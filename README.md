@@ -1,4 +1,4 @@
-node-libcoin
-============
+libcoin
+=======
 
 Nodejs Bitcoin Library

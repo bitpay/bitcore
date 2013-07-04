@@ -1,0 +1,25 @@
+{
+  "name": "libcoin",
+  "description": "Bitcoin Library",
+  "version": "0.1.0",
+  "author": {
+    "name": "Stephen Pair",
+    "email": "stephen@bitpay.com"
+  },
+  "main": "./index",
+  "keywords": [
+    "bitcoin",
+    "btc",
+    "satoshi",
+    "money",
+    "currency",
+    "virtual"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/gasteve/node-libcoin.git"
+  },
+  "scripts": {},
+  "devDependencies": {},
+  "license": "MIT"
+}
