@@ -6,7 +6,7 @@ function ClassSpec(b) {
   function BitcoinAddress(data, encoding) {
     this.data = data;
     this.__proto__ = encodings[encoding || 'base58'];
-	};
+  };
 
   // return the bitcoin address version (the first byte of the address)
   BitcoinAddress.prototype.version = function() {
@@ -41,7 +41,7 @@ function ClassSpec(b) {
   // convert to a string (in base58 form)
 	BitcoinAddress.prototype.toString = function() {
     return this.as('base58');
-	};
+  };
 
   // Setup support for various address encodings.  The object for
   // each encoding inherits from the BitcoinAddress prototype.  This
@@ -94,6 +94,6 @@ function ClassSpec(b) {
     encodings[k].__proto__ = BitcoinAddress.prototype;
   };
   
-	return BitcoinAddress;
+  return BitcoinAddress;
 };
 module.defineClass(ClassSpec);
