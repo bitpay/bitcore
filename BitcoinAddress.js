@@ -90,6 +90,11 @@ function ClassSpec(b) {
   var encodings = {
     'binary': {
       converters: {
+        'binary': function() {
+          var answer = new Buffer(this.data.length);
+          this.data.copy(answer);
+          return answer;
+        },
         'base58': function() {
           return base58.encode(this.data);
         },
@@ -127,7 +132,8 @@ function ClassSpec(b) {
   };
 
   for(var k in encodings) {
-    encodings[k].converters[k] = function() {return this.data;};
+    if(!encodings[k].converters[k])
+      encodings[k].converters[k] = function() {return this.data;};
     encodings[k]._encoding = k;
     encodings[k].__proto__ = BitcoinAddress.prototype;
   };
