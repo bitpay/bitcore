@@ -9,13 +9,20 @@ function ClassSpec(b) {
   };
 
   // return the bitcoin address version (the first byte of the address)
-  BitcoinAddress.prototype.version = function() {
+  BitcoinAddress.prototype.version = function(num) {
+    if(num || (num === 0)) {
+      var oldEncoding = this.encoding();
+      this.encoding('binary');
+      this.data.writeUInt8(num, 0);
+      this.encoding(oldEncoding);
+      return num;
+    }
     return this.as('binary').readUInt8(0);
   };
 
   // get or set the encoding used (transforms data)
   BitcoinAddress.prototype.encoding = function(encoding) {
-    if(encoding) {
+    if(encoding && (encoding != this._encoding)) {
       this.data = this.as(encoding);
       this.__proto__ = encodings[encoding];
     }
