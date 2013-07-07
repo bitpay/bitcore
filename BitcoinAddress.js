@@ -3,9 +3,26 @@ require('classtool');
 function ClassSpec(b) {
   var base58 = b.base58 || require('base58-native').base58Check;
 
-  function BitcoinAddress(data, encoding) {
-    this.data = data;
-    this.__proto__ = encodings[encoding || 'base58'];
+  // Constructor.  Takes the following forms:
+  //   new BitcoinAddress();
+  //   new BitcoinAddress(<base58_address_string>)
+  //   new BitcoinAddress(<21-byte-buffer>)
+  //   new BitcoinAddress(<data>, <encoding>)
+  //   new BitcoinAddress(<version>, <20-byte-hash>)
+  function BitcoinAddress(arg1, arg2) {
+    if(typeof arg1 == 'number') {
+      this.data = new Buffer(21);
+      this.__proto__ = encodings['binary'];
+      this.version(arg1);
+      this.hash(arg2);
+    } else {
+      this.data = arg1 || new Buffer(21);
+      if(!arg2 && (typeof arg1 == 'string')) {
+        this.__proto__ = encodings['base58'];
+      } else {
+        this.__proto__ = encodings[arg2 || 'binary'];
+      }
+    }
   };
 
   // get or set the bitcoin address version (the first byte of the address)
