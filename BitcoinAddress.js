@@ -1,9 +1,9 @@
 require('classtool');
 
 function ClassSpec(b) {
-	var base58 = b.base58 || require('base58-native').base58Check;
+  var base58 = b.base58 || require('base58-native').base58Check;
 
-	function BitcoinAddress(data, encoding) {
+  function BitcoinAddress(data, encoding) {
     this.data = data;
     this.__proto__ = encodings[encoding || 'base58'];
 	};
