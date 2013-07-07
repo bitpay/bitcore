@@ -39,7 +39,7 @@ function ClassSpec(b) {
   };
 
   // convert to a string (in base58 form)
-	BitcoinAddress.prototype.toString = function() {
+  BitcoinAddress.prototype.toString = function() {
     return this.as('base58');
   };
 
