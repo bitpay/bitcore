@@ -1,7 +1,7 @@
 {
   "name": "libcoin",
   "description": "Bitcoin Library",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "Stephen Pair",
     "email": "stephen@bitpay.com"
@@ -20,6 +20,10 @@
     "url": "http://github.com/gasteve/node-libcoin.git"
   },
   "scripts": {},
+  "dependencies": {
+    "classtool": ">=1.0.0",
+    "base58-native": ">=0.1.1"
+  },
   "devDependencies": {},
   "license": "MIT"
 }
