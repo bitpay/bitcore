@@ -8,16 +8,22 @@ function ClassSpec(b) {
     this.__proto__ = encodings[encoding || 'base58'];
   };
 
-  // return the bitcoin address version (the first byte of the address)
+  // get or set the bitcoin address version (the first byte of the address)
   BitcoinAddress.prototype.version = function(num) {
     if(num || (num === 0)) {
-      var oldEncoding = this.encoding();
-      this.encoding('binary');
-      this.data.writeUInt8(num, 0);
-      this.encoding(oldEncoding);
+      this.doAsBinary(function() {this.data.writeUInt8(num, 0);});
       return num;
     }
     return this.as('binary').readUInt8(0);
+  };
+
+  // get or set the hash data (as a Buffer object)
+  BitcoinAddress.prototype.hash = function(data) {
+    if(data) {
+      this.doAsBinary(function() {data.copy(this.data,1);});
+      return data;
+    }
+    return this.as('binary').slice(1);
   };
 
   // get or set the encoding used (transforms data)
@@ -48,6 +54,14 @@ function ClassSpec(b) {
   // convert to a string (in base58 form)
   BitcoinAddress.prototype.toString = function() {
     return this.as('base58');
+  };
+
+  // utility
+  BitcoinAddress.prototype.doAsBinary = function(callback) {
+    var oldEncoding = this.encoding();
+    this.encoding('binary');
+    callback.apply(this);
+    this.encoding(oldEncoding);
   };
 
   // Setup support for various address encodings.  The object for
