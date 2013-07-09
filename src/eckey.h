@@ -7,6 +7,8 @@
 using namespace v8;
 using namespace node;
 
+namespace bitcoin {
+
 class Key : ObjectWrap
 {
 private:
@@ -89,5 +91,7 @@ public:
   static Handle<Value>
     SignSync(const Arguments& args);
 };
+
+};	// namespace bitcoin
 
 #endif

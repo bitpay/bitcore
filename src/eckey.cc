@@ -53,6 +53,8 @@ int static inline EC_KEY_regenerate_key(EC_KEY *eckey, const BIGNUM *priv_key)
   return(ok);
 }
 
+namespace bitcoin {
+
 void Key::Generate()
 {
   if (!EC_KEY_generate_key(ec)) {
@@ -562,10 +564,12 @@ Key::SignSync(const Arguments& args)
 
 Persistent<FunctionTemplate> Key::s_ct;
 
+};	// namespace bitcoin
+
 extern "C" void
 init (Handle<Object> target)
 {
-  Key::Init(target);
+  bitcoin::Key::Init(target);
 }
 
 NODE_MODULE(native, init)
