@@ -6,6 +6,10 @@
     "name": "Stephen Pair",
     "email": "stephen@bitpay.com"
   },
+  "contributors": [
+    {"name": "Stefan Thomas", "email": "moon@justmoon.net"},
+    {"name": "Jeff Garzik", "email": "jgarzik@bitpay.com"}
+  ], 
   "main": "./index",
   "keywords": [
     "bitcoin",
@@ -22,7 +26,8 @@
   "scripts": {},
   "dependencies": {
     "classtool": ">=1.0.0",
-    "base58-native": ">=0.1.1"
+    "base58-native": ">=0.1.1",
+    "bindings": "1.1.0"
   },
   "devDependencies": {},
   "license": "MIT"
