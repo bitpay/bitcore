@@ -39,6 +39,9 @@ exports.livenet = {
   },
   proofOfWorkLimit: hex("00000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
   checkpoints: [], // need to put checkpoint blocks here
+  addressPubkey: 0,
+  addressScript: 5,
+  keySecret: 128,
 };
 
 exports.testnet = {
@@ -58,4 +61,7 @@ exports.testnet = {
   genesisBlockTx: module.exports.livenet.genesisBlockTx,
   proofOfWorkLimit: module.exports.livenet.proofOfWorkLimit,
   checkpoints: [], // need to put checkput blocks here
+  addressPubkey: 111,
+  addressScript: 196,
+  keySecret: 239,
 };
