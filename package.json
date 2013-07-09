@@ -23,6 +23,9 @@
   "dependencies": {
     "classtool": ">=1.0.0",
     "base58-native": ">=0.1.1"
+    //"bignum"
+    //"put"
+    //"binary"
   },
   "devDependencies": {},
   "license": "MIT"
