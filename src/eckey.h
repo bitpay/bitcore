@@ -1,5 +1,5 @@
-#ifndef BITCOINJS_SERVER_INCLUDE_ECKEY_H_
-#define BITCOINJS_SERVER_INCLUDE_ECKEY_H_
+#ifndef LIBCOIN_SERVER_INCLUDE_ECKEY_H_
+#define LIBCOIN_SERVER_INCLUDE_ECKEY_H_
 
 #include <v8.h>
 #include <node.h>
@@ -7,7 +7,7 @@
 using namespace v8;
 using namespace node;
 
-class BitcoinKey : ObjectWrap
+class Key : ObjectWrap
 {
 private:
 
@@ -21,7 +21,7 @@ private:
 
   struct verify_sig_baton_t {
     // Parameters
-    BitcoinKey *key;
+    Key *key;
     const unsigned char *digest;
     const unsigned char *sig;
     int digestLen;
@@ -48,10 +48,10 @@ public:
 
   static void Init(Handle<Object> target);
 
-  BitcoinKey();
-  ~BitcoinKey();
+  Key();
+  ~Key();
 
-  static BitcoinKey* New();
+  static Key* New();
 
   static Handle<Value> New(const Arguments& args);
   static Handle<Value> GenerateSync(const Arguments& args);

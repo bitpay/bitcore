@@ -53,7 +53,7 @@ int static inline EC_KEY_regenerate_key(EC_KEY *eckey, const BIGNUM *priv_key)
   return(ok);
 }
 
-void BitcoinKey::Generate()
+void Key::Generate()
 {
   if (!EC_KEY_generate_key(ec)) {
     lastError = "Error from EC_KEY_generate_key";
@@ -64,13 +64,13 @@ void BitcoinKey::Generate()
   hasPrivate = true;
 }
 
-int BitcoinKey::VerifySignature(const unsigned char *digest, int digest_len,
+int Key::VerifySignature(const unsigned char *digest, int digest_len,
                     const unsigned char *sig, int sig_len)
 {
   return ECDSA_verify(0, digest, digest_len, sig, sig_len, ec);
 }
 
-void BitcoinKey::EIO_VerifySignature(uv_work_t *req)
+void Key::EIO_VerifySignature(uv_work_t *req)
 {
   verify_sig_baton_t *b = static_cast<verify_sig_baton_t *>(req->data);
 
@@ -80,7 +80,7 @@ void BitcoinKey::EIO_VerifySignature(uv_work_t *req)
   );
 }
 
-ECDSA_SIG *BitcoinKey::Sign(const unsigned char *digest, int digest_len)
+ECDSA_SIG *Key::Sign(const unsigned char *digest, int digest_len)
 {
   ECDSA_SIG *sig;
 
@@ -92,14 +92,14 @@ ECDSA_SIG *BitcoinKey::Sign(const unsigned char *digest, int digest_len)
   return sig;
 }
 
-void BitcoinKey::Init(Handle<Object> target)
+void Key::Init(Handle<Object> target)
 {
   HandleScope scope;
   Local<FunctionTemplate> t = FunctionTemplate::New(New);
 
   s_ct = Persistent<FunctionTemplate>::New(t);
   s_ct->InstanceTemplate()->SetInternalFieldCount(1);
-  s_ct->SetClassName(String::NewSymbol("BitcoinKey"));
+  s_ct->SetClassName(String::NewSymbol("Key"));
 
   // Accessors
   s_ct->InstanceTemplate()->SetAccessor(String::New("private"),
@@ -118,11 +118,11 @@ void BitcoinKey::Init(Handle<Object> target)
   NODE_SET_METHOD(s_ct->GetFunction(), "generateSync", GenerateSync);
   NODE_SET_METHOD(s_ct->GetFunction(), "fromDER", FromDER);
 
-  target->Set(String::NewSymbol("BitcoinKey"),
+  target->Set(String::NewSymbol("Key"),
               s_ct->GetFunction());
 }
 
-BitcoinKey::BitcoinKey() :
+Key::Key() :
   lastError(NULL),
   hasPrivate(false),
   hasPublic(false)
@@ -133,24 +133,24 @@ BitcoinKey::BitcoinKey() :
   }
 }
 
-BitcoinKey::~BitcoinKey()
+Key::~Key()
 {
   EC_KEY_free(ec);
 }
 
-BitcoinKey*
-BitcoinKey::New()
+Key*
+Key::New()
 {
   HandleScope scope;
 
   Local<Object> k = s_ct->GetFunction()->NewInstance(0, NULL);
   if (k.IsEmpty()) return NULL;
 
-  return ObjectWrap::Unwrap<BitcoinKey>(k);
+  return ObjectWrap::Unwrap<Key>(k);
 }
 
 Handle<Value>
-BitcoinKey::New(const Arguments& args)
+Key::New(const Arguments& args)
 {
   if (!args.IsConstructCall()) {
     return FromConstructorTemplate(s_ct, args);
@@ -158,7 +158,7 @@ BitcoinKey::New(const Arguments& args)
 
   HandleScope scope;
 
-  BitcoinKey* key = new BitcoinKey();
+  Key* key = new Key();
   if (key->lastError != NULL) {
     return VException(key->lastError);
   }
@@ -169,11 +169,11 @@ BitcoinKey::New(const Arguments& args)
 }
 
 Handle<Value>
-BitcoinKey::GenerateSync(const Arguments& args)
+Key::GenerateSync(const Arguments& args)
 {
   HandleScope scope;
 
-  BitcoinKey* key = BitcoinKey::New();
+  Key* key = Key::New();
 
   key->Generate();
 
@@ -185,10 +185,10 @@ BitcoinKey::GenerateSync(const Arguments& args)
 }
 
 Handle<Value>
-BitcoinKey::GetPrivate(Local<String> property, const AccessorInfo& info)
+Key::GetPrivate(Local<String> property, const AccessorInfo& info)
 {
   HandleScope scope;
-  BitcoinKey* key = node::ObjectWrap::Unwrap<BitcoinKey>(info.Holder());
+  Key* key = node::ObjectWrap::Unwrap<Key>(info.Holder());
 
   if (!key->hasPrivate) {
     return scope.Close(Null());
@@ -225,9 +225,9 @@ BitcoinKey::GetPrivate(Local<String> property, const AccessorInfo& info)
 }
 
 void
-BitcoinKey::SetPrivate(Local<String> property, Local<Value> value, const AccessorInfo& info)
+Key::SetPrivate(Local<String> property, Local<Value> value, const AccessorInfo& info)
 {
-  BitcoinKey* key = node::ObjectWrap::Unwrap<BitcoinKey>(info.Holder());
+  Key* key = node::ObjectWrap::Unwrap<Key>(info.Holder());
   Handle<Object> buffer = value->ToObject();
   const unsigned char *data = (const unsigned char*) Buffer::Data(buffer);
 
@@ -239,10 +239,10 @@ BitcoinKey::SetPrivate(Local<String> property, Local<Value> value, const Accesso
 }
 
 Handle<Value>
-BitcoinKey::GetPublic(Local<String> property, const AccessorInfo& info)
+Key::GetPublic(Local<String> property, const AccessorInfo& info)
 {
   HandleScope scope;
-  BitcoinKey* key = node::ObjectWrap::Unwrap<BitcoinKey>(info.Holder());
+  Key* key = node::ObjectWrap::Unwrap<Key>(info.Holder());
 
   if (!key->hasPublic) {
     return scope.Close(Null());
@@ -270,9 +270,9 @@ BitcoinKey::GetPublic(Local<String> property, const AccessorInfo& info)
 }
 
 void
-BitcoinKey::SetPublic(Local<String> property, Local<Value> value, const AccessorInfo& info)
+Key::SetPublic(Local<String> property, Local<Value> value, const AccessorInfo& info)
 {
-  BitcoinKey* key = node::ObjectWrap::Unwrap<BitcoinKey>(info.Holder());
+  Key* key = node::ObjectWrap::Unwrap<Key>(info.Holder());
   Handle<Object> buffer = value->ToObject();
   const unsigned char *data = (const unsigned char*) Buffer::Data(buffer);
 
@@ -285,10 +285,10 @@ BitcoinKey::SetPublic(Local<String> property, Local<Value> value, const Accessor
 }
 
 Handle<Value>
-BitcoinKey::RegenerateSync(const Arguments& args)
+Key::RegenerateSync(const Arguments& args)
 {
   HandleScope scope;
-  BitcoinKey* key = node::ObjectWrap::Unwrap<BitcoinKey>(args.This());
+  Key* key = node::ObjectWrap::Unwrap<Key>(args.This());
 
   if (!key->hasPrivate) {
     return VException("Regeneration requires a private key.");
@@ -307,10 +307,10 @@ BitcoinKey::RegenerateSync(const Arguments& args)
 }
 
 Handle<Value>
-BitcoinKey::ToDER(const Arguments& args)
+Key::ToDER(const Arguments& args)
 {
   HandleScope scope;
-  BitcoinKey* key = node::ObjectWrap::Unwrap<BitcoinKey>(args.This());
+  Key* key = node::ObjectWrap::Unwrap<Key>(args.This());
 
   if (!key->hasPrivate || !key->hasPublic) {
     return scope.Close(Null());
@@ -338,7 +338,7 @@ BitcoinKey::ToDER(const Arguments& args)
 }
 
 Handle<Value>
-BitcoinKey::FromDER(const Arguments& args)
+Key::FromDER(const Arguments& args)
 {
   HandleScope scope;
 
@@ -349,7 +349,7 @@ BitcoinKey::FromDER(const Arguments& args)
     return VException("Argument 'der' must be of type Buffer");
   }
 
-  BitcoinKey* key = new BitcoinKey();
+  Key* key = new Key();
   if (key->lastError != NULL) {
     return VException(key->lastError);
   }
@@ -372,10 +372,10 @@ BitcoinKey::FromDER(const Arguments& args)
 }
 
 Handle<Value>
-BitcoinKey::VerifySignature(const Arguments& args)
+Key::VerifySignature(const Arguments& args)
 {
   HandleScope scope;
-  BitcoinKey* key = node::ObjectWrap::Unwrap<BitcoinKey>(args.This());
+  Key* key = node::ObjectWrap::Unwrap<Key>(args.This());
 
   if (args.Length() != 3) {
     return VException("Three arguments expected: hash, sig, callback");
@@ -388,7 +388,7 @@ BitcoinKey::VerifySignature(const Arguments& args)
   }
   REQ_FUN_ARG(2, cb);
   if (!key->hasPublic) {
-    return VException("BitcoinKey does not have a public key set");
+    return VException("Key does not have a public key set");
   }
 
   Handle<Object> hash_buf = args[0]->ToObject();
@@ -420,7 +420,7 @@ BitcoinKey::VerifySignature(const Arguments& args)
 }
 
 void
-BitcoinKey::VerifySignatureCallback(uv_work_t *req, int status)
+Key::VerifySignatureCallback(uv_work_t *req, int status)
 {
   HandleScope scope;
   verify_sig_baton_t *baton = static_cast<verify_sig_baton_t *>(req->data);
@@ -462,10 +462,10 @@ BitcoinKey::VerifySignatureCallback(uv_work_t *req, int status)
 }
 
 Handle<Value>
-BitcoinKey::VerifySignatureSync(const Arguments& args)
+Key::VerifySignatureSync(const Arguments& args)
 {
   HandleScope scope;
-  BitcoinKey* key = node::ObjectWrap::Unwrap<BitcoinKey>(args.This());
+  Key* key = node::ObjectWrap::Unwrap<Key>(args.This());
 
   if (args.Length() != 2) {
     return VException("Two arguments expected: hash, sig");
@@ -477,7 +477,7 @@ BitcoinKey::VerifySignatureSync(const Arguments& args)
     return VException("Argument 'sig' must be of type Buffer");
   }
   if (!key->hasPublic) {
-    return VException("BitcoinKey does not have a public key set");
+    return VException("Key does not have a public key set");
   }
 
   Handle<Object> hash_buf = args[0]->ToObject();
@@ -510,10 +510,10 @@ BitcoinKey::VerifySignatureSync(const Arguments& args)
 }
 
 Handle<Value>
-BitcoinKey::SignSync(const Arguments& args)
+Key::SignSync(const Arguments& args)
 {
   HandleScope scope;
-  BitcoinKey* key = node::ObjectWrap::Unwrap<BitcoinKey>(args.This());
+  Key* key = node::ObjectWrap::Unwrap<Key>(args.This());
 
   if (args.Length() != 1) {
     return VException("One argument expected: hash");
@@ -522,7 +522,7 @@ BitcoinKey::SignSync(const Arguments& args)
     return VException("Argument 'hash' must be of type Buffer");
   }
   if (!key->hasPrivate) {
-    return VException("BitcoinKey does not have a private key set");
+    return VException("Key does not have a private key set");
   }
 
   Handle<Object> hash_buf = args[0]->ToObject();
@@ -560,12 +560,12 @@ BitcoinKey::SignSync(const Arguments& args)
   return scope.Close(der_buf->handle_);
 }
 
-Persistent<FunctionTemplate> BitcoinKey::s_ct;
+Persistent<FunctionTemplate> Key::s_ct;
 
 extern "C" void
 init (Handle<Object> target)
 {
-  BitcoinKey::Init(target);
+  Key::Init(target);
 }
 
 NODE_MODULE(native, init)
