@@ -1,6 +1,9 @@
 require('classtool');
 
 function spec(b) {
+  var config = b.config || require('./config');
+  var log = b.log || require('./util/log')(config);
+
   var Opcode = require('./opcode').class();
 
   // Make opcodes available as pseudo-constants
@@ -9,8 +12,7 @@ function spec(b) {
   }
 
   var bignum = b.bignum || require('bignum');
-  var logger = b.logger || require('../ext/logger');
-  var Util = b.Util || require('../ext/util');
+  var Util = b.Util || require('./util/util');
   var Script = require('./script').class();
 
   function ScriptInterpreter() {
@@ -717,7 +719,7 @@ function spec(b) {
           executeStep.call(this, cb);
         }
       } catch (e) {
-        logger.scrdbg("Script aborted: "+
+        log.debug("Script aborted: "+
                       (e.message ? e : e));
         cb(e);
       }

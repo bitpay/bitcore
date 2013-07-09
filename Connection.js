@@ -2,6 +2,7 @@ require('classtool');
 
 function spec(b) {
   var config = b.config || require('./config');
+  var log = b.log || require('./util/log')(config);
   var network = b.network || require('./networks')[config.network];
 
   var MAX_RECEIVE_BUFFER = 10000000;
@@ -11,13 +12,12 @@ function spec(b) {
   var Put = b.Put || require('bufferput');
   var Buffers = b.Buffers || require('buffers');
   var noop = function() {};
-  var log = b.log || require('bitpay/log');
+  var util = b.util || require('./util/util');
   var Parser = b.Parser || require('./util/BinaryParser').class();
-  var util = require('./util/util');
   var doubleSha256 = b.doubleSha256 || util.twoSha256;
   var nonce = util.generateNonce();
 
-  var Block = require('../model/block').class();
+  var Block = require('./Block').class();
 
   var BIP0031_VERSION = 60000;
 
@@ -170,7 +170,7 @@ function spec(b) {
   Connection.prototype.sendVersion = function () {
     var subversion = '/BitcoinX:0.1/';
 
-    var put = Put();
+    var put = new Put();
     put.word32le(PROTOCOL_VERSION); // version
     put.word64le(1); // services
     put.word64le(Math.round(new Date().getTime()/1000)); // timestamp
@@ -185,7 +185,7 @@ function spec(b) {
   };
 
   Connection.prototype.sendGetBlocks = function (starts, stop) {
-    var put = Put();
+    var put = new Put();
     put.word32le(this.sendVer);
 
     put.varint(starts.length);
@@ -208,7 +208,7 @@ function spec(b) {
   };
 
   Connection.prototype.sendGetData = function (invs) {
-    var put = Put();
+    var put = new Put();
     put.varint(invs.length);
     for (var i = 0; i < invs.length; i++) {
       put.word32le(invs[i].type);
@@ -218,13 +218,13 @@ function spec(b) {
   };
 
   Connection.prototype.sendGetAddr = function (invs) {
-    var put = Put();
+    var put = new Put();
     this.sendMessage('getaddr', put.buffer());
   };
 
   Connection.prototype.sendInv = function(data) {
     if(!Array.isArray(data)) data = [data];
-    var put = Put();
+    var put = new Put();
     put.varint(data.length);
     data.forEach(function (value) {
       if (value instanceof Block) {
@@ -240,7 +240,7 @@ function spec(b) {
   };
 
   Connection.prototype.sendHeaders = function (headers) {
-    var put = Put();
+    var put = new Put();
     put.varint(headers.length);
     headers.forEach(function (header) {
       put.put(header);
@@ -256,7 +256,7 @@ function spec(b) {
   };
 
   Connection.prototype.sendBlock = function (block, txs) {
-    var put = Put();
+    var put = new Put();
 
     // Block header
     put.put(block.getHeader());
@@ -283,7 +283,7 @@ function spec(b) {
         checksum = new Buffer([]);
       }
 
-      var message = Put();           // -- HEADER --
+      var message = new Put();           // -- HEADER --
       message.put(magic);                   // magic bytes
       message.put(commandBuf);              // command name
       message.pad(12 - commandBuf.length);  // zero-padded

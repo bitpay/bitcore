@@ -2,11 +2,11 @@ require('classtool');
 
 function spec(b) {
   var config = b.config || require('./config');
+  var log = b.log || require('./util/log')(config);
   var network = b.network || require('./networks')[config.network];
   var Connection = b.Connection || require('./Connection').createClass({config: config});
   var Peer = b.Peer || require('./Peer').class();
   var noop = function() {};
-  var log = b.log || {info: noop, warn: noop, err: noop};
 
   GetAdjustedTime = b.GetAdjustedTime || function () {
     // TODO: Implement actual adjustment
@@ -31,16 +31,14 @@ function spec(b) {
 
   PeerManager.Connection = Connection;
 
-  PeerManager.prototype.start = function()
-  {
+  PeerManager.prototype.start = function() {
     this.active = true;
     if(!this.timer) {
       this.timer = setInterval(this.checkStatus.bind(this), this.interval);
     }
   };
 
-  PeerManager.prototype.stop = function ()
-  {
+  PeerManager.prototype.stop = function() {
     this.active = false;
     if(this.timer) {
       clearInterval(this.timer);
@@ -63,8 +61,7 @@ function spec(b) {
     }
   };
 
-  PeerManager.prototype.checkStatus = function checkStatus()
-  {
+  PeerManager.prototype.checkStatus = function checkStatus() {
     // Make sure we are connected to all forcePeers
     if(this.peers.length) {
       var peerIndex = {};

@@ -1,16 +1,17 @@
 require('classtool');
 
 function spec(b) {
-  var Script = b.Script || require('./script').class();
-  var ScriptInterpreter = b.ScriptInterpreter || require('./scriptInterpreter').class();
-  var util = b.util || require('../ext/util');
+  var config = b.config || require('./config');
+  var log = b.log || require('./util/log')(config);
+  var Script = b.Script || require('./Script').class();
+  var ScriptInterpreter = b.ScriptInterpreter || require('./ScriptInterpreter').class();
+  var util = b.util || require('./util/util');
   var bignum = b.bignum || require('bignum');
   var Put = b.Put || require('bufferput');
-  var error = b.error || require('../ext/error');
-  var logger = b.logger || require('../ext/logger');
+  var Parser = b.Parser || require('./util/BinaryParser').class();
   var Step = b.Step || require('step');
-  var Parser = b.Parser || require('../ext/binaryParser').class();
 
+  var error = b.error || require('./util/error');
   var VerificationError = error.VerificationError;
   var MissingSourceError = error.MissingSourceError;
 
@@ -265,9 +266,9 @@ function spec(b) {
         for (var i = 0, l = results.length; i < l; i++) {
           if (!results[i]) {
             var txout = getTxOut(self.ins[i]);
-            logger.scrdbg('Script evaluated to false');
-            logger.scrdbg('|- scriptSig', ""+self.ins[i].getScript());
-            logger.scrdbg('`- scriptPubKey', ""+txout.getScript());
+            log.debug('Script evaluated to false');
+            log.debug('|- scriptSig', ""+self.ins[i].getScript());
+            log.debug('`- scriptPubKey', ""+txout.getScript());
             throw new VerificationError('Script for input '+i+' evaluated to false');
           }
         }
@@ -302,7 +303,7 @@ function spec(b) {
           blockChain.getConflictingTransactions(outpoints, function (err, results) {
             if (results.length) {
               if (results[0].getHash().compare(self.getHash()) == 0) {
-                logger.warn("Detected tx re-add (recoverable db corruption): "
+                log.warn("Detected tx re-add (recoverable db corruption): "
                             + util.formatHashAlt(results[0].getHash()));
                 // TODO: Needs to return an error for the memory pool case?
                 callback(null, fees);
@@ -360,7 +361,7 @@ function spec(b) {
         } catch (err) {
           // It's not our job to validate, so we just ignore any errors and issue
           // a very low level log message.
-          logger.debug("Unable to determine affected pubkeys: " +
+          log.debug("Unable to determine affected pubkeys: " +
                        (err.stack ? err.stack : ""+err));
         }
       };
@@ -395,7 +396,7 @@ function spec(b) {
         } catch (err) {
           // It's not our job to validate, so we just ignore any errors and issue
           // a very low level log message.
-          logger.debug("Unable to determine affected pubkeys: " +
+          log.debug("Unable to determine affected pubkeys: " +
                        (err.stack ? err.stack : ""+err));
         }
       }
@@ -707,7 +708,7 @@ function spec(b) {
         cb.apply(null, args);
       });
     } catch (err) {
-      logger.error("Callback error after connecting tx inputs: "+
+      log.err("Callback error after connecting tx inputs: "+
                    (err.stack ? err.stack : err.toString()));
     }
   };

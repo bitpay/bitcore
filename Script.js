@@ -1,6 +1,9 @@
 require('classtool');
 
 function spec(b) {
+  var config = b.config || require('./config');
+  var log = b.log || require('./util/log')(config);
+
   var Opcode = require('./opcode').class();
 
   // Make opcodes available as pseudo-constants
@@ -8,16 +11,15 @@ function spec(b) {
     eval(i + " = " + Opcode.map[i] + ";");
   }
 
-  var logger = b.logger || require('../ext/logger');
-  var Util = b.Util || require('../ext/util');
-  var Parser = b.Parser || require('../ext/binaryParser').class();
+  var util = b.util || require('./util/util');
+  var Parser = b.Parser || require('./util/BinaryParser').class();
   var Put = b.Put || require('bufferput');
 
   function Script(buffer) {
     if(buffer) {
       this.buffer = buffer;
     } else {
-      this.buffer = Util.EMPTY_BUFFER;
+      this.buffer = util.EMPTY_BUFFER;
     }
     this.chunks = [];
     this.parse();
@@ -84,10 +86,10 @@ function spec(b) {
     case 'Address':
       return this.chunks[2];
     case 'Pubkey':
-      return Util.sha256ripe160(this.chunks[0]);
+      return util.sha256ripe160(this.chunks[0]);
     default:
-      logger.scrdbg("Encountered non-standard scriptPubKey");
-      logger.scrdbg("Strange script was: " + this.toString());
+      log.debug("Encountered non-standard scriptPubKey");
+      log.debug("Strange script was: " + this.toString());
       return null;
     }
   };
@@ -114,8 +116,8 @@ function spec(b) {
     case 'Pubkey':
       return null;
     default:
-      logger.scrdbg("Encountered non-standard scriptSig");
-      logger.scrdbg("Strange script was: " + this.toString());
+      log.debug("Encountered non-standard scriptSig");
+      log.debug("Strange script was: " + this.toString());
       return null;
     }
   };
@@ -144,7 +146,7 @@ function spec(b) {
       }
 
       if (Buffer.isBuffer(chunk)) {
-        script += "0x"+Util.formatBuffer(chunk, truncate ? null : 0);
+        script += "0x"+util.formatBuffer(chunk, truncate ? null : 0);
       } else {
         script += Opcode.reverseMap[chunk];
       }

@@ -1,17 +1,17 @@
 require('classtool');
 
 function spec(b) {
-  var Util = b.Util || require('../ext/util');
+  var util = b.util || require('./util/util');
   var Debug1 = b.Debug1 || function() {};
-  var Script = b.Script || require('./script').class();
+  var Script = b.Script || require('./Script').class();
   var Bignum = b.Bignum || require('bignum');
   var Put = b.Put || require('bufferput');
   var Step = b.Step || require('step');
-  var Transaction = b.Transaction || require('./transaction');
-  var TransactionIn = b.TransactionIn || require('./transactionIn');
-  var TransactionOut = b.TransactionOut || require('./transactionOut');
+  var Transaction = b.Transaction || require('./transaction').class();
+  var TransactionIn = Transaction.In;
+  var TransactionOut = Transaction.Out;
   var COINBASE_OP = Transaction.COINBASE_OP;
-  var VerificationError = b.VerificationError || require('../ext/error').VerificationError;
+  var VerificationError = b.VerificationError || require('./util/error').VerificationError;
   var BlockRules = {
     maxTimeOffset: 2 * 60 * 60,  // How far block timestamps can be into the future
     largestHash: Bignum(2).pow(256)
@@ -23,8 +23,8 @@ function spec(b) {
       data = {};
     }
     this.hash = data.hash || null;
-    this.prev_hash = data.prev_hash || Util.NULL_HASH;
-    this.merkle_root = data.merkle_root || Util.NULL_HASH;
+    this.prev_hash = data.prev_hash || util.NULL_HASH;
+    this.merkle_root = data.merkle_root || util.NULL_HASH;
     this.timestamp = data.timestamp || 0;
     this.bits = data.bits || 0;
     this.nonce = data.nonce || 0;
@@ -32,7 +32,7 @@ function spec(b) {
     this.height = data.height || 0;
     this.size = data.size || 0;
     this.active = data.active || false;
-    this.chainWork = data.chainWork || Util.EMPTY_BUFFER;
+    this.chainWork = data.chainWork || util.EMPTY_BUFFER;
     this.txs = data.txs || [];
   };
 
@@ -50,7 +50,7 @@ function spec(b) {
   Block.prototype.calcHash = function calcHash() {
     var header = this.getHeader();
 
-    return Util.twoSha256(header);
+    return util.twoSha256(header);
   };
 
   Block.prototype.checkHash = function checkHash() {
@@ -65,7 +65,7 @@ function spec(b) {
   };
 
   Block.prototype.checkProofOfWork = function checkProofOfWork() {
-    var target = Util.decodeDiffBits(this.bits);
+    var target = util.decodeDiffBits(this.bits);
 
     // TODO: Create a compare method in node-buffertools that uses the correct
     //       endian so we don't have to reverse both buffers before comparing.
@@ -89,7 +89,7 @@ function spec(b) {
    * of all possible hashes would mean that 20 "work" is required to meet it.
    */
   Block.prototype.getWork = function getWork() {
-    var target = Util.decodeDiffBits(this.bits, true);
+    var target = util.decodeDiffBits(this.bits, true);
     return BlockRules.largestHash.div(target.add(1));
   };
 
@@ -141,7 +141,7 @@ function spec(b) {
     // This function is a direct translation of CBlock::BuildMerkleTree().
 
     if (txs.length == 0) {
-      return [Util.NULL_HASH.slice(0)];
+      return [util.NULL_HASH.slice(0)];
     }
 
     // Start by adding all the hashes of the transactions as leaves of the tree.
@@ -157,7 +157,7 @@ function spec(b) {
         var i2 = Math.min(i + 1, size - 1);
         var a = tree[j + i];
         var b = tree[j + i2];
-        tree.push(Util.twoSha256(a.concat(b)));
+        tree.push(util.twoSha256(a.concat(b)));
       }
       j += size;
     }
@@ -199,7 +199,7 @@ function spec(b) {
   };
 
   Block.getBlockValue = function getBlockValue(height) {
-    var subsidy = Bignum(50).mul(Util.COIN);
+    var subsidy = Bignum(50).mul(util.COIN);
     subsidy = subsidy.div(Bignum(2).pow(Math.floor(height / 210000)));
     return subsidy;
   };
@@ -209,7 +209,7 @@ function spec(b) {
   };
 
   Block.prototype.toString = function toString() {
-    return "<Block " + Util.formatHashAlt(this.hash) + " height="+this.height+">";
+    return "<Block " + util.formatHashAlt(this.hash) + " height="+this.height+">";
   };
 
   /**
@@ -251,7 +251,7 @@ function spec(b) {
     var self = this;
 
     var powLimit = blockChain.getMinDiff();
-    var powLimitTarget = Util.decodeDiffBits(powLimit, true);
+    var powLimitTarget = util.decodeDiffBits(powLimit, true);
 
     var targetTimespan = blockChain.getTargetTimespan();
     var targetSpacing = blockChain.getTargetSpacing();
@@ -327,7 +327,7 @@ function spec(b) {
               actualTimespan = targetTimespan*4;
             }
 
-            var oldTarget = Util.decodeDiffBits(self.bits, true);
+            var oldTarget = util.decodeDiffBits(self.bits, true);
             var newTarget = oldTarget.mul(actualTimespan).div(targetTimespan);
 
             if (newTarget.cmp(powLimitTarget) > 0) {
@@ -339,7 +339,7 @@ function spec(b) {
             Debug1('Before: '+oldTarget.toBuffer().toString('hex'));
             Debug1('After:  '+newTarget.toBuffer().toString('hex'));
 
-            callback(null, Util.encodeDiffBits(newTarget));
+            callback(null, util.encodeDiffBits(newTarget));
           } catch (err) {
             callback(err);
           }
@@ -426,12 +426,12 @@ function spec(b) {
   {
     var tx = new Transaction();
     tx.ins.push(new TransactionIn({
-      s: Util.EMPTY_BUFFER,
+      s: util.EMPTY_BUFFER,
       q: 0xffffffff,
       o: COINBASE_OP
     }));
     tx.outs.push(new TransactionOut({
-      v: Util.bigIntToValue(this.getBlockValue()),
+      v: util.bigIntToValue(this.getBlockValue()),
       s: Script.createPubKeyOut(beneficiary).getBuffer()
     }));
     return tx;
@@ -518,7 +518,7 @@ function spec(b) {
 
   Block.prototype.solve = function solve(miner, callback) {
     var header = this.getHeader();
-    var target = Util.decodeDiffBits(this.bits);
+    var target = util.decodeDiffBits(this.bits);
     miner.solve(header, target, callback);
   };
 
@@ -529,10 +529,10 @@ function spec(b) {
   function getStandardizedObject(txs)
   {
     var block = {
-      hash: Util.formatHashFull(this.getHash()),
+      hash: util.formatHashFull(this.getHash()),
       version: this.version,
-      prev_block: Util.formatHashFull(this.prev_hash),
-      mrkl_root: Util.formatHashFull(this.merkle_root),
+      prev_block: util.formatHashFull(this.prev_hash),
+      mrkl_root: util.formatHashFull(this.merkle_root),
       time: this.timestamp,
       bits: this.bits,
       nonce: this.nonce,
@@ -542,13 +542,13 @@ function spec(b) {
 
     if (txs) {
       var mrkl_tree = this.getMerkleTree(txs).map(function (buffer) {
-        return Util.formatHashFull(buffer);
+        return util.formatHashFull(buffer);
       });
       block.mrkl_root = mrkl_tree[mrkl_tree.length - 1];
 
       block.n_tx = txs.length;
       var totalSize = 80; // Block header
-      totalSize += Util.getVarIntSize(txs.length); // txn_count
+      totalSize += util.getVarIntSize(txs.length); // txn_count
       txs = txs.map(function (tx) {
         tx = tx.getStandardizedObject();
         totalSize += tx.size;

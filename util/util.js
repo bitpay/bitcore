@@ -2,14 +2,7 @@ require('buffertools');
 var crypto = require('crypto');
 var bignum = require('bignum');
 var Binary = require('binary');
-var Put = require('put');
-//var logger = require('./logger');
-
-var ccmodule = require('bindings')('nativetools');
-
-exports.ccmodule = ccmodule;
-
-exports.BitcoinKey = ccmodule.BitcoinKey;
+var Put = require('bufferput');
 
 var sha256 = exports.sha256 = function (data) {
   return new Buffer(crypto.createHash('sha256').update(data).digest('binary'), 'binary');
@@ -30,8 +23,6 @@ var twoSha256 = exports.twoSha256 = function (data) {
 var sha256ripe160 = exports.sha256ripe160 = function (data) {
   return ripe160(sha256(data));
 };
-
-var sha256midstate = exports.sha256midstate = ccmodule.sha256_midstate;
 
 /**
  * Format a block hash like the official client does.
@@ -119,7 +110,7 @@ var formatValue = exports.formatValue = function (valueBuffer) {
 var pubKeyHashToAddress = exports.pubKeyHashToAddress = function (pubKeyHash, addressVersion) {
   if (!pubKeyHash) return "";
 
-  var put = Put();
+  var put = new Put();
   // Version
   if(addressVersion) {
     put.word8le(addressVersion);
@@ -139,7 +130,6 @@ var addressToPubKeyHash = exports.addressToPubKeyHash = function (address) {
 
   // Check sanity
   if (!address.match(/^[1-9A-HJ-NP-Za-km-z]{27,35}$/)) {
-    //logger.warn("Not a valid Bitcoin address");
     return null;
   }
 
@@ -155,7 +145,6 @@ var addressToPubKeyHash = exports.addressToPubKeyHash = function (address) {
   // Check checksum
   var checksum = twoSha256(buffer.slice(0, 21)).slice(0, 4);
   if (checksum.compare(parser.vars.checksum) !== 0) {
-    //logger.warn("Checksum comparison failed");
     return null;
   }
 
@@ -284,7 +273,7 @@ var reverseBytes32 = exports.reverseBytes32 = function (data) {
   if (data.length % 4) {
     throw new Error("Util.reverseBytes32(): Data length must be multiple of 4");
   }
-  var put = Put();
+  var put = new Put();
   var parser = Binary.parse(data);
   while (!parser.eof()) {
     var word = parser.word32le('word').vars.word;
@@ -311,19 +300,13 @@ var getVarIntSize = exports.getVarIntSize = function getVarIntSize(i) {
 };
 
 // Initializations
-try {
-  var NULL_HASH = exports.NULL_HASH = new Buffer(32).fill(0);
-  var EMPTY_BUFFER = exports.EMPTY_BUFFER = new Buffer(0);
-  var ZERO_VALUE = exports.ZERO_VALUE = new Buffer(8).fill(0);
-  var INT64_MAX = exports.INT64_MAX = decodeHex("ffffffffffffffff");
+exports.NULL_HASH = new Buffer(32).fill(0);
+exports.EMPTY_BUFFER = new Buffer(0);
+exports.ZERO_VALUE = new Buffer(8).fill(0);
+INT64_MAX = new Buffer('ffffffffffffffff', 'hex');
 
-  // How much of Bitcoin's internal integer coin representation
-  // makes 1 BTC
-  var COIN = exports.COIN = 100000000;
+// How much of Bitcoin's internal integer coin representation
+// makes 1 BTC
+exports.COIN = 100000000;
 
-  var MAX_TARGET = exports.MAX_TARGET = decodeHex('00000000FFFF0000000000000000000000000000000000000000000000000000');
-} catch (e) {
-  //logger.error("Error while generating utility constants:\n" +
-  //       (e.stack ? e.stack : e.toString()));
-  process.exit(1);
-}
+exports.MAX_TARGET = new Buffer('00000000FFFF0000000000000000000000000000000000000000000000000000', 'hex');
