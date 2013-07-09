@@ -4,12 +4,12 @@ function ClassSpec(b) {
   var base58 = b.base58 || require('base58-native').base58Check;
 
   // Constructor.  Takes the following forms:
-  //   new BitcoinAddress();
-  //   new BitcoinAddress(<base58_address_string>)
-  //   new BitcoinAddress(<21-byte-buffer>)
-  //   new BitcoinAddress(<data>, <encoding>)
-  //   new BitcoinAddress(<version>, <20-byte-hash>)
-  function BitcoinAddress(arg1, arg2) {
+  //   new Address();
+  //   new Address(<base58_address_string>)
+  //   new Address(<21-byte-buffer>)
+  //   new Address(<data>, <encoding>)
+  //   new Address(<version>, <20-byte-hash>)
+  function Address(arg1, arg2) {
     if(typeof arg1 == 'number') {
       this.data = new Buffer(21);
       this.__proto__ = encodings['binary'];
@@ -26,7 +26,7 @@ function ClassSpec(b) {
   };
 
   // get or set the bitcoin address version (the first byte of the address)
-  BitcoinAddress.prototype.version = function(num) {
+  Address.prototype.version = function(num) {
     if(num || (num === 0)) {
       this.doAsBinary(function() {this.data.writeUInt8(num, 0);});
       return num;
@@ -35,7 +35,7 @@ function ClassSpec(b) {
   };
 
   // get or set the hash data (as a Buffer object)
-  BitcoinAddress.prototype.hash = function(data) {
+  Address.prototype.hash = function(data) {
     if(data) {
       this.doAsBinary(function() {data.copy(this.data,1);});
       return data;
@@ -44,7 +44,7 @@ function ClassSpec(b) {
   };
 
   // get or set the encoding used (transforms data)
-  BitcoinAddress.prototype.encoding = function(encoding) {
+  Address.prototype.encoding = function(encoding) {
     if(encoding && (encoding != this._encoding)) {
       this.data = this.as(encoding);
       this.__proto__ = encodings[encoding];
@@ -53,28 +53,28 @@ function ClassSpec(b) {
   };
 
   // answer a new instance having the given encoding
-  BitcoinAddress.prototype.withEncoding = function(encoding) {
-    return new BitcoinAddress(this.as(encoding), encoding);
+  Address.prototype.withEncoding = function(encoding) {
+    return new Address(this.as(encoding), encoding);
   };
 
   // answer the data in the given encoding
-  BitcoinAddress.prototype.as = function(encoding) {
+  Address.prototype.as = function(encoding) {
     if(!encodings[encoding]) throw new Error('invalid encoding');
     return this.converters[encoding].call(this);
   };
 
   // validate the address (basically just check that we have 21 bytes)
-  BitcoinAddress.prototype.validate = function() {
+  Address.prototype.validate = function() {
     this.withEncoding('binary').validate();
   };
 
   // convert to a string (in base58 form)
-  BitcoinAddress.prototype.toString = function() {
+  Address.prototype.toString = function() {
     return this.as('base58');
   };
 
   // utility
-  BitcoinAddress.prototype.doAsBinary = function(callback) {
+  Address.prototype.doAsBinary = function(callback) {
     var oldEncoding = this.encoding();
     this.encoding('binary');
     callback.apply(this);
@@ -82,11 +82,11 @@ function ClassSpec(b) {
   };
 
   // Setup support for various address encodings.  The object for
-  // each encoding inherits from the BitcoinAddress prototype.  This
+  // each encoding inherits from the Address prototype.  This
   // allows any encoding to override any method...changing the encoding
   // for an instance will change the encoding it inherits from.  Note,
   // this will present some problems for anyone wanting to inherit from
-  // BitcoinAddress (we'll deal with that when needed).
+  // Address (we'll deal with that when needed).
   var encodings = {
     'binary': {
       converters: {
@@ -135,9 +135,9 @@ function ClassSpec(b) {
     if(!encodings[k].converters[k])
       encodings[k].converters[k] = function() {return this.data;};
     encodings[k]._encoding = k;
-    encodings[k].__proto__ = BitcoinAddress.prototype;
+    encodings[k].__proto__ = Address.prototype;
   };
   
-  return BitcoinAddress;
+  return Address;
 };
 module.defineClass(ClassSpec);
