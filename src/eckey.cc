@@ -108,6 +108,8 @@ void Key::Init(Handle<Object> target)
                                         GetPrivate, SetPrivate);
   s_ct->InstanceTemplate()->SetAccessor(String::New("public"),
                                         GetPublic, SetPublic);
+  s_ct->InstanceTemplate()->SetAccessor(String::New("compressed"),
+                                        GetCompressed, SetCompressed);
 
   // Methods
   NODE_SET_PROTOTYPE_METHOD(s_ct, "verifySignature", VerifySignature);
@@ -126,6 +128,7 @@ void Key::Init(Handle<Object> target)
 
 Key::Key() :
   lastError(NULL),
+  isCompressed(true),
   hasPrivate(false),
   hasPublic(false)
 {
@@ -240,6 +243,28 @@ Key::SetPrivate(Local<String> property, Local<Value> value, const AccessorInfo& 
   key->hasPrivate = true;
 }
 
+void
+Key::SetCompressed(Local<String> property, Local<Value> value, const AccessorInfo& info)
+{
+  if (!value->IsBoolean()) {
+    ThrowException(Exception::Error(String::New("compressed must be boolean")));
+    return;
+  }
+
+  Key* key = node::ObjectWrap::Unwrap<Key>(info.Holder());
+
+  key->isCompressed = value->BooleanValue();
+}
+
+Handle<Value>
+Key::GetCompressed(Local<String> property, const AccessorInfo& info)
+{
+  HandleScope scope;
+  Key* key = node::ObjectWrap::Unwrap<Key>(info.Holder());
+
+  return scope.Close(Boolean::New(key->isCompressed));
+}
+
 Handle<Value>
 Key::GetPublic(Local<String> property, const AccessorInfo& info)
 {
@@ -249,6 +274,10 @@ Key::GetPublic(Local<String> property, const AccessorInfo& info)
   if (!key->hasPublic) {
     return scope.Close(Null());
   }
+
+  // Set compressed/uncompressed (we prefer compressed)
+  EC_KEY_set_conv_form(key->ec, key->isCompressed ?
+  	POINT_CONVERSION_COMPRESSED : POINT_CONVERSION_UNCOMPRESSED);
 
   // Export public
   int pub_size = i2o_ECPublicKey(key->ec, NULL);
