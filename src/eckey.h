@@ -16,6 +16,7 @@ private:
   const char *lastError;
   EC_KEY *ec;
 
+  bool isCompressed;
   bool hasPrivate;
   bool hasPublic;
 
@@ -69,6 +70,12 @@ public:
 
   static void
     SetPublic(Local<String> property, Local<Value> value, const AccessorInfo& info);
+
+  static Handle<Value>
+    GetCompressed(Local<String> property, const AccessorInfo& info);
+
+  static void
+    SetCompressed(Local<String> property, Local<Value> value, const AccessorInfo& info);
 
   static Handle<Value>
     RegenerateSync(const Arguments& args);
