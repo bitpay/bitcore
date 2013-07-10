@@ -33,7 +33,7 @@ function test_decode_pub(b58, payload, isTestnet, addrType)
 	var addr = new Address(b58);
 
 	assert.equal(version, addr.version());
-	assert.equal(buf.toString(), addr.hash().toString());
+	assert.equal(buf.toString(), addr.payload().toString());
 }
 
 function is_valid(datum)
