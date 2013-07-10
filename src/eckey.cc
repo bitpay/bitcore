@@ -601,4 +601,4 @@ init (Handle<Object> target)
   bitcoin::Key::Init(target);
 }
 
-NODE_MODULE(native, init)
+NODE_MODULE(KeyModule, init)

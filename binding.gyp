@@ -4,7 +4,7 @@
   },
   'targets': [
     {
-      'target_name': 'Key',
+      'target_name': 'KeyModule',
       'sources': [
         'src/eckey.cc'
       ],
