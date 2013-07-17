@@ -29,7 +29,7 @@ function ClassSpec(b) {
     getAccountAddress: '',
     getAddedNodeInfo: '',
     getAddressesByAccount: '',
-    getBalance: '',
+    getBalance: 'str int',
     getBlock: '',
     getBlockCount: '',
     getBlockHash: 'int',
