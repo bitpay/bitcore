@@ -92,6 +92,22 @@ function is_valid(datum)
 
 function is_invalid(datum)
 {
+	if (datum.length < 1)
+		throw new Error("Bad test");
+	
+	// ignore succeeding elements, as comments
+	var b58 = datum[0];
+	var privkey = new PrivateKey(b58);
+	var addr = new Address(b58);
+
+	var valid = true;
+	try {
+		privkey.validate();
+		addr.validate();
+	} catch(e) {
+		valid = false;
+	}
+	assert.equal(valid, false);
 }
 
 var dataValid = JSON.parse(fs.readFileSync('test/base58_keys_valid.json'));
