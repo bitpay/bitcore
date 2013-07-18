@@ -27,7 +27,7 @@
   "dependencies": {
     "classtool": ">=1.0.0",
     "base58-native": ">=0.1.1",
-    "bindings": "1.1.0",
+    "bindings": ">=1.1.0",
     "bufferput": ">=0.1.1",
     "bignum": "0.6.1",
     "binary": "0.3.0",
