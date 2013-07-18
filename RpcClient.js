@@ -14,6 +14,14 @@ function ClassSpec(b) {
     this.user = opts.user || 'user';
     this.pass = opts.pass || 'pass';
     this.protocol = (opts.protocol == 'http') ? http : https;
+    this.batchedCalls = null;
+  }
+    
+  RpcClient.prototype.batch = function(batchCallback, resultCallback) {
+    this.batchedCalls = [];
+    batchCallback();
+    rpc.call(this, this.batchedCalls, resultCallback);
+    this.batchedCalls = null;
   }
 
   var callspec = {
@@ -90,10 +98,16 @@ function ClassSpec(b) {
   function generateRPCMethods(constructor, apiCalls, rpc) {
     function createRPCMethod(methodName, argMap) {
       return function() {
-        for (var i=0; i<arguments.length - 1; i++) {
+        var limit = arguments.length - 1;
+        if(this.batchedCalls) var limit = arguments.length;
+        for (var i=0; i<limit; i++) {
           if(argMap[i]) arguments[i] = argMap[i](arguments[i]);
         };
-        rpc.call(this, methodName, slice(arguments, 0, arguments.length - 1), arguments[arguments.length - 1]);
+        if(this.batchedCalls) {
+          this.batchedCalls.push({jsonrpc: '2.0', method: methodName, params: slice(arguments)});
+        } else {
+          rpc.call(this, {method: methodName, params: slice(arguments, 0, arguments.length - 1)}, arguments[arguments.length - 1]);
+        }
       };
     };
 
@@ -119,14 +133,9 @@ function ClassSpec(b) {
     }
   }
 
-  function rpc(method, params, callback) {
+  function rpc(request, callback) {
     var self = this;
     var request;
-    if(params) {
-      request = {method: method, params: params};
-    } else {
-      request = {method: method};
-    }
     request = JSON.stringify(request);
     var auth = Buffer(self.user + ':' + self.pass).toString('base64');
 
