@@ -32,7 +32,7 @@
     "bignum": "0.6.1",
     "binary": "0.3.0",
     "step": "0.0.4",
-    "buffers": "0.0.1",
+    "buffers": ">=0.1.1",
     "buffertools": "1.1.1"
   },
   "devDependencies": {},
