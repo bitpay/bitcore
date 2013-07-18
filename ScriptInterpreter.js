@@ -4,7 +4,7 @@ function spec(b) {
   var config = b.config || require('./config');
   var log = b.log || require('./util/log')(config);
 
-  var Opcode = require('./opcode').class();
+  var Opcode = require('./Opcode').class();
 
   // Make opcodes available as pseudo-constants
   for (var i in Opcode.map) {
@@ -13,7 +13,7 @@ function spec(b) {
 
   var bignum = b.bignum || require('bignum');
   var Util = b.Util || require('./util/util');
-  var Script = require('./script').class();
+  var Script = require('./Script').class();
 
   function ScriptInterpreter() {
     this.stack = [];

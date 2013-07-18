@@ -7,7 +7,7 @@ function spec(b) {
   var Bignum = b.Bignum || require('bignum');
   var Put = b.Put || require('bufferput');
   var Step = b.Step || require('step');
-  var Transaction = b.Transaction || require('./transaction').class();
+  var Transaction = b.Transaction || require('./Transaction').class();
   var TransactionIn = Transaction.In;
   var TransactionOut = Transaction.Out;
   var COINBASE_OP = Transaction.COINBASE_OP;
