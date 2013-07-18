@@ -61,6 +61,7 @@ function ClassSpec(b) {
     getTxOutSetInfo: '',
     getWork: '',
     help: '',
+    importAddress: 'str str bool',
     importPrivKey: 'str str bool',
     keypoolRefill: '',
     listAccounts: 'int',
