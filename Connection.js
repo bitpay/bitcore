@@ -11,6 +11,7 @@ function spec(b) {
   var Binary = b.Binary || require('binary');
   var Put = b.Put || require('bufferput');
   var Buffers = b.Buffers || require('buffers');
+  require('./Buffers.monkey').patch(Buffers);
   var noop = function() {};
   var util = b.util || require('./util/util');
   var Parser = b.Parser || require('./util/BinaryParser').class();
