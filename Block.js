@@ -5,6 +5,7 @@ function spec(b) {
   var Debug1 = b.Debug1 || function() {};
   var Script = b.Script || require('./Script').class();
   var Bignum = b.Bignum || require('bignum');
+  var Binary = b.Binary || require('binary');
   var Put = b.Put || require('bufferput');
   var Step = b.Step || require('step');
   var Transaction = b.Transaction || require('./Transaction').class();
@@ -45,6 +46,27 @@ function spec(b) {
     put.word32le(this.bits);
     put.word32le(this.nonce);
     return put.buffer();
+  };
+
+  Block.prototype.parseHeader = function parseHeader(buf) {
+    if (buf.length != 80)
+      throw new VerificationError('Block header length invalid');
+
+    var vars = Binary.parse(buf)
+    	.word32lu('version')
+	.buffer('prev_hash', 32)
+	.buffer('merkle_root', 32)
+	.word32lu('timestamp')
+	.word32lu('bits')
+	.word32lu('nonce')
+	.vars;
+
+    this.version = vars.version;
+    this.prev_hash = vars.prev_hash;
+    this.merkle_root = vars.merkle_root;
+    this.timestamp = vars.timestamp;
+    this.bits = vars.bits;
+    this.nonce = vars.nonce;
   };
 
   Block.prototype.calcHash = function calcHash() {
