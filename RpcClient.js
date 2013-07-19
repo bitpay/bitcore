@@ -6,6 +6,7 @@ require('classtool');
 function ClassSpec(b) {
   var http = b.http || require('http');
   var https = b.https || require('https');
+  var log = b.log || {err: function(){}};
 
   function RpcClient(opts) {
     opts = opts || {};
@@ -115,7 +116,7 @@ function ClassSpec(b) {
       str: function(arg) {return arg.toString();}, 
       int: function(arg) {return parseFloat(arg);},
       float: function(arg) {return parseFloat(arg);},
-      bool: function(arg) {return (arg === true || arg == '1' || arg == 'true' || arg.toLowerCase() == 'true');},
+      bool: function(arg) {return (arg === true || arg == '1' || arg == 'true' || arg.toString().toLowerCase() == 'true');},
     };
 
     for(var k in apiCalls) {
