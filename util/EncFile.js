@@ -1,7 +1,6 @@
 
 var fs = require('fs');
 var crypto = require('crypto');
-var zlib = require('zlib');
 
 exports.readFileSync = function(enc_method, enc_passphrase, filename)
 {
