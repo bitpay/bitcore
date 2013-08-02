@@ -187,7 +187,7 @@ function spec(b) {
     this.sendMessage('version', put.buffer());
   };
 
-  Connection.prototype.sendGetBlocks = function (starts, stop) {
+  Connection.prototype.sendGetBlocks = function (starts, stop, wantHeaders) {
     var put = new Put();
     put.word32le(this.sendVer);
 
@@ -207,7 +207,14 @@ function spec(b) {
 
     put.put(stopBuffer);
 
-    this.sendMessage('getblocks', put.buffer());
+    var command = 'getblocks';
+    if (wantHeaders)
+      command = 'getheaders';
+    this.sendMessage(command, put.buffer());
+  };
+
+  Connection.prototype.sendGetHeaders = function(starts, stop) {
+    this.sendGetBlocks(starts, stop, true);
   };
 
   Connection.prototype.sendGetData = function (invs) {
@@ -429,6 +436,17 @@ function spec(b) {
           type: parser.word32le(),
           hash: parser.buffer(32)
         });
+      }
+      break;
+
+    case 'headers':
+      data.count = parser.varInt();
+
+      data.headers = [];
+      for (i = 0; i < data.count; i++) {
+        var header = new Block();
+	header.parse(parser);
+	data.headers.push(header);
       }
       break;
 
