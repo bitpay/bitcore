@@ -413,13 +413,13 @@ function spec(b) {
       data.addr_me = parser.buffer(26);
       data.addr_you = parser.buffer(26);
       data.nonce = parser.buffer(8);
-      data.subversion = Connection.parseVarStr(parser);
+      data.subversion = parser.varStr();
       data.start_height = parser.word32le();
       break;
 
     case 'inv':
     case 'getdata':
-      data.count = Connection.parseVarInt(parser);
+      data.count = parser.varInt();
 
       data.invs = [];
       for (i = 0; i < data.count; i++) {
@@ -438,7 +438,7 @@ function spec(b) {
       data.bits = parser.word32le();
       data.nonce = parser.word32le();
 
-      var txCount = Connection.parseVarInt(parser);
+      var txCount = parser.varInt();
 
       data.txs = [];
       for (i = 0; i < txCount; i++) {
@@ -465,7 +465,7 @@ function spec(b) {
 
       // TODO: Limit block locator size?
       // reference implementation limits to 500 results
-      var startCount = Connection.parseVarInt(parser);
+      var startCount = parser.varInt();
 
       data.starts = [];
       for (i = 0; i < startCount; i++) {
@@ -475,7 +475,7 @@ function spec(b) {
       break;
 
     case 'addr':
-      var addrCount = Connection.parseVarInt(parser);
+      var addrCount = parser.varInt();
 
       // Enforce a maximum number of addresses per message
       if (addrCount > 1000) {
@@ -495,8 +495,8 @@ function spec(b) {
       break;
 
     case 'alert':
-      data.payload = Connection.parseVarStr(parser);
-      data.signature = Connection.parseVarStr(parser);
+      data.payload = parser.varStr();
+      data.signature = parser.varStr();
       break;
 
     case 'ping':
@@ -521,29 +521,6 @@ function spec(b) {
     return data;
   };
 
-  Connection.parseVarInt = function (parser)
-  {
-    var firstByte = parser.word8();
-    switch (firstByte) {
-    case 0xFD:
-      return parser.word16le();
-
-    case 0xFE:
-      return parser.word32le();
-
-    case 0xFF:
-      return parser.word64le();
-
-    default:
-      return firstByte;
-    }
-  };
-
-  Connection.parseVarStr = function (parser) {
-    var len = Connection.parseVarInt(parser);
-    return parser.buffer(len);
-  };
-
   Connection.parseTx = function (parser) {
     if (Buffer.isBuffer(parser)) {
       parser = new Parser(parser);
@@ -553,25 +530,25 @@ function spec(b) {
 
     data.version = parser.word32le();
     
-    var txinCount = Connection.parseVarInt(parser, 'tx_in_count');
+    var txinCount = parser.varInt();
 
     data.ins = [];
     for (j = 0; j < txinCount; j++) {
       var txin = {};
       txin.o = parser.buffer(36);               // outpoint
-      sLen = Connection.parseVarInt(parser);    // script_len
+      sLen = parser.varInt();    // script_len
       txin.s = parser.buffer(sLen);             // script
       txin.q = parser.word32le();               // sequence
       data.ins.push(txin);
     }
 
-    var txoutCount = Connection.parseVarInt(parser);
+    var txoutCount = parser.varInt();
 
     data.outs = [];
     for (j = 0; j < txoutCount; j++) {
       var txout = {};
       txout.v = parser.buffer(8);               // value
-      sLen = Connection.parseVarInt(parser);    // script_len
+      sLen = parser.varInt();    // script_len
       txout.s = parser.buffer(sLen);            // script
       data.outs.push(txout);
     }

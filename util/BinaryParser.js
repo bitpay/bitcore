@@ -120,6 +120,29 @@ function spec(b) {
     Parser.prototype.word8s = Parser.prototype.word8bs;
   });
 
+  Parser.prototype.varInt = function ()
+  {
+    var firstByte = this.word8();
+    switch (firstByte) {
+    case 0xFD:
+      return this.word16le();
+
+    case 0xFE:
+      return this.word32le();
+
+    case 0xFF:
+      return this.word64le();
+
+    default:
+      return firstByte;
+    }
+  };
+
+  Parser.prototype.varStr = function () {
+    var len = this.varInt();
+    return this.buffer(len);
+  };
+
   return Parser;
 };
 module.defineClass(spec);
