@@ -6,7 +6,6 @@ function spec(b) {
   var Script = b.Script || require('./Script').class();
   var Bignum = b.Bignum || require('bignum');
   var Binary = b.Binary || require('binary');
-  var Put = b.Put || require('bufferput');
   var Step = b.Step || require('step');
   var Transaction = b.Transaction || require('./Transaction').class();
   var TransactionIn = Transaction.In;
@@ -38,14 +37,15 @@ function spec(b) {
   };
 
   Block.prototype.getHeader = function getHeader() {
-    put = Put();
-    put.word32le(this.version);
-    put.put(this.prev_hash);
-    put.put(this.merkle_root);
-    put.word32le(this.timestamp);
-    put.word32le(this.bits);
-    put.word32le(this.nonce);
-    return put.buffer();
+    var buf = new Buffer(80);
+    var ofs = 0;
+    buf.writeUInt32LE(this.version, ofs);	ofs += 4;
+    this.prev_hash.copy(buf, ofs);		ofs += 32;
+    this.merkle_root.copy(buf, ofs);		ofs += 32;
+    buf.writeUInt32LE(this.timestamp, ofs);	ofs += 4;
+    buf.writeUInt32LE(this.bits, ofs);		ofs += 4;
+    buf.writeUInt32LE(this.nonce, ofs);		ofs += 4;
+    return buf;
   };
 
   Block.prototype.parseHeader = function parseHeader(buf) {
