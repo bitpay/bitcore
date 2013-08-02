@@ -48,25 +48,27 @@ function spec(b) {
     return buf;
   };
 
-  Block.prototype.parseHeader = function parseHeader(buf) {
-    if (buf.length != 80)
-      throw new VerificationError('Block header length invalid');
+  Block.prototype.parse = function parse(parser, headerOnly) {
+    this.version = parser.word32le();
+    this.prev_hash = parser.buffer(32);
+    this.merkle_root = parser.buffer(32);
+    this.timestamp = parser.word32le();
+    this.bits = parser.word32le();
+    this.nonce = parser.word32le();
 
-    var vars = Binary.parse(buf)
-    	.word32lu('version')
-	.buffer('prev_hash', 32)
-	.buffer('merkle_root', 32)
-	.word32lu('timestamp')
-	.word32lu('bits')
-	.word32lu('nonce')
-	.vars;
+    this.txs = [];
+    this.size = 0;
 
-    this.version = vars.version;
-    this.prev_hash = vars.prev_hash;
-    this.merkle_root = vars.merkle_root;
-    this.timestamp = vars.timestamp;
-    this.bits = vars.bits;
-    this.nonce = vars.nonce;
+    if (headerOnly)
+      return;
+
+    var txCount = parser.varInt();
+
+    for (i = 0; i < txCount; i++) {
+      var tx = new Transaction();
+      tx.parse(parser);
+      this.txs.push(tx);
+    }
   };
 
   Block.prototype.calcHash = function calcHash() {
