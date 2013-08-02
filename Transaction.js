@@ -575,6 +575,40 @@ function spec(b) {
     return this;
   };
 
+  Transaction.prototype.parse = function (parser) {
+    if (Buffer.isBuffer(parser)) {
+      parser = new Parser(parser);
+    }
+
+    var i, sLen, startPos = parser.pos;
+
+    this.version = parser.word32le();
+    
+    var txinCount = parser.varInt();
+
+    this.ins = [];
+    for (j = 0; j < txinCount; j++) {
+      var txin = new TransactionIn();
+      txin.o = parser.buffer(36);               // outpoint
+      sLen = parser.varInt();                   // script_len
+      txin.s = parser.buffer(sLen);             // script
+      txin.q = parser.word32le();               // sequence
+      this.ins.push(txin);
+    }
+
+    var txoutCount = parser.varInt();
+
+    this.outs = [];
+    for (j = 0; j < txoutCount; j++) {
+      var txout = new TransactionOut();
+      txout.v = parser.buffer(8);               // value
+      sLen = parser.varInt();                   // script_len
+      txout.s = parser.buffer(sLen);            // script
+      this.outs.push(txout);
+    }
+
+    this.lock_time = parser.word32le();
+  };
 
   var TransactionInputsCache = exports.TransactionInputsCache =
   function TransactionInputsCache(tx)
