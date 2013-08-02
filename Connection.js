@@ -13,6 +13,8 @@ function spec(b) {
   var Buffers = b.Buffers || require('buffers');
   require('./Buffers.monkey').patch(Buffers);
   var noop = function() {};
+  var Block = require('./Block').class();
+  var Transaction = require('./Transaction').class();
   var util = b.util || require('./util/util');
   var Parser = b.Parser || require('./util/BinaryParser').class();
   var doubleSha256 = b.doubleSha256 || util.twoSha256;
@@ -431,31 +433,32 @@ function spec(b) {
       break;
 
     case 'block':
-      data.version = parser.word32le();
-      data.prev_hash = parser.buffer(32);
-      data.merkle_root = parser.buffer(32);
-      data.timestamp = parser.word32le();
-      data.bits = parser.word32le();
-      data.nonce = parser.word32le();
+      var block = new Block();
+      block.parse(parser);
 
-      var txCount = parser.varInt();
+      data.block = block;
+      data.version = block.version;
+      data.prev_hash = block.prev_hash;
+      data.merkle_root = block.merkle_root;
+      data.timestamp = block.timestamp;
+      data.bits = block.bits;
+      data.nonce = block.nonce;
 
-      data.txs = [];
-      for (i = 0; i < txCount; i++) {
-        data.txs.push(Connection.parseTx(parser));
-      }
+      data.txs = block.txs;
 
       data.size = payload.length;
       break;
 
     case 'tx':
-      var txData = Connection.parseTx(parser);
+      var tx = new Transaction();
+      tx.parse(parser);
       return {
         command: command,
-        version: txData.version,
-        lock_time: txData.lock_time,
-        ins: txData.ins,
-        outs: txData.outs
+        version: tx.version,
+        lock_time: tx.lock_time,
+        ins: tx.ins,
+        outs: tx.outs,
+	tx: tx,
       };
 
     case 'getblocks':
@@ -517,47 +520,6 @@ function spec(b) {
       // This tells the calling function not to issue an event
       return null;
     }
-
-    return data;
-  };
-
-  Connection.parseTx = function (parser) {
-    if (Buffer.isBuffer(parser)) {
-      parser = new Parser(parser);
-    }
-
-    var data = {}, i, sLen, startPos = parser.pos;
-
-    data.version = parser.word32le();
-    
-    var txinCount = parser.varInt();
-
-    data.ins = [];
-    for (j = 0; j < txinCount; j++) {
-      var txin = {};
-      txin.o = parser.buffer(36);               // outpoint
-      sLen = parser.varInt();    // script_len
-      txin.s = parser.buffer(sLen);             // script
-      txin.q = parser.word32le();               // sequence
-      data.ins.push(txin);
-    }
-
-    var txoutCount = parser.varInt();
-
-    data.outs = [];
-    for (j = 0; j < txoutCount; j++) {
-      var txout = {};
-      txout.v = parser.buffer(8);               // value
-      sLen = parser.varInt();    // script_len
-      txout.s = parser.buffer(sLen);            // script
-      data.outs.push(txout);
-    }
-
-    data.lock_time = parser.word32le();
-
-    var endPos = parser.pos;
-
-    data.buffer = parser.subject.slice(startPos, endPos);
 
     return data;
   };
