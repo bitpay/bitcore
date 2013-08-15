@@ -4,10 +4,26 @@ var crypto = require('crypto');
 
 exports.readFileSync = function(enc_method, enc_passphrase, filename)
 {
-	var crypted = fs.readFileSync(filename, 'binary');
+	// read entire file into memory
+	var fileData = fs.readFileSync(filename, 'binary');
+	if (fileData.length < 32)
+		throw new Error("Crypted file " + filename + " truncated");
 
+	// separate into data, hmac parts
+	var fileCrypted = fileData.slice(0, -32);
+	var fileHmac = fileData.slice(-32);
+
+	// generate and verify HMAC
+	var hmac = crypto.createHmac('sha256', enc_passphrase);
+	hmac.update(fileCrypted);
+	var digest = hmac.digest('binary');
+
+	if (digest.toString() != fileHmac.toString())
+		throw new Error("Crypted file " + filename + " failed HMAC checksum verification");
+
+	// decrypt to plaintext
 	var decipher = crypto.createDecipher(enc_method, enc_passphrase);
-	var dec = decipher.update(crypted, 'binary', 'binary');
+	var dec = decipher.update(fileCrypted, 'binary', 'binary');
 	dec += decipher.final('binary');
 	return dec;
 };
@@ -20,11 +36,17 @@ exports.readJFileSync = function(enc_method, enc_passphrase, filename)
 
 exports.writeFileSync = function(enc_method, enc_passphrase, filename, data)
 {
+	// encrypt to ciphertext
 	var cipher = crypto.createCipher(enc_method, enc_passphrase);
 	var crypted = cipher.update(data, 'binary', 'binary');
 	crypted += cipher.final('binary');
 
-	fs.writeFileSync(filename, crypted, 'binary');
+	// compute HMAC
+	var hmac = crypto.createHmac('sha256', enc_passphrase);
+	hmac.update(crypted);
+	var digest = hmac.digest('binary');
+
+	fs.writeFileSync(filename, crypted + digest, 'binary');
 
 	return true;
 };
