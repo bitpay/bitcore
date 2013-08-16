@@ -323,6 +323,15 @@ var varStrBuf = exports.varStrBuf = function varStrBuf(s) {
   return Buffer.concat(varIntBuf(s.length), s);
 };
 
+var buf64 = exports.buf64 = function buf64(n) {
+  var lo = n & 0xffffffff;
+  var hi = (n >>> 32);
+  var buf = new Buffer(4 + 4);
+  buf.writeUInt32LE(lo, 0);
+  buf.writeUInt32LE(hi, 4);
+  return buf;
+};
+
 // Initializations
 exports.NULL_HASH = new Buffer(32).fill(0);
 exports.EMPTY_BUFFER = new Buffer(0);
