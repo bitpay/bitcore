@@ -1,9 +1,12 @@
 require('classtool');
+var hex = function(hex) {return new Buffer(hex, 'hex');};
 
 function ClassSpec(b) {
 	var fs = require('fs');
 	var EncFile = require('./util/EncFile');
+	var Address = require('./Address').class();
 	var networks = require('./networks');
+  	var util = b.util || require('./util/util');
 	var ENC_METHOD = 'aes-256-cbc';
 
 	var skeleton = {
@@ -14,6 +17,7 @@ function ClassSpec(b) {
 		best_hash: null,
 		best_height: -1,
 		keys: [],
+		scripts: {},
 	};
 
 	function Wallet(cfg) {
@@ -70,6 +74,60 @@ function ClassSpec(b) {
 	Wallet.prototype.addKey = function(wkey) {
 		this.datastore.keys.push(wkey);
 		this.dirty = true;
+	};
+
+	Wallet.prototype.findKeyHash = function(pubKeyHash) {
+		var pkhStr = pubKeyHash.toString();
+
+		for (var i = 0; i < this.datastore.keys.length; i++) {
+			var obj = this.datastore.keys[i];
+			var addrStr = obj.addr;
+			var addr = new Address(addrStr);
+			if (addr.payload().toString() == pkhStr)
+				return obj;
+		}
+
+		return undefined;
+	};
+
+	Wallet.prototype.expandKey = function(key) {
+		var addr = new Address(key);
+		var isAddr = true;
+
+		try {
+			addr.validate();
+			var b = addr.payload();
+			var obj = this.findKeyHash(b);
+			key = obj.pub;
+		} catch(e) {
+			// do nothing
+		}
+
+		var re = /^[a-fA-F0-9]+$/;
+		if (!key.match(re))
+			throw new Error("Unknown key type");
+		return hex(key);
+	};
+
+	Wallet.prototype.expandKeys = function(keys) {
+		var res = [];
+		var us = this;
+		keys.forEach(function(key) {
+			var expKey = us.expandKey(key);
+			res.push(expKey);
+		});
+		return res;
+	};
+
+	Wallet.prototype.addScript = function(script) {
+		var buf = script.getBuffer();
+		var hash = util.sha256ripe160(buf);
+		var addr = new Address(this.network.addressScript, hash);
+		var addrStr = addr.as('base58');
+		this.datastore.scripts[addrStr] = buf.toString('hex');
+		this.dirty = true;
+
+		return addrStr;
 	};
 
 	return Wallet;
