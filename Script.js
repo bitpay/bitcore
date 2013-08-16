@@ -170,32 +170,71 @@ function spec(b) {
 
   Script.prototype.writeOp = function (opcode)
   {
-    var buf = Put();
-    buf.put(this.buffer);
-    buf.word8(opcode);
-    this.buffer = buf.buffer();
+    var buf = Buffer(this.buffer.length + 1);
+    this.buffer.copy(buf);
+    buf.writeUInt8(opcode, this.buffer.length);
+
+    this.buffer = buf;
 
     this.chunks.push(opcode);
   };
 
+  Script.prototype.writeN = function (n)
+  {
+    if (n < 0 || n > 16)
+      throw new Error("writeN: out of range value " + n);
+
+    if (n == 0)
+      this.writeOp(OP_0);
+    else
+      this.writeOp(OP_1 + n - 1);
+  };
+
+  function prefixSize(data_length)
+  {
+    if (data_length < OP_PUSHDATA1) {
+      return 1;
+    } else if (data_length <= 0xff) {
+      return 1 + 1;
+    } else if (data_length <= 0xffff) {
+      return 1 + 2;
+    } else {
+      return 1 + 4;
+    }
+  };
+
+  function encodeLen(data_length) {
+    var buf = undefined;
+    if (data_length < OP_PUSHDATA1) {
+      buf = new Buffer(1);
+      buf.writeUInt8(data_length, 0);
+    }
+    
+    else if (data_length <= 0xff) {
+      buf = new Buffer(1 + 1);
+      buf.writeUInt8(OP_PUSHDATA1, 0);
+      buf.writeUInt8(data_length, 1);
+    }
+    
+    else if (data_length <= 0xffff) {
+      buf = new Buffer(1 + 2);
+      buf.writeUInt8(OP_PUSHDATA2, 0);
+      buf.writeUInt16LE(data_length, 1);
+    }
+    
+    else {
+      buf = new Buffer(1 + 4);
+      buf.writeUInt8(OP_PUSHDATA4, 0);
+      buf.writeUInt32LE(data_length, 1);
+    }
+
+    return buf;
+  };
+
   Script.prototype.writeBytes = function (data)
   {
-    var buf = Put();
-    buf.put(this.buffer);
-    if (data.length < OP_PUSHDATA1) {
-      buf.word8(data.length);
-    } else if (data.length <= 0xff) {
-      buf.word8(OP_PUSHDATA1);
-      buf.word8(data.length);
-    } else if (data.length <= 0xffff) {
-      buf.word8(OP_PUSHDATA2);
-      buf.word16le(data.length);
-    } else {
-      buf.word8(OP_PUSHDATA4);
-      buf.word32le(data.length);
-    }
-    buf.put(data);
-    this.buffer = buf.buffer();
+    var newSize = this.buffer.length + prefixSize(data.length) + data.length;
+    this.buffer = Buffer.concat([this.buffer, encodeLen(data.length), data]);
     this.chunks.push(data);
   };
 
@@ -253,6 +292,25 @@ function spec(b) {
     script.writeBytes(pubKeyHash);
     script.writeOp(OP_EQUALVERIFY);
     script.writeOp(OP_CHECKSIG);
+    return script;
+  };
+
+  Script.createMultisig = function(n_required, keys) {
+    var script = new Script();
+    script.writeN(n_required);
+    keys.forEach(function(key) {
+    	script.writeBytes(key);
+    });
+    script.writeN(keys.length);
+    script.writeOp(OP_CHECKMULTISIG);
+    return script;
+  };
+
+  Script.createP2SH = function(scriptHash) {
+    var script = new Script();
+    script.writeOp(OP_HASH160);
+    script.writeBytes(scriptHash);
+    script.writeOp(OP_EQUAL);
     return script;
   };
 
