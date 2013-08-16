@@ -299,6 +299,30 @@ var getVarIntSize = exports.getVarIntSize = function getVarIntSize(i) {
   }
 };
 
+var varIntBuf = exports.varIntBuf = function varIntBuf(n) {
+  var buf = undefined;
+  if (n < 253) {
+    buf = new Buffer(1);
+    buf.writeUInt8(n, 0);
+  } else if (n < 0x10000) {
+    buf = new Buffer(1 + 2);
+    buf.writeUInt8(253, 0);
+    buf.writeUInt16LE(n, 1);
+  } else if (n < 0x100000000) {
+    buf = new Buffer(1 + 4);
+    buf.writeUInt8(254, 0);
+    buf.writeUInt32LE(n, 1);
+  } else {
+    throw new Error("quadword not supported");
+  }
+
+  return buf;
+};
+
+var varStrBuf = exports.varStrBuf = function varStrBuf(s) {
+  return Buffer.concat(varIntBuf(s.length), s);
+};
+
 // Initializations
 exports.NULL_HASH = new Buffer(32).fill(0);
 exports.EMPTY_BUFFER = new Buffer(0);
