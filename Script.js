@@ -15,6 +15,20 @@ function spec(b) {
   var Parser = b.Parser || require('./util/BinaryParser').class();
   var Put = b.Put || require('bufferput');
 
+  var TX_UNKNOWN = 0;
+  var TX_PUBKEY = 1;
+  var TX_PUBKEYHASH = 2;
+  var TX_MULTISIG = 3;
+  var TX_SCRIPTHASH = 4;
+
+  var TX_TYPES = {
+    TX_UNKNOWN: 'unknown',
+    TX_PUBKEY: 'pubkey',
+    TX_PUBKEYHASH: 'pubkeyhash',
+    TX_MULTISIG: 'multisig',
+    TX_SCRIPTHASH: 'scripthash',
+  };
+
   function Script(buffer) {
     if(buffer) {
       this.buffer = buffer;
@@ -52,32 +66,105 @@ function spec(b) {
     }
   };
 
-  Script.prototype.isSentToIP = function ()
+  Script.prototype.isP2SH = function ()
   {
-    if (this.chunks.length != 2) {
-      return false;
-    }
-    return this.chunks[1] == OP_CHECKSIG && Buffer.isBuffer(this.chunks[0]);
+    return (this.chunks.length == 3 &&
+	    this.chunks[0] == OP_HASH160 &&
+	    Buffer.isBuffer(this.chunks[1]) &&
+	    this.chunks[1].length == 20 &&
+	    this.chunks[2] == OP_EQUAL);
+  };
+
+  Script.prototype.isPubkey = function ()
+  {
+    return (this.chunks.length == 2 &&
+    	    Buffer.isBuffer(this.chunks[0]) &&
+    	    this.chunks[1] == OP_CHECKSIG);
+  };
+
+  Script.prototype.isPubkeyHash = function ()
+  {
+    return (this.chunks.length == 5 &&
+      	    this.chunks[0] == OP_DUP &&
+      	    this.chunks[1] == OP_HASH160 &&
+	    Buffer.isBuffer(this.chunks[2]) &&
+	    this.chunks[2].length == 20 &&
+      	    this.chunks[3] == OP_EQUALVERIFY &&
+      	    this.chunks[4] == OP_CHECKSIG);
+  };
+
+  function isSmallIntOp(opcode)
+  {
+    return ((opcode == OP_0) ||
+    	    ((opcode >= OP_1) && (opcode <= OP_16)));
+  };
+
+  Script.prototype.isMultiSig = function ()
+  {
+    return (this.chunks.length > 3 &&
+    	    isSmallIntOp(this.chunks[0]) &&
+    	    isSmallIntOp(this.chunks[-2]) &&
+	    this.chunks[-1] == OP_CHECKMULTISIG);
+  };
+
+  // is this a script form we know?
+  Script.prototype.classify = function ()
+  {
+  	if (this.isPubkeyHash())
+		return TX_PUBKEYHASH;
+	if (this.isP2SH())
+		return TX_SCRIPTHASH;
+	if (this.isMultiSig())
+		return TX_MULTISIG;
+	if (this.isPubkey())
+		return TX_PUBKEY;
+	return TX_UNKNOWN;
+  };
+
+  // extract useful data items from known scripts
+  Script.prototype.capture = function ()
+  {
+  	var txType = this.classify();
+	var res = [];
+	switch (txType) {
+	case TX_PUBKEY:
+		res.push(this.chunks[0]);
+		break;
+	case TX_PUBKEYHASH:
+		res.push(this.chunks[2]);
+		break;
+	case TX_MULTISIG:
+		for (var i = 1; i < (this.chunks.length - 2); i++)
+			res.push(this.chunks[i]);
+		break;
+	case TX_SCRIPTHASH:
+		res.push(this.chunks[1]);
+		break;
+
+	case TX_UNKNOWN:
+	default:
+		// do nothing
+		break;
+	}
+
+	return res;
+  };
+
+  // return first extracted data item from script
+  Script.prototype.captureOne = function ()
+  {
+  	var arr = this.capture();
+	return arr[0];
   };
 
   Script.prototype.getOutType = function ()
   {
-    if (this.chunks.length == 5 &&
-      this.chunks[0] == OP_DUP &&
-      this.chunks[1] == OP_HASH160 &&
-      this.chunks[3] == OP_EQUALVERIFY &&
-      this.chunks[4] == OP_CHECKSIG) {
-
-      // Transfer to Bitcoin address
-      return 'Address';
-    } else if (this.chunks.length == 2 &&
-      this.chunks[1] == OP_CHECKSIG) {
-
-      // Transfer to IP address
-      return 'Pubkey';
-    } else {
-      return 'Strange';
-    }
+  	var txType = this.classify();
+	switch (txType) {
+	case TX_PUBKEY:		return 'Pubkey';
+	case TX_PUBKEYHASH:	return 'Address';
+	default:		return 'Strange';
+	}
   };
 
   Script.prototype.simpleOutHash = function ()
