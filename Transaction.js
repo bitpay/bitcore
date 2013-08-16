@@ -38,14 +38,11 @@ function spec(b) {
   };
 
   TransactionIn.prototype.serialize = function serialize() {
-    var bytes = Put();
+    var slen = util.varIntBuf(this.s.length);
+    var qbuf = new Buffer(4);
+    qbuf.writeUInt32LE(this.q, 0);
 
-    bytes.put(this.o);
-    bytes.varint(this.s.length);
-    bytes.put(this.s);
-    bytes.word32le(this.q);
-
-    return bytes.buffer();
+    return Buffer.concat([this.o, slen, this.s, qbuf]);
   };
 
   TransactionIn.prototype.getOutpointHash = function getOutpointIndex() {
@@ -88,13 +85,8 @@ function spec(b) {
   };
 
   TransactionOut.prototype.serialize = function serialize() {
-    var bytes = Put();
-
-    bytes.put(this.v);
-    bytes.varint(this.s.length);
-    bytes.put(this.s);
-
-    return bytes.buffer();
+    var slen = util.varIntBuf(this.s.length);
+    return Buffer.concat([this.v, slen, this.s]);
   };
 
   function Transaction(data) {
@@ -143,22 +135,27 @@ function spec(b) {
   };
 
   Transaction.prototype.serialize = function serialize() {
-    var bytes = Put();
+    var bufs = [];
 
-    bytes.word32le(this.version);
-    bytes.varint(this.ins.length);
+    var buf = new Buffer(4);
+    buf.writeUInt32LE(this.version, 0);
+    bufs.push(buf);
+
+    bufs.push(util.varIntBuf(this.ins.length));
     this.ins.forEach(function (txin) {
-      bytes.put(txin.serialize());
+      bufs.push(txin.serialize());
     });
 
-    bytes.varint(this.outs.length);
+    bufs.push(util.varIntBuf(this.outs.length));
     this.outs.forEach(function (txout) {
-      bytes.put(txout.serialize());
+      bufs.push(txout.serialize());
     });
 
-    bytes.word32le(this.lock_time);
+    var buf = new Buffer(4);
+    buf.writeUInt32LE(this.lock_time, 0);
+    bufs.push(buf);
 
-    return this._buffer = bytes.buffer();
+    return this._buffer = Buffer.concat(bufs);
   };
 
   Transaction.prototype.getBuffer = function getBuffer() {
