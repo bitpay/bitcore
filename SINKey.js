@@ -19,9 +19,13 @@ function ClassSpec(b) {
 		this.created = timeUtil.curtime();
 	};
 
+	SINKey.prototype.pubkeyHash = function() {
+		return coinUtil.sha256ripe160(this.privKey.public);
+	};
+
 	SINKey.prototype.storeObj = function() {
 		var pubKey = this.privKey.public.toString('hex');
-		var pubKeyHash = coinUtil.sha256ripe160(this.privKey.public);
+		var pubKeyHash = this.pubkeyHash();
 		var sin = new SIN(SIN.SIN_EPHEM, pubKeyHash);
 		var obj = {
 			created: this.created,
