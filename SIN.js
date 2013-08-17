@@ -11,7 +11,7 @@ function ClassSpec(b) {
     };
     this.data = new Buffer(1 + 1 + payload.length);
     this.__proto__ = this.encodings['binary'];
-    this.prefix(0x18);		// SIN magic number, in numberspace
+    this.prefix(0x0F);		// SIN magic number, in numberspace
     this.type(type);
     this.payload(payload);
   };

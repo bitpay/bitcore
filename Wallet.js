@@ -17,6 +17,7 @@ function ClassSpec(b) {
 		best_hash: null,
 		best_height: -1,
 		keys: [],
+		sin: {},
 		scripts: {},
 	};
 
@@ -73,6 +74,11 @@ function ClassSpec(b) {
 
 	Wallet.prototype.addKey = function(wkey) {
 		this.datastore.keys.push(wkey);
+		this.dirty = true;
+	};
+
+	Wallet.prototype.addSIN = function(sinObj) {
+		this.datastore.sin[sinObj.sin] = sinObj;
 		this.dirty = true;
 	};
 
