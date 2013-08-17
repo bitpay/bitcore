@@ -3,9 +3,6 @@ require('classtool');
 function ClassSpec(b) {
   var superclass = b.superclass || require('./util/VersionedData').class();
 
-  var SIN_PERSIST_MAINNET = 0x01;	// associated with sacrifice TX
-  var SIN_PERSIST_TESTNET = 0x11;	// associated with sacrifice TX
-  var SIN_EPHEM = 0x02;			// generate off-net at any time
 
   function SIN(type, payload) {
     if (typeof type != 'number') {
@@ -20,6 +17,10 @@ function ClassSpec(b) {
   };
   SIN.superclass = superclass;
   superclass.applyEncodingsTo(SIN);
+
+  SIN.SIN_PERSIST_MAINNET = 0x01;	// associated with sacrifice TX
+  SIN.SIN_PERSIST_TESTNET = 0x11;	// associated with sacrifice TX
+  SIN.SIN_EPHEM = 0x02;			// generate off-net at any time
 
   // get or set the prefix data (the first byte of the address)
   SIN.prototype.prefix = function(num) {
