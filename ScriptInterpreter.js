@@ -917,60 +917,86 @@ function spec(b) {
     return si;
   };
 
-  ScriptInterpreter.verifyFull =
-  function verifyFull(scriptSig, scriptPubKey, txTo, nIn, hashType, opts)
+  function verifyStep4(scriptSig, scriptPubKey, txTo, nIn,
+		       hashType, opts, callback, si, siCopy)
   {
-  	var si = new ScriptInterpreter();
-  	var siCopy = new ScriptInterpreter();
-
-	var ok = true;
-	si.eval(scriptSig, txTo, nIn, hashType, function (err) {
-		if (err)
-			ok = false;
-	});
-	if (!ok)
-		return false;
+	if (siCopy.stack.length == 0) {
+		callback(null, false);
+		return;
+	}
 	
+	callback(null, castBool(siCopy.stackBack()));
+  }
+
+  function verifyStep3(scriptSig, scriptPubKey, txTo, nIn,
+		       hashType, opts, callback, si, siCopy)
+  {
+	if (si.stack.length == 0) {
+		callback(null, false);
+		return;
+	}
+  	if (castBool(si.stackBack()) == false) {
+		callback(null, false);
+		return;
+	}
+
+	// if not P2SH, we're done
+	if (!opts.verifyP2SH || !scriptPubKey.isP2SH()) {
+		callback(null, true);
+		return;
+	}
+
+	if (!scriptSig.isPushOnly()) {
+		callback(null, false);
+		return;
+	}
+
+	assert.notEqual(siCopy.length, 0);
+
+	var subscript = new Script(siCopy.stackPop());
+
+	ok = true;
+	siCopy.eval(subscript, txTo, nIn, hashType, function (err) {
+		if (err)
+			callback(err);
+		else
+			verifyStep4(scriptSig, scriptPubKey, txTo, nIn,
+				    hashType, opts, callback, si, siCopy);
+	});
+  }
+
+  function verifyStep2(scriptSig, scriptPubKey, txTo, nIn,
+		       hashType, opts, callback, si, siCopy)
+  {
 	if (opts.verifyP2SH) {
 		si.stack.forEach(function(item) {
 			siCopy.stack.push(item);
 		});
 	}
 
-	ok = true;
 	si.eval(scriptPubKey, txTo, nIn, hashType, function (err) {
 		if (err)
-			ok = false;
+			callback(err);
+		else
+			verifyStep3(scriptSig, scriptPubKey, txTo, nIn,
+				    hashType, opts, callback, si, siCopy);
 	});
-	if (!ok)
-		return false;
-	if (si.stack.length == 0)
-		return false;
+  }
 
-  	if (castBool(si.stackBack()) == false)
-		return false;
+  ScriptInterpreter.verifyFull =
+  function verifyFull(scriptSig, scriptPubKey, txTo, nIn, hashType,
+  		      opts, callback)
+  {
+  	var si = new ScriptInterpreter();
+  	var siCopy = new ScriptInterpreter();
 
-	if (opts.verifyP2SH && scriptPubKey.isP2SH()) {
-		if (!scriptSig.isPushOnly())
-			return false;
-
-		assert.notEqual(siCopy.length, 0);
-
-		var subscript = new Script(siCopy.stackPop());
-
-		ok = true;
-		siCopy.eval(subscript, txTo, nIn, hashType, function (err) {
-			if (err)
-				ok = false;
-		});
-		if (!ok)
-			return false;
-		if (siCopy.stack.length == 0)
-			return false;
-		return castBool(siCopy.stackBack());
-	}
-
-	return true;
+	si.eval(scriptSig, txTo, nIn, hashType, function (err) {
+		if (err)
+			callback(err);
+		else
+			verifyStep2(scriptSig, scriptPubKey, txTo, nIn,
+				    hashType, opts, callback, si, siCopy);
+	});
   };
 
   var checkSig = ScriptInterpreter.checkSig =
