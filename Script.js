@@ -66,6 +66,15 @@ function spec(b) {
     }
   };
 
+  Script.prototype.isPushOnly = function ()
+  {
+    for (var i = 0; i < this.chunks.length; i++)
+      if (!Buffer.isBuffer(this.chunks[i]))
+        return false;
+
+    return true;
+  };
+
   Script.prototype.isP2SH = function ()
   {
     return (this.chunks.length == 3 &&
