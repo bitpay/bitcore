@@ -42,6 +42,16 @@ function ClassSpec(b) {
     this.withEncoding('binary');
   };
 
+  // Boolean protocol for testing if valid
+  EncodedData.prototype.isValid = function() {
+    try {
+      this.validate();
+      return true;
+    } catch(e) {
+      return false;
+    }
+  };
+
   // subclasses can override to do more stuff
   EncodedData.prototype.validate = function() {
     this._validate();
