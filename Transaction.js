@@ -45,7 +45,7 @@ function spec(b) {
     return Buffer.concat([this.o, slen, this.s, qbuf]);
   };
 
-  TransactionIn.prototype.getOutpointHash = function getOutpointIndex() {
+  TransactionIn.prototype.getOutpointHash = function getOutpointHash() {
     if ("undefined" !== typeof this.o.outHashCache) {
       return this.o.outHashCache;
     }
