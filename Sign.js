@@ -55,6 +55,21 @@ function signTxIn(nIn, tx, txInputs, network, keys, scripts)
 	var hash = tx.hashForSignature(scriptPubKey, i, 0);
 
 	switch (txType) {
+	case TX_PUBKEY:
+		// already signed
+		if (scriptSig.chunks.length > 0)
+			return;
+
+		var pubkeyhash = util.sha256ripe160(scriptData[0]);
+		var addr = new Address(network.addressPubkey, pubkeyhash);
+		var addrStr = addr.toString();
+		if (!(addrStr in keys))
+			throw new Error("unknown pubkey");
+
+		var signature = signOne(hash, addrStr, keys);
+		scriptSig.writeBytes(signature);
+		break;
+
 	case TX_PUBKEYHASH:
 		// already signed
 		if (scriptSig.chunks.length > 0)
