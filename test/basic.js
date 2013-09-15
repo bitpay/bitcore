@@ -5,6 +5,7 @@ var Address = require('../Address').class();
 var PrivateKey = require('../PrivateKey').class();
 var networks = require('../networks');
 var KeyModule = require('../Key');
+var coinUtil = require('../util/util');
 
 suite('basic');
 
@@ -110,8 +111,22 @@ function is_invalid(datum)
 	assert.equal(valid, false);
 }
 
+function test_value(datum)
+{
+	if (datum.length != 2)
+		throw new Error("Bad test");
+
+	var decimal = datum[0];
+	var intStr = datum[1];
+
+	var bn = coinUtil.parseValue(decimal);
+	assert.notEqual(bn, undefined);
+	assert.equal(bn.toString(), intStr);
+}
+
 var dataValid = JSON.parse(fs.readFileSync('test/base58_keys_valid.json'));
 var dataInvalid = JSON.parse(fs.readFileSync('test/base58_keys_invalid.json'));
+var dataValues = JSON.parse(fs.readFileSync('test/values.json'));
 
 test('valid', function() {
 	dataValid.forEach(function(datum) { is_valid(datum); });
@@ -119,5 +134,9 @@ test('valid', function() {
 
 test('invalid', function() {
 	dataInvalid.forEach(function(datum) { is_invalid(datum); });
+});
+
+test('values', function() {
+	dataValues.forEach(function(datum) { test_value(datum); });
 });
 

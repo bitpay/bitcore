@@ -107,6 +107,49 @@ var formatValue = exports.formatValue = function (valueBuffer) {
   return integerPart+"."+decimalPart;
 };
 
+var reFullVal = /^\s*(\d+)\.(\d+)/;
+var reFracVal = /^\s*\.(\d+)/;
+var reWholeVal = /^\s*(\d+)/;
+
+function padFrac(frac)
+{
+	while (frac.length < 8)
+		frac = frac + '0';
+	return frac;
+}
+
+function parseFullValue(res)
+{
+	return bignum(res[1]).mul('100000000').add(padFrac(res[2]));
+}
+
+function parseFracValue(res)
+{
+	return bignum(padFrac(res[1]));
+}
+
+function parseWholeValue(res)
+{
+	return bignum(res[1]).mul('100000000');
+}
+
+exports.parseValue = function parseValue(valueStr)
+{
+	var res = valueStr.match(reFullVal);
+	if (res)
+		return parseFullValue(res);
+
+	res = valueStr.match(reFracVal);
+	if (res)
+		return parseFracValue(res);
+
+	res = valueStr.match(reWholeVal);
+	if (res)
+		return parseWholeValue(res);
+
+	return undefined;
+};
+
 var pubKeyHashToAddress = exports.pubKeyHashToAddress = function (pubKeyHash, addressVersion) {
   if (!pubKeyHash) return "";
 
