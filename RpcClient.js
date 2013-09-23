@@ -35,7 +35,7 @@ function ClassSpec(b) {
     dumpPrivKey: '',
     encryptWallet: '',
     getAccount: '',
-    getAccountAddress: '',
+    getAccountAddress: 'str',
     getAddedNodeInfo: '',
     getAddressesByAccount: '',
     getBalance: 'str int',
