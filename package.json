@@ -10,7 +10,6 @@
     {"name": "Stefan Thomas", "email": "moon@justmoon.net"},
     {"name": "Jeff Garzik", "email": "jgarzik@bitpay.com"}
   ], 
-  "main": "./index",
   "keywords": [
     "bitcoin",
     "btc",
