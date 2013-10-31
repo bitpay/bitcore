@@ -108,6 +108,49 @@ var formatValue = exports.formatValue = function (valueBuffer) {
   return integerPart+"."+decimalPart;
 };
 
+var reFullVal = /^\s*(\d+)\.(\d+)/;
+var reFracVal = /^\s*\.(\d+)/;
+var reWholeVal = /^\s*(\d+)/;
+
+function padFrac(frac)
+{
+	while (frac.length < 8)
+		frac = frac + '0';
+	return frac;
+}
+
+function parseFullValue(res)
+{
+	return bignum(res[1]).mul('100000000').add(padFrac(res[2]));
+}
+
+function parseFracValue(res)
+{
+	return bignum(padFrac(res[1]));
+}
+
+function parseWholeValue(res)
+{
+	return bignum(res[1]).mul('100000000');
+}
+
+exports.parseValue = function parseValue(valueStr)
+{
+	var res = valueStr.match(reFullVal);
+	if (res)
+		return parseFullValue(res);
+
+	res = valueStr.match(reFracVal);
+	if (res)
+		return parseFracValue(res);
+
+	res = valueStr.match(reWholeVal);
+	if (res)
+		return parseWholeValue(res);
+
+	return undefined;
+};
+
 // Utility that synchronizes function calls based on a key
 var createSynchrotron = exports.createSynchrotron = function (fn) {
   var table = {};
@@ -278,15 +321,6 @@ var varIntBuf = exports.varIntBuf = function varIntBuf(n) {
 
 var varStrBuf = exports.varStrBuf = function varStrBuf(s) {
   return Buffer.concat(varIntBuf(s.length), s);
-};
-
-var buf64 = exports.buf64 = function buf64(n) {
-  var lo = n & 0xffffffff;
-  var hi = (n >>> 32);
-  var buf = new Buffer(4 + 4);
-  buf.writeUInt32LE(lo, 0);
-  buf.writeUInt32LE(hi, 4);
-  return buf;
 };
 
 // Initializations

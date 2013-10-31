@@ -45,7 +45,7 @@ function spec(b) {
     return Buffer.concat([this.o, slen, this.s, qbuf]);
   };
 
-  TransactionIn.prototype.getOutpointHash = function getOutpointIndex() {
+  TransactionIn.prototype.getOutpointHash = function getOutpointHash() {
     if ("undefined" !== typeof this.o.outHashCache) {
       return this.o.outHashCache;
     }
@@ -180,6 +180,19 @@ function spec(b) {
     }
     return this.hash;
   };
+
+  // convert encoded list of inputs to easy-to-use JS list-of-lists
+  Transaction.prototype.inputs = function inputs() {
+    var res = [];
+    for (var i = 0; i < this.ins.length; i++) {
+      var txin = this.ins[i];
+      var outHash = txin.getOutpointHash();
+      var outIndex = txin.getOutpointIndex();
+      res.push([outHash, outIndex]);
+    }
+
+    return res;
+  }
 
   /**
    * Load and cache transaction inputs.
