@@ -1,7 +1,7 @@
 {
   "name": "libcoin",
   "description": "Bitcoin Library",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "author": {
     "name": "Stephen Pair",
     "email": "stephen@bitpay.com"
