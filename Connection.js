@@ -2,7 +2,7 @@ require('classtool');
 
 function spec(b) {
   var config = b.config || require('./config');
-  var log = b.log || require('./util/log')(config);
+  var log = b.log || require('./util/log');
   var network = b.network || require('./networks')[config.network];
 
   var MAX_RECEIVE_BUFFER = 10000000;
@@ -152,18 +152,18 @@ function spec(b) {
         }
         break;
       }
-
-      this.emit(message.command, {
-        conn: this,
-        socket: this.socket,
-        peer: this.peer,
-        message: message
-      });
     } catch (e) {
-      log.err('Error while handling message '+message.command+' from ' +
+      log.err('Error while handling "'+message.command+'" message from ' +
                    this.peer + ':\n' +
                    (e.stack ? e.stack : e.toString()));
+      return;
     }
+    this.emit(message.command, {
+      conn: this,
+      socket: this.socket,
+      peer: this.peer,
+      message: message
+    });
   };
 
   Connection.prototype.sendPong = function (nonce) {

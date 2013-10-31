@@ -6,9 +6,9 @@ var loggers = {
   debug: {info: console.log, warn: console.log, err: console.log, debug: console.log},
 };
 
-module.exports = function(config) {
-  config = config || {};
-  if(config.log) return config.log;
-  if(config.loggers) return config.loggers[config.logging || 'normal'];
-  return loggers[config.logging || 'normal'];
-};
+var config = require('../config');
+if(config.log) {
+  module.exports = config.log;
+} else {
+  module.exports = loggers[config.logger || 'normal'];
+}

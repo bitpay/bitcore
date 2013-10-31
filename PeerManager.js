@@ -2,7 +2,7 @@ require('classtool');
 
 function spec(b) {
   var config = b.config || require('./config');
-  var log = b.log || require('./util/log')(config);
+  var log = b.log || require('./util/log');
   var network = b.network || require('./networks')[config.network];
   var Connection = b.Connection || require('./Connection').createClass({config: config});
   var Peer = b.Peer || require('./Peer').class();
@@ -166,7 +166,7 @@ function spec(b) {
   };
 
   PeerManager.prototype.handleError = function(e) {
-    log.err(e.peer, e.err);
+    log.err('unkown error with peer '+e.peer+' (disconnecting): '+e.err);
     this.handleDisconnect.apply(this, [].slice.call(arguments));
   };
 

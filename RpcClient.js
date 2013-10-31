@@ -6,7 +6,7 @@ require('classtool');
 function ClassSpec(b) {
   var http = b.http || require('http');
   var https = b.https || require('https');
-  var log = b.log || {err: function(){}};
+  var log = b.log || require('./util/log');
 
   function RpcClient(opts) {
     opts = opts || {};
@@ -64,7 +64,7 @@ function ClassSpec(b) {
     help: '',
     importAddress: 'str str bool',
     importPrivKey: 'str str bool',
-    keypoolRefill: '',
+    keyPoolRefill: '',
     listAccounts: 'int',
     listAddressGroupings: '',
     listReceivedByAccount: 'int bool',
@@ -152,12 +152,22 @@ function ClassSpec(b) {
         options[k] = self.httpOptions[k];
       }
     }
+    var err = null;
     var req = this.protocol.request(options, function(res) {
+
       var buf = '';
       res.on('data', function(data) {
         buf += data; 
       });
       res.on('end', function() {
+        if(res.statusCode == 401) {
+          callback(new Error('bitcoin JSON-RPC connection rejected: unauthorized'));
+          return;
+        }
+        if(err) {
+          callback(err);
+          return;
+        }
         try {
           var parsedBuf = JSON.parse(buf);
         } catch(e) {
@@ -170,7 +180,7 @@ function ClassSpec(b) {
       });
     });
     req.on('error', function(e) {
-      callback(e);
+      log.err('Could not connect to bitcoin via RPC: '+e);
     });
     
     req.setHeader('Content-Length', request.length);

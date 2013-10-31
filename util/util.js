@@ -3,6 +3,7 @@ var crypto = require('crypto');
 var bignum = require('bignum');
 var Binary = require('binary');
 var Put = require('bufferput');
+var Address = require('../Address').class();
 
 var sha256 = exports.sha256 = function (data) {
   return new Buffer(crypto.createHash('sha256').update(data).digest('binary'), 'binary');
@@ -105,50 +106,6 @@ var formatValue = exports.formatValue = function (valueBuffer) {
     decimalPart += "0";
   }
   return integerPart+"."+decimalPart;
-};
-
-var pubKeyHashToAddress = exports.pubKeyHashToAddress = function (pubKeyHash, addressVersion) {
-  if (!pubKeyHash) return "";
-
-  var put = new Put();
-  // Version
-  if(addressVersion) {
-    put.word8le(addressVersion);
-  } else {
-    put.word8le(0);
-  }
-  // Hash
-  put.put(pubKeyHash);
-  // Checksum (four bytes)
-  put.put(twoSha256(put.buffer()).slice(0,4));
-  return encodeBase58(put.buffer());
-};
-
-var addressToPubKeyHash = exports.addressToPubKeyHash = function (address) {
-  // Trim
-  address = String(address).replace(/\s/g, '');
-
-  // Check sanity
-  if (!address.match(/^[1-9A-HJ-NP-Za-km-z]{27,35}$/)) {
-    return null;
-  }
-
-  // Decode
-  var buffer = decodeBase58(address);
-
-  // Parse
-  var parser = Binary.parse(buffer);
-  parser.word8('version');
-  parser.buffer('hash', 20);
-  parser.buffer('checksum', 4);
-
-  // Check checksum
-  var checksum = twoSha256(buffer.slice(0, 21)).slice(0, 4);
-  if (checksum.compare(parser.vars.checksum) !== 0) {
-    return null;
-  }
-
-  return parser.vars.hash;
 };
 
 // Utility that synchronizes function calls based on a key

@@ -2,7 +2,7 @@ require('classtool');
 
 function spec(b) {
   var config = b.config || require('./config');
-  var log = b.log || require('./util/log')(config);
+  var log = b.log || require('./util/log');
 
   var Opcode = require('./Opcode').class();
 
@@ -21,13 +21,13 @@ function spec(b) {
   var TX_MULTISIG = 3;
   var TX_SCRIPTHASH = 4;
 
-  var TX_TYPES = {
-    TX_UNKNOWN: 'unknown',
-    TX_PUBKEY: 'pubkey',
-    TX_PUBKEYHASH: 'pubkeyhash',
-    TX_MULTISIG: 'multisig',
-    TX_SCRIPTHASH: 'scripthash',
-  };
+  var TX_TYPES = [
+    'unknown',
+    'pubkey',
+    'pubkeyhash',
+    'multisig',
+    'scripthash'
+  ];
 
   function Script(buffer) {
     if(buffer) {
@@ -168,12 +168,16 @@ function spec(b) {
 
   Script.prototype.getOutType = function ()
   {
-  	var txType = this.classify();
-	switch (txType) {
-	case TX_PUBKEY:		return 'Pubkey';
-	case TX_PUBKEYHASH:	return 'Address';
-	default:		return 'Strange';
-	}
+    var txType = this.classify();
+    switch (txType) {
+      case TX_PUBKEY:		return 'Pubkey';
+      case TX_PUBKEYHASH:	return 'Address';
+      default:		return 'Strange';
+    }
+  };
+
+  Script.prototype.getRawOutType = function() {
+    return TX_TYPES[this.classify()];
   };
 
   Script.prototype.simpleOutHash = function ()

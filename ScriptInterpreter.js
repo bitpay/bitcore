@@ -3,7 +3,7 @@ require('classtool');
 function spec(b) {
   var assert = require('assert');
   var config = b.config || require('./config');
-  var log = b.log || require('./util/log')(config);
+  var log = b.log || require('./util/log');
 
   var Opcode = require('./Opcode').class();
 
