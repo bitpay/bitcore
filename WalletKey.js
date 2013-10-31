@@ -31,6 +31,12 @@ function ClassSpec(b) {
 		return obj;
 	};
 
+	WalletKey.prototype.fromObj = function(obj) {
+		this.created = obj.created;
+		this.privKey = new KeyModule.Key();
+		this.privKey.private = new Buffer(obj.priv, 'hex');
+	};
+
 	return WalletKey;
 };
 module.defineClass(ClassSpec);
