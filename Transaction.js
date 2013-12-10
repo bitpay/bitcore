@@ -456,7 +456,7 @@ function spec(b) {
     var hashTypeMode = hashType & 0x1f;
 
     // Generate modified transaction data for hash
-    var bytes = Put();
+    var bytes = (new Put());
     bytes.word32le(this.version);
 
     // Serialize inputs
