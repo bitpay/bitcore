@@ -40,11 +40,11 @@ function spec(b) {
   };
   this.class = Script;
 
-	Script.TX_UNKNOWN=TX_UNKNOWN;
-	Script.TX_PUBKEY=TX_PUBKEY;
-	Script.TX_PUBKEYHASH=TX_PUBKEYHASH;
-	Script.TX_MULTISIG=TX_MULTISIG;
-	Script.TX_SCRIPTHASH=TX_SCRIPTHASH;
+  Script.TX_UNKNOWN=TX_UNKNOWN;
+  Script.TX_PUBKEY=TX_PUBKEY;
+  Script.TX_PUBKEYHASH=TX_PUBKEYHASH;
+  Script.TX_MULTISIG=TX_MULTISIG;
+  Script.TX_SCRIPTHASH=TX_SCRIPTHASH;
 
   Script.prototype.parse = function () {
     this.chunks = [];
