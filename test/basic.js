@@ -128,15 +128,21 @@ var dataValid = JSON.parse(fs.readFileSync('test/base58_keys_valid.json'));
 var dataInvalid = JSON.parse(fs.readFileSync('test/base58_keys_invalid.json'));
 var dataValues = JSON.parse(fs.readFileSync('test/values.json'));
 
-test('valid', function() {
-	dataValid.forEach(function(datum) { is_valid(datum); });
+describe('valid base58 keys', function(){
+  test('valid', function() {
+    dataValid.forEach(function(datum) { is_valid(datum); });
+  });
 });
 
-test('invalid', function() {
-	dataInvalid.forEach(function(datum) { is_invalid(datum); });
+describe('invalid base58 keys', function(){
+  test('invalid', function() {
+    dataInvalid.forEach(function(datum) { is_invalid(datum); });
+  });
 });
 
-test('values', function() {
-	dataValues.forEach(function(datum) { test_value(datum); });
+describe('floating point unit conversion to satoshis', function(){
+  test('values', function() {
+    dataValues.forEach(function(datum) { test_value(datum); });
+  });
 });
 
