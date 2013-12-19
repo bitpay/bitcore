@@ -113,6 +113,7 @@ var reWholeVal = /^\s*(\d+)/;
 
 function padFrac(frac)
 {
+	frac=frac.substr(0,8); //truncate to 8 decimal places
 	while (frac.length < 8)
 		frac = frac + '0';
 	return frac;
