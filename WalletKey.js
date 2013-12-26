@@ -17,6 +17,11 @@ function ClassSpec(b) {
 		this.created = timeUtil.curtime();
 	};
 
+	WalletKey.prototype.regenerate = function() {
+		this.privKey.regenerateSync();
+		this.created = timeUtil.curtime();
+	};
+
 	WalletKey.prototype.storeObj = function() {
 		var pubKey = this.privKey.public.toString('hex');
 		var pubKeyHash = coinUtil.sha256ripe160(this.privKey.public);
