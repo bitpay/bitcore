@@ -16,7 +16,7 @@ function ClassSpec(b) {
   PrivateKey.prototype.validate = function() {
     this.doAsBinary(function() {
       PrivateKey.super(this, 'validate', arguments);
-      if (this.data.length < 32 || (this.data.length > 1+32 && !this.compressed()) || (this.data.length==1+32 && this.data[1+32+1-1]!=1) || this.data.length>1+32+1)
+      if (this.data.length < 32 || (this.data.length > 1+32 && !this.compressed()) || (this.data.length==1+32+1 && this.data[1+32+1-1]!=1) || this.data.length>1+32+1)
         throw new Error('invalid data length');
     });
   };
