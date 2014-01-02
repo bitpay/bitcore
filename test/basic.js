@@ -56,7 +56,7 @@ function test_decode_priv(b58, payload, isTestnet, isCompressed)
 
 	var privkey = new PrivateKey(b58);
 	assert.equal(version, privkey.version());
-	assert.equal(buf.toString(), privkey.payload().toString());
+	assert.equal(buf_pl.toString(), privkey.payload().toString());
 }
 
 function test_decode_pub(b58, payload, isTestnet, addrType)
