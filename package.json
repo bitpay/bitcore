@@ -7,10 +7,12 @@
     "email": "ryan@bitpay.com"
   },
   "repository": "git://github.com/bitpay/mystery.git",
-  "contributors": [{
-    "name": "Matias Alejo Garcia",
-    "email": "ematiu@gmail.com"
-  }],
+  "contributors": [
+    {
+      "name": "Matias Alejo Garcia",
+      "email": "ematiu@gmail.com"
+    }
+  ],
   "bugs": {
     "url": "https://github.com/bitpay/mystery/issues"
   },
@@ -29,6 +31,7 @@
     "node": "*"
   },
   "scripts": {
+    "start": "node node_modules/grunt-cli/bin/grunt",
     "postinstall": "node node_modules/bower/bin/bower install"
   },
   "dependencies": {
@@ -37,6 +40,19 @@
     "mongoose": "~3.8.3",
     "lodash": "~2.4.1",
     "bower": "~1.2.8",
-    "bitcore": "*"
+    "bitcore": "*",
+    "grunt": "~0.4.2",
+    "grunt-cli": "~0.1.11",
+    "grunt-env": "~0.4.1",
+    "grunt-contrib-jshint": "~0.8.0",
+    "grunt-contrib-watch": "~0.5.3",
+    "grunt-concurrent": "~0.4.2",
+    "grunt-nodemon": "~0.1.2"
+  },
+  "devDependencies": {
+    "grunt-contrib-watch": "~0.5.3",
+    "grunt-contrib-jshint": "~0.8.0",
+    "grunt-nodemon": "~0.1.2",
+    "grunt-concurrent": "~0.4.2"
   }
 }
