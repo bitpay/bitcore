@@ -32,6 +32,7 @@
     "postinstall": "node node_modules/bower/bin/bower install"
   },
   "dependencies": {
+    "classtool": "*",
     "express": "~3.4.7",
     "jade": "~1.0.2",
     "mongoose": "~3.8.3",
