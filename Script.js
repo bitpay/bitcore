@@ -118,8 +118,8 @@ function spec(b) {
   {
     return (this.chunks.length > 3 &&
     	    isSmallIntOp(this.chunks[0]) &&
-    	    isSmallIntOp(this.chunks[-2]) &&
-	    this.chunks[-1] == OP_CHECKMULTISIG);
+    	    isSmallIntOp(this.chunks[this.chunks.length-2]) &&
+	    this.chunks[this.chunks.length-1] == OP_CHECKMULTISIG);
   };
 
   // is this a script form we know?
