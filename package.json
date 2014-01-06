@@ -1,0 +1,33 @@
+{
+    "name": "mystery",
+    "version": "0.0.1",
+    "private": true,
+    "dependencies": {
+    },
+    "author": {
+        "name": "Ryan X Charles",
+        "email": "ryan@bitpay.com"
+    },
+    "repository": "git://github.com/bitpay/mystery.git",
+    "contributors": [{
+            "name": "Matias Alejo Garcia",
+            "email": "ematiu@gmail.com"
+    }],
+    "bugs": {
+        "url": "https://github.com/bitpay/mystery/issues"
+    },
+    "homepage": "https://github.com/bitpay/mystery",
+    "license": "MIT",
+    "keywords": [
+        "mystery",
+        "secret",
+        "enigma",
+        "riddle",
+        "mystification",
+        "puzzle",
+        "conundrum"
+    ],
+    "engines": {
+        "node": "*"
+    } 
+}
