@@ -1,0 +1,7 @@
+{
+    "name": "Mystery",
+    "version": "0.0.1",
+    "dependencies": {
+        "bootstrap": "3.0.3"
+    }
+}

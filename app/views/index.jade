@@ -1,12 +1,13 @@
 extends layouts/default
 
 block content
-  h1 mystery
+  .page-header
+    h1 Hello BitPay!
   p ˈmɪst(ə)ri/'
     | noun
     audio(src="https://ssl.gstatic.com/dictionary/static/sounds/de/0/mystery.mp3",preload="auto",data-dobid="aud",id="aud")
     button(onclick="document.getElementById('aud').play()") Play
-
+  
   ol
     li 
       strong something that is difficult or impossible to understand or explain.
@@ -21,4 +22,3 @@ block content
       strong  a novel, play, or film dealing with a puzzling crime, especially a murder.
       p "the 1920s murder mystery, The Ghost Train"
       | synonyms:	thriller, detective story/novel, murder story; More
-  
