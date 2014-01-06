@@ -443,7 +443,7 @@ function spec(b) {
   };
 
   Script.chunksToBuffer = function (chunks) {
-    var buf = Put();
+    var buf = new Put();
     for (var i = 0, l = chunks.length; i < l; i++) {
       var data = chunks[i];
       if (Buffer.isBuffer(data)) {
