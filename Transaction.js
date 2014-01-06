@@ -428,6 +428,11 @@ function spec(b) {
   var SIGHASH_SINGLE = 3;
   var SIGHASH_ANYONECANPAY = 80;
 
+  Transaction.SIGHASH_ALL=SIGHASH_ALL;
+  Transaction.SIGHASH_NONE=SIGHASH_NONE;
+  Transaction.SIGHASH_SINGLE=SIGHASH_SINGLE;
+  Transaction.SIGHASH_ANYONECANPAY=SIGHASH_ANYONECANPAY;
+
   Transaction.prototype.hashForSignature =
   function hashForSignature(script, inIndex, hashType) {
     if (+inIndex !== inIndex ||
