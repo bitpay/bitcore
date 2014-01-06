@@ -1,0 +1,14 @@
+{
+    "name": "Mystery",
+    "version": "0.0.1",
+    "dependencies": {
+      "angular": "latest",
+      "angular-resource": "latest",
+      "angular-cookies": "latest",
+      "angular-mocks": "latest",
+      "angular-route": "latest",
+      "bootstrap": "3.0.3",
+      "angular-bootstrap": "0.9.0",
+      "angular-ui-utils": "0.1.0"
+    }
+}
