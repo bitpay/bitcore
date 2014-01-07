@@ -9,5 +9,6 @@ module.exports = {
     user: 'mystery',
     pass: 'real_mystery',
     protocol: 'http',
+    host: process.env.BITCOIND_HOST  || '127.0.0.1',
   }
 }
