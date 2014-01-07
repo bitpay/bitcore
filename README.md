@@ -49,6 +49,15 @@ $ npm install -g bower
 
 
 ## API
+
+## Prerequisites
+  Get bitcore from github repository:
+    $ git clone https://github.com/bitpay/bitcore.git
+    $ cd bitcore
+    $ npm install
+    
+  Run sync from mystery repository:
+    $ utils/sync.js
   
 ### Blocks
 ```
