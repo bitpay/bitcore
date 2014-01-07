@@ -1,14 +1,12 @@
 'use strict';
 
-
-var Block = require('../models/Block');
-//, _ = require('lodash');
-
-
-
 /**
  * Module dependencies.
  */
+
+var mongoose = require('mongoose'),
+    Block = mongoose.model('Block');
+//, _ = require('lodash');
 
 
 /**

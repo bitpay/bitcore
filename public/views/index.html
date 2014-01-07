@@ -1,5 +1,10 @@
-<section data-ng-controller="IndexController">
+<section data-ng-controller="IndexController" data-ng-init="last_blocks()">
   <div class="page-header">
     <h1>Hello BitPay!</h1>
   </div>
+  <ul>
+    <li data-ng-repeat="block in blocks">
+      <span>{{block.hash}}</span>
+    </li>
+  </ul>
 </section>

@@ -65,4 +65,4 @@ BlockSchema.statics.fromHash = function(hash, cb) {
   }).exec(cb);
 };
 
-module.exports = mongoose.model('Block', BlockSchema);
+mongoose.model('Block', BlockSchema);
