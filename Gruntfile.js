@@ -39,6 +39,13 @@ module.exports = function(grunt) {
         }
       }
     },
+    mochaTest: {
+      options: {
+        reporter: 'spec',
+      },
+      src: ['test/*.js']
+    },
+
     nodemon: {
       dev: {
         options: {
@@ -61,13 +68,6 @@ module.exports = function(grunt) {
         logConcurrentOutput: true
       }
     },
-    mochaTest: {
-      options: {
-        reporter: 'spec',
-        require: 'server.js'
-      },
-      src: ['test/*.js']
-    },
     env: {
       test: {
         NODE_ENV: 'test'
@@ -87,7 +87,7 @@ module.exports = function(grunt) {
   grunt.option('force', true);
 
   //Default task(s).
-  grunt.registerTask('default', ['jshint', 'concurrent']);
+  grunt.registerTask('default', ['jshint','concurrent']);
   
   //Test task.
   grunt.registerTask('test', ['env:test', 'mochaTest']);

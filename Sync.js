@@ -6,9 +6,11 @@ function spec(b) {
 
   var RpcClient = require('bitcore/RpcClient').class();
   var networks  = require('bitcore/networks');
+  var async     = require('async');
 
   var config    = require('./config/config');
   var Block     = require('./app/models/Block');
+  var Transaction=require('./app/models/Transaction');
 
   function Sync(config) {
     this.network = config.networkName == 'testnet' ? networks.testnet : networks.livenet;
@@ -39,8 +41,13 @@ function spec(b) {
           return cb(err);
         }
 
-        return that.getNextBlock(blockInfo.result.nextblockhash, cb);
-
+        if (inBlock) {
+          inBlock.explodeTransactions(function (err) {
+            return that.getNextBlock(blockInfo.result.nextblockhash, cb);
+          });
+        }
+        else  
+          return that.getNextBlock(blockInfo.result.nextblockhash, cb);
       });
     });
   }
@@ -70,7 +77,7 @@ function spec(b) {
   }
 
 
-  Sync.prototype.start = function (reindex, cb)  {
+  Sync.prototype.start = function (opts, next)  {
 
 
     mongoose.connect(config.db);
@@ -81,15 +88,35 @@ function spec(b) {
 
     db.on('error', console.error.bind(console, 'connection error:'));
 
-    db.once('open', function callback () {
+    db.once('open', function (){
 
-      that.syncBlocks(reindex, function(err) {
-        if (err) {
-          return cb(err);
+      async.series([ 
+        function(cb){
+          if (opts.destroy) {
+            console.log("Deleting Blocks...");
+            Block.remove().exec(cb);
+          }
+        },
+        function(cb){
+          if (opts.destroy) {
+            console.log("Deleting TXs...");
+            Transaction.remove().exec(cb);
+          }
+        },
+        function(cb) {
+          that.syncBlocks(opts.reindex, function(err) {
+            if (err) {
+              return cb(err);
 
+            }
+            db.close();
+            return cb();
+          });
         }
-        mongoose.connection.close();
-        return cb();
+      ],
+      function(err) {
+        if (err) return next(er);
+        return next();
       });
     });
   }
