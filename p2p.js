@@ -43,9 +43,6 @@ function hdrdb_load()
 function get_more_headers(info) {
   var conn = info.conn;
   var loc = hdrdb.locator();
-  if (loc.length == 0) {
-    return;
-  }
   conn.sendGetHeaders(loc, coinUtil.NULL_HASH);
 }
 
