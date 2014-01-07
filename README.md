@@ -78,10 +78,13 @@ All configuration is specified in the [config](config/) folder, particularly the
 
 ### bitcoind
 
-  There is a bitcoind configuration sample at:
+There is a bitcoind configuration sample at:
 ```
     etc/mystery/bitcoin.conf
 ```
+
+If you want to use a external bitcoind server set BITCOIND_HOST / BITCOIND_PORT enviroment variables. Make sure that bitcoind is configured to accept incomming connections using 'rpcallowip' decribed in https://en.bitcoin.it/wiki/Running_Bitcoin.
+
 
 ### Environmental Settings
 
