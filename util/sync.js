@@ -3,6 +3,7 @@
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 require('buffertools').extend();
 
+var util             = require('util');
 var RpcClient        = require('../node_modules/bitcore/RpcClient').class();
 var networks         = require('../node_modules/bitcore/networks');
 
@@ -26,8 +27,11 @@ function getNextBlock(blockHash,cb) {
       return cb(err); 
     }
 
-    if ( ! ( blockInfo.result.height % 1000) ) 
-      console.log("Height:" + blockInfo.result.height);
+    if ( ! ( blockInfo.result.height % 1000) ) {
+      var h = blockInfo.result.height,
+          d = blockInfo.result.confirmations;
+      console.log( util.format("Height: %d/%d [%d%%]", h, d, 100*h/(h+d)));
+    }
 
     Block.create( blockInfo.result, function(err, inBlock) {
 
