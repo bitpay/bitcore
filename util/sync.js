@@ -11,15 +11,19 @@ var config           = require('../config/config');
 var mongoose         = require('mongoose');
 
 var networkName      = process.argv[2] || 'testnet';
-var genesisBlockHash = networks.testnet.genesisBlock.hash.reverse().toString('hex');
+var network          = networkName == 'testnet' ? networks.testnet : networks.livenet;
 
 
-function syncBlocks(blockHash) {
+function getNextBlock(blockHash,cb) {
+
+  if ( !blockHash ) {
+    console.log("done");
+    return cb();
+  }
 
   rpc.getBlock(blockHash, function(err, blockInfo) {
     if (err) {
-      console.log(err);
-      throw(err); 
+      return cb(err); 
     }
 
     if ( ! ( blockInfo.result.height % 1000) ) 
@@ -27,23 +31,37 @@ function syncBlocks(blockHash) {
 
     Block.create( blockInfo.result, function(err, inBlock) {
 
-      if (err && err.toString().match(/E11000/)) {
-//        console.log("\twas there. Skipping");
-        return syncBlocks(blockInfo.result.nextblockhash);
+      // E11000 => already exists
+      if (err && ! err.toString().match(/E11000/)) {
+        return cb(err);
       }
 
-      if (err) throw(err);
-
-      if (inBlock.nextblockhash && ! inBlock.nextblockhash.match(/^0+$/)  ) {
-        syncBlocks(inBlock.nextblockhash)
-      }
-      else {
-        mongoose.connection.close();
-      }
+      return getNextBlock(blockInfo.result.nextblockhash);
 
     });
   });
 
+}
+
+function syncBlocks(network, cb) {
+
+  Block.findOne({}, {}, { sort: { 'height' : -1 } }, function(err, block) {
+    if (err) {
+      return cb(err);
+    }
+
+
+
+    var nextHash = 
+      block && block.hash 
+      ? block.hash
+      : network.genesisBlock.hash.reverse().toString('hex')
+      ;
+
+    
+    console.log('Starting at hash' + nextHash);
+    getNextBlock(nextHash, cb);
+  });
 }
 
 
@@ -55,9 +73,12 @@ var rpc   = new RpcClient(config.bitcoind);
 
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function callback () {
-
-  syncBlocks(genesisBlockHash);
-
+  syncBlocks(network, function(err) {
+    if (err) {
+      console.log(err);
+    }
+    mongoose.connection.close();
+  });
 });
 
 
