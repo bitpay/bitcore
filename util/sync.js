@@ -40,7 +40,7 @@ function getNextBlock(blockHash,cb) {
         return cb(err);
       }
 
-      return getNextBlock(blockInfo.result.nextblockhash);
+      return getNextBlock(blockInfo.result.nextblockhash, cb);
 
     });
   });
@@ -49,7 +49,7 @@ function getNextBlock(blockHash,cb) {
 
 function syncBlocks(network, cb) {
 
-  Block.findOne({}, {}, { sort: { 'height' : -1 } }, function(err, block) {
+  Block.findOne({}, {}, { sort: { 'confirmations' : 1 } }, function(err, block) {
     if (err) {
       return cb(err);
     }
@@ -63,7 +63,7 @@ function syncBlocks(network, cb) {
       ;
 
     
-    console.log('Starting at hash' + nextHash);
+    console.log('Starting at hash: ' + nextHash);
     getNextBlock(nextHash, cb);
   });
 }

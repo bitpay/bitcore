@@ -11,8 +11,8 @@ var mongoose = require('mongoose'),
  * Block Schema
  */
 var BlockSchema = new Schema({
-  hash: { 
-    type: String, 
+  hash: {
+    type: String,
     index: true,
     unique: true,
   },
@@ -27,12 +27,12 @@ var BlockSchema = new Schema({
   difficulty: Number,
   chainwork: String,
   previousblockhash:  {
-    type: String, 
+    type: String,
     index: true,
     unique: true,
   },
   nextblockhash: {
-    type: String, 
+    type: String,
     index: true,
     unique: true,
   },
@@ -53,16 +53,16 @@ BlockSchema.path('title').validate(function(title) {
  */
 
 BlockSchema.statics.load = function(id, cb) {
-    this.findOne({
-        _id: id
-    }).exec(cb);
+  this.findOne({
+    _id: id
+  }).exec(cb);
 };
 
 
 BlockSchema.statics.fromHash = function(hash, cb) {
-    this.findOne({
-      hash: hash,
-    }).exec(cb);
+  this.findOne({
+    hash: hash,
+  }).exec(cb);
 };
 
 module.exports = mongoose.model('Block', BlockSchema);

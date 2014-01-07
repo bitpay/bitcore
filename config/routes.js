@@ -8,7 +8,10 @@ module.exports = function(app) {
 
   //Block routes
 
-  var blocks = require('model/app/controllers/blocks');
-  app.get('/block/:block_hash', blocks.show);
+  var blocks = require('../app/controllers/blocks');
+  app.get('/block/:blockHash', blocks.show);
+ 
+
+  app.param('blockHash', blocks.block);
   
 };
