@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "classtool": "*",
+    "commander": "*",
     "express": "~3.4.7",
     "jade": "~1.0.2",
     "mongoose": "~3.8.3",
