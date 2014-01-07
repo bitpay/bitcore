@@ -6,7 +6,12 @@ module.exports = function(app) {
   var index = require('../app/controllers/index');
   app.get('/', index.render);
 
-  //TX routes
-  //
+  //Block routes
 
+  var blocks = require('../app/controllers/blocks');
+  app.get('/block/:blockHash', blocks.show);
+ 
+
+  app.param('blockHash', blocks.block);
+  
 };
