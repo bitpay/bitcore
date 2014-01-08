@@ -22,6 +22,7 @@ var BlockSchema = new Schema({
     index: true,
     unique: true,
   },
+  time: Number,
 });
 
 
