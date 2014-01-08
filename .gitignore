@@ -1,3 +1,4 @@
+# from https://github.com/github/gitignore/blob/master/Node.gitignore
 lib-cov
 *.seed
 *.log
@@ -11,6 +12,15 @@ lib-cov
 pids
 logs
 results
+build
+
+node_modules
+
+# extras
+*.swp
+*~
+.project
+peerdb.json
 
 npm-debug.log
 node_modules

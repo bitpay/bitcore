@@ -3,9 +3,11 @@
 /**
  * Module dependencies.
  */
-var mongoose = require('mongoose'),
-    Schema = mongoose.Schema;
+var mongoose    = require('mongoose'),
+    Schema      = mongoose.Schema;
 
+var async       = require('async');
+var Transaction = require('./Transaction');
 
 /**
  * Block Schema
@@ -37,6 +39,32 @@ var BlockSchema = new Schema({
     unique: true,
   },
 });
+
+BlockSchema.methods.explodeTransactions = function(next) {
+
+  //  console.log('exploding %s', this.hash, typeof this.tx);
+
+  async.forEach( this.tx,
+    function(tx, callback) {
+      // console.log('procesing TX %s', tx);
+      Transaction.create({ txid: tx }, function(err) {
+        if (err && ! err.toString().match(/E11000/)) {
+          return callback();
+        }
+        if (err) {
+
+          return callback(err);
+        }
+        return callback();
+
+      });
+    },
+    function(err) {
+      if (err) return next(err);
+      return next();
+    }
+  );
+};
 
 /**
  * Validations
