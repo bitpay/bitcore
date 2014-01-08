@@ -19,6 +19,7 @@ var BlockSchema = new Schema({
     unique: true,
   },
   size: Number,
+  height: Number,
   confirmations: Number,
   version: Number,
   merkleroot: String,
