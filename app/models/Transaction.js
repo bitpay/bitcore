@@ -25,7 +25,11 @@ var TransactionSchema = new Schema({
     type: Array,
     default: [],
   },
-  blockhash: String,
+  blockhash: {
+    type: String,
+    index: true,
+    default: null,
+  },
   confirmations: Number,
   time: Number,
   blocktime: Number,

@@ -24,9 +24,7 @@ function spec(b) {
     }
 
     this.rpc.getBlock(blockHash, function(err, blockInfo) {
-      if (err) {
-        return cb(err); 
-      }
+      if (err) return cb(err); 
 
       if ( ! ( blockInfo.result.height % 1000) ) {
         var h = blockInfo.result.height,
@@ -57,6 +55,7 @@ function spec(b) {
     var that        = this;
     var genesisHash = this.network.genesisBlock.hash.reverse().toString('hex');
 
+    console.log("Syncing Blocks...");
     if (reindex) 
       return this.getNextBlock(genesisHash, cb);
 
@@ -71,11 +70,75 @@ function spec(b) {
         ;
 
       
-      console.log('Starting at hash: ' + nextHash);
+      console.log('\tStarting at hash: ' + nextHash);
       return that.getNextBlock(nextHash, cb);
     });
   }
 
+
+  var progress_bar = function(string, current, total) {
+      console.log( util.format("\t%s %d/%d [%d%%]", 
+        string, current, total, parseInt(100 * current/total))
+      );
+  }
+
+  Sync.prototype.syncTXs = function (reindex, cb)  {
+
+    var that        = this;
+
+    console.log("Syncing TXs...");
+    if (reindex) {
+      // TODO?
+    }
+      
+
+    Transaction.find({blockHash: null}, function(err, txs) {
+      if (err) return cb(err);
+
+      var read = 0;
+      var pull = 0;
+      var write = 0;
+      var total = txs.length;
+      console.log("\tneed to pull %d txs", total);
+
+      if (!total) return cb();
+
+      async.each(txs, 
+        function(tx, next){
+          if (! tx.txid) {
+            console.log("NO TXID skipping...", tx);
+            return next();
+          }
+
+          if ( ! ( read++ % 1000) ) 
+            progress_bar('read', read, total);
+
+
+          that.rpc.getRawTransaction(tx.txid, 1,  function(err, txInfo) {
+
+            if ( ! ( pull++ % 1000) ) 
+              progress_bar('\tpull', pull, total);
+
+            if (!err && txInfo) {
+              Transaction.update({txid: tx.txid}, txInfo.result, function(err) {
+                if (err) return next(err); 
+
+                if ( ! ( write++ % 1000) ) 
+                  progress_bar('\t\twrite', write, total);
+
+                return next(); 
+              });
+            }
+            else return next(); 
+          });
+        },
+        function(err){
+          if (err) return cb(err);
+          return cb(err);
+        }
+      );
+    });
+  }
 
   Sync.prototype.start = function (opts, next)  {
 
@@ -106,18 +169,46 @@ function spec(b) {
           return cb();
         },
         function(cb) {
-          that.syncBlocks(opts.reindex, function(err) {
-            if (err) {
-              return cb(err);
 
-            }
-            db.close();
+          if (! opts.skip_blocks) {
+            that.syncBlocks(opts.reindex, function(err) {
+              if (err) {
+                return cb(err);
+
+              }
+              console.log("\tBlocks done.");
+
+              return cb();
+            });
+          }
+          else {
             return cb();
-          });
-        }
+          }
+        },
+        function(cb) {
+          if (! opts.skip_txs) {
+            that.syncTXs(opts.reindex, function(err) {
+              if (err) {
+                return cb(err);
+
+              }
+              return cb();
+            });
+          }
+          else {
+            return cb();
+          }
+        },
+        function(cb) {
+          db.close();
+          return cb();
+        },
       ],
       function(err) {
-        if (err) return next(er);
+        if (err) {
+          db.close();
+          return next(err);
+        }
         return next();
       });
     });
