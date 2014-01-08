@@ -29,3 +29,18 @@ exports.show = function(req, res) {
   res.jsonp(req.block);
 };
 
+/**
+ * List of blocks at HomePage
+ */
+exports.last_blocks = function(req, res) {
+  Block.find().limit(7).exec(function(err, blocks) {
+    if (err) {
+      res.render('error', {
+        status: 500
+      });
+    } else {
+      res.jsonp(blocks);
+    }
+  });
+};
+
