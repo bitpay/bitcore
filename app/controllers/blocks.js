@@ -13,10 +13,10 @@ var mongoose = require('mongoose'),
  * Find block by hash ...
  */
 exports.block = function(req, res, next, hash) {
-  Block.fromHash(hash, function(err, block) {
+  Block.fromHashWithInfo(hash, function(err, block) {
     if (err) return next(err);
     if (!block) return next(new Error('Failed to load block ' + hash));
-    req.block = block;
+    req.block = block.info;
     next();
   });
 };
