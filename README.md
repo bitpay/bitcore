@@ -48,7 +48,6 @@ $ npm install -g bower
 
 
 
-## API
 
 ## Prerequisites
   Get bitcore from github repository:
@@ -62,18 +61,20 @@ $ npm install -g bower
 check utils/sync.js --help for options.
 
   
+## API
+
+A REST API is provided at /api. The entry points are:
+
 ### Blocks
 ```
-  /block/[:hash]
-  /block/00000000a967199a2fad0877433c93df785a8d8ce062e5f9b451cd1397bdbf62
+  /api/block/[:hash]
+  /api/block/00000000a967199a2fad0877433c93df785a8d8ce062e5f9b451cd1397bdbf62
 ```
 ### Transactions 
 ```
-  /tx/[:txid]
-  /tx/525de308971eabd941b139f46c7198b5af9479325c2395db7f2fb5ae8562556c
+  /api/tx/[:txid]
+  /api/tx/525de308971eabd941b139f46c7198b5af9479325c2395db7f2fb5ae8562556c
 ```
-
-
 
 
 
