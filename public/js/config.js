@@ -4,8 +4,17 @@
 angular.module('mystery').config(['$routeProvider',
   function($routeProvider) {
     $routeProvider.
+    when('/block/:blockHash', {
+      templateUrl: 'views/block.html'
+    }).
     when('/', {
       templateUrl: 'views/index.html'
+    }).
+    when('/blocks', {
+      templateUrl: 'views/blocks/list.html'
+    }).
+    when('/blocks-date/:blockDate', {
+      templateUrl: 'views/blocks/list_date.html'
     }).
     otherwise({
       redirectTo: '/'

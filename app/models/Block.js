@@ -19,6 +19,7 @@ var BlockSchema = new Schema({
     unique: true,
   },
   size: Number,
+  height: Number,
   confirmations: Number,
   version: Number,
   merkleroot: String,
@@ -92,6 +93,5 @@ BlockSchema.statics.fromHash = function(hash, cb) {
     hash: hash,
   }).exec(cb);
 };
-
 
 module.exports = mongoose.model('Block', BlockSchema);

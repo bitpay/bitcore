@@ -1,14 +1,12 @@
 'use strict';
 
-
-var Block = require('../models/Block');
-//, _ = require('lodash');
-
-
-
 /**
  * Module dependencies.
  */
+
+var mongoose = require('mongoose'),
+    Block = mongoose.model('Block');
+//, _ = require('lodash');
 
 
 /**
@@ -25,9 +23,47 @@ exports.block = function(req, res, next, hash) {
 
 
 /**
- * Show block 
+ * Show block
  */
 exports.show = function(req, res) {
   res.jsonp(req.block);
 };
 
+/**
+ * List of blocks at HomePage
+ */
+exports.last_blocks = function(req, res) {
+  Block.find().sort({time:-1}).limit(7).exec(function(err, blocks) {
+    if (err) {
+      res.render('error', {
+        status: 500
+      });
+    } else {
+      res.jsonp(blocks);
+    }
+  });
+};
+
+/**
+ * List of blocks by date
+ */
+exports.list = function(req, res) {
+  var findParam = {};
+
+  if (req.query.blockDate) {
+    findParam = {};
+  }
+
+  Block
+    .find(findParam)
+    .limit(5)
+    .exec(function(err, blocks) {
+      if (err) {
+        res.render('error', {
+          status: 500
+        });
+      } else {
+        res.jsonp(blocks);
+      }
+    });
+};
