@@ -4,6 +4,9 @@
 angular.module('mystery').config(['$routeProvider',
   function($routeProvider) {
     $routeProvider.
+    when('/block/:blockHash', {
+      templateUrl: 'views/block.html'
+    }).
     when('/', {
       templateUrl: 'views/index.html'
     }).

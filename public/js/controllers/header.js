@@ -4,11 +4,8 @@ angular.module('mystery.system').controller('HeaderController', ['$scope', 'Glob
   $scope.global = Global;
 
   $scope.menu = [{
-    'title': 'Articles',
-    'link': 'articles'
-  }, {
-    'title': 'Create New Article',
-    'link': 'articles/create'
+    'title': 'Blocks',
+    'link': 'blocks'
   }];
 
   $scope.isCollapsed = false;
