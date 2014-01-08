@@ -14,7 +14,7 @@ var
 
 mongoose.connection.on('error', function(err) { console.log(err); });
 
-describe('getInfo', function(){
+describe('Block getInfo', function(){
 
   before(function(done) {
     mongoose.connect(config.db);
@@ -26,15 +26,22 @@ describe('getInfo', function(){
     done();
   });
 
-  it('should pool block\'s info from bitcoind', function(done) {
+  it('should poll block\'s info from mongoose', function(done) {
     var block2 = Block.fromHashWithInfo(TESTING_BLOCK, function(err, b2) {
         if (err) done(err);
 
         assert.equal(b2.hash, TESTING_BLOCK);
+        done();
+      });
+  });
+
+  it('should poll block\'s info from bitcoind', function(done) {
+    var block2 = Block.fromHashWithInfo(TESTING_BLOCK, function(err, b2) {
+        if (err) done(err);
         assert.equal(b2.info.hash, TESTING_BLOCK);
         assert.equal(b2.info.chainwork, '00000000000000000000000000000000000000000000000000446af21d50acd3');
         done();
-      });
+    });
   });
 });
 

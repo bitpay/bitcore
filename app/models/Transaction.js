@@ -5,7 +5,10 @@
  */
 var mongoose = require('mongoose'),
     Schema   = mongoose.Schema,
-    async    = require('async');
+    async    = require('async'),
+    RpcClient   = require('bitcore/RpcClient').class(),
+    config      = require('../../config/config');
+    
 
 /**
  */
@@ -31,14 +34,14 @@ TransactionSchema.statics.load = function(id, cb) {
 };
 
 
-TransactionSchema.statics.fromID = function(txid, cb) {
+TransactionSchema.statics.fromId = function(txid, cb) {
   this.findOne({
     txid: txid,
   }).exec(cb);
 };
 
-TransactionSchema.statics.fromIDWithInfo = function(txid, cb) {
-  this.fromHash(hash, function(err, tx) {
+TransactionSchema.statics.fromIdWithInfo = function(txid, cb) {
+  this.fromId(txid, function(err, tx) {
     if (err) return cb(err);
 
     tx.getInfo(function(err) { return cb(err,tx); } );
@@ -82,7 +85,7 @@ TransactionSchema.methods.getInfo = function (next) {
   var that = this;
   var rpc  = new RpcClient(config.bitcoind);
 
-  rpc.getRawTransaction(this.txid, function(err, txInfo) {
+  rpc.getRawTransaction(this.txid, 1, function(err, txInfo) {
     if (err) return next(err);
     that.info = txInfo.result;
 
