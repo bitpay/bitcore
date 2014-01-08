@@ -64,7 +64,7 @@ function spec(b) {
 
     var txCount = parser.varInt();
 
-    for (i = 0; i < txCount; i++) {
+    for (var i = 0; i < txCount; i++) {
       var tx = new Transaction();
       tx.parse(parser);
       this.txs.push(tx);
