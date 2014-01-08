@@ -58,12 +58,21 @@ $ npm install -g bower
     
   Run sync from mystery repository:
     $ utils/sync.js
+
+check utils/sync.js --help for options.
+
   
 ### Blocks
 ```
   /block/[:hash]
   /block/00000000a967199a2fad0877433c93df785a8d8ce062e5f9b451cd1397bdbf62
 ```
+### Transactions 
+```
+  /tx/[:txid]
+  /tx/525de308971eabd941b139f46c7198b5af9479325c2395db7f2fb5ae8562556c
+```
+
 
 
 
