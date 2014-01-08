@@ -1,6 +1,6 @@
-<section data-ng-controller="IndexController" data-ng-init="last_blocks()">
+<section data-ng-controller="BlocksController" data-ng-init="findOne()">
   <div class="page-header">
-    <h1>Hello BitPay!</h1>
+    <h1>Block Page</h1>
   </div>
   <table class="table table-striped">
     <thead>
@@ -11,8 +11,8 @@
       <th>Size (kB)</th>
     </thead>
     <tbody>
-      <tr data-ng-repeat="block in blocks">
-        <td><a href="#!/block/{{block.hash}}">{{block.height}}</a></td>
+      <tr>
+        <td>{{block.height}}</td>
         <td>{{block.time | date:'short'}}</td>
         <td>{{block.tx.length }}</td>
         <td>{{block.confirmations}}</td>

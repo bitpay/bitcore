@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('mystery.blocks').controller('BlocksController', ['$scope', '$routeParams', '$location', 'Global', 'Blocks', function ($scope, $routeParams, $location, Global, Blocks) {
+angular.module('mystery.blocks').controller('BlocksController', ['$scope', '$routeParams', '$location', 'Global', 'Block', 'Blocks', function ($scope, $routeParams, $location, Global, Block, Blocks) {
   $scope.global = Global;
 
   $scope.list_blocks = function() {
@@ -14,6 +14,14 @@ angular.module('mystery.blocks').controller('BlocksController', ['$scope', '$rou
       blockDate: $routeParams.blockDate
     }, function(blocks) {
       $scope.blocks = blocks;
+    });
+  };
+
+  $scope.findOne = function() {
+    Block.get({
+      blockHash: $routeParams.blockHash
+    }, function(block) {
+      $scope.block = block;
     });
   };
 
