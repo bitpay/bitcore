@@ -16,6 +16,12 @@ function spec(b) {
     this.network = config.networkName == 'testnet' ? networks.testnet : networks.livenet;
   }
 
+  var progress_bar = function(string, current, total) {
+      console.log( util.format("\t%s %d/%d [%d%%]", 
+        string, current, total, parseInt(100 * current/total))
+      );
+  }
+
   Sync.prototype.getNextBlock = function (blockHash,cb) {
     var that = this;
 
@@ -29,7 +35,7 @@ function spec(b) {
       if ( ! ( blockInfo.result.height % 1000) ) {
         var h = blockInfo.result.height,
             d = blockInfo.result.confirmations;
-        console.log( util.format("Height: %d/%d [%d%%]", h, d, 100*h/(h+d)));
+        progress_bar('height', h, h + d);    
       }
 
       Block.create( blockInfo.result, function(err, inBlock) {
@@ -76,12 +82,6 @@ function spec(b) {
   }
 
 
-  var progress_bar = function(string, current, total) {
-      console.log( util.format("\t%s %d/%d [%d%%]", 
-        string, current, total, parseInt(100 * current/total))
-      );
-  }
-
   Sync.prototype.syncTXs = function (reindex, cb)  {
 
     var that        = this;
@@ -92,7 +92,7 @@ function spec(b) {
     }
       
 
-    Transaction.find({blockHash: null}, function(err, txs) {
+    Transaction.find({blockhash: null}, function(err, txs) {
       if (err) return cb(err);
 
       var read = 0;
