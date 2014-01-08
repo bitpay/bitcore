@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('mystery.blocks').factory('Block', ['$resource', function($resource) {
-  return $resource('block/:blockHash', {
+  return $resource('/api/block/:blockHash', {
     blockHash: '@blockHash'
   });
 }]);
