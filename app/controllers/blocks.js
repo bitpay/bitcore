@@ -23,7 +23,7 @@ exports.block = function(req, res, next, hash) {
 
 
 /**
- * Show block 
+ * Show block
  */
 exports.show = function(req, res) {
   res.jsonp(req.block);
@@ -44,3 +44,26 @@ exports.last_blocks = function(req, res) {
   });
 };
 
+/**
+ * List of blocks by date
+ */
+exports.list = function(req, res) {
+  var findParam = {};
+
+  if (req.query.blockDate) {
+    findParam = {};
+  }
+
+  Block
+    .find(findParam)
+    .limit(5)
+    .exec(function(err, blocks) {
+      if (err) {
+        res.render('error', {
+          status: 500
+        });
+      } else {
+        res.jsonp(blocks);
+      }
+    });
+};
