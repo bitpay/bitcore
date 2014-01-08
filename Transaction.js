@@ -553,7 +553,7 @@ function spec(b) {
     var ins = this.ins.map(function (txin) {
       var txinObj = {
         prev_out: {
-          hash: new Buffer(txin.getOutpointHash()).reverse().toString(hex),
+          hash: new Buffer(txin.getOutpointHash()).reverse().toString('hex'),
           n: txin.getOutpointIndex()
         }
       };

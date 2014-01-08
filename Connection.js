@@ -476,7 +476,7 @@ function spec(b) {
         lock_time: tx.lock_time,
         ins: tx.ins,
         outs: tx.outs,
-	tx: tx,
+	      tx: tx,
       };
 
     case 'getblocks':
