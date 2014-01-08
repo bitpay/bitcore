@@ -1,3 +1,5 @@
+'use strict';
+
 var fs = require('fs');
 var HeaderDB = require('./HeaderDB').class();
 var Block = require('bitcore/Block').class();
@@ -18,8 +20,6 @@ var PeerManager = require('bitcore/PeerManager').createClass({
   config : config
 });
 var Peer = require('bitcore/Peer').class();
-
-var syncState = 'init';
 
 function peerdb_load() {
   try {
@@ -57,8 +57,7 @@ function add_header(info, block) {
 }
 
 function handle_headers(info) {
-  console.log("handle headers");
-  var conn = info.conn;
+  console.log('handle headers');
   var headers = info.message.headers;
 
   headers.forEach(function(hdr) {
@@ -72,16 +71,6 @@ function handle_headers(info) {
   get_more_headers(info);
 }
 
-function handle_block(info) {
-  console.log("handle block")
-  var block = info.message.block;
-  add_header(info, block);
-
-  if (syncState === 'init') {
-    syncState = 'headers';
-    get_more_headers(info);
-  }
-}
 
 function handle_verack(info) {
   var inv = {
@@ -89,17 +78,41 @@ function handle_verack(info) {
     hash : network.genesisBlock.hash,
   };
   var invs = [ inv ];
-  console.log('p2psync: Asking for the genesis block');
 
   // Asks for the genesis block
+  // console.log('p2psync: Asking for the genesis block');
+  // info.conn.sendGetData(invs);
+
+}
+
+function handle_inv(info) {
+  console.log('handle inv');
+  // TODO: should limit the invs to objects we haven't seen yet
+  var invs = info.message.invs;
+  invs.forEach(function(inv) {
+      console.log('Received inv for a '+CoinConst.MSG.to_str(inv.type));
+    }
+  );
+  console.log('requesting getData');
   info.conn.sendGetData(invs);
+}
+
+function handle_tx(info) {
+  var tx = info.message.tx.getStandardizedObject();
+  console.log('handle tx: '+JSON.stringify(tx));
+
+}
+
+function handle_block(info) {
+  console.log('handle block');
+  var block = info.message.block;
+  add_header(info, block);
 }
 
 function handle_connected(data) {
   var peerman = data.pm;
   var peers_n = peerman.peers.length;
-  console.log('p2psync: Connected to ' + peers_n + ' peer'
-      + (peers_n != 1 ? 's' : ''));
+  console.log('p2psync: Connected to ' + peers_n + ' peer' + (peers_n !== 1 ? 's' : ''));
 }
 
 function p2psync() {
@@ -114,6 +127,8 @@ function p2psync() {
     conn.on('verack', handle_verack);
     conn.on('block', handle_block);
     conn.on('headers', handle_headers);
+    conn.on('inv', handle_inv);
+    conn.on('tx', handle_tx);
   });
   peerman.on('connect', handle_connected);
 
