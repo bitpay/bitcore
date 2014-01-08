@@ -37,6 +37,14 @@ TransactionSchema.statics.fromID = function(txid, cb) {
   }).exec(cb);
 };
 
+TransactionSchema.statics.fromIDWithInfo = function(txid, cb) {
+  this.fromHash(hash, function(err, tx) {
+    if (err) return cb(err);
+
+    tx.getInfo(function(err) { return cb(err,tx); } );
+  });
+};
+
 TransactionSchema.statics.createFromArray = function(txs, next) {
 
   var that = this;
@@ -68,13 +76,22 @@ TransactionSchema.statics.createFromArray = function(txs, next) {
 };
 
 
-/*
- * virtual
- */
 
-// ugly? new object every call?
-TransactionSchema.virtual('info').get(function () {
-  
-});
+TransactionSchema.methods.getInfo = function (next) {
+
+  var that = this;
+  var rpc  = new RpcClient(config.bitcoind);
+
+  rpc.getRawTransaction(this.txid, function(err, txInfo) {
+    if (err) return next(err);
+    that.info = txInfo.result;
+
+    //console.log("THAT", that);
+    return next(null, that.info);
+  });
+};
+
+
+
 
 module.exports = mongoose.model('Transaction', TransactionSchema);
