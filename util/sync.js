@@ -6,7 +6,7 @@ require('buffertools').extend();
 
 var SYNC_VERSION     = '0.1';
 var program          = require('commander');
-var Sync             = require('../Sync').class();
+var Sync             = require('../lib/Sync').class();
 
 program
 	.version(SYNC_VERSION)
