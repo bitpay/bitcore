@@ -10,15 +10,25 @@ var mongoose = require('mongoose'),
 /**
  */
 var TransactionSchema = new Schema({
-  hash: {
+  txid: {
     type: String,
     index: true,
     unique: true,
   },
-  parsed: {
-    type: Boolean,
-    default: false,
+  version: Number,
+  locktime: Number,
+  vin: {
+    type: Array,
+    default: [],
   },
+  vout: {
+    type: Array,
+    default: [],
+  },
+  blockhash: String,
+  confirmations: Number,
+  time: Number,
+  blocktime: Number,
 });
 
 /**
@@ -32,10 +42,19 @@ TransactionSchema.statics.load = function(id, cb) {
 };
 
 
-TransactionSchema.statics.fromHash = function(hash, cb) {
+TransactionSchema.statics.fromID = function(txid, cb) {
   this.findOne({
-    hash: hash,
+    txid: txid,
   }).exec(cb);
 };
+
+/*
+ * virtual
+ */
+
+// ugly? new object every call?
+TransactionSchema.virtual('date').get(function () {
+  return new Date(this.time);
+});
 
 module.exports = mongoose.model('Transaction', TransactionSchema);

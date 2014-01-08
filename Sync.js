@@ -94,14 +94,16 @@ function spec(b) {
         function(cb){
           if (opts.destroy) {
             console.log("Deleting Blocks...");
-            Block.remove().exec(cb);
+            return Block.remove().exec(cb);
           }
+          return cb();
         },
         function(cb){
           if (opts.destroy) {
             console.log("Deleting TXs...");
-            Transaction.remove().exec(cb);
+            return Transaction.remove().exec(cb);
           }
+          return cb();
         },
         function(cb) {
           that.syncBlocks(opts.reindex, function(err) {
