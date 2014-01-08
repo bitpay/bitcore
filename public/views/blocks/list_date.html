@@ -1,0 +1,10 @@
+<section data-ng-controller="BlocksController" data-ng-init="list_blocks_date()">
+  <div class="page-header">
+    <h1>Blocks by defined date</h1>
+  </div>
+  <ul>
+    <li data-ng-repeat="block in blocks">
+      <span>{{block.hash}}</span> {{block.time}}
+    </li>
+  </ul>
+</section>

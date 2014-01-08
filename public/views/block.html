@@ -1,0 +1,23 @@
+<section data-ng-controller="BlocksController" data-ng-init="findOne()">
+  <div class="page-header">
+    <h1>Block Page</h1>
+  </div>
+  <table class="table table-striped">
+    <thead>
+      <th>Height</th>
+      <th>Age</th>
+      <th>Transactions</th>
+      <th>Confirmations</th>
+      <th>Size (kB)</th>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{block.height}}</td>
+        <td>{{block.time | date:'short'}}</td>
+        <td>{{block.tx.length }}</td>
+        <td>{{block.confirmations}}</td>
+        <td>{{block.size / 1024}}</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
