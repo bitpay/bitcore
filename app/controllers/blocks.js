@@ -48,28 +48,50 @@ exports.last_blocks = function(req, res) {
  * List of blocks by date
  */
 exports.list = function(req, res) {
-  var findParam = {};
+  //helper to convert timestamps to yyyy-mm-dd format
+  var formatTimestamp = function (date) {
+    var yyyy = date.getUTCFullYear().toString();
+    var mm = (date.getUTCMonth() + 1).toString(); // getMonth() is zero-based
+    var dd  = date.getUTCDate().toString();
 
+    return yyyy + '-' + (mm[1] ? mm : '0' + mm[0]) + '-' + (dd[1] ? dd : '0' + dd[0]); //padding
+  };
+
+  var dateStr;
   if (req.query.blockDate) {
-    var gte = Math.round((new Date(req.query.blockDate)).getTime() / 1000);
-    var lte = gte + 86400;
-
-    findParam = { time: {
-      '$gte': gte,
-      '$lte': lte
-    }};
+    dateStr = req.query.blockDate;
+  } else {
+    dateStr = formatTimestamp(new Date());
   }
 
+  var gte = Math.round((new Date(dateStr)).getTime() / 1000);
+
+  //pagination
+  var lte = gte + 86400;
+  var prev = formatTimestamp(new Date((gte - 86400) * 1000));
+  var next = formatTimestamp(new Date(lte * 1000));
+
   Block
-    .find(findParam)
-    .limit(5)
+    .find({
+      time: {
+        '$gte': gte,
+        '$lte': lte
+      }
+    })
     .exec(function(err, blocks) {
       if (err) {
         res.render('error', {
           status: 500
         });
       } else {
-        res.jsonp(blocks);
+        res.jsonp({
+          blocks: blocks,
+          pagination: {
+            next: next,
+            prev: prev,
+            current: dateStr
+          }
+        });
       }
     });
 };
