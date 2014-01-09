@@ -181,7 +181,6 @@ TransactionSchema.methods.queryInfo = function (next) {
         });
       }
 
-
       tx.outs.forEach( function(i) {
         var n =  util.valueToBigInt(i.v).toNumber();
         valueOut = valueOut.add(n);
