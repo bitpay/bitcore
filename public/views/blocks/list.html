@@ -1,10 +1,17 @@
-<section data-ng-controller="BlocksController" data-ng-init="list_blocks()">
+<section data-ng-controller="BlocksController" data-ng-init="list()">
   <div class="page-header">
     <h1>Blocks by Date</h1>
   </div>
-  <ul>
-    <li data-ng-repeat="block in blocks">
-      <span>{{block.hash}}</span> {{block.time}}
-    </li>
-  </ul>
+  <table class="table table-striped">
+    <thead>
+      <th>Hash</th>
+      <th>Solved at</th>
+    </thead>
+    <tbody>
+      <tr data-ng-repeat="block in blocks">
+        <td><a href="#!/block/{{block.hash}}">{{block.hash}}</a></td>
+        <td>{{block.time}}</td>
+      </tr>
+    </tbody>
+  </table>
 </section>
