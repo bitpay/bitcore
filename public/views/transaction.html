@@ -1,0 +1,32 @@
+<section data-ng-controller="transactionsController" data-ng-init="findOne()">
+  <div class="page-header">
+    <h1>Transaction <small>View information about a bitcoin transaction</small></h1>
+  </div>
+  <ul>
+    <li>{{tx.txid}}</li>
+    <li>VIN
+      <ul data-ng-repeat="vin in tx.vin">
+        <li>coinbase: {{vin.coinbase}}</li>
+        <li>sequence: {{vin.sequence}}</li>
+        <li>txid: {{vin.txid}}</li>
+        <li>vout: {{vin.vout}}</li>
+      </ul>
+    </li>
+    <li>VOUT
+      <ul data-ng-repeat="vout in tx.vout">
+        <li>value: {{vout.value}}</li>
+        <li>n: {{vout.n}}</li>
+        <li>addresses: {{vin.scriptPubKey}}
+          <ul data-ng-repeat="addr in vout.scriptPubKey.addresses">
+            <li>address: {{addr}}</li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+    <li>Blockhash: <a href="#!/block/{{tx.blockhash}}">{{tx.blockhash}}</a></li>
+    <li>Confirmations: {{tx.confirmations}}</li>
+    <li>Time {{tx.time}}</li>
+    <li>Bloctime {{tx.blocktime}}</li>
+  </ul>
+</section>
+

@@ -4,19 +4,13 @@
   </div>
   <table class="table table-striped">
     <thead>
-      <th>Height</th>
-      <th>Age</th>
-      <th>Transactions</th>
-      <th>Confirmations</th>
-      <th>Size (kB)</th>
+      <th>Hash</th>
+      <th>Time</th>
     </thead>
     <tbody>
       <tr data-ng-repeat="block in blocks">
-        <td><a href="#!/block/{{block.hash}}">{{block.height}}</a></td>
+        <td><a href="#!/block/{{block.hash}}">{{block.hash}}</a></td>
         <td>{{block.time | date:'short'}}</td>
-        <td>{{block.tx.length }}</td>
-        <td>{{block.confirmations}}</td>
-        <td>{{block.size / 1024}}</td>
       </tr>
     </tbody>
   </table>
