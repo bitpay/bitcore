@@ -1,6 +1,15 @@
 <section data-ng-controller="BlocksController" data-ng-init="list()">
   <div class="page-header">
-    <h1>Blocks by Date</h1>
+    <h1>
+      <span class="glyphicon glyphicon-calendar"></span>
+      Blocks
+      <small>by date</small>
+    </h1>
+    <ul class="pagination">
+      <li><a href="#!/blocks-date/{{pagination.prev}}">&laquo; {{pagination.prev}}</a></li>
+      <li class="disabled"><a href="#">{{pagination.current}}</a></li>
+      <li><a href="#!/blocks-date/{{pagination.next}}">{{pagination.next}} &raquo;</a></li>
+    </ul>
   </div>
   <table class="table table-striped">
     <thead>

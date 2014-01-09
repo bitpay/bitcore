@@ -4,10 +4,11 @@ angular.module('mystery.blocks').controller('BlocksController', ['$scope', '$rou
   $scope.global = Global;
 
   $scope.list = function() {
-    Blocks.query({
+    Blocks.get({
       blockDate: $routeParams.blockDate
-    }, function(blocks) {
-      $scope.blocks = blocks;
+    }, function(res) {
+      $scope.blocks = res.blocks;
+      $scope.pagination = res.pagination;
     });
   };
 
