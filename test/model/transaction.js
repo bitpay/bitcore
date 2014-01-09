@@ -30,6 +30,7 @@ describe('Transaction fromIdWithInfo', function(){
     Transaction.fromIdWithInfo(test_txid, function(err, tx) {
       if (err) done(err);
       assert.equal(tx.txid, test_txid);
+      assert(!tx.info.isCoinBase);
       done();
     });
   });
@@ -43,6 +44,7 @@ describe('Transaction fromIdWithInfo', function(){
       assert.equal(tx.info.valueOut, 1.66174);
       assert.equal(tx.info.feeds, 0.0005 );
       assert.equal(tx.info.size, 226 );
+      assert(!tx.info.isCoinBase);
       done();
     });
   });
@@ -53,6 +55,7 @@ describe('Transaction fromIdWithInfo', function(){
       if (err) done(err);
       assert(tx.info.isCoinBase);
       assert.equal(tx.info.txid, test_txid2);
+      assert(!tx.info.feeds);
       done();
     });
   });
