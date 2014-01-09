@@ -187,9 +187,12 @@ TransactionSchema.methods.queryInfo = function (next) {
         valueOut = valueOut.add(n);
       });
 
-      that.info.valueIn  = valueIn / util.COIN;
       that.info.valueOut = valueOut / util.COIN;
-      that.info.feeds    = (valueIn - valueOut) / util.COIN;
+
+      if ( !tx.isCoinBase() ) {
+        that.info.valueIn  = valueIn / util.COIN;
+        that.info.feeds    = (valueIn - valueOut) / util.COIN;
+      }
 
       that.info.size     = b.length;
 
