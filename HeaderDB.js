@@ -38,7 +38,7 @@ function ClassSpec(b) {
     assert.equal(this.byHeight[0].toString(),
           this.network.genesisBlock.hash.toString());
     loc.push(this.byHeight[0]);
-    console.log("Requesting more headers. Current height: " + block.height );
+    //console.log('Requesting more headers. Current height: ' + block.height );
     return loc;
   };
 
@@ -49,7 +49,7 @@ function ClassSpec(b) {
 
     if (hash in this.blocks) {
             var old  =  this.blocks[hash];
-      throw new Error("duplicate block (was at height " + old.height  + ")");
+      throw new Error('duplicate block (was at height ' + old.height  + ')');
        }
 
     var bestChain = false;
@@ -63,7 +63,7 @@ function ClassSpec(b) {
     if (this.cached_size == 0) {
       if (this.network.genesisBlock.hash.toString() !=
           hash.toString())
-        throw new Error("Invalid genesis block");
+        throw new Error('Invalid genesis block');
 
       block.height = 0;
       block.work = curWork;
@@ -72,7 +72,7 @@ function ClassSpec(b) {
     } else {
       var prevBlock = this.blocks[block.prev_hash];
       if (!prevBlock)
-        throw new Error("orphan block; prev not found");
+        throw new Error('orphan block; prev not found');
 
       block.height = prevBlock.height + 1;
       block.work = prevBlock.work + curWork;
@@ -169,7 +169,7 @@ function ClassSpec(b) {
     var fd = fs.openSync(filename, 'r');
     var stats = fs.fstatSync(fd);
     if (stats.size % 80 != 0)
-      throw new Error("Corrupted header db");
+      throw new Error('Corrupted header db');
 
     while (1) {
       var buf = new Buffer(80);
@@ -180,7 +180,7 @@ function ClassSpec(b) {
       this.addBuf(buf);
 
             if ( ! ( this.cached_size % 1000 )) {
-                console.log("\tblock..." +  this.cached_size ) ;
+                console.log('\tblock...' +  this.cached_size ) ;
             }
     }
 
