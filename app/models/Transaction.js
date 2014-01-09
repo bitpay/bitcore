@@ -91,6 +91,8 @@ TransactionSchema.statics.createFromArray = function(txs, next) {
 
 TransactionSchema.methods.fillInputValues = function (tx, next) {
 
+  if (tx.isCoinBase()) return next();
+
   if (! this.rpc) this.rpc = new RpcClient(config.bitcoind);
 
   var that = this;
@@ -103,8 +105,16 @@ TransactionSchema.methods.fillInputValues = function (tx, next) {
       var c=0;
       that.rpc.getRawTransaction(outHashBase64, function(err, txdata) {
         var txin = new Transaction();
+
+        if (err || ! txdata.result) return cb( new Error('Input TX '+outHashBase64+' not found'));
+
         var b = new Buffer(txdata.result,'hex');
         txin.parse(b);
+
+
+        if ( txin.isCoinBase() ) {
+          return cb();
+        }
 
         txin.outs.forEach( function(j) {
           // console.log( c + ': ' + util.formatValue(j.v) );
@@ -148,24 +158,28 @@ TransactionSchema.methods.queryInfo = function (next) {
 
       var valueIn  = bignum(0);
       var valueOut = bignum(0);
-      tx.ins.forEach(function(i) {
 
-        that.info.vin[c].value = util.formatValue(i.value);
+      if ( tx.isCoinBase() ) {
+        that.info.isCoinBase = true;
+      }
+      else {
+        tx.ins.forEach(function(i) {
 
-        var n = util.valueToBigInt(i.value).toNumber();
-        valueIn           = valueIn.add( n );
+          that.info.vin[c].value = util.formatValue(i.value);
+          var n = util.valueToBigInt(i.value).toNumber();
+          valueIn           = valueIn.add( n );
 
+          var scriptSig     = i.getScript();
+          var pubKey        = scriptSig.simpleInPubKey();
+          var pubKeyHash    = util.sha256ripe160(pubKey);
+          var addr          = new Address(network.addressPubkey, pubKeyHash);
+          var addrStr       = addr.toString();
 
-        var scriptSig     = i.getScript();
-        var pubKey        = scriptSig.simpleInPubKey();
-        var pubKeyHash    = util.sha256ripe160(pubKey);
-        var addr          = new Address(network.addressPubkey, pubKeyHash);
-        var addrStr       = addr.toString();
+          that.info.vin[c].addr  = addrStr;
 
-        that.info.vin[c].addr  = addrStr;
-
-        c++;
-      });
+          c++;
+        });
+      }
 
 
       tx.outs.forEach( function(i) {
@@ -173,8 +187,8 @@ TransactionSchema.methods.queryInfo = function (next) {
         valueOut = valueOut.add(n);
       });
 
-      that.info.valueIn  = valueIn / util.COIN; 
-      that.info.valueOut = valueOut / util.COIN; 
+      that.info.valueIn  = valueIn / util.COIN;
+      that.info.valueOut = valueOut / util.COIN;
       that.info.feeds    = (valueIn - valueOut) / util.COIN;
 
       that.info.size     = b.length;
