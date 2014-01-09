@@ -89,7 +89,7 @@ describe('Address fromAddrWithInfo', function(){
 
   addrs.forEach( function(t) {
     it('should retrieve the correct info for' + t.addr, function(done) {
-      Addr.fromHashWithInfo(t.addr, function(err, a) {
+      Address.fromHashWithInfo(t.addr, function(err, a) {
         if (err) done(err);
 
         assert.equal(t.balance, a.balance, "balance");
