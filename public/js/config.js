@@ -7,6 +7,9 @@ angular.module('mystery').config(['$routeProvider',
     when('/block/:blockHash', {
       templateUrl: 'views/block.html'
     }).
+    when('/tx/:txId', {
+      templateUrl: 'views/transaction.html'
+    }).
     when('/', {
       templateUrl: 'views/index.html'
     }).

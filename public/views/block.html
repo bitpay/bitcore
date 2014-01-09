@@ -1,22 +1,72 @@
 <section data-ng-controller="BlocksController" data-ng-init="findOne()">
   <div class="page-header">
-    <h1>Block Page</h1>
+    <h1 data-ng-if="block">Block #{{ block.height }}</h1>
   </div>
+  
+  <h2>Summary</h2>
+  <dl class="dl-horizontal">
+    <dt>Number Of Transactions</dt>
+    <dd>--</dd>
+    <dt>Output Total</dt>
+    <dd>--</dd>
+    <dt>Estimated Transaction Volume</dt>
+    <dd>--</dd>
+    <dt>Transaction Fees</dt>
+    <dd>--</dd>
+    <dt>Height</dt>
+    <dd>{{block.height}}</dd>
+    <dt>Timestamp</dt>
+    <dd>{{block.time}}</dd>
+    <dt>Received Time</dt>
+    <dd>{{block.time}}</dd>
+    <dt>Relayed By</dt>
+    <dd>--</dd>
+    <dt>Difficulty</dt>
+    <dd>{{block.difficulty}}</dd>
+    <dt>Bits</dt>
+    <dd>{{block.bits}}</dd>
+    <dt>Size</dt>
+    <dd>{{block.size}}</dd>
+    <dt>Version</dt>
+    <dd>{{block.version}}</dd>
+    <dt>Nonce</dt>
+    <dd>{{block.nonce}}</dd>
+  </dl>
+  
+  <h2>Hashes</h2>
   <table class="table table-striped">
     <thead>
-      <th>Height</th>
-      <th>Age</th>
-      <th>Transactions</th>
-      <th>Confirmations</th>
-      <th>Size (kB)</th>
+      <th>Hashes</th>
+      <th>&nbsp;</th>
     </thead>
     <tbody>
       <tr>
-        <td>{{block.height}}</td>
-        <td>{{block.time | date:'short'}}</td>
-        <td>{{block.tx.length }}</td>
-        <td>{{block.confirmations}}</td>
-        <td>{{block.size / 1024}}</td>
+        <td>Hash</td>
+        <td><a href="/#!/block/{{block.hash}}">{{block.hash}}</a></td>
+      </tr>
+      <tr>
+        <td>Previous Block</td>
+        <td><a href="/#!/block/{{block.previousblockhash}}">{{block.previousblockhash}}</a></td>
+      </tr>
+      <tr>
+        <td>Next Block(s)</td>
+        <td><a href="/#!/block/{{block.nextblockhash}}">{{block.nextblockhash}}</a></td>
+      </tr>
+      <tr>
+        <td>Merkle Root</td>
+        <td>{{block.merkleroot}}</td>
+      </tr>
+    </tbody>
+  </table>
+  
+  <h2>Transactions</h2>
+  <table class="table table-striped">
+    <thead>
+      <th>Hash</th>
+    </thead>
+    <tbody>
+      <tr data-ng-repeat="tx in block.tx">
+        <td><a href="/#!/tx/{{tx}}">{{tx}}</a></td>
       </tr>
     </tbody>
   </table>
