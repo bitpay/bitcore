@@ -3,7 +3,7 @@
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
 
-var TESTING_BLOCK = '0000000000b6288775bbd326bedf324ca8717a15191da58391535408205aada4';
+var TESTING_BLOCK = '000000000185678d3d7ecc9962c96418174431f93fe20bf216d5565272423f74';
 
 var 
   mongoose= require('mongoose'),
@@ -14,7 +14,7 @@ var
 
 mongoose.connection.on('error', function(err) { console.log(err); });
 
-describe('Block getInfo', function(){
+describe('Block fromHashWithInfo', function(){
 
   before(function(done) {
     mongoose.connect(config.db);
@@ -27,7 +27,9 @@ describe('Block getInfo', function(){
   });
 
   it('should poll block\'s info from mongoose', function(done) {
+console.log('asdasd');
     var block2 = Block.fromHashWithInfo(TESTING_BLOCK, function(err, b2) {
+console.log('333');
         if (err) done(err);
 
         assert.equal(b2.hash, TESTING_BLOCK);
@@ -39,7 +41,7 @@ describe('Block getInfo', function(){
     var block2 = Block.fromHashWithInfo(TESTING_BLOCK, function(err, b2) {
         if (err) done(err);
         assert.equal(b2.info.hash, TESTING_BLOCK);
-        assert.equal(b2.info.chainwork, '00000000000000000000000000000000000000000000000000446af21d50acd3');
+        assert.equal(b2.info.chainwork, '000000000000000000000000000000000000000000000000001b6dc969ffe847');
         done();
     });
   });

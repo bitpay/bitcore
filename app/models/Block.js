@@ -57,6 +57,7 @@ BlockSchema.statics.fromHash = function(hash, cb) {
 BlockSchema.statics.fromHashWithInfo = function(hash, cb) {
   this.fromHash(hash, function(err, block) {
     if (err) return cb(err);
+    if (!block) { return cb(new Error('Block not found')); }
 
     block.getInfo(function(err) { return cb(err,block); } );
   });
