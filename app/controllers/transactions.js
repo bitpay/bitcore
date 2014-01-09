@@ -15,10 +15,10 @@ var Transaction = require('../models/Transaction');
  * Find block by hash ...
  */
 exports.transaction = function(req, res, next, txid) {
-  Transaction.fromID(txid, function(err, tx) {
+  Transaction.fromIdWithInfo(txid, function(err, tx) {
     if (err) return next(err);
     if (!tx) return next(new Error('Failed to load TX ' + txid));
-    req.transaction = tx;
+    req.transaction = tx.info;
     next();
   });
 };
