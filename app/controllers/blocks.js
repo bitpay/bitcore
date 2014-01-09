@@ -51,7 +51,13 @@ exports.list = function(req, res) {
   var findParam = {};
 
   if (req.query.blockDate) {
-    findParam = {};
+    var gte = Math.round((new Date(req.query.blockDate)).getTime() / 1000);
+    var lte = gte + 86400;
+
+    findParam = { time: {
+      '$gte': gte,
+      '$lte': lte
+    }};
   }
 
   Block
@@ -67,3 +73,5 @@ exports.list = function(req, res) {
       }
     });
 };
+
+
