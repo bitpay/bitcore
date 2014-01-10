@@ -1,6 +1,5 @@
 'use strict';
 
-
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
 var fs = require('fs');
@@ -106,33 +105,32 @@ sync.init();
 function handle_tx(info) {
 	var tx = info.message.tx.getStandardizedObject();
 	console.log('Handle tx: ' + tx.hash);
-  sync.storeTxs([tx.hash], function(err) {
-    if (err) {
-      console.log('error in handle TX: '+err);
-    }
-  });
+	sync.storeTxs([tx.hash], function(err) {
+		if (err) {
+			console.log('error in handle TX: ' + err);
+		}
+	});
 }
 
 function handle_block(info) {
 	var block = info.message.block;
 	var now = Math.round(new Date().getTime() / 1000);
-  var blockHash = coinUtil.formatHashFull(block.calcHash());
-	console.log('Handle block: '+ blockHash);
+	var blockHash = coinUtil.formatHashFull(block.calcHash());
+	console.log('Handle block: ' + blockHash);
 	sync.storeBlock({
-      'hash': blockHash,
-      'time': now
+		'hash': blockHash,
+		'time': now
 	},
 	function(err) {
 		if (err) {
 			console.log('error in handle Block: ' + err);
 		} else {
-      var hashes = block.txs.map(function(tx) {
-        return coinUtil.formatHashFull(tx.hash);
-      });
-      sync.storeTxs(hashes, function(){});
-	}
-  });
-
+			var hashes = block.txs.map(function(tx) {
+				return coinUtil.formatHashFull(tx.hash);
+			});
+			sync.storeTxs(hashes, function() {});
+		}
+	});
 
 }
 

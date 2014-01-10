@@ -1,4 +1,4 @@
-#! /usr/bin / env node
+# ! /usr/bin / env node
 
 'use strict';
 
@@ -21,11 +21,10 @@ if (program.remove) {
 
 }
 
-
 async.series([
 function(cb) {
 	sync.init(program);
-  cb();
+	cb();
 },
 function(cb) {
 	sync.import_history(program, function(err) {
@@ -35,11 +34,11 @@ function(cb) {
 		else {
 			console.log('Done!');
 		}
-    cb();
+		cb();
 	});
 },
 function(cb) {
 	sync.close();
-  cb();
+	cb();
 }]);
 
