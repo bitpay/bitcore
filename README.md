@@ -106,7 +106,7 @@ There is a bitcoind configuration sample at:
 If you want to use a external bitcoind server set BITCOIND_HOST / BITCOIND_PORT enviroment variables. Make sure that bitcoind is configured to accept incomming connections using 'rpcallowip' decribed in https://en.bitcoin.it/wiki/Running_Bitcoin.
 
 
-### Environmental Settings
+### Environment Variables Settings
 
 There are three environments provided by default, __development__, __test__, and __production__. Each of these environments has the following configuration options:
 * __db__ - This is the name of the MongoDB database to use, and is set by default to __mystery-dev__ for the development environment.
