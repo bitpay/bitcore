@@ -46,10 +46,10 @@ TransactionSchema.statics.fromId = function(txid, cb) {
   }).exec(cb);
 };
 
+
 TransactionSchema.statics.fromIdWithInfo = function(txid, cb) {
 
   // TODO Should we go to mongoDB first? Now, no extra information is stored at mongo.
-
   this.fromId(txid, function(err, tx) {
     if (err) return cb(err);
 
