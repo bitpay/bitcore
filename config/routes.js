@@ -14,8 +14,6 @@ module.exports = function(app) {
   app.get('/api/block/:blockHash', blocks.show);
   app.param('blockHash', blocks.block);
 
-  app.get('/last_blocks', blocks.last_blocks);
-
   var transactions = require('../app/controllers/transactions');
   app.get('/api/tx/:txid', transactions.show);
 
