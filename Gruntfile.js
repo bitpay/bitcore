@@ -1,6 +1,16 @@
 'use strict';
 
 module.exports = function(grunt) {
+
+
+  //Load NPM tasks
+  grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-contrib-jshint');
+  grunt.loadNpmTasks('grunt-mocha-test');
+  grunt.loadNpmTasks('grunt-nodemon');
+  grunt.loadNpmTasks('grunt-concurrent');
+  grunt.loadNpmTasks('grunt-env');
+
   // Project Configuration
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -29,6 +39,11 @@ module.exports = function(grunt) {
         options: {
           livereload: true
         }
+      },
+      test: {
+        // we monitor only app/models/* because we have test for models only now
+        files: ['test/**/*.js', 'test/*.js','app/models/*.js'],
+        tasks: ['test'],
       }
     },
     jshint: {
@@ -43,7 +58,7 @@ module.exports = function(grunt) {
       options: {
         reporter: 'spec',
       },
-      src: ['test/*.js']
+      src: ['test/**/*.js'],
     },
 
     nodemon: {
@@ -51,9 +66,9 @@ module.exports = function(grunt) {
         options: {
           file: 'server.js',
           args: [],
-          ignoredFiles: ['public/**'],
+          ignoredFiles: ['public/**', 'test/**'],
           watchedExtensions: ['js'],
-          nodeArgs: ['--debug'],
+          // nodeArgs: ['--debug'],
           delayTime: 1,
           env: {
             PORT: 3000
@@ -74,14 +89,6 @@ module.exports = function(grunt) {
       }
     }
   });
-
-  //Load NPM tasks
-  grunt.loadNpmTasks('grunt-contrib-watch');
-  grunt.loadNpmTasks('grunt-contrib-jshint');
-  grunt.loadNpmTasks('grunt-mocha-test');
-  grunt.loadNpmTasks('grunt-nodemon');
-  grunt.loadNpmTasks('grunt-concurrent');
-  grunt.loadNpmTasks('grunt-env');
 
   //Making grunt default to force in order not to break the project.
   grunt.option('force', true);

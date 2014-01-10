@@ -26,16 +26,16 @@ describe('Block fromHashWithInfo', function(){
     done();
   });
 
+
   it('should poll block\'s info from mongoose', function(done) {
-console.log('asdasd');
     var block2 = Block.fromHashWithInfo(TESTING_BLOCK, function(err, b2) {
-console.log('333');
         if (err) done(err);
 
         assert.equal(b2.hash, TESTING_BLOCK);
         done();
       });
   });
+
 
   it('should poll block\'s info from bitcoind', function(done) {
     var block2 = Block.fromHashWithInfo(TESTING_BLOCK, function(err, b2) {
