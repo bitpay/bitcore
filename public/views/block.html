@@ -2,72 +2,113 @@
   <div class="page-header">
     <h1 data-ng-if="block">Block #{{ block.height }}</h1>
   </div>
-  
-  <h2>Summary</h2>
-  <dl class="dl-horizontal">
-    <dt>Number Of Transactions</dt>
-    <dd>--</dd>
-    <dt>Output Total</dt>
-    <dd>--</dd>
-    <dt>Estimated Transaction Volume</dt>
-    <dd>--</dd>
-    <dt>Transaction Fees</dt>
-    <dd>--</dd>
-    <dt>Height</dt>
-    <dd>{{block.height}}</dd>
-    <dt>Timestamp</dt>
-    <dd>{{block.time}}</dd>
-    <dt>Received Time</dt>
-    <dd>{{block.time}}</dd>
-    <dt>Relayed By</dt>
-    <dd>--</dd>
-    <dt>Difficulty</dt>
-    <dd>{{block.difficulty}}</dd>
-    <dt>Bits</dt>
-    <dd>{{block.bits}}</dd>
-    <dt>Size</dt>
-    <dd>{{block.size}}</dd>
-    <dt>Version</dt>
-    <dd>{{block.version}}</dd>
-    <dt>Nonce</dt>
-    <dd>{{block.nonce}}</dd>
-  </dl>
-  
-  <h2>Hashes</h2>
-  <table class="table table-striped">
-    <thead>
-      <th>Hashes</th>
-      <th>&nbsp;</th>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Hash</td>
-        <td><a href="/#!/block/{{block.hash}}">{{block.hash}}</a></td>
-      </tr>
-      <tr>
-        <td>Previous Block</td>
-        <td><a href="/#!/block/{{block.previousblockhash}}">{{block.previousblockhash}}</a></td>
-      </tr>
-      <tr>
-        <td>Next Block(s)</td>
-        <td><a href="/#!/block/{{block.nextblockhash}}">{{block.nextblockhash}}</a></td>
-      </tr>
-      <tr>
-        <td>Merkle Root</td>
-        <td>{{block.merkleroot}}</td>
-      </tr>
-    </tbody>
-  </table>
-  
-  <h2>Transactions</h2>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">Summary</h3>
+        </div>
+        <div class="panel-body">
+          <table class="table table-striped">
+            <tbody>
+            <tr>
+              <td>Number Of Transactions</td>
+              <td>--</td>
+            </tr>
+            <tr>
+              <td>Output Total</td>
+              <td>--</td>
+            </tr>
+            <tr>
+              <td>Estimated Transaction Volume</td>
+              <td>--</td>
+            </tr>
+            <tr>
+              <td>Transaction Fees</td>
+              <td>--</td>
+            </tr>
+            <tr>
+              <td>Height</td>
+              <td>{{block.height}}</td>
+            </tr>
+            <tr>
+              <td>Timestamp</td>
+              <td>{{block.time * 1000 | date:'medium'}}</td>
+            </tr>
+            <tr>
+              <td>Received Time</td>
+              <td>--<td>
+            </tr>
+            <tr>
+              <td>Relayed By</td>
+              <td>--</td>
+            </tr>
+            <tr>
+              <td>Difficulty</td>
+              <td>{{block.difficulty}}</td>
+            </tr>
+            <tr>
+              <td>Bits</td>
+              <td>{{block.bits}}</td>
+            </tr>
+            <tr>
+              <td>Size</td>
+              <td>{{block.size}}</td>
+            </tr>
+            <tr>
+              <td>Version</td>
+              <td>{{block.version}}</td>
+            </tr>
+            <tr>
+              <td>Nonce</td>
+              <td>{{block.nonce}}</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="panel panel-default" data-ng-show="!tx.isCoinBase">
+        <div class="panel-heading">
+          <h3 class="panel-title">Hashes</h3>
+        </div>
+        <div class="panel-body">
+          <table class="table table-striped">
+            <tbody>
+            <tr>
+              <td>Hash</td>
+              <td><a class="address" href="/#!/block/{{block.hash}}">{{block.hash}}</a></td>
+            </tr>
+            <tr>
+              <td>Previous Block</td>
+              <td><a class="address" href="/#!/block/{{block.previousblockhash}}">{{block.previousblockhash}}</a></td>
+            </tr>
+            <tr>
+              <td>Next Block</td>
+              <td><a class="address" href="/#!/block/{{block.nextblockhash}}">{{block.nextblockhash}}</a></td>
+            </tr>
+            <tr>
+              <td>Merkle Root</td>
+              <td class="address">{{block.merkleroot}}</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Transactions <small>Transactions contained within this block</small></h2>
   <table class="table table-striped">
     <thead>
       <th>Hash</th>
     </thead>
     <tbody>
-      <tr data-ng-repeat="tx in block.tx">
-        <td><a href="/#!/tx/{{tx}}">{{tx}}</a></td>
-      </tr>
+    <tr data-ng-repeat="tx in block.tx">
+      <td><a href="/#!/tx/{{tx}}">{{tx}}</a></td>
+    </tr>
     </tbody>
   </table>
 </section>
