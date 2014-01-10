@@ -1,11 +1,14 @@
 <section data-ng-controller="transactionsController" data-ng-init="findOne()">
   <div class="page-header">
     <h1>
-      <span class="glyphicon glyphicon-transfer">&nbsp;</span> 
-      <a href="/#!/tx/{{tx.txid}}" title="{{tx.txid}}">Transaction</a> 
+      Transaction 
       <small>View information about a bitcoin transaction</small>
     </h1>
   </div>
+
+  <div class="well well-sm">
+    {{tx.txid}} 
+  </div>  
 
   <table class="table table-striped">
     <thead>
