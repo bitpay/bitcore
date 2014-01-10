@@ -11,9 +11,9 @@ var mongoose    = require('mongoose'),
     Address     = require('bitcore/Address').class(),
     networks    = require('bitcore/networks'),
     util        = require('bitcore/util/util'),
-    bignum      = require('BigNum'),
+    bignum      = require('bignum'),
     config      = require('../../config/config');
-    
+
 
 /**
  */
@@ -48,7 +48,7 @@ TransactionSchema.statics.fromId = function(txid, cb) {
 TransactionSchema.statics.fromIdWithInfo = function(txid, cb) {
 
   // TODO Should we go to mongoDB first? Now, no extra information is stored at mongo.
-  
+
   this.fromId(txid, function(err, tx) {
     if (err) return cb(err);
 

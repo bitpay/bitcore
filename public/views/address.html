@@ -1,0 +1,60 @@
+<section data-ng-controller="AddressController">
+  <div class="page-header">
+    <h1>
+      Address
+      <small>{{address}}</small>
+    </h1>
+  </div>
+  <div class="col-lg-9">
+    <table class="table table-striped">
+      <tbody>
+        <tr>
+          <td>Address</td>
+          <td><a href="#!/address/{{address}}">{{address}}</a></td>
+        </tr>
+        <tr>
+          <td>Hash160</td>
+          <td><a href="#!/address/{{hash160}}">{{hash160}}</a></td>
+        </tr>
+        <tr>
+          <td>Total Output</td>
+          <td>1 BTC</td>
+        </tr>
+        <tr>
+          <td>Total Input</td>
+          <td>0.2 BTC</td>
+        </tr>
+        <tr>
+          <td>Current balance</td>
+          <td>10.2 BTC</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="col-lg-3">
+    <qrcode size="200" data="{{address}}"></qrcode>
+  </div>
+  <div class="col-lg-12">
+    <h3>
+      Transactions
+      <small>transactions this address relates to</small>
+    </h3>
+
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Transaction Hash</th>
+          <th>Datetime</th>
+          <th>Transacted amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr data-ng-repeat="transaction in transactions">
+          <td><a href="#!/tx/{{transaction.hash}}">{{transaction.hash}}</a></td>
+          <td>{{transaction.time | date:'medium'}}</td>
+          <td>{{transaction.amount}} BTC</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

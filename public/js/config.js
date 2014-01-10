@@ -19,6 +19,9 @@ angular.module('mystery').config(['$routeProvider',
     when('/blocks-date/:blockDate', {
       templateUrl: 'views/blocks/list.html'
     }).
+    when('/address/:address', {
+      templateUrl: 'views/address.html'
+    }).
     otherwise({
       redirectTo: '/'
     });
