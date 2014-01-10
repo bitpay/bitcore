@@ -45,25 +45,33 @@ $ npm install -g bower
 
     http://localhost:3000
 
-
-
-
-
-## Prerequisites
-  Get bitcore from github repository:
-    $ git clone https://github.com/bitpay/bitcore.git
-    $ cd bitcore
-    $ npm install
-    
-  Run sync from mystery repository:
-    $ utils/sync.js
-
-check utils/sync.js --help for options.
-
-  
 ## API
 
 A REST API is provided at /api. The entry points are:
+
+### Prerequisites
+  Get bitcore from github repository:
+    
+    $ git clone https://github.com/bitpay/bitcore.git
+    
+    $ cd bitcore
+    
+    $ npm install
+
+  Then create a symbolic link from this to your mystery repository. We need to
+  use bitcore from github, not with npm for now:
+
+    $ cd mystery/node_modules
+
+    $ rm -R bitcore
+
+    $ ln -s <path-to-your-clone-repositoy>/bitcore
+    
+  Run sync from mystery repository (to save blocks in MongoDB):
+    
+    $ utils/sync.js
+
+  Check utils/sync.js --help for options.
 
 ### Blocks
 ```
