@@ -171,11 +171,14 @@ TransactionSchema.methods.queryInfo = function (next) {
 
           var scriptSig     = i.getScript();
           var pubKey        = scriptSig.simpleInPubKey();
-          var pubKeyHash    = util.sha256ripe160(pubKey);
-          var addr          = new Address(network.addressPubkey, pubKeyHash);
-          var addrStr       = addr.toString();
 
-          that.info.vin[c].addr  = addrStr;
+          // We check for pubKey in case a broken / strange TX.
+          if (pubKey) {
+            var pubKeyHash    = util.sha256ripe160(pubKey);
+            var addr          = new Address(network.addressPubkey, pubKeyHash);
+            var addrStr       = addr.toString();
+            that.info.vin[c].addr  = addrStr;
+          }
 
           c++;
         });
