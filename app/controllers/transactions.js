@@ -16,7 +16,12 @@ var Transaction = require('../models/Transaction');
  */
 exports.transaction = function(req, res, next, txid) {
   Transaction.fromIdWithInfo(txid, function(err, tx) {
-    if (err) return next(err);
+    if (err) {
+      console.log(err);
+      res.status(404).send('Not found');
+      return next();
+    }
+
     if (!tx) return next(new Error('Failed to load TX ' + txid));
     req.transaction = tx.info;
     next();
@@ -25,9 +30,11 @@ exports.transaction = function(req, res, next, txid) {
 
 
 /**
- * Show block 
  */
 exports.show = function(req, res) {
-  res.jsonp(req.transaction);
+
+  if (req.transaction) {
+    res.jsonp(req.transaction);
+  }
 };
 

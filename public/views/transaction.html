@@ -1,0 +1,104 @@
+<section data-ng-controller="transactionsController" data-ng-init="findOne()">
+  <div class="page-header">
+    <h1>
+      Transaction 
+      <small>View information about a bitcoin transaction</small>
+    </h1>
+  </div>
+
+  <div class="well well-sm">
+    {{tx.txid}} 
+  </div>  
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Input</th>
+        <th>&nbsp;</th>
+        <th>Output</th>
+      </tr>
+    </thead>
+    <tbody>
+    <tr>
+      <td width="45%"> 
+        <ul class="list-unstyled" data-ng-repeat="vin in tx.vin" data-ng-show="!tx.isCoinBase">
+          <li><a href="/#!/address/{{vin.addr}}">{{vin.addr}}</a>  <span class="pull-right badge">{{vin.value}} BTC</span></li>
+        </ul>
+        <div data-ng-show="tx.isCoinBase">
+          No Inputs (Newly Generated isCoinBasens)
+        </div>
+      </td>
+      <td width="10%" style="text-align: center;"><span class="glyphicon glyphicon-chevron-right">&nbsp;</span></td>
+      <td width="45%">
+        <div data-ng-repeat="vout in tx.vout">
+          <ul class="list-unstyled" data-ng-repeat="addr in vout.scriptPubKey.addresses">
+            <li><a href="/#!/address/{{addr}}">{{addr}}</a> <span class="pull-right badge">{{vout.value}} BTC</span></li>
+          </ul>
+        </div>
+      </td>
+    </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3" style="text-align: right;">
+          <button type="button" class="btn btn-primary">{{tx.confirmations}} Confirmations</button> 
+          <button type="button" class="btn btn-success">{{tx.valueOut}} BTC</button>
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">Summary</h3>
+        </div>
+        <div class="panel-body">
+          <table class="table table-striped">
+            <tbody>
+            <tr>
+              <td>Size</td>
+              <td>{{tx.size}} (bytes)</td>
+            </tr>
+            <tr>
+              <td>Received Time</td>
+              <td>{{tx.time * 1000|date:'medium'}}</td>
+            </tr>
+            <tr>
+              <td>Reward From Block</td>
+              <td><a href="/#!/block/{{tx.blockhash}}">Need height to show (it links to block page)</a></td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="panel panel-default" data-ng-show="!tx.isCoinBase">
+        <div class="panel-heading">
+          <h3 class="panel-title">Inputs and Outputs</h3>
+        </div>
+        <div class="panel-body">
+          <table class="table table-striped">
+            <tbody>
+            <tr>
+              <td>Total Input</td>
+              <td>{{tx.valueIn}} BTC</td>
+            </tr>
+            <tr>
+              <td>Total Output</td>
+              <td>{{tx.valueOut}} BTC</td>
+            </tr>
+            <tr>
+              <td>Fees</td>
+              <td>{{tx.feeds}} BTC</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+

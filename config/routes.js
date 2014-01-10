@@ -9,12 +9,13 @@ module.exports = function(app) {
   //Block routes
   var blocks = require('../app/controllers/blocks');
   app.get('/api/blocks', blocks.list);
+
+
   app.get('/api/block/:blockHash', blocks.show);
   app.param('blockHash', blocks.block);
-  app.get('/last_blocks', blocks.last_blocks);
 
   var transactions = require('../app/controllers/transactions');
-  app.get('/tx/:txid', transactions.show);
+  app.get('/api/tx/:txid', transactions.show);
 
   app.param('txid', transactions.transaction);
 

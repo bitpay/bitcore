@@ -7,6 +7,9 @@ angular.module('mystery').config(['$routeProvider',
     when('/block/:blockHash', {
       templateUrl: 'views/block.html'
     }).
+    when('/tx/:txId', {
+      templateUrl: 'views/transaction.html'
+    }).
     when('/', {
       templateUrl: 'views/index.html'
     }).
@@ -14,7 +17,10 @@ angular.module('mystery').config(['$routeProvider',
       templateUrl: 'views/blocks/list.html'
     }).
     when('/blocks-date/:blockDate', {
-      templateUrl: 'views/blocks/list_date.html'
+      templateUrl: 'views/blocks/list.html'
+    }).
+    when('/address/:address', {
+      templateUrl: 'views/address.html'
     }).
     otherwise({
       redirectTo: '/'

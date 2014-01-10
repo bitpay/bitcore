@@ -1,23 +1,114 @@
 <section data-ng-controller="BlocksController" data-ng-init="findOne()">
   <div class="page-header">
-    <h1>Block Page</h1>
+    <h1 data-ng-if="block">Block #{{ block.height }}</h1>
   </div>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">Summary</h3>
+        </div>
+        <div class="panel-body">
+          <table class="table table-striped">
+            <tbody>
+            <tr>
+              <td>Number Of Transactions</td>
+              <td>--</td>
+            </tr>
+            <tr>
+              <td>Output Total</td>
+              <td>--</td>
+            </tr>
+            <tr>
+              <td>Estimated Transaction Volume</td>
+              <td>--</td>
+            </tr>
+            <tr>
+              <td>Transaction Fees</td>
+              <td>--</td>
+            </tr>
+            <tr>
+              <td>Height</td>
+              <td>{{block.height}}</td>
+            </tr>
+            <tr>
+              <td>Timestamp</td>
+              <td>{{block.time * 1000 | date:'medium'}}</td>
+            </tr>
+            <tr>
+              <td>Received Time</td>
+              <td>--<td>
+            </tr>
+            <tr>
+              <td>Relayed By</td>
+              <td>--</td>
+            </tr>
+            <tr>
+              <td>Difficulty</td>
+              <td>{{block.difficulty}}</td>
+            </tr>
+            <tr>
+              <td>Bits</td>
+              <td>{{block.bits}}</td>
+            </tr>
+            <tr>
+              <td>Size</td>
+              <td>{{block.size}}</td>
+            </tr>
+            <tr>
+              <td>Version</td>
+              <td>{{block.version}}</td>
+            </tr>
+            <tr>
+              <td>Nonce</td>
+              <td>{{block.nonce}}</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="panel panel-default" data-ng-show="!tx.isCoinBase">
+        <div class="panel-heading">
+          <h3 class="panel-title">Hashes</h3>
+        </div>
+        <div class="panel-body">
+          <table class="table table-striped">
+            <tbody>
+            <tr>
+              <td>Hash</td>
+              <td><a class="address" href="/#!/block/{{block.hash}}">{{block.hash}}</a></td>
+            </tr>
+            <tr>
+              <td>Previous Block</td>
+              <td><a class="address" href="/#!/block/{{block.previousblockhash}}">{{block.previousblockhash}}</a></td>
+            </tr>
+            <tr>
+              <td>Next Block</td>
+              <td><a class="address" href="/#!/block/{{block.nextblockhash}}">{{block.nextblockhash}}</a></td>
+            </tr>
+            <tr>
+              <td>Merkle Root</td>
+              <td class="address">{{block.merkleroot}}</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Transactions <small>Transactions contained within this block</small></h2>
   <table class="table table-striped">
     <thead>
-      <th>Height</th>
-      <th>Age</th>
-      <th>Transactions</th>
-      <th>Confirmations</th>
-      <th>Size (kB)</th>
+      <th>Hash</th>
     </thead>
     <tbody>
-      <tr>
-        <td>{{block.height}}</td>
-        <td>{{block.time | date:'short'}}</td>
-        <td>{{block.tx.length }}</td>
-        <td>{{block.confirmations}}</td>
-        <td>{{block.size / 1024}}</td>
-      </tr>
+    <tr data-ng-repeat="tx in block.tx">
+      <td><a href="/#!/tx/{{tx}}">{{tx}}</a></td>
+    </tr>
     </tbody>
   </table>
 </section>

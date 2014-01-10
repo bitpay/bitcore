@@ -1,23 +1,8 @@
 <section data-ng-controller="IndexController" data-ng-init="last_blocks()">
-  <div class="page-header">
-    <h1>Hello BitPay!</h1>
+  <div class="jumbotron">
+    <h1>Hello, BitPay!</h1>
+    <p>Start here for blocks information</p>
+    <p><a href="/#!/blocks" class="btn btn-primary btn-lg">List all blocks</a></p>
   </div>
-  <table class="table table-striped">
-    <thead>
-      <th>Height</th>
-      <th>Age</th>
-      <th>Transactions</th>
-      <th>Confirmations</th>
-      <th>Size (kB)</th>
-    </thead>
-    <tbody>
-      <tr data-ng-repeat="block in blocks">
-        <td><a href="#!/block/{{block.hash}}">{{block.height}}</a></td>
-        <td>{{block.time | date:'short'}}</td>
-        <td>{{block.tx.length }}</td>
-        <td>{{block.confirmations}}</td>
-        <td>{{block.size / 1024}}</td>
-      </tr>
-    </tbody>
-  </table>
 </section>
+
