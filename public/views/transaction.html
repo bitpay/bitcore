@@ -22,7 +22,11 @@
     <tr>
       <td width="45%"> 
         <ul class="list-unstyled" data-ng-repeat="vin in tx.vin" data-ng-show="!tx.isCoinBase">
-          <li><a href="/#!/address/{{vin.addr}}">{{vin.addr}}</a>  <span class="pull-right badge">{{vin.value}} BTC</span></li>
+          <li>
+            <span data-ng-show="!vin.addr">No parse address</span>  
+            <a data-ng-show="vin.addr" href="/#!/address/{{vin.addr}}">{{vin.addr}}</a>  
+            <span class="pull-right badge">{{vin.value}} BTC</span>
+          </li>
         </ul>
         <div data-ng-show="tx.isCoinBase">
           No Inputs (Newly Generated isCoinBasens)
@@ -30,11 +34,18 @@
       </td>
       <td width="10%" style="text-align: center;"><span class="glyphicon glyphicon-chevron-right">&nbsp;</span></td>
       <td width="45%">
-        <div data-ng-repeat="vout in tx.vout">
-          <ul class="list-unstyled" data-ng-repeat="addr in vout.scriptPubKey.addresses">
-            <li><a href="/#!/address/{{addr}}">{{addr}}</a> <span class="pull-right badge">{{vout.value}} BTC</span></li>
-          </ul>
-        </div>
+        <table class="table table-condensed">
+          <tbody>
+          <tr data-ng-repeat="vout in tx.vout">
+            <td><b>{{vout.scriptPubKey.type}}</b></td>
+            <td>
+              <ul class="list-unstyled" data-ng-repeat="addr in vout.scriptPubKey.addresses">
+                <li><a href="/#!/address/{{addr}}">{{addr}}</a> <span class="pull-right badge">{{vout.value}} BTC</span></li>
+              </ul>
+            </td>
+          </tr>
+          </tbody>
+        </table>
       </td>
     </tr>
     </tbody>
