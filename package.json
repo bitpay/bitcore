@@ -11,7 +11,12 @@
     {
       "name": "Matias Alejo Garcia",
       "email": "ematiu@gmail.com"
+    },
+    {
+      "name": "Manuel Araoz",
+      "email": "manuelaraoz@gmail.com"
     }
+  
   ],
   "bugs": {
     "url": "https://github.com/bitpay/mystery/issues"

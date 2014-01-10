@@ -5,7 +5,6 @@
  */
 var mongoose    = require('mongoose'),
     Schema      = mongoose.Schema,
-    async       = require('async'),
     RpcClient   = require('bitcore/RpcClient').class(),
     config      = require('../../config/config')
     ;
@@ -23,6 +22,7 @@ var BlockSchema = new Schema({
     index: true,
     unique: true,
   },
+  time: Number,
 });
 
 

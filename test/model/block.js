@@ -11,31 +11,37 @@ var
   config      = require('../../config/config'),
   Block       = require('../../app/models/Block');
 
-mongoose.connect(config.db);
 
-var db    = mongoose.connection;
+mongoose.connection.on('error', function(err) { console.log(err); });
 
-describe('getInfo', function(){
+describe('Block getInfo', function(){
 
-  var block_hash  = TESTING_BLOCK;
+  before(function(done) {
+    mongoose.connect(config.db);
+    done();
+  });
 
+  after(function(done) {
+    mongoose.connection.close();
+    done();
+  });
 
-  db.on('error', console.error.bind(console, 'connection error:'));
+  it('should poll block\'s info from mongoose', function(done) {
+    var block2 = Block.fromHashWithInfo(TESTING_BLOCK, function(err, b2) {
+        if (err) done(err);
 
-  db.once('open', function (){
+        assert.equal(b2.hash, TESTING_BLOCK);
+        done();
+      });
+  });
 
-
-    var block2 = Block.fromHashWithInfo(block_hash, function(err, b2) {
-      if (err) done(err);
-
-      console.log("Block obj:");
-      console.log(b2);
-      console.log("Block.info:");
-      console.log(b2.info);
-      db.close();
-      done();
+  it('should poll block\'s info from bitcoind', function(done) {
+    var block2 = Block.fromHashWithInfo(TESTING_BLOCK, function(err, b2) {
+        if (err) done(err);
+        assert.equal(b2.info.hash, TESTING_BLOCK);
+        assert.equal(b2.info.chainwork, '00000000000000000000000000000000000000000000000000446af21d50acd3');
+        done();
     });
-
   });
 });
 
