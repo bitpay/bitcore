@@ -1,3 +1,4 @@
+#! /usr/bin/env node
 'use strict';
 
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
@@ -9,21 +10,30 @@ var CoinConst = require('bitcore/const');
 var coinUtil = require('bitcore/util/util');
 var networks = require('bitcore/networks');
 var Parser = require('bitcore/util/BinaryParser').class();
-var async = require('async');
 var Sync = require('./lib/Sync').class();
+var Peer = require('bitcore/Peer').class();
 
 var peerdb_fn = 'peerdb.json';
-
 var peerdb = undefined;
-var hdrdb = undefined;
-var network = networks.testnet;
-var config = {
-  network: network.name
-};
-var PeerManager = require('bitcore/PeerManager').createClass({
-  config: config
+
+var PROGRAM_VERSION = '0.1';
+var program = require('commander');
+
+program
+  .version(PROGRAM_VERSION)
+  .option('-N --network [testnet]', 'Set bitcoin network [testnet]', 'testnet')
+  .parse(process.argv);
+
+var sync = new Sync({
+  networkName: program.network
 });
-var Peer = require('bitcore/Peer').class();
+sync.init();
+
+var PeerManager = require('bitcore/PeerManager').createClass({
+  config: {
+    network: program.network
+  }
+});
 
 function peerdb_load() {
   try {
@@ -40,74 +50,23 @@ function peerdb_load() {
   }
 }
 
-function hdrdb_load() {
-  hdrdb = new HeaderDB({
-    network: network
-  });
-}
-
-function get_more_headers(info) {
-  var conn = info.conn;
-  var loc = hdrdb.locator();
-  conn.sendGetHeaders(loc, coinUtil.NULL_HASH);
-}
-
-function add_header(info, block) {
-  var hashStr = coinUtil.formatHashFull(block.calcHash());
-
-  try {
-    hdrdb.add(block);
-  } catch(e) {
-    return;
-  }
-}
-
-function handle_headers(info) {
-  console.log('handle headers');
-  var headers = info.message.headers;
-
-  headers.forEach(function(hdr) {
-    add_header(info, hdr);
-  });
-
-  // We persist the header DB after each batch
-  //hdrdb.writeFile(hdrdb_fn);
-  // Only one request per batch of headers we receive.
-  get_more_headers(info);
-}
-
-function handle_verack(info) {
-  var inv = {
-    type: CoinConst.MSG.BLOCK,
-    hash: network.genesisBlock.hash,
-  };
-  var invs = [inv];
-
-  // Asks for the genesis block
-  // console.log('p2psync: Asking for the genesis block');
-  // info.conn.sendGetData(invs);
-}
-
 function handle_inv(info) {
   // TODO: should limit the invs to objects we haven't seen yet
   var invs = info.message.invs;
   invs.forEach(function(inv) {
     console.log('Handle inv for a ' + CoinConst.MSG.to_str(inv.type));
   });
+  // this is not needed right now, but it's left in case
+  // we need to store more info in the future
   info.conn.sendGetData(invs);
 }
-
-var sync = new Sync({
-  networkName: networks.testnet
-});
-sync.init();
 
 function handle_tx(info) {
   var tx = info.message.tx.getStandardizedObject();
   console.log('Handle tx: ' + tx.hash);
   sync.storeTxs([tx.hash], function(err) {
     if (err) {
-      console.log('error in handle TX: ' + err);
+      console.log('Error in handle TX: ' + err);
     }
   });
 }
@@ -123,8 +82,9 @@ function handle_block(info) {
   },
   function(err) {
     if (err) {
-      console.log('error in handle Block: ' + err);
+      console.log('Error in handle Block: ' + err);
     } else {
+      // if no errors importing block, import the transactions
       var hashes = block.txs.map(function(tx) {
         return coinUtil.formatHashFull(tx.hash);
       });
@@ -149,10 +109,8 @@ function p2psync() {
   });
 
   peerman.on('connection', function(conn) {
-    conn.on('verack', handle_verack);
-    conn.on('block', handle_block);
-    conn.on('headers', handle_headers);
     conn.on('inv', handle_inv);
+    conn.on('block', handle_block);
     conn.on('tx', handle_tx);
   });
   peerman.on('connect', handle_connected);
@@ -162,8 +120,6 @@ function p2psync() {
 
 function main() {
   peerdb_load();
-  hdrdb_load();
-
   p2psync();
 }
 
