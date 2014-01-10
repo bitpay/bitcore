@@ -165,7 +165,8 @@ function spec(b) {
   };
 
   Transaction.prototype.calcHash = function calcHash() {
-    return util.twoSha256(this.getBuffer());
+    this.hash =  util.twoSha256(this.getBuffer());
+    return this.hash;
   };
 
   Transaction.prototype.checkHash = function checkHash() {
@@ -623,6 +624,7 @@ function spec(b) {
     }
 
     this.lock_time = parser.word32le();
+    this.calcHash();
   };
 
   var TransactionInputsCache = exports.TransactionInputsCache =
