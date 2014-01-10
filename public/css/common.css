@@ -40,6 +40,11 @@ body {
   padding-right: 15px;
 }
 
-code {
+.code {
   font-size: 80%;
 }
+
+.address {
+  font-size: 10px;
+}
+
