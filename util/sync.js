@@ -11,7 +11,14 @@ var program = require('commander');
 var Sync = require('../lib/Sync').class();
 var async = require('async');
 
-program.version(SYNC_VERSION).option('-N --network [livenet]', 'Set bitcoin network [testnet]', 'testnet').option('-R --reindex', 'Force reindexing', '0').option('-D --destroy', 'Remove current DB', '0').option('--skip_blocks', 'Sync blocks').option('--skip_txs', 'Sync transactions').parse(process.argv);
+program
+  .version(SYNC_VERSION)
+  .option('-N --network [livenet]', 'Set bitcoin network [testnet]', 'testnet')
+  .option('-R --reindex', 'Force reindexing', '0')
+  .option('-D --destroy', 'Remove current DB', '0')
+  .option('--skip_blocks', 'Sync blocks')
+  .option('--skip_txs', 'Sync transactions')
+  .parse(process.argv);
 
 var sync = new Sync({
   networkName: program.network
