@@ -45,10 +45,6 @@ $ npm install -g bower
 
     http://localhost:3000
 
-## API
-
-A REST API is provided at /api. The entry points are:
-
 ### Prerequisites
   Get bitcore from github repository:
     
@@ -72,6 +68,12 @@ A REST API is provided at /api. The entry points are:
     $ utils/sync.js
 
   Check utils/sync.js --help for options.
+
+
+## API
+
+A REST API is provided at /api. The entry points are:
+
 
 ### Blocks
 ```
