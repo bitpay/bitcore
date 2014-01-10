@@ -36,7 +36,6 @@ describe('Block fromHashWithInfo', function(){
       });
   });
 
-
   it('should poll block\'s info from bitcoind', function(done) {
     var block2 = Block.fromHashWithInfo(TESTING_BLOCK, function(err, b2) {
         if (err) done(err);

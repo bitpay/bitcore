@@ -3,6 +3,7 @@
 /**
  * Module dependencies.
  */
+    
 var mongoose    = require('mongoose'),
     Schema      = mongoose.Schema,
     async       = require('async'),
@@ -59,31 +60,20 @@ TransactionSchema.statics.fromIdWithInfo = function(txid, cb) {
 };
 
 TransactionSchema.statics.createFromArray = function(txs, next) {
-
   var that = this;
-
   if (!txs) return next();
-
-//  console.log('exploding ', txs);
 
   async.forEach( txs,
     function(tx, callback) {
-      // console.log('procesing TX %s', tx);
       that.create({ txid: tx }, function(err) {
         if (err && ! err.toString().match(/E11000/)) {
-          return callback();
-        }
-        if (err) {
-
           return callback(err);
         }
         return callback();
-
       });
     },
     function(err) {
-      if (err) return next(err);
-      return next();
+      return next(err);
     }
   );
 };
