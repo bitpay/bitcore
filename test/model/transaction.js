@@ -49,7 +49,7 @@ describe('Transaction fromIdWithInfo', function(){
     });
   });
 
-  it('test a coinbase TX', function(done) {
+  it('test a coinbase TX 2a104bab1782e9b6445583296d4a0ecc8af304e4769ceb64b890e8219c562399', function(done) {
     var test_txid2 = '2a104bab1782e9b6445583296d4a0ecc8af304e4769ceb64b890e8219c562399';
     Transaction.fromIdWithInfo(test_txid2, function(err, tx) {
       if (err) done(err);
@@ -59,6 +59,18 @@ describe('Transaction fromIdWithInfo', function(){
       done();
     });
   });
+
+
+  it('test a broken TX 64496d005faee77ac5a18866f50af6b8dd1f60107d6795df34c402747af98608', function(done) {
+    var test_txid2 = '64496d005faee77ac5a18866f50af6b8dd1f60107d6795df34c402747af98608';
+    Transaction.fromIdWithInfo(test_txid2, function(err, tx) {
+      if (err) done(err);
+      assert.equal(tx.info.txid, test_txid2);
+      assert.equal(tx.info.vin[0].addr, null);
+      done();
+    });
+  });
+ 
  
 });
 
