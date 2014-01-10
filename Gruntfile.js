@@ -66,7 +66,7 @@ module.exports = function(grunt) {
         options: {
           file: 'server.js',
           args: [],
-          ignoredFiles: ['public/**', 'test/**','util/**'],
+          ignoredFiles: ['public/**', 'test/**','util/**','lib/**'],
           watchedExtensions: ['js'],
           // nodeArgs: ['--debug'],
           delayTime: 1,
