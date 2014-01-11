@@ -27,6 +27,14 @@ var TransactionSchema = new Schema({
     index: true,
     unique: true,
   },
+  processed: {
+    type: Boolean,
+    default: false,
+  },
+  orphaned: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 /**
@@ -154,22 +162,26 @@ TransactionSchema.methods.queryInfo = function (next) {
       }
       else {
         tx.ins.forEach(function(i) {
+  
+          if (i.value) {
+            that.info.vin[c].value = util.formatValue(i.value);
+            var n = util.valueToBigInt(i.value).toNumber();
+            valueIn           = valueIn.add( n );
 
-          that.info.vin[c].value = util.formatValue(i.value);
-          var n = util.valueToBigInt(i.value).toNumber();
-          valueIn           = valueIn.add( n );
+            var scriptSig     = i.getScript();
+            var pubKey        = scriptSig.simpleInPubKey();
 
-          var scriptSig     = i.getScript();
-          var pubKey        = scriptSig.simpleInPubKey();
-
-          // We check for pubKey in case a broken / strange TX.
-          if (pubKey) {
-            var pubKeyHash    = util.sha256ripe160(pubKey);
-            var addr          = new Address(network.addressPubkey, pubKeyHash);
-            var addrStr       = addr.toString();
-            that.info.vin[c].addr  = addrStr;
+            // We check for pubKey in case a broken / strange TX.
+            if (pubKey) {
+              var pubKeyHash    = util.sha256ripe160(pubKey);
+              var addr          = new Address(network.addressPubkey, pubKeyHash);
+              var addrStr       = addr.toString();
+              that.info.vin[c].addr  = addrStr;
+            }
           }
-
+          else {
+            console.log("TX could not be parsed: %s,%d",txInfo.result.txid, c); 
+          }
           c++;
         });
       }
