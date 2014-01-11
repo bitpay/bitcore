@@ -3,6 +3,7 @@ require('classtool');
 function spec(b) {
   var config = b.config || require('./config');
   var log = b.log || require('./util/log');
+  var Address = b.Address || require('./Address').class();
   var Script = b.Script || require('./Script').class();
   var ScriptInterpreter = b.ScriptInterpreter || require('./ScriptInterpreter').class();
   var util = b.util || require('./util/util');
@@ -590,6 +591,50 @@ function spec(b) {
   Transaction.prototype.toObject = function toObject() {
     return this;
   };
+
+  Transaction.prototype.fromObj = function fromObj(obj) {
+    var txobj = {};
+    txobj.version = obj.version || 1;
+    txobj.lock_time = obj.lock_time || 0;
+    txobj.ins = [];
+    txobj.outs = [];
+  
+    obj.inputs.forEach(function(inputobj) {
+      var txin = new TransactionIn();
+      txin.s = util.EMPTY_BUFFER;
+      txin.q = 0xffffffff;
+
+      var hash = new Buffer(inputobj.txid, 'hex');
+      hash.reverse();
+      var vout = parseInt(inputobj.vout);
+      var voutBuf = new Buffer(4);
+      voutBuf.writeUInt32LE(vout, 0);
+  
+      txin.o = Buffer.concat([hash, voutBuf]);
+  
+      txobj.ins.push(txin);
+    });
+  
+    var keys = Object.keys(obj.outputs);
+    keys.forEach(function(addrStr) {
+      var addr = new Address(addrStr);
+      var script = Script.createPubKeyHashOut(addr.payload());
+  
+      var valueNum = bignum(obj.outputs[addrStr]);
+      var value = util.bigIntToValue(valueNum);
+  
+      var txout = new TransactionOut();
+      txout.v = value;
+      txout.s = script.getBuffer();
+  
+      txobj.outs.push(txout);
+    });
+  
+    this.lock_time = txobj.lock_time;
+    this.version = txobj.version;
+    this.ins = txobj.ins;
+    this.outs = txobj.outs;
+  }
 
   Transaction.prototype.parse = function (parser) {
     if (Buffer.isBuffer(parser)) {
