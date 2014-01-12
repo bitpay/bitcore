@@ -10,7 +10,8 @@ var
   config       = require('../../config/config'),
   Transaction  = require('../../app/models/Transaction'),
   TransactionItem  = require('../../app/models/TransactionItem'),
-  fs      = require('fs');
+  fs      = require('fs'),
+  util    = require('util');
 
 
 var txItemsValid = JSON.parse(fs.readFileSync('test/model/txitems.json'));
@@ -86,18 +87,21 @@ describe('Transaction', function(){
 
           TransactionItem.find({txid: v.txid}).sort({ index:1 }).exec(function(err, readItems) {
 
-            var match=0;
+            var unmatch={};
+
+            v.items.forEach(function(validItem){ 
+              unmatch[validItem.addr] =1;
+            });
             v.items.forEach(function(validItem){ 
               readItems.forEach(function(readItem){ 
                 if ( readItem.addr === validItem.addr && 
-                    parseInt(readItem.index) ===  parseInt(validItem.index) && 
-                    parseFloat(readItem.value) === parseFloat(validItem.value) ) {
-                  }
-                  match=1;
+                    parseInt(readItem.index) ==  parseInt(validItem.index) && 
+                    parseFloat(readItem.value) == parseFloat(validItem.value) ) 
+                  delete unmatch[validItem.addr];
               });
             });
-            var all = v.items.toString();
-            assert(match, "Testing..." + readItems + "vs." + all);
+            var valid = util.inspect(v.items, { depth: null });
+            assert(!Object.keys(unmatch).length, '\n\tmatched:' + Object.keys(unmatch) + "\n\n" +valid + '\nvs.\n' + readItems);
             done();
           });
         });

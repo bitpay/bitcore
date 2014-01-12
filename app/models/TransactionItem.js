@@ -13,7 +13,7 @@ var TransactionItemSchema = new Schema({
     type: String,
     index: true,
   },
-  // >0 is Input <0 is Output
+  // <0 is Input >0 is Output
   value: Number,
 });
 

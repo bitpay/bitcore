@@ -96,6 +96,7 @@ TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
   this.fromIdWithInfo(txid, function(err, t) {
     if (err || !t) return cb(err);
 
+    var index=0;
     async.each(t.info.vin, function(i, next_in) {
 
       /*
@@ -107,7 +108,7 @@ TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
             txid  : t.txid,
             value : -1 * i.value,
             addr  : i.addr,
-            index : i.n,
+            index : index++,
         }, next_in);
       }
       else {
@@ -130,7 +131,7 @@ TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
           TransactionItem.create({
               txid  : t.txid,
               value : o.value,
-              addr  :  o.scriptPubKey.addresses[0],
+              addr  : o.scriptPubKey.addresses[0],
               index : o.n,
           }, next_out);
         }

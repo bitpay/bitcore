@@ -3,18 +3,18 @@
     "txid": "21798ddc9664ac0ef618f52b151dda82dafaf2e26d2bbef6cdaf55a6957ca237",
     "items": [
         { 
-        "addr": "mwcFwXv2Yquy4vJA4nnNLAbHVjrPdC8Q1Z",
-        "value": 1.66224,
-        "index": 0
+            "addr": "mwcFwXv2Yquy4vJA4nnNLAbHVjrPdC8Q1Z",
+            "value": -1.66224,
+            "index": 0
         },
         { 
             "addr": "mzjLe62faUqCSjkwQkwPAL5nYyR8K132fA",
-            "value": -1.34574,
+            "value": 1.34574,
             "index": 0
         },
         { 
             "addr": "n28wb1cRGxPtfmsenYKFfsvnZ6kRapx3jF",
-            "value": -0.316,
+            "value": 0.316,
             "index": 1
         }
     ]
@@ -24,17 +24,17 @@
     "items": [
         { 
             "addr": "mzjLe62faUqCSjkwQkwPAL5nYyR8K132fA",
-            "value": 0.40790667,
+            "value": -0.40790667,
             "index": 0
         },
         { 
             "addr": "mhfQJUSissP6nLM5pz6DxHfctukrrLct2T",
-            "value": -0.193,
+            "value": 0.193,
             "index": 0
         },
         { 
             "addr": "mzcDhbL877ES3MGftWnc3EuTSXs3WXDDML",
-            "value": -0.21440667,
+            "value": 0.21440667,
             "index": 1
         }
     ]
