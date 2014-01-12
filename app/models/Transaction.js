@@ -13,7 +13,8 @@ var mongoose    = require('mongoose'),
     networks    = require('bitcore/networks'),
     util        = require('bitcore/util/util'),
     bignum      = require('bignum'),
-    config      = require('../../config/config');
+    config      = require('../../config/config'),
+    TransactionItem = require('./TransactionItem');
 
 
 /**
@@ -30,6 +31,7 @@ var TransactionSchema = new Schema({
   processed: {
     type: Boolean,
     default: false,
+    index: true,
   },
   orphaned: {
     type: Boolean,
@@ -67,6 +69,8 @@ TransactionSchema.statics.fromIdWithInfo = function(txid, cb) {
   });
 };
 
+
+
 TransactionSchema.statics.createFromArray = function(txs, next) {
   var that = this;
   if (!txs) return next();
@@ -85,6 +89,63 @@ TransactionSchema.statics.createFromArray = function(txs, next) {
     }
   );
 };
+
+
+TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
+
+  this.fromIdWithInfo(txid, function(err, t) {
+    if (err || !t) return cb(err);
+
+    async.each(t.info.vin, function(i, next_in) {
+
+      /*
+       * TODO Support multisigs???
+       */
+
+      if (i.addr && i.value) {
+        TransactionItem.create({
+            txid  : t.txid,
+            value : -1 * i.value,
+            addr  : i.addr,
+            index : i.n,
+        }, next_in);
+      }
+      else {
+        if ( !i.coinbase )
+            console.log ("TX: %s seems to be multisig IN. Skipping... ", t.txid);
+        return next_in(); 
+      }
+    },
+    function (err) {
+      if (err) console.log (err);
+      async.each(t.info.vout, function(o, next_out) {
+
+        /*
+         * TODO Support multisigs
+         */
+        if (o.value &&  o.scriptPubKey 
+            && o.scriptPubKey.addresses 
+            && o.scriptPubKey.addresses[0]
+            ) {
+          TransactionItem.create({
+              txid  : t.txid,
+              value : o.value,
+              addr  :  o.scriptPubKey.addresses[0],
+              index : o.n,
+          }, next_out);
+        }
+        else {
+          console.log ("TX: %s,%d seems to be multisig OUT. Skipping... ", t.txid, o.n);
+          return next_out(); 
+        }
+      },
+      function (err) {
+        return cb(err);
+      });
+    });
+  });
+};
+
 
 
 TransactionSchema.methods.fillInputValues = function (tx, next) {
