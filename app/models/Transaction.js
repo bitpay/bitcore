@@ -112,8 +112,9 @@ TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
         }, next_in);
       }
       else {
-        if ( !i.coinbase )
+        if ( !i.coinbase ) {
             console.log ("TX: %s seems to be multisig IN. Skipping... ", t.txid);
+        }
         return next_in(); 
       }
     },
@@ -154,6 +155,7 @@ TransactionSchema.methods.fillInputValues = function (tx, next) {
   if (tx.isCoinBase()) return next();
 
   if (! this.rpc) this.rpc = new RpcClient(config.bitcoind);
+  var network   = ( config.network === 'testnet') ? networks.testnet : networks.livenet ;
 
   var that = this;
   async.each(tx.ins, function(i, cb) {
@@ -165,21 +167,32 @@ TransactionSchema.methods.fillInputValues = function (tx, next) {
       var c=0;
       that.rpc.getRawTransaction(outHashBase64, function(err, txdata) {
         var txin = new Transaction();
-
         if (err || ! txdata.result) return cb( new Error('Input TX '+outHashBase64+' not found'));
 
         var b = new Buffer(txdata.result,'hex');
         txin.parse(b);
 
-
-        if ( txin.isCoinBase() ) {
-          return cb();
-        }
+        /*
+         *We have to parse it anyways. It will have outputs even it is a coinbase tx
+          if ( txin.isCoinBase() ) {
+           return cb();
+          }
+       */
 
         txin.outs.forEach( function(j) {
           // console.log( c + ': ' + util.formatValue(j.v) );
           if (c === outIndex) {
             i.value = j.v;
+
+            // This is used for pay-to-pubkey transaction in which
+            // the pubkey is not provided on the input
+            var scriptPubKey = j.getScript();
+            var txType       = scriptPubKey.classify();
+            var hash         = scriptPubKey.simpleOutHash();
+            if (hash) {
+              var addr          = new Address(network.addressPubkey, hash);
+              i.addrFromOutput  = addr.toString();
+            }
           }
           c++;
         });
@@ -224,7 +237,6 @@ TransactionSchema.methods.queryInfo = function (next) {
       }
       else {
         tx.ins.forEach(function(i) {
-  
           if (i.value) {
             that.info.vin[c].value = util.formatValue(i.value);
             var n = util.valueToBigInt(i.value).toNumber();
@@ -239,6 +251,10 @@ TransactionSchema.methods.queryInfo = function (next) {
               var addr          = new Address(network.addressPubkey, pubKeyHash);
               var addrStr       = addr.toString();
               that.info.vin[c].addr  = addrStr;
+            }
+            else {
+              if (i.addrFromOutput) 
+                that.info.vin[c].addr  = i.addrFromOutput;
             }
           }
           else {

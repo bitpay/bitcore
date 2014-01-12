@@ -29,6 +29,23 @@ describe('Transaction', function(){
     done();
   });
 
+
+
+  it('should pool tx\'s object from mongoose', function(done) {
+    var txid = '7e621eeb02874ab039a8566fd36f4591e65eca65313875221842c53de6907d6c';
+    Transaction.fromIdWithInfo(txid, function(err, tx) {
+      if (err) done(err);
+      assert.equal(tx.txid, txid);
+      assert(!tx.info.isCoinBase);
+
+      for(var i=0; i<20; i++)
+        assert(parseFloat(tx.info.vin[i].value) === parseFloat(50));
+      assert(tx.info.vin[0].addr === 'msGKGCy2i8wbKS5Fo1LbWUTJnf1GoFFG59');
+      assert(tx.info.vin[1].addr === 'mfye7oHsdrHbydtj4coPXCasKad2eYSv5P');
+      done();
+    });
+  });
+
   it('should pool tx\'s object from mongoose', function(done) {
     var txid = '21798ddc9664ac0ef618f52b151dda82dafaf2e26d2bbef6cdaf55a6957ca237';
     Transaction.fromIdWithInfo(txid, function(err, tx) {
