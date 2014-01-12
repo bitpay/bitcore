@@ -18,6 +18,10 @@ var TransactionItemSchema = new Schema({
 });
 
 
+// Compound index
+TransactionItemSchema.index({txid: 1, index: 1, value: 1}, {unique: true, dropDups: true});
+
+
 
 TransactionItemSchema.statics.load = function(id, cb) {
   this.findOne({
