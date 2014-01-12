@@ -22,7 +22,6 @@ var TransactionItemSchema = new Schema({
 TransactionItemSchema.index({txid: 1, index: 1, value: 1}, {unique: true, dropDups: true});
 
 
-
 TransactionItemSchema.statics.load = function(id, cb) {
   this.findOne({
     _id: id
