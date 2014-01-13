@@ -28,12 +28,20 @@ function spec() {
 
 
   Address.prototype.__defineGetter__('balance', function(){
-
-console.log('#################### '+this.balanceSat);
-
-
-    return this.balanceSat / BitcoreUtil.COIN;
+    return parseFloat(this.balanceSat) / parseFloat(BitcoreUtil.COIN);
   });
+
+
+  Address.prototype.__defineGetter__('totalReceived', function(){
+    return parseFloat(this.totalReceivedSat) / parseFloat(BitcoreUtil.COIN);
+  });
+
+
+  Address.prototype.__defineGetter__('totalSent', function(){
+    return parseFloat(this.totalSentSat) / parseFloat(BitcoreUtil.COIN);
+  });
+
+
 
   Address.prototype.update = function(next) {
 
@@ -46,21 +54,21 @@ console.log('#################### '+this.balanceSat);
       // TODO TXout!
       //T
       function (cb) {
-        TransactionItem.find({addr:that.addrStr}, function(err,txItems){
+        TransactionItem.find({addr:that.addrStr}).sort({ts:1}).exec(function(err,txItems){
           if (err) return cb(err);
 
           txItems.forEach(function(txItem){
 
- // console.log(txItem.txid + ' : ' + txItem.value_sat);
+//  console.log(txItem.txid + ':' + txItem.ts+ ' : ' + (txItem.value_sat/parseFloat(BitcoreUtil.COIN) ) );
             that.txApperances +=1;
             that.balanceSat += txItem.value_sat;
 
             that.transactions.push(txItem.txid);
 
             if (txItem.value_sat > 0)
-              that.totalSentSat += txItem.value_sat;
+              that.totalReceivedSat += txItem.value_sat;
             else
-              that.totalReceivedSat += Math.abs(txItem.value_sat);
+              that.totalSentSat += Math.abs(txItem.value_sat);
           });
           return cb();
         });
