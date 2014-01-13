@@ -1,22 +1,24 @@
 'use strict';
 
+//Load configurations
+//Set the node enviornment variable if not set before
+process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+
 /**
  * Module dependencies.
  */
 var express = require('express'),
-  fs = require('fs');
+  fs = require('fs'),
+  PeerSync = require('./lib/PeerSync').class(),
+  mongoose = require('mongoose');
 
 /**
  * Main application entry file.
  */
 
-//Load configurations
-//Set the node enviornment variable if not set before
-process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
 //Initializing system variables
-var config = require('./config/config'),
-  mongoose = require('mongoose');
+var config = require('./config/config');
 
 //Bootstrap db connection
 var db = mongoose.connect(config.db);
@@ -38,6 +40,14 @@ var walk = function(path) {
 };
 walk(models_path);
 
+// p2p_sync process
+var ps = new PeerSync();
+ps.init({
+  skip_db_connection: true
+});
+ps.run();
+
+// express app
 var app = express();
 
 //express settings
