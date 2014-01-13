@@ -13,7 +13,8 @@ var mongoose    = require('mongoose'),
     networks    = require('bitcore/networks'),
     util        = require('bitcore/util/util'),
     bignum      = require('bignum'),
-    config      = require('../../config/config');
+    config      = require('../../config/config'),
+    TransactionItem = require('./TransactionItem');
 
 
 /**
@@ -26,6 +27,15 @@ var TransactionSchema = new Schema({
     type: String,
     index: true,
     unique: true,
+  },
+  processed: {
+    type: Boolean,
+    default: false,
+    index: true,
+  },
+  orphaned: {
+    type: Boolean,
+    default: false,
   },
 });
 
@@ -46,18 +56,36 @@ TransactionSchema.statics.fromId = function(txid, cb) {
   }).exec(cb);
 };
 
-TransactionSchema.statics.fromIdWithInfo = function(txid, cb) {
 
-  // TODO Should we go to mongoDB first? Now, no extra information is stored at mongo.
+TransactionSchema.statics.fromIdWithInfo = function(txid, cb) {
+  var That = this;
 
   this.fromId(txid, function(err, tx) {
     if (err) return cb(err);
 
-    if (!tx) { return cb(new Error('TX not found')); }
+    if (!tx) {
+      // No in mongo...but maybe in bitcoind... lets query it
+      tx = new That();
 
-    tx.queryInfo(function(err) { return cb(err,tx); } );
+      tx.txid = txid;
+      tx.queryInfo(function(err, txInfo) {
+
+        if (!txInfo)
+          return cb(new Error('TX not found1'));
+
+        tx.save(function(err) {
+          return cb(err,tx);
+        });
+      });
+    }
+    else {
+      tx.queryInfo(function(err) {
+        return cb(err,tx);
+      });
+    }
   });
 };
+
 
 TransactionSchema.statics.createFromArray = function(txs, next) {
   var that = this;
@@ -79,11 +107,72 @@ TransactionSchema.statics.createFromArray = function(txs, next) {
 };
 
 
+TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
+
+  this.fromIdWithInfo(txid, function(err, t) {
+    if (err || !t) return cb(err);
+
+    var index = 0;
+    t.info.vin.forEach( function(i){
+      i.n = index++;
+    });
+
+    async.each(t.info.vin, function(i, next_in) {
+      if (i.addr && i.value) {
+
+//console.log("Creating IN %s %d", i.addr, i.valueSat);
+        TransactionItem.create({
+            txid  : t.txid,
+            value_sat : -1 * i.valueSat,
+            addr  : i.addr,
+            index : i.n,
+            ts : t.info.time,
+        }, next_in);
+      }
+      else {
+        if ( !i.coinbase ) {
+            console.log ('TX: %s,%d could not parse INPUT', t.txid, i.n);
+        }
+        return next_in();
+      }
+    },
+    function (err) {
+      if (err) console.log (err);
+      async.each(t.info.vout, function(o, next_out) {
+
+        /*
+         * TODO Support multisigs
+         */
+        if (o.value && o.scriptPubKey && o.scriptPubKey.addresses && o.scriptPubKey.addresses[0]) {
+//console.log("Creating OUT %s %d", o.scriptPubKey.addresses[0], o.valueSat);
+          TransactionItem.create({
+              txid  : t.txid,
+              value_sat : o.valueSat,
+              addr  : o.scriptPubKey.addresses[0],
+              index : o.n,
+              ts : t.info.time,
+          }, next_out);
+        }
+        else {
+          console.log ('TX: %s,%d could not parse OUTPUT', t.txid, o.n);
+          return next_out();
+        }
+      },
+      function (err) {
+        return cb(err);
+      });
+    });
+  });
+};
+
+
+
 TransactionSchema.methods.fillInputValues = function (tx, next) {
 
   if (tx.isCoinBase()) return next();
 
   if (! this.rpc) this.rpc = new RpcClient(config.bitcoind);
+  var network   = ( config.network === 'testnet') ? networks.testnet : networks.livenet ;
 
   var that = this;
   async.each(tx.ins, function(i, cb) {
@@ -95,21 +184,31 @@ TransactionSchema.methods.fillInputValues = function (tx, next) {
       var c=0;
       that.rpc.getRawTransaction(outHashBase64, function(err, txdata) {
         var txin = new Transaction();
-
         if (err || ! txdata.result) return cb( new Error('Input TX '+outHashBase64+' not found'));
 
         var b = new Buffer(txdata.result,'hex');
         txin.parse(b);
 
-
-        if ( txin.isCoinBase() ) {
-          return cb();
-        }
+        /*
+         *We have to parse it anyways. It will have outputs even it is a coinbase tx
+          if ( txin.isCoinBase() ) {
+           return cb();
+          }
+       */
 
         txin.outs.forEach( function(j) {
           // console.log( c + ': ' + util.formatValue(j.v) );
           if (c === outIndex) {
             i.value = j.v;
+
+            // This is used for pay-to-pubkey transaction in which
+            // the pubkey is not provided on the input
+            var scriptPubKey = j.getScript();
+            var hash         = scriptPubKey.simpleOutHash();
+            if (hash) {
+              var addr          = new Address(network.addressPubkey, hash);
+              i.addrFromOutput  = addr.toString();
+            }
           }
           c++;
         });
@@ -154,29 +253,41 @@ TransactionSchema.methods.queryInfo = function (next) {
       }
       else {
         tx.ins.forEach(function(i) {
+          if (i.value) {
+            that.info.vin[c].value = util.formatValue(i.value);
+            var n = util.valueToBigInt(i.value).toNumber();
+            that.info.vin[c].valueSat = n;
+            valueIn           = valueIn.add( n );
 
-          that.info.vin[c].value = util.formatValue(i.value);
-          var n = util.valueToBigInt(i.value).toNumber();
-          valueIn           = valueIn.add( n );
+            var scriptSig     = i.getScript();
+            var pubKey        = scriptSig.simpleInPubKey();
 
-          var scriptSig     = i.getScript();
-          var pubKey        = scriptSig.simpleInPubKey();
-
-          // We check for pubKey in case a broken / strange TX.
-          if (pubKey) {
-            var pubKeyHash    = util.sha256ripe160(pubKey);
-            var addr          = new Address(network.addressPubkey, pubKeyHash);
-            var addrStr       = addr.toString();
-            that.info.vin[c].addr  = addrStr;
+            // We check for pubKey in case a broken / strange TX.
+            if (pubKey) {
+              var pubKeyHash    = util.sha256ripe160(pubKey);
+              var addr          = new Address(network.addressPubkey, pubKeyHash);
+              var addrStr       = addr.toString();
+              that.info.vin[c].addr  = addrStr;
+            }
+            else {
+              if (i.addrFromOutput)
+                that.info.vin[c].addr  = i.addrFromOutput;
+            }
           }
-
+          else {
+            console.log('TX could not be parsed: %s,%d' ,txInfo.result.txid, c);
+          }
           c++;
         });
       }
 
+      c=0;
       tx.outs.forEach( function(i) {
         var n =  util.valueToBigInt(i.v).toNumber();
         valueOut = valueOut.add(n);
+
+        that.info.vout[c].valueSat = n;
+        c++;
       });
 
       that.info.valueOut = valueOut / util.COIN;

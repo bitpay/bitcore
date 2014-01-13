@@ -40,11 +40,11 @@ module.exports = function(grunt) {
           livereload: true
         }
       },
-      test: {
         // we monitor only app/models/* because we have test for models only now
-        files: ['test/**/*.js', 'test/*.js','app/models/*.js'],
-        tasks: ['test'],
-      }
+//      test: {
+//        files: ['test/**/*.js', 'test/*.js','app/models/*.js'],
+//        tasks: ['test'],
+//      }
     },
     jshint: {
       all: {
@@ -66,7 +66,7 @@ module.exports = function(grunt) {
         options: {
           file: 'server.js',
           args: [],
-          ignoredFiles: ['public/**', 'test/**','util/**'],
+          ignoredFiles: ['public/**', 'test/**','util/**','lib/**'],
           watchedExtensions: ['js'],
           // nodeArgs: ['--debug'],
           delayTime: 1,
