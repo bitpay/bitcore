@@ -41,8 +41,9 @@ describe('Address balances', function(){
           if (v.totalReceived) assert.equal(v.totalReceived, a.totalReceived);
           if (v.totalSent) assert.equal(v.totalSent, a.totalSent);
           if (v.transactions) {
+
             v.transactions.forEach( function(tx) {
-              assert(tx in a.transactions);
+              assert(a.transactions.indexOf(tx)>-1);
             });
           }
           done();

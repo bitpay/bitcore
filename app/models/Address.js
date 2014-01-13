@@ -54,12 +54,12 @@ function spec() {
       // TODO TXout!
       //T
       function (cb) {
-        TransactionItem.find({addr:that.addrStr}, function(err,txItems){
+        TransactionItem.find({addr:that.addrStr}).sort({ts:1}).exec(function(err,txItems){
           if (err) return cb(err);
 
           txItems.forEach(function(txItem){
 
- // console.log(txItem.txid + ' : ' + txItem.value_sat);
+//  console.log(txItem.txid + ':' + txItem.ts+ ' : ' + (txItem.value_sat/parseFloat(BitcoreUtil.COIN) ) );
             that.txApperances +=1;
             that.balanceSat += txItem.value_sat;
 
