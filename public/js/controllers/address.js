@@ -1,8 +1,7 @@
 'use strict';
 
-angular.module('mystery.address').controller('AddressController', ['$scope', function ($scope) {
-
-  //example data
+angular.module('mystery.address').controller('AddressController', ['$scope', '$routeParams', '$location', 'Global', 'Address', function ($scope, $routeParams, $location, Global, Address) {
+/*
   $scope.address = '1JmTTDcksW7A6GN7JnxuXkMAXsVN9zmgm1';
   $scope.hash160 = '77ad7d08aaa9cf489ea4e468eaeb892b85f71e27';
   $scope.transactions = [
@@ -17,4 +16,15 @@ angular.module('mystery.address').controller('AddressController', ['$scope', fun
       amount: 0.1
     }
   ];
+*/
+    $scope.global = Global;
+
+    $scope.findOne = function() {
+      Address.get({
+        addrStr: $routeParams.addrStr
+      }, function(address) {
+        $scope.address = address;
+      });
+    };
+
 }]);

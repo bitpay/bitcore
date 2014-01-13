@@ -14,7 +14,7 @@
             <tbody>
             <tr>
               <td>Number Of Transactions</td>
-              <td>--</td>
+              <td>{{block.tx.length}}<td>
             </tr>
             <tr>
               <td>Output Total</td>
@@ -35,10 +35,6 @@
             <tr>
               <td>Timestamp</td>
               <td>{{block.time * 1000 | date:'medium'}}</td>
-            </tr>
-            <tr>
-              <td>Received Time</td>
-              <td>--<td>
             </tr>
             <tr>
               <td>Relayed By</td>

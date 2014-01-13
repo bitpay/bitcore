@@ -19,7 +19,7 @@ angular.module('mystery').config(['$routeProvider',
     when('/blocks-date/:blockDate', {
       templateUrl: 'views/blocks/list.html'
     }).
-    when('/address/:address', {
+    when('/address/:addrStr', {
       templateUrl: 'views/address.html'
     }).
     otherwise({
