@@ -4,7 +4,8 @@
  * Module dependencies.
  */
 var express = require('express'),
-  config = require('./config');
+    helpers = require('view-helpers'),
+    config = require('./config');
 
 module.exports = function(app, passport, db) {
   app.set('showStackError', true);
@@ -35,6 +36,9 @@ module.exports = function(app, passport, db) {
     app.use(express.urlencoded());
     app.use(express.json());
     app.use(express.methodOverride());
+
+    //dynamic helpers
+    app.use(helpers(config.app.name));
 
     //routes should be at the last
     app.use(app.router);

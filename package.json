@@ -59,7 +59,8 @@
     "grunt-concurrent": "~0.4.2",
     "grunt-nodemon": "~0.1.2",
     "grunt-mocha-test": "~0.8.1",
-    "should": "~2.1.1"
+    "should": "~2.1.1",
+    "view-helpers": "latest" 
   },
   "devDependencies": {
     "grunt-contrib-watch": "latest",
