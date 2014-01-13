@@ -28,6 +28,12 @@
         "totalSent": 26.4245
     },
     { 
+        "addr": "mzSyyXgofoBxpr6gYcU3cV345G8hJpixRd",
+        "balance":  0,
+        "totalReceived":3.9775,
+        "totalSent": 3.9775
+    },
+    { 
 "disabled":1, 
         "addr": "mzW2hdZN2um7WBvTDerdahKqRgj3md9C29",
         "balance":  910.39522682,
