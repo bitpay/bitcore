@@ -1,4 +1,8 @@
-#! /usr/bin/env node
+#!/usr/bin/env node
+<<<<<<< HEAD
+=======
+
+>>>>>>> 71e1c718ac8f5eb89acedb4f91f2207ec463808b
 'use strict';
 
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';

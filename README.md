@@ -69,6 +69,8 @@ $ npm install -g bower
     $ ln -s <path_to>/node-bufferput bufferput
 
     Get bitcore from github repository:
+  
+  Get bitcore from github repository:
     
     $ git clone https://github.com/bitpay/bitcore.git
     
@@ -95,6 +97,12 @@ $ npm install -g bower
 
   Check utils/sync.js --help for options.
 
+
+## API
+
+A REST API is provided at /api. The entry points are:
+
+
 ### Blocks
 ```
   /api/block/[:hash]
@@ -120,13 +128,13 @@ All configuration is specified in the [config](config/) folder, particularly the
 
 There is a bitcoind configuration sample at:
 ```
-    etc/mystery/bitcoin.conf
+    etc/bitcoind/bitcoin.conf
 ```
 
 If you want to use a external bitcoind server set BITCOIND_HOST / BITCOIND_PORT enviroment variables. Make sure that bitcoind is configured to accept incomming connections using 'rpcallowip' decribed in https://en.bitcoin.it/wiki/Running_Bitcoin.
 
 
-### Environmental Settings
+### Environment Variables Settings
 
 There are three environments provided by default, __development__, __test__, and __production__. Each of these environments has the following configuration options:
 * __db__ - This is the name of the MongoDB database to use, and is set by default to __mystery-dev__ for the development environment.
@@ -139,6 +147,13 @@ To run with a different environment, just specify NODE_ENV as you call grunt:
 If you are using node instead of grunt, it is very similar:
 
 	$ NODE_ENV=test node server
+
+
+### Development enviroment
+To run mystery locally for development:
+
+  $ NODE_ENV=development grunt
+
 
 ## Github
 [Mystery](https://github.com/bitpay/mystery)

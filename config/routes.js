@@ -19,4 +19,8 @@ module.exports = function(app) {
 
   app.param('txid', transactions.transaction);
 
+  var addresses = require('../app/controllers/addresses');
+  app.get('/api/addr/:addr', addresses.show);
+  app.param('addr', addresses.address);
+
 };

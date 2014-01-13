@@ -1,0 +1,72 @@
+[
+    {
+    "disabled": 1,
+    "txid": "75c5ffe6dc2eb0f6bd011a08c041ef115380ccd637d859b379506a0dca4c26fc"
+    },
+    {
+    "txid": "21798ddc9664ac0ef618f52b151dda82dafaf2e26d2bbef6cdaf55a6957ca237",
+    "items": [
+        { 
+            "addr": "mwcFwXv2Yquy4vJA4nnNLAbHVjrPdC8Q1Z",
+            "value_sat": -166224000,
+            "index": 0
+        },
+        { 
+            "addr": "mzjLe62faUqCSjkwQkwPAL5nYyR8K132fA",
+            "value_sat": 134574000,
+            "index": 0
+        },
+        { 
+            "addr": "n28wb1cRGxPtfmsenYKFfsvnZ6kRapx3jF",
+            "value_sat": 31600000,
+            "index": 1
+        }
+    ]
+    },
+    {
+    "txid": "b633a6249d4a2bc123e7f8a151cae2d4afd17aa94840009f8697270c7818ceee",
+    "items": [
+        { 
+            "addr": "mzjLe62faUqCSjkwQkwPAL5nYyR8K132fA",
+            "value_sat": -40790667,
+            "index": 0
+        },
+        { 
+            "addr": "mhfQJUSissP6nLM5pz6DxHfctukrrLct2T",
+            "value_sat": 19300000,
+            "index": 0
+        },
+        { 
+            "addr": "mzcDhbL877ES3MGftWnc3EuTSXs3WXDDML",
+            "value_sat": 21440667,
+            "index": 1
+        }
+    ]
+    },
+    {
+    "txid": "ca2f42e44455b8a84434de139efea1fe2c7d71414a8939e0a20f518849085c3b",
+    "items": [
+        { 
+            "addr": "mzeiUi4opeheWYveXqp8ebqHyVwYGA2s3x",
+            "value_sat": -1225871,
+            "index": 0
+        },
+        { 
+            "addr": "mtMLijHAbG8CsgBbQGajsqav9p9wKUYad5",
+            "value_sat": -1201823,
+            "index": 1
+        },
+        { 
+            "addr": "mhqyL1nDQDo1WLH9qH8sjRjx2WwrnmAaXE",
+            "value_sat": 1327746,
+            "index": 0
+        },
+        { 
+            "addr": "mkGrySSnxcqRbtPCisApj3zXCQVmUUWbf1",
+            "value_sat": 1049948,
+            "index": 1
+        }
+    ]
+    }
+ 
+]

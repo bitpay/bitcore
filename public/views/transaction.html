@@ -52,7 +52,12 @@
     <tfoot>
       <tr>
         <td colspan="3" style="text-align: right;">
-          <button type="button" class="btn btn-primary">{{tx.confirmations}} Confirmations</button> 
+          <button data-ng-show="tx.confirmations" type="button" class="btn btn-primary">
+            {{tx.confirmations}} Confirmations
+          </button>
+          <button data-ng-show="!tx.confirmations"  type="button" class="btn btn-danger">
+            Unconfirmed Transaction!
+          </button>
           <button type="button" class="btn btn-success">{{tx.valueOut}} BTC</button>
         </td>
       </tr>

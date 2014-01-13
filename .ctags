@@ -1,0 +1,11 @@
+--extra=+f 
+--exclude=*jquery*
+--exclude=node_modules/a*
+--exclude=node_modules/[c-z]*
+--exclude=*grunt*
+--exclude=*bower*
+--exclude=.swp
+--exclude=public
+--links=yes
+--totals=yes
+

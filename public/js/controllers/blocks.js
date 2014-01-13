@@ -20,6 +20,4 @@ angular.module('mystery.blocks').controller('BlocksController', ['$scope', '$rou
     });
   };
 
-  // for avoid warning. please remove when you use Blocks
-  $scope.blocks = Blocks;
 }]);
