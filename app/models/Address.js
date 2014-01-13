@@ -28,12 +28,20 @@ function spec() {
 
 
   Address.prototype.__defineGetter__('balance', function(){
-
-console.log('#################### '+this.balanceSat);
-
-
-    return this.balanceSat / BitcoreUtil.COIN;
+    return parseFloat(this.balanceSat) / parseFloat(BitcoreUtil.COIN);
   });
+
+
+  Address.prototype.__defineGetter__('totalReceived', function(){
+    return parseFloat(this.totalReceivedSat) / parseFloat(BitcoreUtil.COIN);
+  });
+
+
+  Address.prototype.__defineGetter__('totalSent', function(){
+    return parseFloat(this.totalSentSat) / parseFloat(BitcoreUtil.COIN);
+  });
+
+
 
   Address.prototype.update = function(next) {
 
@@ -58,9 +66,9 @@ console.log('#################### '+this.balanceSat);
             that.transactions.push(txItem.txid);
 
             if (txItem.value_sat > 0)
-              that.totalSentSat += txItem.value_sat;
+              that.totalReceivedSat += txItem.value_sat;
             else
-              that.totalReceivedSat += Math.abs(txItem.value_sat);
+              that.totalSentSat += Math.abs(txItem.value_sat);
           });
           return cb();
         });
