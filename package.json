@@ -60,7 +60,9 @@
     "grunt-nodemon": "~0.1.2",
     "grunt-mocha-test": "~0.8.1",
     "should": "~2.1.1",
-    "view-helpers": "latest" 
+    "view-helpers": "latest",
+    "socket.io": "~0.9.16"
+
   },
   "devDependencies": {
     "grunt-contrib-watch": "latest",
