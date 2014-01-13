@@ -8,7 +8,8 @@ angular.module('mystery.system').controller('IndexController', ['$scope', 'Globa
 $(document).ready(function() {
   var socket = io.connect('http://localhost');
   socket.on('tx', function(data) {
-    console.log(data);
+    var tx = data;
+    console.log('Transaction received! '+tx.txid);
   });
 
 });
