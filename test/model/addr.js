@@ -8,9 +8,7 @@ var
   config  = require('../../config/config'),
   Address = require('../../app/models/Address');
   mongoose= require('mongoose'),
-  config       = require('../../config/config');
-
-var addrValid = JSON.parse(fs.readFileSync('test/model/addr.json'));
+  addrValid = JSON.parse(fs.readFileSync('test/model/addr.json'));
 
 describe('Address update', function(){
 

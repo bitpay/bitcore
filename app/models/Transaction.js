@@ -58,17 +58,34 @@ TransactionSchema.statics.fromId = function(txid, cb) {
 
 
 TransactionSchema.statics.fromIdWithInfo = function(txid, cb) {
+  var that = this;
 
-  // TODO Should we go to mongoDB first? Now, no extra information is stored at mongo.
   this.fromId(txid, function(err, tx) {
     if (err) return cb(err);
 
-    if (!tx) { return cb(new Error('TX not found')); }
+    if (!tx) { 
+
+      return cb(new Error('TX not found')); 
+
+      // No in mongo...but maybe in bitcoind... lets query it
+/*      var tx = new that();
+
+      tx.txid = txid;
+        
+      tx.queryInfo(function(err, txInfo) { 
+
+        if (!txInfo) return cb(new Error('TX not found')); 
+
+        tx.save(function(err) { 
+console.log('asdadsads');
+          return cb(err,tx); 
+        });
+      });
+*/    }
 
     tx.queryInfo(function(err) { return cb(err,tx); } );
   });
 };
-
 
 
 TransactionSchema.statics.createFromArray = function(txs, next) {
@@ -97,23 +114,23 @@ TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
     if (err || !t) return cb(err);
 
     var index=0;
+    t.info.vin.forEach(function(i){ i.n = index++});
+
     async.each(t.info.vin, function(i, next_in) {
-
-      /*
-       * TODO Support multisigs???
-       */
-
       if (i.addr && i.value) {
+
+//console.log("Creating IN %s %d", i.addr, i.valueSat);
         TransactionItem.create({
             txid  : t.txid,
-            value : -1 * i.value,
+            value_sat : -1 * i.valueSat,
             addr  : i.addr,
-            index : index++,
+            index : i.n,
+            ts : t.info.time,
         }, next_in);
       }
       else {
         if ( !i.coinbase ) {
-            console.log ("TX: %s seems to be multisig IN. Skipping... ", t.txid);
+            console.log ("TX: %s,%d could not parse INPUT", t.txid, i.n);
         }
         return next_in(); 
       }
@@ -129,15 +146,17 @@ TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
             && o.scriptPubKey.addresses 
             && o.scriptPubKey.addresses[0]
             ) {
+//console.log("Creating OUT %s %d", o.scriptPubKey.addresses[0], o.valueSat);
           TransactionItem.create({
               txid  : t.txid,
-              value : o.value,
+              value_sat : o.valueSat,
               addr  : o.scriptPubKey.addresses[0],
               index : o.n,
+              ts : t.info.time,
           }, next_out);
         }
         else {
-          console.log ("TX: %s,%d seems to be multisig OUT. Skipping... ", t.txid, o.n);
+          console.log ("TX: %s,%d could not parse OUTPUT. Skipping... ", t.txid, o.n);
           return next_out(); 
         }
       },
@@ -240,6 +259,7 @@ TransactionSchema.methods.queryInfo = function (next) {
           if (i.value) {
             that.info.vin[c].value = util.formatValue(i.value);
             var n = util.valueToBigInt(i.value).toNumber();
+            that.info.vin[c].valueSat = n;
             valueIn           = valueIn.add( n );
 
             var scriptSig     = i.getScript();
@@ -264,9 +284,13 @@ TransactionSchema.methods.queryInfo = function (next) {
         });
       }
 
+      var c = 0;
       tx.outs.forEach( function(i) {
         var n =  util.valueToBigInt(i.v).toNumber();
         valueOut = valueOut.add(n);
+
+        that.info.vout[c].valueSat = n;
+        c++;
       });
 
       that.info.valueOut = valueOut / util.COIN;

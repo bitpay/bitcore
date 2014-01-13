@@ -28,9 +28,6 @@ describe('Transaction', function(){
     mongoose.connection.close();
     done();
   });
-
-
-
   it('should pool tx\'s object from mongoose', function(done) {
     var txid = '7e621eeb02874ab039a8566fd36f4591e65eca65313875221842c53de6907d6c';
     Transaction.fromIdWithInfo(txid, function(err, tx) {
@@ -80,23 +77,42 @@ describe('Transaction', function(){
       done();
     });
   });
+  var txid22 = '666';
+  it('test unexisting TX ' + txid22, function(done) {
+    Transaction.fromIdWithInfo(txid22, function(err, tx) {
+      if (err && err.toString().match(/TX.not.found/))  {
+          return done();
+      }
+      else {
+        return done(err);
+      }
+    });
+  });
 
+  var txid2 = '64496d005faee77ac5a18866f50af6b8dd1f60107d6795df34c402747af98608';
+  it('create TX on the fly ' + txid2, function(done) {
+    TransactionItem.remove({txid: txid2}, function(err) {
+      Transaction.fromIdWithInfo(txid2, function(err, tx) {
+        if (err) return done(err);
+        assert.equal(tx.info.txid, txid2);
+        done();
+      });
+    });
+  });
 
   var txid2 = '64496d005faee77ac5a18866f50af6b8dd1f60107d6795df34c402747af98608';
   it('test a broken TX ' + txid2, function(done) {
     Transaction.fromIdWithInfo(txid2, function(err, tx) {
-      if (err) done(err);
+      if (err) return done(err);
       assert.equal(tx.info.txid, txid2);
       assert.equal(tx.info.vin[0].addr, 'n1JagbRWBDi6VMvG7HfZmXX74dB9eiHJzU');
-
-      // TODO output -> multisig!
-      // https://www.biteasy.com/testnet/transactions/64496d005faee77ac5a18866f50af6b8dd1f60107d6795df34c402747af98608
       done();
     });
   });
 
   
   txItemsValid.forEach( function(v) {
+    if (v.disabled) return;
     it('test a exploding TX ' + v.txid, function(done) {
 
       // Remove first
@@ -105,7 +121,8 @@ describe('Transaction', function(){
         Transaction.explodeTransactionItems(v.txid, function(err, tx) {
           if (err) done(err);
 
-          TransactionItem.find({txid: v.txid}).sort({ index:1 }).exec(function(err, readItems) {
+          TransactionItem
+            .fromTxId( v.txid, function(err, readItems) {
 
             var unmatch={};
 
@@ -113,20 +130,22 @@ describe('Transaction', function(){
               unmatch[validItem.addr] =1;
             });
             v.items.forEach(function(validItem){ 
-              readItems.forEach(function(readItem){ 
-                if ( readItem.addr === validItem.addr && 
-                    parseInt(readItem.index) ==  parseInt(validItem.index) && 
-                    parseFloat(readItem.value) == parseFloat(validItem.value) ) 
-                  delete unmatch[validItem.addr];
-              });
+              var readItem = readItems.shift();
+              assert.equal(readItem.addr,validItem.addr);
+              assert.equal(readItem.value_sat,validItem.value_sat);
+              assert.equal(readItem.index,validItem.index);
+              delete unmatch[validItem.addr];
             });
+
             var valid = util.inspect(v.items, { depth: null });
-            assert(!Object.keys(unmatch).length, '\n\tmatched:' + Object.keys(unmatch) + "\n\n" +valid + '\nvs.\n' + readItems);
+            assert(!Object.keys(unmatch).length, 
+                   '\n\tUnmatchs:' + Object.keys(unmatch) + "\n\n" +valid + '\nvs.\n' + readItems);
             done();
           });
         });
       });
     });
   });
+
 });
 

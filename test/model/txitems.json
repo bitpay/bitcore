@@ -1,20 +1,24 @@
 [
     {
+    "disabled": 1,
+    "txid": "75c5ffe6dc2eb0f6bd011a08c041ef115380ccd637d859b379506a0dca4c26fc"
+    },
+    {
     "txid": "21798ddc9664ac0ef618f52b151dda82dafaf2e26d2bbef6cdaf55a6957ca237",
     "items": [
         { 
             "addr": "mwcFwXv2Yquy4vJA4nnNLAbHVjrPdC8Q1Z",
-            "value": -1.66224,
+            "value_sat": -166224000,
             "index": 0
         },
         { 
             "addr": "mzjLe62faUqCSjkwQkwPAL5nYyR8K132fA",
-            "value": 1.34574,
+            "value_sat": 134574000,
             "index": 0
         },
         { 
             "addr": "n28wb1cRGxPtfmsenYKFfsvnZ6kRapx3jF",
-            "value": 0.316,
+            "value_sat": 31600000,
             "index": 1
         }
     ]
@@ -24,17 +28,17 @@
     "items": [
         { 
             "addr": "mzjLe62faUqCSjkwQkwPAL5nYyR8K132fA",
-            "value": -0.40790667,
+            "value_sat": -40790667,
             "index": 0
         },
         { 
             "addr": "mhfQJUSissP6nLM5pz6DxHfctukrrLct2T",
-            "value": 0.193,
+            "value_sat": 19300000,
             "index": 0
         },
         { 
             "addr": "mzcDhbL877ES3MGftWnc3EuTSXs3WXDDML",
-            "value": 0.21440667,
+            "value_sat": 21440667,
             "index": 1
         }
     ]
@@ -44,22 +48,22 @@
     "items": [
         { 
             "addr": "mzeiUi4opeheWYveXqp8ebqHyVwYGA2s3x",
-            "value": -0.01225871,
+            "value_sat": -1225871,
             "index": 0
         },
         { 
             "addr": "mtMLijHAbG8CsgBbQGajsqav9p9wKUYad5",
-            "value": -0.01201823,
+            "value_sat": -1201823,
             "index": 1
         },
         { 
             "addr": "mhqyL1nDQDo1WLH9qH8sjRjx2WwrnmAaXE",
-            "value": 0.01327746,
+            "value_sat": 1327746,
             "index": 0
         },
         { 
             "addr": "mkGrySSnxcqRbtPCisApj3zXCQVmUUWbf1",
-            "value": 0.01049948,
+            "value_sat": 1049948,
             "index": 1
         }
     ]

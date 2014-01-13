@@ -14,9 +14,9 @@ function spec() {
 
   function Address(addrStr,cb) {
     this.addrStr        = addrStr;
-    this.balance        = null;
-    this.totalReceived  = null;
-    this.totalSent      = null;
+    this.balanceSat        = 0;
+    this.totalReceivedSat  = 0;
+    this.totalSentSat      = 0;
     this.txApperances   = 0;
 
     // TODO store only txids? +index? +all?
@@ -35,16 +35,16 @@ function spec() {
 
         txItems.forEach(function(txItem){
 
+console.log(txItem.txid + ' : ' + txItem.value_sat);
           that.txApperances +=1;
-          // TESTING
-          that.balance += txItem.value + 0.1;
+          that.balanceSat += txItem.value_sat;
 
           that.transactions.push(txItem.txid);
 
-          if (txItem.value > 0)
-            that.totalSent += txItem.value;
+          if (txItem.value_sat > 0)
+            that.totalSentSat += txItem.value_sat;
           else 
-            that.totalReceived += Math.abs(txItem.value);
+            that.totalReceivedSat += Math.abs(txItem.value_sat);
         });
         return cb();
       })
