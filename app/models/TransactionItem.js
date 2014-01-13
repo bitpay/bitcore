@@ -41,7 +41,7 @@ TransactionItemSchema.statics.fromTxId = function(txid, cb) {
           var sa= a.value_sat < 0 ? -1 : 1;
           var sb= b.value_sat < 0 ? -1 : 1;
 
-          if (sa != sb) {
+          if (sa !== sb) {
             return sa-sb;
           }
           else {

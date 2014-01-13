@@ -14,10 +14,14 @@ var mongoose = require('mongoose'),
  */
 exports.block = function(req, res, next, hash) {
   Block.fromHashWithInfo(hash, function(err, block) {
-    if (err) return next(err);
-    if (!block) return next(new Error('Failed to load block ' + hash));
+    if (err && !block) {
+      console.log(err);
+      res.status(404).send('Not found');
+      return next();
+    }
+
     req.block = block.info;
-    next();
+    return next();
   });
 };
 
@@ -26,7 +30,9 @@ exports.block = function(req, res, next, hash) {
  * Show block
  */
 exports.show = function(req, res) {
-  res.jsonp(req.block);
+  if (req.block) {
+    res.jsonp(req.block);
+  }
 };
 
 /**

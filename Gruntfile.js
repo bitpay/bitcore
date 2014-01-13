@@ -40,11 +40,11 @@ module.exports = function(grunt) {
           livereload: true
         }
       },
-      test: {
         // we monitor only app/models/* because we have test for models only now
-        files: ['test/**/*.js', 'test/*.js','app/models/*.js'],
-        tasks: ['test'],
-      }
+//      test: {
+//        files: ['test/**/*.js', 'test/*.js','app/models/*.js'],
+//        tasks: ['test'],
+//      }
     },
     jshint: {
       all: {

@@ -6,7 +6,7 @@ var
   assert  = require('assert'),
   fs  = require('fs'),
   config  = require('../../config/config'),
-  Address = require('../../app/models/Address');
+  Address = require('../../app/models/Address').class();
   mongoose= require('mongoose'),
   addrValid = JSON.parse(fs.readFileSync('test/model/addr.json'));
 
@@ -30,8 +30,7 @@ describe('Address update', function(){
         it('should retrieve the correct info for:' + v.addr, function(done) {
         this.timeout(5000);
         
-        var a = Address.new(v.addr);
-
+        var a = new Address(v.addr);
 
         a.update(function(err) {
           if (err) done(err);

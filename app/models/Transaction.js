@@ -58,32 +58,31 @@ TransactionSchema.statics.fromId = function(txid, cb) {
 
 
 TransactionSchema.statics.fromIdWithInfo = function(txid, cb) {
-  var that = this;
+  var That = this;
 
   this.fromId(txid, function(err, tx) {
     if (err) return cb(err);
 
-    if (!tx) { 
-
-      return cb(new Error('TX not found')); 
-
+    if (!tx) {
       // No in mongo...but maybe in bitcoind... lets query it
-/*      var tx = new that();
+      tx = new That();
 
       tx.txid = txid;
-        
-      tx.queryInfo(function(err, txInfo) { 
+      tx.queryInfo(function(err, txInfo) {
 
-        if (!txInfo) return cb(new Error('TX not found')); 
+        if (!txInfo)
+          return cb(new Error('TX not found1'));
 
-        tx.save(function(err) { 
-console.log('asdadsads');
-          return cb(err,tx); 
+        tx.save(function(err) {
+          return cb(err,tx);
         });
       });
-*/    }
-
-    tx.queryInfo(function(err) { return cb(err,tx); } );
+    }
+    else {
+      tx.queryInfo(function(err) {
+        return cb(err,tx);
+      });
+    }
   });
 };
 
@@ -113,8 +112,10 @@ TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
   this.fromIdWithInfo(txid, function(err, t) {
     if (err || !t) return cb(err);
 
-    var index=0;
-    t.info.vin.forEach(function(i){ i.n = index++});
+    var index = 0;
+    t.info.vin.forEach( function(i){
+      i.n = index++;
+    });
 
     async.each(t.info.vin, function(i, next_in) {
       if (i.addr && i.value) {
@@ -130,9 +131,9 @@ TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
       }
       else {
         if ( !i.coinbase ) {
-            console.log ("TX: %s,%d could not parse INPUT", t.txid, i.n);
+            console.log ('TX: %s,%d could not parse INPUT', t.txid, i.n);
         }
-        return next_in(); 
+        return next_in();
       }
     },
     function (err) {
@@ -142,10 +143,7 @@ TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
         /*
          * TODO Support multisigs
          */
-        if (o.value &&  o.scriptPubKey 
-            && o.scriptPubKey.addresses 
-            && o.scriptPubKey.addresses[0]
-            ) {
+        if (o.value && o.scriptPubKey && o.scriptPubKey.addresses && o.scriptPubKey.addresses[0]) {
 //console.log("Creating OUT %s %d", o.scriptPubKey.addresses[0], o.valueSat);
           TransactionItem.create({
               txid  : t.txid,
@@ -156,8 +154,8 @@ TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
           }, next_out);
         }
         else {
-          console.log ("TX: %s,%d could not parse OUTPUT. Skipping... ", t.txid, o.n);
-          return next_out(); 
+          console.log ('TX: %s,%d could not parse OUTPUT', t.txid, o.n);
+          return next_out();
         }
       },
       function (err) {
@@ -206,7 +204,6 @@ TransactionSchema.methods.fillInputValues = function (tx, next) {
             // This is used for pay-to-pubkey transaction in which
             // the pubkey is not provided on the input
             var scriptPubKey = j.getScript();
-            var txType       = scriptPubKey.classify();
             var hash         = scriptPubKey.simpleOutHash();
             if (hash) {
               var addr          = new Address(network.addressPubkey, hash);
@@ -273,18 +270,18 @@ TransactionSchema.methods.queryInfo = function (next) {
               that.info.vin[c].addr  = addrStr;
             }
             else {
-              if (i.addrFromOutput) 
+              if (i.addrFromOutput)
                 that.info.vin[c].addr  = i.addrFromOutput;
             }
           }
           else {
-            console.log("TX could not be parsed: %s,%d",txInfo.result.txid, c); 
+            console.log('TX could not be parsed: %s,%d' ,txInfo.result.txid, c);
           }
           c++;
         });
       }
 
-      var c = 0;
+      c=0;
       tx.outs.forEach( function(i) {
         var n =  util.valueToBigInt(i.v).toNumber();
         valueOut = valueOut.add(n);

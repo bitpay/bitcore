@@ -1,10 +1,8 @@
 [
     { 
-"disabled":1, 
         "addr": "mjRmkmYzvZN3cA3aBKJgYJ65epn3WCG84H"
     },
     { 
-"disabled":1, 
         "addr": "mp3Rzxx9s1A21SY3sjJ3CQoa2Xjph7e5eS",
         "balance": 0,
         "totalReceived": 50,
@@ -16,6 +14,7 @@
         "balance": 43.1
     },
     { 
+"disabled":1, 
         "addr": "mzW2hdZN2um7WBvTDerdahKqRgj3md9C29",
         "balance":  910.39522682,
         "totalReceived":  910.39522682,

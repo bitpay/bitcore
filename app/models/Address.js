@@ -4,16 +4,12 @@ require('classtool');
 
 
 function spec() {
-  var util            = require('util');
-  var RpcClient       = require('bitcore/RpcClient').class();
-  var networks        = require('bitcore/networks');
   var async           = require('async');
-  var Transaction     = require('./Transaction');
   var TransactionItem = require('./TransactionItem');
-  var config          = require('../../config/config');
+  var BitcoreAddress  = require('bitcore/Address').class();
+  var BitcoreUtil     = require('bitcore/util/util');
 
-  function Address(addrStr,cb) {
-    this.addrStr        = addrStr;
+  function Address(addrStr) {
     this.balanceSat        = 0;
     this.totalReceivedSat  = 0;
     this.totalSentSat      = 0;
@@ -21,38 +17,58 @@ function spec() {
 
     // TODO store only txids? +index? +all?
     this.transactions   = [];
+
+    var a = new BitcoreAddress(addrStr);
+    try {
+      a.validate();
+      this.addrStr        = addrStr;
+    } catch(e){
+    }
   }
 
+
+  Address.prototype.__defineGetter__('balance', function(){
+
+console.log('#################### '+this.balanceSat);
+
+
+    return this.balanceSat / BitcoreUtil.COIN;
+  });
+
   Address.prototype.update = function(next) {
+
+    if (! this.addrStr) {
+      return next(new Error('Invalid or undefined address string'));
+    }
 
     var that = this;
     async.series([
       // TODO TXout!
       //T
       function (cb) {
-      TransactionItem.find({addr:that.addrStr}, function(err,txItems){
-        if (err) return cb(err);
+        TransactionItem.find({addr:that.addrStr}, function(err,txItems){
+          if (err) return cb(err);
 
-        txItems.forEach(function(txItem){
+          txItems.forEach(function(txItem){
 
-console.log(txItem.txid + ' : ' + txItem.value_sat);
-          that.txApperances +=1;
-          that.balanceSat += txItem.value_sat;
+ // console.log(txItem.txid + ' : ' + txItem.value_sat);
+            that.txApperances +=1;
+            that.balanceSat += txItem.value_sat;
 
-          that.transactions.push(txItem.txid);
+            that.transactions.push(txItem.txid);
 
-          if (txItem.value_sat > 0)
-            that.totalSentSat += txItem.value_sat;
-          else 
-            that.totalReceivedSat += Math.abs(txItem.value_sat);
+            if (txItem.value_sat > 0)
+              that.totalSentSat += txItem.value_sat;
+            else
+              that.totalReceivedSat += Math.abs(txItem.value_sat);
+          });
+          return cb();
         });
-        return cb();
-      })
-    }
+      }
     ], function (err) {
       return next(err);
     });
-  }
+  };
 
   return Address;
 }
