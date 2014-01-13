@@ -87,7 +87,10 @@ describe('Transaction', function(){
     Transaction.fromIdWithInfo(txid2, function(err, tx) {
       if (err) done(err);
       assert.equal(tx.info.txid, txid2);
-      assert.equal(tx.info.vin[0].addr, null);
+      assert.equal(tx.info.vin[0].addr, 'n1JagbRWBDi6VMvG7HfZmXX74dB9eiHJzU');
+
+      // TODO output -> multisig!
+      // https://www.biteasy.com/testnet/transactions/64496d005faee77ac5a18866f50af6b8dd1f60107d6795df34c402747af98608
       done();
     });
   });
