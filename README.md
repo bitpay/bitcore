@@ -23,9 +23,18 @@ $ npm install -g bower
 * UI Bootstrap - Defined as bower module in the [bower.json](bower.json) file.
 
 ## Quick Install
-  The quickest way to get started with MEAN is to clone the project and utilize it like this:
-  
-  Grunt Command Line Interface:
+  To install Mystery on local, you have to fork the main repository to your
+  computer:
+
+    https://github.com/bitpay/mystery
+
+  Then clone it wherever you want:
+
+    $ git clone git@github.com:<your_username>/mystery.git
+
+    $ cd myster
+
+  Install Grunt Command Line Interface:
   
     $ sudo npm -g install grunt-cli
   
@@ -37,20 +46,29 @@ $ npm install -g bower
 
     $ grunt
     
-  When not using grunt you can use (for example in production):
+  When not using grunt you can use (for example in production or test
+  environment):
 
     $ node server
     
-  Then open a browser and go to:
+  Then open a browser and go to (with default port):
 
     http://localhost:3000
 
-## API
+  If you get an error, please check the next section "Post-install"
 
-A REST API is provided at /api. The entry points are:
+### Post-install (post-dependecies)
 
-### Prerequisites
-  Get bitcore from github repository:
+  Get bufferput package from Github repository:
+
+    $ git clone git@github.com:gasteve/node-bufferput.git
+
+  Create symbolic link of node-bufferput in your mystery folder:
+
+    $ cd <your_path_to>/mystery/node_modules
+    $ ln -s <path_to>/node-bufferput bufferput
+
+    Get bitcore from github repository:
     
     $ git clone https://github.com/bitpay/bitcore.git
     
@@ -66,7 +84,11 @@ A REST API is provided at /api. The entry points are:
     $ rm -R bitcore
 
     $ ln -s <path-to-your-clone-repositoy>/bitcore
-    
+
+## API
+
+  A REST API is provided at /api. 
+  
   Run sync from mystery repository (to save blocks in MongoDB):
     
     $ utils/sync.js
