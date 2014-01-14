@@ -23,6 +23,7 @@ var BlockSchema = new Schema({
     unique: true,
   },
   time: Number,
+  fromP2P: Boolean,
 });
 
 
