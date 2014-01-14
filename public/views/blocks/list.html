@@ -11,7 +11,7 @@
       <li><a href="#!/blocks-date/{{pagination.next}}">{{pagination.next}} &raquo;</a></li>
     </ul>
   </div>
-  <table class="table table-striped">
+  <table class="table table-striped" ng-show="blocks || blocks.length">
     <thead>
       <th>Hash</th>
       <th>Solved at</th>
@@ -23,4 +23,5 @@
       </tr>
     </tbody>
   </table>
+  <h1 class="text-center text-muted" ng-hide="!blocks || blocks.length">No blocks yet.</h1>
 </section>
