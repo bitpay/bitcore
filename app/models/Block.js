@@ -5,7 +5,10 @@
  */
 var mongoose    = require('mongoose'),
     Schema      = mongoose.Schema,
+    bignum      = require('bignum'),
     RpcClient   = require('bitcore/RpcClient').class(),
+    util        = require('bitcore/util/util'),
+    BitcoreBlock= require('bitcore/Block').class(),
     config      = require('../../config/config')
     ;
 
@@ -25,7 +28,6 @@ var BlockSchema = new Schema({
   time: Number,
   fromP2P: Boolean,
 });
-
 
 /**
  * Validations
@@ -81,6 +83,8 @@ BlockSchema.methods.getInfo = function (next) {
      */
 
     that.info = blockInfo.result;
+
+    that.info.reward =  BitcoreBlock.getBlockValue(that.info.height) / util.COIN ;
 
     //console.log("THAT", that);
     return next(null, that.info);
