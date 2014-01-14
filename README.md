@@ -113,6 +113,12 @@ A REST API is provided at /api. The entry points are:
   /api/tx/[:txid]
   /api/tx/525de308971eabd941b139f46c7198b5af9479325c2395db7f2fb5ae8562556c
 ```
+### Addresses 
+```
+  /api/addr/[:addr]
+  /api/addr/mmvP3mTe53qxHdPqXEvdu8WdC7GfQ2vmx5
+```
+
 
 
 
