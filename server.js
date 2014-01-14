@@ -59,7 +59,7 @@ require('./config/routes')(app);
 // socket.io
 var server = require('http').createServer(app);
 var io = require('socket.io').listen(server);
-require('./app/views/sockets/main.js')(app,io);
+require('./app/views/sockets/main.js').init(app,io);
 
 //Start the app by listening on <port>
 var port = process.env.PORT || config.port;

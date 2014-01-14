@@ -5,7 +5,7 @@ angular.module('mystery.system').controller('IndexController', ['$scope', 'Globa
   socket.on('tx', function(data) {
     var tx = data;
     console.log('Transaction received! ' + tx.txid);
-    $scope.txs.push(tx.txid);
+    $scope.txs.unshift(tx.txid);
   });
 
   $scope.txs = [];

@@ -91,18 +91,20 @@ TransactionSchema.statics.fromIdWithInfo = function(txid, cb) {
 TransactionSchema.statics.createFromArray = function(txs, next) {
   var that = this;
   if (!txs) return next();
-
+  var mongo_txs = [];
   async.forEach( txs,
     function(tx, callback) {
-      that.create({ txid: tx }, function(err) {
+      that.create({ txid: tx }, function(err, new_tx) {
         if (err && ! err.toString().match(/E11000/)) {
           return callback(err);
         }
+        console.log(new_tx);
+        mongo_txs.push(new_tx);
         return callback();
       });
     },
     function(err) {
-      return next(err);
+      return next(err, mongo_txs);
     }
   );
 };
