@@ -99,10 +99,12 @@
   <h2>Transactions <small>Transactions contained within this block</small></h2>
   <table class="table table-striped">
     <thead>
-      <th>Hash</th>
+      <tr>
+        <th>Hash</th>
+      </tr>
     </thead>
     <tbody>
-    <tr data-ng-repeat="tx in block.tx">
+    <tr data-ng-repeat="tx in block.tx track by $index">
       <td><a href="/#!/tx/{{tx}}">{{tx}}</a></td>
     </tr>
     </tbody>
