@@ -44,7 +44,8 @@ walk(models_path);
 var ps = new PeerSync();
 ps.init({
   skip_db_connection: true,
-  broadcast_txs: true
+  broadcast_txs: true,
+  broadcast_blocks: true
 });
 ps.run();
 
