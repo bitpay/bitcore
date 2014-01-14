@@ -93,14 +93,16 @@ TransactionSchema.statics.createFromArray = function(txs, next) {
   if (!txs) return next();
   var mongo_txs = [];
   async.forEach( txs,
-    function(tx, callback) {
+    function(tx, cb) {
       that.create({ txid: tx }, function(err, new_tx) {
-        if (err && ! err.toString().match(/E11000/)) {
-          return callback(err);
+        if (err) {
+          if (err.toString().match(/E11000/)) {
+            return cb();
+          }
+          return cb(err);
         }
-        console.log(new_tx);
         mongo_txs.push(new_tx);
-        return callback();
+        return cb();
       });
     },
     function(err) {

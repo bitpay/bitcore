@@ -43,7 +43,8 @@ walk(models_path);
 // p2p_sync process
 var ps = new PeerSync();
 ps.init({
-  skip_db_connection: true
+  skip_db_connection: true,
+  broadcast_txs: true
 });
 ps.run();
 

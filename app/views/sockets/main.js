@@ -10,11 +10,7 @@ module.exports.init = function(app, io_ext) {
   io = io_ext;
   io.set('log level', 1); // reduce logging
   io.sockets.on('connection', function(socket) {
-    Transaction.findOne(function(err, tx) {
-      setTimeout(function() {
-        socket.emit('tx', tx);
-      }, 5000);
-    });
+    
   });
 };
 
