@@ -5,12 +5,13 @@
       <small>Addresses are identifiers which you use to send bitcoins to another person.</small>
     </h1>
   </div>
-  <div class="col-lg-9">
-    <table class="table table-striped">
-      <tbody>
+  <div class="row">
+    <div class="col-lg-9">
+      <table class="table table-striped">
+        <tbody>
         <tr>
           <td>Address</td>
-          <td><a href="/#!/address/{{address}}">{{address.addrStr}}</a></td>
+          <td><a href="/#!/address/{{address.addrStr}}">{{address.addrStr}}</a></td>
         </tr>
         <tr>
           <td>Total Received</td>
@@ -29,32 +30,32 @@
           <td>{{address.txApperances}}</td>
         </tr>
 
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
+    <div class="col-lg-3">
+      <qrcode size="200" data="{{address.addrStr}}"></qrcode>
+    </div>
   </div>
-  <div class="col-lg-3">
-    <qrcode size="200" data="{{address.addrStr}}"></qrcode>
-  </div>
-  <div class="col-lg-12">
-    <h3>
-      Transactions
-      <small>transactions this address relates to</small>
-    </h3>
 
+  <div data-ng-controller="transactionsController" data-ng-init="byAddress(params.addrStr)"> 
+    <h2>Transactions <small>Transactions contained within this block</small></h2>
     <table class="table table-striped">
       <thead>
         <tr>
           <th>Transaction Hash</th>
           <th>Datetime</th>
-          <th>Transacted amount</th>
+          <th>Fee</th>
+          <th>Transacted Amount</th>
         </tr>
       </thead>
       <tbody>
-        <tr data-ng-repeat="transaction in address.transactions track by $index">
-          <td><a href="/#!/tx/{{transaction}}">{{transaction}}</a></td>
-          <td>--</td>
-          <td>--</td>
-        </tr>
+      <tr data-ng-repeat="tx in txs">
+        <td><a href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a></td>
+        <td>{{tx.time * 1000 | date:'medium'}}</td>
+        <td>{{tx.feeds}}</td>
+        <td>{{tx.valueOut}}</td>
+      </tr>
       </tbody>
     </table>
   </div>

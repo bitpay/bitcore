@@ -17,28 +17,12 @@
               <td>{{block.tx.length}}<td>
             </tr>
             <tr>
-              <td>Output Total</td>
-              <td>--</td>
-            </tr>
-            <tr>
-              <td>Estimated Transaction Volume</td>
-              <td>--</td>
-            </tr>
-            <tr>
-              <td>Transaction Fees</td>
-              <td>--</td>
-            </tr>
-            <tr>
               <td>Height</td>
               <td>{{block.height}}</td>
             </tr>
             <tr>
               <td>Timestamp</td>
               <td>{{block.time * 1000 | date:'medium'}}</td>
-            </tr>
-            <tr>
-              <td>Relayed By</td>
-              <td>--</td>
             </tr>
             <tr>
               <td>Difficulty</td>
@@ -96,17 +80,28 @@
     </div>
   </div>
 
-  <h2>Transactions <small>Transactions contained within this block</small></h2>
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>Hash</th>
+  <div data-ng-controller="transactionsController" data-ng-init="byBlock(params.blockHash)"> 
+    <h2>Transactions <small>Transactions contained within this block</small></h2>
+    <div data-ng-show="txs.length == 0">
+      Loading...
+    </div>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Transaction Hash</th>
+          <th>Datetime</th>
+          <th>Fee</th>
+          <th>Transacted Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+      <tr data-ng-repeat="tx in txs">
+        <td><a href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a></td>
+        <td>{{tx.time * 1000 | date:'medium'}}</td>
+        <td>{{tx.feeds}}</td>
+        <td>{{tx.valueOut}}</td>
       </tr>
-    </thead>
-    <tbody>
-    <tr data-ng-repeat="tx in block.tx track by $index">
-      <td><a href="/#!/tx/{{tx}}">{{tx}}</a></td>
-    </tr>
-    </tbody>
-  </table>
+      </tbody>
+    </table>
+  </div>
 </section>
