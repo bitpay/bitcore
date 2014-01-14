@@ -10,6 +10,7 @@ var mongoose    = require('mongoose'),
     RpcClient   = require('bitcore/RpcClient').class(),
     Transaction = require('bitcore/Transaction').class(),
     Address     = require('bitcore/Address').class(),
+    BitcoreBlock= require('bitcore/Block').class(),
     networks    = require('bitcore/networks'),
     util        = require('bitcore/util/util'),
     bignum      = require('bignum'),
@@ -296,8 +297,16 @@ TransactionSchema.methods.queryInfo = function (next) {
         that.info.valueIn  = valueIn / util.COIN;
         that.info.feeds    = (valueIn - valueOut) / util.COIN;
       }
+      else  {
+        var reward =  BitcoreBlock.getBlockValue(that.info.height) / util.COIN;
+        that.info.vin[0].reward = reward;
+        that.info.valueIn = reward;
+      }
+
 
       that.info.size     = b.length;
+
+
 
       return next(err, that.info);
     });
