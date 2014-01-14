@@ -40,6 +40,8 @@ describe('Address balances', function(){
           if (v.balance) assert.equal(v.balance, a.balance);
           if (v.totalReceived) assert.equal(v.totalReceived, a.totalReceived);
           if (v.totalSent) assert.equal(v.totalSent, a.totalSent);
+
+
           if (v.transactions) {
 
             v.transactions.forEach( function(tx) {
