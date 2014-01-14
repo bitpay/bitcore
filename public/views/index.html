@@ -1,8 +1,9 @@
-<section data-ng-controller="IndexController" data-ng-init="last_blocks()">
-  <div class="jumbotron">
-    <h1>Hello, BitPay!</h1>
-    <p>Start here for blocks information</p>
-    <p><a href="/#!/blocks" class="btn btn-primary btn-lg">List all blocks</a></p>
+<section data-ng-controller="IndexController" data-ng-init="">
+  <div class="">
+    <h3>New transactions</h3>
+    <div class="alert alert-info fader" ng-repeat='tx in txs'>
+      {{tx}}
+    </div>
   </div>
 </section>
 

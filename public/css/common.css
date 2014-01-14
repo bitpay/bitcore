@@ -48,3 +48,14 @@ body {
   font-size: 10px;
 }
 
+
+
+/* Animations */
+.fader.ng-enter {
+  transition: opacity 1s;
+  opacity: 0;
+}
+
+.fader.ng-enter-active {
+  opacity: 1;
+}

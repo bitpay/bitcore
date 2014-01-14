@@ -63,8 +63,9 @@ require('./app/views/sockets/main.js')(app,io);
 
 //Start the app by listening on <port>
 var port = process.env.PORT || config.port;
-server.listen(port);
-console.log('Express app started on port ' + port);
+server.listen(port, function(){
+    console.log('Express server listening on port %d in %s mode', server.address().port, process.env.NODE_ENV);
+});
 
 //expose app
 exports = module.exports = app;
