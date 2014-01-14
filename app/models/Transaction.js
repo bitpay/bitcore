@@ -17,6 +17,7 @@ var mongoose    = require('mongoose'),
     config      = require('../../config/config'),
     TransactionItem = require('./TransactionItem');
 
+var CONCURRENCY = 5;
 
 /**
  */
@@ -122,7 +123,7 @@ TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
       i.n = index++;
     });
 
-    async.each(t.info.vin, function(i, next_in) {
+    async.forEachLimit(t.info.vin, CONCURRENCY, function(i, next_in) {
       if (i.addr && i.value) {
 
 //console.log("Creating IN %s %d", i.addr, i.valueSat);
@@ -143,7 +144,7 @@ TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
     },
     function (err) {
       if (err) console.log (err);
-      async.each(t.info.vout, function(o, next_out) {
+      async.forEachLimit(t.info.vout, CONCURRENCY, function(o, next_out) {
 
         /*
          * TODO Support multisigs
@@ -180,7 +181,7 @@ TransactionSchema.methods.fillInputValues = function (tx, next) {
   var network   = ( config.network === 'testnet') ? networks.testnet : networks.livenet ;
 
   var that = this;
-  async.each(tx.ins, function(i, cb) {
+  async.forEachLimit(tx.ins, CONCURRENCY, function(i, cb) {
 
       var outHash       = i.getOutpointHash();
       var outIndex      = i.getOutpointIndex();
