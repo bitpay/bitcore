@@ -1,6 +1,20 @@
 'use strict';
 
-angular.module('mystery', ['ngCookies', 'ngResource', 'ngRoute', 'ui.bootstrap', 'ui.route', 'mystery.system', 'mystery.index', 'mystery.blocks', 'mystery.transactions', 'monospaced.qrcode', 'mystery.address', 'mystery.search']);
+var app = angular.module('mystery',
+    ['ngAnimate',
+    'ngCookies',
+    'ngResource',
+    'ngRoute',
+    'ui.bootstrap',
+    'ui.route',
+    'mystery.system',
+    'mystery.index',
+    'mystery.blocks',
+    'mystery.transactions',
+    'monospaced.qrcode',
+    'mystery.address',
+    'mystery.search'
+]);
 
 angular.module('mystery.system', []);
 angular.module('mystery.index', []);
