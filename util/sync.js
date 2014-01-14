@@ -14,8 +14,7 @@ var async = require('async');
 program
   .version(SYNC_VERSION)
   .option('-N --network [livenet]', 'Set bitcoin network [testnet]', 'testnet')
-  .option('-R --reindex', 'Force reindexing', '0')
-  .option('-D --destroy', 'Remove current DB', '0')
+  .option('-D --destroy', 'Remove current DB (and start from there)', '0')
   .option('--skip_blocks', 'Sync blocks')
   .option('--skip_txs', 'Sync transactions')
   .parse(process.argv);
