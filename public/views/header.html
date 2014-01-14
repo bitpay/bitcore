@@ -14,5 +14,13 @@
         <a href="#!/{{item.link}}">{{item.title}}</a>
       </li>
     </ul>
+    <div ng-controller="SearchController">
+      <form class="navbar-form navbar-left" role="search" ng-submit="search()">
+        <div class="form-group" ng-class="{'has-error': badQuery}">
+          <input id="search" type="text" class="form-control" ng-model="q" placeholder="Search for block, transaction or address">
+        </div>
+        <span class="text-danger" ng-show="badQuery">No matching records found!</span>
+      </form>
+    </div>
   </div>
 </div>
