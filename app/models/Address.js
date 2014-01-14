@@ -24,24 +24,38 @@ function spec() {
       this.addrStr        = addrStr;
     } catch(e){
     }
+
+
+    Object.defineProperty(this, "totalSent", {
+      get: function() {
+        return parseFloat(this.totalSentSat) / parseFloat(BitcoreUtil.COIN);
+      },
+      set:  function(i) {
+        totalSentSat =  i * BitcoreUtil.COIN;
+      },
+      enumerable: 1,
+    });
+
+    Object.defineProperty(this, "balance", {
+      get: function() {
+        return parseFloat(this.balanceSat) / parseFloat(BitcoreUtil.COIN);
+      },
+      set:  function(i) {
+        balance =   i * BitcoreUtil.COIN;
+      },
+      enumerable: 1,
+    });
+
+    Object.defineProperty(this, "totalReceived", {
+      get: function() {
+        return parseFloat(this.totalReceivedSat) / parseFloat(BitcoreUtil.COIN);
+      },
+      set:  function(i) {
+        totalReceived =  i * BitcoreUtil.COIN;
+      },
+      enumerable: 1,
+    });
   }
-
-
-  Address.prototype.__defineGetter__('balance', function(){
-    return parseFloat(this.balanceSat) / parseFloat(BitcoreUtil.COIN);
-  });
-
-
-  Address.prototype.__defineGetter__('totalReceived', function(){
-    return parseFloat(this.totalReceivedSat) / parseFloat(BitcoreUtil.COIN);
-  });
-
-
-  Address.prototype.__defineGetter__('totalSent', function(){
-    return parseFloat(this.totalSentSat) / parseFloat(BitcoreUtil.COIN);
-  });
-
-
 
   Address.prototype.update = function(next) {
 

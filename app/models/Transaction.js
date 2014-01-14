@@ -10,12 +10,14 @@ var mongoose    = require('mongoose'),
     RpcClient   = require('bitcore/RpcClient').class(),
     Transaction = require('bitcore/Transaction').class(),
     Address     = require('bitcore/Address').class(),
+    BitcoreBlock= require('bitcore/Block').class(),
     networks    = require('bitcore/networks'),
     util        = require('bitcore/util/util'),
     bignum      = require('bignum'),
     config      = require('../../config/config'),
     TransactionItem = require('./TransactionItem');
 
+var CONCURRENCY = 5;
 
 /**
  */
@@ -90,18 +92,22 @@ TransactionSchema.statics.fromIdWithInfo = function(txid, cb) {
 TransactionSchema.statics.createFromArray = function(txs, next) {
   var that = this;
   if (!txs) return next();
-
+  var mongo_txs = [];
   async.forEach( txs,
-    function(tx, callback) {
-      that.create({ txid: tx }, function(err) {
-        if (err && ! err.toString().match(/E11000/)) {
-          return callback(err);
+    function(tx, cb) {
+      that.create({ txid: tx }, function(err, new_tx) {
+        if (err) {
+          if (err.toString().match(/E11000/)) {
+            return cb();
+          }
+          return cb(err);
         }
-        return callback();
+        mongo_txs.push(new_tx);
+        return cb();
       });
     },
     function(err) {
-      return next(err);
+      return next(err, mongo_txs);
     }
   );
 };
@@ -117,7 +123,7 @@ TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
       i.n = index++;
     });
 
-    async.each(t.info.vin, function(i, next_in) {
+    async.forEachLimit(t.info.vin, CONCURRENCY, function(i, next_in) {
       if (i.addr && i.value) {
 
 //console.log("Creating IN %s %d", i.addr, i.valueSat);
@@ -138,7 +144,7 @@ TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
     },
     function (err) {
       if (err) console.log (err);
-      async.each(t.info.vout, function(o, next_out) {
+      async.forEachLimit(t.info.vout, CONCURRENCY, function(o, next_out) {
 
         /*
          * TODO Support multisigs
@@ -175,7 +181,7 @@ TransactionSchema.methods.fillInputValues = function (tx, next) {
   var network   = ( config.network === 'testnet') ? networks.testnet : networks.livenet ;
 
   var that = this;
-  async.each(tx.ins, function(i, cb) {
+  async.forEachLimit(tx.ins, CONCURRENCY, function(i, cb) {
 
       var outHash       = i.getOutpointHash();
       var outIndex      = i.getOutpointIndex();
@@ -296,8 +302,16 @@ TransactionSchema.methods.queryInfo = function (next) {
         that.info.valueIn  = valueIn / util.COIN;
         that.info.feeds    = (valueIn - valueOut) / util.COIN;
       }
+      else  {
+        var reward =  BitcoreBlock.getBlockValue(that.info.height) / util.COIN;
+        that.info.vin[0].reward = reward;
+        that.info.valueIn = reward;
+      }
+
 
       that.info.size     = b.length;
+
+
 
       return next(err, that.info);
     });

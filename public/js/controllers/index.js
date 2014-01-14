@@ -1,16 +1,29 @@
 'use strict';
 
-angular.module('mystery.system').controller('IndexController', ['$scope', 'Global', 'Index', function($scope, Global, Index) {
+var TRANSACTION_DISPLAYED = 5;
+var BLOCKS_DISPLAYED = 5;
+angular.module('mystery.system').controller('IndexController', ['$scope', 'Global', 'socket', function($scope, Global, socket) {
   $scope.global = Global;
-  $scope.index = Index;
-}]);
-
-$(document).ready(function() {
-  var socket = io.connect('http://localhost');
   socket.on('tx', function(data) {
     var tx = data;
-    console.log('Transaction received! '+tx.txid);
+    console.log('Transaction received! ' + tx);
+    if ($scope.txs.length === TRANSACTION_DISPLAYED) {
+      $scope.txs.pop();
+    }
+    $scope.txs.unshift(tx);
   });
 
-});
+  socket.on('block', function(data) {
+    var block = data;
+    console.log('Block received! ' + block);
+    if ($scope.blocks.length === BLOCKS_DISPLAYED) {
+      $scope.blocks.pop();
+    }
+    $scope.blocks.unshift(block);
+  });
+
+  $scope.txs = [];
+  $scope.blocks = [];
+
+}]);
 
