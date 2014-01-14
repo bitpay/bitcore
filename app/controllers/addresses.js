@@ -31,10 +31,6 @@ exports.address = function(req, res, next, addr) {
  */
 exports.show = function(req, res) {
   if (req.address) {
-
-console.log(req.address);
-console.log(req.address.totalSent);
-console.log(JSON.stringify(req.address));
     res.jsonp(req.address);
   }
 };
