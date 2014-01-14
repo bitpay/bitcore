@@ -18,3 +18,8 @@ module.exports.init = function(app, io_ext) {
 module.exports.broadcast_tx = function(tx) {
   io.sockets.emit('tx', tx);
 };
+
+
+module.exports.broadcast_block = function(block) {
+  io.sockets.emit('block', block);
+};
