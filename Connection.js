@@ -20,8 +20,6 @@ function spec(b) {
   var doubleSha256 = b.doubleSha256 || util.twoSha256;
   var nonce = util.generateNonce();
 
-  var Block = require('./Block').class();
-
   var BIP0031_VERSION = 60000;
 
   function Connection(socket, peer) {

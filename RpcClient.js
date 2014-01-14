@@ -180,7 +180,9 @@ function ClassSpec(b) {
       });
     });
     req.on('error', function(e) {
-      log.err('Could not connect to bitcoin via RPC: '+e);
+      var err = new Error('Could not connect to bitcoin via RPC: '+e.message);
+      log.err(err);
+      callback(err);
     });
     
     req.setHeader('Content-Length', request.length);
