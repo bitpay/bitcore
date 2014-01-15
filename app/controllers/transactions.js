@@ -51,36 +51,40 @@ var getTransaction = function(txid, cb) {
   });
 };
 
-exports.getTransactionsByBlock = function(req, res, next, bId) {
-  Block.fromHashWithInfo(bId, function(err, block) {
-    if (err && !block) {
-      console.log(err);
-      res.status(404).send('Not found');
-      return next();
-    }
+exports.transactions = function(req, res, next) {
+  var bId = req.query.block;
+  var aId = req.query.address;
 
-    async.mapSeries(block.info.tx, getTransaction,
-      function(err, results) {
-        res.jsonp(results);
-      });
-  });
-};
+  if (bId) {
+    Block.fromHashWithInfo(bId, function(err, block) {
+      if (err && !block) {
+        console.log(err);
+        res.status(404).send('Not found');
+        return next();
+      }
 
-exports.getTransactionsByAddress = function(req, res, next, aId) {
- 
-  var a = Address.new(aId);
+      async.mapSeries(block.info.tx, getTransaction,
+        function(err, results) {
+          res.jsonp(results);
+        });
+    });
+  }
+  else {
+    var a = Address.new(aId);
 
-  a.update(function(err) {
-    if (err && !a.totalReceivedSat) {
-      console.log(err);
-      res.status(404).send('Invalid address');
-      return next();
-    }
+    a.update(function(err) {
+      if (err && !a.totalReceivedSat) {
+        console.log(err);
+        res.status(404).send('Invalid address');
+        return next();
+      }
 
-    async.mapSeries(a.transactions, getTransaction,
-      function(err, results) {
-        res.jsonp(results);
-      });
-  });
+      async.mapSeries(a.transactions, getTransaction,
+        function(err, results) {
+          res.jsonp(results);
+        });
+    });
+
+  }
 };
 

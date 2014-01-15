@@ -13,7 +13,7 @@ angular.module('mystery.transactions').controller('transactionsController', ['$s
 
   $scope.byBlock = function(bId) {
     TransactionsByBlock.query({
-     bId: bId
+     block: bId
     }, function(txs) {
       $scope.txs = txs;
     });
@@ -21,7 +21,7 @@ angular.module('mystery.transactions').controller('transactionsController', ['$s
 
   $scope.byAddress = function(aId) {
     TransactionsByAddress.query({
-     aId: aId
+     address: aId
     }, function(txs) {
       $scope.txs = txs;
     });

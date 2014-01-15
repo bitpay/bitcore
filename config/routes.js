@@ -19,13 +19,9 @@ module.exports = function(app) {
   app.get('/api/tx/:txid', transactions.show);
   app.param('txid', transactions.transaction);
 
-  app.get('/api/txb/:bId', transactions.getTransactionsByBlock);
-  app.param('bId', transactions.getTransactionsByBlock);
+  app.get('/api/txs', transactions.transactions);
 
-  app.get('/api/txa/:aId', transactions.getTransactionsByAddress);
-  app.param('aId', transactions.getTransactionsByAddress);
-
-
+  // Address routes
   var addresses = require('../app/controllers/addresses');
   app.get('/api/addr/:addr', addresses.show);
   app.param('addr', addresses.address);
