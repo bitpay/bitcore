@@ -10,16 +10,33 @@ function spec() {
 
   function Status() {
     this.info = {};
+    this.difficulty = {};
   }
 
   Status.prototype.getInfo = function(next) {
     var that = this;
     async.series([
       function (cb) {
-        rpc.getInfo(function(err, block){
+        rpc.getInfo(function(err, info){
           if (err) return cb(err);
 
-          that.info = block.result;
+          that.info = info.result;
+          return cb();
+        });
+      }
+    ], function (err) {
+      return next(err);
+    });
+  };
+
+  Status.prototype.getDifficulty = function(next) {
+    var that = this;
+    async.series([
+      function (cb) {
+        rpc.getDifficulty(function(err, df){
+          if (err) return cb(err);
+
+          that.difficulty = df.result;
           return cb();
         });
       }

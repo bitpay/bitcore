@@ -25,7 +25,17 @@ describe('Status', function(){
 
     d.getInfo(function(err) {
       if (err) done(err);
-      assert.equal(4096, d.info.difficulty);
+      assert.equal('number', typeof d.info.difficulty);
+      done();
+    });
+  });
+
+  it('getDifficulty', function(done) {
+    var d = new Status();
+
+    d.getDifficulty(function(err) {
+      if (err) done(err);
+      assert.equal('number', typeof d.difficulty);
       done();
     });
   });
