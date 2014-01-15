@@ -18,8 +18,7 @@ module.exports = function(app) {
   var transactions = require('../app/controllers/transactions');
   app.get('/api/tx/:txid', transactions.show);
   app.param('txid', transactions.transaction);
-
-  app.get('/api/txs', transactions.transactions);
+  app.get('/api/txs', transactions.list);
 
   // Address routes
   var addresses = require('../app/controllers/addresses');
