@@ -1,7 +1,16 @@
+.mystery {
+  font-family: Ubuntu-BoldItalic;
+  font-size: 34px;
+  color: #FFFFFF !important;
+  line-height: 18px;
+  margin-right: 50px;
+}
+
 /* Sticky footer styles
 -------------------------------------------------- */
 html,
 body {
+  font-family: Ubuntu, sans-serif;
   height: 100%;
   /* The html and body elements cannot have any padding or margin. */
 }
@@ -14,6 +23,55 @@ body {
   margin: 0 auto -60px;
   /* Pad bottom by footer height */
   padding: 0 0 60px;
+}
+
+.navbar-default {
+  background-color: #8DC429;
+  border-bottom: 4px solid #64920F;
+  color: #fff;
+}
+
+.navbar-default .navbar-nav>li>a {
+  color: #F4FBE8;
+  font-family: Ubuntu, sans-serif;
+  font-size: 16px;
+}
+
+.navbar-default .navbar-nav>.active>a, .navbar-default .navbar-nav>.active>a:focus, .navbar-default .navbar-nav>li>a:hover  {
+  color: #373D42;
+  background-color: #fff;
+  -moz-box-shadow:    0px 4px 0px 0px rgba(55,61,56,1);
+  -webkit-box-shadow: 0px 4px 0px 0px rgba(55,61,56,1);
+  box-shadow:         0px 4px 0px 0px rgba(55,61,56,1);
+}
+
+.navbar-form .form-control {
+  border: 0;
+  border-radius: 2px;
+  background: #7CAD23;
+  -moz-box-shadow:    1px 1px 0px 0px rgba(255,255,255,0.41), inset 1px 1px 3px 0px rgba(0,0,0,0.10);
+  -webkit-box-shadow: 1px 1px 0px 0px rgba(255,255,255,0.41), inset 1px 1px 3px 0px rgba(0,0,0,0.10);
+  box-shadow:         1px 1px 0px 0px rgba(255,255,255,0.41), inset 1px 1px 3px 0px rgba(0,0,0,0.10);
+}
+
+#search {
+  color: #fff;
+  font-family: Ubuntu-Light;
+}
+
+#search::-webkit-input-placeholder { 
+  font-family: Ubuntu-LightItalic;
+  font-size: 13px;
+  color: #BCDF7E;
+  line-height: 18px;
+}
+
+
+#search::-moz-placeholder { 
+  font-family: Ubuntu-LightItalic;
+  font-size: 13px;
+  color: #BCDF7E;
+  line-height: 18px;
 }
 
 /* Set the fixed height of the footer here */
