@@ -39,6 +39,7 @@ function ClassSpec(b) {
     getAddedNodeInfo: '',
     getAddressesByAccount: '',
     getBalance: 'str int',
+    getBestBlockHash: '',
     getBlock: '',
     getBlockCount: '',
     getBlockHash: 'int',
