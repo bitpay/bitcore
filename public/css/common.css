@@ -10,6 +10,7 @@
 -------------------------------------------------- */
 html,
 body {
+  color: #373D42;
   font-family: Ubuntu, sans-serif;
   height: 100%;
   /* The html and body elements cannot have any padding or margin. */
@@ -74,12 +75,52 @@ body {
   line-height: 18px;
 }
 
+.col-gray {
+  background-color: #F8F8F8;
+  padding: 15px;
+  margin-top: 10px;
+  width: 350px;
+  height: 89%;
+  border-radius: 5px;
+}
+
+.col-gray .address {
+  float: right;
+  display: block;
+  width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.block-id {
+  background: #373D42;
+  border: 3px solid #FFFFFF;
+  width: 165px;
+  height: 165px;
+  margin: 10px auto;
+  border-radius: :;px;
+}
+
+.block-id h1 {
+  font-family: Ubuntu-Medium;
+  font-size: 24px;
+  color: #FFFFFF;
+  line-height: 30px;
+  text-align: center;
+}
+
+.icon-block {
+  font-size: 27px;
+  color: white;
+  margin-top:  20px;
+}
+
 /* Set the fixed height of the footer here */
 #footer {
   height: 60px;
   background-color: #f5f5f5;
 }
-
 
 /* Custom page CSS
 -------------------------------------------------- */
@@ -102,7 +143,7 @@ body {
 }
 
 .address {
-  font-size: 10px;
+  font-size: 11px;
 }
 
 #search { width: 400px; }

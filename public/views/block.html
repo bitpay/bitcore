@@ -1,29 +1,79 @@
 <section data-ng-controller="BlocksController" data-ng-init="findOne()">
-  <div class="page-header">
-    <h1 data-ng-if="block">Block #{{ block.height }}</h1>
-  </div>
-
   <div class="row">
-    <div class="col-md-6">
-      <div class="panel panel-default">
-        <div class="panel-heading">
-          <h3 class="panel-title">Summary</h3>
+    <div class="col-md-4">
+      <div class="bs-sidebar hidden-print affix  col-gray">
+        <div class="block-id">
+          <div class="icon-block text-center">
+            <span class="glyphicon glyphicon-list-alt"></span>
+          </div>
+          <h1 data-ng-if="block">Block #{{ block.height }}</h1>
         </div>
-        <div class="panel-body">
-          <table class="table table-striped">
+
+        <div data-ng-show="!tx.isCoinBase">
+          <div class="panel-heading">
+            <h3>Hashes</h3>
+          </div>
+          <div class="panel-body">
+            <table class="table table-striped">
+              <tbody>
+              <tr>
+                <td>Hash</td>
+                <td><a class="address" href="/#!/block/{{block.hash}}">{{block.hash}}</a></td>
+              </tr>
+              <tr>
+                <td>Previous Block</td>
+                <td><a class="address" href="/#!/block/{{block.previousblockhash}}">{{block.previousblockhash}}</a></td>
+              </tr>
+              <tr>
+                <td>Next Block</td>
+                <td><a class="address" href="/#!/block/{{block.nextblockhash}}">{{block.nextblockhash}}</a></td>
+              </tr>
+              <tr>
+                <td>Merkle Root</td>
+                <td> <p class="address"> {{block.merkleroot}} </p> </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div> <!-- END OF COL-GRAY   -->   
+
+    <div class="col-md-8">
+      <h3>Summary</h3>
+      <div class="row">
+        <div class="col-md-6">
+          <table class="table">
             <tbody>
-            <tr>
-              <td>Number Of Transactions</td>
-              <td>{{block.tx.length}}<td>
-            </tr>
-            <tr>
-              <td>Height</td>
-              <td>{{block.height}}</td>
-            </tr>
-            <tr>
-              <td>Timestamp</td>
-              <td>{{block.time * 1000 | date:'medium'}}</td>
-            </tr>
+
+
+
+              <tr>
+                <td> <strong> Number Of Transactions </strong> </td>
+                <td class="text-right text-muted">{{block.tx.length}}<td>
+              </tr>
+              <tr>
+                <td> <strong> Output Total</strong></td>
+                <td class="text-right text-muted">--</td>
+              </tr>
+              <tr>
+                <td> <strong> Estimated Transaction Volume </strong></td>
+                <td class="text-right text-muted">--</td>
+              </tr>
+              <tr>
+                <td> <strong> Transaction Fees </strong></td>
+                <td class="text-right text-muted">--</td>
+              </tr>
+              <tr>
+                <td> <strong> Height </strong></td>
+                <td class="text-right text-muted">{{block.height}}</td>
+              </tr>
+              <tr>
+                <td> <strong> Timestamp </strong></td>
+                <td class="text-right text-muted">{{block.time * 1000 | date:'medium'}}</td>
+              </tr>
+
             <tr>
               <td>Difficulty</td>
               <td>{{block.difficulty}}</td>
@@ -47,36 +97,51 @@
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
-    <div class="col-md-6">
-      <div class="panel panel-default" data-ng-show="!tx.isCoinBase">
-        <div class="panel-heading">
-          <h3 class="panel-title">Hashes</h3>
-        </div>
-        <div class="panel-body">
-          <table class="table table-striped">
+        <div class="col-md-6">
+          <table class="table">
             <tbody>
-            <tr>
-              <td>Hash</td>
-              <td><a class="address" href="/#!/block/{{block.hash}}">{{block.hash}}</a></td>
-            </tr>
-            <tr>
-              <td>Previous Block</td>
-              <td><a class="address" href="/#!/block/{{block.previousblockhash}}">{{block.previousblockhash}}</a></td>
-            </tr>
-            <tr>
-              <td>Next Block</td>
-              <td><a class="address" href="/#!/block/{{block.nextblockhash}}">{{block.nextblockhash}}</a></td>
-            </tr>
-            <tr>
-              <td>Merkle Root</td>
-              <td class="address">{{block.merkleroot}}</td>
-            </tr>
+              <tr>
+                <td> <strong> Relayed By </strong></td>
+                <td class="text-right text-muted">--</td>
+              </tr>
+              <tr>
+                <td> <strong> Difficulty </strong></td>
+                <td class="text-right text-muted">{{block.difficulty}}</td>
+              </tr>
+              <tr>
+                <td> <strong> Bits </strong></td>
+                <td class="text-right text-muted">{{block.bits}}</td>
+              </tr>
+              <tr>
+                <td> <strong> Size </strong></td>
+                <td class="text-right text-muted">{{block.size}}</td>
+              </tr>
+              <tr>
+                <td> <strong> Version </strong></td>
+                <td class="text-right text-muted">{{block.version}}</td>
+              </tr>
+              <tr>
+                <td> <strong> Nonce </strong></td>
+                <td class="text-right text-muted">{{block.nonce}}</td>
+              </tr>
             </tbody>
           </table>
         </div>
-      </div>
+      </div><!--  END OF ROW -->
+
+      <h2>Transactions <small>Transactions contained within this block</small></h2>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Hash</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr data-ng-repeat="tx in block.tx track by $index">
+          <td><a href="/#!/tx/{{tx}}">{{tx}}</a></td>
+        </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
