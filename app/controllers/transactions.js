@@ -1,17 +1,12 @@
 'use strict';
 
-
+/**
+ * Module dependencies.
+ */
 var Transaction = require('../models/Transaction');
 var Block       = require('../models/Block');
 var Address     = require('../models/Address');
 var async       = require('async');
-//, _ = require('lodash');
-
-
-
-/**
- * Module dependencies.
- */
 
 
 /**
@@ -33,6 +28,7 @@ exports.transaction = function(req, res, next, txid) {
 
 
 /**
+ * Show transaction
  */
 exports.show = function(req, res) {
 
@@ -40,6 +36,7 @@ exports.show = function(req, res) {
     res.jsonp(req.transaction);
   }
 };
+
 
 var getTransaction = function(txid, cb) {
   Transaction.fromIdWithInfo(txid, function(err, tx) {
@@ -51,9 +48,14 @@ var getTransaction = function(txid, cb) {
   });
 };
 
-exports.transactions = function(req, res, next) {
+
+/**
+ * List of transaction
+ */
+exports.list = function(req, res, next) {
   var bId = req.query.block;
   var aId = req.query.address;
+  var limit = req.query.limit || 1000;
 
   if (bId) {
     Block.fromHashWithInfo(bId, function(err, block) {
@@ -69,7 +71,7 @@ exports.transactions = function(req, res, next) {
         });
     });
   }
-  else {
+  else if (aId) {
     var a = Address.new(aId);
 
     a.update(function(err) {
@@ -84,7 +86,18 @@ exports.transactions = function(req, res, next) {
           res.jsonp(results);
         });
     });
-
+  }
+  else {
+    Transaction
+      .find()
+      .limit(limit)
+      .sort('-time')
+      .exec(function(err, txs) {
+        if (err) {
+          res.status(500).send(err);
+        } else {
+          res.jsonp(txs);
+        }
+      });
   }
 };
-
