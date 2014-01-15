@@ -6,7 +6,7 @@ angular.module('mystery.system').controller('IndexController', ['$scope', 'Globa
   $scope.global = Global;
   socket.on('tx', function(data) {
     var tx = data;
-    console.log('Transaction received! ' + tx);
+    console.log('Transaction received! ' + JSON.stringify(tx));
     if ($scope.txs.length === TRANSACTION_DISPLAYED) {
       $scope.txs.pop();
     }
@@ -15,7 +15,7 @@ angular.module('mystery.system').controller('IndexController', ['$scope', 'Globa
 
   socket.on('block', function(data) {
     var block = data;
-    console.log('Block received! ' + block);
+    console.log('Block received! ' + JSON.stringify(block));
     if ($scope.blocks.length === BLOCKS_DISPLAYED) {
       $scope.blocks.pop();
     }
