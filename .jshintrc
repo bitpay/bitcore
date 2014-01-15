@@ -33,8 +33,9 @@
         "it",
         "inject",
         "expect",
-        "$"
-
+        "$",
+        "io",
+        "app"
     ],
     "indent": false, // Specify indentation spacing
     "devel": true, // Allow development statements e.g. `console.log();`.

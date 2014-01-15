@@ -39,6 +39,7 @@ var TransactionSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  time: Number,
 });
 
 /**
@@ -93,9 +94,10 @@ TransactionSchema.statics.createFromArray = function(txs, next) {
   var that = this;
   if (!txs) return next();
   var mongo_txs = [];
-  async.forEach( txs,
+  async.forEach(txs,
     function(tx, cb) {
-      that.create({ txid: tx }, function(err, new_tx) {
+      var now = Math.round(new Date().getTime() / 1000);
+      that.create({ txid: tx, time: now }, function(err, new_tx) {
         if (err) {
           if (err.toString().match(/E11000/)) {
             return cb();
