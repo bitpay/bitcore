@@ -32,3 +32,6 @@ angular.module('mystery.transactions').factory('TransactionsByAddress', ['$resou
   });
 }]);
 
+angular.module('mystery.transactions').factory('Transactions', ['$resource', function($resource) {
+  return $resource('/api/txs');
+}]);
