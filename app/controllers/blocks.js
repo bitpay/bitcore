@@ -3,10 +3,8 @@
 /**
  * Module dependencies.
  */
-
 var mongoose = require('mongoose'),
     Block = mongoose.model('Block');
-//, _ = require('lodash');
 
 
 /**
@@ -35,10 +33,13 @@ exports.show = function(req, res) {
   }
 };
 
+
 /**
  * List of blocks by date
  */
 exports.list = function(req, res) {
+  var limit = req.query.limit || 0;
+
   //helper to convert timestamps to yyyy-mm-dd format
   var formatTimestamp = function (date) {
     var yyyy = date.getUTCFullYear().toString();
@@ -69,11 +70,10 @@ exports.list = function(req, res) {
         '$lte': lte
       }
     })
+    .limit(limit)
     .exec(function(err, blocks) {
       if (err) {
-        res.render('error', {
-          status: 500
-        });
+        res.status(500).send(err);
       } else {
         res.jsonp({
           blocks: blocks,
@@ -86,5 +86,3 @@ exports.list = function(req, res) {
       }
     });
 };
-
-
