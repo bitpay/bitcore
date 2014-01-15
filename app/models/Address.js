@@ -26,32 +26,32 @@ function spec() {
     }
 
 
-    Object.defineProperty(this, "totalSent", {
+    Object.defineProperty(this, 'totalSent', {
       get: function() {
         return parseFloat(this.totalSentSat) / parseFloat(BitcoreUtil.COIN);
       },
       set:  function(i) {
-        totalSentSat =  i * BitcoreUtil.COIN;
+        this.totalSentSat =  i * BitcoreUtil.COIN;
       },
       enumerable: 1,
     });
 
-    Object.defineProperty(this, "balance", {
+    Object.defineProperty(this, 'balance', {
       get: function() {
         return parseFloat(this.balanceSat) / parseFloat(BitcoreUtil.COIN);
       },
       set:  function(i) {
-        balance =   i * BitcoreUtil.COIN;
+        this.balance =   i * BitcoreUtil.COIN;
       },
       enumerable: 1,
     });
 
-    Object.defineProperty(this, "totalReceived", {
+    Object.defineProperty(this, 'totalReceived', {
       get: function() {
         return parseFloat(this.totalReceivedSat) / parseFloat(BitcoreUtil.COIN);
       },
       set:  function(i) {
-        totalReceived =  i * BitcoreUtil.COIN;
+        this.totalReceived =  i * BitcoreUtil.COIN;
       },
       enumerable: 1,
     });

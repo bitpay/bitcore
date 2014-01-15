@@ -5,7 +5,6 @@
  */
 var mongoose    = require('mongoose'),
     Schema      = mongoose.Schema,
-    bignum      = require('bignum'),
     RpcClient   = require('bitcore/RpcClient').class(),
     util        = require('bitcore/util/util'),
     BitcoreBlock= require('bitcore/Block').class(),
