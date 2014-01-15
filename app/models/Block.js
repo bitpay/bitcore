@@ -8,8 +8,12 @@ var mongoose    = require('mongoose'),
     RpcClient   = require('bitcore/RpcClient').class(),
     util        = require('bitcore/util/util'),
     BitcoreBlock= require('bitcore/Block').class(),
+    Transaction = require('./Transaction'),
+    async       = require('async'),
     config      = require('../../config/config')
     ;
+
+var CONCURRENCY     = 5;
 
 /**
  * Block Schema
@@ -25,7 +29,6 @@ var BlockSchema = new Schema({
     unique: true,
   },
   time: Number,
-  fromP2P: Boolean,
 });
 
 /**
@@ -43,9 +46,18 @@ BlockSchema.path('title').validate(function(title) {
  */
 
 BlockSchema.statics.createTimestamped = function(block, cb) {
+
+  var that = this;
   var now = Math.round(new Date().getTime() / 1000);
-  block.time = now;
-  this.create(block, cb);
+
+  var BlockSchema = mongoose.model('Block', BlockSchema);
+  var newBlock = new that();
+  newBlock.time = now;
+
+  Transaction.createFromArray(block.tx, function(err, inserted_txs) {
+    if (err) return cb(err);
+    newBlock.save(cb);
+  });
 };
 
 BlockSchema.statics.load = function(id, cb) {
