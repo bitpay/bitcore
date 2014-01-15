@@ -9,11 +9,8 @@ var mongoose    = require('mongoose'),
     util        = require('bitcore/util/util'),
     BitcoreBlock= require('bitcore/Block').class(),
     Transaction = require('./Transaction'),
-    async       = require('async'),
     config      = require('../../config/config')
     ;
-
-var CONCURRENCY     = 5;
 
 /**
  * Block Schema
@@ -47,16 +44,18 @@ BlockSchema.path('title').validate(function(title) {
 
 BlockSchema.statics.createTimestamped = function(block, cb) {
 
-  var that = this;
+  var That= this;
   var now = Math.round(new Date().getTime() / 1000);
 
   var BlockSchema = mongoose.model('Block', BlockSchema);
-  var newBlock = new that();
+  var newBlock = new That();
   newBlock.time = now;
 
   Transaction.createFromArray(block.tx, function(err, inserted_txs) {
     if (err) return cb(err);
-    newBlock.save(cb);
+    newBlock.save(function(err) {
+      return cb(err, inserted_txs);
+    });
   });
 };
 
