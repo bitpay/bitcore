@@ -43,6 +43,12 @@ BlockSchema.path('title').validate(function(title) {
  * Statics
  */
 
+BlockSchema.statics.createTimestamped = function(block, cb) {
+  var now = Math.round(new Date().getTime() / 1000);
+  block.time = now;
+  this.create(block, cb);
+};
+
 BlockSchema.statics.load = function(id, cb) {
   this.findOne({
     _id: id
