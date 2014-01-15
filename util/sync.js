@@ -33,12 +33,12 @@ function(cb) {
   cb();
 },
 function(cb) {
-  sync.import_history(program, function(err) {
+  sync.import_history(program, function(err, count) {
     if (err) {
       console.log('CRITICAL ERROR: ', err);
     }
     else {
-      console.log('Done!');
+      console.log('Done! [%d blocks]', count);
     }
     cb();
   });

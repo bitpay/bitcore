@@ -30,15 +30,12 @@ var TransactionSchema = new Schema({
     index: true,
     unique: true,
   },
-  processed: {
-    type: Boolean,
-    default: false,
-    index: true,
-  },
+/* TODO?
   orphaned: {
     type: Boolean,
     default: false,
   },
+ */
   time: Number,
 });
 
@@ -71,10 +68,10 @@ TransactionSchema.statics.fromIdWithInfo = function(txid, cb) {
       tx = new That();
 
       tx.txid = txid;
-      tx.queryInfo(function(err, txInfo) {
+      tx.fillInfo(function(err, txInfo) {
 
         if (!txInfo)
-          return cb(new Error('TX not found1'));
+          return cb(new Error('TX not found'));
 
         tx.save(function(err) {
           return cb(err,tx);
@@ -82,7 +79,7 @@ TransactionSchema.statics.fromIdWithInfo = function(txid, cb) {
       });
     }
     else {
-      tx.queryInfo(function(err) {
+      tx.fillInfo(function(err) {
         return cb(err,tx);
       });
     }
@@ -94,59 +91,63 @@ TransactionSchema.statics.createFromArray = function(txs, next) {
   var that = this;
   if (!txs) return next();
   var mongo_txs = [];
-  async.forEach(txs,
-    function(tx, cb) {
-      var now = Math.round(new Date().getTime() / 1000);
-      that.create({ txid: tx, time: now }, function(err, new_tx) {
-        if (err) {
-          if (err.toString().match(/E11000/)) {
-            return cb();
-          }
-          return cb(err);
-        }
-        mongo_txs.push(new_tx);
+  var now = Math.round(new Date().getTime() / 1000);
+
+  async.forEachLimit(txs, CONCURRENCY, function(txid, cb) {
+
+    that.explodeTransactionItems( txid, function(err) {
+
+      that.create({txid: txid, time: now}, function(err, new_tx) {
+
+        //console.log("created:", err, new_tx);
+
+        if (err && ! err.toString().match(/E11000/)) return cb(err);
+
+        if (new_tx) mongo_txs.push(new_tx);
         return cb();
       });
-    },
-    function(err) {
-      return next(err, mongo_txs);
-    }
-  );
+    })
+  },
+  function(err) {
+    return next(err, mongo_txs);
+  });
 };
 
 
 TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
 
-  this.fromIdWithInfo(txid, function(err, t) {
-    if (err || !t) return cb(err);
+  this.queryInfo(txid, function(err, info) {
+
+    //console.log("INFO",info);
+    if (err || !info) return cb(err);
 
     var index = 0;
-    t.info.vin.forEach( function(i){
+    info.vin.forEach( function(i){
       i.n = index++;
     });
 
-    async.forEachLimit(t.info.vin, CONCURRENCY, function(i, next_in) {
+    async.forEachLimit(info.vin, CONCURRENCY, function(i, next_in) {
       if (i.addr && i.value) {
 
 //console.log("Creating IN %s %d", i.addr, i.valueSat);
         TransactionItem.create({
-            txid  : t.txid,
+            txid  : txid,
             value_sat : -1 * i.valueSat,
             addr  : i.addr,
             index : i.n,
-            ts : t.info.time,
+            ts : info.time,
         }, next_in);
       }
       else {
         if ( !i.coinbase ) {
-            console.log ('TX: %s,%d could not parse INPUT', t.txid, i.n);
+            console.log ('TX: %s,%d could not parse INPUT', txid, i.n);
         }
         return next_in();
       }
     },
     function (err) {
       if (err) console.log (err);
-      async.forEachLimit(t.info.vout, CONCURRENCY, function(o, next_out) {
+      async.forEachLimit(info.vout, CONCURRENCY, function(o, next_out) {
 
         /*
          * TODO Support multisigs
@@ -154,15 +155,15 @@ TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
         if (o.value && o.scriptPubKey && o.scriptPubKey.addresses && o.scriptPubKey.addresses[0]) {
 //console.log("Creating OUT %s %d", o.scriptPubKey.addresses[0], o.valueSat);
           TransactionItem.create({
-              txid  : t.txid,
+              txid  : txid,
               value_sat : o.valueSat,
               addr  : o.scriptPubKey.addresses[0],
               index : o.n,
-              ts : t.info.time,
+              ts : info.time,
           }, next_out);
         }
         else {
-          console.log ('TX: %s,%d could not parse OUTPUT', t.txid, o.n);
+          console.log ('TX: %s,%d could not parse OUTPUT', txid, o.n);
           return next_out();
         }
       },
@@ -175,14 +176,13 @@ TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
 
 
 
-TransactionSchema.methods.fillInputValues = function (tx, next) {
+TransactionSchema.statics.getOutpoints = function (tx, next) {
 
   if (tx.isCoinBase()) return next();
 
-  if (! this.rpc) this.rpc = new RpcClient(config.bitcoind);
+  var rpc = new RpcClient(config.bitcoind);
   var network   = ( config.network === 'testnet') ? networks.testnet : networks.livenet ;
 
-  var that = this;
   async.forEachLimit(tx.ins, CONCURRENCY, function(i, cb) {
 
       var outHash       = i.getOutpointHash();
@@ -190,7 +190,7 @@ TransactionSchema.methods.fillInputValues = function (tx, next) {
       var outHashBase64 = outHash.reverse().toString('hex');
 
       var c=0;
-      that.rpc.getRawTransaction(outHashBase64, function(err, txdata) {
+      rpc.getRawTransaction(outHashBase64, function(err, txdata) {
         var txin = new Transaction();
         if (err || ! txdata.result) return cb( new Error('Input TX '+outHashBase64+' not found'));
 
@@ -229,42 +229,40 @@ TransactionSchema.methods.fillInputValues = function (tx, next) {
   );
 };
 
-TransactionSchema.methods.queryInfo = function (next) {
 
-  var that      = this;
+TransactionSchema.statics.queryInfo = function(txid,  cb) {
+  var that = this;
   var network   = ( config.network === 'testnet') ? networks.testnet : networks.livenet ;
-  this.rpc      = new RpcClient(config.bitcoind);
+  var rpc      = new RpcClient(config.bitcoind);
 
+  rpc.getRawTransaction(txid, 1, function(err, txInfo) {
+    if (err) return cb(err);
 
-  this.rpc.getRawTransaction(this.txid, 1, function(err, txInfo) {
-    if (err) return next(err);
-
-    that.info = txInfo.result;
+    var info = txInfo.result;
 
     // Transaction parsing
     var b  = new Buffer(txInfo.result.hex,'hex');
     var tx = new Transaction();
     tx.parse(b);
 
-    that.fillInputValues(tx, function(err) {
+    that.getOutpoints(tx, function(err) {
+      if (err) return cb(err);
 
       // Copy TX relevant values to .info
 
       var c = 0;
-
-
       var valueIn  = bignum(0);
       var valueOut = bignum(0);
 
       if ( tx.isCoinBase() ) {
-        that.info.isCoinBase = true;
+        info.isCoinBase = true;
       }
       else {
         tx.ins.forEach(function(i) {
           if (i.value) {
-            that.info.vin[c].value = util.formatValue(i.value);
+            info.vin[c].value = util.formatValue(i.value);
             var n = util.valueToBigInt(i.value).toNumber();
-            that.info.vin[c].valueSat = n;
+            info.vin[c].valueSat = n;
             valueIn           = valueIn.add( n );
 
             var scriptSig     = i.getScript();
@@ -275,11 +273,11 @@ TransactionSchema.methods.queryInfo = function (next) {
               var pubKeyHash    = util.sha256ripe160(pubKey);
               var addr          = new Address(network.addressPubkey, pubKeyHash);
               var addrStr       = addr.toString();
-              that.info.vin[c].addr  = addrStr;
+              info.vin[c].addr  = addrStr;
             }
             else {
               if (i.addrFromOutput)
-                that.info.vin[c].addr  = i.addrFromOutput;
+                info.vin[c].addr  = i.addrFromOutput;
             }
           }
           else {
@@ -294,32 +292,41 @@ TransactionSchema.methods.queryInfo = function (next) {
         var n =  util.valueToBigInt(i.v).toNumber();
         valueOut = valueOut.add(n);
 
-        that.info.vout[c].valueSat = n;
+        info.vout[c].valueSat = n;
         c++;
       });
 
-      that.info.valueOut = valueOut / util.COIN;
+      info.valueOut = valueOut / util.COIN;
 
       if ( !tx.isCoinBase() ) {
-        that.info.valueIn  = valueIn / util.COIN;
-        that.info.feeds    = (valueIn - valueOut) / util.COIN;
+        info.valueIn  = valueIn / util.COIN;
+        info.feeds    = (valueIn - valueOut) / util.COIN;
       }
       else  {
-        var reward =  BitcoreBlock.getBlockValue(that.info.height) / util.COIN;
-        that.info.vin[0].reward = reward;
-        that.info.valueIn = reward;
+        var reward =  BitcoreBlock.getBlockValue(info.height) / util.COIN;
+        info.vin[0].reward = reward;
+        info.valueIn = reward;
       }
 
+      info.size     = b.length;
 
-      that.info.size     = b.length;
-
-
-
-      return next(err, that.info);
+      return cb(null, info);
     });
   });
 };
 
+
+
+TransactionSchema.methods.fillInfo = function(next) {
+  var that      = this;
+
+  mongoose.model('Transaction', TransactionSchema).queryInfo(that.txid, function(err, info) {
+    if (err) return next(err);
+
+    that.info = info;
+    return next();
+  });
+};
 
 
 
