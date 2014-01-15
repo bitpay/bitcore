@@ -103,22 +103,30 @@ $ npm install -g bower
 A REST API is provided at /api. The entry points are:
 
 
-### Blocks
+### Block
 ```
   /api/block/[:hash]
   /api/block/00000000a967199a2fad0877433c93df785a8d8ce062e5f9b451cd1397bdbf62
 ```
-### Transactions 
+### Transaction
 ```
   /api/tx/[:txid]
   /api/tx/525de308971eabd941b139f46c7198b5af9479325c2395db7f2fb5ae8562556c
 ```
-### Addresses 
+### Addresse
 ```
   /api/addr/[:addr]
   /api/addr/mmvP3mTe53qxHdPqXEvdu8WdC7GfQ2vmx5
 ```
-
+### Transactions by Block
+```
+  /api/txs/?block=HASH
+  /api/txs/?block=00000000fa6cf7367e50ad14eb0ca4737131f256fc4c5841fd3c3f140140e6b6
+```
+### Transactions by Address
+```
+  /api/txs/?address=ADDR
+  /api/txs/?address=mmhmMNfBiZZ37g1tgg2t8DDbNoEdqKVxAL
 
 ## Web Socket API
 The web socket API is served using [socket.io](http://socket.io) at:

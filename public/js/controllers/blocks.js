@@ -20,4 +20,5 @@ angular.module('mystery.blocks').controller('BlocksController', ['$scope', '$rou
     });
   };
 
+  $scope.params = $routeParams;
 }]);

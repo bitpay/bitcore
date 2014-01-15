@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('mystery.transactions').controller('transactionsController', ['$scope', '$routeParams', '$location', 'Global', 'Transaction', function ($scope, $routeParams, $location, Global, Transaction) {
+angular.module('mystery.transactions').controller('transactionsController', ['$scope', '$routeParams', '$location', 'Global', 'Transaction', 'TransactionsByBlock', 'TransactionsByAddress', function ($scope, $routeParams, $location, Global, Transaction, TransactionsByBlock, TransactionsByAddress) {
   $scope.global = Global;
 
   $scope.findOne = function() {
@@ -10,5 +10,23 @@ angular.module('mystery.transactions').controller('transactionsController', ['$s
       $scope.tx = tx;
     });
   };
+
+  $scope.byBlock = function(bId) {
+    TransactionsByBlock.query({
+     block: bId
+    }, function(txs) {
+      $scope.txs = txs;
+    });
+  };
+
+  $scope.byAddress = function(aId) {
+    TransactionsByAddress.query({
+     address: aId
+    }, function(txs) {
+      $scope.txs = txs;
+    });
+  };
+
+
 }]);
 

@@ -14,11 +14,14 @@ module.exports = function(app) {
   app.get('/api/block/:blockHash', blocks.show);
   app.param('blockHash', blocks.block);
 
+  // Transaction routes
   var transactions = require('../app/controllers/transactions');
   app.get('/api/tx/:txid', transactions.show);
-
   app.param('txid', transactions.transaction);
 
+  app.get('/api/txs', transactions.transactions);
+
+  // Address routes
   var addresses = require('../app/controllers/addresses');
   app.get('/api/addr/:addr', addresses.show);
   app.param('addr', addresses.address);

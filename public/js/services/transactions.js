@@ -20,3 +20,15 @@ angular.module('mystery.transactions').factory('Transaction', ['$resource', func
   });
 }]);
 
+angular.module('mystery.transactions').factory('TransactionsByBlock', ['$resource', function($resource) {
+  return $resource('/api/txs', {
+    block: '@block'
+  });
+}]);
+
+angular.module('mystery.transactions').factory('TransactionsByAddress', ['$resource', function($resource) {
+  return $resource('/api/txs', {
+    address: '@address'
+  });
+}]);
+
