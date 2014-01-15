@@ -91,7 +91,7 @@ exports.list = function(req, res, next) {
     Transaction
       .find()
       .limit(limit)
-      .sort('-_id')
+      .sort('-time')
       .exec(function(err, txs) {
         if (err) {
           res.status(500).send(err);

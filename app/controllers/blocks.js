@@ -71,6 +71,7 @@ exports.list = function(req, res) {
       }
     })
     .limit(limit)
+    .sort('-time')
     .exec(function(err, blocks) {
       if (err) {
         res.status(500).send(err);
