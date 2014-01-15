@@ -87,15 +87,15 @@ $ npm install -g bower
 
     $ ln -s <path-to-your-clone-repositoy>/bitcore
 
-## API
+## Syncing old blockchain data
 
-  A REST API is provided at /api. 
-  
-  Run sync from mystery repository (to save blocks in MongoDB):
+  Run sync from mystery repository (to save old blocks and transactions in MongoDB):
     
     $ utils/sync.js
 
   Check utils/sync.js --help for options.
+
+  New blockchain data will be synced while the webserver (server.js) is up, through the p2p module.
 
 
 ## API
@@ -120,7 +120,37 @@ A REST API is provided at /api. The entry points are:
 ```
 
 
+## Web Socket API
+The web socket API is served using [socket.io](http://socket.io) at:
+```
+  /socket.io/1/
+```
 
+Bitcoin network events published are:
+'tx': new transaction received from network. Data will be a app/models/Transaction object.
+Sample output:
+```
+{
+  "__v":0,
+  "txid":"00c1b1acb310b87085c7deaaeba478cef5dc9519fab87a4d943ecbb39bd5b053",
+  "_id":"52d68099c3fb4c240d000088",
+  "orphaned":false,
+  "processed":false
+}
+```
+
+
+'block': new block received from network. Data will be a app/models/Block object.
+Sample output:
+```
+{
+  "__v":0,
+  "hash":"000000004a3d187c430cd6a5e988aca3b19e1f1d1727a50dead6c8ac26899b96",
+  "time":1389789343,
+  "fromP2P":true,
+  "_id":"52d6809ec3fb4c240d00008c"
+}
+```
 
 ## Troubleshooting
 If you did not get all library during grunt command, please use the follow command:
