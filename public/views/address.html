@@ -50,6 +50,9 @@
         </tr>
       </thead>
       <tbody>
+      <tr data-ng-show="!txs.length">
+        <td colspan="4" class="text-center">Loading...</td>
+      </tr>
       <tr data-ng-repeat="tx in txs">
         <td><a href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a></td>
         <td>{{tx.time * 1000 | date:'medium'}}</td>

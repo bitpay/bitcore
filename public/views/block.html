@@ -82,9 +82,6 @@
 
   <div data-ng-controller="transactionsController" data-ng-init="byBlock(params.blockHash)"> 
     <h2>Transactions <small>Transactions contained within this block</small></h2>
-    <div data-ng-show="txs.length == 0">
-      Loading...
-    </div>
     <table class="table table-striped">
       <thead>
         <tr>
@@ -95,6 +92,9 @@
         </tr>
       </thead>
       <tbody>
+      <tr data-ng-show="!txs.length">
+        <td colspan="4" class="text-center">Loading...</td>
+      </tr>
       <tr data-ng-repeat="tx in txs">
         <td><a href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a></td>
         <td>{{tx.time * 1000 | date:'medium'}}</td>
