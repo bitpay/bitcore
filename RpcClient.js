@@ -16,6 +16,7 @@ function ClassSpec(b) {
     this.pass = opts.pass || 'pass';
     this.protocol = (opts.protocol == 'http') ? http : https;
     this.batchedCalls = null;
+    this.keepConnectionAlive  = opts.keepConnectionAlive || false;
   }
     
   RpcClient.prototype.batch = function(batchCallback, resultCallback) {
@@ -146,6 +147,7 @@ function ClassSpec(b) {
       path: '/',
       method: 'POST',
       port: self.port,
+      agent: self.keepConnectionAlive ? undefined : false,                   
     };
     if(self.httpOptions) {
       for(var k in self.httpOptions) {
