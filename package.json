@@ -16,7 +16,6 @@
       "name": "Manuel Araoz",
       "email": "manuelaraoz@gmail.com"
     }
-  
   ],
   "bugs": {
     "url": "https://github.com/bitpay/mystery/issues"
@@ -61,8 +60,8 @@
     "grunt-mocha-test": "~0.8.1",
     "should": "~2.1.1",
     "view-helpers": "latest",
-    "socket.io": "~0.9.16"
-
+    "socket.io": "~0.9.16",
+    "sinon": "~1.7.3"
   },
   "devDependencies": {
     "grunt-contrib-watch": "latest",
