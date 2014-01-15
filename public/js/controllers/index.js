@@ -21,6 +21,11 @@ angular.module('mystery.system').controller('IndexController', ['$scope', 'Globa
     $scope.blocks.unshift(block);
   });
 
+  $scope.human_since = function(time) {
+    var m = moment.unix(time);
+    return m.max().fromNow();
+  }
+
   $scope.index = function() {
     Blocks.get({
       limit: BLOCKS_DISPLAYED
