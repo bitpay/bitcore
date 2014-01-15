@@ -5,7 +5,6 @@ angular.module('mystery.search').controller('SearchController', ['$scope', '$rou
 
   $scope.search = function() {
     var q = $scope.q;
-    var path;
 
     $scope.badQuery = false;
     $scope.q = '';
