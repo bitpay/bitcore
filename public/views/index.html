@@ -3,14 +3,18 @@
     <div class="row">
       <div class="col-md-6">
         <h3> New transactions </h3>
-        <div class="alert alert-info fader" ng-repeat='tx in txs'>
-          <a href="#!/tx/{{tx.txid}}">{{tx.txid}}</a>
+        <div class="panel fader" ng-repeat='tx in txs'>
+          <a class="abreviate" href="#!/tx/{{tx.txid}}">{{tx.txid}}
+            <span class="badge badge-success">{{human_since(tx.time)}}</span>
+          </a>
         </div>
       </div>
       <div class="col-md-6">
         <h3> New blocks </h3>
-        <div class="alert alert-success fader" ng-repeat='b in blocks'>
-          <a href="#!/block/{{b.hash}}">{{b.hash}}</a>
+        <div class="panel fader" ng-repeat='b in blocks'>
+          <a href="#!/block/{{b.hash}}">{{b.hash}}
+            <span class="badge badge-success">{{human_since(b.time)}}</span>
+          </a>
         </div>
       </div>
     </div>

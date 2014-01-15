@@ -61,7 +61,8 @@
     "should": "~2.1.1",
     "view-helpers": "latest",
     "socket.io": "~0.9.16",
-    "moment": "~2.5.0"
+    "moment": "~2.5.0",
+    "sinon": "~1.7.3"
   },
   "devDependencies": {
     "grunt-contrib-watch": "latest",
