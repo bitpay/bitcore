@@ -96,17 +96,15 @@ TransactionSchema.statics.createFromArray = function(txs, next) {
   async.forEachLimit(txs, CONCURRENCY, function(txid, cb) {
 
     that.explodeTransactionItems( txid, function(err) {
+      if (err) return next(err);
 
       that.create({txid: txid, time: now}, function(err, new_tx) {
-
-        //console.log("created:", err, new_tx);
-
         if (err && ! err.toString().match(/E11000/)) return cb(err);
 
         if (new_tx) mongo_txs.push(new_tx);
         return cb();
       });
-    })
+    });
   },
   function(err) {
     return next(err, mongo_txs);
@@ -117,8 +115,6 @@ TransactionSchema.statics.createFromArray = function(txs, next) {
 TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
 
   this.queryInfo(txid, function(err, info) {
-
-    //console.log("INFO",info);
     if (err || !info) return cb(err);
 
     var index = 0;
@@ -168,7 +164,8 @@ TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
         }
       },
       function (err) {
-        return cb(err);
+        if (err && ! err.toString().match(/E11000/)) return cb(err);
+        return cb();
       });
     });
   });
