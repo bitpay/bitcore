@@ -40,5 +40,15 @@ describe('Status', function(){
     });
   });
 
+  it('getTxOutSetInfo', function(done) {
+    var d = new Status();
+
+    d.getTxOutSetInfo(function(err) {
+      if (err) done(err);
+      assert.equal('number', typeof d.txoutsetinfo.txouts);
+      done();
+    });
+  });
+
 });
 
