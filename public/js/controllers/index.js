@@ -2,10 +2,10 @@
 
 var TRANSACTION_DISPLAYED = 5;
 var BLOCKS_DISPLAYED = 5;
-angular.module('mystery.system').controller('IndexController', ['$scope', 'Global', 'socket', function($scope, Global, socket) {
+angular.module('mystery.system').controller('IndexController', ['$scope', '$routeParams', 'Global', 'socket', 'Blocks', 'Transactions', function($scope, $routeParams, Global, socket, Blocks, Transactions) {
   $scope.global = Global;
-  socket.on('tx', function(data) {
-    var tx = data;
+
+  socket.on('tx', function(tx) {
     console.log('Transaction received! ' + JSON.stringify(tx));
     if ($scope.txs.length === TRANSACTION_DISPLAYED) {
       $scope.txs.pop();
@@ -13,8 +13,7 @@ angular.module('mystery.system').controller('IndexController', ['$scope', 'Globa
     $scope.txs.unshift(tx);
   });
 
-  socket.on('block', function(data) {
-    var block = data;
+  socket.on('block', function(block) {
     console.log('Block received! ' + JSON.stringify(block));
     if ($scope.blocks.length === BLOCKS_DISPLAYED) {
       $scope.blocks.pop();
@@ -22,8 +21,21 @@ angular.module('mystery.system').controller('IndexController', ['$scope', 'Globa
     $scope.blocks.unshift(block);
   });
 
+  $scope.index = function() {
+    Blocks.get({
+      limit: BLOCKS_DISPLAYED
+    }, function(res) {
+      $scope.blocks = res.blocks;
+    });
+
+    Transactions.query({
+      limit: TRANSACTION_DISPLAYED
+    }, function(txs) {
+      $scope.txs = txs;
+    });
+  };
+
   $scope.txs = [];
   $scope.blocks = [];
-
 }]);
 
