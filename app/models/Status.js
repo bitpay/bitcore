@@ -12,6 +12,7 @@ function spec() {
     this.info = {};
     this.difficulty = {};
     this.txoutsetinfo = {};
+    this.bestblockhash = {};
   }
 
   Status.prototype.getInfo = function(next) {
@@ -54,6 +55,22 @@ function spec() {
           if (err) return cb(err);
 
           that.txoutsetinfo = txout.result;
+          return cb();
+        });
+      }
+    ], function (err) {
+      return next(err);
+    });
+  };
+
+  Status.prototype.getBestBlockHash = function(next) {
+    var that = this;
+    async.series([
+      function (cb) {
+        rpc.getBestBlockHash(function(err, bbh){
+          if (err) return cb(err);
+
+          that.bestblockhash = bbh.result;
           return cb();
         });
       }
