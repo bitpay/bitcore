@@ -1,6 +1,6 @@
 'use strict';
 
-app.factory('socket', function($rootScope) {
+angular.module('mystery.socket').factory('socket', ['$rootScope', function($rootScope) {
   var socket = io.connect();
   return {
     on: function(eventName, callback) {
@@ -22,5 +22,5 @@ app.factory('socket', function($rootScope) {
       });
     }
   };
-});
+}]);
 
