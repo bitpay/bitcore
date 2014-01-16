@@ -1,0 +1,144 @@
+<section data-ng-controller="StatusController">
+  <div class="page-header">
+    <h1>
+      Status 
+    </h1>
+  </div>
+  <div class="row">
+    <div class="col-lg-6">
+      <h3>getInfo</h3>
+      <table class="table table-striped" data-ng-init="getData('getInfo')">
+        <tbody>
+        <tr data-ng-show="!info">
+          <td colspan="2" class="text-center">Loading...</td>
+        </tr>
+        <tr>
+          <td>Version</td>
+          <td>{{info.version}}</td>
+        </tr>
+        <tr>
+          <td>protocolversion</td>
+          <td>{{info.protocolversion}}</td>
+        </tr>
+        <tr>
+          <td>walletversion</td>
+          <td>{{info.walletversion}}</td>
+        </tr>
+        <tr>
+          <td>balance</td>
+          <td>{{info.balance}}</td>
+        </tr>
+        <tr>
+          <td>blocks</td>
+          <td>{{info.blocks}}</td>
+        </tr>
+        <tr>
+          <td>timeoffset</td>
+          <td>{{info.timeoffset}}</td>
+        </tr>
+        <tr>
+          <td>connections</td>
+          <td>{{info.connections}}</td>
+        </tr>
+        <tr>
+          <td>proxy</td>
+          <td>{{info.proxy}}</td>
+        </tr>
+        <tr>
+          <td>difficulty</td>
+          <td>{{info.difficulty}}</td>
+        </tr>
+        <tr>
+          <td>testnet</td>
+          <td>{{info.testnet}}</td>
+        </tr>
+        <tr>
+          <td>keypoololdest</td>
+          <td>{{info.keypoololdest}}</td>
+        </tr>
+        <tr>
+          <td>keypoolsize</td>
+          <td>{{info.keypoolsize}}</td>
+        </tr>
+        <tr>
+          <td>paytxfee</td>
+          <td>{{info.paytxfee}}</td>
+        </tr>
+        <tr>
+          <td>errors</td>
+          <td>{{info.errors}}</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="col-lg-6">
+      <h3>getTxOutSetInfo</h3>
+      <table class="table table-striped" data-ng-init="getData('getTxOutSetInfo')">
+        <tbody>
+        <tr data-ng-show="!txoutsetinfo">
+          <td colspan="2" class="text-center">Loading...</td>
+        </tr>
+        <tr>
+          <td>Height</td>
+          <td>{{txoutsetinfo.height}}</td>
+        </tr>
+        <tr>
+          <td>bestblock</td>
+          <td>{{txoutsetinfo.bestblock}}</td>
+        </tr>
+        <tr>
+          <td>transactions</td>
+          <td>{{txoutsetinfo.transactions}}</td>
+        </tr>
+        <tr>
+          <td>txouts</td>
+          <td>{{txoutsetinfo.txouts}}</td>
+        </tr>
+        <tr>
+          <td>bytes_serialized</td>
+          <td>{{txoutsetinfo.bytes_serialized}}</td>
+        </tr>
+        <tr>
+          <td>hash_serialized</td>
+          <td>{{txoutsetinfo.hash_serialized}}</td>
+        </tr>
+        <tr>
+          <td>total_amount</td>
+          <td>{{txoutsetinfo.total_amount}}</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-6">
+      <h3>getDifficulty</h3>
+      <table class="table table-striped" data-ng-init="getData('getDifficulty')">
+        <tbody>
+        <tr data-ng-show="!difficulty">
+          <td colspan="2" class="text-center">Loading...</td>
+        </tr>
+        <tr>
+          <td>Difficulty</td>
+          <td>{{difficulty}}</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="col-lg-6">
+      <h3>getBestBlockHash</h3>
+      <table class="table table-striped" data-ng-init="getData('getBestBlockHash')">
+        <tbody>
+        <tr data-ng-show="!bestblockhash">
+          <td colspan="1" class="text-center">Loading...</td>
+        </tr>
+        <tr>
+          <td>{{bestblockhash}}</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+

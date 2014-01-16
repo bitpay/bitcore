@@ -87,18 +87,17 @@ TransactionSchema.statics.fromIdWithInfo = function(txid, cb) {
 };
 
 
-TransactionSchema.statics.createFromArray = function(txs, next) {
+TransactionSchema.statics.createFromArray = function(txs, time, next) {
   var that = this;
   if (!txs) return next();
   var mongo_txs = [];
-  var now = Math.round(new Date().getTime() / 1000);
 
   async.forEachLimit(txs, CONCURRENCY, function(txid, cb) {
 
-    that.explodeTransactionItems( txid, function(err) {
+    that.explodeTransactionItems( txid, time, function(err) {
       if (err) return next(err);
 
-      that.create({txid: txid, time: now}, function(err, new_tx) {
+      that.create({txid: txid, time: time}, function(err, new_tx) {
         if (err && ! err.toString().match(/E11000/)) return cb(err);
 
         if (new_tx) mongo_txs.push(new_tx);
@@ -112,7 +111,7 @@ TransactionSchema.statics.createFromArray = function(txs, next) {
 };
 
 
-TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
+TransactionSchema.statics.explodeTransactionItems = function(txid, time,  cb) {
 
   this.queryInfo(txid, function(err, info) {
     if (err || !info) return cb(err);
@@ -131,7 +130,7 @@ TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
             value_sat : -1 * i.valueSat,
             addr  : i.addr,
             index : i.n,
-            ts : info.time,
+            ts : time,
         }, next_in);
       }
       else {
@@ -155,7 +154,7 @@ TransactionSchema.statics.explodeTransactionItems = function(txid,  cb) {
               value_sat : o.valueSat,
               addr  : o.scriptPubKey.addresses[0],
               index : o.n,
-              ts : info.time,
+              ts : time,
           }, next_out);
         }
         else {

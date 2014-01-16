@@ -5,21 +5,16 @@ var RpcClient = require('../node_modules/bitcore/RpcClient').class();
 
 var config = require('../config/config');
 
-
-var block_hash = process.argv[2] || '0000000000b6288775bbd326bedf324ca8717a15191da58391535408205aada4';
-
-
 var rpc   = new RpcClient(config.bitcoind);
 
-var block = rpc.getBestBlockHash( function(err, block) {
-
-  console.log("Err:");
-  console.log(err);
-
+var block = rpc.getInfo(function(err, block) {
+  if (err) {
+    console.log("Err:");
+    console.log(err);
+  }
 
   console.log("Block info:");
   console.log(block);
 });
-
 
 

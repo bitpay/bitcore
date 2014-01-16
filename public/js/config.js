@@ -22,6 +22,9 @@ angular.module('mystery').config(['$routeProvider',
     when('/address/:addrStr', {
       templateUrl: 'views/address.html'
     }).
+    when('/status', {
+      templateUrl: 'views/status.html'
+    }).
     otherwise({
       redirectTo: '/'
     });
