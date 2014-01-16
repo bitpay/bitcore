@@ -39,12 +39,12 @@ function spec(b) {
   Block.prototype.getHeader = function getHeader() {
     var buf = new Buffer(80);
     var ofs = 0;
-    buf.writeUInt32LE(this.version, ofs);	ofs += 4;
-    this.prev_hash.copy(buf, ofs);		ofs += 32;
-    this.merkle_root.copy(buf, ofs);		ofs += 32;
-    buf.writeUInt32LE(this.timestamp, ofs);	ofs += 4;
-    buf.writeUInt32LE(this.bits, ofs);		ofs += 4;
-    buf.writeUInt32LE(this.nonce, ofs);		ofs += 4;
+    buf.writeUInt32LE(this.version, ofs); ofs += 4;
+    this.prev_hash.copy(buf, ofs);    ofs += 32;
+    this.merkle_root.copy(buf, ofs);    ofs += 32;
+    buf.writeUInt32LE(this.timestamp, ofs); ofs += 4;
+    buf.writeUInt32LE(this.bits, ofs);    ofs += 4;
+    buf.writeUInt32LE(this.nonce, ofs);   ofs += 4;
     return buf;
   };
 

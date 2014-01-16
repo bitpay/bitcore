@@ -1,8 +1,8 @@
 
 MSG = {
-	TX:		1,
-	BLOCK:		2,
-	FILTERED_BLOCK:	3,
+  TX:   1,
+  BLOCK:    2,
+  FILTERED_BLOCK: 3,
 };
 
 MSG.to_str = function(t) {

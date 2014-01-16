@@ -113,42 +113,42 @@ var reWholeVal = /^\s*(\d+)/;
 
 function padFrac(frac)
 {
-	frac=frac.substr(0,8); //truncate to 8 decimal places
-	while (frac.length < 8)
-		frac = frac + '0';
-	return frac;
+  frac=frac.substr(0,8); //truncate to 8 decimal places
+  while (frac.length < 8)
+    frac = frac + '0';
+  return frac;
 }
 
 function parseFullValue(res)
 {
-	return bignum(res[1]).mul('100000000').add(padFrac(res[2]));
+  return bignum(res[1]).mul('100000000').add(padFrac(res[2]));
 }
 
 function parseFracValue(res)
 {
-	return bignum(padFrac(res[1]));
+  return bignum(padFrac(res[1]));
 }
 
 function parseWholeValue(res)
 {
-	return bignum(res[1]).mul('100000000');
+  return bignum(res[1]).mul('100000000');
 }
 
 exports.parseValue = function parseValue(valueStr)
 {
-	var res = valueStr.match(reFullVal);
-	if (res)
-		return parseFullValue(res);
+  var res = valueStr.match(reFullVal);
+  if (res)
+    return parseFullValue(res);
 
-	res = valueStr.match(reFracVal);
-	if (res)
-		return parseFracValue(res);
+  res = valueStr.match(reFracVal);
+  if (res)
+    return parseFracValue(res);
 
-	res = valueStr.match(reWholeVal);
-	if (res)
-		return parseWholeValue(res);
+  res = valueStr.match(reWholeVal);
+  if (res)
+    return parseWholeValue(res);
 
-	return undefined;
+  return undefined;
 };
 
 // Utility that synchronizes function calls based on a key

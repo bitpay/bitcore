@@ -443,8 +443,8 @@ function spec(b) {
       data.headers = [];
       for (i = 0; i < data.count; i++) {
         var header = new Block();
-	header.parse(parser);
-	data.headers.push(header);
+  header.parse(parser);
+  data.headers.push(header);
       }
       break;
 
@@ -474,7 +474,7 @@ function spec(b) {
         lock_time: tx.lock_time,
         ins: tx.ins,
         outs: tx.outs,
-	      tx: tx,
+        tx: tx,
       };
 
     case 'getblocks':
