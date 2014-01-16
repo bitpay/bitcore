@@ -14,23 +14,23 @@
             <h3>Hashes</h3>
           </div>
           <div class="panel-body">
-            <table class="table table-striped">
+            <table class="table table">
               <tbody>
               <tr>
                 <td>Hash</td>
-                <td><a class="address" href="/#!/block/{{block.hash}}">{{block.hash}}</a></td>
+                <td><a class="address ellipsis" href="/#!/block/{{block.hash}}">{{block.hash}}</a></td>
               </tr>
               <tr>
                 <td>Previous Block</td>
-                <td><a class="address" href="/#!/block/{{block.previousblockhash}}">{{block.previousblockhash}}</a></td>
+                <td><a class="address ellipsis" href="/#!/block/{{block.previousblockhash}}">{{block.previousblockhash}}</a></td>
               </tr>
               <tr>
                 <td>Next Block</td>
-                <td><a class="address" href="/#!/block/{{block.nextblockhash}}">{{block.nextblockhash}}</a></td>
+                <td><a class="address ellipsis" href="/#!/block/{{block.nextblockhash}}">{{block.nextblockhash}}</a></td>
               </tr>
               <tr>
                 <td>Merkle Root</td>
-                <td> <p class="address"> {{block.merkleroot}} </p> </td>
+                <td> <p class="address ellipsis"> {{block.merkleroot}} </p> </td>
               </tr>
               </tbody>
             </table>
@@ -46,9 +46,6 @@
         <div class="col-md-6">
           <table class="table">
             <tbody>
-
-
-
               <tr>
                 <td> <strong> Number Of Transactions </strong> </td>
                 <td class="text-right text-muted">{{block.tx.length}}<td>
@@ -73,27 +70,6 @@
                 <td> <strong> Timestamp </strong></td>
                 <td class="text-right text-muted">{{block.time * 1000 | date:'medium'}}</td>
               </tr>
-
-            <tr>
-              <td>Difficulty</td>
-              <td>{{block.difficulty}}</td>
-            </tr>
-            <tr>
-              <td>Bits</td>
-              <td>{{block.bits}}</td>
-            </tr>
-            <tr>
-              <td>Size</td>
-              <td>{{block.size}}</td>
-            </tr>
-            <tr>
-              <td>Version</td>
-              <td>{{block.version}}</td>
-            </tr>
-            <tr>
-              <td>Nonce</td>
-              <td>{{block.nonce}}</td>
-            </tr>
             </tbody>
           </table>
         </div>
@@ -129,44 +105,46 @@
         </div>
       </div><!--  END OF ROW -->
 
-      <h2>Transactions <small>Transactions contained within this block</small></h2>
-      <table class="table table-striped">
-        <thead>
-          <tr>
-            <th>Hash</th>
-          </tr>
-        </thead>
-        <tbody>
-        <tr data-ng-repeat="tx in block.tx track by $index">
-          <td><a href="/#!/tx/{{tx}}">{{tx}}</a></td>
-        </tr>
-        </tbody>
-      </table>
+      <div data-ng-controller="transactionsController" data-ng-init="byBlock(params.blockHash)"> 
+        <h2>Transactions <small >Transactions contained within this block</small></h2>
+
+        <div class="block-tx" data-ng-repeat="tx in txs">
+          <div class="line-bot">
+              <a href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a>
+              <span class="pull-right">{{tx.time * 1000 | date:'medium'}}</span>
+          </div> 
+
+          <div class="row">
+            <div class="col-md-5">
+              Emisor
+            </div>
+            <div class="col-md-2">
+              <span class="glyphicon glyphicon-arrow-right lead"></span>
+            </div>
+            <div class="col-md-5">
+              <div class="row">
+                <div class="col-md-6">
+                  <p>Receptor</p>
+                  <p>Receptor</p>
+                </div>
+                <div class="col-md-6 text-right">
+                  <p>plata del receptor</p>
+                  <p>plata del receptor</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="line-top">
+            <small class="text-muted">Feeds: {{tx.feeds}}</small>
+            <div class="btn btn-primary pull-right">
+              {{tx.valueOut}}
+            </div>
+          </div> 
+        </div><!--  END OF BLOCK-TX -->
+
+      </div>
     </div>
   </div>
 
-  <div data-ng-controller="transactionsController" data-ng-init="byBlock(params.blockHash)"> 
-    <h2>Transactions <small>Transactions contained within this block</small></h2>
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th>Transaction Hash</th>
-          <th>Datetime</th>
-          <th>Fee</th>
-          <th>Transacted Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-      <tr data-ng-show="!txs.length">
-        <td colspan="4" class="text-center">Loading...</td>
-      </tr>
-      <tr data-ng-repeat="tx in txs">
-        <td><a href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a></td>
-        <td>{{tx.time * 1000 | date:'medium'}}</td>
-        <td>{{tx.feeds}}</td>
-        <td>{{tx.valueOut}}</td>
-      </tr>
-      </tbody>
-    </table>
-  </div>
 </section>
