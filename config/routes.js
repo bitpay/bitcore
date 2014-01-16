@@ -26,4 +26,8 @@ module.exports = function(app) {
   app.get('/api/addr/:addr', addresses.show);
   app.param('addr', addresses.address);
 
+  // Status route
+  var st = require('../app/controllers/status');
+  app.get('/api/status', st.show);
+
 };
