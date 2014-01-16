@@ -118,7 +118,8 @@ describe('Transaction', function(){
       // Remove first
       TransactionItem.remove({txid: v.txid}, function(err) {
 
-        Transaction.explodeTransactionItems(v.txid, function(err, tx) {
+        var now = Math.round(new Date().getTime() / 1000);
+        Transaction.explodeTransactionItems(v.txid, now, function(err, tx) {
           if (err) done(err);
 
           TransactionItem

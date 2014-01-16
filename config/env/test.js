@@ -12,7 +12,7 @@ module.exports = {
     pass: process.env.BITCOIND_PASS  || 'real_mystery',
     host: process.env.BITCOIND_HOST  || '127.0.0.1',
     port: process.env.BITCOIND_PORT  || '18332',
-    keepConnectionAlive: false,
+    disableAgent: true,
   },
   network: 'testnet',
 }
