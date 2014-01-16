@@ -13,6 +13,7 @@ function spec() {
     this.difficulty = {};
     this.txoutsetinfo = {};
     this.bestblockhash = {};
+    this.lastblockhash = {};
   }
 
   Status.prototype.getInfo = function(next) {
@@ -77,6 +78,31 @@ function spec() {
     ], function (err) {
       return next(err);
     });
+  };
+
+  Status.prototype.getLastBlockHash = function(next) {
+    var that = this;
+
+    async.waterfall(
+      [
+        function(callback){
+          rpc.getBlockCount(function(err, bc){
+            if (err) return callback(err);
+            callback(null, bc.result);
+          });
+        },
+        function(bc, callback){
+          rpc.getBlockHash(bc, function(err, bh){
+            if (err) return callback(err);
+            callback(null, bh.result);
+          });
+        }
+      ], 
+        function (err, result) {
+          that.lastblockhash = result;
+          return next();
+        }
+    );
   };
 
   return Status;

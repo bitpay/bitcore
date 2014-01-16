@@ -7,18 +7,22 @@ angular.module('mystery.status').controller('StatusController', ['$scope', '$rou
     Status.get({
      q: q
     }, function(d) {
-      if (q == 'getInfo') {
+      if (q === 'getInfo') {
         $scope.info = d.info;
       }
-      if (q == 'getDifficulty') {
+      if (q === 'getDifficulty') {
         $scope.difficulty = d.difficulty;
       }
-      if (q == 'getTxOutSetInfo') {
+      if (q === 'getTxOutSetInfo') {
         $scope.txoutsetinfo = d.txoutsetinfo;
       }
-      if (q == 'getBestBlockHash') {
+      if (q === 'getBestBlockHash') {
         $scope.bestblockhash = d.bestblockhash;
       }
+      if (q === 'getLastBlockHash') {
+        $scope.lastblockhash = d.lastblockhash;
+      }
+
     });
   };
 
