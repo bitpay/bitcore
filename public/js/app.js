@@ -13,7 +13,8 @@ var app = angular.module('mystery',
     'mystery.transactions',
     'monospaced.qrcode',
     'mystery.address',
-    'mystery.search'
+    'mystery.search',
+    'mystery.status'
 ]);
 
 angular.module('mystery.system', []);
@@ -22,3 +23,4 @@ angular.module('mystery.blocks', []);
 angular.module('mystery.transactions', []);
 angular.module('mystery.address', []);
 angular.module('mystery.search', []);
+angular.module('mystery.status', []);
