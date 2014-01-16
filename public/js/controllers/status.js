@@ -19,6 +19,10 @@ angular.module('mystery.status').controller('StatusController', ['$scope', '$rou
       if (q === 'getBestBlockHash') {
         $scope.bestblockhash = d.bestblockhash;
       }
+      if (q === 'getLastBlockHash') {
+        $scope.lastblockhash = d.lastblockhash;
+      }
+
     });
   };
 
