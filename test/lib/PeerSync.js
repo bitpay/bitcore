@@ -35,7 +35,7 @@ describe('PeerSync', function() {
     });
     it('should call sendGetData', function() {
       ps.handle_inv(inv_info);
-      expect(inv_info.conn.sendGetData.calledOnce).to.be.ok;
+      expect(inv_info.conn.sendGetData.calledTwice).to.be.ok;
     });
   });
 
