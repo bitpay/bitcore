@@ -8,7 +8,7 @@ require('buffertools').extend();
 
 var SYNC_VERSION = '0.1';
 var program = require('commander');
-var Sync = require('../lib/Sync').class();
+var HistoricSync = require('../lib/HistoricSync').class();
 var async = require('async');
 
 program
@@ -18,7 +18,7 @@ program
   .option('-R --reverse', 'Sync backwards', 0)
   .parse(process.argv);
 
-var sync = new Sync({
+var historicSync = new HistoricSync({
   networkName: program.network
 });
 
@@ -27,23 +27,22 @@ if (program.remove) {
 }
 
 async.series([
-function(cb) {
-  sync.init(program);
-  cb();
-},
-function(cb) {
-  sync.import_history(program, function(err, count) {
-    if (err) {
-      console.log('CRITICAL ERROR: ', err);
-    }
-    else {
-      console.log('Done! [%d blocks]', count, err);
-    }
+  function(cb) {
+    historicSync.init(program, cb);
+  },
+  function(cb) {
+    historicSync.import_history(program, function(err, count) {
+      if (err) {
+        console.log('CRITICAL ERROR: ', err);
+      }
+      else {
+        console.log('Done! [%d blocks]', count, err);
+      }
+      cb();
+    });
+  },
+  function(cb) {
+    historicSync.close();
     cb();
-  });
-},
-function(cb) {
-  sync.close();
-  cb();
 }]);
 
