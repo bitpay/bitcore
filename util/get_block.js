@@ -11,7 +11,7 @@ var block_hash = process.argv[2] || '0000000000b6288775bbd326bedf324ca8717a15191
 
 var rpc   = new RpcClient(config.bitcoind);
 
-var block = rpc.getBlock(block_hash, function(err, block) {
+var block = rpc.getBestBlockHash( function(err, block) {
 
   console.log("Err:");
   console.log(err);
