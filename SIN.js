@@ -11,16 +11,16 @@ function ClassSpec(b) {
     };
     this.data = new Buffer(1 + 1 + payload.length);
     this.__proto__ = this.encodings['binary'];
-    this.prefix(0x0F);		// SIN magic number, in numberspace
+    this.prefix(0x0F);    // SIN magic number, in numberspace
     this.type(type);
     this.payload(payload);
   };
   SIN.superclass = superclass;
   superclass.applyEncodingsTo(SIN);
 
-  SIN.SIN_PERSIST_MAINNET = 0x01;	// associated with sacrifice TX
-  SIN.SIN_PERSIST_TESTNET = 0x11;	// associated with sacrifice TX
-  SIN.SIN_EPHEM = 0x02;			// generate off-net at any time
+  SIN.SIN_PERSIST_MAINNET = 0x01; // associated with sacrifice TX
+  SIN.SIN_PERSIST_TESTNET = 0x11; // associated with sacrifice TX
+  SIN.SIN_EPHEM = 0x02;     // generate off-net at any time
 
   // get or set the prefix data (the first byte of the address)
   SIN.prototype.prefix = function(num) {
