@@ -1,6 +1,6 @@
 'use strict';
 
-var app = angular.module('mystery',
+angular.module('mystery',
     ['ngAnimate',
     'ngCookies',
     'ngResource',
