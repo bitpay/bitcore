@@ -8,7 +8,7 @@ angular.module('mystery',
     'ui.bootstrap',
     'ui.route',
     'mystery.system',
-    'mystery.index',
+    'mystery.socket',
     'mystery.blocks',
     'mystery.transactions',
     'monospaced.qrcode',
@@ -18,7 +18,7 @@ angular.module('mystery',
 ]);
 
 angular.module('mystery.system', []);
-angular.module('mystery.index', []);
+angular.module('mystery.socket', []);
 angular.module('mystery.blocks', []);
 angular.module('mystery.transactions', []);
 angular.module('mystery.address', []);
