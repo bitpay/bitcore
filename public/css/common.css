@@ -1,5 +1,7 @@
-.mystery {
-  font-family: Ubuntu-BoldItalic;
+.insight {
+  font-family: Ubuntu, sans-serif;
+  font-weight: 400;
+  font-style: italic;
   font-size: 34px;
   color: #FFFFFF !important;
   line-height: 18px;
@@ -14,6 +16,12 @@ body {
   font-family: Ubuntu, sans-serif;
   height: 100%;
   /* The html and body elements cannot have any padding or margin. */
+}
+
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+  font-family: Ubuntu, sans-serif;
+  color: #373D42;
+
 }
 
 /* Wrapper for page content to push down footer */
@@ -57,11 +65,14 @@ body {
 
 #search {
   color: #fff;
-  font-family: Ubuntu-Light;
+  font-family: Ubuntu, sans-serif;
+  font-weight: 100;
 }
 
 #search::-webkit-input-placeholder { 
-  font-family: Ubuntu-LightItalic;
+  font-family: Ubuntu, sans-serif;
+  font-weight: 100;
+  font-style: italic;
   font-size: 13px;
   color: #BCDF7E;
   line-height: 18px;
@@ -69,7 +80,8 @@ body {
 
 
 #search::-moz-placeholder { 
-  font-family: Ubuntu-LightItalic;
+  font-family: Ubuntu, sans-serif;
+  font-weight: 100;
   font-size: 13px;
   color: #BCDF7E;
   line-height: 18px;
@@ -116,7 +128,7 @@ body {
 }
 
 .block-id h1 {
-  font-family: Ubuntu-Medium;
+  font-weight: bold;
   font-size: 24px;
   color: #FFFFFF;
   line-height: 30px;
@@ -146,7 +158,7 @@ body {
   background: #fff;
   border: 2px solid #ccc;
   color: #373D42;
-  font-weight: bold;
+  font-weight: 500;
 }
 
 /* Set the fixed height of the footer here */

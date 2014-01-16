@@ -1,27 +1,29 @@
-<div data-ng-controller="HeaderController">
-  <div class="navbar-header">
-    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-      <span class="sr-only">Toggle navigation</span>
-      <span class="icon-bar"></span>
-      <span class="icon-bar"></span>
-      <span class="icon-bar"></span>
-    </button>
-    <a class="mystery navbar-brand" href="#!">Mystery</a>
-  </div>
-  <div class="collapse navbar-collapse">
-    <ul class="nav navbar-nav">
-      <li data-ng-repeat="item in menu" ui-route="/{{item.link}}" ng-class="{active: $uiRoute}">
-        <a href="#!/{{item.link}}">{{item.title}}</a>
-      </li>
-    </ul>
-    <div ng-controller="SearchController" class="pull-right">
-      <form class="navbar-form navbar-left" role="search" ng-submit="search()">
-        <div class="form-group" ng-class="{'has-error': badQuery}">
-          <input id="search" type="text" class="form-control" ng-model="q" placeholder="Search for block, transaction or address">
-        </div>
-        <span class="text-danger" ng-show="badQuery">No matching records found!</span>
+<div class="container">
+  <div data-ng-controller="HeaderController">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="insight navbar-brand" href="#!">Insight</a>
+    </div>
+    <div class="collapse navbar-collapse">
+      <ul class="nav navbar-nav">
+        <li data-ng-repeat="item in menu" ui-route="/{{item.link}}" ng-class="{active: $uiRoute}">
+          <a href="#!/{{item.link}}">{{item.title}}</a>
+        </li>
+      </ul>
+      <div ng-controller="SearchController" class="pull-right">
+        <form class="navbar-form navbar-left" role="search" ng-submit="search()">
+          <div class="form-group" ng-class="{'has-error': badQuery}">
+            <input id="search" type="text" class="form-control" ng-model="q" placeholder="Search for block, transaction or address">
+          </div>
+          <span class="text-danger" ng-show="badQuery">No matching records found!</span>
 
-      </form>
+        </form>
+      </div>
     </div>
   </div>
 </div>

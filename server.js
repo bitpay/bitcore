@@ -49,6 +49,8 @@ hs.init({
 }, function() {
   hs.import_history({
     reverse: 1,
+  }, function(){
+    console.log('historic_sync finished!');
   });
 });
 
