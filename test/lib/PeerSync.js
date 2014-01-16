@@ -5,7 +5,8 @@ var chai = require('chai'),
 
 var PeerSync = require('../../lib/PeerSync.js').class();
 describe('PeerSync', function() {
-  var ps, inv_info;
+  var ps;
+
   beforeEach(function() {
     ps = new PeerSync();
     ps.init();
@@ -13,6 +14,7 @@ describe('PeerSync', function() {
   afterEach(function(){
     ps.close();
   });
+
   describe('#init()', function() {
     it('should return with no errors', function() {
       var other_ps = new PeerSync();
@@ -20,8 +22,9 @@ describe('PeerSync', function() {
       other_ps.close();
     });
   });
+
   describe('#handle_inv()', function() {
-    inv_info = {
+    var inv_info = {
       message: {invs: []},
       conn: {sendGetData: sinon.spy()}
     };
@@ -32,16 +35,27 @@ describe('PeerSync', function() {
     });
     it('should call sendGetData', function() {
       ps.handle_inv(inv_info);
-      expect(inv_info.conn.calledOnce);
+      expect(inv_info.conn.sendGetData.calledOnce).to.be.ok;
     });
   });
+
   describe('#handle_tx()', function() {
-    it('should call storeTxs');
+    var tx_info = {
+      message: { tx: {getStandardizedObject: function(){
+        return {hash: '00000000e3fe5b3b5416374d8d65560a0792a6da71546d67b00c9d37e8a4cf59'};}}}
+    };
+    it('should call storeTxs', function(){
+      var spy = sinon.spy(ps.sync, 'storeTxs');
+      ps.handle_tx(tx_info);
+      expect(spy.calledOnce);
+    });
   });
+
   describe('#handle_block()', function() {
     it('should call storeBlock');
     it('should call storeTxs for each transaction');
   });
+
   describe('#run()', function() {
     it('should setup peerman');
   });

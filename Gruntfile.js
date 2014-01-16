@@ -48,7 +48,7 @@ module.exports = function(grunt) {
     },
     jshint: {
       all: {
-        src: ['Gruntfile.js', 'server.js', 'app/**/*.js', 'public/js/**'],
+        src: ['Gruntfile.js', 'server.js', 'app/**/*.js', 'public/js/**','lib/*.js'],
         options: {
           jshintrc: true
         }
@@ -66,7 +66,7 @@ module.exports = function(grunt) {
         options: {
           file: 'server.js',
           args: [],
-          ignoredFiles: ['public/**', 'test/**','util/**','lib/**'],
+          ignoredFiles: ['public/**', 'test/**','util/**'],
           watchedExtensions: ['js'],
           // nodeArgs: ['--debug'],
           delayTime: 1,

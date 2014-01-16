@@ -10,6 +10,7 @@ process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 var express = require('express'),
   fs = require('fs'),
   PeerSync = require('./lib/PeerSync').class(),
+  HistoricSync = require('./lib/HistoricSync').class(),
   mongoose = require('mongoose');
 
 /**
@@ -40,14 +41,27 @@ var walk = function(path) {
 };
 walk(models_path);
 
+// historic_sync process
+var hs = new HistoricSync();
+hs.init({
+  skip_db_connection: true,
+  networkName: config.network
+}, function() {
+  hs.import_history({
+    reverse: 1,
+  });
+});
+
+
 // p2p_sync process
 var ps = new PeerSync();
 ps.init({
   skip_db_connection: true,
   broadcast_txs: true,
   broadcast_blocks: true
+}, function() {
+  ps.run();
 });
-ps.run();
 
 // express app
 var app = express();

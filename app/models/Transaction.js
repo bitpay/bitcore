@@ -141,7 +141,7 @@ TransactionSchema.statics.explodeTransactionItems = function(txid, time,  cb) {
       }
     },
     function (err) {
-      if (err) console.log (err);
+      if (err && !err.message.match(/E11000/) ) console.log (err);
       async.forEachLimit(info.vout, CONCURRENCY, function(o, next_out) {
 
         /*

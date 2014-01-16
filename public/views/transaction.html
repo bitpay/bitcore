@@ -23,10 +23,13 @@
       <td width="45%"> 
         <ul class="list-unstyled" data-ng-repeat="vin in tx.vin" data-ng-show="!tx.isCoinBase">
           <li>
-          <span data-ng-show="!vin.addr"><a href="/#!/tx/{{vin.txid}}">Address could not be parsed, {{vin.vout}}</a></span>  
+          <span data-ng-show="!vin.addr">Address could not be parsed</span>  
           <a data-ng-show="vin.addr" href="/#!/address/{{vin.addr}}">{{vin.addr}}</a>  
           <span class="pull-right badge">{{vin.value}} BTC</span>
           </li>
+
+          <li>
+          Outpoint: <a href="/#!/tx/{{vin.txid}}">{{vin.txid}},{{vin.vout}}</a>
         </ul>
         <div data-ng-show="tx.isCoinBase">
           <ul class="list-unstyled" data-ng-repeat="vinn in tx.vin">
