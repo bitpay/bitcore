@@ -122,6 +122,47 @@ function spec(b) {
 	    this.chunks[this.chunks.length-1] == OP_CHECKMULTISIG);
   };
 
+  Script.prototype.finishedMultiSig = function()
+  {
+    var nsigs = 0;
+    for (var i = 0; i < this.chunks.length-1; i++)
+      if (this.chunks[i] !== 0)
+        nsigs++;
+
+    var serializedScript = this.chunks[this.chunks.length-1];
+    var script = new Script(serializedScript);
+    var nreq = script.chunks[0] - 80; //see OP_2-OP_16
+
+    if (nsigs == nreq)
+      return true;
+    else
+      return false;
+  }
+
+  Script.prototype.removePlaceHolders = function()
+  {
+    var chunks = [];
+    for (var i in this.chunks)
+    {
+      var chunk = this.chunks[i];
+      if (chunk != 0)
+        chunks.push(chunk);
+    }
+    this.chunks = chunks;
+    this.updateBuffer();
+    return this;
+  }
+
+  Script.prototype.prependOp0 = function()
+  {
+    var chunks = [0];
+    for (i in this.chunks)
+      chunks.push(this.chunks[i]);
+    this.chunks = chunks;
+    this.updateBuffer();
+    return this;
+  }
+
   // is this a script form we know?
   Script.prototype.classify = function ()
   {
