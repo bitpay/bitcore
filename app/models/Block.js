@@ -53,7 +53,7 @@ BlockSchema.statics.customCreate = function(block, cb) {
   newBlock.time = block.time ? block.time : Math.round(new Date().getTime() / 1000);
   newBlock.hash = block.blockHash;
 
-  Transaction.createFromArray(block.tx, function(err, inserted_txs) {
+  Transaction.createFromArray(block.tx, newBlock.time, function(err, inserted_txs) {
     if (err) return cb(err);
     newBlock.save(function(err) {
       return cb(err, inserted_txs);
