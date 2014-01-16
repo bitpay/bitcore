@@ -42,6 +42,13 @@ exports.show = function(req, res, next) {
         res.jsonp(d);
       });
     }
+    else if (s === 'getLastBlockHash') {
+      d.getLastBlockHash(function(err) {
+        if (err) next(err);
+        res.jsonp(d);
+      });
+    }
+
     else {
      res.status(400).send('Bad Request');
     }

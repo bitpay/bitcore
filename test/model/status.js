@@ -60,6 +60,16 @@ describe('Status', function(){
     });
   });
 
+  it('getLastBlockHash', function(done) {
+    var d = new Status();
+
+    d.getLastBlockHash(function(err) {
+      if (err) done(err);
+      assert.equal('string', typeof d.lastblockhash);
+      done();
+    });
+  });
+
 
 });
 
