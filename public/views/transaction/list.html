@@ -1,0 +1,35 @@
+<div class="block-tx" data-ng-repeat="tx in txs">
+  <div class="line-bot">
+    <a href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a>
+    <span class="pull-right">{{tx.time * 1000 | date:'medium'}}</span>
+  </div> 
+
+  <div class="row">
+    <div class="col-md-5">
+      Transmitter
+    </div>
+    <div class="col-md-2">
+      <span class="glyphicon glyphicon-arrow-right lead"></span>
+    </div>
+    <div class="col-md-5">
+      <div class="row">
+        <div class="col-md-6">
+          <p>Receptor</p>
+          <p>Receptor</p>
+        </div>
+        <div class="col-md-6 text-right">
+          <p>Bitcoin of Receptor</p>
+          <p>Bitcoin of Receptor</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="line-top">
+    <small class="text-muted">Feeds: {{tx.feeds}}</small>
+    <div class="btn btn-primary pull-right">
+      {{tx.valueOut}}
+    </div>
+  </div> 
+</div><!--  END OF BLOCK-TX -->
+

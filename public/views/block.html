@@ -51,18 +51,6 @@
                 <td class="text-right text-muted">{{block.tx.length}}<td>
               </tr>
               <tr>
-                <td> <strong> Output Total</strong></td>
-                <td class="text-right text-muted">--</td>
-              </tr>
-              <tr>
-                <td> <strong> Estimated Transaction Volume </strong></td>
-                <td class="text-right text-muted">--</td>
-              </tr>
-              <tr>
-                <td> <strong> Transaction Fees </strong></td>
-                <td class="text-right text-muted">--</td>
-              </tr>
-              <tr>
                 <td> <strong> Height </strong></td>
                 <td class="text-right text-muted">{{block.height}}</td>
               </tr>
@@ -76,10 +64,6 @@
         <div class="col-md-6">
           <table class="table">
             <tbody>
-              <tr>
-                <td> <strong> Relayed By </strong></td>
-                <td class="text-right text-muted">--</td>
-              </tr>
               <tr>
                 <td> <strong> Difficulty </strong></td>
                 <td class="text-right text-muted">{{block.difficulty}}</td>
@@ -107,42 +91,7 @@
 
       <div data-ng-controller="transactionsController" data-ng-init="byBlock(params.blockHash)"> 
         <h2>Transactions <small >Transactions contained within this block</small></h2>
-
-        <div class="block-tx" data-ng-repeat="tx in txs">
-          <div class="line-bot">
-              <a href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a>
-              <span class="pull-right">{{tx.time * 1000 | date:'medium'}}</span>
-          </div> 
-
-          <div class="row">
-            <div class="col-md-5">
-              Transmitter
-            </div>
-            <div class="col-md-2">
-              <span class="glyphicon glyphicon-arrow-right lead"></span>
-            </div>
-            <div class="col-md-5">
-              <div class="row">
-                <div class="col-md-6">
-                  <p>Receptor</p>
-                  <p>Receptor</p>
-                </div>
-                <div class="col-md-6 text-right">
-                  <p>Bitcoin of Receptor</p>
-                  <p>Bitcoin of Receptor</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="line-top">
-            <small class="text-muted">Feeds: {{tx.feeds}}</small>
-            <div class="btn btn-primary pull-right">
-              {{tx.valueOut}}
-            </div>
-          </div> 
-        </div><!--  END OF BLOCK-TX -->
-
+        <div data-ng-include src="'/views/transaction/list.html'"></div>
       </div>
     </div>
   </div>
