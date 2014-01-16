@@ -94,7 +94,7 @@ TransactionSchema.statics.createFromArray = function(txs, time, next) {
 
   async.forEachLimit(txs, CONCURRENCY, function(txid, cb) {
 
-    that.explodeTransactionItems( txid, function(err) {
+    that.explodeTransactionItems( txid, time, function(err) {
       if (err) return next(err);
 
       that.create({txid: txid, time: time}, function(err, new_tx) {
