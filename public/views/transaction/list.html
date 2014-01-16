@@ -1,0 +1,48 @@
+<div data-ng-show="!txs || txs.lenght">Loading...</div>
+<div class="block-tx" data-ng-repeat="tx in txs">
+  <div class="line-bot">
+    <a href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a>
+    <span class="pull-right">{{tx.time * 1000 | date:'medium'}}</span>
+  </div>
+
+  <div class="row">
+    <div class="col-md-5">
+      <span data-ng-show="tx.isCoinBase">No Inputs (Newly Generated isCoinBasens)</span>
+      <div data-ng-show="!tx.isCoinBase">
+        <div data-ng-repeat="vin in tx.vin">
+          <a href="/#!/address/{{vin.addr}}" class="ellipsis">{{vin.addr}}</a>
+          <span class="badge">{{vin.value}} BTC</span>
+          <p>
+          Outpoint:
+          <a href="/#!/tx/{{vin.txid}}" class="ellipsis">{{vin.txid}}</a>
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <span class="glyphicon glyphicon-arrow-right lead"></span>
+    </div>
+    <div class="col-md-5">
+      <div class="row">
+        <div class="col-md-6">
+          <div data-ng-repeat="vout in tx.vout">
+            <span data-ng-repeat="address in vout.scriptPubKey.addresses">{{vout.scriptPubKey.type}}</span>
+          </div>
+        </div>
+        <div class="col-md-6 text-right">
+          <div data-ng-repeat="vout in tx.vout">
+            <a href="/#!/address/{{address}}" data-ng-repeat="address in vout.scriptPubKey.addresses" class="ellipsis">{{address}}</a>
+            <span class="badge">{{vout.value}} BTC</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="line-top">
+    <small data-ng-show="!tx.isCoinBase" class="text-muted">Feeds: {{tx.feeds}}</small>
+    <div class="btn btn-primary pull-right">
+      {{tx.valueOut}}
+    </div>
+  </div>
+</div>

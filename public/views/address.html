@@ -40,26 +40,6 @@
 
   <div data-ng-controller="transactionsController" data-ng-init="byAddress(params.addrStr)"> 
     <h2>Transactions <small>Transactions contained within this block</small></h2>
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th>Transaction Hash</th>
-          <th>Datetime</th>
-          <th>Fee</th>
-          <th>Transacted Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-      <tr data-ng-show="!txs.length">
-        <td colspan="4" class="text-center">Loading...</td>
-      </tr>
-      <tr data-ng-repeat="tx in txs">
-        <td><a href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a></td>
-        <td>{{tx.time * 1000 | date:'medium'}}</td>
-        <td>{{tx.feeds}}</td>
-        <td>{{tx.valueOut}}</td>
-      </tr>
-      </tbody>
-    </table>
+    <div data-ng-include src="'/views/transaction/list.html'"></div>
   </div>
 </section>
