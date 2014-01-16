@@ -1,6 +1,6 @@
 'use strict';
 
-var Transaction = require('../../models/Transaction');
+var Transaction = require('../models/Transaction');
 
 // server-side socket behaviour
 
