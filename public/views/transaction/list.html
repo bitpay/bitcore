@@ -7,7 +7,10 @@
 
   <div class="row">
     <div class="col-md-5">
-      <span data-ng-show="tx.isCoinBase">No Inputs (Newly Generated isCoinBasens)</span>
+      <div data-ng-show="tx.isCoinBase" data-ng-repeat="vin in tx.vin">
+        <span>No Inputs (Newly Generated isCoinBasens)</span>
+        <span class="badge">{{vin.reward}} BTC</span>
+      </div>
       <div data-ng-show="!tx.isCoinBase">
         <div data-ng-repeat="vin in tx.vin">
           <a href="/#!/address/{{vin.addr}}" class="ellipsis">{{vin.addr}}</a>
@@ -20,7 +23,7 @@
       </div>
     </div>
     <div class="col-md-2">
-      <span class="glyphicon glyphicon-arrow-right lead"></span>
+      <span class="glyphicon glyphicon-arrow-right lead">&nbsp;</span>
     </div>
     <div class="col-md-5">
       <div class="row">
