@@ -26,7 +26,7 @@ angular.module('insight').config(['$routeProvider',
       templateUrl: 'views/status.html'
     }).
     otherwise({
-      redirectTo: '/'
+      templateUrl: 'views/404.html'
     });
   }
 ]);
