@@ -9,7 +9,7 @@ describe('PeerSync', function() {
 
   beforeEach(function() {
     ps = new PeerSync();
-    ps.init();
+    ps.init({verbose: false});
   });
   afterEach(function(){
     ps.close();
@@ -42,22 +42,37 @@ describe('PeerSync', function() {
   describe('#handle_tx()', function() {
     var tx_info = {
       message: { tx: {getStandardizedObject: function(){
-        return {hash: '00000000e3fe5b3b5416374d8d65560a0792a6da71546d67b00c9d37e8a4cf59'};}}}
+        return {hash: 'dac28b5c5e70c16942718f3a22438348c1b709e01d398795fce8fc455178b973'};}}}
     };
     it('should call storeTxs', function(){
       var spy = sinon.spy(ps.sync, 'storeTxs');
       ps.handle_tx(tx_info);
-      expect(spy.calledOnce);
+      expect(spy.calledOnce).to.be.ok;
     });
   });
 
   describe('#handle_block()', function() {
-    it('should call storeBlock');
-    it('should call storeTxs for each transaction');
+    var block_info = {
+      message: { block: {calcHash: function(){
+        return new Buffer('01234');
+      }, txs: [{hash: new Buffer('cabafeca')}, {hash: new Buffer('bacacafe')}]}}
+    };
+    it('should call storeBlock', function(){
+      var spy = sinon.spy(ps.sync, 'storeBlock');
+      ps.handle_block(block_info);
+      expect(spy.calledOnce).to.be.ok;
+    });
   });
 
   describe('#run()', function() {
-    it('should setup peerman');
+    it('should setup peerman', function() {
+      var startSpy = sinon.spy(ps.peerman, 'start');
+      var onSpy = sinon.spy(ps.peerman, 'on');
+      ps.run();
+      
+      expect(startSpy.called).to.be.ok;
+      expect(onSpy.called).to.be.ok;
+    });
   });
 });
 
