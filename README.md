@@ -1,4 +1,4 @@
-# Mystery
+# Insight
 
 Project description.  
 
@@ -23,14 +23,14 @@ $ npm install -g bower
 * UI Bootstrap - Defined as bower module in the [bower.json](bower.json) file.
 
 ## Quick Install
-  To install Mystery on local, you have to fork the main repository to your
+  To install Insight on local, you have to fork the main repository to your
   computer:
 
-    https://github.com/bitpay/mystery
+    https://github.com/bitpay/insight
 
   Then clone it wherever you want:
 
-    $ git clone git@github.com:<your_username>/mystery.git
+    $ git clone git@github.com:<your_username>/insight.git
 
     $ cd myster
 
@@ -63,9 +63,9 @@ $ npm install -g bower
 
     $ git clone git@github.com:gasteve/node-bufferput.git
 
-  Create symbolic link of node-bufferput in your mystery folder:
+  Create symbolic link of node-bufferput in your insight folder:
 
-    $ cd <your_path_to>/mystery/node_modules
+    $ cd <your_path_to>/insight/node_modules
     $ ln -s <path_to>/node-bufferput bufferput
 
     Get bitcore from github repository:
@@ -78,10 +78,10 @@ $ npm install -g bower
     
     $ npm install
 
-  Then create a symbolic link from this to your mystery repository. We need to
+  Then create a symbolic link from this to your insight repository. We need to
   use bitcore from github, not with npm for now:
 
-    $ cd mystery/node_modules
+    $ cd insight/node_modules
 
     $ rm -R bitcore
 
@@ -89,7 +89,7 @@ $ npm install -g bower
 
 ## Syncing old blockchain data
 
-  Run sync from mystery repository (to save old blocks and transactions in MongoDB):
+  Run sync from insight repository (to save old blocks and transactions in MongoDB):
     
     $ utils/sync.js
 
@@ -181,7 +181,7 @@ If you want to use a external bitcoind server set BITCOIND_HOST / BITCOIND_PORT 
 ### Environment Variables Settings
 
 There are three environments provided by default, __development__, __test__, and __production__. Each of these environments has the following configuration options:
-* __db__ - This is the name of the MongoDB database to use, and is set by default to __mystery-dev__ for the development environment.
+* __db__ - This is the name of the MongoDB database to use, and is set by default to __insight-dev__ for the development environment.
 * __app.name__ - This is the name of your app or website, and can be different for each environment. You can tell which environment you are running by looking at the TITLE attribute that your app generates.
 
 To run with a different environment, just specify NODE_ENV as you call grunt:
@@ -194,13 +194,13 @@ If you are using node instead of grunt, it is very similar:
 
 
 ### Development enviroment
-To run mystery locally for development:
+To run insight locally for development:
 
   $ NODE_ENV=development grunt
 
 
 ## Github
-[Mystery](https://github.com/bitpay/mystery)
+[Insight](https://github.com/bitpay/insight)
 
 ## License
 (The MIT License)

@@ -1,7 +1,7 @@
 'use strict';
 
 //Global service for global variables
-angular.module('mystery.system').factory('Global', [
+angular.module('insight.system').factory('Global', [
   function() {
     var _this = this;
     _this._data = {

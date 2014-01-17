@@ -1,7 +1,7 @@
 'use strict';
 
 //Setting up route
-angular.module('mystery').config(['$routeProvider',
+angular.module('insight').config(['$routeProvider',
   function($routeProvider) {
     $routeProvider.
     when('/block/:blockHash', {
@@ -32,7 +32,7 @@ angular.module('mystery').config(['$routeProvider',
 ]);
 
 //Setting HTML5 Location Mode
-angular.module('mystery').config(['$locationProvider',
+angular.module('insight').config(['$locationProvider',
   function($locationProvider) {
     $locationProvider.hashPrefix('!');
   }

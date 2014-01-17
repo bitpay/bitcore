@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('mystery.system').controller('HeaderController', ['$scope', 'Global', function ($scope, Global) {
+angular.module('insight.system').controller('HeaderController', ['$scope', 'Global', function ($scope, Global) {
   $scope.global = Global;
 
   $scope.menu = [

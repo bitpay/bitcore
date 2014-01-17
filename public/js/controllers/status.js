@@ -1,8 +1,8 @@
 'use strict';
 
-angular.module('mystery.status').controller('StatusController', ['$scope', '$routeParams', '$location', 'Global', 'Status', function ($scope, $routeParams, $location, Global, Status) {
+angular.module('insight.status').controller('StatusController', ['$scope', '$routeParams', '$location', 'Global', 'Status', function ($scope, $routeParams, $location, Global, Status) {
   $scope.global = Global;
-  
+
   $scope.getData = function(q) {
     Status.get({
      q: q

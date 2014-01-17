@@ -1,26 +1,26 @@
 'use strict';
 
-angular.module('mystery',
+angular.module('insight',
     ['ngAnimate',
     'ngCookies',
     'ngResource',
     'ngRoute',
     'ui.bootstrap',
     'ui.route',
-    'mystery.system',
-    'mystery.socket',
-    'mystery.blocks',
-    'mystery.transactions',
+    'insight.system',
+    'insight.socket',
+    'insight.blocks',
+    'insight.transactions',
     'monospaced.qrcode',
-    'mystery.address',
-    'mystery.search',
-    'mystery.status'
+    'insight.address',
+    'insight.search',
+    'insight.status'
 ]);
 
-angular.module('mystery.system', []);
-angular.module('mystery.socket', []);
-angular.module('mystery.blocks', []);
-angular.module('mystery.transactions', []);
-angular.module('mystery.address', []);
-angular.module('mystery.search', []);
-angular.module('mystery.status', []);
+angular.module('insight.system', []);
+angular.module('insight.socket', []);
+angular.module('insight.blocks', []);
+angular.module('insight.transactions', []);
+angular.module('insight.address', []);
+angular.module('insight.search', []);
+angular.module('insight.status', []);
