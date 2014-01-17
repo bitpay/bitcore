@@ -16,6 +16,7 @@ program
   .option('-N --network [livenet]', 'Set bitcoin network [testnet]', 'testnet')
   .option('-D --destroy', 'Remove current DB (and start from there)', 0)
   .option('-R --reverse', 'Sync backwards', 0)
+  .option('-U --uptoexisting', 'Sync only until an existing block is found', 0)
   .parse(process.argv);
 
 var historicSync = new HistoricSync({
@@ -23,7 +24,7 @@ var historicSync = new HistoricSync({
 });
 
 if (program.remove) {
-
+  // TODO: Sure?
 }
 
 async.series([
@@ -31,12 +32,17 @@ async.series([
     historicSync.init(program, cb);
   },
   function(cb) {
-    historicSync.import_history(program, function(err, count) {
+    historicSync.import_history({
+      network: program.network,
+      destroy: program.destroy,
+      reverse: program.reverse,
+      uptoexisting: program.uptoexisting,
+    }, function(err, count) {
       if (err) {
         console.log('CRITICAL ERROR: ', err);
       }
       else {
-        console.log('Done! [%d blocks]', count, err);
+        console.log('Finished. [%d blocks]', count);
       }
       cb();
     });
