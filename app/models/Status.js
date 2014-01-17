@@ -97,7 +97,7 @@ function spec() {
             callback(null, bh.result);
           });
         }
-      ], 
+      ],
         function (err, result) {
           that.lastblockhash = result;
           return next();
