@@ -32,7 +32,6 @@
         "afterEach",
         "it",
         "inject",
-        "expect",
         "$",
         "io",
         "app",
