@@ -4,6 +4,7 @@
 //Set the node enviornment variable if not set before
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
+
 /**
  * Module dependencies.
  */
@@ -12,6 +13,7 @@ var express = require('express'),
   PeerSync = require('./lib/PeerSync').class(),
   HistoricSync = require('./lib/HistoricSync').class(),
   mongoose = require('mongoose');
+
 
 /**
  * Main application entry file.
@@ -42,31 +44,38 @@ var walk = function(path) {
 walk(models_path);
 
 // historic_sync process
-var hs = new HistoricSync();
-hs.init({
-  skip_db_connection: true,
-  networkName: config.network
-}, function() {
-  hs.import_history({
-    reverse: 1,
-  }, function(){
-    console.log('historic_sync finished!');
+if (!config.disableHistoricSync) {
+  var hs = new HistoricSync();
+  hs.init({
+    skip_db_connection: true,
+    networkName: config.network
+  }, function() {
+    hs.import_history({
+      reverse: 1,
+    }, function(){
+      console.log('historic_sync finished!');
+    });
   });
-});
+}
 
 
 // p2p_sync process
-var ps = new PeerSync();
-ps.init({
-  skip_db_connection: true,
-  broadcast_txs: true,
-  broadcast_blocks: true
-}, function() {
-  ps.run();
-});
+if (!config.disableP2pSync) {
+  var ps = new PeerSync();
+  ps.init({
+    skip_db_connection: true,
+    broadcast_txs: true,
+    broadcast_blocks: true
+  }, function() {
+    ps.run();
+  });
+}
 
 // express app
-var app = express();
+
+/*jshint validthis:true */
+var app = express(); 
+
 
 //express settings
 require('./config/express')(app, db);
@@ -76,7 +85,7 @@ require('./config/routes')(app);
 
 // socket.io
 var server = require('http').createServer(app);
-var io = require('socket.io').listen(server);
+var ios = require('socket.io').listen(server);
 require('./app/controllers/socket.js').init(app,io);
 
 //Start the app by listening on <port>
