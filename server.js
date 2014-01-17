@@ -50,9 +50,7 @@ if (!config.disableHistoricSync) {
     skip_db_connection: true,
     networkName: config.network
   }, function() {
-    hs.import_history({
-      reverse: 1,
-    }, function(){
+    hs.smart_import(function(){
       console.log('historic_sync finished!');
     });
   });

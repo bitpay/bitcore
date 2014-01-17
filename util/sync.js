@@ -24,33 +24,40 @@ var historicSync = new HistoricSync({
   networkName: program.network
 });
 
+/*  TODO: Sure?
 if (program.remove) {
-  // TODO: Sure?
+
 }
+*/
 
 async.series([
   function(cb) {
     historicSync.init(program, cb);
   },
   function(cb) {
-    historicSync.import_history({
-      network: program.network,
-      destroy: program.destroy,
-      reverse: program.reverse,
-      uptoexisting: program.uptoexisting,
-      smart: program.smart,
-    }, function(err, count) {
-      if (err) {
-        console.log('CRITICAL ERROR: ', err);
-      }
-      else {
-        console.log('Finished. [%d blocks]', count);
-      }
-      cb();
-    });
+    if (program.smart) {
+      historicSync.smart_import(cb);
+    }
+    else {
+      historicSync.import_history({
+        destroy: program.destroy,
+        reverse: program.reverse,
+        uptoexisting: program.uptoexisting,
+      }, cb);
+    }
   },
   function(cb) {
     historicSync.close();
-    cb();
-}]);
+    return cb();
+  },
+  ],
+  function(err, count) {
+    if (err) {
+      console.log('CRITICAL ERROR: ', err);
+    }
+    else {
+      console.log('Finished. [%d blocks synced]', count[1]);
+    }
+    return;
+});
 

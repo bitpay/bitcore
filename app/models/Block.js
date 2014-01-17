@@ -55,6 +55,7 @@ BlockSchema.statics.customCreate = function(block, cb) {
   newBlock.hash = block.hash;
   newBlock.nextBlockHash = block.nextBlockHash;
 
+
   Transaction.createFromArray(block.tx, newBlock.time, function(err, inserted_txs) {
     if (err) return cb(err);
 
