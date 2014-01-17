@@ -72,10 +72,8 @@ if (!config.disableP2pSync) {
 }
 
 // express app
-
-/*jshint validthis:true */
-var app = express(); 
-
+/*global app: true*/
+var app = express();
 
 //express settings
 require('./config/express')(app, db);
@@ -86,7 +84,7 @@ require('./config/routes')(app);
 // socket.io
 var server = require('http').createServer(app);
 var ios = require('socket.io').listen(server);
-require('./app/controllers/socket.js').init(app,io);
+require('./app/controllers/socket.js').init(app,ios);
 
 //Start the app by listening on <port>
 var port = process.env.PORT || config.port;
