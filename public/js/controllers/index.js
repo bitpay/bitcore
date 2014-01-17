@@ -2,7 +2,7 @@
 
 var TRANSACTION_DISPLAYED = 5;
 var BLOCKS_DISPLAYED = 5;
-angular.module('mystery.system').controller('IndexController', ['$scope', 'Global', 'socket', 'Blocks', 'Transactions', function($scope, Global, socket, Blocks, Transactions) {
+angular.module('insight.system').controller('IndexController', ['$scope', 'Global', 'socket', 'Blocks', 'Transactions', function($scope, Global, socket, Blocks, Transactions) {
   $scope.global = Global;
 
   socket.on('tx', function(tx) {

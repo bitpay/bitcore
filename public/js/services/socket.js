@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('mystery.socket').factory('socket', ['$rootScope', function($rootScope) {
+angular.module('insight.socket').factory('socket', ['$rootScope', function($rootScope) {
   var socket = io.connect();
   return {
     on: function(eventName, callback) {

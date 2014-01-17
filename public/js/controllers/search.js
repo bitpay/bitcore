@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('mystery.search').controller('SearchController', ['$scope', '$routeParams', '$location', 'Global', 'Block', 'Transaction', 'Address', function ($scope, $routeParams, $location, Global, Block, Transaction, Address) {
+angular.module('insight.search').controller('SearchController', ['$scope', '$routeParams', '$location', 'Global', 'Block', 'Transaction', 'Address', function ($scope, $routeParams, $location, Global, Block, Transaction, Address) {
   $scope.global = Global;
 
   $scope.search = function() {
