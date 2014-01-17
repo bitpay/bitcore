@@ -19,6 +19,9 @@ var mongoose    = require('mongoose'),
 
 var CONCURRENCY = 5;
 
+// TODO: use bitcore networks module
+var genesisTXID = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b';
+
 /**
  */
 var TransactionSchema = new Schema({
@@ -112,6 +115,10 @@ TransactionSchema.statics.createFromArray = function(txs, time, next) {
 
 
 TransactionSchema.statics.explodeTransactionItems = function(txid, time,  cb) {
+
+  // Is it from genesis block? (testnet==livenet)
+  // TODO: parse it from networks.genesisTX
+  if (txid === genesisTXID) return cb();
 
   this.queryInfo(txid, function(err, info) {
     if (err || !info) return cb(err);
