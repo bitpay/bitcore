@@ -34,6 +34,16 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   padding: 0 0 60px;
 }
 
+.m10h {margin: 0 10px;}
+.m20h {margin: 0 20px;}
+.m20v {margin: 20px 0;}
+.m50v {margin: 50px 0;}
+.m10b {margin-bottom: 10px;}
+
+.vm {
+  vertical-align: middle;
+}
+
 .navbar-default {
   background-color: #8DC429;
   border-bottom: 4px solid #64920F;
@@ -145,20 +155,43 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   border-radius: 2px;
   background: #F4F4F4;
   margin: 20px 0;
-  padding: 15px;
+  padding: 20px;
 }
 
-.btn-primary {
+.btn {
+  margin: 0 5px;
   border-radius: 2px;
-  background: #64920F;
-  border: 2px solid #557F08;
+}
+.btn-primary {
+  background: #8DC429;
+  border: 2px solid #76AF0F;
 }
 
-.btn-primary:hover, .btn-primary:focus, .btn-primary:active, .btn-primary.active, .open .dropdown-toggle.btn-primary {
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active,
+.btn-primary.active, .open .dropdown-toggle.btn-primary,
+.btn-success:hover, .btn-success:focus, .btn-success:active,
+.btn-success.active, .open .dropdown-toggle.btn-success,
+.btn-danger:hover, .btn-danger:focus, .btn-danger:active,
+.btn-danger.active, .open .dropdown-toggle.btn-danger {
   background: #fff;
   border: 2px solid #ccc;
   color: #373D42;
   font-weight: 500;
+}
+
+.btn-default {
+  background: #E7E7E7;
+  border: 2px solid #DCDCDC;
+}
+
+.btn-success {
+  background: #2FA4D7;
+  border: 2px solid #237FA7;
+}
+
+.btn-danger {
+  background: #AC0015;
+  border: 2px solid #6C0000;
 }
 
 /* Set the fixed height of the footer here */
@@ -217,7 +250,15 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   opacity: 1;
 }
 
-
+.tx-bg {
+  background-color: #F4F4F4;
+  width: 100%;
+  min-height: 340px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -9999;
+}
 
 .badge {
   padding: 1px 9px 2px;
