@@ -20,9 +20,6 @@ angular.module('insight.address').controller('AddressController',
     socket.on('connect', function() {
       socket.emit('subscribe', $routeParams.addrStr);
     });
-    socket.on('tx', function(data) {
-      console.log('Incoming message:', data);
-    });
 
     $scope.params = $routeParams;
 }]);

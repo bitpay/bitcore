@@ -1,13 +1,28 @@
 'use strict';
 
-angular.module('insight.transactions').controller('transactionsController', ['$scope', '$routeParams', '$location', 'Global', 'Transaction', 'TransactionsByBlock', 'TransactionsByAddress', function ($scope, $routeParams, $location, Global, Transaction, TransactionsByBlock, TransactionsByAddress) {
+angular.module('insight.transactions').controller('transactionsController',
+    ['$scope',
+    '$routeParams',
+    '$location',
+    'Global',
+    'Transaction',
+    'TransactionsByBlock',
+    'TransactionsByAddress',
+    'socket',
+    function ($scope, $routeParams, $location, Global, Transaction, TransactionsByBlock, TransactionsByAddress, socket) {
   $scope.global = Global;
 
-  $scope.findOne = function() {
+
+  $scope.findThis = function() {
+    $scope.findTx($routeParams.txId);
+  };
+
+  $scope.findTx = function(txid) {
     Transaction.get({
-      txId: $routeParams.txId
+      txId: txid
     }, function(tx) {
       $scope.tx = tx;
+      $scope.txs.push(tx);
     });
   };
 
@@ -26,6 +41,12 @@ angular.module('insight.transactions').controller('transactionsController', ['$s
       $scope.txs = txs;
     });
   };
+  socket.on('tx', function(tx) {
+    console.log('Incoming message for new transaction!', tx);
+    $scope.findTx(tx.txid);
+  });
+
+  $scope.txs = [];
 
 
 }]);

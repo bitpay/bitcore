@@ -10,9 +10,6 @@ module.exports.init = function(app, io_ext) {
   ios.sockets.on('connection', function(socket) {
     socket.on('subscribe', function(topic) {
       socket.join(topic);
-      if (topic !== 'inv') {
-        module.exports.broadcast_address_tx(topic, 'hello world');
-      }
     });
   });
 };
