@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('insight.address').controller('AddressController', ['$scope', '$routeParams', '$location', 'Global', 'Address', function ($scope, $routeParams, $location, Global, Address) {
+angular.module('insight.address').controller('AddressController', ['$scope', '$rootScope', '$routeParams', '$location', 'Global', 'Address', function ($scope, $rootScope, $routeParams, $location, Global, Address) {
     $scope.global = Global;
 
     $scope.findOne = function() {
@@ -8,6 +8,9 @@ angular.module('insight.address').controller('AddressController', ['$scope', '$r
         addrStr: $routeParams.addrStr
       }, function(address) {
         $scope.address = address;
+      }, function() {
+        $rootScope.flashMessage = 'Address Not Found';
+        $location.path('/');
       });
     };
 

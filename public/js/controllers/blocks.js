@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('insight.blocks').controller('BlocksController', ['$scope', '$routeParams', '$location', 'Global', 'Block', 'Blocks', function ($scope, $routeParams, $location, Global, Block, Blocks) {
+angular.module('insight.blocks').controller('BlocksController', ['$scope', '$rootScope', '$routeParams', '$location', 'Global', 'Block', 'Blocks', function ($scope, $rootScope, $routeParams, $location, Global, Block, Blocks) {
   $scope.global = Global;
 
   $scope.list = function() {
@@ -17,6 +17,9 @@ angular.module('insight.blocks').controller('BlocksController', ['$scope', '$rou
       blockHash: $routeParams.blockHash
     }, function(block) {
       $scope.block = block;
+    }, function() {
+      $rootScope.flashMessage = 'Block Not Found';
+      $location.path('/');
     });
   };
 
