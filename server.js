@@ -51,7 +51,7 @@ if (!config.disableHistoricSync) {
     networkName: config.network
   }, function() {
     hs.smart_import(function(){
-      console.log('historic_sync finished!');
+      console.log('[historic_sync] finished!');
     });
   });
 }
