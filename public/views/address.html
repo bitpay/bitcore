@@ -15,15 +15,15 @@
         </tr>
         <tr>
           <td>Total Received</td>
-          <td>{{address.totalReceivedSat / 100000000}} BTC</td>
+          <td>{{address.totalReceived}} BTC</td>
         </tr>
         <tr>
           <td>Total Sent</td>
-          <td>{{address.totalSentSat / 100000000}} BTC</td>
+          <td>{{address.totalSent}} BTC</td>
         </tr>
         <tr>
           <td>Final Balance</td>
-          <td>{{address.balanceSat / 100000000}} BTC</td>
+          <td>{{address.balance}} BTC</td>
         </tr>
         <tr>
           <td>No. Transactions</td>
@@ -38,7 +38,7 @@
     </div>
   </div>
 
-  <div data-ng-controller="transactionsController" data-ng-init="byAddress(params.addrStr)"> 
+  <div data-ng-controller="transactionsController" data-ng-init="byAddress(params.addrStr)">
     <h2>Transactions <small>Transactions contained within this block</small></h2>
     <div data-ng-include src="'/views/transaction/list.html'"></div>
   </div>
