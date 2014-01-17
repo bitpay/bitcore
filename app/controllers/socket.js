@@ -1,25 +1,23 @@
 'use strict';
 
-var Transaction = require('../models/Transaction');
-
 // server-side socket behaviour
 
-var io = null;
+// io is a variable already taken in express
+var ios = null;
 
 module.exports.init = function(app, io_ext) {
-  io = io_ext;
-  io.set('log level', 1); // reduce logging
-  io.sockets.on('connection', function(socket) {
-    
+  ios = io_ext;
+  ios.set('log level', 1); // reduce logging
+  ios.sockets.on('connection', function() {
   });
 };
 
 
 module.exports.broadcast_tx = function(tx) {
-  io.sockets.emit('tx', tx);
+  ios.sockets.emit('tx', tx);
 };
 
 
 module.exports.broadcast_block = function(block) {
-  io.sockets.emit('block', block);
+  ios.sockets.emit('block', block);
 };

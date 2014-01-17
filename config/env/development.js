@@ -14,4 +14,6 @@ module.exports = {
     disableAgent: true,
   },
   network: 'testnet',
+  disableP2pSync: false,
+  disableHistoricSync: false,
 }
