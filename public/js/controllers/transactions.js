@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('insight.transactions').controller('transactionsController', ['$scope', '$routeParams', '$location', 'Global', 'Transaction', 'TransactionsByBlock', 'TransactionsByAddress', function ($scope, $routeParams, $location, Global, Transaction, TransactionsByBlock, TransactionsByAddress) {
+angular.module('insight.transactions').controller('transactionsController', ['$scope', '$rootScope', '$routeParams', '$location', 'Global', 'Transaction', 'TransactionsByBlock', 'TransactionsByAddress', '$rootScope', function ($scope, $rootScope, $routeParams, $location, Global, Transaction, TransactionsByBlock, TransactionsByAddress) {
   $scope.global = Global;
 
   $scope.findOne = function() {
@@ -8,6 +8,9 @@ angular.module('insight.transactions').controller('transactionsController', ['$s
       txId: $routeParams.txId
     }, function(tx) {
       $scope.tx = tx;
+    }, function() {
+      $rootScope.flashMessage = 'Transaction Not Found';
+      $location.path('/');
     });
   };
 
@@ -26,7 +29,4 @@ angular.module('insight.transactions').controller('transactionsController', ['$s
       $scope.txs = txs;
     });
   };
-
-
 }]);
-
