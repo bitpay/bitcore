@@ -1,6 +1,13 @@
 'use strict';
 
-angular.module('insight.address').controller('AddressController', ['$scope', '$routeParams', '$location', 'Global', 'Address', function ($scope, $routeParams, $location, Global, Address) {
+angular.module('insight.address').controller('AddressController',
+    ['$scope',
+    '$routeParams',
+    '$location',
+    'Global',
+    'Address',
+    'socket',
+    function ($scope, $routeParams, $location, Global, Address, socket) {
     $scope.global = Global;
 
     $scope.findOne = function() {
@@ -10,6 +17,12 @@ angular.module('insight.address').controller('AddressController', ['$scope', '$r
         $scope.address = address;
       });
     };
+    socket.on('connect', function() {
+      socket.emit('subscribe', $routeParams.addrStr);
+    });
+    socket.on('tx', function(data) {
+      console.log('Incoming message:', data);
+    });
 
     $scope.params = $routeParams;
 }]);
