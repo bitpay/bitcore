@@ -1,35 +1,26 @@
 <section data-ng-controller="transactionsController" data-ng-init="findOne()">
-  <div class="page-header">
     <h1>
-      Transaction 
+      Transaction
       <small>View information about a bitcoin transaction</small>
     </h1>
-  </div>
 
-  <div class="well well-sm">
-    {{tx.txid}} 
-  </div>  
+  <div class="block-tx">
+    <div class="line-bot">
+      <a href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a>
+    </div> 
 
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>Input</th>
-        <th>&nbsp;</th>
-        <th>Output</th>
-      </tr>
-    </thead>
-    <tbody>
-    <tr>
-      <td width="45%"> 
+    <div class="row m10b">
+
+      <div class="col-md-5">
         <ul class="list-unstyled" data-ng-repeat="vin in tx.vin" data-ng-show="!tx.isCoinBase">
           <li>
-          <span data-ng-show="!vin.addr">Address could not be parsed</span>  
-          <a data-ng-show="vin.addr" href="/#!/address/{{vin.addr}}">{{vin.addr}}</a>  
-          <span class="pull-right badge">{{vin.value}} BTC</span>
+            <a class="m10h vm lead glyphicon glyphicon-circle-arrow-left" href="/#!/tx/{{vin.txid}}" alt="Outpoint: {{vin.txid}},{{vin.vout}}" data-toggle="tooltip" title="Outpoint: {{vin.txid}},{{vin.vout}}">
+            </a>
+            <span data-ng-show="!vin.addr">Address could not be parsed</span>  
+            <a data-ng-show="vin.addr" href="/#!/address/{{vin.addr}}">{{vin.addr}}</a>  
+            <span class="pull-right badge">{{vin.value}} BTC</span>
           </li>
 
-          <li>
-          Outpoint: <a href="/#!/tx/{{vin.txid}}">{{vin.txid}},{{vin.vout}}</a>
         </ul>
         <div data-ng-show="tx.isCoinBase">
           <ul class="list-unstyled" data-ng-repeat="vinn in tx.vin">
@@ -39,89 +30,81 @@
             </li>
           </ul>
         </div>
-      </td>
-      <td width="10%" style="text-align: center;"><span class="glyphicon glyphicon-chevron-right">&nbsp;</span></td>
-      <td width="45%">
-        <table class="table table-condensed">
-          <tbody>
-          <tr data-ng-repeat="vout in tx.vout">
-            <td><b>{{vout.scriptPubKey.type}}</b></td>
-            <td>
-              <ul class="list-unstyled" data-ng-repeat="addr in vout.scriptPubKey.addresses">
-                <li><a href="/#!/address/{{addr}}">{{addr}}</a> <span class="pull-right badge">{{vout.value}} BTC</span></li>
-              </ul>
-            </td>
-          </tr>
-          </tbody>
-        </table>
-      </td>
-    </tr>
-    </tbody>
-    <tfoot>
-      <tr>
-        <td colspan="3" style="text-align: right;">
-          <button data-ng-show="tx.confirmations" type="button" class="btn btn-primary">
-            {{tx.confirmations}} Confirmations
-          </button>
-          <button data-ng-show="!tx.confirmations"  type="button" class="btn btn-danger">
-            Unconfirmed Transaction!
-          </button>
-          <button type="button" class="btn btn-success">{{tx.valueOut}} BTC</button>
-        </td>
-      </tr>
-    </tfoot>
-  </table>
+      </div>
 
-  <div class="row">
-    <div class="col-md-6">
-      <div class="panel panel-default">
-        <div class="panel-heading">
-          <h3 class="panel-title">Summary</h3>
-        </div>
-        <div class="panel-body">
-          <table class="table table-striped">
-            <tbody>
-            <tr>
-              <td>Size</td>
-              <td>{{tx.size}} (bytes)</td>
-            </tr>
-            <tr>
-              <td>Received Time</td>
-              <td>{{tx.time * 1000|date:'medium'}}</td>
-            </tr>
-            <tr>
-              <td>Block</td>
-              <td><a href="/#!/block/{{tx.blockhash}}">Block</a></td>
-            </tr>
-            </tbody>
-          </table>
+      <div class="col-md-2 text-center">
+        <span class="glyphicon glyphicon-chevron-right lead"></span>
+      </div>
+
+      <div class="col-md-5" data-ng-repeat="vout in tx.vout">
+        <div class="row m10b">
+          <div class="col-md-3">
+            <b>{{vout.scriptPubKey.type}}</b>
+          </div>
+          <div class="col-md-9">
+            <ul class="list-unstyled" data-ng-repeat="addr in vout.scriptPubKey.addresses">
+              <li>
+                <a class="ellipsis pull-left" style="width:200px;" href="/#!/address/{{addr}}">{{addr}}</a>
+                <span class="pull-right badge">{{vout.value}} BTC</span>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-md-6">
-      <div class="panel panel-default" data-ng-show="!tx.isCoinBase">
-        <div class="panel-heading">
-          <h3 class="panel-title">Inputs and Outputs</h3>
-        </div>
-        <div class="panel-body">
-          <table class="table table-striped">
-            <tbody>
-            <tr>
-              <td>Total Input</td>
-              <td>{{tx.valueIn}} BTC</td>
-            </tr>
-            <tr>
-              <td>Total Output</td>
-              <td>{{tx.valueOut}} BTC</td>
-            </tr>
-            <tr>
-              <td>Fees</td>
-              <td>{{tx.feeds}} BTC</td>
-            </tr>
-            </tbody>
-          </table>
-        </div>
+
+    <div class="line-top">
+      <small class="text-muted">Feeds: {{tx.feeds}}</small>
+      <div class="pull-right">
+        <button data-ng-show="tx.confirmations" type="button" class="btn btn-success">
+          {{tx.confirmations}} Confirmations
+        </button>
+        <button data-ng-show="!tx.confirmations"  type="button" class="btn btn-danger">
+          Unconfirmed Transaction!
+        </button>
+        <button type="button" class="btn btn-primary">{{tx.valueOut}} BTC</button>
       </div>
+    </div> 
+  </div><!--  END OF BLOCK-TX -->
+
+  <div class="row m50v">
+    <div data-ng-class="{'col-md-6':!tx.isCoinBase}">
+      <h3>Summary</h3>
+      <table class="table">
+        <tbody>
+        <tr>
+          <td><strong> Size </strong></td>
+          <td class="text-muted text-right">{{tx.size}} (bytes)</td>
+        </tr>
+        <tr>
+          <td><strong>Received Time </strong></td>
+          <td class="text-muted text-right">{{tx.time * 1000|date:'medium'}}</td>
+        </tr>
+        <tr>
+          <td><strong>Block </strong></td>
+          <td class="text-muted text-right"><a href="/#!/block/{{tx.blockhash}}">Block</a></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="col-md-6"  data-ng-show="!tx.isCoinBase">
+      <h3>Inputs and Outputs</h3>
+        <table class="table">
+          <tbody>
+          <tr>
+            <td><strong>Total Input</strong></td>
+            <td class="text-muted text-right">{{tx.valueIn}} BTC</td>
+          </tr>
+          <tr>
+            <td><strong>Total Output</strong></td>
+            <td class="text-muted text-right">{{tx.valueOut}} BTC</td>
+          </tr>
+          <tr>
+            <td><strong>Fees</strong></td>
+            <td class="text-muted text-right">{{tx.feeds}} BTC</td>
+          </tr>
+          </tbody>
+        </table>
     </div>
   </div>
 </section>
