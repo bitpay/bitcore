@@ -50,8 +50,11 @@ if (!config.disableHistoricSync) {
     skip_db_connection: true,
     networkName: config.network
   }, function() {
-    hs.smart_import(function(){
-      console.log('[historic_sync] finished!');
+    hs.smart_import(function(err){
+      var txt= 'ended.';
+      if (err) txt = 'ABORTED with error: ' + err.message;
+
+      console.log('[historic_sync] ' + txt, hs.syncInfo);
     });
   });
 }
