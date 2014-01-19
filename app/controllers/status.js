@@ -10,7 +10,7 @@ var Status  = require('../models/Status');
  *  Status
  */
 exports.show = function(req, res, next) {
-
+  
   if (! req.query.q) {
     res.status(400).send('Bad Request');
   }
@@ -18,36 +18,26 @@ exports.show = function(req, res, next) {
     var option = req.query.q;
     var statusObject = Status.new();
 
+    var returnJsonp = function (err) {
+      if(err) return next(err);
+      res.jsonp(statusObject);
+    };
+
     switch(option) {
       case 'getInfo':
-        statusObject.getInfo(function(err) {
-          if (err) next(err);
-          res.jsonp(statusObject);
-        });
+        statusObject.getInfo(returnJsonp);
         break;
       case 'getDifficulty':
-        statusObject.getDifficulty(function(err) {
-          if (err) next(err);
-          res.jsonp(statusObject);
-        });
+        statusObject.getDifficulty(returnJsonp);
         break;
       case 'getTxOutSetInfo':
-        statusObject.getTxOutSetInfo(function(err) {
-          if (err) next(err);
-          res.jsonp(statusObject);
-        });
+        statusObject.getTxOutSetInfo(returnJsonp);
         break;
       case 'getBestBlockHash':
-        statusObject.getBestBlockHash(function(err) {
-          if (err) next(err);
-          res.jsonp(statusObject);
-        });
+        statusObject.getBestBlockHash(returnJsonp);
         break;
       case 'getLastBlockHash':
-        statusObject.getLastBlockHash(function(err) {
-          if (err) next(err);
-          res.jsonp(statusObject);
-        });
+        statusObject.getLastBlockHash(returnJsonp);
         break;
       default:
         res.status(400).send('Bad Request');
