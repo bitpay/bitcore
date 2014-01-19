@@ -41,7 +41,7 @@ async.series([
       historicSync.import_history({
         destroy: program.destroy,
         reverse: program.reverse,
-        uptoexisting: program.uptoexisting,
+        upToExisting: program.uptoexisting,
       }, cb);
     }
   },

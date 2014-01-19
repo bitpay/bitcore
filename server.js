@@ -48,7 +48,8 @@ var historicSync = {};
 if (!config.disableHistoricSync) {
   historicSync = new HistoricSync();
   historicSync.init({
-    skip_db_connection: true,
+    skipDbConnection: true,
+    shouldBroadcast: true,
     networkName: config.network
   }, function() {
     historicSync.smart_import(function(err){
@@ -65,7 +66,7 @@ if (!config.disableHistoricSync) {
 if (!config.disableP2pSync) {
   var ps = new PeerSync();
   ps.init({
-    skip_db_connection: true,
+    skipDbConnection: true,
     broadcast_txs: true,
     broadcast_blocks: true
   }, function() {
