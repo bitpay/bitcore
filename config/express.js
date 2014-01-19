@@ -7,7 +7,8 @@ var express = require('express'),
     helpers = require('view-helpers'),
     config = require('./config');
 
-module.exports = function(app, passport, db) {
+module.exports = function(app, historicSync) {
+
   app.set('showStackError', true);
 
   //Prettify HTML
@@ -26,9 +27,17 @@ module.exports = function(app, passport, db) {
   app.set('view engine', 'jade');
 
   //Enable jsonp
-  app.enable("jsonp callback");
+  app.enable('jsonp callback');
 
+ //custom middleware
+  function setHistoric(req, res, next) {
+    req.syncInfo = historicSync.syncInfo;
+    next();
+  }
+  app.use('/api/sync', setHistoric);
+ 
   app.configure(function() {
+
     //cookieParser should be above session
     app.use(express.cookieParser());
 
@@ -42,6 +51,7 @@ module.exports = function(app, passport, db) {
 
     //routes should be at the last
     app.use(app.router);
+
 
     //Setting the fav icon and static folder
     app.use(express.favicon());

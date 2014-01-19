@@ -18,6 +18,7 @@ node_modules
 
 # extras
 *.swp
+*.swo
 *~
 .project
 peerdb.json

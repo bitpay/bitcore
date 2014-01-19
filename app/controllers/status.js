@@ -48,10 +48,14 @@ exports.show = function(req, res, next) {
         res.jsonp(d);
       });
     }
-
     else {
      res.status(400).send('Bad Request');
     }
   }
 };
 
+exports.sync = function(req, res, next) {
+  if (req.syncInfo)
+    res.jsonp(req.syncInfo);
+  next();
+};
