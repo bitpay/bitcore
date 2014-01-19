@@ -15,43 +15,44 @@ exports.show = function(req, res, next) {
     res.status(400).send('Bad Request');
   }
   else {
-    var s = req.query.q;
-    var d = Status.new();
-    
-    if (s === 'getInfo') {
-      d.getInfo(function(err) {
-        if (err) next(err);
-        res.jsonp(d);
-      });
-    }
-    else if (s === 'getDifficulty') {
-      d.getDifficulty(function(err) {
-        if (err) next(err);
-        res.jsonp(d);
-      });
-    }
-    else if (s === 'getTxOutSetInfo') {
-      d.getTxOutSetInfo(function(err) {
-        if (err) next(err);
-        res.jsonp(d);
-      });
-    }
-    else if (s === 'getBestBlockHash') {
-      d.getBestBlockHash(function(err) {
-        if (err) next(err);
-        res.jsonp(d);
-      });
-    }
-    else if (s === 'getLastBlockHash') {
-      d.getLastBlockHash(function(err) {
-        if (err) next(err);
-        res.jsonp(d);
-      });
-    }
+    var option = req.query.q;
+    var statusObject = Status.new();
 
-    else {
-     res.status(400).send('Bad Request');
+    switch(option) {
+      case 'getInfo':
+        statusObject.getInfo(function(err) {
+          if (err) next(err);
+          res.jsonp(statusObject);
+        });
+        break;
+      case 'getDifficulty':
+        statusObject.getDifficulty(function(err) {
+          if (err) next(err);
+          res.jsonp(statusObject);
+        });
+        break;
+      case 'getTxOutSetInfo':
+        statusObject.getTxOutSetInfo(function(err) {
+          if (err) next(err);
+          res.jsonp(statusObject);
+        });
+        break;
+      case 'getBestBlockHash':
+        statusObject.getBestBlockHash(function(err) {
+          if (err) next(err);
+          res.jsonp(statusObject);
+        });
+        break;
+      case 'getLastBlockHash':
+        statusObject.getLastBlockHash(function(err) {
+          if (err) next(err);
+          res.jsonp(statusObject);
+        });
+        break;
+      default:
+        res.status(400).send('Bad Request');
     }
   }
 };
+
 
