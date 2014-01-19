@@ -128,6 +128,12 @@ A REST API is provided at /api. The entry points are:
   /api/txs/?address=ADDR
   /api/txs/?address=mmhmMNfBiZZ37g1tgg2t8DDbNoEdqKVxAL
 
+
+### Sync status
+```
+  /api/sync
+```
+
 ## Web Socket API
 The web socket API is served using [socket.io](http://socket.io) at:
 ```
@@ -157,6 +163,22 @@ Sample output:
   "time":1389789343,
   "fromP2P":true,
   "_id":"52d6809ec3fb4c240d00008c"
+}
+```
+
+'sync': every 1% increment on the sync task, this event will be triggered.
+
+Sample output:
+```
+{
+blocksToSync: 164141,
+syncedBlocks: 475,
+upToExisting: true,
+scanningBackward: true,
+isEndGenesis: true,
+end: "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943",
+isStartGenesis: false,
+start: "000000009f929800556a8f3cfdbe57c187f2f679e351b12f7011bfc276c41b6d"
 }
 ```
 
