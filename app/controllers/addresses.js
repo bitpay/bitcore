@@ -4,30 +4,32 @@
  * Module dependencies.
  */
 
-var Address = require('../models/Address');
+var Address = require('../models/Address'),
+    common      = require('./common');
 
 
-/**
- * Find block by hash ...
- */
 exports.address = function(req, res, next, addr) {
-  var a = Address.new(addr);
+
+
+  var a;
+  try {
+    a = Address.new(addr);
+  } catch (e) {
+    return common.handleErrors({message: 'Invalid address:' + e.message, code: 1}, res, next);
+  }
 
   a.update(function(err) {
-    if (err && !a.totalReceivedSat) {
-      console.log(err);
-      res.status(404).send('Invalid address');
-      return next();
-    }
-
-    req.address = a;
-    return next();
-  });
+      if (err)
+        return common.handleErrors(err, res);
+      else  {
+        req.address = a;
+        return next();
+      }
+    });
 };
 
 
 /**
- * Show block
  */
 exports.show = function(req, res) {
   if (req.address) {

@@ -19,11 +19,8 @@ function spec() {
     this.transactions   = [];
 
     var a = new BitcoreAddress(addrStr);
-    try {
-      a.validate();
-      this.addrStr        = addrStr;
-    } catch(e){
-    }
+    a.validate();
+    this.addrStr        = addrStr;
 
 
     Object.defineProperty(this, 'totalSent', {
@@ -58,11 +55,6 @@ function spec() {
   }
 
   Address.prototype.update = function(next) {
-
-    if (! this.addrStr) {
-      return next(new Error('Invalid or undefined address string'));
-    }
-
     var that = this;
     async.series([
       // TODO TXout!

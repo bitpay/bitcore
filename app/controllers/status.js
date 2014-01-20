@@ -4,7 +4,8 @@
  * Module dependencies.
  */
 
-var Status  = require('../models/Status');
+var Status  = require('../models/Status'),
+    common      = require('./common');
 
 /**
  *  Status
@@ -19,8 +20,11 @@ exports.show = function(req, res, next) {
     var statusObject = Status.new();
 
     var returnJsonp = function (err) {
-      if(err) return next(err);
-      res.jsonp(statusObject);
+      if (err || ! statusObject)
+        return common.handleErrors(err, res);
+      else {
+        res.jsonp(statusObject);
+      }
     };
 
     switch(option) {

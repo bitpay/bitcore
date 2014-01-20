@@ -81,15 +81,32 @@ BlockSchema.statics.fromHash = function(hash, cb) {
 
 
 BlockSchema.statics.fromHashWithInfo = function(hash, cb) {
+  var That = this;
+
   this.fromHash(hash, function(err, block) {
     if (err) return cb(err);
-    if (!block) { return cb(new Error('Block not found')); }
 
-    block.getInfo(function(err) { return cb(err,block); } );
+    if (!block) {
+      // No in mongo...but maybe in bitcoind... lets query it
+      block = new That();
+
+      block.hash = hash;
+      block.getInfo(function(err, blockInfo) {
+        if (err) return cb(err);
+        if (!blockInfo) return cb();
+
+        block.save(function(err) {
+          return cb(err,block);
+        });
+      });
+    }
+    else {
+      block.getInfo(function(err) {
+        return cb(err,block);
+      });
+    }
   });
 };
-
-
 
 // TODO: Can we store the rpc instance in the Block object?
 BlockSchema.methods.getInfo = function (next) {
@@ -98,6 +115,9 @@ BlockSchema.methods.getInfo = function (next) {
   var rpc  = new RpcClient(config.bitcoind);
 
   rpc.getBlock(this.hash, function(err, blockInfo) {
+    // Not found?
+    if (err && err.code === -5) return next();
+
     if (err) return next(err);
 
     /*

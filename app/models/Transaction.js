@@ -74,8 +74,8 @@ TransactionSchema.statics.fromIdWithInfo = function(txid, cb) {
       tx.txid = txid;
       tx.fillInfo(function(err, txInfo) {
 
-        if (!txInfo)
-          return cb(new Error('TX not found'));
+        if (err) return cb(err);
+        if (!txInfo) return cb();
 
         tx.save(function(err) {
           return cb(err,tx);
@@ -251,6 +251,10 @@ TransactionSchema.statics.queryInfo = function(txid,  cb) {
   var rpc      = new RpcClient(config.bitcoind);
 
   rpc.getRawTransaction(txid, 1, function(err, txInfo) {
+
+    // Not found?
+    if (err && err.code === -5) return cb();
+
     if (err) return cb(err);
 
     var info = txInfo.result;

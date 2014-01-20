@@ -1,30 +1,31 @@
 'use strict';
 
-angular.module('insight.status').controller('StatusController', ['$scope', '$routeParams', '$location', 'Global', 'Status', function ($scope, $routeParams, $location, Global, Status) {
+angular.module('insight.status').controller('StatusController', ['$scope', '$routeParams', '$location', '$rootScope', 'Global', 'Status', 'Sync', function ($scope, $routeParams, $location, $rootScope, Global, Status, Sync) {
   $scope.global = Global;
 
-  $scope.getData = function(q) {
+  $scope.getStatus = function(q) {
     Status.get({
-     q: q
+     q: 'get' + q
     }, function(d) {
-      if (q === 'getInfo') {
-        $scope.info = d.info;
+      $rootScope.infoError = null;
+      angular.extend($scope, d);
+    }, function(e) {
+      if (e.status === 503) {
+        $rootScope.infoError = 'Backend Error. ' + e.data;
       }
-      if (q === 'getDifficulty') {
-        $scope.difficulty = d.difficulty;
+      else {
+        $rootScope.infoError = 'Unknown error:' + e.data;
       }
-      if (q === 'getTxOutSetInfo') {
-        $scope.txoutsetinfo = d.txoutsetinfo;
-      }
-      if (q === 'getBestBlockHash') {
-        $scope.bestblockhash = d.bestblockhash;
-      }
-      if (q === 'getLastBlockHash') {
-        $scope.lastblockhash = d.lastblockhash;
-      }
-
     });
   };
 
+  $scope.getSync = function() {
+    Sync.get({}, function(sync) {
+      $rootScope.syncError = null;
+      $scope.sync = sync;
+    }, function(e) {
+      $rootScope.syncError = 'Could not get sync information' + e;
+    });
+  };
 }]);
 
