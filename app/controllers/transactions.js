@@ -7,6 +7,7 @@ var Transaction = require('../models/Transaction');
 var Block       = require('../models/Block');
 var Address     = require('../models/Address');
 var async       = require('async');
+var common      = require('./common');
 
 
 /**
@@ -14,15 +15,12 @@ var async       = require('async');
  */
 exports.transaction = function(req, res, next, txid) {
   Transaction.fromIdWithInfo(txid, function(err, tx) {
-    if (err) {
-      console.log(err);
-      res.status(404).send('Not found');
-      return next();
-    }
 
-    if (!tx) return next(new Error('Failed to load TX ' + txid));
+    if (err || ! tx) return common.handleErrors(err, res, next);
+
+
     req.transaction = tx.info;
-    next();
+    return next();
   });
 };
 

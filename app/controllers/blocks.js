@@ -4,7 +4,8 @@
  * Module dependencies.
  */
 var mongoose = require('mongoose'),
-    Block = mongoose.model('Block');
+    Block = mongoose.model('Block'),
+    common      = require('./common');
 
 
 /**
@@ -12,11 +13,7 @@ var mongoose = require('mongoose'),
  */
 exports.block = function(req, res, next, hash) {
   Block.fromHashWithInfo(hash, function(err, block) {
-    if (err && !block) {
-      console.log(err);
-      res.status(404).send('Not found');
-      return next();
-    }
+    if (err || ! tx) return common.handleErrors(err, res, next);
 
     req.block = block.info;
     return next();
