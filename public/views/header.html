@@ -15,14 +15,24 @@
           <a href="#!/{{item.link}}">{{item.title}}</a>
         </li>
       </ul>
-      <div ng-controller="SearchController" class="pull-right">
+      <div ng-controller="SearchController">
         <form class="navbar-form navbar-left" role="search" ng-submit="search()">
           <div class="form-group" ng-class="{'has-error': badQuery}">
             <input id="search" type="text" class="form-control" ng-model="q" placeholder="Search for block, transaction or address">
           </div>
           <span class="text-danger" ng-show="badQuery">No matching records found!</span>
-
         </form>
+      <div class="status" data-ng-controller="FooterController" data-ng-init="getFooter()">
+        <i class="small" data-ng-show="info.blocks">
+          <strong>Status:</strong> On Sync  
+        </i>
+        <i class="small">
+          <strong> Connections: </strong> {{info.connections}} 
+        </i>
+        <i class="small">
+          <strong>Height:</strong> {{info.blocks}}
+        </i>
+      </div>
       </div>
     </div>
   </div>
