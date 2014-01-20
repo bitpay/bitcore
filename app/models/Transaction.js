@@ -110,7 +110,10 @@ TransactionSchema.statics.createFromArray = function(txs, time, next) {
       that.create({txid: txid, time: time}, function(err, new_tx) {
         if (err && ! err.toString().match(/E11000/)) return cb(err);
 
-        if (new_tx) mongo_txs.push(new_tx);
+        if (new_tx) {
+          mongo_txs.push(new_tx);
+        }
+
         return cb();
       });
     });
@@ -336,6 +339,7 @@ TransactionSchema.methods.fillInfo = function(next) {
     if (err) return next(err);
 
     that.info = info;
+    that.info.time = that.time;
     return next();
   });
 };
