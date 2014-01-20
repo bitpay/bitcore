@@ -4,8 +4,6 @@
 
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
-require('buffertools').extend();
-
 var SYNC_VERSION = '0.1';
 var program = require('commander');
 var HistoricSync = require('../lib/HistoricSync').class();

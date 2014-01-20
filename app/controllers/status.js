@@ -45,8 +45,7 @@ exports.show = function(req, res, next) {
   }
 };
 
-exports.sync = function(req, res, next) {
+exports.sync = function(req, res) {
   if (req.syncInfo)
     res.jsonp(req.syncInfo);
-  next();
 };
