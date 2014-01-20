@@ -11,7 +11,7 @@
   <div class="row m50v">
     <div data-ng-class="{'col-md-6':!tx.isCoinBase}">
       <h3>Summary</h3>
-      <table class="table">
+      <table class="table" style="table-layout: fixed">
         <tbody>
         <tr>
           <td><strong> Size </strong></td>
@@ -25,9 +25,7 @@
           <td><strong>Block </strong>
           <td class="text-muted text-right">
 
-            <div class="ellipsis">
-              <a href="/#!/block/{{tx.blockhash}}">{{tx.blockhash}}</a>
-            </div>
+              <a href="/#!/block/{{tx.blockhash}}" class=" ellipsis">{{tx.blockhash}}</a>
         </tbody>
       </table>
     </div>

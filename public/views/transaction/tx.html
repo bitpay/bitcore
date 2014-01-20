@@ -7,13 +7,13 @@
     <div class="col-md-5">
       <div class="ellipsis row" data-ng-show="tx.isCoinBase" data-ng-repeat="vin in tx.vin">
         <div class="col-md-10">
-          <p class="ellipsis">No Inputs (Newly Generated isCoinBasens)</p>
+          <p class="ellipsis">No Inputs (Newly Generated Coins)</p>
         </div>
         <p class="text-muted pull-right"> <small>{{vin.reward}} BTC</small></p>
       </div>
       <ul class="list-unstyled" data-ng-repeat="vin in tx.vin" data-ng-show="!tx.isCoinBase">
         <li class="row">
-          <a class="col-md-1 glyphicon glyphicon-circle-arrow-left" href="/#!/tx/{{vin.txid}}" alt="Outpoint: {{vin.txid}},{{vin.vout}}" tooltip="Outpoint: {{vin.txid}},{{vin.vout}}">
+          <a class="col-md-1 glyphicon glyphicon-circle-arrow-left" href="/#!/tx/{{vin.txid}}" alt="Outpoint: {{vin.txid}},{{vin.vout}}" tooltip="Outpoint: {{vin.txid}},{{vin.vout}}"  tooltip-placement="right" >
           </a>
           <div class="col-md-8">
             <div class="ellipsis">
@@ -40,7 +40,7 @@
         <div data-ng-repeat="vout in tx.vout">
           <div class="col-md-6">
             <div class="ellipsis">
-              <a href="/#!/address/{{address}}" data-ng-repeat="address in vout.scriptPubKey.addresses" class="ellipsis">{{address}}</a>
+              <a href="/#!/address/{{address}}" data-ng-repeat="address in vout.scriptPubKey.addresses">{{address}}</a>
             </div>
           </div>
           <div class="col-md-3">
