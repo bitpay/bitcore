@@ -17,8 +17,16 @@ angular.module('insight.blocks').controller('BlocksController', ['$scope', '$roo
       blockHash: $routeParams.blockHash
     }, function(block) {
       $scope.block = block;
-    }, function() {
-      $rootScope.flashMessage = 'Block Not Found';
+    }, function(e) {
+      if (e.status === 400) {
+        $rootScope.flashMessage = 'Invalid Transaction ID: ' + $routeParams.txId;
+      }
+      else if (e.status === 503) {
+        $rootScope.flashMessage = 'Backend Error. ' + e.data;
+      }
+      else {
+        $rootScope.flashMessage = 'Block Not Found';
+      }
       $location.path('/');
     });
   };

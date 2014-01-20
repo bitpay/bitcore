@@ -8,8 +8,16 @@ angular.module('insight.address').controller('AddressController', ['$scope', '$r
         addrStr: $routeParams.addrStr
       }, function(address) {
         $scope.address = address;
-      }, function() {
-        $rootScope.flashMessage = 'Address Not Found';
+      }, function(e) {
+        if (e.status === 400) {
+          $rootScope.flashMessage = 'Invalid Address: ' + $routeParams.addrStr;
+        }
+        else if (e.status === 503) {
+          $rootScope.flashMessage = 'Backend Error. ' + e.data;
+        }
+        else {
+          $rootScope.flashMessage = 'Address Not Found';
+        }
         $location.path('/');
       });
     };

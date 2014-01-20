@@ -8,8 +8,16 @@ angular.module('insight.transactions').controller('transactionsController', ['$s
       txId: $routeParams.txId
     }, function(tx) {
       $scope.tx = tx;
-    }, function() {
-      $rootScope.flashMessage = 'Transaction Not Found';
+    }, function(e) {
+      if (e.status === 400) {
+        $rootScope.flashMessage = 'Invalid Transaction ID: ' + $routeParams.txId;
+      }
+      else if (e.status === 503) {
+        $rootScope.flashMessage = 'Backend Error. ' + e.data;
+      }
+      else {
+        $rootScope.flashMessage = 'Transaction Not Found';
+      }
       $location.path('/');
     });
   };

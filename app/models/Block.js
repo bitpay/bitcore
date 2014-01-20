@@ -92,7 +92,6 @@ BlockSchema.statics.fromHashWithInfo = function(hash, cb) {
 
       block.hash = hash;
       block.getInfo(function(err, blockInfo) {
-console.log('[Block.js.95:err:]',err); //TODO
         if (err) return cb(err);
         if (!blockInfo) return cb();
 

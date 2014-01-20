@@ -13,7 +13,7 @@ var mongoose = require('mongoose'),
  */
 exports.block = function(req, res, next, hash) {
   Block.fromHashWithInfo(hash, function(err, block) {
-    if (err || ! tx) return common.handleErrors(err, res, next);
+    if (err || ! block) return common.handleErrors(err, res, next);
 
     req.block = block.info;
     return next();
