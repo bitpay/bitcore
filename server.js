@@ -24,7 +24,7 @@ var express = require('express'),
 var config = require('./config/config');
 
 //Bootstrap db connection
-var db = mongoose.connect(config.db);
+mongoose.connect(config.db);
 
 //Bootstrap models
 var models_path = __dirname + '/app/models';
@@ -44,14 +44,19 @@ var walk = function(path) {
 walk(models_path);
 
 // historic_sync process
+var historicSync = {};
 if (!config.disableHistoricSync) {
-  var hs = new HistoricSync();
-  hs.init({
-    skip_db_connection: true,
+  historicSync = new HistoricSync();
+  historicSync.init({
+    skipDbConnection: true,
+    shouldBroadcast: true,
     networkName: config.network
   }, function() {
-    hs.smart_import(function(){
-      console.log('[historic_sync] finished!');
+    historicSync.smart_import(function(err){
+      var txt= 'ended.';
+      if (err) txt = 'ABORTED with error: ' + err.message;
+
+      console.log('[historic_sync] ' + txt, historicSync.syncInfo);
     });
   });
 }
@@ -61,7 +66,7 @@ if (!config.disableHistoricSync) {
 if (!config.disableP2pSync) {
   var ps = new PeerSync();
   ps.init({
-    skip_db_connection: true,
+    skipDbConnection: true,
     broadcast_txs: true,
     broadcast_blocks: true
   }, function() {
@@ -74,7 +79,7 @@ if (!config.disableP2pSync) {
 var app = express();
 
 //express settings
-require('./config/express')(app, db);
+require('./config/express')(app, historicSync);
 
 //Bootstrap routes
 require('./config/routes')(app);

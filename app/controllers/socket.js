@@ -21,3 +21,7 @@ module.exports.broadcast_tx = function(tx) {
 module.exports.broadcast_block = function(block) {
   ios.sockets.emit('block', block);
 };
+
+module.exports.broadcastSyncInfo = function(syncInfo) {
+  ios.sockets.emit('block', syncInfo);
+};

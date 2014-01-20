@@ -142,7 +142,7 @@ TransactionSchema.statics.explodeTransactionItems = function(txid, time,  cb) {
       }
       else {
         if ( !i.coinbase ) {
-            console.log ('TX: %s,%d could not parse INPUT', txid, i.n);
+            console.log ('WARN in TX: %s: could not parse INPUT %d', txid, i.n);
         }
         return next_in();
       }
@@ -165,7 +165,7 @@ TransactionSchema.statics.explodeTransactionItems = function(txid, time,  cb) {
           }, next_out);
         }
         else {
-          console.log ('TX: %s,%d could not parse OUTPUT', txid, o.n);
+          console.log ('WARN in TX: %s could not parse OUTPUT %d', txid, o.n);
           return next_out();
         }
       },

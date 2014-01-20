@@ -29,7 +29,6 @@ if (program.remove) {
 
 }
 */
-
 async.series([
   function(cb) {
     historicSync.init(program, cb);
@@ -42,22 +41,18 @@ async.series([
       historicSync.import_history({
         destroy: program.destroy,
         reverse: program.reverse,
-        uptoexisting: program.uptoexisting,
+        upToExisting: program.uptoexisting,
       }, cb);
     }
   },
-  function(cb) {
-    historicSync.close();
-    return cb();
-  },
   ],
-  function(err, count) {
+  function(err) {
+    historicSync.close();
     if (err) {
       console.log('CRITICAL ERROR: ', err);
     }
     else {
-      console.log('Finished. [%d blocks synced]', count[1]);
+      console.log('Finished.\n Status:\n', historicSync.syncInfo);
     }
-    return;
 });
 

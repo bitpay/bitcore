@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = function(app) {
+module.exports = function(app, historicSync) {
 
   //Home route
   var index = require('../app/controllers/index');
@@ -28,5 +28,7 @@ module.exports = function(app) {
   // Status route
   var st = require('../app/controllers/status');
   app.get('/api/status', st.show);
+
+  app.get('/api/sync', st.sync);
 
 };

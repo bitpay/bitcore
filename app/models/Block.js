@@ -27,6 +27,7 @@ var BlockSchema = new Schema({
   },
   time: Number,
   nextBlockHash: String,
+  isOrphan: Boolean,
 });
 
 /**
