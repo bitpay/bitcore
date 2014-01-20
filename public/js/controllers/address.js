@@ -7,8 +7,8 @@ angular.module('insight.address').controller('AddressController',
     '$location',
     'Global',
     'Address',
-    'socket',
-    function ($scope, $rootScope, $routeParams, $location, Global, Address, socket) {
+    'get_socket',
+    function ($scope, $rootScope, $routeParams, $location, Global, Address, get_socket) {
     $scope.global = Global;
 
     $scope.findOne = function() {
@@ -21,9 +21,8 @@ angular.module('insight.address').controller('AddressController',
         $location.path('/');
       });
     };
-    socket.on('connect', function() {
-      socket.emit('subscribe', $routeParams.addrStr);
-    });
+    var socket = get_socket($scope);
+    socket.emit('subscribe', $routeParams.addrStr);
 
     $scope.params = $routeParams;
 }]);

@@ -6,15 +6,14 @@ angular.module('insight.system').controller('IndexController',
     ['$scope',
     '$rootScope',
     'Global',
-    'socket',
+    'get_socket',
     'Blocks',
     'Transactions',
-    function($scope, $rootScope, Global, socket, Blocks, Transactions) {
+    function($scope, $rootScope, Global, get_socket, Blocks, Transactions) {
   $scope.global = Global;
 
-  socket.on('connect', function() {
-    socket.emit('subscribe', 'inv');
-  });
+  var socket = get_socket($scope);
+  socket.emit('subscribe', 'inv');
 
   //show errors
   $scope.flashMessage = $rootScope.flashMessage || null;
