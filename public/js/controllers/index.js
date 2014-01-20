@@ -3,13 +3,7 @@
 var TRANSACTION_DISPLAYED = 5;
 var BLOCKS_DISPLAYED = 5;
 angular.module('insight.system').controller('IndexController',
-    ['$scope',
-    '$rootScope',
-    'Global',
-    'get_socket',
-    'Blocks',
-    'Transactions',
-    function($scope, $rootScope, Global, get_socket, Blocks, Transactions) {
+  function($scope, $rootScope, Global, get_socket, Blocks, Transactions) {
   $scope.global = Global;
 
   var socket = get_socket($scope);
@@ -55,4 +49,4 @@ angular.module('insight.system').controller('IndexController',
 
   $scope.txs = [];
   $scope.blocks = [];
-}]);
+});

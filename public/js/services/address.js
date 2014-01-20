@@ -1,6 +1,7 @@
 'use strict';
 
-angular.module('insight.address').factory('Address', ['$resource', function($resource) {
+angular.module('insight.address').factory('Address',
+  function($resource) {
   return $resource('/api/addr/:addrStr', {
     addrStr: '@addStr'
   }, {
@@ -18,5 +19,5 @@ angular.module('insight.address').factory('Address', ['$resource', function($res
       }
     }
   });
-}]);
+});
 

@@ -1,16 +1,7 @@
 'use strict';
 
 angular.module('insight.transactions').controller('transactionsController',
-    ['$scope',
-    '$rootScope',
-    '$routeParams',
-    '$location',
-    'Global',
-    'Transaction',
-    'TransactionsByBlock',
-    'TransactionsByAddress',
-    'get_socket',
-    function ($scope, $rootScope, $routeParams, $location, Global, Transaction, TransactionsByBlock, TransactionsByAddress, get_socket) {
+  function ($scope, $rootScope, $routeParams, $location, Global, Transaction, TransactionsByBlock, TransactionsByAddress, get_socket) {
   $scope.global = Global;
 
   $scope.findThis = function() {
@@ -62,4 +53,4 @@ angular.module('insight.transactions').controller('transactionsController',
 
   $scope.txs = [];
 
-}]);
+});

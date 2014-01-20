@@ -46,7 +46,8 @@ ScopedSocket.prototype.emit = function(event, data, callback) {
 	});
 };
 
-angular.module('insight.socket').factory('get_socket', ['$rootScope', function($rootScope) {
+angular.module('insight.socket').factory('get_socket',
+  function($rootScope) {
 	var socket = io.connect();
 	return function(scope) {
 		var scopedSocket = new ScopedSocket(socket, $rootScope);
@@ -55,5 +56,5 @@ angular.module('insight.socket').factory('get_socket', ['$rootScope', function($
 		});
 		return scopedSocket;
 	};
-}]);
+});
 

@@ -1,6 +1,7 @@
 'use strict';
 
-angular.module('insight.blocks').controller('BlocksController', ['$scope', '$rootScope', '$routeParams', '$location', 'Global', 'Block', 'Blocks', function ($scope, $rootScope, $routeParams, $location, Global, Block, Blocks) {
+angular.module('insight.blocks').controller('BlocksController',
+  function ($scope, $rootScope, $routeParams, $location, Global, Block, Blocks) {
   $scope.global = Global;
 
   $scope.list = function() {
@@ -32,4 +33,4 @@ angular.module('insight.blocks').controller('BlocksController', ['$scope', '$roo
   };
 
   $scope.params = $routeParams;
-}]);
+});

@@ -1,6 +1,7 @@
 'use strict';
 
-angular.module('insight.search').controller('SearchController', ['$scope', '$routeParams', '$location', 'Global', 'Block', 'Transaction', 'Address', function ($scope, $routeParams, $location, Global, Block, Transaction, Address) {
+angular.module('insight.search').controller('SearchController',
+  function ($scope, $routeParams, $location, Global, Block, Transaction, Address) {
   $scope.global = Global;
 
   $scope.search = function() {
@@ -31,4 +32,4 @@ angular.module('insight.search').controller('SearchController', ['$scope', '$rou
     });
   };
 
-}]);
+});
