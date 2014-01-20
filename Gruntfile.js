@@ -63,11 +63,10 @@ module.exports = function(grunt) {
 
     nodemon: {
       dev: {
+        script: 'server.js',
         options: {
-          file: 'server.js',
           args: [],
-          ignoredFiles: ['public/**', 'test/**','util/**'],
-          watchedExtensions: ['js'],
+          ignore: ['public/**', 'test/**','util/**'],
           // nodeArgs: ['--debug'],
           delayTime: 1,
           env: {
@@ -95,7 +94,7 @@ module.exports = function(grunt) {
 
   //Default task(s).
   grunt.registerTask('default', ['jshint','concurrent']);
-  
+
   //Test task.
   grunt.registerTask('test', ['env:test', 'mochaTest']);
 };

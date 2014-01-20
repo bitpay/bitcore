@@ -1,6 +1,6 @@
 <section data-ng-controller="BlocksController" data-ng-init="findOne()">
   <div class="row">
-    <div class="col-md-4">
+    <div class="col-md-3">
       <div class="bs-sidebar hidden-print affix  col-gray">
         <div class="block-id">
           <div class="icon-block text-center">
@@ -9,38 +9,34 @@
           <h1 data-ng-if="block">Block #{{ block.height }}</h1>
         </div>
 
-        <div data-ng-show="!tx.isCoinBase">
-          <div class="panel-heading">
-            <h3>Hashes</h3>
-          </div>
-          <div class="panel-body">
-            <table class="table table">
-              <tbody>
-              <tr>
-                <td>Hash</td>
-                <td><a class="address ellipsis" href="/#!/block/{{block.hash}}">{{block.hash}}</a></td>
-              </tr>
-              <tr>
-                <td>Previous Block</td>
-                <td><a class="address ellipsis" href="/#!/block/{{block.previousblockhash}}">{{block.previousblockhash}}</a></td>
-              </tr>
-              <tr>
-                <td>Next Block</td>
-                <td><a class="address ellipsis" href="/#!/block/{{block.nextblockhash}}">{{block.nextblockhash}}</a></td>
-              </tr>
-              <tr>
-                <td>Merkle Root</td>
-                <td> <p class="address ellipsis"> {{block.merkleroot}} </p> </td>
-              </tr>
-              </tbody>
-            </table>
-          </div>
+        <div class="m50v" data-ng-show="!tx.isCoinBase">
+          <h4>Hashes</h4>
+          <table class="table">
+            <tbody>
+            <tr>
+              <td> <small>Hash </small></td>
+              <td><a class="address ellipsis" href="/#!/block/{{block.hash}}">{{block.hash}}</a></td>
+            </tr>
+            <tr>
+              <td><small> Previous Block</small></td>
+              <td><a class="address ellipsis" href="/#!/block/{{block.previousblockhash}}">{{block.previousblockhash}}</a></td>
+            </tr>
+            <tr>
+              <td><small> Next Block</small></td>
+              <td><a class="address ellipsis" href="/#!/block/{{block.nextblockhash}}">{{block.nextblockhash}}</a></td>
+            </tr>
+            <tr>
+              <td><small> Merkle Root</small></td>
+              <td> <p class="address ellipsis"> {{block.merkleroot}} </p> </td>
+            </tr>
+            </tbody>
+          </table>
         </div>
 
       </div>
     </div> <!-- END OF COL-GRAY   -->   
 
-    <div class="col-md-8">
+    <div class="col-md-9">
       <h3>Summary</h3>
       <div class="row">
         <div class="col-md-6">
