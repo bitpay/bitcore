@@ -9,7 +9,6 @@ module.exports.init = function(app, io_ext) {
   ios.set('log level', 1); // reduce logging
   ios.sockets.on('connection', function(socket) {
     socket.on('subscribe', function(topic) {
-      console.log('subscribe to '+topic);
       socket.join(topic);
     });
   });

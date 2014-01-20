@@ -10,7 +10,7 @@ var async       = require('async');
 
 
 /**
- * Find block by hash ...
+ * Find transaction by hash ...
  */
 exports.transaction = function(req, res, next, txid) {
   Transaction.fromIdWithInfo(txid, function(err, tx) {

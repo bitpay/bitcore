@@ -22,6 +22,7 @@ angular.module('insight.transactions').controller('transactionsController',
       txId: txid
     }, function(tx) {
       $scope.tx = tx;
+      console.log(console.log(tx));
       $scope.txs.push(tx);
     }, function() {
       $rootScope.flashMessage = 'Transaction Not Found';
@@ -45,7 +46,6 @@ angular.module('insight.transactions').controller('transactionsController',
     });
   };
   var socket = get_socket($scope);
-  console.log('transactions.js');
   socket.on('atx', function(tx) {
     console.log('Incoming transaction for address!', tx);
     $scope.findTx(tx.txid);
