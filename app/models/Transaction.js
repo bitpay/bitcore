@@ -171,10 +171,13 @@ TransactionSchema.statics.explodeTransactionItems = function(txid, time,  cb) {
           TransactionItem.create({
               txid  : txid,
               value_sat : o.valueSat,
-              addr  : o.scriptPubKey.addresses[0],
+              addr  : o.scriptPubKey.addresses[0], // TODO: only address 0?
               index : o.n,
               ts : time,
           }, next_out);
+          if (addrs.indexOf(o.scriptPubKey.addresses[0]) === -1) {
+            addrs.push(o.scriptPubKey.addresses[0]);
+          }
         }
         else {
           console.log ('WARN in TX: %s could not parse OUTPUT %d', txid, o.n);

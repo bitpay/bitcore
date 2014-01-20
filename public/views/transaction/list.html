@@ -1,6 +1,6 @@
 <div data-ng-show="!txs || txs.lenght">Loading...</div>
 <div class="alert alert-warning" data-ng-show="txs && !txs[0].txid">There are not transactions</div>
-<div class="block-tx" data-ng-show="txs && txs[0].txid" data-ng-repeat="tx in txs">
+<div class="block-tx fader" data-ng-show="txs && txs[0].txid" data-ng-repeat="tx in txs">
   <div class="line-bot">
     <a href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a>
     <span class="pull-right">{{tx.time * 1000 | date:'medium'}}</span>
