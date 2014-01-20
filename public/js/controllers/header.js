@@ -1,6 +1,7 @@
 'use strict';
 
-angular.module('insight.system').controller('HeaderController', ['$scope', 'Global', function ($scope, Global) {
+angular.module('insight.system').controller('HeaderController',
+  function ($scope, Global) {
   $scope.global = Global;
 
   $scope.menu = [
@@ -15,4 +16,4 @@ angular.module('insight.system').controller('HeaderController', ['$scope', 'Glob
   ];
 
   $scope.isCollapsed = false;
-}]);
+});

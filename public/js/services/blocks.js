@@ -1,6 +1,7 @@
 'use strict';
 
-angular.module('insight.blocks').factory('Block', ['$resource', function($resource) {
+angular.module('insight.blocks').factory('Block',
+  function($resource) {
   return $resource('/api/block/:blockHash', {
     blockHash: '@blockHash'
   }, {
@@ -18,8 +19,9 @@ angular.module('insight.blocks').factory('Block', ['$resource', function($resour
       }
     }
   });
-}]);
+});
 
-angular.module('insight.blocks').factory('Blocks', ['$resource', function($resource) {
+angular.module('insight.blocks').factory('Blocks',
+  function($resource) {
   return $resource('/api/blocks');
-}]);
+});

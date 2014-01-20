@@ -1,10 +1,7 @@
 'use strict';
 
 angular.module('insight.system').controller('FooterController',
-    ['$scope',
-    'Global',
-    'Status',
-    function ($scope, Global, Status) {
+  function ($scope, Global, Status) {
   $scope.global = Global;
 
   $scope.getFooter = function() {
@@ -15,5 +12,5 @@ angular.module('insight.system').controller('FooterController',
     });
   };
 
-}]);
+});
 
