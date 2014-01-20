@@ -75,6 +75,11 @@
       <h3>sync status</h3>
       <table class="table table-striped" data-ng-init="getSync()">
         <tbody>
+
+
+        <tr data-ng-show="sync.error">  
+          <td colspan="2"> <span class="text-danger"> {{ sync.err }} </span>
+        </tr>
         <tr>
           <td>Sync Progress</td>
           <td> {{(100 * sync.syncedBlocks/sync.blocksToSync)| number:2}}% 

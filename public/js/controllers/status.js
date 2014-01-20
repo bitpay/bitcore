@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('insight.status').controller('StatusController', ['$scope', '$routeParams', '$location', 'Global', 'Status', 'Sync', function ($scope, $routeParams, $location, Global, Status, Sync) {
+angular.module('insight.status').controller('StatusController', ['$scope', '$routeParams', '$location', '$rootScope', 'Global', 'Status', 'Sync', function ($scope, $routeParams, $location, $rootScope, Global, Status, Sync) {
   $scope.global = Global;
 
   $scope.getStatus = function(q) {

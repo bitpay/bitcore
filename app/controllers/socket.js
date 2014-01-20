@@ -23,5 +23,5 @@ module.exports.broadcast_block = function(block) {
 };
 
 module.exports.broadcastSyncInfo = function(syncInfo) {
-  ios.sockets.emit('block', syncInfo);
+  ios.sockets.emit('sync', syncInfo);
 };
