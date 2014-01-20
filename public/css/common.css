@@ -36,6 +36,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 .m10h {margin: 0 10px;}
 .m20h {margin: 0 20px;}
+.m5v {margin: 5px 0;}
 .m20v {margin: 20px 0;}
 .m50v {margin: 50px 0;}
 .m10b {margin-bottom: 10px;}
@@ -107,6 +108,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 }
 
 .ellipsis {
+  width: 100%;
   display: block;
   white-space: nowrap;
   overflow: hidden;
@@ -152,10 +154,15 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 }
 
 .block-tx {
+  overflow: hidden;
   border-radius: 2px;
   background: #F4F4F4;
-  margin: 20px 0;
-  padding: 20px;
+  margin: 20px 0 10px;
+  padding: 15px;
+}
+
+.block-tx p {
+  margin: 0 0 5px;
 }
 
 .btn {
@@ -208,7 +215,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 .line-top {
   padding: 10px 0;
-  margin-top: 10px;
+  margin-top: 5px;
   border-top: 1px solid #EAEAEA;
 }
 
@@ -219,9 +226,9 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 #wrap > .container {
   padding: 60px 15px 0;
 }
-.container .text-muted {
+/*.container .text-muted {
   margin: 20px 0;
-}
+}*/
 
 #footer > .container {
   padding-left: 15px;
