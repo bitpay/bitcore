@@ -22,7 +22,7 @@ angular.module('insight.transactions').controller('transactionsController',
       txId: txid
     }, function(tx) {
       $scope.tx = tx;
-      $scope.txs.push(tx);
+      $scope.txs.unshift(tx);
     }, function(e) {
       if (e.status === 400) {
         $rootScope.flashMessage = 'Invalid Transaction ID: ' + $routeParams.txId;
@@ -54,7 +54,9 @@ angular.module('insight.transactions').controller('transactionsController',
   };
   var socket = get_socket($scope);
   socket.on('atx', function(tx) {
-    console.log('Incoming transaction for address!', tx);
+    console.log('atx '+tx.txid);
+    var beep = new Audio('/sound/transaction.mp3');
+    beep.play();
     $scope.findTx(tx.txid);
   });
 
