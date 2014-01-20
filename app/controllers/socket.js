@@ -24,9 +24,10 @@ module.exports.broadcast_block = function(block) {
 };
 
 module.exports.broadcast_address_tx = function(address, tx) {
-  ios.sockets.in(address).emit('tx', tx);
+  console.log('sending address tx '+address+' '+tx);
+  ios.sockets.in(address).emit('atx', tx);
 };
 
 module.exports.broadcastSyncInfo = function(syncInfo) {
-  ios.sockets.emit('block', syncInfo);
+  ios.sockets.emit('status', syncInfo);
 };

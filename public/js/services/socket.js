@@ -7,10 +7,8 @@ var ScopedSocket = function(socket, $rootScope) {
 };
 
 ScopedSocket.prototype.removeAllListeners = function() {
-  console.log('remove all listeners');
 	for (var i = 0; i < this.listeners.length; i++) {
 		var details = this.listeners[i];
-    console.log('removing listener '+i);
 		this.socket.removeListener(details.event, details.fn);
 	}
   this.listeners = [];
@@ -19,7 +17,6 @@ ScopedSocket.prototype.removeAllListeners = function() {
 ScopedSocket.prototype.on = function(event, callback) {
 	var socket = this.socket;
 	var $rootScope = this.$rootScope;
-
 
 	var wrapped_callback = function() {
 		var args = arguments;

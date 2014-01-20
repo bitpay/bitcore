@@ -9,7 +9,8 @@ angular.module('insight.transactions').controller('transactionsController',
     'Transaction',
     'TransactionsByBlock',
     'TransactionsByAddress',
-    function ($scope, $rootScope, $routeParams, $location, Global, Transaction, TransactionsByBlock, TransactionsByAddress) {
+    'get_socket',
+    function ($scope, $rootScope, $routeParams, $location, Global, Transaction, TransactionsByBlock, TransactionsByAddress, get_socket) {
   $scope.global = Global;
 
   $scope.findThis = function() {
@@ -43,10 +44,12 @@ angular.module('insight.transactions').controller('transactionsController',
       $scope.txs = txs;
     });
   };
-  /*socket.on('tx', function(tx) {
-    console.log('Incoming message for new transaction!', tx);
+  var socket = get_socket($scope);
+  console.log('transactions.js');
+  socket.on('atx', function(tx) {
+    console.log('Incoming transaction for address!', tx);
     $scope.findTx(tx.txid);
-  });*/
+  });
 
   $scope.txs = [];
 
