@@ -5,66 +5,7 @@
     </h1>
 
   <div class="block-tx">
-    <div class="line-bot">
-      <a href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a>
-    </div> 
-
-    <div class="row m10b">
-
-      <div class="col-md-5">
-        <ul class="list-unstyled" data-ng-repeat="vin in tx.vin" data-ng-show="!tx.isCoinBase">
-          <li>
-            <a class="m10h vm lead glyphicon glyphicon-circle-arrow-left" href="/#!/tx/{{vin.txid}}" alt="Outpoint: {{vin.txid}},{{vin.vout}}" data-toggle="tooltip" title="Outpoint: {{vin.txid}},{{vin.vout}}">
-            </a>
-            <span data-ng-show="!vin.addr">Address could not be parsed</span>  
-            <a data-ng-show="vin.addr" href="/#!/address/{{vin.addr}}">{{vin.addr}}</a>  
-            <span class="pull-right badge">{{vin.value}} BTC</span>
-          </li>
-
-        </ul>
-        <div data-ng-show="tx.isCoinBase">
-          <ul class="list-unstyled" data-ng-repeat="vinn in tx.vin">
-            <li>
-            No Inputs (Newly Generated isCoinBasens)
-            <span class="pull-right badge">{{vinn.reward}} BTC</span>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="col-md-2 text-center">
-        <span class="glyphicon glyphicon-chevron-right lead"></span>
-      </div>
-
-      <div class="col-md-5" data-ng-repeat="vout in tx.vout">
-        <div class="row m10b">
-          <div class="col-md-3">
-            <b>{{vout.scriptPubKey.type}}</b>
-          </div>
-          <div class="col-md-9">
-            <ul class="list-unstyled" data-ng-repeat="addr in vout.scriptPubKey.addresses">
-              <li>
-                <a class="ellipsis pull-left" style="width:200px;" href="/#!/address/{{addr}}">{{addr}}</a>
-                <span class="pull-right badge">{{vout.value}} BTC</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="line-top">
-      <small class="text-muted">Feeds: {{tx.feeds}}</small>
-      <div class="pull-right">
-        <button data-ng-show="tx.confirmations" type="button" class="btn btn-success">
-          {{tx.confirmations}} Confirmations
-        </button>
-        <button data-ng-show="!tx.confirmations"  type="button" class="btn btn-danger">
-          Unconfirmed Transaction!
-        </button>
-        <button type="button" class="btn btn-primary">{{tx.valueOut}} BTC</button>
-      </div>
-    </div> 
+    <div data-ng-include src="'/views/transaction/tx.html'"></div>
   </div><!--  END OF BLOCK-TX -->
 
   <div class="row m50v">
@@ -81,9 +22,12 @@
           <td class="text-muted text-right">{{tx.time * 1000|date:'medium'}}</td>
         </tr>
         <tr>
-          <td><strong>Block </strong></td>
-          <td class="text-muted text-right"><a href="/#!/block/{{tx.blockhash}}">Block</a></td>
-        </tr>
+          <td><strong>Block </strong>
+          <td class="text-muted text-right">
+
+            <div class="ellipsis">
+              <a href="/#!/block/{{tx.blockhash}}">{{tx.blockhash}}</a>
+            </div>
         </tbody>
       </table>
     </div>
