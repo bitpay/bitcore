@@ -4,7 +4,7 @@
   font-style: italic;
   font-size: 34px;
   color: #FFFFFF !important;
-  line-height: 18px;
+  line-height: 25px;
   margin-right: 50px;
 }
 
@@ -45,15 +45,22 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 }
 
 .navbar-default {
+  min-height: 60px;
+  padding: 0;
   background-color: #8DC429;
   border-bottom: 4px solid #64920F;
   color: #fff;
+}
+
+.navbar-form {
+  margin: 12px 0;
 }
 
 .navbar-default .navbar-nav>li>a {
   color: #F4FBE8;
   font-family: Ubuntu, sans-serif;
   font-size: 16px;
+  line-height: 28px;
 }
 
 .navbar-default .navbar-nav>.active>a, .navbar-default .navbar-nav>.active>a:focus, .navbar-default .navbar-nav>li>a:hover  {
@@ -66,7 +73,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 .navbar-form .form-control {
   border: 0;
-  border-radius: 2px;
+  border-radius: 3px;
   background: #7CAD23;
   -moz-box-shadow:    1px 1px 0px 0px rgba(255,255,255,0.41), inset 1px 1px 3px 0px rgba(0,0,0,0.10);
   -webkit-box-shadow: 1px 1px 0px 0px rgba(255,255,255,0.41), inset 1px 1px 3px 0px rgba(0,0,0,0.10);
@@ -97,12 +104,25 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   line-height: 18px;
 }
 
+.status {
+  border-radius: 3px;
+  background: #597338;
+  float: right;
+  padding: 8px 15px;
+  margin: 11px 0;
+  font-weight: 300;
+}
+
+.status i {
+  margin: 0 5px;
+}
+
 .col-gray {
   background-color: #F4F4F4;
   padding: 15px;
-  margin-top: 10px;
+  margin-top: 21px;
   width: 265px;
-  height: 89%;
+  height: 87%;
   border-radius: 5px;
 }
 
