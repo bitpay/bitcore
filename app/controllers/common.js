@@ -1,7 +1,7 @@
 'use strict';
 
 
-exports.handleErrors = function (err, res, next) {
+exports.handleErrors = function (err, res) {
   if (err) {
     if (err.code)  {
       res.status(400).send(err.message + '. Code:' + err.code);
@@ -9,10 +9,8 @@ exports.handleErrors = function (err, res, next) {
     else {
       res.status(503).send(err.message);
     }
-    return next();
   }
   else {
     res.status(404).send('Not found');
-    return next();
   }
 };

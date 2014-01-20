@@ -15,12 +15,12 @@ var common      = require('./common');
  */
 exports.transaction = function(req, res, next, txid) {
   Transaction.fromIdWithInfo(txid, function(err, tx) {
-
-    if (err || ! tx) return common.handleErrors(err, res, next);
-
-
-    req.transaction = tx.info;
-    return next();
+    if (err || ! tx)
+      return common.handleErrors(err, res);
+    else {
+      req.transaction = tx.info;
+      return next();
+    }
   });
 };
 

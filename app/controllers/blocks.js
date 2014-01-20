@@ -13,10 +13,12 @@ var mongoose = require('mongoose'),
  */
 exports.block = function(req, res, next, hash) {
   Block.fromHashWithInfo(hash, function(err, block) {
-    if (err || ! block) return common.handleErrors(err, res, next);
-
-    req.block = block.info;
-    return next();
+    if (err || ! block)
+      return common.handleErrors(err, res, next);
+    else {
+      req.block = block.info;
+      return next();
+    }
   });
 };
 

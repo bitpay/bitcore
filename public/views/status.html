@@ -9,9 +9,10 @@
       <h3>getInfo</h3>
       <table class="table table-striped" data-ng-init="getStatus('Info')">
         <tbody>
-        <tr data-ng-show="!info">
-          <td colspan="2" class="text-center">Loading...</td>
-        </tr>
+        <tr data-ng-show="!info &amp;&amp; !infoError">
+          <td colspan="2" class="text-center">Loading...
+        <tr data-ng-show="infoError">
+          <td colspan="2" class="text-danger">{{infoError}}
         <tr>
           <td>Version</td>
           <td>{{info.version}}</td>
@@ -65,8 +66,8 @@
           <td>{{info.paytxfee}}</td>
         </tr>
         <tr>
-          <td>errors</td>
-          <td>{{info.errors}}</td>
+          <td>infoErrors</td>
+          <td>{{info.infoErrors}}</td>
         </tr>
         </tbody>
       </table>
@@ -75,8 +76,8 @@
       <h3>sync status</h3>
       <table class="table table-striped" data-ng-init="getSync()">
         <tbody>
-
-
+        <tr data-ng-show="syncError">  
+          <td colspan="2"> <span class="text-danger"> {{ syncError }} </span>
         <tr data-ng-show="sync.error">  
           <td colspan="2"> <span class="text-danger"> {{ sync.err }} </span>
         </tr>
@@ -125,8 +126,11 @@
       <h3>getTxOutSetInfo</h3>
       <table class="table table-striped" data-ng-init="getStatus('TxOutSetInfo')">
         <tbody>
-        <tr data-ng-show="!txoutsetinfo">
+        <tr data-ng-show="!txoutsetinfo &amp;&amp; !infoError">
           <td colspan="2" class="text-center">Loading...</td>
+        </tr>
+        <tr data-ng-show="infoError">
+          <td colspan="2" class="text-danger">{{infoError}}</td>
         </tr>
         <tr>
           <td>Height</td>
@@ -166,9 +170,13 @@
       <h3>getDifficulty</h3>
       <table class="table table-striped" data-ng-init="getStatus('Difficulty')">
         <tbody>
-        <tr data-ng-show="!difficulty">
+        <tr data-ng-show="!difficulty &amp;&amp; !infoError">
           <td colspan="2" class="text-center">Loading...</td>
         </tr>
+        <tr data-ng-show="infoError">
+          <td colspan="2" class="text-danger">{{infoError}}</td>
+        </tr>
+ 
         <tr>
           <td>Difficulty</td>
           <td>{{difficulty}}</td>
@@ -180,10 +188,14 @@
       <h3>getLastBlockHash</h3>
       <table class="table table-striped" data-ng-init="getStatus('LastBlockHash')">
         <tbody>
-        <tr data-ng-show="!lastblockhash">
-          <td colspan="1" class="text-center">Loading...</td>
+        <tr data-ng-show="!lastblockhash &amp;&amp; !infoError">
+          <td colspan="2" class="text-center">Loading...</td>
+        </tr>
+        <tr data-ng-show="infoError">
+          <td colspan="2" class="text-danger">{{infoError}}</td>
         </tr>
         <tr>
+          <td>Last block hash</td>
           <td>{{lastblockhash}}</td>
         </tr>
         </tbody>

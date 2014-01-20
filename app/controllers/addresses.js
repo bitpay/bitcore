@@ -19,10 +19,12 @@ exports.address = function(req, res, next, addr) {
   }
 
   a.update(function(err) {
-      if (err) return common.handleErrors(err, res, next);
-
-      req.address = a;
-      return next();
+      if (err)
+        return common.handleErrors(err, res);
+      else  {
+        req.address = a;
+        return next();
+      }
     });
 };
 
