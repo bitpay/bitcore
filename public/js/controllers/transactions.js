@@ -1,13 +1,28 @@
 'use strict';
 
-angular.module('insight.transactions').controller('transactionsController', ['$scope', '$rootScope', '$routeParams', '$location', 'Global', 'Transaction', 'TransactionsByBlock', 'TransactionsByAddress', '$rootScope', function ($scope, $rootScope, $routeParams, $location, Global, Transaction, TransactionsByBlock, TransactionsByAddress) {
+angular.module('insight.transactions').controller('transactionsController',
+    ['$scope',
+    '$rootScope',
+    '$routeParams',
+    '$location',
+    'Global',
+    'Transaction',
+    'TransactionsByBlock',
+    'TransactionsByAddress',
+    'get_socket',
+    function ($scope, $rootScope, $routeParams, $location, Global, Transaction, TransactionsByBlock, TransactionsByAddress, get_socket) {
   $scope.global = Global;
 
-  $scope.findOne = function() {
+  $scope.findThis = function() {
+    $scope.findTx($routeParams.txId);
+  };
+
+  $scope.findTx = function(txid) {
     Transaction.get({
-      txId: $routeParams.txId
+      txId: txid
     }, function(tx) {
       $scope.tx = tx;
+      $scope.txs.push(tx);
     }, function() {
       $rootScope.flashMessage = 'Transaction Not Found';
       $location.path('/');
@@ -29,4 +44,13 @@ angular.module('insight.transactions').controller('transactionsController', ['$s
       $scope.txs = txs;
     });
   };
+  var socket = get_socket($scope);
+  console.log('transactions.js');
+  socket.on('atx', function(tx) {
+    console.log('Incoming transaction for address!', tx);
+    $scope.findTx(tx.txid);
+  });
+
+  $scope.txs = [];
+
 }]);

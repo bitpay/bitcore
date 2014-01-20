@@ -4,17 +4,18 @@
  * Module dependencies.
  */
     
-var mongoose    = require('mongoose'),
-    Schema      = mongoose.Schema,
-    async       = require('async'),
-    RpcClient   = require('bitcore/RpcClient').class(),
-    Transaction = require('bitcore/Transaction').class(),
-    Address     = require('bitcore/Address').class(),
-    BitcoreBlock= require('bitcore/Block').class(),
-    networks    = require('bitcore/networks'),
-    util        = require('bitcore/util/util'),
-    bignum      = require('bignum'),
-    config      = require('../../config/config'),
+var mongoose        = require('mongoose'),
+    Schema          = mongoose.Schema,
+    async           = require('async'),
+    RpcClient       = require('bitcore/RpcClient').class(),
+    Transaction     = require('bitcore/Transaction').class(),
+    Address         = require('bitcore/Address').class(),
+    BitcoreBlock    = require('bitcore/Block').class(),
+    networks        = require('bitcore/networks'),
+    util            = require('bitcore/util/util'),
+    bignum          = require('bignum'),
+    config          = require('../../config/config'),
+    sockets         = require('../controllers/socket.js'),
     TransactionItem = require('./TransactionItem');
 
 var CONCURRENCY = 5;
@@ -97,8 +98,14 @@ TransactionSchema.statics.createFromArray = function(txs, time, next) {
 
   async.forEachLimit(txs, CONCURRENCY, function(txid, cb) {
 
-    that.explodeTransactionItems( txid, time, function(err) {
+    that.explodeTransactionItems( txid, time, function(err, addrs) {
       if (err) return next(err);
+      if (addrs) {
+        async.each(addrs, function(addr){
+          sockets.broadcast_address_tx(addr, {'txid': txid});
+        });
+
+      }
 
       that.create({txid: txid, time: time}, function(err, new_tx) {
         if (err && ! err.toString().match(/E11000/)) return cb(err);
@@ -115,6 +122,7 @@ TransactionSchema.statics.createFromArray = function(txs, time, next) {
 
 
 TransactionSchema.statics.explodeTransactionItems = function(txid, time,  cb) {
+  var addrs = [];
 
   // Is it from genesis block? (testnet==livenet)
   // TODO: parse it from networks.genesisTX
@@ -131,7 +139,6 @@ TransactionSchema.statics.explodeTransactionItems = function(txid, time,  cb) {
     async.forEachLimit(info.vin, CONCURRENCY, function(i, next_in) {
       if (i.addr && i.value) {
 
-//console.log("Creating IN %s %d", i.addr, i.valueSat);
         TransactionItem.create({
             txid  : txid,
             value_sat : -1 * i.valueSat,
@@ -139,6 +146,9 @@ TransactionSchema.statics.explodeTransactionItems = function(txid, time,  cb) {
             index : i.n,
             ts : time,
         }, next_in);
+        if (addrs.indexOf(i.addr) === -1) {
+          addrs.push(i.addr);
+        }
       }
       else {
         if ( !i.coinbase ) {
@@ -155,7 +165,6 @@ TransactionSchema.statics.explodeTransactionItems = function(txid, time,  cb) {
          * TODO Support multisigs
          */
         if (o.value && o.scriptPubKey && o.scriptPubKey.addresses && o.scriptPubKey.addresses[0]) {
-//console.log("Creating OUT %s %d", o.scriptPubKey.addresses[0], o.valueSat);
           TransactionItem.create({
               txid  : txid,
               value_sat : o.valueSat,
@@ -171,7 +180,7 @@ TransactionSchema.statics.explodeTransactionItems = function(txid, time,  cb) {
       },
       function (err) {
         if (err && ! err.toString().match(/E11000/)) return cb(err);
-        return cb();
+        return cb(null, addrs);
       });
     });
   });

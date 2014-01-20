@@ -2,8 +2,18 @@
 
 var TRANSACTION_DISPLAYED = 5;
 var BLOCKS_DISPLAYED = 5;
-angular.module('insight.system').controller('IndexController', ['$scope', '$rootScope', 'Global', 'socket', 'Blocks', 'Transactions', function($scope, $rootScope, Global, socket, Blocks, Transactions) {
+angular.module('insight.system').controller('IndexController',
+    ['$scope',
+    '$rootScope',
+    'Global',
+    'get_socket',
+    'Blocks',
+    'Transactions',
+    function($scope, $rootScope, Global, get_socket, Blocks, Transactions) {
   $scope.global = Global;
+
+  var socket = get_socket($scope);
+  socket.emit('subscribe', 'inv');
 
   //show errors
   $scope.flashMessage = $rootScope.flashMessage || null;
@@ -18,9 +28,9 @@ angular.module('insight.system').controller('IndexController', ['$scope', '$root
 
   socket.on('block', function(block) {
     console.log('Block received! ' + JSON.stringify(block));
-    if ($scope.blocks.length === BLOCKS_DISPLAYED) {
-      $scope.blocks.pop();
-    }
+      if ($scope.blocks.length === BLOCKS_DISPLAYED) {
+        $scope.blocks.pop();
+      }
     $scope.blocks.unshift(block);
   });
 
