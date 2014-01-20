@@ -23,5 +23,11 @@ angular.module('insight.blocks').factory('Block',
 
 angular.module('insight.blocks').factory('Blocks',
   function($resource) {
-  return $resource('/api/blocks');
+    return $resource('/api/blocks');
 });
+
+angular.module('insight.blocks').factory('BlockByHeight',
+  function($resource) {
+  return $resource('/api/block-index/:blockHeight');
+});
+

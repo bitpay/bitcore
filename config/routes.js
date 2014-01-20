@@ -14,6 +14,9 @@ module.exports = function(app, historicSync) {
   app.get('/api/block/:blockHash', blocks.show);
   app.param('blockHash', blocks.block);
 
+  app.get('/api/block-index/:height', blocks.blockindex);
+  app.param('height', blocks.blockindex);
+
   // Transaction routes
   var transactions = require('../app/controllers/transactions');
   app.get('/api/tx/:txid', transactions.show);
