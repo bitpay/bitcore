@@ -26,3 +26,6 @@ module.exports.broadcast_address_tx = function(address, tx) {
   ios.sockets.in(address).emit('tx', tx);
 };
 
+module.exports.broadcastSyncInfo = function(syncInfo) {
+  ios.sockets.emit('block', syncInfo);
+};

@@ -12,7 +12,6 @@ angular.module('insight.transactions').controller('transactionsController',
     function ($scope, $routeParams, $location, Global, Transaction, TransactionsByBlock, TransactionsByAddress, socket) {
   $scope.global = Global;
 
-
   $scope.findThis = function() {
     $scope.findTx($routeParams.txId);
   };
@@ -23,6 +22,9 @@ angular.module('insight.transactions').controller('transactionsController',
     }, function(tx) {
       $scope.tx = tx;
       $scope.txs.push(tx);
+    }, function() {
+      $rootScope.flashMessage = 'Transaction Not Found';
+      $location.path('/');
     });
   };
 
@@ -48,6 +50,4 @@ angular.module('insight.transactions').controller('transactionsController',
 
   $scope.txs = [];
 
-
 }]);
-

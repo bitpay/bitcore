@@ -27,6 +27,7 @@ var BlockSchema = new Schema({
   },
   time: Number,
   nextBlockHash: String,
+  isOrphan: Boolean,
 });
 
 /**
@@ -54,6 +55,7 @@ BlockSchema.statics.customCreate = function(block, cb) {
   newBlock.time = block.time ? block.time : Math.round(new Date().getTime() / 1000);
   newBlock.hash = block.hash;
   newBlock.nextBlockHash = block.nextBlockHash;
+
 
   Transaction.createFromArray(block.tx, newBlock.time, function(err, inserted_txs) {
     if (err) return cb(err);

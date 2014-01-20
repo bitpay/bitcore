@@ -4,16 +4,21 @@ var TRANSACTION_DISPLAYED = 5;
 var BLOCKS_DISPLAYED = 5;
 angular.module('insight.system').controller('IndexController',
     ['$scope',
+    '$rootScope',
     'Global',
     'socket',
     'Blocks',
     'Transactions',
-    function($scope, Global, socket, Blocks, Transactions) {
+    function($scope, $rootScope, Global, socket, Blocks, Transactions) {
   $scope.global = Global;
 
   socket.on('connect', function() {
     socket.emit('subscribe', 'inv');
   });
+
+  //show errors
+  $scope.flashMessage = $rootScope.flashMessage || null;
+
   socket.on('tx', function(tx) {
     console.log('Transaction received! ' + JSON.stringify(tx));
     if ($scope.txs.length === TRANSACTION_DISPLAYED) {
@@ -52,4 +57,3 @@ angular.module('insight.system').controller('IndexController',
   $scope.txs = [];
   $scope.blocks = [];
 }]);
-

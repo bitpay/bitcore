@@ -1,14 +1,5 @@
 'use strict';
 
 //Global service for global variables
-angular.module('insight.system').factory('Global', [
-  function() {
-    var _this = this;
-    _this._data = {
-      user: window.user,
-      authenticated: !! window.user
-    };
+angular.module('insight.system').factory('Global', [function() {}]);
 
-    return _this._data;
-  }
-]);

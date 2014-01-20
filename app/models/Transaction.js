@@ -20,6 +20,9 @@ var mongoose        = require('mongoose'),
 
 var CONCURRENCY = 5;
 
+// TODO: use bitcore networks module
+var genesisTXID = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b';
+
 /**
  */
 var TransactionSchema = new Schema({
@@ -120,6 +123,11 @@ TransactionSchema.statics.createFromArray = function(txs, time, next) {
 
 TransactionSchema.statics.explodeTransactionItems = function(txid, time,  cb) {
   var addrs = [];
+
+  // Is it from genesis block? (testnet==livenet)
+  // TODO: parse it from networks.genesisTX
+  if (txid === genesisTXID) return cb();
+
   this.queryInfo(txid, function(err, info) {
     if (err || !info) return cb(err);
 
@@ -144,7 +152,7 @@ TransactionSchema.statics.explodeTransactionItems = function(txid, time,  cb) {
       }
       else {
         if ( !i.coinbase ) {
-            console.log ('TX: %s,%d could not parse INPUT', txid, i.n);
+            console.log ('WARN in TX: %s: could not parse INPUT %d', txid, i.n);
         }
         return next_in();
       }
@@ -166,7 +174,7 @@ TransactionSchema.statics.explodeTransactionItems = function(txid, time,  cb) {
           }, next_out);
         }
         else {
-          console.log ('TX: %s,%d could not parse OUTPUT', txid, o.n);
+          console.log ('WARN in TX: %s could not parse OUTPUT %d', txid, o.n);
           return next_out();
         }
       },
