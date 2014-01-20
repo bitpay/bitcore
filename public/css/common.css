@@ -101,7 +101,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   background-color: #F4F4F4;
   padding: 15px;
   margin-top: 10px;
-  width: 360px;
+  width: 265px;
   height: 89%;
   border-radius: 5px;
 }
@@ -124,8 +124,8 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 }
 
 .col-gray .address {
-  float: right;
-  width: 150px;
+  line-height: 20px;
+  width: 125px;
 }
 
 .block-id {
