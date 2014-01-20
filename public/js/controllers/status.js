@@ -1,30 +1,22 @@
 'use strict';
 
-angular.module('insight.status').controller('StatusController', ['$scope', '$routeParams', '$location', 'Global', 'Status', function ($scope, $routeParams, $location, Global, Status) {
+angular.module('insight.status').controller('StatusController', ['$scope', '$routeParams', '$location', 'Global', 'Status', 'Sync', function ($scope, $routeParams, $location, Global, Status, Sync) {
   $scope.global = Global;
 
-  $scope.getData = function(q) {
+  $scope.getStatus = function(q) {
     Status.get({
-     q: q
+     q: 'get' + q
     }, function(d) {
-      if (q === 'getInfo') {
-        $scope.info = d.info;
-      }
-      if (q === 'getDifficulty') {
-        $scope.difficulty = d.difficulty;
-      }
-      if (q === 'getTxOutSetInfo') {
-        $scope.txoutsetinfo = d.txoutsetinfo;
-      }
-      if (q === 'getBestBlockHash') {
-        $scope.bestblockhash = d.bestblockhash;
-      }
-      if (q === 'getLastBlockHash') {
-        $scope.lastblockhash = d.lastblockhash;
-      }
-
+      angular.extend($scope, d);
     });
   };
 
+  $scope.getSync = function() {
+    Sync.get({}, function(sync) {
+      $scope.sync = sync;
+    }, function() {
+      $rootScope.flashMessage = 'Could not get sync information';
+    });
+  };
 }]);
 

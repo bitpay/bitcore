@@ -7,7 +7,7 @@
   <div class="row">
     <div class="col-lg-6">
       <h3>getInfo</h3>
-      <table class="table table-striped" data-ng-init="getData('getInfo')">
+      <table class="table table-striped" data-ng-init="getStatus('Info')">
         <tbody>
         <tr data-ng-show="!info">
           <td colspan="2" class="text-center">Loading...</td>
@@ -72,8 +72,53 @@
       </table>
     </div>
     <div class="col-lg-6">
+      <h3>sync status</h3>
+      <table class="table table-striped" data-ng-init="getSync()">
+        <tbody>
+        <tr>
+          <td>Sync Progress</td>
+          <td> {{(100 * sync.syncedBlocks/sync.blocksToSync)| number:2}}% 
+        </tr>
+        <tr>
+          <td>blocksToSync</td>
+          <td>{{sync.blocksToSync}}</td>
+        </tr>
+        <tr>
+          <td>syncedBlocks</td>
+          <td>{{sync.syncedBlocks}}</td>
+        </tr>
+        <tr>
+          <td>start</td>
+          <td>{{sync.start}}
+            <span data-ng-show="sync.isStartGenesis"> (genesisBlock) </span> 
+          </td>
+        </tr>
+        <tr>
+          <td>end</td>
+          <td>{{sync.end}}
+            <span data-ng-show="sync.isEndGenesis"> (genesisBlock) </span>
+          </td>
+        </tr>
+        <tr>
+          <td>Sync Type</td>
+          <td>
+            <ul>  
+              <li  data-ng-show="sync.upToExisting"> <span> Stops at existing block </span>
+              <li>
+                <span data-ng-show="sync.scanningBackward"> scanningBackward </span>
+                <span data-ng-hide="sync.scanningBackward"> scanningForward </span>
+            </ul>  
+          </td>
+        </tr>
+
+
+
+
+        </tbody>
+      </table>
+    
       <h3>getTxOutSetInfo</h3>
-      <table class="table table-striped" data-ng-init="getData('getTxOutSetInfo')">
+      <table class="table table-striped" data-ng-init="getStatus('TxOutSetInfo')">
         <tbody>
         <tr data-ng-show="!txoutsetinfo">
           <td colspan="2" class="text-center">Loading...</td>
@@ -114,7 +159,7 @@
   <div class="row">
     <div class="col-lg-6">
       <h3>getDifficulty</h3>
-      <table class="table table-striped" data-ng-init="getData('getDifficulty')">
+      <table class="table table-striped" data-ng-init="getStatus('Difficulty')">
         <tbody>
         <tr data-ng-show="!difficulty">
           <td colspan="2" class="text-center">Loading...</td>
@@ -128,7 +173,7 @@
     </div>
     <div class="col-lg-6">
       <h3>getLastBlockHash</h3>
-      <table class="table table-striped" data-ng-init="getData('getLastBlockHash')">
+      <table class="table table-striped" data-ng-init="getStatus('LastBlockHash')">
         <tbody>
         <tr data-ng-show="!lastblockhash">
           <td colspan="1" class="text-center">Loading...</td>

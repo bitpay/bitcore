@@ -6,3 +6,7 @@ angular.module('insight.status').factory('Status', ['$resource', function($resou
   });
 }]);
 
+angular.module('insight.status').factory('Sync', ['$resource', function($resource) {
+  return $resource('/api/sync');
+}]);
+

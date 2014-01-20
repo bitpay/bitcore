@@ -9,11 +9,6 @@ function spec() {
   var rpc       = new RpcClient(config.bitcoind);
 
   function Status() {
-    this.info = {};
-    this.difficulty = {};
-    this.txoutsetinfo = {};
-    this.bestblockhash = {};
-    this.lastblockhash = {};
   }
 
   Status.prototype.getInfo = function(next) {
