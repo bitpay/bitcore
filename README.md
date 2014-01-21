@@ -3,7 +3,7 @@
 Project description.  
 
 ## Prerequisites
-* Node.js - Download and Install [Node.js](http://www.nodejs.org/download/). You can also follow [this gist](https://gist.github.com/isaacs/579814) for a quick and easy way to install Node.js and npm, or the Ubuntu way: git clone git@github.com:joyent/node.git && cd node && git checkout v0.10.24 && ./configure && make && make install`
+* Node.js v0.10.x - Download and Install [Node.js](http://www.nodejs.org/download/). You can also follow [this gist](https://gist.github.com/isaacs/579814) for a quick and easy way to install Node.js and npm, or the Ubuntu way: git clone git@github.com:joyent/node.git && cd node && git checkout v0.10.24 && ./configure && make && make install`
 * MongoDB - Download and Install [MongoDB](http://www.mongodb.org/downloads) - Make sure it's running on the default port (27017).
 * Bitcoind - Download and Install [Bitcoin](http://bitcoin.org/en/download) - You should make sure to configure RPC security and `txindex`.  For an example, see `./etc/bitcoind/bitcoin.conf`
 
