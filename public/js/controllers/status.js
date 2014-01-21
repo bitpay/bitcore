@@ -23,6 +23,12 @@ function($scope, $routeParams, $location, $rootScope, Global, Status, Sync, get_
   };
 
   var on_sync_update = function(sync) {
+
+    if (sync.error) {
+      $rootScope.syncError = sync.error;
+      return;
+    }
+
     if (sync.blocksToSync > sync.syncedBlocks) {
       var p = parseInt(100*(sync.syncedBlocks) / sync.blocksToSync);
       var delta = sync.blocksToSync - sync.syncedBlocks;
