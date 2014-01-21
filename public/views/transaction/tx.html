@@ -54,8 +54,8 @@
         <div data-ng-repeat="vout in tx.voutSimple" data-ng-show="!itemsExpanded">
           <div class="col-md-9">
             <div class="ellipsis">
-              <span data-ng-show="vout.hideLink">{{vout.addr}}</span>
-              <a href="/#!/address/{{address}}"  data-ng-show="!vout.hideLink" data-ng-repeat="address in vout.addr.split(',')">{{address}}</a>
+              <span data-ng-show="vout.notAddr">{{vout.addr}}</span>
+              <a href="/#!/address/{{address}}"  data-ng-show="!vout.notAddr" data-ng-repeat="address in vout.addr.split(',')">{{address}}</a>
             </div>
           </div>
           <div class="col-md-3">
