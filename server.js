@@ -24,6 +24,16 @@ var express = require('express'),
 var config = require('./config/config');
 
 //Bootstrap db connection
+// If mongod is running
+mongoose.connection.on('open', function (ref) {
+  console.log('Connected to mongo server.');
+});
+// If mongod is not running
+mongoose.connection.on('error', function (err) {
+  console.log('Could not connect to mongo server!');
+  console.log(err);
+});
+
 mongoose.connect(config.db);
 
 //Bootstrap models
