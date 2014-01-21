@@ -82,7 +82,12 @@
         </tr>
         <tr>
           <td>Sync Progress</td>
-          <td> {{(100 * sync.syncedBlocks/sync.blocksToSync)| number:2}}% 
+          <td> 
+          <div class="progress">
+            <div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: {{(100 * sync.syncedBlocks/sync.blocksToSync)| number:2}}%">
+                <span>{{(100 * sync.syncedBlocks/sync.blocksToSync)| number:2}}% Complete</span>
+              </div>
+          </div>
         </tr>
         <tr>
           <td>Blocks to Sync</td>
