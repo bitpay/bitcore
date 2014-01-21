@@ -38,6 +38,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .m20h {margin: 0 20px;}
 .m5v {margin: 5px 0;}
 .m20v {margin: 20px 0;}
+.m10v {margin: 10px 0;}
 .m50v {margin: 50px 0;}
 .m10b {margin-bottom: 10px;}
 
@@ -119,6 +120,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 }
 
 .col-gray {
+  width: 267px;
   background-color: #F4F4F4;
   padding: 15px;
   margin-top: 21px;

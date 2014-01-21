@@ -52,8 +52,12 @@ var getTransaction = function(txid, cb) {
  */
 exports.list = function(req, res, next) {
   var bId = req.query.block;
-  var aId = req.query.address;
-  var limit = req.query.limit || 1000;
+  var addrStr = req.query.address;
+  var page = req.query.pageNum;
+  var pageLength = 20;
+  var pagesTotal = 1;
+  var txLength;
+  var txs;
 
   if (bId) {
     Block.fromHashWithInfo(bId, function(err, block) {
@@ -63,14 +67,28 @@ exports.list = function(req, res, next) {
         return next();
       }
 
-      async.mapSeries(block.info.tx, getTransaction,
+      txLength = block.info.tx.length;
+
+      if (page) {
+        var spliceInit = page * pageLength;
+        txs = block.info.tx.splice(spliceInit, pageLength);
+        pagesTotal = Math.ceil(txLength / pageLength);
+      }
+      else {
+        txs = block.info.tx;
+      }
+
+      async.mapSeries(txs, getTransaction,
         function(err, results) {
-          res.jsonp(results);
+          res.jsonp({
+            pagesTotal: pagesTotal,
+            txs: results
+          });
         });
     });
   }
-  else if (aId) {
-    var a = Address.new(aId);
+  else if (addrStr) {
+    var a = Address.new(addrStr);
 
     a.update(function(err) {
       if (err && !a.totalReceivedSat) {
@@ -79,23 +97,25 @@ exports.list = function(req, res, next) {
         return next();
       }
 
-      async.mapSeries(a.transactions, getTransaction,
+      txLength = a.transactions.length;
+
+      if (page) {
+        var spliceInit = page * pageLength;
+        txs = a.transactions.splice(spliceInit, pageLength);
+        pagesTotal = Math.ceil(txLength / pageLength);
+      }
+      else {
+        txs = a.transactions;
+      }
+
+      async.mapSeries(txs, getTransaction,
         function(err, results) {
-          res.jsonp(results);
+          res.jsonp({
+            pagesTotal: pagesTotal,
+            txs: results
+          });
         });
     });
   }
-  else {
-    Transaction
-      .find()
-      .limit(limit)
-      .sort('-time')
-      .exec(function(err, txs) {
-        if (err) {
-          res.status(500).send(err);
-        } else {
-          res.jsonp(txs);
-        }
-      });
-  }
+
 };
