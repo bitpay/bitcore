@@ -8,30 +8,29 @@
           </div>
           <h1 data-ng-if="block">Block #{{ block.height }}</h1>
         </div>
-
         <div class="m50v" data-ng-show="!tx.isCoinBase">
           <h4>Hashes</h4>
           <table class="table">
             <tbody>
             <tr>
-              <td> <small>Hash </small></td>
+              <td class="small"> Hash </td>
               <td><a class="address ellipsis" href="/#!/block/{{block.hash}}">{{block.hash}}</a></td>
             </tr>
             <tr>
-              <td><small> Previous Block</small></td>
+              <td class="small"> Previous Block</td>
               <td><a class="address ellipsis" href="/#!/block/{{block.previousblockhash}}">{{block.previousblockhash}}</a></td>
             </tr>
             <tr>
-              <td><small> Next Block</small></td>
+              <td class="small"> Next Block</td>
               <td><a class="address ellipsis" href="/#!/block/{{block.nextblockhash}}">{{block.nextblockhash}}</a></td>
             </tr>
             <tr>
-              <td><small> Merkle Root</small></td>
+              <td class="small">Merkle Root</td>
               <td> <p class="address ellipsis"> {{block.merkleroot}} </p> </td>
             </tr>
             </tbody>
           </table>
-        </div>
+        </div> <!-- END OF TRANSACTIONS TABLE -->
 
       </div>
     </div> <!-- END OF COL-GRAY   -->   

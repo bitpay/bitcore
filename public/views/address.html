@@ -1,45 +1,44 @@
 <section data-ng-controller="AddressController" data-ng-init="findOne()">
-  <div class="page-header">
-    <h1>
-      Address
-      <small>Addresses are identifiers which you use to send bitcoins to another person.</small>
-    </h1>
-  </div>
   <div class="row">
-    <div class="col-lg-9">
-      <table class="table table-striped">
-        <tbody>
-        <tr>
-          <td>Address</td>
-          <td><a href="/#!/address/{{address.addrStr}}">{{address.addrStr}}</a></td>
-        </tr>
-        <tr>
-          <td>Total Received</td>
-          <td>{{address.totalReceived}} BTC</td>
-        </tr>
-        <tr>
-          <td>Total Sent</td>
-          <td>{{address.totalSent}} BTC</td>
-        </tr>
-        <tr>
-          <td>Final Balance</td>
-          <td>{{address.balance}} BTC</td>
-        </tr>
-        <tr>
-          <td>No. Transactions</td>
-          <td>{{address.txApperances}}</td>
-        </tr>
-
-        </tbody>
-      </table>
+    <div class="col-md-3">
+      <div class="bs-sidebar hidden-print affix  col-gray">
+        <div class="text-center m10v">
+          <qrcode size="200" data="{{address.addrStr}}"></qrcode>
+          <h4><span class="glyphicon glyphicon-qrcode"></span> Address</h4>
+          <a class="ellipsis" href="/#!/address/{{address.addrStr}}">{{address.addrStr}}</a>
+        </div>
+        
+        <div class="m50v">
+          <h4>Summary</h4>
+          <table class="table">
+            <tbody>
+              <tr>
+                <td class="small">Total Received</td>
+                <td class="address ellipsis text-right">{{address.totalReceived}} BTC</td>
+              </tr>
+              <tr>
+                <td class="small">Total Sent</td>
+                <td class="address ellipsis text-right">{{address.totalSent}} BTC</td>
+              </tr>
+              <tr>
+                <td class="small">Final Balance</td>
+                <td class="address ellipsis text-right">{{address.balance}} BTC</td>
+              </tr>
+              <tr>
+                <td class="small">No. Transactions</td>
+                <td class="address ellipsis text-right">{{address.txApperances}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div> <!-- END OF TRANSACTIONS TABLE -->
+      </div>
+    </div> <!-- END OF COL-MD-3 -->
+    
+    <div class="col-md-9">
+      <div data-ng-controller="transactionsController" data-ng-init="byAddress(params.addrStr)">
+        <h2>Transactions <small>Transactions contained within this block</small></h2>
+        <div data-ng-include src="'/views/transaction/list.html'"></div>
+      </div>
     </div>
-    <div class="col-lg-3">
-      <qrcode size="200" data="{{address.addrStr}}"></qrcode>
-    </div>
-  </div>
-
-  <div data-ng-controller="transactionsController" data-ng-init="byAddress(params.addrStr)">
-    <h2>Transactions <small>Transactions contained within this block</small></h2>
-    <div data-ng-include src="'/views/transaction/list.html'"></div>
-  </div>
+  </div> <!-- END OF ROW -->
 </section>
