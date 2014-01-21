@@ -60,7 +60,6 @@
     "mongoose": "~3.8.3",
     "lodash": "~2.4.1",
     "bower": "~1.2.8",
-    "bitcore": "*",
     "buffertools": "*",
     "grunt": "~0.4.2",
     "grunt-cli": "~0.1.11",
@@ -75,7 +74,9 @@
     "socket.io": "~0.9.16",
     "moment": "~2.5.0",
     "sinon": "~1.7.3",
-    "chai": "~1.8.1"
+    "chai": "~1.8.1",
+    "bitcore": "git://github.com/bitpay/bitcore.git",
+    "bufferput": "git://github.com/bitpay/node-bufferput.git"
   },
   "devDependencies": {
     "grunt-contrib-watch": "latest",

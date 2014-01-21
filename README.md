@@ -57,36 +57,6 @@ $ npm install -g bower
 
   If you get an error, please check the next section "Post-install"
 
-### Post-install (post-dependecies)
-
-  Get bufferput package from Github repository:
-
-    $ git clone git@github.com:gasteve/node-bufferput.git
-
-  Create symbolic link of node-bufferput in your insight folder:
-
-    $ cd <your_path_to>/insight/node_modules
-    $ ln -s <path_to>/node-bufferput bufferput
-
-    Get bitcore from github repository:
-  
-  Get bitcore from github repository:
-    
-    $ git clone https://github.com/bitpay/bitcore.git
-    
-    $ cd bitcore
-    
-    $ npm install
-
-  Then create a symbolic link from this to your insight repository. We need to
-  use bitcore from github, not with npm for now:
-
-    $ cd insight/node_modules
-
-    $ rm -R bitcore
-
-    $ ln -s <path-to-your-clone-repositoy>/bitcore
-
 ## Syncing old blockchain data
 
   Run sync from insight repository (to save old blocks and transactions in MongoDB):
