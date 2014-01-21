@@ -51,6 +51,7 @@ var getTransaction = function(txid, cb) {
  * List of transaction
  */
 exports.list = function(req, res, next) {
+  var limit = req.query.limit || 5;
   var bId = req.query.block;
   var addrStr = req.query.address;
   var page = req.query.pageNum;
@@ -116,6 +117,29 @@ exports.list = function(req, res, next) {
           });
         });
     });
+  }
+  else {
+    Transaction
+      .find()
+      .limit(limit)
+      .sort('-time')
+      .exec(function(err, txs) {
+        if (err) {
+          res.status(500).send(err);
+        } else {
+          var txids = [];
+          for(var i=0;i<txs.length;i++) {
+            txids.push(txs[i].txid);
+          }
+
+          async.mapSeries(txids, getTransaction, function(err, alltxs) {
+            res.jsonp({
+              txs: alltxs,
+              length: alltxs.length
+            });
+          });
+        }
+      });
   }
 
 };

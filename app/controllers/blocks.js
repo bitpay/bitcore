@@ -3,9 +3,10 @@
 /**
  * Module dependencies.
  */
-var mongoose = require('mongoose'),
-    Block = mongoose.model('Block'),
-    common      = require('./common');
+var mongoose  = require('mongoose'),
+    Block     = mongoose.model('Block'),
+    common    = require('./common'),
+    async     = require('async');
 
 
 /**
@@ -44,6 +45,16 @@ exports.blockindex = function(req, res, next, height) {
     else {
       res.jsonp(hash);
     }
+  });
+};
+
+var getBlock = function(blockhash, cb) {
+  Block.fromHashWithInfo(blockhash, function(err, block) {
+    if (err) {
+      console.log(err);
+      return cb(err);
+    }
+    return cb(err, block.info);
   });
 };
 
@@ -89,13 +100,20 @@ exports.list = function(req, res) {
       if (err) {
         res.status(500).send(err);
       } else {
-        res.jsonp({
-          blocks: blocks,
-          pagination: {
-            next: next,
-            prev: prev,
-            current: dateStr
-          }
+        var blockshash = [];
+        for(var i=0;i<blocks.length;i++) {
+          blockshash.push(blocks[i].hash);
+        }
+        async.mapSeries(blockshash, getBlock, function(err, allblocks) {
+          res.jsonp({
+            blocks: allblocks,
+            length: allblocks.length,
+            pagination: {
+              next: next,
+              prev: prev,
+              current: dateStr
+            }
+          });
         });
       }
     });

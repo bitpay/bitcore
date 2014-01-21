@@ -40,10 +40,10 @@ angular.module('insight.system').controller('IndexController',
       $scope.blocks = res.blocks;
     });
 
-    Transactions.query({
+    Transactions.get({
       limit: TRANSACTION_DISPLAYED
-    }, function(txs) {
-      $scope.txs = txs;
+    }, function(res) {
+      $scope.txs = res.txs;
     });
   };
 
