@@ -55,8 +55,11 @@ walk(models_path);
 
 // historic_sync process
 var historicSync = {};
+
+
 if (!config.disableHistoricSync) {
   historicSync = new HistoricSync();
+
   historicSync.init({
     skipDbConnection: true,
     shouldBroadcast: true,
@@ -68,11 +71,11 @@ if (!config.disableHistoricSync) {
       console.log('[historic_sync] ' + txt);
     }
     else {
-      historicSync.smart_import(function(err){
+      historicSync.smartImport(function(err){
         var txt= 'ended.';
         if (err) txt = 'ABORTED with error: ' + err.message;
 
-        console.log('[historic_sync] ' + txt, historicSync.syncInfo);
+        console.log('[historic_sync] ' + txt, historicSync.info());
       });
     }
   });

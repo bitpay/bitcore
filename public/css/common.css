@@ -224,6 +224,10 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   margin-bottom: 45px;
 }
 
+.progress-bar-info {
+  background-color: #8DC429;
+}
+
 /* Set the fixed height of the footer here */
 #footer {
   height: 51px;
@@ -368,4 +372,21 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   font-size: 80%;
 }
 
+.status .t {
+  color: white;
+  display: inline-block;
+  padding:0px 5px;
+}
+
+.status .text-danger {
+  background: red;
+}
+
+.status .text-warning {
+  background: yellow;
+  color: black;
+}
+
+.status .text-default {
+}
 
