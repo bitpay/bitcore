@@ -223,10 +223,19 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 /* Set the fixed height of the footer here */
 #footer {
-  height: 44px;
-  background-color: #8DC429;
-  border-top: 4px solid #64920F;
+  height: 51px;
+  background-color: #373D42;
+  border-top: 4px solid #656E76;
   color: #fff;
+}
+
+#footer .insight {
+  font-size: 20px;
+  text-decoration: none;
+}
+
+.line-footer {
+  border-top: 2px dashed #ccc;
 }
 
 .line-bot {
