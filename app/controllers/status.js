@@ -50,6 +50,6 @@ exports.show = function(req, res) {
 };
 
 exports.sync = function(req, res) {
-  if (req.syncInfo)
-    res.jsonp(req.syncInfo);
+  if (req.historicSync)
+    res.jsonp(req.historicSync.info());
 };
