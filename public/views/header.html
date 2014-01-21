@@ -22,9 +22,9 @@
           </div>
           <div class="no_matching text-danger" ng-show="badQuery">No matching records found!</div>
         </form>
-      <div class="status" data-ng-controller="FooterController" data-ng-init="getFooter()">
+      <div class="status" data-ng-controller="StatusController" data-ng-init="getStatus('Info')">
         <i class="small" data-ng-show="info.blocks">
-          <strong>Status:</strong> On Sync  
+          <strong>Status:</strong>  {{statusMessage}}
         </i>
         <i class="small">
           <strong> Connections: </strong> {{info.connections}} 

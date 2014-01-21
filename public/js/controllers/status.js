@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('insight.status').controller('StatusController',
-  function ($scope, $routeParams, $location, $rootScope, Global, Status, Sync) {
+  function ($scope, $routeParams, $location, $rootScope, Global, Status, Sync, get_socket) {
   $scope.global = Global;
 
   $scope.getStatus = function(q) {
@@ -28,5 +28,12 @@ angular.module('insight.status').controller('StatusController',
       $rootScope.syncError = 'Could not get sync information' + e;
     });
   };
+
+  var socket = get_socket($scope);
+  socket.emit('subscribe', 'sync');
+  socket.on('status', function(info) {
+    console.log('info '+JSON.stringify(info));
+  });
+
 });
 
