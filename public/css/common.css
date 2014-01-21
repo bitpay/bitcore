@@ -29,7 +29,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   min-height: 100%;
   height: auto;
   /* Negative indent footer by its height */
-  margin: 0 auto -44px;
+  margin: 0 auto -51px;
   /* Pad bottom by footer height */
   padding: 0 0 60px;
 }
@@ -221,12 +221,25 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   border: 2px solid #6C0000;
 }
 
+#status .table {
+  margin-bottom: 45px;
+}
+
 /* Set the fixed height of the footer here */
 #footer {
-  height: 44px;
-  background-color: #8DC429;
-  border-top: 4px solid #64920F;
+  height: 51px;
+  background-color: #373D42;
+  border-top: 4px solid #656E76;
   color: #fff;
+}
+
+#footer .insight {
+  font-size: 20px;
+  text-decoration: none;
+}
+
+.line-footer {
+  border-top: 2px dashed #ccc;
 }
 
 .line-bot {
