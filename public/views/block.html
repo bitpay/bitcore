@@ -1,12 +1,12 @@
 <section data-ng-controller="BlocksController" data-ng-init="findOne()">
   <div class="row">
     <div class="col-md-3">
-      <div class="bs-sidebar hidden-print affix  col-gray">
+      <div class="bs-sidebar affix  col-gray">
         <div class="block-id">
           <div class="icon-block text-center">
             <span class="glyphicon glyphicon-list-alt"></span>
           </div>
-          <h1 data-ng-if="block">Block #{{ block.height }}</h1>
+          <h3 data-ng-if="block">Block #{{ block.height }}</h3>
         </div>
         <div class="m50v" data-ng-show="!tx.isCoinBase">
           <h4>Hashes</h4>
