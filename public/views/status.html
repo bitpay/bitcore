@@ -4,76 +4,11 @@
       Application Status 
     </h1>
   </div>
-  <div class="row">
-    <div class="col-md-8 col-md-offset-2">
-      <h2>Bitcoin node information</h2>
-      <table class="table table-striped" data-ng-init="getStatus('Info')">
-        <tbody>
-        <tr data-ng-show="!info &amp;&amp; !infoError">
-          <td colspan="2" class="text-center">Loading...
-        <tr data-ng-show="infoError">
-          <td colspan="2" class="text-danger">{{infoError}}
-        <tr>
-          <td>Version</td>
-          <td>{{info.version}}</td>
-        </tr>
-        <tr>
-          <td>Protocol version</td>
-          <td>{{info.protocolversion}}</td>
-        </tr>
-        <tr>
-          <td>Wallet version</td>
-          <td>{{info.walletversion}}</td>
-        </tr>
-        <tr>
-          <td>Balance (BTC)</td>
-          <td>{{info.balance}}</td>
-        </tr>
-        <tr>
-          <td>Blocks</td>
-          <td><a href="/#!/block-index/{{info.blocks}}">{{info.blocks}}</a></td>
-        </tr>
-        <tr>
-          <td>Time Offset</td>
-          <td>{{info.timeoffset}}</td>
-        </tr>
-        <tr>
-          <td>Connections to other nodes</td>
-          <td>{{info.connections}}</td>
-        </tr>
-        <tr>
-          <td>Proxy setting</td>
-          <td>{{info.proxy}}</td>
-        </tr>
-        <tr>
-          <td>Mining Difficulty</td>
-          <td>{{info.difficulty}}</td>
-        </tr>
-        <tr>
-          <td>Testnet</td>
-          <td>{{info.testnet}}</td>
-        </tr>
-        <tr>
-          <td>Keypool Oldest Date</td>
-          <td>{{info.keypoololdest*1000 | date:'medium' }}</td>
-        </tr>
-        <tr>
-          <td>Keypool Size</td>
-          <td>{{info.keypoolsize}}</td>
-        </tr>
-        <tr>
-          <td>Default Transaction Fee (BTC)</td>
-          <td>{{info.paytxfee}}</td>
-        </tr>
-        <tr>
-          <td>Info Errors</td>
-          <td>{{info.infoErrors}}</td>
-        </tr>
-        </tbody>
-      </table>
+  <div id="status" class="row">
+    <div class="col-md-9">
       
-      <h2>Sync Status</h2>
-      <table class="table table-striped" data-ng-init="getSync()">
+      <h4>Sync Status</h4>
+      <table class="table" data-ng-init="getSync()">
         <tbody>
         <tr data-ng-show="syncError">  
           <td colspan="2"> <span class="text-danger"> {{ syncError }} </span>
@@ -91,29 +26,29 @@
         </tr>
         <tr>
           <td>Blocks to Sync</td>
-          <td>{{sync.blocksToSync}}</td>
+          <td class="text-right">{{sync.blocksToSync}}</td>
         </tr>
         <tr>
           <td>Synced Blocks</td>
-          <td>{{sync.syncedBlocks}}</td>
+          <td class="text-right">{{sync.syncedBlocks}}</td>
         </tr>
         <tr>
           <td>Start</td>
-          <td>
+          <td class="text-right">
             <a href="/#!/block/{{sync.start}}">{{sync.start}}</a>
             <span data-ng-show="sync.isStartGenesis"> (genesisBlock)</span>
           </td>
         </tr>
         <tr>
           <td>End</td>
-          <td>
+          <td class="text-right">
             <a href="/#!/block/{{sync.end}}">{{sync.end}}</a>
             <span data-ng-show="sync.isEndGenesis"> (genesisBlock)</span>
           </td>
         </tr>
         <tr>
           <td>Sync properties</td>
-          <td>
+          <td class="text-right">
             <ul>  
               <li  data-ng-show="sync.upToExisting"> <span> Stops at existing block </span>
               <li>
@@ -125,8 +60,8 @@
         </tbody>
       </table>
     
-      <h2>Transaction Output Set Information</h2>
-      <table class="table table-striped" data-ng-init="getStatus('TxOutSetInfo')">
+      <h4>Transaction Output Set Information</h4>
+      <table class="table" data-ng-init="getStatus('TxOutSetInfo')">
         <tbody>
         <tr data-ng-show="!txoutsetinfo &amp;&amp; !infoError">
           <td colspan="2" class="text-center">Loading...</td>
@@ -136,54 +71,37 @@
         </tr>
         <tr>
           <td>Height</td>
-          <td><a href="/#!/block-index/{{txoutsetinfo.height}}">{{txoutsetinfo.height}}</a></td>
+          <td class="text-right"><a href="/#!/block-index/{{txoutsetinfo.height}}">{{txoutsetinfo.height}}</a></td>
         </tr>
         <tr>
           <td>Best Block</td>
-          <td><a href="/#!/block/{{txoutsetinfo.bestblock}}">{{txoutsetinfo.bestblock}}</a></td>
+          <td class="text-right"><a href="/#!/block/{{txoutsetinfo.bestblock}}">{{txoutsetinfo.bestblock}}</a></td>
         </tr>
         <tr>
           <td>Transactions</td>
-          <td>{{txoutsetinfo.transactions}}</td>
+          <td class="text-right"> {{txoutsetinfo.transactions}}</td>
         </tr>
         <tr>
           <td>Transaction Outputs</td>
-          <td>{{txoutsetinfo.txouts}}</td>
+          <td class="text-right">{{txoutsetinfo.txouts}}</td>
         </tr>
         <tr>
           <td>Bytes Serialized</td>
-          <td>{{txoutsetinfo.bytes_serialized}}</td>
+          <td class="text-right">{{txoutsetinfo.bytes_serialized}}</td>
         </tr>
         <tr>
           <td>Hash Serialized</td>
-          <td>{{txoutsetinfo.hash_serialized}}</td>
+          <td class="text-right">{{txoutsetinfo.hash_serialized}}</td>
         </tr>
         <tr>
           <td>Total Amount</td>
-          <td>{{txoutsetinfo.total_amount}}</td>
-        </tr>
-        </tbody>
-      </table>
-
-      <h2>Difficulty</h2>
-      <table class="table table-striped" data-ng-init="getStatus('Difficulty')">
-        <tbody>
-        <tr data-ng-show="!difficulty &amp;&amp; !infoError">
-          <td colspan="2" class="text-center">Loading...</td>
-        </tr>
-        <tr data-ng-show="infoError">
-          <td colspan="2" class="text-danger">{{infoError}}</td>
-        </tr>
- 
-        <tr>
-          <td>Mining Difficulty</td>
-          <td>{{difficulty}}</td>
+          <td class="text-right">{{txoutsetinfo.total_amount}}</td>
         </tr>
         </tbody>
       </table>
       
-      <h2>Last Block</h2>
-      <table class="table table-striped" data-ng-init="getStatus('LastBlockHash')">
+      <h4>Last Block</h4>
+      <table class="table" data-ng-init="getStatus('LastBlockHash')">
         <tbody>
         <tr data-ng-show="!lastblockhash &amp;&amp; !infoError">
           <td colspan="2" class="text-center">Loading...</td>
@@ -193,11 +111,98 @@
         </tr>
         <tr>
           <td>Last block hash</td>
-          <td><a href="/#!/block/{{lastblockhash}}">{{lastblockhash}}</a></td>
+          <td class="text-right"><a href="/#!/block/{{lastblockhash}}">{{lastblockhash}}</a></td>
         </tr>
         </tbody>
       </table>
-    </div>
+    </div> <!-- END OF COL-8 -->
+
+    <div class="col-md-3">
+      <div class="col-gray">
+        <h4>Bitcoin node information</h4>
+        <table class="table" data-ng-init="getStatus('Info')">
+          <tbody>
+          <tr data-ng-show="!info &amp;&amp; !infoError">
+            <td colspan="2" class="text-center">Loading...
+          <tr data-ng-show="infoError">
+            <td colspan="2" class="text-danger">{{infoError}}
+          <tr>
+            <td>Version</td>
+            <td class="text-right">{{info.version}}</td>
+          </tr>
+          <tr>
+            <td>Protocol version</td>
+            <td class="text-right">{{info.protocolversion}}</td>
+          </tr>
+          <tr>
+            <td>Wallet version</td>
+            <td class="text-right">{{info.walletversion}}</td>
+          </tr>
+          <tr>
+            <td>Balance (BTC)</td>
+            <td class="text-right">{{info.balance}}</td>
+          </tr>
+          <tr>
+            <td>Blocks</td>
+            <td class="text-right"><a href="/#!/block-index/{{info.blocks}}">{{info.blocks}}</a></td>
+          </tr>
+          <tr>
+            <td>Time Offset</td>
+            <td class="text-right">{{info.timeoffset}}</td>
+          </tr>
+          <tr>
+            <td>Connections to other nodes</td>
+            <td class="text-right">{{info.connections}}</td>
+          </tr>
+          <tr>
+            <td>Proxy setting</td>
+            <td class="text-right">{{info.proxy}}</td>
+          </tr>
+          <tr>
+            <td>Mining Difficulty</td>
+            <td class="text-right">{{info.difficulty}}</td>
+          </tr>
+          <tr>
+            <td>Testnet</td>
+            <td class="text-right">{{info.testnet}}</td>
+          </tr>
+          <tr>
+            <td>Keypool Oldest Date</td>
+            <td class="text-right">{{info.keypoololdest*1000 | date:'medium' }}</td>
+          </tr>
+          <tr>
+            <td>Keypool Size</td>
+            <td class="text-right">{{info.keypoolsize}}</td>
+          </tr>
+          <tr>
+            <td>Default Transaction Fee (BTC)</td>
+            <td class="text-right">{{info.paytxfee}}</td>
+          </tr>
+          <tr>
+            <td>Info Errors</td>
+            <td class="text-right">{{info.infoErrors}}</td>
+          </tr>
+          </tbody>
+        </table>
+
+        <h4>Difficulty</h4>
+        <table class="table" data-ng-init="getStatus('Difficulty')">
+          <tbody>
+          <tr data-ng-show="!difficulty &amp;&amp; !infoError">
+            <td colspan="2" class="text-center">Loading...</td>
+          </tr>
+          <tr data-ng-show="infoError">
+            <td colspan="2" class="text-danger">{{infoError}}</td>
+          </tr>
+   
+          <tr>
+            <td>Mining Difficulty</td>
+            <td>{{difficulty}}</td>
+          </tr>
+          </tbody>
+        </table>
+      </div> <!-- END OF COL-GRAY -->
+    </div> <!-- END OF COL-3 -->
   </div>
 </section>
 
