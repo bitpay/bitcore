@@ -1,11 +1,79 @@
 <section data-ng-controller="StatusController">
-  <div id="status" class="row">
-    <div class="page-header">
-      <h1>Status</h1>
-    </div>
-    <div class="col-md-9">
-      <h4>Sync Status</h4>
-      <table class="table" data-ng-init="getSync()">
+  <div class="page-header">
+    <h1>
+      Application Status 
+    </h1>
+  </div>
+  <div class="row">
+    <div class="col-md-8 col-md-offset-2">
+      <h2>Bitcoin node information</h2>
+      <table class="table table-striped" data-ng-init="getStatus('Info')">
+        <tbody>
+        <tr data-ng-show="!info &amp;&amp; !infoError">
+          <td colspan="2" class="text-center">Loading...
+        <tr data-ng-show="infoError">
+          <td colspan="2" class="text-danger">{{infoError}}
+        <tr>
+          <td>Version</td>
+          <td>{{info.version}}</td>
+        </tr>
+        <tr>
+          <td>Protocol version</td>
+          <td>{{info.protocolversion}}</td>
+        </tr>
+        <tr>
+          <td>Wallet version</td>
+          <td>{{info.walletversion}}</td>
+        </tr>
+        <tr>
+          <td>Balance (BTC)</td>
+          <td>{{info.balance}}</td>
+        </tr>
+        <tr>
+          <td>Blocks</td>
+          <td><a href="/#!/block-index/{{info.blocks}}">{{info.blocks}}</a></td>
+        </tr>
+        <tr>
+          <td>Time Offset</td>
+          <td>{{info.timeoffset}}</td>
+        </tr>
+        <tr>
+          <td>Connections to other nodes</td>
+          <td>{{info.connections}}</td>
+        </tr>
+        <tr>
+          <td>Proxy setting</td>
+          <td>{{info.proxy}}</td>
+        </tr>
+        <tr>
+          <td>Mining Difficulty</td>
+          <td>{{info.difficulty}}</td>
+        </tr>
+        <tr>
+          <td>Testnet</td>
+          <td>{{info.testnet}}</td>
+        </tr>
+        <tr>
+          <td>Keypool Oldest Date</td>
+          <td>{{info.keypoololdest*1000 | date:'medium' }}</td>
+        </tr>
+        <tr>
+          <td>Keypool Size</td>
+          <td>{{info.keypoolsize}}</td>
+        </tr>
+        <tr>
+          <td>Default Transaction Fee (BTC)</td>
+          <td>{{info.paytxfee}}</td>
+        </tr>
+        <tr>
+          <td>Info Errors</td>
+          <td>{{info.infoErrors}}</td>
+        </tr>
+        </tbody>
+      </table>
+      
+      <h2>Sync Status</h2>
+      <table class="table table-striped" data-ng-init="getSync()">
         <tbody>
         <tr data-ng-show="syncError">  
           <td colspan="2"> <span class="text-danger"> {{ syncError }} </span>
@@ -14,46 +82,51 @@
         </tr>
         <tr>
           <td>Sync Progress</td>
-          <td> {{(100 * sync.syncedBlocks/sync.blocksToSync)| number:2}}% 
+          <td> 
+          <div class="progress">
+            <div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: {{(100 * sync.syncedBlocks/sync.blocksToSync)| number:2}}%">
+                <span>{{(100 * sync.syncedBlocks/sync.blocksToSync)| number:2}}% Complete</span>
+              </div>
+          </div>
         </tr>
         <tr>
-          <td>blocksToSync</td>
+          <td>Blocks to Sync</td>
           <td>{{sync.blocksToSync}}</td>
         </tr>
         <tr>
-          <td>syncedBlocks</td>
+          <td>Synced Blocks</td>
           <td>{{sync.syncedBlocks}}</td>
         </tr>
         <tr>
-          <td>start</td>
+          <td>Start</td>
           <td>
             <a href="/#!/block/{{sync.start}}">{{sync.start}}</a>
             <span data-ng-show="sync.isStartGenesis"> (genesisBlock)</span>
           </td>
         </tr>
         <tr>
-          <td>end</td>
+          <td>End</td>
           <td>
             <a href="/#!/block/{{sync.end}}">{{sync.end}}</a>
             <span data-ng-show="sync.isEndGenesis"> (genesisBlock)</span>
           </td>
         </tr>
         <tr>
-          <td>Sync Type</td>
+          <td>Sync properties</td>
           <td>
             <ul>  
               <li  data-ng-show="sync.upToExisting"> <span> Stops at existing block </span>
               <li>
-                <span data-ng-show="sync.scanningBackward"> scanningBackward </span>
-                <span data-ng-hide="sync.scanningBackward"> scanningForward </span>
+                <span data-ng-show="sync.scanningBackward"> Backward Scan</span>
+                <span data-ng-hide="sync.scanningBackward"> Forward Scan</span>
             </ul>  
           </td>
         </tr>
         </tbody>
       </table>
-
-      <h4>getTxOutSetInfo()</h4>
-      <table class="table" data-ng-init="getStatus('TxOutSetInfo')">
+    
+      <h2>Transaction Output Set Information</h2>
+      <table class="table table-striped" data-ng-init="getStatus('TxOutSetInfo')">
         <tbody>
         <tr data-ng-show="!txoutsetinfo &amp;&amp; !infoError">
           <td colspan="2" class="text-center">Loading...</td>
@@ -66,135 +139,65 @@
           <td><a href="/#!/block-index/{{txoutsetinfo.height}}">{{txoutsetinfo.height}}</a></td>
         </tr>
         <tr>
-          <td>bestblock</td>
+          <td>Best Block</td>
           <td><a href="/#!/block/{{txoutsetinfo.bestblock}}">{{txoutsetinfo.bestblock}}</a></td>
         </tr>
         <tr>
-          <td>transactions</td>
+          <td>Transactions</td>
           <td>{{txoutsetinfo.transactions}}</td>
         </tr>
         <tr>
-          <td>txouts</td>
+          <td>Transaction Outputs</td>
           <td>{{txoutsetinfo.txouts}}</td>
         </tr>
         <tr>
-          <td>bytes_serialized</td>
+          <td>Bytes Serialized</td>
           <td>{{txoutsetinfo.bytes_serialized}}</td>
         </tr>
         <tr>
-          <td>hash_serialized</td>
+          <td>Hash Serialized</td>
           <td>{{txoutsetinfo.hash_serialized}}</td>
         </tr>
         <tr>
-          <td>total_amount</td>
+          <td>Total Amount</td>
           <td>{{txoutsetinfo.total_amount}}</td>
         </tr>
         </tbody>
       </table>
 
-      <h4>getLastBlockHash()</h4>
-        <table class="table" data-ng-init="getStatus('LastBlockHash')">
-          <tbody>
-          <tr data-ng-show="!lastblockhash &amp;&amp; !infoError">
-            <td colspan="2" class="text-center">Loading...</td>
-          </tr>
-          <tr data-ng-show="infoError">
-            <td colspan="2" class="text-danger">{{infoError}}</td>
-          </tr>
-          <tr>
-            <td>Last block hash</td>
-            <td>{{lastblockhash}}</td>
-          </tr>
-          </tbody>
-        </table>
-    </div> <!-- END OF COL-8 -->
-
-    <div class="col-md-3">
-        <div class="col-gray">
-        <h4>getInfo()</h4>
-        <table class="table" data-ng-init="getStatus('Info')">
-          <tbody>
-          <tr data-ng-show="!info &amp;&amp; !infoError">
-            <td colspan="2" class="text-center">Loading...
-          <tr data-ng-show="infoError">
-            <td colspan="2" class="text-danger">{{infoError}}
-          <tr>
-            <td>Version</td>
-            <td>{{info.version}}</td>
-          </tr>
-          <tr>
-            <td>protocolversion</td>
-            <td>{{info.protocolversion}}</td>
-          </tr>
-          <tr>
-            <td>walletversion</td>
-            <td>{{info.walletversion}}</td>
-          </tr>
-          <tr>
-            <td>balance</td>
-            <td>{{info.balance}}</td>
-          </tr>
-          <tr>
-            <td>blocks</td>
-            <td><a href="/#!/block-index/{{info.blocks}}">{{info.blocks}}</a></td>
-          </tr>
-          <tr>
-            <td>timeoffset</td>
-            <td>{{info.timeoffset}}</td>
-          </tr>
-          <tr>
-            <td>connections</td>
-            <td>{{info.connections}}</td>
-          </tr>
-          <tr>
-            <td>proxy</td>
-            <td>{{info.proxy}}</td>
-          </tr>
-          <tr>
-            <td>difficulty</td>
-            <td>{{info.difficulty}}</td>
-          </tr>
-          <tr>
-            <td>testnet</td>
-            <td>{{info.testnet}}</td>
-          </tr>
-          <tr>
-            <td>keypoololdest</td>
-            <td>{{info.keypoololdest}}</td>
-          </tr>
-          <tr>
-            <td>keypoolsize</td>
-            <td>{{info.keypoolsize}}</td>
-          </tr>
-          <tr>
-            <td>paytxfee</td>
-            <td>{{info.paytxfee}}</td>
-          </tr>
-          <tr>
-            <td>infoErrors</td>
-            <td>{{info.infoErrors}}</td>
-          </tr>
-          </tbody>
-        </table>
-
-        <h4>getDifficulty()</h4>
-        <table class="table" data-ng-init="getStatus('Difficulty')">
-          <tbody>
-          <tr data-ng-show="!difficulty &amp;&amp; !infoError">
-            <td colspan="2" class="text-center">Loading...</td>
-          </tr>
-          <tr data-ng-show="infoError">
-            <td colspan="2" class="text-danger">{{infoError}}</td>
-          </tr>
-   
-          <tr>
-            <td>Difficulty</td>
-            <td>{{difficulty}}</td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
-    </div> <!-- END OF COL-4 -->
-  </div>  <!-- END OF ROW -->
+      <h2>Difficulty</h2>
+      <table class="table table-striped" data-ng-init="getStatus('Difficulty')">
+        <tbody>
+        <tr data-ng-show="!difficulty &amp;&amp; !infoError">
+          <td colspan="2" class="text-center">Loading...</td>
+        </tr>
+        <tr data-ng-show="infoError">
+          <td colspan="2" class="text-danger">{{infoError}}</td>
+        </tr>
+ 
+        <tr>
+          <td>Mining Difficulty</td>
+          <td>{{difficulty}}</td>
+        </tr>
+        </tbody>
+      </table>
+      
+      <h2>Last Block</h2>
+      <table class="table table-striped" data-ng-init="getStatus('LastBlockHash')">
+        <tbody>
+        <tr data-ng-show="!lastblockhash &amp;&amp; !infoError">
+          <td colspan="2" class="text-center">Loading...</td>
+        </tr>
+        <tr data-ng-show="infoError">
+          <td colspan="2" class="text-danger">{{infoError}}</td>
+        </tr>
+        <tr>
+          <td>Last block hash</td>
+          <td><a href="/#!/block/{{lastblockhash}}">{{lastblockhash}}</a></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </section>
 
