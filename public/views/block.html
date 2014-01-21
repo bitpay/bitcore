@@ -33,7 +33,7 @@
         </div> <!-- END OF TRANSACTIONS TABLE -->
 
       </div>
-    </div> <!-- END OF COL-GRAY   -->   
+    </div> <!-- END OF COL-GRAY   -->
 
     <div class="col-md-9">
       <h3>Summary</h3>
@@ -84,9 +84,9 @@
         </div>
       </div><!--  END OF ROW -->
 
-      <div data-ng-controller="transactionsController" data-ng-init="byBlock(params.blockHash)"> 
+      <div data-ng-controller="transactionsController" data-ng-init="load('block')">
         <h2>Transactions <small >Transactions contained within this block</small></h2>
-        <div data-ng-include src="'/views/transaction/list.html'"></div>
+        <div data-ng-include src="'/views/transaction/list.html'" when-scrolled="loadMore()"></div>
       </div>
     </div>
   </div>

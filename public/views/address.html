@@ -7,7 +7,7 @@
           <h4><span class="glyphicon glyphicon-qrcode"></span> Address</h4>
           <a class="ellipsis" href="/#!/address/{{address.addrStr}}">{{address.addrStr}}</a>
         </div>
-        
+
         <div class="m50v">
           <h4>Summary</h4>
           <table class="table">
@@ -33,11 +33,11 @@
         </div> <!-- END OF TRANSACTIONS TABLE -->
       </div>
     </div> <!-- END OF COL-MD-3 -->
-    
+
     <div class="col-md-9">
-      <div data-ng-controller="transactionsController" data-ng-init="byAddress(params.addrStr)">
+      <div data-ng-controller="transactionsController" data-ng-init="load('address')">
         <h2>Transactions <small>Transactions contained within this block</small></h2>
-        <div data-ng-include src="'/views/transaction/list.html'"></div>
+        <div data-ng-include src="'/views/transaction/list.html'" when-scrolled="loadMore()"></div>
       </div>
     </div>
   </div> <!-- END OF ROW -->
