@@ -23,6 +23,17 @@ angular.module('insight.status').controller('StatusController',
   $scope.getSync = function() {
     Sync.get({}, function(sync) {
       $rootScope.syncError = null;
+
+      if (sync.blocksToSync > sync.syncedBlocks ) {
+        sync.message = 'Blocks to sync: ' +  (sync.blocksToSync -  sync.syncedBlocks);
+        sync.tooltip = 'Skipped blocks:' + sync.skipped_blocks;
+      }
+      else {
+        sync.message = 'On sync';
+        sync.tooltip = '';
+      }
+
+
       $scope.sync = sync;
     }, function(e) {
       $rootScope.syncError = 'Could not get sync information' + e;

@@ -11,28 +11,32 @@
     </div>
     <div class="collapse navbar-collapse">
       <ul class="nav navbar-nav">
-        <li data-ng-repeat="item in menu" ui-route="/{{item.link}}" ng-class="{active: $uiRoute}">
+        <li data-ng-repeat="item in menu" ui-route="/{{item.link}}" data-ng-class="{active: $uiRoute}">
           <a href="#!/{{item.link}}">{{item.title}}</a>
         </li>
       </ul>
-      <div ng-controller="SearchController">
-        <form class="navbar-form navbar-left" role="search" ng-submit="search()">
-          <div class="form-group" ng-class="{'has-error': badQuery}">
-            <input id="search" type="text" class="form-control" ng-model="q" placeholder="Search for block, transaction or address">
+      <div data-ng-controller="SearchController">
+        <form class="navbar-form navbar-left" role="search" data-ng-submit="search()">
+          <div class="form-group" data-ng-class="{'has-error': badQuery}">
+            <input id="search" type="text" class="form-control" data-ng-model="q" placeholder="Search for block, transaction or address">
           </div>
-          <div class="no_matching text-danger" ng-show="badQuery">No matching records found!</div>
+          <div class="no_matching text-danger" data-ng-show="badQuery">No matching records found!</div>
         </form>
-      <div class="status" data-ng-controller="StatusController" data-ng-init="getStatus('Info')">
-        <i class="small" data-ng-show="info.blocks">
-          <strong>Status:</strong>  {{statusMessage}}
-        </i>
-        <i class="small">
-          <strong> Connections: </strong> {{info.connections}} 
-        </i>
-        <i class="small">
-          <strong>Height:</strong> {{info.blocks}}
-        </i>
       </div>
+      <div class="status" data-ng-controller="StatusController">
+        <span  data-ng-init="getSync()">
+          <span class="small" tooltip="{{sync.tooltip}}" tooltip-placement="down">
+            <i><strong> {{sync.message}} </strong></i>
+          </span>
+        </span>
+        <span  data-ng-init="getStatus('Info')">
+          <i class="small">
+            <strong> Connections: </strong> {{info.connections}} 
+          </i>
+          <i class="small">
+            <strong>Height:</strong> {{info.blocks}}
+          </i>
+        </span>
       </div>
     </div>
   </div>

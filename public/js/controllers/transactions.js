@@ -14,19 +14,29 @@ angular.module('insight.transactions').controller('transactionsController',
 
     var ret = [];
     var tmp = {};
+    var u=0;
     // TODO multiple output address
     // 
     for(var i=0; i < l; i++) {
 
+      var notAddr = false;
+
+      // non standard input 
+      if (items[i].scriptSig && !items[i].addr) {
+        items[i].addr = 'Unparsed address [' + u++  + ']';
+        items[i].notAddr = true;
+        notAddr = true;
+      }
+
       // non standard output
       if (items[i].scriptPubKey && items[i].scriptPubKey.addresses.length > 1) {
-        item[i].addr = items[i].scriptPubKey.addresses.join(',');
+        items[i].addr = items[i].scriptPubKey.addresses.join(',');
         ret.push(items[i]);
         continue;
       }
 
-      var addr = items[i].addr || 
-        (items[i].scriptPubKey && items[i].scriptPubKey.addresses[0] );
+      var addr = items[i].addr || (items[i].scriptPubKey && items[i].scriptPubKey.addresses[0] );
+
       if (!tmp[addr]) {
         tmp[addr] = {};
         tmp[addr].valueSat = 0;
@@ -37,6 +47,7 @@ angular.module('insight.transactions').controller('transactionsController',
       tmp[addr].valueSat += items[i].valueSat;
       tmp[addr].value =  tmp[addr].valueSat / 100000000;
       tmp[addr].items.push(items[i]);
+      tmp[addr].notAddr = notAddr;
       tmp[addr].count++;
     }
 
