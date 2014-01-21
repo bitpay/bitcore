@@ -221,6 +221,10 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   border: 2px solid #6C0000;
 }
 
+#status .table {
+  margin-bottom: 45px;
+}
+
 /* Set the fixed height of the footer here */
 #footer {
   height: 51px;
