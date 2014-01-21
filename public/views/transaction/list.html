@@ -2,8 +2,8 @@
 <div class="block-tx fader" data-ng-show="txs && txs[0].txid" data-ng-repeat="tx in txs">
   <div data-ng-include src="'/views/transaction/tx.html'"></div>
 </div>
-<div class="panel panel-default" data-ng-show="!txs.length || loading">
-  <div class="panel-body">
-    Loading...
+<div class="progress progress-striped active" data-ng-show="!txs.length || loading">
+  <div class="progress-bar" style="width: 100%">
+    <span>Loading...</span>
   </div>
 </div>

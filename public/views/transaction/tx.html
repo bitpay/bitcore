@@ -1,14 +1,9 @@
   <div class="line-bot">
     <a href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a>
-
     <a class="pull-right" style="margin-left:10px" data-ng-click="itemsExpanded = !itemsExpanded">
-      <span data-ng-show="itemsExpanded" class="glyphicon glyphicon-minus-sign"  tooltip="Hide items details"  tooltip-placement="down" ></span>
-      <span data-ng-show="!itemsExpanded" class="glyphicon glyphicon-plus-sign"  tooltip="Show items details"  tooltip-placement="down"></span>
+      <span class="glyphicon" data-ng-class="{'glyphicon-minus-sign': itemsExpanded, 'glyphicon-plus-sign': !itemsExpanded}" tooltip="Show/Hide items details" tooltip-placement="down"></span>
     </a>
-
     <span class="pull-right">{{tx.time * 1000 | date:'medium'}}</span>
-
-
   </div>
 
   <div class="row">
@@ -25,8 +20,8 @@
           <li class="row">
             <div class="col-md-8">
               <div class="ellipsis">
-                <span data-ng-show="vin.notAddr">{{vin.addr}}</span>  
-                <a data-ng-show="!vin.notAddr" href="/#!/address/{{vin.addr}}">{{vin.addr}}</a>  
+                <span data-ng-show="vin.notAddr">{{vin.addr}}</span>
+                <a data-ng-show="!vin.notAddr" href="/#!/address/{{vin.addr}}">{{vin.addr}}</a>
               </div>
             </div>
             <p class="text-right text-muted"><small>{{vin.value}} BTC</small></p>
@@ -38,8 +33,8 @@
             </a>
             <div class="col-md-8">
               <div class="ellipsis">
-                <span data-ng-show="vin.notAddr">{{vin.addr}}</span>  
-                <a data-ng-show="!vin.notAddr" href="/#!/address/{{vin.addr}}">{{vin.addr}}</a>  
+                <span data-ng-show="vin.notAddr">{{vin.addr}}</span>
+                <a data-ng-show="!vin.notAddr" href="/#!/address/{{vin.addr}}">{{vin.addr}}</a>
               </div>
               <div style="word-wrap:break-word">
                 <small><strong>scriptSig</strong> {{vin.scriptSig.asm}}</small>
@@ -59,7 +54,7 @@
         <div data-ng-repeat="vout in tx.voutSimple" data-ng-show="!itemsExpanded">
           <div class="col-md-9">
             <div class="ellipsis">
-              <span data-ng-show="vout.hideLink">{{vout.addr}}</span>  
+              <span data-ng-show="vout.hideLink">{{vout.addr}}</span>
               <a href="/#!/address/{{address}}"  data-ng-show="!vout.hideLink" data-ng-repeat="address in vout.addr.split(',')">{{address}}</a>
             </div>
           </div>
@@ -72,7 +67,7 @@
             <div class="ellipsis">
               <a href="/#!/address/{{address}}" data-ng-repeat="address in vout.scriptPubKey.addresses">{{address}}</a>
             </div>
-            <small><strong>type</strong> {{vout.scriptPubKey.type}}</small> 
+            <small><strong>type</strong> {{vout.scriptPubKey.type}}</small>
             <div>
               <small><strong>scriptPubKey</strong> {{vout.scriptPubKey.asm}}</small>
             </div>
@@ -81,7 +76,7 @@
             <p class="text-right text-muted"> <small>{{vout.value}} BTC</small></p>
           </div>
         </div>
- 
+
       </div>
     </div>
   </div>
