@@ -368,4 +368,10 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   font-size: 80%;
 }
 
+.status .text-danger {
+  color: white;
+  background: red;
+  display: inline-block;
+  padding:0px 5px;
+}
 

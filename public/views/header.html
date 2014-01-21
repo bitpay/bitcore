@@ -25,6 +25,8 @@
       </div>
       <div class="status" data-ng-controller="StatusController">
         <span  data-ng-init="getSync()">
+          <div class="text-danger"  data-ng-show="syncError" tooltip="{{sync.error}}" tooltip-placement="bottom"> ERROR </div>
+
           <span class="small" tooltip="{{sync.tooltip}}" tooltip-placement="down">
             <i class="{{sync.style}}"><strong> {{sync.message}} </strong></i>
           </span>

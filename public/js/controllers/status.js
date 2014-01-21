@@ -25,31 +25,33 @@ function($scope, $routeParams, $location, $rootScope, Global, Status, Sync, get_
   var on_sync_update = function(sync) {
 
     if (sync.error) {
-      $rootScope.syncError = sync.error;
-      return;
+      $scope.syncError = sync.error;
     }
-
-    if (sync.blocksToSync > sync.syncedBlocks) {
-      var p = parseInt(100*(sync.syncedBlocks) / sync.blocksToSync);
-      var delta = sync.blocksToSync - sync.syncedBlocks;
-      sync.message = 'Sync ' + p + '% ['+delta+' blocks remaining]';
-      sync.style = 'warn';
-    } else {
-      sync.message = 'On sync';
-      sync.style = 'success';
+    else {
+      if (sync.blocksToSync > sync.syncedBlocks) {
+        var p = parseInt(100*(sync.syncedBlocks) / sync.blocksToSync);
+        var delta = sync.blocksToSync - sync.syncedBlocks;
+        sync.message = 'Sync ' + p + '% ['+delta+' blocks remaining]';
+        sync.style = 'warn';
+      } else {
+        sync.message = 'On sync';
+        sync.style = 'success';
+      }
+      sync.tooltip = 'Synced blocks: '+sync.syncedBlocks;
     }
-    sync.tooltip = 'Synced blocks: '+sync.syncedBlocks;
     $scope.sync = sync;
+    $scope.hola = 'hola';
+console.log('[status.js.43:hola:]'); //TODO
   };
 
   $scope.getSync = function() {
     Sync.get({},
     function(sync) {
-      $rootScope.syncError = null;
+      $scope.syncError = null;
       on_sync_update(sync);
     },
     function(e) {
-      $rootScope.syncError = 'Could not get sync information' + e;
+      $scope.syncError = 'Could not get sync information' + e;
     });
   };
 

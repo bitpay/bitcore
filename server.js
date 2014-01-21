@@ -55,8 +55,11 @@ walk(models_path);
 
 // historic_sync process
 var historicSync = {};
+
+
 if (!config.disableHistoricSync) {
   historicSync = new HistoricSync();
+
   historicSync.init({
     skipDbConnection: true,
     shouldBroadcast: true,
