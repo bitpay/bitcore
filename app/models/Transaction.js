@@ -322,7 +322,7 @@ TransactionSchema.statics.queryInfo = function(txid,  cb) {
 
       if ( !tx.isCoinBase() ) {
         info.valueIn  = valueIn / util.COIN;
-        info.feeds    = (valueIn - valueOut) / util.COIN;
+        info.fees    = (valueIn - valueOut) / util.COIN;
       }
       else  {
         var reward =  BitcoreBlock.getBlockValue(info.height) / util.COIN;
