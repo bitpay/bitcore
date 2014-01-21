@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('insight.search').controller('SearchController',
-  function ($scope, $routeParams, $location, Global, Block, Transaction, Address) {
+  function ($scope, $routeParams, $location, $timeout, Global, Block, Transaction, Address) {
   $scope.global = Global;
 
   $scope.search = function() {
@@ -26,6 +26,9 @@ angular.module('insight.search').controller('SearchController',
           $location.path('address/' + q);
         }, function () { //address not found, fail :(
           $scope.badQuery = true;
+          $timeout(function() {
+            $scope.badQuery = false;
+          }, 2000);
           $scope.q = q;
         });
       });
