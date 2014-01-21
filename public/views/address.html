@@ -36,7 +36,7 @@
 
     <div class="col-md-9">
       <div data-ng-controller="transactionsController" data-ng-init="load('address')">
-        <h2>Transactions <small>Transactions contained within this block</small></h2>
+        <h2>Transactions <small>Transactions for this address</small></h2>
         <div data-ng-include src="'/views/transaction/list.html'" when-scrolled="loadMore()"></div>
       </div>
     </div>
