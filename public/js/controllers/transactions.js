@@ -29,11 +29,13 @@ angular.module('insight.transactions').controller('transactionsController',
 
       // non standard output
       if (items[i].scriptPubKey && items[i].scriptPubKey.addresses.length > 1) {
+        item[i].addr = items[i].scriptPubKey.addresses.join(',');
         ret.push(items[i]);
         continue;
       }
 
-      var addr = items[i].addr || items[i].scriptPubKey.addresses[0];
+      var addr = items[i].addr || 
+        (items[i].scriptPubKey && items[i].scriptPubKey.addresses[0] );
       if (!tmp[addr]) {
         tmp[addr] = {};
         tmp[addr].valueSat = 0;
@@ -57,7 +59,6 @@ angular.module('insight.transactions').controller('transactionsController',
   $scope.processTX = function(tx) {
     tx.vinSimple = $scope.aggregateItems(tx.vin);
     tx.voutSimple = $scope.aggregateItems(tx.vout);
-console.log('[transactions.js.33:insSimple:]',tx); //TODO
   };
 
   $scope.findTx = function(txid) {
@@ -65,7 +66,7 @@ console.log('[transactions.js.33:insSimple:]',tx); //TODO
       txId: txid
     }, function(tx) {
       $scope.tx = tx;
-$scope.processTX(tx);
+      $scope.processTX(tx);
       $scope.txs.push(tx);
     }, function(e) {
       if (e.status === 400) {
@@ -85,6 +86,9 @@ $scope.processTX(tx);
     TransactionsByBlock.query({
      block: bId
     }, function(txs) {
+      angular.forEach(txs, function(tx) {
+        $scope.processTX(tx);
+      });
       $scope.txs = txs;
     });
   };
@@ -93,6 +97,9 @@ $scope.processTX(tx);
     TransactionsByAddress.query({
      address: aId
     }, function(txs) {
+      angular.forEach(txs, function(tx) {
+        $scope.processTX(tx);
+      });
       $scope.txs = txs;
     });
   };

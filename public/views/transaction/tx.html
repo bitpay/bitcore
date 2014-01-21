@@ -11,19 +11,45 @@
         </div>
         <p class="text-muted pull-right"> <small>{{vin.reward}} BTC</small></p>
       </div>
-      <ul class="list-unstyled" data-ng-repeat="vin in tx.vin" data-ng-show="!tx.isCoinBase">
-        <li class="row">
-          <a class="col-md-1 glyphicon glyphicon-circle-arrow-left" href="/#!/tx/{{vin.txid}}" alt="Outpoint: {{vin.txid}},{{vin.vout}}" tooltip="Outpoint: {{vin.txid}},{{vin.vout}}"  tooltip-placement="right" >
-          </a>
-          <div class="col-md-8">
-            <div class="ellipsis">
-              <span data-ng-show="!vin.addr">Address could not be parsed</span>
-              <a data-ng-show="vin.addr" href="/#!/address/{{vin.addr}}">{{vin.addr}}</a>  
+
+      <div data-ng-show="!tx.isCoinBase">
+        <ul class="list-unstyled" data-ng-repeat="vin in tx.vinSimple" data-ng-show="!inputsExpanded">
+          <li class="row">
+            <div class="col-md-8">
+              <div class="ellipsis">
+                <a data-ng-show="vin.addr" href="/#!/address/{{vin.addr}}">{{vin.addr}}</a>  
+              </div>
             </div>
-          </div>
-          <p class="text-right text-muted"><small>{{vin.value}} BTC</small></p>
-        </li>
-      </ul>
+            <p class="text-right text-muted"><small>{{vin.value}} BTC</small></p>
+        </ul>
+
+        <ul class="list-unstyled" data-ng-repeat="vin in tx.vin" data-ng-show="inputsExpanded">
+          <li class="row expanded-tx">
+            <a class="col-md-1 glyphicon glyphicon-arrow-right" href="/#!/tx/{{vin.txid}}" alt="Outpoint: {{vin.txid}},{{vin.vout}}" tooltip="Outpoint: {{vin.txid}},{{vin.vout}}"  tooltip-placement="right" >
+            </a>
+            <div class="col-md-8">
+              <div class="ellipsis">
+                <span data-ng-show="!vin.addr">Address could not be parsed</span>
+                <a data-ng-show="vin.addr" href="/#!/address/{{vin.addr}}">{{vin.addr}}</a>
+              </div>
+              <div style="word-wrap:break-word">
+                <small><strong>scriptSig</strong>{{vin.scriptSig.asm}}</small>
+              </div>
+            </div>
+            <p class="text-right text-muted"><small>{{vin.value}} BTC</small></p>
+        </ul>
+
+        <div class="text-center">
+          <a class="text-small" data-ng-click="inputsExpanded = !inputsExpanded">
+            <span data-ng-show="inputsExpanded">
+              <span class="glyphicon glyphicon-chevron-up"></span> Collapse Inputs
+            </span>
+            <span data-ng-show="!inputsExpanded">
+              <span class="glyphicon glyphicon-chevron-down"></span> Expand Inputs
+            </span>
+          </a>
+        </div>
+      </div>
     </div>
 
     <div class="col-md-1 text-center">
@@ -32,21 +58,41 @@
 
     <div class="col-md-6">
       <div class="row">
-        <div class="col-md-3">
-          <div data-ng-repeat="vout in tx.vout">
-            <small data-ng-repeat="address in vout.scriptPubKey.addresses">{{vout.scriptPubKey.type}}</small>
-          </div>
-        </div>
-        <div data-ng-repeat="vout in tx.vout">
-          <div class="col-md-6">
+        <div data-ng-repeat="vout in tx.voutSimple" data-ng-show="!outputsExpanded">
+          <div class="col-md-9">
             <div class="ellipsis">
-              <a href="/#!/address/{{address}}" data-ng-repeat="address in vout.scriptPubKey.addresses">{{address}}</a>
+              <a href="/#!/address/{{address}}" data-ng-repeat="address in vout.addr.split(',')">{{address}}</a>
             </div>
           </div>
           <div class="col-md-3">
             <p class="text-right text-muted"> <small>{{vout.value}} BTC</small></p>
           </div>
         </div>
+        <div data-ng-repeat="vout in tx.vout" data-ng-show="outputsExpanded">
+          <div class="col-md-9 expanded-tx">
+            <div class="ellipsis">
+              <a href="/#!/address/{{address}}" data-ng-repeat="address in vout.scriptPubKey.addresses">{{address}}</a>
+            </div>
+            <small><strong>type</strong> {{vout.scriptPubKey.type}}</small> 
+            <div>
+              <small><strong>scriptPubKey</strong> {{vout.scriptPubKey.asm}}</small>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <p class="text-right text-muted"> <small>{{vout.value}} BTC</small></p>
+          </div>
+        </div>
+ 
+      </div>
+      <div class="text-center">
+        <a class="text-small" data-ng-click="outputsExpanded = !outputsExpanded">
+          <span data-ng-show="outputsExpanded">
+            <span class="glyphicon glyphicon-chevron-up"></span> Collapse Outputs 
+          </span>
+          <span data-ng-show="!outputsExpanded">
+            <span class="glyphicon glyphicon-chevron-down"></span> Expand Outputs 
+          </span>
+        </a>
       </div>
     </div>
   </div>

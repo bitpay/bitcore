@@ -48,19 +48,6 @@
           </tbody>
         </table>
     </div>
-    <div class="col-md-12"  data-ng-show="!tx.isCoinBase">
-      <h3>ScriptSig</h3>
-      <ul class="list-group" data-ng-repeat="vin in tx.vin">
-        <li class="list-group-item" style="word-wrap:break-word">
-          {{vin.scriptSig.asm}}
-      </ul>
-    </div>
-    <div class="col-md-12"  data-ng-show="!tx.isCoinBase">
-      <h3>ScriptPubKey</h3>
-      <ul class="list-group" data-ng-repeat="vout in tx.vout"  style="word-wrap:break-word">
-        <li class="list-group-item"> {{vout.scriptPubKey.asm}}
-      </ul>
-    </div>
  
   </div>
 </section>

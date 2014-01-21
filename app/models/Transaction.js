@@ -279,7 +279,7 @@ TransactionSchema.statics.queryInfo = function(txid,  cb) {
       else {
         tx.ins.forEach(function(i) {
           if (i.value) {
-            info.vin[c].value = util.formatValue(i.value);
+            info.vin[c].value = parseFloat(util.formatValue(i.value));
             var n = util.valueToBigInt(i.value).toNumber();
             info.vin[c].valueSat = n;
             valueIn           = valueIn.add( n );
