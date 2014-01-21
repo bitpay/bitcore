@@ -29,7 +29,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   min-height: 100%;
   height: auto;
   /* Negative indent footer by its height */
-  margin: 0 auto -44px;
+  margin: 0 auto -51px;
   /* Pad bottom by footer height */
   padding: 0 0 60px;
 }
