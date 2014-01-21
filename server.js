@@ -62,13 +62,19 @@ if (!config.disableHistoricSync) {
     shouldBroadcast: true,
     progressStep: 2,
     networkName: config.network
-  }, function() {
-    historicSync.smart_import(function(err){
-      var txt= 'ended.';
-      if (err) txt = 'ABORTED with error: ' + err.message;
+  }, function(err) {
+    if (err) {
+      var txt = 'ABORTED with error: ' + err.message;
+      console.log('[historic_sync] ' + txt);
+    }
+    else {
+      historicSync.smart_import(function(err){
+        var txt= 'ended.';
+        if (err) txt = 'ABORTED with error: ' + err.message;
 
-      console.log('[historic_sync] ' + txt, historicSync.syncInfo);
-    });
+        console.log('[historic_sync] ' + txt, historicSync.syncInfo);
+      });
+    }
   });
 }
 
