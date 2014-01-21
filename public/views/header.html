@@ -26,12 +26,12 @@
       <div class="status" data-ng-controller="StatusController">
         <span  data-ng-init="getSync()">
           <span class="small" tooltip="{{sync.tooltip}}" tooltip-placement="down">
-            <i><strong> {{sync.message}} </strong></i>
+            <i class="{{sync.style}}"><strong> {{sync.message}} </strong></i>
           </span>
         </span>
         <span  data-ng-init="getStatus('Info')">
           <i class="small">
-            <strong> Connections: </strong> {{info.connections}} 
+            <strong> Conn: </strong> {{info.connections}} 
           </i>
           <i class="small">
             <strong>Height:</strong> {{info.blocks}}

@@ -60,6 +60,7 @@ if (!config.disableHistoricSync) {
   historicSync.init({
     skipDbConnection: true,
     shouldBroadcast: true,
+    progressStep: 2,
     networkName: config.network
   }, function() {
     historicSync.smart_import(function(err){
