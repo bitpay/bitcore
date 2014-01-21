@@ -1,5 +1,9 @@
-<div data-ng-show="!txs || txs.lenght">Loading...</div>
-<div class="alert alert-warning" data-ng-show="txs && !txs[0].txid">There are not transactions</div>
+<div class="panel panel-default" data-ng-show="!txs.length">
+  <div class="panel-body">
+    Loading...
+  </div>
+</div>
+<div class="alert alert-warning" data-ng-show="txs.length && !txs[0].txid">There are not transactions</div>
 <div class="block-tx fader" data-ng-show="txs && txs[0].txid" data-ng-repeat="tx in txs">
   <div data-ng-include src="'/views/transaction/tx.html'"></div>
 </div>

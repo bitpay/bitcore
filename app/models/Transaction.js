@@ -346,8 +346,13 @@ TransactionSchema.methods.fillInfo = function(next) {
     if (err) return next(err);
 
     that.info = info;
-    that.info.time = that.time;
-    return next();
+    if (! that.info) {
+      return next();
+    }
+    else {
+      that.info.time = that.time;
+      return next();
+    }
   });
 };
 
