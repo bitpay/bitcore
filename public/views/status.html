@@ -5,8 +5,8 @@
     </h1>
   </div>
   <div class="row">
-    <div class="col-lg-6">
-      <h3>getInfo</h3>
+    <div class="col-md-8 col-md-offset-2">
+      <h2>getInfo()</h2>
       <table class="table table-striped" data-ng-init="getStatus('Info')">
         <tbody>
         <tr data-ng-show="!info &amp;&amp; !infoError">
@@ -31,7 +31,7 @@
         </tr>
         <tr>
           <td>blocks</td>
-          <td>{{info.blocks}}</td>
+          <td><a href="/#!/block-index/{{info.blocks}}">{{info.blocks}}</a></td>
         </tr>
         <tr>
           <td>timeoffset</td>
@@ -71,9 +71,8 @@
         </tr>
         </tbody>
       </table>
-    </div>
-    <div class="col-lg-6">
-      <h3>sync status</h3>
+      
+      <h2>Sync Status</h2>
       <table class="table table-striped" data-ng-init="getSync()">
         <tbody>
         <tr data-ng-show="syncError">  
@@ -95,14 +94,16 @@
         </tr>
         <tr>
           <td>start</td>
-          <td>{{sync.start}}
-            <span data-ng-show="sync.isStartGenesis"> (genesisBlock) </span> 
+          <td>
+            <a href="/#!/block/{{sync.start}}">{{sync.start}}</a>
+            <span data-ng-show="sync.isStartGenesis"> (genesisBlock)</span>
           </td>
         </tr>
         <tr>
           <td>end</td>
-          <td>{{sync.end}}
-            <span data-ng-show="sync.isEndGenesis"> (genesisBlock) </span>
+          <td>
+            <a href="/#!/block/{{sync.end}}">{{sync.end}}</a>
+            <span data-ng-show="sync.isEndGenesis"> (genesisBlock)</span>
           </td>
         </tr>
         <tr>
@@ -116,14 +117,10 @@
             </ul>  
           </td>
         </tr>
-
-
-
-
         </tbody>
       </table>
     
-      <h3>getTxOutSetInfo</h3>
+      <h2>getTxOutSetInfo()</h2>
       <table class="table table-striped" data-ng-init="getStatus('TxOutSetInfo')">
         <tbody>
         <tr data-ng-show="!txoutsetinfo &amp;&amp; !infoError">
@@ -134,11 +131,11 @@
         </tr>
         <tr>
           <td>Height</td>
-          <td>{{txoutsetinfo.height}}</td>
+          <td><a href="/#!/block-index/{{txoutsetinfo.height}}">{{txoutsetinfo.height}}</a></td>
         </tr>
         <tr>
           <td>bestblock</td>
-          <td>{{txoutsetinfo.bestblock}}</td>
+          <td><a href="/#!/block/{{txoutsetinfo.bestblock}}">{{txoutsetinfo.bestblock}}</a></td>
         </tr>
         <tr>
           <td>transactions</td>
@@ -162,12 +159,8 @@
         </tr>
         </tbody>
       </table>
-    </div>
-  </div>
 
-  <div class="row">
-    <div class="col-lg-6">
-      <h3>getDifficulty</h3>
+      <h2>getDifficulty()</h2>
       <table class="table table-striped" data-ng-init="getStatus('Difficulty')">
         <tbody>
         <tr data-ng-show="!difficulty &amp;&amp; !infoError">
@@ -183,9 +176,8 @@
         </tr>
         </tbody>
       </table>
-    </div>
-    <div class="col-lg-6">
-      <h3>getLastBlockHash</h3>
+      
+      <h2>getLastBlockHash()</h2>
       <table class="table table-striped" data-ng-init="getStatus('LastBlockHash')">
         <tbody>
         <tr data-ng-show="!lastblockhash &amp;&amp; !infoError">

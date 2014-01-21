@@ -20,7 +20,7 @@
           <div class="form-group" ng-class="{'has-error': badQuery}">
             <input id="search" type="text" class="form-control" ng-model="q" placeholder="Search for block, transaction or address">
           </div>
-          <span class="text-danger" ng-show="badQuery">No matching records found!</span>
+          <div class="no_matching text-danger" ng-show="badQuery">No matching records found!</div>
         </form>
       <div class="status" data-ng-controller="FooterController" data-ng-init="getFooter()">
         <i class="small" data-ng-show="info.blocks">
