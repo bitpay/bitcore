@@ -1,8 +1,19 @@
 'use strict';
 
 angular.module('insight.blocks').controller('BlocksController',
-  function ($scope, $rootScope, $routeParams, $location, Global, Block, Blocks) {
+  function ($scope, $rootScope, $routeParams, $location, Global, Block, Blocks, BlockByHeight) {
   $scope.global = Global;
+
+  if ($routeParams.blockHeight) {
+    BlockByHeight.get({
+      blockHeight: $routeParams.blockHeight
+    }, function(hash) {
+      $location.path('/block/' + hash.blockHash);
+    }, function() {
+      $rootScope.flashMessage = 'Bad Request';
+      $location.path('/');
+    });
+  }
 
   $scope.list = function() {
     Blocks.get({
