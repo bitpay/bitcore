@@ -25,7 +25,7 @@ var config = require('./config/config');
 
 //Bootstrap db connection
 // If mongod is running
-mongoose.connection.on('open', function (ref) {
+mongoose.connection.on('open', function () {
   console.log('Connected to mongo server.');
 });
 // If mongod is not running
