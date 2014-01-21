@@ -1,18 +1,30 @@
 <section data-ng-controller="BlocksController" data-ng-init="list()">
-  <div class="page-header">
-    <h1>
-      Blocks
-      <small>by date</small>
-    </h1>
-  </div>
   <div class="row">
-    <div class="col-md-8 col-md-offset-2">
-      <ul class="pager">
-        <li class="previous"><a href="#!/blocks-date/{{pagination.prev}}">&larr; {{pagination.prev}}</a></li>
-        <li class="disabled"><a href="#">{{pagination.current}}</a></li>
-        <li class="next"><a href="#!/blocks-date/{{pagination.next}}">{{pagination.next}} &rarr;</a></li>
-      </ul>
-      <table class="table table-striped" data-ng-show="blocks || blocks.length">
+    <div class="col-md-3">
+      <div class="bs-sidebar affix col-gray">
+        <div class="block-id">
+          <div class="icon-block text-center">
+            <span class="glyphicon glyphicon-list"></span>
+            <h3>Blocks <br> mined on:</h3>
+          </div>
+        </div>
+        <p class="lead text-center m20v">{{pagination.current}}</p>
+
+        <div class="m50v">
+          <a class="btn btn-default" href="#!/blocks-date/{{pagination.prev}}"><small>&larr; {{pagination.prev}}</small></a>
+          <a class="btn btn-primary" href="#!/blocks-date/{{pagination.next}}"><small>{{pagination.next}} &rarr;</small></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-8">
+      <div class="page-header">
+        <h1>
+          Blocks
+          <small>by date</small>
+        </h1>
+      </div>
+      <table class="table" data-ng-show="blocks || blocks.length">
         <thead>
           <tr>
             <th>Hash</th>
