@@ -27,5 +27,5 @@ module.exports.broadcast_address_tx = function(address, tx) {
 };
 
 module.exports.broadcastSyncInfo = function(syncInfo) {
-  ios.sockets.emit('sync', syncInfo);
+  ios.sockets.in('sync').emit('status', syncInfo);
 };
