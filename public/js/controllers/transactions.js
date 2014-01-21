@@ -14,6 +14,8 @@ angular.module('insight.transactions').controller('transactionsController',
   };
 
   $scope.aggregateItems = function(items) {
+    if (!items) return [];
+
     var l = items.length;
 
     var ret = [];
@@ -33,6 +35,13 @@ angular.module('insight.transactions').controller('transactionsController',
       }
 
       // non standard output
+      if (items[i].scriptPubKey && !items[i].scriptPubKey.addresses) {
+        items[i].scriptPubKey.addresses = ['Unparsed address [' + u++  + ']'];
+        items[i].notAddr = true;
+        notAddr = true;
+      }
+
+      // multiple addr at output
       if (items[i].scriptPubKey && items[i].scriptPubKey.addresses.length > 1) {
         items[i].addr = items[i].scriptPubKey.addresses.join(',');
         ret.push(items[i]);
