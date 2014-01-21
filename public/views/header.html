@@ -23,16 +23,20 @@
           <div class="no_matching text-danger" data-ng-show="badQuery">No matching records found!</div>
         </form>
       </div>
-      <div class="status" data-ng-controller="FooterController" data-ng-init="getFooter()">
-        <i class="small" data-ng-show="info.blocks">
-          <strong>Status:</strong> On Sync  
-        </i>
-        <i class="small">
-          <strong> Connections: </strong> {{info.connections}} 
-        </i>
-        <i class="small">
-          <strong>Height:</strong> {{info.blocks}}
-        </i>
+      <div class="status" data-ng-controller="StatusController">
+        <span  data-ng-init="getSync()">
+          <span class="small" tooltip="{{sync.tooltip}}" tooltip-placement="down">
+            <i><strong> {{sync.message}} </strong></i>
+          </span>
+        </span>
+        <span  data-ng-init="getStatus('Info')">
+          <i class="small">
+            <strong> Connections: </strong> {{info.connections}} 
+          </i>
+          <i class="small">
+            <strong>Height:</strong> {{info.blocks}}
+          </i>
+        </span>
       </div>
     </div>
   </div>
