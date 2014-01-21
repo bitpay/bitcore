@@ -13,7 +13,7 @@ module.exports = {
     port: process.env.BITCOIND_PORT  || '18332',
     disableAgent: true,
   },
-  network: 'testnet',
+  network: process.env.INSIGHT_NETWORK || 'testnet',
   disableP2pSync: false,
   disableHistoricSync: false,
 };
