@@ -22,7 +22,7 @@ module.exports = function(grunt) {
         },
       },
       js: {
-        files: ['Gruntfile.js', 'server.js', 'app/**/*.js', 'public/js/**'],
+        files: ['Gruntfile.js', 'insight.js', 'app/**/*.js', 'public/js/**'],
         tasks: ['jshint'],
         options: {
           livereload: true,
@@ -48,7 +48,7 @@ module.exports = function(grunt) {
     },
     jshint: {
       all: {
-        src: ['Gruntfile.js', 'server.js', 'app/**/*.js', 'public/js/**','lib/*.js'],
+        src: ['Gruntfile.js', 'insight.js', 'app/**/*.js', 'public/js/**','lib/*.js'],
         options: {
           jshintrc: true
         }
@@ -63,7 +63,7 @@ module.exports = function(grunt) {
 
     nodemon: {
       dev: {
-        script: 'server.js',
+        script: 'insight.js',
         options: {
           args: [],
           ignore: ['public/**', 'test/**','util/**'],
