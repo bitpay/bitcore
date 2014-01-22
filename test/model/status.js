@@ -50,16 +50,6 @@ describe('Status', function(){
     });
   });
 
-  it('getBestBlockHash', function(done) {
-    var d = new Status();
-
-    d.getBestBlockHash(function(err) {
-      if (err) done(err);
-      assert.equal('string', typeof d.bestblockhash);
-      done();
-    });
-  });
-
   it('getLastBlockHash', function(done) {
     var d = new Status();
 
