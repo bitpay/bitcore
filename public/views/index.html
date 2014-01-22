@@ -3,10 +3,10 @@
 </div>
 <section data-ng-controller="IndexController" data-ng-init="index()">
   <div class="container">
-    <div class="row">
-      <div class="col-md-7">
+    <div id="home" class="row">
+      <div class="col-md-8 m20v">
         <h2>Blocks</h2>
-        <table class="table table-hover">
+        <table class="table table-hover" >
           <thead>
             <tr>
               <th>Height</th>
@@ -29,33 +29,65 @@
           </tr>
           </tbody>
         </table>
+        <h3 style="margin-top: 50px;"> About </h3>
+        <p class="text-muted">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quas, sint, neque harum libero eos maiores rerum rem fuga quae architecto ea incidunt dolore optio ullam sit placeat vero perferendis beatae?</p>
+        <p class="text-muted">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Blanditiis, unde quidem commodi dolor asperiores ullam molestias sit a sapiente ipsa!</p>
+        <p class="text-muted">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Deserunt tempora fugiat dolorem cupiditate perspiciatis praesentium.</p>
       </div>
 
-      <div class="col-md-5">
-        <h2>Transactions</h2>
+      <div class="col-md-4">
+        <div class="col-gray">
+          <h4>Transactions</h4>
 
-        <table class="table table-hover" style="table-layout: fixed">
-          <thead>
-            <tr>
-              <th>Hash</th>
-              <th>Age</th>
-              <th>Value Out</th>
-              <th>Size</th>
+          <table class="table table-hover" style="table-layout: fixed">
+            <thead>
+              <tr>
+                <th>Hash</th>
+                <th>Age</th>
+                <th>Value Out</th>
+              </tr>
+            </thead>
+            <tbody>
+            <tr data-ng-show="!txs.length"><td colspan="5">Waiting for transactions...</td></tr>
+            <tr class="fader" data-ng-repeat='tx in txs'>
+              <td>
+                <a class="ellipsis" href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a>
+              </td>
+              <td><span class="ellipsis">{{human_since(tx.time)}}</span></td>
+              <td>{{tx.valueOut}}</td>
             </tr>
-          </thead>
-          <tbody>
-          <tr data-ng-show="!txs.length"><td colspan="5">Waiting for transactions...</td></tr>
-          <tr class="fader" data-ng-repeat='tx in txs'>
-            <td>
-              <a class="ellipsis" href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a>
-            </td>
-            <td><span class="ellipsis">{{human_since(tx.time)}}</span></td>
-            <td>{{tx.valueOut}}</td>
-            <td>{{tx.size}}</td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
+            </tbody>
+          </table>
+          <div class="m50v"></div>
+          <h4> Other Bitcoin Links </h4>
+          <ul style="line-height: 22px;">
+            <li> 
+              <a href="">Most Popular Addresses</a> 
+              <small> - Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolores.</small>
+            </li>
+            <li> 
+              <a href="">Addresses</a> 
+              <small> - Addresses which have received the most payments</small>
+            </li>
+            <li> 
+              <a href="">Lorem ipsum dolor.</a> 
+              <small> - Lorem ipsum dolor sit amet.</small>
+            </li>
+            <li> 
+              <a href="">Most Popular Addresses</a> 
+              <small> - Addresses which have received the most payments</small>
+            </li>
+            <li> 
+              <a href="">Lorem ipsum dolor sit.</a> 
+              <small> - Lorem ipsum dolor sit amet, consectetur adipisicing.</small>
+            </li>
+            <li> 
+              <a href="">Addresses</a> 
+              <small> - Addresses which have received the most payments</small>
+            </li>
+          </ul>
+        </div>
+      </div> <!-- END OF COL-3 -->
     </div>
   </div>
 </section>
