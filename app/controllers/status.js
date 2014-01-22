@@ -10,7 +10,7 @@ var Status  = require('../models/Status'),
 /**
  *  Status
  */
-exports.show = function(req, res, next) {
+exports.show = function(req, res) {
   
   if (! req.query.q) {
     res.status(400).send('Bad Request');
@@ -50,6 +50,6 @@ exports.show = function(req, res, next) {
 };
 
 exports.sync = function(req, res) {
-  if (req.syncInfo)
-    res.jsonp(req.syncInfo);
+  if (req.historicSync)
+    res.jsonp(req.historicSync.info());
 };

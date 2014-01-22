@@ -72,6 +72,15 @@ BlockSchema.statics.load = function(id, cb) {
   }).exec(cb);
 };
 
+BlockSchema.statics.fromHeight = function(height, cb) {
+  var rpc  = new RpcClient(config.bitcoind);
+  var hash = {};
+  rpc.getBlockHash(height, function(err, bh){
+    if (err) return cb(err);
+    hash.blockHash = bh.result;
+    cb(null, hash);
+  });
+};
 
 BlockSchema.statics.fromHash = function(hash, cb) {
   this.findOne({

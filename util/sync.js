@@ -33,10 +33,10 @@ async.series([
   },
   function(cb) {
     if (program.smart) {
-      historicSync.smart_import(cb);
+      historicSync.smartImport(cb);
     }
     else {
-      historicSync.import_history({
+      historicSync.importHistory({
         destroy: program.destroy,
         reverse: program.reverse,
         upToExisting: program.uptoexisting,
@@ -50,7 +50,7 @@ async.series([
       console.log('CRITICAL ERROR: ', err);
     }
     else {
-      console.log('Finished.\n Status:\n', historicSync.syncInfo);
+      console.log('Finished.\n Status:\n', historicSync.info());
     }
 });
 

@@ -1,27 +1,44 @@
 <section data-ng-controller="BlocksController" data-ng-init="list()">
-  <div class="page-header">
-    <h1>
-      <span class="glyphicon glyphicon-calendar"></span>
-      Blocks
-      <small>by date</small>
-    </h1>
-    <ul class="pagination">
-      <li><a href="#!/blocks-date/{{pagination.prev}}">&laquo; {{pagination.prev}}</a></li>
-      <li class="disabled"><a href="#">{{pagination.current}}</a></li>
-      <li><a href="#!/blocks-date/{{pagination.next}}">{{pagination.next}} &raquo;</a></li>
-    </ul>
+  <div class="row">
+    <div class="col-md-3">
+      <div class="bs-sidebar affix col-gray">
+        <div class="block-id">
+          <div class="icon-block text-center">
+            <span class="glyphicon glyphicon-list"></span>
+            <h3>Blocks <br> mined on:</h3>
+          </div>
+        </div>
+        <p class="lead text-center m20v">{{pagination.current}}</p>
+
+        <div class="m50v">
+          <a class="btn btn-default" href="#!/blocks-date/{{pagination.prev}}"><small>&larr; {{pagination.prev}}</small></a>
+          <a class="btn btn-primary" href="#!/blocks-date/{{pagination.next}}"><small>{{pagination.next}} &rarr;</small></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-8">
+      <div class="page-header">
+        <h1>
+          Blocks
+          <small>by date</small>
+        </h1>
+      </div>
+      <table class="table" data-ng-show="blocks || blocks.length">
+        <thead>
+          <tr>
+            <th>Hash</th>
+            <th>Solved at</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr data-ng-repeat="block in blocks">
+          <td><a href="#!/block/{{block.hash}}">{{block.hash}}</a></td>
+          <td>{{block.time * 1000 | date:'medium'}}</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
-  <table class="table table-striped" ng-show="blocks || blocks.length">
-    <thead>
-      <th>Hash</th>
-      <th>Solved at</th>
-    </thead>
-    <tbody>
-      <tr data-ng-repeat="block in blocks">
-        <td><a href="#!/block/{{block.hash}}">{{block.hash}}</a></td>
-        <td>{{block.time * 1000 | date:'medium'}}</td>
-      </tr>
-    </tbody>
-  </table>
-  <h1 class="text-center text-muted" ng-hide="!blocks || blocks.length">No blocks yet.</h1>
+  <h2 class="text-center text-muted" data-ng-hide="!blocks || blocks.length">No blocks yet.</h2>
 </section>

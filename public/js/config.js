@@ -7,6 +7,10 @@ angular.module('insight').config(['$routeProvider',
     when('/block/:blockHash', {
       templateUrl: 'views/block.html'
     }).
+    when('/block-index/:blockHeight', {
+      controller: 'BlocksController',
+      template: 'Redirecting...'
+    }).
     when('/tx/:txId', {
       templateUrl: 'views/transaction.html'
     }).

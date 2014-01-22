@@ -29,7 +29,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   min-height: 100%;
   height: auto;
   /* Negative indent footer by its height */
-  margin: 0 auto -60px;
+  margin: 0 auto -51px;
   /* Pad bottom by footer height */
   padding: 0 0 60px;
 }
@@ -38,6 +38,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .m20h {margin: 0 20px;}
 .m5v {margin: 5px 0;}
 .m20v {margin: 20px 0;}
+.m10v {margin: 10px 0;}
 .m50v {margin: 50px 0;}
 .m10b {margin-bottom: 10px;}
 
@@ -87,22 +88,22 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   font-weight: 100;
 }
 
-#search::-webkit-input-placeholder { 
+#search::-webkit-input-placeholder {
   font-family: Ubuntu, sans-serif;
   font-weight: 100;
   font-style: italic;
-  font-size: 13px;
+  font-size: 15px;
   color: #BCDF7E;
-  line-height: 18px;
+  line-height: 20px;
 }
 
 
-#search::-moz-placeholder { 
+#search::-moz-placeholder {
   font-family: Ubuntu, sans-serif;
   font-weight: 100;
-  font-size: 13px;
+  font-size: 15px;
   color: #BCDF7E;
-  line-height: 18px;
+  line-height: 20px;
 }
 
 .status {
@@ -119,11 +120,10 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 }
 
 .col-gray {
+  width: 267px;
   background-color: #F4F4F4;
   padding: 15px;
   margin-top: 21px;
-  width: 265px;
-  height: 87%;
   border-radius: 5px;
 }
 
@@ -159,9 +159,8 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   border-radius: :;px;
 }
 
-.block-id h1 {
+.block-id h3 {
   font-weight: bold;
-  font-size: 24px;
   color: #FFFFFF;
   line-height: 30px;
   text-align: center;
@@ -221,10 +220,29 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   border: 2px solid #6C0000;
 }
 
+#status .table {
+  margin-bottom: 45px;
+}
+
+.progress-bar-info {
+  background-color: #8DC429;
+}
+
 /* Set the fixed height of the footer here */
 #footer {
-  height: 60px;
-  background-color: #f5f5f5;
+  height: 51px;
+  background-color: #373D42;
+  border-top: 4px solid #656E76;
+  color: #fff;
+}
+
+#footer .insight {
+  font-size: 20px;
+  text-decoration: none;
+}
+
+.line-footer {
+  border-top: 2px dashed #ccc;
 }
 
 .line-bot {
@@ -246,9 +264,14 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 #wrap > .container {
   padding: 60px 15px 0;
 }
-/*.container .text-muted {
-  margin: 20px 0;
-}*/
+
+.container .text-muted {
+  margin: 10px 0;
+}
+
+.container .text-muted a {
+  color: #eee;
+}
 
 #footer > .container {
   padding-left: 15px;
@@ -265,7 +288,13 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 #search { width: 400px; }
 
-
+.no_matching {
+  background-color: #FFFFFF;
+  border: 2px solid #64920F;
+  padding: 10px 20px;
+  position: absolute;
+  top: 46px;
+}
 
 /*Animations*/
 .fader.ng-enter {
@@ -334,4 +363,30 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   background-color: #1a1a1a;
 }
 
+.expanded-tx {
+  border-bottom: 1px dashed #444;
+}
+
+
+.expanded-tx small {
+  font-size: 80%;
+}
+
+.status .t {
+  color: white;
+  display: inline-block;
+  padding:0px 5px;
+}
+
+.status .text-danger {
+  background: red;
+}
+
+.status .text-warning {
+  background: yellow;
+  color: black;
+}
+
+.status .text-default {
+}
 

@@ -1,6 +1,7 @@
 'use strict';
 
-angular.module('insight.transactions').factory('Transaction', ['$resource', function($resource) {
+angular.module('insight.transactions').factory('Transaction',
+  function($resource) {
   return $resource('/api/tx/:txId', {
     txId: '@txId'
   }, {
@@ -18,20 +19,23 @@ angular.module('insight.transactions').factory('Transaction', ['$resource', func
       }
     }
   });
-}]);
+});
 
-angular.module('insight.transactions').factory('TransactionsByBlock', ['$resource', function($resource) {
+angular.module('insight.transactions').factory('TransactionsByBlock',
+  function($resource) {
   return $resource('/api/txs', {
     block: '@block'
   });
-}]);
+});
 
-angular.module('insight.transactions').factory('TransactionsByAddress', ['$resource', function($resource) {
+angular.module('insight.transactions').factory('TransactionsByAddress',
+  function($resource) {
   return $resource('/api/txs', {
     address: '@address'
   });
-}]);
+});
 
-angular.module('insight.transactions').factory('Transactions', ['$resource', function($resource) {
+angular.module('insight.transactions').factory('Transactions',
+  function($resource) {
   return $resource('/api/txs');
-}]);
+});

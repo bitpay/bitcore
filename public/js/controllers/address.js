@@ -1,13 +1,6 @@
 'use strict';
 
 angular.module('insight.address').controller('AddressController',
-    ['$scope',
-    '$rootScope',
-    '$routeParams',
-    '$location',
-    'Global',
-    'Address',
-    'get_socket',
     function ($scope, $rootScope, $routeParams, $location, Global, Address, get_socket) {
     $scope.global = Global;
 
@@ -33,4 +26,4 @@ angular.module('insight.address').controller('AddressController',
     socket.emit('subscribe', $routeParams.addrStr);
 
     $scope.params = $routeParams;
-}]);
+});

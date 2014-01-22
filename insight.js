@@ -24,6 +24,16 @@ var express = require('express'),
 var config = require('./config/config');
 
 //Bootstrap db connection
+// If mongod is running
+mongoose.connection.on('open', function () {
+  console.log('Connected to mongo server.');
+});
+// If mongod is not running
+mongoose.connection.on('error', function (err) {
+  console.log('Could not connect to mongo server!');
+  console.log(err);
+});
+
 mongoose.connect(config.db);
 
 //Bootstrap models
@@ -45,19 +55,29 @@ walk(models_path);
 
 // historic_sync process
 var historicSync = {};
+
+
 if (!config.disableHistoricSync) {
   historicSync = new HistoricSync();
+
   historicSync.init({
     skipDbConnection: true,
     shouldBroadcast: true,
+    progressStep: 2,
     networkName: config.network
-  }, function() {
-    historicSync.smart_import(function(err){
-      var txt= 'ended.';
-      if (err) txt = 'ABORTED with error: ' + err.message;
+  }, function(err) {
+    if (err) {
+      var txt = 'ABORTED with error: ' + err.message;
+      console.log('[historic_sync] ' + txt);
+    }
+    else {
+      historicSync.smartImport(function(err){
+        var txt= 'ended.';
+        if (err) txt = 'ABORTED with error: ' + err.message;
 
-      console.log('[historic_sync] ' + txt, historicSync.syncInfo);
-    });
+        console.log('[historic_sync] ' + txt, historicSync.info());
+      });
+    }
   });
 }
 

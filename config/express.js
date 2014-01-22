@@ -31,7 +31,7 @@ module.exports = function(app, historicSync) {
 
  //custom middleware
   function setHistoric(req, res, next) {
-    req.syncInfo = historicSync.syncInfo;
+    req.historicSync = historicSync;
     next();
   }
   app.use('/api/sync', setHistoric);

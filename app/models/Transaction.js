@@ -171,10 +171,13 @@ TransactionSchema.statics.explodeTransactionItems = function(txid, time,  cb) {
           TransactionItem.create({
               txid  : txid,
               value_sat : o.valueSat,
-              addr  : o.scriptPubKey.addresses[0],
+              addr  : o.scriptPubKey.addresses[0], // TODO: only address 0?
               index : o.n,
               ts : time,
           }, next_out);
+          if (addrs.indexOf(o.scriptPubKey.addresses[0]) === -1) {
+            addrs.push(o.scriptPubKey.addresses[0]);
+          }
         }
         else {
           console.log ('WARN in TX: %s could not parse OUTPUT %d', txid, o.n);
@@ -279,7 +282,7 @@ TransactionSchema.statics.queryInfo = function(txid,  cb) {
       else {
         tx.ins.forEach(function(i) {
           if (i.value) {
-            info.vin[c].value = util.formatValue(i.value);
+            info.vin[c].value = parseFloat(util.formatValue(i.value));
             var n = util.valueToBigInt(i.value).toNumber();
             info.vin[c].valueSat = n;
             valueIn           = valueIn.add( n );
@@ -319,7 +322,7 @@ TransactionSchema.statics.queryInfo = function(txid,  cb) {
 
       if ( !tx.isCoinBase() ) {
         info.valueIn  = valueIn / util.COIN;
-        info.feeds    = (valueIn - valueOut) / util.COIN;
+        info.fees    = (valueIn - valueOut) / util.COIN;
       }
       else  {
         var reward =  BitcoreBlock.getBlockValue(info.height) / util.COIN;
@@ -343,8 +346,13 @@ TransactionSchema.methods.fillInfo = function(next) {
     if (err) return next(err);
 
     that.info = info;
-    that.info.time = that.time;
-    return next();
+    if (! that.info) {
+      return next();
+    }
+    else {
+      that.info.time = that.time;
+      return next();
+    }
   });
 };
 
