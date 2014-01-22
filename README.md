@@ -185,10 +185,17 @@ If you are using node instead of grunt, it is very similar:
 	$ NODE_ENV=test node server
 
 
-### Development enviroment
+### Development environment
 To run insight locally for development:
 
   $ NODE_ENV=development grunt
+
+
+### Production
+You can use [pm2](https://github.com/Unitech/pm2) to manage NodeJS in production:
+
+  $ npm install pm2 -g
+  $ pm2 start insight.js
 
 
 ## Github
