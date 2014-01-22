@@ -1,4 +1,4 @@
-<div class="container" style="width:945px">
+<div class="container">
   <div data-ng-controller="HeaderController">
     <div class="navbar-header">
       <a class="insight navbar-brand" href="#!">Insight</a>
@@ -25,7 +25,7 @@
         </span>
         <span  data-ng-init="getStatus('Info')">
           <i class="small">
-            <strong> Conn: </strong> {{info.connections}} 
+            <strong> Conn: </strong> {{info.connections}}
           </i>
           <i class="small">
             <strong>Height:</strong> {{totalBlocks || info.blocks}}
