@@ -37,9 +37,6 @@ exports.show = function(req, res) {
       case 'getTxOutSetInfo':
         statusObject.getTxOutSetInfo(returnJsonp);
         break;
-      case 'getBestBlockHash':
-        statusObject.getBestBlockHash(returnJsonp);
-        break;
       case 'getLastBlockHash':
         statusObject.getLastBlockHash(returnJsonp);
         break;

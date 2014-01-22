@@ -60,7 +60,7 @@ describe('Transaction', function(){
       assert.equal(tx.info.txid, txid);
       assert.equal(tx.info.blockhash, '000000000185678d3d7ecc9962c96418174431f93fe20bf216d5565272423f74');
       assert.equal(tx.info.valueOut, 1.66174);
-      assert.equal(tx.info.feeds, 0.0005 );
+      assert.equal(tx.info.fees, 0.0005 );
       assert.equal(tx.info.size, 226 );
       assert(!tx.info.isCoinBase);
       done();
@@ -78,9 +78,9 @@ describe('Transaction', function(){
     });
   });
   var txid22 = '666';
-  it('test unexisting TX ' + txid22, function(done) {
+  it('test invalid TX ' + txid22, function(done) {
     Transaction.fromIdWithInfo(txid22, function(err, tx) {
-      if (err && err.toString().match(/TX.not.found/))  {
+      if (err && err.message.match(/must.be.hexadecimal/))  {
           return done();
       }
       else {
@@ -88,6 +88,18 @@ describe('Transaction', function(){
       }
     });
   });
+
+  var txid23 = '21798ddc9664ac0ef618f52b151dda82dafaf2e26d2bbef6cdaf55a6957ca227';
+  it('test unexisting TX ' + txid23, function(done) {
+
+    Transaction.fromIdWithInfo(txid23, function(err, tx) {
+      assert(!err);
+      assert(!tx);
+      return done();
+    });
+  });
+
+
 
   var txid2 = '64496d005faee77ac5a18866f50af6b8dd1f60107d6795df34c402747af98608';
   it('create TX on the fly ' + txid2, function(done) {

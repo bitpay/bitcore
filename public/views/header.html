@@ -1,15 +1,8 @@
-<div class="container">
+<div class="container" style="width:945px">
   <div data-ng-controller="HeaderController">
     <div class="navbar-header">
-      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-        <span class="sr-only">Toggle navigation</span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
       <a class="insight navbar-brand" href="#!">Insight</a>
     </div>
-    <div class="collapse navbar-collapse">
       <ul class="nav navbar-nav">
         <li data-ng-repeat="item in menu" ui-route="/{{item.link}}" data-ng-class="{active: $uiRoute}">
           <a href="#!/{{item.link}}">{{item.title}}</a>
@@ -39,6 +32,5 @@
           </i>
         </span>
       </div>
-    </div>
   </div>
 </div>
