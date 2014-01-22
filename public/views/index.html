@@ -4,21 +4,57 @@
 <section data-ng-controller="IndexController" data-ng-init="index()">
   <div class="container">
     <div class="row">
-      <div class="col-md-6">
-        <h3> New transactions </h3>
-        <div class="panel fader" ng-repeat='tx in txs'>
-          <a class="abreviate" href="#!/tx/{{tx.txid}}">{{tx.txid}}
-            <span class="badge badge-success">{{human_since(tx.time)}}</span>
-          </a>
-        </div>
+      <div class="col-md-7">
+        <h2>Blocks</h2>
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Height</th>
+              <th>Age</th>
+              <th>Transactions</th>
+              <th>Size</th>
+              <th>Confirmations</th>
+            </tr>
+          </thead>
+          <tbody>
+          <tr data-ng-show="!blocks.length"><td colspan="5">Waiting for blocks...</td></tr>
+          <tr class="fader" data-ng-repeat='b in blocks'>
+            <td>
+              <a href="/#!/block/{{b.hash}}">{{b.height}}</a>
+            </td>
+            <td>{{human_since(b.time)}}</td>
+            <td>{{b.tx.length}}</td>
+            <td>{{b.size}}</td>
+            <td>{{b.confirmations}}</td>
+          </tr>
+          </tbody>
+        </table>
       </div>
-      <div class="col-md-6">
-        <h3> New blocks </h3>
-        <div class="panel fader" ng-repeat='b in blocks'>
-          <a href="#!/block/{{b.hash}}">{{b.hash}}
-            <span class="badge badge-success">{{human_since(b.time)}}</span>
-          </a>
-        </div>
+
+      <div class="col-md-5">
+        <h2>Transactions</h2>
+
+        <table class="table table-hover" style="table-layout: fixed">
+          <thead>
+            <tr>
+              <th>Hash</th>
+              <th>Age</th>
+              <th>Value Out</th>
+              <th>Size</th>
+            </tr>
+          </thead>
+          <tbody>
+          <tr data-ng-show="!txs.length"><td colspan="5">Waiting for transactions...</td></tr>
+          <tr class="fader" data-ng-repeat='tx in txs'>
+            <td>
+              <a class="ellipsis" href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a>
+            </td>
+            <td><span class="ellipsis">{{human_since(tx.time)}}</span></td>
+            <td>{{tx.valueOut}}</td>
+            <td>{{tx.size}}</td>
+          </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>

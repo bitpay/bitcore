@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('insight.system').controller('HeaderController',
-  function ($scope, Global) {
+  function ($scope, get_socket, Global, Block) {
   $scope.global = Global;
 
   $scope.menu = [
@@ -14,6 +14,24 @@ angular.module('insight.system').controller('HeaderController',
       'link': 'status'
     }
   ];
+
+  var socket = get_socket($scope);
+  socket.emit('subscribe', 'inv');
+
+  var getBlock = function(hash) {
+    Block.get({
+      blockHash: hash
+    }, function(res) {
+      $scope.totalBlocks = res.height;
+    });
+  };
+
+  socket.on('block', function(block) {
+    var blockHash = block.hash.toString();
+    console.log('Update Height');
+    getBlock(blockHash);
+  });
+
 
   $scope.isCollapsed = false;
 });
