@@ -229,7 +229,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 }
 
 #home .col-gray {
-  width: 390px;
+  width: 100%;
 }
 
 /* Set the fixed height of the footer here */
