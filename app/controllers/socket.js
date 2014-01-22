@@ -23,7 +23,7 @@ module.exports.broadcast_block = function(block) {
 };
 
 module.exports.broadcast_address_tx = function(address, tx) {
-  ios.sockets.in(address).emit('atx', tx);
+  ios.sockets.in(address).emit(address, tx);
 };
 
 module.exports.broadcastSyncInfo = function(historicSync) {

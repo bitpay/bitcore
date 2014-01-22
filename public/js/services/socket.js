@@ -47,11 +47,13 @@ ScopedSocket.prototype.emit = function(event, data, callback) {
 };
 
 angular.module('insight.socket').factory('get_socket',
-  function($rootScope) {
+function($rootScope) {
 	var socket = io.connect();
 	return function(scope) {
 		var scopedSocket = new ScopedSocket(socket, $rootScope);
-		scope.$on('$destroy', function() {
+    scope.$on('$routeChangeStart', function() {
+    });
+    scope.$on('$destroy', function() {
 			scopedSocket.removeAllListeners();
 		});
 		return scopedSocket;

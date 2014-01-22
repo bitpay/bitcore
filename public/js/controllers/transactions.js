@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('insight.transactions').controller('transactionsController',
-  function ($scope, $rootScope, $routeParams, $location, Global, Transaction, TransactionsByBlock, TransactionsByAddress, get_socket) {
+function ($scope, $rootScope, $routeParams, $location, Global, Transaction, TransactionsByBlock, TransactionsByAddress) {
   $scope.global = Global;
   $scope.loading = false;
   $scope.loadedBy = null;
@@ -144,14 +144,10 @@ angular.module('insight.transactions').controller('transactionsController',
     }
   };
 
-  var socket = get_socket($scope);
-  socket.on('atx', function(tx) {
-    console.log('atx '+tx.txid);
-    var beep = new Audio('/sound/transaction.mp3');
-    beep.play();
-    $scope.findTx(tx.txid);
-  });
-
   $scope.txs = [];
+
+  $scope.$on('tx', function(event, txid) {
+    $scope.findTx(txid);
+  });
 
 });
