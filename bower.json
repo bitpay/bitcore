@@ -1,0 +1,23 @@
+{
+  "name": "bitcore.io",
+  "version": "0.1.0",
+  "homepage": "http://bitcore.io",
+  "description": "The bitcore.io project website.",
+  "main": "index.html",
+  "keywords": [
+    "bitcoin",
+    "bitpay",
+    "nodejs",
+    "javascript",
+    "crypto"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
