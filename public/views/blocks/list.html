@@ -11,33 +11,47 @@
         <p class="lead text-center m20v">{{pagination.current}}</p>
 
         <div class="m50v">
-          <a class="btn btn-default" href="#!/blocks-date/{{pagination.prev}}"><small>&larr; {{pagination.prev}}</small></a>
+          <a class="btn btn-primary" href="#!/blocks-date/{{pagination.prev}}"><small>&larr; {{pagination.prev}}</small></a>
           <a class="btn btn-primary" href="#!/blocks-date/{{pagination.next}}"><small>{{pagination.next}} &rarr;</small></a>
         </div>
       </div>
     </div>
 
-    <div class="col-md-8">
+    <div class="col-md-9">
       <div class="page-header">
         <h1>
           Blocks
           <small>by date</small>
         </h1>
       </div>
-      <table class="table" data-ng-show="blocks || blocks.length">
+      <table class="table table-hover">
         <thead>
           <tr>
-            <th>Hash</th>
-            <th>Solved at</th>
+            <th>Height</th>
+            <th>Timestamp</th>
+            <th>Transactions</th>
+            <th>Size</th>
+            <th>Confirmations</th>
           </tr>
         </thead>
         <tbody>
-        <tr data-ng-repeat="block in blocks">
-          <td><a href="#!/block/{{block.hash}}">{{block.hash}}</a></td>
-          <td>{{block.time * 1000 | date:'medium'}}</td>
+        <tr data-ng-show="!blocks.length"><td colspan="5">Waiting for blocks...</td></tr>
+        <tr class="fader" data-ng-repeat='b in blocks'>
+          <td>
+            <a href="/#!/block/{{b.hash}}">{{b.height}}</a>
+          </td>
+          <td>{{b.time * 1000 | date:'medium'}}</td>
+          <td>{{b.tx.length}}</td>
+          <td>{{b.size}}</td>
+          <td>{{b.confirmations}}</td>
         </tr>
         </tbody>
       </table>
+      <ul class="pager" data-ng-show="blocks.length">
+        <li class="previous"><a href="#!/blocks-date/{{pagination.prev}}">&larr; {{pagination.prev}}</a></li>
+        <li class="disabled"><a href="#">{{pagination.current}}</a></li>
+        <li class="next"><a href="#!/blocks-date/{{pagination.next}}">{{pagination.next}} &rarr;</a></li>
+      </ul>
     </div>
   </div>
   <h2 class="text-center text-muted" data-ng-hide="!blocks || blocks.length">No blocks yet.</h2>
