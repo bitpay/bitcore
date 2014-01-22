@@ -10,53 +10,28 @@
       <h4>Sync Status</h4>
       <table class="table" data-ng-init="getSync()">
         <tbody>
-        <tr data-ng-show="syncError">  
-          <td colspan="2"> <span class="text-danger"> {{ syncError }} </span>
         <tr data-ng-show="sync.error">  
-          <td colspan="2"> <span class="text-danger"> {{ sync.err }} </span>
+          <td colspan="2"> <span class="text-danger"> {{sync.error}} </span>
         </tr>
         <tr>
           <td>Sync Progress</td>
           <td> 
           <div class="progress">
-            <div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: {{(100 * sync.syncedBlocks/sync.blocksToSync)| number:2}}%">
-                <span>{{(100 * sync.syncedBlocks/sync.blocksToSync)| number:2}}% Complete</span>
+            <div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: {{ sync.syncPercentage}}%">
+                <span>{{sync.syncPercentage}}% Complete</span>
               </div>
           </div>
         </tr>
         <tr>
-          <td>Blocks to Sync</td>
-          <td class="text-right">{{sync.blocksToSync}}</td>
+          <td>Initial Block Chain Height</td>
+          <td class="text-right">{{sync.blockChainHeight}}</td>
         </tr>
         <tr>
           <td>Synced Blocks</td>
           <td class="text-right">{{sync.syncedBlocks}}</td>
-        </tr>
         <tr>
-          <td>Start</td>
-          <td class="text-right">
-            <a href="/#!/block/{{sync.start}}">{{sync.start}}</a>
-            <span data-ng-show="sync.isStartGenesis"> (genesisBlock)</span>
-          </td>
-        </tr>
-        <tr>
-          <td>End</td>
-          <td class="text-right">
-            <a href="/#!/block/{{sync.end}}">{{sync.end}}</a>
-            <span data-ng-show="sync.isEndGenesis"> (genesisBlock)</span>
-          </td>
-        </tr>
-        <tr>
-          <td>Sync properties</td>
-          <td class="text-right">
-            <ul>  
-              <li  data-ng-show="sync.upToExisting"> <span> Stops at existing block </span>
-              <li>
-                <span data-ng-show="sync.scanningBackward"> Backward Scan</span>
-                <span data-ng-hide="sync.scanningBackward"> Forward Scan</span>
-            </ul>  
-          </td>
-        </tr>
+          <td>Skipped Blocks (previously synced)</td>
+          <td class="text-right">{{sync.skippedBlocks}}</td>
         </tbody>
       </table>
     
