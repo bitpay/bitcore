@@ -28,7 +28,7 @@ angular.module('insight.system').controller('HeaderController',
 
   socket.on('block', function(block) {
     var blockHash = block.hash.toString();
-    console.log('Update Height');
+    console.log('Updated Blocks Height!');
     getBlock(blockHash);
   });
 

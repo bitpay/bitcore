@@ -5,6 +5,7 @@ module.exports = function(app, historicSync) {
   //Home route
   var index = require('../app/controllers/index');
   app.get('/', index.render);
+  app.get('/api/version', index.version);
 
   //Block routes
   var blocks = require('../app/controllers/blocks');
