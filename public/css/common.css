@@ -391,4 +391,13 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   color: black;
 }
 
-
+.btn-copy {
+  -moz-border-radius: 2px;
+  -webkit-border-radius: 2px;
+  background: #FFFFFF;
+  border-radius: 2px;
+  border: 2px solid #E4E4E4;
+  color: #9b9b9b;
+  margin-left: 5px;
+  padding: 2px 6px;
+}

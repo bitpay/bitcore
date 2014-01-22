@@ -1,7 +1,7 @@
   <div class="line-bot">
-    <a href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a>
+    <a href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a> <a href="#" class="btn-copy" clip-copy="tx.txid"><span class="glyphicon glyphicon-paperclip"></span></a>
     <a class="pull-right" style="margin-left:10px" data-ng-click="itemsExpanded = !itemsExpanded">
-      <span class="glyphicon" data-ng-class="{'glyphicon-minus-sign': itemsExpanded, 'glyphicon-plus-sign': !itemsExpanded}" tooltip="Show/Hide items details" tooltip-placement="down"></span>
+      <span class="glyphicon" data-ng-class="{'glyphicon-minus-sign': itemsExpanded, 'glyphicon-plus-sign': !itemsExpanded}" tooltip="Show/Hide items details" tooltip-placement="left"></span>
     </a>
     <span class="pull-right">{{tx.time * 1000 | date:'medium'}}</span>
   </div>
