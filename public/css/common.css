@@ -343,6 +343,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   color: #9b9b9b;
   display: inline-block;
   height: 25px;
+  outline: none;
   text-align: center;
   width: 30px;
 }

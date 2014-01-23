@@ -1,8 +1,8 @@
   <div class="line-bot">
     <time class="pull-right">{{tx.time * 1000 | date:'medium'}}</time>
-    <a href="#" class="btn-expand" data-ng-click="itemsExpanded = !itemsExpanded"><span class="glyphicon glyphicon-plus" data-ng-class="{'glyphicon-minus': itemsExpanded}" tooltip="Show/Hide items details" tooltip-placement="right"></span></a>
+    <button class="btn-expand" data-ng-click="itemsExpanded = !itemsExpanded"><span class="glyphicon glyphicon-plus" data-ng-class="{'glyphicon-minus': itemsExpanded}" tooltip="Show/Hide items details" tooltip-placement="right"></span></button>
     <a href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a>
-    <a href="#" class="btn-copy" clip-copy="tx.txid"><span class="glyphicon glyphicon-paperclip"></span></a>
+    <button class="btn-copy" clip-copy="tx.txid"><span class="glyphicon glyphicon-paperclip"></span></button>
   </div>
   <div class="row line-mid">
     <div class="col-md-5">
