@@ -4,7 +4,7 @@ var TRANSACTION_DISPLAYED = 5;
 var BLOCKS_DISPLAYED = 5;
 
 angular.module('insight.system').controller('IndexController',
-  function($scope, $rootScope, Global, get_socket, Blocks, Block, Transactions, Transaction) {
+  function($scope, $rootScope, Global, getSocket, Blocks, Block, Transactions, Transaction) {
   $scope.global = Global;
 
   var _getTransaction = function(txid) {
@@ -23,7 +23,7 @@ angular.module('insight.system').controller('IndexController',
     });
   };
 
-  var socket = get_socket($scope);
+  var socket = getSocket($scope);
   socket.emit('subscribe', 'inv');
 
   //show errors

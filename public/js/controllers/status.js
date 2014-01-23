@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('insight.status').controller('StatusController',
-function($scope, $routeParams, $location, $rootScope, Global, Status, Sync, get_socket) {
+function($scope, $routeParams, $location, $rootScope, Global, Status, Sync, getSocket) {
   $scope.global = Global;
 
   $scope.getStatus = function(q) {
@@ -36,7 +36,7 @@ function($scope, $routeParams, $location, $rootScope, Global, Status, Sync, get_
     });
   };
 
-  var socket = get_socket($scope);
+  var socket = getSocket($scope);
   socket.emit('subscribe', 'sync');
   socket.on('status', function(sync) {
     console.log('[status.js.55::] sync status update received!');

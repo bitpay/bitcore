@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('insight.system').controller('HeaderController',
-  function($scope, get_socket, Global, Block) {
+  function($scope, getSocket, Global, Block) {
   $scope.global = Global;
 
   $scope.menu = [
@@ -15,7 +15,7 @@ angular.module('insight.system').controller('HeaderController',
     }
   ];
 
-  var socket = get_socket($scope);
+  var socket = getSocket($scope);
   socket.emit('subscribe', 'inv');
 
   var _getBlock = function(hash) {
