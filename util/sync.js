@@ -18,9 +18,7 @@ program
   .option('-U --uptoexisting', 'Sync only until an existing block is found', 0)
   .parse(process.argv);
 
-var historicSync = new HistoricSync({
-  networkName: program.network
-});
+var historicSync = new HistoricSync();
 
 /*  TODO: Sure?
 if (program.remove) {
@@ -32,6 +30,7 @@ async.series([
     historicSync.init(program, cb);
   },
   function(cb) {
+
     if (program.smart) {
       historicSync.smartImport(cb);
     }
@@ -47,7 +46,7 @@ async.series([
   function(err) {
     historicSync.close();
     if (err) {
-      console.log('CRITICAL ERROR: ', err);
+      console.log('CRITICAL ERROR: ', historicSync.info());
     }
     else {
       console.log('Finished.\n Status:\n', historicSync.info());
