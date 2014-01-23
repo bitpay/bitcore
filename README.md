@@ -17,7 +17,9 @@ Bitcore runs on [node](http://nodejs.org/), and can be installed via [npm](https
 npm install bitcore
 ```
 
-Let's try validating a Bitcoin address:
+#Examples
+
+Validating a Bitcoin address:
 ```
 var Address = require('bitcore/Address.js').class();
 
