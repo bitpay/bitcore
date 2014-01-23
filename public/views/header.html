@@ -1,11 +1,11 @@
 <div class="container">
   <div data-ng-controller="HeaderController">
     <div class="navbar-header">
-      <a class="insight navbar-brand" href="#!">Insight</a>
+      <a class="insight navbar-brand" href="/">Insight</a>
     </div>
       <ul class="nav navbar-nav">
         <li data-ng-repeat="item in menu" ui-route="/{{item.link}}" data-ng-class="{active: $uiRoute}">
-          <a href="#!/{{item.link}}">{{item.title}}</a>
+          <a href="/{{item.link}}">{{item.title}}</a>
         </li>
       </ul>
       <div data-ng-controller="SearchController">
