@@ -43,7 +43,13 @@ var getTransaction = function(txid, cb) {
       return cb(err);
     }
 
-    if (!tx) return cb(new Error('Transaction not found'));
+    if (!tx) {
+console.log('[transactions.js.48]:: TXid %d not found in RPC. CHECK THIS.', txid); //TODO
+      // not check this. no
+      tx.info = {
+        txid: txid,
+      };
+    }
 
     return cb(null, tx.info);
   });
