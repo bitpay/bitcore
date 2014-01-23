@@ -59,4 +59,3 @@ function($rootScope) {
 		return scopedSocket;
 	};
 });
-
