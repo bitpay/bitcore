@@ -33,7 +33,7 @@ angular.module('insight.system').controller('IndexController',
     var txStr = tx.txid.toString();
     console.log('Transaction received! ' + JSON.stringify(tx));
     if (parseInt($scope.txs.length, 10) > parseInt(TRANSACTION_DISPLAYED, 10) - 1) {
-      $scope.txs.pop();
+      $scope.txs.slice(Math.max($scope.txs.length - TRANSACTION_DISPLAYED, 1));
     }
 
     _getTransaction(txStr);
