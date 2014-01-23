@@ -33,11 +33,11 @@
           </tr>
         </thead>
         <tbody>
-        <tr data-ng-show="!blocks.length"><td colspan="5">Waiting for blocks...</td></tr>
+        <tr data-ng-show="loading">
+          <td colspan="5">Waiting for blocks...</td>
+        </tr>
         <tr class="fader" data-ng-repeat='b in blocks'>
-          <td>
-            <a href="/#!/block/{{b.hash}}">{{b.height}}</a>
-          </td>
+          <td><a href="/#!/block/{{b.hash}}">{{b.height}}</a></td>
           <td>{{b.time * 1000 | date:'medium'}}</td>
           <td>{{b.tx.length}}</td>
           <td>{{b.size}}</td>
@@ -47,5 +47,5 @@
       </table>
     </div>
   </div>
-  <h2 class="text-center text-muted" data-ng-hide="!blocks || blocks.length">No blocks yet.</h2>
+  <h2 class="text-center text-muted" data-ng-show="!blocks.length">No blocks yet.</h2>
 </section>

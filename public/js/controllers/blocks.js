@@ -3,6 +3,7 @@
 angular.module('insight.blocks').controller('BlocksController',
   function($scope, $rootScope, $routeParams, $location, Global, Block, Blocks, BlockByHeight) {
   $scope.global = Global;
+  $scope.loading = false;
 
   if ($routeParams.blockHeight) {
     BlockByHeight.get({
@@ -16,18 +17,24 @@ angular.module('insight.blocks').controller('BlocksController',
   }
 
   $scope.list = function() {
+    $scope.loading = true;
+
     Blocks.get({
       blockDate: $routeParams.blockDate
     }, function(res) {
+      $scope.loading = false;
       $scope.blocks = res.blocks;
       $scope.pagination = res.pagination;
     });
   };
 
   $scope.findOne = function() {
+    $scope.loading = true;
+
     Block.get({
       blockHash: $routeParams.blockHash
     }, function(block) {
+      $scope.loading = false;
       $scope.block = block;
     }, function(e) {
       if (e.status === 400) {
