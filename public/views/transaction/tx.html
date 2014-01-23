@@ -6,8 +6,8 @@
   </div>
   <div class="row line-mid">
     <div class="col-md-5">
-      <div data-ng-show="tx.isCoinBase" data-ng-repeat="vin in tx.vin">
-        <div class="col-md-12 transaction-vin-vout">
+      <div class="row" data-ng-show="tx.isCoinBase">
+        <div class="col-md-12 transaction-vin-vout" data-ng-repeat="vin in tx.vin">
           <div class="text-muted pull-right btc-value"><small>{{vin.reward}} BTC</small></div>
           <div class="ellipsis">
             <span>No Inputs (Newly Generated Coins)</span>
