@@ -1,7 +1,7 @@
   <div class="line-bot">
     <time class="pull-right">{{tx.time * 1000 | date:'medium'}}</time>
     <button class="btn-expand" data-ng-click="itemsExpanded = !itemsExpanded"><span class="glyphicon glyphicon-plus" data-ng-class="{'glyphicon-minus': itemsExpanded}" tooltip="Show/Hide items details" tooltip-placement="right"></span></button>
-    <a href="/#!/tx/{{tx.txid}}">{{tx.txid}}</a>
+    <a href="/tx/{{tx.txid}}">{{tx.txid}}</a>
     <button class="btn-copy" clip-copy="tx.txid"><span class="glyphicon glyphicon-paperclip"></span></button>
   </div>
   <div class="row line-mid">
@@ -20,7 +20,7 @@
             <div class="text-muted pull-right btc-value"><small>{{vin.value}} BTC</small></div>
             <div class="ellipsis">
               <span data-ng-show="vin.notAddr">{{vin.addr}}</span>
-              <a href="/#!/address/{{vin.addr}}" data-ng-show="!vin.notAddr">{{vin.addr}}</a>
+              <a href="/address/{{vin.addr}}" data-ng-show="!vin.notAddr">{{vin.addr}}</a>
             </div>
           </div>
         </div>
@@ -30,7 +30,7 @@
             <div class="ellipsis">
               <a class="glyphicon glyphicon-chevron-right" href="/#!/tx/{{vin.txid}}" title="Outpoint: {{vin.txid}},{{vin.vout}}"></a>&nbsp;&nbsp;
               <span data-ng-show="vin.notAddr">{{vin.addr}}</span>
-              <a href="/#!/address/{{vin.addr}}" data-ng-show="!vin.notAddr">{{vin.addr}}</a>
+              <a href="/address/{{vin.addr}}" data-ng-show="!vin.notAddr">{{vin.addr}}</a>
             </div>
           </div>
           <div class="col-md-12">
@@ -56,7 +56,7 @@
             <div class="text-muted pull-right btc-value"><small>{{vout.value}} BTC</small></div>
             <div class="ellipsis">
               <span data-ng-show="vout.notAddr">{{vout.addr}}</span>
-              <a href="/#!/address/{{address}}"  data-ng-show="!vout.notAddr" data-ng-repeat="address in vout.addr.split(',')">{{address}}</a>
+              <a href="/address/{{address}}"  data-ng-show="!vout.notAddr" data-ng-repeat="address in vout.addr.split(',')">{{address}}</a>
             </div>
           </div>
         </div>
@@ -64,7 +64,7 @@
           <div class="col-md-12 transaction-vin-vout">
             <div class="text-muted pull-right btc-value"><small>{{vout.value}} BTC</small></div>
             <div class="ellipsis">
-              <a href="/#!/address/{{address}}" data-ng-repeat="address in vout.scriptPubKey.addresses">{{address}}</a>
+              <a href="/address/{{address}}" data-ng-repeat="address in vout.scriptPubKey.addresses">{{address}}</a>
             </div>
           </div>
           <div class="col-md-12">

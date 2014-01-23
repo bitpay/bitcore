@@ -5,32 +5,32 @@ angular.module('insight').config(['$routeProvider',
   function($routeProvider) {
     $routeProvider.
     when('/block/:blockHash', {
-      templateUrl: 'views/block.html'
+      templateUrl: '/views/block.html'
     }).
     when('/block-index/:blockHeight', {
       controller: 'BlocksController',
       template: 'Redirecting...'
     }).
     when('/tx/:txId', {
-      templateUrl: 'views/transaction.html'
+      templateUrl: '/views/transaction.html'
     }).
     when('/', {
-      templateUrl: 'views/index.html'
+      templateUrl: '/views/index.html'
     }).
     when('/blocks', {
-      templateUrl: 'views/blocks/list.html'
+      templateUrl: '/views/blocks/list.html'
     }).
     when('/blocks-date/:blockDate', {
-      templateUrl: 'views/blocks/list.html'
+      templateUrl: '/views/blocks/list.html'
     }).
     when('/address/:addrStr', {
-      templateUrl: 'views/address.html'
+      templateUrl: '/views/address.html'
     }).
     when('/status', {
-      templateUrl: 'views/status.html'
+      templateUrl: '/views/status.html'
     }).
     otherwise({
-      templateUrl: 'views/404.html'
+      templateUrl: '/views/404.html'
     });
   }
 ]);
@@ -38,6 +38,7 @@ angular.module('insight').config(['$routeProvider',
 //Setting HTML5 Location Mode
 angular.module('insight').config(['$locationProvider',
   function($locationProvider) {
+    $locationProvider.html5Mode(true);
     $locationProvider.hashPrefix('!');
   }
 ]);
