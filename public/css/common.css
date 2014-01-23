@@ -238,13 +238,17 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   background-color: #373D42;
   border-top: 4px solid #656E76;
   color: #fff;
+  overflow: hidden;
 }
 
-#footer .insight {
+#footer a.insight {
   font-size: 20px;
   text-decoration: none;
 }
 
+#footer a.insight small {
+  font-size: 11px;
+}
 .line-footer {
   border-top: 2px dashed #ccc;
 }
