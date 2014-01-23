@@ -12,7 +12,11 @@ module.exports = {
     pass: process.env.BITCOIND_PASS  || 'pass',
     host: process.env.BITCOIND_HOST  || '127.0.0.1',
     port: process.env.BITCOIND_PORT  || '18332',
+    p2p_port: process.env.BITCOIND_P2P_PORT  || '18333',
     disableAgent: true,
+ 
   },
-  network: 'testnet',
+  network: process.env.INSIGHT_NETWORK || 'testnet',
+  disableP2pSync: false,
+  disableHistoricSync: false,
 };
