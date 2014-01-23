@@ -10,9 +10,9 @@
       <h4>Sync Status</h4>
       <table class="table" data-ng-init="getSync()">
         <tbody>
-        <tr data-ng-show="sync.error">  
-          <td colspan="2"> <span class="text-danger"> {{sync.error}} </span>
-        </tr>
+        <thead>
+          <span class="text-danger" data-ng-show="sync && sync.error">{{sync.error}}</span>
+        </thead>
         <tr>
           <td>Sync Progress</td>
           <td> 
@@ -37,13 +37,9 @@
     
       <h4>Transaction Output Set Information</h4>
       <table class="table" data-ng-init="getStatus('TxOutSetInfo')">
-        <tbody>
-        <tr data-ng-show="!txoutsetinfo &amp;&amp; !infoError">
-          <td colspan="2" class="text-center">Loading...</td>
-        </tr>
-        <tr data-ng-show="infoError">
-          <td colspan="2" class="text-danger">{{infoError}}</td>
-        </tr>
+        <thead data-ng-include src="'/views/infoStatus.html'">
+        </thead>
+        <tbody  >
         <tr>
           <td>Height</td>
           <td class="text-right"><a href="/#!/block-index/{{txoutsetinfo.height}}">{{txoutsetinfo.height}}</a></td>
@@ -77,13 +73,7 @@
       
       <h4>Last Block</h4>
       <table class="table" data-ng-init="getStatus('LastBlockHash')">
-        <tbody>
-        <tr data-ng-show="!lastblockhash &amp;&amp; !infoError">
-          <td colspan="2" class="text-center">Loading...</td>
-        </tr>
-        <tr data-ng-show="infoError">
-          <td colspan="2" class="text-danger">{{infoError}}</td>
-        </tr>
+        <tbody  data-ng-include src="'/views/infoStatus.html'">
         <tr>
           <td>Last block hash</td>
           <td class="text-right"><a href="/#!/block/{{lastblockhash}}">{{lastblockhash}}</a></td>
@@ -96,11 +86,7 @@
       <div class="col-gray">
         <h4>Bitcoin node information</h4>
         <table class="table" data-ng-init="getStatus('Info')">
-          <tbody>
-          <tr data-ng-show="!info &amp;&amp; !infoError">
-            <td colspan="2" class="text-center">Loading...
-          <tr data-ng-show="infoError">
-            <td colspan="2" class="text-danger">{{infoError}}
+          <tbody  data-ng-include src="'/views/infoStatus.html'">
           <tr>
             <td>Version</td>
             <td class="text-right">{{info.version}}</td>
@@ -162,14 +148,7 @@
 
         <h4>Difficulty</h4>
         <table class="table" data-ng-init="getStatus('Difficulty')">
-          <tbody>
-          <tr data-ng-show="!difficulty &amp;&amp; !infoError">
-            <td colspan="2" class="text-center">Loading...</td>
-          </tr>
-          <tr data-ng-show="infoError">
-            <td colspan="2" class="text-danger">{{infoError}}</td>
-          </tr>
-   
+          <tbody  data-ng-include src="'/views/infoStatus.html'">
           <tr>
             <td>Mining Difficulty</td>
             <td>{{difficulty}}</td>
