@@ -24,6 +24,7 @@ function($scope, $rootScope, $routeParams, $location, Global, Address, get_socke
       $location.path('/');
     });
   };
+
   var socket = get_socket($scope);
   socket.emit('subscribe', $routeParams.addrStr);
   socket.on($routeParams.addrStr, function(tx) {
@@ -33,7 +34,6 @@ function($scope, $rootScope, $routeParams, $location, Global, Address, get_socke
     $rootScope.$broadcast('tx', tx.txid);
   });
 
-
   $scope.params = $routeParams;
-});
 
+});
