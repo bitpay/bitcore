@@ -167,7 +167,14 @@ There is a bitcoind configuration sample at:
     etc/bitcoind/bitcoin.conf
 ```
 
-If you want to use a external bitcoind server set BITCOIND_HOST / BITCOIND_PORT enviroment variables. Make sure that bitcoind is configured to accept incomming connections using 'rpcallowip' decribed in https://en.bitcoin.it/wiki/Running_Bitcoin.
+If you want to use a external bitcoind server set:
+  BITCOIND_HOST 
+  BITCOIND_PORT 
+  BITCOIND_USER 
+  BITCOIND_PASS
+  INSIGHT_NETWORK [= 'livenet' | 'testnet']
+
+enviroment variables. Make sure that bitcoind is configured to accept incomming connections using 'rpcallowip' decribed in https://en.bitcoin.it/wiki/Running_Bitcoin. Alternatively change config/env/$NODE_ENV.js
 
 
 ### Environment Variables Settings
