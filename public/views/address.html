@@ -1,14 +1,15 @@
 <section data-ng-controller="AddressController" data-ng-init="findOne()">
   <div class="row">
     <div class="col-md-3">
-      <div class="bs-sidebar hidden-print affix  col-gray">
-        <div class="text-center m10v">
-          <qrcode size="200" data="{{address.addrStr}}"></qrcode>
-          <h4><span class="glyphicon glyphicon-qrcode"></span> Address</h4>
-          <a class="ellipsis" href="/#!/address/{{address.addrStr}}">{{address.addrStr}}</a>
+      <div class="bs-sidebar hidden-print affix col-gray">
+        <div class="text-center m20v">
+          <qrcode size="160" data="{{address.addrStr}}"></qrcode>
+          <div class="m10v">
+            <button class="pull-right btn-copy" clip-copy="address.addrStr"><span class="glyphicon glyphicon-paperclip"></span></button>
+            <a class="ellipsis" href="/#!/address/{{address.addrStr}}">{{address.addrStr}}</a>
+          </div>
         </div>
-
-        <div class="m50v">
+        <div class="m20v">
           <h4>Summary</h4>
           <table class="table">
             <tbody>
@@ -33,7 +34,6 @@
         </div> <!-- END OF TRANSACTIONS TABLE -->
       </div>
     </div> <!-- END OF COL-MD-3 -->
-
     <div class="col-md-9">
       <div data-ng-controller="transactionsController" data-ng-init="load('address')">
         <h2>Transactions <small>Transactions for this address</small></h2>

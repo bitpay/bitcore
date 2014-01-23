@@ -9,14 +9,12 @@
           </div>
         </div>
         <p class="lead text-center m20v">{{pagination.current}}</p>
-
         <div class="m50v">
           <a class="btn btn-primary" href="#!/blocks-date/{{pagination.prev}}"><small>&larr; {{pagination.prev}}</small></a>
           <a class="btn btn-primary" href="#!/blocks-date/{{pagination.next}}"><small>{{pagination.next}} &rarr;</small></a>
         </div>
       </div>
     </div>
-
     <div class="col-md-9">
       <div class="page-header">
         <h1>
@@ -47,11 +45,6 @@
         </tr>
         </tbody>
       </table>
-      <ul class="pager" data-ng-show="blocks.length">
-        <li class="previous"><a href="#!/blocks-date/{{pagination.prev}}">&larr; {{pagination.prev}}</a></li>
-        <li class="disabled"><a href="#">{{pagination.current}}</a></li>
-        <li class="next"><a href="#!/blocks-date/{{pagination.next}}">{{pagination.next}} &rarr;</a></li>
-      </ul>
     </div>
   </div>
   <h2 class="text-center text-muted" data-ng-hide="!blocks || blocks.length">No blocks yet.</h2>
