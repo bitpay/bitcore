@@ -97,7 +97,7 @@ A REST API is provided at /api. The entry points are:
 ```
   /api/txs/?address=ADDR
   /api/txs/?address=mmhmMNfBiZZ37g1tgg2t8DDbNoEdqKVxAL
-
+```
 
 ### Sync status
 ```
@@ -173,6 +173,7 @@ If you want to use a external bitcoind server set BITCOIND_HOST / BITCOIND_PORT 
 ### Environment Variables Settings
 
 There are three environments provided by default, __development__, __test__, and __production__. Each of these environments has the following configuration options:
+
 * __db__ - This is the name of the MongoDB database to use, and is set by default to __insight-dev__ for the development environment.
 * __app.name__ - This is the name of your app or website, and can be different for each environment. You can tell which environment you are running by looking at the TITLE attribute that your app generates.
 
