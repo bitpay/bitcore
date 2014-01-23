@@ -1,4 +1,4 @@
-<section data-ng-controller="StatusController">
+<section>
   <div class="page-header">
     <h1>
       Application Status 
@@ -8,7 +8,7 @@
     <div class="col-md-9">
       
       <h4>Sync Status</h4>
-      <table class="table" data-ng-init="getSync()">
+      <table class="table"  data-ng-controller="StatusController" data-ng-init="getSync()">
         <tbody>
         <thead>
           <span class="text-danger" data-ng-show="sync && sync.error">{{sync.error}}</span>
@@ -23,6 +23,11 @@
           </div>
         </tr>
         <tr>
+          <td>Current Sync Status</td>
+          <td class="text-right">{{sync.status}}</td>
+        </tr>
+ 
+        <tr>
           <td>Initial Block Chain Height</td>
           <td class="text-right">{{sync.blockChainHeight}}</td>
         </tr>
@@ -36,10 +41,9 @@
       </table>
     
       <h4>Transaction Output Set Information</h4>
-      <table class="table" data-ng-init="getStatus('TxOutSetInfo')">
-        <thead data-ng-include src="'/views/infoStatus.html'">
-        </thead>
-        <tbody  >
+      <table class="table"  data-ng-controller="StatusController" data-ng-init="getStatus('TxOutSetInfo')">
+        <thead  data-ng-include src="'/views/infoStatus.html'"> </thead>
+        <tbody>
         <tr>
           <td>Height</td>
           <td class="text-right"><a href="/#!/block-index/{{txoutsetinfo.height}}">{{txoutsetinfo.height}}</a></td>
@@ -72,10 +76,10 @@
       </table>
       
       <h4>Last Block</h4>
-      <table class="table" data-ng-init="getStatus('LastBlockHash')">
-        <tbody  data-ng-include src="'/views/infoStatus.html'">
+      <table class="table" data-ng-controller="StatusController" data-ng-init="getStatus('LastBlockHash')">
+        <thead  data-ng-include src="'/views/infoStatus.html'"> </thead>
         <tr>
-          <td>Last block hash</td>
+          <td>Last Block Hash</td>
           <td class="text-right"><a href="/#!/block/{{lastblockhash}}">{{lastblockhash}}</a></td>
         </tr>
         </tbody>
@@ -85,8 +89,9 @@
     <div class="col-md-3">
       <div class="col-gray">
         <h4>Bitcoin node information</h4>
-        <table class="table" data-ng-init="getStatus('Info')">
-          <tbody  data-ng-include src="'/views/infoStatus.html'">
+        <table class="table" data-ng-controller="StatusController" data-ng-init="getStatus('Info')">
+          <thead  data-ng-include src="'/views/infoStatus.html'"> </thead>
+          <tbody>
           <tr>
             <td>Version</td>
             <td class="text-right">{{info.version}}</td>
@@ -94,14 +99,6 @@
           <tr>
             <td>Protocol version</td>
             <td class="text-right">{{info.protocolversion}}</td>
-          </tr>
-          <tr>
-            <td>Wallet version</td>
-            <td class="text-right">{{info.walletversion}}</td>
-          </tr>
-          <tr>
-            <td>Balance (BTC)</td>
-            <td class="text-right">{{info.balance}}</td>
           </tr>
           <tr>
             <td>Blocks</td>
@@ -147,8 +144,9 @@
         </table>
 
         <h4>Difficulty</h4>
-        <table class="table" data-ng-init="getStatus('Difficulty')">
-          <tbody  data-ng-include src="'/views/infoStatus.html'">
+        <table class="table" data-ng-controller="StatusController" data-ng-init="getStatus('Difficulty')">
+          <thead  data-ng-include src="'/views/infoStatus.html'"> </thead>
+          <tbody
           <tr>
             <td>Mining Difficulty</td>
             <td>{{difficulty}}</td>

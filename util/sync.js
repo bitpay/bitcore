@@ -18,9 +18,7 @@ program
   .option('-U --uptoexisting', 'Sync only until an existing block is found', 0)
   .parse(process.argv);
 
-var historicSync = new HistoricSync({
-  networkName: program.network
-});
+var historicSync = new HistoricSync();
 
 /*  TODO: Sure?
 if (program.remove) {

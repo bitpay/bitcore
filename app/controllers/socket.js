@@ -15,17 +15,17 @@ module.exports.init = function(app, io_ext) {
 };
 
 module.exports.broadcast_tx = function(tx) {
-  ios.sockets.in('inv').emit('tx', tx);
+  if (ios) ios.sockets.in('inv').emit('tx', tx);
 };
 
 module.exports.broadcast_block = function(block) {
-  ios.sockets.in('inv').emit('block', block);
+  if (ios) ios.sockets.in('inv').emit('block', block);
 };
 
 module.exports.broadcast_address_tx = function(address, tx) {
-  ios.sockets.in(address).emit(address, tx);
+ if (ios) ios.sockets.in(address).emit(address, tx);
 };
 
 module.exports.broadcastSyncInfo = function(historicSync) {
-  ios.sockets.in('sync').emit('status', historicSync);
+ if (ios)  ios.sockets.in('sync').emit('status', historicSync);
 };

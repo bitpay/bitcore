@@ -13,7 +13,7 @@ function($scope, $routeParams, $location, Global, Status, Sync, getSocket) {
       angular.extend($scope, d);
     },
     function(e) {
-      $scope.error = 'API ERROR: ' + e.data;
+      $scope.error =  'API ERROR: ' + e.data;
     });
   };
 

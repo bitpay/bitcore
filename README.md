@@ -169,12 +169,18 @@ There is a bitcoind configuration sample at:
 
 If you want to use a external bitcoind server set:
   BITCOIND_HOST 
-  BITCOIND_PORT 
+  BITCOIND_PORT         # RPC Bitcoind Port
+  BITCOIND_P2P_PORT     # P2P Bitcoind Port 
   BITCOIND_USER 
   BITCOIND_PASS
   INSIGHT_NETWORK [= 'livenet' | 'testnet']
 
 enviroment variables. Make sure that bitcoind is configured to accept incomming connections using 'rpcallowip' decribed in https://en.bitcoin.it/wiki/Running_Bitcoin. Alternatively change config/env/$NODE_ENV.js
+
+In case the network is changed, mongoDB database need to be deleted. This can be performed running:
+```
+  util/sync.js -D
+```
 
 
 ### Environment Variables Settings
@@ -197,6 +203,8 @@ If you are using node instead of grunt, it is very similar:
 To run insight locally for development:
 
   $ NODE_ENV=development grunt
+
+
 
 
 ### Production
