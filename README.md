@@ -17,26 +17,31 @@ Bitcore runs on [node](http://nodejs.org/), and can be installed via [npm](https
 npm install bitcore
 ```
 
+It's is a collection of objects useful to bitcoin applications; class-like idioms are enabled via [Classtool](https://github.com/gasteve/classtool). In most cases, a developer will require the object's class directly:
+```
+var Address = require('bitcore/Address').class();
+```
+
 #Examples
 
 Validating a Bitcoin address:
 ```
-var Address = require('bitcore/Address.js').class();
+var Address = require('bitcore/Address').class();
 
 var addr = new Address("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa");
 
 try {
   addr.validate();
-  console.log("address is valid");
+  console.log("Address is valid.");
 } catch(e) {
-  console.log(addr.data + " is not a valid address.")
+  console.log(addr.data + " is not a valid address. " + e);
 }
 ```
 
 #Security
-Please use at your own risk. Bitcore is still under heavy development and not quite ready for "drop-in" production use. 
+Please use at your own risk.
 
-Bitpay offers a bounty program for security vulnerabilities found in Bitcore. If you find a security issue, please email security@bitcore.io.
+Bitcore is still under heavy development and not quite ready for "drop-in" production use. If you find a security issue, please email security@bitcore.io.
 
 #Contributing
 Bitcore needs some developer love. Please send pull requests for bug fixes, code optimization, and ideas for improvement.
