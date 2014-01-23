@@ -54,6 +54,16 @@ var getBlock = function(blockhash, cb) {
       console.log(err);
       return cb(err);
     }
+
+    // TODO 
+    if (!block.info) {
+console.log('[blocks.js.60]: could not get %s from RPC. Orphan? Error?', blockhash); //TODO
+      // Probably orphan
+      block.info = {
+        hash: blockhash,
+        isOrphan: 1,
+      };
+    }
     return cb(err, block.info);
   });
 };
@@ -100,11 +110,11 @@ exports.list = function(req, res) {
       if (err) {
         res.status(500).send(err);
       } else {
-        var blockshash = [];
+        var blockshashList = [];
         for(var i=0;i<blocks.length;i++) {
-          blockshash.push(blocks[i].hash);
+          blockshashList.push(blocks[i].hash);
         }
-        async.mapSeries(blockshash, getBlock, function(err, allblocks) {
+        async.mapSeries(blockshashList, getBlock, function(err, allblocks) {
           res.jsonp({
             blocks: allblocks,
             length: allblocks.length,
