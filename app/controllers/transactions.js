@@ -42,6 +42,9 @@ var getTransaction = function(txid, cb) {
       console.log(err);
       return cb(err);
     }
+
+    if (!tx) return cb(new Error('Transaction not found'));
+
     return cb(null, tx.info);
   });
 };
@@ -79,13 +82,17 @@ exports.list = function(req, res, next) {
         txs = block.info.tx;
       }
 
-      async.mapSeries(txs, getTransaction,
-        function(err, results) {
-          res.jsonp({
-            pagesTotal: pagesTotal,
-            txs: results
-          });
+      async.mapSeries(txs, getTransaction, function(err, results) {
+        if (err) {
+          console.log(err);
+          res.status(404).send('TX not found');
+        }
+
+        res.jsonp({
+          pagesTotal: pagesTotal,
+          txs: results
         });
+      });
     });
   }
   else if (addrStr) {
@@ -109,13 +116,17 @@ exports.list = function(req, res, next) {
         txs = a.transactions;
       }
 
-      async.mapSeries(txs, getTransaction,
-        function(err, results) {
-          res.jsonp({
-            pagesTotal: pagesTotal,
-            txs: results
-          });
+      async.mapSeries(txs, getTransaction, function(err, results) {
+        if (err) {
+          console.log(err);
+          res.status(404).send('TX not found');
+        }
+
+        res.jsonp({
+          pagesTotal: pagesTotal,
+          txs: results
         });
+      });
     });
   }
   else {
@@ -133,6 +144,11 @@ exports.list = function(req, res, next) {
           }
 
           async.mapSeries(txids, getTransaction, function(err, alltxs) {
+            if (err) {
+              console.log(err);
+              res.status(404).send('TX not found');
+            }
+
             res.jsonp({
               txs: alltxs,
               length: alltxs.length
