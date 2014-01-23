@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('insight.search').controller('SearchController',
-  function ($scope, $routeParams, $location, $timeout, Global, Block, Transaction, Address, BlockByHeight) {
+  function($scope, $routeParams, $location, $timeout, Global, Block, Transaction, Address, BlockByHeight) {
   $scope.global = Global;
 
   $scope.search = function() {
@@ -36,8 +36,8 @@ angular.module('insight.search').controller('SearchController',
             }, 2000);
             $scope.q = q;
           });
-          });
-          });
+        });
+      });
     });
   };
 

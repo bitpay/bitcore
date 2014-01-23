@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('insight.status').controller('StatusController',
-function($scope, $routeParams, $location, $rootScope, Global, Status, Sync, get_socket) {
+function($scope, $routeParams, $location, $rootScope, Global, Status, Sync, getSocket) {
   $scope.global = Global;
 
   $scope.getStatus = function(q) {
@@ -22,25 +22,25 @@ function($scope, $routeParams, $location, $rootScope, Global, Status, Sync, get_
     });
   };
 
-  var on_sync_update = function(sync) {
+  var _onSyncUpdate = function(sync) {
     $scope.sync = sync;
   };
 
   $scope.getSync = function() {
     Sync.get({},
     function(sync) {
-      on_sync_update(sync);
+      _onSyncUpdate(sync);
     },
     function(e) {
       $scope.sync = { error: 'Could not get sync information' + e };
     });
   };
 
-  var socket = get_socket($scope);
+  var socket = getSocket($scope);
   socket.emit('subscribe', 'sync');
   socket.on('status', function(sync) {
-console.log('[status.js.55::] sync status update received!');
-    on_sync_update(sync);
+    console.log('[status.js.55::] sync status update received!');
+    _onSyncUpdate(sync);
   });
 
 });

@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('insight.address').controller('AddressController',
-function($scope, $rootScope, $routeParams, $location, Global, Address, get_socket) {
+function($scope, $rootScope, $routeParams, $location, Global, Address, getSocket) {
   $scope.global = Global;
 
   $scope.findOne = function() {
@@ -24,7 +24,8 @@ function($scope, $rootScope, $routeParams, $location, Global, Address, get_socke
       $location.path('/');
     });
   };
-  var socket = get_socket($scope);
+
+  var socket = getSocket($scope);
   socket.emit('subscribe', $routeParams.addrStr);
   socket.on($routeParams.addrStr, function(tx) {
     console.log('atx ' + tx.txid);
@@ -33,7 +34,6 @@ function($scope, $rootScope, $routeParams, $location, Global, Address, get_socke
     $rootScope.$broadcast('tx', tx.txid);
   });
 
-
   $scope.params = $routeParams;
-});
 
+});

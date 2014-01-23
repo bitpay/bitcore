@@ -1,15 +1,15 @@
 'use strict';
 
 angular.module('insight.system').controller('FooterController',
-  function ($scope, get_socket, Version) {
+  function($scope, Version) {
 
-  var getVersion = function() {
+  var _getVersion = function() {
     Version.get({},
     function(res) {
       $scope.version = res.version;
     });
   };
 
-  $scope.version = getVersion();
+  $scope.version = _getVersion();
 
 });

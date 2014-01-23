@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('insight.blocks').controller('BlocksController',
-  function ($scope, $rootScope, $routeParams, $location, Global, Block, Blocks, BlockByHeight) {
+  function($scope, $rootScope, $routeParams, $location, Global, Block, Blocks, BlockByHeight) {
   $scope.global = Global;
 
   if ($routeParams.blockHeight) {
@@ -44,4 +44,5 @@ angular.module('insight.blocks').controller('BlocksController',
   };
 
   $scope.params = $routeParams;
+
 });

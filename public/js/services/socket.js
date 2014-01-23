@@ -46,7 +46,7 @@ ScopedSocket.prototype.emit = function(event, data, callback) {
 	});
 };
 
-angular.module('insight.socket').factory('get_socket',
+angular.module('insight.socket').factory('getSocket',
 function($rootScope) {
 	var socket = io.connect();
 	return function(scope) {
@@ -59,4 +59,3 @@ function($rootScope) {
 		return scopedSocket;
 	};
 });
-

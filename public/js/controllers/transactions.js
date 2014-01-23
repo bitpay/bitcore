@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('insight.transactions').controller('transactionsController',
-function ($scope, $rootScope, $routeParams, $location, Global, Transaction, TransactionsByBlock, TransactionsByAddress) {
+function($scope, $rootScope, $routeParams, $location, Global, Transaction, TransactionsByBlock, TransactionsByAddress) {
   $scope.global = Global;
   $scope.loading = false;
   $scope.loadedBy = null;
@@ -9,18 +9,15 @@ function ($scope, $rootScope, $routeParams, $location, Global, Transaction, Tran
   var pageNum = 0;
   var pagesTotal = 1;
 
-  $scope.findThis = function() {
-    $scope.findTx($routeParams.txId);
-  };
-
-  $scope.aggregateItems = function(items) {
+  var _aggregateItems = function(items) {
     if (!items) return [];
 
     var l = items.length;
 
     var ret = [];
     var tmp = {};
-    var u=0;
+    var u = 0;
+
     // TODO multiple output address
     //
     for(var i=0; i < l; i++) {
@@ -29,14 +26,14 @@ function ($scope, $rootScope, $routeParams, $location, Global, Transaction, Tran
 
       // non standard input
       if (items[i].scriptSig && !items[i].addr) {
-        items[i].addr = 'Unparsed address [' + u++  + ']';
+        items[i].addr = 'Unparsed address [' + u++ + ']';
         items[i].notAddr = true;
         notAddr = true;
       }
 
       // non standard output
       if (items[i].scriptPubKey && !items[i].scriptPubKey.addresses) {
-        items[i].scriptPubKey.addresses = ['Unparsed address [' + u++  + ']'];
+        items[i].scriptPubKey.addresses = ['Unparsed address [' + u++ + ']'];
         items[i].notAddr = true;
         notAddr = true;
       }
@@ -48,7 +45,7 @@ function ($scope, $rootScope, $routeParams, $location, Global, Transaction, Tran
         continue;
       }
 
-      var addr = items[i].addr || (items[i].scriptPubKey && items[i].scriptPubKey.addresses[0] );
+      var addr = items[i].addr || (items[i].scriptPubKey && items[i].scriptPubKey.addresses[0]);
 
       if (!tmp[addr]) {
         tmp[addr] = {};
@@ -57,6 +54,7 @@ function ($scope, $rootScope, $routeParams, $location, Global, Transaction, Tran
         tmp[addr].addr = addr;
         tmp[addr].items = [];
       }
+
       tmp[addr].valueSat += items[i].valueSat;
       tmp[addr].value =  tmp[addr].valueSat / 100000000;
       tmp[addr].items.push(items[i]);
@@ -67,12 +65,47 @@ function ($scope, $rootScope, $routeParams, $location, Global, Transaction, Tran
     angular.forEach(tmp, function(v) {
       ret.push(v);
     });
-    return (ret);
+
+    return ret;
   };
 
-  $scope.processTX = function(tx) {
-    tx.vinSimple = $scope.aggregateItems(tx.vin);
-    tx.voutSimple = $scope.aggregateItems(tx.vout);
+  var _processTX = function(tx) {
+    tx.vinSimple = _aggregateItems(tx.vin);
+    tx.voutSimple = _aggregateItems(tx.vout);
+  };
+
+  var _paginate = function (data) {
+    $scope.loading = false;
+
+    pagesTotal = data.pagesTotal;
+    pageNum += 1;
+
+    data.txs.forEach(function(tx) {
+      _processTX(tx);
+      $scope.txs.push(tx);
+    });
+  };
+
+  var _byBlock = function() {
+    TransactionsByBlock.get({
+      block: $routeParams.blockHash,
+      pageNum: pageNum
+    }, function(data) {
+      _paginate(data);
+    });
+  };
+
+  var _byAddress = function () {
+    TransactionsByAddress.get({
+      address: $routeParams.addrStr,
+      pageNum: pageNum
+    }, function(data) {
+      _paginate(data);
+    });
+  };
+
+  $scope.findThis = function() {
+    $scope.findTx($routeParams.txId);
   };
 
   $scope.findTx = function(txid) {
@@ -80,7 +113,7 @@ function ($scope, $rootScope, $routeParams, $location, Global, Transaction, Tran
       txId: txid
     }, function(tx) {
       $scope.tx = tx;
-      $scope.processTX(tx);
+      _processTX(tx);
       $scope.txs.unshift(tx);
     }, function(e) {
       if (e.status === 400) {
@@ -92,58 +125,32 @@ function ($scope, $rootScope, $routeParams, $location, Global, Transaction, Tran
       else {
         $rootScope.flashMessage = 'Transaction Not Found';
       }
+
       $location.path('/');
     });
   };
 
-  $scope.byBlock = function() {
-    TransactionsByBlock.get({
-     block: $routeParams.blockHash,
-     pageNum: pageNum
-    }, function(data) {
-      $scope.paginate(data);
-    });
-  };
-
-  $scope.byAddress = function () {
-    TransactionsByAddress.get({
-     address: $routeParams.addrStr,
-     pageNum: pageNum
-    }, function(data) {
-      $scope.paginate(data);
-    });
-  };
-
-  $scope.paginate = function (data) {
-    $scope.loading = false;
-
-    pagesTotal = data.pagesTotal;
-    pageNum += 1;
-
-    data.txs.forEach(function(tx) {
-      $scope.processTX(tx);
-      $scope.txs.push(tx);
-    });
-  };
-
+  //Initial load
   $scope.load = function(from) {
     $scope.loadedBy = from;
     $scope.loadMore();
   };
 
+  //Load more transactions for pagination
   $scope.loadMore = function() {
     if (pageNum < pagesTotal && !$scope.loading) {
       $scope.loading = true;
 
       if ($scope.loadedBy === 'address') {
-        $scope.byAddress();
+        _byAddress();
       }
       else {
-        $scope.byBlock();
+        _byBlock();
       }
     }
   };
 
+  //Init without txs
   $scope.txs = [];
 
   $scope.$on('tx', function(event, txid) {
