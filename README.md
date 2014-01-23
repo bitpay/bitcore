@@ -29,11 +29,12 @@ Validating a Bitcoin address:
 var Address = require('bitcore/Address').class();
 
 var addr = new Address("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa");
+
 try {
   addr.validate();
-  console.log("Address is valid!");
+  console.log("Address is valid.");
 } catch(e) {
-  console.log("Address is not valid.")
+  console.log(addr.data + " is not a valid address. " + e);
 }
 ```
 
