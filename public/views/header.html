@@ -1,36 +1,41 @@
 <div class="container">
   <div data-ng-controller="HeaderController">
     <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse" data-ng-click="isCollapsed = !isCollapsed">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
       <a class="insight navbar-brand" href="/">Insight</a>
     </div>
+    <div class="navbar-collapse collapse" collapse="isCollapsed">
       <ul class="nav navbar-nav">
         <li data-ng-repeat="item in menu" ui-route="/{{item.link}}" data-ng-class="{active: $uiRoute}">
           <a href="/{{item.link}}">{{item.title}}</a>
         </li>
       </ul>
-      <div data-ng-controller="SearchController">
-        <form class="navbar-form navbar-left" role="search" data-ng-submit="search()">
-          <div class="form-group" data-ng-class="{'has-error': badQuery}">
-            <input id="search" type="text" class="form-control" data-ng-model="q" placeholder="Search for block, transaction or address">
-          </div>
-          <div class="no_matching text-danger" data-ng-show="badQuery">No matching records found!</div>
-        </form>
-      </div>
+      <form data-ng-controller="SearchController" class="navbar-form navbar-left" role="search" data-ng-submit="search()">
+        <div class="form-group" data-ng-class="{'has-error': badQuery}">
+          <input id="search" type="text" class="form-control" data-ng-model="q" placeholder="Search for block, transaction or address">
+        </div>
+        <div class="no_matching text-danger" data-ng-show="badQuery">No matching records found!</div>
+      </form>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
       <div class="status" data-ng-controller="StatusController">
-        <span  data-ng-init="getSync()">
-          <div class="t text-danger"  data-ng-show="sync.error" tooltip="{{sync.error}}" tooltip-placement="bottom"> ERROR </div>
-          <div class="t text-warning " tooltip="{{sync.syncedBlocks}} /  {{sync.blockChainHeight}} synced. {{sync.skippedBlocks}} skipped" tooltip-placement="bottom" data-ng-show="sync.status==='syncing'"> {{sync.status}} {{sync.syncPercentage}}%</div>
-          <div class="t text-default" tooltip="Historic sync finished" tooltip-placement="bottom" data-ng-show="sync.status==='finished'"> On sync</div>
-          </span>
-        </span>
-        <span  data-ng-init="getStatus('Info')">
-          <i class="small">
-            <strong> Conn: </strong> {{info.connections}}
-          </i>
-          <i class="small">
-            <strong>Height:</strong> {{totalBlocks || info.blocks}}
-          </i>
-        </span>
+        <a href="#" data-ng-init="getSync()">
+          <span class="t text-danger"  data-ng-show="sync.error" tooltip="{{sync.error}}" tooltip-placement="bottom"> ERROR </span>
+          <span class="t text-warning " tooltip="{{sync.syncedBlocks}} /  {{sync.blockChainHeight}} synced. {{sync.skippedBlocks}} skipped" tooltip-placement="bottom" data-ng-show="sync.status==='syncing'"> {{sync.status}} {{sync.syncPercentage}}%</span>
+          <span class="t text-default" tooltip="Historic sync finished" tooltip-placement="bottom" data-ng-show="sync.status==='finished'"> On sync</span>
+        </a> &middot; 
+        <span data-ng-init="getStatus('Info')">
+          <strong>Conn</strong> {{info.connections}}
+        </span> &middot; 
+        <strong>Height</strong> {{totalBlocks || info.blocks}}
       </div>
+      </li>
+      </ul>
+    </div>
   </div>
 </div>

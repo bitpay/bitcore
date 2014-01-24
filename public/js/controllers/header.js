@@ -33,5 +33,5 @@ angular.module('insight.system').controller('HeaderController',
   });
 
 
-  $scope.isCollapsed = false;
+  $scope.isCollapsed = true;
 });
