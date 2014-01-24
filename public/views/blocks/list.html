@@ -11,7 +11,7 @@
         <p class="lead text-center m20v">{{pagination.current}}</p>
         <div class="m50v">
           <a class="btn btn-primary" href="/blocks-date/{{pagination.prev}}"><small>&larr; {{pagination.prev}}</small></a>
-          <a class="btn btn-primary" href="/blocks-date/{{pagination.next}}"><small>{{pagination.next}} &rarr;</small></a>
+          <a class="btn btn-primary" href="/blocks-date/{{pagination.next}}" data-ng-disabled="pagination.isToday"><small>{{pagination.next}} &rarr;</small></a>
         </div>
       </div>
     </div>

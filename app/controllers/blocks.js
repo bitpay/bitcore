@@ -55,7 +55,7 @@ var getBlock = function(blockhash, cb) {
       return cb(err);
     }
 
-    // TODO 
+    // TODO
     if (!block.info) {
 console.log('[blocks.js.60]: could not get %s from RPC. Orphan? Error?', blockhash); //TODO
       // Probably orphan
@@ -73,6 +73,7 @@ console.log('[blocks.js.60]: could not get %s from RPC. Orphan? Error?', blockha
  */
 exports.list = function(req, res) {
   var limit = req.query.limit || 0;
+  var isToday = false;
 
   //helper to convert timestamps to yyyy-mm-dd format
   var formatTimestamp = function (date) {
@@ -84,10 +85,15 @@ exports.list = function(req, res) {
   };
 
   var dateStr;
+  var todayStr = formatTimestamp(new Date());
+
   if (req.query.blockDate) {
+    // TODO: Validate format yyyy-mm-dd
     dateStr = req.query.blockDate;
+    isToday = dateStr === todayStr;
   } else {
-    dateStr = formatTimestamp(new Date());
+    dateStr = todayStr;
+    isToday = true;
   }
 
   var gte = Math.round((new Date(dateStr)).getTime() / 1000);
@@ -121,7 +127,8 @@ exports.list = function(req, res) {
             pagination: {
               next: next,
               prev: prev,
-              current: dateStr
+              current: dateStr,
+              isToday: isToday
             }
           });
         });
