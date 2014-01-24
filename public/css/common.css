@@ -57,7 +57,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 @media (min-width: 768px) {
   .navbar-form {
-    width: 35%;
+    width: 30%;
   }
 }
 
