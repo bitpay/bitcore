@@ -4,16 +4,16 @@
 <section data-ng-controller="IndexController" data-ng-init="index()">
   <div class="container">
     <div id="home" class="row">
-      <div class="col-md-8 m20v">
-        <h2>Latest Blocks</h2>
-        <table class="table table-hover" >
+      <div class="col-xs-12 col-md-8">
+        <h1>Latest Blocks</h1>
+        <table class="table table-hover" style="table-layout: fixed">
           <thead>
             <tr>
               <th>Height</th>
               <th>Age</th>
-              <th>Transactions</th>
+              <th><span class="ellipsis">Transactions</span></th>
               <th>Size</th>
-              <th>Confirmations</th>
+              <th><span class="ellipsis">Confirmations</span></th>
             </tr>
           </thead>
           <tbody>
@@ -22,24 +22,24 @@
             <td>
               <a href="/block/{{b.hash}}">{{b.height}}</a>
             </td>
-            <td>{{humanSince(b.time)}}</td>
+            <td><span class="ellipsis">{{humanSince(b.time)}}</span></td>
             <td>{{b.tx.length}}</td>
             <td>{{b.size}}</td>
             <td>{{b.confirmations}}</td>
           </tr>
           </tbody>
         </table>
-        <h3 style="margin-top: 50px;"> About </h3>
+        <h2> About </h2>
         <p class="text-muted">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quas, sint, neque harum libero eos maiores rerum rem fuga quae architecto ea incidunt dolore optio ullam sit placeat vero perferendis beatae?</p>
         <p class="text-muted">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Blanditiis, unde quidem commodi dolor asperiores ullam molestias sit a sapiente ipsa!</p>
         <p class="text-muted">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Deserunt tempora fugiat dolorem cupiditate perspiciatis praesentium.</p>
       </div>
 
-      <div class="col-md-4">
-        <div class="col-gray">
-          <h4>Latest Transactions</h4>
+      <div class="col-xs-12 col-md-4">
+        <div class="col-gray col-gray-responsive">
+          <h3>Latest Transactions</h3>
 
-          <table class="table table-hover" style="table-layout: fixed">
+          <table class="table" style="table-layout: fixed">
             <thead>
               <tr>
                 <th>Hash</th>
@@ -58,9 +58,8 @@
             </tr>
             </tbody>
           </table>
-          <div class="m50v"></div>
-          <h4> Other Bitcoin Links </h4>
-          <ul style="line-height: 22px;">
+          <h3> Other Bitcoin Links </h3>
+          <ul>
             <li>
               <a href="">Most Popular Addresses</a>
               <small> - Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolores.</small>
