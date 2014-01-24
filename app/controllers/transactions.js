@@ -71,10 +71,13 @@ exports.list = function(req, res, next) {
 
   if (bId) {
     Block.fromHashWithInfo(bId, function(err, block) {
-      if (err && !block) {
+      if (err) {
         console.log(err);
-        res.status(404).send('Not found');
-        return next();
+        return res.status(500).send('Internal Server Error');
+      }
+
+      if (! block) {
+        return res.status(404).send('Not found');
       }
 
       txLength = block.info.tx.length;

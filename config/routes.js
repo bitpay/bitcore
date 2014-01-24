@@ -4,14 +4,15 @@ module.exports = function(app, historicSync) {
 
   //Home route
   var index = require('../app/controllers/index');
-  
+
   app.get('/', index.render);
   app.get('/blocks', index.render);
   app.get('/blocks-date/*', index.render);
+  app.get('/block-index/*', index.render);
   app.get('/block/*', index.render);
   app.get('/tx/*', index.render);
   app.get('/address/*', index.render);
-  
+
   app.get('/api/version', index.version);
 
   //Block routes
@@ -41,5 +42,5 @@ module.exports = function(app, historicSync) {
   app.get('/api/status', st.show);
 
   app.get('/api/sync', st.sync);
-  
+
 };
