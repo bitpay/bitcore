@@ -8,26 +8,29 @@ angular.module('insight.search').controller('SearchController',
     var q = $scope.q;
 
     $scope.badQuery = false;
-    $scope.q = '';
 
     BlockByHeight.get({
       blockHeight: q
     }, function(hash) {
+      $scope.q = '';
       $location.path('/block/' + hash.blockHash);
     }, function() { // block by height not found
       Block.get({
         blockHash: q
       }, function() {
+        $scope.q = '';
         $location.path('block/' + q);
       }, function () { //block not found, search on TX
         Transaction.get({
           txId: q
         }, function() {
+          $scope.q = '';
           $location.path('tx/' + q);
         }, function () { //tx not found, search on Address
           Address.get({
             addrStr: q
           }, function() {
+            $scope.q = '';
             $location.path('address/' + q);
           }, function () { //address not found, fail :(
             $scope.badQuery = true;
