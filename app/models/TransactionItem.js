@@ -6,6 +6,7 @@
 var mongoose    = require('mongoose'),
     async       = require('async'),
     Transaction = require('./Transaction').class(),
+    sockets     = require('../controllers/socket.js'),
     Schema      = mongoose.Schema;
 
 var CONCURRENCY = 15;
@@ -154,13 +155,15 @@ TransactionItemSchema.statics.explodeTransactionItems = function(txid, cb) {
 
 
 TransactionItemSchema.statics.createFromArray = function(txs, next) {
+
+  var Self = this;
   if (!txs) return next();
 
   var inserted_txs = [];
 
   async.forEachLimit(txs, CONCURRENCY, function(txid, cb, was_new) {
 
-    TransactionItemSchema.explodeTransactionItems( txid, function(err, addrs) {
+    Self.explodeTransactionItems( txid, function(err, addrs) {
       if (err) return next(err);
       if (addrs) {
         async.each(addrs, function(addr){

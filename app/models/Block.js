@@ -8,7 +8,8 @@ var mongoose    = require('mongoose'),
     RpcClient   = require('bitcore/RpcClient').class(),
     util        = require('bitcore/util/util'),
     BitcoreBlock= require('bitcore/Block').class(),
-    Transaction = require('./Transaction'),
+    Transaction = require('./Transaction').class(),
+    TransactionItem = require('./TransactionItem'),
     config      = require('../../config/config')
     ;
 
@@ -57,7 +58,7 @@ BlockSchema.statics.customCreate = function(block, cb) {
   newBlock.nextBlockHash = block.nextBlockHash;
 
 
-  Transaction.createFromArray(block.tx, newBlock.time, function(err, inserted_txs) {
+  TransactionItem.createFromArray(block.tx, function(err, inserted_txs) {
     if (err) return cb(err);
 
     newBlock.save(function(err) {
