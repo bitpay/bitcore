@@ -37,13 +37,13 @@ exports.show = function(req, res) {
  * Show block by Height
  */
 exports.blockindex = function(req, res, next, height) {
-  Block.fromHeight(height, function(err, hash) {
+  Block.blockIndex(height, function(err, hashStr) {
     if (err) {
       console.log(err);
       res.status(400).send('Bad Request'); // TODO
     }
     else {
-      res.jsonp(hash);
+      res.jsonp(hashStr);
     }
   });
 };

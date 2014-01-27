@@ -60,7 +60,7 @@ function spec() {
       // TODO TXout!
       //T
       function (cb) {
-        TransactionItem.find({addr:that.addrStr}).sort({ts:-1}).exec(function(err,txItems){
+        TransactionItem.find({addr:that.addrStr}).exec(function(err,txItems){
           if (err) return cb(err);
 
           txItems.forEach(function(txItem){

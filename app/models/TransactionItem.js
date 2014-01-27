@@ -10,9 +10,11 @@ var mongoose    = require('mongoose'),
     Schema      = mongoose.Schema;
 
 var CONCURRENCY = 15;
+// TODO: use bitcore networks module
+var genesisTXID = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b';
 
 var TransactionItemSchema = new Schema({
-  txid: String,
+  txidBuf: Buffer,
   index: Number,
   addr: {
     type: String,
@@ -25,12 +27,24 @@ var TransactionItemSchema = new Schema({
 });
 
 
-// TODO: use bitcore networks module
-var genesisTXID = '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b';
-
-
 // Compound index
-TransactionItemSchema.index({txid: 1, index: 1, value_sat: 1}, {unique: true, dropDups: true});
+TransactionItemSchema.index({txidBuf: 1, index: 1, value_sat: 1}, {unique: true, dropDups: true});
+
+TransactionItemSchema.virtual('txid').get(function () {
+  return this.txidBuf.toString('hex');
+});
+
+TransactionItemSchema.virtual('txid').set(function (txidStr) {
+  if (txidStr)
+    this.txidBuf = new Buffer(txidStr,'hex');
+  else
+    this.txidBuf = null;
+});
+
+
+
+
+
 
 
 TransactionItemSchema.statics.load = function(id, cb) {
@@ -87,7 +101,6 @@ TransactionItemSchema.statics.explodeTransactionItems = function(txid, cb) {
             value_sat : -1 * i.valueSat,
             addr  : i.addr,
             index : i.n,
-            ts : info.time,
         }, next_in);
         if (addrs.indexOf(i.addr) === -1) {
           addrs.push(i.addr);
@@ -124,7 +137,6 @@ TransactionItemSchema.statics.explodeTransactionItems = function(txid, cb) {
               value_sat : o.valueSat,
               addr  : o.scriptPubKey.addresses[0], // TODO: only address 0?
               index : o.n,
-              ts : info.time,
           }, next_out);
           if (addrs.indexOf(o.scriptPubKey.addresses[0]) === -1) {
             addrs.push(o.scriptPubKey.addresses[0]);
@@ -139,7 +151,7 @@ TransactionItemSchema.statics.explodeTransactionItems = function(txid, cb) {
         if (err) {
           if (err.message.match(/E11000/)) {
             is_new = false;
-          } 
+          }
           else {
             console.log('ERR at TX %s: %s', txid,  err);
             return cb(err);
