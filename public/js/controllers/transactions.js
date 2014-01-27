@@ -104,11 +104,7 @@ function($scope, $rootScope, $routeParams, $location, Global, Transaction, Trans
     });
   };
 
-  $scope.findThis = function() {
-    $scope.findTx($routeParams.txId);
-  };
-
-  $scope.findTx = function(txid) {
+  var _findTx = function(txid) {
     Transaction.get({
       txId: txid
     }, function(tx) {
@@ -128,6 +124,11 @@ function($scope, $rootScope, $routeParams, $location, Global, Transaction, Trans
 
       $location.path('/');
     });
+  };
+
+  $scope.findThis = function() {
+    $rootScope.titleDetail = $routeParams.txId;
+    _findTx($routeParams.txId);
   };
 
   //Initial load
@@ -154,7 +155,7 @@ function($scope, $rootScope, $routeParams, $location, Global, Transaction, Trans
   $scope.txs = [];
 
   $scope.$on('tx', function(event, txid) {
-    $scope.findTx(txid);
+    _findTx(txid);
   });
 
 });

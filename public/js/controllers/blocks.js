@@ -19,6 +19,10 @@ angular.module('insight.blocks').controller('BlocksController',
   $scope.list = function() {
     $scope.loading = true;
 
+    if ($routeParams.blockDate) {
+      $rootScope.titleDetail = 'on ' + $routeParams.blockDate;
+    }
+
     Blocks.get({
       blockDate: $routeParams.blockDate
     }, function(res) {
@@ -30,6 +34,7 @@ angular.module('insight.blocks').controller('BlocksController',
 
   $scope.findOne = function() {
     $scope.loading = true;
+    $rootScope.titleDetail = $routeParams.blockHash;
 
     Block.get({
       blockHash: $routeParams.blockHash

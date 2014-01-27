@@ -4,7 +4,7 @@ head
   meta(name='viewport', content='width=device-width,initial-scale=1.0')
   meta(name="fragment", content="!")
 
-  title= appName+' - '+title
+  title(data-ng-bind="$root.title + $root.titleDetail + ' | #{appName}'")= appName
   meta(http-equiv='Content-type', content='text/html;charset=UTF-8')
   meta(name="keywords", content="node.js, express, mongoose, mongodb, angularjs")
   meta(name="description", content="Insight")
