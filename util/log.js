@@ -6,9 +6,15 @@ var loggers = {
   debug: {info: console.log, warn: console.log, err: console.log, debug: console.log},
 };
 
-var config = require('../config');
-if(config.log) {
-  module.exports = config.log;
-} else {
-  module.exports = loggers[config.logger || 'normal'];
+var build_log = function(config) {
+  return config.log || loggers[config.logger || 'normal'];
+};
+if(!(typeof module === 'undefined')) {
+  var config = require('../config');
+  module.exports = build_log(config);
+} else if(!(typeof define === 'undefined')) {
+  define(['config'], function(config){
+    var e = build_log(config)
+    return e;
+  });
 }
