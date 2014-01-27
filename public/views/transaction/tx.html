@@ -17,10 +17,11 @@
       <div class="row" data-ng-show="!tx.isCoinBase">
         <div data-ng-repeat="vin in tx.vinSimple" data-ng-show="!itemsExpanded">
           <div class="col-md-12 transaction-vin-vout">
-            <div class="text-muted pull-right btc-value"><small>{{vin.value}} BTC</small></div>
+            <div class="text-muted pull-right btc-value" data-ng-class="{'text-danger': $root.currentAddr == vin.addr}"><small>{{vin.value}} BTC</small></div>
             <div class="ellipsis">
               <span data-ng-show="vin.notAddr">{{vin.addr}}</span>
-              <a href="/address/{{vin.addr}}" data-ng-show="!vin.notAddr">{{vin.addr}}</a>
+              <span class="text-muted" title="Current Bitcoin Address" data-ng-show="vin.addr == $root.currentAddr">{{vin.addr}}</span>
+              <a href="/address/{{vin.addr}}" data-ng-show="!vin.notAddr && vin.addr != $root.currentAddr">{{vin.addr}}</a>
             </div>
           </div>
         </div>
@@ -53,10 +54,11 @@
       <div class="row">
         <div data-ng-repeat="vout in tx.voutSimple" data-ng-show="!itemsExpanded">
           <div class="col-md-12 transaction-vin-vout">
-            <div class="text-muted pull-right btc-value"><small>{{vout.value}} BTC</small></div>
+            <div class="text-muted pull-right btc-value" data-ng-class="{'text-success': $root.currentAddr == vout.addr}"><small>{{vout.value}} BTC</small></div>
             <div class="ellipsis">
               <span data-ng-show="vout.notAddr">{{vout.addr}}</span>
-              <a href="/address/{{address}}"  data-ng-show="!vout.notAddr" data-ng-repeat="address in vout.addr.split(',')">{{address}}</a>
+              <span class="text-muted" title="Current Bitcoin Address" data-ng-show="address == $root.currentAddr" data-ng-repeat="address in vout.addr.split(',')">{{vout.addr}}</span>
+              <a href="/address/{{address}}"  data-ng-show="!vout.notAddr && address != $root.currentAddr" data-ng-repeat="address in vout.addr.split(',')">{{address}}</a>
             </div>
           </div>
         </div>
