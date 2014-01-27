@@ -5,8 +5,8 @@
     </h1>
   </div>
   <div id="status" class="row">
-    <div class="col-md-9">
       
+    <div class="col-xs-12 col-md-8">
       <h4>Sync Status</h4>
       <table class="table"  data-ng-controller="StatusController" data-ng-init="getSync()">
         <tbody>
@@ -41,7 +41,7 @@
       </table>
     
       <h4>Transaction Output Set Information</h4>
-      <table class="table"  data-ng-controller="StatusController" data-ng-init="getStatus('TxOutSetInfo')">
+      <table class="table" style="table-layout: fixed" data-ng-controller="StatusController" data-ng-init="getStatus('TxOutSetInfo')">
         <thead  data-ng-include src="'/views/infoStatus.html'"> </thead>
         <tbody>
         <tr>
@@ -50,7 +50,7 @@
         </tr>
         <tr>
           <td>Best Block</td>
-          <td class="text-right"><a href="/block/{{txoutsetinfo.bestblock}}">{{txoutsetinfo.bestblock}}</a></td>
+          <td class="text-right ellipsis"><a href="/block/{{txoutsetinfo.bestblock}}">{{txoutsetinfo.bestblock}}</a></td>
         </tr>
         <tr>
           <td>Transactions</td>
@@ -66,7 +66,7 @@
         </tr>
         <tr>
           <td>Hash Serialized</td>
-          <td class="text-right">{{txoutsetinfo.hash_serialized}}</td>
+          <td class="text-right ellipsis">{{txoutsetinfo.hash_serialized}}</td>
         </tr>
         <tr>
           <td>Total Amount</td>
@@ -76,85 +76,83 @@
       </table>
       
       <h4>Last Block</h4>
-      <table class="table" data-ng-controller="StatusController" data-ng-init="getStatus('LastBlockHash')">
+      <table class="table" style="table-layout: fixed" data-ng-controller="StatusController" data-ng-init="getStatus('LastBlockHash')">
         <thead  data-ng-include src="'/views/infoStatus.html'"> </thead>
         <tr>
           <td>Last Block Hash</td>
-          <td class="text-right"><a href="/block/{{lastblockhash}}">{{lastblockhash}}</a></td>
+          <td class="text-right ellipsis"><a href="/block/{{lastblockhash}}">{{lastblockhash}}</a></td>
         </tr>
         </tbody>
       </table>
     </div> <!-- END OF COL-8 -->
 
-    <div class="col-md-3">
-      <div class="col-gray">
-        <h4>Bitcoin node information</h4>
-        <table class="table" data-ng-controller="StatusController" data-ng-init="getStatus('Info')">
-          <thead  data-ng-include src="'/views/infoStatus.html'"> </thead>
-          <tbody>
-          <tr>
-            <td>Version</td>
-            <td class="text-right">{{info.version}}</td>
-          </tr>
-          <tr>
-            <td>Protocol version</td>
-            <td class="text-right">{{info.protocolversion}}</td>
-          </tr>
-          <tr>
-            <td>Blocks</td>
-            <td class="text-right"><a href="/block-index/{{info.blocks}}">{{info.blocks}}</a></td>
-          </tr>
-          <tr>
-            <td>Time Offset</td>
-            <td class="text-right">{{info.timeoffset}}</td>
-          </tr>
-          <tr>
-            <td>Connections to other nodes</td>
-            <td class="text-right">{{info.connections}}</td>
-          </tr>
-          <tr>
-            <td>Proxy setting</td>
-            <td class="text-right">{{info.proxy}}</td>
-          </tr>
-          <tr>
-            <td>Mining Difficulty</td>
-            <td class="text-right">{{info.difficulty}}</td>
-          </tr>
-          <tr>
-            <td>Testnet</td>
-            <td class="text-right">{{info.testnet}}</td>
-          </tr>
-          <tr>
-            <td>Keypool Oldest Date</td>
-            <td class="text-right">{{info.keypoololdest*1000 | date:'medium' }}</td>
-          </tr>
-          <tr>
-            <td>Keypool Size</td>
-            <td class="text-right">{{info.keypoolsize}}</td>
-          </tr>
-          <tr>
-            <td>Default Transaction Fee (BTC)</td>
-            <td class="text-right">{{info.paytxfee}}</td>
-          </tr>
-          <tr>
-            <td>Info Errors</td>
-            <td class="text-right">{{info.infoErrors}}</td>
-          </tr>
-          </tbody>
-        </table>
+    <div class="col-xs-12 col-md-4 col-gray">
+      <h4>Bitcoin node information</h4>
+      <table class="table" data-ng-controller="StatusController" data-ng-init="getStatus('Info')">
+        <thead  data-ng-include src="'/views/infoStatus.html'"> </thead>
+        <tbody>
+        <tr>
+          <td>Version</td>
+          <td class="text-right">{{info.version}}</td>
+        </tr>
+        <tr>
+          <td>Protocol version</td>
+          <td class="text-right">{{info.protocolversion}}</td>
+        </tr>
+        <tr>
+          <td>Blocks</td>
+          <td class="text-right"><a href="/block-index/{{info.blocks}}">{{info.blocks}}</a></td>
+        </tr>
+        <tr>
+          <td>Time Offset</td>
+          <td class="text-right">{{info.timeoffset}}</td>
+        </tr>
+        <tr>
+          <td>Connections to other nodes</td>
+          <td class="text-right">{{info.connections}}</td>
+        </tr>
+        <tr>
+          <td>Proxy setting</td>
+          <td class="text-right">{{info.proxy}}</td>
+        </tr>
+        <tr>
+          <td>Mining Difficulty</td>
+          <td class="text-right">{{info.difficulty}}</td>
+        </tr>
+        <tr>
+          <td>Testnet</td>
+          <td class="text-right">{{info.testnet}}</td>
+        </tr>
+        <tr>
+          <td>Keypool Oldest Date</td>
+          <td class="text-right">{{info.keypoololdest*1000 | date:'medium' }}</td>
+        </tr>
+        <tr>
+          <td>Keypool Size</td>
+          <td class="text-right">{{info.keypoolsize}}</td>
+        </tr>
+        <tr>
+          <td>Default Transaction Fee (BTC)</td>
+          <td class="text-right">{{info.paytxfee}}</td>
+        </tr>
+        <tr>
+          <td>Info Errors</td>
+          <td class="text-right">{{info.infoErrors}}</td>
+        </tr>
+        </tbody>
+      </table>
 
-        <h4>Difficulty</h4>
-        <table class="table" data-ng-controller="StatusController" data-ng-init="getStatus('Difficulty')">
-          <thead  data-ng-include src="'/views/infoStatus.html'"> </thead>
-          <tbody
-          <tr>
-            <td>Mining Difficulty</td>
-            <td>{{difficulty}}</td>
-          </tr>
-          </tbody>
-        </table>
-      </div> <!-- END OF COL-GRAY -->
-    </div> <!-- END OF COL-3 -->
+      <h4>Difficulty</h4>
+      <table class="table" data-ng-controller="StatusController" data-ng-init="getStatus('Difficulty')">
+        <thead  data-ng-include src="'/views/infoStatus.html'"> </thead>
+        <tbody
+        <tr>
+          <td>Mining Difficulty</td>
+          <td>{{difficulty}}</td>
+        </tr>
+        </tbody>
+      </table>
+    </div> <!-- END OF COL-GRAY -->
   </div>
 </section>
 

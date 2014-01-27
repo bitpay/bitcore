@@ -20,7 +20,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   /* Negative indent footer by its height */
   margin: 0 auto -51px;
   /* Pad bottom by footer height */
-  padding: 0 0 60px;
+  padding: 0 0 75px;
 }
 
 .m10h { margin: 0 10px; }
@@ -134,12 +134,35 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   -webkit-border-radius: 5px;
   background-color: #F4F4F4;
   border-radius: 5px;
-  padding: 15px;
-  width: 267px;
+  padding: 14px;
 }
 
 .col-gray-responsive {
   width: auto;
+}
+
+.col-gray-fixed {
+  position: fixed;
+  width: 250px;
+}
+
+@media (max-width: 768px) {
+  .col-gray-fixed {
+    width:100%;
+  }
+}
+
+@media (max-width: 995px) {
+  .col-gray-fixed {
+    position:static;
+    width: 100%;
+  }
+}
+
+@media (min-width: 1200px) {
+  .col-gray-fixed {
+    width: 280px;
+  }
 }
 
 .ellipsis {
@@ -157,11 +180,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .line10 {
   border: 1px solid #EAEAEA;
   margin: 10px 0;
-}
-
-.col-gray .address {
-  line-height: 20px;
-  width: 125px;
 }
 
 .block-id {
@@ -197,7 +215,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 .btn {
   border-radius: 2px;
-  margin: 0 5px;
 }
 .btn-primary {
   background-color: #8DC429;
@@ -213,7 +230,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   background-color: #fff;
   border: 2px solid #ccc;
   color: #373D42;
-  font-weight: 500;
 }
 
 .btn-default {
@@ -230,8 +246,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   background-color: #AC0015;
   border: 2px solid #6C0000;
 }
-
-#status .table { margin-bottom: 45px; }
 
 .progress-bar-info { background-color: #8DC429; }
 
