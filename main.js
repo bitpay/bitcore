@@ -3,10 +3,10 @@ requirejs.config({
   }
 });
 
-define('bitcore', ['Transaction'], function(Transaction) {
-  var Bitcore = function() {
+define(['Transaction'], function(Transaction) {
+  var B = function() {
     this.Transaction = Transaction;
   };
   
-  return Bitcore;
+  return new B();
 });
