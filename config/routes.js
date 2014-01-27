@@ -7,6 +7,7 @@ module.exports = function(app, historicSync) {
 
   app.get('/', index.render);
   app.get('/blocks', index.render);
+  app.get('/status', index.render);
   app.get('/blocks-date/*', index.render);
   app.get('/block-index/*', index.render);
   app.get('/block/*', index.render);

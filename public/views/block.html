@@ -1,42 +1,39 @@
 <section data-ng-controller="BlocksController" data-ng-init="findOne()">
   <div class="row">
-    <div class="col-md-3">
-      <div class="bs-sidebar affix  col-gray">
-        <div class="block-id">
-          <div class="icon-block text-center">
-            <span class="glyphicon glyphicon-list-alt"></span>
-          </div>
-          <h3 data-ng-if="block">Block #{{ block.height }}</h3>
+    <div class="col-xs-12 col-gray col-gray-fixed">
+      <div class="block-id">
+        <div class="icon-block text-center">
+          <span class="glyphicon glyphicon-list-alt"></span>
         </div>
-        <div class="m50v" data-ng-show="!tx.isCoinBase">
-          <h4>Hashes</h4>
-          <table class="table">
-            <tbody>
-            <tr>
-              <td class="small"> Hash </td>
-              <td><a class="address ellipsis" href="/block/{{block.hash}}">{{block.hash}}</a></td>
-            </tr>
-            <tr>
-              <td class="small"> Previous Block</td>
-              <td><a class="address ellipsis" href="/block/{{block.previousblockhash}}">{{block.previousblockhash}}</a></td>
-            </tr>
-            <tr>
-              <td class="small"> Next Block</td>
-              <td><a class="address ellipsis" href="/block/{{block.nextblockhash}}">{{block.nextblockhash}}</a></td>
-            </tr>
-            <tr>
-              <td class="small">Merkle Root</td>
-              <td> <p class="address ellipsis"> {{block.merkleroot}} </p> </td>
-            </tr>
-            </tbody>
-          </table>
-        </div> <!-- END OF TRANSACTIONS TABLE -->
-
+        <h3 data-ng-if="block">Block #{{ block.height }}</h3>
       </div>
+      <div class="m50v" data-ng-show="!tx.isCoinBase">
+        <h4>Hashes</h4>
+        <table class="table" style="table-layout: fixed">
+          <tbody>
+          <tr>
+            <td class="small"> Hash </td>
+            <td><a class="address ellipsis" href="/block/{{block.hash}}">{{block.hash}}</a></td>
+          </tr>
+          <tr>
+            <td class="small"> Previous Block</td>
+            <td><a class="address ellipsis" href="/block/{{block.previousblockhash}}">{{block.previousblockhash}}</a></td>
+          </tr>
+          <tr>
+            <td class="small"> Next Block</td>
+            <td><a class="address ellipsis" href="/block/{{block.nextblockhash}}">{{block.nextblockhash}}</a></td>
+          </tr>
+          <tr>
+            <td class="small">Merkle Root</td>
+            <td> <p class="address ellipsis"> {{block.merkleroot}} </p> </td>
+          </tr>
+          </tbody>
+        </table>
+      </div> <!-- END OF TRANSACTIONS TABLE -->
     </div> <!-- END OF COL-GRAY   -->
 
-    <div class="col-md-9">
-      <h3>Summary</h3>
+    <div class="col-xs-12 col-md-9 col-md-offset-3">
+      <h2>Summary</h2>
       <div class="row">
         <div class="col-md-6">
           <table class="table">

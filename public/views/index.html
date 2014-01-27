@@ -35,57 +35,55 @@
         <p class="text-muted">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Deserunt tempora fugiat dolorem cupiditate perspiciatis praesentium.</p>
       </div>
 
-      <div class="col-xs-12 col-md-4">
-        <div class="col-gray col-gray-responsive">
-          <h3>Latest Transactions</h3>
+      <div class="col-xs-12 col-md-4 col-gray">
+        <h3>Latest Transactions</h3>
 
-          <table class="table" style="table-layout: fixed">
-            <thead>
-              <tr>
-                <th>Hash</th>
-                <th>Age</th>
-                <th>Value Out</th>
-              </tr>
-            </thead>
-            <tbody>
-            <tr data-ng-show="!txs.length"><td colspan="5">Waiting for transactions...</td></tr>
-            <tr class="fader" data-ng-repeat='tx in txs'>
-              <td>
-                <a class="ellipsis" href="/tx/{{tx.txid}}">{{tx.txid}}</a>
-              </td>
-              <td><span class="ellipsis">{{humanSince(tx.time)}}</span></td>
-              <td>{{tx.valueOut}}</td>
+        <table class="table" style="table-layout: fixed;">
+          <thead>
+            <tr>
+              <th>Hash</th>
+              <th>Age</th>
+              <th>Value Out</th>
             </tr>
-            </tbody>
-          </table>
-          <h3> Other Bitcoin Links </h3>
-          <ul>
-            <li>
-              <a href="">Most Popular Addresses</a>
-              <small> - Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolores.</small>
-            </li>
-            <li>
-              <a href="">Addresses</a>
-              <small> - Addresses which have received the most payments</small>
-            </li>
-            <li>
-              <a href="">Lorem ipsum dolor.</a>
-              <small> - Lorem ipsum dolor sit amet.</small>
-            </li>
-            <li>
-              <a href="">Most Popular Addresses</a>
-              <small> - Addresses which have received the most payments</small>
-            </li>
-            <li>
-              <a href="">Lorem ipsum dolor sit.</a>
-              <small> - Lorem ipsum dolor sit amet, consectetur adipisicing.</small>
-            </li>
-            <li>
-              <a href="">Addresses</a>
-              <small> - Addresses which have received the most payments</small>
-            </li>
-          </ul>
-        </div>
+          </thead>
+          <tbody>
+          <tr data-ng-show="!txs.length"><td colspan="5">Waiting for transactions...</td></tr>
+          <tr class="fader" data-ng-repeat='tx in txs'>
+            <td>
+              <a class="ellipsis" href="/tx/{{tx.txid}}">{{tx.txid}}</a>
+            </td>
+            <td><span class="ellipsis">{{humanSince(tx.time)}}</span></td>
+            <td>{{tx.valueOut}}</td>
+          </tr>
+          </tbody>
+        </table>
+        <h3> Other Bitcoin Links </h3>
+        <ul>
+          <li>
+          <a href="">Most Popular Addresses</a>
+          <small> - Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolores.</small>
+          </li>
+          <li>
+          <a href="">Addresses</a>
+          <small> - Addresses which have received the most payments</small>
+          </li>
+          <li>
+          <a href="">Lorem ipsum dolor.</a>
+          <small> - Lorem ipsum dolor sit amet.</small>
+          </li>
+          <li>
+          <a href="">Most Popular Addresses</a>
+          <small> - Addresses which have received the most payments</small>
+          </li>
+          <li>
+          <a href="">Lorem ipsum dolor sit.</a>
+          <small> - Lorem ipsum dolor sit amet, consectetur adipisicing.</small>
+          </li>
+          <li>
+          <a href="">Addresses</a>
+          <small> - Addresses which have received the most payments</small>
+          </li>
+        </ul>
       </div> <!-- END OF COL-3 -->
     </div>
   </div>
