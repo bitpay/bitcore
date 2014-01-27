@@ -52,5 +52,6 @@ angular.module('insight')
       //Change page title, based on Route information
       $rootScope.titleDetail = '';
       $rootScope.title = $route.current.title;
+      $rootScope.isCollapsed = true;
     });
   });

@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('insight.system').controller('HeaderController',
-  function($scope, getSocket, Global, Block) {
+  function($scope, $rootScope, getSocket, Global, Block) {
   $scope.global = Global;
 
   $scope.menu = [
@@ -32,6 +32,5 @@ angular.module('insight.system').controller('HeaderController',
     _getBlock(blockHash);
   });
 
-
-  $scope.isCollapsed = true;
+  $rootScope.isCollapsed = true;
 });
