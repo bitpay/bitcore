@@ -1,6 +1,4 @@
-require('classtool');
-
-function spec(b) {
+function sTransaction(b) {
   var config = b.config || require('./config');
   var log = b.log || require('./util/log');
   var Address = b.Address || require('./Address').class();
@@ -811,4 +809,12 @@ function spec(b) {
 
   return Transaction;
 };
-module.defineClass(spec);
+
+if(!(typeof module === 'undefined')) {
+  module.defineClass(sTransaction);
+} else if(!(typeof define === 'undefined')) {
+  define(['classtool'], function(Classtool) {
+    return Classtool.defineClass(sTransaction);
+  });
+}
+
