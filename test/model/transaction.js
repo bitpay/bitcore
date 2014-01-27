@@ -1,20 +1,17 @@
 #!/usr/bin/env node
+'use strict';
 
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
 
 
-var 
-  mongoose= require('mongoose'),
+var mongoose= require('mongoose'),
   assert  = require('assert'),
   config       = require('../../config/config'),
-  Transaction  = require('../../app/models/Transaction'),
-  TransactionItem  = require('../../app/models/TransactionItem'),
-  fs      = require('fs'),
-  util    = require('util');
+  Transaction  = require('../../app/models/Transaction').class(),
+  TransactionItem  = require('../../app/models/TransactionItem');
 
 
-var txItemsValid = JSON.parse(fs.readFileSync('test/model/txitems.json'));
 mongoose.connection.on('error', function(err) { console.log(err); });
 
 describe('Transaction', function(){
@@ -119,44 +116,6 @@ describe('Transaction', function(){
       assert.equal(tx.info.txid, txid2);
       assert.equal(tx.info.vin[0].addr, 'n1JagbRWBDi6VMvG7HfZmXX74dB9eiHJzU');
       done();
-    });
-  });
-
-  
-  txItemsValid.forEach( function(v) {
-    if (v.disabled) return;
-    it('test a exploding TX ' + v.txid, function(done) {
-
-      // Remove first
-      TransactionItem.remove({txid: v.txid}, function(err) {
-
-        var now = Math.round(new Date().getTime() / 1000);
-        Transaction.explodeTransactionItems(v.txid, now, function(err, tx) {
-          if (err) done(err);
-
-          TransactionItem
-            .fromTxId( v.txid, function(err, readItems) {
-
-            var unmatch={};
-
-            v.items.forEach(function(validItem){ 
-              unmatch[validItem.addr] =1;
-            });
-            v.items.forEach(function(validItem){ 
-              var readItem = readItems.shift();
-              assert.equal(readItem.addr,validItem.addr);
-              assert.equal(readItem.value_sat,validItem.value_sat);
-              assert.equal(readItem.index,validItem.index);
-              delete unmatch[validItem.addr];
-            });
-
-            var valid = util.inspect(v.items, { depth: null });
-            assert(!Object.keys(unmatch).length, 
-                   '\n\tUnmatchs:' + Object.keys(unmatch) + "\n\n" +valid + '\nvs.\n' + readItems);
-            done();
-          });
-        });
-      });
     });
   });
 
