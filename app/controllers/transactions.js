@@ -40,14 +40,13 @@ var getTransaction = function(txid, cb) {
   Transaction.fromIdWithInfo(txid, function(err, tx) {
     if (err) {
       console.log(err);
-      return cb(err);
     }
 
     if (!tx || !tx.info) {
 console.log('[transactions.js.48]:: TXid %s not found in RPC. CHECK THIS.', tx.txid); //TODO
       // not check this. no
       tx.info = {
-        txid: tx.txid,
+        txid: tx.txid
       };
     }
 
