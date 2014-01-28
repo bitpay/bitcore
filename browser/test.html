@@ -8,7 +8,9 @@
   <body>
     <h1>Hello World</h1>
     <script type="text/javascript">
-      alert(new Bitcore.Address());
+      var addr = new Bitcore.Address("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa");
+      addr.validate();
+      console.log("Address is valid.");
       </script>
     </body>
   </html>
