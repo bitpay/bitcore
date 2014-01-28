@@ -1,12 +1,14 @@
 requirejs.config({
   paths: {
+    'base58-native': 'browser/base58-browser',
   }
 });
 
 define(function(require) {
-  var Transaction = require('./Transaction').class();
+  var Address = require('./Address').class();
   var B = function() {
-    this.Transaction = Transaction;
+    //this.Transaction = Transaction;
+    this.Address = Address;
   };
   
   return new B();

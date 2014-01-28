@@ -157,9 +157,8 @@ function sEncodedData(b) {
 if(!(typeof module === 'undefined')) {
   module.defineClass(sEncodedData);
 } else if(!(typeof define === 'undefined')) {
-  define(function(require) {
-    var Classtool = require('classtool');
-    return Classtool.defineClass(sEncodedData);
+  define('EncodedData', ['classtool'], function(Classtool, base58) {
+    return Classtool.defineClass(sEncodedData);  
   });
 }
 

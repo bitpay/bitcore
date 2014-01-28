@@ -22,10 +22,7 @@ function sAddress(b) {
 if(!(typeof module === 'undefined')) {
   module.defineClass(sAddress);
 } else if(!(typeof define === 'undefined')) {
-  define(function(require) {
-    var Classtool = require('classtool'),
-      VersionedData = require('util/VersionedData');
-
+  define(['classtool', 'util/VersionedData'],function(Classtool) {
     return Classtool.defineClass(sAddress);
   });
 }

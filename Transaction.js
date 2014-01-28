@@ -813,12 +813,7 @@ function sTransaction(b) {
 if(!(typeof module === 'undefined')) {
   module.defineClass(sTransaction);
 } else if(!(typeof define === 'undefined')) {
-  define(function(require) {
-    var Classtool = require('classtool'),
-      config = require('config'),
-      log = require('util/log'),
-      Address = require('Address');
-
+  define(['classtool', 'config', 'util/log', 'Address'], function(Classtool) {
     return Classtool.defineClass(sTransaction);
   });
 }

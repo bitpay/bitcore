@@ -39,9 +39,7 @@ function sVersionedData(b) {
 if(!(typeof module === 'undefined')) {
   module.defineClass(sVersionedData);
 } else if(!(typeof define === 'undefined')) {
-  define(function(require) {
-    var Classtool = require('classtool')
-      EncodedData = require('util/EncodedData');
+  define(['classtool', 'util/EncodedData'], function(Classtool, EncodedData) {
     return Classtool.defineClass(sVersionedData);
   });
 }
