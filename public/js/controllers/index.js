@@ -7,11 +7,11 @@ angular.module('insight.system').controller('IndexController',
   function($scope, $rootScope, Global, getSocket, Blocks, Block, Transactions, Transaction) {
   $scope.global = Global;
 
-  var _getTransaction = function(txid) {
+  var _getTransaction = function(txid, cb) {
     Transaction.get({
       txId: txid
     }, function(res) {
-      $scope.txs.unshift(res);
+      cb(res);
     });
   };
 
@@ -30,14 +30,15 @@ angular.module('insight.system').controller('IndexController',
   $scope.flashMessage = $rootScope.flashMessage || null;
 
   socket.on('tx', function(tx) {
-    var txStr = tx.txid.toString();
-    _getTransaction(txStr);
-
-
     console.log('Transaction received! ' + JSON.stringify(tx));
-    if (parseInt($scope.txs.length, 10) >= parseInt(TRANSACTION_DISPLAYED, 10)) {
-      $scope.txs = $scope.txs.splice(0, TRANSACTION_DISPLAYED);
-    }
+
+    var txStr = tx.txid.toString();
+    _getTransaction(txStr, function(res) {
+      $scope.txs.unshift(res);
+      if (parseInt($scope.txs.length, 10) >= parseInt(TRANSACTION_DISPLAYED, 10)) {
+        $scope.txs = $scope.txs.splice(0, TRANSACTION_DISPLAYED);
+      }
+    });
   });
 
   socket.on('block', function(block) {
