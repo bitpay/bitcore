@@ -2,8 +2,12 @@ body {
 	font-family: ubuntu, helvetica, arial;
 }
 
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+	font-family: ubuntu, helvetica, arial;
+}
+
 h2 {
-	font-family: Ubuntu-Light;
+	font-weight: 100;
 	font-size: 40px;
 	color: #3498DB;
 	line-height: 51px;
@@ -11,7 +15,7 @@ h2 {
 }
 
 p {
-	font-family: Ubuntu-Light;
+	font-weight: 100;
 	font-size: 15px;
 	color: #34495E;
 	line-height: 30px;
@@ -37,7 +41,7 @@ p {
 }
 
 a:hover {
-	font-weight: 600;
+	font-weight: 500;
 }
 
 pre {
@@ -87,16 +91,21 @@ pre {
 }
 
 .btn-default {
+	border: 0;
 	display: inline-block;
 	font-weight: 100;
-	font-size: 30px;
+	font-size: 25px;
 	color: #34495E;
 	line-height: 30px;
-	padding: 15px; 
+	padding: 16px; 
 	border-radius: 5px;
 	background: #FFFFFF;
 	height: 63px;
 	width: 250px;
+}
+
+.btn-default a {
+	
 }
 
 .btn-default:hover {
