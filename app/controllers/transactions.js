@@ -3,7 +3,7 @@
 /**
  * Module dependencies.
  */
-var Transaction = require('../models/Transaction');
+var Transaction = require('../models/Transaction').class();
 var Block       = require('../models/Block');
 var Address     = require('../models/Address');
 var async       = require('async');
@@ -138,32 +138,8 @@ exports.list = function(req, res, next) {
     });
   }
   else {
-    Transaction
-      .find()
-      .limit(limit)
-      .sort('-time')
-      .exec(function(err, txs) {
-        if (err) {
-          res.status(500).send(err);
-        } else {
-          var txids = [];
-          for(var i=0;i<txs.length;i++) {
-            txids.push(txs[i].txid);
-          }
-
-          async.mapSeries(txids, getTransaction, function(err, alltxs) {
-            if (err) {
-              console.log(err);
-              res.status(404).send('TX not found');
-            }
-
-            res.jsonp({
-              txs: alltxs,
-              length: alltxs.length
-            });
-          });
-        }
-      });
+    res.jsonp({
+      txs: [],
+    });
   }
-
 };

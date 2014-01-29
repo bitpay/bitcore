@@ -1,20 +1,16 @@
 #!/usr/bin/env node
+'use strict';
 
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
 
 
-var 
-  mongoose= require('mongoose'),
+var mongoose= require('mongoose'),
   assert  = require('assert'),
   config       = require('../../config/config'),
-  Transaction  = require('../../app/models/Transaction'),
-  TransactionItem  = require('../../app/models/TransactionItem'),
-  fs      = require('fs'),
-  util    = require('util');
+  Transaction  = require('../../app/models/Transaction').class();
 
 
-var txItemsValid = JSON.parse(fs.readFileSync('test/model/txitems.json'));
 mongoose.connection.on('error', function(err) { console.log(err); });
 
 describe('Transaction', function(){
@@ -28,17 +24,17 @@ describe('Transaction', function(){
     mongoose.connection.close();
     done();
   });
-  it('should pool tx\'s object from mongoose', function(done) {
-    var txid = '7e621eeb02874ab039a8566fd36f4591e65eca65313875221842c53de6907d6c';
+  var txid = '7e621eeb02874ab039a8566fd36f4591e65eca65313875221842c53de6907d6c';
+  it('txid ' + txid, function(done) {
     Transaction.fromIdWithInfo(txid, function(err, tx) {
       if (err) done(err);
       assert.equal(tx.txid, txid);
       assert(!tx.info.isCoinBase);
 
       for(var i=0; i<20; i++)
-        assert(parseFloat(tx.info.vin[i].value) === parseFloat(50));
-      assert(tx.info.vin[0].addr === 'msGKGCy2i8wbKS5Fo1LbWUTJnf1GoFFG59');
-      assert(tx.info.vin[1].addr === 'mfye7oHsdrHbydtj4coPXCasKad2eYSv5P');
+        assert(parseFloat(tx.info.vin[i].value) === parseFloat(50), 'input '+i);
+      assert(tx.info.vin[0].addr === 'msGKGCy2i8wbKS5Fo1LbWUTJnf1GoFFG59', 'addr 0');
+      assert(tx.info.vin[1].addr === 'mfye7oHsdrHbydtj4coPXCasKad2eYSv5P', 'addr 1');
       done();
     });
   });
@@ -103,12 +99,10 @@ describe('Transaction', function(){
 
   var txid2 = '64496d005faee77ac5a18866f50af6b8dd1f60107d6795df34c402747af98608';
   it('create TX on the fly ' + txid2, function(done) {
-    TransactionItem.remove({txid: txid2}, function(err) {
-      Transaction.fromIdWithInfo(txid2, function(err, tx) {
-        if (err) return done(err);
-        assert.equal(tx.info.txid, txid2);
-        done();
-      });
+    Transaction.fromIdWithInfo(txid2, function(err, tx) {
+      if (err) return done(err);
+      assert.equal(tx.info.txid, txid2);
+      done();
     });
   });
 
@@ -119,44 +113,6 @@ describe('Transaction', function(){
       assert.equal(tx.info.txid, txid2);
       assert.equal(tx.info.vin[0].addr, 'n1JagbRWBDi6VMvG7HfZmXX74dB9eiHJzU');
       done();
-    });
-  });
-
-  
-  txItemsValid.forEach( function(v) {
-    if (v.disabled) return;
-    it('test a exploding TX ' + v.txid, function(done) {
-
-      // Remove first
-      TransactionItem.remove({txid: v.txid}, function(err) {
-
-        var now = Math.round(new Date().getTime() / 1000);
-        Transaction.explodeTransactionItems(v.txid, now, function(err, tx) {
-          if (err) done(err);
-
-          TransactionItem
-            .fromTxId( v.txid, function(err, readItems) {
-
-            var unmatch={};
-
-            v.items.forEach(function(validItem){ 
-              unmatch[validItem.addr] =1;
-            });
-            v.items.forEach(function(validItem){ 
-              var readItem = readItems.shift();
-              assert.equal(readItem.addr,validItem.addr);
-              assert.equal(readItem.value_sat,validItem.value_sat);
-              assert.equal(readItem.index,validItem.index);
-              delete unmatch[validItem.addr];
-            });
-
-            var valid = util.inspect(v.items, { depth: null });
-            assert(!Object.keys(unmatch).length, 
-                   '\n\tUnmatchs:' + Object.keys(unmatch) + "\n\n" +valid + '\nvs.\n' + readItems);
-            done();
-          });
-        });
-      });
     });
   });
 

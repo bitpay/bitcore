@@ -8,6 +8,7 @@ function($scope, $rootScope, $routeParams, $location, Global, Transaction, Trans
 
   var pageNum = 0;
   var pagesTotal = 1;
+  var COIN = 100000000;
 
   var _aggregateItems = function(items) {
     if (!items) return [];
@@ -55,8 +56,8 @@ function($scope, $rootScope, $routeParams, $location, Global, Transaction, Trans
         tmp[addr].items = [];
       }
 
-      tmp[addr].valueSat += items[i].valueSat;
-      tmp[addr].value =  tmp[addr].valueSat / 100000000;
+      tmp[addr].valueSat += items[i].value * COIN;
+      tmp[addr].value =   items[i].value;
       tmp[addr].items.push(items[i]);
       tmp[addr].notAddr = notAddr;
       tmp[addr].count++;

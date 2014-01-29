@@ -8,7 +8,7 @@ var mongoose    = require('mongoose'),
     RpcClient   = require('bitcore/RpcClient').class(),
     util        = require('bitcore/util/util'),
     BitcoreBlock= require('bitcore/Block').class(),
-    Transaction = require('./Transaction'),
+    TransactionOut = require('./TransactionOut'),
     config      = require('../../config/config')
     ;
 
@@ -20,19 +20,51 @@ var BlockSchema = new Schema({
   // For now we keep this as short as possible
   // More fields will be propably added as we move
   // forward with the UX
-  hash: {
-    type: String,
+  _id: {
+    type: Buffer,
     index: true,
     unique: true,
+    required: true,
   },
   time: Number,
-  nextBlockHash: String,
+  nextBlockHash: Buffer,
   isOrphan: Boolean,
 });
 
-/**
- * Validations
- */
+BlockSchema.virtual('hash').get(function () {
+  return this._id;
+});
+
+
+BlockSchema.virtual('hash').set(function (hash) {
+    this._id = hash;
+});
+
+
+BlockSchema.virtual('hashStr').get(function () {
+  return this._id.toString('hex');
+});
+
+
+BlockSchema.virtual('hashStr').set(function (hashStr) {
+  if (hashStr)
+    this._id = new Buffer(hashStr,'hex');
+  else
+    this._id = null;
+});
+
+
+
+BlockSchema.virtual('nextBlockHashStr').get(function () {
+  return this.nextBlockHash.toString('hex');
+});
+
+BlockSchema.virtual('nextBlockHashStr').set(function (hashStr) {
+  if (hashStr)
+    this.nextBlockHash = new Buffer(hashStr,'hex');
+  else
+    this.nextBlockHash = null;
+});
 
 /*
 BlockSchema.path('title').validate(function(title) {
@@ -45,61 +77,56 @@ BlockSchema.path('title').validate(function(title) {
  */
 
 BlockSchema.statics.customCreate = function(block, cb) {
-
-  var That= this;
+  var Self= this;
 
   var BlockSchema = mongoose.model('Block', BlockSchema);
 
-  var newBlock = new That();
+  var newBlock = new Self();
 
   newBlock.time = block.time ? block.time : Math.round(new Date().getTime() / 1000);
-  newBlock.hash = block.hash;
-  newBlock.nextBlockHash = block.nextBlockHash;
+  newBlock.hashStr = block.hash;
+  newBlock.nextBlockHashStr =  block.nextBlockHash;
 
-
-  Transaction.createFromArray(block.tx, newBlock.time, function(err, inserted_txs) {
+  TransactionOut.createFromArray(block.tx, function(err, inserted_txs, update_addrs) {
     if (err) return cb(err);
 
     newBlock.save(function(err) {
-      return cb(err, newBlock, inserted_txs);
+      return cb(err, newBlock, inserted_txs, update_addrs);
     });
   });
 };
 
-BlockSchema.statics.load = function(id, cb) {
-  this.findOne({
-    _id: id
-  }).exec(cb);
-};
 
-BlockSchema.statics.fromHeight = function(height, cb) {
+BlockSchema.statics.blockIndex = function(height, cb) {
   var rpc  = new RpcClient(config.bitcoind);
-  var hash = {};
+  var hashStr = {};
   rpc.getBlockHash(height, function(err, bh){
     if (err) return cb(err);
-    hash.blockHash = bh.result;
-    cb(null, hash);
+    hashStr.blockHash = bh.result;
+    cb(null, hashStr);
   });
 };
 
-BlockSchema.statics.fromHash = function(hash, cb) {
+BlockSchema.statics.fromHash = function(hashStr, cb) {
+  var hash = new Buffer(hashStr, 'hex');
+
   this.findOne({
-    hash: hash,
+    _id: hash,
   }).exec(cb);
 };
 
 
-BlockSchema.statics.fromHashWithInfo = function(hash, cb) {
+BlockSchema.statics.fromHashWithInfo = function(hashStr, cb) {
   var That = this;
 
-  this.fromHash(hash, function(err, block) {
+  That.fromHash(hashStr, function(err, block) {
     if (err) return cb(err);
 
     if (!block) {
       // No in mongo...but maybe in bitcoind... lets query it
       block = new That();
 
-      block.hash = hash;
+      block.hashStr = hashStr;
       block.getInfo(function(err, blockInfo) {
         if (err) return cb(err);
         if (!blockInfo) return cb();
@@ -120,10 +147,10 @@ BlockSchema.statics.fromHashWithInfo = function(hash, cb) {
 // TODO: Can we store the rpc instance in the Block object?
 BlockSchema.methods.getInfo = function (next) {
 
-  var that = this;
+  var self = this;
   var rpc  = new RpcClient(config.bitcoind);
 
-  rpc.getBlock(this.hash, function(err, blockInfo) {
+  rpc.getBlock(self.hashStr, function(err, blockInfo) {
     // Not found?
     if (err && err.code === -5) return next();
 
@@ -134,12 +161,10 @@ BlockSchema.methods.getInfo = function (next) {
      * Any other way to lazy load a property in a mongoose object?
      */
 
-    that.info = blockInfo.result;
+    self.info = blockInfo.result;
+    self.info.reward =  BitcoreBlock.getBlockValue(self.info.height) / util.COIN ;
 
-    that.info.reward =  BitcoreBlock.getBlockValue(that.info.height) / util.COIN ;
-
-    //console.log("THAT", that);
-    return next(null, that.info);
+    return next(null, self.info);
   });
 };
 

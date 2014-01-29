@@ -63,7 +63,6 @@ if (!config.disableHistoricSync) {
   historicSync.init({
     skipDbConnection: true,
     shouldBroadcast: true,
-    progressStep: 2,
     networkName: config.network
   }, function(err) {
     if (err) {
@@ -88,7 +87,8 @@ if (!config.disableP2pSync) {
   ps.init({
     skipDbConnection: true,
     broadcast_txs: true,
-    broadcast_blocks: true
+    broadcast_address_tx: true,
+    broadcast_blocks: true,
   }, function() {
     ps.run();
   });
