@@ -34,7 +34,7 @@ angular.module('insight.system').controller('IndexController',
     _getTransaction(txStr);
 
     console.log('Transaction received! ' + JSON.stringify(tx));
-    if (parseInt($scope.txs.length, 10) > parseInt(TRANSACTION_DISPLAYED, 10)) {
+    if (parseInt($scope.txs.length, 10) >= parseInt(TRANSACTION_DISPLAYED, 10)) {
       $scope.txs = $scope.txs.slice(Math.max($scope.txs.length - TRANSACTION_DISPLAYED, 1));
     }
   });
