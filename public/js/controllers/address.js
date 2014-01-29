@@ -5,12 +5,13 @@ function($scope, $rootScope, $routeParams, $location, Global, Address, getSocket
   $scope.global = Global;
 
   $scope.findOne = function() {
-    $rootScope.titleDetail = $rootScope.currentAddr = $routeParams.addrStr;
+    $rootScope.currentAddr = $routeParams.addrStr;
 
     Address.get({
       addrStr: $routeParams.addrStr
     },
     function(address) {
+      $rootScope.titleDetail = address.addrStr.substring(0,7) + '...';
       $scope.address = address;
     },
     function(e) {
