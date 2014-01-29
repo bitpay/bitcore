@@ -108,6 +108,7 @@ function($scope, $rootScope, $routeParams, $location, Global, Transaction, Trans
     Transaction.get({
       txId: txid
     }, function(tx) {
+      $rootScope.titleDetail = tx.txid.substring(0,7) + '...';
       $scope.tx = tx;
       _processTX(tx);
       $scope.txs.unshift(tx);
@@ -127,7 +128,6 @@ function($scope, $rootScope, $routeParams, $location, Global, Transaction, Trans
   };
 
   $scope.findThis = function() {
-    $rootScope.titleDetail = $routeParams.txId;
     _findTx($routeParams.txId);
   };
 

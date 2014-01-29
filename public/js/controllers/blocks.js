@@ -34,11 +34,11 @@ angular.module('insight.blocks').controller('BlocksController',
 
   $scope.findOne = function() {
     $scope.loading = true;
-    $rootScope.titleDetail = $routeParams.blockHash;
 
     Block.get({
       blockHash: $routeParams.blockHash
     }, function(block) {
+      $rootScope.titleDetail = block.height;
       $scope.loading = false;
       $scope.block = block;
     }, function(e) {

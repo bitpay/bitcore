@@ -7,7 +7,7 @@
   <div id="status" class="row">
       
     <div class="col-xs-12 col-md-8">
-      <h4>Sync Status</h4>
+      <h2>Sync Status</h2>
       <table class="table"  data-ng-controller="StatusController" data-ng-init="getSync()">
         <tbody>
         <thead>
@@ -40,7 +40,7 @@
         </tbody>
       </table>
     
-      <h4>Transaction Output Set Information</h4>
+      <h2>Transaction Output Set Information</h2>
       <table class="table" style="table-layout: fixed" data-ng-controller="StatusController" data-ng-init="getStatus('TxOutSetInfo')">
         <thead  data-ng-include src="'/views/infoStatus.html'"> </thead>
         <tbody>
@@ -75,7 +75,7 @@
         </tbody>
       </table>
       
-      <h4>Last Block</h4>
+      <h2>Last Block</h2>
       <table class="table" style="table-layout: fixed" data-ng-controller="StatusController" data-ng-init="getStatus('LastBlockHash')">
         <thead  data-ng-include src="'/views/infoStatus.html'"> </thead>
         <tr>
@@ -87,7 +87,7 @@
     </div> <!-- END OF COL-8 -->
 
     <div class="col-xs-12 col-md-4 col-gray">
-      <h4>Bitcoin node information</h4>
+      <h2>Bitcoin node information</h2>
       <table class="table" data-ng-controller="StatusController" data-ng-init="getStatus('Info')">
         <thead  data-ng-include src="'/views/infoStatus.html'"> </thead>
         <tbody>
