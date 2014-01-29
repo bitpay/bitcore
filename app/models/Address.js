@@ -5,7 +5,7 @@ require('classtool');
 
 function spec() {
   var async           = require('async');
-  var TransactionItem = require('./TransactionItem');
+  var TransactionOut = require('./TransactionOut');
   var BitcoreAddress  = require('bitcore/Address').class();
   var BitcoreUtil     = require('bitcore/util/util');
 
@@ -55,30 +55,44 @@ function spec() {
   }
 
   Address.prototype.update = function(next) {
-    var that = this;
+    var self = this;
     async.series([
-      // TODO TXout!
-      //T
-      function (cb) {
-        TransactionItem.find({addr:that.addrStr}).exec(function(err,txItems){
+/*      function (cb) {
+        TransactionIn.find({addr:self.addrStr}).exec(function(err,txIn){
           if (err) return cb(err);
 
-          txItems.forEach(function(txItem){
+          txIn.forEach(function(txItem){
 
-//  console.log(txItem.txid + ':' + txItem.ts+ ' : ' + (txItem.value_sat/parseFloat(BitcoreUtil.COIN) ) );
-            that.txApperances +=1;
-            that.balanceSat += txItem.value_sat;
-
-            that.transactions.push(txItem.txid);
-
-            if (txItem.value_sat > 0)
-              that.totalReceivedSat += txItem.value_sat;
-            else
-              that.totalSentSat += Math.abs(txItem.value_sat);
+            self.balanceSat       += txItem.value_sat;
+            self.totalReceivedSat += txItem.value_sat;
           });
           return cb();
         });
-      }
+      },
+*/
+      function (cb) {
+        TransactionOut.find({addr:self.addrStr}).exec(function(err,txOut){
+          if (err) return cb(err);
+
+          txOut.forEach(function(txItem){
+
+            self.totalReceivedSat += txItem.value_sat;
+            self.transactions.push(txItem.txid);
+            if (! txItem.spendTxIdBuf) {
+              // unspent
+              self.balanceSat   += txItem.value_sat;
+              self.txApperances +=1;
+            }
+            else {
+              // spent
+              self.totalSentSat += txItem.value_sat;
+              self.transactions.push(txItem.spendTxid);
+              self.txApperances +=2;
+            }
+          });
+          return cb();
+        });
+      },
     ], function (err) {
       return next(err);
     });

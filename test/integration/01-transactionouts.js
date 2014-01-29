@@ -10,15 +10,13 @@ var mongoose      = require('mongoose'),
   fs              = require('fs'),
   util            = require('util'),
   config          = require('../../config/config'),
-  Transaction     = require('../../app/models/Transaction').class(),
-  TransactionItem = require('../../app/models/TransactionItem');
+  TransactionOut = require('../../app/models/TransactionOut');
 
 var txItemsValid = JSON.parse(fs.readFileSync('test/model/txitems.json'));
-  
 
 mongoose.connection.on('error', function(err) { console.log(err); });
 
-describe('TransactionItem', function(){
+describe('TransactionOut', function(){
 
   before(function(done) {
     mongoose.connect(config.db);
@@ -32,15 +30,14 @@ describe('TransactionItem', function(){
 
   txItemsValid.forEach( function(v) {
     if (v.disabled) return;
-    it('test a exploding TX ' + v.txid, function(done) {
+    it('test a exploding tx ' + v.txid, function(done) {
 
       // Remove first
-      TransactionItem.remove({txid: v.txid}, function(err) {
-
-        TransactionItem.explodeTransactionItems(v.txid, function(err, tx) {
+      TransactionOut.removeFromTxId(v.txid, function(err) {
+        TransactionOut._explodeTransactionOuts(v.txid, function(err, tx) {
           if (err) done(err);
 
-          TransactionItem
+          TransactionOut
             .fromTxId( v.txid, function(err, readItems) {
 
             var unmatch={};
@@ -53,17 +50,21 @@ describe('TransactionItem', function(){
               assert.equal(readItem.addr,validItem.addr);
               assert.equal(readItem.value_sat,validItem.value_sat);
               assert.equal(readItem.index,validItem.index);
+              assert.equal(readItem.spendIndex, null);
+              assert.equal(readItem.spendTxIdBuf, null);
               delete unmatch[validItem.addr];
             });
 
             var valid = util.inspect(v.items, { depth: null });
             assert(!Object.keys(unmatch).length,'\n\tUnmatchs:' + Object.keys(unmatch) + "\n\n" +valid + '\nvs.\n' + readItems);
             done();
+
           });
         });
       });
     });
   });
-
 });
+
+
 

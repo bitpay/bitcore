@@ -8,7 +8,7 @@ var mongoose    = require('mongoose'),
     RpcClient   = require('bitcore/RpcClient').class(),
     util        = require('bitcore/util/util'),
     BitcoreBlock= require('bitcore/Block').class(),
-    TransactionItem = require('./TransactionItem'),
+    TransactionOut = require('./TransactionOut'),
     config      = require('../../config/config')
     ;
 
@@ -39,8 +39,6 @@ BlockSchema.virtual('hash').get(function () {
 BlockSchema.virtual('hash').set(function (hash) {
     this._id = hash;
 });
-
-
 
 
 BlockSchema.virtual('hashStr').get(function () {
@@ -79,22 +77,21 @@ BlockSchema.path('title').validate(function(title) {
  */
 
 BlockSchema.statics.customCreate = function(block, cb) {
-
-  var That= this;
+  var Self= this;
 
   var BlockSchema = mongoose.model('Block', BlockSchema);
 
-  var newBlock = new That();
+  var newBlock = new Self();
 
   newBlock.time = block.time ? block.time : Math.round(new Date().getTime() / 1000);
   newBlock.hashStr = block.hash;
   newBlock.nextBlockHashStr =  block.nextBlockHash;
 
-  TransactionItem.createFromArray(block.tx, function(err, inserted_txs) {
+  TransactionOut.createFromArray(block.tx, function(err, inserted_txs, update_addrs) {
     if (err) return cb(err);
 
     newBlock.save(function(err) {
-      return cb(err, newBlock, inserted_txs);
+      return cb(err, newBlock, inserted_txs, update_addrs);
     });
   });
 };
@@ -111,11 +108,10 @@ BlockSchema.statics.blockIndex = function(height, cb) {
 };
 
 BlockSchema.statics.fromHash = function(hashStr, cb) {
-
   var hash = new Buffer(hashStr, 'hex');
 
   this.findOne({
-    hash: hash,
+    _id: hash,
   }).exec(cb);
 };
 

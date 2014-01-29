@@ -8,8 +8,7 @@ process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 var mongoose= require('mongoose'),
   assert  = require('assert'),
   config       = require('../../config/config'),
-  Transaction  = require('../../app/models/Transaction').class(),
-  TransactionItem  = require('../../app/models/TransactionItem');
+  Transaction  = require('../../app/models/Transaction').class();
 
 
 mongoose.connection.on('error', function(err) { console.log(err); });
@@ -25,17 +24,17 @@ describe('Transaction', function(){
     mongoose.connection.close();
     done();
   });
-  it('should pool tx\'s object from mongoose', function(done) {
-    var txid = '7e621eeb02874ab039a8566fd36f4591e65eca65313875221842c53de6907d6c';
+  var txid = '7e621eeb02874ab039a8566fd36f4591e65eca65313875221842c53de6907d6c';
+  it('txid ' + txid, function(done) {
     Transaction.fromIdWithInfo(txid, function(err, tx) {
       if (err) done(err);
       assert.equal(tx.txid, txid);
       assert(!tx.info.isCoinBase);
 
       for(var i=0; i<20; i++)
-        assert(parseFloat(tx.info.vin[i].value) === parseFloat(50));
-      assert(tx.info.vin[0].addr === 'msGKGCy2i8wbKS5Fo1LbWUTJnf1GoFFG59');
-      assert(tx.info.vin[1].addr === 'mfye7oHsdrHbydtj4coPXCasKad2eYSv5P');
+        assert(parseFloat(tx.info.vin[i].value) === parseFloat(50), 'input '+i);
+      assert(tx.info.vin[0].addr === 'msGKGCy2i8wbKS5Fo1LbWUTJnf1GoFFG59', 'addr 0');
+      assert(tx.info.vin[1].addr === 'mfye7oHsdrHbydtj4coPXCasKad2eYSv5P', 'addr 1');
       done();
     });
   });
@@ -100,12 +99,10 @@ describe('Transaction', function(){
 
   var txid2 = '64496d005faee77ac5a18866f50af6b8dd1f60107d6795df34c402747af98608';
   it('create TX on the fly ' + txid2, function(done) {
-    TransactionItem.remove({txid: txid2}, function(err) {
-      Transaction.fromIdWithInfo(txid2, function(err, tx) {
-        if (err) return done(err);
-        assert.equal(tx.info.txid, txid2);
-        done();
-      });
+    Transaction.fromIdWithInfo(txid2, function(err, tx) {
+      if (err) return done(err);
+      assert.equal(tx.info.txid, txid2);
+      done();
     });
   });
 
