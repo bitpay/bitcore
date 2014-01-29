@@ -40,12 +40,14 @@ p {
 	padding: 8px;
 }
 
-a:hover {
+.bg-cyan a:hover {
 	font-weight: 500;
 }
 
 pre {
-	font-family: Consolas;
+	font-family: 'Inconsolata', sans-serif;
+  	font-style: normal;
+  	font-weight: 400;
 	font-size: 16px;
 	color: #2C3E50;
 	line-height: 30px;
