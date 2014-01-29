@@ -59,7 +59,6 @@ console.log('[transactions.js.48]:: TXid %s not found in RPC. CHECK THIS.', tx.t
  * List of transaction
  */
 exports.list = function(req, res, next) {
-  var limit = req.query.limit || 5;
   var bId = req.query.block;
   var addrStr = req.query.address;
   var page = req.query.pageNum;
@@ -139,7 +138,7 @@ exports.list = function(req, res, next) {
   }
   else {
     res.jsonp({
-      txs: [],
+      txs: []
     });
   }
 };

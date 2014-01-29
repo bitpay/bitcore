@@ -174,7 +174,7 @@ TransactionOutSchema.statics._explodeTransactionOuts = function(txid, cb) {
             }
             return p_c();
         });
-      }], function(err) {
+      }], function() {
         return cb(null, addrs, is_new);
       });
   });
