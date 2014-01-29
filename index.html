@@ -1,22 +1,68 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title></title>
-        <meta name="description" content="">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title> Bitcore </title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="css/normalize.css">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+    <header class="bg-cyan text-center">
+        <div class="ribbon">
+            <a href="https://github.com/bitpay/bitcore/blob/master/README.md">Star on github</a>
+        </div>
+        <a href="index.html">
+            <img src="images/logo-negative.png" alt="Bitcore">
+        </a>
+        <div class="line-negative-t line-negative-b">
+            <h3>A pure, powerful core for your bitcoin project.</h3>
+            <p class="lead">Bitcore is a complete, native interface to the Bitcoin network, and provides the core functionality needed to develop apps for bitcoin.</p>
+        </div>
+        <a href="#started" class="btn btn-default">Get Started  </a>
+    </header>   
+    <div class="container">
+        <h2>Principles</h2>
+        <p>Bitcoin is a powerful new peer-to-peer platform for the next generation of financial technology. The decentralized nature of the Bitcoin network allows for highly resilient bitcoin infrastructure, but the developer community needs reliable, open-source tools to implement bitcoin apps and services.</p>
+        <p> <b>Bitcore unchains developers from fallible, centralized APIs, and provides the tools to interact with the real Bitcoin network. </b> </p>
 
-        <!-- Place favicon.ico and apple-touch-icon(s) in the root directory -->
+        <h2 id="started">Get Started</h2>
+        <p>Bitcore runs on node, and can be installed via npm:</p>
+        <div class="well">
+            <p> npm install bitcore </p>
+        </div>
+        <p>It's is a collection of objects useful to bitcoin applications; class-like idioms are enabled via Classtool. In most cases, a developer will require the object's class directly:</p>
+        <div class="well">
+            <p>var Address = require('bitcore/Address').class();</p>
+        </div>
 
-        <link rel="stylesheet" href="css/normalize.css">
-        <link rel="stylesheet" href="css/main.css">
-    </head>
-    <body>
-        <header>
-            <h1><a href="/" class="logo">Bitcore</a></h1>
-            <h2>A pure, powerful core for your bitcoin project.</h2>
-            <code class="install">$ npm install bitcore</code>
-        </header>
-    </body>
+        <h2>Examples</h2>
+        <p>Validating a Bitcoin address:</p>
+        <div class="well">
+            <p>var Address = require('bitcore/Address').class(); </p>
+            <p>var addr = new Address("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"); </p> <br>
+            <p> try {</p>
+            <p>addr.validate();</p>
+            <p>console.log("Address is valid.");</p>
+            <p>} catch(e) {</p>
+            <p>console.log(addr.data + " is not a valid address. " + e);</p>
+            <p>}</p>
+        </div>
+
+        <h2>Security</h2>
+        <p>Please use at your own risk.</p>
+        <p>Bitcore is still under heavy development and not quite ready for "drop-in" production use. If you find a security issue, please emailsecurity@bitcore.io.</p>    
+
+        <h2>Contributing</h2>
+        <p>Bitcore needs some developer love. Please send pull requests for bug fixes, code optimization, and ideas for improvement.</p>
+    </div>
+    
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js" type="text/javascript" language="JavaScript"></script>
+    <script src="https://code.jquery.com/jquery.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+</body>
 </html>
