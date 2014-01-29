@@ -40,11 +40,12 @@ a:hover {
 	font-weight: 600;
 }
 
-.well p {
+pre {
 	font-family: Consolas;
 	font-size: 16px;
 	color: #2C3E50;
-	line-height: 19px;
+	line-height: 30px;
+	white-space: pre;
 }
 
 .container {

@@ -6,6 +6,7 @@
     <title> Bitcore </title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ubuntu:300,400,500,700,400italic">
     <link rel="stylesheet" href="css/normalize.css">
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/common.css">
@@ -31,26 +32,28 @@
 
         <h2 id="started">Get Started</h2>
         <p>Bitcore runs on node, and can be installed via npm:</p>
-        <div class="well">
-            <p> npm install bitcore </p>
-        </div>
+<pre>
+npm install bitcore
+</pre>
         <p>It's is a collection of objects useful to bitcoin applications; class-like idioms are enabled via Classtool. In most cases, a developer will require the object's class directly:</p>
-        <div class="well">
-            <p>var Address = require('bitcore/Address').class();</p>
-        </div>
+<pre>
+var Address = require('bitcore/Address').class();
+</pre>
 
         <h2>Examples</h2>
         <p>Validating a Bitcoin address:</p>
-        <div class="well">
-            <p>var Address = require('bitcore/Address').class(); </p>
-            <p>var addr = new Address("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"); </p> <br>
-            <p> try {</p>
-            <p>addr.validate();</p>
-            <p>console.log("Address is valid.");</p>
-            <p>} catch(e) {</p>
-            <p>console.log(addr.data + " is not a valid address. " + e);</p>
-            <p>}</p>
-        </div>
+<pre>
+var Address = require('bitcore/Address').class();
+
+var addr = new Address("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa");
+
+try {
+    addr.validate();
+    console.log("Address is valid.");
+} catch(e) {
+    console.log(addr.data + " is not a valid address. " + e);
+}
+</pre>
 
         <h2>Security</h2>
         <p>Please use at your own risk.</p>
