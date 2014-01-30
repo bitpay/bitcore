@@ -1,7 +1,7 @@
-require('classtool');
-
-function ClassSpec(b) {
-  var base58 = b.base58 || require('base58-native').base58Check;
+function sEncodedData(b) {
+  var base58 = b.base58 || 
+    //require('base58-native').base58Check || 
+    require('base58-native').base58Check;
 
   // Constructor.  Takes the following forms:
   //   new EncodedData(<base58_address_string>)
@@ -153,4 +153,16 @@ function ClassSpec(b) {
   EncodedData.applyEncodingsTo(EncodedData);
   return EncodedData;
 };
-module.defineClass(ClassSpec);
+
+
+
+if(!(typeof module === 'undefined')) {
+  module.defineClass(sEncodedData);
+} else if(!(typeof define === 'undefined')) {
+  define('EncodedData', ['classtool', 'browser/base58'], function(Classtool, base58) {
+    return Classtool.defineClass(sEncodedData);  
+  });
+}
+
+
+

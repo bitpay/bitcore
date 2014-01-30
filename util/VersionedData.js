@@ -1,6 +1,4 @@
-require('classtool');
-
-function ClassSpec(b) {
+function sVersionedData(b) {
   var superclass = b.superclass || require('./EncodedData').class();
 
   function VersionedData(version, payload) {
@@ -36,4 +34,15 @@ function ClassSpec(b) {
 
   return VersionedData;
 };
-module.defineClass(ClassSpec);
+
+
+if(!(typeof module === 'undefined')) {
+  module.defineClass(sVersionedData);
+} else if(!(typeof define === 'undefined')) {
+  define(['classtool', 'util/EncodedData'], function(Classtool, EncodedData) {
+    return Classtool.defineClass(sVersionedData);
+  });
+}
+
+
+

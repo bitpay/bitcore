@@ -1,6 +1,4 @@
-require('classtool');
-
-function ClassSpec(b) {
+function sAddress(b) {
   var superclass = b.superclass || require('./util/VersionedData').class();
 
   function Address() {
@@ -19,4 +17,13 @@ function ClassSpec(b) {
 
   return Address;
 };
-module.defineClass(ClassSpec);
+
+
+if(!(typeof module === 'undefined')) {
+  module.defineClass(sAddress);
+} else if(!(typeof define === 'undefined')) {
+  define(['classtool', 'util/VersionedData'],function(Classtool) {
+    return Classtool.defineClass(sAddress);
+  });
+}
+
