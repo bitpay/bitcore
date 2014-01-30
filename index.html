@@ -13,18 +13,22 @@
     <link rel="stylesheet" href="css/common.css">
 </head>
 <body>
-    <header class="bg-cyan text-center">
-        <div class="ribbon">
-            <a href="https://github.com/bitpay/bitcore/blob/master/README.md">Star on github</a>
+    <header class="bg-white text-center">
+        <div class="ribbon hidden-xs">
+            <a href="https://github.com/bitpay/bitcore/blob/master/README.md">View on GitHub</a>
         </div>
         <a href="index.html">
-            <img src="images/logo-negative.png" alt="Bitcore">
+            <img src="images/logo.png" alt="Bitcore">
         </a>
-        <div class="line-negative-t line-negative-b">
-            <h3>A pure, powerful core for your bitcoin project.</h3>
-            <p class="lead">Bitcore is a complete, native interface to the Bitcoin network, and provides the core functionality needed to develop apps for bitcoin.</p>
+        <div class="ribbon-phone visible-xs">
+            <a href="https://github.com/bitpay/bitcore/blob/master/README.md">View on GitHub</a>
         </div>
-        <a href="#started" class="btn btn-default">Get Started  </a>
+        <div class="line-negative-t line-negative-b">
+            <h3 class="hidden-xs">A pure, powerful core for your bitcoin project.</h3>
+            <h4 class="visible-xs">A pure, powerful core for your bitcoin project.</h4>
+            <p class="lead hidden-xs">Bitcore is a complete, native interface to the Bitcoin network, and provides the core functionality needed to develop apps for bitcoin.</p>
+        </div>
+        <a href="#started" class="btn btn-default">npm install bitcore</a>
     </header>   
     <div class="container">
         <h2>Principles</h2>
@@ -35,7 +39,7 @@
         <p>Bitcore runs on <a href="http://nodejs.org/">node</a>, and can be installed via <a href="https://npmjs.org/">npm:</a></p>
 <pre>
 npm install bitcore
-</pre>
+</pre> <br> <br>
         <p>It's is a collection of objects useful to bitcoin applications; class-like idioms are enabled via <a href="https://github.com/gasteve/classtool">Classtool.</a>  In most cases, a developer will require the object's class directly:</p>
 <pre>
 var Address = require('bitcore/Address').class();
