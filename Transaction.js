@@ -1,3 +1,5 @@
+'use strict';
+
 function sTransaction(b) {
   var config = b.config || require('./config');
   var log = b.log || require('./util/log');
@@ -14,10 +16,10 @@ function sTransaction(b) {
   var VerificationError = error.VerificationError;
   var MissingSourceError = error.MissingSourceError;
 
-  var COINBASE_OP = util.NULL_HASH.concat(new Buffer("FFFFFFFF", 'hex'));
+  var COINBASE_OP = util.NULL_HASH.concat(new Buffer('FFFFFFFF', 'hex'));
 
   function TransactionIn(data) {
-    if ("object" !== typeof data) {
+    if ('object' !== typeof data) {
       data = {};
     }
     if (data.o) {
@@ -26,7 +28,7 @@ function sTransaction(b) {
     this.s = Buffer.isBuffer(data.s) ? data.s :
              Buffer.isBuffer(data.script) ? data.script : util.EMPTY_BUFFER;
     this.q = data.q ? data.q : data.sequence;
-  };
+  }
 
   TransactionIn.prototype.getScript = function getScript() {
     return new Script(this.s);
@@ -45,11 +47,12 @@ function sTransaction(b) {
   };
 
   TransactionIn.prototype.getOutpointHash = function getOutpointHash() {
-    if ("undefined" !== typeof this.o.outHashCache) {
+    if ('undefined' !== typeof this.o.outHashCache) {
       return this.o.outHashCache;
     }
 
-    return this.o.outHashCache = this.o.slice(0, 32);
+    this.o.outHashCache = this.o.slice(0, 32);
+    return this.o.outHashCache;
   };
 
   TransactionIn.prototype.getOutpointIndex = function getOutpointIndex() {
@@ -68,12 +71,12 @@ function sTransaction(b) {
 
 
   function TransactionOut(data) {
-    if ("object" !== typeof data) {
+    if ('object' !== typeof data) {
       data = {};
     }
     this.v = data.v ? data.v : data.value;
     this.s = data.s ? data.s : data.script;
-  };
+  }
 
   TransactionOut.prototype.getValue = function getValue() {
     return new Parser(this.v).word64lu();
@@ -89,7 +92,7 @@ function sTransaction(b) {
   };
 
   function Transaction(data) {
-    if ("object" !== typeof data) {
+    if ('object' !== typeof data) {
       data = {};
     }
     this.hash = data.hash || null;
@@ -109,7 +112,8 @@ function sTransaction(b) {
       return txout;
     }) : [];
     if (data.buffer) this._buffer = data.buffer;
-  };
+  }
+
   this.class = Transaction;
   Transaction.In = TransactionIn;
   Transaction.Out = TransactionOut;
@@ -813,7 +817,7 @@ function sTransaction(b) {
 if(!(typeof module === 'undefined')) {
   module.defineClass(sTransaction);
 } else if(!(typeof define === 'undefined')) {
-  define(['classtool', 'config', 'util/log', 'Address'], function(Classtool) {
+  define(['classtool', 'config', 'util/log', 'Address', 'Script'], function(Classtool) {
     return Classtool.defineClass(sTransaction);
   });
 }

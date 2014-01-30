@@ -1,6 +1,4 @@
-require('classtool');
-
-function spec(b) {
+function sOpcode(b) {
   function Opcode(num) {
     this.code = num;
   };
@@ -158,4 +156,14 @@ function spec(b) {
 
   return Opcode;
 };
-module.defineClass(spec);
+
+
+if(!(typeof module === 'undefined')) {
+  module.defineClass(sOpcode);
+} else if(!(typeof define === 'undefined')) {
+  define(['classtool'], function(Classtool) {
+    return Classtool.defineClass(sOpcode);
+  });
+}
+
+

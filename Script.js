@@ -1,6 +1,6 @@
-require('classtool');
+'use strict';
 
-function spec(b) {
+function sScript(b) {
   var config = b.config || require('./config');
   var log = b.log || require('./util/log');
 
@@ -8,7 +8,7 @@ function spec(b) {
 
   // Make opcodes available as pseudo-constants
   for (var i in Opcode.map) {
-    eval(i + " = " + Opcode.map[i] + ";");
+    eval(i + ' = ' + Opcode.map[i] + ';');
   }
 
   var util = b.util || require('./util/util');
@@ -37,7 +37,7 @@ function spec(b) {
     }
     this.chunks = [];
     this.parse();
-  };
+  }
   this.class = Script;
 
   Script.TX_UNKNOWN=TX_UNKNOWN;
@@ -57,13 +57,13 @@ function spec(b) {
       if (opcode > 0 && opcode < OP_PUSHDATA1) {
         // Read some bytes of data, opcode value is the length of data
         this.chunks.push(parser.buffer(opcode));
-      } else if (opcode == OP_PUSHDATA1) {
+      } else if (opcode === OP_PUSHDATA1) {
         len = parser.word8();
         this.chunks.push(parser.buffer(len));
-      } else if (opcode == OP_PUSHDATA2) {
+      } else if (opcode === OP_PUSHDATA2) {
         len = parser.word16le();
         this.chunks.push(parser.buffer(len));
-      } else if (opcode == OP_PUSHDATA4) {
+      } else if (opcode === OP_PUSHDATA4) {
         len = parser.word32le();
         this.chunks.push(parser.buffer(len));
       } else {
@@ -83,43 +83,43 @@ function spec(b) {
 
   Script.prototype.isP2SH = function ()
   {
-    return (this.chunks.length == 3 &&
-      this.chunks[0] == OP_HASH160 &&
+    return (this.chunks.length === 3 &&
+      this.chunks[0] === OP_HASH160 &&
       Buffer.isBuffer(this.chunks[1]) &&
-      this.chunks[1].length == 20 &&
-      this.chunks[2] == OP_EQUAL);
+      this.chunks[1].length === 20 &&
+      this.chunks[2] === OP_EQUAL);
   };
 
   Script.prototype.isPubkey = function ()
   {
-    return (this.chunks.length == 2 &&
+    return (this.chunks.length === 2 &&
           Buffer.isBuffer(this.chunks[0]) &&
-          this.chunks[1] == OP_CHECKSIG);
+          this.chunks[1] === OP_CHECKSIG);
   };
 
   Script.prototype.isPubkeyHash = function ()
   {
-    return (this.chunks.length == 5 &&
-            this.chunks[0] == OP_DUP &&
-            this.chunks[1] == OP_HASH160 &&
+    return (this.chunks.length === 5 &&
+            this.chunks[0] === OP_DUP &&
+            this.chunks[1] === OP_HASH160 &&
       Buffer.isBuffer(this.chunks[2]) &&
-      this.chunks[2].length == 20 &&
-            this.chunks[3] == OP_EQUALVERIFY &&
-            this.chunks[4] == OP_CHECKSIG);
+      this.chunks[2].length === 20 &&
+            this.chunks[3] === OP_EQUALVERIFY &&
+            this.chunks[4] === OP_CHECKSIG);
   };
 
   function isSmallIntOp(opcode)
   {
-    return ((opcode == OP_0) ||
+    return ((opcode === OP_0) ||
           ((opcode >= OP_1) && (opcode <= OP_16)));
-  };
+  }
 
   Script.prototype.isMultiSig = function ()
   {
     return (this.chunks.length > 3 &&
           isSmallIntOp(this.chunks[0]) &&
           isSmallIntOp(this.chunks[this.chunks.length-2]) &&
-      this.chunks[this.chunks.length-1] == OP_CHECKMULTISIG);
+      this.chunks[this.chunks.length-1] === OP_CHECKMULTISIG);
   };
 
   Script.prototype.finishedMultiSig = function()
@@ -280,7 +280,7 @@ function spec(b) {
       truncate = true;
     }
 
-    if ("undefined" === typeof maxEl) {
+    if ('undefined' === typeof maxEl) {
       maxEl = 15;
     }
 
@@ -512,5 +512,14 @@ function spec(b) {
 
   return Script;
 };
-module.defineClass(spec);
+
+
+if(!(typeof module === 'undefined')) {
+  module.defineClass(sScript);
+} else if(!(typeof define === 'undefined')) {
+  define(['classtool', 'Opcode', 'util/util'], function(Classtool) {
+    return Classtool.defineClass(sScript);
+  });
+}
+
 

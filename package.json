@@ -7,9 +7,15 @@
     "email": "stephen@bitpay.com"
   },
   "contributors": [
-    {"name": "Stefan Thomas", "email": "moon@justmoon.net"},
-    {"name": "Jeff Garzik", "email": "jgarzik@bitpay.com"}
-  ], 
+    {
+      "name": "Stefan Thomas",
+      "email": "moon@justmoon.net"
+    },
+    {
+      "name": "Jeff Garzik",
+      "email": "jgarzik@bitpay.com"
+    }
+  ],
   "keywords": [
     "bitcoin",
     "btc",
@@ -35,6 +41,10 @@
     "buffertools": "=1.1.1",
     "mocha": ">=1.15.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "grunt": "~0.4.2",
+    "browserify": "~3.24.8",
+    "grunt-browserify": "~1.3.0"
+  },
   "license": "MIT"
 }
