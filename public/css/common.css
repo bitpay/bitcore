@@ -208,8 +208,8 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 .icon-block {
   color: #FFFFFF;
-  font-size: 27px;
-  margin-top:  20px;
+  font-size: 35px;
+  margin-top:  10px;
 }
 
 .block-tx {
@@ -400,3 +400,8 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 .transaction-vin-vout .ellipsis { margin-bottom: 10px; }
 .transaction-vin-vout .btc-value { margin-left: 15px; }
+
+.block_hash {
+  margin-left: 46px;
+  text-align: center;
+}
