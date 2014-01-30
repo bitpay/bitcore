@@ -7,14 +7,14 @@
         </div>
         <h1 data-ng-if="block">Block #{{ block.height }}</h1>
       </div>
-      <div class="m50v" data-ng-show="!tx.isCoinBase">
+      <div class="m10v">
+        <button class="pull-right btn-copy" clip-copy="block.hash"><span class="glyphicon glyphicon-paperclip"></span></button>
+        <a class="ellipsis block_hash" href="/address/{{block.hash}}">{{block.hash}}</a>
+      </div>
+      <div class="m20v" data-ng-show="!tx.isCoinBase">
         <h4>Hashes</h4>
         <table class="table" style="table-layout: fixed">
           <tbody>
-          <tr>
-            <td class="small"> Hash </td>
-            <td><a class="address ellipsis" href="/block/{{block.hash}}">{{block.hash}}</a></td>
-          </tr>
           <tr>
             <td class="small"> Previous Block</td>
             <td><a class="address ellipsis" href="/block/{{block.previousblockhash}}">{{block.previousblockhash}}</a></td>

@@ -2,20 +2,6 @@
 
 module.exports = function(app, historicSync) {
 
-  //Home route
-  var index = require('../app/controllers/index');
-
-  app.get('/', index.render);
-  app.get('/blocks', index.render);
-  app.get('/status', index.render);
-  app.get('/blocks-date/*', index.render);
-  app.get('/block-index/*', index.render);
-  app.get('/block/*', index.render);
-  app.get('/tx/*', index.render);
-  app.get('/address/*', index.render);
-
-  app.get('/api/version', index.version);
-
   //Block routes
   var blocks = require('../app/controllers/blocks');
   app.get('/api/blocks', blocks.list);
@@ -44,4 +30,8 @@ module.exports = function(app, historicSync) {
 
   app.get('/api/sync', st.sync);
 
+  //Home route
+  var index = require('../app/controllers/index');
+  app.get('/api/version', index.version);
+  app.get('*', index.render);
 };

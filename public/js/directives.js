@@ -50,7 +50,6 @@ angular.module('insight')
 
           scope.$on('$destroy', function() {
             client.off('mousedown', onMousedown);
-            client.unglue(elm);
           });
         });
       }

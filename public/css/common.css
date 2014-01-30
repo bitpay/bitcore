@@ -208,8 +208,8 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 .icon-block {
   color: #FFFFFF;
-  font-size: 27px;
-  margin-top:  20px;
+  font-size: 35px;
+  margin-top:  10px;
 }
 
 .block-tx {
@@ -403,3 +403,8 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 .connection-status { margin-top: 60px; }
 .page-header { margin-top: 0; }
+
+.block_hash {
+  margin-left: 46px;
+  text-align: center;
+}
