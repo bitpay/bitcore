@@ -52,6 +52,7 @@
   },
   "dependencies": {
     "async": "*",
+    "glob": "*",
     "classtool": "*",
     "commander": "*",
     "bignum": "*",

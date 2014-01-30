@@ -91,97 +91,90 @@ TransactionOutSchema.statics.removeFromTxId = function(txid, cb) {
 
 
 
-TransactionOutSchema.statics._explodeTransactionOuts = function(txid, cb) {
+TransactionOutSchema.statics.storeTransactionOuts = function(txInfo, cb) {
 
   var Self = this;
   var addrs  = [];
   var is_new = true;
 
-  // Is it from genesis block? (testnet==livenet)
-  // TODO: parse it from networks.genesisTX
-  if (txid === genesisTXID) return cb();
 
-  TransactionRpc.getRpcInfo(txid, function(err, info) {
+  var bTxId = new Buffer(txInfo.txid,'hex');
 
-    if (err || !info) return cb(err);
+  async.series([
+    // Input Outpoints (mark them as spended)
+    function(p_c) {
+      if (txInfo.isCoinBase) return p_c();
+      async.forEachLimit(txInfo.vin, CONCURRENCY,
+        function(i, next_out) {
+          var b = new Buffer(i.txid,'hex');
+          var data = {
+              txidBuf: b,
+              index: i.vout,
 
-    var bTxId = new Buffer(txid,'hex');
-
-    async.series([
-      // Input Outputs (mark them as spended)
-      function(p_c) {
-        if (info.isCoinBase) return p_c();
-        async.forEachLimit(info.vin, CONCURRENCY,
-          function(i, next_out) {
-            var b = new Buffer(i.txid,'hex');
-            var data = {
-                txidBuf: b,
-                index: i.vout,
-
-                spendTxIdBuf: bTxId,
-                spendIndex: i.n,
-            };
-            Self.update({txidBuf: b, index: i.vout}, data, {upsert: true}, next_out);
-          },
-          function (err) {
-            if (err) {
-              if (!err.message.match(/E11000/)) {
-                console.log('ERR at TX %s: %s', txid,  err);
-                return cb(err);
-              }
+              spendTxIdBuf: bTxId,
+              spendIndex: i.n,
+          };
+          Self.update({txidBuf: b, index: i.vout}, data, {upsert: true}, next_out);
+        },
+        function (err) {
+          if (err) {
+            if (!err.message.match(/E11000/)) {
+              console.log('ERR at TX %s: %s', txInfo.txid,  err);
+              return cb(err);
             }
-            return p_c();
-        });
-      },
-      // Parse Outputs
-      function(p_c) {
-        async.forEachLimit(info.vout, CONCURRENCY,
-          function(o, next_out) {
-            if (o.value && o.scriptPubKey &&
-              o.scriptPubKey.addresses &&
-              o.scriptPubKey.addresses[0] &&
-              ! o.scriptPubKey.addresses[1] // TODO : not supported
-            ){
+          }
+          return p_c();
+      });
+    },
+    // Parse Outputs
+    function(p_c) {
+      async.forEachLimit(txInfo.vout, CONCURRENCY,
+        function(o, next_out) {
+          if (o.value && o.scriptPubKey &&
+            o.scriptPubKey.addresses &&
+            o.scriptPubKey.addresses[0] &&
+            ! o.scriptPubKey.addresses[1] // TODO : not supported
+          ){
 
-              // This is only to broadcast
-              if (addrs.indexOf(o.scriptPubKey.addresses[0]) === -1) {
-                addrs.push(o.scriptPubKey.addresses[0]);
-              }
+            // This is only to broadcast
+            if (addrs.indexOf(o.scriptPubKey.addresses[0]) === -1) {
+              addrs.push(o.scriptPubKey.addresses[0]);
+            }
 
-              var data = {
-                  txidBuf: bTxId,
-                  index : o.n,
+            var data = {
+                txidBuf: bTxId,
+                index : o.n,
 
-                  value_sat : o.value * util.COIN,
-                  addr  : o.scriptPubKey.addresses[0],
-              };
-              Self.update({txidBuf: bTxId, index: o.n}, data, {upsert: true}, next_out);
+                value_sat : o.value * util.COIN,
+                addr  : o.scriptPubKey.addresses[0],
+            };
+            Self.update({txidBuf: bTxId, index: o.n}, data, {upsert: true}, next_out);
+          }
+          else {
+              console.log ('WARN in TX: %s could not parse OUTPUT %d', txInfo.txid, o.n);
+              return next_out();
+          }
+        },
+        function (err) {
+          if (err) {
+            if (err.message.match(/E11000/)) {
+              is_new = false;
             }
             else {
-                console.log ('WARN in TX: %s could not parse OUTPUT %d', txid, o.n);
-                return next_out();
+              console.log('ERR at TX %s: %s', txInfo.txid,  err);
+              return cb(err);
             }
-          },
-          function (err) {
-            if (err) {
-              if (err.message.match(/E11000/)) {
-                is_new = false;
-              }
-              else {
-                console.log('ERR at TX %s: %s', txid,  err);
-                return cb(err);
-              }
-            }
-            return p_c();
-        });
-      }], function() {
-        return cb(null, addrs, is_new);
+          }
+          return p_c();
       });
+    }], function(err) {
+      return cb(err, addrs, is_new);
   });
 };
 
 
-TransactionOutSchema.statics.createFromArray = function(txs, next) {
+// txs can be a [hashes] or [txObjects]
+TransactionOutSchema.statics.createFromTxs = function(txs, next) {
 
   var Self = this;
   if (!txs) return next();
@@ -191,24 +184,38 @@ TransactionOutSchema.statics.createFromArray = function(txs, next) {
 
   async.forEachLimit(txs, CONCURRENCY, function(txid, cb, was_new) {
 
-    Self._explodeTransactionOuts( txid, function(err, addrs) {
-
-      if (err) return next(err);
-
-      if (was_new) {
-        inserted_txs.push(txid);
-        addrs.each(function(a) {
-          if ( !updated_addrs[a]) updated_addrs[a] = [];
-          updated_addrs[a].push(txid);
+    var txInfo;
+    async.series([
+      function(a_cb) {
+        // Is it from genesis block? (testnet==livenet)
+        // TODO: parse it from networks.genesisTX?
+        if (txid === genesisTXID) return a_cb();
+        TransactionRpc.getRpcInfo(txid, function(err, inInfo) {
+          txInfo =inInfo;
+          return a_cb(err);
         });
-      }
+      },
+      function(a_cb) {
+        Self.storeTransactionOuts(txInfo, function(err, addrs) {
+          if (err) return a_cb(err);
 
-      return cb();
+          if (was_new) {
+            inserted_txs.push(txid);
+            addrs.each(function(a) {
+              if ( !updated_addrs[a]) updated_addrs[a] = [];
+              updated_addrs[a].push(txid);
+            });
+          }
+          return a_cb();
+        });
+      }],
+      function(err) {
+        return cb(err);
+      });
+    },
+    function(err) {
+      return next(err, inserted_txs, updated_addrs);
     });
-  },
-  function(err) {
-    return next(err, inserted_txs, updated_addrs);
-  });
 };
 
 
