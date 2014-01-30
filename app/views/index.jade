@@ -1,4 +1,11 @@
 extends layouts/default
 
 block content
+  .connection-status.container(data-ng-controller='ConnectionController')
+    .alert.alert-danger(data-ng-show='!serverOnline || !clienteOnline || !apiOnline', data-ng-init='getConnStatus()')
+        strong Error!
+        p(data-ng-show='!apiOnline') Can't connect to bitcoind.
+        p(data-ng-show='!serverOnline') Can't connect to server.
+        p(data-ng-show='!clienteOnline') Can't connect to internet. Please, check your connection.
+
   section.container(data-ng-view)
