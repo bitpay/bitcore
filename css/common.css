@@ -1,15 +1,21 @@
 body {
 	font-family: ubuntu, helvetica, arial;
+	background-color: #34495E;
 }
 
 h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 	font-family: ubuntu, helvetica, arial;
 }
 
+h4.visible-xs {
+	color: #2C3E50;
+	line-height: 1.5em;
+}
+
 h2 {
 	font-weight: 100;
 	font-size: 40px;
-	color: #3498DB;
+	color: white;
 	line-height: 51px;
 	margin-top: 80px;
 }
@@ -17,8 +23,29 @@ h2 {
 p {
 	font-weight: 100;
 	font-size: 15px;
-	color: #34495E;
+	color: #C1C8CF;
 	line-height: 30px;
+}
+
+a {
+	color: #F4F4F4;
+}
+
+a:hover {
+	color: white;
+	font-weight: 400;
+}
+
+.ribbon-phone a {
+	background: #1D2A37;
+	display: block;
+	font-weight: 100;
+	font-size: 20px;
+	color: white;
+	width: 60%;
+	padding: 8px;
+	margin: 40px auto;
+	border-radius: 5px;
 }
 
 .ribbon a {
@@ -27,54 +54,57 @@ p {
 	-ms-transform: rotate(45deg);
 	-o-transform: rotate(45deg);
 	transform: rotate(45deg);
-	background: #FFFFFF;
+	background: #1D2A37;
 	position: absolute;
-	top: 64px;
+	top: 75px;
 	right: -71px;
 	display: block;
 	font-weight: 100;
 	font-size: 20px;
-	color: #34495E;
+	color: white;
 	height: 45px;
 	width: 330px;
 	padding: 8px;
 }
 
-.bg-cyan a:hover {
+.bg-white a:hover {
 	font-weight: 500;
 }
 
 pre {
+	padding: 10px 15px;
+	background: #1D2A36;
 	font-family: 'Inconsolata', sans-serif;
   	font-style: normal;
   	font-weight: 400;
-	font-size: 16px;
-	color: #2C3E50;
+	font-size: 18px;
+	color: #C1C8CF;
 	line-height: 30px;
 	white-space: pre;
+	border: 1px solid #627B94;
 }
 
 .container {
 	margin-bottom: 50px;
 }
 
-.bg-cyan {
-	background: #3498DB;
-	height: 650px;
-	padding: 70px;
+.bg-white {
+	background: white;
+	height: 90%;
+	padding: 7% 4%;
 	overflow: hidden;
 	position: relative;
 }
 
-.bg-cyan h3 {
-	color: white;
+.bg-white h3 {
+	color: #2C3E50;
 	margin-bottom: 20px;
 }
 
-.bg-cyan p {
+.bg-white p {
 	font-weight: 100;
 	font-size: 20px;
-	color: #9BD9F5;
+	color: #34495E;
 	line-height: 30px;
 }
 
@@ -82,14 +112,12 @@ pre {
 	padding-bottom: 30px;
 	margin: 57px auto;
 	width: 60%;
-	border-bottom: 1px dashed #7AC1E9;
+	border-bottom: 1px dashed #ccc;
 }
 
 .line-negative-t {
 	padding-top: 30px;
-	margin: 57px auto;
-	width: 60%;
-	border-top: 1px dashed #7AC1E9;
+	border-top: 1px dashed #ccc;
 }
 
 .btn-default {
@@ -97,19 +125,16 @@ pre {
 	display: inline-block;
 	font-weight: 100;
 	font-size: 25px;
-	color: #34495E;
+	color: #fff;
 	line-height: 30px;
 	padding: 16px; 
 	border-radius: 5px;
-	background: #FFFFFF;
+	background: #34495E;
 	height: 63px;
-	width: 250px;
-}
-
-.btn-default a {
-	
+	width: 300px;
 }
 
 .btn-default:hover {
-	background: white;
+	color: white;
+	background: #34495E;
 }
