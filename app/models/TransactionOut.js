@@ -196,6 +196,8 @@ TransactionOutSchema.statics.createFromTxs = function(txs, next) {
         });
       },
       function(a_cb) {
+        if (txid === genesisTXID) return a_cb();
+
         Self.storeTransactionOuts(txInfo, function(err, addrs) {
           if (err) return a_cb(err);
 
