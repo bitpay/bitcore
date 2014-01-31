@@ -55,15 +55,16 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   display: block;
 }
 
-@media (min-width: 768px) {
-  .navbar-form {
-    width: 30%;
-  }
+.navbar-form {
+  width: 30%;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 991px) {
   .status {
-    margin: 0 14px !important;
+    margin: 0;
+  }
+  .navbar-form {
+    width: 20%;
   }
 }
 
