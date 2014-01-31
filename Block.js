@@ -550,7 +550,7 @@ function spec(b) {
    * Returns an object with the same field names as jgarzik's getblock patch.
    */
   Block.prototype.getStandardizedObject =
-  function getStandardizedObject(txs)
+  function getStandardizedObject(txs, network)
   {
     var block = {
       hash: util.formatHashFull(this.getHash()),
@@ -574,7 +574,7 @@ function spec(b) {
       var totalSize = 80; // Block header
       totalSize += util.getVarIntSize(txs.length); // txn_count
       txs = txs.map(function (tx) {
-        tx = tx.getStandardizedObject();
+        tx = tx.getStandardizedObject(network);
         totalSize += tx.size;
         return tx;
       });

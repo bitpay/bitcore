@@ -543,7 +543,7 @@ function spec(b) {
   /**
    * Returns an object with the same field names as jgarzik's getblock patch.
    */
-  Transaction.prototype.getStandardizedObject = function getStandardizedObject() {
+  Transaction.prototype.getStandardizedObject = function getStandardizedObject(network) {
     var tx = {
       hash: util.formatHashFull(this.getHash()),
       version: this.version,
@@ -573,10 +573,18 @@ function spec(b) {
     var outs = this.outs.map(function (txout) {
       totalSize += util.getVarIntSize(txout.s.length) +
         txout.s.length + 8; // script_len + script + value
-      return {
+
+      var s = new Script(txout.s);
+      var ret = {
         value: util.formatValue(txout.v),
-        scriptPubKey: new Script(txout.s).getStringContent(false, 0)
+        scriptPubKey: s.getStringContent(false, 0),
       };
+
+      if (network) {
+        ret.addrStrs = s.getAddrStrs(network);
+      }
+
+      return ret;
     });
 
     tx.size = totalSize;
