@@ -54,6 +54,5 @@ npm install
 npm install -g grunt-cli
 grunt browserify
 
-
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/bitpay/bitcore/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
