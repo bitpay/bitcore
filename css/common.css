@@ -74,8 +74,7 @@ a:hover {
 pre {
 	padding: 10px 15px;
 	background: #1D2A36;
-	font-family: 'Inconsolata', sans-serif;
-  	font-style: normal;
+	font-family: 'Ubuntu Mono', sans-serif;
   	font-weight: 400;
 	font-size: 18px;
 	color: #C1C8CF;
