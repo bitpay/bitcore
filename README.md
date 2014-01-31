@@ -4,7 +4,7 @@ Bitcore.io
 The Bitcore website, hosted via GitHub Pages. 
 
 #Assets
-Bitcore brand assets are available in the `assets` directory.
+Bitcore brand assets are available in the `images` directory.
 
 #Contributing
 Please open a new issue or send pull requests with ideas or suggestions.
