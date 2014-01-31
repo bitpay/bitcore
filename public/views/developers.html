@@ -1,8 +1,307 @@
 <section>
   <div class="page-header">
     <h1>
-      Bitcoin Developer API's <small>Tools for developers to get data about the Insight</small>
+      Developers <small>API Documentation</small>
     </h1>
   </div>
+  <h2>Overview</h2>
+  <p>The Insight REST API provides you with a convenient, powerful and simple way to read data from the bitcoin network and build your own services with it.</p>
+  <p>The REST API currently only supports JSON for the response formats.</p>
+  <p>The API is free to use.</p>
+ 
+  <h2>API Reference</h2>
+
+  <h3>Blocks</h3>
+
+  <h4>Get Block</h4>
+  
+  <p>URI:</p>
+
+  <pre>/api/block/00000000009890591fbacf147ffc6c246fa7bad0f2c75a68e3e1ba48b1636d23</pre>
+
+  <p>Result:</p>
+
+  <pre>
+{
+  hash: "00000000009890591fbacf147ffc6c246fa7bad0f2c75a68e3e1ba48b1636d23",
+  confirmations: 37,
+  size: 1287,
+  height: 177951,
+  version: 2,
+  merkleroot: "4d549d51e0bca64030b7f3ab74fcc9a82f3de7bba5d6c3f9a8cb2028399fc590",
+  tx: [
+    "1b8354de2102f0f3f72f7e59fd3fdc0a406fa92675a78d7bb1f599067685385a",
+    "babe2d8b24649df7951e696a4b1686e28764d2d7bbf94d45f612ff598a14017d",
+    "0351d523fec44a04990b8f9513c44b358eac8b88d5df1074ed36d3ffef5f1582",
+    "09f1a8dd15a989377753690f2293e5509fa0763a26af661cf7b56eebc6999c59",
+    "04d972767c5500805ccd41961e2b538b5334af3e41635b2a2ec3750a3c96565a",
+    "df11424536f618ba511436702f97e886b83a1a0e7d1578a26160177274ca0a39"
+  ],
+  time: 1391192318,
+  nonce: 2374664549,
+  bits: "1c00ffff",
+  difficulty: 256,
+  chainwork: "0000000000000000000000000000000000000000000000000413951687599d9f",
+  previousblockhash: "000000000034a41747ec564a890d8192fbd2ec0bfa71667b81db145575cde08e",
+  nextblockhash: "0000000000868ef72603e45325fc0464a5424b7539c51f5905e0ffd2bafc7115",
+  reward: 50
+}</pre>
+
+  <h4>Get Block information by date</h4>
+  
+  <p>URI:</p>
+
+  <pre>/api/blocks/?blockDate=yyyy-mm-dd</pre>
+
+  <p>Result:</p>
+
+  <pre>
+{
+  blocks: [ Array information of blocks ],
+  length: 2636,
+  pagination: {
+    next: "2014-01-30",
+    prev: "2014-01-28",
+    current: "2014-01-29",
+    isToday: false
+  }
+}</pre>
+
+  <h4>Get hash of block by height</h4>
+  
+  <p>URI:</p>
+
+  <pre>/api/block-index/0</pre>
+
+  <p>Result:</p>
+
+  <pre>
+{
+  blockHash: "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"
+}</pre>
+
+  <h3>Transactions</h3>
+
+  <h4>Get Transaction</h4>
+  
+  <p>URI:</p>
+
+  <pre>/api/tx/0099d9342edab8a59fa4d84cb807cf599ce2210e5240bc39500d8f6b6f4779c0</pre>
+
+  <p>Result:</p>
+
+  <pre>
+{
+  hex: "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0d0358b702017e062f503253482fffffffff01108a082a010000002321029f58ed5b58f1941664d67bcc2ccb5b25c50cc2324ccc9643ff7f8271118c4609ac00000000",
+  txid: "0099d9342edab8a59fa4d84cb807cf599ce2210e5240bc39500d8f6b6f4779c0",
+  version: 1,
+  locktime: 0,
+  vin: [
+    {
+      coinbase: "0358b702017e062f503253482f",
+      sequence: 4294967295,
+      reward: 50,
+      n: 0
+    }
+  ],
+  vout: [
+    {
+      value: 50.0017,
+      n: 0,
+      scriptPubKey: {
+        asm: "029f58ed5b58f1941664d67bcc2ccb5b25c50cc2324ccc9643ff7f8271118c4609 OP_CHECKSIG",
+        hex: "21029f58ed5b58f1941664d67bcc2ccb5b25c50cc2324ccc9643ff7f8271118c4609ac",
+        reqSigs: 1,
+        type: "pubkey",
+        addresses: [
+          "mt3r2JMiWqGkHUiMqduo2HoHw5iAHMT7P9"
+        ]
+      }
+    }
+  ],
+  blockhash: "0000000000478e746e78012066a14db61ee9a447b35607a42b54d15060eb23d6",
+  confirmations: 10,
+  time: 1391201940,
+  blocktime: 1391201940,
+  isCoinBase: true,
+  valueIn: 50,
+  valueOut: 50.0017,
+  size: 108
+}
+</pre>
+
+  <h4>Get Transactions by BlockHash</h4>
+  
+  <p>URI:</p>
+
+  <pre>/api/txs/?block=0000000001a6b96db5e1af9f01458c5f0dd880d9cce6e9ed200afb9f0941991b&pageNum=1</pre>
+
+  <p>Result:</p>
+
+  <pre>
+{
+  pagesTotal: 2,
+  txs: [ Array of Transactions ]
+}
+</pre>
+
+  <h4>Get Transactions by String Address</h4>
+  
+  <p>URI:</p>
+
+  <pre>/api/txs/?address=mqxfgc12qXdm4ekLrCKPDYqamxUEtK78Vg&pageNum=0</pre>
+
+  <p>Result:</p>
+
+  <pre>
+{
+  pagesTotal: 4,
+  txs: [ Array of Transactions ]
+}
+</pre>
+
+  <h3>Address</h3>
+
+  <h4>Get Address</h4>
+  
+  <p>URI:</p>
+
+  <pre>/api/addr/mqxfgc12qXdm4ekLrCKPDYqamxUEtK78Vg</pre>
+
+  <p>Result:</p>
+
+  <pre>
+{
+  balanceSat: 5031766000,
+  totalReceivedSat: 5853132000,
+  totalSentSat: 821366000,
+  txApperances: 66,
+  transactions: [ Array of Transaction IDs ],
+  addrStr: "mqxfgc12qXdm4ekLrCKPDYqamxUEtK78Vg",
+  totalSent: 8.21366,
+  balance: 50.31766,
+  totalReceived: 58.53132
+}
+</pre>
+
+  <h3>Application Status</h3>
+
+  <h4>Get Information</h4>
+  
+  <p>URI:</p>
+
+  <pre>/api/status?q=getInfo</pre>
+
+  <p>Result:</p>
+
+  <pre>
+{
+  info: {
+    version: 89900,
+    protocolversion: 70002,
+    walletversion: 60000,
+    balance: 0,
+    blocks: 178019,
+    timeoffset: -345,
+    connections: 9,
+    proxy: "",
+    difficulty: 1,
+    testnet: true,
+    keypoololdest: 1389273625,
+    keypoolsize: 101,
+    paytxfee: 0,
+    errors: "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  }
+}
+</pre>
+
+  <h4>Get Difficulty</h4>
+  
+  <p>URI:</p>
+
+  <pre>/api/status?q=getDifficulty</pre>
+
+  <p>Result:</p>
+
+  <pre>
+{
+  difficulty: 1
+}
+</pre>
+
+  <h4>Get TxOutSetInfo</h4>
+  
+  <p>URI:</p>
+
+  <pre>/api/status?q=getTxOutSetInfo</pre>
+
+  <p>Result:</p>
+
+  <pre>
+{
+  txoutsetinfo: {
+    height: 178020,
+    bestblock: "00000000fc182ffd65fa397dbe0c60b1932bee4ccef407b36b7d6d9d5fdb5962",
+    transactions: 242191,
+    txouts: 421180,
+    bytes_serialized: 25490639,
+    hash_serialized: "68decf93d8c883a31c061fcd393966d36fbed07c05b4df739da85585cb70e077",
+    total_amount: 8900499.25420614
+  }
+}
+</pre>
+
+  <h4>Get Last Block Hash</h4>
+  
+  <p>URI:</p>
+
+  <pre>/api/status?q=getLastBlockHash</pre>
+
+  <p>Result:</p>
+
+  <pre>
+{
+  lastblockhash: "00000000fc182ffd65fa397dbe0c60b1932bee4ccef407b36b7d6d9d5fdb5962"
+}
+</pre>
+
+  <h3>Server Information</h3>
+
+  <h4>Get information of Bitcoin synchronization</h4>
+
+  <p>URI:</p>
+
+  <pre>/api/sync</pre>
+
+  <p>Result:</p>
+
+  <pre>
+{
+  status: "finished",
+  blockChainHeight: 178009,
+  syncPercentage: 100,
+  skippedBlocks: 0,
+  syncedBlocks: 178011,
+  error: null
+}
+</pre>
+
+  <h4>Get API Version</h4>
+
+  <p>URI:</p>
+
+  <pre>/api/version</pre>
+
+  <p>Result:</p>
+
+  <pre>
+{
+  version: "0.0.1"
+}
+</pre>
+
+  <h2>Sandbox for test API</h2>
+
+  <p>API live documentation</p>
 </section>
 
