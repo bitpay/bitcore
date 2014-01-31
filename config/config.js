@@ -4,13 +4,26 @@
  * Module dependencies.
  */
 var path = require('path'),
-    rootPath = path.normalize(__dirname + '/..');
+    rootPath = path.normalize(__dirname + '/..'),
+    env;
+
+switch(process.env.NODE_ENV) {
+  case 'production':
+    env = 'prod';
+  break;
+  case 'test':
+    env = 'test';
+  break;
+  default:
+    env = 'dev';
+  break;
+}
 
 module.exports = {
   root: rootPath,
-  appName: 'Insight',
+  appName: 'Insight ' + env,
   port: process.env.PORT || 3000,
-  db: 'mongodb://localhost/insight-test',
+  db: 'mongodb://localhost/insight-' + env,
   bitcoind: {
     protocol:  process.env.BITCOIND_PROTO || 'http',
     user: process.env.BITCOIND_USER || 'user',
