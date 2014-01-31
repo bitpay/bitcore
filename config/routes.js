@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = function(app, historicSync) {
+module.exports = function(app) {
 
   //Block routes
   var blocks = require('../app/controllers/blocks');
