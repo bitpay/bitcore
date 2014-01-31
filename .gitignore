@@ -1,4 +1,5 @@
 build/
+browser/bundle.js
 node_modules/
 *.swp
 *~

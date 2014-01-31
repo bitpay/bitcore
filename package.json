@@ -44,7 +44,8 @@
   },
   "devDependencies": {
     "grunt-contrib-watch": "~0.5.3",
-    "grunt-mocha-test": "~0.8.2"
+    "grunt-mocha-test": "~0.8.2",
+    "grunt-browserify": "~1.3.0"
   },
   "license": "MIT"
 }
