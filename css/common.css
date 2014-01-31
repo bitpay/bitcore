@@ -33,11 +33,10 @@ a {
 
 a:hover {
 	color: white;
-	font-weight: 400;
 }
 
 .ribbon-phone a {
-	background: #1D2A37;
+	background: #34495E;
 	display: block;
 	font-weight: 100;
 	font-size: 20px;
@@ -48,13 +47,17 @@ a:hover {
 	border-radius: 5px;
 }
 
+.ribbon-phone a:hover, .ribbon a:hover {
+	background: #1D2A37;
+}
+
 .ribbon a {
 	-webkit-transform: rotate(45deg);
 	-moz-transform: rotate(45deg);
 	-ms-transform: rotate(45deg);
 	-o-transform: rotate(45deg);
 	transform: rotate(45deg);
-	background: #1D2A37;
+	background: #34495E;
 	position: absolute;
 	top: 75px;
 	right: -71px;
@@ -65,10 +68,6 @@ a:hover {
 	height: 45px;
 	width: 330px;
 	padding: 8px;
-}
-
-.bg-white a:hover {
-	font-weight: 500;
 }
 
 pre {
@@ -135,5 +134,5 @@ pre {
 
 .btn-default:hover {
 	color: white;
-	background: #34495E;
+	background: #1D2A37;
 }
