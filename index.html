@@ -6,18 +6,22 @@
     <title> Bitcore </title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ubuntu:300,400,500,700,400italic">
-    <link href='http://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Ubuntu+Mono|Ubuntu:300,400,500,700,400italic' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" href="css/normalize.css">
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/common.css">
+    <script type="text/javascript">
+    window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(t){return function(){var a=Array.prototype.slice.call(arguments);return a.unshift(t),window.analytics.push(a),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(t){var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n)},window.analytics.SNIPPET_VERSION="2.0.8",
+    window.analytics.load("yc2e6mxne0");
+    window.analytics.page("index");
+    </script>
 </head>
 <body>
     <header class="bg-white text-center">
         <div class="ribbon hidden-xs">
             <a href="https://github.com/bitpay/bitcore/blob/master/README.md">View on GitHub</a>
         </div>
-        <a href="index.html">
+        <a href="index.html" id="logo">
             <img src="images/logo.svg" alt="Bitcore">
         </a>
         <div class="ribbon-phone visible-xs">
@@ -28,7 +32,7 @@
             <h4 class="visible-xs">A pure, powerful core for your bitcoin project.</h4>
             <p class="lead hidden-xs">Bitcore is a complete, native interface to the Bitcoin network, and provides the core functionality needed to develop apps for bitcoin.</p>
         </div>
-        <a href="#started" class="btn btn-default"> Get Started</a>
+        <a href="#started" class="btn btn-default" id="cta">Get Started</a>
     </header>   
     <div class="container">
         <h2>Principles</h2>
@@ -66,11 +70,27 @@ try {
 
         <h2>Contributing</h2>
         <p>Bitcore needs some developer love. Please send pull requests for bug fixes, code optimization, and ideas for improvement.</p>
-    </div>
-    
+
+        <h2>Updates</h2>
+
+        <!-- Begin MailChimp Signup Form -->
+        <link href="http://cdn-images.mailchimp.com/embedcode/slim-081711.css" rel="stylesheet" type="text/css">
+        <div id="mc_embed_signup">
+        <form action="http://bitpay.us7.list-manage.com/subscribe/post?u=29605d300e62d91f5e2520c67&amp;id=c3d06574f5" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank" novalidate>
+            <label for="mce-EMAIL">Get Updates on Bitcore</label>
+            <input type="email" value="" name="EMAIL" class="email" id="mce-EMAIL" placeholder="email address" required>
+            <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
+            <div style="position: absolute; left: -5000px;"><input type="text" name="b_29605d300e62d91f5e2520c67_c3d06574f5" value=""></div>
+            <div class="clear"><input type="submit" value="Subscribe" name="subscribe" id="mc-embedded-subscribe" class="button"></div>
+        </form>
+        </div>
+        <!--End mc_embed_signup--> 
+
+    </div>   
 
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js" type="text/javascript" language="JavaScript"></script>
     <script src="https://code.jquery.com/jquery.js"></script>
     <script src="js/bootstrap.min.js"></script>
+    <script src="js/a.js"></script>
 </body>
 </html>
