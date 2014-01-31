@@ -20,11 +20,11 @@ angular.module('insight').config(function($routeProvider) {
       title: 'Home'
     }).
     when('/blocks', {
-      templateUrl: '/views/blocks/list.html',
+      templateUrl: '/views/blocks_list.html',
       title: 'Bitcoin Blocks solved Today'
     }).
     when('/blocks-date/:blockDate', {
-      templateUrl: '/views/blocks/list.html',
+      templateUrl: '/views/blocks_list.html',
       title: 'Bitcoin Blocks solved '
     }).
     when('/address/:addrStr', {

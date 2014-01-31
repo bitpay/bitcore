@@ -294,7 +294,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 -------------------------------------------------- */
 /* Not required for template or sticky footer method. */
 
-#wrap > .container { padding: 0 15px; }
+#wrap > .container { padding: 60px 15px 0; }
 
 .container .text-muted a { color: #eee; }
 
@@ -401,7 +401,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .transaction-vin-vout .ellipsis { margin-bottom: 10px; }
 .transaction-vin-vout .btc-value { margin-left: 15px; }
 
-.connection-status { margin-top: 60px; }
 .page-header { margin-top: 0; }
 
 .block_hash {
