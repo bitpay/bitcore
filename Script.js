@@ -13,6 +13,7 @@ function spec(b) {
 
   var util = b.util || require('./util/util');
   var Parser = b.Parser || require('./util/BinaryParser').class();
+  var Address = b.Address || require('./Address').class();
   var Put = b.Put || require('bufferput');
 
   var TX_UNKNOWN = 0;
@@ -213,6 +214,7 @@ function spec(b) {
   return arr[0];
   };
 
+  // Legacy function. Use classify() instead.
   Script.prototype.getOutType = function ()
   {
     var txType = this.classify();
@@ -227,6 +229,52 @@ function spec(b) {
     return TX_TYPES[this.classify()];
   };
 
+
+  Script.prototype.getAddrStrs = function(network) {
+
+    var addrs = [];
+    var addrStrs = [];
+    var type = this.classify();
+
+    switch(type) {
+      case TX_PUBKEY:
+        var chunk = this.captureOne();
+        var addr = new Address(network.addressPubkey, util.sha256ripe160(chunk));
+        addrs.push(addr);
+        break;
+      case TX_PUBKEYHASH:
+        addrs.push(new Address(network.addressPubkey, this.captureOne()));
+        break;
+      case TX_SCRIPTHASH:
+
+        addrs.push(new Address(network.addressScript, this.captureOne()));
+        break;
+      case TX_MULTISIG:
+        var chunks = this.capture();
+
+        chunks.forEach(function(chunk) {
+          addrs.push(new Address(network.addressPubkey,  util.sha256ripe160(chunk)));
+        });
+        break;
+      case TX_UNKNOWN:
+        break;
+    }
+
+    addrs.forEach(function(addr) {
+        addrStrs.push(addr.toString());
+    });
+
+    return addrStrs;
+  };
+
+
+
+  Script.prototype.getOneAddrStr = function(network) {
+    var arr = this.getAddrStrs(network);
+    return arr[0];
+  };
+
+  // Legacy function. Use capture()/captureOne() instead.
   Script.prototype.simpleOutHash = function ()
   {
     switch (this.getOutType()) {
