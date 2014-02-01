@@ -24,13 +24,16 @@ var TransactionOutSchema = new Schema({
     index: true,
   },
   value_sat: Number,
+  fromOrphan: Boolean,
 
   spendTxIdBuf: Buffer,
   spendIndex: Number,
+  spendFromOrphan: Boolean,
 });
 
 
 // Compound index
+
 TransactionOutSchema.index({txidBuf: 1, index: 1}, {unique: true, sparse: true});
 TransactionOutSchema.index({spendTxIdBuf: 1, spendIndex: 1}, {unique: true, sparse: true});
 
@@ -91,14 +94,51 @@ TransactionOutSchema.statics.removeFromTxId = function(txid, cb) {
 
 
 
-TransactionOutSchema.statics.storeTransactionOuts = function(txInfo, cb) {
+TransactionOutSchema.statics.storeTransactionOuts = function(txInfo, fromOrphan, cb) {
 
   var Self = this;
   var addrs  = [];
   var is_new = true;
 
+  if (txInfo.hash) {
+
+    // adapt bitcore TX object to bitcoind JSON response
+    txInfo.txid = txInfo.hash;
+
+    var count = 0;
+    txInfo.vin = txInfo.in.map(function (txin) {
+      var i = {};
+     
+      if (txin.coinbase) {
+        txInfo.isCoinBase = true;
+      }
+      else {
+        i.txid= txin.prev_out.hash;
+        i.vout= txin.prev_out.n;
+      };
+      i.n = count++;
+      return i;
+    });
+
+
+    count = 0;
+    txInfo.vout = txInfo.out.map(function (txout) {
+      var o = {};
+     
+      o.value = txout.value;
+      o.n = count++;
+
+      if (txout.addrStr){
+        o.scriptPubKey = {};
+        o.scriptPubKey.addresses = [txout.addrStr];
+      }
+      return o;
+    });
+
+  }
 
   var bTxId = new Buffer(txInfo.txid,'hex');
+
 
   async.series([
     // Input Outpoints (mark them as spended)
@@ -114,6 +154,7 @@ TransactionOutSchema.statics.storeTransactionOuts = function(txInfo, cb) {
               spendTxIdBuf: bTxId,
               spendIndex: i.n,
           };
+          if (fromOrphan) data.spendFromOrphan = true;
           Self.update({txidBuf: b, index: i.vout}, data, {upsert: true}, next_out);
         },
         function (err) {
@@ -136,10 +177,10 @@ TransactionOutSchema.statics.storeTransactionOuts = function(txInfo, cb) {
             ! o.scriptPubKey.addresses[1] // TODO : not supported
           ){
 
-            // This is only to broadcast
-            if (addrs.indexOf(o.scriptPubKey.addresses[0]) === -1) {
-              addrs.push(o.scriptPubKey.addresses[0]);
-            }
+            // This is only to broadcast (WIP)
+//            if (addrs.indexOf(o.scriptPubKey.addresses[0]) === -1) {
+//              addrs.push(o.scriptPubKey.addresses[0]);
+//            }
 
             var data = {
                 txidBuf: bTxId,
@@ -148,11 +189,12 @@ TransactionOutSchema.statics.storeTransactionOuts = function(txInfo, cb) {
                 value_sat : o.value * util.COIN,
                 addr  : o.scriptPubKey.addresses[0],
             };
+            if (fromOrphan) data.fromOrphan = true;
             Self.update({txidBuf: bTxId, index: o.n}, data, {upsert: true}, next_out);
           }
           else {
-              console.log ('WARN in TX: %s could not parse OUTPUT %d', txInfo.txid, o.n);
-              return next_out();
+            console.log ('WARN in TX: %s could not parse OUTPUT %d', txInfo.txid, o.n);
+            return next_out();
           }
         },
         function (err) {
@@ -174,50 +216,54 @@ TransactionOutSchema.statics.storeTransactionOuts = function(txInfo, cb) {
 
 
 // txs can be a [hashes] or [txObjects]
-TransactionOutSchema.statics.createFromTxs = function(txs, next) {
-
+TransactionOutSchema.statics.createFromTxs = function(txs, fromOrphan, next) {
   var Self = this;
+
+  if (typeof fromOrphan === 'function') {
+    next = fromOrphan;
+    fromOrphan = false;
+  }
+
   if (!txs) return next();
 
   var inserted_txs = [];
   var updated_addrs = {};
 
-  async.forEachLimit(txs, CONCURRENCY, function(txid, cb, was_new) {
+  async.forEachLimit(txs, CONCURRENCY, function(t, each_cb) {
 
     var txInfo;
+
     async.series([
       function(a_cb) {
+        if (typeof t !== 'string') {
+          txInfo = t;
+          return a_cb();
+        }
+
         // Is it from genesis block? (testnet==livenet)
         // TODO: parse it from networks.genesisTX?
-        if (txid === genesisTXID) return a_cb();
-        TransactionRpc.getRpcInfo(txid, function(err, inInfo) {
+        if (t === genesisTXID) return a_cb();
+
+        TransactionRpc.getRpcInfo(t, function(err, inInfo) {
           txInfo =inInfo;
           return a_cb(err);
         });
       },
       function(a_cb) {
-        if (txid === genesisTXID) return a_cb();
+        if (!txInfo) return a_cb();
 
-        Self.storeTransactionOuts(txInfo, function(err, addrs) {
+        Self.storeTransactionOuts(txInfo, fromOrphan, function(err, addrs) {
           if (err) return a_cb(err);
-
-          if (was_new) {
-            inserted_txs.push(txid);
-            addrs.each(function(a) {
-              if ( !updated_addrs[a]) updated_addrs[a] = [];
-              updated_addrs[a].push(txid);
-            });
-          }
           return a_cb();
         });
       }],
       function(err) {
-        return cb(err);
-      });
-    },
-    function(err) {
-      return next(err, inserted_txs, updated_addrs);
+        return each_cb(err);
     });
+  },
+  function(err) {
+    return next(err, inserted_txs, updated_addrs);
+  });
 };
 
 
