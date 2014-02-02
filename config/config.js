@@ -31,6 +31,7 @@ module.exports = {
     host: process.env.BITCOIND_HOST || '127.0.0.1',
     port: process.env.BITCOIND_PORT || '18332',
     p2pPort: process.env.BITCOIND_P2P_PORT || '18333',
+    dataDir: process.env.BITCOIND_DATADIR || './testnet3',
 
     // DO NOT CHANGE THIS!
     disableAgent: true
