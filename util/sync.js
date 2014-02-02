@@ -16,6 +16,7 @@ program
   .option('-D --destroy', 'Remove current DB (and start from there)', 0)
   .option('-R --reverse', 'Sync backwards', 0)
   .option('-U --uptoexisting', 'Sync only until an existing block is found', 0)
+  .option('-F --fromfiles', 'Sync using bitcoind .dat block files (faster)', 0)
   .parse(process.argv);
 
 var historicSync = new HistoricSync();
@@ -32,13 +33,16 @@ async.series([
   function(cb) {
 
     if (program.smart) {
-      historicSync.smartImport(cb);
+      historicSync.smartImport({
+        destroy: program.destroy,
+      },cb);
     }
     else {
       historicSync.importHistory({
         destroy: program.destroy,
         reverse: program.reverse,
         upToExisting: program.uptoexisting,
+        fromFiles: program.fromfiles,
       }, cb);
     }
   },

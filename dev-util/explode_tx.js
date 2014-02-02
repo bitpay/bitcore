@@ -25,7 +25,7 @@ mongoose.connection.on('open', function() {
 
   var b = new Buffer(hash,'hex');
 
-  T.createFromArray([hash], function(err, ret) {
+  T.createFromTxs([hash], function(err, ret) {
 
     console.log('Err:');
     console.log(err);

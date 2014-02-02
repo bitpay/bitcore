@@ -24,13 +24,16 @@ var TransactionOutSchema = new Schema({
     index: true,
   },
   value_sat: Number,
+  fromOrphan: Boolean,
 
   spendTxIdBuf: Buffer,
   spendIndex: Number,
+  spendFromOrphan: Boolean,
 });
 
 
 // Compound index
+
 TransactionOutSchema.index({txidBuf: 1, index: 1}, {unique: true, sparse: true});
 TransactionOutSchema.index({spendTxIdBuf: 1, spendIndex: 1}, {unique: true, sparse: true});
 
@@ -91,119 +94,171 @@ TransactionOutSchema.statics.removeFromTxId = function(txid, cb) {
 
 
 
-TransactionOutSchema.statics._explodeTransactionOuts = function(txid, cb) {
+TransactionOutSchema.statics.storeTransactionOuts = function(txInfo, fromOrphan, cb) {
 
   var Self = this;
   var addrs  = [];
   var is_new = true;
 
-  // Is it from genesis block? (testnet==livenet)
-  // TODO: parse it from networks.genesisTX
-  if (txid === genesisTXID) return cb();
+  if (txInfo.hash) {
 
-  TransactionRpc.getRpcInfo(txid, function(err, info) {
+    // adapt bitcore TX object to bitcoind JSON response
+    txInfo.txid = txInfo.hash;
 
-    if (err || !info) return cb(err);
+    var count = 0;
+    txInfo.vin = txInfo.in.map(function (txin) {
+      var i = {};
+     
+      if (txin.coinbase) {
+        txInfo.isCoinBase = true;
+      }
+      else {
+        i.txid= txin.prev_out.hash;
+        i.vout= txin.prev_out.n;
+      };
+      i.n = count++;
+      return i;
+    });
 
-    var bTxId = new Buffer(txid,'hex');
 
-    async.series([
-      // Input Outputs (mark them as spended)
-      function(p_c) {
-        if (info.isCoinBase) return p_c();
-        async.forEachLimit(info.vin, CONCURRENCY,
-          function(i, next_out) {
-            var b = new Buffer(i.txid,'hex');
-            var data = {
-                txidBuf: b,
-                index: i.vout,
+    count = 0;
+    txInfo.vout = txInfo.out.map(function (txout) {
+      var o = {};
+     
+      o.value = txout.value;
+      o.n = count++;
 
-                spendTxIdBuf: bTxId,
-                spendIndex: i.n,
-            };
-            Self.update({txidBuf: b, index: i.vout}, data, {upsert: true}, next_out);
-          },
-          function (err) {
-            if (err) {
-              if (!err.message.match(/E11000/)) {
-                console.log('ERR at TX %s: %s', txid,  err);
-                return cb(err);
-              }
+      if (txout.addrStr){
+        o.scriptPubKey = {};
+        o.scriptPubKey.addresses = [txout.addrStr];
+      }
+      return o;
+    });
+
+  }
+
+  var bTxId = new Buffer(txInfo.txid,'hex');
+
+
+  async.series([
+    // Input Outpoints (mark them as spended)
+    function(p_c) {
+      if (txInfo.isCoinBase) return p_c();
+      async.forEachLimit(txInfo.vin, CONCURRENCY,
+        function(i, next_out) {
+          var b = new Buffer(i.txid,'hex');
+          var data = {
+              txidBuf: b,
+              index: i.vout,
+
+              spendTxIdBuf: bTxId,
+              spendIndex: i.n,
+          };
+          if (fromOrphan) data.spendFromOrphan = true;
+          Self.update({txidBuf: b, index: i.vout}, data, {upsert: true}, next_out);
+        },
+        function (err) {
+          if (err) {
+            if (!err.message.match(/E11000/)) {
+              console.log('ERR at TX %s: %s', txInfo.txid,  err);
+              return cb(err);
             }
-            return p_c();
-        });
-      },
-      // Parse Outputs
-      function(p_c) {
-        async.forEachLimit(info.vout, CONCURRENCY,
-          function(o, next_out) {
-            if (o.value && o.scriptPubKey &&
-              o.scriptPubKey.addresses &&
-              o.scriptPubKey.addresses[0] &&
-              ! o.scriptPubKey.addresses[1] // TODO : not supported
-            ){
+          }
+          return p_c();
+      });
+    },
+    // Parse Outputs
+    function(p_c) {
+      async.forEachLimit(txInfo.vout, CONCURRENCY,
+        function(o, next_out) {
+          if (o.value && o.scriptPubKey &&
+            o.scriptPubKey.addresses &&
+            o.scriptPubKey.addresses[0] &&
+            ! o.scriptPubKey.addresses[1] // TODO : not supported
+          ){
 
-              // This is only to broadcast
-              if (addrs.indexOf(o.scriptPubKey.addresses[0]) === -1) {
-                addrs.push(o.scriptPubKey.addresses[0]);
-              }
+            // This is only to broadcast (WIP)
+//            if (addrs.indexOf(o.scriptPubKey.addresses[0]) === -1) {
+//              addrs.push(o.scriptPubKey.addresses[0]);
+//            }
 
-              var data = {
-                  txidBuf: bTxId,
-                  index : o.n,
+            var data = {
+                txidBuf: bTxId,
+                index : o.n,
 
-                  value_sat : o.value * util.COIN,
-                  addr  : o.scriptPubKey.addresses[0],
-              };
-              Self.update({txidBuf: bTxId, index: o.n}, data, {upsert: true}, next_out);
+                value_sat : o.value * util.COIN,
+                addr  : o.scriptPubKey.addresses[0],
+            };
+            if (fromOrphan) data.fromOrphan = true;
+            Self.update({txidBuf: bTxId, index: o.n}, data, {upsert: true}, next_out);
+          }
+          else {
+            console.log ('WARN in TX: %s could not parse OUTPUT %d', txInfo.txid, o.n);
+            return next_out();
+          }
+        },
+        function (err) {
+          if (err) {
+            if (err.message.match(/E11000/)) {
+              is_new = false;
             }
             else {
-                console.log ('WARN in TX: %s could not parse OUTPUT %d', txid, o.n);
-                return next_out();
+              console.log('ERR at TX %s: %s', txInfo.txid,  err);
+              return cb(err);
             }
-          },
-          function (err) {
-            if (err) {
-              if (err.message.match(/E11000/)) {
-                is_new = false;
-              }
-              else {
-                console.log('ERR at TX %s: %s', txid,  err);
-                return cb(err);
-              }
-            }
-            return p_c();
-        });
-      }], function() {
-        return cb(null, addrs, is_new);
+          }
+          return p_c();
       });
+    }], function(err) {
+      return cb(err, addrs, is_new);
   });
 };
 
 
-TransactionOutSchema.statics.createFromArray = function(txs, next) {
-
+// txs can be a [hashes] or [txObjects]
+TransactionOutSchema.statics.createFromTxs = function(txs, fromOrphan, next) {
   var Self = this;
+
+  if (typeof fromOrphan === 'function') {
+    next = fromOrphan;
+    fromOrphan = false;
+  }
+
   if (!txs) return next();
 
   var inserted_txs = [];
   var updated_addrs = {};
 
-  async.forEachLimit(txs, CONCURRENCY, function(txid, cb, was_new) {
+  async.forEachLimit(txs, CONCURRENCY, function(t, each_cb) {
 
-    Self._explodeTransactionOuts( txid, function(err, addrs) {
+    var txInfo;
 
-      if (err) return next(err);
+    async.series([
+      function(a_cb) {
+        if (typeof t !== 'string') {
+          txInfo = t;
+          return a_cb();
+        }
 
-      if (was_new) {
-        inserted_txs.push(txid);
-        addrs.each(function(a) {
-          if ( !updated_addrs[a]) updated_addrs[a] = [];
-          updated_addrs[a].push(txid);
+        // Is it from genesis block? (testnet==livenet)
+        // TODO: parse it from networks.genesisTX?
+        if (t === genesisTXID) return a_cb();
+
+        TransactionRpc.getRpcInfo(t, function(err, inInfo) {
+          txInfo =inInfo;
+          return a_cb(err);
         });
-      }
+      },
+      function(a_cb) {
+        if (!txInfo) return a_cb();
 
-      return cb();
+        Self.storeTransactionOuts(txInfo, fromOrphan, function(err, addrs) {
+          if (err) return a_cb(err);
+          return a_cb();
+        });
+      }],
+      function(err) {
+        return each_cb(err);
     });
   },
   function(err) {

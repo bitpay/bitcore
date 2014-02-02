@@ -7,6 +7,7 @@ var mongoose    = require('mongoose'),
     Schema      = mongoose.Schema,
     RpcClient   = require('bitcore/RpcClient').class(),
     util        = require('bitcore/util/util'),
+    async       = require('async'),
     BitcoreBlock= require('bitcore/Block').class(),
     TransactionOut = require('./TransactionOut'),
     config      = require('../../config/config')
@@ -85,14 +86,26 @@ BlockSchema.statics.customCreate = function(block, cb) {
 
   newBlock.time = block.time ? block.time : Math.round(new Date().getTime() / 1000);
   newBlock.hashStr = block.hash;
+  newBlock.isOrphan = block.isOrphan;
   newBlock.nextBlockHashStr =  block.nextBlockHash;
 
-  TransactionOut.createFromArray(block.tx, function(err, inserted_txs, update_addrs) {
-    if (err) return cb(err);
+  var insertedTxs, updateAddrs;
 
-    newBlock.save(function(err) {
-      return cb(err, newBlock, inserted_txs, update_addrs);
-    });
+  async.series([
+    function(a_cb) {
+      TransactionOut.createFromTxs(block.tx, block.isOrphan,
+        function(err, inInsertedTxs, inUpdateAddrs) {
+          insertedTxs = inInsertedTxs;
+          updateAddrs = inUpdateAddrs;
+          return a_cb(err);
+      });
+    }, function(a_cb) {
+      newBlock.save(function(err) {
+        return a_cb(err);
+      });
+    }],
+    function (err) {
+      return cb(err, newBlock, insertedTxs, updateAddrs);
   });
 };
 
