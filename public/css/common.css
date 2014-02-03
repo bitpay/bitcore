@@ -33,6 +33,12 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 .vm { vertical-align: middle; }
 
+.hightlight_h {
+  color: blue;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #eee;
+}
+
 .navbar-default {
   background-color: #8DC429;
   border-bottom: 4px solid #64920F;
@@ -55,16 +61,21 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   display: block;
 }
 
-@media (min-width: 768px) {
+.navbar-form {
+  width: 30%;
+}
+
+@media (max-width: 991px) {
+  .status {
+    margin: 0;
+  }
   .navbar-form {
-    width: 30%;
+    width: 20%;
   }
 }
 
-@media (max-width: 768px) {
-  .status {
-    margin: 0 14px !important;
-  }
+.nav-tabs.nav-justified>li>a:hover {
+  cursor: pointer;
 }
 
 .insight {
