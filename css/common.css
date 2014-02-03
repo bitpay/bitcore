@@ -83,7 +83,7 @@ pre {
 }
 
 .container {
-	margin-bottom: 50px;
+	/* margin-bottom: 50px; */
 }
 
 .bg-white {
@@ -135,4 +135,44 @@ pre {
 .btn-default:hover {
 	color: white;
 	background: #1D2A37;
+}
+
+.sub-footer {
+	background: #3E5770;
+	padding: 25px 0;
+	margin-top: 40px;
+}
+
+input.btn-default {
+	font-size: 14px;
+	width: auto;
+	height: auto;
+	padding: 4px 20px;
+	border: 0 !important;
+	color: #C1C8CF;
+}
+
+.sub-footer input.email {
+	border-radius: 5px;
+	background: #34495E;
+	border: 1px solid #4D6D8C !important;
+}
+
+.sub-footer label {
+	font-size: 24px;
+	color: #C1C8CF;
+	font-weight: 300 !important;
+}
+
+footer {
+	background: #121E27;
+	padding: 5px 0;
+}
+
+footer .container, .sub-footer .container {
+	margin-bottom: 0;
+}
+
+footer p {
+	margin: 0;
 }
