@@ -46,3 +46,7 @@ Bitcore is still under heavy development and not quite ready for "drop-in" produ
 #Contributing
 Bitcore needs some developer love. Please send pull requests for bug fixes, code optimization, and ideas for improvement.
 
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/dreyzehner/bitcore/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
