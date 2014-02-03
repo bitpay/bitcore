@@ -30,6 +30,10 @@ module.exports = function(app) {
 
   app.get('/api/sync', st.sync);
 
+  // Currency
+  var currency = require('../app/controllers/currency');
+  app.get('/api/currency', currency.index);
+
   //Home route
   var index = require('../app/controllers/index');
   app.get('/api/version', index.version);
