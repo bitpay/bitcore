@@ -4,17 +4,23 @@
       Developers <small>API Documentation</small>
     </h1>
   </div>
+
+  <tabset justified="true">
+  <tab heading="Overview">
+
   <h2>Overview</h2>
   <p>The Insight REST API provides you with a convenient, powerful and simple way to read data from the bitcoin network and build your own services with it.</p>
   <p>The REST API currently only supports JSON for the response formats.</p>
   <p>The API is free to use.</p>
- 
+  </tab>
+
+  <tab heading="API Reference">
   <h2>API Reference</h2>
 
-  <h3>Blocks</h3>
+  <h3 class="hightlight_h">Blocks</h3>
 
   <h4>Get Block</h4>
-  
+
   <p>URI:</p>
 
   <pre>/api/block/00000000009890591fbacf147ffc6c246fa7bad0f2c75a68e3e1ba48b1636d23</pre>
@@ -48,7 +54,7 @@
 }</pre>
 
   <h4>Get Block information by date</h4>
-  
+
   <p>URI:</p>
 
   <pre>/api/blocks/?blockDate=yyyy-mm-dd</pre>
@@ -68,7 +74,7 @@
 }</pre>
 
   <h4>Get hash of block by height</h4>
-  
+
   <p>URI:</p>
 
   <pre>/api/block-index/0</pre>
@@ -80,10 +86,10 @@
   blockHash: "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"
 }</pre>
 
-  <h3>Transactions</h3>
+  <h3 class="hightlight_h">Transactions</h3>
 
   <h4>Get Transaction</h4>
-  
+
   <p>URI:</p>
 
   <pre>/api/tx/0099d9342edab8a59fa4d84cb807cf599ce2210e5240bc39500d8f6b6f4779c0</pre>
@@ -128,10 +134,10 @@
   valueOut: 50.0017,
   size: 108
 }
-</pre>
+  </pre>
 
   <h4>Get Transactions by BlockHash</h4>
-  
+
   <p>URI:</p>
 
   <pre>/api/txs/?block=0000000001a6b96db5e1af9f01458c5f0dd880d9cce6e9ed200afb9f0941991b&pageNum=1</pre>
@@ -143,10 +149,10 @@
   pagesTotal: 2,
   txs: [ Array of Transactions ]
 }
-</pre>
+  </pre>
 
   <h4>Get Transactions by String Address</h4>
-  
+
   <p>URI:</p>
 
   <pre>/api/txs/?address=mqxfgc12qXdm4ekLrCKPDYqamxUEtK78Vg&pageNum=0</pre>
@@ -158,12 +164,12 @@
   pagesTotal: 4,
   txs: [ Array of Transactions ]
 }
-</pre>
+  </pre>
 
-  <h3>Address</h3>
+  <h3 class="hightlight_h">Address</h3>
 
   <h4>Get Address</h4>
-  
+
   <p>URI:</p>
 
   <pre>/api/addr/mqxfgc12qXdm4ekLrCKPDYqamxUEtK78Vg</pre>
@@ -182,12 +188,12 @@
   balance: 50.31766,
   totalReceived: 58.53132
 }
-</pre>
+  </pre>
 
-  <h3>Application Status</h3>
+  <h3 class="hightlight_h">Application Status</h3>
 
   <h4>Get Information</h4>
-  
+
   <p>URI:</p>
 
   <pre>/api/status?q=getInfo</pre>
@@ -213,10 +219,10 @@
     errors: "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
   }
 }
-</pre>
+  </pre>
 
   <h4>Get Difficulty</h4>
-  
+
   <p>URI:</p>
 
   <pre>/api/status?q=getDifficulty</pre>
@@ -227,10 +233,10 @@
 {
   difficulty: 1
 }
-</pre>
+  </pre>
 
   <h4>Get TxOutSetInfo</h4>
-  
+
   <p>URI:</p>
 
   <pre>/api/status?q=getTxOutSetInfo</pre>
@@ -249,10 +255,10 @@
     total_amount: 8900499.25420614
   }
 }
-</pre>
+  </pre>
 
   <h4>Get Last Block Hash</h4>
-  
+
   <p>URI:</p>
 
   <pre>/api/status?q=getLastBlockHash</pre>
@@ -263,9 +269,9 @@
 {
   lastblockhash: "00000000fc182ffd65fa397dbe0c60b1932bee4ccef407b36b7d6d9d5fdb5962"
 }
-</pre>
+  </pre>
 
-  <h3>Server Information</h3>
+  <h3 class="hightlight_h">Server Information</h3>
 
   <h4>Get information of Bitcoin synchronization</h4>
 
@@ -284,7 +290,7 @@
   syncedBlocks: 178011,
   error: null
 }
-</pre>
+  </pre>
 
   <h4>Get API Version</h4>
 
@@ -298,10 +304,14 @@
 {
   version: "0.0.1"
 }
-</pre>
+  </pre>
 
+  </tab>
+
+  <tab heading="Sandbox">
   <h2>Sandbox for test API</h2>
 
   <p>API live documentation</p>
+  </tab>
 </section>
 
