@@ -77,7 +77,8 @@
     "sinon": "~1.7.3",
     "chai": "~1.8.1",
     "bitcore": "git://github.com/bitpay/bitcore.git",
-    "bufferput": "git://github.com/bitpay/node-bufferput.git"
+    "bufferput": "git://github.com/bitpay/node-bufferput.git",
+    "xmlhttprequest": "~1.6.0"
   },
   "devDependencies": {
     "grunt-contrib-watch": "latest",
