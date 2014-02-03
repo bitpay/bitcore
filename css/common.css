@@ -21,6 +21,7 @@ h2 {
 }
 
 p {
+	margin: 1.3em 0;
 	font-weight: 100;
 	font-size: 15px;
 	color: #C1C8CF;
@@ -83,7 +84,10 @@ pre {
 }
 
 .container {
-	/* margin-bottom: 50px; */
+	margin-bottom: 100px;
+	margin-top: 20px;
+	padding-right: 30px;
+	padding-left: 30px;
 }
 
 .bg-white {
@@ -156,6 +160,7 @@ input.btn-default {
 	border-radius: 5px;
 	background: #34495E;
 	border: 1px solid #4D6D8C !important;
+	color: #C1C8CF;
 }
 
 .sub-footer label {
@@ -170,7 +175,7 @@ footer {
 }
 
 footer .container, .sub-footer .container {
-	margin-bottom: 0;
+	margin-bottom: 20px;
 }
 
 footer p {
