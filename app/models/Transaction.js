@@ -28,8 +28,6 @@ function spec() {
     });
   };
 
-
-
   Transaction.prototype._fillInfo = function(next) {
     var self  = this;
 
@@ -42,8 +40,6 @@ function spec() {
     });
   };
 
-
-
   Transaction._fillOutpoints = function(info, cb) {
 
     if (!info || info.isCoinBase) return cb();
@@ -51,17 +47,17 @@ function spec() {
     var valueIn = 0;
     var incompleteInputs = 0;
     async.eachLimit(info.vin, CONCURRENCY, function(i, c_in) {
-      TransactionOut.fromTxIdN(i.txid, i.vout, function(err, out) {
+      TransactionOut.fromTxIdN(i.txid, i.vout, function(err, addr, valueSat) {
 
-        if (err || !out || ! out.addr) {
+
+        if (err || !addr || !valueSat ) {
           console.log('Could not get TXouts in %s,%d from %s ', i.txid, i.vout, info.txid);
           incompleteInputs = 1;
           return c_in(); // error not scaled
         }
-
-        i.addr     = out.addr;
-        i.valueSat = out.value_sat;
-        i.value    = out.value_sat / util.COIN;
+        i.addr     = addr;
+        i.valueSat = valueSat;
+        i.value    = valueSat / util.COIN;
 
         valueIn += i.valueSat;
         return c_in();

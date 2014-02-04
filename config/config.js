@@ -24,6 +24,7 @@ module.exports = {
   appName: 'Insight ' + env,
   port: process.env.PORT || 3000,
   db: 'mongodb://localhost/insight-' + env,
+  leveldb: './db',
   bitcoind: {
     protocol:  process.env.BITCOIND_PROTO || 'http',
     user: process.env.BITCOIND_USER || 'user',

@@ -52,6 +52,8 @@
   },
   "dependencies": {
     "async": "*",
+    "leveldown": "*",
+    "levelup": "*",
     "glob": "*",
     "classtool": "*",
     "commander": "*",
