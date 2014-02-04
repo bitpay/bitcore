@@ -11,7 +11,7 @@ module.exports = function(grunt) {
   grunt.initConfig({
     browserify: {
       client: {
-        src: ['main.js'],
+        src: ['bitcore.js'],
         dest: 'browser/bundle.js',
         options: {
           alias: ['browserify-bignum/bignumber.js:bignum'],

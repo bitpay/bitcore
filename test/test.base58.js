@@ -1,5 +1,8 @@
 'use strict';
 
+var chai = require('chai');
+var bitcore = require('../bitcore');
+
 var expect = chai.expect;
 var should = chai.should();
 
