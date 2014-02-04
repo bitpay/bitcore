@@ -5,7 +5,7 @@
 
 module.exports.bignum = require('bignum');
 module.exports.base58 = require('base58-native');
-//module.exports.Address = require('./Address');
+module.exports.Address = require('./Address');
 
 
 
