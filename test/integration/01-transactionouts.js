@@ -14,7 +14,7 @@ var
 
 var txItemsValid = JSON.parse(fs.readFileSync('test/integration/txitems.json'));
 
-describe('TransactionOut', function(){
+describe('TransactionDb', function(){
 
   var tdb = new TransactionDb();
 

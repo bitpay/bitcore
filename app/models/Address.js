@@ -5,11 +5,12 @@ require('classtool');
 
 function spec() {
   var async           = require('async');
-  var TransactionOut = require('./TransactionOut');
   var BitcoreAddress  = require('bitcore/Address').class();
   var BitcoreUtil     = require('bitcore/util/util');
+  var TransactionDb   = require('../../lib/TransactionDb').class();
 
   function Address(addrStr) {
+    this.tdb               = new TransactionDb();
     this.balanceSat        = 0;
     this.totalReceivedSat  = 0;
     this.totalSentSat      = 0;
@@ -71,14 +72,14 @@ function spec() {
       },
 */
       function (cb) {
-        TransactionOut.find({addr:self.addrStr}).exec(function(err,txOut){
+        self.tdb.fromAddr(self.addrStr, function(err,txOut){
           if (err) return cb(err);
 
           txOut.forEach(function(txItem){
 
             self.totalReceivedSat += txItem.value_sat;
             self.transactions.push(txItem.txid);
-            if (! txItem.spendTxIdBuf) {
+            if (! txItem.spendTxId) {
               // unspent
               self.balanceSat   += txItem.value_sat;
               self.txApperances +=1;

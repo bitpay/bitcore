@@ -5,22 +5,11 @@ process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 var 
   assert  = require('assert'),
   fs  = require('fs'),
-  mongoose= require('mongoose'),
   config  = require('../../config/config'),
   Address = require('../../app/models/Address').class();
-  addrValid = JSON.parse(fs.readFileSync('test/model/addr.json'));
+  addrValid = JSON.parse(fs.readFileSync('test/integration/addr.json'));
 
 describe('Address balances', function(){
-
-  before(function(done) {
-    mongoose.connect(config.db);
-    done();
-  });
-
-  after(function(done) {
-    mongoose.connection.close();
-    done();
-  });
 
   addrValid.forEach( function(v) {
     if (v.disabled) {

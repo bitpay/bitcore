@@ -1,10 +1,12 @@
 [
     { 
+"disabled":1,
         "addr": "mgqvRGJMwR9JU5VhJ3x9uX9MTkzTsmmDgQ",
         "balance": 43.1,
         "txApperances": 19
     },
     { 
+"disabled":1,
         "addr": "mp3Rzxx9s1A21SY3sjJ3CQoa2Xjph7e5eS",
         "balance": 0,
         "totalReceived": 50,
@@ -12,6 +14,7 @@
         "txApperances": 2
     },
     { 
+"disabled":1,
         "addr": "muyg1K5WsHkfMVCkUXU2y7Xp5ZD6RGzCeH",
         "balance": 0.38571339,
         "totalReceived": 0.38571339,
@@ -26,6 +29,7 @@
         "txApperances": 13
     },
     { 
+"disabled":1,
         "addr": "n47CfqnKWdNwqY1UWxTmNJAqYutFxdH3zY",
         "balance":  0,
         "totalReceived":26.4245,
@@ -33,6 +37,7 @@
         "txApperances": 4
     },
     { 
+"disabled":1,
         "addr": "mzSyyXgofoBxpr6gYcU3cV345G8hJpixRd",
         "balance":  0,
         "totalReceived":3.9775,
@@ -40,6 +45,7 @@
         "txApperances": 2
     },
     { 
+"disabled":1,
         "addr": "mzW2hdZN2um7WBvTDerdahKqRgj3md9C29",
         "txApperances": 2034,
         "balance": 1049.69744099,
@@ -47,6 +53,7 @@
         "totalSent": 0
     },
     {
+"disabled":1,
         "addr": "mjRmkmYzvZN3cA3aBKJgYJ65epn3WCG84H",
         "txApperances": 13343,
         "balance": 46413.0,
@@ -54,6 +61,7 @@
         "totalSent": 310717.17644359
     },
     { 
+"disabled":1,
         "addr": "mgKY35SXqxFpcKK3Dq9mW9919N7wYXvcFM",
         "txApperances": 1,
         "balance": 0.01979459,
