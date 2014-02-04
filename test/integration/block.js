@@ -27,18 +27,25 @@ describe('BlockDb fromHashWithInfo', function(){
   it('return true in has', function(done) {
     bdb.has(TESTING_BLOCK, function(err, has) {
       assert.equal(has, true);
-console.log('[block.js.29:has:]',has); //TODO
       done();
     });
   });
-  it('return false in has', function(done) {
-    bdb.has('111', function(err, has) {
-      assert.equal(has, false);
-      done();
+  it('setOrphan', function(done) {
+    var b16 = '00000000c4cbd75af741f3a2b2ff72d9ed4d83a048462c1efe331be31ccf006b';
+    var b17 = '00000000fe198cce4c8abf9dca0fee1182cb130df966cc428ad2a230df8da743';
+
+    bdb.has(b17, function(err, has) {
+      assert(has);
+      bdb.setOrphan(b17, function(err, oldPrev) {
+        assert.equal(oldPrev, b16);
+        bdb.setPrev(b17, b16, function(err, oldPrev) {
+          bdb.getPrev(b17, function(err, p) {
+            assert.equal(p, b16);
+            done();
+          });
+        });
+      });
     });
   });
-
-
-
 });
 
