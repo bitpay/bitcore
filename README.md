@@ -46,6 +46,13 @@ Bitcore is still under heavy development and not quite ready for "drop-in" produ
 #Contributing
 Bitcore needs some developer love. Please send pull requests for bug fixes, code optimization, and ideas for improvement.
 
+# install bitcore
+cd bitcore/
+npm install
+
+# build browser version
+npm install -g grunt-cli
+grunt browserify
 
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/bitpay/bitcore/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
