@@ -42,8 +42,25 @@ var test = function(s,cb) {
 
 
 
+var testNo = function(s,cb) {
+  async.each([2,3,4], function(i,c) {
+    s.blockDb.getPrev(b[i], function(err, p) {
+      assert.equal(p,b[i-1]);
+      return c();
+    });
+  }, function() {
+    s.blockDb.getPrev(b[1], function(err, p) {
+      assert.equal(p,b[0]);
+      return cb();
+    });
+  });
+};
+
+
+
+
 var s;
-describe('Sync setOrphan', function(){
+describe('Sync checkOrphan', function(){
 
   before(function(done) {
     s = new Sync();
@@ -54,15 +71,15 @@ describe('Sync setOrphan', function(){
     fix(s,done);
   });
 
-  it('setOrphan', function(done) {
+  it('checkOrphan', function(done) {
     this.timeout(100000);
 
     s.blockDb.has(b[0], function(err, has) {
       assert(has);
        s.blockDb.has(b[1], function(err, has) {
         assert(has);
-        s.setOrphan(b[4],b[1], function() {
-          test(s,done);
+        s.checkOrphan(b[4],b[1], function() {
+          testNo(s,done);
         });
       });
     });
