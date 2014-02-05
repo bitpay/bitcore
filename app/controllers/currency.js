@@ -1,11 +1,16 @@
 'use strict';
 
+var config = require('../../config/config');
+
+// Set the initial vars
+var timestamp = +new Date(),
+    delay = config.currencyRefresh * 60000,
+    bitstampRate = 0;
 
 exports.index = function(req, res) {
+
   var _xhr = function() {
-    if (typeof ActiveXObject !== 'undefined' && ActiveXObject !== null) {
-      return new ActiveXObject('Microsoft.XMLHTTP');
-    } else if (typeof XMLHttpRequest !== 'undefined' && XMLHttpRequest !== null) {
+    if (typeof XMLHttpRequest !== 'undefined' && XMLHttpRequest !== null) {
       return new XMLHttpRequest();
     } else if (typeof require !== 'undefined' && require !== null) {
       var XMLhttprequest = require('xmlhttprequest').XMLHttpRequest;
@@ -21,33 +26,46 @@ exports.index = function(req, res) {
       if (request.readyState === 4) {
         if (request.status === 200) {
           return cb(false, request.responseText);
-        } else {
-          return cb(true, {
-            status: request.status,
-            message: 'Request error'
-          });
         }
+
+        return cb(true, {
+          status: request.status,
+          message: 'Request error'
+        });
       }
     };
 
     return request.send(null);
   };
 
-  _request('https://www.bitstamp.net/api/ticker/', function(err, data) {
-    if (err) {
-      return res.jsonp({
-        status: err.status,
-        message: err.message
+  // Init
+  var currentTime = +new Date();
+  console.log('-----------------------------------');
+  console.log(timestamp);
+  console.log(currentTime);
+  console.log(currentTime >= (timestamp + delay));
+  console.log('-----------------------------------');
+  if (bitstampRate === 0 || currentTime >= (timestamp + delay)) {
+    timestamp = currentTime;
+
+    _request('https://www.bitstamp.net/api/ticker/', function(err, data) {
+      if (!err) bitstampRate = parseFloat(JSON.parse(data).last);
+
+      res.jsonp({
+        status: 200,
+        data: {
+          bitstamp: bitstampRate,
+          delay: delay
+        }
       });
-    }
-
-    var bitstamp = JSON.parse(data);
-
+    });
+  } else {
     res.jsonp({
       status: 200,
       data: {
-        bitstamp: parseFloat(bitstamp.last)
+        bitstamp: bitstampRate,
+        delay: delay
       }
     });
-  });
+  }
 };
