@@ -7,7 +7,7 @@ function spec() {
   
   var util            = require('bitcore/util/util'),
       TransactionRpc  = require('../../lib/TransactionRpc').class(),
-      TransactionOut  = require('./TransactionOut'),
+      TransactionOut  = require('../../lib/TransactionDb'),
       async           = require('async');
 
   var CONCURRENCY = 20;
