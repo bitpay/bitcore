@@ -63,7 +63,6 @@ function spec() {
           if (err) return cb(err);
 
           txOut.forEach(function(txItem){
-
             var v =  parseInt(txItem.value_sat);
 
             self.totalReceivedSat += v;
@@ -76,7 +75,7 @@ function spec() {
             else {
               // spent
               self.totalSentSat += v;
-              self.transactions.push(txItem.spendTxid);
+              self.transactions.push(txItem.spendTxId);
               self.txApperances +=2;
             }
           });

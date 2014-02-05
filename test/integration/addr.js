@@ -17,6 +17,11 @@ describe('Address balances', function(){
     return c();
   });
 
+  after(function(c) {
+    txDb.close(c);
+  });
+
+
 
   addrValid.forEach( function(v) {
     if (v.disabled) {
@@ -43,7 +48,7 @@ describe('Address balances', function(){
           if (v.transactions) {
 
             v.transactions.forEach( function(tx) {
-              assert(a.transactions.indexOf(tx)>-1);
+              assert(a.transactions.indexOf(tx)>-1,'have tx '+tx);
             });
           }
           done();

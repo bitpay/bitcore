@@ -20,7 +20,7 @@ var b = [
 
 var fix = function(s,cb) {
   async.each([1,2,3,4], function(i,c) {
-    s.blockDb.setPrev(b[i],b[i-1], function() {
+    s.bDb.setPrev(b[i],b[i-1], function() {
       return c();
     });
   }, cb);
@@ -28,12 +28,12 @@ var fix = function(s,cb) {
 
 var test = function(s,cb) {
   async.each([2,3,4], function(i,c) {
-    s.blockDb.getPrev(b[i], function(err, p) {
+    s.bDb.getPrev(b[i], function(err, p) {
       assert.equal(p,0);
       return c();
     });
   }, function() {
-    s.blockDb.getPrev(b[1], function(err, p) {
+    s.bDb.getPrev(b[1], function(err, p) {
       assert.equal(p,b[0]);
       return cb();
     });
@@ -44,12 +44,12 @@ var test = function(s,cb) {
 
 var testNo = function(s,cb) {
   async.each([2,3,4], function(i,c) {
-    s.blockDb.getPrev(b[i], function(err, p) {
+    s.bDb.getPrev(b[i], function(err, p) {
       assert.equal(p,b[i-1]);
       return c();
     });
   }, function() {
-    s.blockDb.getPrev(b[1], function(err, p) {
+    s.bDb.getPrev(b[1], function(err, p) {
       assert.equal(p,b[0]);
       return cb();
     });
@@ -68,15 +68,19 @@ describe('Sync checkOrphan', function(){
   });
 
   after(function(done) {
-    fix(s,done);
+
+    fix(s,function() {
+      s.close(done);
+    });
+
   });
 
   it('checkOrphan', function(done) {
     this.timeout(100000);
 
-    s.blockDb.has(b[0], function(err, has) {
+    s.bDb.has(b[0], function(err, has) {
       assert(has);
-       s.blockDb.has(b[1], function(err, has) {
+       s.bDb.has(b[1], function(err, has) {
         assert(has);
         s.checkOrphan(b[4],b[1], function() {
           testNo(s,done);

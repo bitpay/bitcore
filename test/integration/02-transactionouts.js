@@ -15,37 +15,43 @@ var
 
 var spentValid   = JSON.parse(fs.readFileSync('test/integration/spent.json'));
 
-describe('TransactionDb Expenses', function(){
-  var tdb = new TransactionDb();
+var txDb;
 
-  before(function(done) {
+describe('TransactionDb Expenses', function(){
+
+  before(function(c) {
+    txDb = new TransactionDb();
 
     // lets spend!
     async.each(Object.keys(spentValid), 
       function(txid,c_out) {
         async.each(spentValid[txid], 
                   function(i,c_in) {
-                    tdb.createFromArray([i.txid], null, function(err) {
+                    txDb.createFromArray([i.txid], null, function(err) {
                       return c_in();
                     });
                   }, 
                   function(err) {
-                    console.log('Done spending ', txid); //TODO
                     return c_out();
                   }
         );
       },
       function(err) {
-        return done();
+        return c();
       }
     );
   });
+
+  after(function(c) {
+    txDb.close(c);
+  });
+
 
   Object.keys(spentValid).forEach( function(txid) {
     it('test result of spending tx ' + txid, function(done) {
       var s = spentValid[txid];
       var c=0;
-      tdb.fromTxId( txid, function(err, readItems) {
+      txDb.fromTxId( txid, function(err, readItems) {
         s.forEach( function(v) {
           assert.equal(readItems[c].spendTxId,v.txid);
           assert.equal(readItems[c].spendIndex,v.n);

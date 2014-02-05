@@ -13,7 +13,7 @@ var assert        = require('assert'),
 
 //var txItemsValid = JSON.parse(fs.readFileSync('test/model/txitems.json'));
 
-describe('TransactionOut', function(){
+describe('BlockExtractor', function(){
 
   var be = new BlockExtractor(config.bitcoind.dataDir, config.network);
 
@@ -51,7 +51,7 @@ describe('TransactionOut', function(){
     });
   });
 
-  it('should read 100000 blocks with no error ', function(done) {
+  it.skip('should read 100000 blocks with no error ', function(done) {
 
     var i=0;
     while(i++<100000) {

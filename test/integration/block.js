@@ -11,12 +11,23 @@ var
   config      = require('../../config/config'),
   BlockDb     = require('../../lib/BlockDb').class();
 
+var bDb;
 
 describe('BlockDb fromHashWithInfo', function(){
 
-  var bdb = new BlockDb();
+
+  before(function(c) {
+    bDb = new BlockDb();
+    return c();
+  });
+
+
+  after(function(c) {
+    bDb.close(c);
+  });
+
   it('should poll block\'s info from bitcoind', function(done) {
-    bdb.fromHashWithInfo(TESTING_BLOCK, function(err, b2) {
+    bDb.fromHashWithInfo(TESTING_BLOCK, function(err, b2) {
         if (err) done(err);
         assert.equal(b2.hash, TESTING_BLOCK);
         assert.equal(b2.info.hash, TESTING_BLOCK);
@@ -25,7 +36,7 @@ describe('BlockDb fromHashWithInfo', function(){
     });
   });
   it('return true in has', function(done) {
-    bdb.has(TESTING_BLOCK, function(err, has) {
+    bDb.has(TESTING_BLOCK, function(err, has) {
       assert.equal(has, true);
       done();
     });
@@ -34,12 +45,12 @@ describe('BlockDb fromHashWithInfo', function(){
     var b16 = '00000000c4cbd75af741f3a2b2ff72d9ed4d83a048462c1efe331be31ccf006b';
     var b17 = '00000000fe198cce4c8abf9dca0fee1182cb130df966cc428ad2a230df8da743';
 
-    bdb.has(b17, function(err, has) {
+    bDb.has(b17, function(err, has) {
       assert(has);
-      bdb.setOrphan(b17, function(err, oldPrev) {
+      bDb.setOrphan(b17, function(err, oldPrev) {
         assert.equal(oldPrev, b16);
-        bdb.setPrev(b17, b16, function(err, oldPrev) {
-          bdb.getPrev(b17, function(err, p) {
+        bDb.setPrev(b17, b16, function(err, oldPrev) {
+          bDb.getPrev(b17, function(err, p) {
             assert.equal(p, b16);
             done();
           });
