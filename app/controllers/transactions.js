@@ -3,7 +3,7 @@
 /**
  * Module dependencies.
  */
-var Transaction = require('../models/Transaction').class();
+var Transaction = require('../../lib/TransactionDb').class();
 var Address     = require('../models/Address');
 var async       = require('async');
 var common      = require('./common');
