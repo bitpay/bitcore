@@ -3,11 +3,11 @@
 /**
  * Module dependencies.
  */
-var Transaction = require('../../lib/TransactionDb').class();
 var Address     = require('../models/Address');
 var async       = require('async');
 var common      = require('./common');
 
+var TransactionDb = require('../../lib/TransactionDb').class();
 var BlockDb     = require('../../lib/BlockDb').class();
 
 var bdb = new BlockDb();
@@ -17,7 +17,9 @@ var bdb = new BlockDb();
  * Find transaction by hash ...
  */
 exports.transaction = function(req, res, next, txid) {
-  Transaction.fromIdWithInfo(txid, function(err, tx) {
+  var tDb = new TransactionDb();
+
+  tDb.fromIdWithInfo(txid, function(err, tx) {
     if (err || ! tx)
       return common.handleErrors(err, res);
     else {
@@ -40,7 +42,9 @@ exports.show = function(req, res) {
 
 
 var getTransaction = function(txid, cb) {
-  Transaction.fromIdWithInfo(txid, function(err, tx) {
+  var tDb = new TransactionDb();
+
+  tDb.fromIdWithInfo(txid, function(err, tx) {
     if (err) {
       console.log(err);
     }
