@@ -3,9 +3,9 @@
 
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
-var TESTING_BLOCK = '00000000b7cc12abe8a9a604813aab1f2c4f3a242a021065be52393a147a1a86';
-var START_TS = '1391538611';
-var END_TS = '1391538638';
+var TESTING_BLOCK = '000000001f56660def9b5898ea8411d7b028854e78502e521f9ebd53e673751c';
+var START_TS = '1391607675';
+var END_TS = '1391607709';
 
 var
   assert  = require('assert'),
