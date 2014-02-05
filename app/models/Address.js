@@ -9,8 +9,8 @@ function spec() {
   var BitcoreUtil     = require('bitcore/util/util');
   var TransactionDb   = require('../../lib/TransactionDb').class();
 
-  function Address(addrStr) {
-    this.tdb               = new TransactionDb();
+  function Address(addrStr, txDb) {
+    this.txDb              = txDb || new TransactionDb();
     this.balanceSat        = 0;
     this.totalReceivedSat  = 0;
     this.totalSentSat      = 0;
@@ -58,35 +58,24 @@ function spec() {
   Address.prototype.update = function(next) {
     var self = this;
     async.series([
-/*      function (cb) {
-        TransactionIn.find({addr:self.addrStr}).exec(function(err,txIn){
-          if (err) return cb(err);
-
-          txIn.forEach(function(txItem){
-
-            self.balanceSat       += txItem.value_sat;
-            self.totalReceivedSat += txItem.value_sat;
-          });
-          return cb();
-        });
-      },
-*/
       function (cb) {
-        self.tdb.fromAddr(self.addrStr, function(err,txOut){
+        self.txDb.fromAddr(self.addrStr, function(err,txOut){
           if (err) return cb(err);
 
           txOut.forEach(function(txItem){
 
-            self.totalReceivedSat += txItem.value_sat;
+            var v =  parseInt(txItem.value_sat);
+
+            self.totalReceivedSat += v;
             self.transactions.push(txItem.txid);
             if (! txItem.spendTxId) {
               // unspent
-              self.balanceSat   += txItem.value_sat;
+              self.balanceSat   += v;
               self.txApperances +=1;
             }
             else {
               // spent
-              self.totalSentSat += txItem.value_sat;
+              self.totalSentSat += v;
               self.transactions.push(txItem.spendTxid);
               self.txApperances +=2;
             }

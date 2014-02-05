@@ -6,7 +6,8 @@
     {
     "txid": "21798ddc9664ac0ef618f52b151dda82dafaf2e26d2bbef6cdaf55a6957ca237",
     "toRm": [
-      "txouts-spend-86a03cac7d87f596008c6d5a8d3fd8b88842932ea6f0337673eda16f6b472f7f-0"
+      "txouts-spend-86a03cac7d87f596008c6d5a8d3fd8b88842932ea6f0337673eda16f6b472f7f-0",
+      "txouts-spend-bcd8da8ee847da377f8aaca92502c05e5f914c6a2452753146013b0e642a25a0-0"
     ],
     "items": [
         { 
