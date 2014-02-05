@@ -72,7 +72,7 @@ console.log('[blocks.js.60]: could not get %s from RPC. Orphan? Error?', blockha
  * List of blocks by date
  */
 exports.list = function(req, res) {
-  var limit = req.query.limit || 0;
+  var limit = req.query.limit || -1;
   var isToday = false;
 
   //helper to convert timestamps to yyyy-mm-dd format
@@ -103,37 +103,27 @@ exports.list = function(req, res) {
   var prev = formatTimestamp(new Date((gte - 86400) * 1000));
   var next = formatTimestamp(new Date(lte * 1000));
 
-  /*
-  Block
-    .find({
-      time: {
-        '$gte': gte,
-        '$lte': lte
+  bdb.getBlocksByDate(gte, lte, limit, function(err, blocks) {
+    if (err) {
+      res.status(500).send(err);
+    }
+    else {
+      var blockshashList = [];
+      for(var i=0;i<blocks.length;i++) {
+        blockshashList.unshift(blocks[i].hash);
       }
-    })
-    .limit(limit)
-    .sort('-time')
-    .exec(function(err, blocks) {
-      if (err) {
-        res.status(500).send(err);
-      } else {
-        var blockshashList = [];
-        for(var i=0;i<blocks.length;i++) {
-          blockshashList.push(blocks[i].hash);
-        }
-        async.mapSeries(blockshashList, getBlock, function(err, allblocks) {
-          res.jsonp({
-            blocks: allblocks,
-            length: allblocks.length,
-            pagination: {
-              next: next,
-              prev: prev,
-              current: dateStr,
-              isToday: isToday
-            }
-          });
+      async.mapSeries(blockshashList, getBlock, function(err, allblocks) {
+        res.jsonp({
+          blocks: allblocks,
+          length: allblocks.length,
+          pagination: {
+            next: next,
+          prev: prev,
+          current: dateStr,
+          isToday: isToday
+          }
         });
-      }
-    });
-    */
+      });
+    }
+  });
 };
