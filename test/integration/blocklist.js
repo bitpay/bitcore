@@ -7,6 +7,7 @@ var TESTING_BLOCK0 = '000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d7
 var TESTING_BLOCK1 = '00000000b873e79784647a6c82962c70d228557d24a747ea4d1b8bbe878e1206';
 var START_TS  = 1; 
 var END_TS    = '1296688928~'; // 2/2/2011 23:23PM
+var LIMIT     = 2;
 
 var assert  = require('assert'),
   BlockDb     = require('../../lib/BlockDb').class();
@@ -23,7 +24,7 @@ describe('BlockDb getBlocksByDate', function(){
 
   it('Get Hash by Date', function(done) {
 
-    bDb.getBlocksByDate(START_TS, END_TS, function(err, list) {
+    bDb.getBlocksByDate(START_TS, END_TS, LIMIT, function(err, list) {
       if (err) done(err);
       assert(list, 'returns list');
       assert.equal(list.length,2, 'list has 2 items');
