@@ -21,6 +21,9 @@ module.exports = function(app, historicSync) {
   app.set('views', config.root + '/app/views');
   app.set('view engine', 'jade');
 
+  // Compress JSON outputs
+  app.set('json spaces', 0);
+
   //Enable jsonp
   app.enable('jsonp callback');
 

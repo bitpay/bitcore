@@ -3,7 +3,7 @@
 var ZeroClipboard = window.ZeroClipboard;
 
 angular.module('insight')
-  .directive('whenScrolled', ['$window', function($window) {
+  .directive('whenScrolled', function($window) {
     return {
       restric: 'A',
       link: function(scope, elm, attr) {
@@ -21,13 +21,14 @@ angular.module('insight')
         };
 
         $window.on('scroll', handler);
+
         scope.$on('$destroy', function() {
           return $window.off('scroll', handler);
         });
       }
     };
-  }])
-  .directive('clipCopy', [function() {
+  })
+  .directive('clipCopy', function() {
     ZeroClipboard.config({
       moviePath: '/lib/zeroclipboard/ZeroClipboard.swf',
       trustedDomains: ['*'],
@@ -54,4 +55,4 @@ angular.module('insight')
         });
       }
     };
-  }]);
+  });

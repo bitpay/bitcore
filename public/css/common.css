@@ -278,6 +278,11 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   overflow: hidden;
 }
 
+#footer .currency a:active {
+  color: #fff;
+  text-decoration: underline;
+}
+
 #footer a.insight {
   font-size: 20px;
   text-decoration: none;

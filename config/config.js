@@ -39,4 +39,7 @@ module.exports = {
   network: process.env.INSIGHT_NETWORK || 'testnet',
   disableP2pSync: false,
   disableHistoricSync: false,
+
+  // Time to refresh the currency rate. In minutes
+  currencyRefresh: 10
 };

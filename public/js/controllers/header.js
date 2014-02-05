@@ -1,8 +1,10 @@
 'use strict';
 
 angular.module('insight.system').controller('HeaderController',
-  function($scope, $rootScope, getSocket, Global, Block) {
+  function($scope, $rootScope, getSocket, Global, Block, Currency) {
   $scope.global = Global;
+
+  Currency.get();
 
   $scope.menu = [
     {
