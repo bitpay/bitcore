@@ -61,9 +61,8 @@ function spec() {
       function (cb) {
         db.fromAddr(self.addrStr, function(err,txOut){
           if (err) return cb(err);
-
           txOut.forEach(function(txItem){
-            var v =  parseInt(txItem.value_sat);
+            var v = txItem.value_sat;
 
             self.totalReceivedSat += v;
             self.transactions.push(txItem.txid);

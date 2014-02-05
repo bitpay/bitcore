@@ -16,10 +16,10 @@
     },
     { 
         "addr": "mhPEfAmeKVwT7arwMYbhwnL2TfwuWbP4r4",
-        "balance":  1065,
         "totalReceived":  1069,
-        "totalSent": 4,
-        "txApperances": 13
+        "txApperances": 13,
+        "balance":  1065,
+        "totalSent": 4
     },
     { 
         "addr": "n47CfqnKWdNwqY1UWxTmNJAqYutFxdH3zY",
