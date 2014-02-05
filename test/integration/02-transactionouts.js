@@ -11,7 +11,7 @@ var
   util            = require('util'),
   async           = require('async'),
   config          = require('../../config/config'),
-  TransactionDb = require('../../lib/TransactionDb').class();
+  TransactionDb   = require('../../lib/TransactionDb').class();
 
 var spentValid   = JSON.parse(fs.readFileSync('test/integration/spent.json'));
 
@@ -41,11 +41,6 @@ describe('TransactionDb Expenses', function(){
       }
     );
   });
-
-  after(function(c) {
-    txDb.close(c);
-  });
-
 
   Object.keys(spentValid).forEach( function(txid) {
     it('test result of spending tx ' + txid, function(done) {

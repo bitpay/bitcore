@@ -17,12 +17,6 @@ describe('Address balances', function(){
     return c();
   });
 
-  after(function(c) {
-    txDb.close(c);
-  });
-
-
-
   addrValid.forEach( function(v) {
     if (v.disabled) {
         console.log(v.addr + " => disabled in JSON");

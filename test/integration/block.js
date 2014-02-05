@@ -21,11 +21,6 @@ describe('BlockDb fromHashWithInfo', function(){
     return c();
   });
 
-
-  after(function(c) {
-    bDb.close(c);
-  });
-
   it('should poll block\'s info from bitcoind', function(done) {
     bDb.fromHashWithInfo(TESTING_BLOCK, function(err, b2) {
         if (err) done(err);

@@ -21,10 +21,6 @@ describe('TransactionDb fromIdWithInfo', function(){
   });
 
 
-  after(function(c) {
-    txDb.close(c);
-  });
-
   var txid = '7e621eeb02874ab039a8566fd36f4591e65eca65313875221842c53de6907d6c';
   it('tx info ' + txid, function(done) {
     txDb.fromIdWithInfo(txid, function(err, tx) {
@@ -124,11 +120,6 @@ describe('TransactionDb Outs', function(){
   before(function(c) {
     txDb = new TransactionDb();
     return c();
-  });
-
-
-  after(function(c) {
-    txDb.close(c);
   });
 
   txItemsValid.forEach( function(v) {

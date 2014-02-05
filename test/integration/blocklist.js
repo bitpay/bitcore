@@ -5,8 +5,8 @@ process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
 var TESTING_BLOCK0 = '000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943';
 var TESTING_BLOCK1 = '00000000b873e79784647a6c82962c70d228557d24a747ea4d1b8bbe878e1206';
-var START_TS  = 1293895128; // 1/1/2011
-var END_TS    = 1296688428; // 2/2/2011 23:23PM
+var START_TS  = 1; 
+var END_TS    = '1296688928~'; // 2/2/2011 23:23PM
 
 var assert  = require('assert'),
   BlockDb     = require('../../lib/BlockDb').class();
@@ -19,11 +19,6 @@ describe('BlockDb getBlocksByDate', function(){
   before(function(c) {
     bDb = new BlockDb();
     return c();
-  });
-
-
-  after(function(c) {
-    bDb.close(c);
   });
 
   it('Get Hash by Date', function(done) {
