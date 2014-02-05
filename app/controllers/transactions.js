@@ -3,11 +3,14 @@
 /**
  * Module dependencies.
  */
-var Transaction = require('../models/Transaction').class();
-var Block       = require('../models/Block');
+var Transaction = require('../../lib/TransactionDb').class();
 var Address     = require('../models/Address');
 var async       = require('async');
 var common      = require('./common');
+
+var BlockDb     = require('../../lib/BlockDb').class();
+
+var bdb = new BlockDb();
 
 
 /**
@@ -68,7 +71,7 @@ exports.list = function(req, res, next) {
   var txs;
 
   if (bId) {
-    Block.fromHashWithInfo(bId, function(err, block) {
+    bdb.fromHashWithInfo(bId, function(err, block) {
       if (err) {
         console.log(err);
         return res.status(500).send('Internal Server Error');
