@@ -3,18 +3,19 @@
 var chai = require('chai');
 var bitcore = require('../bitcore');
 
-var expect = chai.expect;
 var should = chai.should();
 
-var Address = bitcore.Address.class();
+var AddressModule = bitcore.Address;
+var Address;
 
-describe('Address', function() {
+describe.skip('Address', function() {
   it('should initialze the main object', function() {
-    should.exist(Address);
+    should.exist(AddressModule);
   });
-  it('should create a bignum from string', function() {
+  it('should be able to create class', function() {
+    Address = AddressModule.class();
   });
-  it('should perform basic math operations', function() {
+  it('should be able to create Address object', function() {
   });
 });
 

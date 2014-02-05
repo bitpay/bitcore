@@ -130,17 +130,20 @@ function ClassSpec(b) {
     },
   };
 
+  var no_conversion = function() {return this.data;};
   for(var k in encodings) {
-    if(!encodings[k].converters[k])
-      encodings[k].converters[k] = function() {return this.data;};
-    encodings[k]._encoding = k;
+    if(encodings.hasOwnProperty(k)){
+      if(!encodings[k].converters[k])
+        encodings[k].converters[k] = no_conversion;
+      encodings[k]._encoding = k;
+    }
   }
 
   EncodedData.applyEncodingsTo = function(aClass) {
     var tmp = {};
     for(var k in encodings) {
       var enc = encodings[k];
-      var obj = {}; 
+      var obj = {};
       for(var j in enc) {
         obj[j] = enc[j];
       }
@@ -152,5 +155,5 @@ function ClassSpec(b) {
 
   EncodedData.applyEncodingsTo(EncodedData);
   return EncodedData;
-};
+}
 module.defineClass(ClassSpec);
