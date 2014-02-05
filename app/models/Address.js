@@ -9,8 +9,7 @@ function spec() {
   var BitcoreUtil     = require('bitcore/util/util');
   var TransactionDb   = require('../../lib/TransactionDb').class();
 
-  function Address(addrStr, txDb) {
-    this.txDb              = txDb || new TransactionDb();
+  function Address(addrStr) {
     this.balanceSat        = 0;
     this.totalReceivedSat  = 0;
     this.totalSentSat      = 0;
@@ -57,9 +56,10 @@ function spec() {
 
   Address.prototype.update = function(next) {
     var self = this;
+    var db   = new TransactionDb();
     async.series([
       function (cb) {
-        self.txDb.fromAddr(self.addrStr, function(err,txOut){
+        db.fromAddr(self.addrStr, function(err,txOut){
           if (err) return cb(err);
 
           txOut.forEach(function(txItem){
