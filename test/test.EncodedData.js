@@ -16,8 +16,8 @@ describe('EncodedData', function() {
     EncodedData = EncodedDataModule.class();
     should.exist(EncodedData);
   });
-  it('should be able to create EncodedData object', function() {
-    var ed = new EncodedData();
+  it('should be able to create an instance', function() {
+    var ed = new EncodedData('1GMx4HdDmN78xzGvdQYkwrVqkmLDG1aMNT');
     should.exist(ed);
   });
 });
