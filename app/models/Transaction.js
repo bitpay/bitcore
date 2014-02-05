@@ -7,17 +7,25 @@ function spec() {
   
   var util            = require('bitcore/util/util'),
       TransactionRpc  = require('../../lib/TransactionRpc').class(),
-      TransactionOut  = require('./TransactionOut'),
+      TransactionDb   = require('../../lib/TransactionDb').class(),
       async           = require('async');
 
   var CONCURRENCY = 20;
 
-  function Transaction() {
+  function Transaction(tdb) {
     this.txid = null;
+    this.tdb = tdb || new TransactionDb();
   }
 
-  Transaction.fromIdWithInfo = function (txid,cb) {
-    var tx = new Transaction();
+  Transaction.fromIdWithInfo = function (txid, tdb, cb) {
+    if (typeof tdb === 'function') {
+      cb = tdb;
+      tdb = null;
+    }
+    var tx = new Transaction(tdb);
+
+
+console.log('[Transaction.js.27]',tx.tdb); //TODO
     tx.txid = txid;
 
     tx._fillInfo(function(err) {
@@ -33,21 +41,22 @@ function spec() {
 
     TransactionRpc.getRpcInfo(self.txid, function(err, info) {
       if (err) return next(err);
-      Transaction._fillOutpoints(info, function() {
+      self._fillOutpoints(info, function() {
         self.info = info;
         return next();
       });
     });
   };
 
-  Transaction._fillOutpoints = function(info, cb) {
+  Transaction.prototype._fillOutpoints = function(info, cb) {
+    var self  = this;
 
     if (!info || info.isCoinBase) return cb();
 
     var valueIn = 0;
     var incompleteInputs = 0;
     async.eachLimit(info.vin, CONCURRENCY, function(i, c_in) {
-      TransactionOut.fromTxIdN(i.txid, i.vout, function(err, addr, valueSat) {
+      self.tdb.fromTxIdN(i.txid, i.vout, function(err, addr, valueSat) {
 
 
         if (err || !addr || !valueSat ) {
