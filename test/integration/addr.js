@@ -30,14 +30,12 @@ describe('Address balances', function(){
         a.update(function(err) {
           if (err) done(err);
           assert.equal(v.addr, a.addrStr);
-          console.log("TX count:" + a.transactions.length);
-
-          if (v.balance) assert.equal(v.balance, a.balance, 'balance: ' + a.balance);
+          if (v.txApperances) 
+            assert.equal(v.txApperances, a.txApperances, 'txApperances: ' + a.txApperances );
           if (v.totalReceived) assert.equal(v.totalReceived, a.totalReceived, 'received: ' + a.totalReceived );
           if (v.totalSent) assert.equal(v.totalSent, a.totalSent, 'send: ' +  a.totalSent);
 
-          if (v.txApperances) 
-            assert.equal(v.txApperances, a.txApperances, 'txApperances: ' + a.txApperances );
+          if (v.balance) assert.equal(v.balance, a.balance, 'balance: ' + a.balance);
 
           if (v.transactions) {
 
