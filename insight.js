@@ -49,7 +49,6 @@ if (!config.disableHistoricSync) {
   historicSync = new HistoricSync();
 
   historicSync.init({
-    skipDbConnection: true,
     shouldBroadcast: true,
     networkName: config.network
   }, function(err) {
@@ -58,7 +57,7 @@ if (!config.disableHistoricSync) {
       console.log('[historic_sync] ' + txt);
     }
     else {
-      historicSync.smartImport(function(err){
+      historicSync.smartImport({}, function(err){
         var txt = 'ended.';
         if (err) txt = 'ABORTED with error: ' + err.message;
         console.log('[historic_sync] ' + txt, historicSync.info());
@@ -73,7 +72,6 @@ if (!config.disableHistoricSync) {
 if (!config.disableP2pSync) {
   var ps = new PeerSync();
   ps.init({
-    skipDbConnection: true,
     broadcast_txs: true,
     broadcast_address_tx: true,
     broadcast_blocks: true,
