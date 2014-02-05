@@ -9,9 +9,7 @@ process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 var express = require('express'),
   fs = require('fs'),
   PeerSync = require('./lib/PeerSync').class(),
-  HistoricSync = require('./lib/HistoricSync').class(),
-  mongoose = require('mongoose');
-
+  HistoricSync = require('./lib/HistoricSync').class();
 
 //Initializing system variables
 var config = require('./config/config');
@@ -20,22 +18,6 @@ var config = require('./config/config');
  * express app
  */
 var expressApp = express();
-
-/**
- * Bootstrap db connection
- */
-// If mongod is running
-mongoose.connection.on('open', function() {
-  console.log('Connected to mongo server.');
-});
-
-// If mongod is not running
-mongoose.connection.on('error', function(err) {
-  console.log('Could not connect to mongo server!');
-  console.log(err);
-});
-
-mongoose.connect(config.db);
 
 /**
  * Bootstrap models
@@ -67,7 +49,6 @@ if (!config.disableHistoricSync) {
   historicSync = new HistoricSync();
 
   historicSync.init({
-    skipDbConnection: true,
     shouldBroadcast: true,
     networkName: config.network
   }, function(err) {
@@ -76,7 +57,7 @@ if (!config.disableHistoricSync) {
       console.log('[historic_sync] ' + txt);
     }
     else {
-      historicSync.smartImport(function(err){
+      historicSync.smartImport({}, function(err){
         var txt = 'ended.';
         if (err) txt = 'ABORTED with error: ' + err.message;
         console.log('[historic_sync] ' + txt, historicSync.info());
@@ -91,7 +72,6 @@ if (!config.disableHistoricSync) {
 if (!config.disableP2pSync) {
   var ps = new PeerSync();
   ps.init({
-    skipDbConnection: true,
     broadcast_txs: true,
     broadcast_address_tx: true,
     broadcast_blocks: true,

@@ -1,9 +1,5 @@
 [
-    { 
-        "addr": "mgqvRGJMwR9JU5VhJ3x9uX9MTkzTsmmDgQ",
-        "balance": 43.1,
-        "txApperances": 19
-    },
+
     { 
         "addr": "mp3Rzxx9s1A21SY3sjJ3CQoa2Xjph7e5eS",
         "balance": 0,
@@ -20,10 +16,10 @@
     },
     { 
         "addr": "mhPEfAmeKVwT7arwMYbhwnL2TfwuWbP4r4",
-        "balance":  1065,
         "totalReceived":  1069,
-        "totalSent": 4,
-        "txApperances": 13
+        "txApperances": 13,
+        "balance":  1065,
+        "totalSent": 4
     },
     { 
         "addr": "n47CfqnKWdNwqY1UWxTmNJAqYutFxdH3zY",
@@ -40,10 +36,15 @@
         "txApperances": 2
     },
     { 
+        "addr": "mgqvRGJMwR9JU5VhJ3x9uX9MTkzTsmmDgQ",
+        "txApperances": 27,
+        "balance": 5.1
+    },
+    { 
         "addr": "mzW2hdZN2um7WBvTDerdahKqRgj3md9C29",
-        "txApperances": 2034,
-        "balance": 1049.69744099,
-        "totalReceived":  1049.69744099,
+        "txApperances": 6033,
+        "balance": 1049.69744101,
+        "totalReceived":  1049.69744101,
         "totalSent": 0
     },
     {
@@ -62,11 +63,11 @@
         "transactions": [ "91800d80bb4c69b238c9bfd94eb5155ab821e6b25cae5c79903d12853bbb4ed5" ]
     },
     { 
-  "disabled":1,
         "addr": "mmvP3mTe53qxHdPqXEvdu8WdC7GfQ2vmx5",
         "balance": 10580.50027254,
         "totalReceived": 12157.65075053,
         "totalSent": 1577.15047799,
+        "txApperances": 459,
         "transactions": [
             "91800d80bb4c69b238c9bfd94eb5155ab821e6b25cae5c79903d12853bbb4ed5",
             "f6e80d4fd1a2377406856c67d0cee5ac7e5120993ff97e617ca9aac33b4c6b1e",

@@ -33,12 +33,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 .vm { vertical-align: middle; }
 
-.hightlight_h {
-  color: blue;
-  padding-bottom: 5px;
-  border-bottom: 1px solid #eee;
-}
-
 .navbar-default {
   background-color: #8DC429;
   border-bottom: 4px solid #64920F;
@@ -62,7 +56,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 }
 
 .navbar-form {
-  width: 30%;
+  width: 35%;
 }
 
 @media (max-width: 991px) {
@@ -70,7 +64,13 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     margin: 0;
   }
   .navbar-form {
-    width: 20%;
+    width: 25%;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar-form {
+    width: auto;
   }
 }
 

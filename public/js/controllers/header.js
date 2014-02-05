@@ -14,10 +14,6 @@ angular.module('insight.system').controller('HeaderController',
     {
       'title': 'Status',
       'link': 'status'
-    },
-    {
-      'title': 'Developers',
-      'link': 'developers'
     }
   ];
 

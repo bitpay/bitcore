@@ -3,17 +3,17 @@
 /**
  * Module dependencies.
  */
-var mongoose  = require('mongoose'),
-    Block     = mongoose.model('Block'),
-    common    = require('./common'),
-    async     = require('async');
+var common    = require('./common'),
+    async     = require('async'),
+    BlockDb   = require('../../lib/BlockDb').class();
 
+var bdb = new BlockDb();
 
 /**
  * Find block by hash ...
  */
 exports.block = function(req, res, next, hash) {
-  Block.fromHashWithInfo(hash, function(err, block) {
+  bdb.fromHashWithInfo(hash, function(err, block) {
     if (err || ! block)
       return common.handleErrors(err, res, next);
     else {
@@ -37,7 +37,7 @@ exports.show = function(req, res) {
  * Show block by Height
  */
 exports.blockindex = function(req, res, next, height) {
-  Block.blockIndex(height, function(err, hashStr) {
+  bdb.blockIndex(height, function(err, hashStr) {
     if (err) {
       console.log(err);
       res.status(400).send('Bad Request'); // TODO
@@ -49,7 +49,7 @@ exports.blockindex = function(req, res, next, height) {
 };
 
 var getBlock = function(blockhash, cb) {
-  Block.fromHashWithInfo(blockhash, function(err, block) {
+  bdb.fromHashWithInfo(blockhash, function(err, block) {
     if (err) {
       console.log(err);
       return cb(err);
@@ -72,7 +72,7 @@ console.log('[blocks.js.60]: could not get %s from RPC. Orphan? Error?', blockha
  * List of blocks by date
  */
 exports.list = function(req, res) {
-  var limit = req.query.limit || 0;
+  var limit = req.query.limit || -1;
   var isToday = false;
 
   //helper to convert timestamps to yyyy-mm-dd format
@@ -103,35 +103,27 @@ exports.list = function(req, res) {
   var prev = formatTimestamp(new Date((gte - 86400) * 1000));
   var next = formatTimestamp(new Date(lte * 1000));
 
-  Block
-    .find({
-      time: {
-        '$gte': gte,
-        '$lte': lte
+  bdb.getBlocksByDate(gte, lte, limit, function(err, blocks) {
+    if (err) {
+      res.status(500).send(err);
+    }
+    else {
+      var blockshashList = [];
+      for(var i=0;i<blocks.length;i++) {
+        blockshashList.unshift(blocks[i].hash);
       }
-    })
-    .limit(limit)
-    .sort('-time')
-    .exec(function(err, blocks) {
-      if (err) {
-        res.status(500).send(err);
-      } else {
-        var blockshashList = [];
-        for(var i=0;i<blocks.length;i++) {
-          blockshashList.push(blocks[i].hash);
-        }
-        async.mapSeries(blockshashList, getBlock, function(err, allblocks) {
-          res.jsonp({
-            blocks: allblocks,
-            length: allblocks.length,
-            pagination: {
-              next: next,
-              prev: prev,
-              current: dateStr,
-              isToday: isToday
-            }
-          });
+      async.mapSeries(blockshashList, getBlock, function(err, allblocks) {
+        res.jsonp({
+          blocks: allblocks,
+          length: allblocks.length,
+          pagination: {
+            next: next,
+          prev: prev,
+          current: dateStr,
+          isToday: isToday
+          }
         });
-      }
-    });
+      });
+    }
+  });
 };

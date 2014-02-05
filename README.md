@@ -18,7 +18,6 @@ $ npm install -g bower
 
 ## Additional Packages
 * Express - Defined as npm module in the [package.json](package.json) file.
-* Mongoose - Defined as npm module in the [package.json](package.json) file.
 * AngularJS - Defined as bower module in the [bower.json](bower.json) file.
 * Twitter Bootstrap - Defined as bower module in the [bower.json](bower.json) file.
 * UI Bootstrap - Defined as bower module in the [bower.json](bower.json) file.
@@ -55,13 +54,15 @@ $ npm install -g bower
 
     http://localhost:3000
 
-  If you get an error, please check the next section "Post-install"
-
 ## Syncing old blockchain data
 
-  Run sync from insight repository (to save old blocks and transactions in MongoDB):
+  Run sync from insight repository (to save old blocks and transactions in
+  LevelDB):
+
+  Create folders:
     
-    $ utils/sync.js
+    $ mkdir -p db/blocks
+    $ utils/sync.js -S
 
   Check utils/sync.js --help for options.
 

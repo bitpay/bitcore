@@ -1,24 +1,12 @@
 #!/usr/bin/env node
+'use strict';
 
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
-var 
-  assert  = require('assert'),
-  config  = require('../../config/config'),
-  Status = require('../../app/models/Status').class(),
-  mongoose= require('mongoose');
+var assert  = require('assert'),
+  Status = require('../../app/models/Status').class();
 
 describe('Status', function(){
-
-  before(function(done) {
-    mongoose.connect(config.db);
-    done();
-  });
-
-  after(function(done) {
-    mongoose.connection.close();
-    done();
-  });
 
   it('getInfo', function(done) {
     var d = new Status();

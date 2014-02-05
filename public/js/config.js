@@ -20,11 +20,11 @@ angular.module('insight').config(function($routeProvider) {
       title: 'Home'
     }).
     when('/blocks', {
-      templateUrl: '/views/blocks_list.html',
+      templateUrl: '/views/block_list.html',
       title: 'Bitcoin Blocks solved Today'
     }).
     when('/blocks-date/:blockDate', {
-      templateUrl: '/views/blocks_list.html',
+      templateUrl: '/views/block_list.html',
       title: 'Bitcoin Blocks solved '
     }).
     when('/address/:addrStr', {
@@ -34,10 +34,6 @@ angular.module('insight').config(function($routeProvider) {
     when('/status', {
       templateUrl: '/views/status.html',
       title: 'Status'
-    }).
-    when('/developers', {
-      templateUrl: '/views/developers.html',
-      title: 'Developers'
     })
     .otherwise({
       templateUrl: '/views/404.html',
