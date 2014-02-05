@@ -1,15 +1,22 @@
 #!/usr/bin/env node
+'use strict';
 
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
-var 
-  assert  = require('assert'),
+var assert  = require('assert'),
   fs  = require('fs'),
-  config  = require('../../config/config'),
-  Address = require('../../app/models/Address').class();
+  Address = require('../../app/models/Address').class(),
+  TransactionDb = require('../../lib/TransactionDb').class(),
   addrValid = JSON.parse(fs.readFileSync('test/integration/addr.json'));
 
+  var txDb;
 describe('Address balances', function(){
+
+  before(function(c) {
+    txDb = new TransactionDb();
+    return c();
+  });
+
 
   addrValid.forEach( function(v) {
     if (v.disabled) {
@@ -19,7 +26,7 @@ describe('Address balances', function(){
         it('Info for: ' + v.addr, function(done) {
         this.timeout(5000);
         
-        var a = new Address(v.addr);
+        var a = new Address(v.addr, txDb);
 
         a.update(function(err) {
           if (err) done(err);
