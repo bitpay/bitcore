@@ -39,7 +39,7 @@ angular.module('insight.system').controller('FooterController',
     $scope.setCurrency = function(currency) {
       if (currency === 'USD') {
         Currency.get({}, function(res) {
-          $rootScope.currency.factor = res.data.bitstamp;
+          $rootScope.currency.factor = $rootScope.currency.bitstamp = res.data.bitstamp;
         });
       } else if (currency === 'mBTC') {
         $rootScope.currency.factor = 1000;
