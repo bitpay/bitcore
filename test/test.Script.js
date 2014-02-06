@@ -30,7 +30,6 @@ describe('Script', function() {
   it('isP2SH should work', function() {
     var addr = new Address('1J57QmkaQ6JohJoQyaUJwngJ2vTQ3C6gHi');
     var script = Script.createPubKeyHashOut(addr.payload());
-    script.isP2SH.bind(script).should.not.throw(Error);
     script.isP2SH().should.be.false;
   });
 });
