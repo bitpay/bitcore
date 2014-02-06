@@ -1,5 +1,3 @@
-'use strict';
-
 require('classtool');
 
 function ClassSpec(b) {
