@@ -16,15 +16,15 @@
           <tbody>
           <tr>
             <td class="small">Total Received</td>
-            <td class="address ellipsis text-right">{{address.totalReceived}} BTC</td>
+            <td class="address ellipsis text-right">{{$root.currency.getConversion(address.totalReceived)}}</td>
           </tr>
           <tr>
             <td class="small">Total Sent</td>
-            <td class="address ellipsis text-right">{{address.totalSent}} BTC</td>
+            <td class="address ellipsis text-right">{{$root.currency.getConversion(address.totalSent)}}</td>
           </tr>
           <tr>
             <td class="small">Final Balance</td>
-            <td class="address ellipsis text-right">{{address.balance}} BTC</td>
+            <td class="address ellipsis text-right">{{$root.currency.getConversion(address.balance)}}</td>
           </tr>
           <tr>
             <td class="small">No. Transactions</td>

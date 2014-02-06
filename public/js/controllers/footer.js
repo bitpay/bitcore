@@ -4,9 +4,7 @@ angular.module('insight.system').controller('FooterController',
   function($rootScope, $scope, Version, Currency) {
 
     var _roundFloat = function(x, n) {
-      if(!parseInt(n, 10)) n = 0;
-
-      if(!parseFloat(x)) return false;
+      if(!parseInt(n, 10) || !parseFloat(x)) n = 0;
 
       return Math.round(x * Math.pow(10, n)) / Math.pow(10, n);
     };

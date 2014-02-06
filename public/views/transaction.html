@@ -43,15 +43,15 @@
           <tbody>
           <tr>
             <td><strong>Total Input</strong></td>
-            <td class="text-muted text-right">{{tx.valueIn}} BTC</td>
+            <td class="text-muted text-right">{{$root.currency.getConversion(tx.valueIn)}}</td>
           </tr>
           <tr>
             <td><strong>Total Output</strong></td>
-            <td class="text-muted text-right">{{tx.valueOut}} BTC</td>
+            <td class="text-muted text-right">{{$root.currency.getConversion(tx.valueOut)}}</td>
           </tr>
           <tr>
             <td><strong>Fees</strong></td>
-            <td class="text-muted text-right">{{tx.fees}} BTC</td>
+            <td class="text-muted text-right">{{$root.currency.getConversion(tx.fees)}}</td>
           </tr>
           </tbody>
         </table>
