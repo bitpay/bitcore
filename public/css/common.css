@@ -411,6 +411,14 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   width: 30px;
 }
 .btn-copy { margin-left: 5px; }
+.btn-copy .tooltip {
+  display: inline-block;
+  margin-left: 10px;
+  margin-top: -2px;
+  opacity: 0;
+}
+.btn-copy.zeroclipboard-is-hover { color: #2a6496; }
+.btn-copy.zeroclipboard-is-active .tooltip { opacity: 1; }
 .btn-expand { margin-right: 5px; }
 
 .transaction-vin-vout .ellipsis { margin-bottom: 10px; }
