@@ -4,7 +4,9 @@ angular.module('insight.system').controller('HeaderController',
   function($scope, $rootScope, getSocket, Global, Block, Currency) {
   $scope.global = Global;
 
-  Currency.get();
+  Currency.get({}, function(res) {
+    $rootScope.currency.bitstamp = res.data.bitstamp;
+  });
 
   $scope.menu = [
     {

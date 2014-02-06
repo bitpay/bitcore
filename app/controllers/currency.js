@@ -40,11 +40,6 @@ exports.index = function(req, res) {
 
   // Init
   var currentTime = +new Date();
-  console.log('-----------------------------------');
-  console.log(timestamp);
-  console.log(currentTime);
-  console.log(currentTime >= (timestamp + delay));
-  console.log('-----------------------------------');
   if (bitstampRate === 0 || currentTime >= (timestamp + delay)) {
     timestamp = currentTime;
 
