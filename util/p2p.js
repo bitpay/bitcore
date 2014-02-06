@@ -14,7 +14,12 @@ program
   .parse(process.argv);
 
 var ps = new PeerSync();
-ps.init(program);
-ps.run();
+ps.init(program, function(err){
+  if (err) {
+    console.log(err);
+    process.exit(1);
+  }
+  ps.run();
+});
 
 
