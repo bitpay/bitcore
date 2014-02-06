@@ -9,7 +9,7 @@
         <h1 data-ng-if="block">Block #{{ block.height }}</h1>
       </div>
       <div class="m10v">
-        <button class="pull-right btn-copy" clip-copy="block.hash"><span class="glyphicon glyphicon-paperclip"></span></button>
+        <button class="pull-right btn-copy" clip-copy="block.hash"></button>
         <a class="ellipsis block_hash" href="/address/{{block.hash}}">{{block.hash}}</a>
       </div>
       <div class="m20v" data-ng-show="!tx.isCoinBase">

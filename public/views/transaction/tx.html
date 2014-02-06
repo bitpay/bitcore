@@ -1,10 +1,16 @@
-  <div class="line-bot">
-    <time class="pull-right">{{tx.time * 1000 | date:'medium'}}</time>
-    <button class="btn-expand" data-ng-click="itemsExpanded = !itemsExpanded"><span class="glyphicon glyphicon-plus" data-ng-class="{'glyphicon-minus': itemsExpanded}" tooltip="Show/Hide items details" tooltip-placement="right"></span></button>
-    <a href="/tx/{{tx.txid}}">{{tx.txid}}</a>
-    <button class="btn-copy" clip-copy="tx.txid"><span class="glyphicon glyphicon-paperclip"></span></button>
+<div class="line-bot row">
+  <div class="col-xs-12 col-md-6">
+    <button class="btn-expand pull-left" data-ng-click="itemsExpanded = !itemsExpanded"><span class="glyphicon glyphicon-plus" data-ng-class="{'glyphicon-minus': itemsExpanded}" tooltip="Show/Hide items details" tooltip-placement="right"></span></button>
+    <button class="btn-copy pull-right" clip-copy="tx.txid"></button>
+    <div class="ellipsis">
+      <a class="txid" href="/tx/{{tx.txid}}">{{tx.txid}}</a>
+    </div>
   </div>
-  <div class="row line-mid">
+  <div class="col-xs-12 col-md-6 text-right">
+    <time>{{tx.time * 1000 | date:'medium'}}</time>
+  </div>
+</div>
+<div class="row line-mid">
     <div class="col-md-5">
       <div class="row" data-ng-show="tx.isCoinBase">
         <div class="col-md-12 transaction-vin-vout" data-ng-repeat="vin in tx.vin">
@@ -92,9 +98,20 @@
       </div>
     </div>
   </div>
-  <div class="line-top">
-    <small data-ng-show="!tx.isCoinBase" class="text-muted">Fees: {{tx.fees}}</small>
-    <div class="pull-right">
+  <div class="panel panel-default" data-ng-show="itemsExpanded">
+    <div class="panel-body" style="word-wrap:break-word">
+      <small>
+        <strong>BlockHash</strong> 
+        <a href="/block/{{tx.blockhash}}">{{tx.blockhash}}</a>
+        <button class="btn-copy" clip-copy="tx.blockhash"></button>
+      </small>
+    </div>
+  </div>
+  <div class="line-top row">
+    <div class="col-xs-4 col-md-6">
+      <button data-ng-show="!tx.isCoinBase" class="btn btn-default">Fees: {{tx.fees}}</button>
+    </div>
+    <div class="col-xs-8 col-md-6 text-right">
       <button data-ng-show="tx.confirmations" class="btn btn-success">{{tx.confirmations}} Confirmations</button>
       <button data-ng-show="!tx.confirmations" class="btn btn-danger">Unconfirmed Transaction!</button>
       <button class="btn btn-primary">{{$root.currency.getConversion(tx.valueOut)}}</button>
