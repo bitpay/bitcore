@@ -1,0 +1,8 @@
+<div class="currency text-center m10t" data-ng-controller="FooterController">
+  <small>
+    Currency:
+    <a href="#" data-ng-click="setCurrency('USD')" data-ng-class="{active: $root.currency.symbol == 'USD'}" tooltip="Change to USD: Bitstamp ${{$root.currency.bitstamp}}">USD</a> ·
+    <a href="#" data-ng-click="setCurrency('BTC')" data-ng-class="{active: $root.currency.symbol == 'BTC'}" tooltip="Change to BTC">BTC</a> ·
+    <a href="#" data-ng-click="setCurrency('mBTC')" data-ng-class="{active: $root.currency.symbol == 'mBTC'}" tooltip="Change to mBTC">mBTC</a>
+  </small>
+</div>

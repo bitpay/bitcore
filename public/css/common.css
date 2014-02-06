@@ -277,9 +277,11 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   height: 51px;
   overflow: hidden;
 }
-#footer .currency a.active {
-  color: #fff;
+
+.currency a.active {
+  color: #000;
   text-decoration: underline;
+  cursor: default;
 }
 
 #footer a.insight {
