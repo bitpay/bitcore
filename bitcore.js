@@ -10,7 +10,9 @@ module.exports.VersionedData = require('./util/VersionedData');
 module.exports.Address = require('./Address');
 module.exports.config = require('./config');
 module.exports.log = require('./util/log');
-//module.exports.Script = require('./Script');
+module.exports.Opcode = require('./Opcode');
+module.exports.util = require('./util/util');
+module.exports.Script = require('./Script');
 //module.exports.Transaction = require('./Transaction');
 
 

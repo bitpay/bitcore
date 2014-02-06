@@ -12,6 +12,10 @@ describe('Miscelaneous stuff', function() {
   it('should initialze the log object', function() {
     should.exist(bitcore.log);
   });
+  it('should initialze the util object', function() {
+    should.exist(bitcore.util);
+  });
+
 });
 
 
