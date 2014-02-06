@@ -22,8 +22,10 @@ describe('Opcode', function() {
   });
   it.skip('should be able to create some constants', function() {
     for (var i in Opcode.map) {
-      eval(i + ' = ' + Opcode.map[i] + ';');
+      console.log('var '+i + ' = ' + Opcode.map[i] + ';');
+      eval('var '+i + ' = ' + Opcode.map[i] + ';');
     }
+    should.exist(OP_VER);
     should.exist(OP_HASH160);
     should.exist(OP_RETURN);
     should.exist(OP_EQUALVERIFY);
