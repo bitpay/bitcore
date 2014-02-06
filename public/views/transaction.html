@@ -9,7 +9,7 @@
     <div data-ng-include src="'/views/transaction/tx.html'"></div>
   </div><!--  END OF BLOCK-TX -->
 
-  <div class="row m50v">
+  <div class="row">
     <div data-ng-class="{'col-md-6':!tx.isCoinBase}">
       <h2>Summary</h2>
       <table class="table" style="table-layout: fixed">
@@ -25,8 +25,8 @@
         <tr>
           <td><strong>Block </strong>
           <td class="text-right">
-
-              <a href="/block/{{tx.blockhash}}" class=" ellipsis">{{tx.blockhash}}</a>
+            <button class="btn-copy pull-right" clip-copy="tx.blockhash"></button>
+            <a href="/block/{{tx.blockhash}}" class=" ellipsis">{{tx.blockhash}}</a> 
         </tbody>
       </table>
     </div>

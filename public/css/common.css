@@ -231,6 +231,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   margin: 20px 0 10px;
   overflow: hidden;
   padding: 15px;
+  border: 1px solid #ccc;
 }
 
 .btn {
@@ -302,7 +303,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .line-mid { padding: 15px 0;}
 .line-top {
   border-top: 1px solid #EAEAEA;
-  padding: 15px 0;
+  padding: 15px 0 0 0;
 }
 
 /* Custom page CSS
@@ -412,6 +413,16 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 }
 .btn-copy { margin-left: 5px; }
 .btn-expand { margin-right: 5px; }
+
+@media (max-width: 991px) {
+  .btn-copy {
+    display: none; 
+  }
+}
+
+.txid {
+  line-height: 26px;
+}
 
 .transaction-vin-vout .ellipsis { margin-bottom: 10px; }
 .transaction-vin-vout .btc-value { margin-left: 15px; }
