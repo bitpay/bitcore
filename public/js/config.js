@@ -53,5 +53,6 @@ angular.module('insight')
       $rootScope.titleDetail = '';
       $rootScope.title = $route.current.title;
       $rootScope.isCollapsed = true;
+      $rootScope.currentAddr = null;
     });
   });
