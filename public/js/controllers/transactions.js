@@ -75,7 +75,7 @@ function($scope, $rootScope, $routeParams, $location, Global, Transaction, Trans
     tx.voutSimple = _aggregateItems(tx.vout);
   };
 
-  var _paginate = function (data) {
+  var _paginate = function(data) {
     $scope.loading = false;
 
     pagesTotal = data.pagesTotal;
