@@ -267,6 +267,30 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   border: 2px solid #6C0000;
 }
 
+.label {
+  padding: .7em 2em;
+  font-size: 13px;
+  text-transform: uppercase;
+  font-weight:100;
+}
+
+.label-primary {
+  background-color: #8DC429;
+}
+
+.label-default {
+  background-color: #ffffff;
+  color: #333;
+}
+
+.label-success {
+  background-color: #2FA4D7;
+}
+
+.label-danger {
+  background-color: #AC0015;
+}
+
 .progress-bar-info { background-color: #8DC429; }
 
 /* Set the fixed height of the footer here */
