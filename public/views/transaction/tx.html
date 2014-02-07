@@ -11,109 +11,109 @@
   </div>
 </div>
 <div class="row line-mid">
-    <div class="col-md-5">
-      <div class="row" data-ng-show="tx.isCoinBase">
-        <div class="col-md-12 transaction-vin-vout" data-ng-repeat="vin in tx.vin">
-          <div class="text-muted pull-right btc-value"><small>{{$root.currency.getConversion(vin.reward)}}</small></div>
+  <div class="col-md-5">
+    <div class="row" data-ng-show="tx.isCoinBase">
+      <div class="col-md-12 transaction-vin-vout" data-ng-repeat="vin in tx.vin">
+        <div class="text-muted pull-right btc-value"><small>{{$root.currency.getConvertion(vin.reward)}}</small></div>
+        <div class="ellipsis">
+          <span>No Inputs (Newly Generated Coins)</span>
+        </div>
+      </div>
+    </div>
+    <div class="row" data-ng-show="!tx.isCoinBase">
+      <div data-ng-repeat="vin in tx.vinSimple" data-ng-show="!itemsExpanded">
+        <div class="col-md-12 transaction-vin-vout">
+          <div class="text-muted pull-right btc-value" data-ng-class="{'text-danger': $root.currentAddr == vin.addr}"><small>{{$root.currency.getConvertion(vin.value)}}</small></div>
           <div class="ellipsis">
-            <span>No Inputs (Newly Generated Coins)</span>
+            <span data-ng-show="vin.notAddr">{{vin.addr}}</span>
+            <span class="text-muted" title="Current Bitcoin Address" data-ng-show="vin.addr == $root.currentAddr">{{vin.addr}}</span>
+            <a href="/address/{{vin.addr}}" data-ng-show="!vin.notAddr && vin.addr != $root.currentAddr">{{vin.addr}}</a>
           </div>
         </div>
       </div>
-      <div class="row" data-ng-show="!tx.isCoinBase">
-        <div data-ng-repeat="vin in tx.vinSimple" data-ng-show="!itemsExpanded">
-          <div class="col-md-12 transaction-vin-vout">
-            <div class="text-muted pull-right btc-value" data-ng-class="{'text-danger': $root.currentAddr == vin.addr}"><small>{{$root.currency.getConversion(vin.value)}}</small></div>
-            <div class="ellipsis">
-              <span data-ng-show="vin.notAddr">{{vin.addr}}</span>
-              <span class="text-muted" title="Current Bitcoin Address" data-ng-show="vin.addr == $root.currentAddr">{{vin.addr}}</span>
-              <a href="/address/{{vin.addr}}" data-ng-show="!vin.notAddr && vin.addr != $root.currentAddr">{{vin.addr}}</a>
-            </div>
+      <div data-ng-repeat="vin in tx.vin" data-ng-show="itemsExpanded">
+        <div class="col-md-12 transaction-vin-vout">
+          <div class="text-muted pull-right btc-value"><small>{{$root.currency.getConvertion(vin.value)}}</small></div>
+          <div class="ellipsis">
+            <a class="glyphicon glyphicon-chevron-right" href="/#!/tx/{{vin.txid}}" title="Outpoint: {{vin.txid}},{{vin.vout}}"></a>&nbsp;&nbsp;
+            <span data-ng-show="vin.notAddr">{{vin.addr}}</span>
+            <a href="/address/{{vin.addr}}" data-ng-show="!vin.notAddr">{{vin.addr}}</a>
           </div>
         </div>
-        <div data-ng-repeat="vin in tx.vin" data-ng-show="itemsExpanded">
-          <div class="col-md-12 transaction-vin-vout">
-            <div class="text-muted pull-right btc-value"><small>{{$root.currency.getConversion(vin.value)}}</small></div>
-            <div class="ellipsis">
-              <a class="glyphicon glyphicon-chevron-right" href="/#!/tx/{{vin.txid}}" title="Outpoint: {{vin.txid}},{{vin.vout}}"></a>&nbsp;&nbsp;
-              <span data-ng-show="vin.notAddr">{{vin.addr}}</span>
-              <a href="/address/{{vin.addr}}" data-ng-show="!vin.notAddr">{{vin.addr}}</a>
-            </div>
-          </div>
-          <div class="col-md-12">
-            <div class="panel panel-default">
-              <div class="panel-body" style="word-wrap:break-word">
-                <small>
-                  <strong>scriptSig</strong>
-                  {{vin.scriptSig.asm}}
-                </small>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-1 text-center hidden-xs hidden-sm">
-      <span class="glyphicon glyphicon-chevron-right text-primary"></span>
-    </div>
-    <div class="col-xs-12 text-center hidden-md hidden-lg">
-      <span class="glyphicon glyphicon-chevron-down text-primary"></span>
-    </div>
-    <div class="col-md-6">
-      <div class="row">
-        <div data-ng-repeat="vout in tx.voutSimple" data-ng-show="!itemsExpanded">
-          <div class="col-md-12 transaction-vin-vout">
-            <div class="text-muted pull-right btc-value" data-ng-class="{'text-success': $root.currentAddr == vout.addr}"><small>{{$root.currency.getConversion(vout.value)}}</small></div>
-            <div class="ellipsis">
-              <span data-ng-show="vout.notAddr">{{vout.addr}}</span>
-              <span class="text-muted" title="Current Bitcoin Address" data-ng-show="address == $root.currentAddr" data-ng-repeat="address in vout.addr.split(',')">{{vout.addr}}</span>
-              <a href="/address/{{address}}"  data-ng-show="!vout.notAddr && address != $root.currentAddr" data-ng-repeat="address in vout.addr.split(',')">{{address}}</a>
-            </div>
-          </div>
-        </div>
-        <div data-ng-repeat="vout in tx.vout" data-ng-show="itemsExpanded">
-          <div class="col-md-12 transaction-vin-vout">
-            <div class="text-muted pull-right btc-value"><small>{{$root.currency.getConversion(vout.value)}}</small></div>
-            <div class="ellipsis">
-              <a href="/address/{{address}}" data-ng-repeat="address in vout.scriptPubKey.addresses">{{address}}</a>
-            </div>
-          </div>
-          <div class="col-md-12">
-            <div class="panel panel-default">
-              <div class="panel-body" style="word-wrap:break-word">
-                <small>
-                  <p>
-                    <strong>Type</strong>
-                    {{vout.scriptPubKey.type}}
-                  </p>
-                  <p>
-                    <strong>scriptPubKey</strong>
-                    {{vout.scriptPubKey.asm}}
-                  </p>
-                </small>
-              </div>
+        <div class="col-md-12">
+          <div class="panel panel-default">
+            <div class="panel-body" style="word-wrap:break-word">
+              <small>
+                <strong>scriptSig</strong>
+                {{vin.scriptSig.asm}}
+              </small>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-  <div class="panel panel-default" data-ng-show="itemsExpanded">
-    <div class="panel-body" style="word-wrap:break-word">
-      <small>
-        <strong>BlockHash</strong> 
-        <a href="/block/{{tx.blockhash}}">{{tx.blockhash}}</a>
-        <button class="btn-copy" clip-copy="tx.blockhash"></button>
-      </small>
+  <div class="col-md-1 text-center hidden-xs hidden-sm">
+    <span class="glyphicon glyphicon-chevron-right text-primary"></span>
+  </div>
+  <div class="col-xs-12 text-center hidden-md hidden-lg">
+    <span class="glyphicon glyphicon-chevron-down text-primary"></span>
+  </div>
+  <div class="col-md-6">
+    <div class="row">
+      <div data-ng-repeat="vout in tx.voutSimple" data-ng-show="!itemsExpanded">
+        <div class="col-md-12 transaction-vin-vout">
+          <div class="text-muted pull-right btc-value" data-ng-class="{'text-success': $root.currentAddr == vout.addr}"><small>{{$root.currency.getConvertion(vout.value)}}</small></div>
+          <div class="ellipsis">
+            <span data-ng-show="vout.notAddr">{{vout.addr}}</span>
+            <span class="text-muted" title="Current Bitcoin Address" data-ng-show="address == $root.currentAddr" data-ng-repeat="address in vout.addr.split(',')">{{vout.addr}}</span>
+            <a href="/address/{{address}}"  data-ng-show="!vout.notAddr && address != $root.currentAddr" data-ng-repeat="address in vout.addr.split(',')">{{address}}</a>
+          </div>
+        </div>
+      </div>
+      <div data-ng-repeat="vout in tx.vout" data-ng-show="itemsExpanded">
+        <div class="col-md-12 transaction-vin-vout">
+          <div class="text-muted pull-right btc-value"><small>{{$root.currency.getConvertion(vout.value)}}</small></div>
+          <div class="ellipsis">
+            <a href="/address/{{address}}" data-ng-repeat="address in vout.scriptPubKey.addresses">{{address}}</a>
+          </div>
+        </div>
+        <div class="col-md-12">
+          <div class="panel panel-default">
+            <div class="panel-body" style="word-wrap:break-word">
+              <small>
+                <p>
+                  <strong>Type</strong>
+                  {{vout.scriptPubKey.type}}
+                </p>
+                <p>
+                  <strong>scriptPubKey</strong>
+                  {{vout.scriptPubKey.asm}}
+                </p>
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-  <div class="line-top row">
-    <div class="col-xs-4 col-md-6">
-      <button data-ng-show="!tx.isCoinBase" class="btn btn-default">Fees: {{$root.currency.getConversion(tx.fees)}}</button>
-    </div>
-    <div class="col-xs-8 col-md-6 text-right">
-      <button data-ng-show="tx.confirmations" class="btn btn-success">{{tx.confirmations}} Confirmations</button>
-      <button data-ng-show="!tx.confirmations" class="btn btn-danger">Unconfirmed Transaction!</button>
-      <button class="btn btn-primary">{{$root.currency.getConversion(tx.valueOut)}}</button>
-    </div>
+</div>
+<div class="panel panel-default" data-ng-show="itemsExpanded">
+  <div class="panel-body" style="word-wrap:break-word">
+    <small>
+      <strong>BlockHash</strong>
+      <a href="/block/{{tx.blockhash}}">{{tx.blockhash}}</a>
+      <button class="btn-copy" clip-copy="tx.blockhash"></button>
+    </small>
   </div>
+</div>
+<div class="line-top row">
+  <div class="col-xs-4 col-md-6">
+    <button data-ng-show="!tx.isCoinBase" class="btn btn-default">Fees: {{$root.currency.getConvertion(tx.fees)}}</button>
+  </div>
+  <div class="col-xs-8 col-md-6 text-right">
+    <button data-ng-show="tx.confirmations" class="btn btn-success">{{tx.confirmations}} Confirmations</button>
+    <button data-ng-show="!tx.confirmations" class="btn btn-danger">Unconfirmed Transaction!</button>
+    <button class="btn btn-primary">{{$root.currency.getConvertion(tx.valueOut)}}</button>
+  </div>
+</div>

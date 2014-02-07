@@ -48,19 +48,13 @@ exports.index = function(req, res) {
 
       res.jsonp({
         status: 200,
-        data: {
-          bitstamp: bitstampRate,
-          delay: delay
-        }
+        data: { bitstamp: bitstampRate }
       });
     });
   } else {
     res.jsonp({
       status: 200,
-      data: {
-        bitstamp: bitstampRate,
-        delay: delay
-      }
+      data: { bitstamp: bitstampRate }
     });
   }
 };
