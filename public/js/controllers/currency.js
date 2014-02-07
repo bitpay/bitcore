@@ -6,7 +6,26 @@ angular.module('insight.currency').controller('CurrencyController',
     $rootScope.currency = {
       factor: 1,
       bitstamp: 0,
-      symbol: 'BTC'
+      symbol: 'BTC',
+      getConvertion: function(value) {
+        if (typeof value !== 'undefined' && value !== null) {
+          var response;
+
+          if (this.symbol === 'USD') {
+            response = _roundFloat((value * this.factor), 2);
+          } else if (this.symbol === 'mBTC') {
+            this.factor = 1000;
+            response = _roundFloat((value * this.factor), 5);
+          } else {
+            this.factor = 1;
+            response = value;
+          }
+
+          return response + ' ' + this.symbol;
+        }
+
+        return 'value error';
+      }
     };
 
     var _roundFloat = function(x, n) {
@@ -27,26 +46,6 @@ angular.module('insight.currency').controller('CurrencyController',
       } else {
         $rootScope.currency.factor = 1;
       }
-    };
-
-    $scope.getConvertion = function(value) {
-      if (typeof value !== 'undefined' && value !== null) {
-        var response;
-
-        if ($rootScope.currency.symbol === 'USD') {
-          response = _roundFloat((value * $rootScope.currency.factor), 2);
-        } else if ($rootScope.currency.symbol === 'mBTC') {
-          $rootScope.currency.factor = 1000;
-          response = _roundFloat((value * $rootScope.currency.factor), 5);
-        } else {
-          $rootScope.currency.factor = 1;
-          response = value;
-        }
-
-        return response + ' ' + $rootScope.currency.symbol;
-      }
-
-      return 'value error';
     };
 
     // Get initial value

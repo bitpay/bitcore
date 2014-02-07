@@ -37,19 +37,19 @@
     </div>
     <div data-ng-show="!tx.isCoinBase">
       <h2>Inputs and Outputs</h2>
-        <table class="table" data-ng-controller="CurrencyController">
+        <table class="table">
           <tbody>
           <tr>
             <td><strong>Total Input</strong></td>
-            <td class="text-muted text-right">{{getConvertion(tx.valueIn)}}</td>
+            <td class="text-muted text-right">{{$root.currency.getConvertion(tx.valueIn)}}</td>
           </tr>
           <tr>
             <td><strong>Total Output</strong></td>
-            <td class="text-muted text-right">{{getConvertion(tx.valueOut)}}</td>
+            <td class="text-muted text-right">{{$root.currency.getConvertion(tx.valueOut)}}</td>
           </tr>
           <tr>
             <td><strong>Fees</strong></td>
-            <td class="text-muted text-right">{{getConvertion(tx.fees)}}</td>
+            <td class="text-muted text-right">{{$root.currency.getConvertion(tx.fees)}}</td>
           </tr>
           </tbody>
         </table>

@@ -12,19 +12,19 @@
       </div>
       <div class="m20v">
         <h4>Summary</h4>
-        <table class="table" data-ng-controller="CurrencyController">
+        <table class="table">
           <tbody>
           <tr>
             <td class="small">Total Received</td>
-            <td class="address ellipsis text-right">{{getConvertion(address.totalReceived)}}</td>
+            <td class="address ellipsis text-right">{{$root.currency.getConvertion(address.totalReceived)}}</td>
           </tr>
           <tr>
             <td class="small">Total Sent</td>
-            <td class="address ellipsis text-right">{{getConvertion(address.totalSent)}}</td>
+            <td class="address ellipsis text-right">{{$root.currency.getConvertion(address.totalSent)}}</td>
           </tr>
           <tr>
             <td class="small">Final Balance</td>
-            <td class="address ellipsis text-right">{{getConvertion(address.balance)}}</td>
+            <td class="address ellipsis text-right">{{$root.currency.getConvertion(address.balance)}}</td>
           </tr>
           <tr>
             <td class="small">No. Transactions</td>
