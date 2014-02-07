@@ -109,7 +109,7 @@
   </div>
   <div class="line-top row">
     <div class="col-xs-4 col-md-6">
-      <button data-ng-show="!tx.isCoinBase" class="btn btn-default">Fees: {{tx.fees}}</button>
+      <button data-ng-show="!tx.isCoinBase" class="btn btn-default">Fees: {{$root.currency.getConversion(tx.fees)}}</button>
     </div>
     <div class="col-xs-8 col-md-6 text-right">
       <button data-ng-show="tx.confirmations" class="btn btn-success">{{tx.confirmations}} Confirmations</button>

@@ -1,11 +1,3 @@
 <div class="container" data-ng-controller="FooterController">
-  <div class="pull-left m10v currency">
-    <small>
-    	Currency:
-    	<a href="#" data-ng-click="setCurrency('USD')" data-ng-class="{active: $root.currency.symbol == 'USD'}" tooltip="Change to USD: Bitstamp ${{$root.currency.bitstamp}}">USD</a> ·
-    	<a href="#" data-ng-click="setCurrency('BTC')" data-ng-class="{active: $root.currency.symbol == 'BTC'}" tooltip="Change to BTC">BTC</a> ·
-    	<a href="#" data-ng-click="setCurrency('mBTC')" data-ng-class="{active: $root.currency.symbol == 'mBTC'}" tooltip="Change to mBTC">mBTC</a>
-	</small>
-  </div>
   <a class="insight m10v pull-right" href="/">Insight <small>API v{{version}}</small></a>
 </div>

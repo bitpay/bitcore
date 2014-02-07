@@ -196,25 +196,24 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .block-id {
   background-color: #373D42;
   border: 3px solid #FFFFFF;
-  height: 165px;
-  margin: 10px auto;
+  margin: 0 auto;
   width: 165px;
+  color: #fff;
+  text-align: center;
+  font-size: 80px;
 }
 
-.block-id h1 {
+.block-id span {
+  margin-top: 10px;
+}
+
+.block-id h2 {
   color: #FFFFFF;
   font-weight: bold;
   line-height: 30px;
-  text-align: center;
   font-size: 24px;
-}
-
-.block-id h3 {
-  color: #FFFFFF;
-  font-weight: bold;
-  line-height: 30px;
-  text-align: center;
-  font-size: 24px;
+  margin-top: 0;
+  margin-bottom: 10px;
 }
 
 .icon-block {
@@ -278,9 +277,11 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   height: 51px;
   overflow: hidden;
 }
-#footer .currency a.active {
-  color: #fff;
+
+.currency a.active {
+  color: #000;
   text-decoration: underline;
+  cursor: default;
 }
 
 #footer a.insight {
@@ -432,12 +433,18 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   line-height: 26px;
 }
 
+.tx-id {
+  background-color: #373D42;
+  border: 3px solid #FFFFFF;
+  margin: 0 auto;
+  width: 165px;
+  color: #FFFFFF;
+  font-size: 80px;
+  text-align: center;
+}
+
 .transaction-vin-vout .ellipsis { margin-bottom: 10px; }
 .transaction-vin-vout .btc-value { margin-left: 15px; }
 
 .page-header { margin-top: 0; }
 
-.block_hash {
-  margin-left: 46px;
-  text-align: center;
-}

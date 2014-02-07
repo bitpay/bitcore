@@ -2,15 +2,14 @@
 <section data-ng-controller="BlocksController" data-ng-init="findOne()">
   <div class="row">
     <div class="col-xs-12 col-gray col-gray-fixed">
+      <h1 class="text-center">Block</h1>
       <div class="block-id">
-        <div class="icon-block text-center">
-          <span class="glyphicon glyphicon-list-alt"></span>
-        </div>
-        <h1 data-ng-if="block">Block #{{ block.height }}</h1>
+        <span class="glyphicon glyphicon-list-alt"></span>
+        <h2 data-ng-if="block">#{{ block.height }}</h2>
       </div>
       <div class="m10v">
         <button class="pull-right btn-copy" clip-copy="block.hash"></button>
-        <a class="ellipsis block_hash" href="/address/{{block.hash}}">{{block.hash}}</a>
+        <a class="ellipsis" href="/address/{{block.hash}}">{{block.hash}}</a>
       </div>
       <div class="m20v" data-ng-show="!tx.isCoinBase">
         <h4>Hashes</h4>
@@ -31,6 +30,7 @@
           </tbody>
         </table>
       </div> <!-- END OF TRANSACTIONS TABLE -->
+      <div data-ng-include src="'/views/includes/currency.html'"></div>
     </div> <!-- END OF COL-GRAY   -->
 
     <div class="col-xs-12 col-md-9 col-md-offset-3">
