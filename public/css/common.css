@@ -196,31 +196,34 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .block-id {
   background-color: #373D42;
   border: 3px solid #FFFFFF;
-  height: 165px;
-  margin: 10px auto;
+  margin: 0 auto;
   width: 165px;
+  color: #fff;
+  text-align: center;
+  font-size: 80px;
 }
 
-.block-id h1 {
+.block-id span {
+  margin-top: 10px;
+}
+
+.block-id h2 {
   color: #FFFFFF;
   font-weight: bold;
   line-height: 30px;
-  text-align: center;
   font-size: 24px;
-}
-
-.block-id h3 {
-  color: #FFFFFF;
-  font-weight: bold;
-  line-height: 30px;
-  text-align: center;
-  font-size: 24px;
+  margin-top: 0;
+  margin-bottom: 10px;
 }
 
 .icon-block {
   color: #FFFFFF;
   font-size: 35px;
   margin-top:  10px;
+}
+
+.icon-block h3 {
+  color: #fff;
 }
 
 .block-tx {
@@ -231,6 +234,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   margin: 20px 0 10px;
   overflow: hidden;
   padding: 15px;
+  border: 1px solid #ccc;
 }
 
 .btn {
@@ -267,6 +271,30 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   border: 2px solid #6C0000;
 }
 
+.label {
+  padding: .7em 2em;
+  font-size: 13px;
+  text-transform: uppercase;
+  font-weight:100;
+}
+
+.label-primary {
+  background-color: #8DC429;
+}
+
+.label-default {
+  background-color: #ffffff;
+  color: #333;
+}
+
+.label-success {
+  background-color: #2FA4D7;
+}
+
+.label-danger {
+  background-color: #AC0015;
+}
+
 .progress-bar-info { background-color: #8DC429; }
 
 /* Set the fixed height of the footer here */
@@ -278,9 +306,10 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   overflow: hidden;
 }
 
-#footer .currency a:active {
-  color: #fff;
+.currency a.active {
+  color: #000;
   text-decoration: underline;
+  cursor: default;
 }
 
 #footer a.insight {
@@ -303,7 +332,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .line-mid { padding: 15px 0;}
 .line-top {
   border-top: 1px solid #EAEAEA;
-  padding: 15px 0;
+  padding: 15px 0 0 0;
 }
 
 /* Custom page CSS
@@ -412,14 +441,38 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   width: 30px;
 }
 .btn-copy { margin-left: 5px; }
+.btn-copy .tooltip {
+  display: inline-block;
+  margin-left: 10px;
+  margin-top: -2px;
+  opacity: 0;
+}
+.btn-copy.zeroclipboard-is-hover { color: #2a6496; }
+.btn-copy.zeroclipboard-is-active .tooltip { opacity: 1; }
 .btn-expand { margin-right: 5px; }
+
+@media (max-width: 991px) {
+  .btn-copy {
+    display: none; 
+  }
+}
+
+.txid {
+  line-height: 26px;
+}
+
+.tx-id {
+  background-color: #373D42;
+  border: 3px solid #FFFFFF;
+  margin: 0 auto;
+  width: 165px;
+  color: #FFFFFF;
+  font-size: 80px;
+  text-align: center;
+}
 
 .transaction-vin-vout .ellipsis { margin-bottom: 10px; }
 .transaction-vin-vout .btc-value { margin-left: 15px; }
 
 .page-header { margin-top: 0; }
 
-.block_hash {
-  margin-left: 46px;
-  text-align: center;
-}

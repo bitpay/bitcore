@@ -1,10 +1,14 @@
 'use strict';
 
 angular.module('insight.system').controller('HeaderController',
-  function($scope, $rootScope, getSocket, Global, Block, Currency) {
+  function($scope, $rootScope, getSocket, Global, Block) {
   $scope.global = Global;
 
-  Currency.get();
+  $rootScope.currency = {
+    factor: 1,
+    bitstamp: 0,
+    symbol: 'BTC'
+  };
 
   $scope.menu = [
     {

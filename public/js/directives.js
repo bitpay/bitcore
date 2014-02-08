@@ -39,6 +39,7 @@ angular.module('insight')
     return {
       restric: 'A',
       scope: { clipCopy: '=clipCopy' },
+      template: '<span class="glyphicon glyphicon-paperclip"></span><div class="tooltip fade right in"><div class="tooltip-arrow"></div><div class="tooltip-inner">Copied!</div></div>',
       link: function(scope, elm) {
         var clip = new ZeroClipboard(elm);
 
@@ -48,6 +49,9 @@ angular.module('insight')
           };
 
           client.on('mousedown', onMousedown);
+          client.on('noflash wrongflash', function() {
+            return elm.remove();
+          });
 
           scope.$on('$destroy', function() {
             client.off('mousedown', onMousedown);

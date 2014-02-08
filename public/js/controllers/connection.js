@@ -4,6 +4,7 @@ angular.module('insight.connection').controller('ConnectionController',
 function($scope, $window, Status, Sync, getSocket) {
 
   // Set initial values
+  $scope.apiOnline = true;
   $scope.serverOnline = true;
   $scope.clienteOnline = true;
 
@@ -22,7 +23,7 @@ function($scope, $window, Status, Sync, getSocket) {
   $scope.getConnStatus = function() {
     Sync.get({},
     function(sync) {
-      $scope.apiOnline = (sync.status !== 'aborted' && sync.status !== 'error') ? true : false;
+      $scope.apiOnline = (sync.status !== 'aborted' && sync.status !== 'error');
     },
     function() {
       $scope.apiOnline = false;
@@ -31,7 +32,7 @@ function($scope, $window, Status, Sync, getSocket) {
 
   socket.emit('subscribe', 'sync');
   socket.on('status', function(sync) {
-      $scope.apiOnline = (sync.status !== 'aborted' && sync.status !== 'error') ? true : false;
+      $scope.apiOnline = (sync.status !== 'aborted' && sync.status !== 'error');
   });
 
   // Check for the client conneciton
