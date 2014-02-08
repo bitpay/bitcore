@@ -8,7 +8,7 @@ var TESTING_BLOCK = '000000000185678d3d7ecc9962c96418174431f93fe20bf216d55652724
 
 var
   assert  = require('assert'),
-  config      = require('../../config/config'),
+//  config      = require('../../config/config'),
   BlockDb     = require('../../lib/BlockDb').class();
 
 var bDb;
@@ -34,23 +34,6 @@ describe('BlockDb fromHashWithInfo', function(){
     bDb.has(TESTING_BLOCK, function(err, has) {
       assert.equal(has, true);
       done();
-    });
-  });
-  it('setOrphan', function(done) {
-    var b16 = '00000000c4cbd75af741f3a2b2ff72d9ed4d83a048462c1efe331be31ccf006b';
-    var b17 = '00000000fe198cce4c8abf9dca0fee1182cb130df966cc428ad2a230df8da743';
-
-    bDb.has(b17, function(err, has) {
-      assert(has);
-      bDb.setOrphan(b17, function(err, oldPrev) {
-        assert.equal(oldPrev, b16);
-        bDb.setPrev(b17, b16, function(err, oldPrev) {
-          bDb.getPrev(b17, function(err, p) {
-            assert.equal(p, b16);
-            done();
-          });
-        });
-      });
     });
   });
 });

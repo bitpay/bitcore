@@ -496,6 +496,53 @@ describe('Sync Reorgs', function(){
  
         ], done );
   });
+
+  var p2p  = {
+    hash: '0000000000000000000000000000000000000000000000000000000000000006',
+    tx: ['f6c2901f39fd07f2f2e503183d76f73ecc1aee9ac9216fde58e867bc29ce674e'],
+    time: 1296690099,
+    previousblockhash: '111',
+  };
+
+  it('p2p, no reorg allowed', function(done) {
+      async.series([
+        function (c) {
+          s.sync.storeTipBlock(p2p, false, function(err) {
+            assert(!err, 'shouldnt return error' + err);
+            return c();
+          });
+        },
+        function (c) {
+          s.sync.bDb.has(p2p.hash, function(err,is) {
+            assert(!err);
+            assert(is);
+            return c();
+          });
+        },
+        function (c) {
+          s.sync.txDb.isConfirmed(p2p.tx[0], function(err,is) {
+            assert(!err);
+            assert(is);
+            return c();
+          });
+        },
+        function (c) {
+          s.sync.bDb.getNext(p2p.hash, function(err,v) {
+            assert(!err);
+            assert.equal(v,p2p.nextblockhash);
+            return c();
+          });
+        },
+         function (c) {
+          s.sync.bDb.getNext(p2p.previousblockhash, function(err,v) {
+            assert(!err);
+            assert.equal(v,p2p.hash);
+            return c();
+          });
+        },
+ 
+        ], done );
+  });
 });
 
 
