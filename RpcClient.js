@@ -164,9 +164,14 @@ function ClassSpec(b) {
       });
       res.on('end', function() {
         if(res.statusCode == 401) {
-          callback(new Error('bitcoin JSON-RPC connection rejected: unauthorized'));
+          callback(new Error('bitcoin JSON-RPC connection rejected: 401 unauthorized'));
           return;
         }
+        if(res.statusCode == 403) {
+          callback(new Error('bitcoin JSON-RPC connection rejected: 403 forbidden'));
+          return;
+        }
+ 
         if(err) {
           callback(err);
           return;
@@ -176,6 +181,7 @@ function ClassSpec(b) {
         } catch(e) {
           log.err(e.stack);
           log.err(buf);
+          log.err('HTTP Status code:' + res.statusCode);
           callback(e);
           return;
         }

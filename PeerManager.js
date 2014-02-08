@@ -4,7 +4,8 @@ function spec(b) {
   var config = b.config || require('./config');
   var log = b.log || require('./util/log');
   var network = b.network || require('./networks')[config.network];
-  var Connection = b.Connection || require('./Connection').createClass({config: config});
+  var Connection = b.Connection || require('./Connection').createClass(
+    {config: config, network: network});
   var Peer = b.Peer || require('./Peer').class();
   var noop = function() {};
 
