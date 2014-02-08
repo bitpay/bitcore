@@ -5,7 +5,7 @@ function ClassSpec(b) {
 
   function Address() {
     Address.super(this, arguments);
-  };
+  }
 
   Address.superclass = superclass;
   superclass.applyEncodingsTo(Address);
@@ -13,10 +13,10 @@ function ClassSpec(b) {
   Address.prototype.validate = function() {
     this.doAsBinary(function() {
       Address.super(this, 'validate', arguments);
-      if(this.data.length != 21) throw new Error('invalid data length');
+      if(this.data.length !== 21) throw new Error('invalid data length');
     });
   };
 
   return Address;
-};
+}
 module.defineClass(ClassSpec);

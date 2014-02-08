@@ -5,8 +5,9 @@
 
 module.exports.bignum = require('bignum');
 module.exports.base58 = require('base58-native');
-//module.exports.Address = require('./Address');
-
+module.exports.EncodedData = require('./util/EncodedData');
+module.exports.VersionedData = require('./util/VersionedData');
+module.exports.Address= require('./Address');
 
 
 if (typeof process.versions === 'undefined') {

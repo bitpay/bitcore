@@ -14,14 +14,22 @@ module.exports = function(grunt) {
         src: ['bitcore.js'],
         dest: 'browser/bundle.js',
         options: {
+          debug: true,
           alias: ['browserify-bignum/bignumber.js:bignum'],
-          standalone: 'bitcore'
+          standalone: 'bitcore',
+        }
+      },
+      vendor: {
+        src: ['browser/vendor_load.js'],
+        dest: 'browser/vendor.js',
+        options: {
+
         }
       }
     },
     watch: {
       scripts: {
-        files: ['**/*.js', '**/*.html', '!**/node_modules/**', '!**/bundle.js'],
+        files: ['**/*.js', '**/*.html', '!**/node_modules/**', '!**/bundle.js', '!**/vendor.js'],
         tasks: ['browserify'/*, 'mochaTest'*/],
       },
     },

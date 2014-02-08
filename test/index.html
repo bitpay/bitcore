@@ -8,14 +8,18 @@
   </head>
   <body>
     <div id="mocha"></div>
-    <script src="adapter.js"></script>
+    <script src="../browser/vendor.js"></script>
     <script src="../node_modules/mocha/mocha.js"></script>
     <script src="../node_modules/chai/chai.js"></script>
     <script>mocha.setup('bdd')</script>
     <script src="../browser/bundle.js"></script>
+    <script src="adapter.js"></script>
 
     <script src="test.main.js"></script>
     <script src="test.base58.js"></script>
+    <script src="test.EncodedData.js"></script>
+    <script src="test.VersionedData.js"></script>
+    <script src="test.Address.js"></script>
     <script>
       mocha.run();
     </script>

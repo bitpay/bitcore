@@ -1,5 +1,6 @@
 build/
 browser/bundle.js
+browser/vendor.js
 node_modules/
 *.swp
 *~
