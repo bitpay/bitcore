@@ -78,7 +78,7 @@ function spec() {
                 self.transactions.push(txItem.spendTxId);
                 self.txApperances +=2;
               }
-            };
+            }
           });
           return cb();
         });
