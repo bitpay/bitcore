@@ -18,6 +18,7 @@ program
   .option('-R --reverse', 'Sync backwards', 0)
   .option('-U --uptoexisting', 'Sync only until an existing block is found', 0)
   .option('-F --fromfiles', 'Sync using bitcoind .dat block files (faster)', 0)
+  .option('-v --verbose', 'Verbose 0/1', 0)
   .parse(process.argv);
 
 var historicSync = new HistoricSync();

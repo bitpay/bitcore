@@ -118,9 +118,10 @@ exports.list = function(req, res) {
           length: allblocks.length,
           pagination: {
             next: next,
-          prev: prev,
-          current: dateStr,
-          isToday: isToday
+            prev: prev,
+            currentTs: lte-1,
+            current: dateStr,
+            isToday: isToday
           }
         });
       });

@@ -8,10 +8,15 @@
           <h3>Blocks <br> mined on:</h3>
         </div>
       </div>
-      <p class="lead text-center m20v">{{pagination.current}}</p>
+      <p class="lead text-center m20v">{{pagination.current}} UTC</p>
+      <p class="lead text-center m20v"  data-ng-show="loading">&nbsp;</p>
+      <p class="text-center m20v"  data-ng-show="pagination.isToday && !loading">Today</p>
+      <p class="text-center m20v"  data-ng-show="!pagination.isToday && !loading">{{humanSince(pagination.currentTs)}}
+      <p class="text-center m20v"  data-ng-show="loading">&nbsp;</p>
+  
       <div class="m50v text-center">
         <a class="btn btn-primary" href="/blocks-date/{{pagination.prev}}"><small>&larr; {{pagination.prev}}</small></a>
-        <a class="btn btn-primary" href="/blocks-date/{{pagination.next}}" data-ng-disabled="pagination.isToday"><small>{{pagination.next}} &rarr;</small></a>
+        <a class="btn btn-primary" href="/blocks-date/{{pagination.next}}" data-ng-show="!pagination.isToday"><small>{{pagination.next}} &rarr;</small></a>
       </div>
     </div>
     <div class="col-xs-12 col-md-9 col-md-offset-3">
