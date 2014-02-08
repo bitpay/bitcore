@@ -46,13 +46,18 @@ Bitcore is still under heavy development and not quite ready for "drop-in" produ
 #Contributing
 Bitcore needs some developer love. Please send pull requests for bug fixes, code optimization, and ideas for improvement.
 
-# install bitcore
-cd bitcore/
-npm install
-
-# build browser version
+Work to enable Bitcore for use in the browser is ongoing. To build bitcore for the browser:
+```
 npm install -g grunt-cli
 grunt browserify
+```
+
+#License
+
+**Code released under [the MIT license](https://github.com/bitpay/bitcore/blob/master/LICENSE).**
+
+Copyright 2013-2014 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.
+
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/bitpay/bitcore/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
