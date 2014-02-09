@@ -21,8 +21,7 @@ function spec() {
     var a = new BitcoreAddress(addrStr);
     a.validate();
     this.addrStr        = addrStr;
-
-
+    
     Object.defineProperty(this, 'totalSent', {
       get: function() {
         return parseFloat(this.totalSentSat) / parseFloat(BitcoreUtil.COIN);
@@ -56,6 +55,8 @@ function spec() {
 
   Address.prototype.update = function(next) {
     var self = this;
+    if (!self.addrStr) return next();
+
     var db   = new TransactionDb();
     async.series([
       function (cb) {
