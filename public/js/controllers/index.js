@@ -32,7 +32,7 @@ angular.module('insight.system').controller('IndexController',
   socket.on('tx', function(tx) {
     console.log('Transaction received! ' + JSON.stringify(tx));
 
-    var txStr = tx.txid.toString();
+    var txStr = tx.toString();
     _getTransaction(txStr, function(res) {
       $scope.txs.unshift(res);
       if (parseInt($scope.txs.length, 10) >= parseInt(TRANSACTION_DISPLAYED, 10)) {
@@ -42,8 +42,9 @@ angular.module('insight.system').controller('IndexController',
   });
 
   socket.on('block', function(block) {
-    var blockHash = block.hash.toString();
     console.log('Block received! ' + JSON.stringify(block));
+
+    var blockHash = block.toString();
     if (parseInt($scope.blocks.length, 10) > parseInt(BLOCKS_DISPLAYED, 10) - 1) {
       $scope.blocks.pop();
     }

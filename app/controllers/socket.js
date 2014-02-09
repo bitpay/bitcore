@@ -14,15 +14,15 @@ module.exports.init = function(app, io_ext) {
   });
 };
 
-module.exports.broadcast_tx = function(tx) {
+module.exports.broadcastTx = function(tx) {
   if (ios) ios.sockets.in('inv').emit('tx', tx);
 };
 
-module.exports.broadcast_block = function(block) {
+module.exports.broadcastBlock = function(block) {
   if (ios) ios.sockets.in('inv').emit('block', block);
 };
 
-module.exports.broadcast_address_tx = function(address, tx) {
+module.exports.broadcastAddressTx = function(address, tx) {
  if (ios) ios.sockets.in(address).emit(address, tx);
 };
 
