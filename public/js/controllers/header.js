@@ -33,7 +33,7 @@ angular.module('insight.system').controller('HeaderController',
   };
 
   socket.on('block', function(block) {
-    var blockHash = block.hash.toString();
+    var blockHash = block.toString();
     console.log('Updated Blocks Height!');
     _getBlock(blockHash);
   });

@@ -38,6 +38,7 @@
         <tr>
           <td>Skipped Blocks (previously synced)</td>
           <td class="text-right">{{sync.skippedBlocks}}</td>
+
         </tbody>
       </table>
 
@@ -80,9 +81,14 @@
       <table class="table" style="table-layout: fixed" data-ng-controller="StatusController" data-ng-init="getStatus('LastBlockHash')">
         <thead  data-ng-include src="'/views/includes/infoStatus.html'"> </thead>
         <tr>
-          <td>Last Block Hash</td>
+          <td>Last Block Hash (Bitcoind)</td>
           <td class="text-right ellipsis"><a href="/block/{{lastblockhash}}">{{lastblockhash}}</a></td>
         </tr>
+        <tr>
+          <td>Current Blockchain Tip(Insight)</td>
+          <td class="text-right ellipsis"><a href="/block/{{syncTipHash}}">{{syncTipHash}}</a></td>
+ 
+
         </tbody>
       </table>
     </div> <!-- END OF COL-8 -->
