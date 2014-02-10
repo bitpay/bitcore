@@ -46,13 +46,13 @@
             </tr>
           </thead>
           <tbody>
-          <tr data-ng-show="!txs.length"><td colspan="5">Waiting for transactions...</td></tr>
+          <tr data-ng-show="!txs.length"><td colspan="3">Waiting for transactions...</td></tr>
           <tr class="fader" data-ng-repeat='tx in txs'>
             <td>
               <a class="ellipsis" href="/tx/{{tx.txid}}">{{tx.txid}}</a>
             </td>
             <td><span class="ellipsis">{{humanSince(tx.time)}}</span></td>
-            <td>{{tx.valueOut}}</td>
+            <td><span class="ellipsis">{{tx.valueOut}}</span></td>
           </tr>
           </tbody>
         </table>
