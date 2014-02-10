@@ -40,15 +40,16 @@ var walk = function(path) {
 
 walk(models_path);
 
+var syncOpts = {
+};
+
 /**
  * p2pSync process
  */
 if (!config.disableP2pSync) {
   var ps = new PeerSync();
   ps.init({
-    broadcast_txs: true,
-    broadcast_address_tx: true,
-    broadcast_blocks: true,
+    shouldBroadcast: true,
   }, function() {
     ps.run();
   });
@@ -63,8 +64,7 @@ if (!config.disableHistoricSync) {
   historicSync = new HistoricSync();
 
   historicSync.init({
-    shouldBroadcast: true,
-    networkName: config.network
+    shouldBroadcastSync: true,
   }, function(err) {
     if (err) {
       var txt = 'ABORTED with error: ' + err.message;

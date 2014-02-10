@@ -5,10 +5,12 @@ require('classtool');
 function spec() {
   var async     = require('async');
   var RpcClient = require('bitcore/RpcClient').class();
+  var BlockDb   = require('../../lib/BlockDb').class();
   var config    = require('../../config/config');
   var rpc       = new RpcClient(config.bitcoind);
 
   function Status() {
+    this.bDb = new BlockDb();
   }
 
   Status.prototype.getInfo = function(next) {
@@ -21,7 +23,7 @@ function spec() {
           that.info = info.result;
           return cb();
         });
-      }
+      },
     ], function (err) {
       return next(err);
     });
@@ -69,7 +71,8 @@ function spec() {
           that.bestblockhash = bbh.result;
           return cb();
         });
-      }
+      },
+
     ], function (err) {
       return next(err);
     });
@@ -77,27 +80,29 @@ function spec() {
 
   Status.prototype.getLastBlockHash = function(next) {
     var that = this;
-
-    async.waterfall(
-      [
-        function(callback){
-          rpc.getBlockCount(function(err, bc){
-            if (err) return callback(err);
-            callback(null, bc.result);
-          });
-        },
-        function(bc, callback){
-          rpc.getBlockHash(bc, function(err, bh){
-            if (err) return callback(err);
-            callback(null, bh.result);
-          });
-        }
-      ],
-        function (err, result) {
-          that.lastblockhash = result;
-          return next();
-        }
-    );
+    that.bDb.getTip(function(err,tip) {
+      that.syncTipHash = tip;
+      async.waterfall(
+        [
+          function(callback){
+            rpc.getBlockCount(function(err, bc){
+              if (err) return callback(err);
+              callback(null, bc.result);
+            });
+          },
+          function(bc, callback){
+            rpc.getBlockHash(bc, function(err, bh){
+              if (err) return callback(err);
+              callback(null, bh.result);
+            });
+          }
+        ],
+          function (err, result) {
+            that.lastblockhash = result;
+            return next();
+          }
+      );
+    });
   };
 
   return Status;

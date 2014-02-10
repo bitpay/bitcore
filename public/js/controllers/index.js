@@ -43,7 +43,7 @@ angular.module('insight.system').controller('IndexController',
   });
 
   socket.on('block', function(block) {
-    var blockHash = block.hash.toString();
+    var blockHash = block.toString();
     console.log('Block received! ' + JSON.stringify(blockHash));
     _getBlocks();
   });
