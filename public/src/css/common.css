@@ -13,11 +13,33 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   font-family: 'Ubuntu', sans-serif;
 }
 
+/* Styling for the ngProgress itself */
 #ngProgress {
+  background-color: #373D42 !important;
   box-shadow: none !important;
-  height: 4px !important;
   color: #373D42 !important;
-  background: #373D42 !important;
+  height: 4px !important;
+  margin: 0;
+  opacity: 0;
+  padding: 0;
+  z-index: 99998;
+
+  /* Add CSS3 styles for transition smoothing */
+  -webkit-transition: all 0.5s ease-in-out;
+  -moz-transition: all 0.5s ease-in-out;
+  -o-transition: all 0.5s ease-in-out;
+  transition: all 0.5s ease-in-out;
+}
+
+/* Styling for the ngProgress-container */
+#ngProgress-container {
+  position: fixed;
+  margin: 0;
+  padding: 0;
+  top: 50px;
+  left: 0;
+  right: 0;
+  z-index: 99999;
 }
 
 /* Wrapper for page content to push down footer */
@@ -460,7 +482,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 @media (max-width: 991px) {
   .btn-copy {
-    display: none; 
+    display: none;
   }
 }
 
