@@ -14,11 +14,10 @@
               <th>Age</th>
               <th><span class="ellipsis">Transactions</span></th>
               <th>Size</th>
-              <th><span class="ellipsis">Confirmations</span></th>
             </tr>
           </thead>
           <tbody>
-          <tr data-ng-show="!blocks.length"><td colspan="5">Waiting for blocks...</td></tr>
+          <tr data-ng-show="!blocks.length"><td colspan="4">Waiting for blocks...</td></tr>
           <tr class="fader" data-ng-repeat='b in blocks'>
             <td>
               <a href="/block/{{b.hash}}">{{b.height}}</a>
@@ -26,7 +25,6 @@
             <td><span class="ellipsis">{{humanSince(b.time)}}</span></td>
             <td>{{b.tx.length}}</td>
             <td>{{b.size}}</td>
-            <td>{{b.confirmations}}</td>
           </tr>
           </tbody>
         </table>
