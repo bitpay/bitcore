@@ -90,6 +90,7 @@
     "grunt-concurrent": "latest",
     "grunt-mocha-test": "latest",
     "should": "latest",
-    "grunt-css": "~0.5.4"
+    "grunt-css": "~0.5.4",
+    "grunt-markdown": "~0.5.0"
   }
 }
