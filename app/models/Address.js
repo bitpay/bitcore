@@ -21,8 +21,7 @@ function spec() {
     var a = new BitcoreAddress(addrStr);
     a.validate();
     this.addrStr        = addrStr;
-
-
+    
     Object.defineProperty(this, 'totalSent', {
       get: function() {
         return parseFloat(this.totalSentSat) / parseFloat(BitcoreUtil.COIN);
@@ -56,26 +55,30 @@ function spec() {
 
   Address.prototype.update = function(next) {
     var self = this;
+    if (!self.addrStr) return next();
+
     var db   = new TransactionDb();
     async.series([
       function (cb) {
         db.fromAddr(self.addrStr, function(err,txOut){
           if (err) return cb(err);
           txOut.forEach(function(txItem){
-            var v = txItem.value_sat;
 
-            self.totalReceivedSat += v;
-            self.transactions.push(txItem.txid);
-            if (! txItem.spendTxId) {
-              // unspent
-              self.balanceSat   += v;
-              self.txApperances +=1;
-            }
-            else {
-              // spent
-              self.totalSentSat += v;
-              self.transactions.push(txItem.spendTxId);
-              self.txApperances +=2;
+            if (txItem.isConfirmed) {
+              var v = txItem.value_sat;
+              self.totalReceivedSat += v;
+              self.transactions.push(txItem.txid);
+              if (! txItem.spendTxId || !txItem.spendIsConfirmed) {
+                // unspent
+                self.balanceSat   += v;
+                self.txApperances +=1;
+              }
+              else {
+                // spent
+                self.totalSentSat += v;
+                self.transactions.push(txItem.spendTxId);
+                self.txApperances +=2;
+              }
             }
           });
           return cb();

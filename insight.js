@@ -40,6 +40,21 @@ var walk = function(path) {
 
 walk(models_path);
 
+var syncOpts = {
+};
+
+/**
+ * p2pSync process
+ */
+if (!config.disableP2pSync) {
+  var ps = new PeerSync();
+  ps.init({
+    shouldBroadcast: true,
+  }, function() {
+    ps.run();
+  });
+}
+
 /**
  * historic_sync process
  */
@@ -49,8 +64,7 @@ if (!config.disableHistoricSync) {
   historicSync = new HistoricSync();
 
   historicSync.init({
-    shouldBroadcast: true,
-    networkName: config.network
+    shouldBroadcastSync: true,
   }, function(err) {
     if (err) {
       var txt = 'ABORTED with error: ' + err.message;
@@ -60,25 +74,16 @@ if (!config.disableHistoricSync) {
       historicSync.smartImport({}, function(err){
         var txt = 'ended.';
         if (err) txt = 'ABORTED with error: ' + err.message;
+        else
+          ps.allowReorgs = true;
+
         console.log('[historic_sync] ' + txt, historicSync.info());
       });
     }
   });
 }
 
-/**
- * p2pSync process
- */
-if (!config.disableP2pSync) {
-  var ps = new PeerSync();
-  ps.init({
-    broadcast_txs: true,
-    broadcast_address_tx: true,
-    broadcast_blocks: true,
-  }, function() {
-    ps.run();
-  });
-}
+
 
 //express settings
 require('./config/express')(expressApp, historicSync);

@@ -37,14 +37,15 @@
     },
     { 
         "addr": "mgqvRGJMwR9JU5VhJ3x9uX9MTkzTsmmDgQ",
-        "txApperances": 27,
-        "balance": 5.1
+        "txApperances": 28,
+        "balance": 0,
+        "totalReceived": 54.81284116
     },
     { 
         "addr": "mzW2hdZN2um7WBvTDerdahKqRgj3md9C29",
-        "txApperances": 6033,
-        "balance": 1049.69744101,
-        "totalReceived":  1049.69744101,
+        "txApperances": 6046,
+        "balance": 1149.19744101,
+        "totalReceived": 1149.19744101,
         "totalSent": 0
     },
     {

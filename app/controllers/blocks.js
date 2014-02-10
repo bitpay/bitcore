@@ -72,7 +72,6 @@ console.log('[blocks.js.60]: could not get %s from RPC. Orphan? Error?', blockha
  * List of blocks by date
  */
 exports.list = function(req, res) {
-  var limit = req.query.limit || -1;
   var isToday = false;
 
   //helper to convert timestamps to yyyy-mm-dd format
@@ -103,14 +102,18 @@ exports.list = function(req, res) {
   var prev = formatTimestamp(new Date((gte - 86400) * 1000));
   var next = formatTimestamp(new Date(lte * 1000));
 
-  bdb.getBlocksByDate(gte, lte, limit, function(err, blocks) {
+  bdb.getBlocksByDate(gte, lte, function(err, blocks) {
     if (err) {
       res.status(500).send(err);
     }
     else {
       var blockshashList = [];
-      for(var i=0;i<blocks.length;i++) {
-        blockshashList.unshift(blocks[i].hash);
+      var limit = parseInt(req.query.limit || blocks.length);
+      if (blocks.length < limit) {
+        limit = blocks.length;
+      }
+      for(var i=0;i<limit;i++) {
+        blockshashList.push(blocks[i].hash);
       }
       async.mapSeries(blockshashList, getBlock, function(err, allblocks) {
         res.jsonp({
@@ -118,9 +121,10 @@ exports.list = function(req, res) {
           length: allblocks.length,
           pagination: {
             next: next,
-          prev: prev,
-          current: dateStr,
-          isToday: isToday
+            prev: prev,
+            currentTs: lte-1,
+            current: dateStr,
+            isToday: isToday
           }
         });
       });

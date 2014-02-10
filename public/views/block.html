@@ -48,6 +48,11 @@
                 <td class="text-right text-muted">{{block.height}}</td>
               </tr>
               <tr>
+                <td> <strong> Block Reward </strong></td>
+                <td class="text-right text-muted">{{$root.currency.getConvertion(block.reward)}}</td>
+              </tr>
+ 
+              <tr>
                 <td> <strong> Timestamp </strong></td>
                 <td class="text-right text-muted">{{block.time * 1000 | date:'medium'}}</td>
               </tr>
