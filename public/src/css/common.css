@@ -14,10 +14,10 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 }
 
 #ngProgress {
-  box-shadow: none;
-  height: 4px;
-  color: #373D42;
-  background: #373D42;
+  box-shadow: none !important;
+  height: 4px !important;
+  color: #373D42 !important;
+  background: #373D42 !important;
 }
 
 /* Wrapper for page content to push down footer */
