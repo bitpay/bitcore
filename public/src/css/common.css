@@ -146,6 +146,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   background-color: #F4F4F4;
   border-radius: 5px;
   padding: 14px;
+  border: 1px solid #eee;
 }
 
 .col-gray-responsive {
@@ -341,8 +342,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 /* Not required for template or sticky footer method. */
 
 #wrap > .container { padding: 60px 15px 0; }
-
-.container .text-muted a { color: #eee; }
 
 #footer > .container { padding: auto 15px; }
 
