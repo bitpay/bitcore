@@ -68,7 +68,7 @@ module.exports = function(grunt) {
             return '// Source: ' + filepath + '\n' +
               src.replace(/(^|\n)[ \t]*('use strict'|"use strict");?\s*/g, '$1');
           } else {
-            return src; 
+            return src;
           }
         }
       },
@@ -85,7 +85,7 @@ module.exports = function(grunt) {
         dest: 'public/js/main.js'
       },
       css: {
-        src: ['public/lib/ngprogress/ngProgress.css', 'public/src/css/**/*.css'],
+        src: ['public/src/css/**/*.css'],
         dest: 'public/css/main.css'
       }
     },
@@ -164,10 +164,10 @@ module.exports = function(grunt) {
 
   //Default task(s).
   grunt.registerTask('default', ['jshint', 'compile', 'concurrent']);
-  
+
   //Compile task (concat + minify)
   grunt.registerTask('compile', ['concat', 'uglify', 'cssmin']);
-      
+
   //Test task.
   grunt.registerTask('test', ['env:test', 'mochaTest']);
 };
