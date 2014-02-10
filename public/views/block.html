@@ -45,7 +45,9 @@
               </tr>
               <tr>
                 <td> <strong> Height </strong></td>
-                <td class="text-right text-muted">{{block.height}}</td>
+                <td class="text-right text-muted">{{block.height}}
+                <span data-ng-show="block.isMainChain" class="text-success">(Mainchain)</span>
+                <span data-ng-show="!block.isMainChain" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> (Orphaned)</span>
               </tr>
               <tr>
                 <td> <strong> Block Reward </strong></td>
