@@ -1,5 +1,3 @@
-'use strict';
-
 //Setting up route
 angular.module('insight').config(function($routeProvider) {
   $routeProvider.

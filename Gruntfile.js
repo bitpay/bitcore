@@ -2,10 +2,12 @@
 
 module.exports = function(grunt) {
 
-
   //Load NPM tasks
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-jshint');
+  grunt.loadNpmTasks('grunt-contrib-uglify');
+  grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-css');
   grunt.loadNpmTasks('grunt-mocha-test');
   grunt.loadNpmTasks('grunt-nodemon');
   grunt.loadNpmTasks('grunt-concurrent');
@@ -48,10 +50,59 @@ module.exports = function(grunt) {
     },
     jshint: {
       all: {
-        src: ['Gruntfile.js', 'insight.js', 'app/**/*.js', 'public/js/**','lib/*.js'],
+        src: ['Gruntfile.js', 'insight.js', 'app/**/*.js', 'public/src/js/**/*.js','lib/*.js'],
         options: {
           jshintrc: true
         }
+      }
+    },
+    concat: {
+      options: {
+        banner: '\'use strict\';\n',
+        process: function(src, filepath) {
+          return '// Source: ' + filepath + '\n' +
+            src.replace(/(^|\n)[ \t]*('use strict'|"use strict");?\s*/g, '$1');
+        }
+      },
+      vendors: {
+        src: ['public/lib/momentjs/min/moment.min.js', 'public/lib/qrcode-generator/js/qrcode.js', 'public/lib/zeroclipboard/ZeroClipboard.min.js'],
+        dest: 'public/js/vendors.js'
+      },
+      angular: {
+        src: ['public/lib/angular/angular.min.js', 'public/lib/angular-resource/angular-resource.min.js', 'public/lib/angular-route/angular-route.min.js', 'public/lib/angular-qrcode/qrcode.js', 'public/lib/angular-animate/angular-animate.min.js', 'public/lib/angular-bootstrap/ui-bootstrap.min.js', 'public/lib/angular-bootstrap/ui-bootstrap-tpls.min.js', 'public/lib/angular-ui-utils/ui-utils.min.js'],
+        dest: 'public/js/angularjs-all.js'
+      },
+      main: {
+        src: ['public/src/js/app.js', 'public/src/js/controllers/*.js', 'public/src/js/services/*.js', 'public/src/js/directives.js', 'public/src/js/filters.js', 'public/src/js/config.js', 'public/src/js/init.js'],
+        dest: 'public/js/main.js'
+      },
+      css: {
+        src: ['public/src/css/**/*.css'],
+        dest: 'public/css/main.css'
+      }
+    },
+    uglify: {
+      options: {
+        banner: '/*! <%= pkg.name %> <%= pkg.version %> */\n',
+        mangle: false
+      },
+      vendors: {
+        src: 'public/js/vendors.js',
+        dest: 'public/js/vendors.min.js'
+      },
+      angular: {
+        src: 'public/js/angularjs-all.js',
+        dest: 'public/js/angularjs-all.min.js'
+      },
+      main: {
+        src: 'public/js/main.js',
+        dest: 'public/js/main.min.js'
+      }
+    },
+    cssmin: {
+      css: {
+        src: 'public/css/main.css',
+        dest: 'public/css/main.min.css'
       }
     },
     mochaTest: {
@@ -60,7 +111,6 @@ module.exports = function(grunt) {
       },
       src: ['test/**/*.js'],
     },
-
     nodemon: {
       dev: {
         script: 'insight.js',
@@ -93,7 +143,7 @@ module.exports = function(grunt) {
   grunt.option('force', true);
 
   //Default task(s).
-  grunt.registerTask('default', ['jshint','concurrent']);
+  grunt.registerTask('default', ['jshint', 'concat', 'uglify', 'cssmin', 'concurrent']);
 
   //Test task.
   grunt.registerTask('test', ['env:test', 'mochaTest']);
