@@ -14,11 +14,10 @@
               <th>Age</th>
               <th><span class="ellipsis">Transactions</span></th>
               <th>Size</th>
-              <th><span class="ellipsis">Confirmations</span></th>
             </tr>
           </thead>
           <tbody>
-          <tr data-ng-show="!blocks.length"><td colspan="5">Waiting for blocks...</td></tr>
+          <tr data-ng-show="!blocks.length"><td colspan="4">Waiting for blocks...</td></tr>
           <tr class="fader" data-ng-repeat='b in blocks'>
             <td>
               <a href="/block/{{b.hash}}">{{b.height}}</a>
@@ -26,14 +25,11 @@
             <td><span class="ellipsis">{{humanSince(b.time)}}</span></td>
             <td>{{b.tx.length}}</td>
             <td>{{b.size}}</td>
-            <td>{{b.confirmations}}</td>
           </tr>
           </tbody>
         </table>
         <h2> About </h2>
-        <p class="text-muted">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quas, sint, neque harum libero eos maiores rerum rem fuga quae architecto ea incidunt dolore optio ullam sit placeat vero perferendis beatae?</p>
-        <p class="text-muted">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Blanditiis, unde quidem commodi dolor asperiores ullam molestias sit a sapiente ipsa!</p>
-        <p class="text-muted">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Deserunt tempora fugiat dolorem cupiditate perspiciatis praesentium.</p>
+        <p class="text-muted">Insight is a bitcoin blockchain API for writing web wallets and other apps that need more advanced blockchain queries than provided by bitcoind RPC. Check out the <a href="http://github.com/bitpay/insight" target="_blank">source code</a>.</p>
       </div>
 
       <div class="col-xs-12 col-md-4 col-gray">
@@ -48,43 +44,16 @@
             </tr>
           </thead>
           <tbody>
-          <tr data-ng-show="!txs.length"><td colspan="5">Waiting for transactions...</td></tr>
+          <tr data-ng-show="!txs.length"><td colspan="3">Waiting for transactions...</td></tr>
           <tr class="fader" data-ng-repeat='tx in txs'>
             <td>
               <a class="ellipsis" href="/tx/{{tx.txid}}">{{tx.txid}}</a>
             </td>
             <td><span class="ellipsis">{{humanSince(tx.time)}}</span></td>
-            <td>{{tx.valueOut}}</td>
+            <td><span class="ellipsis">{{tx.valueOut}}</span></td>
           </tr>
           </tbody>
         </table>
-        <h3> Other Bitcoin Links </h3>
-        <ul>
-          <li>
-          <a href="">Most Popular Addresses</a>
-          <small> - Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolores.</small>
-          </li>
-          <li>
-          <a href="">Addresses</a>
-          <small> - Addresses which have received the most payments</small>
-          </li>
-          <li>
-          <a href="">Lorem ipsum dolor.</a>
-          <small> - Lorem ipsum dolor sit amet.</small>
-          </li>
-          <li>
-          <a href="">Most Popular Addresses</a>
-          <small> - Addresses which have received the most payments</small>
-          </li>
-          <li>
-          <a href="">Lorem ipsum dolor sit.</a>
-          <small> - Lorem ipsum dolor sit amet, consectetur adipisicing.</small>
-          </li>
-          <li>
-          <a href="">Addresses</a>
-          <small> - Addresses which have received the most payments</small>
-          </li>
-        </ul>
       </div> <!-- END OF COL-3 -->
     </div>
   </div>

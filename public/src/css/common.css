@@ -13,6 +13,13 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   font-family: 'Ubuntu', sans-serif;
 }
 
+#ngProgress {
+  box-shadow: none !important;
+  height: 4px !important;
+  color: #373D42 !important;
+  background: #373D42 !important;
+}
+
 /* Wrapper for page content to push down footer */
 #wrap {
   min-height: 100%;
@@ -146,6 +153,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   background-color: #F4F4F4;
   border-radius: 5px;
   padding: 14px;
+  border: 1px solid #eee;
 }
 
 .col-gray-responsive {
@@ -155,6 +163,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .col-gray-fixed {
   position: fixed;
   width: 250px;
+  border: 1px solid #eee;
 }
 
 @media (max-width: 768px) {
@@ -234,7 +243,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   margin: 20px 0 10px;
   overflow: hidden;
   padding: 15px;
-  border: 1px solid #ccc;
+  border: 1px solid #eee;
 }
 
 .btn {
@@ -340,8 +349,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 /* Not required for template or sticky footer method. */
 
 #wrap > .container { padding: 60px 15px 0; }
-
-.container .text-muted a { color: #eee; }
 
 #footer > .container { padding: auto 15px; }
 

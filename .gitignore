@@ -31,3 +31,5 @@ public/lib/*
 db/txs/*
 db/blocks/*
 
+public/js/*
+public/css/*
