@@ -58,10 +58,13 @@ module.exports = function(grunt) {
     },
     concat: {
       options: {
-        banner: '\'use strict\';\n',
         process: function(src, filepath) {
-          return '// Source: ' + filepath + '\n' +
-            src.replace(/(^|\n)[ \t]*('use strict'|"use strict");?\s*/g, '$1');
+          if (filepath.substr(filepath.length - 2) === 'js') {
+            return '// Source: ' + filepath + '\n' +
+              src.replace(/(^|\n)[ \t]*('use strict'|"use strict");?\s*/g, '$1');
+          } else {
+            return src; 
+          }
         }
       },
       vendors: {
@@ -143,7 +146,7 @@ module.exports = function(grunt) {
   grunt.option('force', true);
 
   //Default task(s).
-  grunt.registerTask('default', ['jshint', 'concurrent']);
+  grunt.registerTask('default', ['jshint', 'concat', 'uglify', 'cssmin', 'concurrent']);
   
   //Compile task (concat + minify)
   grunt.registerTask('compile', ['concat', 'uglify', 'cssmin']);
