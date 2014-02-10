@@ -47,8 +47,16 @@ angular.module('insight')
     $locationProvider.html5Mode(true);
     $locationProvider.hashPrefix('!');
   })
-  .run(function($rootScope, $route) {
+  .run(function($rootScope, $route, ngProgress) {
+    $rootScope.$on('$routeChangeStart', function() {
+      ngProgress.height('4px');
+      ngProgress.color('#373D42');
+      ngProgress.start();
+    });
+
     $rootScope.$on('$routeChangeSuccess', function() {
+      ngProgress.complete();
+
       //Change page title, based on Route information
       $rootScope.titleDetail = '';
       $rootScope.title = $route.current.title;

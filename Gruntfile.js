@@ -72,7 +72,7 @@ module.exports = function(grunt) {
         dest: 'public/js/vendors.js'
       },
       angular: {
-        src: ['public/lib/angular/angular.min.js', 'public/lib/angular-resource/angular-resource.min.js', 'public/lib/angular-route/angular-route.min.js', 'public/lib/angular-qrcode/qrcode.js', 'public/lib/angular-animate/angular-animate.min.js', 'public/lib/angular-bootstrap/ui-bootstrap.min.js', 'public/lib/angular-bootstrap/ui-bootstrap-tpls.min.js', 'public/lib/angular-ui-utils/ui-utils.min.js'],
+        src: ['public/lib/angular/angular.min.js', 'public/lib/angular-resource/angular-resource.min.js', 'public/lib/angular-route/angular-route.min.js', 'public/lib/angular-qrcode/qrcode.js', 'public/lib/angular-animate/angular-animate.min.js', 'public/lib/angular-bootstrap/ui-bootstrap.min.js', 'public/lib/angular-bootstrap/ui-bootstrap-tpls.min.js', 'public/lib/angular-ui-utils/ui-utils.min.js', 'public/lib/ngprogress/build/ngProgress.min.js'],
         dest: 'public/js/angularjs-all.js'
       },
       main: {
@@ -80,7 +80,7 @@ module.exports = function(grunt) {
         dest: 'public/js/main.js'
       },
       css: {
-        src: ['public/src/css/**/*.css'],
+        src: ['public/lib/ngprogress/ngProgress.css', 'public/src/css/**/*.css'],
         dest: 'public/css/main.css'
       }
     },

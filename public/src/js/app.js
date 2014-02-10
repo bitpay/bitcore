@@ -4,6 +4,7 @@ angular.module('insight',[
   'ngAnimate',
   'ngResource',
   'ngRoute',
+  'ngProgress',
   'ui.bootstrap',
   'ui.route',
   'monospaced.qrcode',
