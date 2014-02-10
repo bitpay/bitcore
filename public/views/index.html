@@ -12,8 +12,8 @@
             <tr>
               <th>Height</th>
               <th>Age</th>
-              <th><span class="ellipsis">Transactions</span></th>
-              <th>Size</th>
+              <th class="text-right"><span class="ellipsis">Transactions</span></th>
+              <th class="text-right">Size</th>
             </tr>
           </thead>
           <tbody>
@@ -23,8 +23,8 @@
               <a href="/block/{{b.hash}}">{{b.height}}</a>
             </td>
             <td><span class="ellipsis">{{humanSince(b.time)}}</span></td>
-            <td>{{b.tx.length}}</td>
-            <td>{{b.size}}</td>
+            <td class="text-right">{{b.tx.length}}</td>
+            <td class="text-right">{{b.size}}</td>
           </tr>
           </tbody>
         </table>
@@ -35,8 +35,8 @@
           <thead>
             <tr>
               <th>Hash</th>
-              <th>Size</th>
-              <th>Value Out</th>
+              <th class="text-right">Size</th>
+              <th class="text-right">Value Out</th>
             </tr>
           </thead>
           <tbody>
@@ -45,8 +45,8 @@
             <td>
               <a class="ellipsis" href="/tx/{{tx.txid}}">{{tx.txid}}</a>
             </td>
-            <td><span class="ellipsis">{{tx.size}}</span></td>
-            <td><span class="ellipsis">{{tx.valueOut}}</span></td>
+            <td class="text-right"><span class="ellipsis">{{tx.size}} bytes</span></td>
+            <td class="text-right"><span class="ellipsis">{{tx.valueOut}} BTC</span></td>
           </tr>
           </tbody>
         </table>
