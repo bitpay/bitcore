@@ -155,6 +155,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .col-gray-fixed {
   position: fixed;
   width: 250px;
+  border: 1px solid #eee;
 }
 
 @media (max-width: 768px) {
@@ -234,7 +235,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   margin: 20px 0 10px;
   overflow: hidden;
   padding: 15px;
-  border: 1px solid #ccc;
+  border: 1px solid #eee;
 }
 
 .btn {
