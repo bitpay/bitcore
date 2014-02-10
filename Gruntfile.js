@@ -143,8 +143,11 @@ module.exports = function(grunt) {
   grunt.option('force', true);
 
   //Default task(s).
-  grunt.registerTask('default', ['jshint', 'concat', 'uglify', 'cssmin', 'concurrent']);
-
+  grunt.registerTask('default', ['jshint', 'concurrent']);
+  
+  //Compile task (concat + minify)
+  grunt.registerTask('compile', ['concat', 'uglify', 'cssmin']);
+      
   //Test task.
   grunt.registerTask('test', ['env:test', 'mochaTest']);
 };
