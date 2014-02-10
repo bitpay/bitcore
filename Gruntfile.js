@@ -12,11 +12,16 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-nodemon');
   grunt.loadNpmTasks('grunt-concurrent');
   grunt.loadNpmTasks('grunt-env');
+  grunt.loadNpmTasks('grunt-markdown');
 
   // Project Configuration
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     watch: {
+      readme: {
+        files: ['README.md'],
+        tasks: ['markdown']
+      },
       jade: {
         files: ['app/views/**'],
         options: {
@@ -139,6 +144,18 @@ module.exports = function(grunt) {
       test: {
         NODE_ENV: 'test'
       }
+    },
+    markdown: {
+      all: {
+        files: [
+         {
+           expand: true,
+           src: 'README.md',
+           dest: '.',
+           ext: '.html'
+         }
+        ]
+      }
     }
   });
 
@@ -146,7 +163,7 @@ module.exports = function(grunt) {
   grunt.option('force', true);
 
   //Default task(s).
-  grunt.registerTask('default', ['jshint', 'concurrent']);
+  grunt.registerTask('default', ['jshint', 'compile', 'concurrent']);
   
   //Compile task (concat + minify)
   grunt.registerTask('compile', ['concat', 'uglify', 'cssmin']);

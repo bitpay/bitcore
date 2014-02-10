@@ -1,58 +1,62 @@
 # Insight
 
-Insight is an opensource bitcoin blockchain explorer with a complete REST and websocket APIs. Insight is coded in nodejs, and use AngularJS for the front-end and LevelDB for storage.
+Insight is an open-source bitcoin blockchain explorer with complete REST
+and websocket APIs. Insight runs in NodeJS, and uses AngularJS for the
+front-end and LevelDB for storage.
  
 
 ## Prerequisites
-* Node.js v0.10.x - Download and Install [Node.js](http://www.nodejs.org/download/). You can also follow [this gist](https://gist.github.com/isaacs/579814) for a quick and easy way to install Node.js and npm, or the Ubuntu way: git clone git@github.com:joyent/node.git && cd node && git checkout v0.10.24 && ./configure && make && make install`
-* Bitcoind - Download and Install [Bitcoin](http://bitcoin.org/en/download) - You should make sure to configure RPC security and `txindex`.  For an example, see `./etc/bitcoind/bitcoin.conf`
 
-### Tools Prerequisites
+* Node.js v0.10.x - Download and Install [Node.js](http://www.nodejs.org/download/). 
+You can also follow [this gist](https://gist.github.com/isaacs/579814) 
+for a quick and easy way to install Node.js and npm. If you use Ubuntu: 
+
+   ```git clone git@github.com:joyent/node.git && cd node && git checkout v0.10.24 && ./configure && make && make install```
+
+* Bitcoind - Download and Install [Bitcoin](http://bitcoin.org/en/download)
+- You should make sure to configure RPC security and `txindex`.
+The easiest way to do this is copying `./etc/bitcoind/bitcoin.conf` to your
+bitcoin directory (usually ~/.bitcoin).
+
+### Tools
 * NPM - Node.js package manager, should be installed when you install node.js.
-* Grunt - Download and Install [Grunt](http://gruntjs.com).
+* Grunt - Download and Install [Grunt](http://gruntjs.com). You can do this by running: 
+```
+npm install -g grunt-cli
+```
 * Bower - Web package manager, installing [Bower](http://bower.io/) is simple when you have npm:
-
 ```
 $ npm install -g bower
 ```
 
-## Additional Packages
-* Express - Defined as npm module in the [package.json](package.json) file.
-* AngularJS - Defined as bower module in the [bower.json](bower.json) file.
-* Twitter Bootstrap - Defined as bower module in the [bower.json](bower.json) file.
-* UI Bootstrap - Defined as bower module in the [bower.json](bower.json) file.
-
 ## Quick Install
-  To install Insight on local, you have to fork the main repository to your
-  computer:
+  To install Insight, clone the main repository:
 
-    https://github.com/bitpay/insight
+    $ git clone git@github.com:bitpay/insight.git && cd insight
 
-  Then clone it wherever you want:
-
-    $ git clone git@github.com:<your_username>/insight.git && cd insight
-
-  Install Grunt Command Line Interface:
-  
-    $ sudo npm -g install grunt-cli
-  
   Install dependencies:
 
     $ npm install
     $ bower install
 
-  We use [Grunt](https://github.com/gruntjs/grunt-cli) to start the server:
+  Use [Grunt](https://github.com/gruntjs/grunt-cli) to start the server:
 
     $ grunt
     
-  When not using grunt you can use (for example in production or test
-  environment):
-
-    $ node server
-    
-  Then open a browser and go to (with default port):
+  Then open a browser and go to:
 
     http://localhost:3000
+
+## Other utilities for development
+To compile and minify the web application's assets:
+```
+grunt compile
+```
+
+To run the tests
+```
+grunt test
+```
 
 
 ## DB storage requirement
@@ -60,11 +64,12 @@ $ npm install -g bower
 To store the blockchain and address related information, Insight uses LevelDB. Two DBs are created: txs and blocks. By default these are
 stored on <insight root>/db (this can be changed on config/config.js). 
 
-As Feb/2014, storing the blockchain take ~ 31Gb of disk space on levelDB, and insight need ~7hrs to complete the syncronization process.
+As of February 2014, storing the blockchain takes ~31Gb of disk space on levelDB, 
+and Insight needs ~7hrs to complete the syncronization process.
 
 ## Syncing old blockchain data
 
-  Old blockchain data can by sync manually from insight repository (to save old blocks and transactions in
+  Old blockchain data can be synced manually from Insight (to save blocks and transactions in
   LevelDB):
 
   Create folders:
@@ -92,7 +97,7 @@ A REST API is provided at /api. The entry points are:
   /api/tx/[:txid]
   /api/tx/525de308971eabd941b139f46c7198b5af9479325c2395db7f2fb5ae8562556c
 ```
-### Addresse
+### Address
 ```
   /api/addr/[:addr]
   /api/addr/mmvP3mTe53qxHdPqXEvdu8WdC7GfQ2vmx5
@@ -124,11 +129,10 @@ Bitcoin network events published are:
 Sample output:
 ```
 {
-  "__v":0,
   "txid":"00c1b1acb310b87085c7deaaeba478cef5dc9519fab87a4d943ecbb39bd5b053",
-  "_id":"52d68099c3fb4c240d000088",
   "orphaned":false,
   "processed":false
+  ...
 }
 ```
 
@@ -141,7 +145,6 @@ Sample output:
   "hash":"000000004a3d187c430cd6a5e988aca3b19e1f1d1727a50dead6c8ac26899b96",
   "time":1389789343,
   "fromP2P":true,
-  "_id":"52d6809ec3fb4c240d00008c"
 }
 ```
 
@@ -150,21 +153,16 @@ Sample output:
 Sample output:
 ```
 {
-blocksToSync: 164141,
-syncedBlocks: 475,
-upToExisting: true,
-scanningBackward: true,
-isEndGenesis: true,
-end: "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943",
-isStartGenesis: false,
-start: "000000009f929800556a8f3cfdbe57c187f2f679e351b12f7011bfc276c41b6d"
+  blocksToSync: 164141,
+  syncedBlocks: 475,
+  upToExisting: true,
+  scanningBackward: true,
+  isEndGenesis: true,
+  end: "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943",
+  isStartGenesis: false,
+  start: "000000009f929800556a8f3cfdbe57c187f2f679e351b12f7011bfc276c41b6d"
 }
 ```
-
-## Troubleshooting
-If you did not get all library during grunt command, please use the follow command:
-
-    $ bower install
 
 ## Configuration
 All configuration is specified in the [config](config/) folder, particularly the [config.js](config/config.js) file and the [env](config/env/) files. Here you will need to specify your application name and database name.
@@ -176,15 +174,17 @@ There is a bitcoind configuration sample at:
     etc/bitcoind/bitcoin.conf
 ```
 
-If you want to use a external bitcoind server set:
+If you want to use a external bitcoind server set the following environment variables:
+```
   BITCOIND_HOST 
   BITCOIND_PORT         # RPC Bitcoind Port
   BITCOIND_P2P_PORT     # P2P Bitcoind Port 
   BITCOIND_USER 
   BITCOIND_PASS
   INSIGHT_NETWORK [= 'livenet' | 'testnet']
+```
 
-enviroment variables. Make sure that bitcoind is configured to accept incomming connections using 'rpcallowip' decribed in https://en.bitcoin.it/wiki/Running_Bitcoin. Alternatively change config/env/$NODE_ENV.js
+Make sure that bitcoind is configured to accept incomming connections using 'rpcallowip' decribed in https://en.bitcoin.it/wiki/Running_Bitcoin. Alternatively change config/env/$NODE_ENV.js
 
 In case the network is changed, mongoDB database need to be deleted. This can be performed running:
 ```
