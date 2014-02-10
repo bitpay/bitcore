@@ -84,9 +84,12 @@
   "devDependencies": {
     "grunt-contrib-watch": "latest",
     "grunt-contrib-jshint": "latest",
+    "grunt-contrib-concat": "~0.3.0",
+    "grunt-contrib-uglify": "~0.3.2",
     "grunt-nodemon": "latest",
     "grunt-concurrent": "latest",
     "grunt-mocha-test": "latest",
-    "should": "latest"
+    "should": "latest",
+    "grunt-css": "~0.5.4"
   }
 }
