@@ -1,10 +1,10 @@
 # Insight
 
-Project description.  
+Insight is an opensource bitcoin blockchain explorer with a complete REST and websocket APIs. Insight is coded in nodejs, and use AngularJS for the front-end and LevelDB for storage.
+ 
 
 ## Prerequisites
 * Node.js v0.10.x - Download and Install [Node.js](http://www.nodejs.org/download/). You can also follow [this gist](https://gist.github.com/isaacs/579814) for a quick and easy way to install Node.js and npm, or the Ubuntu way: git clone git@github.com:joyent/node.git && cd node && git checkout v0.10.24 && ./configure && make && make install`
-* MongoDB - Download and Install [MongoDB](http://www.mongodb.org/downloads) - Make sure it's running on the default port (27017).
 * Bitcoind - Download and Install [Bitcoin](http://bitcoin.org/en/download) - You should make sure to configure RPC security and `txindex`.  For an example, see `./etc/bitcoind/bitcoin.conf`
 
 ### Tools Prerequisites
@@ -54,9 +54,17 @@ $ npm install -g bower
 
     http://localhost:3000
 
+
+## DB storage requirement
+  
+To store the blockchain and address related information, Insight uses LevelDB. Two DBs are created: txs and blocks. By default these are
+stored on <insight root>/db (this can be changed on config/config.js). 
+
+As Feb/2014, storing the blockchain take ~ 31Gb of disk space on levelDB, and insight need ~7hrs to complete the syncronization process.
+
 ## Syncing old blockchain data
 
-  Run sync from insight repository (to save old blocks and transactions in
+  Old blockchain data can by sync manually from insight repository (to save old blocks and transactions in
   LevelDB):
 
   Create folders:
@@ -64,9 +72,9 @@ $ npm install -g bower
     $ mkdir -p db/blocks
     $ utils/sync.js -S
 
-  Check utils/sync.js --help for options.
+  Check utils/sync.js --help for options, particulary -D to erase the current DB.
 
-  New blockchain data will be synced while the webserver (server.js) is up, through the p2p module.
+  *NOTE* that there is no need to run this manually since the historic syncronization is embedded on the webserver, so running the webserver will trigger the historic sync.
 
 
 ## API
@@ -188,7 +196,6 @@ In case the network is changed, mongoDB database need to be deleted. This can be
 
 There are three environments provided by default, __development__, __test__, and __production__. Each of these environments has the following configuration options:
 
-* __db__ - This is the name of the MongoDB database to use, and is set by default to __insight-dev__ for the development environment.
 * __app.name__ - This is the name of your app or website, and can be different for each environment. You can tell which environment you are running by looking at the TITLE attribute that your app generates.
 
 To run with a different environment, just specify NODE_ENV as you call grunt:
