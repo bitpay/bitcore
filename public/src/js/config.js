@@ -49,8 +49,6 @@ angular.module('insight')
   })
   .run(function($rootScope, $route, ngProgress) {
     $rootScope.$on('$routeChangeStart', function() {
-      ngProgress.height('4px');
-      ngProgress.color('#373D42');
       ngProgress.start();
     });
 

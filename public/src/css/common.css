@@ -13,6 +13,13 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   font-family: 'Ubuntu', sans-serif;
 }
 
+#ngProgress {
+  box-shadow: none !important;
+  height: 4px !important;
+  color: #373D42 !important;
+  background: #373D42 !important;
+}
+
 /* Wrapper for page content to push down footer */
 #wrap {
   min-height: 100%;
