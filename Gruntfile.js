@@ -58,10 +58,13 @@ module.exports = function(grunt) {
     },
     concat: {
       options: {
-        banner: '\'use strict\';\n',
         process: function(src, filepath) {
-          return '// Source: ' + filepath + '\n' +
-            src.replace(/(^|\n)[ \t]*('use strict'|"use strict");?\s*/g, '$1');
+          if (filepath.substr(filepath.length - 2) === 'js') {
+            return '// Source: ' + filepath + '\n' +
+              src.replace(/(^|\n)[ \t]*('use strict'|"use strict");?\s*/g, '$1');
+          } else {
+            return src; 
+          }
         }
       },
       vendors: {
