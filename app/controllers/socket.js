@@ -15,7 +15,23 @@ module.exports.init = function(app, io_ext) {
 };
 
 module.exports.broadcastTx = function(tx) {
-  if (ios) ios.sockets.in('inv').emit('tx', tx);
+  if (ios) {
+    var t = {};
+    if (typeof tx === 'string') {
+      t = { txid: tx };
+    }
+    else {
+      t = tx;
+      // Outputs
+      var valueOut = 0;
+      t.vout.forEach( function(o) {
+        valueOut += o.value * 100000000;
+      });
+
+      t.valueOut = valueOut / 100000000;
+    }
+    ios.sockets.in('inv').emit('tx', t);
+  }
 };
 
 module.exports.broadcastBlock = function(block) {

@@ -1,10 +1,10 @@
 'use strict';
 
-var TRANSACTION_DISPLAYED = 5;
+var TRANSACTION_DISPLAYED = 10;
 var BLOCKS_DISPLAYED = 5;
 
 angular.module('insight.system').controller('IndexController',
-  function($scope, $rootScope, Global, getSocket, Blocks, Transaction) {
+  function($scope, $rootScope, Global, getSocket, Blocks) {
   $scope.global = Global;
 
   var _getBlocks = function() {
@@ -16,14 +16,6 @@ angular.module('insight.system').controller('IndexController',
     });
   };
  
-  var _getTransaction = function(txid, cb) {
-    Transaction.get({
-      txId: txid
-    }, function(res) {
-      cb(res);
-    });
-  };
-
   var socket = getSocket($scope);
   socket.emit('subscribe', 'inv');
 
@@ -31,15 +23,11 @@ angular.module('insight.system').controller('IndexController',
   $scope.flashMessage = $rootScope.flashMessage || null;
 
   socket.on('tx', function(tx) {
-    console.log('Transaction received! ' + JSON.stringify(tx));
-
-    var txStr = tx.toString();
-    _getTransaction(txStr, function(res) {
-      $scope.txs.unshift(res);
-      if (parseInt($scope.txs.length, 10) >= parseInt(TRANSACTION_DISPLAYED, 10)) {
-        $scope.txs = $scope.txs.splice(0, TRANSACTION_DISPLAYED);
-      }
-    });
+    console.log('Transaction received! ' + tx.txid);
+    $scope.txs.unshift(tx);
+    if (parseInt($scope.txs.length, 10) >= parseInt(TRANSACTION_DISPLAYED, 10)) {
+      $scope.txs = $scope.txs.splice(0, TRANSACTION_DISPLAYED);
+    }
   });
 
   socket.on('block', function(block) {
