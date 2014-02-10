@@ -109,6 +109,9 @@ exports.list = function(req, res) {
     else {
       var blockshashList = [];
       var limit = parseInt(req.query.limit || blocks.length);
+      if (blocks.length < limit) {
+        limit = blocks.length;
+      }
       for(var i=0;i<limit;i++) {
         blockshashList.push(blocks[i].hash);
       }
