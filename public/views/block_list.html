@@ -13,7 +13,7 @@
       <p class="text-center m20v"  data-ng-show="pagination.isToday && !loading">Today</p>
       <p class="text-center m20v"  data-ng-show="!pagination.isToday && !loading">{{humanSince(pagination.currentTs)}}
       <p class="text-center m20v"  data-ng-show="loading">&nbsp;</p>
-  
+
       <div class="m50v text-center">
         <a class="btn btn-primary" href="/blocks-date/{{pagination.prev}}"><small>&larr; {{pagination.prev}}</small></a>
         <a class="btn btn-primary" href="/blocks-date/{{pagination.next}}" data-ng-show="!pagination.isToday"><small>{{pagination.next}} &rarr;</small></a>
@@ -26,7 +26,7 @@
           <small>by date</small>
         </h1>
       </div>
-      <table class="table table-hover">
+      <table class="table table-hover table-striped">
         <thead>
           <tr>
             <th>Height</th>
