@@ -11,7 +11,14 @@ front-end and LevelDB for storage.
 You can also follow [this gist](https://gist.github.com/isaacs/579814)
 for a quick and easy way to install Node.js and npm. If you use Ubuntu:
 
-   ```git clone git@github.com:joyent/node.git && cd node && git checkout v0.10.24 && ./configure && make && make install```
+```
+git clone git@github.com:joyent/node.git
+cd node
+git checkout v0.10.24
+./configure
+make
+make install
+```
 
 * Bitcoind - Download and Install [Bitcoin](http://bitcoin.org/en/download)
 - You should make sure to configure RPC security and `txindex`.
@@ -22,7 +29,6 @@ bitcoin directory (usually ~/.bitcoin).
 
 ### Tools
 * NPM - Node.js package manager, should be installed when you install node.js.
-```
 
 ## Quick Install
   To install Insight, clone the main repository:
@@ -46,26 +52,24 @@ All configuration is specified in the [config](config/) folder, particularly the
 
 There is a bitcoind configuration sample at:
 ```
-    etc/bitcoind/bitcoin.conf
+etc/bitcoind/bitcoin.conf
 ```
 
 If you need to configure bitcoind server access set the following environment variables:
 ```
-  BITCOIND_HOST
-  BITCOIND_PORT         # RPC Bitcoind Port
-  BITCOIND_P2P_PORT     # P2P Bitcoind Port
-  BITCOIND_USER         # RPC username
-  BITCOIND_PASS         # RPC password
-  BITCOIND_DATADIR      # bitcoind datadir for livenet, or datadir/testnet3 for testnet
-  INSIGHT_NETWORK [= 'livenet' | 'testnet']
+BITCOIND_HOST
+BITCOIND_PORT         # RPC Bitcoind Port
+BITCOIND_P2P_PORT     # P2P Bitcoind Port
+BITCOIND_USER         # RPC username
+BITCOIND_PASS         # RPC password
+BITCOIND_DATADIR      # bitcoind datadir for livenet, or datadir/testnet3 for testnet
+INSIGHT_NETWORK [= 'livenet' | 'testnet']
 ```
 
-Make sure that bitcoind is configured to accept incomming connections using 'rpcallowip' decribed in https://en.bitcoin.it/wiki/Running_Bitcoin. Alternatively change config/env/$NODE_ENV.js
+Make sure that bitcoind is configured to accept incomming connections using 'rpcallowip' decribed in https://en.bitcoin.it/wiki/Running_Bitcoin. Alternatively change `config/env/$NODE_ENV.js`
 
 In case the network is changed, levelDB database need to be deleted. This can be performed running:
-```
-  util/sync.js -D
-```
+```util/sync.js -D```
 and waiting to Insight to synchronize again. The process can be interrupted and continued from the synchronization process embedded in main app insight.js safely.
 
 
@@ -91,14 +95,10 @@ To run insight locally for development:
 
 ## Other utilities for development
 To compile and minify the web application's assets:
-```
-  grunt compile
-```
+```grunt compile```
 
 To run the tests
-```
-  grunt test
-```
+```grunt test```
 
 
 ### Production
