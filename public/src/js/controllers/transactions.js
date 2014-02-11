@@ -59,7 +59,7 @@ function($scope, $rootScope, $routeParams, $location, Global, Transaction, Trans
       tmp[addr].unconfirmedInput += items[i].unconfirmedInput;
       tmp[addr].dbError = tmp[addr].dbError || items[i].dbError;
       tmp[addr].valueSat += items[i].value * COIN;
-      tmp[addr].value =   items[i].value;
+      tmp[addr].value    = tmp[addr].valueSat / COIN;
       tmp[addr].items.push(items[i]);
       tmp[addr].notAddr = notAddr;
       tmp[addr].count++;
