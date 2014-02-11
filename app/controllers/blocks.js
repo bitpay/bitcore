@@ -115,7 +115,18 @@ exports.list = function(req, res) {
       for(var i=0;i<limit;i++) {
         blockshashList.push(blocks[i].hash);
       }
-      async.mapSeries(blockshashList, getBlock, function(err, allblocks) {
+      async.mapSeries(blockshashList,
+        function(hash, cb) {
+          getBlock(hash, function(err, info) {
+            return cb(err,{
+              height: info.height,
+              size: info.size,
+              hash: info.hash,
+              time: info.time,
+              txlength: info.tx.length,
+            });
+          });
+        }, function(err, allblocks) {
         res.jsonp({
           blocks: allblocks,
           length: allblocks.length,
