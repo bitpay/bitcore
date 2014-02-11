@@ -505,3 +505,13 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 .page-header { margin-top: 0; }
 
+/* Index */
+#home .btn-more {
+  border-top: 1px solid #ddd;
+  margin: 30px auto 0;
+  text-align: center;
+  width: 90%;
+}
+#home .btn-more .btn-default {
+  margin-top: -23px;
+}
