@@ -6,7 +6,7 @@
       <a class="txid" href="/tx/{{tx.txid}}">{{tx.txid}}</a>
     </div>
   </div>
-  <div class="col-xs-12 col-md-6 text-right">
+  <div class="col-xs-12 col-md-6 text-right" data-ng-show="tx.time">
     <time>{{tx.time * 1000 | date:'medium'}}</time>
   </div>
 </div>
@@ -125,7 +125,7 @@
     </div>
   </div>
 </div>
-<div class="panel panel-default" data-ng-show="itemsExpanded">
+<div class="panel panel-default" data-ng-show="itemsExpanded && tx.blockhash">
   <div class="panel-body" style="word-wrap:break-word">
     <small>
       <strong>BlockHash</strong>
