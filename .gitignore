@@ -29,7 +29,9 @@ npm-debug.log
 .DS_Store
 public/lib/*
 db/txs/*
+db/testnet/txs/*
 db/blocks/*
+db/testnet/blocks/*
 
 public/js/*
 public/css/*

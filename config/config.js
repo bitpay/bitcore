@@ -1,36 +1,47 @@
 'use strict';
 
-/**
- * Module dependencies.
- */
 var path = require('path'),
     rootPath = path.normalize(__dirname + '/..'),
-    env;
+    env,
+    db = './db/testnet',
+    port = '3000',
+    b_port = '18332',
+    p2p_port = '18333';
 
 switch(process.env.NODE_ENV) {
   case 'production':
-    env = 'prod';
-  break;
+    if (process.env.INSIGHT_NETWORK === 'livenet') {
+      env = 'livenet';
+      db = './db';
+      b_port = '8332';
+      p2p_port = '8333';
+    }
+    else {
+      env = 'testnet';
+      port = '3001';
+    }
+    break;
   case 'test':
-    env = 'test';
-  break;
+    env = 'test environment';
+    break;
   default:
-    env = 'dev';
-  break;
+    env = 'development';
+    break;
 }
+
 module.exports = {
   root: rootPath,
   appName: 'Insight ' + env,
-  port: process.env.PORT || 3000,
-  leveldb: './db',
+  port: port,
+  leveldb: db,
   bitcoind: {
     protocol:  process.env.BITCOIND_PROTO || 'http',
     user: process.env.BITCOIND_USER || 'user',
     pass: process.env.BITCOIND_PASS || 'pass',
     host: process.env.BITCOIND_HOST || '127.0.0.1',
-    port: process.env.BITCOIND_PORT || '18332',
-    p2pPort: process.env.BITCOIND_P2P_PORT || '18333',
-    dataDir: process.env.BITCOIND_DATADIR || (process.env.HOME + '/.bitcoin/' +
+    port: b_port,
+    p2pPort: p2p_port,
+    dataDir: (process.env.BITCOIND_DATADIR +
        ((process.env.INSIGHT_NETWORK || 'testnet')==='testnet'?'testnet3':'')),
 
     // DO NOT CHANGE THIS!
