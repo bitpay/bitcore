@@ -181,6 +181,7 @@ If you want to use a external bitcoind server set the following environment vari
   BITCOIND_P2P_PORT     # P2P Bitcoind Port 
   BITCOIND_USER 
   BITCOIND_PASS
+  BITCOIND_DATADIR      # bitcoind datadir for livenet, or datadir/testnet3 for testnet
   INSIGHT_NETWORK [= 'livenet' | 'testnet']
 ```
 
