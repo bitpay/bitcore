@@ -29,6 +29,17 @@ switch(process.env.NODE_ENV) {
     break;
 }
 
+var dataDir = process.env.BITCOIND_DATADIR;
+var isWin = /^win/.test(process.platform);
+var isMac = /^darwin/.test(process.platform);
+var isLinux = /^linux/.test(process.platform);
+if (!dataDir) {
+  if (isWin) dataDir = '%APPDATA%\\Bitcoin\\';
+  if (isMac) dataDir = process.env.HOME + '/Library/Application Support/Bitcoin/';
+  if (isLinux) dataDir = process.env.HOME + '/.bitcoin/';
+}
+dataDir += ((process.env.INSIGHT_NETWORK || 'testnet')==='testnet'?'testnet3':'');
+
 module.exports = {
   root: rootPath,
   appName: 'Insight ' + env,
@@ -41,9 +52,7 @@ module.exports = {
     host: process.env.BITCOIND_HOST || '127.0.0.1',
     port: b_port,
     p2pPort: p2p_port,
-    dataDir: (process.env.BITCOIND_DATADIR +
-       ((process.env.INSIGHT_NETWORK || 'testnet')==='testnet'?'testnet3':'')),
-
+    dataDir: dataDir,
     // DO NOT CHANGE THIS!
     disableAgent: true
   },
