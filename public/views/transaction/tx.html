@@ -73,7 +73,15 @@
     <div class="row">
       <div data-ng-repeat="vout in tx.voutSimple" data-ng-show="!itemsExpanded">
         <div class="col-md-12 transaction-vin-vout">
-          <div class="text-muted pull-right btc-value" data-ng-class="{'text-success': $root.currentAddr == vout.addr}"><small>{{$root.currency.getConvertion(vout.value)}}</small></div>
+          <div class="text-muted pull-right btc-value" data-ng-class="{'text-success': $root.currentAddr == vout.addr}">
+
+          <small>
+            {{$root.currency.getConvertion(vout.value)}}
+            <span class="text-danger" data-ng-show="vout.isSpend" tooltip="Output is spend" tooltip-placement="left">(S)</span>
+            <span class="text-success" data-ng-show="!vout.isSpend"  tooltip="Output is unspend" tooltip-placement="left">(U)</span>
+          </small>
+          </div>
+
           <div class="ellipsis">
             <span data-ng-show="vout.notAddr">{{vout.addr}}</span>
             <span class="text-muted" title="Current Bitcoin Address" data-ng-show="address == $root.currentAddr" data-ng-repeat="address in vout.addr.split(',')">{{vout.addr}}</span>
@@ -85,7 +93,14 @@
       </div>
       <div data-ng-repeat="vout in tx.vout" data-ng-show="itemsExpanded">
         <div class="col-md-12 transaction-vin-vout">
-          <div class="text-muted pull-right btc-value"><small>{{$root.currency.getConvertion(vout.value)}}</small></div>
+          <div class="text-muted pull-right btc-value"><small>{{$root.currency.getConvertion(vout.value)}}
+            <span class="text-success" data-ng-show="!vout.spendTxId"  tooltip="Output is unspend" tooltip-placement="left">(U)</span>
+            <a class="glyphicon glyphicon-chevron-right" data-ng-show="vout.spendTxId" href="/#!/tx/{{vout.spendTxId}}" title="Spent at: {{vout.spendTxId}},{{vout.spendIndex}}"></a>&nbsp;&nbsp;
+ 
+
+          </small>
+
+          </div>
           <div class="ellipsis">
             <a href="/address/{{address}}" data-ng-repeat="address in vout.scriptPubKey.addresses">{{address}}</a>
           </div>

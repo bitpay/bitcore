@@ -52,6 +52,7 @@ function($scope, $rootScope, $routeParams, $location, Global, Transaction, Trans
         tmp[addr].addr = addr;
         tmp[addr].items = [];
       }
+      tmp[addr].isSpend = items[i].spendTxId;
 
       tmp[addr].doubleSpendTxID = tmp[addr].doubleSpendTxID   || items[i].doubleSpendTxID;
       tmp[addr].doubleSpendIndex = tmp[addr].doubleSpendIndex || items[i].doubleSpendIndex;
