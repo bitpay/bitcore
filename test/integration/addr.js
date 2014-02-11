@@ -22,7 +22,7 @@ describe('Address balances', function() {
     if (v.disabled) {
       console.log(v.addr + ' => disabled in JSON');
     } else {
-      it('Address info for: ' + v.addr, function(done) {
+      it.skip('Address info for: ' + v.addr, function(done) {
         this.timeout(5000);
 
         var a = new Address(v.addr, txDb);
