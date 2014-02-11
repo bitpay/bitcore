@@ -136,8 +136,7 @@
 </div>
 <div class="line-top row">
   <div class="col-xs-4 col-md-6">
-    <span data-ng-show="!tx.isCoinBase && tx.feeds" class="label label-default">Fees: {{$root.currency.getConvertion(tx.fees)}}</span>
-    <span data-ng-show="!tx.isCoinBase && !tx.feeds" class="label label-default">Fees: unknown yet</span>
+    <span data-ng-show="!tx.isCoinBase &&  !isNaN(parseFloat(tx.fees))" class="label label-default">Fees: {{$root.currency.getConvertion(tx.fees)}} </span>
   </div>
   <div class="col-xs-8 col-md-6 text-right">
     <span data-ng-show="tx.confirmations" class="label label-success">{{tx.confirmations}} Confirmations</span>
