@@ -19,12 +19,9 @@ function($scope, $rootScope, $routeParams, $location, Global, Transaction, Trans
     var tmp = {};
     var u = 0;
 
-    // TODO multiple output address
-    //
     for(var i=0; i < l; i++) {
 
       var notAddr = false;
-
       // non standard input
       if (items[i].scriptSig && !items[i].addr) {
         items[i].addr = 'Unparsed address [' + u++ + ']';
@@ -55,7 +52,12 @@ function($scope, $rootScope, $routeParams, $location, Global, Transaction, Trans
         tmp[addr].addr = addr;
         tmp[addr].items = [];
       }
+      tmp[addr].isSpend = items[i].spendTxId;
 
+      tmp[addr].doubleSpendTxID = tmp[addr].doubleSpendTxID   || items[i].doubleSpendTxID;
+      tmp[addr].doubleSpendIndex = tmp[addr].doubleSpendIndex || items[i].doubleSpendIndex;
+      tmp[addr].unconfirmedInput += items[i].unconfirmedInput;
+      tmp[addr].dbError = tmp[addr].dbError || items[i].dbError;
       tmp[addr].valueSat += items[i].value * COIN;
       tmp[addr].value =   items[i].value;
       tmp[addr].items.push(items[i]);

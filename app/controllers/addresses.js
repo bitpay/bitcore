@@ -7,7 +7,6 @@
 var Address = require('../models/Address'),
     common      = require('./common');
 
-
 exports.address = function(req, res, next, addr) {
 
 

@@ -35,6 +35,13 @@ module.exports = function(grunt) {
           livereload: true,
         },
       },
+      js2: {
+        files: ['public/src/**/*.js'],
+        tasks: ['compile'],
+        options: {
+          livereload: true,
+        },
+      },
       html: {
         files: ['public/views/**'],
         options: {
@@ -124,7 +131,7 @@ module.exports = function(grunt) {
         script: 'insight.js',
         options: {
           args: [],
-          ignore: ['public/**', 'test/**','util/**'],
+          ignore: ['public/**/*.html','public/**/*.css', 'public/**/*.js', 'test/**/*','util/**/*', ,'dev-util/**/*'],
           // nodeArgs: ['--debug'],
           delayTime: 1,
           env: {

@@ -40,9 +40,6 @@ var walk = function(path) {
 
 walk(models_path);
 
-var syncOpts = {
-};
-
 /**
  * p2pSync process
  */

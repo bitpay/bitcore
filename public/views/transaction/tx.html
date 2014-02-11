@@ -28,6 +28,11 @@
             <span class="text-muted" title="Current Bitcoin Address" data-ng-show="vin.addr == $root.currentAddr">{{vin.addr}}</span>
             <a href="/address/{{vin.addr}}" data-ng-show="!vin.notAddr && vin.addr != $root.currentAddr">{{vin.addr}}</a>
           </div>
+          <div data-ng-show="vin.unconfirmedInput" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> (Input unconfirmed)</div>
+          <div data-ng-show="vin.dbError" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> Incoherence in levelDB detected, please resync</div>
+          <div data-ng-show="vin.doubleSpendTxID" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> Double spend attempt detected. From tx:
+              <a href="/tx/{{vin.doubleSpendTxID}}">{{vin.doubleSpendTxID}},{{vin.doubleSpendIndex}}</a>
+          </div>
         </div>
       </div>
       <div data-ng-repeat="vin in tx.vin" data-ng-show="itemsExpanded">
@@ -38,6 +43,12 @@
             <span data-ng-show="vin.notAddr">{{vin.addr}}</span>
             <a href="/address/{{vin.addr}}" data-ng-show="!vin.notAddr">{{vin.addr}}</a>
           </div>
+          <div data-ng-show="vin.unconfirmedInput" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> (Input unconfirmed)</div>
+          <div data-ng-show="vin.dbError" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> Incoherence in levelDB detected, please resync</div>
+          <div data-ng-show="vin.doubleSpendTxID" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> Double spend attempt detected. From tx:
+              <a href="/tx/{{vin.doubleSpendTxID}}">{{vin.doubleSpendTxID}},{{vin.doubleSpendIndex}}</a>
+          </div>
+
         </div>
         <div class="col-md-12">
           <div class="panel panel-default">
@@ -62,17 +73,34 @@
     <div class="row">
       <div data-ng-repeat="vout in tx.voutSimple" data-ng-show="!itemsExpanded">
         <div class="col-md-12 transaction-vin-vout">
-          <div class="text-muted pull-right btc-value" data-ng-class="{'text-success': $root.currentAddr == vout.addr}"><small>{{$root.currency.getConvertion(vout.value)}}</small></div>
+          <div class="text-muted pull-right btc-value" data-ng-class="{'text-success': $root.currentAddr == vout.addr}">
+
+          <small>
+            {{$root.currency.getConvertion(vout.value)}}
+            <span class="text-danger" data-ng-show="vout.isSpend" tooltip="Output is spend" tooltip-placement="left">(S)</span>
+            <span class="text-success" data-ng-show="!vout.isSpend"  tooltip="Output is unspend" tooltip-placement="left">(U)</span>
+          </small>
+          </div>
+
           <div class="ellipsis">
             <span data-ng-show="vout.notAddr">{{vout.addr}}</span>
             <span class="text-muted" title="Current Bitcoin Address" data-ng-show="address == $root.currentAddr" data-ng-repeat="address in vout.addr.split(',')">{{vout.addr}}</span>
             <a href="/address/{{address}}"  data-ng-show="!vout.notAddr && address != $root.currentAddr" data-ng-repeat="address in vout.addr.split(',')">{{address}}</a>
           </div>
+
+
         </div>
       </div>
       <div data-ng-repeat="vout in tx.vout" data-ng-show="itemsExpanded">
         <div class="col-md-12 transaction-vin-vout">
-          <div class="text-muted pull-right btc-value"><small>{{$root.currency.getConvertion(vout.value)}}</small></div>
+          <div class="text-muted pull-right btc-value"><small>{{$root.currency.getConvertion(vout.value)}}
+            <span class="text-success" data-ng-show="!vout.spendTxId"  tooltip="Output is unspend" tooltip-placement="left">(U)</span>
+            <a class="glyphicon glyphicon-chevron-right" data-ng-show="vout.spendTxId" href="/#!/tx/{{vout.spendTxId}}" title="Spent at: {{vout.spendTxId}},{{vout.spendIndex}}"></a>&nbsp;&nbsp;
+ 
+
+          </small>
+
+          </div>
           <div class="ellipsis">
             <a href="/address/{{address}}" data-ng-repeat="address in vout.scriptPubKey.addresses">{{address}}</a>
           </div>
@@ -108,7 +136,8 @@
 </div>
 <div class="line-top row">
   <div class="col-xs-4 col-md-6">
-    <span data-ng-show="!tx.isCoinBase" class="label label-default">Fees: {{$root.currency.getConvertion(tx.fees)}}</span>
+    <span data-ng-show="!tx.isCoinBase && tx.feeds" class="label label-default">Fees: {{$root.currency.getConvertion(tx.fees)}}</span>
+    <span data-ng-show="!tx.isCoinBase && !tx.feeds" class="label label-default">Fees: unknown yet</span>
   </div>
   <div class="col-xs-8 col-md-6 text-right">
     <span data-ng-show="tx.confirmations" class="label label-success">{{tx.confirmations}} Confirmations</span>
