@@ -18,15 +18,10 @@ for a quick and easy way to install Node.js and npm. If you use Ubuntu:
 The easiest way to do this is copying `./etc/bitcoind/bitcoin.conf` to your
 bitcoin directory (usually ~/.bitcoin).
 
+- Bitcoind must be running and must have finished downloading the blockchain *BEFORE* starting Insight.
+
 ### Tools
 * NPM - Node.js package manager, should be installed when you install node.js.
-* Grunt - Download and Install [Grunt](http://gruntjs.com). You can do this by running:
-```
-npm install -g grunt-cli
-```
-* Bower - Web package manager, installing [Bower](http://bower.io/) is simple when you have npm:
-```
-$ npm install -g bower
 ```
 
 ## Quick Install
@@ -37,27 +32,82 @@ $ npm install -g bower
   Install dependencies:
 
     $ npm install
-    $ bower install
-
-  Use [Grunt](https://github.com/gruntjs/grunt-cli) to start the server:
-
-    $ grunt
+    $ node insight.js
 
   Then open a browser and go to:
 
     http://localhost:3000
+   
+
+## Configuration
+All configuration is specified in the [config](config/) folder, particularly the [config.js](config/config.js) file. Here you will need to specify your application name and database name.
+
+### bitcoind
+
+There is a bitcoind configuration sample at:
+```
+    etc/bitcoind/bitcoin.conf
+```
+
+If you need to configure bitcoind server access set the following environment variables:
+```
+  BITCOIND_HOST
+  BITCOIND_PORT         # RPC Bitcoind Port
+  BITCOIND_P2P_PORT     # P2P Bitcoind Port
+  BITCOIND_USER         # RPC username
+  BITCOIND_PASS         # RPC password
+  BITCOIND_DATADIR      # bitcoind datadir for livenet, or datadir/testnet3 for testnet
+  INSIGHT_NETWORK [= 'livenet' | 'testnet']
+```
+
+Make sure that bitcoind is configured to accept incomming connections using 'rpcallowip' decribed in https://en.bitcoin.it/wiki/Running_Bitcoin. Alternatively change config/env/$NODE_ENV.js
+
+In case the network is changed, levelDB database need to be deleted. This can be performed running:
+```
+  util/sync.js -D
+```
+and waiting to Insight to synchronize again. The process can be interrupted and continued from the synchronization process embedded in main app insight.js safely.
+
+
+### Environment Variables Settings
+
+There are three environments provided by default, __development__, __test__, and __production__. Each of these environments has the following configuration options:
+
+* __app.name__ - This is the name of your app or website, and can be different for each environment. You can tell which environment you are running by looking at the TITLE attribute that your app generates.
+
+To run with a different environment, just specify NODE_ENV as you call grunt:
+
+	$ NODE_ENV=test grunt
+
+If you are using node instead of grunt, it is very similar:
+
+	$ NODE_ENV=test node server
+
+
+### Development environment
+To run insight locally for development:
+
+  $ NODE_ENV=development grunt
 
 ## Other utilities for development
 To compile and minify the web application's assets:
 ```
-grunt compile
+  grunt compile
 ```
 
 To run the tests
 ```
-grunt test
+  grunt test
 ```
 
+
+### Production
+You can use [pm2](https://github.com/Unitech/pm2) to manage NodeJS in production:
+
+  $ npm install pm2 -g
+  $ pm2 start insight.js
+
+[forever] (https://github.com/nodejitsu/forever) can also be used for this task.
 
 ## DB storage requirement
 
@@ -163,64 +213,6 @@ Sample output:
   start: "000000009f929800556a8f3cfdbe57c187f2f679e351b12f7011bfc276c41b6d"
 }
 ```
-
-## Configuration
-All configuration is specified in the [config](config/) folder, particularly the [config.js](config/config.js) file and the [env](config/env/) files. Here you will need to specify your application name and database name.
-
-### bitcoind
-
-There is a bitcoind configuration sample at:
-```
-    etc/bitcoind/bitcoin.conf
-```
-
-If you want to use a external bitcoind server set the following environment variables:
-```
-  BITCOIND_HOST
-  BITCOIND_PORT         # RPC Bitcoind Port
-  BITCOIND_P2P_PORT     # P2P Bitcoind Port
-  BITCOIND_USER
-  BITCOIND_PASS
-  BITCOIND_DATADIR      # bitcoind datadir for livenet, or datadir/testnet3 for testnet
-  INSIGHT_NETWORK [= 'livenet' | 'testnet']
-```
-
-Make sure that bitcoind is configured to accept incomming connections using 'rpcallowip' decribed in https://en.bitcoin.it/wiki/Running_Bitcoin. Alternatively change config/env/$NODE_ENV.js
-
-In case the network is changed, levelDB database need to be deleted. This can be performed running:
-```
-  util/sync.js -D
-```
-
-
-### Environment Variables Settings
-
-There are three environments provided by default, __development__, __test__, and __production__. Each of these environments has the following configuration options:
-
-* __app.name__ - This is the name of your app or website, and can be different for each environment. You can tell which environment you are running by looking at the TITLE attribute that your app generates.
-
-To run with a different environment, just specify NODE_ENV as you call grunt:
-
-	$ NODE_ENV=test grunt
-
-If you are using node instead of grunt, it is very similar:
-
-	$ NODE_ENV=test node server
-
-
-### Development environment
-To run insight locally for development:
-
-  $ NODE_ENV=development grunt
-
-
-
-
-### Production
-You can use [pm2](https://github.com/Unitech/pm2) to manage NodeJS in production:
-
-  $ npm install pm2 -g
-  $ pm2 start insight.js
 
 
 ## Github
