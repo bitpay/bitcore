@@ -135,12 +135,12 @@
   </div>
 </div>
 <div class="line-top row">
-  <div class="col-xs-4 col-md-6">
-    <span data-ng-show="!tx.isCoinBase &&  !isNaN(parseFloat(tx.fees))" class="label label-default">Fees: {{$root.currency.getConvertion(tx.fees)}} </span>
+  <div class="col-xs-12 col-sm-4 col-md-4">
+    <span data-ng-show="!tx.isCoinBase &&  !isNaN(parseFloat(tx.fees))" class="txvalues txvalues-default">Fees: {{$root.currency.getConvertion(tx.fees)}} </span>
   </div>
-  <div class="col-xs-8 col-md-6 text-right">
-    <span data-ng-show="tx.confirmations" class="label label-success">{{tx.confirmations}} Confirmations</span>
-    <span data-ng-show="!tx.confirmations" class="label label-danger">Unconfirmed Transaction!</span>
-    <span class="label label-primary">{{$root.currency.getConvertion(tx.valueOut)}}</span>
+  <div class="col-xs-12 col-sm-8 col-md-8 text-right">
+    <span data-ng-show="tx.confirmations" class="txvalues txvalues-success">{{tx.confirmations}} Confirmations</span>
+    <span data-ng-show="!tx.confirmations" class="txvalues txvalues-danger">Unconfirmed Transaction!</span>
+    <span class="txvalues txvalues-primary">{{$root.currency.getConvertion(tx.valueOut)}}</span>
   </div>
 </div>
