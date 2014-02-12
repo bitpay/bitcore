@@ -50,3 +50,8 @@ exports.sync = function(req, res) {
   if (req.historicSync)
     res.jsonp(req.historicSync.info());
 };
+
+exports.peer = function(req, res) {
+  if (req.peerSync)
+    res.jsonp(req.peerSync.info());
+};

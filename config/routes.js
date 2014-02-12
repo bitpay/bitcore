@@ -29,6 +29,7 @@ module.exports = function(app) {
   app.get('/api/status', st.show);
 
   app.get('/api/sync', st.sync);
+  app.get('/api/peer', st.peer);
 
   // Currency
   var currency = require('../app/controllers/currency');

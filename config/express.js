@@ -7,11 +7,15 @@ var express = require('express'),
     helpers = require('view-helpers'),
     config = require('./config');
 
-module.exports = function(app, historicSync) {
+module.exports = function(app, historicSync, peerSync) {
 
  //custom middleware
   function setHistoric(req, res, next) {
     req.historicSync = historicSync;
+    next();
+  }
+  function setPeer(req, res, next) {
+    req.peerSync = peerSync;
     next();
   }
 
@@ -28,6 +32,7 @@ module.exports = function(app, historicSync) {
   app.enable('jsonp callback');
 
   app.use('/api/sync', setHistoric);
+  app.use('/api/peer', setPeer);
   app.use(express.logger('dev'));
   app.use(express.json());
   app.use(express.urlencoded());
