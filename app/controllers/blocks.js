@@ -3,9 +3,9 @@
 /**
  * Module dependencies.
  */
-var common    = require('./common'),
-    async     = require('async'),
-    BlockDb   = require('../../lib/BlockDb').class();
+var common = require('./common'),
+  async = require('async'),
+  BlockDb = require('../../lib/BlockDb').class();
 
 var bdb = new BlockDb();
 
@@ -14,7 +14,7 @@ var bdb = new BlockDb();
  */
 exports.block = function(req, res, next, hash) {
   bdb.fromHashWithInfo(hash, function(err, block) {
-    if (err || ! block)
+    if (err || !block)
       return common.handleErrors(err, res, next);
     else {
       req.block = block.info;
@@ -41,8 +41,7 @@ exports.blockindex = function(req, res, next, height) {
     if (err) {
       console.log(err);
       res.status(400).send('Bad Request'); // TODO
-    }
-    else {
+    } else {
       res.jsonp(hashStr);
     }
   });
@@ -57,7 +56,7 @@ var getBlock = function(blockhash, cb) {
 
     // TODO
     if (!block.info) {
-console.log('[blocks.js.60]: could not get %s from RPC. Orphan? Error?', blockhash); //TODO
+      console.log('[blocks.js.60]: could not get %s from RPC. Orphan? Error?', blockhash); //TODO
       // Probably orphan
       block.info = {
         hash: blockhash,
@@ -75,10 +74,10 @@ exports.list = function(req, res) {
   var isToday = false;
 
   //helper to convert timestamps to yyyy-mm-dd format
-  var formatTimestamp = function (date) {
+  var formatTimestamp = function(date) {
     var yyyy = date.getUTCFullYear().toString();
     var mm = (date.getUTCMonth() + 1).toString(); // getMonth() is zero-based
-    var dd  = date.getUTCDate().toString();
+    var dd = date.getUTCDate().toString();
 
     return yyyy + '-' + (mm[1] ? mm : '0' + mm[0]) + '-' + (dd[1] ? dd : '0' + dd[0]); //padding
   };
@@ -105,20 +104,20 @@ exports.list = function(req, res) {
   bdb.getBlocksByDate(gte, lte, function(err, blocks) {
     if (err) {
       res.status(500).send(err);
-    }
-    else {
+    } else {
       var blockshashList = [];
       var limit = parseInt(req.query.limit || blocks.length);
       if (blocks.length < limit) {
         limit = blocks.length;
       }
-      for(var i=0;i<limit;i++) {
+      for (var i = 0; i < limit; i++) {
         blockshashList.push(blocks[i].hash);
       }
       async.mapSeries(blockshashList,
         function(hash, cb) {
           getBlock(hash, function(err, info) {
-            return cb(err,{
+            if (err) return cb(err);
+            return cb(err, {
               height: info.height,
               size: info.size,
               hash: info.hash,
@@ -127,18 +126,18 @@ exports.list = function(req, res) {
             });
           });
         }, function(err, allblocks) {
-        res.jsonp({
-          blocks: allblocks,
-          length: allblocks.length,
-          pagination: {
-            next: next,
-            prev: prev,
-            currentTs: lte-1,
-            current: dateStr,
-            isToday: isToday
-          }
+          res.jsonp({
+            blocks: allblocks,
+            length: allblocks.length,
+            pagination: {
+              next: next,
+              prev: prev,
+              currentTs: lte - 1,
+              current: dateStr,
+              isToday: isToday
+            }
+          });
         });
-      });
     }
   });
 };
