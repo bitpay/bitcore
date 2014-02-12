@@ -43,5 +43,8 @@ module.exports.broadcastAddressTx = function(address, tx) {
 };
 
 module.exports.broadcastSyncInfo = function(historicSync) {
- if (ios)  ios.sockets.in('sync').emit('status', historicSync);
+
+ if (ios) {
+   ios.sockets.in('sync').emit('status', historicSync);
+ }
 };

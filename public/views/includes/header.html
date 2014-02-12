@@ -24,7 +24,7 @@
       <ul class="nav navbar-nav navbar-right">
         <li>
       <div class="status" data-ng-controller="StatusController">
-        <a href="#" data-ng-init="getSync()">
+        <div data-ng-init="getSync()" class="pull-left">
           <span class="t text-danger"  data-ng-show="sync.error" tooltip="{{sync.error}}" tooltip-placement="bottom"> 
               <span  class="glyphicon glyphicon-warning-sign"></span>
               ERROR 
@@ -33,8 +33,9 @@
             <span  class="glyphicon glyphicon-refresh icon-rotate"></span>
             {{sync.status}} {{sync.syncPercentage}}%
           </span>
-          <span class="t text-default" tooltip="Historic sync finished" tooltip-placement="bottom" data-ng-show="sync.status==='finished'"> On sync</span>
-        </a> &middot;
+          <span class="t text-default" tooltip="Historic sync finished" tooltip-placement="bottom" data-ng-show="sync.status==='finished'"> On sync </span>
+        </div>
+        &nbsp; &middot;
         <span data-ng-init="getStatus('Info')">
           <strong>Conn</strong> {{info.connections}}
         </span> &middot;

@@ -27,6 +27,11 @@
             <td class="address ellipsis text-right">{{$root.currency.getConvertion(address.balance)}}</td>
           </tr>
           <tr>
+            <td class="small">Unconfirmed Tx Balance</td>
+            <td class="address ellipsis text-right">{{$root.currency.getConvertion(address.unconfirmedBalance)}}</td>
+          </tr>
+ 
+          <tr>
             <td class="small">No. Transactions</td>
             <td class="address ellipsis text-right">{{address.txApperances}}</td>
           </tr>

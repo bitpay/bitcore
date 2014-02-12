@@ -48,7 +48,10 @@ ScopedSocket.prototype.emit = function(event, data, callback) {
 
 angular.module('insight.socket').factory('getSocket',
 function($rootScope) {
-	var socket = io.connect();
+  var socket = io.connect(null, {
+    'reconnect': true,
+    'reconnection delay': 500,
+});
 	return function(scope) {
 		var scopedSocket = new ScopedSocket(socket, $rootScope);
     scope.$on('$routeChangeStart', function() {

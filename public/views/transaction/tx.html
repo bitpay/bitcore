@@ -6,7 +6,13 @@
       <a class="txid" href="/tx/{{tx.txid}}">{{tx.txid}}</a>
     </div>
   </div>
-  <div class="col-xs-12 col-md-6 text-right" data-ng-show="tx.time">
+
+  <div class="col-xs-12 col-md-6 text-right" data-ng-show="tx.firstSeenTs">
+    first seen at 
+    <time>{{tx.firstSeenTs * 1000 | date:'medium'}}</time>
+  </div>
+  <div class="col-xs-12 col-md-6 text-right" data-ng-show="tx.time && !tx.firstSeenTs">
+    mined at
     <time>{{tx.time * 1000 | date:'medium'}}</time>
   </div>
 </div>

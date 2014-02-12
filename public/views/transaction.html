@@ -21,8 +21,15 @@
       </tr>
       <tr>
         <td><strong>Received Time </strong></td>
-        <td class="text-muted text-right">{{tx.time * 1000|date:'medium'}}</td>
+        <td data-ng-show="tx.firstSeenTs" class="text-muted text-right">{{tx.firstSeenTs * 1000|date:'medium'}}</td>
+        <td data-ng-show="!tx.firstSeenTs" class="text-muted text-right">N/A</td>
       </tr>
+      <tr>
+        <td><strong>Mined Time </strong></td>
+        <td data-ng-show="tx.time" class="text-muted text-right">{{tx.time * 1000|date:'medium'}}</td>
+        <td data-ng-show="!tx.time" class="text-muted text-right">N/A</td>
+      </tr>
+ 
       </tbody>
     </table>
     <div data-ng-include src="'/views/includes/currency.html'"></div>
