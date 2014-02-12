@@ -193,6 +193,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   position: fixed;
   width: 250px;
   border: 1px solid #eee;
+  z-index: 1;
 }
 
 @media (max-width: 768px) {
