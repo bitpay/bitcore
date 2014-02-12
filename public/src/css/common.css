@@ -138,6 +138,13 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   font-family: 'Ubuntu', sans-serif;
 }
 
+#search.loading {
+  background-image: url('/img/loading.gif');
+  background-position: 5px center;
+  background-repeat: no-repeat;
+  padding-left: 25px;
+}
+
 #search::-webkit-input-placeholder {
   color: #BCDF7E;
   font-family: 'Ubuntu', sans-serif;
