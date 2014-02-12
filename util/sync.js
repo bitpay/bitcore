@@ -35,8 +35,6 @@ async.series([
   function(cb) {
 
     if (typeof program.smart === 'undefined' || parseInt(program.smart) ) {
-
-console.log('[sync.js.38]'); //TODO
       historicSync.smartImport({
         destroy: program.destroy,
       },cb);
