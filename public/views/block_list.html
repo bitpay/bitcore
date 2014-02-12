@@ -31,8 +31,8 @@
           <tr>
             <th>Height</th>
             <th>Timestamp</th>
-            <th>Transactions</th>
-            <th>Size</th>
+            <th class="text-right">Transactions</th>
+            <th class="text-right">Size</th>
           </tr>
         </thead>
         <tbody>
@@ -42,8 +42,8 @@
         <tr class="fader" data-ng-repeat='b in blocks'>
           <td><a href="/block/{{b.hash}}">{{b.height}}</a></td>
           <td>{{b.time * 1000 | date:'medium'}}</td>
-          <td>{{b.txlength}}</td>
-          <td>{{b.size}}</td>
+          <td class="text-right">{{b.txlength}}</td>
+          <td class="text-right">{{b.size}}</td>
         </tr>
         </tbody>
       </table>
