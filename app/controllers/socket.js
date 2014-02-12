@@ -3,6 +3,7 @@
 // server-side socket behaviour
 // io is a variable already taken in express
 var ios = null;
+var util = require('bitcore/util/util');
 
 module.exports.init = function(app, io_ext) {
   ios = io_ext;
@@ -25,10 +26,10 @@ module.exports.broadcastTx = function(tx) {
       // Outputs
       var valueOut = 0;
       t.vout.forEach( function(o) {
-        valueOut += o.value * 100000000;
+        valueOut += o.value * util.COIN;
       });
 
-      t.valueOut = valueOut / 100000000;
+      t.valueOut = parseInt(valueOut) / util.COIN;
     }
     ios.sockets.in('inv').emit('tx', t);
   }
