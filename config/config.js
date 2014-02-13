@@ -3,29 +3,35 @@
 var path = require('path'),
     rootPath = path.normalize(__dirname + '/..'),
     env,
-    db = './db/testnet',
-    port = '3000',
-    b_port = '18332',
-    p2p_port = '18333';
+    db,
+    port,
+    b_port,
+    p2p_port;
+
+if (process.env.INSIGHT_NETWORK === 'livenet') {
+  env = 'livenet';
+  db = './db';
+  port = 3000;
+  b_port = '8332';
+  p2p_port = '8333';
+}
+else {
+  env = 'testnet';
+  db = './db/testnet',
+  port = '3001',
+  b_port = '18332',
+  p2p_port = '18333';
+}
 
 switch(process.env.NODE_ENV) {
   case 'production':
-    if (process.env.INSIGHT_NETWORK === 'livenet') {
-      env = 'livenet';
-      db = './db';
-      b_port = '8332';
-      p2p_port = '8333';
-    }
-    else {
-      env = 'testnet';
-      port = '3001';
-    }
+    env += '';
     break;
   case 'test':
-    env = 'test environment';
+    env += ' - test environment';
     break;
   default:
-    env = 'development';
+    env += ' - development';
     break;
 }
 
