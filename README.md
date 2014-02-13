@@ -136,9 +136,14 @@ A REST API is provided at /api. The entry points are:
   /api/txs/?address=mmhmMNfBiZZ37g1tgg2t8DDbNoEdqKVxAL
 ```
 
-### Sync status
+### Historic blockchain data sync status
 ```
   /api/sync
+```
+
+### Live network p2p data sync status
+```
+  /api/peer
 ```
 
 ## Web Socket API
