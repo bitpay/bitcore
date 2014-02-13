@@ -4,7 +4,7 @@ var TRANSACTION_DISPLAYED = 10;
 var BLOCKS_DISPLAYED = 5;
 
 angular.module('insight.system').controller('IndexController',
-  function($scope, $rootScope, Global, getSocket, Blocks) {
+  function($scope, Global, getSocket, Blocks) {
   $scope.global = Global;
 
   var _getBlocks = function() {
@@ -18,9 +18,6 @@ angular.module('insight.system').controller('IndexController',
  
   var socket = getSocket($scope);
   socket.emit('subscribe', 'inv');
-
-  //show errors
-  $scope.flashMessage = $rootScope.flashMessage || null;
 
   socket.on('tx', function(tx) {
     $scope.txs.unshift(tx);

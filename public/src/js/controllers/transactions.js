@@ -112,6 +112,7 @@ function($scope, $rootScope, $routeParams, $location, Global, Transaction, Trans
       txId: txid
     }, function(tx) {
       $rootScope.titleDetail = tx.txid.substring(0,7) + '...';
+      $rootScope.flashMessage = null;
       $scope.tx = tx;
       _processTX(tx);
       $scope.txs.unshift(tx);
