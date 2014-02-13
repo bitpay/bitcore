@@ -29,8 +29,7 @@ angular.module('insight.system').controller('IndexController',
     }
   });
 
-  socket.on('block', function(block) {
-    var blockHash = block.toString();
+  socket.on('block', function() {
     _getBlocks();
   });
 

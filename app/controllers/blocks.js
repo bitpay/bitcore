@@ -106,11 +106,16 @@ exports.list = function(req, res) {
       res.status(500).send(err);
     }
     else {
+      var blockList = [];
       var l = blocks.length;
       var limit = parseInt(req.query.limit || l);
       if (l < limit) limit = l;
 
-      async.mapSeries(blocks,
+      for(var i=0;i<limit;i++) {
+        blockList.push(blocks[i]);
+      }
+
+      async.mapSeries(blockList,
         function(b, cb) {
           getBlock(b.hash, function(err, info) {
             return cb(err,{
