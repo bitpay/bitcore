@@ -11,7 +11,7 @@ var path = require('path'),
 if (process.env.INSIGHT_NETWORK === 'livenet') {
   env = 'livenet';
   db = './db';
-  port = 3000;
+  port = '3000';
   b_port = '8332';
   p2p_port = '8333';
 }
