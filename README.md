@@ -135,7 +135,8 @@ For run insight in production but with testnet mode in same server:
 
 	$ INSIGHT_NETWORK=‘testnet’ node insight.js
 	
-Note: Insight livenet run by default in port __3000__. Testnet in port __3001__.
+Note: Insight livenet run by default in port __3000__. Testnet in port __3001__. Insight needs a TRUSTED bitcoind to run
+and __bitcoind__ must have finished downloading the blockchain.
 
 ## DB storage requirement
 
