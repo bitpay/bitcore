@@ -104,21 +104,24 @@ exports.list = function(req, res) {
   bdb.getBlocksByDate(gte, lte, function(err, blocks) {
     if (err) {
       res.status(500).send(err);
-    }
-    else {
+    } else {
       var blockList = [];
       var l = blocks.length;
       var limit = parseInt(req.query.limit || l);
       if (l < limit) limit = l;
 
-      for(var i=0;i<limit;i++) {
+      for (var i = 0; i < limit; i++) {
         blockList.push(blocks[i]);
       }
 
       async.mapSeries(blockList,
         function(b, cb) {
           getBlock(b.hash, function(err, info) {
-            return cb(err,{
+            if (err) {
+              console.log(err);
+              return cb(err);
+            }
+            return cb(err, {
               height: info.height,
               size: info.size,
               hash: b.hash,
