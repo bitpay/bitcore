@@ -84,17 +84,6 @@ To run the tests
 
 Contributions and suggestions are welcomed at [insight github repository](https://github.com/bitpay/insight).
 
-
-## Production environment
-
-[pm2](https://github.com/Unitech/pm2) cat be used to manage the NodeJS app in production:
-
-  $ npm install pm2 -g
-  $ pm2 start insight.js
-
-[forever] (https://github.com/nodejitsu/forever) can also be used for this purpose.
-
-
 ## DB storage requirement
 
 To store the blockchain and address related information, *insight* uses LevelDB. Two DBs are created: txs and blocks. By default these are stored on 
