@@ -12,6 +12,7 @@ function($scope, $rootScope, $routeParams, $location, Global, Address, getSocket
     },
     function(address) {
       $rootScope.titleDetail = address.addrStr.substring(0,7) + '...';
+      $rootScope.flashMessage = null;
       $scope.address = address;
     },
     function(e) {

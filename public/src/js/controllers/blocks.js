@@ -68,6 +68,7 @@ angular.module('insight.blocks').controller('BlocksController',
       blockHash: $routeParams.blockHash
     }, function(block) {
       $rootScope.titleDetail = block.height;
+      $rootScope.flashMessage = null;
       $scope.loading = false;
       $scope.block = block;
     }, function(e) {
