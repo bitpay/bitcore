@@ -12,12 +12,8 @@ var async = require('async');
 
 program
   .version(SYNC_VERSION)
-  .option('-N --network [livenet]', 'Set bitcoin network [testnet]', 'testnet')
   .option('-D --destroy', 'Remove current DB (and start from there)', 0)
-  .option('-R --reverse', 'Sync backwards', 0)
-  .option('-U --uptoexisting', 'Sync only until old Tip block is found', 0)
-  .option('-F --fromfiles', 'Sync using bitcoind .dat block files (faster)', 0)
-  .option('-S --smart', 'genesis stored? uptoexisting = 1, fromFiles=1 [default]', true)
+  .option('-S --startfile', 'Number of file from bitcoind to start(default=0)')
   .option('-v --verbose', 'Verbose 0/1', 0)
   .parse(process.argv);
 
@@ -33,19 +29,10 @@ async.series([
     historicSync.init(program, cb);
   },
   function(cb) {
-
-    if (typeof program.smart === 'undefined' || parseInt(program.smart) ) {
-      historicSync.smartImport({
-        destroy: program.destroy,
-      },cb);
-    }
-    else {
-      historicSync.importHistory({
-        destroy: program.destroy,
-        reverse: program.reverse,
-        fromFiles: program.fromfiles,
-      }, cb);
-    }
+    historicSync.smartImport({
+      destroy: program.destroy,
+      startFile: program.startfile,
+    },cb);
   },
   ],
   function(err) {
