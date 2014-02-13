@@ -52,6 +52,8 @@ exports.sync = function(req, res) {
 };
 
 exports.peer = function(req, res) {
-  if (req.peerSync)
-    res.jsonp(req.peerSync.info());
+  if (req.peerSync) {
+    var info = req.peerSync.info();
+    res.jsonp(info);
+  }
 };
