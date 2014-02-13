@@ -138,6 +138,13 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   font-family: 'Ubuntu', sans-serif;
 }
 
+#search.loading {
+  background-image: url('/img/loading.gif');
+  background-position: 5px center;
+  background-repeat: no-repeat;
+  padding-left: 25px;
+}
+
 #search::-webkit-input-placeholder {
   color: #BCDF7E;
   font-family: 'Ubuntu', sans-serif;
@@ -186,6 +193,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   position: fixed;
   width: 250px;
   border: 1px solid #eee;
+  z-index: 1;
 }
 
 @media (max-width: 768px) {
@@ -302,27 +310,40 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   border: 2px solid #6C0000;
 }
 
-.label {
+.txvalues {
+  display: inline-block;
   padding: .7em 2em;
   font-size: 13px;
   text-transform: uppercase;
   font-weight:100;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: .25em;
 }
 
-.label-primary {
+@media (max-width: 768px) {
+  .txvalues {
+    display: block;
+    margin: 5px;
+  }
+}
+
+.txvalues-primary {
   background-color: #8DC429;
 }
 
-.label-default {
+.txvalues-default {
   background-color: #ffffff;
   color: #333;
 }
 
-.label-success {
+.txvalues-success {
   background-color: #2FA4D7;
 }
 
-.label-danger {
+.txvalues-danger {
   background-color: #AC0015;
 }
 

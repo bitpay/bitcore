@@ -23,7 +23,6 @@ angular.module('insight.system').controller('IndexController',
   $scope.flashMessage = $rootScope.flashMessage || null;
 
   socket.on('tx', function(tx) {
-    console.log('Transaction received! ' + tx.txid);
     $scope.txs.unshift(tx);
     if (parseInt($scope.txs.length, 10) >= parseInt(TRANSACTION_DISPLAYED, 10)) {
       $scope.txs = $scope.txs.splice(0, TRANSACTION_DISPLAYED);
@@ -32,7 +31,6 @@ angular.module('insight.system').controller('IndexController',
 
   socket.on('block', function(block) {
     var blockHash = block.toString();
-    console.log('Block received! ' + JSON.stringify(blockHash));
     _getBlocks();
   });
 

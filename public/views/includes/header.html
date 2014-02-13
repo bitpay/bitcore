@@ -17,7 +17,7 @@
       </ul>
       <form data-ng-controller="SearchController" class="navbar-form navbar-left" role="search" data-ng-submit="search()">
         <div class="form-group" data-ng-class="{'has-error': badQuery}">
-          <input id="search" type="text" class="form-control" data-ng-model="q" placeholder="Search for block, transaction or address">
+          <input id="search" type="text" class="form-control" data-ng-model="q" data-ng-class="{'loading': loading}"  placeholder="Search for block, transaction or address">
         </div>
         <div class="no_matching text-danger" data-ng-show="badQuery">No matching records found!</div>
       </form>

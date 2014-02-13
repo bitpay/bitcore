@@ -43,8 +43,11 @@ walk(models_path);
 /**
  * p2pSync process
  */
+
+var peerSync = new PeerSync();
+
 if (!config.disableP2pSync) {
-  var ps = new PeerSync();
+  var ps = peerSync;
   ps.init({
     shouldBroadcast: true,
   }, function() {
@@ -83,7 +86,7 @@ if (!config.disableHistoricSync) {
 
 
 //express settings
-require('./config/express')(expressApp, historicSync);
+require('./config/express')(expressApp, historicSync, peerSync);
 
 //Bootstrap routes
 require('./config/routes')(expressApp);

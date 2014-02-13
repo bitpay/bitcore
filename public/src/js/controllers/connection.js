@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('insight.connection').controller('ConnectionController',
-function($scope, $window, Status, Sync, getSocket) {
+function($scope, $window, Status, getSocket, PeerSync) {
 
   // Set initial values
   $scope.apiOnline = true;
@@ -21,9 +21,9 @@ function($scope, $window, Status, Sync, getSocket) {
 
   // Check for the  api connection
   $scope.getConnStatus = function() {
-    Sync.get({},
-    function(sync) {
-      $scope.apiOnline = (sync.status !== 'aborted' && sync.status !== 'error');
+    PeerSync.get({},
+    function(peer) {
+      $scope.apiOnline = peer.connected;
     },
     function() {
       $scope.apiOnline = false;
