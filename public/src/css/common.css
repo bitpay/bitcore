@@ -486,11 +486,15 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   color: #9b9b9b;
   display: inline-block;
   height: 25px;
+  padding: 0;
   outline: none;
   text-align: center;
   width: 30px;
 }
-.btn-copy { margin-left: 5px; }
+.btn-copy {
+  background: #fff url('/img/icons/copy.png') center center no-repeat;
+  margin-left: 5px;
+}
 .btn-copy .tooltip {
   display: inline-block;
   margin-left: 10px;

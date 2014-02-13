@@ -5,7 +5,7 @@
       <h1 class="text-center">Block</h1>
       <div class="block-id">
         <span class="glyphicon glyphicon-list-alt"></span>
-        <h2 data-ng-if="block">#{{ block.height }}</h2>
+        <h2 data-ng-if="block">#{{block.height}}</h2>
       </div>
       <div class="m10v">
         <button class="pull-right btn-copy" clip-copy="block.hash"></button>
@@ -14,19 +14,15 @@
       <div class="m20v" data-ng-show="!tx.isCoinBase">
         <h4>Hashes</h4>
         <table class="table" style="table-layout: fixed">
-          <tbody>
-          <tr>
-            <td class="small"> Previous Block</td>
-            <td><a class="address ellipsis" href="/block/{{block.previousblockhash}}">{{block.previousblockhash}}</a></td>
-          </tr>
-          <tr>
-            <td class="small"> Next Block</td>
-            <td><a class="address ellipsis" href="/block/{{block.nextblockhash}}">{{block.nextblockhash}}</a></td>
-          </tr>
-          <tr>
-            <td class="small">Merkle Root</td>
-            <td> <p class="address ellipsis"> {{block.merkleroot}} </p> </td>
-          </tr>
+          <tbody class="small">
+            <tr data-ng-show="block.previousblockhash">
+              <td> Previous Block</td>
+              <td class="text-right"><a href="/block/{{block.previousblockhash}}">{{block.height-1}}</a></td>
+            </tr>
+            <tr data-ng-show="block.nextblockhash">
+              <td> Next Block</td>
+              <td class="text-right"><a href="/block/{{block.nextblockhash}}">{{block.height+1}}</a></td>
+            </tr>
           </tbody>
         </table>
       </div> <!-- END OF TRANSACTIONS TABLE -->
@@ -40,23 +36,29 @@
           <table class="table">
             <tbody>
               <tr>
-                <td> <strong> Number Of Transactions </strong> </td>
+                <td><strong>Number Of Transactions</strong></td>
                 <td class="text-right text-muted">{{block.tx.length}}<td>
               </tr>
               <tr>
-                <td> <strong> Height </strong></td>
+                <td><strong>Height</strong></td>
                 <td class="text-right text-muted">{{block.height}}
                 <span data-ng-show="block.isMainChain" class="text-success">(Mainchain)</span>
                 <span data-ng-show="!block.isMainChain" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> (Orphaned)</span>
               </tr>
               <tr>
-                <td> <strong> Block Reward </strong></td>
+                <td><strong>Block Reward</strong></td>
                 <td class="text-right text-muted">{{$root.currency.getConvertion(block.reward)}}</td>
-              </tr>
- 
+              </tr> 
               <tr>
-                <td> <strong> Timestamp </strong></td>
+                <td><strong>Timestamp</strong></td>
                 <td class="text-right text-muted">{{block.time * 1000 | date:'medium'}}</td>
+              </tr>
+              <tr>
+                <td><strong>Merkle Root</strong></td>
+                <td class="text-right text-muted">
+                  <button class="pull-right btn-copy" clip-copy="block.merkleroot"></button>
+                  <span class="ellipsis" style="width:155px">{{block.merkleroot}}</span>
+                </td>
               </tr>
             </tbody>
           </table>

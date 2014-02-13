@@ -39,7 +39,7 @@ angular.module('insight')
     return {
       restric: 'A',
       scope: { clipCopy: '=clipCopy' },
-      template: '<span class="glyphicon glyphicon-paperclip"></span><div class="tooltip fade right in"><div class="tooltip-arrow"></div><div class="tooltip-inner">Copied!</div></div>',
+      template: '<div class="tooltip fade right in"><div class="tooltip-arrow"></div><div class="tooltip-inner">Copied!</div></div>',
       link: function(scope, elm) {
         var clip = new ZeroClipboard(elm);
 
