@@ -42,8 +42,31 @@
         </tbody>
       </table>
 
+      <h2>Last Block</h2>
+      <table class="table" style="table-layout: fixed" data-ng-controller="StatusController" data-ng-init="getStatus('LastBlockHash')">
+        <thead  data-ng-include src="'/views/includes/infoStatus.html'"> </thead>
+        <tr>
+          <td>Last Block Hash (Bitcoind)</td>
+          <td class="text-right ellipsis"><a href="/block/{{lastblockhash}}">{{lastblockhash}}</a></td>
+        </tr>
+        <tr>
+          <td>Current Blockchain Tip(Insight)</td>
+          <td class="text-right ellipsis"><a href="/block/{{syncTipHash}}">{{syncTipHash}}</a></td>
+ 
+
+        </tbody>
+      </table>
+
+
       <h2>Transaction Output Set Information</h2>
-      <table class="table" style="table-layout: fixed" data-ng-controller="StatusController" data-ng-init="getStatus('TxOutSetInfo')">
+
+      <div  data-ng-controller="StatusController">
+      <button data-ng-click="txoutLoading=1;getStatus('TxOutSetInfo')" class="btn btn-default"  data-ng-show="!txoutsetinfo.height"> 
+        Show Transaction Output data
+        <span  data-ng-show="txoutLoading" class="glyphicon glyphicon-refresh icon-rotate"></span>
+      </button > 
+
+      <table class="table" data-ng-show="txoutsetinfo.height" style="table-layout: fixed" >
         <thead  data-ng-include src="'/views/includes/infoStatus.html'"> </thead>
         <tbody>
         <tr>
@@ -76,22 +99,11 @@
         </tr>
         </tbody>
       </table>
+      </div>
 
-      <h2>Last Block</h2>
-      <table class="table" style="table-layout: fixed" data-ng-controller="StatusController" data-ng-init="getStatus('LastBlockHash')">
-        <thead  data-ng-include src="'/views/includes/infoStatus.html'"> </thead>
-        <tr>
-          <td>Last Block Hash (Bitcoind)</td>
-          <td class="text-right ellipsis"><a href="/block/{{lastblockhash}}">{{lastblockhash}}</a></td>
-        </tr>
-        <tr>
-          <td>Current Blockchain Tip(Insight)</td>
-          <td class="text-right ellipsis"><a href="/block/{{syncTipHash}}">{{syncTipHash}}</a></td>
- 
-
-        </tbody>
-      </table>
     </div> <!-- END OF COL-8 -->
+
+
 
     <div class="col-xs-12 col-md-4 col-gray">
       <h2>Bitcoin node information</h2>
@@ -118,11 +130,7 @@
           <td>Connections to other nodes</td>
           <td class="text-right">{{info.connections}}</td>
         </tr>
-        <tr>
-          <td>Proxy setting</td>
-          <td class="text-right">{{info.proxy}}</td>
-        </tr>
-        <tr>
+       <tr>
           <td>Mining Difficulty</td>
           <td class="text-right">{{info.difficulty}}</td>
         </tr>
@@ -131,16 +139,8 @@
           <td class="text-right">{{info.testnet}}</td>
         </tr>
         <tr>
-          <td>Keypool Oldest Date</td>
-          <td class="text-right">{{info.keypoololdest*1000 | date:'medium' }}</td>
-        </tr>
-        <tr>
-          <td>Keypool Size</td>
-          <td class="text-right">{{info.keypoolsize}}</td>
-        </tr>
-        <tr>
-          <td>Default Transaction Fee (BTC)</td>
-          <td class="text-right">{{info.paytxfee}}</td>
+          <td>Proxy setting</td>
+          <td class="text-right">{{info.proxy}}</td>
         </tr>
         <tr>
           <td>Info Errors</td>

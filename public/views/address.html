@@ -12,6 +12,7 @@
       </div>
       <div class="m20v">
         <h4>Summary</h4>
+        <h5>Confirmed</h5>
         <table class="table">
           <tbody>
           <tr>
@@ -30,8 +31,25 @@
             <td class="small">No. Transactions</td>
             <td class="address ellipsis text-right">{{address.txApperances}}</td>
           </tr>
-          </tbody>
+         </tbody>
         </table>
+        <div data-ng-show="address.unconfirmedTxApperances">
+          <h5>Unconfirmed</h5>
+          <table class="table">
+            <tbody>
+            <tr>
+              <td class="small">Unconfirmed Txs Balance</td>
+              <td class="address ellipsis text-right">{{$root.currency.getConvertion(address.unconfirmedBalance)}}</td>
+            </tr>
+            <tr>
+              <td class="small">No. Transactions</td>
+              <td class="address ellipsis text-right">{{address.unconfirmedTxApperances}}</td>
+            </tr>
+  
+          </tbody>
+          </table>
+        </div>
+ 
       </div> <!-- END OF TRANSACTIONS TABLE -->
       <div data-ng-include src="'/views/includes/currency.html'"></div>
     </div> <!-- END OF COL-MD-3 -->

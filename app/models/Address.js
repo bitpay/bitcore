@@ -13,7 +13,11 @@ function spec() {
     this.balanceSat        = 0;
     this.totalReceivedSat  = 0;
     this.totalSentSat      = 0;
-    this.txApperances   = 0;
+
+    this.unconfirmedBalanceSat  = 0;
+
+    this.txApperances           = 0;
+    this.unconfirmedTxApperances= 0;
 
     // TODO store only txids? +index? +all?
     this.transactions   = [];
@@ -51,12 +55,25 @@ function spec() {
       },
       enumerable: 1,
     });
+
+
+    Object.defineProperty(this, 'unconfirmedBalance', {
+      get: function() {
+        return parseFloat(this.unconfirmedBalanceSat) / parseFloat(BitcoreUtil.COIN);
+      },
+      set:  function(i) {
+        this.unconfirmedBalanceSat =  i * BitcoreUtil.COIN;
+      },
+      enumerable: 1,
+    });
+
   }
 
   Address.prototype.update = function(next) {
     var self = this;
     if (!self.addrStr) return next();
 
+    var txs  = [];
     var db   = new TransactionDb();
     async.series([
       function (cb) {
@@ -64,27 +81,52 @@ function spec() {
           if (err) return cb(err);
           txOut.forEach(function(txItem){
 
+            var v = txItem.value_sat;
+
+            txs.push({txid: txItem.txid, ts: txItem.ts});
+
+            if (txItem.spendTxId) {
+              txs.push({txid: txItem.spendTxId, ts: txItem.spendTs});
+            }
+
             if (txItem.isConfirmed) {
-              var v = txItem.value_sat;
+              self.txApperances += 1;
               self.totalReceivedSat += v;
-              self.transactions.push(txItem.txid);
-              if (! txItem.spendTxId || !txItem.spendIsConfirmed) {
+              if (! txItem.spendTxId ) {
+                //unspend
+                self.balanceSat   += v;
+              }
+              else if(!txItem.spendIsConfirmed) {
                 // unspent
                 self.balanceSat   += v;
-                self.txApperances +=1;
+                self.unconfirmedBalanceSat -= v;
+                self.unconfirmedTxApperances += 1;
               }
               else {
                 // spent
                 self.totalSentSat += v;
-                self.transactions.push(txItem.spendTxId);
-                self.txApperances +=2;
+                self.txApperances += 1;
               }
+            }
+            else {
+              self.unconfirmedBalanceSat += v;
+              self.unconfirmedTxApperances += 1;
             }
           });
           return cb();
         });
       },
     ], function (err) {
+
+      // sort input and outputs togheter
+      txs.sort(
+        function compare(a,b) {
+          if (a.ts < b.ts) return 1;
+          if (a.ts > b.ts) return -1;
+          return 0;
+        });
+
+      self.transactions = txs.map(function(i) { return i.txid; } );
       return next(err);
     });
   };

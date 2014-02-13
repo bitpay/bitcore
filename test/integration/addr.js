@@ -30,6 +30,8 @@ describe('Address balances', function() {
         a.update(function(err) {
           if (err) done(err);
           assert.equal(v.addr, a.addrStr);
+          assert.equal(a.unconfirmedTxApperances ,0, 'unconfirmedTxApperances: 0');
+          assert.equal(a.unconfirmedBalanceSat ,0, 'unconfirmedBalanceSat: 0');
           if (v.txApperances)
             assert.equal(v.txApperances, a.txApperances, 'txApperances: ' + a.txApperances);
           if (v.totalReceived) assert.equal(v.totalReceived, a.totalReceived, 'received: ' + a.totalReceived);

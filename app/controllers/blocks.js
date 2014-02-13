@@ -104,24 +104,20 @@ exports.list = function(req, res) {
   bdb.getBlocksByDate(gte, lte, function(err, blocks) {
     if (err) {
       res.status(500).send(err);
-    } else {
-      var blockshashList = [];
-      var limit = parseInt(req.query.limit || blocks.length);
-      if (blocks.length < limit) {
-        limit = blocks.length;
-      }
-      for (var i = 0; i < limit; i++) {
-        blockshashList.push(blocks[i].hash);
-      }
-      async.mapSeries(blockshashList,
-        function(hash, cb) {
-          getBlock(hash, function(err, info) {
-            if (err) return cb(err);
-            return cb(err, {
+    }
+    else {
+      var l = blocks.length;
+      var limit = parseInt(req.query.limit || l);
+      if (l < limit) limit = l;
+
+      async.mapSeries(blocks,
+        function(b, cb) {
+          getBlock(b.hash, function(err, info) {
+            return cb(err,{
               height: info.height,
               size: info.size,
-              hash: info.hash,
-              time: info.time,
+              hash: b.hash,
+              time: b.ts || info.time,
               txlength: info.tx.length,
             });
           });

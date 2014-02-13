@@ -35,8 +35,8 @@ module.exports = function(grunt) {
           livereload: true,
         },
       },
-      js2: {
-        files: ['public/src/**/*.js'],
+      assets: {
+        files: ['public/src/**/*.js', 'public/**/*.css'],
         tasks: ['compile'],
         options: {
           livereload: true,
