@@ -86,39 +86,56 @@ Once the database is deleted, the process can be safely interrupted (CTRL+C) and
 
 ## Environment Variables Settings
 
-There are three environments provided by default, __development__, __test__, and __production__. Each of these environments has the following configuration options:
+There are three environments provided by default, __development__, __test__, and __production__.
 
-* __app.name__ - This is the name of your app or website, and can be different for each environment. You can tell which environment you are running by looking at the TITLE attribute that your app generates.
+To run with a different environment, just specify NODE_ENV (development mode is default):
 
-To run with a different environment, just specify NODE_ENV as you call grunt:
-
-	$ NODE_ENV=test grunt
-
-If you are using node instead of grunt, it is very similar:
-
-	$ NODE_ENV=test node server
-
+	$ NODE_ENV=development node insight.js
 
 ### Development environment
-To run insight locally for development:
+To run insight locally for development with grunt:
 
   $ NODE_ENV=development grunt
 
-### Other utilities for development
 To compile and minify the web application's assets:
+
 ```grunt compile```
 
 To run the tests
+
 ```grunt test```
 
+### Production environment
 
-### Production
 You can use [pm2](https://github.com/Unitech/pm2) to manage the NodeJS app in production:
 
   $ npm install pm2 -g
   $ pm2 start insight.js
 
 [forever] (https://github.com/nodejitsu/forever) can also be used for this purpose.
+
+Set these environment variables to your __.bashrc__ profile:
+
+```
+export NODE_ENV=production
+export BITCOIND_USER=<user>
+export BITCOIND_PASS=<pass>
+export BITCOIND_HOST=<host>
+export BITCOIND_PORT=8332
+export BITCOIND_P2P_PORT=8333
+export BITCOIND_DATADIR="</path/to/bitcoin/data/>"
+export INSIGHT_NETWORK='livenet'
+```
+
+For run insight in production server with the livenet mode:
+
+	$ node insight.js
+
+For run insight in production but with testnet mode in same server:
+
+	$ INSIGHT_NETWORK=‘testnet’ node insight.js
+	
+Note: Insight livenet run by default in port __3000__. Testnet in port __3001__.
 
 ## DB storage requirement
 
