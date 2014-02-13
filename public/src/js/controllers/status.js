@@ -41,8 +41,4 @@ angular.module('insight.status').controller('StatusController',
         _onSyncUpdate(sync);
       });
     });
-
-    socket.on('status', function(sync) {
-      _onSyncUpdate(sync);
-    });
   });

@@ -33,6 +33,7 @@ angular.module('insight.connection').controller('ConnectionController',
 
     socket.emit('subscribe', 'sync');
     socket.on('status', function(sync) {
+      $scope.sync = sync;
       $scope.apiOnline = (sync.status !== 'aborted' && sync.status !== 'error');
     });
 
