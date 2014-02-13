@@ -15,7 +15,7 @@ program
   .option('-N --network [livenet]', 'Set bitcoin network [testnet]', 'testnet')
   .option('-D --destroy', 'Remove current DB (and start from there)', 0)
   .option('-R --reverse', 'Sync backwards', 0)
-  .option('-U --uptoexisting', 'Sync only until an existing block is found', 0)
+  .option('-U --uptoexisting', 'Sync only until old Tip block is found', 0)
   .option('-F --fromfiles', 'Sync using bitcoind .dat block files (faster)', 0)
   .option('-S --smart', 'genesis stored? uptoexisting = 1, fromFiles=1 [default]', true)
   .option('-v --verbose', 'Verbose 0/1', 0)

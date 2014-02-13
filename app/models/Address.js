@@ -16,7 +16,8 @@ function spec() {
 
     this.unconfirmedBalanceSat  = 0;
 
-    this.txApperances   = 0;
+    this.txApperances           = 0;
+    this.unconfirmedTxApperances= 0;
 
     // TODO store only txids? +index? +all?
     this.transactions   = [];
@@ -83,31 +84,33 @@ function spec() {
             var v = txItem.value_sat;
 
             txs.push({txid: txItem.txid, ts: txItem.ts});
-            self.txApperances += 1;
 
             if (txItem.spendTxId) {
               txs.push({txid: txItem.spendTxId, ts: txItem.spendTs});
-              self.txApperances += 1;
             }
 
             if (txItem.isConfirmed) {
+              self.txApperances += 1;
               self.totalReceivedSat += v;
               if (! txItem.spendTxId ) {
                 //unspend
                 self.balanceSat   += v;
-              } 
+              }
               else if(!txItem.spendIsConfirmed) {
                 // unspent
                 self.balanceSat   += v;
                 self.unconfirmedBalanceSat -= v;
+                self.unconfirmedTxApperances += 1;
               }
               else {
                 // spent
                 self.totalSentSat += v;
+                self.txApperances += 1;
               }
             }
             else {
               self.unconfirmedBalanceSat += v;
+              self.unconfirmedTxApperances += 1;
             }
           });
           return cb();
@@ -123,7 +126,7 @@ function spec() {
           return 0;
         });
 
-      self.transactions = txs.map(function(i) { return i.txid; } );     
+      self.transactions = txs.map(function(i) { return i.txid; } );
       return next(err);
     });
   };
