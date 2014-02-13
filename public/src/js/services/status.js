@@ -13,5 +13,5 @@ angular.module('insight.status')
     })
   .factory('PeerSync',
     function($resource) {
-      return $resource('api/peer');
+      return $resource('/api/peer');
     });
