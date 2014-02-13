@@ -1,33 +1,26 @@
-# Insight
+# *insight*
 
-Insight is an open-source bitcoin blockchain explorer with complete REST
+*insight* is an open-source bitcoin blockchain explorer with complete REST
 and websocket APIs. Insight runs in NodeJS, and uses AngularJS for the
 front-end and LevelDB for storage.
 
 
 ## Prerequisites
 
-* **Node.js v0.10.x** - Download and Install [Node.js](http://www.nodejs.org/download/).
-You can also follow [this gist](https://gist.github.com/isaacs/579814)
-for a quick and easy way to install Node.js and npm. If you use Ubuntu:
-
-```
-git clone git@github.com:joyent/node.git
-cd node
-git checkout v0.10.24
-./configure
-make
-make install
-```
-
 * **bitcoind** - Download and Install [Bitcoin](http://bitcoin.org/en/download)
+
+*insight* needs a *trusted* bitcoind node to run. *insight* will connect to the node
+thru the RPC API, Peer-to-peer protocol and will even read its raw .dat files for syncing.
 
 Configure bitcoind to listen to RPC calls and set `txindex` to true.
 The easiest way to do this is by copying `./etc/bitcoind/bitcoin.conf` to your
 bitcoin data directory (usually `"~/.bitcoin"` on Linux, `"%appdata%\Bitcoin\"` on Windows, 
-and `"~/Library/Application Support/Bitcoin"` on Mac OS X).
+or `"~/Library/Application Support/Bitcoin"` on Mac OS X).
 
-bitcoind must be running and must have finished downloading the blockchain *BEFORE* running Insight.
+bitcoind must be running and must have finished downloading the blockchain **before** running *insight*.
+
+
+* **Node.js v0.10.x** - Download and Install [Node.js](http://www.nodejs.org/download/).
 
 * **NPM** - Node.js package manager, should be automatically installed when you get node.js.
 
@@ -54,16 +47,10 @@ bitcoind must be running and must have finished downloading the blockchain *BEFO
    
 
 ## Configuration
-All configuration is specified in the [config](config/) folder, particularly the [config.js](config/config.js) file. Here you can specify your application name and database name.
 
-### bitcoind
+All configuration is specified in the [config](config/) folder, particularly the [config.js](config/config.js) file. There you can specify your application name and database name. Certain configuration values are pulled from environment variables is they are defined:
 
-There is a bitcoind configuration sample at:
-```
-etc/bitcoind/bitcoin.conf
-```
-
-If you need to use a custom bitcoind server set the following environment variables:
+### bitcoind connexion
 ```
 BITCOIND_HOST         # RPC bitcoind host
 BITCOIND_PORT         # RPC bitcoind Port
@@ -74,83 +61,55 @@ BITCOIND_DATADIR      # bitcoind datadir for livenet, or datadir/testnet3 for te
 INSIGHT_NETWORK [= 'livenet' | 'testnet']
 ```
 
-If you use this option, make sure that bitcoind is configured to accept incoming connections using 'rpcallowip' as described in https://en.bitcoin.it/wiki/Running_Bitcoin. 
+Make sure that bitcoind is configured to [accept incoming connections using 'rpcallowip'] (https://en.bitcoin.it/wiki/Running_Bitcoin).
 
-Alternatively, change `config/env/$NODE_ENV.js`
-
-In case the network is changed, levelDB database needs to be deleted. This can be performed running:
-```util/sync.js -D```
-and waiting for Insight to synchronize again. 
-Once the database is deleted, the process can be safely interrupted (CTRL+C) and continued from the synchronization process embedded in main app.
+In case the network is changed (testnet or livenet), levelDB database needs to be deleted. This can be performed running:
+```util/sync.js -D``` and waiting for *insight* to synchronize again.  Once the database is deleted, the sync.js process can be safely interrupted (CTRL+C) and continued from the synchronization process embedded in main app.
 
 
-## Environment Variables Settings
+## Development
 
-There are three environments provided by default, __development__, __test__, and __production__.
-
-To run with a different environment, just specify NODE_ENV (development mode is default):
-
-	$ NODE_ENV=development node insight.js
-
-### Development environment
 To run insight locally for development with grunt:
 
-  $ NODE_ENV=development grunt
+```$ NODE_ENV=development grunt```
 
 To compile and minify the web application's assets:
 
-```grunt compile```
+```$ grunt compile```
 
 To run the tests
 
-```grunt test```
+```$ grunt test```
 
-### Production environment
 
-You can use [pm2](https://github.com/Unitech/pm2) to manage the NodeJS app in production:
+Contributions and suggestions are welcomed at [insight github repository](https://github.com/bitpay/insight).
+
+
+## Production environment
+
+[pm2](https://github.com/Unitech/pm2) cat be used to manage the NodeJS app in production:
 
   $ npm install pm2 -g
   $ pm2 start insight.js
 
 [forever] (https://github.com/nodejitsu/forever) can also be used for this purpose.
 
-Set these environment variables to your __.bashrc__ profile:
-
-```
-export NODE_ENV=production
-export BITCOIND_USER=<user>
-export BITCOIND_PASS=<pass>
-export BITCOIND_HOST=<host>
-export BITCOIND_PORT=8332
-export BITCOIND_P2P_PORT=8333
-export BITCOIND_DATADIR="</path/to/bitcoin/data/>"
-export INSIGHT_NETWORK='livenet'
-```
-
-For run insight in production server with the livenet mode:
-
-	$ node insight.js
-
-For run insight in production but with testnet mode in same server:
-
-	$ INSIGHT_NETWORK=‘testnet’ node insight.js
-	
-Note: Insight livenet run by default in port __3000__. Testnet in port __3001__. Insight needs a TRUSTED bitcoind to run
-and __bitcoind__ must have finished downloading the blockchain.
 
 ## DB storage requirement
 
-To store the blockchain and address related information, Insight uses LevelDB. Two DBs are created: txs and blocks. By default these are
-stored on <insight root>/db (this can be changed on config/config.js).
+To store the blockchain and address related information, *insight* uses LevelDB. Two DBs are created: txs and blocks. By default these are stored on 
+  ```<insight root>/db``` 
+  
+this can be changed on config/config.js.
 
-As of February 2014, storing the blockchain takes ~31Gb of disk space on levelDB,
-and Insight needs ~10 minutes to complete the syncronization process on testnet.
+As of February 2014, storing the livenet blockchain takes ~31GB of disk space on levelDB,
+and takes ~8hrs. For testnet, those values are reduced to 2GB and 20 minutes respectively.
 
-## Syncing old blockchain data
+## Syncing old blockchain data manualy
 
-  Old blockchain data can be manually synced from Insight:
+  Old blockchain data can be manually synced issuing:
 
-    $ utils/sync.js -S
+    $ utils/sync.js
 
   Check utils/sync.js --help for options, particulary -D to erase the current DB.
 
@@ -205,7 +164,6 @@ Sample output:
 ```
 {
   "txid":"00c1b1acb310b87085c7deaaeba478cef5dc9519fab87a4d943ecbb39bd5b053",
-  "orphaned":false,
   "processed":false
   ...
 }
@@ -238,9 +196,6 @@ Sample output:
 }
 ```
 
-
-## Github
-[Insight](https://github.com/bitpay/insight)
 
 ## License
 (The MIT License)
