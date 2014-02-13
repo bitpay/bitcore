@@ -111,7 +111,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   font-family: 'Ubuntu', sans-serif;
   font-size: 34px;
   font-style: italic;
-  font-weight: 400;
+  font-weight: 700;
 }
 
 .navbar-default .navbar-brand:hover, .navbar-default .navbar-brand:focus {
