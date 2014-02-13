@@ -39,7 +39,7 @@ bitcoind must be running and must have finished downloading the blockchain **bef
 
   Then open a browser and go to:
 
-    http://localhost:3000
+    http://localhost:3001
 
   Please note that the app will need to sync its internal database
   with the blockchain state, which may take some time. You can check
