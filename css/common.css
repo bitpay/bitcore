@@ -147,6 +147,10 @@ pre {
 	margin-top: 40px;
 }
 
+.sub-footer p {
+	margin: 0;
+}
+
 input.btn-default {
 	font-size: 14px;
 	width: auto;
