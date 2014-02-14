@@ -48,7 +48,7 @@ bitcoind must be running and must have finished downloading the blockchain **bef
 
 ## Configuration
 
-All configuration is specified in the [config](config/) folder, particularly the [config.js](config/config.js) file. There you can specify your application name and database name. Certain configuration values are pulled from environment variables is they are defined:
+All configuration is specified in the [config](config/) folder, particularly the [config.js](config/config.js) file. There you can specify your application name and database name. Certain configuration values are pulled from environment variables if they are defined:
 
 ### bitcoind connexion
 ```
@@ -63,9 +63,38 @@ INSIGHT_NETWORK [= 'livenet' | 'testnet']
 
 Make sure that bitcoind is configured to [accept incoming connections using 'rpcallowip'] (https://en.bitcoin.it/wiki/Running_Bitcoin).
 
-In case the network is changed (testnet or livenet), levelDB database needs to be deleted. This can be performed running:
+In case the network is changed (testnet to livenet or vice versa) levelDB database needs to be deleted. This can be performed running:
 ```util/sync.js -D``` and waiting for *insight* to synchronize again.  Once the database is deleted, the sync.js process can be safely interrupted (CTRL+C) and continued from the synchronization process embedded in main app.
 
+## Syncronization
+
+The initial syncronization process scans the blockchain from the paired bitcoind server to update addresses and balances. *insight* needs one (and only one) trusted bitcoind node to run. This node must have finished downloading the blockchain befure running *insight*.
+
+While *insight* is synchronizing the website can be accessed (the sync process is embedded in the webserver), but there will be inconsistencies on the data. The 'sync' status is shown on the top-right of all pages. 
+
+The blockchain can be read from bitcoind's raw dat files or RPC access. Reading the information from the dat files is much faster so it is the recommended alternative. .dat files are scanned in the default location for each platform, in case a non standard location is used, it needs to be defined (see Configuration). The synchronization type been use can be seen at the Status page in *insight* front-end.  As of February 2014, using .dat files the sync process takes 7hrs for livenet (20min for testnet).
+
+While synchronizing the blockchain, *insight* listen for new blocks and transactions relayed by the paired bitcoind server. Those are also stored on *insight* database. In case *insight* is shutdown for a period of time, restarting *insight* will trigger a partial (historic) syncronization of the blockchain. Depending the size of that synchronization process, a reverse RPC or forward .dat file schema will be used. 
+
+If bitcoind is shutdown, *insight* need to be stopped and restarted once bitcoind is restarted.
+
+### Syncing old blockchain data manualy
+
+  Old blockchain data can be manually synced issuing:
+
+    $ utils/sync.js
+
+  Check utils/sync.js --help for options, particulary -D to erase the current DB.
+
+  *NOTE* that there is no need to run this manually since the historic syncronization is embedded on the web application, so by running you will trigger the historic sync automatically.
+
+
+### DB storage requirement
+
+To store the blockchain and address related information, *insight* uses LevelDB. Two DBs are created: txs and blocks. By default these are stored on 
+  ```<insight root>/db``` 
+  
+this can be changed on config/config.js. As of February 2014, storing the livenet blockchain takes ~30GB of disk space (2GB for the testnet).
 
 ## Development
 
@@ -83,26 +112,6 @@ To run the tests
 
 
 Contributions and suggestions are welcomed at [insight github repository](https://github.com/bitpay/insight).
-
-## DB storage requirement
-
-To store the blockchain and address related information, *insight* uses LevelDB. Two DBs are created: txs and blocks. By default these are stored on 
-  ```<insight root>/db``` 
-  
-this can be changed on config/config.js.
-
-As of February 2014, storing the livenet blockchain takes ~31GB of disk space on levelDB,
-and takes ~8hrs. For testnet, those values are reduced to 2GB and 20 minutes respectively.
-
-## Syncing old blockchain data manualy
-
-  Old blockchain data can be manually synced issuing:
-
-    $ utils/sync.js
-
-  Check utils/sync.js --help for options, particulary -D to erase the current DB.
-
-  *NOTE* that there is no need to run this manually since the historic syncronization is embedded on the web application, so by running you will trigger the historic sync automatically.
 
 
 ## API
