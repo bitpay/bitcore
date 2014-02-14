@@ -64,7 +64,7 @@
             <td class="text-right ellipsis"><a href="/block/{{lastblockhash}}">{{lastblockhash}}</a></td>
           </tr>
           <tr>
-            <td>Current Blockchain Tip(insight)</td>
+            <td>Current Blockchain Tip (insight)</td>
             <td class="text-right ellipsis"><a href="/block/{{syncTipHash}}">{{syncTipHash}}</a></td>
           </tr>
         </tbody>
@@ -153,17 +153,6 @@
           <tr>
             <td>Info Errors</td>
             <td class="text-right">{{info.infoErrors}}</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <h4>Difficulty</h4>
-      <table class="table" data-ng-controller="StatusController" data-ng-init="getStatus('Difficulty')">
-        <thead data-ng-include src="'/views/includes/infoStatus.html'"></thead>
-        <tbody>
-          <tr>
-            <td>Mining Difficulty</td>
-            <td>{{difficulty}}</td>
           </tr>
         </tbody>
       </table>
