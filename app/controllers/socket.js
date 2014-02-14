@@ -41,7 +41,6 @@ module.exports.broadcastBlock = function(block) {
 };
 
 module.exports.broadcastAddressTx = function(address, tx) {
-  console.log('bcatx = '+address+' '+tx);
   if (ios) ios.sockets. in (address).emit(address, tx);
 };
 
