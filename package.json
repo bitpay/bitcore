@@ -50,6 +50,7 @@
     "postinstall": "node node_modules/bower/bin/bower install; node ./node_modules/grunt-cli/bin/grunt compile "
   },
   "dependencies": {
+    "base58-native": "0.1.2",
     "async": "*",
     "leveldown": "*",
     "levelup": "*",
