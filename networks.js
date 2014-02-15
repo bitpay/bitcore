@@ -16,21 +16,21 @@ exports.livenet = {
     bits: 486604799
   },
   genesisBlockTx: {
-    'outs': [{
-      'v': hex('00F2052A01000000'), // 50 BTC
-      's': new Put()
+    outs: [{
+      v: hex('00F2052A01000000'), // 50 BTC
+      s: new Put()
         .word8(65) // 65 bytes of data follow
         .put(hex('04678AFDB0FE5548271967F1A67130B7105CD6A828E03909A67962E0EA1F61DEB649F6BC3F4CEF38C4F35504E51EC112DE5C384DF7BA0B8D578A4C702B6BF11D5F'))
         .word8(0xAC) // OP_CHECKSIG
         .buffer()
     }],
-    'lock_time': 0,
-    'version': 1,
-    'hash': hex('3BA3EDFD7A7B12B27AC72C3E67768F617FC81BC3888A51323A9FB8AA4B1E5E4A'),
-    'ins': [{
-      'q': 0xFFFFFFFF,
-      'o': hex("0000000000000000000000000000000000000000000000000000000000000000FFFFFFFF"),
-      's': new Put()
+    lock_time: 0,
+    version: 1,
+    hash: hex('3BA3EDFD7A7B12B27AC72C3E67768F617FC81BC3888A51323A9FB8AA4B1E5E4A'),
+    ins: [{
+      q: 0xFFFFFFFF,
+      o: hex("0000000000000000000000000000000000000000000000000000000000000000FFFFFFFF"),
+      s: new Put()
         .put(hex('04FFFF001D010445'))
         .put(new Buffer('The Times 03/Jan/2009 Chancellor on brink of ' +
                         'second bailout for banks', 'ascii'))
