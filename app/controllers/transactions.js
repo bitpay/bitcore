@@ -63,7 +63,7 @@ exports.list = function(req, res, next) {
   var bId = req.query.block;
   var addrStr = req.query.address;
   var page = req.query.pageNum;
-  var pageLength = 20;
+  var pageLength = 10;
   var pagesTotal = 1;
   var txLength;
   var txs;
