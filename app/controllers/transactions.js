@@ -10,6 +10,7 @@ var common      = require('./common');
 var TransactionDb = require('../../lib/TransactionDb').class();
 var BlockDb     = require('../../lib/BlockDb').class();
 
+var tDb = new TransactionDb();
 var bdb = new BlockDb();
 
 
@@ -17,7 +18,6 @@ var bdb = new BlockDb();
  * Find transaction by hash ...
  */
 exports.transaction = function(req, res, next, txid) {
-  var tDb = new TransactionDb();
 
   tDb.fromIdWithInfo(txid, function(err, tx) {
     if (err || ! tx)
@@ -42,21 +42,13 @@ exports.show = function(req, res) {
 
 
 var getTransaction = function(txid, cb) {
-  var tDb = new TransactionDb();
 
   tDb.fromIdWithInfo(txid, function(err, tx) {
-    if (err) {
-      console.log(err);
-    }
+    if (err) console.log(err);
 
     if (!tx || !tx.info) {
-console.log('[transactions.js.48]:: TXid %s not found in RPC. CHECK THIS.', txid); //TODO
-      // not check this. no
-      tx = {
-        info: {
-          txid: txid
-        }
-      };
+      console.log('[transactions.js.48]:: TXid %s not found in RPC. CHECK THIS.', txid); 
+      return ({ txid: txid });
     }
 
     return cb(null, tx.info);
