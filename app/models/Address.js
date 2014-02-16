@@ -85,18 +85,18 @@ function spec() {
 
             txs.push({txid: txItem.txid, ts: txItem.ts});
 
-            if (txItem.spendTxId) {
-              txs.push({txid: txItem.spendTxId, ts: txItem.spendTs});
+            if (txItem.spentTxId) {
+              txs.push({txid: txItem.spentTxId, ts: txItem.spentTs});
             }
 
             if (txItem.isConfirmed) {
               self.txApperances += 1;
               self.totalReceivedSat += v;
-              if (! txItem.spendTxId ) {
-                //unspend
+              if (! txItem.spentTxId ) {
+                //unspent
                 self.balanceSat   += v;
               }
-              else if(!txItem.spendIsConfirmed) {
+              else if(!txItem.spentIsConfirmed) {
                 // unspent
                 self.balanceSat   += v;
                 self.unconfirmedBalanceSat -= v;

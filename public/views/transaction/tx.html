@@ -36,8 +36,8 @@
           </div>
           <div data-ng-show="vin.unconfirmedInput" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> (Input unconfirmed)</div>
           <div data-ng-show="vin.dbError" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> Incoherence in levelDB detected, please resync</div>
-          <div data-ng-show="vin.doubleSpendTxID" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> Double spend attempt detected. From tx:
-              <a href="/tx/{{vin.doubleSpendTxID}}">{{vin.doubleSpendTxID}},{{vin.doubleSpendIndex}}</a>
+          <div data-ng-show="vin.doubleSpentTxID" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> Double spent attempt detected. From tx:
+              <a href="/tx/{{vin.doubleSpentTxID}}">{{vin.doubleSpentTxID}},{{vin.doubleSpentIndex}}</a>
           </div>
         </div>
       </div>
@@ -51,8 +51,8 @@
           </div>
           <div data-ng-show="vin.unconfirmedInput" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> (Input unconfirmed)</div>
           <div data-ng-show="vin.dbError" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> Incoherence in levelDB detected, please resync</div>
-          <div data-ng-show="vin.doubleSpendTxID" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> Double spend attempt detected. From tx:
-              <a href="/tx/{{vin.doubleSpendTxID}}">{{vin.doubleSpendTxID}},{{vin.doubleSpendIndex}}</a>
+          <div data-ng-show="vin.doubleSpentTxID" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> Double spent attempt detected. From tx:
+              <a href="/tx/{{vin.doubleSpentTxID}}">{{vin.doubleSpentTxID}},{{vin.doubleSpentIndex}}</a>
           </div>
 
         </div>
@@ -83,8 +83,8 @@
 
           <small>
             {{$root.currency.getConvertion(vout.value)}}
-            <span class="text-danger" data-ng-show="vout.isSpend" tooltip="Output is spend" tooltip-placement="left">(S)</span>
-            <span class="text-success" data-ng-show="!vout.isSpend"  tooltip="Output is unspend" tooltip-placement="left">(U)</span>
+            <span class="text-danger" data-ng-show="vout.isSpent" tooltip="Output is spent" tooltip-placement="left">(S)</span>
+            <span class="text-success" data-ng-show="!vout.isSpent"  tooltip="Output is unspent" tooltip-placement="left">(U)</span>
           </small>
           </div>
 
@@ -100,8 +100,8 @@
       <div data-ng-repeat="vout in tx.vout" data-ng-show="itemsExpanded">
         <div class="col-md-12 transaction-vin-vout">
           <div class="text-muted pull-right btc-value"><small>{{$root.currency.getConvertion(vout.value)}}
-            <span class="text-success" data-ng-show="!vout.spendTxId"  tooltip="Output is unspend" tooltip-placement="left">(U)</span>
-            <a class="glyphicon glyphicon-chevron-right" data-ng-show="vout.spendTxId" href="/#!/tx/{{vout.spendTxId}}" title="Spent at: {{vout.spendTxId}},{{vout.spendIndex}}"></a>&nbsp;&nbsp;
+            <span class="text-success" data-ng-show="!vout.spentTxId"  tooltip="Output is unspent" tooltip-placement="left">(U)</span>
+            <a class="glyphicon glyphicon-chevron-right" data-ng-show="vout.spentTxId" href="/#!/tx/{{vout.spentTxId}}" title="Spent at: {{vout.spentTxId}},{{vout.spentIndex}}"></a>&nbsp;&nbsp;
  
 
           </small>
