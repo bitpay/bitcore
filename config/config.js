@@ -68,4 +68,7 @@ module.exports = {
 
   // Time to refresh the currency rate. In minutes
   currencyRefresh: 10
+  , keys: {
+      segmentio: process.env.INSIGHT_SEGMENTIO_KEY
+    }
 };
