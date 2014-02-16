@@ -83,8 +83,8 @@
 
           <small>
             {{$root.currency.getConvertion(vout.value)}}
-            <span class="text-danger" data-ng-show="vout.isSpend" tooltip="Output is spend" tooltip-placement="left">(S)</span>
-            <span class="text-success" data-ng-show="!vout.isSpend"  tooltip="Output is unspend" tooltip-placement="left">(U)</span>
+            <span class="text-danger" data-ng-show="vout.isSpend" tooltip="Output is spent" tooltip-placement="left">(S)</span>
+            <span class="text-success" data-ng-show="!vout.isSpend"  tooltip="Output is unspent" tooltip-placement="left">(U)</span>
           </small>
           </div>
 
@@ -100,7 +100,7 @@
       <div data-ng-repeat="vout in tx.vout" data-ng-show="itemsExpanded">
         <div class="col-md-12 transaction-vin-vout">
           <div class="text-muted pull-right btc-value"><small>{{$root.currency.getConvertion(vout.value)}}
-            <span class="text-success" data-ng-show="!vout.spendTxId"  tooltip="Output is unspend" tooltip-placement="left">(U)</span>
+            <span class="text-success" data-ng-show="!vout.spendTxId"  tooltip="Output is unspent" tooltip-placement="left">(U)</span>
             <a class="glyphicon glyphicon-chevron-right" data-ng-show="vout.spendTxId" href="/#!/tx/{{vout.spendTxId}}" title="Spent at: {{vout.spendTxId}},{{vout.spendIndex}}"></a>&nbsp;&nbsp;
  
 
