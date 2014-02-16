@@ -48,8 +48,8 @@ describe('TransactionDb Expenses', function(){
       var c=0;
       txDb.fromTxId( txid, function(err, readItems) {
         s.forEach( function(v) {
-          assert.equal(readItems[c].spendTxId,v.txid);
-          assert.equal(readItems[c].spendIndex,v.n);
+          assert.equal(readItems[c].spentTxId,v.txid);
+          assert.equal(readItems[c].spentIndex,v.n);
           c++;
         });
         done();
