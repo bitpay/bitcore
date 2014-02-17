@@ -59,6 +59,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .m10v { margin: 10px 0; }
 .m50v { margin: 50px 0; }
 .m10b { margin-bottom: 10px; }
+.m10l { margin-left: 10px; }
 
 .vm { vertical-align: middle; }
 
@@ -190,6 +191,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 }
 
 .col-gray-fixed {
+  margin-top: 15px;
   position: fixed;
   width: 250px;
   border: 1px solid #eee;
@@ -239,11 +241,11 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   width: 165px;
   color: #fff;
   text-align: center;
-  font-size: 80px;
 }
 
 .block-id span {
-  margin-top: 10px;
+  font-size: 40px;
+  margin: 30px 0;
 }
 
 .block-id h2 {
@@ -295,9 +297,12 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   color: #373D42;
 }
 
+.btn-default:hover, .btn-default:focus, .btn-default:active, .btn-default.active, .open .dropdown-toggle.btn-default {
+  background-color: #fff;
+}
+
 .btn-default {
   background-color: #E7E7E7;
-  border: 2px solid #DCDCDC;
 }
 
 .btn-success {
@@ -356,12 +361,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   color: #fff;
   height: 51px;
   overflow: hidden;
-}
-
-.currency a.active {
-  color: #000;
-  text-decoration: underline;
-  cursor: default;
 }
 
 #footer a.insight {
