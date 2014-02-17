@@ -5,6 +5,7 @@
       <h1 class="text-center">Address</h1>
       <div class="text-center">
         <qrcode size="160" data="{{address.addrStr}}"></qrcode>
+        <h4>{{$root.currency.getConvertion(address.balance)}}</h4>
       </div>
       <div class="m10v">
         <button class="pull-right btn-copy" clip-copy="address.addrStr"></button>

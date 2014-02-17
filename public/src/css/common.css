@@ -490,6 +490,11 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   text-align: center;
   width: 30px;
 }
+
+.btn-copy:hover, .btn-expand:hover {
+  background-color: #f2f2f2;
+}
+
 .btn-copy {
   background: #fff url('/img/icons/copy.png') center center no-repeat;
   margin-left: 5px;
@@ -520,8 +525,12 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   margin: 0 auto;
   width: 165px;
   color: #FFFFFF;
-  font-size: 80px;
   text-align: center;
+}
+
+.tx-id span { 
+  font-size: 40px;
+  margin: 30px 0;
 }
 
 .transaction-vin-vout .ellipsis { margin-bottom: 10px; }
