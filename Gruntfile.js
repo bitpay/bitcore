@@ -6,6 +6,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-browserify');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-mocha-test');
+  grunt.loadNpmTasks('grunt-markdown');
 
   // Project Configuration
   grunt.initConfig({
@@ -28,6 +29,10 @@ module.exports = function(grunt) {
       }
     },
     watch: {
+      readme: {
+        files: ['README.md'],
+        tasks: ['markdown']
+      },
       scripts: {
         files: ['**/*.js', '**/*.html', '!**/node_modules/**', '!**/bundle.js', '!**/vendor.js'],
         tasks: ['browserify'/*, 'mochaTest'*/],
@@ -39,6 +44,19 @@ module.exports = function(grunt) {
       },
       src: ['test/*.js'],
     },
+    markdown: {
+      all: {
+        files: [
+         {
+           expand: true,
+           src: 'README.md',
+           dest: '.',
+           ext: '.html'
+         }
+        ]
+      }
+    }
+
 
   });
 

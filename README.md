@@ -52,6 +52,7 @@ npm install -g grunt-cli
 grunt browserify
 ```
 
+
 #License
 
 **Code released under [the MIT license](https://github.com/bitpay/bitcore/blob/master/LICENSE).**
