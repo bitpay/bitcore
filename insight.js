@@ -73,9 +73,12 @@ if (!config.disableHistoricSync) {
     else {
       historicSync.smartImport({}, function(err){
         var txt = 'ended.';
-        if (err) txt = 'ABORTED with error: ' + err.message;
-        else
+        if (err)
+          txt = 'ABORTED with error: ' + err.message;
+        else if (ps) {
           ps.allowReorgs = true;
+          ps.historicSync = historicSync;
+        }
 
         console.log('[historic_sync] ' + txt, historicSync.info());
       });
