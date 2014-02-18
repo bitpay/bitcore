@@ -29,7 +29,6 @@ var sha256ripe160 = exports.sha256ripe160 = function (data) {
  * Format a block hash like the official client does.
  */
 var formatHash = exports.formatHash = function (hash) {
-  // Make a copy, because reverse() and toHex() are destructive.
   var hashEnd = new Buffer(10);
   hash.copy(hashEnd, 0, 22, 32);
   return buffertools.reverse(hashEnd).toString('hex');
@@ -39,10 +38,9 @@ var formatHash = exports.formatHash = function (hash) {
  * Display the whole hash, as hex, in correct endian order.
  */
 var formatHashFull = exports.formatHashFull = function (hash) {
-  // Make a copy, because reverse() and toHex() are destructive.
   var copy = new Buffer(hash.length);
   hash.copy(copy);
-  var hex = buffertools.reverse(copy).toHex();
+  var hex = buffertools.toHex(buffertools.reverse(copy));
   return hex;
 };
 
@@ -71,7 +69,7 @@ var formatBuffer = exports.formatBuffer = function (buffer, maxLen) {
   buffer.copy(temp, 0, 0, maxLen);
 
   // Format as string
-  var output = temp.toHex();
+  var output = buffertools.toHex(temp);
   if (temp.length < buffer.length) {
     output += "...";
   }

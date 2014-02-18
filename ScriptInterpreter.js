@@ -798,13 +798,13 @@ function spec(b) {
   ScriptInterpreter.prototype.getPrimitiveStack = function getPrimitiveStack() {
     return this.stack.map(function (entry) {
       if (entry.length > 2) {
-        return entry.slice(0).toHex();
+        return buffertools.toHex(entry.slice(0));
       }
       var num = castBigint(entry);
       if (num.cmp(-128) >= 0 && num.cmp(127) <= 0) {
         return num.toNumber();
       } else {
-        return entry.slice(0).toHex();
+        return buffertools.toHex(entry.slice(0));
       }
     });
   };
