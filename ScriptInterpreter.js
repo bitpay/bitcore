@@ -299,8 +299,8 @@ function spec(b) {
 
         case OP_CAT:
           // (x1 x2 -- out)
-          v1 = this.stackTop(2);
-          v2 = this.stackTop(1);
+          var v1 = this.stackTop(2);
+          var v2 = this.stackTop(1);
           this.stackPop();
           this.stackPop();
           this.stack.push(Buffer.concat([v1, v2]));

@@ -88,7 +88,7 @@ function spec(b) {
 
   TransactionOut.prototype.serialize = function serialize() {
     var slen = util.varIntBuf(this.s.length);
-    return Buffer.concat([his.v, slen, this.s]);
+    return Buffer.concat([this.v, slen, this.s]);
   };
 
   function Transaction(data) {
@@ -153,7 +153,7 @@ function spec(b) {
       bufs.push(txout.serialize());
     });
 
-    buf = new Buffer(4);
+    var buf = new Buffer(4);
     buf.writeUInt32LE(this.lock_time, 0);
     bufs.push(buf);
 
