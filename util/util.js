@@ -225,7 +225,8 @@ var decodeDiffBits = exports.decodeDiffBits = function (diffBits, asBigInt) {
 
   // Convert to buffer
   var diffBuf = target.toBuffer();
-  var targetBuf = new Buffer(32).fill(0);
+  var targetBuf = new Buffer(32);
+  buffertools.fill(targetBuf, 0);
   diffBuf.copy(targetBuf, 32-diffBuf.length);
   return targetBuf;
 };
@@ -325,11 +326,9 @@ var varStrBuf = exports.varStrBuf = function varStrBuf(s) {
 };
 
 // Initializations
-exports.NULL_HASH = new Buffer(32)
-buffertools.fill(exports.NULL_HASH, 0);
+exports.NULL_HASH = buffertools.fill(new Buffer(32), 0);
 exports.EMPTY_BUFFER = new Buffer(0);
-exports.ZERO_VALUE = new Buffer(8)
-buffertools.fill(exports.ZERO_VALUE, 0);
+exports.ZERO_VALUE = buffertools.fill(new Buffer(8), 0);
 var INT64_MAX = new Buffer('ffffffffffffffff', 'hex');
 exports.INT64_MAX = INT64_MAX;
 
