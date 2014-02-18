@@ -26,7 +26,8 @@
       </div>
     </div>
     <div class="row" data-ng-show="!tx.isCoinBase">
-      <div data-ng-repeat="vin in tx.vinSimple" data-ng-show="!itemsExpanded">
+      <div data-ng-if="!itemsExpanded">
+      <div data-ng-repeat="vin in tx.vinSimple">
         <div class="col-md-12 transaction-vin-vout">
           <div class="text-muted pull-right btc-value" data-ng-class="{'text-danger': $root.currentAddr == vin.addr}"><small>{{$root.currency.getConvertion(vin.value)}}</small></div>
           <div class="ellipsis">
@@ -41,7 +42,10 @@
           </div>
         </div>
       </div>
-      <div data-ng-repeat="vin in tx.vin" data-ng-show="itemsExpanded">
+      </div><!-- if -->
+      <div 
+      <div data-ng-if="itemsExpanded">
+      <div data-ng-repeat="vin in tx.vin">
         <div class="col-md-12 transaction-vin-vout">
           <div class="text-muted pull-right btc-value"><small>{{$root.currency.getConvertion(vin.value)}}</small></div>
           <div class="ellipsis">
@@ -67,6 +71,7 @@
           </div>
         </div>
       </div>
+      </div>
     </div>
   </div>
   <div class="col-md-1 text-center hidden-xs hidden-sm">
@@ -77,7 +82,8 @@
   </div>
   <div class="col-md-6">
     <div class="row">
-      <div data-ng-repeat="vout in tx.voutSimple" data-ng-show="!itemsExpanded">
+      <div data-ng-if="!itemsExpanded">
+      <div data-ng-repeat="vout in tx.voutSimple">
         <div class="col-md-12 transaction-vin-vout">
           <div class="text-muted pull-right btc-value" data-ng-class="{'text-success': $root.currentAddr == vout.addr}">
 
@@ -97,7 +103,9 @@
 
         </div>
       </div>
-      <div data-ng-repeat="vout in tx.vout" data-ng-show="itemsExpanded">
+      </div><!-- if -->
+      <div data-ng-if="itemsExpanded">
+      <div data-ng-repeat="vout in tx.vout">
         <div class="col-md-12 transaction-vin-vout">
           <div class="text-muted pull-right btc-value"><small>{{$root.currency.getConvertion(vout.value)}}
             <span class="text-success" data-ng-show="!vout.spentTxId"  tooltip="Output is unspent" tooltip-placement="left">(U)</span>
@@ -126,6 +134,7 @@
           </div>
         </div>
       </div>
+      </div> <!-- if-->
     </div>
   </div>
 </div>
