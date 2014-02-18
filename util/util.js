@@ -1,4 +1,5 @@
-require('buffertools');
+'use strict';
+
 var crypto = require('crypto');
 var bignum = require('bignum');
 var Binary = require('binary');
@@ -327,7 +328,8 @@ var varStrBuf = exports.varStrBuf = function varStrBuf(s) {
 exports.NULL_HASH = new Buffer(32).fill(0);
 exports.EMPTY_BUFFER = new Buffer(0);
 exports.ZERO_VALUE = new Buffer(8).fill(0);
-INT64_MAX = new Buffer('ffffffffffffffff', 'hex');
+var INT64_MAX = new Buffer('ffffffffffffffff', 'hex');
+exports.INT64_MAX = INT64_MAX;
 
 // How much of Bitcoin's internal integer coin representation
 // makes 1 BTC
