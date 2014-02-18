@@ -7,6 +7,7 @@ function spec(b) {
   var Bignum = b.Bignum || require('bignum');
   var Binary = b.Binary || require('binary');
   var Step = b.Step || require('step');
+  var buffertools = b.buffertools || require('buffertools');
   var Transaction = b.Transaction || require('./Transaction').class();
   var TransactionIn = Transaction.In;
   var TransactionOut = Transaction.Out;
@@ -34,7 +35,7 @@ function spec(b) {
     this.active = data.active || false;
     this.chainWork = data.chainWork || util.EMPTY_BUFFER;
     this.txs = data.txs || [];
-  };
+  }
 
   Block.prototype.getHeader = function getHeader() {
     var buf = new Buffer(80);
@@ -79,7 +80,7 @@ function spec(b) {
 
   Block.prototype.checkHash = function checkHash() {
     if (!this.hash || !this.hash.length) return false;
-    return this.calcHash().compare(this.hash) == 0;
+    return buffertools.compare(this.calcHash(), this.hash) == 0;
   };
 
   Block.prototype.getHash = function getHash() {
@@ -93,14 +94,14 @@ function spec(b) {
 
     // TODO: Create a compare method in node-buffertools that uses the correct
     //       endian so we don't have to reverse both buffers before comparing.
-    this.hash.reverse();
+    buffertools.reverse(this.hash);
 
-    if (this.hash.compare(target) > 0) {
+    if (buffertools.compare(this.hash, target) > 0) {
       throw new VerificationError('Difficulty target not met');
     }
 
     // Return the hash to its normal order
-    this.hash.reverse();
+    buffertools.reverse(this.hash);
 
     return true;
   };
@@ -181,7 +182,7 @@ function spec(b) {
         var i2 = Math.min(i + 1, size - 1);
         var a = tree[j + i];
         var b = tree[j + i2];
-        tree.push(util.twoSha256(a.concat(b)));
+        tree.push(util.twoSha256(Buffer.concat([a,b])));
       }
       j += size;
     }
@@ -199,7 +200,7 @@ function spec(b) {
       throw new VerificationError('No merkle root');
     }
 
-    if (this.calcMerkleRoot().compare(this.merkle_root) == 0) {
+    if (buffertools.compare(this.calcMerkleRoot(), this.merkle_root) == 0) {
       throw new VerificationError('Merkle root incorrect');
     }
 

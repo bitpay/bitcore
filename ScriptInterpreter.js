@@ -5,7 +5,8 @@ function spec(b) {
   var config = b.config || require('./config');
   var log = b.log || require('./util/log');
 
-  var Opcode = require('./Opcode').class();
+  var Opcode = b.Opcode || require('./Opcode').class();
+  var buffertools = b.buffertools || require('buffertools');
 
   // Make opcodes available as pseudo-constants
   for (var i in Opcode.map) {
@@ -302,7 +303,7 @@ function spec(b) {
           var v2 = this.stackTop(1);
           this.stackPop();
           this.stackPop();
-          this.stack.push(v1.concat(v2));
+          this.stack.push(Buffer.concat([v1, v2]));
           break;
 
         case OP_SUBSTR:
@@ -385,7 +386,7 @@ function spec(b) {
           // (x1 x2 - bool)
           var v1 = this.stackTop(2);
           var v2 = this.stackTop(1);
-          var value = v1.compare(v2) == 0;
+          var value = buffertools.compare(v1, v2) === 0;
 
           // OP_NOTEQUAL is disabled because it would be too easy to say
           // something like n != 1 and have some wiseguy pass in 1 with extra
@@ -797,13 +798,13 @@ function spec(b) {
   ScriptInterpreter.prototype.getPrimitiveStack = function getPrimitiveStack() {
     return this.stack.map(function (entry) {
       if (entry.length > 2) {
-        return entry.slice(0).toHex();
+        return buffertools.toHex(entry.slice(0));
       }
       var num = castBigint(entry);
       if (num.cmp(-128) >= 0 && num.cmp(127) <= 0) {
         return num.toNumber();
       } else {
-        return entry.slice(0).toHex();
+        return buffertools.toHex(entry.slice(0));
       }
     });
   };
@@ -835,7 +836,7 @@ function spec(b) {
 
     var w = new Buffer(v.length);
     v.copy(w);
-    w.reverse();
+    w = buffertools.reverse(w);
     if (w[0] & 0x80) {
       w[0] &= 0x7f;
       return bignum.fromBuffer(w).neg();
@@ -858,9 +859,9 @@ function spec(b) {
         c = new Buffer(b.length + 1);
         b.copy(c, 1);
         c[0] = 0;
-        return c.reverse();
+        return buffertools.reverse(c);
       } else {
-        return b.reverse();
+        return buffertools.reverse(b);
       }
     } else if (cmp == 0) {
       return new Buffer([]);
@@ -870,10 +871,10 @@ function spec(b) {
         c = new Buffer(b.length + 1);
         b.copy(c, 1);
         c[0] = 0x80;
-        return c.reverse();
+        return buffertools.reverse(c);
       } else {
         b[0] |= 0x80;
-        return b.reverse();
+        return buffertools.reverse(b);
       }
     }
   };

@@ -3,7 +3,7 @@ var crypto = require('crypto');
 var bignum = require('bignum');
 var Binary = require('binary');
 var Put = require('bufferput');
-require('buffertools').extend();
+var buffertools = require('buffertools');
 
 var sha256 = exports.sha256 = function (data) {
   return new Buffer(crypto.createHash('sha256').update(data).digest('binary'), 'binary');
@@ -29,20 +29,18 @@ var sha256ripe160 = exports.sha256ripe160 = function (data) {
  * Format a block hash like the official client does.
  */
 var formatHash = exports.formatHash = function (hash) {
-  // Make a copy, because reverse() and toHex() are destructive.
   var hashEnd = new Buffer(10);
   hash.copy(hashEnd, 0, 22, 32);
-  return hashEnd.reverse().toString('hex');
+  return buffertools.reverse(hashEnd).toString('hex');
 };
 
 /**
  * Display the whole hash, as hex, in correct endian order.
  */
 var formatHashFull = exports.formatHashFull = function (hash) {
-  // Make a copy, because reverse() and toHex() are destructive.
   var copy = new Buffer(hash.length);
   hash.copy(copy);
-  var hex = copy.reverse().toHex();
+  var hex = buffertools.toHex(buffertools.reverse(copy));
   return hex;
 };
 
@@ -71,7 +69,7 @@ var formatBuffer = exports.formatBuffer = function (buffer, maxLen) {
   buffer.copy(temp, 0, 0, maxLen);
 
   // Format as string
-  var output = temp.toHex();
+  var output = buffertools.toHex(temp);
   if (temp.length < buffer.length) {
     output += "...";
   }
@@ -225,7 +223,8 @@ var decodeDiffBits = exports.decodeDiffBits = function (diffBits, asBigInt) {
 
   // Convert to buffer
   var diffBuf = target.toBuffer();
-  var targetBuf = new Buffer(32).fill(0);
+  var targetBuf = new Buffer(32);
+  buffertools.fill(targetBuf, 0);
   diffBuf.copy(targetBuf, 32-diffBuf.length);
   return targetBuf;
 };
@@ -321,13 +320,13 @@ var varIntBuf = exports.varIntBuf = function varIntBuf(n) {
 };
 
 var varStrBuf = exports.varStrBuf = function varStrBuf(s) {
-  return Buffer.concat(varIntBuf(s.length), s);
+  return Buffer.concat([varIntBuf(s.length), s]);
 };
 
 // Initializations
-exports.NULL_HASH = new Buffer(32).fill(0);
+exports.NULL_HASH = buffertools.fill(new Buffer(32), 0);
 exports.EMPTY_BUFFER = new Buffer(0);
-exports.ZERO_VALUE = new Buffer(8).fill(0);
+exports.ZERO_VALUE = buffertools.fill(new Buffer(8), 0);
 var INT64_MAX = new Buffer('ffffffffffffffff', 'hex');
 exports.INT64_MAX = INT64_MAX;
 

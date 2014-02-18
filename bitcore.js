@@ -15,6 +15,11 @@ module.exports.util = require('./util/util');
 module.exports.Script = require('./Script');
 module.exports.SINKey = require('./SINKey');
 module.exports.Transaction = require('./Transaction');
+module.exports.Peer = require('./Peer');
+module.exports.Block = require('./Block');
+module.exports.Connection = require('./Connection');
+module.exports.ScriptInterpreter = require('./ScriptInterpreter');
+module.exports.networks = require('./networks');
 
 
 if (typeof process.versions === 'undefined') {

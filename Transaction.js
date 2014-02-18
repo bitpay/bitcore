@@ -11,12 +11,13 @@ function spec(b) {
   var Put = b.Put || require('bufferput');
   var Parser = b.Parser || require('./util/BinaryParser').class();
   var Step = b.Step || require('step');
+  var buffertools = b.buffertools || require('buffertools');
 
   var error = b.error || require('./util/error');
   var VerificationError = error.VerificationError;
   var MissingSourceError = error.MissingSourceError;
 
-  var COINBASE_OP = util.NULL_HASH.concat(new Buffer("FFFFFFFF", 'hex'));
+  var COINBASE_OP = Buffer.concat([util.NULL_HASH, new Buffer('FFFFFFFF', 'hex')]);
 
   function TransactionIn(data) {
     if ("object" !== typeof data) {
@@ -28,14 +29,14 @@ function spec(b) {
     this.s = Buffer.isBuffer(data.s) ? data.s :
              Buffer.isBuffer(data.script) ? data.script : util.EMPTY_BUFFER;
     this.q = data.q ? data.q : data.sequence;
-  };
+  }
 
   TransactionIn.prototype.getScript = function getScript() {
     return new Script(this.s);
   };
 
   TransactionIn.prototype.isCoinBase = function isCoinBase() {
-    return this.o.compare(COINBASE_OP) === 0;
+    return buffertools.compare(this.o, COINBASE_OP) === 0;
   };
 
   TransactionIn.prototype.serialize = function serialize() {
@@ -156,7 +157,8 @@ function spec(b) {
     buf.writeUInt32LE(this.lock_time, 0);
     bufs.push(buf);
 
-    return this._buffer = Buffer.concat(bufs);
+    this._buffer = Buffer.concat(bufs);
+    return this._buffer;
   };
 
   Transaction.prototype.getBuffer = function getBuffer() {
@@ -173,7 +175,7 @@ function spec(b) {
   Transaction.prototype.checkHash = function checkHash() {
     if (!this.hash || !this.hash.length) return false;
 
-    return this.calcHash().compare(this.hash) == 0;
+    return buffertools.compare(this.calcHash(), this.hash) === 0;
   };
 
   Transaction.prototype.getHash = function getHash() {
@@ -314,7 +316,7 @@ function spec(b) {
           // Spent output detected, retrieve transaction that spends it
           blockChain.getConflictingTransactions(outpoints, function (err, results) {
             if (results.length) {
-              if (results[0].getHash().compare(self.getHash()) == 0) {
+              if (buffertools.compare(results[0].getHash(), self.getHash()) === 0) {
                 log.warn("Detected tx re-add (recoverable db corruption): "
                             + util.formatHashAlt(results[0].getHash()));
                 // TODO: Needs to return an error for the memory pool case?
@@ -535,7 +537,7 @@ function spec(b) {
     var buffer = bytes.buffer();
 
     // Append hashType
-    buffer = buffer.concat(new Buffer([parseInt(hashType), 0, 0, 0]));
+    buffer = Buffer.concat([buffer, new Buffer([parseInt(hashType), 0, 0, 0])]);
 
     return util.twoSha256(buffer);
   };
@@ -555,7 +557,7 @@ function spec(b) {
     var ins = this.ins.map(function (txin) {
       var txinObj = {
         prev_out: {
-          hash: new Buffer(txin.getOutpointHash()).reverse().toString('hex'),
+          hash: buffertools.reverse(new Buffer(txin.getOutpointHash())).toString('hex'),
           n: txin.getOutpointIndex()
         }
       };
@@ -605,7 +607,7 @@ function spec(b) {
       txin.q = 0xffffffff;
 
       var hash = new Buffer(inputobj.txid, 'hex');
-      hash.reverse();
+      hash = buffertools.reverse(hash);
       var vout = parseInt(inputobj.vout);
       var voutBuf = new Buffer(4);
       voutBuf.writeUInt32LE(vout, 0);
