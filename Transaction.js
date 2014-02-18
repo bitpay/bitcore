@@ -11,12 +11,13 @@ function spec(b) {
   var Put = b.Put || require('bufferput');
   var Parser = b.Parser || require('./util/BinaryParser').class();
   var Step = b.Step || require('step');
+  var buffertools = require('buffertools');
 
   var error = b.error || require('./util/error');
   var VerificationError = error.VerificationError;
   var MissingSourceError = error.MissingSourceError;
 
-  var COINBASE_OP = util.NULL_HASH.concat(new Buffer("FFFFFFFF", 'hex'));
+  var COINBASE_OP = buffertools.concat(util.NULL_HASH, new Buffer("FFFFFFFF", 'hex'));
 
   function TransactionIn(data) {
     if ("object" !== typeof data) {

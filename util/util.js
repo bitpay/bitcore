@@ -3,7 +3,7 @@ var crypto = require('crypto');
 var bignum = require('bignum');
 var Binary = require('binary');
 var Put = require('bufferput');
-require('buffertools').extend();
+var buffertools = require('buffertools');
 
 var sha256 = exports.sha256 = function (data) {
   return new Buffer(crypto.createHash('sha256').update(data).digest('binary'), 'binary');
@@ -321,13 +321,15 @@ var varIntBuf = exports.varIntBuf = function varIntBuf(n) {
 };
 
 var varStrBuf = exports.varStrBuf = function varStrBuf(s) {
-  return Buffer.concat(varIntBuf(s.length), s);
+  return buffertools.concat(varIntBuf(s.length), s);
 };
 
 // Initializations
-exports.NULL_HASH = new Buffer(32).fill(0);
+exports.NULL_HASH = new Buffer(32)
+buffertools.fill(exports.NULL_HASH, 0);
 exports.EMPTY_BUFFER = new Buffer(0);
-exports.ZERO_VALUE = new Buffer(8).fill(0);
+exports.ZERO_VALUE = new Buffer(8)
+buffertools.fill(exports.ZERO_VALUE, 0);
 var INT64_MAX = new Buffer('ffffffffffffffff', 'hex');
 exports.INT64_MAX = INT64_MAX;
 
