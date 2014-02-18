@@ -18,6 +18,7 @@ module.exports.Transaction = require('./Transaction');
 module.exports.Peer = require('./Peer');
 module.exports.Block = require('./Block');
 module.exports.Connection = require('./Connection');
+module.exports.ScriptInterpreter = require('./ScriptInterpreter');
 
 
 if (typeof process.versions === 'undefined') {

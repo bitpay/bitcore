@@ -7,6 +7,7 @@ var should = chai.should();
 
 var ConnectionModule = bitcore.Connection;
 var Connection;
+var nop = function() {};
 
 describe('Connection', function() {
   it('should initialze the main object', function() {
@@ -17,7 +18,8 @@ describe('Connection', function() {
     should.exist(Connection);
   });
   it('should be able to create instance', function() {
-    var mSocket, mPeer;
+    var mSocket = {server: null, addListener: nop},
+      mPeer;
     var c = new Connection(mSocket, mPeer);
     should.exist(c);
   });
