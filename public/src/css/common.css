@@ -15,10 +15,10 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 /* Styling for the ngProgress itself */
 #ngProgress {
-  background-color: #373D42 !important;
+  background-color: #6C9032 !important;
   box-shadow: none !important;
   color: #373D42 !important;
-  height: 4px !important;
+  height: 3px !important;
   margin: 0;
   opacity: 0;
   padding: 0;
@@ -36,7 +36,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   position: fixed;
   margin: 0;
   padding: 0;
-  top: 50px;
+  top: 63px;
   left: 0;
   right: 0;
   z-index: 99999;
@@ -63,22 +63,32 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 .vm { vertical-align: middle; }
 
+.navbar-default .navbar-toggle { 
+  border-color: #fff;
+  margin-top: 15px;
+}
+
+.navbar-default .navbar-toggle .icon-bar { background-color: #fff; }
+.navbar-default .navbar-toggle:hover, .navbar-default .navbar-toggle:focus {background-color: #373D42;}
+
 .navbar-default {
   background-color: #8DC429;
-  border-bottom: 4px solid #64920F;
 }
 
 .navbar-default .navbar-nav>li>a {
   color: #F4FBE8;
   font-family: 'Ubuntu', sans-serif;
+  padding-left: 25px;
+  padding-right: 25px;
 }
 
-.navbar-default .navbar-nav>.active>a, .navbar-default .navbar-nav>.active>a:focus, .navbar-default .navbar-nav>li>a:hover  {
+.navbar-default .navbar-nav>.active>a, .navbar-default .navbar-nav>.active>a:focus {
+  background-color: #6C9032;
+  color: #fff;
+}
+
+.navbar-default .navbar-nav>li>a:hover, .navbar-default .navbar-nav>.active>a:hover {
   background-color: #fff;
-  -webkit-box-shadow: 0px 4px 0px 0px rgba(55,61,56,1);
-  -moz-box-shadow:    0px 4px 0px 0px rgba(55,61,56,1);
-  box-shadow:         0px 4px 0px 0px rgba(55,61,56,1);
-  color: #373D42;
 }
 
 .navbar-form .form-group {
@@ -86,7 +96,9 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 }
 
 .navbar-form {
+  margin-left: 20px;
   width: 35%;
+  margin-top: 15px;
 }
 
 @media (max-width: 991px) {
@@ -121,6 +133,8 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 .navbar-default .navbar-brand {
   color: #FFFFFF;
+  margin-right: 20px;
+  padding: 22px 15px;
 }
 
 .navbar-form .form-control {
@@ -132,6 +146,11 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   -webkit-box-shadow: 1px 1px 0px 0px rgba(255,255,255,0.41), inset 1px 1px 3px 0px rgba(0,0,0,0.10);
   -moz-box-shadow:    1px 1px 0px 0px rgba(255,255,255,0.41), inset 1px 1px 3px 0px rgba(0,0,0,0.10);
   box-shadow:         1px 1px 0px 0px rgba(255,255,255,0.41), inset 1px 1px 3px 0px rgba(0,0,0,0.10);
+}
+
+.navbar-nav>li>a {
+  padding-top: 22px;
+  padding-bottom: 22px;
 }
 
 #search {
@@ -166,7 +185,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   -webkit-border-radius: 3px;
   background-color: #597338;
   border-radius: 3px;
-  margin: 8px 0;
+  margin: 15px 0;
   padding: 8px 10px;
   font-size: 12px;
   color: #eee;
@@ -357,7 +376,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 /* Set the fixed height of the footer here */
 #footer {
   background-color: #373D42;
-  border-top: 4px solid #656E76;
   color: #fff;
   height: 51px;
   overflow: hidden;
@@ -390,7 +408,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 -------------------------------------------------- */
 /* Not required for template or sticky footer method. */
 
-#wrap > .container { padding: 60px 15px 0; }
+#wrap > .container { padding: 70px 15px 0; }
 
 #footer > .container { padding: auto 15px; }
 
