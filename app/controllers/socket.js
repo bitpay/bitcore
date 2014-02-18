@@ -17,16 +17,21 @@ module.exports.init = function(app, io_ext) {
 
 module.exports.broadcastTx = function(tx) {
   if (ios) {
-    var t = {};
+    var t;
     if (typeof tx === 'string') {
       t = {
         txid: tx
       };
-    } else {
-      t = tx;
+    } 
+    
+    else {
+      t = {
+        txid: tx.txid,
+        size: tx.size,
+      };
       // Outputs
       var valueOut = 0;
-      t.vout.forEach(function(o) {
+      tx.vout.forEach(function(o) {
         valueOut += o.value * util.COIN;
       });
 
