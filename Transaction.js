@@ -11,7 +11,7 @@ function spec(b) {
   var Put = b.Put || require('bufferput');
   var Parser = b.Parser || require('./util/BinaryParser').class();
   var Step = b.Step || require('step');
-  var buffertools = require('buffertools');
+  var buffertools = b.buffertools || require('buffertools');
 
   var error = b.error || require('./util/error');
   var VerificationError = error.VerificationError;
@@ -29,14 +29,14 @@ function spec(b) {
     this.s = Buffer.isBuffer(data.s) ? data.s :
              Buffer.isBuffer(data.script) ? data.script : util.EMPTY_BUFFER;
     this.q = data.q ? data.q : data.sequence;
-  };
+  }
 
   TransactionIn.prototype.getScript = function getScript() {
     return new Script(this.s);
   };
 
   TransactionIn.prototype.isCoinBase = function isCoinBase() {
-    return this.o.compare(COINBASE_OP) === 0;
+    return buffertools.compare(this.o, COINBASE_OP) === 0;
   };
 
   TransactionIn.prototype.serialize = function serialize() {
@@ -153,11 +153,12 @@ function spec(b) {
       bufs.push(txout.serialize());
     });
 
-    var buf = new Buffer(4);
+    buf = new Buffer(4);
     buf.writeUInt32LE(this.lock_time, 0);
     bufs.push(buf);
 
-    return this._buffer = Buffer.concat(bufs);
+    this._buffer = Buffer.concat(bufs);
+    return this._buffer;
   };
 
   Transaction.prototype.getBuffer = function getBuffer() {
@@ -174,7 +175,7 @@ function spec(b) {
   Transaction.prototype.checkHash = function checkHash() {
     if (!this.hash || !this.hash.length) return false;
 
-    return this.calcHash().compare(this.hash) == 0;
+    return buffertools.compare(this.calcHash(), this.hash) === 0;
   };
 
   Transaction.prototype.getHash = function getHash() {
@@ -315,7 +316,7 @@ function spec(b) {
           // Spent output detected, retrieve transaction that spends it
           blockChain.getConflictingTransactions(outpoints, function (err, results) {
             if (results.length) {
-              if (results[0].getHash().compare(self.getHash()) == 0) {
+              if (buffertools.compare(results[0].getHash(), self.getHash()) === 0) {
                 log.warn("Detected tx re-add (recoverable db corruption): "
                             + util.formatHashAlt(results[0].getHash()));
                 // TODO: Needs to return an error for the memory pool case?
