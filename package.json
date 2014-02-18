@@ -38,7 +38,7 @@
     "binary": "=0.3.0",
     "step": "=0.0.4",
     "buffers": "=0.1.1",
-    "buffertools": "=1.1.1",
+    "buffertools": "~2.0.1",
     "mocha": ">=1.15.1",
     "browserify-bignum": "git://github.com/maraoz/browserify-bignum.git"
   },
