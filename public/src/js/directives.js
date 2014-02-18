@@ -49,13 +49,14 @@ angular.module('insight')
           };
 
           client.on('mousedown', onMousedown);
-          client.on('noflash wrongflash', function() {
-            return elm.remove();
-          });
 
           scope.$on('$destroy', function() {
             client.off('mousedown', onMousedown);
           });
+        });
+
+        clip.on('noFlash wrongflash', function() {
+          return elm.remove();
         });
       }
     };
