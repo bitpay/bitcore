@@ -8,7 +8,7 @@ var should = chai.should();
 var TransactionModule = bitcore.Transaction;
 var Transaction;
 
-describe.skip('Transaction', function() {
+describe('Transaction', function() {
   it('should initialze the main object', function() {
     should.exist(TransactionModule);
   });
