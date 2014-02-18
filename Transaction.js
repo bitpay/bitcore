@@ -557,7 +557,7 @@ function spec(b) {
     var ins = this.ins.map(function (txin) {
       var txinObj = {
         prev_out: {
-          hash: new Buffer(txin.getOutpointHash()).reverse().toString('hex'),
+          hash: buffertools.reverse(new Buffer(txin.getOutpointHash())).toString('hex'),
           n: txin.getOutpointIndex()
         }
       };
@@ -607,7 +607,7 @@ function spec(b) {
       txin.q = 0xffffffff;
 
       var hash = new Buffer(inputobj.txid, 'hex');
-      hash.reverse();
+      hash = buffertools.reverse(hash);
       var vout = parseInt(inputobj.vout);
       var voutBuf = new Buffer(4);
       voutBuf.writeUInt32LE(vout, 0);

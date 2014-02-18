@@ -94,14 +94,14 @@ function spec(b) {
 
     // TODO: Create a compare method in node-buffertools that uses the correct
     //       endian so we don't have to reverse both buffers before comparing.
-    this.hash.reverse();
+    buffertools.reverse(this.hash);
 
     if (buffertools.compare(this.hash, target) > 0) {
       throw new VerificationError('Difficulty target not met');
     }
 
     // Return the hash to its normal order
-    this.hash.reverse();
+    buffertools.reverse(this.hash);
 
     return true;
   };

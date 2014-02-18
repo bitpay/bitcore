@@ -836,7 +836,7 @@ function spec(b) {
 
     var w = new Buffer(v.length);
     v.copy(w);
-    w.reverse();
+    w = buffertools.reverse(w);
     if (w[0] & 0x80) {
       w[0] &= 0x7f;
       return bignum.fromBuffer(w).neg();
@@ -859,9 +859,9 @@ function spec(b) {
         c = new Buffer(b.length + 1);
         b.copy(c, 1);
         c[0] = 0;
-        return c.reverse();
+        return buffertools.reverse(c);
       } else {
-        return b.reverse();
+        return buffertools.reverse(b);
       }
     } else if (cmp == 0) {
       return new Buffer([]);
@@ -871,10 +871,10 @@ function spec(b) {
         c = new Buffer(b.length + 1);
         b.copy(c, 1);
         c[0] = 0x80;
-        return c.reverse();
+        return buffertools.reverse(c);
       } else {
         b[0] |= 0x80;
-        return b.reverse();
+        return buffertools.reverse(b);
       }
     }
   };

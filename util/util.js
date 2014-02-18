@@ -32,7 +32,7 @@ var formatHash = exports.formatHash = function (hash) {
   // Make a copy, because reverse() and toHex() are destructive.
   var hashEnd = new Buffer(10);
   hash.copy(hashEnd, 0, 22, 32);
-  return hashEnd.reverse().toString('hex');
+  return buffertools.reverse(hashEnd).toString('hex');
 };
 
 /**
@@ -42,7 +42,7 @@ var formatHashFull = exports.formatHashFull = function (hash) {
   // Make a copy, because reverse() and toHex() are destructive.
   var copy = new Buffer(hash.length);
   hash.copy(copy);
-  var hex = copy.reverse().toHex();
+  var hex = buffertools.reverse(copy).toHex();
   return hex;
 };
 
