@@ -299,11 +299,11 @@ function spec(b) {
 
         case OP_CAT:
           // (x1 x2 -- out)
-          var v1 = this.stackTop(2);
-          var v2 = this.stackTop(1);
+          v1 = this.stackTop(2);
+          v2 = this.stackTop(1);
           this.stackPop();
           this.stackPop();
-          this.stack.push(v1.concat(v2));
+          this.stack.push(buffertools.concat(v1, v2));
           break;
 
         case OP_SUBSTR:

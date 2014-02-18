@@ -17,7 +17,7 @@ function spec(b) {
   var VerificationError = error.VerificationError;
   var MissingSourceError = error.MissingSourceError;
 
-  var COINBASE_OP = buffertools.concat(util.NULL_HASH, new Buffer("FFFFFFFF", 'hex'));
+  var COINBASE_OP = buffertools.concat(util.NULL_HASH, new Buffer('FFFFFFFF', 'hex'));
 
   function TransactionIn(data) {
     if ("object" !== typeof data) {
@@ -44,7 +44,7 @@ function spec(b) {
     var qbuf = new Buffer(4);
     qbuf.writeUInt32LE(this.q, 0);
 
-    return Buffer.concat([this.o, slen, this.s, qbuf]);
+    return buffertools.concat(this.o, slen, this.s, qbuf);
   };
 
   TransactionIn.prototype.getOutpointHash = function getOutpointHash() {
@@ -88,7 +88,7 @@ function spec(b) {
 
   TransactionOut.prototype.serialize = function serialize() {
     var slen = util.varIntBuf(this.s.length);
-    return Buffer.concat([this.v, slen, this.s]);
+    return buffertools.concat(his.v, slen, this.s);
   };
 
   function Transaction(data) {
@@ -537,7 +537,7 @@ function spec(b) {
     var buffer = bytes.buffer();
 
     // Append hashType
-    buffer = buffer.concat(new Buffer([parseInt(hashType), 0, 0, 0]));
+    buffer = buffertools.concat(buffer, new Buffer([parseInt(hashType), 0, 0, 0]));
 
     return util.twoSha256(buffer);
   };
@@ -612,7 +612,7 @@ function spec(b) {
       var voutBuf = new Buffer(4);
       voutBuf.writeUInt32LE(vout, 0);
   
-      txin.o = Buffer.concat([hash, voutBuf]);
+      txin.o = buffertools.concat(hash, voutBuf);
   
       txobj.ins.push(txin);
     });

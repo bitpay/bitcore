@@ -182,7 +182,7 @@ function spec(b) {
         var i2 = Math.min(i + 1, size - 1);
         var a = tree[j + i];
         var b = tree[j + i2];
-        tree.push(util.twoSha256(a.concat(b)));
+        tree.push(util.twoSha256(buffertools.concat(a,b)));
       }
       j += size;
     }
