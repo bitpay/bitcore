@@ -382,7 +382,7 @@ function spec(b) {
   Script.prototype.writeBytes = function (data)
   {
     var newSize = this.buffer.length + prefixSize(data.length) + data.length;
-    this.buffer = buffertools.concat(this.buffer, encodeLen(data.length), data);
+    this.buffer = Buffer.concat([this.buffer, encodeLen(data.length), data]);
     this.chunks.push(data);
   };
 

@@ -303,7 +303,7 @@ function spec(b) {
           v2 = this.stackTop(1);
           this.stackPop();
           this.stackPop();
-          this.stack.push(buffertools.concat(v1, v2));
+          this.stack.push(Buffer.concat([v1, v2]));
           break;
 
         case OP_SUBSTR:

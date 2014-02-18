@@ -320,7 +320,7 @@ var varIntBuf = exports.varIntBuf = function varIntBuf(n) {
 };
 
 var varStrBuf = exports.varStrBuf = function varStrBuf(s) {
-  return buffertools.concat(varIntBuf(s.length), s);
+  return Buffer.concat([varIntBuf(s.length), s]);
 };
 
 // Initializations
