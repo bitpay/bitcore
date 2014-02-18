@@ -16,14 +16,14 @@ describe('Address', function() {
     Address = AddressModule.class();
     should.exist(Address);
   });
-  it('should be able to create Address object', function() {
+  it('should be able to create instance', function() {
     var a = new Address('1KfyjCgBSMsLqiCbakfSdeoBUqMqLUiu3T');
     should.exist(a);
   });
   it('should validate correctly', function() {
-    var a = new Address("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa");
-    var m = new Address("32QBdjycLwbDTuGafUwaU5p5GxzSLPYoF6");
-    var b = new Address("11111111111111111111111111122222234");
+    var a = new Address('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa');
+    var m = new Address('32QBdjycLwbDTuGafUwaU5p5GxzSLPYoF6');
+    var b = new Address('11111111111111111111111111122222234');
     a.validate.bind(a).should.not.throw(Error);
     m.validate.bind(m).should.not.throw(Error);
     b.validate.bind(b).should.throw(Error);
