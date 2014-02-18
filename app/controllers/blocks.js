@@ -17,8 +17,11 @@ exports.block = function(req, res, next, hash) {
     if (err || !block)
       return common.handleErrors(err, res, next);
     else {
-      req.block = block.info;
-      return next();
+      bdb.getPoolInfo(block.info.tx[0], function(info) {
+        block.info.poolInfo = info;
+        req.block = block.info;
+        return next();
+      });
     }
   });
 };
