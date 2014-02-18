@@ -19,6 +19,8 @@ module.exports.broadcastTx = function(tx) {
   if (ios) {
     var t = {};
     if (typeof tx === 'string') {
+
+console.log('[socket.js.22]',tx); //TODO
       t = {
         txid: tx
       };
@@ -31,6 +33,8 @@ module.exports.broadcastTx = function(tx) {
       });
 
       t.valueOut = parseInt(valueOut) / util.COIN;
+
+console.log('[socket.js.36]',t); //TODO
     }
     ios.sockets. in ('inv').emit('tx', t);
   }

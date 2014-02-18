@@ -53,7 +53,9 @@ if (!config.disableP2pSync) {
 /**
  * historic_sync process
  */
-var historicSync = new HistoricSync({ shouldBroadcastSync: true });
+var historicSync = new HistoricSync({
+  shouldBroadcastSync: true
+});
 peerSync.historicSync = historicSync;
 
 if (!config.disableHistoricSync) {

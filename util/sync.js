@@ -18,7 +18,9 @@ program
   .option('-v --verbose', 'Verbose 0/1', 0)
   .parse(process.argv);
 
-var historicSync = new HistoricSync();
+var historicSync = new HistoricSync({
+  shouldBroadcastSync: true,
+});
 
 
 async.series([
