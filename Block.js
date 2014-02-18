@@ -7,6 +7,7 @@ function spec(b) {
   var Bignum = b.Bignum || require('bignum');
   var Binary = b.Binary || require('binary');
   var Step = b.Step || require('step');
+  var buffertools = b.buffertools || require('buffertools');
   var Transaction = b.Transaction || require('./Transaction').class();
   var TransactionIn = Transaction.In;
   var TransactionOut = Transaction.Out;
@@ -79,7 +80,7 @@ function spec(b) {
 
   Block.prototype.checkHash = function checkHash() {
     if (!this.hash || !this.hash.length) return false;
-    return this.calcHash().compare(this.hash) == 0;
+    return buffertools.compare(this.calcHash(), this.hash) == 0;
   };
 
   Block.prototype.getHash = function getHash() {
@@ -95,7 +96,7 @@ function spec(b) {
     //       endian so we don't have to reverse both buffers before comparing.
     this.hash.reverse();
 
-    if (this.hash.compare(target) > 0) {
+    if (buffertools.compare(this.hash, target) > 0) {
       throw new VerificationError('Difficulty target not met');
     }
 
@@ -199,7 +200,7 @@ function spec(b) {
       throw new VerificationError('No merkle root');
     }
 
-    if (this.calcMerkleRoot().compare(this.merkle_root) == 0) {
+    if (buffertools.compare(this.calcMerkleRoot(), this.merkle_root) == 0) {
       throw new VerificationError('Merkle root incorrect');
     }
 

@@ -3,6 +3,7 @@ require('classtool');
 function spec(b) {
   var Net = b.Net || require('net');
   var Binary = b.Binary || require('binary');
+  var buffertools = b.buffertools || require('buffertools');
 
   function Peer(host, port, services) {
     if ("string" === typeof host) {
@@ -17,7 +18,7 @@ function spec(b) {
       this.host = host.host;
       this.port = host.port;
     } else if (Buffer.isBuffer(host)) {
-      if (host.slice(0, 12).compare(Peer.IPV6_IPV4_PADDING) != 0) {
+      if (buffertools.compare(Peer.IPV6_IPV4_PADDING, host.slice(0, 12)) != 0) {
         throw new Error('IPV6 not supported yet! Cannot instantiate host.');
       }
       this.host = Array.prototype.slice.apply(host.slice(12)).join('.');
