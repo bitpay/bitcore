@@ -17,24 +17,25 @@ module.exports.init = function(app, io_ext) {
 
 module.exports.broadcastTx = function(tx) {
   if (ios) {
-    var t = {};
+    var t;
     if (typeof tx === 'string') {
-
-console.log('[socket.js.22]',tx); //TODO
       t = {
         txid: tx
       };
-    } else {
-      t = tx;
+    } 
+    
+    else {
+      t = {
+        txid: tx.txid,
+        size: tx.size,
+      };
       // Outputs
       var valueOut = 0;
-      t.vout.forEach(function(o) {
+      tx.vout.forEach(function(o) {
         valueOut += o.value * util.COIN;
       });
 
       t.valueOut = parseInt(valueOut) / util.COIN;
-
-console.log('[socket.js.36]',t); //TODO
     }
     ios.sockets. in ('inv').emit('tx', t);
   }
