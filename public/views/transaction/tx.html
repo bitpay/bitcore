@@ -100,15 +100,8 @@
       <div data-ng-repeat="vout in tx.vout" data-ng-show="itemsExpanded">
         <div class="col-md-12 transaction-vin-vout">
           <div class="text-muted pull-right btc-value"><small>{{$root.currency.getConvertion(vout.value)}}
-<<<<<<< HEAD
             <span class="text-success" data-ng-show="!vout.spentTxId"  tooltip="Output is unspent" tooltip-placement="left">(U)</span>
             <a class="glyphicon glyphicon-chevron-right" data-ng-show="vout.spentTxId" href="/#!/tx/{{vout.spentTxId}}" title="Spent at: {{vout.spentTxId}},{{vout.spentIndex}}"></a>&nbsp;&nbsp;
-=======
-            <span class="text-success" data-ng-show="!vout.spendTxId"  tooltip="Output is unspent" tooltip-placement="left">(U)</span>
-            <a class="glyphicon glyphicon-chevron-right" data-ng-show="vout.spendTxId" href="/#!/tx/{{vout.spendTxId}}" title="Spent at: {{vout.spendTxId}},{{vout.spendIndex}}"></a>&nbsp;&nbsp;
->>>>>>> 8e733340d31053254750053c5ca686eac87c5139
- 
-
           </small>
 
           </div>

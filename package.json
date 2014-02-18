@@ -1,7 +1,7 @@
 {
   "name": "insight-bitcore",
   "description": "An open-source bitcoin blockchain API. The Insight API provides you with a convenient, powerful and simple way to query and broadcast data on the bitcoin network and build your own services with it.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": {
     "name": "Ryan X Charles",
     "email": "ryan@bitpay.com"
@@ -25,7 +25,7 @@
       "email": "cmgustavo83@gmail.com"
     },
     {
-      "name": "Juan Sosa",
+      "name": "Juan Ignacio Sosa Lopez",
       "email": "bechilandia@gmail.com"
     }
   ],
