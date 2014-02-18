@@ -17,6 +17,7 @@ function spec(b) {
   var Transaction = require('./Transaction').class();
   var util = b.util || require('./util/util');
   var Parser = b.Parser || require('./util/BinaryParser').class();
+  var buffertools = b.buffertools || require('buffertools');
   var doubleSha256 = b.doubleSha256 || util.twoSha256;
   var nonce = util.generateNonce();
 
@@ -114,7 +115,7 @@ function spec(b) {
       switch (message.command) {
       case 'version':
         // Did we connect to ourself?
-        if (nonce.compare(message.nonce) === 0) {
+        if (buffertools.compare(nonce, message.nonce) === 0) {
           this.socket.end();
           return;
         }
@@ -376,7 +377,7 @@ function spec(b) {
 
     if (checksum !== null) {
       var checksumConfirm = doubleSha256(payload).slice(0, 4);
-      if (checksumConfirm.compare(checksum) !== 0) {
+      if (buffertools.compare(checksumConfirm, checksum) !== 0) {
         log.err('['+this.peer+'] '+
                      'Checksum failed',
                      { cmd: command,

@@ -5,7 +5,8 @@ function spec(b) {
   var config = b.config || require('./config');
   var log = b.log || require('./util/log');
 
-  var Opcode = require('./Opcode').class();
+  var Opcode = b.Opcode || require('./Opcode').class();
+  var buffertools = b.buffertools || require('buffertools');
 
   // Make opcodes available as pseudo-constants
   for (var i in Opcode.map) {
@@ -385,7 +386,7 @@ function spec(b) {
           // (x1 x2 - bool)
           var v1 = this.stackTop(2);
           var v2 = this.stackTop(1);
-          var value = v1.compare(v2) == 0;
+          var value = buffertools.compare(v1, v2) === 0;
 
           // OP_NOTEQUAL is disabled because it would be too easy to say
           // something like n != 1 and have some wiseguy pass in 1 with extra

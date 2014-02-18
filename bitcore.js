@@ -17,6 +17,7 @@ module.exports.SINKey = require('./SINKey');
 module.exports.Transaction = require('./Transaction');
 module.exports.Peer = require('./Peer');
 module.exports.Block = require('./Block');
+module.exports.Connection = require('./Connection');
 
 
 if (typeof process.versions === 'undefined') {

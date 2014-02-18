@@ -17,7 +17,7 @@ describe('Block', function() {
     should.exist(Block);
   });
   it('should be able to create instance', function() {
-    var p = new Block("localhost", 8333);
+    var p = new Block();
     should.exist(p);
   });
 });

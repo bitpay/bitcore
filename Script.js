@@ -4,7 +4,8 @@ function spec(b) {
   var config = b.config || require('./config');
   var log = b.log || require('./util/log');
 
-  var Opcode = require('./Opcode').class();
+  var Opcode = b.Opcode || require('./Opcode').class();
+  var buffertools = b.buffertools || require('buffertools');
 
   // Make opcodes available as pseudo-constants
   for (var i in Opcode.map) {
@@ -396,7 +397,7 @@ function spec(b) {
     if (Buffer.isBuffer(chunk)) {
       for (var i = 0, l = this.chunks.length; i < l; i++) {
         if (Buffer.isBuffer(this.chunks[i]) &&
-            this.chunks[i].compare(chunk) == 0) {
+            buffertools.compare(this.chunks[i], chunk) === 0) {
           this.chunks.splice(i, 1);
           dirty = true;
         }

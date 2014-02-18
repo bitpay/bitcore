@@ -35,7 +35,7 @@ function spec(b) {
     this.active = data.active || false;
     this.chainWork = data.chainWork || util.EMPTY_BUFFER;
     this.txs = data.txs || [];
-  };
+  }
 
   Block.prototype.getHeader = function getHeader() {
     var buf = new Buffer(80);
