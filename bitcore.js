@@ -5,14 +5,15 @@
 
 module.exports.bignum = require('bignum');
 module.exports.base58 = require('base58-native');
-module.exports.EncodedData = require('./util/EncodedData');
-module.exports.VersionedData = require('./util/VersionedData');
-module.exports.Address = require('./Address');
+module.exports.buffertools = require('buffertools');
 module.exports.config = require('./config');
 module.exports.log = require('./util/log');
 module.exports.networks = require('./networks');
-module.exports.Opcode = require('./Opcode');
 module.exports.util = require('./util/util');
+module.exports.EncodedData = require('./util/EncodedData');
+module.exports.VersionedData = require('./util/VersionedData');
+module.exports.Address = require('./Address');
+module.exports.Opcode = require('./Opcode');
 module.exports.Script = require('./Script');
 module.exports.SINKey = require('./SINKey');
 module.exports.Transaction = require('./Transaction');
