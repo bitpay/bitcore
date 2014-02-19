@@ -10,6 +10,7 @@ module.exports.VersionedData = require('./util/VersionedData');
 module.exports.Address = require('./Address');
 module.exports.config = require('./config');
 module.exports.log = require('./util/log');
+module.exports.networks = require('./networks');
 module.exports.Opcode = require('./Opcode');
 module.exports.util = require('./util/util');
 module.exports.Script = require('./Script');
@@ -19,7 +20,6 @@ module.exports.Peer = require('./Peer');
 module.exports.Block = require('./Block');
 module.exports.Connection = require('./Connection');
 module.exports.ScriptInterpreter = require('./ScriptInterpreter');
-module.exports.networks = require('./networks');
 
 
 if (typeof process.versions === 'undefined') {

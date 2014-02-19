@@ -15,7 +15,10 @@ module.exports = function(grunt) {
         dest: 'browser/bundle.js',
         options: {
           debug: true,
-          alias: ['browserify-bignum/bignumber.js:bignum'],
+          alias: [
+            'browserify-bignum/bignumber.js:bignum',
+            'browserify-buffertools/buffertools.js:buffertools'
+          ],
           standalone: 'bitcore',
         }
       },
