@@ -26,7 +26,7 @@ var Address = require('bitcore/Address').class();
 
 Some examples are provided at the [examples](/examples) path. Here are some snippets:
 
-## Address handling
+## Validating an address
 Validating a Bitcoin address:
 ```
 var Address = require('bitcore/Address').class();
@@ -39,25 +39,33 @@ try {
   console.log(addr.data + " is not a valid address. " + e);
 }
 ```
-
 ## Monitoring Blocks and Transactions
 ```
-var networks    = require('bitcore/networks');
-var Peer        = require('bitcore/Peer').class();
-var PeerManager = require('bitcore/PeerManager').createClass({
-  network: networks.livenet
+var networks = require('../networks');
+var Peer = require('../Peer').class();
+var PeerManager = require('../PeerManager').createClass({
+  network: networks.testnet
 });
+var util= require('util');
+
 
 var handleBlock = function(b) {
-  console.log('block received:', b);
+  console.log('block received:', util.inspect(b.message,{depth:null}));
 };
+
 var handleTx = function(b) {
-  console.log('block tx:', b);
+  console.log('block tx:',  util.inspect(b.message,{depth:null}));
 };
+
+var handleInv = function(b) {
+  console.log('block inv:',  util.inspect(b.message,{depth:null}));
+};
+
+
 var peerman = new PeerManager();
-peerman.addPeer( new Peer('62.75.216.13',8333) );
-peerman.addPeer( new Peer('62.75.253.91',8333) );
+peerman.addPeer( new Peer('127.0.0.1',18333) );
 peerman.on('connection', function(conn) {
+  conn.on('inv',  handleInv);
   conn.on('block', handleBlock);
   conn.on('tx', handleTx);
 });
@@ -67,7 +75,7 @@ peerman.start();
 PeerManager will emit the following events: 'version', 'verack', 'addr', 'getaddr', 'error' 'disconnect'; and will relay events like: 'tx', 'block', 'inv'. Please see  [PeerManager.js](PeerManager.js), [Peer.js](Peer.js) and [Connection.js](Connection.js)
 
 
-## Create and send a Transaction thought P2P
+## Creating and sending a Transaction thought P2P
 ```
 var networks    = require('bitcore/networks');
 var Peer        = require('bitcore/Peer').class();
@@ -126,7 +134,7 @@ peerman.on('connect', function(conn) {
 peerman.start();
 ```
 
-## RPC Client
+## Consuming bitcoind RPC
 ```
 var RpcClient = require('../RpcClient').class();
 var config =  {   
@@ -144,7 +152,7 @@ rpc.getBlock( hash,  function(err, ret) {
 ```
 Check the list of all supported RPC call at [RpcClient.js](RpcClient.js)
 
-## Script Parsing
+## Parsing a Script 
 
 Gets an address strings from a  ScriptPubKey Buffer
 
