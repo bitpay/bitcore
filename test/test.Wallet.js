@@ -5,19 +5,19 @@ var bitcore = require('../bitcore');
 
 var should = chai.should();
 
-var SINModule = bitcore.SIN;
-var SIN;
+var WalletModule = bitcore.Wallet;
+var Wallet;
 
-describe('SIN', function() {
+describe('Wallet', function() {
   it('should initialze the main object', function() {
-    should.exist(SINModule);
+    should.exist(WalletModule);
   });
   it('should be able to create class', function() {
-    SIN = SINModule.class();
-    should.exist(SIN);
+    Wallet = WalletModule.class();
+    should.exist(Wallet);
   });
   it('should be able to create instance', function() {
-    var s = new SIN();
+    var s = new Wallet();
     should.exist(s);
   });
 });

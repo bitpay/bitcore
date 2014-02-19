@@ -5,19 +5,19 @@ var bitcore = require('../bitcore');
 
 var should = chai.should();
 
-var SINModule = bitcore.SIN;
-var SIN;
+var RpcClientModule = bitcore.RpcClient;
+var RpcClient;
+    RpcClient = RpcClientModule.class();
 
-describe('SIN', function() {
+describe('RpcClient', function() {
   it('should initialze the main object', function() {
-    should.exist(SINModule);
+    should.exist(RpcClientModule);
   });
   it('should be able to create class', function() {
-    SIN = SINModule.class();
-    should.exist(SIN);
+    should.exist(RpcClient);
   });
   it('should be able to create instance', function() {
-    var s = new SIN();
+    var s = new RpcClient();
     should.exist(s);
   });
 });
