@@ -3,18 +3,22 @@
   <div class="row">
     <div class="col-xs-12 col-gray col-gray-fixed">
       <h1 class="text-center">Block</h1>
-      <div class="block-id">
-        <span class="glyphicon glyphicon-list-alt"></span>
-        <h2 data-ng-if="block">#{{block.height}}</h2>
+      <div class="m20v text-center text-muted" data-ng-if="!block.hash">
+        <span>Loading Block...</span>
       </div>
-      <div class="m10v">
-        <button class="pull-right btn-copy" clip-copy="block.hash"></button>
-        <a class="ellipsis" href="/block/{{block.hash}}">{{block.hash}}</a>
-      </div>
-      <div class="m20v" data-ng-show="!tx.isCoinBase">
-        <h4>Hashes</h4>
-        <table class="table" style="table-layout: fixed">
-          <tbody class="small">
+      <div class="ng-cloak" data-ng-cloak data-ng-if="block.hash">
+        <div class="block-id">
+          <span class="glyphicon glyphicon-list-alt"></span>
+          <h2 data-ng-if="block">#{{block.height}}</h2>
+        </div>
+        <div class="m10v">
+          <button class="pull-right btn-copy" clip-copy="block.hash"></button>
+          <a class="ellipsis" href="/block/{{block.hash}}">{{block.hash}}</a>
+        </div>
+        <div class="m20v" data-ng-show="!tx.isCoinBase">
+          <h4>Hashes</h4>
+          <table class="table" style="table-layout: fixed">
+            <tbody class="small">
             <tr data-ng-show="block.previousblockhash">
               <td> Previous Block</td>
               <td class="text-right"><a href="/block/{{block.previousblockhash}}">{{block.height-1}}</a></td>
@@ -23,15 +27,21 @@
               <td> Next Block</td>
               <td class="text-right"><a href="/block/{{block.nextblockhash}}">{{block.height+1}}</a></td>
             </tr>
-          </tbody>
-        </table>
-      </div> <!-- END OF TRANSACTIONS TABLE -->
+            </tbody>
+          </table>
+        </div> <!-- END OF TRANSACTIONS TABLE -->
+      </div>
       <div data-ng-include src="'/views/includes/currency.html'"></div>
     </div> <!-- END OF COL-GRAY   -->
 
     <div class="col-xs-12 col-md-9 col-md-offset-3">
       <h2>Summary</h2>
-      <div class="row">
+      <div class="progress progress-striped active" data-ng-if="!block.hash">
+        <div class="progress-bar progress-bar-info" style="width: 100%">
+          <span>Loading Block Details...</span>
+        </div>
+      </div>
+      <div class="row ng-cloak" data-ng-cloak data-ng-if="block.hash">
         <div class="col-md-6">
           <table class="table">
             <tbody>

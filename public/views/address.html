@@ -3,54 +3,59 @@
   <div class="row">
     <div class="col-xs-12 col-gray col-gray-fixed">
       <h1 class="text-center">Address</h1>
-      <div class="text-center">
-        <qrcode size="160" data="{{address.addrStr}}"></qrcode>
+      <div class="m20v text-center text-muted" data-ng-if="!address.addrStr">
+        <span>Loading Address Information...</span>
       </div>
-      <div class="m10v">
-        <button class="pull-right btn-copy" clip-copy="address.addrStr"></button>
-        <a class="ellipsis" href="/address/{{address.addrStr}}">{{address.addrStr}}</a>
-      </div>
-      <div class="m20v">
-        <h4>Summary</h4>
-        <h5>Confirmed</h5>
-        <table class="table">
-          <tbody>
-          <tr>
-            <td class="small">Total Received</td>
-            <td class="address ellipsis text-right">{{$root.currency.getConvertion(address.totalReceived)}}</td>
-          </tr>
-          <tr>
-            <td class="small">Total Sent</td>
-            <td class="address ellipsis text-right">{{$root.currency.getConvertion(address.totalSent)}}</td>
-          </tr>
-          <tr>
-            <td class="small">Final Balance</td>
-            <td class="address ellipsis text-right">{{$root.currency.getConvertion(address.balance)}}</td>
-          </tr>
-          <tr>
-            <td class="small">No. Transactions</td>
-            <td class="address ellipsis text-right">{{address.txApperances}}</td>
-          </tr>
-         </tbody>
-        </table>
-        <div data-ng-show="address.unconfirmedTxApperances">
-          <h5>Unconfirmed</h5>
-          <table class="table">
+      <div class="ng-cloak" data-ng-cloak data-ng-if="address.addrStr">
+        <div class="text-center">
+          <qrcode size="160" data="{{address.addrStr}}"></qrcode>
+        </div>
+        <div class="m10v">
+          <button class="pull-right btn-copy" clip-copy="address.addrStr"></button>
+          <a class="ellipsis" href="/address/{{address.addrStr}}">{{address.addrStr}}</a>
+        </div>
+        <div class="m20v">
+          <h4>Summary</h4>
+          <h5>Confirmed</h5>
+          <table class="table ng-cloak" data-ng-hide="!address.addrStr" data-ng-cloak>
             <tbody>
             <tr>
-              <td class="small">Unconfirmed Txs Balance</td>
-              <td class="address ellipsis text-right">{{$root.currency.getConvertion(address.unconfirmedBalance)}}</td>
+              <td class="small">Total Received</td>
+              <td class="address ellipsis text-right">{{$root.currency.getConvertion(address.totalReceived)}}</td>
+            </tr>
+            <tr>
+              <td class="small">Total Sent</td>
+              <td class="address ellipsis text-right">{{$root.currency.getConvertion(address.totalSent)}}</td>
+            </tr>
+            <tr>
+              <td class="small">Final Balance</td>
+              <td class="address ellipsis text-right">{{$root.currency.getConvertion(address.balance)}}</td>
             </tr>
             <tr>
               <td class="small">No. Transactions</td>
-              <td class="address ellipsis text-right">{{address.unconfirmedTxApperances}}</td>
+              <td class="address ellipsis text-right">{{address.txApperances}}</td>
             </tr>
-  
-          </tbody>
+            </tbody>
           </table>
-        </div>
- 
-      </div> <!-- END OF TRANSACTIONS TABLE -->
+          <div data-ng-show="address.unconfirmedTxApperances">
+            <h5>Unconfirmed</h5>
+            <table class="table">
+              <tbody>
+              <tr>
+                <td class="small">Unconfirmed Txs Balance</td>
+                <td class="address ellipsis text-right">{{$root.currency.getConvertion(address.unconfirmedBalance)}}</td>
+              </tr>
+              <tr>
+                <td class="small">No. Transactions</td>
+                <td class="address ellipsis text-right">{{address.unconfirmedTxApperances}}</td>
+              </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+        </div> <!-- END OF TRANSACTIONS TABLE -->
+      </div>
       <div data-ng-include src="'/views/includes/currency.html'"></div>
     </div> <!-- END OF COL-MD-3 -->
     <div class="col-xs-12 col-md-9 col-md-offset-3">
