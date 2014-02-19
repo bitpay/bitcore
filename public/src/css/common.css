@@ -1,5 +1,7 @@
 /* Sticky footer styles
 -------------------------------------------------- */
+@charset "UTF-8";
+
 html,
 body {
   color: #373D42;
@@ -11,6 +13,12 @@ body {
 h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   color: #373D42;
   font-family: 'Ubuntu', sans-serif;
+}
+
+[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak],
+.ng-cloak, .x-ng-cloak,
+.ng-hide {
+  display: none !important;
 }
 
 /* Styling for the ngProgress itself */

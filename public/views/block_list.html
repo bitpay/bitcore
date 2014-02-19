@@ -8,18 +8,22 @@
           <h3>Blocks <br> mined on:</h3>
         </div>
       </div>
-      <p class="lead text-center m20v">
+      <div class="m20v text-center text-muted" data-ng-if="!pagination.current">
+        <span>Loading Selected Date...</span>
+      </div>
+      <div class="ng-cloak" data-ng-cloak data-ng-if="pagination.current">
+        <p class="lead text-center m20v">
         {{pagination.current}} UTC
         <a href="#" class="btn btn-primary btn-xs" datepicker-popup show-button-bar="false" data-ng-click="openCalendar($event)" data-ng-model="dt" is-open="opened" data-ng-required="true"><span class="glyphicon glyphicon-calendar"></span></a>
-      </p>
-      <p class="lead text-center m20v"  data-ng-show="loading">&nbsp;</p>
-      <p class="text-center m20v"  data-ng-show="pagination.isToday && !loading">Today</p>
-      <p class="text-center m20v"  data-ng-show="!pagination.isToday && !loading">{{humanSince(pagination.currentTs)}}</p>
-      <p class="text-center m20v"  data-ng-show="loading">&nbsp;</p>
-
-      <div class="m50v text-center">
-        <a class="btn btn-primary" href="/blocks-date/{{pagination.prev}}"><small>&larr; {{pagination.prev}}</small></a>
-        <a class="btn btn-primary" href="/blocks-date/{{pagination.next}}" data-ng-show="!pagination.isToday"><small>{{pagination.next}} &rarr;</small></a>
+        </p>
+        <p class="lead text-center m20v"  data-ng-show="loading">&nbsp;</p>
+        <p class="text-center m20v"  data-ng-show="pagination.isToday && !loading">Today</p>
+        <p class="text-center m20v"  data-ng-show="!pagination.isToday && !loading">{{humanSince(pagination.currentTs)}}
+        <p class="text-center m20v"  data-ng-show="loading">&nbsp;</p>
+        <div class="m50v text-center">
+          <a class="btn btn-primary" href="/blocks-date/{{pagination.prev}}"><small>&larr; {{pagination.prev}}</small></a>
+          <a class="btn btn-primary" href="/blocks-date/{{pagination.next}}" data-ng-show="!pagination.isToday"><small>{{pagination.next}} &rarr;</small></a>
+        </div>
       </div>
     </div>
     <div class="col-xs-12 col-md-9 col-md-offset-3">
@@ -56,3 +60,4 @@
   </div>
   <h2 class="text-center text-muted" data-ng-show="!blocks.length && !loading">No blocks yet.</h2>
 </section>
+
