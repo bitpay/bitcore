@@ -44,48 +44,31 @@ walk(models_path);
  * p2pSync process
  */
 
-var peerSync = new PeerSync();
+var peerSync = new PeerSync({shouldBroadcast: true});
 
 if (!config.disableP2pSync) {
-  var ps = peerSync;
-  ps.init({
-    shouldBroadcast: true,
-  }, function() {
-    ps.run();
-  });
+  peerSync.run();
 }
 
 /**
  * historic_sync process
  */
-var historicSync = {};
+var historicSync = new HistoricSync({
+  shouldBroadcastSync: true
+});
+peerSync.historicSync = historicSync;
 
 if (!config.disableHistoricSync) {
-  historicSync = new HistoricSync();
-
-  historicSync.init({
-    shouldBroadcastSync: true,
-  }, function(err) {
+  historicSync.start({}, function(err){
     if (err) {
       var txt = 'ABORTED with error: ' + err.message;
       console.log('[historic_sync] ' + txt);
     }
-    else {
-      historicSync.smartImport({}, function(err){
-        var txt = 'ended.';
-        if (err)
-          txt = 'ABORTED with error: ' + err.message;
-        else if (ps) {
-          ps.allowReorgs = true;
-          ps.historicSync = historicSync;
-        }
-
-        console.log('[historic_sync] ' + txt, historicSync.info());
-      });
-    }
+    if (peerSync) peerSync.allowReorgs = true;
   });
 }
-
+else
+  if (peerSync) peerSync.allowReorgs = true;
 
 
 //express settings

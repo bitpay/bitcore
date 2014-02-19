@@ -5,7 +5,7 @@
       <h1 class="text-center">Block</h1>
       <div class="m20v text-center text-muted" data-ng-if="!block.hash">
         <span>Loading Block...</span>
-      </div>
+     </div>
       <div class="ng-cloak" data-ng-cloak data-ng-if="block.hash">
         <div class="block-id">
           <span class="glyphicon glyphicon-list-alt"></span>
@@ -54,6 +54,7 @@
                 <td class="text-right text-muted">{{block.height}}
                 <span data-ng-show="block.isMainChain" class="text-success">(Mainchain)</span>
                 <span data-ng-show="!block.isMainChain" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> (Orphaned)</span>
+                </td>
               </tr>
               <tr>
                 <td><strong>Block Reward</strong></td>
@@ -62,6 +63,12 @@
               <tr>
                 <td><strong>Timestamp</strong></td>
                 <td class="text-right text-muted">{{block.time * 1000 | date:'medium'}}</td>
+              </tr>
+              <tr data-ng-show="block.poolInfo">
+                <td><strong>Relayed by</strong></td>
+                <td class="text-right text-muted">
+                  <a href="{{block.poolInfo.url}}" target="_blank" title="{{block.poolInfo.poolName}}">{{block.poolInfo.poolName}}</a>
+                </td>
               </tr>
               <tr>
                 <td><strong>Merkle Root</strong></td>
@@ -109,3 +116,4 @@
   </div>
 
 </section>
+

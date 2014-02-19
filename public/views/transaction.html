@@ -1,7 +1,7 @@
 <div data-ng-include src="'/views/includes/connection.html'"></div>
 <section data-ng-controller="transactionsController" data-ng-init="findThis()">
   
-  <div class="row ng-cloak" data-ng-clock data-ng-if="tx.txid">
+  <div class="row ng-cloak" data-ng-cloak data-ng-if="tx.txid">
     <div class="col-xs-12 col-gray col-gray-fixed">
       <h1 class="text-center">Transaction</h1>
       <div class="m20v text-center text-muted" data-ng-if="!tx.txid">
@@ -75,3 +75,4 @@
     </div>
   </div>
 </section>
+

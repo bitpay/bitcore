@@ -20,7 +20,6 @@
         <p class="text-center m20v"  data-ng-show="pagination.isToday && !loading">Today</p>
         <p class="text-center m20v"  data-ng-show="!pagination.isToday && !loading">{{humanSince(pagination.currentTs)}}
         <p class="text-center m20v"  data-ng-show="loading">&nbsp;</p>
-
         <div class="m50v text-center">
           <a class="btn btn-primary" href="/blocks-date/{{pagination.prev}}"><small>&larr; {{pagination.prev}}</small></a>
           <a class="btn btn-primary" href="/blocks-date/{{pagination.next}}" data-ng-show="!pagination.isToday"><small>{{pagination.next}} &rarr;</small></a>
@@ -40,6 +39,7 @@
             <th>Height</th>
             <th>Timestamp</th>
             <th class="text-right">Transactions</th>
+            <th class="text-right">Relayed by</th>
             <th class="text-right">Size</th>
           </tr>
         </thead>
@@ -51,6 +51,7 @@
           <td><a href="/block/{{b.hash}}">{{b.height}}</a></td>
           <td>{{b.time * 1000 | date:'medium'}}</td>
           <td class="text-right">{{b.txlength}}</td>
+          <td class="text-right"><a href="{{b.poolInfo.url}}" title="{{b.poolInfo.poolName}}" target="_blank" data-ng-show="b.poolInfo">{{b.poolInfo.poolName}}</a></td>
           <td class="text-right">{{b.size}}</td>
         </tr>
         </tbody>
@@ -59,3 +60,4 @@
   </div>
   <h2 class="text-center text-muted" data-ng-show="!blocks.length && !loading">No blocks yet.</h2>
 </section>
+

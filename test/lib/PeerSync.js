@@ -9,22 +9,12 @@ describe('PeerSync', function() {
 
   beforeEach(function(done) {
     ps = new PeerSync();
-    ps.init({
-      verbose: false
-    }, done);
+    done();
   });
   afterEach(function() {
     ps.close();
   });
 
-  describe('#init()', function() {
-    it('should return with no errors', function() {
-      var other_ps = new PeerSync();
-      expect(other_ps.init.bind(other_ps)).not.to.
-      throw (Error);
-      other_ps.close();
-    });
-  });
 
   describe('#handleInv()', function() {
     var inv_info = {

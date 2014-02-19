@@ -1,4 +1,4 @@
-<div class="line-bot row ng-clock" data-ng-hide="!tx" data-ng-cloak>
+<div class="line-bot row ng-cloak" data-ng-hide="!tx" data-ng-cloak>
   <div class="col-xs-12 col-md-6">
     <button class="btn-expand pull-left" data-ng-click="itemsExpanded = !itemsExpanded"><span class="glyphicon glyphicon-plus" data-ng-class="{'glyphicon-minus': itemsExpanded}" tooltip="Show/Hide items details" tooltip-placement="right"></span></button>
     <button class="btn-copy pull-right" clip-copy="tx.txid"></button>
@@ -168,6 +168,7 @@
     </small>
   </div>
 </div>
+
 <div class="line-top row ng-cloak" data-ng-hide="!tx" data-ng-cloak>
   <div class="col-xs-12 col-sm-4 col-md-4">
     <span data-ng-show="!tx.isCoinBase &&  !isNaN(parseFloat(tx.fees))" class="txvalues txvalues-default">Fees: {{$root.currency.getConvertion(tx.fees)}} </span>

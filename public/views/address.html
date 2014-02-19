@@ -5,10 +5,11 @@
       <h1 class="text-center">Address</h1>
       <div class="m20v text-center text-muted" data-ng-if="!address.addrStr">
         <span>Loading Address Information...</span>
-      </div>
+     </div>
       <div class="ng-cloak" data-ng-cloak data-ng-if="address.addrStr">
         <div class="text-center">
           <qrcode size="160" data="{{address.addrStr}}"></qrcode>
+          <h4>{{$root.currency.getConvertion(address.balance)}}</h4>
         </div>
         <div class="m10v">
           <button class="pull-right btn-copy" clip-copy="address.addrStr"></button>
@@ -66,3 +67,4 @@
     </div>
   </div> <!-- END OF ROW -->
 </section>
+

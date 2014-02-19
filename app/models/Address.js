@@ -77,20 +77,27 @@ function spec() {
     var db   = new TransactionDb();
     async.series([
       function (cb) {
+        var seen={};
         db.fromAddr(self.addrStr, function(err,txOut){
           if (err) return cb(err);
           txOut.forEach(function(txItem){
-
+            var add=0, addSpend=0;
             var v = txItem.value_sat;
 
-            txs.push({txid: txItem.txid, ts: txItem.ts});
+            if ( !seen[txItem.txid] ) {
+              txs.push({txid: txItem.txid, ts: txItem.ts});
+              seen[txItem.txid]=1;
+              add=1;
+            }
 
-            if (txItem.spentTxId) {
+            if (txItem.spentTxId && !seen[txItem.spentTxId]  ) {
               txs.push({txid: txItem.spentTxId, ts: txItem.spentTs});
+              seen[txItem.spentTxId]=1;
+              addSpend=1;
             }
 
             if (txItem.isConfirmed) {
-              self.txApperances += 1;
+              self.txApperances += add;
               self.totalReceivedSat += v;
               if (! txItem.spentTxId ) {
                 //unspent
@@ -100,17 +107,17 @@ function spec() {
                 // unspent
                 self.balanceSat   += v;
                 self.unconfirmedBalanceSat -= v;
-                self.unconfirmedTxApperances += 1;
+                self.unconfirmedTxApperances += addSpend;
               }
               else {
                 // spent
                 self.totalSentSat += v;
-                self.txApperances += 1;
+                self.txApperances += addSpend;
               }
             }
             else {
               self.unconfirmedBalanceSat += v;
-              self.unconfirmedTxApperances += 1;
+              self.unconfirmedTxApperances += add;
             }
           });
           return cb();
