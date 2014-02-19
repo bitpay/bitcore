@@ -7,6 +7,7 @@ module.exports.bignum = require('bignum');
 module.exports.base58 = require('base58-native');
 module.exports.buffertools = require('buffertools');
 module.exports.config = require('./config');
+module.exports.const = require('./const');
 module.exports.log = require('./util/log');
 module.exports.networks = require('./networks');
 module.exports.util = require('./util/util');

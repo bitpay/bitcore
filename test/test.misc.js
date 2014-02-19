@@ -19,6 +19,9 @@ describe('Miscelaneous stuff', function() {
   it('should initialze the util object', function() {
     should.exist(bitcore.util);
   });
+  it('should initialze the const object', function() {
+    should.exist(bitcore.const);
+  });
 
 
   // bignum
@@ -48,6 +51,7 @@ describe('Miscelaneous stuff', function() {
     var m = '1QCJj1gPZKx2EwzGo9Ri8mMBs39STvDYcv';
     base58Check.encode(base58Check.decode(m)).should.equal(m);
   });
+
 });
 
 
