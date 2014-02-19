@@ -46,6 +46,7 @@ Bitcore is still under heavy development and not quite ready for "drop-in" produ
 #Contributing
 Bitcore needs some developer love. Please send pull requests for bug fixes, code optimization, and ideas for improvement.
 
+#Browser support
 Work to enable Bitcore for use in the browser is ongoing. To build bitcore for the browser:
 ```
 npm install -g grunt-cli

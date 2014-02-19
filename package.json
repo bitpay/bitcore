@@ -40,7 +40,8 @@
     "buffers": "=0.1.1",
     "buffertools": "~2.0.1",
     "mocha": ">=1.15.1",
-    "browserify-bignum": "git://github.com/maraoz/browserify-bignum.git"
+    "browserify-bignum": "git://github.com/maraoz/browserify-bignum.git",
+    "browserify-buffertools": "~1.0.2"
   },
   "devDependencies": {
     "grunt-contrib-watch": "~0.5.3",
