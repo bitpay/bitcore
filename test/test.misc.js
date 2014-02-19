@@ -22,6 +22,10 @@ describe('Miscelaneous stuff', function() {
   it('should initialze the const object', function() {
     should.exist(bitcore.const);
   });
+  it('should initialze the Deserialize object', function() {
+    should.exist(bitcore.Deserialize);
+    should.exist(bitcore.Deserialize.intFromCompact);
+  });
 
 
   // bignum
