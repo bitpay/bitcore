@@ -123,17 +123,19 @@ function ClassSpec(b) {
     };
 
     for(var k in apiCalls) {
-      var spec = apiCalls[k].split(' ');
-      for (var i = 0; i < spec.length; i++) {
-        if(types[spec[i]]) {
-          spec[i] = types[spec[i]];
-        } else {
-          spec[i] = types.string;
+      if (apiCalls.hasOwnProperty(k)) {
+        var spec = apiCalls[k].split(' ');
+        for (var i = 0; i < spec.length; i++) {
+         if(types[spec[i]]) {
+           spec[i] = types[spec[i]];
+         } else {
+           spec[i] = types.string;
+         }
         }
-      };
-      var methodName = k.toLowerCase();
-      constructor.prototype[k] = createRPCMethod(methodName, spec);
-      constructor.prototype[methodName] = constructor.prototype[k];
+        var methodName = k.toLowerCase();
+        constructor.prototype[k] = createRPCMethod(methodName, spec);
+        constructor.prototype[methodName] = constructor.prototype[k];
+      }
     }
   }
 

@@ -16,8 +16,3 @@ if (typeof require === 'undefined') {
   
 }
 
-
-if (typeof module === 'undefined') {
-  var that = this;
-  that.module = bitcore.module;
-}

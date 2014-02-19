@@ -30,7 +30,7 @@
   },
   "scripts": {},
   "dependencies": {
-    "classtool": "=1.0.0",
+    "classtool": "git://github.com/bitpay/classtool.git",
     "base58-native": "=0.1.3",
     "bindings": "=1.1.1",
     "bufferput": "=0.1.1",

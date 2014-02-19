@@ -17,13 +17,20 @@ module.exports.VersionedData = require('./util/VersionedData');
 module.exports.Address = require('./Address');
 module.exports.Opcode = require('./Opcode');
 module.exports.Script = require('./Script');
-module.exports.SINKey = require('./SINKey');
 module.exports.Transaction = require('./Transaction');
 module.exports.Peer = require('./Peer');
+module.exports.PeerManager = require('./PeerManager');
 module.exports.Block = require('./Block');
 module.exports.Connection = require('./Connection');
 module.exports.ScriptInterpreter = require('./ScriptInterpreter');
 module.exports.Bloom = require('./Bloom');
+module.exports.Key = require('./Key').Key;
+module.exports.SINKey = require('./SINKey');
+module.exports.SIN = require('./SIN');
+module.exports.PrivateKey = require('./PrivateKey');
+module.exports.RpcClient = require('./RpcClient');
+module.exports.Wallet = require('./Wallet');
+module.exports.WalletKey = require('./WalletKey');
 
 
 if (typeof process.versions === 'undefined') {

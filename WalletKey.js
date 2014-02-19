@@ -8,6 +8,8 @@ function ClassSpec(b) {
   var Address = require('./Address').class();
 
   function WalletKey(cfg) {
+    if (!cfg) cfg = {};
+    if (!cfg.network) throw new Error('network parameter is required');
     this.network = cfg.network; // required
     this.created = cfg.created;
     this.privKey = cfg.privKey;

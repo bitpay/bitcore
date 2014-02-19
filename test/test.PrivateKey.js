@@ -5,20 +5,20 @@ var bitcore = require('../bitcore');
 
 var should = chai.should();
 
-var SINModule = bitcore.SIN;
-var SIN;
+var PrivateKeyModule = bitcore.PrivateKey;
+var PrivateKey;
 
-describe('SIN', function() {
+describe('PrivateKey', function() {
   it('should initialze the main object', function() {
-    should.exist(SINModule);
+    should.exist(PrivateKeyModule);
   });
   it('should be able to create class', function() {
-    SIN = SINModule.class();
-    should.exist(SIN);
+    PrivateKey = PrivateKeyModule.class();
+    should.exist(PrivateKey);
   });
   it('should be able to create instance', function() {
-    var s = new SIN();
-    should.exist(s);
+    var pk = new PrivateKey();
+    should.exist(pk);
   });
 });
 
