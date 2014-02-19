@@ -1,6 +1,6 @@
 <div class="line-bot row ng-cloak" data-ng-hide="!tx" data-ng-cloak>
   <div class="col-xs-12 col-md-6">
-    <button class="btn-expand pull-left" data-ng-click="itemsExpanded = !itemsExpanded"><span class="glyphicon glyphicon-plus" data-ng-class="{'glyphicon-minus': itemsExpanded}" tooltip="Show/Hide items details" tooltip-placement="right"></span></button>
+    <button class="btn-expand pull-left" data-ng-click="itemsExpanded = !itemsExpanded"><span class="glyphicon glyphicon-plus-sign" data-ng-class="{'glyphicon-minus-sign': itemsExpanded}" tooltip="Show/Hide items details" tooltip-placement="right"></span></button>
     <button class="btn-copy pull-right" clip-copy="tx.txid"></button>
     <div class="ellipsis">
       <a class="txid" href="/tx/{{tx.txid}}">{{tx.txid}}</a>
@@ -31,7 +31,7 @@
       <div data-ng-if="!itemsExpanded" data-ng-init="currentInNoExpanded=0; sizeInNoExpanded=5">
         <div data-ng-repeat="vin in tx.vinSimple| startFrom:currentInNoExpanded*sizeInNoExpanded | limitTo:sizeInNoExpanded">
           <div class="col-md-12 transaction-vin-vout">
-            <div class="text-muted pull-right btc-value" data-ng-class="{'text-danger': $root.currentAddr == vin.addr}"><small>{{$root.currency.getConvertion(vin.value)}}</small></div>
+            <div class="pull-right btc-value" data-ng-class="{'text-danger': $root.currentAddr == vin.addr}"><p>{{$root.currency.getConvertion(vin.value)}}</p></div>
             <div class="ellipsis">
               <span data-ng-show="vin.notAddr">{{vin.addr}}</span>
               <span class="text-muted" title="Current Bitcoin Address" data-ng-show="vin.addr == $root.currentAddr">{{vin.addr}}</span>
@@ -44,9 +44,9 @@
             </div>
           </div>
         </div>
-        <div class="showmore_collapse text-center" data-ng-show="tx.vinSimple.length > 5" data-ng-class="{ 'hidden': itemsExpanded}">
-          <a href="#" ng-hide="sizeInNoExpanded != tx.vinSimple.length" ng-click="currentInNoExpanded=0; sizeInNoExpanded=5">...less</a>
-          <a href="#" ng-hide="currentInNoExpanded >= tx.vinSimple.length/sizeInNoExpanded - 1" ng-click="currentInNoExpanded=0; sizeInNoExpanded=tx.vinSimple.length">more...</a>
+        <div class="showmore_collapse text-right" data-ng-show="tx.vinSimple.length > 5" data-ng-class="{ 'hidden': itemsExpanded}">
+          <a href="#" ng-hide="sizeInNoExpanded != tx.vinSimple.length" ng-click="currentInNoExpanded=0; sizeInNoExpanded=5"><small>...less</small></a>
+          <a href="#" ng-hide="currentInNoExpanded >= tx.vinSimple.length/sizeInNoExpanded - 1" ng-click="currentInNoExpanded=0; sizeInNoExpanded=tx.vinSimple.length"><small>more...</small></a>
         </div>
       </div>
 
@@ -54,7 +54,7 @@
       <div data-ng-if="itemsExpanded" data-ng-init="currentInExpanded=0; sizeInExpanded=5">
         <div data-ng-repeat="vin in tx.vin| startFrom:currentInExpanded*sizeInExpanded | limitTo:sizeInExpanded">
           <div class="col-md-12 transaction-vin-vout">
-            <div class="text-muted pull-right btc-value"><small>{{$root.currency.getConvertion(vin.value)}}</small></div>
+            <div class="pull-right btc-value"><p>{{$root.currency.getConvertion(vin.value)}}</p></div>
             <div class="ellipsis">
               <a class="glyphicon glyphicon-chevron-right" href="/tx/{{vin.txid}}" title="Outpoint: {{vin.txid}},{{vin.vout}}"></a>&nbsp;&nbsp;
               <span data-ng-show="vin.notAddr">{{vin.addr}}</span>
@@ -78,9 +78,9 @@
             </div>
           </div>
         </div>
-        <div class="showmore_collapse text-center" data-ng-show="tx.vin.length > 5" data-ng-class="{ 'hidden': !itemsExpanded}">
-          <a href="#" ng-hide="sizeInExpanded != tx.vin.length" ng-click="currentInExpanded=0; sizeInExpanded=5">...less</a>
-          <a href="#" ng-hide="currentInExpanded >= tx.vin.length/sizeInExpanded - 1" ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length">more...</a>
+        <div class="showmore_collapse text-right" data-ng-show="tx.vin.length > 5" data-ng-class="{ 'hidden': !itemsExpanded}">
+          <a href="#" ng-hide="sizeInExpanded != tx.vin.length" ng-click="currentInExpanded=0; sizeInExpanded=5"><small>...less</small></a>
+          <a href="#" ng-hide="currentInExpanded >= tx.vin.length/sizeInExpanded - 1" ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length"><small>more...</small></a>
         </div>
       </div>
     </div>
@@ -98,13 +98,13 @@
       <div data-ng-if="!itemsExpanded" data-ng-init="currentOutNoExpanded=0; sizeOutNoExpanded=5">
         <div data-ng-repeat="vout in tx.voutSimple| startFrom:currentOutNoExpanded*sizeOutNoExpanded | limitTo:sizeOutNoExpanded">
           <div class="col-md-12 transaction-vin-vout">
-            <div class="text-muted pull-right btc-value" data-ng-class="{'text-success': $root.currentAddr == vout.addr}">
+            <div class="pull-right btc-value" data-ng-class="{'text-success': $root.currentAddr == vout.addr}">
 
-              <small>
+              <p>
                 {{$root.currency.getConvertion(vout.value)}}
                 <span class="text-danger" data-ng-show="vout.isSpent" tooltip="Output is spent" tooltip-placement="left">(S)</span>
                 <span class="text-success" data-ng-show="!vout.isSpent"  tooltip="Output is unspent" tooltip-placement="left">(U)</span>
-              </small>
+              </p>
             </div>
 
             <div class="ellipsis">
@@ -114,9 +114,9 @@
             </div>
           </div>
         </div>
-        <div class="showmore_collapse text-center" data-ng-show="tx.voutSimple.length > 5" data-ng-class="{ 'hidden': itemsExpanded}">
-          <a href="#" ng-hide="sizeOutNoExpanded != tx.voutSimple.length" ng-click="currentOutNoExpanded=0; sizeOutNoExpanded=5">...less</a>
-          <a href="#" ng-hide="currentOutNoExpanded >= tx.voutSimple.length/sizeOutNoExpanded - 1" ng-click="currentOutNoExpanded=0; sizeOutNoExpanded=tx.voutSimple.length">more...</a>
+        <div class="showmore_collapse text-right" data-ng-show="tx.voutSimple.length > 5" data-ng-class="{ 'hidden': itemsExpanded}">
+          <a href="#" ng-hide="sizeOutNoExpanded != tx.voutSimple.length" ng-click="currentOutNoExpanded=0; sizeOutNoExpanded=5"><small>...less</small></a>
+          <a href="#" ng-hide="currentOutNoExpanded >= tx.voutSimple.length/sizeOutNoExpanded - 1" ng-click="currentOutNoExpanded=0; sizeOutNoExpanded=tx.voutSimple.length"><small>more...</small></a>
         </div>
       </div>
 
@@ -124,11 +124,11 @@
       <div data-ng-if="itemsExpanded" data-ng-init="currentOutExpanded=0; sizeOutExpanded=5">
         <div data-ng-repeat="vout in tx.vout| startFrom:currentOutExpanded*sizeOutExpanded | limitTo:sizeOutExpanded">
           <div class="col-md-12 transaction-vin-vout">
-            <div class="text-muted pull-right btc-value">
-              <small>{{$root.currency.getConvertion(vout.value)}}
+            <div class="pull-right btc-value">
+              <p>{{$root.currency.getConvertion(vout.value)}}
                 <span class="text-success" data-ng-show="!vout.spendTxId" tooltip="Output is unspent" tooltip-placement="left">(U)</span>
                 <a class="glyphicon glyphicon-chevron-right" data-ng-show="vout.spendTxId" href="/tx/{{vout.spendTxId}}" title="Spent at: {{vout.spendTxId}},{{vout.spendIndex}}"></a>&nbsp;&nbsp;
-              </small>
+              </p>
             </div>
             <div class="ellipsis">
               <a href="/address/{{address}}" data-ng-repeat="address in vout.scriptPubKey.addresses">{{address}}</a>
@@ -151,15 +151,16 @@
             </div>
           </div>
         </div>
-        <div class="showmore_collapse text-center" data-ng-show="tx.vout.length > 5" data-ng-class="{ 'hidden': !itemsExpanded}">
-          <a href="#" ng-hide="sizeOutExpanded != tx.vout.length" ng-click="currentOutExpanded=0; sizeOutExpanded=5">...less</a>
-          <a href="#" ng-hide="currentOutExpanded >= tx.vout.length/sizeOutExpanded - 1" ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length">more...</a>
+        <div class="showmore_collapse text-right" data-ng-show="tx.vout.length > 5" data-ng-class="{ 'hidden': !itemsExpanded}">
+          <a href="#" ng-hide="sizeOutExpanded != tx.vout.length" ng-click="currentOutExpanded=0; sizeOutExpanded=5"><small>...less</small></a>
+          <a href="#" ng-hide="currentOutExpanded >= tx.vout.length/sizeOutExpanded - 1" ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length"><small>more...</small></a>
         </div>
       </div>
     </div>
   </div>
 </div>
-<div class="panel panel-default" data-ng-class="{ 'hidden': !itemsExpanded && !tx.blockhash}">
+
+<div class="panel panel-default" data-ng-if="itemsExpanded && !block.hash">
   <div class="panel-body" style="word-wrap:break-word">
     <small>
       <strong>BlockHash</strong>

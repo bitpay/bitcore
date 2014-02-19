@@ -71,6 +71,14 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 .vm { vertical-align: middle; }
 
+.btn-group .btn+.btn, .btn-group .btn+.btn-group, .btn-group .btn-group+.btn, .btn-group .btn-group+.btn-group {
+margin-left: 0;
+}
+
+.table-hover>tbody>tr:hover>td, .table-hover>tbody>tr:hover>th {
+  background-color: #F0F7E2;
+}
+
 .navbar-default .navbar-toggle { 
   border-color: #fff;
   margin-top: 15px;
@@ -81,6 +89,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 .navbar-default {
   background-color: #8DC429;
+  margin: 0;
 }
 
 .navbar-default .navbar-nav>li>a {
@@ -367,7 +376,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 }
 
 .txvalues-default {
-  background-color: #ffffff;
+  background-color: #EBEBEB;
   color: #333;
 }
 
