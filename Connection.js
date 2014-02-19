@@ -527,6 +527,7 @@ function spec(b) {
 
     case 'getaddr':
     case 'verack':
+    case 'reject':
       // Empty message, nothing to parse
       break;
 

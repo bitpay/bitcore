@@ -3,5 +3,7 @@ browser/bundle.js
 browser/vendor.js
 node_modules/
 *.swp
+*.swo
 *~
 .project
+README.html
