@@ -1,8 +1,10 @@
 # *insight*
 
 *insight* is an open-source bitcoin blockchain explorer with complete REST
-and websocket APIs. Insight runs in NodeJS, and uses AngularJS for the
+and websocket APIs. Insight runs in NodeJS, uses AngularJS for the
 front-end and LevelDB for storage.
+
+Check some screenshots and more details at [insight's project homepage](http://insight.bitcore.io).
 
 
 ## Prerequisites
