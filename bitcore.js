@@ -20,6 +20,7 @@ module.exports.Peer = require('./Peer');
 module.exports.Block = require('./Block');
 module.exports.Connection = require('./Connection');
 module.exports.ScriptInterpreter = require('./ScriptInterpreter');
+module.exports.Bloom = require('./Bloom');
 
 
 if (typeof process.versions === 'undefined') {
