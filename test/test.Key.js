@@ -19,6 +19,14 @@ describe('Key', function() {
     var k = new Key();
     should.exist(k);
   });
+  it('should be able to generateSync instance', function() {
+    var k = Key.generateSync();
+    should.exist(k);
+    k.private.length.should.equal(32);
+    k.public.length.should.equal(33);
+    should.exist(k.compressed);
+  });
+  
 });
 
 

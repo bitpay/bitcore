@@ -31,7 +31,9 @@ module.exports.PrivateKey = require('./PrivateKey');
 module.exports.RpcClient = require('./RpcClient');
 module.exports.Wallet = require('./Wallet');
 module.exports.WalletKey = require('./WalletKey');
+module.exports.Buffer = Buffer;
 
+//module.exports.is = require('./browser/KeyEcdsaAdapter.js').is;
 
 if (typeof process.versions === 'undefined') {
   module.exports.bignum.config({EXPONENTIAL_AT: 9999999, DECIMAL_PLACES: 0, ROUNDING_MODE: 1});

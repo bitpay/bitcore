@@ -23,13 +23,13 @@ module.exports = function(grunt) {
           standalone: 'bitcore',
         }
       },
-      vendor: {
+      /*vendor: {
         src: ['browser/vendor_load.js'],
         dest: 'browser/vendor.js',
         options: {
 
         }
-      }
+      }*/
     },
     watch: {
       readme: {
