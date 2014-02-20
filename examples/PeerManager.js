@@ -15,12 +15,15 @@ var handleBlock = function(b) {
   console.log('block received:', util.inspect(b.message,{depth:null}));
 };
 
-var handleTx = function(b) {
-  console.log('block tx:',  util.inspect(b.message,{depth:null}));
+var handleTx = function(info) {
+  var tx = info.message.tx.getStandardizedObject();
+  console.log('block tx:',  util.inspect(tx,{depth:null}));
 };
 
-var handleInv = function(b) {
-  console.log('block inv:',  util.inspect(b.message,{depth:null}));
+var handleInv = function(info) {
+  console.log('block inv:',  util.inspect(info.message,{depth:null}));
+  var invs = info.message.invs;
+  info.conn.sendGetData(invs);
 };
 
 

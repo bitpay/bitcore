@@ -41,9 +41,9 @@ try {
 ```
 ## Monitoring Blocks and Transactions
 ```
-var networks = require('../networks');
-var Peer = require('../Peer').class();
-var PeerManager = require('../PeerManager').createClass({
+var networks = require('bitcore/networks');
+var Peer = require('bitcore/Peer').class();
+var PeerManager = require('bitcore/PeerManager').createClass({
   network: networks.testnet
 });
 var util= require('util');
@@ -54,11 +54,14 @@ var handleBlock = function(b) {
 };
 
 var handleTx = function(b) {
-  console.log('block tx:',  util.inspect(b.message,{depth:null}));
+  var tx = info.message.tx.getStandardizedObject();
+  console.log('block tx:',  util.inspect(tx,{depth:null}));
 };
 
 var handleInv = function(b) {
-  console.log('block inv:',  util.inspect(b.message,{depth:null}));
+  console.log('block inv:',  util.inspect(info.message,{depth:null}));
+  var invs = info.message.invs;
+  info.conn.sendGetData(invs);
 };
 
 
