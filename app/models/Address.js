@@ -72,7 +72,6 @@ function spec() {
 
   Address.prototype.getUnspents = function(next) {
     var self = this;
-console.log('[Address.js.74:this:]'); //TODO
     if (!self.addrStr) return next();
 
     var ret  = [];
@@ -82,6 +81,9 @@ console.log('[Address.js.74:this:]'); //TODO
       if (err) return next(err);
 
       txOut.forEach(function(txItem){
+
+        // we are filtering out even unconfirmed spents!
+        // add || !txItem.spentIsConfirmed 
         if (!txItem.spentTxId) {
           ret.push({
             address: self.addrStr,
@@ -89,8 +91,7 @@ console.log('[Address.js.74:this:]'); //TODO
             vout: txItem.index,
             ts: txItem.ts,
             amount: txItem.value_sat / BitcoreUtil.COIN,
-// TODO => actually 1+
-//            confirmations: 1, 
+            confirmations: txItem.isConfirmed ? 1 : 0, // TODO => actually is 1+
           });
         }
       });
