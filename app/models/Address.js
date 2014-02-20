@@ -4,10 +4,14 @@ require('classtool');
 
 
 function spec() {
-  var async           = require('async');
-  var BitcoreAddress  = require('bitcore/Address').class();
-  var BitcoreUtil     = require('bitcore/util/util');
-  var TransactionDb   = require('../../lib/TransactionDb').class();
+  var async              = require('async');
+  var BitcoreAddress     = require('bitcore/Address').class();
+  var BitcoreUtil        = require('bitcore/util/util');
+  var TransactionDb      = require('../../lib/TransactionDb').class();
+  var BitcoreTransaction = require('bitcore/Transaction').class();
+  var Parser             = require('bitcore/util/BinaryParser').class();
+  var Buffer             = require('buffer').Buffer;
+  var CONCURRENCY        = 5;
 
   function Address(addrStr) {
     this.balanceSat        = 0;
@@ -69,6 +73,14 @@ function spec() {
 
   }
 
+  Address.prototype._getScriptPubKey = function(hex,n) {
+    // ScriptPubKey is not provided by bitcoind RPC, so we parse it from tx hex.
+
+    var parser = new Parser(new Buffer(hex,'hex'));
+    var tx = new BitcoreTransaction();
+    tx.parse(parser);
+    return (tx.outs[n].s.toString('hex'));
+  };
 
   Address.prototype.getUtxo = function(next) {
     var self = this;
@@ -80,22 +92,30 @@ function spec() {
     db.fromAddr(self.addrStr, function(err,txOut){
       if (err) return next(err);
 
-      txOut.forEach(function(txItem){
+      // Complete utxo info
+      async.eachLimit(txOut,CONCURRENCY,function (txItem, a_c) {
+        db.fromIdInfoSimple(txItem.txid, function(err, info) {
 
-        // we are filtering out even unconfirmed spents!
-        // add || !txItem.spentIsConfirmed 
-        if (!txItem.spentTxId) {
-          ret.push({
-            address: self.addrStr,
-            txid: txItem.txid,
-            vout: txItem.index,
-            ts: txItem.ts,
-            amount: txItem.value_sat / BitcoreUtil.COIN,
-            confirmations: txItem.isConfirmed ? 1 : 0, // TODO => actually is 1+
-          });
-        }
+          var scriptPubKey = self._getScriptPubKey(info.hex, txItem.index);
+
+          // we are filtering out even unconfirmed spents!
+          // add || !txItem.spentIsConfirmed 
+          if (!txItem.spentTxId) {
+            ret.push({
+              address: self.addrStr,
+              txid: txItem.txid,
+              vout: txItem.index,
+              ts: txItem.ts,
+              scriptPubKey: scriptPubKey,
+              amount: txItem.value_sat / BitcoreUtil.COIN,
+              confirmations: txItem.isConfirmed ? info.confirmations : 0,
+            });
+          }
+          return a_c(err);
+        });
+      }, function(err) {
+        return next(err,ret);
       });
-      return next(err,ret);
     });
   };
 
