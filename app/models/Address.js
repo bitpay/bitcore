@@ -70,7 +70,7 @@ function spec() {
   }
 
 
-  Address.prototype.getUnspents = function(next) {
+  Address.prototype.getUtxo = function(next) {
     var self = this;
     if (!self.addrStr) return next();
 

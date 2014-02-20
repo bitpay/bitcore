@@ -36,16 +36,15 @@ exports.show = function(req, res, next) {
 
 
 
-exports.unspents = function(req, res, next) {
+exports.utxo = function(req, res, next) {
   var a = getAddr(req, res, next);
   
   if (a) 
-    a.getUnspents(function(err, unspents) {
+    a.getUtxo(function(err, utxo) {
       if (err)
         return common.handleErrors(err, res);
       else  {
-console.log('[addresses.js.47]', unspents); //TODO
-        return res.jsonp(unspents);
+        return res.jsonp(utxo);
       }
     });
 };
