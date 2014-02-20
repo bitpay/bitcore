@@ -69,6 +69,35 @@ function spec() {
 
   }
 
+
+  Address.prototype.getUnspents = function(next) {
+    var self = this;
+console.log('[Address.js.74:this:]'); //TODO
+    if (!self.addrStr) return next();
+
+    var ret  = [];
+    var db   = new TransactionDb();
+
+    db.fromAddr(self.addrStr, function(err,txOut){
+      if (err) return next(err);
+
+      txOut.forEach(function(txItem){
+        if (!txItem.spentTxId) {
+          ret.push({
+            address: self.addrStr,
+            txid: txItem.txid,
+            vout: txItem.index,
+            ts: txItem.ts,
+            amount: txItem.value_sat / BitcoreUtil.COIN,
+// TODO => actually 1+
+//            confirmations: 1, 
+          });
+        }
+      });
+      return next(err,ret);
+    });
+  };
+
   Address.prototype.update = function(next) {
     var self = this;
     if (!self.addrStr) return next();

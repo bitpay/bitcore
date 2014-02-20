@@ -21,8 +21,8 @@ module.exports = function(app) {
 
   // Address routes
   var addresses = require('../app/controllers/addresses');
-  app.get('/api/addr/:addr', addresses.show);
-  app.param('addr', addresses.address);
+//  app.get('/api/addr/:addr', addresses.show);
+  app.get('/api/addr/:addr/unspents', addresses.unspents);
 
   // Status route
   var st = require('../app/controllers/status');
