@@ -3,7 +3,8 @@
       "poolName":"50BTC",
       "url":"https://50btc.com/",
       "searchStrings":[
-         "50BTC.com"
+         "50BTC.com",
+         "50btc.com"
       ]
    },
    {
@@ -71,7 +72,7 @@
       "searchStrings":[
          "Josh Zerlan was here!",
          "EclipseMC",
-         "Aluminum Falcons"
+         "Aluminum Falcon"
       ]
    },
    {
@@ -117,6 +118,13 @@
          "MaxBTC"
       ]
    },
+    {
+      "poolName":"NMCbit",
+      "url":"http://nmcbit.com/",
+      "searchStrings":[
+         "nmcbit.com"
+      ]
+   },
    {
       "poolName":"ozcoin",
       "url":"https://ozco.in/",
@@ -151,6 +159,13 @@
       "url":"https://www.triplemining.com/",
       "searchStrings":[
          "Triplemining.com"
+      ]
+   },
+   {
+      "poolName":"wizkid057",
+      "url":"http://wizkid057.com/btc",
+      "searchStrings":[
+         "wizkid057"
       ]
    },
    {
