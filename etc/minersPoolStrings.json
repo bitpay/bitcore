@@ -3,7 +3,8 @@
       "poolName":"50BTC",
       "url":"https://50btc.com/",
       "searchStrings":[
-         "50BTC.com"
+         "50BTC.com",
+         "50btc.com"
       ]
    },
    {
@@ -71,7 +72,7 @@
       "searchStrings":[
          "Josh Zerlan was here!",
          "EclipseMC",
-         "Aluminum Falcons"
+         "Aluminum Falcon"
       ]
    },
    {
@@ -90,7 +91,7 @@
       ]
    },
    {
-      "poolName":"Horrible Horrendous Terrible Tremendous",
+      "poolName":"HHTT",
       "url":"http://hhtt.1209k.com/",
       "searchStrings":[
          "HHTT"
@@ -115,6 +116,13 @@
       "url":"https://www.maxbtc.com",
       "searchStrings":[
          "MaxBTC"
+      ]
+   },
+    {
+      "poolName":"NMCbit",
+      "url":"http://nmcbit.com/",
+      "searchStrings":[
+         "nmcbit.com"
       ]
    },
    {
@@ -151,6 +159,13 @@
       "url":"https://www.triplemining.com/",
       "searchStrings":[
          "Triplemining.com"
+      ]
+   },
+   {
+      "poolName":"wizkid057",
+      "url":"http://wizkid057.com/btc",
+      "searchStrings":[
+         "wizkid057"
       ]
    },
    {
