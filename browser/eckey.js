@@ -20,7 +20,7 @@ Bitcoin.ECKey = (function () {
         this.priv = BigInteger.fromByteArrayUnsigned(ECKey.decodeString(input));
       } else {
         // Prepend zero byte to prevent interpretation as negative integer
-        this.priv = BigInteger.fromByteArrayUnsigned(Crypto.util.base64ToBytes(input));
+        this.priv = BigInteger.fromByteArrayUnsigned(Crypto.util.hexToBytes(input));
       }
     }
     this.compressed = !!ECKey.compressByDefault;
