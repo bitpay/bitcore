@@ -41,7 +41,8 @@ describe('Key', function() {
   });
   it('should have a valid private key', function() {
     var k = Key.generateSync();
-    k.private.length.should.equal(32);
+    k.private.length.should.be.below(33);
+    k.private.length.should.be.above(30);
   });
 
   it('should be able to regenerate from a private key', function() {

@@ -10,13 +10,11 @@ if (typeof require === 'undefined') {
     var module = that[name];
     if (!module) {
       if (!bitcore[name])
-        throw new Error('Cannot find module "'+name+'"');
+        throw new Error('Cannot find module "' + name + '"');
       return bitcore[name];
     }
     return module;
   };
-  
+  this.Buffer = require('Buffer');
+
 }
-
-this.Buffer = require('Buffer');
-

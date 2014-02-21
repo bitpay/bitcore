@@ -2,7 +2,6 @@
 
 var chai = require('chai');
 var bitcore = require('../bitcore');
-
 var should = chai.should();
 
 var BlockModule = bitcore.Block;

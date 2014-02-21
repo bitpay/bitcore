@@ -145,9 +145,11 @@ function spec(b) {
     var chunks = [];
     for (var i in this.chunks)
     {
-      var chunk = this.chunks[i];
-      if (chunk != 0)
-        chunks.push(chunk);
+      if (this.chunks.hasOwnProperty(i)) {
+        var chunk = this.chunks[i];
+        if (chunk != 0)
+          chunks.push(chunk);
+      }
     }
     this.chunks = chunks;
     this.updateBuffer();
@@ -157,8 +159,11 @@ function spec(b) {
   Script.prototype.prependOp0 = function()
   {
     var chunks = [0];
-    for (i in this.chunks)
-      chunks.push(this.chunks[i]);
+    for (i in this.chunks) {
+      if (this.chunks.hasOwnProperty(i)) {
+        chunks.push(this.chunks[i]);
+      }
+    }
     this.chunks = chunks;
     this.updateBuffer();
     return this;
@@ -486,6 +491,7 @@ function spec(b) {
 
   Script.chunksToBuffer = function (chunks) {
     var buf = new Put();
+
     for (var i = 0, l = chunks.length; i < l; i++) {
       var data = chunks[i];
       if (Buffer.isBuffer(data)) {
