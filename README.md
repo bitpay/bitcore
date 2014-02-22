@@ -78,7 +78,7 @@ peerman.start();
 PeerManager will emit the following events: 'version', 'verack', 'addr', 'getaddr', 'error' 'disconnect'; and will relay events like: 'tx', 'block', 'inv'. Please see  [PeerManager.js](PeerManager.js), [Peer.js](Peer.js) and [Connection.js](Connection.js)
 
 
-## Creating and sending a Transaction thought P2P
+## Creating and sending a Transaction through P2P
 ```
 var networks    = require('bitcore/networks');
 var Peer        = require('bitcore/Peer').class();
