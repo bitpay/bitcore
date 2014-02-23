@@ -86,9 +86,9 @@ If bitcoind is shutdown, *insight* needs to be stopped and restarted once bitcoi
 
   Old blockchain data can be manually synced issuing:
 
-    $ utils/sync.js
+    $ util/sync.js
 
-  Check utils/sync.js --help for options, particulary -D to erase the current DB.
+  Check util/sync.js --help for options, particulary -D to erase the current DB.
 
   *NOTE* that there is no need to run this manually since the historic synchronization is embedded on the web application, so by running you will trigger the historic sync automatically.
 
