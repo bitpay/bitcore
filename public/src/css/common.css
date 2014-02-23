@@ -568,9 +568,6 @@ margin-left: 0;
   margin: 30px 0;
 }
 
-.transaction-vin-vout .ellipsis { margin-bottom: 10px; }
-.transaction-vin-vout .btc-value { margin-left: 15px; }
-
 .page-header { margin-top: 0; }
 
 /* Index */
@@ -644,5 +641,20 @@ margin-left: 0;
   -webkit-animation-duration: 2s;
   -webkit-animation-iteration-count: infinite;
   -webkit-animation-timing-function: linear;
+}
+
+.transaction-vin-vout {
+  
+}
+
+.v_hightlight {
+  background-color: #8DC429;
+  overflow: hidden;
+  color: #fff;
+}
+
+a.v_hightlight_more {
+  background-color: #8DC429;
+  color: #fff;
 }
 
