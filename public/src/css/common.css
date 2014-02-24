@@ -647,13 +647,13 @@ margin-left: 0;
   
 }
 
-.v_hightlight {
+.v_highlight {
   background-color: #8DC429;
   overflow: hidden;
   color: #fff;
 }
 
-a.v_hightlight_more {
+a.v_highlight_more {
   background-color: #8DC429;
   color: #fff;
 }

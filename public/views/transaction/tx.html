@@ -70,7 +70,7 @@
           </div>
           <div class="col-md-12">
             <div class="panel panel-default">
-              <div class="panel-body" style="word-wrap:break-word" data-ng-class="{true: 'v_hightlight', false: ''}[from_vin == true && (v_index - 1) == vin.n]">
+              <div class="panel-body" style="word-wrap:break-word" data-ng-class="{true: 'v_highlight', false: ''}[from_vin == true && (v_index - 1) == vin.n]">
                 <small>
                   <strong>scriptSig</strong>
                   {{vin.scriptSig.asm}}
@@ -81,7 +81,7 @@
         </div>
         <div class="showmore_collapse text-right" data-ng-show="tx.vin.length > 5 && !fromVinCollapsed" data-ng-class="{ 'hidden': !itemsExpanded}">
           <a href="#" ng-hide="sizeInExpanded != tx.vin.length" ng-click="currentInExpanded=0; sizeInExpanded=5"><small>...less</small></a>
-          <a href="#" data-ng-class="{true: 'v_hightlight_more', false: ''}[from_vin == true && (v_index - 1) > 5]" ng-hide="currentInExpanded >= tx.vin.length/sizeInExpanded - 1" ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length"><small>more...</small></a>
+          <a href="#" data-ng-class="{true: 'v_highlight_more', false: ''}[from_vin == true && (v_index - 1) > 5]" ng-hide="currentInExpanded >= tx.vin.length/sizeInExpanded - 1" ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length"><small>more...</small></a>
         </div>
       </div>
     </div>
@@ -139,7 +139,7 @@
           </div>
           <div class="col-md-12">
             <div class="panel panel-default">
-              <div class="panel-body" style="word-wrap:break-word" data-ng-class="{true: 'v_hightlight', false: ''}[from_vout == true && (v_index - 1) == vout.n]">
+              <div class="panel-body" style="word-wrap:break-word" data-ng-class="{true: 'v_highlight', false: ''}[from_vout == true && (v_index - 1) == vout.n]">
                 <small>
                   <p>
                   <strong>Type</strong>
@@ -156,7 +156,7 @@
         </div>
         <div class="showmore_collapse text-right" data-ng-show="tx.vout.length > 5 && !fromVoutCollapsed" data-ng-class="{ 'hidden': !itemsExpanded}">
           <a href="#" ng-hide="sizeOutExpanded != tx.vout.length" ng-click="currentOutExpanded=0; sizeOutExpanded=5"><small>...less</small></a>
-          <a href="#" data-ng-class="{true: 'v_hightlight_more', false: ''}[from_vout == true && (v_index - 1) > 5]" ng-hide="currentOutExpanded >= tx.vout.length/sizeOutExpanded - 1" ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length"><small>more...</small></a>
+          <a href="#" data-ng-class="{true: 'v_highlight_more', false: ''}[from_vout == true && (v_index - 1) > 5]" ng-hide="currentOutExpanded >= tx.vout.length/sizeOutExpanded - 1" ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length"><small>more...</small></a>
         </div>
       </div>
     </div>
