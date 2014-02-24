@@ -71,6 +71,10 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 .vm { vertical-align: middle; }
 
+.bgwhite {
+  background-color: white;
+}
+
 .btn-group .btn+.btn, .btn-group .btn+.btn-group, .btn-group .btn-group+.btn, .btn-group .btn-group+.btn-group {
 margin-left: 0;
 }
@@ -511,38 +515,37 @@ margin-left: 0;
   color: black;
 }
 
-.btn-copy, .btn-expand {
-  -moz-border-radius: 2px;
-  -webkit-border-radius: 2px;
-  background-color: #FFFFFF;
-  border-radius: 2px;
-  border: 2px solid #E4E4E4;
+.btn-copy {
   color: #9b9b9b;
   display: inline-block;
-  height: 25px;
-  padding: 0;
+  height: 16px;
+  width: 16px;
   outline: none;
-  text-align: center;
-  width: 30px;
+  vertical-align: sub;
+}
+
+.btn-expand {
+  color: #9b9b9b;
+  vertical-align: middle;
 }
 
 .btn-copy:hover, .btn-expand:hover {
-  background-color: #f2f2f2;
+  color: #000;
+  text-decoration: none;
 }
 
 .btn-copy {
-  background: #fff url('/img/icons/copy.png') center center no-repeat;
-  margin-left: 5px;
+  background: transparent url('/img/icons/copy.png') center center no-repeat;
 }
+
 .btn-copy .tooltip {
-  display: inline-block;
-  margin-left: 10px;
+  display: block;
+  margin-left: 20px;
   margin-top: -2px;
   opacity: 0;
 }
 .btn-copy.zeroclipboard-is-hover { color: #2a6496; }
 .btn-copy.zeroclipboard-is-active .tooltip { opacity: 1; }
-.btn-expand { margin-right: 5px; }
 
 @media (max-width: 991px) {
   .btn-copy {
