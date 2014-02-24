@@ -1,5 +1,20 @@
 <div data-ng-include src="'/views/includes/connection.html'"></div>
 <section data-ng-controller="BlocksController" data-ng-init="findOne()">
+  <div class="secondary_navbar" scroll data-ng-class="{'hidden': !secondaryNavbar}">
+    <div class="row">
+      <div class="col-md-2">
+        <a href="/block/{{block.previousblockhash}}">&larr; Previous Block</a>
+      </div>
+      <div class="col-md-8 text-center">
+        <strong>Block</strong> #{{block.height}} &middot; 
+        <strong>Hash</strong> {{block.hash}}
+        <span class="btn-copy" clip-copy="block.hash"></span>
+      </div>
+      <div class="col-md-2">
+        <a href="/block/{{block.nextblockhash}}">Next Block &rarr;</a>
+      </div>
+    </div>
+  </div>
   <h1>Block #{{block.height}}</h1>
   <div class="progress progress-striped active" data-ng-if="!block.hash">
     <div class="progress-bar progress-bar-info" style="width: 100%">

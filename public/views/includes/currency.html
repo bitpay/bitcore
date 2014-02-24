@@ -1,9 +1,15 @@
-<div class="text-center">
-	<small class="text-muted">Currency:</small>
-	<div class="btn-group currency m10l" data-ng-controller="CurrencyController">
-	    
-	    <a href="#" type="button" class="btn btn-default btn-sm" data-ng-click="setCurrency('USD')" data-ng-class="{active: currency.symbol == 'USD'}" tooltip="Change to USD: Bitstamp ${{currency.bitstamp}}"> <small>USD </small></a>
-	    <a href="#" type="button" class="btn btn-default btn-sm" data-ng-click="setCurrency('BTC')" data-ng-class="{active: currency.symbol == 'BTC'}" tooltip="Change to BTC"><small>BTC</small></a>
-	    <a href="#" type="button" class="btn btn-default btn-sm" data-ng-click="setCurrency('mBTC')" data-ng-class="{active: currency.symbol == 'mBTC'}" tooltip="Change to mBTC"><small>mBTC</small></a>
-	</div>
-</div>
+<a class="dropdown-toggle" data-toggle="dropdown" href="#">
+  {{currency.symbol}} <span class="caret"></span>
+</a>
+<ul class="dropdown-menu">
+  <li>
+  <a href="#" data-ng-click="setCurrency('USD')" data-ng-class="{active: currency.symbol == 'USD'}">USD</a>
+  </li>
+  <li>
+  <a href="#" data-ng-click="setCurrency('BTC')" data-ng-class="{active: currency.symbol == 'BTC'}">BTC</a>
+  </li>
+  <li>
+  <a href="#" data-ng-click="setCurrency('mBTC')" data-ng-class="{active: currency.symbol == 'mBTC'}">mBTC</a>
+  </li> 
+</ul>
+
