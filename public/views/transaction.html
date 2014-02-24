@@ -9,6 +9,7 @@
       </small>
     </h1>
     <div class="well well-sm ellipsis">
+      <strong>ID</strong> 
       <span class="txid text-muted">{{tx.txid}}</span>
       <span class="btn-copy" clip-copy="tx.txid"></span>
     </div>
@@ -36,6 +37,7 @@
       </tr>
       </tbody>
     </table>
+    <h2>Details</h2>
     <div class="block-tx ng-cloak" data-ng-cloak data-ng-if="tx.txid">
       <div data-ng-include src="'/views/transaction/tx.html'"></div>
     </div>
