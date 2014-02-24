@@ -2,16 +2,22 @@
 <section data-ng-controller="BlocksController" data-ng-init="findOne()">
   <div class="secondary_navbar" scroll data-ng-class="{'hidden': !secondaryNavbar}">
     <div class="row">
-      <div class="col-md-2">
+      <div class="col-md-2 text-right">
+        <span class="ellipsis txvalues txvalues-normal">
         <a href="/block/{{block.previousblockhash}}">&larr; Previous Block</a>
+      </span>
       </div>
       <div class="col-md-8 text-center">
+        <div class="ellipsis txvalues txvalues-normal">
         <strong>Block</strong> #{{block.height}} &middot; 
         <strong>Hash</strong> {{block.hash}}
         <span class="btn-copy" clip-copy="block.hash"></span>
+        </div>
       </div>
-      <div class="col-md-2">
+      <div class="col-md-2 text-left">
+        <span class="ellipsis txvalues txvalues-normal">
         <a href="/block/{{block.nextblockhash}}">Next Block &rarr;</a>
+      </span>
       </div>
     </div>
   </div>

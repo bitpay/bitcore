@@ -392,6 +392,13 @@ margin-left: 0;
   background-color: #AC0015;
 }
 
+.txvalues-normal {
+  background-color: transparent;
+  text-transform: none;
+  color: #333;
+  font-size: 14px;
+  font-weight: normal;
+}
 .progress-bar-info { background-color: #8DC429; }
 
 /* Set the fixed height of the footer here */
@@ -670,6 +677,6 @@ a.v_highlight_more {
   border: 1px solid #eee;
   padding: 10px;
   text-align: center;
-  z-index: 10000;
+  z-index: 1000;
 }
 

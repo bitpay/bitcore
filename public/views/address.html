@@ -1,12 +1,25 @@
 <div data-ng-include src="'/views/includes/connection.html'"></div>
 <section data-ng-controller="AddressController" data-ng-init="findOne()">
+  <div class="secondary_navbar" scroll data-ng-class="{'hidden': !secondaryNavbar}" data-ng-show="address.addrStr">
+    <div class="row">
+      <div class="col-md-8 text-center">
+        <span class="ellipsis txvalues txvalues-normal">
+          <strong>Address</strong> {{address.addrStr}}
+          <span class="btn-copy" clip-copy="address.addrStr"></span>
+        </span>
+      </div>
+      <div class="col-md-4">
+        <span class="txvalues txvalues-primary"><strong>Final Balance</strong> {{$root.currency.getConvertion(address.balance) || address.balance + ' BTC' }}</span>
+      </div>
+    </div>
+  </div>
   <h1>Address <small data-ng-show="address.addrStr">{{$root.currency.getConvertion(address.balance) || address.balance + ' BTC'}}</small></h1>
   <div class="text-muted" data-ng-if="!address.addrStr">
     <span>Loading Address Information...</span>
   </div>
   <div data-ng-if="address.addrStr">
     <div class="well well-sm ellipsis">
-      <strong>String</strong> 
+      <strong>Address</strong> 
       <span class="text-muted">{{address.addrStr}}</span>
       <span class="btn-copy" clip-copy="address.addrStr"></span>
     </div>
