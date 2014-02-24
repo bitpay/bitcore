@@ -51,10 +51,10 @@
       </div>
 
       <!-- Full view -->
-      <div data-ng-if="itemsExpanded" data-ng-init="currentInExpanded=0; sizeInExpanded=(from_vin && v_index) ? tx.vin.length : 5; fromVinCollapsed=(from_vin && v_index)">
-        <a href="#" data-ng-show="(from_vin && v_index) && tx.vin.length > 1" data-ng-class="{'text-muted': fromVinCollapsed}" data-ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length;fromVinCollapsed=1"><small>only highlighted...</small></a>
-        <a href="#" data-ng-show="(from_vin && v_index) && tx.vin.length > 1" data-ng-class="{'text-muted': !fromVinCollapsed}" data-ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length;fromVinCollapsed=0"><small>expand all...</small></a>
-        <div data-ng-repeat="vin in tx.vin| startFrom:currentInExpanded*sizeInExpanded | limitTo:sizeInExpanded" data-ng-if="fromVinCollapsed ? (v_index - 1) == vin.n : 1">
+      <div data-ng-if="itemsExpanded" data-ng-init="currentInExpanded=0; sizeInExpanded=(from_vin) ? tx.vin.length : 5; fromVinCollapsed=(from_vin)">
+        <a href="#" data-ng-show="(from_vin) && tx.vin.length > 1" data-ng-class="{'text-muted': fromVinCollapsed}" data-ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length;fromVinCollapsed=1"><small>show input {{ v_index }}</small></a>
+        <a href="#" data-ng-show="(from_vin) && tx.vin.length > 1" data-ng-class="{'text-muted': !fromVinCollapsed}" data-ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length;fromVinCollapsed=0"><small>show all</small></a>
+        <div data-ng-repeat="vin in tx.vin| startFrom:currentInExpanded*sizeInExpanded | limitTo:sizeInExpanded" data-ng-if="fromVinCollapsed ? v_index == vin.n : 1">
           <div class="col-md-12 transaction-vin-vout">
             <div class="pull-right btc-value"><p>{{$root.currency.getConvertion(vin.value)}}</p></div>
             <div class="ellipsis">
@@ -70,7 +70,7 @@
           </div>
           <div class="col-md-12">
             <div class="panel panel-default">
-              <div class="panel-body" style="word-wrap:break-word" data-ng-class="{true: 'v_highlight', false: ''}[from_vin == true && (v_index - 1) == vin.n]">
+              <div class="panel-body" style="word-wrap:break-word" data-ng-class="{true: 'v_highlight', false: ''}[from_vin == true && v_index == vin.n]">
                 <small>
                   <strong>scriptSig</strong>
                   {{vin.scriptSig.asm}}
@@ -81,16 +81,18 @@
         </div>
         <div class="showmore_collapse text-right" data-ng-show="tx.vin.length > 5 && !fromVinCollapsed" data-ng-class="{ 'hidden': !itemsExpanded}">
           <a href="#" ng-hide="sizeInExpanded != tx.vin.length" ng-click="currentInExpanded=0; sizeInExpanded=5"><small>...less</small></a>
-          <a href="#" data-ng-class="{true: 'v_highlight_more', false: ''}[from_vin == true && (v_index - 1) > 5]" ng-hide="currentInExpanded >= tx.vin.length/sizeInExpanded - 1" ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length"><small>more...</small></a>
+          <a href="#" data-ng-class="{true: 'v_highlight_more', false: ''}[from_vin == true && v_index > 5]" ng-hide="currentInExpanded >= tx.vin.length/sizeInExpanded - 1" ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length"><small>more...</small></a>
         </div>
       </div>
     </div>
   </div>
-  <div class="col-md-1 text-center hidden-xs hidden-sm">
-    <span class="glyphicon glyphicon-chevron-right text-primary"></span>
-  </div>
-  <div class="col-xs-12 text-center hidden-md hidden-lg">
-    <span class="glyphicon glyphicon-chevron-down text-primary"></span>
+  <div class="col-md-1 col-xs-12">
+    <div class="hidden-xs hidden-sm text-center">
+      <span class="glyphicon glyphicon-chevron-right text-primary"></span>
+    </div>
+    <div class="hidden-md hidden-lg text-center">
+      <span class="glyphicon glyphicon-chevron-down text-primary"></span>
+    </div>
   </div>
   <div class="col-md-6">
     <div class="row">
@@ -122,10 +124,10 @@
       </div>
 
       <!-- Full view -->
-      <div data-ng-if="itemsExpanded" data-ng-init="currentOutExpanded=0; sizeOutExpanded=(from_vout && v_index) ? tx.vout.length : 5; fromVoutCollapsed=(from_vout && v_index)">
-        <a href="#" data-ng-show="(from_vout && v_index) && tx.vout.length > 1" data-ng-class="{'text-muted': fromVoutCollapsed}" data-ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length;fromVoutCollapsed=1"><small>only highlighted...</small></a>
-        <a href="#" data-ng-show="(from_vout && v_index) && tx.vout.length > 1" data-ng-class="{'text-muted': !fromVoutCollapsed}" data-ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length;fromVoutCollapsed=0"><small>expand all...</small></a>
-        <div data-ng-repeat="vout in tx.vout| startFrom:currentOutExpanded*sizeOutExpanded | limitTo:sizeOutExpanded" data-ng-if="fromVoutCollapsed ? (v_index - 1) == vout.n : 1">
+      <div data-ng-if="itemsExpanded" data-ng-init="currentOutExpanded=0; sizeOutExpanded=(from_vout) ? tx.vout.length : 5; fromVoutCollapsed=(from_vout)">
+        <a href="#" data-ng-show="(from_vout) && tx.vout.length > 1" data-ng-class="{'text-muted': fromVoutCollapsed}" data-ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length;fromVoutCollapsed=1"><small>show output {{ v_index }}</small></a>
+        <a href="#" data-ng-show="(from_vout) && tx.vout.length > 1" data-ng-class="{'text-muted': !fromVoutCollapsed}" data-ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length;fromVoutCollapsed=0"><small>show all</small></a>
+        <div data-ng-repeat="vout in tx.vout| startFrom:currentOutExpanded*sizeOutExpanded | limitTo:sizeOutExpanded" data-ng-if="fromVoutCollapsed ? v_index == vout.n : 1">
           <div class="col-md-12 transaction-vin-vout">
             <div class="pull-right btc-value">
               <p>{{$root.currency.getConvertion(vout.value)}}
@@ -139,7 +141,7 @@
           </div>
           <div class="col-md-12">
             <div class="panel panel-default">
-              <div class="panel-body" style="word-wrap:break-word" data-ng-class="{true: 'v_highlight', false: ''}[from_vout == true && (v_index - 1) == vout.n]">
+              <div class="panel-body" style="word-wrap:break-word" data-ng-class="{true: 'v_highlight', false: ''}[from_vout == true && v_index == vout.n]">
                 <small>
                   <p>
                   <strong>Type</strong>
@@ -156,7 +158,7 @@
         </div>
         <div class="showmore_collapse text-right" data-ng-show="tx.vout.length > 5 && !fromVoutCollapsed" data-ng-class="{ 'hidden': !itemsExpanded}">
           <a href="#" ng-hide="sizeOutExpanded != tx.vout.length" ng-click="currentOutExpanded=0; sizeOutExpanded=5"><small>...less</small></a>
-          <a href="#" data-ng-class="{true: 'v_highlight_more', false: ''}[from_vout == true && (v_index - 1) > 5]" ng-hide="currentOutExpanded >= tx.vout.length/sizeOutExpanded - 1" ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length"><small>more...</small></a>
+          <a href="#" data-ng-class="{true: 'v_highlight_more', false: ''}[from_vout == true && v_index > 5]" ng-hide="currentOutExpanded >= tx.vout.length/sizeOutExpanded - 1" ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length"><small>more...</small></a>
         </div>
       </div>
     </div>
