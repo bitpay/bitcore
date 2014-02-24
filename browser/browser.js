@@ -1,1 +1,1 @@
-if ("undefined" == typeof window) window = this;
+if ('undefined' === typeof window) window = this;

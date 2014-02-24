@@ -48,7 +48,8 @@
     "mocha": ">=1.15.1",
     "browserify-bignum": "git://github.com/maraoz/browserify-bignum.git",
     "browserify-buffertools": "~1.0.2",
-    "chai": "~1.9.0"
+    "chai": "~1.9.0",
+    "brfs": "~1.0.0"
   },
   "license": "MIT"
 }
