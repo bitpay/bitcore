@@ -1,70 +1,63 @@
 <div data-ng-include src="'/views/includes/connection.html'"></div>
 <section data-ng-controller="AddressController" data-ng-init="findOne()">
-  <div class="row">
-    <div class="col-xs-12 col-gray col-gray-fixed">
-      <h1 class="text-center">Address</h1>
-      <div class="m20v text-center text-muted" data-ng-if="!address.addrStr">
-        <span>Loading Address Information...</span>
-     </div>
-      <div class="ng-cloak" data-ng-cloak data-ng-if="address.addrStr">
-        <div class="text-center">
-          <qrcode size="160" data="{{address.addrStr}}"></qrcode>
-          <h4>{{$root.currency.getConvertion(address.balance)}}</h4>
-        </div>
-        <div class="m10v">
-          <button class="pull-right btn-copy" clip-copy="address.addrStr"></button>
-          <a class="ellipsis" href="/address/{{address.addrStr}}">{{address.addrStr}}</a>
-        </div>
-        <div class="m20v">
-          <h4>Summary</h4>
-          <h5>Confirmed</h5>
-          <table class="table ng-cloak" data-ng-hide="!address.addrStr" data-ng-cloak>
-            <tbody>
-            <tr>
-              <td class="small">Total Received</td>
-              <td class="address ellipsis text-right">{{$root.currency.getConvertion(address.totalReceived)}}</td>
-            </tr>
-            <tr>
-              <td class="small">Total Sent</td>
-              <td class="address ellipsis text-right">{{$root.currency.getConvertion(address.totalSent)}}</td>
-            </tr>
-            <tr>
-              <td class="small">Final Balance</td>
-              <td class="address ellipsis text-right">{{$root.currency.getConvertion(address.balance)}}</td>
-            </tr>
-            <tr>
-              <td class="small">No. Transactions</td>
-              <td class="address ellipsis text-right">{{address.txApperances}}</td>
-            </tr>
-            </tbody>
-          </table>
-          <div data-ng-show="address.unconfirmedTxApperances">
-            <h5>Unconfirmed</h5>
-            <table class="table">
-              <tbody>
-              <tr>
-                <td class="small">Unconfirmed Txs Balance</td>
-                <td class="address ellipsis text-right">{{$root.currency.getConvertion(address.unconfirmedBalance)}}</td>
-              </tr>
-              <tr>
-                <td class="small">No. Transactions</td>
-                <td class="address ellipsis text-right">{{address.unconfirmedTxApperances}}</td>
-              </tr>
-
-              </tbody>
-            </table>
-          </div>
-
-        </div> <!-- END OF TRANSACTIONS TABLE -->
+  <h1>Address <small data-ng-show="address.addrStr">{{$root.currency.getConvertion(address.balance) || address.balance + ' BTC'}}</small></h1>
+  <div class="text-muted" data-ng-if="!address.addrStr">
+    <span>Loading Address Information...</span>
+  </div>
+  <div data-ng-if="address.addrStr">
+    <div class="well well-sm ellipsis">
+      <strong>String</strong> 
+      <span class="text-muted">{{address.addrStr}}</span>
+      <span class="btn-copy" clip-copy="address.addrStr"></span>
+    </div>
+    <h2>Summary <small>confirmed</small></h2>
+    <div class="ng-cloak row" data-ng-hide="!address.addrStr" data-ng-cloak>
+      <div class="col-md-10">
+        <table class="table">
+          <tbody>
+          <tr>
+            <td><strong>Total Received</strong></td>
+            <td class="ellipsis text-right">{{$root.currency.getConvertion(address.totalReceived) || address.totalReceived + ' BTC'}}</td>
+          </tr>
+          <tr>
+            <td><strong>Total Sent</strong></td>
+            <td class="ellipsis text-right">{{$root.currency.getConvertion(address.totalSent) || address.totalSent + ' BTC'}}</td>
+          </tr>
+          <tr>
+            <td><strong>Final Balance</strong></td>
+            <td class="ellipsis text-right">{{$root.currency.getConvertion(address.balance) || address.balance + ' BTC'}}</td>
+          </tr>
+          <tr>
+            <td><strong>No. Transactions</strong></td>
+            <td class="ellipsis text-right">{{address.txApperances}}</td>
+          </tr>
+          </tbody>
+        </table>
       </div>
-      <div data-ng-include src="'/views/includes/currency.html'"></div>
-    </div> <!-- END OF COL-MD-3 -->
-    <div class="col-xs-12 col-md-9 col-md-offset-3">
-      <div data-ng-controller="transactionsController" data-ng-init="load('address')">
-        <h2>Transactions <small>Transactions for this address</small></h2>
-        <div data-ng-include src="'/views/transaction/list.html'" when-scrolled="loadMore()"></div>
+      <div class="col-md-2 text-center">
+        <qrcode size="160" data="{{address.addrStr}}"></qrcode>
       </div>
     </div>
-  </div> <!-- END OF ROW -->
+    <div data-ng-show="address.unconfirmedTxApperances">
+      <h3>Unconfirmed</h3>
+      <table class="table">
+        <tbody>
+        <tr>
+          <td class="small">Unconfirmed Txs Balance</td>
+          <td class="address ellipsis text-right">{{$root.currency.getConvertion(address.unconfirmedBalance)}}</td>
+        </tr>
+        <tr>
+          <td class="small">No. Transactions</td>
+          <td class="address ellipsis text-right">{{address.unconfirmedTxApperances}}</td>
+        </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <h2>Transactions</h2>
+  <div data-ng-controller="transactionsController" data-ng-init="load('address')">
+    <div data-ng-include src="'/views/transaction/list.html'" when-scrolled="loadMore()"></div>
+  </div>
 </section>
 

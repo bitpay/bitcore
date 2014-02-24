@@ -6,13 +6,13 @@
       <span>Loading Block...</span>
     </div>
   </div>
-  <div class="well well-sm ellipsis">
-    <strong>BlockHash</strong> 
-    <span class="txid text-muted">{{block.hash}}</span>
-    <span class="btn-copy" clip-copy="block.hash"></span>
-  </div>
-  <h2>Summary</h2>
   <div class="row ng-cloak" data-ng-cloak data-ng-if="block.hash">
+    <div class="well well-sm ellipsis">
+      <strong>BlockHash</strong> 
+      <span class="txid text-muted">{{block.hash}}</span>
+      <span class="btn-copy" clip-copy="block.hash"></span>
+    </div>
+    <h2>Summary</h2>
     <div class="col-md-6">
       <table class="table" style="table-layout: fixed">
         <tbody>
@@ -29,7 +29,7 @@
         </tr>
         <tr>
           <td><strong>Block Reward</strong></td>
-          <td class="text-right text-muted">{{$root.currency.getConvertion(block.reward)}}</td>
+          <td class="text-right text-muted">{{$root.currency.getConvertion(block.reward) || block.reward + ' BTC'}}</td>
         </tr> 
         <tr>
           <td><strong>Timestamp</strong></td>

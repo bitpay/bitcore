@@ -8,35 +8,37 @@
         <span>{{v_index}}</span>
       </small>
     </h1>
-    <div class="well well-sm ellipsis">
-      <strong>ID</strong> 
-      <span class="txid text-muted">{{tx.txid}}</span>
-      <span class="btn-copy" clip-copy="tx.txid"></span>
-    </div>
     <div class="progress progress-striped active" data-ng-if="!tx.txid">
       <div class="progress-bar progress-bar-info" style="width: 100%">
         <span>Loading Transaction Details...</span>
       </div>
     </div>
-    <h2>Summary</h2>
-    <table class="table" style="table-layout: fixed">
-      <tbody>
-      <tr>
-        <td><strong> Size </strong></td>
-        <td class="text-muted text-right">{{tx.size}} (bytes)</td>
-      </tr>
-      <tr>
-        <td><strong>Received Time </strong></td>
-        <td data-ng-show="tx.firstSeenTs" class="text-muted text-right">{{tx.firstSeenTs * 1000|date:'medium'}}</td>
-        <td data-ng-show="!tx.firstSeenTs" class="text-muted text-right">N/A</td>
-      </tr>
-      <tr>
-        <td><strong>Mined Time </strong></td>
-        <td data-ng-show="tx.time" class="text-muted text-right">{{tx.time * 1000|date:'medium'}}</td>
-        <td data-ng-show="!tx.time" class="text-muted text-right">N/A</td>
-      </tr>
-      </tbody>
-    </table>
+    <div data-ng-if="tx.txid">
+      <div class="well well-sm ellipsis">
+        <strong>Id</strong> 
+        <span class="txid text-muted">{{tx.txid}}</span>
+        <span class="btn-copy" clip-copy="tx.txid"></span>
+      </div>
+      <h2>Summary</h2>
+      <table class="table" style="table-layout: fixed">
+        <tbody>
+        <tr>
+          <td><strong> Size </strong></td>
+          <td class="text-muted text-right">{{tx.size}} (bytes)</td>
+        </tr>
+        <tr>
+          <td><strong>Received Time </strong></td>
+          <td data-ng-show="tx.firstSeenTs" class="text-muted text-right">{{tx.firstSeenTs * 1000|date:'medium'}}</td>
+          <td data-ng-show="!tx.firstSeenTs" class="text-muted text-right">N/A</td>
+        </tr>
+        <tr>
+          <td><strong>Mined Time </strong></td>
+          <td data-ng-show="tx.time" class="text-muted text-right">{{tx.time * 1000|date:'medium'}}</td>
+          <td data-ng-show="!tx.time" class="text-muted text-right">N/A</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
     <h2>Details</h2>
     <div class="block-tx ng-cloak" data-ng-cloak data-ng-if="tx.txid">
       <div data-ng-include src="'/views/transaction/tx.html'"></div>
