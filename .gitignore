@@ -37,7 +37,7 @@ db/blocks
 db/testnet/blocks/*
 db/testnet/blocks
 
-public/js/*
-public/css/*
+#public/js/*
+#public/css/*
 
 README.html

@@ -47,8 +47,7 @@
     "node": "*"
   },
   "scripts": {
-    "start": "node node_modules/grunt-cli/bin/grunt",
-    "postinstall": "node node_modules/bower/bin/bower install; node ./node_modules/grunt-cli/bin/grunt compile "
+    "start": "node node_modules/grunt-cli/bin/grunt"
   },
   "dependencies": {
     "base58-native": "0.1.2",
@@ -62,16 +61,7 @@
     "express": "~3.4.7",
     "jade": "~1.0.2",
     "lodash": "~2.4.1",
-    "bower": "~1.2.8",
     "buffertools": "*",
-    "grunt": "~0.4.2",
-    "grunt-cli": "~0.1.11",
-    "grunt-env": "~0.4.1",
-    "grunt-contrib-jshint": "~0.8.0",
-    "grunt-contrib-watch": "~0.5.3",
-    "grunt-concurrent": "~0.4.2",
-    "grunt-nodemon": "~0.1.2",
-    "grunt-mocha-test": "~0.8.1",
     "should": "~2.1.1",
     "view-helpers": "latest",
     "socket.io": "~0.9.16",
@@ -83,13 +73,17 @@
     "xmlhttprequest": "~1.6.0"
   },
   "devDependencies": {
-    "grunt-contrib-watch": "latest",
-    "grunt-contrib-jshint": "latest",
+    "bower": "~1.2.8",
+    "grunt": "~0.4.2",
+    "grunt-cli": "~0.1.11",
+    "grunt-env": "~0.4.1",
+    "grunt-contrib-jshint": "~0.8.0",
+    "grunt-contrib-watch": "~0.5.3",
+    "grunt-concurrent": "~0.4.2",
+    "grunt-nodemon": "~0.2.0",
+    "grunt-mocha-test": "~0.8.1",
     "grunt-contrib-concat": "~0.3.0",
     "grunt-contrib-uglify": "~0.3.2",
-    "grunt-nodemon": "latest",
-    "grunt-concurrent": "latest",
-    "grunt-mocha-test": "latest",
     "should": "latest",
     "grunt-css": "~0.5.4",
     "grunt-markdown": "~0.5.0"
