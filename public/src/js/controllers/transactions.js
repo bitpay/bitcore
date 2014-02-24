@@ -158,7 +158,7 @@ function($scope, $rootScope, $routeParams, $location, Global, Transaction, Trans
   if ($routeParams.v_type == '>' || $routeParams.v_type == '<') {
     $scope.from_vin = $routeParams.v_type == '<' ? true : false;
     $scope.from_vout = $routeParams.v_type == '>' ? true : false;
-    $scope.v_index = $routeParams.v_index;
+    $scope.v_index = parseInt($routeParams.v_index) + 1;
     $scope.itemsExpanded = true;
   }
   
