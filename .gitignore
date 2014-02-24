@@ -37,7 +37,10 @@ db/blocks
 db/testnet/blocks/*
 db/testnet/blocks
 
-public/js/*
-public/css/*
+public/js/angularjs-all.js
+public/js/main.js
+public/js/vendors.js
+
+public/css/main.css
 
 README.html
