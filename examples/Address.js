@@ -1,7 +1,7 @@
+'use strict';
 
+// Replace '..' with 'bitcore' if you plan on using this code elsewhere.
 
-// Replace path '..' to 'bitcore' if you are using this example
-// in a different project
 var Address = require('../Address').class();
 
 var addrStrings = [
@@ -9,10 +9,11 @@ var addrStrings = [
   "1A1zP1eP5QGefi2DMPTfTL5SLmv7Dixxxx",
   "A1zP1eP5QGefi2DMPTfTL5SLmv7Dixxxx",
   "1600 Pennsylvania Ave NW",
-];
+].map(function(addr) {
+  return new Address(addr);
+});
 
-addrStrings.forEach(function(addrStr){
-  var addr = new Address(addrStr);
+addrStrings.forEach(function(addr) {
 
   try {
     addr.validate();
@@ -20,4 +21,5 @@ addrStrings.forEach(function(addrStr){
   } catch(e) {
     console.log(addr.data + ": is not a valid address. " + e);
   }
+
 });
