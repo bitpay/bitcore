@@ -1,16 +1,18 @@
 'use strict';
-var assert = require('assert');
-var fs = require('fs');
 
-var Address = require('../Address').class();
-var PrivateKey = require('../PrivateKey').class();
-var networks = require('../networks');
-var KeyModule = require('../Key');
+var chai = require('chai');
+var bitcore = require('../bitcore');
+var should = chai.should();
 
-suite('basic');
+var Address = bitcore.Address.class();
+var PrivateKey = bitcore.PrivateKey.class();
+var networks = bitcore.networks;
+var KeyModule = bitcore.KeyModule;
 
-function test_encode_priv(b58, payload, isTestnet, isCompressed)
-{
+var test_data = require('../browser/testdata');
+
+
+function test_encode_priv(b58, payload, isTestnet, isCompressed) {
   var network = isTestnet ? networks.testnet : networks.livenet;
   var version = network.keySecret;
 
@@ -28,21 +30,20 @@ function test_encode_priv(b58, payload, isTestnet, isCompressed)
   key.compressed = isCompressed;
 
   var privkey = new PrivateKey(version, buf);
-  assert.equal(privkey.toString(), b58);
+  privkey.toString().should.equal(b58);
 }
 
-function test_encode_pub(b58, payload, isTestnet, addrType)
-{
-  var isScript = (addrType == 'script');
+function test_encode_pub(b58, payload, isTestnet, addrType) {
+  var isScript = (addrType === 'script');
   var network = isTestnet ? networks.testnet : networks.livenet;
   var version = isScript ? network.addressScript : network.addressPubkey;
   var buf = new Buffer(payload, 'hex');
   var addr = new Address(version, buf);
-  assert.equal(addr.toString(), b58);
+  addr.toString().should.equal(b58);
+
 }
 
-function test_decode_priv(b58, payload, isTestnet, isCompressed)
-{
+function test_decode_priv(b58, payload, isTestnet, isCompressed) {
   var network = isTestnet ? networks.testnet : networks.livenet;
   var version = network.keySecret;
 
@@ -56,46 +57,43 @@ function test_decode_priv(b58, payload, isTestnet, isCompressed)
     buf = buf_pl;
 
   var privkey = new PrivateKey(b58);
-  assert.equal(version, privkey.version());
-  assert.equal(buf_pl.toString(), privkey.payload().toString());
+  version.should.equal(privkey.version());
+  buf_pl.toString().should.equal(privkey.payload().toString());
 }
 
-function test_decode_pub(b58, payload, isTestnet, addrType)
-{
-  var isScript = (addrType == 'script');
+function test_decode_pub(b58, payload, isTestnet, addrType) {
+  var isScript = (addrType === 'script');
   var network = isTestnet ? networks.testnet : networks.livenet;
   var version = isScript ? network.addressScript : network.addressPubkey;
   var buf = new Buffer(payload, 'hex');
   var addr = new Address(b58);
 
-  assert.equal(version, addr.version());
-  assert.equal(buf.toString(), addr.payload().toString());
+  version.should.equal(addr.version());
+  buf.toString().should.equal(addr.payload().toString());
 }
 
-function is_valid(datum)
-{
+function is_valid(datum) {
   var b58 = datum[0];
   var payload = datum[1];
   var obj = datum[2];
-  var isPrivkey = obj['isPrivkey'];
-  var isTestnet = obj['isTestnet'];
+  var isPrivkey = obj.isPrivkey;
+  var isTestnet = obj.isTestnet;
 
   if (isPrivkey) {
-    var isCompressed = obj['isCompressed'];
+    var isCompressed = obj.isCompressed;
     test_encode_priv(b58, payload, isTestnet, isCompressed);
     test_decode_priv(b58, payload, isTestnet, isCompressed);
   } else {
-    var addrType = obj['addrType'];
+    var addrType = obj.addrType;
     test_encode_pub(b58, payload, isTestnet, addrType);
     test_decode_pub(b58, payload, isTestnet, addrType);
   }
 }
 
-function is_invalid(datum)
-{
+function is_invalid(datum) {
   if (datum.length < 1)
-    throw new Error("Bad test");
-  
+    throw new Error('Bad test');
+
   // ignore succeeding elements, as comments
   var b58 = datum[0];
   var privkey = new PrivateKey(b58);
@@ -105,26 +103,24 @@ function is_invalid(datum)
   try {
     privkey.validate();
     addr.validate();
-  } catch(e) {
+  } catch (e) {
     valid = false;
   }
-  assert.equal(valid, false);
+  valid.should.equal(false);
 }
 
-var dataValid = JSON.parse(fs.readFileSync('test/base58_keys_valid.json'));
-var dataInvalid = JSON.parse(fs.readFileSync('test/base58_keys_invalid.json'));
-var dataValues = JSON.parse(fs.readFileSync('test/values.json'));
-
-describe('valid base58 keys', function(){
-  test('valid', function() {
-    dataValid.forEach(function(datum) { is_valid(datum); });
+describe('Valid base58 keys', function() {
+  test_data.dataValid.forEach(function(datum) {
+    it('valid ' + datum[0], function() {
+      is_valid(datum);
+    });
   });
 });
 
-describe('invalid base58 keys', function(){
-  test('invalid', function() {
-    dataInvalid.forEach(function(datum) { is_invalid(datum); });
+describe('Invalid base58 keys', function() {
+  test_data.dataInvalid.forEach(function(datum) {
+    it('invalid ' + datum, function() {
+      is_invalid(datum);
+    });
   });
 });
-
-

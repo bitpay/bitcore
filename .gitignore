@@ -1,6 +1,6 @@
 build/
 browser/bundle.js
-browser/vendor.js
+browser/testdata.js
 node_modules/
 *.swp
 *.swo

@@ -1,15 +1,17 @@
-var assert = require('assert');
-var coinUtil = require('../util/util');
+var chai = require('chai');
+var bitcore = require('../bitcore');
+var coinUtil = bitcore.util;
+var should = chai.should();
 
-describe('util/util', function(){
+describe('util', function(){
   describe('#parseValue', function(){
     it('should convert floating points to satoshis correctly', function(){
       function test_value(datum) {
         var decimal = datum[0];
         var intStr = datum[1];
         var bn = coinUtil.parseValue(decimal);
-        assert.notEqual(bn, undefined);
-        assert.equal(bn.toString(), intStr);
+        should.exist(bn);
+        bn.toString().should.equal(intStr);
       }
       var dataValues=[
         [ "0", "0" ],

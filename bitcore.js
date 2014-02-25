@@ -24,14 +24,14 @@ module.exports.Block = require('./Block');
 module.exports.Connection = require('./Connection');
 module.exports.ScriptInterpreter = require('./ScriptInterpreter');
 module.exports.Bloom = require('./Bloom');
-module.exports.Key = require('./Key').Key;
+module.exports.KeyModule = require('./Key');
 module.exports.SINKey = require('./SINKey');
 module.exports.SIN = require('./SIN');
 module.exports.PrivateKey = require('./PrivateKey');
 module.exports.RpcClient = require('./RpcClient');
 module.exports.Wallet = require('./Wallet');
 module.exports.WalletKey = require('./WalletKey');
-
+module.exports.Buffer = Buffer;
 
 if (typeof process.versions === 'undefined') {
   module.exports.bignum.config({EXPONENTIAL_AT: 9999999, DECIMAL_PLACES: 0, ROUNDING_MODE: 1});

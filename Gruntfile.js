@@ -23,11 +23,13 @@ module.exports = function(grunt) {
           standalone: 'bitcore',
         }
       },
-      vendor: {
-        src: ['browser/vendor_load.js'],
-        dest: 'browser/vendor.js',
+      test_data: {
+        src: ['test/testdata.js'],
+        dest: 'browser/testdata.js',
         options: {
-
+          transform: ['brfs'],
+          debug: true,
+          standalone: 'testdata',
         }
       }
     },
@@ -37,8 +39,8 @@ module.exports = function(grunt) {
         tasks: ['markdown']
       },
       scripts: {
-        files: ['**/*.js', '**/*.html', '!**/node_modules/**', '!**/bundle.js', '!**/vendor.js'],
-        tasks: ['browserify'/*, 'mochaTest'*/],
+        files: ['**/*.js', '**/*.html', '!**/node_modules/**', '!browser/bundle.js', '!browser/load_test_data.js'],
+        tasks: ['browserify' /*, 'mochaTest'*/ ],
       },
     },
     mochaTest: {
@@ -49,14 +51,12 @@ module.exports = function(grunt) {
     },
     markdown: {
       all: {
-        files: [
-         {
-           expand: true,
-           src: 'README.md',
-           dest: '.',
-           ext: '.html'
-         }
-        ]
+        files: [{
+          expand: true,
+          src: 'README.md',
+          dest: '.',
+          ext: '.html'
+        }]
       }
     }
 
@@ -66,4 +66,3 @@ module.exports = function(grunt) {
   grunt.registerTask('default', ['watch']);
 
 };
-
