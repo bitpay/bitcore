@@ -1,60 +1,62 @@
 <div data-ng-include src="'/views/includes/connection.html'"></div>
 <section data-ng-controller="transactionsController" data-ng-init="findThis()">
-  
-  <div class="row ng-cloak" data-ng-cloak data-ng-if="tx.txid">
-    <div class="col-xs-12 col-gray col-gray-fixed">
-      <div class="m20v text-center text-muted" data-ng-if="!tx.txid">
-        <span>Loading Transaction...</span>
+  <div class="secondary_navbar" scroll data-ng-class="{'hidden': !secondaryNavbar}">
+    <div class="row">
+      <div class="col-md-8 text-center">
+        <span class="ellipsis txvalues txvalues-normal">
+          <strong>Transaction</strong> {{tx.txid}}
+          <span class="btn-copy" clip-copy="tx.txid"></span>
+        </span>
       </div>
-      <div class="ng-cloak" data-ng-cloak data-ng-if="tx.txid">
-        <div class="tx-id">
-          <span class="glyphicon glyphicon-retweet"></span>
-        </div>
-        <div class="m10v">
-          <button class="btn-copy pull-right" clip-copy="tx.txid"></button>
-          <div class="ellipsis">
-            <a class="txid" href="/tx/{{tx.txid}}">{{tx.txid}}</a>
-          </div>
-        </div>
-        <h4>Summary</h4>
-        <table class="table" style="table-layout: fixed">
-          <tbody>
-          <tr>
-            <td><strong> Size </strong></td>
-            <td class="text-muted text-right">{{tx.size}} (bytes)</td>
-          </tr>
-          <tr>
-            <td><strong>Received Time </strong></td>
-            <td data-ng-show="tx.firstSeenTs" class="text-muted text-right">{{tx.firstSeenTs * 1000|date:'medium'}}</td>
-            <td data-ng-show="!tx.firstSeenTs" class="text-muted text-right">N/A</td>
-          </tr>
-          <tr>
-            <td><strong>Mined Time </strong></td>
-            <td data-ng-show="tx.time" class="text-muted text-right">{{tx.time * 1000|date:'medium'}}</td>
-            <td data-ng-show="!tx.time" class="text-muted text-right">N/A</td>
-          </tr>
-
-          </tbody>
-        </table>
+      <div class="col-md-4">
+        <span data-ng-show="tx.confirmations" class="txvalues txvalues-success">{{tx.confirmations}} Confirmations</span>
+        <span data-ng-show="!tx.confirmations" class="txvalues txvalues-danger">Unconfirmed Transaction!</span>
+        <span class="txvalues txvalues-primary">{{$root.currency.getConvertion(tx.valueOut) || tx.valueOut + ' BTC' }}</span>
       </div>
-      <div data-ng-include src="'/views/includes/currency.html'"></div>
     </div>
-    <div class="col-xs-12 col-md-9 col-md-offset-3">
-      <h1>Transaction
+  </div>
+  <div class="ng-cloak" data-ng-cloak data-ng-if="tx.txid">
+    <h1>Transaction 
       <small data-ng-show="from_vin || from_vout">
         <span data-ng-show="from_vin">Input</span> 
         <span data-ng-show="from_vout">Output</span> 
-        <span>{{v_index}}</span> 
+        <span>{{v_index}}</span>
       </small>
-      </h1>
-      <div class="progress progress-striped active" data-ng-if="!tx.txid">
-        <div class="progress-bar progress-bar-info" style="width: 100%">
-          <span>Loading Transaction Details...</span>
-        </div>
+    </h1>
+    <div class="progress progress-striped active" data-ng-if="!tx.txid">
+      <div class="progress-bar progress-bar-info" style="width: 100%">
+        <span>Loading Transaction Details...</span>
       </div>
-      <div class="block-tx ng-cloak" data-ng-cloak data-ng-if="tx.txid">
-        <div data-ng-include src="'/views/transaction/tx.html'"></div>
+    </div>
+    <div data-ng-if="tx.txid">
+      <div class="well well-sm ellipsis">
+        <strong>Transaction</strong> 
+        <span class="txid text-muted">{{tx.txid}}</span>
+        <span class="btn-copy" clip-copy="tx.txid"></span>
       </div>
+      <h2>Summary</h2>
+      <table class="table" style="table-layout: fixed">
+        <tbody>
+        <tr>
+          <td><strong> Size </strong></td>
+          <td class="text-muted text-right">{{tx.size}} (bytes)</td>
+        </tr>
+        <tr>
+          <td><strong>Received Time </strong></td>
+          <td data-ng-show="tx.firstSeenTs" class="text-muted text-right">{{tx.firstSeenTs * 1000|date:'medium'}}</td>
+          <td data-ng-show="!tx.firstSeenTs" class="text-muted text-right">N/A</td>
+        </tr>
+        <tr>
+          <td><strong>Mined Time </strong></td>
+          <td data-ng-show="tx.time" class="text-muted text-right">{{tx.time * 1000|date:'medium'}}</td>
+          <td data-ng-show="!tx.time" class="text-muted text-right">N/A</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <h2>Details</h2>
+    <div class="block-tx ng-cloak" data-ng-cloak data-ng-if="tx.txid">
+      <div data-ng-include src="'/views/transaction/tx.html'"></div>
     </div>
   </div>
 </section>
