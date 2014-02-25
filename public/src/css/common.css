@@ -680,3 +680,13 @@ a.v_highlight_more {
   z-index: 1000;
 }
 
+.hide_snavbar {
+  position: absolute;
+  right: 10px;
+  border: 1px solid #eee;
+  padding: 5px 10px;
+  margin-top: 10px;
+  background: #fff;
+}
+
+
