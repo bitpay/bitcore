@@ -94,6 +94,7 @@ margin-left: 0;
 .navbar-default {
   background-color: #8DC429;
   margin: 0;
+  border: 0;
 }
 
 .navbar-default .navbar-nav>li>a {
@@ -654,7 +655,7 @@ margin-left: 0;
 }
 
 .transaction-vin-vout {
-  
+  line-height: 1.8em;
 }
 
 .v_highlight {
@@ -674,19 +675,37 @@ a.v_highlight_more {
   position: fixed;
   top: 64px;
   left: 0;
-  border: 1px solid #eee;
-  padding: 10px;
   text-align: center;
   z-index: 1000;
+  margin: 0 auto;
+  -moz-box-shadow:    0px 1px 4px 0px rgba(0,0,0,0.20);
+  -webkit-box-shadow: 0px 1px 4px 0px rgba(0,0,0,0.20);
+  box-shadow:         0px 1px 4px 0px rgba(0,0,0,0.20);
+}
+
+.secondary_navbar .container {
+  margin: 0 auto;
+  padding: 1.8em 0;
+}
+
+.secondary_navbar h3, .secondary_navbar p, .secondary_navbar .lead {
+  margin: 0;
+}
+
+.secondary_navbar p {
+  line-height: 1.9em;
 }
 
 .hide_snavbar {
+  border-bottom-right-radius: 0.3em;
+  border-bottom-left-radius: 0.3em;
   position: absolute;
-  right: 10px;
-  border: 1px solid #eee;
+  right: 25px;
   padding: 5px 10px;
-  margin-top: 10px;
   background: #fff;
+  -moz-box-shadow:    0px 2px 3px 0px rgba(0,0,0,0.20);
+  -webkit-box-shadow: 0px 2px 3px 0px rgba(0,0,0,0.20);
+  box-shadow:         0px 2px 3px 0px rgba(0,0,0,0.20);
 }
 
 
