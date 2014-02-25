@@ -7,12 +7,7 @@
     <div id="home" class="row">
       <div class="col-xs-12 col-md-8">
 
-        <form data-ng-controller="SearchController" class="visible-xs" role="search" data-ng-submit="search()">
-          <div class="form-group" data-ng-class="{'has-error': badQuery}">
-            <input id="search" type="text" class="form-control" data-ng-model="q" data-ng-class="{'loading': loading}"  placeholder="Search for block, transaction or address">
-          </div>
-          <div class="no_matching text-danger" data-ng-show="badQuery">No matching records found!</div>
-        </form>
+        <div data-ng-include src="'/views/includes/search.html'"></div> 
 
         <h1>Latest Blocks</h1>
         <table class="table table-hover table-striped" style="table-layout: fixed">
