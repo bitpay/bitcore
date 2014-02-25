@@ -1,12 +1,10 @@
 <div data-ng-include src="'/views/includes/connection.html'"></div>
 <section data-ng-controller="transactionsController" data-ng-init="findThis()">
-  <div class="secondary_navbar" scroll data-ng-class="{'hidden': !secondaryNavbar}" data-ng-show="tx.txid" data-ng-init="hideSNavbar=0">
-    <div class="row" data-ng-if="!hideSNavbar">
-      <div class="col-md-8 text-center">
-        <span class="ellipsis txvalues txvalues-normal">
-          <strong>Transaction</strong> {{tx.txid}}
+  <div class="secondary_navbar hidden-xs hidden-sm" scroll data-ng-class="{'hidden': !secondaryNavbar}" data-ng-show="tx.txid" data-ng-init="hideSNavbar=0">
+    <div class="container" data-ng-if="!hideSNavbar">
+      <div class="col-md-8 text-left">
+          <h3>Transaction</h3> {{tx.txid}}
           <span class="btn-copy" clip-copy="tx.txid"></span>
-        </span>
       </div>
       <div class="col-md-4">
         <span data-ng-show="tx.confirmations" class="txvalues txvalues-success">{{tx.confirmations}} Confirmations</span>
@@ -16,8 +14,8 @@
     </div>
     <div class="hide_snavbar">
       <a href="#" data-ng-click="hideSNavbar=!hideSNavbar">
-        <span data-ng-show="hideSNavbar">Show</span>
-        <span data-ng-show="!hideSNavbar">Hide</span>
+        <span data-ng-show="hideSNavbar"><span class="text-muted glyphicon glyphicon-chevron-down"></span></span>
+        <span data-ng-show="!hideSNavbar"><span class="text-muted glyphicon glyphicon-chevron-up"></span></span>
       </a>
     </div>
   </div>

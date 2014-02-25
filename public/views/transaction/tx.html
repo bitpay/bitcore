@@ -34,7 +34,9 @@
       <div data-ng-if="!itemsExpanded" data-ng-init="currentInNoExpanded=0; sizeInNoExpanded=5">
         <div data-ng-repeat="vin in tx.vinSimple| startFrom:currentInNoExpanded*sizeInNoExpanded | limitTo:sizeInNoExpanded">
           <div class="col-md-12 transaction-vin-vout">
-            <div class="pull-right btc-value" data-ng-class="{'text-danger': $root.currentAddr == vin.addr}"><p>{{$root.currency.getConvertion(vin.value) || vin.value + ' BTC'}}</p></div>
+            <div class="pull-right btc-value" data-ng-class="{'text-danger': $root.currentAddr == vin.addr}">
+              <p>{{$root.currency.getConvertion(vin.value) || vin.value + ' BTC'}}</p>
+            </div>
             <div class="ellipsis">
               <span data-ng-show="vin.notAddr">{{vin.addr}}</span>
               <span class="text-muted" title="Current Bitcoin Address" data-ng-show="vin.addr == $root.currentAddr">{{vin.addr}}</span>
@@ -105,12 +107,9 @@
         <div data-ng-repeat="vout in tx.voutSimple| startFrom:currentOutNoExpanded*sizeOutNoExpanded | limitTo:sizeOutNoExpanded">
           <div class="col-md-12 transaction-vin-vout">
             <div class="pull-right btc-value" data-ng-class="{'text-success': $root.currentAddr == vout.addr}">
-
-              <p>
               {{$root.currency.getConvertion(vout.value) || vout.value + ' BTC' }}
               <span class="text-danger" data-ng-show="vout.isSpent" tooltip="Output is spent" tooltip-placement="left">(S)</span>
               <span class="text-success" data-ng-show="!vout.isSpent"  tooltip="Output is unspent" tooltip-placement="left">(U)</span>
-              </p>
             </div>
 
             <div class="ellipsis">

@@ -1,29 +1,33 @@
 <div data-ng-include src="'/views/includes/connection.html'"></div>
 <section data-ng-controller="BlocksController" data-ng-init="findOne()">
-  <div class="secondary_navbar" scroll data-ng-class="{'hidden': !secondaryNavbar}" data-ng-show="block.hash" data-ng-init="hideSNavbar=0">
-    <div class="row" data-ng-if="!hideSNavbar">
-      <div class="col-md-2 text-right">
-        <span class="ellipsis txvalues txvalues-normal">
-        <a href="/block/{{block.previousblockhash}}">&larr; Previous Block</a>
-      </span>
-      </div>
-      <div class="col-md-8 text-center">
-        <div class="ellipsis txvalues txvalues-normal">
-        <strong>Block</strong> #{{block.height}} &middot; 
-        <strong>Hash</strong> {{block.hash}}
-        <span class="btn-copy" clip-copy="block.hash"></span>
+  <div class="secondary_navbar hidden-xs hidden-sm" scroll data-ng-class="{'hidden': !secondaryNavbar}" data-ng-show="block.hash" data-ng-init="hideSNavbar=0">
+    <div class="container" data-ng-if="!hideSNavbar">
+      <div class="row">
+        <div class="col-md-1">
+          <a href="/block/{{block.previousblockhash}}"><span class="lead glyphicon glyphicon-chevron-left"></span></a>
+        </div>
+        <div class="col-md-10">
+          <div class="row">
+            <div class="col-md-5">
+            <h3 class="text-left">Block #{{block.height}}</h3>
+            </div>
+            <p class="col-md-6 ellipsis text-left">
+                <strong>Hash</strong> {{block.hash}}
+            </p>
+            <div class="col-md-1 text-left">
+                <span class="btn-copy" clip-copy="block.hash"></span>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-1">
+          <a href="/block/{{block.nextblockhash}}"><span class="lead glyphicon glyphicon-chevron-right"></span></a>
         </div>
       </div>
-      <div class="col-md-2 text-left">
-        <span class="ellipsis txvalues txvalues-normal">
-        <a href="/block/{{block.nextblockhash}}">Next Block &rarr;</a>
-      </span>
-      </div>
-    </div>
+    </div> <!-- END OF CONTAINER -->
     <div class="hide_snavbar">
       <a href="#" data-ng-click="hideSNavbar=!hideSNavbar">
-        <span data-ng-show="hideSNavbar">Show</span>
-        <span data-ng-show="!hideSNavbar">Hide</span>
+        <span data-ng-show="hideSNavbar"><span class="text-muted glyphicon glyphicon-chevron-down"></span></span>
+        <span data-ng-show="!hideSNavbar"><span class="text-muted glyphicon glyphicon-chevron-up"></span></span>
       </a>
     </div>
   </div>
