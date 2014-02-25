@@ -56,8 +56,8 @@ module.exports = {
     user: process.env.BITCOIND_USER || 'user',
     pass: process.env.BITCOIND_PASS || 'pass',
     host: process.env.BITCOIND_HOST || '127.0.0.1',
-    port: b_port,
-    p2pPort: p2p_port,
+    port: process.env.BITCOIND_PORT || b_port,
+    p2pPort: process.env.BITCOIND_P2P_PORT || p2p_port,
     dataDir: dataDir,
     // DO NOT CHANGE THIS!
     disableAgent: true
