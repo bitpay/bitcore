@@ -1,7 +1,7 @@
 <div data-ng-include src="'/views/includes/connection.html'"></div>
 <section data-ng-controller="transactionsController" data-ng-init="findThis()">
-  <div class="secondary_navbar" scroll data-ng-class="{'hidden': !secondaryNavbar}">
-    <div class="row">
+  <div class="secondary_navbar" scroll data-ng-class="{'hidden': !secondaryNavbar}" data-ng-show="tx.txid" data-ng-init="hideSNavbar=0">
+    <div class="row" data-ng-if="!hideSNavbar">
       <div class="col-md-8 text-center">
         <span class="ellipsis txvalues txvalues-normal">
           <strong>Transaction</strong> {{tx.txid}}
@@ -13,6 +13,12 @@
         <span data-ng-show="!tx.confirmations" class="txvalues txvalues-danger">Unconfirmed Transaction!</span>
         <span class="txvalues txvalues-primary">{{$root.currency.getConvertion(tx.valueOut) || tx.valueOut + ' BTC' }}</span>
       </div>
+    </div>
+    <div class="hide_snavbar">
+      <a href="#" data-ng-click="hideSNavbar=!hideSNavbar">
+        <span data-ng-show="hideSNavbar">Show</span>
+        <span data-ng-show="!hideSNavbar">Hide</span>
+      </a>
     </div>
   </div>
   <div class="ng-cloak" data-ng-cloak data-ng-if="tx.txid">
