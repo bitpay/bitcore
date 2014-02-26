@@ -11,6 +11,7 @@ var bignum = bitcore.bignum;
 var base58 = bitcore.base58;
 var base58Check = base58.base58Check;
 var util = bitcore.util;
+var buffertools = require('buffertools');
 
 describe('Miscelaneous stuff', function() {
   it('should initialze the config object', function() {
@@ -61,6 +62,7 @@ describe('Miscelaneous stuff', function() {
   test_data.dataEncodeDecode.forEach(function(datum) {
     it('base58 encode/decode checks ' + datum, function() {
       base58.encode(new Buffer(datum[0], 'hex')).should.equal(datum[1]);
+      buffertools.toHex(base58.decode(datum[1])).should.equal(datum[0]);
     });
   });
 
