@@ -269,6 +269,8 @@ npm install -g grunt-cli
 grunt browserify
 ```
 
+You can check a usage example at examples/example.html
+
 
 #License
 
