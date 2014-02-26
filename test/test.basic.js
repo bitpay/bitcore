@@ -9,7 +9,7 @@ var PrivateKey = bitcore.PrivateKey.class();
 var networks = bitcore.networks;
 var KeyModule = bitcore.KeyModule;
 
-var test_data = require('../browser/testdata');
+var test_data = require('./testdata');
 
 
 function test_encode_priv(b58, payload, isTestnet, isCompressed) {
