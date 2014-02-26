@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Bitcore browser examples</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  </head>
+  <body>
+    <div id='content'></div>
+    <script src="../browser/bundle.js"></script>
+
+    <script type="text/javascript">
+
+      console.log = function(s){
+        var div = document.getElementById('content');
+        div.innerHTML += s + '<br />';
+      };
+
+      var Address = bitcore.Address.class();
+
+      var addrStrings = [
+        "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
+        "1A1zP1eP5QGefi2DMPTfTL5SLmv7Dixxxx",
+        "A1zP1eP5QGefi2DMPTfTL5SLmv7Dixxxx",
+        "1600 Pennsylvania Ave NW",
+      ].map(function(addr) {
+        return new Address(addr);
+      });
+
+      addrStrings.forEach(function(addr) {
+
+        try {
+          addr.validate();
+          console.log(addr.data + ": is a valid address");
+        } catch(e) {
+          console.log(addr.data + ": is not a valid address.");
+        }
+    
+      });
+
+    </script>
+  </body>
+</html>
