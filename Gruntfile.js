@@ -39,7 +39,7 @@ module.exports = function(grunt) {
         tasks: ['markdown']
       },
       scripts: {
-        files: ['**/*.js', '**/*.html', '!**/node_modules/**', '!browser/bundle.js', '!browser/load_test_data.js'],
+        files: ['**/*.js', '**/*.html', '!**/node_modules/**', '!browser/bundle.js', '!browser/testdata.js'],
         tasks: ['browserify' /*, 'mochaTest'*/ ],
       },
     },
