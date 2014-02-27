@@ -28,7 +28,9 @@
     "type": "git",
     "url": "https://github.com/bitpay/bitcore.git"
   },
-  "scripts": {},
+  "scripts": {
+    "test": "mocha test -R spec"
+  },
   "dependencies": {
     "classtool": "git://github.com/bitpay/classtool.git",
     "base58-native": "=0.1.3",
