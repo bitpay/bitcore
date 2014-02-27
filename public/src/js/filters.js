@@ -6,4 +6,10 @@ angular.module('insight')
       start = +start; //parse to int
       return input.slice(start);
     }
-});
+  })
+  .filter('split', function() {
+    return function(input, delimiter) {
+      var delimiter = delimiter || ',';
+      return input.split(delimiter);
+    }
+  });
