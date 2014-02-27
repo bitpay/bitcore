@@ -427,7 +427,7 @@ margin-left: 0;
   border-bottom: 2px solid #EAEAEA;
   padding: 0 0 10px 0;
 }
-.line-mid { padding: 15px 0;}
+.line-mid { padding: 15px;}
 .line-top {
   border-top: 1px solid #EAEAEA;
   padding: 15px 0 0 0;
@@ -581,6 +581,9 @@ margin-left: 0;
 
 .page-header { margin-top: 0; }
 
+.panel { margin-bottom: 1em;}
+.panel-body {padding: 0.7em;}
+
 /* Index */
 #home .btn-more {
   border-top: 1px solid #ddd;
@@ -655,7 +658,6 @@ margin-left: 0;
 }
 
 .transaction-vin-vout {
-  line-height: 1.8em;
 }
 
 .v_highlight {

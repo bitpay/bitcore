@@ -1,6 +1,6 @@
 <div class="line-bot row ng-cloak" data-ng-hide="!tx" data-ng-cloak>
   <div class="col-xs-12 col-md-6">
-    <div class="ellipsis">
+    <div class="h5 ellipsis">
       <a class="btn-expand" href="#" title="Show/Hide items details" data-ng-click="itemsExpanded = !itemsExpanded">
         <span class="glyphicon glyphicon-plus-sign" data-ng-class="{'glyphicon-minus-sign': itemsExpanded}"></span>
       </a>
@@ -32,10 +32,10 @@
 
       <!-- Simple view -->
       <div data-ng-if="!itemsExpanded" data-ng-init="currentInNoExpanded=0; sizeInNoExpanded=5">
-        <div data-ng-repeat="vin in tx.vinSimple| startFrom:currentInNoExpanded*sizeInNoExpanded | limitTo:sizeInNoExpanded">
-          <div class="col-md-12 transaction-vin-vout">
+        <div class="panel panel-default" data-ng-repeat="vin in tx.vinSimple| startFrom:currentInNoExpanded*sizeInNoExpanded | limitTo:sizeInNoExpanded">
+          <div class="panel-body transaction-vin-vout">
             <div class="pull-right btc-value" data-ng-class="{'text-danger': $root.currentAddr == vin.addr}">
-              <p>{{$root.currency.getConvertion(vin.value) || vin.value + ' BTC'}}</p>
+              {{$root.currency.getConvertion(vin.value) || vin.value + ' BTC'}}
             </div>
             <div class="ellipsis">
               <span data-ng-show="vin.notAddr">{{vin.addr}}</span>
@@ -59,9 +59,11 @@
       <div data-ng-if="itemsExpanded" data-ng-init="currentInExpanded=0; sizeInExpanded=(from_vin) ? tx.vin.length : 5; fromVinCollapsed=(from_vin)">
         <a href="#" data-ng-show="(from_vin) && tx.vin.length > 1" data-ng-class="{'text-muted': fromVinCollapsed}" data-ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length;fromVinCollapsed=1"><small>show input {{ v_index }}</small></a>
         <a href="#" data-ng-show="(from_vin) && tx.vin.length > 1" data-ng-class="{'text-muted': !fromVinCollapsed}" data-ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length;fromVinCollapsed=0"><small>show all</small></a>
-        <div data-ng-repeat="vin in tx.vin| startFrom:currentInExpanded*sizeInExpanded | limitTo:sizeInExpanded" data-ng-if="fromVinCollapsed ? v_index == vin.n : 1">
-          <div class="col-md-12 transaction-vin-vout">
-            <div class="pull-right btc-value"><p>{{$root.currency.getConvertion(vin.value) || vin.value + ' BTC'}}</p></div>
+        <div class="panel panel-default" data-ng-repeat="vin in tx.vin| startFrom:currentInExpanded*sizeInExpanded | limitTo:sizeInExpanded" data-ng-if="fromVinCollapsed ? v_index == vin.n : 1">
+          <div class="panel-body transaction-vin-vout">
+            <div class="pull-right btc-value">
+              {{$root.currency.getConvertion(vin.value) || vin.value + ' BTC'}}
+            </div>
             <div class="ellipsis">
               <a class="glyphicon glyphicon-chevron-right" href="/tx/{{vin.txid}}/>/{{vin.vout}}" title="Outpoint: {{vin.txid}},{{vin.vout}}"></a>&nbsp;&nbsp;
               <span data-ng-show="vin.notAddr">{{vin.addr}}</span>
@@ -74,13 +76,11 @@
             </div>
           </div>
           <div class="col-md-12">
-            <div class="panel panel-default">
-              <div class="panel-body" style="word-wrap:break-word" data-ng-class="{true: 'v_highlight', false: ''}[from_vin == true && v_index == vin.n]">
-                <small>
-                  <strong>scriptSig</strong>
-                  {{vin.scriptSig.asm}}
-                </small>
-              </div>
+            <div style="word-wrap:break-word" data-ng-class="{true: 'v_highlight', false: ''}[from_vin == true && v_index == vin.n]">
+              <small class="text-muted">
+                <strong>scriptSig</strong>
+                {{vin.scriptSig.asm}}
+              </small>
             </div>
           </div>
         </div>
@@ -93,10 +93,10 @@
   </div>
   <div class="col-md-1 col-xs-12">
     <div class="hidden-xs hidden-sm text-center">
-      <span class="glyphicon glyphicon-chevron-right text-primary"></span>
+      <span class="lead glyphicon glyphicon-chevron-right text-muted"></span>
     </div>
     <div class="hidden-md hidden-lg text-center">
-      <span class="glyphicon glyphicon-chevron-down text-primary"></span>
+      <span class="lead glyphicon glyphicon-chevron-down text-muted"></span>
     </div>
   </div>
   <div class="col-md-6">
@@ -105,17 +105,19 @@
       <!-- Simple view -->
       <div data-ng-if="!itemsExpanded" data-ng-init="currentOutNoExpanded=0; sizeOutNoExpanded=5">
         <div data-ng-repeat="vout in tx.voutSimple| startFrom:currentOutNoExpanded*sizeOutNoExpanded | limitTo:sizeOutNoExpanded">
-          <div class="col-md-12 transaction-vin-vout">
-            <div class="pull-right btc-value" data-ng-class="{'text-success': $root.currentAddr == vout.addr}">
-              {{$root.currency.getConvertion(vout.value) || vout.value + ' BTC' }}
-              <span class="text-danger" data-ng-show="vout.isSpent" tooltip="Output is spent" tooltip-placement="left">(S)</span>
-              <span class="text-success" data-ng-show="!vout.isSpent"  tooltip="Output is unspent" tooltip-placement="left">(U)</span>
-            </div>
+          <div class="transaction-vin-vout panel panel-default">
+            <div class="panel-body">
+              <div class="pull-right btc-value" data-ng-class="{'text-success': $root.currentAddr == vout.addr}">
+                {{$root.currency.getConvertion(vout.value) || vout.value + ' BTC' }}
+                <span class="text-danger" data-ng-show="vout.isSpent" tooltip="Output is spent" tooltip-placement="left">(S)</span>
+                <span class="text-success" data-ng-show="!vout.isSpent"  tooltip="Output is unspent" tooltip-placement="left">(U)</span>
+              </div>
 
-            <div class="ellipsis">
-              <span data-ng-show="vout.notAddr">{{vout.addr}}</span>
-              <span class="text-muted" title="Current Bitcoin Address" data-ng-show="address == $root.currentAddr" data-ng-repeat="address in vout.addr.split(',')">{{vout.addr}}</span>
-              <a href="/address/{{address}}"  data-ng-show="!vout.notAddr && address != $root.currentAddr" data-ng-repeat="address in vout.addr.split(',')">{{address}}</a>
+              <div class="ellipsis">
+                <span data-ng-show="vout.notAddr">{{vout.addr}}</span>
+                <span class="text-muted" title="Current Bitcoin Address" data-ng-show="address == $root.currentAddr" data-ng-repeat="address in vout.addr.split(',')">{{vout.addr}}</span>
+                <a href="/address/{{address}}"  data-ng-show="!vout.notAddr && address != $root.currentAddr" data-ng-repeat="address in vout.addr.split(',')">{{address}}</a>
+              </div>
             </div>
           </div>
         </div>
@@ -127,35 +129,34 @@
 
       <!-- Full view -->
       <div data-ng-if="itemsExpanded" data-ng-init="currentOutExpanded=0; sizeOutExpanded=(from_vout) ? tx.vout.length : 5; fromVoutCollapsed=(from_vout)">
+
         <a href="#" data-ng-show="(from_vout) && tx.vout.length > 1" data-ng-class="{'text-muted': fromVoutCollapsed}" data-ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length;fromVoutCollapsed=1"><small>show output {{ v_index }}</small></a>
         <a href="#" data-ng-show="(from_vout) && tx.vout.length > 1" data-ng-class="{'text-muted': !fromVoutCollapsed}" data-ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length;fromVoutCollapsed=0"><small>show all</small></a>
         <div data-ng-repeat="vout in tx.vout| startFrom:currentOutExpanded*sizeOutExpanded | limitTo:sizeOutExpanded" data-ng-if="fromVoutCollapsed ? v_index == vout.n : 1">
-          <div class="col-md-12 transaction-vin-vout">
-            <div class="pull-right btc-value">
-              <p>{{$root.currency.getConvertion(vout.value) || vout.value + ' BTC'}}
-                <span class="text-success" data-ng-show="!vout.spentTxId" tooltip="Output is unspent" tooltip-placement="left">(U)</span>
-                <a class="glyphicon glyphicon-chevron-right" data-ng-show="vout.spentTxId" href="/tx/{{vout.spentTxId}}/</{{vout.spentIndex}}" title="Spent at: {{vout.spentTxId}},{{vout.spentIndex}}"></a>&nbsp;&nbsp;
-              </p>
-            </div>
-            <div class="ellipsis">
-              <a href="/address/{{address}}" data-ng-repeat="address in vout.scriptPubKey.addresses">{{address}}</a>
-            </div>
-          </div>
-          <div class="col-md-12">
-            <div class="panel panel-default">
-              <div class="panel-body" style="word-wrap:break-word" data-ng-class="{true: 'v_highlight', false: ''}[from_vout == true && v_index == vout.n]">
-                <small>
-                  <p>
-                  <strong>Type</strong>
-                  {{vout.scriptPubKey.type}}
-                  </p>
-                  <p>
-                  <strong>scriptPubKey</strong>
-                  {{vout.scriptPubKey.asm}}
-                  </p>
-                </small>
+          <div class="panel panel-default transaction-vin-vout">
+            <div class="panel-body">
+              <div class="pull-right btc-value">
+                <p>{{$root.currency.getConvertion(vout.value) || vout.value + ' BTC'}}
+                  <span class="text-success" data-ng-show="!vout.spentTxId" tooltip="Output is unspent" tooltip-placement="left">(U)</span>
+                  <a class="glyphicon glyphicon-chevron-right" data-ng-show="vout.spentTxId" href="/tx/{{vout.spentTxId}}/</{{vout.spentIndex}}" title="Spent at: {{vout.spentTxId}},{{vout.spentIndex}}"></a>&nbsp;&nbsp;
+                </p>
+              </div>
+              <div class="ellipsis">
+                <a href="/address/{{address}}" data-ng-repeat="address in vout.scriptPubKey.addresses">{{address}}</a>
               </div>
             </div>
+          </div>
+          <div style="word-wrap:break-word" data-ng-class="{true: 'v_highlight', false: ''}[from_vout == true && v_index == vout.n]">
+            <small>
+              <p>
+              <strong>Type</strong>
+              {{vout.scriptPubKey.type}}
+              </p>
+              <p>
+              <strong>scriptPubKey</strong>
+              {{vout.scriptPubKey.asm}}
+              </p>
+            </small>
           </div>
         </div>
         <div class="showmore_collapse text-right" data-ng-show="tx.vout.length > 5 && !fromVoutCollapsed" data-ng-class="{ 'hidden': !itemsExpanded}">
