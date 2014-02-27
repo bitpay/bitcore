@@ -1,7 +1,7 @@
 {
   "name": "bitcore",
   "description": "Bitcoin Library",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "author": {
     "name": "Stephen Pair",
     "email": "stephen@bitpay.com"
@@ -14,6 +14,18 @@
     {
       "name": "Jeff Garzik",
       "email": "jgarzik@bitpay.com"
+    },
+    {
+      "name": "Manuel Araoz",
+      "email": "manuelaraoz@gmail.com"
+    },
+    {
+      "name": "Matias Alejo Garcia",
+      "email": "ematiu@gmail.com"
+    },
+    {
+      "name": "Ryan X. Charles",
+      "email": "ryan@bitpay.com"
     }
   ],
   "keywords": [
