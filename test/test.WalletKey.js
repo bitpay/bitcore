@@ -23,6 +23,33 @@ describe('WalletKey', function() {
     });
     should.exist(s);
   });
+  it('should be able to call generate', function() {
+    var s = new WalletKey({
+      network: networks.livenet
+    });
+    s.generate.bind(s).should.not.throw(Error);
+  });
+  it('should be able to call storeObj', function() {
+    var s = new WalletKey({
+      network: networks.livenet
+    });
+    s.generate();
+    var o = s.storeObj();
+    should.exist(o);
+  });
+  it('roundtrip for storeObj/fromObj', function() {
+    var s = new WalletKey({
+      network: networks.livenet
+    });
+    s.generate();
+    var obj = s.storeObj();
+    var s2 = new WalletKey({
+      network: networks.livenet
+    });
+    s2.fromObj(obj);
+    s.privKey.private.toString().should.equal(s2.privKey.private.toString());
+    s.privKey.public.toString().should.equal(s2.privKey.public.toString());
+  });
 });
 
 

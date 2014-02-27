@@ -10,6 +10,15 @@ var sha256 = exports.sha256 = function (data) {
 };
 
 var ripe160 = exports.ripe160 = function (data) {
+  if (!process.versions) {
+    // browser version
+    var bjs = require('../browser/bitcoinjs-lib.js');
+    var RIPEMD160 = bjs.RIPEMD160;
+    var WordArray = bjs.WordArray;
+    data = data.toString();
+    var result = RIPEMD160(data) + '';
+    return new Buffer(result, 'hex');
+  }
   return new Buffer(crypto.createHash('rmd160').update(data).digest('binary'), 'binary');
 };
 
