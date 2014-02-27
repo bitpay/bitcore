@@ -53,6 +53,7 @@ addrStrings.forEach(function(addr) {
 
 ```
 ## Monitoring Blocks and Transactions
+For this example you need a running bitcoind instance with RPC enabled. 
 ```js
 var util        = require('util');
 var networks    = require('bitcore/networks');
@@ -105,6 +106,7 @@ PeerManager will emit the following events: 'version', 'verack', 'addr', 'getadd
 
 
 ## Creating and sending a Transaction through P2P
+For this example you need a running bitcoind instance with RPC enabled. 
 ```js
 var networks    = require('bitcore/networks');
 var Peer        = require('bitcore/Peer').class();
@@ -180,6 +182,7 @@ peerman.start();
 ```
 
 ## Consuming bitcoind RPC
+For this example you need a running bitcoind instance with RPC enabled. 
 ```js
 var util      = require('util');
 var RpcClient = require('bitcore/RpcClient').class();
