@@ -25,6 +25,14 @@ function spec(b) {
     }
     if (data.o) {
       this.o = data.o;
+    } else {
+      if (data.oTxHash && typeof data.oIndex !== 'undefined') {
+        var hash = new Buffer(data.oTxHash, 'hex');
+        hash = buffertools.reverse(hash);
+        var voutBuf = new Buffer(4);
+        voutBuf.writeUInt32LE(data.oIndex, 0);
+        this.o = Buffer.concat([hash, voutBuf]);
+      }
     }
     this.s = Buffer.isBuffer(data.s) ? data.s :
              Buffer.isBuffer(data.script) ? data.script : util.EMPTY_BUFFER;
@@ -44,7 +52,8 @@ function spec(b) {
     var qbuf = new Buffer(4);
     qbuf.writeUInt32LE(this.q, 0);
 
-    return Buffer.concat([this.o, slen, this.s, qbuf]);
+    var ret = Buffer.concat([this.o, slen, this.s, qbuf]);
+    return ret;
   };
 
   TransactionIn.prototype.getOutpointHash = function getOutpointHash() {
@@ -144,6 +153,7 @@ function spec(b) {
     bufs.push(buf);
 
     bufs.push(util.varIntBuf(this.ins.length));
+    console.log(this.ins.length);
     this.ins.forEach(function (txin) {
       bufs.push(txin.serialize());
     });
@@ -640,6 +650,8 @@ function spec(b) {
 
   Transaction.prototype.parse = function (parser) {
     if (Buffer.isBuffer(parser)) {
+      console.dir(parser);
+      this._buffer = parser;
       parser = new Parser(parser);
     }
 
