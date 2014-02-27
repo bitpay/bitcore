@@ -3,66 +3,18 @@
 module.exports = function(grunt) {
 
   //Load NPM tasks
-  grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-css');
-  grunt.loadNpmTasks('grunt-mocha-test');
-  grunt.loadNpmTasks('grunt-nodemon');
-  grunt.loadNpmTasks('grunt-concurrent');
-  grunt.loadNpmTasks('grunt-env');
   grunt.loadNpmTasks('grunt-markdown');
 
   // Project Configuration
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
-    watch: {
-      readme: {
-        files: ['README.md'],
-        tasks: ['markdown']
-      },
-      jade: {
-        files: ['app/views/**'],
-        options: {
-          livereload: true,
-        },
-      },
-      js: {
-        files: ['Gruntfile.js', 'insight.js', 'app/**/*.js', 'public/js/**'],
-        tasks: ['jshint'],
-        options: {
-          livereload: true,
-        },
-      },
-      assets: {
-        files: ['public/src/**/*.js', 'public/**/*.css'],
-        tasks: ['compile'],
-        options: {
-          livereload: true,
-        },
-      },
-      html: {
-        files: ['public/views/**'],
-        options: {
-          livereload: true,
-        },
-      },
-      css: {
-        files: ['public/css/**'],
-        options: {
-          livereload: true
-        }
-      },
-        // we monitor only app/models/* because we have test for models only now
-//      test: {
-//        files: ['test/**/*.js', 'test/*.js','app/models/*.js'],
-//        tasks: ['test'],
-//      }
-    },
     jshint: {
       all: {
-        src: ['Gruntfile.js', 'insight.js', 'app/**/*.js', 'public/src/js/**/*.js','lib/*.js'],
+        src: ['Gruntfile.js', 'public/src/js/**/*.js'],
         options: {
           jshintrc: true
         }
@@ -92,7 +44,7 @@ module.exports = function(grunt) {
         dest: 'public/js/main.js'
       },
       css: {
-        src: ['public/src/css/**/*.css'],
+        src: ['public/lib/bootstrap/dist/css/bootstrap.min.css', 'public/src/css/**/*.css'],
         dest: 'public/css/main.css'
       }
     },
@@ -120,38 +72,6 @@ module.exports = function(grunt) {
         dest: 'public/css/main.min.css'
       }
     },
-    mochaTest: {
-      options: {
-        reporter: 'spec',
-      },
-      src: ['test/**/*.js'],
-    },
-    nodemon: {
-      dev: {
-        script: 'insight.js',
-        options: {
-          args: [],
-          ignore: ['public/**/*.html','public/**/*.css', 'public/**/*.js', 'test/**/*','util/**/*', ,'dev-util/**/*'],
-          // nodeArgs: ['--debug'],
-          delayTime: 1,
-          env: {
-            PORT: 3000
-          },
-          cwd: __dirname
-        }
-      }
-    },
-    concurrent: {
-      tasks: ['nodemon', 'watch'],
-      options: {
-        logConcurrentOutput: true
-      }
-    },
-    env: {
-      test: {
-        NODE_ENV: 'test'
-      }
-    },
     markdown: {
       all: {
         files: [
@@ -170,11 +90,8 @@ module.exports = function(grunt) {
   grunt.option('force', true);
 
   //Default task(s).
-  grunt.registerTask('default', ['jshint', 'compile', 'concurrent']);
+  grunt.registerTask('default', ['jshint']);
 
   //Compile task (concat + minify)
   grunt.registerTask('compile', ['concat', 'uglify', 'cssmin']);
-
-  //Test task.
-  grunt.registerTask('test', ['env:test', 'mochaTest']);
 };

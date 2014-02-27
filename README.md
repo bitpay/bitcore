@@ -6,6 +6,7 @@ front-end and LevelDB for storage.
 
 Check some screenshots and more details at [insight's project homepage](http://insight.bitcore.io).
 
+*Insight* project is now splitted in two repositories. One for the [API](https://github.com/bitpay/insight-api) and for the front-end. This repository is for the front-end, which will install the API as a NPM dependency.
 
 ## Prerequisites
 
@@ -39,7 +40,11 @@ bitcoind must be running and must have finished downloading the blockchain **bef
     
   Run the main application:
 
-    $ node insight.js
+    $ npm start
+    
+  Or just run:
+
+    $ INSIGHT_PUBLIC_PATH=public node node_modules/insight-bitcore-api/insight.js
 
   Then open a browser and go to:
 
@@ -109,10 +114,6 @@ To run insight locally for development with grunt:
 To compile and minify the web application's assets:
 
 ```$ grunt compile```
-
-To run the tests
-
-```$ grunt test```
 
 
 Contributions and suggestions are welcomed at [insight github repository](https://github.com/bitpay/insight).
