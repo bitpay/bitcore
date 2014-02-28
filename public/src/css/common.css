@@ -50,6 +50,26 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   z-index: 99999;
 }
 
+/* QR modal */
+#qrcode-scanner-container {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  z-index: 10000;
+  padding: 10px;
+  text-align: center;
+  display: none;
+}
+#qrcode-scanner-container.active { display: block; }
+#qr-canvas { display: none; }
+#qrcode-scanner-video {
+  margin: 0 auto 10px auto;
+  display: block;
+}
+
 /* Wrapper for page content to push down footer */
 #wrap {
   min-height: 100%;
