@@ -78,7 +78,9 @@
               <div class="panel-body" style="word-wrap:break-word" data-ng-class="{true: 'v_highlight', false: ''}[from_vin == true && v_index == vin.n]">
                 <small>
                   <strong>scriptSig</strong>
-                  {{vin.scriptSig.asm}}
+                  <span data-ng-repeat="item in vin.scriptSig.asm | split:' '">
+                    <span>{{item}}</span><br><br>
+                  </span>
                 </small>
               </div>
             </div>
