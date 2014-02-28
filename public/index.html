@@ -13,11 +13,29 @@
 	<link rel="stylesheet" href="/css/main.min.css">
 </head>
 <body>
+  <div>
+    <script type="text/ng-template" id="scannerModal.html">
+      <div class="modal-header">
+        <h3 class="modal-title">Scan Code</h3>
+      </div>
+      <div class="modal-body">
+        <canvas id="qr-canvas" width="300" height="225"></canvas>
+        <video id="qrcode-scanner-video" width="300" height="225"></video>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-default" data-ng-click="cancel()" data-dismiss="modal">Close</button>
+      </div>
+    </script>
+  </div>
 	<div id="wrap">
 		<div class="navbar navbar-default navbar-fixed-top" data-ng-include="'/views/includes/header.html'" role='navigation'></div>
 		<section class="container" data-ng-view></section>
 	</div>
-	<div id="footer" data-ng-include="'/views/includes/footer.html'" role="navigation"></div>
+	<div id="footer" role="navigation">
+    <div class="container" data-ng-controller="FooterController">
+      <a class="insight m10v pull-right" href="/">insight <small>API v{{version}}</small></a>
+    </div>
+  </div>
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="/js/vendors.min.js"></script>
 	<script src="/js/angularjs-all.min.js"></script>
