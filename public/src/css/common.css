@@ -88,8 +88,9 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .m50v { margin: 50px 0; }
 .m10b { margin-bottom: 10px; }
 .m10l { margin-left: 10px; }
-
 .vm { vertical-align: middle; }
+.pa {position: absolute;}
+.pr {position: relative;}
 
 .bgwhite {
   background-color: white;
@@ -447,7 +448,7 @@ margin-left: 0;
   border-bottom: 2px solid #EAEAEA;
   padding: 0 0 10px 0;
 }
-.line-mid { padding: 15px 0;}
+.line-mid { padding: 15px;}
 .line-top {
   border-top: 1px solid #EAEAEA;
   padding: 15px 0 0 0;
@@ -601,6 +602,9 @@ margin-left: 0;
 
 .page-header { margin-top: 0; }
 
+.panel { margin-bottom: 1em;}
+.panel-body {padding: 0.7em;}
+
 /* Index */
 #home .btn-more {
   border-top: 1px solid #ddd;
@@ -675,18 +679,19 @@ margin-left: 0;
 }
 
 .transaction-vin-vout {
-  line-height: 1.8em;
 }
 
 .v_highlight {
-  background-color: #8DC429;
+  margin-bottom: 1em;
+  padding: 1em 0;
+  background-color: #e9e9e9;
   overflow: hidden;
-  color: #fff;
+  color: #333;
 }
 
 a.v_highlight_more {
-  background-color: #8DC429;
-  color: #fff;
+  background-color: #F0F7E2;
+  color: #333;
 }
 
 .secondary_navbar {
