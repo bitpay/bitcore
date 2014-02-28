@@ -55,13 +55,10 @@ describe('Transaction', function() {
           ins.push(input);
 
         });
-        var raw = new Buffer(datum[1]);
+        var raw = new Buffer(datum[1], 'hex');
         var tx = new Transaction();
         tx.parse(raw);
         buffertools.toHex(tx.serialize()).should.equal(buffertools.toHex(raw));
-
-
-
       });
     }
   });

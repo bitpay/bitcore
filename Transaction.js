@@ -26,7 +26,7 @@ function spec(b) {
     if (data.o) {
       this.o = data.o;
     } else {
-      if (data.oTxHash && typeof data.oIndex !== 'undefined') {
+      if (data.oTxHash && typeof data.oIndex !== 'undefined' && data.oIndex >= 0) {
         var hash = new Buffer(data.oTxHash, 'hex');
         hash = buffertools.reverse(hash);
         var voutBuf = new Buffer(4);
@@ -153,7 +153,6 @@ function spec(b) {
     bufs.push(buf);
 
     bufs.push(util.varIntBuf(this.ins.length));
-    console.log(this.ins.length);
     this.ins.forEach(function (txin) {
       bufs.push(txin.serialize());
     });
@@ -650,7 +649,6 @@ function spec(b) {
 
   Transaction.prototype.parse = function (parser) {
     if (Buffer.isBuffer(parser)) {
-      console.dir(parser);
       this._buffer = parser;
       parser = new Parser(parser);
     }
