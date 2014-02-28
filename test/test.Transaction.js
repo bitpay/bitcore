@@ -12,6 +12,7 @@ var Out;
 var Script = bitcore.Script.class();
 var buffertools = require('buffertools');
 var test_data = require('./testdata');
+var async = require('async');
 
 describe('Transaction', function() {
   it('should initialze the main object', function() {
@@ -37,28 +38,38 @@ describe('Transaction', function() {
   // ... where all scripts are stringified scripts.
   test_data.dataTxValid.forEach(function(datum) {
     if (datum.length === 3) {
-      it('valid tx=' + datum[1], function() {
+      it.skip('valid tx=' + datum[1], function(done) {
         var inputs = datum[0];
-        var mapprevOutScriptPubKeys = {};
-        var ins = [];
+        var map = {};
         inputs.forEach(function(vin) {
           var hash = vin[0];
           var index = vin[1];
-          var scriptPubKey = vin[2];
-          var input = new In({
-            s: scriptPubKey,
-            q: 0xffffffff,
-            oTxHash: hash,
-            oIndex: index
-          });
-          //mapprevOutScriptPubKeys[input] = new Script(scriptPubKey);
-          ins.push(input);
+          var scriptPubKey = new Script(new Buffer(vin[2]));
+          map[[hash, index]] = scriptPubKey;//Script.fromStringContent(scriptPubKey);
+          console.log(scriptPubKey.getStringContent());
+          console.log('********************************');
 
         });
         var raw = new Buffer(datum[1], 'hex');
         var tx = new Transaction();
         tx.parse(raw);
+
         buffertools.toHex(tx.serialize()).should.equal(buffertools.toHex(raw));
+
+        var i = 0;
+        var stx = tx.getStandardizedObject();
+        async.eachSeries(tx.ins,
+          function(txin, next) {
+            var scriptPubKey = map[[stx.in[i].prev_out.hash, stx.in[i].prev_out.n]];
+            i += 1;
+            next();
+
+          },
+          function(err) {
+            should.not.exist(err);
+            done();
+          }
+        );
       });
     }
   });

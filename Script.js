@@ -280,6 +280,30 @@ function spec(b) {
     return this.buffer;
   };
 
+  Script.fromStringContent = function(s) {
+    var chunks = [];
+    var split = s.split(' ');
+    console.log(split);
+    for (var i=0; i<split.length; i++) {
+       var word = split[i];
+       if (word.length > 2 && word.substring(0,2) === '0x') {
+         chunks.push(new Buffer(word.substring(2,word.length), 'hex'));
+       } else {
+         var integer = parseInt(word);
+         if (isNaN(integer)) {
+           chunks.push(Opcode.map['OP_'+word]);
+         } else {
+           var hexi = integer.toString(16);
+           if (hexi.length %2 === 1) hexi = '0'+hexi;
+           console.log(hexi);
+           chunks.push(new Buffer(hexi,'hex'));
+         }
+       }
+
+    }
+    return Script.fromChunks(chunks);
+  };
+
   Script.prototype.getStringContent = function (truncate, maxEl)
   {
     if (truncate === null) {
@@ -290,26 +314,26 @@ function spec(b) {
       maxEl = 15;
     }
 
-    var script = '';
+    var s = '';
     for (var i = 0, l = this.chunks.length; i < l; i++) {
       var chunk = this.chunks[i];
 
       if (i > 0) {
-        script += " ";
+        s += ' ';
       }
 
       if (Buffer.isBuffer(chunk)) {
-        script += "0x"+util.formatBuffer(chunk, truncate ? null : 0);
+        s += '0x'+util.formatBuffer(chunk, truncate ? null : 0);
       } else {
-        script += Opcode.reverseMap[chunk];
+        s += Opcode.reverseMap[chunk];
       }
 
       if (maxEl && i > maxEl) {
-        script += " ...";
+        s += ' ...';
         break;
       }
     }
-    return script;
+    return s;
   };
 
   Script.prototype.toString = function (truncate, maxEl)

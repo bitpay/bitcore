@@ -9,6 +9,7 @@ var ScriptModule = bitcore.Script;
 var Address = bitcore.Address.class();
 var networks = bitcore.networks;
 var Script;
+var test_data = require('./testdata');
 
 describe('Script', function() {
   it('should initialze the main object', function() {
@@ -82,4 +83,17 @@ describe('Script', function() {
       script.chunks[0].should.equal(0);
     });
   });
+
+
+
+  test_data.dataScriptValid.forEach(function(datum) {
+    if (datum.length < 2) throw new Error('Invalid test data');
+    var human = datum[1];
+    it('should parse script from human readable ' + human, function() {
+      Script.fromStringContent(human).getStringContent(false, null).should.equal(human);
+    });
+
+
+  });
+
 });

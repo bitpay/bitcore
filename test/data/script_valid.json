@@ -1,8 +1,8 @@
 [
 ["0x01 0x0b", "11 EQUAL", "push 1 byte"],
-["0x02 0x417a", "'Az' EQUAL"],
+["0x02 0x417a", "0x417a EQUAL"],
 ["0x4b 0x417a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a",
- "'Azzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' EQUAL", "push 75 bytes"],
+ "0x417a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a EQUAL", "push 75 bytes"],
 
 ["0x4c 0x01 0x07","7 EQUAL", "0x4c is OP_PUSHDATA1"],
 ["0x4d 0x0100 0x08","8 EQUAL", "0x4d is OP_PUSHDATA2"],
@@ -11,7 +11,7 @@
 ["0x4c 0x00","0 EQUAL"],
 ["0x4d 0x0000","0 EQUAL"],
 ["0x4e 0x00000000","0 EQUAL"],
-["0x4f 1000 ADD","999 EQUAL"],
+["0x4f 0x03e8 ADD","0x03e7 EQUAL"],
 ["0", "IF 0x50 ENDIF 1", "0x50 is reserved (ok if not executed)"],
 ["0x51", "0x5f ADD 0x60 EQUAL", "0x51 through 0x60 push 1 through 16 onto stack"],
 ["1","NOP"],
@@ -53,8 +53,8 @@
 
 ["1 1", "VERIFY"],
 
-["10 0 11 TOALTSTACK DROP FROMALTSTACK", "ADD 21 EQUAL"],
-["'gavin_was_here' TOALTSTACK 11 FROMALTSTACK", "'gavin_was_here' EQUALVERIFY 11 EQUAL"],
+["10 0 11 TOALTSTACK DROP FROMALTSTACK", "ADD 0x15 EQUAL"],
+["0x676176696e5f7761735f68657265 TOALTSTACK 11 FROMALTSTACK", "0x676176696e5f7761735f68657265 EQUALVERIFY 11 EQUAL"],
 
 ["0 IFDUP", "DEPTH 1 EQUALVERIFY 0 EQUAL"],
 ["1 IFDUP", "DEPTH 2 EQUALVERIFY 1 EQUALVERIFY 1 EQUAL"],
