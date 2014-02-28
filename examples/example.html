@@ -7,6 +7,7 @@
   </head>
   <body>
     <div id='content'></div>
+    <script src="./jquery.js"></script>
     <script src="../browser/bundle.js"></script>
 
     <script type="text/javascript">
@@ -37,6 +38,13 @@
         }
     
       });
+
+$.ajax("./config.json", {
+    async: !1,
+    complete: function(resp) {
+        var config = resp.responseJSON;
+    }
+});
 
     </script>
   </body>
