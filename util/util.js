@@ -4,6 +4,12 @@ var bignum = require('bignum');
 var Binary = require('binary');
 var Put = require('bufferput');
 var buffertools = require('buffertools');
+var bjs;
+if (!process.versions) {
+  // browser version
+  bjs = require('../browser/bitcoinjs-lib.js');
+}
+
 
 var sha256 = exports.sha256 = function (data) {
   return new Buffer(crypto.createHash('sha256').update(data).digest('binary'), 'binary');
@@ -11,8 +17,6 @@ var sha256 = exports.sha256 = function (data) {
 
 var ripe160 = exports.ripe160 = function (data) {
   if (!process.versions) {
-    // browser version
-    var bjs = require('../browser/bitcoinjs-lib.js');
     var RIPEMD160 = bjs.RIPEMD160;
     var WordArray = bjs.WordArray;
     data = data.toString();
