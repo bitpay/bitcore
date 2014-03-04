@@ -19,22 +19,41 @@ if (process.versions) {
     return ret;
   }
 
-  var kSpec = function(compressed, public, private) {
-    this.compressed = compressed;
-    this.public = public;
-    this.private = private;
+  var kSpec = function() {
+    this._pub = null;
   };
+
+
+  Object.defineProperty(kSpec.prototype, 'public', {
+    set: function(p){
+      if (!Buffer.isBuffer(p) ) {
+        throw new Error('Arg should be a buffer');
+      }
+      var type = p[0];
+      this.compressed = type!==4;
+      this._pub = p;
+    },
+    get: function(){
+      return this._pub;
+    }
+  });
 
   kSpec.generateSync = function() {
     var eck = new ECKey();
     eck.setCompressed(true);
     var pub = eck.getPub();
-    var ret = new kSpec(true, new Buffer(pub), new Buffer(eck.priv.toByteArrayUnsigned()));
-    ret.eck = eck;
+
+    var ret = new kSpec();
+    ret.private = new Buffer(eck.priv.toByteArrayUnsigned());
+    ret.public  = new Buffer(pub);
     return ret;
   };
 
   kSpec.prototype.regenerateSync = function() {
+    if (!this.private) {
+      throw new Error('Key does not have a private key set');
+    }
+
     var eck = new ECKey(buffertools.toHex(this.private));
     eck.setCompressed(this.compressed);
     this.public = new Buffer(eck.getPub());
@@ -47,7 +66,7 @@ if (process.versions) {
     }
 
     if (!Buffer.isBuffer(hash) || hash.length !== 32) {
-      throw new Error('Arg should be a 32 bytes hash');
+      throw new Error('Arg should be a 32 bytes hash buffer');
     }
     var eck = new ECKey(buffertools.toHex(this.private));
     eck.setCompressed(this.compressed);

@@ -17,6 +17,7 @@ describe('Key', function() {
     Key = KeyModule.Key;
     should.exist(Key);
   });
+  Key = KeyModule.Key;
   it('should be able to create instance', function() {
     var k = new Key();
     should.exist(k);
@@ -81,12 +82,13 @@ describe('Key', function() {
   it('roundtrip for signature/verify', function() {
     var k = Key.generateSync();
     var pub = k.public;
+
     // sign 
     var sig = k.signSync(a_hash);
-    //
 
     // checks sig. priv unknown.
-    var k2 = new Key(true, pub);
+    var k2 = new Key();
+    k2.public = pub;
     var ret= k2.verifySignatureSync(a_hash, sig);
     ret.should.equal(true);
   });
