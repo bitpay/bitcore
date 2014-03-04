@@ -11,7 +11,7 @@
 
     <script type="text/javascript">
 
-      console.log = function(s){
+      print = function(s){
         var div = document.getElementById('content');
         div.innerHTML += s + '<br />';
       };
@@ -31,12 +31,21 @@
 
         try {
           addr.validate();
-          console.log(addr.data + ": is a valid address");
+          print(addr.data + ": is a valid address");
         } catch(e) {
-          console.log(addr.data + ": is not a valid address.");
+          print(addr.data + ": is not a valid address.");
         }
     
       });
+
+
+      var Key = bitcore.KeyModule.Key;
+      var k = Key.generateSync();
+
+      print ('Generated Key Pair:');
+      print ('Private:' + bitcore.buffertools.toHex(k.private));
+      print ('Public:'  + bitcore.buffertools.toHex(k.public));
+      
 
     </script>
   </body>

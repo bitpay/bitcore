@@ -17,6 +17,7 @@ describe('Key', function() {
     Key = KeyModule.Key;
     should.exist(Key);
   });
+  Key = KeyModule.Key;
   it('should be able to create instance', function() {
     var k = new Key();
     should.exist(k);
@@ -55,7 +56,40 @@ describe('Key', function() {
     buffertools.toHex(k.private).should.equal(pkshex);
     buffertools.toHex(k.public).should.equal(pubhex);
   });
+  it('should not fail checking good signSync status', function() {
+    var k = Key.generateSync();
+    var b = new Buffer(32);
+    k.signSync.bind(k,b).should.not.Throw(Error);
+  });
+  it('should fail checking bad signSync params', function() {
+    var k = Key.generateSync();
+    k.signSync.bind(k,'1').should.Throw(Error);
+    k.signSync.bind(k,new Buffer(10)).should.Throw(Error);
+    k.signSync.bind(k,new Buffer(32)).should.not.Throw(Error);
+  });
 
+  var a_hash = buffertools.fromHex(new Buffer('1122334455667788990011223344556677889900112233445566778899001122'));
 
+  it('should create a signature without failling', function() {
+    var k = Key.generateSync();
+    var pkshex = 'b7dafe35d7d1aab78b53982c8ba554584518f86d50af565c98e053613c8f15e0';
+    k.private = buffertools.fromHex(new Buffer(pkshex));
+    k.regenerateSync();
+    k.compressed.should.be.ok;
+    buffertools.toHex(k.private).should.equal(pkshex);
+    k.signSync.bind(k,a_hash).should.not.Throw(Error);
+  });
+  it('roundtrip for signature/verify', function() {
+    var k = Key.generateSync();
+    var pub = k.public;
 
+    // sign 
+    var sig = k.signSync(a_hash);
+
+    // checks sig. priv unknown.
+    var k2 = new Key();
+    k2.public = pub;
+    var ret= k2.verifySignatureSync(a_hash, sig);
+    ret.should.equal(true);
+  });
 });
