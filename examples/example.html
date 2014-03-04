@@ -38,6 +38,15 @@
     
       });
 
+
+      var Key = bitcore.KeyModule.Key;
+      var k = Key.generateSync();
+
+      print ('Generated Key Pair:');
+      print ('Private:' + bitcore.buffertools.toHex(k.private));
+      print ('Public:'  + bitcore.buffertools.toHex(k.public));
+      
+
     </script>
   </body>
 </html>
