@@ -1,6 +1,6 @@
 var imports    = require('soop').imports();
 var base58     = imports.base58 || require('base58-native').base58Check;
-var superclass = imports.parent || require('./EncodedData');
+var parent     = imports.parent || require('./EncodedData');
 
 function VersionedData(version, payload) {
   if(typeof version != 'number') {
@@ -13,8 +13,8 @@ function VersionedData(version, payload) {
   this.payload(payload);
 };
 
-VersionedData.parent = superclass || require('./Person');
-superclass.applyEncodingsTo(VersionedData);
+VersionedData.parent = parent;
+parent.applyEncodingsTo(VersionedData);
 
 // get or set the version data (the first byte of the address)
 VersionedData.prototype.version = function(num) {
