@@ -4,10 +4,9 @@
 
 var util        = require('util');
 var networks    = require('../networks');
-var Peer        = require('../Peer').class();
-var PeerManager = require('../PeerManager').createClass({
-  network: networks.testnet
-});
+var Peer        = require('../Peer');
+var PeerManager = require('soop').load('../PeerManager',
+  {network: networks.testnet});
 
 var handleBlock = function(info) {
 

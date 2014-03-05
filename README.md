@@ -17,9 +17,9 @@ Bitcore runs on [node](http://nodejs.org/), and can be installed via [npm](https
 npm install bitcore
 ```
 
-It is a collection of objects useful to bitcoin applications; class-like idioms are enabled via [Classtool](https://github.com/gasteve/classtool). In most cases, a developer will require the object's class directly:
+It is a collection of objects useful to bitcoin applications; class-like idioms are enabled via [Soop](https://github.com/gasteve/soop). In most cases, a developer will require the object's class directly:
 ```
-var Address = require('bitcore/Address').class();
+var Address = require('bitcore/Address');
 ```
 
 #Examples
@@ -29,7 +29,7 @@ Some examples are provided at the [examples](/examples) path. Here are some snip
 ## Validating an address
 Validating a Bitcoin address:
 ```js
-var Address = require('bitcore/Address').class();
+var Address = require('bitcore/Address');
 
 var addrStrings = [
   "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
@@ -57,10 +57,9 @@ For this example you need a running bitcoind instance with RPC enabled.
 ```js
 var util        = require('util');
 var networks    = require('bitcore/networks');
-var Peer        = require('bitcore/Peer').class();
-var PeerManager = require('bitcore/PeerManager').createClass({
-  network: networks.testnet
-});
+var Peer        = require('bitcore/Peer');
+var PeerManager = require('soop').load('bitcore/PeerManager',
+  {network: networks.testnet});
 
 var handleBlock = function(info) {
 
@@ -109,14 +108,13 @@ PeerManager will emit the following events: 'version', 'verack', 'addr', 'getadd
 For this example you need a running bitcoind instance with RPC enabled. 
 ```js
 var networks    = require('bitcore/networks');
-var Peer        = require('bitcore/Peer').class();
-var Transaction = require('bitcore/Transaction').class();
-var Address     = require('bitcore/Address').class();
-var Script      = require('bitcore/Script').class();
+var Peer        = require('bitcore/Peer');
+var Transaction = require('bitcore/Transaction');
+var Address     = require('bitcore/Address');
+var Script      = require('bitcore/Script');
 var coinUtil    = require('bitcore/util/util');
-var PeerManager = require('bitcore/PeerManager').createClass({
-  network: networks.testnet
-});
+var PeerManager = require('soop').load('bitcore/PeerManager',
+  {network: networks.testnet});
 
 var createTx = function() {
 
@@ -185,7 +183,7 @@ peerman.start();
 For this example you need a running bitcoind instance with RPC enabled. 
 ```js
 var util      = require('util');
-var RpcClient = require('bitcore/RpcClient').class();
+var RpcClient = require('bitcore/RpcClient');
 var hash      = process.argv[2] || '0000000000b6288775bbd326bedf324ca8717a15191da58391535408205aada4';
 
  var config =  {   
@@ -217,7 +215,7 @@ Check the list of all supported RPC call at [RpcClient.js](RpcClient.js)
 Gets an address strings from a  ScriptPubKey Buffer
 
 ```
-  var Address = require('bitcore/Address').class();
+  var Address = require('bitcore/Address');
   var coinUtil= require('bitcore/util/util');
 
   var getAddrStr = function(s) {
