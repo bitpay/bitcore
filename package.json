@@ -44,7 +44,7 @@
     "test": "mocha test -R spec"
   },
   "dependencies": {
-    "classtool": "git://github.com/bitpay/classtool.git",
+    "soop": "git://github.com/gasteve/node-soop.git",
     "base58-native": "=0.1.3",
     "bindings": "=1.1.1",
     "bufferput": "git://github.com/bitpay/node-bufferput.git",
