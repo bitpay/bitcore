@@ -15,7 +15,7 @@ describe('PrivateKey', function() {
     should.exist(PrivateKeyModule);
   });
   it('should be able to create class', function() {
-    PrivateKey = PrivateKeyModule.class();
+    PrivateKey = PrivateKeyModule;
     should.exist(PrivateKey);
   });
   it('should be able to create instance', function() {

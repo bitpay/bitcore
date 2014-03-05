@@ -13,7 +13,7 @@ describe('PeerManager', function() {
     should.exist(PeerManagerModule);
   });
   it('should be able to create class', function() {
-    PeerManager = PeerManagerModule.class();
+    PeerManager = PeerManagerModule;
     should.exist(PeerManager);
   });
   it('should be able to create instance', function() {

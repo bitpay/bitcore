@@ -7,7 +7,7 @@ var should = chai.should();
 
 var RpcClientModule = bitcore.RpcClient;
 var RpcClient;
-    RpcClient = RpcClientModule.class();
+    RpcClient = RpcClientModule;
 
 describe('RpcClient', function() {
   it('should initialze the main object', function() {

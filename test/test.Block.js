@@ -12,7 +12,7 @@ describe('Block', function() {
     should.exist(BlockModule);
   });
   it('should be able to create class', function() {
-    Block = BlockModule.class();
+    Block = BlockModule;
     should.exist(Block);
   });
   it('should be able to create instance', function() {

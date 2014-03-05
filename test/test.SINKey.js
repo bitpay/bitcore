@@ -16,7 +16,7 @@ describe('SINKey', function() {
     should.exist(SINKeyModule);
   });
   it('should be able to create class', function() {
-    SINKey = SINKeyModule.class();
+    SINKey = SINKeyModule;
     should.exist(SINKey);
   });
   it('should be able to create instance', function() {

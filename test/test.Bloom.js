@@ -13,7 +13,7 @@ describe('Bloom', function() {
     should.exist(BloomModule);
   });
   it('should be able to create class', function() {
-    Bloom = BloomModule.class();
+    Bloom = BloomModule;
     should.exist(Bloom);
   });
   it('should be able to create instance', function() {

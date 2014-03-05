@@ -1,159 +1,158 @@
-require('classtool');
+var imports = require('soop').imports();
+var base58 = imports.base58 || require('base58-native').base58Check;
 
-function ClassSpec(b) {
-  var base58 = b.base58 || require('base58-native').base58Check;
 
-  // Constructor.  Takes the following forms:
-  //   new EncodedData(<base58_address_string>)
-  //   new EncodedData(<binary_buffer>)
-  //   new EncodedData(<data>, <encoding>)
-  //   new EncodedData(<version>, <20-byte-hash>)
-  function EncodedData(data, encoding) {
-    this.data = data;
-    if(!encoding && (typeof data == 'string')) {
-      this.__proto__ = this.encodings['base58'];
-    } else {
-      this.__proto__ = this.encodings[encoding || 'binary'];
-    }
-  };
-
-  // get or set the encoding used (transforms data)
-  EncodedData.prototype.encoding = function(encoding) {
-    if(encoding && (encoding != this._encoding)) {
-      this.data = this.as(encoding);
-      this.__proto__ = this.encodings[encoding];
-    }
-    return this._encoding;
-  };
-
-  // answer a new instance having the given encoding
-  EncodedData.prototype.withEncoding = function(encoding) {
-    return new EncodedData(this.as(encoding), encoding);
-  };
-
-  // answer the data in the given encoding
-  EncodedData.prototype.as = function(encoding) {
-    if(!encodings[encoding]) throw new Error('invalid encoding');
-    return this.converters[encoding].call(this);
-  };
-
-  // validate that we can convert to binary
-  EncodedData.prototype._validate = function() {
-    this.withEncoding('binary');
-  };
-
-  // Boolean protocol for testing if valid
-  EncodedData.prototype.isValid = function() {
-    try {
-      this.validate();
-      return true;
-    } catch(e) {
-      return false;
-    }
-  };
-
-  // subclasses can override to do more stuff
-  EncodedData.prototype.validate = function() {
-    this._validate();
-  };
-
-  // Boolean protocol for testing if valid
-  EncodedData.prototype.isValid = function() {
-    try {
-      this.validate();
-      return true;
-    } catch(e) {
-      return false;
-    }
-  };
-
-  // convert to a string (in base58 form)
-  EncodedData.prototype.toString = function() {
-    return this.as('base58');
-  };
-
-  // utility
-  EncodedData.prototype.doAsBinary = function(callback) {
-    var oldEncoding = this.encoding();
-    this.encoding('binary');
-    callback.apply(this);
-    this.encoding(oldEncoding);
-  };
-
-  // Setup support for various address encodings.  The object for
-  // each encoding inherits from the EncodedData prototype.  This
-  // allows any encoding to override any method...changing the encoding
-  // for an instance will change the encoding it inherits from.  Note,
-  // this will present some problems for anyone wanting to inherit from
-  // EncodedData (we'll deal with that when needed).
-  var encodings = {
-    'binary': {
-      converters: {
-        'binary': function() {
-          var answer = new Buffer(this.data.length);
-          this.data.copy(answer);
-          return answer;
-        },
-        'base58': function() {
-          return base58.encode(this.data);
-        },
-        'hex': function() {
-          return this.data.toString('hex');
-        },
-      },
-
-      _validate: function() {
-        //nothing to do here...we make no assumptions about the data
-      },
-    },
-
-    'base58': {
-      converters: {
-        'binary': function() {
-          return base58.decode(this.data);
-        },
-        'hex': function() {
-          return this.withEncoding('binary').as('hex');
-        },
-      },
-    },
-
-    'hex': {
-      converters: {
-        'binary': function() {
-          return new Buffer(this.data, 'hex');
-        },
-        'base58': function() {
-          return this.withEncoding('binary').as('base58');
-        },
-      },
-    },
-  };
-
-  var no_conversion = function() {return this.data;};
-  for(var k in encodings) {
-    if(encodings.hasOwnProperty(k)){
-      if(!encodings[k].converters[k])
-        encodings[k].converters[k] = no_conversion;
-      encodings[k]._encoding = k;
-    }
+// Constructor.  Takes the following forms:
+//   new EncodedData(<base58_address_string>)
+//   new EncodedData(<binary_buffer>)
+//   new EncodedData(<data>, <encoding>)
+//   new EncodedData(<version>, <20-byte-hash>)
+function EncodedData(data, encoding) {
+  this.data = data;
+  if(!encoding && (typeof data == 'string')) {
+    this.__proto__ = this.encodings['base58'];
+  } else {
+    this.__proto__ = this.encodings[encoding || 'binary'];
   }
+};
 
-  EncodedData.applyEncodingsTo = function(aClass) {
-    var tmp = {};
-    for(var k in encodings) {
-      var enc = encodings[k];
-      var obj = {};
-      for(var j in enc) {
-        obj[j] = enc[j];
-      }
-      obj.__proto__ = aClass.prototype;
-      tmp[k] = obj;
-    }
-    aClass.prototype.encodings = tmp;
-  };
+// get or set the encoding used (transforms data)
+EncodedData.prototype.encoding = function(encoding) {
+  if(encoding && (encoding != this._encoding)) {
+    this.data = this.as(encoding);
+    this.__proto__ = this.encodings[encoding];
+  }
+  return this._encoding;
+};
 
-  EncodedData.applyEncodingsTo(EncodedData);
-  return EncodedData;
+// answer a new instance having the given encoding
+EncodedData.prototype.withEncoding = function(encoding) {
+  return new EncodedData(this.as(encoding), encoding);
+};
+
+// answer the data in the given encoding
+EncodedData.prototype.as = function(encoding) {
+  if(!encodings[encoding]) throw new Error('invalid encoding');
+  return this.converters[encoding].call(this);
+};
+
+// validate that we can convert to binary
+EncodedData.prototype._validate = function() {
+  this.withEncoding('binary');
+};
+
+// Boolean protocol for testing if valid
+EncodedData.prototype.isValid = function() {
+  try {
+    this.validate();
+    return true;
+  } catch(e) {
+    return false;
+  }
+};
+
+// subclasses can override to do more stuff
+EncodedData.prototype.validate = function() {
+  this._validate();
+};
+
+// Boolean protocol for testing if valid
+EncodedData.prototype.isValid = function() {
+  try {
+    this.validate();
+    return true;
+  } catch(e) {
+    return false;
+  }
+};
+
+// convert to a string (in base58 form)
+EncodedData.prototype.toString = function() {
+  return this.as('base58');
+};
+
+// utility
+EncodedData.prototype.doAsBinary = function(callback) {
+  var oldEncoding = this.encoding();
+  this.encoding('binary');
+  callback.apply(this);
+  this.encoding(oldEncoding);
+};
+
+// Setup support for various address encodings.  The object for
+// each encoding inherits from the EncodedData prototype.  This
+// allows any encoding to override any method...changing the encoding
+// for an instance will change the encoding it inherits from.  Note,
+// this will present some problems for anyone wanting to inherit from
+// EncodedData (we'll deal with that when needed).
+var encodings = {
+  'binary': {
+    converters: {
+      'binary': function() {
+        var answer = new Buffer(this.data.length);
+        this.data.copy(answer);
+        return answer;
+      },
+      'base58': function() {
+        return base58.encode(this.data);
+      },
+      'hex': function() {
+        return this.data.toString('hex');
+      },
+    },
+
+    _validate: function() {
+      //nothing to do here...we make no assumptions about the data
+    },
+  },
+
+  'base58': {
+    converters: {
+      'binary': function() {
+        return base58.decode(this.data);
+      },
+      'hex': function() {
+        return this.withEncoding('binary').as('hex');
+      },
+    },
+  },
+
+  'hex': {
+    converters: {
+      'binary': function() {
+        return new Buffer(this.data, 'hex');
+      },
+      'base58': function() {
+        return this.withEncoding('binary').as('base58');
+      },
+    },
+  },
+};
+
+var no_conversion = function() {return this.data;};
+for(var k in encodings) {
+  if(encodings.hasOwnProperty(k)){
+    if(!encodings[k].converters[k])
+      encodings[k].converters[k] = no_conversion;
+    encodings[k]._encoding = k;
+  }
 }
-module.defineClass(ClassSpec);
+
+EncodedData.applyEncodingsTo = function(aClass) {
+  var tmp = {};
+  for(var k in encodings) {
+    var enc = encodings[k];
+    var obj = {};
+    for(var j in enc) {
+      obj[j] = enc[j];
+    }
+    obj.__proto__ = aClass.prototype;
+    tmp[k] = obj;
+  }
+  aClass.prototype.encodings = tmp;
+};
+
+EncodedData.applyEncodingsTo(EncodedData);
+
+module.exports = require('soop')(EncodedData);
+

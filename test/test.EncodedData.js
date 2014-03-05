@@ -13,7 +13,7 @@ describe('EncodedData', function() {
     should.exist(EncodedDataModule);
   });
   it('should be able to create class', function() {
-    EncodedData = EncodedDataModule.class();
+    EncodedData = EncodedDataModule;
     should.exist(EncodedData);
   });
   it('should be able to create an instance', function() {

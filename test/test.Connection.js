@@ -14,7 +14,7 @@ describe('Connection', function() {
     should.exist(ConnectionModule);
   });
   it('should be able to create class', function() {
-    Connection = ConnectionModule.class();
+    Connection = ConnectionModule;
     should.exist(Connection);
   });
   it('should be able to create instance', function() {

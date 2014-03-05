@@ -14,7 +14,7 @@ describe('WalletKey', function() {
     should.exist(WalletKeyModule);
   });
   it('should be able to create class', function() {
-    WalletKey = WalletKeyModule.class();
+    WalletKey = WalletKeyModule;
     should.exist(WalletKey);
   });
   it('should be able to create instance', function() {

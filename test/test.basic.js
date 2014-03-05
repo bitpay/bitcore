@@ -4,8 +4,8 @@ var chai = require('chai');
 var bitcore = require('../bitcore');
 var should = chai.should();
 
-var Address = bitcore.Address.class();
-var PrivateKey = bitcore.PrivateKey.class();
+var Address = bitcore.Address;
+var PrivateKey = bitcore.PrivateKey;
 var networks = bitcore.networks;
 var KeyModule = bitcore.KeyModule;
 
