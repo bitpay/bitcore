@@ -2,14 +2,13 @@
 // Replace '..' with 'bitcore' if you plan on using this code elsewhere.
 
 var networks    = require('../networks');
-var Peer        = require('../Peer').class();
-var Transaction = require('../Transaction').class();
-var Address     = require('../Address').class();
-var Script      = require('../Script').class();
+var Peer        = require('../Peer');
+var Transaction = require('../Transaction');
+var Address     = require('../Address');
+var Script      = require('../Script');
 var coinUtil    = require('../util/util');
-var PeerManager = require('../PeerManager').createClass({
-  network: networks.testnet
-});
+var PeerManager = require('soop').load('../PeerManager',
+  {network: networks.testnet});
 
 var createTx = function() {
 

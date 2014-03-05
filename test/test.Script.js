@@ -6,7 +6,7 @@ var bitcore = require('../bitcore');
 var should = chai.should();
 
 var ScriptModule = bitcore.Script;
-var Address = bitcore.Address.class();
+var Address = bitcore.Address;
 var networks = bitcore.networks;
 var Script;
 
@@ -15,7 +15,7 @@ describe('Script', function() {
     should.exist(ScriptModule);
   });
   it('should be able to create class', function() {
-    Script = ScriptModule.class();
+    Script = ScriptModule;
     should.exist(Script);
   });
   it('should be able to create instance', function() {

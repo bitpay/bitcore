@@ -2,7 +2,7 @@
 
 // Replace '..' with 'bitcore' if you plan on using this code elsewhere.
 
-var Address = require('../Address').class();
+var Address = require('../Address');
 
 var addrStrings = [
   "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",

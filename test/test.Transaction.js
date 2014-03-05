@@ -13,7 +13,7 @@ describe('Transaction', function() {
     should.exist(TransactionModule);
   });
   it('should be able to create class', function() {
-    Transaction = TransactionModule.class();
+    Transaction = TransactionModule;
     should.exist(Transaction);
   });
   it('should be able to create instance', function() {

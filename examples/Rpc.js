@@ -3,7 +3,7 @@
 // Replace '..' with 'bitcore' if you plan on using this code elsewhere.
 
 var util      = require('util');
-var RpcClient = require('../RpcClient').class();
+var RpcClient = require('../RpcClient');
 var hash      = process.argv[2] || '0000000000b6288775bbd326bedf324ca8717a15191da58391535408205aada4';
 
  var config =  {   

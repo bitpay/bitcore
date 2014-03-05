@@ -13,7 +13,7 @@ describe('Wallet', function() {
     should.exist(WalletModule);
   });
   it('should be able to create class', function() {
-    Wallet = WalletModule.class();
+    Wallet = WalletModule;
     should.exist(Wallet);
   });
   it('should be able to create instance', function() {
