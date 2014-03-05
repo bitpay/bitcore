@@ -2,6 +2,7 @@ var imports    = require('soop').imports();
 var base58     = imports.base58 || require('base58-native').base58Check;
 var parent     = imports.parent || require('./EncodedData');
 
+
 function VersionedData(version, payload) {
   if(typeof version != 'number') {
     VersionedData.super(this, arguments);
