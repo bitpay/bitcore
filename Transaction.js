@@ -3,7 +3,7 @@ require('classtool');
 function spec(b) {
   var config = b.config || require('./config');
   var log = b.log || require('./util/log');
-  var Address = b.Address || require('./Address').class();
+  var Address = b.Address || require('./Address');
   var Script = b.Script || require('./Script').class();
   var ScriptInterpreter = b.ScriptInterpreter || require('./ScriptInterpreter').class();
   var util = b.util || require('./util/util');

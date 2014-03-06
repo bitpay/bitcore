@@ -5,7 +5,7 @@ function ClassSpec(b) {
   var timeUtil = require('./util/time');
   var KeyModule = require('./Key');
   var PrivateKey = require('./PrivateKey').class();
-  var Address = require('./Address').class();
+  var Address = require('./Address');
 
   function WalletKey(cfg) {
     if (!cfg) cfg = {};
