@@ -12,7 +12,6 @@ var Out;
 var Script = bitcore.Script.class();
 var buffertools = require('buffertools');
 var test_data = require('./testdata');
-var async = require('async');
 
 describe('Transaction', function() {
   it('should initialze the main object', function() {
@@ -45,7 +44,7 @@ describe('Transaction', function() {
           var hash = vin[0];
           var index = vin[1];
           var scriptPubKey = new Script(new Buffer(vin[2]));
-          map[[hash, index]] = scriptPubKey;//Script.fromStringContent(scriptPubKey);
+          map[[hash, index]] = scriptPubKey; //Script.fromStringContent(scriptPubKey);
           console.log(scriptPubKey.getStringContent());
           console.log('********************************');
 
@@ -58,18 +57,10 @@ describe('Transaction', function() {
 
         var i = 0;
         var stx = tx.getStandardizedObject();
-        async.eachSeries(tx.ins,
-          function(txin, next) {
-            var scriptPubKey = map[[stx.in[i].prev_out.hash, stx.in[i].prev_out.n]];
-            i += 1;
-            next();
-
-          },
-          function(err) {
-            should.not.exist(err);
-            done();
-          }
-        );
+        tx.ins.forEach(function(txin) {
+          var scriptPubKey = map[[stx. in [i].prev_out.hash, stx. in [i].prev_out.n]];
+          i += 1;
+        });
       });
     }
   });

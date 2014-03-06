@@ -88,9 +88,10 @@ describe('Script', function() {
 
   test_data.dataScriptValid.forEach(function(datum) {
     if (datum.length < 2) throw new Error('Invalid test data');
-    var human = datum[1];
+    var human = datum[0] + ' ' + datum[1];
     it('should parse script from human readable ' + human, function() {
-      Script.fromStringContent(human).getStringContent(false, null).should.equal(human);
+      var h2 = Script.fromStringContent(human).getStringContent(false, null);
+      Script.fromStringContent(h2).getStringContent(false, null).should.equal(h2);
     });
 
 
