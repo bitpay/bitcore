@@ -46,4 +46,23 @@ describe('util', function() {
       });
     });
   });
+  describe('#intToBuffer', function() {
+    var data = [
+      [0, '00000000'],
+      [-0, '00000000'],
+      [-1, 'ffffffff'],
+      [1, '01000000'],
+      [18, '12000000'],
+      [878082192, '90785634'],
+      [0x01234567890, '1200000090785634'],
+      [-4294967297, 'feffffffffffffff'],
+    ];
+    data.forEach(function(datum) {
+      var integer = datum[0];
+      var result = datum[1];
+      it('should work for ' + integer, function() {
+        buffertools.toHex(coinUtil.intToBuffer(integer)).should.equal(result);
+      });
+    });
+  });
 });

@@ -105,6 +105,30 @@ var bigIntToValue = exports.bigIntToValue = function (valueBigInt) {
   }
 };
 
+var intTo64Bits = function(integer) {
+  return { 
+    hi: Math.floor(integer / 4294967296),
+    lo: (integer & 0xFFFFFFFF) >>> 0
+  };
+};
+var fitsIn32Bits = function(integer) {
+  // TODO: make this efficient!!!
+  return integer.toString(2).replace('-','').length < 32;
+}
+exports.intToBuffer = function(integer) {
+  if (fitsIn32Bits(integer)) {
+    var data = new Buffer(4);
+    data.writeInt32LE(integer, 0);
+    return data;
+  } else {
+    var x = intTo64Bits(integer);
+    var data = new Buffer(8);
+    data.writeInt32LE(x.hi, 0); // high part contains sign information (signed)
+    data.writeUInt32LE(x.lo, 4); // low part encoded as unsigned integer
+    return data;
+  }
+};
+
 var formatValue = exports.formatValue = function (valueBuffer) {
   var value = valueToBigInt(valueBuffer).toString();
   var integerPart = value.length > 8 ? value.substr(0, value.length-8) : '0';
