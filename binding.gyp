@@ -9,6 +9,42 @@
         'src/eckey.cc'
       ],
       'conditions': [
+        # For Windows, require either a 32-bit or 64-bit
+        # separately-compiled OpenSSL library.
+	# Currently set up to use with the following OpenSSL distro:
+	#
+	# http://slproweb.com/products/Win32OpenSSL.html
+        [
+	  'OS=="win"', 
+	  {
+            'conditions':
+	    [
+              [
+	        'target_arch=="x64"',
+	        {
+	          'variables': {
+                    'openssl_root%': 'C:/OpenSSL-Win64'
+                  },
+                }, {
+                 'variables': {
+                   'openssl_root%': 'C:/OpenSSL-Win32'
+                  }
+		}
+	      ]
+            ],
+            'libraries': [ 
+              '-l<(openssl_root)/lib/libeay32.lib',
+            ],
+            'include_dirs': [
+              '<(openssl_root)/include',
+            ],
+          },
+
+
+          # Otherwise, if not Windows, link against the exposed OpenSSL
+	  # in Node.
+          {
+          "conditions": [
         ['node_shared_openssl=="false"', {
           # so when "node_shared_openssl" is "false", then OpenSSL has been
           # bundled into the node executable. So we need to include the same
@@ -28,7 +64,8 @@
             }]
           ]
         }]
-      ]
+        ]}
+      ]]
     }
   ]
 }
