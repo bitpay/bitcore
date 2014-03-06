@@ -1,7 +1,7 @@
 require('classtool');
 
 function ClassSpec(b) {
-  var superclass = b.superclass || require('./util/VersionedData').class();
+  var superclass = b.superclass || require('./util/VersionedData');
 
   //compressed is true if public key is compressed; false otherwise
   function PrivateKey(version, buf, compressed) {

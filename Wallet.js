@@ -4,7 +4,7 @@ var hex = function(hex) {return new Buffer(hex, 'hex');};
 function ClassSpec(b) {
   var fs = require('fs');
   var EncFile = require('./util/EncFile');
-  var Address = require('./Address').class();
+  var Address = require('./Address');
   var networks = require('./networks');
     var util = b.util || require('./util/util');
   var ENC_METHOD = 'aes-256-cbc';
