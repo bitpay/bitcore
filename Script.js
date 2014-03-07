@@ -284,7 +284,7 @@ function spec(b) {
 
       if (Buffer.isBuffer(chunk)) {
         if (chunk.length === 0) {
-          s += '\'\'';
+          s += '0';
         } else {
           s += '0x' + util.formatBuffer(chunk, truncate ? null : 0);
         }
