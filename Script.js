@@ -270,13 +270,14 @@ function spec(b) {
     var split = s.split(' ');
     for (var i = 0; i < split.length; i++) {
       var word = split[i];
+      if (word === '') continue;
       if (word.length > 2 && word.substring(0, 2) === '0x') {
         // raw hex value
         //console.log('hex value');
         chunks.push(new Buffer(word.substring(2, word.length), 'hex'));
       } else {
         var opcode = Opcode.map['OP_' + word];
-        if (opcode) {
+        if (typeof opcode !== 'undefined') {
           // op code in string form
           //console.log('opcode');
           chunks.push(opcode);
@@ -297,7 +298,7 @@ function spec(b) {
             }
             chunks.push(new Buffer(hex,'hex'));
           } else {
-            throw new Error('Could not parse word from script: ' +word);
+            throw new Error('Could not parse word "' +word+'" from script "'+s+'"');
           }
         }
       }

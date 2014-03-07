@@ -393,6 +393,8 @@ function spec(b) {
               // (x1 x2 - bool)
               var v1 = this.stackTop(2);
               var v2 = this.stackTop(1);
+              console.log(v1);
+              console.log(v2);
               var value = buffertools.compare(v1, v2) === 0;
 
               // OP_NOTEQUAL is disabled because it would be too easy to say

@@ -111,18 +111,27 @@ var intTo64Bits = function(integer) {
     lo: (integer & 0xFFFFFFFF) >>> 0
   };
 };
-var fitsIn32Bits = function(integer) {
+var fitsInNBits = function(integer, n) {
   // TODO: make this efficient!!!
-  return integer.toString(2).replace('-','').length < 32;
+  return integer.toString(2).replace('-','').length < n;
 }
 exports.intToBuffer = function(integer) {
-  if (fitsIn32Bits(integer)) {
-    var data = new Buffer(4);
+  var data = null;
+  if (fitsInNBits(integer, 8)) {
+    data = new Buffer(1);
+    data.writeInt8(integer, 0);
+    return data;
+  } else if (fitsInNBits(integer, 16)) {
+    data = new Buffer(2);
+    data.writeInt16LE(integer, 0);
+    return data;
+  } else if (fitsInNBits(integer, 32)) {
+    data = new Buffer(4);
     data.writeInt32LE(integer, 0);
     return data;
   } else {
     var x = intTo64Bits(integer);
-    var data = new Buffer(8);
+    data = new Buffer(8);
     data.writeInt32LE(x.hi, 0); // high part contains sign information (signed)
     data.writeUInt32LE(x.lo, 4); // low part encoded as unsigned integer
     return data;

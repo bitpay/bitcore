@@ -84,7 +84,7 @@ describe('Script', function() {
     });
   });
 
-  test_data.dataScriptValid.forEach(function(datum) {
+  test_data.dataScriptAll.forEach(function(datum) {
     if (datum.length < 2) throw new Error('Invalid test data');
     var human = datum[0] + ' ' + datum[1];
     it('should parse script from human readable ' + human, function() {
