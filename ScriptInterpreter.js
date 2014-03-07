@@ -20,12 +20,13 @@ function spec(b) {
   function ScriptInterpreter() {
     this.stack = [];
     this.disableUnsafeOpcodes = true;
-  };
+  }
 
   ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, callback) {
     if ("function" !== typeof callback) {
       throw new Error("ScriptInterpreter.eval() requires a callback");
     }
+
 
     var pc = 0;
 
@@ -744,7 +745,7 @@ function spec(b) {
               return;
 
             default:
-              console.log('opcode '+opcode);
+              console.log('opcode ' + opcode);
               throw new Error("Unknown opcode encountered");
           }
 
@@ -763,7 +764,7 @@ function spec(b) {
         }
       } catch (e) {
         log.debug("Script aborted: " +
-          (e.message ? e : e));
+          (e.message ? e.message : e));
         cb(e);
       }
     }
