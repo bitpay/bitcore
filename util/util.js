@@ -321,13 +321,13 @@ var reverseBytes32 = exports.reverseBytes32 = function (data) {
 
 var getVarIntSize = exports.getVarIntSize = function getVarIntSize(i) {
 
-  if (i < 0xFD) {
+  if (i < 253) {
     // unsigned char
     return 1;
-  } else if (i <= 1<<16) {
+  } else if (i < 0x10000) {
     // unsigned short (LE)
     return 3;
-  } else if (i <= 1<<32) {
+  } else if (i < 0x100000000) {
     // unsigned int (LE)
     return 5;
   } else {
@@ -350,7 +350,10 @@ var varIntBuf = exports.varIntBuf = function varIntBuf(n) {
     buf.writeUInt8(254, 0);
     buf.writeUInt32LE(n, 1);
   } else {
-    throw new Error("quadword not supported");
+    buf = new Buffer(1 + 8);
+    buf.writeUInt8(255, 0);
+    buf.writeInt32LE(n & -1, 1);
+    buf.writeUInt32LE(Math.floor(n / 0x100000000), 5);
   }
 
   return buf;

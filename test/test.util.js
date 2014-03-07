@@ -65,4 +65,52 @@ describe('util', function() {
       });
     });
   });
+  describe('#varIntBuf', function() {
+    var data = [
+      [0, '00' ],
+      [1, '01'],
+      [253, 'fdfd00'],
+      [254, 'fdfe00'],
+      [255, 'fdff00'],
+      [0x100, 'fd0001'],
+      [0x1000, 'fd0010'],
+      [0x1001, 'fd0110'],
+      [0x10000, 'fe00000100'],
+      [0x12345, 'fe45230100'],
+      [0x12345678, 'fe78563412'],
+      [0x123456789a, 'ff9a78563412000000'],
+      [0x123456789abcde, 'ffdebc9a7856341200'],
+    ];
+    data.forEach(function(datum) {
+      var integer = datum[0];
+      var result = datum[1];
+      it('should work for ' + integer, function() {
+        buffertools.toHex(coinUtil.varIntBuf(integer)).should.equal(result);
+      });
+    });
+  });
+  describe('#getVarIntSize', function() {
+    var data = [
+      [0, 1 ],
+      [1, 1],
+      [252, 1],
+      [253, 3],
+      [254, 3],
+      [0x100, 3],
+      [0x1000, 3],
+      [0x1001, 3],
+      [0x10000, 5],
+      [0x10001, 5],
+      [0xffffffff, 5],
+      [0x100000000, 9],
+      [0x100000001, 9],
+    ];
+    data.forEach(function(datum) {
+      var integer = datum[0];
+      var result = datum[1];
+      it('should work for ' + integer, function() {
+        coinUtil.getVarIntSize(integer).should.equal(result);
+      });
+    });
+  });
 });
