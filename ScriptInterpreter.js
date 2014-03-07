@@ -74,22 +74,22 @@ function spec(b) {
         }
 
         if (this.disableUnsafeOpcodes &&
-          "number" === typeof opcode &&
-          (opcode === OP_CAT ||
-            opcode === OP_SUBSTR ||
-            opcode === OP_LEFT ||
-            opcode === OP_RIGHT ||
-            opcode === OP_INVERT ||
-            opcode === OP_AND ||
-            opcode === OP_OR ||
-            opcode === OP_XOR ||
-            opcode === OP_2MUL ||
-            opcode === OP_2DIV ||
-            opcode === OP_MUL ||
-            opcode === OP_DIV ||
-            opcode === OP_MOD ||
-            opcode === OP_LSHIFT ||
-            opcode === OP_RSHIFT)) {
+            "number" === typeof opcode &&
+            (opcode === OP_CAT ||
+             opcode === OP_SUBSTR ||
+             opcode === OP_LEFT ||
+             opcode === OP_RIGHT ||
+             opcode === OP_INVERT ||
+             opcode === OP_AND ||
+             opcode === OP_OR ||
+             opcode === OP_XOR ||
+             opcode === OP_2MUL ||
+             opcode === OP_2DIV ||
+             opcode === OP_MUL ||
+             opcode === OP_DIV ||
+             opcode === OP_MOD ||
+             opcode === OP_LSHIFT ||
+             opcode === OP_RSHIFT)) {
           throw new Error("Encountered a disabled opcode");
         }
 
@@ -615,15 +615,15 @@ function spec(b) {
 
               // Verify signature
               checkSig(sig, pubkey, scriptCode, tx, inIndex, hashType, function(e, result) {
-                try {
+                  try {
                   var success;
 
                   if (e) {
-                    // We intentionally ignore errors during signature verification and
-                    // treat these cases as an invalid signature.
-                    success = false;
+                  // We intentionally ignore errors during signature verification and
+                  // treat these cases as an invalid signature.
+                  success = false;
                   } else {
-                    success = result;
+                  success = result;
                   }
 
                   // Update stack
@@ -631,18 +631,18 @@ function spec(b) {
                   this.stackPop();
                   this.stack.push(new Buffer([success ? 1 : 0]));
                   if (opcode === OP_CHECKSIGVERIFY) {
-                    if (success) {
-                      this.stackPop();
-                    } else {
-                      throw new Error("OP_CHECKSIGVERIFY negative");
-                    }
+                  if (success) {
+                  this.stackPop();
+                  } else {
+                  throw new Error("OP_CHECKSIGVERIFY negative");
+                  }
                   }
 
                   // Run next step
                   executeStep.call(this, cb);
-                } catch (e) {
-                  cb(e);
-                }
+                  } catch (e) {
+                    cb(e);
+                  }
               }.bind(this));
 
               // Note that for asynchronous opcodes we have to return here to prevent
@@ -686,12 +686,12 @@ function spec(b) {
 
               // Drop the signatures, since a signature can't sign itself
               sigs.forEach(function(sig) {
-                scriptCode.findAndDelete(sig);
-              });
+                  scriptCode.findAndDelete(sig);
+                  });
 
               var success = true,
-                isig = 0,
-                ikey = 0;
+                  isig = 0,
+                  ikey = 0;
               checkMultiSigStep.call(this);
 
               function checkMultiSigStep() {
@@ -701,26 +701,26 @@ function spec(b) {
                     var key = keys[ikey];
 
                     checkSig(sig, key, scriptCode, tx, inIndex, hashType, function(e, result) {
-                      try {
+                        try {
                         if (!e && result) {
-                          isig++;
-                          sigsCount--;
+                        isig++;
+                        sigsCount--;
                         } else {
-                          ikey++;
-                          keysCount--;
+                        ikey++;
+                        keysCount--;
 
-                          // If there are more signatures than keys left, then too many
-                          // signatures have failed
-                          if (sigsCount > keysCount) {
-                            success = false;
-                          }
+                        // If there are more signatures than keys left, then too many
+                        // signatures have failed
+                        if (sigsCount > keysCount) {
+                        success = false;
+                        }
                         }
 
                         checkMultiSigStep.call(this);
-                      } catch (e) {
+                        } catch (e) {
                         cb(e);
-                      }
-                    }.bind(this));
+                        }
+                        }.bind(this));
                   } else {
                     this.stack.push(new Buffer([success ? 1 : 0]));
                     if (opcode === OP_CHECKMULTISIGVERIFY) {
@@ -763,7 +763,7 @@ function spec(b) {
         }
       } catch (e) {
         log.debug("Script aborted: " +
-          (e.message ? e : e));
+            (e.message ? e.message : e));
         cb(e);
       }
     }
@@ -774,14 +774,14 @@ function spec(b) {
       var self = this;
 
       self.eval(scriptSig, tx, n, hashType, function(e) {
-        if (e) {
+          if (e) {
           callback(e)
           return;
-        }
+          }
 
-        self.eval(scriptPubkey, tx, n, hashType, callback);
-      });
-  };
+          self.eval(scriptPubkey, tx, n, hashType, callback);
+          });
+    };
 
   /**
    * Get the top element of the stack.
@@ -821,7 +821,7 @@ function spec(b) {
     }
 
     var s = this.stack,
-      l = s.length;
+        l = s.length;
 
     var tmp = s[l - a];
     s[l - a] = s[l - b];
@@ -836,16 +836,16 @@ function spec(b) {
    */
   ScriptInterpreter.prototype.getPrimitiveStack = function getPrimitiveStack() {
     return this.stack.map(function(entry) {
-      if (entry.length > 2) {
+        if (entry.length > 2) {
         return buffertools.toHex(entry.slice(0));
-      }
-      var num = castBigint(entry);
-      if (num.cmp(-128) >= 0 && num.cmp(127) <= 0) {
+        }
+        var num = castBigint(entry);
+        if (num.cmp(-128) >= 0 && num.cmp(127) <= 0) {
         return num.toNumber();
-      } else {
+        } else {
         return buffertools.toHex(entry.slice(0));
-      }
-    });
+        }
+        });
   };
 
   var castBool = ScriptInterpreter.castBool = function castBool(v) {

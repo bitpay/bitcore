@@ -84,8 +84,6 @@ describe('Script', function() {
     });
   });
 
-
-
   test_data.dataScriptValid.forEach(function(datum) {
     if (datum.length < 2) throw new Error('Invalid test data');
     var human = datum[0] + ' ' + datum[1];
@@ -93,8 +91,6 @@ describe('Script', function() {
       var h2 = Script.fromStringContent(human).getStringContent(false, null);
       Script.fromStringContent(h2).getStringContent(false, null).should.equal(h2);
     });
-
-
   });
 
 });

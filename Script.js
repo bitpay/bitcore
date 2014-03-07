@@ -271,17 +271,33 @@ function spec(b) {
     for (var i = 0; i < split.length; i++) {
       var word = split[i];
       if (word.length > 2 && word.substring(0, 2) === '0x') {
+        // raw hex value
+        //console.log('hex value');
         chunks.push(new Buffer(word.substring(2, word.length), 'hex'));
       } else {
         var opcode = Opcode.map['OP_' + word];
         if (opcode) {
+          // op code in string form
+          //console.log('opcode');
           chunks.push(opcode);
         } else {
           var integer = parseInt(word);
           if (!isNaN(integer)) {
-            //console.log(integer+' bits=\t'+integer.toString(2).replace('-','').length);
+            // integer
+            //console.log('integer');
             var data = util.intToBuffer(integer);
             chunks.push(data);
+          } else if (word[0] === '\'' && word[word.length-1] === '\'') {
+            // string
+            //console.log('string');
+            word = word.substring(1,word.length-1);
+            var hex = '';
+            for(var c=0;c<word.length;c++) {
+              hex += ''+word.charCodeAt(c).toString(16);
+            }
+            chunks.push(new Buffer(hex,'hex'));
+          } else {
+            throw new Error('Could not parse word from script: ' +word);
           }
         }
       }
@@ -307,7 +323,11 @@ function spec(b) {
       }
 
       if (Buffer.isBuffer(chunk)) {
-        s += '0x' + util.formatBuffer(chunk, truncate ? null : 0);
+        if (chunk.length === 0) {
+          s += '\'\''
+        } else {
+          s += '0x' + util.formatBuffer(chunk, truncate ? null : 0);
+        }
       } else {
         s += Opcode.reverseMap[chunk];
       }
