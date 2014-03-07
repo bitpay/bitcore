@@ -145,15 +145,16 @@ Bitcoin.Util = {
     if (i < 0xfd) {
       // unsigned char
       return [i];
-    } else if (i <= 1<<16) {
+    } else if (i < 0x10000) {
       // unsigned short (LE)
-      return [0xfd, i >>> 8, i & 255];
-    } else if (i <= 1<<32) {
+      return [0xfd, i & 255 , i >>> 8];
+    } else if (i < 0x100000000) {
       // unsigned int (LE)
-      return [0xfe].concat(Crypto.util.wordsToBytes([i]));
+      return [0xfe].concat(Crypto.util.wordsToBytes([i]).reverse());
     } else {
+      throw 'quadword not implemented'
       // unsigned long long (LE)
-      return [0xff].concat(Crypto.util.wordsToBytes([i >>> 32, i]));
+      //return [0xff].concat(Crypto.util.wordsToBytes([i >>> 32, i]));
     }
   },
 
