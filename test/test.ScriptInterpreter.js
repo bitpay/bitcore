@@ -31,8 +31,8 @@ describe('ScriptInterpreter', function() {
     it('should validate script ' + human, function(done) {
       i++;
       console.log(i + ' ' + human);
-      ScriptInterpreter.verify(Script.fromStringContent(scriptSig),
-        Script.fromStringContent(scriptPubKey),
+      ScriptInterpreter.verify(Script.fromHumanReadable(scriptSig),
+        Script.fromHumanReadable(scriptPubKey),
         null, 0, 0, // tx, output index, and hashtype
         function (err, result) {
           should.not.exist(err);

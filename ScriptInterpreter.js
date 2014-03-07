@@ -27,6 +27,8 @@ function spec(b) {
       throw new Error("ScriptInterpreter.eval() requires a callback");
     }
 
+    console.log(script);
+
     var pc = 0;
 
     var execStack = [];
