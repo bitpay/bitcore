@@ -1,7 +1,20 @@
 'use strict';
 
-var chai = require('chai');
-var bitcore = require('../bitcore');
+var chai = chai || require('chai');
+var bitcore = bitcore || require('../bitcore');
+
+var test_data;
+if (typeof dataValid !== 'undefined' ) {
+  test_data = {
+    dataValid: dataValid,
+    dataInvalid: dataInvalid,
+  };
+
+} 
+else {
+  test_data = require('./testdata');
+}
+
 var should = chai.should();
 
 var Address = bitcore.Address;
@@ -9,7 +22,6 @@ var PrivateKey = bitcore.PrivateKey;
 var networks = bitcore.networks;
 var KeyModule = bitcore.KeyModule;
 
-var test_data = require('./testdata');
 
 
 function test_encode_priv(b58, payload, isTestnet, isCompressed) {
