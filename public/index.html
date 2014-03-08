@@ -18,9 +18,20 @@
       <div class="modal-header">
         <h3 class="modal-title">Scan Code</h3>
       </div>
-      <div class="modal-body">
-        <canvas id="qr-canvas" width="300" height="225"></canvas>
-        <video id="qrcode-scanner-video" width="300" height="225"></video>
+      <div class="modal-body text-center">
+        <canvas id="qr-canvas" width="200" height="150"></canvas>
+        <div data-ng-show="isMobile">
+          <div id="file-input-wrapper" class="btn btn-primary">
+            <span class="pull-left text-center">
+              <i class="glyphicon glyphicon-refresh icon-rotate"></i>
+              Get QR code
+            </span>
+            <input id="qrcode-camera" type="file" capture="camera" accept="image/*">
+          </div>
+        </div>
+        <div data-ng-hide="isMobile">
+          <video id="qrcode-scanner-video" width="300" height="225" data-ng-hide="isMobile"></video>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-default" data-ng-click="cancel()" data-dismiss="modal">Close</button>
