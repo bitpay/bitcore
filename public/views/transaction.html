@@ -55,6 +55,10 @@
           <td data-ng-show="tx.time" class="text-muted text-right">{{tx.time * 1000|date:'medium'}}</td>
           <td data-ng-show="!tx.time" class="text-muted text-right">N/A</td>
         </tr>
+        <tr data-ng-show="tx.locktime">
+          <td><strong>LockTime </strong></td>
+          <td class="text-muted text-right">{{tx.locktime}}</td>
+        </tr>
         </tbody>
       </table>
     </div>
