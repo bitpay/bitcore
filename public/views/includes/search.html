@@ -1,6 +1,6 @@
-<form data-ng-controller="SearchController" class="visible-xs" role="search" data-ng-submit="search()">
+<form id="search-form-mobile" data-ng-controller="SearchController" class="visible-xs" role="search" data-ng-submit="search()">
   <div class="form-group" data-ng-class="{'has-error': badQuery}">
-    <input id="search" type="text" class="form-control" data-ng-model="q" data-ng-class="{'loading': loading}"  placeholder="Search for block, transaction or address">
+    <input id="search" type="text" class="form-control" data-ng-model="q" data-ng-class="{'loading': loading}"  placeholder="Search for block, transaction or address" data-ng-submit="search()">
     </div>
   <div class="no_matching text-danger" data-ng-show="badQuery">No matching records found!</div>
 </form>

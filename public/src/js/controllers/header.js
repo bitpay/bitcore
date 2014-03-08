@@ -3,7 +3,6 @@
 angular.module('insight.system').controller('HeaderController',
   function($scope, $rootScope, $modal, getSocket, Global, Block) {
     $scope.global = Global;
-    $scope.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia; 
 
     $rootScope.currency = {
       factor: 1,

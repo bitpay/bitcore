@@ -15,9 +15,9 @@
           <a href="/{{item.link}}">{{item.title}}</a>
         </li>
       </ul>
-      <form data-ng-controller="SearchController" class="navbar-form navbar-left hidden-xs" role="search" data-ng-submit="search()">
+      <form id="search-form" data-ng-controller="SearchController" class="navbar-form navbar-left hidden-xs" role="search" data-ng-submit="search()">
         <div class="form-group" data-ng-class="{'has-error': badQuery}">
-          <input id="search" type="text" class="form-control" data-ng-model="q" data-ng-class="{'loading': loading}"  placeholder="Search for block, transaction or address" data-ng-change="search()">
+          <input id="search" type="text" class="form-control" data-ng-model="q" data-ng-class="{'loading': loading}"  placeholder="Search for block, transaction or address" data-ng-submit="search()">
         </div>
         <div class="no_matching text-danger" data-ng-show="badQuery">No matching records found!</div>
       </form>
@@ -42,7 +42,7 @@
         <strong>Height</strong> {{totalBlocks || info.blocks}}
       </div>
       </li>
-      <li data-ng-if="getUserMedia">
+      <li>
         <a href="#" data-ng-click="openScannerModal()"><span class="glyphicon glyphicon-qrcode"></span> Scan</a>
       </li>
       <li class="dropdown" data-ng-controller="CurrencyController" data-ng-include="'/views/includes/currency.html'"></li>
