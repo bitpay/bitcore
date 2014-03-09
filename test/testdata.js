@@ -1,5 +1,3 @@
-
-
 var fs = require('fs');
 
 var dataValid = JSON.parse(fs.readFileSync('test/data/base58_keys_valid.json'));

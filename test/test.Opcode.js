@@ -1,7 +1,7 @@
 'use strict';
 
-var chai = require('chai');
-var bitcore = require('../bitcore');
+var chai = chai || require('chai');
+var bitcore = bitcore || require('../bitcore');
 
 var should = chai.should();
 
@@ -13,7 +13,7 @@ describe('Opcode', function() {
     should.exist(OpcodeModule);
   });
   it('should be able to create class', function() {
-    Opcode = OpcodeModule.class();
+    Opcode = OpcodeModule;
     should.exist(Opcode);
   });
   it('should be able to create instance', function() {

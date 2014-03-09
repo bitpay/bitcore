@@ -1,11 +1,12 @@
 'use strict';
 
-var chai = require('chai');
-var bitcore = require('../bitcore');
+var chai = chai || require('chai');
+var bitcore = bitcore || require('../bitcore');
 
 var should = chai.should();
 
-var PeerManagerModule = bitcore.PeerManager;
+var PeerManagerModule = bitcore.PeerManager || require('PeerManager');
+
 var PeerManager;
 
 describe('PeerManager', function() {
@@ -13,7 +14,7 @@ describe('PeerManager', function() {
     should.exist(PeerManagerModule);
   });
   it('should be able to create class', function() {
-    PeerManager = PeerManagerModule.class();
+    PeerManager = PeerManagerModule;
     should.exist(PeerManager);
   });
   it('should be able to create instance', function() {

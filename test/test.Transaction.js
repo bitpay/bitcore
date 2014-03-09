@@ -1,7 +1,7 @@
 'use strict';
 
-var chai = require('chai');
-var bitcore = require('../bitcore');
+var chai = chai || require('chai');
+var bitcore = bitcore || require('../bitcore');
 
 var should = chai.should();
 
@@ -9,7 +9,7 @@ var TransactionModule = bitcore.Transaction;
 var Transaction;
 var In;
 var Out;
-var Script = bitcore.Script.class();
+var Script = bitcore.Script;
 var buffertools = require('buffertools');
 var test_data = require('./testdata');
 
@@ -18,7 +18,7 @@ describe('Transaction', function() {
     should.exist(TransactionModule);
   });
   it('should be able to create class', function() {
-    Transaction = TransactionModule.class();
+    Transaction = TransactionModule;
     should.exist(Transaction);
     In = Transaction.In;
     Out = Transaction.Out;

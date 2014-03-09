@@ -1,7 +1,7 @@
 'use strict';
 
-var chai = require('chai');
-var bitcore = require('../bitcore');
+var chai = chai || require('chai');
+var bitcore = bitcore || require('../bitcore');
 
 var should = chai.should();
 
@@ -13,7 +13,7 @@ describe('Address', function() {
     should.exist(AddressModule);
   });
   it('should be able to create class', function() {
-    Address = AddressModule.class();
+    Address = AddressModule;
     should.exist(Address);
   });
   it('should be able to create instance', function() {

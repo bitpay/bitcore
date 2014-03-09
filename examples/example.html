@@ -6,17 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
   </head>
   <body>
-    <div id='content'></div>
+    <pre>
+      <div id='content'></div>
+    </pre>
     <script src="../browser/bundle.js"></script>
 
     <script type="text/javascript">
+      var Address = require('Address');
 
       print = function(s){
         var div = document.getElementById('content');
         div.innerHTML += s + '<br />';
       };
-
-      var Address = bitcore.Address.class();
 
       var addrStrings = [
         "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
@@ -37,15 +38,33 @@
         }
     
       });
+      print('<hr>');
 
-
-      var Key = bitcore.KeyModule.Key;
+      var Key = require('KeyModule').Key;
+      var buffertools = require('buffertools');
       var k = Key.generateSync();
 
-      print ('Generated Key Pair:');
-      print ('Private:' + bitcore.buffertools.toHex(k.private));
-      print ('Public:'  + bitcore.buffertools.toHex(k.public));
-      
+      print ('Generate Key Pair:');
+      print ('Private:' + buffertools.toHex(k.private));
+      print ('Public:'  + buffertools.toHex(k.public));
+
+      print('<hr>');
+/*
+      Using bitcore root module
+*/
+
+      var bitcore = require('bitcore');
+      var k = bitcore.KeyModule.Key.generateSync();
+
+      print ('Generate Key Pair:');
+      print ('Private:' + buffertools.toHex(k.private));
+      print ('Public:'  + buffertools.toHex(k.public));
+
+      print('<hr>');
+
+console.log('[example.html.65:PeerManager:]'); //TODO
+
+      var pm = require('PeerManager');
 
     </script>
   </body>
