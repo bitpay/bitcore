@@ -84,17 +84,18 @@ describe('Script', function() {
     });
   });
 
-
-
-  test_data.dataScriptValid.forEach(function(datum) {
+  test_data.dataScriptAll.forEach(function(datum) {
     if (datum.length < 2) throw new Error('Invalid test data');
     var human = datum[0] + ' ' + datum[1];
     it('should parse script from human readable ' + human, function() {
-      var h2 = Script.fromStringContent(human).getStringContent(false, null);
-      Script.fromStringContent(h2).getStringContent(false, null).should.equal(h2);
+      //console.log('********');
+      //console.log(human);
+      var script = Script.fromHumanReadable(human);
+      //console.log(script);
+      var h2 = script.toHumanReadable();
+      //console.log(h2);
+      Script.fromHumanReadable(h2).toHumanReadable().should.equal(h2);
     });
-
-
   });
 
 });

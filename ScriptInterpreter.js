@@ -21,9 +21,8 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
   if ("function" !== typeof callback) {
     throw new Error("ScriptInterpreter.eval() requires a callback");
   }
-
+  
   var pc = 0;
-
   var execStack = [];
   var altStack = [];
   var hashStart = 0;
@@ -758,7 +757,7 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
       }
     } catch (e) {
       log.debug("Script aborted: " +
-        (e.message ? e : e));
+        (e.message ? e.message : e));
       cb(e);
     }
   }

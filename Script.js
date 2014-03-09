@@ -128,7 +128,7 @@ Script.prototype.finishedMultiSig = function() {
     return true;
   else
     return false;
-}
+};
 
 Script.prototype.removePlaceHolders = function() {
   var chunks = [];
@@ -142,7 +142,7 @@ Script.prototype.removePlaceHolders = function() {
   this.chunks = chunks;
   this.updateBuffer();
   return this;
-}
+};
 
 Script.prototype.prependOp0 = function() {
   var chunks = [0];
@@ -154,7 +154,7 @@ Script.prototype.prependOp0 = function() {
   this.chunks = chunks;
   this.updateBuffer();
   return this;
-}
+};
 
 // is this a script form we know?
 Script.prototype.classify = function() {
@@ -262,30 +262,6 @@ Script.prototype.getBuffer = function() {
   return this.buffer;
 };
 
-Script.fromStringContent = function(s) {
-  var chunks = [];
-  var split = s.split(' ');
-  for (var i = 0; i < split.length; i++) {
-    var word = split[i];
-    if (word.length > 2 && word.substring(0, 2) === '0x') {
-      chunks.push(new Buffer(word.substring(2, word.length), 'hex'));
-    } else {
-      var opcode = Opcode.map['OP_' + word];
-      if (opcode) {
-        chunks.push(opcode);
-      } else {
-        var integer = parseInt(word);
-        if (!isNaN(integer)) {
-          //console.log(integer+' bits=\t'+integer.toString(2).replace('-','').length);
-          var data = util.intToBuffer(integer);
-          chunks.push(data);
-        }
-      }
-    }
-  }
-  return Script.fromChunks(chunks);
-};
-
 Script.prototype.getStringContent = function(truncate, maxEl) {
   if (truncate === null) {
     truncate = true;
@@ -323,7 +299,6 @@ Script.prototype.toString = function(truncate, maxEl) {
   script += ">";
   return script;
 };
-
 
 Script.prototype.writeOp = function(opcode) {
   var buf = Buffer(this.buffer.length + 1);
@@ -481,6 +456,79 @@ Script.fromChunks = function(chunks) {
   return script;
 };
 
+Script.fromHumanReadable = function(s) {
+  return new Script(Script.stringToBuffer(s));
+};
+
+Script.prototype.toHumanReadable = function() {
+  var s = '';
+  for (var i = 0, l = this.chunks.length; i < l; i++) {
+    var chunk = this.chunks[i];
+
+    if (i > 0) {
+      s += ' ';
+    }
+
+    if (Buffer.isBuffer(chunk)) {
+      if (chunk.length === 0) {
+        s += '0';
+      } else {
+        s += '0x' + util.formatBuffer(encodeLen(chunk.length), 0) + ' ';
+        s += '0x' + util.formatBuffer(chunk, 0);
+      }
+    } else {
+      var opcode = Opcode.reverseMap[chunk];
+      if (typeof opcode === 'undefined') {
+        opcode = '0x'+chunk.toString(16);
+      }
+      s += opcode;
+    }
+  }
+  return s;
+    
+};
+
+Script.stringToBuffer = function(s) {
+  var buf = new Put();
+  var split = s.split(' ');
+  for (var i = 0; i < split.length; i++) {
+    var word = split[i];
+    if (word === '') continue;
+    if (word.length > 2 && word.substring(0, 2) === '0x') {
+      // raw hex value
+      //console.log('hex value');
+      buf.put(new Buffer(word.substring(2, word.length), 'hex'));
+    } else {
+      var opcode = Opcode.map['OP_' + word];
+      if (typeof opcode !== 'undefined') {
+        // op code in string form
+        //console.log('opcode');
+        buf.word8(opcode);
+      } else {
+        var integer = parseInt(word);
+        if (!isNaN(integer)) {
+          // integer
+          //console.log('integer');
+          var data = util.intToBuffer(integer);
+          buf.put(Script.chunksToBuffer([data]));
+        } else if (word[0] === '\'' && word[word.length-1] === '\'') {
+          // string
+          //console.log('string');
+          word = word.substring(1,word.length-1);
+          var hexString = '';
+          for(var c=0;c<word.length;c++) {
+            hexString += ''+word.charCodeAt(c).toString(16);
+          }
+          buf.put(Script.chunksToBuffer([new Buffer(word)]));
+        } else {
+          throw new Error('Could not parse word "' +word+'" from script "'+s+'"');
+        }
+      }
+    }
+  }
+  return buf.buffer();
+};
+
 Script.chunksToBuffer = function(chunks) {
   var buf = new Put();
 
@@ -508,5 +556,7 @@ Script.chunksToBuffer = function(chunks) {
   }
   return buf.buffer();
 };
+
+
 
 module.exports = require('soop')(Script);

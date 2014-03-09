@@ -15,3 +15,4 @@ module.exports.dataTxValid = dataTxValid;
 module.exports.dataTxInvalid = dataTxInvalid;
 module.exports.dataScriptValid = dataScriptValid;
 module.exports.dataScriptInvalid = dataScriptInvalid;
+module.exports.dataScriptAll = dataScriptValid.concat(dataScriptInvalid);
