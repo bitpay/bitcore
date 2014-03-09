@@ -66,12 +66,15 @@ b.require('./util/util');
 b.require('./util/EncodedData');
 b.require('./util/VersionedData');
 b.add('./browser/bignum_config.js');
+b.require('./test/testdata.js', {expose: './testdata'});
+b.transform('brfs');
 
 modules.forEach(function(m) {
    b.require('./' + m + '.js' ,{expose:m} );
  });
 
 var bopts = {
+  transform: ['brfs']
   // detectGlobals: true,
   // insertGlobals: 'Buffer',
   // insertGlobalVars: {

@@ -18,22 +18,8 @@ module.exports = function(grunt) {
         command: 'node ./browserify.js >  browser/bundle.js',
       },
       browserifyData: {
-        options: {
-          stdout: true
-        },
-        command: 'browserify  -t brfs  test/testdata.js  > browser/testdata.js'
+        command: 'browserify  -t brfs  -s testdata test/testdata.js  -o browser/testdata.js'
       },
-    },
-    browserify: {
-      test_data: {
-        src: ['test/testdata.js'],
-        dest: 'browser/testdata.js',
-        options: {
-          transform: ['brfs'],
-          debug: true,
-          standalone: 'testdata',
-        }
-      }
     },
     watch: {
       readme: {

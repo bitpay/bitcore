@@ -267,7 +267,7 @@ Bitcore needs some developer love. Please send pull requests for bug fixes, code
 Work to enable Bitcore for use in the browser is ongoing. To build bitcore for the browser:
 ```
 npm install -g grunt-cli
-grunt browserify
+grunt shell
 ```
 
 You can check a usage example at examples/example.html
