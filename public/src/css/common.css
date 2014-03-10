@@ -56,11 +56,19 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   margin: 0 auto 10px auto;
   display: block;
 }
-#file-input-wrapper { width: 100%; }
-#file-input-wrapper input { opacity: 0; }
-#file-input-wrapper span { width: 100%; }
+#file-input-wrapper {
+  padding: 0;
+  width: 100%;
+}
+#file-input-wrapper input {
+  opacity: 0;
+  padding: 5px;
+}
+#file-input-wrapper span {
+  padding-top: 5px;
+  width: 100%;
+}
 #file-input-wrapper i { display: none; }
-#file-input-wrapper:hover i { display: inline-block; }
 
 /* Wrapper for page content to push down footer */
 #wrap {

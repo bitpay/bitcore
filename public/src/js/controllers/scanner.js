@@ -55,9 +55,9 @@ angular.module('insight.system').controller('ScannerController',
               mpImg.render(canvas, { maxWidth: 200, maxHeight: 200, orientation: 6 });
 
               setTimeout(function() {
-                //qrcode.width = canvas.width;
-                //qrcode.height = canvas.height;
-                //qrcode.imagedata = context.getImageData(0, 0, qrcode.width, qrcode.height);
+                qrcode.width = canvas.width;
+                qrcode.height = canvas.height;
+                qrcode.imagedata = context.getImageData(0, 0, qrcode.width, qrcode.height);
 
                 try {
                   //alert(JSON.stringify(qrcode.process(context)));
@@ -65,7 +65,7 @@ angular.module('insight.system').controller('ScannerController',
                 } catch (e) {
                   alert(e);
                 }
-              }, 1000);
+              }, 1500);
             };
           })(file);
 
