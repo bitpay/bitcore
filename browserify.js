@@ -32,7 +32,6 @@ var modules = [
   'Block',
   'Bloom',
   'Buffers.monkey',
-  'Connection',
   'Deserialize',
   'Gruntfile',
   'Number.monkey',
@@ -68,6 +67,8 @@ b.require('./util/VersionedData');
 b.add('./browser/bignum_config.js');
 b.require('./test/testdata.js', {expose: './testdata'});
 b.transform('brfs');
+
+b.require('./Connection', {expose: './Connection'});
 
 modules.forEach(function(m) {
    b.require('./' + m + '.js' ,{expose:m} );
