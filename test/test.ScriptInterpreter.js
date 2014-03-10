@@ -28,7 +28,7 @@ describe('ScriptInterpreter', function() {
     var scriptSig = datum[0]; // script inputs
     var scriptPubKey = datum[1]; // output script
     var human = scriptSig + ' ' + scriptPubKey;
-    it('should validate script ' + human, function(done) {
+    it.skip('should validate script ' + human, function(done) {
       i++;
       console.log(i + ' ' + human);
       ScriptInterpreter.verify(Script.fromHumanReadable(scriptSig),
