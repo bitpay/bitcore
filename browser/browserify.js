@@ -26,6 +26,7 @@ var modules = [
   'Block',
   'Bloom',
   'Buffers.monkey',
+  'Connection',
   'Deserialize',
   'Gruntfile',
   'Number.monkey',
@@ -65,7 +66,6 @@ b.require('./util/util');
 b.require('./util/EncodedData');
 b.require('./util/VersionedData');
 b.add('./browser/bignum_config.js');
-
 modules.forEach(function(m) {
    b.require('./' + m + '.js' ,{expose: './'+m} );
 });
