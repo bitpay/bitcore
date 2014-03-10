@@ -48,7 +48,7 @@ var modules = [
 ];
 
 var opts = {};
-//opts.pack = pack;
+opts.pack = pack;
 opts.debug = true;
 opts.standalone = 'bitcore';
 opts.insertGlobals = true;
