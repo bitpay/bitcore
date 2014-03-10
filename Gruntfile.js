@@ -12,7 +12,11 @@ module.exports = function(grunt) {
   grunt.initConfig({
     shell: {
       browserify: {
-        command: 'node ./browserify.js',
+        options: {
+          stdout: true,
+          stderr: true
+        },
+        command: 'node ./browser/browserify.js',
       }
     },
     watch: {
