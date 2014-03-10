@@ -27,6 +27,7 @@
     {
       "name": "Juan Ignacio Sosa Lopez",
       "email": "bechilandia@gmail.com" 
+      
     }
   ],
   "bugs": {
@@ -46,7 +47,7 @@
     "start": "INSIGHT_PUBLIC_PATH=public node node_modules/insight-bitcore-api/insight.js"
   },
   "dependencies": {
-    "insight-bitcore-api": "~0.1.4"
+    "insight-bitcore-api": "git://github.com/bitpay/insight-api"
   },
   "devDependencies": {
     "bower": "~1.2.8",
