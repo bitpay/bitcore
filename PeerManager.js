@@ -5,7 +5,7 @@ var log         = imports.log || require('./util/log');
 var network     = imports.network || require('./networks')[config.network];
 
 var Connection  = imports.Connection || 
-  require('soop').load('Connection', {config: config, network: network}) ||
+  require('soop').load('./Connection', {config: config, network: network}) ||
   require ('./Connection');
 
 var Peer        = imports.Peer || require('./Peer');
