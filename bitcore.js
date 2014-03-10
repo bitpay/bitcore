@@ -1,49 +1,50 @@
-/*
- * Bitcore bindings for the browser
- */
-
-
-
-module.exports.bignum = require('bignum');
-module.exports.base58 = require('base58-native');
-module.exports.buffertools = require('buffertools');
-
-module.exports.config = require('./config');
-module.exports.const = require('./const');
-module.exports.Deserialize = require('./Deserialize');
-module.exports.log = require('./util/log');
-module.exports.networks = require('./networks');
-module.exports.util = require('./util/util');
-
-module.exports.EncodedData = require('./util/EncodedData');
-module.exports.VersionedData = require('./util/VersionedData');
+/* 
+One way to require files is this simple way:
 module.exports.Address = require('./Address');
-module.exports.Opcode = require('./Opcode');
-module.exports.Script = require('./Script');
-module.exports.Transaction = require('./Transaction');
-module.exports.Connection = require('./Connection');
-module.exports.Peer = require('./Peer');
-module.exports.Block = require('./Block');
-module.exports.ScriptInterpreter = require('./ScriptInterpreter');
-module.exports.Bloom = require('./Bloom');
+
+However, that will load all classes in memory even if they are not used.
+Instead, we can set the 'get' property of each class to only require them when
+they are accessed, saving memory if they are not used in a given project.
+*/
+var requireWhenAccessed = function(name, file) {
+  Object.defineProperty(module.exports, name, {get: function() {return require(file)}});
+};
+
+requireWhenAccessed('bignum', 'bignum');
+requireWhenAccessed('base58', 'base58-native');
+requireWhenAccessed('buffertools', 'buffertools');
+requireWhenAccessed('config', './config');
+requireWhenAccessed('const', './const');
+requireWhenAccessed('Deserialize', './Deserialize');
+requireWhenAccessed('log', './util/log');
+requireWhenAccessed('networks', './networks');
+requireWhenAccessed('util', './util/util');
+requireWhenAccessed('EncodedData', './util/EncodedData');
+requireWhenAccessed('VersionedData', './util/VersionedData');
+requireWhenAccessed('Address', './Address');
+requireWhenAccessed('Opcode', './Opcode');
+requireWhenAccessed('Script', './Script');
+requireWhenAccessed('Transaction', './Transaction');
+requireWhenAccessed('Connection', './Connection');
+requireWhenAccessed('Peer', './Peer');
+requireWhenAccessed('Block', './Block');
+requireWhenAccessed('ScriptInterpreter', './ScriptInterpreter');
+requireWhenAccessed('Bloom', './Bloom');
 module.exports.KeyModule = require('./Key');
-module.exports.SINKey = require('./SINKey');
-module.exports.SIN = require('./SIN');
-module.exports.PrivateKey = require('./PrivateKey');
-module.exports.RpcClient = require('./RpcClient');
-module.exports.Wallet = require('./Wallet');
-module.exports.WalletKey = require('./WalletKey');
+requireWhenAccessed('SINKey', './SINKey');
+requireWhenAccessed('SIN', './SIN');
+requireWhenAccessed('PrivateKey', './PrivateKey');
+requireWhenAccessed('RpcClient', './RpcClient');
+requireWhenAccessed('Wallet', './Wallet');
+requireWhenAccessed('WalletKey', './WalletKey');
 module.exports.Buffer = Buffer;
 
 if (typeof process.versions === 'undefined') {
   // Browser specific
   module.exports.bignum.config({EXPONENTIAL_AT: 9999999, DECIMAL_PLACES: 0, ROUNDING_MODE: 1});
-  // module.exports.PeerManager = function () {
-  //   throw new Error('PeerManager not availabe in browser Bitcore, under .bitcore. Use it with: require(\'PeerManager\');');
-  // };
 }
 else {
   // Nodejs specific
-  module.exports.PeerManager = require('./PeerManager');
+  requireWhenAccessed('PeerManager', './PeerManager');
 }
 
