@@ -2,16 +2,15 @@
 
 var chai = chai || require('chai');
 var bitcore = bitcore || require('../bitcore');
+var buffertools = require('buffertools');
 
 var should = chai.should();
 
-var test_data = require('./testdata');
+var testdata = testdata || require('./testdata');
 
 var bignum = bitcore.bignum;
 var base58 = bitcore.base58;
 var base58Check = base58.base58Check;
-var util = bitcore.util;
-var buffertools = require('buffertools');
 
 describe('Miscelaneous stuff', function() {
   it('should initialze the config object', function() {
@@ -19,9 +18,6 @@ describe('Miscelaneous stuff', function() {
   });
   it('should initialze the log object', function() {
     should.exist(bitcore.log);
-  });
-  it('should initialze the util object', function() {
-    should.exist(bitcore.util);
   });
   it('should initialze the const object', function() {
     should.exist(bitcore.const);
@@ -59,7 +55,7 @@ describe('Miscelaneous stuff', function() {
     var m = '1QCJj1gPZKx2EwzGo9Ri8mMBs39STvDYcv';
     base58Check.encode(base58Check.decode(m)).should.equal(m);
   });
-  test_data.dataEncodeDecode.forEach(function(datum) {
+  testdata.dataEncodeDecode.forEach(function(datum) {
     it('base58 encode/decode checks ' + datum, function() {
       // from bitcoin/bitcoin tests:
       // Goal: test low-level base58 encoding functionality

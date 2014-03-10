@@ -12,14 +12,8 @@ module.exports = function(grunt) {
   grunt.initConfig({
     shell: {
       browserify: {
-        options: {
-          stdout: true
-        },
-        command: 'node ./browserify.js >  browser/bundle.js',
-      },
-      browserifyData: {
-        command: 'browserify  -t brfs  -s testdata test/testdata.js  -o browser/testdata.js'
-      },
+        command: 'node ./browserify.js',
+      }
     },
     watch: {
       readme: {
@@ -28,7 +22,7 @@ module.exports = function(grunt) {
       },
       scripts: {
         files: ['**/*.js', '**/*.html', '!**/node_modules/**', '!browser/bundle.js', '!browser/testdata.js'],
-        tasks: ['shell' /*, 'mochaTest'*/ ],
+        tasks: ['shell'],
       },
     },
     mochaTest: {

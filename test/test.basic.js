@@ -3,18 +3,7 @@
 var chai = chai || require('chai');
 var bitcore = bitcore || require('../bitcore');
 
-var test_data;
-if (typeof dataValid !== 'undefined' ) {
-  test_data = {
-    dataValid: dataValid,
-    dataInvalid: dataInvalid,
-  };
-
-} 
-else {
-  test_data = require('./testdata');
-}
-
+var testdata = testdata || require('./testdata');
 var should = chai.should();
 
 var Address = bitcore.Address;
@@ -122,7 +111,7 @@ function is_invalid(datum) {
 }
 
 describe('Valid base58 keys', function() {
-  test_data.dataValid.forEach(function(datum) {
+  testdata.dataValid.forEach(function(datum) {
     it('valid ' + datum[0], function() {
       is_valid(datum);
     });
@@ -130,7 +119,7 @@ describe('Valid base58 keys', function() {
 });
 
 describe('Invalid base58 keys', function() {
-  test_data.dataInvalid.forEach(function(datum) {
+  testdata.dataInvalid.forEach(function(datum) {
     it('invalid ' + datum, function() {
       is_invalid(datum);
     });

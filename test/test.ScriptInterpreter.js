@@ -4,7 +4,7 @@ var chai = chai || require('chai');
 var bitcore = bitcore || require('../bitcore');
 
 var should = chai.should();
-var test_data = require('./testdata');
+var testdata = testdata || require('./testdata');
 
 var ScriptInterpreterModule = bitcore.ScriptInterpreter;
 var Script = bitcore.Script;
@@ -23,7 +23,7 @@ describe('ScriptInterpreter', function() {
     should.exist(si);
   });
   var i = 0;
-  test_data.dataScriptValid.forEach(function(datum) {
+  testdata.dataScriptValid.forEach(function(datum) {
     if (datum.length < 2) throw new Error('Invalid test data');
     var scriptSig = datum[0]; // script inputs
     var scriptPubKey = datum[1]; // output script
