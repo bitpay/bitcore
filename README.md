@@ -37,7 +37,7 @@ var addrStrings = [
   "A1zP1eP5QGefi2DMPTfTL5SLmv7Dixxxx",
   "1600 Pennsylvania Ave NW",
 ].map(function(addr) {
-  return new Address(addr);
+  return Address.new(addr);
 });
 
 addrStrings.forEach(function(addr) {
@@ -144,7 +144,7 @@ var createTx = function() {
   txin.o = Buffer.concat([hash, voutBuf]);
   txobj.ins.push(txin);
 
-  var addr     = new Address(ADDR);
+  var addr     = Address.new(ADDR);
   var script   = Script.createPubKeyHashOut(addr.payload());
   var valueNum = coinUtil.parseValue(VAL);
   var value    = coinUtil.bigIntToValue(valueNum);
@@ -226,21 +226,21 @@ Gets an address strings from a  ScriptPubKey Buffer
     switch (type) {
       case Script.TX_PUBKEY:
         var chunk = s.captureOne();
-        addr = new Address(network.addressPubkey, coinUtil.sha256ripe160(chunk));
+        addr = Address.new(network.addressPubkey, coinUtil.sha256ripe160(chunk));
         addrStrs.push(addr.toString());
         break;
       case Script.TX_PUBKEYHASH:
-        addr = new Address(network.addressPubkey, s.captureOne());
+        addr = Address.new(network.addressPubkey, s.captureOne());
         addrStrs.push(addr.toString());
         break;
       case Script.TX_SCRIPTHASH:
-        addr = new Address(network.addressScript, s.captureOne());
+        addr = Address.new(network.addressScript, s.captureOne());
         addrStrs.push(addr.toString());
         break;
       case Script.TX_MULTISIG:
         var chunks = s.capture();
         chunks.forEach(function(chunk) {
-          var a = new Address(network.addressPubkey, coinUtil.sha256ripe160(chunk));
+          var a = Address.new(network.addressPubkey, coinUtil.sha256ripe160(chunk));
           addrStrs.push(a.toString());
         });
         break;
