@@ -26,7 +26,7 @@
     },
     {
       "name": "Juan Ignacio Sosa Lopez",
-      "email": "bechilandia@gmail.com"
+      "email": "bechilandia@gmail.com" 
     }
   ],
   "bugs": {
@@ -36,20 +36,17 @@
   "license": "MIT",
   "keywords": [
     "insight",
-    "secret",
-    "enigma",
-    "riddle",
-    "mystification",
-    "puzzle",
-    "conundrum",
-    "client",
+    "blockchain",
+    "blockexplorer",
+    "bitcoin",
+    "bitcore",
     "front-end"
   ],
   "scripts": {
     "start": "INSIGHT_PUBLIC_PATH=public node node_modules/insight-bitcore-api/insight.js"
   },
   "dependencies": {
-    "insight-bitcore-api": "git://github.com/bitpay/insight-api.git"
+    "insight-bitcore-api": "~0.1.4"
   },
   "devDependencies": {
     "bower": "~1.2.8",
