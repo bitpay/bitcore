@@ -11,7 +11,7 @@ var In;
 var Out;
 var Script = bitcore.Script;
 var buffertools = require('buffertools');
-var test_data = require('./testdata');
+var testdata = testdata || require('./testdata');
 
 describe('Transaction', function() {
   it('should initialze the main object', function() {
@@ -35,7 +35,7 @@ describe('Transaction', function() {
   // Inner arrays are either [ "comment" ]
   // or [[[prevout hash, prevout index, prevout scriptPubKey], [input 2], ...],"], serializedTransaction, enforceP2SH
   // ... where all scripts are stringified scripts.
-  test_data.dataTxValid.forEach(function(datum) {
+  testdata.dataTxValid.forEach(function(datum) {
     if (datum.length === 3) {
       it.skip('valid tx=' + datum[1], function(done) {
         var inputs = datum[0];
@@ -47,6 +47,7 @@ describe('Transaction', function() {
           map[[hash, index]] = scriptPubKey; //Script.fromStringContent(scriptPubKey);
           console.log(scriptPubKey.getStringContent());
           console.log('********************************');
+          done();
 
         });
         var raw = new Buffer(datum[1], 'hex');

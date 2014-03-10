@@ -13,13 +13,11 @@ module.exports = function(grunt) {
     shell: {
       browserify: {
         options: {
-          stdout: true
+          stdout: true,
+          stderr: true
         },
-        command: 'node ./browserify.js >  browser/bundle.js',
-      },
-      browserifyData: {
-        command: 'browserify  -t brfs  -s testdata test/testdata.js  -o browser/testdata.js'
-      },
+        command: 'node ./browser/browserify.js',
+      }
     },
     watch: {
       readme: {
@@ -28,7 +26,7 @@ module.exports = function(grunt) {
       },
       scripts: {
         files: ['**/*.js', '**/*.html', '!**/node_modules/**', '!browser/bundle.js', '!browser/testdata.js'],
-        tasks: ['shell' /*, 'mochaTest'*/ ],
+        tasks: ['shell'],
       },
     },
     mochaTest: {

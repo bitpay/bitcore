@@ -9,7 +9,7 @@ var ScriptModule = bitcore.Script;
 var Address = bitcore.Address;
 var networks = bitcore.networks;
 var Script;
-var test_data = require('./testdata');
+var testdata = testdata || require('./testdata');
 
 describe('Script', function() {
   it('should initialze the main object', function() {
@@ -84,7 +84,7 @@ describe('Script', function() {
     });
   });
 
-  test_data.dataScriptAll.forEach(function(datum) {
+  testdata.dataScriptAll.forEach(function(datum) {
     if (datum.length < 2) throw new Error('Invalid test data');
     var human = datum[0] + ' ' + datum[1];
     it('should parse script from human readable ' + human, function() {

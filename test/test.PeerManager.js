@@ -5,7 +5,7 @@ var bitcore = bitcore || require('../bitcore');
 
 var should = chai.should();
 
-var PeerManagerModule = bitcore.PeerManager || require('PeerManager');
+var PeerManagerModule = bitcore.PeerManager || require('./PeerManager');
 
 var PeerManager;
 

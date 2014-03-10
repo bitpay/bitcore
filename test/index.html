@@ -12,14 +12,8 @@
     <script src="../node_modules/chai/chai.js"></script>
     <script>mocha.setup('bdd')</script>
     <script src="../browser/bundle.js"></script>
-
-    <script>
-      var bitcore = require('bitcore');
-      this.Buffer = require('buffer').Buffer;
-    </script>
-
-
-<!--    <script src="adapter.js"></script> -->
+    <script src="../browser/testdata.js"></script>
+    <script src="adapter.js"></script>
 
     <script src="test.Address.js"></script>
     <script src="test.basic.js"></script>
@@ -44,8 +38,6 @@
     <script src="test.VersionedData.js"></script>
     <script src="test.Wallet.js"></script>
     <script src="test.WalletKey.js"></script>
-    <!--
-    -->
     <script>
       mocha.run();
     </script>
