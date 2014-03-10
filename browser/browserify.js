@@ -59,7 +59,6 @@ var b = browserify(opts);
 b.require('browserify-bignum/bignumber.js', {expose: 'bignum'} );
 b.require('browserify-buffertools/buffertools.js', {expose:'buffertools'});
 b.require('./bitcore', {expose: 'bitcore'});
-b.require('buffer', {expose: 'buffer'});
 b.require('base58-native');
 b.require('./util/log');
 b.require('./util/util');
