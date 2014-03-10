@@ -267,14 +267,14 @@ describe('Transaction', function() {
   // ... where all scripts are stringified scripts.
   testdata.dataTxValid.forEach(function(datum) {
     if (datum.length === 3) {
-      it.skip('valid tx=' + datum[1], function(done) {
+      it('valid tx=' + datum[1], function() {
         var inputs = datum[0];
-        var map = {};
+        var inputScriptPubKeys = [];
         inputs.forEach(function(vin) {
           var hash = vin[0];
           var index = vin[1];
           var scriptPubKey = new Script(new Buffer(vin[2]));
-          map[[hash, index]] = scriptPubKey; //Script.fromStringContent(scriptPubKey);
+          inputScriptPubKeys.push(scriptPubKey);
           console.log(scriptPubKey.getStringContent());
           console.log('********************************');
           done();
@@ -286,12 +286,17 @@ describe('Transaction', function() {
 
         buffertools.toHex(tx.serialize()).should.equal(buffertools.toHex(raw));
 
-        var i = 0;
-        var stx = tx.getStandardizedObject();
-        tx.ins.forEach(function(txin) {
-          var scriptPubKey = map[[stx. in [i].prev_out.hash, stx. in [i].prev_out.n]];
-          i += 1;
+        var n = 0;
+        inputScriptPubKeys.forEach(function(scriptPubKey) {
+          tx.verifyInput(0, scriptPubKey, function(err, results) {
+            should.not.exist(err);
+            should.exist(results);
+            results.should.equal(true);
+          });
+          n += 1;
         });
+
+        // TODO(mattfaus): Other verifications?
       });
     }
   });
