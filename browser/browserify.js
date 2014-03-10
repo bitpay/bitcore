@@ -35,6 +35,7 @@ var modules = [
   'PeerManager',
   'PrivateKey',
   'RpcClient',
+  'Key',
   'SIN',
   'SINKey',
   'Script',
@@ -60,7 +61,6 @@ b.require('browserify-buffertools/buffertools.js', {expose:'buffertools'});
 b.require('./bitcore', {expose: 'bitcore'});
 b.require('buffer', {expose: 'buffer'});
 b.require('base58-native');
-b.require('./Key.js', {expose: 'KeyModule'});
 b.require('./util/log');
 b.require('./util/util');
 b.require('./util/EncodedData');
