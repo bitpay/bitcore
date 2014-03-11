@@ -7,7 +7,7 @@ var buffertools = require('buffertools');
 var browser;
 if (!process.versions) {
   // browser version
-  browser = require('../browser/vendor.js');
+  browser = require('../browser/vendor-bundle.js');
 }
 
 
