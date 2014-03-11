@@ -26,7 +26,11 @@ describe('Address', function() {
     var b = new Address('11111111111111111111111111122222234');
     a.validate.bind(a).should.not.throw(Error);
     m.validate.bind(m).should.not.throw(Error);
-    b.validate.bind(b).should.throw(Error);
+    b.validate.bind(b).should.not.throw(Error);
+
+    a.validate().should.equal(true);
+    m.validate().should.equal(true);
+    b.validate().should.equal(false);
   });
 });
 

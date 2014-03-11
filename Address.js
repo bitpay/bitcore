@@ -10,10 +10,12 @@ Address.parent = parent;
 parent.applyEncodingsTo(Address);
 
 Address.prototype.validate = function() {
+  var answer;
   this.doAsBinary(function() {
     Address.super(this, 'validate', arguments);
-    if(this.data.length !== 21) throw new Error('invalid data length');
+    answer = (this.data.length === 21);
   });
+  return answer;
 };
 
 module.exports = require('soop')(Address);
