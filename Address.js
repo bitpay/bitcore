@@ -9,12 +9,16 @@ function Address() {
 Address.parent = parent;
 parent.applyEncodingsTo(Address);
 
+
 Address.prototype.validate = function() {
-  var answer;
   this.doAsBinary(function() {
     Address.super(this, 'validate', arguments);
-    answer = (this.data.length === 21);
+    if(this.data.length !== 21) throw new Error('invalid data length');
   });
+};
+
+Address.prototype.isValid = function() {
+  var answer = Address.super(this, 'isValid', arguments);
   return answer;
 };
 
