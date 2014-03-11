@@ -5,7 +5,7 @@ if (process.versions) {
   module.exports = require('bindings')('KeyModule');
 } else {
   // pure js version
-  var ECKey = require('./browser/bitcoinjs-lib.js').ECKey;
+  var ECKey = require('./browser/vendor.js').ECKey;
   var buffertools = require('buffertools');
 
   var bufferToArray = function(buffer) {

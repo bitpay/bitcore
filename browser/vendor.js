@@ -1,4 +1,9 @@
 if ('undefined' === typeof window) window = this;
+Bitcoin = {};
+if (typeof navigator === 'undefined') {
+  var navigator = {};
+  navigator.appName = 'NodeJS';
+}
 /*!
  * Crypto-JS v2.0.0
  * http://code.google.com/p/crypto-js/
@@ -189,15 +194,7 @@ e[a>>>5]|=128<<24-a%32;e[(a+64>>>9<<4)+14]=(b<<8|b>>>24)&16711935|(b<<24|b>>>8)&
 
 
 module.exports.RIPEMD160 = CryptoJS.RIPEMD160;
-Bitcoin = {};
-
-
-
-if (typeof navigator === 'undefined') {
-  var navigator = {};
-  navigator.appName = 'NodeJS';
-
-}
+module.exports.WordArray = CryptoJS.lib.WordArray;
 // Copyright (c) 2005  Tom Wu
 // All Rights Reserved.
 // See "LICENSE" for details.
@@ -1605,15 +1602,16 @@ Bitcoin.Util = {
     if (i < 0xfd) {
       // unsigned char
       return [i];
-    } else if (i <= 1<<16) {
+    } else if (i < 0x10000) {
       // unsigned short (LE)
-      return [0xfd, i >>> 8, i & 255];
-    } else if (i <= 1<<32) {
+      return [0xfd, i & 255 , i >>> 8];
+    } else if (i < 0x100000000) {
       // unsigned int (LE)
-      return [0xfe].concat(Crypto.util.wordsToBytes([i]));
+      return [0xfe].concat(Crypto.util.wordsToBytes([i]).reverse());
     } else {
+      throw 'quadword not implemented'
       // unsigned long long (LE)
-      return [0xff].concat(Crypto.util.wordsToBytes([i >>> 32, i]));
+      //return [0xff].concat(Crypto.util.wordsToBytes([i >>> 32, i]));
     }
   },
 
@@ -2286,36 +2284,25 @@ ECPointFp.prototype.getEncoded = function (compressed) {
   return enc;
 };
 
-ECPointFp.decodeFrom = function (ecparams, enc) {
+ECPointFp.decodeFrom = function (curve, enc) {
   var type = enc[0];
   var dataLen = enc.length-1;
 
   // Extract x and y as byte arrays
-  if (type == 4) {
-    var xBa = enc.slice(1, 1 + dataLen/2),
-        yBa = enc.slice(1 + dataLen/2, 1 + dataLen),
-        x = BigInteger.fromByteArrayUnsigned(xBa),
-        y = BigInteger.fromByteArrayUnsigned(yBa);
-  }
-  else {
-    var xBa = enc.slice(1),
-        x = BigInteger.fromByteArrayUnsigned(xBa),
-        p = ecparams.getQ(),
-        xCubedPlus7 = x.multiply(x).multiply(x).add(new BigInteger('7')).mod(p),
-        pPlus1Over4 = p.add(new BigInteger('1'))
-                       .divide(new BigInteger('4')),
-        y = xCubedPlus7.modPow(pPlus1Over4,p);
-    if (y.mod(new BigInteger('2')).toString() != ''+(type % 2)) {
-        y = p.subtract(y)
-    }
-  }
+  var xBa = enc.slice(1, 1 + dataLen/2);
+  var yBa = enc.slice(1 + dataLen/2, 1 + dataLen);
+
+  // Prepend zero byte to prevent interpretation as negative integer
+  xBa.unshift(0);
+  yBa.unshift(0);
+
+  // Convert to BigIntegers
+  var x = new BigInteger(xBa);
+  var y = new BigInteger(yBa);
 
   // Return point
-  return new ECPointFp(ecparams,
-                       ecparams.fromBigInteger(x),
-                       ecparams.fromBigInteger(y));
+  return new ECPointFp(curve, curve.fromBigInteger(x), curve.fromBigInteger(y));
 };
-
 
 ECPointFp.prototype.add2D = function (b) {
   if(this.isInfinity()) return b;
