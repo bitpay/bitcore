@@ -491,7 +491,7 @@ Script.prototype.toHumanReadable = function() {
     }
   }
   return s;
-    
+
 };
 
 Script.stringToBuffer = function(s) {
@@ -505,7 +505,7 @@ Script.stringToBuffer = function(s) {
       //console.log('hex value');
       buf.put(new Buffer(word.substring(2, word.length), 'hex'));
     } else {
-      var opcode = Opcode.map['OP_' + word];
+      var opcode = Opcode.map['OP_' + word] || Opcode.map[word];
       if (typeof opcode !== 'undefined') {
         // op code in string form
         //console.log('opcode');

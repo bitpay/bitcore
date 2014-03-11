@@ -655,7 +655,7 @@ Transaction.prototype.parse = function (parser) {
   var i, sLen, startPos = parser.pos;
 
   this.version = parser.word32le();
-  
+
   var txinCount = parser.varInt();
 
   this.ins = [];
