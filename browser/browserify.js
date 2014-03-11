@@ -10,6 +10,7 @@
 var fs = require('fs');
 var browserify = require('browserify');
 var browserPack = require('browser-pack');
+var program = require('commander');
 
 // concat browser vendor files
 var exec = require('child_process').exec;
@@ -22,6 +23,20 @@ var puts = function(error, stdout, stderr) {
 
 exec('cd browser; sh concat.sh', puts);
 
+var list = function(val) {
+  return val.split(',');
+};
+
+program
+  .version('0.0.1')
+  .option('-a, --includeall', 'Include all submodules.')
+  .option('-s, --submodules <items>', 'Include the listed comma-separated submodules.', list)
+  .parse(process.argv);
+
+if (!program.includeall && (!program.submodules || program.submodules.length === 0)) {
+  console.log('Must use either -s or -a option. For more info use the --help option');
+  process.exit(1);
+}
 
 var pack = function (params) {
   var preludePath  = 'node_modules/soop/example/custom_prelude.js';
@@ -75,9 +90,11 @@ b.require('./util/log');
 b.require('./util/util');
 b.require('./util/EncodedData');
 b.require('./util/VersionedData');
-b.add('./browser/bignum_config.js');
 modules.forEach(function(m) {
-   b.require('./' + m + '.js' ,{expose: './'+m} );
+  if (program.includeall || program.submodules.indexOf(m) > -1) {
+    console.log('Including '+m+' in the browser bundle');
+    b.require('./' + m + '.js' , {expose: './'+m} );
+  }
 });
 b.require('soop');
 

@@ -41,7 +41,8 @@
     "url": "https://github.com/bitpay/bitcore.git"
   },
   "scripts": {
-    "test": "mocha test -R spec"
+    "test": "mocha test -R spec",
+    "postinstall": "node ./browser/browserify.js -a"
   },
   "dependencies": {
     "soop": "git://github.com/bitpay/soop.git",
@@ -66,7 +67,8 @@
     "browserify-buffertools": "~1.0.2",
     "chai": "~1.9.0",
     "brfs": "~1.0.0",
-    "async": "~0.2.10"
+    "async": "~0.2.10",
+    "commander": "~2.1.0"
   },
   "license": "MIT"
 }

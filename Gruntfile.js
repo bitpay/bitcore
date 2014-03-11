@@ -16,7 +16,7 @@ module.exports = function(grunt) {
           stdout: true,
           stderr: true
         },
-        command: 'node ./browser/browserify.js',
+        command: 'node ./browser/browserify.js -a',
       }
     },
     watch: {
@@ -25,7 +25,7 @@ module.exports = function(grunt) {
         tasks: ['markdown']
       },
       scripts: {
-        files: ['**/*.js', '**/*.html', '!**/node_modules/**', '!browser/bundle.js', '!browser/testdata.js'],
+        files: ['**/*.js', '**/*.html', '!**/node_modules/**', '!browser/bundle.js', '!browser/testdata.js', '!browser/vendor-bundle.js'],
         tasks: ['shell'],
       },
     },
