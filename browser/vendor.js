@@ -2284,24 +2284,34 @@ ECPointFp.prototype.getEncoded = function (compressed) {
   return enc;
 };
 
-ECPointFp.decodeFrom = function (curve, enc) {
+ECPointFp.decodeFrom = function (ecparams, enc) {
   var type = enc[0];
   var dataLen = enc.length-1;
 
   // Extract x and y as byte arrays
-  var xBa = enc.slice(1, 1 + dataLen/2);
-  var yBa = enc.slice(1 + dataLen/2, 1 + dataLen);
-
-  // Prepend zero byte to prevent interpretation as negative integer
-  xBa.unshift(0);
-  yBa.unshift(0);
-
-  // Convert to BigIntegers
-  var x = new BigInteger(xBa);
-  var y = new BigInteger(yBa);
+  if (type === 4) {
+    var xBa = enc.slice(1, 1 + dataLen/2),
+        yBa = enc.slice(1 + dataLen/2, 1 + dataLen),
+        x = BigInteger.fromByteArrayUnsigned(xBa),
+        y = BigInteger.fromByteArrayUnsigned(yBa);
+  }
+  else {
+    var xBa = enc.slice(1),
+        x = BigInteger.fromByteArrayUnsigned(xBa),
+        p = ecparams.getQ(),
+        xCubedPlus7 = x.multiply(x).multiply(x).add(new BigInteger('7')).mod(p),
+        pPlus1Over4 = p.add(new BigInteger('1'))
+                       .divide(new BigInteger('4')),
+        y = xCubedPlus7.modPow(pPlus1Over4,p);
+    if (y.mod(new BigInteger('2')).toString() != ''+(type % 2)) {
+        y = p.subtract(y)
+    }
+  }
 
   // Return point
-  return new ECPointFp(curve, curve.fromBigInteger(x), curve.fromBigInteger(y));
+  return new ECPointFp(ecparams,
+                       ecparams.fromBigInteger(x),
+                       ecparams.fromBigInteger(y));
 };
 
 ECPointFp.prototype.add2D = function (b) {
