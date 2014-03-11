@@ -5,7 +5,7 @@ if (process.versions) {
   module.exports = require('bindings')('KeyModule');
 } else {
   // pure js version
-  var ECKey = require('./browser/bitcoinjs-lib.js').ECKey;
+  var ECKey = require('./browser/vendor-bundle.js').ECKey;
   var buffertools = require('buffertools');
 
   var bufferToArray = function(buffer) {
@@ -89,10 +89,11 @@ if (process.versions) {
     }
 
     var eck = new ECKey();
-    eck.setPub( bufferToArray(self.public));
+    eck.setPub(bufferToArray(self.public));
     eck.setCompressed(self.compressed);
     var sigA = bufferToArray(sig);
-    return eck.verify(hash,sigA);
+    var ret = eck.verify(hash,sigA);
+    return ret;
   };
 
 

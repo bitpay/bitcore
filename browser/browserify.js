@@ -11,6 +11,17 @@ var fs = require('fs');
 var browserify = require('browserify');
 var browserPack = require('browser-pack');
 
+// concat browser vendor files
+var exec = require('child_process').exec;
+var sys = require('sys');
+var puts = function(error, stdout, stderr) {
+  if (error) console.log(error);
+  sys.puts(stdout);
+  sys.puts(stderr);
+};
+
+exec('cd browser; sh concat.sh', puts);
+
 
 var pack = function (params) {
   var preludePath  = 'node_modules/soop/example/custom_prelude.js';

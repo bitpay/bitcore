@@ -4,10 +4,10 @@ var bignum = require('bignum');
 var Binary = require('binary');
 var Put = require('bufferput');
 var buffertools = require('buffertools');
-var bjs;
+var browser;
 if (!process.versions) {
   // browser version
-  bjs = require('../browser/bitcoinjs-lib.js');
+  browser = require('../browser/vendor-bundle.js');
 }
 
 
@@ -17,8 +17,8 @@ var sha256 = exports.sha256 = function (data) {
 
 var ripe160 = exports.ripe160 = function (data) {
   if (!process.versions) {
-    var RIPEMD160 = bjs.RIPEMD160;
-    var WordArray = bjs.WordArray;
+    var RIPEMD160 = browser.RIPEMD160;
+    var WordArray = browser.WordArray;
     data = data.toString();
     var result = RIPEMD160(data) + '';
     return new Buffer(result, 'hex');
