@@ -257,13 +257,49 @@ Bitcore is still under heavy development and not quite ready for "drop-in" produ
 Bitcore needs some developer love. Please send pull requests for bug fixes, code optimization, and ideas for improvement.
 
 #Browser support
-Work to enable Bitcore for use in the browser is ongoing. To build bitcore for the browser:
+## Building the browser bundle
+To build bitcore full bundle for the browser:
+(this is automatically executed after you run `npm install`)
+
 ```
-npm install -g grunt-cli
-grunt shell
+node browser/browserify.js -a
+```
+This will generate a `browser/bundle.js` file which you can include
+in your HTML to use bitcore in the browser.
+
+## 
+
+##Example browser usage
+
+From example/simple.html
+```
+<!DOCTYPE html>
+<html>
+  <body>
+    <script src="../browser/bundle.js"></script>
+    <script>
+      var bitcore = require('bitcore');
+      var Address = bitcore.Address;
+      var a = new Address('1KerhGhLn3SYBEQwby7VyVMWf16fXQUj5d');
+      console.log('1KerhGhLn3SYBEQwby7VyVMWf16fXQUj5d is valid? '+a.isValid());
+    </script>
+  </body>
+</html>
 ```
 
-You can check a usage example at examples/example.html
+You can check a more complex usage example at examples/example.html
+
+## Generating a customized browser bundle
+To generate a customized bitcore bundle, you can specify 
+which submodules you want to include in it with the -s option:
+
+```
+node browser/browserify.js -s Transaction,Address
+```
+This will generate a `browser/bundle.js` containing only the Transaction
+ and Address class, with all their dependencies. 
+Use this option if you are not using the whole bitcore library, to optimize
+the bundle size, script loading time, and general resource usage.
 
 
 #License

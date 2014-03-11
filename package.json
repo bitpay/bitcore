@@ -42,7 +42,7 @@
   },
   "scripts": {
     "test": "mocha test -R spec",
-    "postinstall": "grunt shell"
+    "postinstall": "node ./browser/browserify.js -a"
   },
   "dependencies": {
     "soop": "git://github.com/bitpay/soop.git",
