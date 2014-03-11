@@ -121,28 +121,45 @@ var intTo64Bits = function(integer) {
 var fitsInNBits = function(integer, n) {
   // TODO: make this efficient!!!
   return integer.toString(2).replace('-','').length < n;
-}
+};
+exports.bytesNeededToStore = bytesNeededToStore = function(integer) {
+  if (integer === 0) return 0;
+  return Math.ceil(((integer).toString(2).replace('-','').length + 1)/ 8);
+};
+
+
 exports.intToBuffer = function(integer) {
+  var size = bytesNeededToStore(integer);
+  var buf = new Put();
+  var s = integer.toString(16);
+  var neg = s[0] === '-';
+  s = s.replace('-','');
+  for (var i=0; i<size; i++) {
+    var si = s.substring(s.length - 2*(i+1), s.length - 2*(i));
+    if (si.lenght === 1) {
+      si = '0' + si;
+    }
+    buf.word8((neg?-1:1)*parseInt(si, 16));
+  }
+  return buf.buffer();
+
   var data = null;
   if (fitsInNBits(integer, 8)) {
     data = new Buffer(1);
     data.writeInt8(integer, 0);
-    return data;
   } else if (fitsInNBits(integer, 16)) {
     data = new Buffer(2);
     data.writeInt16LE(integer, 0);
-    return data;
   } else if (fitsInNBits(integer, 32)) {
     data = new Buffer(4);
     data.writeInt32LE(integer, 0);
-    return data;
   } else {
     var x = intTo64Bits(integer);
     data = new Buffer(8);
     data.writeInt32LE(x.hi, 0); // high part contains sign information (signed)
     data.writeUInt32LE(x.lo, 4); // low part encoded as unsigned integer
-    return data;
   }
+  return data;
 };
 
 var formatValue = exports.formatValue = function (valueBuffer) {

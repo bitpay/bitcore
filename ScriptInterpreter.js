@@ -1,6 +1,7 @@
 var imports     = require('soop').imports();
 var config      = imports.config || require('./config');
 var log         = imports.log || require('./util/log');
+var util        = imports.util || require('./util/util');
 var Opcode      = imports.Opcode || require('./Opcode');
 var buffertools = imports.buffertools || require('buffertools');
 var bignum      = imports.bignum || require('bignum');
@@ -92,8 +93,9 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
         throw new Error("Encountered a disabled opcode");
       }
 
-      if (exec && Buffer.isBuffer(opcode))
+      if (exec && Buffer.isBuffer(opcode)) {
         this.stack.push(opcode);
+      }
       else if (exec || (OP_IF <= opcode && opcode <= OP_ENDIF))
         switch (opcode) {
           case OP_0:
@@ -350,6 +352,8 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
           case OP_SIZE:
             // (in -- in size)
             var value = bignum(this.stackTop().length);
+            //var topSize = util.bytesNeededToStore(castBigint(this.stackTop()).toNumber());
+            //var value = bignum(topSize);
             this.stack.push(bigintToBuffer(value));
             break;
 
