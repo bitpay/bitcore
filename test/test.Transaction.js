@@ -324,7 +324,7 @@ describe('Transaction', function() {
   });
 
   // Verify that known invalid transactions are interpretted correctly
-  test_data.dataTxInvalid.forEach(function(datum) {
+  testdata.dataTxInvalid.forEach(function(datum) {
     var testTx = parse_test_transaction(datum);
     if (!testTx) return;
     var transactionString = buffertools.toHex(
