@@ -30,6 +30,7 @@ var list = function(val) {
 program
   .version('0.0.1')
   .option('-a, --includeall', 'Include all submodules.')
+  .option('-d, --dontminify', 'Don\'t minify the code.')
   .option('-s, --submodules <items>', 'Include the listed comma-separated submodules.', list)
   .parse(process.argv);
 
@@ -98,8 +99,14 @@ modules.forEach(function(m) {
 });
 b.require('soop');
 
-b.bundle().pipe(fs.createWriteStream('browser/bundle.js'));
+if (!program.dontminify) {
+  b.transform({
+    global: true
+  }, 'uglifyify');
+}
 
+var bundle = b.bundle();
+bundle = bundle.pipe(fs.createWriteStream('browser/bundle.js'));
 
 opts.standalone = 'testdata';
 var tb = browserify(opts);

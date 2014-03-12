@@ -60,7 +60,8 @@
     "commander": "~2.1.0",
     "browserify-bignum": "git://github.com/maraoz/browserify-bignum.git",
     "browserify-buffertools": "~1.0.2",
-    "brfs": "~1.0.0"
+    "brfs": "~1.0.0",
+    "uglifyify": "~1.2.3"
   },
   "devDependencies": {
     "grunt-contrib-watch": "~0.5.3",
