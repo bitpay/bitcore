@@ -36,6 +36,7 @@
     "currency",
     "virtual"
   ],
+  "main": "bitcore.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/bitpay/bitcore.git"
