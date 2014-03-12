@@ -14,15 +14,21 @@ if (!process.versions) {
 var sha256 = exports.sha256 = function (data) {
   return new Buffer(crypto.createHash('sha256').update(data).digest('binary'), 'binary');
 };
-
 var ripe160 = exports.ripe160 = function (data) {
   if (!Buffer.isBuffer(data)) {
     throw new Error('arg should be a buffer');
   }
 
   if (!process.versions) {
-    var result = browser.ripemd160(data);
-    return new Buffer(result, 'hex');
+
+    var w = new browser.crypto31.lib.WordArray.init(Crypto.util.bytesToWords(data), data.length);
+    var wordArray = browser.crypto31.RIPEMD160(w);
+    var words = wordArray.words;
+    var answer = [];
+    for (var b = 0; b < words.length * 32; b += 8) {
+        answer.push((words[b >>> 5] >>> (24 - b % 32)) & 0xFF);
+    }
+    return new Buffer(answer, 'hex');
   }
   return new Buffer(crypto.createHash('rmd160').update(data).digest('binary'), 'binary');
 };
