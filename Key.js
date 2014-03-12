@@ -50,8 +50,6 @@ if (process.versions) {
   };
 
   kSpec.prototype.regenerateSync = function() {
-
-console.log('[Key.js.53]', this); //TODO
     if (!this.private) {
       throw new Error('Key does not have a private key set');
     }

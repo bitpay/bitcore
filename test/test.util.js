@@ -36,6 +36,23 @@ describe('util', function() {
       });
     });
   });
+  describe('#sha256', function() {
+    var pk = '03d95e184cce34c3cfa58e9a277a09a7c5ed1b2a8134ea1e52887bc66fa3f47071'
+    it('should work for ' + pk, function() {
+      var pubKeyHash = coinUtil.sha256(pk);
+      var pkh = buffertools.toHex(pubKeyHash);
+      pkh.should.equal('a5c756101065ac5b8f689139e6d856fa99e54b5000b6428b43729d334cc9277d');
+    });
+  });
+ 
+  describe('#sha256ripe160', function() {
+    var pk = '03d95e184cce34c3cfa58e9a277a09a7c5ed1b2a8134ea1e52887bc66fa3f47071'
+    it('should work for ' + pk, function() {
+      var pubKeyHash = coinUtil.sha256ripe160(pk);
+      var pkh = buffertools.toHex(pubKeyHash);
+      pkh.should.equal('d166a41f27fd4b158f70314e5eee8998bf3d97d5');
+    });
+  });
   describe('#ripemd160', function() {
     var ripemdData = [
       ['somemessage123', '12fd01a7ec6b9ba23b3a5c16fbfab3ac19624a88'],

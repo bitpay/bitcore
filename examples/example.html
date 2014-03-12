@@ -55,7 +55,19 @@
       var p  = new bitcore.PeerManager();
 
       print('<hr>');
+      var coinUtil = bitcore.util;
+ 
+      var pk = '03d95e184cce34c3cfa58e9a277a09a7c5ed1b2a8134ea1e52887bc66fa3f47071'
 
+      var pubKeyHash = coinUtil.sha256(pk);
+      print(bitcore.buffertools.toHex(pubKeyHash));
+      pubKeyHash = coinUtil.sha256ripe160(pk);
+      print(bitcore.buffertools.toHex(pubKeyHash));
+
+      pubKeyHash = coinUtil.ripe160(new bitcore.Buffer('hola'));
+      print(bitcore.buffertools.toHex(pubKeyHash)); 
+
+      print('<hr>');
       var WalletKey = bitcore.WalletKey;
       var networks  = bitcore.networks;
 
