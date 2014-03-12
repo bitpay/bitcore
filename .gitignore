@@ -1,0 +1,4 @@
+*.swp
+browser/
+build/
+node_modules/
