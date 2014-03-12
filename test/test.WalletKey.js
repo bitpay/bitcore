@@ -75,9 +75,9 @@ describe('WalletKey', function() {
     s.fromObj({ priv: priv});
     s.privKey.compressed.should.equal(false);
     var o = s.storeObj();
+    o.priv.should.equal(priv);
     o.pub.should.equal('04470bbc100896e4df317526efa22f15aac3681ef02d230d00d15b4cba8eea1e88477523d644f20edb6b344f06bba77a9dff81be69d74282866b0b7f3e9d0d910b');
     o.addr.should.equal('1v5GwPNomikEqmMe7h6q1jRw62WKTD6Xo');
-    o.priv.should.equal(priv);
   });
 
 
@@ -94,7 +94,6 @@ describe('WalletKey', function() {
     o.priv.should.equal(priv);
     o.pub.should.equal('03d95e184cce34c3cfa58e9a277a09a7c5ed1b2a8134ea1e52887bc66fa3f47071');
     o.addr.should.equal('1JEgFNDmEUdd6FvNhDBqSuw2uZ4yisSr7A');
-    o.priv.should.equal(priv);
   });
 
 

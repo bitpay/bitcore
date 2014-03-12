@@ -40,32 +40,34 @@
       });
       print('<hr>');
 
-      var Key = require('KeyModule').Key;
-      var buffertools = require('buffertools');
-      var k = Key.generateSync();
-
-      print ('Generate Key Pair:');
-      print ('Private:' + buffertools.toHex(k.private));
-      print ('Public:'  + buffertools.toHex(k.public));
-
-      print('<hr>');
 /*
       Using bitcore root module
 */
-
       var bitcore = require('bitcore');
       var k = bitcore.KeyModule.Key.generateSync();
 
       print ('Generate Key Pair:');
-      print ('Private:' + buffertools.toHex(k.private));
-      print ('Public:'  + buffertools.toHex(k.public));
+      print ('Private:' + bitcore.buffertools.toHex(k.private));
+      print ('Public:'  + bitcore.buffertools.toHex(k.public));
 
       print('<hr>');
 
-console.log('[example.html.65:PeerManager:]'); //TODO
+      var p  = new bitcore.PeerManager();
 
-      var pm = require('PeerManager');
+      print('<hr>');
 
+      var WalletKey = bitcore.WalletKey;
+      var networks  = bitcore.networks;
+
+      var priv = 'cU5NxfpfecLCUWnJyoUF6dCZqCfLSAZnTBPraCPis2if8iHHbNk1';
+      var s = new WalletKey({
+        network: networks.testnet
+      });
+      s.fromObj({ priv: priv});
+      var o = s.storeObj();
+      print("Private: " + o.priv);
+      print("Public: " + o.pub);
+      print("Addr: " + o.addr);
     </script>
   </body>
 </html>
