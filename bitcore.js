@@ -37,14 +37,11 @@ requireWhenAccessed('PrivateKey', './PrivateKey');
 requireWhenAccessed('RpcClient', './RpcClient');
 requireWhenAccessed('Wallet', './Wallet');
 requireWhenAccessed('WalletKey', './WalletKey');
+requireWhenAccessed('PeerManager', './PeerManager');
 module.exports.Buffer = Buffer;
 
 if (typeof process.versions === 'undefined') {
   // Browser specific
   module.exports.bignum.config({EXPONENTIAL_AT: 9999999, DECIMAL_PLACES: 0, ROUNDING_MODE: 1});
-}
-else {
-  // Nodejs specific
-  requireWhenAccessed('PeerManager', './PeerManager');
 }
 
