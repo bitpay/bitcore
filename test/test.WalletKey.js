@@ -50,6 +50,21 @@ describe('WalletKey', function() {
     s.privKey.private.toString().should.equal(s2.privKey.private.toString());
     s.privKey.public.toString().should.equal(s2.privKey.public.toString());
   });
+  it('test for pubs/addr from known priv key', function() {
+    var priv = 'cU5NxfpfecLCUWnJyoUF6dCZqCfLSAZnTBPraCPis2if8iHHbNk1';
+    var s = new WalletKey({
+      network: networks.testnet
+    });
+    s.fromObj({ priv: priv});
+    var o = s.storeObj();
+    o.priv.should.equal(priv);
+    o.pub.should.equal('03fd4788dd045c791043d739dd10d5e8b15aa6c9702f26116dde88ebbce6eb7706');
+    o.addr.should.equal('mqBsTsnVF2zifoGtm7UsXRfdJUr52Jg5d4');
+  });
+
+
+
+
 });
 
 
