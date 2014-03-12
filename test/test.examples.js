@@ -10,9 +10,10 @@ var examples = [
   'PeerManager',
   'Rpc',
   'SendTx',
+  'Script',
 ];
 
-describe('Examples run', function() {
+describe('Examples', function() {
   before(mute);
   after(unmute);
   examples.forEach(function(example) {

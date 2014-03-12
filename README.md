@@ -29,7 +29,8 @@ Some examples are provided at the [examples](/examples) path. Here are some snip
 ## Validating an address
 Validating a Bitcoin address:
 ```js
-var Address = require('bitcore/Address');
+var bitcore = require('bitcore');
+var Address = bitcore.Address;
 
 var addrs = [
   '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
@@ -48,80 +49,103 @@ addrs.forEach(function(addr) {
 ## Monitoring Blocks and Transactions
 For this example you need a running bitcoind instance with RPC enabled. 
 ```js
-var util        = require('util');
-var networks    = require('bitcore/networks');
-var Peer        = require('bitcore/Peer');
-var PeerManager = require('soop').load('bitcore/PeerManager',
-  {network: networks.testnet});
+var bitcore = require('bitcore');
+var networks = bitcore.networks;
+var Peer = bitcore.Peer;
+var PeerManager = require('soop').load('../PeerManager', {
+  network: networks.testnet
+});
 
 var handleBlock = function(info) {
-
   console.log('** Block Received **');
   console.log(info.message);
-
 };
 
 var handleTx = function(info) {
-
   var tx = info.message.tx.getStandardizedObject();
 
-  console.log('** Block TX **');
+  console.log('** TX Received **');
   console.log(tx);
-
 };
 
 var handleInv = function(info) {
-
-  console.log('** Block Inv **');
+  console.log('** Inv **');
   console.log(info.message);
 
   var invs = info.message.invs;
   info.conn.sendGetData(invs);
-
 };
 
 var peerman = new PeerManager();
 
-peerman.addPeer( new Peer('127.0.0.1', 18333) );
-  
+peerman.addPeer(new Peer('127.0.0.1', 18333));
+
 peerman.on('connection', function(conn) {
-  conn.on('inv',   handleInv);
+  conn.on('inv', handleInv);
   conn.on('block', handleBlock);
-  conn.on('tx',    handleTx);
+  conn.on('tx', handleTx);
 });
 
 peerman.start();
-
 ```
 
 PeerManager will emit the following events: 'version', 'verack', 'addr', 'getaddr', 'error' 'disconnect'; and will relay events like: 'tx', 'block', 'inv'. Please see  [PeerManager.js](PeerManager.js), [Peer.js](Peer.js) and [Connection.js](Connection.js)
 
 
+## Consuming bitcoind RPC
+For this example you need a running bitcoind instance with RPC enabled. 
+```js
+var bitcore = require('bitcore');
+var RpcClient = bitcore.RpcClient;
+var hash = '0000000000b6288775bbd326bedf324ca8717a15191da58391535408205aada4';
+
+var config = {
+  protocol: 'http',
+  user: 'user',
+  pass: 'pass',
+  host: '127.0.0.1',
+  port: '18332',
+};
+
+var rpc = new RpcClient(config);
+
+rpc.getBlock(hash, function(err, ret) {
+  if (err) {
+    console.error('An error occured fetching block', hash);
+    console.error(err);
+    return;
+  }
+  console.log(ret);
+});
+```
+Check the list of all supported RPC call at [RpcClient.js](RpcClient.js)
+
 ## Creating and sending a Transaction through P2P
 For this example you need a running bitcoind instance with RPC enabled. 
 ```js
-var networks    = require('bitcore/networks');
-var Peer        = require('bitcore/Peer');
-var Transaction = require('bitcore/Transaction');
-var Address     = require('bitcore/Address');
-var Script      = require('bitcore/Script');
-var coinUtil    = require('bitcore/util/util');
-var PeerManager = require('soop').load('bitcore/PeerManager',
-  {network: networks.testnet});
+var bitcore = require('bitcore');
+var networks = bitcore.networks;
+var Peer = bitcore.Peer;
+var Transaction = bitcore.Transaction;
+var Address = bitcore.Address;
+var Script = bitcore.Script;
+var coinUtil = bitcore.util;
+var PeerManager = require('soop').load('../PeerManager', {
+  network: networks.testnet
+});
 
 var createTx = function() {
-
-  var TXIN   = 'd05f35e0bbc495f6dcab03e599c8f5e32a07cdb4bc76964de201d06a2a7d8265';
+  var TXIN = 'd05f35e0bbc495f6dcab03e599c8f5e32a07cdb4bc76964de201d06a2a7d8265';
   var TXIN_N = 0;
-  var ADDR   = 'muHct3YZ9Nd5Pq7uLYYhXRAxeW4EnpcaLz';
-  var VAL    = '1.234';
+  var ADDR = 'muHct3YZ9Nd5Pq7uLYYhXRAxeW4EnpcaLz';
+  var VAL = '0.001';
 
   var txobj = {
-    version:   1,
+    version: 1,
     lock_time: 0,
-    ins:       [],
-    outs:      []
-  }
+    ins: [],
+    outs: []
+  };
 
   var txin = {
     s: coinUtil.EMPTY_BUFFER, // Add signature
@@ -129,18 +153,17 @@ var createTx = function() {
   };
 
   var hash = new Buffer(TXIN.split('').reverse(), 'hex');
-
-  var vout    = parseInt(TXIN_N);
+  var vout = parseInt(TXIN_N);
   var voutBuf = new Buffer(4);
 
   voutBuf.writeUInt32LE(vout, 0);
   txin.o = Buffer.concat([hash, voutBuf]);
   txobj.ins.push(txin);
 
-  var addr     = new Address(ADDR);
-  var script   = Script.createPubKeyHashOut(addr.payload());
+  var addr = new Address(ADDR);
+  var script = Script.createPubKeyHashOut(addr.payload());
   var valueNum = coinUtil.parseValue(VAL);
-  var value    = coinUtil.bigIntToValue(valueNum);
+  var value = coinUtil.bigIntToValue(valueNum);
 
   var txout = {
     v: value,
@@ -155,97 +178,67 @@ var createTx = function() {
 var peerman = new PeerManager();
 peerman.addPeer(new Peer('127.0.0.1', 18333));
 
-peerman.on('connect', function(conn) {
-
+peerman.on('connect', function() {
   var conn = peerman.getActiveConnection();
-
   if (conn) {
     conn.sendTx(createTx());
   }
-
-  conn.on('reject', function () {
-    console.log('Transaction Rejected'); 
+  conn.on('reject', function() {
+    console.log('Transaction Rejected');
   });
-
 });
 
 peerman.start();
 ```
 
-## Consuming bitcoind RPC
-For this example you need a running bitcoind instance with RPC enabled. 
-```js
-var util      = require('util');
-var RpcClient = require('bitcore/RpcClient');
-var hash      = process.argv[2] || '0000000000b6288775bbd326bedf324ca8717a15191da58391535408205aada4';
-
- var config =  {   
-   protocol: 'http',
-   user:     'user',
-   pass:     'pass',
-   host:     '127.0.0.1',
-   port:     '18332',
-};
- 
-var rpc   = new RpcClient(config);
-
-rpc.getBlock(hash, function(err, ret) {
-
-  if(err) {
-    console.error("An error occured fetching block", hash);
-    console.error(err);
-    return;
-  }
-
-  console.log(ret);
-
-});
-```
-Check the list of all supported RPC call at [RpcClient.js](RpcClient.js)
 
 ## Parsing a Script 
 
-Gets an address strings from a  ScriptPubKey Buffer
+Gets an address strings from a ScriptPubKey Buffer
 
-```
-  var Address = require('bitcore/Address');
-  var coinUtil= require('bitcore/util/util');
+```js
+var bitcore = require('bitcore');
+var Address = bitcore.Address;
+var coinUtil = bitcore.util;
+var Script = bitcore.Script;
+var network = bitcore.networks.testnet;
 
-  var getAddrStr = function(s) {
-    var addrStrs = [];
-    var type = s.classify();
-    var addr;
+var getAddrStr = function(s) {
+  var addrStrs = [];
+  var type = s.classify();
+  var addr;
 
-    switch (type) {
-      case Script.TX_PUBKEY:
-        var chunk = s.captureOne();
-        addr = new Address(network.addressPubkey, coinUtil.sha256ripe160(chunk));
-        addrStrs.push(addr.toString());
-        break;
-      case Script.TX_PUBKEYHASH:
-        addr = new Address(network.addressPubkey, s.captureOne());
-        addrStrs.push(addr.toString());
-        break;
-      case Script.TX_SCRIPTHASH:
-        addr = new Address(network.addressScript, s.captureOne());
-        addrStrs.push(addr.toString());
-        break;
-      case Script.TX_MULTISIG:
-        var chunks = s.capture();
-        chunks.forEach(function(chunk) {
-          var a = new Address(network.addressPubkey, coinUtil.sha256ripe160(chunk));
-          addrStrs.push(a.toString());
-        });
-        break;
-      case Script.TX_UNKNOWN:
-        break;
-    }
-    return addrStrs;
-  };
+  switch (type) {
+    case Script.TX_PUBKEY:
+      var chunk = s.captureOne();
+      addr = new Address(network.addressPubkey, coinUtil.sha256ripe160(chunk));
+      addrStrs.push(addr.toString());
+      break;
+    case Script.TX_PUBKEYHASH:
+      addr = new Address(network.addressPubkey, s.captureOne());
+      addrStrs.push(addr.toString());
+      break;
+    case Script.TX_SCRIPTHASH:
+      addr = new Address(network.addressScript, s.captureOne());
+      addrStrs.push(addr.toString());
+      break;
+    case Script.TX_MULTISIG:
+      var chunks = s.capture();
+      chunks.forEach(function(chunk) {
+        var a = new Address(network.addressPubkey, coinUtil.sha256ripe160(chunk));
+        addrStrs.push(a.toString());
+      });
+      break;
+    case Script.TX_UNKNOWN:
+      console.log('tx type unkown');
+      break;
+  }
+  return addrStrs;
+};
 
-  var s = new Script(scriptBuffer);
-  console.log(getAddrStr(s);
-  
+var script = 'DUP HASH160 0x14 0x3744841e13b90b4aca16fe793a7f88da3a23cc71 EQUALVERIFY CHECKSIG';
+var s = Script.fromHumanReadable(script);
+console.log(getAddrStr(s)[0]); // mkZBYBiq6DNoQEKakpMJegyDbw2YiNQnHT
 ```
 
 #Security
