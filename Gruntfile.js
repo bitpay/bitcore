@@ -16,7 +16,7 @@ module.exports = function(grunt) {
           stdout: true,
           stderr: true
         },
-        command: 'node ./browser/browserify.js -a',
+        command: 'node ./browser/build.js -a',
       }
     },
     watch: {
