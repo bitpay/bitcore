@@ -43,7 +43,7 @@
   },
   "scripts": {
     "test": "mocha test -R spec",
-    "postinstall": "node_modules/.bin/grunt shell"
+    "postinstall": "node browser/browserify.js -a"
   },
   "dependencies": {
     "soop": "git://github.com/bitpay/soop.git",
@@ -69,8 +69,7 @@
     "chai": "~1.9.0",
     "brfs": "~1.0.0",
     "async": "~0.2.10",
-    "commander": "~2.1.0",
-    "grunt": "~0.4.3"
+    "commander": "~2.1.0"
   },
   "license": "MIT"
 }

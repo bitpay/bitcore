@@ -109,5 +109,6 @@ tb.transform('brfs');
 tb.bundle().pipe(fs.createWriteStream('browser/testdata.js'));
 
 
+console.log('cwd '+__dirname);
 
 
