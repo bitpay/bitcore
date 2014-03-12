@@ -74,6 +74,10 @@ var modules = [
   'config',
   'const',
   'networks',
+  'util/log',
+  'util/util',
+  'util/EncodedData',
+  'util/VersionedData',
 ];
 
 var opts = {};
@@ -85,19 +89,14 @@ opts.insertGlobals = true;
 var b = browserify(opts);
 b.require('browserify-bignum/bignumber.js', {expose: 'bignum'} );
 b.require('browserify-buffertools/buffertools.js', {expose:'buffertools'});
+b.require('base58-native', {expose: 'base58-native'});
 b.require('./bitcore', {expose: 'bitcore'});
-b.require('base58-native');
-b.require('./util/log');
-b.require('./util/util');
-b.require('./util/EncodedData');
-b.require('./util/VersionedData');
 modules.forEach(function(m) {
   if (program.includeall || program.submodules.indexOf(m) > -1) {
     console.log('Including '+m+' in the browser bundle');
     b.require('./' + m + '.js' , {expose: './'+m} );
   }
 });
-b.require('soop');
 
 if (!program.dontminify) {
   b.transform({
