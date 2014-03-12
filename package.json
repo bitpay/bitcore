@@ -54,7 +54,8 @@
     "binary": "=0.3.0",
     "step": "=0.0.4",
     "buffers": "=0.1.1",
-    "buffertools": "~2.0.1"
+    "buffertools": "~2.0.1",
+    "browserify": "~3.32.1"
   },
   "devDependencies": {
     "grunt-contrib-watch": "~0.5.3",
@@ -69,8 +70,7 @@
     "chai": "~1.9.0",
     "brfs": "~1.0.0",
     "async": "~0.2.10",
-    "commander": "~2.1.0",
-    "browserify": "~3.32.1"
+    "commander": "~2.1.0"
   },
   "license": "MIT"
 }
