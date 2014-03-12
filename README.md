@@ -262,7 +262,7 @@ To build bitcore full bundle for the browser:
 (this is automatically executed after you run `npm install`)
 
 ```
-node browser/browserify.js -a
+node browser/build.js -a
 ```
 This will generate a `browser/bundle.js` file which you can include
 in your HTML to use bitcore in the browser.
@@ -294,7 +294,7 @@ To generate a customized bitcore bundle, you can specify
 which submodules you want to include in it with the -s option:
 
 ```
-node browser/browserify.js -s Transaction,Address
+node browser/build.js -s Transaction,Address
 ```
 This will generate a `browser/bundle.js` containing only the Transaction
  and Address class, with all their dependencies. 
