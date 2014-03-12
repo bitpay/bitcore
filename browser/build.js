@@ -30,6 +30,7 @@ var list = function(val) {
 program
   .version('0.0.1')
   .option('-a, --includeall', 'Include all submodules.')
+  .option('-d, --dontminify', 'Don\'t minify the code.')
   .option('-s, --submodules <items>', 'Include the listed comma-separated submodules.', list)
   .parse(process.argv);
 
@@ -73,6 +74,10 @@ var modules = [
   'config',
   'const',
   'networks',
+  'util/log',
+  'util/util',
+  'util/EncodedData',
+  'util/VersionedData',
 ];
 
 var opts = {};
@@ -84,22 +89,23 @@ opts.insertGlobals = true;
 var b = browserify(opts);
 b.require('browserify-bignum/bignumber.js', {expose: 'bignum'} );
 b.require('browserify-buffertools/buffertools.js', {expose:'buffertools'});
+b.require('base58-native', {expose: 'base58-native'});
 b.require('./bitcore', {expose: 'bitcore'});
-b.require('base58-native');
-b.require('./util/log');
-b.require('./util/util');
-b.require('./util/EncodedData');
-b.require('./util/VersionedData');
 modules.forEach(function(m) {
   if (program.includeall || program.submodules.indexOf(m) > -1) {
     console.log('Including '+m+' in the browser bundle');
     b.require('./' + m + '.js' , {expose: './'+m} );
   }
 });
-b.require('soop');
 
-b.bundle().pipe(fs.createWriteStream('browser/bundle.js'));
+if (!program.dontminify) {
+  b.transform({
+    global: true
+  }, 'uglifyify');
+}
 
+var bundle = b.bundle();
+bundle = bundle.pipe(fs.createWriteStream('browser/bundle.js'));
 
 opts.standalone = 'testdata';
 var tb = browserify(opts);
