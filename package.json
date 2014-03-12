@@ -1,7 +1,7 @@
 {
   "name": "bitcore",
   "description": "Bitcoin Library",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "author": {
     "name": "Stephen Pair",
     "email": "stephen@bitpay.com"
@@ -46,7 +46,7 @@
     "postinstall": "node browser/build.js -a"
   },
   "dependencies": {
-    "soop": "git://github.com/bitpay/soop.git",
+    "soop": "=0.1.5",
     "base58-native": "=0.1.3",
     "bindings": "=1.1.1",
     "bufferput": "git://github.com/bitpay/node-bufferput.git",
