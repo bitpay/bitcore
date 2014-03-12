@@ -23,7 +23,7 @@ WalletKey.prototype.storeObj = function() {
   var pubKey = this.privKey.public.toString('hex');
 console.log('[WalletKey.js.23:pubKey:]',pubKey); //TODO
   var pubKeyHash = coinUtil.sha256ripe160(this.privKey.public);
-console.log('[WalletKey.js.25:pubKeyHash:]',pubKeyHash); //TODO
+console.log('[WalletKey.js.25:pubKeyHash:]', buffertools.toHex(pubKeyHash)); //TODO
   var addr = new Address(this.network.addressPubkey, pubKeyHash);
   var priv = new PrivateKey(this.network.keySecret, this.privKey.private, this.privKey.compressed);
   var obj = {

@@ -59,9 +59,9 @@
       var WalletKey = bitcore.WalletKey;
       var networks  = bitcore.networks;
 
-      var priv = 'cU5NxfpfecLCUWnJyoUF6dCZqCfLSAZnTBPraCPis2if8iHHbNk1';
+      var priv = 'L4cEVwoNDeYdCQfFJAGkGKPnE2TmqLEuBn4znQChD2ojjQRJVKpU';
       var s = new WalletKey({
-        network: networks.testnet
+        network: networks.livenet
       });
       s.fromObj({ priv: priv});
       var o = s.storeObj();
