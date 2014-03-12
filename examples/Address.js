@@ -2,8 +2,9 @@
 
 
 var run = function() {
-  // Replace '..' with 'bitcore' if you plan on using this code elsewhere.
-  var Address = require('../Address');
+  // Replace '../bitcore' with 'bitcore' if you use this code elsewhere.
+  var bitcore = require('../bitcore');
+  var Address = bitcore.Address;
 
   var addrs = [
     '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',

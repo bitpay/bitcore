@@ -1,13 +1,14 @@
 'use strict';
 
 var run = function() {
-  // Replace '..' with 'bitcore' if you plan on using this code elsewhere.
-  var networks = require('../networks');
-  var Peer = require('../Peer');
-  var Transaction = require('../Transaction');
-  var Address = require('../Address');
-  var Script = require('../Script');
-  var coinUtil = require('../util/util');
+  // Replace '../bitcore' with 'bitcore' if you use this code elsewhere.
+  var bitcore = require('../bitcore');
+  var networks = bitcore.networks;
+  var Peer = bitcore.Peer;
+  var Transaction = bitcore.Transaction;
+  var Address = bitcore.Address;
+  var Script = bitcore.Script;
+  var coinUtil = bitcore.util;
   var PeerManager = require('soop').load('../PeerManager', {
     network: networks.testnet
   });
