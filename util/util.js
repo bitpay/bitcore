@@ -4,10 +4,10 @@ var bignum = require('bignum');
 var Binary = require('binary');
 var Put = require('bufferput');
 var buffertools = require('buffertools');
-var bjs;
+var browser;
 if (!process.versions) {
   // browser version
-  bjs = require('../browser/bitcoinjs-lib.js');
+  browser = require('../browser/vendor-bundle.js');
 }
 
 
@@ -21,7 +21,7 @@ var ripe160 = exports.ripe160 = function (data) {
   }
 
   if (!process.versions) {
-    var result = bjs.ripemd160(data);
+    var result = browser.ripemd160(data);
     return new Buffer(result, 'hex');
   }
   return new Buffer(crypto.createHash('rmd160').update(data).digest('binary'), 'binary');

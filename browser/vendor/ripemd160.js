@@ -29,5 +29,17 @@ f+(((m|~n)^p)+c[2]):64>b?f+((m&p|n&~p)+c[3]):f+((m^(n|~p))+c[4]),f|=0,f=f<<k[b]|
 e[a>>>5]|=128<<24-a%32;e[(a+64>>>9<<4)+14]=(b<<8|b>>>24)&16711935|(b<<24|b>>>8)&4278255360;g.sigBytes=4*(e.length+1);this._process();g=this._hash;e=g.words;for(b=0;5>b;b++)a=e[b],e[b]=(a<<8|a>>>24)&16711935|(a<<24|a>>>8)&4278255360;return g},clone:function(){var e=l.clone.call(this);e._hash=this._hash.clone();return e}});j.RIPEMD160=l._createHelper(k);j.HmacRIPEMD160=l._createHmacHelper(k)})(Math);
 
 
-module.exports.RIPEMD160 = CryptoJS.RIPEMD160;
-module.exports.WordArray = CryptoJS.lib.WordArray;
+module.exports.ripemd160 = function(bytes) {
+  if (!Buffer.isBuffer(bytes)) {
+    throw new Error('arg should be a buffer');
+  }
+  var w = new CryptoJS.lib.WordArray.init(Crypto.util.bytesToWords(bytes), bytes.length);
+  var wordArray = CryptoJS.RIPEMD160(w);
+  var words = wordArray.words;
+  var answer = [];
+  for (var b = 0; b < words.length * 32; b += 8) {
+      answer.push((words[b >>> 5] >>> (24 - b % 32)) & 0xFF);
+  }
+  return answer;
+};
+
