@@ -80,7 +80,7 @@ console.log(addr.isValid());
 var bitcore = require('bitcore');
 var networks = bitcore.networks;
 var Peer = bitcore.Peer;
-var PeerManager = require('soop').load('./node_modules/PeerManager', {
+var PeerManager = require('soop').load('./node_modules/bitcore/PeerManager', {
   network: networks.testnet
 });
 
@@ -154,7 +154,7 @@ var Transaction = bitcore.Transaction;
 var Address = bitcore.Address;
 var Script = bitcore.Script;
 var coinUtil = bitcore.util;
-var PeerManager = require('soop').load('./node_modules/PeerManager', {
+var PeerManager = require('soop').load('./node_modules/bitcore/PeerManager', {
   network: networks.testnet
 });
 
