@@ -19,6 +19,7 @@
         div.innerHTML += s + '<br />';
       };
 
+      print('<hr> <h1>Address</h1>' );
       var addrStrings = [
         "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
         "1A1zP1eP5QGefi2DMPTfTL5SLmv7Dixxxx",
@@ -38,8 +39,7 @@
         }
     
       });
-      print('<hr>');
-
+      print('<hr> <h1>KeyModule</h1>' );
 /*
       Using bitcore root module
 */
@@ -50,11 +50,11 @@
       print ('Private:' + bitcore.buffertools.toHex(k.private));
       print ('Public:'  + bitcore.buffertools.toHex(k.public));
 
-      print('<hr>');
+      print('<hr> <h1>PeerManager</h1>' );
 
       var p  = new bitcore.PeerManager();
 
-      print('<hr>');
+      print('<hr> <h1>Util</h1>' );
       var coinUtil = bitcore.util;
  
       var pk = '03d95e184cce34c3cfa58e9a277a09a7c5ed1b2a8134ea1e52887bc66fa3f47071'
@@ -64,10 +64,20 @@
       pubKeyHash = coinUtil.sha256ripe160(pk);
       print(bitcore.buffertools.toHex(pubKeyHash));
 
+
+      var Buffer = bitcore.Buffer;
+
       pubKeyHash = coinUtil.ripe160(new bitcore.Buffer('hola'));
       print(bitcore.buffertools.toHex(pubKeyHash)); 
 
-      print('<hr>');
+      var bu = new Buffer('a5c756101065ac5b8f689139e6d856fa99e54b5000b6428b43729d334cc9277d', 'hex');
+      print(bitcore.buffertools.toHex(bu));
+
+      var pubKeyHash2 = coinUtil.ripe160(bu);
+      print(bitcore.buffertools.toHex(pubKeyHash2)); 
+
+
+      print('<hr><h1>WalletKey </h1>');
       var WalletKey = bitcore.WalletKey;
       var networks  = bitcore.networks;
 
