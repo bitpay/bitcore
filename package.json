@@ -69,7 +69,8 @@
     "chai": "~1.9.0",
     "brfs": "~1.0.0",
     "async": "~0.2.10",
-    "commander": "~2.1.0"
+    "commander": "~2.1.0",
+    "browserify": "~3.32.1"
   },
   "license": "MIT"
 }
