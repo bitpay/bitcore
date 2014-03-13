@@ -141,7 +141,7 @@ if (require.main === module) {
     .option('-a, --includeall', 'Include all submodules.')
     .option('-d, --dontminify', 'Don\'t minify the code.')
     .option('-o, --stdout', 'Specify output as stdout')
-    .option('-D, --dir', 'Specify a base directory')
+    .option('-D, --dir <dir>', 'Specify a base directory')
     .option('-s, --submodules <items>', 'Include the listed comma-separated submodules.', list)
     .parse(process.argv);
   if (!program.stdout) {
