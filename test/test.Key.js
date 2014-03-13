@@ -56,6 +56,16 @@ describe('Key', function() {
     buffertools.toHex(k.private).should.equal(pkshex);
     buffertools.toHex(k.public).should.equal(pubhex);
   });
+  it('should generate a hardcoded public key example', function() {
+    var k = new Key();
+    k.private = new Buffer('876156ccb16bb1760ddda6ad3e561c026fc0d679ad7860b71dd11c30e42f6589','hex');
+    k.regenerateSync();
+
+    k.compressed.should.equal(true);
+    var pHex = bitcore.buffertools.toHex(k.public);
+    pHex.should.equal('0394615227fd5ff4d4dfac88cf148e43d35a7a059788dd2479f60cea807b09d0c2');
+  });
+
   it('should not fail checking good signSync status', function() {
     var k = Key.generateSync();
     var b = new Buffer(32);
@@ -92,15 +102,7 @@ describe('Key', function() {
     var ret= k2.verifySignatureSync(a_hash, sig);
     ret.should.equal(true);
   });
-  it('should generate a hardcoded public key example', function() {
-    var k = new Key();
-    k.private = new Buffer('876156ccb16bb1760ddda6ad3e561c026fc0d679ad7860b71dd11c30e42f6589','hex');
-    k.regenerateSync();
 
-    k.compressed.should.equal(true);
-    var pHex = bitcore.buffertools.toHex(k.public);
-    pHex.should.equal('0394615227fd5ff4d4dfac88cf148e43d35a7a059788dd2479f60cea807b09d0c2');
-  });
   it('should verify a hardcoded example', function() {
     var k = new Key();
     k.private = new Buffer('876156ccb16bb1760ddda6ad3e561c026fc0d679ad7860b71dd11c30e42f6589','hex');

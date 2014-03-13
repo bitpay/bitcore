@@ -71,7 +71,7 @@ if (process.versions) {
     }
     var eck = new ECKey(buffertools.toHex(this.private));
     eck.setCompressed(this.compressed);
-    var signature = eck.sign(hash);
+    var signature = eck.sign(bufferToArray(hash));
     // return it as a buffer to keep c++ compatibility
     return new Buffer(signature);
   };
@@ -93,7 +93,7 @@ if (process.versions) {
     eck.setPub(bufferToArray(self.public));
     eck.setCompressed(self.compressed);
     var sigA = bufferToArray(sig);
-    var ret = eck.verify(hash,sigA);
+    var ret = eck.verify(bufferToArray(hash),sigA);
     return ret;
   };
 
