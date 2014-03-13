@@ -2,7 +2,7 @@
 
 
 var run = function() {
-  var bitcore = require('../bitcore');
+  bitcore = bitcore || require('../bitcore');
 
   var priv    = 'cTgGUrcro89yUtKeG6gHBAS14r3qp25KwTTxG9d4kEzcFxecuZDm';
   var amt     = '0.005';
