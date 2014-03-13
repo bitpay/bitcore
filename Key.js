@@ -21,6 +21,7 @@ if (process.versions) {
 
   var kSpec = function() {
     this._pub = null;
+    this.compressed = true; // default
   };
 
 
