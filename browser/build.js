@@ -80,13 +80,13 @@ var createBitcore = function(opts) {
   };
   var b = browserify(bopts);
 
-  b.require('browserify-bignum/bignumber.js', {
+  b.require(opts.dir + 'browserify-bignum/bignumber.js', {
     expose: 'bignum'
   });
-  b.require('browserify-buffertools/buffertools.js', {
+  b.require(opts.dir + 'browserify-buffertools/buffertools.js', {
     expose: 'buffertools'
   });
-  b.require('base58-native', {
+  b.require(opts.dir + 'base58-native', {
     expose: 'base58-native'
   });
   b.require('./'+ opts.dir +'bitcore', {
