@@ -10,6 +10,7 @@ var examples = [
   'PeerManager',
   'Rpc',
   'SendTx',
+  'CreateAndSignTx',
   'Script',
 ];
 
