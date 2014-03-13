@@ -7,8 +7,8 @@ var exec = require('child_process').exec;
 var sys = require('sys');
 var puts = function(error, stdout, stderr) {
   if (error) console.log(error);
-  sys.puts(stdout);
-  sys.puts(stderr);
+  //sys.puts(stdout);
+  //sys.puts(stderr);
 };
 
 var pack = function (params) {
@@ -63,7 +63,7 @@ var createBitcore = function(opts) {
   exec('cd ' + opts.dir + 'browser; sh concat.sh', puts);
 
   if (!opts.includeall && (!opts.submodules || opts.submodules.length === 0)) {
-    console.log('Must use either -s or -a option. For more info use the --help option');
+    if (!opts.stdout) console.log('Must use either -s or -a option. For more info use the --help option');
     process.exit(1);
   }
 
@@ -96,7 +96,7 @@ var createBitcore = function(opts) {
   });
   modules.forEach(function(m) {
     if (opts.includeall || opts.submodules.indexOf(m) > -1) {
-      console.log('Including ' + m + ' in the browser bundle');
+      if (!opts.stdout) console.log('Including ' + m + ' in the browser bundle');
       b.require('./' + opts.dir + m + '.js', {
         expose: './' + m
       });
