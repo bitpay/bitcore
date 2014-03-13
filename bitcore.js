@@ -30,7 +30,7 @@ requireWhenAccessed('Peer', './Peer');
 requireWhenAccessed('Block', './Block');
 requireWhenAccessed('ScriptInterpreter', './ScriptInterpreter');
 requireWhenAccessed('Bloom', './Bloom');
-requireWhenAccessed('KeyModule', './Key');
+requireWhenAccessed('Key', './Key');
 requireWhenAccessed('SINKey', './SINKey');
 requireWhenAccessed('SIN', './SIN');
 requireWhenAccessed('PrivateKey', './PrivateKey');

@@ -2,7 +2,9 @@
 
 if (process.versions) {
   // c++ native version
-  module.exports = require('bindings')('KeyModule');
+  var KeyModule = require('bindings')('KeyModule');
+  var Key = KeyModule.Key;
+  module.exports = Key;
 } else {
   // pure js version
   var ECKey = require('./browser/vendor-bundle.js').ECKey;
@@ -97,10 +99,8 @@ if (process.versions) {
     return ret;
   };
 
+  module.exports = kSpec;
 
-  module.exports = {
-    Key: kSpec
-  };
 }
 
 

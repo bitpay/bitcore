@@ -1,6 +1,6 @@
 var coinUtil  = require('./util/util');
 var timeUtil  = require('./util/time');
-var KeyModule = require('./Key');
+var Key = require('./Key');
 var SIN       = require('./SIN');
 
 function SINKey(cfg) {
@@ -12,7 +12,7 @@ function SINKey(cfg) {
 };
 
 SINKey.prototype.generate = function() {
-  this.privKey = KeyModule.Key.generateSync();
+  this.privKey = Key.generateSync();
   this.created = timeUtil.curtime();
 };
 

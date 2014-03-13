@@ -7,17 +7,11 @@ var buffertools = require('buffertools');
 
 var should = chai.should();
 
-var KeyModule = bitcore.KeyModule;
-var Key;
+var Key = bitcore.Key;
 describe('Key', function() {
   it('should initialze the main object', function() {
-    should.exist(KeyModule);
-  });
-  it('should be able to create class', function() {
-    Key = KeyModule.Key;
     should.exist(Key);
   });
-  Key = KeyModule.Key;
   it('should be able to create instance', function() {
     var k = new Key();
     should.exist(k);

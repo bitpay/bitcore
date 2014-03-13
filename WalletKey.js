@@ -2,7 +2,7 @@ var imports = require('soop').imports();
 
 var coinUtil = require('./util/util');
 var timeUtil = require('./util/time');
-var KeyModule = require('./Key');
+var Key= require('./Key');
 var PrivateKey = require('./PrivateKey');
 var Address = require('./Address');
 
@@ -15,7 +15,7 @@ function WalletKey(cfg) {
 };
 
 WalletKey.prototype.generate = function() {
-  this.privKey = KeyModule.Key.generateSync();
+  this.privKey = Key.generateSync();
   this.created = timeUtil.curtime();
 };
 
@@ -36,7 +36,7 @@ WalletKey.prototype.storeObj = function() {
 
 WalletKey.prototype.fromObj = function(obj) {
   this.created = obj.created;
-  this.privKey = new KeyModule.Key();
+  this.privKey = new Key();
   if (obj.priv.length==64) {
     this.privKey.private = new Buffer(obj.priv,'hex');
     this.privKey.compressed = true;
