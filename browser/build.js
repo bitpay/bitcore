@@ -91,13 +91,13 @@ var createBitcore = function(opts) {
   b.require('base58-native', {
     expose: 'base58-native'
   });
-  b.require('./bitcore', {
+  b.require('./'+ opts.dir +'bitcore', {
     expose: 'bitcore'
   });
   modules.forEach(function(m) {
     if (opts.includeall || opts.submodules.indexOf(m) > -1) {
       console.log('Including ' + m + ' in the browser bundle');
-      b.require('./' + m + '.js', {
+      b.require('./' + opts.dir + m + '.js', {
         expose: './' + m
       });
     }
