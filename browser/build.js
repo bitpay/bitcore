@@ -63,6 +63,13 @@ var createBitcore = function(opts) {
     console.log('Must use either -s or -a option. For more info use the --help option');
     process.exit(1);
   }
+  
+  if (opts.submodules) {
+    for (var i = 0; i<opts.submodules.length; i++) {
+      var sm = opts.submodules[i];
+      if (modules.indexOf(sm) === -1) throw new Error('Unknown submodule '+sm);
+    }
+  }
 
   var bopts = {
     pack : pack,
