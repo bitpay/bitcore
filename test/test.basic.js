@@ -9,7 +9,7 @@ var should = chai.should();
 var Address = bitcore.Address;
 var PrivateKey = bitcore.PrivateKey;
 var networks = bitcore.networks;
-var KeyModule = bitcore.KeyModule;
+var Key = bitcore.Key;
 
 
 
@@ -26,7 +26,7 @@ function test_encode_priv(b58, payload, isTestnet, isCompressed) {
   } else
     buf = buf_pl;
 
-  var key = new KeyModule.Key();
+  var key = new Key();
   key.private = buf;
   key.compressed = isCompressed;
 

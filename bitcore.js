@@ -30,7 +30,11 @@ requireWhenAccessed('Peer', './Peer');
 requireWhenAccessed('Block', './Block');
 requireWhenAccessed('ScriptInterpreter', './ScriptInterpreter');
 requireWhenAccessed('Bloom', './Bloom');
-requireWhenAccessed('KeyModule', './Key');
+requireWhenAccessed('Key', './Key');
+Object.defineProperty(module.exports, 'KeyModule', {get: function() {
+  console.log('KeyModule is deprecated.');
+  return require('bindings')('KeyModule');
+}});
 requireWhenAccessed('SINKey', './SINKey');
 requireWhenAccessed('SIN', './SIN');
 requireWhenAccessed('PrivateKey', './PrivateKey');
