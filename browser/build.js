@@ -142,5 +142,7 @@ if (require.main === module) {
 
   testBundle.pipe(fs.createWriteStream('browser/testdata.js'));
   bitcoreBundle.pipe(fs.createWriteStream('browser/bundle.js'));
-
 }
+
+module.exports.createBitcore = createBitcore;
+module.exports.createTestData = createTestData;
