@@ -17,9 +17,12 @@ Bitcore runs on [node](http://nodejs.org/), and can be installed via [npm](https
 npm install bitcore
 ```
 
-It is a collection of objects useful to bitcoin applications; class-like idioms are enabled via [Soop](https://github.com/gasteve/soop). In most cases, a developer will require the object's class directly:
+It is a collection of objects useful to bitcoin applications; class-like idioms are enabled via [Soop](https://github.com/gasteve/soop). In most cases, a developer will require the object's class directly. For instance:
 ```
-var Address = require('bitcore/Address');
+var bitcore = require('bitcore');
+var Address = bitcore.Address;
+var Transaction = bitcore.Transaction;
+var PeerManager = bitcore.PeerManager;
 ```
 
 #Examples
