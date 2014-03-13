@@ -60,24 +60,24 @@ var createBitcore = function(opts) {
   opts.dir = opts.dir || '';
 
   // concat browser vendor files
-  exec('cd '+opts.dir+'browser; sh concat.sh', puts);
+  exec('cd ' + opts.dir + 'browser; sh concat.sh', puts);
 
   if (!opts.includeall && (!opts.submodules || opts.submodules.length === 0)) {
     console.log('Must use either -s or -a option. For more info use the --help option');
     process.exit(1);
   }
-  
+
   if (opts.submodules) {
-    for (var i = 0; i<opts.submodules.length; i++) {
+    for (var i = 0; i < opts.submodules.length; i++) {
       var sm = opts.submodules[i];
-      if (modules.indexOf(sm) === -1) throw new Error('Unknown submodule '+sm);
+      if (modules.indexOf(sm) === -1) throw new Error('Unknown submodule ' + sm);
     }
   }
 
   var bopts = {
-    pack : pack,
-    debug : true,
-    standalone : 'bitcore',
+    pack: pack,
+    debug: true,
+    standalone: 'bitcore',
     insertGlobals: true
   };
   var b = browserify(bopts);
@@ -91,7 +91,7 @@ var createBitcore = function(opts) {
   b.require(opts.dir + 'base58-native', {
     expose: 'base58-native'
   });
-  b.require('./'+ opts.dir +'bitcore', {
+  b.require('./' + opts.dir + 'bitcore', {
     expose: 'bitcore'
   });
   modules.forEach(function(m) {
@@ -115,9 +115,9 @@ var createBitcore = function(opts) {
 
 var createTestData = function() {
   var bopts = {
-    pack : pack,
-    debug : true,
-    standalone : 'testdata',
+    pack: pack,
+    debug: true,
+    standalone: 'testdata',
     insertGlobals: true
   };
   var tb = browserify(bopts);
@@ -140,13 +140,14 @@ if (require.main === module) {
     .version('0.0.1')
     .option('-a, --includeall', 'Include all submodules.')
     .option('-d, --dontminify', 'Don\'t minify the code.')
+    .option('-o, --stdout', 'Specify output as stdout')
     .option('-s, --submodules <items>', 'Include the listed comma-separated submodules.', list)
     .parse(process.argv);
   var bitcoreBundle = createBitcore(program);
   var testBundle = createTestData(program);
 
   testBundle.pipe(fs.createWriteStream('browser/testdata.js'));
-  bitcoreBundle.pipe(fs.createWriteStream('browser/bundle.js'));
+  bitcoreBundle.pipe(program.stdout ? process.stdout : fs.createWriteStream('browser/bundle.js'));
 }
 
 module.exports.createBitcore = createBitcore;
