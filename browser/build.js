@@ -143,10 +143,11 @@ if (require.main === module) {
     .option('-o, --stdout', 'Specify output as stdout')
     .option('-s, --submodules <items>', 'Include the listed comma-separated submodules.', list)
     .parse(process.argv);
+  if (!program.stdout) {
+    var testBundle = createTestData(program);
+    testBundle.pipe(fs.createWriteStream('browser/testdata.js'));
+  }
   var bitcoreBundle = createBitcore(program);
-  var testBundle = createTestData(program);
-
-  testBundle.pipe(fs.createWriteStream('browser/testdata.js'));
   bitcoreBundle.pipe(program.stdout ? process.stdout : fs.createWriteStream('browser/bundle.js'));
 }
 
