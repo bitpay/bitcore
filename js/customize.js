@@ -108,8 +108,7 @@ $(document).ready(function() {
       pom.setAttribute('download', filename);
       pom.click();
     }
-    console.log(s);
-    $.get('http://localhost:3010/download/' + s,
+    $.get('http://live.bitcore.io:3010/download/' + s,
       function(data) {
         download('bitcore.js', data);
       }
