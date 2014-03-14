@@ -103,10 +103,14 @@ $(document).ready(function() {
 
     var s = allf ? 'all' : s;
     var download = function(filename, text) {
-      var pom = document.createElement('a');
-      pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-      pom.setAttribute('download', filename);
-      pom.click();
+      var a = window.document.createElement('a');
+      a.href = window.URL.createObjectURL(new Blob([text], {
+        type: 'text/plain'
+      }));
+      a.download = filename;
+      document.body.appendChild(a)
+      a.click();
+      document.body.removeChild(a)
     }
     $.get('http://live.bitcore.io:3010/download/' + s,
       function(data) {
