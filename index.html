@@ -62,6 +62,35 @@ var Address = bitcore.Address;
 <pre>
 git clone git://github.com/bitpay/bitcore
 </pre>
+        <h2 id="browser">Browser version</h2>
+        <p>To download the Javascript-only browser version of bitcore,
+         select the submodules you want included:</p>
+
+        <div class="row">
+          <div class="col-md-1">
+            <button class='btn' id='checkall'>Check all</button>
+          </div>
+          <div class="col-md-2">
+            <button class='btn' id='none'>Uncheck all</button>
+          </div>
+          <div class="col-md-3">
+            <button class='btn' id='download'>Download custom bundle</button>
+          </div>
+          <div class="col-md-3">
+            <div id="loading" style="display:none">
+              <img src="images/ajax-loader.gif" />
+              <label style="color:#C1C8CF;">Generating bundle...</label>
+            </div>
+          </div>
+        </div>
+        <form id="customize">
+          <div class="row">
+            <div id='col1' class="col-md-4"></div>
+            <div id='col2' class="col-md-4"></div>
+            <div id='col3' class="col-md-4"></div>
+          </div>
+        </form>
+        <p>Note: If you clone the github repository, you can also generate the bundle yourself.</p>
 
         <h2>Examples</h2>
         <p>Validating a bitcoin address.</p>
@@ -335,5 +364,6 @@ console.log(getAddrStr(s)[0]); // mkZBYBiq6DNoQEKakpMJegyDbw2YiNQnHT
     <script src="https://code.jquery.com/jquery.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/a.js"></script>
+    <script src="js/customize.js"></script>
 </body>
 </html>
