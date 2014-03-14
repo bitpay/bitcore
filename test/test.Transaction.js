@@ -25,8 +25,37 @@ describe('Transaction', function() {
     should.exist(In);
     should.exist(Out);
   });
+
+
   it('should be able to create instance', function() {
     var t = new Transaction();
+    should.exist(t);
+  });
+
+
+  it('should be able to select unspents', function() {
+    var u = Transaction.selectUnspent(testdata.dataUnspends,1.0);
+    u.length.should.equal(3);
+    u = Transaction.selectUnspent(testdata.dataUnspends,0.5);
+    u.length.should.equal(3);
+    u = Transaction.selectUnspent(testdata.dataUnspends,0.1);
+    u.length.should.equal(2);
+    u = Transaction.selectUnspent(testdata.dataUnspends,0.05);
+    u.length.should.equal(2);
+    u = Transaction.selectUnspent(testdata.dataUnspends,0.015);
+    u.length.should.equal(2);
+    u = Transaction.selectUnspent(testdata.dataUnspends,0.01);
+    u.length.should.equal(1);
+    should.exist(u[0].amount);
+    should.exist(u[0].txid);
+    should.exist(u[0].scriptPubKey);
+    should.exist(u[0].vout);
+  });
+
+
+  it.skip('should be able to create instance thru #create', function() {
+    var t = Transaction.create({
+    });
     should.exist(t);
   });
 

@@ -679,6 +679,56 @@ Transaction.prototype.parse = function (parser) {
   this.calcHash();
 };
 
+/*
+ * selectUnspent
+ *
+ *  Selects some unspend outputs for later usage in tx inputs
+ *
+ * @unspentArray: unspent array (UTXO) avaible on the form:
+ * [{
+ *       address: "mqSjTad2TKbPcKQ3Jq4kgCkKatyN44UMgZ",
+ *       hash: "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1",
+ *       scriptPubKey: "76a9146ce4e1163eb18939b1440c42844d5f0261c0338288ac",
+ *       vout: 1,
+ *       amount: 0.01,                
+ *       }, [...]
+ * ]
+ * This is compatible con insight's /utxo API. 
+ * NOTE that amount is in BTCs! (as returned in insight and bitcoind.
+ *
+ * @totalNeededAmount: output transaction amount in BTC, including fee
+ *
+ *
+ * Return the selected outputs or null if there are not enough funds.
+ * It does not check for confirmations. The unspendArray should be filtered.
+ *
+ */
+Transaction.selectUnspent = function (unspentArray, totalNeededAmount) {
+
+  // TODO we could randomize or select the selection
+  
+  var selected = [];
+  var l = unspentArray.length;
+  var totalSat = bignum(0);
+  var totalNeededAmountSat = bignum(totalNeededAmount * util.COIN);
+  var fullfill  = false;
+
+  for(var i = 0; i<l; i++) {
+    var u = unspentArray[i];
+    var sat = bignum(u.amount * util.COIN);
+    totalSat = totalSat.add(sat);
+    selected.push(u);
+    if(totalSat.cmp(totalNeededAmountSat) >= 0) {
+      fullfill = true;
+      break;
+    }
+  }
+  if (!fullfill) return [];
+  return selected;
+}
+
+
+
 var TransactionInputsCache = exports.TransactionInputsCache =
 function TransactionInputsCache(tx)
 {
