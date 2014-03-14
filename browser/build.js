@@ -11,8 +11,10 @@ var puts = function(error, stdout, stderr) {
   //sys.puts(stderr);
 };
 
-var pack = function(params) {
-  var preludePath = 'node_modules/soop/example/custom_prelude.js';
+var pack = function (params) {
+  var file = require.resolve('soop');
+  var dir = file.substr(0, file.length - String('soop.js').length);
+  var preludePath = dir + 'example/custom_prelude.js';
   params.raw = true;
   params.sourceMapPrefix = '//#';
   params.prelude = fs.readFileSync(preludePath, 'utf8');
