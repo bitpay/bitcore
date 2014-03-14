@@ -70,8 +70,17 @@ git clone git://github.com/bitpay/bitcore
           <div class="col-md-1">
             <button class='btn' id='checkall'>Check all</button>
           </div>
-          <div class="col-md-1">
+          <div class="col-md-2">
             <button class='btn' id='none'>Uncheck all</button>
+          </div>
+          <div class="col-md-3">
+            <button class='btn' id='download'>Download custom bundle</button>
+          </div>
+          <div class="col-md-3">
+            <div id="loading" style="display:none">
+              <img src="images/ajax-loader.gif" />
+              <label style="color:#C1C8CF;">Generating bundle...</label>
+            </div>
           </div>
         </div>
         <form id="customize">
