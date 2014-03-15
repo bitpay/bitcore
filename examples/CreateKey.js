@@ -1,12 +1,14 @@
 'use strict';
 
 
+
 var run = function() {
   // Replace '../bitcore' with 'bitcore' if you use this code elsewhere.
   var bitcore = require('../bitcore');
   var networks = require('../networks');
   var WalletKey = bitcore.WalletKey;
 
+  var opts = {network: networks.livenet};
 
   function print(wk) {
 
@@ -17,19 +19,26 @@ var run = function() {
     console.log ('\tPublic Compressed : ' + (wk.privKey.compressed?'Yes':'No'));
 
     var wkObj = wk.storeObj();
-    console.log ('\n * WalletKey Store Object');
+    console.log ('\n\t * WalletKey Store Object');
     console.log ('\tPrivate: ' + wkObj.priv);
     console.log ('\tPublic : ' + wkObj.pub);
     console.log ('\tAddr   : ' + wkObj.addr);
   };
 
-  //Generate a new one
-  var wk = new WalletKey({network: networks.testnet});
+  //Generate a new one (compressed public key, compressed WIK flag)
+  var wk = new WalletKey(opts);
   wk.generate();
   print(wk);
 
+  //Generate a new one (uncompressed public key, uncompressed WIK flag)
+  var wk = new WalletKey(opts);
+  wk.generate();
+  wk.privKey.compressed = false;
+  wk.privKey.regenerateSync();
+  print(wk);
+
   //Generate from private Key WIF
-  var wk2 = new WalletKey({network: networks.testnet});
+  var wk2 = new WalletKey(opts);
   wk2.fromObj({priv:'cS62Ej4SobZnpFQYN1PEEBr2KWf5sgRYYnELtumcG6WVCfxno39V'});
   print(wk2);
 
