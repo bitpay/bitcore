@@ -10,6 +10,7 @@ var Transaction;
 var In;
 var Out;
 var Script = bitcore.Script;
+var util = bitcore.util;
 var buffertools = require('buffertools');
 var testdata = testdata || require('./testdata');
 
@@ -33,7 +34,7 @@ describe('Transaction', function() {
   });
 
 
-  it('should be able to select unspents', function() {
+  it('should be able to select utxos', function() {
     var u = Transaction.selectUnspent(testdata.dataUnspends,1.0);
     u.length.should.equal(3);
     u = Transaction.selectUnspent(testdata.dataUnspends,0.5);
@@ -52,11 +53,24 @@ describe('Transaction', function() {
     should.exist(u[0].vout);
   });
 
+  it('should return null if not enough utxos', function() {
+    var u = Transaction.selectUnspent(testdata.dataUnspends,1.12);
+    u.length.should.equal(0);
+  });
 
-  it.skip('should be able to create instance thru #create', function() {
-    var t = Transaction.create({
-    });
-    should.exist(t);
+
+  it('should be able to create instance thru #create', function() {
+    var utxos = Transaction.selectUnspent(testdata.dataUnspends,0.1);
+    var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
+    var tx = Transaction.create(utxos, outs, 
+                                {remainderAddress:'3CMNFxN1oHBc4R1EpboAL5yzHGgE611Xou'});
+    should.exist(tx);
+    tx.version.should.equal(1);
+    tx.ins.length.should.equal(2);
+    tx.outs.length.should.equal(2);
+    util.valueToBigInt(tx.outs[0].v).cmp(8000000).should.equal(0);
+    // TODO remainder is 0.03 here because unspend just select utxos in order
+    util.valueToBigInt(tx.outs[1].v).cmp(3000000).should.equal(0);
   });
 
   // Read tests from test/data/tx_valid.json

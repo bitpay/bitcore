@@ -11,8 +11,10 @@ var Parser             = imports.Parser || require('./util/BinaryParser');
 var Step               = imports.Step || require('step');
 var buffertools        = imports.buffertools || require('buffertools');
 var error              = imports.error || require('./util/error');
+var networks           = imports.networks || require('./networks');
 
 var COINBASE_OP = Buffer.concat([util.NULL_HASH, new Buffer('FFFFFFFF', 'hex')]);
+var DEFAULT_FEE = 0.0001;
 
 function TransactionIn(data) {
   if ("object" !== typeof data) {
@@ -605,36 +607,7 @@ Transaction.prototype.fromObj = function fromObj(obj) {
   txobj.ins = [];
   txobj.outs = [];
 
-  obj.inputs.forEach(function(inputobj) {
-    var txin = new TransactionIn();
-    txin.s = util.EMPTY_BUFFER;
-    txin.q = 0xffffffff;
-
-    var hash = new Buffer(inputobj.txid, 'hex');
-    hash = buffertools.reverse(hash);
-    var vout = parseInt(inputobj.vout);
-    var voutBuf = new Buffer(4);
-    voutBuf.writeUInt32LE(vout, 0);
-
-    txin.o = Buffer.concat([hash, voutBuf]);
-
-    txobj.ins.push(txin);
-  });
-
-  var keys = Object.keys(obj.outputs);
-  keys.forEach(function(addrStr) {
-    var addr = new Address(addrStr);
-    var script = Script.createPubKeyHashOut(addr.payload());
-
-    var valueNum = bignum(obj.outputs[addrStr]);
-    var value = util.bigIntToValue(valueNum);
-
-    var txout = new TransactionOut();
-    txout.v = value;
-    txout.s = script.getBuffer();
-
-    txobj.outs.push(txout);
-  });
+  var tx = new Transaction(txobj);
 
   this.lock_time = txobj.lock_time;
   this.version = txobj.version;
@@ -694,7 +667,8 @@ Transaction.prototype.parse = function (parser) {
  *       }, [...]
  * ]
  * This is compatible con insight's /utxo API. 
- * NOTE that amount is in BTCs! (as returned in insight and bitcoind.
+ * NOTE that amount is in BTCs! (as returned in insight and bitcoind)
+ * amountSat can be given to provide amount in satochis.
  *
  * @totalNeededAmount: output transaction amount in BTC, including fee
  *
@@ -705,17 +679,27 @@ Transaction.prototype.parse = function (parser) {
  */
 Transaction.selectUnspent = function (unspentArray, totalNeededAmount) {
 
+  // TODO implement bidcoind heristics
+  //  A-
+  //  1) select utxos with 6+ confirmations
+  //  2) if not 2) select utxos with 1+ confirmations
+  //  3) if not select unconfirmed.
+  //
+  //  B-
+  //  Select smaller utxos first.
+  //
+  //
   // TODO we could randomize or select the selection
   
   var selected = [];
   var l = unspentArray.length;
   var totalSat = bignum(0);
-  var totalNeededAmountSat = bignum(totalNeededAmount * util.COIN);
+  var totalNeededAmountSat = util.parseValue(totalNeededAmount);
   var fullfill  = false;
 
   for(var i = 0; i<l; i++) {
     var u = unspentArray[i];
-    var sat = bignum(u.amount * util.COIN);
+    var sat = u.amountSat || util.parseValue(u.amount);
     totalSat = totalSat.add(sat);
     selected.push(u);
     if(totalSat.cmp(totalNeededAmountSat) >= 0) {
@@ -727,7 +711,132 @@ Transaction.selectUnspent = function (unspentArray, totalNeededAmount) {
   return selected;
 }
 
+/*
+ * _scriptForAddress
+ * 
+ *  Returns a scriptPubKey for the given address type
+ */
 
+Transaction._scriptForAddress = function (addressString) {
+
+  var livenet = networks.livenet;
+  var testnet = networks.testnet;
+  var address = new Address(addressString);
+
+  var version = address.version();
+  var script;
+  if (version == livenet.addressPubkey || version == testnet.addressPubkey)
+    script = Script.createPubKeyHashOut(address.payload());
+  else if (version == livenet.addressScript || version == testnet.addressScript)
+    script = Script.createP2SH(address.payload());
+  else
+    throw new Error('invalid output address');
+
+  return script;
+};
+
+/*
+ * create
+ *
+ *  creates a transaction
+ *
+ *  @ins 
+ *    a selected set of utxos, as described on selectUnspent
+ *  @outs
+ *    an array of [{
+ *      address: xx, 
+ *      amount:0.001
+*     },...]
+ *  @opts
+ *    { 
+ *      remainderAddress: null,
+ *      fee: 0.001,
+ *      lockTime: null,
+ *    }
+ *
+ *  Amounts are in BTC. instead of fee and amount; feeSat and amountSat can be given, 
+ *  repectively, to provide amounts in satoshis.
+ *
+ *  (TODO: should we use uBTC already?)
+ *
+ *  If not remainderAddress is given, and there is a remainderAddress
+ *  first in address will be used. (TODO: is this is reasoable?)
+ *
+ *  TODO add exceptions for validations:
+ *  out address - ins amount > out amount - fees < maxFees
+ *  + more?
+ */
+
+Transaction.create = function (ins, outs, opts) {
+  opts = opts || {};
+
+  var feeSat = opts.feeSat || util.parseValue(opts.fee || DEFAULT_FEE);
+  var txobj = {};
+  txobj.version = 1;
+  txobj.lock_time = opts.lockTime || 0;
+  txobj.ins     = [];
+  txobj.outs    = [];
+
+  var l = ins.length;
+  var valueInSat = bignum(0);
+  for(var i=0; i<l; i++) {
+    valueInSat = valueInSat.add(util.parseValue(ins[i].amount));
+
+    var txin = {};
+    txin.s = util.EMPTY_BUFFER;
+    txin.q = 0xffffffff;
+
+    var hash = new Buffer(ins[i].txid, 'hex');
+    var hashReversed = buffertools.reverse(hash);
+
+    var vout = parseInt(ins[i].vout);
+    var voutBuf = new Buffer(4);
+    voutBuf.writeUInt32LE(vout, 0);
+
+    txin.o = Buffer.concat([hashReversed, voutBuf]);
+    txobj.ins.push(txin); 
+  }
+
+
+  var valueOutSat = bignum(0);
+  l = outs.length;
+
+  for(var i=0;i<outs.length;i++) {
+    var sat = outs[i].amountSat || util.parseValue(outs[i].amount);
+    valueOutSat = valueOutSat.add(sat);
+  }
+
+  if (valueInSat.cmp(valueOutSat)<0) {
+    throw new Error('transaction inputs sum less than outputs');
+  }
+
+  var remainderSat = valueInSat.sub(valueOutSat);
+
+  if (remainderSat.cmp(0)>0) {
+    var remainderAddress = opts.remainderAddress || ins[0].address;
+
+    outs.push({
+      address: remainderAddress,
+      amountSat: remainderSat,
+    });
+  }
+
+  for(var i=0;i<outs.length;i++) {
+    var amountSat = outs[i].amountSat || util.parseValue(outs[i].amount);
+    var value = util.bigIntToValue(amountSat);
+    var script = Transaction._scriptForAddress(outs[i].address);
+
+    var txout = {
+      v: value,
+      s: script.getBuffer(),
+    };
+
+    txobj.outs.push(txout);
+  }
+
+
+  return new Transaction(txobj);
+};
 
 var TransactionInputsCache = exports.TransactionInputsCache =
 function TransactionInputsCache(tx)
