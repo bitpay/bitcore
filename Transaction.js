@@ -653,6 +653,47 @@ Transaction.prototype.parse = function (parser) {
 };
 
 /*
+ * _selectUnspent
+ *
+ *  Selects some unspend outputs for later usage in tx inputs
+ *
+ * @unspentArray: unspent array (UTXO) avaible on the form (see selectUnspent)
+ * @totalNeededAmount: output transaction amount in BTC, including fee
+ * @minConfirmations: 0 by default.
+ *
+ *
+ * Returns the selected outputs or null if there are not enough funds.
+ * The utxos are selected in the order they appear in the original array. 
+ * Sorting must be done previusly.
+ *
+ */
+Transaction._selectUnspent = function (unspentArray, totalNeededAmount, minConfirmations) {
+  minConfirmations = minConfirmations || 0;
+
+  var selected = [];
+  var l = unspentArray.length;
+  var totalSat = bignum(0);
+  var totalNeededAmountSat = util.parseValue(totalNeededAmount);
+  var fullfill  = false;
+
+  for(var i = 0; i<l; i++) {
+    var u = unspentArray[i];
+    if ( (u.confirmations||0) < minConfirmations) 
+      continue;
+
+    var sat = u.amountSat || util.parseValue(u.amount);
+    totalSat = totalSat.add(sat);
+    selected.push(u);
+    if(totalSat.cmp(totalNeededAmountSat) >= 0) {
+      fullfill = true;
+      break;
+    }
+  }
+  if (!fullfill) return [];
+  return selected;
+}
+
+/*
  * selectUnspent
  *
  *  Selects some unspend outputs for later usage in tx inputs
@@ -664,51 +705,31 @@ Transaction.prototype.parse = function (parser) {
  *       scriptPubKey: "76a9146ce4e1163eb18939b1440c42844d5f0261c0338288ac",
  *       vout: 1,
  *       amount: 0.01,                
+ *       confirmations: 3
  *       }, [...]
  * ]
  * This is compatible con insight's /utxo API. 
- * NOTE that amount is in BTCs! (as returned in insight and bitcoind)
+ * That amount is in BTCs. (as returned in insight and bitcoind)
  * amountSat can be given to provide amount in satochis.
  *
  * @totalNeededAmount: output transaction amount in BTC, including fee
+ * @allowUnconfirmed:false (allow selecting unconfirmed utxos)
  *
  *
- * Return the selected outputs or null if there are not enough funds.
- * It does not check for confirmations. The unspendArray should be filtered.
+ * Note that the sum of the selected unspent is >= the desired amount.
  *
  */
-Transaction.selectUnspent = function (unspentArray, totalNeededAmount) {
 
-  // TODO implement bidcoind heristics
-  //  A-
-  //  1) select utxos with 6+ confirmations
-  //  2) if not 2) select utxos with 1+ confirmations
-  //  3) if not select unconfirmed.
-  //
-  //  B-
-  //  Select smaller utxos first.
-  //
-  //
-  // TODO we could randomize or select the selection
-  
-  var selected = [];
-  var l = unspentArray.length;
-  var totalSat = bignum(0);
-  var totalNeededAmountSat = util.parseValue(totalNeededAmount);
-  var fullfill  = false;
+Transaction.selectUnspent = function (unspentArray, totalNeededAmount, allowUnconfirmed) {
+  var answer = Transaction._selectUnspent(unspentArray, totalNeededAmount, 6);
 
-  for(var i = 0; i<l; i++) {
-    var u = unspentArray[i];
-    var sat = u.amountSat || util.parseValue(u.amount);
-    totalSat = totalSat.add(sat);
-    selected.push(u);
-    if(totalSat.cmp(totalNeededAmountSat) >= 0) {
-      fullfill = true;
-      break;
-    }
-  }
-  if (!fullfill) return [];
-  return selected;
+  if (!answer.length) 
+    answer = Transaction._selectUnspent(unspentArray, totalNeededAmount, 1);
+
+  if (!answer.length && allowUnconfirmed)
+    answer = Transaction._selectUnspent(unspentArray, totalNeededAmount, 0);
+
+  return answer;
 }
 
 /*
@@ -805,9 +826,13 @@ Transaction.create = function (ins, outs, opts) {
     var sat = outs[i].amountSat || util.parseValue(outs[i].amount);
     valueOutSat = valueOutSat.add(sat);
   }
+  valueOutSat = valueOutSat.add(feeSat);
 
   if (valueInSat.cmp(valueOutSat)<0) {
-    throw new Error('transaction inputs sum less than outputs');
+    var inv = valueInSat.toString();
+    var ouv = valueOutSat.toString();
+    throw new Error('transaction input amount is less than outputs: ' + 
+                    inv + ' < '+ouv + ' [SAT]');
   }
 
   var remainderSat = valueInSat.sub(valueOutSat);
