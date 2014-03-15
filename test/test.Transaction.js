@@ -115,7 +115,14 @@ describe('Transaction', function() {
     //
     tx.serialize().toString('hex').should.equal('0100000002c1cf12ab89729d19d3cdec8ae531b5038d56c741006a105d532b3a7afa65c12a0100000000ffffffffc2cf12ab89729d19d3cdec8ae531b5038d56c741006a105d532b3a7afa65c12a0000000000ffffffff0100127a00000000001976a914774e603bafb717bd3f070e68bbcccfd907c77d1388ac00000000');
   });
-  
+ 
+  it.skip('#sign should sign a tx', function() {
+    var utxos = Transaction.selectUnspent(testdata.dataUnspends,0.1);
+    var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
+    var tx = Transaction.create(utxos, outs, opts); 
+  });
+
+
 
   // Read tests from test/data/tx_valid.json
   // Format is an array of arrays
