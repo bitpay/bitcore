@@ -47,4 +47,24 @@ describe('Address', function() {
       s.should.equal(a.toString()); // check that validation doesn't change data
     });
   });
+  it('should be able to detect network from an address', function() {
+    var a = new Address('1KfyjCgBSMsLqiCbakfSdeoBUqMqLUiu3T');
+    a.network().name.should.equal('livenet');
+    var a = new Address('1dice8EMZmqKvrGE4Qc9bUFf9PX3xaYDp');
+    a.network().name.should.equal('livenet');
+    //p2sh
+    var a = new Address('3QRhucKtEn5P9i7YPxzXCqBtPJTPbRFycn');
+    a.network().name.should.equal('livenet');
+
+    //testnet
+    var a = new Address('mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE');
+    a.network().name.should.equal('testnet');
+    var a = new Address('n2ekxibY5keRiMaoKFGfiNfXQCS4zTUpct');
+    a.network().name.should.equal('testnet');
+
+    //p2sh
+    var a = new Address('2NBSBcf2KfjPEEqVusmrWdmUeNHRiUTS3Li');
+    a.network().name.should.equal('testnet');
+  });
+ 
 });
