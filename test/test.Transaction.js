@@ -78,44 +78,49 @@ describe('Transaction', function() {
   });
 
 
-  var opts = {remainderAddress: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'};
+  var opts = {
+    remainderAddress: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd',
+    allowUnconfirmed: true,
+  };
+
   it('#create should be able to create instance', function() {
-    var utxos = Transaction.selectUnspent(testdata.dataUnspent,0.1);
+    var utxos =testdata.dataUnspent;
     var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
-    var tx = Transaction.create(utxos, outs, opts);
+    var tx = Transaction.create(utxos, outs, null, opts);
     should.exist(tx);
 
     tx.version.should.equal(1);
     tx.ins.length.should.equal(2);
     tx.outs.length.should.equal(2);
+
     util.valueToBigInt(tx.outs[0].v).cmp(8000000).should.equal(0);
     // remainder is 0.0299 here because unspent select utxos in order
-    util.valueToBigInt(tx.outs[1].v).cmp(2990000).should.equal(0);
+    util.valueToBigInt(tx.outs[1].v).cmp(2900000).should.equal(0);
+    tx.isComplete().should.equal(false);
   });
 
-
   it('#create should fail if not enough inputs ', function() {
-    var utxos = Transaction.selectUnspent(testdata.dataUnspent,1);
-    var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
+    var utxos =testdata.dataUnspent;
+    var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:80}];
     Transaction
       .create
-      .bind(utxos, outs, opts)
+      .bind(utxos, outs, null, opts)
       .should.throw();
   });
 
 
   it('#create should create same output as bitcoind createrawtransaction ', function() {
-    var utxos = Transaction.selectUnspent(testdata.dataUnspent,0.1);
+    var utxos =testdata.dataUnspent;
     var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
-    var tx = Transaction.create(utxos, outs, opts); 
+    var tx = Transaction.create(utxos, outs, null, opts); 
 
 
     // string output generated from: bitcoind createrawtransaction '[{"txid": "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1","vout":1},{"txid":"2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc2","vout":0}  ]' '{"mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE":0.08,"mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd":0.0299}'
-    tx.serialize().toString('hex').should.equal('0100000002c1cf12ab89729d19d3cdec8ae531b5038d56c741006a105d532b3a7afa65c12a0100000000ffffffffc2cf12ab89729d19d3cdec8ae531b5038d56c741006a105d532b3a7afa65c12a0000000000ffffffff0200127a00000000001976a914774e603bafb717bd3f070e68bbcccfd907c77d1388acb09f2d00000000001976a914b00127584485a7cff0949ef0f6bc5575f06ce00d88ac00000000');
+    tx.serialize().toString('hex').should.equal('0100000002c1cf12ab89729d19d3cdec8ae531b5038d56c741006a105d532b3a7afa65c12a0100000000ffffffffc2cf12ab89729d19d3cdec8ae531b5038d56c741006a105d532b3a7afa65c12a0000000000ffffffff0200127a00000000001976a914774e603bafb717bd3f070e68bbcccfd907c77d1388ac20402c00000000001976a914b00127584485a7cff0949ef0f6bc5575f06ce00d88ac00000000');
 
     // no remainder
     outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
-    tx = Transaction.create(utxos, outs, {fee:0.03} ); 
+    tx = Transaction.create(utxos, outs, null, {fee:0.03} ); 
 
     // string output generated from: bitcoind createrawtransaction '[{"txid": "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1","vout":1},{"txid":"2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc2","vout":0}  ]' '{"mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE":0.08}'
     //
@@ -123,39 +128,40 @@ describe('Transaction', function() {
   });
  
   it('#sign should sign a tx', function() {
-    var utxos = Transaction.selectUnspent(testdata.dataUnspentSign.unspent,0.1);
+    var utxos =testdata.dataUnspentSign.unspent;
     var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
-    var tx = Transaction.create(utxos, outs, opts); 
-    tx.sign(testdata.dataUnspentSign.keyStrings).should.equal(true);
+    var tx = Transaction.create(utxos, outs, testdata.dataUnspentSign.keyStrings, opts); 
+    tx.isComplete().should.equal(true);
 
-    var utxos2 = Transaction.selectUnspent(testdata.dataUnspentSign.unspent,16, true);
-    var outs2 = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
-    var tx2 = Transaction.create(utxos2, outs2, opts); 
-    tx2.sign(testdata.dataUnspentSign.keyStrings).should.equal(true);
+    var outs2 = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:16}];
+    var tx2 = Transaction.create(utxos, outs2, testdata.dataUnspentSign.keyStrings, opts); 
+    tx2.isComplete().should.equal(true);
   });
-  it('#sign should fail to sign a tx', function() {
-    var utxos = Transaction.selectUnspent(testdata.dataUnspentSign.unspent,0.1);
+
+  it('#sign should sign an incomplete tx ', function() {
+    var keys = ['cNpW8B7XPAzCdRR9RBWxZeveSNy3meXgHD8GuhcqUyDuy8ptCDzJ'];
+    var utxos =testdata.dataUnspentSign.unspent;
     var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
-    var tx = Transaction.create(utxos, outs, opts); 
-    tx.sign(['cNpW8B7XPAzCdRR9RBWxZeveSNy3meXgHD8GuhcqUyDuy8ptCDzJ']).should.equal(false);
+    var tx = Transaction.create(utxos, outs, keys, opts); 
+    tx.isComplete().should.equal(false);
   });
   it('#sign should sign a tx in multiple steps', function() {
     var utxos = Transaction.selectUnspent(testdata.dataUnspentSign.unspent,13, true);
     var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
 
-    var tx = Transaction.create(utxos, outs, opts); 
+    var tx = Transaction.prepare(utxos, outs, opts); 
     var k1 = testdata.dataUnspentSign.keyStrings.slice(0,1);
     var k23 = testdata.dataUnspentSign.keyStrings.slice(1,3);
-    tx.sign(k1).should.equal(false);
-    tx.sign(k23).should.equal(true);
+    tx.sign(utxos, k1).should.equal(false);
+    tx.sign(utxos, k23).should.equal(true);
 
-    var tx2 = Transaction.create(utxos, outs, opts); 
+    var tx2 = Transaction.prepare(utxos, outs, opts); 
     var k1 = testdata.dataUnspentSign.keyStrings.slice(0,1);
     var k2 = testdata.dataUnspentSign.keyStrings.slice(1,2);
     var k3 = testdata.dataUnspentSign.keyStrings.slice(2,3);
-    tx2.sign(k1).should.equal(false);
-    tx2.sign(k2).should.equal(false);
-    tx2.sign(k3).should.equal(true);
+    tx2.sign(utxos, k1).should.equal(false);
+    tx2.sign(utxos, k2).should.equal(false);
+    tx2.sign(utxos, k3).should.equal(true);
  
   });
 

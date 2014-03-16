@@ -16,7 +16,7 @@ var WalletKey          = imports.WalletKey || require('./WalletKey');
 var PrivateKey         = imports.PrivateKey || require('./PrivateKey');
 
 var COINBASE_OP = Buffer.concat([util.NULL_HASH, new Buffer('FFFFFFFF', 'hex')]);
-var DEFAULT_FEE = 0.0001;
+var DEFAULT_FEE = 0.001;
 
 function TransactionIn(data) {
   if ("object" !== typeof data) {
@@ -690,20 +690,7 @@ Transaction.prototype.parse = function (parser) {
  *
  *  Selects some unspent outputs for later usage in tx inputs
  *
- * @unspentArray: unspent array (UTXO) avaible on the form:
- * [{
- *       address: "mqSjTad2TKbPcKQ3Jq4kgCkKatyN44UMgZ",
- *       hash: "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1",
- *       scriptPubKey: "76a9146ce4e1163eb18939b1440c42844d5f0261c0338288ac",
- *       vout: 1,
- *       amount: 0.01,                
- *       confirmations: 3
- *       }, [...]
- * ]
- * This is compatible con insight's utxo API. 
- * That amount is in BTCs (as returned in insight and bitcoind).
- * amountSat (instead of amount) can be given to provide amount in satochis.
- *
+ * @utxos 
  * @totalNeededAmount: output transaction amount in BTC, including fee
  * @allowUnconfirmed: false (allow selecting unconfirmed utxos)
  *
@@ -715,13 +702,13 @@ Transaction.prototype.parse = function (parser) {
  *
  */
 
-Transaction.selectUnspent = function (unspentArray, totalNeededAmount, allowUnconfirmed) {
+Transaction.selectUnspent = function (utxos, totalNeededAmount, allowUnconfirmed) {
 
   var minConfirmationSteps = [6,1];
   if (allowUnconfirmed) minConfirmationSteps.push(0);
 
   var ret = [];
-  var l = unspentArray.length;
+  var l = utxos.length;
   var totalSat = bignum(0);
   var totalNeededAmountSat = util.parseValue(totalNeededAmount);
   var fulfill  = false;
@@ -730,7 +717,7 @@ Transaction.selectUnspent = function (unspentArray, totalNeededAmount, allowUnco
   do {
     var minConfirmations = minConfirmationSteps.shift();
     for(var i = 0; i<l; i++) {
-      var u = unspentArray[i];
+      var u = utxos[i];
 
       var c = u.confirmations || 0;
 
@@ -776,39 +763,18 @@ Transaction._scriptForAddress = function (addressString) {
   return script;
 };
 
-/*
- * create
- *
- *  creates a transaction
- *
- *  @ins 
- *    a selected set of utxos, as described on selectUnspent
- *  @outs
- *    an array of [{
- *      address: xx, 
- *      amount:0.001
-*     },...]
- *  @opts
- *    { 
- *      remainderAddress: null,
- *      fee: 0.001,
- *      lockTime: null,
- *    }
- *
- *  Amounts are in BTC. instead of fee and amount; feeSat and amountSat can be given, 
- *  repectively, to provide amounts in satoshis.
- *
- *  (TODO: should we use uBTC already?)
- *
- *  If no remainderAddress is given, and there is a remainderAddress
- *  first in address will be used. (TODO: is this is reasonable?)
- *
- *  The address from the inputs will be added to the Transaction object 
- *  for latter signing
- *
- */
+Transaction._sumOutputs = function(outs) {
+  var valueOutSat = bignum(0);
+  var l = outs.length;
 
-Transaction.create = function (ins, outs, opts) {
+  for(var i=0;i<outs.length;i++) {
+    var sat = outs[i].amountSat || util.parseValue(outs[i].amount);
+    valueOutSat = valueOutSat.add(sat);
+  }
+  return valueOutSat;
+}
+
+Transaction.prepare = function (ins, outs, opts) {
   opts = opts || {};
 
   var feeSat = opts.feeSat || util.parseValue(opts.fee || DEFAULT_FEE);
@@ -818,7 +784,6 @@ Transaction.create = function (ins, outs, opts) {
   txobj.ins     = [];
   txobj.outs    = [];
 
-  var inputMap = [];
 
   var l = ins.length;
   var valueInSat = bignum(0);
@@ -838,20 +803,9 @@ Transaction.create = function (ins, outs, opts) {
 
     txin.o = Buffer.concat([hashReversed, voutBuf]);
     txobj.ins.push(txin); 
-    inputMap[i]= {
-      address: ins[i].address, 
-      scriptPubKey: ins[i].scriptPubKey
-    };
   }
 
-
-  var valueOutSat = bignum(0);
-  l = outs.length;
-
-  for(var i=0;i<outs.length;i++) {
-    var sat = outs[i].amountSat || util.parseValue(outs[i].amount);
-    valueOutSat = valueOutSat.add(sat);
-  }
+  var valueOutSat = Transaction._sumOutputs(outs);
   valueOutSat = valueOutSat.add(feeSat);
 
   if (valueInSat.cmp(valueOutSat)<0) {
@@ -886,38 +840,54 @@ Transaction.create = function (ins, outs, opts) {
   }
 
 
-  var tx =  new Transaction(txobj);
-  tx.inputMap = inputMap;
-  return tx;
+  return  new Transaction(txobj);
 };
+
+Transaction.prototype.isComplete = function () {
+  var l = this.ins.length;
+
+  var ret = true;
+  for (var i=0; i<l; i++) {
+    if ( buffertools.compare(this.ins[i].s,util.EMPTY_BUFFER)===0 )  {
+      ret = false;
+      break;
+    }
+  };
+  return ret;
+};
+ 
 
 /*
  * sign
  *
  *  signs the transaction
  *
+ *  @ utxos
  *  @keypairs
- *    an array of strings representing private keys to sign the 
- *    transaction in WIF private key format OR WalletKey objects
- *
  *  @opts
  *    signhash: Transaction.SIGHASH_ALL
  *
  *  Return the 'completeness' status of the tx (i.e, if all inputs are signed).
  *
- *  To sign a TX, the TX must contain .inputMap to match private keys 
- *  with inputs and scriptPubKey
  */
 
-Transaction.prototype.sign = function (keys, opts) {
+Transaction.prototype.sign = function (selectedUtxos, keys, opts) {
   var self = this;
   var complete = false;
   var m = keys.length;
   opts = opts || {};
   var signhash = opts.signhash || SIGHASH_ALL;
 
-  if (!self.inputMap) {
-    throw new Error('this TX does not have information about input address, cannot be signed');
+  if (selectedUtxos.length !== self.ins.length) 
+    throw new Error('given selectedUtxos do not match tx inputs');
+
+  var inputMap = [];
+  var l = selectedUtxos.length;
+  for(var i=0; i<l; i++) {
+    inputMap[i]= {
+      address: selectedUtxos[i].address, 
+      scriptPubKey: selectedUtxos[i].scriptPubKey
+    };
   }
 
   //prepare keys
@@ -945,14 +915,14 @@ Transaction.prototype.sign = function (keys, opts) {
   l = self.ins.length;
   for(var i=0;i<l;i++) {
     var aIn = self.ins[i];
-    var wk = walletKeyMap[self.inputMap[i].address];
+    var wk = walletKeyMap[inputMap[i].address];
 
     if (typeof wk === 'undefined') {
       if ( buffertools.compare(aIn.s,util.EMPTY_BUFFER)!==0 ) 
         inputSigned++;
       continue;
     }
-    var scriptBuf = new Buffer(self.inputMap[i].scriptPubKey, 'hex');
+    var scriptBuf = new Buffer(inputMap[i].scriptPubKey, 'hex');
     var s = new Script(scriptBuf);
     if (s.classify() !==  Script.TX_PUBKEYHASH) {
       throw new Error('input:'+i+' script type:'+ s.getRawOutType() +' not supported yet');
@@ -990,6 +960,87 @@ Transaction.prototype.sign = function (keys, opts) {
 
 
 
+
+
+/*
+ * create
+ *
+ *  creates and signs a transaction
+ *
+ *  @utxos 
+ *    unspent outputs array (UTXO), using the following format:
+ *    [{
+ *       address: "mqSjTad2TKbPcKQ3Jq4kgCkKatyN44UMgZ",
+ *       hash: "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1",
+ *       scriptPubKey: "76a9146ce4e1163eb18939b1440c42844d5f0261c0338288ac",
+ *       vout: 1,
+ *       amount: 0.01,                
+ *       confirmations: 3
+ *       }, ...
+ *    ]
+ * This is compatible con insight's utxo API. 
+ * That amount is in BTCs (as returned in insight and bitcoind).
+ * amountSat (instead of amount) can be given to provide amount in satochis.
+ *
+
+ *  @outs
+ *    an array of [{
+ *      address: xx, 
+ *      amount:0.001
+ *     },...]
+ *
+ *  @keys
+ *     an array of strings representing private keys to sign the 
+ *    transaction in WIF private key format OR WalletKey objects
+ *
+ *  @opts
+ *    { 
+ *      remainderAddress: null,
+ *      fee: 0.001,
+ *      lockTime: null,
+ *      allowUnconfirmed: false,
+ *      signhash: SIGHASH_ALL
+ *    }
+ *
+ *  Amounts are in BTC. instead of fee and amount; feeSat and amountSat can be given, 
+ *  repectively, to provide amounts in satoshis.
+ *
+ *  If no remainderAddress is given, and there is a remainderAddress
+ *  first in address will be used. (TODO: is this is reasonable?)
+ *
+ *  if not keys are provided, the transaction will no be signed. .sign can be used to
+ *  sign it later.
+ *
+ *  The Transaction creation is handled in 3 steps:
+ *    .selectUnspent
+ *    .prepare
+ *    .sign
+ *
+ */
+
+
+Transaction.create = function (utxos, outs, keys, opts) {
+
+    var valueOutSat = Transaction
+      ._sumOutputs(outs)
+      .add(DEFAULT_FEE * util.COIN);
+
+    var selectedUtxos = Transaction
+      .selectUnspent(utxos,valueOutSat / util.COIN, opts.allowUnconfirmed);
+
+    if (!selectedUtxos) {
+      throw new Error(
+        'the given UTXOs dont sum up the given outputs: ' 
+        + valueOutSat.toString() 
+        + ' SAT'
+      );
+    }
+
+    var tx = Transaction.prepare(selectedUtxos, outs, opts);
+    //TODO interate with the new TX fee
+    if (keys) tx.sign(selectedUtxos, keys);
+    return tx;
+};
 
 var TransactionInputsCache = exports.TransactionInputsCache =
 function TransactionInputsCache(tx)
