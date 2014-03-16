@@ -943,10 +943,15 @@ Transaction.prototype.sign = function (keys, opts) {
     var txSigHash = self.hashForSignature(s, i, signhash);
 
     var sigRaw;
+    var triesLeft = 10;
     do {
       sigRaw = wk.privKey.signSync(txSigHash);
-    } while ( wk.privKey.verifySignatureSync(txSigHash, sigRaw) === false );
+    } while ( wk.privKey.verifySignatureSync(txSigHash, sigRaw) === false && triesLeft-- );
 
+    if (!triesLeft) {
+      log.debug('could not sign input:'+i +' verification failed');
+      continue;
+    }
 
     var sigType = new Buffer(1);
     sigType[0] = signhash;
