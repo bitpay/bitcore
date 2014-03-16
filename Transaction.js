@@ -609,7 +609,36 @@ Transaction.prototype.fromObj = function fromObj(obj) {
   txobj.ins = [];
   txobj.outs = [];
 
-  var tx = new Transaction(txobj);
+  obj.inputs.forEach(function(inputobj) {
+    var txin = new TransactionIn();
+    txin.s = util.EMPTY_BUFFER;
+    txin.q = 0xffffffff;
+
+    var hash = new Buffer(inputobj.txid, 'hex');
+    hash = buffertools.reverse(hash);
+    var vout = parseInt(inputobj.vout);
+    var voutBuf = new Buffer(4);
+    voutBuf.writeUInt32LE(vout, 0);
+
+    txin.o = Buffer.concat([hash, voutBuf]);
+
+    txobj.ins.push(txin);
+  });
+
+  var keys = Object.keys(obj.outputs);
+  keys.forEach(function(addrStr) {
+    var addr = new Address(addrStr);
+    var script = Script.createPubKeyHashOut(addr.payload());
+
+    var valueNum = bignum(obj.outputs[addrStr]);
+    var value = util.bigIntToValue(valueNum);
+
+    var txout = new TransactionOut();
+    txout.v = value;
+    txout.s = script.getBuffer();
+
+    txobj.outs.push(txout);
+  });
 
   this.lock_time = txobj.lock_time;
   this.version = txobj.version;
