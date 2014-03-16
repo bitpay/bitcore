@@ -34,41 +34,47 @@ describe('Transaction', function() {
   });
 
 
-  it('#_selectUnspent should be able to select utxos', function() {
-    var u = Transaction._selectUnspent(testdata.dataUnspent,1.0);
+  it('#selectUnspent should be able to select utxos', function() {
+    var u = Transaction.selectUnspent(testdata.dataUnspent,1.0, true);
     u.length.should.equal(3);
-    u = Transaction._selectUnspent(testdata.dataUnspent,0.5);
-    u.length.should.equal(3);
-    u = Transaction._selectUnspent(testdata.dataUnspent,0.1);
-    u.length.should.equal(2);
-    u = Transaction._selectUnspent(testdata.dataUnspent,0.05);
-    u.length.should.equal(2);
-    u = Transaction._selectUnspent(testdata.dataUnspent,0.015);
-    u.length.should.equal(2);
-    u = Transaction._selectUnspent(testdata.dataUnspent,0.01);
-    u.length.should.equal(1);
+
     should.exist(u[0].amount);
     should.exist(u[0].txid);
     should.exist(u[0].scriptPubKey);
     should.exist(u[0].vout);
+
+    u = Transaction.selectUnspent(testdata.dataUnspent,0.5, true);
+    u.length.should.equal(3);
+
+    u = Transaction.selectUnspent(testdata.dataUnspent,0.1, true);
+    u.length.should.equal(2);
+
+    u = Transaction.selectUnspent(testdata.dataUnspent,0.05, true);
+    u.length.should.equal(2);
+
+    u = Transaction.selectUnspent(testdata.dataUnspent,0.015, true);
+    u.length.should.equal(2);
+
+    u = Transaction.selectUnspent(testdata.dataUnspent,0.01, true);
+    u.length.should.equal(1);
   });
 
   it('#selectUnspent should return null if not enough utxos', function() {
     var u = Transaction.selectUnspent(testdata.dataUnspent,1.12);
-    u.length.should.equal(0);
+    should.not.exist(u);
   });
 
 
   it('#selectUnspent should check confirmations', function() {
     var u = Transaction.selectUnspent(testdata.dataUnspent,0.9);
-    u.length.should.equal(0);
+    should.not.exist(u);
     var u = Transaction.selectUnspent(testdata.dataUnspent,0.9,true);
     u.length.should.equal(3);
 
     var u = Transaction.selectUnspent(testdata.dataUnspent,0.11);
     u.length.should.equal(2);
     var u = Transaction.selectUnspent(testdata.dataUnspent,0.111);
-    u.length.should.equal(0);
+    should.not.exist(u);
   });
 
 

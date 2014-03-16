@@ -683,51 +683,12 @@ Transaction.prototype.parse = function (parser) {
   this.calcHash();
 };
 
-/*
- * _selectUnspent
- *
- *  Selects some unspend outputs for later usage in tx inputs
- *
- * @unspentArray: unspent array (UTXO) avaible on the form (see selectUnspent)
- * @totalNeededAmount: output transaction amount in BTC, including fee
- * @minConfirmations: 0 by default.
- *
- *
- * Returns the selected outputs or null if there are not enough funds.
- * The utxos are selected in the order they appear in the original array. 
- * Sorting must be done previusly.
- *
- */
-Transaction._selectUnspent = function (unspentArray, totalNeededAmount, minConfirmations) {
-  minConfirmations = minConfirmations || 0;
 
-  var selected = [];
-  var l = unspentArray.length;
-  var totalSat = bignum(0);
-  var totalNeededAmountSat = util.parseValue(totalNeededAmount);
-  var fullfill  = false;
-
-  for(var i = 0; i<l; i++) {
-    var u = unspentArray[i];
-    if ( (u.confirmations||0) < minConfirmations) 
-      continue;
-
-    var sat = u.amountSat || util.parseValue(u.amount);
-    totalSat = totalSat.add(sat);
-    selected.push(u);
-    if(totalSat.cmp(totalNeededAmountSat) >= 0) {
-      fullfill = true;
-      break;
-    }
-  }
-  if (!fullfill) return [];
-  return selected;
-}
 
 /*
  * selectUnspent
  *
- *  Selects some unspend outputs for later usage in tx inputs
+ *  Selects some unspent outputs for later usage in tx inputs
  *
  * @unspentArray: unspent array (UTXO) avaible on the form:
  * [{
@@ -739,28 +700,56 @@ Transaction._selectUnspent = function (unspentArray, totalNeededAmount, minConfi
  *       confirmations: 3
  *       }, [...]
  * ]
- * This is compatible con insight's /utxo API. 
- * That amount is in BTCs. (as returned in insight and bitcoind)
- * amountSat can be given to provide amount in satochis.
+ * This is compatible con insight's utxo API. 
+ * That amount is in BTCs (as returned in insight and bitcoind).
+ * amountSat (instead of amount) can be given to provide amount in satochis.
  *
  * @totalNeededAmount: output transaction amount in BTC, including fee
- * @allowUnconfirmed:false (allow selecting unconfirmed utxos)
- *
+ * @allowUnconfirmed: false (allow selecting unconfirmed utxos)
  *
  * Note that the sum of the selected unspent is >= the desired amount.
+ * Returns the selected unspent outputs if the totalNeededAmount was reach. 
+ * 'null' if not.
+ *
+ * TODO: utxo selection is not optimized to minimize mempool usage.
  *
  */
 
 Transaction.selectUnspent = function (unspentArray, totalNeededAmount, allowUnconfirmed) {
-  var answer = Transaction._selectUnspent(unspentArray, totalNeededAmount, 6);
 
-  if (!answer.length) 
-    answer = Transaction._selectUnspent(unspentArray, totalNeededAmount, 1);
+  var minConfirmationSteps = [6,1];
+  if (allowUnconfirmed) minConfirmationSteps.push(0);
 
-  if (!answer.length && allowUnconfirmed)
-    answer = Transaction._selectUnspent(unspentArray, totalNeededAmount, 0);
+  var ret = [];
+  var l = unspentArray.length;
+  var totalSat = bignum(0);
+  var totalNeededAmountSat = util.parseValue(totalNeededAmount);
+  var fulfill  = false;
+  var maxConfirmations = null;
 
-  return answer;
+  do {
+    var minConfirmations = minConfirmationSteps.shift();
+    for(var i = 0; i<l; i++) {
+      var u = unspentArray[i];
+
+      var c = u.confirmations || 0;
+
+      if ( c  < minConfirmations || (maxConfirmations && c >=maxConfirmations) ) 
+        continue;
+
+
+      var sat = u.amountSat || util.parseValue(u.amount);
+      totalSat = totalSat.add(sat);
+      ret.push(u);
+      if(totalSat.cmp(totalNeededAmountSat) >= 0) {
+        fulfill = true;
+        break;
+      }
+    }
+    maxConfirmations = minConfirmations;
+  } while( !fulfill && minConfirmationSteps.length);
+
+  return fulfill ? ret : null;
 }
 
 /*
