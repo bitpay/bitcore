@@ -25,19 +25,12 @@ var run = function() {
     console.log ('\tAddr   : ' + wkObj.addr);
   };
 
-  //Generate a new one (compressed public key, compressed WIK flag)
+  //Generate a new one (compressed public key, compressed WIF flag)
   var wk = new WalletKey(opts);
   wk.generate();
   print(wk);
 
-  //Generate a new one (uncompressed public key, uncompressed WIK flag)
-  var wk = new WalletKey(opts);
-  wk.generate();
-  wk.privKey.compressed = false;
-  wk.privKey.regenerateSync();
-  print(wk);
-
-  //Generate from private Key WIF
+  //Generate from private Key WIF. Compressed status taken from WIF.
   var wk2 = new WalletKey(opts);
   wk2.fromObj({priv:'cS62Ej4SobZnpFQYN1PEEBr2KWf5sgRYYnELtumcG6WVCfxno39V'});
   print(wk2);
