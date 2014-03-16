@@ -12,6 +12,8 @@ var Step               = imports.Step || require('step');
 var buffertools        = imports.buffertools || require('buffertools');
 var error              = imports.error || require('./util/error');
 var networks           = imports.networks || require('./networks');
+var WalletKey          = imports.WalletKey || require('./WalletKey');
+var PrivateKey         = imports.PrivateKey || require('./PrivateKey');
 
 var COINBASE_OP = Buffer.concat([util.NULL_HASH, new Buffer('FFFFFFFF', 'hex')]);
 var DEFAULT_FEE = 0.0001;
@@ -780,12 +782,12 @@ Transaction._scriptForAddress = function (addressString) {
  *
  *  (TODO: should we use uBTC already?)
  *
- *  If not remainderAddress is given, and there is a remainderAddress
- *  first in address will be used. (TODO: is this is reasoable?)
+ *  If no remainderAddress is given, and there is a remainderAddress
+ *  first in address will be used. (TODO: is this is reasonable?)
  *
- *  TODO add exceptions for validations:
- *  out address - ins amount > out amount - fees < maxFees
- *  + more?
+ *  The address from the inputs will be added to the Transaction object 
+ *  for latter signing
+ *
  */
 
 Transaction.create = function (ins, outs, opts) {
@@ -797,6 +799,8 @@ Transaction.create = function (ins, outs, opts) {
   txobj.lock_time = opts.lockTime || 0;
   txobj.ins     = [];
   txobj.outs    = [];
+
+  var inputMap = [];
 
   var l = ins.length;
   var valueInSat = bignum(0);
@@ -816,6 +820,10 @@ Transaction.create = function (ins, outs, opts) {
 
     txin.o = Buffer.concat([hashReversed, voutBuf]);
     txobj.ins.push(txin); 
+    inputMap[i]= {
+      address: ins[i].address, 
+      scriptPubKey: ins[i].scriptPubKey
+    };
   }
 
 
@@ -860,8 +868,105 @@ Transaction.create = function (ins, outs, opts) {
   }
 
 
-  return new Transaction(txobj);
+  var tx =  new Transaction(txobj);
+  tx.inputMap = inputMap;
+  return tx;
 };
+
+/*
+ * sign
+ *
+ *  signs the transaction
+ *
+ *  @keypairs
+ *    an array of strings representing private keys to sign the 
+ *    transaction in WIF private key format OR WalletKey objects
+ *
+ *  @opts
+ *    signhash: Transaction.SIGHASH_ALL
+ *
+ *  Return the 'completeness' status of the tx (i.e, if all inputs are signed).
+ *
+ *  To sign a TX, the TX must contain .inputMap to match private keys 
+ *  with inputs and scriptPubKey
+ */
+
+Transaction.prototype.sign = function (keys, opts) {
+  var self = this;
+  var complete = false;
+  var m = keys.length;
+  opts = opts || {};
+  var signhash = opts.signhash || SIGHASH_ALL;
+
+  if (!self.inputMap) {
+    throw new Error('this TX does not have information about input address, cannot be signed');
+  }
+
+  //prepare keys
+  var walletKeyMap = {};
+  var l = keys.length;
+  var wk;
+  for(var i=0; i<l; i++) {
+    var k = keys[i];
+
+    if (typeof k === 'string') {
+      var pk = new PrivateKey(k);
+      wk = new WalletKey({network: pk.network()});
+      wk.fromObj({priv:k});
+    }
+    else if (k instanceof WalletKey) {
+      wk = k;
+    }
+    else {
+      throw new Error('argument must be an array of strings (WIF format) or WalletKey objects');
+    }
+    walletKeyMap[wk.storeObj().addr] = wk;
+  }
+
+  var inputSigned = 0;
+  l = self.ins.length;
+  for(var i=0;i<l;i++) {
+    var aIn = self.ins[i];
+    var wk = walletKeyMap[self.inputMap[i].address];
+
+    if (typeof wk === 'undefined') {
+      if ( buffertools.compare(aIn.s,util.EMPTY_BUFFER)!==0 ) 
+        inputSigned++;
+      continue;
+    }
+    var scriptBuf = new Buffer(self.inputMap[i].scriptPubKey, 'hex');
+    var s = new Script(scriptBuf);
+    if (s.classify() !==  Script.TX_PUBKEYHASH) {
+      throw new Error('input:'+i+' script type:'+ s.getRawOutType() +' not supported yet');
+    }
+
+    var txSigHash = self.hashForSignature(s, i, signhash);
+
+    var sigRaw;
+    do {
+      sigRaw = wk.privKey.signSync(txSigHash);
+    } while ( wk.privKey.verifySignatureSync(txSigHash, sigRaw) === false );
+
+
+    var sigType = new Buffer(1);
+    sigType[0] = signhash;
+    var sig = Buffer.concat([sigRaw, sigType]);
+
+    var scriptSig = new Script();
+    scriptSig.chunks.push(sig);
+    scriptSig.chunks.push(wk.privKey.public);
+    scriptSig.updateBuffer();
+    self.ins[i].s = scriptSig.getBuffer();
+    inputSigned++;
+  }
+
+  var complete = inputSigned === l;
+
+  return complete;
+};
+
+
+
 
 var TransactionInputsCache = exports.TransactionInputsCache =
 function TransactionInputsCache(tx)

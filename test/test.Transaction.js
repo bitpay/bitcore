@@ -116,13 +116,42 @@ describe('Transaction', function() {
     tx.serialize().toString('hex').should.equal('0100000002c1cf12ab89729d19d3cdec8ae531b5038d56c741006a105d532b3a7afa65c12a0100000000ffffffffc2cf12ab89729d19d3cdec8ae531b5038d56c741006a105d532b3a7afa65c12a0000000000ffffffff0100127a00000000001976a914774e603bafb717bd3f070e68bbcccfd907c77d1388ac00000000');
   });
  
-  it.skip('#sign should sign a tx', function() {
-    var utxos = Transaction.selectUnspent(testdata.dataUnspentign.unspent,0.1);
+  it('#sign should sign a tx', function() {
+    var utxos = Transaction.selectUnspent(testdata.dataUnspentSign.unspent,0.1);
     var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
     var tx = Transaction.create(utxos, outs, opts); 
+    tx.sign(testdata.dataUnspentSign.keyStrings).should.equal(true);
+
+    var utxos2 = Transaction.selectUnspent(testdata.dataUnspentSign.unspent,16, true);
+    var outs2 = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
+    var tx2 = Transaction.create(utxos2, outs2, opts); 
+    tx2.sign(testdata.dataUnspentSign.keyStrings).should.equal(true);
   });
+  it('#sign should fail to sign a tx', function() {
+    var utxos = Transaction.selectUnspent(testdata.dataUnspentSign.unspent,0.1);
+    var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
+    var tx = Transaction.create(utxos, outs, opts); 
+    tx.sign(['cNpW8B7XPAzCdRR9RBWxZeveSNy3meXgHD8GuhcqUyDuy8ptCDzJ']).should.equal(false);
+  });
+  it('#sign should sign a tx in multiple steps', function() {
+    var utxos = Transaction.selectUnspent(testdata.dataUnspentSign.unspent,13, true);
+    var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
 
+    var tx = Transaction.create(utxos, outs, opts); 
+    var k1 = testdata.dataUnspentSign.keyStrings.slice(0,1);
+    var k23 = testdata.dataUnspentSign.keyStrings.slice(1,3);
+    tx.sign(k1).should.equal(false);
+    tx.sign(k23).should.equal(true);
 
+    var tx2 = Transaction.create(utxos, outs, opts); 
+    var k1 = testdata.dataUnspentSign.keyStrings.slice(0,1);
+    var k2 = testdata.dataUnspentSign.keyStrings.slice(1,2);
+    var k3 = testdata.dataUnspentSign.keyStrings.slice(2,3);
+    tx2.sign(k1).should.equal(false);
+    tx2.sign(k2).should.equal(false);
+    tx2.sign(k3).should.equal(true);
+ 
+  });
 
   // Read tests from test/data/tx_valid.json
   // Format is an array of arrays
