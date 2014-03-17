@@ -736,6 +736,10 @@ Transaction.selectUnspent = function (utxos, totalNeededAmount, allowUnconfirmed
     maxConfirmations = minConfirmations;
   } while( !fulfill && minConfirmationSteps.length);
 
+  //TODO(?): sort ret and check is some inputs can be avoided.
+  //If the initial utxos are sorted, this step would be necesary only if
+  //utxos were selected from different minConfirmationSteps.
+
   return fulfill ? ret : null;
 }
 
