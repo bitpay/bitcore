@@ -5,7 +5,7 @@
       "txid": "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1",
       "scriptPubKey": "76a914fe021bac469a5c49915b2a8ffa7390a9ce5580f988ac",
       "vout": 1,
-      "amount": 1.01,
+      "amount": 1.0101,
       "confirmations":7
     },
     {

@@ -16,7 +16,7 @@ var WalletKey          = imports.WalletKey || require('./WalletKey');
 var PrivateKey         = imports.PrivateKey || require('./PrivateKey');
 
 var COINBASE_OP = Buffer.concat([util.NULL_HASH, new Buffer('FFFFFFFF', 'hex')]);
-var DEFAULT_FEE = 0.001;
+var FEE_PER_1000B_SAT = parseInt(0.0001 * util.COIN); 
 
 function TransactionIn(data) {
   if ("object" !== typeof data) {
@@ -777,7 +777,7 @@ Transaction._sumOutputs = function(outs) {
 Transaction.prepare = function (ins, outs, opts) {
   opts = opts || {};
 
-  var feeSat = opts.feeSat || util.parseValue(opts.fee || DEFAULT_FEE);
+  var feeSat = opts.feeSat || (opts.fee? util.parseValue(opts.fee) : FEE_PER_1000B_SAT );
   var txobj = {};
   txobj.version = 1;
   txobj.lock_time = opts.lockTime || 0;
@@ -815,33 +815,58 @@ Transaction.prepare = function (ins, outs, opts) {
                     inv + ' < '+ouv + ' [SAT]');
   }
 
-  var remainderSat = valueInSat.sub(valueOutSat);
-
-  if (remainderSat.cmp(0)>0) {
-    var remainderAddress = opts.remainderAddress || ins[0].address;
-
-    outs.push({
-      address: remainderAddress,
-      amountSat: remainderSat,
-    });
-  }
-
   for(var i=0;i<outs.length;i++) {
     var amountSat = outs[i].amountSat || util.parseValue(outs[i].amount);
     var value = util.bigIntToValue(amountSat);
     var script = Transaction._scriptForAddress(outs[i].address);
-
     var txout = {
       v: value,
       s: script.getBuffer(),
     };
+    txobj.outs.push(txout);
+  }
 
+  // add remainder (without modifiying outs[])
+  var remainderSat = valueInSat.sub(valueOutSat);
+  if (remainderSat.cmp(0)>0) {
+    var remainderAddress = opts.remainderAddress || ins[0].address;
+    var value = util.bigIntToValue(remainderSat);
+    var script = Transaction._scriptForAddress(remainderAddress);
+    var txout = {
+      v: value,
+      s: script.getBuffer(),
+    };
     txobj.outs.push(txout);
   }
 
 
   return  new Transaction(txobj);
 };
+
+Transaction.prototype.calcSize = function () {
+  var totalSize = 8; // version + lock_time
+  totalSize += util.getVarIntSize(this.ins.length); // tx_in count
+  this.ins.forEach(function (txin) {
+    totalSize += 36 + util.getVarIntSize(txin.s.length) +
+      txin.s.length + 4; // outpoint + script_len + script + sequence
+  });
+
+  totalSize += util.getVarIntSize(this.outs.length);
+  this.outs.forEach(function (txout) {
+    totalSize += util.getVarIntSize(txout.s.length) +
+      txout.s.length + 8; // script_len + script + value
+  });
+  this.size = totalSize;
+  return totalSize;
+};
+
+Transaction.prototype.getSize = function getHash() {
+  if (!this.size) {
+    this.size = this.calcSize();
+  }
+  return this.size;
+};
+
 
 Transaction.prototype.isComplete = function () {
   var l = this.ins.length;
@@ -1021,23 +1046,45 @@ Transaction.prototype.sign = function (selectedUtxos, keys, opts) {
 
 Transaction.create = function (utxos, outs, keys, opts) {
 
-    var valueOutSat = Transaction
-      ._sumOutputs(outs)
-      .add(DEFAULT_FEE * util.COIN);
+    //starting size estimation
+    var size    = 500;
+    var opts    = opts || {};
 
-    var selectedUtxos = Transaction
-      .selectUnspent(utxos,valueOutSat / util.COIN, opts.allowUnconfirmed);
-
-    if (!selectedUtxos) {
-      throw new Error(
-        'the given UTXOs dont sum up the given outputs: ' 
-        + valueOutSat.toString() 
-        + ' SAT'
-      );
+    var givenFeeSat;
+    if (opts.fee || opts.feeSat) {
+      givenFeeSat = opts.fee ? opts.fee * util.COIN : opts.feeSat;
     }
 
-    var tx = Transaction.prepare(selectedUtxos, outs, opts);
-    //TODO interate with the new TX fee
+    do {
+      // based on https://en.bitcoin.it/wiki/Transaction_fees
+      maxSizeK     = parseInt(size/1000) + 1;
+      var feeSat  = givenFeeSat
+        ? givenFeeSat : maxSizeK * FEE_PER_1000B_SAT ;
+
+      var valueOutSat = Transaction
+        ._sumOutputs(outs)
+        .add(feeSat);
+
+      var selectedUtxos = Transaction
+        .selectUnspent(utxos,valueOutSat / util.COIN, opts.allowUnconfirmed);
+
+      if (!selectedUtxos) {
+        throw new Error(
+          'the given UTXOs dont sum up the given outputs: ' 
+          + valueOutSat.toString() 
+          + ' (fee is ' + feeSat
+          + ' )SAT'
+        );
+      }
+      var tx = Transaction.prepare(selectedUtxos, outs, {
+        feeSat: feeSat,
+        remainderAddress: opts.remainderAddress,
+        lockTime: opts.lockTime,
+      });
+
+      size = tx.getSize();
+    } while (size > (maxSizeK+1)*1000 );
+
     if (keys) tx.sign(selectedUtxos, keys);
     return tx;
 };
