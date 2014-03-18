@@ -23,42 +23,71 @@ describe('ScriptInterpreter', function() {
     var si = new ScriptInterpreter();
     should.exist(si);
   });
-  testdata.dataScriptValid.forEach(function(datum) {
-    if (datum.length < 2) throw new Error('Invalid test data');
-    var scriptSig = datum[0]; // script inputs
-    var scriptPubKey = datum[1]; // output script
-    var human = scriptSig + ' ' + scriptPubKey;
-    it('should validate script ' + human, function(done) {
-      ScriptInterpreter.verify(Script.fromHumanReadable(scriptSig),
-        Script.fromHumanReadable(scriptPubKey),
-        null, 0, 0, // tx, output index, and hashtype
-        function(err, result) {
-          should.not.exist(err);
-          result.should.equal(true);
+  var testScripts = function(data, valid) {
+    var i = 0;
+    data.forEach(function(datum) {
+      if (datum.length < 2) throw new Error('Invalid test data');
+      var scriptSig = datum[0]; // script inputs
+      var scriptPubKey = datum[1]; // output script
+      var human = scriptSig + ' ' + scriptPubKey;
+      it('should ' + (!valid ? 'not ' : '') + 'validate script ' + human, function(done) {
+        console.log((!valid ? 'invalid ' : 'valid ') + human + ';' + (i++) + ' - ' + datum[2]);
+        try {
+          ScriptInterpreter.verify(
+            Script.fromHumanReadable(scriptSig),
+            Script.fromHumanReadable(scriptPubKey),
+            null, 0, 0, // tx, output index, and hashtype
+            function(err, result) {
+              if (valid) {
+                should.not.exist(err);
+              } else {
+                var failed = (typeof err !== 'undefined') || (result === false);
+                console.log('err=' + err);
+                console.log('result=' + result);
+                failed.should.equal(true);
+              }
+              if (typeof result !== 'undefined') {
+                result.should.equal(valid);
+              }
+              done();
+            }
+          );
+        } catch (e) {
+          if (valid) {
+            console.log(e);
+          }
+          valid.should.equal(false);
           done();
         }
-      );
+
+      });
     });
-  });
+  };
+  testScripts(testdata.dataScriptValid, true);
+  testScripts(testdata.dataScriptInvalid, false);
+
+
+
   testdata.dataSigCanonical.forEach(function(datum) {
     it('should validate valid canonical signatures', function() {
-      ScriptInterpreter.isCanonicalSignature(new Buffer(datum,'hex')).should.equal(true);
+      ScriptInterpreter.isCanonicalSignature(new Buffer(datum, 'hex')).should.equal(true);
     });
   });
-   testdata.dataSigNonCanonical.forEach(function(datum) {
+  testdata.dataSigNonCanonical.forEach(function(datum) {
     it('should NOT validate invalid canonical signatures', function() {
       var sig;
       var isHex;
       //is Hex?
       try {
-        sig =new Buffer(datum,'hex');
-        isHex=1;
-      } catch (e) { }
+        sig = new Buffer(datum, 'hex');
+        isHex = 1;
+      } catch (e) {}
 
       if (isHex)
-        ScriptInterpreter.isCanonicalSignature.bind(sig).should.throw();
+        ScriptInterpreter.isCanonicalSignature.bind(sig).should.
+      throw ();
     });
   });
- 
+
 
 });

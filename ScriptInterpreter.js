@@ -30,7 +30,7 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
   if ("function" !== typeof callback) {
     throw new Error("ScriptInterpreter.eval() requires a callback");
   }
-  
+
   var pc = 0;
   var execStack = [];
   var altStack = [];
