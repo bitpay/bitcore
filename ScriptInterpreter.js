@@ -811,7 +811,7 @@ ScriptInterpreter.prototype.stackTop = function stackTop(offset) {
 };
 
 ScriptInterpreter.prototype.stackBack = function stackBack() {
-  return this.stack[-1];
+  return this.stack[this.stack.length -1];
 };
 
 /**
@@ -944,7 +944,8 @@ function verifyStep3(scriptSig, scriptPubKey, txTo, nIn,
     return;
   }
 
-  assert.notEqual(siCopy.length, 0);
+  if (siCopy.length === 0)
+    throw new Error('siCopy should  have length != 0');
 
   var subscript = new Script(siCopy.stackPop());
 

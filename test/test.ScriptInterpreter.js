@@ -31,19 +31,17 @@ describe('ScriptInterpreter', function() {
       var scriptPubKey = datum[1]; // output script
       var human = scriptSig + ' ' + scriptPubKey;
       it('should ' + (!valid ? 'not ' : '') + 'validate script ' + human, function(done) {
-        console.log((!valid ? 'invalid ' : 'valid ') + human + ';' + (i++) + ' - ' + datum[2]);
         try {
-          ScriptInterpreter.verify(
-            Script.fromHumanReadable(scriptSig),
-            Script.fromHumanReadable(scriptPubKey),
-            null, 0, 0, // tx, output index, and hashtype
+          ScriptInterpreter.verifyFull(
+            Script.fromHumanReadable(scriptSig), // scriptSig
+            Script.fromHumanReadable(scriptPubKey), // scriptPubKey
+            null, 0, 0, // tx, output index, hashtype
+            { verifyP2SH: !valid}, // only verify P2SH for invalid data set
             function(err, result) {
               if (valid) {
                 should.not.exist(err);
               } else {
                 var failed = (typeof err !== 'undefined') || (result === false);
-                console.log('err=' + err);
-                console.log('result=' + result);
                 failed.should.equal(true);
               }
               if (typeof result !== 'undefined') {

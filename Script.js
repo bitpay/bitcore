@@ -33,11 +33,9 @@ function Script(buffer) {
   } else {
     this.buffer = util.EMPTY_BUFFER;
   }
-  console.log(buffertools.toHex(this.buffer));
   this.chunks = [];
   this.parse();
-  console.log(this.chunks);
-};
+}
 this.class = Script;
 
 Script.TX_UNKNOWN = TX_UNKNOWN;
