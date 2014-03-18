@@ -1,6 +1,7 @@
 var imports            = require('soop').imports();
 
 var parent = imports.parent || require('./util/VersionedData');
+var networks= imports.networks || require('./networks');
 
 //compressed is true if public key is compressed; false otherwise
 function PrivateKey(version, buf, compressed) {
@@ -59,6 +60,21 @@ PrivateKey.prototype.compressed = function(compressed) {
     else
       throw new Error('invalid private key');
   }
+};
+
+PrivateKey.prototype.network = function() {
+  var version = this.version();
+
+  var livenet = networks.livenet;
+  var testnet = networks.testnet;
+
+  var answer;
+  if (version === livenet.keySecret)
+    answer = livenet;
+  else if (version === testnet.keySecret)
+    answer = testnet;
+
+  return answer;
 };
 
 module.exports = require('soop')(PrivateKey);

@@ -188,6 +188,9 @@ function parseWholeValue(res)
 
 exports.parseValue = function parseValue(valueStr)
 {
+  if (typeof valueStr !== 'string') 
+    valueStr = valueStr.toString();
+
   var res = valueStr.match(reFullVal);
   if (res)
     return parseFullValue(res);
