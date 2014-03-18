@@ -7,6 +7,11 @@ var bignum      = imports.bignum || require('bignum');
 var Util        = imports.Util || require('./util/util');
 var Script      = require('./Script');
 
+var SIGHASH_ALL = 1;
+var SIGHASH_NONE = 2;
+var SIGHASH_SINGLE = 3;
+var SIGHASH_ANYONECANPAY = 80;
+
 // Make opcodes available as pseudo-constants
 for (var i in Opcode.map) {
   eval(i + " = " + Opcode.map[i] + ";");
@@ -607,6 +612,9 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
             // Remove signature if present (a signature can't sign itself)
             scriptCode.findAndDelete(sig);
 
+            //
+            isCanonicalSignature(new Buffer(sig));
+
             // Verify signature
             checkSig(sig, pubkey, scriptCode, tx, inIndex, hashType, function(e, result) {
               try {
@@ -680,6 +688,7 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
 
             // Drop the signatures, since a signature can't sign itself
             sigs.forEach(function(sig) {
+              isCanonicalSignature(new Buffer(sig));
               scriptCode.findAndDelete(sig);
             });
 
@@ -1054,6 +1063,70 @@ var checkSig = ScriptInterpreter.checkSig =
     } catch (err) {
       callback(null, false);
     }
+};
+
+var isCanonicalSignature = ScriptInterpreter.isCanonicalSignature = function(sig, opts) {
+    // See https://bitcointalk.org/index.php?topic=8392.msg127623#msg127623
+    // A canonical signature exists of: <30> <total len> <02> <len R> <R> <02> <len S> <S> <hashtype>
+    // Where R and S are not negative (their first byte has its highest bit not set), and not
+    // excessively padded (do not start with a 0 byte, unless an otherwise negative number follows,
+    // in which case a single 0 byte is necessary and even required).
+   
+    if (!Buffer.isBuffer(sig))
+      throw new Error("arg should be a Buffer");
+
+    opts = opts || {};
+
+    var l = sig.length;
+    if (l < 9)  throw new Error("Non-canonical signature: too short");
+    if (l > 73) throw new Error("Non-canonical signature: too long");
+
+    var  nHashType = sig[l-1] & (~(SIGHASH_ANYONECANPAY));
+    if (nHashType < SIGHASH_ALL || nHashType > SIGHASH_SINGLE)
+        throw new Error("Non-canonical signature: unknown hashtype byte");
+
+    if (sig[0] !== 0x30)
+        throw new Error("Non-canonical signature: wrong type");
+    if (sig[1] !== l-3)
+        throw new Error("Non-canonical signature: wrong length marker");
+
+    var nLenR = sig[3];
+    if (5 + nLenR >= l)
+        throw new Error("Non-canonical signature: S length misplaced");
+
+    var nLenS = sig[5+nLenR];
+    if ( (nLenR+nLenS+7) !== l)
+        throw new Error("Non-canonical signature: R+S length mismatch");
+      
+    var rPos = 4;
+    var R = new Buffer(nLenR);
+    sig.copy(R, 0,  rPos, rPos+ nLenR);
+     if (sig[rPos-2] !== 0x02)
+         throw new Error("Non-canonical signature: R value type mismatch");
+     if (nLenR == 0)
+         throw new Error("Non-canonical signature: R length is zero");
+     if (R[0] & 0x80)
+         throw new Error("Non-canonical signature: R value negative");
+     if (nLenR > 1 && (R[0] == 0x00) && !(R[1] & 0x80))
+         throw new Error("Non-canonical signature: R value excessively padded");
+
+    var sPos = 6 + nLenR;   
+    var S = new Buffer(nLenS);
+    sig.copy(S, 0,  sPos, sPos+ nLenS);
+     if (sig[sPos-2] != 0x02)
+         throw new Error("Non-canonical signature: S value type mismatch");
+     if (nLenS == 0)
+         throw new Error("Non-canonical signature: S length is zero");
+     if (S[0] & 0x80)
+         throw new Error("Non-canonical signature: S value negative");
+     if (nLenS > 1 && (S[0] == 0x00) && !(S[1] & 0x80))
+         throw new Error("Non-canonical signature: S value excessively padded");
+
+     if (opts.verifyEvenS) {
+         if (S[nLenS-1] & 1)
+             throw new Error("Non-canonical signature: S value odd");
+     }
+    return true;
 };
 
 module.exports = require('soop')(ScriptInterpreter);

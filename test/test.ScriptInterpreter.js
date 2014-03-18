@@ -42,6 +42,30 @@ describe('ScriptInterpreter', function() {
       );
     });
   });
+
+  var i = 0;
+  testdata.dataSigCanonical.forEach(function(datum) {
+    it('should validate valid canonical signatures', function() {
+      ScriptInterpreter.isCanonicalSignature(new Buffer(datum,'hex')).should.equal(true);
+    });
+  });
+   testdata.dataSigNonCanonical.forEach(function(datum) {
+    it('should NOT validate invalid canonical signatures', function() {
+
+      var sig;
+      var isHex;
+      //is Hex?
+      try {
+        sig =new Buffer(datum,'hex');
+        isHex=1;
+      } catch (e) { }
+
+      if (isHex)
+        ScriptInterpreter.isCanonicalSignature.bind(sig).should.throw();
+    });
+  });
+ 
+
 });
 
 
