@@ -98,7 +98,7 @@ var formatBuffer = exports.formatBuffer = function (buffer, maxLen) {
 
 var valueToBigInt = exports.valueToBigInt = function (valueBuffer) {
   if (Buffer.isBuffer(valueBuffer)) {
-    return bignum.fromBuffer(valueBuffer, {endian: 'little', size: 8});
+    return bignum.fromBuffer(valueBuffer, {endian: 'little', size: 'auto'});
   } else {
     return valueBuffer;
   }
@@ -108,16 +108,10 @@ var bigIntToValue = exports.bigIntToValue = function (valueBigInt) {
   if (Buffer.isBuffer(valueBigInt)) {
     return valueBigInt;
   } else {
-    return valueBigInt.toBuffer({endian: 'little', size: 8});
+    return valueBigInt.toBuffer({endian: 'little', size: 'auto'});
   }
 };
 
-var intTo64Bits = function(integer) {
-  return { 
-    hi: Math.floor(integer / 4294967296),
-    lo: (integer & 0xFFFFFFFF) >>> 0
-  };
-};
 var fitsInNBits = function(integer, n) {
   // TODO: make this efficient!!!
   return integer.toString(2).replace('-','').length < n;
@@ -127,6 +121,21 @@ exports.bytesNeededToStore = bytesNeededToStore = function(integer) {
   return Math.ceil(((integer).toString(2).replace('-','').length + 1)/ 8);
 };
 
+exports.negativeBuffer = negativeBuffer = function(b) {
+  // implement two-complement negative
+  var c = new Buffer(b.length);
+  // negate each byte
+  for (var i=0; i<b.length; i++){
+    c[i] = ~b[i];
+  }
+  // add one
+  for (var i=b.length - 1; i>=0; i--){
+    c[i] += 1;
+    if (c[i] !== 0) break;
+  }
+  console.log('negative of '+buffertools.toHex(b)+' is '+buffertools.toHex(c));
+  return c;
+}
 
 exports.intToBuffer = function(integer) {
   var size = bytesNeededToStore(integer);
@@ -139,27 +148,15 @@ exports.intToBuffer = function(integer) {
     if (si.lenght === 1) {
       si = '0' + si;
     }
-    buf.word8((neg?-1:1)*parseInt(si, 16));
+    buf.word8(parseInt(si, 16));
   }
-  return buf.buffer();
-
-  var data = null;
-  if (fitsInNBits(integer, 8)) {
-    data = new Buffer(1);
-    data.writeInt8(integer, 0);
-  } else if (fitsInNBits(integer, 16)) {
-    data = new Buffer(2);
-    data.writeInt16LE(integer, 0);
-  } else if (fitsInNBits(integer, 32)) {
-    data = new Buffer(4);
-    data.writeInt32LE(integer, 0);
-  } else {
-    var x = intTo64Bits(integer);
-    data = new Buffer(8);
-    data.writeInt32LE(x.hi, 0); // high part contains sign information (signed)
-    data.writeUInt32LE(x.lo, 4); // low part encoded as unsigned integer
+  var ret = buf.buffer();
+  if (neg) {
+    ret = buffertools.reverse(ret);
+    ret = negativeBuffer(ret);
+    ret = buffertools.reverse(ret);
   }
-  return data;
+  return ret;
 };
 
 var formatValue = exports.formatValue = function (valueBuffer) {

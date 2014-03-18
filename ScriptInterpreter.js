@@ -119,7 +119,10 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
           case OP_14:
           case OP_15:
           case OP_16:
-            this.stack.push(bigintToBuffer(opcode - OP_1 + 1));
+            var opint = opcode - OP_1 + 1;
+            var opbuf = bigintToBuffer(opint);
+            console.log('op'+opcode+' = '+opint+', '+buffertools.toHex(opbuf));
+            this.stack.push(opbuf);
             break;
 
           case OP_NOP:
@@ -352,8 +355,6 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
           case OP_SIZE:
             // (in -- in size)
             var value = bignum(this.stackTop().length);
-            //var topSize = util.bytesNeededToStore(castBigint(this.stackTop()).toNumber());
-            //var value = bignum(topSize);
             this.stack.push(bigintToBuffer(value));
             break;
 
@@ -396,6 +397,10 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
             // (x1 x2 - bool)
             var v1 = this.stackTop(2);
             var v2 = this.stackTop(1);
+            console.log('equal');
+            console.log(v1);
+            console.log(v2);
+
             var value = buffertools.compare(v1, v2) === 0;
 
             // OP_NOTEQUAL is disabled because it would be too easy to say
@@ -476,6 +481,9 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
             // (x1 x2 -- out)
             var v1 = castBigint(this.stackTop(2));
             var v2 = castBigint(this.stackTop(1));
+            console.log('add');
+            console.log(v1);
+            console.log(v2);
             var num;
             switch (opcode) {
               case OP_ADD:
@@ -874,7 +882,6 @@ var castBigint = ScriptInterpreter.castBigint = function castBigint(v) {
   if (!v.length) {
     return bignum(0);
   }
-
   // Arithmetic operands must be in range [-2^31...2^31]
   if (v.length > 4) {
     throw new Error("Bigint cast overflow (> 4 bytes)");
@@ -883,46 +890,55 @@ var castBigint = ScriptInterpreter.castBigint = function castBigint(v) {
   var w = new Buffer(v.length);
   v.copy(w);
   w = buffertools.reverse(w);
-  if (w[0] & 0x80) {
-    w[0] &= 0x7f;
-    return bignum.fromBuffer(w).neg();
+  console.log('v ='+buffertools.toHex(w));
+  var isNeg = w[0] & 0x80;
+  if (isNeg) {
+    for (var i = 0; i<w.length; i++) {
+      console.log('before = '+w[i]);
+      w[i] = ~w[i];
+      console.log('after  = '+w[i]);
+    }
+    console.log('w ='+buffertools.toHex(w));
+    return bignum.fromBuffer(w).add(bignum(1)).neg();
   } else {
-    // Positive number
     return bignum.fromBuffer(w);
   }
 };
+
+var padSign = function(b) {
+  var c;
+  if (b[0] & 0x80) {
+    c = new Buffer(b.length + 1);
+    b.copy(c, 1);
+    c[0] = 0;
+  } else {
+    c = b;
+  }
+  return c;
+}
+
 var bigintToBuffer = ScriptInterpreter.bigintToBuffer = function bigintToBuffer(v) {
   if ("number" === typeof v) {
     v = bignum(v);
   }
-
   var b, c;
-
   var cmp = v.cmp(0);
   if (cmp > 0) {
+    console.log('positive');
     b = v.toBuffer();
-    if (b[0] & 0x80) {
-      c = new Buffer(b.length + 1);
-      b.copy(c, 1);
-      c[0] = 0;
-      return buffertools.reverse(c);
-    } else {
-      return buffertools.reverse(b);
-    }
+    c = padSign(b);
+    c = buffertools.reverse(c);
   } else if (cmp == 0) {
-    return new Buffer([]);
+    c = new Buffer([]);
   } else {
+    console.log('negative '+v);
     b = v.neg().toBuffer();
-    if (b[0] & 0x80) {
-      c = new Buffer(b.length + 1);
-      b.copy(c, 1);
-      c[0] = 0x80;
-      return buffertools.reverse(c);
-    } else {
-      b[0] |= 0x80;
-      return buffertools.reverse(b);
-    }
+    console.log(b);
+    c = padSign(b);
+    c = Util.negativeBuffer(c);
+    c = buffertools.reverse(c);
   }
+  return c;
 };
 
 ScriptInterpreter.prototype.getResult = function getResult() {

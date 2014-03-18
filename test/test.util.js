@@ -99,6 +99,8 @@ describe('util', function() {
       [4294967295, 'ffffffff00'],
       [4294967296, '0000000001'],
       [4294967297, '0100000001'],
+      [2147483647, 'ffffff7f'],
+      [-2147483647, '01000080'],
       //[-4294967295, 'feffffffffffffff'],
       //[-4294967296, 'feffffffffffffff'],
       //[-4294967297, 'feffffffffffffff'],

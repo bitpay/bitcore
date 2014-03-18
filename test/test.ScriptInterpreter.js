@@ -2,6 +2,7 @@
 
 var chai = chai || require('chai');
 var bitcore = bitcore || require('../bitcore');
+var buffertools = require('buffertools');
 
 var should = chai.should();
 var testdata = testdata || require('./testdata');
@@ -22,6 +23,19 @@ describe('ScriptInterpreter', function() {
     var si = new ScriptInterpreter();
     should.exist(si);
   });
+  var data = [
+    [0, ''],
+    [1, '01'],
+    [-1, 'ff'],
+  ];
+  data.forEach(function(datum) {
+    var i = datum[0];
+    var hex = datum[1];
+    it('bigintToBuffer should work for ' + i, function() {
+      var result = ScriptInterpreter.bigintToBuffer(i);
+      buffertools.toHex(result).should.equal(hex);
+    });
+  });
   var i = 0;
   testdata.dataScriptValid.forEach(function(datum) {
     if (datum.length < 2) throw new Error('Invalid test data');
@@ -34,7 +48,7 @@ describe('ScriptInterpreter', function() {
       ScriptInterpreter.verify(Script.fromHumanReadable(scriptSig),
         Script.fromHumanReadable(scriptPubKey),
         null, 0, 0, // tx, output index, and hashtype
-        function (err, result) {
+        function(err, result) {
           should.not.exist(err);
           result.should.equal(true);
           done();
@@ -67,8 +81,3 @@ describe('ScriptInterpreter', function() {
  
 
 });
-
-
-
-
-
