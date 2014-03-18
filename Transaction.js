@@ -778,10 +778,16 @@ Transaction._sumOutputs = function(outs) {
   return valueOutSat;
 }
 
-Transaction.prepare = function (ins, outs, opts) {
-  opts = opts || {};
+/*
+ * createWithFee 
+ *  Create a TX given ins (selected already), outs, and a FIXED fee
+ *  details on the input on .create
+ */
 
-  var feeSat = opts.feeSat || (opts.fee? util.parseValue(opts.fee) : FEE_PER_1000B_SAT );
+Transaction.createWithFee = function (ins, outs, feeSat, opts) {
+  opts = opts || {};
+  feeSat = feeSat ||  0;
+
   var txobj = {};
   txobj.version = 1;
   txobj.lock_time = opts.lockTime || 0;
@@ -981,18 +987,74 @@ Transaction.prototype.sign = function (selectedUtxos, keys, opts) {
     self.ins[i].s = scriptSig.getBuffer();
     inputSigned++;
   }
-
   var complete = inputSigned === l;
-
   return complete;
 };
 
+/*
+ * create
+ *
+ *  creates a transaction without signing it.
+ *
+ *   @utxos
+ *   @outs
+ *   @opts
+ *
+ *  See createAndSign for documentation on the inputs
+ *
+ *   Returns:
+ *     { tx: {}, selectedUtxos: []}
+ *   see createAndSign for details
+ *
+ */
 
+Transaction.create = function (utxos, outs, opts) {
 
+    //starting size estimation
+    var size    = 500;
+    var opts    = opts || {};
+
+    var givenFeeSat;
+    if (opts.fee || opts.feeSat) {
+      givenFeeSat = opts.fee ? opts.fee * util.COIN : opts.feeSat;
+    }
+
+    var selectedUtxos;
+    do {
+      // based on https://en.bitcoin.it/wiki/Transaction_fees
+      maxSizeK     = parseInt(size/1000) + 1;
+      var feeSat  = givenFeeSat
+        ? givenFeeSat : maxSizeK * FEE_PER_1000B_SAT ;
+
+      var valueOutSat = Transaction
+        ._sumOutputs(outs)
+        .add(feeSat);
+
+      selectedUtxos = Transaction
+        .selectUnspent(utxos,valueOutSat / util.COIN, opts.allowUnconfirmed);
+
+      if (!selectedUtxos) {
+        throw new Error(
+          'the given UTXOs dont sum up the given outputs: ' 
+          + valueOutSat.toString() 
+          + ' (fee is ' + feeSat
+          + ' )SAT'
+        );
+      }
+      var tx = Transaction.createWithFee(selectedUtxos, outs, feeSat, {
+        remainderAddress: opts.remainderAddress,
+        lockTime: opts.lockTime,
+      });
+
+      size = tx.getSize();
+    } while (size > (maxSizeK+1)*1000 );
+
+    return {tx: tx, selectedUtxos: selectedUtxos};
+};
 
 
 /*
- * create
+ * createAndSign
  *
  *  creates and signs a transaction
  *
@@ -1031,66 +1093,33 @@ Transaction.prototype.sign = function (selectedUtxos, keys, opts) {
  *      signhash: SIGHASH_ALL
  *    }
  *
+ *
+ *   Retuns:
+ *   { 
+ *      tx: The new created transaction,
+ *      selectedUtxos: The UTXOs selected as inputs for this transaction
+ *   }
+ *
  *  Amounts are in BTC. instead of fee and amount; feeSat and amountSat can be given, 
  *  repectively, to provide amounts in satoshis.
  *
- *  If no remainderAddress is given, and there is a remainderAddress
- *  first in address will be used. (TODO: is this is reasonable?)
+ *  If no remainderAddress is given, and there are remainder coins, the
+ *  first IN address will be used to return the coins. (TODO: is this is reasonable?)
  *
- *  if not keys are provided, the transaction will no be signed. .sign can be used to
- *  sign it later.
- *
- *  The Transaction creation is handled in 3 steps:
- *    .selectUnspent
- *    .prepare
+ *  The Transaction creation is handled in 2 steps:
+ *    .create
+ *      .selectUnspent
+ *      .createWithFee
  *    .sign
+ *
+ *  If you need just to create a TX and not sign it, use .create  
  *
  */
 
-
-Transaction.create = function (utxos, outs, keys, opts) {
-
-    //starting size estimation
-    var size    = 500;
-    var opts    = opts || {};
-
-    var givenFeeSat;
-    if (opts.fee || opts.feeSat) {
-      givenFeeSat = opts.fee ? opts.fee * util.COIN : opts.feeSat;
-    }
-
-    do {
-      // based on https://en.bitcoin.it/wiki/Transaction_fees
-      maxSizeK     = parseInt(size/1000) + 1;
-      var feeSat  = givenFeeSat
-        ? givenFeeSat : maxSizeK * FEE_PER_1000B_SAT ;
-
-      var valueOutSat = Transaction
-        ._sumOutputs(outs)
-        .add(feeSat);
-
-      var selectedUtxos = Transaction
-        .selectUnspent(utxos,valueOutSat / util.COIN, opts.allowUnconfirmed);
-
-      if (!selectedUtxos) {
-        throw new Error(
-          'the given UTXOs dont sum up the given outputs: ' 
-          + valueOutSat.toString() 
-          + ' (fee is ' + feeSat
-          + ' )SAT'
-        );
-      }
-      var tx = Transaction.prepare(selectedUtxos, outs, {
-        feeSat: feeSat,
-        remainderAddress: opts.remainderAddress,
-        lockTime: opts.lockTime,
-      });
-
-      size = tx.getSize();
-    } while (size > (maxSizeK+1)*1000 );
-
-    if (keys) tx.sign(selectedUtxos, keys);
-    return tx;
+Transaction.createAndSign = function (utxos, outs, keys, opts) {
+    var ret = Transaction.create(utxos, outs, opts);
+    ret.tx.sign(ret.selectedUtxos, keys);
+    return ret;
 };
 
 var TransactionInputsCache = exports.TransactionInputsCache =

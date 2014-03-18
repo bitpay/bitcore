@@ -86,8 +86,13 @@ describe('Transaction', function() {
   it('#create should be able to create instance', function() {
     var utxos =testdata.dataUnspent;
     var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
-    var tx = Transaction.create(utxos, outs, null, opts);
-    should.exist(tx);
+
+    var ret = Transaction.create(utxos, outs, opts);
+    should.exist(ret.tx);
+    should.exist(ret.selectedUtxos);
+    ret.selectedUtxos.length.should.equal(2);
+
+    var tx = ret.tx;
 
     tx.version.should.equal(1);
     tx.ins.length.should.equal(2);
@@ -105,11 +110,11 @@ describe('Transaction', function() {
     var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:80}];
     Transaction
       .create
-      .bind(utxos, outs, null, opts)
+      .bind(utxos, outs, opts)
       .should.throw();
 
     var outs2 = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.5}];
-    should.exist( Transaction.create(utxos, outs2, null, opts));
+    should.exist( Transaction.create(utxos, outs2, opts));
 
     // do not allow unconfirmed
     Transaction.create.bind(utxos, outs2).should.throw();
@@ -119,66 +124,96 @@ describe('Transaction', function() {
   it('#create should create same output as bitcoind createrawtransaction ', function() {
     var utxos =testdata.dataUnspent;
     var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
-    var tx = Transaction.create(utxos, outs, null, opts); 
-
+    var ret = Transaction.create(utxos, outs, opts); 
+    var tx = ret.tx;
 
     // string output generated from: bitcoind createrawtransaction '[{"txid": "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1","vout":1},{"txid":"2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc2","vout":0}  ]' '{"mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE":0.08,"mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd":0.0299}'
     tx.serialize().toString('hex').should.equal('0100000002c1cf12ab89729d19d3cdec8ae531b5038d56c741006a105d532b3a7afa65c12a0100000000ffffffffc2cf12ab89729d19d3cdec8ae531b5038d56c741006a105d532b3a7afa65c12a0000000000ffffffff0200127a00000000001976a914774e603bafb717bd3f070e68bbcccfd907c77d1388acb09f2d00000000001976a914b00127584485a7cff0949ef0f6bc5575f06ce00d88ac00000000');
 
+  });
+
+  it('#create should create same output as bitcoind createrawtransaction wo remainder', function() {
+    var utxos =testdata.dataUnspent;
     // no remainder
-    outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
-    tx = Transaction.create(utxos, outs, null, {fee:0.03} ); 
+    var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
+    var ret = Transaction.create(utxos, outs, {fee:0.03} ); 
+    var tx = ret.tx;
 
     // string output generated from: bitcoind createrawtransaction '[{"txid": "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1","vout":1},{"txid":"2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc2","vout":0}  ]' '{"mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE":0.08}'
     //
     tx.serialize().toString('hex').should.equal('0100000002c1cf12ab89729d19d3cdec8ae531b5038d56c741006a105d532b3a7afa65c12a0100000000ffffffffc2cf12ab89729d19d3cdec8ae531b5038d56c741006a105d532b3a7afa65c12a0000000000ffffffff0100127a00000000001976a914774e603bafb717bd3f070e68bbcccfd907c77d1388ac00000000');
   });
  
-  it('#sign should sign a tx', function() {
+  it('#createAndSign should sign a tx', function() {
     var utxos =testdata.dataUnspentSign.unspent;
     var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
-    var tx = Transaction.create(utxos, outs, testdata.dataUnspentSign.keyStrings, opts); 
+    var ret = Transaction.createAndSign(utxos, outs, testdata.dataUnspentSign.keyStrings, opts); 
+    var tx = ret.tx;
     tx.isComplete().should.equal(true);
     tx.ins.length.should.equal(1);
     tx.outs.length.should.equal(2);
 
     var outs2 = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:16}];
-    var tx2 = Transaction.create(utxos, outs2, testdata.dataUnspentSign.keyStrings, opts); 
+    var ret2 = Transaction.createAndSign(utxos, outs2, testdata.dataUnspentSign.keyStrings, opts); 
+    var tx2 = ret2.tx;
     tx2.isComplete().should.equal(true);
     tx2.ins.length.should.equal(3);
     tx2.outs.length.should.equal(2);
   });
 
-  it('#sign should sign an incomplete tx ', function() {
+  it('#createAndSign should sign an incomplete tx ', function() {
     var keys = ['cNpW8B7XPAzCdRR9RBWxZeveSNy3meXgHD8GuhcqUyDuy8ptCDzJ'];
     var utxos =testdata.dataUnspentSign.unspent;
     var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
-    var tx = Transaction.create(utxos, outs, keys, opts); 
+    var ret = Transaction.createAndSign(utxos, outs, keys, opts); 
+    var tx = ret.tx;
     tx.ins.length.should.equal(1);
     tx.outs.length.should.equal(2);
-    tx.isComplete().should.equal(false);
   });
-  it('#sign should sign a tx in multiple steps', function() {
-    var utxos = Transaction.selectUnspent(testdata.dataUnspentSign.unspent,13, true);
+  it('#isComplete should return TX signature status', function() {
+    var keys = ['cNpW8B7XPAzCdRR9RBWxZeveSNy3meXgHD8GuhcqUyDuy8ptCDzJ'];
+    var utxos =testdata.dataUnspentSign.unspent;
     var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
+    var ret = Transaction.createAndSign(utxos, outs, keys, opts); 
+    var tx = ret.tx;
+    tx.isComplete().should.equal(false);
+    tx.sign(ret.selectedUtxos, testdata.dataUnspentSign.keyStrings);
+    tx.isComplete().should.equal(true);
+  });
 
-    var tx = Transaction.prepare(utxos, outs, opts); 
+  it('#sign should sign a tx in multiple steps (case1)', function() {
+    var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:1.08}];
+    var ret = Transaction.create(testdata.dataUnspentSign.unspent, outs, opts); 
+    var tx            = ret.tx;
+    var selectedUtxos = ret.selectedUtxos;
+
     var k1 = testdata.dataUnspentSign.keyStrings.slice(0,1);
-    var k23 = testdata.dataUnspentSign.keyStrings.slice(1,3);
-    tx.sign(utxos, k1).should.equal(false);
-    tx.sign(utxos, k23).should.equal(true);
 
-    var tx2 = Transaction.prepare(utxos, outs, opts); 
+    tx.isComplete().should.equal(false);
+
+    tx.sign(selectedUtxos, k1).should.equal(false);
+
+    var k23 = testdata.dataUnspentSign.keyStrings.slice(1,3);
+    tx.sign(selectedUtxos, k23).should.equal(true);
+    tx.isComplete().should.equal(true);
+  });
+
+  it('#sign should sign a tx in multiple steps (case2)', function() {
+    var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:16}];
+    var ret = Transaction.create(testdata.dataUnspentSign.unspent, outs, opts); 
+    var tx            = ret.tx;
+    var selectedUtxos = ret.selectedUtxos;
+
     var k1 = testdata.dataUnspentSign.keyStrings.slice(0,1);
     var k2 = testdata.dataUnspentSign.keyStrings.slice(1,2);
     var k3 = testdata.dataUnspentSign.keyStrings.slice(2,3);
-    tx2.sign(utxos, k1).should.equal(false);
-    tx2.sign(utxos, k2).should.equal(false);
-    tx2.sign(utxos, k3).should.equal(true);
+    tx.sign(selectedUtxos, k1).should.equal(false);
+    tx.sign(selectedUtxos, k2).should.equal(false);
+    tx.sign(selectedUtxos, k3).should.equal(true);
  
   });
 
-  it('#create: should generate dynamic fee and readjust (and not) the selected UTXOs', function() {
+  it('#createAndSign: should generate dynamic fee and readjust (and not) the selected UTXOs', function() {
     //this cases exceeds the input by 1mbtc AFTEr calculating the dynamic fee,
     //so, it should trigger adding a new 10BTC utxo
     var utxos =testdata.dataUnspentSign.unspent;
@@ -188,7 +223,8 @@ describe('Transaction', function() {
       outs.push({address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.01});
     }
 
-    var tx = Transaction.create(utxos, outs, testdata.dataUnspentSign.keyStrings, opts); 
+    var ret = Transaction.createAndSign(utxos, outs, testdata.dataUnspentSign.keyStrings, opts); 
+    var tx = ret.tx;
     tx.getSize().should.equal(3560);
 
     // ins = 11.0101 BTC (2 inputs: 1.0101 + 10 );
@@ -209,7 +245,8 @@ describe('Transaction', function() {
       outs.push({address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.01});
     }
 
-    var tx = Transaction.create(utxos, outs, testdata.dataUnspentSign.keyStrings, opts); 
+    var ret = Transaction.createAndSign(utxos, outs, testdata.dataUnspentSign.keyStrings, opts); 
+    var tx = ret.tx;
     tx.getSize().should.equal(3485);
 
     // ins = 1.0101 BTC (1 inputs: 1.0101);

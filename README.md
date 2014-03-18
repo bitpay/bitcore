@@ -130,53 +130,52 @@ var bitcore = require('bitcore');
 var networks = bitcore.networks;
 var Peer = bitcore.Peer;
 var Transaction = bitcore.Transaction;
-var Address = bitcore.Address;
-var Script = bitcore.Script;
-var coinUtil = bitcore.util;
 var PeerManager = require('soop').load('../PeerManager', {
   network: networks.testnet
 });
 
-var createTx = function() {
-  var TXIN = 'd05f35e0bbc495f6dcab03e599c8f5e32a07cdb4bc76964de201d06a2a7d8265';
-  var TXIN_N = 0;
-  var ADDR = 'muHct3YZ9Nd5Pq7uLYYhXRAxeW4EnpcaLz';
-  var VAL = '0.001';
-
-  var txobj = {
-    version: 1,
-    lock_time: 0,
-    ins: [],
-    outs: []
-  };
-
-  var txin = {
-    s: coinUtil.EMPTY_BUFFER, // Add signature
-    q: 0xffffffff
-  };
-
-  var hash = new Buffer(TXIN.split('').reverse(), 'hex');
-  var vout = parseInt(TXIN_N);
-  var voutBuf = new Buffer(4);
-
-  voutBuf.writeUInt32LE(vout, 0);
-  txin.o = Buffer.concat([hash, voutBuf]);
-  txobj.ins.push(txin);
-
-  var addr = new Address(ADDR);
-  var script = Script.createPubKeyHashOut(addr.payload());
-  var valueNum = coinUtil.parseValue(VAL);
-  var value = coinUtil.bigIntToValue(valueNum);
-
-  var txout = {
-    v: value,
-    s: script.getBuffer(),
-  };
-  txobj.outs.push(txout);
-
-  return new Transaction(txobj);
-
+// this can be get from insight.bitcore.io API o blockchain.info
+var utxos = { 
+  "unspent": [
+    {
+      "address": "n4g2TFaQo8UgedwpkYdcQFF6xE2Ei9Czvy",
+      "txid": "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1",
+      "scriptPubKey": "76a914fe021bac469a5c49915b2a8ffa7390a9ce5580f988ac",
+      "vout": 1,
+      "amount": 1.0101,
+      "confirmations":7
+    },
+    {
+      "address": "mhNCT9TwZAGF1tLPpZdqfkTmtBkY282YDW",
+      "txid": "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc2",
+      "scriptPubKey": "76a9141448534cb1a1ec44665b0eb2326e570814afe3f188ac",
+      "vout": 0,
+      "confirmations": 1,
+      "amount": 10
+    },
 };
+
+//private keys in WIF format (see Transaction.js for other options)
+var keys = [
+  "cSq7yo4fvsbMyWVN945VUGUWMaSazZPWqBVJZyoGsHmNq6W4HVBV",
+  "cPa87VgwZfowGZYaEenoQeJgRfKW6PhZ1R65EHTkN1K19cSvc92G",
+  "cPQ9DSbBRLva9av5nqeF5AGrh3dsdW8p2E5jS4P8bDWZAoQTeeKB"
+];
+
+function createTx() {
+  var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
+
+  var ret = Transaction.createAndSign(utxos, outs, keys); 
+
+  / * create and signing can be done in 2 steps using:
+    *       var ret = Transaction.create(utxos,outs);
+    * and later:
+    *       ret.tx.sign(ret.tx.selectedUtxos, outs, keys); 
+    */
+
+  return ret.tx.serialize().toString('hex');
+};
+
 
 var peerman = new PeerManager();
 peerman.addPeer(new Peer('127.0.0.1', 18333));
