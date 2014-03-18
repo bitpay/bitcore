@@ -76,5 +76,8 @@
     "commander": "~2.1.0",
     "browser-pack": "~2.0.1"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=0.10"
+  }
 }
