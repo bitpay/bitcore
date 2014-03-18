@@ -42,9 +42,10 @@ Check some screenshots and more details at [insight's project homepage](http://i
 
   Please note that the app will need to sync its internal database
   with the blockchain state, which may take some time. You can check
-  sync progress from within the web interface.
+  sync progress from within the web interface. More details about that process
+  on [insight-api README](https://github.com/bitpay/insight-api/blob/master/README.md). 
   
-
+  
 
 ## Development
 
