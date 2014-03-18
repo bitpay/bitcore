@@ -23,28 +23,12 @@ describe('ScriptInterpreter', function() {
     var si = new ScriptInterpreter();
     should.exist(si);
   });
-  var data = [
-    [0, ''],
-    [1, '01'],
-    [-1, 'ff'],
-  ];
-  data.forEach(function(datum) {
-    var i = datum[0];
-    var hex = datum[1];
-    it('bigintToBuffer should work for ' + i, function() {
-      var result = ScriptInterpreter.bigintToBuffer(i);
-      buffertools.toHex(result).should.equal(hex);
-    });
-  });
-  var i = 0;
   testdata.dataScriptValid.forEach(function(datum) {
     if (datum.length < 2) throw new Error('Invalid test data');
     var scriptSig = datum[0]; // script inputs
     var scriptPubKey = datum[1]; // output script
     var human = scriptSig + ' ' + scriptPubKey;
     it('should validate script ' + human, function(done) {
-      i++;
-      console.log(i + ' ' + human);
       ScriptInterpreter.verify(Script.fromHumanReadable(scriptSig),
         Script.fromHumanReadable(scriptPubKey),
         null, 0, 0, // tx, output index, and hashtype
@@ -56,8 +40,6 @@ describe('ScriptInterpreter', function() {
       );
     });
   });
-
-  var i = 0;
   testdata.dataSigCanonical.forEach(function(datum) {
     it('should validate valid canonical signatures', function() {
       ScriptInterpreter.isCanonicalSignature(new Buffer(datum,'hex')).should.equal(true);
@@ -65,7 +47,6 @@ describe('ScriptInterpreter', function() {
   });
    testdata.dataSigNonCanonical.forEach(function(datum) {
     it('should NOT validate invalid canonical signatures', function() {
-
       var sig;
       var isHex;
       //is Hex?

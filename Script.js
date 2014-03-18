@@ -509,7 +509,7 @@ Script.stringToBuffer = function(s) {
         if (!isNaN(integer)) {
           // integer
           //console.log('integer');
-          var data = util.intToBuffer(integer);
+          var data = util.intToBufferSM(integer);
           buf.put(Script.chunksToBuffer([data]));
         } else if (word[0] === '\'' && word[word.length-1] === '\'') {
           // string

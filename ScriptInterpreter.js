@@ -18,6 +18,9 @@ for (var i in Opcode.map) {
   eval(i + " = " + Opcode.map[i] + ";");
 }
 
+var intToBufferSM = Util.intToBufferSM
+var bufferSMToInt = Util.bufferSMToInt;
+
 function ScriptInterpreter() {
   this.stack = [];
   this.disableUnsafeOpcodes = true;
@@ -120,8 +123,7 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
           case OP_15:
           case OP_16:
             var opint = opcode - OP_1 + 1;
-            var opbuf = bigintToBuffer(opint);
-            console.log('op'+opcode+' = '+opint+', '+buffertools.toHex(opbuf));
+            var opbuf = intToBufferSM(opint);
             this.stack.push(opbuf);
             break;
 
@@ -246,7 +248,7 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
           case OP_DEPTH:
             // -- stacksize
             var value = bignum(this.stack.length);
-            this.stack.push(bigintToBuffer(value));
+            this.stack.push(intToBufferSM(value));
             break;
 
           case OP_DROP:
@@ -355,7 +357,7 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
           case OP_SIZE:
             // (in -- in size)
             var value = bignum(this.stackTop().length);
-            this.stack.push(bigintToBuffer(value));
+            this.stack.push(intToBufferSM(value));
             break;
 
           case OP_INVERT:
@@ -397,9 +399,6 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
             // (x1 x2 - bool)
             var v1 = this.stackTop(2);
             var v2 = this.stackTop(1);
-            console.log('equal');
-            console.log(v1);
-            console.log(v2);
 
             var value = buffertools.compare(v1, v2) === 0;
 
@@ -430,7 +429,7 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
           case OP_NOT:
           case OP_0NOTEQUAL:
             // (in -- out)
-            var num = castBigint(this.stackTop());
+            var num = bufferSMToInt(this.stackTop());
             switch (opcode) {
               case OP_1ADD:
                 num = num.add(bignum(1));
@@ -457,7 +456,7 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
                 num = bignum(num.cmp(0) == 0 ? 0 : 1);
                 break;
             }
-            this.stack[this.stack.length - 1] = bigintToBuffer(num);
+            this.stack[this.stack.length - 1] = intToBufferSM(num);
             break;
 
           case OP_ADD:
@@ -479,11 +478,8 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
           case OP_MIN:
           case OP_MAX:
             // (x1 x2 -- out)
-            var v1 = castBigint(this.stackTop(2));
-            var v2 = castBigint(this.stackTop(1));
-            console.log('add');
-            console.log(v1);
-            console.log(v2);
+            var v1 = bufferSMToInt(this.stackTop(2));
+            var v2 = bufferSMToInt(this.stackTop(1));
             var num;
             switch (opcode) {
               case OP_ADD:
@@ -559,7 +555,7 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
             }
             this.stackPop();
             this.stackPop();
-            this.stack.push(bigintToBuffer(num));
+            this.stack.push(intToBufferSM(num));
 
             if (opcode === OP_NUMEQUALVERIFY) {
               if (castBool(this.stackTop())) {
@@ -572,14 +568,14 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
 
           case OP_WITHIN:
             // (x min max -- out)
-            var v1 = castBigint(this.stackTop(3));
-            var v2 = castBigint(this.stackTop(2));
-            var v3 = castBigint(this.stackTop(1));
+            var v1 = bufferSMToInt(this.stackTop(3));
+            var v2 = bufferSMToInt(this.stackTop(2));
+            var v3 = bufferSMToInt(this.stackTop(1));
             this.stackPop();
             this.stackPop();
             this.stackPop();
             var value = v1.cmp(v2) >= 0 && v1.cmp(v3) < 0;
-            this.stack.push(bigintToBuffer(value ? 1 : 0));
+            this.stack.push(intToBufferSM(value ? 1 : 0));
             break;
 
           case OP_RIPEMD160:
@@ -759,7 +755,6 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
             return;
 
           default:
-            console.log('opcode '+opcode);
             throw new Error("Unknown opcode encountered");
         }
 
@@ -854,7 +849,7 @@ ScriptInterpreter.prototype.getPrimitiveStack = function getPrimitiveStack() {
     if (entry.length > 2) {
       return buffertools.toHex(entry.slice(0));
     }
-    var num = castBigint(entry);
+    var num = bufferSMToInt(entry);
     if (num.cmp(-128) >= 0 && num.cmp(127) <= 0) {
       return num.toNumber();
     } else {
@@ -876,69 +871,7 @@ var castBool = ScriptInterpreter.castBool = function castBool(v) {
   return false;
 };
 var castInt = ScriptInterpreter.castInt = function castInt(v) {
-  return castBigint(v).toNumber();
-};
-var castBigint = ScriptInterpreter.castBigint = function castBigint(v) {
-  if (!v.length) {
-    return bignum(0);
-  }
-  // Arithmetic operands must be in range [-2^31...2^31]
-  if (v.length > 4) {
-    throw new Error("Bigint cast overflow (> 4 bytes)");
-  }
-
-  var w = new Buffer(v.length);
-  v.copy(w);
-  w = buffertools.reverse(w);
-  console.log('v ='+buffertools.toHex(w));
-  var isNeg = w[0] & 0x80;
-  if (isNeg) {
-    for (var i = 0; i<w.length; i++) {
-      console.log('before = '+w[i]);
-      w[i] = ~w[i];
-      console.log('after  = '+w[i]);
-    }
-    console.log('w ='+buffertools.toHex(w));
-    return bignum.fromBuffer(w).add(bignum(1)).neg();
-  } else {
-    return bignum.fromBuffer(w);
-  }
-};
-
-var padSign = function(b) {
-  var c;
-  if (b[0] & 0x80) {
-    c = new Buffer(b.length + 1);
-    b.copy(c, 1);
-    c[0] = 0;
-  } else {
-    c = b;
-  }
-  return c;
-}
-
-var bigintToBuffer = ScriptInterpreter.bigintToBuffer = function bigintToBuffer(v) {
-  if ("number" === typeof v) {
-    v = bignum(v);
-  }
-  var b, c;
-  var cmp = v.cmp(0);
-  if (cmp > 0) {
-    console.log('positive');
-    b = v.toBuffer();
-    c = padSign(b);
-    c = buffertools.reverse(c);
-  } else if (cmp == 0) {
-    c = new Buffer([]);
-  } else {
-    console.log('negative '+v);
-    b = v.neg().toBuffer();
-    console.log(b);
-    c = padSign(b);
-    c = Util.negativeBuffer(c);
-    c = buffertools.reverse(c);
-  }
-  return c;
+  return bufferSMToInt(v).toNumber();
 };
 
 ScriptInterpreter.prototype.getResult = function getResult() {

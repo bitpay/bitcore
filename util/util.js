@@ -133,11 +133,16 @@ exports.negativeBuffer = negativeBuffer = function(b) {
     c[i] += 1;
     if (c[i] !== 0) break;
   }
-  console.log('negative of '+buffertools.toHex(b)+' is '+buffertools.toHex(c));
   return c;
-}
+};
 
-exports.intToBuffer = function(integer) {
+/*
+ * Transforms an integer into a buffer using two-complement encoding
+ * For example, 1 is encoded as 01 and -1 is encoded as ff
+ * For more info see: 
+ * http://en.wikipedia.org/wiki/Signed_number_representations#Two.27s_complement
+ */
+exports.intToBuffer2C = function(integer) {
   var size = bytesNeededToStore(integer);
   var buf = new Put();
   var s = integer.toString(16);
@@ -158,6 +163,73 @@ exports.intToBuffer = function(integer) {
   }
   return ret;
 };
+
+
+var padSign = function(b) {
+  var c;
+  if (b[0] & 0x80) {
+    c = new Buffer(b.length + 1);
+    b.copy(c, 1);
+    c[0] = 0;
+  } else {
+    c = b;
+  }
+  return c;
+}
+
+
+/*
+ * Transforms an integer into a buffer using sign+magnitude encoding
+ * For example, 1 is encoded as 01 and -1 is encoded as 81
+ * For more info see: 
+ * http://en.wikipedia.org/wiki/Signed_number_representations#Signed_magnitude_representation
+ */
+exports.intToBufferSM = function(v) {
+  if ("number" === typeof v) {
+    v = bignum(v);
+  }
+  var b, c;
+  var cmp = v.cmp(0);
+  if (cmp > 0) {
+    b = v.toBuffer();
+    c = padSign(b);
+    c = buffertools.reverse(c);
+  } else if (cmp == 0) {
+    c = new Buffer([]);
+  } else {
+    b = v.neg().toBuffer();
+    c = padSign(b);
+    c[0] |= 0x80;
+    c = buffertools.reverse(c);
+  }
+  return c;
+};
+
+/*
+ * Reverse of intToBufferSM
+ */
+exports.bufferSMToInt = function(v) {
+  if (!v.length) {
+    return bignum(0);
+  }
+  // Arithmetic operands must be in range [-2^31...2^31]
+  if (v.length > 4) {
+    throw new Error('Bigint cast overflow (> 4 bytes)');
+  }
+
+  var w = new Buffer(v.length);
+  v.copy(w);
+  w = buffertools.reverse(w);
+  var isNeg = w[0] & 0x80;
+  if (isNeg) {
+    w[0] &= 0x7f;
+    return bignum.fromBuffer(w).neg();
+  } else {
+    return bignum.fromBuffer(w);
+  }
+};
+
+
 
 var formatValue = exports.formatValue = function (valueBuffer) {
   var value = valueToBigInt(valueBuffer).toString();
