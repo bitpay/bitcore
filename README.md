@@ -29,17 +29,21 @@ Check some screenshots and more details at [insight's project homepage](http://i
 
     $ npm start
     
-  Or just run:
-
-    $ INSIGHT_PUBLIC_PATH=public node node_modules/insight-bitcore-api/insight.js
-
   Then open a browser and go to:
 
     http://localhost:3001
 
+  If *insight* reports problems connecting to **bitcoind** please check the CONFIGURATION section of 
+  [insight-api README](https://github.com/bitpay/insight-api/blob/master/README.md). To set the 
+  environment variables run something like:
+  
+     $ INSIGHT_NETWORK=livenet BITCOIND_USER=user BITCOIND_PASS=pass INSIGHT_PUBLIC_PATH=public  npm start
+
+
   Please note that the app will need to sync its internal database
   with the blockchain state, which may take some time. You can check
   sync progress from within the web interface.
+  
 
 
 ## Development
