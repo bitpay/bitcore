@@ -127,10 +127,12 @@ exports.negativeBuffer = negativeBuffer = function(b) {
   // negate each byte
   for (var i=0; i<b.length; i++){
     c[i] = ~b[i];
+    if (c[i] < 0) c[i] += 256;
   }
   // add one
   for (var i=b.length - 1; i>=0; i--){
     c[i] += 1;
+    if (c[i] >= 256) c[i] -= 256;
     if (c[i] !== 0) break;
   }
   return c;
@@ -153,7 +155,8 @@ exports.intToBuffer2C = function(integer) {
     if (si.lenght === 1) {
       si = '0' + si;
     }
-    buf.word8(parseInt(si, 16));
+    var pi = parseInt(si, 16);
+    buf.word8(pi);
   }
   var ret = buf.buffer();
   if (neg) {
