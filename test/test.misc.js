@@ -108,6 +108,7 @@ describe('Miscelaneous stuff', function() {
     } else {
       describe('base58 address valid ' + b58, function() {
         var a;
+        var shouldBeScript = meta.addrType === 'script';
         before(function() {
           a = new Address(b58);
         });
@@ -115,10 +116,15 @@ describe('Miscelaneous stuff', function() {
           a.isValid().should.equal(true);
         });
         it('should be of correct type', function() {
-          a.isScript().should.equal(meta.addrType === 'script');
+          a.isScript().should.equal(shouldBeScript);
         });
         it('should get correct network', function() {
           a.network().should.equal(network);
+        });
+        it('should generate correctly from hex', function() {
+          var version = shouldBeScript? network.addressScript: network.addressPubkey;
+          var b = new Address(version, new Buffer(hexPayload, 'hex'));
+          b.toString().should.equal(b58);
         });
       });
     }
