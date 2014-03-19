@@ -62,7 +62,7 @@
     "browserify-buffertools": "~1.0.2",
     "brfs": "~1.0.0",
     "uglifyify": "~1.2.3",
-    "socks5-client": "^0.3.4"
+    "socks5-client": "git+https://github.com/gordonwritescode/socks5-client.git"
   },
   "devDependencies": {
     "grunt-contrib-watch": "~0.5.3",
