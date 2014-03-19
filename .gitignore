@@ -9,3 +9,4 @@ node_modules/
 .project
 README.html
 tags
+coverage

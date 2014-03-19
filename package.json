@@ -43,6 +43,7 @@
   },
   "scripts": {
     "test": "mocha test -R spec",
+    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
     "postinstall": "node browser/build.js -a"
   },
   "dependencies": {
@@ -74,7 +75,8 @@
     "brfs": "~1.0.0",
     "async": "~0.2.10",
     "commander": "~2.1.0",
-    "browser-pack": "~2.0.1"
+    "browser-pack": "~2.0.1",
+    "istanbul": "~0.2.6"
   },
   "license": "MIT",
   "engines": {
