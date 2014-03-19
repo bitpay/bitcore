@@ -145,16 +145,16 @@ margin-left: 0;
 
 @media (max-width: 991px) {
   .status {
-    margin: 0;
-  }
-  .navbar-form {
-    width: 15%;
+    display: none;
   }
 }
 
 @media (max-width: 767px) {
   .navbar-form {
     width: auto;
+  }
+  .status {
+    display: none;
   }
 }
 
@@ -732,4 +732,7 @@ a.v_highlight_more {
   box-shadow:         0px 2px 3px 0px rgba(0,0,0,0.20);
 }
 
+#search-form-mobile {
+  margin-top: 15px;
+}
 
