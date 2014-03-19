@@ -75,12 +75,13 @@ describe('Miscelaneous stuff', function() {
     if (meta.isPrivkey) {
       describe('base58 private key valid ' + b58, function() {
         var k;
+        var opts = {
+          network: network
+        };
         before(function() {
-          k = new WalletKey({
-            network: network
-          });
+          k = new WalletKey(opts);
         });
-        it('parse', function() {
+        it('should generate correctly from WIF', function() {
           k.fromObj({
             priv: b58
           });
@@ -94,6 +95,14 @@ describe('Miscelaneous stuff', function() {
         });
         it('should not be an Address', function() {
           new Address(b58).isValid().should.equal(false);
+        });
+        it('should generate correctly from hex', function() {
+          var k2 = new WalletKey(opts);
+          k2.fromObj({
+            priv: hexPayload,
+            compressed: meta.isCompressed
+          });
+          k2.storeObj().priv.should.equal(b58);
         });
       });
     } else {
