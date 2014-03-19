@@ -296,6 +296,30 @@ This will generate a `browser/bundle.js` containing only the Transaction
 Use this option if you are not using the whole bitcore library, to optimize
 the bundle size, script loading time, and general resource usage.
 
+## Tests
+
+Run tests in node: 
+
+```
+mocha
+```
+
+Or generate tests in the browser:
+
+```
+grunt shell
+```
+
+And then open test/index.html in your browser.
+
+To run the code coverage report:
+
+```
+npm run-script coverage
+```
+
+And then open coverage/lcov-report/index.html in your browser.
+
 
 #License
 
