@@ -306,7 +306,7 @@ describe('Transaction', function() {
     var transactionString = buffertools.toHex(
       testTx.transaction.serialize());
 
-    it('valid tx=' + transactionString, function() {
+    it.skip('valid tx=' + transactionString, function() {
       // Verify that all inputs are valid
       testTx.inputs.forEach(function(input) {
         testTx.transaction.verifyInput(input.index, input.scriptPubKey,
@@ -330,7 +330,7 @@ describe('Transaction', function() {
     var transactionString = buffertools.toHex(
       testTx.transaction.serialize());
 
-    it('valid tx=' + transactionString, function() {
+    it.skip('valid tx=' + transactionString, function() {
       // Verify that all inputs are invalid
       testTx.inputs.forEach(function(input) {
         testTx.transaction.verifyInput(input.index, input.scriptPubKey,
