@@ -48,23 +48,36 @@ describe('Address', function() {
     });
   });
   it('should be able to detect network from an address', function() {
+    // livenet
     var a = new Address('1KfyjCgBSMsLqiCbakfSdeoBUqMqLUiu3T');
     a.network().name.should.equal('livenet');
-    var a = new Address('1dice8EMZmqKvrGE4Qc9bUFf9PX3xaYDp');
+    a = new Address('1dice8EMZmqKvrGE4Qc9bUFf9PX3xaYDp');
     a.network().name.should.equal('livenet');
     //p2sh
-    var a = new Address('3QRhucKtEn5P9i7YPxzXCqBtPJTPbRFycn');
+    a = new Address('3QRhucKtEn5P9i7YPxzXCqBtPJTPbRFycn');
     a.network().name.should.equal('livenet');
 
     //testnet
-    var a = new Address('mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE');
+    a = new Address('mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE');
     a.network().name.should.equal('testnet');
-    var a = new Address('n2ekxibY5keRiMaoKFGfiNfXQCS4zTUpct');
+    a = new Address('n2ekxibY5keRiMaoKFGfiNfXQCS4zTUpct');
     a.network().name.should.equal('testnet');
 
     //p2sh
-    var a = new Address('2NBSBcf2KfjPEEqVusmrWdmUeNHRiUTS3Li');
+    a = new Address('2NBSBcf2KfjPEEqVusmrWdmUeNHRiUTS3Li');
     a.network().name.should.equal('testnet');
+  });
+  it('#isScript should work', function() {
+    // invalid
+    new Address('1T').isScript().should.equal(false);
+    // pubKeyHash livenet 
+    new Address('1KfyjCgBSMsLqiCbakfSdeoBUqMqLUiu3T').isScript().should.equal(false);
+    // script livenet
+    new Address('3QRhucKtEn5P9i7YPxzXCqBtPJTPbRFycn').isScript().should.equal(true);
+    // pubKeyHash testnet
+    new Address('mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE').isScript().should.equal(false);
+    // script testnet
+    new Address('2NBSBcf2KfjPEEqVusmrWdmUeNHRiUTS3Li').isScript().should.equal(true);
   });
  
 });

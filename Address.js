@@ -38,4 +38,9 @@ Address.prototype.network = function() {
   return answer;
 };
 
+Address.prototype.isScript = function() {
+  return this.isValid() && this.version() === this.network().addressScript;
+};
+
+
 module.exports = require('soop')(Address);
