@@ -35,6 +35,9 @@ describe('Address', function() {
     ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW62iz', false], // too long Bitcoin address
     ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW62izz', false],// too long Bitcoin address
     ['2cFupjhnEsSn59qHXstmK2ffpLv2', false],        // valid base58 invalid data
+    ['dB7cwYdcPSgiyAwKWL3JwCVwSk6epU2txw', false],  // valid base58, valid length, invalid network
+    ['2MnmgiRH4eGLyLc9eAqStzk7dFgBjFtUCtu', false],  // valid base58, valid length, invalid network
+    ['32QBdjycLwbDTuGafUwaU5p5GxzSLPYoF6', true],  // valid base58, valid length, valid network
   ];
   data.forEach(function(datum) {
     var address = datum[0];

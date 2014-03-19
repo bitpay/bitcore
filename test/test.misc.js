@@ -122,12 +122,20 @@ describe('Miscelaneous stuff', function() {
           a.network().should.equal(network);
         });
         it('should generate correctly from hex', function() {
-          var version = shouldBeScript? network.addressScript: network.addressPubkey;
+          var version = shouldBeScript ? network.addressScript : network.addressPubkey;
           var b = new Address(version, new Buffer(hexPayload, 'hex'));
           b.toString().should.equal(b58);
         });
       });
     }
+  });
+  testdata.dataBase58KeysInvalid.forEach(function(datum) {
+    var b58 = datum[0];
+    it('shouldnt be able to create Address nor WalletKey with ' + b58, function() {
+      var a = new Address(b58);
+      var invalidAddress = (!a.isValid());
+      invalidAddress.should.equal(true);
+    });
   });
 
 });
