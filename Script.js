@@ -35,7 +35,7 @@ function Script(buffer) {
   }
   this.chunks = [];
   this.parse();
-};
+}
 this.class = Script;
 
 Script.TX_UNKNOWN = TX_UNKNOWN;
@@ -51,19 +51,25 @@ Script.prototype.parse = function() {
   while (!parser.eof()) {
     var opcode = parser.word8();
 
-    var len;
+    var len, chunk;
     if (opcode > 0 && opcode < OP_PUSHDATA1) {
       // Read some bytes of data, opcode value is the length of data
       this.chunks.push(parser.buffer(opcode));
-    } else if (opcode == OP_PUSHDATA1) {
+    } else if (opcode === OP_PUSHDATA1) {
       len = parser.word8();
-      this.chunks.push(parser.buffer(len));
-    } else if (opcode == OP_PUSHDATA2) {
+      chunk = parser.buffer(len);
+      if (chunk.length < len) throw new Error('Invalid data size: not enough data');
+      this.chunks.push(chunk);
+    } else if (opcode === OP_PUSHDATA2) {
       len = parser.word16le();
-      this.chunks.push(parser.buffer(len));
-    } else if (opcode == OP_PUSHDATA4) {
+      chunk = parser.buffer(len);
+      if (chunk.length < len) throw new Error('Invalid data size: not enough data');
+      this.chunks.push(chunk);
+    } else if (opcode === OP_PUSHDATA4) {
       len = parser.word32le();
-      this.chunks.push(parser.buffer(len));
+      chunk = parser.buffer(len);
+      if (chunk.length < len) throw new Error('Invalid data size: not enough data');
+      this.chunks.push(chunk);
     } else {
       this.chunks.push(opcode);
     }
@@ -509,7 +515,7 @@ Script.stringToBuffer = function(s) {
         if (!isNaN(integer)) {
           // integer
           //console.log('integer');
-          var data = util.intToBuffer(integer);
+          var data = util.intToBufferSM(integer);
           buf.put(Script.chunksToBuffer([data]));
         } else if (word[0] === '\'' && word[word.length-1] === '\'') {
           // string

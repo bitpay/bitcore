@@ -39,12 +39,12 @@ describe('util', function() {
   describe('#ripe160', function() {
     var pk = 'a5c756101065ac5b8f689139e6d856fa99e54b5000b6428b43729d334cc9277d';
     it('should work for ' + pk, function() {
-      var pubKeyHash = coinUtil.ripe160(new Buffer(pk,'hex'));
+      var pubKeyHash = coinUtil.ripe160(new Buffer(pk, 'hex'));
       var pkh = buffertools.toHex(pubKeyHash);
       pkh.should.equal('d166a41f27fd4b158f70314e5eee8998bf3d97d5');
     });
   });
- 
+
 
   describe('#sha256', function() {
     var pk = '03d95e184cce34c3cfa58e9a277a09a7c5ed1b2a8134ea1e52887bc66fa3f47071'
@@ -54,7 +54,7 @@ describe('util', function() {
       pkh.should.equal('a5c756101065ac5b8f689139e6d856fa99e54b5000b6428b43729d334cc9277d');
     });
   });
- 
+
   describe('#sha256ripe160', function() {
     var pk = '03d95e184cce34c3cfa58e9a277a09a7c5ed1b2a8134ea1e52887bc66fa3f47071'
     it('should work for ' + pk, function() {
@@ -71,7 +71,7 @@ describe('util', function() {
     ];
     ripemdData.forEach(function(datum) {
       it('should work for ' + datum[0], function() {
-        var r = coinUtil.ripe160( new bitcore.Buffer(datum[0]));
+        var r = coinUtil.ripe160(new bitcore.Buffer(datum[0]));
         buffertools.toHex(r).should.equal(datum[1]);
       });
       it('should work for Buffer ' + datum[0], function() {
@@ -80,28 +80,41 @@ describe('util', function() {
       });
     });
   });
-  describe('#intToBuffer', function() {
+  describe('#intToBuffer2C', function() {
     var data = [
-      [0, '00'],
-      [-0, '00'],
-      [-1, 'ff'],
+      [0, ''],
+      [-0, ''],
       [1, '01'],
+      [-1, 'ff'],
       [18, '12'],
+      [-18, 'ee'],
+      [127, '7f'],
+      [128, '8000'],
+      [129, '8100'],
+      [4096, '0010'],
+      [-4096, '00f0'],
+      [32767, 'ff7f'],
       [878082192, '90785634'],
-      [0x01234567890, '1200000090785634'],
-      [-4294967297, 'feffffffffffffff'],
+      [0x01234567890, '9078563412'],
+      [4294967295, 'ffffffff00'],
+      [4294967296, '0000000001'],
+      [4294967297, '0100000001'],
+      [2147483647, 'ffffff7f'],
+      [-2147483647, '01000080'],
     ];
     data.forEach(function(datum) {
       var integer = datum[0];
       var result = datum[1];
       it('should work for ' + integer, function() {
-        buffertools.toHex(coinUtil.intToBuffer(integer)).should.equal(result);
+        var buf = coinUtil.intToBuffer2C(integer);
+        var hex = buffertools.toHex(buf);
+        hex.should.equal(result);
       });
     });
   });
   describe('#varIntBuf', function() {
     var data = [
-      [0, '00' ],
+      [0, '00'],
       [1, '01'],
       [253, 'fdfd00'],
       [254, 'fdfe00'],
@@ -144,6 +157,24 @@ describe('util', function() {
       var result = datum[1];
       it('should work for ' + integer, function() {
         coinUtil.getVarIntSize(integer).should.equal(result);
+      });
+    });
+  });
+  describe('#intToBufferSM', function() {
+    var data = [
+      [0, ''],
+      [1, '01'],
+      [-1, '81'],
+      [2, '02'],
+      [-2, '82'],
+      [-32768, '008080'],
+    ];
+    data.forEach(function(datum) {
+      var i = datum[0];
+      var hex = datum[1];
+      it('should work for ' + i, function() {
+        var result = coinUtil.intToBufferSM(i);
+        buffertools.toHex(result).should.equal(hex);
       });
     });
   });

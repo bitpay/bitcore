@@ -112,38 +112,127 @@ var bigIntToValue = exports.bigIntToValue = function (valueBigInt) {
   }
 };
 
-var intTo64Bits = function(integer) {
-  return { 
-    hi: Math.floor(integer / 4294967296),
-    lo: (integer & 0xFFFFFFFF) >>> 0
-  };
-};
 var fitsInNBits = function(integer, n) {
   // TODO: make this efficient!!!
   return integer.toString(2).replace('-','').length < n;
-}
-exports.intToBuffer = function(integer) {
-  var data = null;
-  if (fitsInNBits(integer, 8)) {
-    data = new Buffer(1);
-    data.writeInt8(integer, 0);
-    return data;
-  } else if (fitsInNBits(integer, 16)) {
-    data = new Buffer(2);
-    data.writeInt16LE(integer, 0);
-    return data;
-  } else if (fitsInNBits(integer, 32)) {
-    data = new Buffer(4);
-    data.writeInt32LE(integer, 0);
-    return data;
+};
+exports.bytesNeededToStore = bytesNeededToStore = function(integer) {
+  if (integer === 0) return 0;
+  return Math.ceil(((integer).toString(2).replace('-','').length + 1)/ 8);
+};
+
+exports.negativeBuffer = negativeBuffer = function(b) {
+  // implement two-complement negative
+  var c = new Buffer(b.length);
+  // negate each byte
+  for (var i=0; i<b.length; i++){
+    c[i] = ~b[i];
+    if (c[i] < 0) c[i] += 256;
+  }
+  // add one
+  for (var i=b.length - 1; i>=0; i--){
+    c[i] += 1;
+    if (c[i] >= 256) c[i] -= 256;
+    if (c[i] !== 0) break;
+  }
+  return c;
+};
+
+/*
+ * Transforms an integer into a buffer using two-complement encoding
+ * For example, 1 is encoded as 01 and -1 is encoded as ff
+ * For more info see: 
+ * http://en.wikipedia.org/wiki/Signed_number_representations#Two.27s_complement
+ */
+exports.intToBuffer2C = function(integer) {
+  var size = bytesNeededToStore(integer);
+  var buf = new Put();
+  var s = integer.toString(16);
+  var neg = s[0] === '-';
+  s = s.replace('-','');
+  for (var i=0; i<size; i++) {
+    var si = s.substring(s.length - 2*(i+1), s.length - 2*(i));
+    if (si.lenght === 1) {
+      si = '0' + si;
+    }
+    var pi = parseInt(si, 16);
+    buf.word8(pi);
+  }
+  var ret = buf.buffer();
+  if (neg) {
+    ret = buffertools.reverse(ret);
+    ret = negativeBuffer(ret);
+    ret = buffertools.reverse(ret);
+  }
+  return ret;
+};
+
+
+var padSign = function(b) {
+  var c;
+  if (b[0] & 0x80) {
+    c = new Buffer(b.length + 1);
+    b.copy(c, 1);
+    c[0] = 0;
   } else {
-    var x = intTo64Bits(integer);
-    data = new Buffer(8);
-    data.writeInt32LE(x.hi, 0); // high part contains sign information (signed)
-    data.writeUInt32LE(x.lo, 4); // low part encoded as unsigned integer
-    return data;
+    c = b;
+  }
+  return c;
+}
+
+
+/*
+ * Transforms an integer into a buffer using sign+magnitude encoding
+ * For example, 1 is encoded as 01 and -1 is encoded as 81
+ * For more info see: 
+ * http://en.wikipedia.org/wiki/Signed_number_representations#Signed_magnitude_representation
+ */
+exports.intToBufferSM = function(v) {
+  if ("number" === typeof v) {
+    v = bignum(v);
+  }
+  var b, c;
+  var cmp = v.cmp(0);
+  if (cmp > 0) {
+    b = v.toBuffer();
+    c = padSign(b);
+    c = buffertools.reverse(c);
+  } else if (cmp == 0) {
+    c = new Buffer([]);
+  } else {
+    b = v.neg().toBuffer();
+    c = padSign(b);
+    c[0] |= 0x80;
+    c = buffertools.reverse(c);
+  }
+  return c;
+};
+
+/*
+ * Reverse of intToBufferSM
+ */
+exports.bufferSMToInt = function(v) {
+  if (!v.length) {
+    return bignum(0);
+  }
+  // Arithmetic operands must be in range [-2^31...2^31]
+  if (v.length > 4) {
+    throw new Error('Bigint cast overflow (> 4 bytes)');
+  }
+
+  var w = new Buffer(v.length);
+  v.copy(w);
+  w = buffertools.reverse(w);
+  var isNeg = w[0] & 0x80;
+  if (isNeg) {
+    w[0] &= 0x7f;
+    return bignum.fromBuffer(w).neg();
+  } else {
+    return bignum.fromBuffer(w);
   }
 };
+
+
 
 var formatValue = exports.formatValue = function (valueBuffer) {
   var value = valueToBigInt(valueBuffer).toString();
