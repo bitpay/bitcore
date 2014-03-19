@@ -131,10 +131,30 @@ describe('Miscelaneous stuff', function() {
   });
   testdata.dataBase58KeysInvalid.forEach(function(datum) {
     var b58 = datum[0];
-    it('shouldnt be able to create Address nor WalletKey with ' + b58, function() {
+    it('shouldnt be able to create Address with ' + b58, function() {
       var a = new Address(b58);
       var invalidAddress = (!a.isValid());
       invalidAddress.should.equal(true);
+    });
+    it('shouldnt be able to create WalletKey with ' + b58, function() {
+      var kl = new WalletKey({
+        network: networks.livenet
+      });
+      var kt = new WalletKey({
+        network: networks.livenet
+      });
+      var createLivenet = function() {
+        kl.fromObj({
+          priv: b58
+        });
+      };
+      var createTestnet = function() {
+        kt.fromObj({
+          priv: b58
+        });
+      };
+      createLivenet.should.throw();
+      createTestnet.should.throw();
     });
   });
 

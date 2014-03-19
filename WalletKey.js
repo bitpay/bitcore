@@ -42,6 +42,7 @@ WalletKey.prototype.fromObj = function(obj) {
     this.privKey.compressed = typeof obj.compressed === 'undefined'? true: obj.compressed;
   } else {
     var priv = new PrivateKey(obj.priv);
+    priv.validate();
     this.privKey.private = new Buffer(priv.payload());
     this.privKey.compressed = priv.compressed();
   }
