@@ -3,9 +3,9 @@ var imports      = require('soop').imports();
 var parent       = imports.parent || require('events').EventEmitter;
 var EventEmitter = require('events').EventEmitter;
 var dns          = require('dns');
-var inherits     = require('util').inherits;
 
 function SeedList(options) {
+  SeedList.super(this, arguments);
   this.options = options || {};
   this.sources = [
     'dnsseed.bluematt.me',
@@ -19,7 +19,7 @@ function SeedList(options) {
   this.find()
 };
 
-inherits(SeedList, EventEmitter);
+SeedList.parent = imports.parent || EventEmitter;
 
 SeedList.prototype.find = function() {
   var self = this;
