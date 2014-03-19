@@ -98,7 +98,7 @@ var formatBuffer = exports.formatBuffer = function (buffer, maxLen) {
 
 var valueToBigInt = exports.valueToBigInt = function (valueBuffer) {
   if (Buffer.isBuffer(valueBuffer)) {
-    return bignum.fromBuffer(valueBuffer, {endian: 'little', size: 'auto'});
+    return bignum.fromBuffer(valueBuffer, {endian: 'little', size: 8});
   } else {
     return valueBuffer;
   }
@@ -108,7 +108,7 @@ var bigIntToValue = exports.bigIntToValue = function (valueBigInt) {
   if (Buffer.isBuffer(valueBigInt)) {
     return valueBigInt;
   } else {
-    return valueBigInt.toBuffer({endian: 'little', size: 'auto'});
+    return valueBigInt.toBuffer({endian: 'little', size: 8});
   }
 };
 
