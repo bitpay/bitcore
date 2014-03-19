@@ -12,6 +12,9 @@ var bignum = bitcore.bignum;
 var base58 = bitcore.base58;
 var base58Check = base58.base58Check;
 
+var Address = bitcore.Address;
+var networks = bitcore.networks;
+
 describe('Miscelaneous stuff', function() {
   it('should initialze the config object', function() {
     should.exist(bitcore.config);
@@ -61,6 +64,22 @@ describe('Miscelaneous stuff', function() {
       // Goal: test low-level base58 encoding functionality
       base58.encode(new Buffer(datum[0], 'hex')).should.equal(datum[1]);
       buffertools.toHex(base58.decode(datum[1])).should.equal(datum[0]);
+    });
+  });
+  testdata.dataBase58KeysValid.forEach(function(datum) {
+    var b58 = datum[0];
+    var hexPayload = datum[1];
+    var meta = datum[2];
+    it('base58 keys valid ' + b58, function() {
+      if (meta.isPrivkey) {
+        (true).should.equal(true);
+      } else {
+        var a = new Address(b58);
+        a.isValid().should.equal(true);
+        a.isScript().should.equal(meta.addrType === 'script');
+        a.network().should.equal(meta.isTestnet?networks.testnet:networks.livenet);
+      }
+
     });
   });
 
