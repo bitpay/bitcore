@@ -42,8 +42,8 @@ describe('Miscelaneous stuff', function() {
   });
   it('should perform basic math operations for bignum', function() {
     var b = bignum('782910138827292261791972728324982')
-    .sub('182373273283402171237474774728373')
-    .div(13);
+      .sub('182373273283402171237474774728373')
+      .div(13);
     b.toNumber().should.equal(46195143503376160811884457968969);
   });
 
@@ -71,27 +71,48 @@ describe('Miscelaneous stuff', function() {
     var b58 = datum[0];
     var hexPayload = datum[1];
     var meta = datum[2];
-    it('base58 keys valid ' + b58, function() {
-      var network = meta.isTestnet?networks.testnet:networks.livenet;
-      if (meta.isPrivkey) {
-        var k = new WalletKey({network: network});
-        k.fromObj({priv: b58});
-        k.privKey.compressed.should.equal(meta.isCompressed);
-        buffertools.toHex(k.privKey.private).should.equal(hexPayload);
-        new Address(b58).isValid().should.equal(false);
-      } else {
-        var a = new Address(b58);
-        a.isValid().should.equal(true);
-        a.isScript().should.equal(meta.addrType === 'script');
-        a.network().should.equal(network);
-      }
-    });
+    var network = meta.isTestnet ? networks.testnet : networks.livenet;
+    if (meta.isPrivkey) {
+      describe('base58 private key valid ' + b58, function() {
+        var k;
+        before(function() {
+          k = new WalletKey({
+            network: network
+          });
+        });
+        it('parse', function() {
+          k.fromObj({
+            priv: b58
+          });
+          should.exist(k.privKey);
+        });
+        it('should have compressed state', function() {
+          k.privKey.compressed.should.equal(meta.isCompressed);
+        });
+        it('private key should have correct payload', function() {
+          buffertools.toHex(k.privKey.private).should.equal(hexPayload);
+        });
+        it('should not be an Address', function() {
+          new Address(b58).isValid().should.equal(false);
+        });
+      });
+    } else {
+      describe('base58 address valid ' + b58, function() {
+        var a;
+        before(function() {
+          a = new Address(b58);
+        });
+        it('should be valid', function() {
+          a.isValid().should.equal(true);
+        });
+        it('should be of correct type', function() {
+          a.isScript().should.equal(meta.addrType === 'script');
+        });
+        it('should get correct network', function() {
+          a.network().should.equal(network);
+        });
+      });
+    }
   });
 
 });
-
-
-
-
-
-
