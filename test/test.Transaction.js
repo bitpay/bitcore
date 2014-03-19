@@ -163,7 +163,7 @@ describe('Transaction', function() {
   it('#create should create same output as bitcoind createrawtransaction ', function() {
     var utxos =testdata.dataUnspent;
     var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
-    var ret = Transaction.create(utxos, outs, opts); 
+    var ret = Transaction.create(utxos, outs, opts);
     var tx = ret.tx;
 
     // string output generated from: bitcoind createrawtransaction '[{"txid": "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1","vout":1},{"txid":"2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc2","vout":0}  ]' '{"mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE":0.08,"mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd":0.0299}'
@@ -175,25 +175,25 @@ describe('Transaction', function() {
     var utxos =testdata.dataUnspent;
     // no remainder
     var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
-    var ret = Transaction.create(utxos, outs, {fee:0.03} ); 
+    var ret = Transaction.create(utxos, outs, {fee:0.03} );
     var tx = ret.tx;
 
     // string output generated from: bitcoind createrawtransaction '[{"txid": "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1","vout":1},{"txid":"2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc2","vout":0}  ]' '{"mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE":0.08}'
     //
     tx.serialize().toString('hex').should.equal('0100000002c1cf12ab89729d19d3cdec8ae531b5038d56c741006a105d532b3a7afa65c12a0100000000ffffffffc2cf12ab89729d19d3cdec8ae531b5038d56c741006a105d532b3a7afa65c12a0000000000ffffffff0100127a00000000001976a914774e603bafb717bd3f070e68bbcccfd907c77d1388ac00000000');
   });
- 
+
   it('#createAndSign should sign a tx', function() {
     var utxos =testdata.dataUnspentSign.unspent;
     var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
-    var ret = Transaction.createAndSign(utxos, outs, testdata.dataUnspentSign.keyStrings, opts); 
+    var ret = Transaction.createAndSign(utxos, outs, testdata.dataUnspentSign.keyStrings, opts);
     var tx = ret.tx;
     tx.isComplete().should.equal(true);
     tx.ins.length.should.equal(1);
     tx.outs.length.should.equal(2);
 
     var outs2 = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:16}];
-    var ret2 = Transaction.createAndSign(utxos, outs2, testdata.dataUnspentSign.keyStrings, opts); 
+    var ret2 = Transaction.createAndSign(utxos, outs2, testdata.dataUnspentSign.keyStrings, opts);
     var tx2 = ret2.tx;
     tx2.isComplete().should.equal(true);
     tx2.ins.length.should.equal(3);
@@ -204,7 +204,7 @@ describe('Transaction', function() {
     var keys = ['cNpW8B7XPAzCdRR9RBWxZeveSNy3meXgHD8GuhcqUyDuy8ptCDzJ'];
     var utxos =testdata.dataUnspentSign.unspent;
     var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
-    var ret = Transaction.createAndSign(utxos, outs, keys, opts); 
+    var ret = Transaction.createAndSign(utxos, outs, keys, opts);
     var tx = ret.tx;
     tx.ins.length.should.equal(1);
     tx.outs.length.should.equal(2);
@@ -213,7 +213,7 @@ describe('Transaction', function() {
     var keys = ['cNpW8B7XPAzCdRR9RBWxZeveSNy3meXgHD8GuhcqUyDuy8ptCDzJ'];
     var utxos =testdata.dataUnspentSign.unspent;
     var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
-    var ret = Transaction.createAndSign(utxos, outs, keys, opts); 
+    var ret = Transaction.createAndSign(utxos, outs, keys, opts);
     var tx = ret.tx;
     tx.isComplete().should.equal(false);
     tx.sign(ret.selectedUtxos, testdata.dataUnspentSign.keyStrings);
@@ -222,7 +222,7 @@ describe('Transaction', function() {
 
   it('#sign should sign a tx in multiple steps (case1)', function() {
     var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:1.08}];
-    var ret = Transaction.create(testdata.dataUnspentSign.unspent, outs, opts); 
+    var ret = Transaction.create(testdata.dataUnspentSign.unspent, outs, opts);
     var tx            = ret.tx;
     var selectedUtxos = ret.selectedUtxos;
 
@@ -239,7 +239,7 @@ describe('Transaction', function() {
 
   it('#sign should sign a tx in multiple steps (case2)', function() {
     var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:16}];
-    var ret = Transaction.create(testdata.dataUnspentSign.unspent, outs, opts); 
+    var ret = Transaction.create(testdata.dataUnspentSign.unspent, outs, opts);
     var tx            = ret.tx;
     var selectedUtxos = ret.selectedUtxos;
 
@@ -249,7 +249,7 @@ describe('Transaction', function() {
     tx.sign(selectedUtxos, k1).should.equal(false);
     tx.sign(selectedUtxos, k2).should.equal(false);
     tx.sign(selectedUtxos, k3).should.equal(true);
- 
+
   });
 
   it('#createAndSign: should generate dynamic fee and readjust (and not) the selected UTXOs', function() {
@@ -262,7 +262,7 @@ describe('Transaction', function() {
       outs.push({address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.01});
     }
 
-    var ret = Transaction.createAndSign(utxos, outs, testdata.dataUnspentSign.keyStrings, opts); 
+    var ret = Transaction.createAndSign(utxos, outs, testdata.dataUnspentSign.keyStrings, opts);
     var tx = ret.tx;
     tx.getSize().should.equal(3560);
 
@@ -284,7 +284,7 @@ describe('Transaction', function() {
       outs.push({address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.01});
     }
 
-    var ret = Transaction.createAndSign(utxos, outs, testdata.dataUnspentSign.keyStrings, opts); 
+    var ret = Transaction.createAndSign(utxos, outs, testdata.dataUnspentSign.keyStrings, opts);
     var tx = ret.tx;
     tx.getSize().should.equal(3485);
 
@@ -339,7 +339,8 @@ describe('Transaction', function() {
             // ...by this function, so ignore if that is the case
             if (err && err.constructor.name === "AssertionError") return;
 
-            should.exist(err);
+            // There should either be an error, or the results should be false.
+            (err !== null || (!err && results === false)).should.equal(true);
           });
       });
     });
