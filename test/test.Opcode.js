@@ -20,12 +20,10 @@ describe('Opcode', function() {
     var oc = new Opcode();
     should.exist(oc);
   });
-  it.skip('should be able to create some constants', function() {
+  it('should be able to create some constants', function() {
     // TODO: test works in node but not in browser
     for (var i in Opcode.map) {
-      console.log('var '+i + ' = ' + Opcode.map[i] + ';');
       eval('var '+i + ' = ' + Opcode.map[i] + ';');
-      console.log(eval(i));
     }
     should.exist(OP_VER);
     should.exist(OP_HASH160);
