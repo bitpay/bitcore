@@ -33,7 +33,7 @@ if (process.versions) {
         throw new Error('Arg should be a buffer');
       }
       var type = p[0];
-      this.compressed = type!==4;
+      this.compressed = type!==0x04;
       this._pub = p;
     },
     get: function(){

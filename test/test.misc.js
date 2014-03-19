@@ -14,6 +14,7 @@ var base58Check = base58.base58Check;
 
 var Address = bitcore.Address;
 var networks = bitcore.networks;
+var WalletKey = bitcore.WalletKey;
 
 describe('Miscelaneous stuff', function() {
   it('should initialze the config object', function() {
@@ -71,15 +72,19 @@ describe('Miscelaneous stuff', function() {
     var hexPayload = datum[1];
     var meta = datum[2];
     it('base58 keys valid ' + b58, function() {
+      var network = meta.isTestnet?networks.testnet:networks.livenet;
       if (meta.isPrivkey) {
-        (true).should.equal(true);
+        var k = new WalletKey({network: network});
+        k.fromObj({priv: b58});
+        k.privKey.compressed.should.equal(meta.isCompressed);
+        buffertools.toHex(k.privKey.private).should.equal(hexPayload);
+        new Address(b58).isValid().should.equal(false);
       } else {
         var a = new Address(b58);
         a.isValid().should.equal(true);
         a.isScript().should.equal(meta.addrType === 'script');
-        a.network().should.equal(meta.isTestnet?networks.testnet:networks.livenet);
+        a.network().should.equal(network);
       }
-
     });
   });
 
