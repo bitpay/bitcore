@@ -119,8 +119,7 @@
       </div>
     </div>
   </div>
-  
-  <div data-ng-controller="transactionsController" data-ng-init="load('block')">
+  <div data-ng-if="block.hash" data-ng-controller="transactionsController" data-ng-init="load('block')">
     <h3>Transactions</h3>
     <div data-ng-include src="'/views/transaction/list.html'" when-scrolled="loadMore()"></div>
   </div>

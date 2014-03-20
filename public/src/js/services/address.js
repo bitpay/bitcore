@@ -2,7 +2,7 @@
 
 angular.module('insight.address').factory('Address',
   function($resource) {
-  return $resource('/api/addr/:addrStr', {
+  return $resource('/api/addr/:addrStr/?getBalance=1', {
     addrStr: '@addStr'
   }, {
     get: {
