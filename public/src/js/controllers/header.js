@@ -38,7 +38,6 @@ angular.module('insight.system').controller('HeaderController',
       socket.emit('subscribe', 'inv');
 
       socket.on('block', function(block) {
-console.log('[header.js.40:block:]',block); //TODO
         var blockHash = block.toString();
         _getBlock(blockHash);
       });
