@@ -59,10 +59,20 @@ To compile and minify the web application's assets:
 
 ```$ grunt compile```
 
+There is a convinent Gruntfile.js for automation during editing the code
+
+```$ grunt```
+
+and if you are develping the API also, run:
+
+```INSIGHT_PUBLIC_PATH=../insight/public  grunt```
+
+**also** in the insight-api path. (So you will have to grunt process running, one for insight and one for insight-api).
+
 
 ## Note
 
-For more details about the *insight API* configs and end-poinst, just go to [insight API github repository](https://github.com/bitpay/insight-api) or read the [documentation](https://github.com/bitpay/insight-api/blob/master/README.md)
+For more details about the *insight API* configs and end-point, just go to [insight API github repository](https://github.com/bitpay/insight-api) or read the [documentation](https://github.com/bitpay/insight-api/blob/master/README.md)
 
 ## Contribute
 

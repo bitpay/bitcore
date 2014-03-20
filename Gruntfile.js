@@ -3,23 +3,16 @@
 module.exports = function(grunt) {
 
   //Load NPM tasks
-  grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-css');
   grunt.loadNpmTasks('grunt-markdown');
+  grunt.loadNpmTasks('grunt-macreload');
 
   // Project Configuration
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
-    jshint: {
-      all: {
-        src: ['Gruntfile.js', 'public/src/js/**/*.js'],
-        options: {
-          jshintrc: true
-        }
-      }
-    },
     concat: {
       options: {
         process: function(src, filepath) {
@@ -83,15 +76,33 @@ module.exports = function(grunt) {
          }
         ]
       }
-    }
+    },
+    macreload: {
+      chrome: {
+        browser: 'chrome',
+        editor: 'macvim'
+      }
+    },
+    watch: {
+      main: {
+        files: ['public/src/js/**/*.js'],
+        tasks: ['concat:main', 'uglify:main', 'macreload'],
+      },
+      css: {
+        files: ['public/src/css/**/*.css'],
+        tasks: ['concat:css', 'cssmin', 'macreload'],
+      },
+    },
   });
 
   //Making grunt default to force in order not to break the project.
   grunt.option('force', true);
 
   //Default task(s).
-  grunt.registerTask('default', ['jshint']);
+  grunt.registerTask('default', ['watch']);
 
   //Compile task (concat + minify)
-  grunt.registerTask('compile', ['concat', 'uglify', 'cssmin']);
+  grunt.registerTask('compile', ['concat', 'uglify', 'cssmin', 'macreload']);
+
+
 };
