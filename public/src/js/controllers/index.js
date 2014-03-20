@@ -17,9 +17,9 @@ angular.module('insight.system').controller('IndexController',
     };
 
     var socket = getSocket($scope);
-    socket.on('connect', function() {
-      socket.emit('subscribe', 'inv');
 
+    var _startSocket = function() { 
+      socket.emit('subscribe', 'inv');
       socket.on('tx', function(tx) {
         $scope.txs.unshift(tx);
         if (parseInt($scope.txs.length, 10) >= parseInt(TRANSACTION_DISPLAYED, 10)) {
@@ -30,8 +30,13 @@ angular.module('insight.system').controller('IndexController',
       socket.on('block', function() {
         _getBlocks();
       });
+    };
 
+    socket.on('connect', function() {
+      _startSocket();
     });
+
+
 
     $scope.humanSince = function(time) {
       var m = moment.unix(time);
@@ -40,6 +45,7 @@ angular.module('insight.system').controller('IndexController',
 
     $scope.index = function() {
       _getBlocks();
+      _startSocket();
     };
 
     $scope.txs = [];

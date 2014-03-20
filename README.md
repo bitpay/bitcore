@@ -63,9 +63,25 @@ There is a convinent Gruntfile.js for automation during editing the code
 
 ```$ grunt```
 
-and if you are develping the API also, run:
 
-```INSIGHT_PUBLIC_PATH=../insight/public  grunt```
+
+In case you are develping *insight* and *insight-api* toghether, you can do the following:
+
+* Install insight and insight-api on the same path ($IROOT)
+```
+  $ cd $IROOT/insight
+  $ grunt
+```
+in other terminal:
+```
+  $ cd $IROOT/insight-api 
+  $ ln -s ../insight/public
+  $ INSIGHT_PUBLIC_PATH=public node insight.js 
+```
+
+
+```INSIGHT_PUBLIC_PATH=insight/public  grunt```
+at insight-api's home path (edit the path according your setup).
 
 **also** in the insight-api path. (So you will have to grunt process running, one for insight and one for insight-api).
 
