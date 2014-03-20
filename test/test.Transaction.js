@@ -36,6 +36,7 @@ function parse_test_transaction(entry) {
       'index': index,
       'scriptPubKey': scriptPubKey
     });
+
   });
 
   var raw = new Buffer(entry[1], 'hex');
