@@ -36,9 +36,6 @@ function parse_test_transaction(entry) {
       'index': index,
       'scriptPubKey': scriptPubKey
     });
-
-    console.log(scriptPubKey.toHumanReadable());
-    console.log('********************************');
   });
 
   var raw = new Buffer(entry[1], 'hex');
