@@ -65,7 +65,7 @@ There is a convinent Gruntfile.js for automation during editing the code
 
 
 
-In case you are develping *insight* and *insight-api* toghether, you can do the following:
+In case you are developing *insight* and *insight-api* toghether, you can do the following:
 
 * Install insight and insight-api on the same path ($IROOT)
 ```
