@@ -259,10 +259,10 @@ Transaction.prototype.verify = function verify(txCache, blockChain, callback) {
     }
 
     return txout;
-  };
+  }
 
   Step(
-    function verifyInputs() {
+    function verifyInputs(opts) {
       var group = this.group();
 
       if (self.isCoinBase()) {
@@ -278,7 +278,7 @@ Transaction.prototype.verify = function verify(txCache, blockChain, callback) {
 
         outpoints.push(txin.o);
 
-        self.verifyInput(n, txout.getScript(), group());
+        self.verifyInput(n, txout.getScript(), opts, group());
       });
     },
 
@@ -351,11 +351,14 @@ Transaction.prototype.verify = function verify(txCache, blockChain, callback) {
   );
 };
 
-Transaction.prototype.verifyInput = function verifyInput(n, scriptPubKey, callback) {
-  return ScriptInterpreter.verify(this.ins[n].getScript(),
-                                  scriptPubKey,
-                                  this, n, 0,
-                                  callback);
+Transaction.prototype.verifyInput = function verifyInput(n, scriptPubKey, opts, callback) {
+  var valid = ScriptInterpreter.verifyFull(
+    this.ins[n].getScript(),
+    scriptPubKey,
+    this, n, 0,
+    opts,
+    callback);
+  return valid;
 };
 
 /**

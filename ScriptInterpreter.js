@@ -1,12 +1,12 @@
-var imports     = require('soop').imports();
-var config      = imports.config || require('./config');
-var log         = imports.log || require('./util/log');
-var util        = imports.util || require('./util/util');
-var Opcode      = imports.Opcode || require('./Opcode');
+var imports = require('soop').imports();
+var config = imports.config || require('./config');
+var log = imports.log || require('./util/log');
+var util = imports.util || require('./util/util');
+var Opcode = imports.Opcode || require('./Opcode');
 var buffertools = imports.buffertools || require('buffertools');
-var bignum      = imports.bignum || require('bignum');
-var Util        = imports.Util || require('./util/util');
-var Script      = require('./Script');
+var bignum = imports.bignum || require('bignum');
+var Util = imports.Util || require('./util/util');
+var Script = require('./Script');
 
 var SIGHASH_ALL = 1;
 var SIGHASH_NONE = 2;
@@ -21,7 +21,8 @@ for (var i in Opcode.map) {
 var intToBufferSM = Util.intToBufferSM
 var bufferSMToInt = Util.bufferSMToInt;
 
-function ScriptInterpreter() {
+function ScriptInterpreter(opts) {
+  this.opts = opts || {};
   this.stack = [];
   this.disableUnsafeOpcodes = true;
 };
@@ -98,8 +99,7 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
 
       if (exec && Buffer.isBuffer(opcode)) {
         this.stack.push(opcode);
-      }
-      else if (exec || (OP_IF <= opcode && opcode <= OP_ENDIF))
+      } else if (exec || (OP_IF <= opcode && opcode <= OP_ENDIF))
         switch (opcode) {
           case OP_0:
             this.stack.push(new Buffer([]));
@@ -411,10 +411,13 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
             this.stackPop();
             this.stackPop();
             this.stack.push(new Buffer([value ? 1 : 0]));
+            console.log(script.toHumanReadable());
             if (opcode === OP_EQUALVERIFY) {
               if (value) {
                 this.stackPop();
               } else {
+                console.log(v1);
+                console.log(v2);
                 throw new Error("OP_EQUALVERIFY negative");
               }
             }
@@ -621,7 +624,7 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
             scriptCode.findAndDelete(sig);
 
             //
-            isCanonicalSignature(new Buffer(sig));
+            this.isCanonicalSignature(new Buffer(sig));
 
             // Verify signature
             checkSig(sig, pubkey, scriptCode, tx, inIndex, hashType, function(e, result) {
@@ -695,8 +698,9 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
             var scriptCode = Script.fromChunks(scriptChunks);
 
             // Drop the signatures, since a signature can't sign itself
+            var that = this;
             sigs.forEach(function(sig) {
-              isCanonicalSignature(new Buffer(sig));
+              that.isCanonicalSignature(new Buffer(sig));
               scriptCode.findAndDelete(sig);
             });
 
@@ -811,7 +815,7 @@ ScriptInterpreter.prototype.stackTop = function stackTop(offset) {
 };
 
 ScriptInterpreter.prototype.stackBack = function stackBack() {
-  return this.stack[this.stack.length -1];
+  return this.stack[this.stack.length - 1];
 };
 
 /**
@@ -882,6 +886,7 @@ ScriptInterpreter.prototype.getResult = function getResult() {
   return castBool(this.stack[this.stack.length - 1]);
 };
 
+// Use ScriptInterpreter.verifyFull instead
 ScriptInterpreter.verify =
   function verify(scriptSig, scriptPubKey, txTo, n, hashType, callback) {
     if ("function" !== typeof callback) {
@@ -912,8 +917,8 @@ ScriptInterpreter.verify =
     return si;
 };
 
-function verifyStep4(scriptSig, scriptPubKey, txTo, nIn,
-  hashType, opts, callback, si, siCopy) {
+ScriptInterpreter.prototype.verifyStep4 = function(scriptSig, scriptPubKey,
+  txTo, nIn, hashType, callback, siCopy) {
   if (siCopy.stack.length == 0) {
     callback(null, false);
     return;
@@ -922,19 +927,19 @@ function verifyStep4(scriptSig, scriptPubKey, txTo, nIn,
   callback(null, castBool(siCopy.stackBack()));
 }
 
-function verifyStep3(scriptSig, scriptPubKey, txTo, nIn,
-  hashType, opts, callback, si, siCopy) {
-  if (si.stack.length == 0) {
+ScriptInterpreter.prototype.verifyStep3 = function(scriptSig,
+  scriptPubKey, txTo, nIn, hashType, callback, siCopy) {
+  if (this.stack.length == 0) {
     callback(null, false);
     return;
   }
-  if (castBool(si.stackBack()) == false) {
+  if (castBool(this.stackBack()) == false) {
     callback(null, false);
     return;
   }
 
   // if not P2SH, we're done
-  if (!opts.verifyP2SH || !scriptPubKey.isP2SH()) {
+  if (!this.opts.verifyP2SH || !scriptPubKey.isP2SH()) {
     callback(null, true);
     return;
   }
@@ -949,46 +954,48 @@ function verifyStep3(scriptSig, scriptPubKey, txTo, nIn,
 
   var subscript = new Script(siCopy.stackPop());
 
-  ok = true;
+  var that = this;
   siCopy.eval(subscript, txTo, nIn, hashType, function(err) {
-    if (err)
-      callback(err);
-    else
-      verifyStep4(scriptSig, scriptPubKey, txTo, nIn,
-        hashType, opts, callback, si, siCopy);
+    if (err) callback(err);
+    else that.verifyStep4(scriptSig, scriptPubKey, txTo, nIn,
+      hashType, callback, siCopy);
   });
-}
+};
 
-function verifyStep2(scriptSig, scriptPubKey, txTo, nIn,
-  hashType, opts, callback, si, siCopy) {
-  if (opts.verifyP2SH) {
-    si.stack.forEach(function(item) {
+ScriptInterpreter.prototype.verifyStep2 = function(scriptSig, scriptPubKey,
+  txTo, nIn, hashType, callback, siCopy) {
+  if (this.opts.verifyP2SH) {
+    this.stack.forEach(function(item) {
       siCopy.stack.push(item);
     });
   }
 
-  si.eval(scriptPubKey, txTo, nIn, hashType, function(err) {
-    if (err)
-      callback(err);
-    else
-      verifyStep3(scriptSig, scriptPubKey, txTo, nIn,
-        hashType, opts, callback, si, siCopy);
+  var that = this;
+  this.eval(scriptPubKey, txTo, nIn, hashType, function(err) {
+    if (err) callback(err);
+    else that.verifyStep3(scriptSig, scriptPubKey, txTo, nIn,
+      hashType, callback, siCopy);
   });
-}
+};
 
 ScriptInterpreter.verifyFull =
   function verifyFull(scriptSig, scriptPubKey, txTo, nIn, hashType,
     opts, callback) {
-    var si = new ScriptInterpreter();
-    var siCopy = new ScriptInterpreter();
+    var si = new ScriptInterpreter(opts);
+    si.verifyFull(scriptSig, scriptPubKey,
+      txTo, nIn, hashType, callback);
+};
 
-    si.eval(scriptSig, txTo, nIn, hashType, function(err) {
-      if (err)
-        callback(err);
-      else
-        verifyStep2(scriptSig, scriptPubKey, txTo, nIn,
-          hashType, opts, callback, si, siCopy);
-    });
+ScriptInterpreter.prototype.verifyFull = function(scriptSig, scriptPubKey,
+  txTo, nIn, hashType, callback) {
+  var siCopy = new ScriptInterpreter(this.opts);
+  var that = this;
+  this.eval(scriptSig, txTo, nIn, hashType, function(err) {
+    if (err) callback(err);
+    else that.verifyStep2(scriptSig, scriptPubKey, txTo, nIn,
+      hashType, callback, siCopy);
+  });
+
 };
 
 var checkSig = ScriptInterpreter.checkSig =
@@ -1019,68 +1026,70 @@ var checkSig = ScriptInterpreter.checkSig =
     }
 };
 
-var isCanonicalSignature = ScriptInterpreter.isCanonicalSignature = function(sig, opts) {
-    // See https://bitcointalk.org/index.php?topic=8392.msg127623#msg127623
-    // A canonical signature exists of: <30> <total len> <02> <len R> <R> <02> <len S> <S> <hashtype>
-    // Where R and S are not negative (their first byte has its highest bit not set), and not
-    // excessively padded (do not start with a 0 byte, unless an otherwise negative number follows,
-    // in which case a single 0 byte is necessary and even required).
-   
-    if (!Buffer.isBuffer(sig))
-      throw new Error("arg should be a Buffer");
+ScriptInterpreter.prototype.isCanonicalSignature = function(sig) {
+  // See https://bitcointalk.org/index.php?topic=8392.msg127623#msg127623
+  // A canonical signature exists of: <30> <total len> <02> <len R> <R> <02> <len S> <S> <hashtype>
+  // Where R and S are not negative (their first byte has its highest bit not set), and not
+  // excessively padded (do not start with a 0 byte, unless an otherwise negative number follows,
+  // in which case a single 0 byte is necessary and even required).
 
-    opts = opts || {};
+  if (!Buffer.isBuffer(sig))
+    throw new Error("arg should be a Buffer");
 
-    var l = sig.length;
-    if (l < 9)  throw new Error("Non-canonical signature: too short");
-    if (l > 73) throw new Error("Non-canonical signature: too long");
+  // TODO: change to opts.verifyStrictEnc to make the default
+  // behavior not verify, as in bitcoin core
+  if (this.opts.dontVerifyStrictEnc) return true;
 
-    var  nHashType = sig[l-1] & (~(SIGHASH_ANYONECANPAY));
-    if (nHashType < SIGHASH_ALL || nHashType > SIGHASH_SINGLE)
-        throw new Error("Non-canonical signature: unknown hashtype byte");
+  var l = sig.length;
+  if (l < 9) throw new Error("Non-canonical signature: too short");
+  if (l > 73) throw new Error("Non-canonical signature: too long");
 
-    if (sig[0] !== 0x30)
-        throw new Error("Non-canonical signature: wrong type");
-    if (sig[1] !== l-3)
-        throw new Error("Non-canonical signature: wrong length marker");
+  var nHashType = sig[l - 1] & (~(SIGHASH_ANYONECANPAY));
+  if (nHashType < SIGHASH_ALL || nHashType > SIGHASH_SINGLE)
+    throw new Error("Non-canonical signature: unknown hashtype byte");
 
-    var nLenR = sig[3];
-    if (5 + nLenR >= l)
-        throw new Error("Non-canonical signature: S length misplaced");
+  if (sig[0] !== 0x30)
+    throw new Error("Non-canonical signature: wrong type");
+  if (sig[1] !== l - 3)
+    throw new Error("Non-canonical signature: wrong length marker");
 
-    var nLenS = sig[5+nLenR];
-    if ( (nLenR+nLenS+7) !== l)
-        throw new Error("Non-canonical signature: R+S length mismatch");
-      
-    var rPos = 4;
-    var R = new Buffer(nLenR);
-    sig.copy(R, 0,  rPos, rPos+ nLenR);
-     if (sig[rPos-2] !== 0x02)
-         throw new Error("Non-canonical signature: R value type mismatch");
-     if (nLenR == 0)
-         throw new Error("Non-canonical signature: R length is zero");
-     if (R[0] & 0x80)
-         throw new Error("Non-canonical signature: R value negative");
-     if (nLenR > 1 && (R[0] == 0x00) && !(R[1] & 0x80))
-         throw new Error("Non-canonical signature: R value excessively padded");
+  var nLenR = sig[3];
+  if (5 + nLenR >= l)
+    throw new Error("Non-canonical signature: S length misplaced");
 
-    var sPos = 6 + nLenR;   
-    var S = new Buffer(nLenS);
-    sig.copy(S, 0,  sPos, sPos+ nLenS);
-     if (sig[sPos-2] != 0x02)
-         throw new Error("Non-canonical signature: S value type mismatch");
-     if (nLenS == 0)
-         throw new Error("Non-canonical signature: S length is zero");
-     if (S[0] & 0x80)
-         throw new Error("Non-canonical signature: S value negative");
-     if (nLenS > 1 && (S[0] == 0x00) && !(S[1] & 0x80))
-         throw new Error("Non-canonical signature: S value excessively padded");
+  var nLenS = sig[5 + nLenR];
+  if ((nLenR + nLenS + 7) !== l)
+    throw new Error("Non-canonical signature: R+S length mismatch");
 
-     if (opts.verifyEvenS) {
-         if (S[nLenS-1] & 1)
-             throw new Error("Non-canonical signature: S value odd");
-     }
-    return true;
+  var rPos = 4;
+  var R = new Buffer(nLenR);
+  sig.copy(R, 0, rPos, rPos + nLenR);
+  if (sig[rPos - 2] !== 0x02)
+    throw new Error("Non-canonical signature: R value type mismatch");
+  if (nLenR == 0)
+    throw new Error("Non-canonical signature: R length is zero");
+  if (R[0] & 0x80)
+    throw new Error("Non-canonical signature: R value negative");
+  if (nLenR > 1 && (R[0] == 0x00) && !(R[1] & 0x80))
+    throw new Error("Non-canonical signature: R value excessively padded");
+
+  var sPos = 6 + nLenR;
+  var S = new Buffer(nLenS);
+  sig.copy(S, 0, sPos, sPos + nLenS);
+  if (sig[sPos - 2] != 0x02)
+    throw new Error("Non-canonical signature: S value type mismatch");
+  if (nLenS == 0)
+    throw new Error("Non-canonical signature: S length is zero");
+  if (S[0] & 0x80)
+    throw new Error("Non-canonical signature: S value negative");
+  if (nLenS > 1 && (S[0] == 0x00) && !(S[1] & 0x80))
+    throw new Error("Non-canonical signature: S value excessively padded");
+
+  if (this.opts.verifyEvenS) {
+    if (S[nLenS - 1] & 1)
+      throw new Error("Non-canonical signature: S value odd");
+  }
+  return true;
 };
 
 module.exports = require('soop')(ScriptInterpreter);

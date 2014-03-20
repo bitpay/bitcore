@@ -81,9 +81,10 @@ describe('ScriptInterpreter', function() {
         isHex = 1;
       } catch (e) {}
 
-      if (isHex)
-        ScriptInterpreter.isCanonicalSignature.bind(sig).should.
-      throw ();
+      // ignore non-hex strings
+      if (isHex) {
+        ScriptInterpreter.isCanonicalSignature.bind(sig).should.throw();
+      }
     });
   });
 
