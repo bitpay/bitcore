@@ -24,17 +24,15 @@ function parse_test_transaction(entry) {
   // Ignore comments
   if (entry.length !== 3) return;
 
-  var inputs = [];
+  var inputs = {};
   entry[0].forEach(function(vin) {
-    var hash = vin[0];
+    var hash = (vin[0]);
     var index = vin[1];
     var scriptPubKey = Script.fromHumanReadable(vin[2]);
 
-    inputs.push({
-      'prev_tx_hash': hash,
-      'index': index,
-      'scriptPubKey': scriptPubKey
-    });
+    var mapKey = [hash, index];
+    console.log('mapkey=' + mapKey);
+    inputs[mapKey] = scriptPubKey;
 
   });
 
@@ -341,53 +339,39 @@ describe('Transaction', function() {
    * Bitcoin core transaction tests
    */
   // Verify that known valid transactions are intepretted correctly
+  var cb = function(err, results) {
+    should.not.exist(err);
+    should.exist(results);
+    results.should.equal(true);
+  };
   testdata.dataTxValid.forEach(function(datum) {
-    var testTx = parse_test_transaction(datum);
-    if (!testTx) return;
+    if (datum.length < 3) return;
+    var raw = datum[1];
     var verifyP2SH = datum[2];
-    var transactionString = buffertools.toHex(
-      testTx.transaction.serialize());
 
-    it('valid tx=' + transactionString, function() {
+    it('valid tx=' + raw, function() {
       // Verify that all inputs are valid
-      testTx.inputs.forEach(function(input) {
+      var testTx = parse_test_transaction(datum);
+      console.log(raw);
+      //buffertools.toHex(testTx.transaction.serialize()).should.equal(raw);
+      var inputs = testTx.transaction.inputs();
+      for (var i = 0; i < inputs.length; i++) {
+        console.log(' input number #########' + i);
+        var input = inputs[i];
+        buffertools.reverse(input[0]);
+        input[0] = buffertools.toHex(input[0]);
+        var mapKey = [input];
+        var scriptPubKey = testTx.inputs[mapKey];
+        if (!scriptPubKey) throw new Error('asdasdasdasd');
         testTx.transaction.verifyInput(
-          input.index,
-          input.scriptPubKey,
-          { verifyP2SH: verifyP2SH, dontVerifyStrictEnc: true},
-          function(err, results) {
-            // Exceptions raised inside this function will be handled
-            // ...by this function, so ignore if that is the case
-            if (err && err.constructor.name === 'AssertionError') return;
-
-            should.not.exist(err);
-            should.exist(results);
-            results.should.equal(true);
-          });
-      });
+          i,
+          scriptPubKey, {
+            verifyP2SH: verifyP2SH,
+            dontVerifyStrictEnc: true
+          },
+          cb);
+      }
     });
   });
 
-  // Verify that known invalid transactions are interpretted correctly
-  testdata.dataTxInvalid.forEach(function(datum) {
-    var testTx = parse_test_transaction(datum);
-    if (!testTx) return;
-    var transactionString = buffertools.toHex(
-      testTx.transaction.serialize());
-
-    it('valid tx=' + transactionString, function() {
-      // Verify that all inputs are invalid
-      testTx.inputs.forEach(function(input) {
-        testTx.transaction.verifyInput(input.index, input.scriptPubKey,
-          function(err, results) {
-            // Exceptions raised inside this function will be handled
-            // ...by this function, so ignore if that is the case
-            if (err && err.constructor.name === 'AssertionError') return;
-
-            // There should either be an error, or the results should be false.
-            (err !== null || (!err && results === false)).should.equal(true);
-          });
-      });
-    });
-  });
 });
