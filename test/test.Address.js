@@ -35,6 +35,9 @@ describe('Address', function() {
     ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW62iz', false], // too long Bitcoin address
     ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW62izz', false],// too long Bitcoin address
     ['2cFupjhnEsSn59qHXstmK2ffpLv2', false],        // valid base58 invalid data
+    ['dB7cwYdcPSgiyAwKWL3JwCVwSk6epU2txw', false],  // valid base58, valid length, invalid network
+    ['2MnmgiRH4eGLyLc9eAqStzk7dFgBjFtUCtu', false],  // valid base58, valid length, invalid network
+    ['32QBdjycLwbDTuGafUwaU5p5GxzSLPYoF6', true],  // valid base58, valid length, valid network
   ];
   data.forEach(function(datum) {
     var address = datum[0];
@@ -48,23 +51,36 @@ describe('Address', function() {
     });
   });
   it('should be able to detect network from an address', function() {
+    // livenet
     var a = new Address('1KfyjCgBSMsLqiCbakfSdeoBUqMqLUiu3T');
     a.network().name.should.equal('livenet');
-    var a = new Address('1dice8EMZmqKvrGE4Qc9bUFf9PX3xaYDp');
+    a = new Address('1dice8EMZmqKvrGE4Qc9bUFf9PX3xaYDp');
     a.network().name.should.equal('livenet');
     //p2sh
-    var a = new Address('3QRhucKtEn5P9i7YPxzXCqBtPJTPbRFycn');
+    a = new Address('3QRhucKtEn5P9i7YPxzXCqBtPJTPbRFycn');
     a.network().name.should.equal('livenet');
 
     //testnet
-    var a = new Address('mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE');
+    a = new Address('mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE');
     a.network().name.should.equal('testnet');
-    var a = new Address('n2ekxibY5keRiMaoKFGfiNfXQCS4zTUpct');
+    a = new Address('n2ekxibY5keRiMaoKFGfiNfXQCS4zTUpct');
     a.network().name.should.equal('testnet');
 
     //p2sh
-    var a = new Address('2NBSBcf2KfjPEEqVusmrWdmUeNHRiUTS3Li');
+    a = new Address('2NBSBcf2KfjPEEqVusmrWdmUeNHRiUTS3Li');
     a.network().name.should.equal('testnet');
+  });
+  it('#isScript should work', function() {
+    // invalid
+    new Address('1T').isScript().should.equal(false);
+    // pubKeyHash livenet 
+    new Address('1KfyjCgBSMsLqiCbakfSdeoBUqMqLUiu3T').isScript().should.equal(false);
+    // script livenet
+    new Address('3QRhucKtEn5P9i7YPxzXCqBtPJTPbRFycn').isScript().should.equal(true);
+    // pubKeyHash testnet
+    new Address('mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE').isScript().should.equal(false);
+    // script testnet
+    new Address('2NBSBcf2KfjPEEqVusmrWdmUeNHRiUTS3Li').isScript().should.equal(true);
   });
  
 });

@@ -12,6 +12,10 @@ var bignum = bitcore.bignum;
 var base58 = bitcore.base58;
 var base58Check = base58.base58Check;
 
+var Address = bitcore.Address;
+var networks = bitcore.networks;
+var WalletKey = bitcore.WalletKey;
+
 describe('Miscelaneous stuff', function() {
   it('should initialze the config object', function() {
     should.exist(bitcore.config);
@@ -38,8 +42,8 @@ describe('Miscelaneous stuff', function() {
   });
   it('should perform basic math operations for bignum', function() {
     var b = bignum('782910138827292261791972728324982')
-    .sub('182373273283402171237474774728373')
-    .div(13);
+      .sub('182373273283402171237474774728373')
+      .div(13);
     b.toNumber().should.equal(46195143503376160811884457968969);
   });
 
@@ -63,11 +67,95 @@ describe('Miscelaneous stuff', function() {
       buffertools.toHex(base58.decode(datum[1])).should.equal(datum[0]);
     });
   });
+  testdata.dataBase58KeysValid.forEach(function(datum) {
+    var b58 = datum[0];
+    var hexPayload = datum[1];
+    var meta = datum[2];
+    var network = meta.isTestnet ? networks.testnet : networks.livenet;
+    if (meta.isPrivkey) {
+      describe('base58 private key valid ' + b58, function() {
+        var k;
+        var opts = {
+          network: network
+        };
+        before(function() {
+          k = new WalletKey(opts);
+        });
+        it('should generate correctly from WIF', function() {
+          k.fromObj({
+            priv: b58
+          });
+          should.exist(k.privKey);
+        });
+        it('should have compressed state', function() {
+          k.privKey.compressed.should.equal(meta.isCompressed);
+        });
+        it('private key should have correct payload', function() {
+          buffertools.toHex(k.privKey.private).should.equal(hexPayload);
+        });
+        it('should not be an Address', function() {
+          new Address(b58).isValid().should.equal(false);
+        });
+        it('should generate correctly from hex', function() {
+          var k2 = new WalletKey(opts);
+          k2.fromObj({
+            priv: hexPayload,
+            compressed: meta.isCompressed
+          });
+          k2.storeObj().priv.should.equal(b58);
+        });
+      });
+    } else {
+      describe('base58 address valid ' + b58, function() {
+        var a;
+        var shouldBeScript = meta.addrType === 'script';
+        before(function() {
+          a = new Address(b58);
+        });
+        it('should be valid', function() {
+          a.isValid().should.equal(true);
+        });
+        it('should be of correct type', function() {
+          a.isScript().should.equal(shouldBeScript);
+        });
+        it('should get correct network', function() {
+          a.network().should.equal(network);
+        });
+        it('should generate correctly from hex', function() {
+          var version = shouldBeScript ? network.addressScript : network.addressPubkey;
+          var b = new Address(version, new Buffer(hexPayload, 'hex'));
+          b.toString().should.equal(b58);
+        });
+      });
+    }
+  });
+  testdata.dataBase58KeysInvalid.forEach(function(datum) {
+    var b58 = datum[0];
+    it('shouldnt be able to create Address with ' + b58, function() {
+      var a = new Address(b58);
+      var invalidAddress = (!a.isValid());
+      invalidAddress.should.equal(true);
+    });
+    it('shouldnt be able to create WalletKey with ' + b58, function() {
+      var kl = new WalletKey({
+        network: networks.livenet
+      });
+      var kt = new WalletKey({
+        network: networks.livenet
+      });
+      var createLivenet = function() {
+        kl.fromObj({
+          priv: b58
+        });
+      };
+      var createTestnet = function() {
+        kt.fromObj({
+          priv: b58
+        });
+      };
+      createLivenet.should.throw();
+      createTestnet.should.throw();
+    });
+  });
 
 });
-
-
-
-
-
-

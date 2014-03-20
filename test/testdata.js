@@ -11,6 +11,8 @@ var dataUnspent = JSON.parse(fs.readFileSync('test/data/unspent.json'));
 var dataUnspentSign = JSON.parse(fs.readFileSync('test/data/unspentSign.json'));
 var dataSigCanonical = JSON.parse(fs.readFileSync('test/data/sig_canonical.json'));
 var dataSigNonCanonical = JSON.parse(fs.readFileSync('test/data/sig_noncanonical.json'));
+var dataBase58KeysValid = JSON.parse(fs.readFileSync('test/data/base58_keys_valid.json'));
+var dataBase58KeysInvalid = JSON.parse(fs.readFileSync('test/data/base58_keys_invalid.json'));
 
 module.exports.dataValid = dataValid;
 module.exports.dataInvalid = dataInvalid;
@@ -25,3 +27,6 @@ module.exports.dataUnspentSign = dataUnspentSign;
 
 module.exports.dataSigCanonical = dataSigCanonical;
 module.exports.dataSigNonCanonical = dataSigNonCanonical;
+module.exports.dataBase58KeysValid = dataBase58KeysValid;
+module.exports.dataBase58KeysInvalid = dataBase58KeysInvalid;
+

@@ -16,6 +16,7 @@ Address.prototype.validate = function() {
     Address.super(this, 'validate', arguments);
     if(this.data.length !== 21) throw new Error('invalid data length');
   });
+  if (typeof this.network() === 'undefined') throw new Error('invalid network');
 };
 
 Address.prototype.isValid = function() {
@@ -37,5 +38,10 @@ Address.prototype.network = function() {
 
   return answer;
 };
+
+Address.prototype.isScript = function() {
+  return this.isValid() && this.version() === this.network().addressScript;
+};
+
 
 module.exports = require('soop')(Address);
