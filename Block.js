@@ -67,6 +67,7 @@ Block.prototype.parse = function parse(parser, headerOnly) {
   for (var i = 0; i < txCount; i++) {
     var tx = new Transaction();
     tx.parse(parser);
+    tx.calcHash();
     this.txs.push(tx);
   }
 };
