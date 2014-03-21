@@ -94,14 +94,10 @@ Block.prototype.checkProofOfWork = function checkProofOfWork() {
 
   // TODO: Create a compare method in node-buffertools that uses the correct
   //       endian so we don't have to reverse both buffers before comparing.
-  buffertools.reverse(this.hash);
-
-  if (buffertools.compare(this.hash, target) > 0) {
+  var reverseHash = buffertools.reverse(this.hash);
+  if (buffertools.compare(reverseHash, target) > 0) {
     throw new VerificationError('Difficulty target not met');
   }
-
-  // Return the hash to its normal order
-  buffertools.reverse(this.hash);
 
   return true;
 };
@@ -200,7 +196,7 @@ Block.prototype.checkMerkleRoot = function checkMerkleRoot(txs) {
     throw new VerificationError('No merkle root');
   }
 
-  if (buffertools.compare(this.calcMerkleRoot(), this.merkle_root) == 0) {
+  if (buffertools.compare(this.calcMerkleRoot(txs), this.merkle_root) !== 0) {
     throw new VerificationError('Merkle root incorrect');
   }
 
@@ -237,214 +233,6 @@ Block.prototype.toString = function toString() {
   return "<Block " + util.formatHashAlt(this.hash) + " height="+this.height+">";
 };
 
-/**
-  * Initializes some properties based on information from the parent block.
-  */
-Block.prototype.attachTo = function attachTo(parent) {
-  this.height = parent.height + 1;
-  this.setChainWork(parent.getChainWork().add(this.getWork()));
-};
-
-Block.prototype.setChainWork = function setChainWork(chainWork) {
-  if (Buffer.isBuffer(chainWork)) {
-    // Nothing to do
-  } else if ("function" === typeof chainWork.toBuffer) { // duck-typing bignum
-    chainWork = chainWork.toBuffer();
-  } else {
-    throw new Error("Block.setChainWork(): Invalid datatype");
-  }
-
-  this.chainWork = chainWork;
-};
-
-Block.prototype.getChainWork = function getChainWork() {
-  return Bignum.fromBuffer(this.chainWork);
-};
-
-/**
-  * Compares the chainWork of two blocks.
-  */
-Block.prototype.moreWorkThan = function moreWorkThan(otherBlock) {
-  return this.getChainWork().cmp(otherBlock.getChainWork()) > 0;
-};
-
-/**
-  * Returns the difficulty target for the next block after this one.
-  */
-Block.prototype.getNextWork =
-function getNextWork(blockChain, nextBlock, callback) {
-  var self = this;
-
-  var powLimit = blockChain.getMinDiff();
-  var powLimitTarget = util.decodeDiffBits(powLimit, true);
-
-  var targetTimespan = blockChain.getTargetTimespan();
-  var targetSpacing = blockChain.getTargetSpacing();
-  var interval = targetTimespan / targetSpacing;
-
-  if (this.height == 0) {
-    callback(null, this.bits);
-  }
-
-  if ((this.height+1) % interval !== 0) {
-    if (blockChain.isTestnet()) {
-      // Special testnet difficulty rules
-      var lastBlock = blockChain.getTopBlock();
-
-      // If the new block's timestamp is more than 2 * 10 minutes
-      // then allow mining of a min-difficulty block.
-      if (nextBlock.timestamp > this.timestamp + targetSpacing*2) {
-        callback(null, powLimit);
-      } else {
-        // Return last non-"special-min-difficulty" block
-        if (this.bits != powLimit) {
-          // Current block is non-min-diff
-          callback(null, this.bits);
-        } else {
-          // Recurse backwards until a non min-diff block is found.
-          function lookForLastNonMinDiff(block, callback) {
-            try {
-              if (block.height > 0 &&
-                  block.height % interval !== 0 &&
-                  block.bits == powLimit) {
-                blockChain.getBlockByHeight(
-                  block.height - 1,
-                  function (err, lastBlock) {
-                    try {
-                      if (err) throw err;
-                      lookForLastNonMinDiff(lastBlock, callback);
-                    } catch (err) {
-                      callback(err);
-                    }
-                  }
-                );
-              } else {
-                callback(null, block.bits);
-              }
-            } catch (err) {
-              callback(err);
-            }
-          };
-          lookForLastNonMinDiff(this, callback);
-        }
-      }
-    } else {
-      // Not adjustment interval, next block has same difficulty
-      callback(null, this.bits);
-    }
-  } else {
-    // Get the first block from the old difficulty period
-    blockChain.getBlockByHeight(
-      this.height - interval + 1,
-      function (err, lastBlock) {
-        try {
-          if (err) throw err;
-
-          // Determine how long the difficulty period really took
-          var actualTimespan = self.timestamp - lastBlock.timestamp;
-
-          // There are some limits to how much we will adjust the difficulty in
-          // one step
-          if (actualTimespan < targetTimespan/4) {
-            actualTimespan = targetTimespan/4;
-          }
-          if (actualTimespan > targetTimespan*4) {
-            actualTimespan = targetTimespan*4;
-          }
-
-          var oldTarget = util.decodeDiffBits(self.bits, true);
-          var newTarget = oldTarget.mul(actualTimespan).div(targetTimespan);
-
-          if (newTarget.cmp(powLimitTarget) > 0) {
-            newTarget = powLimitTarget;
-          }
-
-          Debug1('Difficulty retarget (target='+targetTimespan +
-                        ', actual='+actualTimespan+')');
-          Debug1('Before: '+oldTarget.toBuffer().toString('hex'));
-          Debug1('After:  '+newTarget.toBuffer().toString('hex'));
-
-          callback(null, util.encodeDiffBits(newTarget));
-        } catch (err) {
-          callback(err);
-        }
-      }
-    );
-  }
-};
-
-var medianTimeSpan = 11;
-
-Block.prototype.getMedianTimePast = 
-function getMedianTimePast(blockChain, callback)
-{
-  var self = this;
-
-  Step(
-    function getBlocks() {
-      var heights = [];
-      for (var i = 0, m = medianTimeSpan; i < m && (self.height - i) >= 0; i++) {
-        heights.push(self.height - i);
-      }
-      blockChain.getBlocksByHeights(heights, this);
-    },
-    function calcMedian(err, blocks) {
-      if (err) throw err;
-
-      var timestamps = blocks.map(function (block) {
-        if (!block) {
-          throw new Error("Prior block missing, cannot calculate median time");
-        }
-
-        return +block.timestamp;
-      });
-
-      // Sort timestamps
-      timestamps = timestamps.sort();
-
-      // Return median timestamp
-      this(null, timestamps[Math.floor(timestamps.length/2)]);
-    },
-    callback
-  );
-};
-
-Block.prototype.verifyChild =
-function verifyChild(blockChain, child, callback)
-{
-  var self = this;
-
-  Step(
-    function getExpectedDifficulty() {
-      self.getNextWork(blockChain, child, this);
-    },
-    function verifyExpectedDifficulty(err, nextWork) {
-      if (err) throw err;
-
-      if (+child.bits !== +nextWork) {
-        throw new VerificationError("Incorrect proof of work '"+child.bits+"',"+
-                                    " should be '"+nextWork+"'.");
-      }
-
-      this();
-    },
-    function getMinimumTimestamp(err) {
-      if (err) throw err;
-
-      self.getMedianTimePast(blockChain, this);
-    },
-    function verifyTimestamp(err, medianTimePast) {
-      if (err) throw err;
-
-      if (child.timestamp <= medianTimePast) {
-        throw new VerificationError("Block's timestamp is too early");
-      }
-
-      this();
-    },
-    callback
-  );
-};
 
 Block.prototype.createCoinbaseTx =
 function createCoinbaseTx(beneficiary)
@@ -460,85 +248,6 @@ function createCoinbaseTx(beneficiary)
     s: Script.createPubKeyOut(beneficiary).getBuffer()
   }));
   return tx;
-};
-
-Block.prototype.prepareNextBlock =
-function prepareNextBlock(blockChain, beneficiary, time, callback)
-{
-  var self = this;
-
-  var newBlock = new Block();
-  Step(
-    function getMedianTimePastStep() {
-      self.getMedianTimePast(blockChain, this);
-    },
-
-    function getNextWorkStep(err, medianTimePast) {
-      if (err) throw err;
-
-      if (!time) {
-        // TODO: Use getAdjustedTime for the second timestamp
-        time = Math.max(medianTimePast+1,
-                        Math.floor(new Date().getTime() / 1000));
-      }
-
-      self.getNextWork(blockChain, newBlock, this);
-    },
-
-    function applyNextWorkStep(err, nextWork) {
-      if (err) throw err;
-      newBlock.bits = nextWork;
-      this(null);
-    },
-
-    function miscStep(err) {
-      if (err) throw err;
-
-      newBlock.version = 1;
-      newBlock.timestamp = time;
-      newBlock.prev_hash = self.getHash().slice(0);
-      newBlock.height = self.height+1;
-
-      // Create coinbase transaction
-      var txs = [];
-
-      var tx = newBlock.createCoinbaseTx(beneficiary);
-      txs.push(tx);
-
-      newBlock.merkle_root = newBlock.calcMerkleRoot(txs);
-
-      // Return reference to (unfinished) block
-      this(null, {block: newBlock, txs: txs});
-    },
-    callback
-  );
-};
-
-Block.prototype.mineNextBlock =
-function mineNextBlock(blockChain, beneficiary, time, miner, callback)
-{
-  this.prepareNextBlock(blockChain, beneficiary, time, function (err, data) {
-    try {
-      if (err) throw err;
-
-      var newBlock = data.block;
-      var txs = data.txs;
-
-      newBlock.solve(miner, function (err, nonce) {
-        newBlock.nonce = nonce;
-
-        // Make sure hash is cached
-        newBlock.getHash();
-
-        callback(err, newBlock, txs);
-      });
-
-      // Return reference to (unfinished) block
-      return newBlock;
-    } catch (e) {
-      callback(e);
-    }
-  });
 };
 
 Block.prototype.solve = function solve(miner, callback) {

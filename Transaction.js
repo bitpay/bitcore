@@ -18,6 +18,8 @@ var PrivateKey         = imports.PrivateKey || require('./PrivateKey');
 var COINBASE_OP = Buffer.concat([util.NULL_HASH, new Buffer('FFFFFFFF', 'hex')]);
 var FEE_PER_1000B_SAT = parseInt(0.0001 * util.COIN); 
 
+Transaction.COINBASE_OP = COINBASE_OP;
+
 function TransactionIn(data) {
   if ("object" !== typeof data) {
     data = {};
@@ -43,6 +45,7 @@ TransactionIn.prototype.getScript = function getScript() {
 };
 
 TransactionIn.prototype.isCoinBase = function isCoinBase() {
+  if (!this.o) return false;
   return buffertools.compare(this.o, COINBASE_OP) === 0;
 };
 

@@ -55,7 +55,6 @@ describe('Block', function() {
     should.exist(b.getHash());
     b.checkHash().should.equal(true);
     b.checkProofOfWork().should.equal(true);
-    b.checkProofOfWork().should.equal(true);
     b.getWork().toString().should.equal('17180131332');
     b.checkTimestamp().should.equal(true);
 
@@ -73,17 +72,31 @@ describe('Block', function() {
     b.checkTransactions(b.txs).should.equal(true);
     b.checkTransactions.bind([]).should.throw();
 
+    var coinbase = b.txs.shift;
+    b.checkTransactions.bind(b.txs).should.throw();
+    b.txs.push(coinbase);
+    b.checkTransactions.bind(b.txs).should.throw();
+
+
+  });
+
+  it('should be able to checkMerkleRoot', function() {
+
+    var b = getBlock();
     b.getMerkleTree(b.txs).length.should.equal(45);
     bitcore.buffertools.toHex(b.calcMerkleRoot(b.txs)).should.equal(bitcore.buffertools.toHex(b.merkle_root));
 
-    var coinbase = b.txs.shift;
-    b.checkTransactions.bind(b.txs).should.throw();
+    b.checkMerkleRoot(b.txs);
 
-    b.txs.push(coinbase);
+    delete b['merkle_root'];
+    b.checkMerkleRoot.bind(b.txs).should.throw();
 
-    b.checkTransactions.bind(b.txs).should.throw();
 
+    b.merkle_root=new Buffer('wrong');
+    b.checkMerkleRoot.bind(b.txs).should.throw();
   });
+
+
  
   it('should be able to checkProofOfWork', function() {
     var b = getBlock();
@@ -104,6 +117,14 @@ describe('Block', function() {
     b.checkProofOfWork.bind().should.throw();
   });
 
+
+  it('should be able to check via checkBlock', function() {
+    var b = getBlock();
+    b.checkBlock.bind(b.txs).should.throw();
+    b.getHash();
+    b.checkBlock(b.txs).should.equal(true);
+  });
+
   it('should be able to get components from blocks', function() {
     var b = getBlock(true);
 
@@ -116,6 +137,54 @@ describe('Block', function() {
   });
 
 
+  it('#getBlockValue should return the correct block value', function() {
+    var c = bitcore.util.COIN;
+    bitcore.Block.getBlockValue(0).div(c).toNumber().should.equal(50);
+    bitcore.Block.getBlockValue(1).div(c).toNumber().should.equal(50);
+    bitcore.Block.getBlockValue(209999).div(c).toNumber().should.equal(50);
+    bitcore.Block.getBlockValue(210000).div(c).toNumber().should.equal(25);
+    bitcore.Block.getBlockValue(2100000).toNumber().should.equal(4882812);
+  });
+
+
+  it('#getStandardizedObject should return object', function() {
+    var b = getBlock();
+    var o = b.getStandardizedObject(b.txs);
+
+    o.hash.should.equal('000000000b99b16390660d79fcc138d2ad0c89a0d044c4201a02bdf1f61ffa11');
+    o.n_tx.should.equal(22);
+    o.size.should.equal(8003);
+    var o2 = b.getStandardizedObject();
+    o2.hash.should.equal('000000000b99b16390660d79fcc138d2ad0c89a0d044c4201a02bdf1f61ffa11');
+    o2.size.should.equal(0);
+  });
+
+
+  it('#miner should call the callback', function(done) {
+    var b = getBlock();
+    var Miner =  function() {};
+    Miner.prototype.solve = function (header,target,cb) {
+      this.called=1;
+      should.exist(header);
+      should.exist(target);
+      return cb();
+    };
+    var miner = new Miner();
+    b.solve(miner, function () {
+      miner.called.should.equal(1);
+      done();
+    });
+
+  });
+
+
+  it('#createCoinbaseTx should create a tx', function() {
+    var b = new Block();
+    var pubkey = new Buffer('02d20b3fba521dcf88dfaf0eee8c15a8ba692d7eb0cb957d5bcf9f4cc052fb9cc6');
+    var tx = b.createCoinbaseTx(pubkey);
+    should.exist(tx);
+    tx.isCoinBase().should.equal(true);
+  });
 });
 
 
