@@ -97,7 +97,6 @@ describe('Miscelaneous stuff', function() {
           new Address(b58).isValid().should.equal(false);
         });
         it('should generate correctly from hex', function() {
-		
           var k2 = new WalletKey(opts);
           k2.fromObj({
             priv: hexPayload,
