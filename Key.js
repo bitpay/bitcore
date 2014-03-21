@@ -79,7 +79,12 @@ if (process.versions) {
   };
   
   kSpec.prototype.verifySignature = function(hash, sig, callback) {
-    
+    try {
+      var result = this.verifySignatureSync(hash, sig);
+      callback(null, result);
+    } catch (e) {
+      callback(e);
+    }
   };
 
   kSpec.prototype.verifySignatureSync = function(hash, sig) {

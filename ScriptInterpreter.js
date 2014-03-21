@@ -620,7 +620,7 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
           // Remove signature if present (a signature can't sign itself)
           scriptCode.findAndDelete(sig);
 
-          //
+          // check canonical signature
           this.isCanonicalSignature(new Buffer(sig));
 
           // Verify signature
@@ -968,11 +968,6 @@ ScriptInterpreter.prototype.verifyFull = function(scriptSig, scriptPubKey,
   this.eval(scriptSig, txTo, nIn, hashType, function(err) {
     if (err) callback(err);
     else {
-      var e = new Error('dummy');
-      var stack = e.stack.replace(/^[^\(]+?[\n$]/gm, '')
-        .replace(/^\s+at\s+/gm, '')
-        .replace(/^Object.<anonymous>\s*\(/gm, '{anonymous}()@')
-        .split('\n');
       that.verifyStep2(scriptSig, scriptPubKey, txTo, nIn,
         hashType, callback, siCopy);
     }
