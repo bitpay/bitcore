@@ -46,7 +46,9 @@ TransactionIn.prototype.getScript = function getScript() {
 
 TransactionIn.prototype.isCoinBase = function isCoinBase() {
   if (!this.o) return false;
-  return buffertools.compare(this.o, COINBASE_OP) === 0;
+
+  //The new Buffer is for Firefox compatibility
+  return  buffertools.compare(new Buffer(this.o), COINBASE_OP) === 0;
 };
 
 TransactionIn.prototype.serialize = function serialize() {

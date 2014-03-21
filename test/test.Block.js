@@ -84,7 +84,7 @@ describe('Block', function() {
 
     var b = getBlock();
     b.getMerkleTree(b.txs).length.should.equal(45);
-    bitcore.buffertools.toHex(b.calcMerkleRoot(b.txs)).should.equal(bitcore.buffertools.toHex(b.merkle_root));
+    bitcore.buffertools.toHex(b.calcMerkleRoot(b.txs)).should.equal(bitcore.buffertools.toHex(new Buffer(b.merkle_root)));
 
     b.checkMerkleRoot(b.txs);
 
@@ -176,7 +176,6 @@ describe('Block', function() {
     });
 
   });
-
 
   it('#createCoinbaseTx should create a tx', function() {
     var b = new Block();

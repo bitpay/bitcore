@@ -195,7 +195,7 @@ Block.prototype.checkMerkleRoot = function checkMerkleRoot(txs) {
     throw new VerificationError('No merkle root');
   }
 
-  if (buffertools.compare(this.calcMerkleRoot(txs), this.merkle_root) !== 0) {
+  if (buffertools.compare(this.calcMerkleRoot(txs), new Buffer(this.merkle_root)) !== 0) {
     throw new VerificationError('Merkle root incorrect');
   }
 
