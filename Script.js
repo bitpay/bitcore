@@ -502,8 +502,16 @@ Script.stringToBuffer = function(s) {
     if (word === '') continue;
     if (word.length > 2 && word.substring(0, 2) === '0x') {
       // raw hex value
-      //console.log('hex value');
-      buf.put(new Buffer(word.substring(2, word.length), 'hex'));
+      var wordBuf = new Buffer(word.substring(2, word.length), 'hex');
+      var lenBuf = encodeLen(wordBuf.length);
+
+      // if the string being parsed is an output of toHumanReadble,
+      // it will already have a length byte. don't push it twice
+      if (split[i - 1] && split[i - 1] !== '0x' + lenBuf.toString('hex')) {
+        buf.put(lenBuf);
+      }
+
+      buf.put(wordBuf);
     } else {
       var opcode = Opcode.map['OP_' + word] || Opcode.map[word];
       if (typeof opcode !== 'undefined') {
