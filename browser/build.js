@@ -52,6 +52,7 @@ var modules = [
   'util/util',
   'util/EncodedData',
   'util/VersionedData',
+  'util/BinaryParser',
 ];
 
 var createBitcore = function(opts) {
