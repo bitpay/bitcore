@@ -7,16 +7,11 @@ var buffertools = require('buffertools');
 var should = chai.should();
 var testdata = testdata || require('./testdata');
 
-var ScriptInterpreterModule = bitcore.ScriptInterpreter;
 var Script = bitcore.Script;
-var ScriptInterpreter;
+var ScriptInterpreter = bitcore.ScriptInterpreter;
 
 describe('ScriptInterpreter', function() {
   it('should initialze the main object', function() {
-    should.exist(ScriptInterpreterModule);
-  });
-  it('should be able to create class', function() {
-    ScriptInterpreter = ScriptInterpreterModule;
     should.exist(ScriptInterpreter);
   });
   it('should be able to create instance', function() {
@@ -24,7 +19,6 @@ describe('ScriptInterpreter', function() {
     should.exist(si);
   });
   var testScripts = function(data, valid) {
-    var i = 0;
     data.forEach(function(datum) {
       if (datum.length < 2) throw new Error('Invalid test data');
       var scriptSig = datum[0]; // script inputs
@@ -68,7 +62,7 @@ describe('ScriptInterpreter', function() {
 
   testdata.dataSigCanonical.forEach(function(datum) {
     it('should validate valid canonical signatures', function() {
-      ScriptInterpreter.isCanonicalSignature(new Buffer(datum, 'hex')).should.equal(true);
+      new ScriptInterpreter().isCanonicalSignature(new Buffer(datum, 'hex')).should.equal(true);
     });
   });
   testdata.dataSigNonCanonical.forEach(function(datum) {
@@ -81,9 +75,16 @@ describe('ScriptInterpreter', function() {
         isHex = 1;
       } catch (e) {}
 
-      if (isHex)
-        ScriptInterpreter.isCanonicalSignature.bind(sig).should.
-      throw ();
+      // ignore non-hex strings
+      if (isHex) {
+        var f = function() {
+          var si = new ScriptInterpreter();
+          var r = si.isCanonicalSignature(sig);
+        };
+        // how this test should be
+        // f.should.throw();
+        new ScriptInterpreter().isCanonicalSignature.bind(sig).should.throw();
+      }
     });
   });
 

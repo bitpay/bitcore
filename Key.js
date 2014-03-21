@@ -77,6 +77,15 @@ if (process.versions) {
     // return it as a buffer to keep c++ compatibility
     return new Buffer(signature);
   };
+  
+  kSpec.prototype.verifySignature = function(hash, sig, callback) {
+    try {
+      var result = this.verifySignatureSync(hash, sig);
+      callback(null, result);
+    } catch (e) {
+      callback(e);
+    }
+  };
 
   kSpec.prototype.verifySignatureSync = function(hash, sig) {
     var self = this;

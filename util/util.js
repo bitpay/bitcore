@@ -1,54 +1,51 @@
-
 var crypto = require('crypto');
 var bignum = require('bignum');
 var Binary = require('binary');
 var Put = require('bufferput');
 var buffertools = require('buffertools');
 var browser;
-if (!process.versions) {
-  // browser version
+var inBrowser = !process.versions;
+if (inBrowser) {
   browser = require('../browser/vendor-bundle.js');
 }
 
 
-var sha256 = exports.sha256 = function (data) {
+var sha256 = exports.sha256 = function(data) {
   return new Buffer(crypto.createHash('sha256').update(data).digest('binary'), 'binary');
 };
-var ripe160 = exports.ripe160 = function (data) {
+var ripe160 = exports.ripe160 = function(data) {
   if (!Buffer.isBuffer(data)) {
     throw new Error('arg should be a buffer');
   }
-
-  if (!process.versions) {
-
+  if (inBrowser) {
     var w = new browser.crypto31.lib.WordArray.init(Crypto.util.bytesToWords(data), data.length);
     var wordArray = browser.crypto31.RIPEMD160(w);
     var words = wordArray.words;
     var answer = [];
     for (var b = 0; b < words.length * 32; b += 8) {
-        answer.push((words[b >>> 5] >>> (24 - b % 32)) & 0xFF);
+      answer.push((words[b >>> 5] >>> (24 - b % 32)) & 0xFF);
     }
     return new Buffer(answer, 'hex');
   }
   return new Buffer(crypto.createHash('rmd160').update(data).digest('binary'), 'binary');
 };
 
-var sha1 = exports.sha1 = function (data) {
+var sha1 = exports.sha1 = function(data) {
   return new Buffer(crypto.createHash('sha1').update(data).digest('binary'), 'binary');
 };
 
-var twoSha256 = exports.twoSha256 = function (data) {
+var twoSha256 = exports.twoSha256 = function(data) {
   return sha256(sha256(data));
 };
 
-var sha256ripe160 = exports.sha256ripe160 = function (data) {
+var sha256ripe160 = exports.sha256ripe160 = function(data) {
   return ripe160(sha256(data));
 };
 
 /**
  * Format a block hash like the official client does.
  */
-var formatHash = exports.formatHash = function (hash) {
+var formatHash = exports.formatHash = function(hash) {
   var hashEnd = new Buffer(10);
   hash.copy(hashEnd, 0, 22, 32);
   return buffertools.reverse(hashEnd).toString('hex');
@@ -57,7 +54,7 @@ var formatHash = exports.formatHash = function (hash) {
 /**
  * Display the whole hash, as hex, in correct endian order.
  */
-var formatHashFull = exports.formatHashFull = function (hash) {
+var formatHashFull = exports.formatHashFull = function(hash) {
   var copy = new Buffer(hash.length);
   hash.copy(copy);
   var hex = buffertools.toHex(buffertools.reverse(copy));
@@ -69,13 +66,13 @@ var formatHashFull = exports.formatHashFull = function (hash) {
  *
  * Formats a block hash by removing leading zeros and truncating to 10 characters.
  */
-var formatHashAlt = exports.formatHashAlt = function (hash) {
+var formatHashAlt = exports.formatHashAlt = function(hash) {
   var hex = formatHashFull(hash);
   hex = hex.replace(/^0*/, '');
   return hex.substr(0, 10);
 };
 
-var formatBuffer = exports.formatBuffer = function (buffer, maxLen) {
+var formatBuffer = exports.formatBuffer = function(buffer, maxLen) {
   // Calculate amount of bytes to display
   if (maxLen === null) {
     maxLen = 10;
@@ -96,41 +93,47 @@ var formatBuffer = exports.formatBuffer = function (buffer, maxLen) {
   return output;
 };
 
-var valueToBigInt = exports.valueToBigInt = function (valueBuffer) {
+var valueToBigInt = exports.valueToBigInt = function(valueBuffer) {
   if (Buffer.isBuffer(valueBuffer)) {
-    return bignum.fromBuffer(valueBuffer, {endian: 'little', size: 8});
+    return bignum.fromBuffer(valueBuffer, {
+      endian: 'little',
+      size: 8
+    });
   } else {
     return valueBuffer;
   }
 };
 
-var bigIntToValue = exports.bigIntToValue = function (valueBigInt) {
+var bigIntToValue = exports.bigIntToValue = function(valueBigInt) {
   if (Buffer.isBuffer(valueBigInt)) {
     return valueBigInt;
   } else {
-    return valueBigInt.toBuffer({endian: 'little', size: 8});
+    return valueBigInt.toBuffer({
+      endian: 'little',
+      size: 8
+    });
   }
 };
 
 var fitsInNBits = function(integer, n) {
   // TODO: make this efficient!!!
-  return integer.toString(2).replace('-','').length < n;
+  return integer.toString(2).replace('-', '').length < n;
 };
 exports.bytesNeededToStore = bytesNeededToStore = function(integer) {
   if (integer === 0) return 0;
-  return Math.ceil(((integer).toString(2).replace('-','').length + 1)/ 8);
+  return Math.ceil(((integer).toString(2).replace('-', '').length + 1) / 8);
 };
 
 exports.negativeBuffer = negativeBuffer = function(b) {
   // implement two-complement negative
   var c = new Buffer(b.length);
   // negate each byte
-  for (var i=0; i<b.length; i++){
+  for (var i = 0; i < b.length; i++) {
     c[i] = ~b[i];
     if (c[i] < 0) c[i] += 256;
   }
   // add one
-  for (var i=b.length - 1; i>=0; i--){
+  for (var i = b.length - 1; i >= 0; i--) {
     c[i] += 1;
     if (c[i] >= 256) c[i] -= 256;
     if (c[i] !== 0) break;
@@ -141,7 +144,7 @@ exports.negativeBuffer = negativeBuffer = function(b) {
 /*
  * Transforms an integer into a buffer using two-complement encoding
  * For example, 1 is encoded as 01 and -1 is encoded as ff
- * For more info see: 
+ * For more info see:
  * http://en.wikipedia.org/wiki/Signed_number_representations#Two.27s_complement
  */
 exports.intToBuffer2C = function(integer) {
@@ -149,9 +152,9 @@ exports.intToBuffer2C = function(integer) {
   var buf = new Put();
   var s = integer.toString(16);
   var neg = s[0] === '-';
-  s = s.replace('-','');
-  for (var i=0; i<size; i++) {
-    var si = s.substring(s.length - 2*(i+1), s.length - 2*(i));
+  s = s.replace('-', '');
+  for (var i = 0; i < size; i++) {
+    var si = s.substring(s.length - 2 * (i + 1), s.length - 2 * (i));
     if (si.lenght === 1) {
       si = '0' + si;
     }
@@ -184,7 +187,7 @@ var padSign = function(b) {
 /*
  * Transforms an integer into a buffer using sign+magnitude encoding
  * For example, 1 is encoded as 01 and -1 is encoded as 81
- * For more info see: 
+ * For more info see:
  * http://en.wikipedia.org/wiki/Signed_number_representations#Signed_magnitude_representation
  */
 exports.intToBufferSM = function(v) {
@@ -234,50 +237,45 @@ exports.bufferSMToInt = function(v) {
 
 
 
-var formatValue = exports.formatValue = function (valueBuffer) {
+var formatValue = exports.formatValue = function(valueBuffer) {
   var value = valueToBigInt(valueBuffer).toString();
-  var integerPart = value.length > 8 ? value.substr(0, value.length-8) : '0';
-  var decimalPart = value.length > 8 ? value.substr(value.length-8) : value;
+  var integerPart = value.length > 8 ? value.substr(0, value.length - 8) : '0';
+  var decimalPart = value.length > 8 ? value.substr(value.length - 8) : value;
   while (decimalPart.length < 8) {
-    decimalPart = "0"+decimalPart;
+    decimalPart = "0" + decimalPart;
   }
   decimalPart = decimalPart.replace(/0*$/, '');
   while (decimalPart.length < 2) {
     decimalPart += "0";
   }
-  return integerPart+"."+decimalPart;
+  return integerPart + "." + decimalPart;
 };
 
 var reFullVal = /^\s*(\d+)\.(\d+)/;
 var reFracVal = /^\s*\.(\d+)/;
 var reWholeVal = /^\s*(\d+)/;
 
-function padFrac(frac)
-{
-  frac=frac.substr(0,8); //truncate to 8 decimal places
+function padFrac(frac) {
+  frac = frac.substr(0, 8); //truncate to 8 decimal places
   while (frac.length < 8)
     frac = frac + '0';
   return frac;
 }
 
-function parseFullValue(res)
-{
+function parseFullValue(res) {
   return bignum(res[1]).mul('100000000').add(padFrac(res[2]));
 }
 
-function parseFracValue(res)
-{
+function parseFracValue(res) {
   return bignum(padFrac(res[1]));
 }
 
-function parseWholeValue(res)
-{
+function parseWholeValue(res) {
   return bignum(res[1]).mul('100000000');
 }
 
-exports.parseValue = function parseValue(valueStr)
-{
-  if (typeof valueStr !== 'string') 
+exports.parseValue = function parseValue(valueStr) {
+  if (typeof valueStr !== 'string')
     valueStr = valueStr.toString();
 
   var res = valueStr.match(reFullVal);
@@ -296,11 +294,11 @@ exports.parseValue = function parseValue(valueStr)
 };
 
 // Utility that synchronizes function calls based on a key
-var createSynchrotron = exports.createSynchrotron = function (fn) {
+var createSynchrotron = exports.createSynchrotron = function(fn) {
   var table = {};
-  return function (key) {
+  return function(key) {
     var args = Array.prototype.slice.call(arguments);
-    var run = function () {
+    var run = function() {
       // Function fn() will call when it finishes
       args[0] = function next() {
         if (table[key]) {
@@ -333,21 +331,23 @@ var createSynchrotron = exports.createSynchrotron = function (fn) {
  *
  * @returns Buffer random nonce
  */
-var generateNonce = exports.generateNonce = function () {
-  var b32 = 0x100000000, ff = 0xff;
-  var b = new Buffer(8), i = 0;
+var generateNonce = exports.generateNonce = function() {
+  var b32 = 0x100000000,
+    ff = 0xff;
+  var b = new Buffer(8),
+    i = 0;
 
   // Generate eight random bytes
-  r = Math.random()*b32;
+  r = Math.random() * b32;
   b[i++] = r & ff;
-  b[i++] = (r=r>>>8) & ff;
-  b[i++] = (r=r>>>8) & ff;
-  b[i++] = (r=r>>>8) & ff;
-  r = Math.random()*b32;
+  b[i++] = (r = r >>> 8) & ff;
+  b[i++] = (r = r >>> 8) & ff;
+  b[i++] = (r = r >>> 8) & ff;
+  r = Math.random() * b32;
   b[i++] = r & ff;
-  b[i++] = (r=r>>>8) & ff;
-  b[i++] = (r=r>>>8) & ff;
-  b[i++] = (r=r>>>8) & ff;
+  b[i++] = (r = r >>> 8) & ff;
+  b[i++] = (r = r >>> 8) & ff;
+  b[i++] = (r = r >>> 8) & ff;
 
   return b;
 };
@@ -357,10 +357,10 @@ var generateNonce = exports.generateNonce = function () {
  *
  * This function calculates the difficulty target given the difficulty bits.
  */
-var decodeDiffBits = exports.decodeDiffBits = function (diffBits, asBigInt) {
+var decodeDiffBits = exports.decodeDiffBits = function(diffBits, asBigInt) {
   diffBits = +diffBits;
   var target = bignum(diffBits & 0xffffff);
-  target = target.shiftLeft(8*((diffBits >>> 24) - 3));
+  target = target.shiftLeft(8 * ((diffBits >>> 24) - 3));
 
   if (asBigInt) {
     return target;
@@ -370,7 +370,7 @@ var decodeDiffBits = exports.decodeDiffBits = function (diffBits, asBigInt) {
   var diffBuf = target.toBuffer();
   var targetBuf = new Buffer(32);
   buffertools.fill(targetBuf, 0);
-  diffBuf.copy(targetBuf, 32-diffBuf.length);
+  diffBuf.copy(targetBuf, 32 - diffBuf.length);
   return targetBuf;
 };
 
@@ -393,8 +393,8 @@ var encodeDiffBits = exports.encodeDiffBits = function encodeDiffBits(target) {
 
   var compact = size << 24;
   if (size >= 1) compact |= mpiBuf[4] << 16;
-  if (size >= 2) compact |= mpiBuf[5] <<  8;
-  if (size >= 3) compact |= mpiBuf[6]      ;
+  if (size >= 2) compact |= mpiBuf[5] << 8;
+  if (size >= 3) compact |= mpiBuf[6];
 
   return compact;
 };
@@ -405,16 +405,20 @@ var encodeDiffBits = exports.encodeDiffBits = function encodeDiffBits(target) {
  * This function calculates the maximum difficulty target divided by the given
  * difficulty target.
  */
-var calcDifficulty = exports.calcDifficulty = function (target) {
+var calcDifficulty = exports.calcDifficulty = function(target) {
   if (!Buffer.isBuffer(target)) {
     target = decodeDiffBits(target);
   }
-  var targetBigint = bignum.fromBuffer(target, {order: 'forward'});
-  var maxBigint = bignum.fromBuffer(MAX_TARGET, {order: 'forward'});
+  var targetBigint = bignum.fromBuffer(target, {
+    order: 'forward'
+  });
+  var maxBigint = bignum.fromBuffer(MAX_TARGET, {
+    order: 'forward'
+  });
   return maxBigint.div(targetBigint).toNumber();
 };
 
-var reverseBytes32 = exports.reverseBytes32 = function (data) {
+var reverseBytes32 = exports.reverseBytes32 = function(data) {
   if (data.length % 4) {
     throw new Error("Util.reverseBytes32(): Data length must be multiple of 4");
   }
