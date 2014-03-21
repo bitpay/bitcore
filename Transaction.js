@@ -577,7 +577,12 @@ Transaction.prototype.getStandardizedObject = function getStandardizedObject() {
     if (txin.isCoinBase()) {
       txinObj.coinbase = txin.s.toString('hex');
     } else {
-      txinObj.scriptSig = new Script(txin.s).getStringContent(false, 0);
+
+      try {
+        txinObj.scriptSig = new Script(txin.s).getStringContent(false, 0);
+      } catch (e) {
+        log.warn(e.msg);     /* log the error, and continue */
+      }
     }
     totalSize += 36 + util.getVarIntSize(txin.s.length) +
       txin.s.length + 4; // outpoint + script_len + script + sequence
@@ -588,9 +593,17 @@ Transaction.prototype.getStandardizedObject = function getStandardizedObject() {
   var outs = this.outs.map(function (txout) {
     totalSize += util.getVarIntSize(txout.s.length) +
       txout.s.length + 8; // script_len + script + value
+
+    var s;
+    try {
+      s = new Script(txout.s).getStringContent(false, 0);
+    } catch (e) {
+      log.warn(e.msg);     /* log the error, and continue */
+    }
+
     return {
       value: util.formatValue(txout.v),
-      scriptPubKey: new Script(txout.s).getStringContent(false, 0)
+      scriptPubKey: s,
     };
   });
 
