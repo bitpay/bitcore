@@ -30,3 +30,6 @@ module.exports.dataSigNonCanonical = dataSigNonCanonical;
 module.exports.dataBase58KeysValid = dataBase58KeysValid;
 module.exports.dataBase58KeysInvalid = dataBase58KeysInvalid;
 
+var buffer = new Buffer(fs.readFileSync('test/data/blk86756-testnet.dat'));
+module.exports.dataRawBlock = buffer;
+  

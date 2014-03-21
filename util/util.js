@@ -359,8 +359,17 @@ var generateNonce = exports.generateNonce = function() {
  */
 var decodeDiffBits = exports.decodeDiffBits = function(diffBits, asBigInt) {
   diffBits = +diffBits;
+
   var target = bignum(diffBits & 0xffffff);
-  target = target.shiftLeft(8 * ((diffBits >>> 24) - 3));
+  /*
+   * shiftLeft is not implemented on the bignum browser 
+   *
+   * target = target.shiftLeft(8*((diffBits >>> 24) - 3));
+   */
+
+  var mov = 8*((diffBits >>> 24) - 3);
+  while (mov-- > 0)
+    target = target.mul(2);
 
   if (asBigInt) {
     return target;

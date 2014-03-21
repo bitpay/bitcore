@@ -21,6 +21,7 @@ requireWhenAccessed('networks', './networks');
 requireWhenAccessed('util', './util/util');
 requireWhenAccessed('EncodedData', './util/EncodedData');
 requireWhenAccessed('VersionedData', './util/VersionedData');
+requireWhenAccessed('BinaryParser', './util/BinaryParser');
 requireWhenAccessed('Address', './Address');
 requireWhenAccessed('Opcode', './Opcode');
 requireWhenAccessed('Script', './Script');
