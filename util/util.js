@@ -18,7 +18,7 @@ var ripe160 = exports.ripe160 = function(data) {
     throw new Error('arg should be a buffer');
   }
   if (inBrowser) {
-    var w = new browser.crypto31.lib.WordArray.init(browser.Crypto.util.bytesToWords(data), data.length);
+    var w = new browser.crypto31.lib.WordArray.init(Crypto.util.bytesToWords(data), data.length);
     var wordArray = browser.crypto31.RIPEMD160(w);
     var words = wordArray.words;
     var answer = [];
