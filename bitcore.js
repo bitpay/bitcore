@@ -23,6 +23,7 @@ requireWhenAccessed('EncodedData', './util/EncodedData');
 requireWhenAccessed('VersionedData', './util/VersionedData');
 requireWhenAccessed('BinaryParser', './util/BinaryParser');
 requireWhenAccessed('Address', './Address');
+requireWhenAccessed('BIP32', './BIP32');
 requireWhenAccessed('Opcode', './Opcode');
 requireWhenAccessed('Script', './Script');
 requireWhenAccessed('Transaction', './Transaction');

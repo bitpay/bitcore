@@ -1,8 +1,9 @@
-//var base58 = imports.base58 || require('base58-native').base58Check;
+var imports = require('soop').imports();
 var base58 = imports.base58 || require('base58-native').base58;
 var coinUtil = imports.coinUtil || require('./util/util');
 var Key = imports.Key || require('./Key');
-var bignum = require('bignum');
+var bignum = imports.bignum || require('bignum');
+var crypto = require('crypto');
 
 var BITCOIN_MAINNET_PUBLIC = 0x0488b21e;
 var BITCOIN_MAINNET_PRIVATE = 0x0488ade4;
@@ -16,7 +17,8 @@ var LITECOIN_MAINNET_PUBLIC = 0x019da462;
 var LITECOIN_MAINNET_PRIVATE = 0x019d9cfe;
 var LITECOIN_TESTNET_PUBLIC = 0x0436f6e1;
 var LITECOIN_TESTNET_PRIVATE = 0x0436ef7d;
-var SECP256K1_N = new bignum("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16);
+var secp256k1_n = new bignum("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16);
+var secp256k1_G = new bignum("79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798", 16); //x coordinate
 
 var BIP32 = function(bytes) {
   // decode base58
@@ -105,7 +107,7 @@ BIP32.prototype.init_from_bytes = function(bytes) {
 }
 
 BIP32.prototype.build_extended_public_key = function() {
-  this.extended_public_key = [];
+  this.extended_public_key = new Buffer([]);
 
   var v = null;
   switch(this.version) {
@@ -160,7 +162,7 @@ BIP32.prototype.build_extended_public_key = function() {
   this.extended_public_key = Buffer.concat([this.extended_public_key, this.chain_code]);
 
   // Public key
-  this.extended_public_key = Buffer.concat([this.extended_public_key, this.eckey.pub]);
+  this.extended_public_key = Buffer.concat([this.extended_public_key, this.eckey.public]);
 }
 
 BIP32.prototype.extended_public_key_string = function(format) {
@@ -178,7 +180,7 @@ BIP32.prototype.extended_public_key_string = function(format) {
 
 BIP32.prototype.build_extended_private_key = function() {
   if (!this.has_private_key) return;
-  this.extended_private_key = new Buffer();
+  this.extended_private_key = new Buffer([]);
 
   var v = this.version;
 
@@ -204,7 +206,6 @@ BIP32.prototype.build_extended_private_key = function() {
   this.extended_private_key = Buffer.concat([this.extended_private_key, this.chain_code]);
 
   // Private key
-  this.extended_private_key.push(0);
   this.extended_private_key = Buffer.concat([this.extended_private_key, new Buffer([0])]);
   this.extended_private_key = Buffer.concat([this.extended_private_key, this.eckey.private]);
 }
@@ -256,7 +257,7 @@ BIP32.prototype.derive_child = function(i) {
   ib.push((i >> 24) & 0xff);
   ib.push((i >> 16) & 0xff);
   ib.push((i >>  8) & 0xff);
-  ib.push(i & 0xff );
+  ib.push(i & 0xff);
   ib = new Buffer(ib);
 
   var use_private = (i & 0x80000000) != 0;
@@ -291,18 +292,17 @@ BIP32.prototype.derive_child = function(i) {
     */
     var hmac = crypto.createHmac('sha512', this.chain_code);
     var hash = hmac.update(data).digest();
-    var il = bignum.fromBufer(hash.slice(0, 64), {size: 32});
-    var ir = hash.slice(64, 128);
+    var il = bignum.fromBuffer(hash.slice(0, 32), {size: 32});
+    var ir = hash.slice(32, 64);
 
     // ki = IL + kpar (mod n).
-    //TODO: Fix this somehow
-    var priv = bignum.fromBuffer(this.eckey.priv, {size: 32});
-    var k = il.add(priv).mod(SECP256K1_N);
+    var priv = bignum.fromBuffer(this.eckey.private, {size: 32});
+    var k = il.add(priv).mod(secp256k1_n);
 
     ret = new BIP32();
     ret.chain_code = ir;
 
-    ret.eckey = new bitcore.Key();
+    ret.eckey = new Key();
     ret.eckey.private = k.toBuffer({size: 32});
     ret.eckey.regenerateSync();
     ret.has_private_key = true;
@@ -317,24 +317,24 @@ BIP32.prototype.derive_child = function(i) {
     var ir = Crypto.util.hexToBytes(hash.slice(64, 128));
     */
     var data = Buffer.concat([this.eckey.public, ib]);
-    var hash = coinUtil.sha512(this.chain_code); //TODO: replace with HMAC
-    var il = bignum.fromBuffer(hash.slice(0, 64).toString('hex'), 16);
-    var ir = hash.slice(64, 128);
+    var hmac = crypto.createHmac('sha512', this.chain_code);
+    var hash = hmac.update(data).digest();
+    var il = bignum.fromBuffer(hash.slice(0, 32), {size: 32});
+    var ir = hash.slice(32, 64);
 
     // Ki = (IL + kpar)*G = IL*G + Kpar
-    //TODO: Fix this somehow
-    var key = new bitcore.Key();
-    key.private = il;
-    key.regenerateSync();
-    var k = key.public;
-    //TODO: now add this.eckey.pub
     //var k = ecparams.getG().multiply(il).add(this.eckey.pub);
+    var pub = new bignum(this.eckey.public, {size: 32});
+    var k = secp256k1_G.mul(il).add(pub);
+
+    //compressed pubkey must start with 0x02 just like compressed G
+    var kbuf = Buffer.concat([new Buffer(0x02), k.toBuffer({size: 32})]);
 
     ret = new BIP32();
     ret.chain_code  = new Buffer(ir);
 
-    ret.eckey = new bitcore.key();
-    ret.eckey.pub = k;
+    ret.eckey = new Key();
+    ret.eckey.public = kbuf;
     ret.has_private_key = false;
   }
 
@@ -343,8 +343,8 @@ BIP32.prototype.derive_child = function(i) {
   ret.version = this.version;
   ret.depth = this.depth + 1;
 
-  ret.eckey.setCompressed(true);
-  ret.pubKeyHash = coinUtil.sha256ripe160(ret.eckey.pub.getEncoded(true));
+  ret.eckey.compressed = true;
+  ret.pubKeyHash = coinUtil.sha256ripe160(ret.eckey.public);
 
   ret.build_extended_public_key();
   ret.build_extended_private_key();
@@ -401,3 +401,5 @@ function decompress_pubkey(key_bytes) {
   return new ECPointFp(curve, curve.fromBigInteger(x), curve.fromBigInteger(y));
 }
 */
+
+module.exports = require('soop')(BIP32);
