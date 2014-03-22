@@ -21,6 +21,24 @@ var secp256k1_n = new bignum("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBF
 var secp256k1_G = new bignum("79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798", 16); //x coordinate
 
 var BIP32 = function(bytes) {
+  if (bytes == 'mainnet' || bytes == 'livenet')
+    this.version = BITCOIN_MAINNET_PRIVATE;
+  else if (bytes == 'testnet')
+    this.version = BITCOIN_TESTNET_PRIVATE;
+
+  if (bytes == 'mainnet' || bytes == 'livenet' || bytes == 'testnet') {
+    this.depth = 0x00;
+    this.parent_fingerprint = new Buffer([0, 0, 0, 0]);
+    this.child_index = new Buffer([0, 0, 0, 0]);
+    this.chain_code = Key.generateSync().private;
+    this.eckey = Key.generateSync();
+    this.has_private_key = true;
+    this.pubKeyHash = coinUtil.sha256ripe160(this.eckey.public);
+    this.build_extended_public_key();
+    this.build_extended_private_key();
+    return;
+  }
+  
   // decode base58
   if (typeof bytes === "string") {
     var decoded = base58.decode(bytes);

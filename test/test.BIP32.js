@@ -40,6 +40,16 @@ describe('BIP32', function() {
     should.exist(BIP32);
   });
 
+  it('should create a mainnet bip32', function() {
+    var bip32 = new BIP32('mainnet');
+    should.exist(bip32);
+  });
+
+  it('should create a testnet bip32', function() {
+    var bip32 = new BIP32('testnet');
+    should.exist(bip32);
+  });
+
   it('should initialize test vector 1 from the extended public key', function() {
     var bip32 = new BIP32(vector1_m_public);
     should.exist(bip32);
