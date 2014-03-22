@@ -4,27 +4,16 @@ var coinUtil = imports.coinUtil || require('./util/util');
 var Key = imports.Key || require('./Key');
 var bignum = imports.bignum || require('bignum');
 var crypto = require('crypto');
+var networks = require('./networks');
 
-var BITCOIN_MAINNET_PUBLIC = 0x0488b21e;
-var BITCOIN_MAINNET_PRIVATE = 0x0488ade4;
-var BITCOIN_TESTNET_PUBLIC = 0x043587cf;
-var BITCOIN_TESTNET_PRIVATE = 0x04358394;
-var DOGECOIN_MAINNET_PUBLIC = 0x02facafd;
-var DOGECOIN_MAINNET_PRIVATE = 0x02fac398;
-var DOGECOIN_TESTNET_PUBLIC = 0x0432a9a8;
-var DOGECOIN_TESTNET_PRIVATE = 0x0432a243;
-var LITECOIN_MAINNET_PUBLIC = 0x019da462;
-var LITECOIN_MAINNET_PRIVATE = 0x019d9cfe;
-var LITECOIN_TESTNET_PUBLIC = 0x0436f6e1;
-var LITECOIN_TESTNET_PRIVATE = 0x0436ef7d;
 var secp256k1_n = new bignum("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16);
 var secp256k1_G = new bignum("79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798", 16); //x coordinate
 
 var BIP32 = function(bytes) {
   if (bytes == 'mainnet' || bytes == 'livenet')
-    this.version = BITCOIN_MAINNET_PRIVATE;
+    this.version = networks['livenet'].bip32private;
   else if (bytes == 'testnet')
-    this.version = BITCOIN_TESTNET_PRIVATE;
+    this.version = networks['testnet'].bip32private;
 
   if (bytes == 'mainnet' || bytes == 'livenet' || bytes == 'testnet') {
     this.depth = 0x00;
@@ -71,20 +60,12 @@ BIP32.prototype.init_from_bytes = function(bytes) {
   var key_bytes = bytes.slice(45, 78);
 
   var is_private = 
-    (this.version == BITCOIN_MAINNET_PRIVATE  ||
-     this.version == BITCOIN_TESTNET_PRIVATE  ||
-     this.version == DOGECOIN_MAINNET_PRIVATE ||
-     this.version == DOGECOIN_TESTNET_PRIVATE ||
-     this.version == LITECOIN_MAINNET_PRIVATE ||
-     this.version == LITECOIN_TESTNET_PRIVATE );
+    (this.version == networks['livenet'].bip32private  ||
+     this.version == networks['testnet'].bip32private  );
 
   var is_public = 
-    (this.version == BITCOIN_MAINNET_PUBLIC  ||
-     this.version == BITCOIN_TESTNET_PUBLIC  ||
-     this.version == DOGECOIN_MAINNET_PUBLIC ||
-     this.version == DOGECOIN_TESTNET_PUBLIC ||
-     this.version == LITECOIN_MAINNET_PUBLIC ||
-     this.version == LITECOIN_TESTNET_PUBLIC );
+    (this.version == networks['livenet'].bip32public  ||
+     this.version == networks['testnet'].bip32public  );
 
   if (is_private && key_bytes[0] == 0) {
     this.eckey = new Key();
@@ -111,29 +92,13 @@ BIP32.prototype.build_extended_public_key = function() {
 
   var v = null;
   switch(this.version) {
-  case BITCOIN_MAINNET_PUBLIC:
-  case BITCOIN_MAINNET_PRIVATE:
-    v = BITCOIN_MAINNET_PUBLIC;
+  case networks['livenet'].bip32public:
+  case networks['livenet'].bip32private:
+    v = networks['livenet'].bip32public;
     break;
-  case BITCOIN_TESTNET_PUBLIC:
-  case BITCOIN_TESTNET_PRIVATE:
-    v = BITCOIN_TESTNET_PUBLIC;
-    break;
-  case DOGECOIN_MAINNET_PUBLIC:
-  case DOGECOIN_MAINNET_PRIVATE:
-    v = DOGECOIN_MAINNET_PUBLIC;
-    break;
-  case DOGECOIN_TESTNET_PUBLIC:
-  case DOGECOIN_TESTNET_PRIVATE:
-    v = DOGECOIN_TESTNET_PUBLIC;
-    break;
-  case LITECOIN_MAINNET_PUBLIC:
-  case LITECOIN_MAINNET_PRIVATE:
-    v = LITECOIN_MAINNET_PUBLIC;
-    break;
-  case LITECOIN_TESTNET_PUBLIC:
-  case LITECOIN_TESTNET_PRIVATE:
-    v = LITECOIN_TESTNET_PUBLIC;
+  case networks['testnet'].bip32public:
+  case networks['testnet'].bip32private:
+    v = networks['testnet'].bip32public;
     break;
    default:
     throw new Error("Unknown version");
@@ -262,12 +227,8 @@ BIP32.prototype.derive_child = function(i) {
   var use_private = (i & 0x80000000) != 0;
 
   var is_private = 
-    (this.version == BITCOIN_MAINNET_PRIVATE  ||
-     this.version == BITCOIN_TESTNET_PRIVATE  ||
-     this.version == DOGECOIN_MAINNET_PRIVATE ||
-     this.version == DOGECOIN_TESTNET_PRIVATE ||
-     this.version == LITECOIN_MAINNET_PRIVATE ||
-     this.version == LITECOIN_TESTNET_PRIVATE);
+    (this.version == networks['livenet'].bip32private  ||
+     this.version == networks['testnet'].bip32private  );
 
   if (use_private && (!this.has_private_key || !is_private))
     throw new Error("Cannot do private key derivation without private key");
