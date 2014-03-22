@@ -69,34 +69,16 @@ BIP32.prototype.init_from_bytes = function(bytes) {
      this.version == LITECOIN_TESTNET_PUBLIC );
 
   if (is_private && key_bytes[0] == 0) {
-    /*
-    this.eckey = new Bitcoin.ECKey(key_bytes.slice(1, 33));
-    this.eckey.setCompressed(true);
-
-    var ecparams = getSECCurveByName("secp256k1");
-    var pt = ecparams.getG().multiply(this.eckey.priv);
-    this.eckey.pub = pt;
-    this.eckey.pubKeyHash = Bitcoin.Util.sha256ripe160(this.eckey.pub.getEncoded(true));
-    this.has_private_key = true;
-    */
     this.eckey = new Key();
     this.eckey.private = key_bytes.slice(1, 33);
     this.eckey.compressed = true;
     this.eckey.regenerateSync();
-    this.pubKeyHash = coinUtil.sha256ripe160(this.eckey.public); //not compressed ... seems to conflict with below
+    this.pubKeyHash = coinUtil.sha256ripe160(this.eckey.public);
     this.has_private_key = true;
   } else if (is_public && (key_bytes[0] == 0x02 || key_bytes[0] == 0x03)) {
-    /* 
-    this.eckey = new Bitcoin.ECKey();
-    this.eckey.pub = decompress_pubkey(key_bytes);
-    this.eckey.pubKeyHash = Bitcoin.Util.sha256ripe160(this.eckey.pub.getEncoded(true));
-    //TODO: why compute hash of uncompressed, then compress again?
-    this.eckey.setCompressed(true);
-    this.has_private_key = false;
-    */
     this.eckey = new Key();
-    this.eckey.public = key_bytes; //assume compressed
-    this.pubKeyHash = coinUtil.sha256ripe160(this.eckey.public); //not compressed ... seems to conflict with above
+    this.eckey.public = key_bytes;
+    this.pubKeyHash = coinUtil.sha256ripe160(this.eckey.public);
     this.has_private_key = false;
   } else {
     throw new Error("Invalid key");
@@ -146,7 +128,6 @@ BIP32.prototype.build_extended_public_key = function() {
   this.extended_public_key = Buffer.concat([this.extended_public_key, new Buffer([v & 0xff])]);
 
   // Depth
-
   this.extended_public_key = Buffer.concat([this.extended_public_key, new Buffer([this.depth])]);
 
   // Parent fingerprint
@@ -261,7 +242,6 @@ BIP32.prototype.derive_child = function(i) {
   ib = new Buffer(ib);
 
   var use_private = (i & 0x80000000) != 0;
-  //var ecparams = getSECCurveByName("secp256k1");
 
   var is_private = 
     (this.version == BITCOIN_MAINNET_PRIVATE  ||
@@ -284,12 +264,6 @@ BIP32.prototype.derive_child = function(i) {
       data = Buffer.concat([this.eckey.public, ib]);
     }
 
-    /*
-    var j = new jsSHA(Crypto.util.bytesToHex(data), 'HEX');   
-    var hash = j.getHMAC(Crypto.util.bytesToHex(this.chain_code), "HEX", "SHA-512", "HEX");
-    var il = new BigInteger(hash.slice(0, 64), 16);
-    var ir = Crypto.util.hexToBytes(hash.slice(64, 128));
-    */
     var hash = coinUtil.sha512hmac(data, this.chain_code);
     var il = bignum.fromBuffer(hash.slice(0, 32), {size: 32});
     var ir = hash.slice(32, 64);
@@ -307,21 +281,12 @@ BIP32.prototype.derive_child = function(i) {
     ret.has_private_key = true;
 
   } else {
-  /*
-    var data = this.eckey.public.getEncoded(true).concat(ib);
-    var data = Buffer.concat([this.eckey.public, new Buffer(ib]);
-    var j = new jsSHA(Crypto.util.bytesToHex(data), 'HEX');   
-    var hash = j.getHMAC(Crypto.util.bytesToHex(this.chain_code), "HEX", "SHA-512", "HEX");
-    var il = new BigInteger(hash.slice(0, 64), 16);
-    var ir = Crypto.util.hexToBytes(hash.slice(64, 128));
-    */
     var data = Buffer.concat([this.eckey.public, ib]);
     var hash = coinUtil.sha512hmac(data, this.chain_code);
     var il = bignum.fromBuffer(hash.slice(0, 32), {size: 32});
     var ir = hash.slice(32, 64);
 
     // Ki = (IL + kpar)*G = IL*G + Kpar
-    //var k = ecparams.getG().multiply(il).add(this.eckey.pub);
     var pub = new bignum(this.eckey.public, {size: 32});
     var k = secp256k1_G.mul(il).add(pub);
 
@@ -366,38 +331,5 @@ function u8(f)  {return uint(f,1);}
 function u16(f) {return uint(f,2);}
 function u32(f) {return uint(f,4);}
 function u64(f) {return uint(f,8);}
-
-/*
-//This function is not actually necessary
-
-function decompress_pubkey(key_bytes) {
-  //TODO: Fix this whole function
-  var y_bit = u8(key_bytes.slice(0, 1)) & 0x01;
-  var ecparams = getSECCurveByName("secp256k1");
-
-  // build X
-  var x = BigInteger.ZERO.clone();
-  x.fromString(Crypto.util.bytesToHex(key_bytes.slice(1, 33)), 16);
-  
-  // get curve
-  var curve = ecparams.getCurve();
-  var a = curve.getA().toBigInteger();
-  var b = curve.getB().toBigInteger();
-  var p = curve.getQ();
-  
-  // compute y^2 = x^3 + a*x + b
-  var tmp = x.multiply(x).multiply(x).add(a.multiply(x)).add(b).mod(p);
-  
-  // compute modular square root of y (mod p)
-  var y = tmp.modSqrt(p);
-  
-  // flip sign if we need to
-  if ((y[0] & 0x01) != y_bit) {
-    y = y.multiply(new BigInteger("-1")).mod(p);
-  }
-  
-  return new ECPointFp(curve, curve.fromBigInteger(x), curve.fromBigInteger(y));
-}
-*/
 
 module.exports = require('soop')(BIP32);
