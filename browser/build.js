@@ -24,6 +24,7 @@ var pack = function (params) {
 
 var modules = [
   'Address',
+  'BIP32',
   'Block',
   'Bloom',
   'Buffers.monkey',

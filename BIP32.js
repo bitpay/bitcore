@@ -290,8 +290,7 @@ BIP32.prototype.derive_child = function(i) {
     var il = new BigInteger(hash.slice(0, 64), 16);
     var ir = Crypto.util.hexToBytes(hash.slice(64, 128));
     */
-    var hmac = crypto.createHmac('sha512', this.chain_code);
-    var hash = hmac.update(data).digest();
+    var hash = coinUtil.sha512hmac(data, this.chain_code);
     var il = bignum.fromBuffer(hash.slice(0, 32), {size: 32});
     var ir = hash.slice(32, 64);
 
@@ -317,8 +316,7 @@ BIP32.prototype.derive_child = function(i) {
     var ir = Crypto.util.hexToBytes(hash.slice(64, 128));
     */
     var data = Buffer.concat([this.eckey.public, ib]);
-    var hmac = crypto.createHmac('sha512', this.chain_code);
-    var hash = hmac.update(data).digest();
+    var hash = coinUtil.sha512hmac(data, this.chain_code);
     var il = bignum.fromBuffer(hash.slice(0, 32), {size: 32});
     var ir = hash.slice(32, 64);
 

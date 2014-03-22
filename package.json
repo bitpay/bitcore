@@ -47,6 +47,7 @@
     "postinstall": "node browser/build.js -a"
   },
   "dependencies": {
+    "jssha": "=1.5.0",
     "soop": "=0.1.5",
     "base58-native": "=0.1.3",
     "bindings": "=1.1.1",
