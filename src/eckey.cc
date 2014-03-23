@@ -435,12 +435,10 @@ Key::AddUncompressed(const Arguments& args)
   EC_KEY *eckey = EC_KEY_new_by_curve_name(NID_secp256k1);
   const EC_GROUP *group = EC_KEY_get0_group(eckey);
 
-
   BN_CTX *ctx;
   EC_POINT *p0, *p1, *r;
   BIGNUM *p0x, *p0y, *p1x, *p1y, *rx, *ry;
   Buffer *rbuf;
-  unsigned char *rcx, *rcy;
 
   p0 = EC_POINT_new(group);
   p1 = EC_POINT_new(group);
@@ -461,19 +459,11 @@ Key::AddUncompressed(const Arguments& args)
   rx = BN_new();
   ry = BN_new();
   EC_POINT_get_affine_coordinates_GFp(group, r, rx, ry, ctx);
-
+  
   rbuf = Buffer::New(65);
-  rcx = (unsigned char *)malloc(32);
-  rcy = (unsigned char *)malloc(32);
-  BN_bn2bin(rx, rcx);
-  BN_bn2bin(ry, rcy);
-  memcpy(&(((unsigned char *)Buffer::Data(rbuf))[1]), rcx, 32);
-  memcpy(&(((unsigned char *)Buffer::Data(rbuf))[33]), rcy, 32);
-  ((unsigned char *)Buffer::Data(rbuf))[0] = 0x04;
+  EC_POINT_point2oct(group, r, POINT_CONVERSION_UNCOMPRESSED, (unsigned char *)Buffer::Data(rbuf), 65, ctx);
 
   //free: eckey, p0, p1, r, p0x, p0y, p1x, p1y, ctx, rx, ry, /*rbuf,*/ rcx, rcy
-  free(rcy); //TODO: also clear
-  free(rcx); //TODO: also clear
   BN_clear_free(ry);
   BN_clear_free(rx);
   //do not free rbuf - this is returned
