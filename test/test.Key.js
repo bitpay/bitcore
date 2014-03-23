@@ -161,25 +161,6 @@ describe('Key', function() {
       assert(key.public !== null);
     });
 
-    it('should be able to add many public keys without error', function() {
-      for (var i = 0; i <= 1000; i++) {
-        var key1 = new Key();
-        key1.private = coinUtil.sha256("first " + i);
-        key1.compressed = false;
-        key1.regenerateSync();
-        var key2 = new Key();
-        key2.private = coinUtil.sha256("second " + i);
-        key2.compressed = false;
-        key2.regenerateSync();
-        var pubkey1 = key1.public;
-        var pubkey2 = key2.public;
-        var pubkey = Key.addUncompressed(pubkey1, pubkey2);
-        pubkey.length.should.equal(65);
-        var key = new Key();
-        key.public = pubkey;
-        assert(key.public !== null);
-      };
-    });
   });
 
 });
