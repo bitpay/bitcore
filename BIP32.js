@@ -284,11 +284,6 @@ BIP32.prototype.derive_child = function(i) {
     }
     eckey.compressed = true;
 
-/*
-    if (k.gt(secp256k1_n))
-      return this.derive_child(i+1);
-*/
-
     ret = new BIP32();
     ret.chain_code = new Buffer(ir);
 
