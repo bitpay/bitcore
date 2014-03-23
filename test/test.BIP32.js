@@ -93,6 +93,15 @@ describe('BIP32', function() {
     child.extended_public_key_string().should.equal(vector1_m0h1_public);
   });
 
+  it("should get m/0'/1 ext. public key from m/0' public key from test vector 1", function() {
+    var bip32 = new BIP32(vector1_m_private);
+    var child = bip32.derive("m/0'");
+    var child_pub = new BIP32(child.extended_public_key_string());
+    var child2 = child_pub.derive("m/1");
+    should.exist(child2);
+    child2.extended_public_key_string().should.equal(vector1_m0h1_public);
+  });
+
   it("should get m/0'/1/2h ext. private key from test vector 1", function() {
     var bip32 = new BIP32(vector1_m_private);
     var child = bip32.derive("m/0'/1/2'");

@@ -7,7 +7,7 @@ var crypto = require('crypto');
 var networks = require('./networks');
 
 var secp256k1_n = new bignum("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16);
-var secp256k1_G = new bignum("79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798", 16); //x coordinate
+var secp256k1_Gx = new bignum("79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798", 16);
 
 var BIP32 = function(bytes) {
   if (bytes == 'mainnet' || bytes == 'livenet')
@@ -266,17 +266,37 @@ BIP32.prototype.derive_child = function(i) {
     var ir = hash.slice(32, 64);
 
     // Ki = (IL + kpar)*G = IL*G + Kpar
-    var pub = new bignum(this.eckey.public, {size: 32});
-    var k = secp256k1_G.mul(il).add(pub);
+    var key = new Key();
+    key.private = il.toBuffer({size: 32});
+    key.regenerateSync();
+    key.compressed = false;
+    var oldkey = new Key();
+    oldkey.public = this.eckey.public;
+    oldkey.compressed = false;
+    var newpub = Key.addUncompressed(key.public, oldkey.public);
 
-    //compressed pubkey must start with 0x02 just like compressed G
-    var kbuf = Buffer.concat([new Buffer(0x02), k.toBuffer({size: 32})]);
+    var eckey = new Key();
+    eckey.compressed = false;
+    eckey.public = newpub;
+    if (eckey.public === null) {
+      console.log('invalid public key');
+      return this.derive_child(i+1);
+    }
+    eckey.compressed = true;
+
+/*
+    if (k.gt(secp256k1_n))
+      return this.derive_child(i+1);
+*/
 
     ret = new BIP32();
-    ret.chain_code  = new Buffer(ir);
+    ret.chain_code = new Buffer(ir);
 
-    ret.eckey = new Key();
-    ret.eckey.public = kbuf;
+    var eckey = new Key();
+    eckey.compressed = false;
+    eckey.public = newpub; 
+    eckey.compressed = true;
+    ret.eckey = eckey;
     ret.has_private_key = false;
   }
 
