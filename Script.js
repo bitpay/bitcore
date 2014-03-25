@@ -265,6 +265,8 @@ Script.prototype.getBuffer = function() {
   return this.buffer;
 };
 
+Script.prototype.serialize = Script.prototype.getBuffer;
+
 Script.prototype.getStringContent = function(truncate, maxEl) {
   if (truncate === null) {
     truncate = true;

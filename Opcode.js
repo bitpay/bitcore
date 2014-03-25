@@ -155,4 +155,14 @@ for (var k in Opcode.map) {
   }
 }
 
+Opcode.asList = function() {
+  var keys = [];
+  for (var prop in Opcode.map) {
+    if (Opcode.map.hasOwnProperty(prop)) {
+      keys.push(prop);
+    }
+  }
+  return keys;
+};
+
 module.exports = require('soop')(Opcode);
