@@ -58,17 +58,14 @@ Script.prototype.parse = function() {
     } else if (opcode === OP_PUSHDATA1) {
       len = parser.word8();
       chunk = parser.buffer(len);
-      if (chunk.length < len) throw new Error('Invalid data size: not enough data');
       this.chunks.push(chunk);
     } else if (opcode === OP_PUSHDATA2) {
       len = parser.word16le();
       chunk = parser.buffer(len);
-      if (chunk.length < len) throw new Error('Invalid data size: not enough data');
       this.chunks.push(chunk);
     } else if (opcode === OP_PUSHDATA4) {
       len = parser.word32le();
       chunk = parser.buffer(len);
-      if (chunk.length < len) throw new Error('Invalid data size: not enough data');
       this.chunks.push(chunk);
     } else {
       this.chunks.push(opcode);

@@ -84,6 +84,15 @@ describe('Script', function() {
     });
   });
 
+  describe('#parse', function() {
+    it('should parse this valid script', function() {
+      var scriptHex = '6a0843435000010001004c75726c3d687474702533612532662532666c6f63616c686f7374253361343636313125326663253266324d794a6e5065774c5a6241596a6843666f695652526679733937746d5231516d4b61';
+      var script = new Script(new Buffer(scriptHex, 'hex'));
+      should.exist(script);
+      script.chunks[2].length.should.equal(75);
+    });
+  });
+
   testdata.dataScriptAll.forEach(function(datum) {
     if (datum.length < 2) throw new Error('Invalid test data');
     var human = datum[0] + ' ' + datum[1];
