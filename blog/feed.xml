@@ -83,7 +83,7 @@ This greatly increases the ease of sharing public keys.&lt;/p&gt;
 By using web technologies, we’re able to make an app that can run pretty much anywhere, and can be improved and audited by a huge number of developers.
 One of the neatest new pieces of technology to come to the web is &lt;a href=&quot;http://www.webrtc.org/&quot;&gt;Web RTC&lt;/a&gt;, which allows (almost) p2p connections in the browser.
 The only central element of this is a server that exists solely to facilitate the creation of the p2p connection, after which the central server is no longer needed.&lt;/p&gt;
-&lt;p&gt;The ultimate goal of Cosign is to have a genuinely p2p app with no need whatsoever for a central server, but that is not yet possible from the browser, so we will get as close to that as possible.&lt;/p&gt;
+&lt;p&gt;The ultimate goal of Cosign is to have a genuinely p2p app with no need whatsoever for a central server, but that is not yet possible from the browser, so we will get as close to that as we can.&lt;/p&gt;
 &lt;h2 id=&quot;html-5-local-storage&quot;&gt;HTML 5 Local Storage&lt;/h2&gt;
 &lt;p&gt;Running apps in the browser used to be far more limited, but today, HTML 5 local storage allows apps to keep significant amounts of data stored locally so that no central server is required to store anything.
 The public wallet (containing the public keys) is shared amongst all cosigners, as are other critical pieces of information such as unspent transaction outputs.&lt;/p&gt;
