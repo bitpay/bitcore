@@ -12,6 +12,7 @@ var requireWhenAccessed = function(name, file) {
 
 requireWhenAccessed('bignum', 'bignum');
 requireWhenAccessed('base58', 'base58-native');
+requireWhenAccessed('bufferput', 'bufferput');
 requireWhenAccessed('buffertools', 'buffertools');
 requireWhenAccessed('config', './config');
 requireWhenAccessed('const', './const');

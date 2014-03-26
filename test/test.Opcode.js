@@ -17,13 +17,13 @@ describe('Opcode', function() {
     should.exist(Opcode);
   });
   it('should be able to create instance', function() {
-    var oc = new Opcode();
+    var oc = new Opcode(81);
     should.exist(oc);
   });
   it('should be able to create some constants', function() {
     // TODO: test works in node but not in browser
     for (var i in Opcode.map) {
-      eval('var '+i + ' = ' + Opcode.map[i] + ';');
+      eval('var ' + i + ' = ' + Opcode.map[i] + ';');
     }
     should.exist(OP_VER);
     should.exist(OP_HASH160);
@@ -31,11 +31,10 @@ describe('Opcode', function() {
     should.exist(OP_EQUALVERIFY);
     should.exist(OP_CHECKSIG);
     should.exist(OP_CHECKMULTISIG);
-
+  });
+  it('#asList should work', function() {
+    var list = Opcode.asList();
+    (typeof(list[0])).should.equal('string');
+    list.length.should.equal(116);
   });
 });
-
-
-
-
-

@@ -445,15 +445,7 @@ Transaction.prototype.hashForSignature =
     }
 
     // Clone transaction
-    var txTmp = new Transaction();
-    this.ins.forEach(function(txin, i) {
-      txTmp.ins.push(new TransactionIn(txin));
-    });
-    this.outs.forEach(function(txout) {
-      txTmp.outs.push(new TransactionOut(txout));
-    });
-    txTmp.version = this.version;
-    txTmp.lock_time = this.lock_time;
+    var txTmp = new Transaction(this);
 
     // In case concatenating two scripts ends up with two codeseparators,
     // or an extra one at the end, this prevents all those possible
@@ -505,10 +497,14 @@ Transaction.prototype.hashForSignature =
     } else {
       var outsLen;
       if (hashTypeMode === SIGHASH_SINGLE) {
-        // TODO: Untested
         if (inIndex >= txTmp.outs.length) {
-          throw new Error("Transaction.hashForSignature(): SIGHASH_SINGLE " +
-            "no corresponding txout found - out of bounds");
+          // bug present in bitcoind which must be also present in bitcore
+          // see https://bitcointalk.org/index.php?topic=260595
+          // Transaction.hashForSignature(): SIGHASH_SINGLE 
+          // no corresponding txout found - out of bounds
+          var ret = new Buffer(1);
+          ret.writeUInt8(1, 0);
+          return ret; // return 1 bug
         }
         outsLen = inIndex + 1;
       } else {
