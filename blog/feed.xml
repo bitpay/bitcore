@@ -73,7 +73,7 @@ So long as the wallet is backed up and at least (say) three of the cosigners hav
 &lt;p&gt;If you’ve ever considered how best to handle multisignature transactions, you’ve encountered the difficulty in sharing public keys with the cosigners.
 Every time you generate a new, random private key, you have to share the corresponding public key, which is burdensome.
 Either that, or you re-use the same addresses over and over again, which is terrible for privacy.&lt;/p&gt;
-&lt;p&gt;HD wallets as described in BIP 32 solve this problem by allowing one master extended private key to generate, deterministically, infinitely many private/public key pairs.
+&lt;p&gt;HD wallets as described in &lt;a href=&quot;https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki&quot;&gt;BIP 32&lt;/a&gt; solve this problem by allowing one master extended private key to generate, deterministically, infinitely many private/public key pairs.
 Importantly, extended public keys can be derived from the master extended public key.
 This means you share one extended public key with your cosigners, and there is no need to share more public keys after that.
 All of the cosigners have every address that will ever be generated right from the start.
@@ -81,17 +81,17 @@ This greatly increases the ease of sharing public keys.&lt;/p&gt;
 &lt;h2 id=&quot;web-rtc&quot;&gt;Web RTC&lt;/h2&gt;
 &lt;p&gt;Cosign is a web application that is run locally.
 By using web technologies, we’re able to make an app that can run pretty much anywhere, and can be improved and audited by a huge number of developers.
-One of the neatest new pieces of technology to come to the web is Web RTC, which allows (almost) p2p connections in the browser.
+One of the neatest new pieces of technology to come to the web is &lt;a href=&quot;http://www.webrtc.org/&quot;&gt;Web RTC&lt;/a&gt;, which allows (almost) p2p connections in the browser.
 The only central element of this is a server that exists solely to facilitate the creation of the p2p connection, after which the central server is no longer needed.&lt;/p&gt;
 &lt;p&gt;The ultimate goal of Cosign is to have a genuinely p2p app with no need whatsoever for a central server, but that is not yet possible from the browser, so we will get as close to that as possible.&lt;/p&gt;
-&lt;h2 id=&quot;html-5-local-storage&quot;&gt;HTML 5 local storage&lt;/h2&gt;
+&lt;h2 id=&quot;html-5-local-storage&quot;&gt;HTML 5 Local Storage&lt;/h2&gt;
 &lt;p&gt;Running apps in the browser used to be far more limited, but today, HTML 5 local storage allows apps to keep significant amounts of data stored locally so that no central server is required to store anything.
 The public wallet (containing the public keys) is shared amongst all cosigners, as are other critical pieces of information such as unspent transaction outputs.&lt;/p&gt;
 &lt;p&gt;Between Web RTC and HTML 5 local storage, it is actually possible to have a web wallet that runs locally with no need for a central server except the p2p facilitator. Oh, and one more important piece.&lt;/p&gt;
 &lt;h2 id=&quot;insight-and-spv&quot;&gt;Insight and SPV&lt;/h2&gt;
-&lt;p&gt;Cosign is developed by the same people that developed insight, a powerful, open-source blockchain API and client.
+&lt;p&gt;Cosign is developed by the same people that developed &lt;a href=&quot;http://insight.bitcore.io/&quot;&gt;Insight&lt;/a&gt;, a powerful, open-source blockchain API and client.
 Cosign uses insight to find unspent transaction outputs and broadcast transactions to the bitcoin network.
-Long-term, however, we believe it will be possible to implement SPV in the browser, where the only need for a server will be to bridge the Web RTC communication protocol with the real bitcoin p2p protocol.
+Long-term, however, we believe it will be possible to implement &lt;a href=&quot;https://en.bitcoin.it/wiki/Scalability#Simplified_payment_verification&quot;&gt;SPV&lt;/a&gt; in the browser, where the only need for a server will be to bridge the Web RTC communication protocol with the real bitcoin p2p protocol.
 In the meantime, running insight locally means there is no central server except the p2p facilitator.&lt;/p&gt;
 &lt;h2 id=&quot;conclusion&quot;&gt;Conclusion&lt;/h2&gt;
 &lt;p&gt;Cosign development is only just now getting underway.
