@@ -89,6 +89,9 @@ var createBitcore = function(opts) {
   b.require(opts.dir + 'browserify-buffertools/buffertools.js', {
     expose: 'buffertools'
   });
+  b.require(opts.dir + 'bufferput', {
+    expose: 'bufferput'
+  });
   b.require(opts.dir + 'base58-native', {
     expose: 'base58-native'
   });
