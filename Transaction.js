@@ -499,6 +499,7 @@ Transaction.prototype.hashForSignature =
       if (hashTypeMode === SIGHASH_SINGLE) {
         if (inIndex >= txTmp.outs.length) {
           // bug present in bitcoind which must be also present in bitcore
+          // see https://bitcointalk.org/index.php?topic=260595
           // Transaction.hashForSignature(): SIGHASH_SINGLE 
           // no corresponding txout found - out of bounds
           var ret = new Buffer(1);
