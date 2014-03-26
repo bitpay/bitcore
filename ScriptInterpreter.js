@@ -33,6 +33,7 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
     throw new Error("ScriptInterpreter.eval() requires a callback");
   }
 
+  console.log('eval script '+script.toHumanReadable());
   var pc = 0;
   var execStack = [];
   var altStack = [];
@@ -718,6 +719,7 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
                   // If there are more signatures than keys left, then too many
                   // signatures have failed
                   if (sigsCount > keysCount) {
+                    console.log('CHECKMULTISIG sigsCount > keysCount');
                     success = false;
                   }
                 }
@@ -866,7 +868,7 @@ ScriptInterpreter.prototype.getResult = function getResult() {
   return castBool(this.stack[this.stack.length - 1]);
 };
 
-// Use ScriptInterpreter.verifyFull instead
+// WARN: Use ScriptInterpreter.verifyFull instead
 ScriptInterpreter.verify =
   function verify(scriptSig, scriptPubKey, txTo, n, hashType, callback) {
     if ("function" !== typeof callback) {
@@ -892,8 +894,8 @@ ScriptInterpreter.verify =
     return si;
 };
 
-ScriptInterpreter.prototype.verifyStep4 = function(scriptSig, scriptPubKey,
-  txTo, nIn, hashType, callback, siCopy) {
+ScriptInterpreter.prototype.verifyStep4 = function(callback, siCopy) {
+  // 4th step, check P2SH subscript evaluated to true
   if (siCopy.stack.length == 0) {
     callback(null, false);
     return;
@@ -904,52 +906,82 @@ ScriptInterpreter.prototype.verifyStep4 = function(scriptSig, scriptPubKey,
 
 ScriptInterpreter.prototype.verifyStep3 = function(scriptSig,
   scriptPubKey, txTo, nIn, hashType, callback, siCopy) {
-  if (this.stack.length == 0) {
-    callback(null, false);
-    return;
-  }
-  if (castBool(this.stackBack()) == false) {
+
+  // 3rd step, check result (stack should contain true)
+
+  // if stack is empty, script considered invalid
+  if (this.stack.length === 0) {
+    console.log('3rd step: no stack');
     callback(null, false);
     return;
   }
 
-  // if not P2SH, we're done
+  // if top of stack contains false, script evaluated to false
+  if (castBool(this.stackBack()) == false) {
+    console.log('3rd step: stack contains false');
+    callback(null, false);
+    return;
+  }
+
+  // if not P2SH, script evaluated to true
   if (!this.opts.verifyP2SH || !scriptPubKey.isP2SH()) {
+    console.log('3rd step: done, true');
     callback(null, true);
     return;
   }
 
+  // if P2SH, scriptSig should be push-only
   if (!scriptSig.isPushOnly()) {
+    console.log('3rd step: scriptSig should be push only');
     callback(null, false);
     return;
   }
 
-  if (siCopy.length === 0)
-    throw new Error('siCopy should  have length != 0');
+  // P2SH script should exist
+  if (siCopy.length === 0) {
+    throw new Error('siCopy should have length != 0');
+  }
 
   var subscript = new Script(siCopy.stackPop());
-
   var that = this;
+  // evaluate the P2SH subscript
   siCopy.eval(subscript, txTo, nIn, hashType, function(err) {
-    if (err) callback(err);
-    else that.verifyStep4(scriptSig, scriptPubKey, txTo, nIn,
-      hashType, callback, siCopy);
+    console.log('Err 3nd step: '+err);
+    if (err) return callback(err);
+    that.verifyStep4(callback, siCopy);
   });
 };
 
 ScriptInterpreter.prototype.verifyStep2 = function(scriptSig, scriptPubKey,
   txTo, nIn, hashType, callback, siCopy) {
+  var siCopy;
   if (this.opts.verifyP2SH) {
+    siCopy = new ScriptInterpreter(this.opts);
     this.stack.forEach(function(item) {
       siCopy.stack.push(item);
     });
   }
 
   var that = this;
+  // 2nd step, evaluate scriptPubKey
   this.eval(scriptPubKey, txTo, nIn, hashType, function(err) {
-    if (err) callback(err);
-    else that.verifyStep3(scriptSig, scriptPubKey, txTo, nIn,
+    console.log('Err 2nd step: '+err);
+    if (err) return callback(err);
+    that.verifyStep3(scriptSig, scriptPubKey, txTo, nIn,
       hashType, callback, siCopy);
+  });
+};
+
+ScriptInterpreter.prototype.verifyFull = function(scriptSig, scriptPubKey,
+  txTo, nIn, hashType, callback) {
+  var that = this;
+
+  // 1st step, evaluate scriptSig
+  this.eval(scriptSig, txTo, nIn, hashType, function(err) {
+    console.log('Err 1st step: '+err);
+    if (err) return callback(err);
+    that.verifyStep2(scriptSig, scriptPubKey, txTo, nIn,
+      hashType, callback);
   });
 };
 
@@ -961,19 +993,6 @@ ScriptInterpreter.verifyFull =
       txTo, nIn, hashType, callback);
 };
 
-ScriptInterpreter.prototype.verifyFull = function(scriptSig, scriptPubKey,
-  txTo, nIn, hashType, callback) {
-  var siCopy = new ScriptInterpreter(this.opts);
-  var that = this;
-  this.eval(scriptSig, txTo, nIn, hashType, function(err) {
-    if (err) callback(err);
-    else {
-      that.verifyStep2(scriptSig, scriptPubKey, txTo, nIn,
-        hashType, callback, siCopy);
-    }
-  });
-
-};
 
 var checkSig = ScriptInterpreter.checkSig =
   function(sig, pubkey, scriptCode, tx, n, hashType, callback) {

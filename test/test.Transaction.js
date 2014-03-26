@@ -72,32 +72,39 @@ describe('Transaction', function() {
       var raw = datum[1];
       var verifyP2SH = datum[2];
 
-      it.skip((valid ? '' : 'in') + 'valid tx=' + raw, function(done) {
-        var cb = function(err, results) {
-          should.not.exist(err);
-          should.exist(results);
-          results.should.equal(valid);
-          done();
-        };
+      describe((valid ? '' : 'in') + 'valid tx=' + raw, function() {
 
         var testTx = parse_test_transaction(datum);
-        buffertools.toHex(testTx.transaction.serialize()).should.equal(raw);
+        it('should parse correctly', function() {
+          buffertools.toHex(testTx.transaction.serialize()).should.equal(raw);
+        });
+
         var inputs = testTx.transaction.inputs();
-        for (var i = 0; i < inputs.length; i++) {
-          var input = inputs[i];
-          buffertools.reverse(input[0]);
-          input[0] = buffertools.toHex(input[0]);
-          var mapKey = [input];
-          var scriptPubKey = testTx.inputs[mapKey];
-          if (!scriptPubKey) throw new Error('Bad test: '+datum);
-          testTx.transaction.verifyInput(
-            i,
-            scriptPubKey, {
-              verifyP2SH: verifyP2SH,
-              dontVerifyStrictEnc: true
-            },
-            cb);
-        }
+        var j = 0;
+        inputs.forEach(function(input) {
+          var i = j;
+          j += 1;
+          it('should validate input #' + i, function(done) {
+            buffertools.reverse(input[0]);
+            input[0] = buffertools.toHex(input[0]);
+            var mapKey = [input];
+            var scriptPubKey = testTx.inputs[mapKey];
+            if (!scriptPubKey) throw new Error('Bad test: ' + datum);
+            testTx.transaction.verifyInput(
+              i,
+              scriptPubKey, {
+                verifyP2SH: verifyP2SH,
+                dontVerifyStrictEnc: true
+              },
+              function(err, results) {
+                should.not.exist(err);
+                should.exist(results);
+                results.should.equal(valid);
+                done();
+              }
+            );
+          });
+        });
       });
     });
   };
