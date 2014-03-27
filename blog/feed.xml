@@ -52,7 +52,7 @@ browser.&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;git push origin your_branch_name
 git push origin feature/some-new-stuff
 git push origin fix/some-bug
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Finally go to &lt;a href=&quot;https://github.com/bitcore/bitpay&quot;&gt;github.com/bitcore/bitpay&lt;/a&gt; in your
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Finally go to &lt;a href=&quot;https://github.com/bitpay/bitcore&quot;&gt;github.com/bitpay/bitcore&lt;/a&gt; in your
 web browser and issue a new pull request. GitHub normally recognizes you have pending
 changes in a new branch and will suggest creating the pull request. If it doesn’t, you can
 always go to &lt;a href=&quot;https://github.com/bitpay/bitcore/compare&quot;&gt;github.com/bitpay/bitcore/compare&lt;/a&gt; and
