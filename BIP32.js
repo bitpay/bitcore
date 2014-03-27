@@ -2,6 +2,7 @@ var imports = require('soop').imports();
 var base58 = imports.base58 || require('base58-native').base58;
 var coinUtil = imports.coinUtil || require('./util/util');
 var Key = imports.Key || require('./Key');
+var Point = imports.Point || require('./Point');
 var bignum = imports.bignum || require('bignum');
 var crypto = require('crypto');
 var networks = require('./networks');
@@ -266,31 +267,20 @@ BIP32.prototype.derive_child = function(i) {
     var ir = hash.slice(32, 64);
 
     // Ki = (IL + kpar)*G = IL*G + Kpar
-    var key = new Key();
-    key.private = il.toBuffer({size: 32});
-    key.regenerateSync();
-    key.compressed = false;
+    var ilGkey = new Key();
+    ilGkey.private = il.toBuffer({size: 32});
+    ilGkey.regenerateSync();
+    var ilG = Point.fromKey(ilGkey);
     var oldkey = new Key();
     oldkey.public = this.eckey.public;
-    oldkey.compressed = false;
-    var newpub = Key.addUncompressed(key.public, oldkey.public);
-
-    var eckey = new Key();
-    eckey.compressed = false;
-    eckey.public = newpub;
-    if (eckey.public === null) {
-      console.log('invalid public key');
-      return this.derive_child(i+1);
-    }
-    eckey.compressed = true;
+    var Kpar = Point.fromKey(oldkey);
+    var newpub = Point.add(ilG, Kpar).toKey().public;
 
     ret = new BIP32();
     ret.chain_code = new Buffer(ir);
 
     var eckey = new Key();
-    eckey.compressed = false;
     eckey.public = newpub; 
-    eckey.compressed = true;
     ret.eckey = eckey;
     ret.has_private_key = false;
   }
