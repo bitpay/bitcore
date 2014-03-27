@@ -691,10 +691,11 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
           // Convert to binary
           var scriptCode = Script.fromChunks(scriptChunks);
 
-          // Drop the signatures, since a signature can't sign itself
           var that = this;
           sigs.forEach(function(sig) {
+            // check each signature is canonical
             that.isCanonicalSignature(new Buffer(sig));
+            // Drop the signatures for the subscript, since a signature can't sign itself
             scriptCode.findAndDelete(sig);
           });
 
@@ -706,13 +707,15 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
           function checkMultiSigStep() {
             if (success && sigsCount > 0) {
               var sig = sigs[isig];
-              var key = keys[ikey];
+              var pubkey = keys[ikey];
 
-              checkSig(sig, key, scriptCode, tx, inIndex, hashType, function(e, result) {
+              checkSig(sig, pubkey, scriptCode, tx, inIndex, hashType, function(e, result) {
                 if (!e && result) {
+                  console.log('sig '+isig+' succeeded');
                   isig++;
                   sigsCount--;
                 } else {
+                  console.log('key '+ikey+' failed '+e +' '+result);
                   ikey++;
                   keysCount--;
 
@@ -996,17 +999,24 @@ ScriptInterpreter.verifyFull =
 
 var checkSig = ScriptInterpreter.checkSig =
   function(sig, pubkey, scriptCode, tx, n, hashType, callback) {
+    // https://en.bitcoin.it/wiki/OP_CHECKSIG#How_it_works
     if (!sig.length) {
+      console.log('sig length 0');
       callback(null, false);
       return;
     }
 
-    if (hashType == 0) {
+    // If the hash-type value is 0, then it is replaced by the last_byte of the signature.
+    if (hashType === 0) {
       hashType = sig[sig.length - 1];
+      console.log('hash type 0 -> '+hashType);
     } else if (hashType != sig[sig.length - 1]) {
+      console.log('wrong hashtype');
       callback(null, false);
       return;
     }
+
+    // Then the last byte of the signature is always deleted. (hashType removed)
     sig = sig.slice(0, sig.length - 1);
 
     // Signature verification requires a special hash procedure
@@ -1015,6 +1025,11 @@ var checkSig = ScriptInterpreter.checkSig =
     // Verify signature
     var key = new Key();
     key.public = pubkey;
+
+    console.log('pubkey before verification: '+buffertools.toHex(key.public));
+    console.log('sig before verification: '+buffertools.toHex(sig));
+    console.log('hash before verification: '+buffertools.toHex(hash));
+
     key.verifySignature(hash, sig, callback);
 };
 

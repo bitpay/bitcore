@@ -316,8 +316,7 @@ Transaction.prototype.hashForSignature =
 
     // Serialize inputs
     if (hashType & SIGHASH_ANYONECANPAY) {
-      // Blank out all inputs except current one, not recommended for open
-      // transactions.
+      // Blank out all inputs except current one
       bytes.varint(1);
       bytes.put(this.ins[inIndex].o);
       bytes.varint(script.buffer.length);
@@ -386,7 +385,8 @@ Transaction.prototype.hashForSignature =
 
     var buffer = bytes.buffer();
 
-    // Append hashType
+    // An array of bytes is constructed from the serialized txCopy 
+    // appended by four bytes for the hash type.
     buffer = Buffer.concat([buffer, new Buffer([parseInt(hashType), 0, 0, 0])]);
 
     return util.twoSha256(buffer);
