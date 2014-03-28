@@ -24,6 +24,7 @@ requireWhenAccessed('VersionedData', './util/VersionedData');
 requireWhenAccessed('BinaryParser', './util/BinaryParser');
 requireWhenAccessed('Address', './Address');
 requireWhenAccessed('BIP32', './BIP32');
+requireWhenAccessed('Point', './Point');
 requireWhenAccessed('Opcode', './Opcode');
 requireWhenAccessed('Script', './Script');
 requireWhenAccessed('Transaction', './Transaction');

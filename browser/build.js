@@ -38,6 +38,7 @@ var modules = [
   'PrivateKey',
   'RpcClient',
   'Key',
+  'Point',
   'SIN',
   'SINKey',
   'Script',
