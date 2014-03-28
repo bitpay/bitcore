@@ -48,6 +48,34 @@ var BIP32 = function(bytes) {
     this.initFromBytes(bytes);
 }
 
+BIP32.seed = function(bytes, network) {
+  if (!network)
+    return false;
+
+  if (!Buffer.isBuffer(bytes))
+    bytes = new Buffer(bytes, 'hex'); //if not buffer, assume hex
+  if (bytes.length < 128/8)
+    return false; //need more entropy
+  var hash = coinUtil.sha512hmac(bytes, new Buffer("Bitcoin seed"));
+
+  var bip32 = new BIP32();
+  bip32.depth = 0x00;
+  bip32.parentFingerprint = new Buffer([0, 0, 0, 0]);
+  bip32.childIndex = new Buffer([0, 0, 0, 0]);
+  bip32.chainCode = hash.slice(32, 64);
+  bip32.version = networks[network].bip32private;
+  bip32.eckey = new Key();
+  bip32.eckey.private = hash.slice(0, 32);
+  bip32.eckey.regenerateSync();
+  bip32.hasPrivateKey = true;
+  bip32.pubKeyHash = coinUtil.sha256ripe160(bip32.eckey.public);
+
+  bip32.buildExtendedPublicKey();
+  bip32.buildExtendedPrivateKey();
+
+  return bip32;
+};
+
 BIP32.prototype.initFromBytes = function(bytes) {
   // Both pub and private extended keys are 78 bytes
   if(bytes.length != 78) throw new Error("not enough data");
