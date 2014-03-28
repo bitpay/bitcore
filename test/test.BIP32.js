@@ -94,6 +94,7 @@ describe('BIP32', function() {
   });
 
   it("should get m/0'/1 ext. public key from m/0' public key from test vector 1", function() {
+  //TEST
     var bip32 = new BIP32(vector1_m_private);
     var child = bip32.derive("m/0'");
     var child_pub = new BIP32(child.extendedPublicKeyString());
