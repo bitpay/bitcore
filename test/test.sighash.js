@@ -13,6 +13,7 @@ var util = bitcore.util;
 var Put = bitcore.Put;
 var Put = require('bufferput');
 var buffertools = require('buffertools');
+var testdata = testdata || require('./testdata');
 
 var seed = 1;
 // seedable pseudo-random function
@@ -210,7 +211,7 @@ var signatureHashOld = function(tx, script, inIndex, hashType) {
 
 describe('Transaction sighash (#hashForSignature)', function() {
   for (var i = 0; i < 250; i++) {
-    it('should hash correctly random tx #' + (i + 1), function() {
+    it.skip('should hash correctly random tx #' + (i + 1), function() {
       var tx = randomTx();
       var l = tx.ins.length;
       for (var i = 0; i < l; i++) {
@@ -222,4 +223,22 @@ describe('Transaction sighash (#hashForSignature)', function() {
       }
     });
   }
+
+  testdata.dataSighash.forEach(function(datum) {
+    if (datum.length < 5) return;
+    var raw_tx = new Buffer(datum[0], 'hex');
+    var scriptPubKey = new Script(new Buffer(datum[1], 'hex'));
+    var input_index = parseInt(datum[2]);
+    var hashType = parseInt(datum[3]);
+    var sighash = datum[4];
+    it('should validate correctly ' + buffertools.toHex(raw_tx), function() {
+      var tx = new Transaction();
+      tx.parse(raw_tx);
+      var ser_tx = buffertools.toHex(tx.serialize());
+      ser_tx.should.equal(buffertools.toHex(raw_tx));
+      var h = buffertools.toHex(tx.hashForSignature(scriptPubKey, input_index, hashType));
+      h.should.equal(sighash); // compare our output with bitcoind's
+    });
+
+  });
 });
