@@ -10,7 +10,12 @@ if (process.versions) {
   var ECKey = require('./browser/vendor-bundle.js').ECKey;
   var buffertools = require('buffertools');
 
-  var bufferToArray = function(buffer) {
+  var kSpec = function() {
+    this._pub = null;
+    this.compressed = true; // default
+  };
+
+  var bufferToArray = kSpec.bufferToArray = function(buffer) {
     var ret = [];
 
     var l = buffer.length;
@@ -20,11 +25,6 @@ if (process.versions) {
 
     return ret;
   }
-
-  var kSpec = function() {
-    this._pub = null;
-    this.compressed = true; // default
-  };
 
 
   Object.defineProperty(kSpec.prototype, 'public', {

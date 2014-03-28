@@ -42,6 +42,8 @@ exports.livenet = {
   checkpoints: [], // need to put checkpoint blocks here
   addressPubkey: 0,
   addressScript: 5,
+  bip32public: 0x0488b21e,
+  bip32private: 0x0488ade4,
   keySecret: 128,
 };
 
@@ -64,5 +66,7 @@ exports.testnet = {
   checkpoints: [], // need to put checkput blocks here
   addressPubkey: 111,
   addressScript: 196,
+  bip32public: 0x043587cf,
+  bip32private: 0x04358394,
   keySecret: 239,
 };

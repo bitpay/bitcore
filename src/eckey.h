@@ -87,6 +87,9 @@ public:
     FromDER(const Arguments& args);
 
   static Handle<Value>
+    AddUncompressed(const Arguments& args);
+
+  static Handle<Value>
     VerifySignature(const Arguments& args);
 
   static void

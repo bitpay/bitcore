@@ -1,349 +1,347 @@
-var BITCOIN_MAINNET_PUBLIC = 0x0488b21e;
-var BITCOIN_MAINNET_PRIVATE = 0x0488ade4;
-var BITCOIN_TESTNET_PUBLIC = 0x043587cf;
-var BITCOIN_TESTNET_PRIVATE = 0x04358394;
-var DOGECOIN_MAINNET_PUBLIC = 0x02facafd;
-var DOGECOIN_MAINNET_PRIVATE = 0x02fac398;
-var DOGECOIN_TESTNET_PUBLIC = 0x0432a9a8;
-var DOGECOIN_TESTNET_PRIVATE = 0x0432a243;
-var LITECOIN_MAINNET_PUBLIC = 0x019da462;
-var LITECOIN_MAINNET_PRIVATE = 0x019d9cfe;
-var LITECOIN_TESTNET_PUBLIC = 0x0436f6e1;
-var LITECOIN_TESTNET_PRIVATE = 0x0436ef7d;
+var imports = require('soop').imports();
+var base58 = imports.base58 || require('base58-native').base58;
+var coinUtil = imports.coinUtil || require('./util/util');
+var Key = imports.Key || require('./Key');
+var Point = imports.Point || require('./Point');
+var bignum = imports.bignum || require('bignum');
+var crypto = require('crypto');
+var networks = require('./networks');
+
+var secp256k1_n = new bignum("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16);
+var secp256k1_Gx = new bignum("79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798", 16);
 
 var BIP32 = function(bytes) {
-    // decode base58
-    if( typeof bytes === "string" ) {
-        var decoded = Bitcoin.Base58.decode(bytes);
-        if( decoded.length != 82 ) throw new Error("Not enough data");
-        var checksum = decoded.slice(78, 82);
-        bytes = decoded.slice(0, 78);
+  if (bytes == 'mainnet' || bytes == 'livenet')
+    this.version = networks['livenet'].bip32private;
+  else if (bytes == 'testnet')
+    this.version = networks['testnet'].bip32private;
 
-        var hash = Crypto.SHA256( Crypto.SHA256( bytes, { asBytes: true } ), { asBytes: true } );
+  if (bytes == 'mainnet' || bytes == 'livenet' || bytes == 'testnet') {
+    this.depth = 0x00;
+    this.parentFingerprint = new Buffer([0, 0, 0, 0]);
+    this.childIndex = new Buffer([0, 0, 0, 0]);
+    this.chainCode = Key.generateSync().private;
+    this.eckey = Key.generateSync();
+    this.hasPrivateKey = true;
+    this.pubKeyHash = coinUtil.sha256ripe160(this.eckey.public);
+    this.buildExtendedPublicKey();
+    this.buildExtendedPrivateKey();
+    return;
+  }
+  
+  // decode base58
+  if (typeof bytes === "string") {
+    var decoded = base58.decode(bytes);
+    if (decoded.length != 82)
+      throw new Error("Not enough data");
+    var checksum = decoded.slice(78, 82);
+    bytes = decoded.slice(0, 78);
 
-        if( hash[0] != checksum[0] || hash[1] != checksum[1] || hash[2] != checksum[2] || hash[3] != checksum[3] ) {
-            throw new Error("Invalid checksum");
-        }
+    var hash = coinUtil.sha256(coinUtil.sha256(bytes));
+
+    if (hash[0] != checksum[0] || hash[1] != checksum[1] || hash[2] != checksum[2] || hash[3] != checksum[3]) {
+      throw new Error("Invalid checksum");
     }
+  }
 
-    if( bytes !== undefined ) 
-        this.init_from_bytes(bytes);
+  if (bytes !== undefined) 
+    this.initFromBytes(bytes);
 }
 
-BIP32.prototype.init_from_bytes = function(bytes) {
-    // Both pub and private extended keys are 78 bytes
-    if( bytes.length != 78 ) throw new Error("not enough data");
+BIP32.seed = function(bytes, network) {
+  if (!network)
+    return false;
 
-    this.version            = u32(bytes.slice(0, 4));
-    this.depth              = u8 (bytes.slice(4, 5));
-    this.parent_fingerprint = bytes.slice(5, 9);
-    this.child_index        = u32(bytes.slice(9, 13));
-    this.chain_code         = bytes.slice(13, 45);
-    
-    var key_bytes = bytes.slice(45, 78);
+  if (!Buffer.isBuffer(bytes))
+    bytes = new Buffer(bytes, 'hex'); //if not buffer, assume hex
+  if (bytes.length < 128/8)
+    return false; //need more entropy
+  var hash = coinUtil.sha512hmac(bytes, new Buffer("Bitcoin seed"));
 
-    var is_private = 
-        (this.version == BITCOIN_MAINNET_PRIVATE  ||
-         this.version == BITCOIN_TESTNET_PRIVATE  ||
-         this.version == DOGECOIN_MAINNET_PRIVATE ||
-         this.version == DOGECOIN_TESTNET_PRIVATE ||
-         this.version == LITECOIN_MAINNET_PRIVATE ||
-         this.version == LITECOIN_TESTNET_PRIVATE );
+  var bip32 = new BIP32();
+  bip32.depth = 0x00;
+  bip32.parentFingerprint = new Buffer([0, 0, 0, 0]);
+  bip32.childIndex = new Buffer([0, 0, 0, 0]);
+  bip32.chainCode = hash.slice(32, 64);
+  bip32.version = networks[network].bip32private;
+  bip32.eckey = new Key();
+  bip32.eckey.private = hash.slice(0, 32);
+  bip32.eckey.regenerateSync();
+  bip32.hasPrivateKey = true;
+  bip32.pubKeyHash = coinUtil.sha256ripe160(bip32.eckey.public);
 
-    var is_public = 
-        (this.version == BITCOIN_MAINNET_PUBLIC  ||
-         this.version == BITCOIN_TESTNET_PUBLIC  ||
-         this.version == DOGECOIN_MAINNET_PUBLIC ||
-         this.version == DOGECOIN_TESTNET_PUBLIC ||
-         this.version == LITECOIN_MAINNET_PUBLIC ||
-         this.version == LITECOIN_TESTNET_PUBLIC );
+  bip32.buildExtendedPublicKey();
+  bip32.buildExtendedPrivateKey();
 
-    if( is_private && key_bytes[0] == 0 ) {
-        this.eckey = new Bitcoin.ECKey(key_bytes.slice(1, 33));
-        this.eckey.setCompressed(true);
+  return bip32;
+};
 
-        var ecparams = getSECCurveByName("secp256k1");
-        var pt = ecparams.getG().multiply(this.eckey.priv);
-        this.eckey.pub = pt;
-        this.eckey.pubKeyHash = Bitcoin.Util.sha256ripe160(this.eckey.pub.getEncoded(true));
-        this.has_private_key = true;
-    } else if( is_public && (key_bytes[0] == 0x02 || key_bytes[0] == 0x03) ) {
-        this.eckey = new Bitcoin.ECKey();
-        this.eckey.pub = decompress_pubkey(key_bytes);
-        this.eckey.pubKeyHash = Bitcoin.Util.sha256ripe160(this.eckey.pub.getEncoded(true));
-        this.eckey.setCompressed(true);
-        this.has_private_key = false;
-    } else {
-        throw new Error("Invalid key");
-    }
+BIP32.prototype.initFromBytes = function(bytes) {
+  // Both pub and private extended keys are 78 bytes
+  if(bytes.length != 78) throw new Error("not enough data");
 
-    this.build_extended_public_key();
-    this.build_extended_private_key();
+  this.version      = u32(bytes.slice(0, 4));
+  this.depth        = u8(bytes.slice(4, 5));
+  this.parentFingerprint = bytes.slice(5, 9);
+  this.childIndex    = u32(bytes.slice(9, 13));
+  this.chainCode     = bytes.slice(13, 45);
+  
+  var keyBytes = bytes.slice(45, 78);
+
+  var isPrivate = 
+    (this.version == networks['livenet'].bip32private  ||
+     this.version == networks['testnet'].bip32private  );
+
+  var isPublic = 
+    (this.version == networks['livenet'].bip32public  ||
+     this.version == networks['testnet'].bip32public  );
+
+  if (isPrivate && keyBytes[0] == 0) {
+    this.eckey = new Key();
+    this.eckey.private = keyBytes.slice(1, 33);
+    this.eckey.compressed = true;
+    this.eckey.regenerateSync();
+    this.pubKeyHash = coinUtil.sha256ripe160(this.eckey.public);
+    this.hasPrivateKey = true;
+  } else if (isPublic && (keyBytes[0] == 0x02 || keyBytes[0] == 0x03)) {
+    this.eckey = new Key();
+    this.eckey.public = keyBytes;
+    this.pubKeyHash = coinUtil.sha256ripe160(this.eckey.public);
+    this.hasPrivateKey = false;
+  } else {
+    throw new Error("Invalid key");
+  }
+
+  this.buildExtendedPublicKey();
+  this.buildExtendedPrivateKey();
 }
 
-BIP32.prototype.build_extended_public_key = function() {
-    this.extended_public_key = [];
+BIP32.prototype.buildExtendedPublicKey = function() {
+  this.extendedPublicKey = new Buffer([]);
 
-    var v = null;
-    switch(this.version) {
-    case BITCOIN_MAINNET_PUBLIC:
-    case BITCOIN_MAINNET_PRIVATE:
-        v = BITCOIN_MAINNET_PUBLIC;
-        break;
-    case BITCOIN_TESTNET_PUBLIC:
-    case BITCOIN_TESTNET_PRIVATE:
-        v = BITCOIN_TESTNET_PUBLIC;
-        break;
-    case DOGECOIN_MAINNET_PUBLIC:
-    case DOGECOIN_MAINNET_PRIVATE:
-        v = DOGECOIN_MAINNET_PUBLIC;
-        break;
-    case DOGECOIN_TESTNET_PUBLIC:
-    case DOGECOIN_TESTNET_PRIVATE:
-        v = DOGECOIN_TESTNET_PUBLIC;
-        break;
-    case LITECOIN_MAINNET_PUBLIC:
-    case LITECOIN_MAINNET_PRIVATE:
-        v = LITECOIN_MAINNET_PUBLIC;
-        break;
-    case LITECOIN_TESTNET_PUBLIC:
-    case LITECOIN_TESTNET_PRIVATE:
-        v = LITECOIN_TESTNET_PUBLIC;
-        break;
-     default:
-        throw new Error("Unknown version");
-    }
+  var v = null;
+  switch(this.version) {
+  case networks['livenet'].bip32public:
+  case networks['livenet'].bip32private:
+    v = networks['livenet'].bip32public;
+    break;
+  case networks['testnet'].bip32public:
+  case networks['testnet'].bip32private:
+    v = networks['testnet'].bip32public;
+    break;
+   default:
+    throw new Error("Unknown version");
+  }
 
-    // Version
-    this.extended_public_key.push(v >> 24);
-    this.extended_public_key.push((v >> 16) & 0xff);
-    this.extended_public_key.push((v >> 8) & 0xff);
-    this.extended_public_key.push(v & 0xff);
+  // Version
+  this.extendedPublicKey = Buffer.concat([this.extendedPublicKey, new Buffer([v >> 24])]);
+  this.extendedPublicKey = Buffer.concat([this.extendedPublicKey, new Buffer([(v >> 16) & 0xff])]);
+  this.extendedPublicKey = Buffer.concat([this.extendedPublicKey, new Buffer([(v >> 8) & 0xff])]);
+  this.extendedPublicKey = Buffer.concat([this.extendedPublicKey, new Buffer([v & 0xff])]);
 
-    // Depth
-    this.extended_public_key.push(this.depth);
+  // Depth
+  this.extendedPublicKey = Buffer.concat([this.extendedPublicKey, new Buffer([this.depth])]);
 
-    // Parent fingerprint
-    this.extended_public_key = this.extended_public_key.concat(this.parent_fingerprint);
+  // Parent fingerprint
+  this.extendedPublicKey = Buffer.concat([this.extendedPublicKey, this.parentFingerprint]);
 
-    // Child index
-    this.extended_public_key.push(this.child_index >>> 24);
-    this.extended_public_key.push((this.child_index >>> 16) & 0xff);
-    this.extended_public_key.push((this.child_index >>> 8) & 0xff);
-    this.extended_public_key.push(this.child_index & 0xff);
+  // Child index
+  this.extendedPublicKey = Buffer.concat([this.extendedPublicKey, new Buffer([this.childIndex >>> 24])]);
+  this.extendedPublicKey = Buffer.concat([this.extendedPublicKey, new Buffer([(this.childIndex >>> 16) & 0xff])]);
+  this.extendedPublicKey = Buffer.concat([this.extendedPublicKey, new Buffer([(this.childIndex >>> 8) & 0xff])]);
+  this.extendedPublicKey = Buffer.concat([this.extendedPublicKey, new Buffer([this.childIndex & 0xff])]);
 
-    // Chain code
-    this.extended_public_key = this.extended_public_key.concat(this.chain_code);
+  // Chain code
+  this.extendedPublicKey = Buffer.concat([this.extendedPublicKey, this.chainCode]);
 
-    // Public key
-    this.extended_public_key = this.extended_public_key.concat(this.eckey.pub.getEncoded(true));
+  // Public key
+  this.extendedPublicKey = Buffer.concat([this.extendedPublicKey, this.eckey.public]);
 }
 
-BIP32.prototype.extended_public_key_string = function(format) {
-    if( format === undefined || format === "base58" ) {
-        var hash = Crypto.SHA256( Crypto.SHA256( this.extended_public_key, { asBytes: true } ), { asBytes: true } );
-        var checksum = hash.slice(0, 4);
-        var data = this.extended_public_key.concat(checksum);
-        return Bitcoin.Base58.encode(data);
-    } else if( format === "hex" ) {
-        return Crypto.util.bytesToHex(this.extended_public_key);
-    } else {
-        throw new Error("bad format");
-    }
+BIP32.prototype.extendedPublicKeyString = function(format) {
+  if (format === undefined || format === "base58") {
+    var hash = coinUtil.sha256(coinUtil.sha256(this.extendedPublicKey));
+    var checksum = hash.slice(0, 4);
+    var data = Buffer.concat([this.extendedPublicKey, checksum]);
+    return base58.encode(data);
+  } else if (format === "hex") {
+    return this.extendedPublicKey.toString('hex');;
+  } else {
+    throw new Error("bad format");
+  }
 }
 
-BIP32.prototype.build_extended_private_key = function() {
-    if( !this.has_private_key ) return;
-    this.extended_private_key = [];
+BIP32.prototype.buildExtendedPrivateKey = function() {
+  if (!this.hasPrivateKey) return;
+  this.extendedPrivateKey = new Buffer([]);
 
-    var v = this.version;
+  var v = this.version;
 
-    // Version
-    this.extended_private_key.push(v >> 24);
-    this.extended_private_key.push((v >> 16) & 0xff);
-    this.extended_private_key.push((v >> 8) & 0xff);
-    this.extended_private_key.push(v & 0xff);
+  // Version
+  this.extendedPrivateKey = Buffer.concat([this.extendedPrivateKey, new Buffer([v >> 24])]);
+  this.extendedPrivateKey = Buffer.concat([this.extendedPrivateKey, new Buffer([(v >> 16) & 0xff])]);
+  this.extendedPrivateKey = Buffer.concat([this.extendedPrivateKey, new Buffer([(v >> 8) & 0xff])]);
+  this.extendedPrivateKey = Buffer.concat([this.extendedPrivateKey, new Buffer([v & 0xff])]);
 
-    // Depth
-    this.extended_private_key.push(this.depth);
+  // Depth
+  this.extendedPrivateKey = Buffer.concat([this.extendedPrivateKey, new Buffer([this.depth])]);
 
-    // Parent fingerprint
-    this.extended_private_key = this.extended_private_key.concat(this.parent_fingerprint);
+  // Parent fingerprint
+  this.extendedPrivateKey = Buffer.concat([this.extendedPrivateKey, this.parentFingerprint]);
 
-    // Child index
-    this.extended_private_key.push(this.child_index >>> 24);
-    this.extended_private_key.push((this.child_index >>> 16) & 0xff);
-    this.extended_private_key.push((this.child_index >>> 8) & 0xff);
-    this.extended_private_key.push(this.child_index & 0xff);
+  // Child index
+  this.extendedPrivateKey = Buffer.concat([this.extendedPrivateKey, new Buffer([this.childIndex >>> 24])]);
+  this.extendedPrivateKey = Buffer.concat([this.extendedPrivateKey, new Buffer([(this.childIndex >>> 16) & 0xff])]);
+  this.extendedPrivateKey = Buffer.concat([this.extendedPrivateKey, new Buffer([(this.childIndex >>> 8) & 0xff])]);
+  this.extendedPrivateKey = Buffer.concat([this.extendedPrivateKey, new Buffer([this.childIndex & 0xff])]);
 
-    // Chain code
-    this.extended_private_key = this.extended_private_key.concat(this.chain_code);
+  // Chain code
+  this.extendedPrivateKey = Buffer.concat([this.extendedPrivateKey, this.chainCode]);
 
-    // Private key
-    this.extended_private_key.push(0);
-    this.extended_private_key = this.extended_private_key.concat(this.eckey.priv.toByteArrayUnsigned());
+  // Private key
+  this.extendedPrivateKey = Buffer.concat([this.extendedPrivateKey, new Buffer([0])]);
+  this.extendedPrivateKey = Buffer.concat([this.extendedPrivateKey, this.eckey.private]);
 }
 
-BIP32.prototype.extended_private_key_string = function(format) {
-    if( format === undefined || format === "base58" ) {
-        var hash = Crypto.SHA256( Crypto.SHA256( this.extended_private_key, { asBytes: true } ), { asBytes: true } );
-        var checksum = hash.slice(0, 4);
-        var data = this.extended_private_key.concat(checksum);
-        return Bitcoin.Base58.encode(data);
-    } else if( format === "hex" ) {
-        return Crypto.util.bytesToHex(this.extended_private_key);
-    } else {
-        throw new Error("bad format");
-    }
+BIP32.prototype.extendedPrivateKeyString = function(format) {
+  if (format === undefined || format === "base58") {
+    var hash = coinUtil.sha256(coinUtil.sha256(this.extendedPrivateKey));
+    var checksum = hash.slice(0, 4);
+    var data = Buffer.concat([this.extendedPrivateKey, checksum]);
+    return base58.encode(data);
+  } else if (format === "hex") {
+    return this.extendedPrivateKey.toString('hex');
+  } else {
+    throw new Error("bad format");
+  }
 }
 
 
 BIP32.prototype.derive = function(path) {
-    var e = path.split('/');
+  var e = path.split('/');
 
-    // Special cases:
-    if( path == 'm' || path == 'M' || path == 'm\'' || path == 'M\'' ) return this;
+  // Special cases:
+  if (path == 'm' || path == 'M' || path == 'm\'' || path == 'M\'')
+    return this;
 
-    var bip32 = this;
-    for( var i in e ) {
-        var c = e[i];
+  var bip32 = this;
+  for (var i in e) {
+    var c = e[i];
 
-        if( i == 0 ) {
-            if( c != 'm' ) throw new Error("invalid path");
-            continue;
-        }
-
-        var use_private = (c.length > 1) && (c[c.length-1] == '\'');
-        var child_index = parseInt(use_private ? c.slice(0, c.length - 1) : c) & 0x7fffffff;
-
-        if( use_private )
-            child_index += 0x80000000;
-
-        bip32 = bip32.derive_child(child_index);
+    if (i == 0 ) {
+      if (c != 'm') throw new Error("invalid path");
+      continue;
     }
 
-    return bip32;
+    var usePrivate = (c.length > 1) && (c[c.length-1] == '\'');
+    var childIndex = parseInt(usePrivate ? c.slice(0, c.length - 1) : c) & 0x7fffffff;
+
+    if (usePrivate)
+      childIndex += 0x80000000;
+
+    bip32 = bip32.deriveChild(childIndex);
+  }
+
+  return bip32;
 }
 
-BIP32.prototype.derive_child = function(i) {
-    var ib = [];
-    ib.push( (i >> 24) & 0xff );
-    ib.push( (i >> 16) & 0xff );
-    ib.push( (i >>  8) & 0xff );
-    ib.push( i & 0xff );
+BIP32.prototype.deriveChild = function(i) {
+  var ib = [];
+  ib.push((i >> 24) & 0xff);
+  ib.push((i >> 16) & 0xff);
+  ib.push((i >>  8) & 0xff);
+  ib.push(i & 0xff);
+  ib = new Buffer(ib);
 
-    var use_private = (i & 0x80000000) != 0;
-    var ecparams = getSECCurveByName("secp256k1");
+  var usePrivate = (i & 0x80000000) != 0;
 
-    var is_private = 
-        (this.version == BITCOIN_MAINNET_PRIVATE  ||
-         this.version == BITCOIN_TESTNET_PRIVATE  ||
-         this.version == DOGECOIN_MAINNET_PRIVATE ||
-         this.version == DOGECOIN_TESTNET_PRIVATE ||
-         this.version == LITECOIN_MAINNET_PRIVATE ||
-         this.version == LITECOIN_TESTNET_PRIVATE);
+  var isPrivate = 
+    (this.version == networks['livenet'].bip32private  ||
+     this.version == networks['testnet'].bip32private  );
 
-    if( use_private && (!this.has_private_key || !is_private) ) throw new Error("Cannot do private key derivation without private key");
+  if (usePrivate && (!this.hasPrivateKey || !isPrivate))
+    throw new Error("Cannot do private key derivation without private key");
 
-    var ret = null;
-    if( this.has_private_key ) {
-        var data = null;
+  var ret = null;
+  if (this.hasPrivateKey) {
+    var data = null;
 
-        if( use_private ) {
-            data = [0].concat(this.eckey.priv.toByteArrayUnsigned()).concat(ib);
-        } else {
-            data = this.eckey.pub.getEncoded(true).concat(ib);
-        }
-
-        var j = new jsSHA(Crypto.util.bytesToHex(data), 'HEX');   
-        var hash = j.getHMAC(Crypto.util.bytesToHex(this.chain_code), "HEX", "SHA-512", "HEX");
-        var il = new BigInteger(hash.slice(0, 64), 16);
-        var ir = Crypto.util.hexToBytes(hash.slice(64, 128));
-
-        // ki = IL + kpar (mod n).
-        var curve = ecparams.getCurve();
-        var k = il.add(this.eckey.priv).mod(ecparams.getN());
-
-        ret = new BIP32();
-        ret.chain_code  = ir;
-
-        ret.eckey = new Bitcoin.ECKey(k.toByteArrayUnsigned());
-        ret.eckey.pub = ret.eckey.getPubPoint();
-        ret.has_private_key = true;
-
+    if (usePrivate) {
+      data = Buffer.concat([new Buffer([0]), this.eckey.private, ib]);
     } else {
-        var data = this.eckey.pub.getEncoded(true).concat(ib);
-        var j = new jsSHA(Crypto.util.bytesToHex(data), 'HEX');   
-        var hash = j.getHMAC(Crypto.util.bytesToHex(this.chain_code), "HEX", "SHA-512", "HEX");
-        var il = new BigInteger(hash.slice(0, 64), 16);
-        var ir = Crypto.util.hexToBytes(hash.slice(64, 128));
-
-        // Ki = (IL + kpar)*G = IL*G + Kpar
-        var k = ecparams.getG().multiply(il).add(this.eckey.pub);
-
-        ret = new BIP32();
-        ret.chain_code  = ir;
-
-        ret.eckey = new Bitcoin.ECKey();
-        ret.eckey.pub = k;
-        ret.has_private_key = false;
+      data = Buffer.concat([this.eckey.public, ib]);
     }
 
-    ret.child_index = i;
-    ret.parent_fingerprint = this.eckey.pubKeyHash.slice(0,4);
-    ret.version = this.version;
-    ret.depth   = this.depth + 1;
+    var hash = coinUtil.sha512hmac(data, this.chainCode);
+    var il = bignum.fromBuffer(hash.slice(0, 32), {size: 32});
+    var ir = hash.slice(32, 64);
 
-    ret.eckey.setCompressed(true);
-    ret.eckey.pubKeyHash = Bitcoin.Util.sha256ripe160(ret.eckey.pub.getEncoded(true));
+    // ki = IL + kpar (mod n).
+    var priv = bignum.fromBuffer(this.eckey.private, {size: 32});
+    var k = il.add(priv).mod(secp256k1_n);
 
-    ret.build_extended_public_key();
-    ret.build_extended_private_key();
+    ret = new BIP32();
+    ret.chainCode = ir;
 
-    return ret;
+    ret.eckey = new Key();
+    ret.eckey.private = k.toBuffer({size: 32});
+    ret.eckey.regenerateSync();
+    ret.hasPrivateKey = true;
+
+  } else {
+    var data = Buffer.concat([this.eckey.public, ib]);
+    var hash = coinUtil.sha512hmac(data, this.chainCode);
+    var il = bignum.fromBuffer(hash.slice(0, 32), {size: 32});
+    var ir = hash.slice(32, 64);
+
+    // Ki = (IL + kpar)*G = IL*G + Kpar
+    var ilGkey = new Key();
+    ilGkey.private = il.toBuffer({size: 32});
+    ilGkey.regenerateSync();
+    var ilG = Point.fromKey(ilGkey);
+    var oldkey = new Key();
+    oldkey.public = this.eckey.public;
+    var Kpar = Point.fromKey(oldkey);
+    var newpub = Point.add(ilG, Kpar).toKey().public;
+
+    ret = new BIP32();
+    ret.chainCode = new Buffer(ir);
+
+    var eckey = new Key();
+    eckey.public = newpub; 
+    ret.eckey = eckey;
+    ret.hasPrivateKey = false;
+  }
+
+  ret.childIndex = i;
+  ret.parentFingerprint = this.pubKeyHash.slice(0,4);
+  ret.version = this.version;
+  ret.depth = this.depth + 1;
+
+  ret.eckey.compressed = true;
+  ret.pubKeyHash = coinUtil.sha256ripe160(ret.eckey.public);
+
+  ret.buildExtendedPublicKey();
+  ret.buildExtendedPrivateKey();
+
+  return ret;
 }
 
 
 function uint(f, size) {
-    if (f.length < size)
-        throw new Error("not enough data");
-    var n = 0;
-    for (var i = 0; i < size; i++) {
-        n *= 256;
-        n += f[i];
-    }
-    return n;
+  if (f.length < size)
+    throw new Error("not enough data");
+  var n = 0;
+  for (var i = 0; i < size; i++) {
+    n *= 256;
+    n += f[i];
+  }
+  return n;
 }
 
-function u8(f)  { return uint(f,1); }
-function u16(f) { return uint(f,2); }
-function u32(f) { return uint(f,4); }
-function u64(f) { return uint(f,8); }
+function u8(f)  {return uint(f,1);}
+function u16(f) {return uint(f,2);}
+function u32(f) {return uint(f,4);}
+function u64(f) {return uint(f,8);}
 
-function decompress_pubkey(key_bytes) {
-    var y_bit = u8(key_bytes.slice(0, 1)) & 0x01;
-    var ecparams = getSECCurveByName("secp256k1");
-
-    // build X
-    var x     = BigInteger.ZERO.clone();
-    x.fromString(Crypto.util.bytesToHex(key_bytes.slice(1, 33)), 16);
-    
-    // get curve
-    var curve = ecparams.getCurve();
-    var a = curve.getA().toBigInteger();
-    var b = curve.getB().toBigInteger();
-    var p = curve.getQ();
-    
-    // compute y^2 = x^3 + a*x + b
-    var tmp = x.multiply(x).multiply(x).add(a.multiply(x)).add(b).mod(p);
-    
-    // compute modular square root of y (mod p)
-    var y = tmp.modSqrt(p);
-    
-    // flip sign if we need to
-    if( (y[0] & 0x01) != y_bit ) {
-        y = y.multiply(new BigInteger("-1")).mod(p);
-    }
-    
-    return new ECPointFp(curve, curve.fromBigInteger(x), curve.fromBigInteger(y));
-}
+module.exports = require('soop')(BIP32);

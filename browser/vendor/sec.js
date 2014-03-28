@@ -171,3 +171,5 @@ function getSECCurveByName(name) {
     if(name == "secp256r1") return secp256r1();
     return null;
 }
+
+module.exports.getSECCurveByName = getSECCurveByName;
