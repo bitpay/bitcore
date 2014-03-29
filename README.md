@@ -175,10 +175,9 @@ peerman.on('connect', function() {
   if (conn) {
     var outs = [{address:toAddress, amount:amt}];
     var opts = {remainderAddress: changeAddressString};
-    var builder = new bitcore.TransactionBuilder;
+    var Builder = bitcore.TransactionBuilder;
 
-    var tx = builder
-      .init(opts)
+    var tx = new Builder(opts)
       .setUnspent(Unspent)
       .setOutputs(outs)
       .sign(keys)
@@ -186,9 +185,7 @@ peerman.on('connect', function() {
 
    /* create and signing can be done in multiple steps using:
     *
-    *  var builder = bitcore
-    *             .TransactionBuilder
-    *             .init(opts) 
+    *  var builder = new bitcore.TransactionBuilder(opts)
     *             .setUnspent(utxos) 
     *             .setOutputs(outs);
     *  //later

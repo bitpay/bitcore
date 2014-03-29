@@ -26,9 +26,8 @@ describe('TransactionBuilder', function() {
     should.exist(t);
   });
 
-  it('should be able init', function() {
-    var t = new TransactionBuilder();
-    t.init({spendUnconfirmed: true, lockTime: 10});
+  it('should be able to create instance with params', function() {
+    var t = new TransactionBuilder({spendUnconfirmed: true, lockTime: 10});
     should.exist(t);
     should.exist(t.txobj.version);
     t.spendUnconfirmed.should.equal(true);
@@ -37,8 +36,7 @@ describe('TransactionBuilder', function() {
 
 
   var getBuilder = function (spendUnconfirmed) {
-    var t = new TransactionBuilder();
-    t.init( {spendUnconfirmed: spendUnconfirmed})
+    var t = new TransactionBuilder({spendUnconfirmed: spendUnconfirmed})
       .setUnspent(testdata.dataUnspent);
 
     return t;
@@ -117,8 +115,7 @@ describe('TransactionBuilder', function() {
       amount: 0.08
     }];
 
-   return (new TransactionBuilder())
-      .init(opts)
+   return new TransactionBuilder(opts)
       .setUnspent(testdata.dataUnspent)
       .setOutputs(outs);
   };
@@ -146,8 +143,7 @@ describe('TransactionBuilder', function() {
     }];
 
     (function() {
-      (new TransactionBuilder(opts))
-      .init(opts)
+      new TransactionBuilder(opts)
       .setUnspent(testdata.dataUnspent)
       .setOutputs(outs);
       }).should.throw();
@@ -158,8 +154,7 @@ describe('TransactionBuilder', function() {
     }];
 
     should.exist(
-      (new TransactionBuilder(opts))
-      .init(opts)
+      new TransactionBuilder(opts)
       .setUnspent(testdata.dataUnspent)
       .setOutputs(outs2)
     );
@@ -167,8 +162,7 @@ describe('TransactionBuilder', function() {
     // do not allow unconfirmed
     opts.spendUnconfirmed = false;
     (function() {
-       (new TransactionBuilder(opts))
-      .init(opts)
+      new TransactionBuilder(opts)
       .setUnspent(testdata.dataUnspent)
       .setOutputs(outs2);
       }).should.throw();
@@ -227,8 +221,7 @@ describe('TransactionBuilder', function() {
     }];
 
 //console.log('[test.TransactionBuilder.js.216:outs:]',outs, outs.length); //TODO
-   return (new TransactionBuilder())
-      .init(opts)
+   return new TransactionBuilder(opts)
       .setUnspent(testdata.dataUnspentSign.unspent)
       .setOutputs(outs);
   };
@@ -268,8 +261,7 @@ describe('TransactionBuilder', function() {
       amount: 0.08
     }];
 
-   var b = (new TransactionBuilder())
-      .init()
+   var b = new TransactionBuilder()
       .setUnspent(testdata.dataUnspentSign.unspent)
       .setOutputs(outs)
       .sign(keys);

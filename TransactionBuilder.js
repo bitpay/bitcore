@@ -1,13 +1,13 @@
 
 /*
-    var tx = TransactionBuilder.init(opts)
+    var tx = (new TransactionBuilder(opts))
       .setUnspent(utxos)
       .setOutputs(outs)
       .sign(keys)
       .build();
 
 
-    var builder = TransactionBuilder.init(opts)
+    var builder = (new TransactionBuilder(opts))
       .setUnspent(spent)
       .setOutputs(outs);
 
@@ -88,8 +88,26 @@ var PrivateKey = imports.PrivateKey || require('./PrivateKey');
 var Transaction = imports.Transaction || require('./Transaction');
 var FEE_PER_1000B_SAT = parseInt(0.0001 * util.COIN);
 
-function TransactionBuilder() {
-  this.txobj = {};
+function TransactionBuilder(opts) {
+  var opts              = opts || {};
+  this.txobj            = {};
+  this.txobj.version    = 1;
+  this.txobj.lock_time  = opts.lockTime || 0;
+  this.txobj.ins  = [];
+  this.txobj.outs = [];
+
+  this.spendUnconfirmed = opts.spendUnconfirmed || false;
+
+  if (opts.fee || opts.feeSat) {
+    this.givenFeeSat = opts.fee ? opts.fee * util.COIN : opts.feeSat;
+  }
+  this.remainderAddress = opts.remainderAddress;
+  this.signhash = opts.signhash || Transaction.SIGHASH_ALL;
+
+  this.tx         = {};
+  this.inputsSigned= 0;
+
+  return this;
 }
 
 /*
@@ -188,31 +206,6 @@ TransactionBuilder.prototype._selectUnspent = function(neededAmountSat) {
   this._setInputMap();
   return this;
 };
-
-
-TransactionBuilder.prototype.init = function(opts) {
-  var opts              = opts || {};
-  this.txobj            = {};
-  this.txobj.version    = 1;
-  this.txobj.lock_time  = opts.lockTime || 0;
-  this.txobj.ins  = [];
-  this.txobj.outs = [];
-
-  this.spendUnconfirmed = opts.spendUnconfirmed || false;
-
-  if (opts.fee || opts.feeSat) {
-    this.givenFeeSat = opts.fee ? opts.fee * util.COIN : opts.feeSat;
-  }
-  this.remainderAddress = opts.remainderAddress;
-  this.signhash = opts.signhash || Transaction.SIGHASH_ALL;
-
-  this.tx         = {};
-  this.inputsSigned= 0;
-
-  return this;
-};
-
-
 
 TransactionBuilder.prototype._setInputs = function() {
   var ins = this.selectedUtxos;

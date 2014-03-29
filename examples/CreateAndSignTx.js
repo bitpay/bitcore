@@ -26,10 +26,9 @@ var run = function() {
   var outs = [{address:toAddress, amount:amt}];
   var keys = [priv];
   var opts = {remainderAddress: changeAddressString};
-  var builder = new bitcore.TransactionBuilder;
+  var Builder = bitcore.TransactionBuilder;
 
-  var tx = builder
-    .init(opts)
+  var tx = new Builder(opts)
     .setUnspent(utxos)
     .setOutputs(outs)
     .sign(keys)
@@ -37,9 +36,7 @@ var run = function() {
 
    /* create and signing can be done in multiple steps using:
     *
-    *  var builder = bitcore
-    *             .TransactionBuilder
-    *             .init(opts) 
+    *  var builder = new bitcore.TransactionBuilder(opts)
     *             .setUnspent(utxos) 
     *             .setOutputs(outs);
     *
