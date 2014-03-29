@@ -27,6 +27,7 @@ requireWhenAccessed('Address', './Address');
 requireWhenAccessed('Opcode', './Opcode');
 requireWhenAccessed('Script', './Script');
 requireWhenAccessed('Transaction', './Transaction');
+requireWhenAccessed('TransactionBuilder', './TransactionBuilder');
 requireWhenAccessed('Connection', './Connection');
 requireWhenAccessed('Peer', './Peer');
 requireWhenAccessed('Block', './Block');
