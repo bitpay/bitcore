@@ -43,6 +43,7 @@ var modules = [
   'ScriptInterpreter',
   'Sign',
   'Transaction',
+  'TransactionBuilder',
   'Wallet',
   'WalletKey',
   'config',
