@@ -59,11 +59,13 @@ var run = function() {
   console.log('TX HEX IS: ', txHex);
 };
 
-// browser example compatibility
-if (module) {
+// This is just for browser & mocha compatibility
+if (typeof module !== 'undefined') {
   module.exports.run = run;
-}
-if (require.main === module) {
+  if (require.main === module) {
+    run();
+  }
+} else {
   run();
 }
 
