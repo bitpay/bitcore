@@ -25,23 +25,44 @@ var run = function() {
 
   var outs = [{address:toAddress, amount:amt}];
   var keys = [priv];
+  var opts = {remainderAddress: changeAddressString};
+  var Builder = bitcore.TransactionBuilder;
 
-  var ret = bitcore.Transaction.createAndSign(utxos, outs, keys,
-                {remainderAddress: changeAddressString}); 
+  var tx = new Builder(opts)
+    .setUnspent(utxos)
+    .setOutputs(outs)
+    .sign(keys)
+    .build();
 
-   /* create and signing can be done in 2 steps using:
-    *       var ret = Transaction.create(utxos,outs);
-    * and later:
-    *       ret.tx.sign(ret.tx.selectedUtxos, outs, keys); 
+   /* create and signing can be done in multiple steps using:
+    *
+    *  var builder = new bitcore.TransactionBuilder(opts)
+    *             .setUnspent(utxos) 
+    *             .setOutputs(outs);
+    *
+    *  builder.sign(key1);
+    *  builder.sign(key2);
+    *  ...
+    *  if (builder.isFullySigned()){
+    *   var tx = builder.build();
+    *  }
+    *
+    *  The selected Unspent Outputs for the transaction can be retrieved with:
+    *
+    *    var selectedUnspent = build.getSelectedUnspent();
     */
 
-  var txHex =  ret.tx.serialize().toString('hex');
+  var txHex =  tx.serialize().toString('hex');
   console.log('TX HEX IS: ', txHex);
 };
 
-
-module.exports.run = run;
-if (require.main === module) {
+// This is just for browser & mocha compatibility
+if (typeof module !== 'undefined') {
+  module.exports.run = run;
+  if (require.main === module) {
+    run();
+  }
+} else {
   run();
 }
 
