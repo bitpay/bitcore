@@ -72,8 +72,8 @@
       </table>
     </div>
   </div>
-  <h2>Transactions</h2>
-  <div data-ng-controller="transactionsController" data-ng-init="load('address')">
+  <div data-ng-if="address.addrStr" data-ng-controller="transactionsController" data-ng-init="load('address')">
+    <h2>Transactions</h2>
     <div data-ng-include src="'/views/transaction/list.html'" when-scrolled="loadMore()"></div>
   </div>
 </section>
