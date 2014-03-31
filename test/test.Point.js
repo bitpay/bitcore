@@ -1,13 +1,13 @@
 'use strict';
 
-var assert = require('assert');
 var chai = chai || require('chai');
 var bitcore = bitcore || require('../bitcore');
-var coinUtil = coinUtil || require('../util/util');
+var coinUtil = coinUtil || bitcore.util;
 var buffertools = require('buffertools');
 var bignum = require('bignum');
 
 var should = chai.should();
+var assert = chai.assert;
 
 var Point = bitcore.Point;
 var Key = bitcore.Key;
