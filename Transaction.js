@@ -553,15 +553,28 @@ Transaction.prototype.getSize = function getHash() {
 };
 
 Transaction.prototype.isComplete = function() {
-  var l = this.ins.length;
-
   var ret = true;
+  var l   = this.ins.length;
+
   for (var i = 0; i < l; i++) {
-    if (buffertools.compare(this.ins[i].s, util.EMPTY_BUFFER) === 0) {
-      ret = false;
-      break;
+    var script = new Script(this.ins[i].s);
+    // Multisig?
+    if (!Buffer.isBuffer(script.chunks[0]) && script.chunks[0] ===0) {
+      for (var i = 1; i < script.chunks.length; i++) {
+        if (buffertools.compare(script.chunks[i], util.EMPTY_BUFFER) === 0){
+          ret = false;
+          break;
+        }
+      }
+    }
+    else {
+      if (buffertools.compare(this.ins[i].s, util.EMPTY_BUFFER) === 0) {
+        ret = false;
+        break;
+      }
     }
   };
+
   return ret;
 };
 
