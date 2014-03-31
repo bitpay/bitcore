@@ -124,19 +124,23 @@ rpc.getBlock(hash, function(err, ret) {
 Check the list of all supported RPC call at [RpcClient.js](RpcClient.js)
 
 ## Creating and sending a Transaction through P2P
-For this example you need a running bitcoind instance with RPC enabled. 
+
+The fee of the transaction can be given in `opts` or it will be determined 
+by the transaction size. Documentation on the paramets of `TransactionBuilder`
+can be found on the source file.
+
 ```js
 var bitcore = require('bitcore');
 var networks = bitcore.networks;
 var Peer = bitcore.Peer;
-var Transaction = bitcore.Transaction;
+var TransactionBuilder = bitcore.TransactionBuilder;
 var PeerManager = require('soop').load('../PeerManager', {
   network: networks.testnet
 });
 
 // this can be get from insight.bitcore.io API o blockchain.info
-var utxos = { 
-  "unspent": [
+
+var unspent = [
     {
       "address": "n4g2TFaQo8UgedwpkYdcQFF6xE2Ei9Czvy",
       "txid": "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1",
@@ -153,28 +157,14 @@ var utxos = {
       "confirmations": 1,
       "amount": 10
     },
-};
+];
 
-//private keys in WIF format (see Transaction.js for other options)
+//private keys in WIF format (see TransactionBuilder.js for other options)
 var keys = [
   "cSq7yo4fvsbMyWVN945VUGUWMaSazZPWqBVJZyoGsHmNq6W4HVBV",
   "cPa87VgwZfowGZYaEenoQeJgRfKW6PhZ1R65EHTkN1K19cSvc92G",
   "cPQ9DSbBRLva9av5nqeF5AGrh3dsdW8p2E5jS4P8bDWZAoQTeeKB"
 ];
-
-function createTx() {
-  var outs = [{address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE', amount:0.08}];
-
-  var ret = Transaction.createAndSign(utxos, outs, keys); 
-
-  / * create and signing can be done in 2 steps using:
-    *       var ret = Transaction.create(utxos,outs);
-    * and later:
-    *       ret.tx.sign(ret.tx.selectedUtxos, outs, keys); 
-    */
-
-  return ret.tx.serialize().toString('hex');
-};
 
 
 var peerman = new PeerManager();
@@ -183,7 +173,36 @@ peerman.addPeer(new Peer('127.0.0.1', 18333));
 peerman.on('connect', function() {
   var conn = peerman.getActiveConnection();
   if (conn) {
-    conn.sendTx(createTx());
+    var outs = [{address:toAddress, amount:amt}];
+    var opts = {remainderAddress: changeAddressString};
+    var Builder = bitcore.TransactionBuilder;
+
+    var tx = new Builder(opts)
+      .setUnspent(Unspent)
+      .setOutputs(outs)
+      .sign(keys)
+      .build();
+
+   /* create and signing can be done in multiple steps using:
+    *
+    *  var builder = new bitcore.TransactionBuilder(opts)
+    *             .setUnspent(utxos) 
+    *             .setOutputs(outs);
+    *  //later
+    *  builder.sign(key1);
+    *  // get partially signed tx
+    *   var tx = builder.build();
+    *
+    *  //later
+    *  builder.sign(key2);
+    *  if (builder.isFullySigned()){
+    *   var tx = builder.build();
+    *  }
+    *
+    *  The selected Unspent Outputs for the transaction can be retrieved with:
+    *    var selectedUnspent = build.getSelectedUnspent();
+    */
+    conn.sendTx(tx.serialize().toString('hex'));
   }
   conn.on('reject', function() {
     console.log('Transaction Rejected');
