@@ -58,7 +58,7 @@
  *
  *  @opts
  *    { 
- *      remainderAddress: null,
+ *      remainderOut: null,
  *      fee: 0.001,
  *      lockTime: null,
  *      spendUnconfirmed: false,
@@ -67,8 +67,12 @@
  *  Amounts are in BTC. instead of fee and amount; feeSat and amountSat can be given, 
  *  repectively, to provide amounts in satoshis.
  *
- *  If no remainderAddress is given, and there are remainder coins, the
- *  first IN address will be used to return the coins. (TODO: is this is reasonable?)
+ *  If no remainderOut is given, and there are remainder coins, the
+ *  first IN out will be used to return the coins. remainderOut has the form:
+ *    remainderOut = { address: 1xxxxx}
+*    or
+ *    remainderOut = { pubkeys: ['hex1','hex2',...} for multisig
+ *
  *
  */
 
@@ -101,7 +105,7 @@ function TransactionBuilder(opts) {
   if (opts.fee || opts.feeSat) {
     this.givenFeeSat = opts.fee ? opts.fee * util.COIN : opts.feeSat;
   }
-  this.remainderAddress = opts.remainderAddress;
+  this.remainderOut = opts.remainderOut;
   this.signhash = opts.signhash || Transaction.SIGHASH_ALL;
 
   this.tx         = {};
@@ -132,6 +136,31 @@ TransactionBuilder._scriptForAddress = function(addressString) {
     throw new Error('invalid output address');
 
   return script;
+};
+
+
+TransactionBuilder._scriptForPubkeys = function(out) {
+
+  var l = out.pubkeys.length;
+  var pubKeyBuf=[];
+
+  for (var i=0; i<l; i++) {
+    pubKeyBuf.push(new Buffer(out.pubkeys[i],'hex'));
+  }
+
+  return Script.createMultisig(out.nreq, pubKeyBuf);
+};
+
+TransactionBuilder._scriptForOut = function(out) {
+  var ret; 
+  if (out.address) 
+    ret = this._scriptForAddress(out.address)
+  else if (out.pubkeys || out.nreq || out.nreq > 1)
+    ret = this._scriptForPubkeys(out);
+  else 
+    throw new Error('unknow out type');
+
+  return ret;
 };
 
 TransactionBuilder.prototype.setUnspent = function(utxos) {
@@ -279,9 +308,9 @@ TransactionBuilder.prototype._setRemainder = function(remainderIndex) {
   }
 
   if (remainderSat.cmp(0) > 0) {
-    var remainderAddress = this.remainderAddress || this.selectedUtxos[0].address;
+    var remainderOut = this.remainderOut || this.selectedUtxos[0];
     var value = util.bigIntToValue(remainderSat);
-    var script = TransactionBuilder._scriptForAddress(remainderAddress);
+    var script = TransactionBuilder._scriptForOut(remainderOut);
     var txout = {
       v: value,
       s: script.getBuffer(),
@@ -327,7 +356,7 @@ TransactionBuilder.prototype.setOutputs = function(outs) {
   for (var i = 0; i < l; i++) {
     var amountSat = outs[i].amountSat || util.parseValue(outs[i].amount);
     var value = util.bigIntToValue(amountSat);
-    var script = TransactionBuilder._scriptForAddress(outs[i].address);
+    var script = TransactionBuilder._scriptForOut(outs[i]);
     var txout = {
       v: value,
       s: script.getBuffer(),
@@ -552,7 +581,13 @@ TransactionBuilder.prototype._signMultiSig = function(walletKeyMap, input, txSig
   };
 };
  
+TransactionBuilder.prototype._signScriptHash = function(walletKeyMap, input, txSigHash) {
+  if (!this.hashToScriptMap)
+    throw new Error('hashToScriptMap not set');
 
+
+  throw new Error('TX_SCRIPTHASH not supported yet');
+};
 
 
 var fnToSign = {};
@@ -560,7 +595,6 @@ fnToSign[Script.TX_PUBKEYHASH] = TransactionBuilder.prototype._signPubKeyHash;
 fnToSign[Script.TX_PUBKEY]     = TransactionBuilder.prototype._signPubKey;
 fnToSign[Script.TX_MULTISIG]   = TransactionBuilder.prototype._signMultiSig;
 fnToSign[Script.TX_SCRIPTHASH] = TransactionBuilder.prototype._signScriptHash;
-//if (!this.hashToScriptMap) throw new Error('hashToScriptMap not set');
 
 TransactionBuilder.prototype.sign = function(keys) {
   this._checkTx();

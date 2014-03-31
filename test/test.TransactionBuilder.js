@@ -104,7 +104,7 @@ describe('TransactionBuilder', function() {
 
   var getBuilder2 = function (fee) {
     var opts = {
-      remainderAddress: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd',
+      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
       spendUnconfirmed: true,
     };
 
@@ -134,7 +134,7 @@ describe('TransactionBuilder', function() {
     var utxos = testdata.dataUnspent;
 
     var opts = {
-      remainderAddress: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd',
+      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
       spendUnconfirmed: true,
     };
     var outs = [{
@@ -211,7 +211,7 @@ describe('TransactionBuilder', function() {
   var getBuilder3 = function (outs) {
 
     var opts = {
-      remainderAddress: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd',
+      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
       spendUnconfirmed: true,
     };
 
@@ -397,7 +397,7 @@ describe('TransactionBuilder', function() {
 
   it('should sign a p2pubkey tx', function() {
     var opts = {
-      remainderAddress: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd',
+      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
     };
     var outs = outs || [{
       address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
@@ -419,7 +419,7 @@ describe('TransactionBuilder', function() {
 
   it('should sign a multisig tx', function() {
     var opts = {
-      remainderAddress: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd',
+      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
     };
     var outs = outs || [{
       address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
@@ -440,7 +440,7 @@ describe('TransactionBuilder', function() {
 
   it('should sign a multisig tx in steps (3-5)', function() {
     var opts = {
-      remainderAddress: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd',
+      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
     };
     var outs = outs || [{
       address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
@@ -470,7 +470,7 @@ describe('TransactionBuilder', function() {
 
   it('should count multisig signs (3-5)', function() {
     var opts = {
-      remainderAddress: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd',
+      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
     };
     var outs = outs || [{
       address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
@@ -494,7 +494,40 @@ describe('TransactionBuilder', function() {
     b.sign(k3);
     b.isFullySigned().should.equal(true);
     b.countInputMultiSig(0).should.equal(3);
+  });
 
 
+  it('should avoid siging with the same key twice multisig signs (3-5)', function() {
+    var opts = {
+      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
+    };
+    var outs = outs || [{
+      address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
+      amount: 0.08
+    }];
+   var b =  new TransactionBuilder(opts)
+      .setUnspent(testdata.dataUnspentSign.unspentMulti)
+      .setOutputs(outs);
+
+    var k1 = testdata.dataUnspentSign.keyStringsMulti.slice(0,1);
+    var k23 = testdata.dataUnspentSign.keyStringsMulti.slice(1,3);
+
+    b.countInputMultiSig(0).should.equal(0);
+    b.sign(k1);
+    b.isFullySigned().should.equal(false);
+    b.countInputMultiSig(0).should.equal(1);
+    b.sign(k1);
+    b.isFullySigned().should.equal(false);
+    b.countInputMultiSig(0).should.equal(1);
+    b.sign(k1);
+    b.isFullySigned().should.equal(false);
+    b.countInputMultiSig(0).should.equal(1);
+
+
+
+
+    b.sign(k23);
+    b.isFullySigned().should.equal(true);
+    b.countInputMultiSig(0).should.equal(3);
   });
 });
