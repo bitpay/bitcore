@@ -523,9 +523,6 @@ describe('TransactionBuilder', function() {
     b.isFullySigned().should.equal(false);
     b.countInputMultiSig(0).should.equal(1);
 
-
-
-
     b.sign(k23);
     b.isFullySigned().should.equal(true);
     b.countInputMultiSig(0).should.equal(3);

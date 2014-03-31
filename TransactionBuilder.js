@@ -158,7 +158,7 @@ TransactionBuilder._scriptForOut = function(out) {
   else if (out.pubkeys || out.nreq || out.nreq > 1)
     ret = this._scriptForPubkeys(out);
   else 
-    throw new Error('unknow out type');
+    throw new Error('unknown out type');
 
   return ret;
 };
@@ -240,7 +240,8 @@ TransactionBuilder.prototype._selectUnspent = function(neededAmountSat) {
   } while (!fulfill && minConfirmationSteps.length);
 
   if (!fulfill)
-    throw new Error('no enough unspent to fulfill totalNeededAmount');
+    throw new Error('no enough unspent to fulfill totalNeededAmount [SAT]:' +
+                    neededAmountSat);
 
   this.selectedUtxos = sel;
   this._setInputMap();
