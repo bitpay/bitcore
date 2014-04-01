@@ -152,15 +152,33 @@ TransactionBuilder._scriptForPubkeys = function(out) {
 };
 
 TransactionBuilder._scriptForOut = function(out) {
-  var ret; 
-  if (out.address) 
-    ret = this._scriptForAddress(out.address)
+  var ret;
+  if (out.address)
+    ret = this._scriptForAddress(out.address);
   else if (out.pubkeys || out.nreq || out.nreq > 1)
     ret = this._scriptForPubkeys(out);
-  else 
+  else
     throw new Error('unknown out type');
 
   return ret;
+};
+
+
+TransactionBuilder.infoForP2sh = function(opts, networkName) {
+  var script = this._scriptForOut(opts);
+  var hash   = util.sha256ripe160(script.getBuffer());
+
+  var version = networkName === 'testnet' ?
+    networks.testnet.addressScript : networks.livenet.addressScript;
+
+  var addr = new Address(version, hash);
+  var addrStr = addr.as('base58');
+  return {
+    script: script,
+    scriptBufHex: script.getBuffer().toString('hex'),
+    hash: hash,
+    address: addrStr,
+  };
 };
 
 TransactionBuilder.prototype.setUnspent = function(utxos) {
@@ -173,8 +191,7 @@ TransactionBuilder.prototype._setInputMap = function() {
 
   var l = this.selectedUtxos.length;
   for (var i = 0; i < l; i++) {
-    var utxo = this.selectedUtxos[i];
-
+    var utxo          = this.selectedUtxos[i];
     var scriptBuf     = new Buffer(utxo.scriptPubKey, 'hex');
     var scriptPubKey  = new Script(scriptBuf);
     var scriptType    = scriptPubKey.classify();
@@ -582,16 +599,61 @@ TransactionBuilder.prototype._signMultiSig = function(walletKeyMap, input, txSig
   };
 };
  
+var fnToSign = {};
+
+
 TransactionBuilder.prototype._signScriptHash = function(walletKeyMap, input, txSigHash) {
+  var originalScriptBuf = this.tx.ins[input.i].s;
+
+
   if (!this.hashToScriptMap)
     throw new Error('hashToScriptMap not set');
 
+  var scriptHex = this.hashToScriptMap[input.address];
+  if (!scriptHex) return;
 
-  throw new Error('TX_SCRIPTHASH not supported yet');
+  var script          = new Script(new Buffer(scriptHex,'hex'));
+  var scriptType      = script.classify();
+  var scriptPubKeyHex = script.getBuffer().toString('hex');
+
+  if (!fnToSign[scriptType])
+    throw new Error('dont know how to sign p2sh script type'+ script.getRawOutType());
+
+  var newInput = {
+    address: 'TODO', // if p2pkubkeyhash -> get the address
+    i: input.i,
+    scriptPubKey: script,
+    scriptPubKeyHex: scriptPubKeyHex ,
+    scriptType: scriptType,
+  };
+
+  var txSigHash2 = this.tx.hashForSignature( script, input.i, this.signhash);
+  var ret =  fnToSign[scriptType].call(this, walletKeyMap, newInput, txSigHash2);
+
+  var rc =1; //TODO : si alguno firmó...
+  if (ret.script) {
+
+console.log('[TransactionBuilder.js.634] IN'); //TODO
+    var scriptSig = new Script(originalScriptBuf);
+    var len = scriptSig.chunks.length;
+    var scriptBufNotAlreadyAppended = scriptSig.chunks[len-1] !== undefined && (typeof scriptSig.chunks[len-1] == "number" || scriptSig.chunks[len-1].toString('hex') != scriptBuf.toString('hex'));
+    if (rc > 0 && scriptBufNotAlreadyAppended) {
+      scriptSig.chunks.push(scriptBuf);
+      scriptSig.updateBuffer();
+      ret.script =  scriptSig.getBuffer();
+    }
+  
+    if (scriptType == Script.TX_MULTISIG && scriptSig.finishedMultiSig())
+    {
+      scriptSig.removePlaceHolders();
+      scriptSig.prependOp0();
+      ret.script = scriptSig.getBuffer();
+    }
+  }
+
+  return ret;
 };
 
-
-var fnToSign = {};
 fnToSign[Script.TX_PUBKEYHASH] = TransactionBuilder.prototype._signPubKeyHash;
 fnToSign[Script.TX_PUBKEY]     = TransactionBuilder.prototype._signPubKey;
 fnToSign[Script.TX_MULTISIG]   = TransactionBuilder.prototype._signMultiSig;
@@ -605,12 +667,12 @@ TransactionBuilder.prototype.sign = function(keys) {
       walletKeyMap = TransactionBuilder._mapKeys(keys);
 
 
+
   for (var i = 0; i < l; i++) {
     var input = this.inputMap[i];
 
     var txSigHash = this.tx.hashForSignature(
       input.scriptPubKey, i, this.signhash);
-
 
     var ret = fnToSign[input.scriptType].call(this, walletKeyMap, input, txSigHash);
     if (ret && ret.script) {
@@ -624,6 +686,8 @@ TransactionBuilder.prototype.sign = function(keys) {
 // [addr -> script]
 TransactionBuilder.prototype.setHashToScriptMap = function(hashToScriptMap) {
   this.hashToScriptMap= hashToScriptMap;
+
+  return this;
 };
 
 
