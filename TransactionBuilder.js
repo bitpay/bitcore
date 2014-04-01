@@ -58,7 +58,7 @@
  *
  *  @opts
  *    { 
- *      remainderAddress: null,
+ *      remainderOut: null,
  *      fee: 0.001,
  *      lockTime: null,
  *      spendUnconfirmed: false,
@@ -67,8 +67,12 @@
  *  Amounts are in BTC. instead of fee and amount; feeSat and amountSat can be given, 
  *  repectively, to provide amounts in satoshis.
  *
- *  If no remainderAddress is given, and there are remainder coins, the
- *  first IN address will be used to return the coins. (TODO: is this is reasonable?)
+ *  If no remainderOut is given, and there are remainder coins, the
+ *  first IN out will be used to return the coins. remainderOut has the form:
+ *    remainderOut = { address: 1xxxxx}
+*    or
+ *    remainderOut = { pubkeys: ['hex1','hex2',...} for multisig
+ *
  *
  */
 
@@ -89,7 +93,7 @@ var Transaction = imports.Transaction || require('./Transaction');
 var FEE_PER_1000B_SAT = parseInt(0.0001 * util.COIN);
 
 function TransactionBuilder(opts) {
-  var opts              = opts || {};
+  opts                  = opts || {};
   this.txobj            = {};
   this.txobj.version    = 1;
   this.txobj.lock_time  = opts.lockTime || 0;
@@ -101,7 +105,7 @@ function TransactionBuilder(opts) {
   if (opts.fee || opts.feeSat) {
     this.givenFeeSat = opts.fee ? opts.fee * util.COIN : opts.feeSat;
   }
-  this.remainderAddress = opts.remainderAddress;
+  this.remainderOut = opts.remainderOut;
   this.signhash = opts.signhash || Transaction.SIGHASH_ALL;
 
   this.tx         = {};
@@ -134,6 +138,49 @@ TransactionBuilder._scriptForAddress = function(addressString) {
   return script;
 };
 
+
+TransactionBuilder._scriptForPubkeys = function(out) {
+
+  var l = out.pubkeys.length;
+  var pubKeyBuf=[];
+
+  for (var i=0; i<l; i++) {
+    pubKeyBuf.push(new Buffer(out.pubkeys[i],'hex'));
+  }
+
+  return Script.createMultisig(out.nreq, pubKeyBuf);
+};
+
+TransactionBuilder._scriptForOut = function(out) {
+  var ret;
+  if (out.address)
+    ret = this._scriptForAddress(out.address);
+  else if (out.pubkeys || out.nreq || out.nreq > 1)
+    ret = this._scriptForPubkeys(out);
+  else
+    throw new Error('unknown out type');
+
+  return ret;
+};
+
+
+TransactionBuilder.infoForP2sh = function(opts, networkName) {
+  var script = this._scriptForOut(opts);
+  var hash   = util.sha256ripe160(script.getBuffer());
+
+  var version = networkName === 'testnet' ?
+    networks.testnet.addressScript : networks.livenet.addressScript;
+
+  var addr = new Address(version, hash);
+  var addrStr = addr.as('base58');
+  return {
+    script: script,
+    scriptBufHex: script.getBuffer().toString('hex'),
+    hash: hash,
+    address: addrStr,
+  };
+};
+
 TransactionBuilder.prototype.setUnspent = function(utxos) {
   this.utxos = utxos;
   return this;
@@ -144,18 +191,28 @@ TransactionBuilder.prototype._setInputMap = function() {
 
   var l = this.selectedUtxos.length;
   for (var i = 0; i < l; i++) {
-    var s = this.selectedUtxos[i];
+    var utxo          = this.selectedUtxos[i];
+    var scriptBuf     = new Buffer(utxo.scriptPubKey, 'hex');
+    var scriptPubKey  = new Script(scriptBuf);
+    var scriptType    = scriptPubKey.classify();
+
+    if (scriptType === Script.TX_UNKNOWN)
+      throw new Error('unkown output type at:' + i +
+                      ' Type:' + scriptPubKey.getRawOutType());
 
     inputMap.push({
-      address: s.address,
-      scriptPubKey: s.scriptPubKey
+      address: utxo.address, //TODO que pasa en multisig normal?
+      scriptPubKeyHex: utxo.scriptPubKey,
+      scriptPubKey: scriptPubKey,
+      scriptType: scriptType,
+      i: i,
     });
   }
   this.inputMap = inputMap;
   return this;
 };
 
-TransactionBuilder.prototype.getSelectedUnspent = function(neededAmountSat) {
+TransactionBuilder.prototype.getSelectedUnspent = function() {
   return this.selectedUtxos;
 };
 
@@ -200,7 +257,8 @@ TransactionBuilder.prototype._selectUnspent = function(neededAmountSat) {
   } while (!fulfill && minConfirmationSteps.length);
 
   if (!fulfill)
-    throw new Error('no enough unspent to fulfill totalNeededAmount');
+    throw new Error('no enough unspent to fulfill totalNeededAmount [SAT]:' +
+                    neededAmountSat);
 
   this.selectedUtxos = sel;
   this._setInputMap();
@@ -268,9 +326,9 @@ TransactionBuilder.prototype._setRemainder = function(remainderIndex) {
   }
 
   if (remainderSat.cmp(0) > 0) {
-    var remainderAddress = this.remainderAddress || this.selectedUtxos[0].address;
+    var remainderOut = this.remainderOut || this.selectedUtxos[0];
     var value = util.bigIntToValue(remainderSat);
-    var script = TransactionBuilder._scriptForAddress(remainderAddress);
+    var script = TransactionBuilder._scriptForOut(remainderOut);
     var txout = {
       v: value,
       s: script.getBuffer(),
@@ -316,7 +374,7 @@ TransactionBuilder.prototype.setOutputs = function(outs) {
   for (var i = 0; i < l; i++) {
     var amountSat = outs[i].amountSat || util.parseValue(outs[i].amount);
     var value = util.bigIntToValue(amountSat);
-    var script = TransactionBuilder._scriptForAddress(outs[i].address);
+    var script = TransactionBuilder._scriptForOut(outs[i]);
     var txout = {
       v: value,
       s: script.getBuffer(),
@@ -360,14 +418,6 @@ TransactionBuilder._mapKeys = function(keys) {
   return walletKeyMap;
 };
 
-TransactionBuilder._checkSupportedScriptType = function (s) {
-  if (s.classify() !== Script.TX_PUBKEYHASH) {
-    throw new Error('scriptSig type:' + s.getRawOutType() +
-                    ' not supported yet');
-  }
-};
-
-
 TransactionBuilder._signHashAndVerify = function(wk, txSigHash) {
   var triesLeft = 10, sigRaw;
 
@@ -387,43 +437,259 @@ TransactionBuilder.prototype._checkTx = function() {
     throw new Error('tx is not defined');
 };
 
+TransactionBuilder.prototype._signPubKey = function(walletKeyMap, input, txSigHash) {
+  if (this.tx.ins[input.i].s.length > 0) return {};
+
+  var wk        = walletKeyMap[input.address];
+  if (!wk) return;
+
+  var sigRaw    = TransactionBuilder._signHashAndVerify(wk, txSigHash);
+  var sigType   = new Buffer(1);
+  sigType[0]    = this.signhash;
+  var sig       = Buffer.concat([sigRaw, sigType]);
+
+  var scriptSig = new Script();
+  scriptSig.chunks.push(sig);
+  scriptSig.updateBuffer();
+  return {isFullySigned: true, script: scriptSig.getBuffer()};
+};
+
+TransactionBuilder.prototype._signPubKeyHash = function(walletKeyMap, input, txSigHash) {
+
+  if (this.tx.ins[input.i].s.length > 0) return {};
+
+  var wk        = walletKeyMap[input.address];
+  if (!wk) return;
+
+  var sigRaw    = TransactionBuilder._signHashAndVerify(wk, txSigHash);
+  var sigType   = new Buffer(1);
+  sigType[0]    = this.signhash;
+  var sig       = Buffer.concat([sigRaw, sigType]);
+
+  var scriptSig = new Script();
+  scriptSig.chunks.push(sig);
+  scriptSig.chunks.push(wk.privKey.public);
+  scriptSig.updateBuffer();
+  return {isFullySigned: true, script: scriptSig.getBuffer()};
+};
+
+// FOR TESTING
+/*
+ var _dumpChunks = function (scriptSig, label) {
+   console.log('## DUMP: ' + label + ' ##');
+   for(var i=0; i<scriptSig.chunks.length; i++) {
+     console.log('\tCHUNK ', i, scriptSig.chunks[i]); 
+   }
+ };
+*/
+
+TransactionBuilder.prototype._initMultiSig = function(scriptSig, nreq) {
+  var wasUpdated = false;
+  if (scriptSig.chunks.length < nreq + 1) {
+    wasUpdated = true;
+    scriptSig.writeN(0);
+    while (scriptSig.chunks.length <= nreq)
+      scriptSig.chunks.push(util.EMPTY_BUFFER);
+  }
+  return wasUpdated;
+};
+
+
+TransactionBuilder.prototype._isSignedWithKey = function(wk, scriptSig, txSigHash, nreq) {
+  var ret=0;
+  for(var i=1; i<=nreq; i++) {
+    var chunk = scriptSig.chunks[i];
+    if (chunk ===0 || chunk.length === 0) continue;
+
+    var sigRaw = new Buffer(chunk.slice(0,chunk.length-1));
+    if(wk.privKey.verifySignatureSync(txSigHash, sigRaw) === true) {
+      ret=true;
+    }
+  }
+  return ret;
+};
+
+TransactionBuilder.prototype._chunkIsEmpty = function(chunk) {
+  return chunk === 0 ||  // when serializing and back, EMPTY_BUFFER becomes 0
+    buffertools.compare(chunk, util.EMPTY_BUFFER) === 0;
+};
+
+TransactionBuilder.prototype._updateMultiSig = function(wk, scriptSig, txSigHash, nreq) {
+  var wasUpdated = this._initMultiSig(scriptSig, nreq);
+
+  if (this._isSignedWithKey(wk,scriptSig, txSigHash, nreq))
+    return null;
+  
+  // Find an empty slot and sign
+  for(var i=1; i<=nreq; i++) {
+    var chunk = scriptSig.chunks[i];
+    if (!this._chunkIsEmpty(chunk))
+      continue;
+
+    // Add signature
+    var sigRaw  = TransactionBuilder._signHashAndVerify(wk, txSigHash);
+    var sigType = new Buffer(1);
+    sigType[0]  = this.signhash;
+    var sig     = Buffer.concat([sigRaw, sigType]);
+    scriptSig.chunks[i] = sig;
+    scriptSig.updateBuffer();
+    wasUpdated=true;
+    break;
+  }
+  return wasUpdated ? scriptSig : null;
+};
+
+
+TransactionBuilder.prototype._multiFindKey = function(walletKeyMap,pubKeyHash) {
+  var wk;
+  [ networks.livenet, networks.testnet].forEach(function(n) {
+    [ n.addressPubkey, n.addressScript].forEach(function(v) {
+      var a = new Address(v,pubKeyHash);
+      if (!wk && walletKeyMap[a]) {
+        wk = walletKeyMap[a];
+      }
+    });
+  });
+
+  return wk;
+};
+
+
+
+TransactionBuilder.prototype._countMultiSig = function(script) {
+  var nsigs = 0;
+  for (var i = 1; i < script.chunks.length; i++)
+    if (!this._chunkIsEmpty(script.chunks[i]))
+      nsigs++;
+  
+  return nsigs;
+};
+
+
+TransactionBuilder.prototype.countInputMultiSig = function(i) {
+  var s = new Script(this.tx.ins[i].s);
+  if (!s.chunks.length || s.chunks[0] !== 0)
+    return 0;    // does not seems multisig
+
+  return this._countMultiSig(s);
+};
+
+TransactionBuilder.prototype._signMultiSig = function(walletKeyMap, input, txSigHash) {
+  var pubkeys = input.scriptPubKey.capture(),
+    nreq    = input.scriptPubKey.chunks[0] - 80, //see OP_2-OP_16
+    l = pubkeys.length,
+    originalScriptBuf = this.tx.ins[input.i].s;
+
+  var scriptSig = new Script (originalScriptBuf);
+
+  for(var j=0; j<l && this._countMultiSig(scriptSig)<nreq; j++) {
+
+    var pubKeyHash = util.sha256ripe160(pubkeys[j]);
+    var wk = this._multiFindKey(walletKeyMap, pubKeyHash);
+    if (!wk) continue;
+
+    var newScriptSig = this._updateMultiSig(wk, scriptSig, txSigHash, nreq);
+    if (newScriptSig)
+      scriptSig = newScriptSig;
+  }
+
+  return {
+    isFullySigned: this._countMultiSig(scriptSig) === nreq,
+    script: scriptSig.getBuffer(),
+  };
+};
+ 
+var fnToSign = {};
+
+
+TransactionBuilder.prototype._signScriptHash = function(walletKeyMap, input, txSigHash) {
+  var originalScriptBuf = this.tx.ins[input.i].s;
+
+
+  if (!this.hashToScriptMap)
+    throw new Error('hashToScriptMap not set');
+
+  var scriptHex = this.hashToScriptMap[input.address];
+  if (!scriptHex) return;
+
+  var script          = new Script(new Buffer(scriptHex,'hex'));
+  var scriptType      = script.classify();
+  var scriptPubKeyHex = script.getBuffer().toString('hex');
+
+  if (!fnToSign[scriptType])
+    throw new Error('dont know how to sign p2sh script type'+ script.getRawOutType());
+
+  var newInput = {
+    address: 'TODO', // if p2pkubkeyhash -> get the address
+    i: input.i,
+    scriptPubKey: script,
+    scriptPubKeyHex: scriptPubKeyHex ,
+    scriptType: scriptType,
+  };
+
+  var txSigHash2 = this.tx.hashForSignature( script, input.i, this.signhash);
+  var ret =  fnToSign[scriptType].call(this, walletKeyMap, newInput, txSigHash2);
+
+  var rc =1; //TODO : si alguno firmó...
+  if (ret.script) {
+
+console.log('[TransactionBuilder.js.634] IN'); //TODO
+    var scriptSig = new Script(originalScriptBuf);
+    var len = scriptSig.chunks.length;
+    var scriptBufNotAlreadyAppended = scriptSig.chunks[len-1] !== undefined && (typeof scriptSig.chunks[len-1] == "number" || scriptSig.chunks[len-1].toString('hex') != scriptBuf.toString('hex'));
+    if (rc > 0 && scriptBufNotAlreadyAppended) {
+      scriptSig.chunks.push(scriptBuf);
+      scriptSig.updateBuffer();
+      ret.script =  scriptSig.getBuffer();
+    }
+  
+    if (scriptType == Script.TX_MULTISIG && scriptSig.finishedMultiSig())
+    {
+      scriptSig.removePlaceHolders();
+      scriptSig.prependOp0();
+      ret.script = scriptSig.getBuffer();
+    }
+  }
+
+  return ret;
+};
+
+fnToSign[Script.TX_PUBKEYHASH] = TransactionBuilder.prototype._signPubKeyHash;
+fnToSign[Script.TX_PUBKEY]     = TransactionBuilder.prototype._signPubKey;
+fnToSign[Script.TX_MULTISIG]   = TransactionBuilder.prototype._signMultiSig;
+fnToSign[Script.TX_SCRIPTHASH] = TransactionBuilder.prototype._signScriptHash;
 
 TransactionBuilder.prototype.sign = function(keys) {
   this._checkTx();
-
   var tx  = this.tx,
       ins = tx.ins,
-      l   = ins.length;
+      l   = ins.length,
+      walletKeyMap = TransactionBuilder._mapKeys(keys);
 
-  var walletKeyMap = TransactionBuilder._mapKeys(keys);
+
 
   for (var i = 0; i < l; i++) {
-    var im = this.inputMap[i];
-    if (typeof im === 'undefined') continue;
-    var wk        = walletKeyMap[im.address];
-    if (!wk) continue;
+    var input = this.inputMap[i];
 
-    var scriptBuf = new Buffer(im.scriptPubKey, 'hex');
+    var txSigHash = this.tx.hashForSignature(
+      input.scriptPubKey, i, this.signhash);
 
-//TODO: support p2sh
-    var s = new Script(scriptBuf);
-    TransactionBuilder._checkSupportedScriptType(s);
-
-    var txSigHash = this.tx.hashForSignature(s, i, this.signhash);
-    var sigRaw    = TransactionBuilder._signHashAndVerify(wk, txSigHash);
-    var sigType   = new Buffer(1);
-    sigType[0]    = this.signhash;
-    var sig       = Buffer.concat([sigRaw, sigType]);
-
-    var scriptSig = new Script();
-    scriptSig.chunks.push(sig);
-    scriptSig.chunks.push(wk.privKey.public);
-    scriptSig.updateBuffer();
-    tx.ins[i].s = scriptSig.getBuffer();
-    this.inputsSigned++;
+    var ret = fnToSign[input.scriptType].call(this, walletKeyMap, input, txSigHash);
+    if (ret && ret.script) {
+      tx.ins[i].s = ret.script; //esto no aqui TODO
+      if (ret.isFullySigned) this.inputsSigned++;
+    }
   }
   return this;
 };
+
+// [addr -> script]
+TransactionBuilder.prototype.setHashToScriptMap = function(hashToScriptMap) {
+  this.hashToScriptMap= hashToScriptMap;
+
+  return this;
+};
+
 
 TransactionBuilder.prototype.isFullySigned = function() {
   return this.inputsSigned === this.tx.ins.length;

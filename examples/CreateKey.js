@@ -3,12 +3,12 @@
 
 
 var run = function() {
-  // Replace '../bitcore' with 'bitcore' if you use this code elsewhere.
+  // replace '../bitcore' with 'bitcore' if you use this code elsewhere.
   var bitcore = require('../bitcore');
   var networks = require('../networks');
   var WalletKey = bitcore.WalletKey;
 
-  var opts = {network: networks.livenet};
+  var opts = {network: networks.testnet};
 
   function print(wk) {
 
