@@ -16,21 +16,21 @@ var run = function() {
   var utxos = [
     {
     address: "n2hoFVbPrYQf7RJwiRy1tkbuPPqyhAEfbp",
-    txid: "ff5c8b4912f6d056f0cf8431ec27032a73df22c167726267dd4cc0d7817a1e7d",
+    txid: "ba20653648a896ae95005b8f52847935a7313da06cd7295bb2cfc8b5c1b36c71",
     vout: 1,
     ts: 1396290442,
     scriptPubKey: "76a914e867aad8bd361f57c50adc37a0c018692b5b0c9a88ac",
-    amount: 0.5799,
+    amount: 0.5298,
     confirmations: 7
   }
   ];
 
   var privs =  [
-    "cP6JBHuQf7yqeqtdKRd22ibF3VehDv7G6BdzxSNABgrv3jFJUGoN",
-    "cQfRwF7XLSM5xGUpF8PZvob2MZyULvZPA2j5cat2RKDJrja7FtCZ",
-    "cUkYub4jtFVYymHh38yMMW36nJB4pXG5Pzd5QjResq79kAndkJcg",
-    "cMyBgowsyrJRufoKWob73rMQB1PBqDdwFt8z4TJ6APN2HkmX1Ttm",
-    "cN9yZCom6hAZpHtCp8ovE1zFa7RqDf3Cr4W6AwH2tp59Jjh9JcXu",
+    "cMpKwGr5oxEacN95WFKNEq6tTcvi11regFwS3muHvGYVxMPJX8JA",
+    "cVf32m9MR4vxcPwKNJuPepUe8XrHD2z63eCk76d6njRGyCkXpkSM",
+    "cQ2sVRFX4jQYMLhWyzz6jTQ2xju51P36968ecXnPhRLKLH677eKR",
+    "cSw7x9ERcmeWCU3yVBT6Nz7b9JiZ5yjUB7JMhBUv9UM7rSaDpwX9",
+    "cRQBM8qM4ZXJGP1De4D5RtJm7Q6FNWQSMx7YExxzgn2ehjM3haxW",
   ];
 
   var pubkeys = []
@@ -49,6 +49,8 @@ var run = function() {
   var info = Builder.infoForP2sh(opts, 'testnet');
   var p2shScript = info.scriptBufHex;
   var p2shAddress = info.address;
+
+
   var outs = [{address:p2shAddress, amount:0.05}];
   var tx = new Builder(opts)
     .setUnspent(utxos)
@@ -56,8 +58,11 @@ var run = function() {
     .sign([input.priv])
     .build();
   var txHex =  tx.serialize().toString('hex');
+
+
+  console.log('p2sh address: ' + p2shAddress); //TODO
   console.log('1) SEND TO P2SH TX: ', txHex);
-  console.log('[this example originally generated TXID: ba20653648a896ae95005b8f52847935a7313da06cd7295bb2cfc8b5c1b36c71 on testnet]\n\n\thttp://test.bitcore.io/tx/ba20653648a896ae95005b8f52847935a7313da06cd7295bb2cfc8b5c1b36c71\n\n');
+  console.log('[this example originally generated TXID: 8675a1f7ab0c2eeec2ff2def539446d1942efffd468319107429b894e60ecac3 on testnet]\n\n\thttp://test.bitcore.io/tx/8675a1f7ab0c2eeec2ff2def539446d1942efffd468319107429b894e60ecac3\n\n');
 
   //save scriptPubKey
   var scriptPubKey = tx.outs[0].s.toString('hex');

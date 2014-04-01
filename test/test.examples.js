@@ -10,7 +10,11 @@ var examples = [
   'PeerManager',
   'Rpc',
   'SendTx',
-  'CreateAndSignTx',
+  'CreateScript',
+  'CreateKey',
+  'CreateAndSignTx-Multisig',
+  'CreateAndSignTx-PayToPubkeyHash',
+  'CreateAndSignTx-PayToScriptHash',
   'Script',
 ];
 
