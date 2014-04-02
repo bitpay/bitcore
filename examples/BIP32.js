@@ -45,7 +45,7 @@ var run = function() {
   console.log('m/0/3/5 extended public key: ' + bip32.derive('m/0/3/5').extendedPublicKeyString());
   console.log();
 
-  console.log('5) Make new bip32 from knowan derived public key');
+  console.log('5) Make new bip32 from known derived public key');
   var knownPublicKey = 'xpub6CZei1p2zk68UwkcBDqzRonLHJWAiPZZ58sMgHJAn9fmpmnPayVEAvAs3XvTSUMZ1J8dNaxnv4wnt7YpRKr6BsqeWbW8msqeuuhiSzsQEC3';
   var bip32 = new BIP32(knownPublicKey);
   console.log('master extended private key: cannot derive');
