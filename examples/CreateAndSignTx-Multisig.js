@@ -17,11 +17,11 @@ var run = function() {
   var utxos = [
     {
     address: input.addr,
-    txid: "a2a1b0bfbbe769253787d83c097adf61e6d77088e295249e9c3f1ca8a035c639",
-    vout: 0,
+    txid: "39c71ebda371f75f4b854a720eaf9898b237facf3c2b101b58cd4383a44a6adc",
+    vout: 1,
     ts: 1396288753,
     scriptPubKey: "76a914e867aad8bd361f57c50adc37a0c018692b5b0c9a88ac",
-    amount: 0.63,
+    amount: 0.4296,
     confirmations: 2
   }
   ];
@@ -50,7 +50,7 @@ var run = function() {
     .build();
   var txHex =  tx.serialize().toString('hex');
   console.log('1) SEND TO MULSISIG TX: ', txHex);
-  console.log('[this example originally generated TXID: ff5c8b4912f6d056f0cf8431ec27032a73df22c167726267dd4cc0d7817a1e7d on testnet]\n\n\thttp://test.bitcore.io/tx/ff5c8b4912f6d056f0cf8431ec27032a73df22c167726267dd4cc0d7817a1e7d\n\n');
+  console.log('[this example originally generated TXID: e4bc22d8c519d3cf848d710619f8480be56176a4a6548dfbe865ab3886b578b5 on testnet]\n\n\thttp://test.bitcore.io/tx/e4bc22d8c519d3cf848d710619f8480be56176a4a6548dfbe865ab3886b578b5\n\n');
 
 
   //save scriptPubKey
@@ -63,7 +63,7 @@ var run = function() {
   var utxos2 = [
     {
     address: input.addr,
-    txid: "ff5c8b4912f6d056f0cf8431ec27032a73df22c167726267dd4cc0d7817a1e7d",
+    txid: "e4bc22d8c519d3cf848d710619f8480be56176a4a6548dfbe865ab3886b578b5",
     vout: 0,
     ts: 1396288753,
     scriptPubKey: scriptPubKey, 
@@ -84,9 +84,9 @@ var run = function() {
 
   var txHex =  tx.serialize().toString('hex');
   console.log('2) REDEEM SCRIPT: ', txHex);
-console.log('=> Is signed status:', b.isFullySigned(), b.countInputMultiSig(0) );
+console.log('=> Is signed status:', b.isFullySigned(), tx.countInputMissingSignatures(0) );
 
-  console.log('[this example originally generated TXID: 2813c5a670d2c9d0527718f9d0ea896c78c3c8fc57b409e67308744fc7a7a98e on testnet]\n\n\thttp://test.bitcore.io/tx/2813c5a670d2c9d0527718f9d0ea896c78c3c8fc57b409e67308744fc7a7a98e');
+  console.log('[this example originally generated TXID: 1eb388977b2de99562eb0fbcc661a100eaffed99c53bfcfebe5a087002039b83 on testnet]\n\n\thttp://test.bitcore.io/tx/1eb388977b2de99562eb0fbcc661a100eaffed99c53bfcfebe5a087002039b83');
 
 };
 

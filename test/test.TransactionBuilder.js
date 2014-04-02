@@ -11,7 +11,9 @@ var TransactionBuilder = bitcore.TransactionBuilder;
 var In;
 var Out;
 var Script = bitcore.Script;
+var WalletKey = bitcore.WalletKey;
 var util = bitcore.util;
+var networks = bitcore.networks;
 var buffertools = require('buffertools');
 var testdata = testdata || require('./testdata');
 
@@ -484,16 +486,26 @@ describe('TransactionBuilder', function() {
     var k2 = testdata.dataUnspentSign.keyStringsMulti.slice(1,2);
     var k3 = testdata.dataUnspentSign.keyStringsMulti.slice(2,3);
 
-    b.countInputMultiSig(0).should.equal(0);
+    var tx = b.build();
+
+    b.isFullySigned().should.equal(false);
+
+    // This is cumbersome. Before sign, missing is 1. Need to be changed in the future
+    tx.countInputMissingSignatures(0).should.equal(1);
+    b.sign(['cSq7yo4fvsbMyWVN945VUGUWMaSazZPWqBVJZyoGsHmNq6W4HVBV']);
+    tx.countInputMissingSignatures(0).should.equal(1);
+
     b.sign(k1);
+    tx.countInputMissingSignatures(0).should.equal(2);
     b.isFullySigned().should.equal(false);
-    b.countInputMultiSig(0).should.equal(1);
+
     b.sign(k2);
+    tx.countInputMissingSignatures(0).should.equal(1);
     b.isFullySigned().should.equal(false);
-    b.countInputMultiSig(0).should.equal(2);
+
     b.sign(k3);
+    tx.countInputMissingSignatures(0).should.equal(0);
     b.isFullySigned().should.equal(true);
-    b.countInputMultiSig(0).should.equal(3);
   });
 
 
@@ -511,20 +523,162 @@ describe('TransactionBuilder', function() {
 
     var k1 = testdata.dataUnspentSign.keyStringsMulti.slice(0,1);
     var k23 = testdata.dataUnspentSign.keyStringsMulti.slice(1,3);
+    var tx = b.build();
 
-    b.countInputMultiSig(0).should.equal(0);
+    tx.countInputMissingSignatures(0).should.equal(1);
     b.sign(k1);
     b.isFullySigned().should.equal(false);
-    b.countInputMultiSig(0).should.equal(1);
+    tx.countInputMissingSignatures(0).should.equal(2);
     b.sign(k1);
     b.isFullySigned().should.equal(false);
-    b.countInputMultiSig(0).should.equal(1);
+    tx.countInputMissingSignatures(0).should.equal(2);
     b.sign(k1);
     b.isFullySigned().should.equal(false);
-    b.countInputMultiSig(0).should.equal(1);
-
+    tx.countInputMissingSignatures(0).should.equal(2);
     b.sign(k23);
     b.isFullySigned().should.equal(true);
-    b.countInputMultiSig(0).should.equal(3);
+    tx.countInputMissingSignatures(0).should.equal(0);
   });
+
+
+  var getInfoForP2sh = function () {
+    var privs =  testdata.dataUnspentSign.keyStringsP2sh;
+    var pubkeys = [];
+    privs.forEach(function(p) {
+      var wk = new WalletKey({network: networks.testnet});
+      wk.fromObj({priv: p});
+      pubkeys.push(bitcore.buffertools.toHex(wk.privKey.public));
+    });
+
+    return {
+      privkeys: privs,
+      pubkeys: pubkeys,
+    };
+  };
+
+  var getP2shBuilder = function(setMap) {
+    var network = 'testnet';
+    var opts = {
+      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
+    };
+    var data = getInfoForP2sh();
+    // multisig p2sh
+    var p2shOpts = {nreq:3, pubkeys:data.pubkeys, amount:0.05};
+    var info = TransactionBuilder.infoForP2sh(p2shOpts, network);
+
+    var outs = outs || [{
+      address: info.address,
+      amount: 0.08
+    }];
+   var b =  new TransactionBuilder(opts)
+      .setUnspent(testdata.dataUnspentSign.unspentP2sh)
+      .setOutputs(outs);
+
+    if (setMap) {
+      var hashMap = {};
+      hashMap[info.address]=info.scriptBufHex;
+      b.setHashToScriptMap(hashMap);
+    }
+    return b;
+  };
+
+  it('should fail to sign a p2sh/multisign tx if none script map was given', function() {
+    var b = getP2shBuilder();     
+    (function() {b.sign(testdata.dataUnspentSign.keyStringsP2sh);}).should.throw();
+  });
+
+  it('should sign a p2sh/multisign tx', function() {
+    var b = getP2shBuilder(1);     
+    b.sign(testdata.dataUnspentSign.keyStringsP2sh);
+    b.isFullySigned().should.equal(true);
+    var tx = b.build();
+    tx.ins.length.should.equal(1);
+    tx.outs.length.should.equal(2);
+    tx.isComplete().should.equal(true);
+  });
+
+
+  it('should sign in steps a p2sh/multisign tx', function() {
+    var b = getP2shBuilder(1);     
+
+    var k1 = testdata.dataUnspentSign.keyStringsP2sh.slice(0,1);
+    var k2 = testdata.dataUnspentSign.keyStringsP2sh.slice(1,2);
+    var k5 = testdata.dataUnspentSign.keyStringsP2sh.slice(4,5);
+    b.isFullySigned().should.equal(false);
+
+    b.sign(k1);
+    b.isFullySigned().should.equal(false);
+
+    var tx = b.build();
+    tx.ins.length.should.equal(1);
+    tx.outs.length.should.equal(2);
+    tx.isComplete().should.equal(false);
+
+    // Sign with the same
+    b.sign(k1);
+    b.isFullySigned().should.equal(false);
+    tx.isComplete().should.equal(false);
+
+    // Sign with k5
+    b.sign(k5);
+///
+    b.isFullySigned().should.equal(false);
+    tx.isComplete().should.equal(false);
+
+    // Sign with same
+    b.sign(k5);
+    b.isFullySigned().should.equal(false);
+    tx.isComplete().should.equal(false);
+
+
+    // Sign k2
+    b.sign(k2);
+    b.isFullySigned().should.equal(true);
+    tx.isComplete().should.equal(true);
+  });
+
+  it('should sign in steps a p2sh/p2pubkeyhash tx', function() {
+    var priv = 'cMpKwGr5oxEacN95WFKNEq6tTcvi11regFwS3muHvGYVxMPJX8JA';
+    var network = 'testnet';
+    var opts = {
+      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
+    };
+    // p2hash/ p2sh
+    var p2shOpts = {address:'mgwqzy6pF5BSc72vxHBFSnnhNEBcV4TJzV', amount:0.05};
+    var info = TransactionBuilder.infoForP2sh(p2shOpts, network);
+
+    //addr: 2NAwCQ1jPYPrSsyBQvfP6AJ6d6SSxnHsZ4e
+    //hash: de09d4a9c7e53e08043efc74d14490dbcf03b0ba
+    //
+    var outs = outs || [{
+      address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
+      amount: 0.08
+    }];
+    //info.scriptBufHex,
+
+    var s =  TransactionBuilder.scriptForAddress(info.address)
+                            .getBuffer().toString('hex');
+
+    var b =  new TransactionBuilder(opts)
+      .setUnspent([{
+      "address": info.address,
+      "scriptPubKey": s, 
+      "txid": "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1",
+      "vout": 1,
+      "amount": 1,
+      "confirmations":7
+      }])
+      .setOutputs(outs);
+
+    var hashMap = {};
+    hashMap[info.address]=info.scriptBufHex;
+    b.setHashToScriptMap(hashMap);
+    b.sign([priv]);
+    b.isFullySigned().should.equal(true);
+    var tx = b.build();
+    tx.ins.length.should.equal(1);
+    tx.outs.length.should.equal(2);
+    tx.isComplete().should.equal(true);
+  });
+
 });

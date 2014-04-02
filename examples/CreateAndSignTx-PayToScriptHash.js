@@ -16,11 +16,11 @@ var run = function() {
   var utxos = [
     {
     address: "n2hoFVbPrYQf7RJwiRy1tkbuPPqyhAEfbp",
-    txid: "ba20653648a896ae95005b8f52847935a7313da06cd7295bb2cfc8b5c1b36c71",
+    txid: "e4bc22d8c519d3cf848d710619f8480be56176a4a6548dfbe865ab3886b578b5",
     vout: 1,
     ts: 1396290442,
     scriptPubKey: "76a914e867aad8bd361f57c50adc37a0c018692b5b0c9a88ac",
-    amount: 0.5298,
+    amount:  0.3795,
     confirmations: 7
   }
   ];
@@ -57,12 +57,13 @@ var run = function() {
     .setOutputs(outs)
     .sign([input.priv])
     .build();
+
   var txHex =  tx.serialize().toString('hex');
 
 
-  console.log('p2sh address: ' + p2shAddress); //TODO
-  console.log('1) SEND TO P2SH TX: ', txHex);
-  console.log('[this example originally generated TXID: 8675a1f7ab0c2eeec2ff2def539446d1942efffd468319107429b894e60ecac3 on testnet]\n\n\thttp://test.bitcore.io/tx/8675a1f7ab0c2eeec2ff2def539446d1942efffd468319107429b894e60ecac3\n\n');
+  console.log('## p2sh address: ' + p2shAddress); //TODO
+  console.log('\n1) SEND TO P2SH TX: ', txHex);
+  console.log('[this example originally generated TXID: c2e50d1c8c581d8c4408378b751633f7eb86687fc5f0502be7b467173f275ae7 on testnet]\n\n\thttp://test.bitcore.io/tx/c2e50d1c8c581d8c4408378b751633f7eb86687fc5f0502be7b467173f275ae7\n\n');
 
   //save scriptPubKey
   var scriptPubKey = tx.outs[0].s.toString('hex');
@@ -74,12 +75,12 @@ var run = function() {
   var utxos2 = [
     {
     address: p2shAddress,
-    txid: "ba20653648a896ae95005b8f52847935a7313da06cd7295bb2cfc8b5c1b36c71",
+    txid: "c2e50d1c8c581d8c4408378b751633f7eb86687fc5f0502be7b467173f275ae7",
     vout: 0,
-    ts: 1396288753,
-    scriptPubKey: scriptPubKey, 
+    ts: 1396375187,
+    scriptPubKey: scriptPubKey,
     amount: 0.05,
-    confirmations: 2
+    confirmations: 1
   }
   ];
 
@@ -94,17 +95,41 @@ var run = function() {
     .setOutputs(outs)
     .sign(privs);
 
-
   tx= b.build();
 
 
+console.log('Builder:');
+console.log('\tSignatures:' + tx.countInputMissingSignatures(0) );
+console.log('\t#isFullySigned:' + b.isFullySigned() );
+
+console.log('TX:');
+console.log('\t #isComplete:' + tx.isComplete() ); 
+
   var txHex =  tx.serialize().toString('hex');
   console.log('2) REDEEM SCRIPT: ', txHex);
-console.log('=> Is signed status:', b.isFullySigned(), b.countInputMultiSig(0) );
+  console.log('[this example originally generated TXID: 8284aa3b6f9c71c35ecb1d61d05ae78c8ca1f36940eaa615b50584dfc3d95cb7 on testnet]\n\n\thttp://test.bitcore.io/tx/8284aa3b6f9c71c35ecb1d61d05ae78c8ca1f36940eaa615b50584dfc3d95cb7\n\n');
 
-  console.log('[this example originally generated TXID: 2813c5a670d2c9d0527718f9d0ea896c78c3c8fc57b409e67308744fc7a7a98e on testnet]\n\n\thttp://test.bitcore.io/tx/2813c5a670d2c9d0527718f9d0ea896c78c3c8fc57b409e67308744fc7a7a98e');
+/*
+  // To send TX with RPC:
+  var RpcClient = bitcore.RpcClient;
+  var config = {
+    protocol: 'http',
+    user: 'user',
+    pass: 'pass',
+    host: '127.0.0.1',
+    port: '18332',
+  };
+  var rpc = new RpcClient(config);
+  rpc.sendRawTransaction(txHex, function(err, ret) {
+    console.log('err', err); //TODO
+    console.log('ret', ret); //TODO
+    process.exit(-1);
+  });
+};
+*/
 
 };
+
 
 // This is just for browser & mocha compatibility
 if (typeof module !== 'undefined') {
@@ -115,6 +140,3 @@ if (typeof module !== 'undefined') {
 } else {
   run();
 }
-
-////
-
