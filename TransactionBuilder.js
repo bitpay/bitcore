@@ -115,12 +115,12 @@ function TransactionBuilder(opts) {
 }
 
 /*
- * _scriptForAddress
+ * scriptForAddress
  *
  *  Returns a scriptPubKey for the given address type
  */
 
-TransactionBuilder._scriptForAddress = function(addressString) {
+TransactionBuilder.scriptForAddress = function(addressString) {
 
   var livenet = networks.livenet;
   var testnet = networks.testnet;
@@ -154,7 +154,7 @@ TransactionBuilder._scriptForPubkeys = function(out) {
 TransactionBuilder._scriptForOut = function(out) {
   var ret;
   if (out.address)
-    ret = this._scriptForAddress(out.address);
+    ret = this.scriptForAddress(out.address);
   else if (out.pubkeys || out.nreq || out.nreq > 1)
     ret = this._scriptForPubkeys(out);
   else
@@ -201,8 +201,7 @@ TransactionBuilder.prototype._setInputMap = function() {
                       ' Type:' + scriptPubKey.getRawOutType());
 
     inputMap.push({
-      address: utxo.address, //TODO que pasa en multisig normal?
-      scriptPubKeyHex: utxo.scriptPubKey,
+      address: utxo.address,
       scriptPubKey: scriptPubKey,
       scriptType: scriptType,
       i: i,
@@ -394,7 +393,6 @@ TransactionBuilder.prototype.setOutputs = function(outs) {
 };
 
 TransactionBuilder._mapKeys = function(keys) {
-
   //prepare keys
   var walletKeyMap = {};
   var l = keys.length;
@@ -437,10 +435,43 @@ TransactionBuilder.prototype._checkTx = function() {
     throw new Error('tx is not defined');
 };
 
+
+TransactionBuilder.prototype._multiFindKey = function(walletKeyMap,pubKeyHash) {
+  var wk;
+  [ networks.livenet, networks.testnet].forEach(function(n) {
+    [ n.addressPubkey, n.addressScript].forEach(function(v) {
+      var a = new Address(v,pubKeyHash);
+      if (!wk && walletKeyMap[a]) {
+        wk = walletKeyMap[a];
+      }
+    });
+  });
+
+  return wk;
+};
+
+TransactionBuilder.prototype._findWalletKey = function(walletKeyMap, input) {
+  var wk;
+
+  if (input.address) {
+    wk        = walletKeyMap[input.address];
+  }
+  else if (input.pubKeyHash) {
+    wk             = this._multiFindKey(walletKeyMap, input.pubKeyHash);
+  }
+  else if (input.pubKeyBuf) {
+    var pubKeyHash = util.sha256ripe160(input.pubKeyBuf);
+    wk             = this._multiFindKey(walletKeyMap, pubKeyHash);
+  } else {
+    throw new Error('no infomation at input to find keys');
+  }
+  return wk;
+};
+
 TransactionBuilder.prototype._signPubKey = function(walletKeyMap, input, txSigHash) {
   if (this.tx.ins[input.i].s.length > 0) return {};
 
-  var wk        = walletKeyMap[input.address];
+  var wk        = this._findWalletKey(walletKeyMap, input);
   if (!wk) return;
 
   var sigRaw    = TransactionBuilder._signHashAndVerify(wk, txSigHash);
@@ -451,14 +482,14 @@ TransactionBuilder.prototype._signPubKey = function(walletKeyMap, input, txSigHa
   var scriptSig = new Script();
   scriptSig.chunks.push(sig);
   scriptSig.updateBuffer();
-  return {isFullySigned: true, script: scriptSig.getBuffer()};
+  return {isFullySigned: true, signaturesAdded: true, script: scriptSig.getBuffer()};
 };
 
 TransactionBuilder.prototype._signPubKeyHash = function(walletKeyMap, input, txSigHash) {
 
   if (this.tx.ins[input.i].s.length > 0) return {};
 
-  var wk        = walletKeyMap[input.address];
+  var wk        = this._findWalletKey(walletKeyMap, input);
   if (!wk) return;
 
   var sigRaw    = TransactionBuilder._signHashAndVerify(wk, txSigHash);
@@ -470,18 +501,16 @@ TransactionBuilder.prototype._signPubKeyHash = function(walletKeyMap, input, txS
   scriptSig.chunks.push(sig);
   scriptSig.chunks.push(wk.privKey.public);
   scriptSig.updateBuffer();
-  return {isFullySigned: true, script: scriptSig.getBuffer()};
+  return {isFullySigned: true, signaturesAdded: true, script: scriptSig.getBuffer()};
 };
 
 // FOR TESTING
-/*
- var _dumpChunks = function (scriptSig, label) {
-   console.log('## DUMP: ' + label + ' ##');
-   for(var i=0; i<scriptSig.chunks.length; i++) {
-     console.log('\tCHUNK ', i, scriptSig.chunks[i]); 
-   }
- };
-*/
+// var _dumpChunks = function (scriptSig, label) {
+//   console.log('## DUMP: ' + label + ' ##');
+//   for(var i=0; i<scriptSig.chunks.length; i++) {
+//     console.log('\tCHUNK ', i, scriptSig.chunks[i]); 
+//   }
+// };
 
 TransactionBuilder.prototype._initMultiSig = function(scriptSig, nreq) {
   var wasUpdated = false;
@@ -514,6 +543,13 @@ TransactionBuilder.prototype._chunkIsEmpty = function(chunk) {
     buffertools.compare(chunk, util.EMPTY_BUFFER) === 0;
 };
 
+
+TransactionBuilder.prototype._chunkIsSignature = function(chunk) {
+  return chunk.length
+    buffertools.compare(chunk, util.EMPTY_BUFFER) === 0;
+};
+
+
 TransactionBuilder.prototype._updateMultiSig = function(wk, scriptSig, txSigHash, nreq) {
   var wasUpdated = this._initMultiSig(scriptSig, nreq);
 
@@ -540,40 +576,6 @@ TransactionBuilder.prototype._updateMultiSig = function(wk, scriptSig, txSigHash
 };
 
 
-TransactionBuilder.prototype._multiFindKey = function(walletKeyMap,pubKeyHash) {
-  var wk;
-  [ networks.livenet, networks.testnet].forEach(function(n) {
-    [ n.addressPubkey, n.addressScript].forEach(function(v) {
-      var a = new Address(v,pubKeyHash);
-      if (!wk && walletKeyMap[a]) {
-        wk = walletKeyMap[a];
-      }
-    });
-  });
-
-  return wk;
-};
-
-
-
-TransactionBuilder.prototype._countMultiSig = function(script) {
-  var nsigs = 0;
-  for (var i = 1; i < script.chunks.length; i++)
-    if (!this._chunkIsEmpty(script.chunks[i]))
-      nsigs++;
-  
-  return nsigs;
-};
-
-
-TransactionBuilder.prototype.countInputMultiSig = function(i) {
-  var s = new Script(this.tx.ins[i].s);
-  if (!s.chunks.length || s.chunks[0] !== 0)
-    return 0;    // does not seems multisig
-
-  return this._countMultiSig(s);
-};
-
 TransactionBuilder.prototype._signMultiSig = function(walletKeyMap, input, txSigHash) {
   var pubkeys = input.scriptPubKey.capture(),
     nreq    = input.scriptPubKey.chunks[0] - 80, //see OP_2-OP_16
@@ -581,30 +583,75 @@ TransactionBuilder.prototype._signMultiSig = function(walletKeyMap, input, txSig
     originalScriptBuf = this.tx.ins[input.i].s;
 
   var scriptSig = new Script (originalScriptBuf);
+  var signaturesAdded = false;
 
-  for(var j=0; j<l && this._countMultiSig(scriptSig)<nreq; j++) {
-
-    var pubKeyHash = util.sha256ripe160(pubkeys[j]);
-    var wk = this._multiFindKey(walletKeyMap, pubKeyHash);
+  for(var j=0; j<l && scriptSig.countMissingSignatures(); j++) {
+    var wk = this._findWalletKey(walletKeyMap, {pubKeyBuf: pubkeys[j]});
     if (!wk) continue;
 
     var newScriptSig = this._updateMultiSig(wk, scriptSig, txSigHash, nreq);
-    if (newScriptSig)
+    if (newScriptSig) {
       scriptSig = newScriptSig;
+      signaturesAdded = true;
+    }
   }
 
   return {
-    isFullySigned: this._countMultiSig(scriptSig) === nreq,
+    isFullySigned:  scriptSig.countMissingSignatures() === 0,
+    signaturesAdded: signaturesAdded,
     script: scriptSig.getBuffer(),
   };
 };
  
 var fnToSign = {};
 
+TransactionBuilder.prototype._scriptIsAppended = function(script, scriptToAddBuf) {
+  var len = script.chunks.length;
+
+  if (script.chunks[len-1] === undefined)
+    return false;
+  if (typeof script.chunks[len-1] === 'number')
+    return false;
+  if (buffertools.compare(script.chunks[len-1] , scriptToAddBuf) !==0 )
+    return false;
+
+  return true;
+};
+
+TransactionBuilder.prototype._addScript = function(scriptBuf, scriptToAddBuf) {
+  var s = new Script(scriptBuf);
+
+  if (!this._scriptIsAppended(s, scriptToAddBuf)) {
+    s.chunks.push(scriptToAddBuf);
+    s.updateBuffer();
+  }
+  return s.getBuffer();
+};
+ 
+TransactionBuilder.prototype._getInputForP2sh = function(script, index) {
+  var scriptType = script.classify();
+  // pubKeyHash is needed for TX_PUBKEYHASH and TX_PUBKEY to retrieve the keys.
+  var pubKeyHash;
+  switch(scriptType) {
+    case Script.TX_PUBKEYHASH:
+      pubKeyHash = script.captureOne();
+      break;
+    case Script.TX_PUBKEY:
+      var chunk  = script.captureOne();
+      pubKeyHash = util.sha256ripe160(chunk);
+  }
+
+  return {
+    i: index,
+    pubKeyHash: pubKeyHash,
+    scriptPubKey: script,
+    scriptType: scriptType,
+  };
+};
+
 
 TransactionBuilder.prototype._signScriptHash = function(walletKeyMap, input, txSigHash) {
   var originalScriptBuf = this.tx.ins[input.i].s;
-
 
   if (!this.hashToScriptMap)
     throw new Error('hashToScriptMap not set');
@@ -612,45 +659,20 @@ TransactionBuilder.prototype._signScriptHash = function(walletKeyMap, input, txS
   var scriptHex = this.hashToScriptMap[input.address];
   if (!scriptHex) return;
 
-  var script          = new Script(new Buffer(scriptHex,'hex'));
-  var scriptType      = script.classify();
-  var scriptPubKeyHex = script.getBuffer().toString('hex');
+  var scriptBuf     = new Buffer(scriptHex,'hex');
+  var script        = new Script(scriptBuf);
+  var scriptType    = script.classify();
 
-  if (!fnToSign[scriptType])
-    throw new Error('dont know how to sign p2sh script type'+ script.getRawOutType());
+  if (!fnToSign[scriptType] || scriptType === Script.TX_SCRIPTHASH)
+    throw new Error('dont know how to sign p2sh script type:'+ script.getRawOutType());
 
-  var newInput = {
-    address: 'TODO', // if p2pkubkeyhash -> get the address
-    i: input.i,
-    scriptPubKey: script,
-    scriptPubKeyHex: scriptPubKeyHex ,
-    scriptType: scriptType,
-  };
+  var newInput      = this._getInputForP2sh(script, input.i);
+  var newTxSigHash  = this.tx.hashForSignature( script, newInput.i, this.signhash);
+  var ret           =  fnToSign[scriptType].call(this, walletKeyMap, newInput, newTxSigHash);
 
-  var txSigHash2 = this.tx.hashForSignature( script, input.i, this.signhash);
-  var ret =  fnToSign[scriptType].call(this, walletKeyMap, newInput, txSigHash2);
-
-  var rc =1; //TODO : si alguno firmó...
-  if (ret.script) {
-
-console.log('[TransactionBuilder.js.634] IN'); //TODO
-    var scriptSig = new Script(originalScriptBuf);
-    var len = scriptSig.chunks.length;
-    var scriptBufNotAlreadyAppended = scriptSig.chunks[len-1] !== undefined && (typeof scriptSig.chunks[len-1] == "number" || scriptSig.chunks[len-1].toString('hex') != scriptBuf.toString('hex'));
-    if (rc > 0 && scriptBufNotAlreadyAppended) {
-      scriptSig.chunks.push(scriptBuf);
-      scriptSig.updateBuffer();
-      ret.script =  scriptSig.getBuffer();
-    }
-  
-    if (scriptType == Script.TX_MULTISIG && scriptSig.finishedMultiSig())
-    {
-      scriptSig.removePlaceHolders();
-      scriptSig.prependOp0();
-      ret.script = scriptSig.getBuffer();
-    }
+  if (ret && ret.script && ret.signaturesAdded) {
+    ret.script = this._addScript(ret.script, scriptBuf);
   }
-
   return ret;
 };
 
@@ -676,17 +698,16 @@ TransactionBuilder.prototype.sign = function(keys) {
 
     var ret = fnToSign[input.scriptType].call(this, walletKeyMap, input, txSigHash);
     if (ret && ret.script) {
-      tx.ins[i].s = ret.script; //esto no aqui TODO
+      tx.ins[i].s = ret.script;
       if (ret.isFullySigned) this.inputsSigned++;
     }
   }
   return this;
 };
 
-// [addr -> script]
+// [ { address:scriptHex }]
 TransactionBuilder.prototype.setHashToScriptMap = function(hashToScriptMap) {
   this.hashToScriptMap= hashToScriptMap;
-
   return this;
 };
 

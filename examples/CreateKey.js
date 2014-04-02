@@ -32,7 +32,7 @@ var run = function() {
 
   //Generate from private Key WIF. Compressed status taken from WIF.
   var wk2 = new WalletKey(opts);
-  wk2.fromObj({priv:'cS62Ej4SobZnpFQYN1PEEBr2KWf5sgRYYnELtumcG6WVCfxno39V'});
+  wk2.fromObj({priv:'cMpKwGr5oxEacN95WFKNEq6tTcvi11regFwS3muHvGYVxMPJX8JA'});
   print(wk2);
 
 

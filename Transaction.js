@@ -552,28 +552,28 @@ Transaction.prototype.getSize = function getHash() {
   return this.size;
 };
 
+
+Transaction.prototype.countInputMissingSignatures = function(index) {
+  var ret = 0;
+  var script = new Script(this.ins[index].s);
+  return script.countMissingSignatures();
+};
+
+
+Transaction.prototype.isInputComplete = function(index) {
+  return this.countInputMissingSignatures(index)===0;
+};
+
 Transaction.prototype.isComplete = function() {
   var ret = true;
   var l   = this.ins.length;
 
   for (var i = 0; i < l; i++) {
-    var script = new Script(this.ins[i].s);
-    // Multisig?
-    if (!Buffer.isBuffer(script.chunks[0]) && script.chunks[0] ===0) {
-      for (var i = 1; i < script.chunks.length; i++) {
-        if (buffertools.compare(script.chunks[i], util.EMPTY_BUFFER) === 0){
-          ret = false;
-          break;
-        }
-      }
+    if (!this.isInputComplete(i)){
+      ret = false;
+      break;
     }
-    else {
-      if (buffertools.compare(this.ins[i].s, util.EMPTY_BUFFER) === 0) {
-        ret = false;
-        break;
-      }
-    }
-  };
+  }
 
   return ret;
 };
