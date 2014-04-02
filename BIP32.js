@@ -50,7 +50,7 @@ var BIP32 = function(bytes) {
 
 BIP32.seed = function(bytes, network) {
   if (!network)
-    return false;
+    network = 'livenet';
 
   if (!Buffer.isBuffer(bytes))
     bytes = new Buffer(bytes, 'hex'); //if not buffer, assume hex
