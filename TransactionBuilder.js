@@ -544,12 +544,6 @@ TransactionBuilder.prototype._chunkIsEmpty = function(chunk) {
 };
 
 
-TransactionBuilder.prototype._chunkIsSignature = function(chunk) {
-  return chunk.length
-    buffertools.compare(chunk, util.EMPTY_BUFFER) === 0;
-};
-
-
 TransactionBuilder.prototype._updateMultiSig = function(wk, scriptSig, txSigHash, nreq) {
   var wasUpdated = this._initMultiSig(scriptSig, nreq);
 
