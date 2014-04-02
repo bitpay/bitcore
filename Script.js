@@ -490,7 +490,25 @@ Script.prototype.toHumanReadable = function() {
     }
   }
   return s;
+};
 
+Script.prototype.countMissingSignatures = function() {
+  var ret = 0;
+  if (!Buffer.isBuffer(this.chunks[0]) && this.chunks[0] ===0) {
+    // Multisig, skip first 0x0 
+    for (var i = 1; i < this.chunks.length; i++) {
+      if (this.chunks[i]===0 
+          || buffertools.compare(this.chunks[i], util.EMPTY_BUFFER) === 0){
+        ret++;
+      }
+    }
+  }
+  else {
+    if (buffertools.compare(this.getBuffer(), util.EMPTY_BUFFER) === 0) {
+      ret = 1;
+    }
+  }
+  return ret;
 };
 
 Script.stringToBuffer = function(s) {
