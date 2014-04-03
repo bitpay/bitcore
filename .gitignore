@@ -28,7 +28,7 @@ npm-debug.log
 
 .DS_Store
 public/lib/*
-!public/lib/zeroclipboard
+!public/lib/zeroclipboard/ZeroClipboard.swf
 db/txs/*
 db/txs
 db/testnet/txs/*
