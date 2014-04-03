@@ -298,11 +298,8 @@ var TransactionSignatureSerializer = function(txTo, scriptCode, nIn, nHashType) 
   this.txTo = txTo;
   this.scriptCode = scriptCode;
   this.nIn = nIn;
-  console.log('nHashType '+nHashType);
   this.anyoneCanPay = !!(nHashType & SIGHASH_ANYONECANPAY);
-  console.log('anyoneCanPay ='+this.anyoneCanPay);
   var hashTypeMode = nHashType & 0x1f;
-  console.log('hashTypeMode ='+hashTypeMode);
   this.hashSingle = hashTypeMode === SIGHASH_SINGLE;
   this.hashNone = hashTypeMode === SIGHASH_NONE;
   this.bytes = new Put();
@@ -322,18 +319,13 @@ TransactionSignatureSerializer.prototype.serializeOutput = function(nOutput) {
     this.bytes.varint(out.s.length);
     this.bytes.put(out.s);
   }
-  console.log('after output '+nOutput+': '+buffertools.toHex(this.bytes.buffer()));
 };
 
 // serialize the script
 TransactionSignatureSerializer.prototype.serializeScriptCode = function() {
-  console.log('scriptCode='+this.scriptCode);
   this.scriptCode.findAndDelete(OP_CODESEPARATOR);
-  console.log('scriptCode='+this.scriptCode);
   this.bytes.varint(this.scriptCode.buffer.length);
-  console.log('after varint: '+buffertools.toHex(this.bytes.buffer()));
   this.bytes.put(this.scriptCode.buffer);
-  console.log('after script: '+buffertools.toHex(this.bytes.buffer()));
 };
 
 // serialize an input of txTo
@@ -343,7 +335,6 @@ TransactionSignatureSerializer.prototype.serializeInput = function(nInput) {
 
   // Serialize the prevout
   this.bytes.put(this.txTo.ins[nInput].o);
-  console.log('after prevout: '+buffertools.toHex(this.bytes.buffer()));
 
   // Serialize the script
   if (nInput !== this.nIn) {
@@ -359,7 +350,6 @@ TransactionSignatureSerializer.prototype.serializeInput = function(nInput) {
   } else {
     this.bytes.word32le(this.txTo.ins[nInput].q);
   }
-  console.log('after input '+nInput+': '+buffertools.toHex(this.bytes.buffer()));
 
 };
 
@@ -368,28 +358,21 @@ TransactionSignatureSerializer.prototype.serializeInput = function(nInput) {
 TransactionSignatureSerializer.prototype.serialize = function() {
   // serialize nVersion
   this.bytes.word32le(this.txTo.version);
-  console.log(buffertools.toHex(this.bytes.buffer())+' after version');
   // serialize vin
   var nInputs = this.anyoneCanPay ? 1 : this.txTo.ins.length;
   this.bytes.varint(nInputs);
-  console.log(buffertools.toHex(this.bytes.buffer())+' after nInputs');
   for (var nInput = 0; nInput < nInputs; nInput++) {
     this.serializeInput(nInput);
   }
-  console.log(buffertools.toHex(this.bytes.buffer())+' after inputs');
   // serialize vout
   var nOutputs = this.hashNone ? 0 : (this.hashSingle ? this.nIn + 1 : this.txTo.outs.length);
   this.bytes.varint(nOutputs);
-  console.log(buffertools.toHex(this.bytes.buffer())+' after nOutputs');
-  console.log('nOutputs = '+nOutputs);
   for (var nOutput = 0; nOutput < nOutputs; nOutput++) {
     this.serializeOutput(nOutput);
   }
-  console.log(buffertools.toHex(this.bytes.buffer())+' after outputs');
 
   // serialize nLockTime
   this.bytes.word32le(this.txTo.lock_time);
-  console.log(buffertools.toHex(this.bytes.buffer())+' after lock_time');
 };
 
 TransactionSignatureSerializer.prototype.buffer = function() {
