@@ -55,6 +55,15 @@ describe('util', function() {
     });
   });
 
+  describe('#twoSha256', function() {
+    var data = new Buffer('907c2bc503ade11cc3b04eb2918b6f547b0630ab569273824748c87ea14b0696526c66ba740200000000fd1f9bdd4ef073c7afc4ae00da8a66f429c917a0081ad1e1dabce28d373eab81d8628de80200000000ad042b5f25efb33beec9f3364e8a9139e8439d9d7e26529c3c30b6c3fd89f8684cfd68ea0200000000599ac2fe02a526ed040000000008535300516352515164370e010000000003006300ab2ec2291fe51c6f', 'hex');
+    it('should work for ' + data, function() {
+      var twoSha256 = buffertools.toHex(buffertools.reverse(coinUtil.twoSha256(data)));
+      var expected = '31af167a6cf3f9d5f6875caa4d31704ceb0eba078d132b78dab52c3b8997317e';
+      twoSha256.should.equal(expected);
+    });
+  });
+
   describe('#sha256ripe160', function() {
     var pk = '03d95e184cce34c3cfa58e9a277a09a7c5ed1b2a8134ea1e52887bc66fa3f47071'
     it('should work for ' + pk, function() {

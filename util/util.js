@@ -454,6 +454,7 @@ var reverseBytes32 = exports.reverseBytes32 = function(data) {
   return put.buffer();
 };
 
+
 var getVarIntSize = exports.getVarIntSize = function getVarIntSize(i) {
 
   if (i < 253) {
