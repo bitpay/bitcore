@@ -331,14 +331,18 @@ TransactionSignatureSerializer.prototype.serializeOutput = function(nOutput) {
     this.bytes.varint(out.s.length);
     this.bytes.put(out.s);
   }
-
+  console.log('after output '+nOutput+': '+buffertools.toHex(this.bytes.buffer()));
 };
 
 // serialize the script
 TransactionSignatureSerializer.prototype.serializeScriptCode = function() {
+  console.log('scriptCode='+this.scriptCode);
   this.scriptCode.findAndDelete(OP_CODESEPARATOR);
+  console.log('scriptCode='+this.scriptCode);
   this.bytes.varint(this.scriptCode.buffer.length);
+  console.log('after varint: '+buffertools.toHex(this.bytes.buffer()));
   this.bytes.put(this.scriptCode.buffer);
+  console.log('after script: '+buffertools.toHex(this.bytes.buffer()));
 };
 
 // serialize an input of txTo
@@ -348,6 +352,7 @@ TransactionSignatureSerializer.prototype.serializeInput = function(nInput) {
 
   // Serialize the prevout
   this.bytes.put(this.txTo.ins[nInput].o);
+  console.log('after prevout: '+buffertools.toHex(this.bytes.buffer()));
 
   // Serialize the script
   if (nInput !== this.nIn) {
@@ -363,6 +368,7 @@ TransactionSignatureSerializer.prototype.serializeInput = function(nInput) {
   } else {
     this.bytes.word32le(this.txTo.ins[nInput].q);
   }
+  console.log('after input '+nInput+': '+buffertools.toHex(this.bytes.buffer()));
 
 };
 
@@ -371,22 +377,28 @@ TransactionSignatureSerializer.prototype.serializeInput = function(nInput) {
 TransactionSignatureSerializer.prototype.serialize = function() {
   // serialize nVersion
   this.bytes.word32le(this.txTo.version);
+  console.log(buffertools.toHex(this.bytes.buffer())+' after version');
   // serialize vin
   var nInputs = this.anyoneCanPay ? 1 : this.txTo.ins.length;
-  console.log('nInputs '+nInputs);
   this.bytes.varint(nInputs);
+  console.log(buffertools.toHex(this.bytes.buffer())+' after nInputs');
   for (var nInput = 0; nInput < nInputs; nInput++) {
     this.serializeInput(nInput);
   }
+  console.log(buffertools.toHex(this.bytes.buffer())+' after inputs');
   // serialize vout
   var nOutputs = this.hashNone ? 0 : (this.hashSingle ? this.nIn + 1 : this.txTo.outs.length);
   this.bytes.varint(nOutputs);
+  console.log(buffertools.toHex(this.bytes.buffer())+' after nOutputs');
+  console.log('nOutputs = '+nOutputs);
   for (var nOutput = 0; nOutput < nOutputs; nOutput++) {
     this.serializeOutput(nOutput);
   }
+  console.log(buffertools.toHex(this.bytes.buffer())+' after outputs');
 
   // serialize nLockTime
   this.bytes.word32le(this.txTo.lock_time);
+  console.log(buffertools.toHex(this.bytes.buffer())+' after lock_time');
 };
 
 TransactionSignatureSerializer.prototype.buffer = function() {
@@ -417,14 +429,18 @@ Transaction.prototype.hashForSignature =
     var hashBuf = new Put().word32le(hashType).buffer();
     buffer = Buffer.concat([buffer, hashBuf]);
     var bth = buffertools.toHex(buffer);
-    //console.log('tx sig b ' + bth);
-    var expected = '907c2bc503ade11cc3b04eb2918b6f547b0630ab569273824748c87ea14b0696526c66ba740200000000fd1f9bdd4ef073c7afc4ae00da8a66f429c917a0081ad1e1dabce28d373eab81d8628de80200000000ad042b5f25efb33beec9f3364e8a9139e8439d9d7e26529c3c30b6c3fd89f8684cfd68ea0200000000599ac2fe02a526ed040000000008535300516352515164370e010000000003006300ab2ec2291fe51c6f';
-    //console.log('expected '+expected);
+    console.log('tx sig b ' + bth);
+    var expected = 'f40a750701b5788174aef79788716f96af779d7959147a0c2e0e5bfb6c2dba2df5b4b978940300000004005163acffffffff0445e6fd0200000000096aac536365526a526aa6546b000000000008acab656a6552535141a0fd010000000000c897ea030000000008526500ab526a6a631b39dba395e20496';
+    var rawtx = 'f40a750702af06efff3ea68e5d56e42bc41cdb8b6065c98f1221fe04a325a898cb61f3d7ee030000000363acacffffffffb5788174aef79788716f96af779d7959147a0c2e0e5bfb6c2dba2df5b4b97894030000000965510065535163ac6affffffff0445e6fd0200000000096aac536365526a526aa6546b000000000008acab656a6552535141a0fd010000000000c897ea030000000008526500ab526a6a631b39dba3';
+    console.log('expected '+expected);
     for (var i=0; i<expected.length/2;i++) {
       var byt = expected.substring(i*2, i*2+2);
       var rbyt = bth.substring(i*2, i*2+2);
-      //if (byt !== rbyt) throw new Error(byt +'!='+rbyt+' on pos '+i);
-      //console.log(byt+ ' OK at '+i); 
+      var interest = buffertools.toHex(this.serialize()) === rawtx;
+      if (interest) {
+        if (byt !== rbyt) throw new Error(byt +'!='+rbyt+' on pos '+i);
+        //console.log(byt+ ' OK at '+i); 
+      }
     }
 
     return buffertools.reverse(util.twoSha256(buffer));

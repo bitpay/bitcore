@@ -376,6 +376,7 @@ Script.prototype.findAndDelete = function(chunk) {
       if (Buffer.isBuffer(this.chunks[i]) &&
         buffertools.compare(this.chunks[i], chunk) === 0) {
         this.chunks.splice(i, 1);
+        i--;
         dirty = true;
       }
     }
@@ -383,6 +384,7 @@ Script.prototype.findAndDelete = function(chunk) {
     for (var i = 0, l = this.chunks.length; i < l; i++) {
       if (this.chunks[i] === chunk) {
         this.chunks.splice(i, 1);
+        i--;
         dirty = true;
       }
     }
