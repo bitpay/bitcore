@@ -324,7 +324,7 @@ The only central element of this is a server that exists solely to facilitate th
 The public wallet (containing the public keys) is shared amongst all cosigners, as are other critical pieces of information such as unspent transaction outputs.&lt;/p&gt;
 &lt;p&gt;Between Web RTC and HTML 5 local storage, it is actually possible to have a web wallet that runs locally with no need for a central server except the p2p facilitator. Oh, and one more important piece.&lt;/p&gt;
 &lt;h2 id=&quot;insight-and-spv&quot;&gt;Insight and SPV&lt;/h2&gt;
-&lt;p&gt;Cosign is developed by the same people that developed &lt;a href=&quot;http://insight.bitcore.io/&quot;&gt;Insight&lt;/a&gt;, a powerful, open-source blockchain API and client.
+&lt;p&gt;Cosign is developed by the same people that developed &lt;a href=&quot;http://insight.is/&quot;&gt;Insight&lt;/a&gt;, a powerful, open-source blockchain API and client.
 Cosign uses insight to find unspent transaction outputs and broadcast transactions to the bitcoin network.
 Long-term, however, we believe it will be possible to implement &lt;a href=&quot;https://en.bitcoin.it/wiki/Scalability#Simplified_payment_verification&quot;&gt;SPV&lt;/a&gt; in the browser, where the only need for a server will be to bridge the Web RTC communication protocol with the real bitcoin p2p protocol.
 In the meantime, running insight locally means there is no central server except the p2p facilitator.&lt;/p&gt;
