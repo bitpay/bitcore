@@ -48,7 +48,7 @@ TransactionIn.prototype.isCoinBase = function isCoinBase() {
   if (!this.o) return false;
 
   //The new Buffer is for Firefox compatibility
-  return  buffertools.compare(new Buffer(this.o), COINBASE_OP) === 0;
+  return buffertools.compare(new Buffer(this.o), COINBASE_OP) === 0;
 };
 
 TransactionIn.prototype.serialize = function serialize() {
@@ -287,20 +287,149 @@ var OP_CODESEPARATOR = 171;
 var SIGHASH_ALL = 1;
 var SIGHASH_NONE = 2;
 var SIGHASH_SINGLE = 3;
-var SIGHASH_ANYONECANPAY = 80;
+var SIGHASH_ANYONECANPAY = 0x80;
 
 Transaction.SIGHASH_ALL = SIGHASH_ALL;
 Transaction.SIGHASH_NONE = SIGHASH_NONE;
 Transaction.SIGHASH_SINGLE = SIGHASH_SINGLE;
 Transaction.SIGHASH_ANYONECANPAY = SIGHASH_ANYONECANPAY;
 
+var oneBuffer = function() {
+  // bug present in bitcoind which must be also present in bitcore
+  // see https://bitcointalk.org/index.php?topic=260595
+  var ret = new Buffer(1);
+  ret.writeUInt8(1, 0);
+  return ret; // return 1 bug
+
+};
+
+var TransactionSignatureSerializer = function(txTo, scriptCode, nIn, nHashType) {
+  this.txTo = txTo;
+  this.scriptCode = scriptCode;
+  this.nIn = nIn;
+  console.log('nHashType '+nHashType);
+  this.anyoneCanPay = !!(nHashType & SIGHASH_ANYONECANPAY);
+  console.log('anyoneCanPay ='+this.anyoneCanPay);
+  var hashTypeMode = nHashType & 0x1f;
+  console.log('hashTypeMode ='+hashTypeMode);
+  this.hashSingle = hashTypeMode === SIGHASH_SINGLE;
+  this.hashNone = hashTypeMode === SIGHASH_NONE;
+  this.bytes = new Put();
+};
+
+// serialize an output of txTo
+TransactionSignatureSerializer.prototype.serializeOutput = function(nOutput) {
+  if (this.hashSingle && nOutput != this.nIn) {
+    // Do not lock-in the txout payee at other indices as txin
+    // ::Serialize(s, CTxOut(), nType, nVersion);
+    this.bytes.put(util.INT64_MAX);
+    this.bytes.varint(0);
+  } else {
+    //::Serialize(s, txTo.vout[nOutput], nType, nVersion);
+    var out = this.txTo.outs[nOutput];
+    this.bytes.put(out.v);
+    this.bytes.varint(out.s.length);
+    this.bytes.put(out.s);
+  }
+
+};
+
+// serialize the script
+TransactionSignatureSerializer.prototype.serializeScriptCode = function() {
+  this.scriptCode.findAndDelete(OP_CODESEPARATOR);
+  this.bytes.varint(this.scriptCode.buffer.length);
+  this.bytes.put(this.scriptCode.buffer);
+};
+
+// serialize an input of txTo
+TransactionSignatureSerializer.prototype.serializeInput = function(nInput) {
+  // In case of SIGHASH_ANYONECANPAY, only the input being signed is serialized
+  if (this.anyoneCanPay) nInput = this.nIn;
+
+  // Serialize the prevout
+  this.bytes.put(this.txTo.ins[nInput].o);
+
+  // Serialize the script
+  if (nInput !== this.nIn) {
+    // Blank out other inputs' signatures
+    this.bytes.varint(0);
+  } else {
+    this.serializeScriptCode();
+  }
+  // Serialize the nSequence
+  if (nInput !== this.nIn && (this.hashSingle || this.hashNone)) {
+    // let the others update at will
+    this.bytes.word32le(0);
+  } else {
+    this.bytes.word32le(this.txTo.ins[nInput].q);
+  }
+
+};
+
+
+// serialize txTo for signature
+TransactionSignatureSerializer.prototype.serialize = function() {
+  // serialize nVersion
+  this.bytes.word32le(this.txTo.version);
+  // serialize vin
+  var nInputs = this.anyoneCanPay ? 1 : this.txTo.ins.length;
+  console.log('nInputs '+nInputs);
+  this.bytes.varint(nInputs);
+  for (var nInput = 0; nInput < nInputs; nInput++) {
+    this.serializeInput(nInput);
+  }
+  // serialize vout
+  var nOutputs = this.hashNone ? 0 : (this.hashSingle ? this.nIn + 1 : this.txTo.outs.length);
+  this.bytes.varint(nOutputs);
+  for (var nOutput = 0; nOutput < nOutputs; nOutput++) {
+    this.serializeOutput(nOutput);
+  }
+
+  // serialize nLockTime
+  this.bytes.word32le(this.txTo.lock_time);
+};
+
+TransactionSignatureSerializer.prototype.buffer = function() {
+  this.serialize();
+  return this.bytes.buffer();
+};
+
 Transaction.prototype.hashForSignature =
   function hashForSignature(script, inIndex, hashType) {
+
     if (+inIndex !== inIndex ||
       inIndex < 0 || inIndex >= this.ins.length) {
-      throw new Error("Input index '" + inIndex + "' invalid or out of bounds " +
-        "(" + this.ins.length + " inputs)");
+      return oneBuffer();
     }
+    // Check for invalid use of SIGHASH_SINGLE
+    var hashTypeMode = hashType & 0x1f;
+    if (hashTypeMode === SIGHASH_SINGLE) {
+      if (inIndex >= this.outs.length) {
+        return oneBuffer();
+      }
+    }
+
+    // Wrapper to serialize only the necessary parts of the transaction being signed
+    var serializer = new TransactionSignatureSerializer(this, script, inIndex, hashType);
+    // Serialize
+    var buffer = serializer.buffer();
+    // Append hashType
+    var hashBuf = new Put().word32le(hashType).buffer();
+    buffer = Buffer.concat([buffer, hashBuf]);
+    var bth = buffertools.toHex(buffer);
+    //console.log('tx sig b ' + bth);
+    var expected = '907c2bc503ade11cc3b04eb2918b6f547b0630ab569273824748c87ea14b0696526c66ba740200000000fd1f9bdd4ef073c7afc4ae00da8a66f429c917a0081ad1e1dabce28d373eab81d8628de80200000000ad042b5f25efb33beec9f3364e8a9139e8439d9d7e26529c3c30b6c3fd89f8684cfd68ea0200000000599ac2fe02a526ed040000000008535300516352515164370e010000000003006300ab2ec2291fe51c6f';
+    //console.log('expected '+expected);
+    for (var i=0; i<expected.length/2;i++) {
+      var byt = expected.substring(i*2, i*2+2);
+      var rbyt = bth.substring(i*2, i*2+2);
+      //if (byt !== rbyt) throw new Error(byt +'!='+rbyt+' on pos '+i);
+      //console.log(byt+ ' OK at '+i); 
+    }
+
+    return buffertools.reverse(util.twoSha256(buffer));
+
+
 
     // In case concatenating two scripts ends up with two codeseparators,
     // or an extra one at the end, this prevents all those possible
@@ -351,15 +480,10 @@ Transaction.prototype.hashForSignature =
       bytes.varint(0);
     } else {
       var outsLen;
+      var hashTypeMode = hashType & 0x1f;
       if (hashTypeMode === SIGHASH_SINGLE) {
         if (inIndex >= this.outs.length) {
-          // bug present in bitcoind which must be also present in bitcore
-          // see https://bitcointalk.org/index.php?topic=260595
-          // Transaction.hashForSignature(): SIGHASH_SINGLE 
-          // no corresponding txout found - out of bounds
-          var ret = new Buffer(1);
-          ret.writeUInt8(1, 0);
-          return ret; // return 1 bug
+          return oneBuffer();
         }
         outsLen = inIndex + 1;
       } else {
