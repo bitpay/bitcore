@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width">
+    <title>TransactionBuilder: A (hopefully) easy API to generate Bitcoin transactions - Bitcore Blog
+    </title>
+    <link rel="alternate" href="/blog/feed.xml" type="application/rss+xml" title="A pure, powerful blog for your daily reading.">
+    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono|Ubuntu:300,400,500,700,400italic,500italic,700italic|Lora:400,700,400italic,700italic|Anonymous+Pro:400,700,400italic,700italic|Merriweather:400,700,300">
+    <link rel="stylesheet" href="/blog/css/main.css">
+  </head>
+  <body class="article-detail">
+    <header class="header">
+      <div class="header-image"><img src="/blog/bitcore-logo.png" alt="Bitcore"></div>
+      <div class="content-wrap">
+        <div class="logo">
+          <h1><a href="/blog/">Bitcore Blog</a></h1>
+          <p class="description">A pure, powerful blog for your daily reading.</p>
+        </div>
+      </div>
+    </header>
+    <div id="content">
+      <div class="content-wrap">
+        <article class="article">
+          <header>
+            <p class="date"><span>02. April 2014</span></p>
+            <h2><a href="/blog/articles/transactionbuilder/">TransactionBuilder: A (hopefully) easy API to generate Bitcoin transactions</a></h2>
+            <p class="author"><span class="author">Matías Alejo García</span>
+            </p>
+          </header>
+          <section class="content"><p>During the last few days we have been working on a new interface to generate
+Bitcoin transactions. We wanted to support all standard types transactions 
+(pay to pubkeyhash, pay to pubkey, pay to script and multisig)  while providing 
+an easy to use <span class="caps">API</span>. This is how we arrived at the 
+<a href="https://en.wikipedia.org/wiki/Builder_pattern">Builder Pattern</a> 
+and <em>TransactionBuilder</em> was&nbsp;born.</p>
+<p>Hopefully <em>TransactionBuilder</em> will help Javascript developers to unleash the 
+power of&nbsp;Bitcoin.</p>
+<h2 id="bitcoin-transactions-introduction">Bitcoin Transactions&nbsp;Introduction</h2>
+<p>All Bitcoin transactions have inputs and outputs. The inputs are the sources of the coins the transactions is spending (i.e. transfering to the outputs). The sum of all inputs’ values  must be equal or greater than the sum of all outputs’ values. The difference, if existent, is the fee assigned by the transaction creator to the miner. This fee will be collected by miner that includes the transaction on the Bitcoin&nbsp;blockchain.</p>
+<p>Once the transaction is accepted on the network, the outputs are ready to become
+inputs for future transactions. Unsurprisingly, each output can only be spent once, 
+therefore a common name for the available outputs to became inputs is <em>unspent outputs</em>.</p>
+<p>In order to spend an <em>unspent output</em> in a transaction, proof of ownership must be 
+provided. Bitcoin implements this security mechanisim by adding a script to all 
+outputs (called ScriptPubKey). This script must fulfilled to spend the associated 
+output coins. Each time an unpent output has been spent in a transaction input, 
+the input <strong>must</strong> provide the right arguments to the unspent’s script (those 
+arguments are a script theirself, which is called ScriptSig).  Failure to do 
+this, will cause the rejection of the transaction by the network. ScriptPubKey 
+and ScriptSig can be thought as a lock and a key,&nbsp;respectively.</p>
+<h2 id="standard-transactions">Standard&nbsp;Transactions</h2>
+<p>In Bitcoin standard transactions elliptic curve cryptography is used in 
+ScriptPubKey and ScriptSig. The two more common ScriptPubKey types
+ (<em>PayToPubKey</em> and <em>PayToPubKeyHash</em>) provide a public key (or its hash) 
+in their contents. In order to spend the output, ScriptSig must provide 
+a signature of the spending transaction using the correspoding private key.
+The beauty of this mechanisim is that the private key is never revealed. 
+Output’s ScriptPubKey has only the public key (or its hash) and 
+Input’s ScriptSig has only a signature of the transaction and still 
+the ownership verification can be accomplish by a third party
+(the bitcoin network in our case). Usually, public keys hashed in
+Bitcoin are represented as <em>addresses</em>, using a custom 
+<a href="https://en.bitcoin.it/wiki/Base58Check_encoding">Base58check encoding</a>.</p>
+<p>Besides PayToPubKey and PayToPubKeyHash, Bitcoin defines to more standard
+transactions: <em>Multisig</em> and <em>PayToScriptHash</em>. Multisig is similar to the 
+described schema, but generalize it by providing multiple (N) public keys 
+on ScriptPubKey and asking for certain number (M) of signatures to allow 
+spending the output. Examples of Multisig configurations are 2 required 
+signatures out of 3 given public keys, 3 out of 5, and 2 out of 2. 
+ Use cases for Multisig include shared control of coins, 2 factor 
+authentication, third party arbitration,&nbsp;etc.</p>
+<p>Finally, in PayToScriptHash (or <span class="caps">P2SH</span>) ScriptPubKey just contain a 
+hash of a script. In order to spend the transaction, the corresponding
+ script must be provided on the input (on ScriptSig), AND that script
+ must be fullfil with the signatures also included on&nbsp;ScriptSig.</p>
+<h3 id="transactionbuilder">TransactionBuilder</h3>
+<p>Without further do, here are some examples of using the new interface
+for creating&nbsp;transactions:</p>
+<p>Transaction generation and&nbsp;signing</p>
+<pre><code class="lang-js">  <span class="keyword">var</span> bitcore = <span class="built_in">require</span>(<span class="string">'bitcore'</span>); <span class="comment">// for browser, check Readme and </span>
+                                    <span class="comment">// example/example.html examples.</span>
+  <span class="keyword">var</span> Builder = bitcore.TransactionBuilder;
+  <span class="keyword">var</span> tx = <span class="keyword">new</span> Builder(opts)
+    .setUnspent(utxos)
+    .setOutputs(outs)
+    .sign(keys)
+    .build();
+
+  <span class="comment">// Transaction ready for broadcast.</span>
+  broadcast(tx.serialize().toString(<span class="string">'hex'</span>));
+</code></pre>
+<p>In the example, <code>utxos</code> are the available unspent outputs for the 
+transactions. The list of unspent output for a bitcoin address can 
+be obtained from Bitcoin blockchain APIs, like <a href="http://blockchain.info/">blockchain.info</a>, 
+<a href="http://biteasy.com/">biteasy.com</a>, <a href="http://blockr.io/">blockr.io</a>, or our 
+own open-sourced <a href="https://github.com/bitpay/insight-api">insigh-api</a>. </p>
+<p>The expected format for the unspent outputs&nbsp;is:</p>
+<pre><code>[
+    {
+      &quot;address&quot;: &quot;2Mwswt6Eih28xH8611fexpqKqJCLJMomveK&quot;,
+      &quot;scriptPubKey&quot;: &quot;a91432d272ce8a9b482b363408a0b1dd28123d59c63387&quot;,
+      &quot;txid&quot;: &quot;2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1&quot;,
+      &quot;vout&quot;: 1,
+      &quot;amount&quot;: 1.0,
+      &quot;confirmations&quot;:7
+    }
+    , { ... }
+]
+</code></pre><p>The <em>outs</em> defines the outputs of the transaction. Depending on the transaction type, different
+elements must be provided. For a standart PayToPubKeyHash, the format&nbsp;is:</p>
+<pre><code>  var outs = [{
+    address:infoForP2sh.address, 
+    amount:0.05,
+  }, {...}];
+</code></pre><p>For other types, see examples&nbsp;below.</p>
+<p>Once the output is defined, <em>TransactionBuilder</em> will scan the <code>unspent outputs</code> 
+to select the ones needed to fulfill the transaction output amount. Following the 
+reference client implementation criteria, <em>TransactionBuilder</em> will look first for
+unspent outputs with 6 or more 
+confirmations, then outputs with 1 or more confirmations will be selected and
+ finally (and only if option <code>spendUnconfirmed: true</code> was provided at <code>opts</code>) 
+outputs with 0 confirmations will be selected. Unless a fixed <code>fee</code> was included
+in <code>opts</code>, the fee will be dynamically calculated depending the transaction size, 
+using <a href="https://en.bitcoin.it/wiki/Transaction_fees">bitcoin guidelines</a>.</p>
+<p>Once the inputs, outputs and the fee are defined, <em>TransactionBuilder</em> will add 
+an output to collect the remainder amount, if any, in a remainder out. This out
+ can be provided in <code>opts</code> (see examples below), or the first input will be 
+automatically&nbsp;selected.</p>
+<p>Other options include: <code>lockTime</code> to set transaction’s <code>lock_time</code>; <code>signhash</code> 
+to set the signature types, which defaults to <em>Transaction.SIGHASH_ALL</em>.</p>
+<p>It is expected that the set of private <code>keys</code> will the match the output’s 
+ScriptPubKey to unlock them. After <code>.sign(keys)</code> is called, <code>.isFullySigned()</code> 
+can be call to check if all inputs are properly signed. This schema work with all 
+stardart type of transactions including Multisig as demostrated&nbsp;later.</p>
+<p>Transaction generation and later&nbsp;signing</p>
+<pre><code class="lang-js">  <span class="keyword">var</span> b = <span class="keyword">new</span> Builder(opts)
+    .setUnspent(utxos)
+    .setOutputs(outs);
+
+  <span class="keyword">var</span> incompleteTx  = b.build();
+
+  <span class="keyword">while</span>(!b.isFullySigned()) {
+    <span class="keyword">var</span> keys = getMoreKeys();
+    b.sign(keys);
+  };
+  <span class="keyword">var</span> completeTx  = b.build();
+  broadcast(tx.serialize().toString(<span class="string">'hex'</span>));
+</code></pre>
+<p>To generate <span class="caps">P2SH</span> transactions, the utility <code>.infoForP2sh</code> is provided. This
+static method can help the creator to obtains a p2sh address for multisignature
+transactions, and also can generate the redeem script&nbsp;hash.</p>
+<p><span class="caps">P2SH</span> Transaction generation and later&nbsp;signing</p>
+<pre><code class="lang-js">
+  <span class="keyword">var</span> infoForP2sh   = Builder.infoForP2sh({
+    nreq    :<span class="number">3</span>, 
+    pubkeys:pubkeys, 
+    amount  :<span class="number">0.05</span>,
+  }, <span class="string">'testnet'</span>);
+
+  <span class="keyword">var</span> outs = [{
+    address:infoForP2sh.address, 
+    amount:<span class="number">0.05</span>,
+  }];
+
+  <span class="keyword">var</span> map = {};
+  map[p2shAddress]=infoForP2sh;
+
+  <span class="keyword">var</span> info = Builder.  
+  <span class="keyword">var</span> b = <span class="keyword">new</span> Builder(opts)
+    .setUnspent(utxos)
+    .setHashToScriptMap(map)
+    .setOutputs(outs);
+
+  <span class="keyword">var</span> incompleteTx  = b.build();
+
+  <span class="keyword">while</span>(!b.isFullySigned()) {
+    <span class="keyword">var</span> keys = getMoreKeys();
+    b.sign(keys);
+  };
+  <span class="keyword">var</span> completeTx  = b.build();
+  broadcast(tx.serialize().toString(<span class="string">'hex'</span>));
+</code></pre>
+<p>Sending remainder to a defined&nbsp;output.</p>
+<pre><code class="lang-js">  <span class="keyword">var</span> opts = {
+    remainderOut: {address: <span class="string">'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'</span>},
+  };
+  <span class="keyword">var</span> tx = <span class="keyword">new</span> Builder(opts)
+    .setUnspent(utxos)
+    .setOutputs(outs)
+    .sign(keys)
+    .build();
+</code></pre>
+<p>More examples can be seen at bitcore’s <a href="https://github.com/bitpay/bitcore/tree/master/examples">example path</a> and also in our <a href="https://github.com/bitpay/bitcore/blob/master/test/test.TransactionBuilder.js">TransactionBuilder’s&nbsp;tests</a></p>
+<p>—</p>
+<p>Matías Alejo&nbsp;García</p>
+<p>Comments? Suggestions? Please let me know at:
+<a href="http://twitter.com/ematiu">@ematiu</a></p>
+</section>
+        </article>
+      </div>
+    </div>
+    <footer>
+      <div class="content-wrap">
+        <div class="nav"><a href="/blog/">« Blog Home</a></div>
+        <section class="about"><p><a href="http://bitcore.io/">Bitcore</a> is an open-source implementation of bitcoin in javascript that works both in node and the browser.
+Our goal is to make it as easy as possible to develop apps for bitcoin.</p>
+
+        </section>
+        <section class="copy">
+          <p>&copy; 2014 Bitcore Team. Blog powered by&nbsp;<a href="https://github.com/jnordberg/wintersmith">Wintersmith.</a>
+          </p>
+        </section>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -5,9 +5,185 @@
     <atom:link href="http://localhost:8080/feed.xml" rel="self" type="application/rss+xml"></atom:link>
     <link>http://localhost:8080</link>
     <description>A pure, powerful blog for your daily reading.</description>
-    <pubDate>Tue, 25 Mar 2014 20:00:00 -0400</pubDate>
+    <pubDate>Tue, 01 Apr 2014 20:00:00 -0400</pubDate>
     <generator>Wintersmith - https://github.com/jnordberg/wintersmith</generator>
     <language>en</language>
+    <item>
+      <title>TransactionBuilder: A (hopefully) easy API to generate Bitcoin transactions</title>
+      <link>http://localhost:8080/blog/articles/transactionbuilder/</link>
+      <pubDate>Tue, 01 Apr 2014 20:00:00 -0400</pubDate>
+      <guid isPermaLink="true">http://localhost:8080/blog/articles/transactionbuilder/</guid>
+      <author></author>
+      <description>&lt;p&gt;During the last few days we have been working on a new interface to generate
+Bitcoin transactions. We wanted to support all standard types transactions 
+(pay to pubkeyhash, pay to pubkey, pay to script and multisig)  while providing 
+an easy to use API. This is how we arrived at the 
+&lt;a href=&quot;https://en.wikipedia.org/wiki/Builder_pattern&quot;&gt;Builder Pattern&lt;/a&gt; 
+and &lt;em&gt;TransactionBuilder&lt;/em&gt; was born.&lt;/p&gt;
+&lt;p&gt;Hopefully &lt;em&gt;TransactionBuilder&lt;/em&gt; will help Javascript developers to unleash the 
+power of Bitcoin.&lt;/p&gt;
+&lt;h2 id=&quot;bitcoin-transactions-introduction&quot;&gt;Bitcoin Transactions Introduction&lt;/h2&gt;
+&lt;p&gt;All Bitcoin transactions have inputs and outputs. The inputs are the sources of the coins the transactions is spending (i.e. transfering to the outputs). The sum of all inputs’ values  must be equal or greater than the sum of all outputs’ values. The difference, if existent, is the fee assigned by the transaction creator to the miner. This fee will be collected by miner that includes the transaction on the Bitcoin blockchain.&lt;/p&gt;
+&lt;p&gt;Once the transaction is accepted on the network, the outputs are ready to become
+inputs for future transactions. Unsurprisingly, each output can only be spent once, 
+therefore a common name for the available outputs to became inputs is &lt;em&gt;unspent outputs&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;In order to spend an &lt;em&gt;unspent output&lt;/em&gt; in a transaction, proof of ownership must be 
+provided. Bitcoin implements this security mechanisim by adding a script to all 
+outputs (called ScriptPubKey). This script must fulfilled to spend the associated 
+output coins. Each time an unpent output has been spent in a transaction input, 
+the input &lt;strong&gt;must&lt;/strong&gt; provide the right arguments to the unspent’s script (those 
+arguments are a script theirself, which is called ScriptSig).  Failure to do 
+this, will cause the rejection of the transaction by the network. ScriptPubKey 
+and ScriptSig can be thought as a lock and a key, respectively.&lt;/p&gt;
+&lt;h2 id=&quot;standard-transactions&quot;&gt;Standard Transactions&lt;/h2&gt;
+&lt;p&gt;In Bitcoin standard transactions elliptic curve cryptography is used in 
+ScriptPubKey and ScriptSig. The two more common ScriptPubKey types
+ (&lt;em&gt;PayToPubKey&lt;/em&gt; and &lt;em&gt;PayToPubKeyHash&lt;/em&gt;) provide a public key (or its hash) 
+in their contents. In order to spend the output, ScriptSig must provide 
+a signature of the spending transaction using the correspoding private key.
+The beauty of this mechanisim is that the private key is never revealed. 
+Output’s ScriptPubKey has only the public key (or its hash) and 
+Input’s ScriptSig has only a signature of the transaction and still 
+the ownership verification can be accomplish by a third party
+(the bitcoin network in our case). Usually, public keys hashed in
+Bitcoin are represented as &lt;em&gt;addresses&lt;/em&gt;, using a custom 
+&lt;a href=&quot;https://en.bitcoin.it/wiki/Base58Check_encoding&quot;&gt;Base58check encoding&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Besides PayToPubKey and PayToPubKeyHash, Bitcoin defines to more standard
+transactions: &lt;em&gt;Multisig&lt;/em&gt; and &lt;em&gt;PayToScriptHash&lt;/em&gt;. Multisig is similar to the 
+described schema, but generalize it by providing multiple (N) public keys 
+on ScriptPubKey and asking for certain number (M) of signatures to allow 
+spending the output. Examples of Multisig configurations are 2 required 
+signatures out of 3 given public keys, 3 out of 5, and 2 out of 2. 
+ Use cases for Multisig include shared control of coins, 2 factor 
+authentication, third party arbitration, etc.&lt;/p&gt;
+&lt;p&gt;Finally, in PayToScriptHash (or P2SH) ScriptPubKey just contain a 
+hash of a script. In order to spend the transaction, the corresponding
+ script must be provided on the input (on ScriptSig), AND that script
+ must be fullfil with the signatures also included on ScriptSig.&lt;/p&gt;
+&lt;h3 id=&quot;transactionbuilder&quot;&gt;TransactionBuilder&lt;/h3&gt;
+&lt;p&gt;Without further do, here are some examples of using the new interface
+for creating transactions:&lt;/p&gt;
+&lt;p&gt;Transaction generation and signing&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;lang-js&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; bitcore = &lt;span class=&quot;built_in&quot;&gt;require&lt;/span&gt;(&lt;span class=&quot;string&quot;&gt;'bitcore'&lt;/span&gt;); &lt;span class=&quot;comment&quot;&gt;// for browser, check Readme and &lt;/span&gt;
+                                    &lt;span class=&quot;comment&quot;&gt;// example/example.html examples.&lt;/span&gt;
+  &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; Builder = bitcore.TransactionBuilder;
+  &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; tx = &lt;span class=&quot;keyword&quot;&gt;new&lt;/span&gt; Builder(opts)
+    .setUnspent(utxos)
+    .setOutputs(outs)
+    .sign(keys)
+    .build();
+
+  &lt;span class=&quot;comment&quot;&gt;// Transaction ready for broadcast.&lt;/span&gt;
+  broadcast(tx.serialize().toString(&lt;span class=&quot;string&quot;&gt;'hex'&lt;/span&gt;));
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In the example, &lt;code&gt;utxos&lt;/code&gt; are the available unspent outputs for the 
+transactions. The list of unspent output for a bitcoin address can 
+be obtained from Bitcoin blockchain APIs, like &lt;a href=&quot;http://blockchain.info/&quot;&gt;blockchain.info&lt;/a&gt;, 
+&lt;a href=&quot;http://biteasy.com/&quot;&gt;biteasy.com&lt;/a&gt;, &lt;a href=&quot;http://blockr.io/&quot;&gt;blockr.io&lt;/a&gt;, or our 
+own open-sourced &lt;a href=&quot;https://github.com/bitpay/insight-api&quot;&gt;insigh-api&lt;/a&gt;. &lt;/p&gt;
+&lt;p&gt;The expected format for the unspent outputs is:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;[
+    {
+      &amp;quot;address&amp;quot;: &amp;quot;2Mwswt6Eih28xH8611fexpqKqJCLJMomveK&amp;quot;,
+      &amp;quot;scriptPubKey&amp;quot;: &amp;quot;a91432d272ce8a9b482b363408a0b1dd28123d59c63387&amp;quot;,
+      &amp;quot;txid&amp;quot;: &amp;quot;2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1&amp;quot;,
+      &amp;quot;vout&amp;quot;: 1,
+      &amp;quot;amount&amp;quot;: 1.0,
+      &amp;quot;confirmations&amp;quot;:7
+    }
+    , { ... }
+]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The &lt;em&gt;outs&lt;/em&gt; defines the outputs of the transaction. Depending on the transaction type, different
+elements must be provided. For a standart PayToPubKeyHash, the format is:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;  var outs = [{
+    address:infoForP2sh.address, 
+    amount:0.05,
+  }, {...}];
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;For other types, see examples below.&lt;/p&gt;
+&lt;p&gt;Once the output is defined, &lt;em&gt;TransactionBuilder&lt;/em&gt; will scan the &lt;code&gt;unspent outputs&lt;/code&gt; 
+to select the ones needed to fulfill the transaction output amount. Following the 
+reference client implementation criteria, &lt;em&gt;TransactionBuilder&lt;/em&gt; will look first for
+unspent outputs with 6 or more 
+confirmations, then outputs with 1 or more confirmations will be selected and
+ finally (and only if option &lt;code&gt;spendUnconfirmed: true&lt;/code&gt; was provided at &lt;code&gt;opts&lt;/code&gt;) 
+outputs with 0 confirmations will be selected. Unless a fixed &lt;code&gt;fee&lt;/code&gt; was included
+in &lt;code&gt;opts&lt;/code&gt;, the fee will be dynamically calculated depending the transaction size, 
+using &lt;a href=&quot;https://en.bitcoin.it/wiki/Transaction_fees&quot;&gt;bitcoin guidelines&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Once the inputs, outputs and the fee are defined, &lt;em&gt;TransactionBuilder&lt;/em&gt; will add 
+an output to collect the remainder amount, if any, in a remainder out. This out
+ can be provided in &lt;code&gt;opts&lt;/code&gt; (see examples below), or the first input will be 
+automatically selected.&lt;/p&gt;
+&lt;p&gt;Other options include: &lt;code&gt;lockTime&lt;/code&gt; to set transaction’s &lt;code&gt;lock_time&lt;/code&gt;; &lt;code&gt;signhash&lt;/code&gt; 
+to set the signature types, which defaults to &lt;em&gt;Transaction.SIGHASH_ALL&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;It is expected that the set of private &lt;code&gt;keys&lt;/code&gt; will the match the output’s 
+ScriptPubKey to unlock them. After &lt;code&gt;.sign(keys)&lt;/code&gt; is called, &lt;code&gt;.isFullySigned()&lt;/code&gt; 
+can be call to check if all inputs are properly signed. This schema work with all 
+stardart type of transactions including Multisig as demostrated later.&lt;/p&gt;
+&lt;p&gt;Transaction generation and later signing&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;lang-js&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; b = &lt;span class=&quot;keyword&quot;&gt;new&lt;/span&gt; Builder(opts)
+    .setUnspent(utxos)
+    .setOutputs(outs);
+
+  &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; incompleteTx  = b.build();
+
+  &lt;span class=&quot;keyword&quot;&gt;while&lt;/span&gt;(!b.isFullySigned()) {
+    &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; keys = getMoreKeys();
+    b.sign(keys);
+  };
+  &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; completeTx  = b.build();
+  broadcast(tx.serialize().toString(&lt;span class=&quot;string&quot;&gt;'hex'&lt;/span&gt;));
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;To generate P2SH transactions, the utility &lt;code&gt;.infoForP2sh&lt;/code&gt; is provided. This
+static method can help the creator to obtains a p2sh address for multisignature
+transactions, and also can generate the redeem script hash.&lt;/p&gt;
+&lt;p&gt;P2SH Transaction generation and later signing&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;lang-js&quot;&gt;
+  &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; infoForP2sh   = Builder.infoForP2sh({
+    nreq    :&lt;span class=&quot;number&quot;&gt;3&lt;/span&gt;, 
+    pubkeys:pubkeys, 
+    amount  :&lt;span class=&quot;number&quot;&gt;0.05&lt;/span&gt;,
+  }, &lt;span class=&quot;string&quot;&gt;'testnet'&lt;/span&gt;);
+
+  &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; outs = [{
+    address:infoForP2sh.address, 
+    amount:&lt;span class=&quot;number&quot;&gt;0.05&lt;/span&gt;,
+  }];
+
+  &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; map = {};
+  map[p2shAddress]=infoForP2sh;
+
+  &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; info = Builder.  
+  &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; b = &lt;span class=&quot;keyword&quot;&gt;new&lt;/span&gt; Builder(opts)
+    .setUnspent(utxos)
+    .setHashToScriptMap(map)
+    .setOutputs(outs);
+
+  &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; incompleteTx  = b.build();
+
+  &lt;span class=&quot;keyword&quot;&gt;while&lt;/span&gt;(!b.isFullySigned()) {
+    &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; keys = getMoreKeys();
+    b.sign(keys);
+  };
+  &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; completeTx  = b.build();
+  broadcast(tx.serialize().toString(&lt;span class=&quot;string&quot;&gt;'hex'&lt;/span&gt;));
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Sending remainder to a defined output.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;lang-js&quot;&gt;  &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; opts = {
+    remainderOut: {address: &lt;span class=&quot;string&quot;&gt;'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'&lt;/span&gt;},
+  };
+  &lt;span class=&quot;keyword&quot;&gt;var&lt;/span&gt; tx = &lt;span class=&quot;keyword&quot;&gt;new&lt;/span&gt; Builder(opts)
+    .setUnspent(utxos)
+    .setOutputs(outs)
+    .sign(keys)
+    .build();
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;More examples can be seen at bitcore’s &lt;a href=&quot;https://github.com/bitpay/bitcore/tree/master/examples&quot;&gt;example path&lt;/a&gt; and also in our &lt;a href=&quot;https://github.com/bitpay/bitcore/blob/master/test/test.TransactionBuilder.js&quot;&gt;TransactionBuilder’s tests&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;—&lt;/p&gt;
+&lt;p&gt;Matías Alejo García&lt;/p&gt;
+&lt;p&gt;Comments? Suggestions? Please let me know at:
+&lt;a href=&quot;http://twitter.com/ematiu&quot;&gt;@ematiu&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
     <item>
       <title>How to Contribute to Bitcore</title>
       <link>http://localhost:8080/blog/articles/how-to-contribute/</link>
