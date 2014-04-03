@@ -294,15 +294,6 @@ Transaction.SIGHASH_NONE = SIGHASH_NONE;
 Transaction.SIGHASH_SINGLE = SIGHASH_SINGLE;
 Transaction.SIGHASH_ANYONECANPAY = SIGHASH_ANYONECANPAY;
 
-var oneBuffer = function() {
-  // bug present in bitcoind which must be also present in bitcore
-  // see https://bitcointalk.org/index.php?topic=260595
-  var ret = new Buffer(1);
-  ret.writeUInt8(1, 0);
-  return ret; // return 1 bug
-
-};
-
 var TransactionSignatureSerializer = function(txTo, scriptCode, nIn, nHashType) {
   this.txTo = txTo;
   this.scriptCode = scriptCode;
@@ -406,6 +397,16 @@ TransactionSignatureSerializer.prototype.buffer = function() {
   return this.bytes.buffer();
 };
 
+Transaction.Serializer = TransactionSignatureSerializer;
+
+var oneBuffer = function() {
+  // bug present in bitcoind which must be also present in bitcore
+  // see https://bitcointalk.org/index.php?topic=260595
+  var ret = new Buffer(1);
+  ret.writeUInt8(1, 0);
+  return ret; // return 1 bug
+};
+
 Transaction.prototype.hashForSignature =
   function hashForSignature(script, inIndex, hashType) {
 
@@ -428,108 +429,7 @@ Transaction.prototype.hashForSignature =
     // Append hashType
     var hashBuf = new Put().word32le(hashType).buffer();
     buffer = Buffer.concat([buffer, hashBuf]);
-    var bth = buffertools.toHex(buffer);
-    console.log('tx sig b ' + bth);
-    var expected = 'f40a750701b5788174aef79788716f96af779d7959147a0c2e0e5bfb6c2dba2df5b4b978940300000004005163acffffffff0445e6fd0200000000096aac536365526a526aa6546b000000000008acab656a6552535141a0fd010000000000c897ea030000000008526500ab526a6a631b39dba395e20496';
-    var rawtx = 'f40a750702af06efff3ea68e5d56e42bc41cdb8b6065c98f1221fe04a325a898cb61f3d7ee030000000363acacffffffffb5788174aef79788716f96af779d7959147a0c2e0e5bfb6c2dba2df5b4b97894030000000965510065535163ac6affffffff0445e6fd0200000000096aac536365526a526aa6546b000000000008acab656a6552535141a0fd010000000000c897ea030000000008526500ab526a6a631b39dba3';
-    console.log('expected '+expected);
-    for (var i=0; i<expected.length/2;i++) {
-      var byt = expected.substring(i*2, i*2+2);
-      var rbyt = bth.substring(i*2, i*2+2);
-      var interest = buffertools.toHex(this.serialize()) === rawtx;
-      if (interest) {
-        if (byt !== rbyt) throw new Error(byt +'!='+rbyt+' on pos '+i);
-        //console.log(byt+ ' OK at '+i); 
-      }
-    }
-
     return buffertools.reverse(util.twoSha256(buffer));
-
-
-
-    // In case concatenating two scripts ends up with two codeseparators,
-    // or an extra one at the end, this prevents all those possible
-    // incompatibilities.
-    script.findAndDelete(OP_CODESEPARATOR);
-
-    // Get mode portion of hashtype
-    var hashTypeMode = hashType & 0x1f;
-
-    // Generate modified transaction data for hash
-    var bytes = (new Put());
-    bytes.word32le(this.version);
-
-    // Serialize inputs
-    if (hashType & SIGHASH_ANYONECANPAY) {
-      // Blank out all inputs except current one, not recommended for open
-      // transactions.
-      bytes.varint(1);
-      bytes.put(this.ins[inIndex].o);
-      bytes.varint(script.buffer.length);
-      bytes.put(script.buffer);
-      bytes.word32le(this.ins[inIndex].q);
-    } else {
-      bytes.varint(this.ins.length);
-      for (var i = 0, l = this.ins.length; i < l; i++) {
-        var txin = this.ins[i];
-        bytes.put(this.ins[i].o);
-
-        // Current input's script gets set to the script to be signed, all others
-        // get blanked.
-        if (inIndex === i) {
-          bytes.varint(script.buffer.length);
-          bytes.put(script.buffer);
-        } else {
-          bytes.varint(0);
-        }
-
-        if (hashTypeMode === SIGHASH_NONE && inIndex !== i) {
-          bytes.word32le(0);
-        } else {
-          bytes.word32le(this.ins[i].q);
-        }
-      }
-    }
-
-    // Serialize outputs
-    if (hashTypeMode === SIGHASH_NONE) {
-      bytes.varint(0);
-    } else {
-      var outsLen;
-      var hashTypeMode = hashType & 0x1f;
-      if (hashTypeMode === SIGHASH_SINGLE) {
-        if (inIndex >= this.outs.length) {
-          return oneBuffer();
-        }
-        outsLen = inIndex + 1;
-      } else {
-        outsLen = this.outs.length;
-      }
-
-      // TODO: If hashTypeMode !== SIGHASH_SINGLE, we could memcpy this whole
-      //       section from the original transaction as is.
-      bytes.varint(outsLen);
-      for (var i = 0; i < outsLen; i++) {
-        if (hashTypeMode === SIGHASH_SINGLE && i !== inIndex) {
-          // Zero all outs except the one we want to keep
-          bytes.put(util.INT64_MAX);
-          bytes.varint(0);
-        } else {
-          bytes.put(this.outs[i].v);
-          bytes.varint(this.outs[i].s.length);
-          bytes.put(this.outs[i].s);
-        }
-      }
-    }
-
-    bytes.word32le(this.lock_time);
-
-    var buffer = bytes.buffer();
-
-    // Append hashType
-    buffer = Buffer.concat([buffer, new Buffer([parseInt(hashType), 0, 0, 0])]);
-
-    return util.twoSha256(buffer);
 };
 
 /**
