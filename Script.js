@@ -74,9 +74,12 @@ Script.prototype.parse = function() {
 };
 
 Script.prototype.isPushOnly = function() {
-  for (var i = 0; i < this.chunks.length; i++)
-    if (!Buffer.isBuffer(this.chunks[i]))
+  for (var i = 0; i < this.chunks.length; i++) {
+    var op = this.chunks[i];
+    if (!Buffer.isBuffer(op) && op > OP_16) {
       return false;
+    }
+  }
 
   return true;
 };

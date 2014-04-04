@@ -86,7 +86,6 @@ describe('Transaction', function() {
           var i = j;
           j += 1;
           it('should validate input #' + i, function(done) {
-            console.log('inputs foreach '+i+': '+tx.serialize().toHex());
 
             var outpointHash = new Buffer(input[0].length);
             input[0].copy(outpointHash);
@@ -96,7 +95,6 @@ describe('Transaction', function() {
             var mapKey = [input];
             var scriptPubKey = testTx.inputs[mapKey];
             if (!scriptPubKey) throw new Error('Bad test: ' + datum);
-            console.log('PRE TX:'+buffertools.toHex(tx.serialize()));
             tx.verifyInput(
               i,
               scriptPubKey, {

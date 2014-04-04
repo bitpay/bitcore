@@ -938,6 +938,7 @@ ScriptInterpreter.prototype.verifyStep3 = function(scriptSig,
   // if P2SH, scriptSig should be push-only
   if (!scriptSig.isPushOnly()) {
     console.log('3rd step: scriptSig should be push only');
+    console.log();
     callback(null, false);
     return;
   }
@@ -1028,7 +1029,7 @@ var checkSig = ScriptInterpreter.checkSig =
 
     // Verify signature
     var key = new Key();
-    //pubkey = buffertools.reverse(pubkey);
+    if (pubkey.length === 0) pubkey = new Buffer('00', 'hex');
     key.public = pubkey; 
 
     console.log('pubkey before verification: '+buffertools.toHex(key.public));
