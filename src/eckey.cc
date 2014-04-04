@@ -313,7 +313,6 @@ Key::SetPublic(Local<String> property, Local<Value> value, const AccessorInfo& i
 
   if (!ret) {
     // TODO: Error
-    std::cout << ret << "C++++++++++++++++++++++++++++++++++++++\n";
     return;
   }
 

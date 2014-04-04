@@ -48,7 +48,7 @@ function parse_test_transaction(entry) {
 }
 
 describe('Transaction', function() {
-  it.skip('should initialze the main object', function() {
+  it('should initialze the main object', function() {
     should.exist(Transaction);
     In = Transaction.In;
     Out = Transaction.Out;
@@ -57,7 +57,7 @@ describe('Transaction', function() {
   });
 
 
-  it.skip('should be able to create instance', function() {
+  it('should be able to create instance', function() {
     var t = new Transaction();
     should.exist(t);
   });
@@ -76,8 +76,8 @@ describe('Transaction', function() {
       var tx = testTx.transaction;
 
       describe((valid ? '' : 'in') + 'valid tx=' + raw, function() {
-        it.skip('should parse correctly', function() {
-          buffertools.toHex(tx.serialize()).should.equal(raw);
+        it('should parse correctly', function() {
+          buffertools.toHex(tx.serialize()).toLowerCase().should.equal(raw.toLowerCase());
         });
 
         var inputs = tx.inputs();
@@ -91,7 +91,6 @@ describe('Transaction', function() {
             input[0].copy(outpointHash);
             input[0] = buffertools.reverse(outpointHash);
             input[0] = buffertools.toHex(input[0]);
-            buffertools.toHex(tx.serialize()).toLowerCase().should.equal(raw.toLowerCase());
             var mapKey = [input];
             var scriptPubKey = testTx.inputs[mapKey];
             if (!scriptPubKey) throw new Error('Bad test: ' + datum);
@@ -102,9 +101,14 @@ describe('Transaction', function() {
                 dontVerifyStrictEnc: true
               },
               function(err, results) {
-                should.not.exist(err);
-                should.exist(results);
-                results.should.equal(valid);
+                if (valid) {
+                  should.not.exist(err);
+                  should.exist(results);
+                  results.should.equal(valid);
+                } else {
+                  var invalid = (typeof err !== 'undefined') || results === false;
+                  invalid.should.equal(true);
+                }
                 done();
               }
             );
