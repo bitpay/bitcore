@@ -48,7 +48,7 @@ TransactionIn.prototype.isCoinBase = function isCoinBase() {
   if (!this.o) return false;
 
   //The new Buffer is for Firefox compatibility
-  return  buffertools.compare(new Buffer(this.o), COINBASE_OP) === 0;
+  return buffertools.compare(new Buffer(this.o), COINBASE_OP) === 0;
 };
 
 TransactionIn.prototype.serialize = function serialize() {
@@ -287,109 +287,132 @@ var OP_CODESEPARATOR = 171;
 var SIGHASH_ALL = 1;
 var SIGHASH_NONE = 2;
 var SIGHASH_SINGLE = 3;
-var SIGHASH_ANYONECANPAY = 80;
+var SIGHASH_ANYONECANPAY = 0x80;
 
 Transaction.SIGHASH_ALL = SIGHASH_ALL;
 Transaction.SIGHASH_NONE = SIGHASH_NONE;
 Transaction.SIGHASH_SINGLE = SIGHASH_SINGLE;
 Transaction.SIGHASH_ANYONECANPAY = SIGHASH_ANYONECANPAY;
 
+var TransactionSignatureSerializer = function(txTo, scriptCode, nIn, nHashType) {
+  this.txTo = txTo;
+  this.scriptCode = scriptCode;
+  this.nIn = nIn;
+  this.anyoneCanPay = !!(nHashType & SIGHASH_ANYONECANPAY);
+  var hashTypeMode = nHashType & 0x1f;
+  this.hashSingle = hashTypeMode === SIGHASH_SINGLE;
+  this.hashNone = hashTypeMode === SIGHASH_NONE;
+  this.bytes = new Put();
+};
+
+// serialize an output of txTo
+TransactionSignatureSerializer.prototype.serializeOutput = function(nOutput) {
+  if (this.hashSingle && nOutput != this.nIn) {
+    // Do not lock-in the txout payee at other indices as txin
+    // ::Serialize(s, CTxOut(), nType, nVersion);
+    this.bytes.put(util.INT64_MAX);
+    this.bytes.varint(0);
+  } else {
+    //::Serialize(s, txTo.vout[nOutput], nType, nVersion);
+    var out = this.txTo.outs[nOutput];
+    this.bytes.put(out.v);
+    this.bytes.varint(out.s.length);
+    this.bytes.put(out.s);
+  }
+};
+
+// serialize the script
+TransactionSignatureSerializer.prototype.serializeScriptCode = function() {
+  this.scriptCode.findAndDelete(OP_CODESEPARATOR);
+  this.bytes.varint(this.scriptCode.buffer.length);
+  this.bytes.put(this.scriptCode.buffer);
+};
+
+// serialize an input of txTo
+TransactionSignatureSerializer.prototype.serializeInput = function(nInput) {
+  // In case of SIGHASH_ANYONECANPAY, only the input being signed is serialized
+  if (this.anyoneCanPay) nInput = this.nIn;
+
+  // Serialize the prevout
+  this.bytes.put(this.txTo.ins[nInput].o);
+
+  // Serialize the script
+  if (nInput !== this.nIn) {
+    // Blank out other inputs' signatures
+    this.bytes.varint(0);
+  } else {
+    this.serializeScriptCode();
+  }
+  // Serialize the nSequence
+  if (nInput !== this.nIn && (this.hashSingle || this.hashNone)) {
+    // let the others update at will
+    this.bytes.word32le(0);
+  } else {
+    this.bytes.word32le(this.txTo.ins[nInput].q);
+  }
+
+};
+
+
+// serialize txTo for signature
+TransactionSignatureSerializer.prototype.serialize = function() {
+  // serialize nVersion
+  this.bytes.word32le(this.txTo.version);
+  // serialize vin
+  var nInputs = this.anyoneCanPay ? 1 : this.txTo.ins.length;
+  this.bytes.varint(nInputs);
+  for (var nInput = 0; nInput < nInputs; nInput++) {
+    this.serializeInput(nInput);
+  }
+  // serialize vout
+  var nOutputs = this.hashNone ? 0 : (this.hashSingle ? this.nIn + 1 : this.txTo.outs.length);
+  this.bytes.varint(nOutputs);
+  for (var nOutput = 0; nOutput < nOutputs; nOutput++) {
+    this.serializeOutput(nOutput);
+  }
+
+  // serialize nLockTime
+  this.bytes.word32le(this.txTo.lock_time);
+};
+
+TransactionSignatureSerializer.prototype.buffer = function() {
+  this.serialize();
+  return this.bytes.buffer();
+};
+
+Transaction.Serializer = TransactionSignatureSerializer;
+
+var oneBuffer = function() {
+  // bug present in bitcoind which must be also present in bitcore
+  // see https://bitcointalk.org/index.php?topic=260595
+  var ret = new Buffer(1);
+  ret.writeUInt8(1, 0);
+  return ret; // return 1 bug
+};
+
 Transaction.prototype.hashForSignature =
   function hashForSignature(script, inIndex, hashType) {
+
     if (+inIndex !== inIndex ||
       inIndex < 0 || inIndex >= this.ins.length) {
-      throw new Error("Input index '" + inIndex + "' invalid or out of bounds " +
-        "(" + this.ins.length + " inputs)");
+      return oneBuffer();
     }
-
-    // In case concatenating two scripts ends up with two codeseparators,
-    // or an extra one at the end, this prevents all those possible
-    // incompatibilities.
-    script.findAndDelete(OP_CODESEPARATOR);
-
-    // Get mode portion of hashtype
+    // Check for invalid use of SIGHASH_SINGLE
     var hashTypeMode = hashType & 0x1f;
-
-    // Generate modified transaction data for hash
-    var bytes = (new Put());
-    bytes.word32le(this.version);
-
-    // Serialize inputs
-    if (hashType & SIGHASH_ANYONECANPAY) {
-      // Blank out all inputs except current one, not recommended for open
-      // transactions.
-      bytes.varint(1);
-      bytes.put(this.ins[inIndex].o);
-      bytes.varint(script.buffer.length);
-      bytes.put(script.buffer);
-      bytes.word32le(this.ins[inIndex].q);
-    } else {
-      bytes.varint(this.ins.length);
-      for (var i = 0, l = this.ins.length; i < l; i++) {
-        var txin = this.ins[i];
-        bytes.put(this.ins[i].o);
-
-        // Current input's script gets set to the script to be signed, all others
-        // get blanked.
-        if (inIndex === i) {
-          bytes.varint(script.buffer.length);
-          bytes.put(script.buffer);
-        } else {
-          bytes.varint(0);
-        }
-
-        if (hashTypeMode === SIGHASH_NONE && inIndex !== i) {
-          bytes.word32le(0);
-        } else {
-          bytes.word32le(this.ins[i].q);
-        }
+    if (hashTypeMode === SIGHASH_SINGLE) {
+      if (inIndex >= this.outs.length) {
+        return oneBuffer();
       }
     }
 
-    // Serialize outputs
-    if (hashTypeMode === SIGHASH_NONE) {
-      bytes.varint(0);
-    } else {
-      var outsLen;
-      if (hashTypeMode === SIGHASH_SINGLE) {
-        if (inIndex >= this.outs.length) {
-          // bug present in bitcoind which must be also present in bitcore
-          // see https://bitcointalk.org/index.php?topic=260595
-          // Transaction.hashForSignature(): SIGHASH_SINGLE 
-          // no corresponding txout found - out of bounds
-          var ret = new Buffer(1);
-          ret.writeUInt8(1, 0);
-          return ret; // return 1 bug
-        }
-        outsLen = inIndex + 1;
-      } else {
-        outsLen = this.outs.length;
-      }
-
-      // TODO: If hashTypeMode !== SIGHASH_SINGLE, we could memcpy this whole
-      //       section from the original transaction as is.
-      bytes.varint(outsLen);
-      for (var i = 0; i < outsLen; i++) {
-        if (hashTypeMode === SIGHASH_SINGLE && i !== inIndex) {
-          // Zero all outs except the one we want to keep
-          bytes.put(util.INT64_MAX);
-          bytes.varint(0);
-        } else {
-          bytes.put(this.outs[i].v);
-          bytes.varint(this.outs[i].s.length);
-          bytes.put(this.outs[i].s);
-        }
-      }
-    }
-
-    bytes.word32le(this.lock_time);
-
-    var buffer = bytes.buffer();
-
+    // Wrapper to serialize only the necessary parts of the transaction being signed
+    var serializer = new TransactionSignatureSerializer(this, script, inIndex, hashType);
+    // Serialize
+    var buffer = serializer.buffer();
     // Append hashType
-    buffer = Buffer.concat([buffer, new Buffer([parseInt(hashType), 0, 0, 0])]);
-
-    return util.twoSha256(buffer);
+    var hashBuf = new Put().word32le(hashType).buffer();
+    buffer = Buffer.concat([buffer, hashBuf]);
+    return buffertools.reverse(util.twoSha256(buffer));
 };
 
 /**
