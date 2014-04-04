@@ -420,7 +420,28 @@ Script.createPubKeyHashOut = function(pubKeyHash) {
   return script;
 };
 
-Script.createMultisig = function(n_required, keys) {
+Script._sortKeys = function(keys) {
+  return keys.sort(function(buf1, buf2) {
+    var len = buf1.length > buf1.length ? buf1.length : buf2.length;
+    for (var i = 0; i <= len; i++) {
+      if (buf1[i] === undefined)
+        return -1; //shorter strings come first
+      if (buf2[i] === undefined)
+        return 1;
+      if (buf1[i] < buf2[i])
+        return -1;
+      if (buf1[i] > buf2[i])
+        return 1;
+      else
+        continue;
+    }
+    return 0;
+  });
+};
+
+Script.createMultisig = function(n_required, inKeys, opts) {
+  opts = opts || {};
+  var keys = opts.noSorting ? inKeys : this._sortKeys(inKeys);
   var script = new Script();
   script.writeN(n_required);
   keys.forEach(function(key) {
