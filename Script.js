@@ -441,7 +441,7 @@ Script._sortKeys = function(keys) {
 
 Script.createMultisig = function(n_required, inKeys, opts) {
   opts = opts || {};
-  var keys = opts.noSorting ? i || inKeys : this._sortKeys(inKeys);
+  var keys = opts.noSorting ? inKeys : this._sortKeys(inKeys);
   var script = new Script();
   script.writeN(n_required);
   keys.forEach(function(key) {
