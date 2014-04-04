@@ -28,5 +28,5 @@ connection.on('connect', function(data) {
 
 connection.on('error', function(err) {
   // boo! :(
-  console.log('poop');
+  console.log(err);
 });
