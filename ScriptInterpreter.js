@@ -669,8 +669,10 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
           }
           var keys = [];
           for (var i = 0, l = keysCount; i < l; i++) {
-            keys.push(this.stackPop());
+            var pubkey = this.stackPop()
+            keys.push(pubkey);
           }
+          
           var sigsCount = castInt(this.stackPop());
           if (sigsCount < 0 || sigsCount > keysCount) {
             throw new Error("OP_CHECKMULTISIG sigsCount out of bounds");
@@ -711,11 +713,11 @@ ScriptInterpreter.prototype.eval = function eval(script, tx, inIndex, hashType, 
 
               checkSig(sig, pubkey, scriptCode, tx, inIndex, hashType, function(e, result) {
                 if (!e && result) {
-                  console.log('sig '+isig+' succeeded');
+                  console.log('sig '+isig+' succeeded with key '+ikey);
                   isig++;
                   sigsCount--;
                 } else {
-                  console.log('key '+ikey+' failed '+e +' '+result);
+                  console.log('key '+ikey+' failed to verify sig '+isig+': '+e +' '+result);
                   ikey++;
                   keysCount--;
 
@@ -873,7 +875,7 @@ ScriptInterpreter.prototype.getResult = function getResult() {
 
 // WARN: Use ScriptInterpreter.verifyFull instead
 ScriptInterpreter.verify =
-  function verify(scriptSig, scriptPubKey, txTo, n, hashType, callback) {
+  function verify(scriptSig, scriptPubKey, tx, n, hashType, callback) {
     if ("function" !== typeof callback) {
       throw new Error("ScriptInterpreter.verify() requires a callback");
     }
@@ -882,7 +884,7 @@ ScriptInterpreter.verify =
     var si = new ScriptInterpreter();
 
     // Evaluate scripts
-    si.evalTwo(scriptSig, scriptPubKey, txTo, n, hashType, function(err) {
+    si.evalTwo(scriptSig, scriptPubKey, tx, n, hashType, function(err) {
       if (err) {
         callback(err);
         return;
@@ -908,7 +910,7 @@ ScriptInterpreter.prototype.verifyStep4 = function(callback, siCopy) {
 }
 
 ScriptInterpreter.prototype.verifyStep3 = function(scriptSig,
-  scriptPubKey, txTo, nIn, hashType, callback, siCopy) {
+  scriptPubKey, tx, nIn, hashType, callback, siCopy) {
 
   // 3rd step, check result (stack should contain true)
 
@@ -948,7 +950,7 @@ ScriptInterpreter.prototype.verifyStep3 = function(scriptSig,
   var subscript = new Script(siCopy.stackPop());
   var that = this;
   // evaluate the P2SH subscript
-  siCopy.eval(subscript, txTo, nIn, hashType, function(err) {
+  siCopy.eval(subscript, tx, nIn, hashType, function(err) {
     console.log('Err 3nd step: '+err);
     if (err) return callback(err);
     that.verifyStep4(callback, siCopy);
@@ -956,7 +958,7 @@ ScriptInterpreter.prototype.verifyStep3 = function(scriptSig,
 };
 
 ScriptInterpreter.prototype.verifyStep2 = function(scriptSig, scriptPubKey,
-  txTo, nIn, hashType, callback, siCopy) {
+  tx, nIn, hashType, callback, siCopy) {
   var siCopy;
   if (this.opts.verifyP2SH) {
     siCopy = new ScriptInterpreter(this.opts);
@@ -967,33 +969,33 @@ ScriptInterpreter.prototype.verifyStep2 = function(scriptSig, scriptPubKey,
 
   var that = this;
   // 2nd step, evaluate scriptPubKey
-  this.eval(scriptPubKey, txTo, nIn, hashType, function(err) {
+  this.eval(scriptPubKey, tx, nIn, hashType, function(err) {
     console.log('Err 2nd step: '+err);
     if (err) return callback(err);
-    that.verifyStep3(scriptSig, scriptPubKey, txTo, nIn,
+    that.verifyStep3(scriptSig, scriptPubKey, tx, nIn,
       hashType, callback, siCopy);
   });
 };
 
 ScriptInterpreter.prototype.verifyFull = function(scriptSig, scriptPubKey,
-  txTo, nIn, hashType, callback) {
+  tx, nIn, hashType, callback) {
   var that = this;
 
   // 1st step, evaluate scriptSig
-  this.eval(scriptSig, txTo, nIn, hashType, function(err) {
+  this.eval(scriptSig, tx, nIn, hashType, function(err) {
     console.log('Err 1st step: '+err);
     if (err) return callback(err);
-    that.verifyStep2(scriptSig, scriptPubKey, txTo, nIn,
+    that.verifyStep2(scriptSig, scriptPubKey, tx, nIn,
       hashType, callback);
   });
 };
 
 ScriptInterpreter.verifyFull =
-  function verifyFull(scriptSig, scriptPubKey, txTo, nIn, hashType,
+  function verifyFull(scriptSig, scriptPubKey, tx, nIn, hashType,
     opts, callback) {
     var si = new ScriptInterpreter(opts);
     si.verifyFull(scriptSig, scriptPubKey,
-      txTo, nIn, hashType, callback);
+      tx, nIn, hashType, callback);
 };
 
 
@@ -1009,7 +1011,6 @@ var checkSig = ScriptInterpreter.checkSig =
     // If the hash-type value is 0, then it is replaced by the last_byte of the signature.
     if (hashType === 0) {
       hashType = sig[sig.length - 1];
-      console.log('hash type 0 -> '+hashType);
     } else if (hashType != sig[sig.length - 1]) {
       console.log('wrong hashtype');
       callback(null, false);
@@ -1020,11 +1021,15 @@ var checkSig = ScriptInterpreter.checkSig =
     sig = sig.slice(0, sig.length - 1);
 
     // Signature verification requires a special hash procedure
+    console.log('rawtx '+buffertools.toHex(tx.serialize()));
     var hash = tx.hashForSignature(scriptCode, n, hashType);
+    console.log('n ='+n+'; hashType='+hashType);
+    console.log('hash ='+ buffertools.toHex(hash));
 
     // Verify signature
     var key = new Key();
-    key.public = pubkey;
+    //pubkey = buffertools.reverse(pubkey);
+    key.public = pubkey; 
 
     console.log('pubkey before verification: '+buffertools.toHex(key.public));
     console.log('sig before verification: '+buffertools.toHex(sig));
