@@ -1,4 +1,4 @@
 module.exports = {
   network: 'livenet',
-  logger: 'debug' // none, normal, debug
+  logger: 'normal' // none, normal, debug
 };
