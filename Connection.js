@@ -10,6 +10,7 @@ var PROTOCOL_VERSION   = 70000;
 var Binary             = imports.Binary || require('binary');
 var Put                = imports.Put || require('bufferput');
 var Buffers            = imports.Buffers || require('buffers');
+var Socks5Client       = imports.Socks5Client || require('socks5-client')
 require('./Buffers.monkey').patch(Buffers);
 
 var Block           = require('./Block');
@@ -22,10 +23,18 @@ var nonce           = util.generateNonce();
 
 var BIP0031_VERSION = 60000;
 
-function Connection(socket, peer) {
+function Connection(socket, peer, opts) {
   Connection.super(this, arguments);
+  
+  this.options = opts || {};
+
   this.socket = socket;
   this.peer = peer;
+
+  // check for socks5 proxy options and construct a proxied socket
+  if (this.options.proxy) {
+    this.socket = new Socks5Client(opts.proxy.host, opts.proxy.port);
+  }
 
   // A connection is considered "active" once we have received verack
   this.active = false;
@@ -36,7 +45,7 @@ function Connection(socket, peer) {
   // The (claimed) height of the remote peer's block chain
   this.bestHeight = 0;
   // Is this an inbound connection?
-  this.inbound = !!socket.server;
+  this.inbound = !!this.socket.server;
   // Have we sent a getaddr on this connection?
   this.getaddr = false;
 
@@ -53,6 +62,12 @@ function Connection(socket, peer) {
   this.setupHandlers();
 }
 Connection.parent = imports.parent || require('events').EventEmitter;
+
+Connection.prototype.open = function(callback) {
+  if (typeof callback === 'function') this.once('connect', callback);
+  this.socket.connect(this.peer.port, this.peer.host);
+  return this;
+};
 
 Connection.prototype.setupHandlers = function () {
   this.socket.addListener('connect', this.handleConnect.bind(this));
