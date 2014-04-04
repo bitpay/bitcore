@@ -74,9 +74,12 @@ Script.prototype.parse = function() {
 };
 
 Script.prototype.isPushOnly = function() {
-  for (var i = 0; i < this.chunks.length; i++)
-    if (!Buffer.isBuffer(this.chunks[i]))
+  for (var i = 0; i < this.chunks.length; i++) {
+    var op = this.chunks[i];
+    if (!Buffer.isBuffer(op) && op > OP_16) {
       return false;
+    }
+  }
 
   return true;
 };
@@ -376,6 +379,7 @@ Script.prototype.findAndDelete = function(chunk) {
       if (Buffer.isBuffer(this.chunks[i]) &&
         buffertools.compare(this.chunks[i], chunk) === 0) {
         this.chunks.splice(i, 1);
+        i--;
         dirty = true;
       }
     }
@@ -383,6 +387,7 @@ Script.prototype.findAndDelete = function(chunk) {
     for (var i = 0, l = this.chunks.length; i < l; i++) {
       if (this.chunks[i] === chunk) {
         this.chunks.splice(i, 1);
+        i--;
         dirty = true;
       }
     }
