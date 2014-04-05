@@ -309,8 +309,9 @@ Key::SetPublic(Local<String> property, Local<Value> value, const AccessorInfo& i
   Key* key = node::ObjectWrap::Unwrap<Key>(info.Holder());
   Handle<Object> buffer = value->ToObject();
   const unsigned char *data = (const unsigned char*) Buffer::Data(buffer);
+  ec_key_st* ret = o2i_ECPublicKey(&(key->ec), &data, Buffer::Length(buffer));
 
-  if (!o2i_ECPublicKey(&(key->ec), &data, Buffer::Length(buffer))) {
+  if (!ret) {
     // TODO: Error
     return;
   }

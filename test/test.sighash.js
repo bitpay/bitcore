@@ -98,8 +98,9 @@ var randomTx = function(single) {
 var oneBuffer = function() {
   // bug present in bitcoind which must be also present in bitcore
   // see https://bitcointalk.org/index.php?topic=260595
-  var ret = new Buffer(1);
+  var ret = new Buffer(32);
   ret.writeUInt8(1, 0);
+  for (var i=1; i<32; i++) ret.writeUInt8(0, i);
   return ret; // return 1 bug
 };
 
@@ -125,7 +126,7 @@ var signatureHashOld = function(tx, script, inIndex, hashType) {
   // Append hashType
   var hashBuf = new Put().word32le(hashType).buffer();
   buffer = Buffer.concat([buffer, hashBuf]);
-  return buffertools.reverse(util.twoSha256(buffer));
+  return util.twoSha256(buffer);
 };
 
 
@@ -156,7 +157,7 @@ describe('Transaction sighash (#hashForSignature)', function() {
     var scriptPubKey = new Script(new Buffer(datum[1], 'hex'));
     var input_index = parseInt(datum[2]);
     var hashType = parseInt(datum[3]);
-    var sighash = datum[4];
+    var sighash = buffertools.toHex(buffertools.reverse(new Buffer(datum[4],'hex')));
     it('should validate correctly ' + buffertools.toHex(raw_tx), function() {
       var tx = new Transaction();
       tx.parse(raw_tx);

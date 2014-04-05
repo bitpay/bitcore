@@ -64,7 +64,6 @@ TransactionIn.prototype.getOutpointHash = function getOutpointHash() {
   if ("undefined" !== typeof this.o.outHashCache) {
     return this.o.outHashCache;
   }
-
   return this.o.outHashCache = this.o.slice(0, 32);
 };
 
@@ -385,8 +384,9 @@ Transaction.Serializer = TransactionSignatureSerializer;
 var oneBuffer = function() {
   // bug present in bitcoind which must be also present in bitcore
   // see https://bitcointalk.org/index.php?topic=260595
-  var ret = new Buffer(1);
+  var ret = new Buffer(32);
   ret.writeUInt8(1, 0);
+  for (var i=1; i<32; i++) ret.writeUInt8(0, i);
   return ret; // return 1 bug
 };
 
@@ -412,7 +412,7 @@ Transaction.prototype.hashForSignature =
     // Append hashType
     var hashBuf = new Put().word32le(hashType).buffer();
     buffer = Buffer.concat([buffer, hashBuf]);
-    return buffertools.reverse(util.twoSha256(buffer));
+    return util.twoSha256(buffer);
 };
 
 /**
