@@ -1,7 +1,7 @@
 {
   "name": "bitcore",
   "description": "Bitcoin Library",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "author": {
     "name": "Stephen Pair",
     "email": "stephen@bitpay.com"
@@ -63,6 +63,7 @@
     "browserify-bignum": "git://github.com/maraoz/browserify-bignum.git",
     "browserify-buffertools": "git://github.com/maraoz/browserify-buffertools.git",
     "brfs": "~1.0.0",
+    "chai": "~1.9.0",
     "uglifyify": "~1.2.3"
   },
   "devDependencies": {
@@ -72,7 +73,6 @@
     "grunt-browserify": "~2.0.0",
     "grunt-markdown": "~0.5.0",
     "mocha": ">=1.15.1",
-    "chai": "~1.9.0",
     "brfs": "~1.0.0",
     "async": "~0.2.10",
     "commander": "~2.1.0",
