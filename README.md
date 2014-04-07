@@ -232,21 +232,21 @@ var getAddrStr = function(s) {
   switch (type) {
     case Script.TX_PUBKEY:
       var chunk = s.captureOne();
-      addr = new Address(network.addressPubkey, coinUtil.sha256ripe160(chunk));
+      addr = new Address(network.addressVersion, coinUtil.sha256ripe160(chunk));
       addrStrs.push(addr.toString());
       break;
     case Script.TX_PUBKEYHASH:
-      addr = new Address(network.addressPubkey, s.captureOne());
+      addr = new Address(network.addressVersion, s.captureOne());
       addrStrs.push(addr.toString());
       break;
     case Script.TX_SCRIPTHASH:
-      addr = new Address(network.addressScript, s.captureOne());
+      addr = new Address(network.P2SHVersion, s.captureOne());
       addrStrs.push(addr.toString());
       break;
     case Script.TX_MULTISIG:
       var chunks = s.capture();
       chunks.forEach(function(chunk) {
-        var a = new Address(network.addressPubkey, coinUtil.sha256ripe160(chunk));
+        var a = new Address(network.addressVersion, coinUtil.sha256ripe160(chunk));
         addrStrs.push(a.toString());
       });
       break;

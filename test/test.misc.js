@@ -23,6 +23,18 @@ describe('Miscelaneous stuff', function() {
   it('should initialze the log object', function() {
     should.exist(bitcore.log);
   });
+  it('should initialze the network object', function() {
+    should.exist(networks);
+    var nets = [networks.livenet, networks.testnet];
+    for (var i=0; i<2; i++) {
+      var net = nets[i];
+      should.exist(net.addressVersion);
+      should.exist(net.privKeyVersion);
+      should.exist(net.P2SHVersion);
+      should.exist(net.bip32publicVersion);
+      should.exist(net.bip32privateVersion);
+    }
+  });
   it('should initialze the const object', function() {
     should.exist(bitcore.const);
   });
@@ -122,7 +134,7 @@ describe('Miscelaneous stuff', function() {
           a.network().should.equal(network);
         });
         it('should generate correctly from hex', function() {
-          var version = shouldBeScript ? network.addressScript : network.addressPubkey;
+          var version = shouldBeScript ? network.P2SHVersion : network.addressVersion;
           var b = new Address(version, new Buffer(hexPayload, 'hex'));
           b.toString().should.equal(b58);
         });
