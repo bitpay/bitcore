@@ -22,8 +22,8 @@ WalletKey.prototype.generate = function() {
 WalletKey.prototype.storeObj = function() {
   var pubKey = this.privKey.public.toString('hex');
   var pubKeyHash = coinUtil.sha256ripe160(this.privKey.public);
-  var addr = new Address(this.network.addressPubkey, pubKeyHash);
-  var priv = new PrivateKey(this.network.keySecret, this.privKey.private, this.privKey.compressed);
+  var addr = new Address(this.network.addressVersion, pubKeyHash);
+  var priv = new PrivateKey(this.network.privKeyVersion, this.privKey.private, this.privKey.compressed);
   var obj = {
     created: this.created,
     priv: priv.toString(),

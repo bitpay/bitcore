@@ -128,9 +128,9 @@ TransactionBuilder.scriptForAddress = function(addressString) {
 
   var version = address.version();
   var script;
-  if (version === livenet.addressPubkey || version === testnet.addressPubkey)
+  if (version === livenet.addressVersion || version === testnet.addressVersion)
     script = Script.createPubKeyHashOut(address.payload());
-  else if (version === livenet.addressScript || version === testnet.addressScript)
+  else if (version === livenet.P2SHVersion || version === testnet.P2SHVersion)
     script = Script.createP2SH(address.payload());
   else
     throw new Error('invalid output address');
@@ -169,7 +169,7 @@ TransactionBuilder.infoForP2sh = function(opts, networkName) {
   var hash   = util.sha256ripe160(script.getBuffer());
 
   var version = networkName === 'testnet' ?
-    networks.testnet.addressScript : networks.livenet.addressScript;
+    networks.testnet.P2SHVersion : networks.livenet.P2SHVersion;
 
   var addr = new Address(version, hash);
   var addrStr = addr.as('base58');
@@ -439,7 +439,7 @@ TransactionBuilder.prototype._checkTx = function() {
 TransactionBuilder.prototype._multiFindKey = function(walletKeyMap,pubKeyHash) {
   var wk;
   [ networks.livenet, networks.testnet].forEach(function(n) {
-    [ n.addressPubkey, n.addressScript].forEach(function(v) {
+    [ n.addressVersion, n.P2SHVersion].forEach(function(v) {
       var a = new Address(v,pubKeyHash);
       if (!wk && walletKeyMap[a]) {
         wk = walletKeyMap[a];

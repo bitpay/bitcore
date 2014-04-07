@@ -70,9 +70,9 @@ PrivateKey.prototype.network = function() {
   var testnet = networks.testnet;
 
   var answer;
-  if (version === livenet.keySecret)
+  if (version === livenet.privKeyVersion)
     answer = livenet;
-  else if (version === testnet.keySecret)
+  else if (version === testnet.privKeyVersion)
     answer = testnet;
 
   return answer;

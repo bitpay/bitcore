@@ -12,9 +12,9 @@ var secp256k1_Gx = new bignum("79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D95
 
 var BIP32 = function(bytes) {
   if (bytes == 'mainnet' || bytes == 'livenet')
-    this.version = networks['livenet'].bip32private;
+    this.version = networks['livenet'].bip32privateVersion;
   else if (bytes == 'testnet')
-    this.version = networks['testnet'].bip32private;
+    this.version = networks['testnet'].bip32privateVersion;
 
   if (bytes == 'mainnet' || bytes == 'livenet' || bytes == 'testnet') {
     this.depth = 0x00;
@@ -63,7 +63,7 @@ BIP32.seed = function(bytes, network) {
   bip32.parentFingerprint = new Buffer([0, 0, 0, 0]);
   bip32.childIndex = new Buffer([0, 0, 0, 0]);
   bip32.chainCode = hash.slice(32, 64);
-  bip32.version = networks[network].bip32private;
+  bip32.version = networks[network].bip32privateVersion;
   bip32.eckey = new Key();
   bip32.eckey.private = hash.slice(0, 32);
   bip32.eckey.regenerateSync();
@@ -89,12 +89,12 @@ BIP32.prototype.initFromBytes = function(bytes) {
   var keyBytes = bytes.slice(45, 78);
 
   var isPrivate = 
-    (this.version == networks['livenet'].bip32private  ||
-     this.version == networks['testnet'].bip32private  );
+    (this.version == networks['livenet'].bip32privateVersion  ||
+     this.version == networks['testnet'].bip32privateVersion  );
 
   var isPublic = 
-    (this.version == networks['livenet'].bip32public  ||
-     this.version == networks['testnet'].bip32public  );
+    (this.version == networks['livenet'].bip32publicVersion  ||
+     this.version == networks['testnet'].bip32publicVersion  );
 
   if (isPrivate && keyBytes[0] == 0) {
     this.eckey = new Key();
@@ -121,13 +121,13 @@ BIP32.prototype.buildExtendedPublicKey = function() {
 
   var v = null;
   switch(this.version) {
-  case networks['livenet'].bip32public:
-  case networks['livenet'].bip32private:
-    v = networks['livenet'].bip32public;
+  case networks['livenet'].bip32publicVersion:
+  case networks['livenet'].bip32privateVersion:
+    v = networks['livenet'].bip32publicVersion;
     break;
-  case networks['testnet'].bip32public:
-  case networks['testnet'].bip32private:
-    v = networks['testnet'].bip32public;
+  case networks['testnet'].bip32publicVersion:
+  case networks['testnet'].bip32privateVersion:
+    v = networks['testnet'].bip32publicVersion;
     break;
    default:
     throw new Error("Unknown version");
@@ -256,8 +256,8 @@ BIP32.prototype.deriveChild = function(i) {
   var usePrivate = (i & 0x80000000) != 0;
 
   var isPrivate = 
-    (this.version == networks['livenet'].bip32private  ||
-     this.version == networks['testnet'].bip32private  );
+    (this.version == networks['livenet'].bip32privateVersion  ||
+     this.version == networks['testnet'].bip32privateVersion  );
 
   if (usePrivate && (!this.hasPrivateKey || !isPrivate))
     throw new Error("Cannot do private key derivation without private key");

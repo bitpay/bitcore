@@ -63,7 +63,7 @@ var run = function() {
   p('\tHex     : ' + buffertools.toHex(s.buffer));
   p('\tHuman   : ' + s.toHumanReadable());
   p('\tScript Hash: ' +  buffertools.toHex(hash));
-  var a = new Address(networks.livenet.addressScript,hash);
+  var a = new Address(networks.livenet.P2SHVersion,hash);
   p('\tp2sh Addr: ' +  a.toString());
  
 };

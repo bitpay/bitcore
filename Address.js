@@ -31,16 +31,16 @@ Address.prototype.network = function() {
   var testnet = networks.testnet;
 
   var answer;
-  if (version === livenet.addressPubkey || version === livenet.addressScript)
+  if (version === livenet.addressVersion || version === livenet.P2SHVersion)
     answer = livenet;
-  else if (version === testnet.addressPubkey || version === testnet.addressScript)
+  else if (version === testnet.addressVersion || version === testnet.P2SHVersion)
     answer = testnet;
 
   return answer;
 };
 
 Address.prototype.isScript = function() {
-  return this.isValid() && this.version() === this.network().addressScript;
+  return this.isValid() && this.version() === this.network().P2SHVersion;
 };
 
 
