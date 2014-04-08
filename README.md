@@ -1,6 +1,8 @@
 Bitcore
 =======
 
+[![Build Status](https://travis-ci.org/bitpay/bitcore.svg?branch=master)](https://travis-ci.org/bitpay/bitcore)
+
 A pure, powerful core for your bitcoin project.
 
 Bitcore is a complete, native interface to the Bitcoin network, and provides the core functionality needed to develop apps for bitcoin.
