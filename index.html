@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="css/normalize.css">
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/codemirror.css">
     <script type="text/javascript">
     window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(t){return function(){var a=Array.prototype.slice.call(arguments);return a.unshift(t),window.analytics.push(a),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(t){var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n)},window.analytics.SNIPPET_VERSION="2.0.8",
     window.analytics.load("yc2e6mxne0");
@@ -92,7 +93,40 @@ git clone git://github.com/bitpay/bitcore
         </form>
         <p>Note: If you clone the github repository, you can also generate the bundle yourself.</p>
 
+        <h2>Live Demo</h2>
+
+<table border="0" width="100%">
+<tr><td width="50%">
+<textarea id="code" name="code">
+var bitcore = require('bitcore');
+
+var password = 'an example of an insecure password';
+var privateKey = bitcore.util.sha256(password);
+
+var key = new bitcore.Key();
+key.private = privateKey;
+key.regenerateSync();
+
+var hash = bitcore.util.sha256ripe160(key.public);
+var version = bitcore.networks['livenet'].addressVersion;
+
+var addr = new bitcore.Address(version, hash);
+
+console.log("Brain wallet address: " + addr.toString());
+
+/*
+Disclaimer: Brain wallets are not recommended for real bitcoins, unless you use a very strong password.
+*/
+</textarea>
+</td><td width="50%">
+<textarea id="code-output" name="code-output">
+</textarea>
+</td></tr>
+</table>
+<button class="btn" id="execute-code">Execute</button>
+
         <h2>Examples</h2>
+
         <p>Validating a bitcoin address.</p>
 <pre>
 var bitcore = require('bitcore');
@@ -374,5 +408,42 @@ console.log(getAddrStr(s)[0]); // mkZBYBiq6DNoQEKakpMJegyDbw2YiNQnHT
     <script src="js/bootstrap.min.js"></script>
     <script src="js/a.js"></script>
     <script src="js/customize.js"></script>
+    <script src="js/bitcore.js"></script>
+    <script src="js/codemirror.js"></script>
+    <script src="js/codemirror-javascript.js"></script>
+<script type="text/javascript" id="script">
+window.onload = function() {
+  var te = document.getElementById("code");
+  te.value = (te.textContent || te.innerText || te.innerHTML).replace(/^\s*/, "");
+  var tr = document.getElementById("code-output");
+  tr.value = (tr.textContent || tr.innerText || tr.innerHTML).replace(/^\s*/, "");
+
+  window.editor = CodeMirror.fromTextArea(te, {
+    mode: "javascript",
+    lineNumbers: true,
+    lineWrapping: true,
+    foldGutter: true,
+    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
+  });
+
+  window.editor_output = CodeMirror.fromTextArea(tr, {
+    lineNumbers: true,
+    lineWrapping: true,
+    foldGutter: true,
+    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
+  });
+
+  $('#execute-code').click(function() {
+    var code = window.editor.value;
+    window.editor_output.setValue("");
+    var _log = console.log;
+    console.log = function(str) {
+      window.editor_output.setValue(window.editor_output.getValue() + str + "\n");
+    };
+    eval(window.editor.getValue());
+    console.log = _log;
+  });
+};
+</script>
 </body>
 </html>
