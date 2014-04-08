@@ -99,14 +99,19 @@ git clone git://github.com/bitpay/bitcore
 <tr><td width="50%">
 <textarea id="code" name="code">
 var bitcore = require('bitcore');
+
 var password = 'an example of an insecure password';
 var privateKey = bitcore.util.sha256(password);
+
 var key = new bitcore.Key();
 key.private = privateKey;
 key.regenerateSync();
+
 var hash = bitcore.util.sha256ripe160(key.public);
 var version = bitcore.networks['livenet'].addressVersion;
+
 var addr = new bitcore.Address(version, hash);
+
 console.log("Brain wallet address: " + addr.toString());
 
 /*
