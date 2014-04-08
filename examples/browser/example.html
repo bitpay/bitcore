@@ -9,12 +9,12 @@
     <pre>
       <div id='content'></div>
     </pre>
-    <script src="../browser/bundle.js"></script>
+    <script src="../../browser/bundle.js"></script>
 
     <script type="text/javascript">
       var Address = require('bitcore').Address;
 
-      print = function(s,s2,s3){
+      var print = function (s,s2,s3) {
         var div = document.getElementById('content');
         div.innerHTML += s + (s2||'') + (s3||'') + '<br />';
       };
@@ -90,6 +90,6 @@
       print('<hr><h1>TransactionBuilder</h1>');
       console.log = print;
     </script>
-    <script src="./CreateAndSignTx.js"></script>
+    <script src="../CreateAndSignTx-PayToPubkeyHash.js"></script>
   </body>
 </html>
