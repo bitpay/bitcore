@@ -187,7 +187,7 @@ Connection.prototype.sendVersion = function () {
 
 Connection.prototype.sendGetBlocks = function (starts, stop, wantHeaders) {
   // Default value for stop is 0 to get as many blocks as possible (500)
-  stop = stop || '00000000000000000000000000000000';
+  stop = stop || util.NULL_HASH;
 
   var put = new Put();
 
