@@ -112,6 +112,8 @@ PeerManager.prototype.addConnection = function(socketConn, peer) {
 
 PeerManager.prototype.handleVersion = function(e) {
   e.peer.version = e.message.version;
+  e.peer.start_height = e.message.start_height;
+
   if (!e.conn.inbound) {
     // TODO: Advertise our address (if listening)
   }
