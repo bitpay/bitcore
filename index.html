@@ -93,25 +93,32 @@ git clone git://github.com/bitpay/bitcore
         </form>
         <p>Note: If you clone the github repository, you can also generate the bundle yourself.</p>
 
-        <h2>Examples</h2>
-        <p>Validating a bitcoin address.</p>
+        <h2>Live Demo</h2>
+
 <table border="0" width="100%">
 <tr><td width="50%">
 <textarea id="code" name="code">
 var bitcore = require('bitcore');
-var Address = bitcore.Address;
-
-var addr = new Address("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa");
-
-console.log(addr.isValid());
+var password = 'an example of an insecure password';
+var privateKey = bitcore.util.sha256(password);
+var key = new bitcore.Key();
+key.private = privateKey;
+key.regenerateSync();
+var hash = bitcore.util.sha256ripe160(key.public);
+var version = bitcore.networks['livenet'].addressVersion;
+var addr = new bitcore.Address(version, hash);
+console.log("Brain wallet address: " + addr.toString());
 </textarea>
 </td><td width="50%">
 <textarea id="code-output" name="code-output">
-true
 </textarea>
 </td></tr>
 </table>
-<button id="execute-code">Execute</button>
+<button class="btn" id="execute-code">Execute</button>
+
+        <h2>Examples</h2>
+
+        <p>Validating a bitcoin address.</p>
 <pre>
 var bitcore = require('bitcore');
 var Address = bitcore.Address;
