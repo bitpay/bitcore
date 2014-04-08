@@ -186,10 +186,15 @@ Connection.prototype.sendVersion = function () {
 };
 
 Connection.prototype.sendGetBlocks = function (starts, stop, wantHeaders) {
-  var put = new Put();
-  put.word32le(this.sendVer);
+  // Default value for stop is 0 to get as many blocks as possible (500)
+  stop = stop || util.NULL_HASH;
 
+  var put = new Put();
+
+  // https://en.bitcoin.it/wiki/Protocol_specification#getblocks
+  put.word32le(this.sendVer);
   put.varint(starts.length);
+
   for (var i = 0; i < starts.length; i++) {
     if (starts[i].length != 32) {
       throw new Error('Invalid hash length');
@@ -443,8 +448,8 @@ Connection.prototype.parseMessage = function (command, payload) {
     data.headers = [];
     for (i = 0; i < data.count; i++) {
       var header = new Block();
-header.parse(parser);
-data.headers.push(header);
+      header.parse(parser);
+      data.headers.push(header);
     }
     break;
 
