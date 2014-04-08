@@ -187,4 +187,17 @@ describe('util', function() {
       });
     });
   });
+  describe('#calcDifficulty', function() {
+    var bitsgenesis = 486604799;
+    it('should work for ' + bitsgenesis, function() {
+      var difficulty = coinUtil.calcDifficulty(bitsgenesis);
+      difficulty.should.equal(1);
+    });
+    var bitslater = 419476394;
+    it('should work for ' + bitslater, function() {
+      var difficulty = coinUtil.calcDifficulty(bitslater);
+      difficulty.should.equal(6119726089);
+    });
+  });
+
 });
