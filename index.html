@@ -108,6 +108,10 @@ var hash = bitcore.util.sha256ripe160(key.public);
 var version = bitcore.networks['livenet'].addressVersion;
 var addr = new bitcore.Address(version, hash);
 console.log("Brain wallet address: " + addr.toString());
+
+/*
+Disclaimer: Brain wallets are not recommended for real bitcoins, unless you use a very strong password.
+*/
 </textarea>
 </td><td width="50%">
 <textarea id="code-output" name="code-output">
