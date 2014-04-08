@@ -160,20 +160,26 @@ Key::New()
 Handle<Value>
 Key::New(const Arguments& args)
 {
-  if (!args.IsConstructCall()) {
-    return FromConstructorTemplate(s_ct, args);
-  }
-
   HandleScope scope;
 
-  Key* key = new Key();
-  if (key->lastError != NULL) {
-    return VException(key->lastError);
+  // this was invoked as Key() not new Key()
+  if (!args.IsConstructCall()) {
+//    return FromConstructorTemplate(s_ct, args);
+
+    const int argc = 1;
+    Local<Value> argv[argc] = { args[0] };
+    return scope.Close(s_ct->GetFunction()->NewInstance(argc, argv));
   }
+  else{
+    Key* key = new Key();
+    if (key->lastError != NULL) {
+      return VException(key->lastError);
+    }
 
-  key->Wrap(args.Holder());
+    key->Wrap(args.Holder());
 
-  return scope.Close(args.This());
+    return scope.Close(args.This());
+  }
 }
 
 Handle<Value>
