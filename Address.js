@@ -27,7 +27,7 @@ Address.fromPubKey = function(pubKey, network) {
 };
 
 //create a p2sh m-of-n multisig address
-Address.fromPubKeys = function(mReq, pubKeys, network) {
+Address.fromPubKeys = function(mReq, pubKeys, network, opts) {
   if (!network)
     network = 'livenet';
 
@@ -37,12 +37,9 @@ Address.fromPubKeys = function(mReq, pubKeys, network) {
       throw new Error('Invalid public key');
   }
 
-  var version = networks[network].P2SHVersion;
-  var script = Script.createMultisig(mReq, pubKeys);
-  var buf = script.getBuffer();
-  var hash = coinUtil.sha256ripe160(buf)
+  var script = Script.createMultisig(mReq, pubKeys, opts);
 
-  return new Address(version, hash);
+  return Address.fromScript(script, network);
 };
 
 //create a p2sh address from redeemScript

@@ -120,6 +120,22 @@ describe('Address', function() {
       var addr2 = Address.fromPubKeys(mReq, pubKeys);
       addr.toString().should.equal(addr2.toString());
     });
+
+    it('it should make this hand-crafted address', function() {
+      var pubkey1 = new Buffer('03e0973263b4e0d5f5f56d25d430e777ab3838ff644db972c0bf32c31da5686c27', 'hex');
+      var pubkey2 = new Buffer('0371f94c57cc013507101e30794161f4e6b9efd58a9ea68838daf429b7feac8cb2', 'hex');
+      var pubkey3 = new Buffer('032c0d2e394541e2efdc7ac3500e16e7e69df541f38670402e95aa477202fa06bb', 'hex');
+      var pubKeys = [pubkey1, pubkey2, pubkey3];
+      var mReq = 2;
+      var script = bitcore.Script.createMultisig(mReq, pubKeys);
+      var addr = Address.fromScript(script);
+      
+      var hash = bitcore.util.sha256ripe160(script.getBuffer());
+      var version = bitcore.networks['livenet'].P2SHVersion;
+      var addr2 = new Address(version, hash);
+
+      addr.toString().should.equal(addr2.toString());
+    });
   });
  
 });
