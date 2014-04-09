@@ -41,10 +41,10 @@ var run = function() {
   });
 
   // multisig p2sh
-  var opts = {nreq:3, pubkeys:pubkeys, amount:0.05};
+  var opts = {nreq:3, pubkeys:pubkeys};
 
   // p2scriphash p2sh
-  //var opts = [{address: an_address, amount:0.05}];
+  //var opts = [{address: an_address}];
   
   var info = Builder.infoForP2sh(opts, 'testnet');
   var p2shScript = info.scriptBufHex;

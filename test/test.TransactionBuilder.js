@@ -563,7 +563,7 @@ describe('TransactionBuilder', function() {
     };
     var data = getInfoForP2sh();
     // multisig p2sh
-    var p2shOpts = {nreq:3, pubkeys:data.pubkeys, amount:0.05};
+    var p2shOpts = {nreq:3, pubkeys:data.pubkeys};
     var info = TransactionBuilder.infoForP2sh(p2shOpts, network);
 
     var outs = outs || [{
@@ -644,7 +644,7 @@ describe('TransactionBuilder', function() {
       remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
     };
     // p2hash/ p2sh
-    var p2shOpts = {address:'mgwqzy6pF5BSc72vxHBFSnnhNEBcV4TJzV', amount:0.05};
+    var p2shOpts = {address:'mgwqzy6pF5BSc72vxHBFSnnhNEBcV4TJzV'};
     var info = TransactionBuilder.infoForP2sh(p2shOpts, network);
 
     //addr: 2NAwCQ1jPYPrSsyBQvfP6AJ6d6SSxnHsZ4e
