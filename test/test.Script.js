@@ -84,6 +84,15 @@ describe('Script', function() {
     });
   });
 
+  describe('#parse', function() {
+    it('should parse this valid script', function() {
+      var scriptHex = '6a0843435000010001004c75726c3d687474702533612532662532666c6f63616c686f7374253361343636313125326663253266324d794a6e5065774c5a6241596a6843666f695652526679733937746d5231516d4b61';
+      var script = new Script(new Buffer(scriptHex, 'hex'));
+      should.exist(script);
+      script.chunks[2].length.should.equal(75);
+    });
+  });
+
   testdata.dataScriptAll.forEach(function(datum) {
     if (datum.length < 2) throw new Error('Invalid test data');
     var human = datum[0] + ' ' + datum[1];
@@ -97,5 +106,48 @@ describe('Script', function() {
       Script.fromHumanReadable(h2).toHumanReadable().should.equal(h2);
     });
   });
+
+  // Original test from https://github.com/ryanxcharles/treasure
+  var testPubKeysHex = [
+    '02c525d65d18be8fb36ab50a21bee02ac9fdc2c176fa18791ac664ea4b95572ae0',
+    '02b937d54b550a3afdc2819772822d25869495f9e588b56a0205617d80514f0758',
+    '0266dd7664e65958f3cc67bf92ad6243bc495df5ab56691719263977104b635bea',
+    '02ee91377073b04d1d9d19597b81a7be3db6554bd7d16151cb5599a6107a589e70',
+    '02c8f63ad4822ef360b5c300f08488fa0fa24af2b2bebb6d6b602ca938ee5af793'
+    ];
+
+  describe('#_sortKeys', function() {
+    it('should get the pubkeys in properly sorted order', function() {
+      var pubs = testPubKeysHex.map( function(hex) { 
+        return new Buffer(hex,'hex');
+      });
+      var sorted = Script._sortKeys(pubs);
+      sorted[0].toString('hex').should.equal(testPubKeysHex[2]);
+      sorted[1].toString('hex').should.equal(testPubKeysHex[1]);
+      sorted[2].toString('hex').should.equal(testPubKeysHex[0]);
+      sorted[3].toString('hex').should.equal(testPubKeysHex[4]);
+      sorted[4].toString('hex').should.equal(testPubKeysHex[3]);
+    });
+  });
+
+  describe('#createMultisig', function() {
+    it('should create ', function() {
+      var pubs = testPubKeysHex.map( function(hex) {
+        return new Buffer(hex,'hex');
+      });
+      var s1 = Script.createMultisig(3,pubs, {noSorting: true});
+
+      // test case generated with: bitcoind createmultisig 3 '["02c525d65d18be8fb36ab50a21bee02ac9fdc2c176fa18791ac664ea4b95572ae0", "02b937d54b550a3afdc2819772822d25869495f9e588b56a0205617d80514f0758", "0266dd7664e65958f3cc67bf92ad6243bc495df5ab56691719263977104b635bea","02ee91377073b04d1d9d19597b81a7be3db6554bd7d16151cb5599a6107a589e70", "02c8f63ad4822ef360b5c300f08488fa0fa24af2b2bebb6d6b602ca938ee5af793"]'
+      
+      s1.getBuffer().toString('hex').should.equal('532102c525d65d18be8fb36ab50a21bee02ac9fdc2c176fa18791ac664ea4b95572ae02102b937d54b550a3afdc2819772822d25869495f9e588b56a0205617d80514f0758210266dd7664e65958f3cc67bf92ad6243bc495df5ab56691719263977104b635bea2102ee91377073b04d1d9d19597b81a7be3db6554bd7d16151cb5599a6107a589e702102c8f63ad4822ef360b5c300f08488fa0fa24af2b2bebb6d6b602ca938ee5af79355ae');
+      var s2 = Script.createMultisig(3,pubs);
+
+      // test case generated with: bitcoind createmultisig 3 '["0266dd7664e65958f3cc67bf92ad6243bc495df5ab56691719263977104b635bea", "02b937d54b550a3afdc2819772822d25869495f9e588b56a0205617d80514f0758", "02c525d65d18be8fb36ab50a21bee02ac9fdc2c176fa18791ac664ea4b95572ae0", "02c8f63ad4822ef360b5c300f08488fa0fa24af2b2bebb6d6b602ca938ee5af793", "02ee91377073b04d1d9d19597b81a7be3db6554bd7d16151cb5599a6107a589e70"]'
+      s2.getBuffer().toString('hex').should.equal('53210266dd7664e65958f3cc67bf92ad6243bc495df5ab56691719263977104b635bea2102b937d54b550a3afdc2819772822d25869495f9e588b56a0205617d80514f07582102c525d65d18be8fb36ab50a21bee02ac9fdc2c176fa18791ac664ea4b95572ae02102c8f63ad4822ef360b5c300f08488fa0fa24af2b2bebb6d6b602ca938ee5af7932102ee91377073b04d1d9d19597b81a7be3db6554bd7d16151cb5599a6107a589e7055ae');
+
+    });
+  });
+
+
 
 });

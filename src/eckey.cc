@@ -10,6 +10,8 @@
 #include <openssl/ecdsa.h>
 #include <openssl/evp.h>
 
+#include <iostream>
+
 #include "common.h"
 #include "eckey.h"
 
@@ -121,6 +123,7 @@ void Key::Init(Handle<Object> target)
   // Static methods
   NODE_SET_METHOD(s_ct->GetFunction(), "generateSync", GenerateSync);
   NODE_SET_METHOD(s_ct->GetFunction(), "fromDER", FromDER);
+  NODE_SET_METHOD(s_ct->GetFunction(), "addUncompressed", AddUncompressed);
 
   target->Set(String::NewSymbol("Key"),
               s_ct->GetFunction());
@@ -306,8 +309,9 @@ Key::SetPublic(Local<String> property, Local<Value> value, const AccessorInfo& i
   Key* key = node::ObjectWrap::Unwrap<Key>(info.Holder());
   Handle<Object> buffer = value->ToObject();
   const unsigned char *data = (const unsigned char*) Buffer::Data(buffer);
+  ec_key_st* ret = o2i_ECPublicKey(&(key->ec), &data, Buffer::Length(buffer));
 
-  if (!o2i_ECPublicKey(&(key->ec), &data, Buffer::Length(buffer))) {
+  if (!ret) {
     // TODO: Error
     return;
   }
@@ -400,6 +404,81 @@ Key::FromDER(const Arguments& args)
   Handle<Value> result = cons->NewInstance(1, &external);
 
   return scope.Close(result);
+}
+
+Handle<Value>
+Key::AddUncompressed(const Arguments& args)
+{
+  HandleScope scope;
+
+  if (args.Length() != 2) {
+    return VException("Two arguments expected: point0, point1");
+  }
+  if (!Buffer::HasInstance(args[0])) {
+    return VException("Argument 'point0' must be of type Buffer");
+  }
+  if (Buffer::Length(args[0]) != 65) {
+    return VException("Argument 'point0' must have length 65");
+  }
+  if (!Buffer::HasInstance(args[1])) {
+    return VException("Argument 'point1' must be of type Buffer");
+  }
+  if (Buffer::Length(args[1]) != 65) {
+    return VException("Argument 'point1' must have length 65");
+  }
+
+  Handle<Object> point0_buf = args[0]->ToObject();
+  unsigned char *point0 = (unsigned char*) Buffer::Data(point0_buf);
+
+  Handle<Object> point1_buf = args[1]->ToObject();
+  unsigned char *point1 = (unsigned char*) Buffer::Data(point1_buf);
+
+  EC_KEY *eckey = EC_KEY_new_by_curve_name(NID_secp256k1);
+  const EC_GROUP *group = EC_KEY_get0_group(eckey);
+
+  BN_CTX *ctx;
+  EC_POINT *p0, *p1, *r;
+  BIGNUM *p0x, *p0y, *p1x, *p1y, *rx, *ry;
+  Buffer *rbuf;
+
+  p0 = EC_POINT_new(group);
+  p1 = EC_POINT_new(group);
+  r = EC_POINT_new(group);
+
+  p0x = BN_bin2bn(&point0[1], 32, BN_new());
+  p0y = BN_bin2bn(&point0[33], 32, BN_new());
+  p1x = BN_bin2bn(&point1[1], 32, BN_new());
+  p1y = BN_bin2bn(&point1[33], 32, BN_new());
+
+  ctx = BN_CTX_new();
+
+  EC_POINT_set_affine_coordinates_GFp(group, p0, p0x, p0y, ctx);
+  EC_POINT_set_affine_coordinates_GFp(group, p1, p1x, p1y, ctx);
+
+  EC_POINT_add(group, r, p0, p1, ctx);
+
+  rx = BN_new();
+  ry = BN_new();
+  EC_POINT_get_affine_coordinates_GFp(group, r, rx, ry, ctx);
+  
+  rbuf = Buffer::New(65);
+  EC_POINT_point2oct(group, r, POINT_CONVERSION_UNCOMPRESSED, (unsigned char *)Buffer::Data(rbuf), 65, ctx);
+
+  //free: eckey, p0, p1, r, p0x, p0y, p1x, p1y, ctx, rx, ry, /*rbuf,*/ rcx, rcy
+  BN_clear_free(ry);
+  BN_clear_free(rx);
+  //do not free rbuf - this is returned
+  BN_CTX_free(ctx);
+  BN_clear_free(p0x);
+  BN_clear_free(p0y);
+  BN_clear_free(p1x);
+  BN_clear_free(p1y);
+  EC_POINT_free(r);
+  EC_POINT_free(p1);
+  EC_POINT_free(p0);
+  EC_KEY_free(eckey);
+
+  return scope.Close(rbuf->handle_);
 }
 
 Handle<Value>

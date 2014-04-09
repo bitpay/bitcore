@@ -12,6 +12,7 @@ var requireWhenAccessed = function(name, file) {
 
 requireWhenAccessed('bignum', 'bignum');
 requireWhenAccessed('base58', 'base58-native');
+requireWhenAccessed('bufferput', 'bufferput');
 requireWhenAccessed('buffertools', 'buffertools');
 requireWhenAccessed('config', './config');
 requireWhenAccessed('const', './const');
@@ -21,10 +22,14 @@ requireWhenAccessed('networks', './networks');
 requireWhenAccessed('util', './util/util');
 requireWhenAccessed('EncodedData', './util/EncodedData');
 requireWhenAccessed('VersionedData', './util/VersionedData');
+requireWhenAccessed('BinaryParser', './util/BinaryParser');
 requireWhenAccessed('Address', './Address');
+requireWhenAccessed('BIP32', './BIP32');
+requireWhenAccessed('Point', './Point');
 requireWhenAccessed('Opcode', './Opcode');
 requireWhenAccessed('Script', './Script');
 requireWhenAccessed('Transaction', './Transaction');
+requireWhenAccessed('TransactionBuilder', './TransactionBuilder');
 requireWhenAccessed('Connection', './Connection');
 requireWhenAccessed('Peer', './Peer');
 requireWhenAccessed('Block', './Block');

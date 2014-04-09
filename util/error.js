@@ -9,7 +9,8 @@ function MissingSourceError(msg, missingTxHash) {
   // TODO: Since this happens in normal operation, perhaps we should
   //       avoid generating a whole stack trace.
   Error.call(this);
-  Error.captureStackTrace(this, arguments.callee);
+// This is not compatible with firefox.
+//  Error.captureStackTrace(this, arguments.callee);
   this.message = msg;
   this.missingTxHash = missingTxHash;
   this.name = 'MissingSourceError';
@@ -18,6 +19,7 @@ function MissingSourceError(msg, missingTxHash) {
 MissingSourceError.prototype.__proto__ = Error.prototype;
 
 exports.MissingSourceError = MissingSourceError;
+
 
 /**
  * Used in several places to indicate invalid data.
@@ -29,7 +31,9 @@ function VerificationError(msg, missingTxHash) {
   // TODO: Since this happens in normal operation, perhaps we should
   //       avoid generating a whole stack trace.
   Error.call(this);
-  Error.captureStackTrace(this, arguments.callee);
+
+// This is not compatible with firefox.
+//  Error.captureStackTrace(this, arguments.callee);
   this.message = msg;
   this.missingTxHash = missingTxHash;
   this.name = 'VerificationError';

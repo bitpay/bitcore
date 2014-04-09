@@ -7,10 +7,15 @@ var unmute = require('./mute').unmute;
 
 var examples = [
   'Address',
+  'BIP32',
   'PeerManager',
   'Rpc',
   'SendTx',
-  'CreateAndSignTx',
+  'CreateScript',
+  'CreateKey',
+  'CreateAndSignTx-Multisig',
+  'CreateAndSignTx-PayToPubkeyHash',
+  'CreateAndSignTx-PayToScriptHash',
   'Script',
 ];
 

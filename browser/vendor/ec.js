@@ -314,3 +314,6 @@ ECCurveFp.prototype.equals = curveFpEquals;
 ECCurveFp.prototype.getInfinity = curveFpGetInfinity;
 ECCurveFp.prototype.fromBigInteger = curveFpFromBigInteger;
 ECCurveFp.prototype.decodePointHex = curveFpDecodePointHex;
+
+module.exports.ECPointFp = ECPointFp;
+module.exports.ECFieldElementFp = ECFieldElementFp;

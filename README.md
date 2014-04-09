@@ -1,6 +1,8 @@
 Bitcore
 =======
 
+[![Build Status](https://travis-ci.org/bitpay/bitcore.svg?branch=master)](https://travis-ci.org/bitpay/bitcore)
+
 A pure, powerful core for your bitcoin project.
 
 Bitcore is a complete, native interface to the Bitcoin network, and provides the core functionality needed to develop apps for bitcoin.
@@ -17,7 +19,7 @@ Bitcore runs on [node](http://nodejs.org/), and can be installed via [npm](https
 npm install bitcore
 ```
 
-It is a collection of objects useful to bitcoin applications; class-like idioms are enabled via [Soop](https://github.com/gasteve/soop). In most cases, a developer will require the object's class directly. For instance:
+It is a collection of objects useful to bitcoin applications; class-like idioms are enabled via [Soop](https://github.com/bitpay/soop). In most cases, a developer will require the object's class directly. For instance:
 ```
 var bitcore = require('bitcore');
 var Address = bitcore.Address;
@@ -124,59 +126,48 @@ rpc.getBlock(hash, function(err, ret) {
 Check the list of all supported RPC call at [RpcClient.js](RpcClient.js)
 
 ## Creating and sending a Transaction through P2P
-For this example you need a running bitcoind instance with RPC enabled. 
+
+The fee of the transaction can be given in `opts` or it will be determined 
+by the transaction size. Documentation on the paramets of `TransactionBuilder`
+can be found on the source file.
+
 ```js
 var bitcore = require('bitcore');
 var networks = bitcore.networks;
 var Peer = bitcore.Peer;
-var Transaction = bitcore.Transaction;
-var Address = bitcore.Address;
-var Script = bitcore.Script;
-var coinUtil = bitcore.util;
+var TransactionBuilder = bitcore.TransactionBuilder;
 var PeerManager = require('soop').load('../PeerManager', {
   network: networks.testnet
 });
 
-var createTx = function() {
-  var TXIN = 'd05f35e0bbc495f6dcab03e599c8f5e32a07cdb4bc76964de201d06a2a7d8265';
-  var TXIN_N = 0;
-  var ADDR = 'muHct3YZ9Nd5Pq7uLYYhXRAxeW4EnpcaLz';
-  var VAL = '0.001';
+// this can be get from insight.bitcore.io API o blockchain.info
 
-  var txobj = {
-    version: 1,
-    lock_time: 0,
-    ins: [],
-    outs: []
-  };
+var unspent = [
+    {
+      "address": "n4g2TFaQo8UgedwpkYdcQFF6xE2Ei9Czvy",
+      "txid": "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1",
+      "scriptPubKey": "76a914fe021bac469a5c49915b2a8ffa7390a9ce5580f988ac",
+      "vout": 1,
+      "amount": 1.0101,
+      "confirmations":7
+    },
+    {
+      "address": "mhNCT9TwZAGF1tLPpZdqfkTmtBkY282YDW",
+      "txid": "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc2",
+      "scriptPubKey": "76a9141448534cb1a1ec44665b0eb2326e570814afe3f188ac",
+      "vout": 0,
+      "confirmations": 1,
+      "amount": 10
+    },
+];
 
-  var txin = {
-    s: coinUtil.EMPTY_BUFFER, // Add signature
-    q: 0xffffffff
-  };
+//private keys in WIF format (see TransactionBuilder.js for other options)
+var keys = [
+  "cSq7yo4fvsbMyWVN945VUGUWMaSazZPWqBVJZyoGsHmNq6W4HVBV",
+  "cPa87VgwZfowGZYaEenoQeJgRfKW6PhZ1R65EHTkN1K19cSvc92G",
+  "cPQ9DSbBRLva9av5nqeF5AGrh3dsdW8p2E5jS4P8bDWZAoQTeeKB"
+];
 
-  var hash = new Buffer(TXIN.split('').reverse(), 'hex');
-  var vout = parseInt(TXIN_N);
-  var voutBuf = new Buffer(4);
-
-  voutBuf.writeUInt32LE(vout, 0);
-  txin.o = Buffer.concat([hash, voutBuf]);
-  txobj.ins.push(txin);
-
-  var addr = new Address(ADDR);
-  var script = Script.createPubKeyHashOut(addr.payload());
-  var valueNum = coinUtil.parseValue(VAL);
-  var value = coinUtil.bigIntToValue(valueNum);
-
-  var txout = {
-    v: value,
-    s: script.getBuffer(),
-  };
-  txobj.outs.push(txout);
-
-  return new Transaction(txobj);
-
-};
 
 var peerman = new PeerManager();
 peerman.addPeer(new Peer('127.0.0.1', 18333));
@@ -184,7 +175,36 @@ peerman.addPeer(new Peer('127.0.0.1', 18333));
 peerman.on('connect', function() {
   var conn = peerman.getActiveConnection();
   if (conn) {
-    conn.sendTx(createTx());
+    var outs = [{address:toAddress, amount:amt}];
+    var opts = {remainderAddress: changeAddressString};
+    var Builder = bitcore.TransactionBuilder;
+
+    var tx = new Builder(opts)
+      .setUnspent(Unspent)
+      .setOutputs(outs)
+      .sign(keys)
+      .build();
+
+   /* create and signing can be done in multiple steps using:
+    *
+    *  var builder = new bitcore.TransactionBuilder(opts)
+    *             .setUnspent(utxos) 
+    *             .setOutputs(outs);
+    *  //later
+    *  builder.sign(key1);
+    *  // get partially signed tx
+    *   var tx = builder.build();
+    *
+    *  //later
+    *  builder.sign(key2);
+    *  if (builder.isFullySigned()){
+    *   var tx = builder.build();
+    *  }
+    *
+    *  The selected Unspent Outputs for the transaction can be retrieved with:
+    *    var selectedUnspent = build.getSelectedUnspent();
+    */
+    conn.sendTx(tx.serialize().toString('hex'));
   }
   conn.on('reject', function() {
     console.log('Transaction Rejected');
@@ -214,21 +234,21 @@ var getAddrStr = function(s) {
   switch (type) {
     case Script.TX_PUBKEY:
       var chunk = s.captureOne();
-      addr = new Address(network.addressPubkey, coinUtil.sha256ripe160(chunk));
+      addr = new Address(network.addressVersion, coinUtil.sha256ripe160(chunk));
       addrStrs.push(addr.toString());
       break;
     case Script.TX_PUBKEYHASH:
-      addr = new Address(network.addressPubkey, s.captureOne());
+      addr = new Address(network.addressVersion, s.captureOne());
       addrStrs.push(addr.toString());
       break;
     case Script.TX_SCRIPTHASH:
-      addr = new Address(network.addressScript, s.captureOne());
+      addr = new Address(network.P2SHVersion, s.captureOne());
       addrStrs.push(addr.toString());
       break;
     case Script.TX_MULTISIG:
       var chunks = s.capture();
       chunks.forEach(function(chunk) {
-        var a = new Address(network.addressPubkey, coinUtil.sha256ripe160(chunk));
+        var a = new Address(network.addressVersion, coinUtil.sha256ripe160(chunk));
         addrStrs.push(a.toString());
       });
       break;
@@ -296,6 +316,30 @@ This will generate a `browser/bundle.js` containing only the Transaction
  and Address class, with all their dependencies. 
 Use this option if you are not using the whole bitcore library, to optimize
 the bundle size, script loading time, and general resource usage.
+
+## Tests
+
+Run tests in node: 
+
+```
+mocha
+```
+
+Or generate tests in the browser:
+
+```
+grunt shell
+```
+
+And then open test/index.html in your browser.
+
+To run the code coverage report:
+
+```
+npm run-script coverage
+```
+
+And then open coverage/lcov-report/index.html in your browser.
 
 
 #License

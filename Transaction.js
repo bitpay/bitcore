@@ -1,18 +1,24 @@
-var imports            = require('soop').imports();
-var config             = imports.config || require('./config');
-var log                = imports.log || require('./util/log');
-var Address            = imports.Address || require('./Address');
-var Script             = imports.Script || require('./Script');
-var ScriptInterpreter  = imports.ScriptInterpreter || require('./ScriptInterpreter');
-var util               = imports.util || require('./util/util');
-var bignum             = imports.bignum || require('bignum');
-var Put                = imports.Put || require('bufferput');
-var Parser             = imports.Parser || require('./util/BinaryParser');
-var Step               = imports.Step || require('step');
-var buffertools        = imports.buffertools || require('buffertools');
-var error              = imports.error || require('./util/error');
+var imports = require('soop').imports();
+var config = imports.config || require('./config');
+var log = imports.log || require('./util/log');
+var Address = imports.Address || require('./Address');
+var Script = imports.Script || require('./Script');
+var ScriptInterpreter = imports.ScriptInterpreter || require('./ScriptInterpreter');
+var util = imports.util || require('./util/util');
+var bignum = imports.bignum || require('bignum');
+var Put = imports.Put || require('bufferput');
+var Parser = imports.Parser || require('./util/BinaryParser');
+var Step = imports.Step || require('step');
+var buffertools = imports.buffertools || require('buffertools');
+var error = imports.error || require('./util/error');
+var networks = imports.networks || require('./networks');
+var WalletKey = imports.WalletKey || require('./WalletKey');
+var PrivateKey = imports.PrivateKey || require('./PrivateKey');
 
 var COINBASE_OP = Buffer.concat([util.NULL_HASH, new Buffer('FFFFFFFF', 'hex')]);
+var FEE_PER_1000B_SAT = parseInt(0.0001 * util.COIN);
+
+Transaction.COINBASE_OP = COINBASE_OP;
 
 function TransactionIn(data) {
   if ("object" !== typeof data) {
@@ -30,7 +36,7 @@ function TransactionIn(data) {
     }
   }
   this.s = Buffer.isBuffer(data.s) ? data.s :
-           Buffer.isBuffer(data.script) ? data.script : util.EMPTY_BUFFER;
+    Buffer.isBuffer(data.script) ? data.script : util.EMPTY_BUFFER;
   this.q = data.q ? data.q : data.sequence;
 }
 
@@ -39,7 +45,10 @@ TransactionIn.prototype.getScript = function getScript() {
 };
 
 TransactionIn.prototype.isCoinBase = function isCoinBase() {
-  return buffertools.compare(this.o, COINBASE_OP) === 0;
+  if (!this.o) return false;
+
+  //The new Buffer is for Firefox compatibility
+  return buffertools.compare(new Buffer(this.o), COINBASE_OP) === 0;
 };
 
 TransactionIn.prototype.serialize = function serialize() {
@@ -55,20 +64,19 @@ TransactionIn.prototype.getOutpointHash = function getOutpointHash() {
   if ("undefined" !== typeof this.o.outHashCache) {
     return this.o.outHashCache;
   }
-
   return this.o.outHashCache = this.o.slice(0, 32);
 };
 
 TransactionIn.prototype.getOutpointIndex = function getOutpointIndex() {
-  return (this.o[32]      ) +
-         (this.o[33] <<  8) +
-         (this.o[34] << 16) +
-         (this.o[35] << 24);
+  return (this.o[32]) +
+    (this.o[33] << 8) +
+    (this.o[34] << 16) +
+    (this.o[35] << 24);
 };
 
 TransactionIn.prototype.setOutpointIndex = function setOutpointIndex(n) {
-  this.o[32] = n       & 0xff;
-  this.o[33] = n >>  8 & 0xff;
+  this.o[32] = n & 0xff;
+  this.o[33] = n >> 8 & 0xff;
   this.o[34] = n >> 16 & 0xff;
   this.o[35] = n >> 24 & 0xff;
 };
@@ -102,14 +110,14 @@ function Transaction(data) {
   this.hash = data.hash || null;
   this.version = data.version;
   this.lock_time = data.lock_time;
-  this.ins = Array.isArray(data.ins) ? data.ins.map(function (data) {
+  this.ins = Array.isArray(data.ins) ? data.ins.map(function(data) {
     var txin = new TransactionIn();
     txin.s = data.s;
     txin.q = data.q;
     txin.o = data.o;
     return txin;
   }) : [];
-  this.outs = Array.isArray(data.outs) ? data.outs.map(function (data) {
+  this.outs = Array.isArray(data.outs) ? data.outs.map(function(data) {
     var txout = new TransactionOut();
     txout.v = data.v;
     txout.s = data.s;
@@ -121,7 +129,7 @@ this.class = Transaction;
 Transaction.In = TransactionIn;
 Transaction.Out = TransactionOut;
 
-Transaction.prototype.isCoinBase = function () {
+Transaction.prototype.isCoinBase = function() {
   return this.ins.length == 1 && this.ins[0].isCoinBase();
 };
 
@@ -148,12 +156,12 @@ Transaction.prototype.serialize = function serialize() {
   bufs.push(buf);
 
   bufs.push(util.varIntBuf(this.ins.length));
-  this.ins.forEach(function (txin) {
+  this.ins.forEach(function(txin) {
     bufs.push(txin.serialize());
   });
 
   bufs.push(util.varIntBuf(this.outs.length));
-  this.outs.forEach(function (txout) {
+  this.outs.forEach(function(txout) {
     bufs.push(txout.serialize());
   });
 
@@ -172,7 +180,7 @@ Transaction.prototype.getBuffer = function getBuffer() {
 };
 
 Transaction.prototype.calcHash = function calcHash() {
-  this.hash =  util.twoSha256(this.getBuffer());
+  this.hash = util.twoSha256(this.getBuffer());
   return this.hash;
 };
 
@@ -200,158 +208,16 @@ Transaction.prototype.inputs = function inputs() {
   }
 
   return res;
-}
-
-/**
- * Load and cache transaction inputs.
- *
- * This function will try to load the inputs for a transaction.
- *
- * @param {BlockChain} blockChain A reference to the BlockChain object.
- * @param {TransactionMap|null} txStore Additional transactions to consider.
- * @param {Boolean} wait Whether to keep trying until the dependencies are
- * met (or a timeout occurs.)
- * @param {Function} callback Function to call on completion.
- */
-Transaction.prototype.cacheInputs =
-function cacheInputs(blockChain, txStore, wait, callback) {
-  var self = this;
-
-  var txCache = new TransactionInputsCache(this);
-  txCache.buffer(blockChain, txStore, wait, callback);
 };
 
-Transaction.prototype.verify = function verify(txCache, blockChain, callback) {
-  var self = this;
-
-  var txIndex = txCache.txIndex;
-
-  var outpoints = [];
-
-  var valueIn = bignum(0);
-  var valueOut = bignum(0);
-
-  function getTxOut(txin, n) {
-    var outHash = txin.getOutpointHash();
-    var outIndex = txin.getOutpointIndex();
-    var outHashBase64 = outHash.toString('base64');
-    var fromTxOuts = txIndex[outHashBase64];
-
-    if (!fromTxOuts) {
-      throw new MissingSourceError(
-        "Source tx " + util.formatHash(outHash) +
-          " for inputs " + n  + " not found",
-        // We store the hash of the missing tx in the error
-        // so that the txStore can watch out for it.
-        outHash.toString('base64')
-      );
-    }
-
-    var txout = fromTxOuts[outIndex];
-
-    if (!txout) {
-      throw new Error("Source output index "+outIndex+
-                      " for input "+n+" out of bounds");
-    }
-
-    return txout;
-  };
-
-  Step(
-    function verifyInputs() {
-      var group = this.group();
-
-      if (self.isCoinBase()) {
-        throw new Error("Coinbase tx are invalid unless part of a block");
-      }
-
-      self.ins.forEach(function (txin, n) {
-        var txout = getTxOut(txin, n);
-
-        // TODO: Verify coinbase maturity
-
-        valueIn = valueIn.add(util.valueToBigInt(txout.v));
-
-        outpoints.push(txin.o);
-
-        self.verifyInput(n, txout.getScript(), group());
-      });
-    },
-
-    function verifyInputsResults(err, results) {
-      if (err) throw err;
-
-      for (var i = 0, l = results.length; i < l; i++) {
-        if (!results[i]) {
-          var txout = getTxOut(self.ins[i]);
-          log.debug('Script evaluated to false');
-          log.debug('|- scriptSig', ""+self.ins[i].getScript());
-          log.debug('`- scriptPubKey', ""+txout.getScript());
-          throw new VerificationError('Script for input '+i+' evaluated to false');
-        }
-      }
-
-      this();
-    },
-
-    function queryConflicts(err) {
-      if (err) throw err;
-
-      // Make sure there are no other transactions spending the same outs
-      blockChain.countConflictingTransactions(outpoints, this);
-    },
-    function checkConflicts(err, count) {
-      if (err) throw err;
-
-      self.outs.forEach(function (txout) {
-        valueOut = valueOut.add(util.valueToBigInt(txout.v));
-      });
-
-      if (valueIn.cmp(valueOut) < 0) {
-        var outValue = util.formatValue(valueOut);
-        var inValue = util.formatValue(valueIn);
-        throw new Error("Tx output value (BTC "+outValue+") "+
-                        "exceeds input value (BTC "+inValue+")");
-      }
-
-      var fees = valueIn.sub(valueOut);
-
-      if (count) {
-        // Spent output detected, retrieve transaction that spends it
-        blockChain.getConflictingTransactions(outpoints, function (err, results) {
-          if (results.length) {
-            if (buffertools.compare(results[0].getHash(), self.getHash()) === 0) {
-              log.warn("Detected tx re-add (recoverable db corruption): "
-                          + util.formatHashAlt(results[0].getHash()));
-              // TODO: Needs to return an error for the memory pool case?
-              callback(null, fees);
-            } else {
-              callback(new Error("At least one referenced output has"
-                                 + " already been spent in tx "
-                                 + util.formatHashAlt(results[0].getHash())));
-            }
-          } else {
-            callback(new Error("Outputs of this transaction are spent, but "+
-                               "the transaction(s) that spend them are not "+
-                               "available. This probably means you need to "+
-                               "reset your database."));
-          }
-        });
-        return;
-      }
-
-      // Success
-      this(null, fees);
-    },
-    callback
-  );
-};
-
-Transaction.prototype.verifyInput = function verifyInput(n, scriptPubKey, callback) {
-  return ScriptInterpreter.verify(this.ins[n].getScript(),
-                                  scriptPubKey,
-                                  this, n, 0,
-                                  callback);
+Transaction.prototype.verifyInput = function verifyInput(n, scriptPubKey, opts, callback) {
+  var scriptSig = this.ins[n].getScript();
+  return ScriptInterpreter.verifyFull(
+    scriptSig,
+    scriptPubKey,
+    this, n, 0,
+    opts,
+    callback);
 };
 
 /**
@@ -368,61 +234,47 @@ Transaction.prototype.getAffectedKeys = function getAffectedKeys(txCache) {
 
     // Index any pubkeys affected by the outputs of this transaction
     for (var i = 0, l = this.outs.length; i < l; i++) {
-      try {
-        var txout = this.outs[i];
-        var script = txout.getScript();
+      var txout = this.outs[i];
+      var script = txout.getScript();
 
-        var outPubKey = script.simpleOutPubKeyHash();
-        if (outPubKey) {
-          this.affects.push(outPubKey);
-        }
-      } catch (err) {
-        // It's not our job to validate, so we just ignore any errors and issue
-        // a very low level log message.
-        log.debug("Unable to determine affected pubkeys: " +
-                     (err.stack ? err.stack : ""+err));
+      var outPubKey = script.simpleOutPubKeyHash();
+      if (outPubKey) {
+        this.affects.push(outPubKey);
       }
     };
 
     // Index any pubkeys affected by the inputs of this transaction
     var txIndex = txCache.txIndex;
     for (var i = 0, l = this.ins.length; i < l; i++) {
-      try {
-        var txin = this.ins[i];
+      var txin = this.ins[i];
 
-        if (txin.isCoinBase()) continue;
+      if (txin.isCoinBase()) continue;
 
-        // In the case of coinbase or IP transactions, the txin doesn't
-        // actually contain the pubkey, so we look at the referenced txout
-        // instead.
-        var outHash = txin.getOutpointHash();
-        var outIndex = txin.getOutpointIndex();
-        var outHashBase64 = outHash.toString('base64');
-        var fromTxOuts = txIndex[outHashBase64];
+      // In the case of coinbase or IP transactions, the txin doesn't
+      // actually contain the pubkey, so we look at the referenced txout
+      // instead.
+      var outHash = txin.getOutpointHash();
+      var outIndex = txin.getOutpointIndex();
+      var outHashBase64 = outHash.toString('base64');
+      var fromTxOuts = txIndex[outHashBase64];
 
-        if (!fromTxOuts) {
-          throw new Error("Input not found!");
-        }
+      if (!fromTxOuts) {
+        throw new Error("Input not found!");
+      }
 
-        var txout = fromTxOuts[outIndex];
-        var script = txout.getScript();
+      var txout = fromTxOuts[outIndex];
+      var script = txout.getScript();
 
-        var outPubKey = script.simpleOutPubKeyHash();
-        if (outPubKey) {
-          this.affects.push(outPubKey);
-        }
-      } catch (err) {
-        // It's not our job to validate, so we just ignore any errors and issue
-        // a very low level log message.
-        log.debug("Unable to determine affected pubkeys: " +
-                     (err.stack ? err.stack : ""+err));
+      var outPubKey = script.simpleOutPubKeyHash();
+      if (outPubKey) {
+        this.affects.push(outPubKey);
       }
     }
   }
 
   var affectedKeys = {};
 
-  this.affects.forEach(function (pubKeyHash) {
+  this.affects.forEach(function(pubKeyHash) {
     affectedKeys[pubKeyHash.toString('base64')] = pubKeyHash;
   });
 
@@ -434,116 +286,133 @@ var OP_CODESEPARATOR = 171;
 var SIGHASH_ALL = 1;
 var SIGHASH_NONE = 2;
 var SIGHASH_SINGLE = 3;
-var SIGHASH_ANYONECANPAY = 80;
+var SIGHASH_ANYONECANPAY = 0x80;
 
-Transaction.SIGHASH_ALL=SIGHASH_ALL;
-Transaction.SIGHASH_NONE=SIGHASH_NONE;
-Transaction.SIGHASH_SINGLE=SIGHASH_SINGLE;
-Transaction.SIGHASH_ANYONECANPAY=SIGHASH_ANYONECANPAY;
+Transaction.SIGHASH_ALL = SIGHASH_ALL;
+Transaction.SIGHASH_NONE = SIGHASH_NONE;
+Transaction.SIGHASH_SINGLE = SIGHASH_SINGLE;
+Transaction.SIGHASH_ANYONECANPAY = SIGHASH_ANYONECANPAY;
+
+var TransactionSignatureSerializer = function(txTo, scriptCode, nIn, nHashType) {
+  this.txTo = txTo;
+  this.scriptCode = scriptCode;
+  this.nIn = nIn;
+  this.anyoneCanPay = !!(nHashType & SIGHASH_ANYONECANPAY);
+  var hashTypeMode = nHashType & 0x1f;
+  this.hashSingle = hashTypeMode === SIGHASH_SINGLE;
+  this.hashNone = hashTypeMode === SIGHASH_NONE;
+  this.bytes = new Put();
+};
+
+// serialize an output of txTo
+TransactionSignatureSerializer.prototype.serializeOutput = function(nOutput) {
+  if (this.hashSingle && nOutput != this.nIn) {
+    // Do not lock-in the txout payee at other indices as txin
+    // ::Serialize(s, CTxOut(), nType, nVersion);
+    this.bytes.put(util.INT64_MAX);
+    this.bytes.varint(0);
+  } else {
+    //::Serialize(s, txTo.vout[nOutput], nType, nVersion);
+    var out = this.txTo.outs[nOutput];
+    this.bytes.put(out.v);
+    this.bytes.varint(out.s.length);
+    this.bytes.put(out.s);
+  }
+};
+
+// serialize the script
+TransactionSignatureSerializer.prototype.serializeScriptCode = function() {
+  this.scriptCode.findAndDelete(OP_CODESEPARATOR);
+  this.bytes.varint(this.scriptCode.buffer.length);
+  this.bytes.put(this.scriptCode.buffer);
+};
+
+// serialize an input of txTo
+TransactionSignatureSerializer.prototype.serializeInput = function(nInput) {
+  // In case of SIGHASH_ANYONECANPAY, only the input being signed is serialized
+  if (this.anyoneCanPay) nInput = this.nIn;
+
+  // Serialize the prevout
+  this.bytes.put(this.txTo.ins[nInput].o);
+
+  // Serialize the script
+  if (nInput !== this.nIn) {
+    // Blank out other inputs' signatures
+    this.bytes.varint(0);
+  } else {
+    this.serializeScriptCode();
+  }
+  // Serialize the nSequence
+  if (nInput !== this.nIn && (this.hashSingle || this.hashNone)) {
+    // let the others update at will
+    this.bytes.word32le(0);
+  } else {
+    this.bytes.word32le(this.txTo.ins[nInput].q);
+  }
+
+};
+
+
+// serialize txTo for signature
+TransactionSignatureSerializer.prototype.serialize = function() {
+  // serialize nVersion
+  this.bytes.word32le(this.txTo.version);
+  // serialize vin
+  var nInputs = this.anyoneCanPay ? 1 : this.txTo.ins.length;
+  this.bytes.varint(nInputs);
+  for (var nInput = 0; nInput < nInputs; nInput++) {
+    this.serializeInput(nInput);
+  }
+  // serialize vout
+  var nOutputs = this.hashNone ? 0 : (this.hashSingle ? this.nIn + 1 : this.txTo.outs.length);
+  this.bytes.varint(nOutputs);
+  for (var nOutput = 0; nOutput < nOutputs; nOutput++) {
+    this.serializeOutput(nOutput);
+  }
+
+  // serialize nLockTime
+  this.bytes.word32le(this.txTo.lock_time);
+};
+
+TransactionSignatureSerializer.prototype.buffer = function() {
+  this.serialize();
+  return this.bytes.buffer();
+};
+
+Transaction.Serializer = TransactionSignatureSerializer;
+
+var oneBuffer = function() {
+  // bug present in bitcoind which must be also present in bitcore
+  // see https://bitcointalk.org/index.php?topic=260595
+  var ret = new Buffer(32);
+  ret.writeUInt8(1, 0);
+  for (var i=1; i<32; i++) ret.writeUInt8(0, i);
+  return ret; // return 1 bug
+};
 
 Transaction.prototype.hashForSignature =
-function hashForSignature(script, inIndex, hashType) {
-  if (+inIndex !== inIndex ||
+  function hashForSignature(script, inIndex, hashType) {
+
+    if (+inIndex !== inIndex ||
       inIndex < 0 || inIndex >= this.ins.length) {
-    throw new Error("Input index '"+inIndex+"' invalid or out of bounds "+
-                    "("+this.ins.length+" inputs)");
-  }
-
-  // Clone transaction
-  var txTmp = new Transaction();
-  this.ins.forEach(function (txin, i) {
-    txTmp.ins.push(new TransactionIn(txin));
-  });
-  this.outs.forEach(function (txout) {
-    txTmp.outs.push(new TransactionOut(txout));
-  });
-  txTmp.version = this.version;
-  txTmp.lock_time = this.lock_time;
-
-  // In case concatenating two scripts ends up with two codeseparators,
-  // or an extra one at the end, this prevents all those possible
-  // incompatibilities.
-  script.findAndDelete(OP_CODESEPARATOR);
-
-  // Get mode portion of hashtype
-  var hashTypeMode = hashType & 0x1f;
-
-  // Generate modified transaction data for hash
-  var bytes = (new Put());
-  bytes.word32le(this.version);
-
-  // Serialize inputs
-  if (hashType & SIGHASH_ANYONECANPAY) {
-    // Blank out all inputs except current one, not recommended for open
-    // transactions.
-    bytes.varint(1);
-    bytes.put(this.ins[inIndex].o);
-    bytes.varint(script.buffer.length);
-    bytes.put(script.buffer);
-    bytes.word32le(this.ins[inIndex].q);
-  } else {
-    bytes.varint(this.ins.length);
-    for (var i = 0, l = this.ins.length; i < l; i++) {
-      var txin = this.ins[i];
-      bytes.put(this.ins[i].o);
-
-      // Current input's script gets set to the script to be signed, all others
-      // get blanked.
-      if (inIndex === i) {
-        bytes.varint(script.buffer.length);
-        bytes.put(script.buffer);
-      } else {
-        bytes.varint(0);
-      }
-
-      if (hashTypeMode === SIGHASH_NONE && inIndex !== i) {
-        bytes.word32le(0);
-      } else {
-        bytes.word32le(this.ins[i].q);
-      }
+      return oneBuffer();
     }
-  }
-
-  // Serialize outputs
-  if (hashTypeMode === SIGHASH_NONE) {
-    bytes.varint(0);
-  } else {
-    var outsLen;
+    // Check for invalid use of SIGHASH_SINGLE
+    var hashTypeMode = hashType & 0x1f;
     if (hashTypeMode === SIGHASH_SINGLE) {
-      // TODO: Untested
-      if (inIndex >= txTmp.outs.length) {
-        throw new Error("Transaction.hashForSignature(): SIGHASH_SINGLE " +
-                        "no corresponding txout found - out of bounds");
-      }
-      outsLen = inIndex + 1;
-    } else {
-      outsLen = this.outs.length;
-    }
-
-    // TODO: If hashTypeMode !== SIGHASH_SINGLE, we could memcpy this whole
-    //       section from the original transaction as is.
-    bytes.varint(outsLen);
-    for (var i = 0; i < outsLen; i++) {
-      if (hashTypeMode === SIGHASH_SINGLE && i !== inIndex) {
-        // Zero all outs except the one we want to keep
-        bytes.put(util.INT64_MAX);
-        bytes.varint(0);
-      } else {
-        bytes.put(this.outs[i].v);
-        bytes.varint(this.outs[i].s.length);
-        bytes.put(this.outs[i].s);
+      if (inIndex >= this.outs.length) {
+        return oneBuffer();
       }
     }
-  }
 
-  bytes.word32le(this.lock_time);
-
-  var buffer = bytes.buffer();
-
-  // Append hashType
-  buffer = Buffer.concat([buffer, new Buffer([parseInt(hashType), 0, 0, 0])]);
-
-  return util.twoSha256(buffer);
+    // Wrapper to serialize only the necessary parts of the transaction being signed
+    var serializer = new TransactionSignatureSerializer(this, script, inIndex, hashType);
+    // Serialize
+    var buffer = serializer.buffer();
+    // Append hashType
+    var hashBuf = new Put().word32le(hashType).buffer();
+    buffer = Buffer.concat([buffer, hashBuf]);
+    return util.twoSha256(buffer);
 };
 
 /**
@@ -558,7 +427,7 @@ Transaction.prototype.getStandardizedObject = function getStandardizedObject() {
 
   var totalSize = 8; // version + lock_time
   totalSize += util.getVarIntSize(this.ins.length); // tx_in count
-  var ins = this.ins.map(function (txin) {
+  var ins = this.ins.map(function(txin) {
     var txinObj = {
       prev_out: {
         hash: buffertools.reverse(new Buffer(txin.getOutpointHash())).toString('hex'),
@@ -576,7 +445,7 @@ Transaction.prototype.getStandardizedObject = function getStandardizedObject() {
   });
 
   totalSize += util.getVarIntSize(this.outs.length);
-  var outs = this.outs.map(function (txout) {
+  var outs = this.outs.map(function(txout) {
     totalSize += util.getVarIntSize(txout.s.length) +
       txout.s.length + 8; // script_len + script + value
     return {
@@ -642,7 +511,7 @@ Transaction.prototype.fromObj = function fromObj(obj) {
   this.outs = txobj.outs;
 }
 
-Transaction.prototype.parse = function (parser) {
+Transaction.prototype.parse = function(parser) {
   if (Buffer.isBuffer(parser)) {
     this._buffer = parser;
     parser = new Parser(parser);
@@ -651,16 +520,16 @@ Transaction.prototype.parse = function (parser) {
   var i, sLen, startPos = parser.pos;
 
   this.version = parser.word32le();
-  
+
   var txinCount = parser.varInt();
 
   this.ins = [];
   for (j = 0; j < txinCount; j++) {
     var txin = new TransactionIn();
-    txin.o = parser.buffer(36);               // outpoint
-    sLen = parser.varInt();                   // script_len
-    txin.s = parser.buffer(sLen);             // script
-    txin.q = parser.word32le();               // sequence
+    txin.o = parser.buffer(36); // outpoint
+    sLen = parser.varInt(); // script_len
+    txin.s = parser.buffer(sLen); // script
+    txin.q = parser.word32le(); // sequence
     this.ins.push(txin);
   }
 
@@ -669,9 +538,9 @@ Transaction.prototype.parse = function (parser) {
   this.outs = [];
   for (j = 0; j < txoutCount; j++) {
     var txout = new TransactionOut();
-    txout.v = parser.buffer(8);               // value
-    sLen = parser.varInt();                   // script_len
-    txout.s = parser.buffer(sLen);            // script
+    txout.v = parser.buffer(8); // value
+    sLen = parser.varInt(); // script_len
+    txout.s = parser.buffer(sLen); // script
     this.outs.push(txout);
   }
 
@@ -679,141 +548,58 @@ Transaction.prototype.parse = function (parser) {
   this.calcHash();
 };
 
-var TransactionInputsCache = exports.TransactionInputsCache =
-function TransactionInputsCache(tx)
-{
-  var txList = [];
-  var txList64 = [];
-  var reqOuts = {};
 
-  // Get list of transactions required for verification
-  tx.ins.forEach(function (txin) {
-    if (txin.isCoinBase()) return;
 
-    var hash = txin.o.slice(0, 32);
-    var hash64 = hash.toString('base64');
-    if (txList64.indexOf(hash64) == -1) {
-      txList.push(hash);
-      txList64.push(hash64);
-    }
-    if (!reqOuts[hash64]) {
-      reqOuts[hash64] = [];
-    }
-    reqOuts[hash64][txin.getOutpointIndex()] = true;
+
+Transaction.prototype.calcSize = function() {
+  var totalSize = 8; // version + lock_time
+  totalSize += util.getVarIntSize(this.ins.length); // tx_in count
+  this.ins.forEach(function(txin) {
+    totalSize += 36 + util.getVarIntSize(txin.s.length) +
+      txin.s.length + 4; // outpoint + script_len + script + sequence
   });
 
-  this.tx = tx;
-  this.txList = txList;
-  this.txList64 = txList64;
-  this.txIndex = {};
-  this.requiredOuts = reqOuts;
-  this.callbacks = [];
-};
-
-TransactionInputsCache.prototype.buffer = function buffer(blockChain, txStore, wait, callback)
-{
-  var self = this;
-
-  var complete = false;
-
-  if ("function" === typeof callback) {
-    self.callbacks.push(callback);
-  }
-
-  var missingTx = {};
-  self.txList64.forEach(function (hash64) {
-    missingTx[hash64] = true;
+  totalSize += util.getVarIntSize(this.outs.length);
+  this.outs.forEach(function(txout) {
+    totalSize += util.getVarIntSize(txout.s.length) +
+      txout.s.length + 8; // script_len + script + value
   });
-
-  // A utility function to create the index object from the txs result lists
-  function indexTxs(err, txs) {
-    if (err) throw err;
-
-    // Index memory transactions
-    txs.forEach(function (tx) {
-      var hash64 = tx.getHash().toString('base64');
-      var obj = {};
-      Object.keys(self.requiredOuts[hash64]).forEach(function (o) {
-        obj[+o] = tx.outs[+o];
-      });
-      self.txIndex[hash64] = obj;
-      delete missingTx[hash64];
-    });
-
-    this(null);
-  };
-
-  Step(
-    // First find and index memory transactions (if a txStore was provided)
-    function findMemTx() {
-      if (txStore) {
-        txStore.find(self.txList64, this);
-      } else {
-        this(null, []);
-      }
-    },
-    indexTxs,
-    // Second find and index persistent transactions
-    function findBlockChainTx(err) {
-      if (err) throw err;
-
-      // TODO: Major speedup should be possible if we load only the outs and not
-      //       whole transactions.
-      var callback = this;
-      blockChain.getOutputsByHashes(self.txList, function (err, result) {
-        callback(err, result);
-      });
-    },
-    indexTxs,
-    function saveTxCache(err) {
-      if (err) throw err;
-
-      var missingTxDbg = '';
-      if (Object.keys(missingTx).length) {
-        missingTxDbg = Object.keys(missingTx).map(function (hash64) {
-          return util.formatHash(new Buffer(hash64, 'base64'));
-        }).join(',');
-      }
-
-      if (wait && Object.keys(missingTx).length) {
-        // TODO: This might no longer be needed now that saveTransactions uses
-        //       the safe=true option.
-        setTimeout(function () {
-          var missingHashes = Object.keys(missingTx);
-          if (missingHashes.length) {
-            self.callback(new Error('Missing inputs (timeout while searching): '
-                                    + missingTxDbg));
-          } else if (!complete) {
-            self.callback(new Error('Callback failed to trigger'));
-          }
-        }, 10000);
-      } else {
-        complete = true;
-        this(null, self);
-      }
-    },
-    self.callback.bind(self)
-  );
+  this.size = totalSize;
+  return totalSize;
 };
 
-
-TransactionInputsCache.prototype.callback = function callback(err)
-{
-  var args = Array.prototype.slice.apply(arguments);
-
-  // Empty the callback array first (because downstream functions could add new
-  // callbacks or otherwise interfere if were not in a consistent state.)
-  var cbs = this.callbacks;
-  this.callbacks = [];
-
-  try {
-    cbs.forEach(function (cb) {
-      cb.apply(null, args);
-    });
-  } catch (err) {
-    log.err("Callback error after connecting tx inputs: "+
-                 (err.stack ? err.stack : err.toString()));
+Transaction.prototype.getSize = function getHash() {
+  if (!this.size) {
+    this.size = this.calcSize();
   }
+  return this.size;
 };
+
+
+Transaction.prototype.countInputMissingSignatures = function(index) {
+  var ret = 0;
+  var script = new Script(this.ins[index].s);
+  return script.countMissingSignatures();
+};
+
+
+Transaction.prototype.isInputComplete = function(index) {
+  return this.countInputMissingSignatures(index)===0;
+};
+
+Transaction.prototype.isComplete = function() {
+  var ret = true;
+  var l   = this.ins.length;
+
+  for (var i = 0; i < l; i++) {
+    if (!this.isInputComplete(i)){
+      ret = false;
+      break;
+    }
+  }
+
+  return ret;
+};
+
 
 module.exports = require('soop')(Transaction);

@@ -24,6 +24,7 @@ var pack = function (params) {
 
 var modules = [
   'Address',
+  'BIP32',
   'Block',
   'Bloom',
   'Buffers.monkey',
@@ -37,12 +38,14 @@ var modules = [
   'PrivateKey',
   'RpcClient',
   'Key',
+  'Point',
   'SIN',
   'SINKey',
   'Script',
   'ScriptInterpreter',
   'Sign',
   'Transaction',
+  'TransactionBuilder',
   'Wallet',
   'WalletKey',
   'config',
@@ -52,6 +55,7 @@ var modules = [
   'util/util',
   'util/EncodedData',
   'util/VersionedData',
+  'util/BinaryParser',
 ];
 
 var createBitcore = function(opts) {
@@ -60,7 +64,10 @@ var createBitcore = function(opts) {
   opts.dir = opts.dir || '';
 
   // concat browser vendor files
-  exec('cd ' + opts.dir + 'browser; sh concat.sh', puts);
+  var cwd = process.cwd();
+  process.chdir(opts.dir + 'browser');
+  exec('sh concat.sh', puts);
+  process.chdir(cwd);
 
   if (!opts.includeall && (!opts.submodules || opts.submodules.length === 0)) {
     if (!opts.stdout) console.log('Must use either -s or -a option. For more info use the --help option');
@@ -87,6 +94,9 @@ var createBitcore = function(opts) {
   });
   b.require(opts.dir + 'browserify-buffertools/buffertools.js', {
     expose: 'buffertools'
+  });
+  b.require(opts.dir + 'bufferput', {
+    expose: 'bufferput'
   });
   b.require(opts.dir + 'base58-native', {
     expose: 'base58-native'

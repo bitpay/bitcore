@@ -1,6 +1,7 @@
 var imports            = require('soop').imports();
 
 var parent = imports.parent || require('./util/VersionedData');
+var networks= imports.networks || require('./networks');
 
 //compressed is true if public key is compressed; false otherwise
 function PrivateKey(version, buf, compressed) {
@@ -18,6 +19,7 @@ PrivateKey.prototype.validate = function() {
     if (this.data.length < 32 || (this.data.length > 1+32 && !this.compressed()) || (this.data.length==1+32+1 && this.data[1+32+1-1]!=1) || this.data.length>1+32+1)
       throw new Error('invalid data length');
   });
+  if (typeof this.network() === 'undefined') throw new Error('invalid network');
 };
 
 // get or set the payload data (as a Buffer object)
@@ -59,6 +61,21 @@ PrivateKey.prototype.compressed = function(compressed) {
     else
       throw new Error('invalid private key');
   }
+};
+
+PrivateKey.prototype.network = function() {
+  var version = this.version();
+
+  var livenet = networks.livenet;
+  var testnet = networks.testnet;
+
+  var answer;
+  if (version === livenet.privKeyVersion)
+    answer = livenet;
+  else if (version === testnet.privKeyVersion)
+    answer = testnet;
+
+  return answer;
 };
 
 module.exports = require('soop')(PrivateKey);

@@ -9,14 +9,14 @@
     <pre>
       <div id='content'></div>
     </pre>
-    <script src="../browser/bundle.js"></script>
+    <script src="../../browser/bundle.js"></script>
 
     <script type="text/javascript">
       var Address = require('bitcore').Address;
 
-      print = function(s){
+      var print = function (s,s2,s3) {
         var div = document.getElementById('content');
-        div.innerHTML += s + '<br />';
+        div.innerHTML += s + (s2||'') + (s3||'') + '<br />';
       };
 
       print('<hr> <h1>Address</h1>' );
@@ -39,20 +39,15 @@
         }
     
       });
-      print('<hr> <h1>KeyModule</h1>' );
+      print('<hr> <h1>Key</h1>' );
 /*
       Using bitcore root module
 */
       var bitcore = require('bitcore');
-      var k = bitcore.KeyModule.Key.generateSync();
-
+      var k = bitcore.Key.generateSync();
       print ('Generate Key Pair:');
       print ('Private:' + bitcore.buffertools.toHex(k.private));
       print ('Public:'  + bitcore.buffertools.toHex(k.public));
-
-      print('<hr> <h1>PeerManager</h1>' );
-
-      var p  = new bitcore.PeerManager();
 
       print('<hr> <h1>Util</h1>' );
       var coinUtil = bitcore.util;
@@ -81,6 +76,7 @@
       var WalletKey = bitcore.WalletKey;
       var networks  = bitcore.networks;
 
+
       var priv = 'L4cEVwoNDeYdCQfFJAGkGKPnE2TmqLEuBn4znQChD2ojjQRJVKpU';
       var s = new WalletKey({
         network: networks.livenet
@@ -91,11 +87,9 @@
       print("Public: " + o.pub);
       print("Addr: " + o.addr);
 
-      var module = { exports: {} };
+      print('<hr><h1>TransactionBuilder</h1>');
+      console.log = print;
     </script>
-    <script src="./CreateAndSignTx.js"></script>
-    <script>
-      run();
-    </script>
+    <script src="../CreateAndSignTx-PayToPubkeyHash.js"></script>
   </body>
 </html>

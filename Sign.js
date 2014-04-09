@@ -39,7 +39,7 @@ function signTxIn(nIn, tx, txInputs, network, keys, scripts)
   var subType = undefined;
   var subData = undefined;
   if (txType == TX_SCRIPTHASH) {
-    var addr = new Address(network.addressScript, scriptData[0]);
+    var addr = new Address(network.P2SHVersion, scriptData[0]);
     var addrStr = addr.toString();
     if (!(addrStr in scripts))
       throw new Error("unknown script hash address");
@@ -61,7 +61,7 @@ function signTxIn(nIn, tx, txInputs, network, keys, scripts)
       return;
 
     var pubkeyhash = util.sha256ripe160(scriptData[0]);
-    var addr = new Address(network.addressPubkey, pubkeyhash);
+    var addr = new Address(network.addressVersion, pubkeyhash);
     var addrStr = addr.toString();
     if (!(addrStr in keys))
       throw new Error("unknown pubkey");
@@ -75,7 +75,7 @@ function signTxIn(nIn, tx, txInputs, network, keys, scripts)
     if (scriptSig.chunks.length > 0)
       return;
 
-    var addr = new Address(network.addressPubkey, scriptData[0]);
+    var addr = new Address(network.addressVersion, scriptData[0]);
     var addrStr = addr.toString();
     if (!(addrStr in keys))
       throw new Error("unknown pubkey hash address");
@@ -90,7 +90,7 @@ function signTxIn(nIn, tx, txInputs, network, keys, scripts)
     if (scriptSig.chunks.length > 0)
       return;
 
-    var addr = new Address(network.addressPubkey, subData[0]);
+    var addr = new Address(network.addressVersion, subData[0]);
     var addrStr = addr.toString();
     if (!(addrStr in keys))
       throw new Error("unknown script(pubkey hash) address");
@@ -110,7 +110,7 @@ function signTxIn(nIn, tx, txInputs, network, keys, scripts)
         continue;
 
       var pubkeyhash = util.sha256ripe160(scriptSig.chunks[i]);
-      var addr = new Address(network.addressPubkey, pubkeyhash);
+      var addr = new Address(network.addressVersion, pubkeyhash);
       var addrStr = addr.toString();
       if (!(addrStr in keys))
         continue;

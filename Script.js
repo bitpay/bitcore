@@ -35,7 +35,7 @@ function Script(buffer) {
   }
   this.chunks = [];
   this.parse();
-};
+}
 this.class = Script;
 
 Script.TX_UNKNOWN = TX_UNKNOWN;
@@ -51,19 +51,22 @@ Script.prototype.parse = function() {
   while (!parser.eof()) {
     var opcode = parser.word8();
 
-    var len;
+    var len, chunk;
     if (opcode > 0 && opcode < OP_PUSHDATA1) {
       // Read some bytes of data, opcode value is the length of data
       this.chunks.push(parser.buffer(opcode));
-    } else if (opcode == OP_PUSHDATA1) {
+    } else if (opcode === OP_PUSHDATA1) {
       len = parser.word8();
-      this.chunks.push(parser.buffer(len));
-    } else if (opcode == OP_PUSHDATA2) {
+      chunk = parser.buffer(len);
+      this.chunks.push(chunk);
+    } else if (opcode === OP_PUSHDATA2) {
       len = parser.word16le();
-      this.chunks.push(parser.buffer(len));
-    } else if (opcode == OP_PUSHDATA4) {
+      chunk = parser.buffer(len);
+      this.chunks.push(chunk);
+    } else if (opcode === OP_PUSHDATA4) {
       len = parser.word32le();
-      this.chunks.push(parser.buffer(len));
+      chunk = parser.buffer(len);
+      this.chunks.push(chunk);
     } else {
       this.chunks.push(opcode);
     }
@@ -71,9 +74,12 @@ Script.prototype.parse = function() {
 };
 
 Script.prototype.isPushOnly = function() {
-  for (var i = 0; i < this.chunks.length; i++)
-    if (!Buffer.isBuffer(this.chunks[i]))
+  for (var i = 0; i < this.chunks.length; i++) {
+    var op = this.chunks[i];
+    if (!Buffer.isBuffer(op) && op > OP_16) {
       return false;
+    }
+  }
 
   return true;
 };
@@ -262,6 +268,8 @@ Script.prototype.getBuffer = function() {
   return this.buffer;
 };
 
+Script.prototype.serialize = Script.prototype.getBuffer;
+
 Script.prototype.getStringContent = function(truncate, maxEl) {
   if (truncate === null) {
     truncate = true;
@@ -371,6 +379,7 @@ Script.prototype.findAndDelete = function(chunk) {
       if (Buffer.isBuffer(this.chunks[i]) &&
         buffertools.compare(this.chunks[i], chunk) === 0) {
         this.chunks.splice(i, 1);
+        i--;
         dirty = true;
       }
     }
@@ -378,6 +387,7 @@ Script.prototype.findAndDelete = function(chunk) {
     for (var i = 0, l = this.chunks.length; i < l; i++) {
       if (this.chunks[i] === chunk) {
         this.chunks.splice(i, 1);
+        i--;
         dirty = true;
       }
     }
@@ -415,7 +425,28 @@ Script.createPubKeyHashOut = function(pubKeyHash) {
   return script;
 };
 
-Script.createMultisig = function(n_required, keys) {
+Script._sortKeys = function(keys) {
+  return keys.sort(function(buf1, buf2) {
+    var len = buf1.length > buf1.length ? buf1.length : buf2.length;
+    for (var i = 0; i <= len; i++) {
+      if (buf1[i] === undefined)
+        return -1; //shorter strings come first
+      if (buf2[i] === undefined)
+        return 1;
+      if (buf1[i] < buf2[i])
+        return -1;
+      if (buf1[i] > buf2[i])
+        return 1;
+      else
+        continue;
+    }
+    return 0;
+  });
+};
+
+Script.createMultisig = function(n_required, inKeys, opts) {
+  opts = opts || {};
+  var keys = opts.noSorting ? inKeys : this._sortKeys(inKeys);
   var script = new Script();
   script.writeN(n_required);
   keys.forEach(function(key) {
@@ -485,7 +516,25 @@ Script.prototype.toHumanReadable = function() {
     }
   }
   return s;
-    
+};
+
+Script.prototype.countMissingSignatures = function() {
+  var ret = 0;
+  if (!Buffer.isBuffer(this.chunks[0]) && this.chunks[0] ===0) {
+    // Multisig, skip first 0x0 
+    for (var i = 1; i < this.chunks.length; i++) {
+      if (this.chunks[i]===0 
+          || buffertools.compare(this.chunks[i], util.EMPTY_BUFFER) === 0){
+        ret++;
+      }
+    }
+  }
+  else {
+    if (buffertools.compare(this.getBuffer(), util.EMPTY_BUFFER) === 0) {
+      ret = 1;
+    }
+  }
+  return ret;
 };
 
 Script.stringToBuffer = function(s) {
@@ -499,7 +548,7 @@ Script.stringToBuffer = function(s) {
       //console.log('hex value');
       buf.put(new Buffer(word.substring(2, word.length), 'hex'));
     } else {
-      var opcode = Opcode.map['OP_' + word];
+      var opcode = Opcode.map['OP_' + word] || Opcode.map[word];
       if (typeof opcode !== 'undefined') {
         // op code in string form
         //console.log('opcode');
@@ -509,7 +558,7 @@ Script.stringToBuffer = function(s) {
         if (!isNaN(integer)) {
           // integer
           //console.log('integer');
-          var data = util.intToBuffer(integer);
+          var data = util.intToBufferSM(integer);
           buf.put(Script.chunksToBuffer([data]));
         } else if (word[0] === '\'' && word[word.length-1] === '\'') {
           // string
