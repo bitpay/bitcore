@@ -80,7 +80,8 @@
     "istanbul": "~0.2.6"
   },
   "testling": {
-    "files": "test/test*.js",
+    "harness": "mocha-tdd",
+    "html": "test/index-testling.html",
     "browsers": [
       "ie/6..latest",
       "chrome/22..latest",
