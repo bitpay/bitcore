@@ -5,13 +5,45 @@
     <atom:link href="http://localhost:8080/feed.xml" rel="self" type="application/rss+xml"></atom:link>
     <link>http://localhost:8080</link>
     <description>A pure, powerful blog for your daily reading.</description>
-    <pubDate>Tue, 01 Apr 2014 20:00:00 -0400</pubDate>
+    <pubDate>Thu, 10 Apr 2014 21:00:00 -0300</pubDate>
     <generator>Wintersmith - https://github.com/jnordberg/wintersmith</generator>
     <language>en</language>
     <item>
+      <title>Bitcore now has 100% Bitcoin Core test data coverage</title>
+      <link>http://localhost:8080/blog/articles/bitcore-now-has-100-bitcoin-core-test-data-coverage/</link>
+      <pubDate>Thu, 10 Apr 2014 21:00:00 -0300</pubDate>
+      <guid isPermaLink="true">http://localhost:8080/blog/articles/bitcore-now-has-100-bitcoin-core-test-data-coverage/</guid>
+      <author></author>
+      <description>&lt;p&gt;We’ve achieved an important milestone in bitcore development, 
+and one that we’ve been working on since we started with this open source initiative. 
+That is achieving &lt;strong&gt;100% compatibility with test data from Bitcoin
+Core&lt;/strong&gt;. It was hard work, but we think it’s worth it: we are now sure 
+bitcore handles correctly all the edge cases and tricky input data
+the same way that bitcoind does (or at least those that have test data for them). &lt;/p&gt;
+&lt;p&gt;The current version of bitcore has &lt;strong&gt;2868&lt;/strong&gt; tests passing both in node
+and in modern browsers (save for a few tests that make no sense for
+the browser yet, like connecting to the p2p bitcoin network). We are
+also looking to expand the test coverage, and welcome any contributions
+to this important task. If you’ve thought about collaborating with 
+bitcore but didn’t know where to start, writing tests is a good way
+to internalize with the source code, learn about bitcoin, and improve
+the project a lot. You can also follow &lt;a href=&quot;/blog/articles/how-to-contribute/&quot;&gt;our collaboration guide&lt;/a&gt; if
+you are new to open-source contributions.&lt;/p&gt;
+&lt;p&gt;While this milestone is important (test data compatibility with Bitcoin 
+Core is a must for any serious bitcoin library), we’re still looking
+to complete a more ambitious goal: achieving 100% code coverage 
+for all our code. A good tool to measure that is &lt;a href=&quot;http://gotwarlost.github.io/istanbul/&quot;&gt;
+istanbul&lt;/a&gt;. Here’s bitcore’s istanbul report:&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/blog/images/bitcore-istanbul.png&quot;&gt; &lt;/img&gt;&lt;/p&gt;
+&lt;p&gt;As you can see, there’s some work to be done, but we hope you’ll help us
+get there! Bitcore is a community effort and adding tests will greatly improve
+the quality of the code.&lt;/p&gt;
+</description>
+    </item>
+    <item>
       <title>TransactionBuilder: A (hopefully) easy API to generate Bitcoin transactions</title>
       <link>http://localhost:8080/blog/articles/transactionbuilder/</link>
-      <pubDate>Tue, 01 Apr 2014 20:00:00 -0400</pubDate>
+      <pubDate>Tue, 01 Apr 2014 21:00:00 -0300</pubDate>
       <guid isPermaLink="true">http://localhost:8080/blog/articles/transactionbuilder/</guid>
       <author></author>
       <description>&lt;p&gt;During the last few days we have been working on a new interface to generate
@@ -187,7 +219,7 @@ transactions, and also can generate the redeem script hash.&lt;/p&gt;
     <item>
       <title>How to Contribute to Bitcore</title>
       <link>http://localhost:8080/blog/articles/how-to-contribute/</link>
-      <pubDate>Tue, 25 Mar 2014 20:00:00 -0400</pubDate>
+      <pubDate>Tue, 25 Mar 2014 21:00:00 -0300</pubDate>
       <guid isPermaLink="true">http://localhost:8080/blog/articles/how-to-contribute/</guid>
       <author></author>
       <description>&lt;p&gt;Are you a developer looking to learn more about bitcoin? 
@@ -246,7 +278,7 @@ merge your pull request and your code will be part of bitcore.&lt;/p&gt;
     <item>
       <title>Cosign: Our Multisignature Wallet In Development</title>
       <link>http://localhost:8080/blog/articles/cosign-our-multisignature-wallet-in-development/</link>
-      <pubDate>Mon, 24 Mar 2014 20:00:00 -0400</pubDate>
+      <pubDate>Mon, 24 Mar 2014 21:00:00 -0300</pubDate>
       <guid isPermaLink="true">http://localhost:8080/blog/articles/cosign-our-multisignature-wallet-in-development/</guid>
       <author></author>
       <description>&lt;p&gt;One of the greatest problems in bitcoin is security.
