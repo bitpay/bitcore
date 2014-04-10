@@ -101,6 +101,9 @@ var createBitcore = function(opts) {
   b.require(opts.dir + 'base58-native', {
     expose: 'base58-native'
   });
+  b.require(opts.dir + 'buffers', {
+    expose: 'buffers'
+  });
   b.require('./' + opts.dir + 'bitcore', {
     expose: 'bitcore'
   });
