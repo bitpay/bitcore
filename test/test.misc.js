@@ -3,6 +3,7 @@
 var chai = chai || require('chai');
 var bitcore = bitcore || require('../bitcore');
 var buffertools = require('buffertools');
+buffertools.extend();
 
 var should = chai.should();
 
@@ -15,6 +16,7 @@ var base58Check = base58.base58Check;
 var Address = bitcore.Address;
 var networks = bitcore.networks;
 var WalletKey = bitcore.WalletKey;
+var Buffers = require('buffers');
 
 describe('Miscelaneous stuff', function() {
   it('should initialze the config object', function() {
@@ -26,7 +28,7 @@ describe('Miscelaneous stuff', function() {
   it('should initialze the network object', function() {
     should.exist(networks);
     var nets = [networks.livenet, networks.testnet];
-    for (var i=0; i<2; i++) {
+    for (var i = 0; i < 2; i++) {
       var net = nets[i];
       should.exist(net.addressVersion);
       should.exist(net.privKeyVersion);
@@ -42,8 +44,36 @@ describe('Miscelaneous stuff', function() {
     should.exist(bitcore.Deserialize);
     should.exist(bitcore.Deserialize.intFromCompact);
   });
+  it('should initialze the Buffer class', function() {
+    should.exist(bitcore.Buffer);
+  });
 
 
+  describe('Buffers monkey patch', function() {
+    var bufs;
+    beforeEach(function() {
+      bufs = new Buffers();
+      bufs.push(new Buffer([1, 2, 3]));
+      bufs.push(new Buffer([4, 5, 6, 7]));
+      bufs.push(new Buffer([8, 9, 10]));
+    });
+    it('should monkey patch the Buffers class', function() {
+      require('../Buffers.monkey').patch(Buffers);
+      should.exist(bufs.skip);
+    });
+    it('should work for 0', function() {
+      bufs.skip(0);
+      bufs.toBuffer().toHex().should.equal('0102030405060708090a');
+    });
+    it('should work for length', function() {
+      bufs.skip(bufs.length);
+      bufs.toBuffer().toHex().should.equal('');
+    });
+    it('should work for middle values', function() {
+      bufs.skip(5);
+      bufs.toBuffer().toHex().should.equal('060708090a');
+    });
+  });
   // bignum
   it('should initialze the bignum object', function() {
     should.exist(bitcore.bignum);
@@ -165,8 +195,10 @@ describe('Miscelaneous stuff', function() {
           priv: b58
         });
       };
-      createLivenet.should.throw();
-      createTestnet.should.throw();
+      createLivenet.should.
+      throw ();
+      createTestnet.should.
+      throw ();
     });
   });
 
