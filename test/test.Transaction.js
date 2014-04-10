@@ -1,7 +1,7 @@
 'use strict';
 
 var chai = chai || require('chai');
-chai.Assertion.includeStack = true;
+chai.config.includeStack = true;
 var bitcore = bitcore || require('../bitcore');
 
 var should = chai.should();
