@@ -48,5 +48,12 @@ describe('PrivateKey', function() {
     var a = new PrivateKey('5JZsbYcnYN8Dz2YeSLZr6aswrVevedMUSFWxpie6SPpYRb2E4Gi');
     a.network().name.should.equal('livenet');
   });
+
+  describe('#isValid', function() {
+    it('should detect this private key as valid', function() {
+      var privKey = new PrivateKey('5JQkUX6RNQC91xv4Www6Cgbxb6Eri6WBJjtPGqwfXVKBzT37cAf');
+      privKey.isValid().should.equal(true);
+    });
+  });
  
 });
