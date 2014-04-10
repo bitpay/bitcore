@@ -605,36 +605,43 @@ describe('TransactionBuilder', function() {
     var k2 = testdata.dataUnspentSign.keyStringsP2sh.slice(1,2);
     var k5 = testdata.dataUnspentSign.keyStringsP2sh.slice(4,5);
     b.isFullySigned().should.equal(false);
+    b.signaturesAdded.should.equal(0);
 
     b.sign(k1);
     b.isFullySigned().should.equal(false);
+    b.signaturesAdded.should.equal(1);
 
     var tx = b.build();
     tx.ins.length.should.equal(1);
     tx.outs.length.should.equal(2);
     tx.isComplete().should.equal(false);
+    b.signaturesAdded.should.equal(1);
 
     // Sign with the same
     b.sign(k1);
     b.isFullySigned().should.equal(false);
     tx.isComplete().should.equal(false);
+    b.signaturesAdded.should.equal(1);
 
     // Sign with k5
     b.sign(k5);
 ///
     b.isFullySigned().should.equal(false);
     tx.isComplete().should.equal(false);
+    b.signaturesAdded.should.equal(2);
 
     // Sign with same
     b.sign(k5);
     b.isFullySigned().should.equal(false);
     tx.isComplete().should.equal(false);
+    b.signaturesAdded.should.equal(2);
 
 
     // Sign k2
     b.sign(k2);
     b.isFullySigned().should.equal(true);
     tx.isComplete().should.equal(true);
+    b.signaturesAdded.should.equal(3);
   });
 
   it('should sign in steps a p2sh/p2pubkeyhash tx', function() {
