@@ -110,6 +110,7 @@ function TransactionBuilder(opts) {
 
   this.tx         = {};
   this.inputsSigned= 0;
+  this.signaturesAdded= 0;
 
   return this;
 }
@@ -482,7 +483,7 @@ TransactionBuilder.prototype._signPubKey = function(walletKeyMap, input, txSigHa
   var scriptSig = new Script();
   scriptSig.chunks.push(sig);
   scriptSig.updateBuffer();
-  return {isFullySigned: true, signaturesAdded: true, script: scriptSig.getBuffer()};
+  return {isFullySigned: true, signaturesAdded: 1, script: scriptSig.getBuffer()};
 };
 
 TransactionBuilder.prototype._signPubKeyHash = function(walletKeyMap, input, txSigHash) {
@@ -501,7 +502,7 @@ TransactionBuilder.prototype._signPubKeyHash = function(walletKeyMap, input, txS
   scriptSig.chunks.push(sig);
   scriptSig.chunks.push(wk.privKey.public);
   scriptSig.updateBuffer();
-  return {isFullySigned: true, signaturesAdded: true, script: scriptSig.getBuffer()};
+  return {isFullySigned: true, signaturesAdded: 1, script: scriptSig.getBuffer()};
 };
 
 // FOR TESTING
@@ -577,7 +578,7 @@ TransactionBuilder.prototype._signMultiSig = function(walletKeyMap, input, txSig
     originalScriptBuf = this.tx.ins[input.i].s;
 
   var scriptSig = new Script (originalScriptBuf);
-  var signaturesAdded = false;
+  var signaturesAdded = 0;
 
   for(var j=0; j<l && scriptSig.countMissingSignatures(); j++) {
     var wk = this._findWalletKey(walletKeyMap, {pubKeyBuf: pubkeys[j]});
@@ -586,7 +587,7 @@ TransactionBuilder.prototype._signMultiSig = function(walletKeyMap, input, txSig
     var newScriptSig = this._updateMultiSig(wk, scriptSig, txSigHash, nreq);
     if (newScriptSig) {
       scriptSig = newScriptSig;
-      signaturesAdded = true;
+      signaturesAdded++;
     }
   }
 
@@ -694,6 +695,7 @@ TransactionBuilder.prototype.sign = function(keys) {
     if (ret && ret.script) {
       tx.ins[i].s = ret.script;
       if (ret.isFullySigned) this.inputsSigned++;
+      if (ret.signaturesAdded) this.signaturesAdded +=ret.signaturesAdded;
     }
   }
   return this;
