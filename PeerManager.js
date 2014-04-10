@@ -111,6 +111,9 @@ PeerManager.prototype.addConnection = function(socketConn, peer) {
 };
 
 PeerManager.prototype.handleVersion = function(e) {
+  e.peer.version = e.message.version;
+  e.peer.start_height = e.message.start_height;
+
   if (!e.conn.inbound) {
     // TODO: Advertise our address (if listening)
   }
@@ -132,7 +135,7 @@ PeerManager.prototype.handleReady = function (e) {
   });
 
   if(this.isConnected == false) {
-    this.emit('netConnected');
+    this.emit('netConnected', e);
     this.isConnected = true;
   }
 };

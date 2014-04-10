@@ -187,4 +187,17 @@ describe('util', function() {
       });
     });
   });
+  describe('#calcDifficulty', function() {
+    var bitsgenesis = 486604799;
+    it('should work for the bits from the genesis block; ' + bitsgenesis, function() {
+      var difficulty = coinUtil.calcDifficulty(bitsgenesis);
+      difficulty.should.equal(1);
+    });
+    var randomotherbits = 419476394;
+    it('should work for the bits in a randomly chosen block, eg [00000000000000001fef2bbc6da9b65e16f9187b7d88f15a308490bf2c9b8e1d] ' + randomotherbits, function() {
+      var difficulty = coinUtil.calcDifficulty(randomotherbits);
+      difficulty.should.equal(6119726089);
+    });
+  });
+
 });
