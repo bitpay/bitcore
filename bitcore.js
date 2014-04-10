@@ -42,6 +42,7 @@ Object.defineProperty(module.exports, 'BIP32', {get: function() {
   console.log('BIP32 is deprecated. Use bitcore.HierarchicalKey instead.');
   return require('./lib/HierarchicalKey');
 }});
+requireWhenAccessed('BIP39WordlistEn', './BIP39WordlistEn');
 requireWhenAccessed('Point', './lib/Point');
 requireWhenAccessed('Opcode', './lib/Opcode');
 requireWhenAccessed('Script', './lib/Script');
