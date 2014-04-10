@@ -195,10 +195,8 @@ describe('Miscelaneous stuff', function() {
           priv: b58
         });
       };
-      createLivenet.should.
-      throw ();
-      createTestnet.should.
-      throw ();
+      createLivenet.should.throw();
+      createTestnet.should.throw();
     });
   });
 
