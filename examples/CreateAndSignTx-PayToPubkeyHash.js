@@ -25,7 +25,7 @@ var run = function() {
 
   var outs = [{address:toAddress, amount:amt}];
   var keys = [priv];
-  var opts = {remainderAddress: changeAddressString};
+  var opts = {remainderOut: {address: changeAddressString}};
   var Builder = bitcore.TransactionBuilder;
 
   var tx = new Builder(opts)
