@@ -164,8 +164,6 @@ Key::New(const Arguments& args)
 
   // this was invoked as Key() not new Key()
   if (!args.IsConstructCall()) {
-//    return FromConstructorTemplate(s_ct, args);
-
     const int argc = 1;
     Local<Value> argv[argc] = { args[0] };
     return scope.Close(s_ct->GetFunction()->NewInstance(argc, argv));
