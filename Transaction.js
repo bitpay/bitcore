@@ -40,6 +40,8 @@ function TransactionIn(data) {
   this.q = data.q ? data.q : data.sequence;
 }
 
+TransactionIn.MAX_SEQUENCE = 0xffffffff;
+
 TransactionIn.prototype.getScript = function getScript() {
   return new Script(this.s);
 };
