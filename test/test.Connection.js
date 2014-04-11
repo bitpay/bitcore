@@ -23,6 +23,12 @@ describe('Connection', function() {
     var c = new Connection(mSocket, mPeer);
     should.exist(c);
   });
+  it('should create a proxied socket if instructed', function() {
+    var c = new Connection(null, mPeer, {
+      proxy: { host: 'localhost', port: 9050 }
+    });
+    should.exist(c.socket);
+  });
 });
 
 
