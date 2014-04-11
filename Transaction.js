@@ -196,6 +196,22 @@ Transaction.prototype.getHash = function getHash() {
   return this.hash;
 };
 
+
+Transaction.prototype.calcNormalizedHash = function () {
+  this.normalizedHash = this.hashForSignature(new Script(),0, SIGHASH_ALL);
+  return this.normalizedHash;
+};
+
+
+Transaction.prototype.getNormalizedHash = function () {
+  if (!this.normalizedHash || !this.normalizedHash.length) {
+    this.normalizedHash = this.calcNormalizedHash();
+  }
+  return this.normalizedHash;
+};
+
+
+
 // convert encoded list of inputs to easy-to-use JS list-of-lists
 Transaction.prototype.inputs = function inputs() {
   var res = [];
@@ -567,7 +583,7 @@ Transaction.prototype.calcSize = function() {
   return totalSize;
 };
 
-Transaction.prototype.getSize = function getHash() {
+Transaction.prototype.getSize = function () {
   if (!this.size) {
     this.size = this.calcSize();
   }
