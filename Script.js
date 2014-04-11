@@ -36,7 +36,6 @@ function Script(buffer) {
   this.chunks = [];
   this.parse();
 }
-this.class = Script;
 
 Script.TX_UNKNOWN = TX_UNKNOWN;
 Script.TX_PUBKEY = TX_PUBKEY;
