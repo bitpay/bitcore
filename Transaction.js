@@ -40,6 +40,8 @@ function TransactionIn(data) {
   this.q = data.q ? data.q : data.sequence;
 }
 
+TransactionIn.MAX_SEQUENCE = 0xffffffff;
+
 TransactionIn.prototype.getScript = function getScript() {
   return new Script(this.s);
 };
@@ -447,7 +449,8 @@ Transaction.prototype.getStandardizedObject = function getStandardizedObject() {
       prev_out: {
         hash: buffertools.reverse(new Buffer(txin.getOutpointHash())).toString('hex'),
         n: txin.getOutpointIndex()
-      }
+      },
+      sequence: txin.q
     };
     if (txin.isCoinBase()) {
       txinObj.coinbase = txin.s.toString('hex');
