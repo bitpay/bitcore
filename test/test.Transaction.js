@@ -1,7 +1,7 @@
 'use strict';
 
 var chai = chai || require('chai');
-chai.Assertion.includeStack = true;
+chai.config.includeStack = true;
 var bitcore = bitcore || require('../bitcore');
 
 var should = chai.should();
@@ -120,5 +120,21 @@ describe('Transaction', function() {
 
   coreTest(testdata.dataTxValid, true);
   coreTest(testdata.dataTxInvalid, false);
+
+  it('#normalized hash', function() {
+    // string output generated from: bitcoind createrawtransaction '[{"txid": "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1","vout":1},{"txid":"2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc2","vout":0}  ]' '{"mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE":0.08}'
+    //
+    var Parser = bitcore.BinaryParser;
+    var tx = new Transaction();
+    tx.parse(new Buffer('0100000002c1cf12ab89729d19d3cdec8ae531b5038d56c741006a105d532b3a7afa65c12a0100000000ffffffffc2cf12ab89729d19d3cdec8ae531b5038d56c741006a105d532b3a7afa65c12a0000000000ffffffff0100127a00000000001976a914774e603bafb717bd3f070e68bbcccfd907c77d1388ac00000000','hex'));
+
+    tx.getNormalizedHash().toString('hex').should.equal('1f7d2666e2d0d663e098abb76db6ba392da972d21c14b6ea6f4336171d29966b');
+
+    var tx2 = new Transaction();
+    tx2.parse(new Buffer('0100000001c1cf12ab89729d19d3cdec8ae531b5038d56c741006a105d532b3a7afa65c12a010000004b00473044022059085ff1b8ad03033e60969b1c770aa29ba5d74c28a9992c514b100d860792f1022057a307f77f91f4563651eefc0a959aa916d275c58525320309b6aeeff43d0d8a010000ffffffff0215cd5b07000000001976a91434f8e0c5be216025a52addf18a987543cad23f7a88acdbd53e340000000017a9147a769913c0721b1e0aa6bf8a93f4ef810c60587a8700000000','hex'));
+
+    tx2.getNormalizedHash().toString('hex').should.equal('e298bbf3734898581b8e342f2064236abf0acca6ac7e9a3009a16ef7b64d4983');
+  });
+
 
 });

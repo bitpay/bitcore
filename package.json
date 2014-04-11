@@ -60,16 +60,17 @@
     "binary": "=0.3.0",
     "step": "=0.0.4",
     "buffers": "=0.1.1",
-    "buffertools": "~2.0.1",
-    "browserify": "~3.32.1",
-    "browser-pack": "~2.0.1",
-    "commander": "~2.1.0",
+    "buffertools": "=2.1.2",
+    "browserify": "=3.40.0",
+    "browser-pack": "=2.0.1",
+    "commander": "=2.1.0",
     "browserify-bignum": "git://github.com/maraoz/browserify-bignum.git",
     "browserify-buffertools": "git://github.com/maraoz/browserify-buffertools.git",
     "brfs": "~1.0.0",
     "socks5-client": "~0.3.6",
-    "chai": "~1.9.0",
-    "uglifyify": "~1.2.3"
+    "brfs": "=1.0.0",
+    "chai": "=1.9.1",
+    "uglifyify": "=1.2.3"
   },
   "devDependencies": {
     "grunt-contrib-watch": "~0.5.3",
@@ -85,7 +86,8 @@
     "istanbul": "~0.2.6"
   },
   "testling": {
-    "files": "test/test*.js",
+    "harness": "mocha-bdd",
+    "html": "test/index-testling.html",
     "browsers": [
       "ie/6..latest",
       "chrome/22..latest",

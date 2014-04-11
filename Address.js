@@ -1,7 +1,9 @@
 'use strict';
 var imports = require('soop').imports();
-var parent  = imports.parent || require('./util/VersionedData');
-var networks= imports.networks || require('./networks');
+var coinUtil = imports.coinUtil || require('./util/util');
+var parent = imports.parent || require('./util/VersionedData');
+var networks = imports.networks || require('./networks');
+var Script = imports.Script || require('./Script');
 
 function Address() {
   Address.super(this, arguments);
@@ -10,6 +12,47 @@ function Address() {
 Address.parent = parent;
 parent.applyEncodingsTo(Address);
 
+//create a pubKeyHash address
+Address.fromPubKey = function(pubKey, network) {
+  if (!network)
+    network = 'livenet';
+
+  if (pubKey.length != 33 && pubKey.length != 65)
+    throw new Error('Invalid public key');
+
+  var version = networks[network].addressVersion;
+  var hash = coinUtil.sha256ripe160(pubKey);
+
+  return new Address(version, hash);
+};
+
+//create a p2sh m-of-n multisig address
+Address.fromPubKeys = function(mReq, pubKeys, network, opts) {
+  if (!network)
+    network = 'livenet';
+
+  for (var i in pubKeys) {
+    var pubKey = pubKeys[i];
+    if (pubKey.length != 33 && pubKey.length != 65)
+      throw new Error('Invalid public key');
+  }
+
+  var script = Script.createMultisig(mReq, pubKeys, opts);
+
+  return Address.fromScript(script, network);
+};
+
+//create a p2sh address from redeemScript
+Address.fromScript = function(script, network) {
+  if (!network)
+    network = 'livenet';
+
+  var version = networks[network].P2SHVersion;
+  var buf = script.getBuffer();
+  var hash = coinUtil.sha256ripe160(buf);
+
+  return new Address(version, hash);
+};
 
 Address.prototype.validate = function() {
   this.doAsBinary(function() {

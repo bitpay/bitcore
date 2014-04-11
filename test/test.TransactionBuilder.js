@@ -1,7 +1,7 @@
 'use strict';
 
 var chai = chai || require('chai');
-chai.Assertion.includeStack = true;
+chai.config.includeStack = true;
 var bitcore = bitcore || require('../bitcore');
 
 var should = chai.should();
@@ -563,7 +563,7 @@ describe('TransactionBuilder', function() {
     };
     var data = getInfoForP2sh();
     // multisig p2sh
-    var p2shOpts = {nreq:3, pubkeys:data.pubkeys, amount:0.05};
+    var p2shOpts = {nreq:3, pubkeys:data.pubkeys};
     var info = TransactionBuilder.infoForP2sh(p2shOpts, network);
 
     var outs = outs || [{
@@ -605,36 +605,43 @@ describe('TransactionBuilder', function() {
     var k2 = testdata.dataUnspentSign.keyStringsP2sh.slice(1,2);
     var k5 = testdata.dataUnspentSign.keyStringsP2sh.slice(4,5);
     b.isFullySigned().should.equal(false);
+    b.signaturesAdded.should.equal(0);
 
     b.sign(k1);
     b.isFullySigned().should.equal(false);
+    b.signaturesAdded.should.equal(1);
 
     var tx = b.build();
     tx.ins.length.should.equal(1);
     tx.outs.length.should.equal(2);
     tx.isComplete().should.equal(false);
+    b.signaturesAdded.should.equal(1);
 
     // Sign with the same
     b.sign(k1);
     b.isFullySigned().should.equal(false);
     tx.isComplete().should.equal(false);
+    b.signaturesAdded.should.equal(1);
 
     // Sign with k5
     b.sign(k5);
 ///
     b.isFullySigned().should.equal(false);
     tx.isComplete().should.equal(false);
+    b.signaturesAdded.should.equal(2);
 
     // Sign with same
     b.sign(k5);
     b.isFullySigned().should.equal(false);
     tx.isComplete().should.equal(false);
+    b.signaturesAdded.should.equal(2);
 
 
     // Sign k2
     b.sign(k2);
     b.isFullySigned().should.equal(true);
     tx.isComplete().should.equal(true);
+    b.signaturesAdded.should.equal(3);
   });
 
   it('should sign in steps a p2sh/p2pubkeyhash tx', function() {
@@ -644,7 +651,7 @@ describe('TransactionBuilder', function() {
       remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
     };
     // p2hash/ p2sh
-    var p2shOpts = {address:'mgwqzy6pF5BSc72vxHBFSnnhNEBcV4TJzV', amount:0.05};
+    var p2shOpts = {address:'mgwqzy6pF5BSc72vxHBFSnnhNEBcV4TJzV'};
     var info = TransactionBuilder.infoForP2sh(p2shOpts, network);
 
     //addr: 2NAwCQ1jPYPrSsyBQvfP6AJ6d6SSxnHsZ4e

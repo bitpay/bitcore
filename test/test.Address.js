@@ -82,5 +82,60 @@ describe('Address', function() {
     // script testnet
     new Address('2NBSBcf2KfjPEEqVusmrWdmUeNHRiUTS3Li').isScript().should.equal(true);
   });
+
+  describe('#fromPubKey', function() {
+    it('should make this pubkeyhash address from uncompressed this public key', function() {
+      var pubkey = new Buffer('04fa05ce8b25010cb6e17a30e0b66668bf083c40687547748ec330ee77adf53a42abd3d26148cbacfcf79c907ddefeb2c37f8bebc0a695ba79d634449d871de218', 'hex');
+      var hash = bitcore.util.sha256ripe160(pubkey);
+      var addr = new Address(0, hash);
+      addr.toString().should.equal(Address.fromPubKey(pubkey).toString());
+    });
+  });
+
+  describe('#fromPubKeys', function() {
+    it('should make this p2sh multisig address from these pubkeys', function() {
+      var pubkey1 = new Buffer('03e0973263b4e0d5f5f56d25d430e777ab3838ff644db972c0bf32c31da5686c27', 'hex');
+      var pubkey2 = new Buffer('0371f94c57cc013507101e30794161f4e6b9efd58a9ea68838daf429b7feac8cb2', 'hex');
+      var pubkey3 = new Buffer('032c0d2e394541e2efdc7ac3500e16e7e69df541f38670402e95aa477202fa06bb', 'hex');
+      var sortedPubKeys = [pubkey3, pubkey2, pubkey1];
+      var mReq = 2;
+      var script = bitcore.Script.createMultisig(mReq, sortedPubKeys, {noSorting: true});
+      var hash = bitcore.util.sha256ripe160(script.getBuffer());
+      var version = bitcore.networks['livenet'].P2SHVersion;
+      var addr = new Address(version, hash);
+      var addr2 = Address.fromPubKeys(mReq, sortedPubKeys);
+      addr.toString().should.equal(addr2.toString());
+    });
+  });
+
+  describe('#fromScript', function() {
+    it('should make this p2sh multisig address from these pubkeys', function() {
+      var pubkey1 = new Buffer('03e0973263b4e0d5f5f56d25d430e777ab3838ff644db972c0bf32c31da5686c27', 'hex');
+      var pubkey2 = new Buffer('0371f94c57cc013507101e30794161f4e6b9efd58a9ea68838daf429b7feac8cb2', 'hex');
+      var pubkey3 = new Buffer('032c0d2e394541e2efdc7ac3500e16e7e69df541f38670402e95aa477202fa06bb', 'hex');
+      var pubKeys = [pubkey1, pubkey2, pubkey3];
+      var mReq = 2;
+      var script = bitcore.Script.createMultisig(mReq, pubKeys);
+      var addr = Address.fromScript(script);
+      var addr2 = Address.fromPubKeys(mReq, pubKeys);
+      addr.toString().should.equal(addr2.toString());
+    });
+
+    it('it should make this hand-crafted address', function() {
+      var pubkey1 = new Buffer('03e0973263b4e0d5f5f56d25d430e777ab3838ff644db972c0bf32c31da5686c27', 'hex');
+      var pubkey2 = new Buffer('0371f94c57cc013507101e30794161f4e6b9efd58a9ea68838daf429b7feac8cb2', 'hex');
+      var pubkey3 = new Buffer('032c0d2e394541e2efdc7ac3500e16e7e69df541f38670402e95aa477202fa06bb', 'hex');
+      var pubKeys = [pubkey1, pubkey2, pubkey3];
+      var mReq = 2;
+      var script = bitcore.Script.createMultisig(mReq, pubKeys);
+      var addr = Address.fromScript(script);
+      
+      var hash = bitcore.util.sha256ripe160(script.getBuffer());
+      var version = bitcore.networks['livenet'].P2SHVersion;
+      var addr2 = new Address(version, hash);
+
+      addr.toString().should.equal(addr2.toString());
+    });
+  });
  
 });

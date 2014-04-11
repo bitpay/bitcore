@@ -9,8 +9,7 @@ exports.patch = function(Buffers) {
     }
     var pos = this.pos(i);
     this.buffers = this.buffers.slice(pos.buf);
-    this.buffers[0].length -= pos.offset;
-    this.buffers[0].offset += pos.offset;
+    this.buffers[0] = new Buffer(this.buffers[0].slice(pos.offset));
     this.length -= i;
   };
 };

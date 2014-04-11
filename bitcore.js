@@ -14,6 +14,7 @@ requireWhenAccessed('bignum', 'bignum');
 requireWhenAccessed('base58', 'base58-native');
 requireWhenAccessed('bufferput', 'bufferput');
 requireWhenAccessed('buffertools', 'buffertools');
+requireWhenAccessed('Buffers.monkey', './Buffers.monkey');
 requireWhenAccessed('config', './config');
 requireWhenAccessed('const', './const');
 requireWhenAccessed('Deserialize', './Deserialize');
