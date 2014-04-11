@@ -16,6 +16,21 @@ describe('Key', function() {
     var k = new Key();
     should.exist(k);
   });
+  it('should not fail when called as Key() without "new"', function() {
+    var key = Key();
+    should.exist(key);
+  });
+  it('should not fail when called as Key() without "new" with some args', function() {
+    var key = Key(1, 2, 3, 4, 5);
+    should.exist(key);
+  });
+  it('should have correct properties when called with Key() without "new"', function() {
+    var key = Key();
+    key.compressed.should.equal(true);
+    should.not.exist(key.public);
+    should.not.exist(key.private);
+    should.exist(key);
+  });
   it('should be able to generateSync instance', function() {
     var k = Key.generateSync();
     should.exist(k);
