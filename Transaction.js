@@ -125,7 +125,6 @@ function Transaction(data) {
   }) : [];
   if (data.buffer) this._buffer = data.buffer;
 };
-this.class = Transaction;
 Transaction.In = TransactionIn;
 Transaction.Out = TransactionOut;
 
