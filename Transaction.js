@@ -432,7 +432,8 @@ Transaction.prototype.getStandardizedObject = function getStandardizedObject() {
       prev_out: {
         hash: buffertools.reverse(new Buffer(txin.getOutpointHash())).toString('hex'),
         n: txin.getOutpointIndex()
-      }
+      },
+      sequence: (txin.q === 0xffffffff) ? null : txin.q
     };
     if (txin.isCoinBase()) {
       txinObj.coinbase = txin.s.toString('hex');
