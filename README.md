@@ -176,7 +176,7 @@ peerman.on('connect', function() {
   var conn = peerman.getActiveConnection();
   if (conn) {
     var outs = [{address:toAddress, amount:amt}];
-    var opts = {remainderAddress: changeAddressString};
+    var opts = {remainderOut: {address: changeAddressString}};
     var Builder = bitcore.TransactionBuilder;
 
     var tx = new Builder(opts)
