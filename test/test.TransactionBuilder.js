@@ -32,9 +32,9 @@ describe('TransactionBuilder', function() {
   it('should be able to create instance with params', function() {
     var t = new TransactionBuilder({spendUnconfirmed: true, lockTime: 10});
     should.exist(t);
-    should.exist(t.txobj.version);
+    should.exist(t.lockTime);
     t.spendUnconfirmed.should.equal(true);
-    t.txobj.lock_time.should.equal(10);
+    t.lockTime.should.equal(10);
   });
 
 
@@ -84,22 +84,24 @@ describe('TransactionBuilder', function() {
 
 
   it('#_setInputs sets inputs', function() {
+    var txobj={};
     var b = getBuilder()
       .setUnspent(testdata.dataUnspent)
       ._selectUnspent(0.1 * util.COIN)
-      ._setInputs();
+      ._setInputs(txobj);
 
-    should.exist(b.txobj.ins[0].s);
-    should.exist(b.txobj.ins[0].q);
-    should.exist(b.txobj.ins[0].o);
+    should.exist(txobj.ins[0].s);
+    should.exist(txobj.ins[0].q);
+    should.exist(txobj.ins[0].o);
   });
 
   it('#_setInputMap set inputMap', function() {
+    var txobj={};
     var b = getBuilder()
       .setUnspent(testdata.dataUnspent)
       ._selectUnspent(0.1 * util.COIN)
-      ._setInputs()
-      ._setInputMap();
+      ._setInputs(txobj)
+      ._setInputMap(txobj);
 
     should.exist(b.inputMap);
     b.inputMap.length.should.equal(2);

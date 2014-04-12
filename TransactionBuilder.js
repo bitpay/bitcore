@@ -94,12 +94,7 @@ var FEE_PER_1000B_SAT = parseInt(0.0001 * util.COIN);
 
 function TransactionBuilder(opts) {
   opts                  = opts || {};
-  this.txobj            = {};
-  this.txobj.version    = 1;
-  this.txobj.lock_time  = opts.lockTime || 0;
-  this.txobj.ins  = [];
-  this.txobj.outs = [];
-
+  this.lockTime         = opts.lockTime || 0;
   this.spendUnconfirmed = opts.spendUnconfirmed || false;
 
   if (opts.fee || opts.feeSat) {
@@ -265,12 +260,12 @@ TransactionBuilder.prototype._selectUnspent = function(neededAmountSat) {
   return this;
 };
 
-TransactionBuilder.prototype._setInputs = function() {
+TransactionBuilder.prototype._setInputs = function(txobj) {
   var ins = this.selectedUtxos;
   var l = ins.length;
   var valueInSat = bignum(0);
 
-  this.txobj.ins=[];
+  txobj.ins=[];
   for (var i = 0; i < l; i++) {
     valueInSat = valueInSat.add(util.parseValue(ins[i].amount));
 
@@ -286,7 +281,7 @@ TransactionBuilder.prototype._setInputs = function() {
     voutBuf.writeUInt32LE(vout, 0);
 
     txin.o = Buffer.concat([hashReversed, voutBuf]);
-    this.txobj.ins.push(txin);
+    txobj.ins.push(txin);
   }
   this.valueInSat = valueInSat;
   return this;
@@ -309,7 +304,7 @@ TransactionBuilder.prototype._setFee = function(feeSat) {
   return this;
 };
 
-TransactionBuilder.prototype._setRemainder = function(remainderIndex) {
+TransactionBuilder.prototype._setRemainder = function(txobj, remainderIndex) {
 
   if ( typeof this.valueInSat === 'undefined' ||
       typeof this.valueOutSat === 'undefined')
@@ -317,12 +312,12 @@ TransactionBuilder.prototype._setRemainder = function(remainderIndex) {
 
   // add remainder (without modifying outs[])
   var remainderSat = this.valueInSat.sub(this.valueOutSat).sub(this.feeSat);
-  var l =this.txobj.outs.length;
+  var l =txobj.outs.length;
   this.remainderSat = bignum(0);
 
   //remove old remainder?
   if (l > remainderIndex) {
-    this.txobj.outs.pop();
+    txobj.outs.pop();
   }
 
   if (remainderSat.cmp(0) > 0) {
@@ -333,18 +328,17 @@ TransactionBuilder.prototype._setRemainder = function(remainderIndex) {
       v: value,
       s: script.getBuffer(),
     };
-    this.txobj.outs.push(txout);
+    txobj.outs.push(txout);
     this.remainderSat = remainderSat;
   }
 
   return this;
 };
 
-TransactionBuilder.prototype._setFeeAndRemainder = function() {
+TransactionBuilder.prototype._setFeeAndRemainder = function(txobj) {
 
   //starting size estimation
-  var size = 500, maxSizeK, remainderIndex = this.txobj.outs.length;
-
+  var size = 500, maxSizeK, remainderIndex = txobj.outs.length;
   do {
     // based on https://en.bitcoin.it/wiki/Transaction_fees
     maxSizeK = parseInt(size / 1000) + 1;
@@ -355,12 +349,12 @@ TransactionBuilder.prototype._setFeeAndRemainder = function() {
     var neededAmountSat = this.valueOutSat.add(feeSat);
 
     this._selectUnspent(neededAmountSat)
-        ._setInputs()
+        ._setInputs(txobj)
         ._setFee(feeSat)
-        ._setRemainder(remainderIndex);
+        ._setRemainder(txobj, remainderIndex);
 
         
-    size = new Transaction(this.txobj).getSize();
+    size = new Transaction(txobj).getSize();
   } while (size > (maxSizeK + 1) * 1000);
   return this;
 };
@@ -368,9 +362,13 @@ TransactionBuilder.prototype._setFeeAndRemainder = function() {
 TransactionBuilder.prototype.setOutputs = function(outs) {
   var valueOutSat = bignum(0);
 
-  this.txobj.outs = [];
-  var l =outs.length;
+  var txobj = {}; 
+  txobj.version    = 1;
+  txobj.lock_time  = this.lockTime || 0;
+  txobj.ins  = [];
+  txobj.outs = [];
 
+  var l =outs.length;
   for (var i = 0; i < l; i++) {
     var amountSat = outs[i].amountSat || util.parseValue(outs[i].amount);
     var value = util.bigIntToValue(amountSat);
@@ -379,7 +377,7 @@ TransactionBuilder.prototype.setOutputs = function(outs) {
       v: value,
       s: script.getBuffer(),
     };
-    this.txobj.outs.push(txout);
+    txobj.outs.push(txout);
 
     var sat = outs[i].amountSat || util.parseValue(outs[i].amount);
     valueOutSat = valueOutSat.add(sat);
@@ -387,9 +385,9 @@ TransactionBuilder.prototype.setOutputs = function(outs) {
 
   this.valueOutSat = valueOutSat;
 
-  this._setFeeAndRemainder();
+  this._setFeeAndRemainder(txobj);
 
-  this.tx = new Transaction(this.txobj);
+  this.tx = new Transaction(txobj);
   return this;
 };
 
@@ -736,7 +734,6 @@ TransactionBuilder.prototype.toObj = function() {
     spendUnconfirmed : this.spendUnconfirmed,
 
     inputMap         : this.inputMap,
-    txobj            : this.txobj,
   };
   if (this.tx) {
     data.tx  =this.tx.serialize().toString('hex');
@@ -762,17 +759,78 @@ TransactionBuilder.fromObj = function(data) {
   b.spendUnconfirmed = data.spendUnconfirmed;
 
   b.inputMap         = data.inputMap;
-  b.txobj            = data.txobj;
 
   if (data.tx) {
+    // Tx may have signatures, that are not on txobj
     var t = new Transaction();
     t.parse(new Buffer(data.tx,'hex'));
     b.tx = t;
   }
-  else if (b.txobj)
-    b.tx = new Transaction(b.txobj);
   return b;
 };
+
+TransactionBuilder.merge = function(b) {
+  // Builder should have the same params
+  ['valueInSat', 'valueOutSat', 'feeSat', 'remainderSat', 'signhash', 'spendUnconfirmed']
+      .forEach(function (k) {
+    if (this[k] !== b[k]) 
+      throw new Error('mismatch at TransactionBuilder match: ' + k);
+  });
+
+  if (this.hashToScriptMap) {
+    var err = 0;
+    if(! b.hashToScriptMap) err=1;
+    Object.keys(this.hashToScriptMap).forEach(function(k) {
+      if (!b.hashToScriptMap[k]) err=1;
+      if (this.hashToScriptMap[k] !== b.hashToScriptMap[k]) err=1;
+    });
+    if (err)
+      throw new Error('mismatch at TransactionBuilder hashToScriptMap');
+  }
+
+
+  var err = 0, i=0;;
+  this.selectedUtxos.forEach(function(u) {
+    if (!err) {
+      var v=b.selectedUtxos[i++];
+      if (!v) err=1;
+      // confirmations could differ
+      ['address', 'hash', 'scriptPubKey', 'vout', 'amount'].forEach(function(k) {
+        if (u[k] !== v[k])
+          err=k;
+      });
+    }
+  });
+  if (err)
+    throw new Error('mismatch at TransactionBuilder selectedUtxos #' + i-1+ ' Key:' + err);
+
+
+  err = 0; i=0;;
+  this.inputMap.forEach(function(u) {
+    if (!err) {
+      var v=b.inputMap[i++];
+      if (!v) err=1;
+      // confirmations could differ
+      ['address', 'scriptType', 'scriptPubKey', 'i'].forEach(function(k) {
+        if (u[k] !== v[k])
+          err=k;
+      });
+    }
+  });
+  if (err)
+    throw new Error('mismatch at TransactionBuilder inputMap #' + i-1 + ' Key:' + err);
+
+
+  // Does this tX have any signature already?
+  if (this.signaturesAdded) {
+  }
+  if (this.tx) {
+  }
+  // to be really merged
+  // signaturesAdded, inputsSigned
+};
+
+   
 
 
 module.exports = require('soop')(TransactionBuilder);
