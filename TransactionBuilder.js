@@ -506,12 +506,12 @@ TransactionBuilder.prototype._signPubKeyHash = function(walletKeyMap, input, txS
 };
 
 // FOR TESTING
-// var _dumpChunks = function (scriptSig, label) {
-//   console.log('## DUMP: ' + label + ' ##');
-//   for(var i=0; i<scriptSig.chunks.length; i++) {
-//     console.log('\tCHUNK ', i, scriptSig.chunks[i]); 
-//   }
-// };
+var _dumpChunks = function (scriptSig, label) {
+  console.log('## DUMP: ' + label + ' ##');
+  for(var i=0; i<scriptSig.chunks.length; i++) {
+    console.log('\tCHUNK ', i, scriptSig.chunks[i]); 
+  }
+};
 
 TransactionBuilder.prototype._initMultiSig = function(scriptSig, nreq) {
   var wasUpdated = false;
@@ -526,7 +526,8 @@ TransactionBuilder.prototype._initMultiSig = function(scriptSig, nreq) {
 
 
 TransactionBuilder.prototype._isSignedWithKey = function(wk, scriptSig, txSigHash, nreq) {
-  var ret=0;
+  var ret=false;
+//  _dumpChunks(scriptSig); 
   for(var i=1; i<=nreq; i++) {
     var chunk = scriptSig.chunks[i];
     if (chunk ===0 || chunk.length === 0) continue;
@@ -567,6 +568,7 @@ TransactionBuilder.prototype._updateMultiSig = function(wk, scriptSig, txSigHash
     wasUpdated=true;
     break;
   }
+//  _dumpChunks(scriptSig); // TODO
   return wasUpdated ? scriptSig : null;
 };
 
@@ -683,8 +685,6 @@ TransactionBuilder.prototype.sign = function(keys) {
       l   = ins.length,
       walletKeyMap = TransactionBuilder._mapKeys(keys);
 
-
-
   for (var i = 0; i < l; i++) {
     var input = this.inputMap[i];
 
@@ -716,6 +716,64 @@ TransactionBuilder.prototype.build = function() {
   this._checkTx();
   return this.tx;
 };
+
+
+TransactionBuilder.prototype.toObj = function() {
+  var data = { 
+    valueInSat       : this.valueInSat.toString(),
+    valueOutSat      : this.valueOutSat.toString(),
+    feeSat           : this.feeSat.toString(),
+    remainderSat     : this.remainderSat.toString(),
+
+    hashToScriptMap  : this.hashToScriptMap,
+    selectedUtxos    : this.selectedUtxos,
+
+    inputsSigned     : this.inputsSigned,
+    signaturesAdded  : this.signaturesAdded,
+
+    //opts           :
+    signhash         : this.signhash,
+    spendUnconfirmed : this.spendUnconfirmed,
+
+    inputMap         : this.inputMap,
+    txobj            : this.txobj,
+  };
+  if (this.tx) {
+    data.tx  =this.tx.serialize().toString('hex');
+  }
+  return data;
+};
+
+
+TransactionBuilder.fromObj = function(data) {
+  var b = new TransactionBuilder();
+  b.valueInSat       = data.valueInSat.toString();
+  b.valueOutSat      = data.valueOutSat.toString();
+  b.feeSat           = data.feeSat.toString();
+  b.remainderSat     = data.remainderSat.toString();
+
+  b.hashToScriptMap  = data.hashToScriptMap;
+  b.selectedUtxos    = data.selectedUtxos;
+
+  b.inputsSigned     = data.inputsSigned;
+  b.signaturesAdded  = data.signaturesAdded;
+
+  b.signhash         = data.signhash;
+  b.spendUnconfirmed = data.spendUnconfirmed;
+
+  b.inputMap         = data.inputMap;
+  b.txobj            = data.txobj;
+
+  if (data.tx) {
+    var t = new Transaction();
+    t.parse(new Buffer(data.tx,'hex'));
+    b.tx = t;
+  }
+  else if (b.txobj)
+    b.tx = new Transaction(b.txobj);
+  return b;
+};
+
 
 module.exports = require('soop')(TransactionBuilder);
 
