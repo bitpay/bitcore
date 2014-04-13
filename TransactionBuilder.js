@@ -830,9 +830,9 @@ TransactionBuilder.prototype._checkMergeability = function(b) {
 
 
 // this assumes that the same signature can not be v0 / v1 (which shouldnt be!)
-TransactionBuilder.prototype._mergeInputSig = function(s0buf, s1buf) {
+TransactionBuilder.prototype._mergeInputSig = function(s0buf, s1buf, ignoreConflictingSignatures) {
   if (buffertools.compare(s0buf,s1buf) === 0) {
-    console.log('BUFFERS .s MATCH'); //TODO
+    //console.log('BUFFERS .s MATCH'); //TODO
     return s0buf;
   }
   // Is multisig?
@@ -874,19 +874,24 @@ TransactionBuilder.prototype._mergeInputSig = function(s0buf, s1buf) {
     }
   }
 
-  if (emptySlots.length<diff.length) 
-    throw new Error('no enough empty slots to merge Txs');
-
-  for (var i=0;  i<diff.length; i++) {
-    s0.chunks[emptySlots[i]] = diff[i];
-    this.signaturesAdded++;
+  if (emptySlots.length<diff.length) {
+    if (!ignoreConflictingSignatures) {
+      throw new Error(
+        'no enough empty slots to merge Txs: Check ignoreConflictingSignatures option');
+    } 
   }
-  s0.updateBuffer();
+  else {
+    for (var i=0;  i<diff.length; i++) {
+      s0.chunks[emptySlots[i]] = diff[i];
+      this.signaturesAdded++;
+    }
+    s0.updateBuffer();
+  }
   return s0.getBuffer();
 };
 
 
-TransactionBuilder.prototype._mergeTx = function(tx) {
+TransactionBuilder.prototype._mergeTx = function(tx, ignoreConflictingSignatures) {
     var v0 = this.tx;
     var v1 = tx;
 
@@ -905,14 +910,14 @@ TransactionBuilder.prototype._mergeTx = function(tx) {
       if (buffertools.compare(i0.o,i1.o) !== 0) 
         throw new Error('TX .o in mismatch in merge. Input:',i);
 
-      i0.s=this._mergeInputSig(i0.s,i1.s);
+      i0.s=this._mergeInputSig(i0.s,i1.s, ignoreConflictingSignatures);
 
       if (v0.isInputComplete(i)) this.inputsSigned++;
     }
 };
 
 
-TransactionBuilder.prototype.merge = function(b) {
+TransactionBuilder.prototype.merge = function(b, ignoreConflictingSignatures) {
   this._checkMergeability(b);
 
 
@@ -922,7 +927,7 @@ TransactionBuilder.prototype.merge = function(b) {
         !== b.tx.getNormalizedHash().toString('hex')) 
       throw new Error('mismatch at TransactionBuilder NTXID');
 
-    this._mergeTx(b.tx);   
+    this._mergeTx(b.tx, ignoreConflictingSignatures);   
     // TODO UPDATE: signaturesAdded, inputsSigned
   }
 };
