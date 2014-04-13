@@ -769,7 +769,8 @@ TransactionBuilder.fromObj = function(data) {
   return b;
 };
 
-TransactionBuilder.merge = function(b) {
+
+TransactionBuilder._checkMergeability = function(b) {
   // Builder should have the same params
   ['valueInSat', 'valueOutSat', 'feeSat', 'remainderSat', 'signhash', 'spendUnconfirmed']
       .forEach(function (k) {
@@ -820,14 +821,103 @@ TransactionBuilder.merge = function(b) {
   if (err)
     throw new Error('mismatch at TransactionBuilder inputMap #' + i-1 + ' Key:' + err);
 
+};
+
+
+// this assumes that the same signature can not be v0 / v1 (which shouldnt be!)
+TransactionBuilder.prototype._mergeInputSig = function(s0buf, s1buf) {
+  if (buffertools.compare(s0buf,s1buf) === 0) {
+    console.log('BUFFERS .s MATCH'); //TODO
+    return s0buf;
+  }
+  // Is multisig?
+  var s0 = new Script(s0buf);
+  var s1 = new Script(s1buf);
+  var l0 = s0.chunks.length;
+  var l1 = s1.chunks.length;
+  var s0map = {};
+
+  if (l0 && l1 && l0 !== l1)
+    throw new Error('TX sig types mismatch in merge');
+
+  if (l0) {
+    // Look for differences.
+    for (var i=0; i<l0; i++) {
+      if (!this._chunkIsEmpty(s0.chunks[i]))
+        s0map[s0.chunks[i]] = 1;
+    };
+
+    var diff = []; 
+    for (var i=0; i<l1; i++) {
+      if ( !this._chunkIsEmpty(s1.chunks[i]) && !s0map[s1.chunks[i]]) {
+        diff.push(s1.chunks[i]);
+      }
+    };
+
+    if (!diff) {
+      console.log('[TransactionBuilder.js.857: NO DIFF FOUND, just ORDER DIFF]'); //TODO
+      return s0.getBuffer();
+    }
+  
+    var emptySlots = [];
+    for (var i=1; i<l0; i++) {
+      if (this._chunkIsEmpty(s0.chunks[i])) {
+        emptySlots.push(i);
+      }
+    }
+
+    if (emptySlots.length<diff.length) 
+      throw new Error('no enough empty slots to merge Txs');
+
+    for (var i=0;  i<diff.length; i++) {
+      s0.chunks[emptySlots[i]] = diff[i];
+    }
+    s0.updateBuffer();
+    return s0.getBuffer();
+  }
+  else {
+    return s1.getBuffer();
+  }
+
+};
+
+
+TransactionBuilder.prototype._mergeTx = function(tx) {
+    var v0 = this.tx;
+    var v1 = tx;
+
+    var l = v0.ins.length;
+    if (l !== v1.ins.length) 
+      throw new Error('TX in length mismatch in merge');
+
+    for(var i=0; i<l; i++) {
+      var i0 =  v0.ins[i];
+      var i1 =  v1.ins[i];
+
+      if (i0.q !==  i1.q)
+        throw new Error('TX sequence ins mismatch in merge. Input:',i);
+
+      if (buffertools.compare(i0.o,i1.o) !== 0) 
+        throw new Error('TX .o in mismatch in merge. Input:',i);
+
+      i0.s=self._mergeInputSig(i0.s,i1.s);
+    }
+};
+
+
+TransactionBuilder.prototype.merge = function(b) {
+  this._checkMergeability(b);
+
 
   // Does this tX have any signature already?
-  if (this.signaturesAdded) {
+  if (this.tx || b.tx) {
+    if (this.tx.getNormalizedHash().toString('hex') 
+        !== b.tx.getNormalizedHash().toString('hex')) 
+      throw new Error('mismatch at TransactionBuilder NTXID');
+
+    this._mergeTx(b.tx);   
+    // TODO UPDATE: signaturesAdded, inputsSigned
   }
-  if (this.tx) {
-  }
-  // to be really merged
-  // signaturesAdded, inputsSigned
 };
 
    
