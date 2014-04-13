@@ -9,7 +9,7 @@ var run = function() {
   var Address = bitcore.Address;
   var Script = bitcore.Script;
   var coinUtil = bitcore.util;
-  var PeerManager = require('soop').load('../PeerManager', {
+  var PeerManager = require('soop').load('../lib/PeerManager', {
     network: networks.testnet
   });
 

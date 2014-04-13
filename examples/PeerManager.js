@@ -5,7 +5,7 @@ var run = function() {
   var bitcore = require('../bitcore');
   var networks = bitcore.networks;
   var Peer = bitcore.Peer;
-  var PeerManager = require('soop').load('../PeerManager', {
+  var PeerManager = require('soop').load('../lib/PeerManager', {
     network: networks.testnet
   });
 
