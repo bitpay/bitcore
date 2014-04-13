@@ -758,6 +758,41 @@ describe('TransactionBuilder', function() {
   });
 
 
+  it('#merge p2sh/p2pubkeyhash', function() {
+    var b = getP2shBuilder(1);     
+    var k1 = testdata.dataUnspentSign.keyStringsP2sh.slice(0,1);
+    var k2 = testdata.dataUnspentSign.keyStringsP2sh.slice(1,2);
+    var k3 = testdata.dataUnspentSign.keyStringsP2sh.slice(2,3);
+    b.isFullySigned().should.equal(false);
+    b.signaturesAdded.should.equal(0);
+    b.sign(k1);
+    b.signaturesAdded.should.equal(1);
+    b.isFullySigned().should.equal(false);
+    var tx = b.build();
+    tx.isComplete().should.equal(false);
+
+    var b2 = getP2shBuilder(1); 
+    b2.sign(k2);
+    b2.signaturesAdded.should.equal(1);
+    b2.merge(b);
+    b2.signaturesAdded.should.equal(2);
+    tx = b2.build();
+    tx.isComplete().should.equal(false);
+
+    var b3 = getP2shBuilder(1); 
+    b3.sign(k3);
+    b3.signaturesAdded.should.equal(1);
+    b3.merge(b2);
+    b3.signaturesAdded.should.equal(3);
+    tx = b3.build();
+    tx.isComplete().should.equal(true);
+
+    b2.merge(b3);
+    b2.signaturesAdded.should.equal(3);
+    tx = b2.build();
+    tx.isComplete().should.equal(true);
 
 
+
+  });
 });

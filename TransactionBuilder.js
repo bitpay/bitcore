@@ -770,20 +770,25 @@ TransactionBuilder.fromObj = function(data) {
 };
 
 
-TransactionBuilder._checkMergeability = function(b) {
+TransactionBuilder.prototype._checkMergeability = function(b) {
+  var self=this;
+
   // Builder should have the same params
   ['valueInSat', 'valueOutSat', 'feeSat', 'remainderSat', 'signhash', 'spendUnconfirmed']
       .forEach(function (k) {
-    if (this[k] !== b[k]) 
-      throw new Error('mismatch at TransactionBuilder match: ' + k);
+
+    if (self[k].toString() !== b[k].toString()) {
+      throw new Error('mismatch at TransactionBuilder match: ' 
+        + k + ': ' + self[k] + ' vs. ' + b[k]);
+    }
   });
 
-  if (this.hashToScriptMap) {
+  if (self.hashToScriptMap) {
     var err = 0;
     if(! b.hashToScriptMap) err=1;
-    Object.keys(this.hashToScriptMap).forEach(function(k) {
+    Object.keys(self.hashToScriptMap).forEach(function(k) {
       if (!b.hashToScriptMap[k]) err=1;
-      if (this.hashToScriptMap[k] !== b.hashToScriptMap[k]) err=1;
+      if (self.hashToScriptMap[k] !== b.hashToScriptMap[k]) err=1;
     });
     if (err)
       throw new Error('mismatch at TransactionBuilder hashToScriptMap');
@@ -791,7 +796,7 @@ TransactionBuilder._checkMergeability = function(b) {
 
 
   var err = 0, i=0;;
-  this.selectedUtxos.forEach(function(u) {
+  self.selectedUtxos.forEach(function(u) {
     if (!err) {
       var v=b.selectedUtxos[i++];
       if (!v) err=1;
@@ -807,13 +812,13 @@ TransactionBuilder._checkMergeability = function(b) {
 
 
   err = 0; i=0;;
-  this.inputMap.forEach(function(u) {
+  self.inputMap.forEach(function(u) {
     if (!err) {
       var v=b.inputMap[i++];
       if (!v) err=1;
       // confirmations could differ
       ['address', 'scriptType', 'scriptPubKey', 'i'].forEach(function(k) {
-        if (u[k] !== v[k])
+        if (u[k].toString() !== v[k].toString())
           err=k;
       });
     }
@@ -840,45 +845,44 @@ TransactionBuilder.prototype._mergeInputSig = function(s0buf, s1buf) {
   if (l0 && l1 && l0 !== l1)
     throw new Error('TX sig types mismatch in merge');
 
-  if (l0) {
-    // Look for differences.
-    for (var i=0; i<l0; i++) {
-      if (!this._chunkIsEmpty(s0.chunks[i]))
-        s0map[s0.chunks[i]] = 1;
-    };
+  if (!l0 && !l1) return s0buf;
+  if ( l0 && !l1) return s0buf;
+  if (!l0 &&  l1) return s1buf;
 
-    var diff = []; 
-    for (var i=0; i<l1; i++) {
-      if ( !this._chunkIsEmpty(s1.chunks[i]) && !s0map[s1.chunks[i]]) {
-        diff.push(s1.chunks[i]);
-      }
-    };
+  // Look for differences.
+  for (var i=0; i<l0; i++) {
+    if (!this._chunkIsEmpty(s0.chunks[i]))
+      s0map[s0.chunks[i]] = 1;
+  };
 
-    if (!diff) {
-      console.log('[TransactionBuilder.js.857: NO DIFF FOUND, just ORDER DIFF]'); //TODO
-      return s0.getBuffer();
+  var diff = []; 
+  for (var i=0; i<l1; i++) {
+    if ( !this._chunkIsEmpty(s1.chunks[i]) && !s0map[s1.chunks[i]]) {
+      diff.push(s1.chunks[i]);
     }
-  
-    var emptySlots = [];
-    for (var i=1; i<l0; i++) {
-      if (this._chunkIsEmpty(s0.chunks[i])) {
-        emptySlots.push(i);
-      }
-    }
+  };
 
-    if (emptySlots.length<diff.length) 
-      throw new Error('no enough empty slots to merge Txs');
-
-    for (var i=0;  i<diff.length; i++) {
-      s0.chunks[emptySlots[i]] = diff[i];
-    }
-    s0.updateBuffer();
+  if (!diff) {
+    console.log('[TransactionBuilder.js.857: NO DIFF FOUND, just ORDER DIFF]'); //TODO
     return s0.getBuffer();
   }
-  else {
-    return s1.getBuffer();
+
+  var emptySlots = [];
+  for (var i=1; i<l0; i++) {
+    if (this._chunkIsEmpty(s0.chunks[i])) {
+      emptySlots.push(i);
+    }
   }
 
+  if (emptySlots.length<diff.length) 
+    throw new Error('no enough empty slots to merge Txs');
+
+  for (var i=0;  i<diff.length; i++) {
+    s0.chunks[emptySlots[i]] = diff[i];
+    this.signaturesAdded++;
+  }
+  s0.updateBuffer();
+  return s0.getBuffer();
 };
 
 
@@ -890,6 +894,7 @@ TransactionBuilder.prototype._mergeTx = function(tx) {
     if (l !== v1.ins.length) 
       throw new Error('TX in length mismatch in merge');
 
+    this.inputsSigned =0;
     for(var i=0; i<l; i++) {
       var i0 =  v0.ins[i];
       var i1 =  v1.ins[i];
@@ -900,7 +905,9 @@ TransactionBuilder.prototype._mergeTx = function(tx) {
       if (buffertools.compare(i0.o,i1.o) !== 0) 
         throw new Error('TX .o in mismatch in merge. Input:',i);
 
-      i0.s=self._mergeInputSig(i0.s,i1.s);
+      i0.s=this._mergeInputSig(i0.s,i1.s);
+
+      if (v0.isInputComplete(i)) this.inputsSigned++;
     }
 };
 
