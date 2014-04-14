@@ -27,7 +27,6 @@
 #include "node.h"
 #include "node_buffer.h"
 #include "string_bytes.h"
-#include "node_root_certs.h"
 
 #include <string.h>
 #ifdef _MSC_VER
