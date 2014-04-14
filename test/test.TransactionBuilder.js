@@ -6,17 +6,11 @@ var bitcore = bitcore || require('../bitcore');
 
 var should = chai.should();
 
-var Transaction = bitcore.Transaction;
 var TransactionBuilder = bitcore.TransactionBuilder;
-var In;
-var Out;
-var Script = bitcore.Script;
 var WalletKey = bitcore.WalletKey;
 var util = bitcore.util;
 var networks = bitcore.networks;
-var buffertools = require('buffertools');
 var testdata = testdata || require('./testdata');
-var nutil = require('util');
 
 describe('TransactionBuilder', function() {
   it('should initialze the main object', function() {
