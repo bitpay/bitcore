@@ -10,7 +10,6 @@ var PROTOCOL_VERSION   = 70000;
 var Binary             = imports.Binary || require('binary');
 var Put                = imports.Put || require('bufferput');
 var Buffers            = imports.Buffers || require('buffers');
-var Socks5Client       = imports.Socks5Client || require('socks5-client')
 require('./Buffers.monkey').patch(Buffers);
 
 var Block           = require('./Block');
@@ -33,6 +32,7 @@ function Connection(socket, peer, opts) {
 
   // check for socks5 proxy options and construct a proxied socket
   if (this.options.proxy) {
+    var Socks5Client = imports.Socks5Client || require('socks5-client');
     this.socket = new Socks5Client(opts.proxy.host, opts.proxy.port);
   }
 
