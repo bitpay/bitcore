@@ -10,3 +10,4 @@ node_modules/
 README.html
 tags
 coverage
+.DS_Store
