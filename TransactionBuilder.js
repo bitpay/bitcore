@@ -732,8 +732,6 @@ TransactionBuilder.prototype.toObj = function() {
     //opts           :
     signhash         : this.signhash,
     spendUnconfirmed : this.spendUnconfirmed,
-
-    inputMap         : this.inputMap,
   };
   if (this.tx) {
     data.tx  =this.tx.serialize().toString('hex');
@@ -758,7 +756,7 @@ TransactionBuilder.fromObj = function(data) {
   b.signhash         = data.signhash;
   b.spendUnconfirmed = data.spendUnconfirmed;
 
-  b.inputMap         = data.inputMap;
+  b._setInputMap();
 
   if (data.tx) {
     // Tx may have signatures, that are not on txobj
