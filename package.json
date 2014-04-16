@@ -42,6 +42,7 @@
     "url": "https://github.com/bitpay/bitcore.git"
   },
   "scripts": {
+    "install": "node-gyp rebuild",
     "test": "mocha test -R spec",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
     "postinstall": "node browser/build.js -a"
