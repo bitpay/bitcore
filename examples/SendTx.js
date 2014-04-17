@@ -9,9 +9,7 @@ var run = function() {
   var Address = bitcore.Address;
   var Script = bitcore.Script;
   var coinUtil = bitcore.util;
-  var PeerManager = require('soop').load('../PeerManager', {
-    network: networks.testnet
-  });
+  var PeerManager = require('../PeerManager');
 
   var createTx = function() {
     var TXIN = 'd05f35e0bbc495f6dcab03e599c8f5e32a07cdb4bc76964de201d06a2a7d8265';

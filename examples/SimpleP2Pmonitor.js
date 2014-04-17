@@ -1,6 +1,6 @@
 /**
  * This is a simple script that will display network messages.
- * It users the Peer / Connection classes * directly instead of
+ * It users the Peer / Connection classes directly instead of
  * relying on PeerManager.
  */
 
