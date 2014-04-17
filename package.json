@@ -26,6 +26,10 @@
     {
       "name": "Ryan X. Charles",
       "email": "ryan@bitpay.com"
+    },
+    {
+      "name": "Gordon Hall",
+      "email": "gordon@bitpay.com"
     }
   ],
   "keywords": [
@@ -63,6 +67,7 @@
     "commander": "=2.1.0",
     "browserify-bignum": "git://github.com/maraoz/browserify-bignum.git",
     "browserify-buffertools": "git://github.com/maraoz/browserify-buffertools.git",
+    "socks5-client": "~0.3.6",
     "brfs": "=1.0.0",
     "chai": "=1.9.1",
     "uglifyify": "=1.2.3"
