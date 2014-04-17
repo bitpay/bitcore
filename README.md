@@ -128,7 +128,7 @@ Check the list of all supported RPC call at [RpcClient.js](RpcClient.js)
 ## Creating and sending a Transaction through P2P
 
 The fee of the transaction can be given in `opts` or it will be determined 
-by the transaction size. Documentation on the paramets of `TransactionBuilder`
+by the transaction size. Documentation on the parameters of `TransactionBuilder`
 can be found on the source file.
 
 ```js
@@ -177,9 +177,9 @@ peerman.on('connect', function() {
   if (conn) {
     var outs = [{address:toAddress, amount:amt}];
     var opts = {remainderOut: {address: changeAddressString}};
-    var Builder = bitcore.TransactionBuilder;
+    var TransactionBuilder = bitcore.TransactionBuilder;
 
-    var tx = new Builder(opts)
+    var tx = new TransactionBuilder(opts)
       .setUnspent(Unspent)
       .setOutputs(outs)
       .sign(keys)
