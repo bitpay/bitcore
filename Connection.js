@@ -1,19 +1,18 @@
 var imports            = require('soop').imports();
 
-var config             = imports.config || require('./config');
 var log                = imports.log || require('./util/log');
-var network            = imports.network || require('./networks')[config.network];
 
 var MAX_RECEIVE_BUFFER = 10000000;
 var PROTOCOL_VERSION   = 70000;
 
-var Binary             = imports.Binary || require('binary');
 var Put                = imports.Put || require('bufferput');
 var Buffers            = imports.Buffers || require('buffers');
 require('./Buffers.monkey').patch(Buffers);
 
-var Block           = require('./Block');
-var Transaction     = require('./Transaction');
+var bitcoreDefaults = imports.config || require('./config');
+var networks        = imports.networks || require('./networks');
+var Block           = imports.Block || require('./Block');
+var Transaction     = imports.Transaction || require('./Transaction');
 var util            = imports.util || require('./util/util');
 var Parser          = imports.Parser || require('./util/BinaryParser');
 var buffertools     = imports.buffertools || require('buffertools');
@@ -25,15 +24,16 @@ var BIP0031_VERSION = 60000;
 function Connection(socket, peer, opts) {
   Connection.super(this, arguments);
   
-  this.options = opts || {};
-
+  this.config = opts || bitcoreDefaults;
+  
+  this.network = networks[this.config.network] || networks.livenet;
   this.socket = socket;
   this.peer = peer;
 
   // check for socks5 proxy options and construct a proxied socket
   if (this.options.proxy) {
     var Socks5Client = imports.Socks5Client || require('socks5-client');
-    this.socket = new Socks5Client(opts.proxy.host, opts.proxy.port);
+    this.socket = new Socks5Client(config.proxy.host, config.proxy.port);
   }
 
   // A connection is considered "active" once we have received verack
@@ -146,7 +146,7 @@ Connection.prototype.handleMessage = function(message) {
         this.recvVer = Math.min(message.version, PROTOCOL_VERSION);
       } else {
         // We won't start expecting a checksum until after we've received
-        // the "verack" message.
+        // the 'verack' message.
         this.once('verack', (function () {
           this.recvVer = message.version;
         }).bind(this));
@@ -160,7 +160,7 @@ Connection.prototype.handleMessage = function(message) {
       break;
 
     case 'ping':
-      if ("object" === typeof message.nonce) {
+      if ('object' === typeof message.nonce) {
         this.sendPong(message.nonce);
       }
       break;
@@ -300,7 +300,7 @@ Connection.prototype.sendBlock = function (block, txs) {
 
 Connection.prototype.sendMessage = function (command, payload) {
   try {
-    var magic = network.magic;
+    var magic = this.network.magic;
     var commandBuf = new Buffer(command, 'ascii');
     if (commandBuf.length > 12) throw 'Command name too long';
 
@@ -323,13 +323,13 @@ Connection.prototype.sendMessage = function (command, payload) {
     var buffer = message.buffer();
 
     log.debug('['+this.peer+'] '+
-                  "Sending message "+command+" ("+payload.length+" bytes)");
+                  'Sending message '+command+' ('+payload.length+' bytes)');
 
     this.socket.write(buffer);
   } catch (err) {
     // TODO: We should catch this error one level higher in order to better
     //       determine how to react to it. For now though, ignoring it will do.
-    log.err("Error while sending message to peer "+this.peer+": "+
+    log.err('Error while sending message to peer '+this.peer+': '+
                   (err.stack ? err.stack : err.toString()));
   }
 };
@@ -338,7 +338,7 @@ Connection.prototype.handleData = function (data) {
   this.buffers.push(data);
 
   if (this.buffers.length > MAX_RECEIVE_BUFFER) {
-    log.err("Peer "+this.peer+" exceeded maxreceivebuffer, disconnecting."+
+    log.err('Peer '+this.peer+' exceeded maxreceivebuffer, disconnecting.'+
                   (err.stack ? err.stack : err.toString()));
     this.socket.destroy();
     return;
@@ -351,7 +351,7 @@ Connection.prototype.processData = function () {
   // If there are less than 20 bytes there can't be a message yet.
   if (this.buffers.length < 20) return;
 
-  var magic = network.magic;
+  var magic = this.network.magic;
   var i = 0;
   for (;;) {
     if (this.buffers.get(i  ) === magic[0] &&
@@ -386,13 +386,13 @@ Connection.prototype.processData = function () {
 
   if (this.buffers.length < endPos) return;
 
-  var command = this.buffers.slice(4, 16).toString('ascii').replace(/\0+$/,"");
+  var command = this.buffers.slice(4, 16).toString('ascii').replace(/\0+$/,'');
   var payload = this.buffers.slice(startPos, endPos);
   var checksum = (this.recvVer >= 209) ? this.buffers.slice(20, 24) : null;
 
   log.debug('['+this.peer+'] ' +
-                "Received message " + command +
-                " (" + payloadLen + " bytes)");
+                'Received message ' + command +
+                ' (' + payloadLen + ' bytes)');
 
   if (checksum !== null) {
     var checksumConfirm = doubleSha256(payload).slice(0, 4);
