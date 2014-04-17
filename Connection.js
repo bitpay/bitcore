@@ -31,9 +31,9 @@ function Connection(socket, peer, opts) {
   this.peer = peer;
 
   // check for socks5 proxy options and construct a proxied socket
-  if (this.options.proxy) {
+  if (this.config.proxy) {
     var Socks5Client = imports.Socks5Client || require('socks5-client');
-    this.socket = new Socks5Client(config.proxy.host, config.proxy.port);
+    this.socket = new Socks5Client(this.config.proxy.host, this.config.proxy.port);
   }
 
   // A connection is considered "active" once we have received verack
