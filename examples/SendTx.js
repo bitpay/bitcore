@@ -3,13 +3,12 @@
 var run = function() {
   // Replace '../bitcore' with 'bitcore' if you use this code elsewhere.
   var bitcore = require('../bitcore');
-  var networks = bitcore.networks;
   var Peer = bitcore.Peer;
   var Transaction = bitcore.Transaction;
   var Address = bitcore.Address;
   var Script = bitcore.Script;
   var coinUtil = bitcore.util;
-  var PeerManager = require('../PeerManager');
+  var PeerManager = bitcore.PeerManager;
 
   var createTx = function() {
     var TXIN = 'd05f35e0bbc495f6dcab03e599c8f5e32a07cdb4bc76964de201d06a2a7d8265';

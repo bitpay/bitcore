@@ -25,7 +25,7 @@ function PeerManager(config) {
   this.interval = 5000;
   this.minConnections = 8;
   this.minKnownPeers = 10;
-};
+}
 
 PeerManager.parent = imports.parent || require('events').EventEmitter;
 PeerManager.Connection = Connection;

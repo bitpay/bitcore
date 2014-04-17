@@ -26,7 +26,9 @@ var run = function() {
     info.conn.sendGetData(invs);
   };
 
-  var peerman = new PeerManager();
+  var peerman = new PeerManager({
+    network: 'testnet'
+  });
 
   peerman.addPeer(new Peer('127.0.0.1', 18333));
 
