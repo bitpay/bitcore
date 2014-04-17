@@ -95,8 +95,8 @@ PeerManager.prototype.connectTo = function(peer) {
   }
 };
 
-PeerManager.prototype.addConnection = function(socketConn, peer) {
-  var conn = new Connection(socketConn, peer);
+PeerManager.prototype.addConnection = function(socketConn, peer, opts) {
+  var conn = new Connection(socketConn, peer, opts);
   this.connections.push(conn);
   this.emit('connection', conn);
 
