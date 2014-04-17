@@ -6,6 +6,9 @@ var dns        = require('dns');
 dns.resolve('dnsseed.bluematt.me', function(err, seeds) {
   // use the first peer
   var peer = new Peer(seeds[0], 8333);
+
+  //Custom peer:
+  //var peer = new Peer('180.153.139.246', '8888');
   
   // create a connection without an existing socket
   // but specify a socks5 proxy to create a socket 
@@ -21,7 +24,11 @@ dns.resolve('dnsseed.bluematt.me', function(err, seeds) {
   });
 
   connection.on('error', function(err) {
-    console.log(err);
+    console.log('There was an error running this example.');
+    console.log('Are you running Tor? Tor must running for this example to work.');
+    console.log('If you still get an error, you may need to use a different proxy from here:');
+    console.log('http://sockslist.net/');
+    //console.log(err);
   });
 
 });
