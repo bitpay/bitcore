@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width">
+    <title>Copay Team Broadcasts First BIP32 P2SH Multisig Transaction from Tucuman, Argentina - Bitcore Blog
+    </title>
+    <link rel="alternate" href="/blog/feed.xml" type="application/rss+xml" title="A pure, powerful blog for your daily reading.">
+    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono|Ubuntu:300,400,500,700,400italic,500italic,700italic|Lora:400,700,400italic,700italic|Anonymous+Pro:400,700,400italic,700italic|Merriweather:400,700,300">
+    <link rel="stylesheet" href="/blog/css/main.css">
+  </head>
+  <body class="article-detail">
+    <header class="header">
+      <div class="header-image"><img src="/blog/bitcore-logo.svg" alt="Bitcore"></div>
+      <div class="content-wrap">
+        <div class="logo">
+          <h1><a href="/blog/">Bitcore Blog</a></h1>
+          <p class="description">A pure, powerful blog for your daily reading.</p>
+        </div>
+      </div>
+    </header>
+    <div id="content">
+      <div class="content-wrap">
+        <article class="article">
+          <header>
+            <p class="date"><span>18. April 2014</span></p>
+            <h2><a href="/blog/articles/copay-team-congregates-in-tucuman/">Copay Team Broadcasts First BIP32 P2SH Multisig Transaction from Tucuman, Argentina</a></h2>
+            <p class="author"><span class="author">Ryan X. Charles</span>
+            </p>
+          </header>
+          <section class="content"><p>It&#8217;s really hard to properly secure bitcoins.
+It&#817;s so hard that even the most technically adept bitcoiners sometimes get hacked and lose their bitcoins.
+As bitcoin grows up to become an adult financial system, it is absolutely imperative that we end this security nightmare as quickly as possible.
+That is what multisignature transactions promise to&nbsp;do.</p>
+<p>The basic security problem with bitcoin is that your private keys give access to your bitcoins.
+If you slip up just once and reveal your private keys, which is really easy to do (especially if you&#8217;re not trained in the art of computer security), your bitcoins can be stolen.
+Countless individuals and companies have lost some or all of their bitcoins this&nbsp;way.</p>
+<p>Multisignature transactions offer a solution to this problem by allowing for more than one private key to control an address.
+In a 2-of-2 multisignature transaction, a private key from your laptop is used to sign a transaction, and a private key from your phone also has to be used to sign the same transaction.
+If you slip up and reveal the private keys on your laptop, your bitcoins are still safe because the private keys on your phone haven’t been&nbsp;compromised.</p>
+<p>Multisignature transactions allow, in principle, any combination of M signatures for N possible public keys.
+For instance, a company might desired to use 3-of-5 multisignature transactions to store their corporate funds.
+This is where at least three people of five must sign a transaction.
+If one person trips up and leaks their private keys, the company’s corporate funds are still safe.
+(Note that other limits in bitcoin’s architecture don’t allow very large M and N to be&nbsp;used.)</p>
+<p>A few weeks ago we announced a new project that we are developing called <a href="/blog/articles/cosign-our-multisignature-wallet-in-development/">Copay</a> (formerly Cosign) that should make it really easy to do multisignature transactions.
+Since then, all six Copay developers have congregated in Tucuman, Argentina to build a prototype of this&nbsp;wallet.</p>
+<p>Today we are happy to announce that we have successfully broadcast the first <span class="caps">BIP32</span> P2SH multisig transaction using Copay.
+<a href="http://test.insight.is/tx/22ca516de52794efaec60a1dba3048152b49a3764d2e99124893ac0862cd7928">It can be viewed on Insight here.</a>
+(Technical jargon will be explained in future blog&nbsp;posts.)</p>
+<p>Copay is not the only multisig wallet in development.
+We fully support all efforts to improve the security of bitcoin, including <a href="https://www.bitgo.com/">BitGo</a>, <a href="https://cryptocorp.co/">CryptoCorp</a>, and <a href="https://greenaddress.it/en/">GreenAddress.it</a>.
+We want the best security to win, which will be better for the entire bitcoin ecosystem.
+Therefore, in keeping with the spirit of bitcoin, Copay is 100% open-source, and has been since Day 1.
+If our ideas are good for security, then they will be adopted by all bitcoin&nbsp;wallets.</p>
+<p>We believe 2014 will go down in bitcoin history as the year of multisig.
+May stolen bitcoins be a thing of the&nbsp;past.</p>
+<p><img src="/blog/images/copay-first-transaction.jpg" alt="Copay Team"></p>
+</section>
+        </article>
+      </div>
+    </div>
+    <footer>
+      <div class="content-wrap">
+        <div class="nav"><a href="/blog/">« Blog Home</a></div>
+        <section class="about"><p><a href="http://bitcore.io/">Bitcore</a> is an open-source implementation of bitcoin in javascript that works both in node and the browser.
+Our goal is to make it as easy as possible to develop apps for bitcoin.</p>
+
+        </section>
+        <section class="copy">
+          <p>&copy; 2014 Bitcore Team. Blog powered by&nbsp;<a href="https://github.com/jnordberg/wintersmith">Wintersmith.</a>
+          </p>
+        </section>
+      </div>
+    </footer>
+  </body>
+</html>
