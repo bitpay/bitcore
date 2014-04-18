@@ -119,6 +119,13 @@ describe('Address', function() {
       var addr = Address.fromScript(script);
       var addr2 = Address.fromPubKeys(mReq, pubKeys);
       addr.toString().should.equal(addr2.toString());
+
+      // Same case, using HEX
+      var scriptHex = bitcore.Script.createMultisig(mReq, pubKeys).getBuffer().toString('hex');
+      var addrB = Address.fromScript(scriptHex);
+      var addr2B = Address.fromPubKeys(mReq, pubKeys);
+      addrB.toString().should.equal(addr2B.toString());
+ 
     });
 
     it('it should make this hand-crafted address', function() {
@@ -136,6 +143,42 @@ describe('Address', function() {
 
       addr.toString().should.equal(addr2.toString());
     });
+  });
+
+
+  describe('#fromScriptPubKey', function() {
+
+    // All examples checked againt bitcoind decodescript
+    var cases = [
+      ['76a91423b7530a00dd7951e11791c529389421c0b8d83b88ac', 'mimoZNLcP2rrMRgdeX5PSnR7AjCqQveZZ4'],
+      ['a9147049be48e74a660157da3ed64569981592f7fa0587','2N3Ux1YTnt1ixofYvJfaabqZSj2MBF3jsmv'],
+      ['76a914774e603bafb717bd3f070e68bbcccfd907c77d1388ac', 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE'],
+      ['76a914b00127584485a7cff0949ef0f6bc5575f06ce00d88ac', 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'],
+      ['532103bf025eb410407aec5a67c975ce222e363bb88c69bb1acce45d20d85602df2ec52103d76dd6d99127f4b733e772f0c0a09c573ac7e4d69b8bf50272292da2e093de2c2103dd9acd8dd1816c825d6b0739339c171ae2cb10efb53699680537865b07086e9b2102371cabbaf466c3a536034b4bda64ad515807bffd87488f44f93c2373d4d189c9210264cd444358f8d57f8637a7309f9736806f4883aebc4fe7da4bad1e4b37f2d12c55ae', [
+          "n4JAZc4cJimQbky5wxZUEDeAFZtGaZrjWK",
+          "msge5muNmBSRDn5nsaRcHCU6dg2zimA8wQ",
+          "mvz9MjocpyXdgXqRcZYazsdE8iThdvjdhk",
+          "miQGZ2gybQe7UvUQDBYsgcctUteij5pTpm",
+          "mu9kmhGrzREKsWaXUEUrsRLLMG4UMPy1LF"
+      ]]
+    ];
+
+    for(var i in cases){
+      var c=cases[i];
+      it('it should generate the right address', function(){
+        if (typeof c[1] === 'string') {
+          (new Address.fromScriptPubKey(c[0],'testnet')).toString().should.equal(c[1]);
+          var s = new bitcore.Script(new Buffer(c[0],'hex'));
+          (new Address.fromScriptPubKey(s,'testnet')).toString().should.equal(c[1]);
+        }
+        else {
+          var as=new Address.fromScriptPubKey(c[0],'testnet');
+          for(var j in as){
+            as[j].toString().should.equal(c[1][j]);
+          }
+        }
+      });
+    }
   });
  
 });
