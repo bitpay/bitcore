@@ -4,6 +4,7 @@ var run = function() {
   // Replace '../bitcore' with 'bitcore' if you use this code elsewhere.
   var bitcore = require('../bitcore');
   var Peer = bitcore.Peer;
+
   var TransactionBuilder = bitcore.TransactionBuilder;
   var PeerManager = bitcore.PeerManager;
 

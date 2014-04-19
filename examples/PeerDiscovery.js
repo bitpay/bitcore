@@ -1,4 +1,4 @@
-var PeerManager = require('../PeerManager');
+var PeerManager = require('../lib/PeerManager');
 var peerman     = new PeerManager();
 
 peerman.discoverPeers(function(err, peers) {
