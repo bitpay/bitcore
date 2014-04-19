@@ -12,7 +12,7 @@ var assert = chai.assert;
 var Point = bitcore.Point;
 var Key = bitcore.Key;
 
-describe('Key', function() {
+describe('Point', function() {
 
   it('should initialize the main object', function() {
     should.exist(Point);
