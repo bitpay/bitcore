@@ -1,5 +1,6 @@
 
 var imports         = require('soop').imports();
+var extend          = imports.extend || require('extend');
 var log             = imports.log || require('./util/log');
 var bitcoreDefaults = imports.config || require('./config');
 var Connection      = imports.Connection || require ('./Connection');
@@ -12,7 +13,8 @@ GetAdjustedTime = imports.GetAdjustedTime || function () {
 };
 
 function PeerManager(config) {
-  this.config = config || bitcoreDefaults;
+  // extend defaults with config
+  this.config = extend(true, config || {}, bitcoreDefaults);
   this.active = false;
   this.timer = null;
 
