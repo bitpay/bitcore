@@ -30,6 +30,7 @@ var modules = [
   'lib/Bloom',
   'lib/Connection',
   'lib/Deserialize',
+  'lib/Message',
   'lib/Opcode',
   'lib/Peer',
   'lib/PeerManager',
