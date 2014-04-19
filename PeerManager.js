@@ -213,4 +213,61 @@ PeerManager.prototype.getActiveConnections = function () {
   return this.connections.slice(0);
 };
 
+PeerManager.prototype.discoverPeers = function(callback) {
+  var self     = this;
+  var async    = imports.async || require('async');
+  var dns      = imports.dns || require('dns');
+  var networks = imports.networks || require('./networks')[this.config.network];
+  var seeds    = networks.dnsSeeds;
+
+  // keep track of tried seeds and results
+  self.seeds = {
+    resolved: [],
+    failed: [],
+    results: {}
+  };
+
+  var dnsExecutor = seeds.map(function(seed) {
+    return function(done) {
+      // have we already resolved this seed?
+      if (~self.seeds.resolved.indexOf(seed)) {
+        // if so, just pass back cached peer list
+        return done(null, self.seeds.results[seed]);
+      }
+      // has this seed failed to resolve?
+      if (~self.seeds.resolved.indexOf(seed)) {
+        // if so, pass back empty results
+        return done(null, []);
+      }
+      // otherwise resolve the dns seed to get some peers
+      dns.resolve(seed, function(err, peers) {
+        if (err) {
+          self.seeds.failed.push(seed);
+          return done(null, []);
+        }
+        self.seeds.resolved.push(seed);
+        self.seeds.results[seed] = peers;
+        return done(null, peers);
+      });
+    };
+  });
+
+  // try resolving all seeds
+  async.parallel(dnsExecutor, function(err, results) {
+    var peers = [];
+
+    // consolidate all resolved peers into one list
+    results.forEach(function(peerlist) {
+      peers = peers.concat(peerlist);
+    });
+
+    // transform that list into a list of Peer instances
+    peers = peers.map(function(ip) {
+      return new Peer(ip, networks.defaultClientPort);
+    });
+
+    callback(null, peers);
+  });
+};
+
 module.exports = require('soop')(PeerManager);
