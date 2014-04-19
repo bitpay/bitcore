@@ -48,6 +48,7 @@ requireWhenAccessed('RpcClient', './lib/RpcClient');
 requireWhenAccessed('Wallet', './lib/Wallet');
 requireWhenAccessed('WalletKey', './lib/WalletKey');
 requireWhenAccessed('PeerManager', './lib/PeerManager');
+requireWhenAccessed('Message', './lib/Message');
 module.exports.Buffer = Buffer;
 
 if (typeof process.versions === 'undefined') {
