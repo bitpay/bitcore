@@ -70,7 +70,8 @@
     "socks5-client": "~0.3.6",
     "brfs": "=1.0.0",
     "chai": "=1.9.1",
-    "uglifyify": "=1.2.3"
+    "uglifyify": "=1.2.3",
+    "extend": "~1.2.1"
   },
   "devDependencies": {
     "grunt-contrib-watch": "~0.5.3",

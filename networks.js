@@ -19,7 +19,16 @@ exports.livenet = {
     prev_hash: buffertools.fill(new Buffer(32), 0),
     timestamp: 1231006505,
     bits: 486604799,
-  }
+  },
+  dnsSeeds: [
+    'seed.bitcoin.sipa.be',
+    'dnsseed.bluematt.me',
+    'dnsseed.bitcoin.dashjr.org',
+    'seed.bitcoinstats.com',
+    'seed.bitnodes.io',
+    'bitseed.xf2.org'
+  ],
+  defaultClientPort: 8333
 };
 
 exports.testnet = {
@@ -39,5 +48,10 @@ exports.testnet = {
     prev_hash: buffertools.fill(new Buffer(32), 0),
     timestamp: 1296688602,
     bits: 486604799,
-  }
+  },
+  dnsSeeds: [
+    'testnet-seed.bitcoin.petertodd.org',
+    'testnet-seed.bluematt.me'
+  ],
+  defaultClientPort: 18333
 };
