@@ -317,6 +317,7 @@ Key::SetPublic(Local<String> property, Local<Value> value, const AccessorInfo& i
 
   if (!ret) {
     // TODO: Error
+    VException("Invalid public key.");
     return;
   }
 
