@@ -49,6 +49,7 @@ requireWhenAccessed('Wallet', './lib/Wallet');
 requireWhenAccessed('WalletKey', './lib/WalletKey');
 requireWhenAccessed('PeerManager', './lib/PeerManager');
 requireWhenAccessed('Message', './lib/Message');
+requireWhenAccessed('Electrum', './lib/Electrum');
 module.exports.Buffer = Buffer;
 
 if (typeof process.versions === 'undefined') {
