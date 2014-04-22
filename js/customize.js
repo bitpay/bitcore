@@ -2,37 +2,6 @@
 
 $(document).ready(function() {
   var form = $('#customize');
-  var modules = [
-    'Address',
-    'Block',
-    'Bloom',
-    'Buffers.monkey',
-    'Connection',
-    'Deserialize',
-    'Number.monkey',
-    'Opcode',
-    'Peer',
-    'PeerManager',
-    'PrivateKey',
-    'RpcClient',
-    'Key',
-    'SIN',
-    'SINKey',
-    'Script',
-    'ScriptInterpreter',
-    'Sign',
-    'Transaction',
-    'Wallet',
-    'WalletKey',
-    'config',
-    'const',
-    'networks',
-    'util/log',
-    'util/util',
-    'util/EncodedData',
-    'util/VersionedData',
-  ];
-
   $.ajaxSetup({
     beforeSend: function() {
       $("#loading").show();
@@ -61,12 +30,17 @@ $(document).ready(function() {
     return container;
   };
 
-  for (var i = 0; i < modules.length; i++) {
-    var m = modules[i];
-    var cb = createCheckbox(m);
-    var col = cols[i % 3];
-    col.append(cb);
-  }
+  $.get('http://live.bitcore.io:3010/modules',
+    function(data) {
+      var modules = data.split(',');
+      for (var i = 0; i < modules.length; i++) {
+        var m = modules[i];
+        var cb = createCheckbox(m);
+        var col = cols[i % 3];
+        col.append(cb);
+      }
+    }
+  );
 
   var checkall = $('#checkall');
   var none = $('#none');
