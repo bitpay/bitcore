@@ -66,10 +66,11 @@
     "cMyBgowsyrJRufoKWob73rMQB1PBqDdwFt8z4TJ6APN2HkmX1Ttm",
     "cN9yZCom6hAZpHtCp8ovE1zFa7RqDf3Cr4W6AwH2tp59Jjh9JcXu"
   ],
+  "comment": "script pubkey can be obtained from: bitcoind createrawtransaction '[{\"txid\": \"2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1\",\"vout\":1}]' '{\"2NFW3ja1tdza4b1WTyG9fkz6cBtRf4qEFBh\":0.08}' and then decoding the generated transaction hex using bitcoind decoderawtransaction",
   "unspentP2sh": [
     {
       "address": "2NDJbzwzsmRgD2o5HHXPhuq5g6tkKTjYkd6",
-      "scriptPubKey": "a91432d272ce8a9b482b363408a0b1dd28123d59c63387",
+      "scriptPubKey": "a914dc0623476aefb049066b09b0147a022e6eb8429187",
       "txid": "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1",
       "vout": 1,
       "amount": 1,
