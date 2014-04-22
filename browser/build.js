@@ -23,7 +23,6 @@ var pack = function (params) {
 };
 
 var modules = [
-  'Gruntfile',
   'lib/Address',
   'lib/BIP32',
   'lib/Block',
