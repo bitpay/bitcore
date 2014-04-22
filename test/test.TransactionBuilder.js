@@ -8,9 +8,18 @@ var should = chai.should();
 
 var TransactionBuilder = bitcore.TransactionBuilder;
 var WalletKey = bitcore.WalletKey;
+var Script = bitcore.Script;
 var util = bitcore.util;
 var networks = bitcore.networks;
 var testdata = testdata || require('./testdata');
+
+
+var vopts =  {
+  verifyP2SH: true,
+  dontVerifyStrictEnc: true
+};
+
+
 
 describe('TransactionBuilder', function() {
   it('should initialze the main object', function() {
@@ -224,7 +233,7 @@ describe('TransactionBuilder', function() {
       .setOutputs(outs);
   };
 
-  it('should sign a tx (case 1)', function() {
+  it('should sign a tx (case 1)', function(done) {
     var b = getBuilder3();
     b.isFullySigned().should.equal(false);
       
@@ -236,9 +245,18 @@ describe('TransactionBuilder', function() {
     tx.isComplete().should.equal(true);
     tx.ins.length.should.equal(1);
     tx.outs.length.should.equal(2);
+
+    var shex = testdata.dataUnspentSign.unspent[0].scriptPubKey;
+    var s    = new Script(new Buffer(shex,'hex'));
+    tx.verifyInput(0,s, vopts, function(err, results){
+      should.not.exist(err);
+      should.exist(results);
+      results.should.equal(true);
+      done();
+    });
   });
 
-  it('should sign a tx (case 2)', function() {
+  it('should sign a tx (case 2)', function(done) {
     var b = getBuilder3([{
       address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
       amount: 16
@@ -250,6 +268,16 @@ describe('TransactionBuilder', function() {
     tx.isComplete().should.equal(true);
     tx.ins.length.should.equal(3);
     tx.outs.length.should.equal(2);
+
+    var shex = testdata.dataUnspentSign.unspent[0].scriptPubKey;
+    var s    = new Script(new Buffer(shex,'hex'));
+    tx.verifyInput(0,s, vopts, function(err, results){
+      should.not.exist(err);
+      should.exist(results);
+      results.should.equal(true);
+      done();
+    });
+
   });
 
   it('should sign an incomplete tx', function() {
@@ -273,7 +301,7 @@ describe('TransactionBuilder', function() {
   });
 
 
-  it('should sign a tx in multiple steps (case1)', function() {
+  it('should sign a tx in multiple steps (case1)', function(done) {
 
     var b = getBuilder3([{
       address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
@@ -292,9 +320,20 @@ describe('TransactionBuilder', function() {
     b.sign(k23);
     b.isFullySigned().should.equal(true);
     (b.build()).isComplete().should.equal(true);
+
+    var tx = b.build();
+    var shex = testdata.dataUnspentSign.unspent[0].scriptPubKey;
+    var s    = new Script(new Buffer(shex,'hex'));
+    tx.verifyInput(0,s, vopts, function(err, results){
+      should.not.exist(err);
+      should.exist(results);
+      results.should.equal(true);
+      done();
+    });
+
   });
 
-  it('#sign should sign a tx in multiple steps (case2)', function() {
+  it('#sign should sign a tx in multiple steps (case2)', function(done) {
     var b = getBuilder3([{
       address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
       amount: 16
@@ -304,20 +343,66 @@ describe('TransactionBuilder', function() {
     (b.build()).isComplete().should.equal(false);
 
     var k1 = testdata.dataUnspentSign.keyStrings.slice(0, 1);
+    var k2 = testdata.dataUnspentSign.keyStrings.slice(1, 2);
+    var k3 = testdata.dataUnspentSign.keyStrings.slice(2, 3);
     b.sign(k1);
     b.isFullySigned().should.equal(false);
     (b.build()).isComplete().should.equal(false);
 
-    var k2 = testdata.dataUnspentSign.keyStrings.slice(1, 2);
     b.sign(k2);
     b.isFullySigned().should.equal(false);
     (b.build()).isComplete().should.equal(false);
 
-    var k3 = testdata.dataUnspentSign.keyStrings.slice(2, 3);
     b.sign(k3);
     b.isFullySigned().should.equal(true);
     (b.build()).isComplete().should.equal(true);
+
+    var tx = b.build();
+    var shex = testdata.dataUnspentSign.unspent[0].scriptPubKey;
+    var s    = new Script(new Buffer(shex,'hex'));
+    tx.verifyInput(0,s, vopts, function(err, results){
+      should.not.exist(err);
+      should.exist(results);
+      results.should.equal(true);
+      done();
+    });
   });
+
+  it('#sign should sign a tx in multiple steps (case2) / diff order', function(done) {
+    var b = getBuilder3([{
+      address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
+      amount: 16
+    }]);
+
+    b.isFullySigned().should.equal(false);
+    (b.build()).isComplete().should.equal(false);
+
+    var k2 = testdata.dataUnspentSign.keyStrings.slice(0, 1);
+    var k3 = testdata.dataUnspentSign.keyStrings.slice(1, 2);
+    var k1 = testdata.dataUnspentSign.keyStrings.slice(2, 3);
+    b.sign(k1);
+    b.isFullySigned().should.equal(false);
+    (b.build()).isComplete().should.equal(false);
+
+    b.sign(k2);
+    b.isFullySigned().should.equal(false);
+    (b.build()).isComplete().should.equal(false);
+
+    b.sign(k3);
+    b.isFullySigned().should.equal(true);
+    (b.build()).isComplete().should.equal(true);
+
+    var tx = b.build();
+    var shex = testdata.dataUnspentSign.unspent[0].scriptPubKey;
+    var s    = new Script(new Buffer(shex,'hex'));
+    tx.verifyInput(0,s, vopts, function(err, results){
+      should.not.exist(err);
+      should.exist(results);
+      results.should.equal(true);
+      done();
+    });
+  });
+
 
   it('should generate dynamic fee and readjust (and not) the selected UTXOs (case1)', function() {
     //this cases exceeds the input by 1mbtc AFTEr calculating the dynamic fee,
@@ -394,7 +479,7 @@ describe('TransactionBuilder', function() {
     tx.isComplete().should.equal(false);
   });
 
-  it('should sign a p2pubkey tx', function() {
+  it('should sign a p2pubkey tx', function(done) {
     var opts = {
       remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
     };
@@ -413,10 +498,21 @@ describe('TransactionBuilder', function() {
     tx.isComplete().should.equal(true);
     tx.ins.length.should.equal(1);
     tx.outs.length.should.equal(2);
+
+    var tx = b.build();
+    var shex = testdata.dataUnspentSign.unspentPubKey[0].scriptPubKey;
+    var s    = new Script(new Buffer(shex,'hex'));
+    tx.verifyInput(0,s, vopts, function(err, results){
+      should.not.exist(err);
+      should.exist(results);
+      results.should.equal(true);
+      done();
+    });
+
   });
 
 
-  it('should sign a multisig tx', function() {
+  it('should sign a multisig tx', function(done) {
     var opts = {
       remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
     };
@@ -434,10 +530,20 @@ describe('TransactionBuilder', function() {
     tx.ins.length.should.equal(1);
     tx.outs.length.should.equal(2);
     tx.isComplete().should.equal(true);
+
+    var tx = b.build();
+    var shex = testdata.dataUnspentSign.unspentMulti[0].scriptPubKey;
+    var s    = new Script(new Buffer(shex,'hex'));
+    tx.verifyInput(0,s, vopts, function(err, results){
+      should.not.exist(err);
+      should.exist(results);
+      results.should.equal(true);
+      done();
+    });
   });
 
 
-  it('should sign a multisig tx in steps (3-5)', function() {
+  it('should sign a multisig tx in steps (3-5)', function(done) {
     var opts = {
       remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
     };
@@ -464,6 +570,17 @@ describe('TransactionBuilder', function() {
     tx.ins.length.should.equal(1);
     tx.outs.length.should.equal(2);
     tx.isComplete().should.equal(true);
+
+    var tx = b.build();
+    var shex = testdata.dataUnspentSign.unspentMulti[0].scriptPubKey;
+    var s    = new Script(new Buffer(shex,'hex'));
+    tx.verifyInput(0,s, vopts, function(err, results){
+      should.not.exist(err);
+      should.exist(results);
+      results.should.equal(true);
+      done();
+    });
+
   });
 
 
@@ -506,7 +623,7 @@ describe('TransactionBuilder', function() {
   });
 
 
-  it('should avoid siging with the same key twice multisig signs (3-5)', function() {
+  it('should avoid siging with the same key twice multisig signs (3-5)', function(done) {
     var opts = {
       remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
     };
@@ -535,6 +652,18 @@ describe('TransactionBuilder', function() {
     b.sign(k23);
     b.isFullySigned().should.equal(true);
     tx.countInputMissingSignatures(0).should.equal(0);
+
+    var tx = b.build();
+    var shex = testdata.dataUnspentSign.unspentMulti[0].scriptPubKey;
+    var s    = new Script(new Buffer(shex,'hex'));
+    tx.verifyInput(0,s, vopts, function(err, results){
+      should.not.exist(err);
+      should.exist(results);
+      results.should.equal(true);
+      done();
+    });
+
+
   });
 
 
@@ -822,11 +951,11 @@ describe('TransactionBuilder', function() {
     b2.merge(b, true);
   });
 
-  it('#merge p2sh/steps', function() {
+  it('#merge p2sh/steps', function(done) {
     var b = getP2shBuilder(1);     
-    var k1 = testdata.dataUnspentSign.keyStringsP2sh.slice(0,1);
+    var k3 = testdata.dataUnspentSign.keyStringsP2sh.slice(0,1);
     var k2 = testdata.dataUnspentSign.keyStringsP2sh.slice(1,2);
-    var k3 = testdata.dataUnspentSign.keyStringsP2sh.slice(2,3);
+    var k1 = testdata.dataUnspentSign.keyStringsP2sh.slice(2,3);
     b.isFullySigned().should.equal(false);
     b.signaturesAdded.should.equal(0);
     b.sign(k1);
@@ -855,5 +984,18 @@ describe('TransactionBuilder', function() {
     b2.signaturesAdded.should.equal(3);
     tx = b2.build();
     tx.isComplete().should.equal(true);
+
+    var shex = testdata.dataUnspentSign.unspentP2sh[0].scriptPubKey;
+    var s    = new Script(new Buffer(shex,'hex'));
+    tx.verifyInput(0,s, vopts, function(err, results){
+console.log('[test.TransactionBuilder.js.870:err:]',err,results); //TODO
+//TODO
+      // should.not.exist(err);
+      // should.exist(results);
+      // results.should.equal(true);
+
+      return done();
+    });
+
   });
 });
