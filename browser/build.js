@@ -23,7 +23,6 @@ var pack = function (params) {
 };
 
 var modules = [
-  'Gruntfile',
   'lib/Address',
   'lib/BIP32',
   'lib/Block',
@@ -59,6 +58,8 @@ var modules = [
   'util/VersionedData',
   'util/BinaryParser',
 ];
+
+module.exports.moduleNames = modules;
 
 var createBitcore = function(opts) {
 
