@@ -60,6 +60,8 @@ var modules = [
   'util/BinaryParser',
 ];
 
+module.exports.moduleNames = modules;
+
 var createBitcore = function(opts) {
 
 
