@@ -9,7 +9,7 @@ var should = chai.should();
 
 var Key = bitcore.Key;
 describe('Key randomness tests', function() {
-  var RUNS = 100;
+  var RUNS = 128;
   it('should pass Frequency (Monobits) Test', function() {
     /*
     Description: The focus of the test is the proportion
@@ -65,14 +65,16 @@ describe('Key randomness tests', function() {
     return (b >> index) & 1;
   };
   var getBitInKey = function(key, index) {
-    var bindex = parseInt(index / key.length);
-    return getBitInByte(key[bindex], index - bindex * key.length);
+    var bindex = parseInt(index / 8);
+    bindex.should.be.below(key.length);
+    return getBitInByte(key[bindex], index - bindex * 8);
   };
   var getBitInKeys = function(keys, index) {
-    var kindex = parseInt(index / keys.length);
-    return getBitInKey(keys[kindex], index - keys.length * kindex);
+    var kindex = parseInt(index / (keys[0].length*8));
+    kindex.should.be.below(keys.length);
+    return getBitInKey(keys[kindex], index - (keys[0].length*8) * kindex);
   };
-  it.skip('should pass Runs Test', function() {
+  it('should pass Runs Test', function() {
     var keys = [];
     for (var i = 0; i < RUNS; i++) {
       keys.push(Key.generateSync().private);
@@ -90,18 +92,19 @@ describe('Key randomness tests', function() {
       }
       count += 1;
     }
-    console.log(h);
-    var max;
-    for(i = 1; i < 32; i++) {
-      var f = h[i];
-      if (i === 1) max = f;
-
-      var fNorm = f * 80 / max;
-      var s = '';
-      for (var c = 0; c<fNorm; c++) {
-        s += '*';
-      }
+    var ratio = 0;
+    count = 0;
+    for(i = 1; i < 8; i++) {
+      var next = h[i+1];
+      var current = h[i];
+      if (typeof current === 'undefined' || current === 0) continue;
+      if (typeof next === 'undefined') continue;
+      var r = next / current;
+      ratio += r * current;
+      count += 1 * current;
     }
+    var p = ratio / count;
+    (p-0.5).should.be.below(0.01);
 
   });
   it('should pass Test For The Longest Run Of Ones In A Block', function() {
