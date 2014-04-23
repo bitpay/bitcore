@@ -72,7 +72,7 @@ describe('Key randomness tests', function() {
     var kindex = parseInt(index / keys.length);
     return getBitInKey(keys[kindex], index - keys.length * kindex);
   };
-  it('should pass Runs Test', function() {
+  it.skip('should pass Runs Test', function() {
     var keys = [];
     for (var i = 0; i < RUNS; i++) {
       keys.push(Key.generateSync().private);
