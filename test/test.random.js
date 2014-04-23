@@ -104,28 +104,28 @@ describe('Key randomness tests', function() {
     (p-0.5).should.be.below(0.01);
 
   });
-  it('should pass Test For The Longest Run Of Ones In A Block', function() {
+  it.skip('should pass Test For The Longest Run Of Ones In A Block', function() {
   });
-  it('should pass Random Binary Matrix Rank Test', function() {
+  it.skip('should pass Random Binary Matrix Rank Test', function() {
   });
-  it('should pass Discrete Fourier Transform (Spectral) Test', function() {
+  it.skip('should pass Discrete Fourier Transform (Spectral) Test', function() {
   });
-  it('should pass Non-Overlapping (Aperiodic) Template Matching Test', function() {
+  it.skip('should pass Non-Overlapping (Aperiodic) Template Matching Test', function() {
   });
-  it('should pass Overlapping (Periodic) Template Matching Test', function() {
+  it.skip('should pass Overlapping (Periodic) Template Matching Test', function() {
   });
-  it('should pass Maurers Universal Statistical Test', function() {
+  it.skip('should pass Maurers Universal Statistical Test', function() {
   });
-  it('should pass Linear Complexity Test', function() {
+  it.skip('should pass Linear Complexity Test', function() {
   });
-  it('should pass Serial Test', function() {
+  it.skip('should pass Serial Test', function() {
   });
-  it('should pass Approximate Entropy Test', function() {
+  it.skip('should pass Approximate Entropy Test', function() {
   });
-  it('should pass Cumulative Sum (Cusum) Test', function() {
+  it.skip('should pass Cumulative Sum (Cusum) Test', function() {
   });
-  it('should pass Random Excursions Test', function() {
+  it.skip('should pass Random Excursions Test', function() {
   });
-  it('should pass Random Excursions Variant Test', function() {
+  it.skip('should pass Random Excursions Variant Test', function() {
   });
 });
