@@ -154,7 +154,7 @@ describe('BIP39', function() {
         var mnemonic1 = BIP39.to_mnemonic(BIP39WordlistEn, new Buffer(code, 'hex'));
         var seed1 = BIP39.mnemonic_to_seed(mnemonic, 'TREZOR');
         mnemonic1.should.equal(mnemonic);
-        seed1.toString().should.equal(new Buffer(seed, 'hex').toString());
+        seed1.toString('hex').should.equal(seed)
       }
     });
   });
