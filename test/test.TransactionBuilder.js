@@ -601,24 +601,23 @@ describe('TransactionBuilder', function() {
     var k3 = testdata.dataUnspentSign.keyStringsMulti.slice(2,3);
 
     var tx = b.build();
-
     b.isFullySigned().should.equal(false);
 
-    // This is cumbersome. Before sign, missing is 1. Need to be changed in the future
-    tx.countInputMissingSignatures(0).should.equal(1);
-    b.sign(['cSq7yo4fvsbMyWVN945VUGUWMaSazZPWqBVJZyoGsHmNq6W4HVBV']);
-    tx.countInputMissingSignatures(0).should.equal(1);
+    tx.countInputSignatures(0).should.equal(0);
 
+    b.sign(['cSq7yo4fvsbMyWVN945VUGUWMaSazZPWqBVJZyoGsHmNq6W4HVBV']);
+
+    tx.countInputSignatures(0).should.equal(0);
     b.sign(k1);
-    tx.countInputMissingSignatures(0).should.equal(2);
+    tx.countInputSignatures(0).should.equal(1);
     b.isFullySigned().should.equal(false);
 
     b.sign(k2);
-    tx.countInputMissingSignatures(0).should.equal(1);
+    tx.countInputSignatures(0).should.equal(2);
     b.isFullySigned().should.equal(false);
 
     b.sign(k3);
-    tx.countInputMissingSignatures(0).should.equal(0);
+    tx.countInputSignatures(0).should.equal(3);
     b.isFullySigned().should.equal(true);
   });
 
@@ -639,19 +638,19 @@ describe('TransactionBuilder', function() {
     var k23 = testdata.dataUnspentSign.keyStringsMulti.slice(1,3);
     var tx = b.build();
 
-    tx.countInputMissingSignatures(0).should.equal(1);
+    tx.countInputSignatures(0).should.equal(0);
     b.sign(k1);
     b.isFullySigned().should.equal(false);
-    tx.countInputMissingSignatures(0).should.equal(2);
+    tx.countInputSignatures(0).should.equal(1);
     b.sign(k1);
     b.isFullySigned().should.equal(false);
-    tx.countInputMissingSignatures(0).should.equal(2);
+    tx.countInputSignatures(0).should.equal(1);
     b.sign(k1);
     b.isFullySigned().should.equal(false);
-    tx.countInputMissingSignatures(0).should.equal(2);
+    tx.countInputSignatures(0).should.equal(1);
     b.sign(k23);
     b.isFullySigned().should.equal(true);
-    tx.countInputMissingSignatures(0).should.equal(0);
+    tx.countInputSignatures(0).should.equal(3);
 
     var tx = b.build();
     var shex = testdata.dataUnspentSign.unspentMulti[0].scriptPubKey;
@@ -698,12 +697,9 @@ describe('TransactionBuilder', function() {
       remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
     };
     var data = getInfoForP2sh();
-console.log('[test.TransactionBuilder.js.700:data:]',data); //TODO
-process.exit(1);
     // multisig p2sh
     var p2shOpts = {nreq:3, pubkeys:data.pubkeys};
     var info = TransactionBuilder.infoForP2sh(p2shOpts, network);
-console.log('[test.TransactionBuilder.js.693:info:]',info, p2shOpts); //TODO
 
     var outs = outs || [{
       address: 'mon1Hqs3jqKTtRSnRwJ3pRYMFos9WYfKb5',
@@ -726,11 +722,8 @@ console.log('[test.TransactionBuilder.js.693:info:]',info, p2shOpts); //TODO
     (function() {b.sign(testdata.dataUnspentSign.keyStringsP2sh);}).should.throw();
   });
 
-  it('should sign a p2sh/multisig tx right order', function(done) {
-    var b = getP2shBuilder(1); 
-    b.sign([testdata.dataUnspentSign.keyStringsP2sh[3]]);
-    b.sign([testdata.dataUnspentSign.keyStringsP2sh[1]]);
-    b.sign([testdata.dataUnspentSign.keyStringsP2sh[2]]);
+
+  var _checkOK = function(b, done) {
     b.isFullySigned().should.equal(true);
     var tx = b.build();
     tx.ins.length.should.equal(1);
@@ -745,28 +738,18 @@ console.log('[test.TransactionBuilder.js.693:info:]',info, p2shOpts); //TODO
       should.not.exist(err);
       done();
     });
-  });
 
-  it('should failed to verify a p2sh/multisig tx wrong order', function(done) {
-    var b = getP2shBuilder(1); 
-    b.sign([testdata.dataUnspentSign.keyStringsP2sh[1]]);
-    b.sign([testdata.dataUnspentSign.keyStringsP2sh[2]]);
-    b.sign([testdata.dataUnspentSign.keyStringsP2sh[3]]);
-    b.isFullySigned().should.equal(true);
-    var tx = b.build();
-    tx.ins.length.should.equal(1);
-    tx.outs.length.should.equal(2);
-    tx.isComplete().should.equal(true);
+  };
 
-    var shex = testdata.dataUnspentSign.unspentP2sh[0].scriptPubKey;
-    var s    = new Script(new Buffer(shex,'hex'));
-    tx.verifyInput(0,s, vopts, function(err, results){
-      should.not.exist(results);
-      should.exist(err);
-      done();
+  [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,2,1],[3,1,2]].forEach(function(order) {
+    it('should sign a p2sh/multisig tx in order ' + order.join(','), function(done) {
+      var b = getP2shBuilder(1); 
+      b.sign([testdata.dataUnspentSign.keyStringsP2sh[3]]);
+      b.sign([testdata.dataUnspentSign.keyStringsP2sh[1]]);
+      b.sign([testdata.dataUnspentSign.keyStringsP2sh[2]]);
+      _checkOK(b, done);
     });
   });
-
 
   it('should sign in steps a p2sh/multisign tx', function() {
     var b = getP2shBuilder(1);     
@@ -991,8 +974,9 @@ console.log('[test.TransactionBuilder.js.693:info:]',info, p2shOpts); //TODO
       amount: 16
     }])
       .sign(testdata.dataUnspentSign.keyStrings);
-    (function() {b2.merge(b);}).should.throw();
-    b2.merge(b, true);
+    b2.isFullySigned().should.equal(true);
+    b2.merge(b);
+    b2.isFullySigned().should.equal(true);
   });
 
   it('#merge p2sh/steps', function(done) {
@@ -1008,6 +992,9 @@ console.log('[test.TransactionBuilder.js.693:info:]',info, p2shOpts); //TODO
     var tx = b.build();
     tx.isComplete().should.equal(false);
 
+    b = TransactionBuilder.fromObj(b.toObj());
+
+    // TODO TO OBJ!
     var b2 = getP2shBuilder(1); 
     b2.sign(k2);
     b2.signaturesAdded.should.equal(1);
@@ -1016,6 +1003,7 @@ console.log('[test.TransactionBuilder.js.693:info:]',info, p2shOpts); //TODO
     tx = b2.build();
     tx.isComplete().should.equal(false);
 
+    b2 = TransactionBuilder.fromObj(b2.toObj());
     var b3 = getP2shBuilder(1); 
     b3.sign(k3);
     b3.signaturesAdded.should.equal(1);
@@ -1024,6 +1012,7 @@ console.log('[test.TransactionBuilder.js.693:info:]',info, p2shOpts); //TODO
     tx = b3.build();
     tx.isComplete().should.equal(true);
 
+    b3 = TransactionBuilder.fromObj(b3.toObj());
     b2.merge(b3);
     b2.signaturesAdded.should.equal(3);
     tx = b2.build();
@@ -1032,13 +1021,10 @@ console.log('[test.TransactionBuilder.js.693:info:]',info, p2shOpts); //TODO
     var shex = testdata.dataUnspentSign.unspentP2sh[0].scriptPubKey;
     var s    = new Script(new Buffer(shex,'hex'));
     tx.verifyInput(0,s, vopts, function(err, results){
-console.log('[test.TransactionBuilder.js.870:err:]',err,results); //TODO
-//TODO
-      // should.not.exist(err);
-      // should.exist(results);
-      // results.should.equal(true);
-
-      return done();
+      should.exist(results);
+      results.should.equal(true);
+      should.not.exist(err);
+      done();
     });
 
   });

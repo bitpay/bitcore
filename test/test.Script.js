@@ -141,6 +141,7 @@ describe('Script', function() {
       var b = new Buffer('00483045022100aac57f3ba004e6265097b759d92132c43fb5dcb033c2a3f6e61caa5e05e6b97e02200dae579e54c8e733d222eae5bbbaf557bbcf03271cf76775c91744c24a99916b014c69522103197599f6e209cefef07da2fddc6fe47715a70162c531ffff8e611cef23dfb70d210392dccb2ed470a45984811d6402fdca613c175f8f3e4eb8e2306e8ccd7d0aed032103e085eb6fa1f20b2722c16161144314070a2c316a9cae2489fd52ce5f63fff6e453ae', 'hex');
       var s = new Script(b);
       s.countMissingSignatures().should.equal(1);
+      s.countSignatures().should.equal(1);
     });
 
     it('should count missing signatures p2sh 2-3 0 missing', function() {
@@ -148,9 +149,8 @@ describe('Script', function() {
       var b = new Buffer('00483045022100aac57f3ba004e6265097b759d92132c43fb5dcb033c2a3f6e61caa5e05e6b97e02200dae579e54c8e733d222eae5bbbaf557bbcf03271cf76775c91744c24a99916b01483045022100a505aff6a1d9cc14d0658a99ebcf1901b5c9f9e6408055fa9b9da443c80bfdb602207f0391c98abecc93bc3b353c55ada4d3fb6d4bab48fd63ae184df1af367cee46014c69522103197599f6e209cefef07da2fddc6fe47715a70162c531ffff8e611cef23dfb70d210392dccb2ed470a45984811d6402fdca613c175f8f3e4eb8e2306e8ccd7d0aed032103e085eb6fa1f20b2722c16161144314070a2c316a9cae2489fd52ce5f63fff6e453ae', 'hex');
       var s = new Script(b);
       s.countMissingSignatures().should.equal(0);
+      s.countSignatures().should.equal(2);
     });
- 
- 
   });
 
 
