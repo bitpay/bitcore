@@ -1,5 +1,5 @@
-var Peer       = require('../Peer');
-var Connection = require('../Connection');
+var Peer       = require('../lib/Peer');
+var Connection = require('../lib/Connection');
 var dns        = require('dns');
 
 // get a peer from dns seed
