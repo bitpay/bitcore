@@ -44,31 +44,12 @@ describe('Script', function() {
       script.finishedMultiSig().should.equal(true);
     });
     it('should report that this scripSig has not finished being signed', function() {
-      var scriptHex = '483045022002da7fae9b98615115b7e9a4f1d9efd581463b670f91ec6404a14cb6fc9c4531022100ff449d72ba4e72deb4317267e2d38cec9fd2f58a9afa39c9f5e35f5678694ff50100004c695221033e4cc6b6ee8d8ce3335fed6d4917b2bbbac0f5743b2ced101ba036f95c51e59421023147410ce15e0a31c2bb970cdf01517266dc2c9182f5938636ed363cfd4cc3ae210342a3c8a4b20c7a122a011a07063df04e4c5ad520a1302a2a66e174fd9b0d4ea453ae';
-      //decoded: 3045022002da7fae9b98615115b7e9a4f1d9efd581463b670f91ec6404a14cb6fc9c4531022100ff449d72ba4e72deb4317267e2d38cec9fd2f58a9afa39c9f5e35f5678694ff501 0 0 5221033e4cc6b6ee8d8ce3335fed6d4917b2bbbac0f5743b2ced101ba036f95c51e59421023147410ce15e0a31c2bb970cdf01517266dc2c9182f5938636ed363cfd4cc3ae210342a3c8a4b20c7a122a011a07063df04e4c5ad520a1302a2a66e174fd9b0d4ea453ae
+      var scriptHex = '00483045022100aac57f3ba004e6265097b759d92132c43fb5dcb033c2a3f6e61caa5e05e6b97e02200dae579e54c8e733d222eae5bbbaf557bbcf03271cf76775c91744c24a99916b014c69522103197599f6e209cefef07da2fddc6fe47715a70162c531ffff8e611cef23dfb70d210392dccb2ed470a45984811d6402fdca613c175f8f3e4eb8e2306e8ccd7d0aed032103e085eb6fa1f20b2722c16161144314070a2c316a9cae2489fd52ce5f63fff6e453ae';
+      //decoded: 0 3045022100aac57f3ba004e6265097b759d92132c43fb5dcb033c2a3f6e61caa5e05e6b97e02200dae579e54c8e733d222eae5bbbaf557bbcf03271cf76775c91744c24a99916b01 522103197599f6e209cefef07da2fddc6fe47715a70162c531ffff8e611cef23dfb70d210392dccb2ed470a45984811d6402fdca613c175f8f3e4eb8e2306e8ccd7d0aed032103e085eb6fa1f20b2722c16161144314070a2c316a9cae2489fd52ce5f63fff6e453ae
       //meaning: sig place_holder place_holder serialized_script
       var scriptBuf = new Buffer(scriptHex, 'hex');
       var script = new Script(scriptBuf);
       script.finishedMultiSig().should.equal(false);
-    });
-  });
-
-  describe('#removePlaceHolders', function() {
-    it('should remove place holders from this script', function() {
-      var scriptHex = '483045022002da7fae9b98615115b7e9a4f1d9efd581463b670f91ec6404a14cb6fc9c4531022100ff449d72ba4e72deb4317267e2d38cec9fd2f58a9afa39c9f5e35f5678694ff50100004c695221033e4cc6b6ee8d8ce3335fed6d4917b2bbbac0f5743b2ced101ba036f95c51e59421023147410ce15e0a31c2bb970cdf01517266dc2c9182f5938636ed363cfd4cc3ae210342a3c8a4b20c7a122a011a07063df04e4c5ad520a1302a2a66e174fd9b0d4ea453ae';
-      //decoded: 3045022002da7fae9b98615115b7e9a4f1d9efd581463b670f91ec6404a14cb6fc9c4531022100ff449d72ba4e72deb4317267e2d38cec9fd2f58a9afa39c9f5e35f5678694ff501 0 0 5221033e4cc6b6ee8d8ce3335fed6d4917b2bbbac0f5743b2ced101ba036f95c51e59421023147410ce15e0a31c2bb970cdf01517266dc2c9182f5938636ed363cfd4cc3ae210342a3c8a4b20c7a122a011a07063df04e4c5ad520a1302a2a66e174fd9b0d4ea453ae
-      //meaning: sig place_holder place_holder serialized_script
-      var scriptBuf = new Buffer(scriptHex, 'hex');
-      var script = new Script(scriptBuf);
-      script.removePlaceHolders();
-
-      var scriptHex2 = '483045022002da7fae9b98615115b7e9a4f1d9efd581463b670f91ec6404a14cb6fc9c4531022100ff449d72ba4e72deb4317267e2d38cec9fd2f58a9afa39c9f5e35f5678694ff5014c695221033e4cc6b6ee8d8ce3335fed6d4917b2bbbac0f5743b2ced101ba036f95c51e59421023147410ce15e0a31c2bb970cdf01517266dc2c9182f5938636ed363cfd4cc3ae210342a3c8a4b20c7a122a011a07063df04e4c5ad520a1302a2a66e174fd9b0d4ea453ae';
-      //decoded: 3045022002da7fae9b98615115b7e9a4f1d9efd581463b670f91ec6404a14cb6fc9c4531022100ff449d72ba4e72deb4317267e2d38cec9fd2f58a9afa39c9f5e35f5678694ff501 5221033e4cc6b6ee8d8ce3335fed6d4917b2bbbac0f5743b2ced101ba036f95c51e59421023147410ce15e0a31c2bb970cdf01517266dc2c9182f5938636ed363cfd4cc3ae210342a3c8a4b20c7a122a011a07063df04e4c5ad520a1302a2a66e174fd9b0d4ea453ae
-      //meaning: sig serialized_script
-      var scriptBuf2 = new Buffer(scriptHex2, 'hex');
-      var script2 = new Script(scriptBuf2);
-
-      script.buffer.toString('hex').should.equal(script2.buffer.toString('hex'));
     });
   });
 
@@ -145,6 +126,30 @@ describe('Script', function() {
       // test case generated with: bitcoind createmultisig 3 '["0266dd7664e65958f3cc67bf92ad6243bc495df5ab56691719263977104b635bea", "02b937d54b550a3afdc2819772822d25869495f9e588b56a0205617d80514f0758", "02c525d65d18be8fb36ab50a21bee02ac9fdc2c176fa18791ac664ea4b95572ae0", "02c8f63ad4822ef360b5c300f08488fa0fa24af2b2bebb6d6b602ca938ee5af793", "02ee91377073b04d1d9d19597b81a7be3db6554bd7d16151cb5599a6107a589e70"]'
       s2.getBuffer().toString('hex').should.equal('53210266dd7664e65958f3cc67bf92ad6243bc495df5ab56691719263977104b635bea2102b937d54b550a3afdc2819772822d25869495f9e588b56a0205617d80514f07582102c525d65d18be8fb36ab50a21bee02ac9fdc2c176fa18791ac664ea4b95572ae02102c8f63ad4822ef360b5c300f08488fa0fa24af2b2bebb6d6b602ca938ee5af7932102ee91377073b04d1d9d19597b81a7be3db6554bd7d16151cb5599a6107a589e7055ae');
 
+    });
+  });
+
+
+  describe('#countMissingSignatures', function() {
+    Script = ScriptModule;
+    it('should count missing signature in empty scripts', function() {
+      var s = new Script();
+      s.countMissingSignatures().should.equal(1);
+    }); 
+    it('should count missing signatures p2sh 2-3 1 missing', function() {
+      // from https://gist.github.com/matiu/11182987
+      var b = new Buffer('00483045022100aac57f3ba004e6265097b759d92132c43fb5dcb033c2a3f6e61caa5e05e6b97e02200dae579e54c8e733d222eae5bbbaf557bbcf03271cf76775c91744c24a99916b014c69522103197599f6e209cefef07da2fddc6fe47715a70162c531ffff8e611cef23dfb70d210392dccb2ed470a45984811d6402fdca613c175f8f3e4eb8e2306e8ccd7d0aed032103e085eb6fa1f20b2722c16161144314070a2c316a9cae2489fd52ce5f63fff6e453ae', 'hex');
+      var s = new Script(b);
+      s.countMissingSignatures().should.equal(1);
+      s.countSignatures().should.equal(1);
+    });
+
+    it('should count missing signatures p2sh 2-3 0 missing', function() {
+      // from https://gist.github.com/matiu/11182987
+      var b = new Buffer('00483045022100aac57f3ba004e6265097b759d92132c43fb5dcb033c2a3f6e61caa5e05e6b97e02200dae579e54c8e733d222eae5bbbaf557bbcf03271cf76775c91744c24a99916b01483045022100a505aff6a1d9cc14d0658a99ebcf1901b5c9f9e6408055fa9b9da443c80bfdb602207f0391c98abecc93bc3b353c55ada4d3fb6d4bab48fd63ae184df1af367cee46014c69522103197599f6e209cefef07da2fddc6fe47715a70162c531ffff8e611cef23dfb70d210392dccb2ed470a45984811d6402fdca613c175f8f3e4eb8e2306e8ccd7d0aed032103e085eb6fa1f20b2722c16161144314070a2c316a9cae2489fd52ce5f63fff6e453ae', 'hex');
+      var s = new Script(b);
+      s.countMissingSignatures().should.equal(0);
+      s.countSignatures().should.equal(2);
     });
   });
 
