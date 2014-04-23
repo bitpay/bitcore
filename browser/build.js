@@ -42,6 +42,7 @@ var modules = [
   'lib/SINKey',
   'lib/Script',
   'lib/ScriptInterpreter',
+  'lib/SecureRandom',
   'lib/Sign',
   'lib/Transaction',
   'lib/TransactionBuilder',

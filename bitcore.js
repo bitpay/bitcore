@@ -20,6 +20,7 @@ requireWhenAccessed('const', './const');
 requireWhenAccessed('Deserialize', './lib/Deserialize');
 requireWhenAccessed('log', './util/log');
 requireWhenAccessed('networks', './networks');
+requireWhenAccessed('SecureRandom', './lib/SecureRandom');
 requireWhenAccessed('util', './util/util');
 requireWhenAccessed('EncodedData', './util/EncodedData');
 requireWhenAccessed('VersionedData', './util/VersionedData');
