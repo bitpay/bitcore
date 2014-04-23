@@ -9,7 +9,7 @@ var should = chai.should();
 
 var Key = bitcore.Key;
 describe('Key randomness tests', function() {
-  var RUNS = 128;
+  var RUNS = 32;
   it('should pass Frequency (Monobits) Test', function() {
     /*
     Description: The focus of the test is the proportion
@@ -61,17 +61,14 @@ describe('Key randomness tests', function() {
     (p1-0.5).should.be.below(0.01);
   });
   var getBitInByte = function(b, index) {
-    index.should.be.below(8);
     return (b >> index) & 1;
   };
   var getBitInKey = function(key, index) {
     var bindex = parseInt(index / 8);
-    bindex.should.be.below(key.length);
     return getBitInByte(key[bindex], index - bindex * 8);
   };
   var getBitInKeys = function(keys, index) {
     var kindex = parseInt(index / (keys[0].length*8));
-    kindex.should.be.below(keys.length);
     return getBitInKey(keys[kindex], index - (keys[0].length*8) * kindex);
   };
   it('should pass Runs Test', function() {
