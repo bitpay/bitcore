@@ -10,7 +10,6 @@ if (inBrowser) {
   browser = require('../browser/vendor-bundle.js');
 }
 
-
 var sha256 = exports.sha256 = function(data) {
   return new Buffer(crypto.createHash('sha256').update(data).digest('binary'), 'binary');
 };
@@ -334,36 +333,6 @@ var createSynchrotron = exports.createSynchrotron = function(fn) {
       table[key].push(run);
     }
   };
-};
-
-/**
- * Generate a random 64-bit number.
- *
- * With ideas from node-uuid:
- * Copyright (c) 2010 Robert Kieffer
- * https://github.com/broofa/node-uuid/
- *
- * @returns Buffer random nonce
- */
-var generateNonce = exports.generateNonce = function() {
-  var b32 = 0x100000000,
-    ff = 0xff;
-  var b = new Buffer(8),
-    i = 0;
-
-  // Generate eight random bytes
-  r = Math.random() * b32;
-  b[i++] = r & ff;
-  b[i++] = (r = r >>> 8) & ff;
-  b[i++] = (r = r >>> 8) & ff;
-  b[i++] = (r = r >>> 8) & ff;
-  r = Math.random() * b32;
-  b[i++] = r & ff;
-  b[i++] = (r = r >>> 8) & ff;
-  b[i++] = (r = r >>> 8) & ff;
-  b[i++] = (r = r >>> 8) & ff;
-
-  return b;
 };
 
 /**
