@@ -66,7 +66,6 @@ describe('Electrum', function() {
       //change
       pubkey = elec.generateChangePubKey(i);
       addr = Address.fromPubKey(pubkey);
-      console.log('change');
       addr.as('base58').should.equal(expected_values.change[i]);
     }
   });
