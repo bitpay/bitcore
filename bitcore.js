@@ -17,6 +17,7 @@ requireWhenAccessed('buffertools', 'buffertools');
 requireWhenAccessed('Buffers.monkey', './patches/Buffers.monkey');
 requireWhenAccessed('config', './config');
 requireWhenAccessed('const', './const');
+requireWhenAccessed('Curve', './lib/Curve');
 requireWhenAccessed('Deserialize', './lib/Deserialize');
 requireWhenAccessed('log', './util/log');
 requireWhenAccessed('networks', './networks');

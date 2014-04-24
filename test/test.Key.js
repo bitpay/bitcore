@@ -7,6 +7,9 @@ var should = chai.should();
 var assert = chai.assert;
 
 var Key = bitcore.Key;
+var Point = bitcore.Point;
+var bignum = require('bignum');
+
 describe('Key', function() {
   it('should initialize the main object', function() {
     should.exist(Key);
@@ -14,6 +17,20 @@ describe('Key', function() {
   it('should be able to create instance', function() {
     var k = new Key();
     should.exist(k);
+  });
+  it('should set change compressed to uncompressed', function() {
+    var key = Key.generateSync();
+    key.public.length.should.equal(33);
+    key.compressed = false;
+    key.public.length.should.equal(65);
+  });
+  it('should change uncompressed to compressed', function() {
+    var key = Key.generateSync();
+    key.compressed = false;
+    var key2 = new Key();
+    key2.public = key.public;
+    key2.compressed = true;
+    key2.public.length.should.equal(33);
   });
   it('should be able to generateSync instance', function() {
     var k = Key.generateSync();
@@ -112,4 +129,5 @@ describe('Key', function() {
     var ret= k.verifySignatureSync(a_hash, sig2);
     ret.should.equal(false);
   });
+
 });

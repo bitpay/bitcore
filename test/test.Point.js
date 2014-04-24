@@ -49,8 +49,9 @@ describe('Point', function() {
     var pubKeyBufCompressedHex = "0369b154b42ff9452c31251cb341d7db01ad603dc56d64f9c5fb9e7031b89a241d";
     var key = new Key();
     key.public = new Buffer(pubKeyBufCompressedHex, 'hex');
+    key.compressed = false;
 
-    key.public.toString('hex').should.equal(a.toKey().public.toString('hex'));
+    key.public.toString('hex').should.equal(a.toUncompressedPubKey().toString('hex'));
   });
 
   it('should convert the public key of a Key into a Point', function() {
@@ -60,8 +61,9 @@ describe('Point', function() {
     var pubKeyBufCompressedHex = "0369b154b42ff9452c31251cb341d7db01ad603dc56d64f9c5fb9e7031b89a241d";
     var key = new Key();
     key.public = new Buffer(pubKeyBufCompressedHex, 'hex');
+    key.compressed = false;
 
-    var point = Point.fromKey(key);
+    var point = Point.fromUncompressedPubKey(key.public);
     point.x.toBuffer({size: 32}).toString('hex').should.equal(axhex);
     point.y.toBuffer({size: 32}).toString('hex').should.equal(ayhex);
   });
