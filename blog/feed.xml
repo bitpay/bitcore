@@ -16,7 +16,7 @@
       <author></author>
       <description>&lt;p&gt;Hello.
 My name is Robby Dermody (a.k.a. xnova), and I’m a member of the &lt;a href=&quot;https://www.counterparty.co/&quot;&gt;Counterparty&lt;/a&gt; Project.
-Counterparty is a suite of financial tools in a protocol built on top of the Bitcoin blockchain.
+Counterparty implements a suite of financial tools in a protocol built on top of the Bitcoin blockchain.
 Counterparty provides its users with the world’s first peer-to-peer digital asset exchange, betting functionality, and derivatives market.
 We’re writing this guest blog post for the bitcore project because of how our team has incorporated &lt;a href=&quot;http://insight.is/&quot;&gt;Insight&lt;/a&gt; into the Counterparty reference client, for which it has proved invaluable.&lt;/p&gt;
 &lt;p&gt;When it comes to Counterparty, decentralization, robustness and security are our top priorities.
