@@ -65,11 +65,11 @@ describe('Script', function() {
       var info = script.getMultiSigInfo();
 
       info.nsigs.should.equal(3);
-      info.npks.should.equal(5);
+      info.npubkeys.should.equal(5);
 
-      info.pks.length.should.equal(info.npks);
-      info.pks.map(function(pk) {
-        testPubKeysHex.indexOf(pk.toString('hex')).should.not.equal(-1);
+      info.pubkeys.length.should.equal(info.npubkeys);
+      info.pubkeys.map(function(pubkey) {
+        testPubKeysHex.indexOf(pubkey.toString('hex')).should.not.equal(-1);
       });
     });
   });
