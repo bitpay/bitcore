@@ -34,6 +34,7 @@ describe('Script', function() {
     var script = Script.createPubKeyHashOut(addr.payload());
     script.isP2SH().should.be.false;
   });
+
   describe('#finishedMultiSig', function() {
     it('should report that this scriptSig has finished being signed', function() {
       var scriptHex = '00493046022100954d2aa7af9a2de34b04e4151842933df81acc379580cd0c057883cfb0994a8b022100de1530692eda9cdb567c94e05fc856cfbc26fcf3482148bde85f143032f4902501483045022100d164d174118497d93e0062b573be78d4b9417aee09889cd242a966af73367917022054f095be0bce9edee556a2216239fcad45a7a64d8fb318dc5375c9159724689a014c695221033e4cc6b6ee8d8ce3335fed6d4917b2bbbac0f5743b2ced101ba036f95c51e59421023147410ce15e0a31c2bb970cdf01517266dc2c9182f5938636ed363cfd4cc3ae210342a3c8a4b20c7a122a011a07063df04e4c5ad520a1302a2a66e174fd9b0d4ea453ae';
@@ -50,6 +51,26 @@ describe('Script', function() {
       var scriptBuf = new Buffer(scriptHex, 'hex');
       var script = new Script(scriptBuf);
       script.finishedMultiSig().should.equal(false);
+    });
+  });
+
+  describe('#getMultiSigInfo', function() {
+    it('should report the expected pubkeys', function() {
+      // using same test case as used in #createMultisig
+      // 3 of 5 multisig, unsorted
+      // test case generated with: bitcoind createmultisig 3 '["02c525d65d18be8fb36ab50a21bee02ac9fdc2c176fa18791ac664ea4b95572ae0", "02b937d54b550a3afdc2819772822d25869495f9e588b56a0205617d80514f0758", "0266dd7664e65958f3cc67bf92ad6243bc495df5ab56691719263977104b635bea","02ee91377073b04d1d9d19597b81a7be3db6554bd7d16151cb5599a6107a589e70", "02c8f63ad4822ef360b5c300f08488fa0fa24af2b2bebb6d6b602ca938ee5af793"]'
+      var scriptHex = '532102c525d65d18be8fb36ab50a21bee02ac9fdc2c176fa18791ac664ea4b95572ae02102b937d54b550a3afdc2819772822d25869495f9e588b56a0205617d80514f0758210266dd7664e65958f3cc67bf92ad6243bc495df5ab56691719263977104b635bea2102ee91377073b04d1d9d19597b81a7be3db6554bd7d16151cb5599a6107a589e702102c8f63ad4822ef360b5c300f08488fa0fa24af2b2bebb6d6b602ca938ee5af79355ae';
+      var scriptBuf = new Buffer(scriptHex, 'hex');
+      var script = new Script(scriptBuf);
+      var info = script.getMultiSigInfo();
+
+      info.nsigs.should.equal(3);
+      info.npks.should.equal(5);
+
+      info.pks.length.should.equal(info.npks);
+      info.pks.map(function(pk) {
+        testPubKeysHex.indexOf(pk.toString('hex')).should.not.equal(-1);
+      });
     });
   });
 
@@ -116,14 +137,14 @@ describe('Script', function() {
       var pubs = testPubKeysHex.map( function(hex) {
         return new Buffer(hex,'hex');
       });
-      var s1 = Script.createMultisig(3,pubs, {noSorting: true});
-
+      // 3 of 5 multisig, unsorted
       // test case generated with: bitcoind createmultisig 3 '["02c525d65d18be8fb36ab50a21bee02ac9fdc2c176fa18791ac664ea4b95572ae0", "02b937d54b550a3afdc2819772822d25869495f9e588b56a0205617d80514f0758", "0266dd7664e65958f3cc67bf92ad6243bc495df5ab56691719263977104b635bea","02ee91377073b04d1d9d19597b81a7be3db6554bd7d16151cb5599a6107a589e70", "02c8f63ad4822ef360b5c300f08488fa0fa24af2b2bebb6d6b602ca938ee5af793"]'
-      
+      var s1 = Script.createMultisig(3,pubs, {noSorting: true});
       s1.getBuffer().toString('hex').should.equal('532102c525d65d18be8fb36ab50a21bee02ac9fdc2c176fa18791ac664ea4b95572ae02102b937d54b550a3afdc2819772822d25869495f9e588b56a0205617d80514f0758210266dd7664e65958f3cc67bf92ad6243bc495df5ab56691719263977104b635bea2102ee91377073b04d1d9d19597b81a7be3db6554bd7d16151cb5599a6107a589e702102c8f63ad4822ef360b5c300f08488fa0fa24af2b2bebb6d6b602ca938ee5af79355ae');
-      var s2 = Script.createMultisig(3,pubs);
 
+      // 3 of 5 multisig, sorted
       // test case generated with: bitcoind createmultisig 3 '["0266dd7664e65958f3cc67bf92ad6243bc495df5ab56691719263977104b635bea", "02b937d54b550a3afdc2819772822d25869495f9e588b56a0205617d80514f0758", "02c525d65d18be8fb36ab50a21bee02ac9fdc2c176fa18791ac664ea4b95572ae0", "02c8f63ad4822ef360b5c300f08488fa0fa24af2b2bebb6d6b602ca938ee5af793", "02ee91377073b04d1d9d19597b81a7be3db6554bd7d16151cb5599a6107a589e70"]'
+      var s2 = Script.createMultisig(3,pubs);
       s2.getBuffer().toString('hex').should.equal('53210266dd7664e65958f3cc67bf92ad6243bc495df5ab56691719263977104b635bea2102b937d54b550a3afdc2819772822d25869495f9e588b56a0205617d80514f07582102c525d65d18be8fb36ab50a21bee02ac9fdc2c176fa18791ac664ea4b95572ae02102c8f63ad4822ef360b5c300f08488fa0fa24af2b2bebb6d6b602ca938ee5af7932102ee91377073b04d1d9d19597b81a7be3db6554bd7d16151cb5599a6107a589e7055ae');
 
     });
