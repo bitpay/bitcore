@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width">
+    <title>Counterparty: Enabling Decentralization with Insight - Bitcore Blog
+    </title>
+    <link rel="alternate" href="/blog/feed.xml" type="application/rss+xml" title="A pure, powerful blog for your daily reading.">
+    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono|Ubuntu:300,400,500,700,400italic,500italic,700italic|Lora:400,700,400italic,700italic|Anonymous+Pro:400,700,400italic,700italic|Merriweather:400,700,300">
+    <link rel="stylesheet" href="/blog/css/main.css">
+  </head>
+  <body class="article-detail">
+    <header class="header">
+      <div class="header-image"><img src="/blog/bitcore-logo.svg" alt="Bitcore"></div>
+      <div class="content-wrap">
+        <div class="logo">
+          <h1><a href="/blog/">Bitcore Blog</a></h1>
+          <p class="description">A pure, powerful blog for your daily reading.</p>
+        </div>
+      </div>
+    </header>
+    <div id="content">
+      <div class="content-wrap">
+        <article class="article">
+          <header>
+            <p class="date"><span>24. April 2014</span></p>
+            <h2><a href="/blog/articles/counterparty-enabling-decentralization-with-insight/">Counterparty: Enabling Decentralization with Insight</a></h2>
+            <p class="author"><span class="author">Robby Dermody</span>
+            </p>
+          </header>
+          <section class="content"><p>Hello.
+My name is Robby Dermody (a.k.a. xnova), and I’m a member of the <a href="https://www.counterparty.co/">Counterparty</a> Project.
+Counterparty is a suite of financial tools in a protocol built on top of the Bitcoin blockchain.
+Counterparty provides its users with the world’s first peer-to-peer digital asset exchange, betting functionality, and derivatives market.
+We’re writing this guest blog post for the bitcore project because of how our team has incorporated <a href="http://insight.is/">Insight</a> into the Counterparty reference client, for which it has proved&nbsp;invaluable.</p>
+<p>When it comes to Counterparty, decentralization, robustness and security are our top priorities.
+When we were designing Counterwallet, we didn’t want to store any user wallet data on our private servers at all.
+All address generation is from a 12-world deterministic wallet passphrase, and all transaction signing is done in the user’s browser, so the servers which host Counterwallet need to be able to query the Bitcoin blockchain for the balances and unspent transaction outputs of arbitrary Bitcoin addresses.
+Bitcoin Core only knows such information about addresses in its wallet,&nbsp;however.</p>
+<p>Indeed, the functionality of Bitcoin Core is in many ways rather limited: its age and idiosyncrasies make it unsuitable for direct use by a lot of great Bitcoin projects, which often resort to using proprietary, closed-source services for getting detailed information about the state of the Bitcoin blockchain that Bitcoin Core cannot provide.
+We were ourselves querying Blockchain.info for everything we needed.
+But such a service, while very useful, promotes centralization, and cannot have the reliability of a full node implementation of Bitcoin, which Counterparty does&nbsp;require.</p>
+<p>Insight provided us with a great alternative, one that allowed us direct access to the Bitcoin blockchain, along with all of the security that such access provides.
+Insight also has better support for testnet (and a much better web interface) than any other block explorer.
+Bitcoin testnet is an extremely valuable resource which our community does not make nearly enough use of, and the existence of Bitcore should greatly encourage its future&nbsp;use.</p>
+<p>Without Insight, Counterparty would have had to release Counterwallet live on mainnet immediately, without being able to bug-test first.
+Certainly we found many bugs in Counterwallet while running it on testnet, and an immediate release on mainnet would have made the development and release of Counterwallet harder on both its developers and its users.
+Beyond that, Insight’s block explorer helps us with debugging.
+In addition, we link directly to the public Insight webpages in some places, so that users can, for example, get more information about a&nbsp;block.</p>
+<p>Counterparty is live today, and it is running Insight for its backend block explorer.
+Achieving our goals would have been much harder, and our software would have been much more fragile, had it not been for the excellence of the bitcore software and the excellence of the entire BitPay team, which has been responsive and helpful whenever&nbsp;possible.</p>
+<p>We offer our thanks for all of their&nbsp;work.</p>
+<p>&#8212; The Counterparty Dev&nbsp;Team</p>
+</section>
+        </article>
+      </div>
+    </div>
+    <footer>
+      <div class="content-wrap">
+        <div class="nav"><a href="/blog/">« Blog Home</a></div>
+        <section class="about"><p><a href="http://bitcore.io/">Bitcore</a> is an open-source implementation of bitcoin in javascript that works both in node and the browser.
+Our goal is to make it as easy as possible to develop apps for bitcoin.</p>
+
+        </section>
+        <section class="copy">
+          <p>&copy; 2014 Bitcore Team. Blog powered by&nbsp;<a href="https://github.com/jnordberg/wintersmith">Wintersmith.</a>
+          </p>
+        </section>
+      </div>
+    </footer>
+  </body>
+</html>

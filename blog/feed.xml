@@ -5,9 +5,40 @@
     <atom:link href="http://localhost:8080/feed.xml" rel="self" type="application/rss+xml"></atom:link>
     <link>http://localhost:8080</link>
     <description>A pure, powerful blog for your daily reading.</description>
-    <pubDate>Thu, 17 Apr 2014 21:00:00 -0300</pubDate>
+    <pubDate>Wed, 23 Apr 2014 21:00:00 -0300</pubDate>
     <generator>Wintersmith - https://github.com/jnordberg/wintersmith</generator>
     <language>en</language>
+    <item>
+      <title>Counterparty: Enabling Decentralization with Insight</title>
+      <link>http://localhost:8080/blog/articles/counterparty-enabling-decentralization-with-insight/</link>
+      <pubDate>Wed, 23 Apr 2014 21:00:00 -0300</pubDate>
+      <guid isPermaLink="true">http://localhost:8080/blog/articles/counterparty-enabling-decentralization-with-insight/</guid>
+      <author></author>
+      <description>&lt;p&gt;Hello.
+My name is Robby Dermody (a.k.a. xnova), and I’m a member of the &lt;a href=&quot;https://www.counterparty.co/&quot;&gt;Counterparty&lt;/a&gt; Project.
+Counterparty is a suite of financial tools in a protocol built on top of the Bitcoin blockchain.
+Counterparty provides its users with the world’s first peer-to-peer digital asset exchange, betting functionality, and derivatives market.
+We’re writing this guest blog post for the bitcore project because of how our team has incorporated &lt;a href=&quot;http://insight.is/&quot;&gt;Insight&lt;/a&gt; into the Counterparty reference client, for which it has proved invaluable.&lt;/p&gt;
+&lt;p&gt;When it comes to Counterparty, decentralization, robustness and security are our top priorities.
+When we were designing Counterwallet, we didn’t want to store any user wallet data on our private servers at all.
+All address generation is from a 12-world deterministic wallet passphrase, and all transaction signing is done in the user’s browser, so the servers which host Counterwallet need to be able to query the Bitcoin blockchain for the balances and unspent transaction outputs of arbitrary Bitcoin addresses.
+Bitcoin Core only knows such information about addresses in its wallet, however.&lt;/p&gt;
+&lt;p&gt;Indeed, the functionality of Bitcoin Core is in many ways rather limited: its age and idiosyncrasies make it unsuitable for direct use by a lot of great Bitcoin projects, which often resort to using proprietary, closed-source services for getting detailed information about the state of the Bitcoin blockchain that Bitcoin Core cannot provide.
+We were ourselves querying Blockchain.info for everything we needed.
+But such a service, while very useful, promotes centralization, and cannot have the reliability of a full node implementation of Bitcoin, which Counterparty does require.&lt;/p&gt;
+&lt;p&gt;Insight provided us with a great alternative, one that allowed us direct access to the Bitcoin blockchain, along with all of the security that such access provides.
+Insight also has better support for testnet (and a much better web interface) than any other block explorer.
+Bitcoin testnet is an extremely valuable resource which our community does not make nearly enough use of, and the existence of Bitcore should greatly encourage its future use.&lt;/p&gt;
+&lt;p&gt;Without Insight, Counterparty would have had to release Counterwallet live on mainnet immediately, without being able to bug-test first.
+Certainly we found many bugs in Counterwallet while running it on testnet, and an immediate release on mainnet would have made the development and release of Counterwallet harder on both its developers and its users.
+Beyond that, Insight’s block explorer helps us with debugging.
+In addition, we link directly to the public Insight webpages in some places, so that users can, for example, get more information about a block.&lt;/p&gt;
+&lt;p&gt;Counterparty is live today, and it is running Insight for its backend block explorer.
+Achieving our goals would have been much harder, and our software would have been much more fragile, had it not been for the excellence of the bitcore software and the excellence of the entire BitPay team, which has been responsive and helpful whenever possible.&lt;/p&gt;
+&lt;p&gt;We offer our thanks for all of their work.&lt;/p&gt;
+&lt;p&gt;&amp;#8212; The Counterparty Dev Team&lt;/p&gt;
+</description>
+    </item>
     <item>
       <title>Copay Team Broadcasts First BIP32 P2SH Multisig Transaction from Tucuman, Argentina</title>
       <link>http://localhost:8080/blog/articles/copay-team-broadcasts-first-p2sh-multisig-tx/</link>
