@@ -21,7 +21,7 @@ Counterparty provides its users with the world’s first peer-to-peer digital as
 We’re writing this guest blog post for the bitcore project because of how our team has incorporated &lt;a href=&quot;http://insight.is/&quot;&gt;Insight&lt;/a&gt; into the Counterparty reference client, for which it has proved invaluable.&lt;/p&gt;
 &lt;p&gt;When it comes to Counterparty, decentralization, robustness and security are our top priorities.
 When we were designing Counterwallet, we didn’t want to store any user wallet data on our private servers at all.
-All address generation is from a 12-world deterministic wallet passphrase, and all transaction signing is done in the user’s browser, so the servers which host Counterwallet need to be able to query the Bitcoin blockchain for the balances and unspent transaction outputs of arbitrary Bitcoin addresses.
+All address generation is from a 12-word deterministic wallet passphrase, and all transaction signing is done in the user’s browser, so the servers which host Counterwallet need to be able to query the Bitcoin blockchain for the balances and unspent transaction outputs of arbitrary Bitcoin addresses.
 Bitcoin Core only knows such information about addresses in its wallet, however.&lt;/p&gt;
 &lt;p&gt;Indeed, the functionality of Bitcoin Core is in many ways rather limited: its age and idiosyncrasies make it unsuitable for direct use by a lot of great Bitcoin projects, which often resort to using proprietary, closed-source services for getting detailed information about the state of the Bitcoin blockchain that Bitcoin Core cannot provide.
 We were ourselves querying Blockchain.info for everything we needed.
