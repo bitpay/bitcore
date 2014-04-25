@@ -65,4 +65,6 @@ function rng_get_bytes(ba) {
 
 function SecureRandom() {}
 
-SecureRandom.prototype.nextBytes = rng_get_bytes;
+SecureRandom.prototype.nextBytes = function() {
+  throw new Error('Should not use old RNG');
+};
