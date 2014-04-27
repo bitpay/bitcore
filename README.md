@@ -59,7 +59,7 @@ addrs.forEach(function(addr) {
 
 ## Monitoring Blocks and Transactions
 
-For this example you need a running bitcoind instance with RPC enabled. 
+For this example you need a running bitcoind instance.
 
 ```js
   var bitcore = require('../bitcore');
