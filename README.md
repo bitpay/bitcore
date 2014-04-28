@@ -132,7 +132,7 @@ rpc.getBlock(hash, function(err, ret) {
 });
 ```
 
-Check the list of all supported RPC call at [RpcClient.js](RpcClient.js)
+Check the list of all supported RPC call at [RpcClient.js](lib/RpcClient.js)
 
 ## Creating and sending a Transaction through P2P
 
