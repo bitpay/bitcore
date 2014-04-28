@@ -5,15 +5,11 @@ var bitcore = bitcore || require('../bitcore');
 
 var should = chai.should();
 
-var AddressModule = bitcore.Address;
-var Address;
+var Address = bitcore.Address;
+var Key = bitcore.Key;
 
 describe('Address', function() {
-  it('should initialze the main object', function() {
-    should.exist(AddressModule);
-  });
   it('should be able to create class', function() {
-    Address = AddressModule;
     should.exist(Address);
   });
   it('should be able to create instance', function() {
@@ -84,13 +80,24 @@ describe('Address', function() {
   });
 
   describe('#fromPubKey', function() {
-    it('should make this pubkeyhash address from uncompressed this public key', function() {
+    it('should make pubkeyhash address from an uncompressed public key', function() {
       var pubkey = new Buffer('04fa05ce8b25010cb6e17a30e0b66668bf083c40687547748ec330ee77adf53a42abd3d26148cbacfcf79c907ddefeb2c37f8bebc0a695ba79d634449d871de218', 'hex');
       var hash = bitcore.util.sha256ripe160(pubkey);
       var addr = new Address(0, hash);
       addr.toString().should.equal(Address.fromPubKey(pubkey).toString());
     });
   });
+  describe('#forKey', function() {
+    it('should make this pubkeyhash address from uncompressed this public key', function() {
+      var k = new Key();
+      k.private = new Buffer('43532455C88590A594D552F76DDB70EC1CFD7746F05C10CBB70B1EA9552EDF87', 'hex');
+      k.compressed = true;
+      k.regenerateSync();
+      var a = Address.forKey(k);
+      a.toString().should.equal('1L8k7WpWHMNkqVPTaZhzFU5VaWyjZEK7mD');
+    });
+  });
+
 
   describe('#fromPubKeys', function() {
     it('should make this p2sh multisig address from these pubkeys', function() {
