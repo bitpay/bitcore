@@ -11,19 +11,15 @@ var requireWhenAccessed = function(name, file) {
 };
 
 requireWhenAccessed('Bignum', './lib/Bignum');
-/*
 Object.defineProperty(module.exports, 'bignum', {get: function() {
   console.log('bignum (with a lower-case "b") is deprecated. Use bitcore.Bignum (capital "B") instead.');
   return require('./lib/Bignum');
 }});
-*/
 requireWhenAccessed('Base58', './lib/Base58');
-/*
 Object.defineProperty(module.exports, 'base58', {get: function() {
   console.log('base58 (with a lower-case "b") is deprecated. Use bitcore.Base58 (capital "B") instead.');
   return require('./lib/Base58');
 }});
-*/
 requireWhenAccessed('bufferput', 'bufferput');
 requireWhenAccessed('buffertools', 'buffertools');
 requireWhenAccessed('Buffers.monkey', './patches/Buffers.monkey');
