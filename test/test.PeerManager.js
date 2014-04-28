@@ -30,6 +30,16 @@ describe('PeerManager', function() {
     pm.start();
     pm.stop.bind(pm).should.not.throw();
   });
+  it('should extend default config with passed config', function() {
+    var pm = new PeerManager({ 
+      proxy: { 
+        host: 'localhost', 
+        port: 9050 
+      } 
+    });
+    should.exist(pm.config.network);
+    should.exist(pm.config.proxy);
+  });
 });
 
 

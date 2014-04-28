@@ -71,8 +71,8 @@
     "brfs": "=1.0.0",
     "chai": "=1.9.1",
     "uglifyify": "=1.2.3",
-    "extend": "~1.2.1",
-    "async": "~0.2.10"
+    "async": "~0.2.10",
+    "underscore": "~1.6.0"
   },
   "devDependencies": {
     "grunt-contrib-watch": "~0.5.3",
