@@ -1,5 +1,5 @@
 var imports = require('soop').imports();
-var base58 = imports.base58 || require('base58-native').base58Check;
+var base58 = imports.base58 || require('../lib/Base58').base58Check;
 
 
 // Constructor.  Takes the following forms:

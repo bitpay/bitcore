@@ -4,7 +4,7 @@ var chai = chai || require('chai');
 var bitcore = bitcore || require('../bitcore');
 var coinUtil = coinUtil || bitcore.util;
 var buffertools = require('buffertools');
-var bignum = require('bignum');
+var bignum = bitcore.Bignum;
 
 var should = chai.should();
 var assert = chai.assert;
