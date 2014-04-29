@@ -62,8 +62,3 @@ requireWhenAccessed('Message', './lib/Message');
 requireWhenAccessed('Electrum', './lib/Electrum');
 module.exports.Buffer = Buffer;
 
-if (typeof process.versions === 'undefined') {
-  // Browser specific
-  module.exports.Bignum.config({EXPONENTIAL_AT: 9999999, DECIMAL_PLACES: 0, ROUNDING_MODE: 1});
-}
-

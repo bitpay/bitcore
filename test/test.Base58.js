@@ -1,6 +1,8 @@
-var assert = require('assert');
-var base58 = require('../lib/Base58').base58;
-var base58Check = require('../lib/Base58').base58Check;
+var chai = chai || require('chai');
+var assert = chai.assert;
+var bitcore = bitcore || require('../bitcore');
+var base58 = bitcore.Base58.base58;
+var base58Check = bitcore.Base58.base58Check;
 
 var testData = [
   ["61", "2g", "C2dGTwc"],
@@ -19,31 +21,33 @@ var testData = [
 
 //suite('basic');
 
-test('allData', function() {
-  base58.encodeTest = function(raw, b58str) {
-    assert.equal(base58.encode(raw), b58str);
-  };
+describe('Base58', function() {
+  it('should pass these tests', function() {
+    base58.encodeTest = function(raw, b58str) {
+      assert.equal(base58.encode(raw), b58str);
+    };
 
-  base58.decodeTest = function(raw, b58str) {
-    assert.equal(raw.toString('hex'), base58.decode(b58str).toString('hex'));
-  };
+    base58.decodeTest = function(raw, b58str) {
+      assert.equal(raw.toString('hex'), base58.decode(b58str).toString('hex'));
+    };
 
-  base58Check.encodeTest = function(raw, b58str) {
-    assert.equal(base58Check.encode(raw), b58str);
-  };
+    base58Check.encodeTest = function(raw, b58str) {
+      assert.equal(base58Check.encode(raw), b58str);
+    };
 
-  base58Check.decodeTest = function(raw, b58str) {
-    assert.equal(raw.toString('hex'), base58Check.decode(b58str).toString('hex'));
-  };
+    base58Check.decodeTest = function(raw, b58str) {
+      assert.equal(raw.toString('hex'), base58Check.decode(b58str).toString('hex'));
+    };
 
-  testData.forEach(function(datum) {
-    var raw = new Buffer(datum[0], 'hex');
-    var b58 = datum[1];
-    var b58Check = datum[2];
+    testData.forEach(function(datum) {
+      var raw = new Buffer(datum[0], 'hex');
+      var b58 = datum[1];
+      var b58Check = datum[2];
 
-    base58.encodeTest(raw, b58);
-    base58.decodeTest(raw, b58);
-    base58Check.encodeTest(raw, b58Check);
-    base58Check.decodeTest(raw, b58Check);
+      base58.encodeTest(raw, b58);
+      base58.decodeTest(raw, b58);
+      base58Check.encodeTest(raw, b58Check);
+      base58Check.decodeTest(raw, b58Check);
+    });
   });
 });
