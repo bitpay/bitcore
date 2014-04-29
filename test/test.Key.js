@@ -8,7 +8,7 @@ var assert = chai.assert;
 
 var Key = bitcore.Key;
 var Point = bitcore.Point;
-var bignum = require('bignum');
+var bignum = bitcore.Bignum;
 
 describe('Key', function() {
   it('should initialize the main object', function() {

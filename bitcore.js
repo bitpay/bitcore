@@ -10,8 +10,16 @@ var requireWhenAccessed = function(name, file) {
   Object.defineProperty(module.exports, name, {get: function() {return require(file)}});
 };
 
-requireWhenAccessed('bignum', 'bignum');
-requireWhenAccessed('base58', 'base58-native');
+requireWhenAccessed('Bignum', './lib/Bignum');
+Object.defineProperty(module.exports, 'bignum', {get: function() {
+  console.log('bignum (with a lower-case "b") is deprecated. Use bitcore.Bignum (capital "B") instead.');
+  return require('./lib/Bignum');
+}});
+requireWhenAccessed('Base58', './lib/Base58');
+Object.defineProperty(module.exports, 'base58', {get: function() {
+  console.log('base58 (with a lower-case "b") is deprecated. Use bitcore.Base58 (capital "B") instead.');
+  return require('./lib/Base58');
+}});
 requireWhenAccessed('bufferput', 'bufferput');
 requireWhenAccessed('buffertools', 'buffertools');
 requireWhenAccessed('Buffers.monkey', './patches/Buffers.monkey');
@@ -56,6 +64,6 @@ module.exports.Buffer = Buffer;
 
 if (typeof process.versions === 'undefined') {
   // Browser specific
-  module.exports.bignum.config({EXPONENTIAL_AT: 9999999, DECIMAL_PLACES: 0, ROUNDING_MODE: 1});
+  module.exports.Bignum.config({EXPONENTIAL_AT: 9999999, DECIMAL_PLACES: 0, ROUNDING_MODE: 1});
 }
 

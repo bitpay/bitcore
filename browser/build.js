@@ -24,6 +24,8 @@ var pack = function (params) {
 
 var modules = [
   'lib/Address',
+  'lib/Base58',
+  'lib/Bignum',
   'lib/BIP32',
   'lib/Block',
   'lib/Bloom',
@@ -94,17 +96,11 @@ var createBitcore = function(opts) {
   };
   var b = browserify(bopts);
 
-  b.require(opts.dir + 'browserify-bignum/bignumber.js', {
-    expose: 'bignum'
-  });
   b.require(opts.dir + 'browserify-buffertools/buffertools.js', {
     expose: 'buffertools'
   });
   b.require(opts.dir + 'bufferput', {
     expose: 'bufferput'
-  });
-  b.require(opts.dir + 'base58-native', {
-    expose: 'base58-native'
   });
   b.require(opts.dir + 'buffers', {
     expose: 'buffers'

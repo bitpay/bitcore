@@ -9,8 +9,8 @@ var should = chai.should();
 
 var testdata = testdata || require('./testdata');
 
-var bignum = bitcore.bignum;
-var base58 = bitcore.base58;
+var bignum = bitcore.Bignum;
+var base58 = bitcore.Base58;
 var base58Check = base58.base58Check;
 
 var Address = bitcore.Address;
@@ -81,7 +81,7 @@ describe('Miscelaneous stuff', function() {
   });
   // bignum
   it('should initialze the bignum object', function() {
-    should.exist(bitcore.bignum);
+    should.exist(bitcore.Bignum);
   });
   it('should create a bignum from string', function() {
     var n = bignum('9832087987979879879879879879879879879879879879');
@@ -96,7 +96,7 @@ describe('Miscelaneous stuff', function() {
 
   // base58
   it('should initialze the base58 object', function() {
-    should.exist(bitcore.base58);
+    should.exist(bitcore.Base58);
   });
   it('should obtain the same string in base58 roundtrip', function() {
     var m = 'mqqa8xSMVDyf9QxihGnPtap6Mh6qemUkcu';
