@@ -87,13 +87,13 @@ describe('Address', function() {
       addr.toString().should.equal(Address.fromPubKey(pubkey).toString());
     });
   });
-  describe('#forKey', function() {
+  describe('#fromKey', function() {
     it('should make this pubkeyhash address from uncompressed this public key', function() {
       var k = new Key();
       k.private = new Buffer('43532455C88590A594D552F76DDB70EC1CFD7746F05C10CBB70B1EA9552EDF87', 'hex');
       k.compressed = true;
       k.regenerateSync();
-      var a = Address.forKey(k);
+      var a = Address.fromKey(k);
       a.toString().should.equal('1L8k7WpWHMNkqVPTaZhzFU5VaWyjZEK7mD');
     });
   });
