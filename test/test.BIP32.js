@@ -291,7 +291,19 @@ describe('BIP32', function() {
       bip32.extendedPrivateKeyString().should.equal(vector2_m_private);
       bip32.extendedPublicKeyString().should.equal(vector2_m_public);
     });
+  });
 
+  describe('testnet', function() {
+    it('should initialize a new BIP32 correctly from a random BIP32', function() {
+      var b1 = new BIP32('testnet');
+      var b2 = new BIP32(b1.extendedPublicKeyString());
+      b2.extendedPublicKeyString().should.equal(b1.extendedPublicKeyString());
+    });
+
+    it('should generate valid ext pub key for testnet', function() {
+      var b = new BIP32('testnet');
+      b.extendedPublicKeyString().substring(0,4).should.equal('tpub');
+    });
   });
 
 });
