@@ -1,0 +1,27 @@
+{
+  "name": "bitcore",
+  "main": "browser/bundle.js",
+  "version": "0.1.8",
+  "homepage": "http://bitcore.io",
+  "authors": [
+    "Ryan X. Charles (<ryan@bitpay.com>)"
+  ],
+  "description": "A pure, powerful core for your bitcoin project.",
+  "moduleType": [
+    "globals"
+  ],
+  "keywords": [
+    "bitcoin",
+    "bitcore",
+    "btc",
+    "satoshi"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
