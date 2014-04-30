@@ -42,7 +42,6 @@ describe('Message', function() {
       for (var i = 0; i <= 1000; i++)
         message += 'message ';
       var encrypted = Message.encrypt(message, 'password');
-      console.log('encrypted: ' + encrypted.toString('hex'));
       var decrypted = Message.decrypt(encrypted, 'password');
       decrypted.should.equal(message);
     });

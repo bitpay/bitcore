@@ -69,8 +69,9 @@
     "brfs": "=1.0.0",
     "chai": "=1.9.1",
     "uglifyify": "=1.2.3",
-    "async": "~0.2.10",
-    "underscore": "~1.6.0"
+    "async": "=0.2.10",
+    "underscore": "=1.6.0",
+    "crypto-js": "=3.1.2"
   },
   "devDependencies": {
     "grunt-contrib-watch": "~0.5.3",
