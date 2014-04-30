@@ -15,6 +15,39 @@ describe('Message', function() {
     });
   });
 
+  describe('encrypt', function() {
+    it('should encrypt data', function() {
+      var r = Message.encrypt('message', 'password');
+      r.length.should.equal(32);
+      should.exist(r);
+    });
+  });
+
+  describe('decrypt', function() {
+    it('should derypt an encrypted message', function() {
+      var message = 'message';
+      var encrypted = Message.encrypt(message, 'password');
+      var unencrypted = Message.decrypt(encrypted, 'password');
+      unencrypted.should.equal(message);
+    });
+
+    it('should decrypt this previously encrypted message', function() {
+      var encrypted = new Buffer('f0f9d77aaa77b28190a409162cca6a186cc0bd93ec5d8c7ab477c40b69390875', 'hex');
+      var message = Message.decrypt(encrypted, 'password');
+      message.should.equal('message');
+    });
+
+    it('should encrypt and decrypt a long message', function() {
+      var message = 'message ';
+      for (var i = 0; i <= 1000; i++)
+        message += 'message ';
+      var encrypted = Message.encrypt(message, 'password');
+      console.log('encrypted: ' + encrypted.toString('hex'));
+      var decrypted = Message.decrypt(encrypted, 'password');
+      decrypted.should.equal(message);
+    });
+  });
+
   describe('verifyWithPubKey', function() {
     it('should verify a signed message', function() {
       var message = 'my message';
