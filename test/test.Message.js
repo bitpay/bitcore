@@ -13,6 +13,15 @@ describe('Message', function() {
       var sig = Message.sign('my message', key);
       sig.length.should.be.greaterThan(0);
     });
+
+    it('should not sign a message the same way twice', function() {
+      var key = new bitcore.Key();
+      key.private = coinUtil.sha256('a fake private key');
+      key.regenerateSync();
+      var sig1 = Message.sign('my message', key);
+      var sig2 = Message.sign('my message', key);
+      sig1.toString('hex').should.not.equal(sig2.toString('hex'));
+    });
   });
 
   describe('verifyWithPubKey', function() {
