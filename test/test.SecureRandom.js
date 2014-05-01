@@ -22,6 +22,15 @@ describe('SecureRandom', function() {
       bytes1.toString('hex').should.not.equal(bytes2.toString('hex'));
     });
 
+    it('should generate 1000 8 byte buffers in a row that are not equal', function() {
+      var bufs = [];
+      for (var i = 0; i < 100; i++)
+        bufs[i] = SecureRandom.getRandomBuffer(8);
+      for (var i = 0; i < 100; i++)
+        for (var j = i + 1; j < 100; j++)
+          bufs[i].toString('hex').should.not.equal(bufs[j].toString('hex'));
+    });
+
   });
 
   describe('getPseudoRandomBuffer', function() {

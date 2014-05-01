@@ -130,4 +130,19 @@ describe('Key', function() {
     ret.should.equal(false);
   });
 
+  describe('signSync', function() {
+    it('should sign 10 times and have a different signature each time', function() {
+      var key = new Key();
+      key.private = coinUtil.sha256('my fake private key');
+      key.regenerateSync();
+      var data = coinUtil.sha256('the data i am signing');
+      var sigs = [];
+      for (var i = 0; i < 10; i++)
+        sigs[i] = key.signSync(data);
+      for (var i = 0; i < 10; i++)
+        for (var j = i + 1; j < 10; j++)
+          sigs[i].toString('hex').should.not.equal(sigs[j].toString('hex'));
+    });
+  });
+
 });
