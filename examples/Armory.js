@@ -45,3 +45,22 @@ for (var i = 0; i < 5; i++) {
   console.log(Address.fromPubKey(a.pubkey).as('base58'));
   a = a.next();
 }
+
+
+var mpk = '045a09a3286873a72f164476bde9d1d8e5c2bc044e35aa47eb6e798e325a86417f7c35b61d9905053533e0b4f2a26eca0330aadf21c638969e45aaace50e4c0c8784ac14bc4b388b33da099a0b4ee3b507284d99e1476639e36e5ca5e6af86481e';
+
+console.log('');
+console.log('');
+console.log('Deriving public keys for');
+console.log('------------------------');
+console.log('Master Public Key: %s', mpk);
+console.log('');
+
+// skip first public key
+var b = Armory.fromMasterPublicKey(mpk).next();
+
+for (var i = 0; i < 5; i++) {
+  console.log(Address.fromPubKey(b.pubkey).as('base58'));
+  b = b.next();
+}
+
