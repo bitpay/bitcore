@@ -21,16 +21,12 @@ describe('Opcode', function() {
     should.exist(oc);
   });
   it('should be able to create some constants', function() {
-    // TODO: test works in node but not in browser
-    for (var i in Opcode.map) {
-      eval('var ' + i + ' = ' + Opcode.map[i] + ';');
-    }
-    should.exist(OP_VER);
-    should.exist(OP_HASH160);
-    should.exist(OP_RETURN);
-    should.exist(OP_EQUALVERIFY);
-    should.exist(OP_CHECKSIG);
-    should.exist(OP_CHECKMULTISIG);
+    should.exist(Opcode.map.OP_VER);
+    should.exist(Opcode.map.OP_HASH160);
+    should.exist(Opcode.map.OP_RETURN);
+    should.exist(Opcode.map.OP_EQUALVERIFY);
+    should.exist(Opcode.map.OP_CHECKSIG);
+    should.exist(Opcode.map.OP_CHECKMULTISIG);
   });
   it('#asList should work', function() {
     var list = Opcode.asList();
