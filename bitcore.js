@@ -60,5 +60,6 @@ requireWhenAccessed('WalletKey', './lib/WalletKey');
 requireWhenAccessed('PeerManager', './lib/PeerManager');
 requireWhenAccessed('Message', './lib/Message');
 requireWhenAccessed('Electrum', './lib/Electrum');
+requireWhenAccessed('Armory', './lib/Armory');
 module.exports.Buffer = Buffer;
 
