@@ -22,11 +22,11 @@ module.exports = function(grunt) {
     },
     watch: {
       readme: {
-        files: ['README.md'],
+        files: ['README.md', 'CONTRIBUTING.md'],
         tasks: ['markdown']
       },
       scripts: {
-        files: ['**/*.js', '**/*.html', '!**/node_modules/**', '!browser/bundle.js', '!browser/testdata.js', '!browser/vendor-bundle.js', '!docs/**'],
+        files: ['**/*.js', '**/*.html', '!**/node_modules/**', '!browser/bundle.js', '!browser/testdata.js', '!browser/vendor-bundle.js', '!docs/**', '!*.md', '!README.html', '!CONTRIBUTING.html'],
         tasks: ['shell'],
       },
     },
@@ -40,7 +40,7 @@ module.exports = function(grunt) {
       all: {
         files: [{
           expand: true,
-          src: 'README.md',
+          src: '*.md',
           dest: '.',
           ext: '.html'
         }]
