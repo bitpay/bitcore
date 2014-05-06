@@ -3,7 +3,6 @@ var run = function() {
   bitcore = typeof (bitcore) === 'undefined' ? require('../bitcore') : bitcore;
   var networks = require('../networks');
   var WalletKey = bitcore.WalletKey;
-  var Script = bitcore.Script;
   var Builder = bitcore.TransactionBuilder;
   var opts = {network: networks.testnet};
 
