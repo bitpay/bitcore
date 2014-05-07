@@ -60,5 +60,6 @@ requireWhenAccessed('WalletKey', './lib/WalletKey');
 requireWhenAccessed('PeerManager', './lib/PeerManager');
 requireWhenAccessed('Message', './lib/Message');
 requireWhenAccessed('Electrum', './lib/Electrum');
+requireWhenAccessed('sjcl', 'sjcl');
 module.exports.Buffer = Buffer;
 

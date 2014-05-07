@@ -104,6 +104,9 @@ var createBitcore = function(opts) {
   b.require(opts.dir + 'buffers', {
     expose: 'buffers'
   });
+  b.require(opts.dir + 'sjcl', {
+    expose: 'sjcl'
+  });
   b.require('./' + opts.dir + 'bitcore', {
     expose: 'bitcore'
   });
