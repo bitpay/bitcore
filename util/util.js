@@ -1,5 +1,5 @@
 var crypto = require('crypto');
-var bignum = require('../lib/Bignum');
+var bignum = require('bignum');
 var Binary = require('binary');
 var Put = require('bufferput');
 var buffertools = require('buffertools');

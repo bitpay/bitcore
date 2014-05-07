@@ -10,10 +10,10 @@ var requireWhenAccessed = function(name, file) {
   Object.defineProperty(module.exports, name, {get: function() {return require(file)}});
 };
 
-requireWhenAccessed('Bignum', './lib/Bignum');
+requireWhenAccessed('Bignum', 'bignum');
 Object.defineProperty(module.exports, 'bignum', {get: function() {
   console.log('bignum (with a lower-case "b") is deprecated. Use bitcore.Bignum (capital "B") instead.');
-  return require('./lib/Bignum');
+  return require('bignum');
 }});
 requireWhenAccessed('Base58', './lib/Base58');
 Object.defineProperty(module.exports, 'base58', {get: function() {
