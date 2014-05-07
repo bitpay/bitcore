@@ -98,6 +98,12 @@
       "android-browser/latest"
     ]
   },
+  "browser": {
+    "bignum": "./lib/browser/Bignum.js",
+    "./lib/Key.js": "./lib/browser/Key.js",
+    "./lib/Point.js": "./lib/browser/Point.js",
+    "./lib/SecureRandom.js": "./lib/browser/SecureRandom.js"
+  },
   "license": "MIT",
   "engines": {
     "node": ">=0.10"

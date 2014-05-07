@@ -25,7 +25,6 @@ var pack = function (params) {
 var modules = [
   'lib/Address',
   'lib/Base58',
-  'lib/Bignum',
   'lib/BIP32',
   'lib/Block',
   'lib/Bloom',
