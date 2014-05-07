@@ -518,29 +518,21 @@ Key::Multiply(const Arguments& args)
   const EC_GROUP *group = EC_KEY_get0_group(eckey);
 
   BN_CTX *ctx;
-  //EC_POINT *p0, *p1, *r;
   EC_POINT *p0, *r;
-  //BIGNUM *p0x, *p0y, *p1x, *p1y, *rx, *ry;
   BIGNUM *p0x, *p0y, *x, *rx, *ry;
   Buffer *rbuf;
 
   p0 = EC_POINT_new(group);
-  //p1 = EC_POINT_new(group);
   r = EC_POINT_new(group);
 
   p0x = BN_bin2bn(&point0[1], 32, BN_new());
   p0y = BN_bin2bn(&point0[33], 32, BN_new());
   x = BN_bin2bn(&xval[0], 32, BN_new());
-  //p1x = BN_bin2bn(&point1[1], 32, BN_new());
-  //p1y = BN_bin2bn(&point1[33], 32, BN_new());
 
   ctx = BN_CTX_new();
 
   EC_POINT_set_affine_coordinates_GFp(group, p0, p0x, p0y, ctx);
-  //EC_POINT_set_affine_coordinates_GFp(group, p1, p1x, p1y, ctx);
 
-  //int EC_POINTs_mul(const EC_GROUP *group, EC_POINT *r, const BIGNUM *n, size_t num, const EC_POINT *p[], const BIGNUM *m[], BN_CTX *ctx);
-  //int EC_POINT_mul(const EC_GROUP *group, EC_POINT *r, const BIGNUM *n, const EC_POINT *q, const BIGNUM *m, BN_CTX *ctx);
   EC_POINT_mul(group, r, NULL, p0, x, ctx);
 
   rx = BN_new();
@@ -558,10 +550,7 @@ Key::Multiply(const Arguments& args)
   BN_clear_free(p0x);
   BN_clear_free(p0y);
   BN_clear_free(x);
-  //BN_clear_free(p1x);
-  //BN_clear_free(p1y);
   EC_POINT_free(r);
-  //EC_POINT_free(p1);
   EC_POINT_free(p0);
   EC_KEY_free(eckey);
 
