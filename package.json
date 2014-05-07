@@ -52,6 +52,7 @@
     "postinstall": "node browser/build.js -a"
   },
   "dependencies": {
+    "sjcl": "=1.0.1",
     "jssha": "=1.5.0",
     "soop": "=0.1.5",
     "bindings": "=1.1.1",
