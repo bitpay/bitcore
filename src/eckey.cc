@@ -124,7 +124,7 @@ void Key::Init(Handle<Object> target)
   NODE_SET_METHOD(s_ct->GetFunction(), "generateSync", GenerateSync);
   NODE_SET_METHOD(s_ct->GetFunction(), "fromDER", FromDER);
   NODE_SET_METHOD(s_ct->GetFunction(), "addUncompressed", AddUncompressed);
-  NODE_SET_METHOD(s_ct->GetFunction(), "multiply", Multiply);
+  NODE_SET_METHOD(s_ct->GetFunction(), "multiplyUncompressed", MultiplyUncompressed);
 
   target->Set(String::NewSymbol("Key"),
               s_ct->GetFunction());
@@ -488,7 +488,7 @@ Key::AddUncompressed(const Arguments& args)
 }
 
 Handle<Value>
-Key::Multiply(const Arguments& args)
+Key::MultiplyUncompressed(const Arguments& args)
 {
   HandleScope scope;
 
