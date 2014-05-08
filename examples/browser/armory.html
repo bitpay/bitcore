@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+    textarea {
+      width: 400px;
+      height: 100px;
+    }
+    </style>
+  </head>
+  <body>
+    <script src="../../browser/bundle.js"></script>
+    Enter you paper wallet seed:<br>
+    <textarea id="seed">aagh hjfj sihk ietj giik wwai awtd uodh hnji
+soss uaku egod utai itos fijj ihgi jhau jtoo</textarea>
+    <br>
+    <input type="submit" onclick="updateResult()" value="Generate">
+    <div id="result"></div>
+    <pre id="console"></pre>
+    <script>
+      var bitcore = require('bitcore'),
+        Address = bitcore.Address,
+        Armory = bitcore.Armory;
+
+      var logs = document.getElementById('console');
+      function log (msg) {
+        logs.insertAdjacentHTML('beforeend', msg + '\n');
+      }
+      function clear_log () {
+        logs.innerHTML = '';
+      }
+
+      function getSeed() {
+        return document.getElementById('seed').value;
+      }
+
+      function updateResult () {
+        clear_log();
+        var seed = getSeed();
+
+        var a = Armory.fromSeed(seed);
+        log('Armory MPK: ');
+        log('');
+        log('');
+        log('<textarea>' + a.pubkey.toString('hex') + '' + a.chaincode.toString('hex') + '</textarea>');
+        log('');
+        log('');
+        log('Some wallet addresses:');
+        for (var i = 0; i < 5; i++) {
+          log(Address.fromPubKey(a.pubkey).as('base58'));
+          a = a.next();
+        }
+      }
+
+      updateResult();
+    </script>
+  </body>
+</html>

@@ -90,6 +90,9 @@ public:
     AddUncompressed(const Arguments& args);
 
   static Handle<Value>
+    MultiplyUncompressed(const Arguments& args);
+
+  static Handle<Value>
     VerifySignature(const Arguments& args);
 
   static void
