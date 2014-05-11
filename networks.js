@@ -8,8 +8,8 @@ exports.livenet = {
   addressVersion: 0x00,
   privKeyVersion: 128,
   P2SHVersion: 5,
-  bip32publicVersion: 0x0488b21e,
-  bip32privateVersion: 0x0488ade4,
+  hkeyPublicVersion: 0x0488b21e,
+  hkeyPrivateVersion: 0x0488ade4,
   genesisBlock: {
     hash: hex('6FE28C0AB6F1B372C1A6A246AE63F74F931E8365E15A089C68D6190000000000'),
     merkle_root: hex('3BA3EDFD7A7B12B27AC72C3E67768F617FC81BC3888A51323A9FB8AA4B1E5E4A'),
@@ -37,8 +37,8 @@ exports.testnet = {
   addressVersion: 0x6f,
   privKeyVersion: 239,
   P2SHVersion: 196,
-  bip32publicVersion: 0x043587cf,
-  bip32privateVersion: 0x04358394,
+  hkeyPublicVersion: 0x043587cf,
+  hkeyPrivateVersion: 0x04358394,
   genesisBlock: {
     hash: hex('43497FD7F826957108F4A30FD9CEC3AEBA79972084E90EAD01EA330900000000'),
     merkle_root: hex('3BA3EDFD7A7B12B27AC72C3E67768F617FC81BC3888A51323A9FB8AA4B1E5E4A'),
