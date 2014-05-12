@@ -26,7 +26,7 @@ var modules = [
   'lib/Address',
   'lib/Armory',
   'lib/Base58',
-  'lib/BIP32',
+  'lib/HierarchicalKey',
   'lib/Block',
   'lib/Bloom',
   'lib/Connection',

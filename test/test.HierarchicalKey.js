@@ -3,9 +3,9 @@
 var chai = chai || require('chai');
 var should = chai.should();
 var bitcore = bitcore || require('../bitcore');
-var BIP32 = bitcore.BIP32;
+var HierarchicalKey = bitcore.HierarchicalKey;
 
-describe('BIP32', function() {
+describe('HierarchicalKey', function() {
 
   //test vectors: https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki
   var vector1_master = '000102030405060708090a0b0c0d0e0f';
@@ -37,238 +37,238 @@ describe('BIP32', function() {
 
 
   it('should initialize the class', function() {
-    should.exist(BIP32);
+    should.exist(HierarchicalKey);
   });
 
-  it('should create a mainnet bip32', function() {
-    var bip32 = new BIP32('mainnet');
-    should.exist(bip32);
+  it('should create a mainnet hkey', function() {
+    var hkey = new HierarchicalKey('mainnet');
+    should.exist(hkey);
   });
 
-  it('should create a testnet bip32', function() {
-    var bip32 = new BIP32('testnet');
-    should.exist(bip32);
+  it('should create a testnet hkey', function() {
+    var hkey = new HierarchicalKey('testnet');
+    should.exist(hkey);
   });
 
   it('should initialize test vector 1 from the extended public key', function() {
-    var bip32 = new BIP32(vector1_m_public);
-    should.exist(bip32);
+    var hkey = new HierarchicalKey(vector1_m_public);
+    should.exist(hkey);
   });
 
   it('should initialize test vector 1 from the extended private key', function() {
-    var bip32 = new BIP32(vector1_m_private);
-    should.exist(bip32);
+    var hkey = new HierarchicalKey(vector1_m_private);
+    should.exist(hkey);
   });
 
   it('should get the extended public key from the extended private key for test vector 1', function() {
-    var bip32 = new BIP32(vector1_m_private);
-    bip32.extendedPublicKeyString().should.equal(vector1_m_public);
+    var hkey = new HierarchicalKey(vector1_m_private);
+    hkey.extendedPublicKeyString().should.equal(vector1_m_public);
   });
 
   it("should get m/0' ext. private key from test vector 1", function() {
-    var bip32 = new BIP32(vector1_m_private);
-    var child = bip32.derive("m/0'");
+    var hkey = new HierarchicalKey(vector1_m_private);
+    var child = hkey.derive("m/0'");
     should.exist(child);
     child.extendedPrivateKeyString().should.equal(vector1_m0h_private);
   });
 
   it("should get m/0' ext. public key from test vector 1", function() {
-    var bip32 = new BIP32(vector1_m_private);
-    var child = bip32.derive("m/0'");
+    var hkey = new HierarchicalKey(vector1_m_private);
+    var child = hkey.derive("m/0'");
     should.exist(child);
     child.extendedPublicKeyString().should.equal(vector1_m0h_public);
   });
 
   it("should get m/0'/1 ext. private key from test vector 1", function() {
-    var bip32 = new BIP32(vector1_m_private);
-    var child = bip32.derive("m/0'/1");
+    var hkey = new HierarchicalKey(vector1_m_private);
+    var child = hkey.derive("m/0'/1");
     should.exist(child);
     child.extendedPrivateKeyString().should.equal(vector1_m0h1_private);
   });
 
   it("should get m/0'/1 ext. public key from test vector 1", function() {
-    var bip32 = new BIP32(vector1_m_private);
-    var child = bip32.derive("m/0'/1");
+    var hkey = new HierarchicalKey(vector1_m_private);
+    var child = hkey.derive("m/0'/1");
     should.exist(child);
     child.extendedPublicKeyString().should.equal(vector1_m0h1_public);
   });
 
   it("should get m/0'/1 ext. public key from m/0' public key from test vector 1", function() {
-    var bip32 = new BIP32(vector1_m_private);
-    var child = bip32.derive("m/0'");
-    var child_pub = new BIP32(child.extendedPublicKeyString());
+    var hkey = new HierarchicalKey(vector1_m_private);
+    var child = hkey.derive("m/0'");
+    var child_pub = new HierarchicalKey(child.extendedPublicKeyString());
     var child2 = child_pub.derive("m/1");
     should.exist(child2);
     child2.extendedPublicKeyString().should.equal(vector1_m0h1_public);
   });
 
   it("should get m/0'/1/2h ext. private key from test vector 1", function() {
-    var bip32 = new BIP32(vector1_m_private);
-    var child = bip32.derive("m/0'/1/2'");
+    var hkey = new HierarchicalKey(vector1_m_private);
+    var child = hkey.derive("m/0'/1/2'");
     should.exist(child);
     child.extendedPrivateKeyString().should.equal(vector1_m0h12h_private);
   });
 
   it("should get m/0'/1/2h ext. public key from test vector 1", function() {
-    var bip32 = new BIP32(vector1_m_private);
-    var child = bip32.derive("m/0'/1/2'");
+    var hkey = new HierarchicalKey(vector1_m_private);
+    var child = hkey.derive("m/0'/1/2'");
     should.exist(child);
     child.extendedPublicKeyString().should.equal(vector1_m0h12h_public);
   });
 
   it("should get m/0'/1/2h/2 ext. private key from test vector 1", function() {
-    var bip32 = new BIP32(vector1_m_private);
-    var child = bip32.derive("m/0'/1/2'/2");
+    var hkey = new HierarchicalKey(vector1_m_private);
+    var child = hkey.derive("m/0'/1/2'/2");
     should.exist(child);
     child.extendedPrivateKeyString().should.equal(vector1_m0h12h2_private);
   });
 
   it("should get m/0'/1/2'/2 ext. public key from m/0'/1/2' public key from test vector 1", function() {
-    var bip32 = new BIP32(vector1_m_private);
-    var child = bip32.derive("m/0'/1/2'");
-    var child_pub = new BIP32(child.extendedPublicKeyString());
+    var hkey = new HierarchicalKey(vector1_m_private);
+    var child = hkey.derive("m/0'/1/2'");
+    var child_pub = new HierarchicalKey(child.extendedPublicKeyString());
     var child2 = child_pub.derive("m/2");
     should.exist(child2);
     child2.extendedPublicKeyString().should.equal(vector1_m0h12h2_public);
   });
 
   it("should get m/0'/1/2h/2 ext. public key from test vector 1", function() {
-    var bip32 = new BIP32(vector1_m_private);
-    var child = bip32.derive("m/0'/1/2'/2");
+    var hkey = new HierarchicalKey(vector1_m_private);
+    var child = hkey.derive("m/0'/1/2'/2");
     should.exist(child);
     child.extendedPublicKeyString().should.equal(vector1_m0h12h2_public);
   });
 
   it("should get m/0'/1/2h/2/1000000000 ext. private key from test vector 1", function() {
-    var bip32 = new BIP32(vector1_m_private);
-    var child = bip32.derive("m/0'/1/2'/2/1000000000");
+    var hkey = new HierarchicalKey(vector1_m_private);
+    var child = hkey.derive("m/0'/1/2'/2/1000000000");
     should.exist(child);
     child.extendedPrivateKeyString().should.equal(vector1_m0h12h21000000000_private);
   });
 
   it("should get m/0'/1/2h/2/1000000000 ext. public key from test vector 1", function() {
-    var bip32 = new BIP32(vector1_m_private);
-    var child = bip32.derive("m/0'/1/2'/2/1000000000");
+    var hkey = new HierarchicalKey(vector1_m_private);
+    var child = hkey.derive("m/0'/1/2'/2/1000000000");
     should.exist(child);
     child.extendedPublicKeyString().should.equal(vector1_m0h12h21000000000_public);
   });
 
   it("should get m/0'/1/2'/2/1000000000 ext. public key from m/0'/1/2'/2 public key from test vector 1", function() {
-    var bip32 = new BIP32(vector1_m_private);
-    var child = bip32.derive("m/0'/1/2'/2");
-    var child_pub = new BIP32(child.extendedPublicKeyString());
+    var hkey = new HierarchicalKey(vector1_m_private);
+    var child = hkey.derive("m/0'/1/2'/2");
+    var child_pub = new HierarchicalKey(child.extendedPublicKeyString());
     var child2 = child_pub.derive("m/1000000000");
     should.exist(child2);
     child2.extendedPublicKeyString().should.equal(vector1_m0h12h21000000000_public);
   });
 
   it('should initialize test vector 2 from the extended public key', function() {
-    var bip32 = new BIP32(vector2_m_public);
-    should.exist(bip32);
+    var hkey = new HierarchicalKey(vector2_m_public);
+    should.exist(hkey);
   });
 
   it('should initialize test vector 2 from the extended private key', function() {
-    var bip32 = new BIP32(vector2_m_private);
-    should.exist(bip32);
+    var hkey = new HierarchicalKey(vector2_m_private);
+    should.exist(hkey);
   });
 
   it('should get the extended public key from the extended private key for test vector 2', function() {
-    var bip32 = new BIP32(vector2_m_private);
-    bip32.extendedPublicKeyString().should.equal(vector2_m_public);
+    var hkey = new HierarchicalKey(vector2_m_private);
+    hkey.extendedPublicKeyString().should.equal(vector2_m_public);
   });
 
   it("should get m/0 ext. private key from test vector 2", function() {
-    var bip32 = new BIP32(vector2_m_private);
-    var child = bip32.derive("m/0");
+    var hkey = new HierarchicalKey(vector2_m_private);
+    var child = hkey.derive("m/0");
     should.exist(child);
     child.extendedPrivateKeyString().should.equal(vector2_m0_private);
   });
 
   it("should get m/0 ext. public key from test vector 2", function() {
-    var bip32 = new BIP32(vector2_m_private);
-    var child = bip32.derive("m/0");
+    var hkey = new HierarchicalKey(vector2_m_private);
+    var child = hkey.derive("m/0");
     should.exist(child);
     child.extendedPublicKeyString().should.equal(vector2_m0_public);
   });
 
   it("should get m/0 ext. public key from m public key from test vector 2", function() {
-    var bip32 = new BIP32(vector2_m_private);
-    var child = bip32.derive("m");
-    var child_pub = new BIP32(child.extendedPublicKeyString());
+    var hkey = new HierarchicalKey(vector2_m_private);
+    var child = hkey.derive("m");
+    var child_pub = new HierarchicalKey(child.extendedPublicKeyString());
     var child2 = child_pub.derive("m/0");
     should.exist(child2);
     child2.extendedPublicKeyString().should.equal(vector2_m0_public);
   });
 
   it("should get m/0/2147483647h ext. private key from test vector 2", function() {
-    var bip32 = new BIP32(vector2_m_private);
-    var child = bip32.derive("m/0/2147483647'");
+    var hkey = new HierarchicalKey(vector2_m_private);
+    var child = hkey.derive("m/0/2147483647'");
     should.exist(child);
     child.extendedPrivateKeyString().should.equal(vector2_m02147483647h_private);
   });
 
   it("should get m/0/2147483647h ext. public key from test vector 2", function() {
-    var bip32 = new BIP32(vector2_m_private);
-    var child = bip32.derive("m/0/2147483647'");
+    var hkey = new HierarchicalKey(vector2_m_private);
+    var child = hkey.derive("m/0/2147483647'");
     should.exist(child);
     child.extendedPublicKeyString().should.equal(vector2_m02147483647h_public);
   });
 
   it("should get m/0/2147483647h/1 ext. private key from test vector 2", function() {
-    var bip32 = new BIP32(vector2_m_private);
-    var child = bip32.derive("m/0/2147483647'/1");
+    var hkey = new HierarchicalKey(vector2_m_private);
+    var child = hkey.derive("m/0/2147483647'/1");
     should.exist(child);
     child.extendedPrivateKeyString().should.equal(vector2_m02147483647h1_private);
   });
 
   it("should get m/0/2147483647h/1 ext. public key from test vector 2", function() {
-    var bip32 = new BIP32(vector2_m_private);
-    var child = bip32.derive("m/0/2147483647'/1");
+    var hkey = new HierarchicalKey(vector2_m_private);
+    var child = hkey.derive("m/0/2147483647'/1");
     should.exist(child);
     child.extendedPublicKeyString().should.equal(vector2_m02147483647h1_public);
   });
 
   it("should get m/0/2147483647h/1 ext. public key from m/0/2147483647h public key from test vector 2", function() {
-    var bip32 = new BIP32(vector2_m_private);
-    var child = bip32.derive("m/0/2147483647'");
-    var child_pub = new BIP32(child.extendedPublicKeyString());
+    var hkey = new HierarchicalKey(vector2_m_private);
+    var child = hkey.derive("m/0/2147483647'");
+    var child_pub = new HierarchicalKey(child.extendedPublicKeyString());
     var child2 = child_pub.derive("m/1");
     should.exist(child2);
     child2.extendedPublicKeyString().should.equal(vector2_m02147483647h1_public);
   });
 
   it("should get m/0/2147483647h/1/2147483646h ext. private key from test vector 2", function() {
-    var bip32 = new BIP32(vector2_m_private);
-    var child = bip32.derive("m/0/2147483647'/1/2147483646'");
+    var hkey = new HierarchicalKey(vector2_m_private);
+    var child = hkey.derive("m/0/2147483647'/1/2147483646'");
     should.exist(child);
     child.extendedPrivateKeyString().should.equal(vector2_m02147483647h12147483646h_private);
   });
 
   it("should get m/0/2147483647h/1/2147483646h ext. public key from test vector 2", function() {
-    var bip32 = new BIP32(vector2_m_private);
-    var child = bip32.derive("m/0/2147483647'/1/2147483646'");
+    var hkey = new HierarchicalKey(vector2_m_private);
+    var child = hkey.derive("m/0/2147483647'/1/2147483646'");
     should.exist(child);
     child.extendedPublicKeyString().should.equal(vector2_m02147483647h12147483646h_public);
   });
 
   it("should get m/0/2147483647h/1/2147483646h/2 ext. private key from test vector 2", function() {
-    var bip32 = new BIP32(vector2_m_private);
-    var child = bip32.derive("m/0/2147483647'/1/2147483646'/2");
+    var hkey = new HierarchicalKey(vector2_m_private);
+    var child = hkey.derive("m/0/2147483647'/1/2147483646'/2");
     should.exist(child);
     child.extendedPrivateKeyString().should.equal(vector2_m02147483647h12147483646h2_private);
   });
 
   it("should get m/0/2147483647h/1/2147483646h/2 ext. public key from test vector 2", function() {
-    var bip32 = new BIP32(vector2_m_private);
-    var child = bip32.derive("m/0/2147483647'/1/2147483646'/2");
+    var hkey = new HierarchicalKey(vector2_m_private);
+    var child = hkey.derive("m/0/2147483647'/1/2147483646'/2");
     should.exist(child);
     child.extendedPublicKeyString().should.equal(vector2_m02147483647h12147483646h2_public);
   });
 
   it("should get m/0/2147483647h/1/2147483646h/2 ext. public key from m/0/2147483647h/2147483646h public key from test vector 2", function() {
-    var bip32 = new BIP32(vector2_m_private);
-    var child = bip32.derive("m/0/2147483647'/1/2147483646'");
-    var child_pub = new BIP32(child.extendedPublicKeyString());
+    var hkey = new HierarchicalKey(vector2_m_private);
+    var child = hkey.derive("m/0/2147483647'/1/2147483646'");
+    var child_pub = new HierarchicalKey(child.extendedPublicKeyString());
     var child2 = child_pub.derive("m/2");
     should.exist(child2);
     child2.extendedPublicKeyString().should.equal(vector2_m02147483647h12147483646h2_public);
@@ -276,32 +276,32 @@ describe('BIP32', function() {
 
   describe('#seed', function() {
 
-    it('should initialize a new BIP32 correctly from test vector 1 seed', function() {
+    it('should initialize a new HierarchicalKey correctly from test vector 1 seed', function() {
       var hex = vector1_master;
-      var bip32 = BIP32.seed(hex, 'livenet');
-      should.exist(bip32);
-      bip32.extendedPrivateKeyString().should.equal(vector1_m_private);
-      bip32.extendedPublicKeyString().should.equal(vector1_m_public);
+      var hkey = HierarchicalKey.seed(hex, 'livenet');
+      should.exist(hkey);
+      hkey.extendedPrivateKeyString().should.equal(vector1_m_private);
+      hkey.extendedPublicKeyString().should.equal(vector1_m_public);
     });
 
-    it('should initialize a new BIP32 correctly from test vector 2 seed', function() {
+    it('should initialize a new HierarchicalKey correctly from test vector 2 seed', function() {
       var hex = vector2_master;
-      var bip32 = BIP32.seed(hex, 'livenet');
-      should.exist(bip32);
-      bip32.extendedPrivateKeyString().should.equal(vector2_m_private);
-      bip32.extendedPublicKeyString().should.equal(vector2_m_public);
+      var hkey = HierarchicalKey.seed(hex, 'livenet');
+      should.exist(hkey);
+      hkey.extendedPrivateKeyString().should.equal(vector2_m_private);
+      hkey.extendedPublicKeyString().should.equal(vector2_m_public);
     });
   });
 
   describe('testnet', function() {
-    it('should initialize a new BIP32 correctly from a random BIP32', function() {
-      var b1 = new BIP32('testnet');
-      var b2 = new BIP32(b1.extendedPublicKeyString());
+    it('should initialize a new HierarchicalKey correctly from a random HierarchicalKey', function() {
+      var b1 = new HierarchicalKey('testnet');
+      var b2 = new HierarchicalKey(b1.extendedPublicKeyString());
       b2.extendedPublicKeyString().should.equal(b1.extendedPublicKeyString());
     });
 
     it('should generate valid ext pub key for testnet', function() {
-      var b = new BIP32('testnet');
+      var b = new HierarchicalKey('testnet');
       b.extendedPublicKeyString().substring(0,4).should.equal('tpub');
     });
   });

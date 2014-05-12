@@ -35,8 +35,8 @@ describe('Miscelaneous stuff', function() {
       should.exist(net.addressVersion);
       should.exist(net.privKeyVersion);
       should.exist(net.P2SHVersion);
-      should.exist(net.bip32publicVersion);
-      should.exist(net.bip32privateVersion);
+      should.exist(net.hkeyPublicVersion);
+      should.exist(net.hkeyPrivateVersion);
     }
   });
   it('should initialze the const object', function() {

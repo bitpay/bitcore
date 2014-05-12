@@ -35,7 +35,11 @@ requireWhenAccessed('EncodedData', './util/EncodedData');
 requireWhenAccessed('VersionedData', './util/VersionedData');
 requireWhenAccessed('BinaryParser', './util/BinaryParser');
 requireWhenAccessed('Address', './lib/Address');
-requireWhenAccessed('BIP32', './lib/BIP32');
+requireWhenAccessed('HierarchicalKey', './lib/HierarchicalKey');
+Object.defineProperty(module.exports, 'BIP32', {get: function() {
+  console.log('BIP32 is deprecated. Use bitcore.HierarchicalKey instead.');
+  return require('./lib/HierarchicalKey');
+}});
 requireWhenAccessed('Point', './lib/Point');
 requireWhenAccessed('Opcode', './lib/Opcode');
 requireWhenAccessed('Script', './lib/Script');
