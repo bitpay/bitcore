@@ -62,7 +62,7 @@ addrs.forEach(function(addr) {
 For this example you need a running bitcoind instance.
 
 ```js
-  var bitcore = require('../bitcore');
+  var bitcore = require('bitcore');
   var Peer = bitcore.Peer;
   var PeerManager = bitcore.PeerManager;
 
