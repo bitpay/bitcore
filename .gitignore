@@ -1,5 +1,4 @@
 build/
-browser/bundle.js
 browser/vendor-bundle.js
 browser/testdata.js
 node_modules/
