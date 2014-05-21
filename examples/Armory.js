@@ -21,7 +21,7 @@ console.log('Public key: %s', pubkey);
 console.log('');
 
 for (var i = 0; i < 5; i++) {
-  console.log(Address.fromPubKey(armory.pubkey).as('base58'));
+  console.log(Address.fromPubKey(armory.pubkey, 'bitcoin').as('base58'));
   armory = armory.next();
 }
 
@@ -42,7 +42,7 @@ console.log('');
 var a = Armory.fromSeed(seed.join('\n')).next();
 
 for (var i = 0; i < 5; i++) {
-  console.log(Address.fromPubKey(a.pubkey).as('base58'));
+  console.log(Address.fromPubKey(a.pubkey, 'bitcoin').as('base58'));
   a = a.next();
 }
 
@@ -60,7 +60,7 @@ console.log('');
 var b = Armory.fromMasterPublicKey(mpk).next();
 
 for (var i = 0; i < 5; i++) {
-  console.log(Address.fromPubKey(b.pubkey).as('base58'));
+  console.log(Address.fromPubKey(b.pubkey, 'bitcoin').as('base58'));
   b = b.next();
 }
 

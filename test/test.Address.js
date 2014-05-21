@@ -47,14 +47,14 @@ describe('Address', function() {
     });
   });
   it('should be able to detect network from an address', function() {
-    // livenet
+    // bitcoin
     var a = new Address('1KfyjCgBSMsLqiCbakfSdeoBUqMqLUiu3T');
-    a.network().name.should.equal('livenet');
+    a.network().name.should.equal('bitcoin');
     a = new Address('1dice8EMZmqKvrGE4Qc9bUFf9PX3xaYDp');
-    a.network().name.should.equal('livenet');
+    a.network().name.should.equal('bitcoin');
     //p2sh
     a = new Address('3QRhucKtEn5P9i7YPxzXCqBtPJTPbRFycn');
-    a.network().name.should.equal('livenet');
+    a.network().name.should.equal('bitcoin');
 
     //testnet
     a = new Address('mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE');
@@ -69,9 +69,9 @@ describe('Address', function() {
   it('#isScript should work', function() {
     // invalid
     new Address('1T').isScript().should.equal(false);
-    // pubKeyHash livenet 
+    // pubKeyHash bitcoin 
     new Address('1KfyjCgBSMsLqiCbakfSdeoBUqMqLUiu3T').isScript().should.equal(false);
-    // script livenet
+    // script bitcoin
     new Address('3QRhucKtEn5P9i7YPxzXCqBtPJTPbRFycn').isScript().should.equal(true);
     // pubKeyHash testnet
     new Address('mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE').isScript().should.equal(false);
@@ -84,7 +84,7 @@ describe('Address', function() {
       var pubkey = new Buffer('04fa05ce8b25010cb6e17a30e0b66668bf083c40687547748ec330ee77adf53a42abd3d26148cbacfcf79c907ddefeb2c37f8bebc0a695ba79d634449d871de218', 'hex');
       var hash = bitcore.util.sha256ripe160(pubkey);
       var addr = new Address(0, hash);
-      addr.toString().should.equal(Address.fromPubKey(pubkey).toString());
+      addr.toString().should.equal(Address.fromPubKey(pubkey, 'bitcoin').toString());
     });
   });
   describe('#fromKey', function() {
@@ -93,7 +93,7 @@ describe('Address', function() {
       k.private = new Buffer('43532455C88590A594D552F76DDB70EC1CFD7746F05C10CBB70B1EA9552EDF87', 'hex');
       k.compressed = true;
       k.regenerateSync();
-      var a = Address.fromKey(k);
+      var a = Address.fromKey(k, 'bitcoin');
       a.toString().should.equal('1L8k7WpWHMNkqVPTaZhzFU5VaWyjZEK7mD');
     });
   });
@@ -108,9 +108,9 @@ describe('Address', function() {
       var mReq = 2;
       var script = bitcore.Script.createMultisig(mReq, sortedPubKeys, {noSorting: true});
       var hash = bitcore.util.sha256ripe160(script.getBuffer());
-      var version = bitcore.networks['livenet'].P2SHVersion;
+      var version = bitcore.networks['bitcoin'].P2SHVersion;
       var addr = new Address(version, hash);
-      var addr2 = Address.fromPubKeys(mReq, sortedPubKeys);
+      var addr2 = Address.fromPubKeys(mReq, sortedPubKeys, 'bitcoin');
       addr.toString().should.equal(addr2.toString());
     });
   });
@@ -123,14 +123,14 @@ describe('Address', function() {
       var pubKeys = [pubkey1, pubkey2, pubkey3];
       var mReq = 2;
       var script = bitcore.Script.createMultisig(mReq, pubKeys);
-      var addr = Address.fromScript(script);
-      var addr2 = Address.fromPubKeys(mReq, pubKeys);
+      var addr = Address.fromScript(script, 'bitcoin');
+      var addr2 = Address.fromPubKeys(mReq, pubKeys, 'bitcoin');
       addr.toString().should.equal(addr2.toString());
 
       // Same case, using HEX
       var scriptHex = bitcore.Script.createMultisig(mReq, pubKeys).getBuffer().toString('hex');
-      var addrB = Address.fromScript(scriptHex);
-      var addr2B = Address.fromPubKeys(mReq, pubKeys);
+      var addrB = Address.fromScript(scriptHex, 'bitcoin');
+      var addr2B = Address.fromPubKeys(mReq, pubKeys, 'bitcoin');
       addrB.toString().should.equal(addr2B.toString());
  
     });
@@ -142,10 +142,10 @@ describe('Address', function() {
       var pubKeys = [pubkey1, pubkey2, pubkey3];
       var mReq = 2;
       var script = bitcore.Script.createMultisig(mReq, pubKeys);
-      var addr = Address.fromScript(script);
+      var addr = Address.fromScript(script, 'bitcoin');
       
       var hash = bitcore.util.sha256ripe160(script.getBuffer());
-      var version = bitcore.networks['livenet'].P2SHVersion;
+      var version = bitcore.networks['bitcoin'].P2SHVersion;
       var addr2 = new Address(version, hash);
 
       addr.toString().should.equal(addr2.toString());

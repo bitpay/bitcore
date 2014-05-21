@@ -37,7 +37,7 @@ describe('Electrum', function() {
   it('should generate correct public key at sequence 0', function() {
     var elec = new Electrum(mpk);
     var pubkey = elec.generatePubKey(0);
-    var addr = Address.fromPubKey(pubkey);
+    var addr = Address.fromPubKey(pubkey, 'bitcoin');
     addr.as('base58').should.equal('15Ur7LV4hZFvFYQHkB12g1mdnKuHyHBDiW');
   });
   it('should generate correct (change) public keys at sequence 0,1,2', function() {
@@ -60,12 +60,12 @@ describe('Electrum', function() {
     for (var i = 0; i < expected_values.receiving.length; i++) {
       //receiving
       pubkey = elec.generatePubKey(i);
-      addr = Address.fromPubKey(pubkey);
+      addr = Address.fromPubKey(pubkey, 'bitcoin');
       addr.as('base58').should.equal(expected_values.receiving[i]);
 
       //change
       pubkey = elec.generateChangePubKey(i);
-      addr = Address.fromPubKey(pubkey);
+      addr = Address.fromPubKey(pubkey, 'bitcoin');
       addr.as('base58').should.equal(expected_values.change[i]);
     }
   });

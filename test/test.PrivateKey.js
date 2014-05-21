@@ -38,15 +38,15 @@ describe('PrivateKey', function() {
 
     //compress flag = on
     var a = new PrivateKey('KwHXRTLNWKzxy2NUnnhFtxricC3Dod4Dd3D7RKzVkKDtWrZhuDHs');
-    a.network().name.should.equal('livenet');
+    a.network().name.should.equal('bitcoin');
     var a = new PrivateKey('KwaLX8oyJNNCL9tcyYakQHJDTnrPAmZ2M1YK7NhEcT9j55LWqMZz');
-    a.network().name.should.equal('livenet');
+    a.network().name.should.equal('bitcoin');
 
     //compress flag = off
     var a = new PrivateKey('5KS4jw2kT3VoEFUfzgSpX3GVi7qRYkTfwTBU7qxPKyvbGuiVj33');
-    a.network().name.should.equal('livenet');
+    a.network().name.should.equal('bitcoin');
     var a = new PrivateKey('5JZsbYcnYN8Dz2YeSLZr6aswrVevedMUSFWxpie6SPpYRb2E4Gi');
-    a.network().name.should.equal('livenet');
+    a.network().name.should.equal('bitcoin');
   });
 
   describe('#isValid', function() {

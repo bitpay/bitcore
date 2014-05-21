@@ -1,4 +1,4 @@
 module.exports = {
-  network: 'livenet',
+  network: 'bitcoin',
   logger: 'normal' // none, normal, debug
 };

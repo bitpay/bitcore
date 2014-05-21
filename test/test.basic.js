@@ -13,8 +13,8 @@ var Key = bitcore.Key;
 
 
 
-function test_encode_priv(b58, payload, isTestnet, isCompressed) {
-  var network = isTestnet ? networks.testnet : networks.livenet;
+function test_encode_priv(b58, payload, netname, isCompressed) {
+  var network = networks[netname];
   var version = network.privKeyVersion;
 
   var buf_pl = new Buffer(payload, 'hex');
@@ -34,9 +34,9 @@ function test_encode_priv(b58, payload, isTestnet, isCompressed) {
   privkey.toString().should.equal(b58);
 }
 
-function test_encode_pub(b58, payload, isTestnet, addrType) {
+function test_encode_pub(b58, payload, netname, addrType) {
   var isScript = (addrType === 'script');
-  var network = isTestnet ? networks.testnet : networks.livenet;
+  var network = networks[netname];
   var version = isScript ? network.P2SHVersion : network.addressVersion;
   var buf = new Buffer(payload, 'hex');
   var addr = new Address(version, buf);
@@ -44,8 +44,8 @@ function test_encode_pub(b58, payload, isTestnet, addrType) {
 
 }
 
-function test_decode_priv(b58, payload, isTestnet, isCompressed) {
-  var network = isTestnet ? networks.testnet : networks.livenet;
+function test_decode_priv(b58, payload, netname, isCompressed) {
+  var network = networks[netname];
   var version = network.privKeyVersion;
 
   var buf_pl = new Buffer(payload, 'hex');
@@ -62,9 +62,9 @@ function test_decode_priv(b58, payload, isTestnet, isCompressed) {
   buf_pl.toString().should.equal(privkey.payload().toString());
 }
 
-function test_decode_pub(b58, payload, isTestnet, addrType) {
+function test_decode_pub(b58, payload, netname, addrType) {
   var isScript = (addrType === 'script');
-  var network = isTestnet ? networks.testnet : networks.livenet;
+  var network = networks[netname];
   var version = isScript ? network.P2SHVersion : network.addressVersion;
   var buf = new Buffer(payload, 'hex');
   var addr = new Address(b58);
@@ -78,16 +78,15 @@ function is_valid(datum) {
   var payload = datum[1];
   var obj = datum[2];
   var isPrivkey = obj.isPrivkey;
-  var isTestnet = obj.isTestnet;
 
   if (isPrivkey) {
     var isCompressed = obj.isCompressed;
-    test_encode_priv(b58, payload, isTestnet, isCompressed);
-    test_decode_priv(b58, payload, isTestnet, isCompressed);
+    test_encode_priv(b58, payload, obj.netname, isCompressed);
+    test_decode_priv(b58, payload, obj.netname, isCompressed);
   } else {
     var addrType = obj.addrType;
-    test_encode_pub(b58, payload, isTestnet, addrType);
-    test_decode_pub(b58, payload, isTestnet, addrType);
+    test_encode_pub(b58, payload, obj.netname, addrType);
+    test_decode_pub(b58, payload, obj.netname, addrType);
   }
 }
 

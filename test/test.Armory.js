@@ -80,7 +80,7 @@ describe('Armory', function() {
     var addr, a;
     a = instance;
     for (var i = 0; i < address.length; i++) {
-      should.equal(Address.fromPubKey(a.pubkey).as('base58'), address[i]);
+      should.equal(Address.fromPubKey(a.pubkey, 'bitcoin').as('base58'), address[i]);
       a = a.next();
     }
   });

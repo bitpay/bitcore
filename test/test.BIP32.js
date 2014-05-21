@@ -278,7 +278,7 @@ describe('BIP32', function() {
 
     it('should initialize a new BIP32 correctly from test vector 1 seed', function() {
       var hex = vector1_master;
-      var bip32 = BIP32.seed(hex, 'livenet');
+      var bip32 = BIP32.seed(hex, 'bitcoin');
       should.exist(bip32);
       bip32.extendedPrivateKeyString().should.equal(vector1_m_private);
       bip32.extendedPublicKeyString().should.equal(vector1_m_public);
@@ -286,7 +286,7 @@ describe('BIP32', function() {
 
     it('should initialize a new BIP32 correctly from test vector 2 seed', function() {
       var hex = vector2_master;
-      var bip32 = BIP32.seed(hex, 'livenet');
+      var bip32 = BIP32.seed(hex, 'bitcoin');
       should.exist(bip32);
       bip32.extendedPrivateKeyString().should.equal(vector2_m_private);
       bip32.extendedPublicKeyString().should.equal(vector2_m_public);

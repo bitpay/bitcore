@@ -29,7 +29,7 @@ describe('Miscelaneous stuff', function() {
   });
   it('should initialze the network object', function() {
     should.exist(networks);
-    var nets = [networks.livenet, networks.testnet];
+    var nets = [networks.bitcoin, networks.testnet];
     for (var i = 0; i < 2; i++) {
       var net = nets[i];
       should.exist(net.addressVersion);
@@ -118,7 +118,7 @@ describe('Miscelaneous stuff', function() {
     var b58 = datum[0];
     var hexPayload = datum[1];
     var meta = datum[2];
-    var network = meta.isTestnet ? networks.testnet : networks.livenet;
+    var network = networks[meta.netname];
     if (meta.isPrivkey) {
       describe('base58 private key valid ' + b58, function() {
         var k;
@@ -185,12 +185,12 @@ describe('Miscelaneous stuff', function() {
     });
     it('shouldnt be able to create WalletKey with ' + b58, function() {
       var kl = new WalletKey({
-        network: networks.livenet
+        network: networks.bitcoin
       });
       var kt = new WalletKey({
-        network: networks.livenet
+        network: networks.bitcoin
       });
-      var createLivenet = function() {
+      var createBitcoin = function() {
         kl.fromObj({
           priv: b58
         });
@@ -200,7 +200,7 @@ describe('Miscelaneous stuff', function() {
           priv: b58
         });
       };
-      createLivenet.should.throw();
+      createBitcoin.should.throw();
       createTestnet.should.throw();
     });
   });
