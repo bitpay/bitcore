@@ -1,7 +1,7 @@
 {
   "name": "bitcore",
   "description": "Bitcoin Library",
-  "version": "0.1.19",
+  "version": "0.1.20",
   "author": {
     "name": "Stephen Pair",
     "email": "stephen@bitpay.com"
