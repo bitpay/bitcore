@@ -55,6 +55,11 @@
           <td data-ng-show="tx.time" class="text-muted text-right">{{tx.time * 1000|date:'medium'}}</td>
           <td data-ng-show="!tx.time" class="text-muted text-right">N/A</td>
         </tr>
+        <tr>
+          <td><strong>Included in Block </strong></td>
+          <td data-ng-show="tx.blockhash" class="text-muted text-right"> <a class="text-muted" href="/block/{{tx.blockhash}}">{{tx.blockhash}}</a>
+          <td data-ng-show="!tx.blockhash" class="text-muted text-right">Unconfirmed</td>
+        </tr>
         <tr data-ng-show="tx.locktime">
           <td><strong>LockTime </strong></td>
           <td class="text-muted text-right">{{tx.locktime}}</td>
