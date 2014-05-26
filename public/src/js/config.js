@@ -47,7 +47,7 @@ angular.module('insight')
     $locationProvider.html5Mode(true);
     $locationProvider.hashPrefix('!');
   })
-  .run(function($rootScope, $route, ngProgress) {
+  .run(function($rootScope, $route, $location, $routeParams, $anchorScroll, ngProgress) {
     $rootScope.$on('$routeChangeStart', function() {
       ngProgress.start();
     });
@@ -60,5 +60,8 @@ angular.module('insight')
       $rootScope.title = $route.current.title;
       $rootScope.isCollapsed = true;
       $rootScope.currentAddr = null;
+
+      $location.hash($routeParams.scrollTo);
+      $anchorScroll();
     });
   });
