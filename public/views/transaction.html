@@ -22,7 +22,7 @@
       </a>
     </div>
   </div>
-  <div class="ng-cloak" data-ng-cloak data-ng-if="tx.txid">
+  <div data-ng-if="tx.txid">
     <h1>Transaction 
       <small data-ng-show="from_vin || from_vout">
         <span data-ng-show="from_vin">Input</span> 
@@ -71,7 +71,7 @@
       </table>
     </div>
     <h2>Details</h2>
-    <div class="block-tx ng-cloak" data-ng-cloak data-ng-if="tx.txid">
+    <div class="block-tx" data-ng-if="tx.txid">
       <div data-ng-include src="'/views/transaction/tx.html'"></div>
     </div>
   </div>

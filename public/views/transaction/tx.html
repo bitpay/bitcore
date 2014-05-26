@@ -1,4 +1,4 @@
-<div class="line-bot row ng-cloak" data-ng-hide="!tx" data-ng-cloak>
+<div class="line-bot row" data-ng-hide="!tx">
   <div class="col-xs-12 col-md-8">
     <div class="h5 ellipsis">
       <a class="btn-expand m10h" href="#" title="Show/Hide items details" data-ng-click="itemsExpanded = !itemsExpanded">
@@ -182,7 +182,7 @@
   <span class="btn-copy" clip-copy="tx.blockhash"></span>
 </div>
 
-<div class="line-top row ng-cloak" data-ng-hide="!tx" data-ng-cloak>
+<div class="line-top row" data-ng-hide="!tx">
   <div class="col-xs-12 col-sm-4 col-md-4">
     <span data-ng-show="!tx.isCoinBase &&  !isNaN(parseFloat(tx.fees))" class="txvalues txvalues-default">Fees: {{$root.currency.getConvertion(tx.fees) || tx.fees + 'BTC'}} </span>
   </div>
