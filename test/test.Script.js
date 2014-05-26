@@ -187,8 +187,6 @@ describe('Script', function() {
       (new Script(new Buffer('000000ae','hex'))).isMultiSig().should.equal(false);
       var s = new Script(new Buffer('522103bb52138972c48a132fc1f637858c5189607dd0f7fe40c4f20f6ad65f2d389ba42103bb52138972c48a132fc1f637858c5189607dd0f7fe40c4f20f6ad65f2d389ba45f6054ae','hex'));
 
-console.log('[test.Script.js.189]',s.chunks); //TODO
-
       (new Script(new Buffer('522103bb52138972c48a132fc1f637858c5189607dd0f7fe40c4f20f6ad65f2d389ba42103bb52138972c48a132fc1f637858c5189607dd0f7fe40c4f20f6ad65f2d389ba45f6054ae','hex'))).isMultiSig().should.equal(false);
       
     });
