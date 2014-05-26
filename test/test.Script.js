@@ -175,5 +175,21 @@ describe('Script', function() {
   });
 
 
+  describe('#isMultiSig', function() {
+    it('should return true for valid multisig scripts', function() {
+      var pubs = testPubKeysHex.map( function(hex) {
+        return new Buffer(hex,'hex');
+      });
+      var s1 = Script.createMultisig(3,pubs, {noSorting: true});
+      s1.isMultiSig().should.equal(true);
+    });
+    it('should return false for invalid multisig scripts', function() {
+      (new Script(new Buffer('000000ae','hex'))).isMultiSig().should.equal(false);
+      var s = new Script(new Buffer('522103bb52138972c48a132fc1f637858c5189607dd0f7fe40c4f20f6ad65f2d389ba42103bb52138972c48a132fc1f637858c5189607dd0f7fe40c4f20f6ad65f2d389ba45f6054ae','hex'));
+
+      (new Script(new Buffer('522103bb52138972c48a132fc1f637858c5189607dd0f7fe40c4f20f6ad65f2d389ba42103bb52138972c48a132fc1f637858c5189607dd0f7fe40c4f20f6ad65f2d389ba45f6054ae','hex'))).isMultiSig().should.equal(false);
+      
+    });
+  });
 
 });
