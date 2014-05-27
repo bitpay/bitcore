@@ -1,14 +1,14 @@
-<div class="line-bot row ng-cloak" data-ng-hide="!tx" data-ng-cloak>
+<div class="line-bot row" data-ng-hide="!tx">
   <div class="col-xs-12 col-md-8">
-    <div class="h5 ellipsis">
-      <a class="btn-expand m10h" href="#" title="Show/Hide items details" data-ng-click="itemsExpanded = !itemsExpanded">
+    <div class="ellipsis">
+      <a class="btn-expand" href="#" title="Show/Hide items details" data-ng-click="itemsExpanded = !itemsExpanded">
         <span class="glyphicon glyphicon-plus-sign" data-ng-class="{'glyphicon-minus-sign': itemsExpanded}"></span>
       </a>
       <a class="txid" href="/tx/{{tx.txid}}">{{tx.txid}}</a>
       <span class="btn-copy" clip-copy="tx.txid"></span>
     </div>
   </div>
-  <div class="col-xs-12 col-md-4 text-right">
+  <div class="col-xs-12 col-md-4 text-right text-muted">
     <div data-ng-show="tx.firstSeenTs">
       first seen at 
       <time>{{tx.firstSeenTs * 1000 | date:'medium'}}</time>
@@ -49,9 +49,9 @@
             </div>
           </div>
         </div>
-        <div class="showmore_collapse text-right" data-ng-show="tx.vinSimple.length > 5" data-ng-class="{ 'hidden': itemsExpanded}">
-          <a href="#" ng-hide="sizeInNoExpanded != tx.vinSimple.length" ng-click="currentInNoExpanded=0; sizeInNoExpanded=5"><small>...less</small></a>
-          <a href="#" ng-hide="currentInNoExpanded >= tx.vinSimple.length/sizeInNoExpanded - 1" ng-click="currentInNoExpanded=0; sizeInNoExpanded=tx.vinSimple.length"><small>more...</small></a>
+        <div class="showmore_collapse text-left" data-ng-show="tx.vinSimple.length > 5" data-ng-class="{ 'hidden': itemsExpanded}">
+          <button type="button" class="btn btn-info btn-sm" ng-hide="sizeInNoExpanded != tx.vinSimple.length" ng-click="currentInNoExpanded=0; sizeInNoExpanded=5"><i class="glyphicon glyphicon-chevron-up"></i> Show less</button>
+          <button type="button" class="btn btn-info btn-sm" ng-hide="currentInNoExpanded >= tx.vinSimple.length/sizeInNoExpanded - 1" ng-click="currentInNoExpanded=0; sizeInNoExpanded=tx.vinSimple.length"><i class="glyphicon glyphicon-chevron-down"></i> Show more</button>
         </div>
       </div>
 
@@ -91,12 +91,12 @@
           </div>
         </div>
         <div class="text-left">
-          <a href="#" data-ng-show="(from_vin) && tx.vin.length > 1" data-ng-class="{'text-muted': fromVinCollapsed}" data-ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length;fromVinCollapsed=1"><small>show input {{ v_index }}</small></a>
-          <a href="#" data-ng-show="(from_vin) && tx.vin.length > 1" data-ng-class="{'text-muted': !fromVinCollapsed}" data-ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length;fromVinCollapsed=0"><small>show all</small></a>
+          <button type="button" class="btn btn-default btn-sm" data-ng-show="(from_vin) && tx.vin.length > 1" data-ng-disabled="fromVinCollapsed" data-ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length;fromVinCollapsed=1">Show input {{ v_index }}</button>
+          <button type="button" class="btn btn-default btn-sm" data-ng-show="(from_vin) && tx.vin.length > 1" data-ng-disabled="!fromVinCollapsed" data-ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length;fromVinCollapsed=0">Show all</button>
         </div>
-        <div class="showmore_collapse text-right" data-ng-show="tx.vin.length > 5 && !fromVinCollapsed" data-ng-class="{ 'hidden': !itemsExpanded}">
-          <a href="#" ng-hide="sizeInExpanded != tx.vin.length" ng-click="currentInExpanded=0; sizeInExpanded=5"><small>...less</small></a>
-          <a href="#" data-ng-class="{true: 'v_highlight_more', false: ''}[from_vin == true && v_index > 5]" ng-hide="currentInExpanded >= tx.vin.length/sizeInExpanded - 1" ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length"><small>more...</small></a>
+        <div class="showmore_collapse text-left" data-ng-show="tx.vin.length > 5 && !fromVinCollapsed" data-ng-class="{ 'hidden': !itemsExpanded}">
+          <button type="button" class="btn btn-info btn-sm" ng-hide="sizeInExpanded != tx.vin.length" ng-click="currentInExpanded=0; sizeInExpanded=5"><i class="glyphicon glyphicon-chevron-up"></i> Show less</button>
+          <button type="button" class="btn btn-info btn-sm" ng-hide="currentInExpanded >= tx.vin.length/sizeInExpanded - 1" ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length"><i class="glyphicon glyphicon-chevron-down"></i> Show more</button>
         </div>
       </div>
     </div>
@@ -130,9 +130,9 @@
             </div>
           </div>
         </div>
-        <div class="showmore_collapse text-right" data-ng-show="tx.voutSimple.length > 5" data-ng-class="{ 'hidden': itemsExpanded}">
-          <a href="#" ng-hide="sizeOutNoExpanded != tx.voutSimple.length" ng-click="currentOutNoExpanded=0; sizeOutNoExpanded=5"><small>...less</small></a>
-          <a href="#" ng-hide="currentOutNoExpanded >= tx.voutSimple.length/sizeOutNoExpanded - 1" ng-click="currentOutNoExpanded=0; sizeOutNoExpanded=tx.voutSimple.length"><small>more...</small></a>
+        <div class="showmore_collapse text-left" data-ng-show="tx.voutSimple.length > 5" data-ng-class="{ 'hidden': itemsExpanded}">
+          <button type="button" class="btn btn-info btn-sm" ng-hide="sizeOutNoExpanded != tx.voutSimple.length" ng-click="currentOutNoExpanded=0; sizeOutNoExpanded=5"><i class="glyphicon glyphicon-chevron-up"></i> Show less</button>
+          <button type="button" class="btn btn-info btn-sm" ng-hide="currentOutNoExpanded >= tx.voutSimple.length/sizeOutNoExpanded - 1" ng-click="currentOutNoExpanded=0; sizeOutNoExpanded=tx.voutSimple.length"><i class="glyphicon glyphicon-chevron-down"></i> Show more</button>
         </div>
       </div>
 
@@ -165,12 +165,12 @@
           </div>
         </div>
         <div class="text-right">
-          <a href="#" class="text-right" data-ng-show="(from_vout) && tx.vout.length > 1" data-ng-class="{'text-muted': fromVoutCollapsed}" data-ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length;fromVoutCollapsed=1"><small>show output {{ v_index }}</small></a>
-          <a href="#" class="text-right" data-ng-show="(from_vout) && tx.vout.length > 1" data-ng-class="{'text-muted': !fromVoutCollapsed}" data-ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length;fromVoutCollapsed=0"><small>show all</small></a>
+          <button type="button" class="btn btn-default btn-sm" data-ng-show="(from_vout) && tx.vout.length > 1" data-ng-disabled="fromVoutCollapsed" data-ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length;fromVoutCollapsed=1">Show output {{ v_index }}</button>
+          <button type="button" class="btn btn-default btn-sm" data-ng-show="(from_vout) && tx.vout.length > 1" data-ng-disabled="!fromVoutCollapsed" data-ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length;fromVoutCollapsed=0">Show all</button>
         </div>
-        <div class="showmore_collapse text-right" data-ng-show="tx.vout.length > 5 && !fromVoutCollapsed" data-ng-class="{ 'hidden': !itemsExpanded}">
-          <a href="#" ng-hide="sizeOutExpanded != tx.vout.length" ng-click="currentOutExpanded=0; sizeOutExpanded=5"><small>...less</small></a>
-          <a href="#" data-ng-class="{true: 'v_highlight_more', false: ''}[from_vout == true && v_index > 5]" ng-hide="currentOutExpanded >= tx.vout.length/sizeOutExpanded - 1" ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length"><small>more...</small></a>
+        <div class="showmore_collapse text-left" data-ng-show="tx.vout.length > 5 && !fromVoutCollapsed" data-ng-class="{ 'hidden': !itemsExpanded}">
+          <button type="button" class="btn btn-info btn-sm" ng-hide="sizeOutExpanded != tx.vout.length" ng-click="currentOutExpanded=0; sizeOutExpanded=5"><i class="glyphicon glyphicon-chevron-up"></i>Show less</button>
+          <button type="button" class="btn btn-info btn-sm" ng-hide="currentOutExpanded >= tx.vout.length/sizeOutExpanded - 1" ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length"><i class="glyphicon glyphicon-chevron-down"></i> Show more</button>
         </div>
       </div>
     </div>
@@ -182,7 +182,7 @@
   <span class="btn-copy" clip-copy="tx.blockhash"></span>
 </div>
 
-<div class="line-top row ng-cloak" data-ng-hide="!tx" data-ng-cloak>
+<div class="line-top row" data-ng-hide="!tx">
   <div class="col-xs-12 col-sm-4 col-md-4">
     <span data-ng-show="!tx.isCoinBase &&  !isNaN(parseFloat(tx.fees))" class="txvalues txvalues-default">Fees: {{$root.currency.getConvertion(tx.fees) || tx.fees + 'BTC'}} </span>
   </div>

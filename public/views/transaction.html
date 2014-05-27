@@ -2,11 +2,14 @@
 <section data-ng-controller="transactionsController" data-ng-init="findThis()">
   <div class="secondary_navbar hidden-xs hidden-sm" scroll data-ng-class="{'hidden': !secondaryNavbar}" data-ng-show="tx.txid" data-ng-init="hideSNavbar=0">
     <div class="container" data-ng-if="!hideSNavbar">
-      <div class="col-md-8 text-left">
-          <h3>Transaction</h3> {{tx.txid}}
-          <span class="btn-copy" clip-copy="tx.txid"></span>
+      <div class="col-md-6 col-lg-7 text-left">
+          <h3>Transaction</h3>
+          <div class="ellipsis"> 
+            <small>{{tx.txid}}</small> 
+            <span class="btn-copy" clip-copy="tx.txid"></span>
+          </div>
       </div>
-      <div class="col-md-4">
+      <div class="col-md-6 col-lg-5 text-right">
         <span data-ng-show="tx.confirmations" class="txvalues txvalues-success">{{tx.confirmations}} Confirmations</span>
         <span data-ng-show="!tx.confirmations" class="txvalues txvalues-danger">Unconfirmed Transaction!</span>
         <span class="txvalues txvalues-primary">{{$root.currency.getConvertion(tx.valueOut) || tx.valueOut + ' BTC' }}</span>
@@ -19,7 +22,7 @@
       </a>
     </div>
   </div>
-  <div class="ng-cloak" data-ng-cloak data-ng-if="tx.txid">
+  <div data-ng-if="tx.txid">
     <h1>Transaction 
       <small data-ng-show="from_vin || from_vout">
         <span data-ng-show="from_vin">Input</span> 
@@ -68,7 +71,7 @@
       </table>
     </div>
     <h2>Details</h2>
-    <div class="block-tx ng-cloak" data-ng-cloak data-ng-if="tx.txid">
+    <div class="block-tx" data-ng-if="tx.txid">
       <div data-ng-include src="'/views/transaction/tx.html'"></div>
     </div>
   </div>

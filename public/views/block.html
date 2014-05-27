@@ -35,7 +35,7 @@
   <div class="text-muted" data-ng-if="!block.hash">
     <span>Loading Block Information...</span>
   </div>
-  <div class="ng-cloak" data-ng-cloak data-ng-if="block.hash">
+  <div data-ng-if="block.hash">
     <div class="well well-sm ellipsis">
       <strong>BlockHash</strong> 
       <span class="txid text-muted">{{block.hash}}</span>
