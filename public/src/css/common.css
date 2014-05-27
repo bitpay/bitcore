@@ -737,3 +737,6 @@ a.v_highlight_more {
   margin-top: 15px;
 }
 
+@media (min-width: 768px) {
+  #search { color: #fff; }
+}
