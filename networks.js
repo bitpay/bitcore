@@ -1,9 +1,14 @@
+/**
+ * https://github.com/ryanralph/altcoin-address/blob/master/index.js
+ * 
+ */
+
 var Put = require('bufferput');
 var buffertools = require('buffertools');
 var hex = function(hex) {return new Buffer(hex, 'hex');};
 
-exports.livenet = {
-  name: 'livenet',
+exports.bitcoin = {
+  name: 'bitcoin',
   magic: hex('f9beb4d9'),
   addressVersion: 0x00,
   privKeyVersion: 128,
@@ -30,7 +35,36 @@ exports.livenet = {
   ],
   defaultClientPort: 8333
 };
+exports.mainnet = exports.bitcoin;
 
+exports.dogecoin = {
+  name: 'dogecoin',
+  magic: hex('c0c0c0c0'),
+  addressVersion: 0x1e,
+  privKeyVersion: 128,
+  P2SHVersion: 0x16,
+  bip32publicVersion: 0x02c8b71e,
+  bip32privateVersion: 0x02c8a3e4,
+  genesisBlock: {
+    hash: hex('9156352c1818b32e90c9e792efd6a11a82fe7956a630f03bbee236cedae3911a'),
+    merkle_root: hex('696ad20e2dd4365c7459b4a4a5af743d5e92c6da3229e6532cd605f6533f2a5b'),
+    height: 0,
+    nonce: 2083236893,
+    version: 1,
+    prev_hash: buffertools.fill(new Buffer(32), 0),
+    timestamp: 1386325540,
+    bits: 0x1e0ffff0
+  },
+  dnsSeeds: [
+    'seed.dogecoin.com',
+    'seed.mophides.com',
+    'seed.dglibrary.org',
+    'seed.dogechain.info'
+  ],
+  defaultClientPort: 22556
+};
+
+// Currently we only use bitcon testnet
 exports.testnet = {
   name: 'testnet',
   magic: hex('0b110907'),
