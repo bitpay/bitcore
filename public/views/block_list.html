@@ -45,7 +45,7 @@
         </thead>
         <tbody>
         <tr data-ng-show="loading">
-          <td colspan="4">Waiting for blocks...</td>
+          <td colspan="5">Waiting for blocks <span class="loader-gif"></span></td>
         </tr>
         <tr class="fader" data-ng-repeat='b in blocks'>
           <td><a href="/block/{{b.hash}}">{{b.height}}</a></td>
