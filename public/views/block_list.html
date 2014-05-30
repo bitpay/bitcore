@@ -30,7 +30,7 @@
       <div class="page-header">
         <h1>
           Blocks
-          <small>by date</small>
+          <small>by date. {{detail}} {{before}}</small>
         </h1>
       </div>
       <table class="table table-hover table-striped">
@@ -56,6 +56,10 @@
         </tr>
         </tbody>
       </table>
+      <div data-ng-if="pagination.more">
+        <a class="btn btn-primary" href="/blocks-date/{{pagination.current}}" data-ng-show="{{before}}">Lastest block from date</a>
+        <a class="btn btn-primary" href="/blocks-date/{{pagination.current}}/{{pagination.moreTs}}">Older blocks from this date</a>
+      </div>
     </div>
   </div>
   <h2 class="text-center text-muted" data-ng-show="!blocks.length && !loading">No blocks yet.</h2>
