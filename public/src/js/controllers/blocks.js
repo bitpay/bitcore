@@ -49,11 +49,21 @@ angular.module('insight.blocks').controller('BlocksController',
     $scope.loading = true;
 
     if ($routeParams.blockDate) {
-      $rootScope.titleDetail = 'on ' + $routeParams.blockDate;
+      $scope.detail = 'On ' + $routeParams.blockDate;
     }
 
+    if ($routeParams.startTimestamp) {
+      var d=new Date($routeParams.startTimestamp*1000);
+      var m=d.getMinutes();
+      if (m<10) m = '0' + m;
+      $scope.before = ' before ' + d.getHours() + ':' + m;
+    }
+
+    $rootScope.titleDetail = $scope.detail;
+
     Blocks.get({
-      blockDate: $routeParams.blockDate
+      blockDate: $routeParams.blockDate,
+      startTimestamp: $routeParams.startTimestamp
     }, function(res) {
       $scope.loading = false;
       $scope.blocks = res.blocks;

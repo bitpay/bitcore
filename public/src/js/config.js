@@ -23,7 +23,7 @@ angular.module('insight').config(function($routeProvider) {
       templateUrl: '/views/block_list.html',
       title: 'Bitcoin Blocks solved Today'
     }).
-    when('/blocks-date/:blockDate', {
+    when('/blocks-date/:blockDate/:startTimestamp?', {
       templateUrl: '/views/block_list.html',
       title: 'Bitcoin Blocks solved '
     }).
