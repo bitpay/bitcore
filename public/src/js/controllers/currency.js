@@ -10,7 +10,11 @@ angular.module('insight.currency').controller('CurrencyController',
     };
 
     $rootScope.currency.getConvertion = function(value) {
-      if (typeof value !== 'undefined' && value !== null) {
+      value = value * 1; // Convert to number
+
+      if (!isNaN(value) && typeof value !== 'undefined' && value !== null) {
+        if (value === 0.00000000) return '0 ' + this.symbol; // fix value to show
+
         var response;
 
         if (this.symbol === 'USD') {
