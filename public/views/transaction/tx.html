@@ -142,10 +142,10 @@
           <div class="panel panel-default transaction-vin-vout">
             <div class="panel-body">
               <div class="pull-right btc-value">
-                <spam>{{$root.currency.getConvertion(vout.value) || vout.value + ' BTC'}}
+                <span>{{$root.currency.getConvertion(vout.value) || vout.value + ' BTC'}}
                   <span class="text-success" data-ng-show="!vout.spentTxId" tooltip="Output is unspent" tooltip-placement="left">(U)</span>
                   <a class="glyphicon glyphicon-chevron-right" data-ng-show="vout.spentTxId" href="/tx/{{vout.spentTxId}}/</{{vout.spentIndex}}" title="Spent at: {{vout.spentTxId}},{{vout.spentIndex}}"></a>&nbsp;&nbsp;
-                </spam>
+                </span>
               </div>
               <div class="ellipsis">
                 <a href="/address/{{address}}" data-ng-repeat="address in vout.scriptPubKey.addresses">{{address}}</a>
