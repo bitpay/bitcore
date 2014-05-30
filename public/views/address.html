@@ -19,7 +19,7 @@
   </div>
   <h1>Address <small data-ng-show="address.addrStr">{{$root.currency.getConvertion(address.balance) || address.balance + ' BTC'}}</small></h1>
   <div class="text-muted" data-ng-if="!address.addrStr">
-    <span>Loading Address Information...</span>
+    <span>Loading Address Information <span class="loader-gif"></span>
   </div>
   <div data-ng-if="address.addrStr">
     <div class="well well-sm ellipsis">

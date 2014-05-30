@@ -207,6 +207,14 @@ margin-left: 0;
   padding-left: 25px;
 }
 
+.loader-gif {
+  display: inline-block;
+  width: 16px;
+  height: 11px;
+  background: transparent url(../img/loading.gif) no-repeat;
+  margin-left: 5px;
+}
+
 #search::-webkit-input-placeholder {
   color: #BCDF7E;
   font-family: 'Ubuntu', sans-serif;
