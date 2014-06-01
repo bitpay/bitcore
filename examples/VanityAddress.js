@@ -13,7 +13,7 @@ var run = function() {
   var a,k,m;
   while (true) {
     k = Key.generateSync();
-    a = Address.forKey(k);
+    a = Address.fromKey(k);
     m = a.toString().match(re);
     if (m) break;
   }
