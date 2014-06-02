@@ -48,6 +48,7 @@ angular.module('insight.search').controller('SearchController',
               _resetSearch();
               $location.path('/block/' + hash.blockHash);
             }, function() { //not found, fail :(
+              $scope.loading = false;
               _badQuery();
             });
           }
