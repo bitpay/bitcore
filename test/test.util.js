@@ -7,6 +7,13 @@ var should = chai.should();
 var buffertools = require('buffertools');
 
 describe('util', function() {
+  describe('sha512', function() {
+    it('should calculate this particular hash correctly', function() {
+      var data = new Buffer('test data');
+      var hash = coinUtil.sha512(data);
+      hash.toString('hex').should.equal('0e1e21ecf105ec853d24d728867ad70613c21663a4693074b2a3619c1bd39d66b588c33723bb466c72424e80e3ca63c249078ab347bab9428500e7ee43059d0d');
+    });
+  });
   describe('exist', function() {
     it('should initialze the util object', function() {
       should.exist(bitcore.util);

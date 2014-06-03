@@ -14,6 +14,15 @@ var sha256 = exports.sha256 = function(data) {
   return new Buffer(crypto.createHash('sha256').update(data).digest('binary'), 'binary');
 };
 
+var sha512 = exports.sha512 = function(data) {
+  if (inBrowser) {
+    var j = new jssha(data.toString('hex'), 'HEX');
+    var hashhex = j.getHash('SHA-512', 'HEX');
+    return new Buffer(hashhex, 'hex');
+  };
+  return new Buffer(crypto.createHash('sha512').update(data).digest('binary'), 'binary');
+};
+
 var sha512hmac = exports.sha512hmac = function (data, key) {
   if (inBrowser) {
     var j = new jssha(data.toString('hex'), 'HEX');

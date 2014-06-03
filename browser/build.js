@@ -32,6 +32,7 @@ var modules = [
   'lib/Connection',
   'lib/Curve',
   'lib/Deserialize',
+  'lib/ECIES',
   'lib/Electrum',
   'lib/Message',
   'lib/Opcode',
