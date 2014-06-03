@@ -73,7 +73,7 @@
               </div>
               <div data-ng-show="vin.dbError" class="text-danger"> 
                 <span class="glyphicon glyphicon-warning-sign"></span> 
-                Incoherence in levelDB detected, please resync
+                Incoherence in levelDB detected: {{vin.dbError}}
               </div>
               <div data-ng-show="vin.doubleSpentTxID" class="text-danger"> 
                 <span class="glyphicon glyphicon-warning-sign"></span> 
@@ -91,7 +91,7 @@
           </div>
         </div>
         <div class="text-left">
-          <button type="button" class="btn btn-default btn-sm" data-ng-show="(from_vin) && tx.vin.length > 1" data-ng-disabled="fromVinCollapsed" data-ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length;fromVinCollapsed=1">Show input {{ v_index }}</button>
+          <button type="button" class="btn btn-default btn-sm" data-ng-show="(from_vin) && tx.vin.length > 1" data-ng-disabled="fromVinCollapsed" data-ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length;fromVinCollapsed=1">Show input #{{ v_index }}</button>
           <button type="button" class="btn btn-default btn-sm" data-ng-show="(from_vin) && tx.vin.length > 1" data-ng-disabled="!fromVinCollapsed" data-ng-click="currentInExpanded=0; sizeInExpanded=tx.vin.length;fromVinCollapsed=0">Show all</button>
         </div>
         <div class="showmore_collapse text-left" data-ng-show="tx.vin.length > 5 && !fromVinCollapsed" data-ng-class="{ 'hidden': !itemsExpanded}">
@@ -165,7 +165,7 @@
           </div>
         </div>
         <div class="text-right">
-          <button type="button" class="btn btn-default btn-sm" data-ng-show="(from_vout) && tx.vout.length > 1" data-ng-disabled="fromVoutCollapsed" data-ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length;fromVoutCollapsed=1">Show output {{ v_index }}</button>
+          <button type="button" class="btn btn-default btn-sm" data-ng-show="(from_vout) && tx.vout.length > 1" data-ng-disabled="fromVoutCollapsed" data-ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length;fromVoutCollapsed=1">Show output #{{ v_index }}</button>
           <button type="button" class="btn btn-default btn-sm" data-ng-show="(from_vout) && tx.vout.length > 1" data-ng-disabled="!fromVoutCollapsed" data-ng-click="currentOutExpanded=0; sizeOutExpanded=tx.vout.length;fromVoutCollapsed=0">Show all</button>
         </div>
         <div class="showmore_collapse text-left" data-ng-show="tx.vout.length > 5 && !fromVoutCollapsed" data-ng-class="{ 'hidden': !itemsExpanded}">
