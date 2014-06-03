@@ -43,7 +43,7 @@
               <a href="/address/{{vin.addr}}" data-ng-show="!vin.notAddr && vin.addr != $root.currentAddr">{{vin.addr}}</a>
             </div>
             <div data-ng-show="vin.unconfirmedInput" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> (Input unconfirmed)</div>
-            <div data-ng-show="vin.dbError" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> Incoherence in levelDB detected, please resync</div>
+            <div data-ng-show="vin.dbError" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> Incoherence in levelDB detected: {{vin.dbError}}</div>
             <div data-ng-show="vin.doubleSpentTxID" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> Double spent attempt detected. From tx:
               <a href="/tx/{{vin.doubleSpentTxID}}">{{vin.doubleSpentTxID}},{{vin.doubleSpentIndex}}</a>
             </div>
@@ -177,7 +177,7 @@
   </div>
 </div>
 
-<div class="well well-sm bgwhite ellipsis" data-ng-if="itemsExpanded && !block.hash">
+<div class="well well-sm bgwhite ellipsis" data-ng-if="itemsExpanded && !block.hash && tx.blockhash">
   <strong>Included in Block</strong> <a class="text-muted" href="/block/{{tx.blockhash}}">{{tx.blockhash}}</a>
   <span class="btn-copy" clip-copy="tx.blockhash"></span>
 </div>
