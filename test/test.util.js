@@ -187,6 +187,34 @@ describe('util', function() {
       });
     });
   });
+  describe('#toBitcoin', function() {
+    var data = [
+      [10000000, 0.1],
+      [1, 0.00000001],
+    ]
+    data.forEach(function(datum) {
+      var satoshi = datum[0];
+      var bitcoin = datum[1];
+      it('should work for ' + satoshi, function() {
+        coinUtil.toBitcoin(satoshi).should.equal(bitcoin);
+      });
+    });
+  });
+  describe('#toSatoshi', function() {
+    var data = [
+      [300, 30000000000],
+      [3, 300000000],
+      [0.3, 30000000],
+      [0.0003, 30000]
+    ]
+    data.forEach(function(datum) {
+      var bitcoin = datum[0];
+      var satoshi = datum[1];
+      it('should work for ' + bitcoin, function() {
+        coinUtil.toSatoshi(bitcoin).should.equal(satoshi);
+      });
+    });
+  });
   describe('#calcDifficulty', function() {
     var bitsgenesis = 486604799;
     it('should work for the bits from the genesis block; ' + bitsgenesis, function() {
