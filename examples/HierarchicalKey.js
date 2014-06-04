@@ -10,7 +10,7 @@ var run = function() {
   console.log('https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki\n');
   console.log('1) Make new hkey from randomly generated new seed');
 
-  var randomBytes = crypto.randomBytes(256);
+  var randomBytes = crypto.randomBytes(32);
   var hkey = HierarchicalKey.seed(randomBytes);
   console.log('master extended private key: ' + hkey.extendedPrivateKeyString());
   console.log('master extended public key: ' + hkey.extendedPublicKeyString());
