@@ -11,6 +11,9 @@ var puts = function(error, stdout, stderr) {
   //sys.puts(stderr);
 };
 
+//compile sjcl
+exec('cd node_modules/sjcl && ./configure --without-all --with-aes --with-convenience --with-cbc --with-codecHex --with-codecBase64 && make && cd ../..;', puts);
+
 var pack = function (params) {
   var file = require.resolve('soop');
   var dir = file.substr(0, file.length - String('soop.js').length);

@@ -31,6 +31,7 @@ requireWhenAccessed('ECIES', './lib/ECIES');
 requireWhenAccessed('log', './util/log');
 requireWhenAccessed('networks', './networks');
 requireWhenAccessed('SecureRandom', './lib/SecureRandom');
+requireWhenAccessed('sjcl', 'sjcl');
 requireWhenAccessed('util', './util/util');
 requireWhenAccessed('EncodedData', './util/EncodedData');
 requireWhenAccessed('VersionedData', './util/VersionedData');

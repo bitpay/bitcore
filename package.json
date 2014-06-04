@@ -52,6 +52,7 @@
     "prepublish": "node browser/build.js -a"
   },
   "dependencies": {
+    "sjcl": "=1.0.1",
     "jssha": "=1.5.0",
     "soop": "=0.1.5",
     "bindings": "=1.1.1",
@@ -102,6 +103,7 @@
     "bignum": "./lib/browser/Bignum.js",
     "./lib/Key.js": "./lib/browser/Key.js",
     "./lib/Point.js": "./lib/browser/Point.js",
+    "./lib/ECIES.js": "./lib/browser/ECIES.js",
     "./lib/SecureRandom.js": "./lib/browser/SecureRandom.js"
   },
   "license": "MIT",
