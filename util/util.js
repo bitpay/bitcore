@@ -248,6 +248,46 @@ exports.bufferSMToInt = function(v) {
   }
 };
 
+/*
+ * Transforms a float bitcoin value into it's sathoshi integer representation
+ * For example, toSatoshi(0.0003) returns 30000
+ */
+exports.toSatoshi = function(btc) {
+  if (isNaN(btc)) return NaN;
+  if (btc === 0) return 0;
+  var str = btc.toString();
+  var sign = (str.indexOf('-') === 0) ? "-" : "";
+  str = str.replace(/^-/, '');
+  if (str.indexOf('e') >=0) {
+    return parseInt(sign + str.replace(".", "").replace(/e-8/, "").replace(/e-7/, "0"), 10);
+  } else {
+    if (!(/\./).test(str)) str += ".0";
+    var parts = str.split(".");
+    str = parts[0] + "." + parts[1].slice(0,8);
+    while (!(/\.[0-9]{8}/).test(str)) {
+      str += "0";
+    }
+    return parseInt(sign + str.replace(".", "").replace(/^0+/, ""), 10);
+  }
+};
+
+/*
+ * Transforms a integer satoshi value into it's bitcoin float representation
+ * For example, toBitcoin(30000) returns 0.0003
+ */
+exports.toBitcoin = function(satoshi) {
+  if (isNaN(satoshi)) return NaN;
+  if (satoshi === 0) return 0;
+  var str = parseInt(satoshi, 10).toString();
+  var sign = (str.indexOf('-') === 0) ? "-" : "";
+  str = str.replace(/^-/, '');
+  var lengthTester = (/[0-9]{8}/);
+  while (!lengthTester.test(str)) {
+    str = "0" + str;
+  }
+  str = str.slice(0, str.length - 8) + "." + str.slice(str.length - 8);
+  return parseFloat(sign + str);
+};
 
 
 var formatValue = exports.formatValue = function(valueBuffer) {
