@@ -14,6 +14,14 @@ describe('util', function() {
       hash.toString('hex').should.equal('0e1e21ecf105ec853d24d728867ad70613c21663a4693074b2a3619c1bd39d66b588c33723bb466c72424e80e3ca63c249078ab347bab9428500e7ee43059d0d');
     });
   });
+  describe('sha512hmac', function() {
+    it('should calculate the value of this sha512hmac correctly', function() {
+      var data = new Buffer('data');
+      var key = new Buffer('key');
+      var mac = coinUtil.sha512hmac(data, key);
+      mac.toString('hex').should.equal('3c5953a18f7303ec653ba170ae334fafa08e3846f2efe317b87efce82376253cb52a8c31ddcde5a3a2eee183c2b34cb91f85e64ddbc325f7692b199473579c58');
+    });
+  });
   describe('exist', function() {
     it('should initialze the util object', function() {
       should.exist(bitcore.util);
