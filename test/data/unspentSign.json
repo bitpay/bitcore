@@ -37,7 +37,7 @@
       "txid": "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1",
       "vout": 1,
       "amount": 1,
-      "confirmations":7
+      "confirmations":"7+"
     }
   ],
   "keyStringsPubKey": [
