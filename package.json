@@ -63,7 +63,6 @@
     "buffertools": "=2.1.2",
     "browserify": "=3.40.0",
     "browser-pack": "=2.0.1",
-    "commander": "=2.1.0",
     "browserify-buffertools": "git://github.com/maraoz/browserify-buffertools.git",
     "socks5-client": "~0.3.6",
     "brfs": "=1.0.0",
