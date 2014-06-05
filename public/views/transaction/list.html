@@ -1,4 +1,4 @@
-<div class="alert alert-warning" data-ng-show="!txs[0].txid && !loading">There are not transactions involving this address.</div>
+<div class="alert alert-warning" data-ng-show="!txs[0].txid && !loading">There are no transactions involving this address.</div>
 <div class="block-tx" data-ng-show="txs && txs[0].txid" data-ng-repeat="tx in txs">
   <div data-ng-include src="'/views/transaction/tx.html'"></div>
 </div>
