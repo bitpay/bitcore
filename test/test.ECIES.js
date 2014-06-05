@@ -9,20 +9,20 @@ var Point = bitcore.Point;
 
 describe('ECIES', function() {
 
-  describe('#rand', function() {
+  describe('#getRandomSeed', function() {
 
     it('should set r and R', function() {
       var ecies = new ECIES();
-      ecies.rand();
+      ecies.getRandomSeed();
       ecies.r.length.should.equal(32);
       ecies.R.toUncompressedPubKey().length.should.equal(65);
     });
 
     it('should not set the same r twice in a row', function() {
       var ecies = new ECIES();
-      ecies.rand();
+      ecies.getRandomSeed();
       var ecies2 = new ECIES();
-      ecies2.rand();
+      ecies2.getRandomSeed();
       ecies.r.toString('hex').should.not.equal(ecies2.r.toString('hex'));
     });
 
