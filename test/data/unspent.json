@@ -5,7 +5,7 @@
     "scriptPubKey": "76a9146ce4e1163eb18939b1440c42844d5f0261c0338288ac",
     "vout": 1,
     "amount": 0.01,
-    "confirmations":7
+    "confirmations":"7+"
   },
   {
     "address": "mqSjTad2TKbPcKQ3Jq4kgCkKatyN44UMgZ",
