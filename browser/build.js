@@ -12,7 +12,7 @@ var puts = function(error, stdout, stderr) {
 };
 
 //compile sjcl
-exec('cd node_modules/sjcl && ./configure --without-all --with-aes --with-convenience --with-cbc --with-codecHex --with-codecBase64 && make && cd ../..;', puts);
+exec('cd node_modules/sjcl && ./configure --without-all --with-aes --with-convenience --with-cbc --with-codecHex --with-codecBase64 --with-sha512 --with-hmac && make && cd ../..;', puts);
 
 var pack = function (params) {
   var file = require.resolve('soop');

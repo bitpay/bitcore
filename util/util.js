@@ -3,7 +3,7 @@ var bignum = require('bignum');
 var Binary = require('binary');
 var Put = require('bufferput');
 var buffertools = require('buffertools');
-var jssha = require('jssha');
+var sjcl = require('sjcl');
 var browser;
 var inBrowser = !process.versions;
 if (inBrowser) {
@@ -16,19 +16,25 @@ var sha256 = exports.sha256 = function(data) {
 
 var sha512 = exports.sha512 = function(data) {
   if (inBrowser) {
-    var j = new jssha(data.toString('hex'), 'HEX');
-    var hashhex = j.getHash('SHA-512', 'HEX');
-    return new Buffer(hashhex, 'hex');
+    var datahex = data.toString('hex');
+    var databits = sjcl.codec.hex.toBits(datahex);
+    var hashbits = sjcl.hash.sha512.hash(databits);
+    var hashhex = sjcl.codec.hex.fromBits(hashbits);
+    var hash = new Buffer(hashhex, 'hex');
+    return hash;
   };
   return new Buffer(crypto.createHash('sha512').update(data).digest('binary'), 'binary');
 };
 
 var sha512hmac = exports.sha512hmac = function (data, key) {
   if (inBrowser) {
-    var j = new jssha(data.toString('hex'), 'HEX');
-    var hash = j.getHMAC(key.toString('hex'), "HEX", "SHA-512", "HEX");
-    hash = new Buffer(hash, 'hex');
-    return hash;
+    var skey = sjcl.codec.hex.toBits(key.toString('hex'));
+    var sdata = sjcl.codec.hex.toBits(data.toString('hex'));
+    var hmac = new sjcl.misc.hmac(skey, sjcl.hash.sha512);
+    var encrypted = hmac.encrypt(sdata);
+    var enchex = sjcl.codec.hex.fromBits(encrypted);
+    var encbuf = new Buffer(enchex, 'hex');
+    return encbuf;
   };
   var hmac = crypto.createHmac('sha512', key);
   var hash = hmac.update(data).digest();
