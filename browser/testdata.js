@@ -1373,6 +1373,8 @@ exports.write = function(buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128;
 };
 
+},{}],"testdata":[function(require,module,exports){
+module.exports=require('CoCQri');
 },{}],"CoCQri":[function(require,module,exports){
 (function (Buffer){
 var fs = require('fs');
@@ -1413,6 +1415,4 @@ module.exports.dataRawBlock = buffer;
   
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":2,"fs":1}],"testdata":[function(require,module,exports){
-module.exports=require('CoCQri');
-},{}]},{},[])
+},{"buffer":2,"fs":1}]},{},[])

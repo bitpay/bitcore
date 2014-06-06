@@ -52,7 +52,7 @@
     "prepublish": "node browser/build.js -a"
   },
   "dependencies": {
-    "jssha": "=1.5.0",
+    "sjcl": "=1.0.1",
     "soop": "=0.1.5",
     "bindings": "=1.1.1",
     "bufferput": "git://github.com/bitpay/node-bufferput.git",
@@ -63,14 +63,12 @@
     "buffertools": "=2.1.2",
     "browserify": "=3.40.0",
     "browser-pack": "=2.0.1",
-    "commander": "=2.1.0",
     "browserify-buffertools": "git://github.com/maraoz/browserify-buffertools.git",
     "socks5-client": "~0.3.6",
     "brfs": "=1.0.0",
     "chai": "=1.9.1",
     "uglifyify": "=1.2.3",
-    "async": "~0.2.10",
-    "underscore": "~1.6.0"
+    "async": "~0.2.10"
   },
   "devDependencies": {
     "brfs": "~1.0.0",
@@ -103,6 +101,7 @@
     "bignum": "./lib/browser/Bignum.js",
     "./lib/Key.js": "./lib/browser/Key.js",
     "./lib/Point.js": "./lib/browser/Point.js",
+    "./lib/ECIES.js": "./lib/browser/ECIES.js",
     "./lib/SecureRandom.js": "./lib/browser/SecureRandom.js"
   },
   "license": "MIT",
