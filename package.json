@@ -52,6 +52,17 @@
     "prepublish": "node browser/build.js -a"
   },
   "dependencies": {
+    "grunt-browserify": "~2.0.0",
+    "grunt-contrib-watch": "~0.5.3",
+    "grunt-markdown": "~0.5.0",
+    "grunt-mocha-test": "~0.8.2",
+    "grunt-shell": "~0.6.4",
+    "browser-pack": "~2.0.1",
+    "brfs": "~1.0.0",
+    "coveralls": "^2.10.0",
+    "istanbul": "~0.2.6",
+    "commander": "~2.2.0",
+    "mocha": ">=1.15.1",
     "sjcl": "=1.0.1",
     "soop": "=0.1.5",
     "bindings": "=1.1.1",
@@ -69,19 +80,6 @@
     "chai": "=1.9.1",
     "uglifyify": "=1.2.3",
     "async": "~0.2.10"
-  },
-  "devDependencies": {
-    "brfs": "~1.0.0",
-    "browser-pack": "~2.0.1",
-    "commander": "~2.1.0",
-    "coveralls": "^2.10.0",
-    "grunt-browserify": "~2.0.0",
-    "grunt-contrib-watch": "~0.5.3",
-    "grunt-markdown": "~0.5.0",
-    "grunt-mocha-test": "~0.8.2",
-    "grunt-shell": "~0.6.4",
-    "istanbul": "~0.2.6",
-    "mocha": ">=1.15.1"
   },
   "testling": {
     "harness": "mocha-bdd",
