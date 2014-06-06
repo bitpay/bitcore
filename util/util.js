@@ -3,7 +3,7 @@ var bignum = require('bignum');
 var Binary = require('binary');
 var Put = require('bufferput');
 var buffertools = require('buffertools');
-var sjcl = require('sjcl');
+var sjcl = require('../lib/sjcl');
 var browser;
 var inBrowser = !process.versions;
 if (inBrowser) {
