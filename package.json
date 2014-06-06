@@ -47,7 +47,7 @@
   },
   "scripts": {
     "install": "node-gyp rebuild",
-    "test": "mocha test -R spec",
+    "test": "node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
     "prepublish": "node browser/build.js -a"
   },
@@ -73,16 +73,17 @@
     "underscore": "~1.6.0"
   },
   "devDependencies": {
+    "brfs": "~1.0.0",
+    "browser-pack": "~2.0.1",
+    "commander": "~2.1.0",
+    "coveralls": "^2.10.0",
+    "grunt-browserify": "~2.0.0",
     "grunt-contrib-watch": "~0.5.3",
+    "grunt-markdown": "~0.5.0",
     "grunt-mocha-test": "~0.8.2",
     "grunt-shell": "~0.6.4",
-    "grunt-browserify": "~2.0.0",
-    "grunt-markdown": "~0.5.0",
-    "mocha": ">=1.15.1",
-    "brfs": "~1.0.0",
-    "commander": "~2.1.0",
-    "browser-pack": "~2.0.1",
-    "istanbul": "~0.2.6"
+    "istanbul": "~0.2.6",
+    "mocha": ">=1.15.1"
   },
   "testling": {
     "harness": "mocha-bdd",
