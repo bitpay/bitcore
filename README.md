@@ -4,7 +4,7 @@
 and websocket APIs. Insight runs in NodeJS, uses AngularJS for the
 front-end and LevelDB for storage.
 
-Check some screenshots and more details at [insight's project homepage](http://insight.bitcore.io).
+Check some screenshots and more details at [insight's project homepage](http://insight.is/).
 
 *Insight* project is now splitted in two repositories. One for the [API](https://github.com/bitpay/insight-api) and for the front-end. This repository is for the front-end, which will install the API as a NPM dependency.
 
