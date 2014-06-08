@@ -4,7 +4,6 @@ var chai = chai || require('chai');
 var should = chai.should();
 var bitcore = bitcore || require('../bitcore');
 var HierarchicalKey = bitcore.HierarchicalKey;
-var BIP39WordlistEn = bitcore.BIP39WordlistEn;
 
 describe('HierarchicalKey', function() {
 
@@ -35,6 +34,7 @@ describe('HierarchicalKey', function() {
   var vector2_m02147483647h12147483646h_private = 'xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc';
   var vector2_m02147483647h12147483646h2_public = 'xpub6FnCn6nSzZAw5Tw7cgR9bi15UV96gLZhjDstkXXxvCLsUXBGXPdSnLFbdpq8p9HmGsApME5hQTZ3emM2rnY5agb9rXpVGyy3bdW6EEgAtqt';
   var vector2_m02147483647h12147483646h2_private = 'xprvA2nrNbFZABcdryreWet9Ea4LvTJcGsqrMzxHx98MMrotbir7yrKCEXw7nadnHM8Dq38EGfSh6dqA9QWTyefMLEcBYJUuekgW4BYPJcr9E7j';
+
 
   it('should initialize the class', function() {
     should.exist(HierarchicalKey);
@@ -305,4 +305,5 @@ describe('HierarchicalKey', function() {
       b.extendedPublicKeyString().substring(0,4).should.equal('tpub');
     });
   });
+
 });
