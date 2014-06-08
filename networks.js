@@ -1,4 +1,5 @@
 /**
+ * Refer to
  * https://github.com/ryanralph/altcoin-address/blob/master/index.js
  * 
  */
@@ -62,6 +63,34 @@ exports.dogecoin = {
     'seed.dogechain.info'
   ],
   defaultClientPort: 22556
+};
+
+exports.litecoin = {
+  name: 'litecoin',
+  magic: hex('fbc0b6db'),
+  addressVersion: 0x30,
+  privKeyVersion: 121,
+  P2SHVersion: 0x05,
+  bip32publicVersion: 0x0291b71e,
+  bip32privateVersion: 0x0291a3e4,
+  genesisBlock: {
+    hash: hex('e2bf047e7e5a191aa4ef34d314979dc9986e0f19251edaba5940fd1fe365a712'),
+    merkle_root: hex('d9ced4ed1130f7b7faad9be25323ffafa33232a17c3edf6cfd97bee6bafbdd97'),
+    height: 0,
+    nonce: 2084524493,
+    version: 1,
+    prev_hash: buffertools.fill(new Buffer(32), 0),
+    timestamp: 1386325540,
+    bits: 0x1e0ffff0
+  },
+  dnsSeeds: [
+    'dnsseed.litecointools.com',
+    'dnsseed.litecoinpool.org',
+    'dnsseed.ltc.xurious.com',
+    'dnsseed.koin-project.com',
+    'dnsseed.weminemnc.com'
+  ],
+  defaultClientPort: 9333
 };
 
 // Currently we only use bitcon testnet
