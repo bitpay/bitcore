@@ -46,6 +46,10 @@ Check some screenshots and more details at [insight's project homepage](http://i
   on [insight-api README](https://github.com/bitpay/insight-api/blob/master/README.md). 
   
   
+## Nginx Setup
+
+To use Nginx as a reverse proxy for Insight, use the following base [configuration](https://gist.github.com/matiu/bdd5e55ff0ad90b54261)
+
 
 ## Development
 
