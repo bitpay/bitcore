@@ -306,4 +306,15 @@ describe('HierarchicalKey', function() {
     });
   });
 
+  describe('derivation in linux', function() {
+    it('should not be non-deterministic', function(){
+      var hk = new HierarchicalKey('tprv8ZgxMBicQKsPdSF1avR6mXyDj5Uv1XY2UyUHSDpAXQ5TvPN7prGeDppjy4562rBB9gMMAhRfFdJrNDpQ4t69kkqHNEEen3PX1zBJqSehJDH');
+      console.log(hk.derive('m/45/0/0/0').extendedPrivateKeyString());
+      console.log(hk.derive('m/45/0/0/0').extendedPrivateKeyString());
+      console.log(hk.derive('m/45\'/0/0/0').extendedPrivateKeyString());
+      console.log(hk.derive('m/45\'/0/0/0').extendedPrivateKeyString());
+      hk.derive('m/45\'/0/0/0').extendedPrivateKeyString().should.equal(hk.derive('m/45\'/0/0/0').extendedPrivateKeyString());
+    });
+  });
+
 });
