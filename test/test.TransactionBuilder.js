@@ -19,8 +19,6 @@ var vopts =  {
   dontVerifyStrictEnc: true
 };
 
-
-
 describe('TransactionBuilder', function() {
   it('should initialze the main object', function() {
     should.exist(TransactionBuilder);
@@ -40,6 +38,10 @@ describe('TransactionBuilder', function() {
     t.lockTime.should.equal(10);
   });
 
+  it('should be a fee in satoshi', function() {
+    var satoshi = TransactionBuilder.FEE_PER_1000B_SAT;
+    satoshi.should.equal(10000);
+  });
 
   var getBuilder = function (spendUnconfirmed) {
     var t = new TransactionBuilder({spendUnconfirmed: spendUnconfirmed})
