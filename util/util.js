@@ -493,5 +493,6 @@ exports.INT64_MAX = INT64_MAX;
 // How much of Bitcoin's internal integer coin representation
 // makes 1 BTC
 exports.COIN = 100000000;
+exports.BIT = 100;
 
 var MAX_TARGET = exports.MAX_TARGET = new Buffer('00000000FFFF0000000000000000000000000000000000000000000000000000', 'hex');
