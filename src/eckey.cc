@@ -291,14 +291,14 @@ Key::GetPublic(Local<String> property, const AccessorInfo& info)
   int pub_size = i2o_ECPublicKey(key->ec, NULL);
   if (!pub_size) {
     // TODO: ERROR: "Error from i2o_ECPublicKey(key->ec, NULL)"
-    return scope.Close(Null());
+    return VException("Error from i2o_ECPublicKey(key->ec, NULL)");
   }
   unsigned char *pub_begin, *pub_end;
   pub_begin = pub_end = (unsigned char *)malloc(pub_size);
 
   if (i2o_ECPublicKey(key->ec, &pub_end) != pub_size) {
     // TODO: ERROR: "Error from i2o_ECPublicKey(key->ec, &pub)"
-    return scope.Close(Null());
+    return VException("Error from i2o_ECPublicKey(key->ec, &pub)");
   }
   Buffer *pub_buf = Buffer::New(pub_size);
   memcpy(Buffer::Data(pub_buf), pub_begin, pub_size);
