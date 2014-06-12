@@ -4,6 +4,6 @@
 
 COUNTER=0
 mocha
-while [  $? -ne 0 ]; do
+while [  $? -eq 0 ]; do
   mocha
 done

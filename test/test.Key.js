@@ -163,6 +163,17 @@ describe('Key', function() {
     });
   });
 
+  describe('bug in linux', function() {
+    it('should assign private key starting with 0 properly', function(){
+      var key = new Key();
+      var hex = '000000000000000019fd3ee484410966c7a1f8098069d1f2a3846b409fbb0e76';
+      var pk = new Buffer(hex, 'hex');
+      pk.toString('hex').should.equal(hex);
+      key.private = pk;
+      key.private.toString('hex').should.equal(hex);
+
+    });
+  });
 
 
 });

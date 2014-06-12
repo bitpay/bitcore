@@ -220,7 +220,7 @@ Key::GetPrivate(Local<String> property, const AccessorInfo& info)
     return scope.Close(Null());
   }
 
-  unsigned char *priv = (unsigned char *)malloc(32);
+  unsigned char *priv = (unsigned char *)calloc(32, 1);
 
   int n = BN_bn2bin(bn, &priv[32 - priv_size]);
 

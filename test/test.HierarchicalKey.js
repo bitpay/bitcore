@@ -311,7 +311,6 @@ describe('HierarchicalKey', function() {
       var hp = 'm/45\'';
       var sp = 'm/45';
 
-      console.log();
       var hk = new HierarchicalKey('tprv8ZgxMBicQKsPdSF1avR6mXyDj5Uv1XY2UyUHSDpAXQ5TvPN7prGeDppjy4562rBB9gMMAhRfFdJrNDpQ4t69kkqHNEEen3PX1zBJqSehJDH');
       //hk.derive(sp).extendedPrivateKeyString().should.equal(
       //  'tprv8cSDV3fVD6wqGoLKykTPhRwWLiwD6WBHvYHYkFvp8PJvApm7HCfY9HH9P6Q6iPaCGNsU3LEqh7iJMN7478TqjkLFnf71f9zBXXd7XoiL7dw');
