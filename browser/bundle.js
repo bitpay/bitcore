@@ -3326,8 +3326,6 @@ module.exports = Armory;
 }).call(this,require("buffer").Buffer)
 },{"../util":143,"./Key":"ALJ4PS","./Point":"6tXgqr","buffer":85}],"./lib/Armory":[function(require,module,exports){
 module.exports=require('YL/05i');
-},{}],"./lib/Base58":[function(require,module,exports){
-module.exports=require('6VqyzY');
 },{}],"6VqyzY":[function(require,module,exports){
 (function (Buffer){
 var crypto = require('crypto');
@@ -3377,7 +3375,6 @@ var base58 = {
     if(str.length == 0) return zerobuf;
     var answer = bignum(0);
     for(var i=0; i<str.length; i++) {
-    answer.mul(58)
       answer = answer.mul(58);
       answer = answer.add(ALPHABET_INV[str[i]]);
     };
@@ -3448,7 +3445,9 @@ exports.encode = base58.encode;
 exports.decode = base58.decode;
 
 }).call(this,require("buffer").Buffer)
-},{"bignum":58,"buffer":85,"crypto":89}],"./lib/Block":[function(require,module,exports){
+},{"bignum":58,"buffer":85,"crypto":89}],"./lib/Base58":[function(require,module,exports){
+module.exports=require('6VqyzY');
+},{}],"./lib/Block":[function(require,module,exports){
 module.exports=require('pJEQEB');
 },{}],"pJEQEB":[function(require,module,exports){
 (function (Buffer){
