@@ -4,6 +4,7 @@ var chai = chai || require('chai');
 var bitcore = bitcore || require('../bitcore');
 
 var should = chai.should();
+var expect = chai.expect;
 
 var Address = bitcore.Address;
 var Key = bitcore.Key;
@@ -77,6 +78,27 @@ describe('Address', function() {
     new Address('mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE').isScript().should.equal(false);
     // script testnet
     new Address('2NBSBcf2KfjPEEqVusmrWdmUeNHRiUTS3Li').isScript().should.equal(true);
+  });
+
+  describe('#Address constructor', function() {
+    it('should produce a valid address from a hash', function() {
+      var privkey = bitcore.util.sha256('test');
+      var key = new bitcore.Key();
+      key.private = privkey;
+      key.regenerateSync();
+      var hash = bitcore.util.sha256ripe160(key.public);
+      var addr = new bitcore.Address(0, hash);
+      addr.isValid().should.equal(true);
+    });
+
+    it('should throw an error if you try to use a public key instead of a hash', function() {
+      var privkey = bitcore.util.sha256('test');
+      var key = new bitcore.Key();
+      key.private = privkey;
+      key.regenerateSync();
+      var f = function() {new bitcore.Address(0, key.public);};
+      expect(f).to.throw(Error);
+    });
   });
 
   describe('#fromPubKey', function() {
