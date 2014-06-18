@@ -645,7 +645,7 @@ margin-left: 0;
   height: 45px;
 }
 #powered a.bitcore {
-  background-image: url('http://bitcore.io/images/logo.svg');
+  background-image: url('/img/logo.svg');
   background-size: 80px;
   width: 30%;
 }
