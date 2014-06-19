@@ -7,6 +7,7 @@ var bitcore = bitcore || require('../bitcore');
 var should = chai.should();
 
 var TransactionBuilder = bitcore.TransactionBuilder;
+var Address = bitcore.Address;
 var WalletKey = bitcore.WalletKey;
 var Script = bitcore.Script;
 var util = bitcore.util;
@@ -818,7 +819,7 @@ describe('TransactionBuilder', function() {
     }];
     //info.scriptBufHex,
 
-    var s =  TransactionBuilder.scriptForAddress(info.address)
+    var s =  new Address(info.address).getScriptPubKey()
                             .getBuffer().toString('hex');
 
     var b =  new TransactionBuilder(opts)
