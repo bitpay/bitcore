@@ -102,7 +102,7 @@ For this example you need a running bitcoind instance.
   peerman.start();
 ```
 
-PeerManager will emit the following events: 'version', 'verack', 'addr', 'getaddr', 'error' 'disconnect'; and will relay events like: 'tx', 'block', 'inv'. Please see  [PeerManager.js](PeerManager.js), [Peer.js](Peer.js) and [Connection.js](Connection.js)
+PeerManager will emit the following events: 'version', 'verack', 'addr', 'getaddr', 'error' 'disconnect'; and will relay events like: 'tx', 'block', 'inv'. Please see  [PeerManager.js](lib/PeerManager.js), [Peer.js](lib/Peer.js) and [Connection.js](lib/Connection.js)
 
 ## Consuming bitcoind RPC
 
