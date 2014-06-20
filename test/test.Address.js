@@ -174,6 +174,22 @@ describe('Address', function() {
     });
   });
 
+  describe('#getScriptPubKey', function() {
+    var data = [
+      ['76a91423b7530a00dd7951e11791c529389421c0b8d83b88ac', 'mimoZNLcP2rrMRgdeX5PSnR7AjCqQveZZ4'],
+      ['a9147049be48e74a660157da3ed64569981592f7fa0587','2N3Ux1YTnt1ixofYvJfaabqZSj2MBF3jsmv'],
+      ['76a914774e603bafb717bd3f070e68bbcccfd907c77d1388ac', 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE'],
+      ['76a914b00127584485a7cff0949ef0f6bc5575f06ce00d88ac', 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd']
+    ];
+
+    it('validate scriptPubKey for a given address', function() {
+      for(var i in data) {
+          var d = data[i];
+          var b = new Address(d[1]).getScriptPubKey().getBuffer();
+          b.toString('hex').should.equal(d[0]);
+      }
+    });
+  });
 
   describe('#fromScriptPubKey', function() {
 
