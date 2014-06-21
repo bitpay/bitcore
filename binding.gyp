@@ -4,12 +4,6 @@
   },
   'targets': [
     {
-      'target_name': 'cryptox',
-      'sources': [
-        'src/pbkdf2_sha512.cc'
-      ],
-    },
-    {
       'target_name': 'KeyModule',
       'sources': [
         'src/eckey.cc'
