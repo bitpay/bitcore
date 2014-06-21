@@ -29,7 +29,6 @@ var modules = [
   'lib/HierarchicalKey',
   'lib/BIP39',
   'lib/BIP39WordlistEn',
-  'lib/cryptox',
   'lib/Block',
   'lib/Bloom',
   'lib/Connection',

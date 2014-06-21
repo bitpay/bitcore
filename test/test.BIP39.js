@@ -151,8 +151,8 @@ describe('BIP39', function() {
         var code = vector[0];
         var mnemonic = vector[1];
         var seed = vector[2];
-        var mnemonic1 = BIP39.to_mnemonic(BIP39WordlistEn, new Buffer(code, 'hex'));
-        var seed1 = BIP39.mnemonic_to_seed(mnemonic, 'TREZOR');
+        var mnemonic1 = BIP39.entropy2mnemonic(BIP39WordlistEn, new Buffer(code, 'hex'));
+        var seed1 = BIP39.mnemonic2seed(mnemonic, 'TREZOR');
         mnemonic1.should.equal(mnemonic);
         seed1.toString('hex').should.equal(seed)
       }
