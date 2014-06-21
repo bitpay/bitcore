@@ -80,9 +80,19 @@ var createBitcore = function(opts) {
   exec('sh concat.sh', puts);
   process.chdir(cwd);
 
-  if (!opts.includeall && (!opts.submodules || opts.submodules.length === 0)) {
-    if (!opts.stdout) console.log('Must use either -s or -a option. For more info use the --help option');
+  if (!opts.includeall && !opts.includemain && (!opts.submodules || opts.submodules.length === 0)) {
+    if (!opts.stdout) console.log('Must use either -s or -a or -m option. For more info use the --help option');
     process.exit(1);
+  }
+
+  var submodules = opts.submodules;
+
+  if (opts.includemain) {
+    submodules = JSON.parse(JSON.stringify(modules));
+    submodules.splice(submodules.indexOf('lib/BIP39'), 1);
+    submodules.splice(submodules.indexOf('lib/BIP39WordlistEn'), 1);
+    var assert = require('assert');
+    assert(submodules.length == modules.length - 2);
   }
 
   if (opts.submodules) {
@@ -113,7 +123,7 @@ var createBitcore = function(opts) {
     expose: 'bitcore'
   });
   modules.forEach(function(m) {
-    if (opts.includeall || opts.submodules.indexOf(m) > -1) {
+    if (opts.includeall || submodules.indexOf(m) > -1) {
       if (!opts.stdout) console.log('Including ' + m + ' in the browser bundle');
       b.require('./' + opts.dir + m + '.js', {
         expose: './' + m
@@ -157,6 +167,7 @@ if (require.main === module) {
   program
     .version('0.0.1')
     .option('-a, --includeall', 'Include all submodules.')
+    .option('-m, --includemain', 'Include main submodules.')
     .option('-d, --dontminify', 'Don\'t minify the code.')
     .option('-o, --stdout', 'Specify output as stdout')
     .option('-D, --dir <dir>', 'Specify a base directory')
