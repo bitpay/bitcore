@@ -332,6 +332,18 @@ You can check a more complex usage example at examples/example.html.
 
 ## Generating a customized browser bundle
 
+To build the main bitcore bundle, run:
+
+```
+node browser/build.js -m
+```
+
+To build all features into the bitcore bundle (which will lead to a large filesize), run:
+
+```
+node browser/build.js -a
+```
+
 To generate a customized bitcore bundle, you can specify which submodules you want to include in it with the -s option:
 
 ```
