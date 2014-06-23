@@ -81,7 +81,7 @@ var run = function() {
        */
 
       var txid = tx.getHash().toString('hex');
-      console.log('Created transaction with txid '+txid);
+      console.log('Created transaction with txid ' + txid);
       var raw_tx = tx.serialize().toString('hex');
       console.log('Transaction raw hex dump:');
       console.log('-------------------------------------');

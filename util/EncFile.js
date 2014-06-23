@@ -1,9 +1,7 @@
-
 var fs = require('fs');
 var crypto = require('crypto');
 
-exports.readFileSync = function(enc_method, enc_passphrase, filename)
-{
+exports.readFileSync = function(enc_method, enc_passphrase, filename) {
   // read entire file into memory
   var fileData = fs.readFileSync(filename, 'binary');
   if (fileData.length < 32)
@@ -28,14 +26,12 @@ exports.readFileSync = function(enc_method, enc_passphrase, filename)
   return dec;
 };
 
-exports.readJFileSync = function(enc_method, enc_passphrase, filename)
-{
+exports.readJFileSync = function(enc_method, enc_passphrase, filename) {
   var raw = this.readFileSync(enc_method, enc_passphrase, filename);
   return JSON.parse(raw);
 };
 
-exports.writeFileSync = function(enc_method, enc_passphrase, filename, data)
-{
+exports.writeFileSync = function(enc_method, enc_passphrase, filename, data) {
   // encrypt to ciphertext
   var cipher = crypto.createCipher(enc_method, enc_passphrase);
   var crypted = cipher.update(data, 'binary', 'binary');
@@ -51,9 +47,7 @@ exports.writeFileSync = function(enc_method, enc_passphrase, filename, data)
   return true;
 };
 
-exports.writeJFileSync = function(enc_method, enc_passphrase, filename, obj)
-{
+exports.writeJFileSync = function(enc_method, enc_passphrase, filename, obj) {
   var raw = JSON.stringify(obj);
   return this.writeFileSync(enc_method, enc_passphrase, filename, raw);
 };
-

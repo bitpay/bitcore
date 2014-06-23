@@ -1,10 +1,10 @@
-var imports    = require('soop').imports();
-var base58     = imports.base58 || require('../lib/Base58').base58Check;
-var parent     = imports.parent || require('./EncodedData');
+var imports = require('soop').imports();
+var base58 = imports.base58 || require('../lib/Base58').base58Check;
+var parent = imports.parent || require('./EncodedData');
 
 
 function VersionedData(version, payload) {
-  if(typeof version != 'number') {
+  if (typeof version != 'number') {
     VersionedData.super(this, arguments);
     return;
   };
@@ -19,8 +19,10 @@ parent.applyEncodingsTo(VersionedData);
 
 // get or set the version data (the first byte of the address)
 VersionedData.prototype.version = function(num) {
-  if(num || (num === 0)) {
-    this.doAsBinary(function() {this.data.writeUInt8(num, 0);});
+  if (num || (num === 0)) {
+    this.doAsBinary(function() {
+      this.data.writeUInt8(num, 0);
+    });
     return num;
   }
   return this.as('binary').readUInt8(0);
@@ -28,8 +30,10 @@ VersionedData.prototype.version = function(num) {
 
 // get or set the payload data (as a Buffer object)
 VersionedData.prototype.payload = function(data) {
-  if(data) {
-    this.doAsBinary(function() {data.copy(this.data,1);});
+  if (data) {
+    this.doAsBinary(function() {
+      data.copy(this.data, 1);
+    });
     return data;
   }
   return this.as('binary').slice(1);

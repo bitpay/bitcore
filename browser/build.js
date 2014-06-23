@@ -11,7 +11,7 @@ var puts = function(error, stdout, stderr) {
   //sys.puts(stderr);
 };
 
-var pack = function (params) {
+var pack = function(params) {
   var file = require.resolve('soop');
   var dir = file.substr(0, file.length - String('soop.js').length);
   var preludePath = dir + 'example/custom_prelude.js';
