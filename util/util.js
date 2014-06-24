@@ -26,7 +26,7 @@ var sha512 = exports.sha512 = function(data) {
   return new Buffer(crypto.createHash('sha512').update(data).digest('binary'), 'binary');
 };
 
-var sha512hmac = exports.sha512hmac = function (data, key) {
+var sha512hmac = exports.sha512hmac = function(data, key) {
   if (inBrowser) {
     var skey = sjcl.codec.hex.toBits(key.toString('hex'));
     var sdata = sjcl.codec.hex.toBits(data.toString('hex'));
@@ -41,7 +41,7 @@ var sha512hmac = exports.sha512hmac = function (data, key) {
   return hash;
 };
 
-var ripe160 = exports.ripe160 = function (data) {
+var ripe160 = exports.ripe160 = function(data) {
   if (!Buffer.isBuffer(data)) {
     throw new Error('arg should be a buffer');
   }
@@ -360,12 +360,12 @@ var decodeDiffBits = exports.decodeDiffBits = function(diffBits, asBigInt) {
 
   var target = bignum(diffBits & 0xffffff);
   /*
-   * shiftLeft is not implemented on the bignum browser 
+   * shiftLeft is not implemented on the bignum browser
    *
    * target = target.shiftLeft(8*((diffBits >>> 24) - 3));
    */
 
-  var mov = 8*((diffBits >>> 24) - 3);
+  var mov = 8 * ((diffBits >>> 24) - 3);
   while (mov-- > 0)
     target = target.mul(2);
 

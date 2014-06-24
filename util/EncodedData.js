@@ -9,7 +9,7 @@ var base58 = imports.base58 || require('../lib/Base58').base58Check;
 //   new EncodedData(<version>, <20-byte-hash>)
 function EncodedData(data, encoding) {
   this.data = data;
-  if(!encoding && (typeof data == 'string')) {
+  if (!encoding && (typeof data == 'string')) {
     this.__proto__ = this.encodings['base58'];
   } else {
     this.__proto__ = this.encodings[encoding || 'binary'];
@@ -18,7 +18,7 @@ function EncodedData(data, encoding) {
 
 // get or set the encoding used (transforms data)
 EncodedData.prototype.encoding = function(encoding) {
-  if(encoding && (encoding != this._encoding)) {
+  if (encoding && (encoding != this._encoding)) {
     this.data = this.as(encoding);
     this.__proto__ = this.encodings[encoding];
   }
@@ -32,7 +32,7 @@ EncodedData.prototype.withEncoding = function(encoding) {
 
 // answer the data in the given encoding
 EncodedData.prototype.as = function(encoding) {
-  if(!encodings[encoding]) throw new Error('invalid encoding');
+  if (!encodings[encoding]) throw new Error('invalid encoding');
   return this.converters[encoding].call(this);
 };
 
@@ -46,7 +46,7 @@ EncodedData.prototype.isValid = function() {
   try {
     this.validate();
     return true;
-  } catch(e) {
+  } catch (e) {
     return false;
   }
 };
@@ -61,7 +61,7 @@ EncodedData.prototype.isValid = function() {
   try {
     this.validate();
     return true;
-  } catch(e) {
+  } catch (e) {
     return false;
   }
 };
@@ -129,10 +129,12 @@ var encodings = {
   },
 };
 
-var no_conversion = function() {return this.data;};
-for(var k in encodings) {
-  if(encodings.hasOwnProperty(k)){
-    if(!encodings[k].converters[k])
+var no_conversion = function() {
+  return this.data;
+};
+for (var k in encodings) {
+  if (encodings.hasOwnProperty(k)) {
+    if (!encodings[k].converters[k])
       encodings[k].converters[k] = no_conversion;
     encodings[k]._encoding = k;
   }
@@ -140,10 +142,10 @@ for(var k in encodings) {
 
 EncodedData.applyEncodingsTo = function(aClass) {
   var tmp = {};
-  for(var k in encodings) {
+  for (var k in encodings) {
     var enc = encodings[k];
     var obj = {};
-    for(var j in enc) {
+    for (var j in enc) {
       obj[j] = enc[j];
     }
     obj.__proto__ = aClass.prototype;
@@ -155,4 +157,3 @@ EncodedData.applyEncodingsTo = function(aClass) {
 EncodedData.applyEncodingsTo(EncodedData);
 
 module.exports = require('soop')(EncodedData);
-

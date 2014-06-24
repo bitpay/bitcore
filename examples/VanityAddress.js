@@ -10,15 +10,15 @@ var run = function() {
   // config your regular expression
   var re = /[0-9]{6}$/; // ends in 6 digits
 
-  var a,k,m;
+  var a, k, m;
   while (true) {
     k = Key.generateSync();
     a = Address.fromKey(k);
     m = a.toString().match(re);
     if (m) break;
   }
-  console.log('Address: '+a.toString());
-  console.log('Private Key: '+k.private.toString('hex'));
+  console.log('Address: ' + a.toString());
+  console.log('Private Key: ' + k.private.toString('hex'));
 
 };
 

@@ -1,5 +1,5 @@
 var run = function() {
-  bitcore = typeof (bitcore) === 'undefined' ? require('../bitcore') : bitcore;
+  bitcore = typeof(bitcore) === 'undefined' ? require('../bitcore') : bitcore;
   var HierarchicalKey = bitcore.HierarchicalKey;
   var Address = bitcore.Address;
   var networks = bitcore.networks;

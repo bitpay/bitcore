@@ -1,11 +1,8 @@
-
-
-
 var run = function() {
-  bitcore = typeof (bitcore) === 'undefined' ? require('../bitcore') : bitcore;
+  bitcore = typeof(bitcore) === 'undefined' ? require('../bitcore') : bitcore;
 
-  var priv    = 'cTgGUrcro89yUtKeG6gHBAS14r3qp25KwTTxG9d4kEzcFxecuZDm';
-  var amt     = '0.005';
+  var priv = 'cTgGUrcro89yUtKeG6gHBAS14r3qp25KwTTxG9d4kEzcFxecuZDm';
+  var amt = '0.005';
   var toAddress = 'myuAQcCc1REUgXGsCTiYhZvPPc3XxZ36G1';
   var changeAddressString = 'moDz3jEo9q7CxjBDjmb13sL4SKkgo2AACE';
 
@@ -19,13 +16,20 @@ var run = function() {
     confirmations: 2
   }];
 
-  console.log('TX Data: BTC:' + amt + ' => '+ toAddress + ', change To:' + changeAddressString ) ;
+  console.log('TX Data: BTC:' + amt + ' => ' + toAddress + ', change To:' + changeAddressString);
   console.log('Unspends Outputs:', utxos);
 
 
-  var outs = [{address:toAddress, amount:amt}];
+  var outs = [{
+    address: toAddress,
+    amount: amt
+  }];
   var keys = [priv];
-  var opts = {remainderOut: {address: changeAddressString}};
+  var opts = {
+    remainderOut: {
+      address: changeAddressString
+    }
+  };
   var Builder = bitcore.TransactionBuilder;
 
   var tx = new Builder(opts)
@@ -34,25 +38,25 @@ var run = function() {
     .sign(keys)
     .build();
 
-   /* create and signing can be done in multiple steps using:
-    *
-    *  var builder = new bitcore.TransactionBuilder(opts)
-    *             .setUnspent(utxos) 
-    *             .setOutputs(outs);
-    *
-    *  builder.sign(key1);
-    *  builder.sign(key2);
-    *  ...
-    *  if (builder.isFullySigned()){
-    *   var tx = builder.build();
-    *  }
-    *
-    *  The selected Unspent Outputs for the transaction can be retrieved with:
-    *
-    *    var selectedUnspent = build.getSelectedUnspent();
-    */
+  /* create and signing can be done in multiple steps using:
+   *
+   *  var builder = new bitcore.TransactionBuilder(opts)
+   *             .setUnspent(utxos)
+   *             .setOutputs(outs);
+   *
+   *  builder.sign(key1);
+   *  builder.sign(key2);
+   *  ...
+   *  if (builder.isFullySigned()){
+   *   var tx = builder.build();
+   *  }
+   *
+   *  The selected Unspent Outputs for the transaction can be retrieved with:
+   *
+   *    var selectedUnspent = build.getSelectedUnspent();
+   */
 
-  var txHex =  tx.serialize().toString('hex');
+  var txHex = tx.serialize().toString('hex');
   console.log('TX HEX IS: ', txHex);
 };
 
@@ -67,4 +71,3 @@ if (typeof module !== 'undefined') {
 }
 
 ////
-

@@ -8,21 +8,23 @@ var run = function() {
   var networks = require('../networks');
   var WalletKey = bitcore.WalletKey;
 
-  var opts = {network: networks.testnet};
+  var opts = {
+    network: networks.testnet
+  };
 
   function print(wk) {
 
     console.log('\n## Network: ' + wk.network.name);
-    console.log ('\t * Hex Representation');
-    console.log ('\tPrivate: ' + bitcore.buffertools.toHex(wk.privKey.private));
-    console.log ('\tPublic : ' + bitcore.buffertools.toHex(wk.privKey.public));
-    console.log ('\tPublic Compressed : ' + (wk.privKey.compressed?'Yes':'No'));
+    console.log('\t * Hex Representation');
+    console.log('\tPrivate: ' + bitcore.buffertools.toHex(wk.privKey.private));
+    console.log('\tPublic : ' + bitcore.buffertools.toHex(wk.privKey.public));
+    console.log('\tPublic Compressed : ' + (wk.privKey.compressed ? 'Yes' : 'No'));
 
     var wkObj = wk.storeObj();
-    console.log ('\n\t * WalletKey Store Object');
-    console.log ('\tPrivate: ' + wkObj.priv);
-    console.log ('\tPublic : ' + wkObj.pub);
-    console.log ('\tAddr   : ' + wkObj.addr);
+    console.log('\n\t * WalletKey Store Object');
+    console.log('\tPrivate: ' + wkObj.priv);
+    console.log('\tPublic : ' + wkObj.pub);
+    console.log('\tAddr   : ' + wkObj.addr);
   };
 
   //Generate a new one (compressed public key, compressed WIF flag)
@@ -32,7 +34,9 @@ var run = function() {
 
   //Generate from private Key WIF. Compressed status taken from WIF.
   var wk2 = new WalletKey(opts);
-  wk2.fromObj({priv:'cMpKwGr5oxEacN95WFKNEq6tTcvi11regFwS3muHvGYVxMPJX8JA'});
+  wk2.fromObj({
+    priv: 'cMpKwGr5oxEacN95WFKNEq6tTcvi11regFwS3muHvGYVxMPJX8JA'
+  });
   print(wk2);
 
 
