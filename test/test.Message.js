@@ -14,6 +14,12 @@ describe('Message', function() {
       sig.length.should.be.greaterThan(0);
     });
 
+    it('should work with buffer', function() {
+      var key = bitcore.Key.generateSync();
+      var sig = Message.sign(new Buffer('my message'), key);
+      sig.length.should.be.greaterThan(0);
+    });
+
     it('should not sign a message the same way twice', function() {
       var key = new bitcore.Key();
       key.private = coinUtil.sha256('a fake private key');
@@ -31,6 +37,13 @@ describe('Message', function() {
       var sig = Message.sign(message, key);
       Message.verifyWithPubKey(key.public, message, sig).should.equal(true);
     });
+
+    it('should verify a signed message buffer', function() {
+      var message = new Buffer('my message');
+      var key = bitcore.Key.generateSync();
+      var sig = Message.sign(message, key);
+      Message.verifyWithPubKey(key.public, message, sig).should.equal(true);
+    });
   });
 
   describe('magicBytes', function() {
@@ -42,6 +55,22 @@ describe('Message', function() {
   describe('magicHash', function() {
     it('should hash the message with the magic bytes', function() {
       var str = 'my message';
+      var magicBytes = Message.magicBytes;
+      var prefix1 = coinUtil.varIntBuf(magicBytes.length);
+      var message = new Buffer(str);
+      var prefix2 = coinUtil.varIntBuf(message.length);
+
+      var buf = Buffer.concat([prefix1, magicBytes, prefix2, message]);
+
+      var hash = coinUtil.twoSha256(buf);
+
+      var hash2 = Message.magicHash(str);
+
+      hash.toString().should.equal(hash2.toString());
+    });
+
+    it('should hash the message (buffer) with the magic bytes', function() {
+      var str = new Buffer('my message');
       var magicBytes = Message.magicBytes;
       var prefix1 = coinUtil.varIntBuf(magicBytes.length);
       var message = new Buffer(str);
