@@ -38,6 +38,7 @@ var modules = [
   'lib/Electrum',
   'lib/Message',
   'lib/Opcode',
+  'lib/PayPro',
   'lib/Peer',
   'lib/PeerManager',
   'lib/PrivateKey',
@@ -87,12 +88,14 @@ var createBitcore = function(opts) {
 
   var submodules = opts.submodules;
 
+  //modules not included in "main" bundle
   if (opts.includemain) {
     submodules = JSON.parse(JSON.stringify(modules));
     submodules.splice(submodules.indexOf('lib/BIP39'), 1);
     submodules.splice(submodules.indexOf('lib/BIP39WordlistEn'), 1);
+    submodules.splice(submodules.indexOf('lib/PayPro'), 1);
     var assert = require('assert');
-    assert(submodules.length == modules.length - 2);
+    assert(submodules.length == modules.length - 3);
   }
 
   if (opts.submodules) {
