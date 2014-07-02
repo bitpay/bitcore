@@ -88,7 +88,7 @@ var createBitcore = function(opts) {
 
   var submodules = opts.submodules;
 
-  //modules not included in "main" bundle
+  //modules included in "all" but not included in "main" bundle
   if (opts.includemain) {
     submodules = JSON.parse(JSON.stringify(modules));
     submodules.splice(submodules.indexOf('lib/BIP39'), 1);
