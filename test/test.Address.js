@@ -22,6 +22,8 @@ describe('Address', function() {
     ['11111111111111111111111111122222234', false], // totally invalid
     ['32QBdjycLwbDTuGafUwaU5p5GxzSLPYoF6', true],
     ['1Q1pE5vPGEEMqRcVRMbtBK842Y6Pzo6nK9', true],
+    ['1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', true],
+    ['1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNb', false], //bad checksum ... thanks @wtogami
     ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW62i', true],
     ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW600', false],  // bad checksum
     ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW620', false],  // bad checksum
@@ -225,5 +227,5 @@ describe('Address', function() {
       });
     }
   });
- 
+
 });
