@@ -177,6 +177,22 @@ describe('PayPro', function() {
 
   });
 
+  describe('#serializeForSig', function() {
+
+    it('should serialize a PaymentRequest and not fail', function() {
+      var pd = new PayPro.PaymentDetails();
+      pd.set('time', 0);
+      var pdbuf = pd.toBuffer();
+
+      var paypro = new PayPro();
+      paypro.makePaymentRequest();
+      paypro.set('serialized_payment_details', pdbuf);
+      var buf = paypro.serializeForSig();
+      buf.length.should.be.greaterThan(0);
+    });
+
+  });
+
   describe('#serialize', function() {
 
     it('should serialize', function() {
