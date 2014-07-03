@@ -177,6 +177,21 @@ describe('PayPro', function() {
 
   });
 
+  describe('#setObj', function() {
+
+    it('should set properties of paymentdetails', function() {
+      var pd = new PayPro.PaymentDetails();
+      var paypro = new PayPro();
+      paypro.messageType = "PaymentDetails";
+      paypro.message = pd;
+      paypro.setObj({
+        time: 0
+      });
+      paypro.get('time').should.equal(0);
+    });
+
+  });
+
   describe('#serializeForSig', function() {
 
     it('should serialize a PaymentRequest and not fail', function() {
