@@ -240,4 +240,83 @@ describe('PayPro', function() {
 
   });
 
+  describe('#sign', function() {
+
+    it('should sign a payment request', function() {
+      var pd = new PayPro.PaymentDetails();
+      pd.set('time', 0);
+      var pdbuf = pd.toBuffer();
+      var paypro = new PayPro();
+      paypro.makePaymentRequest();
+      paypro.set('serialized_payment_details', pdbuf);
+      paypro.set('pki_type', 'SIN');
+      var key = new bitcore.Key();
+      key.private = bitcore.util.sha256('test key');
+      key.regenerateSync();
+      paypro.sign(key);
+      var sig = paypro.get('signature');
+      sig.length.should.be.greaterThan(0);
+    });
+
+  });
+
+  describe('#verify', function() {
+
+    it('should verify a signed payment request', function() {
+      var pd = new PayPro.PaymentDetails();
+      pd.set('time', 0);
+      var pdbuf = pd.toBuffer();
+      var paypro = new PayPro();
+      paypro.makePaymentRequest();
+      paypro.set('serialized_payment_details', pdbuf);
+      paypro.set('pki_type', 'SIN');
+      var key = new bitcore.Key();
+      key.private = bitcore.util.sha256('test key');
+      key.regenerateSync();
+      paypro.sign(key);
+      var verify = paypro.verify();
+      verify.should.equal(true);
+    });
+
+  });
+
+  describe('#sinSign', function() {
+
+    it('should sign assuming pki_type is SIN', function() {
+      var pd = new PayPro.PaymentDetails();
+      pd.set('time', 0);
+      var pdbuf = pd.toBuffer();
+      var paypro = new PayPro();
+      paypro.makePaymentRequest();
+      paypro.set('serialized_payment_details', pdbuf);
+      paypro.set('pki_type', 'SIN');
+      var key = new bitcore.Key();
+      key.private = bitcore.util.sha256('test key');
+      key.regenerateSync();
+      var sig = paypro.sinSign(key);
+      sig.length.should.be.greaterThan(0);
+    });
+
+  });
+
+  describe('#sinVerify', function() {
+
+    it('should verify assuming pki_type is SIN', function() {
+      var pd = new PayPro.PaymentDetails();
+      pd.set('time', 0);
+      var pdbuf = pd.toBuffer();
+      var paypro = new PayPro();
+      paypro.makePaymentRequest();
+      paypro.set('serialized_payment_details', pdbuf);
+      paypro.set('pki_type', 'SIN');
+      var key = new bitcore.Key();
+      key.private = bitcore.util.sha256('test key');
+      key.regenerateSync();
+      paypro.sign(key);
+      var verify = paypro.sinVerify();
+      verify.should.equal(true);
+    });
+
+  });
+
 });
