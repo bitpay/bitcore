@@ -60,6 +60,7 @@ requireWhenAccessed('Script', './lib/Script');
 requireWhenAccessed('Transaction', './lib/Transaction');
 requireWhenAccessed('TransactionBuilder', './lib/TransactionBuilder');
 requireWhenAccessed('Connection', './lib/Connection');
+requireWhenAccessed('PayPro', './lib/PayPro');
 requireWhenAccessed('Peer', './lib/Peer');
 requireWhenAccessed('Block', './lib/Block');
 requireWhenAccessed('ScriptInterpreter', './lib/ScriptInterpreter');
