@@ -183,7 +183,7 @@ exports.intToBuffer2C = function(integer) {
   s = s.replace('-', '');
   for (var i = 0; i < size; i++) {
     var si = s.substring(s.length - 2 * (i + 1), s.length - 2 * (i));
-    if (si.lenght === 1) {
+    if (si.length === 1) {
       si = '0' + si;
     }
     var pi = parseInt(si, 16);
@@ -220,10 +220,10 @@ var padSign = function(b) {
  */
 exports.intToBufferSM = function(v) {
   if ("number" === typeof v) {
-    v = bignum(v);
+    v = new bignum(v);
   }
   var b, c;
-  var cmp = v.cmp(0);
+  var cmp = v.cmp(new bignum(0));
   if (cmp > 0) {
     b = v.toBuffer();
     c = padSign(b);
@@ -244,7 +244,7 @@ exports.intToBufferSM = function(v) {
  */
 exports.bufferSMToInt = function(v) {
   if (!v.length) {
-    return bignum(0);
+    return new bignum(0);
   }
   // Arithmetic operands must be in range [-2^31...2^31]
   if (v.length > 4) {
@@ -291,15 +291,15 @@ function padFrac(frac) {
 }
 
 function parseFullValue(res) {
-  return bignum(res[1]).mul('100000000').add(padFrac(res[2]));
+  return new bignum(res[1]).mul(new bignum('100000000')).add(new bignum(padFrac(res[2])));
 }
 
 function parseFracValue(res) {
-  return bignum(padFrac(res[1]));
+  return new bignum(padFrac(res[1]));
 }
 
 function parseWholeValue(res) {
-  return bignum(res[1]).mul('100000000');
+  return new bignum(res[1]).mul(new bignum('100000000'));
 }
 
 exports.parseValue = function parseValue(valueStr) {
@@ -358,7 +358,7 @@ var createSynchrotron = exports.createSynchrotron = function(fn) {
 var decodeDiffBits = exports.decodeDiffBits = function(diffBits, asBigInt) {
   diffBits = +diffBits;
 
-  var target = bignum(diffBits & 0xffffff);
+  var target = new bignum(diffBits & 0xffffff);
   /*
    * shiftLeft is not implemented on the bignum browser
    *
@@ -367,7 +367,7 @@ var decodeDiffBits = exports.decodeDiffBits = function(diffBits, asBigInt) {
 
   var mov = 8 * ((diffBits >>> 24) - 3);
   while (mov-- > 0)
-    target = target.mul(2);
+    target = target.mul(new bignum(2));
 
   if (asBigInt) {
     return target;

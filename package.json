@@ -63,6 +63,7 @@
     "commander": "~2.2.0",
     "mocha": ">=1.15.1",
     "sjcl": "=1.0.1",
+    "bn.js": "=0.13.2",
     "bindings": "=1.1.1",
     "bufferput": "git://github.com/bitpay/node-bufferput.git",
     "bignum": "=0.6.2",
