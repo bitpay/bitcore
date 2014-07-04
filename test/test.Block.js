@@ -138,7 +138,7 @@ describe('Block', function() {
 
 
   it('#getBlockValue should return the correct block value', function() {
-    var c = bitcore.util.COIN;
+    var c = new bitcore.Bignum(bitcore.util.COIN);
     bitcore.Block.getBlockValue(0).div(c).toNumber().should.equal(50);
     bitcore.Block.getBlockValue(1).div(c).toNumber().should.equal(50);
     bitcore.Block.getBlockValue(209999).div(c).toNumber().should.equal(50);
