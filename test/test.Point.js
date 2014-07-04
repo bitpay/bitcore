@@ -68,4 +68,36 @@ describe('Point', function() {
     point.y.toBuffer({size: 32}).toString('hex').should.equal(ayhex);
   });
 
+  describe('#multiply', function() {
+
+    it('should multiply this number by 2', function() {
+      var axhex = "69b154b42ff9452c31251cb341d7db01ad603dc56d64f9c5fb9e7031b89a241d";
+      var axbuf = new Buffer(axhex, 'hex');
+      var ayhex = "eeedc91342b3c8982c1e676435780fe5f9d62f3f692e8d1512485d77fab35997";
+      var aybuf = new Buffer(ayhex, 'hex');
+      var a = new Point(bignum.fromBuffer(axbuf, {size: 32}), bignum.fromBuffer(aybuf, {size: 32}));
+
+      var x = new bignum(2);
+      var xbuf = x.toBuffer({size: 32});
+      var mult = Point.multiply(a, xbuf);
+      mult.x.toBuffer({size: 32}).toString('hex').should.equal('f81b3dcae4eeb504d2898500721ece357767b9564bdf03dce95a3db12de72d3a');
+      mult.y.toBuffer({size: 32}).toString('hex').should.equal('e0220ac6e8524ca3f80c2c65a390dacc0371a6875afc8546d621eb20284e5568');
+    });
+
+    it('should multiply this number by 200', function() {
+      var axhex = "69b154b42ff9452c31251cb341d7db01ad603dc56d64f9c5fb9e7031b89a241d";
+      var axbuf = new Buffer(axhex, 'hex');
+      var ayhex = "eeedc91342b3c8982c1e676435780fe5f9d62f3f692e8d1512485d77fab35997";
+      var aybuf = new Buffer(ayhex, 'hex');
+      var a = new Point(bignum.fromBuffer(axbuf, {size: 32}), bignum.fromBuffer(aybuf, {size: 32}));
+
+      var x = new bignum(200);
+      var xbuf = x.toBuffer({size: 32});
+      var mult = Point.multiply(a, xbuf);
+      mult.x.toBuffer({size: 32}).toString('hex').should.equal('91c03d9104df24f01d69702c680a53a9b46ba49de89ab27819ea02c61229bace');
+      mult.y.toBuffer({size: 32}).toString('hex').should.equal('5d2fdbdeab06383f14b2702e893444be5e80af58cecb9a70c1ae22e9daab69c1');
+    });
+
+  });
+
 });
