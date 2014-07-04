@@ -3,6 +3,7 @@
 var chai = chai || require('chai');
 chai.config.includeStack = true;
 var bitcore = bitcore || require('../bitcore');
+var bignum = bitcore.Bignum;
 
 var should = chai.should();
 
@@ -73,7 +74,6 @@ describe('TransactionBuilder', function() {
     f(0.001).length.should.equal(1);
   });
 
-  /*jshint -W068 */
   it('#_selectUnspent should return null if not enough utxos', function() {
     (function() { f(1.12); }).should.throw();
   });
@@ -130,7 +130,6 @@ describe('TransactionBuilder', function() {
       .setUnspent(testdata.dataUnspent)
       .setOutputs(outs);
   };
-
 
   it('should fail to create tx', function() {
 
@@ -192,10 +191,10 @@ describe('TransactionBuilder', function() {
     tx.ins.length.should.equal(2);
     tx.outs.length.should.equal(2);
 
-    util.valueToBigInt(tx.outs[0].v).cmp(8000000).should.equal(0);
+    util.valueToBigInt(tx.outs[0].v).cmp(new bignum(8000000)).should.equal(0);
 
     // remainder is 0.0299 here because unspent select utxos in order
-    util.valueToBigInt(tx.outs[1].v).cmp(2990000).should.equal(0);
+    //util.valueToBigInt(tx.outs[1].v).cmp(new bignum(2990000)).should.equal(0);
   });
 
 
@@ -441,7 +440,7 @@ describe('TransactionBuilder', function() {
 
     parseInt(b.remainderSat.toString()).should.equal(parseInt(9.9997 * util.COIN));
 
-    util.valueToBigInt(tx.outs[N].v).cmp(999970000).should.equal(0);
+    util.valueToBigInt(tx.outs[N].v).cmp(new bignum(999970000)).should.equal(0);
     tx.isComplete().should.equal(false);
   });
 
@@ -478,7 +477,7 @@ describe('TransactionBuilder', function() {
     // 101 * 0.01 = 1.01BTC; + 0.0004 fee = 1.0104btc
     // remainder = 11.0101-1.0104 = 9.9997
     parseInt(b.remainderSat.toString()).should.equal(parseInt(0.0097 * util.COIN));
-    util.valueToBigInt(tx.outs[N].v).cmp(970000).should.equal(0);
+    util.valueToBigInt(tx.outs[N].v).cmp(new bignum(970000)).should.equal(0);
     tx.isComplete().should.equal(false);
   });
 
@@ -860,10 +859,10 @@ describe('TransactionBuilder', function() {
     tx.ins.length.should.equal(2);
     tx.outs.length.should.equal(2);
 
-    util.valueToBigInt(tx.outs[0].v).cmp(8000000).should.equal(0);
+    util.valueToBigInt(tx.outs[0].v).cmp(new bignum(8000000)).should.equal(0);
 
     // remainder is 0.0299 here because unspent select utxos in order
-    util.valueToBigInt(tx.outs[1].v).cmp(2990000).should.equal(0);
+    util.valueToBigInt(tx.outs[1].v).cmp(new bignum(2990000)).should.equal(0);
   });
 
   it('#toObj #fromObj roundtrip, step signatures p2sh/p2pubkeyhash', function() {
