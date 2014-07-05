@@ -31,6 +31,17 @@ if (typeof process == 'undefined' || typeof process.versions == 'undefined') {
 
     });
 
+    describe('#sub', function() {
+
+      it('should subtract a small number', function() {
+        var bn1 = new Bignum(50);
+        var bn2 = new Bignum(25);
+        var bn3 = bn1.sub(bn2);
+        bn3.toString().should.equal('25');
+      });
+
+    });
+
     describe('#gt', function() {
 
       it('should say 1 is greater than 0', function() {
