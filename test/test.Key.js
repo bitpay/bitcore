@@ -10,7 +10,7 @@ var Key = bitcore.Key;
 var Point = bitcore.Point;
 var bignum = bitcore.Bignum;
 
-describe('Key', function() {
+describe('Key (ECKey)', function() {
   it('should initialize the main object', function() {
     should.exist(Key);
   });
