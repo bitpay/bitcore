@@ -63,12 +63,6 @@ var createBitcore = function(opts) {
 
   opts.dir = opts.dir || '';
 
-  // concat browser vendor files
-  var cwd = process.cwd();
-  process.chdir(opts.dir + 'browser');
-  exec('sh concat.sh', puts);
-  process.chdir(cwd);
-
   if (!opts.includeall && !opts.includemain && (!opts.submodules || opts.submodules.length === 0)) {
     if (!opts.stdout) console.log('Must use either -s or -a or -m option. For more info use the --help option');
     process.exit(1);
