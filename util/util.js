@@ -4,10 +4,8 @@ var Binary = require('binary');
 var Put = require('bufferput');
 var buffertools = require('buffertools');
 var sjcl = require('../lib/sjcl');
-var browser;
-var inBrowser = !process.versions;
-if (inBrowser) {
-  browser = require('../browser/vendor-bundle.js');
+if (process.browser) {
+  var hashjs = require('hash.js');
 }
 
 var sha256 = exports.sha256 = function(data) {
@@ -15,7 +13,7 @@ var sha256 = exports.sha256 = function(data) {
 };
 
 var sha512 = exports.sha512 = function(data) {
-  if (inBrowser) {
+  if (process.browser) {
     var datahex = data.toString('hex');
     var databits = sjcl.codec.hex.toBits(datahex);
     var hashbits = sjcl.hash.sha512.hash(databits);
@@ -27,7 +25,7 @@ var sha512 = exports.sha512 = function(data) {
 };
 
 var sha512hmac = exports.sha512hmac = function(data, key) {
-  if (inBrowser) {
+  if (process.browser) {
     var skey = sjcl.codec.hex.toBits(key.toString('hex'));
     var sdata = sjcl.codec.hex.toBits(data.toString('hex'));
     var hmac = new sjcl.misc.hmac(skey, sjcl.hash.sha512);
@@ -45,7 +43,9 @@ var ripe160 = exports.ripe160 = function(data) {
   if (!Buffer.isBuffer(data)) {
     throw new Error('arg should be a buffer');
   }
-  if (inBrowser) {
+  if (process.browser) {
+    return new Buffer(hashjs.ripemd160().update(data).digest());
+    /*
     var w = new browser.crypto31.lib.WordArray.init(Crypto.util.bytesToWords(data), data.length);
     var wordArray = browser.crypto31.RIPEMD160(w);
     var words = wordArray.words;
@@ -54,6 +54,7 @@ var ripe160 = exports.ripe160 = function(data) {
       answer.push((words[b >>> 5] >>> (24 - b % 32)) & 0xFF);
     }
     return new Buffer(answer, 'hex');
+    */
   }
   return new Buffer(crypto.createHash('rmd160').update(data).digest('binary'), 'binary');
 };
