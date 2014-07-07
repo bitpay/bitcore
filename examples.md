@@ -95,11 +95,10 @@
 	  b = b.next();
 	}
 	
-	
 #ConnectionTor.js
-	var Peer       = require('../lib/Peer');
+	var Peer = require('../lib/Peer');
 	var Connection = require('../lib/Connection');
-	var dns        = require('dns');
+	var dns = require('dns');
 	
 	// get a peer from dns seed
 	dns.resolve('dnsseed.bluematt.me', function(err, seeds) {
@@ -108,12 +107,15 @@
 	
 	  //Custom peer:
 	  //var peer = new Peer('180.153.139.246', '8888');
-	  
+	
 	  // create a connection without an existing socket
 	  // but specify a socks5 proxy to create a socket 
 	  // that's bound to that proxy in it's place
 	  var connection = new Connection(null, peer, {
-	    proxy: { host: '127.0.0.1', port: 9050 }
+	    proxy: {
+	      host: '127.0.0.1',
+	      port: 9050
+	    }
 	  });
 	
 	  connection.open();
@@ -133,13 +135,14 @@
 	});
 	
 #CreateAndSignTx-Multisig.js
-	
 	var run = function() {
-	  bitcore = typeof (bitcore) === 'undefined' ? require('../bitcore') : bitcore;
+	  bitcore = typeof(bitcore) === 'undefined' ? require('../bitcore') : bitcore;
 	  var networks = require('../networks');
 	  var WalletKey = bitcore.WalletKey;
 	  var Builder = bitcore.TransactionBuilder;
-	  var opts = {network: networks.testnet};
+	  var opts = {
+	    network: networks.testnet
+	  };
 	
 	  console.log('## Network: ' + opts.network.name);
 	
@@ -148,8 +151,7 @@
 	  input.priv = "cS62Ej4SobZnpFQYN1PEEBr2KWf5sgRYYnELtumcG6WVCfxno39V";
 	
 	  // Complete with the corresponding UTXO you want to use
-	  var utxos = [
-	    {
+	  var utxos = [{
 	    address: input.addr,
 	    txid: "39c71ebda371f75f4b854a720eaf9898b237facf3c2b101b58cd4383a44a6adc",
 	    vout: 1,
@@ -157,10 +159,9 @@
 	    scriptPubKey: "76a914e867aad8bd361f57c50adc37a0c018692b5b0c9a88ac",
 	    amount: 0.4296,
 	    confirmations: 2
-	  }
-	  ];
+	  }];
 	
-	  var privs =  [
+	  var privs = [
 	    "cP6JBHuQf7yqeqtdKRd22ibF3VehDv7G6BdzxSNABgrv3jFJUGoN",
 	    "cQfRwF7XLSM5xGUpF8PZvob2MZyULvZPA2j5cat2RKDJrja7FtCZ",
 	    "cUkYub4jtFVYymHh38yMMW36nJB4pXG5Pzd5QjResq79kAndkJcg",
@@ -171,18 +172,24 @@
 	  var pubkeys = []
 	  privs.forEach(function(p) {
 	    var wk = new WalletKey(opts);
-	    wk.fromObj({priv: p});
+	    wk.fromObj({
+	      priv: p
+	    });
 	    pubkeys.push(bitcore.buffertools.toHex(wk.privKey.public));
 	  });
 	
 	
-	  var outs = [{nreq:3, pubkeys:pubkeys, amount:0.05}];
+	  var outs = [{
+	    nreq: 3,
+	    pubkeys: pubkeys,
+	    amount: 0.05
+	  }];
 	  var tx = new Builder(opts)
 	    .setUnspent(utxos)
 	    .setOutputs(outs)
 	    .sign([input.priv])
 	    .build();
-	  var txHex =  tx.serialize().toString('hex');
+	  var txHex = tx.serialize().toString('hex');
 	  console.log('1) SEND TO MULSISIG TX: ', txHex);
 	  console.log('[this example originally generated TXID: e4bc22d8c519d3cf848d710619f8480be56176a4a6548dfbe865ab3886b578b5 on testnet]\n\n\thttp://test.bitcore.io/tx/e4bc22d8c519d3cf848d710619f8480be56176a4a6548dfbe865ab3886b578b5\n\n');
 	
@@ -194,31 +201,32 @@
 	   *
 	   * REDDEEM TX
 	   */
-	  var utxos2 = [
-	    {
+	  var utxos2 = [{
 	    address: input.addr,
 	    txid: "e4bc22d8c519d3cf848d710619f8480be56176a4a6548dfbe865ab3886b578b5",
 	    vout: 0,
 	    ts: 1396288753,
-	    scriptPubKey: scriptPubKey, 
+	    scriptPubKey: scriptPubKey,
 	    amount: 0.05,
 	    confirmations: 2
-	  }
-	  ];
+	  }];
 	
-	  outs = [{address:input.addr, amount:0.04}];
+	  outs = [{
+	    address: input.addr,
+	    amount: 0.04
+	  }];
 	  var b = new Builder(opts)
 	    .setUnspent(utxos2)
 	    .setOutputs(outs)
 	    .sign(privs);
 	
 	
-	  tx= b.build();
+	  tx = b.build();
 	
 	
-	  var txHex =  tx.serialize().toString('hex');
+	  var txHex = tx.serialize().toString('hex');
 	  console.log('2) REDEEM SCRIPT: ', txHex);
-	console.log('=> Is signed status:', b.isFullySigned(), tx.countInputMissingSignatures(0) );
+	  console.log('=> Is signed status:', b.isFullySigned(), tx.countInputMissingSignatures(0));
 	
 	  console.log('[this example originally generated TXID: 1eb388977b2de99562eb0fbcc661a100eaffed99c53bfcfebe5a087002039b83 on testnet]\n\n\thttp://test.bitcore.io/tx/1eb388977b2de99562eb0fbcc661a100eaffed99c53bfcfebe5a087002039b83');
 	
@@ -236,16 +244,12 @@
 	
 	////
 	
-	
 #CreateAndSignTx-PayToPubkeyHash.js
-	
-	
-	
 	var run = function() {
-	  bitcore = typeof (bitcore) === 'undefined' ? require('../bitcore') : bitcore;
+	  bitcore = typeof(bitcore) === 'undefined' ? require('../bitcore') : bitcore;
 	
-	  var priv    = 'cTgGUrcro89yUtKeG6gHBAS14r3qp25KwTTxG9d4kEzcFxecuZDm';
-	  var amt     = '0.005';
+	  var priv = 'cTgGUrcro89yUtKeG6gHBAS14r3qp25KwTTxG9d4kEzcFxecuZDm';
+	  var amt = '0.005';
 	  var toAddress = 'myuAQcCc1REUgXGsCTiYhZvPPc3XxZ36G1';
 	  var changeAddressString = 'moDz3jEo9q7CxjBDjmb13sL4SKkgo2AACE';
 	
@@ -259,13 +263,20 @@
 	    confirmations: 2
 	  }];
 	
-	  console.log('TX Data: BTC:' + amt + ' => '+ toAddress + ', change To:' + changeAddressString ) ;
+	  console.log('TX Data: BTC:' + amt + ' => ' + toAddress + ', change To:' + changeAddressString);
 	  console.log('Unspends Outputs:', utxos);
 	
 	
-	  var outs = [{address:toAddress, amount:amt}];
+	  var outs = [{
+	    address: toAddress,
+	    amount: amt
+	  }];
 	  var keys = [priv];
-	  var opts = {remainderOut: {address: changeAddressString}};
+	  var opts = {
+	    remainderOut: {
+	      address: changeAddressString
+	    }
+	  };
 	  var Builder = bitcore.TransactionBuilder;
 	
 	  var tx = new Builder(opts)
@@ -274,25 +285,25 @@
 	    .sign(keys)
 	    .build();
 	
-	   /* create and signing can be done in multiple steps using:
-	    *
-	    *  var builder = new bitcore.TransactionBuilder(opts)
-	    *             .setUnspent(utxos) 
-	    *             .setOutputs(outs);
-	    *
-	    *  builder.sign(key1);
-	    *  builder.sign(key2);
-	    *  ...
-	    *  if (builder.isFullySigned()){
-	    *   var tx = builder.build();
-	    *  }
-	    *
-	    *  The selected Unspent Outputs for the transaction can be retrieved with:
-	    *
-	    *    var selectedUnspent = build.getSelectedUnspent();
-	    */
+	  /* create and signing can be done in multiple steps using:
+	   *
+	   *  var builder = new bitcore.TransactionBuilder(opts)
+	   *             .setUnspent(utxos)
+	   *             .setOutputs(outs);
+	   *
+	   *  builder.sign(key1);
+	   *  builder.sign(key2);
+	   *  ...
+	   *  if (builder.isFullySigned()){
+	   *   var tx = builder.build();
+	   *  }
+	   *
+	   *  The selected Unspent Outputs for the transaction can be retrieved with:
+	   *
+	   *    var selectedUnspent = build.getSelectedUnspent();
+	   */
 	
-	  var txHex =  tx.serialize().toString('hex');
+	  var txHex = tx.serialize().toString('hex');
 	  console.log('TX HEX IS: ', txHex);
 	};
 	
@@ -308,15 +319,16 @@
 	
 	////
 	
-	
 #CreateAndSignTx-PayToScriptHash.js
 	var run = function() {
-	  bitcore = typeof (bitcore) === 'undefined' ? require('../bitcore') : bitcore;
+	  bitcore = typeof(bitcore) === 'undefined' ? require('../bitcore') : bitcore;
 	  var networks = require('../networks');
 	  var WalletKey = bitcore.WalletKey;
 	  var Script = bitcore.Script;
 	  var Builder = bitcore.TransactionBuilder;
-	  var opts = {network: networks.testnet};
+	  var opts = {
+	    network: networks.testnet
+	  };
 	
 	  console.log('## Network: ' + opts.network.name);
 	
@@ -325,19 +337,17 @@
 	  input.priv = "cS62Ej4SobZnpFQYN1PEEBr2KWf5sgRYYnELtumcG6WVCfxno39V";
 	
 	  // Complete with the corresponding UTXO you want to use
-	  var utxos = [
-	    {
+	  var utxos = [{
 	    address: "n2hoFVbPrYQf7RJwiRy1tkbuPPqyhAEfbp",
 	    txid: "e4bc22d8c519d3cf848d710619f8480be56176a4a6548dfbe865ab3886b578b5",
 	    vout: 1,
 	    ts: 1396290442,
 	    scriptPubKey: "76a914e867aad8bd361f57c50adc37a0c018692b5b0c9a88ac",
-	    amount:  0.3795,
+	    amount: 0.3795,
 	    confirmations: 7
-	  }
-	  ];
+	  }];
 	
-	  var privs =  [
+	  var privs = [
 	    "cMpKwGr5oxEacN95WFKNEq6tTcvi11regFwS3muHvGYVxMPJX8JA",
 	    "cVf32m9MR4vxcPwKNJuPepUe8XrHD2z63eCk76d6njRGyCkXpkSM",
 	    "cQ2sVRFX4jQYMLhWyzz6jTQ2xju51P36968ecXnPhRLKLH677eKR",
@@ -348,29 +358,37 @@
 	  var pubkeys = []
 	  privs.forEach(function(p) {
 	    var wk = new WalletKey(opts);
-	    wk.fromObj({priv: p});
+	    wk.fromObj({
+	      priv: p
+	    });
 	    pubkeys.push(bitcore.buffertools.toHex(wk.privKey.public));
 	  });
 	
 	  // multisig p2sh
-	  var opts = {nreq:3, pubkeys:pubkeys};
+	  var opts = {
+	    nreq: 3,
+	    pubkeys: pubkeys
+	  };
 	
 	  // p2scriphash p2sh
 	  //var opts = [{address: an_address}];
-	  
+	
 	  var info = Builder.infoForP2sh(opts, 'testnet');
 	  var p2shScript = info.scriptBufHex;
 	  var p2shAddress = info.address;
 	
 	
-	  var outs = [{address:p2shAddress, amount:0.05}];
+	  var outs = [{
+	    address: p2shAddress,
+	    amount: 0.05
+	  }];
 	  var tx = new Builder(opts)
 	    .setUnspent(utxos)
 	    .setOutputs(outs)
 	    .sign([input.priv])
 	    .build();
 	
-	  var txHex =  tx.serialize().toString('hex');
+	  var txHex = tx.serialize().toString('hex');
 	
 	
 	  console.log('## p2sh address: ' + p2shAddress); //TODO
@@ -384,8 +402,7 @@
 	   *
 	   * REDDEEM TX
 	   */
-	  var utxos2 = [
-	    {
+	  var utxos2 = [{
 	    address: p2shAddress,
 	    txid: "c2e50d1c8c581d8c4408378b751633f7eb86687fc5f0502be7b467173f275ae7",
 	    vout: 0,
@@ -393,13 +410,15 @@
 	    scriptPubKey: scriptPubKey,
 	    amount: 0.05,
 	    confirmations: 1
-	  }
-	  ];
+	  }];
 	
-	  outs = [{address:input.addr, amount:0.04}];
+	  outs = [{
+	    address: input.addr,
+	    amount: 0.04
+	  }];
 	
 	  var hashMap = {};
-	  hashMap[p2shAddress]=p2shScript;
+	  hashMap[p2shAddress] = p2shScript;
 	
 	  var b = new Builder(opts)
 	    .setUnspent(utxos2)
@@ -407,21 +426,21 @@
 	    .setOutputs(outs)
 	    .sign(privs);
 	
-	  tx= b.build();
+	  tx = b.build();
 	
 	
-	console.log('Builder:');
-	console.log('\tSignatures:' + tx.countInputMissingSignatures(0) );
-	console.log('\t#isFullySigned:' + b.isFullySigned() );
+	  console.log('Builder:');
+	  console.log('\tSignatures:' + tx.countInputMissingSignatures(0));
+	  console.log('\t#isFullySigned:' + b.isFullySigned());
 	
-	console.log('TX:');
-	console.log('\t #isComplete:' + tx.isComplete() ); 
+	  console.log('TX:');
+	  console.log('\t #isComplete:' + tx.isComplete());
 	
-	  var txHex =  tx.serialize().toString('hex');
+	  var txHex = tx.serialize().toString('hex');
 	  console.log('2) REDEEM SCRIPT: ', txHex);
 	  console.log('[this example originally generated TXID: 8284aa3b6f9c71c35ecb1d61d05ae78c8ca1f36940eaa615b50584dfc3d95cb7 on testnet]\n\n\thttp://test.bitcore.io/tx/8284aa3b6f9c71c35ecb1d61d05ae78c8ca1f36940eaa615b50584dfc3d95cb7\n\n');
 	
-	/*
+	  /*
 	  // To send TX with RPC:
 	  var RpcClient = bitcore.RpcClient;
 	  var config = {
@@ -464,21 +483,23 @@
 	  var networks = require('../networks');
 	  var WalletKey = bitcore.WalletKey;
 	
-	  var opts = {network: networks.testnet};
+	  var opts = {
+	    network: networks.testnet
+	  };
 	
 	  function print(wk) {
 	
 	    console.log('\n## Network: ' + wk.network.name);
-	    console.log ('\t * Hex Representation');
-	    console.log ('\tPrivate: ' + bitcore.buffertools.toHex(wk.privKey.private));
-	    console.log ('\tPublic : ' + bitcore.buffertools.toHex(wk.privKey.public));
-	    console.log ('\tPublic Compressed : ' + (wk.privKey.compressed?'Yes':'No'));
+	    console.log('\t * Hex Representation');
+	    console.log('\tPrivate: ' + bitcore.buffertools.toHex(wk.privKey.private));
+	    console.log('\tPublic : ' + bitcore.buffertools.toHex(wk.privKey.public));
+	    console.log('\tPublic Compressed : ' + (wk.privKey.compressed ? 'Yes' : 'No'));
 	
 	    var wkObj = wk.storeObj();
-	    console.log ('\n\t * WalletKey Store Object');
-	    console.log ('\tPrivate: ' + wkObj.priv);
-	    console.log ('\tPublic : ' + wkObj.pub);
-	    console.log ('\tAddr   : ' + wkObj.addr);
+	    console.log('\n\t * WalletKey Store Object');
+	    console.log('\tPrivate: ' + wkObj.priv);
+	    console.log('\tPublic : ' + wkObj.pub);
+	    console.log('\tAddr   : ' + wkObj.addr);
 	  };
 	
 	  //Generate a new one (compressed public key, compressed WIF flag)
@@ -488,7 +509,9 @@
 	
 	  //Generate from private Key WIF. Compressed status taken from WIF.
 	  var wk2 = new WalletKey(opts);
-	  wk2.fromObj({priv:'cMpKwGr5oxEacN95WFKNEq6tTcvi11regFwS3muHvGYVxMPJX8JA'});
+	  wk2.fromObj({
+	    priv: 'cMpKwGr5oxEacN95WFKNEq6tTcvi11regFwS3muHvGYVxMPJX8JA'
+	  });
 	  print(wk2);
 	
 	
@@ -511,7 +534,9 @@
 	  var buffertools = bitcore.buffertools;
 	  var Address = bitcore.Address;
 	  var util = bitcore.util;
-	  var opts = {network: networks.testnet};
+	  var opts = {
+	    network: networks.testnet
+	  };
 	
 	  var p = console.log;
 	
@@ -524,38 +549,38 @@
 	  p('\tHex     : ' + buffertools.toHex(s.buffer));
 	  p('\tHuman   : ' + s.toHumanReadable());
 	  p('\tKey      -------------------------------');
-	  console.log ('\tPrivate: ' + wkObj.priv);
-	  console.log ('\tPublic : ' + wkObj.pub);
-	  console.log ('\tAddr   : ' + wkObj.addr);
+	  console.log('\tPrivate: ' + wkObj.priv);
+	  console.log('\tPublic : ' + wkObj.pub);
+	  console.log('\tAddr   : ' + wkObj.addr);
 	
 	  s = Script.createPubKeyHashOut(wk.privKey.public);
 	  p('\nScript PubKeyHash:');
 	  p('\tHex     : ' + buffertools.toHex(s.buffer));
 	  p('\tHuman   : ' + s.toHumanReadable());
 	  p('\tKey      -------------------------------');
-	  console.log ('\tPrivate: ' + wkObj.priv);
-	  console.log ('\tPublic : ' + wkObj.pub);
-	  console.log ('\tAddr   : ' + wkObj.addr);
+	  console.log('\tPrivate: ' + wkObj.priv);
+	  console.log('\tPublic : ' + wkObj.pub);
+	  console.log('\tAddr   : ' + wkObj.addr);
 	
-	  var wks=[];
+	  var wks = [];
 	  var pubs = [];
-	  for (var i =0; i<5; i++) {
+	  for (var i = 0; i < 5; i++) {
 	    wks[i] = new WalletKey(opts);
 	    wks[i].generate();
 	    pubs.push(wks[i].privKey.public);
 	  }
 	
-	  s = Script.createMultisig(3,pubs);
+	  s = Script.createMultisig(3, pubs);
 	  p('\nScript MultiSig (3 out of 5 required signatures):');
 	  p('\tHex     : ' + buffertools.toHex(s.buffer));
 	  p('\tHuman   : ' + s.toHumanReadable());
 	
-	  for (i =0; i<5; i++) {
+	  for (i = 0; i < 5; i++) {
 	    wkObj = wks[i].storeObj();
-	    p('\tKey ['+i+'] -------------------------------');
-	    console.log ('\tPrivate: ' + wkObj.priv);
-	    console.log ('\tPublic : ' + wkObj.pub);
-	    console.log ('\tAddr   : ' + wkObj.addr);
+	    p('\tKey [' + i + '] -------------------------------');
+	    console.log('\tPrivate: ' + wkObj.priv);
+	    console.log('\tPublic : ' + wkObj.pub);
+	    console.log('\tAddr   : ' + wkObj.addr);
 	  }
 	
 	  var hash = util.sha256ripe160(s.buffer);
@@ -564,10 +589,10 @@
 	  p('\nScript P2SH:');
 	  p('\tHex     : ' + buffertools.toHex(s.buffer));
 	  p('\tHuman   : ' + s.toHumanReadable());
-	  p('\tScript Hash: ' +  buffertools.toHex(hash));
-	  var a = new Address(networks.livenet.P2SHVersion,hash);
-	  p('\tp2sh Addr: ' +  a.toString());
-	 
+	  p('\tScript Hash: ' + buffertools.toHex(hash));
+	  var a = new Address(networks.livenet.P2SHVersion, hash);
+	  p('\tp2sh Addr: ' + a.toString());
+	
 	};
 	
 	module.exports.run = run;
@@ -577,18 +602,18 @@
 	
 #ECIES.js
 	var run = function() {
-	  bitcore = typeof (bitcore) === 'undefined' ? require('../bitcore') : bitcore;
+	  bitcore = typeof(bitcore) === 'undefined' ? require('../bitcore') : bitcore;
 	
 	  console.log('ECIES: Elliptic Curve Integrated Encryption Scheme');
 	  console.log('A way of encrypting with a public key and decrypting with a private key.');
-	  
+	
 	  var key = bitcore.Key.generateSync();
 	  console.log('Private key: ' + key.private.toString('hex'));
 	  console.log('Public key: ' + key.public.toString('hex'));
-	  
+	
 	  var message = new Buffer('This is a message to be encrypted');
 	  console.log('Message: "' + message.toString() + '"');
-	  
+	
 	  var encrypted = bitcore.ECIES.encrypt(key.public, message);
 	  console.log('Encrypted (with public key): ' + encrypted.toString('hex'));
 	
@@ -622,7 +647,7 @@
 	
 #HierarchicalKey.js
 	var run = function() {
-	  bitcore = typeof (bitcore) === 'undefined' ? require('../bitcore') : bitcore;
+	  bitcore = typeof(bitcore) === 'undefined' ? require('../bitcore') : bitcore;
 	  var HierarchicalKey = bitcore.HierarchicalKey;
 	  var Address = bitcore.Address;
 	  var networks = bitcore.networks;
@@ -726,9 +751,11 @@
 	
 #PeerDiscovery.js
 	var PeerManager = require('../lib/PeerManager');
-	var peerman     = new PeerManager();
+	var peerman = new PeerManager();
 	
-	peerman.discover({ limit: 12 }).start();
+	peerman.discover({
+	  limit: 12
+	}).start();
 	
 #PeerManager.js
 	'use strict';
@@ -951,7 +978,7 @@
 	       */
 	
 	      var txid = tx.getHash().toString('hex');
-	      console.log('Created transaction with txid '+txid);
+	      console.log('Created transaction with txid ' + txid);
 	      var raw_tx = tx.serialize().toString('hex');
 	      console.log('Transaction raw hex dump:');
 	      console.log('-------------------------------------');
@@ -997,16 +1024,17 @@
 	
 	var con = new Connection(socket, peer);
 	
-	con.on('error', function (msg) {
-	  var peer = msg.peer, err = msg.err;
+	con.on('error', function(msg) {
+	  var peer = msg.peer,
+	    err = msg.err;
 	  console.error('Error connecting to peer', peer.host + ':' + peer.port, '(' + err.message + ')');
 	});
 	
-	con.on('disconnect', function (msg) {
+	con.on('disconnect', function(msg) {
 	  console.log('disconnect: ', msg);
 	});
 	
-	con.on('connect', function (msg) {
+	con.on('connect', function(msg) {
 	  console.log('Connected to %s', msg.peer.host + ':' + msg.peer.port);
 	});
 	
@@ -1015,40 +1043,39 @@
 	// Make a log function available to all listeners
 	// The log function is just like console.log except it prefixes 
 	// messages with [host:port]
-	function listen (event_name, fn) {
-	  con.on(event_name, function (event) {
-	    fn(event, function () {
+	function listen(event_name, fn) {
+	  con.on(event_name, function(event) {
+	    fn(event, function() {
 	      var args = Array.prototype.slice.call(arguments);
 	      var str = args.shift();
 	      str = '[%s:%s] ' + str;
-	      args = [ str, event.peer.host, event.peer.port ].concat(args);
+	      args = [str, event.peer.host, event.peer.port].concat(args);
 	      console.log.apply(console, args);
 	    });
 	  });
 	}
 	
-	listen('getaddr', function (event, log) {
+	listen('getaddr', function(event, log) {
 	  log('Received message getaddr');
 	  log(event);
 	});
 	
-	listen('verack', function (event, log) {
+	listen('verack', function(event, log) {
 	  log('Received message verack');
 	});
 	
-	listen('version', function (event, log) {
+	listen('version', function(event, log) {
 	  log('Received message version (%s)', event.message.version);
 	});
 	
-	listen('addr', function (event, log) {
+	listen('addr', function(event, log) {
 	  log('Received message addr (%s addresses)', event.message.addrs.length);
 	});
 	
-	listen('inv', function (event, log) {
+	listen('inv', function(event, log) {
 	  log('Received message inv (%s invs)', event.message.count);
 	  console.log(event.message.invs);
 	});
-	
 	
 #VanityAddress.js
 	'use strict';
@@ -1063,15 +1090,15 @@
 	  // config your regular expression
 	  var re = /[0-9]{6}$/; // ends in 6 digits
 	
-	  var a,k,m;
+	  var a, k, m;
 	  while (true) {
 	    k = Key.generateSync();
 	    a = Address.fromKey(k);
 	    m = a.toString().match(re);
 	    if (m) break;
 	  }
-	  console.log('Address: '+a.toString());
-	  console.log('Private Key: '+k.private.toString('hex'));
+	  console.log('Address: ' + a.toString());
+	  console.log('Private Key: ' + k.private.toString('hex'));
 	
 	};
 	

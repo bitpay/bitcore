@@ -34,7 +34,14 @@ var PeerManager = bitcore.PeerManager;
 #Examples
 
 Examples are provided [here](examples.md)
-Or in form of .js files at [/examples](/examples) folder.
+Build the examples by installing and running gulp:
+
+```
+npm install -g gulp
+gulp
+```
+
+Javascript files available at [/examples](/examples) folder.
 
 
 #Security
