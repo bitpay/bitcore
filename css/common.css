@@ -36,6 +36,16 @@ a:hover {
 	color: white;
 }
 
+.text-gray {
+	color: #999;
+}
+
+a.text-gray:hover {
+	color: #999;
+}
+
+.db { display: block;}
+
 .ribbon-phone a {
 	background: #34495E;
 	display: block;
