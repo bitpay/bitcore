@@ -184,7 +184,7 @@ if (require.main === module) {
   var pjson = require('../package.json');
   bitcoreBundle.pipe(
       program.stdout ? process.stdout :
-      fs.createWriteStream('browser/bitcore-'+pjson.version+'.js'));
+      fs.createWriteStream('browser/bitcore-dev.js'));
 }
 
 module.exports.createBitcore = createBitcore;
