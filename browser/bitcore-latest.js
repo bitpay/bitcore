@@ -1,1 +1,1 @@
-bitcore-0.1.24.js
+bitcore-0.1.26.js
