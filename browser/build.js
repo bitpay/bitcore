@@ -181,7 +181,10 @@ if (require.main === module) {
     testBundle.pipe(fs.createWriteStream('browser/testdata.js'));
   }
   var bitcoreBundle = createBitcore(program);
-  bitcoreBundle.pipe(program.stdout ? process.stdout : fs.createWriteStream('browser/bundle.js'));
+  var pjson = require('../package.json');
+  bitcoreBundle.pipe(
+      program.stdout ? process.stdout :
+      fs.createWriteStream('browser/bitcore-'+pjson.version+'.js'));
 }
 
 module.exports.createBitcore = createBitcore;
