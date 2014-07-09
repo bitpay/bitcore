@@ -75,6 +75,48 @@ describe('ECIES', function() {
       decrypted.toString().should.equal('this is my message');
     });
 
+    it('should encrypt and decrypt 0x80 correctly, the first bad byte', function() {
+      var privhex = 'e0224327f5e4a9daea6c7b996cb013775f90821d15d7d0d25db517c7cd0c1a8e';
+      var key = new bitcore.Key();
+      key.private = new Buffer(privhex, 'hex');
+      key.regenerateSync();
+
+      var data = new Buffer([0x80]);
+      var encrypted = bitcore.ECIES.encrypt(key.public, data);
+      var decrypted = bitcore.ECIES.decrypt(key.private, encrypted);
+      decrypted.toString('hex').should.equal('80');
+      decrypted.toString('hex').should.not.equal('c280');
+    });
+
+    it('should encrypt and decrypt this known problematic encrypted message', function() {
+      var privhex = 'e0224327f5e4a9daea6c7b996cb013775f90821d15d7d0d25db517c7cd0c1a8e';
+      var key = new bitcore.Key();
+      key.private = new Buffer(privhex, 'hex');
+      key.regenerateSync();
+
+      var data = new Buffer('010053bdae9b000000017b2274797065223a2268656c6c6f222c22636f70617965724964223a22303237323735366234366561386564313763376166613934303861306161333535616266326432623263353134373637343766353135326332623535653163656230227d', 'hex');
+      var data = new Buffer('53bdae00', 'hex');
+
+      var encrypted = bitcore.ECIES.encrypt(key.public, data);
+      var decrypted = bitcore.ECIES.decrypt(key.private, encrypted);
+      decrypted.toString('hex').should.not.equal('53c2bdc2ae00');
+      decrypted.toString('hex').should.equal('53bdae00');
+
+    });
+
+    it('should encrypt and decrypt this known problematic encrypted message', function() {
+      var privhex = 'e0224327f5e4a9daea6c7b996cb013775f90821d15d7d0d25db517c7cd0c1a8e';
+      var key = new bitcore.Key();
+      key.private = new Buffer(privhex, 'hex');
+      key.regenerateSync();
+
+      var data = new Buffer('010053bdae9b000000017b2274797065223a2268656c6c6f222c22636f70617965724964223a22303237323735366234366561386564313763376166613934303861306161333535616266326432623263353134373637343766353135326332623535653163656230227d', 'hex');
+      var encrypted = bitcore.ECIES.encrypt(key.public, data);
+      var decrypted = bitcore.ECIES.decrypt(key.private, encrypted);
+      decrypted.toString('hex').should.equal('010053bdae9b000000017b2274797065223a2268656c6c6f222c22636f70617965724964223a22303237323735366234366561386564313763376166613934303861306161333535616266326432623263353134373637343766353135326332623535653163656230227d');
+
+    });
+
     it('should decrypt this known problematic encrypted message', function() {
       var privhex = 'e0224327f5e4a9daea6c7b996cb013775f90821d15d7d0d25db517c7cd0c1a8e';
       var key = new bitcore.Key();
