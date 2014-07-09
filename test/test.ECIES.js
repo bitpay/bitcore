@@ -75,6 +75,20 @@ describe('ECIES', function() {
       decrypted.toString().should.equal('this is my message');
     });
 
+    it('should decrypt this known problematic encrypted message', function() {
+      var privhex = 'e0224327f5e4a9daea6c7b996cb013775f90821d15d7d0d25db517c7cd0c1a8e';
+      var key = new bitcore.Key();
+      key.private = new Buffer(privhex, 'hex');
+      key.regenerateSync();
+
+      var encryptedhex = '02f773c550bf228327f773b1dc63802055ba7333ee4ea86323e1a77365f14fede041dbe628dc636c5eebb572578e79184a96eee82db57b456328ca080a9e8b0b856474119f65b942b088ce09dcfb8536632d57343d533e9b55c8f17cc52466a6dfada1848923782e99e8f2210cfd6a04510ea0a482f38e43a88b018b6e9cc27511df873f7aea04fd342a42f651481f42f91a7a672ef9d56080d072417ca6cb1a2771b6838f08ab49470d84fa67f85886382b503ab86fefd02195e49c0f8516884a3adc62bf176c5ff1665bafe1c9af59f6857531e86c2a650bebdbc60970f6b1ce';
+      var encrypted = new Buffer(encryptedhex, 'hex');
+
+      var decrypted = bitcore.ECIES.decrypt(key.private, encrypted);
+      decrypted.slice(10).toString().should.equal('{"type":"hello","copayerId":"024c0ec590ba86bbaf7beb9823c6610d02eacb9c3345bc678c09cc266590681af0"}');
+
+    });
+
     it('should not fail for long messages', function() {
       var key = new bitcore.Key();
       key.private = bitcore.util.sha256('test');
