@@ -2,7 +2,6 @@
 
 var fs = require('fs');
 var browserify = require('browserify');
-var browserPack = require('browser-pack');
 var exec = require('child_process').exec;
 var sys = require('sys');
 var puts = function(error, stdout, stderr) {
@@ -134,7 +133,6 @@ var createBitcore = function(opts) {
 
 var createTestData = function() {
   var bopts = {
-    pack: pack,
     debug: true,
     standalone: 'testdata',
     insertGlobals: true

@@ -1,57 +1,4 @@
-require=
-// modules are defined as an array
-// [ module function, map of requireuires ]
-//
-// map of requireuires is short require name -> numeric require
-//
-// anything defined in a previous bundle is accessed via the
-// orig method which is the requireuire for previous bundles
-(function outer (modules, cache, entry) {
-    // Save the require from previous bundle to this closure if any
-    var previousRequire = typeof require == "function" && require;
-
-    function newRequire(name, jumped, inSkipCache){
-
-        var m, skipCache = inSkipCache; 
-        if (typeof name === 'string') {
-          if (name.charAt(0) === '!' ) {
-            name = name.substr(1);
-            skipCache=true;
-          }
-        }
-        if(skipCache || !cache[name]) {
-            if(!modules[name]) {
-                // if we cannot find the the module within our internal map or
-                // cache jump to the current global require ie. the last bundle
-                // that was added to the page.
-                var currentRequire = typeof require == "function" && require;
-                if (!jumped && currentRequire) return currentRequire(name, true);
-
-                // If there are other bundles on this page the require from the
-                // previous one is saved to 'previousRequire'. Repeat this as
-                // many times as there are bundles until the module is found or
-                // we exhaust the require chain.
-                if (previousRequire) return previousRequire(name, true);
-                throw new Error('Cannot find module \'' + name + '\'');
-            }
-
-            m = {exports:{}};
-            var nextSkipCache = inSkipCache ? false : skipCache;
-            if (!skipCache) cache[name] = m; 
-            skipCache = false;
-            modules[name][0].call(m.exports, function(x){
-                var id = modules[name][1][x];
-                return newRequire(id ? id : x, false, nextSkipCache);
-            },m,m.exports,outer,modules,cache,entry);
-        } 
-        return m ? m.exports:cache[name].exports;
-    }
-    for(var i=0;i<entry.length;i++) newRequire(entry[i]);
-
-    // Override the current require with this new one
-    return newRequire;
-})
-({1:[function(require,module,exports){
+require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 
 },{}],2:[function(require,module,exports){
 /*!
@@ -1174,7 +1121,6 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
     ? Uint8Array
     : Array
 
-	var ZERO   = '0'.charCodeAt(0)
 	var PLUS   = '+'.charCodeAt(0)
 	var SLASH  = '/'.charCodeAt(0)
 	var NUMBER = '0'.charCodeAt(0)
@@ -1283,9 +1229,9 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 		return output
 	}
 
-	module.exports.toByteArray = b64ToByteArray
-	module.exports.fromByteArray = uint8ToBase64
-}())
+	exports.toByteArray = b64ToByteArray
+	exports.fromByteArray = uint8ToBase64
+}(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
 
 },{}],4:[function(require,module,exports){
 exports.read = function(buffer, offset, isLE, mLen, nBytes) {
