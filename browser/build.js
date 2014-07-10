@@ -11,17 +11,6 @@ var puts = function(error, stdout, stderr) {
   //sys.puts(stderr);
 };
 
-var pack = function(params) {
-  var file = require.resolve('soop');
-  var dir = file.substr(0, file.length - String('soop.js').length);
-  var preludePath = dir + 'example/custom_prelude.js';
-  params.raw = true;
-  params.sourceMapPrefix = '//#';
-  params.prelude = fs.readFileSync(preludePath, 'utf8');
-  params.preludePath = preludePath;
-  return browserPack(params);
-};
-
 var modules = [
   'lib/Address',
   'lib/Armory',
@@ -106,7 +95,6 @@ var createBitcore = function(opts) {
   }
 
   var bopts = {
-    pack: pack,
     debug: true,
     standalone: 'bitcore',
     insertGlobals: true
