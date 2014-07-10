@@ -1,6 +1,4 @@
-var imports = require('soop').imports();
-var base58 = imports.base58 || require('../lib/Base58').base58Check;
-
+var base58 = require('../lib/Base58').base58Check;
 
 // Constructor.  Takes the following forms:
 //   new EncodedData(<base58_address_string>)
@@ -32,7 +30,7 @@ EncodedData.prototype.withEncoding = function(encoding) {
 
 // answer the data in the given encoding
 EncodedData.prototype.as = function(encoding) {
-  if (!encodings[encoding]) throw new Error('invalid encoding');
+  if (!encodings[encoding]) throw new Error('invalid encoding: '+encoding);
   return this.converters[encoding].call(this);
 };
 

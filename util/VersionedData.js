@@ -1,6 +1,6 @@
-var imports = require('soop').imports();
-var base58 = imports.base58 || require('../lib/Base58').base58Check;
-var parent = imports.parent || require('./EncodedData');
+var base58 = require('../lib/Base58').base58Check;
+var util = require('util');
+var EncodedData = require('./EncodedData');
 
 
 function VersionedData(version, payload) {
@@ -14,8 +14,8 @@ function VersionedData(version, payload) {
   this.payload(payload);
 };
 
-VersionedData.parent = parent;
-parent.applyEncodingsTo(VersionedData);
+util.inherits(VersionedData, EncodedData);
+EncodedData.applyEncodingsTo(VersionedData);
 
 // get or set the version data (the first byte of the address)
 VersionedData.prototype.version = function(num) {

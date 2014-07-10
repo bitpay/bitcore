@@ -2,8 +2,6 @@
  * Simple synchronous parser based on node-binary.
  */
 
-var imports = require('soop').imports();
-
 function Parser(buffer) {
   this.subject = buffer;
   this.pos = 0;
