@@ -17,12 +17,16 @@ describe('Address', function() {
     var a = new Address('1KfyjCgBSMsLqiCbakfSdeoBUqMqLUiu3T');
     should.exist(a);
   });
+  it('should be able to transform to string', function() {
+    var a = new Address('1GfGL3iLTfX43KSCd95WhMi4bgU36qjzC1');
+    a.toString.bind(a).should.not.throw();
+    a.toString().should.equal('1GfGL3iLTfX43KSCd95WhMi4bgU36qjzC1');
+  });
   var data = [
     ['1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', true],
     ['11111111111111111111111111122222234', false], // totally invalid
     ['32QBdjycLwbDTuGafUwaU5p5GxzSLPYoF6', true],
     ['1Q1pE5vPGEEMqRcVRMbtBK842Y6Pzo6nK9', true],
-    ['1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', true],
     ['1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNb', false], //bad checksum ... thanks @wtogami
     ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW62i', true],
     ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW600', false],  // bad checksum

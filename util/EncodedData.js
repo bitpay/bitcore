@@ -54,16 +54,6 @@ EncodedData.prototype.validate = function() {
   this._validate();
 };
 
-// Boolean protocol for testing if valid
-EncodedData.prototype.isValid = function() {
-  try {
-    this.validate();
-    return true;
-  } catch (e) {
-    return false;
-  }
-};
-
 // convert to a string (in base58 form)
 EncodedData.prototype.toString = function() {
   return this.as('base58');
@@ -154,4 +144,4 @@ EncodedData.applyEncodingsTo = function(aClass) {
 
 EncodedData.applyEncodingsTo(EncodedData);
 
-module.exports = require('soop')(EncodedData);
+module.exports = (EncodedData);

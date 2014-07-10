@@ -4,8 +4,8 @@ var EncodedData = require('./EncodedData');
 
 
 function VersionedData(version, payload) {
+  VersionedData.super_.call(this, version, payload);
   if (typeof version != 'number') {
-    VersionedData.super(this, arguments);
     return;
   };
   this.data = new Buffer(payload.length + 1);
@@ -39,4 +39,4 @@ VersionedData.prototype.payload = function(data) {
   return this.as('binary').slice(1);
 };
 
-module.exports = require('soop')(VersionedData);
+module.exports = (VersionedData);

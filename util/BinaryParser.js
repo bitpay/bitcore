@@ -134,4 +134,4 @@ Parser.prototype.varStr = function() {
   return this.buffer(len);
 };
 
-module.exports = require('soop')(Parser);
+module.exports = (Parser);
