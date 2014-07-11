@@ -84,7 +84,31 @@ describe('Point', function() {
       mult.y.toBuffer({size: 32}).toString('hex').should.equal('e0220ac6e8524ca3f80c2c65a390dacc0371a6875afc8546d621eb20284e5568');
     });
 
-    it('should multiply this number by 200', function() {
+    it('should fail if x < 32 bytes', function() {
+      var axhex = "69b154b42ff9452c31251cb341d7db01ad603dc56d64f9c5fb9e7031b89a241d";
+      var axbuf = new Buffer(axhex, 'hex');
+      var ayhex = "eeedc91342b3c8982c1e676435780fe5f9d62f3f692e8d1512485d77fab35997";
+      var aybuf = new Buffer(ayhex, 'hex');
+      var a = new Point(bignum.fromBuffer(axbuf, {size: 32}), bignum.fromBuffer(aybuf, {size: 32}));
+
+      var x = new Buffer(31);
+      x.fill(0);
+      (function() {Point.multiply(a, x);}).should.throw('if x is a buffer, it must be 32 bytes');
+    });
+
+    it('should fail if x > 32 bytes', function() {
+      var axhex = "69b154b42ff9452c31251cb341d7db01ad603dc56d64f9c5fb9e7031b89a241d";
+      var axbuf = new Buffer(axhex, 'hex');
+      var ayhex = "eeedc91342b3c8982c1e676435780fe5f9d62f3f692e8d1512485d77fab35997";
+      var aybuf = new Buffer(ayhex, 'hex');
+      var a = new Point(bignum.fromBuffer(axbuf, {size: 32}), bignum.fromBuffer(aybuf, {size: 32}));
+
+      var x = new Buffer(33);
+      x.fill(0);
+      (function() {Point.multiply(a, x);}).should.throw('if x is a buffer, it must be 32 bytes');
+    });
+
+    it('should multiply this number by 200 (buffer)', function() {
       var axhex = "69b154b42ff9452c31251cb341d7db01ad603dc56d64f9c5fb9e7031b89a241d";
       var axbuf = new Buffer(axhex, 'hex');
       var ayhex = "eeedc91342b3c8982c1e676435780fe5f9d62f3f692e8d1512485d77fab35997";
@@ -96,6 +120,44 @@ describe('Point', function() {
       var mult = Point.multiply(a, xbuf);
       mult.x.toBuffer({size: 32}).toString('hex').should.equal('91c03d9104df24f01d69702c680a53a9b46ba49de89ab27819ea02c61229bace');
       mult.y.toBuffer({size: 32}).toString('hex').should.equal('5d2fdbdeab06383f14b2702e893444be5e80af58cecb9a70c1ae22e9daab69c1');
+    });
+
+    it('should multiply this number by 200 (number)', function() {
+      var axhex = "69b154b42ff9452c31251cb341d7db01ad603dc56d64f9c5fb9e7031b89a241d";
+      var axbuf = new Buffer(axhex, 'hex');
+      var ayhex = "eeedc91342b3c8982c1e676435780fe5f9d62f3f692e8d1512485d77fab35997";
+      var aybuf = new Buffer(ayhex, 'hex');
+      var a = new Point(bignum.fromBuffer(axbuf, {size: 32}), bignum.fromBuffer(aybuf, {size: 32}));
+
+      var mult = Point.multiply(a, 200);
+      mult.x.toBuffer({size: 32}).toString('hex').should.equal('91c03d9104df24f01d69702c680a53a9b46ba49de89ab27819ea02c61229bace');
+      mult.y.toBuffer({size: 32}).toString('hex').should.equal('5d2fdbdeab06383f14b2702e893444be5e80af58cecb9a70c1ae22e9daab69c1');
+    });
+
+    it('should multiply this number by 200 (string)', function() {
+      var axhex = "69b154b42ff9452c31251cb341d7db01ad603dc56d64f9c5fb9e7031b89a241d";
+      var axbuf = new Buffer(axhex, 'hex');
+      var ayhex = "eeedc91342b3c8982c1e676435780fe5f9d62f3f692e8d1512485d77fab35997";
+      var aybuf = new Buffer(ayhex, 'hex');
+      var a = new Point(bignum.fromBuffer(axbuf, {size: 32}), bignum.fromBuffer(aybuf, {size: 32}));
+
+      var mult = Point.multiply(a, '200');
+      mult.x.toBuffer({size: 32}).toString('hex').should.equal('91c03d9104df24f01d69702c680a53a9b46ba49de89ab27819ea02c61229bace');
+      mult.y.toBuffer({size: 32}).toString('hex').should.equal('5d2fdbdeab06383f14b2702e893444be5e80af58cecb9a70c1ae22e9daab69c1');
+    });
+
+    it('should multiply this point by big number', function() {
+      var axhex = "69b154b42ff9452c31251cb341d7db01ad603dc56d64f9c5fb9e7031b89a241d";
+      var axbuf = new Buffer(axhex, 'hex');
+      var ayhex = "eeedc91342b3c8982c1e676435780fe5f9d62f3f692e8d1512485d77fab35997";
+      var aybuf = new Buffer(ayhex, 'hex');
+      var a = new Point(bignum.fromBuffer(axbuf, {size: 32}), bignum.fromBuffer(aybuf, {size: 32}));
+
+      var x = new bignum('69b154b42ff9452c31251cb341d7db01ad603dc56d64f9c5fb9e7031b89a241d', 16);
+      var xbuf = x.toBuffer({size: 32});
+      var mult = Point.multiply(a, xbuf);
+      mult.x.toBuffer().toString('hex').should.equal('cdc09cfe61eb6a6a3de87feb4a001e82396142c5201d50b5284ac04c1969daa5');
+      mult.y.toBuffer().toString('hex').should.equal('405813e7942e25cadefa653baf4230fc009a461b5ead16ed1f5fd80c9ea13c02');
     });
 
   });
