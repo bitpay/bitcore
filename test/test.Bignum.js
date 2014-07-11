@@ -62,4 +62,47 @@ describe('Bignum', function() {
 
   });
 
+  describe('#fromBuffer', function() {
+    
+    it('should work with big endian', function() {
+      var bn = Bignum.fromBuffer(new Buffer('0001', 'hex'), {endian: 'big'});
+      bn.toString().should.equal('1');
+    });
+
+    it('should work with big endian 256', function() {
+      var bn = Bignum.fromBuffer(new Buffer('0100', 'hex'), {endian: 'big'});
+      bn.toString().should.equal('256');
+    });
+
+    it('should work with little endian if we specify the size', function() {
+      var bn = Bignum.fromBuffer(new Buffer('0100', 'hex'), {size: 2, endian: 'little'});
+      bn.toString().should.equal('1');
+    });
+
+  });
+
+  describe('#toBuffer', function() {
+    
+    it('should create a 4 byte buffer', function() {
+      var bn = new Bignum(1);
+      bn.toBuffer({size: 4}).toString('hex').should.equal('00000001');
+    });
+
+    it('should create a 4 byte buffer in little endian', function() {
+      var bn = new Bignum(1);
+      bn.toBuffer({size: 4, endian: 'little'}).toString('hex').should.equal('01000000');
+    });
+
+    it('should create a 2 byte buffer even if you ask for a 1 byte', function() {
+      var bn = new Bignum('ff00', 16);
+      bn.toBuffer({size: 1}).toString('hex').should.equal('ff00');
+    });
+
+    it('should create a 4 byte buffer even if you ask for a 1 byte', function() {
+      var bn = new Bignum('ffffff00', 16);
+      bn.toBuffer({size: 4}).toString('hex').should.equal('ffffff00');
+    });
+
+  });
+
 });
