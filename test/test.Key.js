@@ -10,6 +10,8 @@ var Key = bitcore.Key;
 var Point = bitcore.Point;
 var bignum = bitcore.Bignum;
 
+var testdata = testdata || require('./testdata');
+
 describe('Key (ECKey)', function() {
   it('should initialize the main object', function() {
     should.exist(Key);
@@ -192,5 +194,18 @@ describe('Key (ECKey)', function() {
     });
   });
 
+  describe('secp256k1 test vectors', function() {
+    //test vectors from http://crypto.stackexchange.com/questions/784/are-there-any-secp256k1-ecdsa-test-examples-available
+    testdata.dataSecp256k1.nTimesG.forEach(function(val) {
+      it('should multiply n by G and get p from test data', function() {
+        var key = new Key();
+        key.private = new Buffer(val.n, 'hex');
+        key.regenerateSync();
+        key.compressed = false;
+        key.public.slice(1, 33).toString('hex').toUpperCase().should.equal(val.px);
+        key.public.slice(33, 65).toString('hex').toUpperCase().should.equal(val.py);
+      });
+    });
+  });
 
 });
