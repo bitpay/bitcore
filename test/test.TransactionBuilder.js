@@ -3,6 +3,7 @@
 var chai = chai || require('chai');
 chai.config.includeStack = true;
 var bitcore = bitcore || require('../bitcore');
+var bignum = bitcore.Bignum;
 
 var should = chai.should();
 
@@ -73,7 +74,6 @@ describe('TransactionBuilder', function() {
     f(0.001).length.should.equal(1);
   });
 
-  /*jshint -W068 */
   it('#_selectUnspent should return null if not enough utxos', function() {
     (function() { f(1.12); }).should.throw();
   });
@@ -130,7 +130,6 @@ describe('TransactionBuilder', function() {
       .setUnspent(testdata.dataUnspent)
       .setOutputs(outs);
   };
-
 
   it('should fail to create tx', function() {
 

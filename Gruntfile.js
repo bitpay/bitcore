@@ -26,7 +26,7 @@ module.exports = function(grunt) {
         tasks: ['markdown']
       },
       scripts: {
-        files: ['**/*.js', '**/*.html', '!**/node_modules/**', '!browser/bundle.js', '!browser/testdata.js', '!browser/vendor-bundle.js', '!docs/**', '!*.md', '!README.html', '!CONTRIBUTING.html'],
+        files: ['**/*.js', '**/*.html', '!**/node_modules/**', '!browser/bundle.js', '!browser/testdata.js', '!docs/**', '!*.md', '!README.html', '!CONTRIBUTING.html'],
         tasks: ['shell'],
       },
     },

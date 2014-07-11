@@ -14,6 +14,7 @@ var dataSigNonCanonical = JSON.parse(fs.readFileSync('test/data/sig_noncanonical
 var dataBase58KeysValid = JSON.parse(fs.readFileSync('test/data/base58_keys_valid.json'));
 var dataBase58KeysInvalid = JSON.parse(fs.readFileSync('test/data/base58_keys_invalid.json'));
 var dataSighash = JSON.parse(fs.readFileSync('test/data/sighash.json'));
+var dataSecp256k1 = JSON.parse(fs.readFileSync('test/data/secp256k1.json'));
 
 module.exports.dataValid = dataValid;
 module.exports.dataInvalid = dataInvalid;
@@ -30,6 +31,7 @@ module.exports.dataSigNonCanonical = dataSigNonCanonical;
 module.exports.dataBase58KeysValid = dataBase58KeysValid;
 module.exports.dataBase58KeysInvalid = dataBase58KeysInvalid;
 module.exports.dataSighash = dataSighash;
+module.exports.dataSecp256k1 = dataSecp256k1;
 
 var buffer = new Buffer(fs.readFileSync('test/data/blk86756-testnet.dat'));
 module.exports.dataRawBlock = buffer;
