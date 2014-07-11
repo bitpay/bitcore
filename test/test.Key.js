@@ -163,6 +163,23 @@ describe('Key (ECKey)', function() {
     });
   });
 
+  describe('verifySync', function() {
+    var hash = bitcore.util.sha256('test data');
+    var key = new bitcore.Key();
+    key.private = bitcore.util.sha256('my fake private key');
+    key.regenerateSync();
+
+    it('should verify this example generated in the browser', function() {
+      var sig = new Buffer('304402200e02016b816e1b229559b6db97abc528438c64056a412eee2b7c41887ddf17010220ad9f1cd56fd382650286f51a842bba0a7664da164093db956b51f623b0d8e64f', 'hex');
+      key.verifySignatureSync(hash, sig).should.equal(true);
+    });
+
+    it('should verify this example generated in node', function() {
+      var sig = new Buffer('30450221008bab1f0a2ff2f9cb8992173d8ad73c229d31ea8e10b0f4d4ae1a0d8ed76021fa02200993a6ec81755b9111762fc2cf8e3ede73047515622792110867d12654275e72', 'hex')
+      key.verifySignatureSync(hash, sig).should.equal(true);
+    });
+  });
+
   describe('bug in linux', function() {
     it('should assign private key starting with 0 properly', function(){
       var key = new Key();
