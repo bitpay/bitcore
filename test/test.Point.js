@@ -12,6 +12,8 @@ var assert = chai.assert;
 var Point = bitcore.Point;
 var Key = bitcore.Key;
 
+var testdata = testdata || require('./testdata');
+
 describe('Point', function() {
 
   it('should initialize the main object', function() {
@@ -178,6 +180,19 @@ describe('Point', function() {
       p.toCompressedPubKey().toString('hex').should.equal('028078d90f1ec3ac0a3ec1d2184939a8ed675eec5008d585132ba75465429ec0eb');
     });
 
+  });
+
+  describe('secp256k1 test vectors', function() {
+    //test vectors from http://crypto.stackexchange.com/questions/784/are-there-any-secp256k1-ecdsa-test-examples-available
+    var G = bitcore.Curve.getG();
+    testdata.dataSecp256k1.nTimesG.forEach(function(val) {
+      it('should multiply n by G and get p from test data', function() {
+        var n = new Buffer(val.n, 'hex');
+        var p = Point.multiply(G, n);
+        p.x.toBuffer().toString('hex').toUpperCase().should.equal(val.px);
+        p.y.toBuffer().toString('hex').toUpperCase().should.equal(val.py);
+      });
+    });
   });
 
 });
