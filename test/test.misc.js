@@ -84,13 +84,13 @@ describe('Miscelaneous stuff', function() {
     should.exist(bitcore.Bignum);
   });
   it('should create a bignum from string', function() {
-    var n = new bignum('9832087987979879879879879879879879879879879879');
+    var n = bignum('9832087987979879879879879879879879879879879879');
     should.exist(n);
   });
   it('should perform basic math operations for bignum', function() {
-    var b = new bignum('782910138827292261791972728324982')
-      .sub(new bignum('182373273283402171237474774728373'))
-      .div(new bignum(13));
+    var b = bignum('782910138827292261791972728324982')
+      .sub('182373273283402171237474774728373')
+      .div(13);
     b.toNumber().should.equal(46195143503376160811884457968969);
   });
 

@@ -19,6 +19,11 @@ if (typeof process == 'undefined' || typeof process.versions == 'undefined') {
       should.exist(bn);
       bn.toString().should.equal('50');
     });
+
+    it('should parse this number', function() {
+      var bn = new Bignum(999970000);
+      bn.toString().should.equal('999970000');
+    });
     
     describe('#add', function() {
 

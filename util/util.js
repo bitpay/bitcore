@@ -224,7 +224,7 @@ exports.intToBufferSM = function(v) {
     v = new bignum(v);
   }
   var b, c;
-  var cmp = v.cmp(new bignum(0));
+  var cmp = v.cmp(0);
   if (cmp > 0) {
     b = v.toBuffer();
     c = padSign(b);
@@ -292,7 +292,7 @@ function padFrac(frac) {
 }
 
 function parseFullValue(res) {
-  return new bignum(res[1]).mul(new bignum('100000000')).add(new bignum(padFrac(res[2])));
+  return new bignum(res[1]).mul('100000000').add(new bignum(padFrac(res[2])));
 }
 
 function parseFracValue(res) {
@@ -300,7 +300,7 @@ function parseFracValue(res) {
 }
 
 function parseWholeValue(res) {
-  return new bignum(res[1]).mul(new bignum('100000000'));
+  return new bignum(res[1]).mul('100000000');
 }
 
 exports.parseValue = function parseValue(valueStr) {
@@ -368,7 +368,7 @@ var decodeDiffBits = exports.decodeDiffBits = function(diffBits, asBigInt) {
 
   var mov = 8 * ((diffBits >>> 24) - 3);
   while (mov-- > 0)
-    target = target.mul(new bignum(2));
+    target = target.mul(2);
 
   if (asBigInt) {
     return target;
