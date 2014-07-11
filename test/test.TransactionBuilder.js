@@ -194,7 +194,7 @@ describe('TransactionBuilder', function() {
     util.valueToBigInt(tx.outs[0].v).cmp(8000000).should.equal(0);
 
     // remainder is 0.0299 here because unspent select utxos in order
-    //util.valueToBigInt(tx.outs[1].v).cmp(new bignum(2990000)).should.equal(0);
+    util.valueToBigInt(tx.outs[1].v).cmp(2990000).should.equal(0);
   });
 
 
