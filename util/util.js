@@ -45,16 +45,6 @@ var ripe160 = exports.ripe160 = function(data) {
   }
   if (process.browser) {
     return new Buffer(hashjs.ripemd160().update(data).digest());
-    /*
-    var w = new browser.crypto31.lib.WordArray.init(Crypto.util.bytesToWords(data), data.length);
-    var wordArray = browser.crypto31.RIPEMD160(w);
-    var words = wordArray.words;
-    var answer = [];
-    for (var b = 0; b < words.length * 32; b += 8) {
-      answer.push((words[b >>> 5] >>> (24 - b % 32)) & 0xFF);
-    }
-    return new Buffer(answer, 'hex');
-    */
   }
   return new Buffer(crypto.createHash('rmd160').update(data).digest('binary'), 'binary');
 };
