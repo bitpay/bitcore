@@ -100,4 +100,22 @@ describe('Point', function() {
 
   });
 
+  describe('#toCompressedPubKey', function() {
+    
+    it('should handle an odd y', function() {
+      var p = new Point();
+      p.x = new bignum('e22d4eeedc02d79c00a8daba5f01c9a5a129ae028fa689328121d226fa9398b7', 16);
+      p.y = new bignum('3c4c880a28da79270e62901277c0ab122158aea8630e7c0bcb691adb3abfd33d', 16);
+      p.toCompressedPubKey().toString('hex').should.equal('03e22d4eeedc02d79c00a8daba5f01c9a5a129ae028fa689328121d226fa9398b7');
+    });
+
+    it('should handle an even y', function() {
+      var p = new Point();
+      p.x = new bignum('8078d90f1ec3ac0a3ec1d2184939a8ed675eec5008d585132ba75465429ec0eb', 16);
+      p.y = new bignum('32a389053fd408577bb7cdf8bbd4c58a3eca5af74a304de7510c9b3ffdaca17a', 16);
+      p.toCompressedPubKey().toString('hex').should.equal('028078d90f1ec3ac0a3ec1d2184939a8ed675eec5008d585132ba75465429ec0eb');
+    });
+
+  });
+
 });
