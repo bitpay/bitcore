@@ -221,7 +221,7 @@ var padSign = function(b) {
  */
 exports.intToBufferSM = function(v) {
   if ("number" === typeof v) {
-    v = new bignum(v);
+    v = bignum(v);
   }
   var b, c;
   var cmp = v.cmp(0);
@@ -245,7 +245,7 @@ exports.intToBufferSM = function(v) {
  */
 exports.bufferSMToInt = function(v) {
   if (!v.length) {
-    return new bignum(0);
+    return bignum(0);
   }
   // Arithmetic operands must be in range [-2^31...2^31]
   if (v.length > 4) {
@@ -292,15 +292,15 @@ function padFrac(frac) {
 }
 
 function parseFullValue(res) {
-  return new bignum(res[1]).mul('100000000').add(new bignum(padFrac(res[2])));
+  return bignum(res[1]).mul('100000000').add(padFrac(res[2]));
 }
 
 function parseFracValue(res) {
-  return new bignum(padFrac(res[1]));
+  return bignum(padFrac(res[1]));
 }
 
 function parseWholeValue(res) {
-  return new bignum(res[1]).mul('100000000');
+  return bignum(res[1]).mul('100000000');
 }
 
 exports.parseValue = function parseValue(valueStr) {
@@ -359,7 +359,7 @@ var createSynchrotron = exports.createSynchrotron = function(fn) {
 var decodeDiffBits = exports.decodeDiffBits = function(diffBits, asBigInt) {
   diffBits = +diffBits;
 
-  var target = new bignum(diffBits & 0xffffff);
+  var target = bignum(diffBits & 0xffffff);
   /*
    * shiftLeft is not implemented on the bignum browser
    *
