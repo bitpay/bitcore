@@ -144,4 +144,4 @@ EncodedData.applyEncodingsTo = function(aClass) {
 
 EncodedData.applyEncodingsTo(EncodedData);
 
-module.exports = (EncodedData);
+module.exports = EncodedData;

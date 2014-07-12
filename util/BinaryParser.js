@@ -134,4 +134,4 @@ Parser.prototype.varStr = function() {
   return this.buffer(len);
 };
 
-module.exports = (Parser);
+module.exports = Parser;
