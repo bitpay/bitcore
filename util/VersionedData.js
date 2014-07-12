@@ -39,4 +39,4 @@ VersionedData.prototype.payload = function(data) {
   return this.as('binary').slice(1);
 };
 
-module.exports = (VersionedData);
+module.exports = VersionedData;
