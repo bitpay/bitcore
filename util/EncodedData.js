@@ -132,11 +132,10 @@ EncodedData.applyEncodingsTo = function(aClass) {
   var tmp = {};
   for (var k in encodings) {
     var enc = encodings[k];
-    var obj = {};
+    var obj = Object.create(aClass.prototype);
     for (var j in enc) {
       obj[j] = enc[j];
     }
-    obj.__proto__ = aClass.prototype;
     tmp[k] = obj;
   }
   aClass.prototype.encodings = tmp;
