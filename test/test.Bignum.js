@@ -17,6 +17,13 @@ describe('Bignum', function() {
     var bn = new Bignum(999970000);
     bn.toString().should.equal('999970000');
   });
+
+  it('should parse numbers below and at bn.js internal word size', function() {
+    var bn = new Bignum(Math.pow(2, 26) - 1);
+    bn.toString().should.equal((Math.pow(2, 26) - 1).toString());
+    var bn = new Bignum(Math.pow(2, 26));
+    bn.toString().should.equal((Math.pow(2, 26)).toString());
+  });
   
   describe('#add', function() {
 
