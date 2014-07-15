@@ -76,8 +76,11 @@ var createBitcore = function(opts) {
     submodules.splice(submodules.indexOf('lib/BIP39'), 1);
     submodules.splice(submodules.indexOf('lib/BIP39WordlistEn'), 1);
     submodules.splice(submodules.indexOf('lib/PayPro'), 1);
+    submodules.splice(submodules.indexOf('lib/Connection'), 1);
+    submodules.splice(submodules.indexOf('lib/Peer'), 1);
+    submodules.splice(submodules.indexOf('lib/PeerManager'), 1);
     var assert = require('assert');
-    assert(submodules.length == modules.length - 3);
+    assert(submodules.length == modules.length - 6);
   }
 
   if (opts.submodules) {
