@@ -33,6 +33,8 @@ exports.livenet = {
   defaultClientPort: 8333
 };
 
+exports.mainnet = exports.livenet;
+
 exports.testnet = {
   name: 'testnet',
   magic: hex('0b110907'),
