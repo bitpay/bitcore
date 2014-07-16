@@ -65,6 +65,7 @@
     "sjcl": "=1.0.1",
     "hash.js": "=0.3.1",
     "bn.js": "=0.13.3",
+    "jsrsasign": "=0.0.3",
     "elliptic": "=0.15.7",
     "bindings": "=1.1.1",
     "bufferput": "git://github.com/bitpay/node-bufferput.git",
