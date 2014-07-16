@@ -18,6 +18,16 @@ describe('ScriptInterpreter', function() {
     var si = new ScriptInterpreter();
     should.exist(si);
   });
+
+  describe('SIGHASH constants', function() {
+    it('should equal the values from bitcoin core', function() {
+      ScriptInterpreter.SIGHASH_ALL.should.equal(1);
+      ScriptInterpreter.SIGHASH_NONE.should.equal(2);
+      ScriptInterpreter.SIGHASH_SINGLE.should.equal(3);
+      ScriptInterpreter.SIGHASH_ANYONECANPAY.should.equal(0x80);
+    });
+  });
+
   var testScripts = function(data, valid) {
     data.forEach(function(datum) {
       if (datum.length < 2) throw new Error('Invalid test data');
