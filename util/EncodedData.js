@@ -8,9 +8,14 @@ var base58 = require('../lib/Base58').base58Check;
 function EncodedData(data, encoding) {
   this.data = data;
   if (!encoding && (typeof data == 'string')) {
-    this.__proto__ = this.encodings['base58'];
+    encoding = 'base58';
+    this.converters = this.encodings[encoding].converters;
+    this._encoding = this.encodings[encoding]._encoding;
   } else {
-    this.__proto__ = this.encodings[encoding || 'binary'];
+    if (typeof this.encodings[encoding] === 'undefined')
+      encoding = 'binary';
+    this.converters = this.encodings[encoding].converters;
+    this._encoding = this.encodings[encoding]._encoding;
   }
 };
 
@@ -18,7 +23,8 @@ function EncodedData(data, encoding) {
 EncodedData.prototype.encoding = function(encoding) {
   if (encoding && (encoding != this._encoding)) {
     this.data = this.as(encoding);
-    this.__proto__ = this.encodings[encoding];
+    this.converters = this.encodings[encoding].converters;
+    this._encoding = this.encodings[encoding]._encoding;
   }
   return this._encoding;
 };
@@ -132,11 +138,10 @@ EncodedData.applyEncodingsTo = function(aClass) {
   var tmp = {};
   for (var k in encodings) {
     var enc = encodings[k];
-    var obj = {};
+    var obj = Object.create(aClass.prototype);
     for (var j in enc) {
       obj[j] = enc[j];
     }
-    obj.__proto__ = aClass.prototype;
     tmp[k] = obj;
   }
   aClass.prototype.encodings = tmp;

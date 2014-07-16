@@ -9,7 +9,7 @@ function VersionedData(version, payload) {
     return;
   };
   this.data = new Buffer(payload.length + 1);
-  this.__proto__ = this.encodings['binary'];
+  this.encoding('binary');
   this.version(version);
   this.payload(payload);
 };
