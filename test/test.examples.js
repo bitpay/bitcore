@@ -18,6 +18,7 @@ var examples = [
   'CreateAndSignTx-PayToPubkeyHash',
   'CreateAndSignTx-PayToScriptHash',
   'Script',
+  'ScriptInterpreter'
 ];
 
 describe('Examples', function() {
