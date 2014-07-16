@@ -142,7 +142,17 @@ var createTestData = function() {
   return tb.bundle();
 };
 
-
+var createTrusted = function(callback) {
+  var cp = require('child_process');
+  var ps = cp.spawn('/bin/bash', ['./browser/generate-trusted.sh'], {
+    customFds: [0, 1, 2],
+    cwd: __dirname + '/..'
+  });
+  return ps.on('exit', function(code) {
+    if (code !== 0) return callback(new Error('Exit code: ' + code));
+    return callback();
+  });
+};
 
 if (require.main === module) {
   var list = function(val) {
