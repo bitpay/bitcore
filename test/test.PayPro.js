@@ -334,7 +334,9 @@ describe('PayPro', function() {
       paypro.set('serialized_payment_details', pdbuf);
       paypro.set('pki_type', 'x509+sha256');
 
-      paypro.set('pki_data', x509cert); // contains one or more x509 certs
+      var key = require('fs').readFileSync(__dirname + '/data/x509.der');
+      paypro.set('pki_data', key); // contains one or more x509 certs
+      //paypro.set('pki_data', x509cert); // contains one or more x509 certs
 
       var key = new bitcore.Key();
       key.private = bitcore.util.sha256('test key');
