@@ -15,7 +15,7 @@ function MissingSourceError(msg, missingTxHash) {
   this.name = 'MissingSourceError';
 };
 
-MissingSourceError.prototype.__proto__ = Error.prototype;
+MissingSourceError.prototype = Object.create(Error.prototype);
 
 exports.MissingSourceError = MissingSourceError;
 
@@ -38,6 +38,6 @@ function VerificationError(msg, missingTxHash) {
   this.name = 'VerificationError';
 };
 
-VerificationError.prototype.__proto__ = Error.prototype;
+VerificationError.prototype = Object.create(Error.prototype);
 
 exports.VerificationError = VerificationError;
