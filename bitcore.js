@@ -33,7 +33,6 @@ requireWhenAccessed('buffertools', 'buffertools');
 requireWhenAccessed('Buffers.monkey', './patches/Buffers.monkey');
 requireWhenAccessed('config', './config');
 requireWhenAccessed('const', './const');
-requireWhenAccessed('Curve', './lib/Curve');
 requireWhenAccessed('Deserialize', './lib/Deserialize');
 requireWhenAccessed('ECIES', './lib/ECIES');
 requireWhenAccessed('log', './util/log');

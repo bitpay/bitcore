@@ -20,7 +20,6 @@ var modules = [
   'lib/Block',
   'lib/Bloom',
   'lib/Connection',
-  'lib/Curve',
   'lib/Deserialize',
   'lib/ECIES',
   'lib/Electrum',
