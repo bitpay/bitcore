@@ -12,7 +12,7 @@ function EncodedData(data, encoding) {
     this.converters = this.encodings[encoding].converters;
     this._encoding = this.encodings[encoding]._encoding;
   } else {
-    if (typeof this.encodings[encoding] === 'undefined')
+    if (this.encodings[encoding] == undefined)
       encoding = 'binary';
     this.converters = this.encodings[encoding].converters;
     this._encoding = this.encodings[encoding]._encoding;
@@ -22,8 +22,8 @@ function EncodedData(data, encoding) {
 // get or set the encoding used (transforms data)
 EncodedData.prototype.encoding = function(encoding) {
   if (encoding && (encoding != this._encoding)) {
-    this.converters = this.encodings[encoding].converters;
     this.data = this.as(encoding);
+    this.converters = this.encodings[encoding].converters;
     this._encoding = this.encodings[encoding]._encoding;
   }
   return this._encoding;
