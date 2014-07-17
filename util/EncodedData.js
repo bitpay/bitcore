@@ -22,8 +22,8 @@ function EncodedData(data, encoding) {
 // get or set the encoding used (transforms data)
 EncodedData.prototype.encoding = function(encoding) {
   if (encoding && (encoding != this._encoding)) {
-    this.data = this.as(encoding);
     this.converters = this.encodings[encoding].converters;
+    this.data = this.as(encoding);
     this._encoding = this.encodings[encoding]._encoding;
   }
   return this._encoding;
