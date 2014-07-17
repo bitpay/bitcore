@@ -132,6 +132,65 @@ describe('Key (ECKey)', function() {
     ret.should.equal(false);
   });
 
+  describe('#parseDERsig', function() {
+    it('should parse this signature generated in node', function() {
+      var sighex = '30450221008bab1f0a2ff2f9cb8992173d8ad73c229d31ea8e10b0f4d4ae1a0d8ed76021fa02200993a6ec81755b9111762fc2cf8e3ede73047515622792110867d12654275e72';
+      var sig = new Buffer(sighex, 'hex');
+      var parsed = Key.parseDERsig(sig);
+      parsed.header.should.equal(0x30)
+      parsed.length.should.equal(69)
+      parsed.rlength.should.equal(33);
+      parsed.rneg.should.equal(true);
+      parsed.rbuf.toString('hex').should.equal('008bab1f0a2ff2f9cb8992173d8ad73c229d31ea8e10b0f4d4ae1a0d8ed76021fa');
+      parsed.r.toString().should.equal('63173831029936981022572627018246571655303050627048489594159321588908385378810');
+      parsed.slength.should.equal(32);
+      parsed.sneg.should.equal(false);
+      parsed.sbuf.toString('hex').should.equal('0993a6ec81755b9111762fc2cf8e3ede73047515622792110867d12654275e72');
+      parsed.s.toString().should.equal('4331694221846364448463828256391194279133231453999942381442030409253074198130');
+    });
+
+    it('should parse this 69 byte signature', function() {
+      var sighex = '3043021f59e4705959cc78acbfcf8bd0114e9cc1b389a4287fb33152b73a38c319b50302202f7428a27284c757e409bf41506183e9e49dfb54d5063796dfa0d403a4deccfa';
+      var sig = new Buffer(sighex, 'hex');
+      var parsed = Key.parseDERsig(sig);
+      parsed.header.should.equal(0x30)
+      parsed.length.should.equal(67)
+      parsed.rlength.should.equal(31);
+      parsed.rneg.should.equal(false);
+      parsed.rbuf.toString('hex').should.equal('59e4705959cc78acbfcf8bd0114e9cc1b389a4287fb33152b73a38c319b503');
+      parsed.r.toString().should.equal('158826015856106182499128681792325160381907915189052224498209222621383996675');
+      parsed.slength.should.equal(32);
+      parsed.sneg.should.equal(false);
+      parsed.sbuf.toString('hex').should.equal('2f7428a27284c757e409bf41506183e9e49dfb54d5063796dfa0d403a4deccfa');
+      parsed.s.toString().should.equal('21463938592353267769710297084836796652964571266930856168996063301532842380538');
+    });
+
+    it('should parse this 68 byte signature', function() {
+      var sighex = '3042021e17cfe77536c3fb0526bd1a72d7a8e0973f463add210be14063c8a9c37632022061bfa677f825ded82ba0863fb0c46ca1388dd3e647f6a93c038168b59d131a51';
+      var sig = new Buffer(sighex, 'hex');
+      var parsed = Key.parseDERsig(sig);
+      parsed.header.should.equal(0x30)
+      parsed.length.should.equal(66)
+      parsed.rlength.should.equal(30);
+      parsed.rneg.should.equal(false);
+      parsed.rbuf.toString('hex').should.equal('17cfe77536c3fb0526bd1a72d7a8e0973f463add210be14063c8a9c37632');
+      parsed.r.toString().should.equal('164345250294671732127776123343329699648286106708464198588053542748255794');
+      parsed.slength.should.equal(32);
+      parsed.sneg.should.equal(false);
+      parsed.sbuf.toString('hex').should.equal('61bfa677f825ded82ba0863fb0c46ca1388dd3e647f6a93c038168b59d131a51');
+      parsed.s.toString().should.equal('44212963026209759051804639008236126356702363229859210154760104982946304432721');
+    });
+  });
+
+  describe('#rs2DER', function() {
+    it('should convert these known r and s values into a known signature', function() {
+      var r = new bignum('63173831029936981022572627018246571655303050627048489594159321588908385378810');
+      var s = new bignum('4331694221846364448463828256391194279133231453999942381442030409253074198130');
+      var der = Key.rs2DER(r, s);
+      der.toString('hex').should.equal('30450221008bab1f0a2ff2f9cb8992173d8ad73c229d31ea8e10b0f4d4ae1a0d8ed76021fa02200993a6ec81755b9111762fc2cf8e3ede73047515622792110867d12654275e72');
+    });
+  });
+
   describe('generateSync', function() {
     it('should not generate the same key twice in a row', function() {
       var key1 = Key.generateSync();
@@ -170,6 +229,17 @@ describe('Key (ECKey)', function() {
     var key = new bitcore.Key();
     key.private = bitcore.util.sha256('my fake private key');
     key.regenerateSync();
+
+    it('should verify a signature created right here', function() {
+      var sig = key.signSync(hash);
+      key.verifySignatureSync(hash, sig).should.equal(true);
+    });
+
+    it('should fail on an invalid signature', function() {
+      var sig = key.signSync(hash);
+      sig[15] = !sig[15];
+      key.verifySignatureSync(hash, sig).should.equal(false);
+    });
 
     it('should verify this example generated in the browser', function() {
       var sig = new Buffer('304402200e02016b816e1b229559b6db97abc528438c64056a412eee2b7c41887ddf17010220ad9f1cd56fd382650286f51a842bba0a7664da164093db956b51f623b0d8e64f', 'hex');

@@ -184,7 +184,7 @@ describe('Point', function() {
 
   describe('secp256k1 test vectors', function() {
     //test vectors from http://crypto.stackexchange.com/questions/784/are-there-any-secp256k1-ecdsa-test-examples-available
-    var G = bitcore.Curve.getG();
+    var G = Point.getG();
     testdata.dataSecp256k1.nTimesG.forEach(function(val) {
       it('should multiply n by G and get p from test data', function() {
         var n = new Buffer(val.n, 'hex');
