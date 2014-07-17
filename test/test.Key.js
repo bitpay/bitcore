@@ -230,6 +230,17 @@ describe('Key (ECKey)', function() {
     key.private = bitcore.util.sha256('my fake private key');
     key.regenerateSync();
 
+    it('should verify a signature created right here', function() {
+      var sig = key.signSync(hash);
+      key.verifySignatureSync(hash, sig).should.equal(true);
+    });
+
+    it('should fail on an invalid signature', function() {
+      var sig = key.signSync(hash);
+      sig[15] = !sig[15];
+      key.verifySignatureSync(hash, sig).should.equal(false);
+    });
+
     it('should verify this example generated in the browser', function() {
       var sig = new Buffer('304402200e02016b816e1b229559b6db97abc528438c64056a412eee2b7c41887ddf17010220ad9f1cd56fd382650286f51a842bba0a7664da164093db956b51f623b0d8e64f', 'hex');
       key.verifySignatureSync(hash, sig).should.equal(true);
