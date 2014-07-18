@@ -4,16 +4,11 @@ var chai = chai || require('chai');
 var bitcore = bitcore || require('../bitcore');
 var should = chai.should();
 
-var SINKeyModule = bitcore.SINKey;
-var SINKey;
+var SINKey = bitcore.SINKey;
 
 
 describe('SINKey', function() {
   it('should initialze the main object', function() {
-    should.exist(SINKeyModule);
-  });
-  it('should be able to create class', function() {
-    SINKey = SINKeyModule;
     should.exist(SINKey);
   });
   it('should be able to create instance', function() {
@@ -23,5 +18,14 @@ describe('SINKey', function() {
     should.exist(sk.privKey.private);
     should.exist(sk.privKey.public);
     should.exist(sk.privKey.compressed);
+  });
+
+  describe('#storeObj', function() {
+    it('should give an object', function() {
+      var sinkey = new SINKey();
+      sinkey.generate();
+      var obj = sinkey.storeObj();
+      should.exist(obj);
+    });
   });
 });
