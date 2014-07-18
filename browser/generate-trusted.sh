@@ -14,10 +14,20 @@ pushd lib &> /dev/null
 
 sed -i '$s/,$//g' RootCerts.js
 
-echo "module.exports = ["$'\n'"$(cat RootCerts.js)" > RootCerts.js
+echo "var RootCerts = ["$'\n'"$(cat RootCerts.js)" > RootCerts.js
 echo "];" >> RootCerts.js
 
 sed -i 's/^"/+ "/g' RootCerts.js
 sed -i 's/^+ "-----B/"-----B/g' RootCerts.js
+
+cat <<EOF > RootCerts.js
+// Use hash table for efficiency:
+RootCerts = RootCerts.reduce(function(trusted, cert) {
+  cert = cert.replace(/\s+/g, '');
+  trusted[cert] = true;
+  return trusted;
+}, {});
+module.exports = RootCerts;
+EOF
 
 popd &> /dev/null
