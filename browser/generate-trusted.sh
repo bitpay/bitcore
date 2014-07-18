@@ -20,7 +20,7 @@ echo "];" >> RootCerts.js
 sed -i 's/^"/+ "/g' RootCerts.js
 sed -i 's/^+ "-----B/"-----B/g' RootCerts.js
 
-cat <<EOF > RootCerts.js
+cat <<EOF >> RootCerts.js
 // Use hash table for efficiency:
 RootCerts = RootCerts.reduce(function(trusted, cert) {
   cert = cert.replace(/\s+/g, '');
