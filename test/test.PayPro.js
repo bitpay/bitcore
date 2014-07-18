@@ -339,7 +339,7 @@ describe('PayPro', function() {
 
       paypro.set('serialized_payment_details', pdbuf);
       paypro.set('pki_type', 'x509+sha256');
-      paypro.set('pki_data', x509.crt);
+      paypro.set('pki_data', [x509.crt]);
 
       paypro.sign(x509.priv);
 
@@ -362,7 +362,7 @@ describe('PayPro', function() {
       paypro.set('pki_type', 'x509+sha256');
 
       paypro.set('signature', x509.sig); // sig buffer
-      paypro.set('pki_data', x509.crt); // contains one or more x509 certs
+      paypro.set('pki_data', [x509.crt]); // contains one or more x509 certs
 
       var verify = paypro.verify();
       verify.should.equal(true);
