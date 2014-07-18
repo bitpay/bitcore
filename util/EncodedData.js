@@ -12,7 +12,7 @@ function EncodedData(data, encoding) {
     this.converters = this.encodings[encoding].converters;
     this._encoding = this.encodings[encoding]._encoding;
   } else {
-    if (typeof this.encodings[encoding] === 'undefined')
+    if (this.encodings[encoding] == undefined)
       encoding = 'binary';
     this.converters = this.encodings[encoding].converters;
     this._encoding = this.encodings[encoding]._encoding;
