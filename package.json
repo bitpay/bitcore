@@ -71,7 +71,8 @@
     "uglifyify": "=1.2.3",
     "async": "~0.2.10",
     "underscore": "~1.6.0",
-    "grunt": "~0.4.5"
+    "grunt": "~0.4.5",
+    "x11-hash": "0.0.2"
   },
   "devDependencies": {
     "grunt-contrib-watch": "~0.5.3",

@@ -42,7 +42,7 @@ exports.dogecoin = {
   name: 'dogecoin',
   magic: hex('c0c0c0c0'),
   addressVersion: 0x1e,
-  privKeyVersion: 128,
+  privKeyVersion: 158,
   P2SHVersion: 0x16,
   bip32publicVersion: 0x02c8b71e,
   bip32privateVersion: 0x02c8a3e4,
@@ -69,7 +69,7 @@ exports.litecoin = {
   name: 'litecoin',
   magic: hex('fbc0b6db'),
   addressVersion: 0x30,
-  privKeyVersion: 121,
+  privKeyVersion: 176,
   P2SHVersion: 0x05,
   bip32publicVersion: 0x0291b71e,
   bip32privateVersion: 0x0291a3e4,
@@ -91,6 +91,32 @@ exports.litecoin = {
     'dnsseed.weminemnc.com'
   ],
   defaultClientPort: 9333
+};
+
+exports.darkcoin = {
+  name: 'darkcoin',
+  magic: hex('bf0c6bbd'),
+  addressVersion: 0x4C, // Starts with X
+  privKeyVersion: 204,
+  P2SHVersion: 0x05,
+  bip32publicVersion: 0x0781b71e,
+  bip32privateVersion: 0x0781a3e4,
+  blockHashFunc: 'x11',
+  genesisBlock: {
+    hash: hex('b67a40f3cd5804437a108f105533739c37e6229bc1adcab385140b59fd0f0000'),
+    merkle_root: hex('c762a6567f3cc092f0684bb62b7e00a84890b990f07cc71a6bb58d64b98e02e0'),
+    height: 0,
+    nonce: 28917698,
+    version: 1,
+    prev_hash: buffertools.fill(new Buffer(32), 0),
+    timestamp: 1390095618,
+    bits: 0x1e0ffff0
+  },
+  dnsSeeds: [
+    'dnsseed.darkcoin.io',
+    'dnsseed.ddarkcoin.qa'
+  ],
+  defaultClientPort: 9999
 };
 
 // Currently we only use bitcon testnet

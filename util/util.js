@@ -1,6 +1,7 @@
 var crypto = require('crypto');
 var bignum = require('bignum');
 var Binary = require('binary');
+var x11 = require('x11-hash');
 var Put = require('bufferput');
 var buffertools = require('buffertools');
 var jssha = require('jssha');
@@ -53,6 +54,10 @@ var twoSha256 = exports.twoSha256 = function(data) {
 
 var sha256ripe160 = exports.sha256ripe160 = function(data) {
   return ripe160(sha256(data));
+};
+
+var x11Digest = exports.x11Digest = function(data) {
+  return x11.digest(data);
 };
 
 /**
