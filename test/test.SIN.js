@@ -33,6 +33,14 @@ describe('SIN', function() {
       s.should.equal(a.toString()); // check that validation doesn't change data
     });
   });
+
+  describe('#SIN', function() {
+    it('should be able to create a new SIN with a version byte', function() {
+      var myhash = bitcore.util.sha256ripe160('test');
+      var sin = new SIN(SIN.SIN_EPHEM, myhash);
+      should.exist(sin);
+    });
+  });
 });
 
 
