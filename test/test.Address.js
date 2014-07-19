@@ -50,6 +50,7 @@ describe('Address', function() {
       var s = a.toString();
 
       a.isValid().should.equal(result);
+      Address.validate(address).should.equal(result);
       s.should.equal(a.toString()); // check that validation doesn't change data
     });
   });

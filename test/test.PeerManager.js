@@ -5,16 +5,10 @@ var bitcore = bitcore || require('../bitcore');
 
 var should = chai.should();
 
-var PeerManagerModule = bitcore.PeerManager;
-
-var PeerManager;
+var PeerManager = bitcore.PeerManager;
 
 describe('PeerManager', function() {
-  it('should initialze the main object', function() {
-    should.exist(PeerManagerModule);
-  });
   it('should be able to create class', function() {
-    PeerManager = PeerManagerModule;
     should.exist(PeerManager);
   });
   it('should be able to create instance', function() {

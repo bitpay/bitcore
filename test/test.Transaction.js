@@ -48,7 +48,7 @@ function parse_test_transaction(entry) {
 }
 
 describe('Transaction', function() {
-  it('should initialze the main object', function() {
+  it('should initialize the main objects', function() {
     should.exist(Transaction);
     In = Transaction.In;
     Out = Transaction.Out;
