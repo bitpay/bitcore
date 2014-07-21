@@ -29,13 +29,23 @@ function getRootCerts(callback) {
     body = body.replace(/^"/gm, '+ "');
     body = body.replace(/^\+ "-----B/gm, '"-----B');
     body += ''
+      + '\n'
       + '// Use hash table for efficiency:\n'
       + 'RootCerts = RootCerts.reduce(function(trusted, cert) {\n'
       + '  cert = cert.replace(/\\s+/g, "");\n'
       + '  trusted[cert] = true;\n'
       + '  return trusted;\n'
       + '}, {});\n'
-      + 'module.exports = RootCerts;\n';
+      + '\n'
+      + 'function isTrusted(pem) {\n'
+      + '  pem = pem + "";\n'
+      + '  pem = pem.replace(/\\s+/g, "");\n'
+      + '  return !!RootCerts[pem];\n'
+      + '}\n'
+      + '\n'
+      + 'exports = RootCerts;\n'
+      + 'exports.isTrusted = isTrusted;\n'
+      + 'module.exports = exports;\n';
     return callback(null, body);
   });
 }
