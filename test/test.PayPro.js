@@ -9,6 +9,13 @@ var fs = require('fs');
 var PayPro = bitcore.PayPro;
 var Key = bitcore.Key;
 
+var x509 = {
+  priv: fs.readFileSync(__dirname + '/data/x509.key'),
+  pub: fs.readFileSync(__dirname + '/data/x509.pub'),
+  crt: fs.readFileSync(__dirname + '/data/x509.der'),
+  sig: new Buffer(0)
+};
+
 describe('PayPro', function() {
 
   it('should be able to create class', function() {
@@ -348,53 +355,4 @@ describe('PayPro', function() {
 
   });
 
-  var x509 = {
-    priv: fs.readFileSync(__dirname + '/data/x509.key'),
-    pub: fs.readFileSync(__dirname + '/data/x509.pub'),
-    crt: fs.readFileSync(__dirname + '/data/x509.der'),
-    sig: new Buffer(0)
-  };
-
-  describe('#x509Sign', function() {
-    it('should sign assuming pki_type is x509', function() {
-      var pd = new PayPro.PaymentDetails();
-      pd.set('time', 0);
-
-      var pdbuf = pd.toBuffer();
-
-      var paypro = new PayPro();
-      paypro.makePaymentRequest();
-
-      paypro.set('serialized_payment_details', pdbuf);
-      paypro.set('pki_type', 'x509+sha256');
-      paypro.set('pki_data', x509.crt);
-
-      paypro.x509Sign(x509.priv);
-
-      x509.sig = paypro.get('signature');
-      x509.sig.length.should.be.greaterThan(0);
-    });
-  });
-
-  describe('#x509Verify', function() {
-    it('should verify assuming pki_type is x509', function() {
-      var pd = new PayPro.PaymentDetails();
-      pd.set('time', 0);
-
-      var pdbuf = pd.toBuffer();
-
-      var paypro = new PayPro();
-      paypro.makePaymentRequest();
-
-      paypro.set('serialized_payment_details', pdbuf);
-      paypro.set('pki_type', 'x509+sha256');
-
-      paypro.set('signature', x509.sig); // sig buffer
-      paypro.set('pki_data', x509.crt); // contains one or more x509 certs
-
-      var verify = paypro.x509Verify();
-      verify.should.equal(true);
-    });
-
-  });
 });
