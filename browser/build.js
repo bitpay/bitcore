@@ -144,7 +144,7 @@ var createTestData = function() {
 
 var createTrusted = function(callback) {
   var cp = require('child_process');
-  var ps = cp.spawn('/bin/bash', ['./browser/generate-trusted.sh'], {
+  var ps = cp.spawn('/bin/bash', ['./browser/root-certs'], {
     customFds: [0, 1, 2],
     cwd: __dirname + '/..'
   });
