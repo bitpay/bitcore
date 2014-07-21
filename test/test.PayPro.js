@@ -463,10 +463,6 @@ describe('PayPro', function() {
       var paypro = new PayPro();
       var pem1 = paypro._DERtoPEM(x509.der, 'CERTIFICATE');
       var pem2 = KJUR.asn1.ASN1Util.getPEMStringFromHex(x509.der.toString('hex'), 'CERTIFICATE');
-      pem1 = pem1.trim();
-      pem2 = pem2.trim();
-      pem1 = pem1.replace(/\s+/g, '');
-      pem2 = pem2.replace(/\s+/g, '');
       pem1.should.equal(pem2);
     });
   });
