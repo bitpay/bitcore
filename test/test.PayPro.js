@@ -13,7 +13,9 @@ var x509 = {
   priv: fs.readFileSync(__dirname + '/data/x509.key'),
   pub: fs.readFileSync(__dirname + '/data/x509.pub'),
   crt: fs.readFileSync(__dirname + '/data/x509.der'),
-  sig: new Buffer(0)
+  sig1: new Buffer(0),
+  sig2: new Buffer(0),
+  sig3: new Buffer(0)
 };
 
 describe('PayPro', function() {
@@ -276,8 +278,8 @@ describe('PayPro', function() {
       paypro.set('pki_type', 'x509+sha256');
       paypro.set('pki_data', x509.crt);
       paypro.sign(x509.priv);
-      x509.sig = paypro.get('signature');
-      x509.sig.length.should.be.greaterThan(0);
+      x509.sig1 = paypro.get('signature');
+      x509.sig1.length.should.be.greaterThan(0);
     });
 
   });
@@ -308,7 +310,7 @@ describe('PayPro', function() {
       paypro.makePaymentRequest();
       paypro.set('serialized_payment_details', pdbuf);
       paypro.set('pki_type', 'x509+sha256');
-      paypro.set('signature', x509.sig); // sig buffer
+      paypro.set('signature', x509.sig1); // sig buffer
       paypro.set('pki_data', x509.crt); // contains one or more x509 certs
       var verify = paypro.verify();
       verify.should.equal(true);
@@ -353,6 +355,92 @@ describe('PayPro', function() {
       verify.should.equal(true);
     });
 
+  });
+
+  describe('#x509+sha256Sign', function() {
+    it('should sign assuming pki_type is x509+sha256', function() {
+      var pd = new PayPro.PaymentDetails();
+      pd.set('time', 0);
+
+      var pdbuf = pd.toBuffer();
+
+      var paypro = new PayPro();
+      paypro.makePaymentRequest();
+
+      paypro.set('serialized_payment_details', pdbuf);
+      paypro.set('pki_type', 'x509+sha256');
+      paypro.set('pki_data', x509.crt);
+
+      var sig = paypro.x509Sign(x509.priv);
+      paypro.set('signature', sig);
+
+      x509.sig2 = paypro.get('signature');
+      x509.sig2.length.should.be.greaterThan(0);
+    });
+  });
+
+  describe('#x509+sha256Verify', function() {
+    it('should verify assuming pki_type is x509+sha256', function() {
+      var pd = new PayPro.PaymentDetails();
+      pd.set('time', 0);
+
+      var pdbuf = pd.toBuffer();
+
+      var paypro = new PayPro();
+      paypro.makePaymentRequest();
+
+      paypro.set('serialized_payment_details', pdbuf);
+      paypro.set('pki_type', 'x509+sha256');
+
+      paypro.set('signature', x509.sig2); // sig buffer
+      paypro.set('pki_data', x509.crt); // contains one or more x509 certs
+
+      var verify = paypro.x509Verify();
+      verify.should.equal(true);
+    });
+  });
+
+  describe('#x509+sha1Sign', function() {
+    it('should sign assuming pki_type is x509+sha1', function() {
+      var pd = new PayPro.PaymentDetails();
+      pd.set('time', 0);
+
+      var pdbuf = pd.toBuffer();
+
+      var paypro = new PayPro();
+      paypro.makePaymentRequest();
+
+      paypro.set('serialized_payment_details', pdbuf);
+      paypro.set('pki_type', 'x509+sha1');
+      paypro.set('pki_data', x509.crt);
+
+      var sig = paypro.x509Sign(x509.priv);
+      paypro.set('signature', sig);
+
+      x509.sig3 = paypro.get('signature');
+      x509.sig3.length.should.be.greaterThan(0);
+    });
+  });
+
+  describe('#x509+sha1Verify', function() {
+    it('should verify assuming pki_type is x509+sha1', function() {
+      var pd = new PayPro.PaymentDetails();
+      pd.set('time', 0);
+
+      var pdbuf = pd.toBuffer();
+
+      var paypro = new PayPro();
+      paypro.makePaymentRequest();
+
+      paypro.set('serialized_payment_details', pdbuf);
+      paypro.set('pki_type', 'x509+sha1');
+
+      paypro.set('signature', x509.sig3); // sig buffer
+      paypro.set('pki_data', x509.crt); // contains one or more x509 certs
+
+      var verify = paypro.x509Verify();
+      verify.should.equal(true);
+    });
   });
 
 });
