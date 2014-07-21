@@ -9,7 +9,6 @@ var puts = function(error, stdout, stderr) {
   //sys.puts(stdout);
   //sys.puts(stderr);
 };
-var rootCerts = require('./root-certs');
 
 var modules = [
   'lib/Address',
@@ -142,6 +141,8 @@ var createTestData = function() {
 
   return tb.bundle();
 };
+
+
 
 if (require.main === module) {
   var list = function(val) {
