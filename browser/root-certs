@@ -172,7 +172,7 @@ function main(argv, callback) {
     argv = null;
   }
   return getRootCerts(function(err, certs) {
-    var file = path.resolve(__dirname, '..', 'lib', 'RootCerts.js');
+    var file = path.resolve(__dirname, '..', 'lib', 'common', 'RootCerts.js');
     return fs.writeFile(file, certs, callback);
   });
 }
