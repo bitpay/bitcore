@@ -244,6 +244,7 @@ describe('PayPro', function() {
   describe('#sign', function() {
 
     it('should sign a payment request', function() {
+      // SIN
       var pd = new PayPro.PaymentDetails();
       pd.set('time', 0);
       var pdbuf = pd.toBuffer();
@@ -257,6 +258,19 @@ describe('PayPro', function() {
       paypro.sign(key);
       var sig = paypro.get('signature');
       sig.length.should.be.greaterThan(0);
+
+      // X509
+      var pd = new PayPro.PaymentDetails();
+      pd.set('time', 0);
+      var pdbuf = pd.toBuffer();
+      var paypro = new PayPro();
+      paypro.makePaymentRequest();
+      paypro.set('serialized_payment_details', pdbuf);
+      paypro.set('pki_type', 'x509+sha256');
+      paypro.set('pki_data', x509.crt);
+      paypro.sign(x509.priv);
+      x509.sig = paypro.get('signature');
+      x509.sig.length.should.be.greaterThan(0);
     });
 
   });
@@ -264,6 +278,7 @@ describe('PayPro', function() {
   describe('#verify', function() {
 
     it('should verify a signed payment request', function() {
+      // SIN
       var pd = new PayPro.PaymentDetails();
       pd.set('time', 0);
       var pdbuf = pd.toBuffer();
@@ -275,6 +290,19 @@ describe('PayPro', function() {
       key.private = bitcore.util.sha256('test key');
       key.regenerateSync();
       paypro.sign(key);
+      var verify = paypro.verify();
+      verify.should.equal(true);
+
+      // X509
+      var pd = new PayPro.PaymentDetails();
+      pd.set('time', 0);
+      var pdbuf = pd.toBuffer();
+      var paypro = new PayPro();
+      paypro.makePaymentRequest();
+      paypro.set('serialized_payment_details', pdbuf);
+      paypro.set('pki_type', 'x509+sha256');
+      paypro.set('signature', x509.sig); // sig buffer
+      paypro.set('pki_data', x509.crt); // contains one or more x509 certs
       var verify = paypro.verify();
       verify.should.equal(true);
     });
@@ -341,7 +369,7 @@ describe('PayPro', function() {
       paypro.set('pki_type', 'x509+sha256');
       paypro.set('pki_data', x509.crt);
 
-      paypro.sign(x509.priv);
+      paypro.x509Sign(x509.priv);
 
       x509.sig = paypro.get('signature');
       x509.sig.length.should.be.greaterThan(0);
@@ -364,7 +392,7 @@ describe('PayPro', function() {
       paypro.set('signature', x509.sig); // sig buffer
       paypro.set('pki_data', x509.crt); // contains one or more x509 certs
 
-      var verify = paypro.verify();
+      var verify = paypro.x509Verify();
       verify.should.equal(true);
     });
 
