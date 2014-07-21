@@ -1,7 +1,7 @@
 'use strict';
 
 var chai = chai || require('chai');
-var sinon = require('sinon');
+var sinon = sinon || require('sinon');
 var bitcore = bitcore || require('../bitcore');
 var Transaction = bitcore.Transaction;
 var NetworkMonitor = bitcore.NetworkMonitor;
@@ -36,6 +36,7 @@ describe('NetworkMonitor', function() {
   it('should be able to start instance', function() {
     var nm = new NetworkMonitor.create(config);
     nm.start.bind(nm).should.not.throw();
+    nm.stop();
   });
   it('should be able to stop instance', function() {
     var nm = new NetworkMonitor.create(config);

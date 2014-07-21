@@ -24,6 +24,7 @@ var modules = [
   'lib/ECIES',
   'lib/Electrum',
   'lib/Message',
+  'lib/NetworkMonitor',
   'lib/Opcode',
   'lib/PayPro',
   'lib/Peer',
@@ -100,6 +101,9 @@ var createBitcore = function(opts) {
   });
   b.require(opts.dir + 'bufferput', {
     expose: 'bufferput'
+  });
+  b.require(opts.dir + 'events', {
+    expose: 'events'
   });
   b.require(opts.dir + 'buffers', {
     expose: 'buffers'
