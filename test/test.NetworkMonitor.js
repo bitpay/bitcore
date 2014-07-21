@@ -1,6 +1,7 @@
 'use strict';
 
 var chai = chai || require('chai');
+var sinon = require('sinon');
 var bitcore = bitcore || require('../bitcore');
 var Transaction = bitcore.Transaction;
 var NetworkMonitor = bitcore.NetworkMonitor;
@@ -77,12 +78,10 @@ describe('NetworkMonitor', function() {
   });
   var observedAddress = '2NFYBLfabKgLbgoTALYrtBQhbLjEKUcs9Go';
   describe('incoming tx event', function() {
-    it('should be called on incoming transactions', function(done) {
+    it('should be called on incoming transactions', function() {
       var nm = createConnectedNM();
-      nm.incoming(observedAddress, function(tx) {
-        should.exist(tx);
-        done();
-      });
+      var spy = sinon.spy();
+      nm.incoming(observedAddress, spy);
       var tx = new Transaction();
       var raw = '01000000012732117ef4663b4a7a455ff37c3af26deca57dc43f5d8e7e5440b22c11cefc8b010000006a47304402201ca8b1b33e9f7a515829b887b264b812ab499a08e0002a0fb32629bdbfbc005e0220567adbec3befee04e810e1d34bf31614e1cd397d7a6e3184f219c89562cac7a3012102f1bc222f40a7dd4348e4c2b1e88812179686305f1b56374aae891aa21929ad14ffffffff02809698000000000017a914f487a0aeae655268e2636207abe75228bfcf5631874f219800000000001976a914361d24071123fb9fd88685c877b014ff8543c24488ac00000000';
       tx.parse(new Buffer(raw, 'hex'));
@@ -92,6 +91,7 @@ describe('NetworkMonitor', function() {
           tx: tx
         }
       });
+      spy.calledWith(tx).should.equal(true);
     });
     it('should not be called on unrelated transactions', function(done) {
       var nm = createConnectedNM();
