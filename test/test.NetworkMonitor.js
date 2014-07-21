@@ -76,41 +76,71 @@ describe('NetworkMonitor', function() {
       });
     });
   });
-  var observedAddress = '2NFYBLfabKgLbgoTALYrtBQhbLjEKUcs9Go';
+  var observedAddress = 'mwABUqsGjjeTgExrBmyyWEErS8yA4QNAUJ';
+  var simulateNetworkTx = function(raw, nm) {
+    var tx = new Transaction();
+    tx.parse(new Buffer(raw, 'hex'));
+    nm.connection.emit('tx', {
+      message: {
+        tx: tx
+      }
+    });
+    return tx;
+  };
+  var incomingRaw = '01000000017ee4912333a1add2b03041b7abf4f64c365634a2d31ebfef4f47684c5adcfc49010000006a473044022064e5a4bd31615d184f7c660fcb7e072bfaaf8d87ad8f208ec85276b66420aeb102201c4fe9921495b07492a26648d4b124b346028dbdd91fea1ce3a32a21f1accb31012102749393ba256c17f67ff1c3e7d3ad72e610f07146b2d1d996287b1c500a75062effffffff0200ca9a3b000000001976a914ab9448d3b5adab710665e82506ae5cbd4ba7ba1288acf0bfe71c000000001976a9146c45fa9d90420668f7ff16e33d3d21b0d7e73bc188ac00000000';
+  var unrelatedRaw = '010000000114bae675546f758e0dbab95aa88d4db0c63e26f8fd6cbbce3a4827446d4937cf00000000700048304502201da760691f18a0ab140de1437e4bd29767b74add8cca8e38d46a2f37d9a8188f022100cbf4e121d97b4db846d236957da7fc17fd706ad47b41ae63adf953982e34f70901255121022f58491a833933a9bea80d8e820e66bee91bd8c71bfa972fe70482360b48129951aeffffffff01706f9800000000001976a91400a26ff8123593e10d0a9eba2a74db33cd69299288ac00000000';
+  var outgoingRaw = '0100000001613b50ef601ac068b7805afb8615bb06371881321a478b62d1f52d21f2a8529c000000006b483045022100e3c38e6da99bc8e4b6150404d3afc9ee74b5b48a245311e8fb0e019a3f69570102201eda167b14d675f7b9cf60cf1b0c65b1d66efa4a339743aaec047ce90b92e52e0121031915a253ead0da95c46ff64d07fe4d562a29b7fc211c6a8f49764ac85c039de4ffffffff01f0a29a3b000000001976a914c69536a7d60748bb1953e5e186edf920efa823e388ac00000000';
+
   describe('incoming tx event', function() {
     it('should be called on incoming transactions', function() {
       var nm = createConnectedNM();
       var spy = sinon.spy();
       nm.incoming(observedAddress, spy);
-      var tx = new Transaction();
-      var raw = '01000000012732117ef4663b4a7a455ff37c3af26deca57dc43f5d8e7e5440b22c11cefc8b010000006a47304402201ca8b1b33e9f7a515829b887b264b812ab499a08e0002a0fb32629bdbfbc005e0220567adbec3befee04e810e1d34bf31614e1cd397d7a6e3184f219c89562cac7a3012102f1bc222f40a7dd4348e4c2b1e88812179686305f1b56374aae891aa21929ad14ffffffff02809698000000000017a914f487a0aeae655268e2636207abe75228bfcf5631874f219800000000001976a914361d24071123fb9fd88685c877b014ff8543c24488ac00000000';
-      tx.parse(new Buffer(raw, 'hex'));
-
-      nm.connection.emit('tx', {
-        message: {
-          tx: tx
-        }
-      });
+      var tx = simulateNetworkTx(incomingRaw, nm);
       spy.calledWith(tx).should.equal(true);
+      spy.callCount.should.equal(1);
     });
-    it('should not be called on unrelated transactions', function(done) {
+    it('should not be called on unrelated transactions', function() {
       var nm = createConnectedNM();
-      nm.incoming(observedAddress, function(tx) {
-        should.exist(tx);
-        done();
-      });
-      var raw = '010000000114bae675546f758e0dbab95aa88d4db0c63e26f8fd6cbbce3a4827446d4937cf00000000700048304502201da760691f18a0ab140de1437e4bd29767b74add8cca8e38d46a2f37d9a8188f022100cbf4e121d97b4db846d236957da7fc17fd706ad47b41ae63adf953982e34f70901255121022f58491a833933a9bea80d8e820e66bee91bd8c71bfa972fe70482360b48129951aeffffffff01706f9800000000001976a91400a26ff8123593e10d0a9eba2a74db33cd69299288ac00000000';
-      var tx = new Transaction();
-      tx.parse(new Buffer(raw, 'hex'));
-      nm.connection.emit('tx', {
-        message: {
-          tx: tx
-        }
-      });
+      var spy = sinon.spy();
+      nm.incoming(observedAddress, spy);
+      var tx = simulateNetworkTx(unrelatedRaw, nm);
+      spy.calledWith(tx).should.equal(false);
+      spy.callCount.should.equal(0);
+    });
+    it('should not be called on outgoing transactions', function() {
+      var nm = createConnectedNM();
+      var spy = sinon.spy();
+      nm.incoming(observedAddress, spy);
+      var tx = simulateNetworkTx(outgoingRaw, nm);
+      spy.calledWith(tx).should.equal(false);
+      spy.callCount.should.equal(0);
     });
   });
   describe('outgoing tx event', function() {
-    it('should be called on outgoing transactions', function() {});
-    it('should not be called on incoming transactions', function() {});
+    it('should be called on outgoing transactions', function() {
+      var nm = createConnectedNM();
+      var spy = sinon.spy();
+      nm.outgoing(observedAddress, spy);
+      var tx = simulateNetworkTx(outgoingRaw, nm);
+      spy.calledWith(tx).should.equal(true);
+      spy.callCount.should.equal(1);
+    });
+    it('should not be called on unrelated transactions', function() {
+      var nm = createConnectedNM();
+      var spy = sinon.spy();
+      nm.outgoing(observedAddress, spy);
+      var tx = simulateNetworkTx(unrelatedRaw, nm);
+      spy.calledWith(tx).should.equal(false);
+      spy.callCount.should.equal(0);
+    });
+    it('should not be called on incoming transactions', function() {
+      var nm = createConnectedNM();
+      var spy = sinon.spy();
+      nm.outgoing(observedAddress, spy);
+      var tx = simulateNetworkTx(incomingRaw, nm);
+      spy.calledWith(tx).should.equal(false);
+      spy.callCount.should.equal(0);
+    });
   });
 });
