@@ -30,16 +30,14 @@ $(document).ready(function() {
     return container;
   };
 
-  $.get('http://live.bitcore.io:3010/modules',
-    function(data) {
-      var modules = data.split(',');
-      for (var i = 0; i < modules.length; i++) {
-        var m = modules[i];
-        var cb = createCheckbox(m);
-        var col = cols[i % 3];
-        col.append(cb);
-      }
-    }
+  var data = "lib/Address,lib/Armory,lib/Base58,lib/HierarchicalKey,lib/BIP39,lib/BIP39WordlistEn,lib/Block,lib/Bloom,lib/Connection,lib/Deserialize,lib/ECIES,lib/Electrum,lib/Message,lib/Opcode,lib/PayPro,lib/Peer,lib/PeerManager,lib/PrivateKey,lib/RpcClient,lib/Key,lib/Point,lib/SIN,lib/SINKey,lib/Script,lib/ScriptInterpreter,lib/SecureRandom,lib/Sign,lib/sjcl,lib/Transaction,lib/TransactionBuilder,lib/Wallet,lib/WalletKey,patches/Buffers.monkey,patches/Number.monkey,config,const,networks,util/log,util/util,util/EncodedData,util/VersionedData,util/BinaryParser";
+  var modules = data.split(',');
+  for (var i = 0; i < modules.length; i++) {
+    var m = modules[i];
+    var cb = createCheckbox(m);
+    var col = cols[i % 3];
+    col.append(cb);
+  }
   );
 
   var checkall = $('#checkall');
