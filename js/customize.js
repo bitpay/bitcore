@@ -67,6 +67,8 @@ $(document).ready(function() {
         allf = false;
       }
     });
+    if (nonef)
+      allf = true;
     if (nonef) {
       alert('You must select at least one submodule');
       return;
