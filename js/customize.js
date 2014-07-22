@@ -69,10 +69,12 @@ $(document).ready(function() {
     });
     if (nonef)
       allf = true;
+    /*
     if (nonef) {
       alert('You must select at least one submodule');
       return;
     }
+    */
 
     var s = allf ? 'all' : s;
     var download = function(filename, text) {
