@@ -5,8 +5,6 @@ var should = chai.should();
 var expect = chai.expect;
 var bitcore = bitcore || require('../bitcore');
 
-var KJUR = require('jsrsasign');
-
 var PayPro = bitcore.PayPro;
 var Key = bitcore.Key;
 
@@ -538,7 +536,11 @@ describe('PayPro', function() {
     it('convert a DER cert to PEM', function() {
       var paypro = new PayPro();
       var pem1 = paypro._DERtoPEM(x509.der, 'CERTIFICATE');
-      var pem2 = KJUR.asn1.ASN1Util.getPEMStringFromHex(x509.der.toString('hex'), 'CERTIFICATE');
+      //var KJUR = require('jsrsasign');
+      //var pem2 = KJUR.asn1.ASN1Util.getPEMStringFromHex(x509.der.toString('hex'), 'CERTIFICATE');
+      var pem2 = x509.pem.toString();
+      pem1 = pem1.replace(/\s+/g, '');
+      pem2 = pem2.replace(/\s+/g, '');
       pem1.should.equal(pem2);
     });
   });
