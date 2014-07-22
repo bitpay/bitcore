@@ -83,10 +83,7 @@ $(document).ready(function() {
       a.click();
       document.body.removeChild(a)
     }
-    $.get('http://live.bitcore.io:3010/download/' + s,
-      function(data) {
-        download('bitcore.js', data);
-      }
-    );
+    var url = 'http://live.bitcore.io:3010/download/' + s;
+    window.location = url;
   });
 });
