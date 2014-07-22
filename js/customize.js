@@ -38,7 +38,6 @@ $(document).ready(function() {
     var col = cols[i % 3];
     col.append(cb);
   }
-  );
 
   var checkall = $('#checkall');
   var none = $('#none');
