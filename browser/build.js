@@ -37,7 +37,6 @@ var modules = [
   'lib/Script',
   'lib/ScriptInterpreter',
   'lib/SecureRandom',
-  'lib/Sign',
   'lib/sjcl',
   'lib/Transaction',
   'lib/TransactionBuilder',
