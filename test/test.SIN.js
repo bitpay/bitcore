@@ -47,7 +47,7 @@ describe('SIN', function() {
       (function() { SIN.fromPubKey('1234')}).should.throw();
     });
     it('should fail to create  a new SIN not using a pub key case 2', function() {
-      (function() { SIN.fromPubKey('X2345678901234567890123456789012112345678901234567890123456781011')}).should.throw();
+      (function() { SIN.fromPubKey('03e0973263b4e0d5f5f56d25d430e777ab3838ff644db972c0bf32c31da5686c27')}).should.throw();
     });
     it('should be able to create a new SIN using a pub key', function() {
       var pubkey1 = new Buffer('03e0973263b4e0d5f5f56d25d430e777ab3838ff644db972c0bf32c31da5686c27', 'hex');
