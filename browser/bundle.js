@@ -3005,9 +3005,11 @@ module.exports = RpcClient;
 module.exports=require('tBM27q');
 },{}],"tBM27q":[function(require,module,exports){
 (function (Buffer){
+'use strict';
 var VersionedData = require('../util/VersionedData');
 var EncodedData = require('../util/EncodedData');
 var util = require('util');
+var coinUtil = require('../util');
 
 function SIN(type, payload) {
   if (typeof type != 'number') {
@@ -3069,10 +3071,24 @@ SIN.prototype.validate = function() {
     if (this.data.length != 22) throw new Error('invalid data length');
   });
 };
+
+
+// create a SIN from a public key
+SIN.fromPubKey = function(pubKey, type) {
+  if (!type)
+    type = SIN.SIN_EPHEM;
+
+  if (!Buffer.isBuffer(pubKey) || (pubKey.length !== 33 && pubKey.length != 65))
+    throw new Error('Invalid public key');
+
+  var hash = coinUtil.sha256ripe160(pubKey);
+  return new SIN(hash, type);
+};
+
 module.exports = SIN;
 
 }).call(this,require("buffer").Buffer)
-},{"../util/EncodedData":"eLfUFE","../util/VersionedData":"QLzNQg","buffer":91,"util":123}],"EyghZQ":[function(require,module,exports){
+},{"../util":181,"../util/EncodedData":"eLfUFE","../util/VersionedData":"QLzNQg","buffer":91,"util":123}],"EyghZQ":[function(require,module,exports){
 var coinUtil = require('../util');
 var timeUtil = require('../util/time');
 var Key = require('./Key');
