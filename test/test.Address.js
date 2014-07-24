@@ -29,18 +29,18 @@ describe('Address', function() {
     ['1Q1pE5vPGEEMqRcVRMbtBK842Y6Pzo6nK9', true],
     ['1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNb', false], //bad checksum ... thanks @wtogami
     ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW62i', true],
-    ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW600', false],  // bad checksum
-    ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW620', false],  // bad checksum
-    ['1ANNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW62i', false],  // data changed, original checksum.
-    ['1A Na15ZQXAZUgFiqJ2i7Z2DPU2J6hW62i', false],  // invalid chars
-    ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW62j', false],  // checksums don't match.
-    ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW62!', false],  // bad char (!)
+    ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW600', false], // bad checksum
+    ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW620', false], // bad checksum
+    ['1ANNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW62i', false], // data changed, original checksum.
+    ['1A Na15ZQXAZUgFiqJ2i7Z2DPU2J6hW62i', false], // invalid chars
+    ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW62j', false], // checksums don't match.
+    ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW62!', false], // bad char (!)
     ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW62iz', false], // too long Bitcoin address
-    ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW62izz', false],// too long Bitcoin address
-    ['2cFupjhnEsSn59qHXstmK2ffpLv2', false],        // valid base58 invalid data
-    ['dB7cwYdcPSgiyAwKWL3JwCVwSk6epU2txw', false],  // valid base58, valid length, invalid network
-    ['2MnmgiRH4eGLyLc9eAqStzk7dFgBjFtUCtu', false],  // valid base58, valid length, invalid network
-    ['32QBdjycLwbDTuGafUwaU5p5GxzSLPYoF6', true],  // valid base58, valid length, valid network
+    ['1AGNa15ZQXAZUgFiqJ2i7Z2DPU2J6hW62izz', false], // too long Bitcoin address
+    ['2cFupjhnEsSn59qHXstmK2ffpLv2', false], // valid base58 invalid data
+    ['dB7cwYdcPSgiyAwKWL3JwCVwSk6epU2txw', false], // valid base58, valid length, invalid network
+    ['2MnmgiRH4eGLyLc9eAqStzk7dFgBjFtUCtu', false], // valid base58, valid length, invalid network
+    ['32QBdjycLwbDTuGafUwaU5p5GxzSLPYoF6', true], // valid base58, valid length, valid network
   ];
   data.forEach(function(datum) {
     var address = datum[0];
@@ -102,10 +102,27 @@ describe('Address', function() {
       var key = new bitcore.Key();
       key.private = privkey;
       key.regenerateSync();
-      var f = function() {new bitcore.Address(0, key.public);};
+      var f = function() {
+        new bitcore.Address(0, key.public);
+      };
       expect(f).to.throw(Error);
     });
   });
+
+  describe('constructor, 2 params', function() {
+    it('should make an address from a version, hash', function() {
+      var hash = new Buffer('1ab59a0fd1d5fc446d38746ee033c8af57ed6bc0', 'hex');
+      var addr = new Address(0, hash);
+      addr.toString().should.equal('13SE7uKmnQwGA8X1A8WcZnX2ceQRDEzsAd');
+    });
+    it('should fail with param version, string', function() {
+      var hash = '1ab59a0fd1d5fc446d38746ee033c8af57ed6bc0';
+      (function() {
+        var addr = new Address(0, hash);
+      }).should.throw();
+    });
+  });
+
 
   describe('#fromPubKey', function() {
     it('should make pubkeyhash address from an uncompressed public key', function() {
@@ -134,7 +151,9 @@ describe('Address', function() {
       var pubkey3 = new Buffer('032c0d2e394541e2efdc7ac3500e16e7e69df541f38670402e95aa477202fa06bb', 'hex');
       var sortedPubKeys = [pubkey3, pubkey2, pubkey1];
       var mReq = 2;
-      var script = bitcore.Script.createMultisig(mReq, sortedPubKeys, {noSorting: true});
+      var script = bitcore.Script.createMultisig(mReq, sortedPubKeys, {
+        noSorting: true
+      });
       var hash = bitcore.util.sha256ripe160(script.getBuffer());
       var version = bitcore.networks['livenet'].P2SHVersion;
       var addr = new Address(version, hash);
@@ -160,7 +179,7 @@ describe('Address', function() {
       var addrB = Address.fromScript(scriptHex);
       var addr2B = Address.fromPubKeys(mReq, pubKeys);
       addrB.toString().should.equal(addr2B.toString());
- 
+
     });
 
     it('it should make this hand-crafted address', function() {
@@ -171,7 +190,7 @@ describe('Address', function() {
       var mReq = 2;
       var script = bitcore.Script.createMultisig(mReq, pubKeys);
       var addr = Address.fromScript(script);
-      
+
       var hash = bitcore.util.sha256ripe160(script.getBuffer());
       var version = bitcore.networks['livenet'].P2SHVersion;
       var addr2 = new Address(version, hash);
@@ -183,16 +202,16 @@ describe('Address', function() {
   describe('#getScriptPubKey', function() {
     var data = [
       ['76a91423b7530a00dd7951e11791c529389421c0b8d83b88ac', 'mimoZNLcP2rrMRgdeX5PSnR7AjCqQveZZ4'],
-      ['a9147049be48e74a660157da3ed64569981592f7fa0587','2N3Ux1YTnt1ixofYvJfaabqZSj2MBF3jsmv'],
+      ['a9147049be48e74a660157da3ed64569981592f7fa0587', '2N3Ux1YTnt1ixofYvJfaabqZSj2MBF3jsmv'],
       ['76a914774e603bafb717bd3f070e68bbcccfd907c77d1388ac', 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE'],
       ['76a914b00127584485a7cff0949ef0f6bc5575f06ce00d88ac', 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd']
     ];
 
     it('validate scriptPubKey for a given address', function() {
-      for(var i in data) {
-          var d = data[i];
-          var b = new Address(d[1]).getScriptPubKey().getBuffer();
-          b.toString('hex').should.equal(d[0]);
+      for (var i in data) {
+        var d = data[i];
+        var b = new Address(d[1]).getScriptPubKey().getBuffer();
+        b.toString('hex').should.equal(d[0]);
       }
     });
   });
@@ -202,29 +221,28 @@ describe('Address', function() {
     // All examples checked againt bitcoind decodescript
     var cases = [
       ['76a91423b7530a00dd7951e11791c529389421c0b8d83b88ac', 'mimoZNLcP2rrMRgdeX5PSnR7AjCqQveZZ4'],
-      ['a9147049be48e74a660157da3ed64569981592f7fa0587','2N3Ux1YTnt1ixofYvJfaabqZSj2MBF3jsmv'],
+      ['a9147049be48e74a660157da3ed64569981592f7fa0587', '2N3Ux1YTnt1ixofYvJfaabqZSj2MBF3jsmv'],
       ['76a914774e603bafb717bd3f070e68bbcccfd907c77d1388ac', 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE'],
       ['76a914b00127584485a7cff0949ef0f6bc5575f06ce00d88ac', 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'],
       ['532103bf025eb410407aec5a67c975ce222e363bb88c69bb1acce45d20d85602df2ec52103d76dd6d99127f4b733e772f0c0a09c573ac7e4d69b8bf50272292da2e093de2c2103dd9acd8dd1816c825d6b0739339c171ae2cb10efb53699680537865b07086e9b2102371cabbaf466c3a536034b4bda64ad515807bffd87488f44f93c2373d4d189c9210264cd444358f8d57f8637a7309f9736806f4883aebc4fe7da4bad1e4b37f2d12c55ae', [
-          "n4JAZc4cJimQbky5wxZUEDeAFZtGaZrjWK",
-          "msge5muNmBSRDn5nsaRcHCU6dg2zimA8wQ",
-          "mvz9MjocpyXdgXqRcZYazsdE8iThdvjdhk",
-          "miQGZ2gybQe7UvUQDBYsgcctUteij5pTpm",
-          "mu9kmhGrzREKsWaXUEUrsRLLMG4UMPy1LF"
+        "n4JAZc4cJimQbky5wxZUEDeAFZtGaZrjWK",
+        "msge5muNmBSRDn5nsaRcHCU6dg2zimA8wQ",
+        "mvz9MjocpyXdgXqRcZYazsdE8iThdvjdhk",
+        "miQGZ2gybQe7UvUQDBYsgcctUteij5pTpm",
+        "mu9kmhGrzREKsWaXUEUrsRLLMG4UMPy1LF"
       ]]
     ];
 
-    for(var i in cases){
-      var c=cases[i];
-      it('it should generate the right address', function(){
+    for (var i in cases) {
+      var c = cases[i];
+      it('it should generate the right address', function() {
         if (typeof c[1] === 'string') {
-          (new Address.fromScriptPubKey(c[0],'testnet')).toString().should.equal(c[1]);
-          var s = new bitcore.Script(new Buffer(c[0],'hex'));
-          (new Address.fromScriptPubKey(s,'testnet')).toString().should.equal(c[1]);
-        }
-        else {
-          var as=new Address.fromScriptPubKey(c[0],'testnet');
-          for(var j in as){
+          (new Address.fromScriptPubKey(c[0], 'testnet')).toString().should.equal(c[1]);
+          var s = new bitcore.Script(new Buffer(c[0], 'hex'));
+          (new Address.fromScriptPubKey(s, 'testnet')).toString().should.equal(c[1]);
+        } else {
+          var as = new Address.fromScriptPubKey(c[0], 'testnet');
+          for (var j in as) {
             as[j].toString().should.equal(c[1][j]);
           }
         }
