@@ -1030,7 +1030,7 @@ describe('TransactionBuilder', function() {
       }]);
       (function() {
         b2.merge(b);
-      }).should.throw('NTXID');
+      }).should.throw('incompatible');
     });
     it('should check addresses', function() {
       // bad out
@@ -1040,7 +1040,7 @@ describe('TransactionBuilder', function() {
       }]);
       (function() {
         b2.merge(b);
-      }).should.throw('NTXID');
+      }).should.throw('incompatible');
     });
 
 
@@ -1060,7 +1060,7 @@ describe('TransactionBuilder', function() {
 
       (function() {
         b2.merge(b);
-      }).should.throw('signhash');
+      }).should.throw('incompatible');
     });
 
 
@@ -1202,7 +1202,7 @@ describe('TransactionBuilder', function() {
       b2.sign(k2);
       (function() {
         b2.merge(b)
-      }).should.throw('NTXID');
+      }).should.throw('incompatible');
     });
 
 
