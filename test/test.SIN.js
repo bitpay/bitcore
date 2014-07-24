@@ -41,6 +41,13 @@ describe('SIN', function() {
       var sin = new SIN(SIN.SIN_EPHEM, myhash);
       should.exist(sin);
     });
+    it('should fail with param version, string', function() {
+      var hash = '1ab59a0fd1d5fc446d38746ee033c8af57ed6bc0';
+      ( function (){ 
+        var sin = new SIN(SIN.SIN_EPHEM, hash);
+      }).should.throw();
+    });
+ 
   });
   describe('#fromPubKey', function() {
     it('should fail to create  a new SIN not using a pub key', function() {
