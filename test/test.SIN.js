@@ -37,7 +37,7 @@ describe('SIN', function() {
 
   describe('#SIN', function() {
     it('should be able to create a new SIN with a version byte', function() {
-      var myhash = bitcore.util.sha256ripe160('test');
+      var myhash = new Buffer('1ab59a0fd1d5fc446d38746ee033c8af57ed6bc0', 'hex');
       var sin = new SIN(SIN.SIN_EPHEM, myhash);
       should.exist(sin);
     });
@@ -45,6 +45,13 @@ describe('SIN', function() {
       var hash = '1ab59a0fd1d5fc446d38746ee033c8af57ed6bc0';
       ( function (){ 
         var sin = new SIN(SIN.SIN_EPHEM, hash);
+      }).should.throw();
+    });
+ 
+    it('should fail with wrong sized hash', function() {
+      var myhash = new Buffer('111ab59a0fd1d5fc446d38746ee033c8af57ed6bc0', 'hex');
+      ( function (){ 
+        var sin = new SIN(SIN.SIN_EPHEM, myhash);
       }).should.throw();
     });
  
