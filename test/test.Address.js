@@ -50,6 +50,7 @@ describe('Address', function() {
       var s = a.toString();
 
       a.isValid().should.equal(result);
+      Address.validate(address).should.equal(result);
       s.should.equal(a.toString()); // check that validation doesn't change data
     });
   });
@@ -212,6 +213,7 @@ describe('Address', function() {
         var d = data[i];
         var b = new Address(d[1]).getScriptPubKey().getBuffer();
         b.toString('hex').should.equal(d[0]);
+        Address.getScriptPubKeyFor(d[1]).getBuffer().toString('hex').should.equal(d[0]);
       }
     });
   });
