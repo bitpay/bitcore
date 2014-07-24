@@ -133,7 +133,7 @@ describe('Transaction', function() {
     tx2.getNormalizedHash().toString('hex').should.equal('e298bbf3734898581b8e342f2064236abf0acca6ac7e9a3009a16ef7b64d4983');
   });
 
-  describe.only('#send and receiving addresses', function() {
+  describe('#send and receiving addresses', function() {
     var a1 = 'n1pKARYYUnZwxBuGj3y7WqVDu6VLN7n971';
     var a2 = 'mtxYYJXZJmQc2iJRHQ4RZkfxU5K7TE2qMJ';
     var utxos = [{
