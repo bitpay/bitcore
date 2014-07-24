@@ -16,7 +16,7 @@ var networks = bitcore.networks;
 var testdata = testdata || require('./testdata');
 
 
-var vopts =  {
+var vopts = {
   verifyP2SH: true,
   dontVerifyStrictEnc: true
 };
@@ -33,7 +33,10 @@ describe('TransactionBuilder', function() {
   });
 
   it('should be able to create instance with params', function() {
-    var t = new TransactionBuilder({spendUnconfirmed: true, lockTime: 10});
+    var t = new TransactionBuilder({
+      spendUnconfirmed: true,
+      lockTime: 10
+    });
     should.exist(t);
     should.exist(t.lockTime);
     t.spendUnconfirmed.should.equal(true);
@@ -45,15 +48,17 @@ describe('TransactionBuilder', function() {
     satoshi.should.equal(10000);
   });
 
-  var getBuilder = function (spendUnconfirmed) {
-    var t = new TransactionBuilder({spendUnconfirmed: spendUnconfirmed})
+  var getBuilder = function(spendUnconfirmed) {
+    var t = new TransactionBuilder({
+        spendUnconfirmed: spendUnconfirmed
+      })
       .setUnspent(testdata.dataUnspent);
 
     return t;
   };
 
   function f(amount, spendUnconfirmed) {
-    spendUnconfirmed = typeof spendUnconfirmed === 'undefined'?true:false;
+    spendUnconfirmed = typeof spendUnconfirmed === 'undefined' ? true : false;
     return getBuilder(spendUnconfirmed)
       ._selectUnspent(amount * util.COIN).selectedUtxos;
   }
@@ -75,22 +80,28 @@ describe('TransactionBuilder', function() {
   });
 
   it('#_selectUnspent should return null if not enough utxos', function() {
-    (function() { f(1.12); }).should.throw();
+    (function() {
+      f(1.12);
+    }).should.throw();
   });
 
 
   it('#_selectUnspent should check confirmations', function() {
-    (function() { f(0.9,false); }).should.throw();
+    (function() {
+      f(0.9, false);
+    }).should.throw();
     f(0.9).length.should.equal(3);
 
-    f(0.11,false).length.should.equal(2);
-    (function() { f(0.111,false); }).should.throw();
+    f(0.11, false).length.should.equal(2);
+    (function() {
+      f(0.111, false);
+    }).should.throw();
   });
 
 
 
   it('#_setInputs sets inputs', function() {
-    var txobj={};
+    var txobj = {};
     var b = getBuilder()
       .setUnspent(testdata.dataUnspent)
       ._selectUnspent(0.1 * util.COIN)
@@ -102,7 +113,7 @@ describe('TransactionBuilder', function() {
   });
 
   it('#_setInputMap set inputMap', function() {
-    var txobj={};
+    var txobj = {};
     var b = getBuilder()
       .setUnspent(testdata.dataUnspent)
       ._selectUnspent(0.1 * util.COIN)
@@ -113,9 +124,11 @@ describe('TransactionBuilder', function() {
     b.inputMap.length.should.equal(2);
   });
 
-  var getBuilder2 = function (fee) {
+  var getBuilder2 = function(fee) {
     var opts = {
-      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
+      remainderOut: {
+        address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'
+      },
       spendUnconfirmed: true,
     };
 
@@ -126,7 +139,7 @@ describe('TransactionBuilder', function() {
       amount: 0.08
     }];
 
-   return new TransactionBuilder(opts)
+    return new TransactionBuilder(opts)
       .setUnspent(testdata.dataUnspent)
       .setOutputs(outs);
   };
@@ -144,7 +157,9 @@ describe('TransactionBuilder', function() {
     var utxos = testdata.dataUnspent;
 
     var opts = {
-      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
+      remainderOut: {
+        address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'
+      },
       spendUnconfirmed: true,
     };
     var outs = [{
@@ -154,9 +169,9 @@ describe('TransactionBuilder', function() {
 
     (function() {
       new TransactionBuilder(opts)
-      .setUnspent(testdata.dataUnspent)
-      .setOutputs(outs);
-      }).should.throw();
+        .setUnspent(testdata.dataUnspent)
+        .setOutputs(outs);
+    }).should.throw();
 
     var outs2 = [{
       address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
@@ -173,9 +188,9 @@ describe('TransactionBuilder', function() {
     opts.spendUnconfirmed = false;
     (function() {
       new TransactionBuilder(opts)
-      .setUnspent(testdata.dataUnspent)
-      .setOutputs(outs2);
-      }).should.throw();
+        .setUnspent(testdata.dataUnspent)
+        .setOutputs(outs2);
+    }).should.throw();
   });
 
   it('should be able to create a tx', function() {
@@ -218,11 +233,14 @@ describe('TransactionBuilder', function() {
 
 
 
-  var getBuilder3 = function (outs) {
+  var getBuilder3 = function(outs, signhash) {
 
     var opts = {
-      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
+      remainderOut: {
+        address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'
+      },
       spendUnconfirmed: true,
+      signhash: signhash,
     };
 
     var outs = outs || [{
@@ -230,7 +248,7 @@ describe('TransactionBuilder', function() {
       amount: 0.08
     }];
 
-   return new TransactionBuilder(opts)
+    return new TransactionBuilder(opts)
       .setUnspent(testdata.dataUnspentSign.unspent)
       .setOutputs(outs);
   };
@@ -238,9 +256,9 @@ describe('TransactionBuilder', function() {
   it('should sign a tx (case 1)', function(done) {
     var b = getBuilder3();
     b.isFullySigned().should.equal(false);
-      
+
     b.sign(testdata.dataUnspentSign.keyStrings);
-      
+
     b.isFullySigned().should.equal(true);
 
     var tx = b.build();
@@ -249,8 +267,8 @@ describe('TransactionBuilder', function() {
     tx.outs.length.should.equal(2);
 
     var shex = testdata.dataUnspentSign.unspent[0].scriptPubKey;
-    var s    = new Script(new Buffer(shex,'hex'));
-    tx.verifyInput(0,s, vopts, function(err, results){
+    var s = new Script(new Buffer(shex, 'hex'));
+    tx.verifyInput(0, s, vopts, function(err, results) {
       should.not.exist(err);
       should.exist(results);
       results.should.equal(true);
@@ -260,9 +278,9 @@ describe('TransactionBuilder', function() {
 
   it('should sign a tx (case 2)', function(done) {
     var b = getBuilder3([{
-      address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
-      amount: 16
-    }])
+        address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
+        amount: 16
+      }])
       .sign(testdata.dataUnspentSign.keyStrings);
 
     b.isFullySigned().should.equal(true);
@@ -272,8 +290,8 @@ describe('TransactionBuilder', function() {
     tx.outs.length.should.equal(2);
 
     var shex = testdata.dataUnspentSign.unspent[0].scriptPubKey;
-    var s    = new Script(new Buffer(shex,'hex'));
-    tx.verifyInput(0,s, vopts, function(err, results){
+    var s = new Script(new Buffer(shex, 'hex'));
+    tx.verifyInput(0, s, vopts, function(err, results) {
       should.not.exist(err);
       should.exist(results);
       results.should.equal(true);
@@ -289,7 +307,7 @@ describe('TransactionBuilder', function() {
       amount: 0.08
     }];
 
-   var b = new TransactionBuilder()
+    var b = new TransactionBuilder()
       .setUnspent(testdata.dataUnspentSign.unspent)
       .setOutputs(outs)
       .sign(keys);
@@ -325,8 +343,8 @@ describe('TransactionBuilder', function() {
 
     var tx = b.build();
     var shex = testdata.dataUnspentSign.unspent[0].scriptPubKey;
-    var s    = new Script(new Buffer(shex,'hex'));
-    tx.verifyInput(0,s, vopts, function(err, results){
+    var s = new Script(new Buffer(shex, 'hex'));
+    tx.verifyInput(0, s, vopts, function(err, results) {
       should.not.exist(err);
       should.exist(results);
       results.should.equal(true);
@@ -361,8 +379,8 @@ describe('TransactionBuilder', function() {
 
     var tx = b.build();
     var shex = testdata.dataUnspentSign.unspent[0].scriptPubKey;
-    var s    = new Script(new Buffer(shex,'hex'));
-    tx.verifyInput(0,s, vopts, function(err, results){
+    var s = new Script(new Buffer(shex, 'hex'));
+    tx.verifyInput(0, s, vopts, function(err, results) {
       should.not.exist(err);
       should.exist(results);
       results.should.equal(true);
@@ -396,8 +414,8 @@ describe('TransactionBuilder', function() {
 
     var tx = b.build();
     var shex = testdata.dataUnspentSign.unspent[0].scriptPubKey;
-    var s    = new Script(new Buffer(shex,'hex'));
-    tx.verifyInput(0,s, vopts, function(err, results){
+    var s = new Script(new Buffer(shex, 'hex'));
+    tx.verifyInput(0, s, vopts, function(err, results) {
       should.not.exist(err);
       should.exist(results);
       results.should.equal(true);
@@ -429,7 +447,7 @@ describe('TransactionBuilder', function() {
     tx.ins.length.should.equal(2);
 
     // outs = 101 outs + 1 remainder
-    tx.outs.length.should.equal(N+1);
+    tx.outs.length.should.equal(N + 1);
 
 
     // 3560 bytes tx -> 0.0004
@@ -466,9 +484,9 @@ describe('TransactionBuilder', function() {
     // outs = 100 outs:
     // 100 * 0.01 = 1BTC; + 0.0004 fee = 1.0004btc
     // remainder = 1.0101-1.0004 = 0.0097
- 
+
     // outs = 101 outs + 1 remainder
-    tx.outs.length.should.equal(N+1);
+    tx.outs.length.should.equal(N + 1);
 
 
     // 3560 bytes tx -> 0.0004
@@ -483,14 +501,16 @@ describe('TransactionBuilder', function() {
 
   it('should sign a p2pubkey tx', function(done) {
     var opts = {
-      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
+      remainderOut: {
+        address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'
+      },
     };
     var outs = outs || [{
       address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
       amount: 0.08
     }];
 
-   var b =  new TransactionBuilder(opts)
+    var b = new TransactionBuilder(opts)
       .setUnspent(testdata.dataUnspentSign.unspentPubKey)
       .setOutputs(outs)
       .sign(testdata.dataUnspentSign.keyStringsPubKey);
@@ -503,8 +523,8 @@ describe('TransactionBuilder', function() {
 
     var tx = b.build();
     var shex = testdata.dataUnspentSign.unspentPubKey[0].scriptPubKey;
-    var s    = new Script(new Buffer(shex,'hex'));
-    tx.verifyInput(0,s, vopts, function(err, results){
+    var s = new Script(new Buffer(shex, 'hex'));
+    tx.verifyInput(0, s, vopts, function(err, results) {
       should.not.exist(err);
       should.exist(results);
       results.should.equal(true);
@@ -516,13 +536,15 @@ describe('TransactionBuilder', function() {
 
   it('should sign a multisig tx', function(done) {
     var opts = {
-      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
+      remainderOut: {
+        address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'
+      },
     };
     var outs = outs || [{
       address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
       amount: 0.08
     }];
-   var b =  new TransactionBuilder(opts)
+    var b = new TransactionBuilder(opts)
       .setUnspent(testdata.dataUnspentSign.unspentMulti)
       .setOutputs(outs);
 
@@ -535,8 +557,8 @@ describe('TransactionBuilder', function() {
 
     var tx = b.build();
     var shex = testdata.dataUnspentSign.unspentMulti[0].scriptPubKey;
-    var s    = new Script(new Buffer(shex,'hex'));
-    tx.verifyInput(0,s, vopts, function(err, results){
+    var s = new Script(new Buffer(shex, 'hex'));
+    tx.verifyInput(0, s, vopts, function(err, results) {
       should.not.exist(err);
       should.exist(results);
       results.should.equal(true);
@@ -547,19 +569,21 @@ describe('TransactionBuilder', function() {
 
   it('should sign a multisig tx in steps (3-5)', function(done) {
     var opts = {
-      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
+      remainderOut: {
+        address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'
+      },
     };
     var outs = outs || [{
       address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
       amount: 0.08
     }];
-   var b =  new TransactionBuilder(opts)
+    var b = new TransactionBuilder(opts)
       .setUnspent(testdata.dataUnspentSign.unspentMulti)
       .setOutputs(outs);
 
-    var k1 = testdata.dataUnspentSign.keyStringsMulti.slice(0,1);
-    var k2 = testdata.dataUnspentSign.keyStringsMulti.slice(1,2);
-    var k3 = testdata.dataUnspentSign.keyStringsMulti.slice(2,3);
+    var k1 = testdata.dataUnspentSign.keyStringsMulti.slice(0, 1);
+    var k2 = testdata.dataUnspentSign.keyStringsMulti.slice(1, 2);
+    var k3 = testdata.dataUnspentSign.keyStringsMulti.slice(2, 3);
 
     b.sign(k1);
     b.isFullySigned().should.equal(false);
@@ -575,8 +599,8 @@ describe('TransactionBuilder', function() {
 
     var tx = b.build();
     var shex = testdata.dataUnspentSign.unspentMulti[0].scriptPubKey;
-    var s    = new Script(new Buffer(shex,'hex'));
-    tx.verifyInput(0,s, vopts, function(err, results){
+    var s = new Script(new Buffer(shex, 'hex'));
+    tx.verifyInput(0, s, vopts, function(err, results) {
       should.not.exist(err);
       should.exist(results);
       results.should.equal(true);
@@ -588,19 +612,21 @@ describe('TransactionBuilder', function() {
 
   it('should count multisig signs (3-5)', function() {
     var opts = {
-      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
+      remainderOut: {
+        address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'
+      },
     };
     var outs = outs || [{
       address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
       amount: 0.08
     }];
-   var b =  new TransactionBuilder(opts)
+    var b = new TransactionBuilder(opts)
       .setUnspent(testdata.dataUnspentSign.unspentMulti)
       .setOutputs(outs);
 
-    var k1 = testdata.dataUnspentSign.keyStringsMulti.slice(0,1);
-    var k2 = testdata.dataUnspentSign.keyStringsMulti.slice(1,2);
-    var k3 = testdata.dataUnspentSign.keyStringsMulti.slice(2,3);
+    var k1 = testdata.dataUnspentSign.keyStringsMulti.slice(0, 1);
+    var k2 = testdata.dataUnspentSign.keyStringsMulti.slice(1, 2);
+    var k3 = testdata.dataUnspentSign.keyStringsMulti.slice(2, 3);
 
     var tx = b.build();
     b.isFullySigned().should.equal(false);
@@ -626,18 +652,20 @@ describe('TransactionBuilder', function() {
 
   it('should avoid siging with the same key twice multisig signs (3-5)', function(done) {
     var opts = {
-      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
+      remainderOut: {
+        address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'
+      },
     };
     var outs = outs || [{
       address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
       amount: 0.08
     }];
-   var b =  new TransactionBuilder(opts)
+    var b = new TransactionBuilder(opts)
       .setUnspent(testdata.dataUnspentSign.unspentMulti)
       .setOutputs(outs);
 
-    var k1 = testdata.dataUnspentSign.keyStringsMulti.slice(0,1);
-    var k23 = testdata.dataUnspentSign.keyStringsMulti.slice(1,3);
+    var k1 = testdata.dataUnspentSign.keyStringsMulti.slice(0, 1);
+    var k23 = testdata.dataUnspentSign.keyStringsMulti.slice(1, 3);
     var tx = b.build();
 
     tx.countInputSignatures(0).should.equal(0);
@@ -656,8 +684,8 @@ describe('TransactionBuilder', function() {
 
     var tx = b.build();
     var shex = testdata.dataUnspentSign.unspentMulti[0].scriptPubKey;
-    var s    = new Script(new Buffer(shex,'hex'));
-    tx.verifyInput(0,s, vopts, function(err, results){
+    var s = new Script(new Buffer(shex, 'hex'));
+    tx.verifyInput(0, s, vopts, function(err, results) {
       should.not.exist(err);
       should.exist(results);
       results.should.equal(true);
@@ -668,12 +696,16 @@ describe('TransactionBuilder', function() {
   });
 
 
-  var getInfoForP2sh = function () {
-    var privs =  testdata.dataUnspentSign.keyStringsP2sh;
+  var getInfoForP2sh = function() {
+    var privs = testdata.dataUnspentSign.keyStringsP2sh;
     var pubkeys = [];
     privs.forEach(function(p) {
-      var wk = new WalletKey({network: networks.testnet});
-      wk.fromObj({priv: p});
+      var wk = new WalletKey({
+        network: networks.testnet
+      });
+      wk.fromObj({
+        priv: p
+      });
       pubkeys.push(bitcore.buffertools.toHex(wk.privKey.public));
     });
 
@@ -683,45 +715,52 @@ describe('TransactionBuilder', function() {
     };
   };
 
-//
-// bitcoind  createmultisig 3 '["03197599f6e209cefef07da2fddc6fe47715a70162c531ffff8e611cef23dfb70d" ,  "0380a29968851f93af55e581c43d9ef9294577a439a3ca9fc2bc47d1ca2b3e9127"  ,  "0392dccb2ed470a45984811d6402fdca613c175f8f3e4eb8e2306e8ccd7d0aed03",     "03a94351fecc4328bb683bf93a1aa67378374904eac5980c7966723a51897c56e3"  ,  "03e085eb6fa1f20b2722c16161144314070a2c316a9cae2489fd52ce5f63fff6e4" ]'
-//
-// =>
-//
-// {
-//     "address" : "2NDJbzwzsmRgD2o5HHXPhuq5g6tkKTjYkd6",
-//     "redeemScript" : "532103197599f6e209cefef07da2fddc6fe47715a70162c531ffff8e611cef23dfb70d210380a29968851f93af55e581c43d9ef9294577a439a3ca9fc2bc47d1ca2b3e9127210392dccb2ed470a45984811d6402fdca613c175f8f3e4eb8e2306e8ccd7d0aed032103a94351fecc4328bb683bf93a1aa67378374904eac5980c7966723a51897c56e32103e085eb6fa1f20b2722c16161144314070a2c316a9cae2489fd52ce5f63fff6e455ae"
-// }
-//
-  var getP2shBuilder = function(setMap) {
+  //
+  // bitcoind  createmultisig 3 '["03197599f6e209cefef07da2fddc6fe47715a70162c531ffff8e611cef23dfb70d" ,  "0380a29968851f93af55e581c43d9ef9294577a439a3ca9fc2bc47d1ca2b3e9127"  ,  "0392dccb2ed470a45984811d6402fdca613c175f8f3e4eb8e2306e8ccd7d0aed03",     "03a94351fecc4328bb683bf93a1aa67378374904eac5980c7966723a51897c56e3"  ,  "03e085eb6fa1f20b2722c16161144314070a2c316a9cae2489fd52ce5f63fff6e4" ]'
+  //
+  // =>
+  //
+  // {
+  //     "address" : "2NDJbzwzsmRgD2o5HHXPhuq5g6tkKTjYkd6",
+  //     "redeemScript" : "532103197599f6e209cefef07da2fddc6fe47715a70162c531ffff8e611cef23dfb70d210380a29968851f93af55e581c43d9ef9294577a439a3ca9fc2bc47d1ca2b3e9127210392dccb2ed470a45984811d6402fdca613c175f8f3e4eb8e2306e8ccd7d0aed032103a94351fecc4328bb683bf93a1aa67378374904eac5980c7966723a51897c56e32103e085eb6fa1f20b2722c16161144314070a2c316a9cae2489fd52ce5f63fff6e455ae"
+  // }
+  //
+  var getP2shBuilder = function(setMap, opts) {
     var network = 'testnet';
-    var opts = {
-      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
+    opts = opts || {};
+    opts.remainderOut = opts.remainderOut || {
+      address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'
     };
+
     var data = getInfoForP2sh();
     // multisig p2sh
-    var p2shOpts = {nreq:3, pubkeys:data.pubkeys};
+    var p2shOpts = {
+      nreq: 3,
+      pubkeys: data.pubkeys
+    };
     var info = TransactionBuilder.infoForP2sh(p2shOpts, network);
 
     var outs = outs || [{
       address: 'mon1Hqs3jqKTtRSnRwJ3pRYMFos9WYfKb5',
       amount: 0.08
     }];
-   var b =  new TransactionBuilder(opts)
+    var b = new TransactionBuilder(opts)
       .setUnspent(testdata.dataUnspentSign.unspentP2sh)
       .setOutputs(outs);
 
     if (setMap) {
       var hashMap = {};
-      hashMap[info.address]=info.scriptBufHex;
+      hashMap[info.address] = info.scriptBufHex;
       b.setHashToScriptMap(hashMap);
     }
     return b;
   };
 
   it('should fail to sign a p2sh/multisign tx if none script map was given', function() {
-    var b = getP2shBuilder();     
-    (function() {b.sign(testdata.dataUnspentSign.keyStringsP2sh);}).should.throw();
+    var b = getP2shBuilder();
+    (function() {
+      b.sign(testdata.dataUnspentSign.keyStringsP2sh);
+    }).should.throw();
   });
 
 
@@ -733,8 +772,8 @@ describe('TransactionBuilder', function() {
     tx.isComplete().should.equal(true);
 
     var shex = testdata.dataUnspentSign.unspentP2sh[0].scriptPubKey;
-    var s    = new Script(new Buffer(shex,'hex'));
-    tx.verifyInput(0,s, vopts, function(err, results){
+    var s = new Script(new Buffer(shex, 'hex'));
+    tx.verifyInput(0, s, vopts, function(err, results) {
       should.exist(results);
       results.should.equal(true);
       should.not.exist(err);
@@ -743,9 +782,16 @@ describe('TransactionBuilder', function() {
 
   };
 
-  [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,2,1],[3,1,2]].forEach(function(order) {
+  [
+    [1, 2, 3],
+    [1, 3, 2],
+    [2, 1, 3],
+    [2, 3, 1],
+    [3, 2, 1],
+    [3, 1, 2]
+  ].forEach(function(order) {
     it('should sign a p2sh/multisig tx in order ' + order.join(','), function(done) {
-      var b = getP2shBuilder(1); 
+      var b = getP2shBuilder(1);
       b.sign([testdata.dataUnspentSign.keyStringsP2sh[3]]);
       b.sign([testdata.dataUnspentSign.keyStringsP2sh[1]]);
       b.sign([testdata.dataUnspentSign.keyStringsP2sh[2]]);
@@ -754,59 +800,56 @@ describe('TransactionBuilder', function() {
   });
 
   it('should sign in steps a p2sh/multisign tx', function() {
-    var b = getP2shBuilder(1);     
+    var b = getP2shBuilder(1);
 
-    var k1 = testdata.dataUnspentSign.keyStringsP2sh.slice(0,1);
-    var k2 = testdata.dataUnspentSign.keyStringsP2sh.slice(1,2);
-    var k5 = testdata.dataUnspentSign.keyStringsP2sh.slice(4,5);
+    var k1 = testdata.dataUnspentSign.keyStringsP2sh.slice(0, 1);
+    var k2 = testdata.dataUnspentSign.keyStringsP2sh.slice(1, 2);
+    var k5 = testdata.dataUnspentSign.keyStringsP2sh.slice(4, 5);
     b.isFullySigned().should.equal(false);
-    b.signaturesAdded.should.equal(0);
 
     b.sign(k1);
     b.isFullySigned().should.equal(false);
-    b.signaturesAdded.should.equal(1);
 
     var tx = b.build();
     tx.ins.length.should.equal(1);
     tx.outs.length.should.equal(2);
     tx.isComplete().should.equal(false);
-    b.signaturesAdded.should.equal(1);
 
     // Sign with the same
     b.sign(k1);
     b.isFullySigned().should.equal(false);
     tx.isComplete().should.equal(false);
-    b.signaturesAdded.should.equal(1);
 
     // Sign with k5
     b.sign(k5);
-///
+    ///
     b.isFullySigned().should.equal(false);
     tx.isComplete().should.equal(false);
-    b.signaturesAdded.should.equal(2);
 
     // Sign with same
     b.sign(k5);
     b.isFullySigned().should.equal(false);
     tx.isComplete().should.equal(false);
-    b.signaturesAdded.should.equal(2);
 
 
     // Sign k2
     b.sign(k2);
     b.isFullySigned().should.equal(true);
     tx.isComplete().should.equal(true);
-    b.signaturesAdded.should.equal(3);
   });
 
   it('should sign a p2sh/p2pubkeyhash tx', function() {
     var priv = 'cMpKwGr5oxEacN95WFKNEq6tTcvi11regFwS3muHvGYVxMPJX8JA';
     var network = 'testnet';
     var opts = {
-      remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
+      remainderOut: {
+        address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'
+      },
     };
     // p2hash/ p2sh
-    var p2shOpts = {address:'mgwqzy6pF5BSc72vxHBFSnnhNEBcV4TJzV'};
+    var p2shOpts = {
+      address: 'mgwqzy6pF5BSc72vxHBFSnnhNEBcV4TJzV'
+    };
     var info = TransactionBuilder.infoForP2sh(p2shOpts, network);
 
     //addr: 2NAwCQ1jPYPrSsyBQvfP6AJ6d6SSxnHsZ4e
@@ -818,22 +861,22 @@ describe('TransactionBuilder', function() {
     }];
     //info.scriptBufHex,
 
-    var s =  new Address(info.address).getScriptPubKey()
-                            .getBuffer().toString('hex');
+    var s = new Address(info.address).getScriptPubKey()
+      .getBuffer().toString('hex');
 
-    var b =  new TransactionBuilder(opts)
+    var b = new TransactionBuilder(opts)
       .setUnspent([{
-      "address": info.address,
-      "scriptPubKey": s, 
-      "txid": "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1",
-      "vout": 1,
-      "amount": 1,
-      "confirmations":7
+        "address": info.address,
+        "scriptPubKey": s,
+        "txid": "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1",
+        "vout": 1,
+        "amount": 1,
+        "confirmations": 7
       }])
       .setOutputs(outs);
 
     var hashMap = {};
-    hashMap[info.address]=info.scriptBufHex;
+    hashMap[info.address] = info.scriptBufHex;
     b.setHashToScriptMap(hashMap);
     b.sign([priv]);
     b.isFullySigned().should.equal(true);
@@ -844,190 +887,325 @@ describe('TransactionBuilder', function() {
     tx.isComplete().should.equal(true);
   });
 
-  it('#toObj #fromObj roundtrip', function() {
-    var b = getBuilder2();
 
-    b.isFullySigned().should.equal(false);
-    b.getSelectedUnspent().length.should.equal(2);
-
-    var data =b.toObj();
-
-    var b2 = TransactionBuilder.fromObj(data);
-    var tx = b2.build();
-    should.exist(tx);
-    tx.version.should.equal(1);
-    tx.ins.length.should.equal(2);
-    tx.outs.length.should.equal(2);
-
-    util.valueToBigInt(tx.outs[0].v).cmp(8000000).should.equal(0);
-
-    // remainder is 0.0299 here because unspent select utxos in order
-    util.valueToBigInt(tx.outs[1].v).cmp(2990000).should.equal(0);
+  it('should check sign parameters', function() {
+    var b = getP2shBuilder(1);
+    (function() {
+      b.sign(testdata.dataUnspentSign.keyStringsP2sh[0])
+    }).should.throw('array');
   });
 
-  it('#toObj #fromObj roundtrip, step signatures p2sh/p2pubkeyhash', function() {
-    var b = getP2shBuilder(1);     
 
-    var k1 = testdata.dataUnspentSign.keyStringsP2sh.slice(0,1);
-    var k2 = testdata.dataUnspentSign.keyStringsP2sh.slice(1,2);
-    var k5 = testdata.dataUnspentSign.keyStringsP2sh.slice(4,5);
-    b.isFullySigned().should.equal(false);
-    b.signaturesAdded.should.equal(0);
+  describe('serizalization', function() {
 
-    var b2 = TransactionBuilder.fromObj(b.toObj());
+    it('#toObj #fromObj roundtrip', function() {
+      var b = getBuilder2();
 
-    b2.sign(k1);
+      b.isFullySigned().should.equal(false);
+      b.getSelectedUnspent().length.should.equal(2);
 
-    b2.isFullySigned().should.equal(false);
-    b2.signaturesAdded.should.equal(1);
+      var data = b.toObj();
 
-    var tx = b2.build();
-    tx.ins.length.should.equal(1);
-    tx.outs.length.should.equal(2);
-    tx.isComplete().should.equal(false);
-    b2.signaturesAdded.should.equal(1);
+      var b2 = TransactionBuilder.fromObj(data);
+      var tx = b2.build();
+      should.exist(tx);
+      tx.version.should.equal(1);
+      tx.ins.length.should.equal(2);
+      tx.outs.length.should.equal(2);
 
-    // Sign with the same
-    var b3 = TransactionBuilder.fromObj(b2.toObj());
+      util.valueToBigInt(tx.outs[0].v).cmp(8000000).should.equal(0);
 
-    b3.sign(k1);
-    b3.isFullySigned().should.equal(false);
-    b3.signaturesAdded.should.equal(1);
-
-    // Sign with k5
-    var b4 = TransactionBuilder.fromObj(b3.toObj());
-    b4.sign(k5);
-    b4.isFullySigned().should.equal(false);
-    b4.signaturesAdded.should.equal(2);
-
-    var b5 = TransactionBuilder.fromObj(b4.toObj());
-    // Sign k2
-    b5.sign(k2);
-    b5.isFullySigned().should.equal(true);
-    var tx2 = b5.build();
-    tx2.isComplete().should.equal(true);
-    b5.signaturesAdded.should.equal(3);
-  });
-
-  it('#merge self', function() {
-    var b = getBuilder3([{
-      address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
-      amount: 16
-    }])
-      .sign(testdata.dataUnspentSign.keyStrings);
-    b.merge(b);
-
-    b.isFullySigned().should.equal(true);
-    var tx = b.build();
-    tx.isComplete().should.equal(true);
-    tx.ins.length.should.equal(3);
-    tx.outs.length.should.equal(2);
-  });
-  it('#merge simple', function() {
-    var b = getBuilder3([{
-      address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
-      amount: 16
-    }])
-      .sign(testdata.dataUnspentSign.keyStrings);
-
-    // merge simple
-    var b2 = getBuilder3([{
-      address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
-      amount: 16
-    }]);
-    b2.isFullySigned().should.equal(false);
-    b2.merge(b);
-
-    b2.isFullySigned().should.equal(true);
-    var tx = b.build();
-    tx.isComplete().should.equal(true);
-    tx.ins.length.should.equal(3);
-    tx.outs.length.should.equal(2);
-  });
-
-  it('#merge checks', function() {
-    var b = getBuilder3([{
-      address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
-      amount: 16
-    }]);
-    // bad amount
-    var b2 = getBuilder3([{
-      address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
-      amount: 15
-    }]);
-    (function() {b2.merge(b);}).should.throw();
-    // bad out
-    b2 = getBuilder3([{
-      address: 'muHct3YZ9Nd5Pq7uLYYhXRAxeW4EnpcaLz',
-      amount: 16
-    }]);
-    (function() {b2.merge(b);}).should.throw();
-
-    // same signature 
-    //  -> this fails: no way to check signatures, since PRIV Keys are not stored
-    b = getBuilder3([{
-      address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
-      amount: 16
-    }])
-      .sign(testdata.dataUnspentSign.keyStrings);
-    // merge simple
-    b2 = getBuilder3([{
-      address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
-      amount: 16
-    }])
-      .sign(testdata.dataUnspentSign.keyStrings);
-    b2.isFullySigned().should.equal(true);
-    b2.merge(b);
-    b2.isFullySigned().should.equal(true);
-  });
-
-  it('#merge p2sh/steps', function(done) {
-    var b = getP2shBuilder(1);     
-    var k1 = testdata.dataUnspentSign.keyStringsP2sh.slice(0,1);
-    var k2 = testdata.dataUnspentSign.keyStringsP2sh.slice(1,2);
-    var k3 = testdata.dataUnspentSign.keyStringsP2sh.slice(2,3);
-    b.isFullySigned().should.equal(false);
-    b.signaturesAdded.should.equal(0);
-    b.sign(k1);
-    b.signaturesAdded.should.equal(1);
-    b.isFullySigned().should.equal(false);
-    var tx = b.build();
-    tx.isComplete().should.equal(false);
-
-    b = TransactionBuilder.fromObj(b.toObj());
-
-    // TODO TO OBJ!
-    var b2 = getP2shBuilder(1); 
-    b2.sign(k2);
-    b2.signaturesAdded.should.equal(1);
-    b2.merge(b);
-    b2.signaturesAdded.should.equal(2);
-    tx = b2.build();
-    tx.isComplete().should.equal(false);
-
-    b2 = TransactionBuilder.fromObj(b2.toObj());
-    var b3 = getP2shBuilder(1); 
-    b3.sign(k3);
-    b3.signaturesAdded.should.equal(1);
-    b3.merge(b2);
-    b3.signaturesAdded.should.equal(3);
-    tx = b3.build();
-    tx.isComplete().should.equal(true);
-
-    b3 = TransactionBuilder.fromObj(b3.toObj());
-    b2.merge(b3);
-    b2.signaturesAdded.should.equal(3);
-    tx = b2.build();
-    tx.isComplete().should.equal(true);
-
-    var shex = testdata.dataUnspentSign.unspentP2sh[0].scriptPubKey;
-    var s    = new Script(new Buffer(shex,'hex'));
-    tx.verifyInput(0,s, vopts, function(err, results){
-      should.exist(results);
-      results.should.equal(true);
-      should.not.exist(err);
-      done();
+      // remainder is 0.0299 here because unspent select utxos in order
+      util.valueToBigInt(tx.outs[1].v).cmp(2990000).should.equal(0);
     });
+
+    it('#toObj #fromObj roundtrip, step signatures p2sh/p2pubkeyhash', function() {
+      var b = getP2shBuilder(1);
+
+      var keys = JSON.parse(JSON.stringify(testdata.dataUnspentSign.keyStringsP2sh));
+
+      var k1 = keys.slice(0, 1);
+      var k2 = keys.slice(1, 2);
+      var k5 = keys.slice(4, 5);
+      b.isFullySigned().should.equal(false);
+
+      var b2 = TransactionBuilder.fromObj(b.toObj());
+
+      b2.sign(k1);
+      b2.isFullySigned().should.equal(false);
+
+      var tx = b2.build();
+      tx.ins.length.should.equal(1);
+      tx.outs.length.should.equal(2);
+      tx.isComplete().should.equal(false);
+
+      // Sign with the same
+      var b3 = TransactionBuilder.fromObj(b2.toObj());
+
+      b3.sign(k1);
+      b3.isFullySigned().should.equal(false);
+
+      // Sign with k5
+      var b4 = TransactionBuilder.fromObj(b3.toObj());
+      b4.sign(k5);
+      b4.isFullySigned().should.equal(false);
+
+      var b5 = TransactionBuilder.fromObj(b4.toObj());
+      // Sign k2
+      b5.sign(k2);
+      b5.isFullySigned().should.equal(true);
+      var tx2 = b5.build();
+      tx2.isComplete().should.equal(true);
+    });
+
+
+    it('should keep signatures after clone', function() {
+      var k1 = testdata.dataUnspentSign.keyStringsP2sh[0];
+      var k2 = testdata.dataUnspentSign.keyStringsP2sh[1];
+
+      var b = getP2shBuilder(1);
+      var b2 = getP2shBuilder(1);
+
+      b.sign([k1]);
+      b2.sign([k2]);
+      b2.merge(b);
+      var tx2 = b2.build();
+      tx2.countInputSignatures(0).should.equal(2, 'before clone');
+      tx2 = b2.clone().build();
+      tx2.countInputSignatures(0).should.equal(2, 'after clone');
+
+    });
+  });
+
+
+  describe('#merge', function() {
+    it('with self', function() {
+      var b = getBuilder3([{
+          address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
+          amount: 16
+        }])
+        .sign(testdata.dataUnspentSign.keyStrings);
+      b.merge(b);
+
+      b.isFullySigned().should.equal(true);
+      var tx = b.build();
+      tx.isComplete().should.equal(true);
+      tx.ins.length.should.equal(3);
+      tx.outs.length.should.equal(2);
+    });
+
+    it('#merge simple', function() {
+      var b = getBuilder3([{
+          address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
+          amount: 16
+        }])
+        .sign(testdata.dataUnspentSign.keyStrings);
+
+      // merge simple
+      var b2 = getBuilder3([{
+        address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
+        amount: 16
+      }]);
+      b2.isFullySigned().should.equal(false);
+      b2.merge(b);
+
+      b2.isFullySigned().should.equal(true);
+      var tx = b.build();
+      tx.isComplete().should.equal(true);
+      tx.ins.length.should.equal(3);
+      tx.outs.length.should.equal(2);
+    });
+
+
+    var b = getBuilder3([{
+      address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
+      amount: 16
+    }]);
+
+    it('should check amount', function() {
+      // bad amount
+      var b2 = getBuilder3([{
+        address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
+        amount: 15
+      }]);
+      (function() {
+        b2.merge(b);
+      }).should.throw('NTXID');
+    });
+    it('should check addresses', function() {
+      // bad out
+      var b2 = getBuilder3([{
+        address: 'muHct3YZ9Nd5Pq7uLYYhXRAxeW4EnpcaLz',
+        amount: 16
+      }]);
+      (function() {
+        b2.merge(b);
+      }).should.throw('NTXID');
+    });
+
+
+    it('should check signhash in p2pubkeyhash', function() {
+      // bad amount
+      var b = getBuilder3([{
+        address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
+        amount: 15
+      }]);
+      b.sign(testdata.dataUnspentSign.keyStrings);
+
+      var b2 = getBuilder3([{
+        address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
+        amount: 15
+      }], bitcore.Transaction.SIGHASH_NONE);
+      b2.sign(testdata.dataUnspentSign.keyStrings);
+
+      (function() {
+        b2.merge(b);
+      }).should.throw('signhash');
+    });
+
+
+    it('should merge signed signed txs', function() {
+      // same signature 
+      //  -> keep first signature
+      var b = getBuilder3([{
+          address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
+          amount: 16
+        }])
+        .sign(testdata.dataUnspentSign.keyStrings);
+      // merge simple
+      var b2 = getBuilder3([{
+          address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
+          amount: 16
+        }])
+        .sign(testdata.dataUnspentSign.keyStrings);
+      b2.isFullySigned().should.equal(true);
+      b2.merge(b);
+      b2.isFullySigned().should.equal(true);
+    });
+
+
+    it('#merge p2sh in 2 steps', function() {
+      var b = getP2shBuilder(1);
+      var b2 = getP2shBuilder(1);
+      var k1 = testdata.dataUnspentSign.keyStringsP2sh[0];
+      var k2 = testdata.dataUnspentSign.keyStringsP2sh[1];
+      b.sign([k1]);
+      b2.sign([k2]);
+      b.merge(b2);
+      var tx = b.build();
+      tx.countInputSignatures(0).should.equal(2);
+    });
+
+    it('#merge p2sh in 2 steps, case 2', function() {
+      var b = getP2shBuilder(1);
+      var b2 = getP2shBuilder(1);
+      var k1 = testdata.dataUnspentSign.keyStringsP2sh[0];
+      var k2 = testdata.dataUnspentSign.keyStringsP2sh[1];
+      var k3 = testdata.dataUnspentSign.keyStringsP2sh[2];
+      b.sign([k1, k2]);
+      b2.sign([k3]);
+      b.merge(b2);
+      var tx = b.build();
+      tx.countInputSignatures(0).should.equal(3);
+    });
+
+
+    it('#merge p2sh sign twice', function() {
+      var k1 = testdata.dataUnspentSign.keyStringsP2sh[0];
+      var k2 = testdata.dataUnspentSign.keyStringsP2sh[1];
+
+      var b = getP2shBuilder(1);
+      var b2 = getP2shBuilder(1);
+
+      b.sign([k1]);
+      b2.sign([k1, k2]);
+      b2.merge(b);
+      var tx = b2.build();
+      tx.countInputSignatures(0).should.equal(2);
+    });
+
+
+    it('#merge p2sh sign twice, case2', function() {
+      var k1 = testdata.dataUnspentSign.keyStringsP2sh[0];
+      var k2 = testdata.dataUnspentSign.keyStringsP2sh[1];
+
+      var b = getP2shBuilder(1);
+      var b2 = getP2shBuilder(1);
+
+      b.sign([k1]);
+      b2.sign([k1]);
+      b2.merge(b);
+      var tx = b2.build();
+      tx.countInputSignatures(0).should.equal(1);
+    });
+
+
+
+
+
+    it('#merge p2sh in 3 steps', function() {
+      var k1 = testdata.dataUnspentSign.keyStringsP2sh[0];
+      var k2 = testdata.dataUnspentSign.keyStringsP2sh[1];
+      var k3 = testdata.dataUnspentSign.keyStringsP2sh[2];
+
+      var b = getP2shBuilder(1);
+      var b2 = getP2shBuilder(1);
+      var b3 = getP2shBuilder(1);
+
+      b.sign([k1]);
+      b2.sign([k2]);
+      b2.merge(b);
+      var tx = b2.clone().build();
+      tx.countInputSignatures(0).should.equal(2);
+
+      b3.sign([k3]);
+      b3.merge(b2);
+      tx = b3.build();
+      tx.countInputSignatures(0).should.equal(3);
+    });
+
+
+    it('should check signhash in p2sh/merge', function() {
+      var b = getP2shBuilder(1);
+      var k1 = testdata.dataUnspentSign.keyStringsP2sh.slice(0, 1);
+      var k2 = testdata.dataUnspentSign.keyStringsP2sh.slice(1, 2);
+      b.isFullySigned().should.equal(false);
+      b.sign(k1);
+      var tx = b.build();
+      tx.isComplete().should.equal(false);
+
+      var b2 = getP2shBuilder(1, {
+        signhash: bitcore.Transaction.SIGHASH_NONE
+      });
+      b2.sign(k2);
+      (function() {
+        b2.merge(b)
+      }).should.throw();
+    });
+
+    it('#merge p2sh/steps change return address', function() {
+      var b = getP2shBuilder(1);
+      var k1 = testdata.dataUnspentSign.keyStringsP2sh.slice(0, 1);
+      var k2 = testdata.dataUnspentSign.keyStringsP2sh.slice(1, 2);
+      var k3 = testdata.dataUnspentSign.keyStringsP2sh.slice(2, 3);
+      b.isFullySigned().should.equal(false);
+      b.sign(k1);
+      var tx = b.build();
+      tx.isComplete().should.equal(false);
+      b = TransactionBuilder.fromObj(b.toObj());
+
+      var b2 = getP2shBuilder(1, {
+        remainderOut: {
+          address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE'
+        }
+      });
+      b2.sign(k2);
+      (function() {
+        b2.merge(b)
+      }).should.throw('NTXID');
+    });
+
+
 
   });
 });
