@@ -43,25 +43,29 @@ describe('SIN', function() {
     });
     it('should fail with param version, string', function() {
       var hash = '1ab59a0fd1d5fc446d38746ee033c8af57ed6bc0';
-      ( function (){ 
+      (function() {
         var sin = new SIN(SIN.SIN_EPHEM, hash);
       }).should.throw();
     });
- 
+
     it('should fail with wrong sized hash', function() {
       var myhash = new Buffer('111ab59a0fd1d5fc446d38746ee033c8af57ed6bc0', 'hex');
-      ( function (){ 
+      (function() {
         var sin = new SIN(SIN.SIN_EPHEM, myhash);
       }).should.throw();
     });
- 
+
   });
   describe('#fromPubKey', function() {
     it('should fail to create  a new SIN not using a pub key', function() {
-      (function() { SIN.fromPubKey('1234')}).should.throw();
+      (function() {
+        SIN.fromPubKey('1234')
+      }).should.throw();
     });
     it('should fail to create  a new SIN not using a pub key case 2', function() {
-      (function() { SIN.fromPubKey('03e0973263b4e0d5f5f56d25d430e777ab3838ff644db972c0bf32c31da5686c27')}).should.throw();
+      (function() {
+        SIN.fromPubKey('03e0973263b4e0d5f5f56d25d430e777ab3838ff644db972c0bf32c31da5686c27')
+      }).should.throw();
     });
     it('should be able to create a new SIN using a pub key', function() {
       var pubkey1 = new Buffer('03e0973263b4e0d5f5f56d25d430e777ab3838ff644db972c0bf32c31da5686c27', 'hex');
@@ -69,9 +73,6 @@ describe('SIN', function() {
       should.exist(sin);
       sin.toString().should.equal('FrCfKjSFN1Ubp3x6AD6au8M5LTaNAEN8b');
     });
- 
+
   });
 });
-
-
-
