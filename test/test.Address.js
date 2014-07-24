@@ -107,6 +107,21 @@ describe('Address', function() {
     });
   });
 
+  describe('constructor, 2 params', function() {
+    it('should make an address from a version, hash', function() {
+      var hash = new Buffer('1ab59a0fd1d5fc446d38746ee033c8af57ed6bc0', 'hex');
+      var addr = new Address(0, hash);
+      addr.toString().should.equal('13SE7uKmnQwGA8X1A8WcZnX2ceQRDEzsAd');
+    });
+    it('should fail with param version, string', function() {
+      var hash = '1ab59a0fd1d5fc446d38746ee033c8af57ed6bc0';
+      ( function (){ 
+        var addr = new Address(0, hash);
+      }).should.throw();
+    });
+  });
+ 
+
   describe('#fromPubKey', function() {
     it('should make pubkeyhash address from an uncompressed public key', function() {
       var pubkey = new Buffer('04fa05ce8b25010cb6e17a30e0b66668bf083c40687547748ec330ee77adf53a42abd3d26148cbacfcf79c907ddefeb2c37f8bebc0a695ba79d634449d871de218', 'hex');
