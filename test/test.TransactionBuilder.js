@@ -1108,21 +1108,17 @@ describe('TransactionBuilder', function() {
     });
 
 
-    it.only('should check signhash in p2sh/merge', function() {
+    it('should check signhash in p2sh/merge', function() {
       var b = getP2shBuilder(1);     
       var k1 = testdata.dataUnspentSign.keyStringsP2sh.slice(0,1);
       var k2 = testdata.dataUnspentSign.keyStringsP2sh.slice(1,2);
-      var k3 = testdata.dataUnspentSign.keyStringsP2sh.slice(2,3);
       b.isFullySigned().should.equal(false);
       b.sign(k1);
       var tx = b.build();
       tx.isComplete().should.equal(false);
-      b = TransactionBuilder.fromObj(b.toObj());
 
       var b2 = getP2shBuilder(1, {signhash: bitcore.Transaction.SIGHASH_NONE }); 
       b2.sign(k2);
-
-console.log('[test.TransactionBuilder.js.1124]'); //TODO
       (function() { b2.merge(b)}).should.throw();
     });
 
@@ -1139,7 +1135,7 @@ console.log('[test.TransactionBuilder.js.1124]'); //TODO
 
       var b2 = getP2shBuilder(1, {remainderOut: {address:'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE' }}); 
       b2.sign(k2);
-      (function() { b2.merge(b)}).should.throw('asdds');
+      (function() { b2.merge(b)}).should.throw('NTXID');
     });
 
 
