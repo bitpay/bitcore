@@ -1,7 +1,7 @@
 {
   "name": "bitcore",
   "main": "browser/bundle.js",
-  "version": "0.1.33",
+  "version": "0.1.34",
   "homepage": "http://bitcore.io",
   "authors": [
     "Ryan X. Charles (<ryan@bitpay.com>)"
