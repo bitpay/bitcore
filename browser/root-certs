@@ -24,28 +24,46 @@ var certUrl = 'https://raw.githubusercontent.com/joyent/node/master/src/node_roo
 function getRootCerts(callback) {
   return request(certUrl, function(err, res, body) {
     if (err) return callback(err);
-    body = body.replace(/,$/, '');
-    body = 'var RootCerts = [\n' + body + '\n];\n';
+    body = body.replace(/,\s*$/, '');
+    body = 'var certs = {\n' + body + '\n};\n';
     body = body.replace(/^"/gm, '+ "');
     body = body.replace(/^\+ "-----B/gm, '"-----B');
+    body = body.replace(/\/\*([^*]+)\*\/\n(?=")/g, function(_, name) {
+      var key = name.trim();
+      return '// ' + key + '\n'
+          + '"' + key + '":\n';
+    });
     body += ''
       + '\n'
       + '// Use hash table for efficiency:\n'
-      + 'RootCerts = RootCerts.reduce(function(trusted, cert) {\n'
-      + '  cert = cert.replace(/\\s+/g, "");\n'
-      + '  trusted[cert] = true;\n'
+      + 'var trusted = Object.keys(certs).reduce(function(trusted, key) {\n'
+      + '  var pem = certs[key];\n'
+      + '  pem = pem.replace(/-----BEGIN CERTIFICATE-----/g, "");\n'
+      + '  pem = pem.replace(/-----END CERTIFICATE-----/g, "");\n'
+      + '  pem = pem.replace(/\\s+/g, "");\n'
+      + '  trusted[pem] = key;\n'
       + '  return trusted;\n'
       + '}, {});\n'
       + '\n'
-      + 'function isTrusted(pem) {\n'
+      + 'function getTrusted(pem) {\n'
       + '  pem = pem + "";\n'
+      + '  pem = pem.replace(/-----BEGIN CERTIFICATE-----/g, "");\n'
+      + '  pem = pem.replace(/-----END CERTIFICATE-----/g, "");\n'
       + '  pem = pem.replace(/\\s+/g, "");\n'
-      + '  return !!RootCerts[pem];\n'
+      + '  if (!Object.prototype.hasOwnProperty.call(certs, pem)) return;\n'
+      + '  return certs[pem];\n'
       + '}\n'
       + '\n'
-      + 'exports = RootCerts;\n'
-      + 'exports.isTrusted = isTrusted;\n'
-      + 'module.exports = exports;\n';
+      + 'function getCert(name) {\n'
+      + '  name = name.replace(/^\s+|\s+$/g, "");\n'
+      + '  if (!Object.prototype.hasOwnProperty.call(trusted, name)) return;\n'
+      + '  return trusted[name];\n'
+      + '}\n'
+      + '\n'
+      + 'exports.certs = certs;\n'
+      + 'exports.trusted = trusted;\n'
+      + 'exports.getCert = getCert;\n'
+      + 'exports.getTrusted = getTrusted;\n';
     return callback(null, body);
   });
 }
@@ -181,9 +199,14 @@ function main(argv, callback) {
     callback = argv;
     argv = null;
   }
+  console.log('Retrieving root certs from: %s', certUrl);
   return getRootCerts(function(err, certs) {
     var file = path.resolve(__dirname, '..', 'lib', 'common', 'RootCerts.js');
-    return fs.writeFile(file, certs, callback);
+    return fs.writeFile(file, certs, function(err) {
+      if (err) return callback(err);
+      console.log('Root cert code generated at: %s.', file);
+      return callback();
+    });
   });
 }
 
