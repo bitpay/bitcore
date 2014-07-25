@@ -29,7 +29,9 @@ if (isNode) {
  * Dependencies
  */
 
-var bitcore = require('bitcore');
+var bitcore = isNode
+  ? require('../../')
+  : require('bitcore');
 var PayPro = bitcore.PayPro;
 var Transaction = bitcore.Transaction;
 var TransactionBuilder = bitcore.TransactionBuilder;
