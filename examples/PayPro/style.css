@@ -1,0 +1,66 @@
+/**
+ * Stylesheet for Payment Protocol
+ */
+
+/**
+ * Raleway
+ */
+
+@font-face {
+  font-family: 'Raleway';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Raleway'), url(http://themes.googleusercontent.com/static/fonts/raleway/v7/cIFypx4yrWPDz3zOxk7hIQLUuEpTyoUstqEm5AMlJo4.woff) format('woff');
+}
+
+/**
+ * Ubuntu
+ */
+
+@font-face {
+  font-family: 'Ubuntu';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Ubuntu'), url(https://themes.googleusercontent.com/static/fonts/ubuntu/v5/lhhB5ZCwEkBRbHMSnYuKyA.ttf) format('truetype');
+}
+
+article, aside, details, figcaption, figure, footer, header, hgroup, nav, section, summary {
+	display: block
+}
+
+html {
+  width: 840px;
+  font-family: "Raleway", "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", "Helvetica", "Verdana", sans-serif;
+  font-size: 22px;
+  line-height: 30px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  color: #000;
+  background-image: -webkit-gradient( linear, 0 0, 0 100%, color-stop(0, rgba(0, 0, 0, 0.15)), color-stop(0.2, transparent), color-stop(0.8, transparent), color-stop(1, rgba(0, 0, 0, 0.15)));
+  background-image: -moz-linear-gradient( -90deg, rgba(0, 0, 0, 0.15) 0%, transparent 20%, transparent 80%, rgba(0, 0, 0, 0.15) 100%);
+  background-attachment: fixed;
+  background-color: #c1d3e3;
+}
+
+input {
+  display: block;
+  margin: 0 0 20px 0;
+  font-family: "Raleway", "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", "Helvetica", "Verdana", sans-serif;
+  font-size: 22px;
+  line-height: 30px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  color: #000;
+}
+
+body {
+  padding: 20px;
+  text-shadow: rgba(0, 0, 0, 0.025) 0 -1px 0, rgba(255, 255, 255, 0.2) 0 1px 0;
+}
+
+h1 {
+  width: 350px;
+  color: #000;
+  font: 60px/1.0 "Ubuntu", "Helvetica", "Verdana", "Arial", sans-serif;
+  margin-left: 20px;
+}
