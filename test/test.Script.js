@@ -191,5 +191,23 @@ describe('Script', function() {
       
     });
   });
+  describe('#isPubkeyHashScriptSig', function() {
+    var testPKHSS = function(raw, result) {
+      var s = new Script(new Buffer(raw, 'hex');
+      s.isPubkeyHashScriptSig().should.equal(result); 
+    };
+    it('should identify pubkeyhash scriptsig', function() {
+      testPKHSS(pkhss, true);
+    });
+    it('should not identify pubkey scriptsig', function() {
+      testPKHSS(pkss, false);
+    });
+    it('should not identify p2sh scriptsig', function() {
+      testPKHSS(p2shss, false);
+    });
+    it('should not identify multisig scriptsig', function() {
+      testPKHSS(msss, false);
+    });
+  });
 
 });
