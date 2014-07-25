@@ -114,6 +114,9 @@
     "node": ">=0.10"
   },
   "devDependencies": {
-    "sinon": "^1.10.3"
+    "sinon": "^1.10.3",
+    "express": "4.6.1",
+    "request": "2.39.0",
+    "optimist": "0.6.1"
   }
 }
