@@ -919,6 +919,15 @@ describe('TransactionBuilder', function() {
       util.valueToBigInt(tx.outs[1].v).cmp(2990000).should.equal(0);
     });
 
+    it('#clone roundtrip, signed', function() {
+      var b = getBuilder3();
+      b.sign(testdata.dataUnspentSign.keyStrings);
+      b.isFullySigned().should.equal(true);
+
+      var b2 = b.clone().clone().clone();
+      b2.isFullySigned().should.equal(true);
+    });
+
     it('#toObj #fromObj roundtrip, step signatures p2sh/p2pubkeyhash', function() {
       var b = getP2shBuilder(1);
 
@@ -1204,8 +1213,5 @@ describe('TransactionBuilder', function() {
         b2.merge(b)
       }).should.throw('incompatible');
     });
-
-
-
   });
 });
