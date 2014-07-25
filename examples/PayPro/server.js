@@ -25,7 +25,7 @@ process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
 
 var argv = require('optimist').argv;
 var express = require('express');
-var bitcore = require('bitcore');
+var bitcore = require('../../');
 
 var PayPro = bitcore.PayPro;
 var Transaction = bitcore.Transaction;
@@ -316,8 +316,7 @@ app.use(express.static(__dirname));
  * Helpers
  */
 
-var bitcorePath = path.dirname(require.resolve('bitcore/package.json'));
-var log = require(bitcorePath + '/util/log');
+var log = require('../../util/log');
 
 log.err = error;
 log.debug = error;
