@@ -278,4 +278,76 @@ describe('Key (ECKey)', function() {
     });
   });
 
+  describe('#recoverPubKey', function() {
+    var key = new bitcore.Key();
+    key.private = bitcore.util.sha256('test');
+    key.regenerateSync();
+    var data = bitcore.util.sha256('some data');
+    var privnum = bignum.fromBuffer(key.private);
+    var sig = Key.sign(data, privnum);
+    var r = sig.r;
+    var s = sig.s;
+    var e = bignum.fromBuffer(data);
+
+    it('should return a point', function() {
+      var Q = Key.recoverPubKey(e, r, s, 0);
+      should.exist(Q.x);
+      should.exist(Q.y);
+    });
+  });
+
+  describe('calcPubKeyRecoveryParam', function() {
+    var key = new bitcore.Key();
+    key.private = bitcore.util.sha256('test');
+    key.regenerateSync();
+    key.compressed = false;
+    var pubnum = Point.fromUncompressedPubKey(key.public);
+    var data = bitcore.util.sha256('some data');
+    var privnum = bignum.fromBuffer(key.private);
+    var sig = Key.sign(data, privnum);
+    var r = sig.r;
+    var s = sig.s;
+    var knownr = bignum('71706645040721865894779025947914615666559616020894583599959600180037551395766');
+    var knowns = bignum('109412465507152403114191008482955798903072313614214706891149785278625167723646');
+    var e = bignum.fromBuffer(data);
+
+    it('should return a number', function() {
+      var i = Key.calcPubKeyRecoveryParam(e, r, s, pubnum);
+      (i >= 0 || i <= 3).should.equal(true);
+    });
+
+    it('should return x for these known values', function() {
+      var i = Key.calcPubKeyRecoveryParam(e, knownr, knowns, pubnum);
+      i.should.equal(1);
+    });
+  });
+
+  describe('#signCompressed', function() {
+    var key = new bitcore.Key();
+    key.private = bitcore.util.sha256('test');
+    key.regenerateSync();
+    var data = bitcore.util.sha256('some data');
+    var privnum = bignum.fromBuffer(key.private);
+
+    it('should return a 65 byte buffer', function() {
+      var sig = Key.signCompressed(data, privnum);
+      Buffer.isBuffer(sig).should.equal(true);
+      sig.length.should.equal(65);
+    });
+  });
+
+  describe('#verifyCompressed', function() {
+    var key = new bitcore.Key();
+    key.private = bitcore.util.sha256('test');
+    key.regenerateSync();
+    var pubkeyhash = bitcore.util.sha256ripe160(key.public);
+    var data = bitcore.util.sha256('some data');
+    var privnum = bignum.fromBuffer(key.private);
+    var sig = Key.signCompressed(data, privnum);
+
+    it('should verify that which was signed compressed', function() {
+      Key.verifyCompressed(data, sig, pubkeyhash).should.equal(true);
+    });
+  });
+
 });
