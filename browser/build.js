@@ -78,8 +78,9 @@ var createBitcore = function(opts) {
     submodules.splice(submodules.indexOf('lib/Connection'), 1);
     submodules.splice(submodules.indexOf('lib/Peer'), 1);
     submodules.splice(submodules.indexOf('lib/PeerManager'), 1);
+    submodules.splice(submodules.indexOf('lib/NetworkMonitor'), 1);
     var assert = require('assert');
-    assert(submodules.length == modules.length - 6);
+    assert(submodules.length == modules.length - 7);
   }
 
   if (opts.submodules) {
