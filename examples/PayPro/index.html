@@ -1,0 +1,28 @@
+<!doctype html>
+<title>Payment Protocol</title>
+<link rel="stylesheet" href="/style.css">
+
+<h1>Payment Protocol</h1>
+
+<p>
+  <a href="https://github.com/bitcoin/bips/blob/master/bip-0070.mediawiki"><strong>BIP-70</strong></a>
+  is here!
+</p>
+
+<form method="POST" action="/-/request">
+  <ul>
+    <li>BitPay T-Shirt: <strong>0.00002000 BTC</strong></li>
+    <li>BitPay Mug: <strong>0.00001000 BTC</strong></li>
+  </ul>
+  <p>These items will cost you a total of <strong>0.00003000 BTC</strong>.</p>
+  <p>Would you like to checkout?</p>
+  <input type="text" name="memo" placeholder="Message to merchant..." value="">
+  <input type="submit" value="Checkout">
+</form>
+
+<p id="load">Loading...</p>
+
+<pre id="log"></pre>
+
+<script src="./bitcore.js"></script>
+<script src="./customer.js"></script>
