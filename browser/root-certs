@@ -45,7 +45,7 @@ function getRootCerts(callback) {
       + '  return trusted;\n'
       + '}, {});\n'
       + '\n'
-      + 'function isTrusted(pem) {\n'
+      + 'function getTrusted(pem) {\n'
       + '  pem = pem + "";\n'
       + '  pem = pem.replace(/-----BEGIN CERTIFICATE-----/g, "");\n'
       + '  pem = pem.replace(/-----END CERTIFICATE-----/g, "");\n'
@@ -59,8 +59,8 @@ function getRootCerts(callback) {
       + '\n'
       + 'exports.certs = certs;\n'
       + 'exports.trusted = trusted;\n'
-      + 'exports.isTrusted = isTrusted;\n'
-      + 'exports.getCert = getCert;\n';
+      + 'exports.getCert = getCert;\n'
+      + 'exports.getTrusted = getTrusted;\n';
     return callback(null, body);
   });
 }
