@@ -239,7 +239,7 @@ function sendPayment(msg, callback) {
     var pay = new PayPro();
     pay = pay.makePayment();
     pay.set('merchant_data', merchant_data);
-    pay.set('transactions', [createTX()]);
+    pay.set('transactions', [createTX(outputs)]);
     pay.set('refund_to', refund_outputs);
 
     msg = msg || 'Hi server, I would like to give you some money.';
@@ -273,6 +273,19 @@ function sendPayment(msg, callback) {
       var memo = ack.get('memo');
       print('Our payment was acknowledged!');
       print('Message from Merchant: %s', memo);
+      payment = PayPro.Payment.decode(payment);
+      var pay = new PayPro();
+      payment = pay.makePayment(payment);
+      print(payment);
+      var tx = payment.message.transactions[0];
+      if (tx.buffer) {
+        tx.buffer = tx.buffer.slice(tx.offset, tx.limit);
+        var ptx = new bitcore.Transaction();
+        ptx.parse(tx.buffer);
+        tx = ptx;
+      }
+      var txid = tx.getHash().toString('hex');
+      print('First payment txid: %s', txid);
       return callback();
     });
   });
@@ -324,7 +337,7 @@ function parseQS(query) {
   return out;
 }
 
-function createTX() {
+function createTX(outputs) {
   // Addresses
   var addrs = [
     'mzTQ66VKcybz9BD1LAqEwMFp9NrBGS82sY',
@@ -361,10 +374,13 @@ function createTX() {
   ];
 
   // define transaction output
-  var outs = [{
-    address: addrs[2],
-    amount: 0.00003000
-  }];
+  var outs = [];
+  outputs.forEach(function(output) {
+    outs.push({
+      address: addrs[0], // dummy address
+      amount: 0 // dummy value
+    });
+  });
 
   // set change address
   var opts = {
@@ -378,6 +394,23 @@ function createTX() {
     .setOutputs(outs)
     .sign(keys)
     .build();
+
+  outputs.forEach(function(output, i) {
+    var value = output.get('amount');
+    var script = output.get('script');
+    var v = new Buffer(8);
+    v[0] = (value.low >> 0) & 0xff;
+    v[1] = (value.low >> 8) & 0xff;
+    v[2] = (value.low >> 16) & 0xff;
+    v[3] = (value.low >> 24) & 0xff;
+    v[4] = (value.high >> 0) & 0xff;
+    v[5] = (value.high >> 8) & 0xff;
+    v[6] = (value.high >> 16) & 0xff;
+    v[7] = (value.high >> 24) & 0xff;
+    var s = script.buffer.slice(script.offset, script.limit);
+    tx.outs[i].v = v;
+    tx.outs[i].s = s;
+  });
 
   print('');
   print('Customer created transaction:');
