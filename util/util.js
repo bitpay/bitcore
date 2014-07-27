@@ -40,9 +40,6 @@ var sha512hmac = exports.sha512hmac = function(data, key) {
 };
 
 var ripe160 = exports.ripe160 = function(data) {
-  if (!Buffer.isBuffer(data)) {
-    throw new Error('arg should be a buffer');
-  }
   if (process.browser) {
     return new Buffer(hashjs.ripemd160().update(data).digest());
   }
