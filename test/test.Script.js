@@ -196,10 +196,10 @@ describe('Script', function() {
 
     });
   });
-  describe.only('ScriptSig validations', function() {
+  describe('ScriptSig validations', function() {
     var pkhss = '4730440220150eccaec1e5d9104434544bf820b1e24c94e0da7a768d62260b57b9f02877db02204d5d193e833099adb0bf38a610d314936fb70671383d2fa6e09586bc77abe3f9012103146226860c4f62b1ab79bdbb0d3145bf1dc1a0cfa7bf35f2aa30e8432717ac72'
     var p2shss = '004930460221008d36f82425396aff3797aed0651954b5bd2bf8768baf358fbeef9994a282d639022100e3967e55972a99b37da210e9a01c580dc3e0e4df8dc9f5a87ba4338c8fc9e5ba0147304402201aafdf74d2dc5d9d78baadd3beb2e565b0ed14489ad2f1434f9b51ad9b4fa7df02204de4400a1e6817c0883cae056baab77986e65a65aac885020d29d4ddafe30960014c69522103909e13a508df9edd35c806b4d0993bca644e69963041aa93dc209105cfd39b282103b3805706833fab77ae3ad3be1117bf797b460bd58c901f5e12721975d89aff8f2103d442f2fe27171b5d1404a9d7ca943e01951fdc103a25bd89089eb88b5a3e743a53ae'
-    var pkss = '0313220402bc01062f503253482f';
+    var pkss = '483045022100afe5d533f9925f987991328b7abbdb5a705113b72488ff6cd5502dcfc2ea1c8b02205cb8a0c686bf13b439b2f4b6e8f69c08ae00df0901a89a4a1313a936b044a43f01';
     var msss = '004830450220582cd0d8c0f42113ef036af9b5b26d500447eb47dd737e129b0d1b9f870166fa022100e6794cc9158cb2347ff440cec6c017ab5043bb71f1cff55baf9df4888902e26a0149304602210089c912fa687304f82634fe4e02f86ad721c3f9b8a6e7a2c06a7b0ba7a891ac18022100ff4f47c88c752a9e2e1ad8d450c7d5c06628159ea2e614f260dcf28c1c7333b101483045022100dd0c15876575df2e9973f3cd57c4f5e9e84d94277d2f4d82cebfb10fe2b25d62022060eb86654f538a5e5c55288de828bdd854e5d1434050a6b54d7d5402b59528ae01';
     var createTestF = function(f) {
       var testF = function(raw, result) {
@@ -238,6 +238,38 @@ describe('Script', function() {
       });
       it('should not identify multisig scriptsig', function() {
         testP2SHSS(msss, false);
+      });
+    });
+    describe('#isMultiSigScriptSig', function() {
+      var isMultiSigScriptSig = new Script().isMultiSigScriptSig;
+      var testMSSS = createTestF(isMultiSigScriptSig);
+      it('should not identify pubkeyhash scriptsig', function() {
+        testMSSS(pkhss, false);
+      });
+      it('should not identify pubkey scriptsig', function() {
+        testMSSS(pkss, false);
+      });
+      it('should identify p2sh scriptsig', function() {
+        testMSSS(p2shss, false);
+      });
+      it('should not identify multisig scriptsig', function() {
+        testMSSS(msss, true);
+      });
+    });
+    describe('#isPubkeyScriptSig', function() {
+      var isPubkeyScriptSig = new Script().isPubkeyScriptSig;
+      var testPKSS = createTestF(isPubkeyScriptSig);
+      it('should not identify pubkeyhash scriptsig', function() {
+        testPKSS(pkhss, false);
+      });
+      it('should not identify pubkey scriptsig', function() {
+        testPKSS(pkss, true);
+      });
+      it('should identify p2sh scriptsig', function() {
+        testPKSS(p2shss, false);
+      });
+      it('should not identify multisig scriptsig', function() {
+        testPKSS(msss, false);
       });
     });
 
