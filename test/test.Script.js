@@ -5,19 +5,15 @@ var bitcore = bitcore || require('../bitcore');
 
 var should = chai.should();
 
-var ScriptModule = bitcore.Script;
+var Script = bitcore.Script;
 var Address = bitcore.Address;
 var Opcode = bitcore.Opcode;
+var Transaction = bitcore.Transaction;
 var networks = bitcore.networks;
-var Script;
 var testdata = testdata || require('./testdata');
 
 describe('Script', function() {
-  it('should initialze the main object', function() {
-    should.exist(ScriptModule);
-  });
   it('should be able to create class', function() {
-    Script = ScriptModule;
     should.exist(Script);
   });
   it('should be able to create instance', function() {
@@ -151,7 +147,6 @@ describe('Script', function() {
 
 
   describe('#countMissingSignatures', function() {
-    Script = ScriptModule;
     it('should count missing signature in empty scripts', function() {
       var s = new Script();
       s.countMissingSignatures().should.equal(1);
@@ -201,7 +196,12 @@ describe('Script', function() {
       var testF = function(raw, expected) {
         var s = new Script(new Buffer(raw, 'hex'));
         var actual = f.bind(s)();
-        actual.should.equal(expected);
+        if (expected !== null) {
+          should.exist(actual);
+          actual.should.equal(expected);
+        } else {
+          should.not.exist(actual);
+        }
       };
       return testF;
     };
@@ -289,21 +289,41 @@ describe('Script', function() {
         var s = new Script(new Buffer(raw, 'hex'));
         var actual = s.getSignatures();
         actual.length.should.equal(expected.length);
-        for (var i=0; i<actual.length; i++) {
+        for (var i = 0; i < actual.length; i++) {
           actual[i].toString('hex').should.equal(expected[i].toString('hex'));
         }
       };
-      it('should not identify pubkeyhash scriptsig', function() {
+      it('should work with pubkeyhash scriptsig', function() {
         testSigs(pkhss, ['30440220150eccaec1e5d9104434544bf820b1e24c94e0da7a768d62260b57b9f02877db02204d5d193e833099adb0bf38a610d314936fb70671383d2fa6e09586bc77abe3f901']);
       });
-      it('should not identify pubkey scriptsig', function() {
+      it('should work with pubkey scriptsig', function() {
         testSigs(pkss, []);
       });
-      it('should identify p2sh scriptsig', function() {
-        testSigs(p2shss, ['30460221008d36f82425396aff3797aed0651954b5bd2bf8768baf358fbeef9994a282d639022100e3967e55972a99b37da210e9a01c580dc3e0e4df8dc9f5a87ba4338c8fc9e5ba01','304402201aafdf74d2dc5d9d78baadd3beb2e565b0ed14489ad2f1434f9b51ad9b4fa7df02204de4400a1e6817c0883cae056baab77986e65a65aac885020d29d4ddafe3096001']);
+      it('should work with p2sh scriptsig', function() {
+        testSigs(p2shss, ['30460221008d36f82425396aff3797aed0651954b5bd2bf8768baf358fbeef9994a282d639022100e3967e55972a99b37da210e9a01c580dc3e0e4df8dc9f5a87ba4338c8fc9e5ba01', '304402201aafdf74d2dc5d9d78baadd3beb2e565b0ed14489ad2f1434f9b51ad9b4fa7df02204de4400a1e6817c0883cae056baab77986e65a65aac885020d29d4ddafe3096001']);
       });
-      it('should not identify multisig scriptsig', function() {
-        testSigs(msss, ['30450220582cd0d8c0f42113ef036af9b5b26d500447eb47dd737e129b0d1b9f870166fa022100e6794cc9158cb2347ff440cec6c017ab5043bb71f1cff55baf9df4888902e26a01','304602210089c912fa687304f82634fe4e02f86ad721c3f9b8a6e7a2c06a7b0ba7a891ac18022100ff4f47c88c752a9e2e1ad8d450c7d5c06628159ea2e614f260dcf28c1c7333b101','3045022100dd0c15876575df2e9973f3cd57c4f5e9e84d94277d2f4d82cebfb10fe2b25d62022060eb86654f538a5e5c55288de828bdd854e5d1434050a6b54d7d5402b59528ae01']);
+      it('should work with multisig scriptsig', function() {
+        testSigs(msss, ['30450220582cd0d8c0f42113ef036af9b5b26d500447eb47dd737e129b0d1b9f870166fa022100e6794cc9158cb2347ff440cec6c017ab5043bb71f1cff55baf9df4888902e26a01', '304602210089c912fa687304f82634fe4e02f86ad721c3f9b8a6e7a2c06a7b0ba7a891ac18022100ff4f47c88c752a9e2e1ad8d450c7d5c06628159ea2e614f260dcf28c1c7333b101', '3045022100dd0c15876575df2e9973f3cd57c4f5e9e84d94277d2f4d82cebfb10fe2b25d62022060eb86654f538a5e5c55288de828bdd854e5d1434050a6b54d7d5402b59528ae01']);
+      });
+    });
+    describe('#getHashType', function() {
+      var testGHT = createTestF(new Script().getHashType);
+      it('should work with undefined sighash (no signatures)', function() {
+        var noSigs1 = '010000000189632848f99722915727c5c75da8db2dbf194342a0429828f66ff88fab2af7d60000000000ffffffff0140420f000000000017a914f815b036d9bbbce5e9f2a00abd1bf3dc91e955108700000000';
+        var noSigs2 = '0100000001e205297fd05e4504d72761dc7a16e5cc9f4ab89877f28aee97c1cc66b3f07d690100000000ffffffff01706f9800000000001976a91473707e88f79c9c616b44bc766a25efcb9f49346688ac00000000';
+        testGHT(noSigs1, null);
+        testGHT(noSigs2, null);
+      });
+      it('should work with SIGHASH_ALL', function() {
+        testGHT(pkhss, Transaction.SIGHASH_ALL);
+      });
+      it('should work with SIGHASH_NONE', function() {
+        var none = '004730440220778f3174393e9ee6b0bfa876b4150db6f12a4da9715044ead5e345c2781ceee002203aab31f1e1d3dcf77ca780d9af798139719891917c9a09123dba54483ef462bc02493046022100dd93b64b30580029605dbba09d7fa34194d9ff38fda0c4fa187c52bf7f79ae98022100dd7b056762087b9aa8ccfde328d7067fa1753b78c0ee25577122569ff9de1d57024c695221039f847c24f09d7299c10bba4e41b24dc78e47bbb05fd7c1d209c994899d6881062103d363476e634fc5cdc11e9330c05a141c1e0c7f8b616817bdb83e7579bbf870942103fb2072953ceab87c6da450ac661685a881ddb661002d2ec1d60bfd33e3ec807d53ae';
+        testGHT(none, Transaction.SIGHASH_NONE);
+      });
+      it('should work with SIGHASH_SINGLE', function() {
+        var single = '483045022100c9cdd08798a28af9d1baf44a6c77bcc7e279f47dc487c8c899911bc48feaffcc0220503c5c50ae3998a733263c5c0f7061b483e2b56c4c41b456e7d2f5a78a74c077032102d5c25adb51b61339d2b05315791e21bbe80ea470a49db0135720983c905aace0';
+        testGHT(single, Transaction.SIGHASH_SINGLE);
       });
     });
   });
