@@ -100,12 +100,8 @@ describe('Script', function() {
     if (datum.length < 2) throw new Error('Invalid test data');
     var human = datum[0] + ' ' + datum[1];
     it('should parse script from human readable ' + human, function() {
-      //console.log('********');
-      //console.log(human);
       var script = Script.fromHumanReadable(human);
-      //console.log(script);
       var h2 = script.toHumanReadable();
-      //console.log(h2);
       Script.fromHumanReadable(h2).toHumanReadable().should.equal(h2);
     });
   });
@@ -202,9 +198,10 @@ describe('Script', function() {
     var pkss = '483045022100afe5d533f9925f987991328b7abbdb5a705113b72488ff6cd5502dcfc2ea1c8b02205cb8a0c686bf13b439b2f4b6e8f69c08ae00df0901a89a4a1313a936b044a43f01';
     var msss = '004830450220582cd0d8c0f42113ef036af9b5b26d500447eb47dd737e129b0d1b9f870166fa022100e6794cc9158cb2347ff440cec6c017ab5043bb71f1cff55baf9df4888902e26a0149304602210089c912fa687304f82634fe4e02f86ad721c3f9b8a6e7a2c06a7b0ba7a891ac18022100ff4f47c88c752a9e2e1ad8d450c7d5c06628159ea2e614f260dcf28c1c7333b101483045022100dd0c15876575df2e9973f3cd57c4f5e9e84d94277d2f4d82cebfb10fe2b25d62022060eb86654f538a5e5c55288de828bdd854e5d1434050a6b54d7d5402b59528ae01';
     var createTestF = function(f) {
-      var testF = function(raw, result) {
+      var testF = function(raw, expected) {
         var s = new Script(new Buffer(raw, 'hex'));
-        f.bind(s)().should.equal(result);
+        var actual = f.bind(s)();
+        actual.should.equal(expected);
       };
       return testF;
     };
@@ -272,6 +269,42 @@ describe('Script', function() {
         testPKSS(msss, false);
       });
     });
-
+    describe('#countSignatures', function() {
+      var testCount = createTestF(new Script().countSignatures);
+      it('should not identify pubkeyhash scriptsig', function() {
+        testCount(pkhss, 1);
+      });
+      it('should not identify pubkey scriptsig', function() {
+        testCount(pkss, 0);
+      });
+      it('should identify p2sh scriptsig', function() {
+        testCount(p2shss, 2);
+      });
+      it('should not identify multisig scriptsig', function() {
+        testCount(msss, 3);
+      });
+    });
+    describe('#getSignatures', function() {
+      var testSigs = function(raw, expected) {
+        var s = new Script(new Buffer(raw, 'hex'));
+        var actual = s.getSignatures();
+        actual.length.should.equal(expected.length);
+        for (var i=0; i<actual.length; i++) {
+          actual[i].toString('hex').should.equal(expected[i].toString('hex'));
+        }
+      };
+      it('should not identify pubkeyhash scriptsig', function() {
+        testSigs(pkhss, ['30440220150eccaec1e5d9104434544bf820b1e24c94e0da7a768d62260b57b9f02877db02204d5d193e833099adb0bf38a610d314936fb70671383d2fa6e09586bc77abe3f901']);
+      });
+      it('should not identify pubkey scriptsig', function() {
+        testSigs(pkss, []);
+      });
+      it('should identify p2sh scriptsig', function() {
+        testSigs(p2shss, ['30460221008d36f82425396aff3797aed0651954b5bd2bf8768baf358fbeef9994a282d639022100e3967e55972a99b37da210e9a01c580dc3e0e4df8dc9f5a87ba4338c8fc9e5ba01','304402201aafdf74d2dc5d9d78baadd3beb2e565b0ed14489ad2f1434f9b51ad9b4fa7df02204de4400a1e6817c0883cae056baab77986e65a65aac885020d29d4ddafe3096001']);
+      });
+      it('should not identify multisig scriptsig', function() {
+        testSigs(msss, ['30450220582cd0d8c0f42113ef036af9b5b26d500447eb47dd737e129b0d1b9f870166fa022100e6794cc9158cb2347ff440cec6c017ab5043bb71f1cff55baf9df4888902e26a01','304602210089c912fa687304f82634fe4e02f86ad721c3f9b8a6e7a2c06a7b0ba7a891ac18022100ff4f47c88c752a9e2e1ad8d450c7d5c06628159ea2e614f260dcf28c1c7333b101','3045022100dd0c15876575df2e9973f3cd57c4f5e9e84d94277d2f4d82cebfb10fe2b25d62022060eb86654f538a5e5c55288de828bdd854e5d1434050a6b54d7d5402b59528ae01']);
+      });
+    });
   });
 });
