@@ -20,6 +20,29 @@ describe('Key (ECKey)', function() {
     var k = new Key();
     should.exist(k);
   });
+  it('should have a private key by default', function() {
+    var k = new Key();
+    k.private;
+    should.exist(k.private);
+  });
+  it('should have a public key by default', function() {
+    var k = new Key();
+    k.public;
+    
+    should.exist(k.public);
+  });
+  it('should allow private key bootstrap', function() {
+    var k = new Key('test');
+    should.exist(k.private);
+  });
+  it('should have change the public key when private key changes', function() {
+    var k = new Key();
+    var prior = k.public;
+
+    k.private = bitcore.util.sha256('test');
+    
+    k.public.toString().should.not.equal( prior.toString() );
+  });
   it('should set change compressed to uncompressed', function() {
     var key = Key.generateSync();
     key.public.length.should.equal(33);
