@@ -10,7 +10,7 @@ var run = function() {
   var Address = bitcore.Address;
   var util = bitcore.util;
   var opts = {
-    network: networks.testnet
+    network: networks['btc'].testnet
   };
 
   var p = console.log;
@@ -65,7 +65,7 @@ var run = function() {
   p('\tHex     : ' + buffertools.toHex(s.buffer));
   p('\tHuman   : ' + s.toHumanReadable());
   p('\tScript Hash: ' + buffertools.toHex(hash));
-  var a = new Address(networks.livenet.P2SHVersion, hash);
+  var a = new Address(networks['btc'].livenet.P2SHVersion, hash);
   p('\tp2sh Addr: ' + a.toString());
 
 };

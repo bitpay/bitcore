@@ -9,7 +9,7 @@ var run = function() {
   var WalletKey = bitcore.WalletKey;
 
   var opts = {
-    network: networks.testnet
+    network: networks['btc'].testnet
   };
 
   function print(wk) {
