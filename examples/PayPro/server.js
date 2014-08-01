@@ -72,6 +72,12 @@ app.use(function(req, res, next) {
 
   res.setHeader('Access-Control-Allow-Origin', '*');
 
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Methods', 'OPTIONS,GET,PUT,POST,PATCH,DELETE');
+    res.setHeader('Access-Control-Allow-Headers', req.headers['access-control-request-headers']);
+    return res.send(200);
+  }
+
   res.setHeader('Accept', PayPro.PAYMENT_CONTENT_TYPE);
 
   return next();
@@ -134,6 +140,8 @@ app.post('/-/request', function(req, res, next) {
       169, // OP_HASH160
       76,  // OP_PUSHDATA1
       20,  // number of bytes
+
+/*
       0xcf,
       0xbe,
       0x41,
@@ -154,6 +162,29 @@ app.post('/-/request', function(req, res, next) {
       0xfc,
       0x4f,
       0xcd,
+*/
+
+      55,
+      48,
+      254,
+      188,
+      186,
+      4,
+      186,
+      208,
+      205,
+      71,
+      108,
+      251,
+      130,
+      15,
+      156,
+      55,
+      215,
+      70,
+      111,
+      217,
+
       136, // OP_EQUALVERIFY
       172  // OP_CHECKSIG
     ]));
@@ -179,7 +210,7 @@ app.post('/-/request', function(req, res, next) {
   pd.set('network', 'test');
   pd.set('outputs', outputs);
   pd.set('time', now);
-  pd.set('expires', now * 60 * 60 * 24);
+  pd.set('expires', now + 60 * 60 * 24);
   pd.set('memo', 'Hello, this is the server, we would like some money.');
   var port = +req.headers.host.split(':')[1] || server.port;
   pd.set('payment_url', 'https://localhost:' + port + '/-/pay');
@@ -296,8 +327,9 @@ var peerman = new bitcore.PeerManager({
   network: 'testnet'
 });
 
-peerman.peerDiscovery = true;
+peerman.peerDiscovery = false;
 
+peerman.addPeer(new bitcore.Peer('testnet-seed.alexykot.me', 18333));
 peerman.addPeer(new bitcore.Peer('testnet-seed.bitcoin.petertodd.org', 18333));
 peerman.addPeer(new bitcore.Peer('testnet-seed.bluematt.me', 18333));
 
@@ -361,6 +393,11 @@ function error() {
 server.on('request', app);
 server.app = app;
 server.port = +argv.p || +argv.port || 8080;
+
+if (argv.s) {
+  server.listen(server.port);
+  return;
+}
 
 if (!module.parent || path.basename(module.parent.filename) === 'index.js') {
   server.listen(server.port, function(addr) {
