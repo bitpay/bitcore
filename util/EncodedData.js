@@ -17,6 +17,7 @@ function EncodedData(data, encoding) {
     this.converters = this.encodings[encoding].converters;
     this._encoding = this.encodings[encoding]._encoding;
   }
+
 };
 
 // get or set the encoding used (transforms data)

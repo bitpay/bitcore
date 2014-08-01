@@ -6,7 +6,7 @@ var run = function() {
   var Address = bitcore.Address;
   var coinUtil = bitcore.util;
   var Script = bitcore.Script;
-  var network = bitcore.networks.testnet;
+  var network = bitcore.networks['btc'].testnet;
 
   var getAddrStr = function(s) {
     var addrStrs = [];

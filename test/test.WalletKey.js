@@ -19,19 +19,19 @@ describe('WalletKey', function() {
   });
   it('should be able to create instance', function() {
     var s = new WalletKey({
-      network: networks.livenet
+      network: networks['btc'].livenet
     });
     should.exist(s);
   });
   it('should be able to call generate', function() {
     var s = new WalletKey({
-      network: networks.livenet
+      network: networks['btc'].livenet
     });
     s.generate.bind(s).should.not.throw(Error);
   });
   it('should be able to call storeObj', function() {
     var s = new WalletKey({
-      network: networks.livenet
+      network: networks['btc'].livenet
     });
     s.generate();
     var o = s.storeObj();
@@ -39,12 +39,12 @@ describe('WalletKey', function() {
   });
   it('roundtrip for storeObj/fromObj', function() {
     var s = new WalletKey({
-      network: networks.livenet
+      network: networks['btc'].livenet
     });
     s.generate();
     var obj = s.storeObj();
     var s2 = new WalletKey({
-      network: networks.livenet
+      network: networks['btc'].livenet
     });
     s2.fromObj(obj);
     s.privKey.private.toString().should.equal(s2.privKey.private.toString());
@@ -54,7 +54,7 @@ describe('WalletKey', function() {
   it('should import  priv key testnet / compressed', function() {
     var priv = 'cU5NxfpfecLCUWnJyoUF6dCZqCfLSAZnTBPraCPis2if8iHHbNk1';
     var s = new WalletKey({
-      network: networks.testnet
+      network: networks['btc'].testnet
     });
     s.fromObj({ priv: priv});
     s.privKey.compressed.should.equal(true);
@@ -70,7 +70,7 @@ describe('WalletKey', function() {
     //this is a WIF priv, compress flag = false 
     var priv = '5KMpLZExnGzeU3oC9qZnKBt7yejLUS8boPiWag33TMX2XEK2Ayc';
     var s = new WalletKey({
-      network: networks.livenet,
+      network: networks['btc'].livenet,
     });
     s.fromObj({ priv: priv});
     s.privKey.compressed.should.equal(false);
@@ -86,7 +86,7 @@ describe('WalletKey', function() {
     //this is a WIF priv, compress flag = true
     var priv = 'L4cEVwoNDeYdCQfFJAGkGKPnE2TmqLEuBn4znQChD2ojjQRJVKpU';
     var s = new WalletKey({
-      network: networks.livenet,
+      network: networks['btc'].livenet,
     });
     s.fromObj({ priv: priv});
     s.privKey.compressed.should.equal(true);

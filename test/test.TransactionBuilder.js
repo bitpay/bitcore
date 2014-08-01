@@ -13,6 +13,7 @@ var WalletKey = bitcore.WalletKey;
 var Script = bitcore.Script;
 var util = bitcore.util;
 var networks = bitcore.networks;
+
 var testdata = testdata || require('./testdata');
 
 
@@ -701,7 +702,7 @@ describe('TransactionBuilder', function() {
     var pubkeys = [];
     privs.forEach(function(p) {
       var wk = new WalletKey({
-        network: networks.testnet
+        network: networks['btc'].testnet
       });
       wk.fromObj({
         priv: p
