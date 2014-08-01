@@ -12,7 +12,7 @@ var Block;
 
 var getBlock = function (onlyHeader) {
 
-  var testnetMagic = bitcore.networks.testnet.magic.toString('hex');
+  var testnetMagic = bitcore.networks['btc'].testnet.magic.toString('hex');
 
   var b = new Block();
   // this is block 86756 from testnet3

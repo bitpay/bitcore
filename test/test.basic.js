@@ -14,7 +14,7 @@ var Key = bitcore.Key;
 
 
 function test_encode_priv(b58, payload, isTestnet, isCompressed) {
-  var network = isTestnet ? networks.testnet : networks.livenet;
+  var network = isTestnet ? networks['btc'].testnet : networks['btc'].livenet;
   var version = network.privKeyVersion;
 
   var buf_pl = new Buffer(payload, 'hex');
@@ -36,7 +36,7 @@ function test_encode_priv(b58, payload, isTestnet, isCompressed) {
 
 function test_encode_pub(b58, payload, isTestnet, addrType) {
   var isScript = (addrType === 'script');
-  var network = isTestnet ? networks.testnet : networks.livenet;
+  var network = isTestnet ? networks['btc'].testnet : networks['btc'].livenet;
   var version = isScript ? network.P2SHVersion : network.addressVersion;
   var buf = new Buffer(payload, 'hex');
   var addr = new Address(version, buf);
@@ -45,7 +45,7 @@ function test_encode_pub(b58, payload, isTestnet, addrType) {
 }
 
 function test_decode_priv(b58, payload, isTestnet, isCompressed) {
-  var network = isTestnet ? networks.testnet : networks.livenet;
+  var network = isTestnet ? networks['btc'].testnet : networks['btc'].livenet;
   var version = network.privKeyVersion;
 
   var buf_pl = new Buffer(payload, 'hex');
@@ -64,7 +64,7 @@ function test_decode_priv(b58, payload, isTestnet, isCompressed) {
 
 function test_decode_pub(b58, payload, isTestnet, addrType) {
   var isScript = (addrType === 'script');
-  var network = isTestnet ? networks.testnet : networks.livenet;
+  var network = isTestnet ? networks['btc'].testnet : networks['btc'].livenet;
   var version = isScript ? network.P2SHVersion : network.addressVersion;
   var buf = new Buffer(payload, 'hex');
   var addr = new Address(b58);
