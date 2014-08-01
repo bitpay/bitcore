@@ -147,7 +147,8 @@ describe('BIP39', function() {
 
     //do not run these slow tests on TRAVIS which often fails
     var vectors = bip39_vectors['english'];
-    if (!process.env.TRAVIS && !process.env.CI) {
+    var process = process || null;
+    if (!process || (!process.env.TRAVIS && !process.env.CI)) {
       for (var v = 0 ; v < vectors.length ; v++) {
         (function(v){
           it('should pass test vector ' + v, function() {
