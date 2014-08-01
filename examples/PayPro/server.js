@@ -140,30 +140,6 @@ app.post('/-/request', function(req, res, next) {
       169, // OP_HASH160
       76,  // OP_PUSHDATA1
       20,  // number of bytes
-
-/*
-      0xcf,
-      0xbe,
-      0x41,
-      0xf4,
-      0xa5,
-      0x18,
-      0xed,
-      0xc2,
-      0x5a,
-      0xf7,
-      0x1b,
-      0xaf,
-      0xc7,
-      0x2f,
-      0xb6,
-      0x1b,
-      0xfc,
-      0xfc,
-      0x4f,
-      0xcd,
-*/
-
       55,
       48,
       254,
@@ -184,7 +160,6 @@ app.post('/-/request', function(req, res, next) {
       70,
       111,
       217,
-
       136, // OP_EQUALVERIFY
       172  // OP_CHECKSIG
     ]));
