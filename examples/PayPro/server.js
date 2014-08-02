@@ -225,6 +225,9 @@ app.post('/-/request', function(req, res, next) {
 app.post('/-/pay', function(req, res, next) {
   var body = req.paymentData;
 
+  print('Received Payment Message Body:');
+  print(body.toString('hex'));
+
   body = PayPro.Payment.decode(body);
 
   var pay = new PayPro();
@@ -234,7 +237,7 @@ app.post('/-/pay', function(req, res, next) {
   var refund_to = pay.get('refund_to');
   var memo = pay.get('memo');
 
-  print('Received payment from %s.', req.socket.remoteAddress);
+  print('Received Payment from %s.', req.socket.remoteAddress);
   print('Customer Message: %s', memo);
   print('Payment Message:');
   print(pay);
