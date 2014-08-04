@@ -468,16 +468,36 @@ module.exports = Armory;
 
 var Message = require('./Message');
 var ECIES = require('./ECIES');
+var preconditions = require('preconditions').singleton();
+var Key = require('./Key');
+
+
+var majorVersion = 1;
+var minorVersion = 0;
 
 /* Encrypted, authenticated messages to be shared between copayers */
-var AuthMessage = function() {
+var AuthMessage = function() {};
+
+AuthMessage.setVersion = function(major, minor) {
+  majorVersion = major;
+  minorVersion = minor;
 };
 
 AuthMessage.encode = function(topubkey, fromkey, payload, opts) {
-  var version1 = new Buffer([1]); //peers will reject messges containing not-understood version1
-                                  //i.e., increment version1 to prevent communications with old clients
-  var version2 = new Buffer([0]); //peers will not reject messages containing not-understood version2
-                                  //i.e., increment version2 to allow communication with old clients, but signal new clients
+  preconditions.checkArgument(fromkey instanceof Key, 'fromkey');
+  if (typeof topubkey === 'string') {
+    topubkey = new Buffer(topubkey, 'hex');
+  }
+  if (!(payload instanceof Buffer)) {
+    payload = new Buffer(JSON.stringify(payload));
+  }
+  //peers should reject messges containing bigger major version
+  //i.e., increment to prevent communications with old clients
+  var version1 = new Buffer([majorVersion]);
+
+  //peers should not reject messages containing not-understood minorversion
+  //i.e., increment to allow communication with old clients, but signal new clients
+  var version2 = new Buffer([minorVersion]);
 
   if (opts && opts.nonce && Buffer.isBuffer(opts.nonce) && opts.nonce.length == 8) {
     var nonce = opts.nonce;
@@ -493,7 +513,8 @@ AuthMessage.encode = function(topubkey, fromkey, payload, opts) {
   var encoded = {
     pubkey: fromkey.public.toString('hex'),
     sig: sig.toString('hex'),
-    encrypted: encrypted.toString('hex')
+    encrypted: encrypted.toString('hex'),
+    to: topubkey.toString('hex')
   };
   return encoded;
 };
@@ -518,7 +539,7 @@ AuthMessage.decode = function(key, encoded, opts) {
   } catch (e) {
     throw new Error('Error decoding data: ' + e);
   }
-  
+
   try {
     var v = AuthMessage._verify(frompubkey, sig, encrypted);
   } catch (e) {
@@ -549,16 +570,26 @@ AuthMessage.decode = function(key, encoded, opts) {
     throw new Error('No data present');
   }
 
-  if (version1 !== 1) {
+  if (version1 !== majorVersion) {
     throw new Error('Invalid version number');
   }
 
-  if (version2 !== 0) {
+  if (version2 !== minorVersion) {
     //put special version2 handling code here, if ever needed
   }
 
   if (!AuthMessage._noncegt(nonce, prevnonce) && prevnonce.toString('hex') !== '0000000000000000') {
     throw new Error('Nonce not equal to zero and not greater than the previous nonce');
+  }
+
+  try {
+    payload = JSON.parse(payload);
+  } catch (e) {
+    if (e instanceof SyntaxError) {
+      // if we can't parse a JSON, just return what we found
+    } else {
+      throw e;
+    }
   }
 
   var decoded = {
@@ -578,7 +609,7 @@ AuthMessage._noncegt = function(nonce, prevnonce) {
 
   if (noncep1 > prevnoncep1)
     return true;
-  
+
   if (noncep1 < prevnoncep1)
     return false;
 
@@ -614,7 +645,7 @@ AuthMessage._verify = function(pubkey, signature, payload) {
 module.exports = AuthMessage;
 
 }).call(this,require("buffer").Buffer)
-},{"./ECIES":"0Qraa1","./Message":"CBDCgz","buffer":95}],"./lib/AuthMessage":[function(require,module,exports){
+},{"./ECIES":"0Qraa1","./Key":"ALJ4PS","./Message":"CBDCgz","buffer":95,"preconditions":163}],"./lib/AuthMessage":[function(require,module,exports){
 module.exports=require('cBnJMk');
 },{}],"./lib/BIP39":[function(require,module,exports){
 module.exports=require('82LilS');

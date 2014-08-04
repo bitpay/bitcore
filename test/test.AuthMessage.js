@@ -16,6 +16,8 @@ describe('AuthMessage model', function() {
   var key2 = new Key();
   key2.private = util.sha256(new Buffer('test 2'));
   key2.regenerateSync();
+  
+  var message = 'some message';
 
   describe('#encode', function() {
     
@@ -32,7 +34,6 @@ describe('AuthMessage model', function() {
   describe('#decode', function() {
 
     it('should decode an encoded message', function() {
-      var message = new Buffer('message');
       var messagehex = message.toString('hex');
       var encoded = AuthMessage.encode(key2.public, key, message);
     
@@ -42,7 +43,6 @@ describe('AuthMessage model', function() {
     });
 
     it('should decode an encoded message with proper prevnonce', function() {
-      var message = new Buffer('message');
       var messagehex = message.toString('hex');
       var nonce = new Buffer([0, 0, 0, 0, 0, 0, 0, 2]);
       var opts = {nonce: nonce};
@@ -56,7 +56,6 @@ describe('AuthMessage model', function() {
     });
 
     it('should decode an encoded message with proper prevnonce - for first part', function() {
-      var message = new Buffer('message');
       var messagehex = message.toString('hex');
       var nonce = new Buffer([0, 0, 0, 2, 0, 0, 0, 0]);
       var opts = {nonce: nonce};
@@ -70,7 +69,6 @@ describe('AuthMessage model', function() {
     });
 
     it('should fail if prevnonce is too high', function() {
-      var message = new Buffer('message');
       var messagehex = message.toString('hex');
       var nonce = new Buffer([0, 0, 0, 0, 0, 0, 0, 1]);
       var opts = {nonce: nonce};
@@ -82,7 +80,6 @@ describe('AuthMessage model', function() {
     });
 
     it('should fail if prevnonce is too high - for first part', function() {
-      var message = new Buffer('message');
       var messagehex = message.toString('hex');
       var nonce = new Buffer([0, 0, 0, 1, 0, 0, 0, 0]);
       var opts = {nonce: nonce};
