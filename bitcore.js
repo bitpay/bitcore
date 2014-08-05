@@ -44,6 +44,7 @@ requireWhenAccessed('EncodedData', './util/EncodedData');
 requireWhenAccessed('VersionedData', './util/VersionedData');
 requireWhenAccessed('BinaryParser', './util/BinaryParser');
 requireWhenAccessed('Address', './lib/Address');
+requireWhenAccessed('AuthMessage', './lib/AuthMessage');
 requireWhenAccessed('HierarchicalKey', './lib/HierarchicalKey');
 Object.defineProperty(module.exports, 'BIP32', {
   get: function() {
