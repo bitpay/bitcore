@@ -46,6 +46,25 @@ describe('Message', function() {
     });
   });
 
+  describe('#signMessage', function() {
+    it('should return a 65 byte buffer', function() {
+      var message = 'my message';
+      var key = bitcore.Key.generateSync();
+      var sig = Message.signMessage(message, key);
+      sig.length.should.equal(65);
+    });
+  });
+
+  describe('#verifyMessage', function() {
+    it('should return a 65 byte buffer', function() {
+      var message = 'my message';
+      var key = bitcore.Key.generateSync();
+      var sig = Message.signMessage(message, key);
+      var pubkeyhash = bitcore.util.sha256ripe160(key.public);
+      Message.verifyMessage(pubkeyhash, message, sig).should.equal(true);
+    });
+  });
+
   describe('magicBytes', function() {
     it('should be "Bitcoin Signed Message:\\n"', function() {
       Message.magicBytes.toString().should.equal('Bitcoin Signed Message:\n');
