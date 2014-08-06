@@ -18,34 +18,24 @@ describe('WalletKey', function() {
     should.exist(WalletKey);
   });
   it('should be able to create instance', function() {
-    var s = new WalletKey({
-      network: networks.livenet
-    });
+    var s = new WalletKey();
     should.exist(s);
   });
   it('should be able to call generate', function() {
-    var s = new WalletKey({
-      network: networks.livenet
-    });
+    var s = new WalletKey();
     s.generate.bind(s).should.not.throw(Error);
   });
   it('should be able to call storeObj', function() {
-    var s = new WalletKey({
-      network: networks.livenet
-    });
+    var s = new WalletKey();
     s.generate();
     var o = s.storeObj();
     should.exist(o);
   });
   it('roundtrip for storeObj/fromObj', function() {
-    var s = new WalletKey({
-      network: networks.livenet
-    });
+    var s = new WalletKey();
     s.generate();
     var obj = s.storeObj();
-    var s2 = new WalletKey({
-      network: networks.livenet
-    });
+    var s2 = new WalletKey();
     s2.fromObj(obj);
     s.privKey.private.toString().should.equal(s2.privKey.private.toString());
     s.privKey.public.toString().should.equal(s2.privKey.public.toString());
@@ -69,9 +59,7 @@ describe('WalletKey', function() {
 
     //this is a WIF priv, compress flag = false 
     var priv = '5KMpLZExnGzeU3oC9qZnKBt7yejLUS8boPiWag33TMX2XEK2Ayc';
-    var s = new WalletKey({
-      network: networks.livenet,
-    });
+    var s = new WalletKey();
     s.fromObj({ priv: priv});
     s.privKey.compressed.should.equal(false);
     var o = s.storeObj();
@@ -85,9 +73,7 @@ describe('WalletKey', function() {
 
     //this is a WIF priv, compress flag = true
     var priv = 'L4cEVwoNDeYdCQfFJAGkGKPnE2TmqLEuBn4znQChD2ojjQRJVKpU';
-    var s = new WalletKey({
-      network: networks.livenet,
-    });
+    var s = new WalletKey();
     s.fromObj({ priv: priv});
     s.privKey.compressed.should.equal(true);
     var o = s.storeObj();
