@@ -79,11 +79,11 @@ describe('point', function() {
 
   });
 
-  describe('#pointFromX', function() {
+  describe('#fromX', function() {
     
     it('should return g', function() {
       var g = point.getG();
-      var p = point.pointFromX(false, g.getX());
+      var p = point.fromX(false, g.getX());
       g.eq(p).should.equal(true);
     });
 
