@@ -44,7 +44,7 @@ describe('WalletKey', function() {
   it('should import  priv key testnet / compressed', function() {
     var priv = 'cU5NxfpfecLCUWnJyoUF6dCZqCfLSAZnTBPraCPis2if8iHHbNk1';
     var s = new WalletKey({
-      network: networks.testnet
+      network: networks['btc'].testnet
     });
     s.fromObj({ priv: priv});
     s.privKey.compressed.should.equal(true);

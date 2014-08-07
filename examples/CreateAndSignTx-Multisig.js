@@ -4,7 +4,7 @@ var run = function() {
   var WalletKey = bitcore.WalletKey;
   var Builder = bitcore.TransactionBuilder;
   var opts = {
-    network: networks.testnet
+    network: networks['btc'].testnet
   };
 
   console.log('## Network: ' + opts.network.name);
