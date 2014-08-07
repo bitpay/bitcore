@@ -17,6 +17,7 @@ privsec.hash = require('./lib/hash');
 privsec.point = require('./lib/point');
 privsec.privkey = require('./lib/privkey');
 privsec.pubkey = require('./lib/pubkey');
+privsec.random = require('./lib/random');
 
 //privsec.key = require('lib/key');
 //privsec.script = require('lib/script');
