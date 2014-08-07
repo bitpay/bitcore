@@ -13,6 +13,7 @@ var puts = function(error, stdout, stderr) {
 var modules = [
   'lib/Address',
   'lib/Armory',
+  'lib/AuthMessage',
   'lib/Base58',
   'lib/HierarchicalKey',
   'lib/BIP39',
@@ -140,6 +141,9 @@ var createTestData = function() {
   var tb = browserify(bopts);
   tb.require('./test/testdata', {
     expose: 'testdata'
+  });
+  tb.require('sinon', {
+    expose: 'sinon'
   });
   tb.transform('brfs');
 
