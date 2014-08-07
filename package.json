@@ -20,7 +20,6 @@
     "bs58": "=1.2.1",
     "elliptic": "=0.15.7",
     "hash.js": "=0.3.1",
-    "ripemd160": "=0.2.0",
     "sha512": "=0.0.1"
   },
   "devDependencies": {

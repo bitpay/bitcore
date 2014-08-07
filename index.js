@@ -6,7 +6,6 @@ privsec.deps.bs58 = require('bs58');
 privsec.deps.elliptic = require('elliptic');
 privsec.deps.hashjs = require('hash.js');
 privsec.deps.sha512 = require('sha512');
-privsec.deps.ripemd160 = require('ripemd160');
 
 privsec.address = require('./lib/address');
 privsec.base58 = require('./lib/base58');
