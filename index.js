@@ -11,10 +11,10 @@ privsec.deps.ripemd160 = require('ripemd160');
 privsec.address = require('./lib/address');
 privsec.base58 = require('./lib/base58');
 privsec.base58check = require('./lib/base58check');
+privsec.bn = require('./lib/bn');
 privsec.constants = require('./lib/constants');
 privsec.hash = require('./lib/hash');
 
-//privsec.bn = require('lib/bn');
 //privsec.key = require('lib/key');
 //privsec.point = require('lib/point');
 //privsec.privkey = require('lib/privkey');
