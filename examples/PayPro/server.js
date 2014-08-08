@@ -129,7 +129,7 @@ app.post('/-/request', function(req, res, next) {
 
   var outputs = [];
 
-  [2000, 1000].forEach(function(value) {
+  [2000, 1000, 10000].forEach(function(value) {
     var po = new PayPro();
     po = po.makeOutput();
     // number of satoshis to be paid
