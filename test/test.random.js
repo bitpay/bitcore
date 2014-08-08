@@ -3,7 +3,7 @@ var Random = require('../lib/random');
 
 describe('random', function() {
 
-  describe('getRandomBuffer', function() {
+  describe('#getRandomBuffer', function() {
 
     it('should return a buffer', function() {
       var bytes = Random.getRandomBuffer(8);
@@ -28,7 +28,7 @@ describe('random', function() {
 
   });
 
-  describe('getPseudoRandomBuffer', function() {
+  describe('#getPseudoRandomBuffer', function() {
 
     it('should generate 7 random bytes', function() {
       var buf = Random.getPseudoRandomBuffer(7);
