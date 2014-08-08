@@ -14,12 +14,12 @@ privsec.base58check = require('./lib/base58check');
 privsec.bn = require('./lib/bn');
 privsec.constants = require('./lib/constants');
 privsec.hash = require('./lib/hash');
+privsec.key = require('./lib/key');
 privsec.point = require('./lib/point');
 privsec.privkey = require('./lib/privkey');
 privsec.pubkey = require('./lib/pubkey');
 privsec.random = require('./lib/random');
 
-//privsec.key = require('lib/key');
 //privsec.script = require('lib/script');
 //privsec.scriptexec = require('lib/scriptexec');
 //privsec.tx = require('lib/tx');
