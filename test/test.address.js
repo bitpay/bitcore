@@ -2,7 +2,7 @@ var should = require('chai').should();
 var constants = require('../lib/constants');
 var Address = require('../lib/address');
 
-describe('Address', function() {
+describe('address', function() {
   var pubkeyhash = new Buffer('3c3fa3d4adcaf8f52d5b1843975e122548269937', 'hex');
   var str = '1Cs8a3b7R5n4G9c8Cgbp9iW8BXbhv3SFt6';
 
