@@ -36,13 +36,8 @@ describe('BIP32', function() {
     should.exist(BIP32);
   });
 
-  it('should create a mainnet bip32', function() {
-    var bip32 = new BIP32('mainnet');
-    should.exist(bip32);
-  });
-
-  it('should create a testnet bip32', function() {
-    var bip32 = new BIP32('testnet');
+  it('should create a bip32', function() {
+    var bip32 = new BIP32();
     should.exist(bip32);
   });
 
@@ -291,13 +286,15 @@ describe('BIP32', function() {
 
   describe('testnet', function() {
     it('should initialize a new BIP32 correctly from a random BIP32', function() {
-      var b1 = new BIP32('testnet');
+      var b1 = new BIP32();
+      b1.fromRandom('testnet');
       var b2 = new BIP32(b1.extendedPublicKeyString());
       b2.extendedPublicKeyString().should.equal(b1.extendedPublicKeyString());
     });
 
     it('should generate valid ext pub key for testnet', function() {
-      var b = new BIP32('testnet');
+      var b = new BIP32();
+      b.fromRandom('testnet');
       b.extendedPublicKeyString().substring(0,4).should.equal('tpub');
     });
   });
