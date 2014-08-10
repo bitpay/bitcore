@@ -1,4 +1,5 @@
 var should = require('chai').should();
+var constants = require('../lib/constants');
 var BIP32 = require('../lib/bip32');
 
 describe('BIP32', function() {
@@ -297,6 +298,33 @@ describe('BIP32', function() {
       b.fromRandom('testnet');
       b.extendedPublicKeyString().substring(0,4).should.equal('tpub');
     });
+  });
+
+  describe('#toString', function() {
+    var bip32 = new BIP32();
+    bip32.fromRandom('mainnet');
+    var tip32 = new BIP32();
+    tip32.fromRandom('testnet');
+
+    it('should return an xprv string', function() {
+      bip32.toString().slice(0, 4).should.equal('xprv');
+    });
+
+    it('should return an xpub string', function() {
+      var bip32b = new BIP32(bip32.extendedPublicKeyString());
+      bip32b.toString().slice(0, 4).should.equal('xpub');
+    });
+
+    it('should return a tprv string', function() {
+      tip32.toString().slice(0, 4).should.equal('tprv');
+    });
+
+    it('should return a tpub string', function() {
+      var tip32b = new BIP32(tip32.extendedPublicKeyString());
+      tip32b.toString().slice(0, 4).should.equal('tpub');
+    });
+
+
   });
 
 });
