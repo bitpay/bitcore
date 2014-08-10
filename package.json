@@ -24,7 +24,8 @@
   },
   "devDependencies": {
     "chai": "~1.9.1",
-    "mocha": "~1.21.0"
+    "mocha": "~1.21.0",
+    "browserify": "~5.9.1"
   },
   "author": "Ryan X. Charles <ryanxcharles@gmail.com>",
   "license": "MIT"

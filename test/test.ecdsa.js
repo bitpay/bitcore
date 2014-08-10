@@ -62,18 +62,20 @@ describe("ecdsa", function() {
     it('should return an error if the pubkey is invalid', function() {
       var ecdsa = new ECDSA();
       ecdsa.hash = Hash.sha256(new Buffer('test'));
-      ecdsa.sigError().should.equal("Invalid pubkey: TypeError: Cannot read property 'pubkey' of undefined");
+      ecdsa.sigError().indexOf("Invalid pubkey").should.equal(0);
     });
 
     it('should return an error if r, s are invalid', function() {
       var ecdsa = new ECDSA();
       ecdsa.hash = Hash.sha256(new Buffer('test'));
-      ecdsa.pubkey = new Pubkey();
-      ecdsa.pubkey.fromDER(new Buffer('041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341', 'hex'));
+      var pk = new Pubkey();
+      pk.fromDER(new Buffer('041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341', 'hex'));
+      ecdsa.key = new Key();
+      ecdsa.key.pubkey = pk;
       ecdsa.sig = new Signature();
       ecdsa.sig.r = bn(0);
       ecdsa.sig.s = bn(0);
-      ecdsa.sigError().should.equal("Invalid pubkey: TypeError: Cannot read property 'pubkey' of undefined");
+      ecdsa.sigError().should.equal("r and s not in range");
     });
 
     it('should return an error if the signature is incorrect', function() {
