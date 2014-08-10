@@ -93,4 +93,32 @@ describe('pubkey', function() {
 
   });
 
+  describe('#validate', function() {
+
+    it('should not throw an error if pubkey is valid', function() {
+      var hex = '031ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a';
+      var pk = new pubkey();
+      pk.fromString(hex);
+      should.exist(pk.validate());
+    });
+    
+    it('should not throw an error if pubkey is invalid', function() {
+      var hex = '041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a0000000000000000000000000000000000000000000000000000000000000000';
+      var pk = new pubkey();
+      pk.fromString(hex);
+      (function() {
+        pk.validate();
+      }).should.throw('point: Invalid y value of public key');
+    });
+    
+    it('should not throw an error if pubkey is infinity', function() {
+      var pk = new pubkey();
+      pk.p = point.getG().mul(point.getN());
+      (function() {
+        pk.validate();
+      }).should.throw('point: Point cannot be equal to Infinity');
+    });
+    
+  });
+
 });

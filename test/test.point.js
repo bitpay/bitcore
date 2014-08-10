@@ -89,4 +89,24 @@ describe('point', function() {
 
   });
 
+  describe('#validate', function() {
+
+    it('should validate this valid point', function() {
+      var x = bn.fromBuffer(new Buffer('ac242d242d23be966085a2b2b893d989f824e06c9ad0395a8a52f055ba39abb2', 'hex'));
+      var y = bn.fromBuffer(new Buffer('4836ab292c105a711ed10fcfd30999c31ff7c02456147747e03e739ad527c380', 'hex'));
+      var p = point(x, y);
+      should.exist(p.validate());
+    });
+
+    it('should invalidate this invalid point', function() {
+      var x = bn.fromBuffer(new Buffer('ac242d242d23be966085a2b2b893d989f824e06c9ad0395a8a52f055ba39abb2', 'hex'));
+      var y = bn.fromBuffer(new Buffer('0000000000000000000000000000000000000000000000000000000000000000', 'hex'));
+      var p = point(x, y);
+      (function() {
+        p.validate();
+      }).should.throw('point: Invalid y value of public key');
+    });
+
+  });
+
 });

@@ -13,6 +13,7 @@ privsec.base58 = require('./lib/base58');
 privsec.base58check = require('./lib/base58check');
 privsec.bn = require('./lib/bn');
 privsec.constants = require('./lib/constants');
+privsec.ecdsa = require('./lib/ecdsa');
 privsec.hash = require('./lib/hash');
 privsec.key = require('./lib/key');
 privsec.point = require('./lib/point');

@@ -1,8 +1,8 @@
 var should = require('chai').should();
 var bn = require('../lib/bn');
 var point = require('../lib/point');
-var privkey = require('../lib/privkey');
-var pubkey = require('../lib/pubkey');
+var Privkey = require('../lib/privkey');
+var Pubkey = require('../lib/pubkey');
 var Key = require('../lib/key');
 
 describe('key', function() {
@@ -13,12 +13,12 @@ describe('key', function() {
   });
 
   it('should make a key with a priv and pub', function() {
-    var priv = new privkey();
-    var pub = new pubkey();
+    var priv = new Privkey();
+    var pub = new Pubkey();
     var key = new Key(priv, pub);
     should.exist(key);
-    should.exist(key.priv);
-    should.exist(key.pub);
+    should.exist(key.privkey);
+    should.exist(key.pubkey);
   });
 
   describe("#fromRandom", function() {
@@ -26,11 +26,11 @@ describe('key', function() {
     it('should make a new priv and pub', function() {
       var key = new Key();
       key.fromRandom();
-      should.exist(key.priv);
-      should.exist(key.pub);
-      key.priv.n.gt(bn(0)).should.equal(true);
-      key.pub.p.getX().gt(bn(0)).should.equal(true);
-      key.pub.p.getY().gt(bn(0)).should.equal(true);
+      should.exist(key.privkey);
+      should.exist(key.pubkey);
+      key.privkey.n.gt(bn(0)).should.equal(true);
+      key.pubkey.p.getX().gt(bn(0)).should.equal(true);
+      key.pubkey.p.getY().gt(bn(0)).should.equal(true);
     });
 
   });
@@ -40,49 +40,49 @@ describe('key', function() {
     it('should recover a key creating with toString', function() {
       var key = new Key();
       key.fromRandom();
-      var priv = key.priv;
-      var pub = key.pub;
+      var priv = key.privkey;
+      var pub = key.pubkey;
       var str = key.toString();
       key.fromString(str);
-      should.exist(key.priv);
-      should.exist(key.pub);
-      key.priv.toString().should.equal(priv.toString());
-      key.pub.toString().should.equal(pub.toString());
+      should.exist(key.privkey);
+      should.exist(key.pubkey);
+      key.privkey.toString().should.equal(priv.toString());
+      key.pubkey.toString().should.equal(pub.toString());
     });
 
-    it('should work with only privkey set', function() {
+    it('should work with only Privkey set', function() {
       var key = new Key();
       key.fromRandom();
-      key.pub = undefined;
-      var priv = key.priv;
+      key.pubkey = undefined;
+      var priv = key.privkey;
       var str = key.toString();
       key.fromString(str);
-      should.exist(key.priv);
-      key.priv.toString().should.equal(priv.toString());
+      should.exist(key.privkey);
+      key.privkey.toString().should.equal(priv.toString());
     });
 
-    it('should work with only pubkey set', function() {
+    it('should work with only Pubkey set', function() {
       var key = new Key();
       key.fromRandom();
-      key.priv = undefined;
-      var pub = key.pub;
+      key.privkey = undefined;
+      var pub = key.pubkey;
       var str = key.toString();
       key.fromString(str);
-      should.exist(key.pub);
-      key.pub.toString().should.equal(pub.toString());
+      should.exist(key.pubkey);
+      key.pubkey.toString().should.equal(pub.toString());
     });
 
   });
 
-  describe("#priv2pub", function() {
+  describe("#privkey2pubkey", function() {
     
-    it('should convert this known privkey to known pubkey', function() {
+    it('should convert this known Privkey to known Pubkey', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
       var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
       var key = new Key();
-      key.priv = new privkey(bn(new Buffer(privhex, 'hex')));
-      key.priv2pub();
-      key.pub.toString().should.equal(pubhex);
+      key.privkey = new Privkey(bn(new Buffer(privhex, 'hex')));
+      key.privkey2pubkey();
+      key.pubkey.toString().should.equal(pubhex);
     });
 
   });
