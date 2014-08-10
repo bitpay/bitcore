@@ -8,6 +8,11 @@ describe('point', function() {
     var p = point();
     should.exist(p);
   });
+  
+  it('should create a point when called with "new"', function() {
+    var p = new point();
+    should.exist(p);
+  });
 
   describe('#getX', function() {
     
