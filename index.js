@@ -11,6 +11,7 @@ privsec.deps.sha512 = require('sha512');
 privsec.address = require('./lib/address');
 privsec.base58 = require('./lib/base58');
 privsec.base58check = require('./lib/base58check');
+privsec.bip32 = require('./lib/bip32');
 privsec.bn = require('./lib/bn');
 privsec.constants = require('./lib/constants');
 privsec.ecdsa = require('./lib/ecdsa');
@@ -27,5 +28,4 @@ privsec.signature = require('./lib/signature');
 //privsec.tx = require('lib/tx');
 //privsec.txpartial = require('lib/txpartial');
 
-//privsec.bip32 = require('lib/bip32');
 //privsec.bip70 = require('lib/bip70');
