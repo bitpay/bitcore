@@ -64,6 +64,17 @@ describe('pubkey', function() {
 
   });
 
+  describe('#toBuffer', function() {
+
+    it('should return this compressed DER format', function() {
+      var x = bn.fromBuffer(new Buffer('1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a', 'hex'));
+      var pk = new pubkey();
+      pk.fromX(true, x);
+      pk.toBuffer().toString('hex').should.equal('031ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a');
+    });
+
+  });
+
   describe('#toDER', function() {
 
     it('should return this compressed DER format', function() {
