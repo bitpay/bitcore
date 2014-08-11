@@ -130,16 +130,6 @@ describe('BIP21', function() {
     );
   });
 
-  it('should fail with wrong arguments', function() {
-    (function() {
-      new BIP21(12);
-    }).should.throw(Error);
-
-    (function() {
-      new BIP21();
-    }).should.not.throw(Error);
-  });
-
   it('should be case insensitive to protocol', function() {
     var uri1 = new BIP21('bItcOin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj');
     var uri2 = new BIP21('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj');
@@ -153,5 +143,14 @@ describe('BIP21', function() {
 
     uri.setAddress('1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj');
     uri.address.network().name.should.equal('livenet');
+  });
+
+  it('should check required arguments', function() {
+    var uri = new BIP21('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?req-somethingyoudontunderstand=50&req-somethingelseyoudontget=999');
+    uri.isValid().should.be.false;
+    uri.isValid([
+      'req-somethingyoudontunderstand',
+      'req-somethingelseyoudontget'
+    ]).should.be.true;
   });
 });
