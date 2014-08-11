@@ -1,13 +1,5 @@
 var privsec = module.exports;
 
-privsec.deps = {};
-privsec.deps.bnjs = require('bn.js');
-privsec.deps.bs58 = require('bs58');
-privsec.deps.buffer = Buffer;
-privsec.deps.elliptic = require('elliptic');
-privsec.deps.hashjs = require('hash.js');
-privsec.deps.sha512 = require('sha512');
-
 privsec.address = require('./lib/address');
 privsec.base58 = require('./lib/base58');
 privsec.base58check = require('./lib/base58check');
@@ -22,6 +14,14 @@ privsec.privkey = require('./lib/privkey');
 privsec.pubkey = require('./lib/pubkey');
 privsec.random = require('./lib/random');
 privsec.signature = require('./lib/signature');
+
+privsec.deps = {};
+privsec.deps.bnjs = require('bn.js');
+privsec.deps.bs58 = require('bs58');
+privsec.deps.buffer = Buffer;
+privsec.deps.elliptic = require('elliptic');
+privsec.deps.hashjs = require('hash.js');
+privsec.deps.sha512 = require('sha512');
 
 //privsec.script = require('lib/script');
 //privsec.scriptexec = require('lib/scriptexec');
