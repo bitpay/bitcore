@@ -1121,6 +1121,7 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
     ? Uint8Array
     : Array
 
+	var ZERO   = '0'.charCodeAt(0)
 	var PLUS   = '+'.charCodeAt(0)
 	var SLASH  = '/'.charCodeAt(0)
 	var NUMBER = '0'.charCodeAt(0)
@@ -1229,9 +1230,9 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 		return output
 	}
 
-	exports.toByteArray = b64ToByteArray
-	exports.fromByteArray = uint8ToBase64
-}(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
+	module.exports.toByteArray = b64ToByteArray
+	module.exports.fromByteArray = uint8ToBase64
+}())
 
 },{}],4:[function(require,module,exports){
 exports.read = function(buffer, offset, isLE, mLen, nBytes) {
@@ -2002,8 +2003,8 @@ function hasOwnProperty(obj, prop) {
   return Object.prototype.hasOwnProperty.call(obj, prop);
 }
 
-}).call(this,require("/home/maraoz/git/bitcore/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":7,"/home/maraoz/git/bitcore/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":6,"inherits":5}],"3kNi7S":[function(require,module,exports){
+}).call(this,require("/Users/yemeljardi/code/bitcore/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./support/isBuffer":7,"/Users/yemeljardi/code/bitcore/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":6,"inherits":5}],"3kNi7S":[function(require,module,exports){
 /*jslint eqeqeq: false, onevar: false, forin: true, nomen: false, regexp: false, plusplus: false*/
 /*global module, require, __dirname, document*/
 /**
@@ -2930,8 +2931,8 @@ module.exports=require('3kNi7S');
     }
 }(typeof sinon == "object" && sinon || null));
 
-}).call(this,require("/home/maraoz/git/bitcore/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"))
-},{"../sinon":"3kNi7S","/home/maraoz/git/bitcore/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":6}],13:[function(require,module,exports){
+}).call(this,require("/Users/yemeljardi/code/bitcore/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"))
+},{"../sinon":"3kNi7S","/Users/yemeljardi/code/bitcore/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":6}],13:[function(require,module,exports){
 /**
   * @depend ../sinon.js
   * @depend match.js
