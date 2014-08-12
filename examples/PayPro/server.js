@@ -73,7 +73,7 @@ app.use(function(req, res, next) {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
   if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Methods', 'OPTIONS,GET,PUT,POST,PATCH,DELETE');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST');
     res.setHeader('Access-Control-Allow-Headers', req.headers['access-control-request-headers']);
     return res.send(200);
   }
@@ -124,12 +124,12 @@ app.use('/-/pay', function(req, res, next) {
 
 app.uid = 0;
 
-app.post('/-/request', function(req, res, next) {
+app.get('/-/request', function(req, res, next) {
   print('Received payment "request" from %s.', req.socket.remoteAddress);
 
   var outputs = [];
 
-  [2000, 1000].forEach(function(value) {
+  [2000, 1000, 10000].forEach(function(value) {
     var po = new PayPro();
     po = po.makeOutput();
     // number of satoshis to be paid
