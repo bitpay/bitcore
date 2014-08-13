@@ -1,6 +1,6 @@
 var Privkey = require('../lib/privkey');
 var base58check = require('../lib/base58check');
-var bn = require('../lib/bn');
+var Bn = require('../lib/bn');
 var should = require('chai').should();
 
 describe('privkey', function() {
@@ -17,17 +17,17 @@ describe('privkey', function() {
   });
 
   it('should create a mainnet private key', function() {
-    var privkey = new Privkey(bn.fromBuffer(buf), 'mainnet', true);
+    var privkey = new Privkey(Bn.fromBuffer(buf), 'mainnet', true);
     privkey.toString().should.equal(encmainnet);
   });
 
   it('should create an uncompressed testnet private key', function() {
-    var privkey = new Privkey(bn.fromBuffer(buf), 'testnet', false);
+    var privkey = new Privkey(Bn.fromBuffer(buf), 'testnet', false);
     privkey.toString().should.equal(enctu);
   });
 
   it('should create an uncompressed mainnet private key', function() {
-    var privkey = new Privkey(bn.fromBuffer(buf), 'mainnet', false);
+    var privkey = new Privkey(Bn.fromBuffer(buf), 'mainnet', false);
     privkey.toString().should.equal(encmu);
   });
 

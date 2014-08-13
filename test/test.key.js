@@ -28,9 +28,9 @@ describe('key', function() {
       key.fromRandom();
       should.exist(key.privkey);
       should.exist(key.pubkey);
-      key.privkey.n.gt(bn(0)).should.equal(true);
-      key.pubkey.p.getX().gt(bn(0)).should.equal(true);
-      key.pubkey.p.getY().gt(bn(0)).should.equal(true);
+      key.privkey.bn.gt(bn(0)).should.equal(true);
+      key.pubkey.point.getX().gt(bn(0)).should.equal(true);
+      key.pubkey.point.getY().gt(bn(0)).should.equal(true);
     });
 
   });
