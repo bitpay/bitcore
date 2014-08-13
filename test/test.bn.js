@@ -83,6 +83,11 @@ describe('bn', function() {
       bn.toString().should.equal('1');
     });
 
+    it('should work as a prototype method', function() {
+      var bn = BN().fromBuffer(new Buffer('0100', 'hex'), {size: 2, endian: 'little'});
+      bn.toString().should.equal('1');
+    });
+
   });
 
   describe('#toBuffer', function() {
