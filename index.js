@@ -1,20 +1,27 @@
 var privsec = module.exports;
 
-privsec.address = require('./lib/address');
-privsec.base58 = require('./lib/base58');
-privsec.base58check = require('./lib/base58check');
-privsec.bip32 = require('./lib/bip32');
-privsec.bn = require('./lib/bn');
-privsec.constants = require('./lib/constants');
-privsec.ecdsa = require('./lib/ecdsa');
-privsec.hash = require('./lib/hash');
-privsec.key = require('./lib/key');
-privsec.point = require('./lib/point');
-privsec.privkey = require('./lib/privkey');
-privsec.pubkey = require('./lib/pubkey');
-privsec.random = require('./lib/random');
-privsec.signature = require('./lib/signature');
+//main bitcoin library
+privsec.Address = require('./lib/address');
+privsec.Base58 = require('./lib/base58');
+privsec.Base58Check = require('./lib/base58check');
+privsec.BIP32 = require('./lib/bip32');
+privsec.BN = require('./lib/bn');
+privsec.Constants = require('./lib/constants');
+privsec.ECDSA = require('./lib/ecdsa');
+privsec.Hash = require('./lib/hash');
+privsec.KDF = require('./lib/kdf');
+privsec.Key = require('./lib/key');
+privsec.Point = require('./lib/point');
+privsec.Privkey = require('./lib/privkey');
+privsec.Pubkey = require('./lib/pubkey');
+privsec.Random = require('./lib/random');
+privsec.Signature = require('./lib/signature');
 
+//experimental
+//privsec.expmt = {};
+//privsec.expmt.Stealth = require('./lib/expmt/stealth');
+
+//dependencies
 privsec.deps = {};
 privsec.deps.bnjs = require('bn.js');
 privsec.deps.bs58 = require('bs58');
