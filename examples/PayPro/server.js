@@ -71,12 +71,18 @@ app.use(function(req, res, next) {
   };
 
   res.setHeader('Access-Control-Allow-Origin', '*');
-
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST');
-    res.setHeader('Access-Control-Allow-Headers', req.headers['access-control-request-headers']);
-    return res.send(200);
-  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST');
+  res.setHeader('Access-Control-Allow-Headers', [
+    'Host',
+    'Connection',
+    'Content-Length',
+    'Accept',
+    'Origin',
+    'User-Agent',
+    'Content-Type',
+    'Accept-Encoding',
+    'Accept-Language'
+  ].join(','));
 
   res.setHeader('Accept', PayPro.PAYMENT_CONTENT_TYPE);
 
