@@ -144,3 +144,5 @@ exports.testnet = {
   ],
   defaultClientPort: 18333
 };
+
+exports.supportedNetnames = ['bitcoin', 'litecoin', 'dogecoin', 'darkcoin'];

@@ -1,15 +1,23 @@
 var crypto = require('crypto');
 var bignum = require('bignum');
 var Binary = require('binary');
-var x11 = require('x11-hash');
+
 var Put = require('bufferput');
 var buffertools = require('buffertools');
 var jssha = require('jssha');
 var browser;
 var inBrowser = !process.versions;
+try {
+  var x11 = require('x11-hash');
+} catch(e) {
+  //console.warn('mudule x11-hash not found, use fallback');
+  var x11 = null;
+}
 if (inBrowser) {
   browser = require('../browser/vendor-bundle.js');
 }
+
+
 
 var sha256 = exports.sha256 = function(data) {
   return new Buffer(crypto.createHash('sha256').update(data).digest('binary'), 'binary');
@@ -57,7 +65,10 @@ var sha256ripe160 = exports.sha256ripe160 = function(data) {
 };
 
 var x11Digest = exports.x11Digest = function(data) {
-  return x11.digest(data);
+  if(x11)
+    return x11.digest(data);
+  else
+    return sha256ripe160(data);
 };
 
 /**
