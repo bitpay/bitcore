@@ -1,5 +1,6 @@
 var should = require('chai').should();
 var constants = require('../lib/constants');
+var Pubkey = require('../lib/pubkey');
 var Address = require('../lib/address');
 
 describe('address', function() {
@@ -9,6 +10,26 @@ describe('address', function() {
   it('should create a new address object', function() {
     var address = new Address();
     should.exist(address);
+  });
+
+  describe('#fromPubkey', function() {
+
+    it('should make this address from a compressed pubkey', function() {
+      var pubkey = new Pubkey();
+      pubkey.fromDER(new Buffer('0285e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b004', 'hex'));
+      var address = new Address();
+      address.fromPubkey(pubkey);
+      address.toString().should.equal('19gH5uhqY6DKrtkU66PsZPUZdzTd11Y7ke');
+    });
+
+    it('should make this address from an uncompressed pubkey', function() {
+      var pubkey = new Pubkey();
+      pubkey.fromDER(new Buffer('0285e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b004', 'hex'));
+      var address = new Address();
+      address.fromPubkey(pubkey, 'mainnet', false);
+      address.toString().should.equal('16JXnhxjJUhxfyx4y6H4sFcxrgt8kQ8ewX');
+    });
+
   });
 
   describe('#fromString', function() {
