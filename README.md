@@ -1,4 +1,4 @@
-privsec
+bitcore
 =======
 
-Bitcoin privacy and security features implemented in pure javascript.
+A bitcoin library.
