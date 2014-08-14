@@ -3,7 +3,7 @@ var base58check = require('../lib/base58check');
 var Bn = require('../lib/bn');
 var should = require('chai').should();
 
-describe('privkey', function() {
+describe('Privkey', function() {
   var hex = '96c132224121b509b7d0a16245e957d9192609c5637c6228311287b1be21627a';
   var buf = new Buffer(hex, 'hex');
   var enctestnet = 'cSdkPxkAjA4HDr5VHgsebAPDEh9Gyub4HK8UJr2DFGGqKKy4K5sG';

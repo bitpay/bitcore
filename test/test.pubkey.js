@@ -3,7 +3,7 @@ var Pubkey = require('../lib/pubkey');
 var Point = require('../lib/point');
 var Bn = require('../lib/bn');
 
-describe('pubkey', function() {
+describe('Pubkey', function() {
   
   it('should create a blank public key', function() {
     var pk = new Pubkey();

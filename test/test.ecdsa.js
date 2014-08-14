@@ -8,7 +8,7 @@ var bn = require('../lib/bn');
 var point = require('../lib/point');
 var should = require('chai').should();
 
-describe("ecdsa", function() {
+describe("ECDSA", function() {
 
   it('should create a blank ecdsa', function() {
     var ecdsa = new ECDSA();

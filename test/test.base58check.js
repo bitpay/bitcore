@@ -2,7 +2,7 @@ var should = require('chai').should();
 var base58check = require('../lib/base58check');
 var base58 = require('../lib/base58');
 
-describe('base58check', function() {
+describe('Base58check', function() {
   var buf = new Buffer([0, 1, 2, 3, 253, 254, 255]);
   var enc = "14HV44ipwoaqfg";
 

@@ -6,7 +6,7 @@ var Privkey = require('../lib/privkey');
 var Pubkey = require('../lib/pubkey');
 var Key = require('../lib/key');
 
-describe('key', function() {
+describe('Key', function() {
   
   it('should make a blank key', function() {
     var key = new Key();

@@ -1,7 +1,7 @@
 var should = require('chai').should();
 var Random = require('../lib/random');
 
-describe('random', function() {
+describe('Random', function() {
 
   describe('#getRandomBuffer', function() {
 

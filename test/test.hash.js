@@ -1,7 +1,7 @@
 var should = require('chai').should();
 var Hash = require('../lib/hash');
 
-describe('hash', function() {
+describe('Hash', function() {
   var buf = new Buffer([0, 1, 2, 3, 253, 254, 255]);
   var str = "test string";
 

@@ -2,7 +2,7 @@ var should = require('chai').should();
 var KDF = require('../lib/kdf');
 var Hash = require('../lib/hash');
 
-describe('kdf', function() {
+describe('KDF', function() {
   
   describe('#buf2key', function() {
 

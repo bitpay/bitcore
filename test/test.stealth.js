@@ -7,7 +7,7 @@ var BN = require('../lib/bn');
 var Hash = require('../lib/hash');
 var base58check = require('../lib/base58check');
 
-describe('stealth', function() {
+describe('Stealth', function() {
   
   var stealth = Stealth();
   stealth.payloadKey = Key();

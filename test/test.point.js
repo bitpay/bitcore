@@ -2,7 +2,7 @@ var should = require('chai').should();
 var point = require('../lib/point');
 var bn = require('../lib/bn');
 
-describe('point', function() {
+describe('Point', function() {
   
   it('should create a point', function() {
     var p = point();

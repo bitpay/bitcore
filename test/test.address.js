@@ -3,7 +3,7 @@ var constants = require('../lib/constants');
 var Pubkey = require('../lib/pubkey');
 var Address = require('../lib/address');
 
-describe('address', function() {
+describe('Address', function() {
   var pubkeyhash = new Buffer('3c3fa3d4adcaf8f52d5b1843975e122548269937', 'hex');
   var str = '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r';
 

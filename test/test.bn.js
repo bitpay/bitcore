@@ -3,7 +3,7 @@ var should = chai.should();
 var assert = chai.assert;
 var BN = require('../lib/bn');
 
-describe('bn', function() {
+describe('BN', function() {
   it('should create a bn', function() {
     var bn = new BN(50);
     should.exist(bn);
