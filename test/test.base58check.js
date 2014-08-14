@@ -1,5 +1,5 @@
 var should = require('chai').should();
-var Base58Check = require('../lib/Base58Check');
+var Base58Check = require('../lib/base58check');
 var base58 = require('../lib/base58');
 
 describe('Base58Check', function() {
