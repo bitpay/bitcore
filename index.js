@@ -18,8 +18,8 @@ privsec.Random = require('./lib/random');
 privsec.Signature = require('./lib/signature');
 
 //experimental
-//privsec.expmt = {};
-//privsec.expmt.Stealth = require('./lib/expmt/stealth');
+privsec.expmt = {};
+privsec.expmt.Stealth = require('./lib/expmt/stealth');
 
 //dependencies
 privsec.deps = {};
