@@ -141,6 +141,11 @@ describe('Stealth', function() {
       key.pubkey.toString().should.equal(pubkey.toString());
     });
 
+    it('should return private key with length 32 or less', function() {
+      var key = stealth.getReceiveKey(senderKey.pubkey);
+      key.privkey.bn.toBuffer().length.should.be.below(33);
+    });
+
   });
 
   describe('#isForMe', function() {
