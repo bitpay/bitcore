@@ -1,38 +1,38 @@
-var bitcore = module.exports;
+var privsec = module.exports;
 
 //main bitcoin library
-bitcore.Address = require('./lib/address');
-bitcore.Base58 = require('./lib/base58');
-bitcore.Base58Check = require('./lib/base58check');
-bitcore.BIP32 = require('./lib/bip32');
-bitcore.BN = require('./lib/bn');
-bitcore.Constants = require('./lib/constants');
-bitcore.ECDSA = require('./lib/ecdsa');
-bitcore.Hash = require('./lib/hash');
-bitcore.KDF = require('./lib/kdf');
-bitcore.Key = require('./lib/key');
-bitcore.Point = require('./lib/point');
-bitcore.Privkey = require('./lib/privkey');
-bitcore.Pubkey = require('./lib/pubkey');
-bitcore.Random = require('./lib/random');
-bitcore.Signature = require('./lib/signature');
+privsec.Address = require('./lib/address');
+privsec.Base58 = require('./lib/base58');
+privsec.Base58Check = require('./lib/base58check');
+privsec.BIP32 = require('./lib/bip32');
+privsec.BN = require('./lib/bn');
+privsec.Constants = require('./lib/constants');
+privsec.ECDSA = require('./lib/ecdsa');
+privsec.Hash = require('./lib/hash');
+privsec.KDF = require('./lib/kdf');
+privsec.Key = require('./lib/key');
+privsec.Point = require('./lib/point');
+privsec.Privkey = require('./lib/privkey');
+privsec.Pubkey = require('./lib/pubkey');
+privsec.Random = require('./lib/random');
+privsec.Signature = require('./lib/signature');
 
 //experimental, nonstandard, or unstable features
-bitcore.expmt = {};
-bitcore.expmt.Stealth = require('./lib/expmt/stealth');
+privsec.expmt = {};
+privsec.expmt.Stealth = require('./lib/expmt/stealth');
 
 //dependencies, subject to change
-bitcore.deps = {};
-bitcore.deps.bnjs = require('bn.js');
-bitcore.deps.bs58 = require('bs58');
-bitcore.deps.Buffer = Buffer;
-bitcore.deps.elliptic = require('elliptic');
-bitcore.deps.hashjs = require('hash.js');
-bitcore.deps.sha512 = require('sha512');
+privsec.deps = {};
+privsec.deps.bnjs = require('bn.js');
+privsec.deps.bs58 = require('bs58');
+privsec.deps.Buffer = Buffer;
+privsec.deps.elliptic = require('elliptic');
+privsec.deps.hashjs = require('hash.js');
+privsec.deps.sha512 = require('sha512');
 
-//bitcore.script = require('lib/script');
-//bitcore.scriptexec = require('lib/scriptexec');
-//bitcore.tx = require('lib/tx');
-//bitcore.txpartial = require('lib/txpartial');
+//privsec.script = require('lib/script');
+//privsec.scriptexec = require('lib/scriptexec');
+//privsec.tx = require('lib/tx');
+//privsec.txpartial = require('lib/txpartial');
 
-//bitcore.bip70 = require('lib/bip70');
+//privsec.bip70 = require('lib/bip70');

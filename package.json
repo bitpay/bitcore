@@ -1,7 +1,7 @@
 {
-  "name": "bitcore",
+  "name": "privsec",
   "version": "0.0.0",
-  "description": "A bitcoin library.",
+  "description": "Bitcoin privacy and security.",
   "main": "index.js",
   "scripts": {
     "test": "mocha"
