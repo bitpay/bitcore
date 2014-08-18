@@ -50,7 +50,8 @@ Customer: Payment sent successfully.
 If you want to alter the address or public key the testnet coins get sent to by
 the payment server, you can pass in the `--pubkey` or `--address` options.
 `address` has to be a testnet address, whereas `pubkey` is a hex encoded public
-key.
+key. The `--privkey` option is also available in the standard bitcoind privkey
+format.
 
 ## Other Options
 
