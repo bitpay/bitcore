@@ -147,23 +147,19 @@ app.get('/-/request', function(req, res, next) {
 
     // Instead of creating it ourselves:
     // if (!argv.pubkey && !argv.privkey && !argv.address) {
-    //   argv.pubkey = '3730febcba04bad0cd476cfb820f9c37d7466fd9';
+    //   //argv.pubkey = '3730febcba04bad0cd476cfb820f9c37d7466fd9';
+    //   argv.pubkey = 'd96f46d7379c0f82fb6c47cdd0ba04babcfe3037'
     // }
 
     if (argv.pubkey || argv.privkey || argv.address) {
       var pubKey;
       if (argv.pubkey) {
         pubKey = new Buffer(argv.pubkey, 'hex');
-        // If it were possible:
-        // pubKey = bitcore.Script.fromCompressedPubKey(new Buffer(argv.pubkey)).toCompressedPubKey();
       } else if (argv.privkey) {
         pubKey = bitcore.Key.recoverPubKey(new Buffer(argv.privkey)).toCompressedPubKey();
       } else if (argv.address) {
         pubKey = bitcore.Base58Check.decode(new Buffer(argv.address));
-        // pubKey = bitcore.Script.fromUncompressedPubKey(pubKey).toCompressedPubKey();
       }
-      // var pubKeyHash = bitcore.util.sha256ripe160(pubKey);
-      // var address = new bitcore.Address(111, pubKeyHash);
       var address = bitcore.Address.fromPubKey(pubKey, 'testnet');
       var scriptPubKey = address.getScriptPubKey();
       assert.equal(scriptPubKey.isPubkeyHash(), true);

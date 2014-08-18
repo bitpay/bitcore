@@ -5,7 +5,7 @@
 The node payment protocol demonstration will run automatically via:
 
 ``` bash
-$ node examples/PayPro`
+$ node examples/PayPro
 ```
 
 You will see the server and customer logs output in the terminal.
