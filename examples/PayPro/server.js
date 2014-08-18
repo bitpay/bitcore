@@ -48,8 +48,10 @@ var server = https.createServer({
   cert: fs.readFileSync(__dirname + '/../../test/data/x509.crt')
 });
 
+server.options = argv;
+
 server.setOptions = function(options) {
-  argv = options;
+  server.options = argv = options;
 };
 
 var app = express();
@@ -411,10 +413,9 @@ server.port = 8080;
 server.isNode = true;
 
 setTimeout(function() {
-  server.port = +argv.p || +argv.port || 8080;
+  server.port = argv.p = argv.port = +argv.p || +argv.port || 8080;
   server.isNode = !argv.b && !argv.browser;
-  // Arguably the same thing as -b or --browser:
-  if (argv.s || argv.server) {
+  if (argv.s || argv.server || argv.l || argv.listen) {
     server.listen(server.port, function(addr) {
       print('Listening on port %s.', server.port);
     });
