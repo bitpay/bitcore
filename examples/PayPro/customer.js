@@ -153,7 +153,7 @@ function sendPayment(msg, callback) {
   }
 
   return request({
-    method: 'POST',
+    method: 'GET',
     uri: 'https://localhost:' + port + '/-/request',
     headers: {
       'Accept': PayPro.PAYMENT_REQUEST_CONTENT_TYPE
