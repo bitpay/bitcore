@@ -15,6 +15,7 @@ var fs = require('fs');
 var path = require('path');
 var qs = require('querystring');
 var crypto = require('crypto');
+var assert = require('assert');
 
 // Disable strictSSL
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
@@ -71,7 +72,7 @@ app.use(function(req, res, next) {
   };
 
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', [
     'Host',
     'Connection',
@@ -138,19 +139,34 @@ app.get('/-/request', function(req, res, next) {
   [2000, 1000, 10000].forEach(function(value) {
     var po = new PayPro();
     po = po.makeOutput();
+
     // number of satoshis to be paid
     po.set('amount', value);
+
     // a TxOut script where the payment should be sent. similar to OP_CHECKSIG
-    if (argv.pubkey || argv.address) {
+
+    // Instead of creating it ourselves:
+    // if (!argv.pubkey && !argv.privkey && !argv.address) {
+    //   argv.pubkey = '3730febcba04bad0cd476cfb820f9c37d7466fd9';
+    // }
+
+    if (argv.pubkey || argv.privkey || argv.address) {
       var pubKey;
-      if (argv.address) {
-        pubKey = bitcore.Base58Check.decode(new Buffer(argv.address));
-      } else {
+      if (argv.pubkey) {
         pubKey = new Buffer(argv.pubkey, 'hex');
+        // If it were possible:
+        // pubKey = bitcore.Script.fromCompressedPubKey(new Buffer(argv.pubkey)).toCompressedPubKey();
+      } else if (argv.privkey) {
+        pubKey = bitcore.Key.recoverPubKey(new Buffer(argv.privkey)).toCompressedPubKey();
+      } else if (argv.address) {
+        pubKey = bitcore.Base58Check.decode(new Buffer(argv.address));
+        // pubKey = bitcore.Script.fromUncompressedPubKey(pubKey).toCompressedPubKey();
       }
-      var pubKeyHash = bitcore.util.sha256ripe160(pubKey);
-      var address = new bitcore.Address(pubKeyHash, 'testnet');
-      var scriptPubKey = addr.getScriptPubKey();
+      // var pubKeyHash = bitcore.util.sha256ripe160(pubKey);
+      // var address = new bitcore.Address(111, pubKeyHash);
+      var address = bitcore.Address.fromPubKey(pubKey, 'testnet');
+      var scriptPubKey = address.getScriptPubKey();
+      assert.equal(scriptPubKey.isPubkeyHash(), true);
       po.set('script', scriptPubKey.getBuffer());
     } else {
       po.set('script', new Buffer([
@@ -182,6 +198,7 @@ app.get('/-/request', function(req, res, next) {
         172  // OP_CHECKSIG
       ]));
     }
+
     outputs.push(po.message);
   });
 
