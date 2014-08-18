@@ -141,34 +141,47 @@ app.get('/-/request', function(req, res, next) {
     // number of satoshis to be paid
     po.set('amount', value);
     // a TxOut script where the payment should be sent. similar to OP_CHECKSIG
-    po.set('script', new Buffer([
-      118, // OP_DUP
-      169, // OP_HASH160
-      76,  // OP_PUSHDATA1
-      20,  // number of bytes
-      55,
-      48,
-      254,
-      188,
-      186,
-      4,
-      186,
-      208,
-      205,
-      71,
-      108,
-      251,
-      130,
-      15,
-      156,
-      55,
-      215,
-      70,
-      111,
-      217,
-      136, // OP_EQUALVERIFY
-      172  // OP_CHECKSIG
-    ]));
+    if (argv.pubkey || argv.address) {
+      var pubKey;
+      if (argv.address) {
+        pubKey = bitcore.Base58Check.decode(new Buffer(argv.address));
+      } else {
+        pubKey = new Buffer(argv.pubkey, 'hex');
+      }
+      var pubKeyHash = bitcore.util.sha256ripe160(pubKey);
+      var address = new bitcore.Address(pubKeyHash, 'testnet');
+      var scriptPubKey = addr.getScriptPubKey();
+      po.set('script', scriptPubKey.getBuffer());
+    } else {
+      po.set('script', new Buffer([
+        118, // OP_DUP
+        169, // OP_HASH160
+        76,  // OP_PUSHDATA1
+        20,  // number of bytes
+        55,
+        48,
+        254,
+        188,
+        186,
+        4,
+        186,
+        208,
+        205,
+        71,
+        108,
+        251,
+        130,
+        15,
+        156,
+        55,
+        215,
+        70,
+        111,
+        217,
+        136, // OP_EQUALVERIFY
+        172  // OP_CHECKSIG
+      ]));
+    }
     outputs.push(po.message);
   });
 

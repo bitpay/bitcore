@@ -45,7 +45,12 @@ Customer: Message from Merchant: Thank you for your payment!
 Customer: Payment sent successfully.
 ```
 
-## Changing the server address in outputs
+## Changing the server address contained in outputs
+
+If you want to alter the address or public key the testnet coins get sent to by
+the payment server, you can pass in the `--pubkey` or `--address` options.
+`address` has to be a testnet address, whereas `pubkey` is a hex encoded public
+key.
 
 ## Other Options
 
