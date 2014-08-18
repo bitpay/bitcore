@@ -62,45 +62,7 @@ var merchant = isNode
 if (isNode) {
   var Buffer = global.Buffer;
 } else {
-  var Buffer = function Buffer(data) {
-    var ab = new ArrayBuffer(data.length);
-    var view = new Uint8Array(ab);
-    data._size = data.length;
-    for (var i = 0; i < data._size; i++) {
-      view[i] = data[i];
-    }
-    if (!view.slice) {
-      // view.slice = ab.slice.bind(ab);
-      view.slice = function(start, end) {
-        if (end < 0) {
-          end = data._size + end;
-        }
-        data._size = end - start;
-        var ab = new ArrayBuffer(data._size);
-        var view = new Uint8Array(ab);
-        for (var i = 0, j = start; j < end; i++, j++) {
-          view[i] = data[j];
-        }
-        return view;
-      };
-    }
-    return view;
-  };
-  Buffer.byteLength = function(buf) {
-    var bytes = 0
-      , ch;
-
-    for (var i = 0; i < buf.length; i++) {
-      ch = buf.charCodeAt(i);
-      if (ch > 0xff) {
-        bytes += 2;
-      } else {
-        bytes++;
-      }
-    }
-
-    return bytes;
-  };
+  var Buffer = bitcore.Buffer;
 }
 
 function request(options, callback) {
@@ -281,7 +243,11 @@ function sendPayment(msg, callback) {
       if (tx.buffer) {
         tx.buffer = tx.buffer.slice(tx.offset, tx.limit);
         var ptx = new bitcore.Transaction();
-        ptx.parse(tx.buffer);
+
+        var parser = new bitcore.BinaryParser(tx.buffer);
+        ptx.parse(parser);
+        // ptx.parse(tx.buffer);
+
         tx = ptx;
       }
       var txid = tx.getHash().toString('hex');
@@ -411,6 +377,109 @@ function createTX(outputs) {
     tx.outs[i].v = v;
     tx.outs[i].s = s;
   });
+
+  print('');
+  print('Customer created transaction:');
+  print(tx.getStandardizedObject());
+  print('');
+
+  return tx.serialize();
+}
+
+function createTX(outputs) {
+  // Addresses
+  var addrs = [
+    'mzTQ66VKcybz9BD1LAqEwMFp9NrBGS82sY',
+    'mmu9k3KzsDMEm9JxmJmZaLhovAoRKW3zr4',
+    'myqss64GNZuWuFyg5LTaoTCyWEpKH56Fgz'
+  ];
+
+  // Private keys in WIF format (see TransactionBuilder.js for other options)
+  var keys = [
+    'cVvr5YmWVAkVeZWAawd2djwXM4QvNuwMdCw1vFQZBM1SPFrtE8W8',
+    'cPyx1hXbe3cGQcHZbW3GNSshCYZCriidQ7afR2EBsV6ReiYhSkNF'
+    // 'cUB9quDzq1Bj7pocenmofzNQnb1wJNZ5V3cua6pWKzNL1eQtaDqQ'
+  ];
+
+  var unspent = [{
+    // http://blockexplorer.com/testnet/rawtx/1fcfe898cc2612f8b222bd3b4ac8d68bf95d43df8367b71978c184dea35bde22
+    'txid': '1fcfe898cc2612f8b222bd3b4ac8d68bf95d43df8367b71978c184dea35bde22',
+    'vout': 1,
+    'address': addrs[0],
+    'scriptPubKey': '76a94c14cfbe41f4a518edc25af71bafc72fb61bfcfc4fcd88ac',
+    'amount': 1.60000000,
+    'confirmations': 9
+  },
+
+  {
+    // http://blockexplorer.com/testnet/rawtx/0624c0c794447b0d2343ae3d20382983f41b915bb115a834419e679b2b13b804
+    'txid': '0624c0c794447b0d2343ae3d20382983f41b915bb115a834419e679b2b13b804',
+    'vout': 1,
+    'address': addrs[1],
+    'scriptPubKey': '76a94c14460376539c219c5e3274d86f16b40e806b37817688ac',
+    'amount': 1.60000000,
+    'confirmations': 9
+  }];
+
+  // set change address
+  var opts = {
+    remainderOut: {
+      address: addrs[0]
+    }
+  };
+
+  var outs = [];
+  outputs.forEach(function(output) {
+    var amount = output.get('amount');
+    var script = {
+      offset: output.get('script').offset,
+      limit: output.get('script').limit,
+      buffer: new Buffer(new Uint8Array(
+        output.get('script').buffer))
+    };
+
+    // big endian
+    var v = new Buffer(8);
+    v[0] = (amount.high >> 24) & 0xff;
+    v[1] = (amount.high >> 16) & 0xff;
+    v[2] = (amount.high >> 8) & 0xff;
+    v[3] = (amount.high >> 0) & 0xff;
+    v[4] = (amount.low >> 24) & 0xff;
+    v[5] = (amount.low >> 16) & 0xff;
+    v[6] = (amount.low >> 8) & 0xff;
+    v[7] = (amount.low >> 0) & 0xff;
+
+    var s = script.buffer.slice(script.offset, script.limit);
+    var addr = bitcore.Address.fromScriptPubKey(new bitcore.Script(s), 'testnet');
+
+    outs.push({
+      address: addr.toString(),
+      amountSatStr: bitcore.Bignum.fromBuffer(v, {
+        // XXX for some reason, endian is ALWAYS 'big'
+        // in node (in the browser it behaves correctly)
+        endian: 'big',
+        size: 1
+      }).toString(10)
+    });
+  });
+
+  var b = new bitcore.TransactionBuilder(opts)
+    .setUnspent(unspent)
+    .setOutputs(outs)
+    .sign(keys);
+
+  outputs.forEach(function(output, i) {
+    var script = {
+      offset: output.get('script').offset,
+      limit: output.get('script').limit,
+      buffer: new Buffer(new Uint8Array(
+        output.get('script').buffer))
+    };
+    var s = script.buffer.slice(script.offset, script.limit);
+    b.tx.outs[i].s = s;
+  });
+
+  var tx = b.build();
 
   print('');
   print('Customer created transaction:');
