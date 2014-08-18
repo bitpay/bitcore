@@ -15,6 +15,7 @@ var fs = require('fs');
 var path = require('path');
 var qs = require('querystring');
 var crypto = require('crypto');
+var assert = require('assert');
 
 // Disable strictSSL
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
@@ -35,10 +36,6 @@ var TransactionBuilder = bitcore.TransactionBuilder;
  * Variables
  */
 
-var isNode = !argv.b && !argv.browser;
-
-var app = express();
-
 var x509 = {
   priv: fs.readFileSync(__dirname + '/../../test/data/x509.key'),
   pub: fs.readFileSync(__dirname + '/../../test/data/x509.pub'),
@@ -50,6 +47,14 @@ var server = https.createServer({
   key: fs.readFileSync(__dirname + '/../../test/data/x509.key'),
   cert: fs.readFileSync(__dirname + '/../../test/data/x509.crt')
 });
+
+server.setOptions = function(options) {
+  argv = options;
+};
+
+var isNode = !argv.b && !argv.browser;
+
+var app = express();
 
 /**
  * Ignore Cache Headers
@@ -71,12 +76,18 @@ app.use(function(req, res, next) {
   };
 
   res.setHeader('Access-Control-Allow-Origin', '*');
-
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST');
-    res.setHeader('Access-Control-Allow-Headers', req.headers['access-control-request-headers']);
-    return res.send(200);
-  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', [
+    'Host',
+    'Connection',
+    'Content-Length',
+    'Accept',
+    'Origin',
+    'User-Agent',
+    'Content-Type',
+    'Accept-Encoding',
+    'Accept-Language'
+  ].join(','));
 
   res.setHeader('Accept', PayPro.PAYMENT_CONTENT_TYPE);
 
@@ -132,37 +143,62 @@ app.get('/-/request', function(req, res, next) {
   [2000, 1000, 10000].forEach(function(value) {
     var po = new PayPro();
     po = po.makeOutput();
+
     // number of satoshis to be paid
     po.set('amount', value);
+
     // a TxOut script where the payment should be sent. similar to OP_CHECKSIG
-    po.set('script', new Buffer([
-      118, // OP_DUP
-      169, // OP_HASH160
-      76,  // OP_PUSHDATA1
-      20,  // number of bytes
-      55,
-      48,
-      254,
-      188,
-      186,
-      4,
-      186,
-      208,
-      205,
-      71,
-      108,
-      251,
-      130,
-      15,
-      156,
-      55,
-      215,
-      70,
-      111,
-      217,
-      136, // OP_EQUALVERIFY
-      172  // OP_CHECKSIG
-    ]));
+
+    // Instead of creating it ourselves:
+    // if (!argv.pubkey && !argv.privkey && !argv.address) {
+    //   //argv.pubkey = '3730febcba04bad0cd476cfb820f9c37d7466fd9';
+    //   argv.pubkey = 'd96f46d7379c0f82fb6c47cdd0ba04babcfe3037'
+    // }
+
+    if (argv.pubkey || argv.privkey || argv.address) {
+      var pubKey;
+      if (argv.pubkey) {
+        pubKey = new Buffer(argv.pubkey, 'hex');
+      } else if (argv.privkey) {
+        pubKey = bitcore.Key.recoverPubKey(new Buffer(argv.privkey)).toCompressedPubKey();
+      } else if (argv.address) {
+        pubKey = bitcore.Base58Check.decode(new Buffer(argv.address));
+      }
+      var address = bitcore.Address.fromPubKey(pubKey, 'testnet');
+      var scriptPubKey = address.getScriptPubKey();
+      assert.equal(scriptPubKey.isPubkeyHash(), true);
+      po.set('script', scriptPubKey.getBuffer());
+    } else {
+      po.set('script', new Buffer([
+        118, // OP_DUP
+        169, // OP_HASH160
+        76,  // OP_PUSHDATA1
+        20,  // number of bytes
+        55,
+        48,
+        254,
+        188,
+        186,
+        4,
+        186,
+        208,
+        205,
+        71,
+        108,
+        251,
+        130,
+        15,
+        156,
+        55,
+        215,
+        70,
+        111,
+        217,
+        136, // OP_EQUALVERIFY
+        172  // OP_CHECKSIG
+      ]));
+    }
+
     outputs.push(po.message);
   });
 
@@ -282,7 +318,10 @@ app.post('/-/pay', function(req, res, next) {
           });
 
           print('Broadcasting transaction...');
-          conn.sendTx(tx);
+
+          if (!argv['no-tx']) {
+            conn.sendTx(tx);
+          }
         });
       } else {
         print('No BTC network connection. Retrying...');
@@ -305,7 +344,7 @@ var peerman = new bitcore.PeerManager({
   network: 'testnet'
 });
 
-peerman.peerDiscovery = false;
+peerman.peerDiscovery = argv.d || argv.discovery || false;
 
 peerman.addPeer(new bitcore.Peer('testnet-seed.alexykot.me', 18333));
 peerman.addPeer(new bitcore.Peer('testnet-seed.bitcoin.petertodd.org', 18333));
