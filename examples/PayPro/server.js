@@ -36,10 +36,6 @@ var TransactionBuilder = bitcore.TransactionBuilder;
  * Variables
  */
 
-var isNode = !argv.b && !argv.browser;
-
-var app = express();
-
 var x509 = {
   priv: fs.readFileSync(__dirname + '/../../test/data/x509.key'),
   pub: fs.readFileSync(__dirname + '/../../test/data/x509.pub'),
@@ -51,6 +47,14 @@ var server = https.createServer({
   key: fs.readFileSync(__dirname + '/../../test/data/x509.key'),
   cert: fs.readFileSync(__dirname + '/../../test/data/x509.crt')
 });
+
+server.setOptions = function(options) {
+  argv = options;
+};
+
+var isNode = !argv.b && !argv.browser;
+
+var app = express();
 
 /**
  * Ignore Cache Headers
