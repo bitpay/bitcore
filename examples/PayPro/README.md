@@ -65,3 +65,10 @@ testnet coins, you can pass `--no-tx` on the server command line.
 
 If you don't want the tests to run automatically and simply host the payment
 server, simply pass `--browser` (`-b`) as mentioned above.
+
+## Using the example in a modular manner
+
+``` js
+var server = require('bitcore/examples/PayPro');
+server.listen(8080);
+```
