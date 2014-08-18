@@ -288,7 +288,10 @@ app.post('/-/pay', function(req, res, next) {
           });
 
           print('Broadcasting transaction...');
-          conn.sendTx(tx);
+
+          if (!argv['no-tx']) {
+            conn.sendTx(tx);
+          }
         });
       } else {
         print('No BTC network connection. Retrying...');
@@ -311,7 +314,7 @@ var peerman = new bitcore.PeerManager({
   network: 'testnet'
 });
 
-peerman.peerDiscovery = false;
+peerman.peerDiscovery = argv.d || argv.discovery || false;
 
 peerman.addPeer(new bitcore.Peer('testnet-seed.alexykot.me', 18333));
 peerman.addPeer(new bitcore.Peer('testnet-seed.bitcoin.petertodd.org', 18333));
