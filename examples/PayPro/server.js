@@ -52,8 +52,6 @@ server.setOptions = function(options) {
   argv = options;
 };
 
-var isNode = !argv.b && !argv.browser;
-
 var app = express();
 
 /**
@@ -409,22 +407,30 @@ function error() {
 
 server.on('request', app);
 server.app = app;
-server.port = +argv.p || +argv.port || 8080;
+server.port = 8080;
+server.isNode = true;
 
-if (argv.s) {
-  server.listen(server.port);
-  return;
-}
-
-if (!module.parent || path.basename(module.parent.filename) === 'index.js') {
-  server.listen(server.port, function(addr) {
-    if (!isNode) return;
-    var customer = require('./customer');
-    customer.sendPayment(function(err) {
-      if (err) return error(err.message);
-      customer.print('Payment sent successfully.');
+setTimeout(function() {
+  server.port = +argv.p || +argv.port || 8080;
+  server.isNode = !argv.b && !argv.browser;
+  // Arguably the same thing as -b or --browser:
+  if (argv.s || argv.server) {
+    server.listen(server.port, function(addr) {
+      print('Listening on port %s.', server.port);
     });
-  });
-} else {
-  module.exports = server;
-}
+    return;
+  }
+  if (!module.parent || path.basename(module.parent.filename) === 'index.js') {
+    server.listen(server.port, function(addr) {
+      print('Listening on port %s.', server.port);
+      if (!server.isNode) return;
+      var customer = require('./customer');
+      customer.sendPayment(function(err) {
+        if (err) return error(err.message);
+        customer.print('Payment sent successfully.');
+      });
+    });
+  }
+}, 1);
+
+module.exports = server;
