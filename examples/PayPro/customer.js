@@ -62,45 +62,7 @@ var merchant = isNode
 if (isNode) {
   var Buffer = global.Buffer;
 } else {
-  var Buffer = function Buffer(data) {
-    var ab = new ArrayBuffer(data.length);
-    var view = new Uint8Array(ab);
-    data._size = data.length;
-    for (var i = 0; i < data._size; i++) {
-      view[i] = data[i];
-    }
-    if (!view.slice) {
-      // view.slice = ab.slice.bind(ab);
-      view.slice = function(start, end) {
-        if (end < 0) {
-          end = data._size + end;
-        }
-        data._size = end - start;
-        var ab = new ArrayBuffer(data._size);
-        var view = new Uint8Array(ab);
-        for (var i = 0, j = start; j < end; i++, j++) {
-          view[i] = data[j];
-        }
-        return view;
-      };
-    }
-    return view;
-  };
-  Buffer.byteLength = function(buf) {
-    var bytes = 0
-      , ch;
-
-    for (var i = 0; i < buf.length; i++) {
-      ch = buf.charCodeAt(i);
-      if (ch > 0xff) {
-        bytes += 2;
-      } else {
-        bytes++;
-      }
-    }
-
-    return bytes;
-  };
+  var Buffer = bitcore.Buffer;
 }
 
 function request(options, callback) {
@@ -281,7 +243,11 @@ function sendPayment(msg, callback) {
       if (tx.buffer) {
         tx.buffer = tx.buffer.slice(tx.offset, tx.limit);
         var ptx = new bitcore.Transaction();
-        ptx.parse(tx.buffer);
+
+        var parser = new bitcore.BinaryParser(tx.buffer);
+        ptx.parse(parser);
+        // ptx.parse(tx.buffer);
+
         tx = ptx;
       }
       var txid = tx.getHash().toString('hex');
@@ -370,17 +336,7 @@ function createTX(outputs) {
     'scriptPubKey': '76a94c14460376539c219c5e3274d86f16b40e806b37817688ac',
     'amount': 1.60000000,
     'confirmations': 9
-  }
-  ];
-
-  // define transaction output
-  var outs = [];
-  outputs.forEach(function(output) {
-    outs.push({
-      address: addrs[0], // dummy address
-      amount: 0 // dummy value
-    });
-  });
+  }];
 
   // set change address
   var opts = {
@@ -389,28 +345,58 @@ function createTX(outputs) {
     }
   };
 
-  var tx = new TransactionBuilder(opts)
+  var outs = [];
+  outputs.forEach(function(output) {
+    var amount = output.get('amount');
+    var script = {
+      offset: output.get('script').offset,
+      limit: output.get('script').limit,
+      buffer: new Buffer(new Uint8Array(
+        output.get('script').buffer))
+    };
+
+    // big endian
+    var v = new Buffer(8);
+    v[0] = (amount.high >> 24) & 0xff;
+    v[1] = (amount.high >> 16) & 0xff;
+    v[2] = (amount.high >> 8) & 0xff;
+    v[3] = (amount.high >> 0) & 0xff;
+    v[4] = (amount.low >> 24) & 0xff;
+    v[5] = (amount.low >> 16) & 0xff;
+    v[6] = (amount.low >> 8) & 0xff;
+    v[7] = (amount.low >> 0) & 0xff;
+
+    var s = script.buffer.slice(script.offset, script.limit);
+    var addr = bitcore.Address.fromScriptPubKey(new bitcore.Script(s), 'testnet');
+
+    outs.push({
+      address: addr.toString(),
+      amountSatStr: bitcore.Bignum.fromBuffer(v, {
+        // XXX for some reason, endian is ALWAYS 'big'
+        // in node (in the browser it behaves correctly)
+        endian: 'big',
+        size: 1
+      }).toString(10)
+    });
+  });
+
+  var b = new bitcore.TransactionBuilder(opts)
     .setUnspent(unspent)
     .setOutputs(outs)
-    .sign(keys)
-    .build();
+    .sign(keys);
 
   outputs.forEach(function(output, i) {
-    var value = output.get('amount');
-    var script = output.get('script');
-    var v = new Buffer(8);
-    v[0] = (value.low >> 0) & 0xff;
-    v[1] = (value.low >> 8) & 0xff;
-    v[2] = (value.low >> 16) & 0xff;
-    v[3] = (value.low >> 24) & 0xff;
-    v[4] = (value.high >> 0) & 0xff;
-    v[5] = (value.high >> 8) & 0xff;
-    v[6] = (value.high >> 16) & 0xff;
-    v[7] = (value.high >> 24) & 0xff;
+    var script = {
+      offset: output.get('script').offset,
+      limit: output.get('script').limit,
+      buffer: new Buffer(new Uint8Array(
+        output.get('script').buffer))
+    };
     var s = script.buffer.slice(script.offset, script.limit);
-    tx.outs[i].v = v;
-    tx.outs[i].s = s;
+    b.tx.outs[i].s = s;
   });
+
+  var tx = b.build();
 
   print('');
   print('Customer created transaction:');
