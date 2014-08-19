@@ -1,8 +1,8 @@
 This software is licensed under the MIT License.
 
-Copyright Ryan X. Charles, 2014.
+Copyright BitPay, 2014.
 
-Portions of this software are Copyright BitPay, 2014.
+Portions of this software are Copyright Ryan X. Charles, 2014.
 
 Portions of this software are Copyright Stefan Thomas, 2011.
 

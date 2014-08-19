@@ -1,4 +1,4 @@
-privsec
+bitcore
 =======
 
-Bitcoin privacy and security.
+Bitcoin library.
