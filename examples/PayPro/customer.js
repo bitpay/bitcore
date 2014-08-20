@@ -382,8 +382,7 @@ function createTX(outputs) {
 
   var b = new bitcore.TransactionBuilder(opts)
     .setUnspent(unspent)
-    .setOutputs(outs)
-    .sign(keys);
+    .setOutputs(outs);
 
   outputs.forEach(function(output, i) {
     var script = {
@@ -395,6 +394,8 @@ function createTX(outputs) {
     var s = script.buffer.slice(script.offset, script.limit);
     b.tx.outs[i].s = s;
   });
+
+  b = b.sign(keys);
 
   var tx = b.build();
 
