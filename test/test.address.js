@@ -126,7 +126,7 @@ describe('Address', function() {
       address.network = 'unknown';
       (function() {
         address.validate();
-      }).should.throw('address: network must be "mainnet" or "testnet"');
+      }).should.throw('network must be "mainnet" or "testnet"');
     });
 
     it('should throw an error on this invalid type', function() {
@@ -135,7 +135,7 @@ describe('Address', function() {
       address.type = 'unknown';
       (function() {
         address.validate();
-      }).should.throw('address: type must be "pubkeyhash" or "p2sh"');
+      }).should.throw('type must be "pubkeyhash" or "p2sh"');
     });
 
   });

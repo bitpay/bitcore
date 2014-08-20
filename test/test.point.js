@@ -109,7 +109,7 @@ describe('Point', function() {
       var p = point(x, y);
       (function() {
         p.validate();
-      }).should.throw('point: Invalid y value of public key');
+      }).should.throw('Invalid y value of public key');
     });
 
   });

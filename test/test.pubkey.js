@@ -119,7 +119,7 @@ describe('Pubkey', function() {
       pk.fromString(hex);
       (function() {
         pk.validate();
-      }).should.throw('point: Invalid y value of public key');
+      }).should.throw('Invalid y value of public key');
     });
     
     it('should not throw an error if pubkey is infinity', function() {
@@ -127,7 +127,7 @@ describe('Pubkey', function() {
       pk.point = Point.getG().mul(Point.getN());
       (function() {
         pk.validate();
-      }).should.throw('point: Point cannot be equal to Infinity');
+      }).should.throw('Point cannot be equal to Infinity');
     });
     
   });
