@@ -56,7 +56,7 @@ exports.btc = {
                    'testnet-seed.bitcoin.petertodd.org',
                    'testnet-seed.bluematt.me'
                    ],
-                   defaultClientPort: 18333
+        defaultClientPort: 18333
     }
 }
 
@@ -171,6 +171,59 @@ exports.doge = {
     }
 }
 
+exports.drk = {
+        name:'Darkcoin',
+        livenet : {
+          name: 'livenet',
+          magic: hex('bf0c6bbd'),
+          addressVersion: 0x4c,
+          privKeyVersion: 128,
+          P2SHVersion: 5,
+          hkeyPublicVersion: 0x0488b21e,
+          hkeyPrivateVersion: 0x0488ade4,
+          genesisBlock: {
+            hash: hex('b67a40f3cd5804437a108f105533739c37e6229bc1adcab385140b59fd0f0000'),
+            merkle_root: hex('e0028eb9648db56b1ac77cf090b99048a8007e2bb64b68f092c03c7f56a662c7'),
+            height: 0,
+            nonce: 28917698,
+            version: 1,
+            prev_hash: buffertools.fill(new Buffer(32), 0),
+            timestamp: 1390095618,
+            bits: 504365040,
+          },
+          dnsSeeds: [
+            'dnsseed.darkcoin.io',
+            'dnsseed.darkcoin.qa'
+          ],
+          defaultClientPort: 9999,
+          peerVersion: 70035
+        },
+        testnet : {
+          name: 'testnet',
+          magic: hex('cee2caff'),
+          addressVersion: 0x6f,
+          privKeyVersion: 239,
+          P2SHVersion: 196,
+          hkeyPublicVersion: 0x043587cf,
+          hkeyPrivateVersion: 0x04358394,
+          genesisBlock: {
+            hash: hex('2cbcf83b62913d56f605c0e581a48872839428c92e5eb76cd7ad94bcaf0b0000'),
+            merkle_root: hex('e0028eb9648db56b1ac77cf090b99048a8007e2bb64b68f092c03c7f56a662c7'),
+            height: 0,
+            nonce: 3861367235,
+            version: 1,
+            prev_hash: buffertools.fill(new Buffer(32), 0),
+            timestamp: 1390666206,
+            bits: 504365040,
+          },
+          dnsSeeds: [
+            'testnet-seed.darkcoin.io',
+            'testnet-seed.darkcoin.io'
+          ],
+          defaultClientPort: 19999,
+          peerVersion: 70035
+        }
+    }
 // Kept for backward compatibility, e.g Insight
 
 exports.livenet = {
