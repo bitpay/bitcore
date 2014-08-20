@@ -1,4 +1,5 @@
 var BufferWriter = require('../lib/bufferwriter');
+var BN = require('../lib/bn');
 var should = require('chai').should();
 
 describe('BufferWriter', function() {
@@ -75,20 +76,20 @@ describe('BufferWriter', function() {
 
   });
 
-  describe('#writeUInt64BE', function() {
+  describe('#writeUInt64BEBN', function() {
     
     it('should write 1', function() {
       var bw = new BufferWriter();
-      bw.writeUInt64BE(1).concat().toString('hex').should.equal('0000000000000001');
+      bw.writeUInt64BEBN(BN(1)).concat().toString('hex').should.equal('0000000000000001');
     });
 
   });
 
-  describe('#writeUInt64LE', function() {
+  describe('#writeUInt64LEBN', function() {
     
     it('should write 1', function() {
       var bw = new BufferWriter();
-      bw.writeUInt64LE(1).concat().toString('hex').should.equal('0100000000000000');
+      bw.writeUInt64LEBN(BN(1)).concat().toString('hex').should.equal('0100000000000000');
     });
 
   });
@@ -116,6 +117,34 @@ describe('BufferWriter', function() {
     it('should write a 9 byte varInt', function() {
       var bw = new BufferWriter();
       bw.writeVarInt(Math.pow(2, 32 + 1));
+      bw.concat().length.should.equal(9);
+    });
+
+  });
+
+  describe('#writeVarIntBN', function() {
+    
+    it('should write a 1 byte varInt', function() {
+      var bw = new BufferWriter();
+      bw.writeVarIntBN(BN(1));
+      bw.concat().length.should.equal(1);
+    });
+
+    it('should write a 3 byte varInt', function() {
+      var bw = new BufferWriter();
+      bw.writeVarIntBN(BN(1000));
+      bw.concat().length.should.equal(3);
+    });
+
+    it('should write a 5 byte varInt', function() {
+      var bw = new BufferWriter();
+      bw.writeVarIntBN(BN(Math.pow(2, 16 + 1)));
+      bw.concat().length.should.equal(5);
+    });
+
+    it('should write a 9 byte varInt', function() {
+      var bw = new BufferWriter();
+      bw.writeVarIntBN(BN(Math.pow(2, 32 + 1)));
       bw.concat().length.should.equal(9);
     });
 
