@@ -1,6 +1,6 @@
 var should = require('chai').should();
 var point = require('../lib/point');
-var bn = require('../lib/bn');
+var BN = require('../lib/bn');
 
 describe('Point', function() {
   
@@ -58,7 +58,7 @@ describe('Point', function() {
 
     it('should accurately multiply g by 2', function() {
       var g = point.getG();
-      var b = g.mul(bn(2));
+      var b = g.mul(BN(2));
       b.getX().toString().should.equal('89565891926547004231252920425935692360644145829622209833684329913297188986597');
       b.getY().toString().should.equal('12158399299693830322967808612713398636155367887041628176798871954788371653930');
     });
@@ -97,15 +97,15 @@ describe('Point', function() {
   describe('#validate', function() {
 
     it('should validate this valid point', function() {
-      var x = bn.fromBuffer(new Buffer('ac242d242d23be966085a2b2b893d989f824e06c9ad0395a8a52f055ba39abb2', 'hex'));
-      var y = bn.fromBuffer(new Buffer('4836ab292c105a711ed10fcfd30999c31ff7c02456147747e03e739ad527c380', 'hex'));
+      var x = BN().fromBuffer(new Buffer('ac242d242d23be966085a2b2b893d989f824e06c9ad0395a8a52f055ba39abb2', 'hex'));
+      var y = BN().fromBuffer(new Buffer('4836ab292c105a711ed10fcfd30999c31ff7c02456147747e03e739ad527c380', 'hex'));
       var p = point(x, y);
       should.exist(p.validate());
     });
 
     it('should invalidate this invalid point', function() {
-      var x = bn.fromBuffer(new Buffer('ac242d242d23be966085a2b2b893d989f824e06c9ad0395a8a52f055ba39abb2', 'hex'));
-      var y = bn.fromBuffer(new Buffer('0000000000000000000000000000000000000000000000000000000000000000', 'hex'));
+      var x = BN().fromBuffer(new Buffer('ac242d242d23be966085a2b2b893d989f824e06c9ad0395a8a52f055ba39abb2', 'hex'));
+      var y = BN().fromBuffer(new Buffer('0000000000000000000000000000000000000000000000000000000000000000', 'hex'));
       var p = point(x, y);
       (function() {
         p.validate();
