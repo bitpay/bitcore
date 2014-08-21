@@ -29,3 +29,11 @@ should work both in node, and be automatically work in the browser with used in
 conjunction with browserify).
 
 7) Minimize the use of dependencies so that all code can be easily audited.
+
+-------------------------
+Features over bitcore:
+* Stealth addresses
+* Proper handling of reading and writing big varInts
+* Browserifiable
+* A proper point class
+* Better test coverage
