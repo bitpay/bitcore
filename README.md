@@ -30,6 +30,10 @@ conjunction with browserify).
 
 7) Minimize the use of dependencies so that all code can be easily audited.
 
+8) All instance methods modify the state of the object and return the object.
+To access the result of an instance method, you must access the object
+property(s) that it modifies.
+
 -------------------------
 Features over bitcore:
 * Stealth addresses
