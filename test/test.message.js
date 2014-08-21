@@ -46,4 +46,16 @@ describe('Message', function() {
 
   });
 
+  describe('@sign', function() {
+    var messagebuf = new Buffer('this is my message');
+    var key = Key().fromRandom();
+
+    it('should return a base64 string', function() {
+      var sigstr = Message.sign(messagebuf, key);
+      var sigbuf = new Buffer(sigstr, 'base64');
+      sigbuf.length.should.equal(1 + 32 + 32);
+    });
+
+  });
+
 });
