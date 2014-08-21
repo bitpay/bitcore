@@ -1,7 +1,7 @@
 'use strict';
 
 var noop = function() {};
-var cl = console.log;
+var cl = console.log.bind(console);
 
 var loggers = {
   none: {
