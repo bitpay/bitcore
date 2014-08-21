@@ -1,3 +1,4 @@
+var BufferWriter = require('../lib/bufferwriter');
 var BufferReader = require('../lib/bufferreader');
 var should = require('chai').should();
 
@@ -156,10 +157,12 @@ describe('BufferReader', function() {
       br.readVarInt().should.equal(50000);
     });
 
-    it('should read a 9 byte varint', function() {
+    it('should throw an error on a 9 byte varint', function() {
       var buf = Buffer.concat([new Buffer([255]), new Buffer('ffffffffffffffff', 'hex')]);
       var br = new BufferReader(buf);
-      br.readVarInt().should.equal(Math.pow(2, 64));
+      (function() {
+        br.readVarInt();
+      }).should.throw('number too large to retain precision - use readVarIntBN');
     });
 
   });

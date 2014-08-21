@@ -1,4 +1,5 @@
 var BufferWriter = require('../lib/bufferwriter');
+var BufferReader = require('../lib/bufferreader');
 var BN = require('../lib/bn');
 var should = require('chai').should();
 
@@ -118,6 +119,15 @@ describe('BufferWriter', function() {
       var bw = new BufferWriter();
       bw.writeVarInt(Math.pow(2, 32 + 1));
       bw.concat().length.should.equal(9);
+    });
+
+    it('should read back the same value it wrote for a 9 byte varInt', function() {
+      var bw = new BufferWriter();
+      var n = Math.pow(2, 53);
+      n.should.equal(n + 1); //javascript number precision limit
+      bw.writeVarInt(n);
+      var br = new BufferReader(bw.concat());
+      br.readVarIntBN().toNumber().should.equal(n);
     });
 
   });
