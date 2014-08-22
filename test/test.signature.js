@@ -15,7 +15,7 @@ describe('Signature', function() {
       var blank = new Buffer(32);
       blank.fill(0);
       var compressed = Buffer.concat([
-        new Buffer([0]),
+        new Buffer([0 + 27 + 4]),
         blank,
         blank
         ]);

@@ -58,4 +58,23 @@ describe('Message', function() {
 
   });
 
+  describe('@verify', function() {
+    var messagebuf = new Buffer('this is my message');
+    var key = Key().fromRandom();
+
+    it('should verify a signed message', function() {
+      var sigstr = Message.sign(messagebuf, key);
+      var addr = Address().fromPubkey(key.pubkey);
+      Message.verify(messagebuf, sigstr, addr).should.equal(true);
+    });
+
+    it('should verify this known good signature', function() {
+      var addrstr = '1CKTmxj6DjGrGTfbZzVxnY4Besbv8oxSZb';
+      var address = Address().fromString(addrstr);
+      var sigstr = 'IOrTlbNBI0QO990xOw4HAjnvRl/1zR+oBMS6HOjJgfJqXp/1EnFrcJly0UcNelqJNIAH4f0abxOZiSpYmenMH4M=';
+      Message.verify(messagebuf, sigstr, address);
+    });
+
+  });
+
 });
