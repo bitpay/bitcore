@@ -13,6 +13,7 @@ bitcore.ECDSA = require('./lib/ecdsa');
 bitcore.Hash = require('./lib/hash');
 bitcore.KDF = require('./lib/kdf');
 bitcore.Key = require('./lib/key');
+bitcore.Message = require('./lib/message');
 bitcore.Point = require('./lib/point');
 bitcore.Privkey = require('./lib/privkey');
 bitcore.Pubkey = require('./lib/pubkey');
