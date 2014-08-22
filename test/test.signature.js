@@ -9,7 +9,7 @@ describe('Signature', function() {
     should.exist(sig);
   });
 
-  describe('#fromCompressed', function() {
+  describe('#fromCompact', function() {
     
     it('should create a signature from a compressed signature', function() {
       var blank = new Buffer(32);
@@ -20,7 +20,7 @@ describe('Signature', function() {
         blank
         ]);
       var sig = new Signature();
-      sig.fromCompressed(compressed);
+      sig.fromCompact(compressed);
       sig.r.cmp(0).should.equal(0);
       sig.s.cmp(0).should.equal(0);
     });
