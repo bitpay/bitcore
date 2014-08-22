@@ -41,3 +41,4 @@ Features over bitcore:
 * Browserifiable
 * A proper point class
 * Better test coverage
+* Proper message signing and verification
