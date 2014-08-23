@@ -56,6 +56,24 @@ describe('Message', function() {
       sigbuf.length.should.equal(1 + 32 + 32);
     });
 
+    it('should sign with a compressed pubkey', function() {
+      var key = Key().fromRandom();
+      key.pubkey.compressed = true;
+      var sigstr = Message.sign(messagebuf, key);
+      var sigbuf = new Buffer(sigstr, 'base64');
+      sigbuf[0].should.be.above(27 + 4 - 1);
+      sigbuf[0].should.be.below(27 + 4 + 4 - 1);
+    });
+
+    it('should sign with an uncompressed pubkey', function() {
+      var key = Key().fromRandom();
+      key.pubkey.compressed = false;
+      var sigstr = Message.sign(messagebuf, key);
+      var sigbuf = new Buffer(sigstr, 'base64');
+      sigbuf[0].should.be.above(27 - 1);
+      sigbuf[0].should.be.below(27 + 4 - 1);
+    });
+
   });
 
   describe('@verify', function() {
