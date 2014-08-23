@@ -86,7 +86,7 @@
     "gulp-concat": "~2.2.0",
     "gulp": "~3.8.2",
     "preconditions": "^1.0.7",
-    "asn1.js": "git://github.com/chjj/asn1.js.git"
+    "asn1.js": "0.4.1"
   },
   "testling": {
     "harness": "mocha-bdd",
