@@ -99,6 +99,24 @@ describe('Key', function() {
       key.pubkey.toString().should.equal(pubhex);
     });
 
+    it('should convert this known Privkey to known Pubkey and preserve compressed=true', function() {
+      var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
+      var key = new Key();
+      key.privkey = new Privkey(bn(new Buffer(privhex, 'hex')));
+      key.privkey.compressed = true;
+      key.privkey2pubkey();
+      key.pubkey.compressed.should.equal(true);
+    });
+
+    it('should convert this known Privkey to known Pubkey and preserve compressed=true', function() {
+      var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
+      var key = new Key();
+      key.privkey = new Privkey(bn(new Buffer(privhex, 'hex')));
+      key.privkey.compressed = false;
+      key.privkey2pubkey();
+      key.pubkey.compressed.should.equal(false);
+    });
+
   });
 
   describe("#toString()", function() {
