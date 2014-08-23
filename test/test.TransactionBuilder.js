@@ -935,7 +935,7 @@ describe('TransactionBuilder', function() {
     var b = getP2shBuilder(1);
     (function() {
       b.sign(testdata.dataUnspentSign.keyStringsP2sh[0])
-    }).should.throw('array');
+    }).should.not.throw('array');
   });
 
 
