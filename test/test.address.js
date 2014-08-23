@@ -26,7 +26,8 @@ describe('Address', function() {
       var pubkey = new Pubkey();
       pubkey.fromDER(new Buffer('0285e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b004', 'hex'));
       var address = new Address();
-      address.fromPubkey(pubkey, 'mainnet', false);
+      pubkey.compressed = false;
+      address.fromPubkey(pubkey, 'mainnet');
       address.toString().should.equal('16JXnhxjJUhxfyx4y6H4sFcxrgt8kQ8ewX');
     });
 
