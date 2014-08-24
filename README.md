@@ -57,26 +57,34 @@ To run insight locally for development mode:
 
 Install bower dependencies:
 
-```$ bower install```
+```
+$ bower install
+```
 
 To compile and minify the web application's assets:
 
-```$ grunt compile```
+```
+$ grunt compile
+```
 
 There is a convinent Gruntfile.js for automation during editing the code
 
-```$ grunt```
-
+```
+$ grunt
+```
 
 
 In case you are developing *insight* and *insight-api* toghether, you can do the following:
 
 * Install insight and insight-api on the same path ($IROOT)
+
 ```
   $ cd $IROOT/insight
   $ grunt
 ```
+
 in other terminal:
+
 ```
   $ cd $IROOT/insight-api 
   $ ln -s ../insight/public
@@ -84,10 +92,40 @@ in other terminal:
 ```
 
 
-```INSIGHT_PUBLIC_PATH=insight/public  grunt```
+``` 
+INSIGHT_PUBLIC_PATH=insight/public  grunt
+```
+
 at insight-api's home path (edit the path according your setup).
 
 **also** in the insight-api path. (So you will have to grunt process running, one for insight and one for insight-api).
+
+
+## Multilanguage support
+
+insight use [angular-gettext](http://angular-gettext.rocketeer.be) for
+multilanguage support. 
+
+To enable a text to be translated, add the ***translate*** directive to html tags. See more details [here](http://angular-gettext.rocketeer.be/dev-guide/annotate/). Then, run:
+
+```
+grunt compile
+```
+
+This action will create a template.pot file in ***po/*** folder. You can open
+it with some PO editor ([Poedit](http://poedit.net)). Read this [guide](http://angular-gettext.rocketeer.be/dev-guide/translate/) to learn how to edit/update/import PO files from a generated POT file. PO file will be generated inside po/ folder.
+
+If you make new changes, simply run **grunt compile** again to generate a new .pot template and the angular javascript ***js/translations.js***. Then (if use Poedit), open .po file and choose ***update from POT File*** from **Catalog** menu.
+
+Finally changes your default language from ***public/src/js/config*** 
+
+```
+gettextCatalog.currentLanguage = 'es';
+```
+
+This line will take a look at any *.po files inside ***po/*** folder, e.g.
+**po/es.po**, **po/nl.po**. After any change do not forget to run ***grunt
+compile***.
 
 
 ## Note
