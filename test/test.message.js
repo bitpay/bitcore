@@ -15,37 +15,6 @@ describe('Message', function() {
     should.exist(message);
   });
 
-  describe('#sign', function() {
-    var messagebuf = new Buffer('this is my message');
-    var key = Key().fromRandom();
-
-    it('should sign a message', function() {
-      var message = new Message();
-      message.messagebuf = messagebuf;
-      message.key = key;
-      message.sign();
-      var sig = message.sig;
-      should.exist(sig);
-    });
-
-  });
-
-  describe('#verify', function() {
-    var messagebuf = new Buffer('this is my message');
-    var key = Key().fromRandom();
-
-    it('should verify a message that was just signed', function() {
-      var message = new Message();
-      message.messagebuf = messagebuf;
-      message.key = key;
-      message.address = Address().fromPubkey(key.pubkey);
-      message.sign();
-      message.verify();
-      message.verified.should.equal(true);
-    });
-
-  });
-
   describe('@sign', function() {
     var messagebuf = new Buffer('this is my message');
     var key = Key().fromRandom();
@@ -91,6 +60,37 @@ describe('Message', function() {
       var address = Address().fromString(addrstr);
       var sigstr = 'IOrTlbNBI0QO990xOw4HAjnvRl/1zR+oBMS6HOjJgfJqXp/1EnFrcJly0UcNelqJNIAH4f0abxOZiSpYmenMH4M=';
       Message.verify(messagebuf, sigstr, address);
+    });
+
+  });
+
+  describe('#sign', function() {
+    var messagebuf = new Buffer('this is my message');
+    var key = Key().fromRandom();
+
+    it('should sign a message', function() {
+      var message = new Message();
+      message.messagebuf = messagebuf;
+      message.key = key;
+      message.sign();
+      var sig = message.sig;
+      should.exist(sig);
+    });
+
+  });
+
+  describe('#verify', function() {
+    var messagebuf = new Buffer('this is my message');
+    var key = Key().fromRandom();
+
+    it('should verify a message that was just signed', function() {
+      var message = new Message();
+      message.messagebuf = messagebuf;
+      message.key = key;
+      message.address = Address().fromPubkey(key.pubkey);
+      message.sign();
+      message.verify();
+      message.verified.should.equal(true);
     });
 
   });
