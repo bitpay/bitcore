@@ -1,7 +1,10 @@
 bitcore2
 ========
 
-Bitcore 2 is a rewrite of bitcore to satisfy several goals:
+Bitcore 2 is a rewrite of bitcore. It is alpha quality. It will ultimately be
+merged into upstream bitcore.
+
+Our goals:
 
 1) Support ease-of-use by being internally consistent. It should not be
 necessary to read the source code of a class or function to know how to use it.
