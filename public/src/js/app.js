@@ -8,6 +8,7 @@ angular.module('insight',[
   'ui.bootstrap',
   'ui.route',
   'monospaced.qrcode',
+  'gettext',
   'insight.system',
   'insight.socket',
   'insight.blocks',
