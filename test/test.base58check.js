@@ -16,7 +16,7 @@ describe('Base58Check', function() {
     should.exist(b58);
   });
 
-  describe('#encode', function() {
+  describe('@encode', function() {
 
     it('should encode the buffer accurately', function() {
       Base58Check.encode(buf).should.equal(enc);
@@ -30,7 +30,7 @@ describe('Base58Check', function() {
 
   });
 
-  describe('#decode', function() {
+  describe('@decode', function() {
 
     it('should decode this encoded value correctly', function() {
       Base58Check.decode(enc).toString('hex').should.equal(buf.toString('hex'));
