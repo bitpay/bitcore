@@ -16,6 +16,7 @@
     "multisig"
   ],
   "dependencies": {
+    "aes": "=0.1.0",
     "bn.js": "=0.13.3",
     "bs58": "=1.2.1",
     "elliptic": "=0.15.7",
