@@ -15,6 +15,10 @@
     "merge",
     "multisig"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ryanxcharles/bitcore2.git"
+  },
   "dependencies": {
     "aes": "=0.1.0",
     "bn.js": "=0.13.3",
