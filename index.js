@@ -28,6 +28,7 @@ bitcore.expmt.Stealth = require('./lib/expmt/stealth');
 
 //dependencies, subject to change
 bitcore.deps = {};
+bitcore.deps.aes = require('aes');
 bitcore.deps.bnjs = require('bn.js');
 bitcore.deps.bs58 = require('bs58');
 bitcore.deps.Buffer = Buffer;
