@@ -44,13 +44,13 @@ describe('CBC', function() {
       var messagebuf = Buffer.concat([messagebuf1, messagebuf2]);
       var ivbuf = new Buffer(128 / 8);
       ivbuf.fill(0x10);
-      var keybuf = new Buffer(128 / 8);
-      keybuf.fill(0);
+      var cipherkeybuf = new Buffer(128 / 8);
+      cipherkeybuf.fill(0);
       var blockcipher = {};
-      blockcipher.encrypt = function(messagebuf, keybuf) {
+      blockcipher.encrypt = function(messagebuf, cipherkeybuf) {
         return messagebuf;
       };
-      var encbuf = CBC.encrypt(messagebuf, ivbuf, blockcipher, keybuf);
+      var encbuf = CBC.encrypt(messagebuf, ivbuf, blockcipher, cipherkeybuf);
       encbuf.toString('hex').should.equal('101010101010101010101010101010100000000000000000000000000000000010101010101010101010101010101010');
     });
 
@@ -63,13 +63,13 @@ describe('CBC', function() {
       messagebuf.fill(0);
       var ivbuf = new Buffer(128 / 8);
       ivbuf.fill(0x10);
-      var keybuf = new Buffer(128 / 8);
-      keybuf.fill(0);
+      var cipherkeybuf = new Buffer(128 / 8);
+      cipherkeybuf.fill(0);
       var blockcipher = {};
-      blockcipher.encrypt = function(messagebuf, keybuf) {
+      blockcipher.encrypt = function(messagebuf, cipherkeybuf) {
         return messagebuf;
       };
-      var enc = CBC.encryptblock(messagebuf, ivbuf, blockcipher, keybuf);
+      var enc = CBC.encryptblock(messagebuf, ivbuf, blockcipher, cipherkeybuf);
       enc.toString('hex').should.equal(ivbuf.toString('hex'));
     });
 
@@ -78,13 +78,13 @@ describe('CBC', function() {
       messagebuf.fill(0x10);
       var ivbuf = new Buffer(128 / 8);
       ivbuf.fill(0x10);
-      var keybuf = new Buffer(128 / 8);
-      keybuf.fill(0);
+      var cipherkeybuf = new Buffer(128 / 8);
+      cipherkeybuf.fill(0);
       var blockcipher = {};
-      blockcipher.encrypt = function(messagebuf, keybuf) {
+      blockcipher.encrypt = function(messagebuf, cipherkeybuf) {
         return messagebuf;
       };
-      var enc = CBC.encryptblock(messagebuf, ivbuf, blockcipher, keybuf);
+      var enc = CBC.encryptblock(messagebuf, ivbuf, blockcipher, cipherkeybuf);
       enc.toString('hex').should.equal('00000000000000000000000000000000');
     });
 
@@ -99,13 +99,13 @@ describe('CBC', function() {
       messagebuf2.fill(0x10);
       var ivbuf = new Buffer(128 / 8);
       ivbuf.fill(0x10);
-      var keybuf = new Buffer(128 / 8);
-      keybuf.fill(0);
+      var cipherkeybuf = new Buffer(128 / 8);
+      cipherkeybuf.fill(0);
       var blockcipher = {}
-      blockcipher.encrypt = function(messagebuf, keybuf) {
+      blockcipher.encrypt = function(messagebuf, cipherkeybuf) {
         return messagebuf;
       };
-      var encbufs = CBC.encryptblocks([messagebuf1, messagebuf2], ivbuf, blockcipher, keybuf);
+      var encbufs = CBC.encryptblocks([messagebuf1, messagebuf2], ivbuf, blockcipher, cipherkeybuf);
       encbufs[0].toString('hex').should.equal('10101010101010101010101010101010');
       encbufs[1].toString('hex').should.equal('00000000000000000000000000000000');
     });
