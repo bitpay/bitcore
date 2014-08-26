@@ -34,6 +34,26 @@ describe('CBC', function() {
 
   });
   
+  describe('@buf2blockbufs', function() {
+
+    it('should convert this buffer into one block and back into the same buffer', function() {
+      var buf = new Buffer(16 - 1);
+      buf.fill(0);
+      var blockbufs = CBC.buf2blockbufs(buf, 16 * 8);
+      var buf2 = CBC.blockbufs2buf(blockbufs, 16 * 8);
+      buf2.toString('hex').should.equal(buf.toString('hex'));
+    });
+
+    it('should convert this buffer into two blocks and back into the same buffer', function() {
+      var buf = new Buffer(16);
+      buf.fill(0);
+      var blockbufs = CBC.buf2blockbufs(buf, 16 * 8);
+      var buf2 = CBC.blockbufs2buf(blockbufs, 16 * 8);
+      buf2.toString('hex').should.equal(buf.toString('hex'));
+    });
+
+  });
+  
   describe('@encrypt', function() {
 
     it('should return this known value', function() {
