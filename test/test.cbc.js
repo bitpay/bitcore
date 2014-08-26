@@ -135,6 +135,32 @@ describe('CBC', function() {
 
   });
   
+  describe('@decryptblocks', function() {
+
+    it('should decrypt encrypted blocks', function() {
+      var messagebuf1 = new Buffer(128 / 8);
+      messagebuf1.fill(0);
+      var messagebuf2 = new Buffer(128 / 8);
+      messagebuf2.fill(0x10);
+      var ivbuf = new Buffer(128 / 8);
+      ivbuf.fill(0x10);
+      var cipherkeybuf = new Buffer(128 / 8);
+      cipherkeybuf.fill(0);
+      var blockcipher = {}
+      blockcipher.encrypt = function(messagebuf, cipherkeybuf) {
+        return messagebuf;
+      };
+      blockcipher.decrypt = function(messagebuf, cipherkeybuf) {
+        return messagebuf;
+      };
+      var encbufs = CBC.encryptblocks([messagebuf1, messagebuf2], ivbuf, blockcipher, cipherkeybuf);
+      var bufs = CBC.decryptblocks(encbufs, ivbuf, blockcipher, cipherkeybuf);
+      bufs[0].toString('hex').should.equal(messagebuf1.toString('hex'));
+      bufs[1].toString('hex').should.equal(messagebuf2.toString('hex'));
+    });
+
+  });
+  
   describe('@pkcs7pad', function() {
     
     it('should pad this 32 bit buffer to 128 bits with the number 128/8 - 32/8', function() {
