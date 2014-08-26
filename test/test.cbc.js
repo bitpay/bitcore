@@ -90,6 +90,29 @@ describe('CBC', function() {
 
   });
   
+  describe('@decryptblock', function() {
+
+    it('should decrypt an encrypted block', function() {
+      var messagebuf = new Buffer(128 / 8);
+      messagebuf.fill(0);
+      var ivbuf = new Buffer(128 / 8);
+      ivbuf.fill(0x10);
+      var cipherkeybuf = new Buffer(128 / 8);
+      cipherkeybuf.fill(0);
+      var blockcipher = {};
+      blockcipher.encrypt = function(messagebuf, cipherkeybuf) {
+        return messagebuf;
+      };
+      blockcipher.decrypt = function(messagebuf, cipherkeybuf) {
+        return messagebuf;
+      };
+      var encbuf = CBC.encryptblock(messagebuf, ivbuf, blockcipher, cipherkeybuf);
+      var buf = CBC.decryptblock(encbuf, ivbuf, blockcipher, cipherkeybuf);
+      buf.toString('hex').should.equal(messagebuf.toString('hex'));
+    });
+
+  });
+  
   describe('@encryptblocks', function() {
 
     it('should return this known value', function() {
