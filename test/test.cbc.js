@@ -176,6 +176,18 @@ describe('CBC', function() {
 
   });
 
+  describe('@pkcs7unpad', function() {
+    
+    it('should unpad this padded 32 bit buffer', function() {
+      var buf = new Buffer(32 / 8);
+      buf.fill(0);
+      var paddedbuf = CBC.pkcs7pad(buf, 128);
+      var unpaddedbuf = CBC.pkcs7unpad(paddedbuf, 128);
+      unpaddedbuf.toString('hex').should.equal(buf.toString('hex'));
+    });
+
+  });
+
   describe('@xorbufs', function() {
     
     it('should xor 1 and 0', function() {
