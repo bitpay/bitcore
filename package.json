@@ -1,12 +1,16 @@
 {
-  "name": "bitcore",
+  "name": "bitcore-multicoin",
   "description": "Bitcoin Library",
-  "version": "0.1.18",
+  "version": "0.1.0",
   "author": {
     "name": "Stephen Pair",
     "email": "stephen@bitpay.com"
   },
   "contributors": [
+    {
+      "name": "Ke Zeng",
+      "email": "superisaac.ke@gail.com"
+    },
     {
       "name": "Stefan Thomas",
       "email": "moon@justmoon.net"
@@ -43,7 +47,7 @@
   "main": "bitcore.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitpay/bitcore.git"
+    "url": "https://github.com/haobtc/bitcore.git"
   },
   "scripts": {
     "install": "node-gyp rebuild",
