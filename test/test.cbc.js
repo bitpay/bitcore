@@ -133,6 +133,7 @@ describe('CBC', function() {
       var blockcipher = AES;
       var encbuf = CBC.encrypt(messagebuf, ivbuf, blockcipher, cipherkeybuf);
       var buf2 = CBC.decrypt(encbuf, ivbuf, blockcipher, cipherkeybuf);
+      buf2.toString('hex').should.equal(messagebuf.toString('hex'));
     });
 
   });
