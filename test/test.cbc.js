@@ -123,7 +123,7 @@ describe('CBC', function() {
   
   describe('decrypt', function() {
 
-    it('', function() {
+    it('should properly decrypt an encrypted message', function() {
       var messagebuf1 = new Buffer(128 / 8);
       messagebuf1.fill(0);
       var messagebuf2 = new Buffer(128 / 8);
