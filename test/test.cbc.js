@@ -1,3 +1,4 @@
+var AES = require('../lib/expmt/aes');
 var should = require('chai').should();
 var CBC = require('../lib/expmt/cbc');
 
@@ -115,6 +116,21 @@ describe('CBC', function() {
       blockcipher.decrypt = function(messagebuf, cipherkeybuf) {
         return messagebuf;
       };
+      var encbuf = CBC.encrypt(messagebuf, ivbuf, blockcipher, cipherkeybuf);
+      var buf2 = CBC.decrypt(encbuf, ivbuf, blockcipher, cipherkeybuf);
+    });
+
+    it('should encrypt something with AES', function() {
+      var messagebuf1 = new Buffer(128 / 8);
+      messagebuf1.fill(0);
+      var messagebuf2 = new Buffer(128 / 8);
+      messagebuf2.fill(0x10);
+      var messagebuf = Buffer.concat([messagebuf1, messagebuf2]);
+      var ivbuf = new Buffer(128 / 8);
+      ivbuf.fill(0x10);
+      var cipherkeybuf = new Buffer(128 / 8);
+      cipherkeybuf.fill(0);
+      var blockcipher = AES;
       var encbuf = CBC.encrypt(messagebuf, ivbuf, blockcipher, cipherkeybuf);
       var buf2 = CBC.decrypt(encbuf, ivbuf, blockcipher, cipherkeybuf);
     });
