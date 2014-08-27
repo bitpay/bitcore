@@ -121,7 +121,7 @@ describe('CBC', function() {
 
   });
   
-  describe('decrypt', function() {
+  describe('@decrypt', function() {
 
     it('should properly decrypt an encrypted message', function() {
       var messagebuf1 = new Buffer(128 / 8);
