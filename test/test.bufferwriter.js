@@ -126,7 +126,7 @@ describe('BufferWriter', function() {
       var n = Math.pow(2, 53);
       n.should.equal(n + 1); //javascript number precision limit
       bw.writeVarInt(n);
-      var br = new BufferReader(bw.concat());
+      var br = new BufferReader({buf: bw.concat()});
       br.readVarIntBN().toNumber().should.equal(n);
     });
 
