@@ -14,6 +14,15 @@ describe('Message', function() {
     var message = Message();
     should.exist(message);
   });
+  
+  describe('#set', function() {
+
+    it('should set the messagebuf', function() {
+      var messagebuf = new Buffer('message');
+      should.exist(Message().set({messagebuf: messagebuf}).messagebuf);
+    });
+
+  });
 
   describe('@sign', function() {
     var messagebuf = new Buffer('this is my message');
