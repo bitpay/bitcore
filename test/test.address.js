@@ -12,6 +12,14 @@ describe('Address', function() {
     should.exist(address);
   });
 
+  describe('@validate', function() {
+
+    it('should validate this valid address string', function() {
+      should.exist(Address.validate(str))
+    });
+
+  });
+
   describe('#fromPubkey', function() {
 
     it('should make this address from a compressed pubkey', function() {
