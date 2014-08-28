@@ -24,6 +24,7 @@ bitcore.Signature = require('./lib/signature');
 bitcore.expmt = {};
 bitcore.expmt.AES = require('./lib/expmt/aes');
 bitcore.expmt.CBC = require('./lib/expmt/cbc');
+bitcore.expmt.SymEnc = require('./lib/expmt/symenc');
 bitcore.expmt.Stealth = require('./lib/expmt/stealth');
 
 //dependencies, subject to change
