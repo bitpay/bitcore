@@ -44,7 +44,7 @@ describe('Address', function() {
     it('should derive from this known address string testnet', function() {
       var address = new Address();
       address.fromString(str);
-      address.network = 'testnet';
+      address.networkstr = 'testnet';
       address.fromString(address.toString());
       address.toString().should.equal('mm1X5M2QWyHVjn7txrF7mmtZDpjCXzoa98');
     });
@@ -52,8 +52,8 @@ describe('Address', function() {
     it('should derive from this known address string mainnet p2sh', function() {
       var address = new Address();
       address.fromString(str);
-      address.network = 'mainnet';
-      address.type = 'p2sh';
+      address.networkstr = 'mainnet';
+      address.typestr = 'p2sh';
       address.fromString(address.toString());
       address.toString().should.equal('37BahqRsFrAd3qLiNNwLNV3AWMRD7itxTo');
     });
@@ -61,8 +61,8 @@ describe('Address', function() {
     it('should derive from this known address string testnet p2sh', function() {
       var address = new Address();
       address.fromString(str);
-      address.network = 'testnet';
-      address.type = 'p2sh';
+      address.networkstr = 'testnet';
+      address.typestr = 'p2sh';
       address.fromString(address.toString());
       address.toString().should.equal('2MxjnmaMtsJfyFcyG3WZCzS2RihdNuWqeX4');
     });
@@ -80,14 +80,14 @@ describe('Address', function() {
     it('should describe this address with unknown network as invalid', function() {
       var address = new Address();
       address.fromString('37BahqRsFrAd3qLiNNwLNV3AWMRD7itxTo');
-      address.network = 'unknown';
+      address.networkstr = 'unknown';
       address.isValid().should.equal(false);
     });
 
     it('should describe this address with unknown type as invalid', function() {
       var address = new Address();
       address.fromString('37BahqRsFrAd3qLiNNwLNV3AWMRD7itxTo');
-      address.type = 'unknown';
+      address.typestr = 'unknown';
       address.isValid().should.equal(false);
     });
 
@@ -124,19 +124,19 @@ describe('Address', function() {
     it('should throw an error on this invalid network', function() {
       var address = new Address();
       address.fromString(str);
-      address.network = 'unknown';
+      address.networkstr = 'unknown';
       (function() {
         address.validate();
-      }).should.throw('network must be "mainnet" or "testnet"');
+      }).should.throw('networkstr must be "mainnet" or "testnet"');
     });
 
     it('should throw an error on this invalid type', function() {
       var address = new Address();
       address.fromString(str);
-      address.type = 'unknown';
+      address.typestr = 'unknown';
       (function() {
         address.validate();
-      }).should.throw('type must be "pubkeyhash" or "p2sh"');
+      }).should.throw('typestr must be "pubkeyhash" or "p2sh"');
     });
 
   });
