@@ -9,6 +9,14 @@ describe('Signature', function() {
     should.exist(sig);
   });
 
+  describe('#set', function() {
+    
+    it('should set compressed', function() {
+      should.exist(Signature().set({compressed: true}));
+    });
+
+  });
+
   describe('#fromCompact', function() {
     
     it('should create a signature from a compressed signature', function() {
@@ -110,7 +118,7 @@ describe('Signature', function() {
     it('should convert these known r and s values into a known signature', function() {
       var r = bn('63173831029936981022572627018246571655303050627048489594159321588908385378810');
       var s = bn('4331694221846364448463828256391194279133231453999942381442030409253074198130');
-      var sig = new Signature(r, s);
+      var sig = new Signature({r: r, s: s});
       var der = sig.toDER(r, s);
       der.toString('hex').should.equal('30450221008bab1f0a2ff2f9cb8992173d8ad73c229d31ea8e10b0f4d4ae1a0d8ed76021fa02200993a6ec81755b9111762fc2cf8e3ede73047515622792110867d12654275e72');
     });
@@ -122,7 +130,7 @@ describe('Signature', function() {
     it('should convert this signature in to hex DER', function() {
       var r = bn('63173831029936981022572627018246571655303050627048489594159321588908385378810');
       var s = bn('4331694221846364448463828256391194279133231453999942381442030409253074198130');
-      var sig = new Signature(r, s);
+      var sig = new Signature({r: r, s: s});
       var hex = sig.toString();
       hex.should.equal('30450221008bab1f0a2ff2f9cb8992173d8ad73c229d31ea8e10b0f4d4ae1a0d8ed76021fa02200993a6ec81755b9111762fc2cf8e3ede73047515622792110867d12654275e72');
     });

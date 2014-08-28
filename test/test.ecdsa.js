@@ -48,7 +48,7 @@ describe("ECDSA", function() {
       ecdsa.key.privkey.bn = BN().fromBuffer(Hash.sha256(new Buffer('test')));
       ecdsa.key.privkey2pubkey();
       ecdsa.hashbuf = hashbuf;
-      ecdsa.sig = new Signature(r, s);
+      ecdsa.sig = new Signature({r: r, s: s});
 
       ecdsa.calci();
       ecdsa.sig.i.should.equal(1);
