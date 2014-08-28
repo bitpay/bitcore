@@ -15,6 +15,14 @@ describe('Base58', function() {
     should.exist(b58);
   });
 
+  describe('#set', function() {
+    
+    it('should set a blank buffer', function() {
+      Base58().set({buf: new Buffer([])});
+    });
+
+  });
+
   describe('@encode', function() {
 
     it('should encode the buffer accurately', function() {
@@ -67,7 +75,7 @@ describe('Base58', function() {
   describe('#toBuffer', function() {
 
     it('should return the buffer', function() {
-      var b58 = Base58(buf);
+      var b58 = Base58({buf: buf});
       b58.buf.toString('hex').should.equal(buf.toString('hex'));
     });
 
@@ -76,7 +84,7 @@ describe('Base58', function() {
   describe('#toString', function() {
 
     it('should return the buffer', function() {
-      var b58 = Base58(buf);
+      var b58 = Base58({buf: buf});
       b58.toString().should.equal(enc);
     });
 
