@@ -10,12 +10,24 @@ describe('BufferWriter', function() {
     should.exist(bw);
   });
 
+  describe('#set', function() {
+    
+    it('set bufs', function() {
+      var buf1 = new Buffer([0]);
+      var buf2 = new Buffer([1]);
+      var bufs = [buf1, buf2];
+      var bw = new BufferWriter().set({bufs: [buf1, buf2]});
+      bw.concat().toString('hex').should.equal('0001');
+    });
+
+  });
+
   describe('#concat', function() {
     
     it('should concat these two bufs', function() {
       var buf1 = new Buffer([0]);
       var buf2 = new Buffer([1]);
-      var bw = new BufferWriter([buf1, buf2]);
+      var bw = new BufferWriter({bufs: [buf1, buf2]});
       bw.concat().toString('hex').should.equal('0001');
     });
 
