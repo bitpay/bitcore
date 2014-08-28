@@ -16,10 +16,18 @@ describe('Key', function() {
   it('should make a key with a priv and pub', function() {
     var priv = new Privkey();
     var pub = new Pubkey();
-    var key = new Key(priv, pub);
+    var key = new Key({privkey: priv, pubkey: pub});
     should.exist(key);
     should.exist(key.privkey);
     should.exist(key.pubkey);
+  });
+
+  describe("#set", function() {
+    
+    it('should make a new priv and pub', function() {
+      should.exist(Key().set({privkey: Privkey()}).privkey);
+    });
+
   });
 
   describe("#fromRandom", function() {
