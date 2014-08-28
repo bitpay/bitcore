@@ -21,6 +21,14 @@ describe("ECDSA", function() {
   ecdsa.key.pubkey = new Pubkey(point(BN().fromBuffer(new Buffer('ac242d242d23be966085a2b2b893d989f824e06c9ad0395a8a52f055ba39abb2', 'hex')),
                                       BN().fromBuffer(new Buffer('4836ab292c105a711ed10fcfd30999c31ff7c02456147747e03e739ad527c380', 'hex'))));
 
+  describe('#set', function() {
+    
+    it('should set hashbuf', function() {
+      should.exist(ECDSA().set({hashbuf: ecdsa.hashbuf}).hashbuf);
+    });
+
+  });
+
   describe('#calci', function() {
     
     it('should calculate i', function() {
