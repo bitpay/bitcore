@@ -32,7 +32,7 @@ describe('Key', function() {
 
   describe("#fromRandom", function() {
     
-    it('should make a new priv and pub', function() {
+    it('should make a new priv and pub, should be compressed, mainnet', function() {
       var key = new Key();
       key.fromRandom();
       should.exist(key.privkey);
@@ -40,6 +40,9 @@ describe('Key', function() {
       key.privkey.bn.gt(bn(0)).should.equal(true);
       key.pubkey.point.getX().gt(bn(0)).should.equal(true);
       key.pubkey.point.getY().gt(bn(0)).should.equal(true);
+      key.privkey.compressed.should.equal(true);
+      key.privkey.networkstr.should.equal('mainnet');
+      key.pubkey.compressed.should.equal(true);
     });
 
   });

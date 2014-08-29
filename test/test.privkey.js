@@ -42,10 +42,11 @@ describe('Privkey', function() {
 
   describe('#fromRandom', function() {
     
-    it('should set bn gt 0 and lt n', function() {
+    it('should set bn gt 0 and lt n, and should be compressed', function() {
       var privkey = Privkey().fromRandom();
       privkey.bn.gt(BN(0)).should.equal(true);
       privkey.bn.lt(Point.getN()).should.equal(true);
+      privkey.compressed.should.equal(true);
     });
 
   });
