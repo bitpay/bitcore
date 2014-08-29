@@ -8,12 +8,20 @@
   },
   "contributors": [
     {
+      "name": "Daniel Cousens",
+      "email": "bitcoin@dcousens.com"
+    },
+    {
       "name": "Gordon Hall",
       "email": "gordon@bitpay.com"
     },
     {
       "name": "Jeff Garzik",
       "email": "jgarzik@bitpay.com"
+    },
+    {
+      "name": "Kyle Drake",
+      "email": "kyle@kyledrake.net"
     },
     {
       "name": "Manuel Araoz",
@@ -34,6 +42,10 @@
     {
       "name": "Stephen Pair",
       "email": "stephen@bitpay.com"
+    },
+    {
+      "name": "Wei Lu",
+      "email": "luwei.here@gmail.com"
     }
   ],
   "keywords": [
