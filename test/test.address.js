@@ -12,10 +12,10 @@ describe('Address', function() {
     should.exist(address);
   });
 
-  describe('@validate', function() {
+  describe('@isValid', function() {
 
     it('should validate this valid address string', function() {
-      should.exist(Address.validate(str))
+      Address.isValid(str).should.equal(true);
     });
 
   });
