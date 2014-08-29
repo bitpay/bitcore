@@ -1,7 +1,6 @@
 var should = require('chai').should();
 var bn = require('../lib/bn');
 var point = require('../lib/point');
-var Address = require('../lib/address');
 var Privkey = require('../lib/privkey');
 var Pubkey = require('../lib/pubkey');
 var Keypair = require('../lib/keypair');
@@ -90,19 +89,6 @@ describe('Keypair', function() {
       key.fromString(str);
       should.exist(key.pubkey);
       key.pubkey.toString().should.equal(pub.toString());
-    });
-
-  });
-
-  describe('#getAddress', function() {
-    
-    it('should return an address', function() {
-      var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
-      var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
-      var key = new Keypair();
-      key.privkey = new Privkey({bn: bn(new Buffer(privhex, 'hex'))});
-      key.privkey2pubkey();
-      key.getAddress().toString().should.equal((new Address()).fromPubkey(key.pubkey).toString());
     });
 
   });
