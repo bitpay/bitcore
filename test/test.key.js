@@ -30,6 +30,14 @@ describe('Key', function() {
 
   });
 
+  describe("#fromPrivkey", function() {
+    
+    it('should make a new key from a privkey', function() {
+      should.exist(Key().fromPrivkey(Privkey().fromRandom()).pubkey);
+    });
+
+  });
+
   describe("#fromRandom", function() {
     
     it('should make a new priv and pub, should be compressed, mainnet', function() {
