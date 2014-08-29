@@ -1,4 +1,4 @@
 #!/bin/bash
 
 browserify index.js -o browser/privsec.js
-ls test/test.* | xargs browserify -o browser/tests.js
+ls test/*.js | xargs browserify -o browser/tests.js
