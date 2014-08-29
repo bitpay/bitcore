@@ -11,6 +11,9 @@
     <script src="../node_modules/mocha/mocha.js"></script>
     <script src="../node_modules/chai/chai.js"></script>
     <script src="../node_modules/sinon/pkg/sinon.js"></script>
+    <script>window.exports = window; /* jsrsasign throws otherwise */</script>
+    <script src="../node_modules/jsrsasign/lib/jsrsasign.js"></script>
+    <script>KJUR.exports = window.exports; delete window.exports;</script>
     <script>mocha.setup('bdd')</script>
     <script src="../browser/bundle.js"></script>
     <script src="../browser/testdata.js"></script>
