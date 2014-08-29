@@ -1,6 +1,6 @@
 var ECDSA = require('../lib/ecdsa');
 var Hash = require('../lib/hash');
-var Key = require('../lib/key');
+var Keypair = require('../lib/keypair');
 var Privkey = require('../lib/privkey');
 var Pubkey = require('../lib/pubkey');
 var Signature = require('../lib/signature');
@@ -16,7 +16,7 @@ describe("ECDSA", function() {
 
   var ecdsa = new ECDSA();
   ecdsa.hashbuf = Hash.sha256(new Buffer('test data'));
-  ecdsa.key = new Key();
+  ecdsa.key = new Keypair();
   ecdsa.key.privkey = new Privkey({bn: BN().fromBuffer(new Buffer('fee0a1f7afebf9d2a5a80c0c98a31c709681cce195cbcd06342b517970c0be1e', 'hex'))});
   ecdsa.key.pubkey = new Pubkey({
     point: point(BN().fromBuffer(new Buffer('ac242d242d23be966085a2b2b893d989f824e06c9ad0395a8a52f055ba39abb2', 'hex')),
@@ -45,7 +45,7 @@ describe("ECDSA", function() {
       var r = BN('71706645040721865894779025947914615666559616020894583599959600180037551395766', 10);
       var s = BN('109412465507152403114191008482955798903072313614214706891149785278625167723646', 10);
       var ecdsa = new ECDSA();
-      ecdsa.key = new Key();
+      ecdsa.key = new Keypair();
       ecdsa.key.privkey = Privkey();
       ecdsa.key.privkey.bn = BN().fromBuffer(Hash.sha256(new Buffer('test')));
       ecdsa.key.privkey2pubkey();
@@ -119,7 +119,7 @@ describe("ECDSA", function() {
       ecdsa.hashbuf = Hash.sha256(new Buffer('test'));
       var pk = new Pubkey();
       pk.fromDER(new Buffer('041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341', 'hex'));
-      ecdsa.key = new Key();
+      ecdsa.key = new Keypair();
       ecdsa.key.pubkey = pk;
       ecdsa.sig = new Signature();
       ecdsa.sig.r = BN(0);

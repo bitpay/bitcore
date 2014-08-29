@@ -1,6 +1,6 @@
 var Address = require('../lib/address');
 var Message = require('../lib/message');
-var Key = require('../lib/key');
+var Keypair = require('../lib/keypair');
 var should = require('chai').should();
 
 describe('Message', function() {
@@ -26,7 +26,7 @@ describe('Message', function() {
 
   describe('@sign', function() {
     var messagebuf = new Buffer('this is my message');
-    var key = Key().fromRandom();
+    var key = Keypair().fromRandom();
 
     it('should return a base64 string', function() {
       var sigstr = Message.sign(messagebuf, key);
@@ -35,7 +35,7 @@ describe('Message', function() {
     });
 
     it('should sign with a compressed pubkey', function() {
-      var key = Key().fromRandom();
+      var key = Keypair().fromRandom();
       key.pubkey.compressed = true;
       var sigstr = Message.sign(messagebuf, key);
       var sigbuf = new Buffer(sigstr, 'base64');
@@ -44,7 +44,7 @@ describe('Message', function() {
     });
 
     it('should sign with an uncompressed pubkey', function() {
-      var key = Key().fromRandom();
+      var key = Keypair().fromRandom();
       key.pubkey.compressed = false;
       var sigstr = Message.sign(messagebuf, key);
       var sigbuf = new Buffer(sigstr, 'base64');
@@ -56,7 +56,7 @@ describe('Message', function() {
 
   describe('@verify', function() {
     var messagebuf = new Buffer('this is my message');
-    var key = Key().fromRandom();
+    var key = Keypair().fromRandom();
 
     it('should verify a signed message', function() {
       var sigstr = Message.sign(messagebuf, key);
@@ -75,7 +75,7 @@ describe('Message', function() {
 
   describe('#sign', function() {
     var messagebuf = new Buffer('this is my message');
-    var key = Key().fromRandom();
+    var key = Keypair().fromRandom();
 
     it('should sign a message', function() {
       var message = new Message();
@@ -90,7 +90,7 @@ describe('Message', function() {
 
   describe('#verify', function() {
     var messagebuf = new Buffer('this is my message');
-    var key = Key().fromRandom();
+    var key = Keypair().fromRandom();
 
     it('should verify a message that was just signed', function() {
       var message = new Message();

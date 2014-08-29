@@ -1,6 +1,6 @@
 var ECIES = require('../lib/expmt/ecies');
 var should = require('chai').should();
-var Key = require('../lib/key');
+var Keypair = require('../lib/keypair');
 var Hash = require('../lib/hash');
 
 describe('#ECIES', function() {
@@ -15,8 +15,8 @@ describe('#ECIES', function() {
     should.exist(ecies);
   });
 
-  var fromkey = Key().fromRandom();
-  var tokey = Key().fromRandom();
+  var fromkey = Keypair().fromRandom();
+  var tokey = Keypair().fromRandom();
   var messagebuf = Hash.sha256(new Buffer('my message is the hash of this string'));
 
   describe('@encrypt', function() {
