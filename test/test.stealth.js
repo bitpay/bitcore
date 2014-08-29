@@ -36,6 +36,14 @@ describe('Stealth', function() {
     should.exist(stealth);
   });
 
+  describe('#set', function() {
+
+    it('should set payload key', function() {
+      should.exist(Stealth().set({payloadKey: stealth.payloadKey}).payloadKey);
+    });
+
+  });
+
   describe('#fromAddressBuffer', function() {
 
     it('should give a stealth address with the right pubkeys', function() {
