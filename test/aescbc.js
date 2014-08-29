@@ -1,7 +1,7 @@
 var should = require('chai').should();
-var SymEnc = require('../lib/expmt/symenc');
+var AESCBC = require('../lib/expmt/aescbc');
 
-describe('SymEnc', function() {
+describe('AESCBC', function() {
 
   describe('@encrypt', function() {
 
@@ -9,7 +9,7 @@ describe('SymEnc', function() {
       var password = "password";
       var messagebuf = new Buffer(128 / 8 - 1);
       messagebuf.fill(0);
-      var encbuf = SymEnc.encrypt(messagebuf, password);
+      var encbuf = AESCBC.encrypt(messagebuf, password);
       encbuf.length.should.equal(128 / 8 + 128 / 8);
     });
 
@@ -21,8 +21,8 @@ describe('SymEnc', function() {
       var password = "password";
       var messagebuf = new Buffer(128 / 8 - 1);
       messagebuf.fill(0);
-      var encbuf = SymEnc.encrypt(messagebuf, password);
-      var messagebuf2 = SymEnc.decrypt(encbuf, password);
+      var encbuf = AESCBC.encrypt(messagebuf, password);
+      var messagebuf2 = AESCBC.decrypt(encbuf, password);
       messagebuf2.toString('hex').should.equal(messagebuf.toString('hex'));
     });
 
@@ -37,7 +37,7 @@ describe('SymEnc', function() {
       ivbuf.fill(0);
       var messagebuf = new Buffer(128 / 8 - 1);
       messagebuf.fill(0);
-      var encbuf = SymEnc.encryptCipherkey(messagebuf, cipherkeybuf, ivbuf);
+      var encbuf = AESCBC.encryptCipherkey(messagebuf, cipherkeybuf, ivbuf);
       encbuf.length.should.equal(128 / 8 + 128 / 8);
     });
 
@@ -48,7 +48,7 @@ describe('SymEnc', function() {
       ivbuf.fill(0);
       var messagebuf = new Buffer(128 / 8);
       messagebuf.fill(0);
-      var encbuf = SymEnc.encryptCipherkey(messagebuf, cipherkeybuf, ivbuf);
+      var encbuf = AESCBC.encryptCipherkey(messagebuf, cipherkeybuf, ivbuf);
       encbuf.length.should.equal(128 / 8 + 128 / 8 + 128 / 8);
     });
 
@@ -63,8 +63,8 @@ describe('SymEnc', function() {
       ivbuf.fill(0);
       var messagebuf = new Buffer(128 / 8);
       messagebuf.fill(0);
-      var encbuf = SymEnc.encryptCipherkey(messagebuf, cipherkeybuf, ivbuf);
-      var messagebuf2 = SymEnc.decryptCipherkey(encbuf, cipherkeybuf);
+      var encbuf = AESCBC.encryptCipherkey(messagebuf, cipherkeybuf, ivbuf);
+      var messagebuf2 = AESCBC.decryptCipherkey(encbuf, cipherkeybuf);
       messagebuf2.toString('hex').should.equal(messagebuf.toString('hex'));
     });
 

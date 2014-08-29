@@ -23,9 +23,9 @@ bitcore.Signature = require('./lib/signature');
 //experimental, nonstandard, or unstable features
 bitcore.expmt = {};
 bitcore.expmt.AES = require('./lib/expmt/aes');
+bitcore.expmt.AESCBC = require('./lib/expmt/aescbc');
 bitcore.expmt.CBC = require('./lib/expmt/cbc');
 bitcore.expmt.ECIES = require('./lib/expmt/ecies');
-bitcore.expmt.SymEnc = require('./lib/expmt/symenc');
 bitcore.expmt.Stealth = require('./lib/expmt/stealth');
 
 //dependencies, subject to change
