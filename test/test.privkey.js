@@ -17,18 +17,26 @@ describe('Privkey', function() {
   });
 
   it('should create a mainnet private key', function() {
-    var privkey = new Privkey(Bn.fromBuffer(buf), 'mainnet', true);
+    var privkey = new Privkey({bn: Bn.fromBuffer(buf), network: 'mainnet', compressed: true});
     privkey.toString().should.equal(encmainnet);
   });
 
   it('should create an uncompressed testnet private key', function() {
-    var privkey = new Privkey(Bn.fromBuffer(buf), 'testnet', false);
+    var privkey = new Privkey({bn: Bn.fromBuffer(buf), network: 'testnet', compressed: false});
     privkey.toString().should.equal(enctu);
   });
 
   it('should create an uncompressed mainnet private key', function() {
-    var privkey = new Privkey(Bn.fromBuffer(buf), 'mainnet', false);
+    var privkey = new Privkey({bn: Bn.fromBuffer(buf), network: 'mainnet', compressed: false});
     privkey.toString().should.equal(encmu);
+  });
+
+  describe('#set', function() {
+    
+    it('should set bn', function() {
+      should.exist(Privkey().set({bn: Bn.fromBuffer(buf)}).bn);
+    });
+
   });
 
   describe('#fromWIF', function() {

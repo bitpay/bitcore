@@ -17,7 +17,7 @@ describe("ECDSA", function() {
   var ecdsa = new ECDSA();
   ecdsa.hashbuf = Hash.sha256(new Buffer('test data'));
   ecdsa.key = new Key();
-  ecdsa.key.privkey = new Privkey(BN().fromBuffer(new Buffer('fee0a1f7afebf9d2a5a80c0c98a31c709681cce195cbcd06342b517970c0be1e', 'hex')));
+  ecdsa.key.privkey = new Privkey({bn: BN().fromBuffer(new Buffer('fee0a1f7afebf9d2a5a80c0c98a31c709681cce195cbcd06342b517970c0be1e', 'hex'))});
   ecdsa.key.pubkey = new Pubkey(point(BN().fromBuffer(new Buffer('ac242d242d23be966085a2b2b893d989f824e06c9ad0395a8a52f055ba39abb2', 'hex')),
                                       BN().fromBuffer(new Buffer('4836ab292c105a711ed10fcfd30999c31ff7c02456147747e03e739ad527c380', 'hex'))));
 
