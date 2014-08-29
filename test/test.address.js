@@ -18,6 +18,10 @@ describe('Address', function() {
       Address.isValid(str).should.equal(true);
     });
 
+    it('should invalidate this valid address string', function() {
+      Address.isValid(str.substr(1)).should.equal(false);
+    });
+
   });
 
   describe('#fromPubkey', function() {
