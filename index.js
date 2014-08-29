@@ -26,7 +26,7 @@ bitcore.expmt.AES = require('./lib/expmt/aes');
 bitcore.expmt.AESCBC = require('./lib/expmt/aescbc');
 bitcore.expmt.CBC = require('./lib/expmt/cbc');
 bitcore.expmt.ECIES = require('./lib/expmt/ecies');
-bitcore.expmt.Stealth = require('./lib/expmt/stealth');
+bitcore.expmt.Stealthkey = require('./lib/expmt/stealthkey');
 
 //dependencies, subject to change
 bitcore.deps = {};
