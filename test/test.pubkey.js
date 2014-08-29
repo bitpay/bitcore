@@ -2,6 +2,7 @@ var should = require('chai').should();
 var Pubkey = require('../lib/pubkey');
 var Point = require('../lib/point');
 var Bn = require('../lib/bn');
+var Privkey = require('../lib/privkey');
 
 describe('Pubkey', function() {
   
@@ -20,6 +21,14 @@ describe('Pubkey', function() {
     
     it('should make a public key from a point', function() {
       should.exist(Pubkey().set({point: Point.getG()}).point);
+    });
+
+  });
+
+  describe('#fromPrivkey', function() {
+    
+    it('should make a public key from a privkey', function() {
+      should.exist(Pubkey().fromPrivkey(Privkey().fromRandom()));
     });
 
   });
