@@ -12,8 +12,16 @@ describe('Pubkey', function() {
 
   it('should create a public key with a point', function() {
     var p = Point();
-    var pk = new Pubkey(p);
+    var pk = new Pubkey({point: p});
     should.exist(pk.point);
+  });
+
+  describe('#set', function() {
+    
+    it('should make a public key from a point', function() {
+      should.exist(Pubkey().set({point: Point.getG()}).point);
+    });
+
   });
 
   describe('#fromDER', function() {
