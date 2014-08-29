@@ -1,6 +1,7 @@
 var Privkey = require('../lib/privkey');
 var base58check = require('../lib/base58check');
-var Bn = require('../lib/bn');
+var BN = require('../lib/bn');
+var Point = require('../lib/point');
 var should = require('chai').should();
 
 describe('Privkey', function() {
@@ -17,24 +18,34 @@ describe('Privkey', function() {
   });
 
   it('should create a mainnet private key', function() {
-    var privkey = new Privkey({bn: Bn.fromBuffer(buf), networkstr: 'mainnet', compressed: true});
+    var privkey = new Privkey({bn: BN.fromBuffer(buf), networkstr: 'mainnet', compressed: true});
     privkey.toString().should.equal(encmainnet);
   });
 
   it('should create an uncompressed testnet private key', function() {
-    var privkey = new Privkey({bn: Bn.fromBuffer(buf), networkstr: 'testnet', compressed: false});
+    var privkey = new Privkey({bn: BN.fromBuffer(buf), networkstr: 'testnet', compressed: false});
     privkey.toString().should.equal(enctu);
   });
 
   it('should create an uncompressed mainnet private key', function() {
-    var privkey = new Privkey({bn: Bn.fromBuffer(buf), networkstr: 'mainnet', compressed: false});
+    var privkey = new Privkey({bn: BN.fromBuffer(buf), networkstr: 'mainnet', compressed: false});
     privkey.toString().should.equal(encmu);
   });
 
   describe('#set', function() {
     
     it('should set bn', function() {
-      should.exist(Privkey().set({bn: Bn.fromBuffer(buf)}).bn);
+      should.exist(Privkey().set({bn: BN.fromBuffer(buf)}).bn);
+    });
+
+  });
+
+  describe('#fromRandom', function() {
+    
+    it('should set bn gt 0 and lt n', function() {
+      var privkey = Privkey().fromRandom();
+      privkey.bn.gt(BN(0)).should.equal(true);
+      privkey.bn.lt(Point.getN()).should.equal(true);
     });
 
   });
