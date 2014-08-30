@@ -1,0 +1,94 @@
+{
+  "name": "bitcore2",
+  "version": "0.0.0",
+  "dependencies": {
+    "aes": {
+      "version": "0.1.0",
+      "from": "aes@=0.1.0",
+      "resolved": "https://registry.npmjs.org/aes/-/aes-0.1.0.tgz"
+    },
+    "bn.js": {
+      "version": "0.13.3",
+      "from": "bn.js@=0.13.3",
+      "resolved": "https://registry.npmjs.org/bn.js/-/bn.js-0.13.3.tgz"
+    },
+    "bs58": {
+      "version": "1.2.1",
+      "from": "bs58@=1.2.1",
+      "resolved": "https://registry.npmjs.org/bs58/-/bs58-1.2.1.tgz"
+    },
+    "elliptic": {
+      "version": "0.15.7",
+      "from": "elliptic@=0.15.7",
+      "resolved": "https://registry.npmjs.org/elliptic/-/elliptic-0.15.7.tgz",
+      "dependencies": {
+        "bn.js": {
+          "version": "0.11.7",
+          "from": "bn.js@^0.11.6",
+          "resolved": "https://registry.npmjs.org/bn.js/-/bn.js-0.11.7.tgz"
+        },
+        "hash.js": {
+          "version": "0.2.1",
+          "from": "hash.js@^0.2.0",
+          "resolved": "https://registry.npmjs.org/hash.js/-/hash.js-0.2.1.tgz"
+        },
+        "inherits": {
+          "version": "2.0.1",
+          "from": "inherits@^2.0.1"
+        },
+        "uglify-js": {
+          "version": "2.4.15",
+          "from": "uglify-js@^2.4.13",
+          "resolved": "https://registry.npmjs.org/uglify-js/-/uglify-js-2.4.15.tgz",
+          "dependencies": {
+            "async": {
+              "version": "0.2.10",
+              "from": "async@~0.2.6"
+            },
+            "source-map": {
+              "version": "0.1.34",
+              "from": "source-map@0.1.34",
+              "resolved": "https://registry.npmjs.org/source-map/-/source-map-0.1.34.tgz",
+              "dependencies": {
+                "amdefine": {
+                  "version": "0.1.0",
+                  "from": "amdefine@>=0.0.4"
+                }
+              }
+            },
+            "optimist": {
+              "version": "0.3.7",
+              "from": "optimist@~0.3.5",
+              "dependencies": {
+                "wordwrap": {
+                  "version": "0.0.2",
+                  "from": "wordwrap@~0.0.2"
+                }
+              }
+            },
+            "uglify-to-browserify": {
+              "version": "1.0.2",
+              "from": "uglify-to-browserify@~1.0.0"
+            }
+          }
+        }
+      }
+    },
+    "hash.js": {
+      "version": "0.3.1",
+      "from": "hash.js@=0.3.1",
+      "resolved": "https://registry.npmjs.org/hash.js/-/hash.js-0.3.1.tgz",
+      "dependencies": {
+        "inherits": {
+          "version": "2.0.1",
+          "from": "inherits@^2.0.1"
+        }
+      }
+    },
+    "sha512": {
+      "version": "0.0.1",
+      "from": "sha512@=0.0.1",
+      "resolved": "https://registry.npmjs.org/sha512/-/sha512-0.0.1.tgz"
+    }
+  }
+}
