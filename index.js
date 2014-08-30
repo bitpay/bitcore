@@ -14,6 +14,7 @@ bitcore.Hash = require('./lib/hash');
 bitcore.KDF = require('./lib/kdf');
 bitcore.Keypair = require('./lib/keypair');
 bitcore.Message = require('./lib/message');
+bitcore.Opcode = require('./lib/opcode');
 bitcore.Point = require('./lib/point');
 bitcore.Privkey = require('./lib/privkey');
 bitcore.Pubkey = require('./lib/pubkey');
