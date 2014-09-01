@@ -1,5 +1,5 @@
 *.swp
 coverage
 node_modules
-browser/privsec.js
+browser/bitcore.js
 browser/tests.js
