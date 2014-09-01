@@ -45,3 +45,4 @@ Features over bitcore:
 * A proper point class
 * Better test coverage
 * Proper message signing and verification
+* npm-shrinkwrap.json ensures npm install works as intended
