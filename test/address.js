@@ -61,20 +61,20 @@ describe('Address', function() {
       address.toString().should.equal('mm1X5M2QWyHVjn7txrF7mmtZDpjCXzoa98');
     });
 
-    it('should derive from this known address string mainnet p2sh', function() {
+    it('should derive from this known address string mainnet scripthash', function() {
       var address = new Address();
       address.fromString(str);
       address.networkstr = 'mainnet';
-      address.typestr = 'p2sh';
+      address.typestr = 'scripthash';
       address.fromString(address.toString());
       address.toString().should.equal('37BahqRsFrAd3qLiNNwLNV3AWMRD7itxTo');
     });
 
-    it('should derive from this known address string testnet p2sh', function() {
+    it('should derive from this known address string testnet scripthash', function() {
       var address = new Address();
       address.fromString(str);
       address.networkstr = 'testnet';
-      address.typestr = 'p2sh';
+      address.typestr = 'scripthash';
       address.fromString(address.toString());
       address.toString().should.equal('2MxjnmaMtsJfyFcyG3WZCzS2RihdNuWqeX4');
     });
@@ -148,7 +148,7 @@ describe('Address', function() {
       address.typestr = 'unknown';
       (function() {
         address.validate();
-      }).should.throw('typestr must be "pubkeyhash" or "p2sh"');
+      }).should.throw('typestr must be "pubkeyhash" or "scripthash"');
     });
 
   });
