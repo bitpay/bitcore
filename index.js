@@ -19,6 +19,7 @@ bitcore.Point = require('./lib/point');
 bitcore.Privkey = require('./lib/privkey');
 bitcore.Pubkey = require('./lib/pubkey');
 bitcore.Random = require('./lib/random');
+bitcore.Script = require('./lib/script');
 bitcore.Signature = require('./lib/signature');
 
 //experimental, nonstandard, or unstable features
@@ -39,7 +40,6 @@ bitcore.deps.elliptic = require('elliptic');
 bitcore.deps.hashjs = require('hash.js');
 bitcore.deps.sha512 = require('sha512');
 
-//bitcore.script = require('lib/script');
 //bitcore.scriptexec = require('lib/scriptexec');
 //bitcore.tx = require('lib/tx');
 //bitcore.txpartial = require('lib/txpartial');
