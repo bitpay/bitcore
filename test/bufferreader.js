@@ -7,6 +7,15 @@ describe('BufferReader', function() {
   it('should make a new BufferReader', function() {
     var br = new BufferReader();
     should.exist(br);
+    br = BufferReader();
+    should.exist(br);
+  });
+
+  it('should create a new bufferreader with a buffer', function() {
+    var buf = new Buffer(0);
+    var br = new BufferReader(buf);
+    should.exist(br);
+    Buffer.isBuffer(br.buf).should.equal(true);
   });
 
   describe('#set', function() {
