@@ -1,4 +1,4 @@
-var bn = require('../lib/bn');
+var BN = require('../lib/bn');
 var should = require('chai').should();
 var Signature = require('../lib/signature');
 
@@ -7,6 +7,15 @@ describe('Signature', function() {
   it('should make a blank signature', function() {
     var sig = new Signature();
     should.exist(sig);
+  });
+
+  it('should work with conveniently setting r, s', function() {
+    var r = BN();
+    var s = BN();
+    var sig = new Signature(r, s);
+    should.exist(sig);
+    sig.r.toString().should.equal(r.toString());
+    sig.s.toString().should.equal(s.toString());
   });
 
   describe('#set', function() {
@@ -116,8 +125,8 @@ describe('Signature', function() {
   describe('#toDER', function() {
 
     it('should convert these known r and s values into a known signature', function() {
-      var r = bn('63173831029936981022572627018246571655303050627048489594159321588908385378810');
-      var s = bn('4331694221846364448463828256391194279133231453999942381442030409253074198130');
+      var r = BN('63173831029936981022572627018246571655303050627048489594159321588908385378810');
+      var s = BN('4331694221846364448463828256391194279133231453999942381442030409253074198130');
       var sig = new Signature({r: r, s: s});
       var der = sig.toDER(r, s);
       der.toString('hex').should.equal('30450221008bab1f0a2ff2f9cb8992173d8ad73c229d31ea8e10b0f4d4ae1a0d8ed76021fa02200993a6ec81755b9111762fc2cf8e3ede73047515622792110867d12654275e72');
@@ -128,8 +137,8 @@ describe('Signature', function() {
   describe('#toString', function() {
 
     it('should convert this signature in to hex DER', function() {
-      var r = bn('63173831029936981022572627018246571655303050627048489594159321588908385378810');
-      var s = bn('4331694221846364448463828256391194279133231453999942381442030409253074198130');
+      var r = BN('63173831029936981022572627018246571655303050627048489594159321588908385378810');
+      var s = BN('4331694221846364448463828256391194279133231453999942381442030409253074198130');
       var sig = new Signature({r: r, s: s});
       var hex = sig.toString();
       hex.should.equal('30450221008bab1f0a2ff2f9cb8992173d8ad73c229d31ea8e10b0f4d4ae1a0d8ed76021fa02200993a6ec81755b9111762fc2cf8e3ede73047515622792110867d12654275e72');
