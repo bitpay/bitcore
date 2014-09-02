@@ -71,52 +71,11 @@ describe('Stealthkey', function() {
 
   });
 
-  describe('#getSharedKeypairAsSender', function() {
-
-    it('should return a key', function() {
-      var stealthkey2 = new Stealthkey();
-      stealthkey2.payloadKeypair = new Keypair();
-      stealthkey2.payloadKeypair.pubkey = stealthkey.payloadKeypair.pubkey;
-      stealthkey2.scanKeypair = new Keypair();
-      stealthkey2.scanKeypair.pubkey = stealthkey.scanKeypair.pubkey;
-      var key = stealthkey2.getSharedKeypairAsSender(senderKeypair);
-      (key instanceof Keypair).should.equal(true);
-    });
-
-    it('should return the same key as getSharedKeypairAsReceiver', function() {
-      var stealthkey2 = new Stealthkey();
-      stealthkey2.payloadKeypair = new Keypair();
-      stealthkey2.payloadKeypair.pubkey = stealthkey.payloadKeypair.pubkey;
-      stealthkey2.scanKeypair = new Keypair();
-      stealthkey2.scanKeypair.pubkey = stealthkey.scanKeypair.pubkey;
-      var key = stealthkey2.getSharedKeypairAsSender(senderKeypair);
-
-      var key2 = stealthkey.getSharedKeypairAsReceiver(senderKeypair.pubkey);
-      key.toString().should.equal(key2.toString());
-    });
-
-  });
-
   describe('#getReceivePubkeyAsReceiver', function() {
     
     it('should return a pubkey', function() {
       var pubkey = stealthkey.getReceivePubkeyAsReceiver(senderKeypair.pubkey);
       (pubkey instanceof Pubkey).should.equal(true);
-    });
-
-  });
-
-  describe('#getReceivePubkeyAsSender', function() {
-    
-    it('should return a pubkey', function() {
-      var pubkey = stealthkey.getReceivePubkeyAsSender(senderKeypair);
-      (pubkey instanceof Pubkey).should.equal(true);
-    });
-
-    it('should return the same pubkey as getReceivePubkeyAsReceiver', function() {
-      var pubkey = stealthkey.getReceivePubkeyAsSender(senderKeypair);
-      var pubkey2 = stealthkey.getReceivePubkeyAsReceiver(senderKeypair.pubkey);
-      pubkey2.toString().should.equal(pubkey.toString());
     });
 
   });
