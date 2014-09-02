@@ -26,27 +26,27 @@ describe('Message', function() {
 
   describe('@sign', function() {
     var messagebuf = new Buffer('this is my message');
-    var key = Keypair().fromRandom();
+    var keypair = Keypair().fromRandom();
 
     it('should return a base64 string', function() {
-      var sigstr = Message.sign(messagebuf, key);
+      var sigstr = Message.sign(messagebuf, keypair);
       var sigbuf = new Buffer(sigstr, 'base64');
       sigbuf.length.should.equal(1 + 32 + 32);
     });
 
     it('should sign with a compressed pubkey', function() {
-      var key = Keypair().fromRandom();
-      key.pubkey.compressed = true;
-      var sigstr = Message.sign(messagebuf, key);
+      var keypair = Keypair().fromRandom();
+      keypair.pubkey.compressed = true;
+      var sigstr = Message.sign(messagebuf, keypair);
       var sigbuf = new Buffer(sigstr, 'base64');
       sigbuf[0].should.be.above(27 + 4 - 1);
       sigbuf[0].should.be.below(27 + 4 + 4 - 1);
     });
 
     it('should sign with an uncompressed pubkey', function() {
-      var key = Keypair().fromRandom();
-      key.pubkey.compressed = false;
-      var sigstr = Message.sign(messagebuf, key);
+      var keypair = Keypair().fromRandom();
+      keypair.pubkey.compressed = false;
+      var sigstr = Message.sign(messagebuf, keypair);
       var sigbuf = new Buffer(sigstr, 'base64');
       sigbuf[0].should.be.above(27 - 1);
       sigbuf[0].should.be.below(27 + 4 - 1);
@@ -56,11 +56,11 @@ describe('Message', function() {
 
   describe('@verify', function() {
     var messagebuf = new Buffer('this is my message');
-    var key = Keypair().fromRandom();
+    var keypair = Keypair().fromRandom();
 
     it('should verify a signed message', function() {
-      var sigstr = Message.sign(messagebuf, key);
-      var addr = Address().fromPubkey(key.pubkey);
+      var sigstr = Message.sign(messagebuf, keypair);
+      var addr = Address().fromPubkey(keypair.pubkey);
       Message.verify(messagebuf, sigstr, addr).should.equal(true);
     });
 
@@ -75,12 +75,12 @@ describe('Message', function() {
 
   describe('#sign', function() {
     var messagebuf = new Buffer('this is my message');
-    var key = Keypair().fromRandom();
+    var keypair = Keypair().fromRandom();
 
     it('should sign a message', function() {
       var message = new Message();
       message.messagebuf = messagebuf;
-      message.key = key;
+      message.keypair = keypair;
       message.sign();
       var sig = message.sig;
       should.exist(sig);
@@ -90,13 +90,13 @@ describe('Message', function() {
 
   describe('#verify', function() {
     var messagebuf = new Buffer('this is my message');
-    var key = Keypair().fromRandom();
+    var keypair = Keypair().fromRandom();
 
     it('should verify a message that was just signed', function() {
       var message = new Message();
       message.messagebuf = messagebuf;
-      message.key = key;
-      message.address = Address().fromPubkey(key.pubkey);
+      message.keypair = keypair;
+      message.address = Address().fromPubkey(keypair.pubkey);
       message.sign();
       message.verify();
       message.verified.should.equal(true);
