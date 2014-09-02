@@ -32,7 +32,7 @@ describe('Script', function() {
       var buf = new Buffer([3, 1, 2, 3]);
       var script = Script().fromBuffer(buf);
       script.chunks.length.should.equal(1);
-      script.chunks[0].toString('hex').should.equal('010203');
+      script.chunks[0].buf.toString('hex').should.equal('010203');
     });
 
     it('should parse this buffer containing OP_PUSHDATA1 and three bytes of data', function() {
@@ -41,7 +41,7 @@ describe('Script', function() {
       buf.writeUInt8(3, 1);
       var script = Script().fromBuffer(buf);
       script.chunks.length.should.equal(1);
-      script.chunks[0].toString('hex').should.equal('010203');
+      script.chunks[0].buf.toString('hex').should.equal('010203');
     });
 
     it('should parse this buffer containing OP_PUSHDATA2 and three bytes of data', function() {
@@ -50,7 +50,7 @@ describe('Script', function() {
       buf.writeUInt16LE(3, 1);
       var script = Script().fromBuffer(buf);
       script.chunks.length.should.equal(1);
-      script.chunks[0].toString('hex').should.equal('010203');
+      script.chunks[0].buf.toString('hex').should.equal('010203');
     });
 
     it('should parse this buffer containing OP_PUSHDATA4 and three bytes of data', function() {
@@ -59,7 +59,7 @@ describe('Script', function() {
       buf.writeUInt16LE(3, 1);
       var script = Script().fromBuffer(buf);
       script.chunks.length.should.equal(1);
-      script.chunks[0].toString('hex').should.equal('010203');
+      script.chunks[0].buf.toString('hex').should.equal('010203');
     });
 
     it('should parse this buffer an OP code, data, and another OP code', function() {
@@ -71,7 +71,7 @@ describe('Script', function() {
       var script = Script().fromBuffer(buf);
       script.chunks.length.should.equal(3);
       script.chunks[0].should.equal(buf[0]);
-      script.chunks[1].toString('hex').should.equal('010203');
+      script.chunks[1].buf.toString('hex').should.equal('010203');
       script.chunks[2].should.equal(buf[buf.length - 1]);
     });
 
