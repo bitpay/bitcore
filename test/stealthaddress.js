@@ -32,6 +32,10 @@ describe('StealthAddress', function() {
     should.exist(sa);
     sa = StealthAddress();
     should.exist(sa);
+    sa = StealthAddress(addressString);
+    should.exist(sa);
+    sa = StealthAddress(Base58check.decode(addressString));
+    should.exist(sa);
   });
 
   describe('#fromBuffer', function() {
