@@ -36,6 +36,14 @@ describe('Stealthkey', function() {
     should.exist(stealthkey);
   });
 
+  it('should create a new stealthkey with both keypairs in the constructor', function() {
+    var keypair1 = Keypair();
+    var keypair2 = Keypair();
+    var stealthkey = Stealthkey(keypair1, keypair2);
+    should.exist(stealthkey.payloadKeypair);
+    should.exist(stealthkey.scanKeypair);
+  });
+
   describe('#set', function() {
 
     it('should set payload key', function() {
