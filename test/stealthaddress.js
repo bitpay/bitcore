@@ -71,13 +71,13 @@ describe('StealthAddress', function() {
       (key instanceof Keypair).should.equal(true);
     });
 
-    it('should return the same key as Stealthkey.prototype.getSharedKeypairAsReceiver', function() {
+    it('should return the same key as Stealthkey.prototype.getSharedKeypair', function() {
       var sa = new StealthAddress();
       sa.payloadPubkey = stealthkey.payloadKeypair.pubkey;
       sa.scanPubkey = stealthkey.scanKeypair.pubkey;
       var key = sa.getSharedKeypair(senderKeypair);
 
-      var key2 = stealthkey.getSharedKeypairAsReceiver(senderKeypair.pubkey);
+      var key2 = stealthkey.getSharedKeypair(senderKeypair.pubkey);
       key.toString().should.equal(key2.toString());
     });
 
@@ -90,9 +90,9 @@ describe('StealthAddress', function() {
       (pubkey instanceof Pubkey).should.equal(true);
     });
 
-    it('should return the same pubkey as getReceivePubkeyAsReceiver', function() {
+    it('should return the same pubkey as getReceivePubkey', function() {
       var pubkey = StealthAddress().fromStealthkey(stealthkey).getReceivePubkey(senderKeypair);
-      var pubkey2 = stealthkey.getReceivePubkeyAsReceiver(senderKeypair.pubkey);
+      var pubkey2 = stealthkey.getReceivePubkey(senderKeypair.pubkey);
       pubkey2.toString().should.equal(pubkey.toString());
     });
 

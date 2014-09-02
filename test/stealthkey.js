@@ -62,19 +62,19 @@ describe('Stealthkey', function() {
 
   });
 
-  describe('#getSharedKeypairAsReceiver', function() {
+  describe('#getSharedKeypair', function() {
 
     it('should return a key', function() {
-      var key = stealthkey.getSharedKeypairAsReceiver(senderKeypair.pubkey);
+      var key = stealthkey.getSharedKeypair(senderKeypair.pubkey);
       (key instanceof Keypair).should.equal(true);
     });
 
   });
 
-  describe('#getReceivePubkeyAsReceiver', function() {
+  describe('#getReceivePubkey', function() {
     
     it('should return a pubkey', function() {
-      var pubkey = stealthkey.getReceivePubkeyAsReceiver(senderKeypair.pubkey);
+      var pubkey = stealthkey.getReceivePubkey(senderKeypair.pubkey);
       (pubkey instanceof Pubkey).should.equal(true);
     });
 
@@ -87,9 +87,9 @@ describe('Stealthkey', function() {
       (key instanceof Keypair).should.equal(true);
     });
 
-    it('should return a key with the same pubkey as getReceivePubkeyAsReceiver', function() {
+    it('should return a key with the same pubkey as getReceivePubkey', function() {
       var key = stealthkey.getReceiveKeypair(senderKeypair.pubkey);
-      var pubkey = stealthkey.getReceivePubkeyAsReceiver(senderKeypair.pubkey);
+      var pubkey = stealthkey.getReceivePubkey(senderKeypair.pubkey);
       key.pubkey.toString().should.equal(pubkey.toString());
     });
 
