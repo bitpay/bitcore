@@ -17,6 +17,13 @@ describe('Pubkey', function() {
     should.exist(pk.point);
   });
 
+  it('should create a public key with a point with this convenient method', function() {
+    var p = Point();
+    var pk = new Pubkey(p);
+    should.exist(pk.point);
+    pk.point.toString().should.equal(p.toString());
+  });
+
   describe('#set', function() {
     
     it('should make a public key from a point', function() {
