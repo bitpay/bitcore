@@ -61,6 +61,43 @@ describe('StealthAddress', function() {
 
   });
 
+  describe('#getSharedKeypair', function() {
+
+    it('should return a key', function() {
+      var sa = new StealthAddress();
+      sa.payloadPubkey = stealthkey.payloadKeypair.pubkey;
+      sa.scanPubkey = stealthkey.scanKeypair.pubkey;
+      var key = sa.getSharedKeypair(senderKeypair);
+      (key instanceof Keypair).should.equal(true);
+    });
+
+    it('should return the same key as Stealthkey.prototype.getSharedKeypairAsReceiver', function() {
+      var sa = new StealthAddress();
+      sa.payloadPubkey = stealthkey.payloadKeypair.pubkey;
+      sa.scanPubkey = stealthkey.scanKeypair.pubkey;
+      var key = sa.getSharedKeypair(senderKeypair);
+
+      var key2 = stealthkey.getSharedKeypairAsReceiver(senderKeypair.pubkey);
+      key.toString().should.equal(key2.toString());
+    });
+
+  });
+
+  describe('#getReceivePubkey', function() {
+    
+    it('should return a pubkey', function() {
+      var pubkey = StealthAddress().fromStealthkey(stealthkey).getReceivePubkey(senderKeypair);
+      (pubkey instanceof Pubkey).should.equal(true);
+    });
+
+    it('should return the same pubkey as getReceivePubkeyAsReceiver', function() {
+      var pubkey = StealthAddress().fromStealthkey(stealthkey).getReceivePubkey(senderKeypair);
+      var pubkey2 = stealthkey.getReceivePubkeyAsReceiver(senderKeypair.pubkey);
+      pubkey2.toString().should.equal(pubkey.toString());
+    });
+
+  });
+
   describe('#toBuffer', function() {
     
     it('should return this known address buffer', function() {
