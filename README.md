@@ -46,3 +46,4 @@ Features over bitcore:
 * Better test coverage
 * Proper message signing and verification
 * npm-shrinkwrap.json ensures npm install works as intended
+* byte-for-byte reading/writing scripts
