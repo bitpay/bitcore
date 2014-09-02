@@ -17,6 +17,12 @@ describe('Privkey', function() {
     should.exist(privkey);
   });
 
+  it('should create a 0 private key with this convenience method', function() {
+    var bn = BN(0);
+    var privkey = new Privkey(bn);
+    privkey.bn.toString().should.equal(bn.toString());
+  });
+
   it('should create a mainnet private key', function() {
     var privkey = new Privkey({bn: BN.fromBuffer(buf), networkstr: 'mainnet', compressed: true});
     privkey.toString().should.equal(encmainnet);
