@@ -52,29 +52,6 @@ describe('Stealthkey', function() {
 
   });
 
-  describe('#fromAddressBuffer', function() {
-
-    it('should give a stealthkey address with the right pubkeys', function() {
-      var stealthkey2 = new Stealthkey();
-      var buf = base58check.decode(addressString);
-      stealthkey2.fromAddressBuffer(buf);
-      stealthkey2.payloadKeypair.pubkey.toString().should.equal(stealthkey.payloadKeypair.pubkey.toString());
-      stealthkey2.scanKeypair.pubkey.toString().should.equal(stealthkey.scanKeypair.pubkey.toString());
-    });
-
-  });
-
-  describe('#fromAddressString', function() {
-
-    it('should give a stealthkey address with the right pubkeys', function() {
-      var stealthkey2 = new Stealthkey();
-      stealthkey2.fromAddressString(addressString);
-      stealthkey2.payloadKeypair.pubkey.toString().should.equal(stealthkey.payloadKeypair.pubkey.toString());
-      stealthkey2.scanKeypair.pubkey.toString().should.equal(stealthkey.scanKeypair.pubkey.toString());
-    });
-
-  });
-
   describe('#fromRandom', function() {
 
     it('should create a new stealthkey from random', function() {
@@ -174,23 +151,6 @@ describe('Stealthkey', function() {
     it('should return false if it (the transaction or message) is not for me', function() {
       var pubkeyhash = new Buffer('00b64fa6ee9b3e8754e3e2bd033bf61048604a99', 'hex');
       stealthkey.isForMe(senderKeypair.pubkey, pubkeyhash).should.equal(false);
-    });
-
-  });
-
-  describe('#toAddressBuffer', function() {
-    
-    it('should return this known address buffer', function() {
-      var buf = stealthkey.toAddressBuffer();
-      base58check.encode(buf).should.equal(addressString);
-    });
-
-  });
-
-  describe('#toAddressString', function() {
-    
-    it('should return this known address string', function() {
-      stealthkey.toAddressString().should.equal(addressString);
     });
 
   });
