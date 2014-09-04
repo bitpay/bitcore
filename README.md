@@ -24,7 +24,7 @@ npm install bitcore
 
 It is a collection of objects useful to bitcoin applications; class-like idioms are enabled via [Soop](https://github.com/bitpay/soop). In most cases, a developer will require the object's class directly. For instance:
 
-```
+```javascript
 var bitcore = require('bitcore');
 var Address = bitcore.Address;
 var Transaction = bitcore.Transaction;
@@ -69,7 +69,8 @@ This will generate a `browser/bundle.js` file which you can include in your HTML
 ##Example browser usage
 
 From example/simple.html
-```
+
+```html
 <!DOCTYPE html>
 <html>
   <body>
