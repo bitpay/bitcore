@@ -49,6 +49,7 @@ function getRootCerts(callback) {
       + '  pem = pem + "";\n'
       + '  pem = pem.replace(/-----BEGIN CERTIFICATE-----/g, "");\n'
       + '  pem = pem.replace(/-----END CERTIFICATE-----/g, "");\n'
+      + '  pem = pem.trim().split(/(?:\\r?\\n){2,}/).pop();'
       + '  pem = pem.replace(/\\s+/g, "");\n'
       + '  if (!Object.prototype.hasOwnProperty.call(trusted, pem)) return;\n'
       + '  return trusted[pem];\n'
