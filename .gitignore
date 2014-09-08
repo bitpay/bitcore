@@ -45,3 +45,5 @@ public/js/vendors.js
 public/css/main.css
 
 README.html
+po/*
+!po/*.po

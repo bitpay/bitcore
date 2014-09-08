@@ -9,6 +9,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-css');
   grunt.loadNpmTasks('grunt-markdown');
   grunt.loadNpmTasks('grunt-macreload');
+  grunt.loadNpmTasks('grunt-angular-gettext');
 
   // Project Configuration
   grunt.initConfig({
@@ -29,11 +30,11 @@ module.exports = function(grunt) {
         dest: 'public/js/vendors.js'
       },
       angular: {
-        src: ['public/lib/angular/angular.min.js', 'public/lib/angular-resource/angular-resource.min.js', 'public/lib/angular-route/angular-route.min.js', 'public/lib/angular-qrcode/qrcode.js', 'public/lib/angular-animate/angular-animate.min.js', 'public/lib/angular-bootstrap/ui-bootstrap.js', 'public/lib/angular-bootstrap/ui-bootstrap-tpls.js', 'public/lib/angular-ui-utils/ui-utils.min.js', 'public/lib/ngprogress/build/ngProgress.min.js'],
+        src: ['public/lib/angular/angular.min.js', 'public/lib/angular-resource/angular-resource.min.js', 'public/lib/angular-route/angular-route.min.js', 'public/lib/angular-qrcode/qrcode.js', 'public/lib/angular-animate/angular-animate.min.js', 'public/lib/angular-bootstrap/ui-bootstrap.js', 'public/lib/angular-bootstrap/ui-bootstrap-tpls.js', 'public/lib/angular-ui-utils/ui-utils.min.js', 'public/lib/ngprogress/build/ngProgress.min.js', 'public/lib/angular-gettext/dist/angular-gettext.min.js'],
         dest: 'public/js/angularjs-all.js'
       },
       main: {
-        src: ['public/src/js/app.js', 'public/src/js/controllers/*.js', 'public/src/js/services/*.js', 'public/src/js/directives.js', 'public/src/js/filters.js', 'public/src/js/config.js', 'public/src/js/init.js'],
+        src: ['public/src/js/app.js', 'public/src/js/controllers/*.js', 'public/src/js/services/*.js', 'public/src/js/directives.js', 'public/src/js/filters.js', 'public/src/js/config.js', 'public/src/js/init.js', 'public/src/js/translations.js'],
         dest: 'public/js/main.js'
       },
       css: {
@@ -86,13 +87,30 @@ module.exports = function(grunt) {
     watch: {
       main: {
         files: ['public/src/js/**/*.js'],
-        tasks: ['concat:main', 'uglify:main', 'macreload'],
+        tasks: ['concat:main', 'uglify:main'],
       },
       css: {
         files: ['public/src/css/**/*.css'],
-        tasks: ['concat:css', 'cssmin', 'macreload'],
+        tasks: ['concat:css', 'cssmin'],
       },
     },
+    nggettext_extract: {
+      pot: {
+        files: {
+          'po/template.pot': ['public/views/*.html', 'public/views/**/*.html']
+        }
+      },
+    },
+    nggettext_compile: {
+      all: {
+        options: {
+          module: 'insight'
+        },
+        files: {
+          'public/src/js/translations.js': ['po/*.po']
+        }
+      },
+    }
   });
 
   //Making grunt default to force in order not to break the project.
@@ -102,7 +120,7 @@ module.exports = function(grunt) {
   grunt.registerTask('default', ['watch']);
 
   //Compile task (concat + minify)
-  grunt.registerTask('compile', ['concat', 'uglify', 'cssmin', 'macreload']);
+  grunt.registerTask('compile', ['nggettext_extract', 'nggettext_compile', 'concat', 'uglify', 'cssmin']);
 
 
 };

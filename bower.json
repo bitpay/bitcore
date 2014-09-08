@@ -12,6 +12,7 @@
     "momentjs": "~2.5.1",
     "zeroclipboard": "~1.3.2",
     "ngprogress": "~1.0.4",
-    "angular-ui-utils": "~0.1.1"
+    "angular-ui-utils": "~0.1.1",
+    "angular-gettext": "~1.1.0"
   }
 }
