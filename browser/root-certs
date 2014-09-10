@@ -24,46 +24,39 @@ var certUrl = 'https://raw.githubusercontent.com/joyent/node/master/src/node_roo
 function getRootCerts(callback) {
   return request(certUrl, function(err, res, body) {
     if (err) return callback(err);
+
+    // Delete the trailing comma
     body = body.replace(/,\s*$/, '');
-    body = 'var certs = {\n' + body + '\n};\n';
-    body = body.replace(/^"/gm, '+ "');
-    body = body.replace(/^\+ "-----B/gm, '"-----B');
+
+    // Make sure each C string is concatenated
+    body = body.replace(/"\r?\n"/g, '');
+
+    // Make sue we turn the cert names into property names
     body = body.replace(/\/\*([^*]+)\*\/\n(?=")/g, function(_, name) {
       var key = name.trim();
-      return '// ' + key + '\n'
-          + '"' + key + '":\n';
+      return '"' + key + '":\n';
     });
-    body += ''
-      + '\n'
-      + '// Use hash table for efficiency:\n'
-      + 'var trusted = Object.keys(certs).reduce(function(trusted, key) {\n'
-      + '  var pem = certs[key];\n'
-      + '  pem = pem.replace(/-----BEGIN CERTIFICATE-----/g, "");\n'
-      + '  pem = pem.replace(/-----END CERTIFICATE-----/g, "");\n'
-      + '  pem = pem.replace(/\\s+/g, "");\n'
-      + '  trusted[pem] = key;\n'
-      + '  return trusted;\n'
-      + '}, {});\n'
-      + '\n'
-      + 'function getTrusted(pem) {\n'
-      + '  pem = pem + "";\n'
-      + '  pem = pem.replace(/-----BEGIN CERTIFICATE-----/g, "");\n'
-      + '  pem = pem.replace(/-----END CERTIFICATE-----/g, "");\n'
-      + '  pem = pem.replace(/\\s+/g, "");\n'
-      + '  if (!Object.prototype.hasOwnProperty.call(trusted, pem)) return;\n'
-      + '  return trusted[pem];\n'
-      + '}\n'
-      + '\n'
-      + 'function getCert(name) {\n'
-      + '  name = name.replace(/^\s+|\s+$/g, "");\n'
-      + '  if (!Object.prototype.hasOwnProperty.call(certs, name)) return;\n'
-      + '  return certs[name];\n'
-      + '}\n'
-      + '\n'
-      + 'exports.certs = certs;\n'
-      + 'exports.trusted = trusted;\n'
-      + 'exports.getCert = getCert;\n'
-      + 'exports.getTrusted = getTrusted;\n';
+
+    // Delete Comments
+    body = body.replace(/\/\* tools\/\.\.\/src[^\0]+?\*\//, '');
+    body = body.replace(/\/\* @\(#\)[^\n]+/, '');
+
+    // \xff -> \u00ff
+    body = body.replace(/\\x([0-9a-fA-F]{2})/g, '\\u00$1');
+
+    // Trim Whitespace
+    body = body.trim();
+
+    // Wrap into a JSON Object
+    body = '{\n' + body + '\n}\n';
+
+    // Ensure JSON parses properly
+    try {
+      body = JSON.stringify(JSON.parse(body), null, 2);
+    } catch (e) {
+      return callback(e);
+    }
+
     return callback(null, body);
   });
 }
@@ -201,7 +194,7 @@ function main(argv, callback) {
   }
   console.log('Retrieving root certs from: %s', certUrl);
   return getRootCerts(function(err, certs) {
-    var file = path.resolve(__dirname, '..', 'lib', 'common', 'RootCerts.js');
+    var file = path.resolve(__dirname, '..', 'lib', 'common', 'RootCerts.json');
     return fs.writeFile(file, certs, function(err) {
       if (err) return callback(err);
       console.log('Root cert code generated at: %s.', file);
