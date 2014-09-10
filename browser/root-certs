@@ -41,7 +41,6 @@ function getRootCerts(callback) {
     body = body.replace(/\/\* tools\/\.\.\/src[^\0]+?\*\//, '');
     body = body.replace(/\/\* @\(#\)[^\n]+/, '');
 
-
     // \xff -> \u00ff
     body = body.replace(/\\x([0-9a-fA-F]{2})/g, '\\u00$1');
 
@@ -50,6 +49,13 @@ function getRootCerts(callback) {
 
     // Wrap into a JSON Object
     body = '{\n' + body + '\n}\n';
+
+    // Ensure JSON parses properly
+    try {
+      body = JSON.stringify(JSON.parse(body), null, 2);
+    } catch (e) {
+      return callback(e);
+    }
 
     return callback(null, body);
   });
