@@ -28,8 +28,9 @@ bitcore.expmt.AES = require('./lib/expmt/aes');
 bitcore.expmt.AESCBC = require('./lib/expmt/aescbc');
 bitcore.expmt.CBC = require('./lib/expmt/cbc');
 bitcore.expmt.ECIES = require('./lib/expmt/ecies');
-bitcore.expmt.Stealthkey = require('./lib/expmt/stealthkey');
 bitcore.expmt.StealthAddress = require('./lib/expmt/stealthaddress');
+bitcore.expmt.Stealthkey = require('./lib/expmt/stealthkey');
+bitcore.expmt.StealthMessage = require('./lib/expmt/stealthmessage');
 
 //dependencies, subject to change
 bitcore.deps = {};
