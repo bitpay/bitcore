@@ -15,11 +15,6 @@ var sa = StealthAddress().fromStealthkey(sk);
 
 console.log('Stealth address: ' + sa);
 
-//The person sending must have a keypair.
-//It is best to make a new one for each message sent.
-
-var keypair = Keypair().fromRandom();
-
 //Now make a message.
 
 var messagebuf = new Buffer('Hello there. Only you know this message is to you, and only you know what it says.');
