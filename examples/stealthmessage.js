@@ -37,6 +37,8 @@ console.log('The randomly generated address the message is to: ' + address);
 
 var pubkey = Pubkey().fromDER(encbuf.slice(20, 20 + 33));
 
+console.log('Nonce public key: ' + pubkey);
+
 //The owner of the stealth key can check to see if it is for them.
 
 console.log('Is the message for me? ' + (StealthMessage.isForMe(encbuf, sk) ? "yes" : "no"));
