@@ -144,21 +144,6 @@ margin-left: 0;
   margin-top: 15px;
 }
 
-@media (max-width: 991px) {
-  .status {
-    display: none;
-  }
-}
-
-@media (max-width: 767px) {
-  .navbar-form {
-    width: auto;
-  }
-  .status {
-    display: none;
-  }
-}
-
 .nav-tabs.nav-justified>li>a:hover {
   cursor: pointer;
 }
@@ -198,8 +183,6 @@ margin-left: 0;
 
 #search-form { color: #fff; }
 
-#search { font-family: 'Ubuntu', sans-serif; }
-
 #search.loading {
   background-image: url('/img/loading.gif');
   background-position: 5px center;
@@ -215,10 +198,11 @@ margin-left: 0;
   margin-left: 5px;
 }
 
+#search { color: #fff; }
+
 #search::-webkit-input-placeholder {
   color: #BCDF7E;
   font-family: 'Ubuntu', sans-serif;
-  font-size: 14px;
   font-style: italic;
   font-weight: 100;
 }
@@ -226,7 +210,6 @@ margin-left: 0;
 #search::-moz-placeholder {
   color: #BCDF7E;
   font-family: 'Ubuntu', sans-serif;
-  font-size: 14px;
   font-weight: 100;
 }
 
@@ -266,25 +249,6 @@ margin-left: 0;
   width: 250px;
   border: 1px solid #eee;
   z-index: 1;
-}
-
-@media (max-width: 768px) {
-  .col-gray-fixed {
-    width:100%;
-  }
-}
-
-@media (max-width: 995px) {
-  .col-gray-fixed {
-    position:static;
-    width: 100%;
-  }
-}
-
-@media (min-width: 1200px) {
-  .col-gray-fixed {
-    width: 280px;
-  }
 }
 
 .ellipsis {
@@ -396,13 +360,6 @@ margin-left: 0;
   white-space: nowrap;
   vertical-align: baseline;
   border-radius: .25em;
-}
-
-@media (max-width: 768px) {
-  .txvalues {
-    display: block;
-    margin: 5px;
-  }
 }
 
 .txvalues-primary {
@@ -584,16 +541,6 @@ margin-left: 0;
 .btn-copy.zeroclipboard-is-hover { color: #2a6496; }
 .btn-copy.zeroclipboard-is-active .tooltip { opacity: 1; }
 
-@media (max-width: 991px) {
-  .btn-copy {
-    display: none;
-  }
-}
-
-.txid {
-  line-height: 26px;
-}
-
 .tx-id {
   background-color: #373D42;
   border: 3px solid #FFFFFF;
@@ -611,7 +558,10 @@ margin-left: 0;
 .page-header { margin-top: 0; }
 
 .panel { margin-bottom: 1em;}
-.panel-body {padding: 0.7em;}
+.panel-body {
+  padding: 0.7em;
+  word-wrap: break-word;
+}
 
 /* Index */
 #home .btn-more {
@@ -745,6 +695,132 @@ a.v_highlight_more {
   margin-top: 15px;
 }
 
-@media (min-width: 768px) {
-  #search { color: #fff; }
+@media (max-width: 991px) {
+  .status {
+    display: none;
+  } 
+  .navbar-form {
+    width: auto;
+  }
+  .btn-copy {
+    display: none;
+  }
+  .col-gray-fixed {
+    position:static;
+    width: 100%;
+    margin-top: 0;
+    padding: 0;
+  }
+  .m50v {
+    margin: 15px 0;
+  }
+  .block-id span {
+    font-size: 24px;
+    margin: 10px 0;
+  }
+  .icon-block {
+    font-size: initial;
+    margin: 10px 0;
+  }
+  body {
+    font-size: 12px;
+  }
+  h1 {
+    font-size: 26px;
+  }
+  h2 {
+    font-size: 22px;
+  }
+  h3 {
+    font-size: 18px;
+  }
 }
+
+@media (max-width: 767px) {
+  .navbar-form {
+    width: auto;
+  }
+  .status {
+    display: none;
+  } 
+  #wrap>.container {
+    padding: 50px 15px 0;
+  }
+  #ngProgress-container {
+    top: 50px;
+  }
+  body {
+    font-size: 11px;
+  }
+  h1 {
+    font-size: 24px;
+  }
+  h2 {
+    font-size: 20px;
+  }
+  .navbar-default .navbar-brand {
+    padding: 15px;
+  }
+  .insight {
+    font-size: 26px;
+  }
+  .navbar-nav>li>a {
+    padding-top: 15px;
+    padding-bottom: 15px;
+  }
+  .container {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .navbar-default .navbar-toggle {
+    margin-top: 7px;
+  }
+  .navbar {
+    min-height: 50px;
+  }
+  #search { color: #000; }
+  .txvalues {
+    display: block;
+    margin: 5px;
+    padding: 0.5em 2em;
+    font-size: 11px;
+  }
+  .navbar-default .navbar-nav .open .dropdown-menu>li>a {
+    color: #fff;
+  }
+  .txvalues {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    font-weight: bold;
+  }
+  .txvalues-success {
+    background: none;
+    color: #2FA4D7;
+  }
+  .txvalues-primary {
+    background: none;
+    color: #8DC429;
+  }
+  .txvalues-default {
+    background: none;
+    color: #A09E9E;
+  }
+  .txvalues-danger {
+    background: none;
+    color: #AC0015;
+  }
+  .btn-expand {
+    font-size: 18px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .col-gray-fixed {
+    width: 280px;
+  }
+  .navbar-form .form-control {
+    width: 350px;
+  }
+}
+
