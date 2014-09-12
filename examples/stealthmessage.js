@@ -22,7 +22,7 @@ var keypair = Keypair().fromRandom();
 
 //Now make a message.
 
-var messagebuf = new Buffer('Hello there. Only you know this message is to, and only you know what it says.');
+var messagebuf = new Buffer('Hello there. Only you know this message is to you, and only you know what it says.');
 
 //Encrypt the message with the stealth address.
 
