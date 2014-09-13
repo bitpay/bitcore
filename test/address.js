@@ -2,6 +2,7 @@ var should = require('chai').should();
 var constants = require('../lib/constants');
 var Pubkey = require('../lib/pubkey');
 var Address = require('../lib/address');
+var Script = require('../lib/script');
 
 describe('Address', function() {
   var pubkeyhash = new Buffer('3c3fa3d4adcaf8f52d5b1843975e122548269937', 'hex');
@@ -41,6 +42,22 @@ describe('Address', function() {
       pubkey.compressed = false;
       address.fromPubkey(pubkey, 'mainnet');
       address.toString().should.equal('16JXnhxjJUhxfyx4y6H4sFcxrgt8kQ8ewX');
+    });
+
+  });
+
+  describe('#fromScript', function() {
+
+    it('should make this address from a script', function() {
+      var script = Script().fromString("OP_CHECKMULTISIG");
+      var address = Address().fromScript(script);
+      address.toString().should.equal('3BYmEwgV2vANrmfRymr1mFnHXgLjD6gAWm');
+    });
+
+    it('should make this address from other script', function() {
+      var script = Script().fromString("OP_CHECKSIG OP_HASH160");
+      var address = Address().fromScript(script);
+      address.toString().should.equal('347iRqVwks5r493N1rsLN4k9J7Ljg488W7');
     });
 
   });
