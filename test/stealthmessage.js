@@ -1,3 +1,4 @@
+var Keypair = require('../lib/keypair');
 var StealthMessage = require('../lib/expmt/stealthmessage');
 var Stealthkey = require('../lib/expmt/stealthkey');
 var StealthAddress = require('../lib/expmt/stealthAddress');
@@ -11,7 +12,7 @@ describe('StealthMessage', function() {
   var payloadKeypair = KDF.buf2keypair(new Buffer('key1'));
   var scanKeypair = KDF.buf2keypair(new Buffer('key2'));
   var fromKeypair = KDF.buf2keypair(new Buffer('key3'));
-  var enchex = 'f557994f16d0d628fa4fdb4ab3d7e0bc5f2754f20381c7831a20c7c9ec88dcf092ea3683261798ccda991ed65a3a54a036d8125dec0381c7831a20c7c9ec88dcf092ea3683261798ccda991ed65a3a54a036d8125dec9f86d081884c7d659a2feaa0c55ad01560ba2904d3bc8395b6c4a6f87648edb33db6a22170e5e26f340c7ba943169210234cd6a753ad13919b0ab7d678b47b5e7d63e452382de2c2590fb57ef048f7b3';
+  var enchex = '3867dce7be22e8551512b25f329b51fd5fe8ecfe0381c7831a20c7c9ec88dcf092ea3683261798ccda991ed65a3a54a036d8125dec0381c7831a20c7c9ec88dcf092ea3683261798ccda991ed65a3a54a036d8125dec9f86d081884c7d659a2feaa0c55ad015aca97de5af3a34a0f47eee0a1f7774dcb759187555003282bd23b047bceb5b2f2c1ee35b8f0be1fda7a41424f6cc8030559c8c32ea8cc812860f4c8123f1417a';
   var encbuf = new Buffer(enchex, 'hex');
   var ivbuf = Hash.sha256(new Buffer('test')).slice(0, 128 / 8);
   var sk = Stealthkey().set({payloadKeypair: payloadKeypair, scanKeypair: scanKeypair});
@@ -71,6 +72,14 @@ describe('StealthMessage', function() {
 
     it('should know that this message is for me', function() {
       StealthMessage.isForMe(encbuf, sk).should.equal(true);
+    });
+
+    it('should know that this message is for me even if my payloadPrivkey is not present', function() {
+      var sk2 = new Stealthkey();
+      sk2.scanKeypair = sk.scanKeypair;
+      sk2.payloadKeypair = Keypair().set({pubkey: sk.payloadKeypair.pubkey});
+      should.not.exist(sk2.payloadKeypair.privkey);
+      StealthMessage.isForMe(encbuf, sk2).should.equal(true);
     });
 
   });

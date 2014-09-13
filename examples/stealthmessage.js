@@ -48,3 +48,16 @@ console.log('Is the message for me? ' + (StealthMessage.isForMe(encbuf, sk) ? "y
 var messagebuf2 = StealthMessage.decrypt(encbuf, sk);
 
 console.log('Decrypted message: ' + messagebuf2.toString());
+
+//If you do not have the payload privkey, you can still use isForMe.
+sk.payloadKeypair.privkey = undefined;
+
+console.log('Without payload privkey, is the message for me? ' + (StealthMessage.isForMe(encbuf, sk) ? "yes" : "no"));
+
+//...but not decrypt
+
+try {
+  StealthMessage.decrypt(encbuf, sk);
+} catch (e) {
+  console.log("...but without the payload privkey, I can't decrypt.");
+}

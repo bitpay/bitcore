@@ -103,12 +103,12 @@ describe('Stealthkey', function() {
   describe('#isForMe', function() {
 
     it('should return true if it (the transaction or message) is for me', function() {
-      var pubkeyhash = new Buffer('3cb64fa6ee9b3e8754e3e2bd033bf61048604a99', 'hex');
+      var pubkeyhash = new Buffer('0db7f06cffb913322e211e8b0688efe8ff52aa8d', 'hex');
       stealthkey.isForMe(senderKeypair.pubkey, pubkeyhash).should.equal(true);
     });
 
     it('should return false if it (the transaction or message) is not for me', function() {
-      var pubkeyhash = new Buffer('00b64fa6ee9b3e8754e3e2bd033bf61048604a99', 'hex');
+      var pubkeyhash = new Buffer('ffb7f06cffb913322e211e8b0688efe8ff52aa8d', 'hex');
       stealthkey.isForMe(senderKeypair.pubkey, pubkeyhash).should.equal(false);
     });
 
