@@ -168,6 +168,35 @@ describe('BufferReader', function() {
 
   });
 
+  describe('#readVarIntBuf', function() {
+
+    it('should read a 1 byte varint', function() {
+      var buf = new Buffer([50]);
+      var br = new BufferReader({buf: buf});
+      br.readVarIntBuf().length.should.equal(1);
+    });
+
+    it('should read a 3 byte varint', function() {
+      var buf = new Buffer([253, 253, 0]);
+      var br = new BufferReader({buf: buf});
+      br.readVarIntBuf().length.should.equal(3);
+    });
+
+    it('should read a 5 byte varint', function() {
+      var buf = new Buffer([254, 0, 0, 0, 0]);
+      buf.writeUInt32LE(50000, 1);
+      var br = new BufferReader({buf: buf});
+      br.readVarIntBuf().length.should.equal(5);
+    });
+
+    it('should read a 9 byte varint', function() {
+      var buf = BufferWriter().writeVarIntBN(BN(Math.pow(2, 54).toString())).concat();
+      var br = new BufferReader({buf: buf});
+      br.readVarIntBuf().length.should.equal(9);
+    });
+
+  });
+
   describe('#readVarIntNum', function() {
 
     it('should read a 1 byte varint', function() {
