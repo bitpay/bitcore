@@ -21,6 +21,7 @@ bitcore.Pubkey = require('./lib/pubkey');
 bitcore.Random = require('./lib/random');
 bitcore.Script = require('./lib/script');
 bitcore.Signature = require('./lib/signature');
+bitcore.Varint = require('./lib/varint');
 
 //experimental, nonstandard, or unstable features
 bitcore.expmt = {};
