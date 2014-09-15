@@ -168,32 +168,32 @@ describe('BufferReader', function() {
 
   });
 
-  describe('#readVarInt', function() {
+  describe('#readVarIntNum', function() {
 
     it('should read a 1 byte varint', function() {
       var buf = new Buffer([50]);
       var br = new BufferReader({buf: buf});
-      br.readVarInt().should.equal(50);
+      br.readVarIntNum().should.equal(50);
     });
 
     it('should read a 3 byte varint', function() {
       var buf = new Buffer([253, 253, 0]);
       var br = new BufferReader({buf: buf});
-      br.readVarInt().should.equal(253);
+      br.readVarIntNum().should.equal(253);
     });
 
     it('should read a 5 byte varint', function() {
       var buf = new Buffer([254, 0, 0, 0, 0]);
       buf.writeUInt32LE(50000, 1);
       var br = new BufferReader({buf: buf});
-      br.readVarInt().should.equal(50000);
+      br.readVarIntNum().should.equal(50000);
     });
 
     it('should throw an error on a 9 byte varint over the javascript uint precision limit', function() {
       var buf = BufferWriter().writeVarIntBN(BN(Math.pow(2, 54).toString())).concat();
       var br = new BufferReader({buf: buf});
       (function() {
-        br.readVarInt();
+        br.readVarIntNum();
       }).should.throw('number too large to retain precision - use readVarIntBN');
     });
 
@@ -201,7 +201,7 @@ describe('BufferReader', function() {
       var buf = BufferWriter().writeVarIntBN(BN(Math.pow(2, 53).toString())).concat();
       var br = new BufferReader({buf: buf});
       (function() {
-        br.readVarInt();
+        br.readVarIntNum();
       }).should.not.throw('number too large to retain precision - use readVarIntBN');
     });
 
