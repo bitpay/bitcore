@@ -168,99 +168,99 @@ describe('BufferReader', function() {
 
   });
 
-  describe('#readVarIntBuf', function() {
+  describe('#readVarintBuf', function() {
 
     it('should read a 1 byte varint', function() {
       var buf = new Buffer([50]);
       var br = new BufferReader({buf: buf});
-      br.readVarIntBuf().length.should.equal(1);
+      br.readVarintBuf().length.should.equal(1);
     });
 
     it('should read a 3 byte varint', function() {
       var buf = new Buffer([253, 253, 0]);
       var br = new BufferReader({buf: buf});
-      br.readVarIntBuf().length.should.equal(3);
+      br.readVarintBuf().length.should.equal(3);
     });
 
     it('should read a 5 byte varint', function() {
       var buf = new Buffer([254, 0, 0, 0, 0]);
       buf.writeUInt32LE(50000, 1);
       var br = new BufferReader({buf: buf});
-      br.readVarIntBuf().length.should.equal(5);
+      br.readVarintBuf().length.should.equal(5);
     });
 
     it('should read a 9 byte varint', function() {
-      var buf = BufferWriter().writeVarIntBN(BN(Math.pow(2, 54).toString())).concat();
+      var buf = BufferWriter().writeVarintBN(BN(Math.pow(2, 54).toString())).concat();
       var br = new BufferReader({buf: buf});
-      br.readVarIntBuf().length.should.equal(9);
+      br.readVarintBuf().length.should.equal(9);
     });
 
   });
 
-  describe('#readVarIntNum', function() {
+  describe('#readVarintNum', function() {
 
     it('should read a 1 byte varint', function() {
       var buf = new Buffer([50]);
       var br = new BufferReader({buf: buf});
-      br.readVarIntNum().should.equal(50);
+      br.readVarintNum().should.equal(50);
     });
 
     it('should read a 3 byte varint', function() {
       var buf = new Buffer([253, 253, 0]);
       var br = new BufferReader({buf: buf});
-      br.readVarIntNum().should.equal(253);
+      br.readVarintNum().should.equal(253);
     });
 
     it('should read a 5 byte varint', function() {
       var buf = new Buffer([254, 0, 0, 0, 0]);
       buf.writeUInt32LE(50000, 1);
       var br = new BufferReader({buf: buf});
-      br.readVarIntNum().should.equal(50000);
+      br.readVarintNum().should.equal(50000);
     });
 
     it('should throw an error on a 9 byte varint over the javascript uint precision limit', function() {
-      var buf = BufferWriter().writeVarIntBN(BN(Math.pow(2, 54).toString())).concat();
+      var buf = BufferWriter().writeVarintBN(BN(Math.pow(2, 54).toString())).concat();
       var br = new BufferReader({buf: buf});
       (function() {
-        br.readVarIntNum();
-      }).should.throw('number too large to retain precision - use readVarIntBN');
+        br.readVarintNum();
+      }).should.throw('number too large to retain precision - use readVarintBN');
     });
 
     it('should not throw an error on a 9 byte varint not over the javascript uint precision limit', function() {
-      var buf = BufferWriter().writeVarIntBN(BN(Math.pow(2, 53).toString())).concat();
+      var buf = BufferWriter().writeVarintBN(BN(Math.pow(2, 53).toString())).concat();
       var br = new BufferReader({buf: buf});
       (function() {
-        br.readVarIntNum();
-      }).should.not.throw('number too large to retain precision - use readVarIntBN');
+        br.readVarintNum();
+      }).should.not.throw('number too large to retain precision - use readVarintBN');
     });
 
   });
 
-  describe('#readVarIntBN', function() {
+  describe('#readVarintBN', function() {
 
     it('should read a 1 byte varint', function() {
       var buf = new Buffer([50]);
       var br = new BufferReader({buf: buf});
-      br.readVarIntBN().toNumber().should.equal(50);
+      br.readVarintBN().toNumber().should.equal(50);
     });
 
     it('should read a 3 byte varint', function() {
       var buf = new Buffer([253, 253, 0]);
       var br = new BufferReader({buf: buf});
-      br.readVarIntBN().toNumber().should.equal(253);
+      br.readVarintBN().toNumber().should.equal(253);
     });
 
     it('should read a 5 byte varint', function() {
       var buf = new Buffer([254, 0, 0, 0, 0]);
       buf.writeUInt32LE(50000, 1);
       var br = new BufferReader({buf: buf});
-      br.readVarIntBN().toNumber().should.equal(50000);
+      br.readVarintBN().toNumber().should.equal(50000);
     });
 
     it('should read a 9 byte varint', function() {
       var buf = Buffer.concat([new Buffer([255]), new Buffer('ffffffffffffffff', 'hex')]);
       var br = new BufferReader({buf: buf});
-      br.readVarIntBN().toNumber().should.equal(Math.pow(2, 64));
+      br.readVarintBN().toNumber().should.equal(Math.pow(2, 64));
     });
 
   });
