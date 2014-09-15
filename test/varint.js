@@ -1,3 +1,4 @@
+var BN = require('../lib/bn');
 var should = require('chai').should();
 var BufferReader = require('../lib/bufferreader');
 var BufferWriter = require('../lib/bufferwriter');
@@ -48,6 +49,15 @@ describe('Varint', function() {
 
   });
 
+  describe('#fromBN', function() {
+    
+    it('should set a number', function() {
+      var varint = Varint().fromNumber(BN(5));
+      varint.toNumber().should.equal(5);
+    });
+
+  });
+
   describe('#fromNumber', function() {
     
     it('should set a number', function() {
@@ -63,6 +73,15 @@ describe('Varint', function() {
       buf = BufferWriter().writeVarintNum(5).concat();
       var varint = Varint(buf);
       varint.toBuffer().toString('hex').should.equal(buf.toString('hex'));
+    });
+
+  });
+
+  describe('#toBN', function() {
+    
+    it('should return a buffer', function() {
+      var varint = Varint(5);
+      varint.toBN().toString().should.equal(BN(5).toString());
     });
 
   });
