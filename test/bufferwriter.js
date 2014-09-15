@@ -111,25 +111,25 @@ describe('BufferWriter', function() {
     
     it('should write a 1 byte varInt', function() {
       var bw = new BufferWriter();
-      bw.writeVarInt(1);
+      bw.writeVarIntNum(1);
       bw.concat().length.should.equal(1);
     });
 
     it('should write a 3 byte varInt', function() {
       var bw = new BufferWriter();
-      bw.writeVarInt(1000);
+      bw.writeVarIntNum(1000);
       bw.concat().length.should.equal(3);
     });
 
     it('should write a 5 byte varInt', function() {
       var bw = new BufferWriter();
-      bw.writeVarInt(Math.pow(2, 16 + 1));
+      bw.writeVarIntNum(Math.pow(2, 16 + 1));
       bw.concat().length.should.equal(5);
     });
 
     it('should write a 9 byte varInt', function() {
       var bw = new BufferWriter();
-      bw.writeVarInt(Math.pow(2, 32 + 1));
+      bw.writeVarIntNum(Math.pow(2, 32 + 1));
       bw.concat().length.should.equal(9);
     });
 
@@ -137,7 +137,7 @@ describe('BufferWriter', function() {
       var bw = new BufferWriter();
       var n = Math.pow(2, 53);
       n.should.equal(n + 1); //javascript number precision limit
-      bw.writeVarInt(n);
+      bw.writeVarIntNum(n);
       var br = new BufferReader({buf: bw.concat()});
       br.readVarIntBN().toNumber().should.equal(n);
     });
