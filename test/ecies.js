@@ -26,6 +26,11 @@ describe('#ECIES', function() {
       Buffer.isBuffer(encbuf).should.equal(true);
     });
 
+    it('should return a buffer if fromkey is not present', function() {
+      var encbuf = ECIES.encrypt(messagebuf, tokey);
+      Buffer.isBuffer(encbuf).should.equal(true);
+    });
+
   });
 
   describe('@decrypt', function() {
