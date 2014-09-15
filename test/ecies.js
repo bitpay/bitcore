@@ -22,12 +22,12 @@ describe('#ECIES', function() {
   describe('@encrypt', function() {
 
     it('should return a buffer', function() {
-      var encbuf = ECIES.encrypt(messagebuf, tokey, fromkey);
+      var encbuf = ECIES.encrypt(messagebuf, tokey.pubkey, fromkey);
       Buffer.isBuffer(encbuf).should.equal(true);
     });
 
     it('should return a buffer if fromkey is not present', function() {
-      var encbuf = ECIES.encrypt(messagebuf, tokey);
+      var encbuf = ECIES.encrypt(messagebuf, tokey.pubkey);
       Buffer.isBuffer(encbuf).should.equal(true);
     });
 
@@ -36,14 +36,14 @@ describe('#ECIES', function() {
   describe('@decrypt', function() {
 
     it('should decrypt that which was encrypted', function() {
-      var encbuf = ECIES.encrypt(messagebuf, tokey, fromkey);
-      var messagebuf2 = ECIES.decrypt(encbuf, tokey);
+      var encbuf = ECIES.encrypt(messagebuf, tokey.pubkey, fromkey);
+      var messagebuf2 = ECIES.decrypt(encbuf, tokey.privkey);
       messagebuf2.toString('hex').should.equal(messagebuf.toString('hex'));
     });
 
     it('should decrypt that which was encrypted if fromkeypair was randomly generated', function() {
-      var encbuf = ECIES.encrypt(messagebuf, tokey);
-      var messagebuf2 = ECIES.decrypt(encbuf, tokey);
+      var encbuf = ECIES.encrypt(messagebuf, tokey.pubkey);
+      var messagebuf2 = ECIES.decrypt(encbuf, tokey.privkey);
       messagebuf2.toString('hex').should.equal(messagebuf.toString('hex'));
     });
 
