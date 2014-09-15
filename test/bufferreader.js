@@ -1,6 +1,7 @@
 var BufferWriter = require('../lib/bufferwriter');
 var BufferReader = require('../lib/bufferreader');
 var should = require('chai').should();
+var BN = require('../lib/bn');
 
 describe('BufferReader', function() {
   
@@ -188,12 +189,20 @@ describe('BufferReader', function() {
       br.readVarInt().should.equal(50000);
     });
 
-    it('should throw an error on a 9 byte varint', function() {
-      var buf = Buffer.concat([new Buffer([255]), new Buffer('ffffffffffffffff', 'hex')]);
+    it('should throw an error on a 9 byte varint over the javascript uint precision limit', function() {
+      var buf = BufferWriter().writeVarIntBN(BN(Math.pow(2, 54).toString())).concat();
       var br = new BufferReader({buf: buf});
       (function() {
         br.readVarInt();
       }).should.throw('number too large to retain precision - use readVarIntBN');
+    });
+
+    it('should not throw an error on a 9 byte varint not over the javascript uint precision limit', function() {
+      var buf = BufferWriter().writeVarIntBN(BN(Math.pow(2, 53).toString())).concat();
+      var br = new BufferReader({buf: buf});
+      (function() {
+        br.readVarInt();
+      }).should.not.throw('number too large to retain precision - use readVarIntBN');
     });
 
   });
