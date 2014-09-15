@@ -39,7 +39,7 @@ property(s) that it modifies.
 
 -------------------------
 Features over bitcore:
-* Stealth addresses
+* Stealth keys, addresses, message
 * Proper handling of reading and writing big varInts
 * Browserifiable
 * A proper point class
