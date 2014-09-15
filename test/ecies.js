@@ -41,6 +41,12 @@ describe('#ECIES', function() {
       messagebuf2.toString('hex').should.equal(messagebuf.toString('hex'));
     });
 
+    it('should decrypt that which was encrypted if fromkeypair was randomly generated', function() {
+      var encbuf = ECIES.encrypt(messagebuf, tokey);
+      var messagebuf2 = ECIES.decrypt(encbuf, tokey);
+      messagebuf2.toString('hex').should.equal(messagebuf.toString('hex'));
+    });
+
   });
 
 });
