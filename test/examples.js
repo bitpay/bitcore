@@ -1,3 +1,6 @@
+if (process.browser)
+  return; //examples are loaded from files, which doesn't work in the browser
+
 var should = require('chai').should();
 var fs = require('fs');
 
