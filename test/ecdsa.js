@@ -190,4 +190,24 @@ describe("ECDSA", function() {
 
   });
 
+  describe('@sign', function() {
+    
+    it('should produce a signature', function() {
+      var sig = ECDSA.sign(ecdsa.hashbuf, ecdsa.keypair);
+      (sig instanceof Signature).should.equal(true);
+    });
+
+  });
+
+  describe('@verify', function() {
+
+    it('should verify a valid signature, and unverify an invalid signature', function() {
+      var sig = ECDSA.sign(ecdsa.hashbuf, ecdsa.keypair);
+      ECDSA.verify(ecdsa.hashbuf, sig, ecdsa.keypair.pubkey).should.equal(true);
+      var fakesig = Signature(sig.r.add(1), sig.s);
+      ECDSA.verify(ecdsa.hashbuf, fakesig, ecdsa.keypair.pubkey).should.equal(false);
+    });
+
+  });
+
 });
