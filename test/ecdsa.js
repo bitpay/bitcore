@@ -144,6 +144,17 @@ describe("ECDSA", function() {
       ecdsa.verify().should.equal(true);
     });
 
+    it('should should throw an error if hashbuf is not 32 bytes', function() {
+      var ecdsa2 = ECDSA().set({
+        hashbuf: ecdsa.hashbuf.slice(0, 31),
+        keypair: ecdsa.keypair
+      });
+      ecdsa2.randomK();
+      (function() {
+        ecdsa2.sign();
+      }).should.throw('hashbuf must be a 32 byte buffer');
+    });
+
   });
 
   describe('#signRandomK', function() {
