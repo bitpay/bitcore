@@ -105,7 +105,7 @@ describe("ECDSA", function() {
 
     it('should return an error if the hash is invalid', function() {
       var ecdsa = new ECDSA();
-      ecdsa.sigError().should.equal('Invalid hash');
+      ecdsa.sigError().should.equal('hashbuf must be a 32 byte buffer');
     });
 
     it('should return an error if the pubkey is invalid', function() {
