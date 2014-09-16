@@ -299,39 +299,40 @@ app.post('/-/pay', function(req, res, next) {
     return ptx;
   });
 
-  (function retry() {
-    var timeout = setTimeout(function() {
-      if (conn) {
-        transactions.forEach(function(tx) {
-          var id = tx.getHash().toString('hex');
-          print('');
-          print('Sending transaction with txid: %s', id);
-          print(tx.getStandardizedObject());
+  if (!argv['no-tx']) {
+    (function retry() {
+      var timeout = setTimeout(function() {
+        if (conn) {
+          transactions.forEach(function(tx) {
+            var id = tx.getHash().toString('hex');
+            print('');
+            print('Sending transaction with txid: %s', id);
+            print(tx.getStandardizedObject());
 
-          var pending = 1;
-          peerman.on('ack', function listener() {
-            if (!--pending) {
-              peerman.removeListener('ack', listener);
-              clearTimeout(timeout);
-              print('Transaction sent to peer successfully.');
-            }
-          });
+            print('Broadcasting transaction...');
 
-          print('Broadcasting transaction...');
-
-          if (!argv['no-tx']) {
+            var pending = 1;
+            peerman.on('ack', function listener() {
+              if (!--pending) {
+                peerman.removeListener('ack', listener);
+                clearTimeout(timeout);
+                print('Transaction sent to peer successfully.');
+                res.send(ack);
+              }
+            });
             conn.sendTx(tx);
-          }
-        });
-      } else {
-        print('No BTC network connection. Retrying...');
-        conn = peerman.getActiveConnection();
-        retry();
-      }
-    }, 1000);
-  })();
-
-  res.send(ack);
+          });
+        } else {
+          print('No BTC network connection. Retrying...');
+          conn = peerman.getActiveConnection();
+          retry();
+        }
+      }, 1000);
+    })();
+  } else {
+    print('Broadcasting transaction...');
+    res.send(ack);
+  }
 });
 
 /**
