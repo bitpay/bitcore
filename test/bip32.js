@@ -287,12 +287,12 @@ describe('BIP32', function() {
     var bip322 = BIP32().set({
       version: bip32.version,
       depth: bip32.depth,
-      parentFingerprint: bip32.parentFingerprint,
-      childIndex: bip32.childIndex,
-      chainCode: bip32.chainCode,
+      parentfingerprint: bip32.parentfingerprint,
+      childindex: bip32.childindex,
+      chaincode: bip32.chaincode,
       key: bip32.key,
-      hasPrivateKey: bip32.hasPrivateKey,
-      pubKeyHash: bip32.pubKeyhash,
+      hasprivkey: bip32.hasprivkey,
+      pubkeyhash: bip32.pubKeyhash,
       xpubkey: bip32.xpubkey,
       xprivkey: bip32.xprivkey
     });
