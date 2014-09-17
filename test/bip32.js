@@ -40,6 +40,7 @@ describe('BIP32', function() {
     should.exist(bip32);
     new BIP32(vector1_m_private).toString().should.equal(vector1_m_private);
     BIP32(vector1_m_private).toString().should.equal(vector1_m_private);
+    BIP32(BIP32(vector1_m_private)).toString().should.equal(vector1_m_private);
   });
 
   it('should initialize test vector 1 from the extended public key', function() {
@@ -279,6 +280,24 @@ describe('BIP32', function() {
       b.fromRandom('testnet');
       b.extendedPublicKeyString().substring(0,4).should.equal('tpub');
     });
+  });
+
+  describe('#set', function() {
+    var bip32 = BIP32(vector1_m_private);
+    var bip322 = BIP32().set({
+      version: bip32.version,
+      depth: bip32.depth,
+      parentFingerprint: bip32.parentFingerprint,
+      childIndex: bip32.childIndex,
+      chainCode: bip32.chainCode,
+      key: bip32.key,
+      hasPrivateKey: bip32.hasPrivateKey,
+      pubKeyHash: bip32.pubKeyhash,
+      extendedPublicKey: bip32.extendedPublicKey,
+      extendedPrivateKey: bip32.extendedPrivateKey
+    });
+    bip322.toString().should.equal(bip32.toString());
+    bip322.set({}).toString().should.equal(bip32.toString());
   });
 
   describe('#seed', function() {
