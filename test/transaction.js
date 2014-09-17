@@ -19,9 +19,9 @@ describe('Transaction', function() {
   var txout = Txout().fromBuffer(new Buffer('050000000000000001ae', 'hex'));
   var tx = Transaction().set({
     version: 0,
-    txinsvarint: Varint(1),
+    txinsvi: Varint(1),
     txins: [txin],
-    txoutsvarint: Varint(1),
+    txoutsvi: Varint(1),
     txouts: [txout],
     nlocktime: 0
   });
@@ -37,16 +37,16 @@ describe('Transaction', function() {
     it('should set all the basic parameters', function() {
       var tx = Transaction().set({
         version: 0,
-        txinsvarint: Varint(1),
+        txinsvi: Varint(1),
         txins: [txin],
-        txoutsvarint: Varint(1),
+        txoutsvi: Varint(1),
         txouts: [txout],
         nlocktime: 0
       });
       should.exist(tx.version);
-      should.exist(tx.txinsvarint);
+      should.exist(tx.txinsvi);
       should.exist(tx.txins);
-      should.exist(tx.txoutsvarint);
+      should.exist(tx.txoutsvi);
       should.exist(tx.txouts);
       should.exist(tx.nlocktime);
     });

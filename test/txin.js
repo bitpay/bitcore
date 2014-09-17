@@ -17,12 +17,12 @@ describe('Txin', function() {
   txidbuf.fill(0);
   var txoutnum = 0;
   var script = Script().fromString("OP_CHECKMULTISIG");
-  var varint = Varint(script.toBuffer().length);
+  var scriptvi = Varint(script.toBuffer().length);
   var seqnum = 0;
   var txin = Txin().set({
     txidbuf: txidbuf,
     txoutnum: txoutnum,
-    varint: varint,
+    scriptvi: scriptvi,
     script: script,
     seqnum: seqnum
   });
@@ -33,13 +33,13 @@ describe('Txin', function() {
       var txin = Txin().set({
         txidbuf: txidbuf,
         txoutnum: txoutnum,
-        varint: varint,
+        scriptvi: scriptvi,
         script: script,
         seqnum: seqnum
       });
       should.exist(txin.txidbuf);
       should.exist(txin.txoutnum);
-      should.exist(txin.varint);
+      should.exist(txin.scriptvi);
       should.exist(txin.script);
       should.exist(txin.seqnum);
     });
@@ -52,7 +52,7 @@ describe('Txin', function() {
       var hex = '00000000000000000000000000000000000000000000000000000000000000000000000001ae00000000';
       var buf = new Buffer(hex, 'hex');
       var txin = Txin().fromBuffer(buf);
-      txin.varint.toNumber().should.equal(1);
+      txin.scriptvi.toNumber().should.equal(1);
       txin.script.toString().should.equal('OP_CHECKMULTISIG');
     });
 
@@ -65,7 +65,7 @@ describe('Txin', function() {
       var buf = new Buffer(hex, 'hex');
       var br = BufferReader(buf);
       var txin = Txin().fromBufferReader(br);
-      txin.varint.toNumber().should.equal(1);
+      txin.scriptvi.toNumber().should.equal(1);
       txin.script.toString().should.equal('OP_CHECKMULTISIG');
     });
 

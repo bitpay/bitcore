@@ -17,10 +17,10 @@ describe('Txout', function() {
 
   var valuebn = BN(5);
   var script = Script().fromString("OP_CHECKMULTISIG");
-  var varint = Varint(script.toBuffer().length);
+  var scriptvi = Varint(script.toBuffer().length);
   var txout = new Txout().set({
     valuebn: valuebn,
-    varint: varint,
+    scriptvi: scriptvi,
     script: script
   });
 
@@ -29,11 +29,11 @@ describe('Txout', function() {
     it('should set this object', function() {
       var txout = new Txout().set({
         valuebn: valuebn,
-        varint: varint,
+        scriptvi: scriptvi,
         script: script
       });
       should.exist(txout.valuebn);
-      should.exist(txout.varint);
+      should.exist(txout.scriptvi);
       should.exist(txout.script);
     });
 
