@@ -36,20 +36,6 @@ describe('BufferReader', function() {
 
   });
 
-  describe('#buffer', function() {
-
-    it('should return a buffer of this length', function() {
-      var buf = new Buffer(10);
-      buf.fill(0);
-      var br = new BufferReader(buf);
-      var buf2 = br.buffer(2);
-      buf2.length.should.equal(2);
-      br.eof().should.equal(false);
-      br.pos.should.equal(2);
-    });
-
-  });
-
   describe('read', function() {
     
     it('should return the same buffer', function() {
