@@ -84,7 +84,7 @@ describe('Point', function() {
 
   });
 
-  describe('#fromX', function() {
+  describe('@fromX', function() {
     
     it('should return g', function() {
       var g = point.getG();
