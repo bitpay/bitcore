@@ -324,7 +324,6 @@ describe('BIP32', function() {
       tip32b.toString().slice(0, 4).should.equal('tpub');
     });
 
-
   });
 
 });
