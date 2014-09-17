@@ -66,7 +66,23 @@ describe('BN', function() {
 
   });
 
-  describe('#fromBuffer', function() {
+  describe('#fromString', function() {
+    
+    it('should make BN from a string', function() {
+      BN().fromString('5').toString().should.equal('5');
+    });
+
+  });
+
+  describe('#toString', function() {
+    
+    it('should make a string', function() {
+      BN(5).toString().should.equal('5');
+    });
+
+  });
+
+  describe('@fromBuffer', function() {
     
     it('should work with big endian', function() {
       var bn = BN.fromBuffer(new Buffer('0001', 'hex'), {endian: 'big'});
@@ -83,11 +99,15 @@ describe('BN', function() {
       bn.toString().should.equal('1');
     });
 
+  });
+
+  describe('#fromBuffer', function() {
+
     it('should work as a prototype method', function() {
       var bn = BN().fromBuffer(new Buffer('0100', 'hex'), {size: 2, endian: 'little'});
       bn.toString().should.equal('1');
     });
-
+  
   });
 
   describe('#toBuffer', function() {
