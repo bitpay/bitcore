@@ -16,6 +16,11 @@ describe('Base58Check', function() {
     should.exist(b58);
   });
 
+  it('should allow this handy syntax', function() {
+    Base58Check(buf).toString().should.equal(enc);
+    Base58Check(enc).toBuffer().toString('hex').should.equal(buf.toString('hex'));
+  });
+
   describe('#set', function() {
     
     it('should set a buf', function() {
