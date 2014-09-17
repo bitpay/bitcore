@@ -32,14 +32,14 @@ describe('BIP32', function() {
   var vector2_m02147483647h12147483646h2_public = 'xpub6FnCn6nSzZAw5Tw7cgR9bi15UV96gLZhjDstkXXxvCLsUXBGXPdSnLFbdpq8p9HmGsApME5hQTZ3emM2rnY5agb9rXpVGyy3bdW6EEgAtqt';
   var vector2_m02147483647h12147483646h2_private = 'xprvA2nrNbFZABcdryreWet9Ea4LvTJcGsqrMzxHx98MMrotbir7yrKCEXw7nadnHM8Dq38EGfSh6dqA9QWTyefMLEcBYJUuekgW4BYPJcr9E7j';
 
-
-  it('should initialize the class', function() {
-    should.exist(BIP32);
-  });
-
-  it('should create a bip32', function() {
-    var bip32 = new BIP32();
+  it('should make a new a bip32', function() {
+    var bip32;
+    bip32 = new BIP32();
     should.exist(bip32);
+    bip32 = BIP32();
+    should.exist(bip32);
+    new BIP32(vector1_m_private).toString().should.equal(vector1_m_private);
+    BIP32(vector1_m_private).toString().should.equal(vector1_m_private);
   });
 
   it('should initialize test vector 1 from the extended public key', function() {
@@ -266,6 +266,21 @@ describe('BIP32', function() {
     child2.extendedPublicKeyString().should.equal(vector2_m02147483647h12147483646h2_public);
   });
 
+  describe('testnet', function() {
+    it('should initialize a new BIP32 correctly from a random BIP32', function() {
+      var b1 = new BIP32();
+      b1.fromRandom('testnet');
+      var b2 = new BIP32().fromString(b1.extendedPublicKeyString());
+      b2.extendedPublicKeyString().should.equal(b1.extendedPublicKeyString());
+    });
+
+    it('should generate valid ext pub key for testnet', function() {
+      var b = new BIP32();
+      b.fromRandom('testnet');
+      b.extendedPublicKeyString().substring(0,4).should.equal('tpub');
+    });
+  });
+
   describe('#seed', function() {
 
     it('should initialize a new BIP32 correctly from test vector 1 seed', function() {
@@ -282,21 +297,6 @@ describe('BIP32', function() {
       should.exist(bip32);
       bip32.extendedPrivateKeyString().should.equal(vector2_m_private);
       bip32.extendedPublicKeyString().should.equal(vector2_m_public);
-    });
-  });
-
-  describe('testnet', function() {
-    it('should initialize a new BIP32 correctly from a random BIP32', function() {
-      var b1 = new BIP32();
-      b1.fromRandom('testnet');
-      var b2 = new BIP32().fromString(b1.extendedPublicKeyString());
-      b2.extendedPublicKeyString().should.equal(b1.extendedPublicKeyString());
-    });
-
-    it('should generate valid ext pub key for testnet', function() {
-      var b = new BIP32();
-      b.fromRandom('testnet');
-      b.extendedPublicKeyString().substring(0,4).should.equal('tpub');
     });
   });
 
