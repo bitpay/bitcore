@@ -52,7 +52,7 @@ describe('Varint', function() {
   describe('#fromBN', function() {
     
     it('should set a number', function() {
-      var varint = Varint().fromNumber(BN(5));
+      var varint = Varint().fromBN(BN(5));
       varint.toNumber().should.equal(5);
     });
 
