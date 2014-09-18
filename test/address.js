@@ -38,6 +38,23 @@ describe('Address', function() {
 
   });
 
+  describe('#fromHashbuf', function() {
+    
+    it('should make an address from a hashbuf', function() {
+      Address().fromHashbuf(pubkeyhash).toString().should.equal(str);
+      var a = Address().fromHashbuf(pubkeyhash, 'testnet', 'scripthash');
+      a.networkstr.should.equal('testnet');
+      a.typestr.should.equal('scripthash');
+    });
+
+    it('should throw an error for invalid length hashbuf', function() {
+      (function() {
+        Address().fromHashbuf(buf);
+      }).should.throw('hashbuf must be exactly 20 bytes');
+    });
+
+  });
+
   describe('#fromPubkey', function() {
 
     it('should make this address from a compressed pubkey', function() {
