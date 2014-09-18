@@ -21,7 +21,7 @@ fromObject methods.
 4) All standard features of the bitcoin protocol are implemented and saved in
 lib/. All BIPs are correctly implemented and saved as BIPxx.js in lib/ (since
 that is their standard name). Any non-standard features (such as SINs and
-stealtha addresses) are placed in the lib/expmt/ folder and are accessible at
+stealth addresses) are placed in the lib/expmt/ folder and are accessible at
 bitcore.expmt. Once they are standardized and given a BIP, they are renamed and
 placed in lib/.
 
