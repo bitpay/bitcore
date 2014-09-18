@@ -5,6 +5,8 @@ bitcore.Address = require('./lib/address');
 bitcore.Base58 = require('./lib/base58');
 bitcore.Base58Check = require('./lib/base58check');
 bitcore.BIP32 = require('./lib/bip32');
+bitcore.Block = require('./lib/block');
+bitcore.Blockheader = require('./lib/blockheader');
 bitcore.BN = require('./lib/bn');
 bitcore.BufferReader = require('./lib/bufferreader');
 bitcore.BufferWriter = require('./lib/bufferwriter');
@@ -21,6 +23,9 @@ bitcore.Pubkey = require('./lib/pubkey');
 bitcore.Random = require('./lib/random');
 bitcore.Script = require('./lib/script');
 bitcore.Signature = require('./lib/signature');
+bitcore.Transaction = require('./lib/transaction');
+bitcore.Txin = require('./lib/txin');
+bitcore.Txout = require('./lib/txout');
 bitcore.Varint = require('./lib/varint');
 
 //experimental, nonstandard, or unstable features
