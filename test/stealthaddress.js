@@ -5,7 +5,7 @@ var Keypair = require('../lib/keypair');
 var Privkey = require('../lib/privkey');
 var Pubkey = require('../lib/pubkey');
 var BN = require('../lib/bn');
-var Hash = require('../lib/Hash');
+var Hash = require('../lib/hash');
 var Base58check = require('../lib/base58check');
 
 describe('StealthAddress', function() {
