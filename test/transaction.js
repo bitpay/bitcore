@@ -53,6 +53,41 @@ describe('Transaction', function() {
 
   });
 
+  describe('#fromJSON', function() {
+
+    it('should set all the basic parameters', function() {
+      var tx = Transaction().fromJSON({
+        version: 0,
+        txinsvi: Varint(1).toJSON(),
+        txins: [txin.toJSON()],
+        txoutsvi: Varint(1).toJSON(),
+        txouts: [txout.toJSON()],
+        nlocktime: 0
+      });
+      should.exist(tx.version);
+      should.exist(tx.txinsvi);
+      should.exist(tx.txins);
+      should.exist(tx.txoutsvi);
+      should.exist(tx.txouts);
+      should.exist(tx.nlocktime);
+    });
+
+  });
+
+  describe('#toJSON', function() {
+
+    it('should recover all the basic parameters', function() {
+      var json = tx.toJSON();
+      should.exist(json.version);
+      should.exist(json.txinsvi);
+      should.exist(json.txins);
+      should.exist(json.txoutsvi);
+      should.exist(json.txouts);
+      should.exist(json.nlocktime);
+    });
+
+  });
+
   describe('#fromBuffer', function() {
     
     it('should recover from this known tx', function() {

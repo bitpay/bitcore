@@ -53,6 +53,41 @@ describe('Blockheader', function() {
 
   });
 
+  describe('#fromJSON', function() {
+
+    it('should set all the variables', function() {
+      var bh = Blockheader().fromJSON({
+        version: version,
+        prevblockidbuf: prevblockidbuf.toString('hex'),
+        merklerootbuf: merklerootbuf.toString('hex'),
+        time: time,
+        bits: bits,
+        nonce: nonce
+      });
+      should.exist(bh.version);
+      should.exist(bh.prevblockidbuf);
+      should.exist(bh.merklerootbuf);
+      should.exist(bh.time);
+      should.exist(bh.bits);
+      should.exist(bh.nonce);
+    });
+
+  });
+
+  describe('#toJSON', function() {
+
+    it('should set all the variables', function() {
+      var json = bh.toJSON();
+      should.exist(json.version);
+      should.exist(json.prevblockidbuf);
+      should.exist(json.merklerootbuf);
+      should.exist(json.time);
+      should.exist(json.bits);
+      should.exist(json.nonce);
+    });
+
+  });
+
   describe('#fromBuffer', function() {
 
     it('should parse this known buffer', function() {

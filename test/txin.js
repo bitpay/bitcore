@@ -46,6 +46,32 @@ describe('Txin', function() {
 
   });
 
+  describe('#fromJSON', function() {
+    
+    it('should set these vars', function() {
+      var txin2 = Txin().fromJSON(txin.toJSON());
+      should.exist(txin2.txidbuf);
+      should.exist(txin2.txoutnum);
+      should.exist(txin2.scriptvi);
+      should.exist(txin2.script);
+      should.exist(txin2.seqnum);
+    });
+
+  });
+
+  describe('#toJSON', function() {
+    
+    it('should set these vars', function() {
+      var json = txin.toJSON()
+      should.exist(json.txidbuf);
+      should.exist(json.txoutnum);
+      should.exist(json.scriptvi);
+      should.exist(json.script);
+      should.exist(json.seqnum);
+    });
+
+  });
+
   describe('#fromBuffer', function() {
     
     it('should convert this known buffer', function() {

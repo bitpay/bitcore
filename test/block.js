@@ -55,6 +55,38 @@ describe('Block', function() {
     
   });
 
+  describe('#fromJSON', function() {
+
+    it('should set these known values', function() {
+      var block = Block().set({
+        magicnum: magicnum,
+        blocksize: blocksize,
+        blockheader: bh.toJSON(),
+        txsvi: txsvi.toJSON(),
+        txs: [txs[0].toJSON()]
+      });
+      should.exist(block.magicnum);
+      should.exist(block.blocksize);
+      should.exist(block.blockheader);
+      should.exist(block.txsvi);
+      should.exist(block.txs);
+    });
+    
+  });
+
+  describe('#toJSON', function() {
+
+    it('should recover these known values', function() {
+      var json = block.toJSON();
+      should.exist(json.magicnum);
+      should.exist(json.blocksize);
+      should.exist(json.blockheader);
+      should.exist(json.txsvi);
+      should.exist(json.txs);
+    });
+    
+  });
+
   describe('#fromBuffer', function() {
     
     it('should make a block from this known buffer', function() {

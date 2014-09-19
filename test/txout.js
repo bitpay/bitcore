@@ -39,6 +39,37 @@ describe('Txout', function() {
 
   });
 
+  describe('#fromJSON', function() {
+    
+    it('should set from this json', function() {
+      var txout = Txout().fromJSON({
+        valuebn: valuebn.toJSON(),
+        scriptvi: scriptvi.toJSON(),
+        script: script.toJSON()
+      });
+      should.exist(txout.valuebn);
+      should.exist(txout.scriptvi);
+      should.exist(txout.script);
+    });
+
+  });
+
+  describe('#toJSON', function() {
+    
+    it('should return this json', function() {
+      var txout = Txout().fromJSON({
+        valuebn: valuebn.toJSON(),
+        scriptvi: scriptvi.toJSON(),
+        script: script.toJSON()
+      });
+      var json = txout.toJSON();
+      should.exist(json.valuebn);
+      should.exist(json.scriptvi);
+      should.exist(json.script);
+    });
+
+  });
+
   describe('#fromBuffer', function() {
     
     it('should make this txin from this known buffer', function() {
