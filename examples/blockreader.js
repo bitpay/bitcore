@@ -16,5 +16,5 @@ process.stdin.on('end', function(buf) {
   var blocksbuf = bw.concat();
   var br = new BufferReader(blocksbuf);
   while (!br.eof())
-    console.log(Block().fromBufferReader(br));
+    console.log(JSON.stringify(Block().fromBufferReader(br).toJSON(), null, 2));
 });
