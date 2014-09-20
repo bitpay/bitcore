@@ -124,4 +124,23 @@ describe('Transaction', function() {
 
   });
 
+  describe('#hash', function() {
+
+    it('should correctly calculate the hash of this known transaction', function() {
+      var tx = Transaction().fromBuffer(tx2buf);
+      var txhashbuf = new Buffer(Array.apply([], new Buffer(tx2idhex, 'hex')).reverse());
+      tx.hash().toString('hex').should.equal(txhashbuf.toString('hex'));
+    });
+
+  });
+
+  describe('#id', function() {
+
+    it('should correctly calculate the id of this known transaction', function() {
+      var tx = Transaction().fromBuffer(tx2buf);
+      tx.id().toString('hex').should.equal(tx2idhex);
+    });
+
+  });
+
 });
