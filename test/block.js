@@ -127,6 +127,16 @@ describe('Block', function() {
 
   });
 
+  describe('#hash', function() {
+    
+    it('should return the correct hash of the genesis block', function() {
+      var block = Block().fromBuffer(genesisbuf);
+      var blockhash = new Buffer(Array.apply([], new Buffer(genesisidhex, 'hex')).reverse());
+      block.hash().toString('hex').should.equal(blockhash.toString('hex'));
+    });
+
+  });
+
   describe('#id', function() {
     
     it('should return the correct id of the genesis block', function() {
