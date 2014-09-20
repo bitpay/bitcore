@@ -196,4 +196,24 @@ describe('Script', function() {
 
   });
 
+  describe('#isOpReturn', function() {
+    
+    it('should know this is a (blank) OP_RETURN script', function() {
+      Script('OP_RETURN').isOpReturn().should.equal(true);
+    });
+
+    it('should know this is an OP_RETURN script', function() {
+      var buf = new Buffer(40);
+      buf.fill(0);
+      Script('OP_RETURN 40 0x' + buf.toString('hex')).isOpReturn().should.equal(true);
+    });
+
+    it('should know this is not an OP_RETURN script', function() {
+      var buf = new Buffer(40);
+      buf.fill(0);
+      Script('OP_CHECKMULTISIG 40 0x' + buf.toString('hex')).isOpReturn().should.equal(false);
+    });
+
+  });
+
 });
