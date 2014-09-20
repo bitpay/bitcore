@@ -7,7 +7,6 @@ var BufferWriter = require('../lib/bufferwriter');
 //cat blk00000.dat | node blockreader.js
 
 var head = null;
-var body = null;
 
 process.stdin.on('readable', function() {
   if (!head) {
@@ -22,6 +21,5 @@ process.stdin.on('readable', function() {
   var block = Block().fromBuffer(blockbuf);
   console.log(block.toJSON());
   head = null;
-  body = null;
   process.stdin.unshift(process.stdin.read());
 });
