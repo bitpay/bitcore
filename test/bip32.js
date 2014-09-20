@@ -319,6 +319,17 @@ describe('BIP32', function() {
     });
   });
 
+  describe('#fromString', function() {
+    
+    it('should make a bip32 from a string', function() {
+      var str = 'xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi';
+      var bip32 = new BIP32().fromString(str);
+      should.exist(bip32);
+      bip32.toString().should.equal(str);
+    });
+
+  });
+
   describe('#toString', function() {
     var bip32 = new BIP32();
     bip32.fromRandom('mainnet');
