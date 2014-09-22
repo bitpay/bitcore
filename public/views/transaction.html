@@ -60,7 +60,10 @@
         </tr>
         <tr>
           <td><strong>Included in Block </strong></td>
-          <td data-ng-show="tx.blockhash" class="text-muted text-right"> <a href="/block/{{tx.blockhash}}">{{tx.blockhash}}</a>
+          <td data-ng-show="tx.blockhash" class="text-muted text-right"> 
+            <div class="ellipsis">
+              <a href="/block/{{tx.blockhash}}">{{tx.blockhash}}</a>
+            </div>
           <td data-ng-show="!tx.blockhash" class="text-muted text-right">Unconfirmed</td>
         </tr>
         <tr data-ng-show="tx.locktime">

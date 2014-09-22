@@ -16,7 +16,7 @@
               <th>Height</th>
               <th>Age</th>
               <th class="text-right"><span class="ellipsis">Transactions</span></th>
-              <th class="text-right"><span class="ellipsis">Mined by</span></th>
+              <th class="text-right hidden-xs"><span class="ellipsis">Mined by</span></th>
               <th class="text-right">Size</th>
             </tr>
           </thead>
@@ -28,8 +28,8 @@
             </td>
             <td><span class="ellipsis">{{humanSince(b.time)}}</span></td>
             <td class="text-right">{{b.txlength}}</td>
-            <td class="text-right"><a href="{{b.poolInfo.url}}" title="{{b.poolInfo.poolName}}" target="_blank" data-ng-show="b.poolInfo">{{b.poolInfo.poolName}}</a></td>
-            <td class="text-right">{{b.size}} bytes</td>
+            <td class="text-right hidden-xs"><a href="{{b.poolInfo.url}}" title="{{b.poolInfo.poolName}}" target="_blank" data-ng-show="b.poolInfo">{{b.poolInfo.poolName}}</a></td>
+            <td class="text-right">{{b.size}}</td>
           </tr>
           </tbody>
         </table>

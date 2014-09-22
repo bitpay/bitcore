@@ -1,20 +1,20 @@
 <div class="line-bot row" data-ng-hide="!tx">
-  <div class="col-xs-12 col-md-8">
+  <div class="col-xs-7 col-md-8">
     <div class="ellipsis">
       <a class="btn-expand" href="#" title="Show/Hide items details" data-ng-click="itemsExpanded = !itemsExpanded">
         <span class="glyphicon glyphicon-plus-sign" data-ng-class="{'glyphicon-minus-sign': itemsExpanded}"></span>
       </a>
-      <a class="txid" href="/tx/{{tx.txid}}">{{tx.txid}}</a>
+      <a href="/tx/{{tx.txid}}">{{tx.txid}}</a>
       <span class="btn-copy" clip-copy="tx.txid"></span>
     </div>
   </div>
-  <div class="col-xs-12 col-md-4 text-right text-muted">
+  <div class="col-xs-5 col-md-4 text-right text-muted">
     <div data-ng-show="tx.firstSeenTs">
       first seen at 
       <time>{{tx.firstSeenTs * 1000 | date:'medium'}}</time>
     </div>
     <div data-ng-show="tx.time && !tx.firstSeenTs">
-      mined at
+      mined 
       <time>{{tx.time * 1000 | date:'medium'}}</time>
     </div>
   </div>
@@ -183,10 +183,10 @@
 </div>
 
 <div class="line-top row" data-ng-hide="!tx">
-  <div class="col-xs-12 col-sm-4 col-md-4">
+  <div class="col-xs-6 col-sm-4 col-md-4">
     <span data-ng-show="!tx.isCoinBase &&  !isNaN(parseFloat(tx.fees))" class="txvalues txvalues-default">Fees: {{$root.currency.getConvertion(tx.fees) || tx.fees + 'BTC'}} </span>
   </div>
-  <div class="col-xs-12 col-sm-8 col-md-8 text-right">
+  <div class="col-xs-6 col-sm-8 col-md-8 text-right">
     <span data-ng-show="tx.confirmations" class="txvalues txvalues-success">{{tx.confirmations}} Confirmations</span>
     <span data-ng-show="!tx.confirmations" class="txvalues txvalues-danger">Unconfirmed Transaction!</span>
     <span class="txvalues txvalues-primary">{{$root.currency.getConvertion(tx.valueOut) || tx.valueOut + ' BTC' }}</span>
