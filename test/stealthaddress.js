@@ -38,6 +38,25 @@ describe('StealthAddress', function() {
     should.exist(sa);
   });
 
+  describe('#fromJSON', function() {
+
+    it('should give a stealthkey address with the right pubkeys', function() {
+      var sa = new StealthAddress();
+      sa.fromJSON(addressString);
+      sa.payloadPubkey.toString().should.equal(stealthkey.payloadKeypair.pubkey.toString());
+      sa.scanPubkey.toString().should.equal(stealthkey.scanKeypair.pubkey.toString());
+    });
+
+  });
+
+  describe('#toJSON', function() {
+    
+    it('should return this known address string', function() {
+      StealthAddress().fromJSON(addressString).toJSON().should.equal(addressString);
+    });
+
+  });
+
   describe('#fromBuffer', function() {
 
     it('should give a stealthkey address with the right pubkeys', function() {
