@@ -23,8 +23,6 @@ describe('Stealthkey', function() {
   senderKeypair.privkey.bn = BN().fromBuffer(Hash.sha256(new Buffer('test 3')));
   senderKeypair.privkey2pubkey();
 
-  var addressString = '9dDbC9FzZ74r8njQkXD6W27gtrxLiWaeFPHxeo1fynQRXPicqxVt7u95ozbwoVVMXyrzaHKN9owsteg63FgwDfrxWx82SAW';
-
   it('should create a new stealthkey', function() {
     var stealthkey = new Stealthkey();
     should.exist(stealthkey);
