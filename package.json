@@ -46,7 +46,7 @@
     "start": "INSIGHT_PUBLIC_PATH=public node node_modules/.bin/insight-bitcore-api"
   },
   "dependencies": {
-    "insight-bitcore-api": "git://github.com/bitpay/insight-api.git#v0.2.10"
+    "insight-bitcore-api": ">0.2.10"
   },
   "devDependencies": {
     "bower": "~1.2.8",
