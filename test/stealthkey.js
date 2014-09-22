@@ -5,7 +5,6 @@ var Privkey = require('../lib/privkey');
 var Pubkey = require('../lib/pubkey');
 var BN = require('../lib/bn');
 var Hash = require('../lib/hash');
-var base58check = require('../lib/base58check');
 
 describe('Stealthkey', function() {
   
