@@ -5,13 +5,6 @@ var should = require('chai').should();
 
 describe('Blockheader', function() {
   
-  it('should make a new blockheader', function() {
-    var blockheader = new Blockheader();
-    should.exist(blockheader);
-    blockheader = Blockheader();
-    should.exist(blockheader);
-  });
-
   var bh = new Blockheader();
   var version = 1;
   var prevblockidbuf = new Buffer(32);
@@ -31,6 +24,14 @@ describe('Blockheader', function() {
   });
   bhhex = '0100000005050505050505050505050505050505050505050505050505050505050505050909090909090909090909090909090909090909090909090909090909090909020000000300000004000000';
   bhbuf = new Buffer(bhhex, 'hex');
+
+  it('should make a new blockheader', function() {
+    var blockheader = new Blockheader();
+    should.exist(blockheader);
+    blockheader = Blockheader();
+    should.exist(blockheader);
+    Blockheader(bhbuf).toBuffer().toString('hex').should.equal(bhhex);
+  });
 
   describe('#set', function() {
 

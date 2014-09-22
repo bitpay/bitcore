@@ -6,13 +6,6 @@ var BufferReader = require('../lib/bufferreader');
 
 describe('Txin', function() {
   
-  it('should make a new txin', function() {
-    var txin = new Txin();
-    should.exist(txin);
-    txin = Txin();
-    should.exist(txin);
-  });
-
   var txidbuf = new Buffer(32);
   txidbuf.fill(0);
   var txoutnum = 0;
@@ -25,6 +18,21 @@ describe('Txin', function() {
     scriptvi: scriptvi,
     script: script,
     seqnum: seqnum
+  });
+
+  it('should make a new txin', function() {
+    var txin = new Txin();
+    should.exist(txin);
+    txin = Txin();
+    should.exist(txin);
+    var txidbuf = new Buffer(32);
+    txidbuf.fill(0);
+    Txin(txidbuf).txidbuf.length.should.equal(32);
+    (function() {
+      var txidbuf2 = new Buffer(33);
+      txidbuf2.fill(0);
+      Txin(txidbuf2);
+    }).should.throw('txidbuf must be 32 bytes');
   });
 
   describe('#set', function() {

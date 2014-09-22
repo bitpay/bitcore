@@ -8,13 +8,6 @@ var BufferWriter = require('../lib/bufferwriter');
 
 describe('Txout', function() {
   
-  it('should make a new txout', function() {
-    var txout = new Txout();
-    should.exist(txout);
-    txout = Txout();
-    should.exist(txout);
-  });
-
   var valuebn = BN(5);
   var script = Script().fromString("OP_CHECKMULTISIG");
   var scriptvi = Varint(script.toBuffer().length);
@@ -22,6 +15,14 @@ describe('Txout', function() {
     valuebn: valuebn,
     scriptvi: scriptvi,
     script: script
+  });
+
+  it('should make a new txout', function() {
+    var txout = new Txout();
+    should.exist(txout);
+    txout = Txout();
+    should.exist(txout);
+    Txout(valuebn, scriptvi, script).valuebn.toString().should.equal('5');
   });
 
   describe('#set', function() {
