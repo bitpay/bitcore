@@ -29,6 +29,34 @@ describe('Keypair', function() {
 
   });
 
+  describe('#fromJSON', function() {
+
+    it('should make a keypair from this json', function() {
+      var privkey = Privkey().fromRandom();
+      var pubkey = Pubkey().fromPrivkey(privkey);
+      var keypair = Keypair().fromJSON({
+        privkey: privkey.toJSON(),
+        pubkey: pubkey.toJSON()
+      })
+      keypair.privkey.toString().should.equal(privkey.toString());
+      keypair.pubkey.toString().should.equal(pubkey.toString());
+    });
+
+  });
+
+  describe('#toJSON', function() {
+
+    it('should make json from this keypair', function() {
+      var json = Keypair().fromRandom().toJSON();
+      should.exist(json.privkey);
+      should.exist(json.pubkey);
+      var keypair = Keypair().fromJSON(json);
+      keypair.toJSON().privkey.toString().should.equal(json.privkey.toString());
+      keypair.toJSON().pubkey.toString().should.equal(json.pubkey.toString());
+    });
+
+  });
+
   describe("#fromPrivkey", function() {
     
     it('should make a new key from a privkey', function() {

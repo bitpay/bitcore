@@ -46,6 +46,26 @@ describe('Privkey', function() {
 
   });
 
+  describe('#fromJSON', function() {
+
+    it('should input this address correctly', function() {
+      var privkey = new Privkey();
+      privkey.fromJSON(encmu);
+      privkey.toWIF().should.equal(encmu);
+    });
+
+  });
+
+  describe('#toString', function() {
+
+    it('should output this address correctly', function() {
+      var privkey = new Privkey();
+      privkey.fromJSON(encmu);
+      privkey.toJSON().should.equal(encmu);
+    });
+
+  });
+
   describe('#fromRandom', function() {
     
     it('should set bn gt 0 and lt n, and should be compressed', function() {

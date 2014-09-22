@@ -32,6 +32,27 @@ describe('Pubkey', function() {
 
   });
 
+  describe('#fromJSON', function() {
+    
+    it('should input this public key', function() {
+      var pk = new Pubkey();
+      pk.fromJSON('041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341');
+      pk.point.getX().toString(16).should.equal('1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a');
+      pk.point.getY().toString(16).should.equal('7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341');
+    });
+
+  });
+
+  describe('#toJSON', function() {
+
+    it('should output this pubkey', function() {
+      var pk = new Pubkey();
+      var hex = '041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341';
+      pk.fromJSON(hex).toJSON().should.equal(hex);
+    });
+
+  });
+
   describe('#fromPrivkey', function() {
     
     it('should make a public key from a privkey', function() {
