@@ -49,6 +49,30 @@ describe('Stealthkey', function() {
 
   });
 
+  describe('#fromJSON', function() {
+    
+    it('should make a stealthkey from this JSON', function() {
+      var sk = Stealthkey().fromJSON({
+        payloadKeypair: stealthkey.payloadKeypair.toJSON(),
+        scanKeypair: stealthkey.scanKeypair.toJSON()
+      });
+      sk.payloadKeypair.toString().should.equal(stealthkey.payloadKeypair.toString());
+      sk.scanKeypair.toString().should.equal(stealthkey.scanKeypair.toString());
+    });
+
+  });
+
+  describe('#toJSON', function() {
+    
+    it('should convert this stealthkey to json', function() {
+      var json = stealthkey.toJSON()
+      var json2 = Stealthkey().fromJSON(json).toJSON();
+      json.payloadKeypair.privkey.should.equal(json2.payloadKeypair.privkey);
+      json.scanKeypair.privkey.should.equal(json2.scanKeypair.privkey);
+    });
+
+  });
+
   describe('#fromRandom', function() {
 
     it('should create a new stealthkey from random', function() {
