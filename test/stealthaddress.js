@@ -58,39 +58,39 @@ describe('StealthAddress', function() {
 
   });
 
-  describe('#fromBuffer', function() {
+  describe('#fromBitcoreBuffer', function() {
 
     it('should give a stealthkey address with the right pubkeys', function() {
       var sa = new StealthAddress();
       var buf = Base58check.decode(addressString);
-      sa.fromBuffer(buf);
+      sa.fromBitcoreBuffer(buf);
       sa.payloadPubkey.toString().should.equal(stealthkey.payloadKeypair.pubkey.toString());
       sa.scanPubkey.toString().should.equal(stealthkey.scanKeypair.pubkey.toString());
     });
 
   });
 
-  describe('#fromDWBuffer', function() {
+  describe('#fromBuffer', function() {
 
     it('should parse this DW buffer', function() {
-      StealthAddress().fromDWBuffer(new Buffer(dwhex, 'hex')).toDWBuffer().toString('hex').should.equal(dwhex);
-    });
-
-  });
-
-  describe('#fromDWString', function() {
-
-    it('should parse this DW buffer', function() {
-      StealthAddress().fromDWString(Base58check(new Buffer(dwhex, 'hex')).toString()).toDWBuffer().toString('hex').should.equal(dwhex);
+      StealthAddress().fromBuffer(new Buffer(dwhex, 'hex')).toBuffer().toString('hex').should.equal(dwhex);
     });
 
   });
 
   describe('#fromString', function() {
 
+    it('should parse this DW buffer', function() {
+      StealthAddress().fromString(Base58check(new Buffer(dwhex, 'hex')).toString()).toBuffer().toString('hex').should.equal(dwhex);
+    });
+
+  });
+
+  describe('#fromBitcoreString', function() {
+
     it('should give a stealthkey address with the right pubkeys', function() {
       var sa = new StealthAddress();
-      sa.fromString(addressString);
+      sa.fromBitcoreString(addressString);
       sa.payloadPubkey.toString().should.equal(stealthkey.payloadKeypair.pubkey.toString());
       sa.scanPubkey.toString().should.equal(stealthkey.scanKeypair.pubkey.toString());
     });
@@ -134,37 +134,37 @@ describe('StealthAddress', function() {
 
   });
 
+  describe('#toBitcoreBuffer', function() {
+    
+    it('should return this known address buffer', function() {
+      var buf = Base58check.decode(addressString);
+      StealthAddress().fromBitcoreBuffer(buf).toBitcoreBuffer().toString('hex').should.equal(buf.toString('hex'));
+    });
+
+  });
+
   describe('#toBuffer', function() {
     
     it('should return this known address buffer', function() {
       var buf = Base58check.decode(addressString);
-      StealthAddress().fromBuffer(buf).toBuffer().toString('hex').should.equal(buf.toString('hex'));
-    });
-
-  });
-
-  describe('#toDWBuffer', function() {
-    
-    it('should return this known address buffer', function() {
-      var buf = Base58check.decode(addressString);
-      StealthAddress().fromBuffer(buf).toDWBuffer().toString('hex').should.equal(dwhex);
-    });
-
-  });
-
-  describe('#toDWString', function() {
-    
-    it('should return this known address buffer', function() {
-      var buf = Base58check.decode(addressString);
-      StealthAddress().fromBuffer(buf).toDWString().should.equal(Base58check(new Buffer(dwhex, 'hex')).toString());
+      StealthAddress().fromBitcoreBuffer(buf).toBuffer().toString('hex').should.equal(dwhex);
     });
 
   });
 
   describe('#toString', function() {
     
+    it('should return this known address buffer', function() {
+      var buf = Base58check.decode(addressString);
+      StealthAddress().fromBitcoreBuffer(buf).toString().should.equal(Base58check(new Buffer(dwhex, 'hex')).toString());
+    });
+
+  });
+
+  describe('#toBitcoreString', function() {
+    
     it('should return this known address string', function() {
-      StealthAddress().fromString(addressString).toString().should.equal(addressString);
+      StealthAddress().fromBitcoreString(addressString).toBitcoreString().should.equal(addressString);
     });
 
   });
