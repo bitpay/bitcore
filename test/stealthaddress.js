@@ -26,6 +26,7 @@ describe('StealthAddress', function() {
   senderKeypair.privkey2pubkey();
 
   var addressString = '9dDbC9FzZ74r8njQkXD6W27gtrxLiWaeFPHxeo1fynQRXPicqxVt7u95ozbwoVVMXyrzaHKN9owsteg63FgwDfrxWx82SAW';
+  var dwhex = '2a0002697763d7e9becb0c180083738c32c05b0e2fee26d6278020c06bbb04d5f66b32010362408459041e0473298af3824dbabe4d2b7f846825ed4d1c2e2c670c07cb275d0100';
 
   it('should make a new stealth address', function() {
     var sa = new StealthAddress();
@@ -65,6 +66,22 @@ describe('StealthAddress', function() {
       sa.fromBuffer(buf);
       sa.payloadPubkey.toString().should.equal(stealthkey.payloadKeypair.pubkey.toString());
       sa.scanPubkey.toString().should.equal(stealthkey.scanKeypair.pubkey.toString());
+    });
+
+  });
+
+  describe('#fromDWBuffer', function() {
+
+    it('should parse this DW buffer', function() {
+      StealthAddress().fromDWBuffer(new Buffer(dwhex, 'hex')).toDWBuffer().toString('hex').should.equal(dwhex);
+    });
+
+  });
+
+  describe('#fromDWString', function() {
+
+    it('should parse this DW buffer', function() {
+      StealthAddress().fromDWString(Base58check(new Buffer(dwhex, 'hex')).toString()).toDWBuffer().toString('hex').should.equal(dwhex);
     });
 
   });
@@ -126,10 +143,44 @@ describe('StealthAddress', function() {
 
   });
 
+  describe('#toDWBuffer', function() {
+    
+    it('should return this known address buffer', function() {
+      var buf = Base58check.decode(addressString);
+      StealthAddress().fromBuffer(buf).toDWBuffer().toString('hex').should.equal(dwhex);
+    });
+
+  });
+
+  describe('#toDWString', function() {
+    
+    it('should return this known address buffer', function() {
+      var buf = Base58check.decode(addressString);
+      StealthAddress().fromBuffer(buf).toDWString().should.equal(Base58check(new Buffer(dwhex, 'hex')).toString());
+    });
+
+  });
+
   describe('#toString', function() {
     
     it('should return this known address string', function() {
       StealthAddress().fromString(addressString).toString().should.equal(addressString);
+    });
+
+  });
+
+  describe('@parseDWBuffer', function() {
+
+    it('should parse this known DW buffer', function() {
+      var buf = new Buffer(dwhex, 'hex');
+      var parsed = StealthAddress.parseDWBuffer(buf);
+      parsed.version.should.equal(42);
+      parsed.options.should.equal(0);
+      parsed.scanPubkey.toString().should.equal('02697763d7e9becb0c180083738c32c05b0e2fee26d6278020c06bbb04d5f66b32');
+      parsed.nPayloadPubkeys.should.equal(1);
+      parsed.payloadPubkeys[0].toString().should.equal('0362408459041e0473298af3824dbabe4d2b7f846825ed4d1c2e2c670c07cb275d');
+      parsed.nSigs.should.equal(1);
+      parsed.prefix.toString().should.equal('');
     });
 
   });
