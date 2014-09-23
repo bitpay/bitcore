@@ -15,8 +15,9 @@ type of object always and everywhere.
 2) Have 100% test coverage so that the library is known to be reliable.
 
 3) Library objects have an interface suitable for use with a command-line
-interface and API, in particular having toString, fromString, toObject,
-fromObject methods.
+interface and API, in particular having toString, fromString, toJSON, fromJSON,
+methods. Other common methods are toBuffer, fromBuffer relevant for binary
+formats such as transactions and blocks.
 
 4) All standard features of the bitcoin protocol are implemented and saved in
 lib/. All BIPs are correctly implemented and saved as BIPxx.js in lib/ (since
