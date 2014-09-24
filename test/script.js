@@ -265,4 +265,44 @@ describe('Script', function() {
 
   });
 
+  describe('#writeOp', function() {
+
+    it('should write these ops', function() {
+      Script().writeOp('OP_CHECKMULTISIG').toString().should.equal('OP_CHECKMULTISIG');
+      Script().writeOp(Opcode.map.OP_CHECKMULTISIG).toString().should.equal('OP_CHECKMULTISIG');
+    });
+
+  });
+
+  describe('#writeBuffer', function() {
+    
+    it('should write these push data', function() {
+      var buf = new Buffer(1);
+      buf.fill(0);
+      Script().writeBuffer(buf).toString().should.equal('1 0x00');
+      buf = new Buffer(255);
+      buf.fill(0);
+      Script().writeBuffer(buf).toString().should.equal('OP_PUSHDATA1 255 0x' + buf.toString('hex'));
+      buf = new Buffer(256);
+      buf.fill(0);
+      Script().writeBuffer(buf).toString().should.equal('OP_PUSHDATA2 256 0x' + buf.toString('hex'));
+      buf = new Buffer(Math.pow(2, 16));
+      buf.fill(0);
+      Script().writeBuffer(buf).toString().should.equal('OP_PUSHDATA4 ' + Math.pow(2, 16) + ' 0x' + buf.toString('hex'));
+    });
+
+  });
+
+  describe('#write', function() {
+
+    it('should write both pushdata and non-pushdata chunks', function() {
+      Script().write('OP_CHECKMULTISIG').toString().should.equal('OP_CHECKMULTISIG');
+      Script().write(Opcode.map.OP_CHECKMULTISIG).toString().should.equal('OP_CHECKMULTISIG');
+      var buf = new Buffer(1);
+      buf.fill(0);
+      Script().write(buf).toString().should.equal('1 0x00');
+    });
+
+  });
+
 });
