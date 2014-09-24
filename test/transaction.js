@@ -30,7 +30,31 @@ describe('Transaction', function() {
     should.exist(tx);
     tx = Transaction();
     should.exist(tx);
+
     Transaction(txbuf).toBuffer().toString('hex').should.equal(txhex);
+    
+    //should set known defaults
+    tx.version.should.equal(1);
+    tx.txinsvi.toNumber().should.equal(0);
+    tx.txins.length.should.equal(0);
+    tx.txoutsvi.toNumber().should.equal(0);
+    tx.txouts.length.should.equal(0);
+    tx.nlocktime.should.equal(0xffffffff);
+  });
+
+  describe('#initialize', function() {
+    
+    it('should set these known defaults', function() {
+      var tx = new Transaction();
+      tx.initialize();
+      tx.version.should.equal(1);
+      tx.txinsvi.toNumber().should.equal(0);
+      tx.txins.length.should.equal(0);
+      tx.txoutsvi.toNumber().should.equal(0);
+      tx.txouts.length.should.equal(0);
+      tx.nlocktime.should.equal(0xffffffff);
+    });
+
   });
 
   describe('#set', function() {
