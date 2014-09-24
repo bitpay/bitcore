@@ -37,6 +37,7 @@ bitcore.expmt.ECIES = require('./lib/expmt/ecies');
 bitcore.expmt.StealthAddress = require('./lib/expmt/stealthaddress');
 bitcore.expmt.Stealthkey = require('./lib/expmt/stealthkey');
 bitcore.expmt.StealthMessage = require('./lib/expmt/stealthmessage');
+bitcore.expmt.StealthTx = require('./lib/expmt/stealthtx');
 
 //dependencies, subject to change
 bitcore.deps = {};
