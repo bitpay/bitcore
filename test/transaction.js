@@ -168,4 +168,28 @@ describe('Transaction', function() {
 
   });
 
+  describe('#pushin', function() {
+    
+    it('should add an input', function() {
+      var txin = Txin();
+      var tx = Transaction();
+      tx.pushin(txin);
+      tx.txinsvi.toNumber().should.equal(1);
+      tx.txins.length.should.equal(1);
+    });
+
+  });
+
+  describe('#pushout', function() {
+    
+    it('should add an output', function() {
+      var txout = Txout();
+      var tx = Transaction();
+      tx.pushout(txout);
+      tx.txoutsvi.toNumber().should.equal(1);
+      tx.txouts.length.should.equal(1);
+    });
+
+  });
+
 });
