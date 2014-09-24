@@ -14,6 +14,11 @@ describe('Varint', function() {
     varint = Varint(buf);
     should.exist(varint);
     varint.buf.toString('hex').should.equal('00');
+
+    //various ways to use the constructor
+    Varint(Varint(0).toBuffer()).toNumber().should.equal(0);
+    Varint(0).toNumber().should.equal(0);
+    Varint(BN(0)).toNumber().should.equal(0);
   });
 
   describe('#set', function() {
