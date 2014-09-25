@@ -18,7 +18,7 @@ Bitcoin is a powerful new peer-to-peer platform for the next generation of finan
 Bitcore runs on [node](http://nodejs.org/), and can be installed via [npm](https://npmjs.org/):
 
 ```
-npm install bitcore
+npm install bitcore-multicoin
 ```
 
 It is a collection of objects useful to bitcoin applications; class-like idioms are enabled via [Soop](https://github.com/bitpay/soop). In most cases, a developer will require the object's class directly. For instance:

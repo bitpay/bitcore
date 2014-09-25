@@ -1,16 +1,12 @@
 {
   "name": "bitcore-multicoin",
   "description": "Bitcoin and altcoins Library",
-  "version": "0.1.1",
+  "version": "0.1.5",
   "author": {
-    "name": "Stephen Pair",
-    "email": "stephen@bitpay.com"
+    "name": "Ke Zeng",
+    "email": "superisaac.ke@gmail.com"
   },
   "contributors": [
-    {
-      "name": "Ke Zeng",
-      "email": "superisaac.ke@gail.com"
-    },
     {
       "name": "Stefan Thomas",
       "email": "moon@justmoon.net"
