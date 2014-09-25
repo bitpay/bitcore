@@ -7,12 +7,12 @@ var buffertools = require('buffertools');
 var jssha = require('jssha');
 var browser;
 var inBrowser = !process.versions;
-try {
+/*try {
   var x11 = require('x11-hash');
 } catch(e) {
   //console.warn('mudule x11-hash not found, use fallback');
   var x11 = null;
-}
+}*/
 if (inBrowser) {
   browser = require('../browser/vendor-bundle.js');
 }

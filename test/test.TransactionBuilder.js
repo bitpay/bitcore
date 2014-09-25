@@ -110,6 +110,19 @@ describe('TransactionBuilder', function() {
     b.inputMap.length.should.equal(2);
   });
 
+
+  it('headAddress put utxo of given address first selected', function() {
+    var b = new TransactionBuilder({spendUnconfirmed: true, headAddress: 'mhNCT9TwZAGF1tLPpZdqfkTmtBkY282YDW'})
+      .setUnspent(testdata.dataUnspent2)
+      ._selectUnspent(1.01 * util.COIN);
+    b.selectedUtxos[0].address.should.equal('mhNCT9TwZAGF1tLPpZdqfkTmtBkY282YDW');
+
+    b = new TransactionBuilder({spendUnconfirmed: true})
+      .setUnspent(testdata.dataUnspent2)
+      ._selectUnspent(1.01 * util.COIN);
+    b.selectedUtxos[0].address.should.not.equal('mhNCT9TwZAGF1tLPpZdqfkTmtBkY282YDW');
+  });
+
   var getBuilder2 = function (fee) {
     var opts = {
       remainderOut: {address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'},
