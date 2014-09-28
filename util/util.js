@@ -283,6 +283,7 @@ var formatValue = exports.formatValue = function(valueBuffer) {
 var reFullVal = /^\s*(\d+)\.(\d+)/;
 var reFracVal = /^\s*\.(\d+)/;
 var reWholeVal = /^\s*(\d+)/;
+var reSciShift = /^e(-?\d+)/;
 
 function padFrac(frac) {
   frac = frac.substr(0, 8); //truncate to 8 decimal places
@@ -291,16 +292,31 @@ function padFrac(frac) {
   return frac;
 }
 
+function parseSciShift(res, p) {
+  var remain = res.input.substr(res[0].length);
+  var sciRes = remain.match(reSciShift);
+  if(sciRes) {
+    var sciShift = parseInt(sciRes[1]);
+    if(sciShift < 0) {
+      p = p.div(bignum.pow(10, -sciShift));
+    } else {
+      p = p.mul(bignum.pow(10, sciShift));
+    }
+  }
+  return p;
+}
+
 function parseFullValue(res) {
-  return bignum(res[1]).mul('100000000').add(padFrac(res[2]));
+  var p = bignum(res[1]).mul('100000000').add(padFrac(res[2]));
+  return parseSciShift(res, p);
 }
 
 function parseFracValue(res) {
-  return bignum(padFrac(res[1]));
+  return parseSciShift(res, bignum(padFrac(res[1])));
 }
 
 function parseWholeValue(res) {
-  return bignum(res[1]).mul('100000000');
+  return parseSciShift(res, bignum(res[1]).mul('100000000'));
 }
 
 exports.parseValue = function parseValue(valueStr) {
