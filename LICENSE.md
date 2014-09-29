@@ -1,9 +1,9 @@
 This software is licensed under the MIT License.
 
-Copyright (c) 2014 BitPay Inc.
-
-Parts of this software are based on privsec
 Copyright (c) 2014 Ryan X. Charles <ryanxcharles@gmail.com>
+
+Parts of this software are based on bitcore
+Copyright (c) 2014 BitPay Inc.
 
 Parts of this software are based on BitcoinJS
 Copyright (c) 2011 Stefan Thomas <justmoon@members.fsf.org>

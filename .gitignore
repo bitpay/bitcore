@@ -1,5 +1,5 @@
 *.swp
 coverage
 node_modules
-browser/bitcore.js
+browser/fullnode.js
 browser/tests.js
