@@ -6,9 +6,6 @@ intended to satisfy certain goals:
 
 1) Support ease-of-use by being internally consistent. It should not be
 necessary to read the source code of a class or function to know how to use it.
-I.e., where in bitcore a "privkey" might be anything from a buffer to a hex
-string to a key to a private key object, in fullnode "privkey" is the same
-type of object always and everywhere.
 
 2) Have 100% test coverage so that the library is known to be reliable.
 
@@ -37,7 +34,7 @@ To access the result of an instance method, you must access the object
 property(s) that it modifies.
 
 -------------------------
-Features over bitcore:
+Key features:
 * Stealth keys, addresses, message
 * Proper handling of reading and writing big varInts
 * Browserifiable
