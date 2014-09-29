@@ -1,7 +1,7 @@
 Full Node
 =========
 
-Full Node is a javascript implementation of bitcoin, forked from bitcore,
+Full Node is a javascript implementation of bitcoin, forked from bitcore2,
 intended to satisfy certain goals:
 
 1) Support ease-of-use by being internally consistent. It should not be
