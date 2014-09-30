@@ -28,25 +28,32 @@ describe('util', function() {
     });
   });
   describe('#parseValue', function() {
-    it('should convert floating points to satoshis correctly', function() {
-      function test_value(datum) {
-        var decimal = datum[0];
-        var intStr = datum[1];
-        var bn = coinUtil.parseValue(decimal);
-        should.exist(bn);
-        bn.toString().should.equal(intStr);
-      }
-      var dataValues = [
-        ['0', '0'],
-        ['1.0', '100000000'],
-        ['0.1', '10000000'],
-        ['.1', '10000000'],
-        ['0.0005', '50000'],
-        ['.000000001', '0'],
-        ['.000000009', '0'],
-        ['.00000000000000001', '0']
-      ];
-      dataValues.forEach(function(datum) {
+    function test_value(datum) {
+      var decimal = datum[0];
+      var intStr = datum[1];
+      var bn = coinUtil.parseValue(decimal);
+      should.exist(bn);
+      bn.toString().should.equal(intStr);
+    }
+    var dataValues = [
+      ['0', '0'],
+      ['1.0', '100000000'],
+      ['0.1', '10000000'],
+      ['.1', '10000000'],
+      ['0.0005', '50000'],
+      ['.000000001', '0'],
+      ['.000000009', '0'],
+      ['.00000000000000001', '0'],
+      ['1e-7', '10'],
+      ['1e-8', '1'],
+      ['1e2', '10000000000'],
+      ['1.5e2', '15000000000'],
+      ['1e-9', '0'],
+      ['0.0001', '10000'],
+      [1e-8, '1'],
+    ];
+    dataValues.forEach(function(datum) {
+      it('should convert floating points to satoshis correctly for ' + datum[0], function() {
         test_value(datum);
       });
     });
