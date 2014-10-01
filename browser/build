@@ -1,4 +1,4 @@
 #!/bin/bash
 
-browserify index.js -o browser/fullnode.js
+browserify index.js -o browser/bitcore.js
 ls test/*.js | xargs browserify -o browser/tests.js

@@ -1,8 +1,8 @@
 {
-  "name": "fullnode",
-  "version": "0.0.0",
+  "name": "bitcore",
+  "version": "0.8.0",
   "description": "Bitcoin library, CLI and API.",
-  "author": "Ryan X. Charles <ryanxcharles@gmail.com>",
+  "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
     "test": "mocha"
@@ -60,7 +60,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/ryanxcharles/fullnode.git"
+    "url": "https://github.com/bitpay/bitcore.git"
   },
   "dependencies": {
     "aes": "=0.1.0",
