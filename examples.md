@@ -155,7 +155,6 @@
 	    address: input.addr,
 	    txid: "39c71ebda371f75f4b854a720eaf9898b237facf3c2b101b58cd4383a44a6adc",
 	    vout: 1,
-	    ts: 1396288753,
 	    scriptPubKey: "76a914e867aad8bd361f57c50adc37a0c018692b5b0c9a88ac",
 	    amount: 0.4296,
 	    confirmations: 2
@@ -205,7 +204,6 @@
 	    address: input.addr,
 	    txid: "e4bc22d8c519d3cf848d710619f8480be56176a4a6548dfbe865ab3886b578b5",
 	    vout: 0,
-	    ts: 1396288753,
 	    scriptPubKey: scriptPubKey,
 	    amount: 0.05,
 	    confirmations: 2
@@ -257,7 +255,6 @@
 	    address: "mqSjTad2TKbPcKQ3Jq4kgCkKatyN44UMgZ",
 	    txid: "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1",
 	    vout: 1,
-	    ts: 1394719301,
 	    scriptPubKey: "76a9146ce4e1163eb18939b1440c42844d5f0261c0338288ac",
 	    amount: 0.01,
 	    confirmations: 2
@@ -341,7 +338,6 @@
 	    address: "n2hoFVbPrYQf7RJwiRy1tkbuPPqyhAEfbp",
 	    txid: "e4bc22d8c519d3cf848d710619f8480be56176a4a6548dfbe865ab3886b578b5",
 	    vout: 1,
-	    ts: 1396290442,
 	    scriptPubKey: "76a914e867aad8bd361f57c50adc37a0c018692b5b0c9a88ac",
 	    amount: 0.3795,
 	    confirmations: 7
@@ -406,7 +402,6 @@
 	    address: p2shAddress,
 	    txid: "c2e50d1c8c581d8c4408378b751633f7eb86687fc5f0502be7b467173f275ae7",
 	    vout: 0,
-	    ts: 1396375187,
 	    scriptPubKey: scriptPubKey,
 	    amount: 0.05,
 	    confirmations: 1
