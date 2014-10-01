@@ -51,6 +51,7 @@
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
     "prepublish": "node browser/build.js -m"
   },
+  "browser": "bundle.js",
   "dependencies": {
     "grunt-browserify": "~2.0.0",
     "grunt-contrib-watch": "~0.5.3",
