@@ -1,0 +1,4 @@
+#!/bin/bash
+
+browserify index.js -o browser/fullnode.js
+ls test/*.js | xargs browserify -o browser/tests.js

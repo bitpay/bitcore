@@ -1,13 +1,5 @@
-build/
-node_modules/
 *.swp
-*.swo
-*~
-.project
-README.html
-CONTRIBUTING.html
-tags
 coverage
-.DS_Store
-docs
-browser/bitcore-dev.js
+node_modules
+browser/fullnode.js
+browser/tests.js
