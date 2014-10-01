@@ -144,6 +144,27 @@ describe('TransactionBuilder', function() {
       .setOutputs(outs);
   };
 
+
+  var getBuilderDust = function() {
+    var opts = {
+      remainderOut: {
+        address: 'mwZabyZXg8JzUtFX1pkGygsMJjnuqiNhgd'
+      },
+      spendUnconfirmed: true,
+    };
+
+    var outs = [{
+      address: 'mrPnbY1yKDBsdgbHbS7kJ8GVm8F66hWHLE',
+      amount: 3.27585303, 
+    }];
+
+    return new TransactionBuilder(opts)
+      .setUnspent(testdata.dataUnspentDust)
+      .setOutputs(outs);
+  };
+
+
+
   it('should fail to create tx', function() {
 
     (function() {
@@ -211,6 +232,28 @@ describe('TransactionBuilder', function() {
     // remainder is 0.0299 here because unspent select utxos in order
     util.valueToBigInt(tx.outs[1].v).cmp(2990000).should.equal(0);
   });
+
+
+  it('should be able to create a tx with dust UTXOs', function() {
+    var b = getBuilderDust();
+
+    b.isFullySigned().should.equal(false);
+    b.getSelectedUnspent().length.should.equal(4);
+
+    var tx = b.build();
+    should.exist(tx);
+
+    tx.version.should.equal(1);
+    tx.ins.length.should.equal(4);
+    tx.outs.length.should.equal(2);
+    util.valueToBigInt(tx.outs[0].v).cmp(327585303).should.equal(0);
+
+
+    // remainder is ( 0.06407+ 3.5348 + 1-e8 + 1-e8 ) * 100000000  - fee - 359877002
+    util.valueToBigInt(tx.outs[1].v).cmp(32291699).should.equal(0);
+  });
+
+
 
 
   it('should create same output as bitcoind createrawtransaction ', function() {
