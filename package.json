@@ -104,6 +104,7 @@
   },
   "browser": {
     "bignum": "./lib/browser/Bignum.js",
+    "buffertools": "browserify-buffertools",
     "./lib/Key.js": "./lib/browser/Key.js",
     "./lib/Point.js": "./lib/browser/Point.js",
     "./lib/ECIES.js": "./lib/browser/ECIES.js",
