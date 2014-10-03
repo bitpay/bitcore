@@ -8,7 +8,7 @@ describe('Identity', function() {
   
   var pubkeyhash = new Buffer('3c3fa3d4adcaf8f52d5b1843975e122548269937', 'hex');
   var buf = Buffer.concat([new Buffer([0]), pubkeyhash]);
-  var str = '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r';
+  var str = 'sMKQzi3RTDK8zRRimoPZQGw4sfsj9Ttx1';
 
   it('should create a new identity object', function() {
     var identity = new Identity();
@@ -45,7 +45,7 @@ describe('Identity', function() {
       Identity().fromHashbuf(pubkeyhash).toString().should.equal(str);
       var a = Identity().fromHashbuf(pubkeyhash, 'testnet', 'scripthash');
       a.networkstr.should.equal('testnet');
-      a.typestr.should.equal('scripthash');
+      a.typestr.should.equal('identephem');
     });
 
     it('should throw an error for invalid length hashbuf', function() {
@@ -113,7 +113,7 @@ describe('Identity', function() {
       var identity = new Identity();
       identity.fromString(str);
       identity.networkstr = 'mainnet';
-      identity.typestr = 'scripthash';
+      identity.typestr = 'identephem';
       identity.fromString(identity.toString());
       identity.toString().should.equal('37BahqRsFrAd3qLiNNwLNV3AWMRD7itxTo');
     });
@@ -122,7 +122,7 @@ describe('Identity', function() {
       var identity = new Identity();
       identity.fromString(str);
       identity.networkstr = 'testnet';
-      identity.typestr = 'scripthash';
+      identity.typestr = 'identephem';
       identity.fromString(identity.toString());
       identity.toString().should.equal('2MxjnmaMtsJfyFcyG3WZCzS2RihdNuWqeX4');
     });
@@ -196,7 +196,7 @@ describe('Identity', function() {
       identity.typestr = 'unknown';
       (function() {
         identity.validate();
-      }).should.throw('typestr must be "pubkeyhash" or "scripthash"');
+      }).should.throw('typestr must be "identephem" or "identpersist"');
     });
 
   });
