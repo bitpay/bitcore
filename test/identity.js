@@ -5,19 +5,18 @@ var Identity = require('../lib/identity');
 
 describe('Identity', function() {
   
-  var knownPrivKey = 'L1KL3xHiuBF9YuBKTZMorW6TVDG2QW9UHWdSFEzcVFpLuGxTe9bQ';
-  var knownPubKey = '026006aa5fd6e800e6b529258dbb73b531da735a863c87e6673bf96def1372a59e';
-  var knownIdent = 'Tf8vkF9HPCDbNcLoFHk8ENAwJLQMVmWRz5P';
+  var knownPrivKey = 'L3qq9TMqq2Wfax48vTsywEtCTCTbr18PuMwkvpLUseCJPBhGhAJj';
+  var knownPubKey = '03663eadf291f099c7c87cf04dc037c49b4d168ff67a0f86d95fa77e525af4dee6';
+  var knownPubKeyHash = 'c3f89d708d24c0eaf5953d103b95dfec87ab66f6';
+  var knownIdent = 'TfFQdYg2BmLVWew1faUytoG3EpZZ8ebTqHr';
   
-  //var pubkeyhash = new Buffer('3c3fa3d4adcaf8f52d5b1843975e122548269937', 'hex');
-  var pubkey = '0348dc031a1499c455eeb593407e0505dfbd95a88411fa78e8cab9cbe89d064048';
-  var key = new PubKey();
-  key.fromString( pubkey );
+  var pubkeyhash = new Buffer( knownPubKeyHash , 'hex');
 
   //var buf = Buffer.concat([ new Buffer([0]), new Buffer([0]), pubkeyhash ]);
   // note: key is wrong string until I figure out how to duplicate the generation of short keys
-  var buf = Buffer.concat([ new Buffer( 0x0f ) , new Buffer( 0x02 ) , new Buffer('3c3fa3d4adcaf8f52d5b1843975e122548269937', 'hex') ])
-  var str = 'Tf3sWHK314o6hpeUDHpqu8RAxPypoAinbDg';
+  //var buf = Buffer.concat([ new Buffer( 0x0f ) , new Buffer( 0x02 ) , pubkeyhash ])
+  var buf = Buffer.concat([ new Buffer([0x0f]) , new Buffer([0x02]) , pubkeyhash ])
+  var str = knownIdent;
 
   it('should create a new identity object', function() {
     var identity = new Identity();
@@ -77,7 +76,7 @@ describe('Identity', function() {
 
     it('should make this identity from an uncompressed pubkey', function() {
       var pubkey = new PubKey();
-      pubkey.fromDER(new Buffer( knownPubKey , 'hex'));
+      pubkey.fromDER(new Buffer( knownPubKeyUncomp , 'hex'));
       var identity = new Identity();
       pubkey.compressed = false;
       identity.fromPubkey(pubkey, 'ephemeral');
@@ -91,7 +90,7 @@ describe('Identity', function() {
     it('should derive from this known ephemeral identity string', function() {
       var identity = new Identity();
       identity.fromString( str );
-      identity.toBuffer().slice(1).toString('hex').should.equal(pubkeyhash.toString('hex'));
+      identity.toBuffer().slice(2).toString('hex').should.equal(pubkeyhash.toString('hex'));
     });
 
   });
@@ -125,7 +124,7 @@ describe('Identity', function() {
     it('should output this known hash', function() {
       var identity = new Identity();
       identity.fromString(str);
-      identity.toBuffer().slice(1).toString('hex').should.equal(pubkeyhash.toString('hex'));
+      identity.toBuffer().slice(2).toString('hex').should.equal(pubkeyhash.toString('hex'));
     });
 
   });

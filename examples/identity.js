@@ -1,10 +1,13 @@
 var Identity = require('../lib/identity');
 var KeyPair  = require('../lib/keypair');
+var Hash     = require('../lib/hash');
 
 var keypair = new KeyPair().fromRandom();
 
 console.log( 'keypair:' , keypair );
-console.log( 'public key:' , keypair.pubkey.toString() );
+console.log( 'private key:' , keypair.privkey.toString('hex') );
+console.log( 'public key:' , keypair.pubkey.toString('hex') );
+console.log( 'public hash:' , Hash.sha256ripemd160( keypair.pubkey.toBuffer() ).toString('hex') );
 
 var identity = new Identity().fromPubkey( keypair.pubkey );
 
