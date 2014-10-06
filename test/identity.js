@@ -5,10 +5,11 @@ var Identity = require('../lib/identity');
 
 describe('Identity', function() {
   
-  var knownPrivKey = 'L3qq9TMqq2Wfax48vTsywEtCTCTbr18PuMwkvpLUseCJPBhGhAJj';
-  var knownPubKey = '03663eadf291f099c7c87cf04dc037c49b4d168ff67a0f86d95fa77e525af4dee6';
-  var knownPubKeyHash = 'c3f89d708d24c0eaf5953d103b95dfec87ab66f6';
-  var knownIdent = 'TfFQdYg2BmLVWew1faUytoG3EpZZ8ebTqHr';
+  var knownPrivKey    = 'L3e3ZneXzGw2wyyRoUxKGGrHCBhBE3uPMvQDXPaJTom4d4ogRxvC';
+  var knownPubKey     = '02ff0c643214634691e6f1c5044df79f7002c404407c8db1897484017e1082f182';
+  var knownPubKeyHash = 'bceb8b52237d7a6c09e9aaedcf26cf387530d23e';
+  var knownIdent      = 'TfEmMAA5PSQRRJgiZka8y6B5x1pABHe6BVv';
+  var knownIdentComp  = 'TfDBCwB4ciatE4Kx3r1TK5kfCTxrrpG1H8J';
   
   var pubkeyhash = new Buffer( knownPubKeyHash , 'hex');
 
@@ -76,11 +77,11 @@ describe('Identity', function() {
 
     it('should make this identity from an uncompressed pubkey', function() {
       var pubkey = new PubKey();
-      pubkey.fromDER(new Buffer( knownPubKeyUncomp , 'hex'));
+      pubkey.fromDER(new Buffer( knownPubKey , 'hex'));
       var identity = new Identity();
       pubkey.compressed = false;
       identity.fromPubkey(pubkey, 'ephemeral');
-      identity.toString().should.equal( knownIdent );
+      identity.toString().should.equal( knownIdentComp );
     });
 
   });

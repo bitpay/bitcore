@@ -5,7 +5,8 @@
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "coverage": "istanbul cover _mocha"
   },
   "contributors": [
     {
