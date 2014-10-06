@@ -13,6 +13,7 @@ bitcore.BufferWriter = require('./lib/bufferwriter');
 bitcore.Constants = require('./lib/constants');
 bitcore.ECDSA = require('./lib/ecdsa');
 bitcore.Hash = require('./lib/hash');
+bitcore.Identity = require('./lib/identity');
 bitcore.KDF = require('./lib/kdf');
 bitcore.Keypair = require('./lib/keypair');
 bitcore.Message = require('./lib/message');
