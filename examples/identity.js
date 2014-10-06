@@ -1,14 +1,12 @@
 var Identity = require('../lib/identity');
-var Keypair  = require('../lib/keypair');
+var KeyPair  = require('../lib/keypair');
 
-var pubkeyhash = new Buffer('3c3fa3d4adcaf8f52d5b1843975e122548269937', 'hex');
-var buf = Buffer.concat([new Buffer([0]), pubkeyhash]);
+var keypair = new KeyPair().fromRandom();
 
-var keypair  = new Keypair();
-//var identity = new Identity().fromPubkey( keypair.pubkey );
+console.log( 'keypair:' , keypair );
+console.log( 'public key:' , keypair.pubkey.toString() );
+
 var identity = new Identity().fromPubkey( keypair.pubkey );
 
-console.log( 'pubkey',  keypair.pubkey.toString() );
-console.log( 'privkey', keypair.privkey.toString() );
-console.log( identity );
-console.log( identity.toString() );
+console.log( 'identity:' , identity );
+console.log( 'identity string:' , identity.toString() );
