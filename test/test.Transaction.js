@@ -5,6 +5,7 @@ chai.config.includeStack = true;
 var bitcore = bitcore || require('../bitcore');
 
 var should = chai.should();
+var assert = chai.assert;
 
 var Transaction = bitcore.Transaction;
 var TransactionBuilder = bitcore.TransactionBuilder;
@@ -63,7 +64,7 @@ describe('Transaction', function() {
   /*
    * Bitcoin core transaction tests
    */
-  // Verify that known valid transactions are intepretted correctly
+  // Verify that known valid transactions are intepreted correctly
   var coreTest = function(data, valid) {
     buffertools.extend();
     data.forEach(function(datum) {
@@ -151,7 +152,7 @@ describe('Transaction', function() {
       amount: 0.5001,
       confirmations: 200
     }];
-    
+
     var destAddress = 'myuAQcCc1REUgXGsCTiYhZvPPc3XxZ36G1';
     var outs = [{
       address: destAddress,
@@ -175,5 +176,9 @@ describe('Transaction', function() {
       from[0].should.equal(a1);
       from[1].should.equal(a2);
     });
+    it('should find affected pubkeys', function() {
+      var affectedPubKeys = tx.getAffectedKeys();
+      assert.sameMembers(affectedPubKeys, [a1, a2, destAddress])
+    })
   });
 });

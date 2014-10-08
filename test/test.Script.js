@@ -31,6 +31,16 @@ describe('Script', function() {
     var script = Script.createPubKeyHashOut(addr.payload());
     script.isP2SH().should.be.false;
   });
+  it('simpleOutHash should return pubkey hash for pubkey output', function() {
+    var addr = new Address('1J57QmkaQ6JohJoQyaUJwngJ2vTQ3C6gHi');
+    var script = Script.createPubKeyHashOut(addr.payload());
+    script.simpleOutHash().should.equal(addr.payload());
+  });
+  it('simpleOutHash should return null for P2SH', function() {
+    var addr = new Address('1J57QmkaQ6JohJoQyaUJwngJ2vTQ3C6gHi');
+    var script = Script.createP2SH(addr.payload());
+    script.simpleOutHash().should.equal(null);
+  });
 
   describe('#finishedMultiSig', function() {
     it('should report that this scriptSig has finished being signed', function() {
