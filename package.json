@@ -49,7 +49,7 @@
     "install": "node-gyp rebuild",
     "test": "node browser/build.js -a && node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
-    "prepublish": "node browser/build.js -m"
+    "prepublish": "node browser/build.js -a"
   },
   "dependencies": {
     "grunt-browserify": "~2.0.0",
