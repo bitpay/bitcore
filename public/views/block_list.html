@@ -5,7 +5,8 @@
       <div class="block-id">
         <div class="icon-block text-center">
           <span class="glyphicon glyphicon-list"></span>
-          <h3>Blocks <br> mined on:</h3>
+          <h3><span translate>Blocks</span> <br> 
+            <span translate>mined on:</span></h3>
         </div>
       </div>
       <p class="lead text-center m20v">
@@ -13,11 +14,11 @@
       <a href="#" class="btn btn-primary btn-xs" datepicker-popup show-button-bar="false" data-ng-click="openCalendar($event)" data-ng-model="dt" is-open="opened" data-ng-required="true"><span class="glyphicon glyphicon-calendar"></span></a>
       </p>
       <div class="m20v text-center text-muted" data-ng-if="!pagination.current">
-        <span>Loading Selected Date...</span>
+        <span translate>Loading Selected Date...</span>
       </div>
       <div data-ng-if="pagination.current">
         <p class="lead text-center m20v"  data-ng-show="loading">&nbsp;</p>
-        <p class="text-center m20v"  data-ng-show="pagination.isToday && !loading">Today</p>
+        <p class="text-center m20v"  data-ng-show="pagination.isToday && !loading" translate>Today</p>
         <p class="text-center m20v"  data-ng-show="!pagination.isToday && !loading">{{humanSince(pagination.currentTs)}}
         <p class="text-center m20v"  data-ng-show="loading">&nbsp;</p>
         <div class="m50v text-center">
@@ -29,23 +30,23 @@
     <div class="col-xs-12 col-md-9 col-md-offset-3">
       <div class="page-header">
         <h1>
-          Blocks
-          <small>by date. {{detail}} {{before}}</small>
+          <span translate>Blocks</span>
+          <small><span translate>by date.</span> {{detail}} {{before}}</small>
         </h1>
       </div>
       <table class="table table-hover table-striped">
         <thead>
           <tr>
-            <th>Height</th>
-            <th>Timestamp</th>
-            <th class="text-right">Transactions</th>
-            <th class="text-right hidden-xs">Mined by</th>
-            <th class="text-right">Size</th>
+            <th translate>Height</th>
+            <th translate>Timestamp</th>
+            <th class="text-right" translate>Transactions</th>
+            <th class="text-right hidden-xs" translate>Mined by</th>
+            <th class="text-right" translate>Size</th>
           </tr>
         </thead>
         <tbody>
         <tr data-ng-show="loading">
-          <td colspan="5">Waiting for blocks <span class="loader-gif"></span></td>
+          <td colspan="5"><span translate>Waiting for blocks...</span> <span class="loader-gif"></span></td>
         </tr>
         <tr class="fader" data-ng-repeat='b in blocks'>
           <td><a href="/block/{{b.hash}}">{{b.height}}</a></td>
@@ -62,6 +63,7 @@
       </div>
     </div>
   </div>
-  <h2 class="text-center text-muted" data-ng-show="!blocks.length && !loading">No blocks yet.</h2>
+  <h2 class="text-center text-muted" data-ng-show="!blocks.length && !loading"
+    translate>No blocks yet.</h2>
 </section>
 

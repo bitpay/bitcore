@@ -119,8 +119,11 @@ module.exports = function(grunt) {
   //Default task(s).
   grunt.registerTask('default', ['watch']);
 
+  //Update .pot file
+  grunt.registerTask('translate', ['nggettext_extract']);
+
   //Compile task (concat + minify)
-  grunt.registerTask('compile', ['nggettext_extract', 'nggettext_compile', 'concat', 'uglify', 'cssmin']);
+  grunt.registerTask('compile', ['nggettext_compile', 'concat', 'uglify', 'cssmin']);
 
 
 };

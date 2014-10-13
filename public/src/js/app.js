@@ -1,5 +1,7 @@
 'use strict';
 
+var defaultLanguage = localStorage.getItem('insight-language') || 'en';
+
 angular.module('insight',[
   'ngAnimate',
   'ngResource',

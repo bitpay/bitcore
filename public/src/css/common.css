@@ -89,6 +89,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .m50v { margin: 50px 0; }
 .m10b { margin-bottom: 10px; }
 .m10l { margin-left: 10px; }
+.m20t { margin-top: 20px; }
 .vm { vertical-align: middle; }
 .pa {position: absolute;}
 .pr {position: relative;}
@@ -408,6 +409,25 @@ margin-left: 0;
 
 #footer a.insight small { font-size: 11px; }
 .line-footer { border-top: 2px dashed #ccc; }
+
+#footer .languages {
+  color: #ddd;
+  font-size: 10px;
+}
+
+#footer .languages a {
+  color: #ddd;
+}
+
+#footer .languages a.selected {
+  color: #eee;
+  font-weight: bold;
+}
+
+#footer .languages a:hover {
+  text-decoration: none;
+  color: #fffffe;
+}
 
 .line-bot {
   border-bottom: 2px solid #EAEAEA;
