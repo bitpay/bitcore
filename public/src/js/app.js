@@ -11,6 +11,7 @@ angular.module('insight',[
   'ui.route',
   'monospaced.qrcode',
   'gettext',
+  'angularMoment',
   'insight.system',
   'insight.socket',
   'insight.blocks',
