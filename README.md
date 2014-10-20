@@ -104,7 +104,7 @@ node browser/build.js -a
 To generate a customized bitcore bundle, you can specify which submodules you want to include in it with the -s option:
 
 ```
-node browser/build.js -s Transaction,Address
+node browser/build.js -s lib/Transaction,lib/Address
 ```
 
 This will generate a `browser/bundle.js` containing only the Transaction and Address class, with all their dependencies.  Use this option if you are not using the whole bitcore library, to optimize the bundle size, script loading time, and general resource usage.
