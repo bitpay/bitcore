@@ -10,7 +10,6 @@
     var key = bitcore.Key.generateSync();
     console.log('Private key: ' + key.private.toString('hex'));
     console.log('Public key: ' + key.public.toString('hex'));
-    /* Crash happens here */
     var message = new Buffer('This is a message to be encrypt');
     console.log('Message: "' + message.toString() + '"');
     var encrypted = bitcore.ECIES.encrypt(key.public, message);
