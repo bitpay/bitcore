@@ -12,14 +12,15 @@
     <div class="navbar-collapse collapse" collapse="$root.isCollapsed">
       <ul class="nav navbar-nav">
         <li data-ng-repeat="item in menu" ui-route="/{{item.link}}" data-ng-class="{active: $uiRoute}">
-          <a href="/{{item.link}}">{{item.title}}</a>
+          <a href="/{{item.link}}">{{item.title|translate}}</a>
         </li>
       </ul>
       <form id="search-form" data-ng-controller="SearchController" class="navbar-form navbar-left hidden-xs" role="search" data-ng-submit="search()">
         <div class="form-group" data-ng-class="{'has-error': badQuery}">
-          <input id="search" type="text" class="form-control" data-ng-model="q" data-ng-class="{'loading': loading}"  placeholder="Search for block, transaction or address!" data-ng-submit="search()" focus="true">
+          <input id="search" type="text" class="form-control" data-ng-model="q" data-ng-class="{'loading': loading}" 
+          placeholder="{{'Search for block, transaction or address'|translate}}" data-ng-submit="search()" focus="true">
         </div>
-        <div class="no_matching text-danger" data-ng-show="badQuery">No matching records found!</div>
+        <div class="no_matching text-danger" data-ng-show="badQuery" translate>No matching records found!</div>
       </form>
       <ul class="nav navbar-nav navbar-right">
         <li>
@@ -37,13 +38,14 @@
         </div>
         &nbsp; &middot;
         <span data-ng-init="getStatus('Info')">
-          <strong>Conn</strong> {{info.connections}}
+          <strong>{{'Conn'|translate}}</strong> {{info.connections}}
         </span> &middot;
-        <strong>Height</strong> {{totalBlocks || info.blocks}}
+        <strong>{{'Height'|translate}}</strong> {{totalBlocks || info.blocks}}
       </div>
       </li>
       <li>
-        <a href="#" data-ng-click="openScannerModal()"><span class="glyphicon glyphicon-qrcode"></span> Scan</a>
+        <a href="#" data-ng-click="openScannerModal()"><span class="glyphicon
+            glyphicon-qrcode"></span> Scan</a>
       </li>
       <li class="dropdown" data-ng-controller="CurrencyController" data-ng-include="'/views/includes/currency.html'"></li>
       </ul>

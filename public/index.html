@@ -44,6 +44,16 @@
 	</div>
 	<div id="footer" role="navigation">
     <div class="container" data-ng-controller="FooterController">
+      <div class="languages m20t pull-left">
+        [ 
+        <a href="#" 
+          ng-click="setLanguage(l.isoCode)"
+          ng-class="{'selected': defaultLanguage == l.isoCode}" 
+          ng-repeat="l in availableLanguages">
+          <span ng-show="$last"> &middot; </span> {{l.name}}
+        </a>
+         ]
+      </div>
       <a class="insight m10v pull-right" target="_blank" href="http://insight.is">insight <small>API v{{version}}</small></a>
     </div>
   </div>
