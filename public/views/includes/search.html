@@ -1,4 +1,4 @@
-<form id="search-form-mobile" data-ng-controller="SearchController" class="visible-xs" role="search" data-ng-submit="search()">
+<form id="search-form" data-ng-controller="SearchController" role="search" data-ng-submit="search()">
   <div class="form-group" data-ng-class="{'has-error': badQuery}">
     <input id="search" type="text" class="form-control" data-ng-model="q" data-ng-class="{'loading': loading}" placeholder="{{'Search for block, transaction or address'|translate}}" data-ng-submit="search()" focus="true">
     </div>
