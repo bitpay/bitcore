@@ -123,8 +123,8 @@ margin-left: 0;
 .navbar-default .navbar-nav>li>a {
   color: #F4FBE8;
   font-family: 'Ubuntu', sans-serif;
-  padding-left: 25px;
-  padding-right: 25px;
+  padding-left: 20px;
+  padding-right: 20px;
 }
 
 .navbar-default .navbar-nav>.active>a, .navbar-default .navbar-nav>.active>a:focus {
@@ -141,7 +141,6 @@ margin-left: 0;
 }
 
 .navbar-form {
-  /*width: 35%;*/
   margin-top: 15px;
 }
 
@@ -753,6 +752,13 @@ a.v_highlight_more {
   }
   h3 {
     font-size: 18px;
+  }
+  .insight {
+    font-size: 30px;
+  }
+  .navbar-default .navbar-nav>li>a {
+    padding-left: 15px;
+    padding-right: 15px;
   }
 }
 
