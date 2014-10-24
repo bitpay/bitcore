@@ -15,13 +15,7 @@
           <a href="/{{item.link}}">{{item.title|translate}}</a>
         </li>
       </ul>
-      <form id="search-form" data-ng-controller="SearchController" class="navbar-form navbar-left hidden-xs" role="search" data-ng-submit="search()">
-        <div class="form-group" data-ng-class="{'has-error': badQuery}">
-          <input id="search" type="text" class="form-control" data-ng-model="q" data-ng-class="{'loading': loading}" 
-          placeholder="{{'Search for block, transaction or address'|translate}}" data-ng-submit="search()" focus="true">
-        </div>
-        <div class="no_matching text-danger" data-ng-show="badQuery" translate>No matching records found!</div>
-      </form>
+      <span class="hidden-xs navbar-form navbar-left" data-ng-include src="'/views/includes/search.html'"></span>
       <ul class="nav navbar-nav navbar-right">
         <li>
       <div class="status" data-ng-controller="StatusController">
