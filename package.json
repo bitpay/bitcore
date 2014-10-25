@@ -30,6 +30,10 @@
     {
       "name": "Gordon Hall",
       "email": "gordon@bitpay.com"
+    },
+    {
+      "name": "Esteban Ordano",
+      "email": "eordano@gmail.com"
     }
   ],
   "keywords": [
@@ -52,41 +56,24 @@
     "prepublish": "node browser/build.js -m"
   },
   "dependencies": {
-    "grunt-browserify": "~2.0.0",
-    "grunt-contrib-watch": "~0.5.3",
-    "grunt-markdown": "~0.5.0",
-    "grunt-mocha-test": "~0.8.2",
-    "grunt-shell": "~0.6.4",
-    "protobufjs": "=3.0.0",
-    "coveralls": "^2.10.0",
-    "istanbul": "~0.2.6",
-    "commander": "~2.2.0",
-    "mocha": ">=1.15.1",
-    "sjcl": "=1.0.1",
-    "hash.js": "=0.3.1",
-    "bn.js": "=0.13.3",
-    "jsrsasign": "=0.0.3",
-    "elliptic": "=0.15.7",
-    "bindings": "=1.1.1",
-    "bufferput": "git://github.com/bitpay/node-bufferput.git",
+    "asn1.js": "0.4.1",
+    "async": "~0.2.10",
     "bignum": "=0.6.2",
-    "binary": "=0.3.0",
-    "step": "=0.0.4",
+    "bindings": "=1.1.1",
+    "binary": "^0.3.0",
+    "bn.js": "=0.13.3",
+    "brfs": "=1.0.0",
+    "bufferput": "git://github.com/bitpay/node-bufferput.git",
     "buffers": "=0.1.1",
     "buffertools": "=2.1.2",
-    "browserify": "=3.40.0",
-    "browser-pack": "=2.0.1",
     "browserify-buffertools": "git://github.com/maraoz/browserify-buffertools.git",
-    "socks5-client": "~0.3.6",
-    "brfs": "=1.0.0",
-    "chai": "=1.9.1",
-    "uglifyify": "=1.2.3",
-    "async": "~0.2.10",
-    "event-stream": "~3.1.5",
-    "gulp-concat": "~2.2.0",
-    "gulp": "~3.8.2",
+    "elliptic": "=0.15.7",
+    "hash.js": "=0.3.1",
+    "jsrsasign": "=0.0.3",
     "preconditions": "^1.0.7",
-    "asn1.js": "0.4.1"
+    "protobufjs": "=3.0.0",
+    "sjcl": "=1.0.1",
+    "socks5-client": "~0.3.6"
   },
   "testling": {
     "harness": "mocha-bdd",
@@ -115,9 +102,24 @@
     "node": ">=0.10"
   },
   "devDependencies": {
-    "sinon": "^1.10.3",
+    "browserify": "=3.40.0",
+    "chai": "=1.9.1",
+    "commander": "~2.2.0",
+    "coveralls": "^2.10.0",
+    "event-stream": "~3.1.5",
     "express": "4.6.1",
+    "grunt-browserify": "~2.0.0",
+    "grunt-contrib-watch": "~0.5.3",
+    "grunt-markdown": "~0.5.0",
+    "grunt-mocha-test": "~0.8.2",
+    "grunt-shell": "~0.6.4",
+    "gulp": "~3.8.2",
+    "gulp-concat": "~2.2.0",
+    "istanbul": "~0.2.6",
+    "mocha": ">=1.15.1",
+    "optimist": "0.6.1",
     "request": "2.39.0",
-    "optimist": "0.6.1"
+    "sinon": "^1.10.3",
+    "uglifyify": "=1.2.3"
   }
 }
