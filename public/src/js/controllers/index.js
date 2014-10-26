@@ -12,7 +12,7 @@ angular.module('insight.system').controller('IndexController',
         limit: BLOCKS_DISPLAYED
       }, function(res) {
         $scope.blocks = res.blocks;
-        $scope.blocksLength = res.lenght;
+        $scope.blocksLength = res.length;
       });
     };
 
