@@ -4,12 +4,14 @@ var chai = chai || require('chai');
 var bitcore = bitcore || require('../bitcore');
 
 var should = chai.should();
+var assert = chai.assert;
 
 var Script = bitcore.Script;
 var Address = bitcore.Address;
 var Opcode = bitcore.Opcode;
 var Transaction = bitcore.Transaction;
 var networks = bitcore.networks;
+var buffertools = bitcore.buffertools;
 var testdata = testdata || require('./testdata');
 
 describe('Script', function() {
@@ -30,6 +32,17 @@ describe('Script', function() {
     var addr = new Address('1J57QmkaQ6JohJoQyaUJwngJ2vTQ3C6gHi');
     var script = Script.createPubKeyHashOut(addr.payload());
     script.isP2SH().should.be.false;
+  });
+  it('simpleOutHash should return pubkey hash for pubkey output', function() {
+    var addr = new Address('1J57QmkaQ6JohJoQyaUJwngJ2vTQ3C6gHi');
+    var script = Script.createPubKeyHashOut(addr.payload());
+    var isEqual = buffertools.equals(script.simpleOutHash(), addr.payload());
+    isEqual.should.be.true;
+  });
+  it('simpleOutHash should return null for P2SH', function() {
+    var addr = new Address('1J57QmkaQ6JohJoQyaUJwngJ2vTQ3C6gHi');
+    var script = Script.createP2SH(addr.payload());
+    assert.isNull(script.simpleOutHash());
   });
 
   describe('#finishedMultiSig', function() {
