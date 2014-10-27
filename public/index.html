@@ -44,7 +44,7 @@
 	</div>
 	<div id="footer" role="navigation">
     <div class="container" data-ng-controller="FooterController">
-      <div class="languages m20t pull-left">
+      <div class="languages m20t pull-left" ng-show="availableLanguages.0">
         [ 
         <a href="#" 
           ng-click="setLanguage(l.isoCode)"

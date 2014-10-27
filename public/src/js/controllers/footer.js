@@ -24,7 +24,7 @@ angular.module('insight.system').controller('FooterController',
 
     $scope.setLanguage = function(isoCode) {
       gettextCatalog.currentLanguage = $scope.defaultLanguage = defaultLanguage = isoCode;
-      amMoment.changeLanguage(isoCode);
+      amMoment.changeLocale(isoCode);
       localStorage.setItem('insight-language', isoCode);
       var currentPageTemplate = $route.current.templateUrl;
       $templateCache.remove(currentPageTemplate);
