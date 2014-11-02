@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /address
+Disallow: /api
+Disallow: /transaction
