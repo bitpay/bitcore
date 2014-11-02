@@ -1,0 +1,81 @@
+<section data-ng-controller="VerifyMessageController">
+  <div class="page-header">
+    <h1>
+      <span translate>Verify signed message</span>
+    </h1>
+  </div>
+  <div class="row">
+    <div class="col-xs-12 col-md-8">
+      <form class="form-horizontal" role="form">
+        <div class="form-group">
+          <label for="verify-message-address" class="col-sm-2 control-label" translate>
+            Address
+          </label>
+          <div class="col-sm-10">
+            <input type="text" class="form-control" id="verify-message-address"
+                data-ng-model="message.address">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="verify-message-signature" class="col-sm-2 control-label" translate>
+            Signature
+          </label>
+          <div class="col-sm-10">
+            <input type="text" class="form-control" id="verify-message-signature"
+                data-ng-model="message.signature">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="verify-message-message" class="col-sm-2 control-label" translate>
+            Message
+          </label>
+          <div class="col-sm-10">
+            <textarea class="form-control" id="verify-message-message"
+              data-ng-model="message.message" rows="5"></textarea>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="col-sm-offset-2 col-sm-10">
+            <button class="btn btn-default" translate
+                data-ng-click="verify()" data-ng-disabled="!verifiable()">
+              Verify
+            </button>
+          </div>
+        </div>
+      </form>
+      <div class="row">
+        <div data-ng-hide="verification.status == 'unverified'"
+             class="col-sm-offset-2 col-sm-10">
+          <div ng-show="verification.status == 'loading'" translate>
+            Loading...
+          </div>
+          <div ng-show="verification.status == 'verified' && verification.result"
+               class="alert alert-success" translate>
+            The message is verifiably from {{verification.address}}.
+          </div>
+          <div ng-show="verification.status == 'verified' && !verification.result"
+               class="alert alert-danger" translate>
+            The message failed to verify.
+          </div>
+          <div ng-show="verification.status == 'error'"
+               class="alert alert-warning">
+            <p translate>An error occured in the verification process.</p>
+            <p ng-show="error">
+              <strong translate>Error message:</strong>
+              {{verification.error}}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xs-12 col-md-4 col-gray">
+      <p translate>
+        Bitcoin comes with a way of signing arbitrary messages.
+      </p>
+      <p translate>
+        This form can be used to verify that a message comes from
+        a specific Bitcoin address.
+      </p>
+    </div>
+  </div>
+</section>

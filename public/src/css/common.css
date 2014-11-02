@@ -409,21 +409,21 @@ margin-left: 0;
 #footer a.insight small { font-size: 11px; }
 .line-footer { border-top: 2px dashed #ccc; }
 
-#footer .languages {
+#footer .links {
   color: #ddd;
   font-size: 10px;
 }
 
-#footer .languages a {
+#footer .links a {
   color: #ddd;
 }
 
-#footer .languages a.selected {
+#footer .links a.selected {
   color: #eee;
   font-weight: bold;
 }
 
-#footer .languages a:hover {
+#footer .links a:hover {
   text-decoration: none;
   color: #fffffe;
 }
