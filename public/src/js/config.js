@@ -11,6 +11,10 @@ angular.module('insight').config(function($routeProvider) {
       controller: 'BlocksController',
       templateUrl: '/views/redirect.html'
     }).
+    when('/tx/send', {
+      templateUrl: '/views/transaction_sendraw.html',
+      title: 'Broadcast Raw Transaction'
+    }).
     when('/tx/:txId/:v_type?/:v_index?', {
       templateUrl: '/views/transaction.html',
       title: 'Bitcoin Transaction '
