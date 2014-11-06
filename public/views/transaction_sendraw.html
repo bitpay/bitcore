@@ -1,0 +1,55 @@
+<section data-ng-controller="SendRawTransactionController">
+  <div class="page-header">
+    <h1>
+      <span translate>Broadcast Raw Transaction</span>
+    </h1>
+  </div>
+  <div class="row">
+    <div class="col-xs-12 col-md-8">
+      <form name="txForm" class="form-horizontal" role="form" novalidate>
+        <div class="form-group"
+             ng-class="{ 'has-error': txForm.rawData.$error.pattern }">
+          <label for="transaction-rawdata" class="col-sm-2 control-label" translate>
+            Raw transaction data
+          </label>
+          <div class="col-sm-10">
+            <textarea class="form-control" id="transaction-rawdata" name="rawData"
+                data-ng-model="transaction" data-ng-pattern="/^[0-9A-Fa-f]+$/"
+                rows="10" required></textarea>
+            <span class="help-block" ng-show="txForm.rawData.$error.pattern" translate>
+              Raw transaction data must be a valid hexadecimal string.
+            </span>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="col-sm-offset-2 col-sm-10">
+            <button class="btn btn-default" translate
+                data-ng-click="send()" data-ng-disabled="!txForm.$valid">
+              Send transaction
+            </button>
+          </div>
+        </div>
+      </form>
+      <div class="row">
+        <div data-ng-hide="status == 'ready'"
+             class="col-sm-offset-2 col-sm-10">
+          <div ng-show="status == 'loading'" translate>
+            Loading...
+          </div>
+          <div ng-show="status == 'sent'" class="alert alert-success" translate>
+            Transaction succesfully broadcast.<br>Transaction id: {{txid}}
+          </div>
+          <div ng-show="status == 'error'" class="alert alert-warning" translate>
+            An error occured:<br>{{error}}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xs-12 col-md-4 col-gray">
+      <p translate>
+        This form can be used to broadcast a raw transaction in hex format over
+        the Bitcoin network.
+      </p>
+    </div>
+  </div>
+</section>
