@@ -1,7 +1,7 @@
 {
   "name": "bitcore-multicoin",
   "description": "Bitcoin and altcoins Library",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "author": {
     "name": "Ke Zeng",
     "email": "superisaac.ke@gmail.com"
