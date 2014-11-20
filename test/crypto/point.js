@@ -1,6 +1,9 @@
+'use strict';
+
 var should = require('chai').should();
-var point = require('../lib/point');
-var BN = require('../lib/bn');
+var bitcore = require('../..');
+var point = bitcore.Point;
+var BN = bitcore.BN;
 
 describe('Point', function() {
   
