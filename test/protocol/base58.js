@@ -1,9 +1,12 @@
-var Base58 = require('../lib/base58');
+'use strict';
+
 var should = require('chai').should();
+var bitcore = require('../..');
+var Base58 = bitcore.Base58;
 
 describe('Base58', function() {
   var buf = new Buffer([0, 1, 2, 3, 253, 254, 255]);
-  var enc = "1W7N4RuG";
+  var enc = '1W7N4RuG';
 
   it('should make an instance with "new"', function() {
     var b58 = new Base58();
@@ -17,13 +20,15 @@ describe('Base58', function() {
 
   it('should allow this handy syntax', function() {
     Base58(buf).toString().should.equal(enc);
-    Base58(enc).toBuffer().toString('hex').should.equal(buf.toString('hex'))
+    Base58(enc).toBuffer().toString('hex').should.equal(buf.toString('hex'));
   });
 
   describe('#set', function() {
-    
+
     it('should set a blank buffer', function() {
-      Base58().set({buf: new Buffer([])});
+      Base58().set({
+        buf: new Buffer([])
+      });
     });
 
   });
@@ -57,7 +62,7 @@ describe('Base58', function() {
   });
 
   describe('#fromBuffer', function() {
-    
+
     it('should not fail', function() {
       should.exist(Base58().fromBuffer(buf));
     });
@@ -80,7 +85,9 @@ describe('Base58', function() {
   describe('#toBuffer', function() {
 
     it('should return the buffer', function() {
-      var b58 = Base58({buf: buf});
+      var b58 = Base58({
+        buf: buf
+      });
       b58.buf.toString('hex').should.equal(buf.toString('hex'));
     });
 
@@ -89,7 +96,9 @@ describe('Base58', function() {
   describe('#toString', function() {
 
     it('should return the buffer', function() {
-      var b58 = Base58({buf: buf});
+      var b58 = Base58({
+        buf: buf
+      });
       b58.toString().should.equal(enc);
     });
 
