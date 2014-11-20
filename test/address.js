@@ -1,7 +1,11 @@
+'use strict';
+
 var should = require('chai').should();
-var Pubkey = require('../lib/pubkey');
-var Address = require('../lib/address');
-var Script = require('../lib/script');
+
+var bitcore = require('..');
+var Pubkey = bitcore.Pubkey;
+var Address = bitcore.Address;
+var Script = bitcore.Script;
 
 describe('Address', function() {
   var pubkeyhash = new Buffer('3c3fa3d4adcaf8f52d5b1843975e122548269937', 'hex');
@@ -11,9 +15,9 @@ describe('Address', function() {
   it('should create a new address object', function() {
     var address = new Address();
     should.exist(address);
-    address = Address(buf);
+    address = new Address(buf);
     should.exist(address);
-    address = Address(str);
+    address = new Address(str);
     should.exist(address);
   });
 
