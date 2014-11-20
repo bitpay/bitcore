@@ -1,21 +1,18 @@
+'use strict';
+
 var should = require('chai').should();
-var BN = require('../lib/bn');
-var Txout = require('../lib/txout');
-var Script = require('../lib/script');
-var Varint = require('../lib/varint');
-var BufferReader = require('../lib/bufferreader');
-var BufferWriter = require('../lib/bufferwriter');
+var bitcore = require('..');
+var BN = bitcore.BN;
+var Txout = bitcore.Txout;
+var Script = bitcore.Script;
+var Varint = bitcore.Varint;
+var BufferReader = bitcore.BufferReader;
 
 describe('Txout', function() {
   
   var valuebn = BN(5);
-  var script = Script().fromString("OP_CHECKMULTISIG");
+  var script = Script().fromString('OP_CHECKMULTISIG');
   var scriptvi = Varint(script.toBuffer().length);
-  var txout = new Txout().set({
-    valuebn: valuebn,
-    scriptvi: scriptvi,
-    script: script
-  });
 
   it('should make a new txout', function() {
     var txout = new Txout();
