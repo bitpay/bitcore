@@ -1,7 +1,10 @@
-var BufferWriter = require('../lib/bufferwriter');
-var BufferReader = require('../lib/bufferreader');
-var BN = require('../lib/bn');
+'use strict';
+
+var bitcore = require('../..');
 var should = require('chai').should();
+var BufferWriter = bitcore.BufferWriter;
+var BufferReader = bitcore.BufferReader;
+var BN = bitcore.BN;
 
 describe('BufferWriter', function() {
 
@@ -15,7 +18,6 @@ describe('BufferWriter', function() {
     it('set bufs', function() {
       var buf1 = new Buffer([0]);
       var buf2 = new Buffer([1]);
-      var bufs = [buf1, buf2];
       var bw = new BufferWriter().set({bufs: [buf1, buf2]});
       bw.concat().toString('hex').should.equal('0001');
     });
