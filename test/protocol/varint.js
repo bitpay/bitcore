@@ -1,8 +1,11 @@
-var BN = require('../lib/bn');
+'use strict';
+
 var should = require('chai').should();
-var BufferReader = require('../lib/bufferreader');
-var BufferWriter = require('../lib/bufferwriter');
-var Varint = require('../lib/varint');
+var bitcore = require('../..');
+var BN = bitcore.BN;
+var BufferReader = bitcore.BufferReader;
+var BufferWriter = bitcore.BufferWriter;
+var Varint = bitcore.Varint;
 
 describe('Varint', function() {
 
@@ -95,7 +98,7 @@ describe('Varint', function() {
   describe('#toBuffer', function() {
     
     it('should return a buffer', function() {
-      buf = BufferWriter().writeVarintNum(5).concat();
+      var buf = BufferWriter().writeVarintNum(5).concat();
       var varint = Varint(buf);
       varint.toBuffer().toString('hex').should.equal(buf.toString('hex'));
     });
