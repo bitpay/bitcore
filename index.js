@@ -6,6 +6,7 @@ bitcore.Base58 = require('./lib/protocol/base58');
 bitcore.Base58Check = require('./lib/protocol/base58check');
 bitcore.BufferReader = require('./lib/protocol/bufferreader');
 bitcore.BufferWriter = require('./lib/protocol/bufferwriter');
+bitcore.Varint = require('./lib/protocol/varint');
 
 // crypto 
 bitcore.BN = require('./lib/crypto/bn');
@@ -29,7 +30,6 @@ bitcore.Signature = require('./lib/signature');
 bitcore.Transaction = require('./lib/transaction');
 bitcore.Txin = require('./lib/txin');
 bitcore.Txout = require('./lib/txout');
-bitcore.Varint = require('./lib/varint');
 
 
 //dependencies, subject to change
