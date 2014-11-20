@@ -1,7 +1,10 @@
-var BufferWriter = require('../lib/bufferwriter');
-var BufferReader = require('../lib/bufferreader');
+'use strict';
+
 var should = require('chai').should();
-var BN = require('../lib/bn');
+var bitcore = require('../..');
+var BufferWriter = bitcore.BufferWriter;
+var BufferReader = bitcore.BufferReader;
+var BN = bitcore.BN;
 
 describe('BufferReader', function() {
   
