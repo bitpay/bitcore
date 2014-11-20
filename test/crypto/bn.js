@@ -1,7 +1,8 @@
-var chai = chai || require('chai');
-var should = chai.should();
-var assert = chai.assert;
-var BN = require('../lib/bn');
+'use strict';
+
+var should = require('chai').should();
+var bitcore = require('../..');
+var BN = bitcore.BN;
 
 describe('BN', function() {
   it('should create a bn', function() {
@@ -18,7 +19,7 @@ describe('BN', function() {
   it('should parse numbers below and at bn.js internal word size', function() {
     var bn = new BN(Math.pow(2, 26) - 1);
     bn.toString().should.equal((Math.pow(2, 26) - 1).toString());
-    var bn = new BN(Math.pow(2, 26));
+    bn = new BN(Math.pow(2, 26));
     bn.toString().should.equal((Math.pow(2, 26)).toString());
   });
   
