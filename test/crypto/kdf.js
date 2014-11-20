@@ -1,9 +1,12 @@
+'use strict';
+
 var should = require('chai').should();
-var KDF = require('../lib/kdf');
-var Hash = require('../lib/hash');
+var bitcore = require('bitcore');
+var KDF = bitcore.KDF;
+var Hash = bitcore.Hash;
 
 describe('KDF', function() {
-  
+
   describe('#buf2keypair', function() {
 
     it('should compute these known values', function() {
