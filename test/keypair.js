@@ -1,12 +1,14 @@
+'use strict';
+
 var should = require('chai').should();
-var bn = require('../lib/bn');
-var point = require('../lib/point');
-var Privkey = require('../lib/privkey');
-var Pubkey = require('../lib/pubkey');
-var Keypair = require('../lib/keypair');
+var bitcore = require('..');
+var bn = bitcore.BN;
+var Privkey = bitcore.Privkey;
+var Pubkey = bitcore.Pubkey;
+var Keypair = bitcore.Keypair;
 
 describe('Keypair', function() {
-  
+
   it('should make a blank key', function() {
     var key = new Keypair();
     should.exist(key);
@@ -15,16 +17,21 @@ describe('Keypair', function() {
   it('should make a key with a priv and pub', function() {
     var priv = new Privkey();
     var pub = new Pubkey();
-    var key = new Keypair({privkey: priv, pubkey: pub});
+    var key = new Keypair({
+      privkey: priv,
+      pubkey: pub
+    });
     should.exist(key);
     should.exist(key.privkey);
     should.exist(key.pubkey);
   });
 
-  describe("#set", function() {
-    
+  describe('#set', function() {
+
     it('should make a new priv and pub', function() {
-      should.exist(Keypair().set({privkey: Privkey()}).privkey);
+      should.exist(new Keypair().set({
+        privkey: new Privkey()
+      }).privkey);
     });
 
   });
@@ -58,7 +65,7 @@ describe('Keypair', function() {
   });
 
   describe("#fromPrivkey", function() {
-    
+
     it('should make a new key from a privkey', function() {
       should.exist(Keypair().fromPrivkey(Privkey().fromRandom()).pubkey);
     });
@@ -66,7 +73,7 @@ describe('Keypair', function() {
   });
 
   describe("#fromRandom", function() {
-    
+
     it('should make a new priv and pub, should be compressed, mainnet', function() {
       var key = new Keypair();
       key.fromRandom();
@@ -83,7 +90,7 @@ describe('Keypair', function() {
   });
 
   describe("#fromString()", function() {
-    
+
     it('should recover a key creating with toString', function() {
       var key = new Keypair();
       key.fromRandom();
@@ -122,12 +129,14 @@ describe('Keypair', function() {
   });
 
   describe("#privkey2pubkey", function() {
-    
+
     it('should convert this known Privkey to known Pubkey', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
       var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
       var key = new Keypair();
-      key.privkey = new Privkey({bn: bn(new Buffer(privhex, 'hex'))});
+      key.privkey = new Privkey({
+        bn: bn(new Buffer(privhex, 'hex'))
+      });
       key.privkey2pubkey();
       key.pubkey.toString().should.equal(pubhex);
     });
@@ -135,7 +144,9 @@ describe('Keypair', function() {
     it('should convert this known Privkey to known Pubkey and preserve compressed=true', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
       var key = new Keypair();
-      key.privkey = new Privkey({bn: bn(new Buffer(privhex, 'hex'))});
+      key.privkey = new Privkey({
+        bn: bn(new Buffer(privhex, 'hex'))
+      });
       key.privkey.compressed = true;
       key.privkey2pubkey();
       key.pubkey.compressed.should.equal(true);
@@ -144,7 +155,9 @@ describe('Keypair', function() {
     it('should convert this known Privkey to known Pubkey and preserve compressed=true', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
       var key = new Keypair();
-      key.privkey = new Privkey({bn: bn(new Buffer(privhex, 'hex'))});
+      key.privkey = new Privkey({
+        bn: bn(new Buffer(privhex, 'hex'))
+      });
       key.privkey.compressed = false;
       key.privkey2pubkey();
       key.pubkey.compressed.should.equal(false);
@@ -153,7 +166,7 @@ describe('Keypair', function() {
   });
 
   describe("#toString()", function() {
-    
+
     it('should exist', function() {
       var key = new Keypair();
       key.fromRandom();
