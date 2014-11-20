@@ -17,7 +17,7 @@ module.exports = function(grunt) {
           stderr: true
         },
         command: grunt.option('target') === 'dev' ?
-            'node ./browser/build.js -a -d; docco lib/* ' : 'node ./browser/build.js -a'
+            './browser/build; docco lib/* ' : './browser/build'
       }
     },
     watch: {
