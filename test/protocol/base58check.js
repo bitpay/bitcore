@@ -1,10 +1,13 @@
+'use strict';
+
 var should = require('chai').should();
-var Base58Check = require('../lib/base58check');
-var base58 = require('../lib/base58');
+var bitcore = require('../..');
+var Base58Check = bitcore.Base58Check;
+var base58 = bitcore.Base58;
 
 describe('Base58Check', function() {
   var buf = new Buffer([0, 1, 2, 3, 253, 254, 255]);
-  var enc = "14HV44ipwoaqfg";
+  var enc = '14HV44ipwoaqfg';
 
   it('should make an instance with "new"', function() {
     var b58 = new Base58Check();
