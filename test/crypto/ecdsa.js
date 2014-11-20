@@ -1,17 +1,21 @@
-var ECDSA = require('../lib/ecdsa');
-var Hash = require('../lib/hash');
-var Keypair = require('../lib/keypair');
-var Privkey = require('../lib/privkey');
-var Pubkey = require('../lib/pubkey');
-var Signature = require('../lib/signature');
-var BN = require('../lib/bn');
-var point = require('../lib/point');
-var should = require('chai').should();
+'use strict';
 
-describe("ECDSA", function() {
+var should = require('chai').should();
+var bitcore = require('../..');
+var ECDSA = bitcore.ECDSA;
+var Hash = bitcore.Hash;
+var Keypair = bitcore.Keypair;
+var Privkey = bitcore.Privkey;
+var Pubkey = bitcore.Pubkey;
+var Signature = bitcore.Signature;
+var BN = bitcore.BN;
+var point = bitcore.Point;
+
+describe('ECDSA', function() {
 
   it('should create a blank ecdsa', function() {
     var ecdsa = new ECDSA();
+    should.exist(ecdsa);
   });
 
   var ecdsa = new ECDSA();
