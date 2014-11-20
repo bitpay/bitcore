@@ -1,5 +1,4 @@
 var should = require('chai').should();
-var constants = require('../lib/constants');
 var Pubkey = require('../lib/pubkey');
 var Address = require('../lib/address');
 var Script = require('../lib/script');
