@@ -1,10 +1,12 @@
-var Varint = require('../lib/varint');
-var Transaction = require('../lib/transaction');
-var Txin = require('../lib/txin');
-var Txout = require('../lib/txout');
+'use strict';
+
 var should = require('chai').should();
-var BufferReader = require('../lib/bufferreader');
-var BufferWriter = require('../lib/bufferwriter');
+var bitcore = require('..');
+var Varint = bitcore.Varint;
+var Transaction = bitcore.Transaction;
+var Txin = bitcore.Txin;
+var Txout = bitcore.Txout;
+var BufferReader = bitcore.BufferReader;
 
 describe('Transaction', function() {
 
@@ -32,7 +34,7 @@ describe('Transaction', function() {
     should.exist(tx);
 
     Transaction(txbuf).toBuffer().toString('hex').should.equal(txhex);
-    
+
     //should set known defaults
     tx.version.should.equal(1);
     tx.txinsvi.toNumber().should.equal(0);
@@ -43,7 +45,7 @@ describe('Transaction', function() {
   });
 
   describe('#initialize', function() {
-    
+
     it('should set these known defaults', function() {
       var tx = new Transaction();
       tx.initialize();
@@ -114,7 +116,7 @@ describe('Transaction', function() {
   });
 
   describe('#fromBuffer', function() {
-    
+
     it('should recover from this known tx', function() {
       Transaction().fromBuffer(txbuf).toBuffer().toString('hex').should.equal(txhex);
     });
@@ -126,7 +128,7 @@ describe('Transaction', function() {
   });
 
   describe('#fromBufferReader', function() {
-    
+
     it('should recover from this known tx', function() {
       Transaction().fromBufferReader(BufferReader(txbuf)).toBuffer().toString('hex').should.equal(txhex);
     });
@@ -134,7 +136,7 @@ describe('Transaction', function() {
   });
 
   describe('#toBuffer', function() {
-    
+
     it('should produce this known tx', function() {
       Transaction().fromBuffer(txbuf).toBuffer().toString('hex').should.equal(txhex);
     });
@@ -142,7 +144,7 @@ describe('Transaction', function() {
   });
 
   describe('#toBufferWriter', function() {
-    
+
     it('should produce this known tx', function() {
       Transaction().fromBuffer(txbuf).toBufferWriter().concat().toString('hex').should.equal(txhex);
     });
@@ -169,7 +171,7 @@ describe('Transaction', function() {
   });
 
   describe('#pushin', function() {
-    
+
     it('should add an input', function() {
       var txin = Txin();
       var tx = Transaction();
@@ -181,7 +183,7 @@ describe('Transaction', function() {
   });
 
   describe('#pushout', function() {
-    
+
     it('should add an output', function() {
       var txout = Txout();
       var tx = Transaction();
