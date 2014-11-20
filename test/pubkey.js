@@ -1,8 +1,11 @@
+'use strict';
+
 var should = require('chai').should();
-var Pubkey = require('../lib/pubkey');
-var Point = require('../lib/point');
-var Bn = require('../lib/bn');
-var Privkey = require('../lib/privkey');
+var bitcore = require('bitcore');
+var Pubkey = bitcore.Pubkey;
+var Point = bitcore.Point;
+var Bn = bitcore.BN;
+var Privkey = bitcore.Privkey;
 
 describe('Pubkey', function() {
   
@@ -114,7 +117,7 @@ describe('Pubkey', function() {
   describe('#fromString', function() {
 
     it('should parse this known valid public key', function() {
-      pk = new Pubkey();
+      var pk = new Pubkey();
       pk.fromString('041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341');
       pk.point.getX().toString(16).should.equal('1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a');
       pk.point.getY().toString(16).should.equal('7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341');
