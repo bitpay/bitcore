@@ -1,5 +1,8 @@
+'use strict';
+
 var should = require('chai').should();
-var Random = require('../lib/random');
+var bitcore = require('../..');
+var Random = bitcore.Random;
 
 describe('Random', function() {
 
@@ -21,7 +24,7 @@ describe('Random', function() {
       var hexs = [];
       for (var i = 0; i < 100; i++)
         hexs[i] = Random.getRandomBuffer(8).toString('hex');
-      for (var i = 0; i < 100; i++)
+      for (i = 0; i < 100; i++)
         for (var j = i + 1; j < 100; j++)
           hexs[i].should.not.equal(hexs[j]);
     });
