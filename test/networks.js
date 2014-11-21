@@ -1,18 +1,24 @@
 'use strict';
 
 var should = require('chai').should();
-var bitcore = require('../../');
-var constants = bitcore.Constants;
+var bitcore = require('..');
+var networks = bitcore.networks;
 
-describe('Constants', function() {
+describe('networks', function() {
 
-  it('should contain all constants for livenet and testnet', function() {
-    for (var key in constants.livenet) {
-      if (constants.livenet.hasOwnProperty(key)) {
-        constants.testnet.hasOwnProperty(key).should.equal(true);
+  it('should contain all networks', function() {
+    should.exist(networks.livenet);
+    should.exist(networks.testnet);
+    should.exist(networks.mainnet);
+  });
+  describe('contain all constants for livenet and testnet', function() {
+    for (var key in networks.livenet) {
+      if (networks.livenet.hasOwnProperty(key)) {
+        it('all should contain '+key, function() {
+          networks.testnet.hasOwnProperty(key).should.equal(true);
+        });
       }
     }
-
   });
 
 });

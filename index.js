@@ -1,12 +1,5 @@
 var bitcore = module.exports;
 
-// protocol
-bitcore.Constants = require('./lib/protocol/constants');
-bitcore.Base58 = require('./lib/protocol/base58');
-bitcore.Base58Check = require('./lib/protocol/base58check');
-bitcore.BufferReader = require('./lib/protocol/bufferreader');
-bitcore.BufferWriter = require('./lib/protocol/bufferwriter');
-bitcore.Varint = require('./lib/protocol/varint');
 
 // crypto 
 bitcore.BN = require('./lib/crypto/bn');
@@ -15,12 +8,20 @@ bitcore.Hash = require('./lib/crypto/hash');
 bitcore.Random = require('./lib/crypto/random');
 bitcore.Point = require('./lib/crypto/point');
 
+// encoding
+bitcore.Base58 = require('./lib/encoding/base58');
+bitcore.Base58Check = require('./lib/encoding/base58check');
+bitcore.BufferReader = require('./lib/encoding/bufferreader');
+bitcore.BufferWriter = require('./lib/encoding/bufferwriter');
+bitcore.Varint = require('./lib/encoding/varint');
+
 // main bitcoin library
 bitcore.Address = require('./lib/address');
 bitcore.BIP32 = require('./lib/bip32');
 bitcore.Block = require('./lib/block');
 bitcore.Blockheader = require('./lib/blockheader');
 bitcore.Keypair = require('./lib/keypair');
+bitcore.networks = require('./lib/networks');
 bitcore.Opcode = require('./lib/opcode');
 bitcore.Privkey = require('./lib/privkey');
 bitcore.Pubkey = require('./lib/pubkey');
