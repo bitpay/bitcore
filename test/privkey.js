@@ -2,9 +2,9 @@
 
 var should = require('chai').should();
 var bitcore = require('..');
+var BN = bitcore.crypto.BN;
+var Point = bitcore.crypto.Point;
 var Privkey = bitcore.Privkey;
-var BN = bitcore.BN;
-var Point = bitcore.Point;
 
 describe('Privkey', function() {
   var hex = '96c132224121b509b7d0a16245e957d9192609c5637c6228311287b1be21627a';

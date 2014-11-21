@@ -2,7 +2,6 @@
 
 var should = require('chai').should();
 var bitcore = require('..');
-var constants = bitcore.constants;
 var BIP32 = bitcore.BIP32;
 
 describe('BIP32', function() {
