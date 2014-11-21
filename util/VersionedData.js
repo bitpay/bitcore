@@ -3,11 +3,17 @@ var util = require('util');
 var EncodedData = require('./EncodedData');
 
 
-function VersionedData(version, payload) {
+function VersionedData(version, payload, currency) {
   VersionedData.super_.call(this, version, payload);
+  if(!currency){
+    currency = 'btc';
+  }
+  this.currency(currency);
+  
   if (typeof version != 'number') {
     return;
   };
+  
   this.data = new Buffer(payload.length + 1);
   this.encoding('binary');
   this.version(version);
@@ -16,6 +22,15 @@ function VersionedData(version, payload) {
 
 util.inherits(VersionedData, EncodedData);
 EncodedData.applyEncodingsTo(VersionedData);
+
+//get or set the currency
+VersionedData.prototype.currency = function(currency) {
+  if (currency) {
+    this._currency = currency;
+    return currency;
+  }
+  return this._currency
+};
 
 // get or set the version data (the first byte of the address)
 VersionedData.prototype.version = function(num) {

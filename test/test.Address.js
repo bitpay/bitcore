@@ -156,7 +156,7 @@ describe('Address', function() {
         noSorting: true
       });
       var hash = bitcore.util.sha256ripe160(script.getBuffer());
-      var version = bitcore.networks['livenet'].P2SHVersion;
+      var version = bitcore.networks['btc']['livenet'].P2SHVersion;
       var addr = new Address(version, hash);
       var addr2 = Address.fromPubKeys(mReq, sortedPubKeys);
       addr.toString().should.equal(addr2.toString());
@@ -193,7 +193,7 @@ describe('Address', function() {
       var addr = Address.fromScript(script);
 
       var hash = bitcore.util.sha256ripe160(script.getBuffer());
-      var version = bitcore.networks['livenet'].P2SHVersion;
+      var version = bitcore.networks['btc']['livenet'].P2SHVersion;
       var addr2 = new Address(version, hash);
 
       addr.toString().should.equal(addr2.toString());

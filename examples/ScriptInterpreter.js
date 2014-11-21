@@ -7,7 +7,7 @@ var run = function() {
   var coinUtil = bitcore.util;
   var Script = bitcore.Script;
   var ScriptInterpreter = bitcore.ScriptInterpreter;
-  var network = bitcore.networks.testnet;
+  var network = bitcore.networks['btc'].testnet;
 
 
   // using "static" method
