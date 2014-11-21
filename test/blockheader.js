@@ -2,8 +2,8 @@
 
 var should = require('chai').should();
 var bitcore = require('..');
+var BufferReader = bitcore.encoding.BufferReader;
 var Blockheader = bitcore.Blockheader;
-var BufferReader = bitcore.BufferReader;
 
 describe('Blockheader', function() {
   

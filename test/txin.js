@@ -2,10 +2,10 @@
 
 var should = require('chai').should();
 var bitcore = require('..');
+var Varint = bitcore.encoding.Varint;
+var BufferReader = bitcore.encoding.BufferReader;
 var Script = bitcore.Script;
 var Txin = bitcore.Txin;
-var Varint = bitcore.Varint;
-var BufferReader = bitcore.BufferReader;
 
 describe('Txin', function() {
   

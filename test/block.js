@@ -2,10 +2,10 @@
 
 var should = require('chai').should();
 var bitcore = require('..');
+var Varint = bitcore.encoding.Varint;
+var BufferReader = bitcore.encoding.BufferReader;
 var Blockheader = bitcore.Blockheader;
 var Block = bitcore.Block;
-var BufferReader = bitcore.BufferReader;
-var Varint = bitcore.Varint;
 var Transaction = bitcore.Transaction;
 
 describe('Block', function() {

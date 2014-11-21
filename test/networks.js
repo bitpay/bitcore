@@ -2,20 +2,20 @@
 
 var should = require('chai').should();
 var bitcore = require('..');
-var networks = bitcore.networks;
+var Networks = bitcore.Networks;
 
-describe('networks', function() {
+describe('Networks', function() {
 
-  it('should contain all networks', function() {
-    should.exist(networks.livenet);
-    should.exist(networks.testnet);
-    should.exist(networks.mainnet);
+  it('should contain all Networks', function() {
+    should.exist(Networks.livenet);
+    should.exist(Networks.testnet);
+    should.exist(Networks.mainnet);
   });
   describe('contain all constants for livenet and testnet', function() {
-    for (var key in networks.livenet) {
-      if (networks.livenet.hasOwnProperty(key)) {
+    for (var key in Networks.livenet) {
+      if (Networks.livenet.hasOwnProperty(key)) {
         it('all should contain '+key, function() {
-          networks.testnet.hasOwnProperty(key).should.equal(true);
+          Networks.testnet.hasOwnProperty(key).should.equal(true);
         });
       }
     }

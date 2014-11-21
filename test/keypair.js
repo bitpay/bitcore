@@ -2,7 +2,7 @@
 
 var should = require('chai').should();
 var bitcore = require('..');
-var bn = bitcore.BN;
+var bn = bitcore.crypto.BN;
 var Privkey = bitcore.Privkey;
 var Pubkey = bitcore.Pubkey;
 var Keypair = bitcore.Keypair;
