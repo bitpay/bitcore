@@ -72,9 +72,13 @@
     "sha512": "=0.0.1"
   },
   "devDependencies": {
+    "browserify": "~5.9.1",
     "chai": "~1.9.1",
-    "mocha": "~1.21.0",
-    "browserify": "~5.9.1"
+    "grunt": "^0.4.5",
+    "grunt-contrib-watch": "^0.6.1",
+    "grunt-markdown": "^0.6.1",
+    "grunt-shell": "^1.1.1",
+    "mocha": "~1.21.0"
   },
   "license": "MIT"
 }

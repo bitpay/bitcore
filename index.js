@@ -10,7 +10,6 @@ bitcore.Varint = require('./lib/protocol/varint');
 
 // crypto 
 bitcore.BN = require('./lib/crypto/bn');
-bitcore.KDF = require('./lib/crypto/kdf');
 bitcore.ECDSA = require('./lib/crypto/ecdsa');
 bitcore.Hash = require('./lib/crypto/hash');
 bitcore.Random = require('./lib/crypto/random');
