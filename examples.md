@@ -4,6 +4,7 @@
 
 'use strict';
 
+
 var run = function() {
   // Replace '../bitcore' with 'bitcore' if you use this code elsewhere.
   var bitcore = require('../bitcore');
@@ -29,7 +30,6 @@ module.exports.run = run;
 if (require.main === module) {
   run();
 }
-
 ```
 
 #Armory.js
@@ -101,7 +101,6 @@ for (var i = 0; i < 5; i++) {
   console.log(Address.fromPubKey(b.pubkey).as('base58'));
   b = b.next();
 }
-
 ```
 
 #ConnectionTor.js
@@ -145,7 +144,6 @@ dns.resolve('dnsseed.bluematt.me', function(err, seeds) {
   });
 
 });
-
 ```
 
 #CreateAndSignTx-Multisig.js
@@ -172,6 +170,7 @@ var run = function() {
     address: input.addr,
     txid: "39c71ebda371f75f4b854a720eaf9898b237facf3c2b101b58cd4383a44a6adc",
     vout: 1,
+    ts: 1396288753,
     scriptPubKey: "76a914e867aad8bd361f57c50adc37a0c018692b5b0c9a88ac",
     amount: 0.4296,
     confirmations: 2
@@ -213,7 +212,7 @@ var run = function() {
   //save scriptPubKey
   var scriptPubKey = tx.outs[0].s.toString('hex');
 
-  /*
+  /* 
    *
    * REDDEEM TX
    */
@@ -221,6 +220,7 @@ var run = function() {
     address: input.addr,
     txid: "e4bc22d8c519d3cf848d710619f8480be56176a4a6548dfbe865ab3886b578b5",
     vout: 0,
+    ts: 1396288753,
     scriptPubKey: scriptPubKey,
     amount: 0.05,
     confirmations: 2
@@ -256,8 +256,8 @@ if (typeof module !== 'undefined') {
 } else {
   run();
 }
-////
 
+////
 ```
 
 #CreateAndSignTx-PayToPubkeyHash.js
@@ -276,6 +276,7 @@ var run = function() {
     address: "mqSjTad2TKbPcKQ3Jq4kgCkKatyN44UMgZ",
     txid: "2ac165fa7a3a2b535d106a0041c7568d03b531e58aeccdd3199d7289ab12cfc1",
     vout: 1,
+    ts: 1394719301,
     scriptPubKey: "76a9146ce4e1163eb18939b1440c42844d5f0261c0338288ac",
     amount: 0.01,
     confirmations: 2
@@ -334,8 +335,8 @@ if (typeof module !== 'undefined') {
 } else {
   run();
 }
-////
 
+////
 ```
 
 #CreateAndSignTx-PayToScriptHash.js
@@ -363,6 +364,7 @@ var run = function() {
     address: "n2hoFVbPrYQf7RJwiRy1tkbuPPqyhAEfbp",
     txid: "e4bc22d8c519d3cf848d710619f8480be56176a4a6548dfbe865ab3886b578b5",
     vout: 1,
+    ts: 1396290442,
     scriptPubKey: "76a914e867aad8bd361f57c50adc37a0c018692b5b0c9a88ac",
     amount: 0.3795,
     confirmations: 7
@@ -419,7 +421,7 @@ var run = function() {
   //save scriptPubKey
   var scriptPubKey = tx.outs[0].s.toString('hex');
 
-  /*
+  /* 
    *
    * REDDEEM TX
    */
@@ -427,6 +429,7 @@ var run = function() {
     address: p2shAddress,
     txid: "c2e50d1c8c581d8c4408378b751633f7eb86687fc5f0502be7b467173f275ae7",
     vout: 0,
+    ts: 1396375187,
     scriptPubKey: scriptPubKey,
     amount: 0.05,
     confirmations: 1
@@ -491,7 +494,6 @@ if (typeof module !== 'undefined') {
 } else {
   run();
 }
-
 ```
 
 #CreateKey.js
@@ -499,6 +501,8 @@ if (typeof module !== 'undefined') {
 ```js
 
 'use strict';
+
+
 
 var run = function() {
   // replace '../bitcore' with 'bitcore' if you use this code elsewhere.
@@ -544,7 +548,6 @@ module.exports.run = run;
 if (require.main === module) {
   run();
 }
-
 ```
 
 #CreateScript.js
@@ -627,7 +630,6 @@ module.exports.run = run;
 if (require.main === module) {
   run();
 }
-
 ```
 
 #ECIES.js
@@ -664,7 +666,6 @@ if (typeof module !== 'undefined') {
 } else {
   run();
 }
-
 ```
 
 #ElectrumMPK.js
@@ -682,7 +683,6 @@ var key0 = mpk.generatePubKey(0);
 var addr0 = Address.fromPubKey(key0);
 
 console.log(addr0.as('base58'));
-
 ```
 
 #HierarchicalKey.js
@@ -772,7 +772,67 @@ if (typeof module !== 'undefined') {
 } else {
   run();
 }
+```
 
+#NetworkMonitor.js
+
+```js
+
+'use strict';
+
+var run = function() {
+  // Replace '../bitcore' with 'bitcore' if you use this code elsewhere.
+  var bitcore = require('../bitcore');
+  var NetworkMonitor = bitcore.NetworkMonitor;
+
+  var config = {
+    networkName: 'testnet',
+    host: 'localhost',
+    port: 18333
+  };
+
+
+  var nm = new NetworkMonitor.create(config);
+  // monitor incoming transactions to http://tpfaucet.appspot.com/ donation address
+  nm.incoming('msj42CCGruhRsFrGATiUuh25dtxYtnpbTx', function(tx) {
+    console.log('Donation to tpfaucet! '+JSON.stringify(tx.getStandardizedObject()));
+  });
+
+  // connect to bitcoin network and start listening
+  nm.start();
+
+};
+
+module.exports.run = run;
+if (require.main === module) {
+  run();
+}
+```
+
+#Opreturn.js
+
+```js
+
+'use strict';
+
+var run = function() {
+  // Replace '../bitcore' with 'bitcore' if you use this code elsewhere.
+  var bitcore = require('../bitcore');
+  var Address = bitcore.Address;
+  var coinUtil = bitcore.util;
+  var Script = bitcore.Script;
+  var network = bitcore.networks.testnet;
+
+  var script = 'OP_RETURN 58434c524e4748530000000000000000000000010000000005f5e100';
+  var s = Script.fromHumanReadable(script);
+  var result = (s.classify() == Script.TX_RETURN)
+  console.log("Is op_return:", result); 
+};
+
+module.exports.run = run;
+if (require.main === module) {
+  run();
+}
 ```
 
 #PayToScriptHashAddress.js
@@ -796,7 +856,6 @@ var addrStr = addr.as('base58');
 
 // This outputs the "address" of thescript
 console.log(addrStr);
-
 ```
 
 #PeerDiscovery.js
@@ -809,7 +868,6 @@ var peerman = new PeerManager();
 peerman.discover({
   limit: 12
 }).start();
-
 ```
 
 #PeerManager.js
@@ -863,7 +921,6 @@ module.exports.run = run;
 if (require.main === module) {
   run();
 }
-
 ```
 
 #Rpc.js
@@ -902,7 +959,6 @@ module.exports.run = run;
 if (require.main === module) {
   run();
 }
-
 ```
 
 #Script.js
@@ -961,7 +1017,54 @@ module.exports.run = run;
 if (require.main === module) {
   run();
 }
+```
 
+#ScriptInterpreter.js
+
+```js
+
+'use strict';
+
+var run = function() {
+  // Replace '../bitcore' with 'bitcore' if you use this code elsewhere.
+  var bitcore = require('../bitcore');
+  var Address = bitcore.Address;
+  var coinUtil = bitcore.util;
+  var Script = bitcore.Script;
+  var ScriptInterpreter = bitcore.ScriptInterpreter;
+  var network = bitcore.networks.testnet;
+
+
+  // using "static" method
+  var scriptPubKeyHR = '0x14 0x3744841e13b90b4aca16fe793a7f88da3a23cc71 EQUAL';
+  var scriptPubKey = Script.fromHumanReadable(scriptPubKeyHR);
+
+  var scriptSigHR = '0x14 0x3744841e13b90b4aca16fe793a7f88da3a23cc71';
+  var scriptSig = Script.fromHumanReadable(scriptSigHR);
+
+  ScriptInterpreter.verifyFull(scriptSig, scriptPubKey, undefined, undefined,
+    undefined, undefined, function(err, result) {
+      console.log('script verified successfully? ', result)
+  });
+
+  // using an instance
+  scriptPubKeyHR = '0x26 0x554e5a49500370e53982a1d5201829562c5d9eebf256eb755b92c9b1449afd99f9f8c3265631 DROP HASH256 0x20 0x34b4f6042e1bcfc6182ee2727a3d0069a9071385bc07b318f57e77a28ffa13ac EQUAL';
+  scriptPubKey = Script.fromHumanReadable(scriptPubKeyHR);
+
+  scriptSigHR = '0x41 0x0470e53982a1d5201829562c5d9eebf256eb755b92c9b1449afd99f9f8c3265631142f3bf6954e3bec4bdad1a1a197bf90904a1e6f06c209eb477e2fde00d26691';
+  scriptSig = Script.fromHumanReadable(scriptSigHR);
+
+  var si = new ScriptInterpreter();
+  si.verifyFull(scriptSig, scriptPubKey, undefined, undefined,
+    undefined, function(err, result) {
+      console.log('script verified successfully? ', result)
+  });
+};
+
+module.exports.run = run;
+if (require.main === module) {
+  run();
+}
 ```
 
 #SendTx.js
@@ -1060,7 +1163,7 @@ var run = function() {
       // finally, send transaction to the bitcoin network
       conn.sendTx(tx);
 
-      // for now, the network will not respond in any case
+      // for now, the network won't respond in any case
       // (transaction accepted, transaction rejected)
       // in the future, we may listen to 'reject' message
       // see https://gist.github.com/gavinandresen/7079034
@@ -1075,7 +1178,6 @@ module.exports.run = run;
 if (require.main === module) {
   run();
 }
-
 ```
 
 #SimpleP2Pmonitor.js
@@ -1154,7 +1256,6 @@ listen('inv', function(event, log) {
   log('Received message inv (%s invs)', event.message.count);
   console.log(event.message.invs);
 });
-
 ```
 
 #VanityAddress.js
@@ -1162,6 +1263,7 @@ listen('inv', function(event, log) {
 ```js
 
 'use strict';
+
 
 var run = function() {
   // Replace '../bitcore' with 'bitcore' if you use this code elsewhere.
@@ -1188,5 +1290,4 @@ module.exports.run = run;
 if (require.main === module) {
   run();
 }
-
 ```
