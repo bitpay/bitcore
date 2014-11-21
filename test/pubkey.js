@@ -1,7 +1,7 @@
 'use strict';
 
 var should = require('chai').should();
-var bitcore = require('bitcore');
+var bitcore = require('..');
 var Pubkey = bitcore.Pubkey;
 var Point = bitcore.Point;
 var Bn = bitcore.BN;
