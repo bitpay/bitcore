@@ -75,7 +75,7 @@ output.
 
 ```javascript
   var multiSigTx = new Transaction()
-      .fromMultisig(utxo, publicKeys)
+      .fromMultisig(utxo, publicKeys, threshold)
       .spendAllTo(address, amount)
       .sign(myKeys);
 
@@ -113,7 +113,7 @@ There are some nits that you should have in mind when using this API:
 We have implemented partially Merge Avoidance for the change
 addresses of a transaction with a simple API: 
 
-```
+```javascript
   var mergeAvoidance = new Transaction.Strategy.MergeAvoidance({
     change: ['1bitcoinChange...', '3bitcoinChange...']
   });
