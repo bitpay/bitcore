@@ -3,3 +3,10 @@ coverage
 node_modules
 browser/bitcore.js
 browser/tests.js
+
+
+CONTRIBUTING.html
+LICENSE.html
+README.html
+examples.html
+npm-debug.log

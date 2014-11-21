@@ -64,7 +64,6 @@
     "url": "https://github.com/bitpay/bitcore.git"
   },
   "dependencies": {
-    "aes": "=0.1.0",
     "bn.js": "=0.15.0",
     "bs58": "=1.2.1",
     "elliptic": "=0.15.12",
