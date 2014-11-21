@@ -16,7 +16,7 @@ The code to do these validations looks like this:
 var address = new bitcore.Address('1BitcoinAddress...');
 assert(address.network === bitcore.network.livenet);
 // Detect the kind of the address...
-assert(address.type === bitcore.Address.Pay2PubKeyHash);
+assert(address.scriptType === bitcore.Address.Pay2PubKeyHash);
 ```
 
 There are also static methods for this that work very similarly:
@@ -25,6 +25,6 @@ There are also static methods for this that work very similarly:
 var address = new bitcore.Address();
 assert(bitcore.Address.isValid('1BitcoinAddress...'));
 assert(bitcore.Address.network('1BitcoinAddress...') === bitcore.network.livenet);
-assert(bitcore.Address.type('1BitcoinAddress...') !== bitcore.Address.Pay2ScriptHash);
-assert(bitcore.Address.type('3MultisigP2SH...') === bitcore.Address.Pay2ScriptHash);
+assert(bitcore.Address.scriptType('1BitcoinAddress...') !== bitcore.Address.Pay2ScriptHash);
+assert(bitcore.Address.scriptType('3MultisigP2SH...') === bitcore.Address.Pay2ScriptHash);
 ```
