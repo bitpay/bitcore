@@ -1,13 +1,15 @@
-var Script = require('../lib/script');
+'use strict';
+
 var should = require('chai').should();
-var Opcode = require('../lib/opcode');
-var BufferReader = require('../lib/bufferreader');
-var BufferWriter = require('../lib/bufferwriter');
+var bitcore = require('..');
+var Script = bitcore.Script;
+var Opcode = bitcore.Opcode;
 
 describe('Script', function() {
   
   it('should make a new script', function() {
     var script = new Script();
+    should.exist(script);
   });
 
   describe('#fromBuffer', function() {
