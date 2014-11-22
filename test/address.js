@@ -17,19 +17,19 @@ describe('Address', function() {
   it('should throw an error because of missing data', function() {
     (function() {
       var a = new Address();
-    }).should.throw('Please include address data');
+    }).should.throw('First argument is required, please include address data.');
   });
 
   it('should throw an error because of bad network param', function() {
     (function(){
       var a = new Address(validAddresses[0], 'main', 'pubkeyhash');
-    }).should.throw('Network must be "mainnet" or "testnet"');
+    }).should.throw('Second argument must be "mainnet" or "testnet".');
   });
 
   it('should throw an error because of bad type param', function() {
     (function() {
       var a = new Address(validAddresses[0], 'mainnet', 'pubkey');
-    }).should.throw('Type must be "pubkeyhash" or "scripthash"');
+    }).should.throw('Third argument must be "pubkeyhash" or "scripthash"');
   });
 
 
@@ -145,7 +145,7 @@ describe('Address', function() {
       for(var i=0;i<validAddresses.length;i++){
         var error = Address.getValidationError(validAddresses[i], 'testnet', 'pubkeyhash');
         should.exist(error);
-        error.message.should.equal('Address has mismatched network type');
+        error.message.should.equal('Address has mismatched network type.');
       }
 
     });
@@ -154,7 +154,7 @@ describe('Address', function() {
       for(var i=0;i<validAddresses.length;i++){
         var error = Address.getValidationError(validAddresses[i], 'mainnet', 'scripthash');
         should.exist(error);
-        error.message.should.equal('Address has mismatched type');
+        error.message.should.equal('Address has mismatched type.');
       }
     });
 
@@ -184,7 +184,7 @@ describe('Address', function() {
       for(var i=0;i<testValidAddresses.length;i++){
         var error = Address.getValidationError(testValidAddresses[i], 'mainnet', 'pubkeyhash');
         should.exist(error);
-        error.message.should.equal('Address has mismatched network type');
+        error.message.should.equal('Address has mismatched network type.');
       }
     });
 
@@ -214,7 +214,7 @@ describe('Address', function() {
     it('should throw an error for invalid length hashBuffer', function() {
       (function() {
         var a = Address.fromPubkeyHash(buf);
-      }).should.throw('Address hashbuffers must be exactly a 20 bytes');
+      }).should.throw('Address hashbuffers must be exactly a 20 bytes.');
     });
 
     it('should make this address from a compressed pubkey object', function() {
