@@ -88,6 +88,16 @@ describe('Address', function() {
       should.exist(error);
     });
 
+    it('should should return a true boolean', function(){
+      var valid = Address.isValid('37BahqRsFrAd3qLiNNwLNV3AWMRD7itxTo', 'mainnet');
+      valid.should.equal(true);
+    });
+
+    it('should should return a false boolean', function(){
+      var valid = Address.isValid('37BahqRsFrAd3qLiNNwLNV3AWMRD7itxTo', 'testnet');
+      valid.should.equal(false);
+    });
+
     it('should validate addresses', function() {
       for(var i=0;i<validAddresses.length;i++){
         var error = Address.getValidationError(validAddresses[i]);
