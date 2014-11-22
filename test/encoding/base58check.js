@@ -40,7 +40,7 @@ describe('Base58Check', function() {
 
     it('should throw an error when the input is not a buffer', function() {
       (function() {
-        Base58Check.encode("string")
+        Base58Check.encode('string');
       }).should.throw('Input must be a buffer');
     });
 

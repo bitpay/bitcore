@@ -10,3 +10,7 @@ LICENSE.html
 README.html
 examples.html
 npm-debug.log
+
+apiref
+bower_components
+dist

@@ -237,7 +237,7 @@ describe('Script', function() {
     });
 
     it('should classify this known non-pubkeyhashout as not pubkeyhashout', function() {
-      Script('OP_DUP OP_HASH160 20 0000000000000000000000000000000000000000').isPublicKeyHashOut().should.equal(false)
+      Script('OP_DUP OP_HASH160 20 0000000000000000000000000000000000000000').isPublicKeyHashOut().should.equal(false);
     });
 
   });

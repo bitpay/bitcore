@@ -89,8 +89,8 @@ describe('Signature', function() {
       var sighex = '30450221008bab1f0a2ff2f9cb8992173d8ad73c229d31ea8e10b0f4d4ae1a0d8ed76021fa02200993a6ec81755b9111762fc2cf8e3ede73047515622792110867d12654275e72';
       var sig = new Buffer(sighex, 'hex');
       var parsed = Signature.parseDER(sig);
-      parsed.header.should.equal(0x30)
-      parsed.length.should.equal(69)
+      parsed.header.should.equal(0x30);
+      parsed.length.should.equal(69);
       parsed.rlength.should.equal(33);
       parsed.rneg.should.equal(true);
       parsed.rbuf.toString('hex').should.equal('008bab1f0a2ff2f9cb8992173d8ad73c229d31ea8e10b0f4d4ae1a0d8ed76021fa');
@@ -105,8 +105,8 @@ describe('Signature', function() {
       var sighex = '3043021f59e4705959cc78acbfcf8bd0114e9cc1b389a4287fb33152b73a38c319b50302202f7428a27284c757e409bf41506183e9e49dfb54d5063796dfa0d403a4deccfa';
       var sig = new Buffer(sighex, 'hex');
       var parsed = Signature.parseDER(sig);
-      parsed.header.should.equal(0x30)
-      parsed.length.should.equal(67)
+      parsed.header.should.equal(0x30);
+      parsed.length.should.equal(67);
       parsed.rlength.should.equal(31);
       parsed.rneg.should.equal(false);
       parsed.rbuf.toString('hex').should.equal('59e4705959cc78acbfcf8bd0114e9cc1b389a4287fb33152b73a38c319b503');
@@ -121,8 +121,8 @@ describe('Signature', function() {
       var sighex = '3042021e17cfe77536c3fb0526bd1a72d7a8e0973f463add210be14063c8a9c37632022061bfa677f825ded82ba0863fb0c46ca1388dd3e647f6a93c038168b59d131a51';
       var sig = new Buffer(sighex, 'hex');
       var parsed = Signature.parseDER(sig);
-      parsed.header.should.equal(0x30)
-      parsed.length.should.equal(66)
+      parsed.header.should.equal(0x30);
+      parsed.length.should.equal(66);
       parsed.rlength.should.equal(30);
       parsed.rneg.should.equal(false);
       parsed.rbuf.toString('hex').should.equal('17cfe77536c3fb0526bd1a72d7a8e0973f463add210be14063c8a9c37632');

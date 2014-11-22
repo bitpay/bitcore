@@ -99,7 +99,7 @@ describe('Hash', function() {
 
   });
 
-  describe("#sha512hmac", function() {
+  describe('#sha512hmac', function() {
 
     it('should calculate this known empty test vector correctly', function() {
       var hex = 'b936cee86c9f87aa5d3c6f2e84cb5a4239a5fe50480a6ec66b70ab5b1f4ac6730c6c515421b327ec1d69402e53dfb49ad7381eb067b338fd7b0cb22247225d47';
@@ -108,8 +108,8 @@ describe('Hash', function() {
 
     it('should calculate this known non-empty test vector correctly', function() {
       var hex = 'c40bd7c15aa493b309c940e08a73ffbd28b2e4cb729eb94480d727e4df577b13cc403a78e6150d83595f3b17c4cc331f12ca5952691de3735a63c1d4c69a2bac';
-      var data = new Buffer("test1");
-      var key = new Buffer("test2");
+      var data = new Buffer('test1');
+      var key = new Buffer('test2');
       Hash.sha512hmac(data, key).toString('hex').should.equal(hex);
     });
 
