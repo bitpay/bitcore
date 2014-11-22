@@ -6,7 +6,7 @@ front-end and LevelDB for storage.
 
 Check some screenshots and more details at [insight's project homepage](http://insight.is/).
 
-*Insight* project is now split in two repositories. One for the [API](https://github.com/bitpay/insight-api) and for the front-end. This repository is for the front-end, which will install the API as a NPM dependency.
+*Insight* project is now split into two repositories. One for the [API](https://github.com/bitpay/insight-api) and for the front-end. This repository is for the front-end, which will install the API as a NPM dependency.
 
 ## Prerequisites
 
