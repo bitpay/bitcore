@@ -202,6 +202,54 @@ describe('Address', function() {
       var b = new Address(str).toString().should.equal(str);
     });
 
+    it('should error because of unrecognized data format', function() {
+      (function() {
+        var a = new Address(new Error());
+      }).should.throw('First argument is an unrecognized data format.');
+    });
+
+    it('should error because of incorrect format for pubkey hash', function() {
+      (function() {
+        var a = new Address.fromPubkeyHash('notahash');
+      }).should.throw('Address supplied is not a buffer.');
+    });
+
+    it('should error because of incorrect format for script hash', function() {
+      (function() {
+        var a = new Address.fromScriptHash('notascript');
+      }).should.throw('Address supplied is not a buffer.');
+    });
+
+    it('should error because of incorrect type for transform buffer', function() {
+      (function() {
+        var info = Address._transformBuffer('notabuffer');
+      }).should.throw('Address supplied is not a buffer.');
+    });
+
+    it('should error because of incorrect length buffer for transform buffer', function() {
+      (function() {
+        var info = Address._transformBuffer(new Buffer(20));
+      }).should.throw('Address buffers must be exactly 21 bytes.');
+    });
+
+    it('should error because of incorrect type for pubkey transform', function() {
+      (function() {
+        var info = Address._transformPubkey(new Buffer(20));
+      }).should.throw('Address must be an instance of Pubkey.');
+    });
+
+    it('should error because of incorrect type for script transform', function() {
+      (function() {
+        var info = Address._transformScript(new Buffer(20));
+      }).should.throw('Address must be an instance of Script.');
+    });
+
+    it('should error because of incorrect type for string transform', function() {
+      (function() {
+        var info = Address._transformString(new Buffer(20));
+      }).should.throw('Address supplied is not a string.');
+    });
+
     it('should make an address from a pubkey hash buffer', function() {
       var hash = pubkeyhash; //use the same hash
       var a = Address.fromPubkeyHash(hash).toString().should.equal(str);
@@ -214,7 +262,7 @@ describe('Address', function() {
     it('should throw an error for invalid length hashBuffer', function() {
       (function() {
         var a = Address.fromPubkeyHash(buf);
-      }).should.throw('Address hashbuffers must be exactly a 20 bytes.');
+      }).should.throw('Address hashbuffers must be exactly 20 bytes.');
     });
 
     it('should make this address from a compressed pubkey object', function() {
@@ -240,10 +288,13 @@ describe('Address', function() {
 
     it('should make this address from a script', function() {
       var s = Script().fromString("OP_CHECKMULTISIG");
+      var buf = s.toBuffer();
       var a = Address.fromScript(s);
       a.toString().should.equal('3BYmEwgV2vANrmfRymr1mFnHXgLjD6gAWm');
       var b = new Address(s);
       b.toString().should.equal('3BYmEwgV2vANrmfRymr1mFnHXgLjD6gAWm');
+      var c = Address.fromScriptHash(bitcore.crypto.Hash.sha256ripemd160(buf));
+      c.toString().should.equal('3BYmEwgV2vANrmfRymr1mFnHXgLjD6gAWm');
     });
 
     it('should make this address from other script', function() {
@@ -312,6 +363,16 @@ describe('Address', function() {
     it('should output a testnet pubkeyhash address', function() {
       var address = new Address(testValidAddresses[0]);
       address.toString().should.equal(testValidAddresses[0]);
+    });
+
+  });
+
+  describe('#inspect', function() {
+
+    it('should output formatted output correctly', function() {
+      var address = new Address(str);
+      var output = '<Address: 16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r, type: pubkeyhash, network: mainnet>';
+      address.inspect().should.equal(output);
     });
 
   });
