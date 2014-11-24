@@ -64,20 +64,20 @@
     "url": "https://github.com/bitpay/bitcore.git"
   },
   "dependencies": {
-    "bn.js": "=0.15.0",
-    "bs58": "=1.2.1",
-    "elliptic": "=0.15.12",
+    "bn.js": "=0.15.2",
+    "bs58": "=2.0.0",
+    "elliptic": "=0.15.14",
     "hash.js": "=0.3.2",
     "sha512": "=0.0.1"
   },
   "devDependencies": {
-    "browserify": "~5.9.1",
-    "chai": "~1.9.1",
+    "browserify": "~6.3.3",
+    "chai": "~1.10.0",
     "grunt": "^0.4.5",
     "grunt-contrib-watch": "^0.6.1",
     "grunt-markdown": "^0.6.1",
     "grunt-shell": "^1.1.1",
-    "mocha": "~1.21.0"
+    "mocha": "~2.0.1"
   },
   "license": "MIT"
 }
