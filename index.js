@@ -1,5 +1,7 @@
 var bitcore = module.exports;
 
+// configuration
+bitcore.config = require('./config');
 
 // crypto 
 bitcore.crypto = {};
