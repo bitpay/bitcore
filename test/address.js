@@ -195,6 +195,7 @@ describe('Address', function() {
     it('should make an address from a buffer', function() {
       var a = Address.fromBuffer(buf).toString().should.equal(str);
       var b = new Address(buf).toString().should.equal(str);
+      var c = Address(buf).toString().should.equal(str);
     });
 
     it('should make an address from a string', function() {
