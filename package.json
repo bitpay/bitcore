@@ -68,6 +68,7 @@
     "bs58": "=2.0.0",
     "elliptic": "=0.15.14",
     "hash.js": "=0.3.2",
+    "lodash": "=2.4.1",
     "sha512": "=0.0.1"
   },
   "devDependencies": {
@@ -77,6 +78,7 @@
     "grunt-contrib-watch": "^0.6.1",
     "grunt-markdown": "^0.6.1",
     "grunt-shell": "^1.1.1",
+    "lodash": "=2.4.1",
     "mocha": "~2.0.1"
   },
   "license": "MIT"
