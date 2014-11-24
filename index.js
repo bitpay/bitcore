@@ -22,7 +22,6 @@ bitcore.Address = require('./lib/address');
 bitcore.BIP32 = require('./lib/bip32');
 bitcore.Block = require('./lib/block');
 bitcore.Blockheader = require('./lib/blockheader');
-bitcore.Keypair = require('./lib/keypair');
 bitcore.Networks = require('./lib/networks');
 bitcore.Opcode = require('./lib/opcode');
 bitcore.Privkey = require('./lib/privkey');
