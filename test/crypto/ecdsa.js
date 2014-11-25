@@ -8,7 +8,6 @@ var PrivateKey = bitcore.PrivateKey;
 var PublicKey = bitcore.PublicKey;
 var Signature = bitcore.Signature;
 var BN = bitcore.crypto.BN;
-var point = bitcore.crypto.Point;
 
 describe('ECDSA', function() {
 
@@ -105,17 +104,10 @@ describe('ECDSA', function() {
       ecdsa.sigError().should.equal('hashbuf must be a 32 byte buffer');
     });
 
-    it('should return an error if the pubkey is invalid', function() {
-      var ecdsa = new ECDSA();
-      ecdsa.hashbuf = Hash.sha256(new Buffer('test'));
-      ecdsa.sigError().indexOf("Invalid pubkey").should.equal(0);
-    });
-
     it('should return an error if r, s are invalid', function() {
       var ecdsa = new ECDSA();
       ecdsa.hashbuf = Hash.sha256(new Buffer('test'));
-      var pk = new PublicKey();
-      pk.fromDER(new Buffer('041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341', 'hex'));
+      var pk = PublicKey.fromDER(new Buffer('041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341', 'hex'));
       ecdsa.pubkey = pk;
       ecdsa.sig = new Signature();
       ecdsa.sig.r = BN(0);
