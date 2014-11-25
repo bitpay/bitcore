@@ -2,8 +2,8 @@
 
 var should = require('chai').should();
 var bitcore = require('../..');
-var Base58Check = bitcore.Base58Check;
-var base58 = bitcore.Base58;
+var Base58Check = bitcore.encoding.Base58Check;
+var base58 = bitcore.encoding.Base58;
 
 describe('Base58Check', function() {
   var buf = new Buffer([0, 1, 2, 3, 253, 254, 255]);
