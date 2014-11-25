@@ -2,7 +2,7 @@
 
 var should = require('chai').should();
 var bitcore = require('../..');
-var Random = bitcore.Random;
+var Random = bitcore.crypto.Random;
 
 describe('Random', function() {
 

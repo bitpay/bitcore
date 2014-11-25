@@ -49,7 +49,7 @@ You can take a look at the javadocs for the [Transaction class here](link
 missing). This document will go over the expected high level use cases.
 
 * from(utxo)
-* fromMultisig(utxo, pubkeys, threshold)
+* from(utxo, pubkeys, threshold)
 * change(address)
 * fee(amount)
 * usingStrategy(strategy)
