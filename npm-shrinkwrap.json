@@ -1,6 +1,6 @@
 {
-  "name": "bitcore2",
-  "version": "0.0.0",
+  "name": "bitcore",
+  "version": "0.8.0",
   "dependencies": {
     "aes": {
       "version": "0.1.0",
@@ -8,14 +8,14 @@
       "resolved": "https://registry.npmjs.org/aes/-/aes-0.1.0.tgz"
     },
     "bn.js": {
-      "version": "0.15.0",
-      "from": "bn.js@0.15.0",
-      "resolved": "https://registry.npmjs.org/bn.js/-/bn.js-0.15.0.tgz"
+      "version": "0.15.2",
+      "from": "bn.js@0.15.2",
+      "resolved": "https://registry.npmjs.org/bn.js/-/bn.js-0.15.2.tgz"
     },
     "bs58": {
-      "version": "1.2.1",
-      "from": "bs58@=1.2.1",
-      "resolved": "https://registry.npmjs.org/bs58/-/bs58-1.2.1.tgz"
+      "version": "2.0.0",
+      "from": "bs58@2.0.0",
+      "resolved": "https://registry.npmjs.org/bs58/-/bs58-2.0.0.tgz"
     },
     "elliptic": {
       "version": "0.15.12",
@@ -23,9 +23,9 @@
       "resolved": "https://registry.npmjs.org/elliptic/-/elliptic-0.15.12.tgz",
       "dependencies": {
         "bn.js": {
-          "version": "0.15.0",
-          "from": "bn.js@0.15.0",
-          "resolved": "https://registry.npmjs.org/bn.js/-/bn.js-0.15.0.tgz"
+          "version": "0.15.2",
+          "from": "bn.js@0.15.2",
+          "resolved": "https://registry.npmjs.org/bn.js/-/bn.js-0.15.2.tgz"
         },
         "hash.js": {
           "version": "0.3.2",
