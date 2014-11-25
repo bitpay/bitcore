@@ -2,7 +2,7 @@
 
 var should = require('chai').should();
 var bitcore = require('../..');
-var Base58 = bitcore.Base58;
+var Base58 = bitcore.encoding.Base58;
 
 describe('Base58', function() {
   var buf = new Buffer([0, 1, 2, 3, 253, 254, 255]);

@@ -2,9 +2,9 @@
 
 var should = require('chai').should();
 var bitcore = require('../..');
-var BufferWriter = bitcore.BufferWriter;
-var BufferReader = bitcore.BufferReader;
-var BN = bitcore.BN;
+var BufferWriter = bitcore.encoding.BufferWriter;
+var BufferReader = bitcore.encoding.BufferReader;
+var BN = bitcore.crypto.BN;
 
 describe('BufferReader', function() {
   

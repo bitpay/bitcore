@@ -2,8 +2,8 @@
 
 var should = require('chai').should();
 var bitcore = require('../..');
-var point = bitcore.Point;
-var BN = bitcore.BN;
+var point = bitcore.crypto.Point;
+var BN = bitcore.crypto.BN;
 
 describe('Point', function() {
   
