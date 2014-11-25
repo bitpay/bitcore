@@ -5,6 +5,7 @@ var bitcore = require('..');
 var BN = bitcore.crypto.BN;
 var Point = bitcore.crypto.Point;
 var Privkey = bitcore.Privkey;
+var Pubkey = bitcore.Pubkey;
 
 describe('Privkey', function() {
   var hex = '96c132224121b509b7d0a16245e957d9192609c5637c6228311287b1be21627a';
@@ -129,6 +130,40 @@ describe('Privkey', function() {
       var privkey = new Privkey();
       privkey.fromString(encmu);
       privkey.toString().should.equal(encmu);
+    });
+
+  });
+
+  describe("#toPubkey", function() {
+
+    it('should convert this known Privkey to known Pubkey', function() {
+      var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
+      var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
+      var privkey = new Privkey({
+        bn: BN(new Buffer(privhex, 'hex'))
+      });
+      var pubkey = privkey.toPubkey();
+      pubkey.toString().should.equal(pubhex);
+    });
+
+    it('should convert this known Privkey to known Pubkey and preserve compressed=true', function() {
+      var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
+      var privkey = new Privkey({
+        bn: BN(new Buffer(privhex, 'hex'))
+      });
+      privkey.compressed = true;
+      var pubkey = privkey.toPubkey();
+      pubkey.compressed.should.equal(true);
+    });
+
+    it('should convert this known Privkey to known Pubkey and preserve compressed=true', function() {
+      var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
+      var privkey = new Privkey({
+        bn: BN(new Buffer(privhex, 'hex'))
+      });
+      privkey.compressed = false;
+      var pubkey = privkey.toPubkey();
+      pubkey.compressed.should.equal(false);
     });
 
   });
