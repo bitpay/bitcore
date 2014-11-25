@@ -5,8 +5,8 @@ var bitcore = require('../..');
 var ECDSA = bitcore.ECDSA;
 var Hash = bitcore.Hash;
 var Keypair = bitcore.Keypair;
-var Privkey = bitcore.Privkey;
-var Pubkey = bitcore.Pubkey;
+var PrivateKey = bitcore.PrivateKey;
+var PublicKey = bitcore.PublicKey;
 var Signature = bitcore.Signature;
 var BN = bitcore.BN;
 var point = bitcore.Point;
@@ -21,8 +21,8 @@ describe('ECDSA', function() {
   var ecdsa = new ECDSA();
   ecdsa.hashbuf = Hash.sha256(new Buffer('test data'));
   ecdsa.keypair = new Keypair();
-  ecdsa.keypair.privkey = new Privkey({bn: BN().fromBuffer(new Buffer('fee0a1f7afebf9d2a5a80c0c98a31c709681cce195cbcd06342b517970c0be1e', 'hex'))});
-  ecdsa.keypair.pubkey = new Pubkey({
+  ecdsa.keypair.privkey = new PrivateKey({bn: BN().fromBuffer(new Buffer('fee0a1f7afebf9d2a5a80c0c98a31c709681cce195cbcd06342b517970c0be1e', 'hex'))});
+  ecdsa.keypair.pubkey = new PublicKey({
     point: point(BN().fromBuffer(new Buffer('ac242d242d23be966085a2b2b893d989f824e06c9ad0395a8a52f055ba39abb2', 'hex')),
     BN().fromBuffer(new Buffer('4836ab292c105a711ed10fcfd30999c31ff7c02456147747e03e739ad527c380', 'hex')))
   });
@@ -50,7 +50,7 @@ describe('ECDSA', function() {
       var s = BN('109412465507152403114191008482955798903072313614214706891149785278625167723646', 10);
       var ecdsa = new ECDSA();
       ecdsa.keypair = new Keypair();
-      ecdsa.keypair.privkey = Privkey();
+      ecdsa.keypair.privkey = PrivateKey();
       ecdsa.keypair.privkey.bn = BN().fromBuffer(Hash.sha256(new Buffer('test')));
       ecdsa.keypair.privkey2pubkey();
       ecdsa.hashbuf = hashbuf;
@@ -121,7 +121,7 @@ describe('ECDSA', function() {
     it('should return an error if r, s are invalid', function() {
       var ecdsa = new ECDSA();
       ecdsa.hashbuf = Hash.sha256(new Buffer('test'));
-      var pk = new Pubkey();
+      var pk = new PublicKey();
       pk.fromDER(new Buffer('041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341', 'hex'));
       ecdsa.keypair = new Keypair();
       ecdsa.keypair.pubkey = pk;
