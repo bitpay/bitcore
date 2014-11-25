@@ -3,7 +3,7 @@
 var should = require('chai').should();
 
 var bitcore = require('..');
-var Pubkey = bitcore.Pubkey;
+var PublicKey = bitcore.PublicKey;
 var Address = bitcore.Address;
 var Script = bitcore.Script;
 
@@ -211,7 +211,7 @@ describe('Address', function() {
 
     it('should error because of incorrect format for pubkey hash', function() {
       (function() {
-        var a = new Address.fromPubkeyHash('notahash');
+        var a = new Address.fromPublicKeyHash('notahash');
       }).should.throw('Address supplied is not a buffer.');
     });
 
@@ -235,8 +235,8 @@ describe('Address', function() {
 
     it('should error because of incorrect type for pubkey transform', function() {
       (function() {
-        var info = Address._transformPubkey(new Buffer(20));
-      }).should.throw('Address must be an instance of Pubkey.');
+        var info = Address._transformPublicKey(new Buffer(20));
+      }).should.throw('Address must be an instance of PublicKey.');
     });
 
     it('should error because of incorrect type for script transform', function() {
@@ -253,8 +253,8 @@ describe('Address', function() {
 
     it('should make an address from a pubkey hash buffer', function() {
       var hash = pubkeyhash; //use the same hash
-      var a = Address.fromPubkeyHash(hash).toString().should.equal(str);
-      var b = Address.fromPubkeyHash(hash, 'testnet');
+      var a = Address.fromPublicKeyHash(hash).toString().should.equal(str);
+      var b = Address.fromPublicKeyHash(hash, 'testnet');
       b.network.should.equal('testnet');
       b.type.should.equal('pubkeyhash');
       var c = new Address(hash).toString().should.equal(str);
@@ -262,26 +262,19 @@ describe('Address', function() {
 
     it('should throw an error for invalid length hashBuffer', function() {
       (function() {
-        var a = Address.fromPubkeyHash(buf);
+        var a = Address.fromPublicKeyHash(buf);
       }).should.throw('Address hashbuffers must be exactly 20 bytes.');
     });
 
-    it('should make this address from a compressed pubkey object', function() {
-      var pubkey = new Pubkey();
-      pubkey.fromDER(new Buffer('0285e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b004',
-                                'hex'));
-      var a = Address.fromPubkey(pubkey);
-      a.toString().should.equal('19gH5uhqY6DKrtkU66PsZPUZdzTd11Y7ke');
-      var b = new Address(pubkey);
-      b.toString().should.equal('19gH5uhqY6DKrtkU66PsZPUZdzTd11Y7ke');
+    it('should make this address from a compressed pubkey', function() {
+      var pubkey = PublicKey.fromDER(new Buffer('0285e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b004', 'hex'));
+      var address = Address.fromPublicKey(pubkey);
+      address.toString().should.equal('19gH5uhqY6DKrtkU66PsZPUZdzTd11Y7ke');
     });
 
     it('should make this address from an uncompressed pubkey', function() {
-      var pubkey = new Pubkey();
-      pubkey.fromDER(new Buffer('0285e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b004',
-                                'hex'));
-      pubkey.compressed = false;
-      var a = Address.fromPubkey(pubkey, 'mainnet', 'pubkeyhash');
+      var pubkey = PublicKey.fromDER(new Buffer('0485e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b004833fef26c8be4c4823754869ff4e46755b85d851077771c220e2610496a29d98', 'hex'));
+      var a = Address.fromPublicKey(pubkey, 'mainnet');
       a.toString().should.equal('16JXnhxjJUhxfyx4y6H4sFcxrgt8kQ8ewX');
       var b = new Address(pubkey, 'mainnet', 'pubkeyhash');
       b.toString().should.equal('16JXnhxjJUhxfyx4y6H4sFcxrgt8kQ8ewX');
@@ -310,7 +303,7 @@ describe('Address', function() {
       var address = new Address(str);
       var buffer = address.toBuffer();
       var slice = buffer.slice(1);
-      var sliceString = slice.toString('hex')
+      var sliceString = slice.toString('hex');
       sliceString.should.equal(pubkeyhash.toString('hex'));
     });
 

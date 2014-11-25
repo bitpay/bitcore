@@ -218,26 +218,26 @@ describe('Script', function() {
 
   });
 
-  describe('#isPubkeyhashIn', function() {
+  describe('#isPublicKeyHashIn', function() {
     
     it('should classify this known pubkeyhashin', function() {
-      Script('73 0x3046022100bb3c194a30e460d81d34be0a230179c043a656f67e3c5c8bf47eceae7c4042ee0221008bf54ca11b2985285be0fd7a212873d243e6e73f5fad57e8eb14c4f39728b8c601 65 0x04e365859b3c78a8b7c202412b949ebca58e147dba297be29eee53cd3e1d300a6419bc780cc9aec0dc94ed194e91c8f6433f1b781ee00eac0ead2aae1e8e0712c6').isPubkeyhashIn().should.equal(true);
+      Script('73 0x3046022100bb3c194a30e460d81d34be0a230179c043a656f67e3c5c8bf47eceae7c4042ee0221008bf54ca11b2985285be0fd7a212873d243e6e73f5fad57e8eb14c4f39728b8c601 65 0x04e365859b3c78a8b7c202412b949ebca58e147dba297be29eee53cd3e1d300a6419bc780cc9aec0dc94ed194e91c8f6433f1b781ee00eac0ead2aae1e8e0712c6').isPublicKeyHashIn().should.equal(true);
     });
 
     it('should classify this known non-pubkeyhashin', function() {
-      Script('73 0x3046022100bb3c194a30e460d81d34be0a230179c043a656f67e3c5c8bf47eceae7c4042ee0221008bf54ca11b2985285be0fd7a212873d243e6e73f5fad57e8eb14c4f39728b8c601 65 0x04e365859b3c78a8b7c202412b949ebca58e147dba297be29eee53cd3e1d300a6419bc780cc9aec0dc94ed194e91c8f6433f1b781ee00eac0ead2aae1e8e0712c6 OP_CHECKSIG').isPubkeyhashIn().should.equal(false);
+      Script('73 0x3046022100bb3c194a30e460d81d34be0a230179c043a656f67e3c5c8bf47eceae7c4042ee0221008bf54ca11b2985285be0fd7a212873d243e6e73f5fad57e8eb14c4f39728b8c601 65 0x04e365859b3c78a8b7c202412b949ebca58e147dba297be29eee53cd3e1d300a6419bc780cc9aec0dc94ed194e91c8f6433f1b781ee00eac0ead2aae1e8e0712c6 OP_CHECKSIG').isPublicKeyHashIn().should.equal(false);
     });
 
   });
 
-  describe('#isPubkeyhashOut', function() {
+  describe('#isPublicKeyHashOut', function() {
 
     it('should classify this known pubkeyhashout as pubkeyhashout', function() {
-      Script('OP_DUP OP_HASH160 20 0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').isPubkeyhashOut().should.equal(true);
+      Script('OP_DUP OP_HASH160 20 0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').isPublicKeyHashOut().should.equal(true);
     });
 
     it('should classify this known non-pubkeyhashout as not pubkeyhashout', function() {
-      Script('OP_DUP OP_HASH160 20 0000000000000000000000000000000000000000').isPubkeyhashOut().should.equal(false)
+      Script('OP_DUP OP_HASH160 20 0000000000000000000000000000000000000000').isPublicKeyHashOut().should.equal(false)
     });
 
   });
@@ -245,11 +245,11 @@ describe('Script', function() {
   describe('#isScripthashIn', function() {
     
     it('should classify this known scripthashin', function() {
-      Script('20 0000000000000000000000000000000000000000').isScripthashIn().should.equal(true);
+      Script('20 0000000000000000000000000000000000000000').isScriptHashIn().should.equal(true);
     });
 
     it('should classify this known non-scripthashin', function() {
-      Script('20 0000000000000000000000000000000000000000 OP_CHECKSIG').isScripthashIn().should.equal(false);
+      Script('20 0000000000000000000000000000000000000000 OP_CHECKSIG').isScriptHashIn().should.equal(false);
     });
 
   });
@@ -257,12 +257,12 @@ describe('Script', function() {
   describe('#isScripthashOut', function() {
 
     it('should classify this known pubkeyhashout as pubkeyhashout', function() {
-      Script('OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUAL').isScripthashOut().should.equal(true);
+      Script('OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUAL').isScriptHashOut().should.equal(true);
     });
 
     it('should classify these known non-pubkeyhashout as not pubkeyhashout', function() {
-      Script('OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUAL OP_EQUAL').isScripthashOut().should.equal(false);
-      Script('OP_HASH160 21 0x000000000000000000000000000000000000000000 OP_EQUAL').isScripthashOut().should.equal(false);
+      Script('OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUAL OP_EQUAL').isScriptHashOut().should.equal(false);
+      Script('OP_HASH160 21 0x000000000000000000000000000000000000000000 OP_EQUAL').isScriptHashOut().should.equal(false);
     });
 
   });
