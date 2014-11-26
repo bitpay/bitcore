@@ -15,7 +15,7 @@ var bitcore = require('..');
 var HDPrivateKey = bitcore.HDPrivateKey;
 var HDPublicKey = bitcore.HDPublicKey;
 
-describe.only('BIP32 compliance', function() {
+describe('BIP32 compliance', function() {
 
   it('should initialize test vector 1 from the extended public key', function() {
     new HDPublicKey(vector1_m_public).xpubkey.should.equal(vector1_m_public);
@@ -44,8 +44,8 @@ describe.only('BIP32 compliance', function() {
   });
 
   it("should get m/0' ext. private key from test vector 1", function() {
-    var privateKey = new HDPrivateKey(vector1_m_private);
-    privateKey.derive("m/0'").xprivkey.should.equal(vector1_m0h_private);
+    var privateKey = new HDPrivateKey(vector1_m_private).derive("m/0'");
+    privateKey.xprivkey.should.equal(vector1_m0h_private);
   });
 
   it("should get m/0' ext. public key from test vector 1", function() {
@@ -64,8 +64,8 @@ describe.only('BIP32 compliance', function() {
   });
 
   it("should get m/0'/1 ext. public key from m/0' public key from test vector 1", function() {
-    var derivedPublic = HDPrivateKey(vector1_m_private).derive("m/0'").hdPublicKey;
-    derivedPublic.derive("m/1").xpubkey.should.equal(vector1_m0h1_public);
+    var derivedPublic = HDPrivateKey(vector1_m_private).derive("m/0'").hdPublicKey.derive("m/1");
+    derivedPublic.xpubkey.should.equal(vector1_m0h1_public);
   });
 
   it("should get m/0'/1/2' ext. private key from test vector 1", function() {
@@ -130,7 +130,7 @@ describe.only('BIP32 compliance', function() {
   });
 
   it("should get m/0 ext. public key from m public key from test vector 2", function() {
-    HDPrivateKey(vector2_m_private).hdPublicKey.derive(0).should.equal(vector2_m0_public);
+    HDPrivateKey(vector2_m_private).hdPublicKey.derive(0).xpubkey.should.equal(vector2_m0_public);
   });
 
   it("should get m/0/2147483647h ext. private key from test vector 2", function() {
