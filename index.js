@@ -20,9 +20,9 @@ bitcore.encoding.Varint = require('./lib/encoding/varint');
 
 // main bitcoin library
 bitcore.Address = require('./lib/address');
-bitcore.BIP32 = require('./lib/bip32');
 bitcore.Block = require('./lib/block');
 bitcore.Blockheader = require('./lib/blockheader');
+bitcore.HDPrivateKey = require('./lib/hdprivkey.js');
 bitcore.Networks = require('./lib/networks');
 bitcore.Opcode = require('./lib/opcode');
 bitcore.PrivateKey = require('./lib/privatekey');

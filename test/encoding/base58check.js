@@ -14,6 +14,13 @@ describe('Base58Check', function() {
     should.exist(b58);
   });
 
+  it('can validate a serialized string', function() {
+    var address = '3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy';
+    Base58Check.validChecksum(address).should.equal(true);
+    address = address + 'a';
+    Base58Check.validChecksum(address).should.equal(false);
+  });
+
   it('should make an instance without "new"', function() {
     var b58 = Base58Check();
     should.exist(b58);

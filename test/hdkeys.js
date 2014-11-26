@@ -15,7 +15,7 @@ var bitcore = require('..');
 var HDPrivateKey = bitcore.HDPrivateKey;
 var HDPublicKey = bitcore.HDPublicKey;
 
-describe('BIP32 compliance', function() {
+describe.only('BIP32 compliance', function() {
 
   it('should initialize test vector 1 from the extended public key', function() {
     new HDPublicKey(vector1_m_public).xpubkey.should.equal(vector1_m_public);
