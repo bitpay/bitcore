@@ -67,7 +67,7 @@ gulp.task('watch:lint', function() {
 });
 
 gulp.task('watch:browser', function() {
-  return gulp.watch(alljs, ['browser', 'browser-test']);
+  return gulp.watch(alljs, ['browser-all']);
 });
 
 gulp.task('coverage', shell.task(['istanbul cover _mocha -- --recursive']));
