@@ -96,11 +96,9 @@ gulp.task('browser', function() {
     .pipe(gulp.dest('browser'));
 });
 
-gulp.task('browser-test', function() {
-  shell.task([
+gulp.task('browser-test', shell.task([
     'find test/ -type f -name "*.js" | xargs browserify -o ./browser/tests.js'
-  ]);
-});
+]));
 
 gulp.task('browser-all', function(callback) {
   runSequence(['browser'], ['browser-test'], callback);
