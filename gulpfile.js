@@ -56,15 +56,19 @@ gulp.task('watch:lint', function() {
 });
 
 gulp.task('coverage', function() {
-  gulp.src(files)
+  return gulp.src(files)
     .pipe(istanbul())
     .pipe(tap(function(f) {
        // Make sure all files are loaded to get accurate coverage data
        require(f.path);
     }))
-    .on('end', testMocha.pipe(
-      istanbul.writeReports('coverage')
-    ));
+    .on('end', function() {
+      gulp.src(tests)
+        .pipe(istanbul.writeReports('coverage'))
+        .pipe(new mocha({reporter: 'spec'}))
+        .on('end', function() {})
+        .on('error', ignoreError)
+    });
 });
 
 gulp.task('jsdoc', function() {
