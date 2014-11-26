@@ -13,19 +13,19 @@
 var gulp = require('gulp');
 var browserify = require('gulp-browserify');
 var closureCompiler = require('gulp-closure-compiler');
-var istanbul = require('gulp-istanbul');
 var jsdoc = require('gulp-jsdoc');
 var jshint = require('gulp-jshint');
 var mocha = require('gulp-mocha');
 var rename = require('gulp-rename');
 var runSequence = require('run-sequence');
 var shell = require('gulp-shell');
-var tap = require('gulp-tap');
+
 
 var files = ['lib/**/*.js'];
 var tests = ['test/**/*.js'];
 var alljs = files.concat(tests);
 var jsdocReadme = 'doc/README.md';
+
 
 function ignoreError() {
   /* jshint ignore:start */ // using `this` in this context is weird 
@@ -55,21 +55,7 @@ gulp.task('watch:lint', function() {
   return gulp.watch(alljs, ['lint']);
 });
 
-gulp.task('coverage', function() {
-  return gulp.src(files)
-    .pipe(istanbul())
-    .pipe(tap(function(f) {
-       // Make sure all files are loaded to get accurate coverage data
-       require(f.path);
-    }))
-    .on('end', function() {
-      gulp.src(tests)
-        .pipe(istanbul.writeReports('coverage'))
-        .pipe(new mocha({reporter: 'spec'}))
-        .on('end', function() {})
-        .on('error', ignoreError)
-    });
-});
+gulp.task('coverage', shell.task(['istanbul cover _mocha -- --recursive']));
 
 gulp.task('jsdoc', function() {
   return gulp.src(files.concat([jsdocReadme]))
@@ -95,9 +81,9 @@ gulp.task('browser', function() {
     .pipe(gulp.dest('browser'));
 });
 
-gulp.task('browser-test', function() {
-  return shell('find test/ -type f -name "*.js" | xargs browserify -o browser/tests.js');
-});
+gulp.task('browser-test', shell.task([
+  'find test/ -type f -name "*.js" | xargs browserify -o ./browser/tests.js'
+]));
 
 gulp.task('minify', function() {
   return gulp.src('dist/bitcore.js')
