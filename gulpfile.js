@@ -67,7 +67,7 @@ gulp.task('watch:lint', function() {
 });
 
 gulp.task('watch:browser', function() {
-  return gulp.watch(alljs, ['browser', 'browser-test']);
+  return gulp.watch(alljs, ['browser-all']);
 });
 
 gulp.task('coverage', shell.task(['istanbul cover _mocha -- --recursive']));
@@ -100,6 +100,10 @@ gulp.task('browser-test', function() {
   shell.task([
     'find test/ -type f -name "*.js" | xargs browserify -o ./browser/tests.js'
   ]);
+});
+
+gulp.task('browser-all', function(callback) {
+  runSequence(['browser'], ['browser-test'], callback);
 });
 
 gulp.task('karma', testKarma);
