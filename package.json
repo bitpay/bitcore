@@ -92,6 +92,8 @@
     "lodash": "^2.4.1",
     "mocha": "~2.0.1",
     "run-sequence": "^1.0.2"
+    "karma": "^0.12.28",
+    "karma-mocha": "^0.1.9",
   },
   "license": "MIT"
 }

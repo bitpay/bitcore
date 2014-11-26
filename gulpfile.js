@@ -85,6 +85,10 @@ gulp.task('browser-test', shell.task([
   'find test/ -type f -name "*.js" | xargs browserify -o ./browser/tests.js'
 ]));
 
+gulp.task('karma', shell.task([
+  './node_modules/karma/bin/karma start karma.conf.js'
+]));
+
 gulp.task('minify', function() {
   return gulp.src('dist/bitcore.js')
     .pipe(closureCompiler({
