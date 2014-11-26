@@ -39,8 +39,6 @@ bitcore.deps.bnjs = require('bn.js');
 bitcore.deps.bs58 = require('bs58');
 bitcore.deps.Buffer = Buffer;
 bitcore.deps.elliptic = require('elliptic');
-bitcore.deps.hashjs = require('hash.js');
-bitcore.deps.sha512 = require('sha512');
 
 //bitcore.scriptexec = require('lib/scriptexec');
 //bitcore.tx = require('lib/tx');

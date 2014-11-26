@@ -1,4 +1,0 @@
-#!/bin/bash
-
-browserify index.js -o browser/bitcore.js
-find test/ -type f -name "*.js" | xargs browserify -o browser/tests.js

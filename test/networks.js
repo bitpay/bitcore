@@ -12,11 +12,12 @@ describe('Networks', function() {
     should.exist(Networks.mainnet);
   });
   describe('contain all constants for livenet and testnet', function() {
+    var makeTest = function(key) {
+      Networks.testnet.hasOwnProperty(key).should.equal(true);
+    };
     for (var key in Networks.livenet) {
       if (Networks.livenet.hasOwnProperty(key)) {
-        it('all should contain '+key, function() {
-          Networks.testnet.hasOwnProperty(key).should.equal(true);
-        });
+        it('all should contain ' + key, makeTest(key));
       }
     }
   });

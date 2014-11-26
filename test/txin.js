@@ -12,7 +12,7 @@ describe('Txin', function() {
   var txidbuf = new Buffer(32);
   txidbuf.fill(0);
   var txoutnum = 0;
-  var script = Script().fromString("OP_CHECKMULTISIG");
+  var script = Script().fromString('OP_CHECKMULTISIG');
   var scriptvi = Varint(script.toBuffer().length);
   var seqnum = 0;
   var txin = Txin().set({
@@ -73,7 +73,7 @@ describe('Txin', function() {
   describe('#toJSON', function() {
     
     it('should set these vars', function() {
-      var json = txin.toJSON()
+      var json = txin.toJSON();
       should.exist(json.txidbuf);
       should.exist(json.txoutnum);
       should.exist(json.scriptvi);

@@ -112,14 +112,14 @@ describe('ECDSA', function() {
       ecdsa.sig = new Signature();
       ecdsa.sig.r = BN(0);
       ecdsa.sig.s = BN(0);
-      ecdsa.sigError().should.equal("r and s not in range");
+      ecdsa.sigError().should.equal('r and s not in range');
     });
 
     it('should return an error if the signature is incorrect', function() {
       ecdsa.sig = new Signature();
       ecdsa.sig.fromString('3046022100e9915e6236695f093a4128ac2a956c40ed971531de2f4f41ba05fac7e2bd019c02210094e6a4a769cc7f2a8ab3db696c7cd8d56bcdbfff860a8c81de4bc6a798b90827');
       ecdsa.sig.r = ecdsa.sig.r.add(BN(1));
-      ecdsa.sigError().should.equal("Invalid signature");
+      ecdsa.sigError().should.equal('Invalid signature');
     });
 
   });
