@@ -33,11 +33,22 @@ function ignoreError() {
   /* jshint ignore:end */
 }
 
-function testMocha() {
-  return gulp.src(tests).pipe(new mocha({reporter: 'spec'}));
-}
+var testMocha = function() {
+  return gulp.src(tests).pipe(new mocha({
+    reporter: 'spec'
+  }));
+};
+
+var testKarma = shell.task([
+  './node_modules/karma/bin/karma start --single-run --browsers Firefox'
+]);
+
 
 gulp.task('test', testMocha);
+
+gulp.task('test-all', function(callback) {
+  runSequence(['test'], ['karma'], callback);
+});
 
 gulp.task('test-nofail', function() {
   return testMocha().on('error', ignoreError);
@@ -53,6 +64,10 @@ gulp.task('watch:lint', function() {
   // TODO: Only lint files that are linked to file changes by doing
   // something smart like reading through the require statements
   return gulp.watch(alljs, ['lint']);
+});
+
+gulp.task('watch:browser', function() {
+  return gulp.watch(alljs, ['browser', 'browser-test']);
 });
 
 gulp.task('coverage', shell.task(['istanbul cover _mocha -- --recursive']));
@@ -81,13 +96,13 @@ gulp.task('browser', function() {
     .pipe(gulp.dest('browser'));
 });
 
-gulp.task('browser-test', shell.task([
-  'find test/ -type f -name "*.js" | xargs browserify -o ./browser/tests.js'
-]));
+gulp.task('browser-test', function() {
+  shell.task([
+    'find test/ -type f -name "*.js" | xargs browserify -o ./browser/tests.js'
+  ]);
+});
 
-gulp.task('karma', shell.task([
-  './node_modules/karma/bin/karma start karma.conf.js'
-]));
+gulp.task('karma', testKarma);
 
 gulp.task('minify', function() {
   return gulp.src('dist/bitcore.js')

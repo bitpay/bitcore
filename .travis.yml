@@ -1,11 +1,12 @@
 language: node_js
 node_js:
 - '0.10'
-notifications:
-  hipchat:
-    rooms:
-      secure: p6IUoOsKoM7cEmUsYh9JV5XKpUSASXukGkiBxdPU+ELM1CgNT0PyUROXwgDvI0vjSBCJemNh5sqrEQWiT70PcR69rH1JQ6+mHZah4r6W1Ql0NuWibvsofLyCeTzW2nrptdx97Z4y65NiHsaaOo3F+BShTeBpmBAvRMNp/FLMjWU=
-    template:
-      - '%{repository}#%{build_number} (%{branch} - %{commit} : %{author}): %{message} (<a href="%{build_url}">Details</a>/<a href="%{compare_url}">Change view</a>)'
-    format: html
-    on_success: never
+before_install:
+  - npm install -g bower
+  - npm install -g grunt-cli
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+install:
+  - bower install
+  - npm install
+
