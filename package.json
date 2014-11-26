@@ -8,7 +8,8 @@
     "lint": "gulp lint",
     "test": "gulp test-all",
     "coverage": "gulp coverage",
-    "build": "gulp"
+    "build": "gulp",
+    "postinstall": "gulp browser-all"
   },
   "contributors": [
     {

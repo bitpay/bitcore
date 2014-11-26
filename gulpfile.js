@@ -102,6 +102,10 @@ gulp.task('browser-test', function() {
   ]);
 });
 
+gulp.task('browser-all', function(callback) {
+  runSequence(['browser'], ['browser-test'], callback);
+});
+
 gulp.task('karma', testKarma);
 
 gulp.task('minify', function() {
