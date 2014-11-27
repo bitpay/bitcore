@@ -8,6 +8,7 @@ bitcore.crypto.ECDSA = require('./lib/crypto/ecdsa');
 bitcore.crypto.Hash = require('./lib/crypto/hash');
 bitcore.crypto.Random = require('./lib/crypto/random');
 bitcore.crypto.Point = require('./lib/crypto/point');
+bitcore.crypto.Signature = require('./lib/crypto/signature');
 
 // encoding
 bitcore.encoding = {};
@@ -27,7 +28,6 @@ bitcore.Opcode = require('./lib/opcode');
 bitcore.PrivateKey = require('./lib/privatekey');
 bitcore.PublicKey = require('./lib/publickey');
 bitcore.Script = require('./lib/script');
-bitcore.Signature = require('./lib/signature');
 bitcore.Transaction = require('./lib/transaction');
 bitcore.Txin = require('./lib/txin');
 bitcore.Txout = require('./lib/txout');

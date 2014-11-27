@@ -4,9 +4,9 @@ var should = require('chai').should();
 var bitcore = require('../..');
 var ECDSA = bitcore.crypto.ECDSA;
 var Hash = bitcore.crypto.Hash;
+var Signature = bitcore.crypto.Signature;
 var PrivateKey = bitcore.PrivateKey;
 var PublicKey = bitcore.PublicKey;
-var Signature = bitcore.Signature;
 var BN = bitcore.crypto.BN;
 
 describe('ECDSA', function() {
