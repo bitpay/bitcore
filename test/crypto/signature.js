@@ -1,9 +1,9 @@
 'use strict';
 
 var should = require('chai').should();
-var bitcore = require('..');
+var bitcore = require('../..');
 var BN = bitcore.crypto.BN;
-var Signature = bitcore.Signature;
+var Signature = bitcore.crypto.Signature;
 
 describe('Signature', function() {
 
