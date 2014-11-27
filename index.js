@@ -18,6 +18,8 @@ bitcore.encoding.BufferReader = require('./lib/encoding/bufferreader');
 bitcore.encoding.BufferWriter = require('./lib/encoding/bufferwriter');
 bitcore.encoding.Varint = require('./lib/encoding/varint');
 
+bitcore.util = require('./lib/util');
+
 // main bitcoin library
 bitcore.Address = require('./lib/address');
 bitcore.Block = require('./lib/block');

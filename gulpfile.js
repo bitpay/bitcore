@@ -60,6 +60,12 @@ gulp.task('watch:test', function() {
   return gulp.watch(alljs, ['test-nofail']);
 });
 
+gulp.task('watch:coverage', function() {
+  // TODO: Only run tests that are linked to file changes by doing
+  // something smart like reading through the require statements
+  return gulp.watch(alljs, ['coverage']);
+});
+
 gulp.task('watch:lint', function() {
   // TODO: Only lint files that are linked to file changes by doing
   // something smart like reading through the require statements
