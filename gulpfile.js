@@ -9,7 +9,7 @@ var format = es.through(
         if (file.isStream()) return this.emit('error', new Error('Streaming not supported'));
 
         //add indentation
-        var contents = "\t" + file.contents.toString("utf8").split("\n").join("\n\t");
+        var contents = "\n```js\n\n" + file.contents.toString("utf8").split("\n").join("\n") + "```\n";
         //add header
         contents = ["#", path.basename(file.path), "\n", contents].join("");
         file.contents = new Buffer(contents, "utf8");
