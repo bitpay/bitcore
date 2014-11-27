@@ -12,7 +12,7 @@ describe('Txin', function() {
   var txidbuf = new Buffer(32);
   txidbuf.fill(0);
   var txoutnum = 0;
-  var script = Script().fromString('OP_CHECKMULTISIG');
+  var script = Script.fromString('OP_CHECKMULTISIG');
   var scriptvi = Varint(script.toBuffer().length);
   var seqnum = 0;
   var txin = Txin().set({
