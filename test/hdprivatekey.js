@@ -40,7 +40,7 @@ describe('HDPrivate key interface', function() {
     regenerate.xprivkey.should.equal(xprivkey);
   });
 
-  it('builds a json keeping the same interface than previous versions', function() {
+  it('builds a json keeping the structure and same members', function() {
     assert(util.shallowEquals(
       JSON.parse(new HDPrivateKey(json).toJson()),
       JSON.parse(new HDPrivateKey(xprivkey).toJson())
