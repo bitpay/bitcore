@@ -204,11 +204,11 @@ describe('Script', function() {
 
   describe('#isPublicKeyHashIn', function() {
 
-    it('should classify this known pubkeyhashin', function() {
+    it('should identify this known pubkeyhashin', function() {
       Script('73 0x3046022100bb3c194a30e460d81d34be0a230179c043a656f67e3c5c8bf47eceae7c4042ee0221008bf54ca11b2985285be0fd7a212873d243e6e73f5fad57e8eb14c4f39728b8c601 65 0x04e365859b3c78a8b7c202412b949ebca58e147dba297be29eee53cd3e1d300a6419bc780cc9aec0dc94ed194e91c8f6433f1b781ee00eac0ead2aae1e8e0712c6').isPublicKeyHashIn().should.equal(true);
     });
 
-    it('should classify this known non-pubkeyhashin', function() {
+    it('should identify this known non-pubkeyhashin', function() {
       Script('73 0x3046022100bb3c194a30e460d81d34be0a230179c043a656f67e3c5c8bf47eceae7c4042ee0221008bf54ca11b2985285be0fd7a212873d243e6e73f5fad57e8eb14c4f39728b8c601 65 0x04e365859b3c78a8b7c202412b949ebca58e147dba297be29eee53cd3e1d300a6419bc780cc9aec0dc94ed194e91c8f6433f1b781ee00eac0ead2aae1e8e0712c6 OP_CHECKSIG').isPublicKeyHashIn().should.equal(false);
     });
 
@@ -216,11 +216,11 @@ describe('Script', function() {
 
   describe('#isPublicKeyHashOut', function() {
 
-    it('should classify this known pubkeyhashout as pubkeyhashout', function() {
+    it('should identify this known pubkeyhashout as pubkeyhashout', function() {
       Script('OP_DUP OP_HASH160 20 0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').isPublicKeyHashOut().should.equal(true);
     });
 
-    it('should classify this known non-pubkeyhashout as not pubkeyhashout', function() {
+    it('should identify this known non-pubkeyhashout as not pubkeyhashout', function() {
       Script('OP_DUP OP_HASH160 20 0000000000000000000000000000000000000000').isPublicKeyHashOut().should.equal(false);
     });
 
@@ -228,11 +228,11 @@ describe('Script', function() {
 
   describe('#isScripthashIn', function() {
 
-    it('should classify this known scripthashin', function() {
+    it('should identify this known scripthashin', function() {
       Script('20 0000000000000000000000000000000000000000').isScriptHashIn().should.equal(true);
     });
 
-    it('should classify this known non-scripthashin', function() {
+    it('should identify this known non-scripthashin', function() {
       Script('20 0000000000000000000000000000000000000000 OP_CHECKSIG').isScriptHashIn().should.equal(false);
     });
 
@@ -240,11 +240,11 @@ describe('Script', function() {
 
   describe('#isScripthashOut', function() {
 
-    it('should classify this known pubkeyhashout as pubkeyhashout', function() {
+    it('should identify this known pubkeyhashout as pubkeyhashout', function() {
       Script('OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUAL').isScriptHashOut().should.equal(true);
     });
 
-    it('should classify these known non-pubkeyhashout as not pubkeyhashout', function() {
+    it('should identify these known non-pubkeyhashout as not pubkeyhashout', function() {
       Script('OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUAL OP_EQUAL').isScriptHashOut().should.equal(false);
       Script('OP_HASH160 21 0x000000000000000000000000000000000000000000 OP_EQUAL').isScriptHashOut().should.equal(false);
     });
@@ -252,36 +252,48 @@ describe('Script', function() {
   });
 
   describe('#isMultisigOut', function() {
-    it('should classify known multisig out 1', function() {
+    it('should identify known multisig out 1', function() {
       Script('OP_2 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 OP_2 OP_CHECKMULTISIG').isMultisigOut().should.equal(true);
     });
-    it('should classify known multisig out 2', function() {
+    it('should identify known multisig out 2', function() {
       Script('OP_1 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 OP_2 OP_CHECKMULTISIG').isMultisigOut().should.equal(true);
     });
-    it('should classify known multisig out 3', function() {
+    it('should identify known multisig out 3', function() {
       Script('OP_2 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 21 0x03363d90d447b00c9c99ceac05b6262ee053441c7e55552ffe526bad8f83ff4640 OP_3 OP_CHECKMULTISIG').isMultisigOut().should.equal(true);
     });
 
-    it('should classify non-multisig out 1', function() {
+    it('should identify non-multisig out 1', function() {
       Script('OP_2 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 OP_2 OP_CHECKMULTISIG OP_EQUAL').isMultisigOut().should.equal(false);
     });
-    it('should classify non-multisig out 2', function() {
+    it('should identify non-multisig out 2', function() {
       Script('OP_2').isMultisigOut().should.equal(false);
     });
   });
 
   describe('#isMultisigIn', function() {
-    it('should classify multisig in 1', function() {
+    it('should identify multisig in 1', function() {
       Script('OP_0 0x47 0x3044022002a27769ee33db258bdf7a3792e7da4143ec4001b551f73e6a190b8d1bde449d02206742c56ccd94a7a2e16ca52fc1ae4a0aa122b0014a867a80de104f9cb18e472c01').isMultisigIn().should.equal(true);
     });
-    it('should classify multisig in 2', function() {
+    it('should identify multisig in 2', function() {
       Script('OP_0 0x47 0x3044022002a27769ee33db258bdf7a3792e7da4143ec4001b551f73e6a190b8d1bde449d02206742c56ccd94a7a2e16ca52fc1ae4a0aa122b0014a867a80de104f9cb18e472c01 0x47 30450220357011fd3b3ad2b8f2f2d01e05dc6108b51d2a245b4ef40c112d6004596f0475022100a8208c93a39e0c366b983f9a80bfaf89237fcd64ca543568badd2d18ee2e1d7501').isMultisigIn().should.equal(true);
     });
-    it('should classify non-multisig in 1', function() {
+    it('should identify non-multisig in 1', function() {
       Script('0x47 0x3044022002a27769ee33db258bdf7a3792e7da4143ec4001b551f73e6a190b8d1bde449d02206742c56ccd94a7a2e16ca52fc1ae4a0aa122b0014a867a80de104f9cb18e472c01').isMultisigIn().should.equal(false);
     });
-    it('should classify non-multisig in 2', function() {
+    it('should identify non-multisig in 2', function() {
       Script('OP_0 0x47 0x3044022002a27769ee33db258bdf7a3792e7da4143ec4001b551f73e6a190b8d1bde449d02206742c56ccd94a7a2e16ca52fc1ae4a0aa122b0014a867a80de104f9cb18e472c01 OP_0').isMultisigIn().should.equal(false);
+    });
+  });
+
+  describe.only('#classify', function() {
+    it('should classify public key hash out', function() {
+      Script('OP_DUP OP_HASH160 20 0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').classify().should.equal(Script.types.PUBKEYHASH_OUT);
+    });
+    it('should classify public key hash in', function() {
+      Script('47 0x3044022077a8d81e656c4a1c1721e68ce35fa0b27f13c342998e75854858c12396a15ffa02206378a8c6959283c008c87a14a9c0ada5cf3934ac5ee29f1fef9cac6969783e9801 21 0x03993c230da7dabb956292851ae755f971c50532efc095a16bee07f83ab9d262df').classify().should.equal(Script.types.PUBKEYHASH_IN);
+    });
+    it('should classify OP_RETURN', function() {
+      Script('OP_RETURN 1 0x01').classify().should.equal(Script.types.OP_RETURN);
     });
   });
 
