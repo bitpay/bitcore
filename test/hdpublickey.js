@@ -7,7 +7,7 @@ var should = require('chai').should();
 var expect = require('chai').expect;
 var bitcore = require('..');
 var buffer = require('buffer');
-var util = bitcore.util;
+var bufferUtil = bitcore.util.buffer;
 var HDPrivateKey = bitcore.HDPrivateKey;
 var HDPublicKey = bitcore.HDPublicKey;
 var Base58Check = bitcore.encoding.Base58Check;
@@ -71,7 +71,7 @@ describe('HDPublicKey interface', function() {
     });
 
     it('can generate a json that has a particular structure', function() {
-      assert(util.shallowEquals(
+      assert(_.isEqual(
         JSON.parse(new HDPublicKey(json).toJson()),
         JSON.parse(new HDPublicKey(xpubkey).toJson())
       ));
@@ -83,7 +83,7 @@ describe('HDPublicKey interface', function() {
 
     it('checks the checksum', function() {
       var buffers = new HDPublicKey(xpubkey)._buffers;
-      buffers.checksum = util.integerAsBuffer(1);
+      buffers.checksum = bufferUtil.integerAsBuffer(1);
       expectFail(buffers, HDPublicKey.Errors.InvalidB58Checksum)();
     });
 

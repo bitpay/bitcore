@@ -6,7 +6,7 @@ var should = require('chai').should();
 var expect = require('chai').expect;
 var bitcore = require('..');
 var buffer = require('buffer');
-var util = bitcore.util;
+var bufferUtil = bitcore.util.buffer;
 var HDPrivateKey = bitcore.HDPrivateKey;
 var Base58Check = bitcore.encoding.Base58Check;
 
@@ -41,7 +41,7 @@ describe('HDPrivate key interface', function() {
   });
 
   it('builds a json keeping the structure and same members', function() {
-    assert(util.shallowEquals(
+    assert(_.isEqual(
       JSON.parse(new HDPrivateKey(json).toJson()),
       JSON.parse(new HDPrivateKey(xprivkey).toJson())
     ));
@@ -130,7 +130,7 @@ describe('HDPrivate key interface', function() {
     var privKey = new HDPrivateKey(xprivkey);
     expect(function() {
       var buffers = privKey._buffers;
-      buffers.checksum = util.integerAsBuffer(0);
+      buffers.checksum = bufferUtil.integerAsBuffer(0);
       return new HDPrivateKey(buffers);
     }).to.throw(HDPrivateKey.Errors.InvalidB58Checksum);
   });
