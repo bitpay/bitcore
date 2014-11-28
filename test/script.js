@@ -292,6 +292,18 @@ describe('Script', function() {
     it('should classify public key hash in', function() {
       Script('47 0x3044022077a8d81e656c4a1c1721e68ce35fa0b27f13c342998e75854858c12396a15ffa02206378a8c6959283c008c87a14a9c0ada5cf3934ac5ee29f1fef9cac6969783e9801 21 0x03993c230da7dabb956292851ae755f971c50532efc095a16bee07f83ab9d262df').classify().should.equal(Script.types.PUBKEYHASH_IN);
     });
+    it('should classify script hash out', function() {
+      Script('').classify().should.equal(Script.types.SCRIPTHASH_OUT);
+    });
+    it('should classify script hash in', function() {
+      Script('').classify().should.equal(Script.types.SCRIPTHASH_IN);
+    });
+    it('should classify MULTISIG out', function() {
+      Script('').classify().should.equal(Script.types.MULTISIG_OUT);
+    });
+    it('should classify MULTISIG in', function() {
+      Script('').classify().should.equal(Script.types.MULTISIG_IN);
+    });
     it('should classify OP_RETURN', function() {
       Script('OP_RETURN 1 0x01').classify().should.equal(Script.types.OP_RETURN);
     });
