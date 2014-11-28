@@ -149,5 +149,12 @@ describe('HDPublicKey interface', function() {
       expect(function() { return new HDPublicKey(xpubkey).derive(HDPublicKey.Hardened + 1); })
         .to.throw(HDPublicKey.Errors.InvalidIndexCantDeriveHardened);
     });
+
+    it('should use the cache', function() {
+      var pubkey = new HDPublicKey(xpubkey);
+      var derived1 = pubkey.derive(0);
+      var derived2 = pubkey.derive(0);
+      derived1.xpubkey.should.equal(derived2.xpubkey);
+    });
   });
 });
