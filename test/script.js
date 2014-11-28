@@ -251,37 +251,47 @@ describe('Script', function() {
 
   });
 
-  describe('#add', function() {
+  describe('#add and #prepend', function() {
 
     it('should add these ops', function() {
       Script().add('OP_CHECKMULTISIG').toString().should.equal('OP_CHECKMULTISIG');
+      Script().add('OP_1').add('OP_2').toString().should.equal('OP_1 OP_2');
+      Script().add(new Opcode('OP_CHECKMULTISIG')).toString().should.equal('OP_CHECKMULTISIG');
       Script().add(Opcode.map.OP_CHECKMULTISIG).toString().should.equal('OP_CHECKMULTISIG');
     });
 
-  });
+    it('should prepend these ops', function() {
+      Script().prepend('OP_CHECKMULTISIG').toString().should.equal('OP_CHECKMULTISIG');
+      Script().prepend('OP_1').prepend('OP_2').toString().should.equal('OP_2 OP_1');
+    });
 
-  it('should add these push data', function() {
-    var buf = new Buffer(1);
-    buf.fill(0);
-    Script().add(buf).toString().should.equal('1 0x00');
-    buf = new Buffer(255);
-    buf.fill(0);
-    Script().add(buf).toString().should.equal('OP_PUSHDATA1 255 0x' + buf.toString('hex'));
-    buf = new Buffer(256);
-    buf.fill(0);
-    Script().add(buf).toString().should.equal('OP_PUSHDATA2 256 0x' + buf.toString('hex'));
-    buf = new Buffer(Math.pow(2, 16));
-    buf.fill(0);
-    Script().add(buf).toString().should.equal('OP_PUSHDATA4 ' + Math.pow(2, 16) + ' 0x' + buf.toString('hex'));
-  });
+    it('should add and prepend correctly', function() {
+      Script().add('OP_1').prepend('OP_2').add('OP_3').prepend('OP_4').toString()
+        .should.equal('OP_4 OP_2 OP_1 OP_3');
+    });
 
-  it('should add both pushdata and non-pushdata chunks', function() {
-    Script().add('OP_CHECKMULTISIG').toString().should.equal('OP_CHECKMULTISIG');
-    Script().add(Opcode.map.OP_CHECKMULTISIG).toString().should.equal('OP_CHECKMULTISIG');
-    var buf = new Buffer(1);
-    buf.fill(0);
-    Script().add(buf).toString().should.equal('1 0x00');
-  });
+    it('should add these push data', function() {
+      var buf = new Buffer(1);
+      buf.fill(0);
+      Script().add(buf).toString().should.equal('1 0x00');
+      buf = new Buffer(255);
+      buf.fill(0);
+      Script().add(buf).toString().should.equal('OP_PUSHDATA1 255 0x' + buf.toString('hex'));
+      buf = new Buffer(256);
+      buf.fill(0);
+      Script().add(buf).toString().should.equal('OP_PUSHDATA2 256 0x' + buf.toString('hex'));
+      buf = new Buffer(Math.pow(2, 16));
+      buf.fill(0);
+      Script().add(buf).toString().should.equal('OP_PUSHDATA4 ' + Math.pow(2, 16) + ' 0x' + buf.toString('hex'));
+    });
 
+    it('should add both pushdata and non-pushdata chunks', function() {
+      Script().add('OP_CHECKMULTISIG').toString().should.equal('OP_CHECKMULTISIG');
+      Script().add(Opcode.map.OP_CHECKMULTISIG).toString().should.equal('OP_CHECKMULTISIG');
+      var buf = new Buffer(1);
+      buf.fill(0);
+      Script().add(buf).toString().should.equal('1 0x00');
+    });
+  });
 
 });
