@@ -23,6 +23,8 @@ bitcore.util.bitcoin = require('./lib/util/bitcoin');
 bitcore.util.buffer = require('./lib/util/buffer');
 bitcore.util.js = require('./lib/util/js');
 
+bitcore.errors = require('./lib/errors');
+
 // main bitcoin library
 bitcore.Address = require('./lib/address');
 bitcore.Block = require('./lib/block');

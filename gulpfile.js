@@ -44,13 +44,13 @@ var testKarma = shell.task([
 ]);
 
 
-gulp.task('test', testMocha);
+gulp.task('test', ['errors'], testMocha);
 
-gulp.task('test-all', function(callback) {
+gulp.task('test-all', ['errors'], function(callback) {
   runSequence(['test'], ['karma'], callback);
 });
 
-gulp.task('test-nofail', function() {
+gulp.task('test-nofail', ['errors'], function() {
   return testMocha().on('error', ignoreError);
 });
 
@@ -93,7 +93,7 @@ gulp.task('lint', function() {
     .pipe(jshint.reporter('default'));
 });
 
-gulp.task('browser', function() {
+gulp.task('browser', ['errors'], function() {
   return gulp.src('index.js')
     .pipe(browserify({
       insertGlobals: true
@@ -106,13 +106,17 @@ gulp.task('browser-test', shell.task([
     'find test/ -type f -name "*.js" | xargs browserify -o ./browser/tests.js'
 ]));
 
-gulp.task('browser-all', function(callback) {
+gulp.task('browser-all', ['errors'], function(callback) {
   runSequence(['browser'], ['browser-test'], callback);
 });
 
 gulp.task('karma', testKarma);
 
-gulp.task('minify', function() {
+gulp.task('errors', shell.task([
+  'node ./lib/errors/build.js'
+]));
+
+gulp.task('minify', ['errors'], function() {
   return gulp.src('dist/bitcore.js')
     .pipe(closureCompiler({
       fileName: 'bitcore.min.js',
@@ -126,5 +130,8 @@ gulp.task('minify', function() {
 });
 
 gulp.task('default', function(callback) {
-  return runSequence(['lint', 'jsdoc', 'browser', 'test'], ['coverage', 'minify'], callback);
+  return runSequence(['lint', 'jsdoc'],
+                     ['browser', 'test'],
+                     ['coverage', 'minify'],
+                     callback);
 });
