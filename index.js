@@ -18,11 +18,13 @@ bitcore.encoding.BufferReader = require('./lib/encoding/bufferreader');
 bitcore.encoding.BufferWriter = require('./lib/encoding/bufferwriter');
 bitcore.encoding.Varint = require('./lib/encoding/varint');
 
+// utilities
 bitcore.util = {};
 bitcore.util.bitcoin = require('./lib/util/bitcoin');
 bitcore.util.buffer = require('./lib/util/buffer');
 bitcore.util.js = require('./lib/util/js');
 
+// errors thrown by the library
 bitcore.errors = require('./lib/errors');
 
 // main bitcoin library
@@ -41,7 +43,7 @@ bitcore.Txin = require('./lib/txin');
 bitcore.Txout = require('./lib/txout');
 
 
-//dependencies, subject to change
+// dependencies, subject to change
 bitcore.deps = {};
 bitcore.deps.bnjs = require('bn.js');
 bitcore.deps.bs58 = require('bs58');
@@ -53,3 +55,6 @@ bitcore.deps.elliptic = require('elliptic');
 //bitcore.txpartial = require('lib/txpartial');
 
 //bitcore.bip70 = require('lib/bip70');
+
+// Internal usage, exposed for testing/advanced tweaking
+bitcore._HDKeyCache = require('./lib/hdkeycache');
