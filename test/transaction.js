@@ -1,197 +1,95 @@
 'use strict';
 
+/* jshint unused: false */
+/* jshint latedef: false */
 var should = require('chai').should();
+var _ = require('lodash');
+
 var bitcore = require('..');
-var Varint = bitcore.encoding.Varint;
-var BufferReader = bitcore.encoding.BufferReader;
 var Transaction = bitcore.Transaction;
-var Txin = bitcore.Txin;
-var Txout = bitcore.Txout;
+var Script = bitcore.Script;
 
 describe('Transaction', function() {
 
-  var txin = Txin().fromBuffer(new Buffer('00000000000000000000000000000000000000000000000000000000000000000000000001ae00000000', 'hex'));
-  var txout = Txout().fromBuffer(new Buffer('050000000000000001ae', 'hex'));
-  var tx = Transaction().set({
-    version: 0,
-    txinsvi: Varint(1),
-    txins: [txin],
-    txoutsvi: Varint(1),
-    txouts: [txout],
-    nlocktime: 0
-  });
-  var txhex = '000000000100000000000000000000000000000000000000000000000000000000000000000000000001ae0000000001050000000000000001ae00000000';
-  var txbuf = new Buffer(txhex, 'hex');
-
-  var tx2idhex = '8c9aa966d35bfeaf031409e0001b90ccdafd8d859799eb945a3c515b8260bcf2';
-  var tx2hex = '01000000029e8d016a7b0dc49a325922d05da1f916d1e4d4f0cb840c9727f3d22ce8d1363f000000008c493046022100e9318720bee5425378b4763b0427158b1051eec8b08442ce3fbfbf7b30202a44022100d4172239ebd701dae2fbaaccd9f038e7ca166707333427e3fb2a2865b19a7f27014104510c67f46d2cbb29476d1f0b794be4cb549ea59ab9cc1e731969a7bf5be95f7ad5e7f904e5ccf50a9dc1714df00fbeb794aa27aaff33260c1032d931a75c56f2ffffffffa3195e7a1ab665473ff717814f6881485dc8759bebe97e31c301ffe7933a656f020000008b48304502201c282f35f3e02a1f32d2089265ad4b561f07ea3c288169dedcf2f785e6065efa022100e8db18aadacb382eed13ee04708f00ba0a9c40e3b21cf91da8859d0f7d99e0c50141042b409e1ebbb43875be5edde9c452c82c01e3903d38fa4fd89f3887a52cb8aea9dc8aec7e2c9d5b3609c03eb16259a2537135a1bf0f9c5fbbcbdbaf83ba402442ffffffff02206b1000000000001976a91420bb5c3bfaef0231dc05190e7f1c8e22e098991e88acf0ca0100000000001976a9149e3e2d23973a04ec1b02be97c30ab9f2f27c3b2c88ac00000000';
-  var tx2buf = new Buffer(tx2hex, 'hex');
-
-  it('should make a new transaction', function() {
-    var tx = new Transaction();
-    should.exist(tx);
-    tx = Transaction();
-    should.exist(tx);
-
-    Transaction(txbuf).toBuffer().toString('hex').should.equal(txhex);
-
-    //should set known defaults
-    tx.version.should.equal(1);
-    tx.txinsvi.toNumber().should.equal(0);
-    tx.txins.length.should.equal(0);
-    tx.txoutsvi.toNumber().should.equal(0);
-    tx.txouts.length.should.equal(0);
-    tx.nlocktime.should.equal(0xffffffff);
+  it('should serialize and deserialize correctly a given transaction', function() {
+    var transaction = new Transaction(tx_1_hex);
+    transaction.serialize().should.equal(tx_1_hex);
   });
 
-  describe('#initialize', function() {
-
-    it('should set these known defaults', function() {
-      var tx = new Transaction();
-      tx.initialize();
-      tx.version.should.equal(1);
-      tx.txinsvi.toNumber().should.equal(0);
-      tx.txins.length.should.equal(0);
-      tx.txoutsvi.toNumber().should.equal(0);
-      tx.txouts.length.should.equal(0);
-      tx.nlocktime.should.equal(0xffffffff);
-    });
-
+  it('standard hash of transaction should be decoded correctly', function() {
+    var transaction = new Transaction(tx_1_hex);
+    transaction.id.should.equal(tx_1_id);
   });
 
-  describe('#set', function() {
-
-    it('should set all the basic parameters', function() {
-      var tx = Transaction().set({
-        version: 0,
-        txinsvi: Varint(1),
-        txins: [txin],
-        txoutsvi: Varint(1),
-        txouts: [txout],
-        nlocktime: 0
-      });
-      should.exist(tx.version);
-      should.exist(tx.txinsvi);
-      should.exist(tx.txins);
-      should.exist(tx.txoutsvi);
-      should.exist(tx.txouts);
-      should.exist(tx.nlocktime);
-    });
-
+  it('serializes an empty transaction', function() {
+    var transaction = new Transaction();
+    transaction.serialize().should.equal(tx_empty_hex);
   });
 
-  describe('#fromJSON', function() {
-
-    it('should set all the basic parameters', function() {
-      var tx = Transaction().fromJSON({
-        version: 0,
-        txinsvi: Varint(1).toJSON(),
-        txins: [txin.toJSON()],
-        txoutsvi: Varint(1).toJSON(),
-        txouts: [txout.toJSON()],
-        nlocktime: 0
-      });
-      should.exist(tx.version);
-      should.exist(tx.txinsvi);
-      should.exist(tx.txins);
-      should.exist(tx.txoutsvi);
-      should.exist(tx.txouts);
-      should.exist(tx.nlocktime);
-    });
-
+  it('serializes and deserializes correctly', function() {
+    var transaction = new Transaction(tx_1_hex);
+    transaction.serialize().should.equal(tx_1_hex);
   });
 
-  describe('#toJSON', function() {
-
-    it('should recover all the basic parameters', function() {
-      var json = tx.toJSON();
-      should.exist(json.version);
-      should.exist(json.txinsvi);
-      should.exist(json.txins);
-      should.exist(json.txoutsvi);
-      should.exist(json.txouts);
-      should.exist(json.nlocktime);
-    });
-
+  it('should create a sample transaction from an utxo', function() {
+    var transaction = new Transaction()
+      .from(utxo_1a)
+      .to(address_1, amount_1)
+      .sign(privkey_1a)
+      .serialize()
+      .should.equal(tx_1_hex);
   });
 
-  describe('#fromBuffer', function() {
-
-    it('should recover from this known tx', function() {
-      Transaction().fromBuffer(txbuf).toBuffer().toString('hex').should.equal(txhex);
-    });
-
-    it('should recover from this known tx from the blockchain', function() {
-      Transaction().fromBuffer(tx2buf).toBuffer().toString('hex').should.equal(tx2hex);
-    });
-
+  it.skip('should create a transaction with two utxos', function() {
+    var transaction = new Transaction()
+      .from([utxo_2a, utxo_2b])
+      .to(address_2, amount_2)
+      .sign([privkey_2a, privkey_2b])
+      .serialize()
+      .should.equal(tx_2_hex);
   });
-
-  describe('#fromBufferReader', function() {
-
-    it('should recover from this known tx', function() {
-      Transaction().fromBufferReader(BufferReader(txbuf)).toBuffer().toString('hex').should.equal(txhex);
-    });
-
-  });
-
-  describe('#toBuffer', function() {
-
-    it('should produce this known tx', function() {
-      Transaction().fromBuffer(txbuf).toBuffer().toString('hex').should.equal(txhex);
-    });
-
-  });
-
-  describe('#toBufferWriter', function() {
-
-    it('should produce this known tx', function() {
-      Transaction().fromBuffer(txbuf).toBufferWriter().concat().toString('hex').should.equal(txhex);
-    });
-
-  });
-
-  describe('#hash', function() {
-
-    it('should correctly calculate the hash of this known transaction', function() {
-      var tx = Transaction().fromBuffer(tx2buf);
-      var txhashbuf = new Buffer(Array.apply([], new Buffer(tx2idhex, 'hex')).reverse());
-      tx.hash().toString('hex').should.equal(txhashbuf.toString('hex'));
-    });
-
-  });
-
-  describe('#id', function() {
-
-    it('should correctly calculate the id of this known transaction', function() {
-      var tx = Transaction().fromBuffer(tx2buf);
-      tx.id().toString('hex').should.equal(tx2idhex);
-    });
-
-  });
-
-  describe('#pushin', function() {
-
-    it('should add an input', function() {
-      var txin = Txin();
-      var tx = Transaction();
-      tx.pushin(txin);
-      tx.txinsvi.toNumber().should.equal(1);
-      tx.txins.length.should.equal(1);
-    });
-
-  });
-
-  describe('#pushout', function() {
-
-    it('should add an output', function() {
-      var txout = Txout();
-      var tx = Transaction();
-      tx.pushout(txout);
-      tx.txoutsvi.toNumber().should.equal(1);
-      tx.txouts.length.should.equal(1);
-    });
-
-  });
-
 });
+
+var tx_empty_hex = '01000000000000000000';
+
+/* jshint maxlen: 1000 */
+var tx_1_hex = '01000000015884e5db9de218238671572340b207ee85b628074e7e467096c267266baf77a4000000006a473044022013fa3089327b50263029265572ae1b022a91d10ac80eb4f32f291c914533670b02200d8a5ed5f62634a7e1a0dc9188a3cc460a986267ae4d58faf50c79105431327501210223078d2942df62c45621d209fab84ea9a7a23346201b7727b9b45a29c4e76f5effffffff0150690f00000000001976a9147821c0a3768aa9d1a37e16cf76002aef5373f1a888ac00000000';
+var tx_1_id = '779a3e5b3c2c452c85333d8521f804c1a52800e60f4b7c3bbe36f4bab350b72c';
+var tx_2_hex = '';
+
+var utxo_1a_address = 'mszYqVnqKoQx4jcTdJXxwKAissE3Jbrrc1';
+
+var utxo_2a_address = 'mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc';
+var utxo_2b_address = 'mrCHmWgn54hJNty2srFF4XLmkey5GnCv5m';
+
+/* A new-format utxo */
+var utxo_1a = {
+  address: utxo_1a_address,
+  txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+  outputIndex: 0,
+  script: Script.buildPublicKeyHashOut(utxo_1a_address).toString(),
+  satoshis: 1020000
+};
+/* An old-format utxo */
+var utxo_2a = {
+  address: utxo_2a_address,
+  txid: '779a3e5b3c2c452c85333d8521f804c1a52800e60f4b7c3bbe36f4bab350b72c',
+  vout: 0,
+  scriptPubKey: Script.buildPublicKeyHashOut(utxo_2a_address).toString(),
+  amount: 0.01010000
+};
+var utxo_2b = {
+  address: utxo_2b_address,
+  txid: 'e0f44096fcac31c1baede0714997c831123ecb5e258b52617fb093ba487c1d04',
+  vout: 0,
+  scriptPubKey: Script.buildPublicKeyHashOut(utxo_2b_address).toString(),
+  amount: 0.00090000
+};
+
+var address_1 = 'mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc';
+var address_2 = 'mrCHmWgn54hJNty2srFF4XLmkey5GnCv5m';
+var amount_1 = 1010000;
+var amount_2 = 1090000;
+var privkey_1a = 'cSBnVM4xvxarwGQuAfQFwqDg9k5tErHUHzgWsEfD4zdwUasvqRVY';
+var privkey_2a = 'cVLKm6LT1VTpZJVaSYtkYPLP1UP2Ph6NFxGVNLPAKKuSfv8hHreU';
+var privkey_2b = 'cVWHj19aJXVAxcKC5xAWQmiyhWyarmcPcuv4dT7nZy1JR37dbWgT';
