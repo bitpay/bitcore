@@ -51,7 +51,7 @@
             ng-click="setLanguage(l.isoCode)"
             ng-class="{'selected': defaultLanguage == l.isoCode}"
             ng-repeat="l in availableLanguages">
-            <span ng-show="$last"> &middot; </span> {{l.name}}
+            <span ng-show="!$first"> &middot; </span> {{l.name}}
           </a>
           ]
         </span>
