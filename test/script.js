@@ -313,6 +313,9 @@ describe('Script', function() {
     it('should classify public key in', function() {
       Script('47 0x3044022007415aa37ce7eaa6146001ac8bdefca0ddcba0e37c5dc08c4ac99392124ebac802207d382307fd53f65778b07b9c63b6e196edeadf0be719130c5db21ff1e700d67501').classify().should.equal(Script.types.PUBKEY_IN);
     });
+    it('should classify unknown', function() {
+      Script('OP_TRUE OP_FALSE').classify().should.equal(Script.types.UNKNOWN);
+    });
   });
 
   describe('#add and #prepend', function() {
