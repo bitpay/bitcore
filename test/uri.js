@@ -70,7 +70,7 @@ describe('URI', function() {
 
     uri = new URI('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=1.2&other=param');
     uri.address.should.be.instanceof(bitcore.Address);
-    uri.amount.should.equal(1.2);
+    uri.amount.should.equal(120000000);
     expect(uri.other).to.be.undefined;
     uri.extras.other.should.equal('param');
 
@@ -80,7 +80,7 @@ describe('URI', function() {
 
     uri = new URI('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=1.2&other=param&req-required=param', ['req-required']);
     uri.address.should.be.instanceof(bitcore.Address);
-    uri.amount.should.equal(1.2);
+    uri.amount.should.equal(120000000);
     uri.extras.other.should.equal('param');
     uri.extras['req-required'].should.equal('param');
   });
@@ -103,11 +103,11 @@ describe('URI', function() {
 
     uri = new URI({
       address: '1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj',
-      amount: '1.2',
+      amount: 120000000,
       other: 'param'
     });
     uri.address.should.be.instanceof(bitcore.Address);
-    uri.amount.should.equal(1.2);
+    uri.amount.should.equal(120000000);
     expect(uri.other).to.be.undefined;
     uri.extras.other.should.equal('param');
 
@@ -120,12 +120,12 @@ describe('URI', function() {
 
     uri = new URI({
       address: '1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj',
-      amount: 1.2,
+      amount: 120000000,
       other: 'param',
       'req-required': 'param'
     }, ['req-required']);
     uri.address.should.be.instanceof(bitcore.Address);
-    uri.amount.should.equal(1.2);
+    uri.amount.should.equal(120000000);
     uri.extras.other.should.equal('param');
     uri.extras['req-required'].should.equal('param');
   });
@@ -137,7 +137,7 @@ describe('URI', function() {
 
   it('should support numeric amounts', function() {
     var uri = new URI('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=12.10001');
-    expect(uri.amount).to.be.equal(12.10001);
+    expect(uri.amount).to.be.equal(1210001000);
   });
 
   it('should support extra arguments', function() {
@@ -162,7 +162,7 @@ describe('URI', function() {
 
     new URI({
       address: '1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj',
-      amount: 1.10001,
+      amount: 110001000,
       message: 'Hello World',
       something: 'else'
     }).toString().should.equal(
