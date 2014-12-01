@@ -30,15 +30,15 @@
     "maxlen": 600,        // Maximum number of lines of code in a file
 
     "predef": [ // Extra globals.
-        "define",
-        "require",
-        "exports",
-        "module",
-        "describe",
-        "before",
-        "beforeEach",
         "after",
         "afterEach",
-        "it"
+        "before",
+        "beforeEach",
+        "define",
+        "describe",
+        "exports",
+        "it",
+        "module",
+        "require"
     ]
 }

@@ -4,6 +4,7 @@ node_modules
 browser/bitcore.js
 browser/tests.js
 
+lib/errors/index.js
 
 CONTRIBUTING.html
 LICENSE.html
