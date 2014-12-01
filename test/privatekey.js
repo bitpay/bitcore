@@ -5,6 +5,7 @@ var bitcore = require('..');
 var BN = bitcore.crypto.BN;
 var Point = bitcore.crypto.Point;
 var PrivateKey = bitcore.PrivateKey;
+var networks = bitcore.Networks;
 var base58check = bitcore.encoding.Base58Check;
 
 describe('PrivateKey', function() {
@@ -98,6 +99,17 @@ describe('PrivateKey', function() {
   it('should create a livenet private key', function() {
     var privkey = new PrivateKey(BN.fromBuffer(buf), 'livenet', true);
     privkey.toString().should.equal(enclivenet);
+  });
+
+  it('should create a default network private key', function() {
+    var a = new PrivateKey(BN.fromBuffer(buf));
+    a.network.should.equal('livenet');
+    // change the default
+    networks.defaultNetwork = networks.testnet;
+    var b = new PrivateKey(BN.fromBuffer(buf));
+    b.network.should.equal('testnet');
+    // restore the default
+    networks.defaultNetwork = networks.livenet;
   });
 
   it('should create an uncompressed testnet private key', function() {
