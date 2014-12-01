@@ -81,7 +81,7 @@ describe('Unit', function() {
   });
 
   it('should expose shorthand conversion methods', function() {
-    var unit = new Unit(1.3, "BTC");
+    var unit = new Unit(1.3, 'BTC');
     unit.toBTC().should.equal(unit.BTC);
     unit.toMilis().should.equal(unit.mBTC);
     unit.toBits().should.equal(unit.bits);
@@ -89,7 +89,7 @@ describe('Unit', function() {
   });
 
   it('should expose a general conversion method', function() {
-    var unit = new Unit(1.3, "BTC");
+    var unit = new Unit(1.3, 'BTC');
     unit.to(Unit.BTC).should.equal(unit.BTC);
     unit.to(Unit.mBTC).should.equal(unit.mBTC);
     unit.to(Unit.bits).should.equal(unit.bits);
@@ -97,13 +97,13 @@ describe('Unit', function() {
   });
 
   it('should have a toString method', function() {
-    var unit = new Unit(1.3, "BTC");
+    var unit = new Unit(1.3, 'BTC');
     should.exist(unit.toString);
     unit.toString().should.be.a('string');
   });
 
   it('should have an inspect method', function() {
-    var unit = new Unit(1.3, "BTC");
+    var unit = new Unit(1.3, 'BTC');
     should.exist(unit.inspect);
     unit.inspect().should.be.a('string');
   });
