@@ -7,16 +7,37 @@ var Unit = bitcore.Unit;
 describe('Unit', function() {
 
   it('should create an instance', function() {
-    var unit = new Unit(1.2, "BTC");
+    var unit;
+
+    unit = new Unit(1.2, 'BTC');
+    should.exist(unit);
+
+    unit = Unit(1.2, 'BTC');
     should.exist(unit);
   });
 
   it('should have property accesors', function() {
-    var unit = new Unit(1.2, "BTC");
+    var unit = new Unit(1.2, 'BTC');
     should.exist(unit.BTC);
     should.exist(unit.mBTC);
     should.exist(unit.bits);
     should.exist(unit.satoshis);
+  });
+
+  it('should allow amount as string', function() {
+    var unit;
+
+    unit = Unit.fromBTC('1.00001');
+    unit.BTC.should.equal(1.00001);
+
+    unit = Unit.fromMilis('1.00001');
+    unit.mBTC.should.equal(1.00001);
+
+    unit = Unit.fromBits('100');
+    unit.bits.should.equal(100);
+
+    unit = Unit.fromSatoshis('8999');
+    unit.satoshis.should.equal(8999);
   });
 
   it('should have constructor helpers', function() {
