@@ -18,7 +18,6 @@ bitcore.encoding.BufferWriter = require('./lib/encoding/bufferwriter');
 bitcore.encoding.Varint = require('./lib/encoding/varint');
 
 // main bitcoin library
-bitcore.Unit = require('./lib/unit');
 bitcore.Address = require('./lib/address');
 bitcore.BIP32 = require('./lib/bip32');
 bitcore.Block = require('./lib/block');
@@ -32,6 +31,7 @@ bitcore.Signature = require('./lib/signature');
 bitcore.Transaction = require('./lib/transaction');
 bitcore.Txin = require('./lib/txin');
 bitcore.Txout = require('./lib/txout');
+bitcore.Unit = require('./lib/unit');
 
 
 //dependencies, subject to change
