@@ -285,7 +285,7 @@ describe('Script', function() {
     });
   });
 
-  describe.only('#classify', function() {
+  describe('#classify', function() {
     it('should classify public key hash out', function() {
       Script('OP_DUP OP_HASH160 20 0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').classify().should.equal(Script.types.PUBKEYHASH_OUT);
     });
@@ -309,10 +309,10 @@ describe('Script', function() {
       Script('OP_RETURN 1 0x01').classify().should.equal(Script.types.OP_RETURN);
     });
     it('should classify public key out', function() {
-      Script('').classify().should.equal(Script.types.PUBKEY_OUT);
+      Script('41 0x0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8 OP_CHECKSIG').classify().should.equal(Script.types.PUBKEY_OUT);
     });
     it('should classify public key in', function() {
-      Script('').classify().should.equal(Script.types.PUBKEY_IN);
+      Script('47 0x3044022007415aa37ce7eaa6146001ac8bdefca0ddcba0e37c5dc08c4ac99392124ebac802207d382307fd53f65778b07b9c63b6e196edeadf0be719130c5db21ff1e700d67501').classify().should.equal(Script.types.PUBKEY_IN);
     });
   });
 
