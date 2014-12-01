@@ -9,22 +9,24 @@ var PrivateKey = bitcore.PrivateKey;
 
 describe('PublicKey', function() {
 
+  var invalidPoint = '0400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';
+
   it('should error because of missing data', function() {
     (function() {
       var pk = new PublicKey();
     }).should.throw('First argument is required, please include public key data.');
   });
-  
+
   it('should error because of an invalid point', function() {
     (function() {
-      var pk = new PublicKey(Point());
-    }).should.throw('Point cannot be equal to 0, 0');
+      var pk = new PublicKey(invalidPoint);
+    }).should.throw('Invalid x,y value for curve, cannot equal 0.');
   });
 
   it('should error because of an invalid public key point, not on the secp256k1 curve', function() {
     (function() {
       var pk = new PublicKey(Point(1000, 1000));
-    }).should.throw('Invalid y value of public key');
+    }).should.throw('Invalid y value for curve.');
   });
 
   it('should error because of an unrecognized data type', function() {
@@ -65,13 +67,15 @@ describe('PublicKey', function() {
   });
 
   describe('#getValidationError', function(){
-    it('should recieve an error message', function() {
-      var error = PublicKey.getValidationError(Point());
+
+    it('should recieve an invalid point error', function() {
+      var error = PublicKey.getValidationError(invalidPoint);
       should.exist(error);
+      error.message.should.equal('Invalid x,y value for curve, cannot equal 0.');
     });
 
     it('should recieve a boolean as false', function() {
-      var valid = PublicKey.isValid(Point());
+      var valid = PublicKey.isValid(invalidPoint);
       valid.should.equal(false);
     });
 
@@ -100,7 +104,7 @@ describe('PublicKey', function() {
   });
 
   describe('#fromJSON', function() {
-    
+
     it('should input this public key', function() {
       var pk = PublicKey.fromJSON('041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341');
       pk.point.getX().toString(16).should.equal('1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a');
@@ -120,7 +124,7 @@ describe('PublicKey', function() {
   });
 
   describe('#fromPrivateKey', function() {
-    
+
     it('should make a public key from a privkey', function() {
       should.exist(PublicKey.fromPrivateKey(PrivateKey.fromRandom()));
     });
@@ -134,7 +138,7 @@ describe('PublicKey', function() {
   });
 
   describe('#fromBuffer', function() {
-    
+
     it('should parse this uncompressed public key', function() {
       var pk = PublicKey.fromBuffer(new Buffer('041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341', 'hex'));
       pk.point.getX().toString(16).should.equal('1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a');
@@ -168,7 +172,7 @@ describe('PublicKey', function() {
   });
 
   describe('#fromDER', function() {
-    
+
     it('should parse this uncompressed public key', function() {
       var pk = PublicKey.fromDER(new Buffer('041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341', 'hex'));
       pk.point.getX().toString(16).should.equal('1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a');
@@ -200,7 +204,7 @@ describe('PublicKey', function() {
   });
 
   describe('#fromX', function() {
-    
+
     it('should create this known public key', function() {
       var x = BN.fromBuffer(new Buffer('1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a', 'hex'));
       var pk = PublicKey.fromX(true, x);
@@ -253,7 +257,7 @@ describe('PublicKey', function() {
   });
 
   describe('#toString', function() {
-    
+
     it('should print this known public key', function() {
       var hex = '031ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a';
       var pk = PublicKey.fromString(hex);
@@ -281,20 +285,27 @@ describe('PublicKey', function() {
       var hex = '031ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a';
       var pk = PublicKey.fromString(hex);
     });
-    
+
     it('should throw an error if pubkey is invalid', function() {
       var hex = '041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a0000000000000000000000000000000000000000000000000000000000000000';
       (function() {
         var pk = PublicKey.fromString(hex);
-      }).should.throw('Invalid y value of public key');
+      }).should.throw('Invalid x,y value for curve, cannot equal 0.');
     });
-    
+
+    it('should throw an error if pubkey is invalid', function() {
+      var hex = '041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a00000000000000000000000000000000000000000000000000000000000000FF';
+      (function() {
+        var pk = PublicKey.fromString(hex);
+      }).should.throw('Invalid y value for curve.');
+    });
+
     it('should throw an error if pubkey is infinity', function() {
       (function() {
         var pk = new PublicKey(Point.getG().mul(Point.getN()));
       }).should.throw('Point cannot be equal to Infinity');
     });
-    
+
   });
 
 });
