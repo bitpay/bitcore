@@ -6,6 +6,7 @@ var bitcore = require('..');
 var PublicKey = bitcore.PublicKey;
 var Address = bitcore.Address;
 var Script = bitcore.Script;
+var networks = bitcore.Networks;
 
 describe('Address', function() {
 
@@ -258,6 +259,18 @@ describe('Address', function() {
       b.network.should.equal('testnet');
       b.type.should.equal('pubkeyhash');
       var c = new Address(hash).toString().should.equal(str);
+    });
+
+    it('should make an address using the default network', function() {
+      var hash = pubkeyhash; //use the same hash
+      var a = Address.fromPublicKeyHash(hash);
+      a.network.should.equal('livenet');
+      // change the default
+      networks.defaultNetwork = networks.testnet;
+      var b = Address.fromPublicKeyHash(hash);
+      b.network.should.equal('testnet');
+      // restore the default
+      networks.defaultNetwork = networks.livenet;
     });
 
     it('should throw an error for invalid length hashBuffer', function() {
