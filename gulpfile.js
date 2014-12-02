@@ -111,7 +111,7 @@ gulp.task('browser-all', function(callback) {
   runSequence(['browser'], ['browser-test'], callback);
 });
 
-gulp.task('karma', ['browser-test'], testKarma);
+gulp.task('karma', ['browser-all'], testKarma);
 
 gulp.task('minify', function() {
   return gulp.src('dist/bitcore.js')
