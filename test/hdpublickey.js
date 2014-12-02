@@ -7,7 +7,6 @@ var should = require('chai').should();
 var expect = require('chai').expect;
 var bitcore = require('..');
 var buffer = require('buffer');
-var errors = bitcore.errors.HDPublicKey.InvalidArgument;
 var bufferUtil = bitcore.util.buffer;
 var HDPrivateKey = bitcore.HDPrivateKey;
 var HDPublicKey = bitcore.HDPublicKey;
@@ -20,32 +19,17 @@ var derived_0_1_200000 = 'xpub6BqyndF6rkBNTV6LXwiY8Pco8aqctqq7tGEUdA8fmGDTnDJphn
 
 describe('HDPublicKey interface', function() {
 
-  var expectFail = function(func, errorType) {
-    var got = null;
-    var error = null;
-    try {
-      func();
-    } catch (e) {
-      error = e;
-      got = e instanceof errorType;
-    }
-    if (!error instanceof errorType) {
-      console.log('Adsasd', typeof error);
-    }
-    // expect(got).to.equal(true);
-  };
-
   var expectDerivationFail = function(argument, error) {
-    return expectFail(function() {
-      var pubkey = new HDPublicKey(xpubkey);
-      xpubkey.derive(argument);
-    }, error);
+    var testpubkey = new HDPublicKey(xpubkey);
+    (function() {
+      testpubkey.derive(argument);
+    }).should.throw(error);
   };
 
   var expectFailBuilding = function(argument, error) {
-    return expectFail(function() {
+    (function() {
       return new HDPublicKey(argument);
-    }, error);
+    }).should.throw(error);
   };
 
   describe('creation formats', function() {
@@ -57,7 +41,7 @@ describe('HDPublicKey interface', function() {
 
     it('returns the correct xpubkey for a xprivkey', function() {
       var publicKey = new HDPublicKey(xprivkey);
-      publicKey.xpubkey.should.equal(xpubkey);
+      publicKey.should.equal(new HDPublicKey(publicKey));
     });
 
     it('allows to call the argument with no "new" keyword', function() {
@@ -65,12 +49,12 @@ describe('HDPublicKey interface', function() {
     });
 
     it('fails when user doesn\'t supply an argument', function() {
-      expectFailBuilding(null, errors.MustSupplyArgument);
+      expectFailBuilding(null, 'Must supply an argument');
     });
 
     it('doesn\'t recognize an invalid argument', function() {
-      expectFailBuilding(1, errors.UnrecognizedArgument);
-      expectFailBuilding(true, errors.UnrecognizedArgument);
+      expectFailBuilding(1, 'Invalid argument for creation');
+      expectFailBuilding(true, 'Invalid argument for creation');
     });
 
 
@@ -78,13 +62,13 @@ describe('HDPublicKey interface', function() {
       it('fails on invalid length', function() {
         expectFailBuilding(
           Base58Check.encode(new buffer.Buffer([1, 2, 3])),
-          errors.InvalidLength
+          'Invalid length for xpubkey'
         );
       });
       it('fails on invalid base58 encoding', function() {
         expectFailBuilding(
           xpubkey + '1',
-          errors.InvalidB58Checksum
+          'Checksum mismatch'
         );
       });
       it('user can ask if a string is valid', function() {
@@ -110,9 +94,9 @@ describe('HDPublicKey interface', function() {
     it('checks the checksum', function() {
       var buffers = new HDPublicKey(xpubkey)._buffers;
       buffers.checksum = bufferUtil.integerAsBuffer(1);
-      expectFail(function() {
-        return new HDPublicKey(buffers);
-      }, errors.InvalidB58Checksum);
+      (function() {
+        var a = new HDPublicKey(buffers);
+      }).should.throw('Invalid Base58 checksum');
     });
 
   });
@@ -122,13 +106,19 @@ describe('HDPublicKey interface', function() {
       expect(a instanceof b).to.equal(true);
     };
     it('throws invalid argument when argument is not a string or buffer', function() {
-      compareType(HDPublicKey.getSerializedError(1), errors.UnrecognizedArgument);
+      (function() {
+        throw HDPublicKey.getSerializedError(1);
+      }).should.throw('Expected buffer or string');
     });
     it('if a network is provided, validates that data corresponds to it', function() {
-      compareType(HDPublicKey.getSerializedError(xpubkey, 'testnet'), errors.InvalidNetwork);
+      (function() {
+        throw HDPublicKey.getSerializedError(xpubkey, 'testnet');
+      }).should.throw('Invalid network');
     });
     it('recognizes invalid network arguments', function() {
-      compareType(HDPublicKey.getSerializedError(xpubkey, 'invalid'), errors.InvalidNetworkArgument);
+      (function() {
+        throw HDPublicKey.getSerializedError(xpubkey, 'invalid');
+      }).should.throw('Expected network to be');
     });
     it('recognizes a valid network', function() {
       expect(HDPublicKey.getSerializedError(xpubkey, 'livenet')).to.equal(null);
@@ -158,29 +148,29 @@ describe('HDPublicKey interface', function() {
     });
 
     it('doesn\'t allow object arguments for derivation', function() {
-      expectFail(function() {
-        return new HDPublicKey(xpubkey).derive({});
-      }, errors.InvalidDerivationArgument);
+      (function() {
+        var a = new HDPublicKey(xpubkey).derive({});
+      }).should.throw('Invalid derivation argument');
     });
 
     it('needs first argument for derivation', function() {
-      expectFail(function() {
-        return new HDPublicKey(xpubkey).derive('s');
-      }, errors.InvalidPath);
+      (function() {
+        var a = new HDPublicKey(xpubkey).derive('s');
+      }).should.throw('Invalid derivation path');
     });
 
     it('doesn\'t allow other parameters like m\' or M\' or "s"', function() {
       /* jshint quotmark: double */
-      expectDerivationFail("m'", errors.InvalidDerivationArgument);
-      expectDerivationFail("M'", errors.InvalidDerivationArgument);
-      expectDerivationFail("1", errors.InvalidDerivationArgument);
-      expectDerivationFail("S", errors.InvalidDerivationArgument);
+      expectDerivationFail("m'", "Invalid derivation path");
+      expectDerivationFail("M'", "Invalid derivation path");
+      expectDerivationFail("1", "Invalid derivation path");
+      expectDerivationFail("S", "Invalid derivation path");
     });
 
     it('can\'t derive hardened keys', function() {
-      expectFail(function() {
-        return new HDPublicKey(xpubkey).derive(HDPublicKey.Hardened + 1);
-      }, errors.InvalidDerivationArgument);
+      (function() {
+        var a = new HDPublicKey(xpubkey).derive(HDPublicKey.Hardened + 1);
+      }).should.throw('Invalid index can not derive');
     });
 
     it('should use the cache', function() {
