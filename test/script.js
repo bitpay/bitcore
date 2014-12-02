@@ -166,6 +166,11 @@ describe('Script', function() {
 
   describe('#toString', function() {
 
+    it('should work with an empty script', function() {
+      var script = new Script();
+      script.toString().should.equal('');
+    });
+
     it('should output this buffer an OP code, data, and another OP code', function() {
       var buf = new Buffer([0, 0, 0, 0, 0, 0, 1, 2, 3, 0]);
       buf[0] = Opcode('OP_0').toNumber();
@@ -358,6 +363,15 @@ describe('Script', function() {
       var buf = new Buffer(1);
       buf.fill(0);
       Script().add(buf).toString().should.equal('1 0x00');
+    });
+  });
+
+  describe('#isStandard', function() {
+    it('should classify correctly standard script', function() {
+      Script('OP_RETURN 1 0x00').isStandard().should.equal(true);
+    });
+    it('should classify correctly non standard script', function() {
+      Script('OP_TRUE OP_FALSE').isStandard().should.equal(false);
     });
   });
 
