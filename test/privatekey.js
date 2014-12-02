@@ -5,6 +5,7 @@ var bitcore = require('..');
 var BN = bitcore.crypto.BN;
 var Point = bitcore.crypto.Point;
 var PrivateKey = bitcore.PrivateKey;
+var networks = bitcore.Networks;
 var base58check = bitcore.encoding.Base58Check;
 
 describe('PrivateKey', function() {
@@ -12,7 +13,7 @@ describe('PrivateKey', function() {
   var buf = new Buffer(hex, 'hex');
   var enctestnet = 'cSdkPxkAjA4HDr5VHgsebAPDEh9Gyub4HK8UJr2DFGGqKKy4K5sG';
   var enctu = '92jJzK4tbURm1C7udQXxeCBvXHoHJstDXRxAMouPG1k1XUaXdsu';
-  var encmainnet = 'L2Gkw3kKJ6N24QcDuH4XDqt9cTqsKTVNDGz1CRZhk9cq4auDUbJy';
+  var enclivenet = 'L2Gkw3kKJ6N24QcDuH4XDqt9cTqsKTVNDGz1CRZhk9cq4auDUbJy';
   var encmu = '5JxgQaFM1FMd38cd14e3mbdxsdSa9iM2BV6DHBYsvGzxkTNQ7Un';
 
   it('should create a new random private key', function() {
@@ -51,7 +52,7 @@ describe('PrivateKey', function() {
 
   it('should not be able to instantiate private key because of compression mismatch', function() {
     (function() {
-      var a = new PrivateKey('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m', 'mainnet', false);
+      var a = new PrivateKey('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m', 'livenet', false);
     }).should.throw('Private key compression mismatch');
   });
 
@@ -86,7 +87,7 @@ describe('PrivateKey', function() {
   it('should not be able to instantiate with unknown network', function() {
     (function() {
       var a = new PrivateKey(null, 'unknown');
-    }).should.throw('Must specify the network ("mainnet" or "testnet")');
+    }).should.throw('Must specify the network ("livenet" or "testnet")');
   });
 
   it('should create a 0 private key with this convenience method', function() {
@@ -95,9 +96,20 @@ describe('PrivateKey', function() {
     privkey.bn.toString().should.equal(bn.toString());
   });
 
-  it('should create a mainnet private key', function() {
-    var privkey = new PrivateKey(BN.fromBuffer(buf), 'mainnet', true);
-    privkey.toString().should.equal(encmainnet);
+  it('should create a livenet private key', function() {
+    var privkey = new PrivateKey(BN.fromBuffer(buf), 'livenet', true);
+    privkey.toString().should.equal(enclivenet);
+  });
+
+  it('should create a default network private key', function() {
+    var a = new PrivateKey(BN.fromBuffer(buf));
+    a.network.should.equal('livenet');
+    // change the default
+    networks.defaultNetwork = networks.testnet;
+    var b = new PrivateKey(BN.fromBuffer(buf));
+    b.network.should.equal('testnet');
+    // restore the default
+    networks.defaultNetwork = networks.livenet;
   });
 
   it('should create an uncompressed testnet private key', function() {
@@ -105,8 +117,8 @@ describe('PrivateKey', function() {
     privkey.toString().should.equal(enctu);
   });
 
-  it('should create an uncompressed mainnet private key', function() {
-    var privkey = new PrivateKey(BN.fromBuffer(buf), 'mainnet', false);
+  it('should create an uncompressed livenet private key', function() {
+    var privkey = new PrivateKey(BN.fromBuffer(buf), 'livenet', false);
     privkey.toString().should.equal(encmu);
   });
 
@@ -129,7 +141,7 @@ describe('PrivateKey', function() {
   });
 
   describe('#toAddress', function() {
-    it('should output this known mainnet address correctly', function() {
+    it('should output this known livenet address correctly', function() {
       var privkey = PrivateKey.fromWIF('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
       var address = privkey.toAddress();
       address.toString().should.equal('1A6ut1tWnUq1SEQLMr4ttDh24wcbJ5o9TT');
@@ -144,9 +156,9 @@ describe('PrivateKey', function() {
   });
 
   describe('#inspect', function() {
-    it('should output known mainnet address for console', function() {
+    it('should output known livenet address for console', function() {
       var privkey = PrivateKey.fromWIF('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
-      privkey.inspect().should.equal('<PrivateKey: L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m, compressed: true, network: mainnet>');
+      privkey.inspect().should.equal('<PrivateKey: L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m, compressed: true, network: livenet>');
     });
 
     it('should output known testnet address for console', function() {
@@ -178,7 +190,7 @@ describe('PrivateKey', function() {
 
   describe('#toBuffer', function() {
     it('should output known buffer', function() {
-      var privkey = new PrivateKey(BN.fromBuffer(buf), 'mainnet', true);
+      var privkey = new PrivateKey(BN.fromBuffer(buf), 'livenet', true);
       var b = privkey.toBuffer().toString('hex').should.equal(buf.toString('hex'));
     });
   });
@@ -186,7 +198,7 @@ describe('PrivateKey', function() {
   describe('#toBigNumber', function() {
     it('should output known BN', function() {
       var a = BN.fromBuffer(buf);
-      var privkey = new PrivateKey(a, 'mainnet', true);
+      var privkey = new PrivateKey(a, 'livenet', true);
       var b = privkey.toBigNumber();
       b.toString('hex').should.equal(a.toString('hex'));
     });
@@ -206,8 +218,8 @@ describe('PrivateKey', function() {
   describe('#fromWIF', function() {
 
     it('should parse this compressed testnet address correctly', function() {
-      var privkey = PrivateKey.fromWIF(encmainnet);
-      privkey.toWIF().should.equal(encmainnet);
+      var privkey = PrivateKey.fromWIF(enclivenet);
+      privkey.toWIF().should.equal(enclivenet);
     });
 
   });
@@ -232,7 +244,7 @@ describe('PrivateKey', function() {
 
   describe('#toString', function() {
 
-    it('should parse this uncompressed mainnet address correctly', function() {
+    it('should parse this uncompressed livenet address correctly', function() {
       var privkey = PrivateKey.fromString(encmu);
       privkey.toString().should.equal(encmu);
     });

@@ -6,6 +6,7 @@ var bitcore = require('..');
 var PublicKey = bitcore.PublicKey;
 var Address = bitcore.Address;
 var Script = bitcore.Script;
+var networks = bitcore.Networks;
 
 describe('Address', function() {
 
@@ -23,17 +24,17 @@ describe('Address', function() {
   it('should throw an error because of bad network param', function() {
     (function(){
       var a = new Address(validAddresses[0], 'main', 'pubkeyhash');
-    }).should.throw('Second argument must be "mainnet" or "testnet".');
+    }).should.throw('Second argument must be "livenet" or "testnet".');
   });
 
   it('should throw an error because of bad type param', function() {
     (function() {
-      var a = new Address(validAddresses[0], 'mainnet', 'pubkey');
+      var a = new Address(validAddresses[0], 'livenet', 'pubkey');
     }).should.throw('Third argument must be "pubkeyhash" or "scripthash"');
   });
 
 
-  // mainnet valid
+  // livenet valid
   var validAddresses = [
     '15vkcKf7gB23wLAnZLmbVuMiiVDc1Nm4a2',
     '1A6ut1tWnUq1SEQLMr4ttDh24wcbJ5o9TT',
@@ -41,7 +42,7 @@ describe('Address', function() {
     '1Jz2yCRd5ST1p2gUqFB5wsSQfdm3jaFfg7'
   ];
 
-  // mainnet p2sh
+  // livenet p2sh
   var validp2shAddresses = [
     '342ftSRCvFHfCeFFBuz4xwbeqnDw6BGUey',
     '33vt8ViH5jsr115AGkW6cEmEz9MpvJSwDk',
@@ -57,7 +58,7 @@ describe('Address', function() {
     '2NB72XtkjpnATMggui83aEtPawyyKvnbX2o'
   ];
 
-  //mainnet bad checksums
+  //livenet bad checksums
   var badChecksums = [
     '15vkcKf7gB23wLAnZLmbVuMiiVDc3nq4a2',
     '1A6ut1tWnUq1SEQLMr4ttDh24wcbj4w2TT',
@@ -65,7 +66,7 @@ describe('Address', function() {
     '1Jz2yCRd5ST1p2gUqFB5wsSQfdmEJaffg7'
   ];
 
-  //mainnet non-base58
+  //livenet non-base58
   var nonBase58 = [
     '15vkcKf7g#23wLAnZLmb$uMiiVDc3nq4a2',
     '1A601ttWnUq1SEQLMr4ttDh24wcbj4w2TT',
@@ -83,13 +84,13 @@ describe('Address', function() {
 
   describe('validation', function() {
 
-    it('should describe this mainnet address as an invalid testnet address', function() {
+    it('should describe this livenet address as an invalid testnet address', function() {
       var error = Address.getValidationError('37BahqRsFrAd3qLiNNwLNV3AWMRD7itxTo', 'testnet');
       should.exist(error);
     });
 
     it('should should return a true boolean', function(){
-      var valid = Address.isValid('37BahqRsFrAd3qLiNNwLNV3AWMRD7itxTo', 'mainnet');
+      var valid = Address.isValid('37BahqRsFrAd3qLiNNwLNV3AWMRD7itxTo', 'livenet');
       valid.should.equal(true);
     });
 
@@ -128,14 +129,14 @@ describe('Address', function() {
 
     it('should validate addresses with params', function() {
       for(var i=0;i<validAddresses.length;i++){
-        var error = Address.getValidationError(validAddresses[i], 'mainnet');
+        var error = Address.getValidationError(validAddresses[i], 'livenet');
         should.not.exist(error);
       }
     });
 
     it('should not validate because of an invalid checksum', function() {
       for(var i=0;i<badChecksums.length;i++){
-        var error = Address.getValidationError(badChecksums[i], 'mainnet', 'pubkeyhash');
+        var error = Address.getValidationError(badChecksums[i], 'livenet', 'pubkeyhash');
         should.exist(error);
         error.message.should.equal('Checksum mismatch');
       }
@@ -152,7 +153,7 @@ describe('Address', function() {
 
     it('should not validate because of a mismatched type', function() {
       for(var i=0;i<validAddresses.length;i++){
-        var error = Address.getValidationError(validAddresses[i], 'mainnet', 'scripthash');
+        var error = Address.getValidationError(validAddresses[i], 'livenet', 'scripthash');
         should.exist(error);
         error.message.should.equal('Address has mismatched type.');
       }
@@ -160,7 +161,7 @@ describe('Address', function() {
 
     it('should not validate because of non-base58 characters', function() {
       for(var i=0;i<nonBase58.length;i++){
-        var error = Address.getValidationError(nonBase58[i], 'mainnet', 'pubkeyhash');
+        var error = Address.getValidationError(nonBase58[i], 'livenet', 'pubkeyhash');
         should.exist(error);
         error.message.should.equal('Non-base58 character');
       }
@@ -182,7 +183,7 @@ describe('Address', function() {
 
     it('should not validate testnet addresses because of mismatched network', function() {
       for(var i=0;i<testValidAddresses.length;i++){
-        var error = Address.getValidationError(testValidAddresses[i], 'mainnet', 'pubkeyhash');
+        var error = Address.getValidationError(testValidAddresses[i], 'livenet', 'pubkeyhash');
         should.exist(error);
         error.message.should.equal('Address has mismatched network type.');
       }
@@ -260,6 +261,18 @@ describe('Address', function() {
       var c = new Address(hash).toString().should.equal(str);
     });
 
+    it('should make an address using the default network', function() {
+      var hash = pubkeyhash; //use the same hash
+      var a = Address.fromPublicKeyHash(hash);
+      a.network.should.equal('livenet');
+      // change the default
+      networks.defaultNetwork = networks.testnet;
+      var b = Address.fromPublicKeyHash(hash);
+      b.network.should.equal('testnet');
+      // restore the default
+      networks.defaultNetwork = networks.livenet;
+    });
+
     it('should throw an error for invalid length hashBuffer', function() {
       (function() {
         var a = Address.fromPublicKeyHash(buf);
@@ -274,9 +287,9 @@ describe('Address', function() {
 
     it('should make this address from an uncompressed pubkey', function() {
       var pubkey = PublicKey.fromDER(new Buffer('0485e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b004833fef26c8be4c4823754869ff4e46755b85d851077771c220e2610496a29d98', 'hex'));
-      var a = Address.fromPublicKey(pubkey, 'mainnet');
+      var a = Address.fromPublicKey(pubkey, 'livenet');
       a.toString().should.equal('16JXnhxjJUhxfyx4y6H4sFcxrgt8kQ8ewX');
-      var b = new Address(pubkey, 'mainnet', 'pubkeyhash');
+      var b = new Address(pubkey, 'livenet', 'pubkeyhash');
       b.toString().should.equal('16JXnhxjJUhxfyx4y6H4sFcxrgt8kQ8ewX');
     });
 
@@ -299,7 +312,7 @@ describe('Address', function() {
       b.toString().should.equal('347iRqVwks5r493N1rsLN4k9J7Ljg488W7');
     });
 
-    it('should derive from this known address string mainnet', function() {
+    it('should derive from this known address string livenet', function() {
       var address = new Address(str);
       var buffer = address.toBuffer();
       var slice = buffer.slice(1);
@@ -314,8 +327,8 @@ describe('Address', function() {
       b.network.should.equal('testnet');
     });
 
-    it('should derive from this known address string mainnet scripthash', function() {
-      var a = new Address(validp2shAddresses[0], 'mainnet', 'scripthash');
+    it('should derive from this known address string livenet scripthash', function() {
+      var a = new Address(validp2shAddresses[0], 'livenet', 'scripthash');
       var b = new Address(a.toString());
       b.toString().should.equal(validp2shAddresses[0]);
     });
@@ -339,7 +352,7 @@ describe('Address', function() {
 
   describe('#toString', function() {
 
-    it('should output a mainnet pubkeyhash address', function() {
+    it('should output a livenet pubkeyhash address', function() {
       var address = new Address(str);
       address.toString().should.equal(str);
     });
@@ -365,7 +378,7 @@ describe('Address', function() {
 
     it('should output formatted output correctly', function() {
       var address = new Address(str);
-      var output = '<Address: 16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r, type: pubkeyhash, network: mainnet>';
+      var output = '<Address: 16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r, type: pubkeyhash, network: livenet>';
       address.inspect().should.equal(output);
     });
 
