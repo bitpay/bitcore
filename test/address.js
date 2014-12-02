@@ -294,7 +294,7 @@ describe('Address', function() {
     });
 
     it('should make this address from a script', function() {
-      var s = Script().fromString("OP_CHECKMULTISIG");
+      var s = Script.fromString("OP_CHECKMULTISIG");
       var buf = s.toBuffer();
       var a = Address.fromScript(s);
       a.toString().should.equal('3BYmEwgV2vANrmfRymr1mFnHXgLjD6gAWm');
@@ -305,7 +305,7 @@ describe('Address', function() {
     });
 
     it('should make this address from other script', function() {
-      var s = Script().fromString("OP_CHECKSIG OP_HASH160");
+      var s = Script.fromString("OP_CHECKSIG OP_HASH160");
       var a = Address.fromScript(s);
       a.toString().should.equal('347iRqVwks5r493N1rsLN4k9J7Ljg488W7');
       var b = new Address(s);

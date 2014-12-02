@@ -11,7 +11,7 @@ var Script = bitcore.Script;
 describe('Txout', function() {
   
   var valuebn = BN(5);
-  var script = Script().fromString('OP_CHECKMULTISIG');
+  var script = Script.fromString('OP_CHECKMULTISIG');
   var scriptvi = Varint(script.toBuffer().length);
 
   it('should make a new txout', function() {
@@ -43,7 +43,7 @@ describe('Txout', function() {
       var txout = Txout().fromJSON({
         valuebn: valuebn.toJSON(),
         scriptvi: scriptvi.toJSON(),
-        script: script.toJSON()
+        script: script.toString()
       });
       should.exist(txout.valuebn);
       should.exist(txout.scriptvi);
@@ -58,7 +58,7 @@ describe('Txout', function() {
       var txout = Txout().fromJSON({
         valuebn: valuebn.toJSON(),
         scriptvi: scriptvi.toJSON(),
-        script: script.toJSON()
+        script: script.toString()
       });
       var json = txout.toJSON();
       should.exist(json.valuebn);
