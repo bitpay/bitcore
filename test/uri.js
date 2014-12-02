@@ -62,7 +62,7 @@ describe('URI', function() {
 
     uri = new URI('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj');
     uri.address.should.be.instanceof(bitcore.Address);
-    uri.network.should.equal('mainnet');
+    uri.network.should.equal('livenet');
 
     uri = new URI('bitcoin:mkYY5NRvikVBY1EPtaq9fAFgquesdjqECw');
     uri.address.should.be.instanceof(bitcore.Address);
@@ -92,7 +92,7 @@ describe('URI', function() {
       address: '1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj'
     });
     uri.address.should.be.instanceof(bitcore.Address);
-    uri.network.should.equal('mainnet');
+    uri.network.should.equal('livenet');
 
     uri = new URI({
       address: 'mkYY5NRvikVBY1EPtaq9fAFgquesdjqECw'
