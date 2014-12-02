@@ -263,16 +263,14 @@ describe('PrivateKey', function() {
 
     it('should convert this known PrivateKey to known PublicKey and preserve compressed=true', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
-      var privkey = new PrivateKey(BN(new Buffer(privhex, 'hex')));
-      privkey.compressed = true;
+      var privkey = new PrivateKey(BN(new Buffer(privhex, 'hex')), 'livenet', true);
       var pubkey = privkey.toPublicKey();
       pubkey.compressed.should.equal(true);
     });
 
     it('should convert this known PrivateKey to known PublicKey and preserve compressed=true', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
-      var privkey = new PrivateKey(BN(new Buffer(privhex, 'hex')));
-      privkey.compressed = false;
+      var privkey = new PrivateKey(BN(new Buffer(privhex, 'hex')), 'livenet', false);
       var pubkey = privkey.toPublicKey();
       pubkey.compressed.should.equal(false);
     });
