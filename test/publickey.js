@@ -260,7 +260,7 @@ describe('PublicKey', function() {
 
     it('should output this known mainnet address correctly', function() {
       var pk = new PublicKey('03c87bd0e162f26969da8509cafcb7b8c8d202af30b928c582e263dd13ee9a9781');
-      var address = pk.toAddress('mainnet');
+      var address = pk.toAddress('livenet');
       address.toString().should.equal('1A6ut1tWnUq1SEQLMr4ttDh24wcbJ5o9TT');
     });
 
