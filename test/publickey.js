@@ -256,6 +256,22 @@ describe('PublicKey', function() {
 
   });
 
+  describe('#toAddress', function() {
+
+    it('should output this known mainnet address correctly', function() {
+      var pk = new PublicKey('03c87bd0e162f26969da8509cafcb7b8c8d202af30b928c582e263dd13ee9a9781');
+      var address = pk.toAddress('mainnet');
+      address.toString().should.equal('1A6ut1tWnUq1SEQLMr4ttDh24wcbJ5o9TT');
+    });
+
+    it('should output this known testnet address correctly', function() {
+      var pk = new PublicKey('0293126ccc927c111b88a0fe09baa0eca719e2a3e087e8a5d1059163f5c566feef');
+      var address = pk.toAddress('testnet');
+      address.toString().should.equal('mtX8nPZZdJ8d3QNLRJ1oJTiEi26Sj6LQXS');
+    });
+
+  });
+
   describe('#toString', function() {
 
     it('should print this known public key', function() {
