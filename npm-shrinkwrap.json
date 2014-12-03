@@ -49,6 +49,11 @@
         }
       }
     },
+    "lodash": {
+       "version": "2.4.1",
+       "from": "lodash@=2.4.1",
+       "resolved": "https://registry.npmjs.org/lodash/-/lodash-2.4.1.tgz"
+    },
     "sha512": {
       "version": "0.0.1",
       "from": "sha512@=0.0.1",
