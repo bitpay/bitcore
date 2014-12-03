@@ -9,7 +9,7 @@
     "test": "gulp test-all",
     "coverage": "gulp coverage",
     "build": "gulp",
-    "postinstall": "node ./lib/errors/build.js"
+    "postinstall": "node_modules/gulp/bin/gulp.js browser-all"
   },
   "contributors": [
     {
