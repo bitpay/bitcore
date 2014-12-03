@@ -96,7 +96,8 @@ gulp.task('lint', function() {
 gulp.task('browser', ['errors'], function() {
   return gulp.src('index.js')
     .pipe(browserify({
-      insertGlobals: true
+      insertGlobals: true,
+      standalone: 'bitcore'
     }))
     .pipe(rename('bitcore.js'))
     .pipe(gulp.dest('browser'));
