@@ -38,6 +38,11 @@
         }
       }
     },
+    "inherits": {
+      "version": "2.0.1",
+      "from": "inherits@2.0.1",
+      "resolved": "https://registry.npmjs.org/inherits/-/inherits-2.0.1.tgz"
+    },
     "hash.js": {
       "version": "0.3.2",
       "from": "hash.js@0.3.2",
