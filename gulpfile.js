@@ -111,7 +111,7 @@ gulp.task('browser-all', ['errors'], function(callback) {
   runSequence(['browser'], ['browser-test'], callback);
 });
 
-gulp.task('karma', ['browser-test'], testKarma);
+gulp.task('karma', ['browser-all'], testKarma);
 
 gulp.task('errors', shell.task([
   'node ./lib/errors/build.js'
