@@ -96,7 +96,8 @@ gulp.task('lint', function() {
 gulp.task('browser', ['errors'], function() {
   return gulp.src('index.js')
     .pipe(browserify({
-      insertGlobals: true
+      insertGlobals: true,
+      standalone: 'bitcore'
     }))
     .pipe(rename('bitcore.js'))
     .pipe(gulp.dest('browser'));
@@ -110,7 +111,7 @@ gulp.task('browser-all', ['errors'], function(callback) {
   runSequence(['browser'], ['browser-test'], callback);
 });
 
-gulp.task('karma', ['browser-test'], testKarma);
+gulp.task('karma', ['browser-all'], testKarma);
 
 gulp.task('errors', shell.task([
   'node ./lib/errors/build.js'
