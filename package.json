@@ -71,12 +71,15 @@
     "url": "https://github.com/bitpay/bitcore.git"
   },
   "dependencies": {
+    "asn1.js": "=0.4.1",
     "bn.js": "=0.15.2",
     "bs58": "=2.0.0",
     "elliptic": "=0.15.14",
     "hash.js": "=0.3.2",
     "inherits": "=2.0.1",
+    "jsrsasign": "=0.0.3",
     "lodash": "=2.4.1",
+    "protobufjs": "=3.0.0",
     "sha512": "=0.0.1"
   },
   "devDependencies": {
