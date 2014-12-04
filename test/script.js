@@ -458,10 +458,10 @@ describe('Script', function() {
   });
   describe('#buildScriptHashOut', function() {
     it('should create script from another script', function() {
-      var inner = new Script('OP_DUP OP_HASH160 06c06f6d931d7bfba2b5bd5ad0d19a8f257af3e3 OP_EQUALVERIFY OP_CHECKSIG');
+      var inner = new Script('OP_DUP OP_HASH160 20 0x06c06f6d931d7bfba2b5bd5ad0d19a8f257af3e3 OP_EQUALVERIFY OP_CHECKSIG');
       var s = Script.buildScriptHashOut(inner);
       should.exist(s);
-      s.toString().should.equal('OP_HASH160 20 0xb96d20131e15d948aa9196e477e9611d8e43c8f0 OP_EQUAL');
+      s.toString().should.equal('OP_HASH160 20 0x45ea3f9133e7b1cef30ba606f8433f993e41e159 OP_EQUAL');
       s.isScriptHashOut().should.equal(true);
     });
   });
