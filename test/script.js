@@ -328,6 +328,9 @@ describe('Script', function() {
   describe('#add and #prepend', function() {
 
     it('should add these ops', function() {
+      Script().add(Opcode('OP_RETURN')).add(new Buffer('')).toString().should.equal('OP_RETURN');
+    });
+    it('should add these ops', function() {
       Script().add('OP_CHECKMULTISIG').toString().should.equal('OP_CHECKMULTISIG');
       Script().add('OP_1').add('OP_2').toString().should.equal('OP_1 OP_2');
       Script().add(new Opcode('OP_CHECKMULTISIG')).toString().should.equal('OP_CHECKMULTISIG');
@@ -377,7 +380,7 @@ describe('Script', function() {
     });
   });
 
-  describe.only('new methods', function() {
+  describe('new methods', function() {
     describe('#buildMultisigOut', function() {
       var pubkey_hexs = [
         '022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da',
@@ -427,13 +430,13 @@ describe('Script', function() {
         var pubkey = new PublicKey('022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da');
         var s = Script.buildPublicKeyOut(pubkey);
         should.exist(s);
-        s.toString().should.equal('9674af7395592ec5d91573aa8d6557de55f60147 OP_CHECKSIG');
+        s.toString().should.equal('33 0x022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da OP_CHECKSIG');
         s.isPublicKeyOut().should.equal(true);
       });
     });
     describe('#buildDataOut', function() {
       it('should create script from empty data', function() {
-        var data = new Buffer();
+        var data = new Buffer('');
         var s = Script.buildDataOut(data);
         should.exist(s);
         s.toString().should.equal('OP_RETURN');
@@ -443,14 +446,14 @@ describe('Script', function() {
         var data = new Buffer('bacacafe0102030405', 'hex');
         var s = Script.buildDataOut(data);
         should.exist(s);
-        s.toString().should.equal('OP_RETURN bacacafe0102030405');
+        s.toString().should.equal('OP_RETURN 9 0xbacacafe0102030405');
         s.isDataOut().should.equal(true);
       });
       it('should create script from string', function() {
-        var data = 'hello world';
+        var data = 'hello world!!!';
         var s = Script.buildDataOut(data);
         should.exist(s);
-        s.toString().should.equal('OP_RETURN 68656c6c6f20776f726c64212121');
+        s.toString().should.equal('OP_RETURN 14 0x68656c6c6f20776f726c64212121');
         s.isDataOut().should.equal(true);
       });
     });
