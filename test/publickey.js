@@ -79,8 +79,13 @@ describe('PublicKey', function() {
       valid.should.equal(false);
     });
 
-    it('should recieve a boolean as true', function() {
+    it('should recieve a boolean as true for uncompressed', function() {
       var valid = PublicKey.isValid('041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341');
+      valid.should.equal(true);
+    });
+
+    it('should recieve a boolean as true for compressed', function() {
+      var valid = PublicKey.isValid('031ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a');
       valid.should.equal(true);
     });
 
