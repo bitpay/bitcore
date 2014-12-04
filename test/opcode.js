@@ -92,13 +92,22 @@ describe('Opcode', function() {
     Opcode('OP_16')
   ];
 
-  describe('@isSmallIntOp', function() {
-    var testSmallInt = function() {
-      Opcode.isSmallIntOp(this).should.equal(true);
+  describe('@smallInt', function() {
+    var testSmallInt = function(n, op) {
+      Opcode.smallInt(n).toString().should.equal(op.toString());
     };
     for (var i = 0; i < smallints.length; i++) {
       var op = smallints[i];
-      it('should work for small int ' + op, testSmallInt.bind(op));
+      it('should work for small int ' + op, testSmallInt.bind(null, i, op));
+    }
+  });
+  describe('@isSmallIntOp', function() {
+    var testIsSmallInt = function(op) {
+      Opcode.isSmallIntOp(op).should.equal(true);
+    };
+    for (var i = 0; i < smallints.length; i++) {
+      var op = smallints[i];
+      it('should work for small int ' + op, testIsSmallInt.bind(null, op));
     }
 
     it('should work for non-small ints', function() {
