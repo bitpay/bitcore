@@ -1,0 +1,528 @@
+    * {
+    margin: 0;
+    }
+    html, body {
+    height: 100%;
+    }
+    .wrapper {
+    min-height: 100%;
+    height: auto !important;
+    height: 100%;
+    margin: 0 auto -20em;
+    }
+    #footer, .push {
+      clear: both;
+    height: 20em;
+    }
+
+
+/* padding / margin */  
+
+    .mt10 {
+    margin-top: 10px;
+    }
+
+    .mt50 {
+    margin-top: 50px;
+    }
+
+       .mb10 {
+    margin-bottom: 10px;
+    } 
+
+    .mb100 {
+    margin-bottom: 100px;
+    }
+
+    .pt4p {
+    padding-top: 4%;
+    }
+
+    .pt10p {
+    padding-top: 15%;
+    }
+
+    .pt15p {
+    padding-top: 20%;
+    }
+
+    .pt30 {
+    padding-top: 30px;
+    }
+
+    .pt70 {
+    padding-top: 70px;
+    }
+
+    .pt10p {
+    padding-top: 10%;
+    }
+
+     .pt6p {
+    padding-top: 6%;
+    }
+
+    .pb30 {
+    padding-bottom: 30px;
+    }
+
+    .pb40 {
+    padding-bottom: 40px;
+    }
+
+    .pb110 {
+    padding-bottom: 110px;
+    }
+
+    .pb4p {
+    padding-bottom: 4%;
+    }
+
+
+/* fonts */
+@font-face {
+  font-family: 'Ubuntu-Light';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Ubuntu Light'), local('Ubuntu-Light'), url(../font/ubuntu-light.woff) format('woff');
+}
+@font-face {
+  font-family: 'Ubuntu';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Ubuntu'), url(../font/ubuntu.woff) format('woff');
+}
+@font-face {
+  font-family: 'Ubuntu';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Ubuntu Bold'), local('Ubuntu-Bold'), url(../font/ubuntu-bold.woff) format('woff');
+}
+@font-face {
+  font-family: 'Ubuntu';
+  font-style: italic;
+  font-weight: 700;
+  src: local('Ubuntu Bold Italic'), local('Ubuntu-BoldItalic'), url(../font/ubuntu-bold-italic.woff) format('woff');
+}
+
+.font-color-grey1 { color: #A29F99}
+}
+
+/* buttons */
+
+
+/* bg colors */
+  .bg-color-black1 { background-color: #A29F99;}
+  .bg-color-black2 { background-color: #3A3A3A;}
+  .bg-color-black3 { background-color: #231F20;}
+  .bg-color-red1 { background-color: #BD1900;}
+  .bg-color-black3 { background-color: #231F20;}
+
+  #header, #header-footer { 
+  position: relative;
+}
+
+  #header-top{ 
+    border-bottom: solid 1px #444443;
+    }
+
+ .core-illustration, .core-illustration-medium, .core-illustration-small, .call-to-action  {
+  position: absolute;
+    left:0;
+    right:0;
+    margin-left:auto;
+    margin-right:auto;
+     }   
+
+ .core-illustration {
+    top: 70px;
+     }  
+
+  .core-illustration-medium {
+    top: 95px;
+     } 
+
+  .core-illustration-small {
+    top: 160px;
+     } 
+
+.call-to-action {
+    bottom: -48px;
+     } 
+
+  #header-txt, #header-txt h1{ 
+    color: white;
+    }
+
+  #header-txt h1{ 
+    font-size: 2.5em;
+    line-height: 1.3em;
+    }
+
+  .header-txt-small h1{ 
+    margin: 30px 0 0 0;
+    font-size: 1.7em !important;
+    line-height: 1em;
+    }
+
+  #header-txt p{ 
+    font-size: 1.3em;
+    padding: 10px 0 0 0;
+    font-family: "Ubuntu-Light"!important;
+    line-height: 1.3em;
+    }
+
+      .header-txt-small p{ 
+    font-size: 1em !important;
+    margin: 30px 0 0 0;
+    padding: 10px 0 0 10px !important;
+    font-family: "Ubuntu-Light"!important;
+    line-height: 1.2em !important;
+    }
+
+  #header-footer{ 
+    background-image:url('../images/mount-bg-hd.svg');
+    background-repeat: repeat-x;
+    background-position: bottom;
+    }
+
+  #features h3{ 
+    font-size: 1.3em;
+    line-height: 1.1em;
+    margin: 30px 0 0 0;
+    }
+
+  #features h4{ 
+    font-size: 1em;
+    line-height: 1em;
+    margin: 10px 0 0 0;
+    }
+
+    #features p{ 
+    font-family: "ubuntu-light";
+    font-size: 1 em;
+    margin: 30px 0 1px 0;
+    padding: 20px 0 1px 0;
+    line-height: 1.2em;
+    }
+
+    .red-border-top{ 
+    border-top: solid 2px #BD1900;
+    }
+
+    .small-features-h3{ 
+    font-size: 1.2em !important;
+    margin: 5px 0 1px 0 !important;
+    }
+
+
+    .small-features-p{ 
+    font-family: "ubuntu-light";
+    font-size: 1em;
+    margin: 5px 0 30px 0 !important;
+    padding: 0px 0 30px 0 !important;
+    }
+
+
+  #get-started h3{ 
+    color: #FFFFFF;
+    font-size: 1.1em;
+    line-height: 1em;
+    margin: 10px 0;
+    }
+
+    #get-started p{ 
+    color: #FFFFFF;
+    font-size: 1em;
+    font-family: "ubuntu-light";
+    margin: 0 0 0 0;
+    padding: 0 0 0 0;
+    }
+
+  .get-started-illustrations{ 
+
+    }
+
+  .nodejs-bspeech{ 
+    background-image:url('../images/nodejs-bspeech.svg');
+    background-repeat: no-repeat;
+    background-position: center top;
+    padding: 30px 0 0 0;
+    }
+  .bower-bspeech{ 
+    background-image:url('../images/bower-bspeech.svg');
+    background-repeat: no-repeat;
+    background-position: center top;
+    padding: 30px 0 0 0;
+    }
+
+  .projects-using-bitcore{ 
+    
+  }
+
+.copay a {     
+  display : block;
+  width : 104px;
+  height : 51px;
+  background-image:url('../images/copay-logo-off.svg');}
+
+.copay:before {
+  content: url('../images/copay-logo-on.gif');
+  width:0;
+  height:0;
+  visibility:hidden;
+}
+
+.copay a:hover { 
+  display : block;
+  width : 104px;
+  height : 51px;
+  background-image:url('../images/copay-logo-on.svg');}
+
+
+  .enbitcoins a {     
+  display : block;
+  width : 152px;
+  height : 31px;
+  background-image:url('../images/enbitcoins-logo-off.svg');}
+
+.enbitcoins:before {
+  content: url('../images/enbitcoins-logo-on.gif');
+  width:0;
+  height:0;
+  visibility:hidden;
+}
+
+.enbitcoins a:hover { 
+  display : block;
+  width : 152px;
+  height : 31px;
+  background-image:url('../images/enbitcoins-logo-on.svg');}
+
+
+  .insight a {     
+  display : block;
+  width : 103px;
+  height : 35px;
+  background-image:url('../images/insight-logo-off.svg');}
+
+  .insight:before {
+  content: url('../images/insight-logo-on.svg');
+  width:0;
+  height:0;
+  visibility:hidden;
+}
+
+  .insight a:hover { 
+  display : block;
+  width : 103px;
+  height : 35px;
+  background-image:url('../images/insight-logo-on.svg');}
+
+
+  .bitbox a {     
+  display : block;
+  width : 109px;
+  height : 33px;
+  background-image:url('../images/bitbox-logo-off.svg');}
+
+  .bitbox:before {
+  content: url('../images/bitbox-logo-on.svg');
+  width:0;
+  height:0;
+  visibility:hidden;
+}
+
+  .bitbox a:hover { 
+  display : block;
+  width : 109px;
+  height : 33px;
+  background-image:url('../images/bitbox-logo-on.svg');}
+
+
+  .paper-wallet a {     
+  display : block;
+  width : 143px;
+  height : 33px;
+  background-image:url('../images/paper-wallet-logo-off.svg');}
+
+  .paper-wallet:before {
+  content: url('../images/paper-wallet-logo-on.svg');
+  width:0;
+  height:0;
+  visibility:hidden;
+}
+
+  .paper-wallet a:hover { 
+  display : block;
+  width : 143px;
+  height : 33px;
+  background-image:url('../images/paper-wallet-logo-on.svg');}
+
+
+
+  #projects-using-bitcore h2, #get-started h2, #features h2{ 
+    text-align: center;
+    font-weight: normal; 
+    font-size: 1.4em;
+    font-weight: bold;
+  }
+
+    #projects-using-bitcore h2, #get-started h2{ 
+    color: white;
+  }
+
+  #features h2{ 
+    color: black;
+  }
+
+.links{
+text-align: center;} 
+
+ #using-bitcore ul{   
+
+       } 
+
+ #using-bitcore li{   
+     display: inline-block;  
+     margin: 10px 20px;
+       } 
+
+ .copay-link a{
+    background-image:url('../images/copay-link.svg');
+    background-position: top;
+      display : block;
+  width : 104px;
+  height : 51px;
+         } 
+
+ .copay-link a:hover { 
+  display : block;
+  width : 104px;
+  height : 51px;
+  background-image:url('../images/copay-link.svg');
+  background-position: bottom;
+}
+
+ .enbitcoins-link a{
+    background-image:url('../images/enbitcoins-link.svg');
+    background-position: top;
+      display : block;
+  width : 122px;
+  height : 27px;
+         } 
+
+ .enbitcoins-link a:hover { 
+  display : block;
+  width : 122px;
+  height : 27px;
+  background-image:url('../images/enbitcoins-link.svg');
+  background-position: bottom;
+}
+
+ .insight-link a{
+    background-image:url('../images/insight-link.svg');
+    background-position: top;
+      display : block;
+  width : 103px;
+  height : 34px;
+         } 
+
+ .insight-link a:hover { 
+  display : block;
+  width : 103px;
+  height : 34px;
+  background-image:url('../images/insight-link.svg');
+  background-position: bottom;
+}
+
+ .bitbox-link a{
+    background-image:url('../images/bitbox-link.svg');
+    background-position: top;
+      display : block;
+  width : 109px;
+  height : 33px;
+         } 
+
+ .bitbox-link a:hover { 
+  display : block;
+  width : 109px;
+  height : 33px;
+  background-image:url('../images/bitbox-link.svg');
+  background-position: bottom;
+}
+
+ .paper-wallet-link a{
+    background-image:url('../images/paper-wallet-link.svg');
+    background-position: top;
+      display : block;
+  width : 142px;
+  height : 33px;
+         } 
+
+ .paper-wallet-link a:hover { 
+  display : block;
+  width : 142px;
+  height : 33px;
+  background-image:url('../images/paper-wallet-link.svg');
+  background-position: bottom;
+}
+
+
+/* footer */
+
+  #copyright-ft{ 
+    margin: 20px 0;
+  }
+
+
+  #nav-ft{ 
+    margin: 10px 0;
+  }
+
+  #nav-ft li, #nav-hd li { 
+    display: inline-block;
+    font-size: 0.8em;
+    margin: 10px 29px;
+  }
+
+  #nav-ft li a, #nav-hd li a{ 
+    color: #6B6B6A;
+  }
+  #nav-ft li a:hover, #nav-hd li a:hover{ color: #A39F9A;}
+
+ .docs a, .docs a:hover, .github a, .github a:hover, .labs a, .labs a:hover{
+      background-repeat: no-repeat;
+     } 
+.docs a{ background-image: url("../images/doc-icon.svg");
+          background-position: top left;
+          padding: 4px 0 4px 25px;
+   }   
+.docs a:hover{ background-image: url("../images/doc-icon.svg");
+    background-position: bottom left;
+   }  
+
+.github a{ background-image: url("../images/githubcat-icon.svg");
+            background-position: top left;
+            padding: 4px 0 4px 35px;
+   }   
+.github a:hover{ background-image: url("../images/githubcat-icon.svg");
+    background-position: bottom left;
+   }   
+
+ .labs a{ background-image: url("../images/bitpaylabs-icon.svg");
+            background-position: top left;
+            padding: 4px 0 4px 130px;
+   }   
+.labs a:hover{ background-image: url("../images/bitpaylabs-icon.svg");
+    background-position: bottom left;
+   }     
+
+  #footer { 
+    background-image: url("../images/volcano-ft.svg");
+    background-repeat: no-repeat;
+    background-position: bottom center;
+    text-align: center;
+}
+
+

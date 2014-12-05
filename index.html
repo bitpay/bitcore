@@ -1,457 +1,304 @@
 <!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title> Bitcore </title>
-    <meta name="description" content="Bitcore is a complete, native interface to the Bitcoin network, and provides the core functionality needed to develop apps for bitcoin.">
-    <meta property="og:site_name" content="Bitcore">
-    <meta property="og:url" content="http://bitcore.io/">
-    <meta property="og:title" content="Bitcore">
-    <meta property="og:description" content="Bitcore is a complete, native interface to the Bitcoin network, and provides the core functionality needed to develop apps for bitcoin.">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta property="og:image" content="http://bitcore.io/images/og.png">
-    <meta property="og:type" content="website">
-    <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
-    <link href="http://fonts.googleapis.com/css?family=Ubuntu+Mono|Ubuntu:300,400,500,700,400italic" rel="stylesheet" type="text/css">
-    <link rel="stylesheet" href="css/normalize.css">
-    <link href="css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/common.css">
-    <link rel="stylesheet" href="css/codemirror.css">
-    <script type="text/javascript">
-    window.analytics||(window.analytics=[]),window.analytics.methods=["identify","track","trackLink","trackForm","trackClick","trackSubmit","page","pageview","ab","alias","ready","group","on","once","off"],window.analytics.factory=function(t){return function(){var a=Array.prototype.slice.call(arguments);return a.unshift(t),window.analytics.push(a),window.analytics}};for(var i=0;i<window.analytics.methods.length;i++){var method=window.analytics.methods[i];window.analytics[method]=window.analytics.factory(method)}window.analytics.load=function(t){var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=("https:"===document.location.protocol?"https://":"http://")+"d2dq2ahtl5zl1z.cloudfront.net/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(a,n)},window.analytics.SNIPPET_VERSION="2.0.8",
-    window.analytics.load("yc2e6mxne0");
-    window.analytics.page("index");
-    </script>
-</head>
-<body>
-    <header class="bg-white text-center">
-        <div class="ribbon hidden-xs">
-            <a href="https://github.com/bitpay/bitcore">View on GitHub</a>
-        </div>
-        <a href="http://bitcore.io/" id="logo">
-            <img src="images/logo.svg" alt="Bitcore">
-        </a>
-        <a class="db text-gray" href="https://bitpay.com/">
-          <span>is supported by</span>
-          <img src="images/bitpay-gray.svg" alt="BitPay">
-        </a>
-        <div class="ribbon-phone visible-xs">
-            <a href="https://github.com/bitpay/bitcore">View on GitHub</a>
-        </div>
-        <div class="line-negative-t line-negative-b">
-            <h3 class="hidden-xs">A pure, powerful core for your bitcoin project.</h3>
-            <h4 class="visible-xs">A pure, powerful core for your bitcoin project.</h4>
-            <p class="lead hidden-xs">Bitcore is a complete, native interface to the Bitcoin network, and provides the core functionality needed to develop apps for bitcoin.</p>
-        </div>
-        <a href="#started" class="btn btn-default" id="cta">Get Started</a>
-    </header>   
-    <div class="container">
-        <h2>Principles</h2>
-        <p>Bitcoin is a powerful new peer-to-peer platform for the next generation of financial technology. The decentralized nature of the Bitcoin network allows for highly resilient bitcoin infrastructure, and the developer community needs reliable, open-source tools to implement bitcoin apps and services.</p>
-        <p>Bitcore unchains developers from fallible, centralized APIs, and provides the tools to interact with the real Bitcoin network.</p>
+<html class="no-js" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bitcore | Core for your bitcoin projects</title>
+    <link rel="stylesheet" href="css/foundation.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="js/vendor/modernizr.js"></script>
+  </head>
+  <body>
 
-        <h2 id="started">Get Started</h2>
-        <p>Bitcore runs on <a href="http://nodejs.org/">node</a>, and can be installed via <a href="https://npmjs.org/">npm:</a></p>
-<pre>
-npm install bitcore
-</pre> 
-        <p>It is a collection of objects useful to bitcoin applications, such as Address:</p>
-<pre>
-var bitcore = require('bitcore');
-var Address = bitcore.Address;
-</pre>
+    <body>
+        <div class="wrapper">
 
-        <p>If you're feeling experimental, you can get the latest master from our github repo:</p>
-
-<pre>
-git clone git://github.com/bitpay/bitcore
-</pre>
-        <h2 id="browser">Browser version</h2>
-        <p>Download the <a href="http://162.242.219.26:3010/download/all">browser bundle</a>, or build a custom one by acquiring the <a href="https://github.com/bitpay/bitcore">source code</a>.</p>
-
-        <div class="row">
-          <!--
-          <div class="col-md-1">
-            <button class='btn' id='checkall'>Check all</button>
-          </div>
-          <div class="col-md-2">
-            <button class='btn' id='none'>Uncheck all</button>
-          </div>
-          <div class="col-md-3">
-            <button class='btn' id='download'>Download bundle</button>
-          </div>
-          -->
-          <div class="col-md-3">
-            <div id="loading" style="display:none">
-              <img src="images/ajax-loader.gif" />
-              <label style="color:#C1C8CF;">Generating custom bundle...</label>
-            </div>
-          </div>
-        </div>
-        <!--<form id="customize">
-          <div class="row">
-            <div id='col1' class="col-md-4"></div>
-            <div id='col2' class="col-md-4"></div>
-            <div id='col3' class="col-md-4"></div>
-          </div>
-        </form>-->
-        <p>Note: If you clone the github repository, you can also generate the bundle yourself.</p>
-        <p><a href="test/index.html" target="_blank">Run all bitcore tests in your browser</a></p>
-
-        <h2>Live Demo</h2>
-
-<table border="0" width="100%">
-<tr><td width="50%">
-<textarea id="code" name="code">
-var bitcore = require('bitcore');
-
-var password = 'an example of an insecure password';
-var privateKey = bitcore.util.sha256(password);
-
-var key = new bitcore.Key();
-key.private = privateKey;
-key.regenerateSync();
-
-var hash = bitcore.util.sha256ripe160(key.public);
-var version = bitcore.networks['livenet'].addressVersion;
-
-var addr = new bitcore.Address(version, hash);
-
-console.log("Brain wallet address: " + addr.toString());
-
-/*
-Disclaimer: Brain wallets are not recommended for real bitcoins, unless you use a very strong password.
-*/
-</textarea>
-</td><td width="50%">
-<textarea id="code-output" name="code-output">
-</textarea>
-</td></tr>
-</table>
-<button class="btn" id="execute-code">Execute</button>
-
-        <h2>Examples</h2>
-
-        <p>Validating a bitcoin address.</p>
-<pre>
-var bitcore = require('bitcore');
-var Address = bitcore.Address;
-
-var addr = new Address("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa");
-
-console.log(addr.isValid());
-</pre>
-
-<p>Monitoring blocks and transactions. For this example you need a running bitcoind instance with RPC enabled.</p>
-
-<pre>
-var bitcore = require('bitcore');
-var networks = bitcore.networks;
-var Peer = bitcore.Peer;
-var PeerManager = require('soop').load('bitcore/PeerManager', {
-  network: networks.testnet
-});
-
-var handleBlock = function(info) {
-  console.log('** Block Received **');
-  console.log(info.message);
-};
-
-var handleTx = function(info) {
-  var tx = info.message.tx.getStandardizedObject();
-
-  console.log('** TX Received **');
-  console.log(tx);
-};
-
-var handleInv = function(info) {
-  console.log('** Inv **');
-  console.log(info.message);
-
-  var invs = info.message.invs;
-  info.conn.sendGetData(invs);
-};
-
-var peerman = new PeerManager();
-
-peerman.addPeer(new Peer('127.0.0.1', 18333));
-
-peerman.on('connection', function(conn) {
-  conn.on('inv', handleInv);
-  conn.on('block', handleBlock);
-  conn.on('tx', handleTx);
-});
-
-peerman.start();
-</pre>
-
-<p>Consuming a bitcoind RPC. For this example you need a running bitcoind instance with RPC enabled.</p>
-
-<pre>
-var bitcore = require('bitcore');
-var RpcClient = bitcore.RpcClient;
-var hash = '0000000000b6288775bbd326bedf324ca8717a15191da58391535408205aada4';
-
-var config = {
-  protocol: 'http',
-  user: 'user',
-  pass: 'pass',
-  host: '127.0.0.1',
-  port: '18332',
-};
-
-var rpc = new RpcClient(config);
-
-rpc.getBlock(hash, function(err, ret) {
-  if (err) {
-    console.error('An error occured fetching block', hash);
-    console.error(err);
-    return;
-  }
-  console.log(ret);
-});
-</pre>
-
-<p>Creating and sending a Transaction through P2P.</p>
-
-<pre>
-var bitcore = require('bitcore');
-var networks = bitcore.networks;
-var Peer = bitcore.Peer;
-var Transaction = bitcore.Transaction;
-var Address = bitcore.Address;
-var Script = bitcore.Script;
-var coinUtil = bitcore.util;
-var PeerManager = require('soop').load('bitcore/PeerManager', {
-  network: networks.testnet
-});
-
-var createTx = function() {
-  var TXIN = 'd05f35e0bbc495f6dcab03e599c8f5e32a07cdb4bc76964de201d06a2a7d8265';
-  var TXIN_N = 0;
-  var ADDR = 'muHct3YZ9Nd5Pq7uLYYhXRAxeW4EnpcaLz';
-  var VAL = '0.001';
-
-  var txobj = {
-    version: 1,
-    lock_time: 0,
-    ins: [],
-    outs: []
-  };
-
-  var txin = {
-    s: coinUtil.EMPTY_BUFFER, // Add signature
-    q: 0xffffffff
-  };
-
-  var hash = new Buffer(TXIN.split('').reverse(), 'hex');
-  var vout = parseInt(TXIN_N);
-  var voutBuf = new Buffer(4);
-
-  voutBuf.writeUInt32LE(vout, 0);
-  txin.o = Buffer.concat([hash, voutBuf]);
-  txobj.ins.push(txin);
-
-  var addr = new Address(ADDR);
-  var script = Script.createPubKeyHashOut(addr.payload());
-  var valueNum = coinUtil.parseValue(VAL);
-  var value = coinUtil.bigIntToValue(valueNum);
-
-  var txout = {
-    v: value,
-    s: script.getBuffer(),
-  };
-  txobj.outs.push(txout);
-
-  return new Transaction(txobj);
-
-};
-
-var peerman = new PeerManager();
-peerman.addPeer(new Peer('127.0.0.1', 18333));
-
-peerman.on('connect', function() {
-  var conn = peerman.getActiveConnection();
-  if (conn) {
-    conn.sendTx(createTx());
-  }
-  conn.on('reject', function() {
-    console.log('Transaction Rejected');
-  });
-});
-
-peerman.start();
-</pre>
-
-<p>Parsing a script.</p>
-
-<pre>
-var bitcore = require('bitcore');
-var Address = bitcore.Address;
-var coinUtil = bitcore.util;
-var Script = bitcore.Script;
-var network = bitcore.networks.testnet;
-
-var getAddrStr = function(s) {
-  var addrStrs = [];
-  var type = s.classify();
-  var addr;
-
-  switch (type) {
-    case Script.TX_PUBKEY:
-      var chunk = s.captureOne();
-      addr = new Address(network.addressPubkey, coinUtil.sha256ripe160(chunk));
-      addrStrs.push(addr.toString());
-      break;
-    case Script.TX_PUBKEYHASH:
-      addr = new Address(network.addressPubkey, s.captureOne());
-      addrStrs.push(addr.toString());
-      break;
-    case Script.TX_SCRIPTHASH:
-      addr = new Address(network.addressScript, s.captureOne());
-      addrStrs.push(addr.toString());
-      break;
-    case Script.TX_MULTISIG:
-      var chunks = s.capture();
-      chunks.forEach(function(chunk) {
-        var a = new Address(network.addressPubkey, coinUtil.sha256ripe160(chunk));
-        addrStrs.push(a.toString());
-      });
-      break;
-    case Script.TX_UNKNOWN:
-      console.log('tx type unkown');
-      break;
-  }
-  return addrStrs;
-};
-
-var script = 'DUP HASH160 0x14 0x3744841e13b90b4aca16fe793a7f88da3a23cc71 EQUALVERIFY CHECKSIG';
-var s = Script.fromHumanReadable(script);
-console.log(getAddrStr(s)[0]); // mkZBYBiq6DNoQEKakpMJegyDbw2YiNQnHT
-</pre>
-
-
-
-        <h2>Security</h2>
-        <p>Bitcore is still under heavy development and not quite ready for "drop-in" production use. If you find a security issue, please email ryan at bitpay dot com.</p>
-
-        <h2>Contributing</h2>
-        <p>Bitcore is under active development by BitPay engineers and volunteers from all over the world. We deeply appreciate feedback, issues, and pull requests, all of which can be done on the <a href="https://github.com/bitpay/bitcore/">GitHub page</a>. We also have an IRC channel, if that's your style. #bitcore on Freenode.</p>
-
-        <h2>Projects Using Bitcore</h2>
-        <ul class="row">
-            <li><a href="http://insight.is/">Insight</a></li>
-            <li><a href="http://www.counterparty.co/">Counterparty</a></li>
-            <li><a href="https://maraoz.github.io/multipaper/">Multi-signature address (P2SH) paper wallet</a></li>
-            <li><a href="https://github.com/dmerrill6/BitChrome">BitChrome Chrome Extension</a></li>
-            <li><a href="http://enbitcoins.com/">En Bitcoins</a></li>
-            <li><a href="https://coldmonitor.com/">ColdMonitor</a></li>
-            <li><a href="https://github.com/bitpay/copay">Copay</a></li>
-        </ul>
-
-    </div> <!-- end of Container -->
-
-    <div class="sub-footer">
-        <div class="container">
+        <section id="header-top" class="bg-color-black2 pt30 pb30 show-for-small-only">
             <div class="row">
-                <div class="col-md-6 visible-lg visible-md" style="border-right:1px dashed #547799;">
-                    <!-- Begin MailChimp Signup Form -->
-                    <link href="http://cdn-images.mailchimp.com/embedcode/slim-081711.css" rel="stylesheet" type="text/css">
-                    <div id="mc_embed_signup">
-                        <form action="http://bitpay.us7.list-manage.com/subscribe/post?u=29605d300e62d91f5e2520c67&amp;id=c3d06574f5" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank" novalidate>
-                            <label for="mce-EMAIL">Get Updates on Bitcore</label>
-                            <input type="email" value="" name="EMAIL" class="email pull-left" id="mce-EMAIL" placeholder="email address" required>
-                            <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
-                            <div style="position: absolute; left: -5000px;"><input type="text" name="b_29605d300e62d91f5e2520c67_c3d06574f5" value=""></div>
-                            <div class="clear"><input type="submit" value="Subscribe" name="subscribe" id="mc-embedded-subscribe" class="btn btn-default pull-left"></div>
-                        </form>
-                    </div><!--End mc_embed_signup-->
-                </div>
-                <div class="col-md-6">
-                    <div class="row text-center hidden-sm">
-                        <div class="col-md-2"></div>
-                        <div class="col-md-3 tex-center">
-                            <p style="margin-bottom:10px;">Star</p>
-                            <iframe src="http://ghbtns.com/github-btn.html?user=bitpay&repo=bitcore&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="110" height="20"></iframe>
-                        </div>
-                        <div class="col-md-3 tex-center">
-                            <p style="margin-bottom:10px;">Fork</p>
-                            <iframe src="http://ghbtns.com/github-btn.html?user=bitpay&repo=bitcore&type=fork&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="95" height="20"></iframe>
-                        </div>
-                        <div class="col-md-3 tex-center">
-                            <p style="margin-bottom:10px;">Follow</p>
-                            <iframe src="http://ghbtns.com/github-btn.html?user=Bitpay&type=follow&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="165" height="20"></iframe>
-                        </div>
-                    </div>
-                    <div class="row visible-sm">
-                        <div class="col-md-4 tex-center pull-left">
-                            <p style="margin-bottom:10px;">Star</p>
-                            <iframe src="http://ghbtns.com/github-btn.html?user=bitpay&repo=bitcore&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="110" height="20"></iframe>
-                        </div>
-                        <div class="col-md-4 tex-center pull-left">
-                            <p style="margin-bottom:10px;">Fork</p>
-                            <iframe src="http://ghbtns.com/github-btn.html?user=bitpay&repo=bitcore&type=fork&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="95" height="20"></iframe>
-                        </div>
-                        <div class="col-md-4 tex-center pull-left">
-                            <p style="margin-bottom:10px;">Follow</p>
-                            <iframe src="http://ghbtns.com/github-btn.html?user=Bitpay&type=follow&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="165" height="20"></iframe>
-                        </div>
-                    </div>
-                </div>
+              <div class="medium-12 columns text-center mb10">
+                <a href="http://bitcore.io/"><img src="images/bitcore-logo-hd.svg" width="99" height="28" alt="bitcore"/></a>
+              </div>
             </div>
-        </div>
-    </div> <!-- end of sub-footer -->
-    <footer>
-        <div class="copyright">
-            <div class="container">
-                <p class="pull-left"><small>Bitcore&trade; © 2013-2014 <a href="https://bitpay.com">BitPay, Inc.</a> Bitcore is released under the MIT license.</small></p>
-                <img src="images/logo-negative-footer.svg" alt="" class="pull-right" style="padding-top: 5px;">
+            <div class="row">
+              <div class="medium-12 columns text-center">
+                <ul id="nav-hd">
+                  <li class="docs"><a href="https://github.com/bitpay/bitcore" target="_blank">READ THE <b>DOCS</b></a></li>
+                  <li class="labs"><a href="http://bitpaylabs.com/c/bitcore" target="_blank">DEMOS AND EXAMPLES</a></li>
+              </ul>
+              </div>
             </div>
+        </section>
+
+        <section id="header-top" class="bg-color-black2 pt30 pb30 show-for-medium-up">
+            <div class="row">
+              <div class="medium-2 columns">
+                <a href="http://bitcore.io/"><img src="images/bitcore-logo-hd.svg" width="99" height="28" alt="bitcore"/></a>
+              </div>
+              <div class="medium-10 columns text-right">
+                <ul id="nav-hd">
+                  <li class="docs"><a href="https://github.com/bitpay/bitcore" target="_blank">READ THE <b>DOCS</b></a></li>
+                  <li class="labs"><a href="http://bitpaylabs.com/c/bitcore" target="_blank">DEMOS AND EXAMPLES</a></li>
+              </ul>
+              </div>
+            </div>
+        </section>
+        <section id="header header-footer" class="bg-color-black2">
+          <div id="header-txt" class="pt10p pb4p">
+            <div class="row core-illustration-small show-for-small-only">
+              <div class="small-12 columns text-center">
+                <img src="images/core-illustration.png" width="80" alt="bitcore"/>
+              </div>
+            </div>
+            <div class="row core-illustration-medium show-for-medium-only">
+              <div class="small-12 columns text-center">
+                <img src="images/core-illustration.png" width="120" alt="bitcore"/>
+              </div>
+            </div>
+            <div class="row core-illustration show-for-large-up">
+              <div class="small-12 columns text-center">
+                <img src="images/core-illustration.png" width="169" height="191" alt="bitcore"/>
+              </div>
+            </div>
+            <div class="row">
+              <div class="small-6 columns text-right show-for-medium-down header-txt-small">
+                  <h1>A pure, powerful core for your bitcoin project.</h1>
+              </div>
+              <div class="small-6 columns text-right show-for-large-up">
+                  <h1>A pure, powerful core for your bitcoin project.</h1>
+              </div>
+              <div class="small-6 columns text-left show-for-medium-down header-txt-small">
+                <p>Bitcore is a complete, native interface to the bitcoin network, and provides the corefunctionality needed to develop apps for bitcoin.</p>
+              </div>
+              <div class="small-6 columns text-left show-for-large-up">
+                <p>Bitcore is a complete, native interface to the bitcoin network, and provides the corefunctionality needed to develop apps for bitcoin.</p>
+              </div>
+            </div>
+          </div>
+          <div id="header-footer">
+            <div class="row">
+              <div class="small-12 columns text-center">
+                  <img src="images/volcano-hd.svg" alt="to the core"/>
+              </div>
+            </div>
+            <div class="row call-to-action">
+              <div class="small-12 columns text-center">
+                <a href="https://github.com/bitpay/bitcore" class="button radius github-main-btn"><img src="images/githubcat-icon-white.svg" width="20">&nbsp; FORK IT ON <b>GITHUB</b></a>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section id="features" class="bg-color-white pt70 pb110 show-for-small-only">
+          <div class="row pb40">
+            <div class="small-12 columns">
+              <h2>Main features<h2>
+            </div>
+          </div>
+          <div class="row">
+            <div class="small-12 columns text-center">
+              <img src="images/cross-platform-illustration.png" width="169" height="125" alt="cross platform"/>
+              <h3 class="small-features-h3">cross platform</h3>
+              <p class="small-features-p">works on both your server and the browser</p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="small-12 columns text-center">
+              <img src="images/functionality-illustration.png" width="169" height="125" alt="all the core bitcon functionality"/>
+              <h3 class="small-features-h3">all the core bitcon functionality</h3>
+              <p class="small-features-p">addresses, transactions, scripting</p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="small-12 columns text-center">
+              <img src="images/o-source-illustration.png" width="169" height="125" alt="cross platform"/>
+              <h3 class="small-features-h3">open-sourced</h3>
+              <p class="small-features-p">tested and publicly audited</p>
+            </div>
+          </div>    
+          <div class="row">
+            <div class="small-12 columns text-center">
+              <img src="images/p-protocol-illustration.png" width="169" height="125" alt="cross platform"/>
+              <h3 class="small-features-h3">payment protocol support</h3>
+              <p class="small-features-p"></p>
+            </div>
+          </div>   
+          <div class="row">
+            <div class="small-12 columns text-center">
+              <img src="images/kets-illustration.png" width="169" height="125" alt="cross platform"/>
+              <h3 class="small-features-h3">private and public key management</h3>
+              <p class="small-features-p">basic and hierarchically derived</p>
+            </div>
+          </div>   
+
+
+        </section>
+        <section id="features" class="bg-color-white pt70 pb110 show-for-medium-up">
+          <div class="row">
+            <div class="small-12 columns">
+              <h2>Main features<h2>
+            </div>
+            <div class="small-12 columns">
+          </div>
+          <div class="row">
+            <div class="medium-1 columns">&nbsp;</div>
+            <div class="medium-2 columns text-center mt50">
+              <img src="images/cross-platform-illustration.png" width="169" height="125" alt="cross platform"/>
+            </div>
+            <div class="medium-2 columns text-center mt50">
+              <img src="images/functionality-illustration.png" width="169" height="125" alt="all the core bitcon functionality"/>
+            </div>
+            <div class="medium-2 columns text-center mt50">
+              <img src="images/o-source-illustration.png" width="169" height="125" alt="cross platform"/>
+            </div>
+            <div class="medium-2 columns text-center mt50">
+              <img src="images/p-protocol-illustration.png" width="169" height="125" alt="cross platform"/>
+            </div>
+            <div class="medium-2 columns text-center mt50">
+              <img src="images/kets-illustration.png" width="169" height="125" alt="cross platform"/>
+            </div>
+            <div class="medium-1 columns">&nbsp;</div>
+          </div>
+          <div class="row">
+            <div class="small-1 columns">&nbsp;</div>
+            <div class="small-2 columns text-center show-for-large-up">
+              <h3>cross platform</h3>
+            </div>
+            <div class="small-2 columns text-center show-for-large-up">
+              <h3>all the core bitcon functionality</h3>
+            </div>
+            <div class="small-2 columns text-center show-for-large-up">
+              <h3>open-sourced</h3>
+            </div>
+            <div class="small-2 columns text-center show-for-large-up">
+              <h3>payment protocol support</h3>
+            </div>
+            <div class="small-2 columns text-center show-for-large-up">
+              <h3>private and public key management</h3>
+            </div>
+            <div class="small-2 columns text-center show-for-medium-only">
+              <h4>cross platform</h4>
+            </div>
+            <div class="small-2 columns text-center show-for-medium-only">
+              <h4>all the core bitcon functionality</h4>
+            </div>
+            <div class="small-2 columns text-center show-for-medium-only">
+              <h4>open-sourced</h4>
+            </div>
+            <div class="small-2 columns text-center show-for-medium-only">
+              <h4>payment protocol support</h4>
+            </div>
+            <div class="small-2 columns text-center show-for-medium-only">
+              <h4>private and public key management</h4>
+            </div>
+            <div class="small-1 columns">&nbsp;</div>
+          </div>
+          <div class="row">
+            <div class="small-1 columns">&nbsp;</div>
+            <div class="small-2 columns text-center">
+              <p class="red-border-top">works on both your server and the browser</p>
+            </div>
+            <div class="small-2 columns text-center">
+              <p class="red-border-top">addresses, transactions, scripting</p>
+            </div>
+            <div class="small-2 columns text-center">
+              <p class="red-border-top">tested and publicly audited</p>
+            </div>
+            <div class="small-2 columns text-center">
+              <p class="red-border-top">&nbsp;</p>
+            </div>
+            <div class="small-2 columns text-center">
+              <p class="red-border-top">basic and hierarchically derived</p>
+            </div>
+            <div class="small-1 columns">&nbsp;</div>
+          </div>
+        </section>
+        <section id="get-started" class="bg-color-red1 pt70 pb40">
+          <div class="row">
+            <div class="small-12 columns pb40">
+              <h2>Get Started<h2>
+            </div>
+          </div>
+          <div class="row">
+            <div class="large-3 columns text-center">&nbsp;</div>
+            <div class="large-2 columns text-center pb110">
+              <div class="get-started-illustrations pt50 pb30">
+                <img src="images/doc-illustration.png" width="85" height="88" alt="read the docs"/> 
+              </div>
+                <h3>read the</h3>
+                <a href="https://github.com/bitpay/bitcore" class="small radius secondary button" target="_blank">docs</a>
+                <p>(contains examples)</p>
+                <h3>or visit our community forum</h3>
+                <a href="http://bitpaylabs.com/c/bitcore" class="small radius secondary button" target="_blank">
+                    <img src="images/bitpaylabs-icon-white.svg">
+                </a>
+            </div>
+            <div class="large-2 columns text-center pb110">
+              <div class="get-started-illustrations pt50 pb30">
+                <img src="images/inst-illustration.png" width="123" height="88" alt="install it"/>  
+              </div>             
+                <h3>install it</h3>
+                <div class="nodejs-bspeech">
+                  <p>npm install bitcore</p>
+                </div>  
+                <div class="bower-bspeech mt10">
+                  <p>boweer install bitcore</p>
+                </div>  
+            </div>
+            <div class="large-2 columns text-center">
+              <div class="get-started-illustrations pt50 pb30">
+                <img src="images/api-illustration.png" width="87" height="88" alt="install it"/>   
+              </div> 
+                <h3>doubts?</h3>
+                <p>check the</p>
+                <a href="#" class="small radius secondary button" target="_blank">API reference</a>
+                
+            </div>
+            <div class="large-3 columns text-center">&nbsp;</div>
+          </div>
+        </section>
+        <section id="projects-using-bitcore" class="bg-color-black3 pt70 pb110">
+          <div class="row">
+            <div class="small-12 columns small-centered">
+              <h2>Projects Using Bitcore</h2>
+            </div>
+          </div>
+          <div class="row links">
+            <div class="small-12 columns">
+              <ul id="using-bitcore" class="pt6p">
+                <li class="copay-link"><a href="https://copay.io" target="_blank">&nbsp;</a></li>
+                <li class="enbitcoins-link"><a href="https://enbitcoins.com" target="_blank">&nbsp;</a></li>
+                <li class="insight-link"><a href="https://insight.is/" target="_blank">&nbsp;</a></li>
+                <li class="bitbox-link"><a href="https://github.com/dmerrill6/BitBox" target="_blank">&nbsp;</a></li>
+                <li class="paper-wallet-link"><a href="https://maraoz.github.io/multipaper/" target="_blank">&nbsp;</a></li>
+              </ul>
+            </div>
+          </div>
+        </section>
+            <div class="push"></div>
         </div>
-    </footer>
 
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js" type="text/javascript" language="JavaScript"></script>
-    <script src="https://code.jquery.com/jquery.js"></script>
-    <script src="js/bootstrap.min.js"></script>
-    <script src="js/a.js"></script>
-    <!--<script src="js/customize.js"></script>-->
-    <script src="js/bitcore.js"></script>
-    <script src="js/codemirror.js"></script>
-    <script src="js/codemirror-javascript.js"></script>
-<script type="text/javascript" id="script">
-window.onload = function() {
-  var te = document.getElementById("code");
-  te.value = (te.textContent || te.innerText || te.innerHTML).replace(/^\s*/, "");
-  var tr = document.getElementById("code-output");
-  tr.value = (tr.textContent || tr.innerText || tr.innerHTML).replace(/^\s*/, "");
-
-  window.editor = CodeMirror.fromTextArea(te, {
-    mode: "javascript",
-    lineNumbers: true,
-    lineWrapping: true,
-    foldGutter: true,
-    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
-  });
-
-  window.editor_output = CodeMirror.fromTextArea(tr, {
-    lineNumbers: true,
-    lineWrapping: true,
-    foldGutter: true,
-    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
-  });
-
-  $('#execute-code').click(function() {
-    var code = window.editor.value;
-    window.editor_output.setValue("");
-    var _log = console.log;
-    console.log = function(str) {
-      window.editor_output.setValue(window.editor_output.getValue() + str + "\n");
-    };
-    eval(window.editor.getValue());
-    console.log = _log;
-  });
-};
-</script>
-</body>
+        <footer class="bg-color-black2" id="footer">
+          <div class="row">
+            <div class="small-12 columns">
+              <div id="copyright-ft" class="font-color-grey1 pt4p">
+                <p>™ © 2013-2014 BitPay, Inc. Bitcore is released under the MIT license.</p>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="small-12 columns">
+              <ul id="nav-ft">
+                <li class="docs"><a href="https://github.com/bitpay/bitcore" target="_blank">READ THE <b>DOCS</b></a></li>
+                <li class="labs"><a href="http://bitpaylabs.com/c/bitcore" target="_blank">DEMOS AND EXAMPLES</a></li>
+                <li class="github"><a href="https://github.com/bitpay/bitcore" target="_blank">FORK IT ON <b>GITHUB</b></a></li>
+              </ul>
+            </div>
+          </div>
+        </footer>
+    
+    <script src="js/vendor/jquery.js"></script>
+    <script src="js/foundation.min.js"></script>
+    <script>
+      $(document).foundation();
+    </script>
+  </body>
 </html>
