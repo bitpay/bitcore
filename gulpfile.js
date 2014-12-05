@@ -92,11 +92,11 @@ gulp.task('lint', function() {
 });
 
 gulp.task('browser', ['errors'], shell.task([
-  './node_modules/.bin/browserify index.js --insert-global-vars=true --standalone=bitcore -o ./browser/bitcore.js'
+  './node_modules/.bin/browserify index.js --insert-global-vars=true --standalone=bitcore -o browser/bitcore.js'
 ]));
 
 gulp.task('browser-test', shell.task([
-  'find test/ -type f -name "*.js" | xargs ./node_modules/.bin/browserify -o ./browser/tests.js'
+  'find test/ -type f -name "*.js" | xargs ./node_modules/.bin/browserify -o browser/tests.js'
 ]));
 
 gulp.task('browser-all', ['errors'], function(callback) {

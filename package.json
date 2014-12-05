@@ -87,7 +87,6 @@
     "chai": "~1.10.0",
     "closure-compiler-jar": "git://github.com/eordano/closure-compiler-jar.git",
     "gulp": "^3.8.10",
-    "gulp-browserify": "^0.5.0",
     "gulp-closure-compiler": "^0.2.9",
     "gulp-jsdoc": "^0.1.4",
     "gulp-jshint": "^1.9.0",
