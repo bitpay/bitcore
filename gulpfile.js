@@ -11,12 +11,10 @@
 'use strict';
 
 var gulp = require('gulp');
-var browserify = require('gulp-browserify');
 var closureCompiler = require('gulp-closure-compiler');
 var jsdoc = require('gulp-jsdoc');
 var jshint = require('gulp-jshint');
 var mocha = require('gulp-mocha');
-var rename = require('gulp-rename');
 var runSequence = require('run-sequence');
 var shell = require('gulp-shell');
 
@@ -93,18 +91,12 @@ gulp.task('lint', function() {
     .pipe(jshint.reporter('default'));
 });
 
-gulp.task('browser', ['errors'], function() {
-  return gulp.src('index.js')
-    .pipe(browserify({
-      insertGlobals: true,
-      standalone: 'bitcore'
-    }))
-    .pipe(rename('bitcore.js'))
-    .pipe(gulp.dest('browser'));
-});
+gulp.task('browser', ['errors'], shell.task([
+  './node_modules/.bin/browserify index.js --insert-global-vars=true --standalone=bitcore -o browser/bitcore.js'
+]));
 
 gulp.task('browser-test', shell.task([
-    'find test/ -type f -name "*.js" | xargs browserify -o ./browser/tests.js'
+  'find test/ -type f -name "*.js" | xargs ./node_modules/.bin/browserify -o browser/tests.js'
 ]));
 
 gulp.task('browser-all', ['errors'], function(callback) {
