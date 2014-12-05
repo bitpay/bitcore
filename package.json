@@ -91,7 +91,6 @@
     "gulp-jsdoc": "^0.1.4",
     "gulp-jshint": "^1.9.0",
     "gulp-mocha": "^2.0.0",
-    "gulp-rename": "^1.2.0",
     "gulp-shell": "^0.2.10",
     "mocha": "~2.0.1",
     "run-sequence": "^1.0.2",
