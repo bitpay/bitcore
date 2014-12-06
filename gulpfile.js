@@ -96,7 +96,7 @@ gulp.task('browser', ['errors'], shell.task([
 ]));
 
 gulp.task('browser-test', shell.task([
-  'find test/ -type f -name "*.js" | xargs ./node_modules/.bin/browserify -o browser/tests.js'
+  'find test/ -type f -name "*.js" | xargs ./node_modules/.bin/browserify -t brfs -o browser/tests.js'
 ]));
 
 gulp.task('browser-all', ['errors'], function(callback) {

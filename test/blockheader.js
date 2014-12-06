@@ -1,22 +1,27 @@
 'use strict';
 
-var should = require('chai').should();
 var bitcore = require('..');
+var BN = require('../lib/crypto/bn');
 var BufferReader = bitcore.encoding.BufferReader;
-var Blockheader = bitcore.Blockheader;
+var BlockHeader = bitcore.BlockHeader;
+var fs = require('fs');
+var should = require('chai').should();
 
-describe('Blockheader', function() {
-  
-  var bh = new Blockheader();
-  var version = 1;
-  var prevblockidbuf = new Buffer(32);
-  prevblockidbuf.fill(5);
-  var merklerootbuf = new Buffer(32);
-  merklerootbuf.fill(9);
-  var time = 2;
-  var bits = 3;
-  var nonce = 4;
-  bh.set({
+// https://test-insight.bitpay.com/block/000000000b99b16390660d79fcc138d2ad0c89a0d044c4201a02bdf1f61ffa11
+var dataRawBlockBuffer = fs.readFileSync('test/data/blk86756-testnet.dat');
+var dataRawBlockBinary = fs.readFileSync('test/data/blk86756-testnet.dat', 'binary');
+var dataRawId = '000000000b99b16390660d79fcc138d2ad0c89a0d044c4201a02bdf1f61ffa11';
+var data = require('./data/blk86756-testnet');
+
+describe('BlockHeader', function() {
+
+  var version = data.version;
+  var prevblockidbuf = new Buffer(data.prevblockidhex, 'hex');
+  var merklerootbuf = new Buffer(data.merkleroothex, 'hex');
+  var time = data.time;
+  var bits = data.bits;
+  var nonce = data.nonce;
+  var bh = new BlockHeader({
     version: version,
     prevblockidbuf: prevblockidbuf,
     merklerootbuf: merklerootbuf,
@@ -24,21 +29,23 @@ describe('Blockheader', function() {
     bits: bits,
     nonce: nonce
   });
-  var bhhex = '0100000005050505050505050505050505050505050505050505050505050505050505050909090909090909090909090909090909090909090909090909090909090909020000000300000004000000';
+  var bhhex = data.blockheaderhex;
   var bhbuf = new Buffer(bhhex, 'hex');
 
   it('should make a new blockheader', function() {
-    var blockheader = new Blockheader();
-    should.exist(blockheader);
-    blockheader = Blockheader();
-    should.exist(blockheader);
-    Blockheader(bhbuf).toBuffer().toString('hex').should.equal(bhhex);
+    BlockHeader(bhbuf).toBuffer().toString('hex').should.equal(bhhex);
   });
 
-  describe('#set', function() {
+  it('should not make an empty block', function() {
+    (function() {
+      BlockHeader();
+    }).should.throw('Unrecognized argument for BlockHeader');
+  });
+
+  describe('#constructor', function() {
 
     it('should set all the variables', function() {
-      bh.set({
+      var bh = new BlockHeader({
         version: version,
         prevblockidbuf: prevblockidbuf,
         merklerootbuf: merklerootbuf,
@@ -59,7 +66,7 @@ describe('Blockheader', function() {
   describe('#fromJSON', function() {
 
     it('should set all the variables', function() {
-      var bh = Blockheader().fromJSON({
+      var bh = BlockHeader.fromJSON({
         version: version,
         prevblockidbuf: prevblockidbuf.toString('hex'),
         merklerootbuf: merklerootbuf.toString('hex'),
@@ -91,10 +98,34 @@ describe('Blockheader', function() {
 
   });
 
+  describe('#fromJSON', function() {
+
+    it('should parse this known json string', function() {
+
+      var jsonString = JSON.stringify({
+        version: version,
+        prevblockidbuf: prevblockidbuf,
+        merklerootbuf: merklerootbuf,
+        time: time,
+        bits: bits,
+        nonce: nonce
+      });
+
+      var json = new BlockHeader(jsonString);
+      should.exist(json.version);
+      should.exist(json.prevblockidbuf);
+      should.exist(json.merklerootbuf);
+      should.exist(json.time);
+      should.exist(json.bits);
+      should.exist(json.nonce);
+    });
+
+  });
+
   describe('#fromBuffer', function() {
 
     it('should parse this known buffer', function() {
-      Blockheader().fromBuffer(bhbuf).toBuffer().toString('hex').should.equal(bhhex);
+      BlockHeader.fromBuffer(bhbuf).toBuffer().toString('hex').should.equal(bhhex);
     });
 
   });
@@ -102,7 +133,7 @@ describe('Blockheader', function() {
   describe('#fromBufferReader', function() {
 
     it('should parse this known buffer', function() {
-      Blockheader().fromBufferReader(BufferReader(bhbuf)).toBuffer().toString('hex').should.equal(bhhex);
+      BlockHeader.fromBufferReader(BufferReader(bhbuf)).toBuffer().toString('hex').should.equal(bhhex);
     });
 
   });
@@ -110,7 +141,7 @@ describe('Blockheader', function() {
   describe('#toBuffer', function() {
 
     it('should output this known buffer', function() {
-      Blockheader().fromBuffer(bhbuf).toBuffer().toString('hex').should.equal(bhhex);
+      BlockHeader.fromBuffer(bhbuf).toBuffer().toString('hex').should.equal(bhhex);
     });
 
   });
@@ -118,7 +149,70 @@ describe('Blockheader', function() {
   describe('#toBufferWriter', function() {
 
     it('should output this known buffer', function() {
-      Blockheader().fromBuffer(bhbuf).toBufferWriter().concat().toString('hex').should.equal(bhhex);
+      BlockHeader.fromBuffer(bhbuf).toBufferWriter().concat().toString('hex').should.equal(bhhex);
+    });
+
+  });
+
+  describe('#inspect', function() {
+
+    it('should return the correct inspect of the genesis block', function() {
+      var block = BlockHeader.fromRawBlock(dataRawBlockBinary);
+      block.inspect().should.equal('<BlockHeader '+dataRawId+'>');
+    });
+
+  });
+
+  describe('#fromRawBlock', function() {
+
+    it('should instantiate from a raw block binary', function() {
+      var x = BlockHeader.fromRawBlock(dataRawBlockBinary);
+      x.version.should.equal(2);
+      BN(x.bits).toString('hex').should.equal('1c3fffc0');
+    });
+
+    it('should instantiate from raw block buffer', function() {
+      var x = BlockHeader.fromRawBlock(dataRawBlockBuffer);
+      x.version.should.equal(2);
+      BN(x.bits).toString('hex').should.equal('1c3fffc0');
+    });
+
+  });
+
+  describe('#validTimestamp', function() {
+
+    var x = BlockHeader.fromRawBlock(dataRawBlockBuffer);
+
+    it('should validate timpstamp as true', function() {
+      var valid = x.validTimestamp(x);
+      valid.should.equal(true);
+    });
+
+
+    it('should validate timestamp as false', function() {
+      x.time = Math.round(new Date().getTime() / 1000) + BlockHeader.Constants.MAX_TIME_OFFSET + 100;
+      var valid = x.validTimestamp(x);
+      valid.should.equal(false);
+    });
+
+  });
+
+  describe('#validProofOfWork', function() {
+
+    var x = BlockHeader.fromRawBlock(dataRawBlockBuffer);
+
+    it('should validate proof-of-work as true', function() {
+      var valid = x.validProofOfWork(x);
+      valid.should.equal(true);
+
+    });
+
+    it('should validate proof of work as false because incorrect proof of work', function() {
+      var nonce = x.nonce;
+      x.nonce = 0;
+      var valid = x.validProofOfWork(x);
+      valid.should.equal(false);
+      x.nonce = nonce;
     });
 
   });
