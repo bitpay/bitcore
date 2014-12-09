@@ -27,7 +27,7 @@
     "maxstatements": 15,  // Maximum number of statements in a function
     "maxcomplexity": 4,   // Cyclomatic complexity (http://en.wikipedia.org/wiki/Cyclomatic_complexity)
     "maxdepth": 4,        // Maximum depth of nested control structures
-    "maxlen": 600,        // Maximum number of lines of code in a file
+    "maxlen": 120,        // Maximum number of cols in a line
 
     "predef": [ // Extra globals.
         "after",
