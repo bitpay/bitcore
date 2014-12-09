@@ -19,7 +19,7 @@ own.
 So, in order to transmit a valid transaction, you must know what other transactions 
 on the network store outputs that have not been spent and that are available
 for you to spend (meaning that you have the set of keys that can validate you
-own those funds). The unspent outputs are usually refered to as "utxo"s.
+own those funds). The unspent outputs are usually referred to as "utxo"s.
 
 Let's take a look at some very simple transactions:
 
@@ -46,26 +46,7 @@ bitcoin-cli sendrawtransaction <serialized transaction>
 ## Transaction API
 
 You can take a look at the javadocs for the [Transaction class here](link
-missing). This document will go over the expected high level use cases.
-
-* from(utxo)
-* from(utxo, pubkeys, threshold)
-* change(address)
-* fee(amount)
-* usingStrategy(strategy)
-* to(address, amount)
-* to(pubKeySet, amount)
-* addData(opReturnValue)
-* sign(privKey)
-* sign(privKeySet)
-* applySignature(signature)
-* missingSignatures()
-* isValidSignature(signature)
-* getSignatures(privKey)
-* getSignatures(privKeySet)
-* isFullySigned()
-* toBuffer()
-* toJSON()
+missing).
 
 ## Multisig Transactions
 
@@ -77,7 +58,7 @@ output.
 ```javascript
   var multiSigTx = new Transaction()
       .fromMultisig(utxo, publicKeys, threshold)
-      .spendAllTo(address, amount)
+      .change(address)
       .sign(myKeys);
 
   var serialized = multiSigTx.serialize();
@@ -95,52 +76,61 @@ signatures:
 
 ## Advanced topics
 
+### Internal Workings
+
+There are a number of data structures being stored internally in a
+`Transaction` instance. These are kept up to date and change through successive
+calls to its methods.
+
+* `inputs`: The ordered set of inputs for this transaction
+* `outputs`: This is the ordered set of output scripts
+* `_outpoints`: The ordered set of outpoints (a string that combines a
+  transaction hash and output index), UTXOs that will be inputs to this
+  transaction. This gets populated on calls to `from` and also when
+  deserializing from a serialized transaction.
+* `_utxos`: Maps an outpoint to information regarding the output on that
+  transaction. The values of an output are:
+  - script: the associated script for this output. Will be an instance of
+    `Script`
+  - satoshis: amount of satoshis associated with this output
+  - txId: the transaction id from the outpoint
+  - outputIndex: the index of this output in the previous transaction
+* `_inputAmount`: sum the amount for all the inputs
+* `_signatures`: This is the ordered set of `scriptSig`s that are going to be
+  included in the serialized transaction. These are objects with the following
+  values:
+  - publicKey: the public key that generated the signature 
+  - prevTxId: the previous transaction hash
+  - outputIndex: the index for the output that this input is signing
+  - signature: the `Signature` for that public key
+  - sigtype: the type of the signature (`Signature.SIGHASH_ALL` is the only one implemented)
+* `_change`: stores the value provided by calling the `change` method.
+
+TO BE IMPLEMENTED YET:
+* `_fee`: if user specified a non-standard fee, the amount (in satoshis) will
+  be stored in this variable so the change amount can be calculated.
+* `_p2shMap`: For the case of P2SH spending, the user needs to supply
+  information about the script that hashes to the hash of an UTXO. This map
+  goes from the hash of the spend script to that script. When using the
+  `from(utxo, publicKeys, threshold)` function, this map gets populated with a
+  standard multisig spend script with public keys in the order provided.
+
 ### Unspent Output Selection
 
 If you have a larger set of unspent outputs, only some of them will be selected
 to fulfill the amount. This is done by storing a cache of unspent outputs in a
 protected member called `_utxos`. When the `to()` method is called, some of
-these outputs will be selected to pay the requested amount to the appropiate
+these outputs will be selected to pay the requested amount to the appropriate
 address.
 
-There are some nits that you should have in mind when using this API:
-
-  * When a signature is added, the corresponding utxo is removed from the cache.
-  * When the transaction is serialized, this cache is not included in the
-    serialized form. 
-
-#### Spending Strategies
-
-We have implemented partially Merge Avoidance for the change
-addresses of a transaction with a simple API: 
-
-```javascript
-  var mergeAvoidance = new Transaction.Strategy.MergeAvoidance({
-    change: ['1bitcoinChange...', '3bitcoinChange...']
-  });
-  var transaction = new Transaction()
-      .usingStrategy(mergeAvoidance)
-      .to(['1target...', '3anaddress...'], amount)
-```
-
-Note that this will not create multiple transactions, which would increase
-privacy. The `MergeAvoidance` API will take care that the target and change
-addresses provided will receive as equally distributed outputs as possible,
-using a simple algorithm.
-
-In the future, if a Stealth Address is provided to the `to` method and the
-strategy being used is `MergeAvoidance`, it will derive as many addresses as
-needed according to the utxos received. In a similar fashion, we are discussing
-how to provide an API for using an extended public key to derive change
-addresses, but as the user of the library should be in control of the policy
-for deriving keys (so no transaction outputs gets unnoticed), it's proving to
-be a hard problem to solve and it may end up being the user's responsability.
+A nit that you should have in mind is that when the transaction is serialized,
+this cache can't be included in the serialized form. 
 
 ## Upcoming changes
 
-We're debating an API for full Merge Avoidance, CoinJoin, Smart contracts,
-CoinSwap, and Stealth Addresses. We're expecting to have all of them by some
-time in 2015.
+We're debating an API for Merge Avoidance, CoinJoin, Smart contracts, CoinSwap,
+and Stealth Addresses. We're expecting to have all of them by some time in
+early 2015.
 
 A first draft of a Payment Channel smart contract modular extension to this
 library is being implemented independently
