@@ -7,6 +7,7 @@ var Opcode = bitcore.Opcode;
 var PublicKey = bitcore.PublicKey;
 var Address = bitcore.Address;
 
+
 describe('Script', function() {
 
   it('should make a new script', function() {
@@ -213,6 +214,14 @@ describe('Script', function() {
 
     it('should identify this known pubkeyhashin', function() {
       Script('73 0x3046022100bb3c194a30e460d81d34be0a230179c043a656f67e3c5c8bf47eceae7c4042ee0221008bf54ca11b2985285be0fd7a212873d243e6e73f5fad57e8eb14c4f39728b8c601 65 0x04e365859b3c78a8b7c202412b949ebca58e147dba297be29eee53cd3e1d300a6419bc780cc9aec0dc94ed194e91c8f6433f1b781ee00eac0ead2aae1e8e0712c6').isPublicKeyHashIn().should.equal(true);
+    });
+
+    it('should identify this known pubkeyhashin starting with 0x02', function() {
+      Script('73 0x3046022100bb3c194a30e460d81d34be0a230179c043a656f67e3c5c8bf47eceae7c4042ee0221008bf54ca11b2985285be0fd7a212873d243e6e73f5fad57e8eb14c4f39728b8c601 21 0x02aec6b86621e7fef63747fbfd6a6e7d54c8e1052044ef2dd2c5e46656ef1194d4').isPublicKeyHashIn().should.equal(true);
+    });
+
+    it('should identify this known pubkeyhashin starting with 0x03', function() {
+      Script('73 0x3046022100bb3c194a30e460d81d34be0a230179c043a656f67e3c5c8bf47eceae7c4042ee0221008bf54ca11b2985285be0fd7a212873d243e6e73f5fad57e8eb14c4f39728b8c601 21 0x03e724d93c4fda5f1236c525de7ffac6c5f1f72b0f5cdd1fc4b4f5642b6d055fcc').isPublicKeyHashIn().should.equal(true);
     });
 
     it('should identify this known non-pubkeyhashin', function() {
