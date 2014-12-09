@@ -8,7 +8,7 @@ var bitcore = require('..');
 var PublicKey = bitcore.PublicKey;
 var Address = bitcore.Address;
 var Script = bitcore.Script;
-var networks = bitcore.Networks;
+var Networks = bitcore.Networks;
 
 describe('Address', function() {
 
@@ -205,6 +205,10 @@ describe('Address', function() {
       new Address(str).toString().should.equal(str);
     });
 
+    it('should make an address using a non-string network', function() {
+      Address.fromString(str, Networks.livenet).toString().should.equal(str);
+    });
+
     it('should error because of unrecognized data format', function() {
       (function() {
         return new Address(new Error());
@@ -257,7 +261,7 @@ describe('Address', function() {
       var hash = pubkeyhash; //use the same hash
       Address.fromPublicKeyHash(hash).toString().should.equal(str);
       var b = Address.fromPublicKeyHash(hash, 'testnet');
-      b.network.should.equal('testnet');
+      b.network.should.equal(Networks.testnet);
       b.type.should.equal('pubkeyhash');
       new Address(hash).toString().should.equal(str);
     });
@@ -265,13 +269,13 @@ describe('Address', function() {
     it('should make an address using the default network', function() {
       var hash = pubkeyhash; //use the same hash
       var a = Address.fromPublicKeyHash(hash);
-      a.network.should.equal('livenet');
+      a.network.should.equal(Networks.livenet);
       // change the default
-      networks.defaultNetwork = networks.testnet;
+      Networks.defaultNetwork = Networks.testnet;
       var b = Address.fromPublicKeyHash(hash);
-      b.network.should.equal('testnet');
+      b.network.should.equal(Networks.testnet);
       // restore the default
-      networks.defaultNetwork = networks.livenet;
+      Networks.defaultNetwork = Networks.livenet;
     });
 
     it('should throw an error for invalid length hashBuffer', function() {
@@ -325,7 +329,7 @@ describe('Address', function() {
       var a = new Address(PKHTestnet[0], 'testnet');
       var b = new Address(a.toString());
       b.toString().should.equal(PKHTestnet[0]);
-      b.network.should.equal('testnet');
+      b.network.should.equal(Networks.testnet);
     });
 
     it('should derive from this known address string livenet scripthash', function() {
