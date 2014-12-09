@@ -28,6 +28,7 @@ bitcore.util.js = require('./lib/util/js');
 bitcore.transport = {};
 bitcore.transport.Connection = require('./lib/transport/connection');
 bitcore.transport.Peer = require('./lib/transport/peer');
+bitcore.transport.Peer2 = require('./lib/transport/peer2');
 bitcore.transport.PeerManager = require('./lib/transport/peermanager');
 
 // errors thrown by the library
