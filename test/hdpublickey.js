@@ -7,7 +7,8 @@ var should = require('chai').should();
 var expect = require('chai').expect;
 var bitcore = require('..');
 var buffer = require('buffer');
-var errors = bitcore.errors.HDPublicKey.InvalidArgument;
+var errors = bitcore.errors;
+var hdErrors = bitcore.errors.HDPublicKey;
 var bufferUtil = bitcore.util.buffer;
 var HDPrivateKey = bitcore.HDPrivateKey;
 var HDPublicKey = bitcore.HDPublicKey;
@@ -65,12 +66,12 @@ describe('HDPublicKey interface', function() {
     });
 
     it('fails when user doesn\'t supply an argument', function() {
-      expectFailBuilding(null, errors.MustSupplyArgument);
+      expectFailBuilding(null, hdErrors.MustSupplyArgument);
     });
 
     it('doesn\'t recognize an invalid argument', function() {
-      expectFailBuilding(1, errors.UnrecognizedArgument);
-      expectFailBuilding(true, errors.UnrecognizedArgument);
+      expectFailBuilding(1, hdErrors.UnrecognizedArgument);
+      expectFailBuilding(true, hdErrors.UnrecognizedArgument);
     });
 
 
@@ -78,7 +79,7 @@ describe('HDPublicKey interface', function() {
       it('fails on invalid length', function() {
         expectFailBuilding(
           Base58Check.encode(new buffer.Buffer([1, 2, 3])),
-          errors.InvalidLength
+          hdErrors.InvalidLength
         );
       });
       it('fails on invalid base58 encoding', function() {
@@ -122,7 +123,7 @@ describe('HDPublicKey interface', function() {
       expect(a instanceof b).to.equal(true);
     };
     it('throws invalid argument when argument is not a string or buffer', function() {
-      compareType(HDPublicKey.getSerializedError(1), errors.UnrecognizedArgument);
+      compareType(HDPublicKey.getSerializedError(1), hdErrors.UnrecognizedArgument);
     });
     it('if a network is provided, validates that data corresponds to it', function() {
       compareType(HDPublicKey.getSerializedError(xpubkey, 'testnet'), errors.InvalidNetwork);
@@ -160,27 +161,27 @@ describe('HDPublicKey interface', function() {
     it('doesn\'t allow object arguments for derivation', function() {
       expectFail(function() {
         return new HDPublicKey(xpubkey).derive({});
-      }, errors.InvalidDerivationArgument);
+      }, hdErrors.InvalidDerivationArgument);
     });
 
     it('needs first argument for derivation', function() {
       expectFail(function() {
         return new HDPublicKey(xpubkey).derive('s');
-      }, errors.InvalidPath);
+      }, hdErrors.InvalidPath);
     });
 
     it('doesn\'t allow other parameters like m\' or M\' or "s"', function() {
       /* jshint quotmark: double */
-      expectDerivationFail("m'", errors.InvalidDerivationArgument);
-      expectDerivationFail("M'", errors.InvalidDerivationArgument);
-      expectDerivationFail("1", errors.InvalidDerivationArgument);
-      expectDerivationFail("S", errors.InvalidDerivationArgument);
+      expectDerivationFail("m'", hdErrors.InvalidDerivationArgument);
+      expectDerivationFail("M'", hdErrors.InvalidDerivationArgument);
+      expectDerivationFail("1", hdErrors.InvalidDerivationArgument);
+      expectDerivationFail("S", hdErrors.InvalidDerivationArgument);
     });
 
     it('can\'t derive hardened keys', function() {
       expectFail(function() {
         return new HDPublicKey(xpubkey).derive(HDPublicKey.Hardened + 1);
-      }, errors.InvalidDerivationArgument);
+      }, hdErrors.InvalidDerivationArgument);
     });
 
     it('should use the cache', function() {
