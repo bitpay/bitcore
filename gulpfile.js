@@ -105,6 +105,10 @@ gulp.task('browser-all', ['errors'], function(callback) {
 
 gulp.task('karma', ['browser-all'], testKarma);
 
+gulp.task('plato', shell.task[
+  'plato -d report -r -l .jshintrc -t bitcore lib'
+]);
+
 gulp.task('errors', shell.task([
   'node ./lib/errors/build.js'
 ]));

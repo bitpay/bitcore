@@ -43,6 +43,19 @@ describe('PublicKey', function() {
     pk.toString().should.equal(pubhex);
   });
 
+  it('should instantiate from a compressed public key', function() {
+    var publicKeyHex = '031ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a';
+    var publicKey = new PublicKey(publicKeyHex);
+    publicKey.toString().should.equal(publicKeyHex);
+  });
+
+  it('should instantiate from another publicKey', function() {
+    var publicKeyHex = '031ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a';
+    var publicKey = new PublicKey(publicKeyHex);
+    var publicKey2 = new PublicKey(publicKey);
+    publicKey.should.equal(publicKey2);
+  });
+
   it('should instantiate from a hex encoded DER string', function() {
     var pk = new PublicKey('041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341');
     should.exist(pk.point);

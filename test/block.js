@@ -154,21 +154,24 @@ describe('Block', function() {
 
   });
 
-  describe('#hash', function() {
+  describe('#_getHash', function() {
 
     it('should return the correct hash of the genesis block', function() {
       var block = Block.fromBuffer(genesisbuf);
       var blockhash = new Buffer(Array.apply([], new Buffer(genesisidhex, 'hex')).reverse());
-      block.hash().toString('hex').should.equal(blockhash.toString('hex'));
+      block._getHash().toString('hex').should.equal(blockhash.toString('hex'));
     });
-
   });
 
   describe('#id', function() {
 
     it('should return the correct id of the genesis block', function() {
       var block = Block.fromBuffer(genesisbuf);
-      block.id().toString('hex').should.equal(genesisidhex);
+      block.id.should.equal(genesisidhex);
+    });
+    it('"hash" should be the same as "id"', function() {
+      var block = Block.fromBuffer(genesisbuf);
+      block.id.should.equal(block.hash);
     });
 
   });
