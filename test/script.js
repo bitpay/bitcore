@@ -494,5 +494,10 @@ describe('Script', function() {
     });
   });
 
+  describe('#removeCodeseparators', function() {
+    it('should remove any OP_CODESEPARATORs', function() {
+      Script('OP_CODESEPARATOR OP_0 OP_CODESEPARATOR').removeCodeseparators().toString().should.equal('OP_0');
+    });
+  });
 
 });
