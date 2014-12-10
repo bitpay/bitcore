@@ -8,10 +8,10 @@ var should = chai.should();
 var expect = chai.expect;
 
 var bitcore = require('../..');
-var Peer = bitcore.transport.Peer2;
+var Peer = bitcore.transport.Peer;
 var Networks = bitcore.Networks;
 
-describe.only('Peer2', function() {
+describe('Peer', function() {
 
   it('should be able to create instance', function() {
     var peer = new Peer('localhost');
@@ -64,10 +64,4 @@ describe.only('Peer2', function() {
 
     peer.should.equal(peer2);
   });
-
-  it('should create connection', function() {
-    var peer = new Peer('localhost').connect();
-  });
-
-
 });
