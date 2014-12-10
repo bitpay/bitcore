@@ -54,24 +54,28 @@ describe('ScriptInterpreter', function() {
 
   describe('#verify', function() {
 
-    it('should verify or unverify these trivial scripts from script_valid.json', function() {
-      var verified = ScriptInterpreter().verify(Script('OP_1'), Script('OP_1'), Transaction(), 0);
+    it('should verify these trivial scripts', function() {
+      var verified;
+      var si = ScriptInterpreter();
+      verified = si.verify(Script('OP_1'), Script('OP_1'));
+      console.log(si.errstr);
       verified.should.equal(true);
-      verified = ScriptInterpreter().verify(Script('OP_1'), Script('OP_0'), Transaction(), 0);
+      var 
+      verified = ScriptInterpreter().verify(Script('OP_1'), Script('OP_0'));
       verified.should.equal(false);
-      verified = ScriptInterpreter().verify(Script('OP_0'), Script('OP_1'), Transaction(), 0);
+      verified = ScriptInterpreter().verify(Script('OP_0'), Script('OP_1'));
       verified.should.equal(true);
-      verified = ScriptInterpreter().verify(Script('OP_CODESEPARATOR'), Script('OP_1'), Transaction(), 0);
+      verified = ScriptInterpreter().verify(Script('OP_CODESEPARATOR'), Script('OP_1'));
       verified.should.equal(true);
-      verified = ScriptInterpreter().verify(Script(''), Script('OP_DEPTH OP_0 OP_EQUAL'), Transaction(), 0);
+      verified = ScriptInterpreter().verify(Script(''), Script('OP_DEPTH OP_0 OP_EQUAL'));
       verified.should.equal(true);
-      verified = ScriptInterpreter().verify(Script('OP_1 OP_2'), Script('OP_2 OP_EQUALVERIFY OP_1 OP_EQUAL'), Transaction(), 0);
+      verified = ScriptInterpreter().verify(Script('OP_1 OP_2'), Script('OP_2 OP_EQUALVERIFY OP_1 OP_EQUAL'));
       verified.should.equal(true);
-      verified = ScriptInterpreter().verify(Script('9 0x000000000000000010'), Script(''), Transaction(), 0);
+      verified = ScriptInterpreter().verify(Script('9 0x000000000000000010'), Script(''));
       verified.should.equal(true);
-      verified = ScriptInterpreter().verify(Script('OP_1'), Script('OP_15 OP_ADD OP_16 OP_EQUAL'), Transaction(), 0);
+      verified = ScriptInterpreter().verify(Script('OP_1'), Script('OP_15 OP_ADD OP_16 OP_EQUAL'));
       verified.should.equal(true);
-      verified = ScriptInterpreter().verify(Script('OP_0'), Script('OP_IF OP_VER OP_ELSE OP_1 OP_ENDIF'), Transaction(), 0);
+      verified = ScriptInterpreter().verify(Script('OP_0'), Script('OP_IF OP_VER OP_ELSE OP_1 OP_ENDIF'));
       verified.should.equal(true);
     });
 
