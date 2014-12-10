@@ -5,7 +5,8 @@ var assert = require('assert');
 var should = require('chai').should();
 var expect = require('chai').expect;
 var bitcore = require('..');
-var errors = bitcore.errors.HDPrivateKey.InvalidArgument;
+var errors = bitcore.errors;
+var hdErrors = errors.HDPrivateKey;
 var buffer = require('buffer');
 var bufferUtil = bitcore.util.buffer;
 var HDPrivateKey = bitcore.HDPrivateKey;
@@ -67,7 +68,7 @@ describe('HDPrivate key interface', function() {
 
   describe('should error with a nonsensical argument', function() {
     it('like a number', function() {
-      expectFailBuilding(1, errors.UnrecognizedArgument);
+      expectFailBuilding(1, hdErrors.UnrecognizedArgument);
     });
   });
 
@@ -81,11 +82,11 @@ describe('HDPrivate key interface', function() {
   });
 
   it('fails when trying to derive with an invalid argument', function() {
-    expectDerivationFail([], errors.InvalidDerivationArgument);
+    expectDerivationFail([], hdErrors.InvalidDerivationArgument);
   });
 
   it('catches early invalid paths', function() {
-    expectDerivationFail('s', errors.InvalidPath);
+    expectDerivationFail('s', hdErrors.InvalidPath);
   });
 
   it('allows derivation of hardened keys by passing a very big number', function() {
@@ -103,14 +104,14 @@ describe('HDPrivate key interface', function() {
   it('returns InvalidArgument if invalid data is given to getSerializedError', function() {
     expect(
       HDPrivateKey.getSerializedError(1) instanceof
-      errors.UnrecognizedArgument
+      hdErrors.UnrecognizedArgument
     ).to.equal(true);
   });
 
   it('returns InvalidLength if data of invalid length is given to getSerializedError', function() {
     expect(
       HDPrivateKey.getSerializedError(Base58Check.encode(new buffer.Buffer('onestring'))) instanceof
-      errors.InvalidLength
+      hdErrors.InvalidLength
     ).to.equal(true);
   });
 
@@ -137,17 +138,17 @@ describe('HDPrivate key interface', function() {
       HDPrivateKey.fromSeed('01234567890abcdef01234567890abcdef').xprivkey.should.exist();
     });
     it('fails when argument is not a buffer or string', function() {
-      expectSeedFail(1, errors.InvalidEntropyArgument);
+      expectSeedFail(1, hdErrors.InvalidEntropyArgument);
     });
     it('fails when argument doesn\'t provide enough entropy', function() {
-      expectSeedFail('01', errors.InvalidEntropyArgument.NotEnoughEntropy);
+      expectSeedFail('01', hdErrors.InvalidEntropyArgument.NotEnoughEntropy);
     });
     it('fails when argument provides too much entropy', function() {
       var entropy = '0';
       for (var i = 0; i < 129; i++) {
         entropy += '1';
       }
-      expectSeedFail(entropy, errors.InvalidEntropyArgument.TooMuchEntropy);
+      expectSeedFail(entropy, hdErrors.InvalidEntropyArgument.TooMuchEntropy);
     });
   });
 
