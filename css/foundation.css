@@ -1121,6 +1121,15 @@ button, .button {
       color: #FFFFFF !important; }
     button.secondary:hover, button.secondary:focus, .button.secondary:hover, .button.secondary:focus {
       color: #FFFFFF; }
+    button.overblack, .button.overblack {
+    background-color: #393A3A;
+    border-color: #b9b9b9;
+    color: #6D6E70; }
+    button.overblack:hover, button.overblack:focus, .button.overblack:hover, .button.overblack:focus {
+      background-color: #000000 !important; 
+      color: #939597 !important; }
+    button.overblack:hover, button.overblack:focus, .button.overblack:hover, .button.overblack:focus {
+      color: #FFFFFF; }
   button.success, .button.success {
     background-color: #43ac6a;
     border-color: #F44D37;
