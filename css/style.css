@@ -18,6 +18,11 @@
 
 /* padding / margin */  
 
+    .p0m0 {
+    margin: 0px;
+    padding: 0px;
+    }
+
     .mt10 {
     margin-top: 10px;
     }
@@ -34,6 +39,10 @@
     margin-bottom: 100px;
     }
 
+    .pt3p {
+    padding-top: 3%;
+    }
+
     .pt4p {
     padding-top: 4%;
     }
@@ -42,8 +51,12 @@
     padding-top: 15%;
     }
 
-    .pt15p {
-    padding-top: 20%;
+    .pb3p {
+    padding-bottom: 3%;
+    }
+
+    .pt3p {
+    padding-top: 3%;
     }
 
     .pt30 {
@@ -202,8 +215,19 @@
     font-family: "ubuntu-light";
     font-size: 1 em;
     margin: 30px 0 1px 0;
-    padding: 20px 0 1px 0;
+    padding: 20px 0 5px 0;
     line-height: 1.2em;
+    }
+
+    a.read-more{ 
+      color: #BD1900;
+    font-size: 0.7em;  
+
+    }
+
+    a:hover.read-more{ 
+      text-decoration: underline;
+
     }
 
     .red-border-top{ 
@@ -219,10 +243,52 @@
     .small-features-p{ 
     font-family: "ubuntu-light";
     font-size: 1em;
-    margin: 5px 0 30px 0 !important;
-    padding: 0px 0 30px 0 !important;
+    margin: 5px 0 5px 0 !important;
+    padding: 0px 5px 0 !important;
     }
 
+  #get-started{ 
+    position: relative;
+    }
+
+  .polygon-bg1{ 
+    position: absolute;
+    bottom: -345px;
+    right: 0px;
+    background-image: url("../images/polygon-bg-right.svg");
+    background-repeat: no-repeat;
+    height: 674px;
+    width: 547px;
+  }
+
+  .polygon-bg2{ 
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    background-image: url("../images/polygon-bg-left-down.svg");
+    background-repeat: no-repeat;
+    height: 339px;
+    width: 348px;
+  }
+
+   .polygon-bg3{ 
+    position: absolute;
+    top: -263px;
+    left: 0px;
+    background-image: url("../images/polygon-bg-left-up.svg");
+    background-repeat: no-repeat;
+    height: 263px;
+    width: 348px;
+  }
+
+
+  
+
+ .transparent {
+  zoom: 1;
+  filter: alpha(opacity=20);
+  opacity: 0.2;
+} 
 
   #get-started h3{ 
     color: #FFFFFF;
@@ -385,7 +451,7 @@ text-align: center;}
 
  #using-bitcore li{   
      display: inline-block;  
-     margin: 10px 20px;
+     margin: 5px 20px;
        } 
 
  .copay-link a{
@@ -519,10 +585,16 @@ text-align: center;}
    }     
 
   #footer { 
-    background-image: url("../images/volcano-ft.svg");
+    background-image: url("../images/volcano-ft-texture.svg");
     background-repeat: no-repeat;
     background-position: bottom center;
     text-align: center;
 }
+
+
+
+
+
+
 
 
