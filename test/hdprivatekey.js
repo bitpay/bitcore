@@ -47,7 +47,7 @@ describe('HDPrivate key interface', function() {
   };
 
   it('should make a new private key from random', function() {
-    (new HDPrivateKey().xprivkey).should.exist();
+    should.exist(new HDPrivateKey().xprivkey);
   });
 
   it('should error with an invalid checksum', function() {
@@ -135,7 +135,7 @@ describe('HDPrivate key interface', function() {
 
   describe('on creation from seed', function() {
     it('converts correctly from an hexa string', function() {
-      HDPrivateKey.fromSeed('01234567890abcdef01234567890abcdef').xprivkey.should.exist();
+      should.exist(HDPrivateKey.fromSeed('01234567890abcdef01234567890abcdef').xprivkey);
     });
     it('fails when argument is not a buffer or string', function() {
       expectSeedFail(1, hdErrors.InvalidEntropyArgument);

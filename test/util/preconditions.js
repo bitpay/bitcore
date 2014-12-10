@@ -1,5 +1,7 @@
 'use strict';
 
+var should = require('chai').should();
+
 var errors = require('../../lib/errors');
 var $ = require('../../lib/util/preconditions');
 var PrivateKey = require('../../lib/privatekey');
@@ -35,7 +37,7 @@ describe('preconditions', function() {
       error = e;
       e.message.should.equal('Invalid Argument for argumentName, expected string but got number');
     }
-    error.should.exist();
+    should.exist(error);
   });
   it('has no false negatives when used to check an argument type', function() {
     (function() {
@@ -51,7 +53,7 @@ describe('preconditions', function() {
       error = e;
       e.message.should.equal('Invalid Argument for (unknown name), expected PrivateKey but got number');
     }
-    error.should.exist();
+    should.exist(error);
   });
   it('has no false negatives when checking a type for a class', function() {
     (function() {
