@@ -199,15 +199,15 @@ describe('BlockHeader', function() {
 
   describe('#validProofOfWork', function() {
 
-    var x = BlockHeader.fromRawBlock(dataRawBlockBuffer);
-
     it('should validate proof-of-work as true', function() {
+      var x = BlockHeader.fromRawBlock(dataRawBlockBuffer);
       var valid = x.validProofOfWork(x);
       valid.should.equal(true);
 
     });
 
     it('should validate proof of work as false because incorrect proof of work', function() {
+      var x = BlockHeader.fromRawBlock(dataRawBlockBuffer);
       var nonce = x.nonce;
       x.nonce = 0;
       var valid = x.validProofOfWork(x);
