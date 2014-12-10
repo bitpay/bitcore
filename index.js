@@ -44,6 +44,7 @@ bitcore.PaymentProtocol = require('./lib/paymentprotocol');
 bitcore.PrivateKey = require('./lib/privatekey');
 bitcore.PublicKey = require('./lib/publickey');
 bitcore.Script = require('./lib/script');
+bitcore.ScriptInterpreter = require('./lib/script_interpreter');
 bitcore.Transaction = require('./lib/transaction');
 bitcore.URI = require('./lib/uri');
 bitcore.Unit = require('./lib/unit');
@@ -54,12 +55,6 @@ bitcore.deps.bnjs = require('bn.js');
 bitcore.deps.bs58 = require('bs58');
 bitcore.deps.Buffer = Buffer;
 bitcore.deps.elliptic = require('elliptic');
-
-//bitcore.scriptexec = require('lib/scriptexec');
-//bitcore.tx = require('lib/tx');
-//bitcore.txpartial = require('lib/txpartial');
-
-//bitcore.bip70 = require('lib/bip70');
 
 // Internal usage, exposed for testing/advanced tweaking
 bitcore._HDKeyCache = require('./lib/hdkeycache');
