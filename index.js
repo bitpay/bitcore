@@ -46,6 +46,7 @@ bitcore.PaymentProtocol = require('./lib/paymentprotocol');
 bitcore.PrivateKey = require('./lib/privatekey');
 bitcore.PublicKey = require('./lib/publickey');
 bitcore.Script = require('./lib/script');
+bitcore.ScriptInterpreter = require('./lib/script_interpreter');
 bitcore.Transaction = require('./lib/transaction');
 bitcore.URI = require('./lib/uri');
 bitcore.Unit = require('./lib/unit');
