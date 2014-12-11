@@ -43,7 +43,7 @@ The code to do these validations looks like this:
 ```javascript
 
 // validate an address
-if (PrivateKey.isValid(input){
+if (PrivateKey.isValid(input)){
   ...
 }
 
