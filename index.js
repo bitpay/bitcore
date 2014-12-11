@@ -24,6 +24,11 @@ bitcore.util.bitcoin = require('./lib/util/bitcoin');
 bitcore.util.buffer = require('./lib/util/buffer');
 bitcore.util.js = require('./lib/util/js');
 
+// transport
+bitcore.transport = {};
+bitcore.transport.Peer = require('./lib/transport/peer');
+bitcore.transport.Messages = require('./lib/transport/messages');
+
 // errors thrown by the library
 bitcore.errors = require('./lib/errors');
 
