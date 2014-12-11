@@ -7,8 +7,8 @@ Wiki](https://en.bitcoin.it/wiki/Address) for more information.
 
 ## Instantiate an Address
 
-To be able to receive bitcoin an address is needed, here is how to create an 
-address from a new private key. Please see the [`PrivateKey`](PrivateKey.md) docs 
+To be able to receive bitcoin an address is needed, here is how to create an
+address from a new private key. Please see the [`PrivateKey`](PrivateKey.md) docs
 for more information about exporting and saving a key.
 
 ```javascript
@@ -51,6 +51,12 @@ belong to.
 The code to do these validations looks like this:
 
 ```javascript
+
+// validate an address
+if (Address.isValid(input){
+  ...
+}
+
 // validate that an input field is a valid testnet address
 if (Address.isValid(input, Networks.testnet){
   ...
