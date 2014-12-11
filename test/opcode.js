@@ -25,52 +25,61 @@ describe('Opcode', function() {
   });
 
   describe('#fromNumber', function() {
-
     it('should work for 0', function() {
       Opcode().fromNumber(0).num.should.equal(0);
     });
+    it('should fail for non-number', function() {
+      Opcode().fromNumber.bind(null, 'a string').should.throw('Invalid Argument');
+    });
+  });
 
+  describe('#set', function() {
+    it('should work for object', function() {
+      Opcode().set({
+        num: 42
+      }).num.should.equal(42);
+    });
+    it('should fail for non-object', function() {
+      Opcode().set.bind(null, 'non-object').should.throw('Invalid Argument');
+    });
   });
 
   describe('#toNumber', function() {
-
     it('should work for 0', function() {
       Opcode().fromNumber(0).toNumber().should.equal(0);
     });
-
   });
 
   describe('#fromString', function() {
-
     it('should work for OP_0', function() {
       Opcode().fromString('OP_0').num.should.equal(0);
     });
-
+    it('should fail for invalid string', function() {
+      Opcode().fromString.bind(null, 'OP_SATOSHI').should.throw('Invalid opcodestr');
+      Opcode().fromString.bind(null, 'BANANA').should.throw('Invalid opcodestr');
+    });
+    it('should fail for non-string', function() {
+      Opcode().fromString.bind(null, 123).should.throw('Invalid Argument');
+    });
   });
 
   describe('#toString', function() {
-
     it('should work for OP_0', function() {
       Opcode().fromString('OP_0').toString().should.equal('OP_0');
     });
-
   });
 
   describe('@map', function() {
-
     it('should have a map containing 116 elements', function() {
       _.size(Opcode.map).should.equal(116);
     });
-
   });
 
   describe('@reverseMap', function() {
-
     it('should exist and have op 185', function() {
       should.exist(Opcode.reverseMap);
       Opcode.reverseMap[185].should.equal('OP_NOP10');
     });
-
   });
   var smallints = [
     Opcode('OP_0'),
