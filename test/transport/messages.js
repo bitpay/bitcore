@@ -1,11 +1,8 @@
 'use strict';
 
 var chai = require('chai');
-var Net = require('net');
-var Socks5Client = require('socks5-client');
 
 var should = chai.should();
-var expect = chai.expect;
 
 var bitcore = require('../..');
 var Data = require('../data/messages');
@@ -37,7 +34,7 @@ describe('Messages', function() {
 
     it('should be able to parse payload', function() {
       var payload = new Buffer(Data.VERSION.payload, 'hex');
-      var message = new Messages.Version().fromBuffer(payload);
+      new Messages.Version().fromBuffer(payload);
     });
   });
 
@@ -61,7 +58,7 @@ describe('Messages', function() {
 
     it('should be able to parse payload', function() {
       var payload = new Buffer(Data.VERACK.payload, 'hex');
-      var message = new Messages.VerAck().fromBuffer(payload);
+      new Messages.VerAck().fromBuffer(payload);
     });
   });
 
@@ -85,7 +82,7 @@ describe('Messages', function() {
 
     it('should be able to parse payload', function() {
       var payload = new Buffer(Data.INV.payload, 'hex');
-      var message = new Messages.Inventory().fromBuffer(payload);
+      new Messages.Inventory().fromBuffer(payload);
     });
   });
 
@@ -109,7 +106,7 @@ describe('Messages', function() {
 
     it('should be able to parse payload', function() {
       var payload = new Buffer(Data.ADDR.payload, 'hex');
-      var message = new Messages.Addresses().fromBuffer(payload);
+      new Messages.Addresses().fromBuffer(payload);
     });
   });
 
@@ -133,7 +130,7 @@ describe('Messages', function() {
 
     it('should be able to parse payload', function() {
       var payload = new Buffer(Data.PING.payload, 'hex');
-      var message = new Messages.Ping().fromBuffer(payload);
+      new Messages.Ping().fromBuffer(payload);
     });
   });
 
@@ -157,7 +154,7 @@ describe('Messages', function() {
 
     it('should be able to parse payload', function() {
       var payload = new Buffer(Data.PING.payload, 'hex');
-      var message = new Messages.Pong().fromBuffer(payload);
+      new Messages.Pong().fromBuffer(payload);
     });
   });
 
