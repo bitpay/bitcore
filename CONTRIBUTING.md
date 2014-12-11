@@ -92,6 +92,19 @@ returned to the user, its `.name` property should be used.
 Write a `.inspect()` method so an instance can be easily debugged in the
 console.
 
+### G6 - General: Naming Utility Namespaces
+
+Name them in CamelCase, as they are namespaces.
+
+DO:
+```javascript
+var BufferUtil = require('./util/buffer');
+```
+DON'T:
+```javascript
+var bufferUtil = require('./util/buffer');
+```
+
 ### E1 - Errors: Use bitcore.Errors
 
 We've designed a structure for Errors to follow and are slowly migrating to it.
@@ -196,6 +209,21 @@ variable names.
 Inputs for tests should not be generated randomly. Also, the type and structure
 of outputs should be checked.
 
+### T3 - Testing: Require 'bitcore' and look up classes from there
+
+This helps to make tests more useful as examples, and more independent of where
+they are placed. This also helps prevent forgetting to include all submodules
+in the bitcore object.
+
+DO:
+```javascript
+var bitcore = require('../');
+var PublicKey = bitcore.PublicKey;
+```
+DON'T:
+```javascript
+var PublicKey = require('../lib/publickey');
+```
 
 ## Pull Request Workflow
 
