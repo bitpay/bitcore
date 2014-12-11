@@ -22,6 +22,11 @@
       "from": "bs58@2.0.0",
       "resolved": "https://registry.npmjs.org/bs58/-/bs58-2.0.0.tgz"
     },
+    "buffers": {
+      "version": "0.1.1",
+      "from": "buffers@0.1.1",
+      "resolved": "https://registry.npmjs.org/buffers/-/buffers-0.1.1.tgz"
+    },
     "elliptic": {
       "version": "0.15.12",
       "from": "elliptic@0.15.12",

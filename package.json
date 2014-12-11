@@ -74,6 +74,7 @@
     "asn1.js": "=0.4.1",
     "bn.js": "=0.15.2",
     "bs58": "=2.0.0",
+    "buffers": "^0.1.1",
     "elliptic": "=0.15.14",
     "hash.js": "=0.3.2",
     "inherits": "=2.0.1",
@@ -97,9 +98,7 @@
     "run-sequence": "^1.0.2",
     "karma": "^0.12.28",
     "karma-firefox-launcher": "^0.1.3",
-    "karma-mocha": "^0.1.9",
-    "mocha": "~2.0.1",
-    "run-sequence": "^1.0.2"
+    "karma-mocha": "^0.1.9"
   },
   "license": "MIT"
 }
