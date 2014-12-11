@@ -4,6 +4,7 @@ var chai = require('chai');
 var Net = require('net');
 var Socks5Client = require('socks5-client');
 
+/* jshint unused: false */
 var should = chai.should();
 var expect = chai.expect;
 
@@ -52,7 +53,7 @@ describe('Peer', function() {
     var peer, peer2, socket;
 
     peer = new Peer('localhost');
-    expect(peer.proxy).to.be.undefined;
+    expect(peer.proxy).to.be.undefined();
     socket = peer._getSocket();
     socket.should.be.instanceof(Net.Socket);
 
