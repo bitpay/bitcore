@@ -1,9 +1,10 @@
 'use strict';
 
 var chai = chai || require('chai');
-var should = chai.should();
-var expect = chai.expect;
 var bitcore = require('..');
+var expect = chai.expect;
+var Networks = bitcore.Networks;
+var should = chai.should();
 var URI = bitcore.URI;
 
 describe('URI', function() {
@@ -62,11 +63,11 @@ describe('URI', function() {
 
     uri = new URI('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj');
     uri.address.should.be.instanceof(bitcore.Address);
-    uri.network.should.equal('livenet');
+    uri.network.should.equal(Networks.livenet);
 
     uri = new URI('bitcoin:mkYY5NRvikVBY1EPtaq9fAFgquesdjqECw');
     uri.address.should.be.instanceof(bitcore.Address);
-    uri.network.should.equal('testnet');
+    uri.network.should.equal(Networks.testnet);
 
     uri = new URI('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=1.2&other=param');
     uri.address.should.be.instanceof(bitcore.Address);
@@ -92,14 +93,13 @@ describe('URI', function() {
       address: '1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj'
     });
     uri.address.should.be.instanceof(bitcore.Address);
-    uri.network.should.equal('livenet');
+    uri.network.should.equal(Networks.livenet);
 
     uri = new URI({
       address: 'mkYY5NRvikVBY1EPtaq9fAFgquesdjqECw'
     });
     uri.address.should.be.instanceof(bitcore.Address);
-    uri.network.should.equal('testnet');
-
+    uri.network.should.equal(Networks.testnet);
 
     uri = new URI({
       address: '1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj',
