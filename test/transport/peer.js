@@ -49,7 +49,8 @@ describe('Peer', function() {
     peer.port.should.equal(8111);
   });
 
-  it('should be able to set a proxy', function() {
+  // only for node TODO: (yemel)
+  it.skip('should be able to set a proxy', function() {
     var peer, peer2, socket;
 
     peer = new Peer('localhost');

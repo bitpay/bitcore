@@ -22,6 +22,11 @@
       "from": "bs58@2.0.0",
       "resolved": "https://registry.npmjs.org/bs58/-/bs58-2.0.0.tgz"
     },
+    "bufferput": {
+      "version": "0.1.2",
+      "from": "bufferput@0.1.2",
+      "resolved": "https://registry.npmjs.org/bufferput/-/bufferput-0.1.2.tgz"
+    },
     "buffers": {
       "version": "0.1.1",
       "from": "buffers@0.1.1",
@@ -83,6 +88,11 @@
       "version": "0.0.1",
       "from": "sha512@=0.0.1",
       "resolved": "https://registry.npmjs.org/sha512/-/sha512-0.0.1.tgz"
+    },
+    "socks5-client": {
+      "version": "0.3.6",
+      "from": "socks5-client@0.3.6",
+      "resolved": "https://registry.npmjs.org/socks5-client/-/socks5-client-0.3.6.tgz"
     }
   }
 }
