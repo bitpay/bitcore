@@ -58,9 +58,7 @@ describe('ScriptInterpreter', function() {
       var verified;
       var si = ScriptInterpreter();
       verified = si.verify(Script('OP_1'), Script('OP_1'));
-      console.log(si.errstr);
       verified.should.equal(true);
-      var 
       verified = ScriptInterpreter().verify(Script('OP_1'), Script('OP_0'));
       verified.should.equal(false);
       verified = ScriptInterpreter().verify(Script('OP_0'), Script('OP_1'));
