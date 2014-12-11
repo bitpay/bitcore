@@ -23,6 +23,7 @@ bitcore.util = {};
 bitcore.util.bitcoin = require('./lib/util/bitcoin');
 bitcore.util.buffer = require('./lib/util/buffer');
 bitcore.util.js = require('./lib/util/js');
+bitcore.util.preconditions = require('./lib/util/preconditions');
 
 // transport
 bitcore.transport = {};
@@ -54,12 +55,6 @@ bitcore.deps.bnjs = require('bn.js');
 bitcore.deps.bs58 = require('bs58');
 bitcore.deps.Buffer = Buffer;
 bitcore.deps.elliptic = require('elliptic');
-
-//bitcore.scriptexec = require('lib/scriptexec');
-//bitcore.tx = require('lib/tx');
-//bitcore.txpartial = require('lib/txpartial');
-
-//bitcore.bip70 = require('lib/bip70');
 
 // Internal usage, exposed for testing/advanced tweaking
 bitcore._HDKeyCache = require('./lib/hdkeycache');
