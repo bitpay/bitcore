@@ -21,7 +21,7 @@ To export and import a private key, you can do the following:
 var exported = privateKey.toWIF();
 
 // instantiate from the exported (and saved) private key
-var imported = PrivateKey.fromWIF(exported);
+var imported = PrivateKey.fromWIF('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
 
 ```
 
@@ -49,9 +49,8 @@ if (PrivateKey.isValid(input){
 
 // get the specific validation error that can occurred
 var error = PrivateKey.getValidationError(input, Networks.livenet);
-  if (error) {
-    // handle the error
-  }
+if (error) {
+  // handle the error
 }
 
 ```
