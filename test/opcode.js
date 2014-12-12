@@ -1,7 +1,9 @@
 'use strict';
 
 var _ = require('lodash');
-var should = require('chai').should();
+var chai = require('chai');
+var should = chai.should();
+var expect = chai.expect;
 var bitcore = require('..');
 var Opcode = bitcore.Opcode;
 
@@ -26,46 +28,52 @@ describe('Opcode', function() {
 
   describe('#fromNumber', function() {
     it('should work for 0', function() {
-      Opcode().fromNumber(0).num.should.equal(0);
+      Opcode.fromNumber(0).num.should.equal(0);
     });
     it('should fail for non-number', function() {
-      Opcode().fromNumber.bind(null, 'a string').should.throw('Invalid Argument');
+      Opcode.fromNumber.bind(null, 'a string').should.throw('Invalid Argument');
     });
   });
 
   describe('#set', function() {
     it('should work for object', function() {
-      Opcode().set({
-        num: 42
-      }).num.should.equal(42);
+      Opcode(42).num.should.equal(42);
     });
-    it('should fail for non-object', function() {
-      Opcode().set.bind(null, 'non-object').should.throw('Invalid Argument');
+    it('should fail for empty-object', function() {
+      expect(function() {
+        Opcode();
+      }).to.throw(TypeError);
     });
   });
 
   describe('#toNumber', function() {
     it('should work for 0', function() {
-      Opcode().fromNumber(0).toNumber().should.equal(0);
+      Opcode.fromNumber(0).toNumber().should.equal(0);
     });
   });
 
   describe('#fromString', function() {
     it('should work for OP_0', function() {
-      Opcode().fromString('OP_0').num.should.equal(0);
+      Opcode.fromString('OP_0').num.should.equal(0);
     });
     it('should fail for invalid string', function() {
-      Opcode().fromString.bind(null, 'OP_SATOSHI').should.throw('Invalid opcodestr');
-      Opcode().fromString.bind(null, 'BANANA').should.throw('Invalid opcodestr');
+      Opcode.fromString.bind(null, 'OP_SATOSHI').should.throw('Invalid opcodestr');
+      Opcode.fromString.bind(null, 'BANANA').should.throw('Invalid opcodestr');
     });
     it('should fail for non-string', function() {
-      Opcode().fromString.bind(null, 123).should.throw('Invalid Argument');
+      Opcode.fromString.bind(null, 123).should.throw('Invalid Argument');
     });
   });
 
   describe('#toString', function() {
     it('should work for OP_0', function() {
-      Opcode().fromString('OP_0').toString().should.equal('OP_0');
+      Opcode.fromString('OP_0').toString().should.equal('OP_0');
+    });
+
+    it('should not work for non-opcode', function() {
+      expect(function(){
+        Opcode('OP_NOTACODE').toString();
+      }).to.throw('Opcode does not have a string representation');
     });
   });
 
