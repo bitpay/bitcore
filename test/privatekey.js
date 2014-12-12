@@ -129,11 +129,15 @@ describe('PrivateKey', function() {
     privkey.toString().should.equal(encmu);
   });
 
-  describe('#fromJSON', function() {
+  describe('#json', function() {
 
-    it('should input this address correctly', function() {
-      var privkey = PrivateKey.fromJSON(encmu);
-      privkey.toWIF().should.equal(encmu);
+    it('should input/output json', function() {
+      var json = {
+        bn: '96c132224121b509b7d0a16245e957d9192609c5637c6228311287b1be21627a',
+        compressed: false,
+        network: 'livenet'
+      };
+      PrivateKey.fromJSON(json).toJSON().should.deep.equal(json);
     });
 
   });
@@ -141,8 +145,8 @@ describe('PrivateKey', function() {
   describe('#toString', function() {
 
     it('should output this address correctly', function() {
-      var privkey = PrivateKey.fromJSON(encmu);
-      privkey.toJSON().should.equal(encmu);
+      var privkey = PrivateKey.fromWIF(encmu);
+      privkey.toString().should.equal(encmu);
     });
 
   });
