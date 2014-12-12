@@ -488,6 +488,22 @@ text-align: center;}
   background-position: bottom;
 }
 
+ .streamium-link a{
+    background-image:url('../images/streamium-link.svg');
+    background-position: top;
+      display : block;
+  width : 123px;
+  height : 20px;
+         } 
+
+ .streamium-link a:hover{
+    background-image:url('../images/streamium-link.svg');
+    background-position: bottom;
+      display : block;
+  width : 123px;
+  height : 20px;
+         }          
+
  .enbitcoins-link a{
     background-image:url('../images/enbitcoins-link.svg');
     background-position: top;
