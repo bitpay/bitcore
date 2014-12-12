@@ -303,12 +303,12 @@
         }
 
   #terminal { 
-    width: 340px;
+    width: 350px;
     margin-bottom: 25px;
         }
 
   #terminal-small { 
-    width: 290px;
+    width: 295px;
         }
 
   #terminal li{ 
@@ -426,104 +426,6 @@ a:hover.links-over-red{
     
   }
 
-.copay a {     
-  display : block;
-  width : 104px;
-  height : 51px;
-  background-image:url('../images/copay-logo-off.svg');}
-
-.copay:before {
-  content: url('../images/copay-logo-on.gif');
-  width:0;
-  height:0;
-  visibility:hidden;
-}
-
-.copay a:hover { 
-  display : block;
-  width : 104px;
-  height : 51px;
-  background-image:url('../images/copay-logo-on.svg');}
-
-
-  .enbitcoins a {     
-  display : block;
-  width : 152px;
-  height : 31px;
-  background-image:url('../images/enbitcoins-logo-off.svg');}
-
-.enbitcoins:before {
-  content: url('../images/enbitcoins-logo-on.gif');
-  width:0;
-  height:0;
-  visibility:hidden;
-}
-
-.enbitcoins a:hover { 
-  display : block;
-  width : 152px;
-  height : 31px;
-  background-image:url('../images/enbitcoins-logo-on.svg');}
-
-
-  .insight a {     
-  display : block;
-  width : 103px;
-  height : 35px;
-  background-image:url('../images/insight-logo-off.svg');}
-
-  .insight:before {
-  content: url('../images/insight-logo-on.svg');
-  width:0;
-  height:0;
-  visibility:hidden;
-}
-
-  .insight a:hover { 
-  display : block;
-  width : 103px;
-  height : 35px;
-  background-image:url('../images/insight-logo-on.svg');}
-
-
-  .bitbox a {     
-  display : block;
-  width : 109px;
-  height : 33px;
-  background-image:url('../images/bitbox-logo-off.svg');}
-
-  .bitbox:before {
-  content: url('../images/bitbox-logo-on.svg');
-  width:0;
-  height:0;
-  visibility:hidden;
-}
-
-  .bitbox a:hover { 
-  display : block;
-  width : 109px;
-  height : 33px;
-  background-image:url('../images/bitbox-logo-on.svg');}
-
-
-  .paper-wallet a {     
-  display : block;
-  width : 143px;
-  height : 33px;
-  background-image:url('../images/paper-wallet-logo-off.svg');}
-
-  .paper-wallet:before {
-  content: url('../images/paper-wallet-logo-on.svg');
-  width:0;
-  height:0;
-  visibility:hidden;
-}
-
-  .paper-wallet a:hover { 
-  display : block;
-  width : 143px;
-  height : 33px;
-  background-image:url('../images/paper-wallet-logo-on.svg');}
 
 
 
@@ -553,6 +455,22 @@ text-align: center;}
      display: inline-block;  
      margin: 5px 20px;
        } 
+
+ .bitpay-link a{
+    background-image:url('../images/bitpay-link.svg');
+    background-position: top;
+      display : block;
+  width : 108px;
+  height : 38px;
+         } 
+
+  .bitpay-link a:hover { 
+  display : block;
+  width : 108px;
+  height : 38px;
+  background-image:url('../images/bitpay-link.svg');
+  background-position: bottom;
+}            
 
  .copay-link a{
     background-image:url('../images/copay-link.svg');
