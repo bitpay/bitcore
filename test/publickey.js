@@ -121,22 +121,15 @@ describe('PublicKey', function() {
     });
   });
 
-  describe('#fromJSON', function() {
+  describe('#json', function() {
 
-    it('should input this public key', function() {
-      var pk = PublicKey.fromJSON('041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341');
-      pk.point.getX().toString(16).should.equal('1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a');
-      pk.point.getY().toString(16).should.equal('7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341');
-    });
-
-  });
-
-  describe('#toJSON', function() {
-
-    it('should output this pubkey', function() {
-      var hex = '041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341';
-      var pk = PublicKey.fromJSON(hex);
-      pk.toJSON().should.equal(hex);
+    it('should input/ouput json', function() {
+      var json = {
+        x: '1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a',
+        y: '7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341',
+        compressed: false
+      };
+      PublicKey.fromJSON(json).toJSON().should.deep.equal(json);
     });
 
   });
