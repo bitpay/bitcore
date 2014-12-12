@@ -1,9 +1,11 @@
-# Encoding
+# > `bitcore.encoding`
+
+## Description
 
 The `bitcore.Encoding` namespace contains utilities for encoding information in
 common formats in the bitcoin ecosystem.
 
-## Base58
+## Base58 & Base58Check
 
 Two classes are provided: `Base58` and `Base58Check`. The first one merely
 encodes/decodes a set of bytes in base58 format. The second one will also take
