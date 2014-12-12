@@ -35,6 +35,14 @@
     margin-bottom: 10px;
     } 
 
+       .mb50 {
+    margin-bottom: 50px;
+    } 
+
+       .mb60 {
+    margin-bottom: 60px;
+    } 
+
     .mb100 {
     margin-bottom: 100px;
     }
@@ -82,6 +90,16 @@
     .pb40 {
     padding-bottom: 40px;
     }
+
+    .pb60 {
+    padding-bottom: 60px;
+    }
+
+
+    .pb80 {
+    padding-bottom: 80px;
+    }
+
 
     .pb110 {
     padding-bottom: 110px;
@@ -251,6 +269,83 @@
     position: relative;
     }
 
+   #get-started p{ 
+    font-family: "Ubuntu-Light" !important;
+    font-size: 0.9em !important;
+    color: #FFFFFF;
+    margin: 0 0 5px 0;
+    padding: 0 0 0 0;
+    }   
+
+  #terminal, #terminal-small { 
+    background-image: url("../images/terminal-bg.svg");
+    background-repeat: no-repeat;
+    background-position: center;
+    list-style: none;
+    height: 147px;
+    margin: 0 auto;
+    color: #FFFFFF;
+    padding: 20px 0 0 0;
+    font-size: 1em;
+        }
+
+  #terminal { 
+    width: 340px;
+    margin-bottom: 25px;
+        }
+
+  #terminal-small { 
+    width: 290px;
+        }
+
+  #terminal li{ 
+    padding: 5px 0 0 0;
+        }
+
+.browser-icon, .browser-icon-small { 
+      background-image: url("../images/browser-icon.svg");
+      background-repeat: no-repeat;
+          }
+
+.browser-icon{ 
+      margin: 20px 0 10px 0;
+      height: 34px;
+          }
+
+.browser-icon-small { 
+      margin: 27px 0 10px 0;
+      height: 30px;
+      background-size: 71px 25px;
+          }          
+
+.nodejs-icon, .nodejs-icon-small { 
+      background-image: url("../images/nodejs-icon.svg");
+      background-repeat: no-repeat;
+      background-position: right;
+          }
+
+.nodejs-icon{ 
+      height: 34px;
+          }
+
+.nodejs-icon-small { 
+      height: 30px;
+      background-size: 63px 25px;
+          }    
+
+a.links-over-red{   
+  border-bottom: 1px #FFFFFF dotted;
+  color: #FFFFFF !important;
+  font-weight: bold;
+  padding-bottom: 3px;
+          }    
+
+a:hover.links-over-red{   
+  border-bottom: 1px red solid;
+  font-weight: bold;
+  padding-bottom: 3px;
+          }   
+
   .polygon-bg1{ 
     position: absolute;
     bottom: -345px;
@@ -292,18 +387,10 @@
 
   #get-started h3{ 
     color: #FFFFFF;
-    font-size: 1.1em;
-    line-height: 1em;
-    margin: 10px 0;
+    font-size: 1.2em;
+    margin: 0px 0;
     }
 
-    #get-started p{ 
-    color: #FFFFFF;
-    font-size: 1em;
-    font-family: "ubuntu-light";
-    margin: 0 0 0 0;
-    padding: 0 0 0 0;
-    }
 
   .get-started-illustrations{ 
 
