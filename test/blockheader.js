@@ -122,6 +122,15 @@ describe('BlockHeader', function() {
 
   });
 
+  describe('#fromString/#toString', function() {
+
+    it('should output/input a block hex string', function() {
+      var b = BlockHeader.fromString(bhhex);
+      b.toString().should.equal(bhhex);
+    });
+
+  });
+
   describe('#fromBuffer', function() {
 
     it('should parse this known buffer', function() {

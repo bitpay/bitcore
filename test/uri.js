@@ -65,6 +65,11 @@ describe('URI', function() {
     uri.address.should.be.instanceof(bitcore.Address);
     uri.network.should.equal(Networks.livenet);
 
+    uri = URI.fromString('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=123.22');
+    uri.address.toString().should.equal('1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj');
+    uri.amount.should.equal(12322000000);
+    expect(uri.otherParam).to.be.undefined;
+
     uri = new URI('bitcoin:mkYY5NRvikVBY1EPtaq9fAFgquesdjqECw');
     uri.address.should.be.instanceof(bitcore.Address);
     uri.network.should.equal(Networks.testnet);
@@ -135,6 +140,21 @@ describe('URI', function() {
     uri.address.toString().should.equal('1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj');
   });
 
+  it('should input/output String', function() {
+    var str = 'bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?message=Donation%20for%20project%20xyz&label=myLabel&other=xD';
+    URI.fromString(str).toString().should.equal(str);
+  });
+
+  it('should input/output JSON', function() {
+    var json = {
+      address: '1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj',
+      message: 'Donation for project xyz',
+      label: 'myLabel',
+      other: 'xD'
+    };
+    URI.fromJSON(json).toJSON().should.deep.equal(json);
+  });
+
   it('should support numeric amounts', function() {
     var uri = new URI('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=12.10001');
     expect(uri.amount).to.be.equal(1210001000);
@@ -166,7 +186,7 @@ describe('URI', function() {
       message: 'Hello World',
       something: 'else'
     }).toString().should.equal(
-      'bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?something=else&amount=1.10001&message=Hello%20World'
+      'bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=1.10001&message=Hello%20World&something=else'
     );
 
   });

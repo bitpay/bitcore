@@ -118,6 +118,15 @@ describe('Block', function() {
 
   });
 
+  describe('#fromString/#toString', function() {
+
+    it('should output/input a block hex string', function() {
+      var b = Block.fromString(blockhex);
+      b.toString().should.equal(blockhex);
+    });
+
+  });
+
   describe('#fromBuffer', function() {
 
     it('should make a block from this known buffer', function() {

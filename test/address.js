@@ -355,6 +355,21 @@ describe('Address', function() {
 
   });
 
+  describe('#json', function() {
+
+    it('should output/input a JSON object', function() {
+      var address = Address.fromJSON(new Address(str).toJSON());
+      address.toString().should.equal(str);
+    });
+
+    it('should output/input a JSON string', function() {
+      var json = JSON.stringify(new Address(str).toJSON());
+      var address = Address.fromJSON(json);
+      address.toString().should.equal(str);
+    });
+
+  });
+
   describe('#toString', function() {
 
     it('should output a livenet pubkeyhash address', function() {
