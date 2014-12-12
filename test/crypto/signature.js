@@ -151,7 +151,6 @@ describe('Signature', function() {
   });
 
   describe('#toString', function() {
-
     it('should convert this signature in to hex DER', function() {
       var r = BN('63173831029936981022572627018246571655303050627048489594159321588908385378810');
       var s = BN('4331694221846364448463828256391194279133231453999942381442030409253074198130');
@@ -162,7 +161,41 @@ describe('Signature', function() {
       var hex = sig.toString();
       hex.should.equal('30450221008bab1f0a2ff2f9cb8992173d8ad73c229d31ea8e10b0f4d4ae1a0d8ed76021fa02200993a6ec81755b9111762fc2cf8e3ede73047515622792110867d12654275e72');
     });
+  });
 
+
+  describe('@isTxDER', function() {
+    it('should know this is a DER signature', function() {
+      var sighex = '3042021e17cfe77536c3fb0526bd1a72d7a8e0973f463add210be14063c8a9c37632022061bfa677f825ded82ba0863fb0c46ca1388dd3e647f6a93c038168b59d131a5101';
+      var sigbuf = new Buffer(sighex, 'hex');
+      Signature.isTxDER(sigbuf).should.equal(true);
+    });
+
+    it('should know this is not a DER signature', function() {
+      //for more extensive tests, see the script interpreter
+      var sighex = '3042021e17cfe77536c3fb0526bd1a72d7a8e0973f463add210be14063c8a9c37632022061bfa677f825ded82ba0863fb0c46ca1388dd3e647f6a93c038168b59d131a5101';
+      var sigbuf = new Buffer(sighex, 'hex');
+      sigbuf[0] = 0x31;
+      Signature.isTxDER(sigbuf).should.equal(false);
+    });
+  });
+  describe('#hasLowS', function() {
+    it('should detect high and low S', function() {
+      var r = BN('63173831029936981022572627018246571655303050627048489594159321588908385378810');
+      var s = BN('4331694221846364448463828256391194279133231453999942381442030409253074198130');
+      var s2 = BN('7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B2000');
+      var sig = new Signature({
+        r: r,
+        s: s
+      });
+      var sig2 = new Signature({
+        r: r,
+        s: s2
+      });
+      sig2.hasLowS().should.equal(true);
+      sig.hasLowS().should.equal(false);
+
+    });
   });
 
 });

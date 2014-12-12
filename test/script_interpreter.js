@@ -243,6 +243,7 @@ describe('ScriptInterpreter', function() {
         var spendtx = Transaction();
 
         var interp = ScriptInterpreter();
+        console.log(scriptSig.toString() + ' ' + scriptPubkey.toString());
         var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0, flags);
         console.log(interp.errstr);
         verified.should.equal(true);

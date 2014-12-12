@@ -524,4 +524,20 @@ describe('Script', function() {
     });
   });
 
+
+  describe('#findAndDelete', function() {
+    it('should find and delete this buffer', function() {
+      Script('OP_RETURN 2 0xf0f0')
+        .findAndDelete(Script('2 0xf0f0'))
+        .toString()
+        .should.equal('OP_RETURN');
+    });
+    it('should do nothing', function() {
+      Script('OP_RETURN 2 0xf0f0')
+        .findAndDelete(Script('2 0xffff'))
+        .toString()
+        .should.equal('OP_RETURN 2 0xf0f0');
+    });
+  });
+
 });
