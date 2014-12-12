@@ -1,4 +1,6 @@
-# Transaction
+# > `bitcore.Transaction`
+
+## Description
 
 Bitcore provides a very simple API for creating transactions. We expect this API to be accessible for developers without knowing the working internals of bitcoin in deep. What follows is a small introduction to transactions with some basic knowledge required to use this API.
 
