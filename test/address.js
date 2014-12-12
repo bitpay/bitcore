@@ -363,7 +363,7 @@ describe('Address', function() {
     });
 
     it('should output/input a JSON string', function() {
-      var json = JSON.stringify(new Address(str).toJSON());
+      var json = new Address(str).toJSON();
       var address = Address.fromJSON(json);
       address.toString().should.equal(str);
     });
