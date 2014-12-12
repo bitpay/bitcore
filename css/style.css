@@ -316,7 +316,7 @@
         }
 
 .browser-icon, .browser-icon-small { 
-      background-image: url("../images/browser-icon.svg");
+      background-image: url("../images/nodejs-icon.svg");
       background-repeat: no-repeat;
           }
 
@@ -332,7 +332,7 @@
           }          
 
 .nodejs-icon, .nodejs-icon-small { 
-      background-image: url("../images/nodejs-icon.svg");
+      background-image: url("../images/browser-icon.svg");
       background-repeat: no-repeat;
       background-position: right;
           }
@@ -685,7 +685,7 @@ text-align: center;}
    }     
 
   #footer { 
-    background-image: url("../images/volcano-ft-texture.svg");
+    background-image: url("../images/volcano-ft.svg");
     background-repeat: no-repeat;
     background-position: bottom center;
     text-align: center;
