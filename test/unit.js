@@ -123,6 +123,12 @@ describe('Unit', function() {
     unit.toString().should.be.a('string');
   });
 
+  it('should input/output JSON', function() {
+    var json = {amount:1.3, code:'BTC'};
+    var unit = Unit.fromJSON(json);
+    unit.toJSON().should.deep.equal(json);
+  });
+
   it('should have an inspect method', function() {
     var unit = new Unit(1.3, 'BTC');
     should.exist(unit.inspect);
