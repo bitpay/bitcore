@@ -68,8 +68,8 @@ describe('HDPrivate key interface', function() {
 
   it('builds a json keeping the structure and same members', function() {
     assert(_.isEqual(
-      JSON.parse(new HDPrivateKey(json).toJson()),
-      JSON.parse(new HDPrivateKey(xprivkey).toJson())
+      new HDPrivateKey(json).toJSON(),
+      new HDPrivateKey(xprivkey).toJSON()
     ));
   });
 
