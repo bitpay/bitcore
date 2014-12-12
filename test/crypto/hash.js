@@ -8,6 +8,23 @@ describe('Hash', function() {
   var buf = new Buffer([0, 1, 2, 3, 253, 254, 255]);
   var str = 'test string';
 
+  describe('@sha1', function() {
+
+    it('should calculate the hash of this buffer correctly', function() {
+      var hash = Hash.sha1(buf);
+      hash.toString('hex').should.equal('de69b8a4a5604d0486e6420db81e39eb464a17b2');
+      hash = Hash.sha1(new Buffer(0));
+      hash.toString('hex').should.equal('da39a3ee5e6b4b0d3255bfef95601890afd80709');
+    });
+
+    it('should throw an error when the input is not a buffer', function() {
+      (function() {
+        Hash.sha1(str);
+      }).should.throw('Invalid Argument');
+    });
+
+  });
+
   describe('#sha256', function() {
 
     it('should calculate the hash of this buffer correctly', function() {
@@ -18,13 +35,13 @@ describe('Hash', function() {
     it('should throw an error when the input is not a buffer', function() {
       (function() {
         Hash.sha256(str);
-      }).should.throw('sha256 hash must be of a buffer');
+      }).should.throw('Invalid Argument');
     });
 
   });
 
   describe('#sha256hmac', function() {
-    
+
     it('should compute this known empty test vector correctly', function() {
       var key = new Buffer('');
       var data = new Buffer('');
@@ -49,7 +66,7 @@ describe('Hash', function() {
     it('should throw an error when the input is not a buffer', function() {
       (function() {
         Hash.sha256sha256(str);
-      }).should.throw('sha256sha256 hash must be of a buffer');
+      }).should.throw('Invalid Argument');
     });
 
   });
@@ -64,7 +81,7 @@ describe('Hash', function() {
     it('should throw an error when the input is not a buffer', function() {
       (function() {
         Hash.sha256ripemd160(str);
-      }).should.throw('sha256ripemd160 hash must be of a buffer');
+      }).should.throw('Invalid Argument');
     });
 
   });
@@ -79,7 +96,7 @@ describe('Hash', function() {
     it('should throw an error when the input is not a buffer', function() {
       (function() {
         Hash.ripemd160(str);
-      }).should.throw('ripemd160 hash must be of a buffer');
+      }).should.throw('Invalid Argument');
     });
 
   });
@@ -94,7 +111,7 @@ describe('Hash', function() {
     it('should throw an error when the input is not a buffer', function() {
       (function() {
         Hash.sha512(str);
-      }).should.throw('sha512 hash must be of a buffer');
+      }).should.throw('Invalid Argument');
     });
 
   });

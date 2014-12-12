@@ -349,9 +349,8 @@ describe('Script', function() {
   describe('#add and #prepend', function() {
 
     it('should add these ops', function() {
-      Script().add(Opcode('OP_RETURN')).add(new Buffer('')).toString().should.equal('OP_RETURN');
-    });
-    it('should add these ops', function() {
+      Script().add(1).add(10).add(186).toString().should.equal('0x01 0x0a 0xba');
+      Script().add(1000).toString().should.equal('0x03e8');
       Script().add('OP_CHECKMULTISIG').toString().should.equal('OP_CHECKMULTISIG');
       Script().add('OP_1').add('OP_2').toString().should.equal('OP_1 OP_2');
       Script().add(new Opcode('OP_CHECKMULTISIG')).toString().should.equal('OP_CHECKMULTISIG');
@@ -389,6 +388,10 @@ describe('Script', function() {
       var buf = new Buffer(1);
       buf.fill(0);
       Script().add(buf).toString().should.equal('1 0x00');
+    });
+
+    it('should work for no data OP_RETURN', function() {
+      Script().add(Opcode('OP_RETURN')).add(new Buffer('')).toString().should.equal('OP_RETURN 0');
     });
   });
 
@@ -469,11 +472,17 @@ describe('Script', function() {
     });
   });
   describe('#buildDataOut', function() {
+    it('should create script from no data', function() {
+      var s = Script.buildDataOut();
+      should.exist(s);
+      s.toString().should.equal('OP_RETURN');
+      s.isDataOut().should.equal(true);
+    });
     it('should create script from empty data', function() {
       var data = new Buffer('');
       var s = Script.buildDataOut(data);
       should.exist(s);
-      s.toString().should.equal('OP_RETURN');
+      s.toString().should.equal('OP_RETURN 0');
       s.isDataOut().should.equal(true);
     });
     it('should create script from some data', function() {
