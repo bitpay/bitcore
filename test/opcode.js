@@ -52,6 +52,13 @@ describe('Opcode', function() {
     });
   });
 
+  describe('#buffer', function() {
+    it('should correctly input/output a buffer', function() {
+      var buf = new Buffer('a6', 'hex');
+      Opcode.fromBuffer(buf).toBuffer().should.deep.equal(buf);
+    });
+  });
+
   describe('#fromString', function() {
     it('should work for OP_0', function() {
       Opcode.fromString('OP_0').num.should.equal(0);
