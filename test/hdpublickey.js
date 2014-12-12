@@ -69,6 +69,13 @@ describe('HDPublicKey interface', function() {
       expectFailBuilding(null, hdErrors.MustSupplyArgument);
     });
 
+    it('should not be able to change read-only properties', function() {
+      var publicKey = new HDPublicKey(xprivkey);
+      expect(function() {
+        publicKey.fingerPrint = 'notafingerprint';
+      }).to.throw(TypeError);
+    });
+
     it('doesn\'t recognize an invalid argument', function() {
       expectFailBuilding(1, hdErrors.UnrecognizedArgument);
       expectFailBuilding(true, hdErrors.UnrecognizedArgument);

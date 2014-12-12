@@ -50,6 +50,13 @@ describe('HDPrivate key interface', function() {
     should.exist(new HDPrivateKey().xprivkey);
   });
 
+  it('should not be able to change read-only properties', function() {
+    var hdkey = new HDPrivateKey();
+    expect(function() {
+      hdkey.fingerPrint = 'notafingerprint';
+    }).to.throw(TypeError);
+  });
+
   it('should error with an invalid checksum', function() {
     expectFailBuilding(xprivkey + '1', errors.InvalidB58Checksum);
   });
