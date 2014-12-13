@@ -132,11 +132,11 @@ describe('PrivateKey', function() {
   describe('#json', function() {
 
     it('should input/output json', function() {
-      var json = {
+      var json = JSON.stringify({
         bn: '96c132224121b509b7d0a16245e957d9192609c5637c6228311287b1be21627a',
         compressed: false,
         network: 'livenet'
-      };
+      });
       PrivateKey.fromJSON(json).toJSON().should.deep.equal(json);
     });
 

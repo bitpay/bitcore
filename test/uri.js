@@ -146,12 +146,12 @@ describe('URI', function() {
   });
 
   it('should input/output JSON', function() {
-    var json = {
+    var json = JSON.stringify({
       address: '1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj',
       message: 'Donation for project xyz',
       label: 'myLabel',
       other: 'xD'
-    };
+    });
     URI.fromJSON(json).toJSON().should.deep.equal(json);
   });
 

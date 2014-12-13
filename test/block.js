@@ -107,8 +107,8 @@ describe('Block', function() {
   describe('#toJSON', function() {
 
     it('should recover these known values', function() {
-      var block = Block(json);
-      var b = block.toJSON();
+      var block = Block.fromJSON(json);
+      var b = JSON.parse(block.toJSON());
       should.exist(b.magicnum);
       should.exist(b.blocksize);
       should.exist(b.blockheader);

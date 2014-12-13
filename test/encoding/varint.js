@@ -36,22 +36,22 @@ describe('Varint', function() {
 
   });
 
-  describe('#fromJSON', function() {
+  describe('#fromString', function() {
     
     it('should set a buffer', function() {
       var buf = BufferWriter().writeVarintNum(5).concat();
-      var varint = Varint().fromJSON(buf.toString('hex'));
+      var varint = Varint().fromString(buf.toString('hex'));
       varint.toNumber().should.equal(5);
     });
 
   });
 
-  describe('#toJSON', function() {
+  describe('#toString', function() {
     
     it('should return a buffer', function() {
       var buf = BufferWriter().writeVarintNum(5).concat();
-      var varint = Varint().fromJSON(buf.toString('hex'));
-      varint.toJSON().should.equal('05');
+      var varint = Varint().fromString(buf.toString('hex'));
+      varint.toString().should.equal('05');
     });
 
   });

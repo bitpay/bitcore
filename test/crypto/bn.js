@@ -67,23 +67,6 @@ describe('BN', function() {
 
   });
 
-  describe('#fromJSON', function() {
-    
-    it('should make BN from a string', function() {
-      BN().fromJSON('5').toString().should.equal('5');
-    });
-
-  });
-
-  describe('#toJSON', function() {
-    
-    it('should make string from a BN', function() {
-      BN(5).toJSON().should.equal('5');
-      BN().fromJSON('5').toJSON().should.equal('5');
-    });
-
-  });
-
   describe('#fromString', function() {
     
     it('should make BN from a string', function() {

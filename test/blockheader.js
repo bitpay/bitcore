@@ -87,7 +87,7 @@ describe('BlockHeader', function() {
   describe('#toJSON', function() {
 
     it('should set all the variables', function() {
-      var json = bh.toJSON();
+      var json = JSON.parse(bh.toJSON());
       should.exist(json.version);
       should.exist(json.prevblockidbuf);
       should.exist(json.merklerootbuf);
