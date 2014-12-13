@@ -124,7 +124,7 @@ describe('Unit', function() {
   });
 
   it('should input/output JSON', function() {
-    var json = {amount:1.3, code:'BTC'};
+    var json = JSON.stringify({amount:1.3, code:'BTC'});
     var unit = Unit.fromJSON(json);
     unit.toJSON().should.deep.equal(json);
   });
