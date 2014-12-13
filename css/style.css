@@ -454,6 +454,20 @@ text-align: center;}
  #using-bitcore li{   
      display: inline-block;  
      margin: 5px 20px;
+     font-size: 1.3em;
+       } 
+
+li.dogeparty-link{
+
+         } 
+
+
+ #using-bitcore li a{  
+ color: #6B6A65;
+       } 
+
+ #using-bitcore li a:hover{  
+ color: #A39F9A;
        } 
 
  .bitpay-link a{
