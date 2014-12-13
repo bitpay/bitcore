@@ -105,6 +105,19 @@ DON'T:
 var bufferUtil = require('./util/buffer');
 ```
 
+### G7 - General: Standard Methods
+
+When possible, bitcore objects should have standard methods on an instance prototype:
+* `toObject` - A plain JavaScript object that can be JSON stringified
+* `toJSON` - A JSON stringified object of the instance
+* `toString` - A string representation of the instance
+* `toBuffer` - A hex Buffer
+
+These should have a matching static method that can be used for instantiation:
+* `fromJSON` - Should handle both JSON from `toJSON` and plain JavaScript object from `toObject`
+* `fromString` - Should be able to instantiate with output from `toString`
+* `fromBuffer` - Should likewise be able to instantiate from output from `toBuffer`
+
 ### E1 - Errors: Use bitcore.Errors
 
 We've designed a structure for Errors to follow and are slowly migrating to it.
@@ -233,7 +246,7 @@ the change the branch introduces. Some examples for such branches are:
 ```sh
 git checkout -b test/some-module
 git checkout -b feature/some-new-stuff
-git checkout -b fix/some-bug 
+git checkout -b fix/some-bug
 git checkout -b remove/some-file
 ```
 
@@ -244,7 +257,7 @@ git pull --rebase bitpay master
 ```
 
 Note that we require rebasing your branch instead of mergeing it, for commit
-readability reasons. 
+readability reasons.
 
 After that, you can push the changes to your fork, by doing:
 ```sh
