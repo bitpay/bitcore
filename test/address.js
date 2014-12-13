@@ -2,13 +2,18 @@
 
 /* jshint maxstatements: 30 */
 
-var should = require('chai').should();
+var chai = require('chai');
+var should = chai.should();
+var expect = chai.expect;
 
 var bitcore = require('..');
 var PublicKey = bitcore.PublicKey;
 var Address = bitcore.Address;
 var Script = bitcore.Script;
 var Networks = bitcore.Networks;
+
+var validbase58 = require('./data/bitcoind/base58_keys_valid.json');
+var invalidbase58 = require('./data/bitcoind/base58_keys_invalid.json');
 
 describe('Address', function() {
 
@@ -34,6 +39,32 @@ describe('Address', function() {
     }).should.throw('Third argument must be "pubkeyhash" or "scripthash"');
   });
 
+  describe('bitcoind compliance', function() {
+    validbase58.map(function(d){
+      if (!d[2].isPrivkey) {
+        it('should describe address ' + d[0] + ' as valid', function() {
+          var type;
+          if (d[2].addrType === 'script') {
+            type = 'scripthash';
+          } else if (d[2].addrType === 'pubkey') {
+            type = 'pubkeyhash';
+          }
+          var network = 'livenet';
+          if (d[2].isTestnet) {
+            network = 'testnet';
+          }
+          return new Address(d[0], network, type);
+        });
+      }
+    });
+    invalidbase58.map(function(d){
+      it('should describe input ' + d[0].slice(0,10) + '... as invalid', function() {
+        expect(function() {
+          return new Address(d[0]);
+        }).to.throw(Error);
+      });
+    });
+  });
 
   // livenet valid
   var PKHLivenet = [

@@ -1,12 +1,18 @@
 'use strict';
 
-var should = require('chai').should();
+var chai = require('chai');
+var should = chai.should();
+var expect = chai.expect;
+
 var bitcore = require('..');
 var BN = bitcore.crypto.BN;
 var Point = bitcore.crypto.Point;
 var PrivateKey = bitcore.PrivateKey;
 var Networks = bitcore.Networks;
 var base58check = bitcore.encoding.Base58Check;
+
+var validbase58 = require('./data/bitcoind/base58_keys_valid.json');
+var invalidbase58 = require('./data/bitcoind/base58_keys_invalid.json');
 
 describe('PrivateKey', function() {
   var hex = '96c132224121b509b7d0a16245e957d9192609c5637c6228311287b1be21627a';
@@ -37,39 +43,62 @@ describe('PrivateKey', function() {
     should.exist(a.bn);
   });
 
+  describe('bitcoind compliance', function() {
+    validbase58.map(function(d){
+      if (d[2].isPrivkey) {
+        it('should instantiate WIF private key ' + d[0] + ' with correct properties', function() {
+          var network = Networks.livenet;
+          if (d[2].isTestnet) {
+            network = Networks.testnet;
+          }
+          var key = new PrivateKey(d[0]);
+          key.compressed.should.equal(d[2].isCompressed);
+          key.network.should.equal(network);
+        });
+      }
+    });
+    invalidbase58.map(function(d){
+      it('should describe input ' + d[0].slice(0,10) + '... as invalid', function() {
+        expect(function() {
+          return new PrivateKey(d[0]);
+        }).to.throw(Error);
+      });
+    });
+  });
+
   it('should not be able to instantiate private key greater than N', function() {
-    (function() {
+    expect(function() {
       var n = Point.getN();
       var a = new PrivateKey(n);
-    }).should.throw('Number must be less than N');
+    }).to.throw('Number must be less than N');
   });
 
   it('should not be able to instantiate private key because of network mismatch', function() {
-    (function() {
+    expect(function() {
       var a = new PrivateKey('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m', 'testnet');
-    }).should.throw('Private key network mismatch');
+    }).to.throw('Private key network mismatch');
   });
 
   it('should not be able to instantiate private key because of compression mismatch', function() {
-    (function() {
+    expect(function() {
       var a = new PrivateKey('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m', 'livenet', false);
-    }).should.throw('Private key compression mismatch');
+    }).to.throw('Private key compression mismatch');
   });
 
   it('should not be able to instantiate private key WIF is too long', function() {
-    (function() {
+    expect(function() {
       var buf = base58check.decode('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
       var buf2 = Buffer.concat([buf, new Buffer(0x01)]);
       var a = new PrivateKey(buf2);
-    }).should.throw('Length of buffer must be 33 (uncompressed) or 34 (compressed');
+    }).to.throw('Length of buffer must be 33 (uncompressed) or 34 (compressed');
   });
 
   it('should not be able to instantiate private key WIF because of unknown network byte', function() {
-    (function() {
+    expect(function() {
       var buf = base58check.decode('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
       var buf2 = Buffer.concat([new Buffer(0x01, 'hex'), buf.slice(1, 33)]);
       var a = new PrivateKey(buf2);
-    }).should.throw('Invalid network');
+    }).to.throw('Invalid network');
   });
 
   it('can be instantiated from a hex string', function() {
@@ -80,27 +109,28 @@ describe('PrivateKey', function() {
   });
 
   it('should not be able to instantiate because compressed is non-boolean', function() {
-    (function() {
-      var a = new PrivateKey(null, 'testnet', 'compressed');
-    }).should.throw('Must specify whether the corresponding public key is compressed or not (true or false)');
+    expect(function() {
+      var a = new PrivateKey('random', 'testnet', 'compressed');
+    }).to.throw('Must specify whether the corresponding public key is compressed or not (true or false)');
   });
 
   it('should not be able to instantiate because of unrecognized data', function() {
-    (function() {
+    expect(function() {
       var a = new PrivateKey(new Error());
-    }).should.throw('First argument is an unrecognized data type.');
+    }).to.throw('First argument is an unrecognized data type.');
   });
 
   it('should not be able to instantiate with unknown network', function() {
-    (function() {
-      var a = new PrivateKey(null, 'unknown');
-    }).should.throw('Must specify the network ("livenet" or "testnet")');
+    expect(function() {
+      var a = new PrivateKey('random', 'unknown');
+    }).to.throw('Must specify the network ("livenet" or "testnet")');
   });
 
-  it('should create a 0 private key with this convenience method', function() {
-    var bn = BN(0);
-    var privkey = new PrivateKey(bn);
-    privkey.bn.toString().should.equal(bn.toString());
+  it('should not create a zero private key', function() {
+    expect(function() {
+      var bn = BN(0);
+      var privkey = new PrivateKey(bn);
+     }).to.throw(TypeError);
   });
 
   it('should create a livenet private key', function() {
