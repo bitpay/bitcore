@@ -148,6 +148,11 @@ describe('HDPublicKey interface', function() {
     pubKey.toString().should.equal(pubKey.xpubkey);
   });
 
+  it('inspect() displays correctly', function() {
+    var pubKey = new HDPublicKey(xpubkey);
+    pubKey.inspect().should.equal('<HDPublicKey: ' + pubKey.xpubkey + '>');
+  });
+
   describe('derivation', function() {
     it('derivation is the same whether deriving with number or string', function() {
       var pubkey = new HDPublicKey(xpubkey);
