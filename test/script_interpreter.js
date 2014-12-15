@@ -240,8 +240,39 @@ describe('ScriptInterpreter', function() {
         var scriptPubkey = Script.fromBitcoindString(vector[1]);
         var flags = getFlags(vector[2]);
 
-        var spendtx = Transaction();
+        var hashbuf = new Buffer(32);
+        hashbuf.fill(0);
+        var credtx = Transaction();
+        //credtx.addTxin(hashbuf, 0xffffffff, Script('OP_0 OP_0'), 0xffffffff);
+        credtx.inputs.push(new Transaction.Input({
+          prevTxId: '0000000000000000000000000000000000000000000000000000000000000000',
+          outputIndex: 0xffffffff,
+          sequenceNumber: 0xffffffff,
+          script: Script('OP_0 OP_0')
+        }));
+        //credtx.addTxout(BN(0), scriptPubkey);
+        credtx._addOutput(new Transaction.Output({
+          script: scriptPubkey,
+          satoshis: 0
+        }));
+        var idbuf = credtx.id;
+        //console.log('idbuf: '+idbuf);
+        //console.log('expef: 9ce5586f04dd407719ab7e2ed3583583b9022f29652702cfac5ed082013461fe');
 
+
+        var spendtx = Transaction();
+        //spendtx.addTxin(idbuf, 0, scriptSig, 0xffffffff);
+        spendtx.inputs.push(new Transaction.Input({
+          prevTxId: idbuf.toString('hex'),
+          outputIndex: 0,
+          sequenceNumber: 0xffffffff,
+          script: scriptSig
+        }));
+        //spendtx.addTxout(BN(0), Script());
+        credtx._addOutput(new Transaction.Output({
+          script: Script(),
+          satoshis: 0
+        }));
         var interp = ScriptInterpreter();
         console.log(scriptSig.toString() + ' ' + scriptPubkey.toString());
         var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0, flags);
