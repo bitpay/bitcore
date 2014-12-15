@@ -10,6 +10,9 @@ if (typeof(window) === 'undefined'){
   var should = chai.should();
   var expect = chai.expect;
 
+  var dns = require('dns');
+  var sinon = require('sinon');
+
   var bitcore = require('../..');
   var Peer = bitcore.transport.Peer;
   var Pool = bitcore.transport.Pool;
@@ -28,14 +31,14 @@ if (typeof(window) === 'undefined'){
     });
 
     it('should discover peers via dns', function() {
-      // mock dns
-      var dns = function() {};
-      dns.resolve = function(seed, callback){
+      var stub = sinon.stub(dns, 'resolve', function(seed, callback){
         callback(null, ['10.10.10.1', '10.10.10.2', '10.10.10.3']);
-      };
-      var pool = new Pool(Networks.livenet, {dns: dns});
+      });
+      var pool = new Pool(Networks.livenet);
       pool.connect();
       pool.addrs.length.should.equal(3);
+      stub.restore();
+
     });
 
     it('should not discover peers via dns', function() {
