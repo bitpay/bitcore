@@ -49,21 +49,27 @@ describe('Peer', function() {
     peer.port.should.equal(8111);
   });
 
-  // only for node TODO: (yemel)
-  it.skip('should be able to set a proxy', function() {
-    var peer, peer2, socket;
+  if (typeof(window) === 'undefined'){
 
-    peer = new Peer('localhost');
-    expect(peer.proxy).to.be.undefined();
-    socket = peer._getSocket();
-    socket.should.be.instanceof(Net.Socket);
+    // Node.js Tests
 
-    peer2 = peer.setProxy('127.0.0.1', 9050);
-    peer2.proxy.host.should.equal('127.0.0.1');
-    peer2.proxy.port.should.equal(9050);
-    socket = peer2._getSocket();
-    socket.should.be.instanceof(Socks5Client);
+    it('should be able to set a proxy', function() {
+      var peer, peer2, socket;
 
-    peer.should.equal(peer2);
-  });
+      peer = new Peer('localhost');
+      expect(peer.proxy).to.be.undefined();
+      socket = peer._getSocket();
+      socket.should.be.instanceof(Net.Socket);
+
+      peer2 = peer.setProxy('127.0.0.1', 9050);
+      peer2.proxy.host.should.equal('127.0.0.1');
+      peer2.proxy.port.should.equal(9050);
+      socket = peer2._getSocket();
+      socket.should.be.instanceof(Socks5Client);
+
+      peer.should.equal(peer2);
+    });
+
+  }
+
 });
