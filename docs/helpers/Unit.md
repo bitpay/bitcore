@@ -1,8 +1,12 @@
-# Unit
+# > `bitcore.Unit`
+
+## Description
 
 Unit it's a utility for handling and converting bitcoins units. We strongly
 recommend you to always use satoshis to represent amount inside your application
 and only convert them to other units in the front-end.
+
+## Supported units
 
 The supported units are BTC, mBTC, bits and satoshis. The codes for each unit
 can be found as members of the Unit class.
@@ -13,6 +17,8 @@ var mbtcCode = Unit.mBTC;
 var bitsCode = Unit.bits;
 var satsCode = Unit.satoshis;
 ```
+
+## Creating units
 
 There are two ways for creating a unit instance. You can instanciate the class
 using a value and a unit code; alternatively if the unit it's fixed you could
@@ -32,6 +38,8 @@ unit = Unit.fromMilis(amount);
 unit = Unit.fromBits(amount);
 unit = Unit.fromSatoshis(amount);
 ```
+
+## Conversion
 
 Once you have a unit instance, you can check it's representantion in all the
 available units. For your convinience the classes expose three ways to acomplish

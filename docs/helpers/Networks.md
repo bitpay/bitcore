@@ -1,4 +1,6 @@
-# Networks
+# > `bitcore.Networks`
+
+## Description
 
 Bitcore provides support for both the main bitcoin network as well as for
 `testnet3`, the current test blockchain. We encourage the use of

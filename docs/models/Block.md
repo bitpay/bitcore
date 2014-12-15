@@ -1,4 +1,6 @@
-# Block
+# > `bitcore.Block`
+
+## Description
 
 A Block instance represents the information on a block in the bitcoin network.
 Note that creating it takes some computing power, as the tree of transactions
