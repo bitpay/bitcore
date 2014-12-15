@@ -454,7 +454,7 @@ text-align: center;}
  #using-bitcore li{   
      display: inline-block;  
      margin: 5px 20px;
-     font-size: 1.3em;
+
        } 
 
 li.dogeparty-link{
@@ -581,6 +581,21 @@ li.dogeparty-link{
   background-image:url('../images/paper-wallet-link.svg');
   background-position: bottom;
 }
+
+.cp-link a{ 
+    display : block;
+    height : 24px;
+    background-image:url('../images/cp-link.svg');
+    background-position: 100em left !important;
+    background-repeat: no-repeat;
+    padding: 0 0 4px 40px !important;
+}
+
+.cp-link a:hover{ 
+    background-position: bottom left;
+}
+
+
 
 
 /* footer */

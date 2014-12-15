@@ -74,3 +74,8 @@
         padding: 1em;
     }
 
+#md-main-navbar{  background-color: red !important}
+.navbar   {  background-color: red !important}
+.navbar-default {  background-color: red !important}
+.navbar-fixed-top  {  background-color: red !important}
+
