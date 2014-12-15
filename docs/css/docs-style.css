@@ -73,9 +73,9 @@
         font-size: smaller;
         padding: 1em;
     }
+.md-inpage-anchor{
+    margin-bottom: 100px !important;
+        }
 
-#md-main-navbar{  background-color: red !important}
-.navbar   {  background-color: red !important}
-.navbar-default {  background-color: red !important}
-.navbar-fixed-top  {  background-color: red !important}
+
 
