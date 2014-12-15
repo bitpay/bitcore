@@ -221,6 +221,33 @@ describe('PrivateKey', function() {
 
   });
 
+  describe('#isValidWIF', function(){
+    it('should accept an valid WIF', function() {
+      var a = PrivateKey.isValidWIF('L4mh1bzY4PLPETs5ZtsS5pH2A6gFKcQbS8rYSXQERPjJbMEP1qgn', 'livenet');
+      a.should.equal(true);
+    });
+
+    it('should accept an valid WIF on testnet', function() {
+      var a = PrivateKey.isValidWIF('cMvQXcULSsA86SVJ1iRbiApuYhHYnVrTrfuqb6btayfH1jj3sLPn', 'testnet');
+      a.should.equal(true);
+    });
+
+    it('should check agains defaultNetwork in network is not present', function() {
+      var a = PrivateKey.isValidWIF('L4mh1bzY4PLPETs5ZtsS5pH2A6gFKcQbS8rYSXQERPjJbMEP1qgn');
+      a.should.equal(true);
+    });
+
+    it('should reject an invalid WIF', function() {
+      var a = PrivateKey.isValidWIF('L4mh1bzY4PLPETs5ZtsS5pH2A6gFKcQbS8rYkXQERPjJbMEP1qgn');
+      a.should.equal(false);
+    });
+
+    it('should reject a valid WIF because network mismach', function() {
+      var a = PrivateKey.isValidWIF('L4mh1bzY4PLPETs5ZtsS5pH2A6gFKcQbS8rYkXQERPjJbMEP1qgn', 'testnet');
+      a.should.equal(false);
+    });
+  });
+
   describe('#toBuffer', function() {
     it('should output known buffer', function() {
       var privkey = new PrivateKey(BN.fromBuffer(buf), 'livenet');
