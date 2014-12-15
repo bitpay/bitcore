@@ -269,10 +269,11 @@ describe('ScriptInterpreter', function() {
           script: scriptSig
         }));
         //spendtx.addTxout(BN(0), Script());
-        credtx._addOutput(new Transaction.Output({
+        spendtx._addOutput(new Transaction.Output({
           script: Script(),
           satoshis: 0
         }));
+
         var interp = ScriptInterpreter();
         console.log(scriptSig.toString() + ' ' + scriptPubkey.toString());
         var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0, flags);
