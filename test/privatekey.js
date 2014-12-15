@@ -79,12 +79,6 @@ describe('PrivateKey', function() {
     }).to.throw('Private key network mismatch');
   });
 
-  it('should not be able to instantiate private key because of compression mismatch', function() {
-    expect(function() {
-      var a = new PrivateKey('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m', 'livenet', false);
-    }).to.throw('Private key compression mismatch');
-  });
-
   it('should not be able to instantiate private key WIF is too long', function() {
     expect(function() {
       var buf = base58check.decode('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
@@ -108,12 +102,6 @@ describe('PrivateKey', function() {
     privkey.publicKey.toString().should.equal(pubhex);
   });
 
-  it('should not be able to instantiate because compressed is non-boolean', function() {
-    expect(function() {
-      var a = new PrivateKey(BN(2), 'testnet', 'compressed');
-    }).to.throw('Must specify whether the corresponding public key is compressed or not (true or false)');
-  });
-
   it('should not be able to instantiate because of unrecognized data', function() {
     expect(function() {
       var a = new PrivateKey(new Error());
@@ -134,7 +122,7 @@ describe('PrivateKey', function() {
   });
 
   it('should create a livenet private key', function() {
-    var privkey = new PrivateKey(BN.fromBuffer(buf), 'livenet', true);
+    var privkey = new PrivateKey(BN.fromBuffer(buf), 'livenet');
     privkey.toString().should.equal(enclivenet);
   });
 
@@ -147,16 +135,6 @@ describe('PrivateKey', function() {
     b.network.should.equal(Networks.testnet);
     // restore the default
     Networks.defaultNetwork = Networks.livenet;
-  });
-
-  it('should create an uncompressed testnet private key', function() {
-    var privkey = new PrivateKey(BN.fromBuffer(buf), 'testnet', false);
-    privkey.toString().should.equal(enctu);
-  });
-
-  it('should create an uncompressed livenet private key', function() {
-    var privkey = new PrivateKey(BN.fromBuffer(buf), 'livenet', false);
-    privkey.toString().should.equal(encmu);
   });
 
   describe('#json', function() {
@@ -199,12 +177,12 @@ describe('PrivateKey', function() {
   describe('#inspect', function() {
     it('should output known livenet address for console', function() {
       var privkey = PrivateKey.fromWIF('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
-      privkey.inspect().should.equal('<PrivateKey: L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m, compressed: true, network: livenet>');
+      privkey.inspect().should.equal('<PrivateKey: L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m, network: livenet>');
     });
 
     it('should output known testnet address for console', function() {
       var privkey = PrivateKey.fromWIF('cR4qogdN9UxLZJXCNFNwDRRZNeLRWuds9TTSuLNweFVjiaE4gPaq');
-      privkey.inspect().should.equal('<PrivateKey: cR4qogdN9UxLZJXCNFNwDRRZNeLRWuds9TTSuLNweFVjiaE4gPaq, compressed: true, network: testnet>');
+      privkey.inspect().should.equal('<PrivateKey: cR4qogdN9UxLZJXCNFNwDRRZNeLRWuds9TTSuLNweFVjiaE4gPaq, network: testnet>');
     });
 
   });
@@ -231,7 +209,7 @@ describe('PrivateKey', function() {
 
   describe('#toBuffer', function() {
     it('should output known buffer', function() {
-      var privkey = new PrivateKey(BN.fromBuffer(buf), 'livenet', true);
+      var privkey = new PrivateKey(BN.fromBuffer(buf), 'livenet');
       var b = privkey.toBuffer().toString('hex').should.equal(buf.toString('hex'));
     });
   });
@@ -239,7 +217,7 @@ describe('PrivateKey', function() {
   describe('#toBigNumber', function() {
     it('should output known BN', function() {
       var a = BN.fromBuffer(buf);
-      var privkey = new PrivateKey(a, 'livenet', true);
+      var privkey = new PrivateKey(a, 'livenet');
       var b = privkey.toBigNumber();
       b.toString('hex').should.equal(a.toString('hex'));
     });
@@ -310,15 +288,15 @@ describe('PrivateKey', function() {
     });
 
     it('should convert this known PrivateKey to known PublicKey and preserve compressed=true', function() {
-      var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
-      var privkey = new PrivateKey(BN(new Buffer(privhex, 'hex')), 'livenet', true);
+      var privwif = 'L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m';
+      var privkey = new PrivateKey(privwif, 'livenet');
       var pubkey = privkey.toPublicKey();
       pubkey.compressed.should.equal(true);
     });
 
-    it('should convert this known PrivateKey to known PublicKey and preserve compressed=true', function() {
-      var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
-      var privkey = new PrivateKey(BN(new Buffer(privhex, 'hex')), 'livenet', false);
+    it('should convert this known PrivateKey to known PublicKey and preserve compressed=false', function() {
+      var privwif = '92jJzK4tbURm1C7udQXxeCBvXHoHJstDXRxAMouPG1k1XUaXdsu';
+      var privkey = new PrivateKey(privwif, 'testnet');
       var pubkey = privkey.toPublicKey();
       pubkey.compressed.should.equal(false);
     });
