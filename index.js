@@ -29,6 +29,7 @@ bitcore.util.preconditions = require('./lib/util/preconditions');
 bitcore.transport = {};
 bitcore.transport.Peer = require('./lib/transport/peer');
 bitcore.transport.Messages = require('./lib/transport/messages');
+bitcore.transport.Pool = require('./lib/transport/pool');
 
 // errors thrown by the library
 bitcore.errors = require('./lib/errors');
