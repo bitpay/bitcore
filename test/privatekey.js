@@ -110,7 +110,7 @@ describe('PrivateKey', function() {
 
   it('should not be able to instantiate because compressed is non-boolean', function() {
     expect(function() {
-      var a = new PrivateKey('random', 'testnet', 'compressed');
+      var a = new PrivateKey(BN(2), 'testnet', 'compressed');
     }).to.throw('Must specify whether the corresponding public key is compressed or not (true or false)');
   });
 
@@ -122,7 +122,7 @@ describe('PrivateKey', function() {
 
   it('should not be able to instantiate with unknown network', function() {
     expect(function() {
-      var a = new PrivateKey('random', 'unknown');
+      var a = new PrivateKey(BN(2), 'unknown');
     }).to.throw('Must specify the network ("livenet" or "testnet")');
   });
 
