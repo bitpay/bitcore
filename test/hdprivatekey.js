@@ -83,6 +83,10 @@ describe('HDPrivate key interface', function() {
     HDPrivateKey(xprivkey).toString().should.equal(xprivkey);
   });
 
+  it('inspect() displays correctly', function() {
+    HDPrivateKey(xprivkey).inspect().should.equal('<HDPrivateKey: ' + xprivkey + '>');
+  });
+
   it('allows the use of a copy constructor', function() {
     HDPrivateKey(HDPrivateKey(xprivkey))
       .xprivkey.should.equal(xprivkey);

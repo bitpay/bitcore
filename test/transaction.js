@@ -16,6 +16,11 @@ describe('Transaction', function() {
     transaction.serialize().should.equal(tx_1_hex);
   });
 
+  it('should display correctly in console', function() {
+    var transaction = new Transaction(tx_1_hex);
+    transaction.inspect().should.equal('<Transaction: ' + tx_1_hex + '>');
+  });
+
   it('standard hash of transaction should be decoded correctly', function() {
     var transaction = new Transaction(tx_1_hex);
     transaction.id.should.equal(tx_1_id);
