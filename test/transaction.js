@@ -9,7 +9,27 @@ var bitcore = require('..');
 var Transaction = bitcore.Transaction;
 var Script = bitcore.Script;
 
+var valid = require('./data/bitcoind/tx_valid.json');
+var invalid = require('./data/bitcoind/tx_invalid.json');
+
 describe('Transaction', function() {
+
+  describe('bitcoind compliance', function() {
+    
+    valid.map(function(datum){
+      if ( typeof(datum[0]) === 'string' ) {
+        return;
+      }
+
+      it('should deserialize/serialize '+datum[1].slice(0, 15)+'... transaction', function() {
+        var serialized = datum[1];
+        var t = new Transaction(serialized);
+        t.serialize().should.equal(serialized);
+      });
+
+    });
+
+  });
 
   it('should serialize and deserialize correctly a given transaction', function() {
     var transaction = new Transaction(tx_1_hex);
