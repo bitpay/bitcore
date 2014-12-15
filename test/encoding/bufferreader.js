@@ -44,7 +44,7 @@ describe('BufferReader', function() {
     it('should return the same buffer', function() {
       var buf = new Buffer([0]);
       var br = new BufferReader({buf: buf});
-      br.read().toString('hex').should.equal(buf.toString('hex'));
+      br.readAll().toString('hex').should.equal(buf.toString('hex'));
     });
 
     it('should return a buffer of this length', function() {
@@ -269,7 +269,7 @@ describe('BufferReader', function() {
     it('should reverse this [0, 1]', function() {
       var buf = new Buffer([0, 1]);
       var br = new BufferReader({buf: buf});
-      br.reverse().read().toString('hex').should.equal('0100');
+      br.reverse().readAll().toString('hex').should.equal('0100');
     });
 
   });
