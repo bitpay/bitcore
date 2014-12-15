@@ -130,7 +130,7 @@
   src: local('Ubuntu Bold'), local('Ubuntu-Bold'), url(../font/ubuntu-bold.woff) format('woff');
 }
 @font-face {
-  font-family: 'Ubuntu';
+  font-family: 'Ubuntu-BoldItalic';
   font-style: italic;
   font-weight: 700;
   src: local('Ubuntu Bold Italic'), local('Ubuntu-BoldItalic'), url(../font/ubuntu-bold-italic.woff) format('woff');
