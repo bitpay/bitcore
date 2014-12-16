@@ -119,6 +119,78 @@ describe('Transaction', function() {
       }).should.equal(true);
     });
   });
+  describe('change address', function() {
+    var fromAddress = 'mszYqVnqKoQx4jcTdJXxwKAissE3Jbrrc1';
+    var simpleUtxoWith100000Satoshis = {
+      address: fromAddress,
+      txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+      outputIndex: 0,
+      script: Script.buildPublicKeyHashOut(fromAddress).toString(),
+      satoshis: 100000
+    };
+    var toAddress = 'mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc';
+    var changeAddress = 'mgBCJAsvzgT2qNNeXsoECg2uPKrUsZ76up';
+    var privateKey = 'cSBnVM4xvxarwGQuAfQFwqDg9k5tErHUHzgWsEfD4zdwUasvqRVY';
+
+    it('can calculate simply the output amount', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith100000Satoshis)
+        .to(toAddress, 50000)
+        .change(changeAddress)
+        .sign(privateKey);
+      transaction.outputs.length.should.equal(2);
+      transaction.outputs[1].satoshis.should.equal(49000);
+      transaction.outputs[1].script.toString()
+        .should.equal(Script.fromAddress(changeAddress).toString());
+    });
+    it('can recalculate the change amount', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith100000Satoshis)
+        .to(toAddress, 50000)
+        .change(changeAddress)
+        .sign(privateKey)
+        .to(toAddress, 20000)
+        .sign(privateKey);
+      transaction.outputs.length.should.equal(3);
+      transaction.outputs[2].satoshis.should.equal(29000);
+      transaction.outputs[2].script.toString()
+        .should.equal(Script.fromAddress(changeAddress).toString());
+    });
+    it('adds no fee if no change is available', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith100000Satoshis)
+        .to(toAddress, 99000)
+        .sign(privateKey);
+      transaction.outputs.length.should.equal(1);
+    });
+    it('adds no fee if no money is available', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith100000Satoshis)
+        .to(toAddress, 100000)
+        .change(changeAddress)
+        .sign(privateKey);
+      transaction.outputs.length.should.equal(1);
+    });
+    it('fee can be set up manually', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith100000Satoshis)
+        .to(toAddress, 80000)
+        .fee(10000)
+        .change(changeAddress)
+        .sign(privateKey);
+      transaction.outputs.length.should.equal(2);
+      transaction.outputs[1].satoshis.should.equal(10000);
+    });
+    it('coverage: on second call to sign, change is not recalculated', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith100000Satoshis)
+        .to(toAddress, 100000)
+        .change(changeAddress)
+        .sign(privateKey)
+        .sign(privateKey);
+      transaction.outputs.length.should.equal(1);
+    });
+  });
 });
 
 var tx_empty_hex = '01000000000000000000';
