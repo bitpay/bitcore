@@ -57,30 +57,6 @@ Script.fromBitcoindString = function(str) {
   var buf = bw.concat();
   return this.fromBuffer(buf);
 };
-
-//the script string format used in bitcoind data tests
-Script.toBitcoindString = function() {
-  var str = '';
-  for (var i = 0; i < this.chunks.length; i++) {
-    var chunk = this.chunks[i];
-    if (chunk.buf) {
-      var buf = Script({
-        chunks: [chunk]
-      }).toBuffer();
-      var hex = buf.toString('hex');
-      str = str + ' ' + '0x' + hex;
-    } else if (typeof Opcode.str[chunk.opcodenum] !== 'undefined') {
-      var ostr = Opcode(chunk.opcodenum).toString();
-      str = str + ' ' + ostr.slice(3); //remove OP_
-    } else {
-      str = str + ' ' + '0x' + chunk.opcodenum.toString(16);
-    }
-  }
-  return str.substr(1);
-};
-
-
-
 describe('ScriptInterpreter', function() {
 
   it('should make a new interp', function() {
@@ -225,93 +201,74 @@ describe('ScriptInterpreter', function() {
     return flags;
   };
 
-  var c = 0;
+
+  var testToFromString = function(script) {
+    var s = script.toString();
+    Script.fromString(s).toString().should.equal(s);
+  };
+
+  var testFixture = function(vector, expected) {
+    var scriptSig = Script.fromBitcoindString(vector[0]);
+    var scriptPubkey = Script.fromBitcoindString(vector[1]);
+    var flags = getFlags(vector[2]);
+
+
+    //testToFromString(scriptSig);
+    //testToFromString(scriptPubkey);
+
+    var hashbuf = new Buffer(32);
+    hashbuf.fill(0);
+    var credtx = Transaction();
+    credtx.inputs.push(new Transaction.Input({
+      prevTxId: '0000000000000000000000000000000000000000000000000000000000000000',
+      outputIndex: 0xffffffff,
+      sequenceNumber: 0xffffffff,
+      script: Script('OP_0 OP_0')
+    }));
+    credtx._addOutput(new Transaction.Output({
+      script: scriptPubkey,
+      satoshis: 0
+    }));
+    var idbuf = credtx.id;
+
+    var spendtx = Transaction();
+    spendtx.inputs.push(new Transaction.Input({
+      prevTxId: idbuf.toString('hex'),
+      outputIndex: 0,
+      sequenceNumber: 0xffffffff,
+      script: scriptSig
+    }));
+    spendtx._addOutput(new Transaction.Output({
+      script: Script(),
+      satoshis: 0
+    }));
+
+    var interp = ScriptInterpreter();
+    console.log(scriptSig.toString() + ' ' + scriptPubkey.toString());
+    var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0, flags);
+    console.log(interp.errstr);
+    verified.should.equal(expected);
+  };
   describe.only('bitcoind fixtures', function() {
-    script_valid.forEach(function(vector) {
-      if (vector.length === 1) {
-        return;
-      }
-      c++;
-      var descstr = vector[3];
-      var fullScriptString = vector[0] + ' ' + vector[1];
-      var comment = descstr ? (' (' + descstr + ')') : '';
-      it('should pass script_valid vector #' + c + ': ' + fullScriptString + comment, function() {
-        var scriptSig = Script.fromBitcoindString(vector[0]);
-        var scriptPubkey = Script.fromBitcoindString(vector[1]);
-        var flags = getFlags(vector[2]);
-
-        var hashbuf = new Buffer(32);
-        hashbuf.fill(0);
-        var credtx = Transaction();
-        //credtx.addTxin(hashbuf, 0xffffffff, Script('OP_0 OP_0'), 0xffffffff);
-        credtx.inputs.push(new Transaction.Input({
-          prevTxId: '0000000000000000000000000000000000000000000000000000000000000000',
-          outputIndex: 0xffffffff,
-          sequenceNumber: 0xffffffff,
-          script: Script('OP_0 OP_0')
-        }));
-        //credtx.addTxout(BN(0), scriptPubkey);
-        credtx._addOutput(new Transaction.Output({
-          script: scriptPubkey,
-          satoshis: 0
-        }));
-        var idbuf = credtx.id;
-        //console.log('idbuf: '+idbuf);
-        //console.log('expef: 9ce5586f04dd407719ab7e2ed3583583b9022f29652702cfac5ed082013461fe');
-
-
-        var spendtx = Transaction();
-        //spendtx.addTxin(idbuf, 0, scriptSig, 0xffffffff);
-        spendtx.inputs.push(new Transaction.Input({
-          prevTxId: idbuf.toString('hex'),
-          outputIndex: 0,
-          sequenceNumber: 0xffffffff,
-          script: scriptSig
-        }));
-        //spendtx.addTxout(BN(0), Script());
-        spendtx._addOutput(new Transaction.Output({
-          script: Script(),
-          satoshis: 0
-        }));
-
-        var interp = ScriptInterpreter();
-        console.log(scriptSig.toString() + ' ' + scriptPubkey.toString());
-        var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0, flags);
-        console.log(interp.errstr);
-        verified.should.equal(true);
+    var testAllFixtures = function(set, expected) {
+      var c = 0;
+      script_valid.forEach(function(vector) {
+        if (vector.length === 1) {
+          return;
+        }
+        c++;
+        var descstr = vector[3];
+        var fullScriptString = vector[0] + ' ' + vector[1];
+        var comment = descstr ? (' (' + descstr + ')') : '';
+        it('should pass script_valid vector #' + c + ': ' + fullScriptString + comment, function() {
+          testFixture(vector, expected);
+        });
       });
-    });
+    };
+    testAllFixtures(script_valid, true);
+    testAllFixtures(script_invalid, false);
 
-    c = 0;
-    script_invalid.forEach(function(vector) {
-      if (vector.length === 1) {
-        return;
-      }
-      c++;
-      var descstr = vector[3];
-      it('should pass script_invalid vector ' + c + '(' + descstr + ')', function() {
-        var scriptSig = Script.fromBitcoindString(vector[0]);
-        var scriptPubkey = Script.fromBitcoindString(vector[1]);
-        var flags = getFlags(vector[2]);
-
-        var hashbuf = new Buffer(32);
-        hashbuf.fill(0);
-        var credtx = Transaction();
-        credtx.addTxin(hashbuf, 0xffffffff, Script('OP_0 OP_0'), 0xffffffff);
-        credtx.addTxout(BN(0), scriptPubkey);
-
-        var idbuf = credtx.hash();
-        var spendtx = Transaction();
-        spendtx.addTxin(idbuf, 0, scriptSig, 0xffffffff);
-        spendtx.addTxout(BN(0), Script());
-
-        var interp = ScriptInterpreter();
-        var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0, flags);
-        verified.should.equal(false);
-      });
-    });
-
-    c = 0;
+    var c = 0;
     tx_valid.forEach(function(vector) {
       if (vector.length === 1) {
         return;
