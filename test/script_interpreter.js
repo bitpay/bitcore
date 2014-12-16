@@ -120,52 +120,6 @@ describe('ScriptInterpreter', function() {
       verified.should.equal(true);
     });
 
-    it.skip('should verify this new pay-to-pubkey script', function() {
-      // TODO: unskip when Transaction is done
-      var privkey = new PrivateKey();
-      var pubkey = privkey.toPublicKey();
-      var scriptPubkey = Script.buildPublicKeyOut(pubkey);
-
-      var hashbuf = new Buffer(32);
-      hashbuf.fill(0);
-      var credtx = Transaction();
-      credtx.addTxin(hashbuf, 0xffffffff, Script('OP_0 OP_0'), 0xffffffff);
-      credtx.addTxout(BN(0), scriptPubkey);
-
-      var idbuf = credtx.hash();
-      var spendtx = Transaction();
-      spendtx.addTxin(idbuf, 0, Script(), 0xffffffff);
-      spendtx.addTxout(BN(0), Script());
-
-      var sig = spendtx.sign(keypair, Sig.SIGHASH_ALL, 0, scriptPubkey);
-      var scriptSig = Script().writeBuffer(sig.toTxFormat());
-      spendtx.txins[0].setScript(scriptSig);
-
-      var interp = ScriptInterpreter();
-      var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0);
-      verified.should.equal(true);
-    });
-
-    it.skip('should verify this pay-to-pubkey script from script_valid.json', function() {
-      var scriptSig = Script.fromBitcoindString('0x47 0x3044022007415aa37ce7eaa6146001ac8bdefca0ddcba0e37c5dc08c4ac99392124ebac802207d382307fd53f65778b07b9c63b6e196edeadf0be719130c5db21ff1e700d67501');
-      var scriptPubkey = Script.fromBitcoindString('0x41 0x0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8 CHECKSIG');
-
-      var hashbuf = new Buffer(32);
-      hashbuf.fill(0);
-      var credtx = Transaction();
-      credtx.addTxin(hashbuf, 0xffffffff, Script('OP_0 OP_0'), 0xffffffff);
-      credtx.addTxout(BN(0), scriptPubkey);
-
-      var idbuf = credtx.hash();
-      var spendtx = Transaction();
-      spendtx.addTxin(idbuf, 0, scriptSig, 0xffffffff);
-      spendtx.addTxout(BN(0), Script());
-
-      var interp = ScriptInterpreter();
-      var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0, 0);
-      verified.should.equal(true);
-    });
-
   });
 
 
@@ -208,7 +162,6 @@ describe('ScriptInterpreter', function() {
   };
 
   var testFixture = function(vector, expected) {
-    console.log(vector);
     var scriptSig = Script.fromBitcoindString(vector[0]);
     var scriptPubkey = Script.fromBitcoindString(vector[1]);
     var flags = getFlags(vector[2]);
@@ -245,12 +198,7 @@ describe('ScriptInterpreter', function() {
     }));
 
     var interp = ScriptInterpreter();
-    console.log('scriptSig=' + scriptSig.toString());
-    console.log('scriptPubkey=' + scriptPubkey.toString());
-    console.log(vector[1]);
-    console.log(scriptSig.toString() + ' ' + scriptPubkey.toString());
     var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0, flags);
-    console.log(interp.errstr);
     verified.should.equal(expected);
   };
   describe.only('bitcoind fixtures', function() {
