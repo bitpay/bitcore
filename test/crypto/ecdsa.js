@@ -127,7 +127,7 @@ describe("ECDSA", function() {
 
     it('should calculate the correct public key for this signature with low s', function() {
       ecdsa.k = BN('114860389168127852803919605627759231199925249596762615988727970217268189974335', 10);
-      ecdsa.sig = Signature().fromString('3045022100ec3cfe0e335791ad278b4ec8eac93d0347a97877bb1d54d35d189e225c15f6650220278cf15b05ce47fb37d2233802899d94c774d5480bba9f0f2d996baa13370c43');
+      ecdsa.sig = Signature.fromString('3045022100ec3cfe0e335791ad278b4ec8eac93d0347a97877bb1d54d35d189e225c15f6650220278cf15b05ce47fb37d2233802899d94c774d5480bba9f0f2d996baa13370c43');
       ecdsa.sig.i = 0;
       var pubkey = ecdsa.sig2pubkey();
       pubkey.point.eq(ecdsa.pubkey.point).should.equal(true);
@@ -136,7 +136,7 @@ describe("ECDSA", function() {
     it('should calculate the correct public key for this signature with high s', function() {
       ecdsa.k = BN('114860389168127852803919605627759231199925249596762615988727970217268189974335', 10);
       ecdsa.sign();
-      ecdsa.sig = Signature().fromString('3046022100ec3cfe0e335791ad278b4ec8eac93d0347a97877bb1d54d35d189e225c15f665022100d8730ea4fa31b804c82ddcc7fd766269f33a079ea38e012c9238f2e2bcff34fe');
+      ecdsa.sig = Signature.fromString('3046022100ec3cfe0e335791ad278b4ec8eac93d0347a97877bb1d54d35d189e225c15f665022100d8730ea4fa31b804c82ddcc7fd766269f33a079ea38e012c9238f2e2bcff34fe');
       ecdsa.sig.i = 1;
       var pubkey = ecdsa.sig2pubkey();
       pubkey.point.eq(ecdsa.pubkey.point).should.equal(true);
@@ -169,8 +169,7 @@ describe("ECDSA", function() {
     });
 
     it('should return an error if the signature is incorrect', function() {
-      ecdsa.sig = new Signature();
-      ecdsa.sig.fromString('3046022100e9915e6236695f093a4128ac2a956c40ed971531de2f4f41ba05fac7e2bd019c02210094e6a4a769cc7f2a8ab3db696c7cd8d56bcdbfff860a8c81de4bc6a798b90827');
+      ecdsa.sig = new Signature.fromString('3046022100e9915e6236695f093a4128ac2a956c40ed971531de2f4f41ba05fac7e2bd019c02210094e6a4a769cc7f2a8ab3db696c7cd8d56bcdbfff860a8c81de4bc6a798b90827');
       ecdsa.sig.r = ecdsa.sig.r.add(BN(1));
       ecdsa.sigError().should.equal("Invalid signature");
     });
@@ -235,8 +234,7 @@ describe("ECDSA", function() {
   describe('#verify', function() {
     
     it('should verify a signature that was just signed', function() {
-      ecdsa.sig = new Signature();
-      ecdsa.sig.fromString('3046022100e9915e6236695f093a4128ac2a956c40ed971531de2f4f41ba05fac7e2bd019c02210094e6a4a769cc7f2a8ab3db696c7cd8d56bcdbfff860a8c81de4bc6a798b90827');
+      ecdsa.sig = new Signature.fromString('3046022100e9915e6236695f093a4128ac2a956c40ed971531de2f4f41ba05fac7e2bd019c02210094e6a4a769cc7f2a8ab3db696c7cd8d56bcdbfff860a8c81de4bc6a798b90827');
       ecdsa.verify().verified.should.equal(true);
     });
 
