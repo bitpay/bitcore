@@ -20,16 +20,12 @@ bitcore.encoding.Varint = require('./lib/encoding/varint');
 
 // utilities
 bitcore.util = {};
-bitcore.util.bitcoin = require('./lib/util/bitcoin');
 bitcore.util.buffer = require('./lib/util/buffer');
 bitcore.util.js = require('./lib/util/js');
 bitcore.util.preconditions = require('./lib/util/preconditions');
 
 // transport
-bitcore.transport = {};
-bitcore.transport.Peer = require('./lib/transport/peer');
-bitcore.transport.Messages = require('./lib/transport/messages');
-bitcore.transport.Pool = require('./lib/transport/pool');
+bitcore.transport = require('./lib/transport');
 
 // errors thrown by the library
 bitcore.errors = require('./lib/errors');
