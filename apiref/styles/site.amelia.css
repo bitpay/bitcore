@@ -206,7 +206,6 @@ textarea {
 }
 body {
   margin: 0;
-  font-family: 'Cabin', Verdana, sans-serif;
   font-size: 14px;
   line-height: 20px;
   color: #e1f0f0;
@@ -618,7 +617,6 @@ h4,
 h5,
 h6 {
   margin: 10px 0;
-  font-family: 'Lobster', cursive;
   font-weight: normal;
   line-height: 20px;
   color: inherit;
@@ -811,7 +809,6 @@ address {
 code,
 pre {
   padding: 0 3px 2px;
-  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
   font-size: 12px;
   color: #444444;
   -webkit-border-radius: 3px;
@@ -893,7 +890,6 @@ input,
 button,
 select,
 textarea {
-  font-family: 'Cabin', Verdana, sans-serif;
 }
 label {
   display: block;
@@ -3831,7 +3827,6 @@ input[type="submit"].btn.btn-mini {
 .navbar-search .search-query {
   margin-bottom: 0;
   padding: 4px 14px;
-  font-family: 'Cabin', Verdana, sans-serif;
   font-size: 13px;
   font-weight: normal;
   line-height: 1;
@@ -5271,7 +5266,6 @@ h3 small,
 h4 small,
 h5 small,
 h6 small {
-  font-family: 'Cabin', Verdana, sans-serif;
   color: #e1f0f0;
 }
 code,
@@ -5325,7 +5319,6 @@ hr {
 }
 .navbar .brand {
   padding: 15px 20px 14px;
-  font-family: 'Lobster', cursive;
   font-size: 24px;
   font-weight: normal;
 }
@@ -5842,7 +5835,6 @@ div.subnav-fixed {
   background-color: #00bce1;
 }
 legend {
-  font-family: 'Lobster', cursive;
 }
 legend,
 label,

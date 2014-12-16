@@ -206,7 +206,6 @@ textarea {
 }
 body {
   margin: 0;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 14px;
   line-height: 20px;
   color: #555555;
@@ -618,7 +617,6 @@ h4,
 h5,
 h6 {
   margin: 10px 0;
-  font-family: 'Telex', sans-serif;
   font-weight: bold;
   line-height: 20px;
   color: #317eac;
@@ -811,7 +809,6 @@ address {
 code,
 pre {
   padding: 0 3px 2px;
-  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
   font-size: 12px;
   color: #333333;
   -webkit-border-radius: 3px;
