@@ -24,6 +24,12 @@ Now, this could just be serialized to hexadecimal ASCII values (`transaction.ser
 bitcoin-cli sendrawtransaction <serialized transaction>
 ```
 
+You can also override the fee estimation with another amount, specified in satoshis:
+```javascript
+var transaction = new Transaction().fee(5430); // Minimum non-dust amount
+var transaction = new Transaction().fee(1e8);  // Generous fee of 1 BTC
+```
+
 ## Transaction API
 
 You can take a look at the javadocs for the [Transaction class here](link missing).
@@ -71,8 +77,6 @@ There are a number of data structures being stored internally in a `Transaction`
 * `outputs`: This is the ordered set of output scripts
 * `_inputAmount`: sum of the amount for all the inputs
 * `_outputAmount`: sum of the amount for all the outputs
-
-TO BE IMPLEMENTED YET:
 * `_fee`: if user specified a non-standard fee, the amount (in satoshis) will be stored in this variable so the change amount can be calculated.
 * `_change`: stores the value provided by calling the `change` method.
 
