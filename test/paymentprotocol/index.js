@@ -297,6 +297,12 @@ describe('PaymentProtocol', function() {
       output.get('amount').toInt().should.equal(20);
     });
 
+    it('should be able to make output using "makeOutput"', function() {
+      var output = new PaymentProtocol().makeOutput();
+      output.message.set('amount', 20);
+      output.message.get('amount').toInt().should.equal(20);
+    });
+
   });
 
   describe('#PaymentDetails', function() {
@@ -380,6 +386,24 @@ describe('PaymentProtocol', function() {
       pahex.length.should.be.greaterThan(0);
     });
 
+    it('makePaymentACK', function() {
+      var payment = new PaymentProtocol.Payment();
+      var ack = new PaymentProtocol().makePaymentACK();
+      ack.set('payment', payment);
+      ack.set('memo', 'this is a memo');
+      ack.get('memo').should.equal('this is a memo');
+      var valid = ack.isValidSize();
+      valid.should.equal(true);
+      var contentType = ack.getContentType();
+      contentType.should.equal(PaymentProtocol.PAYMENT_ACK_CONTENT_TYPE);
+      var serialized = ack.serialize();
+      serialized.length.should.be.greaterThan(0);
+      var ack2 = new PaymentProtocol().makePaymentACK();
+      ack2.deserialize(serialized, 'PaymentACK');
+      var serialized2 = ack2.serialize();
+      serialized.should.deep.equal(serialized2);
+    });
+
   });
 
   describe('#X509Certificates', function() {
@@ -412,6 +436,14 @@ describe('PaymentProtocol', function() {
   });
 
   describe('#getContentType', function() {
+
+    it('should error without a known message type', function() {
+      var paypro = new PaymentProtocol();
+      paypro.messageType = 'unknown';
+      expect(function(){
+        paypro.getContentType();
+      }).to.throw(Error);
+    });
 
     it('should get a content type for payment', function() {
       var paypro = new PaymentProtocol();
@@ -463,6 +495,14 @@ describe('PaymentProtocol', function() {
 
   describe('#serializeForSig', function() {
 
+    it('should error when not a payment request', function() {
+      var paypro = new PaymentProtocol();
+      paypro.messageType = 'unknown';
+      expect(function(){
+        paypro.serializeForSig();
+      }).to.throw(Error);
+    });
+
     it('should serialize a PaymentRequest and not fail', function() {
       var pd = new PaymentProtocol.PaymentDetails();
       pd.set('time', 0);
@@ -472,6 +512,10 @@ describe('PaymentProtocol', function() {
       paypro.makePaymentRequest();
       paypro.set('serialized_payment_details', pdbuf);
       var buf = paypro.serializeForSig();
+      var valid = paypro.isValidSize();
+      var contentType = paypro.getContentType();
+      contentType.should.equal(PaymentProtocol.PAYMENT_REQUEST_CONTENT_TYPE);
+      valid.should.equal(true);
       buf.length.should.be.greaterThan(0);
     });
 
@@ -494,6 +538,13 @@ describe('PaymentProtocol', function() {
 
   describe('#deserialize', function() {
 
+    it('should error without a message type', function() {
+      var paypro = new PaymentProtocol();
+      expect(function(){
+        paypro.deserialize(new Buffer({size: 12}));
+      }).to.throw(Error);
+    });
+
     it('should deserialize a serialized message', function() {
       var obj = {};
       var paypro = new PaymentProtocol();
@@ -510,6 +561,29 @@ describe('PaymentProtocol', function() {
   });
 
   describe('#sign', function() {
+
+    it('should error when not a payment request', function() {
+      var paypro = new PaymentProtocol();
+      expect(function(){
+        paypro.sign();
+      }).to.throw(Error);
+    });
+
+    it('should not sign if the pki_type is "none"', function() {
+      var paypro = new PaymentProtocol().makePaymentRequest();
+      paypro.set('pki_type', 'none');
+      var a = paypro.sign();
+      var signature = a.get('signature');
+      should.not.exist(signature);
+    });
+
+    it('should error if unkown pki_type', function() {
+      var paypro = new PaymentProtocol().makePaymentRequest();
+      paypro.set('pki_type', 'x508'); //typo
+      expect(function(){
+        paypro.sign();
+      }).to.throw(Error);
+    });
 
     it('should sign a payment request', function() {
       // SIN
@@ -548,6 +622,28 @@ describe('PaymentProtocol', function() {
   });
 
   describe('#verify', function() {
+
+    it('should error if not a payment request', function() {
+      var paypro = new PaymentProtocol();
+      expect(function(){
+        paypro.verify();
+      }).to.throw(Error);
+    });
+
+    it('should return true if pki_type is set to "none"', function() {
+      var paypro = new PaymentProtocol().makePaymentRequest();
+      paypro.set('pki_type', 'none');
+      var valid = paypro.verify();
+      valid.should.equal(true);
+    });
+
+    it('should error if unsupported pki_type', function() {
+      var paypro = new PaymentProtocol().makePaymentRequest();
+      paypro.set('pki_type', 'x508'); // typo
+      expect(function(){
+        paypro.verify();
+      }).to.throw(Error);
+    });
 
     it('should verify a signed payment request', function() {
       // SIN
@@ -594,6 +690,13 @@ describe('PaymentProtocol', function() {
   });
 
   describe('#sinSign', function() {
+
+    it('should error if not sent an instance of PrivateKey', function() {
+      var paypro = new PaymentProtocol();
+      expect(function(){
+        paypro.sinSign(Number(7)); // not a private key
+      }).to.throw(TypeError);
+    });
 
     it('should sign assuming pki_type is SIN', function() {
       var pd = new PaymentProtocol.PaymentDetails();
@@ -648,6 +751,7 @@ describe('PaymentProtocol', function() {
       paypro.set('pki_data', cr.serialize()); // contains one or more x509 certs
 
       var sig = paypro.x509Sign(x509.priv);
+
       paypro.set('signature', sig);
 
       x509.sig2 = paypro.get('signature');
@@ -707,6 +811,13 @@ describe('PaymentProtocol', function() {
       cr.set('certificate', [x509.der]);
 
       paypro.set('pki_data', cr.serialize()); // contains one or more x509 certs
+
+      var sigTrust = paypro.x509Sign(x509.priv, true);
+      sigTrust.selfSigned.should.equal(1);
+      sigTrust.isChain.should.equal(false);
+      sigTrust.signature.length.should.be.greaterThan(0);
+      sigTrust.caTrusted.should.equal(false);
+      should.not.exist(sigTrust.caName);
 
       var sig = paypro.x509Sign(x509.priv);
       paypro.set('signature', sig);
