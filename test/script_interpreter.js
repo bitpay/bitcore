@@ -202,7 +202,7 @@ describe('ScriptInterpreter', function() {
     var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0, flags);
     verified.should.equal(expected);
   };
-  describe('bitcoind fixtures', function() {
+  describe('bitcoind script evaluation fixtures', function() {
     var testAllFixtures = function(set, expected) {
       var c = 0;
       set.forEach(function(vector) {
@@ -221,13 +221,15 @@ describe('ScriptInterpreter', function() {
     testAllFixtures(script_valid, true);
     testAllFixtures(script_invalid, false);
 
+  });
+  describe('bitcoind transaction evaluation fixtures', function() {
     var c = 0;
     tx_valid.forEach(function(vector) {
       if (vector.length === 1) {
         return;
       }
       c++;
-      it.skip('should pass tx_valid vector ' + c, function() {
+      it('should pass tx_valid vector ' + c, function() {
         var inputs = vector[0];
         var txhex = vector[1];
         var flags = getFlags(vector[2]);
@@ -240,8 +242,7 @@ describe('ScriptInterpreter', function() {
           if (txoutnum === -1) {
             txoutnum = 0xffffffff; //bitcoind casts -1 to an unsigned int
           }
-          var txkey = txid + ':' + txoutnum;
-          map[txkey] = Script.fromBitcoindString(scriptPubKeyStr);
+          map[txid + ':' + txoutnum] = Script.fromBitcoindString(scriptPubKeyStr);
         });
 
         var tx = Transaction(txhex);
@@ -249,9 +250,9 @@ describe('ScriptInterpreter', function() {
           var scriptSig = txin.script;
           var txidhex = txin.prevTxId.toString('hex');
           var txoutnum = txin.outputIndex;
-          var txkey = txidhex + ':' + txoutnum;
-          var scriptPubkey = map[txkey];
+          var scriptPubkey = map[txidhex + ':' + txoutnum];
           should.exist(scriptPubkey);
+          should.exist(scriptSig);
           var interp = ScriptInterpreter();
           var verified = interp.verify(scriptSig, scriptPubkey, tx, j, flags);
           verified.should.equal(true);
