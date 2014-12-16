@@ -457,10 +457,6 @@ text-align: center;}
 
        } 
 
-li.dogeparty-link{
-
-         } 
-
 
  #using-bitcore li a{  
  color: #6B6A65;
@@ -594,6 +590,20 @@ li.dogeparty-link{
 .cp-link a:hover{ 
     background-position: bottom left;
 }
+
+.dogeparty-link a{
+    display : block;
+    height : 23px;
+    background-image:url('../images/dogeparty-link.svg');
+    background-position: 100em left !important;
+    background-repeat: no-repeat;
+    padding: 0 0 4px 20px !important;
+}
+
+.dogeparty-link a:hover{ 
+    background-position: bottom left;
+}
+
 
 
 
