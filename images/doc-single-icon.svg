@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="19px" height="23px" viewBox="0 0 19 23" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+    <!-- Generator: Sketch 3.2.1 (9971) - http://www.bohemiancoding.com/sketch -->
+    <title>doc-icon</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <g id="doc-icon" sketch:type="MSLayerGroup" fill="#A39F9A">
+            <g id="Page-1" sketch:type="MSShapeGroup">
+                <g id="Artboard-2">
+                    <g id="Imported-Layers">
+                        <path d="M12.243,0.092 L0.975,0.092 L0.975,22.41 L18.416,22.41 L18.416,6.262 L12.243,0.092 L12.243,0.092 Z M12.863,3.539 L14.971,5.646 L12.863,5.646 L12.863,3.539 L12.863,3.539 Z M2.975,20.41 L2.975,2.092 L10.863,2.092 L10.863,7.646 L16.417,7.646 L16.417,20.41 L2.975,20.41 L2.975,20.41 Z" id="Fill-1"></path>
+                        <path d="M4.751,9.355 L12.54,9.355 L12.54,11.355 L4.751,11.355 L4.751,9.355 L4.751,9.355 Z" id="Fill-2"></path>
+                        <path d="M4.751,12.605 L12.54,12.605 L12.54,14.605 L4.751,14.605 L4.751,12.605 L4.751,12.605 Z" id="Fill-3"></path>
+                        <path d="M4.751,15.856 L10.102,15.856 L10.102,17.856 L4.751,17.856 L4.751,15.856 L4.751,15.856 Z" id="Fill-4"></path>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
