@@ -1,4 +1,4 @@
-[logo]: bitcore-logo.svg "bitcore"
+[bitcore Logo](http://bitpay.github.io/bitcore/images/bitcore-logo-with-ball.svg)
 bitcore
 =======
 
