@@ -206,6 +206,7 @@ describe('Signature', function() {
       Signature.isTxDER(sigbuf).should.equal(false);
     });
 
+
     describe('bitcoind fixtures', function() {
       var test_sigs = function(set, expected) {
         var i = 0;
