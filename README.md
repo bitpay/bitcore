@@ -24,7 +24,7 @@ Using it on node.js:
 ```javascript
 var bitcore = require('bitcore');
 
-assert(bitcore.isValid(address));
+assert(bitcore.Address.isValid(address));
 var simpleTx = new bitcore.Transaction();
 var simpleTx.from(unspent).to(address, amount);
 simpleTx.sign(privateKey);
@@ -32,7 +32,7 @@ simpleTx.sign(privateKey);
 
 ## Documentation
 
-The complete docs are hosted here: [bitcore documentation](http://missing-link). There's also a [bitcore API reference](http://missing-link) available generated from the JSDocs of the project.
+The complete docs are hosted here: [bitcore documentation](bitpay.github.io/bitcore/docs). There's also a [bitcore API reference](bitpay.github.io/bitcore/apiref) available generated from the JSDocs of the project.
 
 ## Security
 
@@ -52,7 +52,7 @@ To build bitcore full bundle for the browser:
 gulp browser
 ```
 
-This will generate files named `dist/bitcore.js` and `dist/bitcore.min.js`.
+This will generate files named `browser/bitcore.js` and `browser/bitcore.min.js`.
 
 ## Tests
 
