@@ -109,31 +109,33 @@
     padding-bottom: 4%;
     }
 
+.ubuntu {font-family: 'Ubuntu', sans-serif;}
+.ubuntu-light {font-family: 'Ubuntu', sans-serif;}
 
 /* fonts */
 @font-face {
   font-family: 'Ubuntu-Light';
   font-style: normal;
   font-weight: 300;
-  src: local('Ubuntu Light'), local('Ubuntu-Light'), url(../font/ubuntu-light.woff) format('woff');
+  src: local('Ubuntu Light'), local('Ubuntu-Light'), url(../fonts/ubuntu-light.woff) format('woff');
 }
 @font-face {
   font-family: 'Ubuntu';
   font-style: normal;
   font-weight: 400;
-  src: local('Ubuntu'), url(../font/ubuntu.woff) format('woff');
+  src: local('Ubuntu'), url(../fonts/ubuntu.woff) format('woff');
 }
 @font-face {
   font-family: 'Ubuntu';
   font-style: normal;
   font-weight: 700;
-  src: local('Ubuntu Bold'), local('Ubuntu-Bold'), url(../font/ubuntu-bold.woff) format('woff');
+  src: local('Ubuntu Bold'), local('Ubuntu-Bold'), url(../fonts/ubuntu-bold.woff) format('woff');
 }
 @font-face {
   font-family: 'Ubuntu-BoldItalic';
   font-style: italic;
   font-weight: 700;
-  src: local('Ubuntu Bold Italic'), local('Ubuntu-BoldItalic'), url(../font/ubuntu-bold-italic.woff) format('woff');
+  src: local('Ubuntu Bold Italic'), local('Ubuntu-BoldItalic'), url(../fonts/ubuntu-bold-italic.woff) format('woff');
 }
 
 .font-color-grey1 { color: #A29F99}
