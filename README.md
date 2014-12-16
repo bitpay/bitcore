@@ -13,7 +13,7 @@ Bitcoin is a powerful new peer-to-peer platform for the next generation of finan
 
 ## Get Started
 
-You can run bitcore on any javascript engine. It's distributed through npm, and you can also find compiled single files here: [bitcore.js](http://missing-link) and [bitcore.min.js](http://missing-link).
+You can run bitcore on any javascript engine. It's distributed through npm, and you can also find compiled single files here: [bitcore.js](https://bitcore.io/bitcore/dist/bitcore.js) and [bitcore.min.js](https://bitcore.io/bitcore/dist/bitcore.min.js).
 
 ```
 npm install bitcore
@@ -32,7 +32,7 @@ simpleTx.sign(privateKey);
 
 ## Documentation
 
-The complete docs are hosted here: [bitcore documentation](bitpay.github.io/bitcore/docs). There's also a [bitcore API reference](bitpay.github.io/bitcore/apiref) available generated from the JSDocs of the project.
+The complete docs are hosted here: [bitcore documentation](https://bitcore.io/bitcore/docs). There's also a [bitcore API reference](https://bitcore.io/bitcore/apiref) available generated from the JSDocs of the project.
 
 ## Security
 
