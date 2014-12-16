@@ -208,6 +208,7 @@ describe('ScriptInterpreter', function() {
   };
 
   var testFixture = function(vector, expected) {
+    console.log(vector);
     var scriptSig = Script.fromBitcoindString(vector[0]);
     var scriptPubkey = Script.fromBitcoindString(vector[1]);
     var flags = getFlags(vector[2]);
@@ -244,6 +245,9 @@ describe('ScriptInterpreter', function() {
     }));
 
     var interp = ScriptInterpreter();
+    console.log('scriptSig=' + scriptSig.toString());
+    console.log('scriptPubkey=' + scriptPubkey.toString());
+    console.log(vector[1]);
     console.log(scriptSig.toString() + ' ' + scriptPubkey.toString());
     var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0, flags);
     console.log(interp.errstr);
@@ -252,7 +256,7 @@ describe('ScriptInterpreter', function() {
   describe.only('bitcoind fixtures', function() {
     var testAllFixtures = function(set, expected) {
       var c = 0;
-      script_valid.forEach(function(vector) {
+      set.forEach(function(vector) {
         if (vector.length === 1) {
           return;
         }
@@ -260,7 +264,7 @@ describe('ScriptInterpreter', function() {
         var descstr = vector[3];
         var fullScriptString = vector[0] + ' ' + vector[1];
         var comment = descstr ? (' (' + descstr + ')') : '';
-        it('should pass script_valid vector #' + c + ': ' + fullScriptString + comment, function() {
+        it('should pass script_' + (expected ? '' : 'in') + 'valid vector #' + c + ': ' + fullScriptString + comment, function() {
           testFixture(vector, expected);
         });
       });
