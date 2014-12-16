@@ -16,3 +16,4 @@ apiref
 bower_components
 dist
 report
+.DS_Store
