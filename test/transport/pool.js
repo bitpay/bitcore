@@ -15,6 +15,8 @@ if (typeof(window) === 'undefined'){
 
   var bitcore = require('../..');
   var Peer = bitcore.transport.Peer;
+  var MessagesData = require('../data/messages');
+  var Messages = bitcore.transport.Messages;
   var Pool = bitcore.transport.Pool;
   var Networks = bitcore.Networks;
 
@@ -36,17 +38,60 @@ if (typeof(window) === 'undefined'){
       });
       var pool = new Pool(Networks.livenet);
       pool.connect();
+      pool.disconnect();
       pool.addrs.length.should.equal(3);
       stub.restore();
-
     });
 
     it('should not discover peers via dns', function() {
       var pool = new Pool();
       pool.addAddr({ip: '10.10.10.1'});
       pool.connect();
+      pool.disconnect();
       pool.addrs.length.should.equal(1);
     });
+
+    it('should add new addrs as they are announced over the network', function(done) {
+
+      // only emit an event, no need to connect
+      var peerConnectStub = sinon.stub(Peer.prototype, 'connect', function(){
+        this._readMessage();
+        this.emit('ready');
+      });
+
+      // mock a addr peer event
+      var peerMessageStub = sinon.stub(Peer.prototype, '_readMessage', function(){
+        var payload = new Buffer(MessagesData.ADDR.payload, 'hex');
+        var message = new Messages.Addresses().fromBuffer(payload);
+        this.emit(message.command, message);
+      });
+
+      var pool = new Pool();
+
+      pool.addAddr({ip: {v4: 'localhost'}});
+
+      // listen for the event
+      pool.on('peeraddr', function(peer, message) {
+        pool.addrs.length.should.equal(502);
+
+        // restore stubs
+        peerConnectStub.restore();
+        peerMessageStub.restore();
+
+        for (var i = 0; i < pool.addrs.length; i++) {
+          should.exist(pool.addrs[i].hash);
+          should.exist(pool.addrs[i].ip);
+          should.exist(pool.addrs[i].ip.v4);
+        }
+
+        // done
+        done();
+      });
+
+      pool.connect();
+
+    });
+
 
   });
 
