@@ -222,7 +222,7 @@ describe('ScriptInterpreter', function() {
     testAllFixtures(script_invalid, false);
 
   });
-  describe.only('bitcoind transaction evaluation fixtures', function() {
+  describe('bitcoind transaction evaluation fixtures', function() {
     var c = 0;
     tx_valid.forEach(function(vector) {
       if (vector.length === 1) {
