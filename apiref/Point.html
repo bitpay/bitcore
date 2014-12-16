@@ -3,24 +3,49 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>Documentation Class: Point</title>
+	<title>bitcore Class: Point</title>
 
 	<!--[if lt IE 9]>
 	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
 	<![endif]-->
 	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
 
-	
 	<link type="text/css" rel="stylesheet" href="styles/site.journal.css">
-	
+
 </head>
 
 <body>
 <div class="container-fluid">
 	<div class="navbar navbar-fixed-top ">
 		<div class="navbar-inner">
-			<a class="brand" href="index.html">Documentation</a>
+			<a class="brand" href="index.html">bitcore</a>
 			<ul class="nav">
+				
+				<li class="dropdown">
+					<a href="namespaces.list.html" class="dropdown-toggle" data-toggle="dropdown">Namespaces<b
+						class="caret"></b></a>
+
+					<ul class="dropdown-menu ">
+						
+						<li>
+							<a href="JSUtil.html">JSUtil</a>
+						</li>
+						
+						<li>
+							<a href="Signing.html">Signing</a>
+						</li>
+						
+						<li>
+							<a href="Transport.html">Transport</a>
+						</li>
+						
+						<li>
+							<a href="Transport.html#Message">Transport.Message</a>
+						</li>
+						
+
+					</ul>
+				</li>
 				
 				<li class="dropdown">
 					<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b
@@ -33,7 +58,7 @@
 						</li>
 						
 						<li>
-							<a href="global.html#Block">Block</a>
+							<a href="Block.html">Block</a>
 						</li>
 						
 						<li>
@@ -46,6 +71,10 @@
 						
 						<li>
 							<a href="HDPublicKey.html">HDPublicKey</a>
+						</li>
+						
+						<li>
+							<a href="MultiSigScriptHashInput.html">MultiSigScriptHashInput</a>
 						</li>
 						
 						<li>
@@ -69,7 +98,23 @@
 						</li>
 						
 						<li>
+							<a href="PublicKeyHashInput.html">PublicKeyHashInput</a>
+						</li>
+						
+						<li>
 							<a href="Script.html">Script</a>
+						</li>
+						
+						<li>
+							<a href="Transaction.html">Transaction</a>
+						</li>
+						
+						<li>
+							<a href="Unit.html">Unit</a>
+						</li>
+						
+						<li>
+							<a href="URI.html">URI</a>
 						</li>
 						
 
@@ -114,7 +159,7 @@
     
     
     <div class="description">
-        Instantiate a valid secp256k1 Point from the X and Y coordinates.
+        <p>Instantiate a valid secp256k1 Point from the X and Y coordinates.</p>
     </div>
     
 
@@ -167,7 +212,7 @@
 
             
 
-            <td class="description last">The X coordinate</td>
+            <td class="description last"><p>The X coordinate</p></td>
         </tr>
 
 	
@@ -193,7 +238,7 @@
 
             
 
-            <td class="description last">The Y coordinate</td>
+            <td class="description last"><p>The Y coordinate</p></td>
         </tr>
 
 	
@@ -204,36 +249,43 @@
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="point.js.html">crypto/point.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="crypto_point.js.html">crypto/point.js</a>,
+				 <a href="crypto_point.js.html#sunlight-1-line-21">line 21</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -251,7 +303,7 @@
 <dl>
     <dt>
         <div class="param-desc">
-        A validation error if exists
+        <p>A validation error if exists</p>
         </div>
     </dt>
     <dt>
@@ -277,7 +329,7 @@
     
             
 <div class="param-desc">
-    An instance of Point
+    <p>An instance of Point</p>
 </div>
 
 
@@ -335,7 +387,7 @@
     
     
     <div class="description">
-        Instantiate a valid secp256k1 Point from only the X coordinate
+        <p>Instantiate a valid secp256k1 Point from only the X coordinate</p>
     </div>
     
 
@@ -385,7 +437,7 @@
 
             
 
-            <td class="description last">If the Y coordinate is odd</td>
+            <td class="description last"><p>If the Y coordinate is odd</p></td>
         </tr>
 
 	
@@ -411,7 +463,7 @@
 
             
 
-            <td class="description last">The X coordinate</td>
+            <td class="description last"><p>The X coordinate</p></td>
         </tr>
 
 	
@@ -422,36 +474,43 @@
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="point.js.html">crypto/point.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="crypto_point.js.html">crypto/point.js</a>,
+				 <a href="crypto_point.js.html#sunlight-1-line-38">line 38</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -469,7 +528,7 @@
 <dl>
     <dt>
         <div class="param-desc">
-        A validation error if exists
+        <p>A validation error if exists</p>
         </div>
     </dt>
     <dt>
@@ -495,7 +554,7 @@
     
             
 <div class="param-desc">
-    An instance of Point
+    <p>An instance of Point</p>
 </div>
 
 
@@ -529,7 +588,7 @@
     
     
     <div class="description">
-        Will return a secp256k1 ECDSA base point.
+        <p>Will return a secp256k1 ECDSA base point.</p>
     </div>
     
 
@@ -541,36 +600,43 @@
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="point.js.html">crypto/point.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="crypto_point.js.html">crypto/point.js</a>,
+				 <a href="crypto_point.js.html#sunlight-1-line-51">line 51</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -587,7 +653,7 @@
     
             
 <div class="param-desc">
-    An instance of the base point.
+    <p>An instance of the base point.</p>
 </div>
 
 
@@ -621,7 +687,7 @@
     
     
     <div class="description">
-        Will return the max of range of valid private keys as governed by the secp256k1 ECDSA standard.
+        <p>Will return the max of range of valid private keys as governed by the secp256k1 ECDSA standard.</p>
     </div>
     
 
@@ -633,36 +699,43 @@
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="point.js.html">crypto/point.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="crypto_point.js.html">crypto/point.js</a>,
+				 <a href="crypto_point.js.html#sunlight-1-line-62">line 62</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -679,7 +752,7 @@
     
             
 <div class="param-desc">
-    A BN instance of the number of points on the curve
+    <p>A BN instance of the number of points on the curve</p>
 </div>
 
 
@@ -713,7 +786,7 @@
     
     
     <div class="description">
-        Will return the X coordinate of the Point
+        <p>Will return the X coordinate of the Point</p>
     </div>
     
 
@@ -725,36 +798,43 @@
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="point.js.html">crypto/point.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="crypto_point.js.html">crypto/point.js</a>,
+				 <a href="crypto_point.js.html#sunlight-1-line-74">line 74</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -771,7 +851,7 @@
     
             
 <div class="param-desc">
-    A BN instance of the X coordinate
+    <p>A BN instance of the X coordinate</p>
 </div>
 
 
@@ -805,7 +885,7 @@
     
     
     <div class="description">
-        Will return the Y coordinate of the Point
+        <p>Will return the Y coordinate of the Point</p>
     </div>
     
 
@@ -817,36 +897,43 @@
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="point.js.html">crypto/point.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="crypto_point.js.html">crypto/point.js</a>,
+				 <a href="crypto_point.js.html#sunlight-1-line-86">line 86</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -863,7 +950,7 @@
     
             
 <div class="param-desc">
-    A BN instance of the Y coordinate
+    <p>A BN instance of the Y coordinate</p>
 </div>
 
 
@@ -897,7 +984,7 @@
     
     
     <div class="description">
-        Will determine if the point is valid
+        <p>Will determine if the point is valid</p>
     </div>
     
 
@@ -947,7 +1034,7 @@
 
             
 
-            <td class="description last">instance of Point</td>
+            <td class="description last"><p>instance of Point</p></td>
         </tr>
 
 	
@@ -958,36 +1045,43 @@
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="point.js.html">crypto/point.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="crypto_point.js.html">crypto/point.js</a>,
+				 <a href="crypto_point.js.html#sunlight-1-line-99">line 99</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -1005,7 +1099,7 @@
 <dl>
     <dt>
         <div class="param-desc">
-        A validation error if exists
+        <p>A validation error if exists</p>
         </div>
     </dt>
     <dt>
@@ -1031,7 +1125,7 @@
     
             
 <div class="param-desc">
-    An instance of the same Point
+    <p>An instance of the same Point</p>
 </div>
 
 
@@ -1073,9 +1167,15 @@
 				<footer>
 					
 					
+		<span class="copyright">
+		© 2013-2014, BitPay Inc.
+		</span>
+					<br />
+					
 		<span class="jsdoc-message">
-		Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha5</a>
-		on Tue Dec 16 2014 03:26:37 GMT-0300 (ART) using the <a href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
+		Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha11</a>
+		on 2014-12-16T17:20:32-03:00 using the <a
+			href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
 		</span>
 				</footer>
 			</div>
@@ -1089,33 +1189,72 @@
 		</div>
 
 	</div>
-	<script src="scripts/sunlight.js"></script>
-	<script src="scripts/sunlight.javascript.js"></script>
-	<script src="scripts/sunlight-plugin.doclinks.js"></script>
-	<script src="scripts/sunlight-plugin.linenumbers.js"></script>
-	<script src="scripts/sunlight-plugin.menu.js"></script>
-	<script src="scripts/jquery.min.js"></script>
-	<script src="scripts/jquery.scrollTo.js"></script>
-	<script src="scripts/jquery.localScroll.js"></script>
+	<!--<script src="scripts/sunlight.js"></script>-->
+	<script src="scripts/docstrap.lib.js"></script>
 	<script src="scripts/bootstrap-dropdown.js"></script>
 	<script src="scripts/toc.js"></script>
 
-
-	<script>  Sunlight.highlightAll({lineNumbers:,  showMenu: true, enableDoclinks :true}); </script>
-
 	<script>
 		$( function () {
+			$( "[id*='$']" ).each( function () {
+				var $this = $( this );
+
+				$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+			} );
+
 			$( "#toc" ).toc( {
+				anchorName  : function ( i, heading, prefix ) {
+					return $( heading ).attr( "id" ) || ( prefix + i );
+				},
 				selectors   : "h1,h2,h3,h4",
 				showAndHide : false,
-				scrollTo    : 60
+				scrollTo    : "100px"
 			} );
+
 			$( "#toc>ul" ).addClass( "nav nav-pills nav-stacked" );
 			$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+			$( '.dropdown-toggle' ).dropdown();
+//			$( ".tutorial-section pre, .readme-section pre" ).addClass( "sunlight-highlight-javascript" ).addClass( "linenums" );
 
+			$( ".tutorial-section pre, .readme-section pre" ).each( function () {
+				var $this = $( this );
+
+				var example = $this.find( "code" );
+				exampleText = example.html();
+				var lang = /{@lang (.*?)}/.exec( exampleText );
+				if ( lang && lang[1] ) {
+					exampleText = exampleText.replace( lang[0], "" );
+					example.html( exampleText );
+					lang = lang[1];
+				} else {
+					lang = "javascript";
+				}
+
+				if ( lang ) {
+
+					$this
+						.addClass( "sunlight-highlight-" + lang )
+						.addClass( "linenums" )
+						.html( example.html() );
+
+				}
+			} );
+
+			Sunlight.highlightAll( {
+				lineNumbers : true,
+				showMenu : true,
+				enableDoclinks : true
+			} );
 		} );
-	</script>
+	 </script>
 
+
+
+	<!--Navigation and Symbol Display-->
+	
+
+
+	<!--Google Analytics-->
 	
 
 </body>

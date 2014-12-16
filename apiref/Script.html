@@ -3,24 +3,49 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>Documentation Class: Script</title>
+	<title>bitcore Class: Script</title>
 
 	<!--[if lt IE 9]>
 	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
 	<![endif]-->
 	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
 
-	
 	<link type="text/css" rel="stylesheet" href="styles/site.journal.css">
-	
+
 </head>
 
 <body>
 <div class="container-fluid">
 	<div class="navbar navbar-fixed-top ">
 		<div class="navbar-inner">
-			<a class="brand" href="index.html">Documentation</a>
+			<a class="brand" href="index.html">bitcore</a>
 			<ul class="nav">
+				
+				<li class="dropdown">
+					<a href="namespaces.list.html" class="dropdown-toggle" data-toggle="dropdown">Namespaces<b
+						class="caret"></b></a>
+
+					<ul class="dropdown-menu ">
+						
+						<li>
+							<a href="JSUtil.html">JSUtil</a>
+						</li>
+						
+						<li>
+							<a href="Signing.html">Signing</a>
+						</li>
+						
+						<li>
+							<a href="Transport.html">Transport</a>
+						</li>
+						
+						<li>
+							<a href="Transport.html#Message">Transport.Message</a>
+						</li>
+						
+
+					</ul>
+				</li>
 				
 				<li class="dropdown">
 					<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b
@@ -33,7 +58,7 @@
 						</li>
 						
 						<li>
-							<a href="global.html#Block">Block</a>
+							<a href="Block.html">Block</a>
 						</li>
 						
 						<li>
@@ -46,6 +71,10 @@
 						
 						<li>
 							<a href="HDPublicKey.html">HDPublicKey</a>
+						</li>
+						
+						<li>
+							<a href="MultiSigScriptHashInput.html">MultiSigScriptHashInput</a>
 						</li>
 						
 						<li>
@@ -69,7 +98,23 @@
 						</li>
 						
 						<li>
+							<a href="PublicKeyHashInput.html">PublicKeyHashInput</a>
+						</li>
+						
+						<li>
 							<a href="Script.html">Script</a>
+						</li>
+						
+						<li>
+							<a href="Transaction.html">Transaction</a>
+						</li>
+						
+						<li>
+							<a href="Unit.html">Unit</a>
+						</li>
+						
+						<li>
+							<a href="URI.html">URI</a>
 						</li>
 						
 
@@ -114,10 +159,9 @@
     
     
     <div class="description">
-        A bitcoin transaction script. Each transaction's inputs and outputs
-has a script that is evaluated to validate it's spending.
-
-See https://en.bitcoin.it/wiki/Script
+        <p>A bitcoin transaction script. Each transaction's inputs and outputs
+has a script that is evaluated to validate it's spending.</p>
+<p>See https://en.bitcoin.it/wiki/Script</p>
     </div>
     
 
@@ -185,7 +229,7 @@ See https://en.bitcoin.it/wiki/Script
 
             
 
-            <td class="description last">optional data to populate script</td>
+            <td class="description last"><p>optional data to populate script</p></td>
         </tr>
 
 	
@@ -196,36 +240,43 @@ See https://en.bitcoin.it/wiki/Script
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-28">line 28</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -320,7 +371,7 @@ See https://en.bitcoin.it/wiki/Script
 
             
 
-            <td class="description last">the data to embed in the output</td>
+            <td class="description last"><p>the data to embed in the output</p></td>
         </tr>
 
 	
@@ -331,36 +382,43 @@ See https://en.bitcoin.it/wiki/Script
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-599">line 599</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -377,7 +435,7 @@ See https://en.bitcoin.it/wiki/Script
     
             
 <div class="param-desc">
-    a new OP_RETURN script with data
+    <p>a new OP_RETURN script with data</p>
 </div>
 
 
@@ -437,7 +495,7 @@ See https://en.bitcoin.it/wiki/Script
             <td class="type">
             
                 
-<span class="param-type">PublicKey[]</span>
+<span class="param-type">Array.&lt;<a href="PublicKey.html">PublicKey</a>></span>
 
 
             
@@ -455,7 +513,7 @@ See https://en.bitcoin.it/wiki/Script
 
             
 
-            <td class="description last">list of all public keys controlling the output</td>
+            <td class="description last"><p>list of all public keys controlling the output</p></td>
         </tr>
 
 	
@@ -486,7 +544,7 @@ See https://en.bitcoin.it/wiki/Script
 
             
 
-            <td class="description last">amount of required signatures to spend the output</td>
+            <td class="description last"><p>amount of required signatures to spend the output</p></td>
         </tr>
 
 	
@@ -519,9 +577,9 @@ See https://en.bitcoin.it/wiki/Script
 
             
 
-            <td class="description last">Several options:
-       - noSorting: defaults to false, if true, don't sort the given
-                     public keys before creating the script</td>
+            <td class="description last"><p>Several options:</p>
+<pre class="prettyprint source"><code>   - noSorting: defaults to false, if true, don't sort the given
+                 public keys before creating the script</code></pre></td>
         </tr>
 
 	
@@ -532,36 +590,43 @@ See https://en.bitcoin.it/wiki/Script
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-521">line 521</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -578,8 +643,8 @@ See https://en.bitcoin.it/wiki/Script
     
             
 <div class="param-desc">
-    a new Multisig output script for given public keys,
-requiring m of those public keys to spend
+    <p>a new Multisig output script for given public keys,
+requiring m of those public keys to spend</p>
 </div>
 
 
@@ -601,7 +666,7 @@ requiring m of those public keys to spend
     
     
     <div class="description">
-        A new P2SH Multisig input script for the given public keys, requiring m of those public keys to spend
+        <p>A new P2SH Multisig input script for the given public keys, requiring m of those public keys to spend</p>
     </div>
     
 
@@ -643,7 +708,7 @@ requiring m of those public keys to spend
             <td class="type">
             
                 
-<span class="param-type">PublicKey[]</span>
+<span class="param-type">Array.&lt;<a href="PublicKey.html">PublicKey</a>></span>
 
 
             
@@ -661,7 +726,7 @@ requiring m of those public keys to spend
 
             
 
-            <td class="description last">list of all public keys controlling the output</td>
+            <td class="description last"><p>list of all public keys controlling the output</p></td>
         </tr>
 
 	
@@ -692,7 +757,7 @@ requiring m of those public keys to spend
 
             
 
-            <td class="description last">amount of required signatures to spend the output</td>
+            <td class="description last"><p>amount of required signatures to spend the output</p></td>
         </tr>
 
 	
@@ -723,7 +788,7 @@ requiring m of those public keys to spend
 
             
 
-            <td class="description last">signatures to append to the script</td>
+            <td class="description last"><p>signatures to append to the script</p></td>
         </tr>
 
 	
@@ -810,7 +875,7 @@ requiring m of those public keys to spend
 
             
 
-            <td class="description last">don't sort the given public keys before creating the script (false by default)</td>
+            <td class="description last"><p>don't sort the given public keys before creating the script (false by default)</p></td>
         </tr>
 
 	
@@ -843,7 +908,7 @@ requiring m of those public keys to spend
 
             
 
-            <td class="description last">don't recalculate the redeemScript</td>
+            <td class="description last"><p>don't recalculate the redeemScript</p></td>
         </tr>
 
 	
@@ -861,36 +926,43 @@ requiring m of those public keys to spend
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-553">line 553</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -907,7 +979,7 @@ requiring m of those public keys to spend
     
             
 <div class="param-desc">
-    Script
+    <p>Script</p>
 </div>
 
 
@@ -929,8 +1001,8 @@ requiring m of those public keys to spend
     
     
     <div class="description">
-        Builds a scriptSig (a script for an input) that signs a public key hash
-output script.
+        <p>Builds a scriptSig (a script for an input) that signs a public key hash
+output script.</p>
     </div>
     
 
@@ -1027,7 +1099,7 @@ output script.
 
             
 
-            <td class="description last">the signature in DER cannonical encoding</td>
+            <td class="description last"><p>the signature in DER cannonical encoding</p></td>
         </tr>
 
 	
@@ -1060,7 +1132,7 @@ output script.
 
             
 
-            <td class="description last">the type of the signature (defaults to SIGHASH_ALL)</td>
+            <td class="description last"><p>the type of the signature (defaults to SIGHASH_ALL)</p></td>
         </tr>
 
 	
@@ -1071,36 +1143,43 @@ output script.
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-629">line 629</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -1177,7 +1256,7 @@ output script.
 
             
 
-            <td class="description last">destination address or public key</td>
+            <td class="description last"><p>destination address or public key</p></td>
         </tr>
 
 	
@@ -1188,36 +1267,43 @@ output script.
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-569">line 569</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -1234,8 +1320,8 @@ output script.
     
             
 <div class="param-desc">
-    a new pay to public key hash output for the given
-address or public key
+    <p>a new pay to public key hash output for the given
+address or public key</p>
 </div>
 
 
@@ -1265,36 +1351,43 @@ address or public key
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-588">line 588</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -1311,8 +1404,8 @@ address or public key
     
             
 <div class="param-desc">
-    a new pay to public key output for the given
- public key
+    <p>a new pay to public key output for the given
+ public key</p>
 </div>
 
 
@@ -1380,7 +1473,7 @@ address or public key
 
             
 
-            <td class="description last">the redeemScript for the new p2sh output</td>
+            <td class="description last"><p>the redeemScript for the new p2sh output</p></td>
         </tr>
 
 	
@@ -1391,36 +1484,43 @@ address or public key
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-613">line 613</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -1437,7 +1537,7 @@ address or public key
     
             
 <div class="param-desc">
-    Script new pay to script hash script for given script
+    <p>Script new pay to script hash script for given script</p>
 </div>
 
 
@@ -1467,36 +1567,43 @@ address or public key
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-642">line 642</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -1513,7 +1620,7 @@ address or public key
     
             
 <div class="param-desc">
-    Script an empty script
+    <p>Script an empty script</p>
 </div>
 
 
@@ -1543,36 +1650,43 @@ address or public key
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-656">line 656</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -1589,7 +1703,7 @@ address or public key
     
             
 <div class="param-desc">
-    Script a script built from the address
+    <p>Script a script built from the address</p>
 </div>
 
 
@@ -1611,7 +1725,7 @@ address or public key
     
     
     <div class="description">
-        Adds a script element to the end of the script.
+        <p>Adds a script element to the end of the script.</p>
     </div>
     
 
@@ -1661,7 +1775,7 @@ address or public key
 
             
 
-            <td class="description last">a string, number, Opcode, Bufer, or object to add</td>
+            <td class="description last"><p>a string, number, Opcode, Bufer, or object to add</p></td>
         </tr>
 
 	
@@ -1672,36 +1786,43 @@ address or public key
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-429">line 429</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -1718,7 +1839,7 @@ address or public key
     
             
 <div class="param-desc">
-    this script instance
+    <p>this script instance</p>
 </div>
 
 
@@ -1760,36 +1881,43 @@ address or public key
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-367">line 367</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -1806,8 +1934,8 @@ address or public key
     
             
 <div class="param-desc">
-    The Script type if it is a known form,
-or Script.UNKNOWN if it isn't
+    <p>The Script type if it is a known form,
+or Script.UNKNOWN if it isn't</p>
 </div>
 
 
@@ -1841,7 +1969,7 @@ or Script.UNKNOWN if it isn't
     
     
     <div class="description">
-        Compares a script with another script
+        <p>Compares a script with another script</p>
     </div>
     
 
@@ -1853,36 +1981,43 @@ or Script.UNKNOWN if it isn't
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-401">line 401</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -1918,36 +2053,43 @@ or Script.UNKNOWN if it isn't
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-319">line 319</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -1964,7 +2106,7 @@ or Script.UNKNOWN if it isn't
     
             
 <div class="param-desc">
-    true if this is an OP_RETURN data script
+    <p>true if this is an OP_RETURN data script</p>
 </div>
 
 
@@ -1994,36 +2136,43 @@ or Script.UNKNOWN if it isn't
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-306">line 306</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -2040,7 +2189,7 @@ or Script.UNKNOWN if it isn't
     
             
 <div class="param-desc">
-    true if this is a multisig input script
+    <p>true if this is a multisig input script</p>
 </div>
 
 
@@ -2070,36 +2219,43 @@ or Script.UNKNOWN if it isn't
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-292">line 292</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -2116,7 +2272,7 @@ or Script.UNKNOWN if it isn't
     
             
 <div class="param-desc">
-    true if this is a mutlsig output script
+    <p>true if this is a mutlsig output script</p>
 </div>
 
 
@@ -2146,36 +2302,43 @@ or Script.UNKNOWN if it isn't
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-224">line 224</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -2192,7 +2355,7 @@ or Script.UNKNOWN if it isn't
     
             
 <div class="param-desc">
-    true if this is a pay to public key hash input script
+    <p>true if this is a pay to public key hash input script</p>
 </div>
 
 
@@ -2222,36 +2385,43 @@ or Script.UNKNOWN if it isn't
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-212">line 212</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -2268,7 +2438,7 @@ or Script.UNKNOWN if it isn't
     
             
 <div class="param-desc">
-    true if this is a pay to pubkey hash output script
+    <p>true if this is a pay to pubkey hash output script</p>
 </div>
 
 
@@ -2298,36 +2468,43 @@ or Script.UNKNOWN if it isn't
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-250">line 250</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -2344,7 +2521,7 @@ or Script.UNKNOWN if it isn't
     
             
 <div class="param-desc">
-    true if this is a pay to public key input script
+    <p>true if this is a pay to public key input script</p>
 </div>
 
 
@@ -2374,36 +2551,43 @@ or Script.UNKNOWN if it isn't
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-240">line 240</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -2420,7 +2604,7 @@ or Script.UNKNOWN if it isn't
     
             
 <div class="param-desc">
-    true if this is a public key output script
+    <p>true if this is a public key output script</p>
 </div>
 
 
@@ -2450,36 +2634,43 @@ or Script.UNKNOWN if it isn't
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-333">line 333</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -2496,8 +2687,8 @@ or Script.UNKNOWN if it isn't
     
             
 <div class="param-desc">
-    true if the script is only composed of data pushing
-opcodes or small int opcodes (OP_0, OP_1, ..., OP_16)
+    <p>true if the script is only composed of data pushing
+opcodes or small int opcodes (OP_0, OP_1, ..., OP_16)</p>
 </div>
 
 
@@ -2527,36 +2718,43 @@ opcodes or small int opcodes (OP_0, OP_1, ..., OP_16)
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-272">line 272</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -2573,8 +2771,8 @@ opcodes or small int opcodes (OP_0, OP_1, ..., OP_16)
     
             
 <div class="param-desc">
-    true if this is a p2sh input script
-Note that these are frequently indistinguishable from pubkeyhashin
+    <p>true if this is a p2sh input script
+Note that these are frequently indistinguishable from pubkeyhashin</p>
 </div>
 
 
@@ -2604,36 +2802,43 @@ Note that these are frequently indistinguishable from pubkeyhashin
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-260">line 260</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -2650,7 +2855,7 @@ Note that these are frequently indistinguishable from pubkeyhashin
     
             
 <div class="param-desc">
-    true if this is a p2sh output script
+    <p>true if this is a p2sh output script</p>
 </div>
 
 
@@ -2680,36 +2885,43 @@ Note that these are frequently indistinguishable from pubkeyhashin
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-380">line 380</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -2726,7 +2938,7 @@ Note that these are frequently indistinguishable from pubkeyhashin
     
             
 <div class="param-desc">
-    true if script is one of the known types
+    <p>true if script is one of the known types</p>
 </div>
 
 
@@ -2748,7 +2960,7 @@ Note that these are frequently indistinguishable from pubkeyhashin
     
     
     <div class="description">
-        Adds a script element at the start of the script.
+        <p>Adds a script element at the start of the script.</p>
     </div>
     
 
@@ -2798,7 +3010,7 @@ Note that these are frequently indistinguishable from pubkeyhashin
 
             
 
-            <td class="description last">a string, number, Opcode, Bufer, or object to add</td>
+            <td class="description last"><p>a string, number, Opcode, Bufer, or object to add</p></td>
         </tr>
 
 	
@@ -2809,36 +3021,43 @@ Note that these are frequently indistinguishable from pubkeyhashin
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-393">line 393</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -2855,7 +3074,7 @@ Note that these are frequently indistinguishable from pubkeyhashin
     
             
 <div class="param-desc">
-    this script instance
+    <p>this script instance</p>
 </div>
 
 
@@ -2897,36 +3116,43 @@ Note that these are frequently indistinguishable from pubkeyhashin
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="script.js.html">script.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="script.js.html">script.js</a>,
+				 <a href="script.js.html#sunlight-1-line-649">line 649</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -2943,7 +3169,7 @@ Note that these are frequently indistinguishable from pubkeyhashin
     
             
 <div class="param-desc">
-    Script a new pay to script hash script that pays to this script
+    <p>Script a new pay to script hash script that pays to this script</p>
 </div>
 
 
@@ -2973,9 +3199,15 @@ Note that these are frequently indistinguishable from pubkeyhashin
 				<footer>
 					
 					
+		<span class="copyright">
+		© 2013-2014, BitPay Inc.
+		</span>
+					<br />
+					
 		<span class="jsdoc-message">
-		Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha5</a>
-		on Tue Dec 16 2014 03:26:37 GMT-0300 (ART) using the <a href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
+		Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha11</a>
+		on 2014-12-16T17:20:33-03:00 using the <a
+			href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
 		</span>
 				</footer>
 			</div>
@@ -2989,33 +3221,72 @@ Note that these are frequently indistinguishable from pubkeyhashin
 		</div>
 
 	</div>
-	<script src="scripts/sunlight.js"></script>
-	<script src="scripts/sunlight.javascript.js"></script>
-	<script src="scripts/sunlight-plugin.doclinks.js"></script>
-	<script src="scripts/sunlight-plugin.linenumbers.js"></script>
-	<script src="scripts/sunlight-plugin.menu.js"></script>
-	<script src="scripts/jquery.min.js"></script>
-	<script src="scripts/jquery.scrollTo.js"></script>
-	<script src="scripts/jquery.localScroll.js"></script>
+	<!--<script src="scripts/sunlight.js"></script>-->
+	<script src="scripts/docstrap.lib.js"></script>
 	<script src="scripts/bootstrap-dropdown.js"></script>
 	<script src="scripts/toc.js"></script>
 
-
-	<script>  Sunlight.highlightAll({lineNumbers:,  showMenu: true, enableDoclinks :true}); </script>
-
 	<script>
 		$( function () {
+			$( "[id*='$']" ).each( function () {
+				var $this = $( this );
+
+				$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+			} );
+
 			$( "#toc" ).toc( {
+				anchorName  : function ( i, heading, prefix ) {
+					return $( heading ).attr( "id" ) || ( prefix + i );
+				},
 				selectors   : "h1,h2,h3,h4",
 				showAndHide : false,
-				scrollTo    : 60
+				scrollTo    : "100px"
 			} );
+
 			$( "#toc>ul" ).addClass( "nav nav-pills nav-stacked" );
 			$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+			$( '.dropdown-toggle' ).dropdown();
+//			$( ".tutorial-section pre, .readme-section pre" ).addClass( "sunlight-highlight-javascript" ).addClass( "linenums" );
 
+			$( ".tutorial-section pre, .readme-section pre" ).each( function () {
+				var $this = $( this );
+
+				var example = $this.find( "code" );
+				exampleText = example.html();
+				var lang = /{@lang (.*?)}/.exec( exampleText );
+				if ( lang && lang[1] ) {
+					exampleText = exampleText.replace( lang[0], "" );
+					example.html( exampleText );
+					lang = lang[1];
+				} else {
+					lang = "javascript";
+				}
+
+				if ( lang ) {
+
+					$this
+						.addClass( "sunlight-highlight-" + lang )
+						.addClass( "linenums" )
+						.html( example.html() );
+
+				}
+			} );
+
+			Sunlight.highlightAll( {
+				lineNumbers : true,
+				showMenu : true,
+				enableDoclinks : true
+			} );
 		} );
-	</script>
+	 </script>
 
+
+
+	<!--Navigation and Symbol Display-->
+	
+
+
+	<!--Google Analytics-->
 	
 
 </body>

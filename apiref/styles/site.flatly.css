@@ -1,4 +1,4 @@
-@import url("//fonts.googleapis.com/css?family=Lato:400,700,900,400italic");
+@import url("fred://fonts.googleapis.com/css?family=Lato:400,700,900,400italic");
 /*!
  * Bootstrap v2.3.2
  *
@@ -5839,7 +5839,7 @@ legend {
   }
 }
 #main {
-  margin-top: 56px;
+  margin-top: 62px;
 }
 .navbar-fixed-top .navbar-inner {
   padding-left: 20px;
@@ -5872,9 +5872,9 @@ legend {
 }
 #toc {
   position: fixed;
-  top: 56px;
+  top: 62px;
   width: 29%;
-  max-height: 90%;
+  max-height: 82%;
   overflow: auto;
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
@@ -5883,8 +5883,8 @@ legend {
   padding: 5px;
 }
 #toc .toc-active {
-  background-color: #233140;
-  color: #1abc9c;
+  background-color: #15a589;
+  color: #2c3e50;
   -webkit-border-radius: 3px;
   -moz-border-radius: 3px;
   border-radius: 3px;
@@ -5893,13 +5893,8 @@ legend {
 #toc .toc-active a:hover,
 #toc .toc-active a:active,
 #toc .toc-active a:visited {
-  background-color: #233140;
-  color: #1abc9c;
-}
-.toc-shim {
-  padding-top: 56px;
-  margin-top: -56px;
-  display: block;
+  background-color: #15a589;
+  color: #2c3e50;
 }
 .toc-h1 {
   margin-left: 2px;
@@ -5936,6 +5931,7 @@ legend {
   color: #18bc9c;
   font-weight: 700;
   padding-top: 10px;
+  padding-bottom: 7px;
   display: block;
 }
 footer {
@@ -5948,8 +5944,8 @@ code {
   color: #f39c12;
 }
 .buffered-name {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 62px;
+  margin-top: -62px;
 }
 .member-collapsed {
   background-color: #18bc9c;
@@ -5971,7 +5967,13 @@ code {
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
   border-radius: 5px;
-  padding: 10px;
+  padding: 3px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+.member-name {
+  padding-top: 100px !important;
+  margin-top: -100px !important;
 }
 .sunlight-highlighted {
   margin: 0;

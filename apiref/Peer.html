@@ -3,24 +3,49 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>Documentation Class: Peer</title>
+	<title>bitcore Class: Peer</title>
 
 	<!--[if lt IE 9]>
 	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
 	<![endif]-->
 	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
 
-	
 	<link type="text/css" rel="stylesheet" href="styles/site.journal.css">
-	
+
 </head>
 
 <body>
 <div class="container-fluid">
 	<div class="navbar navbar-fixed-top ">
 		<div class="navbar-inner">
-			<a class="brand" href="index.html">Documentation</a>
+			<a class="brand" href="index.html">bitcore</a>
 			<ul class="nav">
+				
+				<li class="dropdown">
+					<a href="namespaces.list.html" class="dropdown-toggle" data-toggle="dropdown">Namespaces<b
+						class="caret"></b></a>
+
+					<ul class="dropdown-menu ">
+						
+						<li>
+							<a href="JSUtil.html">JSUtil</a>
+						</li>
+						
+						<li>
+							<a href="Signing.html">Signing</a>
+						</li>
+						
+						<li>
+							<a href="Transport.html">Transport</a>
+						</li>
+						
+						<li>
+							<a href="Transport.html#Message">Transport.Message</a>
+						</li>
+						
+
+					</ul>
+				</li>
 				
 				<li class="dropdown">
 					<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b
@@ -33,7 +58,7 @@
 						</li>
 						
 						<li>
-							<a href="global.html#Block">Block</a>
+							<a href="Block.html">Block</a>
 						</li>
 						
 						<li>
@@ -46,6 +71,10 @@
 						
 						<li>
 							<a href="HDPublicKey.html">HDPublicKey</a>
+						</li>
+						
+						<li>
+							<a href="MultiSigScriptHashInput.html">MultiSigScriptHashInput</a>
 						</li>
 						
 						<li>
@@ -69,7 +98,23 @@
 						</li>
 						
 						<li>
+							<a href="PublicKeyHashInput.html">PublicKeyHashInput</a>
+						</li>
+						
+						<li>
 							<a href="Script.html">Script</a>
+						</li>
+						
+						<li>
+							<a href="Transaction.html">Transaction</a>
+						</li>
+						
+						<li>
+							<a href="Unit.html">Unit</a>
+						</li>
+						
+						<li>
+							<a href="URI.html">URI</a>
 						</li>
 						
 
@@ -114,8 +159,8 @@
     
     
     <div class="description">
-        A Peer instance represents a remote bitcoin node and allows to communicate
-with it using the standar messages of the bitcoin p2p protocol.
+        <p>A Peer instance represents a remote bitcoin node and allows to communicate
+with it using the standar messages of the bitcoin p2p protocol.</p>
     </div>
     
 
@@ -175,7 +220,7 @@ with it using the standar messages of the bitcoin p2p protocol.
 
             
 
-            <td class="description last">IP address of the remote host</td>
+            <td class="description last"><p>IP address of the remote host</p></td>
         </tr>
 
 	
@@ -208,7 +253,7 @@ with it using the standar messages of the bitcoin p2p protocol.
 
             
 
-            <td class="description last">Port number of the remote host</td>
+            <td class="description last"><p>Port number of the remote host</p></td>
         </tr>
 
 	
@@ -241,7 +286,7 @@ with it using the standar messages of the bitcoin p2p protocol.
 
             
 
-            <td class="description last">The context for this communication</td>
+            <td class="description last"><p>The context for this communication</p></td>
         </tr>
 
 	
@@ -252,36 +297,43 @@ with it using the standar messages of the bitcoin p2p protocol.
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="peer.js.html">transport/peer.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="transport_peer.js.html">transport/peer.js</a>,
+				 <a href="transport_peer.js.html#sunlight-1-line-32">line 32</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -298,7 +350,7 @@ with it using the standar messages of the bitcoin p2p protocol.
     
             
 <div class="param-desc">
-    A new instance of Peer.
+    <p>A new instance of Peer.</p>
 </div>
 
 
@@ -321,9 +373,9 @@ with it using the standar messages of the bitcoin p2p protocol.
     
         <h5>Example</h5>
         
-    <pre class="sunlight-highlight-javascript">var peer = new Peer('127.0.0.1').setProxy('127.0.0.1', 9050);
-peer.on('tx', function(tx) {
- console.log('New transaction: ', tx.id);
+    <pre class="sunlight-highlight-javascript">var peer = new Peer(&#x27;127.0.0.1&#x27;).setProxy(&#x27;127.0.0.1&#x27;, 9050);
+peer.on(&#x27;tx&#x27;, function(tx) {
+ console.log(&#x27;New transaction: &#x27;, tx.id);
 });
 peer.connect();</pre>
 
@@ -360,7 +412,7 @@ peer.connect();</pre>
     
     
     <div class="description">
-        Internal function that creates a socket using a proxy if neccesary.
+        <p>Internal function that creates a socket using a proxy if neccesary.</p>
     </div>
     
 
@@ -372,36 +424,43 @@ peer.connect();</pre>
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="peer.js.html">transport/peer.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="transport_peer.js.html">transport/peer.js</a>,
+				 <a href="transport_peer.js.html#sunlight-1-line-184">line 184</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -418,7 +477,7 @@ peer.connect();</pre>
     
             
 <div class="param-desc">
-    A Socket instance not yet connected.
+    <p>A Socket instance not yet connected.</p>
 </div>
 
 
@@ -452,7 +511,7 @@ peer.connect();</pre>
     
     
     <div class="description">
-        Internal function that tries to read a message from the data buffer
+        <p>Internal function that tries to read a message from the data buffer</p>
     </div>
     
 
@@ -464,36 +523,43 @@ peer.connect();</pre>
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="peer.js.html">transport/peer.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="transport_peer.js.html">transport/peer.js</a>,
+				 <a href="transport_peer.js.html#sunlight-1-line-170">line 170</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -521,7 +587,7 @@ peer.connect();</pre>
     
     
     <div class="description">
-        Send a PONG message to the remote peer.
+        <p>Send a PONG message to the remote peer.</p>
     </div>
     
 
@@ -533,36 +599,43 @@ peer.connect();</pre>
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="peer.js.html">transport/peer.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="transport_peer.js.html">transport/peer.js</a>,
+				 <a href="transport_peer.js.html#sunlight-1-line-162">line 162</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -590,7 +663,7 @@ peer.connect();</pre>
     
     
     <div class="description">
-        Internal function that sends VERSION message to the remote peer.
+        <p>Internal function that sends VERSION message to the remote peer.</p>
     </div>
     
 
@@ -602,36 +675,43 @@ peer.connect();</pre>
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="peer.js.html">transport/peer.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="transport_peer.js.html">transport/peer.js</a>,
+				 <a href="transport_peer.js.html#sunlight-1-line-154">line 154</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -659,7 +739,7 @@ peer.connect();</pre>
     
     
     <div class="description">
-        Init the connection with the remote peer.
+        <p>Init the connection with the remote peer.</p>
     </div>
     
 
@@ -671,36 +751,43 @@ peer.connect();</pre>
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="peer.js.html">transport/peer.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="transport_peer.js.html">transport/peer.js</a>,
+				 <a href="transport_peer.js.html#sunlight-1-line-105">line 105</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -717,7 +804,7 @@ peer.connect();</pre>
     
             
 <div class="param-desc">
-    The same peer instance.
+    <p>The same peer instance.</p>
 </div>
 
 
@@ -751,7 +838,7 @@ peer.connect();</pre>
     
     
     <div class="description">
-        Disconnects the remote connection.
+        <p>Disconnects the remote connection.</p>
     </div>
     
 
@@ -763,36 +850,43 @@ peer.connect();</pre>
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="peer.js.html">transport/peer.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="transport_peer.js.html">transport/peer.js</a>,
+				 <a href="transport_peer.js.html#sunlight-1-line-135">line 135</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -809,7 +903,7 @@ peer.connect();</pre>
     
             
 <div class="param-desc">
-    The same peer instance.
+    <p>The same peer instance.</p>
 </div>
 
 
@@ -843,7 +937,7 @@ peer.connect();</pre>
     
     
     <div class="description">
-        Send a Message to the remote peer.
+        <p>Send a Message to the remote peer.</p>
     </div>
     
 
@@ -883,7 +977,7 @@ peer.connect();</pre>
             <td class="type">
             
                 
-<span class="param-type"><a href="global.html#Message">Message</a></span>
+<span class="param-type"><a href="Message.html">Message</a></span>
 
 
             
@@ -893,7 +987,7 @@ peer.connect();</pre>
 
             
 
-            <td class="description last">A message instance</td>
+            <td class="description last"><p>A message instance</p></td>
         </tr>
 
 	
@@ -904,36 +998,43 @@ peer.connect();</pre>
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="peer.js.html">transport/peer.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="transport_peer.js.html">transport/peer.js</a>,
+				 <a href="transport_peer.js.html#sunlight-1-line-147">line 147</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -961,7 +1062,7 @@ peer.connect();</pre>
     
     
     <div class="description">
-        Set a socks5 proxy for the connection. Enables the use of the TOR network.
+        <p>Set a socks5 proxy for the connection. Enables the use of the TOR network.</p>
     </div>
     
 
@@ -1011,7 +1112,7 @@ peer.connect();</pre>
 
             
 
-            <td class="description last">IP address of the proxy</td>
+            <td class="description last"><p>IP address of the proxy</p></td>
         </tr>
 
 	
@@ -1034,7 +1135,7 @@ peer.connect();</pre>
 
             
 
-            <td class="description last">Port number of the proxy</td>
+            <td class="description last"><p>Port number of the proxy</p></td>
         </tr>
 
 	
@@ -1045,36 +1146,43 @@ peer.connect();</pre>
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="peer.js.html">transport/peer.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="transport_peer.js.html">transport/peer.js</a>,
+				 <a href="transport_peer.js.html#sunlight-1-line-88">line 88</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -1091,7 +1199,7 @@ peer.connect();</pre>
     
             
 <div class="param-desc">
-    The same Peer instance.
+    <p>The same Peer instance.</p>
 </div>
 
 
@@ -1133,9 +1241,15 @@ peer.connect();</pre>
 				<footer>
 					
 					
+		<span class="copyright">
+		© 2013-2014, BitPay Inc.
+		</span>
+					<br />
+					
 		<span class="jsdoc-message">
-		Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha5</a>
-		on Tue Dec 16 2014 03:26:37 GMT-0300 (ART) using the <a href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
+		Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha11</a>
+		on 2014-12-16T17:20:32-03:00 using the <a
+			href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
 		</span>
 				</footer>
 			</div>
@@ -1149,33 +1263,72 @@ peer.connect();</pre>
 		</div>
 
 	</div>
-	<script src="scripts/sunlight.js"></script>
-	<script src="scripts/sunlight.javascript.js"></script>
-	<script src="scripts/sunlight-plugin.doclinks.js"></script>
-	<script src="scripts/sunlight-plugin.linenumbers.js"></script>
-	<script src="scripts/sunlight-plugin.menu.js"></script>
-	<script src="scripts/jquery.min.js"></script>
-	<script src="scripts/jquery.scrollTo.js"></script>
-	<script src="scripts/jquery.localScroll.js"></script>
+	<!--<script src="scripts/sunlight.js"></script>-->
+	<script src="scripts/docstrap.lib.js"></script>
 	<script src="scripts/bootstrap-dropdown.js"></script>
 	<script src="scripts/toc.js"></script>
 
-
-	<script>  Sunlight.highlightAll({lineNumbers:,  showMenu: true, enableDoclinks :true}); </script>
-
 	<script>
 		$( function () {
+			$( "[id*='$']" ).each( function () {
+				var $this = $( this );
+
+				$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+			} );
+
 			$( "#toc" ).toc( {
+				anchorName  : function ( i, heading, prefix ) {
+					return $( heading ).attr( "id" ) || ( prefix + i );
+				},
 				selectors   : "h1,h2,h3,h4",
 				showAndHide : false,
-				scrollTo    : 60
+				scrollTo    : "100px"
 			} );
+
 			$( "#toc>ul" ).addClass( "nav nav-pills nav-stacked" );
 			$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+			$( '.dropdown-toggle' ).dropdown();
+//			$( ".tutorial-section pre, .readme-section pre" ).addClass( "sunlight-highlight-javascript" ).addClass( "linenums" );
 
+			$( ".tutorial-section pre, .readme-section pre" ).each( function () {
+				var $this = $( this );
+
+				var example = $this.find( "code" );
+				exampleText = example.html();
+				var lang = /{@lang (.*?)}/.exec( exampleText );
+				if ( lang && lang[1] ) {
+					exampleText = exampleText.replace( lang[0], "" );
+					example.html( exampleText );
+					lang = lang[1];
+				} else {
+					lang = "javascript";
+				}
+
+				if ( lang ) {
+
+					$this
+						.addClass( "sunlight-highlight-" + lang )
+						.addClass( "linenums" )
+						.html( example.html() );
+
+				}
+			} );
+
+			Sunlight.highlightAll( {
+				lineNumbers : true,
+				showMenu : true,
+				enableDoclinks : true
+			} );
 		} );
-	</script>
+	 </script>
 
+
+
+	<!--Navigation and Symbol Display-->
+	
+
+
+	<!--Google Analytics-->
 	
 
 </body>

@@ -3,24 +3,49 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>Documentation Class: PublicKey</title>
+	<title>bitcore Class: PublicKey</title>
 
 	<!--[if lt IE 9]>
 	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
 	<![endif]-->
 	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
 
-	
 	<link type="text/css" rel="stylesheet" href="styles/site.journal.css">
-	
+
 </head>
 
 <body>
 <div class="container-fluid">
 	<div class="navbar navbar-fixed-top ">
 		<div class="navbar-inner">
-			<a class="brand" href="index.html">Documentation</a>
+			<a class="brand" href="index.html">bitcore</a>
 			<ul class="nav">
+				
+				<li class="dropdown">
+					<a href="namespaces.list.html" class="dropdown-toggle" data-toggle="dropdown">Namespaces<b
+						class="caret"></b></a>
+
+					<ul class="dropdown-menu ">
+						
+						<li>
+							<a href="JSUtil.html">JSUtil</a>
+						</li>
+						
+						<li>
+							<a href="Signing.html">Signing</a>
+						</li>
+						
+						<li>
+							<a href="Transport.html">Transport</a>
+						</li>
+						
+						<li>
+							<a href="Transport.html#Message">Transport.Message</a>
+						</li>
+						
+
+					</ul>
+				</li>
 				
 				<li class="dropdown">
 					<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b
@@ -33,7 +58,7 @@
 						</li>
 						
 						<li>
-							<a href="global.html#Block">Block</a>
+							<a href="Block.html">Block</a>
 						</li>
 						
 						<li>
@@ -46,6 +71,10 @@
 						
 						<li>
 							<a href="HDPublicKey.html">HDPublicKey</a>
+						</li>
+						
+						<li>
+							<a href="MultiSigScriptHashInput.html">MultiSigScriptHashInput</a>
 						</li>
 						
 						<li>
@@ -69,7 +98,23 @@
 						</li>
 						
 						<li>
+							<a href="PublicKeyHashInput.html">PublicKeyHashInput</a>
+						</li>
+						
+						<li>
 							<a href="Script.html">Script</a>
+						</li>
+						
+						<li>
+							<a href="Transaction.html">Transaction</a>
+						</li>
+						
+						<li>
+							<a href="Unit.html">Unit</a>
+						</li>
+						
+						<li>
+							<a href="URI.html">URI</a>
 						</li>
 						
 
@@ -114,7 +159,7 @@
     
     
     <div class="description">
-        Instantiate a PublicKey from a 'PrivateKey', 'Point', 'string', 'Buffer'.
+        <p>Instantiate a PublicKey from a 'PrivateKey', 'Point', 'string', 'Buffer'.</p>
     </div>
     
 
@@ -164,7 +209,7 @@
 
             
 
-            <td class="description last">The encoded data in various formats</td>
+            <td class="description last"><p>The encoded data in various formats</p></td>
         </tr>
 
 	
@@ -187,7 +232,7 @@
 
             
 
-            <td class="description last">additional options
+            <td class="description last"><p>additional options</p>
                 <h6>Properties</h6>
                 
 
@@ -241,7 +286,7 @@
 
             
 
-            <td class="description last">Which network should the address for this public key be for</td>
+            <td class="description last"><p>Which network should the address for this public key be for</p></td>
         </tr>
 
 	
@@ -274,7 +319,7 @@
 
             
 
-            <td class="description last">If the public key is compressed</td>
+            <td class="description last"><p>If the public key is compressed</p></td>
         </tr>
 
 	
@@ -292,36 +337,43 @@
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="publickey.js.html">publickey.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-31">line 31</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -338,7 +390,7 @@
     
             
 <div class="param-desc">
-    A new valid instance of an PublicKey
+    <p>A new valid instance of an PublicKey</p>
 </div>
 
 
@@ -392,109 +444,123 @@ var imported = PublicKey.fromString(exported);</pre>
 
         <dl>
             
-<dt>
-    <h4 class="name" id="fromDER"><span class="type-signature">&lt;static> </span>fromDER<span class="type-signature"></span></h4>
-    
+<dt class="name" id="fromDER">
+    <h4><span class="type-signature">&lt;static> </span>fromDER<span class="type-signature"></span></h4>
+
     
 </dt>
 <dd>
     
     <div class="description">
-        Instantiate a PublicKey from a Buffer
+        <p>Instantiate a PublicKey from a Buffer</p>
     </div>
     
-    
+
     
 
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="publickey.js.html">publickey.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-251">line 251</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
-    
+
     
 </dd>
 
         
             
-<dt>
-    <h4 class="name" id="toBuffer"><span class="type-signature"></span>toBuffer<span class="type-signature"></span></h4>
-    
+<dt class="name" id="toBuffer">
+    <h4><span class="type-signature"></span>toBuffer<span class="type-signature"></span></h4>
+
     
 </dt>
 <dd>
     
     <div class="description">
-        Will output the PublicKey to a DER Buffer
+        <p>Will output the PublicKey to a DER Buffer</p>
     </div>
     
-    
+
     
 
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="publickey.js.html">publickey.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-346">line 346</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
-    
+
     
 </dd>
 
@@ -507,6 +573,1053 @@ var imported = PublicKey.fromString(exported);</pre>
         <dl>
             
 <dt>
+    <h4 class="name" id="_isBuffer"><span class="type-signature">&lt;private, static> </span>_isBuffer<span class="signature">(param)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Internal function to detect if an object is a Buffer</p>
+    </div>
+    
+
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+
+		<th>Type</th>
+
+		
+
+		
+
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+
+	<tbody>
+	
+
+        <tr>
+            
+                <td class="name"><code>param</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">*</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>object to test</p></td>
+        </tr>
+
+	
+	</tbody>
+</table>
+
+    
+    
+    
+<dl class="details">
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-106">line 106</a>
+			</li>
+		</ul>
+	</dd>
+	
+
+	
+
+	
+
+	
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+<span class="param-type">boolean</span>
+
+
+	</dd>
+</dl>
+
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="_isJSON"><span class="type-signature">&lt;private, static> </span>_isJSON<span class="signature">(param)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Internal function to detect if a param is a JSON string or plain object</p>
+    </div>
+    
+
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+
+		<th>Type</th>
+
+		
+
+		
+
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+
+	<tbody>
+	
+
+        <tr>
+            
+                <td class="name"><code>param</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">*</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>value to test</p></td>
+        </tr>
+
+	
+	</tbody>
+</table>
+
+    
+    
+    
+<dl class="details">
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-117">line 117</a>
+			</li>
+		</ul>
+	</dd>
+	
+
+	
+
+	
+
+	
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+<span class="param-type">boolean</span>
+
+
+	</dd>
+</dl>
+
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="_isPrivateKey"><span class="type-signature">&lt;private, static> </span>_isPrivateKey<span class="signature">(param)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Internal function to detect if an object is a PrivateKey</p>
+    </div>
+    
+
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+
+		<th>Type</th>
+
+		
+
+		
+
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+
+	<tbody>
+	
+
+        <tr>
+            
+                <td class="name"><code>param</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">*</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>object to test</p></td>
+        </tr>
+
+	
+	</tbody>
+</table>
+
+    
+    
+    
+<dl class="details">
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-94">line 94</a>
+			</li>
+		</ul>
+	</dd>
+	
+
+	
+
+	
+
+	
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+<span class="param-type">boolean</span>
+
+
+	</dd>
+</dl>
+
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="_transformDER"><span class="type-signature">&lt;private, static> </span>_transformDER<span class="signature">(buf)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Internal function to transform DER into a public key point</p>
+    </div>
+    
+
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+
+		<th>Type</th>
+
+		
+
+		
+
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+
+	<tbody>
+	
+
+        <tr>
+            
+                <td class="name"><code>buf</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Buffer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>An hex encoded buffer</p></td>
+        </tr>
+
+	
+	</tbody>
+</table>
+
+    
+    
+    
+<dl class="details">
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-146">line 146</a>
+			</li>
+		</ul>
+	</dd>
+	
+
+	
+
+	
+
+	
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    <p>An object with keys: point and compressed</p>
+</div>
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+<span class="param-type">Object</span>
+
+
+	</dd>
+</dl>
+
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="_transformJSON"><span class="type-signature">&lt;private, static> </span>_transformJSON<span class="signature">(buf)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Internal function to transform a JSON into a public key point</p>
+    </div>
+    
+
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+
+		<th>Type</th>
+
+		
+
+		
+
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+
+	<tbody>
+	
+
+        <tr>
+            
+                <td class="name"><code>buf</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Buffer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>a JSON string or plain object</p></td>
+        </tr>
+
+	
+	</tbody>
+</table>
+
+    
+    
+    
+<dl class="details">
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-221">line 221</a>
+			</li>
+		</ul>
+	</dd>
+	
+
+	
+
+	
+
+	
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    <p>An object with keys: point and compressed</p>
+</div>
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+<span class="param-type">Object</span>
+
+
+	</dd>
+</dl>
+
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="_transformPrivateKey"><span class="type-signature">&lt;private, static> </span>_transformPrivateKey<span class="signature">(privkey)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Internal function to transform a private key into a public key point</p>
+    </div>
+    
+
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+
+		<th>Type</th>
+
+		
+
+		
+
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+
+	<tbody>
+	
+
+        <tr>
+            
+                <td class="name"><code>privkey</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="PrivateKey.html">PrivateKey</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>An instance of PrivateKey</p></td>
+        </tr>
+
+	
+	</tbody>
+</table>
+
+    
+    
+    
+<dl class="details">
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-128">line 128</a>
+			</li>
+		</ul>
+	</dd>
+	
+
+	
+
+	
+
+	
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    <p>An object with keys: point and compressed</p>
+</div>
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+<span class="param-type">Object</span>
+
+
+	</dd>
+</dl>
+
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="_transformX"><span class="type-signature">&lt;private, static> </span>_transformX<span class="signature">(odd, x)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        <p>Internal function to transform X into a public key point</p>
+    </div>
+    
+
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+
+		<th>Type</th>
+
+		
+
+		
+
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+
+	<tbody>
+	
+
+        <tr>
+            
+                <td class="name"><code>odd</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>If the point is above or below the x axis</p></td>
+        </tr>
+
+	
+
+        <tr>
+            
+                <td class="name"><code>x</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Point.html">Point</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The x point</p></td>
+        </tr>
+
+	
+	</tbody>
+</table>
+
+    
+    
+    
+<dl class="details">
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-191">line 191</a>
+			</li>
+		</ul>
+	</dd>
+	
+
+	
+
+	
+
+	
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    <p>An object with keys: point and compressed</p>
+</div>
+
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+<span class="param-type">Object</span>
+
+
+	</dd>
+</dl>
+
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
     <h4 class="name" id="fromJSON"><span class="type-signature">&lt;static> </span>fromJSON<span class="signature">(json)</span><span class="type-signature"> &rarr; {<a href="PublicKey.html">PublicKey</a>}</span></h4>
     
     
@@ -515,7 +1628,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
     <div class="description">
-        Instantiate a PublicKey from JSON
+        <p>Instantiate a PublicKey from JSON</p>
     </div>
     
 
@@ -565,7 +1678,7 @@ var imported = PublicKey.fromString(exported);</pre>
 
             
 
-            <td class="description last">A JSON string</td>
+            <td class="description last"><p>A JSON string</p></td>
         </tr>
 
 	
@@ -576,36 +1689,43 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="publickey.js.html">publickey.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-206">line 206</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -622,7 +1742,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
             
 <div class="param-desc">
-    A new valid instance of PublicKey
+    <p>A new valid instance of PublicKey</p>
 </div>
 
 
@@ -656,7 +1776,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
     <div class="description">
-        Instantiate a PublicKey from a Point
+        <p>Instantiate a PublicKey from a Point</p>
     </div>
     
 
@@ -716,7 +1836,7 @@ var imported = PublicKey.fromString(exported);</pre>
 
             
 
-            <td class="description last">A Point instance</td>
+            <td class="description last"><p>A Point instance</p></td>
         </tr>
 
 	
@@ -749,7 +1869,7 @@ var imported = PublicKey.fromString(exported);</pre>
 
             
 
-            <td class="description last">whether to store this public key as compressed format</td>
+            <td class="description last"><p>whether to store this public key as compressed format</p></td>
         </tr>
 
 	
@@ -760,36 +1880,43 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="publickey.js.html">publickey.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-266">line 266</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -806,7 +1933,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
             
 <div class="param-desc">
-    A new valid instance of PublicKey
+    <p>A new valid instance of PublicKey</p>
 </div>
 
 
@@ -840,7 +1967,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
     <div class="description">
-        Instantiate a PublicKey from a PrivateKey
+        <p>Instantiate a PublicKey from a PrivateKey</p>
     </div>
     
 
@@ -890,7 +2017,7 @@ var imported = PublicKey.fromString(exported);</pre>
 
             
 
-            <td class="description last">An instance of PrivateKey</td>
+            <td class="description last"><p>An instance of PrivateKey</p></td>
         </tr>
 
 	
@@ -901,36 +2028,43 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="publickey.js.html">publickey.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-237">line 237</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -947,7 +2081,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
             
 <div class="param-desc">
-    A new valid instance of PublicKey
+    <p>A new valid instance of PublicKey</p>
 </div>
 
 
@@ -981,7 +2115,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
     <div class="description">
-        Instantiate a PublicKey from a DER hex encoded string
+        <p>Instantiate a PublicKey from a DER hex encoded string</p>
     </div>
     
 
@@ -1041,7 +2175,7 @@ var imported = PublicKey.fromString(exported);</pre>
 
             
 
-            <td class="description last">A DER hex string</td>
+            <td class="description last"><p>A DER hex string</p></td>
         </tr>
 
 	
@@ -1074,7 +2208,7 @@ var imported = PublicKey.fromString(exported);</pre>
 
             
 
-            <td class="description last">The type of string encoding</td>
+            <td class="description last"><p>The type of string encoding</p></td>
         </tr>
 
 	
@@ -1085,36 +2219,43 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="publickey.js.html">publickey.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-280">line 280</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -1131,7 +2272,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
             
 <div class="param-desc">
-    A new valid instance of PublicKey
+    <p>A new valid instance of PublicKey</p>
 </div>
 
 
@@ -1165,7 +2306,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
     <div class="description">
-        Instantiate a PublicKey from an X Point
+        <p>Instantiate a PublicKey from an X Point</p>
     </div>
     
 
@@ -1215,7 +2356,7 @@ var imported = PublicKey.fromString(exported);</pre>
 
             
 
-            <td class="description last">If the point is above or below the x axis</td>
+            <td class="description last"><p>If the point is above or below the x axis</p></td>
         </tr>
 
 	
@@ -1238,7 +2379,7 @@ var imported = PublicKey.fromString(exported);</pre>
 
             
 
-            <td class="description last">The x point</td>
+            <td class="description last"><p>The x point</p></td>
         </tr>
 
 	
@@ -1249,36 +2390,43 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="publickey.js.html">publickey.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-293">line 293</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -1295,7 +2443,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
             
 <div class="param-desc">
-    A new valid instance of PublicKey
+    <p>A new valid instance of PublicKey</p>
 </div>
 
 
@@ -1329,7 +2477,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
     <div class="description">
-        Check if there would be any errors when initializing a PublicKey
+        <p>Check if there would be any errors when initializing a PublicKey</p>
     </div>
     
 
@@ -1389,7 +2537,7 @@ var imported = PublicKey.fromString(exported);</pre>
 
             
 
-            <td class="description last">The encoded data in various formats</td>
+            <td class="description last"><p>The encoded data in various formats</p></td>
         </tr>
 
 	
@@ -1422,7 +2570,7 @@ var imported = PublicKey.fromString(exported);</pre>
 
             
 
-            <td class="description last">If the public key is compressed</td>
+            <td class="description last"><p>If the public key is compressed</p></td>
         </tr>
 
 	
@@ -1433,36 +2581,43 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="publickey.js.html">publickey.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-305">line 305</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -1479,7 +2634,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
             
 <div class="param-desc">
-    An error if exists
+    <p>An error if exists</p>
 </div>
 
 
@@ -1516,7 +2671,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
     <div class="description">
-        Check if the parameters are valid
+        <p>Check if the parameters are valid</p>
     </div>
     
 
@@ -1576,7 +2731,7 @@ var imported = PublicKey.fromString(exported);</pre>
 
             
 
-            <td class="description last">The encoded data in various formats</td>
+            <td class="description last"><p>The encoded data in various formats</p></td>
         </tr>
 
 	
@@ -1609,7 +2764,7 @@ var imported = PublicKey.fromString(exported);</pre>
 
             
 
-            <td class="description last">If the public key is compressed</td>
+            <td class="description last"><p>If the public key is compressed</p></td>
         </tr>
 
 	
@@ -1620,36 +2775,43 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="publickey.js.html">publickey.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-322">line 322</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -1666,7 +2828,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
             
 <div class="param-desc">
-    If the public key would be valid
+    <p>If the public key would be valid</p>
 </div>
 
 
@@ -1700,7 +2862,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
     <div class="description">
-        Will return a string formatted for the console
+        <p>Will return a string formatted for the console</p>
     </div>
     
 
@@ -1712,36 +2874,43 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="publickey.js.html">publickey.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-392">line 392</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -1758,7 +2927,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
             
 <div class="param-desc">
-    Public key
+    <p>Public key</p>
 </div>
 
 
@@ -1792,7 +2961,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
     <div class="description">
-        Will return an address for the public key
+        <p>Will return an address for the public key</p>
     </div>
     
 
@@ -1804,36 +2973,43 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="publickey.js.html">publickey.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-373">line 373</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -1850,7 +3026,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
             
 <div class="param-desc">
-    An address generated from the public key
+    <p>An address generated from the public key</p>
 </div>
 
 
@@ -1892,36 +3068,43 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="publickey.js.html">publickey.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-329">line 329</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -1938,7 +3121,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
             
 <div class="param-desc">
-    A plain object of the PublicKey
+    <p>A plain object of the PublicKey</p>
 </div>
 
 
@@ -1972,7 +3155,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
     <div class="description">
-        Will output the PublicKey to a DER encoded hex string
+        <p>Will output the PublicKey to a DER encoded hex string</p>
     </div>
     
 
@@ -1984,36 +3167,43 @@ var imported = PublicKey.fromString(exported);</pre>
     
     
 <dl class="details">
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="publickey.js.html">publickey.js</a>
-    </li></ul></dd>
-    
 
-    
 
-    
+	
+	<dt class="tag-source">Source:</dt>
+	<dd class="tag-source">
+		<ul class="dummy">
+			<li>
+				<a href="publickey.js.html">publickey.js</a>,
+				 <a href="publickey.js.html#sunlight-1-line-382">line 382</a>
+			</li>
+		</ul>
+	</dd>
+	
 
-    
+	
+
+	
+
+	
 </dl>
 
     
@@ -2030,7 +3220,7 @@ var imported = PublicKey.fromString(exported);</pre>
     
             
 <div class="param-desc">
-    A DER hex encoded string
+    <p>A DER hex encoded string</p>
 </div>
 
 
@@ -2072,9 +3262,15 @@ var imported = PublicKey.fromString(exported);</pre>
 				<footer>
 					
 					
+		<span class="copyright">
+		© 2013-2014, BitPay Inc.
+		</span>
+					<br />
+					
 		<span class="jsdoc-message">
-		Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha5</a>
-		on Tue Dec 16 2014 03:26:37 GMT-0300 (ART) using the <a href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
+		Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha11</a>
+		on 2014-12-16T17:20:33-03:00 using the <a
+			href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
 		</span>
 				</footer>
 			</div>
@@ -2088,33 +3284,72 @@ var imported = PublicKey.fromString(exported);</pre>
 		</div>
 
 	</div>
-	<script src="scripts/sunlight.js"></script>
-	<script src="scripts/sunlight.javascript.js"></script>
-	<script src="scripts/sunlight-plugin.doclinks.js"></script>
-	<script src="scripts/sunlight-plugin.linenumbers.js"></script>
-	<script src="scripts/sunlight-plugin.menu.js"></script>
-	<script src="scripts/jquery.min.js"></script>
-	<script src="scripts/jquery.scrollTo.js"></script>
-	<script src="scripts/jquery.localScroll.js"></script>
+	<!--<script src="scripts/sunlight.js"></script>-->
+	<script src="scripts/docstrap.lib.js"></script>
 	<script src="scripts/bootstrap-dropdown.js"></script>
 	<script src="scripts/toc.js"></script>
 
-
-	<script>  Sunlight.highlightAll({lineNumbers:,  showMenu: true, enableDoclinks :true}); </script>
-
 	<script>
 		$( function () {
+			$( "[id*='$']" ).each( function () {
+				var $this = $( this );
+
+				$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+			} );
+
 			$( "#toc" ).toc( {
+				anchorName  : function ( i, heading, prefix ) {
+					return $( heading ).attr( "id" ) || ( prefix + i );
+				},
 				selectors   : "h1,h2,h3,h4",
 				showAndHide : false,
-				scrollTo    : 60
+				scrollTo    : "100px"
 			} );
+
 			$( "#toc>ul" ).addClass( "nav nav-pills nav-stacked" );
 			$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+			$( '.dropdown-toggle' ).dropdown();
+//			$( ".tutorial-section pre, .readme-section pre" ).addClass( "sunlight-highlight-javascript" ).addClass( "linenums" );
 
+			$( ".tutorial-section pre, .readme-section pre" ).each( function () {
+				var $this = $( this );
+
+				var example = $this.find( "code" );
+				exampleText = example.html();
+				var lang = /{@lang (.*?)}/.exec( exampleText );
+				if ( lang && lang[1] ) {
+					exampleText = exampleText.replace( lang[0], "" );
+					example.html( exampleText );
+					lang = lang[1];
+				} else {
+					lang = "javascript";
+				}
+
+				if ( lang ) {
+
+					$this
+						.addClass( "sunlight-highlight-" + lang )
+						.addClass( "linenums" )
+						.html( example.html() );
+
+				}
+			} );
+
+			Sunlight.highlightAll( {
+				lineNumbers : true,
+				showMenu : true,
+				enableDoclinks : true
+			} );
 		} );
-	</script>
+	 </script>
 
+
+
+	<!--Navigation and Symbol Display-->
+	
+
+
+	<!--Google Analytics-->
 	
 
 </body>

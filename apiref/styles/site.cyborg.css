@@ -5997,7 +5997,7 @@ label {
   }
 }
 #main {
-  margin-top: 56px;
+  margin-top: 62px;
 }
 .navbar-fixed-top .navbar-inner {
   padding-left: 20px;
@@ -6030,9 +6030,9 @@ label {
 }
 #toc {
   position: fixed;
-  top: 56px;
+  top: 62px;
   width: 29%;
-  max-height: 90%;
+  max-height: 82%;
   overflow: auto;
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
@@ -6041,7 +6041,7 @@ label {
   padding: 5px;
 }
 #toc .toc-active {
-  background-color: #020202;
+  background-color: #242a31;
   color: #ffffff;
   -webkit-border-radius: 3px;
   -moz-border-radius: 3px;
@@ -6051,13 +6051,8 @@ label {
 #toc .toc-active a:hover,
 #toc .toc-active a:active,
 #toc .toc-active a:visited {
-  background-color: #020202;
+  background-color: #242a31;
   color: #ffffff;
-}
-.toc-shim {
-  padding-top: 56px;
-  margin-top: -56px;
-  display: block;
 }
 .toc-h1 {
   margin-left: 2px;
@@ -6094,6 +6089,7 @@ label {
   color: #252a30;
   font-weight: 700;
   padding-top: 10px;
+  padding-bottom: 7px;
   display: block;
 }
 footer {
@@ -6106,8 +6102,8 @@ code {
   color: #ff8800;
 }
 .buffered-name {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 62px;
+  margin-top: -62px;
 }
 .member-collapsed {
   background-color: #252a30;
@@ -6129,7 +6125,13 @@ code {
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
   border-radius: 5px;
-  padding: 10px;
+  padding: 3px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+.member-name {
+  padding-top: 100px !important;
+  margin-top: -100px !important;
 }
 .sunlight-highlighted {
   margin: 0;

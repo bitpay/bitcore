@@ -206,6 +206,7 @@ textarea {
 }
 body {
   margin: 0;
+  font-family: Georgia, "Times New Roman", Times, serif;
   font-size: 14px;
   line-height: 20px;
   color: #777777;
@@ -617,6 +618,7 @@ h4,
 h5,
 h6 {
   margin: 10px 0;
+  font-family: "News Cycle", "Arial Narrow Bold", sans-serif;
   font-weight: bold;
   line-height: 20px;
   color: #000000;
@@ -809,6 +811,7 @@ address {
 code,
 pre {
   padding: 0 3px 2px;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
   font-size: 12px;
   color: #777777;
   -webkit-border-radius: 3px;
@@ -890,6 +893,7 @@ input,
 button,
 select,
 textarea {
+  font-family: Georgia, "Times New Roman", Times, serif;
 }
 label {
   display: block;
@@ -3827,6 +3831,7 @@ input[type="submit"].btn.btn-mini {
 .navbar-search .search-query {
   margin-bottom: 0;
   padding: 4px 14px;
+  font-family: "News Cycle", "Arial Narrow Bold", sans-serif;
   font-size: 13px;
   font-weight: normal;
   line-height: 1;
@@ -5320,6 +5325,7 @@ hr {
   border-bottom: 1px solid #eeeeee;
 }
 .navbar {
+  font-family: "News Cycle", "Arial Narrow Bold", sans-serif;
   font-weight: bold;
 }
 .navbar .navbar-inner {
@@ -5445,6 +5451,7 @@ div.subnav .nav > li.active > a {
   -webkit-box-shadow: none;
   -moz-box-shadow: none;
   box-shadow: none;
+  font-family: "News Cycle", "Arial Narrow Bold", sans-serif;
   color: #000000;
   font-size: 15px;
   font-weight: bold;
@@ -5517,6 +5524,7 @@ div.subnav li.dropdown.open .dropdown-toggle:hover {
 }
 legend {
   border-bottom: 2px solid #eeeeee;
+  font-family: "News Cycle", "Arial Narrow Bold", sans-serif;
   font-weight: bold;
   color: #000000;
 }
@@ -5583,7 +5591,7 @@ legend {
   }
 }
 #main {
-  margin-top: 56px;
+  margin-top: 62px;
 }
 .navbar-fixed-top .navbar-inner {
   padding-left: 20px;
@@ -5616,9 +5624,9 @@ legend {
 }
 #toc {
   position: fixed;
-  top: 56px;
+  top: 62px;
   width: 29%;
-  max-height: 90%;
+  max-height: 82%;
   overflow: auto;
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
@@ -5627,8 +5635,8 @@ legend {
   padding: 5px;
 }
 #toc .toc-active {
-  background-color: transparent;
-  color: #000000;
+  background-color: #111111;
+  color: #ffffff;
   -webkit-border-radius: 3px;
   -moz-border-radius: 3px;
   border-radius: 3px;
@@ -5637,13 +5645,8 @@ legend {
 #toc .toc-active a:hover,
 #toc .toc-active a:active,
 #toc .toc-active a:visited {
-  background-color: transparent;
-  color: #000000;
-}
-.toc-shim {
-  padding-top: 56px;
-  margin-top: -56px;
-  display: block;
+  background-color: #111111;
+  color: #ffffff;
 }
 .toc-h1 {
   margin-left: 2px;
@@ -5680,6 +5683,7 @@ legend {
   color: #111111;
   font-weight: 700;
   padding-top: 10px;
+  padding-bottom: 7px;
   display: block;
 }
 footer {
@@ -5692,8 +5696,8 @@ code {
   color: #ff7f00;
 }
 .buffered-name {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 62px;
+  margin-top: -62px;
 }
 .member-collapsed {
   background-color: #111111;
@@ -5715,7 +5719,13 @@ code {
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
   border-radius: 5px;
-  padding: 10px;
+  padding: 3px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+.member-name {
+  padding-top: 100px !important;
+  margin-top: -100px !important;
 }
 .sunlight-highlighted {
   margin: 0;
