@@ -1,6 +1,4 @@
 ![bitcore Logo](http://bitpay.github.io/bitcore/images/bitcore-logo-with-ball.svg)
-bitcore
-=======
 
 [![NPM Package](https://img.shields.io/npm/v/bitcore.svg?style=flat-square)](https://www.npmjs.org/package/bitcore)
 [![Build Status](https://img.shields.io/travis/bitpay/bitcore.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore)
