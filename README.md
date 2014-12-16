@@ -1,4 +1,5 @@
-Bitcore
+[logo]: bitcore-logo.svg "bitcore"
+bitcore
 =======
 
 [![NPM Package](https://img.shields.io/npm/v/bitcore.svg?style=flat-square)](https://www.npmjs.org/package/bitcore)
