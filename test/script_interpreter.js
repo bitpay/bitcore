@@ -247,7 +247,6 @@ describe('ScriptInterpreter', function() {
 
         var tx = Transaction(txhex);
         tx.inputs.forEach(function(txin, j) {
-          console.log('input ' + j);
           var scriptSig = txin.script;
           var txidhex = txin.prevTxId.toString('hex');
           var txoutnum = txin.outputIndex;
