@@ -1,10 +1,10 @@
 {
   "magicnum": 118034699,
-  "blocksize": 8003,
-  "blockheader": {
+  "size": 8003,
+  "header": {
     "version": 2,
-    "prevblockidbuf": "4baaa9507c3b27908397ea7bc177a998e9f4fe38b9d5130be7b5353c00000000",
-    "merklerootbuf": "97fc4c97868288e984ff9f246f2c38510f5c37a3d5b41aae7004b01e2dd5e658",
+    "prevHash": "4baaa9507c3b27908397ea7bc177a998e9f4fe38b9d5130be7b5353c00000000",
+    "merkleRoot": "97fc4c97868288e984ff9f246f2c38510f5c37a3d5b41aae7004b01e2dd5e658",
     "time": 1371410638,
     "bits": 473956288,
     "nonce": 3594009557

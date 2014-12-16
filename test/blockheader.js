@@ -23,8 +23,8 @@ describe('BlockHeader', function() {
   var nonce = data.nonce;
   var bh = new BlockHeader({
     version: version,
-    prevblockidbuf: prevblockidbuf,
-    merklerootbuf: merklerootbuf,
+    prevHash: prevblockidbuf,
+    merkleRoot: merklerootbuf,
     time: time,
     bits: bits,
     nonce: nonce
@@ -47,15 +47,15 @@ describe('BlockHeader', function() {
     it('should set all the variables', function() {
       var bh = new BlockHeader({
         version: version,
-        prevblockidbuf: prevblockidbuf,
-        merklerootbuf: merklerootbuf,
+        prevHash: prevblockidbuf,
+        merkleRoot: merklerootbuf,
         time: time,
         bits: bits,
         nonce: nonce
       });
       should.exist(bh.version);
-      should.exist(bh.prevblockidbuf);
-      should.exist(bh.merklerootbuf);
+      should.exist(bh.prevHash);
+      should.exist(bh.merkleRoot);
       should.exist(bh.time);
       should.exist(bh.bits);
       should.exist(bh.nonce);
@@ -68,15 +68,15 @@ describe('BlockHeader', function() {
     it('should set all the variables', function() {
       var bh = BlockHeader.fromJSON({
         version: version,
-        prevblockidbuf: prevblockidbuf.toString('hex'),
-        merklerootbuf: merklerootbuf.toString('hex'),
+        prevHash: prevblockidbuf.toString('hex'),
+        merkleRoot: merklerootbuf.toString('hex'),
         time: time,
         bits: bits,
         nonce: nonce
       });
       should.exist(bh.version);
-      should.exist(bh.prevblockidbuf);
-      should.exist(bh.merklerootbuf);
+      should.exist(bh.prevHash);
+      should.exist(bh.merkleRoot);
       should.exist(bh.time);
       should.exist(bh.bits);
       should.exist(bh.nonce);
@@ -89,8 +89,8 @@ describe('BlockHeader', function() {
     it('should set all the variables', function() {
       var json = JSON.parse(bh.toJSON());
       should.exist(json.version);
-      should.exist(json.prevblockidbuf);
-      should.exist(json.merklerootbuf);
+      should.exist(json.prevHash);
+      should.exist(json.merkleRoot);
       should.exist(json.time);
       should.exist(json.bits);
       should.exist(json.nonce);
@@ -104,8 +104,8 @@ describe('BlockHeader', function() {
 
       var jsonString = JSON.stringify({
         version: version,
-        prevblockidbuf: prevblockidbuf,
-        merklerootbuf: merklerootbuf,
+        prevHash: prevblockidbuf,
+        merkleRoot: merklerootbuf,
         time: time,
         bits: bits,
         nonce: nonce
@@ -113,8 +113,8 @@ describe('BlockHeader', function() {
 
       var json = new BlockHeader(jsonString);
       should.exist(json.version);
-      should.exist(json.prevblockidbuf);
-      should.exist(json.merklerootbuf);
+      should.exist(json.prevHash);
+      should.exist(json.merkleRoot);
       should.exist(json.time);
       should.exist(json.bits);
       should.exist(json.nonce);
