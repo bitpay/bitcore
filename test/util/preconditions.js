@@ -61,4 +61,19 @@ describe('preconditions', function() {
       $.checkArgumentType(new PrivateKey(), PrivateKey);
     }).should.not.throw();
   });
+
+  it('formats correctly a message on InvalidArgument()', function() {
+    var error = new errors.InvalidArgument();
+    error.message.should.equal('Invalid Argument');
+  });
+
+  it('formats correctly a message on checkArgument', function() {
+    var error;
+    try {
+      $.checkArgument(null, 'parameter must be provided');
+    } catch (e) {
+      error = e;
+    }
+    error.message.should.equal('Invalid Argument: parameter must be provided');
+  });
 });
