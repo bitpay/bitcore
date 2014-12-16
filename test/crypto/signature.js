@@ -41,7 +41,7 @@ describe('Signature', function() {
         blank,
         blank
       ]);
-      var sig = new Signature.fromCompact(compressed);
+      var sig = Signature.fromCompact(compressed);
       sig.r.cmp(0).should.equal(0);
       sig.s.cmp(0).should.equal(0);
     });
@@ -53,7 +53,7 @@ describe('Signature', function() {
     var buf = new Buffer('3044022075fc517e541bd54769c080b64397e32161c850f6c1b2b67a5c433affbb3e62770220729e85cc46ffab881065ec07694220e71d4df9b2b8c8fd12c3122cf3a5efbcf2', 'hex');
 
     it('should parse this DER format signature', function() {
-      var sig = new Signature.fromDER(buf);
+      var sig = Signature.fromDER(buf);
       sig.r.toBuffer({
         size: 32
       }).toString('hex').should.equal('75fc517e541bd54769c080b64397e32161c850f6c1b2b67a5c433affbb3e6277');
@@ -69,7 +69,7 @@ describe('Signature', function() {
     var buf = new Buffer('3044022075fc517e541bd54769c080b64397e32161c850f6c1b2b67a5c433affbb3e62770220729e85cc46ffab881065ec07694220e71d4df9b2b8c8fd12c3122cf3a5efbcf2', 'hex');
 
     it('should parse this DER format signature in hex', function() {
-      var sig = new Signature.fromString(buf.toString('hex'));
+      var sig = Signature.fromString(buf.toString('hex'));
       sig.r.toBuffer({
         size: 32
       }).toString('hex').should.equal('75fc517e541bd54769c080b64397e32161c850f6c1b2b67a5c433affbb3e6277');

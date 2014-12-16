@@ -18,7 +18,7 @@ describe('Script', function() {
 
     it('should parse this buffer containing an OP code', function() {
       var buf = new Buffer(1);
-      buf[0] = Opcode('OP_0').toNumber();
+      buf[0] = Opcode.OP_0;
       var script = Script.fromBuffer(buf);
       script.chunks.length.should.equal(1);
       script.chunks[0].opcodenum.should.equal(buf[0]);
@@ -26,7 +26,7 @@ describe('Script', function() {
 
     it('should parse this buffer containing another OP code', function() {
       var buf = new Buffer(1);
-      buf[0] = Opcode('OP_CHECKMULTISIG').toNumber();
+      buf[0] = Opcode.OP_CHECKMULTISIG;
       var script = Script.fromBuffer(buf);
       script.chunks.length.should.equal(1);
       script.chunks[0].opcodenum.should.equal(buf[0]);
@@ -41,7 +41,7 @@ describe('Script', function() {
 
     it('should parse this buffer containing OP_PUSHDATA1 and three bytes of data', function() {
       var buf = new Buffer([0, 0, 1, 2, 3]);
-      buf[0] = Opcode('OP_PUSHDATA1').toNumber();
+      buf[0] = Opcode.OP_PUSHDATA1;
       buf.writeUInt8(3, 1);
       var script = Script.fromBuffer(buf);
       script.chunks.length.should.equal(1);
@@ -50,7 +50,7 @@ describe('Script', function() {
 
     it('should parse this buffer containing OP_PUSHDATA2 and three bytes of data', function() {
       var buf = new Buffer([0, 0, 0, 1, 2, 3]);
-      buf[0] = Opcode('OP_PUSHDATA2').toNumber();
+      buf[0] = Opcode.OP_PUSHDATA2;
       buf.writeUInt16LE(3, 1);
       var script = Script.fromBuffer(buf);
       script.chunks.length.should.equal(1);
@@ -59,7 +59,7 @@ describe('Script', function() {
 
     it('should parse this buffer containing OP_PUSHDATA4 and three bytes of data', function() {
       var buf = new Buffer([0, 0, 0, 0, 0, 1, 2, 3]);
-      buf[0] = Opcode('OP_PUSHDATA4').toNumber();
+      buf[0] = Opcode.OP_PUSHDATA4;
       buf.writeUInt16LE(3, 1);
       var script = Script.fromBuffer(buf);
       script.chunks.length.should.equal(1);
@@ -68,10 +68,10 @@ describe('Script', function() {
 
     it('should parse this buffer an OP code, data, and another OP code', function() {
       var buf = new Buffer([0, 0, 0, 0, 0, 0, 1, 2, 3, 0]);
-      buf[0] = Opcode('OP_0').toNumber();
-      buf[1] = Opcode('OP_PUSHDATA4').toNumber();
+      buf[0] = Opcode.OP_0;
+      buf[1] = Opcode.OP_PUSHDATA4;
       buf.writeUInt16LE(3, 2);
-      buf[buf.length - 1] = Opcode('OP_0').toNumber();
+      buf[buf.length - 1] = Opcode.OP_0;
       var script = Script.fromBuffer(buf);
       script.chunks.length.should.equal(3);
       script.chunks[0].opcodenum.should.equal(buf[0]);
@@ -85,7 +85,7 @@ describe('Script', function() {
 
     it('should output this buffer containing an OP code', function() {
       var buf = new Buffer(1);
-      buf[0] = Opcode('OP_0').toNumber();
+      buf[0] = Opcode.OP_0;
       var script = Script.fromBuffer(buf);
       script.chunks.length.should.equal(1);
       script.chunks[0].opcodenum.should.equal(buf[0]);
@@ -94,7 +94,7 @@ describe('Script', function() {
 
     it('should output this buffer containing another OP code', function() {
       var buf = new Buffer(1);
-      buf[0] = Opcode('OP_CHECKMULTISIG').toNumber();
+      buf[0] = Opcode.OP_CHECKMULTISIG;
       var script = Script.fromBuffer(buf);
       script.chunks.length.should.equal(1);
       script.chunks[0].opcodenum.should.equal(buf[0]);
@@ -111,7 +111,7 @@ describe('Script', function() {
 
     it('should output this buffer containing OP_PUSHDATA1 and three bytes of data', function() {
       var buf = new Buffer([0, 0, 1, 2, 3]);
-      buf[0] = Opcode('OP_PUSHDATA1').toNumber();
+      buf[0] = Opcode.OP_PUSHDATA1;
       buf.writeUInt8(3, 1);
       var script = Script.fromBuffer(buf);
       script.chunks.length.should.equal(1);
@@ -121,7 +121,7 @@ describe('Script', function() {
 
     it('should output this buffer containing OP_PUSHDATA2 and three bytes of data', function() {
       var buf = new Buffer([0, 0, 0, 1, 2, 3]);
-      buf[0] = Opcode('OP_PUSHDATA2').toNumber();
+      buf[0] = Opcode.OP_PUSHDATA2;
       buf.writeUInt16LE(3, 1);
       var script = Script.fromBuffer(buf);
       script.chunks.length.should.equal(1);
@@ -131,7 +131,7 @@ describe('Script', function() {
 
     it('should output this buffer containing OP_PUSHDATA4 and three bytes of data', function() {
       var buf = new Buffer([0, 0, 0, 0, 0, 1, 2, 3]);
-      buf[0] = Opcode('OP_PUSHDATA4').toNumber();
+      buf[0] = Opcode.OP_PUSHDATA4;
       buf.writeUInt16LE(3, 1);
       var script = Script.fromBuffer(buf);
       script.chunks.length.should.equal(1);
@@ -141,10 +141,10 @@ describe('Script', function() {
 
     it('should output this buffer an OP code, data, and another OP code', function() {
       var buf = new Buffer([0, 0, 0, 0, 0, 0, 1, 2, 3, 0]);
-      buf[0] = Opcode('OP_0').toNumber();
-      buf[1] = Opcode('OP_PUSHDATA4').toNumber();
+      buf[0] = Opcode.OP_0;
+      buf[1] = Opcode.OP_PUSHDATA4;
       buf.writeUInt16LE(3, 2);
-      buf[buf.length - 1] = Opcode('OP_0').toNumber();
+      buf[buf.length - 1] = Opcode.OP_0;
       var script = Script.fromBuffer(buf);
       script.chunks.length.should.equal(3);
       script.chunks[0].opcodenum.should.equal(buf[0]);
@@ -175,10 +175,10 @@ describe('Script', function() {
 
     it('should output this buffer an OP code, data, and another OP code', function() {
       var buf = new Buffer([0, 0, 0, 0, 0, 0, 1, 2, 3, 0]);
-      buf[0] = Opcode('OP_0').toNumber();
-      buf[1] = Opcode('OP_PUSHDATA4').toNumber();
+      buf[0] = Opcode.OP_0;
+      buf[1] = Opcode.OP_PUSHDATA4;
       buf.writeUInt16LE(3, 2);
-      buf[buf.length - 1] = Opcode('OP_0').toNumber();
+      buf[buf.length - 1] = Opcode.OP_0;
       var script = Script.fromBuffer(buf);
       script.chunks.length.should.equal(3);
       script.chunks[0].opcodenum.should.equal(buf[0]);
@@ -352,7 +352,7 @@ describe('Script', function() {
       Script().add(1000).toString().should.equal('0x03e8');
       Script().add('OP_CHECKMULTISIG').toString().should.equal('OP_CHECKMULTISIG');
       Script().add('OP_1').add('OP_2').toString().should.equal('OP_1 OP_2');
-      Script().add(new Opcode('OP_CHECKMULTISIG')).toString().should.equal('OP_CHECKMULTISIG');
+      Script().add(Opcode.OP_CHECKMULTISIG).toString().should.equal('OP_CHECKMULTISIG');
       Script().add(Opcode.map.OP_CHECKMULTISIG).toString().should.equal('OP_CHECKMULTISIG');
     });
 
@@ -390,7 +390,7 @@ describe('Script', function() {
     });
 
     it('should work for no data OP_RETURN', function() {
-      Script().add(Opcode('OP_RETURN')).add(new Buffer('')).toString().should.equal('OP_RETURN 0');
+      Script().add(Opcode.OP_RETURN).add(new Buffer('')).toString().should.equal('OP_RETURN 0');
     });
   });
 
