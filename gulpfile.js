@@ -78,10 +78,14 @@ gulp.task('coverage', shell.task(['istanbul cover _mocha -- --recursive']));
 
 gulp.task('jsdoc', function() {
   return gulp.src(files.concat([jsdocReadme]))
-    .pipe(jsdoc.parser())
+    .pipe(jsdoc.parser({
+      name: 'bitcore',
+      version: '0.8.0',
+      description: 'API Reference for the bitcore bitcoin javascript library'
+    }))
     .pipe(jsdoc.generator('./apiref', {
       path: 'ink-docstrap',
-      theme: 'flatly',
+      theme: 'journal'
     }));
 });
 
