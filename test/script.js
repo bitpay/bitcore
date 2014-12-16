@@ -7,7 +7,6 @@ var Opcode = bitcore.Opcode;
 var PublicKey = bitcore.PublicKey;
 var Address = bitcore.Address;
 
-
 describe('Script', function() {
 
   it('should make a new script', function() {
@@ -538,6 +537,33 @@ describe('Script', function() {
         .toString()
         .should.equal('OP_RETURN 2 0xf0f0');
     });
+  });
+
+
+  describe('#checkMinimalPush', function() {
+
+    it('should check these minimal pushes', function() {
+      Script().add(1).checkMinimalPush(0).should.equal(true);
+      Script().add(0).checkMinimalPush(0).should.equal(true);
+      Script().add(-1).checkMinimalPush(0).should.equal(true);
+      Script().add(1000).checkMinimalPush(0).should.equal(true);
+      Script().add(0xffffffff).checkMinimalPush(0).should.equal(true);
+      Script().add(0xffffffffffffffff).checkMinimalPush(0).should.equal(true);
+      Script().add(new Buffer([0])).checkMinimalPush(0).should.equal(true);
+
+      var buf = new Buffer(75);
+      buf.fill(1);
+      Script().add(buf).checkMinimalPush(0).should.equal(true);
+
+      buf = new Buffer(76);
+      buf.fill(1);
+      Script().add(buf).checkMinimalPush(0).should.equal(true);
+
+      buf = new Buffer(256);
+      buf.fill(1);
+      Script().add(buf).checkMinimalPush(0).should.equal(true);
+    });
+
   });
 
 });
