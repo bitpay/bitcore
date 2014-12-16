@@ -130,6 +130,7 @@ describe('Transaction', function() {
     };
     var toAddress = 'mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc';
     var changeAddress = 'mgBCJAsvzgT2qNNeXsoECg2uPKrUsZ76up';
+    var changeAddressP2SH = '2N7T3TAetJrSCruQ39aNrJvYLhG1LJosujf';
     var privateKey = 'cSBnVM4xvxarwGQuAfQFwqDg9k5tErHUHzgWsEfD4zdwUasvqRVY';
 
     it('can calculate simply the output amount', function() {
@@ -142,6 +143,15 @@ describe('Transaction', function() {
       transaction.outputs[1].satoshis.should.equal(49000);
       transaction.outputs[1].script.toString()
         .should.equal(Script.fromAddress(changeAddress).toString());
+    });
+    it('accepts a P2SH address for change', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith100000Satoshis)
+        .to(toAddress, 50000)
+        .change(changeAddressP2SH)
+        .sign(privateKey);
+      transaction.outputs.length.should.equal(2);
+      transaction.outputs[1].script.isScriptHashOut().should.equal(true);
     });
     it('can recalculate the change amount', function() {
       var transaction = new Transaction()
