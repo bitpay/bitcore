@@ -5,6 +5,7 @@ var bitcore = require('../..');
 var BN = bitcore.crypto.BN;
 var Signature = bitcore.crypto.Signature;
 var JSUtil = bitcore.util.js;
+var ScriptInterpreter = bitcore.ScriptInterpreter;
 
 var sig_canonical = require('../data/bitcoind/sig_canonical');
 var sig_noncanonical = require('../data/bitcoind/sig_noncanonical');
@@ -217,13 +218,17 @@ describe('Signature', function() {
           }
           it('should be ' + (expected ? '' : 'in') + 'valid for fixture #' + i, function() {
             var sighex = vector;
-            Signature.isTxDER(new Buffer(sighex, 'hex')).should.equal(expected);
+            var interp = ScriptInterpreter();
+            interp.flags = ScriptInterpreter.SCRIPT_VERIFY_DERSIG |
+              ScriptInterpreter.SCRIPT_VERIFY_STRICTENC;
+            var result = interp.checkSignatureEncoding(new Buffer(sighex, 'hex'));
+            result.should.equal(expected);
           });
           i++;
         });
       };
       test_sigs(sig_canonical, true);
-      //test_sigs(sig_noncanonical, false);
+      test_sigs(sig_noncanonical, false);
     });
 
   });
