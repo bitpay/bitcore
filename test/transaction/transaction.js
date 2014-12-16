@@ -50,7 +50,7 @@ describe('Transaction', function() {
         var transaction = new Transaction();
         while (i < vector.length) {
           var command = vector[i];
-          var args = vector[i+1];
+          var args = vector[i + 1];
           if (command === 'serialize') {
             transaction.serialize().should.equal(args);
           } else {

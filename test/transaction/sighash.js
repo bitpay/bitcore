@@ -1,10 +1,8 @@
 'use strict';
 
 var buffer = require('buffer');
-var bufferUtil = require('../../lib/util/buffer');
 
 var Script = require('../../lib/script');
-var Signature = require('../../lib/crypto/signature');
 var Transaction = require('../../lib/transaction');
 var sighash = require('../../lib/transaction/sighash');
 
@@ -12,12 +10,12 @@ var vectors_sighash = require('./sighash.json');
 
 describe('sighash', function() {
 
-  it('test vector from bitcoind', function() {
-    vectors_sighash.forEach(function(vector, i) {
-      if (i === 0) {
-        // First element is just a row describing the next ones
-        return;
-      }
+  vectors_sighash.forEach(function(vector, i) {
+    if (i === 0) {
+      // First element is just a row describing the next ones
+      return;
+    }
+    it('test vector from bitcoind #' + i + ' (' + vector[4].substring(0, 16) + ')', function() {
       var txbuf = new buffer.Buffer(vector[0], 'hex');
       var scriptbuf = new buffer.Buffer(vector[1], 'hex');
       var subscript = Script(scriptbuf);

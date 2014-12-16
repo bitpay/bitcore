@@ -4,6 +4,10 @@ var should = require('chai').should();
 var bitcore = require('../..');
 var BN = bitcore.crypto.BN;
 var Signature = bitcore.crypto.Signature;
+var JSUtil = bitcore.util.js;
+
+var sig_canonical = require('../data/bitcoind/sig_canonical');
+var sig_noncanonical = require('../data/bitcoind/sig_noncanonical');
 
 describe('Signature', function() {
 
@@ -41,8 +45,7 @@ describe('Signature', function() {
         blank,
         blank
       ]);
-      var sig = new Signature();
-      sig.fromCompact(compressed);
+      var sig = Signature.fromCompact(compressed);
       sig.r.cmp(0).should.equal(0);
       sig.s.cmp(0).should.equal(0);
     });
@@ -54,8 +57,7 @@ describe('Signature', function() {
     var buf = new Buffer('3044022075fc517e541bd54769c080b64397e32161c850f6c1b2b67a5c433affbb3e62770220729e85cc46ffab881065ec07694220e71d4df9b2b8c8fd12c3122cf3a5efbcf2', 'hex');
 
     it('should parse this DER format signature', function() {
-      var sig = new Signature();
-      sig.fromDER(buf);
+      var sig = Signature.fromDER(buf);
       sig.r.toBuffer({
         size: 32
       }).toString('hex').should.equal('75fc517e541bd54769c080b64397e32161c850f6c1b2b67a5c433affbb3e6277');
@@ -71,14 +73,32 @@ describe('Signature', function() {
     var buf = new Buffer('3044022075fc517e541bd54769c080b64397e32161c850f6c1b2b67a5c433affbb3e62770220729e85cc46ffab881065ec07694220e71d4df9b2b8c8fd12c3122cf3a5efbcf2', 'hex');
 
     it('should parse this DER format signature in hex', function() {
-      var sig = new Signature();
-      sig.fromString(buf.toString('hex'));
+      var sig = Signature.fromString(buf.toString('hex'));
       sig.r.toBuffer({
         size: 32
       }).toString('hex').should.equal('75fc517e541bd54769c080b64397e32161c850f6c1b2b67a5c433affbb3e6277');
       sig.s.toBuffer({
         size: 32
       }).toString('hex').should.equal('729e85cc46ffab881065ec07694220e71d4df9b2b8c8fd12c3122cf3a5efbcf2');
+    });
+
+  });
+
+  describe('#fromTxFormat', function() {
+
+    it('should convert from this known tx-format buffer', function() {
+      var buf = new Buffer('30450221008bab1f0a2ff2f9cb8992173d8ad73c229d31ea8e10b0f4d4ae1a0d8ed76021fa02200993a6ec81755b9111762fc2cf8e3ede73047515622792110867d12654275e7201', 'hex');
+      var sig = Signature.fromTxFormat(buf);
+      sig.r.toString().should.equal('63173831029936981022572627018246571655303050627048489594159321588908385378810');
+      sig.s.toString().should.equal('4331694221846364448463828256391194279133231453999942381442030409253074198130');
+      sig.nhashtype.should.equal(Signature.SIGHASH_ALL);
+    });
+
+    it('should parse this known signature and rebuild it', function() {
+      var hex = "3044022007415aa37ce7eaa6146001ac8bdefca0ddcba0e37c5dc08c4ac99392124ebac802207d382307fd53f65778b07b9c63b6e196edeadf0be719130c5db21ff1e700d67501";
+      var buf = new Buffer(hex, 'hex');
+      var sig = Signature.fromTxFormat(buf);
+      sig.toTxFormat().toString('hex').should.equal(hex);
     });
 
   });
@@ -133,6 +153,13 @@ describe('Signature', function() {
       parsed.s.toString().should.equal('44212963026209759051804639008236126356702363229859210154760104982946304432721');
     });
 
+    it('should parse this signature from script_valid.json', function() {
+      var sighex = '304502203e4516da7253cf068effec6b95c41221c0cf3a8e6ccb8cbf1725b562e9afde2c022100ab1e3da73d67e32045a20e0b999e049978ea8d6ee5480d485fcf2ce0d03b2ef051';
+      var sig = Buffer(sighex, 'hex');
+      var parsed = Signature.parseDER(sig, false);
+      should.exist(parsed);
+    });
+
   });
 
   describe('#toDER', function() {
@@ -151,7 +178,6 @@ describe('Signature', function() {
   });
 
   describe('#toString', function() {
-
     it('should convert this signature in to hex DER', function() {
       var r = BN('63173831029936981022572627018246571655303050627048489594159321588908385378810');
       var s = BN('4331694221846364448463828256391194279133231453999942381442030409253074198130');
@@ -162,7 +188,62 @@ describe('Signature', function() {
       var hex = sig.toString();
       hex.should.equal('30450221008bab1f0a2ff2f9cb8992173d8ad73c229d31ea8e10b0f4d4ae1a0d8ed76021fa02200993a6ec81755b9111762fc2cf8e3ede73047515622792110867d12654275e72');
     });
+  });
 
+
+  describe('@isTxDER', function() {
+    it('should know this is a DER signature', function() {
+      var sighex = '3042021e17cfe77536c3fb0526bd1a72d7a8e0973f463add210be14063c8a9c37632022061bfa677f825ded82ba0863fb0c46ca1388dd3e647f6a93c038168b59d131a5101';
+      var sigbuf = new Buffer(sighex, 'hex');
+      Signature.isTxDER(sigbuf).should.equal(true);
+    });
+
+    it('should know this is not a DER signature', function() {
+      //for more extensive tests, see the script interpreter
+      var sighex = '3042021e17cfe77536c3fb0526bd1a72d7a8e0973f463add210be14063c8a9c37632022061bfa677f825ded82ba0863fb0c46ca1388dd3e647f6a93c038168b59d131a5101';
+      var sigbuf = new Buffer(sighex, 'hex');
+      sigbuf[0] = 0x31;
+      Signature.isTxDER(sigbuf).should.equal(false);
+    });
+
+
+    describe('bitcoind fixtures', function() {
+      var test_sigs = function(set, expected) {
+        var i = 0;
+        set.forEach(function(vector) {
+          if (!JSUtil.isHexa(vector)) {
+            // non-hex strings are ignored
+            return;
+          }
+          it('should be ' + (expected ? '' : 'in') + 'valid for fixture #' + i, function() {
+            var sighex = vector;
+            Signature.isTxDER(new Buffer(sighex, 'hex')).should.equal(expected);
+          });
+          i++;
+        });
+      };
+      test_sigs(sig_canonical, true);
+      //test_sigs(sig_noncanonical, false);
+    });
+
+  });
+  describe('#hasLowS', function() {
+    it('should detect high and low S', function() {
+      var r = BN('63173831029936981022572627018246571655303050627048489594159321588908385378810');
+      var s = BN('4331694221846364448463828256391194279133231453999942381442030409253074198130');
+      var s2 = BN('7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B2000');
+      var sig = new Signature({
+        r: r,
+        s: s
+      });
+      var sig2 = new Signature({
+        r: r,
+        s: s2
+      });
+      sig2.hasLowS().should.equal(true);
+      sig.hasLowS().should.equal(false);
+
+    });
   });
 
 });
