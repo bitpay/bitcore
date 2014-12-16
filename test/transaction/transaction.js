@@ -41,7 +41,7 @@ describe('Transaction', function() {
     transaction.serialize().should.equal(tx_1_hex);
   });
 
-  describe.skip('transaction creation test vector', function() {
+  describe('transaction creation test vector', function() {
     var index = 0;
     transactionVector.forEach(function(vector) {
       index++;
