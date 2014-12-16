@@ -300,6 +300,12 @@ describe('PublicKey', function() {
       pubkey.inspect().should.equal('<PublicKey: 031ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a>');
     });
 
+    it('should output known compressed pubkey with network for console', function() {
+      var privkey = PrivateKey.fromWIF('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
+      var pubkey = new PublicKey(privkey);
+      pubkey.inspect().should.equal('<PublicKey: 03c87bd0e162f26969da8509cafcb7b8c8d202af30b928c582e263dd13ee9a9781, network: livenet>');
+    });
+
   });
 
   describe('#validate', function() {
