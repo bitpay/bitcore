@@ -13,8 +13,8 @@ var _ = require('lodash');
 
 var script_valid = require('../data/bitcoind/script_valid');
 var script_invalid = require('../data/bitcoind/script_invalid');
-var tx_valid = require('../transaction/tx_valid');
-var tx_invalid = require('../transaction/tx_invalid');
+var tx_valid = require('../data/bitcoind/tx_valid');
+var tx_invalid = require('../data/bitcoind/tx_invalid');
 
 //the script string format used in bitcoind data tests
 Script.fromBitcoindString = function(str) {

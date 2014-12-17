@@ -12,7 +12,7 @@ var Script = bitcore.Script;
 var Address = bitcore.Address;
 var Networks = bitcore.Networks;
 
-var transactionVector = require('./creation');
+var transactionVector = require('../data/tx_creation');
 
 describe('Transaction', function() {
 
