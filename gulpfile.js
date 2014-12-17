@@ -80,11 +80,15 @@ gulp.task('test', function(callback) {
  * File generation
  */
 
-gulp.task('browser:uncompressed', ['errors'], shell.task([
+gulp.task('browser:makefolder', shell.task([
+  'if [ ! -d "browser" ]; then mkdir browser; fi'
+]));
+
+gulp.task('browser:uncompressed', ['browser:makefolder', 'errors'], shell.task([
   './node_modules/.bin/browserify index.js --insert-global-vars=true --standalone=bitcore -o browser/bitcore.js'
 ]));
 
-gulp.task('browser:compressed', ['errors'], function() {
+gulp.task('browser:compressed', ['browser:makefolder', 'errors'], function() {
   return gulp.src('dist/bitcore.js')
     .pipe(closureCompiler({
       fileName: 'bitcore.min.js',
@@ -97,7 +101,7 @@ gulp.task('browser:compressed', ['errors'], function() {
     .pipe(gulp.dest('dist'));
 });
 
-gulp.task('browser:maketests', shell.task([
+gulp.task('browser:maketests', ['browser:makefolder'], shell.task([
   'find test/ -type f -name "*.js" | xargs ./node_modules/.bin/browserify -t brfs -o browser/tests.js'
 ]));
 
