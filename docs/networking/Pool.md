@@ -1,4 +1,6 @@
-# Pool
+# > `bitcore.transport.Pool`
+
+## Pool
 
 A pool maintains a connection of [Peers](Peer.md). A pool will discover peers via DNS seeds, as well as when peer addresses are announced through the network.
 
