@@ -18,7 +18,7 @@ var satsCode = Unit.satoshis;
 
 ## Creating units
 
-There are two ways for creating a unit instance. You can instanciate the class using a value and a unit code; alternatively if the unit it's fixed you could you some of the static methods. Check some examples below:
+There are two ways for creating a unit instance. You can instantiate the class using a value and a unit code; alternatively if the unit it's fixed you could you some of the static methods. Check some examples below:
 
 ```javascript
 var unit;

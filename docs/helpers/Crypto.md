@@ -2,7 +2,7 @@
 
 ## Description
 
-The cryptographic primitives (ECDSA and HMAC) implementations in this package have been audited bythe BitPay engineering team. More review and certifications are always welcomed.
+The cryptographic primitives (ECDSA and HMAC) implementations in this package have been reviewed by the BitPay engineering team. More audits and reviews are welcomed.
 
 ## Random
 

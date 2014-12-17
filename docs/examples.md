@@ -14,7 +14,8 @@ var address = privKey.toAddress();
 
 ## Create a Multisig Address
 ```
-???
+// Build a 2-of-3 address from public keys
+var P2SHAddress = new bitcore.Address([publicKey1, publicKey2, publicKey3], 2);
 ```
 
 ## Request a Payment
@@ -28,7 +29,11 @@ var uri = new bitcore.URI(paymentInfo).toString();
 
 ## Create a transaction
 ```
-???
+var transaction = new Transaction()
+    .from(utxos)          // Feed information about what unspend outputs one can use
+    .to(address, amount)  // Add an output with the given amount of satoshis
+    .change(address)      // Sets up a change address where the rest of the funds will go
+    .sign(privkeySet)     // Signs all the inputs it can
 ```
 
 ## Connect to the network

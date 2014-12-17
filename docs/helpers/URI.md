@@ -30,7 +30,7 @@ See [the official BIP21 spec](https://github.com/bitcoin/bips/blob/master/bip-00
 
 ## Create URI
 
-Another important usecase for the `URI` class is creating a bitcoin URI for sharing a payment request. That can be acomplished by using a dictionary to create an instance of URI.
+Another important use case for the `URI` class is creating a bitcoin URI for sharing a payment request. That can be accomplished by using a dictionary to create an instance of URI.
 
 The code for creating an URI from an Object looks like this:
 ```javascript
