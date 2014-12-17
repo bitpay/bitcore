@@ -22,7 +22,7 @@ describe('Block', function() {
   var magicnum = data.magicnum;
   var blockhex = data.blockhex;
   var blockbuf = new Buffer(blockhex, 'hex');
-  var blocksize = data.blocksize;
+  var size = data.blocksize;
   var bh = BlockHeader.fromBuffer(new Buffer(data.blockheaderhex, 'hex'));
   var txsvi = Varint().fromNumber(data.txsvi);
   var txs = [];
@@ -51,15 +51,15 @@ describe('Block', function() {
     it('should set these known values', function() {
       var b = new Block({
         magicnum: magicnum,
-        blocksize: blocksize,
-        blockheader: bh,
+        size: size,
+        header: bh,
         txsvi: txsvi,
         txs: txs
       });
       should.exist(b.magicnum);
-      should.exist(b.blocksize);
+      should.exist(b.size);
       should.exist(b.txsvi);
-      should.exist(b.blockheader);
+      should.exist(b.header);
       should.exist(b.txs);
     });
 
@@ -69,14 +69,14 @@ describe('Block', function() {
 
     it('should instantiate from a raw block binary', function() {
       var x = Block.fromRawBlock(dataRawBlockBinary);
-      x.blockheader.version.should.equal(2);
-      BN(x.blockheader.bits).toString('hex').should.equal('1c3fffc0');
+      x.header.version.should.equal(2);
+      BN(x.header.bits).toString('hex').should.equal('1c3fffc0');
     });
 
     it('should instantiate from raw block buffer', function() {
       var x = Block.fromRawBlock(dataRawBlockBuffer);
-      x.blockheader.version.should.equal(2);
-      BN(x.blockheader.bits).toString('hex').should.equal('1c3fffc0');
+      x.header.version.should.equal(2);
+      BN(x.header.bits).toString('hex').should.equal('1c3fffc0');
     });
 
   });
@@ -86,8 +86,8 @@ describe('Block', function() {
     it('should set these known values', function() {
       var block = Block.fromJSON(json);
       should.exist(block.magicnum);
-      should.exist(block.blocksize);
-      should.exist(block.blockheader);
+      should.exist(block.size);
+      should.exist(block.header);
       should.exist(block.txsvi);
       should.exist(block.txs);
     });
@@ -96,8 +96,8 @@ describe('Block', function() {
 
       var block = Block(json);
       should.exist(block.magicnum);
-      should.exist(block.blocksize);
-      should.exist(block.blockheader);
+      should.exist(block.size);
+      should.exist(block.header);
       should.exist(block.txsvi);
       should.exist(block.txs);
     });
@@ -110,8 +110,8 @@ describe('Block', function() {
       var block = Block.fromJSON(json);
       var b = JSON.parse(block.toJSON());
       should.exist(b.magicnum);
-      should.exist(b.blocksize);
-      should.exist(b.blockheader);
+      should.exist(b.size);
+      should.exist(b.header);
       should.exist(b.txsvi);
       should.exist(b.txs);
     });

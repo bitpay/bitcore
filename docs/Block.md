@@ -1,30 +1,55 @@
 # Block
 
-A Block instance represents the information on a block in the bitcoin network. Instantiating it is not a cheap operation, as the tree of transactions needs to be created or verified. There's a (BlockHeader)[https://github.com/bitpay/bitcore/tree/master/lib/blockheader.js] interface that is easier on the javascript VM.
-
-Given a hexa or base64 string representation of the serialization of a block with its transactions, you can instantiate a Block instance. It will calculate and check the merkle root hash (if enough data is provided), but transactions won't necessarily be valid spends, and this class won't validate them. A binary representation as a `Buffer` instance is also valid input for a Block's constructor.
+A Block instance represents the information on a block in the bitcoin network. Given a hexa or base64 string representation of the serialization of a block with its transactions, you can instantiate a Block instance. Methods are provided to calculate and check the merkle root hash (if enough data is provided), but transactions won't necessarily be valid spends, and this class won't validate them. A binary representation as a `Buffer` instance is also valid input for a Block's constructor. 
 
 ```javascript
-assert(Block.isValidHeader(data);
-assert(Block.isValidBlock(data);
 
+// instantiate a new block instance
 var block = new Block(hexaEncodedBlock);
-assert(block.id && block.hash && block.id === block.hash);
-assert(block.version === Block.CurrentVersion);
-assert(block.prevHash);
-assert(block.timestamp);
-assert(block.nonce);
+
+// will verify that the correspending block transactions match the header
+assert(block.validMerkleRoot());
+
+// blocks have several properties
+assert(block.magicnum);
 assert(block.size);
-assert(block.transactions[0] instanceof Transaction);
+assert(block.header); // an instance of block header, more info below
+assert(block.txs); // an array of transactions, more info below
+
 ```
 
-## Navigating through transactions
+For detailed technical information about a block please visit [Blocks](https://en.bitcoin.it/wiki/Blocks#Block_structure) on the Bitcoin Wiki.
 
-The set of transactions in a block can be explored by iterating on the block's
-`transactions` member.
+## Block Header
+
+Each instance of Block has a BlockHeader *(which can be instantiated seperately)*. The header has validation methods, to verify that the block.
 
 ```javascript
-for (var transaction in block.transactions) {
-  // ...
+
+// will verify that the nonce demonstrates enough proof of work
+assert(block.header.validProofOfWork());
+
+// will verify that timestamp is not too far in the future
+assert(block.header.validTimestamp());
+
+// each header has the following properties
+assert(block.header.version);
+assert(block.header.prevHash);
+assert(block.header.merkleRoot);
+assert(block.header.time);
+assert(block.header.bits);
+assert(block.header.nonce);
+
+```
+For more information about the specific properties of a block header please visit the [Block hashing algorithm](https://en.bitcoin.it/wiki/Block_hashing_algorithm) page on the Bitcoin Wiki.
+
+## Transactions
+
+The set of transactions in a block is an array of instances of [Transaction](Transaction.md) and can be explored by iterating on the block's `transactions` member.
+
+```javascript
+for (var i in block.txs) {
+  var transaction = block.txs[i];
 }
 ```
+
