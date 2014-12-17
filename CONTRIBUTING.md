@@ -66,6 +66,10 @@ guidelines are easier to detect and apply, and also more opinionated (the
 design guidelines mentioned above are the way we think about general software
 development and we believe they should be present on any software project).
 
+### G0 - General: Default to felixge's style guide
+
+Follow this Node.js style guide: https://github.com/felixge/node-style-guide#nodejs-style-guide
+
 ### G1 - General: No Magic Numbers
 
 Avoid constants in the code as much as possible. Magic strings are also magic
