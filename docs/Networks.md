@@ -12,7 +12,7 @@ Most project will only need to work in one of either networks. The value of `Net
 
 The functionality of testnet and livenet is mostly similar (except for some relaxed block validation rules on testnet). They differ in the constants being used for human representation of base58 encoded strings. These are sometimes referred to as "version" constants.
 
-Take a look at this modified snippet from (networks.js)[https://github.com/bitpay/bitcore/blob/master/lib/networks.js]
+Take a look at this modified snippet from [networks.js](https://github.com/bitpay/bitcore/blob/master/lib/networks.js)
 ```javascript
 var livenet = new Network();
 _.extend(livenet, {

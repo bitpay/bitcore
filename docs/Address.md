@@ -11,7 +11,7 @@ var privateKey = new PrivateKey();
 var address = privateKey.toAddress();
 ```
 
-You can also instantiate an address from a String, `PublicKey`, or [HDPublicKey](Hierarchical.md), in case you are not the owner of the private key.
+You can also instantiate an address from a String, [PublicKey](PublicKey.md), or [HDPublicKey](Hierarchical.md), in case you are not the owner of the private key.
 
 ```javascript
 // from a string
