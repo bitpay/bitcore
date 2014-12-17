@@ -61,6 +61,64 @@ describe('Transaction', function() {
       });
     });
   });
+
+  // TODO: Migrate this into a test for inputs
+  describe('MultiSigScriptHashInput', function() {
+    var MultiSigScriptHashInput = Transaction.Input.MultiSigScriptHash;
+
+    var privateKey1 = new PrivateKey('KwF9LjRraetZuEjR8VqEq539z137LW5anYDUnVK11vM3mNMHTWb4');
+    var privateKey2 = new PrivateKey('L4PqnaPTCkYhAqH3YQmefjxQP6zRcF4EJbdGqR8v6adtG9XSsadY');
+    var privateKey3 = new PrivateKey('L4CTX79zFeksZTyyoFuPQAySfmP7fL3R41gWKTuepuN7hxuNuJwV');
+    var public1 = privateKey1.publicKey;
+    var public2 = privateKey2.publicKey;
+    var public3 = privateKey3.publicKey;
+    var address = new Address('33zbk2aSZYdNbRsMPPt6jgy6Kq1kQreqeb');
+
+    var output = {
+      address: '33zbk2aSZYdNbRsMPPt6jgy6Kq1kQreqeb',
+      txId: '66e64ef8a3b384164b78453fa8c8194de9a473ba14f89485a0e433699daec140',
+      outputIndex: 0,
+      script: new Script(address),
+      satoshis: 1000000
+    };
+    it('can count missing signatures', function() {
+      var transaction = new Transaction()
+        .from(output, [public1, public2, public3], 2)
+        .to(address, 1000000);
+      var input = transaction.inputs[0];
+
+      input.countSignatures().should.equal(0);
+
+      transaction.sign(privateKey1);
+      input.countSignatures().should.equal(1);
+      input.countMissingSignatures().should.equal(1);
+      input.isFullySigned().should.equal(false);
+
+      transaction.sign(privateKey2);
+      input.countSignatures().should.equal(2);
+      input.countMissingSignatures().should.equal(0);
+      input.isFullySigned().should.equal(true);
+    });
+    it('returns a list of public keys with missing signatures', function() {
+      var transaction = new Transaction()
+        .from(output, [public1, public2, public3], 2)
+        .to(address, 1000000);
+      var input = transaction.inputs[0];
+
+      _.all(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
+        var serialized = publicKeyMissing.toString();
+        return serialized === public1.toString() ||
+               serialized === public2.toString() ||
+               serialized === public3.toString();
+      }).should.equal(true);
+      transaction.sign(privateKey1);
+      _.all(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
+        var serialized = publicKeyMissing.toString();
+        return serialized === public2.toString() ||
+               serialized === public3.toString();
+      }).should.equal(true);
+    });
+  });
 });
 
 var tx_empty_hex = '01000000000000000000';
