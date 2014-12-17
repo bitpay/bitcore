@@ -12,10 +12,24 @@
     #md-page-menu {
             position: static;
     }
+
+    #md-page-menu a {
+        text-transform: uppercase;
+         color: #828083;
+          }
+
+    #md-page-menu a:hover {
+         color: black;
+          }
+
     #md-page-menu a.active {
         /* background-color: rgba(0, 0, 0, 0.01); */
         font-weight: bold;
-        padding-left: 6px;
+        padding-left: 15px;
+        border-left: 5px solid #BD1900;
+        color: #BD1900;
+        font-size: 1.2em;
+
 
     }
     @media (min-width: 992px) {
@@ -73,9 +87,5 @@
         font-size: smaller;
         padding: 1em;
     }
-.md-inpage-anchor{
-    margin-bottom: 100px !important;
-        }
-
 
 
