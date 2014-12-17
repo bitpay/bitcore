@@ -110,3 +110,51 @@ s.isPublicKeyHashOut() // false
 s.isScriptHashOut() // false
 s.isMultisigOut() // true
 ```
+
+
+## Script interpreting and validation
+
+To validate a transaction, the bitcoin network validates all of its inputs and outputs. To validate an input, the input's script is concatenated with the referenced output script, and the result is executed. If at the end of execution the stack contains a 'true' value, then the transaction is valid.
+You can do this in `bitcore` by using the `Interpreter` class. The entry point (and probably the only interface you'll need for most applications) is the method `Interpreter#verify()`.
+
+You can use it like this:
+
+```
+var inputScript = Script('OP_1');
+var outputScript = Script('OP_15 OP_ADD OP_16 OP_EQUAL');
+
+var verified = Interpreter().verify(inputScript, outputScript);
+// verified will be true
+```
+
+Note that `verify` expects two scripts: one is the input script (scriptSig) and the other is the output script (scriptPubkey). This is because different conditions are checked for each.
+
+It also accepts some optional parameters, assuming defaults if not provided:
+```
+// first we create a transaction
+var privateKey = new PrivateKey('cSBnVM4xvxarwGQuAfQFwqDg9k5tErHUHzgWsEfD4zdwUasvqRVY');
+var publicKey = privateKey.publicKey;
+var fromAddress = publicKey.toAddress();
+var toAddress = 'mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc';
+var scriptPubkey = Script.buildPublicKeyHashOut(fromAddress);
+var utxo = {
+  address: fromAddress,
+  txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+  outputIndex: 0,
+  script: scriptPubkey,
+  satoshis: 100000
+};
+var tx = new Transaction()
+  .from(utxo)
+  .to(toAddress, 100000)
+  .sign(privateKey);
+
+// we then extract the signature from the first input
+var inputIndex = 0;
+var signature = tx.getSignatures(privateKey)[inputIndex].signature;
+
+var scriptSig = Script.buildPublicKeyHashIn(publicKey, signature);
+var flags = Interpreter.SCRIPT_VERIFY_P2SH | Interpreter.SCRIPT_VERIFY_STRICTENC;
+var verified = Interpreter().verify(scriptSig, scriptPubkey, tx, inputIndex, flags);
+```
+

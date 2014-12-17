@@ -1,20 +1,20 @@
 'use strict';
 
 var should = require('chai').should();
-var bitcore = require('..');
-var ScriptInterpreter = bitcore.Script.Interpreter;
+var bitcore = require('../..');
+var Interpreter = bitcore.Script.Interpreter;
 var Transaction = bitcore.Transaction;
+var PrivateKey = bitcore.PrivateKey;
 var Script = bitcore.Script;
 var BN = bitcore.crypto.BN;
-var BufferReader = bitcore.encoding.BufferReader;
 var BufferWriter = bitcore.encoding.BufferWriter;
 var Opcode = bitcore.Opcode;
 var _ = require('lodash');
 
-var script_valid = require('./data/bitcoind/script_valid');
-var script_invalid = require('./data/bitcoind/script_invalid');
-var tx_valid = require('./transaction/tx_valid');
-var tx_invalid = require('./transaction/tx_invalid');
+var script_valid = require('../data/bitcoind/script_valid');
+var script_invalid = require('../data/bitcoind/script_invalid');
+var tx_valid = require('../transaction/tx_valid');
+var tx_invalid = require('../transaction/tx_invalid');
 
 //the script string format used in bitcoind data tests
 Script.fromBitcoindString = function(str) {
@@ -59,11 +59,11 @@ Script.fromBitcoindString = function(str) {
 
 
 
-describe('ScriptInterpreter', function() {
+describe('Interpreter', function() {
 
   it('should make a new interp', function() {
-    var interp = new ScriptInterpreter();
-    (interp instanceof ScriptInterpreter).should.equal(true);
+    var interp = new Interpreter();
+    (interp instanceof Interpreter).should.equal(true);
     interp.stack.length.should.equal(0);
     interp.altstack.length.should.equal(0);
     interp.pc.should.equal(0);
@@ -77,14 +77,14 @@ describe('ScriptInterpreter', function() {
   describe('@castToBool', function() {
 
     it('should cast these bufs to bool correctly', function() {
-      ScriptInterpreter.castToBool(BN(0).toSM({
+      Interpreter.castToBool(BN(0).toSM({
         endian: 'little'
       })).should.equal(false);
-      ScriptInterpreter.castToBool(new Buffer('0080', 'hex')).should.equal(false); //negative 0
-      ScriptInterpreter.castToBool(BN(1).toSM({
+      Interpreter.castToBool(new Buffer('0080', 'hex')).should.equal(false); //negative 0
+      Interpreter.castToBool(BN(1).toSM({
         endian: 'little'
       })).should.equal(true);
-      ScriptInterpreter.castToBool(BN(-1).toSM({
+      Interpreter.castToBool(BN(-1).toSM({
         endian: 'little'
       })).should.equal(true);
 
@@ -92,7 +92,7 @@ describe('ScriptInterpreter', function() {
       var bool = BN().fromSM(buf, {
         endian: 'little'
       }).cmp(0) !== 0;
-      ScriptInterpreter.castToBool(buf).should.equal(bool);
+      Interpreter.castToBool(buf).should.equal(bool);
     });
 
   });
@@ -101,58 +101,86 @@ describe('ScriptInterpreter', function() {
 
     it('should verify these trivial scripts', function() {
       var verified;
-      var si = ScriptInterpreter();
+      var si = Interpreter();
       verified = si.verify(Script('OP_1'), Script('OP_1'));
       verified.should.equal(true);
-      verified = ScriptInterpreter().verify(Script('OP_1'), Script('OP_0'));
+      verified = Interpreter().verify(Script('OP_1'), Script('OP_0'));
       verified.should.equal(false);
-      verified = ScriptInterpreter().verify(Script('OP_0'), Script('OP_1'));
+      verified = Interpreter().verify(Script('OP_0'), Script('OP_1'));
       verified.should.equal(true);
-      verified = ScriptInterpreter().verify(Script('OP_CODESEPARATOR'), Script('OP_1'));
+      verified = Interpreter().verify(Script('OP_CODESEPARATOR'), Script('OP_1'));
       verified.should.equal(true);
-      verified = ScriptInterpreter().verify(Script(''), Script('OP_DEPTH OP_0 OP_EQUAL'));
+      verified = Interpreter().verify(Script(''), Script('OP_DEPTH OP_0 OP_EQUAL'));
       verified.should.equal(true);
-      verified = ScriptInterpreter().verify(Script('OP_1 OP_2'), Script('OP_2 OP_EQUALVERIFY OP_1 OP_EQUAL'));
+      verified = Interpreter().verify(Script('OP_1 OP_2'), Script('OP_2 OP_EQUALVERIFY OP_1 OP_EQUAL'));
       verified.should.equal(true);
-      verified = ScriptInterpreter().verify(Script('9 0x000000000000000010'), Script(''));
+      verified = Interpreter().verify(Script('9 0x000000000000000010'), Script(''));
       verified.should.equal(true);
-      verified = ScriptInterpreter().verify(Script('OP_1'), Script('OP_15 OP_ADD OP_16 OP_EQUAL'));
+      verified = Interpreter().verify(Script('OP_1'), Script('OP_15 OP_ADD OP_16 OP_EQUAL'));
       verified.should.equal(true);
-      verified = ScriptInterpreter().verify(Script('OP_0'), Script('OP_IF OP_VER OP_ELSE OP_1 OP_ENDIF'));
+      verified = Interpreter().verify(Script('OP_0'), Script('OP_IF OP_VER OP_ELSE OP_1 OP_ENDIF'));
       verified.should.equal(true);
     });
 
+    it('should verify these simple transaction', function() {
+      // first we create a transaction
+      var privateKey = new PrivateKey('cSBnVM4xvxarwGQuAfQFwqDg9k5tErHUHzgWsEfD4zdwUasvqRVY');
+      var publicKey = privateKey.publicKey;
+      var fromAddress = publicKey.toAddress();
+      var toAddress = 'mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc';
+      var scriptPubkey = Script.buildPublicKeyHashOut(fromAddress);
+      var utxo = {
+        address: fromAddress,
+        txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+        outputIndex: 0,
+        script: scriptPubkey,
+        satoshis: 100000
+      };
+      var tx = new Transaction()
+        .from(utxo)
+        .to(toAddress, 100000)
+        .sign(privateKey);
+
+      // we then extract the signature from the first input
+      var inputIndex = 0;
+      var signature = tx.getSignatures(privateKey)[inputIndex].signature;
+
+      var scriptSig = Script.buildPublicKeyHashIn(publicKey, signature);
+      var flags = Interpreter.SCRIPT_VERIFY_P2SH | Interpreter.SCRIPT_VERIFY_STRICTENC;
+      var verified = Interpreter().verify(scriptSig, scriptPubkey, tx, inputIndex, flags);
+      verified.should.equal(true);
+    });
   });
 
 
   var getFlags = function getFlags(flagstr) {
     var flags = 0;
     if (flagstr.indexOf('NONE') !== -1) {
-      flags = flags | ScriptInterpreter.SCRIPT_VERIFY_NONE;
+      flags = flags | Interpreter.SCRIPT_VERIFY_NONE;
     }
     if (flagstr.indexOf('P2SH') !== -1) {
-      flags = flags | ScriptInterpreter.SCRIPT_VERIFY_P2SH;
+      flags = flags | Interpreter.SCRIPT_VERIFY_P2SH;
     }
     if (flagstr.indexOf('STRICTENC') !== -1) {
-      flags = flags | ScriptInterpreter.SCRIPT_VERIFY_STRICTENC;
+      flags = flags | Interpreter.SCRIPT_VERIFY_STRICTENC;
     }
     if (flagstr.indexOf('DERSIG') !== -1) {
-      flags = flags | ScriptInterpreter.SCRIPT_VERIFY_DERSIG;
+      flags = flags | Interpreter.SCRIPT_VERIFY_DERSIG;
     }
     if (flagstr.indexOf('LOW_S') !== -1) {
-      flags = flags | ScriptInterpreter.SCRIPT_VERIFY_LOW_S;
+      flags = flags | Interpreter.SCRIPT_VERIFY_LOW_S;
     }
     if (flagstr.indexOf('NULLDUMMY') !== -1) {
-      flags = flags | ScriptInterpreter.SCRIPT_VERIFY_NULLDUMMY;
+      flags = flags | Interpreter.SCRIPT_VERIFY_NULLDUMMY;
     }
     if (flagstr.indexOf('SIGPUSHONLY') !== -1) {
-      flags = flags | ScriptInterpreter.SCRIPT_VERIFY_SIGPUSHONLY;
+      flags = flags | Interpreter.SCRIPT_VERIFY_SIGPUSHONLY;
     }
     if (flagstr.indexOf('MINIMALDATA') !== -1) {
-      flags = flags | ScriptInterpreter.SCRIPT_VERIFY_MINIMALDATA;
+      flags = flags | Interpreter.SCRIPT_VERIFY_MINIMALDATA;
     }
     if (flagstr.indexOf('DISCOURAGE_UPGRADABLE_NOPS') !== -1) {
-      flags = flags | ScriptInterpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS;
+      flags = flags | Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS;
     }
     return flags;
   };
@@ -167,7 +195,6 @@ describe('ScriptInterpreter', function() {
     var scriptSig = Script.fromBitcoindString(vector[0]);
     var scriptPubkey = Script.fromBitcoindString(vector[1]);
     var flags = getFlags(vector[2]);
-
 
     //testToFromString(scriptSig);
     //testToFromString(scriptPubkey);
@@ -199,7 +226,7 @@ describe('ScriptInterpreter', function() {
       satoshis: 0
     }));
 
-    var interp = ScriptInterpreter();
+    var interp = Interpreter();
     var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0, flags);
     verified.should.equal(expected);
   };
@@ -214,9 +241,10 @@ describe('ScriptInterpreter', function() {
         var descstr = vector[3];
         var fullScriptString = vector[0] + ' ' + vector[1];
         var comment = descstr ? (' (' + descstr + ')') : '';
-        it('should pass script_' + (expected ? '' : 'in') + 'valid vector #' + c + ': ' + fullScriptString + comment, function() {
-          testFixture(vector, expected);
-        });
+        it('should pass script_' + (expected ? '' : 'in') + 'valid ' +
+          'vector #' + c + ': ' + fullScriptString + comment, function() {
+            testFixture(vector, expected);
+          });
       });
     };
     testAllFixtures(script_valid, true);
@@ -256,7 +284,7 @@ describe('ScriptInterpreter', function() {
             var scriptPubkey = map[txidhex + ':' + txoutnum];
             should.exist(scriptPubkey);
             should.exist(scriptSig);
-            var interp = ScriptInterpreter();
+            var interp = Interpreter();
             var verified = interp.verify(scriptSig, scriptPubkey, tx, j, flags);
             if (!verified) {
               allInputsVerified = false;

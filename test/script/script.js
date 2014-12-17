@@ -1,7 +1,7 @@
 'use strict';
 
 var should = require('chai').should();
-var bitcore = require('..');
+var bitcore = require('../..');
 var Script = bitcore.Script;
 var Opcode = bitcore.Opcode;
 var PublicKey = bitcore.PublicKey;
