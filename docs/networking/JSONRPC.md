@@ -2,11 +2,11 @@
 
 ## Description
 
-Bitcoind provides a solid integration with the bitcoin network and it also exposes a `JSON-RPC` API. This class allows to connect to a local instance of a bitcoind server and make simple or batch RPC calls to it.
+Bitcoind provides a direct interface to the bitcoin network and it also exposes a `JSON-RPC` API. This class allows to connect to a local instance of a bitcoind server and make simple or batch RPC calls to it.
 
 ## Connection to bitcoind
 
-First you will need a running instance of bitcoind, setting up a username and password to connect with it. For more information about running bitcoind please refer to the official documentation.
+First you will need a running instance of bitcoind, setting up a username and password to connect with it. For more information about running bitcoind please refer to the [official documentation](https://en.bitcoin.it/wiki/Running_Bitcoin).
 
 The code for creating and configuring an instance of the RPC client looks like this:
 
