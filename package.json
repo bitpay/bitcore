@@ -1,7 +1,7 @@
 {
   "name": "bitcore",
   "version": "0.8.0",
-  "description": "Bitcoin library, CLI and API.",
+  "description": "A pure and simple javascript bitcoin API.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
@@ -62,7 +62,6 @@
     "bip32",
     "bip37",
     "bip70",
-    "stealth",
     "merge",
     "multisig"
   ],
