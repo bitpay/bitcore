@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>bitcore Source: publickey.js</title>
+
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
+
+	<link type="text/css" rel="stylesheet" href="styles/site.journal.css">
+
+</head>
+
+<body>
+<div class="container-fluid">
+	<div class="navbar navbar-fixed-top ">
+		<div class="navbar-inner">
+			<a class="brand" href="index.html">bitcore</a>
+			<ul class="nav">
+				
+				<li class="dropdown">
+					<a href="namespaces.list.html" class="dropdown-toggle" data-toggle="dropdown">Namespaces<b
+						class="caret"></b></a>
+
+					<ul class="dropdown-menu ">
+						
+						<li>
+							<a href="JSUtil.html">JSUtil</a>
+						</li>
+						
+						<li>
+							<a href="Signing.html">Signing</a>
+						</li>
+						
+						<li>
+							<a href="Transport.html">Transport</a>
+						</li>
+						
+						<li>
+							<a href="Transport.html#Message">Transport.Message</a>
+						</li>
+						
+
+					</ul>
+				</li>
+				
+				<li class="dropdown">
+					<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b
+						class="caret"></b></a>
+
+					<ul class="dropdown-menu ">
+						
+						<li>
+							<a href="Address.html">Address</a>
+						</li>
+						
+						<li>
+							<a href="Block.html">Block</a>
+						</li>
+						
+						<li>
+							<a href="BlockHeader.html">BlockHeader</a>
+						</li>
+						
+						<li>
+							<a href="HDPrivateKey.html">HDPrivateKey</a>
+						</li>
+						
+						<li>
+							<a href="HDPublicKey.html">HDPublicKey</a>
+						</li>
+						
+						<li>
+							<a href="MultiSigScriptHashInput.html">MultiSigScriptHashInput</a>
+						</li>
+						
+						<li>
+							<a href="Network.html">Network</a>
+						</li>
+						
+						<li>
+							<a href="Peer.html">Peer</a>
+						</li>
+						
+						<li>
+							<a href="Point.html">Point</a>
+						</li>
+						
+						<li>
+							<a href="PrivateKey.html">PrivateKey</a>
+						</li>
+						
+						<li>
+							<a href="PublicKey.html">PublicKey</a>
+						</li>
+						
+						<li>
+							<a href="PublicKeyHashInput.html">PublicKeyHashInput</a>
+						</li>
+						
+						<li>
+							<a href="Script.html">Script</a>
+						</li>
+						
+						<li>
+							<a href="Transaction.html">Transaction</a>
+						</li>
+						
+						<li>
+							<a href="Unit.html">Unit</a>
+						</li>
+						
+						<li>
+							<a href="URI.html">URI</a>
+						</li>
+						
+
+					</ul>
+				</li>
+				
+			</ul>
+		</div>
+	</div>
+
+	<div class="row-fluid">
+
+		
+			<div class="span12">
+				
+				<div id="main">
+					
+
+
+		<h1 class="page-title">Source: publickey.js</h1>
+    
+<section>
+	<article>
+		<pre
+			class="sunlight-highlight-javascript linenums">'use strict';
+
+var _ = require('lodash');
+var Address = require('./address');
+var BN = require('./crypto/bn');
+var Point = require('./crypto/point');
+var JSUtil = require('./util/js');
+var Network = require('./networks');
+
+/**
+ * Instantiate a PublicKey from a 'PrivateKey', 'Point', 'string', 'Buffer'.
+ *
+ * @example
+ *
+ * // instantiate from a private key
+ * var key = PublicKey(privateKey, true);
+ *
+ * // export to as a DER hex encoded string
+ * var exported = key.toString();
+ *
+ * // import the public key
+ * var imported = PublicKey.fromString(exported);
+ *
+ * @param {String} data - The encoded data in various formats
+ * @param {Object} extra - additional options
+ * @param {Network=} extra.network - Which network should the address for this public key be for
+ * @param {String=} extra.compressed - If the public key is compressed
+ * @returns {PublicKey} A new valid instance of an PublicKey
+ * @constructor
+ */
+var PublicKey = function PublicKey(data, extra) {
+
+  if (!(this instanceof PublicKey)) {
+    return new PublicKey(data, extra);
+  }
+  if (!data) {
+    throw new TypeError('First argument is required, please include public key data.');
+  }
+  if (data instanceof PublicKey) {
+    // Return copy, but as it's an immutable object, return same argument
+    return data;
+  }
+  extra = extra || {};
+
+  var info = {
+    compressed: _.isUndefined(extra.compressed) || extra.compressed,
+    network: _.isUndefined(extra.network) ? undefined : Network.get(extra.network)
+  };
+
+  // detect type of data
+  if (data instanceof Point) {
+    info.point = data;
+  } else if (PublicKey._isJSON(data)) {
+    info = PublicKey._transformJSON(data);
+  } else if (typeof(data) === 'string') {
+    info = PublicKey._transformDER(new Buffer(data, 'hex'));
+  } else if (PublicKey._isBuffer(data)) {
+    info = PublicKey._transformDER(data);
+  } else if (PublicKey._isPrivateKey(data)) {
+    info = PublicKey._transformPrivateKey(data);
+  } else {
+    throw new TypeError('First argument is an unrecognized data format.');
+  }
+
+  // validation
+  info.point.validate();
+
+  Object.defineProperty(this, 'point', {
+    configurable: false,
+    value: info.point
+  });
+
+  Object.defineProperty(this, 'compressed', {
+    configurable: false,
+    value: info.compressed
+  });
+
+  Object.defineProperty(this, 'network', {
+    configurable: false,
+    value: info.network
+  });
+
+  return this;
+
+};
+
+/**
+ * Internal function to detect if an object is a PrivateKey
+ *
+ * @param {*} param - object to test
+ * @returns {boolean}
+ * @private
+ */
+PublicKey._isPrivateKey = function(param) {
+  return param &amp;&amp; param.constructor &amp;&amp; param.constructor.name
+      &amp;&amp; param.constructor.name === 'PrivateKey';
+};
+
+/**
+ * Internal function to detect if an object is a Buffer
+ *
+ * @param {*} param - object to test
+ * @returns {boolean}
+ * @private
+ */
+PublicKey._isBuffer = function(param) {
+  return (param instanceof Buffer) || (param instanceof Uint8Array);
+};
+
+/**
+ * Internal function to detect if a param is a JSON string or plain object
+ *
+ * @param {*} param - value to test
+ * @returns {boolean}
+ * @private
+ */
+PublicKey._isJSON = function(json) {
+  return JSUtil.isValidJSON(json) || (json.x &amp;&amp; json.y);
+};
+
+/**
+ * Internal function to transform a private key into a public key point
+ *
+ * @param {PrivateKey} privkey - An instance of PrivateKey
+ * @returns {Object} An object with keys: point and compressed
+ * @private
+ */
+PublicKey._transformPrivateKey = function(privkey) {
+  var info = {};
+  if (!PublicKey._isPrivateKey(privkey)) {
+    throw new TypeError('Must be an instance of PrivateKey');
+  }
+  info.point = Point.getG().mul(privkey.bn);
+  info.compressed = privkey.compressed;
+  info.network = privkey.network;
+  return info;
+};
+
+/**
+ * Internal function to transform DER into a public key point
+ *
+ * @param {Buffer} buf - An hex encoded buffer
+ * @returns {Object} An object with keys: point and compressed
+ * @private
+ */
+PublicKey._transformDER = function(buf){
+  var info = {};
+  if (!PublicKey._isBuffer(buf)) {
+    throw new TypeError('Must be a hex buffer of DER encoded public key');
+  }
+
+  var x;
+  var y;
+  var xbuf;
+  var ybuf;
+
+  if (buf[0] === 0x04) {
+    xbuf = buf.slice(1, 33);
+    ybuf = buf.slice(33, 65);
+    if (xbuf.length !== 32 || ybuf.length !== 32 || buf.length !== 65) {
+      throw new TypeError('Length of x and y must be 32 bytes');
+    }
+    x = BN(xbuf);
+    y = BN(ybuf);
+    info.point = Point(x, y);
+    info.compressed = false;
+  } else if (buf[0] === 0x03) {
+    xbuf = buf.slice(1);
+    x = BN(xbuf);
+    info = PublicKey._transformX(true, x);
+    info.compressed = true;
+  } else if (buf[0] == 0x02) {
+    xbuf = buf.slice(1);
+    x = BN(xbuf);
+    info = PublicKey._transformX(false, x);
+    info.compressed = true;
+  } else {
+    throw new TypeError('Invalid DER format public key');
+  }
+  return info;
+};
+
+/**
+ * Internal function to transform X into a public key point
+ *
+ * @param {Boolean} odd - If the point is above or below the x axis
+ * @param {Point} x - The x point
+ * @returns {Object} An object with keys: point and compressed
+ * @private
+ */
+PublicKey._transformX = function(odd, x){
+  var info = {};
+  if (typeof odd !== 'boolean') {
+    throw new TypeError('Must specify whether y is odd or not (true or false)');
+  }
+  info.point = Point.fromX(odd, x);
+  return info;
+};
+
+/**
+ * Instantiate a PublicKey from JSON
+ *
+ * @param {String} json - A JSON string
+ * @returns {PublicKey} A new valid instance of PublicKey
+ */
+PublicKey.fromJSON = function(json) {
+  if (!PublicKey._isJSON(json)) {
+    throw new TypeError('Must be a valid JSON string or plain object');
+  }
+
+  return new PublicKey(json);
+};
+
+/**
+ * Internal function to transform a JSON into a public key point
+ *
+ * @param {Buffer} buf - a JSON string or plain object
+ * @returns {Object} An object with keys: point and compressed
+ * @private
+ */
+PublicKey._transformJSON = function(json) {
+  if (JSUtil.isValidJSON(json)) {
+    json = JSON.parse(json);
+  }
+  var x = BN(json.x, 'hex');
+  var y = BN(json.y, 'hex');
+  var point = new Point(x, y);
+  return new PublicKey(point, {compressed: json.compressed});
+};
+
+/**
+ * Instantiate a PublicKey from a PrivateKey
+ *
+ * @param {PrivateKey} privkey - An instance of PrivateKey
+ * @returns {PublicKey} A new valid instance of PublicKey
+ */
+PublicKey.fromPrivateKey = function(privkey) {
+  if (!PublicKey._isPrivateKey(privkey)) {
+    throw new TypeError('Must be an instance of PrivateKey');
+  }
+  var info = PublicKey._transformPrivateKey(privkey);
+  return new PublicKey(info.point, {compressed: info.compressed, network: info.network});
+};
+
+/**
+ * Instantiate a PublicKey from a Buffer
+ *
+ * @param {Buffer} buf - A DER buffer
+ * @returns {PublicKey} A new valid instance of PublicKey
+ */
+PublicKey.fromDER = PublicKey.fromBuffer = function(buf) {
+  if (!PublicKey._isBuffer(buf)) {
+    throw new TypeError('Must be a hex buffer of DER encoded public key');
+  }
+  var info = PublicKey._transformDER(buf);
+  return new PublicKey(info.point, {compressed: info.compressed});
+};
+
+/**
+ * Instantiate a PublicKey from a Point
+ *
+ * @param {Point} point - A Point instance
+ * @param {boolean=} compressed - whether to store this public key as compressed format
+ * @returns {PublicKey} A new valid instance of PublicKey
+ */
+PublicKey.fromPoint = function(point, compressed){
+  if (!(point instanceof Point)) {
+    throw new TypeError('First argument must be an instance of Point.');
+  }
+  return new PublicKey(point, {compressed: compressed});
+};
+
+/**
+ * Instantiate a PublicKey from a DER hex encoded string
+ *
+ * @param {String} str - A DER hex string
+ * @param {String} [encoding] - The type of string encoding
+ * @returns {PublicKey} A new valid instance of PublicKey
+ */
+PublicKey.fromString = function(str, encoding) {
+  var buf = new Buffer(str, encoding || 'hex');
+  var info = PublicKey._transformDER(buf);
+  return new PublicKey(info.point, {compressed: info.compressed});
+};
+
+/**
+ * Instantiate a PublicKey from an X Point
+ *
+ * @param {Boolean} odd - If the point is above or below the x axis
+ * @param {Point} x - The x point
+ * @returns {PublicKey} A new valid instance of PublicKey
+ */
+PublicKey.fromX = function(odd, x) {
+  var info = PublicKey._transformX(odd, x);
+  return new PublicKey(info.point, {compressed: info.compressed});
+};
+
+/**
+ * Check if there would be any errors when initializing a PublicKey
+ *
+ * @param {String} data - The encoded data in various formats
+ * @param {String} [compressed] - If the public key is compressed
+ * @returns {null|Error} An error if exists
+ */
+PublicKey.getValidationError = function(data) {
+  var error;
+  try {
+    new PublicKey(data);
+  } catch (e) {
+    error = e;
+  }
+  return error;
+};
+
+/**
+ * Check if the parameters are valid
+ *
+ * @param {String} data - The encoded data in various formats
+ * @param {String} [compressed] - If the public key is compressed
+ * @returns {Boolean} If the public key would be valid
+ */
+PublicKey.isValid = function(data) {
+  return !PublicKey.getValidationError(data);
+};
+
+/**
+ * @returns {Object} A plain object of the PublicKey
+ */
+PublicKey.prototype.toObject = function toObject() {
+  return {
+    x: this.point.getX().toString('hex'),
+    y: this.point.getY().toString('hex'),
+    compressed: this.compressed
+  };
+};
+
+PublicKey.prototype.toJSON = function toJSON(){
+  return JSON.stringify(this.toObject());
+};
+
+/**
+ * Will output the PublicKey to a DER Buffer
+ *
+ * @returns {Buffer} A DER hex encoded buffer
+ */
+PublicKey.prototype.toBuffer = PublicKey.prototype.toDER = function() {
+  var x = this.point.getX();
+  var y = this.point.getY();
+
+  var xbuf = x.toBuffer({size: 32});
+  var ybuf = y.toBuffer({size: 32});
+
+  var prefix;
+  if (!this.compressed) {
+    prefix = new Buffer([0x04]);
+    return Buffer.concat([prefix, xbuf, ybuf]);
+  } else {
+    var odd = ybuf[ybuf.length - 1] % 2;
+    if (odd) {
+      prefix = new Buffer([0x03]);
+    } else {
+      prefix = new Buffer([0x02]);
+    }
+    return Buffer.concat([prefix, xbuf]);
+  }
+};
+
+/**
+ * Will return an address for the public key
+ *
+ * @returns {Address} An address generated from the public key
+ */
+PublicKey.prototype.toAddress = function(network) {
+  return Address.fromPublicKey(this, network || this.network);
+};
+
+/**
+ * Will output the PublicKey to a DER encoded hex string
+ *
+ * @returns {String} A DER hex encoded string
+ */
+PublicKey.prototype.toString = function() {
+  var compressed = _.isUndefined(this.compressed) || this.compressed;
+  return this.toDER(compressed).toString('hex');
+};
+
+/**
+ * Will return a string formatted for the console
+ *
+ * @returns {String} Public key
+ */
+PublicKey.prototype.inspect = function() {
+  return '&lt;PublicKey: ' + this.toString() +
+    (this.compressed ? '' : ', uncompressed') +
+    (this.network ? this.network.name : '') + '>';
+};
+
+module.exports = PublicKey;
+</pre>
+	</article>
+</section>
+
+
+
+
+
+				</div>
+
+				<div class="clearfix"></div>
+				<footer>
+					
+					
+		<span class="copyright">
+		© 2013-2014, BitPay Inc.
+		</span>
+					<br />
+					
+		<span class="jsdoc-message">
+		Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha11</a>
+		on 2014-12-16T17:20:32-03:00 using the <a
+			href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
+		</span>
+				</footer>
+			</div>
+
+			
+			<br clear="both">
+		</div>
+
+	</div>
+	<!--<script src="scripts/sunlight.js"></script>-->
+	<script src="scripts/docstrap.lib.js"></script>
+	<script src="scripts/bootstrap-dropdown.js"></script>
+	<script src="scripts/toc.js"></script>
+
+	<script>
+		$( function () {
+			$( "[id*='$']" ).each( function () {
+				var $this = $( this );
+
+				$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+			} );
+
+			$( "#toc" ).toc( {
+				anchorName  : function ( i, heading, prefix ) {
+					return $( heading ).attr( "id" ) || ( prefix + i );
+				},
+				selectors   : "h1,h2,h3,h4",
+				showAndHide : false,
+				scrollTo    : "100px"
+			} );
+
+			$( "#toc>ul" ).addClass( "nav nav-pills nav-stacked" );
+			$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+			$( '.dropdown-toggle' ).dropdown();
+//			$( ".tutorial-section pre, .readme-section pre" ).addClass( "sunlight-highlight-javascript" ).addClass( "linenums" );
+
+			$( ".tutorial-section pre, .readme-section pre" ).each( function () {
+				var $this = $( this );
+
+				var example = $this.find( "code" );
+				exampleText = example.html();
+				var lang = /{@lang (.*?)}/.exec( exampleText );
+				if ( lang && lang[1] ) {
+					exampleText = exampleText.replace( lang[0], "" );
+					example.html( exampleText );
+					lang = lang[1];
+				} else {
+					lang = "javascript";
+				}
+
+				if ( lang ) {
+
+					$this
+						.addClass( "sunlight-highlight-" + lang )
+						.addClass( "linenums" )
+						.html( example.html() );
+
+				}
+			} );
+
+			Sunlight.highlightAll( {
+				lineNumbers : true,
+				showMenu : true,
+				enableDoclinks : true
+			} );
+		} );
+	 </script>
+
+
+
+	<!--Navigation and Symbol Display-->
+	
+
+
+	<!--Google Analytics-->
+	
+
+</body>
+</html>
