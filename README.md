@@ -4,7 +4,7 @@
 [![Build Status](https://img.shields.io/travis/bitpay/bitcore.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore)
 [![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore)
 
-[Read the Developer Guide](https://bitpay.github.io/bitcore/docs).
+[Read the Developer Guide](https://bitpay.github.io/bitcore/docs/#!index.md).
 [Read the API Reference](https://bitpay.github.io/bitcore/apiref).
 
 
