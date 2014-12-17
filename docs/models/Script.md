@@ -1,4 +1,6 @@
-# Script
+# > `bitcore.Script`
+
+## Description
 
 All bitcoin transactions have scripts embedded into its inputs and outputs.  The scripts use a very simple programming language, which is evaluated from left to right using a stack. The language is designed such that it guarantees all scripts will execute in a limited amount of time (it is not Turing-Complete).
 

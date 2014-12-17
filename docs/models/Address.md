@@ -1,4 +1,6 @@
-# Address
+# > `bitcore.Address`
+
+## Description
 
 Represents a bitcoin Address. Addresses became the most popular way to make bitcoin transactions. See [the official Bitcoin Wiki](https://en.bitcoin.it/wiki/Address) for more information.
 

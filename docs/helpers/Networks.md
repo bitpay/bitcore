@@ -1,4 +1,6 @@
-# Networks
+# > `bitcore.Networks`
+
+## Description
 
 Bitcore provides support for both the main bitcoin network as well as for `testnet3`, the current test blockchain. We encourage the use of `Networks.livenet` and `Networks.testnet` as constants. Note that the library sometimes may check for equality against this object. Avoid creating a deep copy of this object and using that.
 
