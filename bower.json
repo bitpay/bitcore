@@ -1,6 +1,6 @@
 {
   "name": "bitcore",
-  "main": "browser/bundle.js",
+  "main": "dist/bitcore.js",
   "version": "0.1.36",
   "homepage": "http://bitcore.io",
   "authors": [
