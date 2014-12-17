@@ -5,7 +5,7 @@ All bitcoin transactions have scripts embedded into its inputs and outputs.  The
 When a transaction is validated, the input scripts are concatenated with the output scripts and evaluated. To be valid, all transaction scripts must evaluate to true.  A good analogy for how this works is that the output scripts are puzzles that specify in which conditions can those bitcoins be spent. The input scripts provide the correct data to make those output scripts evaluate to true.
 
 
-For more detailed information about the bitcoin scripting language, check the online reference (on bitcoin's wiki)[https://en.bitcoin.it/wiki/Script].
+For more detailed information about the bitcoin scripting language, check the online reference [on bitcoin's wiki](https://en.bitcoin.it/wiki/Script).
 
 The `Script` object provides an interface to construct, parse, and identify bitcoin scripts. It also gives simple interfaces to create most common script types. This class is useful if you want to create custom input or output scripts. In other case, you should probably use `Transaction`.
 
