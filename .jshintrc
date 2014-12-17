@@ -10,7 +10,7 @@
     "immed": true,        // Require immediate invocations to be wrapped in parens e.g. `( function(){}() );`
     "indent": 2,          // Specify indentation spacing
     "latedef": true,      // Prohibit variable use before definition.
-    "newcap": false,      // Require capitalization of all constructor functions e.g. `new F()`.
+    "newcap": true,       // Require capitalization of all constructor functions e.g. `new F()`.
     "noarg": true,        // Prohibit use of `arguments.caller` and `arguments.callee`.
     "node": true,         // Enable globals available when code is running inside of the NodeJS runtime environment.
     "noempty": true,      // Prohibit use of empty blocks.

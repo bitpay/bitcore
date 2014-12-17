@@ -21,15 +21,17 @@ describe("ECDSA", function() {
   ecdsa.privkey2pubkey();
 
   describe('#set', function() {
-    
+
     it('should set hashbuf', function() {
-      should.exist(ECDSA().set({hashbuf: ecdsa.hashbuf}).hashbuf);
+      should.exist(ECDSA().set({
+        hashbuf: ecdsa.hashbuf
+      }).hashbuf);
     });
 
   });
 
   describe('#calci', function() {
-    
+
     it('should calculate i', function() {
       ecdsa.randomK();
       ecdsa.sign();
@@ -44,7 +46,10 @@ describe("ECDSA", function() {
       var ecdsa = new ECDSA({
         privkey: Privkey(BN().fromBuffer(Hash.sha256(new Buffer('test')))),
         hashbuf: hashbuf,
-        sig: new Signature({r: r, s: s})
+        sig: new Signature({
+          r: r,
+          s: s
+        })
       });
 
       ecdsa.calci();
@@ -54,7 +59,7 @@ describe("ECDSA", function() {
   });
 
   describe('#fromString', function() {
-    
+
     it('should to a round trip with to string', function() {
       var str = ecdsa.toString();
       var ecdsa2 = new ECDSA();
@@ -66,7 +71,7 @@ describe("ECDSA", function() {
   });
 
   describe('#randomK', function() {
-    
+
     it('should generate a new random k when called twice in a row', function() {
       ecdsa.randomK();
       var k1 = ecdsa.k;
@@ -151,12 +156,6 @@ describe("ECDSA", function() {
       ecdsa.sigError().should.equal('hashbuf must be a 32 byte buffer');
     });
 
-    it.skip('should return an error if the pubkey is invalid', function() {
-      var ecdsa = new ECDSA();
-      ecdsa.hashbuf = Hash.sha256(new Buffer('test'));
-      ecdsa.sigError().indexOf("Invalid pubkey").should.equal(0);
-    });
-
     it('should return an error if r, s are invalid', function() {
       var ecdsa = new ECDSA();
       ecdsa.hashbuf = Hash.sha256(new Buffer('test'));
@@ -177,7 +176,7 @@ describe("ECDSA", function() {
   });
 
   describe('#sign', function() {
-    
+
     it('should create a valid signature', function() {
       ecdsa.randomK();
       ecdsa.sign();
@@ -223,7 +222,7 @@ describe("ECDSA", function() {
   });
 
   describe('#toString', function() {
-    
+
     it('should convert this to a string', function() {
       var str = ecdsa.toString();
       (typeof str === 'string').should.equal(true);
@@ -232,7 +231,7 @@ describe("ECDSA", function() {
   });
 
   describe('#verify', function() {
-    
+
     it('should verify a signature that was just signed', function() {
       ecdsa.sig = new Signature.fromString('3046022100e9915e6236695f093a4128ac2a956c40ed971531de2f4f41ba05fac7e2bd019c02210094e6a4a769cc7f2a8ab3db696c7cd8d56bcdbfff860a8c81de4bc6a798b90827');
       ecdsa.verify().verified.should.equal(true);
@@ -246,7 +245,7 @@ describe("ECDSA", function() {
   });
 
   describe('@sign', function() {
-    
+
     it('should produce a signature', function() {
       var sig = ECDSA.sign(ecdsa.hashbuf, ecdsa.privkey);
       (sig instanceof Signature).should.equal(true);
@@ -298,7 +297,7 @@ describe("ECDSA", function() {
         ecdsa.verify().verified.should.equal(true);
       });
     });
-    
+
     vectors.invalid.sigError.forEach(function(obj, i) {
       it('should validate invalid.sigError vector ' + i + ': ' + obj.description, function() {
         var ecdsa = ECDSA().set({
