@@ -448,4 +448,28 @@ describe('Address', function() {
     });
   });
 
+  describe('creating a P2SH address from public keys', function() {
+
+    var public1 = '02da5798ed0c055e31339eb9b5cef0d3c0ccdec84a62e2e255eb5c006d4f3e7f5b';
+    var public2 = '0272073bf0287c4469a2a011567361d42529cd1a72ab0d86aa104ecc89342ffeb0';
+    var public3 = '02738a516a78355db138e8119e58934864ce222c553a5407cf92b9c1527e03c1a2';
+    var publics = [public1, public2, public3];
+
+    it('can create an address from a set of public keys', function() {
+      var address = new Address(publics, 2);
+      address.toString().should.equal('3FtqPRirhPvrf7mVUSkygyZ5UuoAYrTW3y');
+    });
+
+    it('works on testnet also', function() {
+      var address = new Address(publics, 2, Networks.testnet);
+      address.toString().should.equal('2N7T3TAetJrSCruQ39aNrJvYLhG1LJosujf');
+    });
+
+    it('can also be created by Address.createMultisig', function() {
+      var address = Address.createMultisig(publics, 2);
+      var address2 = Address.createMultisig(publics, 2);
+      address.toString().should.equal(address2.toString());
+    });
+  });
+
 });
