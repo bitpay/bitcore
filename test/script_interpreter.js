@@ -2,7 +2,7 @@
 
 var should = require('chai').should();
 var bitcore = require('..');
-var ScriptInterpreter = bitcore.ScriptInterpreter;
+var ScriptInterpreter = bitcore.Script.Interpreter;
 var Transaction = bitcore.Transaction;
 var Script = bitcore.Script;
 var BN = bitcore.crypto.BN;

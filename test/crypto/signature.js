@@ -5,7 +5,7 @@ var bitcore = require('../..');
 var BN = bitcore.crypto.BN;
 var Signature = bitcore.crypto.Signature;
 var JSUtil = bitcore.util.js;
-var ScriptInterpreter = bitcore.ScriptInterpreter;
+var ScriptInterpreter = bitcore.Script.Interpreter;
 
 var sig_canonical = require('../data/bitcoind/sig_canonical');
 var sig_noncanonical = require('../data/bitcoind/sig_noncanonical');
