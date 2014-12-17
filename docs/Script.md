@@ -132,18 +132,6 @@ Note that `verify` expects two scripts: one is the input script (scriptSig) and 
 It also accepts some optional parameters, assuming defaults if not provided:
 ```
 // first we create a transaction
-var privateKey = new PrivateKey('cSBnVM4xvxarwGQuAfQFwqDg9k5tErHUHzgWsEfD4zdwUasvqRVY');
-var publicKey = privateKey.publicKey;
-var fromAddress = publicKey.toAddress();
-var toAddress = 'mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc';
-var scriptPubkey = Script.buildPublicKeyHashOut(fromAddress);
-var utxo = {
-  address: fromAddress,
-  txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
-  outputIndex: 0,
-  script: scriptPubkey,
-  satoshis: 100000
-};
 var tx = new Transaction()
   .from(utxo)
   .to(toAddress, 100000)
