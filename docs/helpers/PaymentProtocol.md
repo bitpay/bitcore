@@ -1,6 +1,6 @@
 # > `bitcore.PaymentProtocol`
 
-# Payment Protocol
+## Description
 
 `PaymentProtocol` and associated functions and methods will serialize, deserialize, sign and verify payment protocol messages both in Node.js and web browsers. Both X.509 and [bitcoin identity protocol](https://en.bitcoin.it/wiki/Identity_protocol_v1) are supported. For detailed technical information, please view [BIP70](https://github.com/bitcoin/bips/blob/master/bip-0070.mediawiki).
 
@@ -38,7 +38,7 @@ The merchant's server will then construct a payment request and send it to the c
 ```javascript
 // load the X509 certificate
 var certificates = new PaymentProtocol().makeX509Certificates();
-certificates.set('certificate', [<file_of_x509_der_cert>]);
+certificates.set('certificate', [file_with_x509_der_cert]);
 
 // form the request
 var request = new PaymentRequest().makePaymentRequest();
@@ -46,7 +46,7 @@ request.set('payment_details_version', 1);
 request.set('pki_type', 'x509+sha256');
 request.set('pki_data', certificates.serialize());
 request.set('serialized_payment_details', details.serialize());
-request.sign(<file_of_x509_private_key>);
+request.sign(file_with_x509_private_key);
 
 // serialize the request
 var rawbody = request.serialize();
@@ -104,7 +104,7 @@ After the request is verified a payment can be sent to the merchant, from the cu
 // send the payment transaction
 var payment = new PaymentProtocol().makePayment();
 payment.set('merchant_data', merchant_data);
-payment.set('transactions', [<transaction_with_outputs>]); // as from payment details
+payment.set('transactions', [transaction_with_outputs]); // as from payment details
 
 // define the refund outputs
 var refund_outputs = [];
