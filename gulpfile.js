@@ -31,7 +31,6 @@
 
 var gulp = require('gulp');
 var closureCompiler = require('gulp-closure-compiler');
-var jsdoc = require('gulp-jsdoc');
 var jshint = require('gulp-jshint');
 var mocha = require('gulp-mocha');
 var runSequence = require('run-sequence');
@@ -41,7 +40,6 @@ var shell = require('gulp-shell');
 var files = ['lib/**/*.js'];
 var tests = ['test/**/*.js'];
 var alljs = files.concat(tests);
-var jsdocReadme = 'doc/README.md';
 
 
 function ignoreError() {
@@ -124,9 +122,9 @@ gulp.task('lint', function() {
     .pipe(jshint.reporter('default'));
 });
 
-gulp.task('plato', shell.task['plato -d report -r -l .jshintrc -t bitcore lib']);
+gulp.task('plato', shell.task(['plato -d report -r -l .jshintrc -t bitcore lib']));
 
-gulp.task('jsdoc', shell.task['jsdoc -c .jsdoc.conf lib']);
+gulp.task('jsdoc', shell.task(['jsdoc -c .jsdoc.conf lib']));
 
 gulp.task('coverage', shell.task(['istanbul cover _mocha -- --recursive']));
 
