@@ -1,10 +1,10 @@
 {
   "name": "bitcore",
   "main": "dist/bitcore.js",
-  "version": "0.1.36",
+  "version": "0.8.0",
   "homepage": "http://bitcore.io",
   "authors": [
-    "Ryan X. Charles (<ryan@bitpay.com>)"
+    "BitPay, Inc."
   ],
   "description": "A pure, powerful core for your bitcoin project.",
   "moduleType": [
