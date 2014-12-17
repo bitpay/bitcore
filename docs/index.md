@@ -1,39 +1,28 @@
 # Bitcore v0.8
 
-## Description
+## Addresses and Key Management
 
-A pure, powerful core for your bitcoin project.
+* [Addresses](models/Address.md)
+* [Using different networks](helpers/Networks.md)
+* [Private Keys](models/PrivateKey.md) and [Public Keys](models/PublicKey.md)
+* [Hierarchically-derived Private and Public Keys](models/Hierarchical.md)
 
-Bitcore is a complete, native interface to the bitcoin network, and provides the core functionality needed to develop apps for bitcoin.
+## Payment handling
+* [Using different Units](helpers/Unit.md)
+* [Acknowledging and Requesting payments: Bitcoin URIs](helpers/URI.md)
+* [Payment Protocol Support](helpers/PaymentProtocol.md)
+* [The Transaction Class](models/Transaction.md)
 
-## Main Features
+## Bitcoin internals
+* [Scripts](models/Script.md)
+* [Block](models/Block.md)
 
-* Cross platform
-* All core bitcoin functionality
-* Open-source
-* Payment protocol support
-* Private and public key management
+## Networking
+* [Interface to the Bitcoin P2P network](networking/Peer.md)
+* [Managing a pool of peers](networking/Pool.md)
+* [Connecting to a bitcoind instance through JSON-RPC](networking/JSONRPC.md)
 
-
-## Get Started
-
-Use it on `Node.js`:
-
-```
-npm install bitcore
-```
-
-Use it client side on the browser:
-
-```
-bower install bitcore
-```
-
-
-## Projects using Bitcore
-
-* Copay
-* Insight
-* enBitcoins
-* BitBox
-* Multi-signature Paper Wallet
+## Extra
+* [Crypto](helpers/Crypto.md)
+* [Encoding](helpers/Encoding.md)
+* [ECIES](helpers/ECIES.md)

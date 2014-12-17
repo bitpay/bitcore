@@ -1,4 +1,6 @@
-# Public Key
+# > `bitcore.PublicKey`
+
+## Description
 
 Represents a bitcoin public key and is needed to be able to receive bitcoin, as is usually represented as a bitcoin [Address](Address.md), see the official [Bitcoin Wiki](https://en.bitcoin.it/wiki/Technical_background_of_version_1_Bitcoin_addresses). A PublicKey in Bitcore is an immutable object and can be instantiated from a [Point](Crypto.md), string, [PrivateKey](PrivateKey.md), Buffer and a [BN](Crypto.md).
 
