@@ -6,7 +6,7 @@ var Script = require('../../lib/script');
 var Transaction = require('../../lib/transaction');
 var sighash = require('../../lib/transaction/sighash');
 
-var vectors_sighash = require('./sighash.json');
+var vectors_sighash = require('../data/sighash.json');
 
 describe('sighash', function() {
 
