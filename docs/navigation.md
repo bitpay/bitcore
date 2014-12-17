@@ -7,8 +7,8 @@
 * [Address](models/Address.md)
 * [Block](models/Block.md)
 * [Hierarchical](models/Hierarchical.md)
-* [Private Key](models/Privatekey.md)
-* [Public Key](models/Publickey.md)
+* [Private Key](models/PrivateKey.md)
+* [Public Key](models/PublicKey.md)
 * [Script](models/Script.md)
 * [Transaction](models/Transaction.md)
 
