@@ -9,6 +9,7 @@ var BN = bitcore.crypto.BN;
 var BufferReader = bitcore.encoding.BufferReader;
 var BufferWriter = bitcore.encoding.BufferWriter;
 var Opcode = bitcore.Opcode;
+var _ = require('lodash');
 
 var script_valid = require('./data/bitcoind/script_valid');
 var script_invalid = require('./data/bitcoind/script_invalid');
@@ -223,93 +224,53 @@ describe('ScriptInterpreter', function() {
 
   });
   describe('bitcoind transaction evaluation fixtures', function() {
-    var c = 0;
-    tx_valid.forEach(function(vector) {
-      if (vector.length === 1) {
-        return;
-      }
-      c++;
-      it('should pass tx_valid vector ' + c, function() {
-        var inputs = vector[0];
-        var txhex = vector[1];
-        var flags = getFlags(vector[2]);
+    var test_txs = function(set, expected) {
+      var c = 0;
+      set.forEach(function(vector) {
+        if (vector.length === 1) {
+          return;
+        }
+        c++;
+        it('should pass tx_' + (expected ? '' : 'in') + 'valid vector ' + c, function() {
+          var inputs = vector[0];
+          var txhex = vector[1];
+          var flags = getFlags(vector[2]);
 
-        var map = {};
-        inputs.forEach(function(input) {
-          var txid = input[0];
-          var txoutnum = input[1];
-          var scriptPubKeyStr = input[2];
-          if (txoutnum === -1) {
-            txoutnum = 0xffffffff; //bitcoind casts -1 to an unsigned int
-          }
-          map[txid + ':' + txoutnum] = Script.fromBitcoindString(scriptPubKeyStr);
-        });
+          var map = {};
+          inputs.forEach(function(input) {
+            var txid = input[0];
+            var txoutnum = input[1];
+            var scriptPubKeyStr = input[2];
+            if (txoutnum === -1) {
+              txoutnum = 0xffffffff; //bitcoind casts -1 to an unsigned int
+            }
+            map[txid + ':' + txoutnum] = Script.fromBitcoindString(scriptPubKeyStr);
+          });
 
-        var tx = Transaction(txhex);
-        tx.inputs.forEach(function(txin, j) {
-          var scriptSig = txin.script;
-          var txidhex = txin.prevTxId.toString('hex');
-          var txoutnum = txin.outputIndex;
-          var scriptPubkey = map[txidhex + ':' + txoutnum];
-          should.exist(scriptPubkey);
-          should.exist(scriptSig);
-          var interp = ScriptInterpreter();
-          var verified = interp.verify(scriptSig, scriptPubkey, tx, j, flags);
-          verified.should.equal(true);
-        });
-      });
-    });
-
-    c = 0;
-    tx_invalid.forEach(function(vector) {
-      if (vector.length === 1) {
-        return;
-      }
-      c++;
-
-      // tests intentionally not performed by the script interpreter:
-      // TODO: check this?
-      /*
-      if (c === 7 || // tests if valuebn is negative
-        c === 8 || // tests if valuebn is greater than MAX_MONEY
-        c === 10 || // tests if two inputs are equal
-        c === 11 || // coinbase
-        c === 12 || // coinbase
-        c === 13 // null input
-      ) {
-        return;
-      }
-      */
-
-      it.skip('should pass tx_invalid vector ' + c, function() {
-        var inputs = vector[0];
-        var txhex = vector[1];
-        var flags = getFlags(vector[2]);
-
-        var map = {};
-        inputs.forEach(function(input) {
-          var txoutnum = input[1];
-          if (txoutnum === -1) {
-            txoutnum = 0xffffffff; //bitcoind casts -1 to an unsigned int
-          }
-          map[input[0] + ':' + txoutnum] = Script.fromBitcoindString(input[2]);
-        });
-
-        var tx = Transaction().fromBuffer(new Buffer(txhex, 'hex'));
-        if (tx.txins.length > 0) {
-          tx.txins.some(function(txin, j) {
+          var tx = Transaction(txhex);
+          var allInputsVerified = true;
+          tx.inputs.forEach(function(txin, j) {
             var scriptSig = txin.script;
-            var txidhex = BufferReader(txin.txidbuf).readReverse().toString('hex');
-            var txoutnum = txin.txoutnum;
+            var txidhex = txin.prevTxId.toString('hex');
+            var txoutnum = txin.outputIndex;
             var scriptPubkey = map[txidhex + ':' + txoutnum];
             should.exist(scriptPubkey);
+            should.exist(scriptSig);
             var interp = ScriptInterpreter();
             var verified = interp.verify(scriptSig, scriptPubkey, tx, j, flags);
-            return verified === false;
-          }).should.equal(true);
-        }
+            if (!verified) {
+              allInputsVerified = false;
+            }
+          });
+          var txVerified = tx.verify();
+          txVerified = _.isBoolean(txVerified);
+          allInputsVerified = allInputsVerified && txVerified;
+          allInputsVerified.should.equal(expected);
+        });
       });
-    });
+    };
+    test_txs(tx_valid, true);
+    test_txs(tx_invalid, false);
 
   });
 
