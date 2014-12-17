@@ -90,7 +90,7 @@ describe('PrivateKey', function() {
   it('should not be able to instantiate private key WIF because of unknown network byte', function() {
     expect(function() {
       var buf = base58check.decode('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
-      var buf2 = Buffer.concat([new Buffer(0x01, 'hex'), buf.slice(1, 33)]);
+      var buf2 = Buffer.concat([new Buffer('ff', 'hex'), buf.slice(1, 33)]);
       var a = new PrivateKey(buf2);
     }).to.throw('Invalid network');
   });
