@@ -37,7 +37,10 @@ var jshint = require('gulp-jshint');
 var mocha = require('gulp-mocha');
 var runSequence = require('run-sequence');
 var shell = require('gulp-shell');
-
+var through = require('through2');
+var gutil = require('gulp-util');
+var jsdoc2md = require('jsdoc-to-markdown');
+var mfs = require('more-fs');
 
 var files = ['lib/**/*.js'];
 var tests = ['test/**/*.js'];
@@ -126,7 +129,32 @@ gulp.task('lint', function() {
 
 gulp.task('plato', shell.task(['plato -d report -r -l .jshintrc -t bitcore lib']));
 
-gulp.task('jsdoc', shell.task(['node_modules/.bin/jsdoc2md lib/address.js > docs/api/address.md']));
+gulp.task('jsdoc', function() {
+
+  function jsdoc() {
+    return through.obj(function(file, enc, cb) {
+      
+      if (file.isNull()){
+        cb(null, file);
+        return;
+      }
+      if (file.isStream()) {
+        cb(new gutil.PluginError('gulp-jsdoc2md', 'Streaming not supported'));
+        return;
+      }
+      var destination = 'docs/api/'+file.path.replace(file.base, '').replace(/\.js$/, '.md');
+      jsdoc2md.render(file.path, {})
+        .on('error', function(err) {
+          gutil.log(gutil.colors.red('jsdoc2md failed', err.message));
+        })
+        .pipe(mfs.writeStream(destination));
+      cb(null, file);
+    });
+  }
+  
+  return gulp.src(files).pipe(jsdoc());
+
+});
 
 gulp.task('coverage', shell.task(['node_modules/.bin/./istanbul cover node_modules/.bin/_mocha -- --recursive']));
 
