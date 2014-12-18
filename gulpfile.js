@@ -25,12 +25,14 @@
  * <li> `lint` - run `jshint`
  * <li> `coverage` - run `istanbul` with mocha to generate a report of test coverage
  * <li> `jsdoc` - run `jsdoc` to generate the API reference
+ * <li> `coveralls` - updates coveralls info
  * </ul>
  */
 'use strict';
 
 var gulp = require('gulp');
 var closureCompiler = require('gulp-closure-compiler');
+var coveralls = require('gulp-coveralls');
 var jshint = require('gulp-jshint');
 var mocha = require('gulp-mocha');
 var runSequence = require('run-sequence');
@@ -127,6 +129,10 @@ gulp.task('plato', shell.task(['plato -d report -r -l .jshintrc -t bitcore lib']
 gulp.task('jsdoc', shell.task(['jsdoc -c .jsdoc.conf lib']));
 
 gulp.task('coverage', shell.task(['istanbul cover _mocha -- --recursive']));
+
+gulp.task('coveralls', ['coverage'], function() {
+  gulp.src('coverage/lcov.info').pipe(coveralls());
+});
 
 /**
  * Watch tasks

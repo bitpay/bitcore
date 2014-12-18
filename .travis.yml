@@ -9,4 +9,5 @@ before_install:
 install:
   - bower install
   - npm install
-
+after_script:
+  - gulp coveralls
