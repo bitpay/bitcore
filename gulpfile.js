@@ -126,7 +126,7 @@ gulp.task('lint', function() {
 
 gulp.task('plato', shell.task(['plato -d report -r -l .jshintrc -t bitcore lib']));
 
-gulp.task('jsdoc', shell.task(['jsdoc -c .jsdoc.conf lib']));
+gulp.task('jsdoc', shell.task(['node_modules/.bin/jsdoc2md lib/address.js > docs/api/address.md']));
 
 gulp.task('coverage', shell.task(['node_modules/.bin/./istanbul cover node_modules/.bin/_mocha -- --recursive']));
 
