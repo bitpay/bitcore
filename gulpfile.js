@@ -128,7 +128,7 @@ gulp.task('plato', shell.task(['plato -d report -r -l .jshintrc -t bitcore lib']
 
 gulp.task('jsdoc', shell.task(['jsdoc -c .jsdoc.conf lib']));
 
-gulp.task('coverage', shell.task(['istanbul cover _mocha -- --recursive']));
+gulp.task('coverage', shell.task(['node_modules/.bin/./istanbul cover node_modules/.bin/_mocha -- --recursive']));
 
 gulp.task('coveralls', ['coverage'], function() {
   gulp.src('coverage/lcov.info').pipe(coveralls());
