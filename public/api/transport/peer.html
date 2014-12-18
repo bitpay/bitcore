@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head prefix="og: http://ogp.me/ns#">
+  <meta charset="utf-8">
+  <title>Bitcore &mdash; A pure and simple JavaScript bitcoin API.</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="canonical" href="http://bitcore.io/api/transport/peer.html">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#2f83cd">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+  <link rel="stylesheet" href="/css/style.css" type="text/css">
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,700" rel="stylesheet" type="text/css">
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro:400,700" rel="stylesheet" type="text/css">
+  <link rel="alternative" href="/atom.xml" title="Bitcore" type="application/atom+xml">
+  <meta name="description" content="class: Peer
+Members
+
+class: Peer
+new Peer(host, [port], [network])
+peer.setProxy(host, port)
+peer.connect()
+peer.disconnect()
+peer.sendMessage(message)
+peer._sendVersion()
+peer._sendPong()
+peer._read">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Bitcore">
+<meta property="og:url" content="http://bitcore.io/api/transport/peer.html">
+<meta property="og:site_name" content="Bitcore">
+<meta property="og:description" content="class: Peer
+Members
+
+class: Peer
+new Peer(host, [port], [network])
+peer.setProxy(host, port)
+peer.connect()
+peer.disconnect()
+peer.sendMessage(message)
+peer._sendVersion()
+peer._sendPong()
+peer._read">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Bitcore">
+<meta name="twitter:description" content="class: Peer
+Members
+
+class: Peer
+new Peer(host, [port], [network])
+peer.setProxy(host, port)
+peer.connect()
+peer.disconnect()
+peer.sendMessage(message)
+peer._sendVersion()
+peer._sendPong()
+peer._read">
+<meta name="twitter:site" content="@bitpay">
+
+  
+</head>
+
+
+<body>
+  <header id="header">
+  <div class="outer">
+    <div class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Bitcore</a>
+        <a id="main-nav-toggle"></a>
+      </h1>
+      <nav id="main-nav">
+        <ul id="main-nav-list">
+          
+            <li class="main-nav-item">
+              <a href="/docs/" class="main-nav-link">Docs</a>
+            </li>
+          
+            <li class="main-nav-item">
+              <a href="/api/" class="main-nav-link">API</a>
+            </li>
+          
+            <li class="main-nav-item">
+              <a href="https://github.com/bitpay/bitcore" class="main-nav-link">Github</a>
+            </li>
+          
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>
+  <article class="page" itemscope itemtype="http://schema.org/Article">
+  <header id="page-banner">
+    <div class="outer">
+      <div id="page-banner-inner" class="inner">
+        <h1 id="page-title" itemprop="name"></h1>
+        <!--<a href="https://github.com/bitpay/bitcore/blob/master/api/transport/peer.md" title="Improve this doc" id="page-edit-link"></a>-->
+      </div>
+    </div>
+  </header>
+  <div class="outer">
+    <div id="mobile-menu-wrap"></div>
+    <div class="page-content">
+      <div class="toc-wrap">
+        <strong class="toc-title">Contents</strong>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#class:_Peer"><span class="toc-number">1.</span> <span class="toc-text">class: Peer</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#new_Peer(host,_[port],_[network])"><span class="toc-number">1.1.</span> <span class="toc-text">new Peer(host, [port], [network])</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#peer-setProxy(host,_port)"><span class="toc-number">1.2.</span> <span class="toc-text">peer.setProxy(host, port)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#peer-connect()"><span class="toc-number">1.3.</span> <span class="toc-text">peer.connect()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#peer-disconnect()"><span class="toc-number">1.4.</span> <span class="toc-text">peer.disconnect()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#peer-sendMessage(message)"><span class="toc-number">1.5.</span> <span class="toc-text">peer.sendMessage(message)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#peer-_sendVersion()"><span class="toc-number">1.6.</span> <span class="toc-text">peer._sendVersion()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#peer-_sendPong()"><span class="toc-number">1.7.</span> <span class="toc-text">peer._sendPong()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#peer-_readMessage()"><span class="toc-number">1.8.</span> <span class="toc-text">peer._readMessage()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#peer-_getSocket()"><span class="toc-number">1.9.</span> <span class="toc-text">peer._getSocket()</span></a></li></ol></li></ol>
+      </div>
+      <div class="page-entry" itemprop="articleBody">
+        <p><a name="Peer"></a></p>
+<h1 id="class:_Peer">class: Peer</h1>
+<p><strong>Members</strong></p>
+<ul>
+<li><a href="#Peer">class: Peer</a><ul>
+<li><a href="#new_Peer">new Peer(host, [port], [network])</a></li>
+<li><a href="#Peer#setProxy">peer.setProxy(host, port)</a></li>
+<li><a href="#Peer#connect">peer.connect()</a></li>
+<li><a href="#Peer#disconnect">peer.disconnect()</a></li>
+<li><a href="#Peer#sendMessage">peer.sendMessage(message)</a></li>
+<li><a href="#Peer#_sendVersion">peer._sendVersion()</a></li>
+<li><a href="#Peer#_sendPong">peer._sendPong()</a></li>
+<li><a href="#Peer#_readMessage">peer._readMessage()</a></li>
+<li><a href="#Peer#_getSocket">peer._getSocket()</a></li>
+</ul>
+</li>
+</ul>
+<p><a name="new_Peer"></a></p>
+<h2 id="new_Peer(host,_[port],_[network])">new Peer(host, [port], [network])</h2>
+<p>A Peer instance represents a remote bitcoin node and allows to communicate<br>with it using the standar messages of the bitcoin p2p protocol.</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>host <code>String</code> - IP address of the remote host  </li>
+<li>[port] <code>Number</code> - Port number of the remote host  </li>
+<li>[network] <code>Network</code> - The context for this communication  </li>
+</ul>
+<p><strong>Returns</strong>: <a href="#Peer">Peer</a> - A new instance of Peer.<br><strong>Example</strong>  </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">var</span> peer = <span class="keyword">new</span> Peer(<span class="string">'127.0.0.1'</span>).setProxy(<span class="string">'127.0.0.1'</span>, <span class="number">9050</span>);</div><div class="line">peer.on(<span class="string">'tx'</span>, <span class="function"><span class="keyword">function</span><span class="params">(tx)</span> </span>{</div><div class="line"> <span class="built_in">console</span>.log(<span class="string">'New transaction: '</span>, tx.id);</div><div class="line">});</div><div class="line">peer.connect();</div></pre></td></tr></table></figure>
+
+<p><a name="Peer#setProxy"></a></p>
+<h2 id="peer-setProxy(host,_port)">peer.setProxy(host, port)</h2>
+<p>Set a socks5 proxy for the connection. Enables the use of the TOR network.</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>host <code>String</code> - IP address of the proxy  </li>
+<li>port <code>Number</code> - Port number of the proxy  </li>
+</ul>
+<p><strong>Returns</strong>: <a href="#Peer">Peer</a> - The same Peer instance.<br><a name="Peer#connect"></a></p>
+<h2 id="peer-connect()">peer.connect()</h2>
+<p>Init the connection with the remote peer.</p>
+<p><strong>Returns</strong>: <code>Socket</code> - The same peer instance.<br><a name="Peer#disconnect"></a></p>
+<h2 id="peer-disconnect()">peer.disconnect()</h2>
+<p>Disconnects the remote connection.</p>
+<p><strong>Returns</strong>: <code>Socket</code> - The same peer instance.<br><a name="Peer#sendMessage"></a></p>
+<h2 id="peer-sendMessage(message)">peer.sendMessage(message)</h2>
+<p>Send a Message to the remote peer.</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>message <code>Message</code> - A message instance  </li>
+</ul>
+<p><a name="Peer#_sendVersion"></a></p>
+<h2 id="peer-_sendVersion()">peer._sendVersion()</h2>
+<p>Internal function that sends VERSION message to the remote peer.</p>
+<p><a name="Peer#_sendPong"></a></p>
+<h2 id="peer-_sendPong()">peer._sendPong()</h2>
+<p>Send a PONG message to the remote peer.</p>
+<p><a name="Peer#_readMessage"></a></p>
+<h2 id="peer-_readMessage()">peer._readMessage()</h2>
+<p>Internal function that tries to read a message from the data buffer</p>
+<p><a name="Peer#_getSocket"></a></p>
+<h2 id="peer-_getSocket()">peer._getSocket()</h2>
+<p>Internal function that creates a socket using a proxy if neccesary.</p>
+<p><strong>Returns</strong>: <code>Socket</code> - A Socket instance not yet connected.  </p>
+
+      </div>
+      <footer id="page-footer">
+        <time id="page-footer-updated" datetime="2014-12-18T20:27:58.000Z" itemprop="dateModified">Last updated: Dec 18 2014</time>
+        <a href="index.html" id="page-footer-next" title="Get Started">Next</a>
+      </footer>
+      
+    </div>
+    <aside id="sidebar">
+
+  
+
+  
+    <strong class="sidebar-title">Main</strong>
+    
+      <a href="/api/address.html" class="sidebar-link">Address</a>
+    
+      <a href="/api/block.html" class="sidebar-link">Block</a>
+    
+      <a href="/api/blockheader.html" class="sidebar-link">BlockHeader</a>
+    
+      <a href="/api/hdprivatekey.html" class="sidebar-link">HDPrivateKey</a>
+    
+      <a href="/api/hdpublickey.html" class="sidebar-link">HDPublicKey</a>
+    
+      <a href="/api/networks.html" class="sidebar-link">Networks</a>
+    
+      <a href="/api/privatekey.html" class="sidebar-link">PrivateKey</a>
+    
+      <a href="/api/publickey.html" class="sidebar-link">PublicKey</a>
+    
+      <a href="/api/unit.html" class="sidebar-link">Unit</a>
+    
+      <a href="/api/uri.html" class="sidebar-link">Uri</a>
+    
+  
+    <strong class="sidebar-title">Crypto</strong>
+    
+      <a href="/api/crypto/point.html" class="sidebar-link">Point</a>
+    
+  
+    <strong class="sidebar-title">Script</strong>
+    
+      <a href="/api/script/script.html" class="sidebar-link">Script</a>
+    
+  
+    <strong class="sidebar-title">Transaction</strong>
+    
+      <a href="/api/transaction/transaction.html" class="sidebar-link">Transaction</a>
+    
+      <a href="/api/transaction/sighash.html" class="sidebar-link">Sig Hash</a>
+    
+  
+    <strong class="sidebar-title">Transport</strong>
+    
+      <a href="/api/transport/peer.html" class="sidebar-link current">Peer</a>
+    
+      <a href="/api/transport/pool.html" class="sidebar-link">Pool</a>
+    
+      <a href="/api/transport/rpc.html" class="sidebar-link">RPC</a>
+    
+  
+
+
+
+
+</aside>
+  </div>
+</article>
+  <footer id="footer">
+  <div class="outer">
+    <div class="inner">
+      <div id="footer-copyright">
+        <p>bitcore™ &copy; 2013-2014 BitPay, Inc. bitcore is released under the MIT license.</p>
+      </div>
+      <div id="footer-links">
+        <a href="https://twitter.com/bitpay" id="footer-link-twitter" class="footer-link" target="_blank"><span>Twitter</span></a>
+        <a href="https://github.com/bitpay/bitcore" id="footer-link-github" class="footer-link" target="_blank"><span>GitHub</span></a>
+      </div>
+    </div>
+  </div>
+</footer>
+  
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="/js/retina.min.js" type="text/javascript"></script>
+
+<script src="/js/script.js" type="text/javascript"></script>
+
+<!-- Google+ -->
+<script type="text/javascript" src="//apis.google.com/js/plusone.js"></script>
+<!-- Twitter -->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+
+</body>
+</html>

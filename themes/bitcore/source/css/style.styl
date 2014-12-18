@@ -1,0 +1,29 @@
+@import "nib"
+@import "_variables"
+
+global-reset()
+
+@import "_util/grid"
+@import "_util/mixin"
+
+body
+  font: font-size font-sans
+  -webkit-text-size-adjust: 100%
+
+.outer
+  clearfix()
+  max-width: (column-width + gutter-width) * columns + gutter-width
+  margin: 0 auto
+  padding: 0 gutter-width
+
+.inner
+  column(12)
+
+@import "_partial/header"
+@import "_partial/page"
+@import "_partial/sidebar"
+@import "_partial/news"
+@import "_partial/api"
+@import "_partial/index"
+@import "_partial/footer"
+@import "_partial/highlight"

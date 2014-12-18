@@ -1,0 +1,24 @@
+<aside id="sidebar">
+
+  <% 
+    // setup the different menus
+    if (is_current('docs/', false)) { 
+      var sidebar = theme.doc_sidebar; 
+      var base = 'docs/';
+    } else if (is_current('api/', false)) {
+      var sidebar = theme.api_sidebar; 
+      var base = 'api/';
+    }
+  %>
+
+  <% _.each(sidebar, function(menu, title){ %>
+    <strong class="sidebar-title"><%= title %></strong>
+    <% _.each(menu, function(link, text){ %>
+      <a href="<%- url_for(base + link) %>" class="sidebar-link<% if (is_current(base + link, true)){ %> current<% } %>"><%= text %></a>
+    <% }) %>
+  <% }) %>
+
+
+
+
+</aside>

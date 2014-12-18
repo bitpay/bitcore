@@ -1,0 +1,32 @@
+layout: api/layout
+---
+<header id="api-header">
+  <h1 id="api-title"><%= page.name %> Module</h1>
+  <div class="api-meta">
+    Defined in <%- github_link(page) %>
+  </div>
+</header>
+<div class="page-entry">
+  <h2 class="api-section-title">Description</h2>
+  <%- page.description %>
+  <% if (page.submodules.length){ %>
+    <h2 class="api-section-title">Submodules</h2>
+    <ul>
+      <% page.submodules.forEach(function(item){ %>
+        <li>
+          <a href="<%- config.root %><%- item.path %>"><%= item.name %></a>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+  <% if (page.classes.length){ %>
+    <h2 class="api-section-title">Classes</h2>
+    <ul>
+      <% page.classes.forEach(function(item){ %>
+        <li>
+          <a href="<%- config.root %><%- item.path %>"><%= item.name %></a>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</div>

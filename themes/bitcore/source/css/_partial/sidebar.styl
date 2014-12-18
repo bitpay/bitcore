@@ -1,0 +1,38 @@
+#sidebar
+  column(3)
+  font-family: font-title
+  padding: 0 0 40px
+  @media mq-mobile
+    display: none
+
+.sidebar-title
+  display: block
+  margin: 40px 0 10px
+  color: color-blue
+  text-transform: uppercase
+  font-weight: bold
+  position: relative
+  padding-left: 20px
+  &:before
+    content: ""
+    width: 8px
+    height: 8px
+    background: color-blue
+    border-radius: 50%
+    position: absolute
+    top: 4px
+    left: 0
+
+.sidebar-link
+  color: #666
+  text-decoration: none
+  display: block
+  font-weight: 300
+  padding: 5px 15px
+  border-left: 2px solid color-border
+  margin-left: 3px
+  &:hover, &.current
+    color: color-blue
+  &.current
+    font-weight: bold
+    border-left-color: color-blue

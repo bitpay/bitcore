@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head prefix="og: http://ogp.me/ns#">
+  <meta charset="utf-8">
+  <title>Bitcore &mdash; A pure and simple JavaScript bitcoin API.</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="canonical" href="http://bitcore.io/docs/Script.html">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#2f83cd">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+  <link rel="stylesheet" href="/css/style.css" type="text/css">
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,700" rel="stylesheet" type="text/css">
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro:400,700" rel="stylesheet" type="text/css">
+  <link rel="alternative" href="/atom.xml" title="Bitcore" type="application/atom+xml">
+  <meta name="description" content="Script
+Description
+All bitcoin transactions have scripts embedded into its inputs and outputs.  The scripts use a very simple programming language, which is evaluated from left to right using a stack.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Bitcore">
+<meta property="og:url" content="http://bitcore.io/docs/Script.html">
+<meta property="og:site_name" content="Bitcore">
+<meta property="og:description" content="Script
+Description
+All bitcoin transactions have scripts embedded into its inputs and outputs.  The scripts use a very simple programming language, which is evaluated from left to right using a stack.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Bitcore">
+<meta name="twitter:description" content="Script
+Description
+All bitcoin transactions have scripts embedded into its inputs and outputs.  The scripts use a very simple programming language, which is evaluated from left to right using a stack.">
+<meta name="twitter:site" content="@bitpay">
+
+  
+</head>
+
+
+<body>
+  <header id="header">
+  <div class="outer">
+    <div class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Bitcore</a>
+        <a id="main-nav-toggle"></a>
+      </h1>
+      <nav id="main-nav">
+        <ul id="main-nav-list">
+          
+            <li class="main-nav-item">
+              <a href="/docs/" class="main-nav-link">Docs</a>
+            </li>
+          
+            <li class="main-nav-item">
+              <a href="/api/" class="main-nav-link">API</a>
+            </li>
+          
+            <li class="main-nav-item">
+              <a href="https://github.com/bitpay/bitcore" class="main-nav-link">Github</a>
+            </li>
+          
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>
+  <article class="page" itemscope itemtype="http://schema.org/Article">
+  <header id="page-banner">
+    <div class="outer">
+      <div id="page-banner-inner" class="inner">
+        <h1 id="page-title" itemprop="name"></h1>
+        <!--<a href="https://github.com/bitpay/bitcore/blob/master/docs/Script.md" title="Improve this doc" id="page-edit-link"></a>-->
+      </div>
+    </div>
+  </header>
+  <div class="outer">
+    <div id="mobile-menu-wrap"></div>
+    <div class="page-content">
+      <div class="toc-wrap">
+        <strong class="toc-title">Contents</strong>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Script"><span class="toc-number">1.</span> <span class="toc-text">Script</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Description"><span class="toc-number">1.1.</span> <span class="toc-text">Description</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Script_creation"><span class="toc-number">1.2.</span> <span class="toc-text">Script creation</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Pay_to_Public_Key_Hash_(p2pkh)"><span class="toc-number">1.2.1.</span> <span class="toc-text">Pay to Public Key Hash (p2pkh)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Pay_to_Public_Key_(p2pk)"><span class="toc-number">1.2.2.</span> <span class="toc-text">Pay to Public Key (p2pk)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Pay_to_Multisig_(p2ms)"><span class="toc-number">1.2.3.</span> <span class="toc-text">Pay to Multisig (p2ms)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Pay_to_Script_Hash_(p2sh)"><span class="toc-number">1.2.4.</span> <span class="toc-text">Pay to Script Hash (p2sh)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Data_output"><span class="toc-number">1.2.5.</span> <span class="toc-text">Data output</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Custom_scripts"><span class="toc-number">1.2.6.</span> <span class="toc-text">Custom scripts</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Script_parsing_and_identification"><span class="toc-number">1.3.</span> <span class="toc-text">Script parsing and identification</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Script_interpreting_and_validation"><span class="toc-number">1.4.</span> <span class="toc-text">Script interpreting and validation</span></a></li></ol></li></ol>
+      </div>
+      <div class="page-entry" itemprop="articleBody">
+        <h1 id="Script">Script</h1>
+<h2 id="Description">Description</h2>
+<p>All bitcoin transactions have scripts embedded into its inputs and outputs.  The scripts use a very simple programming language, which is evaluated from left to right using a stack. The language is designed such that it guarantees all scripts will execute in a limited amount of time (it is not Turing-Complete).</p>
+<p>When a transaction is validated, the input scripts are concatenated with the output scripts and evaluated. To be valid, all transaction scripts must evaluate to true.  A good analogy for how this works is that the output scripts are puzzles that specify in which conditions can those bitcoins be spent. The input scripts provide the correct data to make those output scripts evaluate to true.</p>
+<p>For more detailed information about the bitcoin scripting language, check the online reference <a href="https://en.bitcoin.it/wiki/Script" target="_blank" rel="external">on bitcoin’s wiki</a>.</p>
+<p>The <code>Script</code> object provides an interface to construct, parse, and identify bitcoin scripts. It also gives simple interfaces to create most common script types. This class is useful if you want to create custom input or output scripts. In other case, you should probably use <code>Transaction</code>.</p>
+<h2 id="Script_creation">Script creation</h2>
+<p>Here’s how to use <code>Script</code> to create the five most common script types:</p>
+<h3 id="Pay_to_Public_Key_Hash_(p2pkh)">Pay to Public Key Hash (p2pkh)</h3>
+<p>This is the most commonly used transaction output script. It’s used to pay to a bitcoin address (a bitcoin address is a public key hash encoded in base58check)</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// create a new p2pkh paying to a specific address</span></div><div class="line"><span class="keyword">var</span> address = Address.fromString(<span class="string">'1NaTVwXDDUJaXDQajoa9MqHhz4uTxtgK14'</span>);</div><div class="line"><span class="keyword">var</span> script = Script.buildPublicKeyHashOut(address);</div><div class="line">assert(script.toString() === <span class="string">'OP_DUP OP_HASH160 20 0xecae7d092947b7ee4998e254aa48900d26d2ce1d OP_EQUALVERIFY OP_CHECKSIG'</span>);</div></pre></td></tr></table></figure>
+
+<h3 id="Pay_to_Public_Key_(p2pk)">Pay to Public Key (p2pk)</h3>
+<p>Pay to public key scripts are a simplified form of the p2pkh, but aren’t commonly used in new transactions anymore, because p2pkh scripts are more secure (the public key is not revealed until the output is spent). </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// create a new p2pk paying to a specific public key</span></div><div class="line"><span class="keyword">var</span> pubkey = <span class="keyword">new</span> PublicKey(<span class="string">'022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da'</span>);</div><div class="line"><span class="keyword">var</span> script = Script.buildPublicKeyOut(pubkey);</div><div class="line">assert(script.toString() === <span class="string">'33 0x022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da OP_CHECKSIG'</span>);</div></pre></td></tr></table></figure>
+
+<h3 id="Pay_to_Multisig_(p2ms)">Pay to Multisig (p2ms)</h3>
+<p>Multisig outputs allow to share control of bitcoins between several keys. When creating the script, one specifies the public keys that control the funds, and how many of those keys are required to sign off spending transactions to be valid. An output with N public keys of which M are required is called an m-of-n output (For example, 2-of-3, 3-of-5, 4-of-4, etc.)</p>
+<p>Note that regular multisig outputs are rarely used nowadays. The best practice is to use a p2sh multisig output (See Script#toScriptHashOut()).</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// create a new 2-of-3 multisig output from 3 given public keys</span></div><div class="line"><span class="keyword">var</span> pubkeys = [</div><div class="line">  <span class="keyword">new</span> PublicKey(<span class="string">'022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da'</span>),</div><div class="line">  <span class="keyword">new</span> PublicKey(<span class="string">'03e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e9'</span>),</div><div class="line">  <span class="keyword">new</span> PublicKey(<span class="string">'021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc18'</span>),</div><div class="line">];</div><div class="line"><span class="keyword">var</span> threshold = <span class="number">2</span>;</div><div class="line"><span class="keyword">var</span> script = Script.buildMultisigOut(pubkeys, threshold);</div><div class="line">assert(script.toString() === <span class="string">'OP_2 33 0x022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da'</span></div><div class="line">      + <span class="string">' 33 0x03e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e9'</span></div><div class="line">      + <span class="string">' 33 0x021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc18 OP_3 OP_CHECKMULTISIG'</span>);</div></pre></td></tr></table></figure>
+
+<h3 id="Pay_to_Script_Hash_(p2sh)">Pay to Script Hash (p2sh)</h3>
+<p>Pay to script hash outputs are scripts that contain the hash of another script, called <code>redeemScript</code>. To spend bitcoins sent in a p2sh output, the spending transaction must provide a script matching the script hash and data which makes the script evaluate to true.  This allows to defer revealing the spending conditions to the moment of spending. It also makes it possible for the receiver to set the conditions to spend those bitcoins. </p>
+<p>Most multisig transactions today use p2sh outputs where the redeemScript is a multisig output.</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// create a p2sh multisig output</span></div><div class="line"><span class="keyword">var</span> pubkeys = [</div><div class="line">  <span class="keyword">new</span> PublicKey(<span class="string">'022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da'</span>),</div><div class="line">  <span class="keyword">new</span> PublicKey(<span class="string">'03e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e9'</span>),</div><div class="line">  <span class="keyword">new</span> PublicKey(<span class="string">'021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc18'</span>),</div><div class="line">];</div><div class="line"><span class="keyword">var</span> redeemScript = Script.buildMultisigOut(pubkeys, <span class="number">2</span>);</div><div class="line"><span class="keyword">var</span> script = redeemScript.toScriptHashOut();</div><div class="line">assert(script.toString() === <span class="string">'OP_HASH160 20 0x620a6eeaf538ec9eb89b6ae83f2ed8ef98566a03 OP_EQUAL'</span>);</div></pre></td></tr></table></figure>
+
+<h3 id="Data_output">Data output</h3>
+<p>Data outputs are used to push data into the blockchain. Up to 40 bytes can be pushed in a standard way, but more data can be used, if a miner decides to accept the transaction.</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">var</span> data = <span class="string">'hello world!!!'</span>;</div><div class="line"><span class="keyword">var</span> script = Script.buildDataOut(data);</div><div class="line">assert(script.toString() === <span class="string">'OP_RETURN 14 0x68656c6c6f20776f726c64212121'</span></div></pre></td></tr></table></figure>
+
+<h3 id="Custom_scripts">Custom scripts</h3>
+<p>To create a custom <code>Script</code> instance, you must rely on the lower-level methods <code>add</code> and <code>prepend</code>. Both methods accept the same parameter types, and insert an opcode or data at the beginning (<code>prepend</code>) or end (<code>add</code>) of the <code>Script</code>.</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">var</span> script = Script()</div><div class="line">  .<span class="keyword">add</span>(<span class="string">'OP_IF'</span>)                       <span class="comment">// add an opcode by name</span></div><div class="line">  .prepend(<span class="number">114</span>)                       <span class="comment">// add OP_2SWAP by code</span></div><div class="line">  .<span class="keyword">add</span>(Opcode.OP_NOT)                 <span class="comment">// add an opcode object</span></div><div class="line">  .<span class="keyword">add</span>(<span class="keyword">new</span> Buffer(<span class="string">'bacacafe'</span>, <span class="string">'hex'</span>)) <span class="comment">// add a data buffer (will append the size of the push operation first)</span></div><div class="line"></div><div class="line">assert(script.toString() === <span class="string">'OP_2SWAP OP_IF OP_NOT 4 0xbacacafe'</span>);</div></pre></td></tr></table></figure>
+
+<h2 id="Script_parsing_and_identification">Script parsing and identification</h2>
+<p><code>Script</code> has an easy interface to parse raw scripts from the newtwork or bitcoind, and to extract useful information. An illustrative example (for more options check the API reference)</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">var</span> raw_script = <span class="keyword">new</span> Buffer(<span class="string">'5221022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da2103e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e921021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc1853ae'</span>, <span class="string">'hex'</span>);</div><div class="line"><span class="keyword">var</span> s = <span class="keyword">new</span> Script(raw_script);</div><div class="line"><span class="built_in">console</span>.log(s.toString());</div><div class="line"><span class="comment">// 'OP_2 33 0x022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da 33 0x03e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e9 33 0x021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc18 OP_3 OP_CHECKMULTISIG'</span></div><div class="line"></div><div class="line">s.isPublicKeyHashOut() <span class="comment">// false</span></div><div class="line">s.isScriptHashOut() <span class="comment">// false</span></div><div class="line">s.isMultisigOut() <span class="comment">// true</span></div></pre></td></tr></table></figure>
+
+<h2 id="Script_interpreting_and_validation">Script interpreting and validation</h2>
+<p>To validate a transaction, the bitcoin network validates all of its inputs and outputs. To validate an input, the input’s script is concatenated with the referenced output script, and the result is executed. If at the end of execution the stack contains a ‘true’ value, then the transaction is valid.<br>You can do this in <code>bitcore</code> by using the <code>Interpreter</code> class. The entry point (and probably the only interface you’ll need for most applications) is the method <code>Interpreter#verify()</code>.</p>
+<p>You can use it like this:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">var</span> inputScript = Script(<span class="string">'OP_1'</span>);</div><div class="line"><span class="keyword">var</span> outputScript = Script(<span class="string">'OP_15 OP_ADD OP_16 OP_EQUAL'</span>);</div><div class="line"></div><div class="line"><span class="keyword">var</span> verified = Interpreter().verify(inputScript, outputScript);</div><div class="line"><span class="comment">// verified will be true</span></div></pre></td></tr></table></figure>
+
+<p>Note that <code>verify</code> expects two scripts: one is the input script (scriptSig) and the other is the output script (scriptPubkey). This is because different conditions are checked for each.</p>
+<p>It also accepts some optional parameters, assuming defaults if not provided:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// first we create a transaction</span></div><div class="line"><span class="keyword">var</span> tx = <span class="keyword">new</span> Transaction()</div><div class="line">  .<span class="keyword">from</span>(utxo)</div><div class="line">  .<span class="keyword">to</span>(toAddress, <span class="number">100000</span>)</div><div class="line">  .sign(privateKey);</div><div class="line"></div><div class="line"><span class="comment">// we then extract the signature from the first input</span></div><div class="line"><span class="keyword">var</span> inputIndex = <span class="number">0</span>;</div><div class="line"><span class="keyword">var</span> signature = tx.getSignatures(privateKey)[inputIndex].signature;</div><div class="line"></div><div class="line"><span class="keyword">var</span> scriptSig = Script.buildPublicKeyHashIn(publicKey, signature);</div><div class="line"><span class="keyword">var</span> <span class="keyword">flags</span> = Interpreter.SCRIPT_VERIFY_P2SH | Interpreter.SCRIPT_VERIFY_STRICTENC;</div><div class="line"><span class="keyword">var</span> verified = Interpreter().verify(scriptSig, scriptPubkey, tx, inputIndex, <span class="keyword">flags</span>);</div></pre></td></tr></table></figure>
+
+
+      </div>
+      <footer id="page-footer">
+        <time id="page-footer-updated" datetime="2014-12-18T20:27:58.000Z" itemprop="dateModified">Last updated: Dec 18 2014</time>
+        <a href="PublicKey.html" id="page-footer-prev" title="Public Key">Prev</a><a href="Transaction.html" id="page-footer-next" title="Transaction">Next</a>
+      </footer>
+      
+    </div>
+    <aside id="sidebar">
+
+  
+
+  
+    <strong class="sidebar-title">Home</strong>
+    
+      <a href="/docs/index.html" class="sidebar-link">Get Started</a>
+    
+      <a href="/docs/contributing.html" class="sidebar-link">Contributing</a>
+    
+  
+    <strong class="sidebar-title">Models</strong>
+    
+      <a href="/docs/Address.html" class="sidebar-link">Address</a>
+    
+      <a href="/docs/Block.html" class="sidebar-link">Block</a>
+    
+      <a href="/docs/Hierarchical.html" class="sidebar-link">Hierarchical</a>
+    
+      <a href="/docs/PrivateKey.html" class="sidebar-link">Private Key</a>
+    
+      <a href="/docs/PublicKey.html" class="sidebar-link">Public Key</a>
+    
+      <a href="/docs/Script.html" class="sidebar-link current">Script</a>
+    
+      <a href="/docs/Transaction.html" class="sidebar-link">Transaction</a>
+    
+  
+    <strong class="sidebar-title">Helpers</strong>
+    
+      <a href="/docs/Crypto.html" class="sidebar-link">Crypto</a>
+    
+      <a href="/docs/ECIES.html" class="sidebar-link">ECIES</a>
+    
+      <a href="/docs/Encoding.html" class="sidebar-link">Encoding</a>
+    
+      <a href="/docs/Networks.html" class="sidebar-link">Networks</a>
+    
+      <a href="/docs/PaymentProtocol.html" class="sidebar-link">Payment Protocol</a>
+    
+      <a href="/docs/Unit.html" class="sidebar-link">Unit</a>
+    
+      <a href="/docs/URI.html" class="sidebar-link">URI</a>
+    
+  
+    <strong class="sidebar-title">Networking</strong>
+    
+      <a href="/docs/JSONRPC.html" class="sidebar-link">JSON-RPC</a>
+    
+      <a href="/docs/Peer.html" class="sidebar-link">Peer</a>
+    
+      <a href="/docs/Pool.html" class="sidebar-link">Pool</a>
+    
+  
+
+
+
+
+</aside>
+  </div>
+</article>
+  <footer id="footer">
+  <div class="outer">
+    <div class="inner">
+      <div id="footer-copyright">
+        <p>bitcore™ &copy; 2013-2014 BitPay, Inc. bitcore is released under the MIT license.</p>
+      </div>
+      <div id="footer-links">
+        <a href="https://twitter.com/bitpay" id="footer-link-twitter" class="footer-link" target="_blank"><span>Twitter</span></a>
+        <a href="https://github.com/bitpay/bitcore" id="footer-link-github" class="footer-link" target="_blank"><span>GitHub</span></a>
+      </div>
+    </div>
+  </div>
+</footer>
+  
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="/js/retina.min.js" type="text/javascript"></script>
+
+<script src="/js/script.js" type="text/javascript"></script>
+
+<!-- Google+ -->
+<script type="text/javascript" src="//apis.google.com/js/plusone.js"></script>
+<!-- Twitter -->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+
+</body>
+</html>

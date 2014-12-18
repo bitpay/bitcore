@@ -1,0 +1,10 @@
+<% page.title = 'News' %>
+<%- partial('_partial/news-banner') %>
+
+<div id="post-list" class="outer">
+  <div class="inner">
+    <% page.posts.each(function(post, i){ %>
+      <%- partial('_partial/article', {post: post, full: i === 0, index: true}) %>
+    <% }) %>
+  </div>
+</div>

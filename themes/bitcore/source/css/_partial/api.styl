@@ -1,0 +1,89 @@
+#api-header
+  clearfix()
+  margin: line-height 0
+
+#api-title
+  color: color-default
+  font-size: 2em
+  font-weight: bold
+  margin-bottom: 4px
+
+.api-meta
+  color: color-grey
+  font-size: 0.85em
+  line-height: line-height
+  float: left
+  a
+    color: color-blue
+    text-decoration: none
+    &:hover
+      text-decoration: underline
+
+.api-options
+  float: right
+  font-size: 0.85em
+  color: color-default
+
+.api-section-title
+  border-top: 1px solid color-border
+  padding-top: 1em
+
+.api-item
+  margin: 2.5em 0
+  &.private
+  &.protected
+  &.deprecated
+    display: none
+
+.api-item-title
+  font-weight: normal
+  margin-bottom: 6px
+  display: inline
+  font-family: font-mono
+  a
+    color: color-default
+
+.api-item-params
+  font-family: font-mono
+
+.api-deprecated-msg
+  margin: line-height 0
+  color: color-default
+  &:before
+    @extend $icon-font
+    content: "\f06a"
+    color: note-warn
+  strong
+    font-weight: bold
+    color: note-warn
+
+.api-item-type
+  color: color-grey
+  a, span
+    border-bottom: 1px dotted color-grey
+  a
+    &:hover
+      text-decoration: none
+  span
+    color: color-default
+
+.api-item-flag
+  background: color-grey
+  color: #fff
+  border-radius: 3px
+  font-size: 0.85em
+  margin: 0 6px
+  padding: 3px 5px
+
+.api-item-meta
+  color: color-grey
+  font-size: 0.85em
+  line-height: line-height
+  a
+    color: color-blue
+    text-decoration: none
+    &:hover
+      text-decoration: underline
+
+.api-item-subtitle
+  margin: line-height 0

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head prefix="og: http://ogp.me/ns#">
+  <meta charset="utf-8">
+  <title>Bitcore &mdash; A pure and simple JavaScript bitcoin API.</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="canonical" href="http://bitcore.io/api/blockheader.html">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#2f83cd">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+  <link rel="stylesheet" href="/css/style.css" type="text/css">
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,700" rel="stylesheet" type="text/css">
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro:400,700" rel="stylesheet" type="text/css">
+  <link rel="alternative" href="/atom.xml" title="Bitcore" type="application/atom+xml">
+  <meta name="description" content="class: BlockHeader
+Members
+
+class: BlockHeader
+new BlockHeader()
+BlockHeader.fromJSON(json)
+BlockHeader.fromRawBlock(data)
+BlockHeader.fromBuffer(buf)
+BlockHeader.fromString(str)
+BlockHeader.fromBuff">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Bitcore">
+<meta property="og:url" content="http://bitcore.io/api/blockheader.html">
+<meta property="og:site_name" content="Bitcore">
+<meta property="og:description" content="class: BlockHeader
+Members
+
+class: BlockHeader
+new BlockHeader()
+BlockHeader.fromJSON(json)
+BlockHeader.fromRawBlock(data)
+BlockHeader.fromBuffer(buf)
+BlockHeader.fromString(str)
+BlockHeader.fromBuff">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Bitcore">
+<meta name="twitter:description" content="class: BlockHeader
+Members
+
+class: BlockHeader
+new BlockHeader()
+BlockHeader.fromJSON(json)
+BlockHeader.fromRawBlock(data)
+BlockHeader.fromBuffer(buf)
+BlockHeader.fromString(str)
+BlockHeader.fromBuff">
+<meta name="twitter:site" content="@bitpay">
+
+  
+</head>
+
+
+<body>
+  <header id="header">
+  <div class="outer">
+    <div class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Bitcore</a>
+        <a id="main-nav-toggle"></a>
+      </h1>
+      <nav id="main-nav">
+        <ul id="main-nav-list">
+          
+            <li class="main-nav-item">
+              <a href="/docs/" class="main-nav-link">Docs</a>
+            </li>
+          
+            <li class="main-nav-item">
+              <a href="/api/" class="main-nav-link">API</a>
+            </li>
+          
+            <li class="main-nav-item">
+              <a href="https://github.com/bitpay/bitcore" class="main-nav-link">Github</a>
+            </li>
+          
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>
+  <article class="page" itemscope itemtype="http://schema.org/Article">
+  <header id="page-banner">
+    <div class="outer">
+      <div id="page-banner-inner" class="inner">
+        <h1 id="page-title" itemprop="name"></h1>
+        <!--<a href="https://github.com/bitpay/bitcore/blob/master/api/blockheader.md" title="Improve this doc" id="page-edit-link"></a>-->
+      </div>
+    </div>
+  </header>
+  <div class="outer">
+    <div id="mobile-menu-wrap"></div>
+    <div class="page-content">
+      <div class="toc-wrap">
+        <strong class="toc-title">Contents</strong>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#class:_BlockHeader"><span class="toc-number">1.</span> <span class="toc-text">class: BlockHeader</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#new_BlockHeader()"><span class="toc-number">1.1.</span> <span class="toc-text">new BlockHeader()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#BlockHeader-fromJSON(json)"><span class="toc-number">1.2.</span> <span class="toc-text">BlockHeader.fromJSON(json)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#BlockHeader-fromRawBlock(data)"><span class="toc-number">1.3.</span> <span class="toc-text">BlockHeader.fromRawBlock(data)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#BlockHeader-fromBuffer(buf)"><span class="toc-number">1.4.</span> <span class="toc-text">BlockHeader.fromBuffer(buf)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#BlockHeader-fromString(str)"><span class="toc-number">1.5.</span> <span class="toc-text">BlockHeader.fromString(str)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#BlockHeader-fromBufferReader(br)"><span class="toc-number">1.6.</span> <span class="toc-text">BlockHeader.fromBufferReader(br)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#blockHeader-toObject()"><span class="toc-number">1.7.</span> <span class="toc-text">blockHeader.toObject()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#blockHeader-toJSON()"><span class="toc-number">1.8.</span> <span class="toc-text">blockHeader.toJSON()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#blockHeader-toBuffer()"><span class="toc-number">1.9.</span> <span class="toc-text">blockHeader.toBuffer()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#blockHeader-toString()"><span class="toc-number">1.10.</span> <span class="toc-text">blockHeader.toString()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#blockHeader-toBufferWriter(bw)"><span class="toc-number">1.11.</span> <span class="toc-text">blockHeader.toBufferWriter(bw)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#blockHeader-getTargetDifficulty()"><span class="toc-number">1.12.</span> <span class="toc-text">blockHeader.getTargetDifficulty()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#blockHeader-_getHash()"><span class="toc-number">1.13.</span> <span class="toc-text">blockHeader._getHash()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#blockHeader-validTimestamp()"><span class="toc-number">1.14.</span> <span class="toc-text">blockHeader.validTimestamp()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#blockHeader-validProofOfWork()"><span class="toc-number">1.15.</span> <span class="toc-text">blockHeader.validProofOfWork()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#blockHeader-inspect()"><span class="toc-number">1.16.</span> <span class="toc-text">blockHeader.inspect()</span></a></li></ol></li></ol>
+      </div>
+      <div class="page-entry" itemprop="articleBody">
+        <p><a name="BlockHeader"></a></p>
+<h1 id="class:_BlockHeader">class: BlockHeader</h1>
+<p><strong>Members</strong></p>
+<ul>
+<li><a href="#BlockHeader">class: BlockHeader</a><ul>
+<li><a href="#new_BlockHeader">new BlockHeader()</a></li>
+<li><a href="#BlockHeader.fromJSON">BlockHeader.fromJSON(json)</a></li>
+<li><a href="#BlockHeader.fromRawBlock">BlockHeader.fromRawBlock(data)</a></li>
+<li><a href="#BlockHeader.fromBuffer">BlockHeader.fromBuffer(buf)</a></li>
+<li><a href="#BlockHeader.fromString">BlockHeader.fromString(str)</a></li>
+<li><a href="#BlockHeader.fromBufferReader">BlockHeader.fromBufferReader(br)</a></li>
+<li><a href="#BlockHeader#toObject">blockHeader.toObject()</a></li>
+<li><a href="#BlockHeader#toJSON">blockHeader.toJSON()</a></li>
+<li><a href="#BlockHeader#toBuffer">blockHeader.toBuffer()</a></li>
+<li><a href="#BlockHeader#toString">blockHeader.toString()</a></li>
+<li><a href="#BlockHeader#toBufferWriter">blockHeader.toBufferWriter(bw)</a></li>
+<li><a href="#BlockHeader#getTargetDifficulty">blockHeader.getTargetDifficulty()</a></li>
+<li><a href="#BlockHeader#_getHash">blockHeader._getHash()</a></li>
+<li><a href="#BlockHeader#validTimestamp">blockHeader.validTimestamp()</a></li>
+<li><a href="#BlockHeader#validProofOfWork">blockHeader.validProofOfWork()</a></li>
+<li><a href="#BlockHeader#inspect">blockHeader.inspect()</a></li>
+</ul>
+</li>
+</ul>
+<p><a name="new_BlockHeader"></a></p>
+<h2 id="new_BlockHeader()">new BlockHeader()</h2>
+<p>Instantiate a BlockHeader from a Buffer, JSON object, or Object with<br>the properties of the BlockHeader</p>
+<p><strong>Params</strong></p>
+<ul>
+<li><code>*</code> - A Buffer, JSON string, or Object  </li>
+</ul>
+<p><strong>Returns</strong>: <a href="#BlockHeader">BlockHeader</a> - - An instance of block header<br><a name="BlockHeader.fromJSON"></a></p>
+<h2 id="BlockHeader-fromJSON(json)">BlockHeader.fromJSON(json)</h2>
+<p><strong>Params</strong></p>
+<ul>
+<li>json <code>String</code> | <code>Object</code> - A JSON string or object  </li>
+</ul>
+<p><strong>Returns</strong>: <a href="#BlockHeader">BlockHeader</a> - - An instance of block header<br><a name="BlockHeader.fromRawBlock"></a></p>
+<h2 id="BlockHeader-fromRawBlock(data)">BlockHeader.fromRawBlock(data)</h2>
+<p><strong>Params</strong></p>
+<ul>
+<li>data <code>Binary</code> - Raw block binary data or buffer  </li>
+</ul>
+<p><strong>Returns</strong>: <a href="#BlockHeader">BlockHeader</a> - - An instance of block header<br><a name="BlockHeader.fromBuffer"></a></p>
+<h2 id="BlockHeader-fromBuffer(buf)">BlockHeader.fromBuffer(buf)</h2>
+<p><strong>Params</strong></p>
+<ul>
+<li>buf <code>Buffer</code> - A buffer of the block header  </li>
+</ul>
+<p><strong>Returns</strong>: <a href="#BlockHeader">BlockHeader</a> - - An instance of block header<br><a name="BlockHeader.fromString"></a></p>
+<h2 id="BlockHeader-fromString(str)">BlockHeader.fromString(str)</h2>
+<p><strong>Params</strong></p>
+<ul>
+<li>str <code>String</code> - A hex encoded buffer of the block header  </li>
+</ul>
+<p><strong>Returns</strong>: <a href="#BlockHeader">BlockHeader</a> - - An instance of block header<br><a name="BlockHeader.fromBufferReader"></a></p>
+<h2 id="BlockHeader-fromBufferReader(br)">BlockHeader.fromBufferReader(br)</h2>
+<p><strong>Params</strong></p>
+<ul>
+<li>br <code>BufferReader</code> - A BufferReader of the block header  </li>
+</ul>
+<p><strong>Returns</strong>: <a href="#BlockHeader">BlockHeader</a> - - An instance of block header<br><a name="BlockHeader#toObject"></a></p>
+<h2 id="blockHeader-toObject()">blockHeader.toObject()</h2>
+<p><strong>Returns</strong>: <code>Object</code> - - A plain object of the BlockHeader<br><a name="BlockHeader#toJSON"></a></p>
+<h2 id="blockHeader-toJSON()">blockHeader.toJSON()</h2>
+<p><strong>Returns</strong>: <code>String</code> - - A JSON string<br><a name="BlockHeader#toBuffer"></a></p>
+<h2 id="blockHeader-toBuffer()">blockHeader.toBuffer()</h2>
+<p><strong>Returns</strong>: <code>Buffer</code> - - A Buffer of the BlockHeader<br><a name="BlockHeader#toString"></a></p>
+<h2 id="blockHeader-toString()">blockHeader.toString()</h2>
+<p><strong>Returns</strong>: <code>String</code> - - A hex encoded string of the BlockHeader<br><a name="BlockHeader#toBufferWriter"></a></p>
+<h2 id="blockHeader-toBufferWriter(bw)">blockHeader.toBufferWriter(bw)</h2>
+<p><strong>Params</strong></p>
+<ul>
+<li>bw <code>BufferWriter</code> - An existing instance BufferWriter  </li>
+</ul>
+<p><strong>Returns</strong>: <code>BufferWriter</code> - - An instance of BufferWriter representation of the BlockHeader<br><a name="BlockHeader#getTargetDifficulty"></a></p>
+<h2 id="blockHeader-getTargetDifficulty()">blockHeader.getTargetDifficulty()</h2>
+<p><strong>Returns</strong>: <code>BN</code> - - An instance of BN with the decoded difficulty bits<br><a name="BlockHeader#_getHash"></a></p>
+<h2 id="blockHeader-_getHash()">blockHeader._getHash()</h2>
+<p><strong>Returns</strong>: <code>Buffer</code> - - The little endian hash buffer of the header<br><a name="BlockHeader#validTimestamp"></a></p>
+<h2 id="blockHeader-validTimestamp()">blockHeader.validTimestamp()</h2>
+<p><strong>Returns</strong>: <code>Boolean</code> - - If timestamp is not too far in the future<br><a name="BlockHeader#validProofOfWork"></a></p>
+<h2 id="blockHeader-validProofOfWork()">blockHeader.validProofOfWork()</h2>
+<p><strong>Returns</strong>: <code>Boolean</code> - - If the proof-of-work hash satisfies the target difficulty<br><a name="BlockHeader#inspect"></a></p>
+<h2 id="blockHeader-inspect()">blockHeader.inspect()</h2>
+<p><strong>Returns</strong>: <code>String</code> - - A string formated for the console  </p>
+
+      </div>
+      <footer id="page-footer">
+        <time id="page-footer-updated" datetime="2014-12-18T20:27:58.000Z" itemprop="dateModified">Last updated: Dec 18 2014</time>
+        <a href="index.html" id="page-footer-next" title="Get Started">Next</a>
+      </footer>
+      
+    </div>
+    <aside id="sidebar">
+
+  
+
+  
+    <strong class="sidebar-title">Main</strong>
+    
+      <a href="/api/address.html" class="sidebar-link">Address</a>
+    
+      <a href="/api/block.html" class="sidebar-link">Block</a>
+    
+      <a href="/api/blockheader.html" class="sidebar-link current">BlockHeader</a>
+    
+      <a href="/api/hdprivatekey.html" class="sidebar-link">HDPrivateKey</a>
+    
+      <a href="/api/hdpublickey.html" class="sidebar-link">HDPublicKey</a>
+    
+      <a href="/api/networks.html" class="sidebar-link">Networks</a>
+    
+      <a href="/api/privatekey.html" class="sidebar-link">PrivateKey</a>
+    
+      <a href="/api/publickey.html" class="sidebar-link">PublicKey</a>
+    
+      <a href="/api/unit.html" class="sidebar-link">Unit</a>
+    
+      <a href="/api/uri.html" class="sidebar-link">Uri</a>
+    
+  
+    <strong class="sidebar-title">Crypto</strong>
+    
+      <a href="/api/crypto/point.html" class="sidebar-link">Point</a>
+    
+  
+    <strong class="sidebar-title">Script</strong>
+    
+      <a href="/api/script/script.html" class="sidebar-link">Script</a>
+    
+  
+    <strong class="sidebar-title">Transaction</strong>
+    
+      <a href="/api/transaction/transaction.html" class="sidebar-link">Transaction</a>
+    
+      <a href="/api/transaction/sighash.html" class="sidebar-link">Sig Hash</a>
+    
+  
+    <strong class="sidebar-title">Transport</strong>
+    
+      <a href="/api/transport/peer.html" class="sidebar-link">Peer</a>
+    
+      <a href="/api/transport/pool.html" class="sidebar-link">Pool</a>
+    
+      <a href="/api/transport/rpc.html" class="sidebar-link">RPC</a>
+    
+  
+
+
+
+
+</aside>
+  </div>
+</article>
+  <footer id="footer">
+  <div class="outer">
+    <div class="inner">
+      <div id="footer-copyright">
+        <p>bitcore™ &copy; 2013-2014 BitPay, Inc. bitcore is released under the MIT license.</p>
+      </div>
+      <div id="footer-links">
+        <a href="https://twitter.com/bitpay" id="footer-link-twitter" class="footer-link" target="_blank"><span>Twitter</span></a>
+        <a href="https://github.com/bitpay/bitcore" id="footer-link-github" class="footer-link" target="_blank"><span>GitHub</span></a>
+      </div>
+    </div>
+  </div>
+</footer>
+  
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="/js/retina.min.js" type="text/javascript"></script>
+
+<script src="/js/script.js" type="text/javascript"></script>
+
+<!-- Google+ -->
+<script type="text/javascript" src="//apis.google.com/js/plusone.js"></script>
+<!-- Twitter -->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+
+</body>
+</html>

@@ -1,0 +1,5 @@
+<div class="post-date-wrap">
+  <a href="<%- url_for(post.path) %>" class="post-date">
+    <time datetime="<%= date_xml(post.date) %>" itemprop="datePublished"><%= date(post.date) %></time>
+  </a>
+</div>

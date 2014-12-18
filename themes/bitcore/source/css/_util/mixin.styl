@@ -1,0 +1,51 @@
+$banner-background
+  background-color: #ddd
+  background-size: 500px
+  image: "images/shattered.png"
+
+$icon-font
+  font-family: font-icon
+  font-style: normal
+  font-weight: normal
+  font-variant: normal
+  text-transform: none
+  -webkit-font-smoothing: antialiased
+  -moz-osx-font-smoothing: grayscale
+
+$banner-link
+  color: #aaa
+  text-shadow: 1px 0 #eee
+  width: 24px
+  height: @width
+  line-height: @width
+  text-align: center
+  text-decoration: none
+  transition: color 0.2s
+  position: absolute
+  top: 0
+  bottom: 0
+  right: 0
+  margin: auto
+  font-size: @width
+  &:hover
+    color: #888
+  @media mq-mobile
+    display: none
+
+square(size)
+  width: size
+  height: size
+
+absolute-center()
+  position: absolute
+  top: 0
+  left: 0
+  right: 0
+  bottom: 0
+  margin: auto
+
+// http://www.zeldman.com/2012/03/01/replacing-the-9999px-hack-new-image-replacement/
+hide-text()
+  text-indent: 100%
+  white-space: nowrap
+  overflow: hidden

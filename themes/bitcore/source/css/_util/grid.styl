@@ -1,0 +1,38 @@
+/////////////////
+// Semantic.gs // for Stylus: http://learnboost.github.com/stylus/
+/////////////////
+
+// Utility variable — you should never need to modify this
+_gridsystem-width = (column-width + gutter-width) * columns
+
+// Set @total-width to 100% for a fluid layout
+// total-width = _gridsystem-width
+total-width = 100%
+
+// Correcting percentage-to-pixel rounding errors in IE6 & 7
+// See http://tylertate.com/blog/2012/01/05/subpixel-rounding.html
+// Override @min with the minimum width of your layout
+min-width = 960
+correction = (((0.5 / min-width) * 100) * 1%)
+
+//////////
+// GRID //
+//////////
+
+body
+	width 100%
+	clearfix()
+
+row(columns = columns)
+	display block
+	width total-width * ((gutter-width + _gridsystem-width ) / _gridsystem-width)
+	margin 0 total-width * (((gutter-width * 0.5) / _gridsystem-width ) * - 1)
+
+column(x, columns = columns)
+	display inline
+	float left
+	width total-width * ((((gutter-width + column-width ) * x) - gutter-width) / _gridsystem-width)
+	margin 0 total-width * ( (gutter-width * 0.5) / _gridsystem-width)
+
+offset(offset = 1)
+	margin-left total-width*(((gutter-width+column-width)*offset + (gutter-width*0.5))/_gridsystem-width)

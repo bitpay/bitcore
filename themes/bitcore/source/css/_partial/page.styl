@@ -1,0 +1,201 @@
+note-tip = hsl(40, 100%, 50%)
+note-info = hsl(200, 100%, 50%)
+note-warn = hsl(0, 100%, 50%)
+
+#page-banner
+  @extend $banner-background
+  padding: 30px 0
+  text-align: center
+  @media mq-normal
+    padding: 40px 0
+    text-align: left
+
+#page-banner-inner
+  position: relative
+
+#page-title
+  color: #555
+  font: 300 35px font-title
+  text-shadow: 1px 0 #eee
+  line-height: 1em
+
+#page-edit-link
+  @extend $banner-link
+  &:before
+    @extend $icon-font
+    content: "\f040"
+
+.page-content
+  column(12)
+  padding: 20px 0
+  @media mq-normal
+    column(9)
+    float: right
+
+.page-entry
+  line-height: line-height
+  color: color-default
+  p, ol, ul, dl, table, blockquote, iframe, .highlight
+    margin: line-height 0
+  h1
+    font-size: 2em
+  h2
+    font-size: 1.5em
+  h3
+    font-size: 1.3em
+  h1, h2, h3, h4, h5, h6
+    line-height: 1em
+    font-weight: bold
+    margin: 1em 0
+  a
+    color: color-blue
+    text-decoration: none
+    &:hover
+      text-decoration: underline
+  strong
+    font-weight: bold
+  em
+    font-style: italic
+  ul, ol, dl
+    margin-left: 20px
+    ul, ol, dl
+      margin-top: 0
+      margin-bottom: 0
+  ul
+    list-style: disc
+  ol
+    list-style: decimal
+  dl
+    list-style: square
+  li
+    p
+      margin: 0
+    table, blockquote, iframe, .highlight
+      margin: 1em 0
+  img, video
+    max-width: 100%
+  blockquote
+    border: 1px solid color-border
+    border-left: 4px solid color-border
+    padding: 0 20px
+    position: relative
+    @media mq-normal
+      margin-left: 40px
+    &:before
+      @extend $icon-font
+      content: "\f10d"
+      position: absolute
+      left: -40px
+      top: 20px
+      font-size: 25px
+      width: 25px
+      height: 25px
+      text-align: center
+      color: color-border
+    footer
+      margin: 1em 0
+      font-style: italic
+      cite
+        &:before
+          content: "—"
+          padding: 0 0.3em
+        a
+          color: color-grey
+  .note
+    &.tip
+      border-left-color: note-tip
+      &:before
+        content: "\f0eb"
+        color: note-tip
+    &.info
+      border-left-color: note-info
+      &:before
+        content: "\f05a"
+        color: note-info
+    &.warn
+      border-left-color: note-warn
+      &:before
+        content: "\f06a"
+        color: note-warn
+  .note-title
+    margin: 1em 0
+    display: block
+    font-size: 1.3em
+    font-weight: bold
+  table
+    max-width: 100%
+    border: 1px solid color-border
+    th
+      font-weight: bold
+    th, td
+      padding: 5px 15px
+    tr
+      &:nth-child(2n)
+        background: #eee
+
+#page-footer
+  clearfix()
+  border-top: 1px solid color-border
+  color: color-grey
+  padding: 1em 0 30px
+  text-align: center
+
+#page-footer-updated
+  font-size: 0.9em
+  display: none
+  @media mq-normal
+    display: inline
+
+$page-footer-link
+  font-family: font-title
+  font-size: 1em
+  color: color-blue
+  font-weight: bold
+  text-transform: uppercase
+  text-decoration: none
+
+#page-footer-prev
+  @extend $page-footer-link
+  float: left
+  &:before
+    @extend $icon-font
+    content: "\f060"
+    padding-right: 10px
+
+#page-footer-next
+  @extend $page-footer-link
+  float: right
+  &:after
+    @extend $icon-font
+    content: "\f061"
+    padding-left: 10px
+
+#page-mobile-menu
+  width: 100%
+  margin: 30px 0 0
+  display: none
+  @media mq-mobile
+    display: block
+
+.toc-wrap
+  float: right
+  border-radius: 4px
+  background: #eee
+  border: 1px solid color-border
+  margin: line-height 0 1em 2em
+  padding: 10px 15px
+  line-height: line-height
+
+.toc-title
+  font-weight: bold
+  color: color-default
+
+.toc-link
+  color: color-blue
+  text-decoration: none
+  font-size: 0.9em
+  &:hover
+    text-decoration: underline
+
+.toc-child
+  margin-left: 1em

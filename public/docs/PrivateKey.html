@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head prefix="og: http://ogp.me/ns#">
+  <meta charset="utf-8">
+  <title>Bitcore &mdash; A pure and simple JavaScript bitcoin API.</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="canonical" href="http://bitcore.io/docs/PrivateKey.html">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#2f83cd">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+  <link rel="stylesheet" href="/css/style.css" type="text/css">
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,700" rel="stylesheet" type="text/css">
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro:400,700" rel="stylesheet" type="text/css">
+  <link rel="alternative" href="/atom.xml" title="Bitcore" type="application/atom+xml">
+  <meta name="description" content="PrivateKey
+Description
+Represents a bitcoin private key and is needed to be able to spend bitcoin and sign transactions. See the official Bitcoin Wiki for more information about private keys. A Privat">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Bitcore">
+<meta property="og:url" content="http://bitcore.io/docs/PrivateKey.html">
+<meta property="og:site_name" content="Bitcore">
+<meta property="og:description" content="PrivateKey
+Description
+Represents a bitcoin private key and is needed to be able to spend bitcoin and sign transactions. See the official Bitcoin Wiki for more information about private keys. A Privat">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Bitcore">
+<meta name="twitter:description" content="PrivateKey
+Description
+Represents a bitcoin private key and is needed to be able to spend bitcoin and sign transactions. See the official Bitcoin Wiki for more information about private keys. A Privat">
+<meta name="twitter:site" content="@bitpay">
+
+  
+</head>
+
+
+<body>
+  <header id="header">
+  <div class="outer">
+    <div class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Bitcore</a>
+        <a id="main-nav-toggle"></a>
+      </h1>
+      <nav id="main-nav">
+        <ul id="main-nav-list">
+          
+            <li class="main-nav-item">
+              <a href="/docs/" class="main-nav-link">Docs</a>
+            </li>
+          
+            <li class="main-nav-item">
+              <a href="/api/" class="main-nav-link">API</a>
+            </li>
+          
+            <li class="main-nav-item">
+              <a href="https://github.com/bitpay/bitcore" class="main-nav-link">Github</a>
+            </li>
+          
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>
+  <article class="page" itemscope itemtype="http://schema.org/Article">
+  <header id="page-banner">
+    <div class="outer">
+      <div id="page-banner-inner" class="inner">
+        <h1 id="page-title" itemprop="name"></h1>
+        <!--<a href="https://github.com/bitpay/bitcore/blob/master/docs/PrivateKey.md" title="Improve this doc" id="page-edit-link"></a>-->
+      </div>
+    </div>
+  </header>
+  <div class="outer">
+    <div id="mobile-menu-wrap"></div>
+    <div class="page-content">
+      <div class="toc-wrap">
+        <strong class="toc-title">Contents</strong>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#PrivateKey"><span class="toc-number">1.</span> <span class="toc-text">PrivateKey</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Description"><span class="toc-number">1.1.</span> <span class="toc-text">Description</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Instantiate_a_Private_Key"><span class="toc-number">1.2.</span> <span class="toc-text">Instantiate a Private Key</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Validating_a_Private_Key"><span class="toc-number">1.3.</span> <span class="toc-text">Validating a Private Key</span></a></li></ol></li></ol>
+      </div>
+      <div class="page-entry" itemprop="articleBody">
+        <h1 id="PrivateKey">PrivateKey</h1>
+<h2 id="Description">Description</h2>
+<p>Represents a bitcoin private key and is needed to be able to spend bitcoin and sign transactions. See the official <a href="https://en.bitcoin.it/wiki/Private_key" target="_blank" rel="external">Bitcoin Wiki</a> for more information about private keys. A PrivateKey in Bitcore is an immutable object that has methods to import and export into a variety of formats including <a href="https://en.bitcoin.it/wiki/Wallet_import_format" target="_blank" rel="external">Wallet Import Format</a>.</p>
+<h2 id="Instantiate_a_Private_Key">Instantiate a Private Key</h2>
+<p>Here is how to create a new private key. It will generate a new random number using <code>window.crypto</code> or the Node.js ‘crypto’ library.</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">var</span> privateKey = <span class="keyword">new</span> PrivateKey();</div><div class="line"></div><div class="line"><span class="comment">// Creates a private key from a hexa encoded number</span></div><div class="line"><span class="keyword">var</span> privateKey2 = <span class="keyword">new</span> PrivateKey(<span class="string">'b221d9dbb083a7f33428d7c2a3c3198ae925614d70210e28716ccaa7cd4ddb79'</span>);</div></pre></td></tr></table></figure>
+
+<p>To export and import a private key, you can do the following:</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// encode into wallet export format</span></div><div class="line"><span class="keyword">var</span> exported = privateKey.toWIF();</div><div class="line"></div><div class="line"><span class="comment">// instantiate from the exported (and saved) private key</span></div><div class="line"><span class="keyword">var</span> imported = PrivateKey.fromWIF(<span class="string">'L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m'</span>);</div></pre></td></tr></table></figure>
+
+<p>Note: The WIF (Wallet Import Format) includes information about the network and if the associated public key is compressed or uncompressed (thus the same bitcoin address will be generated by using this format).</p>
+<p>To generate an Address or PublicKey from a PrivateKey:</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">var</span> publicKey = privateKey.toPublicKey();</div><div class="line"><span class="keyword">var</span> address = publicKey.toAddress(Networks.livenet);</div></pre></td></tr></table></figure>
+
+<h2 id="Validating_a_Private_Key">Validating a Private Key</h2>
+<p>The code to do these validations looks like this:</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// validate an address</span></div><div class="line"><span class="keyword">if</span> (PrivateKey.isValid(input)){</div><div class="line">  ...</div><div class="line">}</div><div class="line"></div><div class="line"><span class="comment">// get the specific validation error that can occurred</span></div><div class="line"><span class="keyword">var</span> error = PrivateKey.getValidationError(input, Networks.livenet);</div><div class="line"><span class="keyword">if</span> (error) {</div><div class="line">  <span class="comment">// handle the error</span></div><div class="line">}</div></pre></td></tr></table></figure>
+
+
+      </div>
+      <footer id="page-footer">
+        <time id="page-footer-updated" datetime="2014-12-18T20:27:58.000Z" itemprop="dateModified">Last updated: Dec 18 2014</time>
+        <a href="Hierarchical.html" id="page-footer-prev" title="Hierarchical">Prev</a><a href="PublicKey.html" id="page-footer-next" title="Public Key">Next</a>
+      </footer>
+      
+    </div>
+    <aside id="sidebar">
+
+  
+
+  
+    <strong class="sidebar-title">Home</strong>
+    
+      <a href="/docs/index.html" class="sidebar-link">Get Started</a>
+    
+      <a href="/docs/contributing.html" class="sidebar-link">Contributing</a>
+    
+  
+    <strong class="sidebar-title">Models</strong>
+    
+      <a href="/docs/Address.html" class="sidebar-link">Address</a>
+    
+      <a href="/docs/Block.html" class="sidebar-link">Block</a>
+    
+      <a href="/docs/Hierarchical.html" class="sidebar-link">Hierarchical</a>
+    
+      <a href="/docs/PrivateKey.html" class="sidebar-link current">Private Key</a>
+    
+      <a href="/docs/PublicKey.html" class="sidebar-link">Public Key</a>
+    
+      <a href="/docs/Script.html" class="sidebar-link">Script</a>
+    
+      <a href="/docs/Transaction.html" class="sidebar-link">Transaction</a>
+    
+  
+    <strong class="sidebar-title">Helpers</strong>
+    
+      <a href="/docs/Crypto.html" class="sidebar-link">Crypto</a>
+    
+      <a href="/docs/ECIES.html" class="sidebar-link">ECIES</a>
+    
+      <a href="/docs/Encoding.html" class="sidebar-link">Encoding</a>
+    
+      <a href="/docs/Networks.html" class="sidebar-link">Networks</a>
+    
+      <a href="/docs/PaymentProtocol.html" class="sidebar-link">Payment Protocol</a>
+    
+      <a href="/docs/Unit.html" class="sidebar-link">Unit</a>
+    
+      <a href="/docs/URI.html" class="sidebar-link">URI</a>
+    
+  
+    <strong class="sidebar-title">Networking</strong>
+    
+      <a href="/docs/JSONRPC.html" class="sidebar-link">JSON-RPC</a>
+    
+      <a href="/docs/Peer.html" class="sidebar-link">Peer</a>
+    
+      <a href="/docs/Pool.html" class="sidebar-link">Pool</a>
+    
+  
+
+
+
+
+</aside>
+  </div>
+</article>
+  <footer id="footer">
+  <div class="outer">
+    <div class="inner">
+      <div id="footer-copyright">
+        <p>bitcore™ &copy; 2013-2014 BitPay, Inc. bitcore is released under the MIT license.</p>
+      </div>
+      <div id="footer-links">
+        <a href="https://twitter.com/bitpay" id="footer-link-twitter" class="footer-link" target="_blank"><span>Twitter</span></a>
+        <a href="https://github.com/bitpay/bitcore" id="footer-link-github" class="footer-link" target="_blank"><span>GitHub</span></a>
+      </div>
+    </div>
+  </div>
+</footer>
+  
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="/js/retina.min.js" type="text/javascript"></script>
+
+<script src="/js/script.js" type="text/javascript"></script>
+
+<!-- Google+ -->
+<script type="text/javascript" src="//apis.google.com/js/plusone.js"></script>
+<!-- Twitter -->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+
+</body>
+</html>

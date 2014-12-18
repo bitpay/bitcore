@@ -1,0 +1,64 @@
+menu:
+  Docs: /docs/
+  API: /api/
+  Github: https://github.com/bitpay/bitcore
+
+doc_sidebar:
+  Home: 
+    Get Started: index.html
+    Contributing: contributing.html
+
+  Models:
+    Address: Address.html
+    Block: Block.html
+    Hierarchical: Hierarchical.html
+    Private Key: PrivateKey.html
+    Public Key: PublicKey.html
+    Script: Script.html
+    Transaction: Transaction.html
+  Helpers:
+    Crypto: Crypto.html
+    ECIES: ECIES.html
+    Encoding: Encoding.html
+    Networks: Networks.html
+    Payment Protocol: PaymentProtocol.html
+    Unit: Unit.html
+    URI: URI.html
+  Networking:
+    JSON-RPC: JSONRPC.html
+    Peer: Peer.html
+    Pool: Pool.html
+
+api_sidebar:
+  Main: 
+    Address: address.html
+    Block: block.html
+    BlockHeader: blockheader.html
+    HDPrivateKey: hdprivatekey.html
+    HDPublicKey: hdpublickey.html
+    Networks: networks.html
+    PrivateKey: privatekey.html
+    PublicKey: publickey.html
+    Unit: unit.html
+    Uri: uri.html
+
+  Crypto:
+    Point: crypto/point.html
+
+  Script:
+    Script: script/script.html
+
+  Transaction:
+    Transaction: transaction/transaction.html
+    Sig Hash: transaction/sighash.html
+
+  Transport:
+    Peer: transport/peer.html
+    Pool: transport/pool.html
+    RPC: transport/rpc.html
+
+//google_analytics: UA-4910098-10
+//fb_admins: 100000247608790
+//swiftype_key: DDvzs7LQ9kdKssQNQLcv
+twitter: bitpay
+github: bitpay/bitcore

@@ -1,0 +1,10 @@
+<% var yuidoc = get_current_yuidoc(); %>
+<aside id="sidebar">
+  <strong class="sidebar-title">Projects</strong>
+  <a href="<%- url_for('api/classes/Hexo.html') %>" class="sidebar-link<% if (page.yuidoc_name === 'index'){ %> current<% } %>">Hexo</a>
+  <a href="<%- url_for('api/warehouse/classes/Database.html') %>" class="sidebar-link<% if (page.yuidoc_name === 'warehouse'){ %> current<% } %>">Warehouse</a>
+  <strong class="sidebar-title">Classes</strong>
+  <% _.each(yuidoc.classes, function(obj){ %>
+    <a href="<%- url_for(obj.path) %>" class="sidebar-link<% if (is_current(obj.path)){ %> current<% } %>"><%= obj.name %></a>
+  <% }) %>
+</aside>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head prefix="og: http://ogp.me/ns#">
+  <meta charset="utf-8">
+  <title><% if (page.title){ %><%= page.title %> | <% } %>Bitcore &mdash; A pure and simple JavaScript bitcoin API.</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="canonical" href="<%- page.permalink %>">
+  <link rel="apple-touch-icon" sizes="57x57" href="<%- url_for('apple-touch-icon-57x57.png') %>">
+  <link rel="apple-touch-icon" sizes="114x114" href="<%- url_for('apple-touch-icon-114x114.png') %>">
+  <link rel="apple-touch-icon" sizes="72x72" href="<%- url_for('apple-touch-icon-72x72.png') %>">
+  <link rel="apple-touch-icon" sizes="144x144" href="<%- url_for('apple-touch-icon-144x144.png') %>">
+  <link rel="apple-touch-icon" sizes="60x60" href="<%- url_for('apple-touch-icon-60x60.png') %>">
+  <link rel="apple-touch-icon" sizes="120x120" href="<%- url_for('apple-touch-icon-120x120.png') %>">
+  <link rel="apple-touch-icon" sizes="76x76" href="<%- url_for('apple-touch-icon-76x76.png') %>">
+  <link rel="apple-touch-icon" sizes="152x152" href="<%- url_for('apple-touch-icon-152x152.png') %>">
+  <link rel="icon" type="image/png" href="<%- url_for('favicon-196x196.png') %>" sizes="196x196">
+  <link rel="icon" type="image/png" href="<%- url_for('favicon-160x160.png') %>" sizes="160x160">
+  <link rel="icon" type="image/png" href="<%- url_for('favicon-96x96.png') %>" sizes="96x96">
+  <link rel="icon" type="image/png" href="<%- url_for('favicon-16x16.png') %>" sizes="16x16">
+  <link rel="icon" type="image/png" href="<%- url_for('favicon-32x32.png') %>" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#2f83cd">
+  <meta name="msapplication-TileImage" content="<%- url_for('mstile-144x144.png') %>">
+  <%- css('css/style') %>
+  <link href="//fonts.googleapis.com/css?family=Lato:300,700" rel="stylesheet" type="text/css">
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro:400,700" rel="stylesheet" type="text/css">
+  <%- feed_tag('atom.xml') %>
+  <%- open_graph({
+    fb_admins: theme.fb_admins,
+    twitter_site: '@' + theme.twitter,
+    image: url_for('logo.png')
+  }) %>
+  <%- partial('google-analytics') %>
+</head>

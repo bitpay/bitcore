@@ -1,0 +1,165 @@
+getting-started-bg = #c8c8c8
+getting-started-height = 40px
+
+intro-feature-margin = 50px
+intro-feature-column = 3
+intro-quick-start-column = 2
+
+#banner
+  @extend $banner-background
+  padding-top: 50px
+  padding-bottom: 50px
+  @media mq-normal
+    padding-top: 150px
+
+#banner-title
+  color: #555
+  font: 300 35px font-title
+  text-shadow: 1px 0 #eee
+  line-height: 1.3
+
+$banner-getting-started-font
+  font-family: font-mono
+  font-size: 14px
+  line-height: getting-started-height
+  @media mq-normal
+    font-size: 16px
+
+#banner-getting-started
+  clearfix()
+  padding-top: 30px
+
+#banner-getting-started-prefix
+  @extend $banner-getting-started-font
+  float: left
+  background: getting-started-bg
+  padding-left: 15px
+  color: #999
+
+#banner-getting-started-input
+  @extend $banner-getting-started-font
+  float: left
+  float: left
+  background: getting-started-bg
+  color: #555
+  border: none
+  padding: 0 15px
+  margin: 0
+  height: getting-started-height
+  border-radius: 0
+
+#banner-getting-started-btn
+  float: left
+  background: #bbb
+  color: #777
+  text-decoration: none
+  width: getting-started-height
+  height: @width
+  text-align: center
+  line-height: @width
+  font-size: 16px
+  &:hover
+    background: #aaa
+    color: #555
+  &:before
+    @extend $icon-font
+    content: "\f061"
+
+#banner-share
+  padding: 100px 0 0
+  display: none
+  @media mq-normal
+    display: block
+
+.intro-wrap
+  padding: 20px 0
+  @media mq-normal
+    padding: 40px 0
+
+.intro-feature-wrap
+  column(12)
+  @media mq-normal
+    column(6)
+
+.intro-feature
+  margin: 20px 0
+  padding-left: 50px
+  position: relative
+  @media mq-normal
+    margin: 40px 0
+  &:before
+    @extend $icon-font
+    font-size: 30px
+    position: absolute
+    top: 0
+    left: 0
+    color: color-blue
+
+#intro-feature-fast
+  &:before
+    content: "\e604"
+
+#intro-feature-markdown
+  &:before
+    content: "\e606"
+
+#intro-feature-deploy
+  &:before
+    content: "\e603"
+
+#intro-feature-plugin
+  &:before
+    content: "\e605"
+
+.intro-feature-title
+  font-weight: 300
+  font-family: font-title
+  color: color-blue
+  font-size: 24px
+  padding-bottom: 20px
+  line-height: 1.3em
+
+.intro-feature-desc
+  color: color-default
+  line-height: 2em
+
+#intro-cmd-wrap
+  margin: 20px auto
+  max-width: 700px
+  overflow: auto
+  background: #eee
+  padding: 15px 0
+  @media mq-normal
+    margin: 40px auto
+
+.intro-cmd-item
+  line-height: 1.8
+  font-family: font-mono
+  font-size: 16px
+  color: color-default
+  white-space: nowrap
+  &:before
+    content: "$"
+    padding-right: 10px
+    color: color-blue
+
+#intro-btn-wrap
+  text-align: center
+  padding: 25px 0
+
+#intro-btn
+  display: inline-block
+  padding: 15px 30px
+  font-family: font-title
+  font-weight: bold
+  border: 3px solid color-blue
+  border-radius: 3px
+  color: color-blue
+  font-size: 16px
+  text-transform: uppercase
+  transition: 0.2s
+  text-decoration: none
+  line-height: 1
+  &:hover
+    color: #fff
+    background: color-blue

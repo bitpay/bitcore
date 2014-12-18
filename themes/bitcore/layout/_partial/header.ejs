@@ -1,0 +1,19 @@
+<header id="header">
+  <div class="outer">
+    <div class="inner">
+      <h1 id="logo-wrap">
+        <a href="<%- url_for() %>" id="logo">Bitcore</a>
+        <a id="main-nav-toggle"></a>
+      </h1>
+      <nav id="main-nav">
+        <ul id="main-nav-list">
+          <% _.each(theme.menu, function(menu, title){ %>
+            <li class="main-nav-item">
+              <a href="<%= url_for(menu) %>" class="main-nav-link"><%= title %></a>
+            </li>
+          <% }); %>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>

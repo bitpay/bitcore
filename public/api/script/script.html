@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+<head prefix="og: http://ogp.me/ns#">
+  <meta charset="utf-8">
+  <title>Bitcore &mdash; A pure and simple JavaScript bitcoin API.</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="canonical" href="http://bitcore.io/api/script/script.html">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#2f83cd">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+  <link rel="stylesheet" href="/css/style.css" type="text/css">
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,700" rel="stylesheet" type="text/css">
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro:400,700" rel="stylesheet" type="text/css">
+  <link rel="alternative" href="/atom.xml" title="Bitcore" type="application/atom+xml">
+  <meta name="description" content="class: Script
+Members
+
+class: Script
+new Script([from])
+script.isPublicKeyHashOut()
+script.isPublicKeyHashIn()
+script.isPublicKeyOut()
+script.isPublicKeyIn()
+script.isScriptHashOut()
+script.isScriptH">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Bitcore">
+<meta property="og:url" content="http://bitcore.io/api/script/script.html">
+<meta property="og:site_name" content="Bitcore">
+<meta property="og:description" content="class: Script
+Members
+
+class: Script
+new Script([from])
+script.isPublicKeyHashOut()
+script.isPublicKeyHashIn()
+script.isPublicKeyOut()
+script.isPublicKeyIn()
+script.isScriptHashOut()
+script.isScriptH">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Bitcore">
+<meta name="twitter:description" content="class: Script
+Members
+
+class: Script
+new Script([from])
+script.isPublicKeyHashOut()
+script.isPublicKeyHashIn()
+script.isPublicKeyOut()
+script.isPublicKeyIn()
+script.isScriptHashOut()
+script.isScriptH">
+<meta name="twitter:site" content="@bitpay">
+
+  
+</head>
+
+
+<body>
+  <header id="header">
+  <div class="outer">
+    <div class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Bitcore</a>
+        <a id="main-nav-toggle"></a>
+      </h1>
+      <nav id="main-nav">
+        <ul id="main-nav-list">
+          
+            <li class="main-nav-item">
+              <a href="/docs/" class="main-nav-link">Docs</a>
+            </li>
+          
+            <li class="main-nav-item">
+              <a href="/api/" class="main-nav-link">API</a>
+            </li>
+          
+            <li class="main-nav-item">
+              <a href="https://github.com/bitpay/bitcore" class="main-nav-link">Github</a>
+            </li>
+          
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>
+  <article class="page" itemscope itemtype="http://schema.org/Article">
+  <header id="page-banner">
+    <div class="outer">
+      <div id="page-banner-inner" class="inner">
+        <h1 id="page-title" itemprop="name"></h1>
+        <!--<a href="https://github.com/bitpay/bitcore/blob/master/api/script/script.md" title="Improve this doc" id="page-edit-link"></a>-->
+      </div>
+    </div>
+  </header>
+  <div class="outer">
+    <div id="mobile-menu-wrap"></div>
+    <div class="page-content">
+      <div class="toc-wrap">
+        <strong class="toc-title">Contents</strong>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#class:_Script"><span class="toc-number">1.</span> <span class="toc-text">class: Script</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#new_Script([from])"><span class="toc-number">1.1.</span> <span class="toc-text">new Script([from])</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#script-isPublicKeyHashOut()"><span class="toc-number">1.2.</span> <span class="toc-text">script.isPublicKeyHashOut()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#script-isPublicKeyHashIn()"><span class="toc-number">1.3.</span> <span class="toc-text">script.isPublicKeyHashIn()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#script-isPublicKeyOut()"><span class="toc-number">1.4.</span> <span class="toc-text">script.isPublicKeyOut()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#script-isPublicKeyIn()"><span class="toc-number">1.5.</span> <span class="toc-text">script.isPublicKeyIn()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#script-isScriptHashOut()"><span class="toc-number">1.6.</span> <span class="toc-text">script.isScriptHashOut()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#script-isScriptHashIn()"><span class="toc-number">1.7.</span> <span class="toc-text">script.isScriptHashIn()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#script-isMultisigOut()"><span class="toc-number">1.8.</span> <span class="toc-text">script.isMultisigOut()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#script-isMultisigIn()"><span class="toc-number">1.9.</span> <span class="toc-text">script.isMultisigIn()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#script-isDataOut()"><span class="toc-number">1.10.</span> <span class="toc-text">script.isDataOut()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#script-isPushOnly()"><span class="toc-number">1.11.</span> <span class="toc-text">script.isPushOnly()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#script-classify()"><span class="toc-number">1.12.</span> <span class="toc-text">script.classify()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#script-isStandard()"><span class="toc-number">1.13.</span> <span class="toc-text">script.isStandard()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#script-prepend(obj)"><span class="toc-number">1.14.</span> <span class="toc-text">script.prepend(obj)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#script-equals()"><span class="toc-number">1.15.</span> <span class="toc-text">script.equals()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#script-add(obj)"><span class="toc-number">1.16.</span> <span class="toc-text">script.add(obj)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Script-buildMultisigOut(publicKeys,_threshold,_[opts])"><span class="toc-number">1.17.</span> <span class="toc-text">Script.buildMultisigOut(publicKeys, threshold, [opts])</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Script-buildP2SHMultisigIn(pubkeys,_threshold,_signatures,_[opts])"><span class="toc-number">1.18.</span> <span class="toc-text">Script.buildP2SHMultisigIn(pubkeys, threshold, signatures, [opts])</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Script-buildPublicKeyHashOut(to)"><span class="toc-number">1.19.</span> <span class="toc-text">Script.buildPublicKeyHashOut(to)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Script-buildPublicKeyOut()"><span class="toc-number">1.20.</span> <span class="toc-text">Script.buildPublicKeyOut()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Script-buildDataOut(to)"><span class="toc-number">1.21.</span> <span class="toc-text">Script.buildDataOut(to)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Script-buildScriptHashOut(script)"><span class="toc-number">1.22.</span> <span class="toc-text">Script.buildScriptHashOut(script)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Script-buildPublicKeyHashIn(publicKey,_signature,_[sigtype])"><span class="toc-number">1.23.</span> <span class="toc-text">Script.buildPublicKeyHashIn(publicKey, signature, [sigtype])</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Script-empty()"><span class="toc-number">1.24.</span> <span class="toc-text">Script.empty()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#script-toScriptHashOut()"><span class="toc-number">1.25.</span> <span class="toc-text">script.toScriptHashOut()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Script-fromAddress()"><span class="toc-number">1.26.</span> <span class="toc-text">Script.fromAddress()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#script-findAndDelete()"><span class="toc-number">1.27.</span> <span class="toc-text">script.findAndDelete()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#script-checkMinimalPush()"><span class="toc-number">1.28.</span> <span class="toc-text">script.checkMinimalPush()</span></a></li></ol></li></ol>
+      </div>
+      <div class="page-entry" itemprop="articleBody">
+        <p><a name="Script"></a></p>
+<h1 id="class:_Script">class: Script</h1>
+<p><strong>Members</strong></p>
+<ul>
+<li><a href="#Script">class: Script</a><ul>
+<li><a href="#new_Script">new Script([from])</a></li>
+<li><a href="#Script#isPublicKeyHashOut">script.isPublicKeyHashOut()</a></li>
+<li><a href="#Script#isPublicKeyHashIn">script.isPublicKeyHashIn()</a></li>
+<li><a href="#Script#isPublicKeyOut">script.isPublicKeyOut()</a></li>
+<li><a href="#Script#isPublicKeyIn">script.isPublicKeyIn()</a></li>
+<li><a href="#Script#isScriptHashOut">script.isScriptHashOut()</a></li>
+<li><a href="#Script#isScriptHashIn">script.isScriptHashIn()</a></li>
+<li><a href="#Script#isMultisigOut">script.isMultisigOut()</a></li>
+<li><a href="#Script#isMultisigIn">script.isMultisigIn()</a></li>
+<li><a href="#Script#isDataOut">script.isDataOut()</a></li>
+<li><a href="#Script#isPushOnly">script.isPushOnly()</a></li>
+<li><a href="#Script#classify">script.classify()</a></li>
+<li><a href="#Script#isStandard">script.isStandard()</a></li>
+<li><a href="#Script#prepend">script.prepend(obj)</a></li>
+<li><a href="#Script#equals">script.equals()</a></li>
+<li><a href="#Script#add">script.add(obj)</a></li>
+<li><a href="#Script.buildMultisigOut">Script.buildMultisigOut(publicKeys, threshold, [opts])</a></li>
+<li><a href="#Script.buildP2SHMultisigIn">Script.buildP2SHMultisigIn(pubkeys, threshold, signatures, [opts])</a></li>
+<li><a href="#Script.buildPublicKeyHashOut">Script.buildPublicKeyHashOut(to)</a></li>
+<li><a href="#Script.buildPublicKeyOut">Script.buildPublicKeyOut()</a></li>
+<li><a href="#Script.buildDataOut">Script.buildDataOut(to)</a></li>
+<li><a href="#Script.buildScriptHashOut">Script.buildScriptHashOut(script)</a></li>
+<li><a href="#Script.buildPublicKeyHashIn">Script.buildPublicKeyHashIn(publicKey, signature, [sigtype])</a></li>
+<li><a href="#Script.empty">Script.empty()</a></li>
+<li><a href="#Script#toScriptHashOut">script.toScriptHashOut()</a></li>
+<li><a href="#Script.fromAddress">Script.fromAddress()</a></li>
+<li><a href="#Script#findAndDelete">script.findAndDelete()</a></li>
+<li><a href="#Script#checkMinimalPush">script.checkMinimalPush()</a></li>
+</ul>
+</li>
+</ul>
+<p><a name="new_Script"></a></p>
+<h2 id="new_Script([from])">new Script([from])</h2>
+<p>A bitcoin transaction script. Each transaction’s inputs and outputs<br>has a script that is evaluated to validate it’s spending.</p>
+<p>See <a href="https://en.bitcoin.it/wiki/Script" target="_blank" rel="external">https://en.bitcoin.it/wiki/Script</a></p>
+<p><strong>Params</strong></p>
+<ul>
+<li>[from] <code>Object</code> | <code>string</code> | <code>Buffer</code> - optional data to populate script  </li>
+</ul>
+<p><a name="Script#isPublicKeyHashOut"></a></p>
+<h2 id="script-isPublicKeyHashOut()">script.isPublicKeyHashOut()</h2>
+<p><strong>Returns</strong>:  - true if this is a pay to pubkey hash output script<br><a name="Script#isPublicKeyHashIn"></a></p>
+<h2 id="script-isPublicKeyHashIn()">script.isPublicKeyHashIn()</h2>
+<p><strong>Returns</strong>:  - true if this is a pay to public key hash input script<br><a name="Script#isPublicKeyOut"></a></p>
+<h2 id="script-isPublicKeyOut()">script.isPublicKeyOut()</h2>
+<p><strong>Returns</strong>:  - true if this is a public key output script<br><a name="Script#isPublicKeyIn"></a></p>
+<h2 id="script-isPublicKeyIn()">script.isPublicKeyIn()</h2>
+<p><strong>Returns</strong>:  - true if this is a pay to public key input script<br><a name="Script#isScriptHashOut"></a></p>
+<h2 id="script-isScriptHashOut()">script.isScriptHashOut()</h2>
+<p><strong>Returns</strong>:  - true if this is a p2sh output script<br><a name="Script#isScriptHashIn"></a></p>
+<h2 id="script-isScriptHashIn()">script.isScriptHashIn()</h2>
+<p><strong>Returns</strong>:  - true if this is a p2sh input script<br>Note that these are frequently indistinguishable from pubkeyhashin<br><a name="Script#isMultisigOut"></a></p>
+<h2 id="script-isMultisigOut()">script.isMultisigOut()</h2>
+<p><strong>Returns</strong>:  - true if this is a mutlsig output script<br><a name="Script#isMultisigIn"></a></p>
+<h2 id="script-isMultisigIn()">script.isMultisigIn()</h2>
+<p><strong>Returns</strong>:  - true if this is a multisig input script<br><a name="Script#isDataOut"></a></p>
+<h2 id="script-isDataOut()">script.isDataOut()</h2>
+<p><strong>Returns</strong>:  - true if this is an OP_RETURN data script<br><a name="Script#isPushOnly"></a></p>
+<h2 id="script-isPushOnly()">script.isPushOnly()</h2>
+<p><strong>Returns</strong>:  - true if the script is only composed of data pushing<br>opcodes or small int opcodes (OP_0, OP_1, …, OP_16)<br><a name="Script#classify"></a></p>
+<h2 id="script-classify()">script.classify()</h2>
+<p><strong>Returns</strong>: <code>object</code> - The Script type if it is a known form,<br>or Script.UNKNOWN if it isn’t<br><a name="Script#isStandard"></a></p>
+<h2 id="script-isStandard()">script.isStandard()</h2>
+<p><strong>Returns</strong>:  - true if script is one of the known types<br><a name="Script#prepend"></a></p>
+<h2 id="script-prepend(obj)">script.prepend(obj)</h2>
+<p>Adds a script element at the start of the script.</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>obj <code>*</code> - a string, number, Opcode, Bufer, or object to add  </li>
+</ul>
+<p><strong>Returns</strong>: <a href="#Script">Script</a> - this script instance<br><a name="Script#equals"></a></p>
+<h2 id="script-equals()">script.equals()</h2>
+<p>Compares a script with another script</p>
+<p><a name="Script#add"></a></p>
+<h2 id="script-add(obj)">script.add(obj)</h2>
+<p>Adds a script element to the end of the script.</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>obj <code>*</code> - a string, number, Opcode, Bufer, or object to add  </li>
+</ul>
+<p><strong>Returns</strong>: <a href="#Script">Script</a> - this script instance<br><a name="Script.buildMultisigOut"></a></p>
+<h2 id="Script-buildMultisigOut(publicKeys,_threshold,_[opts])">Script.buildMultisigOut(publicKeys, threshold, [opts])</h2>
+<p><strong>Params</strong></p>
+<ul>
+<li>publicKeys <code>Array.&lt;PublicKey&gt;</code> - list of all public keys controlling the output  </li>
+<li>threshold <code>number</code> - amount of required signatures to spend the output  </li>
+<li>[opts] <code>Object</code> - Several options:<pre><code> - noSorting: defaults <span class="keyword">to</span> <span class="constant">false</span>, <span class="keyword">if</span> <span class="constant">true</span>, don't sort <span class="keyword">the</span> <span class="keyword">given</span>
+               public keys <span class="keyword">before</span> creating <span class="keyword">the</span> <span class="keyword">script</span>  
+</code></pre></li>
+</ul>
+<p><strong>Returns</strong>:  - a new Multisig output script for given public keys,<br>requiring m of those public keys to spend<br><a name="Script.buildP2SHMultisigIn"></a></p>
+<h2 id="Script-buildP2SHMultisigIn(pubkeys,_threshold,_signatures,_[opts])">Script.buildP2SHMultisigIn(pubkeys, threshold, signatures, [opts])</h2>
+<p>A new P2SH Multisig input script for the given public keys, requiring m of those public keys to spend</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>pubkeys <code>Array.&lt;PublicKey&gt;</code> - list of all public keys controlling the output  </li>
+<li>threshold <code>number</code> - amount of required signatures to spend the output  </li>
+<li>signatures <code>Array</code> - signatures to append to the script  </li>
+<li>[opts] <code>Object</code>  <ul>
+<li>[noSorting] <code>boolean</code> - don’t sort the given public keys before creating the script (false by default)  </li>
+<li>[cachedMultisig] <code><a href="#Script">Script</a></code> - don’t recalculate the redeemScript  </li>
+</ul>
+</li>
+</ul>
+<p><strong>Returns</strong>:  - Script<br><a name="Script.buildPublicKeyHashOut"></a></p>
+<h2 id="Script-buildPublicKeyHashOut(to)">Script.buildPublicKeyHashOut(to)</h2>
+<p><strong>Params</strong></p>
+<ul>
+<li>to <code>Address</code> | <code>PublicKey</code> - destination address or public key  </li>
+</ul>
+<p><strong>Returns</strong>:  - a new pay to public key hash output for the given<br>address or public key<br><a name="Script.buildPublicKeyOut"></a></p>
+<h2 id="Script-buildPublicKeyOut()">Script.buildPublicKeyOut()</h2>
+<p><strong>Returns</strong>:  - a new pay to public key output for the given<br> public key<br><a name="Script.buildDataOut"></a></p>
+<h2 id="Script-buildDataOut(to)">Script.buildDataOut(to)</h2>
+<p><strong>Params</strong></p>
+<ul>
+<li>to <code>string</code> | <code>Buffer</code> - the data to embed in the output  </li>
+</ul>
+<p><strong>Returns</strong>:  - a new OP_RETURN script with data<br><a name="Script.buildScriptHashOut"></a></p>
+<h2 id="Script-buildScriptHashOut(script)">Script.buildScriptHashOut(script)</h2>
+<p><strong>Params</strong></p>
+<ul>
+<li>script <code><a href="#Script">Script</a></code> | <code>Address</code> - the redeemScript for the new p2sh output.<br> It can also be a p2sh address  </li>
+</ul>
+<p><strong>Returns</strong>:  - Script new pay to script hash script for given script<br><a name="Script.buildPublicKeyHashIn"></a></p>
+<h2 id="Script-buildPublicKeyHashIn(publicKey,_signature,_[sigtype])">Script.buildPublicKeyHashIn(publicKey, signature, [sigtype])</h2>
+<p>Builds a scriptSig (a script for an input) that signs a public key hash<br>output script.</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>publicKey <code>Buffer</code> | <code>string</code> | <code>PublicKey</code>  </li>
+<li>signature <code>Signature</code> | <code>Buffer</code> - a Signature object, or the signature in DER cannonical encoding  </li>
+<li>[sigtype] <code>number</code> - the type of the signature (defaults to SIGHASH_ALL)  </li>
+</ul>
+<p><a name="Script.empty"></a></p>
+<h2 id="Script-empty()">Script.empty()</h2>
+<p><strong>Returns</strong>:  - Script an empty script<br><a name="Script#toScriptHashOut"></a></p>
+<h2 id="script-toScriptHashOut()">script.toScriptHashOut()</h2>
+<p><strong>Returns</strong>:  - Script a new pay to script hash script that pays to this script<br><a name="Script.fromAddress"></a></p>
+<h2 id="Script-fromAddress()">Script.fromAddress()</h2>
+<p><strong>Returns</strong>:  - Script a script built from the address<br><a name="Script#findAndDelete"></a></p>
+<h2 id="script-findAndDelete()">script.findAndDelete()</h2>
+<p>Analagous to bitcoind’s FindAndDelete. Find and delete equivalent chunks,<br>typically used with push data chunks.  Note that this will find and delete<br>not just the same data, but the same data with the same push data op as<br>produced by default. i.e., if a pushdata in a tx does not use the minimal<br>pushdata op, then when you try to remove the data it is pushing, it will not<br>be removed, because they do not use the same pushdata op.</p>
+<p><a name="Script#checkMinimalPush"></a></p>
+<h2 id="script-checkMinimalPush()">script.checkMinimalPush()</h2>
+<p><strong>Returns</strong>: <code>i</code> - true if the chunk  is the smallest way to push that particular data.<br>Comes from bitcoind’s script interpreter CheckMinimalPush function  </p>
+
+      </div>
+      <footer id="page-footer">
+        <time id="page-footer-updated" datetime="2014-12-18T20:27:58.000Z" itemprop="dateModified">Last updated: Dec 18 2014</time>
+        <a href="index.html" id="page-footer-next" title="Get Started">Next</a>
+      </footer>
+      
+    </div>
+    <aside id="sidebar">
+
+  
+
+  
+    <strong class="sidebar-title">Main</strong>
+    
+      <a href="/api/address.html" class="sidebar-link">Address</a>
+    
+      <a href="/api/block.html" class="sidebar-link">Block</a>
+    
+      <a href="/api/blockheader.html" class="sidebar-link">BlockHeader</a>
+    
+      <a href="/api/hdprivatekey.html" class="sidebar-link">HDPrivateKey</a>
+    
+      <a href="/api/hdpublickey.html" class="sidebar-link">HDPublicKey</a>
+    
+      <a href="/api/networks.html" class="sidebar-link">Networks</a>
+    
+      <a href="/api/privatekey.html" class="sidebar-link">PrivateKey</a>
+    
+      <a href="/api/publickey.html" class="sidebar-link">PublicKey</a>
+    
+      <a href="/api/unit.html" class="sidebar-link">Unit</a>
+    
+      <a href="/api/uri.html" class="sidebar-link">Uri</a>
+    
+  
+    <strong class="sidebar-title">Crypto</strong>
+    
+      <a href="/api/crypto/point.html" class="sidebar-link">Point</a>
+    
+  
+    <strong class="sidebar-title">Script</strong>
+    
+      <a href="/api/script/script.html" class="sidebar-link current">Script</a>
+    
+  
+    <strong class="sidebar-title">Transaction</strong>
+    
+      <a href="/api/transaction/transaction.html" class="sidebar-link">Transaction</a>
+    
+      <a href="/api/transaction/sighash.html" class="sidebar-link">Sig Hash</a>
+    
+  
+    <strong class="sidebar-title">Transport</strong>
+    
+      <a href="/api/transport/peer.html" class="sidebar-link">Peer</a>
+    
+      <a href="/api/transport/pool.html" class="sidebar-link">Pool</a>
+    
+      <a href="/api/transport/rpc.html" class="sidebar-link">RPC</a>
+    
+  
+
+
+
+
+</aside>
+  </div>
+</article>
+  <footer id="footer">
+  <div class="outer">
+    <div class="inner">
+      <div id="footer-copyright">
+        <p>bitcore™ &copy; 2013-2014 BitPay, Inc. bitcore is released under the MIT license.</p>
+      </div>
+      <div id="footer-links">
+        <a href="https://twitter.com/bitpay" id="footer-link-twitter" class="footer-link" target="_blank"><span>Twitter</span></a>
+        <a href="https://github.com/bitpay/bitcore" id="footer-link-github" class="footer-link" target="_blank"><span>GitHub</span></a>
+      </div>
+    </div>
+  </div>
+</footer>
+  
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="/js/retina.min.js" type="text/javascript"></script>
+
+<script src="/js/script.js" type="text/javascript"></script>
+
+<!-- Google+ -->
+<script type="text/javascript" src="//apis.google.com/js/plusone.js"></script>
+<!-- Twitter -->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+
+</body>
+</html>
