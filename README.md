@@ -4,9 +4,6 @@
 [![Build Status](https://img.shields.io/travis/bitpay/bitcore.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore)
 [![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore)
 
-[![Read the Developer Guide](http://bitpay.github.io/bitcore/images/read-the-developer-guide-btn.png)](https://bitpay.github.io/bitcore/docs/#!index.md)  [![Read the API Reference](http://bitpay.github.io/bitcore/images/read-the-api-reference-btn.png)](https://bitpay.github.io/bitcore/apiref)
-
-
 A pure and simple javascript bitcoin API.
 
 ## Principles
@@ -35,6 +32,8 @@ simpleTx.sign(privateKey);
 ## Documentation
 
 The complete docs are hosted here: [bitcore documentation](https://bitpay.github.io/bitcore/docs/#!index.md). There's also a [bitcore API reference](https://bitpay.github.io/bitcore/apiref) available generated from the JSDocs of the project, but we're still working on the quality and design of this API reference.
+
+[![Read the Developer Guide](http://bitpay.github.io/bitcore/images/read-the-developer-guide-btn.png)](https://bitpay.github.io/bitcore/docs/#!index.md)  [![Read the API Reference](http://bitpay.github.io/bitcore/images/read-the-api-reference-btn.png)](https://bitpay.github.io/bitcore/apiref)
 
 ## Security
 
