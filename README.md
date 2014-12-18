@@ -34,7 +34,7 @@ simpleTx.sign(privateKey);
 
 ## Documentation
 
-The complete docs are hosted here: [bitcore documentation](https://bitcore.io/bitcore/docs). There's also a [bitcore API reference](https://bitcore.io/bitcore/apiref) available generated from the JSDocs of the project.
+The complete docs are hosted here: [bitcore documentation](https://bitpay.github.io/bitcore/docs/#!index.md). There's also a [bitcore API reference](https://bitpay.github.io/bitcore/apiref) available generated from the JSDocs of the project, but we're still working on the quality and design of this API reference.
 
 ## Security
 
