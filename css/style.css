@@ -170,7 +170,7 @@
      }      
 
   .shadow-lava-ball {
-    top: 100px;
+    top: 250px;
      }  
 
 .call-to-action {
@@ -178,20 +178,20 @@
      } 
 
    .lava-ball-medium {
-    top: 100px;
+    top: 85px;
      } 
 
    .shadow-lava-ball-medium {
-    top: 120px;
+    top: 210px;
      }     
 
   .lava-ball-small {
-    top: 160px;
+    top: 130px;
      }  
      
 
   .shadow-lava-ball-small {
-    top: 180px;
+    top: 225px;
      }         
 
   #header-txt, #header-txt h1{ 
