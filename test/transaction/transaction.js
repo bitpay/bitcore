@@ -3,6 +3,7 @@
 /* jshint unused: false */
 /* jshint latedef: false */
 var should = require('chai').should();
+var expect = require('chai').expect;
 var _ = require('lodash');
 
 var bitcore = require('../..');
@@ -11,6 +12,7 @@ var PrivateKey = bitcore.PrivateKey;
 var Script = bitcore.Script;
 var Address = bitcore.Address;
 var Networks = bitcore.Networks;
+var errors = bitcore.errors;
 
 var transactionVector = require('../data/tx_creation');
 
@@ -19,6 +21,46 @@ describe('Transaction', function() {
   it('should serialize and deserialize correctly a given transaction', function() {
     var transaction = new Transaction(tx_1_hex);
     transaction.serialize().should.equal(tx_1_hex);
+  });
+
+  it('fails if an invalid parameter is passed to constructor', function() {
+    expect(function() {
+      return new Transaction(1);
+    }).to.throw(errors.InvalidArgument);
+  });
+
+  var testScript = 'OP_DUP OP_HASH160 20 0x88d9931ea73d60eaf7e5671efc0552b912911f2a OP_EQUALVERIFY OP_CHECKSIG';
+  var testPrevTx = 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458';
+  var testAmount = 1020000;
+  var testTransaction = new Transaction()
+    .from({
+      'txId': testPrevTx,
+      'outputIndex': 0,
+      'script': testScript,
+      'satoshis': testAmount
+    }).to('mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc', testAmount - 10000);
+
+  it('can serialize to a plain javascript object', function() {
+    var object = testTransaction.toObject();
+    object.inputs[0].output.satoshis.should.equal(testAmount);
+    object.inputs[0].output.script.toString().should.equal(testScript);
+    object.inputs[0].prevTxId.should.equal(testPrevTx);
+    object.inputs[0].outputIndex.should.equal(0);
+    object.outputs[0].satoshis.should.equal(testAmount - 10000);
+  });
+
+  it('returns the fee correctly', function() {
+    testTransaction.getFee().should.equal(10000);
+  });
+
+  it('serialize to Object roundtrip', function() {
+    new Transaction(testTransaction.toObject()).serialize().should.equal(testTransaction.serialize());
+  });
+
+  it('constructor returns a shallow copy of another transaction', function() {
+    var transaction = new Transaction(tx_1_hex);
+    var copy = new Transaction(transaction);
+    copy.serialize().should.equal(transaction.serialize());
   });
 
   it('should display correctly in console', function() {
@@ -63,76 +105,21 @@ describe('Transaction', function() {
   });
 
   // TODO: Migrate this into a test for inputs
-  describe('MultiSigScriptHashInput', function() {
-    var MultiSigScriptHashInput = Transaction.Input.MultiSigScriptHash;
 
-    var privateKey1 = new PrivateKey('KwF9LjRraetZuEjR8VqEq539z137LW5anYDUnVK11vM3mNMHTWb4');
-    var privateKey2 = new PrivateKey('L4PqnaPTCkYhAqH3YQmefjxQP6zRcF4EJbdGqR8v6adtG9XSsadY');
-    var privateKey3 = new PrivateKey('L4CTX79zFeksZTyyoFuPQAySfmP7fL3R41gWKTuepuN7hxuNuJwV');
-    var public1 = privateKey1.publicKey;
-    var public2 = privateKey2.publicKey;
-    var public3 = privateKey3.publicKey;
-    var address = new Address('33zbk2aSZYdNbRsMPPt6jgy6Kq1kQreqeb');
+  var fromAddress = 'mszYqVnqKoQx4jcTdJXxwKAissE3Jbrrc1';
+  var simpleUtxoWith100000Satoshis = {
+    address: fromAddress,
+    txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+    outputIndex: 0,
+    script: Script.buildPublicKeyHashOut(fromAddress).toString(),
+    satoshis: 100000
+  };
+  var toAddress = 'mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc';
+  var changeAddress = 'mgBCJAsvzgT2qNNeXsoECg2uPKrUsZ76up';
+  var changeAddressP2SH = '2N7T3TAetJrSCruQ39aNrJvYLhG1LJosujf';
+  var privateKey = 'cSBnVM4xvxarwGQuAfQFwqDg9k5tErHUHzgWsEfD4zdwUasvqRVY';
 
-    var output = {
-      address: '33zbk2aSZYdNbRsMPPt6jgy6Kq1kQreqeb',
-      txId: '66e64ef8a3b384164b78453fa8c8194de9a473ba14f89485a0e433699daec140',
-      outputIndex: 0,
-      script: new Script(address),
-      satoshis: 1000000
-    };
-    it('can count missing signatures', function() {
-      var transaction = new Transaction()
-        .from(output, [public1, public2, public3], 2)
-        .to(address, 1000000);
-      var input = transaction.inputs[0];
-
-      input.countSignatures().should.equal(0);
-
-      transaction.sign(privateKey1);
-      input.countSignatures().should.equal(1);
-      input.countMissingSignatures().should.equal(1);
-      input.isFullySigned().should.equal(false);
-
-      transaction.sign(privateKey2);
-      input.countSignatures().should.equal(2);
-      input.countMissingSignatures().should.equal(0);
-      input.isFullySigned().should.equal(true);
-    });
-    it('returns a list of public keys with missing signatures', function() {
-      var transaction = new Transaction()
-        .from(output, [public1, public2, public3], 2)
-        .to(address, 1000000);
-      var input = transaction.inputs[0];
-
-      _.all(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
-        var serialized = publicKeyMissing.toString();
-        return serialized === public1.toString() ||
-               serialized === public2.toString() ||
-               serialized === public3.toString();
-      }).should.equal(true);
-      transaction.sign(privateKey1);
-      _.all(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
-        var serialized = publicKeyMissing.toString();
-        return serialized === public2.toString() ||
-               serialized === public3.toString();
-      }).should.equal(true);
-    });
-  });
   describe('change address', function() {
-    var fromAddress = 'mszYqVnqKoQx4jcTdJXxwKAissE3Jbrrc1';
-    var simpleUtxoWith100000Satoshis = {
-      address: fromAddress,
-      txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
-      outputIndex: 0,
-      script: Script.buildPublicKeyHashOut(fromAddress).toString(),
-      satoshis: 100000
-    };
-    var toAddress = 'mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc';
-    var changeAddress = 'mgBCJAsvzgT2qNNeXsoECg2uPKrUsZ76up';
-    var changeAddressP2SH = '2N7T3TAetJrSCruQ39aNrJvYLhG1LJosujf';
-    var privateKey = 'cSBnVM4xvxarwGQuAfQFwqDg9k5tErHUHzgWsEfD4zdwUasvqRVY';
-
     it('can calculate simply the output amount', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith100000Satoshis)
@@ -140,7 +127,7 @@ describe('Transaction', function() {
         .change(changeAddress)
         .sign(privateKey);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(49000);
+      transaction.outputs[1].satoshis.should.equal(40000);
       transaction.outputs[1].script.toString()
         .should.equal(Script.fromAddress(changeAddress).toString());
     });
@@ -162,7 +149,7 @@ describe('Transaction', function() {
         .to(toAddress, 20000)
         .sign(privateKey);
       transaction.outputs.length.should.equal(3);
-      transaction.outputs[2].satoshis.should.equal(29000);
+      transaction.outputs[2].satoshis.should.equal(20000);
       transaction.outputs[2].script.toString()
         .should.equal(Script.fromAddress(changeAddress).toString());
     });
@@ -199,6 +186,34 @@ describe('Transaction', function() {
         .sign(privateKey)
         .sign(privateKey);
       transaction.outputs.length.should.equal(1);
+    });
+  });
+
+  var simpleUtxoWith1BTC = {
+    address: fromAddress,
+    txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+    outputIndex: 0,
+    script: Script.buildPublicKeyHashOut(fromAddress).toString(),
+    satoshis: 1e8
+  };
+
+  describe('checked serialize', function() {
+    it('fails if no change address was set', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith1BTC)
+        .to(toAddress, 1);
+      expect(function() {
+        return transaction.serialize();
+      }).to.throw(errors.Transaction.ChangeAddressMissing);
+    });
+    it('fails if a high fee was set', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith1BTC)
+        .change(changeAddress)
+        .to(toAddress, 1);
+      expect(function() {
+        return transaction.serialize();
+      }).to.throw(errors.Transaction.FeeError);
     });
   });
 });
