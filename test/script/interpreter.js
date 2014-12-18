@@ -208,7 +208,7 @@ describe('Interpreter', function() {
       sequenceNumber: 0xffffffff,
       script: Script('OP_0 OP_0')
     }));
-    credtx._addOutput(new Transaction.Output({
+    credtx.addOutput(new Transaction.Output({
       script: scriptPubkey,
       satoshis: 0
     }));
@@ -221,7 +221,7 @@ describe('Interpreter', function() {
       sequenceNumber: 0xffffffff,
       script: scriptSig
     }));
-    spendtx._addOutput(new Transaction.Output({
+    spendtx.addOutput(new Transaction.Output({
       script: Script(),
       satoshis: 0
     }));
