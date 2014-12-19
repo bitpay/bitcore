@@ -5,27 +5,236 @@ intro-feature-margin = 50px
 intro-feature-column = 3
 intro-quick-start-column = 2
 
+#animation
+  margin:auto
+  width:190px
+
+#animation-inner
+  position:absolute;
+  top:40px
+
+#ball 
+  position:absolute
+  top:10px
+  height:160px
+  width:169px
+  background-repeat:no-repeat
+  background-size: 160px 150px
+  background-image: url("images/lava-ball.png")
+
+#shadow-ball 
+  position:absolute
+  top:190px
+  background-size: 180px 20px
+  width:200px
+  height:180px
+  margin-left:-6px
+  background-repeat:no-repeat
+  background-image: url("images/shadow-lava-ball.svg")
+
+#projects
+  background-color:color-black3
+  padding-bottom:30px
+  padding-top:40px
+
+#projects
+  padding-top:60px
+  padding-bottom:80px
+  text-align:center
+
+#projects .link a
+  width:200px
+  height:100px
+
+#projects .link
+  background-repeat:no-repeat
+  margin:0 20px
+  overflow:hidden
+  display:inline-block
+
+#enbitcoins-link
+  width: 120px
+  background-image: url("images/enbitcoins-link.svg")
+  height:43px
+
+#enbitcoins-link:hover
+  background-position:0 -60px
+
+#streamium-link
+  width:125px
+  background-image: url("images/streamium-link.svg")
+  height:38px
+
+#streamium-link:hover
+  background-position:0 -59px
+
+#bitbox-link
+  width:120px
+  background-image: url("images/bitbox-link.svg")
+  height:41px
+
+#bitbox-link:hover
+  background-position:0 -40.5px
+
+#paper-wallet-link
+  width:145px
+  background-image: url("images/paper-wallet-link.svg")
+  height:41px
+
+#paper-wallet-link:hover
+  background-position:0 -41.5px
+
+#cp-link a
+  color:#6b6a65
+  text-decoration:none
+
+#cp-link
+  position:relative;
+  top:-11px
+  padding-left:25px
+  width:120px
+  background-image: url("images/cp-link.svg")
+  height:24px
+
+#cp-link:hover
+  background-position:0 -24px
+
+#cp-link:hover a
+  color:#b1b0a8
+
+#bitpay-link
+  width: 120px
+  background-image: url("images/bitpay-link.svg")
+  height:45px
+
+#bitpay-link:hover
+  background-position:0 -60px
+
+#copay-link
+  width: 120px
+  background-image: url("images/copay-link.svg")
+  height:50px
+
+#copay-link:hover
+  background-position:0 -55px
+
+#insight-link
+  width: 120px
+  background-image: url("images/insight-link.svg")
+  height:43px       
+
+#insight-link:hover
+  background-position:0 -43px
+
+.using-bitcore
+  text-align:center
+  clear:both
+  margin-top:60px
+  width:100%
+  margin-bottom:45px
+
+#banner-footer
+  background-image: url("images/mount-bg-hd.svg")
+  background-position:center bottom
+  background-repeat:repeat-x
+  height:234px
+  width:100%
+
+#volcano-hd
+  display:block
+  background-image: url("images/volcano-hd-texture.png")
+  background-position: center bottom
+  width:400px
+  height:234px
+  margin:auto
+
+#features .list
+  margin-bottom:40px
+  margin-top:40px
+  
+#features .item p.headline
+  margin-top:145px
+  font-size:21px
+  line-height:28px
+  height:90px
+  padding-bottom:20px;
+  border-bottom: solid 3px color-blue
+
+#features a 
+  color: color-black2
+
+#features .item p.detail 
+  margin-top:20px
+  font-size:15px
+  line-height:20px
+
+#features .item
+  float:left
+  margin:0 20px
+  width:169px
+  height:125px
+  padding-bottom:230px
+  text-align:center
+  background-size:169px 125px
+  background-repeat: no-repeat
+  background-position: center top
+
+
+#cross-platform
+  background-image: url("images/cross-platform-illustration.png")
+
+#functionality
+  background-image: url("images/functionality-illustration.png")
+
+#osource
+  background-image: url("images/o-source-illustration.png")
+
+#paymentprotocol
+  background-image: url("images/p-protocol-illustration.png")
+
+#keys
+  background-image: url("images/keys-illustration.png")
+
+#features
+  clear:both;
+  padding-top:10px
+  padding-bottom:60px
+
+#features h2, #projects h2
+  font-size: 1.9em
+  text-align:center
+
+#projects h2
+  color:#fff
+
 #banner
-  @extend $banner-background
-  padding-top: 50px
-  padding-bottom: 50px
+  padding-top: 30px
+  background-color:color-black2;
+  padding-bottom: 0px
   @media mq-normal
-    padding-top: 150px
+    padding-top: 170px
 
 #banner-title
-  color: #555
-  font: 300 35px font-title
-  text-shadow: 1px 0 #eee
+  position:relative
+  top:-30px
+  color: #fff
+  font: 300 38px font-title
+  text-shadow: 1px 0 #000
   line-height: 1.3
+  text-align:center
 
 $banner-getting-started-font
   font-family: font-mono
-  font-size: 14px
+  font-size: 21px
   line-height: getting-started-height
   @media mq-normal
-    font-size: 16px
+    font-size: 21px
 
 #banner-getting-started
+  margin:auto
+  position:relative
+  top:-45px
+  width:350px
   clearfix()
   padding-top: 30px
 

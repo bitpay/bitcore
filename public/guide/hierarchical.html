@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head prefix="og: http://ogp.me/ns#">
+  <meta charset="utf-8">
+  <title>Bitcore &mdash; A pure and simple JavaScript bitcoin API.</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="canonical" href="http://bitcore.io/guide/hierarchical.html">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#2f83cd">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+  <link rel="stylesheet" href="/css/style.css" type="text/css">
+
+  <link href="/css/animations.css" rel="stylesheet" type="text/css">
+  <link href="//fonts.googleapis.com/css?family=Lato:300,700" rel="stylesheet" type="text/css">
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro:400,700" rel="stylesheet" type="text/css">
+  <link rel="alternative" href="/atom.xml" title="Bitcore" type="application/atom+xml">
+  <meta name="description" content="HDKeys
+Hierarichically Derived Keys
+Bitcore provides full support for BIP32, allowing for many key management schemas that benefit from this property.  Please be sure to read and understand the basic">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Bitcore">
+<meta property="og:url" content="http://bitcore.io/guide/hierarchical.html">
+<meta property="og:site_name" content="Bitcore">
+<meta property="og:description" content="HDKeys
+Hierarichically Derived Keys
+Bitcore provides full support for BIP32, allowing for many key management schemas that benefit from this property.  Please be sure to read and understand the basic">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Bitcore">
+<meta name="twitter:description" content="HDKeys
+Hierarichically Derived Keys
+Bitcore provides full support for BIP32, allowing for many key management schemas that benefit from this property.  Please be sure to read and understand the basic">
+<meta name="twitter:site" content="@bitpay">
+
+  
+</head>
+
+
+<body>
+  <header id="header"  class="invert" >
+  <div class="outer">
+    <div class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Bitcore</a>
+        <a id="main-nav-toggle"></a>
+      </h1>
+      <nav id="main-nav">
+        <ul id="main-nav-list">
+          
+            <li class="main-nav-item">
+              <a href="/guide/" class="main-nav-link">Docs</a>
+            </li>
+          
+            <li class="main-nav-item">
+              <a href="/api/" class="main-nav-link">API</a>
+            </li>
+          
+            <li class="main-nav-item">
+              <a href="https://github.com/bitpay/bitcore" class="main-nav-link">Github</a>
+            </li>
+          
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>
+  <article class="page" itemscope itemtype="http://schema.org/Article">
+  <header id="page-banner">
+    <div class="outer">
+      <div id="page-banner-inner" class="inner">
+        
+        <h1 id="page-title" itemprop="name">Documentation</h1>
+        <!--<a href="https://github.com/bitpay/bitcore/blob/master/guide/hierarchical.md" title="Improve this doc" id="page-edit-link"></a>-->
+      </div>
+    </div>
+  </header>
+  <div class="outer">
+    <div id="mobile-menu-wrap"></div>
+    <div class="page-content">
+      <div class="toc-wrap">
+        <strong class="toc-title">Contents</strong>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#HDKeys"><span class="toc-number">1.</span> <span class="toc-text">HDKeys</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Hierarichically_Derived_Keys"><span class="toc-number">1.1.</span> <span class="toc-text">Hierarichically Derived Keys</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#HDPrivateKey"><span class="toc-number">1.2.</span> <span class="toc-text">HDPrivateKey</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#HDPublicKey"><span class="toc-number">1.3.</span> <span class="toc-text">HDPublicKey</span></a></li></ol></li></ol>
+      </div>
+      <div class="page-entry" itemprop="articleBody">
+        <h1 id="HDKeys">HDKeys</h1>
+<h2 id="Hierarichically_Derived_Keys">Hierarichically Derived Keys</h2>
+<p>Bitcore provides full support for <a href="https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki" target="_blank" rel="external">BIP32</a>, allowing for many key management schemas that benefit from this property.  Please be sure to read and understand the basic concepts and the warnings on that BIP before using these classes.</p>
+<h2 id="HDPrivateKey">HDPrivateKey</h2>
+<p>An instance of a <a href="PrivateKey.md">PrivateKey</a> that also contains information required to derive child keys.</p>
+<p>Sample usage:</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">var</span> hdPrivateKey = <span class="keyword">new</span> HDPrivateKey();</div><div class="line"><span class="keyword">var</span> retrieved = <span class="keyword">new</span> HDPrivateKey(<span class="string">'xpriv...'</span>);</div><div class="line"><span class="keyword">var</span> derived = privateKey.derive(<span class="string">"m/0'"</span>);</div><div class="line"><span class="keyword">var</span> derivedByNumber = privateKey.derive(<span class="number">1</span>).derive(<span class="number">2</span>, <span class="literal">true</span>);</div><div class="line"><span class="keyword">var</span> derivedByArgument = privateKey.derive(<span class="string">"m/1/2'"</span>);</div><div class="line">assert(derivedByNumber.xprivkey === derivedByArgument.xprivkey);</div><div class="line"></div><div class="line"><span class="keyword">var</span> address = <span class="keyword">new</span> Address(privateKey.publicKey, Networks.livenet);</div><div class="line"><span class="keyword">var</span> redeem = <span class="keyword">new</span> Transaction().from(output).to(target, <span class="number">10000</span>).sign(derived.privateKey);</div></pre></td></tr></table></figure>
+
+<h2 id="HDPublicKey">HDPublicKey</h2>
+<p>An instance of a PublicKey that can be derived to build extended public keys. Note that hardened paths are not available when deriving an HDPublicKey.</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">var</span> hdPrivateKey = <span class="keyword">new</span> HDPrivateKey();</div><div class="line"><span class="keyword">var</span> hdPublicKey = privateKey.hdPublicKey;</div><div class="line"><span class="keyword">try</span> {</div><div class="line">  <span class="keyword">new</span> HDPublicKey();</div><div class="line">} <span class="keyword">catch</span>(e) {</div><div class="line">  <span class="built_in">console</span>.log(<span class="string">"Can't generate a public key without a private key"</span>);</div><div class="line">}</div><div class="line"></div><div class="line"><span class="keyword">var</span> address = <span class="keyword">new</span> Address(hdPublicKey.publicKey, Networks.livenet);</div><div class="line"><span class="keyword">var</span> derivedAddress = <span class="keyword">new</span> Address(hdPublicKey.derive(<span class="number">100</span>).publicKey, Networks.testnet);</div></pre></td></tr></table></figure>
+
+
+      </div>
+      <footer id="page-footer">
+        <time id="page-footer-updated" datetime="2014-12-19T06:59:55.000Z" itemprop="dateModified">Last updated: Dec 19 2014</time>
+        <a href="index.html" id="page-footer-next" title="Get Started">Next</a>
+      </footer>
+      
+    </div>
+    <aside id="sidebar">
+
+  
+
+  
+    <strong class="sidebar-title">Home</strong>
+    
+      <a href="/guide/index.html" class="sidebar-link">Get Started</a>
+    
+      <a href="/guide/contributing.html" class="sidebar-link">Contributing</a>
+    
+  
+    <strong class="sidebar-title">Models</strong>
+    
+      <a href="/guide/address.html" class="sidebar-link">Address</a>
+    
+      <a href="/guide/block.html" class="sidebar-link">Block</a>
+    
+      <a href="/guide/hierarchical.html" class="sidebar-link current">Hierarchical</a>
+    
+      <a href="/guide/privatekey.html" class="sidebar-link">Private Key</a>
+    
+      <a href="/guide/publickey.html" class="sidebar-link">Public Key</a>
+    
+      <a href="/guide/script.html" class="sidebar-link">Script</a>
+    
+      <a href="/guide/transaction.html" class="sidebar-link">Transaction</a>
+    
+  
+    <strong class="sidebar-title">Helpers</strong>
+    
+      <a href="/guide/crypto.html" class="sidebar-link">Crypto</a>
+    
+      <a href="/guide/ecies.html" class="sidebar-link">ECIES</a>
+    
+      <a href="/guide/encoding.html" class="sidebar-link">Encoding</a>
+    
+      <a href="/guide/networks.html" class="sidebar-link">Networks</a>
+    
+      <a href="/guide/paymentprotocol.html" class="sidebar-link">Payment Protocol</a>
+    
+      <a href="/guide/unit.html" class="sidebar-link">Unit</a>
+    
+      <a href="/guide/uri.html" class="sidebar-link">URI</a>
+    
+  
+    <strong class="sidebar-title">Networking</strong>
+    
+      <a href="/guide/jsonrpc.html" class="sidebar-link">JSON-RPC</a>
+    
+      <a href="/guide/peer.html" class="sidebar-link">Peer</a>
+    
+      <a href="/guide/pool.html" class="sidebar-link">Pool</a>
+    
+  
+
+
+
+
+</aside>
+  </div>
+</article>
+  <footer id="footer">
+  <div class="outer">
+    <div class="inner">
+      <div id="footer-copyright">
+        <p>bitcore™ &copy; 2013-2014 BitPay, Inc. bitcore is released under the MIT license.</p>
+      </div>
+      <div id="footer-links">
+        <a href="https://twitter.com/bitpay" id="footer-link-twitter" class="footer-link" target="_blank"><span>Twitter</span></a>
+        <a href="https://github.com/bitpay/bitcore" id="footer-link-github" class="footer-link" target="_blank"><span>GitHub</span></a>
+      </div>
+    </div>
+  </div>
+</footer>
+  
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="/js/retina.min.js" type="text/javascript"></script>
+
+<script src="/js/script.js" type="text/javascript"></script>
+
+<!-- Google+ -->
+<script type="text/javascript" src="//apis.google.com/js/plusone.js"></script>
+<!-- Twitter -->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+
+</body>
+</html>
