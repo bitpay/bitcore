@@ -21,11 +21,14 @@ describe('Random', function() {
 
     it('should generate 100 8 byte buffers in a row that are not equal', function() {
       var hexs = [];
-      for (var i = 0; i < 100; i++)
+      for (var i = 0; i < 100; i++) {
         hexs[i] = Random.getRandomBuffer(8).toString('hex');
-      for (i = 0; i < 100; i++)
-        for (var j = i + 1; j < 100; j++)
+      }
+      for (i = 0; i < 100; i++) {
+        for (var j = i + 1; j < 100; j++) {
           hexs[i].should.not.equal(hexs[j]);
+        }
+      }
     });
 
   });
