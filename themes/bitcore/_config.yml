@@ -1,5 +1,5 @@
 menu:
-  Docs: /docs/
+  Docs: /guide/
   API: /api/
   Github: https://github.com/bitpay/bitcore
 
@@ -9,25 +9,25 @@ doc_sidebar:
     Contributing: contributing.html
 
   Models:
-    Address: Address.html
-    Block: Block.html
-    Hierarchical: Hierarchical.html
-    Private Key: PrivateKey.html
-    Public Key: PublicKey.html
-    Script: Script.html
-    Transaction: Transaction.html
+    Address: address.html
+    Block: block.html
+    Hierarchical: hierarchical.html
+    Private Key: privatekey.html
+    Public Key: publickey.html
+    Script: script.html
+    Transaction: transaction.html
   Helpers:
-    Crypto: Crypto.html
-    ECIES: ECIES.html
-    Encoding: Encoding.html
-    Networks: Networks.html
-    Payment Protocol: PaymentProtocol.html
-    Unit: Unit.html
-    URI: URI.html
+    Crypto: crypto.html
+    ECIES: ecies.html
+    Encoding: encoding.html
+    Networks: networks.html
+    Payment Protocol: paymentprotocol.html
+    Unit: unit.html
+    URI: uri.html
   Networking:
-    JSON-RPC: JSONRPC.html
-    Peer: Peer.html
-    Pool: Pool.html
+    JSON-RPC: jsonrpc.html
+    Peer: peer.html
+    Pool: pool.html
 
 api_sidebar:
   Main: 
