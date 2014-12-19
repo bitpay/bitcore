@@ -147,6 +147,8 @@ describe('PublicKey', function() {
       expect(function() {
         return PublicKey.fromJSON('{"x": "1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a"}');
       }).to.throw();
+      // coverage
+      PublicKey._isJSON({x: '1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a'}).should.equal(false);
     });
 
     it('fails if invalid JSON is provided', function() {
