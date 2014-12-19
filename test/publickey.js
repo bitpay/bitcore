@@ -1,83 +1,94 @@
 'use strict';
 
 var should = require('chai').should();
+var expect = require('chai').expect;
+
 var bitcore = require('..');
 var Point = bitcore.crypto.Point;
 var BN = bitcore.crypto.BN;
 var PublicKey = bitcore.PublicKey;
 var PrivateKey = bitcore.PrivateKey;
 
+// DER uncompressed format
+/* jshint maxlen: 200 */
+
 describe('PublicKey', function() {
+  /* jshint maxstatements: 30 */
 
   var invalidPoint = '0400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';
 
-  it('should error because of missing data', function() {
-    (function() {
-      var pk = new PublicKey();
-    }).should.throw('First argument is required, please include public key data.');
+  describe('validating errors on creation', function() {
+    it('errors if data is missing', function() {
+      (function() {
+        return new PublicKey();
+      }).should.throw('First argument is required, please include public key data.');
+    });
+
+    it('errors if an invalid point is provided', function() {
+      (function() {
+        return new PublicKey(invalidPoint);
+      }).should.throw('Invalid x,y value for curve, cannot equal 0.');
+    });
+
+    it('errors if a point not on the secp256k1 curve is provided', function() {
+      (function() {
+        return new PublicKey(new Point(1000, 1000));
+      }).should.throw('Invalid y value for curve.');
+    });
+
+    it('errors if the argument is of an unrecognized type', function() {
+      (function() {
+        return new PublicKey(new Error());
+      }).should.throw('First argument is an unrecognized data format.');
+    });
   });
 
-  it('should error because of an invalid point', function() {
-    (function() {
-      var pk = new PublicKey(invalidPoint);
-    }).should.throw('Invalid x,y value for curve, cannot equal 0.');
+  describe('instantiation', function() {
+    it('from a private key', function() {
+      var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
+      var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
+      var privkey = new PrivateKey(BN(new Buffer(privhex, 'hex')));
+      var pk = new PublicKey(privkey);
+      pk.toString().should.equal(pubhex);
+    });
+
+    it('from a compressed public key', function() {
+      var publicKeyHex = '031ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a';
+      var publicKey = new PublicKey(publicKeyHex);
+      publicKey.toString().should.equal(publicKeyHex);
+    });
+
+    it('from another publicKey', function() {
+      var publicKeyHex = '031ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a';
+      var publicKey = new PublicKey(publicKeyHex);
+      var publicKey2 = new PublicKey(publicKey);
+      publicKey.should.equal(publicKey2);
+    });
+
+    it('from a hex encoded DER string', function() {
+      var pk = new PublicKey('041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341');
+      should.exist(pk.point);
+      pk.point.getX().toString(16).should.equal('1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a');
+    });
+
+    it('from a hex encoded DER buffer', function() {
+      var pk = new PublicKey(new Buffer('041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341', 'hex'));
+      should.exist(pk.point);
+      pk.point.getX().toString(16).should.equal('1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a');
+    });
+
+    it('from a point', function() {
+      var p = new Point('86a80a5a2bfc48dddde2b0bd88bd56b0b6ddc4e6811445b175b90268924d7d48',
+                        '3b402dfc89712cfe50963e670a0598e6b152b3cd94735001cdac6794975d3afd');
+      var a = new PublicKey(p);
+      should.exist(a.point);
+      a.point.toString().should.equal(p.toString());
+      var c = new PublicKey(p);
+      should.exist(c.point);
+      c.point.toString().should.equal(p.toString());
+    });
   });
 
-  it('should error because of an invalid public key point, not on the secp256k1 curve', function() {
-    (function() {
-      var pk = new PublicKey(Point(1000, 1000));
-    }).should.throw('Invalid y value for curve.');
-  });
-
-  it('should error because of an unrecognized data type', function() {
-    (function() {
-      var pk = new PublicKey(new Error());
-    }).should.throw('First argument is an unrecognized data format.');
-  });
-
-  it('should instantiate from a private key', function() {
-    var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
-    var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
-    var privkey = new PrivateKey(BN(new Buffer(privhex, 'hex')));
-    var pk = new PublicKey(privkey);
-    pk.toString().should.equal(pubhex);
-  });
-
-  it('should instantiate from a compressed public key', function() {
-    var publicKeyHex = '031ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a';
-    var publicKey = new PublicKey(publicKeyHex);
-    publicKey.toString().should.equal(publicKeyHex);
-  });
-
-  it('should instantiate from another publicKey', function() {
-    var publicKeyHex = '031ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a';
-    var publicKey = new PublicKey(publicKeyHex);
-    var publicKey2 = new PublicKey(publicKey);
-    publicKey.should.equal(publicKey2);
-  });
-
-  it('should instantiate from a hex encoded DER string', function() {
-    var pk = new PublicKey('041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341');
-    should.exist(pk.point);
-    pk.point.getX().toString(16).should.equal('1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a');
-  });
-
-  it('should instantiate from a hex encoded DER buffer', function() {
-    var pk = new PublicKey(new Buffer('041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341', 'hex'));
-    should.exist(pk.point);
-    pk.point.getX().toString(16).should.equal('1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a');
-  });
-
-  it('should create a public key with a point', function() {
-    var p = Point('86a80a5a2bfc48dddde2b0bd88bd56b0b6ddc4e6811445b175b90268924d7d48',
-                  '3b402dfc89712cfe50963e670a0598e6b152b3cd94735001cdac6794975d3afd');
-    var a = new PublicKey(p);
-    should.exist(a.point);
-    a.point.toString().should.equal(p.toString());
-    var c = PublicKey(p);
-    should.exist(c.point);
-    c.point.toString().should.equal(p.toString());
-  });
 
   describe('#getValidationError', function(){
 
@@ -107,8 +118,8 @@ describe('PublicKey', function() {
   describe('#fromPoint', function() {
 
     it('should instantiate from a point', function() {
-      var p = Point('86a80a5a2bfc48dddde2b0bd88bd56b0b6ddc4e6811445b175b90268924d7d48',
-                    '3b402dfc89712cfe50963e670a0598e6b152b3cd94735001cdac6794975d3afd');
+      var p = new Point('86a80a5a2bfc48dddde2b0bd88bd56b0b6ddc4e6811445b175b90268924d7d48',
+                        '3b402dfc89712cfe50963e670a0598e6b152b3cd94735001cdac6794975d3afd');
       var b = PublicKey.fromPoint(p);
       should.exist(b.point);
       b.point.toString().should.equal(p.toString());
@@ -130,6 +141,18 @@ describe('PublicKey', function() {
         compressed: false
       });
       PublicKey.fromJSON(json).toJSON().should.deep.equal(json);
+    });
+
+    it('fails if "y" is not provided', function() {
+      expect(function() {
+        return PublicKey.fromJSON('{"x": "1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a"}');
+      }).to.throw();
+    });
+
+    it('fails if invalid JSON is provided', function() {
+      expect(function() {
+        return PublicKey._transformJSON('¹');
+      }).to.throw();
     });
 
   });
@@ -227,7 +250,7 @@ describe('PublicKey', function() {
     it('should error because odd was not included as a param', function() {
       var x = BN.fromBuffer(new Buffer('1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a', 'hex'));
       (function() {
-        var pk = PublicKey.fromX(null, x);
+        return PublicKey.fromX(null, x);
       }).should.throw('Must specify whether y is odd or not (true or false)');
     });
 
@@ -312,26 +335,28 @@ describe('PublicKey', function() {
 
     it('should not have an error if pubkey is valid', function() {
       var hex = '031ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a';
-      var pk = PublicKey.fromString(hex);
+      expect(function() {
+        return PublicKey.fromString(hex);
+      }).to.not.throw();
     });
 
     it('should throw an error if pubkey is invalid', function() {
       var hex = '041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a0000000000000000000000000000000000000000000000000000000000000000';
       (function() {
-        var pk = PublicKey.fromString(hex);
+        return PublicKey.fromString(hex);
       }).should.throw('Invalid x,y value for curve, cannot equal 0.');
     });
 
     it('should throw an error if pubkey is invalid', function() {
       var hex = '041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a00000000000000000000000000000000000000000000000000000000000000FF';
       (function() {
-        var pk = PublicKey.fromString(hex);
+        return PublicKey.fromString(hex);
       }).should.throw('Invalid y value for curve.');
     });
 
     it('should throw an error if pubkey is infinity', function() {
       (function() {
-        var pk = new PublicKey(Point.getG().mul(Point.getN()));
+        return new PublicKey(Point.getG().mul(Point.getN()));
       }).should.throw('Point cannot be equal to Infinity');
     });
 
