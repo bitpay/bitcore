@@ -201,7 +201,7 @@ describe('Interpreter', function() {
 
     var hashbuf = new Buffer(32);
     hashbuf.fill(0);
-    var credtx = Transaction();
+    var credtx = new Transaction();
     credtx.uncheckedAddInput(new Transaction.Input({
       prevTxId: '0000000000000000000000000000000000000000000000000000000000000000',
       outputIndex: 0xffffffff,
@@ -214,7 +214,7 @@ describe('Interpreter', function() {
     }));
     var idbuf = credtx.id;
 
-    var spendtx = Transaction();
+    var spendtx = new Transaction();
     spendtx.uncheckedAddInput(new Transaction.Input({
       prevTxId: idbuf.toString('hex'),
       outputIndex: 0,
@@ -222,11 +222,11 @@ describe('Interpreter', function() {
       script: scriptSig
     }));
     spendtx.addOutput(new Transaction.Output({
-      script: Script(),
+      script: new Script(),
       satoshis: 0
     }));
 
-    var interp = Interpreter();
+    var interp = new Interpreter();
     var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0, flags);
     verified.should.equal(expected);
   };
@@ -251,7 +251,7 @@ describe('Interpreter', function() {
     testAllFixtures(script_invalid, false);
 
   });
-  describe('bitcoind transaction evaluation fixtures', function() {
+  describe.only('bitcoind transaction evaluation fixtures', function() {
     var test_txs = function(set, expected) {
       var c = 0;
       set.forEach(function(vector) {
@@ -275,7 +275,7 @@ describe('Interpreter', function() {
             map[txid + ':' + txoutnum] = Script.fromBitcoindString(scriptPubKeyStr);
           });
 
-          var tx = Transaction(txhex);
+          var tx = new Transaction(txhex);
           var allInputsVerified = true;
           tx.inputs.forEach(function(txin, j) {
             var scriptSig = txin.script;
@@ -284,7 +284,7 @@ describe('Interpreter', function() {
             var scriptPubkey = map[txidhex + ':' + txoutnum];
             should.exist(scriptPubkey);
             should.exist(scriptSig);
-            var interp = Interpreter();
+            var interp = new Interpreter();
             var verified = interp.verify(scriptSig, scriptPubkey, tx, j, flags);
             if (!verified) {
               allInputsVerified = false;
