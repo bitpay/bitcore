@@ -251,7 +251,7 @@ describe('Interpreter', function() {
     testAllFixtures(script_invalid, false);
 
   });
-  describe.only('bitcoind transaction evaluation fixtures', function() {
+  describe('bitcoind transaction evaluation fixtures', function() {
     var test_txs = function(set, expected) {
       var c = 0;
       set.forEach(function(vector) {
