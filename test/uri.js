@@ -8,90 +8,115 @@ var should = chai.should();
 var URI = bitcore.URI;
 
 describe('URI', function() {
+  /* jshint maxstatements: 30 */
 
-  it('should parse uris strings', function() {
+  // TODO: Split this and explain tests
+  it('parses uri strings correctly (test vector)', function() {
     var uri;
 
     URI.parse.bind(URI, 'badURI').should.throw(TypeError);
 
     uri = URI.parse('bitcoin:');
-    expect(uri.address).to.be.undefined;
-    expect(uri.amount).to.be.undefined;
-    expect(uri.otherParam).to.be.undefined;
+    expect(uri.address).to.be.undefined();
+    expect(uri.amount).to.be.undefined();
+    expect(uri.otherParam).to.be.undefined();
 
     uri = URI.parse('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj');
     uri.address.should.equal('1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj');
-    expect(uri.amount).to.be.undefined;
-    expect(uri.otherParam).to.be.undefined;
+    expect(uri.amount).to.be.undefined();
+    expect(uri.otherParam).to.be.undefined();
 
     uri = URI.parse('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=123.22');
     uri.address.should.equal('1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj');
     uri.amount.should.equal('123.22');
-    expect(uri.otherParam).to.be.undefined;
+    expect(uri.otherParam).to.be.undefined();
 
-    uri = URI.parse('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=123.22&other-param=something&req-extra=param');
+    uri = URI.parse('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=123.22' +
+                    '&other-param=something&req-extra=param');
     uri.address.should.equal('1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj');
     uri.amount.should.equal('123.22');
     uri['other-param'].should.equal('something');
     uri['req-extra'].should.equal('param');
   });
 
-  it('should statically validate uris', function() {
-    URI.isValid('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj').should.be.true;
-    URI.isValid('bitcoin:mkYY5NRvikVBY1EPtaq9fAFgquesdjqECw').should.be.true;
+  // TODO: Split this and explain tests
+  it('URIs can be validated statically (test vector)', function() {
+    URI.isValid('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj').should.equal(true);
+    URI.isValid('bitcoin:mkYY5NRvikVBY1EPtaq9fAFgquesdjqECw').should.equal(true);
 
-    URI.isValid('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=1.2').should.be.true;
-    URI.isValid('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=1.2&other=param').should.be.true;
-    URI.isValid('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=1.2&req-other=param', ['req-other']).should.be.true;
-    URI.isValid('bitcoin:mmrqEBJxUCf42vdb3oozZtyz5mKr3Vb2Em?amount=0.1&r=https%3A%2F%2Ftest.bitpay.com%2Fi%2F6DKgf8cnJC388irbXk5hHu').should.be.true;
+    URI.isValid('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=1.2')
+                .should.equal(true);
+    URI.isValid('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=1.2&other=param')
+                .should.equal(true);
+    URI.isValid('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=1.2&req-other=param',
+                ['req-other']).should.equal(true);
+    URI.isValid('bitcoin:mmrqEBJxUCf42vdb3oozZtyz5mKr3Vb2Em?amount=0.1&' +
+                'r=https%3A%2F%2Ftest.bitpay.com%2Fi%2F6DKgf8cnJC388irbXk5hHu').should.equal(true);
 
-    URI.isValid('bitcoin:').should.be.false;
-    URI.isValid('bitcoin:badUri').should.be.false;
-    URI.isValid('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfk?amount=bad').should.be.false;
-    URI.isValid('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfk?amount=1.2&req-other=param').should.be.false;
-    URI.isValid('bitcoin:?r=https%3A%2F%2Ftest.bitpay.com%2Fi%2F6DKgf8cnJC388irbXk5hHu').should.be.false;
+    URI.isValid('bitcoin:').should.equal(false);
+    URI.isValid('bitcoin:badUri').should.equal(false);
+    URI.isValid('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfk?amount=bad').should.equal(false);
+    URI.isValid('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfk?amount=1.2&req-other=param')
+                .should.equal(false);
+    URI.isValid('bitcoin:?r=https%3A%2F%2Ftest.bitpay.com%2Fi%2F6DKgf8cnJC388irbXk5hHu')
+                .should.equal(false);
   });
 
-  it('should fail creation with no params', function() {
+  it('fails on creation with no params', function() {
     (function(){
-      new URI();
+      return new URI();
     }).should.throw(TypeError);
   });
 
-  it('should create instance from bitcoin uri', function() {
+  describe('instantiation from bitcoin uri', function() {
+    /* jshint maxstatements: 25 */
     var uri;
 
-    uri = new URI('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj');
-    uri.address.should.be.instanceof(bitcore.Address);
-    uri.network.should.equal(Networks.livenet);
+    it('parses address', function() {
+      uri = new URI('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj');
+      uri.address.should.be.instanceof(bitcore.Address);
+      uri.network.should.equal(Networks.livenet);
+    });
 
-    uri = URI.fromString('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=123.22');
-    uri.address.toString().should.equal('1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj');
-    uri.amount.should.equal(12322000000);
-    expect(uri.otherParam).to.be.undefined;
+    it('parses amount', function() {
+      uri = URI.fromString('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=123.22');
+      uri.address.toString().should.equal('1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj');
+      uri.amount.should.equal(12322000000);
+      expect(uri.otherParam).to.be.undefined();
+    });
 
-    uri = new URI('bitcoin:mkYY5NRvikVBY1EPtaq9fAFgquesdjqECw');
-    uri.address.should.be.instanceof(bitcore.Address);
-    uri.network.should.equal(Networks.testnet);
+    it('parses a testnet address', function() {
+      uri = new URI('bitcoin:mkYY5NRvikVBY1EPtaq9fAFgquesdjqECw');
+      uri.address.should.be.instanceof(bitcore.Address);
+      uri.network.should.equal(Networks.testnet);
+    });
 
-    uri = new URI('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=1.2&other=param');
-    uri.address.should.be.instanceof(bitcore.Address);
-    uri.amount.should.equal(120000000);
-    expect(uri.other).to.be.undefined;
-    uri.extras.other.should.equal('param');
+    it('stores unknown parameters as "extras"', function() {
+      uri = new URI('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=1.2&other=param');
+      uri.address.should.be.instanceof(bitcore.Address);
+      expect(uri.other).to.be.undefined();
+      uri.extras.other.should.equal('param');
+    });
 
-    (function() {
-      new URI('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=1.2&other=param&req-required=param');
-    }).should.throw(Error);
+    it('throws error when a required feature is not supported', function() {
+      (function() {
+        return new URI('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=1.2&other=param&req-required=param');
+      }).should.throw(Error);
+    });
 
-    uri = new URI('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=1.2&other=param&req-required=param', ['req-required']);
-    uri.address.should.be.instanceof(bitcore.Address);
-    uri.amount.should.equal(120000000);
-    uri.extras.other.should.equal('param');
-    uri.extras['req-required'].should.equal('param');
+    it('has no false negative when checking supported features', function() {
+      uri = new URI('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?amount=1.2&other=param&' +
+                    'req-required=param', ['req-required']);
+      uri.address.should.be.instanceof(bitcore.Address);
+      uri.amount.should.equal(120000000);
+      uri.extras.other.should.equal('param');
+      uri.extras['req-required'].should.equal('param');
+    });
   });
 
+  // TODO: Split this and explain tests
   it('should create instance from object', function() {
+    /* jshint maxstatements: 25 */
     var uri;
 
     uri = new URI({
@@ -113,13 +138,13 @@ describe('URI', function() {
     });
     uri.address.should.be.instanceof(bitcore.Address);
     uri.amount.should.equal(120000000);
-    expect(uri.other).to.be.undefined;
+    expect(uri.other).to.be.undefined();
     uri.extras.other.should.equal('param');
 
     (function() {
-      new URI({
+      return new URI({
         address: '1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj',
-        'req-required': param
+        'req-required': 'param'
       });
     }).should.throw(Error);
 
@@ -141,7 +166,8 @@ describe('URI', function() {
   });
 
   it('should input/output String', function() {
-    var str = 'bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?message=Donation%20for%20project%20xyz&label=myLabel&other=xD';
+    var str = 'bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?' +
+              'message=Donation%20for%20project%20xyz&label=myLabel&other=xD';
     URI.fromString(str).toString().should.equal(str);
   });
 
@@ -161,7 +187,8 @@ describe('URI', function() {
   });
 
   it('should support extra arguments', function() {
-    var uri = new URI('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?message=Donation%20for%20project%20xyz&label=myLabel&other=xD');
+    var uri = new URI('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj?' +
+                      'message=Donation%20for%20project%20xyz&label=myLabel&other=xD');
 
     should.exist(uri.message);
     uri.message.should.equal('Donation for project xyz');
@@ -196,5 +223,30 @@ describe('URI', function() {
     var uri2 = new URI('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj');
 
     uri1.address.toString().should.equal(uri2.address.toString());
+  });
+
+  it('writes correctly the "r" parameter on string serialization', function() {
+    var originalString = 'bitcoin:mmrqEBJxUCf42vdb3oozZtyz5mKr3Vb2Em?amount=0.1&' +
+                         'r=https%3A%2F%2Ftest.bitpay.com%2Fi%2F6DKgf8cnJC388irbXk5hHu';
+    var uri = new URI(originalString);
+    uri.toString().should.equal(originalString);
+  });
+
+  it('displays nicely on the console (#inspect)', function() {
+    var uri = 'bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj';
+    var instance = new URI(uri);
+    instance.inspect().should.equal('<URI: ' + uri + '>');
+  });
+
+  it('fails early when fromString isn\'t provided a string', function() {
+    expect(function() {
+      return URI.fromString(1);
+    }).to.throw();
+  });
+
+  it('fails early when fromJSON isn\'t provided a valid JSON string', function() {
+    expect(function() {
+      return URI.fromJSON('¹');
+    }).to.throw();
   });
 });
