@@ -1,30 +1,36 @@
 'use strict';
 
 var should = require('chai').should();
+var expect = require('chai').expect;
+
 var bitcore = require('..');
+var errors = bitcore.errors;
 var Unit = bitcore.Unit;
 
 describe('Unit', function() {
 
-  it('should create an instance', function() {
-    var unit;
-
-    unit = new Unit(1.2, 'BTC');
-    should.exist(unit);
-
-    unit = Unit(1.2, 'BTC');
-    should.exist(unit);
+  it('can be created from a number and unit', function() {
+    expect(function() {
+      return new Unit(1.2, 'BTC');
+    }).to.not.throw();
   });
 
-  it('should have property accesors', function() {
+  it('no "new" is required for creating an instance', function() {
+    expect(function() {
+      return Unit(1.2, 'BTC');
+    }).to.not.throw();
+  });
+
+  it('has property accesors "BTC", "mBTC", "uBTC", "bits", and "satoshis"', function() {
     var unit = new Unit(1.2, 'BTC');
-    should.exist(unit.BTC);
-    should.exist(unit.mBTC);
-    should.exist(unit.bits);
-    should.exist(unit.satoshis);
+    unit.BTC.should.equal(1.2);
+    unit.mBTC.should.equal(1200);
+    unit.uBTC.should.equal(1200000);
+    unit.bits.should.equal(1200000);
+    unit.satoshis.should.equal(120000000);
   });
 
-  it('should allow amount as string', function() {
+  it('a string amount is allowed', function() {
     var unit;
 
     unit = Unit.fromBTC('1.00001');
@@ -56,7 +62,8 @@ describe('Unit', function() {
     unit.satoshis.should.equal(8999);
   });
 
-  it('should convert to satoshis correctly', function() {
+  it('converts to satoshis correctly', function() {
+    /* jshint maxstatements: 25 */
     var unit;
 
     unit = Unit.fromBTC(1.3);
@@ -80,14 +87,14 @@ describe('Unit', function() {
     unit.bits.should.equal(0.03);
   });
 
-  it('should take in count floating point problems', function() {
+  it('takes into account floating point problems', function() {
     var unit = Unit.fromBTC(0.00000003);
     unit.mBTC.should.equal(0.00003);
     unit.bits.should.equal(0.03);
     unit.satoshis.should.equal(3);
   });
 
-  it('should expose unit codes', function() {
+  it('exposes unit codes', function() {
     should.exist(Unit.BTC);
     Unit.BTC.should.equal('BTC');
 
@@ -101,15 +108,7 @@ describe('Unit', function() {
     Unit.satoshis.should.equal('satoshis');
   });
 
-  it('should expose shorthand conversion methods', function() {
-    var unit = new Unit(1.3, 'BTC');
-    unit.toBTC().should.equal(unit.BTC);
-    unit.toMilis().should.equal(unit.mBTC);
-    unit.toBits().should.equal(unit.bits);
-    unit.toSatoshis().should.equal(unit.satoshis);
-  });
-
-  it('should expose a general conversion method', function() {
+  it('exposes a method that converts to different units', function() {
     var unit = new Unit(1.3, 'BTC');
     unit.to(Unit.BTC).should.equal(unit.BTC);
     unit.to(Unit.mBTC).should.equal(unit.mBTC);
@@ -117,22 +116,44 @@ describe('Unit', function() {
     unit.to(Unit.satoshis).should.equal(unit.satoshis);
   });
 
-  it('should have a toString method', function() {
+  it('exposes shorthand conversion methods', function() {
+    var unit = new Unit(1.3, 'BTC');
+    unit.toBTC().should.equal(unit.BTC);
+    unit.toMilis().should.equal(unit.mBTC);
+    unit.toBits().should.equal(unit.bits);
+    unit.toSatoshis().should.equal(unit.satoshis);
+  });
+
+  it('toString works as expected', function() {
     var unit = new Unit(1.3, 'BTC');
     should.exist(unit.toString);
     unit.toString().should.be.a('string');
   });
 
-  it('should input/output JSON', function() {
+  it('can be imported and exported from/to JSON', function() {
     var json = JSON.stringify({amount:1.3, code:'BTC'});
     var unit = Unit.fromJSON(json);
     unit.toJSON().should.deep.equal(json);
   });
 
-  it('should have an inspect method', function() {
+  it('importing from invalid JSON fails quickly', function() {
+    expect(function() {
+      return Unit.fromJSON('¹');
+    }).to.throw();
+  });
+
+  it('inspect method displays nicely', function() {
     var unit = new Unit(1.3, 'BTC');
-    should.exist(unit.inspect);
-    unit.inspect().should.be.a('string');
+    unit.inspect().should.equal('<Unit: 130000000 satoshis>');
+  });
+
+  it('fails when the unit is not recognized', function() {
+    expect(function() {
+      return new Unit(100, 'USD');
+    }).to.throw(errors.Unit.UnknownCode);
+    expect(function() {
+      return new Unit(100, 'BTC').to('USD');
+    }).to.throw(errors.Unit.UnknownCode);
   });
 
 });
