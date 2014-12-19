@@ -651,10 +651,10 @@ text-align: center;}
 
  .labs a{ background-image: url("../images/bitpaylabs-icon.svg");
             background-position: top left;
-            padding: 4px 0 4px 130px;
+            padding: 7px 0 0px 100px;
    }   
 .labs a:hover{ background-image: url("../images/bitpaylabs-icon.svg");
-    background-position: bottom left;
+    background-position: 0px -41px;
    }     
 
   #footer { 
