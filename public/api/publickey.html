@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head prefix="og: http://ogp.me/ns#">
+  <meta charset="utf-8">
+  <title>Bitcore &mdash; A pure and simple JavaScript bitcoin API.</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="canonical" href="http://bitcore.io/api/publickey.html">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#2f83cd">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+  <link rel="stylesheet" href="/css/style.css" type="text/css">
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,700" rel="stylesheet" type="text/css">
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro:400,700" rel="stylesheet" type="text/css">
+  <link rel="alternative" href="/atom.xml" title="Bitcore" type="application/atom+xml">
+  <meta name="description" content="class: PublicKey
+Members
+
+class: PublicKey
+new PublicKey(data, extra)
+PublicKey.fromDER
+publicKey.toBuffer
+PublicKey.fromJSON(json)
+PublicKey.fromPrivateKey(privkey)
+PublicKey.fromPoint(point, [compr">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Bitcore">
+<meta property="og:url" content="http://bitcore.io/api/publickey.html">
+<meta property="og:site_name" content="Bitcore">
+<meta property="og:description" content="class: PublicKey
+Members
+
+class: PublicKey
+new PublicKey(data, extra)
+PublicKey.fromDER
+publicKey.toBuffer
+PublicKey.fromJSON(json)
+PublicKey.fromPrivateKey(privkey)
+PublicKey.fromPoint(point, [compr">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Bitcore">
+<meta name="twitter:description" content="class: PublicKey
+Members
+
+class: PublicKey
+new PublicKey(data, extra)
+PublicKey.fromDER
+publicKey.toBuffer
+PublicKey.fromJSON(json)
+PublicKey.fromPrivateKey(privkey)
+PublicKey.fromPoint(point, [compr">
+<meta name="twitter:site" content="@bitpay">
+
+  
+</head>
+
+
+<body>
+  <header id="header">
+  <div class="outer">
+    <div class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Bitcore</a>
+        <a id="main-nav-toggle"></a>
+      </h1>
+      <nav id="main-nav">
+        <ul id="main-nav-list">
+          
+            <li class="main-nav-item">
+              <a href="/guide/" class="main-nav-link">Docs</a>
+            </li>
+          
+            <li class="main-nav-item">
+              <a href="/api/" class="main-nav-link">API</a>
+            </li>
+          
+            <li class="main-nav-item">
+              <a href="https://github.com/bitpay/bitcore" class="main-nav-link">Github</a>
+            </li>
+          
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>
+  <article class="page" itemscope itemtype="http://schema.org/Article">
+  <header id="page-banner">
+    <div class="outer">
+      <div id="page-banner-inner" class="inner">
+        <h1 id="page-title" itemprop="name"></h1>
+        <!--<a href="https://github.com/bitpay/bitcore/blob/master/api/publickey.md" title="Improve this doc" id="page-edit-link"></a>-->
+      </div>
+    </div>
+  </header>
+  <div class="outer">
+    <div id="mobile-menu-wrap"></div>
+    <div class="page-content">
+      <div class="toc-wrap">
+        <strong class="toc-title">Contents</strong>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#class:_PublicKey"><span class="toc-number">1.</span> <span class="toc-text">class: PublicKey</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#new_PublicKey(data,_extra)"><span class="toc-number">1.1.</span> <span class="toc-text">new PublicKey(data, extra)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#PublicKey-fromDER"><span class="toc-number">1.2.</span> <span class="toc-text">PublicKey.fromDER</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#publicKey-toBuffer"><span class="toc-number">1.3.</span> <span class="toc-text">publicKey.toBuffer</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#PublicKey-fromJSON(json)"><span class="toc-number">1.4.</span> <span class="toc-text">PublicKey.fromJSON(json)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#PublicKey-fromPrivateKey(privkey)"><span class="toc-number">1.5.</span> <span class="toc-text">PublicKey.fromPrivateKey(privkey)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#PublicKey-fromPoint(point,_[compressed])"><span class="toc-number">1.6.</span> <span class="toc-text">PublicKey.fromPoint(point, [compressed])</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#PublicKey-fromString(str,_[encoding])"><span class="toc-number">1.7.</span> <span class="toc-text">PublicKey.fromString(str, [encoding])</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#PublicKey-fromX(odd,_x)"><span class="toc-number">1.8.</span> <span class="toc-text">PublicKey.fromX(odd, x)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#PublicKey-getValidationError(data,_[compressed])"><span class="toc-number">1.9.</span> <span class="toc-text">PublicKey.getValidationError(data, [compressed])</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#PublicKey-isValid(data,_[compressed])"><span class="toc-number">1.10.</span> <span class="toc-text">PublicKey.isValid(data, [compressed])</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#publicKey-toObject()"><span class="toc-number">1.11.</span> <span class="toc-text">publicKey.toObject()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#publicKey-toAddress()"><span class="toc-number">1.12.</span> <span class="toc-text">publicKey.toAddress()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#publicKey-toString()"><span class="toc-number">1.13.</span> <span class="toc-text">publicKey.toString()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#publicKey-inspect()"><span class="toc-number">1.14.</span> <span class="toc-text">publicKey.inspect()</span></a></li></ol></li></ol>
+      </div>
+      <div class="page-entry" itemprop="articleBody">
+        <p><a name="PublicKey"></a></p>
+<h1 id="class:_PublicKey">class: PublicKey</h1>
+<p><strong>Members</strong></p>
+<ul>
+<li><a href="#PublicKey">class: PublicKey</a><ul>
+<li><a href="#new_PublicKey">new PublicKey(data, extra)</a></li>
+<li><a href="#PublicKey.fromDER">PublicKey.fromDER</a></li>
+<li><a href="#PublicKey#toBuffer">publicKey.toBuffer</a></li>
+<li><a href="#PublicKey.fromJSON">PublicKey.fromJSON(json)</a></li>
+<li><a href="#PublicKey.fromPrivateKey">PublicKey.fromPrivateKey(privkey)</a></li>
+<li><a href="#PublicKey.fromPoint">PublicKey.fromPoint(point, [compressed])</a></li>
+<li><a href="#PublicKey.fromString">PublicKey.fromString(str, [encoding])</a></li>
+<li><a href="#PublicKey.fromX">PublicKey.fromX(odd, x)</a></li>
+<li><a href="#PublicKey.getValidationError">PublicKey.getValidationError(data, [compressed])</a></li>
+<li><a href="#PublicKey.isValid">PublicKey.isValid(data, [compressed])</a></li>
+<li><a href="#PublicKey#toObject">publicKey.toObject()</a></li>
+<li><a href="#PublicKey#toAddress">publicKey.toAddress()</a></li>
+<li><a href="#PublicKey#toString">publicKey.toString()</a></li>
+<li><a href="#PublicKey#inspect">publicKey.inspect()</a></li>
+</ul>
+</li>
+</ul>
+<p><a name="new_PublicKey"></a></p>
+<h2 id="new_PublicKey(data,_extra)">new PublicKey(data, extra)</h2>
+<p>Instantiate a PublicKey from a ‘PrivateKey’, ‘Point’, ‘string’, ‘Buffer’.</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>data <code>String</code> - The encoded data in various formats  </li>
+<li>extra <code>Object</code> - additional options  <ul>
+<li>[network] <code>Network</code> - Which network should the address for this public key be for  </li>
+<li>[compressed] <code>String</code> - If the public key is compressed  </li>
+</ul>
+</li>
+</ul>
+<p><strong>Returns</strong>: <a href="#PublicKey">PublicKey</a> - A new valid instance of an PublicKey<br><strong>Example</strong>  </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="comment">// instantiate from a private key</span></div><div class="line"><span class="keyword">var</span> key = PublicKey(privateKey, <span class="literal">true</span>);</div><div class="line"></div><div class="line"><span class="comment">// export to as a DER hex encoded string</span></div><div class="line"><span class="keyword">var</span> exported = key.toString();</div><div class="line"></div><div class="line"><span class="comment">// import the public key</span></div><div class="line"><span class="keyword">var</span> imported = PublicKey.fromString(exported);</div></pre></td></tr></table></figure>
+
+<p><a name="PublicKey.fromDER"></a></p>
+<h2 id="PublicKey-fromDER">PublicKey.fromDER</h2>
+<p>Instantiate a PublicKey from a Buffer</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>buf <code>Buffer</code> - A DER hex buffer  </li>
+<li>[strict] <code>bool</code> - if set to false, will loosen some conditions  </li>
+</ul>
+<p><strong>Returns</strong>: <a href="#PublicKey">PublicKey</a> - A new valid instance of PublicKey<br><a name="PublicKey#toBuffer"></a></p>
+<h2 id="publicKey-toBuffer">publicKey.toBuffer</h2>
+<p>Will output the PublicKey to a DER Buffer</p>
+<p><strong>Returns</strong>: <code>Buffer</code> - A DER hex encoded buffer<br><a name="PublicKey.fromJSON"></a></p>
+<h2 id="PublicKey-fromJSON(json)">PublicKey.fromJSON(json)</h2>
+<p>Instantiate a PublicKey from JSON</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>json <code>String</code> - A JSON string  </li>
+</ul>
+<p><strong>Returns</strong>: <a href="#PublicKey">PublicKey</a> - A new valid instance of PublicKey<br><a name="PublicKey.fromPrivateKey"></a></p>
+<h2 id="PublicKey-fromPrivateKey(privkey)">PublicKey.fromPrivateKey(privkey)</h2>
+<p>Instantiate a PublicKey from a PrivateKey</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>privkey <code>PrivateKey</code> - An instance of PrivateKey  </li>
+</ul>
+<p><strong>Returns</strong>: <a href="#PublicKey">PublicKey</a> - A new valid instance of PublicKey<br><a name="PublicKey.fromPoint"></a></p>
+<h2 id="PublicKey-fromPoint(point,_[compressed])">PublicKey.fromPoint(point, [compressed])</h2>
+<p>Instantiate a PublicKey from a Point</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>point <code>Point</code> - A Point instance  </li>
+<li>[compressed] <code>boolean</code> - whether to store this public key as compressed format  </li>
+</ul>
+<p><strong>Returns</strong>: <a href="#PublicKey">PublicKey</a> - A new valid instance of PublicKey<br><a name="PublicKey.fromString"></a></p>
+<h2 id="PublicKey-fromString(str,_[encoding])">PublicKey.fromString(str, [encoding])</h2>
+<p>Instantiate a PublicKey from a DER hex encoded string</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>str <code>String</code> - A DER hex string  </li>
+<li>[encoding] <code>String</code> - The type of string encoding  </li>
+</ul>
+<p><strong>Returns</strong>: <a href="#PublicKey">PublicKey</a> - A new valid instance of PublicKey<br><a name="PublicKey.fromX"></a></p>
+<h2 id="PublicKey-fromX(odd,_x)">PublicKey.fromX(odd, x)</h2>
+<p>Instantiate a PublicKey from an X Point</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>odd <code>Boolean</code> - If the point is above or below the x axis  </li>
+<li>x <code>Point</code> - The x point  </li>
+</ul>
+<p><strong>Returns</strong>: <a href="#PublicKey">PublicKey</a> - A new valid instance of PublicKey<br><a name="PublicKey.getValidationError"></a></p>
+<h2 id="PublicKey-getValidationError(data,_[compressed])">PublicKey.getValidationError(data, [compressed])</h2>
+<p>Check if there would be any errors when initializing a PublicKey</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>data <code>String</code> - The encoded data in various formats  </li>
+<li>[compressed] <code>String</code> - If the public key is compressed  </li>
+</ul>
+<p><strong>Returns</strong>: <code>null</code> | <code>Error</code> - An error if exists<br><a name="PublicKey.isValid"></a></p>
+<h2 id="PublicKey-isValid(data,_[compressed])">PublicKey.isValid(data, [compressed])</h2>
+<p>Check if the parameters are valid</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>data <code>String</code> - The encoded data in various formats  </li>
+<li>[compressed] <code>String</code> - If the public key is compressed  </li>
+</ul>
+<p><strong>Returns</strong>: <code>Boolean</code> - If the public key would be valid<br><a name="PublicKey#toObject"></a></p>
+<h2 id="publicKey-toObject()">publicKey.toObject()</h2>
+<p><strong>Returns</strong>: <code>Object</code> - A plain object of the PublicKey<br><a name="PublicKey#toAddress"></a></p>
+<h2 id="publicKey-toAddress()">publicKey.toAddress()</h2>
+<p>Will return an address for the public key</p>
+<p><strong>Returns</strong>: <code>Address</code> - An address generated from the public key<br><a name="PublicKey#toString"></a></p>
+<h2 id="publicKey-toString()">publicKey.toString()</h2>
+<p>Will output the PublicKey to a DER encoded hex string</p>
+<p><strong>Returns</strong>: <code>String</code> - A DER hex encoded string<br><a name="PublicKey#inspect"></a></p>
+<h2 id="publicKey-inspect()">publicKey.inspect()</h2>
+<p>Will return a string formatted for the console</p>
+<p><strong>Returns</strong>: <code>String</code> - Public key  </p>
+
+      </div>
+      <footer id="page-footer">
+        <time id="page-footer-updated" datetime="2014-12-19T00:34:35.000Z" itemprop="dateModified">Last updated: Dec 18 2014</time>
+        <a href="index.html" id="page-footer-next" title="Get Started">Next</a>
+      </footer>
+      
+    </div>
+    <aside id="sidebar">
+
+  
+
+  
+    <strong class="sidebar-title">Main</strong>
+    
+      <a href="/api/address.html" class="sidebar-link">Address</a>
+    
+      <a href="/api/block.html" class="sidebar-link">Block</a>
+    
+      <a href="/api/blockheader.html" class="sidebar-link">BlockHeader</a>
+    
+      <a href="/api/hdprivatekey.html" class="sidebar-link">HDPrivateKey</a>
+    
+      <a href="/api/hdpublickey.html" class="sidebar-link">HDPublicKey</a>
+    
+      <a href="/api/networks.html" class="sidebar-link">Networks</a>
+    
+      <a href="/api/privatekey.html" class="sidebar-link">PrivateKey</a>
+    
+      <a href="/api/publickey.html" class="sidebar-link current">PublicKey</a>
+    
+      <a href="/api/unit.html" class="sidebar-link">Unit</a>
+    
+      <a href="/api/uri.html" class="sidebar-link">Uri</a>
+    
+  
+    <strong class="sidebar-title">Crypto</strong>
+    
+      <a href="/api/crypto/point.html" class="sidebar-link">Point</a>
+    
+  
+    <strong class="sidebar-title">Script</strong>
+    
+      <a href="/api/script/script.html" class="sidebar-link">Script</a>
+    
+  
+    <strong class="sidebar-title">Transaction</strong>
+    
+      <a href="/api/transaction/transaction.html" class="sidebar-link">Transaction</a>
+    
+      <a href="/api/transaction/sighash.html" class="sidebar-link">Sig Hash</a>
+    
+  
+    <strong class="sidebar-title">Transport</strong>
+    
+      <a href="/api/transport/peer.html" class="sidebar-link">Peer</a>
+    
+      <a href="/api/transport/pool.html" class="sidebar-link">Pool</a>
+    
+      <a href="/api/transport/rpc.html" class="sidebar-link">RPC</a>
+    
+  
+
+
+
+
+</aside>
+  </div>
+</article>
+  <footer id="footer">
+  <div class="outer">
+    <div class="inner">
+      <div id="footer-copyright">
+        <p>bitcore™ &copy; 2013-2014 BitPay, Inc. bitcore is released under the MIT license.</p>
+      </div>
+      <div id="footer-links">
+        <a href="https://twitter.com/bitpay" id="footer-link-twitter" class="footer-link" target="_blank"><span>Twitter</span></a>
+        <a href="https://github.com/bitpay/bitcore" id="footer-link-github" class="footer-link" target="_blank"><span>GitHub</span></a>
+      </div>
+    </div>
+  </div>
+</footer>
+  
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="/js/retina.min.js" type="text/javascript"></script>
+
+<script src="/js/script.js" type="text/javascript"></script>
+
+<!-- Google+ -->
+<script type="text/javascript" src="//apis.google.com/js/plusone.js"></script>
+<!-- Twitter -->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+
+</body>
+</html>

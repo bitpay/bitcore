@@ -1,0 +1,17 @@
+<article class="post<% if (full){ %> full<% } %>" itemscope itemtype="http://schema.org/Article">
+  <header class="post-header">
+    <%- partial('post/title') %>
+    <%- partial('post/date') %>
+  </header>
+  <% if (full){ %>
+    <div class="page-entry" itemprop="articleBody">
+      <%- post.content %>
+    </div>
+  <% } %>
+  <% if (!index){ %>
+    <footer class="post-footer">
+      <%- partial('post/share') %>
+    </footer>
+    <%- partial('comment') %>
+  <% } %>
+</article>

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head prefix="og: http://ogp.me/ns#">
+  <meta charset="utf-8">
+  <title>Bitcore &mdash; A pure and simple JavaScript bitcoin API.</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="canonical" href="http://bitcore.io/api/uri.html">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#2f83cd">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+  <link rel="stylesheet" href="/css/style.css" type="text/css">
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,700" rel="stylesheet" type="text/css">
+  <link href="//fonts.googleapis.com/css?family=Source+Code+Pro:400,700" rel="stylesheet" type="text/css">
+  <link rel="alternative" href="/atom.xml" title="Bitcore" type="application/atom+xml">
+  <meta name="description" content="class: URI
+Members
+
+class: URI
+new URI(data, [knownParams])
+URI.fromString(str)
+URI.fromJSON(json)
+URI.isValid(data, [knownParams])
+URI.parse(uri)
+uRI._fromObject(obj)
+uRI._parseAmount(amount)
+uRI.to">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Bitcore">
+<meta property="og:url" content="http://bitcore.io/api/uri.html">
+<meta property="og:site_name" content="Bitcore">
+<meta property="og:description" content="class: URI
+Members
+
+class: URI
+new URI(data, [knownParams])
+URI.fromString(str)
+URI.fromJSON(json)
+URI.isValid(data, [knownParams])
+URI.parse(uri)
+uRI._fromObject(obj)
+uRI._parseAmount(amount)
+uRI.to">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Bitcore">
+<meta name="twitter:description" content="class: URI
+Members
+
+class: URI
+new URI(data, [knownParams])
+URI.fromString(str)
+URI.fromJSON(json)
+URI.isValid(data, [knownParams])
+URI.parse(uri)
+uRI._fromObject(obj)
+uRI._parseAmount(amount)
+uRI.to">
+<meta name="twitter:site" content="@bitpay">
+
+  
+</head>
+
+
+<body>
+  <header id="header">
+  <div class="outer">
+    <div class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Bitcore</a>
+        <a id="main-nav-toggle"></a>
+      </h1>
+      <nav id="main-nav">
+        <ul id="main-nav-list">
+          
+            <li class="main-nav-item">
+              <a href="/guide/" class="main-nav-link">Docs</a>
+            </li>
+          
+            <li class="main-nav-item">
+              <a href="/api/" class="main-nav-link">API</a>
+            </li>
+          
+            <li class="main-nav-item">
+              <a href="https://github.com/bitpay/bitcore" class="main-nav-link">Github</a>
+            </li>
+          
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>
+  <article class="page" itemscope itemtype="http://schema.org/Article">
+  <header id="page-banner">
+    <div class="outer">
+      <div id="page-banner-inner" class="inner">
+        <h1 id="page-title" itemprop="name"></h1>
+        <!--<a href="https://github.com/bitpay/bitcore/blob/master/api/uri.md" title="Improve this doc" id="page-edit-link"></a>-->
+      </div>
+    </div>
+  </header>
+  <div class="outer">
+    <div id="mobile-menu-wrap"></div>
+    <div class="page-content">
+      <div class="toc-wrap">
+        <strong class="toc-title">Contents</strong>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#class:_URI"><span class="toc-number">1.</span> <span class="toc-text">class: URI</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#new_URI(data,_[knownParams])"><span class="toc-number">1.1.</span> <span class="toc-text">new URI(data, [knownParams])</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#URI-fromString(str)"><span class="toc-number">1.2.</span> <span class="toc-text">URI.fromString(str)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#URI-fromJSON(json)"><span class="toc-number">1.3.</span> <span class="toc-text">URI.fromJSON(json)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#URI-isValid(data,_[knownParams])"><span class="toc-number">1.4.</span> <span class="toc-text">URI.isValid(data, [knownParams])</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#URI-parse(uri)"><span class="toc-number">1.5.</span> <span class="toc-text">URI.parse(uri)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#uRI-_fromObject(obj)"><span class="toc-number">1.6.</span> <span class="toc-text">uRI._fromObject(obj)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#uRI-_parseAmount(amount)"><span class="toc-number">1.7.</span> <span class="toc-text">uRI._parseAmount(amount)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#uRI-toString()"><span class="toc-number">1.8.</span> <span class="toc-text">uRI.toString()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#uRI-inspect()"><span class="toc-number">1.9.</span> <span class="toc-text">uRI.inspect()</span></a></li></ol></li></ol>
+      </div>
+      <div class="page-entry" itemprop="articleBody">
+        <p><a name="URI"></a></p>
+<h1 id="class:_URI">class: URI</h1>
+<p><strong>Members</strong></p>
+<ul>
+<li><a href="#URI">class: URI</a><ul>
+<li><a href="#new_URI">new URI(data, [knownParams])</a></li>
+<li><a href="#URI.fromString">URI.fromString(str)</a></li>
+<li><a href="#URI.fromJSON">URI.fromJSON(json)</a></li>
+<li><a href="#URI.isValid">URI.isValid(data, [knownParams])</a></li>
+<li><a href="#URI.parse">URI.parse(uri)</a></li>
+<li><a href="#URI#_fromObject">uRI._fromObject(obj)</a></li>
+<li><a href="#URI#_parseAmount">uRI._parseAmount(amount)</a></li>
+<li><a href="#URI#toString">uRI.toString()</a></li>
+<li><a href="#URI#inspect">uRI.inspect()</a></li>
+</ul>
+</li>
+</ul>
+<p><a name="new_URI"></a></p>
+<h2 id="new_URI(data,_[knownParams])">new URI(data, [knownParams])</h2>
+<p>Bitcore URI</p>
+<p>Instantiate an URI from a bitcoin URI String or an Object. An URI instance<br>can be created with a bitcoin uri string or an object. All instances of<br>URI are valid, the static method isValid allows checking before instanciation.</p>
+<p>All standard parameters can be found as members of the class, the address<br>is represented using an {Address} instance and the amount is represented in<br>satoshis. Any other non-standard parameters can be found under the extra member.</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>data <code>string</code> | <code>Object</code> - A bitcoin URI string or an Object  </li>
+<li>[knownParams] <code>Array.&lt;string&gt;</code> - Required non-standard params  </li>
+</ul>
+<p><strong>Type</strong>: <code>TypeError</code><br><strong>Returns</strong>: <a href="#URI">URI</a> - A new valid and frozen instance of URI<br><strong>Example</strong>  </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">var</span> uri = <span class="keyword">new</span> URI(<span class="string">'bitcoin:12A1MyfXbW6RhdRAZEqofac5jCQQjwEPBu?amount=1.2'</span>);</div><div class="line"><span class="built_in">console</span>.log(uri.address, uri.amount);</div></pre></td></tr></table></figure>
+
+<p><a name="URI.fromString"></a></p>
+<h2 id="URI-fromString(str)">URI.fromString(str)</h2>
+<p>Instantiate a URI from a String</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>str <code>String</code> - JSON string or object of the URI  </li>
+</ul>
+<p><strong>Returns</strong>: <a href="#URI">URI</a> - A new instance of a URI<br><a name="URI.fromJSON"></a></p>
+<h2 id="URI-fromJSON(json)">URI.fromJSON(json)</h2>
+<p>Instantiate a URI from JSON</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>json <code>String</code> | <code>Object</code> - JSON string or object of the URI  </li>
+</ul>
+<p><strong>Returns</strong>: <a href="#URI">URI</a> - A new instance of a URI<br><a name="URI.isValid"></a></p>
+<h2 id="URI-isValid(data,_[knownParams])">URI.isValid(data, [knownParams])</h2>
+<p>Check if an bitcoin URI string is valid</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>data <code>string</code> | <code>Object</code> - A bitcoin URI string or an Object  </li>
+<li>[knownParams] <code>Array.&lt;string&gt;</code> - Required non-standard params  </li>
+</ul>
+<p><strong>Returns</strong>: <code>boolean</code> - Result of uri validation<br><strong>Example</strong>  </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">var</span> valid = URI.isValid(<span class="string">'bitcoin:12A1MyfXbW6RhdRAZEqofac5jCQQjwEPBu'</span>);</div><div class="line"><span class="comment">// true</span></div></pre></td></tr></table></figure>
+
+<p><a name="URI.parse"></a></p>
+<h2 id="URI-parse(uri)">URI.parse(uri)</h2>
+<p>Convert a bitcoin URI string into a simple object.</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>uri <code>string</code> - A bitcoin URI string  </li>
+</ul>
+<p><strong>Type</strong>: <code>TypeError</code><br><strong>Returns</strong>: <code>Object</code> - An object with the parsed params<br><a name="URI#_fromObject"></a></p>
+<h2 id="uRI-_fromObject(obj)">uRI._fromObject(obj)</h2>
+<p>Internal function to load the URI instance with an object.</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>obj <code>Object</code> - Object with the information  </li>
+</ul>
+<p><strong>Type</strong>: <code>TypeError</code><br><a name="URI#_parseAmount"></a></p>
+<h2 id="uRI-_parseAmount(amount)">uRI._parseAmount(amount)</h2>
+<p>Internal function to transform a BTC string amount into satoshis</p>
+<p><strong>Params</strong></p>
+<ul>
+<li>amount <code>String</code> - Amount BTC string  </li>
+</ul>
+<p><strong>Type</strong>: <code>TypeError</code><br><strong>Returns</strong>: <code>Object</code> - Amount represented in satoshis<br><a name="URI#toString"></a></p>
+<h2 id="uRI-toString()">uRI.toString()</h2>
+<p>Will return a the string representation of the URI</p>
+<p><strong>Returns</strong>: <code>String</code> - Bitcoin URI string<br><a name="URI#inspect"></a></p>
+<h2 id="uRI-inspect()">uRI.inspect()</h2>
+<p>Will return a string formatted for the console</p>
+<p><strong>Returns</strong>: <code>String</code> - Bitcoin URI  </p>
+
+      </div>
+      <footer id="page-footer">
+        <time id="page-footer-updated" datetime="2014-12-19T00:34:35.000Z" itemprop="dateModified">Last updated: Dec 18 2014</time>
+        <a href="index.html" id="page-footer-next" title="Get Started">Next</a>
+      </footer>
+      
+    </div>
+    <aside id="sidebar">
+
+  
+
+  
+    <strong class="sidebar-title">Main</strong>
+    
+      <a href="/api/address.html" class="sidebar-link">Address</a>
+    
+      <a href="/api/block.html" class="sidebar-link">Block</a>
+    
+      <a href="/api/blockheader.html" class="sidebar-link">BlockHeader</a>
+    
+      <a href="/api/hdprivatekey.html" class="sidebar-link">HDPrivateKey</a>
+    
+      <a href="/api/hdpublickey.html" class="sidebar-link">HDPublicKey</a>
+    
+      <a href="/api/networks.html" class="sidebar-link">Networks</a>
+    
+      <a href="/api/privatekey.html" class="sidebar-link">PrivateKey</a>
+    
+      <a href="/api/publickey.html" class="sidebar-link">PublicKey</a>
+    
+      <a href="/api/unit.html" class="sidebar-link">Unit</a>
+    
+      <a href="/api/uri.html" class="sidebar-link current">Uri</a>
+    
+  
+    <strong class="sidebar-title">Crypto</strong>
+    
+      <a href="/api/crypto/point.html" class="sidebar-link">Point</a>
+    
+  
+    <strong class="sidebar-title">Script</strong>
+    
+      <a href="/api/script/script.html" class="sidebar-link">Script</a>
+    
+  
+    <strong class="sidebar-title">Transaction</strong>
+    
+      <a href="/api/transaction/transaction.html" class="sidebar-link">Transaction</a>
+    
+      <a href="/api/transaction/sighash.html" class="sidebar-link">Sig Hash</a>
+    
+  
+    <strong class="sidebar-title">Transport</strong>
+    
+      <a href="/api/transport/peer.html" class="sidebar-link">Peer</a>
+    
+      <a href="/api/transport/pool.html" class="sidebar-link">Pool</a>
+    
+      <a href="/api/transport/rpc.html" class="sidebar-link">RPC</a>
+    
+  
+
+
+
+
+</aside>
+  </div>
+</article>
+  <footer id="footer">
+  <div class="outer">
+    <div class="inner">
+      <div id="footer-copyright">
+        <p>bitcore™ &copy; 2013-2014 BitPay, Inc. bitcore is released under the MIT license.</p>
+      </div>
+      <div id="footer-links">
+        <a href="https://twitter.com/bitpay" id="footer-link-twitter" class="footer-link" target="_blank"><span>Twitter</span></a>
+        <a href="https://github.com/bitpay/bitcore" id="footer-link-github" class="footer-link" target="_blank"><span>GitHub</span></a>
+      </div>
+    </div>
+  </div>
+</footer>
+  
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="/js/retina.min.js" type="text/javascript"></script>
+
+<script src="/js/script.js" type="text/javascript"></script>
+
+<!-- Google+ -->
+<script type="text/javascript" src="//apis.google.com/js/plusone.js"></script>
+<!-- Twitter -->
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+
+</body>
+</html>

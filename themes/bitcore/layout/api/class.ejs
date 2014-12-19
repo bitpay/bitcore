@@ -1,0 +1,47 @@
+layout: api/layout
+---
+<header id="api-header">
+  <h1 id="api-title"><%= page.name %> Class</h1>
+  <div class="api-meta">
+    Defined in <%- github_link(page) %>
+    <% if (page.extends){ %>
+      <br>Extends <span class="api-item-type"><%- yuidoc_type(page.extends) %></span>
+    <% } %>
+    <% if (page.uses && page.uses.length){ %>
+      <br>Uses <span class="api-item-type"><%- yuidoc_type(page.uses) %></span>
+    <% } %>
+  </div>
+</header>
+<%- partial('_partial/deprecated', {data: page}) %>
+<div class="page-entry">
+  <h2 class="api-section-title">Description</h2>
+  <%- page.description %>
+  <% if (page.is_constructor){ %>
+    <h2 class="api-section-title">Constructor</h2>
+    <%- partial('_partial/classitem', {data: page, type: 'constructor'}) %>
+  <% } %>
+  <% if (page.methods.length){ %>
+    <h2 class="api-section-title">Methods</h2>
+    <% page.methods.forEach(function(item){ %>
+      <%- partial('_partial/classitem', {data: item, type: 'method'}) %>
+    <% }) %>
+  <% } %>
+  <% if (page.properties.length){ %>
+    <h2 class="api-section-title">Properties</h2>
+    <% page.properties.forEach(function(item){ %>
+      <%- partial('_partial/classitem', {data: item, type: 'property'}) %>
+    <% }) %>
+  <% } %>
+  <% if (page.attributes.length){ %>
+    <h2 class="api-section-title">Attributes</h2>
+    <% page.attributes.forEach(function(item){ %>
+      <%- partial('_partial/classitem', {data: item, type: 'attribute'}) %>
+    <% }) %>
+  <% } %>
+  <% if (page.events.length){ %>
+    <h2 class="api-section-title">Events</h2>
+    <% page.events.forEach(function(item){ %>
+      <%- partial('_partial/classitem', {data: item, type: 'event'}) %>
+    <% }) %>
+  <% } %>
+</div>

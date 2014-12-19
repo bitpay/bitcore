@@ -1,0 +1,45 @@
+#news-subscribe-link
+  @extend $banner-link
+  &:before
+    @extend $icon-font
+    content: "\f09e"
+
+#post-list
+  padding-bottom: 30px
+
+.post
+  padding: 20px 0
+  max-width: 860px
+  margin: 0 auto
+  &.full
+    padding: 60px 0 30px
+
+.post-header
+  text-align: center
+
+.post-title
+  font: 300 2em font-title
+  line-height: 1.2em
+  color: color-default
+  text-decoration: none
+  transition: color 0.2s
+  a&:hover
+    color: color-blue
+
+.post-date-wrap
+  padding: 20px 0
+
+.post-date
+  font: 300 0.9em font-title
+  line-height: 1em
+  color: color-grey
+  text-decoration: none
+  position: relative
+  background: #fff
+  padding: 0 8px
+  transition: color 0.2s
+  &:hover
+    color: color-default
+
+.post-footer
+  padding: 20px 0 40px

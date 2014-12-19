@@ -1,0 +1,55 @@
+footer-link-size = 30px
+
+#footer
+  padding: 40px 0
+  background: #eee
+  font-family: font-title
+  color: color-grey
+  line-height: 1.5
+  border: 1px solid color-border
+  text-align: center
+  @media mq-normal
+    text-align: left
+
+#footer-copyright
+  @media mq-normal
+    float: left
+  a
+    color: #777
+    text-decoration: none
+    &:hover
+      text-decoration: underline
+      color: color-blue
+
+#footer-links
+  @media mq-mobile
+    margin-top: 25px
+  @media mq-normal
+    float: right
+    margin-right: -10px
+
+.footer-link
+  text-decoration: none
+  width: footer-link-size
+  height: @width
+  font-size: @width
+  line-height: @width
+  display: inline-block
+  text-align: center
+  color: color-grey
+  margin: 0 10px
+  transition: color 0.2s
+  &:hover
+    color: color-blue
+  &:before
+    @extend $icon-font
+  span
+    display: none
+
+#footer-link-twitter
+  &:before
+    content: "\f099"
+
+#footer-link-github
+  &:before
+    content: "\f113"

@@ -1,0 +1,59 @@
+<div id="<%- data.slug || 'constructor' %>" class="api-item <%= type %> <%= data.access || 'public' %><% if (data.deprecated){ %> deprecated<% } %>">
+  <header class="api-item-header">
+    <h3 class="api-item-title">
+      <a href="#<%- data.slug || 'constructor' %>"><%= data.name %></a>
+    </h3>
+    <% if (data.params && data.params.length){ %>
+      <span class="api-item-params"><%- yuidoc_params(data.params) %></span>
+    <% } %>
+    <% if (data.return){ %>
+      <span class="api-item-type"><%- yuidoc_type(data.return.type) %></span>
+    <% } %>
+    <%- item_flags(data) %>
+    <% if (data.access){ %>
+      <span class="api-item-flag <%= data.access %>"><%= data.access %></span>
+    <% } %>
+  </header>
+  <div class="api-item-meta">
+    <% if (data.overwritten_from){ %>
+      Inherited from <a href="<%- url_for(data.overwritten_from.path) %>#<%= type %>_<%- data.name %>"><%= data.overwritten_from.name %></a> but overwritten in:
+    <% } else if (data.extended_from){ %>
+      Inherited from <a href="<%- url_for(data.extended_from.path) %>#<%= type %>_<%- data.name %>"></a>:
+    <% } else { %>
+      Defined in
+    <% } %>
+    <%- github_link(data) %>
+  </div>
+  <%- partial('deprecated', {data: data}) %>
+  <div class="api-item-entry">
+    <%- data.description %>
+    <% if (data.params && data.params.length){ %>
+      <h4 class="api-item-subtitle">Parameters</h4>
+      <ul>
+        <% data.params.forEach(function(param){ %>
+          <li>
+            <strong><%= param.name %></strong>
+            <span class="api-item-type"><%- yuidoc_type(param.type) %></span>
+            <% if (param.optional){ %>
+              <span class="api-item-flag optional">optional</span>
+            <% } %>
+            <% if (param.description){ %>
+              <%- param.description %>
+            <% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+    <% if (data.return){ %>
+      <h4 class="api-item-subtitle">Returns</h4>
+      <ul>
+        <li>
+          <span class="api-item-type"><%- yuidoc_type(data.return.type) %></span>
+          <% if (data.return.description){ %>
+            <%- data.return.description %>
+          <% } %>
+        </li>
+      </ul>
+    <% } %>
+  </div>
+</div>

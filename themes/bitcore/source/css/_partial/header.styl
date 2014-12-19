@@ -1,0 +1,125 @@
+logo-width = 198px
+logo-height = 58px
+
+#header
+  background: #fff
+  border-bottom: 1px solid #ccc
+  font-family: font-title
+  padding-top: 30px
+  padding-bottom: 30px
+  position: relative
+
+#logo-wrap
+  text-align: center
+  position: relative
+  @media mq-normal
+    float: left
+
+#logo
+  hide-text()
+  width: logo-width
+  height: logo-height
+  image: "images/logo.png" @width @height
+  display: block
+
+#main-nav-toggle
+  float: right
+  width: logo-height
+  height: @width
+  text-align: center
+  color: #999
+  cursor: pointer
+  position: absolute
+  top: 0
+  bottom: 0
+  right: 0
+  margin: auto
+  user-select: none
+  font-size: 24px
+  &:before
+    @extend $icon-font
+    square(@font-size)
+    absolute-center()
+    content: "\f0c9"
+  &:hover, &:active
+    color: #555
+  @media mq-normal
+    display: none
+
+#main-nav
+  &.on
+    display: block
+  @media mq-mobile
+    position: absolute
+    top: 100%
+    left: 0
+    right: 0
+    margin-top: -20px
+    border-bottom: 1px solid color-border
+    background: #fff
+    display: none
+    z-index: 1
+  @media mq-normal
+    float: right
+    display: block
+    margin: 0
+
+#main-nav-list
+  @media mq-normal
+    float: left
+
+.main-nav-item
+  margin: 10px
+  @media mq-normal
+    float: left
+    margin: 0 15px
+
+.main-nav-link
+  display: block
+  font-weight: bold
+  text-transform: uppercase
+  text-decoration: none
+  color: color-grey
+  text-align: center
+  padding: 10px 15px
+  line-height: 1
+  transition: 0.2s
+  @media mq-normal
+    padding: 10px 0
+  &:hover, &:active
+    color: color-blue
+    @media mq-mobile
+      background: color-blue
+      color: #fff
+      border-radius: 4px
+
+$header-btn
+  float: left
+  display: none
+  width: 18px
+  height: @width
+  text-align: center
+  padding: 8px
+  line-height: @width
+  cursor: pointer
+  color: #999
+  transition: color 0.2s
+  text-decoration: none
+  &:hover
+    color: color-blue
+  &:before
+    font-size: @width
+  @media mq-normal
+    display: block
+
+#github-btn
+  @extend $header-btn
+  &:before
+    @extend $icon-font
+    content: "\f113"
+
+#search-btn
+  @extend $header-btn
+  &:before
+    @extend $icon-font
+    content: "\f002"

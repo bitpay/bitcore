@@ -3,6 +3,15 @@ Bitcore.io
 
 The Bitcore website, hosted via GitHub Pages. 
 
+#Running
+
+```
+$ npm install
+$ npm install hexo -g
+$ hexo generate
+$ hexo server
+```
+
 #Assets
 Bitcore brand assets are available in the `images` directory.
 
