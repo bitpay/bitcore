@@ -1,14 +1,80 @@
+
+<div id="animation">
+  <div id="animation-inner">
+    <div id="shadow-ball" class="fadeIn"></div>
+    <div id="ball" class="slideDown"></div>  
+  </div>
+</div>
+
 <div id="banner">
   <div class="outer">
     <div class="inner">
       <h2 id="banner-title">A pure and simple JavaScript bitcoin API.</h2>
-      <div id="banner-getting-started">
-        <span id="banner-getting-started-prefix">$</span>
-        <input id="banner-getting-started-input" type="text" value="npm install bitcore" readonly>
-        <a href="<%- config.root %>guide" id="banner-getting-started-btn"></a>
-      </div>
+    </div>
+  </div>
+  <div id="banner-footer">
+    <div id="volcano-hd"></div>
+    <div id="banner-getting-started">
+      <span id="banner-getting-started-prefix">$</span>
+      <input id="banner-getting-started-input" type="text" value="npm install bitcore" readonly>
+      <a href="<%- config.root %>guide" id="banner-getting-started-btn"></a>
     </div>
   </div>
 </div>
+
+
+<div id="features">
+  <div class="outer">
+
+    <h2>Main Features</h2>
+
+    <div class="list">
+      <div id="cross-platform" class="item">
+        <p class="headline">Cross Platform</p>
+        <p class="detail">Works in both <a href="/guide/index.html">Node.js</a> and <a href="/guide/index.html">Web Browsers</a></p>
+      </div>
+      <div id="functionality" class="item">
+        <p class="headline">All the Core Bitcoin Functionality</p>
+        <p class="detail"><a href="/guide/address.html">Addresses</a>, <a href="/guide/transaction.html">Transactions</a>, <a href="/guide/script.html">Script</a> and <a href="/guide/pool.html">P2P Networking</a></p>
+      </div>
+      <div id="osource" class="item">
+        <p class="headline">Open Source</p>
+        <p class="detail">Over 93% Test Coverage, Publically Audited and available on <a href="https://github.com/bitpay/bitcore">Github</a></p>
+      </div>
+      <div id="paymentprotocol" class="item">
+        <p class="headline">Payment Protocol Support</p>
+        <p class="detail"><a href="/guide/paymentprotocol.html">Secure Messages</a> between Merchants and Customers</p>
+      </div>
+      <div id="keys" class="item">
+        <p class="headline">Private and <br/>Public Key Management</p>
+        <p class="detail"><a href="/guide/privatekey.html">Basic</a> and <a href="/guide/hierarchical.html">Hierarchically Derived</a></p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<div id="projects">
+  <div class="outer">
+    <h2>Projects Using Bitcore</h2>
+
+     <ul class="using-bitcore">
+       <a href="https://bitpay.com/"><li id="bitpay-link" class="link"></li></a>
+       <a href="https://copay.io"><li id="copay-link" class="link"></li></a>
+       <a href="https://insight.is/"><li id="insight-link" class="link"></li></a>
+     </ul>
+
+     <ul class="using-bitcore">
+       <a href="https://enbitcoins.com"><li id="enbitcoins-link" class="link"></li></a>
+       <a href="https://github.com/streamium/paystream"><li id="streamium-link" class="link"></li></a>
+       <a href="https://github.com/dmerrill6/BitBox"><li id="bitbox-link" class="link"></li></a>
+       <a href="https://maraoz.github.io/multipaper/"><li id="paper-wallet-link" class="link"></li></a>
+       <a href="http://counterparty.io/"><li id="cp-link" class="link">Counterparty</a></li>
+     </ul>
+
+  </div>
+</div>
+
 
 <%- page.content %>

@@ -2,7 +2,15 @@
   <header id="page-banner">
     <div class="outer">
       <div id="page-banner-inner" class="inner">
-        <h1 id="page-title" itemprop="name"><%= page.title %></h1>
+        <% 
+          // setup the different titles
+          if (is_current('guide/', false)) { 
+            var title = 'Documentation';
+          } else if (is_current('api/', false)) {
+            var title = 'API Reference';
+          }
+        %>
+        <h1 id="page-title" itemprop="name"><%= title %></h1>
         <!--<a href="https://github.com/bitpay/bitcore/blob/master/<%- page.path.replace(/\.html$/, '.md') %>" title="Improve this doc" id="page-edit-link"></a>-->
       </div>
     </div>
