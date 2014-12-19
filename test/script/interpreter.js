@@ -202,7 +202,7 @@ describe('Interpreter', function() {
     var hashbuf = new Buffer(32);
     hashbuf.fill(0);
     var credtx = Transaction();
-    credtx.inputs.push(new Transaction.Input({
+    credtx.uncheckedAddInput(new Transaction.Input({
       prevTxId: '0000000000000000000000000000000000000000000000000000000000000000',
       outputIndex: 0xffffffff,
       sequenceNumber: 0xffffffff,
@@ -215,7 +215,7 @@ describe('Interpreter', function() {
     var idbuf = credtx.id;
 
     var spendtx = Transaction();
-    spendtx.inputs.push(new Transaction.Input({
+    spendtx.uncheckedAddInput(new Transaction.Input({
       prevTxId: idbuf.toString('hex'),
       outputIndex: 0,
       sequenceNumber: 0xffffffff,
