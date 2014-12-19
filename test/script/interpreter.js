@@ -89,7 +89,7 @@ describe('Interpreter', function() {
       })).should.equal(true);
 
       var buf = new Buffer('00', 'hex');
-      var bool = BN().fromSM(buf, {
+      var bool = BN.fromSM(buf, {
         endian: 'little'
       }).cmp(0) !== 0;
       Interpreter.castToBool(buf).should.equal(bool);
