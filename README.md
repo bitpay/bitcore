@@ -5,7 +5,7 @@ Bitcore
 [![Build Status](https://img.shields.io/travis/bitpay/bitcore.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore)
 [![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore)
 
-A pure and simple javascript bitcoin API.
+A pure and simple JavaScript bitcoin API.
 
 ## Principles
 
@@ -13,13 +13,11 @@ Bitcoin is a powerful new peer-to-peer platform for the next generation of finan
 
 ## Get Started
 
-You can run bitcore on any javascript engine. It's distributed through npm, and you can also find compiled single files here: [bitcore.js](https://bitcore.io/bitcore/dist/bitcore.js) and [bitcore.min.js](https://bitcore.io/bitcore/dist/bitcore.min.js).
-
 ```
 npm install bitcore
 ```
 
-Using it on node.js:
+Using it in Node.js:
 
 ```javascript
 var bitcore = require('bitcore');
@@ -46,7 +44,7 @@ Bitcore is still under heavy development and not quite ready for "drop-in" produ
 
 Please send pull requests for bug fixes, code optimization, and ideas for improvement.
 
-## Building the browser bundle
+## Building the Browser Bundle
 
 To build bitcore full bundle for the browser:
 

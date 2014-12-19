@@ -1,6 +1,6 @@
 # Examples
 
-## Create a private key
+## Create a Private Key
 
 ```
 var privKey = new bitcore.PrivateKey();
@@ -27,7 +27,7 @@ var paymentInfo = {
 var uri = new bitcore.URI(paymentInfo).toString();
 ```
 
-## Create a transaction
+## Create a Transaction
 ```
 var transaction = new Transaction()
     .from(utxos)          // Feed information about what unspend outputs one can use
@@ -36,7 +36,7 @@ var transaction = new Transaction()
     .sign(privkeySet)     // Signs all the inputs it can
 ```
 
-## Connect to the network
+## Connect to the Network
 ```
 var peer = new Peer('5.9.85.34');
 

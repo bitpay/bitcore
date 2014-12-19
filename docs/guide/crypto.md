@@ -1,4 +1,4 @@
-# > `bitcore.crypto`
+# Crypto
 
 ## Description
 
@@ -14,7 +14,7 @@ The `bitcore.Crypto.BN` class contains a wrapper around [bn.js](https://github.c
 
 ## Point
 
-The `bitcore.Crypto.Point` class contains a wrapper around the class Point of [elliptic.js](https://github.com/indutny/elliptic.js), the elliptic curve library used internally in bitcore.
+The `bitcore.Crypto.Point` class contains a wrapper around the class Point of [elliptic.js](https://github.com/indutny/elliptic), the elliptic curve library used internally in bitcore.
 
 ## Hash
 
@@ -22,4 +22,4 @@ The `bitcore.Crypto.Hash` namespace contains a set of hashes and utilities. Thes
 
 ## ECDSA
 
-`bitcore.Crypto.ECDSA` contains a pure javascript implementation of the elliptic curve DSA signature scheme. 
+`bitcore.Crypto.ECDSA` contains a pure JavaScript implementation of the elliptic curve DSA signature scheme.

@@ -1,4 +1,4 @@
-# > `bitcore.Script`
+# Script
 
 ## Description
 
@@ -83,7 +83,7 @@ var script = Script.buildDataOut(data);
 assert(script.toString() === 'OP_RETURN 14 0x68656c6c6f20776f726c64212121'
 ```
 
-### Custom scripts
+### Custom Scripts
 
 To create a custom `Script` instance, you must rely on the lower-level methods `add` and `prepend`. Both methods accept the same parameter types, and insert an opcode or data at the beginning (`prepend`) or end (`add`) of the `Script`.
 
@@ -97,10 +97,9 @@ var script = Script()
 assert(script.toString() === 'OP_2SWAP OP_IF OP_NOT 4 0xbacacafe');
 ```
 
+## Script Parsing and Identification
 
-## Script parsing and identification
-
-`Script` has an easy interface to parse raw scripts from the newtwork or bitcoind, and to extract useful information. An illustrative example (for more options check the API reference)
+`Script` has an easy interface to parse raw scripts from the network or bitcoind, and to extract useful information. An illustrative example (for more options check the API reference)
 
 ```javascript
 var raw_script = new Buffer('5221022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da2103e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e921021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc1853ae', 'hex');
@@ -113,8 +112,7 @@ s.isScriptHashOut() // false
 s.isMultisigOut() // true
 ```
 
-
-## Script interpreting and validation
+## Script Interpreting and Validation
 
 To validate a transaction, the bitcoin network validates all of its inputs and outputs. To validate an input, the input's script is concatenated with the referenced output script, and the result is executed. If at the end of execution the stack contains a 'true' value, then the transaction is valid.
 You can do this in `bitcore` by using the `Interpreter` class. The entry point (and probably the only interface you'll need for most applications) is the method `Interpreter#verify()`.
@@ -147,4 +145,3 @@ var scriptSig = Script.buildPublicKeyHashIn(publicKey, signature);
 var flags = Interpreter.SCRIPT_VERIFY_P2SH | Interpreter.SCRIPT_VERIFY_STRICTENC;
 var verified = Interpreter().verify(scriptSig, scriptPubkey, tx, inputIndex, flags);
 ```
-

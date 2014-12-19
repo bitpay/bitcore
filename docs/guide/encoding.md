@@ -1,4 +1,4 @@
-# > `bitcore.encoding`
+# Encoding
 
 ## Description
 

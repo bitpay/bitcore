@@ -1,4 +1,4 @@
-# > `bitcore.PrivateKey`
+# Private Key
 
 ## Description
 
@@ -6,7 +6,7 @@ Represents a bitcoin private key and is needed to be able to spend bitcoin and s
 
 ## Instantiate a Private Key
 
-Here is how to create a new private key. It will generate a new random number using `window.crypto` or the Node.js 'crypto' library.
+Here is how to create a new private key. It will generate a new random number using `window.crypto` or the Node.js `crypto` library.
 
 ```javascript
 var privateKey = new PrivateKey();

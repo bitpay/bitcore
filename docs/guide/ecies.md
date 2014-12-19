@@ -1,8 +1,8 @@
-# > `bitcore-ecies`
+# ECIES
 
 ## Description
 
-Bitcore implements [Elliptic Curve Integrated Encryption Scheme (ECIES)](http://en.wikipedia.org/wiki/Integrated_Encryption_Scheme), which is a public key encryption system that performs bulk encryption on data usinc a symmetric cipher and a random key.
+Bitcore implements [Elliptic Curve Integrated Encryption Scheme (ECIES)](http://en.wikipedia.org/wiki/Integrated_Encryption_Scheme), which is a public key encryption system that performs bulk encryption on data using a symmetric cipher and a random key.
 
 For more information refer to the [bitcore-ecies](https://github.com/bitpay/bitcore-ecies) github repo.
 

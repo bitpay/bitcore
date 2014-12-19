@@ -1,9 +1,9 @@
 Contributing to Bitcore
 =======
 
-We're working hard to make *bitcore* the easiest and most powerful javascript library for working with bitcoin. Our goal is to have *bitcore* be a library that can be used by anyone interested in bitcoin, and level the expertise differences with agreat design and documentation.
+We're working hard to make *bitcore* the most powerful JavaScript library for working with bitcoin. Our goal is to have *bitcore* be a library that can be used by anyone interested in bitcoin, and to level expertise differences with great design and documentation.
 
-## Quick checklist
+## Quick Checklist
 
 Make sure:
 
@@ -41,7 +41,7 @@ Consistency on the way classes are used is paramount to allow an easier understa
 
 ## Style Guidelines
 
-The design guidelines have quite a high abstraction level. These style guidelines are more concreate and easier to apply, and also more opinionated. The design guidelines mentioned above are the way we think about general software development and we believe they should be present in any software project.
+The design guidelines have quite a high abstraction level. These style guidelines are more concrete and easier to apply, and also more opinionated. The design guidelines mentioned above are the way we think about general software development and we believe they should be present in any software project.
 
 ### G0 - General: Default to Felixge's Style Guide
 

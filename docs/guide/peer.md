@@ -1,4 +1,4 @@
-# > `bitcore.transport.Peer`
+# Peer
 
 ## Description
 

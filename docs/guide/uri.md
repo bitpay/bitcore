@@ -1,8 +1,8 @@
-# > `bitcore.URI`
+# URI
 
 ## Description
 
-Represents a bitcoin payment uri. Bitcoin URI strings became the most popular way to share payment request, sometimes as a bitcoin link and others using a QR code.
+Represents a bitcoin payment URI. Bitcoin URI strings became the most popular way to share payment request, sometimes as a bitcoin link and others using a QR code.
 
 URI Examples:
 ```
@@ -24,7 +24,7 @@ console.log(uri.address.network, uri.amount); // 'livenet', 120000000
 ```
 
 ## URI Parameters
-All standard parameters can be found as members of the `URI` instance. However a bitcoin uri may contain other non-standard parameters, all those can be found under the `extra` namespace.
+All standard parameters can be found as members of the `URI` instance. However a bitcoin URI may contain other non-standard parameters, all those can be found under the `extra` namespace.
 
 See [the official BIP21 spec](https://github.com/bitcoin/bips/blob/master/bip-0021.mediawiki) for more information.
 
