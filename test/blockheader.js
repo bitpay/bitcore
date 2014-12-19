@@ -3,6 +3,8 @@
 var bitcore = require('..');
 var BN = require('../lib/crypto/bn');
 var BufferReader = bitcore.encoding.BufferReader;
+var BufferWriter = bitcore.encoding.BufferWriter;
+
 var BlockHeader = bitcore.BlockHeader;
 var fs = require('fs');
 var should = require('chai').should();
@@ -161,6 +163,12 @@ describe('BlockHeader', function() {
       BlockHeader.fromBuffer(bhbuf).toBufferWriter().concat().toString('hex').should.equal(bhhex);
     });
 
+    it('doesn\'t create a bufferWriter if one provided', function() {
+      var writer = new BufferWriter();
+      var blockHeader = BlockHeader.fromBuffer(bhbuf);
+      blockHeader.toBufferWriter(writer).should.equal(writer);
+    });
+
   });
 
   describe('#inspect', function() {
@@ -224,6 +232,11 @@ describe('BlockHeader', function() {
       x.nonce = nonce;
     });
 
+  });
+
+  it('coverage: caches the "_id" property', function() {
+      var blockHeader = BlockHeader.fromRawBlock(dataRawBlockBuffer);
+      blockHeader.id.should.equal(blockHeader.id);
   });
 
 });

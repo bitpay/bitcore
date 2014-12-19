@@ -3,6 +3,7 @@
 var bitcore = require('..');
 var BN = require('../lib/crypto/bn');
 var BufferReader = bitcore.encoding.BufferReader;
+var BufferWriter = bitcore.encoding.BufferWriter;
 var BlockHeader = bitcore.BlockHeader;
 var Block = bitcore.Block;
 var chai = require('chai');
@@ -102,6 +103,11 @@ describe('Block', function() {
       should.exist(block.txs);
     });
 
+    it('accepts an object as argument', function() {
+      var block = Block.fromRawBlock(dataRawBlockBuffer);
+      Block.fromJSON(block.toObject()).should.exist();
+    });
+
   });
 
   describe('#toJSON', function() {
@@ -159,6 +165,12 @@ describe('Block', function() {
     it('should recover a block from this known buffer', function() {
       var block = Block.fromBuffer(blockbuf);
       block.toBufferWriter().concat().toString('hex').should.equal(blockhex);
+    });
+
+    it('doesn\'t create a bufferWriter if one provided', function() {
+      var writer = new BufferWriter();
+      var block = Block.fromBuffer(blockbuf);
+      block.toBufferWriter(writer).should.equal(writer);
     });
 
   });
