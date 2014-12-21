@@ -47,7 +47,7 @@ For more information about the specific properties of a block header please visi
 
 ## Transactions
 
-The set of transactions in a block is an array of instances of [Transaction](Transaction.md) and can be explored by iterating on the block's `transactions` member.
+The set of transactions in a block is an array of instances of [Transaction](transaction.md) and can be explored by iterating on the block's `transactions` member.
 
 ```javascript
 for (var i in block.txs) {

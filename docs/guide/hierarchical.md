@@ -6,7 +6,7 @@ Bitcore provides full support for [BIP32](https://github.com/bitcoin/bips/blob/m
 
 ## HDPrivateKey
 
-An instance of a [PrivateKey](PrivateKey.md) that also contains information required to derive child keys.
+An instance of a [PrivateKey](privatekey.md) that also contains information required to derive child keys.
 
 Sample usage:
 

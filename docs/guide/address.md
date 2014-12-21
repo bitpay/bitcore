@@ -6,14 +6,14 @@ Represents a bitcoin Address. Addresses are the most popular way to make bitcoin
 
 ## Instantiate an Address
 
-To be able to receive bitcoins an address is needed, but in order to spend them a private key is necessary. Please take a look at the [`PrivateKey`](PrivateKey.md) docs for more information about exporting and saving a key.  
+To be able to receive bitcoins an address is needed, but in order to spend them a private key is necessary. Please take a look at the [`PrivateKey`](privatekey.md) docs for more information about exporting and saving a key.  
 
 ```javascript
 var privateKey = new PrivateKey();
 var address = privateKey.toAddress();
 ```
 
-You can also instantiate an Address from a String, [PublicKey](PublicKey.md), or [HDPublicKey](Hierarchical.md), in case you are not the owner of the private key.
+You can also instantiate an Address from a String, [PublicKey](publickey.md), or [HDPublicKey](hierarchical.md), in case you are not the owner of the private key.
 
 ```javascript
 // from a string
