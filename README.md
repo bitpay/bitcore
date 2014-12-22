@@ -30,9 +30,9 @@ simpleTx.sign(privateKey);
 
 ## Documentation
 
-The complete docs are hosted here: [bitcore documentation](https://bitpay.github.io/bitcore/docs/#!index.md). There's also a [bitcore API reference](https://bitpay.github.io/bitcore/apiref) available generated from the JSDocs of the project, but we're still working on the quality and design of this API reference.
+The complete docs are hosted here: [bitcore documentation](http://bitcore.io/guide/). There's also a [bitcore API reference](http://bitcore.io/api/) available generated from the JSDocs of the project, where you'll find low-level details on each bitcore utility.
 
-[![Read the Developer Guide](http://bitpay.github.io/bitcore/images/read-the-developer-guide-btn.png)](https://bitpay.github.io/bitcore/docs/#!index.md)  [![Read the API Reference](http://bitpay.github.io/bitcore/images/read-the-api-reference-btn.png)](https://bitpay.github.io/bitcore/apiref)
+[![Read the Developer Guide](http://bitpay.github.io/bitcore/images/read-the-developer-guide-btn.png)](http://bitcore.io/guide/)  [![Read the API Reference](http://bitpay.github.io/bitcore/images/read-the-api-reference-btn.png)](http://bitcore.io/api/)
 
 To get community assistance and ask for help with implementation questions, please use our [community forums](http://bitpaylabs.com/c/bitcore).
 
