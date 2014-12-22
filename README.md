@@ -34,6 +34,8 @@ The complete docs are hosted here: [bitcore documentation](https://bitpay.github
 
 [![Read the Developer Guide](http://bitpay.github.io/bitcore/images/read-the-developer-guide-btn.png)](https://bitpay.github.io/bitcore/docs/#!index.md)  [![Read the API Reference](http://bitpay.github.io/bitcore/images/read-the-api-reference-btn.png)](https://bitpay.github.io/bitcore/apiref)
 
+To get community assistance and ask for help with implementation questions, please use our [community forums](http://bitpaylabs.com/c/bitcore).
+
 ## Security
 
 We're using Bitcore in production, as are [many others](http://bitcore.io#projects), but please use common sense when doing anything related to finances! We take no responsibility for your implementation decisions.
