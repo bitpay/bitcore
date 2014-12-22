@@ -1,19 +1,19 @@
-# > `bitcore.Address`
+# Address
 
 ## Description
 
-Represents a bitcoin Address. Addresses became the most popular way to make bitcoin transactions. See [the official Bitcoin Wiki](https://en.bitcoin.it/wiki/Address) for more information.
+Represents a bitcoin Address. Addresses are the most popular way to make bitcoin transactions. See [the official Bitcoin Wiki](https://en.bitcoin.it/wiki/Address) for technical background information.
 
 ## Instantiate an Address
 
-To be able to receive bitcoins an address is needed, but in order to spend them a private key is necessary. Take a look at the [`PrivateKey`](PrivateKey.md) docs for more information about exporting and saving a key.  
+To be able to receive bitcoins an address is needed, but in order to spend them a private key is necessary. Please take a look at the [`PrivateKey`](privatekey.md) docs for more information about exporting and saving a key.  
 
 ```javascript
 var privateKey = new PrivateKey();
 var address = privateKey.toAddress();
 ```
 
-You can also instantiate an address from a String, [PublicKey](PublicKey.md), or [HDPublicKey](Hierarchical.md), in case you are not the owner of the private key.
+You can also instantiate an Address from a String, [PublicKey](publickey.md), or [HDPublicKey](hierarchical.md), in case you are not the owner of the private key.
 
 ```javascript
 // from a string
@@ -32,7 +32,7 @@ var address = new Address(publicKey, Networks.testnet);
 
 ## Validating an Address
 
-The main use that we expect you'll have for the `Address` class in bitcore is validating that an address is a valid one, what type of address it is (you may be interested on knowing if the address is a simple "pay to public key hash" address or a "pay to script hash" address) and what network does the address belong to.
+The main use that we expect you'll have for the `Address` class in Bitcore is validating that an address is a valid one, what type of address it is (you may be interested on knowing if the address is a simple "pay to public key hash" address or a "pay to script hash" address) and what network does the address belong to.
 
 The code to do these validations looks like this:
 

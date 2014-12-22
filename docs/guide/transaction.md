@@ -1,4 +1,4 @@
-# > `bitcore.Transaction`
+# Transaction
 
 ## Description
 
@@ -34,15 +34,13 @@ var transaction = new Transaction().fee(1e8);  // Generous fee of 1 BTC
 
 ## Transaction API
 
-You can take a look at the javadocs for the [Transaction class here](link missing).
-
 ## Input
 
-Transaction inputs are instances of either [Input](https://github.com/bitpay/bitcore/tree/master/lib/transaction/input) or its subclasses. The internal workings of it can be understood from the [API reference](link missing).
+Transaction inputs are instances of either [Input](https://github.com/bitpay/bitcore/tree/master/lib/transaction/input) or its subclasses.
 
 ## Output
 
-Transaction outputs are a very thin wrap around the information provided by a transaction output: its script and its output amount.
+Transaction outputs are a very thin wrapper around the information provided by a transaction output: its script and its output amount.
 
 ## Multisig Transactions
 
@@ -57,13 +55,12 @@ To send a transaction to a multisig address, the API is the same as in the above
   var serialized = multiSigTx.serialize();
 ```
 
-This can be serialized and sent to another party, to complete with the needed
-signatures:
+This can be serialized and sent to another party, to complete with the needed signatures:
 
 ```javascript
   var multiSigTx = new Transaction(serialized)
       .from(utxo, publicKeys, threshold)       // provide info about the multisig output
-                                               // (lost on serialization) 
+                                               // (lost on serialization)
       .sign(anotherSetOfKeys);
 
   assert(multiSigTx.isFullySigned());
@@ -86,7 +83,7 @@ There are a number of data structures being stored internally in a `Transaction`
 
 If you have a larger set of unspent outputs, only some of them will be selected to fulfill the amount. This is done by storing a cache of unspent outputs in a protected member called `_utxos`. When the `to()` method is called, some of these outputs will be selected to pay the requested amount to the appropriate address.
 
-A nit that you should have in mind is that when the transaction is serialized, this cache can't be included in the serialized form. 
+A detail that you should have in mind is that when the transaction is serialized, this cache can't be included in the serialized form.
 
 ## Upcoming changes
 

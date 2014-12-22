@@ -3,6 +3,7 @@ coverage
 node_modules
 browser/bitcore.js
 browser/tests.js
+docs/api
 
 lib/errors/index.js
 

@@ -1,8 +1,8 @@
-# > `bitcore.transport.RPC`
+# JSON-RPC
 
 ## Description
 
-Bitcoind provides a direct interface to the bitcoin network and it also exposes a `JSON-RPC` API. This class allows to connect to a local instance of a bitcoind server and make simple or batch RPC calls to it.
+Bitcoind provides a direct interface to the bitcoin network and it also exposes a `JSON-RPC` API. This class will connect to a local instance of a bitcoind server and make simple or batch RPC calls to it.
 
 ## Connection to bitcoind
 
