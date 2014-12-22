@@ -1,0 +1,42 @@
+{
+  "name": "bitcore-poetry",
+  "version": "0.0.1",
+  "description": "BIP39 Mnemonics implemented for Bitcore.",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha",
+    "coverage": "istanbul cover _mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore-poetry.git"
+  },
+  "keywords": [
+    "bitcoin",
+    "bitcore",
+    "mnemonic",
+    "crypto",
+    "cryptography",
+    "encryption"
+  ],
+  "author": "BitPay",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bitpay/bitcore-poetry/issues"
+  },
+  "homepage": "https://github.com/bitpay/bitcore-poetry",
+  "devDependencies": {
+    "assert": "^1.1.2",
+    "coveralls": "^2.11.2",
+    "istanbul": "^0.3.5",
+    "mocha": "^2.0.1",
+    "chai": "~1.10.0"
+  },
+  "dependencies": {
+    "bitcore": "git://github.com/bitpay/bitcore#v0.8",
+    "lodash": "^2.4.1"
+  }
+}
