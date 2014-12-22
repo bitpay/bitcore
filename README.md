@@ -5,7 +5,7 @@ Bitcore
 [![Build Status](https://img.shields.io/travis/bitpay/bitcore.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore)
 [![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore)
 
-A pure and simple JavaScript bitcoin API.
+A pure and powerful JavaScript Bitcoin API.
 
 ## Principles
 
@@ -36,9 +36,9 @@ The complete docs are hosted here: [bitcore documentation](https://bitpay.github
 
 ## Security
 
-Please use at your own risk.
+We're using Bitcore in production, as are [many others](http://bitcore.io#projects), but please use common sense when doing anything related to finances! We take no responsibility for your implementation decisions.
 
-Bitcore is still under heavy development and not quite ready for "drop-in" production use. If you find a security issue, please email security@bitcore.io.
+If you find a security issue, please email security@bitpay.com.
 
 ## Contributing
 
