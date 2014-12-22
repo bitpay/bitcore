@@ -22,7 +22,7 @@ describe('BN', function() {
     bn = new BN(Math.pow(2, 26));
     bn.toString().should.equal((Math.pow(2, 26)).toString());
   });
-  
+
   describe('#add', function() {
 
     it('should add two small numbers together', function() {
@@ -67,70 +67,81 @@ describe('BN', function() {
 
   });
 
-  describe('#fromString', function() {
-    
-    it('should make BN from a string', function() {
-      BN().fromString('5').toString().should.equal('5');
+  describe('to/from ScriptNumBuffer', function() {
+    [0, 1, 10, 256, 1000, 65536, 65537, -1, -1000, -65536, -65537].forEach(function(n) {
+      it('rountrips correctly for ' + n, function() {
+        BN.fromScriptNumBuffer(BN(n).toScriptNumBuffer()).toNumber().should.equal(n);
+      });
     });
+  });
 
+  describe('#fromString', function() {
+    it('should make BN from a string', function() {
+      BN.fromString('5').toString().should.equal('5');
+    });
   });
 
   describe('#toString', function() {
-    
     it('should make a string', function() {
       BN(5).toString().should.equal('5');
     });
-
   });
 
   describe('@fromBuffer', function() {
-    
+
     it('should work with big endian', function() {
-      var bn = BN.fromBuffer(new Buffer('0001', 'hex'), {endian: 'big'});
+      var bn = BN.fromBuffer(new Buffer('0001', 'hex'), {
+        endian: 'big'
+      });
       bn.toString().should.equal('1');
     });
 
     it('should work with big endian 256', function() {
-      var bn = BN.fromBuffer(new Buffer('0100', 'hex'), {endian: 'big'});
+      var bn = BN.fromBuffer(new Buffer('0100', 'hex'), {
+        endian: 'big'
+      });
       bn.toString().should.equal('256');
     });
 
     it('should work with little endian if we specify the size', function() {
-      var bn = BN.fromBuffer(new Buffer('0100', 'hex'), {size: 2, endian: 'little'});
+      var bn = BN.fromBuffer(new Buffer('0100', 'hex'), {
+        size: 2,
+        endian: 'little'
+      });
       bn.toString().should.equal('1');
     });
 
-  });
-
-  describe('#fromBuffer', function() {
-
-    it('should work as a prototype method', function() {
-      var bn = BN().fromBuffer(new Buffer('0100', 'hex'), {size: 2, endian: 'little'});
-      bn.toString().should.equal('1');
-    });
-  
   });
 
   describe('#toBuffer', function() {
-    
+
     it('should create a 4 byte buffer', function() {
       var bn = new BN(1);
-      bn.toBuffer({size: 4}).toString('hex').should.equal('00000001');
+      bn.toBuffer({
+        size: 4
+      }).toString('hex').should.equal('00000001');
     });
 
     it('should create a 4 byte buffer in little endian', function() {
       var bn = new BN(1);
-      bn.toBuffer({size: 4, endian: 'little'}).toString('hex').should.equal('01000000');
+      bn.toBuffer({
+        size: 4,
+        endian: 'little'
+      }).toString('hex').should.equal('01000000');
     });
 
     it('should create a 2 byte buffer even if you ask for a 1 byte', function() {
       var bn = new BN('ff00', 16);
-      bn.toBuffer({size: 1}).toString('hex').should.equal('ff00');
+      bn.toBuffer({
+        size: 1
+      }).toString('hex').should.equal('ff00');
     });
 
     it('should create a 4 byte buffer even if you ask for a 1 byte', function() {
       var bn = new BN('ffffff00', 16);
-      bn.toBuffer({size: 4}).toString('hex').should.equal('ffffff00');
+      bn.toBuffer({
+        size: 4
+      }).toString('hex').should.equal('ffffff00');
     });
 
   });
