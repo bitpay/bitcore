@@ -5,7 +5,7 @@ Bitcore
 [![Build Status](https://img.shields.io/travis/bitpay/bitcore.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore)
 [![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore)
 
-A pure and simple JavaScript bitcoin API.
+A pure and powerful JavaScript Bitcoin API.
 
 ## Principles
 
@@ -22,7 +22,7 @@ Using it in Node.js:
 ```javascript
 var bitcore = require('bitcore');
 
-assert(bitcore.Address.isValid(address));
+assert(bitcore.Address.isValid('126vMmY1fyznpZiFTTnty3cm1Rw8wuheev'));
 var simpleTx = new bitcore.Transaction();
 var simpleTx.from(unspent).to(address, amount);
 simpleTx.sign(privateKey);
@@ -30,19 +30,21 @@ simpleTx.sign(privateKey);
 
 ## Documentation
 
-The complete docs are hosted here: [bitcore documentation](https://bitpay.github.io/bitcore/docs/#!index.md). There's also a [bitcore API reference](https://bitpay.github.io/bitcore/apiref) available generated from the JSDocs of the project, but we're still working on the quality and design of this API reference.
+The complete docs are hosted here: [bitcore documentation](http://bitcore.io/guide/). There's also a [bitcore API reference](http://bitcore.io/api/) available generated from the JSDocs of the project, where you'll find low-level details on each bitcore utility.
 
-[![Read the Developer Guide](http://bitpay.github.io/bitcore/images/read-the-developer-guide-btn.png)](https://bitpay.github.io/bitcore/docs/#!index.md)  [![Read the API Reference](http://bitpay.github.io/bitcore/images/read-the-api-reference-btn.png)](https://bitpay.github.io/bitcore/apiref)
+[![Read the Developer Guide](http://bitpay.github.io/bitcore/images/read-the-developer-guide-btn.png)](http://bitcore.io/guide/)  [![Read the API Reference](http://bitpay.github.io/bitcore/images/read-the-api-reference-btn.png)](http://bitcore.io/api/)
+
+To get community assistance and ask for help with implementation questions, please use our [community forums](http://bitpaylabs.com/c/bitcore).
 
 ## Security
 
-Please use at your own risk.
+We're using Bitcore in production, as are [many others](http://bitcore.io#projects), but please use common sense when doing anything related to finances! We take no responsibility for your implementation decisions.
 
-Bitcore is still under heavy development and not quite ready for "drop-in" production use. If you find a security issue, please email security@bitcore.io.
+If you find a security issue, please email security@bitpay.com.
 
 ## Contributing
 
-Please send pull requests for bug fixes, code optimization, and ideas for improvement.
+Please send pull requests for bug fixes, code optimization, and ideas for improvement. For more information on how to contribute, please refer to our [CONTRIBUTING](https://github.com/bitpay/bitcore/blob/master/CONTRIBUTING.md) file. 
 
 ## Building the Browser Bundle
 
@@ -62,19 +64,19 @@ Run all the tests:
 gulp test
 ```
 
-Run the tests with mocha:
+Run the NodeJS tests with mocha:
 
 ```sh
 gulp test:node
 ```
 
-Run the tests with karma (uses firefox and chrome):
+Run the browser tests with karma:
 
 ```sh
 gulp test:browser
 ```
 
-Create a coverage report (you can open `coverage/lcov-report/index.html` to visualize it):
+Create a test coverage report (you can open `coverage/lcov-report/index.html` to visualize it):
 
 ```sh
 gulp coverage
@@ -84,4 +86,4 @@ gulp coverage
 
 Code released under [the MIT license](https://github.com/bitpay/bitcore/blob/master/LICENSE).
 
-Copyright 2013-2014 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.
+Copyright 2013-2015 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.
