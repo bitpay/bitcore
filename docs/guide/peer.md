@@ -1,3 +1,6 @@
+title: Peer
+description: The Peer class privides a simple interface for connecting to a node in the bitcoin network.
+---
 # Peer
 
 ## Description

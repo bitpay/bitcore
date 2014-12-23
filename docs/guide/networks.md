@@ -1,3 +1,6 @@
+title: Networks
+description: A simple interface to handle livenet and testnet bitcoin networks.
+---
 # Networks
 
 ## Description

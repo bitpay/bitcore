@@ -1,3 +1,6 @@
+title: Payment Protocol
+description: A powerful interface for serialize, deserialize, sign and verify payment protocol messsages.
+---
 # Payment Protocol
 
 ## Description

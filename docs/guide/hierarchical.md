@@ -1,3 +1,6 @@
+title: HD Keys
+description: Hierarichically derived keys support, let's you create and derive extended public and private keys.
+---
 # HDKeys
 
 ## Hierarichically Derived Keys
