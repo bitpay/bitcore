@@ -31,7 +31,6 @@
 'use strict';
 
 var gulp = require('gulp');
-var closureCompiler = require('gulp-closure-compiler');
 var coveralls = require('gulp-coveralls');
 var jshint = require('gulp-jshint');
 var mocha = require('gulp-mocha');
@@ -91,18 +90,9 @@ gulp.task('browser:uncompressed', ['browser:makefolder', 'errors'], shell.task([
   './node_modules/.bin/browserify index.js --insert-global-vars=true --standalone=bitcore -o browser/bitcore.js'
 ]));
 
-gulp.task('browser:compressed', ['browser:makefolder', 'errors'], function() {
-  return gulp.src('dist/bitcore.js')
-    .pipe(closureCompiler({
-      fileName: 'bitcore.min.js',
-      compilerPath: 'node_modules/closure-compiler-jar/compiler.jar',
-      compilerFlags: {
-        language_in: 'ECMASCRIPT5',
-        jscomp_off: 'suspiciousCode'
-      }
-    }))
-    .pipe(gulp.dest('dist'));
-});
+gulp.task('browser:compressed', ['browser:uncompressed'], shell.task([
+  './node_modules/.bin/uglifyjs dist/bitcore.js --compress --mangle -o dist/bitcore.min.js'
+]));
 
 gulp.task('browser:maketests', ['browser:makefolder'], shell.task([
   'find test/ -type f -name "*.js" | xargs ./node_modules/.bin/browserify -t brfs -o browser/tests.js'
