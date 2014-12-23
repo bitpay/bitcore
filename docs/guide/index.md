@@ -1,6 +1,6 @@
 # Bitcore v0.8
 
-Welcome to the documentation for bictore, a pure and powerful JavaScript Bitcoin API.
+Welcome to the documentation for bitcore, a pure and powerful JavaScript Bitcoin API.
 
 ## Principles
 
@@ -69,7 +69,7 @@ var uri = new bitcore.URI(paymentInfo).toString();
 ## Create a Transaction
 ```
 var transaction = new Transaction()
-    .from(utxos)          // Feed information about what unspend outputs one can use
+    .from(utxos)          // Feed information about what unspent outputs one can use
     .to(address, amount)  // Add an output with the given amount of satoshis
     .change(address)      // Sets up a change address where the rest of the funds will go
     .sign(privkeySet)     // Signs all the inputs it can
@@ -80,7 +80,7 @@ var transaction = new Transaction()
 var peer = new Peer('5.9.85.34');
 
 peer.on('inv', function(message) {
-  // new invetory
+  // new inventory
 });
 
 peer.connect();
