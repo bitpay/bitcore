@@ -153,6 +153,30 @@ describe('HDPublicKey interface', function() {
     pubKey.inspect().should.equal('<HDPublicKey: ' + pubKey.xpubkey + '>');
   });
 
+  describe('conversion to different formats', function() {
+    var plainObject = {
+      'network':'livenet',
+      'depth':0,
+      'fingerPrint':876747070,
+      'parentFingerPrint':0,
+      'childIndex':0,
+      'chainCode':'873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d508',
+      'publicKey':'0339a36013301597daef41fbe593a02cc513d0b55527ec2df1050e2e8ff49c85c2',
+      'checksum':-1421395167,
+      'xpubkey':'xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8'
+    };
+    it('roundtrips to JSON and to Object', function() {
+      var pubkey = new HDPublicKey(xpubkey);
+      expect(HDPublicKey.fromJSON(pubkey.toJSON()).xpubkey).to.equal(xpubkey);
+    });
+    it('recovers state from JSON', function() {
+      new HDPublicKey(JSON.stringify(plainObject)).xpubkey.should.equal(xpubkey);
+    });
+    it('recovers state from Object', function() {
+      new HDPublicKey(plainObject).xpubkey.should.equal(xpubkey);
+    });
+  });
+
   describe('derivation', function() {
     it('derivation is the same whether deriving with number or string', function() {
       var pubkey = new HDPublicKey(xpubkey);
