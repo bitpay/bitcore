@@ -1,10 +1,8 @@
 # Bitcore v0.8
 
-Welcome to the documentation for bitcore, a pure and powerful JavaScript Bitcoin API.
-
 ## Principles
 
-Bitcoin is a powerful new peer-to-peer platform for the next generation of financial technology. The decentralized nature of the Bitcoin network allows for highly resilient bitcoin infrastructure, and the developer community needs reliable, open-source tools to implement bitcoin apps and services. Bitcore provides a powerful API to Bitcoin.
+Bitcoin is a powerful new peer-to-peer platform for the next generation of financial technology. The decentralized nature of the Bitcoin network allows for highly resilient bitcoin infrastructure, and the developer community needs reliable, open-source tools to implement bitcoin apps and services. Bitcore provides a reliable API for javascript apps that need to interface with Bitcoin.
 
 To get started, just `npm install bitcore` or `bower install bitcore`.
 
