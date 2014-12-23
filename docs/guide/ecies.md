@@ -1,3 +1,6 @@
+title: ECIES
+description: Uses ECIES symmetric key negotiation from public keys to encrypt arbitrarily long data streams.
+---
 # ECIES
 
 ## Description

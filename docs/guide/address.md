@@ -1,3 +1,6 @@
+title: Address
+description: A simple interface to generate and validate a bitcoin address.
+---
 # Address
 
 ## Description

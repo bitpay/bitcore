@@ -1,3 +1,6 @@
+title: Bitcoin URIs
+description: Utility to parse and create standard bitcoin URIs.
+---
 # URI
 
 ## Description

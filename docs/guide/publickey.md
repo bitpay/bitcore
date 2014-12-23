@@ -1,3 +1,6 @@
+title: Public Key
+description: A simple interface for handling private keys.
+---
 # Public Key
 
 ## Description

@@ -1,3 +1,6 @@
+title: JSON-RPC
+description: A simple interface to connect and make RPC calls to bitcoind.
+---
 # JSON-RPC
 
 ## Description

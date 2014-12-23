@@ -1,3 +1,6 @@
+title: Pool
+description: A simple interface to create and maintain a set of connections to bitcoin nodes.
+---
 # Pool
 
 ## Pool

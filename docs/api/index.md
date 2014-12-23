@@ -1,3 +1,6 @@
+title: Bitcore Examples
+description: Sample code for the most common task in any bitcoin application.
+---
 # Examples
 
 ## Create a Private Key
