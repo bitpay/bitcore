@@ -21,17 +21,17 @@
  * <li> `browser:compressed` - build `browser/bitcore.min.js`
  * <li> `browser:maketests` - build `browser/tests.js`, needed for testing without karma
  * </ul>`
- * <li> `errors` - autogenerate the `./lib/errors/index.js` file with error definitions 
+ * <li> `errors` - autogenerate the `./lib/errors/index.js` file with error definitions
  * <li> `lint` - run `jshint`
  * <li> `coverage` - run `istanbul` with mocha to generate a report of test coverage
  * <li> `jsdoc` - run `jsdoc` to generate the API reference
  * <li> `coveralls` - updates coveralls info
+ * <li> `release` - automates release process (only for bitcore maintainers)
  * </ul>
  */
 'use strict';
 
 var gulp = require('gulp');
-var closureCompiler = require('gulp-closure-compiler');
 var coveralls = require('gulp-coveralls');
 var jshint = require('gulp-jshint');
 var mocha = require('gulp-mocha');
@@ -41,6 +41,11 @@ var through = require('through2');
 var gutil = require('gulp-util');
 var jsdoc2md = require('jsdoc-to-markdown');
 var mfs = require('more-fs');
+var uglify = require('gulp-uglify');
+var rename = require('gulp-rename');
+var bump = require('gulp-bump');
+var git = require('gulp-git');
+
 
 var files = ['lib/**/*.js'];
 var tests = ['test/**/*.js'];
@@ -91,25 +96,23 @@ gulp.task('browser:uncompressed', ['browser:makefolder', 'errors'], shell.task([
   './node_modules/.bin/browserify index.js --insert-global-vars=true --standalone=bitcore -o browser/bitcore.js'
 ]));
 
-gulp.task('browser:compressed', ['browser:makefolder', 'errors'], function() {
-  return gulp.src('dist/bitcore.js')
-    .pipe(closureCompiler({
-      fileName: 'bitcore.min.js',
-      compilerPath: 'node_modules/closure-compiler-jar/compiler.jar',
-      compilerFlags: {
-        language_in: 'ECMASCRIPT5',
-        jscomp_off: 'suspiciousCode'
-      }
+gulp.task('browser:compressed', ['browser:uncompressed'], function() {
+  return gulp.src('browser/bitcore.js')
+    .pipe(uglify({
+      mangle: true,
+      compress: true
     }))
-    .pipe(gulp.dest('dist'));
+    .pipe(rename('bitcore.min.js'))
+    .pipe(gulp.dest('browser'))
+    .on('error', gutil.log);
 });
 
 gulp.task('browser:maketests', ['browser:makefolder'], shell.task([
   'find test/ -type f -name "*.js" | xargs ./node_modules/.bin/browserify -t brfs -o browser/tests.js'
 ]));
 
-gulp.task('browser', ['errors'], function(callback) {
-  runSequence(['browser:uncompressed'], ['browser:compressed'], ['browser:maketests'], callback);
+gulp.task('browser', function(callback) {
+  runSequence(['browser:compressed'], ['browser:maketests'], callback);
 });
 
 gulp.task('errors', shell.task([
@@ -133,8 +136,8 @@ gulp.task('jsdoc', function() {
 
   function jsdoc() {
     return through.obj(function(file, enc, cb) {
-      
-      if (file.isNull()){
+
+      if (file.isNull()) {
         cb(null, file);
         return;
       }
@@ -142,7 +145,7 @@ gulp.task('jsdoc', function() {
         cb(new gutil.PluginError('gulp-jsdoc2md', 'Streaming not supported'));
         return;
       }
-      var destination = 'docs/api/'+file.path.replace(file.base, '').replace(/\.js$/, '.md');
+      var destination = 'docs/api/' + file.path.replace(file.base, '').replace(/\.js$/, '.md');
       jsdoc2md.render(file.path, {})
         .on('error', function(err) {
           gutil.log(gutil.colors.red('jsdoc2md failed', err.message));
@@ -151,7 +154,7 @@ gulp.task('jsdoc', function() {
       cb(null, file);
     });
   }
-  
+
   return gulp.src(files).pipe(jsdoc());
 
 });
@@ -207,11 +210,116 @@ gulp.task('watch:browser', function() {
 });
 
 /**
- * Default task
+ * Release automation
  */
+
+gulp.task('release:install', function() {
+  return shell.task([
+    'npm install',
+  ]);
+});
+
+gulp.task('release:bump', function() {
+  return gulp.src(['./bower.json', './package.json'])
+    .pipe(bump({
+      type: 'patch'
+    }))
+    .pipe(gulp.dest('./'));
+});
+
+gulp.task('release:checkout-releases', function(cb) {
+  git.checkout('releases', {args: ''}, cb);
+});
+
+gulp.task('release:merge-master', function(cb) {
+  git.merge('master', {args: ''}, cb);
+});
+
+gulp.task('release:checkout-master', function(cb) {
+  git.checkout('master', {args: ''}, cb);
+});
+
+gulp.task('release:add-built-files', function() {
+  return gulp.src(['./browser/bitcore.js', './browser/bitcore.min.js', './package.json', './bower.json'])
+    .pipe(git.add({args: '-f'}));
+});
+
+gulp.task('release:build-commit', ['release:add-built-files'], function() {
+  var pjson = require('./package.json');
+  return gulp.src(['./browser/bitcore.js', './browser/bitcore.min.js', './package.json', './bower.json'])
+    .pipe(git.commit('Build: ' + pjson.version, {args: ''}));
+});
+
+gulp.task('release:version-commit', function() {
+  var pjson = require('./package.json');
+  var files = ['./package.json', './bower.json'];
+  return gulp.src(files)
+    .pipe(git.commit('Bump package version to ' + pjson.version, {args: ''}));
+});
+
+gulp.task('release:push-releases', function(cb) {
+  git.push('origin', 'releases', {
+    args: ''
+  }, cb);
+});
+
+gulp.task('release:push', function(cb) {
+  git.push('origin', 'master', {
+    args: ''
+  }, cb);
+});
+
+gulp.task('release:push-tag', function(cb) {
+  var pjson = require('./package.json');
+  var name = 'v' + pjson.version;
+  git.tag(name, 'Release ' + name, function() {
+    git.push('origin', name, {
+      args: '--tags'
+    }, cb);
+  });
+});
+
+gulp.task('release:publish', shell.task([
+  'npm publish'
+]));
+
+// requires https://hub.github.com/
+gulp.task('release', function(cb) {
+  runSequence(
+    // Checkout the `releases` branch
+    ['release:checkout-releases'],
+    // Merge the master branch
+    ['release:merge-master'],
+    // Run npm install
+    ['release:install'],
+    // Build browser bundle
+    ['browser:compressed'],
+    // Run tests with gulp test
+    ['test'],
+    // Update package.json and bower.json
+    ['release:bump'],
+    // Commit 
+    ['release:build-commit'],
+    // Run git push bitpay $VERSION
+    ['release:push-tag'],
+    // Push to releases branch
+    ['release:push-releases'],
+    // Run npm publish
+    ['release:publish'],
+    // Checkout the `master` branch
+    ['release:checkout-master'],
+    // Bump package.json and bower.json, again
+    ['release:bump'],
+    // Version commit with no binary files to master
+    ['release:version-commit'],
+    // Push to master
+    ['release:push'],
+    cb);
+});
+
+
+/* Default task */
 gulp.task('default', function(callback) {
-  return runSequence(['lint', 'jsdoc'],
-                     ['browser:uncompressed', 'test'],
-                     ['coverage', 'browser:compressed'],
-                     callback);
+  return runSequence(['lint', 'jsdoc'], ['browser:uncompressed', 'test'], ['coverage', 'browser:compressed'],
+    callback);
 });
