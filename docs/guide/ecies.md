@@ -1,5 +1,5 @@
 title: ECIES
-description: Perform bulk encryption on data using a symmetric cipher and a random key.
+description: Uses ECIES symmetric key negotiation from public keys to encrypt arbitrarily long data streams.
 ---
 # ECIES
 

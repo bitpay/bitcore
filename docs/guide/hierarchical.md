@@ -1,5 +1,5 @@
-title: HD Keys
-description: Hierarichically derived keys support, let's you create and derive extended public and private keys.
+title: HDKeys
+description: Lets you create and derive extended public and private keys according to the BIP32 standard for Hierarchical Deterministic (HD) keys.
 ---
 # HDKeys
 
