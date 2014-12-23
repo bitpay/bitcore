@@ -8,7 +8,7 @@ var bitcore = require('..');
 var errors = bitcore.errors;
 var hdErrors = errors.HDPrivateKey;
 var buffer = require('buffer');
-var bufferUtil = bitcore.util.buffer;
+var BufferUtil = bitcore.util.buffer;
 var HDPrivateKey = bitcore.HDPrivateKey;
 var Base58Check = bitcore.encoding.Base58Check;
 
@@ -168,7 +168,7 @@ describe('HDPrivate key interface', function() {
     var error = null;
     try {
       var buffers = privKey._buffers;
-      buffers.checksum = bufferUtil.integerAsBuffer(0);
+      buffers.checksum = BufferUtil.integerAsBuffer(0);
       var privateKey = new HDPrivateKey(buffers);
     } catch (e) {
       error = e;
@@ -188,6 +188,40 @@ describe('HDPrivate key interface', function() {
     var derivedByString = privateKey.derive('m/0\'/1/2\'');
     var derivedByNumber = privateKey.derive(0, true).derive(1).derive(2, true);
     derivedByNumber.xprivkey.should.equal(derivedByString.xprivkey);
+  });
+
+  describe('conversion to plain object/json', function() {
+    var plainObject = {
+      'network':'livenet',
+      'depth':0,
+      'fingerPrint':876747070,
+      'parentFingerPrint':0,
+      'childIndex':0,
+      'chainCode':'873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d508',
+      'privateKey':'e8f32e723decf4051aefac8e2c93c9c5b214313817cdb01a1494b917c8436b35',
+      'checksum':-411132559,
+      'xprivkey':'xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi'
+    };
+    it('toObject leaves no Buffer instances', function() {
+      var privKey = new HDPrivateKey(xprivkey);
+      var object = privKey.toObject();
+      _.each(_.values(object), function(value) {
+        expect(BufferUtil.isBuffer(value)).to.equal(false);
+      });
+    });
+    it('roundtrips toJSON', function() {
+      expect(HDPrivateKey.fromJSON(new HDPrivateKey(xprivkey).toJSON()).xprivkey).to.equal(xprivkey);
+    });
+    it('roundtrips to JSON and to Object', function() {
+      var privkey = new HDPrivateKey(xprivkey);
+      expect(HDPrivateKey.fromJSON(privkey.toJSON()).xprivkey).to.equal(xprivkey);
+    });
+    it('recovers state from JSON', function() {
+      new HDPrivateKey(JSON.stringify(plainObject)).xprivkey.should.equal(xprivkey);
+    });
+    it('recovers state from Object', function() {
+      new HDPrivateKey(plainObject).xprivkey.should.equal(xprivkey);
+    });
   });
 });
 
