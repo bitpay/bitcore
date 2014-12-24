@@ -5,7 +5,7 @@ description: Utility to easily convert between bitcoin units.
 
 ## Description
 
-Unit is an utility for handling and converting bitcoin units. We strongly recommend to always use satoshis to represent amount inside your application and only convert them to other units in the front-end.
+Unit is a utility for handling and converting bitcoin units. We strongly recommend to always use satoshis to represent amount inside your application and only convert them to other units in the front-end.
 
 ## Supported units
 
@@ -40,7 +40,7 @@ unit = Unit.fromSatoshis(amount);
 
 ## Conversion
 
-Once you have a unit instance, you can check its representantion in all the available units. For your convinience the classes expose three ways to acomplish this. Using the `.to(unitCode)` method, using a fixed unit like `.toSatoshis()` or by using the accessors.
+Once you have a unit instance, you can check its representation in all the available units. For your convenience the classes expose three ways to accomplish this. Using the `.to(unitCode)` method, using a fixed unit like `.toSatoshis()` or by using the accessors.
 
 ```javascript
 var unit;
