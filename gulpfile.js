@@ -228,33 +228,45 @@ gulp.task('release:bump', function() {
 });
 
 gulp.task('release:checkout-releases', function(cb) {
-  git.checkout('releases', {args: ''}, cb);
+  git.checkout('releases', {
+    args: ''
+  }, cb);
 });
 
 gulp.task('release:merge-master', function(cb) {
-  git.merge('master', {args: ''}, cb);
+  git.merge('master', {
+    args: ''
+  }, cb);
 });
 
 gulp.task('release:checkout-master', function(cb) {
-  git.checkout('master', {args: ''}, cb);
+  git.checkout('master', {
+    args: ''
+  }, cb);
 });
 
 gulp.task('release:add-built-files', function() {
   return gulp.src(['./browser/bitcore.js', './browser/bitcore.min.js', './package.json', './bower.json'])
-    .pipe(git.add({args: '-f'}));
+    .pipe(git.add({
+      args: '-f'
+    }));
 });
 
 gulp.task('release:build-commit', ['release:add-built-files'], function() {
   var pjson = require('./package.json');
   return gulp.src(['./browser/bitcore.js', './browser/bitcore.min.js', './package.json', './bower.json'])
-    .pipe(git.commit('Build: ' + pjson.version, {args: ''}));
+    .pipe(git.commit('Build: ' + pjson.version, {
+      args: ''
+    }));
 });
 
 gulp.task('release:version-commit', function() {
   var pjson = require('./package.json');
   var files = ['./package.json', './bower.json'];
   return gulp.src(files)
-    .pipe(git.commit('Bump package version to ' + pjson.version, {args: ''}));
+    .pipe(git.commit('Bump package version to ' + pjson.version, {
+      args: ''
+    }));
 });
 
 gulp.task('release:push-releases', function(cb) {
@@ -273,9 +285,7 @@ gulp.task('release:push-tag', function(cb) {
   var pjson = require('./package.json');
   var name = 'v' + pjson.version;
   git.tag(name, 'Release ' + name, function() {
-    git.push('bitpay', name, {
-      args: '--tags'
-    }, cb);
+    git.push('bitpay', name, cb);
   });
 });
 
