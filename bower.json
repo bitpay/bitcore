@@ -1,6 +1,6 @@
 {
   "name": "bitcore",
-  "main": "dist/bitcore.js",
+  "main": "browser/bitcore.min.js",
   "version": "0.8.2",
   "homepage": "http://bitcore.io",
   "authors": [

@@ -1,7 +1,6 @@
 *.swp
 coverage
 node_modules
-browser/bitcore.js
 browser/tests.js
 docs/api
 
@@ -17,3 +16,4 @@ apiref
 bower_components
 report
 .DS_Store
+browser
