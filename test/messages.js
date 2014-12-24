@@ -4,9 +4,10 @@ var chai = require('chai');
 
 var should = chai.should();
 
-var bitcore = require('../..');
-var Data = require('../data/messages');
-var Messages = bitcore.transport.Messages;
+var bitcore = require('bitcore-base');
+var Data = require('./data/messages');
+var P2P = require('../');
+var Messages = P2P.Messages;
 var Networks = bitcore.Networks;
 
 describe('Messages', function() {
