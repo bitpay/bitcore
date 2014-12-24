@@ -193,6 +193,10 @@ DON'T:
 var PublicKey = require('../lib/publickey');
 ```
 
+### T4 - Testing: Data for tests included in a JSON file
+
+If possible, data for tests should be included in a different JSON file from the test. This improves interoperability with other libraries and keeps tests cleaner.
+
 ## Pull Request Workflow
 
 Our workflow is based on GitHub's pull requests. We use feature branches, prepended with: `test`, `feature`, `fix`, `refactor`, or `remove` according to the change the branch introduces. Some examples for such branches are:
