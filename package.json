@@ -1,0 +1,54 @@
+{
+  "name": "bitcore-paymentprotocol",
+  "version": "0.8.5",
+  "description": "Payment Protocol (BIP70 and related) support for bitcore",
+  "author": "BitPay <dev@bitpay.com>",
+  "main": "index.js",
+  "scripts": {
+    "lint": "gulp lint",
+    "test": "gulp test",
+    "coverage": "gulp coverage",
+    "build": "gulp",
+    "postinstall": "node ./lib/errors/build.js"
+  },
+  "contributors": [
+    {
+      "name": "Esteban Ordano",
+      "email": "eordano@gmail.com"
+    }
+  ],
+  "keywords": [
+    "bitcoin",
+    "bitcore"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore-paymentprotocol.git"
+  },
+  "dependencies": {
+    "bitcore-base": "~0.8.5"
+  },
+  "devDependencies": {
+    "browserify": "~6.3.3",
+    "chai": "~1.10.0",
+    "gulp": "^3.8.10",
+    "gulp-bump": "^0.1.11",
+    "gulp-coveralls": "^0.1.3",
+    "gulp-git": "^0.5.5",
+    "gulp-jshint": "^1.9.0",
+    "gulp-mocha": "^2.0.0",
+    "gulp-rename": "^1.2.0",
+    "gulp-shell": "^0.2.10",
+    "gulp-uglify": "^1.0.2",
+    "gulp-util": "=3.0.1",
+    "istanbul": "^0.3.5",
+    "karma": "^0.12.28",
+    "karma-firefox-launcher": "^0.1.3",
+    "karma-mocha": "^0.1.9",
+    "mocha": "~2.0.1",
+    "plato": "^1.3.0",
+    "run-sequence": "^1.0.2",
+    "sinon": "^1.12.2"
+  },
+  "license": "MIT"
+}

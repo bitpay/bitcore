@@ -3,14 +3,13 @@
 var chai = require('chai');
 var should = chai.should();
 var expect = chai.expect;
-var bitcore = require('../../');
+var bitcore = require('bitcore-base');
 var PrivateKey = bitcore.PrivateKey;
 var PublicKey = bitcore.PublicKey;
 
 var is_browser = typeof process === 'undefined' || typeof process.versions === 'undefined';
 
-var PaymentProtocol = bitcore.PaymentProtocol;
-
+var PaymentProtocol = require('../');
 var Key = bitcore.Key;
 
 var x509 = {
@@ -278,7 +277,6 @@ var bitpayRequest = new Buffer(''
   + '01f76292614b30a14272e837f3813045b035f3d42f4f76f48acd',
   'hex');
 
-
 describe('PaymentProtocol', function() {
 
   this.timeout(15000);
@@ -313,7 +311,7 @@ describe('PaymentProtocol', function() {
 
     it('should not fail', function() {
       var obj = {};
-      var pd = new PayPro.PaymentDetails();
+      var pd = new PaymentProtocol.PaymentDetails();
     });
 
     it('should set the memo', function() {
