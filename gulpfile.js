@@ -258,13 +258,13 @@ gulp.task('release:version-commit', function() {
 });
 
 gulp.task('release:push-releases', function(cb) {
-  git.push('origin', 'releases', {
+  git.push('bitpay', 'releases', {
     args: ''
   }, cb);
 });
 
 gulp.task('release:push', function(cb) {
-  git.push('origin', 'master', {
+  git.push('bitpay', 'master', {
     args: ''
   }, cb);
 });
@@ -273,7 +273,7 @@ gulp.task('release:push-tag', function(cb) {
   var pjson = require('./package.json');
   var name = 'v' + pjson.version;
   git.tag(name, 'Release ' + name, function() {
-    git.push('origin', name, {
+    git.push('bitpay', name, {
       args: '--tags'
     }, cb);
   });
