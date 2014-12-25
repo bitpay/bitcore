@@ -61,3 +61,19 @@ value = Unit.fromBTC(amount).mBTC;
 value = Unit.fromBTC(amount).bits;
 value = Unit.fromBTC(amount).satoshis;
 ```
+
+## Using a fiat currency
+
+The unit class also provides a convenient alternative to create an instance from a fiat amount and the corresponding BTC/fiat exchange rate. Any unit instance can be converted to a fiat amount by providing the current exchange rate. Check the example below:
+
+```javascript
+var unit, fiat;
+var amount = 100;
+var exchangeRate = 350;
+
+unit = new Unit(amount, exchangeRate);
+unit = Unit.fromFiat(amount, exchangeRate);
+
+fiat = Unit.fromBits(amount).toFiat(exchangeRate);
+fiat = Unit.fromBits(amount).to(exchangeRate);
+```
