@@ -9,7 +9,7 @@ Bitcore implements [Elliptic Curve Integrated Encryption Scheme (ECIES)](http://
 
 For more information refer to the [bitcore-ecies](https://github.com/bitpay/bitcore-ecies) github repo.
 
-## Instalation
+## Installation
 
 ECIES is implemented as a separate module and you must add it to your dependencies:
 

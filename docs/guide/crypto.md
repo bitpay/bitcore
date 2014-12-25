@@ -25,4 +25,4 @@ The `bitcore.Crypto.Hash` namespace contains a set of hashes and utilities. Thes
 
 ## ECDSA
 
-`bitcore.Crypto.ECDSA` contains a pure JavaScript implementation of the elliptic curve DSA signature scheme.
+`bitcore.Crypto.ECDSA` contains a pure JavaScript implementation of the elliptic curve DSA signature scheme based on [elliptic.js](https://github.com/indutny/elliptic).

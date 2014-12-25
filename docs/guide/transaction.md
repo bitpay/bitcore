@@ -7,7 +7,7 @@ description: A robust interface to create, parse and validate bitcoin transactio
 
 Bitcore provides a very simple API for creating transactions. We expect this API to be accessible for developers without knowing the working internals of bitcoin in deep detail. What follows is a small introduction to transactions with some basic knowledge required to use this API.
 
-A Transaction contains a set of inputs and a set of outputs. Each input contains a reference to another transaction's output, and a signature that allows the value referenced in that ouput to be used in this transaction.
+A Transaction contains a set of inputs and a set of outputs. Each input contains a reference to another transaction's output, and a signature that allows the value referenced in that output to be used in this transaction.
 
 Note also that an output can be used only once. That's why there's a concept of "change address" in the bitcoin ecosystem: if an output of 10 BTC is available for me to spend, but I only need to transmit 1 BTC, I'll create a transaction with two outputs, one with 1 BTC that I want to spend, and the other with 9 BTC to a change address, so I can spend this 9 BTC with another private key that I own.
 
@@ -17,7 +17,7 @@ Let's take a look at some very simple transactions:
 
 ```javascript
 var transaction = new Transaction()
-    .from(utxos)          // Feed information about what unspend outputs one can use
+    .from(utxos)          // Feed information about what unspent outputs one can use
     .to(address, amount)  // Add an output with the given amount of satoshis
     .change(address)      // Sets up a change address where the rest of the funds will go
     .sign(privkeySet)     // Signs all the inputs it can

@@ -5,7 +5,7 @@ description: A simple interface to generate and validate a bitcoin address.
 
 ## Description
 
-Represents a bitcoin Address. Addresses are the most popular way to make bitcoin transactions. See [the official Bitcoin Wiki](https://en.bitcoin.it/wiki/Address) for technical background information.
+Represents a bitcoin address. Addresses are the most popular way to make bitcoin transactions. See [the official Bitcoin Wiki](https://en.bitcoin.it/wiki/Address) for technical background information.
 
 ## Instantiate an Address
 
