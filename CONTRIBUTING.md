@@ -51,19 +51,19 @@ Follow this Node.js Style Guide: https://github.com/felixge/node-style-guide#nod
 
 Avoid constants in the code as much as possible. Magic strings are also magic numbers.
 
-### G2 - General: Internal Objects should be Instances
+### G2 - General: Internal Objects Should be Instances
 
 If a class has a `publicKey` member, for instance, that should be a `PublicKey` instance.
 
-### G3 - General: Internal amounts must be integers representing Satoshis
+### G3 - General: Internal Amounts Must be Integers Representing Satoshis
 
 Avoid representation errors by always dealing with satoshis. For conversion for frontends, use the `Unit` class.
 
-### G4 - General: Internal network references must be Network instances
+### G4 - General: Internal Network References Must be Network Instances
 
 A special case for [G2](#g2---general-internal-objects-should-be-instances) all network references must be `Network` instances (see `lib/network.js`), but when returned to the user, its `.name` property should be used.
 
-### G5 - General: Objects should display nicely in the console
+### G5 - General: Objects Should Display Nicely in the Console
 
 Write a `.inspect()` method so an instance can be easily debugged in the console.
 
@@ -103,7 +103,7 @@ Usage:
 * Whenever a new class is created, add a generic error for that class in `lib/errors/spec.js`.
 * Specific errors for that class should subclass that error. Take a look at the structure in `lib/errors/spec.js`, it should be clear how subclasses are generated from that file.
 
-### E2 - Errors: Provide a `getValidationError` static method for classes
+### E2 - Errors: Provide a `getValidationError` Static Method for Classes
 
 ### I1 - Interface: Make Code that Fails Early
 
@@ -156,7 +156,7 @@ function ImmutableClass(arg) {
 }
 ```
 
-### I5 - Interface: No new keyword for Constructors
+### I5 - Interface: No New Keyword for Constructors
 
 Constructors should not require to be called with `new`. This rule is not heavily enforced, but is a "nice to have".
 
@@ -179,7 +179,7 @@ Don't write long tests, write helper functions to make them be as short and conc
 
 Inputs for tests should not be generated randomly. Also, the type and structure of outputs should be checked.
 
-### T3 - Testing: Require 'bitcore' and look up classes from there
+### T3 - Testing: Require 'bitcore' and Look up Classes from There
 
 This helps to make tests more useful as examples, and more independent of where they are placed. This also helps prevent forgetting to include all submodules in the bitcore object.
 
@@ -193,9 +193,9 @@ DON'T:
 var PublicKey = require('../lib/publickey');
 ```
 
-### T4 - Testing: Data for tests included in a JSON file
+### T4 - Testing: Data for Tests Included in a JSON File
 
-If possible, data for tests should be included in a different JSON file from the test. This improves interoperability with other libraries and keeps tests cleaner.
+If possible, data for tests should be included in a JSON file in the `test/data` directory. This improves interoperability with other libraries and keeps tests cleaner.
 
 ## Pull Request Workflow
 
