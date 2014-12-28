@@ -142,11 +142,11 @@ describe('Unit', function() {
 
   it('can convert to fiat', function() {
     var unit = new Unit(1.3, 350);
-    unit.toFiat(350).should.equal(1.3);
+    unit.atRate(350).should.equal(1.3);
     unit.to(350).should.equal(1.3);
 
     unit = Unit.fromBTC(0.0123);
-    unit.toFiat(10).should.equal(0.12);
+    unit.atRate(10).should.equal(0.12);
   });
 
   it('toString works as expected', function() {
@@ -186,7 +186,7 @@ describe('Unit', function() {
       return new Unit(100, -123);
     }).to.throw(errors.Unit.InvalidRate);
     expect(function() {
-      return new Unit(100, 'BTC').toFiat(-123);
+      return new Unit(100, 'BTC').atRate(-123);
     }).to.throw(errors.Unit.InvalidRate);
   });
 

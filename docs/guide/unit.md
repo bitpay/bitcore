@@ -74,6 +74,6 @@ var exchangeRate = 350;
 unit = new Unit(amount, exchangeRate);
 unit = Unit.fromFiat(amount, exchangeRate);
 
-fiat = Unit.fromBits(amount).toFiat(exchangeRate);
+fiat = Unit.fromBits(amount).atRate(exchangeRate);
 fiat = Unit.fromBits(amount).to(exchangeRate);
 ```
