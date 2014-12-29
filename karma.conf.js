@@ -7,7 +7,7 @@ module.exports = function(config) {
     browsers: ['Chrome', 'Firefox'],
     singleRun: true,
     files: [
-      'browser/tests.js'
+      'tests.js'
     ]
   });
 };

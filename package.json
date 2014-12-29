@@ -1,6 +1,6 @@
 {
   "name": "bitcore-paymentprotocol",
-  "version": "0.8.5",
+  "version": "0.8.6",
   "description": "Payment Protocol (BIP70 and related) support for bitcore",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -8,8 +8,7 @@
     "lint": "gulp lint",
     "test": "gulp test",
     "coverage": "gulp coverage",
-    "build": "gulp",
-    "postinstall": "node ./lib/errors/build.js"
+    "build": "gulp"
   },
   "contributors": [
     {
@@ -26,9 +25,13 @@
     "url": "https://github.com/bitpay/bitcore-paymentprotocol.git"
   },
   "dependencies": {
-    "bitcore-base": "~0.8.5"
+    "bitcore-base": "~0.8.5",
+    "asn1.js": "=0.4.1",
+    "jsrsasign": "=0.0.3",
+    "protobufjs": "=3.0.0"
   },
   "devDependencies": {
+    "brfs": "^1.2.0",
     "browserify": "~6.3.3",
     "chai": "~1.10.0",
     "gulp": "^3.8.10",
