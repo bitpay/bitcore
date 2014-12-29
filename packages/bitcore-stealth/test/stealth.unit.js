@@ -11,6 +11,8 @@ var aliceKey = new PrivateKey('L1Ejc5dAigm5XrM3mNptMEsNnHzS7s51YxU7J61ewGshZTKkb
 var bobKey   = new PrivateKey('KxfxrUXSMjJQcb3JgnaaA6MqsrKQ1nBSxvhuigdKRyFiEm6BZDgG');
 
 var saddrLive = 'vJmtjxSDxNPXL4RNapp9ARdqKz3uJyf1EDGjr1Fgqs9c8mYsVH82h8wvnA4i5rtJ57mr3kor1EVJrd4e5upACJd588xe52yXtzumxj';
+var saddrLive2 = 'hfFELudSDw7rBvGyadXF9DZbcsE92YJGaA4LniuuyYyenZPzFmnF4M74e';
+
 var scanKeyLive = '025e58a31122b38c86abc119b9379fe247410aee87a533f9c07b189aef6c3c1f52';
 var spendKeyLive = '03616562c98e7d7b74be409a787cec3a912122f3fb331a9bee9b0b73ce7b9f50af';
 
@@ -31,12 +33,12 @@ describe('Stealth Address', function() {
     assert.ok(address instanceof StealthAddress);
   });
   
-  it('creates from livenet string', function() {
+  it('creates instance from livenet string', function() {
     var address = new StealthAddress(saddrLive);
     assert.ok(address instanceof StealthAddress);
 
     assert.equal(address.network, bitcore.Networks.livenet);
-    assert.equal(address.reuseScan, 0);
+    assert.equal(address.reuseScan, false);
     assert.equal(address.scanKey.toString(), scanKeyLive);
     assert.equal(address.spendKeys.length, 1);
     assert.equal(address.spendKeys[0].toString(), spendKeyLive);
@@ -44,7 +46,7 @@ describe('Stealth Address', function() {
     assert.equal(address.prefix, '');
   });
 
-  it('creates from testnet string', function() {
+  it('creates instance from testnet string', function() {
     var address = new StealthAddress(saddrTest);
     assert.ok(address instanceof StealthAddress);
 
@@ -57,11 +59,22 @@ describe('Stealth Address', function() {
     assert.equal(address.prefix, '');
   });
 
+  it('creates instance from sort livenet string', function() {
+    var address = new StealthAddress(saddrLive2);
+    assert.ok(address instanceof StealthAddress);
+
+    assert.equal(address.network, bitcore.Networks.livenet);
+    assert.equal(address.reuseScan, true);
+    assert.equal(address.scanKey.toString(), scanKeyLive);
+    assert.equal(address.spendKeys.length, 0);
+    assert.equal(address.signatures, 1);
+    assert.equal(address.prefix, '');
+  });
+
   it('creates from scanKey', function() {
     var scankey = new bitcore.PublicKey(scanKeyLive);
     var address = new StealthAddress(scankey);
     assert.equal(address.reuseScan, true);
-    console.log(address.toString());
   });
 
   it('creates from spendKeys array and scanKey', function() {
