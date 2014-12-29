@@ -10,7 +10,12 @@ var BufferReader = bitcore.encoding.BufferReader;
 var BufferWriter = bitcore.encoding.BufferWriter;
 var preconditions = bitcore.util.preconditions;
 
+var BN = bitcore.crypto.BN;
+var Hash = bitcore.crypto.Hash;
+var Point = bitcore.crypto.Point;
+
 var PublicKey = bitcore.PublicKey;
+var PrivateKey = bitcore.PrivateKey;
 var Networks = bitcore.Networks;
 
 
@@ -118,6 +123,106 @@ StealthAddress.prototype._fromBuffer = function(buffer) {
   var prefix = reader.readUInt8();
   info.prefix = reader.read(prefix / 8).toString('hex');
   return info;
+};
+
+
+/**
+ * Internal function to perform curvedh
+ * @param {BN} bn - private key part
+ * @param {PublicKey} pubKey - public key
+ * @returns {BN}
+ */
+StealthAddress._stealthDH = function(bn, spendKey) {
+  var point = spendKey.point.mul(bn);
+  var buffer = new PublicKey(point).toBuffer();
+  var c = Hash.sha256(buffer);
+  return BN.fromBuffer(c);
+};
+
+/**
+ * Internal function to derive a public key from spend public key and shared secret
+ * @param {PublicKey} spendKey - private key asociated with spendKey
+ * @param {BN} c - Derivation value
+ * @returns {PublicKey}
+ */
+StealthAddress._derivePublicKey = function(spendKey, c) {
+  var sharedPoint = new PrivateKey(c).publicKey.point;
+  return new PublicKey(spendKey.point.add(sharedPoint));
+};
+
+/**
+ * Internal function to derive a private key from spend private key and shared secret
+ * @param {PrivateKey} spendKey - private key asociated with spendKey
+ * @param {BN} c - Derivation value
+ * @returns {PrivateKey}
+ */
+StealthAddress._derivePrivateKey = function(spendKey, c) {
+  var derived = spendKey.bn.add(c).mod(Point.getN());
+  return new PrivateKey(derived);
+};
+
+/**
+ * Sender: Generate a public key to make the stealth payment
+ * E.g: sx stealth-initiate $EPHEM_SECRET $SCAN_PUBKEY $SPEND_PUBKEY
+ *
+ * @param {PrivateKey} ephemeral - A new private key
+ * @returns {PublicKey}
+ */
+StealthAddress.prototype.toStealthPublicKey = function(ephemeral) {
+  if (!(ephemeral instanceof PrivateKey)) {
+    throw new Error('Ephemeral must be a private key');
+  }
+
+  var c = StealthAddress._stealthDH(ephemeral.bn, this.scanKey);
+  return StealthAddress._derivePublicKey(this.spendKeys[0], c);
+};
+
+/**
+ * Scanner: Generate a public key to verify a stealth output
+ * E.g: sx stealth-uncover $EPHEM_PUBKEY $SCAN_SECRET $SPEND_PUBKEY
+ *
+ * @param {PublicKey} ephemeral - Tx ephemeral public key
+ * @param {PrivateKey} scanKey - Scan private key
+ * @param {PublicKey} spendKey - Spend public key
+ * @returns {PublicKey}
+ */
+StealthAddress.getStealthPublicKey = function(ephemeral, scanKey, spendKey) {
+  if (!(ephemeral instanceof PublicKey)) {
+    throw new Error('ephemeral must be a public key');
+  }
+  if (!(scanKey instanceof PrivateKey)) {
+    throw new Error('scanKey key must be a private key');
+  }
+  if (!(spendKey instanceof PublicKey)) {
+    throw new Error('spendKey key must be a public key');
+  }
+
+  var c = StealthAddress._stealthDH(scanKey.bn, ephemeral);
+  return StealthAddress._derivePublicKey(spendKey, c);
+};
+
+/**
+ * Receiver: Generate a private key to spend the funds of a stealth payment
+ * E.g: sx stealth-uncover-secret $EPHEM_PUBKEY $SCAN_SECRET $SPEND_SECRET
+ *
+ * @param {PublicKey} ephemeral - Tx ephemeral public key
+ * @param {PrivateKey} scannKey - Scan private key
+ * @param {PrivateKey} spendKey - Spend private key
+ * @returns {PublicKey}
+ */
+StealthAddress.getStealthPrivateKey = function(ephemeral, scanKey, spendKey) {
+  if (!(ephemeral instanceof PublicKey)) {
+    throw new Error('ephemeral must be a public key');
+  }
+  if (!(scanKey instanceof PrivateKey)) {
+    throw new Error('scanKey key must be a private key');
+  }
+  if (!(spendKey instanceof PrivateKey)) {
+    throw new Error('spendKey key must be a private key');
+  }
+
+  var c = StealthAddress._stealthDH(scanKey.bn, ephemeral);
+  return StealthAddress._derivePrivateKey(spendKey, c);
 };
 
 /**

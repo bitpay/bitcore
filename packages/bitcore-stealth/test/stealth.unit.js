@@ -122,4 +122,45 @@ describe('Stealth Address', function() {
     });
   });
 
+  describe('Stealth derivation', function() {
+    var stealthAddress = "vJmtjxSDxNPXL4RNapp9ARdqKz3uJyf1EDGjr1Fgqs9c8mYsVH82h8wvnA4i5rtJ57mr3kor1EVJrd4e5upACJd588xe52yXtzumxj";
+    var scanSecret = "3e49e7257cb31db997edb1cf8299af0f37e2663e2260e4b8033e49d39a6d02f2";
+    var spendSecret = "aa3db0cfb3edc94de4d10f873f8190843f2a17484f6021a95a7742302c744748";
+    var ephemSecret = "9e63abaf8dcd5ea3919e6de0b6c544e00bf51bf92496113a01d6e369944dc091";
+    var stealthSecret = "4e422fb1e5e1db6c1f6ab32a7706d368ceb385e7fab098e633c5c5949c3b97cd";
+
+    it('Sender: generate stealth public key', function() {
+      var address = new StealthAddress(stealthAddress);
+      var ephemeral = new bitcore.PrivateKey(ephemSecret);
+      var expectedStealthKey = new bitcore.PrivateKey(stealthSecret).publicKey;
+
+      var stealthKey = address.toStealthPublicKey(ephemeral);
+      assert.equal(stealthKey.toString(), expectedStealthKey.toString());
+    });
+
+    it('Scanner: generate stealth public key', function() {
+      var ephemeral = new bitcore.PrivateKey(ephemSecret).publicKey;
+      var scanKey = new bitcore.PrivateKey(scanSecret);
+      var spendKey = new bitcore.PrivateKey(spendSecret).publicKey;
+      var expectedStealthKey = new bitcore.PrivateKey(stealthSecret).publicKey;
+
+      var stealthKey = StealthAddress.getStealthPublicKey(ephemeral, scanKey, spendKey)
+      assert.equal(stealthKey.toString(), expectedStealthKey.toString());
+    });
+
+    it('Receiver: generate stealth private key', function() {
+      var ephemeral = new bitcore.PrivateKey(ephemSecret).publicKey;
+      var scanKey = new bitcore.PrivateKey(scanSecret);
+      var spendKey = new bitcore.PrivateKey(spendSecret);
+      var expectedStealthKey = new bitcore.PrivateKey(stealthSecret);
+
+      var stealthKey = StealthAddress.getStealthPrivateKey(ephemeral, scanKey, spendKey)
+      assert.equal(stealthKey.toString(), expectedStealthKey.toString());
+    });
+
+    // TODO: spendKey - helper:reuseScan
+    // TODO: test with reuseScan
+
+  });
+
 });
