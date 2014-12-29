@@ -43,31 +43,33 @@ Consistency on the way classes are used is paramount to allow an easier understa
 
 The design guidelines have quite a high abstraction level. These style guidelines are more concrete and easier to apply, and also more opinionated. The design guidelines mentioned above are the way we think about general software development and we believe they should be present in any software project.
 
-### G0 - General: Default to Felixge's Style Guide
+### General
+
+#### G0 - Default to Felixge's Style Guide
 
 Follow this Node.js Style Guide: https://github.com/felixge/node-style-guide#nodejs-style-guide
 
-### G1 - General: No Magic Numbers
+#### G1 - No Magic Numbers
 
 Avoid constants in the code as much as possible. Magic strings are also magic numbers.
 
-### G2 - General: Internal Objects Should be Instances
+#### G2 - Internal Objects Should be Instances
 
 If a class has a `publicKey` member, for instance, that should be a `PublicKey` instance.
 
-### G3 - General: Internal Amounts Must be Integers Representing Satoshis
+#### G3 - Internal Amounts Must be Integers Representing Satoshis
 
 Avoid representation errors by always dealing with satoshis. For conversion for frontends, use the `Unit` class.
 
-### G4 - General: Internal Network References Must be Network Instances
+#### G4 - Internal Network References Must be Network Instances
 
 A special case for [G2](#g2---general-internal-objects-should-be-instances) all network references must be `Network` instances (see `lib/network.js`), but when returned to the user, its `.name` property should be used.
 
-### G5 - General: Objects Should Display Nicely in the Console
+#### G5 - Objects Should Display Nicely in the Console
 
 Write a `.inspect()` method so an instance can be easily debugged in the console.
 
-### G6 - General: Naming Utility Namespaces
+#### G6 - Naming Utility Namespaces
 
 Name them in CamelCase, as they are namespaces.
 
@@ -80,7 +82,7 @@ DON'T:
 var bufferUtil = require('./util/buffer');
 ```
 
-### G7 - General: Standard Methods
+#### G7 - Standard Methods
 
 When possible, bitcore objects should have standard methods on an instance prototype:
 * `toObject` - A plain JavaScript object that can be JSON stringified
@@ -93,7 +95,9 @@ These should have a matching static method that can be used for instantiation:
 * `fromString` - Should be able to instantiate with output from `toString`
 * `fromBuffer` - Should likewise be able to instantiate from output from `toBuffer`
 
-### E1 - Errors: Use bitcore.Errors
+### Errors
+
+#### E1 - Use bitcore.Errors
 
 We've designed a structure for Errors to follow and are slowly migrating to it.
 
@@ -103,9 +107,11 @@ Usage:
 * Whenever a new class is created, add a generic error for that class in `lib/errors/spec.js`.
 * Specific errors for that class should subclass that error. Take a look at the structure in `lib/errors/spec.js`, it should be clear how subclasses are generated from that file.
 
-### E2 - Errors: Provide a `getValidationError` Static Method for Classes
+#### E2 - Provide a `getValidationError` Static Method for Classes
 
-### I1 - Interface: Make Code that Fails Early
+### Interface
+
+#### I1 - Code that Fails Early
 
 In order to deal with JavaScript's weak typing and confusing errors, we ask our code to fail as soon as possible when an unexpected input was provided.
 
@@ -118,11 +124,11 @@ $.checkArgumentType(something, PrivateKey, 'something'); // The third argument i
 $.checkArgumentType(something, PrivateKey); // but it's optional (will show up as "(unknown argument)")
 ```
 
-### I2 - Interface: Permissive Constructors
+#### I2 - Permissive Constructors
 
 Most classes have static methods named `fromBuffer`, `fromString`, `fromJSON`. Whenever one of those methods is provided, the constructor for that class should also be able to detect the type of the arguments and call the appropriate method.
 
-### I3 - Interface: Method Chaining
+#### I3 - Method Chaining
 
 For classes that have a mutable state, most of the methods that can be chained *SHOULD* be chained, allowing for interfaces that read well, like:
 
@@ -134,7 +140,7 @@ var transaction = new Transaction()
     .sign(privkey);
 ```
 
-### I4 - Interface: Copy Constructors
+#### I4 - Copy Constructors
 
 Constructors, when provided an instance of the same class, should:
 * Return the same object, if the instances of this class are immutable
@@ -156,7 +162,7 @@ function ImmutableClass(arg) {
 }
 ```
 
-### I5 - Interface: No New Keyword for Constructors
+#### I5 - No New Keyword for Constructors
 
 Constructors should not require to be called with `new`. This rule is not heavily enforced, but is a "nice to have".
 
@@ -169,17 +175,19 @@ function NoNewRequired(args) {
 }
 ```
 
-### T1 - Testing: Tests Must be Written Elegantly
+### Testing
+
+#### T1 - Tests Must be Written Elegantly
 
 Style guidelines are not relaxed for tests. Tests are a good way to show how to use the library, and maintaining them is extremely necessary.
 
 Don't write long tests, write helper functions to make them be as short and concise as possible (they should take just a few lines each), and use good variable names.
 
-### T2 - Testing: Tests Must not be Random
+#### T2 - Tests Must not be Random
 
 Inputs for tests should not be generated randomly. Also, the type and structure of outputs should be checked.
 
-### T3 - Testing: Require 'bitcore' and Look up Classes from There
+#### T3 - Require 'bitcore' and Look up Classes from There
 
 This helps to make tests more useful as examples, and more independent of where they are placed. This also helps prevent forgetting to include all submodules in the bitcore object.
 
@@ -193,9 +201,19 @@ DON'T:
 var PublicKey = require('../lib/publickey');
 ```
 
-### T4 - Testing: Data for Tests Included in a JSON File
+#### T4 - Data for Tests Included in a JSON File
 
 If possible, data for tests should be included in a JSON file in the `test/data` directory. This improves interoperability with other libraries and keeps tests cleaner.
+
+### Documentation
+
+#### D1 - Guide and API Reference
+
+All modules should include a developer guide and API reference. The API reference documentation is generated using JSDOC. Each function that exposes a public API should include a description, @return and @param, as appropriate. The general documentation guide for the module should be located in the `docs/guide` directory and is written in GitHub Flavored Markdown.
+
+#### D1 - Proofread
+
+Please proofread documentation to avoid unintentional spelling and grammatical mistakes before submitting a pull request.
 
 ## Pull Request Workflow
 
