@@ -1,0 +1,39 @@
+{
+  "name": "bitcore-stealth",
+  "version": "0.0.1",
+  "description": "Stealth Addresses implemented for Bitcore.",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha",
+    "coverage": "istanbul cover _mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore-stealth.git"
+  },
+  "keywords": [
+    "bitcoin",
+    "bitcore",
+    "stealth",
+    "addresses"
+  ],
+  "author": "Yemel Jardi <yemel@bitpay.com> (http://github.com/yemel)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bitpay/bitcore-stealth/issues"
+  },
+  "homepage": "https://github.com/bitpay/bitcore-stealth",
+  "devDependencies": {
+    "assert": "^1.1.2",
+    "coveralls": "^2.11.2",
+    "istanbul": "^0.3.5",
+    "mocha": "^2.0.1"
+  },
+  "dependencies": {
+    "bitcore": "^0.8.5",
+    "lodash": "^2.4.1"
+  }
+}
