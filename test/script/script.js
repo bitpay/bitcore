@@ -1,7 +1,10 @@
 'use strict';
 
 var should = require('chai').should();
+var expect = require('chai').expect;
 var bitcore = require('../..');
+
+var BufferUtil = bitcore.util.buffer;
 var Script = bitcore.Script;
 var Opcode = bitcore.Opcode;
 var PublicKey = bitcore.PublicKey;
@@ -564,6 +567,27 @@ describe('Script', function() {
       Script().add(buf).checkMinimalPush(0).should.equal(true);
     });
 
+  });
+
+  describe('getData returns associated data', function() {
+    it('for a P2PKH address', function() {
+      var address = Address.fromString('1NaTVwXDDUJaXDQajoa9MqHhz4uTxtgK14');
+      var script = Script.buildPublicKeyHashOut(address);
+      expect(BufferUtil.equal(script.getData(), address.hashBuffer)).to.be.true();
+    });
+    it('for a P2SH address', function() {
+      var address = Address.fromString('3GhtMmAbWrUf6Y8vDxn9ETB14R6V7Br3mt');
+      var script = new Script(address);
+      expect(BufferUtil.equal(script.getData(), address.hashBuffer)).to.be.true();
+    });
+    it('for a standard opreturn output', function() {
+      expect(BufferUtil.equal(Script('OP_RETURN 1 0xFF').getData(), new Buffer([255]))).to.be.true();
+    });
+    it('fails if content is not recognized', function() {
+      expect(function() {
+        return Script('1 0xFF').getData();
+      }).to.throw();
+    });
   });
 
 });
