@@ -6,6 +6,7 @@ var bitcore = require('../..');
 
 var BufferUtil = bitcore.util.buffer;
 var Script = bitcore.Script;
+var Networks = bitcore.Networks;
 var Opcode = bitcore.Opcode;
 var PublicKey = bitcore.PublicKey;
 var Address = bitcore.Address;
@@ -586,6 +587,26 @@ describe('Script', function() {
     it('fails if content is not recognized', function() {
       expect(function() {
         return Script('1 0xFF').getData();
+      }).to.throw();
+    });
+  });
+
+  describe('toAddress', function() {
+    it('for a P2PKH address', function() {
+      var stringAddress = '1NaTVwXDDUJaXDQajoa9MqHhz4uTxtgK14';
+      var address = new Address(stringAddress);
+      var script = new Script(address);
+      script.toAddress(Networks.livenet).toString().should.equal(stringAddress);
+    });
+    it('for a P2SH address', function() {
+      var stringAddress = '3GhtMmAbWrUf6Y8vDxn9ETB14R6V7Br3mt';
+      var address = new Address(stringAddress);
+      var script = new Script(address);
+      script.toAddress(Networks.livenet).toString().should.equal(stringAddress);
+    });
+    it('fails if content is not recognized', function() {
+      expect(function() {
+        return Script().toAddress(Networks.livenet);
       }).to.throw();
     });
   });

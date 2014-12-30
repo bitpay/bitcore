@@ -320,23 +320,36 @@ describe('Address', function() {
       b.toString().should.equal('16JXnhxjJUhxfyx4y6H4sFcxrgt8kQ8ewX');
     });
 
-    it('should make this address from a script', function() {
-      var s = Script.fromString('OP_CHECKMULTISIG');
-      var buf = s.toBuffer();
-      var a = Address.fromScript(s);
-      a.toString().should.equal('3BYmEwgV2vANrmfRymr1mFnHXgLjD6gAWm');
-      var b = new Address(s);
-      b.toString().should.equal('3BYmEwgV2vANrmfRymr1mFnHXgLjD6gAWm');
-      var c = Address.fromScriptHash(bitcore.crypto.Hash.sha256ripemd160(buf));
-      c.toString().should.equal('3BYmEwgV2vANrmfRymr1mFnHXgLjD6gAWm');
-    });
+    describe('from a script', function() {
+      it('should make this address from a script', function() {
+        var s = Script.fromString('OP_CHECKMULTISIG');
+        var buf = s.toBuffer();
+        var a = Address.fromScript(s);
+        a.toString().should.equal('3BYmEwgV2vANrmfRymr1mFnHXgLjD6gAWm');
+        var b = new Address(s);
+        b.toString().should.equal('3BYmEwgV2vANrmfRymr1mFnHXgLjD6gAWm');
+        var c = Address.fromScriptHash(bitcore.crypto.Hash.sha256ripemd160(buf));
+        c.toString().should.equal('3BYmEwgV2vANrmfRymr1mFnHXgLjD6gAWm');
+      });
 
-    it('should make this address from other script', function() {
-      var s = Script.fromString('OP_CHECKSIG OP_HASH160');
-      var a = Address.fromScript(s);
-      a.toString().should.equal('347iRqVwks5r493N1rsLN4k9J7Ljg488W7');
-      var b = new Address(s);
-      b.toString().should.equal('347iRqVwks5r493N1rsLN4k9J7Ljg488W7');
+      it('should make this address from other script', function() {
+        var s = Script.fromString('OP_CHECKSIG OP_HASH160');
+        var a = Address.fromScript(s);
+        a.toString().should.equal('347iRqVwks5r493N1rsLN4k9J7Ljg488W7');
+        var b = new Address(s);
+        b.toString().should.equal('347iRqVwks5r493N1rsLN4k9J7Ljg488W7');
+      });
+
+      it('returns the same address if the script is a pay to public key hash out', function() {
+        var address = '16JXnhxjJUhxfyx4y6H4sFcxrgt8kQ8ewX';
+        var script = Script.buildPublicKeyHashOut(new Address(address));
+        Address(script, Networks.livenet).toString().should.equal(address);
+      });
+      it('returns the same address if the script is a pay to script hash out', function() {
+        var address = '3BYmEwgV2vANrmfRymr1mFnHXgLjD6gAWm';
+        var script = Script.buildScriptHashOut(new Address(address));
+        Address(script, Networks.livenet).toString().should.equal(address);
+      });
     });
 
     it('should derive from this known address string livenet', function() {
