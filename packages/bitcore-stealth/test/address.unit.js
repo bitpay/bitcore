@@ -149,10 +149,10 @@ describe('Stealth Address', function() {
       var ephemeral = new bitcore.PrivateKey(ephemSecret).publicKey;
       var scanKey = new bitcore.PrivateKey(scanSecret);
       var spendKey = new bitcore.PrivateKey(spendSecret).publicKey;
-      var expectedStealthKey = new bitcore.PrivateKey(stealthSecret).publicKey;
+      var expectedAddress = new bitcore.PrivateKey(stealthSecret).toAddress();
 
-      var stealthKey = Stealth.Address.getStealthPublicKey(ephemeral, scanKey, spendKey)
-      assert.equal(stealthKey.toString(), expectedStealthKey.toString());
+      var stealthKey = Stealth.Address.getPubkeyHashPaymentAddress(ephemeral, scanKey, spendKey)
+      assert.equal(stealthKey.toString(), expectedAddress.toString());
     });
 
     it('Receiver: generate stealth private key', function() {

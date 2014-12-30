@@ -19,7 +19,7 @@ var spendKeysMult = [
   'KwnXgbxAzV9XYhGSPRpY2xUN3ZdPqtrxF1GVZBWgzNY3VvQNcke7'
 ];
 
-describe.only('Stealth Transaction', function() {
+describe('Stealth Transaction', function() {
   
   it('provides a constructor', function() {
     assert.equal(typeof Stealth.Transaction , 'function');
@@ -106,7 +106,6 @@ describe.only('Stealth Transaction', function() {
 
       assert.equal(scannedAddress.toString(), paymentAddress.toString());
     });
-
 
     // TODO: Test Networks!!!
 

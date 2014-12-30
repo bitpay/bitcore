@@ -144,7 +144,7 @@ Address.prototype._fromBuffer = function(buffer) {
  */
 Address._stealthDH = function(bn, spendKey) {
   var point = spendKey.point.mul(bn);
-  var buffer = new PublicKey(point).toBuffer();
+  var buffer = new PublicKey(point, spendKey.network).toBuffer();
   var c = Hash.sha256(buffer);
   return BN.fromBuffer(c);
 };
@@ -157,7 +157,7 @@ Address._stealthDH = function(bn, spendKey) {
  */
 Address._derivePublicKey = function(spendKey, c) {
   var sharedPoint = new PrivateKey(c).publicKey.point;
-  return new PublicKey(spendKey.point.add(sharedPoint));
+  return new PublicKey(spendKey.point.add(sharedPoint), spendKey.network);
 };
 
 /**
@@ -168,7 +168,7 @@ Address._derivePublicKey = function(spendKey, c) {
  */
 Address._derivePrivateKey = function(spendKey, c) {
   var derived = spendKey.bn.add(c).mod(Point.getN());
-  return new PrivateKey(derived);
+  return new PrivateKey(derived, spendKey.network);
 };
 
 /**
@@ -299,15 +299,6 @@ Address.getStealthPrivateKey = function(ephemeral, scanKey, spendKey) {
   var c = Address._stealthDH(scanKey.bn, ephemeral);
   return Address._derivePrivateKey(spendKey, c);
 };
-
-Address.prototype.getTransaction = function(amount) {
-  var ephemeral = new PrivateKey();
-  var stealthKey = this.getStealthPublicKey(ephemeral);
-
-  
-  return Address._derivePrivateKey(spendKey, c);
-};
-
 
 /**
  * Will return a buffer representation of the stealth address
