@@ -2,12 +2,16 @@ language: node_js
 node_js:
 - '0.10'
 before_install:
-  - npm install -g bower
-  - npm install -g grunt-cli
-  - export DISPLAY=:99.0
-  - sh -e /etc/init.d/xvfb start
+- npm install -g bower
+- npm install -g grunt-cli
+- export DISPLAY=:99.0
+- sh -e /etc/init.d/xvfb start
 install:
-  - bower install
-  - npm install
+- bower install
+- npm install
 after_script:
-  - gulp coveralls
+- gulp coveralls
+env:
+  global:
+  - secure: t3iCN+1nc6WmfeGZtNctrSN1Na+aPOmBzv1o9y8KjPqE0K7Ixdj3s/Gni3UFKN/cfsQ0Xb3k49ebv5pCpTEs21iHSsTLViUm4YxS5nrhNacvTZxFTMGboZq5brI0BMDoHfKYM9sZj+GSxSVPG7kyvqPa99DpwEq1gw674txB9Oo=
+  - secure: vUtRGI7GL+yUu/YUD3Ndc5Odhnnc5dKHfxcX7PuZwPGVSUcw2VKZsZmZClU5tkyjbe2c9F4zYW7wBKRbIyQ9ipy4EqqhSbtRaLOqDPMIUU6eRqSiGHYxdve+545X2pdRIeQRjFoQ8UcfyJoe0O1be4c+O9KWLQ6eGCORkZkqQuQ=
