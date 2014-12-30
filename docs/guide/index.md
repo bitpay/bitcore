@@ -35,6 +35,9 @@ To get started, just `npm install bitcore` or `bower install bitcore`.
 * [Encoding](encoding.md)
 * [ECIES](ecies.md)
 
+## Module Development
+* [Browser Builds](browser.md)
+
 # Examples 
 
 ## Create a Private Key
