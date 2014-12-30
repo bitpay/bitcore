@@ -35,18 +35,12 @@ describe('PrivateKey', function() {
     var a = new PrivateKey(Networks.testnet);
     should.exist(a);
     should.exist(a.bn);
-    var b = PrivateKey(Networks.testnet);
-    should.exist(b);
-    should.exist(b.bn);
   });
 
-  it('should create a new random testnet private key with an empty data', function() {
+  it('should create a new random testnet private key with empty data', function() {
     var a = new PrivateKey(null, Networks.testnet);
     should.exist(a);
     should.exist(a.bn);
-    var b = PrivateKey(null, Networks.testnet);
-    should.exist(b);
-    should.exist(b.bn);
   });
 
   it('should create a private key from WIF string', function() {
