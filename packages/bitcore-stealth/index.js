@@ -1,1 +1,6 @@
-module.exports = require('./lib/stealth');
+var stealth = {};
+
+stealth.Address = require('./lib/address');
+stealth.Transaction = require('./lib/transaction');
+
+module.exports = stealth;

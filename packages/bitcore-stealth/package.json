@@ -33,7 +33,7 @@
     "mocha": "^2.0.1"
   },
   "dependencies": {
-    "bitcore": "^0.8.5",
+    "bitcore": "git://github.com/bitpay/bitcore.git",
     "lodash": "^2.4.1"
   }
 }

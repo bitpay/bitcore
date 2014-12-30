@@ -17,15 +17,16 @@ var Point = bitcore.crypto.Point;
 var PublicKey = bitcore.PublicKey;
 var PrivateKey = bitcore.PrivateKey;
 var Networks = bitcore.Networks;
+var Transcation = bitcore.Transcation;
 
 
-function StealthAddress(scanKey, spendKeys, signatures) {
-  if (!(this instanceof StealthAddress)) {
-    return new StealthAddress(scanKey, spendKeys, signatures);
+function Address(scanKey, spendKeys, signatures) {
+  if (!(this instanceof Address)) {
+    return new Address(scanKey, spendKeys, signatures);
   }
 
-  if (spendKeys instanceof StealthAddress) {
-    return spendKeys;
+  if (scanKey instanceof Address) {
+    return scanKey;
   }
 
   var info = this._classifyArguments(scanKey, spendKeys, signatures);
@@ -69,7 +70,7 @@ function StealthAddress(scanKey, spendKeys, signatures) {
 /**
  * Internal function used to split different kinds of arguments of the constructor
  */
-StealthAddress.prototype._classifyArguments = function(scanKey, spendKeys, signatures) {
+Address.prototype._classifyArguments = function(scanKey, spendKeys, signatures) {
   preconditions.checkArgument(scanKey);
 
   // Parse address string
@@ -93,13 +94,22 @@ StealthAddress.prototype._classifyArguments = function(scanKey, spendKeys, signa
   return info;
 };
 
+// TODO: Improve this (yemel)
+Address.isValid = function(address) {
+  try {
+    var address = new Address(address);
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
 
-StealthAddress.prototype._fromString = function(address) {
+Address.prototype._fromString = function(address) {
   var buffer = Base58Check(address).toBuffer();
   return this._fromBuffer(buffer);
 };
 
-StealthAddress.prototype._fromBuffer = function(buffer) {
+Address.prototype._fromBuffer = function(buffer) {
   var reader = new BufferReader(buffer);
   var info = {};
 
@@ -132,7 +142,7 @@ StealthAddress.prototype._fromBuffer = function(buffer) {
  * @param {PublicKey} pubKey - public key
  * @returns {BN}
  */
-StealthAddress._stealthDH = function(bn, spendKey) {
+Address._stealthDH = function(bn, spendKey) {
   var point = spendKey.point.mul(bn);
   var buffer = new PublicKey(point).toBuffer();
   var c = Hash.sha256(buffer);
@@ -145,7 +155,7 @@ StealthAddress._stealthDH = function(bn, spendKey) {
  * @param {BN} c - Derivation value
  * @returns {PublicKey}
  */
-StealthAddress._derivePublicKey = function(spendKey, c) {
+Address._derivePublicKey = function(spendKey, c) {
   var sharedPoint = new PrivateKey(c).publicKey.point;
   return new PublicKey(spendKey.point.add(sharedPoint));
 };
@@ -156,10 +166,19 @@ StealthAddress._derivePublicKey = function(spendKey, c) {
  * @param {BN} c - Derivation value
  * @returns {PrivateKey}
  */
-StealthAddress._derivePrivateKey = function(spendKey, c) {
+Address._derivePrivateKey = function(spendKey, c) {
   var derived = spendKey.bn.add(c).mod(Point.getN());
   return new PrivateKey(derived);
 };
+
+/**
+ * Returns if the sthealth address is multisig
+ * @returns {Boolean}
+ */
+Address.prototype.isMultisig = function() {
+  return this.spendKeys.length > 1;
+};
+
 
 /**
  * Sender: Generate a public key to make the stealth payment
@@ -168,13 +187,41 @@ StealthAddress._derivePrivateKey = function(spendKey, c) {
  * @param {PrivateKey} ephemeral - A new private key
  * @returns {PublicKey}
  */
-StealthAddress.prototype.toStealthPublicKey = function(ephemeral) {
+Address.prototype.toPaymentAddress = function(ephemeral) {
   if (!(ephemeral instanceof PrivateKey)) {
     throw new Error('Ephemeral must be a private key');
   }
 
-  var c = StealthAddress._stealthDH(ephemeral.bn, this.scanKey);
-  return StealthAddress._derivePublicKey(this.spendKeys[0], c);
+  return this.isMultisig()
+    ? this._toMultisigPaymentAddress(ephemeral)
+    : this._toPubkeyHashPaymentAddress(ephemeral);
+};
+
+/**
+ * Internal function to generate the public key to make a stealth payment
+ *
+ * @param {PrivateKey} ephemeral - A new private key
+ * @returns {PublicKey}
+ */
+Address.prototype._toPubkeyHashPaymentAddress = function(ephemeral) {
+  var c = Address._stealthDH(ephemeral.bn, this.scanKey);
+  var pubkey = Address._derivePublicKey(this.spendKeys[0], c); // TODO: honor reuseScan
+  return pubkey.toAddress(this.network);
+};
+
+/**
+ * Internal function to generate the public keys to make a multisig stealth payment
+ *
+ * @param {PrivateKey} ephemeral - A new private key
+ * @returns {PublicKey}
+ */
+Address.prototype._toMultisigPaymentAddress = function(ephemeral) {
+  var c = Address._stealthDH(ephemeral.bn, this.scanKey);
+  var derivedPubkeys = this.spendKeys.map(function(pubkey) {
+    return Address._derivePublicKey(pubkey, c);
+  });
+
+  return bitcore.Address.createMultisig(derivedPubkeys, this.signatures);;
 };
 
 /**
@@ -186,7 +233,7 @@ StealthAddress.prototype.toStealthPublicKey = function(ephemeral) {
  * @param {PublicKey} spendKey - Spend public key
  * @returns {PublicKey}
  */
-StealthAddress.getStealthPublicKey = function(ephemeral, scanKey, spendKey) {
+Address.getPubkeyHashPaymentAddress = function(ephemeral, scanKey, spendKey) {
   if (!(ephemeral instanceof PublicKey)) {
     throw new Error('ephemeral must be a public key');
   }
@@ -197,9 +244,37 @@ StealthAddress.getStealthPublicKey = function(ephemeral, scanKey, spendKey) {
     throw new Error('spendKey key must be a public key');
   }
 
-  var c = StealthAddress._stealthDH(scanKey.bn, ephemeral);
-  return StealthAddress._derivePublicKey(spendKey, c);
+  var c = Address._stealthDH(scanKey.bn, ephemeral);
+  return Address._derivePublicKey(spendKey, c).toAddress(); // TODO: Network?
 };
+
+/**
+ * Scanner: Generate a multisig payment address to verify a stealth output
+ *
+ * @param {PublicKey} ephemeral - Tx ephemeral public key
+ * @param {PrivateKey} scanKey - Scan private key
+ * @param {PublicKey} spendKey - Spend public key
+ * @returns {PublicKey}
+ */
+Address.getMultisigPaymentAddress = function(ephemeral, scanKey, spendKeys, signatures) {
+  if (!(ephemeral instanceof PublicKey)) {
+    throw new Error('ephemeral must be a public key');
+  }
+  if (!(scanKey instanceof PrivateKey)) {
+    throw new Error('scanKey key must be a private key');
+  }
+  if (!(_.isArray(spendKeys))) {
+    throw new Error('spendKey key must be a public key');
+  }
+
+  var c = Address._stealthDH(scanKey.bn, ephemeral);
+  var derivedPubkeys = spendKeys.map(function(pubkey) {
+    return Address._derivePublicKey(pubkey, c);
+  });
+
+  return bitcore.Address.createMultisig(derivedPubkeys, signatures); // TODO: Network?
+};
+
 
 /**
  * Receiver: Generate a private key to spend the funds of a stealth payment
@@ -210,7 +285,7 @@ StealthAddress.getStealthPublicKey = function(ephemeral, scanKey, spendKey) {
  * @param {PrivateKey} spendKey - Spend private key
  * @returns {PublicKey}
  */
-StealthAddress.getStealthPrivateKey = function(ephemeral, scanKey, spendKey) {
+Address.getStealthPrivateKey = function(ephemeral, scanKey, spendKey) {
   if (!(ephemeral instanceof PublicKey)) {
     throw new Error('ephemeral must be a public key');
   }
@@ -221,16 +296,25 @@ StealthAddress.getStealthPrivateKey = function(ephemeral, scanKey, spendKey) {
     throw new Error('spendKey key must be a private key');
   }
 
-  var c = StealthAddress._stealthDH(scanKey.bn, ephemeral);
-  return StealthAddress._derivePrivateKey(spendKey, c);
+  var c = Address._stealthDH(scanKey.bn, ephemeral);
+  return Address._derivePrivateKey(spendKey, c);
 };
+
+Address.prototype.getTransaction = function(amount) {
+  var ephemeral = new PrivateKey();
+  var stealthKey = this.getStealthPublicKey(ephemeral);
+
+  
+  return Address._derivePrivateKey(spendKey, c);
+};
+
 
 /**
  * Will return a buffer representation of the stealth address
  *
  * @returns {Buffer} stealth address buffer
  */
-StealthAddress.prototype.toBuffer = function() {
+Address.prototype.toBuffer = function() {
   var version = this.network == Networks.livenet ? 42 : 43;
 
   var writer = new BufferWriter();
@@ -254,7 +338,7 @@ StealthAddress.prototype.toBuffer = function() {
 /**
  * @returns {Object} A plain object with the stealth address information
  */
-StealthAddress.prototype.toObject = function toObject() {
+Address.prototype.toObject = function toObject() {
   return {
     network: this.network.toString(),
     options: this.options,
@@ -268,7 +352,7 @@ StealthAddress.prototype.toObject = function toObject() {
 /**
  * @returns {String} A JSON representation of a plain object with the stealth address information
  */
-StealthAddress.prototype.toJSON = function toJSON() {
+Address.prototype.toJSON = function toJSON() {
   return JSON.stringify(this.toObject());
 };
 
@@ -277,7 +361,7 @@ StealthAddress.prototype.toJSON = function toJSON() {
  *
  * @returns {String} Stealth address
  */
-StealthAddress.prototype.toString = function() {
+Address.prototype.toString = function() {
   return Base58Check.encode(this.toBuffer());
 };
 
@@ -286,8 +370,8 @@ StealthAddress.prototype.toString = function() {
  *
  * @returns {String} Stealth address
  */
-StealthAddress.prototype.inspect = function() {
+Address.prototype.inspect = function() {
   return '<Stealth Address: ' + this.toString() + ', network: ' + this.network + '>';
 };
 
-module.exports = StealthAddress;
+module.exports = Address;

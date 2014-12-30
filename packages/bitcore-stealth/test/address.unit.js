@@ -3,12 +3,9 @@
 var assert = require('assert');
 var bitcore = require('bitcore');
 
-var StealthAddress = require('../');
+var Stealth = require('../');
 
 var PrivateKey = bitcore.PrivateKey;
-
-var aliceKey = new PrivateKey('L1Ejc5dAigm5XrM3mNptMEsNnHzS7s51YxU7J61ewGshZTKkbmzJ');
-var bobKey   = new PrivateKey('KxfxrUXSMjJQcb3JgnaaA6MqsrKQ1nBSxvhuigdKRyFiEm6BZDgG');
 
 var saddrLive = 'vJmtjxSDxNPXL4RNapp9ARdqKz3uJyf1EDGjr1Fgqs9c8mYsVH82h8wvnA4i5rtJ57mr3kor1EVJrd4e5upACJd588xe52yXtzumxj';
 var saddrLive2 = 'hfFELudSDw7rBvGyadXF9DZbcsE92YJGaA4LniuuyYyenZPzFmnF4M74e';
@@ -25,17 +22,23 @@ var multisigAddress = '2Ctqsd4cHgrGfMqFgQXrRmREFZdSrNSys7LQSMaK6y9bhsVsFuDbsgipT
 describe('Stealth Address', function() {
   
   it('provides a constructor', function() {
-    assert.equal(typeof StealthAddress , 'function');
+    assert.equal(typeof Stealth.Address , 'function');
   });
   
   it('should not require the "new" keyword', function() {
-    var address = StealthAddress(saddrLive);
-    assert.ok(address instanceof StealthAddress);
+    var address = Stealth.Address(saddrLive);
+    assert.ok(address instanceof Stealth.Address);
   });
   
+  it('provides a copy constructor', function() {
+    var address = Stealth.Address(saddrLive);
+    var address2 = Stealth.Address(address);
+    assert.equal(address, address2);
+  });
+
   it('creates instance from livenet string', function() {
-    var address = new StealthAddress(saddrLive);
-    assert.ok(address instanceof StealthAddress);
+    var address = new Stealth.Address(saddrLive);
+    assert.ok(address instanceof Stealth.Address);
 
     assert.equal(address.network, bitcore.Networks.livenet);
     assert.equal(address.reuseScan, false);
@@ -47,8 +50,8 @@ describe('Stealth Address', function() {
   });
 
   it('creates instance from testnet string', function() {
-    var address = new StealthAddress(saddrTest);
-    assert.ok(address instanceof StealthAddress);
+    var address = new Stealth.Address(saddrTest);
+    assert.ok(address instanceof Stealth.Address);
 
     assert.equal(address.network, bitcore.Networks.testnet);
     assert.equal(address.reuseScan, false);
@@ -60,8 +63,8 @@ describe('Stealth Address', function() {
   });
 
   it('creates instance from sort livenet string', function() {
-    var address = new StealthAddress(saddrLive2);
-    assert.ok(address instanceof StealthAddress);
+    var address = new Stealth.Address(saddrLive2);
+    assert.ok(address instanceof Stealth.Address);
 
     assert.equal(address.network, bitcore.Networks.livenet);
     assert.equal(address.reuseScan, true);
@@ -73,7 +76,7 @@ describe('Stealth Address', function() {
 
   it('creates from scanKey', function() {
     var scankey = new bitcore.PublicKey(scanKeyLive);
-    var address = new StealthAddress(scankey);
+    var address = new Stealth.Address(scankey);
     assert.equal(address.reuseScan, true);
   });
 
@@ -81,7 +84,7 @@ describe('Stealth Address', function() {
     var scankey = new bitcore.PublicKey(scanKeyLive);
     var spendKeys = [new bitcore.PublicKey(spendKeyLive)];
 
-    var address = new StealthAddress(scankey, spendKeys);
+    var address = new Stealth.Address(scankey, spendKeys);
     assert.equal(address.toString(), saddrLive);
     assert.equal(address.reuseScan, false);
   });
@@ -90,35 +93,35 @@ describe('Stealth Address', function() {
     var scankey = new bitcore.PublicKey(scanKeyLive);
     var spendKey = new bitcore.PublicKey(spendKeyLive);
 
-    var address = new StealthAddress(scankey, spendKey);
+    var address = new Stealth.Address(scankey, spendKey);
     assert.equal(address.toString(), saddrLive);
     assert.equal(address.reuseScan, false);
   });
 
   it('creates from simple spendKey and scannKey strings', function() {
-    var address = new StealthAddress(scanKeyLive, spendKeyLive);
+    var address = new Stealth.Address(scanKeyLive, spendKeyLive);
     assert.equal(address.toString(), saddrLive);
     assert.equal(address.reuseScan, false);
   });
 
   it('support multisig addresses', function() {
     var spendKeys = [spendKeyLive, spendKeyTest];
-    var address = new StealthAddress(scanKeyLive, spendKeys, 2);
+    var address = new Stealth.Address(scanKeyLive, spendKeys, 2);
     assert.equal(address.toString(), multisigAddress);
     assert.equal(address.reuseScan, false);
   });
 
   it('multisig addresses requires all signatures by defualt', function() {
     var spendKeys = [spendKeyLive, spendKeyTest];
-    var address = new StealthAddress(scanKeyLive, spendKeys);
+    var address = new Stealth.Address(scanKeyLive, spendKeys);
     assert.equal(address.signatures, 2);
   });
 
   it('validates number of signatures', function() {
     var spendKeys = [spendKeyLive, spendKeyLive];
-    var address = new StealthAddress(scanKeyLive, spendKeys, 2);
+    var address = new Stealth.Address(scanKeyLive, spendKeys, 2);
     assert.throws(function() {
-      new StealthAddress(spendKeys, scanKeyLive, 3);
+      new Stealth.Address(spendKeys, scanKeyLive, 3);
     });
   });
 
@@ -129,13 +132,17 @@ describe('Stealth Address', function() {
     var ephemSecret = "9e63abaf8dcd5ea3919e6de0b6c544e00bf51bf92496113a01d6e369944dc091";
     var stealthSecret = "4e422fb1e5e1db6c1f6ab32a7706d368ceb385e7fab098e633c5c5949c3b97cd";
 
-    it('Sender: generate stealth public key', function() {
-      var address = new StealthAddress(stealthAddress);
+    it('Sender: generate a payment address', function() {
+      var address = new Stealth.Address(stealthAddress);
       var ephemeral = new bitcore.PrivateKey(ephemSecret);
       var expectedStealthKey = new bitcore.PrivateKey(stealthSecret).publicKey;
 
-      var stealthKey = address.toStealthPublicKey(ephemeral);
-      assert.equal(stealthKey.toString(), expectedStealthKey.toString());
+      var paymentAddress = address.toPaymentAddress(ephemeral);
+      assert.equal(paymentAddress.toString(), expectedStealthKey.toAddress().toString());
+    });
+
+    it.skip('reuseScan generates payment address', function() {
+      
     });
 
     it('Scanner: generate stealth public key', function() {
@@ -144,7 +151,7 @@ describe('Stealth Address', function() {
       var spendKey = new bitcore.PrivateKey(spendSecret).publicKey;
       var expectedStealthKey = new bitcore.PrivateKey(stealthSecret).publicKey;
 
-      var stealthKey = StealthAddress.getStealthPublicKey(ephemeral, scanKey, spendKey)
+      var stealthKey = Stealth.Address.getStealthPublicKey(ephemeral, scanKey, spendKey)
       assert.equal(stealthKey.toString(), expectedStealthKey.toString());
     });
 
@@ -154,13 +161,36 @@ describe('Stealth Address', function() {
       var spendKey = new bitcore.PrivateKey(spendSecret);
       var expectedStealthKey = new bitcore.PrivateKey(stealthSecret);
 
-      var stealthKey = StealthAddress.getStealthPrivateKey(ephemeral, scanKey, spendKey)
+      var stealthKey = Stealth.Address.getStealthPrivateKey(ephemeral, scanKey, spendKey)
       assert.equal(stealthKey.toString(), expectedStealthKey.toString());
     });
 
-    // TODO: spendKey - helper:reuseScan
-    // TODO: test with reuseScan
+  });
 
+  it('validates an stealth address', function() {
+    assert.ok(Stealth.Address.isValid(saddrLive));
+    assert.ok(!Stealth.Address.isValid('invalid address'));
+    assert.ok(!Stealth.Address.isValid('15LihmsdPn816t1LYa5sgWTAdaT8DfZq5s'));
+  });
+
+  it.skip('is multisig', function() {
+    
+  });
+
+  it.skip('reuse scan helper', function() {
+    
+  });
+
+  it.skip('accepts private keys in constructor', function() {
+    
+  });
+
+  it.skip('getPaymentAddress method', function() {
+    
+  });
+
+  it.skip('getPaymentAddress static', function() {
+    
   });
 
 });
