@@ -585,13 +585,9 @@ describe('Script', function() {
       expect(BufferUtil.equal(Script('OP_RETURN 1 0xFF').getData(), new Buffer([255]))).to.be.true();
     });
     it('fails if content is not recognized', function() {
-      var failed = false;
-      try {
-        Script('1 0xFF').getData();
-      } catch (e) {
-        failed = true;
-      }
-      failed.should.equal(true);
+      expect(function() {
+        return Script('1 0xFF').getData();
+      }).to.throw();
     });
   });
 
@@ -609,13 +605,9 @@ describe('Script', function() {
       script.toAddress(Networks.livenet).toString().should.equal(stringAddress);
     });
     it('fails if content is not recognized', function() {
-      var failed = false;
-      try {
-        Script().toAddress();
-      } catch (e) {
-        failed = true;
-      }
-      failed.should.equal(true);
+      expect(function() {
+        return Script().toAddress(Networks.livenet);
+      }).to.throw();
     });
   });
 
