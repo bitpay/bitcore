@@ -33,7 +33,7 @@ module.exports = function(config) {
         bs_firefox_mac: {
           base: 'BrowserStack',
           browser: 'firefox',
-          browser_version: '34.0',
+          browser_version: '30.0',
           os: 'OS X',
           os_version: 'Mountain Lion'
         }
