@@ -45,7 +45,6 @@ bitcore.Script = require('./lib/script');
 bitcore.Transaction = require('./lib/transaction');
 bitcore.URI = require('./lib/uri');
 bitcore.Unit = require('./lib/unit');
-bitcore.UTXO = require('./lib/utxo');
 
 // dependencies, subject to change
 bitcore.deps = {};

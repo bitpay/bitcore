@@ -6,9 +6,9 @@ var should = chai.should();
 var expect = chai.expect;
 
 var bitcore = require('..');
-var UTXO = bitcore.UTXO;
+var UnspentOutput = bitcore.Transaction.UnspentOutput;
 
-describe('UTXO', function() {
+describe('UnspentOutput', function() {
 
   var sampleData1 = {
     'address': 'mszYqVnqKoQx4jcTdJXxwKAissE3Jbrrc1',
@@ -26,16 +26,16 @@ describe('UTXO', function() {
   };
 
   it('roundtrip from raw data', function() {
-    expect(UTXO(sampleData2).toObject()).to.deep.equal(sampleData2);
+    expect(UnspentOutput(sampleData2).toObject()).to.deep.equal(sampleData2);
   });
 
   it('can be created without "new" operand', function() {
-    expect(UTXO(sampleData1) instanceof UTXO).to.equal(true);
+    expect(UnspentOutput(sampleData1) instanceof UnspentOutput).to.equal(true);
   });
 
   it('fails if no tx id is provided', function() {
     expect(function() {
-      return new UTXO({});
+      return new UnspentOutput({});
     }).to.throw();
   });
 
@@ -43,28 +43,28 @@ describe('UTXO', function() {
     var sample = _.cloneDeep(sampleData2);
     sample.vout = '1';
     expect(function() {
-      return new UTXO(sample);
+      return new UnspentOutput(sample);
     }).to.throw();
   });
 
   it('displays nicely on the console', function() {
-    var expected = '<UTXO: a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458:0' +
+    var expected = '<UnspentOutput: a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458:0' +
                    ', satoshis: 1020000, address: mszYqVnqKoQx4jcTdJXxwKAissE3Jbrrc1>';
-    expect(new UTXO(sampleData1).inspect()).to.equal(expected);
+    expect(new UnspentOutput(sampleData1).inspect()).to.equal(expected);
   });
 
   it('toString returns txid:vout', function() {
     var expected = 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458:0';
-    expect(new UTXO(sampleData1).toString()).to.equal(expected);
+    expect(new UnspentOutput(sampleData1).toString()).to.equal(expected);
   });
 
   it('to/from JSON roundtrip', function() {
-    var utxo = new UTXO(sampleData2);
+    var utxo = new UnspentOutput(sampleData2);
     expect(
       JSON.parse(
-        UTXO.fromJSON(
-          UTXO.fromObject(
-            UTXO.fromJSON(
+        UnspentOutput.fromJSON(
+          UnspentOutput.fromObject(
+            UnspentOutput.fromJSON(
               utxo.toJSON()
             ).toObject()
           ).toJSON()
