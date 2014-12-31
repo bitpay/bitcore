@@ -10,7 +10,7 @@ var Address = bitcore.Address;
 var Transaction = bitcore.Transaction;
 var Networks = bitcore.Networks;
 
-describe.only('Insight', function() {
+describe('Insight', function() {
 
   describe('instantiation', function() {
     it('can be created without any parameters', function() {
