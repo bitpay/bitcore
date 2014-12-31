@@ -69,9 +69,13 @@
     "type": "git",
     "url": "https://github.com/bitpay/bitcore.git"
   },
+  "browser": {
+    "request": "browser-request"
+  },
   "dependencies": {
     "asn1.js": "=0.4.1",
     "bn.js": "=0.16.0",
+    "browser-request": "^0.3.3",
     "bs58": "=2.0.0",
     "bufferput": "^0.1.2",
     "buffers": "^0.1.1",
@@ -81,6 +85,7 @@
     "jsrsasign": "=0.0.3",
     "lodash": "=2.4.1",
     "protobufjs": "=3.0.0",
+    "request": "^2.51.0",
     "sha512": "=0.0.1",
     "socks5-client": "^0.3.6"
   },

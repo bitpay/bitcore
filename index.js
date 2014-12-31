@@ -53,5 +53,9 @@ bitcore.deps.bs58 = require('bs58');
 bitcore.deps.Buffer = Buffer;
 bitcore.deps.elliptic = require('elliptic');
 
+// blockchain explorers
+bitcore.explorers = {};
+bitcore.explorers.Insight = require('./lib/explorers/insight');
+
 // Internal usage, exposed for testing/advanced tweaking
 bitcore._HDKeyCache = require('./lib/hdkeycache');

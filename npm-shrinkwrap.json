@@ -1,6 +1,6 @@
 {
   "name": "bitcore",
-  "version": "0.8.0",
+  "version": "0.8.5",
   "dependencies": {
     "aes": {
       "version": "0.1.0",
@@ -16,6 +16,11 @@
       "version": "0.16.0",
       "from": "bn.js@0.16.0",
       "resolved": "https://registry.npmjs.org/bn.js/-/bn.js-0.16.0.tgz"
+    },
+    "browser-request": {
+      "version": "0.3.3",
+      "from": "browser-request@*",
+      "resolved": "https://registry.npmjs.org/browser-request/-/browser-request-0.3.3.tgz"
     },
     "bs58": {
       "version": "2.0.0",
@@ -88,6 +93,11 @@
       "version": "3.0.0",
       "from": "protobufjs@3.0.0",
       "resolved": "https://registry.npmjs.org/protobufjs/-/protobufjs-3.0.0.tgz"
+    },
+    "request": {
+      "version": "2.51.0",
+      "from": "request@*",
+      "resolved": "https://registry.npmjs.org/request/-/request-2.51.0.tgz"
     },
     "sha512": {
       "version": "0.0.1",
