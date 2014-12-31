@@ -8,8 +8,8 @@ var Point = bitcore.crypto.Point;
 var BN = bitcore.crypto.BN;
 var PublicKey = bitcore.PublicKey;
 var PrivateKey = bitcore.PrivateKey;
+var Networks = bitcore.Networks;
 
-// DER uncompressed format
 /* jshint maxlen: 200 */
 
 describe('PublicKey', function() {
@@ -63,6 +63,12 @@ describe('PublicKey', function() {
       var publicKey = new PublicKey(publicKeyHex);
       var publicKey2 = new PublicKey(publicKey);
       publicKey.should.equal(publicKey2);
+    });
+
+    it('sets the network to defaultNetwork if none provided', function() {
+      var publicKeyHex = '031ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a';
+      var publicKey = new PublicKey(publicKeyHex);
+      publicKey.network.should.equal(Networks.defaultNetwork);
     });
 
     it('from a hex encoded DER string', function() {
@@ -317,12 +323,12 @@ describe('PublicKey', function() {
   describe('#inspect', function() {
     it('should output known uncompressed pubkey for console', function() {
       var pubkey = PublicKey.fromString('041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341');
-      pubkey.inspect().should.equal('<PublicKey: 041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341, uncompressed>');
+      pubkey.inspect().should.equal('<PublicKey: 041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341, uncompressed, network: livenet>');
     });
 
     it('should output known compressed pubkey for console', function() {
       var pubkey = PublicKey.fromString('031ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a');
-      pubkey.inspect().should.equal('<PublicKey: 031ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a>');
+      pubkey.inspect().should.equal('<PublicKey: 031ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a, network: livenet>');
     });
 
     it('should output known compressed pubkey with network for console', function() {
