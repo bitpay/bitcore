@@ -197,6 +197,22 @@ describe('Transaction', function() {
     satoshis: 1e8
   };
 
+  describe('not enough information errors', function() {
+    it('fails when Inputs are not subclassed and isFullySigned is called', function() {
+      var tx = new Transaction(tx_1_hex);
+      expect(function() {
+        return tx.isFullySigned();
+      }).to.throw(errors.Transaction.UnableToVerifySignature);
+    });
+
+    it('fails when Inputs are not subclassed and verifySignature is called', function() {
+      var tx = new Transaction(tx_1_hex);
+      expect(function() {
+        return tx.isValidSignature({inputIndex: 0});
+      }).to.throw(errors.Transaction.UnableToVerifySignature);
+    });
+  });
+
   describe('checked serialize', function() {
     it('fails if no change address was set', function() {
       var transaction = new Transaction()
