@@ -29,9 +29,7 @@ To get started, just `npm install bitcore` or `bower install bitcore`.
 * [Interface to the Bitcoin P2P network](peer.md)
 * [Managing a pool of peers](pool.md)
 * [Connecting to a bitcoind instance through JSON-RPC](jsonrpc.md)
-
-## Blockchain Explorers
-* [Insight](insight.md)
+* [Connecting to a Insight instance to retrieve informetion](insight.md)
 
 ## Extra
 * [Crypto](crypto.md)

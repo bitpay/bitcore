@@ -1,11 +1,11 @@
 title: Insight Explorer
-description: Allows users to fetch information about the state of the blockchain from a trusted Insight server.
+description: Provides an interface to fetch information about the state of the blockchain from a trusted Insight server.
 ---
 # Insight
 
 ## Description
 
-`bitcore.transport.explorers.Insight` is a simple agent to perform queries to the blockchain. There are currently two methods (the API will grow as features are requested): `getUnspentUtxos` and `broadcast`.
+`bitcore.transport.explorers.Insight` is a simple agent to perform queries to the blockchain. There are currently two methods (the API will grow as features are requested): `getUnspentUtxos` and `broadcast`. The default servers are `https://insight.bitpay.com` and `https://test-insight.bitpay.com`, hosted by BitPay Inc.
 
 ### Retrieving Unspent UTXOs for an Address (or set of)
 
