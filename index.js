@@ -24,9 +24,6 @@ bitcore.util.buffer = require('./lib/util/buffer');
 bitcore.util.js = require('./lib/util/js');
 bitcore.util.preconditions = require('./lib/util/preconditions');
 
-// transport
-bitcore.transport = require('./lib/transport');
-
 // errors thrown by the library
 bitcore.errors = require('./lib/errors');
 
@@ -53,9 +50,8 @@ bitcore.deps.bs58 = require('bs58');
 bitcore.deps.Buffer = Buffer;
 bitcore.deps.elliptic = require('elliptic');
 
-// blockchain explorers
-bitcore.explorers = {};
-bitcore.explorers.Insight = require('./lib/explorers/insight');
+// transport
+bitcore.transport = require('./lib/transport');
 
 // Internal usage, exposed for testing/advanced tweaking
 bitcore._HDKeyCache = require('./lib/hdkeycache');

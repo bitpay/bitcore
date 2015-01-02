@@ -5,7 +5,7 @@ description: Allows users to fetch information about the state of the blockchain
 
 ## Description
 
-`bitcore.explorers.Insight` is a simple agent to perform queries to the blockchain. There are currently two methods (the API will grow as features are requested): `getUnspentUtxos` and `broadcast`.
+`bitcore.transport.explorers.Insight` is a simple agent to perform queries to the blockchain. There are currently two methods (the API will grow as features are requested): `getUnspentUtxos` and `broadcast`.
 
 ### Retrieving Unspent UTXOs for an Address (or set of)
 
