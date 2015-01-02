@@ -71,11 +71,11 @@
   },
   "dependencies": {
     "asn1.js": "=0.4.1",
-    "bn.js": "=0.15.2",
+    "bn.js": "=0.16.0",
     "bs58": "=2.0.0",
     "bufferput": "^0.1.2",
     "buffers": "^0.1.1",
-    "elliptic": "=0.15.14",
+    "elliptic": "=0.16.0",
     "hash.js": "=0.3.2",
     "inherits": "=2.0.1",
     "jsrsasign": "=0.0.3",
