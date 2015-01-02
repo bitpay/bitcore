@@ -190,6 +190,24 @@ describe('HDPrivate key interface', function() {
     derivedByNumber.xprivkey.should.equal(derivedByString.xprivkey);
   });
 
+  it('validates correct paths', function() {
+    var privateKey = new HDPrivateKey(xprivkey);
+    var valid = privateKey.isValidPath('m/0\'/1/2\'');
+    valid.should.equal(true);
+
+    var valid = privateKey.isValidPath(123, true);
+    valid.should.equal(true);
+  });
+
+  it('validates illigal paths', function() {
+    var privateKey = new HDPrivateKey(xprivkey);
+    var valid = privateKey.isValidPath('m/-1/12');
+    valid.should.equal(false);
+
+    var valid = privateKey.isValidPath(HDPrivateKey.MaxHardened);
+    valid.should.equal(false);
+  });
+
   describe('conversion to plain object/json', function() {
     var plainObject = {
       'network':'livenet',

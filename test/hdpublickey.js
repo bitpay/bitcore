@@ -216,9 +216,27 @@ describe('HDPublicKey interface', function() {
 
     it('can\'t derive hardened keys', function() {
       expectFail(function() {
-        return new HDPublicKey(xpubkey).derive(HDPublicKey.Hardened + 1);
+        return new HDPublicKey(xpubkey).derive(HDPublicKey.Hardened);
       }, hdErrors.InvalidDerivationArgument);
     });
+
+  it('validates correct paths', function() {
+    var publicKey = new HDPublicKey(xpubkey);
+    var valid = publicKey.isValidPath('m/123/12');
+    valid.should.equal(true);
+
+    var valid = publicKey.isValidPath(123, true);
+    valid.should.equal(true);
+  });
+
+  it('validates illigal paths', function() {
+    var publicKey = new HDPublicKey(xpubkey);
+    var valid = publicKey.isValidPath('m/-1/12');
+    valid.should.equal(false);
+
+    var valid = publicKey.isValidPath(HDPublicKey.Hardened);
+    valid.should.equal(false);
+  });
 
     it('should use the cache', function() {
       var pubkey = new HDPublicKey(xpubkey);
