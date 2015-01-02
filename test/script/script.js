@@ -592,6 +592,12 @@ describe('Script', function() {
   });
 
   describe('toAddress', function() {
+    it('uses default network', function() {
+      var stringAddress = '1NaTVwXDDUJaXDQajoa9MqHhz4uTxtgK14';
+      var address = new Address(stringAddress);
+      var script = new Script(address);
+      script.toAddress().toString().should.equal(stringAddress);
+    });
     it('for a P2PKH address', function() {
       var stringAddress = '1NaTVwXDDUJaXDQajoa9MqHhz4uTxtgK14';
       var address = new Address(stringAddress);
