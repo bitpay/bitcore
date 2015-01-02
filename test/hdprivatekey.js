@@ -199,7 +199,7 @@ describe('HDPrivate key interface', function() {
     valid.should.equal(true);
   });
 
-  it('validates illigal paths', function() {
+  it('validates illegal paths', function() {
     var privateKey = new HDPrivateKey(xprivkey);
     var valid = privateKey.isValidPath('m/-1/12');
     valid.should.equal(false);
