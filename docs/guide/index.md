@@ -30,6 +30,9 @@ To get started, just `npm install bitcore` or `bower install bitcore`.
 * [Managing a pool of peers](pool.md)
 * [Connecting to a bitcoind instance through JSON-RPC](jsonrpc.md)
 
+## Blockchain Explorers
+* [Insight](insight.md)
+
 ## Extra
 * [Crypto](crypto.md)
 * [Encoding](encoding.md)

@@ -8,7 +8,6 @@ description: A simple interface to parse and validate a bitcoin blocks.
 A Block instance represents the information of a block in the bitcoin network. Given a hexadecimal string representation of the serialization of a block with its transactions, you can instantiate a Block instance. Methods are provided to calculate and check the merkle root hash (if enough data is provided), but transactions won't necessarily be valid spends, and this class won't validate them. A binary representation as a `Buffer` instance is also valid input for a Block's constructor. 
 
 ```javascript
-
 // instantiate a new block instance
 var block = new Block(hexaEncodedBlock);
 
@@ -30,7 +29,6 @@ For detailed technical information about a block please visit [Blocks](https://e
 Each instance of Block has a BlockHeader *(which can be instantiated separately)*. The header has validation methods, to verify that the block.
 
 ```javascript
-
 // will verify that the nonce demonstrates enough proof of work
 assert(block.header.validProofOfWork());
 
