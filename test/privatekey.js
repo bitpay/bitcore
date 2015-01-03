@@ -16,6 +16,7 @@ var invalidbase58 = require('./data/bitcoind/base58_keys_invalid.json');
 
 describe('PrivateKey', function() {
   var hex = '96c132224121b509b7d0a16245e957d9192609c5637c6228311287b1be21627a';
+  var hex2 = '8080808080808080808080808080808080808080808080808080808080808080';
   var buf = new Buffer(hex, 'hex');
   var wifTestnet = 'cSdkPxkAjA4HDr5VHgsebAPDEh9Gyub4HK8UJr2DFGGqKKy4K5sG';
   var wifTestnetUncompressed = '92jJzK4tbURm1C7udQXxeCBvXHoHJstDXRxAMouPG1k1XUaXdsu';
@@ -29,6 +30,12 @@ describe('PrivateKey', function() {
     var b = PrivateKey();
     should.exist(b);
     should.exist(b.bn);
+  });
+
+  it('should create a privatkey from hexa string', function() {
+    var a = new PrivateKey(hex2);
+    should.exist(a);
+    should.exist(a.bn);
   });
 
   it('should create a new random testnet private key with only one argument', function() {
