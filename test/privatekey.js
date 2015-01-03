@@ -32,7 +32,7 @@ describe('PrivateKey', function() {
     should.exist(b.bn);
   });
 
-  it('should create a privatkey from hexa string', function() {
+  it('should create a privatekey from hexa string', function() {
     var a = new PrivateKey(hex2);
     should.exist(a);
     should.exist(a.bn);
