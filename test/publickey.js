@@ -44,12 +44,25 @@ describe('PublicKey', function() {
   });
 
   describe('instantiation', function() {
+
     it('from a private key', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
       var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
       var privkey = new PrivateKey(BN(new Buffer(privhex, 'hex')));
       var pk = new PublicKey(privkey);
       pk.toString().should.equal(pubhex);
+    });
+
+    it('from a known private key', function() {
+      var privwif = 'KzsjKq2FVqVuQv2ueHVFuB65A9uEZ6S1L6F8NuokCrE3V3kE3Ack';
+      var pubhex = '03d6106302d2698d6a41e9c9a114269e7be7c6a0081317de444bb2980bf9265a01';
+      var pubxhex = 'd6106302d2698d6a41e9c9a114269e7be7c6a0081317de444bb2980bf9265a01';
+      var pubyhex = 'e05fb262e64b108991a29979809fcef9d3e70cafceb3248c922c17d83d66bc9d';
+      var privkey = new PrivateKey(privwif);
+      var pubkey = privkey.toPublicKey();
+      pubkey.point.x.toString('hex').should.equal(pubxhex);
+      pubkey.point.y.toString('hex').should.equal(pubyhex);
+      pubkey.toString().should.equal(pubhex);
     });
 
     it('from a compressed public key', function() {
