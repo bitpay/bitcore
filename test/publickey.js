@@ -53,16 +53,33 @@ describe('PublicKey', function() {
       pk.toString().should.equal(pubhex);
     });
 
-    it('from a known private key', function() {
-      var privwif = 'KzsjKq2FVqVuQv2ueHVFuB65A9uEZ6S1L6F8NuokCrE3V3kE3Ack';
-      var pubhex = '03d6106302d2698d6a41e9c9a114269e7be7c6a0081317de444bb2980bf9265a01';
-      var pubxhex = 'd6106302d2698d6a41e9c9a114269e7be7c6a0081317de444bb2980bf9265a01';
-      var pubyhex = 'e05fb262e64b108991a29979809fcef9d3e70cafceb3248c922c17d83d66bc9d';
-      var privkey = new PrivateKey(privwif);
-      var pubkey = privkey.toPublicKey();
-      pubkey.point.x.toString('hex').should.equal(pubxhex);
-      pubkey.point.y.toString('hex').should.equal(pubyhex);
-      pubkey.toString().should.equal(pubhex);
+    it('problematic secp256k1 public keys', function() {
+
+      var knownKeys = [
+        {
+          wif: 'KzsjKq2FVqVuQv2ueHVFuB65A9uEZ6S1L6F8NuokCrE3V3kE3Ack',
+          priv: '6d1229a6b24c2e775c062870ad26bc261051e0198c67203167273c7c62538846',
+          pub: '03d6106302d2698d6a41e9c9a114269e7be7c6a0081317de444bb2980bf9265a01',
+          pubx: 'd6106302d2698d6a41e9c9a114269e7be7c6a0081317de444bb2980bf9265a01',
+          puby: 'e05fb262e64b108991a29979809fcef9d3e70cafceb3248c922c17d83d66bc9d'
+        },
+        {
+          wif: 'L5MgSwNB2R76xBGorofRSTuQFd1bm3hQMFVf3u2CneFom8u1Yt7G',
+          priv: 'f2cc9d2b008927db94b89e04e2f6e70c180e547b3e5e564b06b8215d1c264b53',
+          pub: '03e275faa35bd1e88f5df6e8f9f6edb93bdf1d65f4915efc79fd7a726ec0c21700',
+          pubx: 'e275faa35bd1e88f5df6e8f9f6edb93bdf1d65f4915efc79fd7a726ec0c21700',
+          puby: '367216cb35b086e6686d69dddd822a8f4d52eb82ac5d9de18fdcd9bf44fa7df7'
+        }
+      ];
+
+      for(var i = 0; i < knownKeys.length; i++) {
+        var privkey = new PrivateKey(knownKeys[i].wif);
+        var pubkey = privkey.toPublicKey();
+        pubkey.toString().should.equal(knownKeys[i].pub);
+        pubkey.point.x.toString('hex').should.equal(knownKeys[i].pubx);
+        pubkey.point.y.toString('hex').should.equal(knownKeys[i].puby);
+      }
+
     });
 
     it('from a compressed public key', function() {
