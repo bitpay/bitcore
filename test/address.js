@@ -456,6 +456,16 @@ describe('Address', function() {
     });
   });
 
+  it('throws an error if it couldn\'t instantiate', function() {
+    expect(function() {
+      return new Address(1);
+    }).to.throw(TypeError);
+  });
+  it('can roundtrip from/to a object', function() {
+    var address = new Address(P2SHLivenet[0]);
+    expect(new Address(address.toObject()).toString()).to.equal(P2SHLivenet[0]);
+  });
+
   describe('creating a P2SH address from public keys', function() {
 
     var public1 = '02da5798ed0c055e31339eb9b5cef0d3c0ccdec84a62e2e255eb5c006d4f3e7f5b';

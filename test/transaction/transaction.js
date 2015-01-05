@@ -243,6 +243,18 @@ describe('Transaction', function() {
       }).to.throw(errors.Transaction.FeeError);
     });
   });
+
+  describe('to and from JSON', function() {
+    it('takes a string that is a valid JSON and deserializes from it', function() {
+      var transaction = new Transaction();
+      expect(new Transaction(transaction.toJSON()).serialize()).to.equal(transaction.serialize());
+    });
+    it('serializes the `change` information', function() {
+      var transaction = new Transaction();
+      transaction.change(changeAddress);
+      expect(JSON.parse(transaction.toJSON()).change).to.equal(changeAddress.toString());
+    });
+  });
 });
 
 var tx_empty_hex = '01000000000000000000';
