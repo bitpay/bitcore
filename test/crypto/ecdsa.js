@@ -296,6 +296,21 @@ describe('ECDSA', function() {
           ecdsa.sigError().should.equal(obj.exception);
         });
       });
+      
+      vectors.deterministicK.forEach(function(obj, i) {
+        it('should validate deterministicK vector ' + i, function() {
+          var hashbuf = Hash.sha256(new Buffer(obj.message));
+          var privkey = Privkey(BN.fromBuffer(new Buffer(obj.privkey, 'hex')), 'mainnet');
+          var ecdsa = ECDSA({
+            privkey: privkey,
+            hashbuf: hashbuf
+          });
+          ecdsa.deterministicK(0).k.toString('hex').should.equal(obj.k_bad00);
+          ecdsa.deterministicK(1).k.toString('hex').should.equal(obj.k_bad01);
+          ecdsa.deterministicK(15).k.toString('hex').should.equal(obj.k_bad15);
+        });
+      });
+
     });
   });
 });
