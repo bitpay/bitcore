@@ -8,6 +8,8 @@ var HDPrivateKey = bitcore.HDPrivateKey;
 var xprivkey = 'xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi';
 
 describe('HDKey cache', function() {
+  this.timeout(10000);
+
   /* jshint unused: false */
   var cache = bitcore._HDKeyCache;
   var master = new HDPrivateKey(xprivkey);

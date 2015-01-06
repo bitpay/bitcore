@@ -279,6 +279,8 @@ var bitpayRequest = new Buffer(''
 
 describe('PaymentProtocol', function() {
 
+  this.timeout(15000);
+
   it('should be able to create class', function() {
     should.exist(PaymentProtocol);
   });
