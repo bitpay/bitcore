@@ -221,20 +221,40 @@ describe('HDPublicKey interface', function() {
     });
 
   it('validates correct paths', function() {
-    var publicKey = new HDPublicKey(xpubkey);
-    var valid = publicKey.isValidPath('m/123/12');
+    var valid;
+
+    valid = HDPublicKey.isValidPath('m/123/12');
     valid.should.equal(true);
 
-    var valid = publicKey.isValidPath(123, true);
+    valid = HDPublicKey.isValidPath('m');
+    valid.should.equal(true);
+
+    valid = HDPublicKey.isValidPath(123);
     valid.should.equal(true);
   });
 
-  it('validates illegal paths', function() {
-    var publicKey = new HDPublicKey(xpubkey);
-    var valid = publicKey.isValidPath('m/-1/12');
+  it('rejects illegal paths', function() {
+    var valid;
+    
+    valid = HDPublicKey.isValidPath('m/-1/12');
     valid.should.equal(false);
 
-    var valid = publicKey.isValidPath(HDPublicKey.Hardened);
+    valid = HDPublicKey.isValidPath("m/0'/12");
+    valid.should.equal(false);
+
+    valid = HDPublicKey.isValidPath("m/8000000000/12");
+    valid.should.equal(false);
+
+    valid = HDPublicKey.isValidPath('bad path');
+    valid.should.equal(false);
+
+    valid = HDPublicKey.isValidPath(-1);
+    valid.should.equal(false);
+
+    valid = HDPublicKey.isValidPath(8000000000);
+    valid.should.equal(false);
+
+    valid = HDPublicKey.isValidPath(HDPublicKey.Hardened);
     valid.should.equal(false);
   });
 
