@@ -229,7 +229,7 @@ describe('HDPublicKey interface', function() {
     valid.should.equal(true);
   });
 
-  it('validates illigal paths', function() {
+  it('validates illegal paths', function() {
     var publicKey = new HDPublicKey(xpubkey);
     var valid = publicKey.isValidPath('m/-1/12');
     valid.should.equal(false);
