@@ -449,6 +449,7 @@ describe('Script', function() {
       should.exist(s);
       s.toString().should.equal('OP_DUP OP_HASH160 20 0xecae7d092947b7ee4998e254aa48900d26d2ce1d OP_EQUALVERIFY OP_CHECKSIG');
       s.isPublicKeyHashOut().should.equal(true);
+      s.toAddress().toString().should.equal('1NaTVwXDDUJaXDQajoa9MqHhz4uTxtgK14');
     });
     it('should create script from testnet address', function() {
       var address = Address.fromString('mxRN6AQJaDi5R6KmvMaEmZGe3n5ScV9u33');
@@ -456,6 +457,7 @@ describe('Script', function() {
       should.exist(s);
       s.toString().should.equal('OP_DUP OP_HASH160 20 0xb96b816f378babb1fe585b7be7a2cd16eb99b3e4 OP_EQUALVERIFY OP_CHECKSIG');
       s.isPublicKeyHashOut().should.equal(true);
+      s.toAddress().toString().should.equal('mxRN6AQJaDi5R6KmvMaEmZGe3n5ScV9u33');
     });
     it('should create script from public key', function() {
       var pubkey = new PublicKey('022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da');
@@ -463,6 +465,8 @@ describe('Script', function() {
       should.exist(s);
       s.toString().should.equal('OP_DUP OP_HASH160 20 0x9674af7395592ec5d91573aa8d6557de55f60147 OP_EQUALVERIFY OP_CHECKSIG');
       s.isPublicKeyHashOut().should.equal(true);
+      should.exist(s._network);
+      s._network.should.equal(pubkey.network);
     });
   });
   describe('#buildPublicKeyOut', function() {
@@ -510,6 +514,20 @@ describe('Script', function() {
       should.exist(s);
       s.toString().should.equal('OP_HASH160 20 0x45ea3f9133e7b1cef30ba606f8433f993e41e159 OP_EQUAL');
       s.isScriptHashOut().should.equal(true);
+    });
+
+    it('inherits network property from other script', function() {
+      var s1 = new Script.fromAddress(new Address('1FSMWkjVPAxzUNjbxT52p3mVKC971rfW3S'));
+      var s2 = Script.buildScriptHashOut(s1);
+      should.exist(s1._network);
+      s1._network.should.equal(s2._network);
+    });
+
+    it('inherits network property form an address', function() {
+      var address = new Address('34Nn91aTGaULqWsZiunrBPHzFBDrZ3B8XS');
+      var script = Script.buildScriptHashOut(address);
+      should.exist(script._network);
+      script._network.should.equal(address.network);
     });
   });
   describe('#toScriptHashOut', function() {
@@ -592,17 +610,38 @@ describe('Script', function() {
   });
 
   describe('toAddress', function() {
+    var pubkey = new PublicKey('027ffeb8c7795d529ee9cd96512d472cefe398a0597623438ac5d066a64af50072');
+    var liveAddress = pubkey.toAddress(Networks.livenet);
+    var testAddress = pubkey.toAddress(Networks.testnet);
+
+    it('priorize the network argument', function() {
+      var script = new Script(liveAddress);
+      script.toAddress(Networks.testnet).toString().should.equal(testAddress.toString());
+
+      var s = new Script('OP_DUP OP_HASH160 20 0x06c06f6d931d7bfba2b5bd5ad0d19a8f257af3e3 OP_EQUALVERIFY OP_CHECKSIG');
+      script.toAddress(Networks.testnet).network.should.equal(Networks.testnet);
+    });
+    it('use the inherited network', function() {
+      var script = new Script(liveAddress);
+      script.toAddress().toString().should.equal(liveAddress.toString());
+      var script = new Script(testAddress);
+      script.toAddress().toString().should.equal(testAddress.toString());
+    });
+    it('uses default network', function() {
+      var script = new Script('OP_DUP OP_HASH160 20 0x06c06f6d931d7bfba2b5bd5ad0d19a8f257af3e3 OP_EQUALVERIFY OP_CHECKSIG');
+      script.toAddress().network.should.equal(Networks.defaultNetwork);
+    });
     it('for a P2PKH address', function() {
       var stringAddress = '1NaTVwXDDUJaXDQajoa9MqHhz4uTxtgK14';
       var address = new Address(stringAddress);
       var script = new Script(address);
-      script.toAddress(Networks.livenet).toString().should.equal(stringAddress);
+      script.toAddress().toString().should.equal(stringAddress);
     });
     it('for a P2SH address', function() {
       var stringAddress = '3GhtMmAbWrUf6Y8vDxn9ETB14R6V7Br3mt';
       var address = new Address(stringAddress);
       var script = new Script(address);
-      script.toAddress(Networks.livenet).toString().should.equal(stringAddress);
+      script.toAddress().toString().should.equal(stringAddress);
     });
     it('fails if content is not recognized', function() {
       expect(function() {
