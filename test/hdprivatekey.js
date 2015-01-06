@@ -190,22 +190,70 @@ describe('HDPrivate key interface', function() {
     derivedByNumber.xprivkey.should.equal(derivedByString.xprivkey);
   });
 
-  it('validates correct paths', function() {
-    var privateKey = new HDPrivateKey(xprivkey);
-    var valid = privateKey.isValidPath('m/0\'/1/2\'');
-    valid.should.equal(true);
+  describe('validates paths', function() {
+    it('validates correct paths', function() {
+      var valid;
 
-    var valid = privateKey.isValidPath(123, true);
-    valid.should.equal(true);
-  });
+      valid = HDPrivateKey.isValidPath("m/0'/1/2'");
+      valid.should.equal(true);
 
-  it('validates illegal paths', function() {
-    var privateKey = new HDPrivateKey(xprivkey);
-    var valid = privateKey.isValidPath('m/-1/12');
-    valid.should.equal(false);
+      valid = HDPrivateKey.isValidPath('m');
+      valid.should.equal(true);
 
-    var valid = privateKey.isValidPath(HDPrivateKey.MaxHardened);
-    valid.should.equal(false);
+      valid = HDPrivateKey.isValidPath(123, true);
+      valid.should.equal(true);
+
+      valid = HDPrivateKey.isValidPath(123);
+      valid.should.equal(true);
+
+      valid = HDPrivateKey.isValidPath(HDPrivateKey.Hardened + 123);
+      valid.should.equal(true);
+
+      valid = HDPrivateKey.isValidPath(HDPrivateKey.Hardened + 123, true);
+      valid.should.equal(true);
+    });
+
+    it('rejects illegal paths', function() {
+      var valid;
+
+      valid = HDPrivateKey.isValidPath('m/-1/12');
+      valid.should.equal(false);
+
+      valid = HDPrivateKey.isValidPath('bad path');
+      valid.should.equal(false);
+
+      valid = HDPrivateKey.isValidPath('K');
+      valid.should.equal(false);
+
+      valid = HDPrivateKey.isValidPath('m/');
+      valid.should.equal(false);
+
+      valid = HDPrivateKey.isValidPath(HDPrivateKey.MaxHardened);
+      valid.should.equal(false);
+    });
+
+    it('generates deriving indexes correctly', function() {
+      var indexes;
+
+      indexes = HDPrivateKey._getDerivationIndexes('m/-1/12');
+      indexes.should.eql([-1, 12]);
+
+      indexes = HDPrivateKey._getDerivationIndexes("m/0/12/12'");
+      indexes.should.eql([0, 12, HDPrivateKey.Hardened + 12]);
+
+      indexes = HDPrivateKey._getDerivationIndexes("m/0/12/12'");
+      indexes.should.eql([0, 12, HDPrivateKey.Hardened + 12]);
+    });
+
+    it('rejects invalid derivation path', function() {
+      var indexes;
+
+      indexes = HDPrivateKey._getDerivationIndexes("m/");
+      expect(indexes).to.be.null;
+
+      indexes = HDPrivateKey._getDerivationIndexes("bad path");
+      expect(indexes).to.be.null;
+    });
   });
 
   describe('conversion to plain object/json', function() {
