@@ -12,6 +12,7 @@
 
 var should = require('chai').should();
 var bitcore = require('..');
+var Networks = bitcore.Networks;
 var HDPrivateKey = bitcore.HDPrivateKey;
 var HDPublicKey = bitcore.HDPublicKey;
 
@@ -188,13 +189,13 @@ describe('BIP32 compliance', function() {
   describe('seed', function() {
 
     it('should initialize a new BIP32 correctly from test vector 1 seed', function() {
-      var seededKey = HDPrivateKey.fromSeed(vector1_master);
+      var seededKey = HDPrivateKey.fromSeed(vector1_master, Networks.livenet);
       seededKey.xprivkey.should.equal(vector1_m_private);
       seededKey.xpubkey.should.equal(vector1_m_public);
     });
 
     it('should initialize a new BIP32 correctly from test vector 2 seed', function() {
-      var seededKey = HDPrivateKey.fromSeed(vector2_master);
+      var seededKey = HDPrivateKey.fromSeed(vector2_master, Networks.livenet);
       seededKey.xprivkey.should.equal(vector2_m_private);
       seededKey.xpubkey.should.equal(vector2_m_public);
     });

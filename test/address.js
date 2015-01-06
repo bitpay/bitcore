@@ -280,15 +280,19 @@ describe('Address', function() {
 
     it('should make an address from a pubkey hash buffer', function() {
       var hash = pubkeyhash; //use the same hash
-      Address.fromPublicKeyHash(hash).toString().should.equal(str);
+      var a = Address.fromPublicKeyHash(hash, 'livenet');
+      a.network.should.equal(Networks.livenet);
+      a.toString().should.equal(str);
       var b = Address.fromPublicKeyHash(hash, 'testnet');
       b.network.should.equal(Networks.testnet);
       b.type.should.equal('pubkeyhash');
-      new Address(hash).toString().should.equal(str);
+      new Address(hash, 'livenet').toString().should.equal(str);
     });
 
     it('should make an address using the default network', function() {
       var hash = pubkeyhash; //use the same hash
+      var network = Networks.defaultNetwork;
+      Networks.defaultNetwork = Networks.livenet;
       var a = Address.fromPublicKeyHash(hash);
       a.network.should.equal(Networks.livenet);
       // change the default
@@ -296,7 +300,7 @@ describe('Address', function() {
       var b = Address.fromPublicKeyHash(hash);
       b.network.should.equal(Networks.testnet);
       // restore the default
-      Networks.defaultNetwork = Networks.livenet;
+      Networks.defaultNetwork = network;
     });
 
     it('should throw an error for invalid length hashBuffer', function() {
@@ -307,7 +311,7 @@ describe('Address', function() {
 
     it('should make this address from a compressed pubkey', function() {
       var pubkey = new PublicKey('0285e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b004');
-      var address = Address.fromPublicKey(pubkey);
+      var address = Address.fromPublicKey(pubkey, 'livenet');
       address.toString().should.equal('19gH5uhqY6DKrtkU66PsZPUZdzTd11Y7ke');
     });
 
@@ -324,19 +328,19 @@ describe('Address', function() {
       it('should make this address from a script', function() {
         var s = Script.fromString('OP_CHECKMULTISIG');
         var buf = s.toBuffer();
-        var a = Address.fromScript(s);
+        var a = Address.fromScript(s, 'livenet');
         a.toString().should.equal('3BYmEwgV2vANrmfRymr1mFnHXgLjD6gAWm');
-        var b = new Address(s);
+        var b = new Address(s, 'livenet');
         b.toString().should.equal('3BYmEwgV2vANrmfRymr1mFnHXgLjD6gAWm');
-        var c = Address.fromScriptHash(bitcore.crypto.Hash.sha256ripemd160(buf));
+        var c = Address.fromScriptHash(bitcore.crypto.Hash.sha256ripemd160(buf), 'livenet');
         c.toString().should.equal('3BYmEwgV2vANrmfRymr1mFnHXgLjD6gAWm');
       });
 
       it('should make this address from other script', function() {
         var s = Script.fromString('OP_CHECKSIG OP_HASH160');
-        var a = Address.fromScript(s);
+        var a = Address.fromScript(s, 'livenet');
         a.toString().should.equal('347iRqVwks5r493N1rsLN4k9J7Ljg488W7');
-        var b = new Address(s);
+        var b = new Address(s, 'livenet');
         b.toString().should.equal('347iRqVwks5r493N1rsLN4k9J7Ljg488W7');
       });
 
@@ -460,12 +464,12 @@ describe('Address', function() {
     var publics = [public1, public2, public3];
 
     it('can create an address from a set of public keys', function() {
-      var address = new Address(publics, 2);
+      var address = Address.createMultisig(publics, 2, Networks.livenet);
       address.toString().should.equal('3FtqPRirhPvrf7mVUSkygyZ5UuoAYrTW3y');
     });
 
     it('works on testnet also', function() {
-      var address = new Address(publics, 2, Networks.testnet);
+      var address = Address.createMultisig(publics, 2, Networks.testnet);
       address.toString().should.equal('2N7T3TAetJrSCruQ39aNrJvYLhG1LJosujf');
     });
 
