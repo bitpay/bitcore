@@ -65,7 +65,7 @@ var testMocha = function() {
 };
 
 var testKarma = shell.task([
-  './node_modules/karma/bin/karma start --single-run --browsers Firefox'
+  './node_modules/karma/bin/karma start'
 ]);
 
 /**
