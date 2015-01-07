@@ -84,6 +84,7 @@ describe('Transaction', function() {
   });
 
   describe('transaction creation test vector', function() {
+    this.timeout(5000);
     var index = 0;
     transactionVector.forEach(function(vector) {
       index++;

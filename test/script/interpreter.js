@@ -259,7 +259,8 @@ describe('Interpreter', function() {
           return;
         }
         c++;
-        it('should pass tx_' + (expected ? '' : 'in') + 'valid vector ' + c, function() {
+        var cc = c; //copy to local
+        it('should pass tx_' + (expected ? '' : 'in') + 'valid vector ' + cc, function() {
           var inputs = vector[0];
           var txhex = vector[1];
           var flags = getFlags(vector[2]);
@@ -291,9 +292,10 @@ describe('Interpreter', function() {
             }
           });
           var txVerified = tx.verify();
-          txVerified = _.isBoolean(txVerified);
+          txVerified = (txVerified === true) ? true : false;
           allInputsVerified = allInputsVerified && txVerified;
           allInputsVerified.should.equal(expected);
+
         });
       });
     };
