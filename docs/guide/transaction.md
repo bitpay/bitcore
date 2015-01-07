@@ -82,12 +82,6 @@ There are a number of data structures being stored internally in a `Transaction`
 * `_fee`: if user specified a non-standard fee, the amount (in satoshis) will be stored in this variable so the change amount can be calculated.
 * `_change`: stores the value provided by calling the `change` method.
 
-### Unspent Output Selection
-
-If you have a larger set of unspent outputs, only some of them will be selected to fulfill the amount. This is done by storing a cache of unspent outputs in a protected member called `_utxos`. When the `to()` method is called, some of these outputs will be selected to pay the requested amount to the appropriate address.
-
-A detail that you should have in mind is that when the transaction is serialized, this cache can't be included in the serialized form.
-
 ## Upcoming changes
 
 We're debating an API for Merge Avoidance, CoinJoin, Smart contracts, CoinSwap, and Stealth Addresses. We're expecting to have all of them by some time in early 2015. First draft implementations of Payment Channel smart contracts extensions to this library are already being implemented independently.
