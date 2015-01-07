@@ -15,8 +15,13 @@ describe('Insight', function() {
   describe('instantiation', function() {
     it('can be created without any parameters', function() {
       var insight = new Insight();
-      insight.url.should.equal('https://insight.bitpay.com');
-      insight.network.should.equal(Networks.livenet);
+      should.exist(insight.url);
+      should.exist(insight.network);
+      if (insight.network === Networks.livenet) {
+        insight.url.should.equal('https://insight.bitpay.com');
+      } else if (insight.network === Networks.testnet) {
+        insight.url.should.equal('https://test-insight.bitpay.com');
+      }
     });
     it('can be created providing just a network', function() {
       var insight = new Insight(Networks.testnet);

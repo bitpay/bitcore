@@ -146,6 +146,9 @@ describe('PrivateKey', function() {
     });
 
     it('should create a default network private key', function() {
+      // keep the original
+      var network = Networks.defaultNetwork;
+      Networks.defaultNetwork = Networks.livenet;
       var a = new PrivateKey(BN.fromBuffer(buf));
       a.network.should.equal(Networks.livenet);
       // change the default
@@ -153,7 +156,7 @@ describe('PrivateKey', function() {
       var b = new PrivateKey(BN.fromBuffer(buf));
       b.network.should.equal(Networks.testnet);
       // restore the default
-      Networks.defaultNetwork = Networks.livenet;
+      Networks.defaultNetwork = network;
     });
 
     it('returns the same instance if a PrivateKey is provided (immutable)', function() {

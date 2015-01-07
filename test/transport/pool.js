@@ -24,7 +24,13 @@ if (typeof(window) === 'undefined'){
 
     it('should be able to create instance', function() {
       var pool = new Pool();
-      pool.network.should.equal(Networks.livenet);
+      should.exist(pool.network);
+      expect(pool.network).to.satisfy(function(network){
+        if (network === Networks.testnet || network === Networks.livenet) {
+          return true;
+        }
+        return false;
+      });
     });
 
     it('should be able to create instance setting the network', function() {
