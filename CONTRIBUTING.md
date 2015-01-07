@@ -211,7 +211,7 @@ If possible, data for tests should be included in a JSON file in the `test/data`
 
 All modules should include a developer guide and API reference. The API reference documentation is generated using JSDOC. Each function that exposes a public API should include a description, @return and @param, as appropriate. The general documentation guide for the module should be located in the `docs/guide` directory and is written in GitHub Flavored Markdown.
 
-#### D1 - Proofread
+#### D2 - Proofread
 
 Please proofread documentation to avoid unintentional spelling and grammatical mistakes before submitting a pull request.
 
