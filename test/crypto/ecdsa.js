@@ -103,7 +103,7 @@ describe('ECDSA', function() {
       ecdsa.k.toBuffer().toString('hex')
         .should.not.equal('fcce1de7a9bcd6b2d3defade6afa1913fb9229e3b7ddf4749b55c4848b2a196e');
       ecdsa.k.toBuffer().toString('hex')
-        .should.equal('6f4dcca6fa7a137ae9d110311905013b3c053c732ad18611ec2752bb3dcef9d8');
+        .should.equal('727fbcb59eb48b1d7d46f95a04991fc512eb9dbf9105628e3aec87428df28fd8');
     });
     it('should compute this test vector correctly', function() {
       // test fixture from bitcoinjs
@@ -296,6 +296,21 @@ describe('ECDSA', function() {
           ecdsa.sigError().should.equal(obj.exception);
         });
       });
+      
+      vectors.deterministicK.forEach(function(obj, i) {
+        it('should validate deterministicK vector ' + i, function() {
+          var hashbuf = Hash.sha256(new Buffer(obj.message));
+          var privkey = Privkey(BN.fromBuffer(new Buffer(obj.privkey, 'hex')), 'mainnet');
+          var ecdsa = ECDSA({
+            privkey: privkey,
+            hashbuf: hashbuf
+          });
+          ecdsa.deterministicK(0).k.toString('hex').should.equal(obj.k_bad00);
+          ecdsa.deterministicK(1).k.toString('hex').should.equal(obj.k_bad01);
+          ecdsa.deterministicK(15).k.toString('hex').should.equal(obj.k_bad15);
+        });
+      });
+
     });
   });
 });

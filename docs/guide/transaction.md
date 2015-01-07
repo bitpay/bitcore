@@ -7,7 +7,7 @@ description: A robust interface to create, parse and validate bitcoin transactio
 
 Bitcore provides a very simple API for creating transactions. We expect this API to be accessible for developers without knowing the working internals of bitcoin in deep detail. What follows is a small introduction to transactions with some basic knowledge required to use this API.
 
-A Transaction contains a set of inputs and a set of outputs. Each input contains a reference to another transaction's output, and a signature that allows the value referenced in that ouput to be used in this transaction.
+A Transaction contains a set of inputs and a set of outputs. Each input contains a reference to another transaction's output, and a signature that allows the value referenced in that output to be used in this transaction.
 
 Note also that an output can be used only once. That's why there's a concept of "change address" in the bitcoin ecosystem: if an output of 10 BTC is available for me to spend, but I only need to transmit 1 BTC, I'll create a transaction with two outputs, one with 1 BTC that I want to spend, and the other with 9 BTC to a change address, so I can spend this 9 BTC with another private key that I own.
 
@@ -17,7 +17,7 @@ Let's take a look at some very simple transactions:
 
 ```javascript
 var transaction = new Transaction()
-    .from(utxos)          // Feed information about what unspend outputs one can use
+    .from(utxos)          // Feed information about what unspent outputs one can use
     .to(address, amount)  // Add an output with the given amount of satoshis
     .change(address)      // Sets up a change address where the rest of the funds will go
     .sign(privkeySet)     // Signs all the inputs it can
@@ -81,12 +81,6 @@ There are a number of data structures being stored internally in a `Transaction`
 * `_outputAmount`: sum of the amount for all the outputs
 * `_fee`: if user specified a non-standard fee, the amount (in satoshis) will be stored in this variable so the change amount can be calculated.
 * `_change`: stores the value provided by calling the `change` method.
-
-### Unspent Output Selection
-
-If you have a larger set of unspent outputs, only some of them will be selected to fulfill the amount. This is done by storing a cache of unspent outputs in a protected member called `_utxos`. When the `to()` method is called, some of these outputs will be selected to pay the requested amount to the appropriate address.
-
-A detail that you should have in mind is that when the transaction is serialized, this cache can't be included in the serialized form.
 
 ## Upcoming changes
 

@@ -18,7 +18,7 @@ bitcoin:12A1MyfXbW6RhdRAZEqofac5jCQQjwEPBu?amount=1.2&message=Payment&label=Sato
 
 The main use that we expect you'll have for the `URI` class in bitcore is validating and parsing bitcoin URIs. A `URI` instance exposes the address as a bitcore `Address` object and the amount in Satoshis, if present.
 
-The code for validating uris looks like this:
+The code for validating URIs looks like this:
 ```javascript
 var uriString = 'bitcoin:12A1MyfXbW6RhdRAZEqofac5jCQQjwEPBu?amount=1.2';
 var valid = URI.isValid(uriString);

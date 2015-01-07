@@ -5,7 +5,7 @@ description: A simple interface to handle livenet and testnet bitcoin networks.
 
 ## Description
 
-Bitcore provides support for the main bitcoin network as well as for `testnet3`, the current test blockchain. We encourage the use of `Networks.livenet` and `Networks.testnet` as constants. Note that the library sometimes may check for equality against this object. Avoid creating a deep copy of this object and using that.
+Bitcore provides support for the main bitcoin network as well as for `testnet3`, the current test blockchain. We encourage the use of `Networks.livenet` and `Networks.testnet` as constants. Note that the library sometimes may check for equality against this object. Please avoid creating a deep copy of this object.
 
 The `Network` namespace has a function, `get(...)` that returns an instance of a `Network` or `undefined`. The only argument to this function is some kind of identifier of the network: either its name, a reference to a Network object, or a number used as a magic constant to identify the network (for example, the value `0` that gives bitcoin addresses the distinctive `'1'` at its beginning on livenet, is a `0x6F` for testnet).
 

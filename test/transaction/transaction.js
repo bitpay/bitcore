@@ -84,6 +84,7 @@ describe('Transaction', function() {
   });
 
   describe('transaction creation test vector', function() {
+    this.timeout(5000);
     var index = 0;
     transactionVector.forEach(function(vector) {
       index++;
@@ -196,6 +197,22 @@ describe('Transaction', function() {
     script: Script.buildPublicKeyHashOut(fromAddress).toString(),
     satoshis: 1e8
   };
+
+  describe('not enough information errors', function() {
+    it('fails when Inputs are not subclassed and isFullySigned is called', function() {
+      var tx = new Transaction(tx_1_hex);
+      expect(function() {
+        return tx.isFullySigned();
+      }).to.throw(errors.Transaction.UnableToVerifySignature);
+    });
+
+    it('fails when Inputs are not subclassed and verifySignature is called', function() {
+      var tx = new Transaction(tx_1_hex);
+      expect(function() {
+        return tx.isValidSignature({inputIndex: 0});
+      }).to.throw(errors.Transaction.UnableToVerifySignature);
+    });
+  });
 
   describe('checked serialize', function() {
     it('fails if no change address was set', function() {

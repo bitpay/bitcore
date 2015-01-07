@@ -3,9 +3,9 @@ description: Lets you create and derive extended public and private keys accordi
 ---
 # HDKeys
 
-## Hierarichically Derived Keys
+## Hierarchically Derived Keys
 
-Bitcore provides full support for [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki), allowing for many key management schemas that benefit from this property.  Please be sure to read and understand the basic concepts and the warnings on that BIP before using these classes.
+Bitcore provides full support for [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki), allowing for many key management schemas that benefit from this property. Please be sure to read and understand the basic concepts and the warnings on that BIP before using these classes.
 
 ## HDPrivateKey
 

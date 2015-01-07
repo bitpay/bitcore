@@ -100,7 +100,7 @@ var merchant_data = details.get('merchant_data');
 
 ## Send a Payment
 
-After the request is verified a payment can be sent to the merchant, from the customer's wallet:
+After the request is verified a payment can be sent to the merchant from the customer's wallet:
 
 ```javascript
 

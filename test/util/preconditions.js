@@ -52,7 +52,8 @@ describe('preconditions', function() {
       $.checkArgumentType(1, PrivateKey);
     } catch (e) {
       error = e;
-      e.message.should.equal('Invalid Argument for (unknown name), expected PrivateKey but got number');
+      var fail = !(~e.message.indexOf('Invalid Argument for (unknown name)'));
+      fail.should.equal(false);
     }
     should.exist(error);
   });

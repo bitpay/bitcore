@@ -15,9 +15,19 @@ describe('Unit', function() {
     }).to.not.throw();
   });
 
+  it('can be created from a number and exchange rate', function() {
+    expect(function() {
+      return new Unit(1.2, 350);
+    }).to.not.throw();
+  });
+
   it('no "new" is required for creating an instance', function() {
     expect(function() {
       return Unit(1.2, 'BTC');
+    }).to.not.throw();
+
+    expect(function() {
+      return Unit(1.2, 350);
     }).to.not.throw();
   });
 
@@ -44,6 +54,9 @@ describe('Unit', function() {
 
     unit = Unit.fromSatoshis('8999');
     unit.satoshis.should.equal(8999);
+
+    unit = Unit.fromFiat('43', 350);
+    unit.BTC.should.equal(0.12285714);
   });
 
   it('should have constructor helpers', function() {
@@ -60,6 +73,9 @@ describe('Unit', function() {
 
     unit = Unit.fromSatoshis(8999);
     unit.satoshis.should.equal(8999);
+
+    unit = Unit.fromFiat(43, 350);
+    unit.BTC.should.equal(0.12285714);
   });
 
   it('converts to satoshis correctly', function() {
@@ -124,6 +140,15 @@ describe('Unit', function() {
     unit.toSatoshis().should.equal(unit.satoshis);
   });
 
+  it('can convert to fiat', function() {
+    var unit = new Unit(1.3, 350);
+    unit.atRate(350).should.equal(1.3);
+    unit.to(350).should.equal(1.3);
+
+    unit = Unit.fromBTC(0.0123);
+    unit.atRate(10).should.equal(0.12);
+  });
+
   it('toString works as expected', function() {
     var unit = new Unit(1.3, 'BTC');
     should.exist(unit.toString);
@@ -154,6 +179,15 @@ describe('Unit', function() {
     expect(function() {
       return new Unit(100, 'BTC').to('USD');
     }).to.throw(errors.Unit.UnknownCode);
+  });
+
+  it('fails when the exchange rate is invalid', function() {
+    expect(function() {
+      return new Unit(100, -123);
+    }).to.throw(errors.Unit.InvalidRate);
+    expect(function() {
+      return new Unit(100, 'BTC').atRate(-123);
+    }).to.throw(errors.Unit.InvalidRate);
   });
 
 });

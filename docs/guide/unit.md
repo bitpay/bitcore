@@ -5,7 +5,7 @@ description: Utility to easily convert between bitcoin units.
 
 ## Description
 
-Unit is an utility for handling and converting bitcoin units. We strongly recommend to always use satoshis to represent amount inside your application and only convert them to other units in the front-end.
+Unit is a utility for handling and converting bitcoin units. We strongly recommend to always use satoshis to represent amount inside your application and only convert them to other units in the front-end.
 
 ## Supported units
 
@@ -40,7 +40,7 @@ unit = Unit.fromSatoshis(amount);
 
 ## Conversion
 
-Once you have a unit instance, you can check its representantion in all the available units. For your convinience the classes expose three ways to acomplish this. Using the `.to(unitCode)` method, using a fixed unit like `.toSatoshis()` or by using the accessors.
+Once you have a unit instance, you can check its representation in all the available units. For your convenience the classes expose three ways to accomplish this. Using the `.to(unitCode)` method, using a fixed unit like `.toSatoshis()` or by using the accessors.
 
 ```javascript
 var unit;
@@ -60,4 +60,20 @@ value = Unit.fromBTC(amount).BTC;
 value = Unit.fromBTC(amount).mBTC;
 value = Unit.fromBTC(amount).bits;
 value = Unit.fromBTC(amount).satoshis;
+```
+
+## Using a fiat currency
+
+The unit class also provides a convenient alternative to create an instance from a fiat amount and the corresponding BTC/fiat exchange rate. Any unit instance can be converted to a fiat amount by providing the current exchange rate. Check the example below:
+
+```javascript
+var unit, fiat;
+var amount = 100;
+var exchangeRate = 350;
+
+unit = new Unit(amount, exchangeRate);
+unit = Unit.fromFiat(amount, exchangeRate);
+
+fiat = Unit.fromBits(amount).atRate(exchangeRate);
+fiat = Unit.fromBits(amount).to(exchangeRate);
 ```
