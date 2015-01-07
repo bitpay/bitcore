@@ -2,6 +2,8 @@
 
 var buffer = require('buffer');
 
+var chai = require('chai');
+var should = chai.should();
 var Script = require('../../lib/script');
 var Transaction = require('../../lib/transaction');
 var sighash = require('../../lib/transaction/sighash');

@@ -1,0 +1,10 @@
+ui: mocha-bdd
+browsers:
+  - name: chrome
+    version: latest
+    platform: Windows XP
+  - name: ie
+    version: latest
+    platform: Windows XP
+browserify:
+  - transform: brfs
