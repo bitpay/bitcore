@@ -1,10 +1,10 @@
 ui: mocha-bdd
 browsers:
   - name: chrome
-    version: latest
-    platform: Windows XP
+    version: 27..latest
   - name: ie
     version: latest
-    platform: Windows XP
+  - name: iphone
+    version: 6.1
 browserify:
   - transform: brfs
