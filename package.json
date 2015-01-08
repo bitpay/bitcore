@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "lint": "gulp lint",
-    "test": "gulp test && ./node_modules/zuul/bin/zuul -- test/*.js",
+    "test": "gulp test",
     "coverage": "gulp coverage",
     "build": "gulp",
     "postinstall": "node ./lib/errors/build.js"
