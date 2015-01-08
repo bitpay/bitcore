@@ -55,3 +55,6 @@ bitcore.transport = require('./lib/transport');
 
 // Internal usage, exposed for testing/advanced tweaking
 bitcore._HDKeyCache = require('./lib/hdkeycache');
+
+// module information
+bitcore.version = 'v'+require('./package.json').version;
