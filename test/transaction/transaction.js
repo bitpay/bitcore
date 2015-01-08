@@ -214,6 +214,16 @@ describe('Transaction', function() {
     });
   });
 
+  describe('serialization', function() {
+    it('stores the change address correctly', function() {
+      var serialized = new Transaction()
+        .change(changeAddress)
+        .toObject();
+      var deserialized = new Transaction(serialized);
+      expect(deserialized._change.toString()).to.equal(changeAddress);
+    });
+  });
+
   describe('checked serialize', function() {
     it('fails if no change address was set', function() {
       var transaction = new Transaction()

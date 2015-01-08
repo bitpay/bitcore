@@ -233,7 +233,7 @@ describe('Address', function() {
     it('should error because of unrecognized data format', function() {
       (function() {
         return new Address(new Error());
-      }).should.throw('First argument is an unrecognized data format.');
+      }).should.throw(bitcore.errors.InvalidArgument);
     });
 
     it('should error because of incorrect format for pubkey hash', function() {
