@@ -242,6 +242,16 @@ describe('Transaction', function() {
         return transaction.serialize();
       }).to.throw(errors.Transaction.FeeError);
     });
+    it('fails if a dust transaction is created', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith1BTC)
+        .to(toAddress, 1)
+        .change(changeAddress)
+        .sign(privateKey);
+      expect(function() {
+        return transaction.serialize();
+      }).to.throw(errors.Transaction.DustOutputs);
+    });
   });
 });
 

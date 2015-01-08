@@ -12,7 +12,7 @@ describe('Transaction deserialization', function() {
     vectors_valid.forEach(function(vector) {
       if (vector.length > 1) {
         var hexa = vector[1];
-        Transaction(hexa).serialize().should.equal(hexa);
+        Transaction(hexa).serialize(true).should.equal(hexa);
         index++;
       }
     });
@@ -22,7 +22,7 @@ describe('Transaction deserialization', function() {
     vectors_invalid.forEach(function(vector) {
       if (vector.length > 1) {
         var hexa = vector[1];
-        Transaction(hexa).serialize().should.equal(hexa);
+        Transaction(hexa).serialize(true).should.equal(hexa);
         index++;
       }
     });
