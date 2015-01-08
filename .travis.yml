@@ -11,7 +11,3 @@ install:
   - npm install
 after_script:
   - gulp coveralls
-env:
-  global:
-    - SAUCE_USERNAME=maraoz
-    - SAUCE_ACCESS_KEY=30055bf8-2def-4e6a-8edd-4adb9fd1de66
