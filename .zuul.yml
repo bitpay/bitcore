@@ -1,10 +1,12 @@
 ui: mocha-bdd
 browsers:
   - name: chrome
-    version: 27..latest
+    version: 30..latest
+  - name: firefox
+    version: 30..latest
   - name: ie
     version: latest
-  - name: iphone
-    version: 6.1
+  - name: safari
+    version: latest
 browserify:
   - transform: brfs
