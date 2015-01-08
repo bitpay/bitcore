@@ -9,8 +9,13 @@ before_install:
 install:
   - bower install
   - npm install
+addons:
+  code_climate:
+    repo_token:
+      secure: "kL9uA1Hqv7iRpxdZio8a3p130NyNRTPf/eVKXrSMz/zUA2mIeNAsvuthWAp89Oe5kN9tSX7GsRXu8cHpWEx5AI8FenSn4SQZcdbxnxLsHeiiR2ROpo1m+CuGNZ5wCrDkfpe9XRdRvRXpnZtWdqJM4QZ7J0l1jcuuo1s7e3OsUdo="
 after_script:
   - gulp coveralls
+  - cat coverage/lcov.info | codeclimate
 env:
   global:
     - SAUCE_USERNAME=maraoz
