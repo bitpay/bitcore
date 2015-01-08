@@ -8,6 +8,7 @@ var Point = bitcore.crypto.Point;
 var BN = bitcore.crypto.BN;
 var PublicKey = bitcore.PublicKey;
 var PrivateKey = bitcore.PrivateKey;
+var Address = bitcore.Address;
 var Networks = bitcore.Networks;
 
 /* jshint maxlen: 200 */
@@ -338,6 +339,25 @@ describe('PublicKey', function() {
       address.toString().should.equal('mtX8nPZZdJ8d3QNLRJ1oJTiEi26Sj6LQXS');
     });
 
+  });
+
+  describe('hashes', function() {
+
+    // wif private key, address
+    // see: https://github.com/bitcoin/bitcoin/blob/master/src/test/key_tests.cpp#L20
+    var data = [
+      ['5HxWvvfubhXpYYpS3tJkw6fq9jE9j18THftkZjHHfmFiWtmAbrj', '1QFqqMUD55ZV3PJEJZtaKCsQmjLT6JkjvJ'],
+      ['5KC4ejrDjv152FGwP386VD1i2NYc5KkfSMyv1nGy1VGDxGHqVY3', '1F5y5E5FMc5YzdJtB9hLaUe43GDxEKXENJ'],
+      ['Kwr371tjA9u2rFSMZjTNun2PXXP3WPZu2afRHTcta6KxEUdm1vEw', '1NoJrossxPBKfCHuJXT4HadJrXRE9Fxiqs'],
+      ['L3Hq7a8FEQwJkW1M2GNKDW28546Vp5miewcCzSqUD9kCAXrJdS3g', '1CRj2HyM1CXWzHAXLQtiGLyggNT9WQqsDs']
+    ];
+    
+    data.forEach(function(d){
+      var publicKey = PrivateKey.fromWIF(d[0]).toPublicKey();
+      var address = Address.fromString(d[1]);
+      address.hashBuffer.should.deep.equal(publicKey.getID());
+    });
+    
   });
 
   describe('#toString', function() {
