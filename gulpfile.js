@@ -32,19 +32,20 @@
 'use strict';
 
 var gulp = require('gulp');
+
+var bump = require('gulp-bump');
 var coveralls = require('gulp-coveralls');
+var git = require('gulp-git');
+var gutil = require('gulp-util');
+var jsdoc2md = require('jsdoc-to-markdown');
 var jshint = require('gulp-jshint');
+var mfs = require('more-fs');
 var mocha = require('gulp-mocha');
+var rename = require('gulp-rename');
 var runSequence = require('run-sequence');
 var shell = require('gulp-shell');
 var through = require('through2');
-var gutil = require('gulp-util');
-var jsdoc2md = require('jsdoc-to-markdown');
-var mfs = require('more-fs');
 var uglify = require('gulp-uglify');
-var rename = require('gulp-rename');
-var bump = require('gulp-bump');
-var git = require('gulp-git');
 
 
 var files = ['lib/**/*.js'];

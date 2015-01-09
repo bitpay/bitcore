@@ -277,9 +277,9 @@ describe('Transaction', function() {
       var public2 = new PrivateKey(private2).publicKey;
       var transaction = new Transaction()
         .from({
-          txId: private1,
+          txId: '0000', // Not relevant
           outputIndex: 0,
-          script: Script.buildScriptHashOut(Script.buildMultisigOut([public1, public2], 2)),
+          script: Script.buildMultisigOut([public1, public2], 2).toScriptHashOut(),
           satoshis: 10000
         }, [public1, public2], 2);
       var deserialized = new Transaction(transaction.toObject());
