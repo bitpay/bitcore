@@ -3,14 +3,13 @@
 var chai = require('chai');
 var should = chai.should();
 var expect = chai.expect;
-var bitcore = require('bitcore-base');
+var bitcore = require('bitcore');
 var PrivateKey = bitcore.PrivateKey;
 var PublicKey = bitcore.PublicKey;
 
 var is_browser = typeof process === 'undefined' || typeof process.versions === 'undefined';
 
 var PaymentProtocol = require('../');
-var Key = bitcore.Key;
 
 var x509 = {
   priv: ''

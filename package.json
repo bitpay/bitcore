@@ -25,8 +25,9 @@
     "url": "https://github.com/bitpay/bitcore-paymentprotocol.git"
   },
   "dependencies": {
-    "bitcore-base": "~0.8.5",
     "asn1.js": "=0.4.1",
+    "bitcore-base": "~0.8.5",
+    "gulp-bitcore": "^0.1.0",
     "jsrsasign": "=0.0.3",
     "protobufjs": "=3.0.0"
   },
