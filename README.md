@@ -18,6 +18,24 @@ npm install bitcore-payment-protocol
 bower install bitcore-payment-protocol
 ```
 
+There are many examples of how to use it on the developer guide [section for payment protocol](http://bitcore.io/guide/paymentprotocol.html). For example, the following code would verify a payment request:
+
+```javascript
+var PaymentProtocol = require('bitcore-payment-protocol');
+
+var body = PaymentProtocol.PaymentRequest.decode(rawbody);
+var request = new PaymentProtocol().makePaymentRequest(body);
+
+var version = pr.get('payment_details_version');
+var pki_type = pr.get('pki_type');
+var pki_data = pr.get('pki_data');
+var serializedDetails = pr.get('serialized_payment_details');
+var signature = pr.get('signature');
+
+// Verify the signature
+var verified = request.verify();
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](https://github.com/bitpay/bitcore) on the main bitcore repo for information about how to contribute.
