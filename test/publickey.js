@@ -355,7 +355,7 @@ describe('PublicKey', function() {
     data.forEach(function(d){
       var publicKey = PrivateKey.fromWIF(d[0]).toPublicKey();
       var address = Address.fromString(d[1]);
-      address.hashBuffer.should.deep.equal(publicKey.getID());
+      address.hashBuffer.should.deep.equal(publicKey._getID());
     });
     
   });
