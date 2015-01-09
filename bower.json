@@ -1,6 +1,6 @@
 {
-  "name": "bitcore-paymentprotocol",
-  "main": "bitcore-paymentprotocol.min.js",
+  "name": "bitcore-payment-protocol",
+  "main": "bitcore-payment-protocol.min.js",
   "version": "0.8.5",
   "homepage": "http://bitcore.io",
   "authors": [
