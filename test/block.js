@@ -1,5 +1,6 @@
 'use strict';
 
+var assert = require('assert');
 var bitcore = require('..');
 var BN = require('../lib/crypto/bn');
 var BufferReader = bitcore.encoding.BufferReader;
@@ -17,6 +18,7 @@ var dataRawBlockBuffer = fs.readFileSync('test/data/blk86756-testnet.dat');
 var dataRawBlockBinary = fs.readFileSync('test/data/blk86756-testnet.dat', 'binary');
 var dataJson = fs.readFileSync('test/data/blk86756-testnet.json').toString();
 var data = require('./data/blk86756-testnet');
+var dataBlocks = require('./data/bitcoind/blocks');
 
 describe('Block', function() {
 
@@ -62,6 +64,13 @@ describe('Block', function() {
       should.exist(b.txsvi);
       should.exist(b.header);
       should.exist(b.txs);
+    });
+
+    it('should properly deserialize blocks', function() {
+      dataBlocks.forEach(function(block){
+        var b = Block.fromBuffer(new Buffer(block.data, 'hex'));
+        b.txs.length.should.equal(block.transactions);
+      });
     });
 
   });
