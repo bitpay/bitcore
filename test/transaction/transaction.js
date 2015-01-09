@@ -222,6 +222,13 @@ describe('Transaction', function() {
       var deserialized = new Transaction(serialized);
       expect(deserialized._change.toString()).to.equal(changeAddress);
     });
+    it('can avoid checked serialize', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith1BTC)
+        .to(fromAddress, 1);
+      expect(function() { return transaction.serialize(); }).to.throw();
+      expect(function() { return transaction.serialize(true); }).to.not.throw();
+    });
   });
 
   describe('checked serialize', function() {
@@ -263,6 +270,30 @@ describe('Transaction', function() {
       var transaction = new Transaction();
       transaction.change(changeAddress);
       expect(JSON.parse(transaction.toJSON()).change).to.equal(changeAddress.toString());
+    });
+  });
+
+  describe('serialization of inputs', function() {
+    it('can serialize and deserialize a P2PKH input', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith1BTC);
+      var deserialized = new Transaction(transaction.toObject());
+      expect(deserialized.inputs[0] instanceof Transaction.Input.PublicKeyHash).to.equal(true);
+    });
+    it('can serialize and deserialize a P2SH input', function() {
+      var private1 = '6ce7e97e317d2af16c33db0b9270ec047a91bff3eff8558afb5014afb2bb5976';
+      var private2 = 'c9b26b0f771a0d2dad88a44de90f05f416b3b385ff1d989343005546a0032890';
+      var public1 = new PrivateKey(private1).publicKey;
+      var public2 = new PrivateKey(private2).publicKey;
+      var transaction = new Transaction()
+        .from({
+          txId: '0000', // Not relevant
+          outputIndex: 0,
+          script: Script.buildMultisigOut([public1, public2], 2).toScriptHashOut(),
+          satoshis: 10000
+        }, [public1, public2], 2);
+      var deserialized = new Transaction(transaction.toObject());
+      expect(deserialized.inputs[0] instanceof Transaction.Input.MultiSigScriptHash).to.equal(true);
     });
   });
 });
