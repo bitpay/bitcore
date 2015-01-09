@@ -1,5 +1,5 @@
 {
-  "name": "bitcore-poetry",
+  "name": "bitcore-mnemonic",
   "version": "0.0.1",
   "description": "BIP39 Mnemonics implemented for Bitcore.",
   "main": "index.js",
@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitpay/bitcore-poetry.git"
+    "url": "https://github.com/bitpay/bitcore-mnemonic.git"
   },
   "keywords": [
     "bitcoin",
@@ -25,9 +25,9 @@
   "author": "BitPay",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/bitpay/bitcore-poetry/issues"
+    "url": "https://github.com/bitpay/bitcore-mnemonic/issues"
   },
-  "homepage": "https://github.com/bitpay/bitcore-poetry",
+  "homepage": "https://github.com/bitpay/bitcore-mnemonic",
   "devDependencies": {
     "assert": "^1.1.2",
     "coveralls": "^2.11.2",
