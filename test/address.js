@@ -210,7 +210,18 @@ describe('Address', function() {
         should.not.exist(error);
       }
     });
+  });
 
+  describe('instantiation', function() {
+    it('can be instantiated from another address', function() {
+      var address = Address.fromBuffer(buf);
+      var address2 = new Address({
+        hashBuffer: address.hashBuffer,
+        network: address.network,
+        type: address.type
+      });
+      address.toString().should.equal(address2.toString());
+    });
   });
 
   describe('encodings', function() {
