@@ -12,8 +12,35 @@
   },
   "contributors": [
     {
+      "name": "Yemel Jardi",
+      "email": "yemel@bitpay.com"
+    },
+    {
+      "name": "Braydon Fuller",
+      "email": "braydon@bitpay.com"
+    },
+    {
+      "name": "Ryan X. Charles",
+      "email": "ryan@bitpay.com"
+    },
+    {
+      "name": "Eric Martindale",
+      "email": "eric@bitpay.com"
+    },
+    {
+      "name": "Philip Hutchins",
+      "email": "philip@bitpay.com"
+    },
+    {
+      "name": "Manuel Araoz",
+      "email": "maraoz@bitpay.com"
+    },
+    {
       "name": "Esteban Ordano",
       "email": "eordano@gmail.com"
+    },
+    {
+      "name": "Elichai Turkel"
     }
   ],
   "keywords": [
@@ -25,7 +52,7 @@
     "url": "https://github.com/bitpay/bitcore-p2p.git"
   },
   "dependencies": {
-    "bitcore-base": "~0.8.5",
+    "bitcore": "^0.8.6",
     "bufferput": "^0.1.2",
     "buffers": "^0.1.1",
     "socks5-client": "^0.3.6"
