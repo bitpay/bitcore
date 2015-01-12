@@ -5,7 +5,23 @@ description: A simple interface to generate mnemonic codes and deterministic key
 
 ## Description
 
-This modules provides an implementation of a mnemonic code or mnemonic sentence -- a group of easy to remember words -- for the generation of deterministic keys. The `Mnemonic` class handles code generation and it's later conversion to a [HDPrivateKey](hierarchical.md). See [the official BIP-0039](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) for technical background information.
+The `Mnemonic` class provides an implementation of a mnemonic code or mnemonic sentence -- a group of easy to remember words -- for the generation of deterministic keys. The class handles code generation and it's later conversion to a [HDPrivateKey](hierarchical.md). See [the official BIP-0039](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) for technical background information.
+
+## Installation
+
+Mnemonics is implemented as a separate module and you must add it to your dependencies:
+
+For node projects:
+
+```
+npm install bitcore-mnemonic --save
+```
+
+For client-side projects:
+
+```
+bower install bitcore-mnemonic --save
+```
 
 ## Mnemonic generation
 
