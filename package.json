@@ -12,6 +12,22 @@
   },
   "contributors": [
     {
+      "name": "Christopher Jeffrey",
+      "email": "chjeffrey@gmail.com"
+    },
+    {
+      "name": "Manuel Araoz",
+      "email": "manuelaraoz@gmail.com"
+    },
+    {
+      "name": "Ryan X. Charles",
+      "email": "ryan@bitpay.com"
+    },
+    {
+      "name": "Linus Unnebäck",
+      "email": "linus@folkdatorn.se"
+    },
+    {
       "name": "Esteban Ordano",
       "email": "eordano@gmail.com"
     }
@@ -26,15 +42,8 @@
   },
   "dependencies": {
     "asn1.js": "=0.4.1",
-    "bitcore": "=0.8.6",
-    "gulp-bitcore": "^0.1.0",
+    "bitcore": "^0.8.6",
     "jsrsasign": "=0.0.3",
-    "karma-chrome-launcher": "^0.1.7",
-    "karma-detect-browsers": "^0.1.3",
-    "karma-ie-launcher": "^0.1.5",
-    "karma-opera-launcher": "^0.1.0",
-    "karma-phantomjs-launcher": "^0.1.4",
-    "karma-safari-launcher": "^0.1.1",
     "protobufjs": "=3.0.0"
   },
   "devDependencies": {
@@ -42,6 +51,7 @@
     "browserify": "~6.3.3",
     "chai": "~1.10.0",
     "gulp": "^3.8.10",
+    "gulp-bitcore": "^0.1.0",
     "gulp-bump": "^0.1.11",
     "gulp-coveralls": "^0.1.3",
     "gulp-git": "^0.5.5",
@@ -53,8 +63,14 @@
     "gulp-util": "=3.0.1",
     "istanbul": "^0.3.5",
     "karma": "^0.12.28",
+    "karma-chrome-launcher": "^0.1.7",
+    "karma-detect-browsers": "^0.1.3",
     "karma-firefox-launcher": "^0.1.3",
+    "karma-ie-launcher": "^0.1.5",
     "karma-mocha": "^0.1.9",
+    "karma-opera-launcher": "^0.1.0",
+    "karma-phantomjs-launcher": "^0.1.4",
+    "karma-safari-launcher": "^0.1.1",
     "lodash": "^2.4.1",
     "mocha": "~2.0.1",
     "plato": "^1.3.0",
