@@ -2,14 +2,20 @@
   "name": "bitcore-mnemonic",
   "version": "0.0.1",
   "description": "BIP39 Mnemonics implemented for Bitcore.",
+  "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
   "scripts": {
-    "test": "mocha",
-    "coverage": "istanbul cover _mocha"
+    "lint": "gulp lint",
+    "test": "gulp test",
+    "coverage": "gulp coverage",
+    "build": "gulp"
   },
+  "contributors": [
+    {
+      "name": "Yemel Jardi",
+      "email": "angel.jardi@gmail.com"
+    }
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/bitpay/bitcore-mnemonic.git"
@@ -22,12 +28,7 @@
     "cryptography",
     "encryption"
   ],
-  "author": "BitPay",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/bitpay/bitcore-mnemonic/issues"
-  },
-  "homepage": "https://github.com/bitpay/bitcore-mnemonic",
   "devDependencies": {
     "assert": "^1.1.2",
     "coveralls": "^2.11.2",
@@ -62,7 +63,7 @@
     "sinon": "^1.12.2"
   },
   "dependencies": {
-    "bitcore": "=0.8.6",
+    "bitcore": "^0.8.6",
     "lodash": "^2.4.1"
   }
 }
