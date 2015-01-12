@@ -35,7 +35,6 @@ bitcore.HDPrivateKey = require('./lib/hdprivatekey.js');
 bitcore.HDPublicKey = require('./lib/hdpublickey.js');
 bitcore.Networks = require('./lib/networks');
 bitcore.Opcode = require('./lib/opcode');
-bitcore.PaymentProtocol = require('./lib/paymentprotocol');
 bitcore.PrivateKey = require('./lib/privatekey');
 bitcore.PublicKey = require('./lib/publickey');
 bitcore.Script = require('./lib/script');
