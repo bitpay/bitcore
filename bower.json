@@ -1,0 +1,42 @@
+{
+  "name": "bitcore-p2p",
+  "main": "bitcore-p2p.min.js",
+  "version": "0.8.7",
+  "homepage": "http://bitcore.io",
+  "authors": [
+    "BitPay, Inc.",
+    {
+      "name": "Yemel Jardi",
+      "email": "yemel@bitpay.com"
+    },
+    {
+      "name": "Braydon Fuller",
+      "email": "braydon@bitpay.com"
+    },
+    {
+      "name": "Ryan X. Charles",
+      "email": "ryan@bitpay.com"
+    },
+  ],
+  "description": "Interface to the bitcoin P2P network for bitcore",
+  "moduleType": [
+    "globals"
+  ],
+  "keywords": [
+    "bitcoin",
+    "bitcore",
+    "btc",
+    "satoshi"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "CONTRIBUTING.md",
+    "gulpfile.js",
+    "lib",
+    "index.js",
+    "karma.conf.js",
+    "npm-shrinkwrap.json",
+    "test"
+  ]
+}
