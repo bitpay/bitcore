@@ -173,12 +173,6 @@ function startGulp(name) {
   gulp.task('watch:browser', function() {
     return gulp.watch(alljs, ['browser']);
   });
-
-  /* default task */
-  gulp.task('default', function(callback) {
-    return runsequence(['lint'], ['browser:uncompressed', 'test'], ['coverage', 'browser:compressed'],
-      callback);
-  });
 }
 
 module.exports = startGulp;

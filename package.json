@@ -1,6 +1,6 @@
 {
   "name": "gulp-bitcore",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "A helper for common tasks across bitcore modules'",
   "main": "index.js",
   "scripts": {
