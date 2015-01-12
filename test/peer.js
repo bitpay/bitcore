@@ -8,7 +8,7 @@ var Socks5Client = require('socks5-client');
 var should = chai.should();
 var expect = chai.expect;
 
-var bitcore = require('bitcore-base');
+var bitcore = require('bitcore');
 var P2P = require('../');
 var Peer = P2P.Peer;
 var Networks = bitcore.Networks;

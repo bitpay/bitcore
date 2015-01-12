@@ -10,15 +10,16 @@ if (typeof(window) === 'undefined'){
   var should = chai.should();
   var expect = chai.expect;
 
+  var bitcore = require('bitcore');
+  var P2P = require('../');
+  var Peer = P2P.Peer;
+  var MessagesData = require('./data/messages');
+  var Messages = P2P.Messages;
+  var Pool = P2P.Pool;
+  var Networks = bitcore.Networks;
+
   var dns = require('dns');
   var sinon = require('sinon');
-
-  var bitcore = require('../..');
-  var Peer = bitcore.transport.Peer;
-  var MessagesData = require('../data/messages');
-  var Messages = bitcore.transport.Messages;
-  var Pool = bitcore.transport.Pool;
-  var Networks = bitcore.Networks;
 
   describe('Pool', function() {
 

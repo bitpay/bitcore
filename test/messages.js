@@ -4,7 +4,7 @@ var chai = require('chai');
 
 var should = chai.should();
 
-var bitcore = require('bitcore-base');
+var bitcore = require('bitcore');
 var Data = require('./data/messages');
 var P2P = require('../');
 var Messages = P2P.Messages;
