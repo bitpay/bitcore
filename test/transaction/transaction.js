@@ -120,6 +120,40 @@ describe('Transaction', function() {
   var changeAddressP2SH = '2N7T3TAetJrSCruQ39aNrJvYLhG1LJosujf';
   var privateKey = 'cSBnVM4xvxarwGQuAfQFwqDg9k5tErHUHzgWsEfD4zdwUasvqRVY';
 
+  var simpleUtxoWith1BTC = {
+    address: fromAddress,
+    txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+    outputIndex: 0,
+    script: Script.buildPublicKeyHashOut(fromAddress).toString(),
+    satoshis: 1e8
+  };
+
+  describe('adding inputs', function() {
+
+    it('it only adds once one utxo', function() {
+      var tx = new Transaction();
+      tx.from(simpleUtxoWith1BTC);
+      tx.from(simpleUtxoWith1BTC);
+      tx.inputs.length.should.equal(1);
+    });
+
+    describe('not enough information errors', function() {
+      it('fails when Inputs are not subclassed and isFullySigned is called', function() {
+        var tx = new Transaction(tx_1_hex);
+        expect(function() {
+          return tx.isFullySigned();
+        }).to.throw(errors.Transaction.UnableToVerifySignature);
+      });
+
+      it('fails when Inputs are not subclassed and verifySignature is called', function() {
+        var tx = new Transaction(tx_1_hex);
+        expect(function() {
+          return tx.isValidSignature({inputIndex: 0});
+        }).to.throw(errors.Transaction.UnableToVerifySignature);
+      });
+    });
+  });
+
   describe('change address', function() {
     it('can calculate simply the output amount', function() {
       var transaction = new Transaction()
@@ -187,30 +221,6 @@ describe('Transaction', function() {
         .sign(privateKey)
         .sign(privateKey);
       transaction.outputs.length.should.equal(1);
-    });
-  });
-
-  var simpleUtxoWith1BTC = {
-    address: fromAddress,
-    txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
-    outputIndex: 0,
-    script: Script.buildPublicKeyHashOut(fromAddress).toString(),
-    satoshis: 1e8
-  };
-
-  describe('not enough information errors', function() {
-    it('fails when Inputs are not subclassed and isFullySigned is called', function() {
-      var tx = new Transaction(tx_1_hex);
-      expect(function() {
-        return tx.isFullySigned();
-      }).to.throw(errors.Transaction.UnableToVerifySignature);
-    });
-
-    it('fails when Inputs are not subclassed and verifySignature is called', function() {
-      var tx = new Transaction(tx_1_hex);
-      expect(function() {
-        return tx.isValidSignature({inputIndex: 0});
-      }).to.throw(errors.Transaction.UnableToVerifySignature);
     });
   });
 
