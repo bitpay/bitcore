@@ -4,6 +4,9 @@ node_modules
 
 lib/errors/index.js
 npm-debug.log
+bitcore-p2p.js
+bitcore-p2p.min.js
+tests.js
 
 bower_components
 report
