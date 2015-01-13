@@ -91,7 +91,7 @@
     "chai": "~1.10.0",
     "closure-compiler-jar": "git://github.com/eordano/closure-compiler-jar.git",
     "gulp": "^3.8.10",
-    "gulp-bitcore": "^0.2.2",
+    "gulp-bitcore": "^0.3.0",
     "istanbul": "^0.3.5",
     "jsdoc": "^3.3.0-alpha11",
     "jsdoc-to-markdown": "=0.5.9",
