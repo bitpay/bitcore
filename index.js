@@ -25,7 +25,6 @@ var gulp = require('gulp');
  * <li> `browser:compressed` - build `bitcore-*.min.js`
  * <li> `browser:maketests` - build `tests.js`, needed for testing without karma
  * </ul>`
- * <li> `errors` - autogenerate the `./lib/errors/index.js` file with error definitions
  * <li> `lint` - run `jshint`
  * <li> `coverage` - run `istanbul` with mocha to generate a report of test coverage
  * <li> `coveralls` - updates coveralls info
@@ -67,9 +66,9 @@ function startGulp(name) {
   * testing
   */
 
-  gulp.task('test:node', ['errors'], testmocha);
+  gulp.task('test:node', testmocha);
 
-  gulp.task('test:node:nofail', ['errors'], function() {
+  gulp.task('test:node:nofail', function() {
     return testmocha().on('error', ignoreerror);
   });
 
@@ -83,7 +82,7 @@ function startGulp(name) {
   * file generation
   */
 
-  gulp.task('browser:uncompressed', ['errors'], shell.task([
+  gulp.task('browser:uncompressed', shell.task([
     './node_modules/.bin/browserify index.js --insert-global-vars=true --standalone=bitcore-' +
     name + ' -o bitcore-' + name + '.js'
   ]));
@@ -106,11 +105,6 @@ function startGulp(name) {
   gulp.task('browser', function(callback) {
     runsequence(['browser:compressed'], ['browser:maketests'], callback);
   });
-
-  gulp.task('errors', shell.task([
-    'node ./lib/errors/build.js'
-  ]));
-
 
   /**
   * code quality and documentation
