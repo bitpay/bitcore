@@ -285,8 +285,6 @@ function startGulp(name, opts) {
       ['release:merge-master'],
       // Run npm install
       ['release:install'],
-      // Build browser bundle
-      ['browser:compressed'],
       // Run tests with gulp test
       ['test'],
       // Update package.json and bower.json
