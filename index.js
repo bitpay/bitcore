@@ -237,7 +237,7 @@ function startGulp(name, opts) {
   });
 
   gulp.task('release:build-commit', ['release:add-built-files'], function() {
-    var pjson = require('./package.json');
+    var pjson = require('../../package.json');
     return gulp.src(buildFiles)
       .pipe(git.commit('Build: ' + pjson.version, {
         args: ''
@@ -245,7 +245,7 @@ function startGulp(name, opts) {
   });
 
   gulp.task('release:version-commit', function() {
-    var pjson = require('./package.json');
+    var pjson = require('../../package.json');
     return gulp.src(releaseFiles)
       .pipe(git.commit('Bump package version to ' + pjson.version, {
         args: ''
@@ -265,7 +265,7 @@ function startGulp(name, opts) {
   });
 
   gulp.task('release:push-tag', function(cb) {
-    var pjson = require('./package.json');
+    var pjson = require('../../package.json');
     var name = 'v' + pjson.version;
     git.tag(name, 'Release ' + name, function() {
       git.push('bitpay', name, cb);
