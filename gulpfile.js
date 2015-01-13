@@ -21,7 +21,6 @@
  * <li> `browser:compressed` - build `browser/bitcore.min.js`
  * <li> `browser:maketests` - build `browser/tests.js`, needed for testing without karma
  * </ul>`
- * <li> `errors` - autogenerate the `./lib/errors/index.js` file with error definitions
  * <li> `lint` - run `jshint`
  * <li> `coverage` - run `istanbul` with mocha to generate a report of test coverage
  * <li> `jsdoc` - run `jsdoc` to generate the API reference
@@ -73,9 +72,9 @@ var testKarma = shell.task([
  * Testing
  */
 
-gulp.task('test:node', ['errors'], testMocha);
+gulp.task('test:node', testMocha);
 
-gulp.task('test:node:nofail', ['errors'], function() {
+gulp.task('test:node:nofail', function() {
   return testMocha().on('error', ignoreError);
 });
 
@@ -93,7 +92,7 @@ gulp.task('browser:makefolder', shell.task([
   'if [ ! -d "browser" ]; then mkdir browser; fi'
 ]));
 
-gulp.task('browser:uncompressed', ['browser:makefolder', 'errors'], shell.task([
+gulp.task('browser:uncompressed', ['browser:makefolder'], shell.task([
   './node_modules/.bin/browserify index.js --insert-global-vars=true --standalone=bitcore -o browser/bitcore.js'
 ]));
 
@@ -115,11 +114,6 @@ gulp.task('browser:maketests', ['browser:makefolder'], shell.task([
 gulp.task('browser', function(callback) {
   runSequence(['browser:compressed'], ['browser:maketests'], callback);
 });
-
-gulp.task('errors', shell.task([
-  'node ./lib/errors/build.js'
-]));
-
 
 /**
  * Code quality and documentation
