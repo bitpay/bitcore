@@ -84,7 +84,7 @@ function startGulp(name, opts) {
       runsequence(['test:node'], ['test:browser'], callback);
     });
   } else {
-    gulp.task('test', 'test:node');
+    gulp.task('test', ['test:node']);
   }
 
   /**
