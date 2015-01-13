@@ -76,8 +76,6 @@
     "bn.js": "=0.16.1",
     "browser-request": "^0.3.3",
     "bs58": "=2.0.0",
-    "bufferput": "^0.1.2",
-    "buffers": "^0.1.1",
     "elliptic": "=0.16.0",
     "hash.js": "=0.3.2",
     "inherits": "=2.0.1",
