@@ -51,6 +51,7 @@ function ignoreerror() {
  */
 function startGulp(name, opts) {
 
+  opts = opts || {};
   var browser = !opts.skipBrowser;
   var fullname = name ? 'bitcore-' + name : 'bitcore';
   var files = ['lib/**/*.js'];
