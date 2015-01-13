@@ -63,7 +63,7 @@
     "browserify": "~6.3.3",
     "chai": "~1.10.0",
     "gulp": "^3.8.10",
-    "gulp-bitcore": "git://github.com/eordano/gulp-bitcore.git",
+    "gulp-bitcore": "^0.3.0",
     "istanbul": "^0.3.5",
     "karma": "^0.12.28",
     "karma-firefox-launcher": "^0.1.3",
