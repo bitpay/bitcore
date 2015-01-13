@@ -33,6 +33,7 @@ var gulp = require('gulp');
  */
 function startGulp(name) {
 
+  var fullname = name ? 'bitcore-' + name : 'bitcore';
   var coveralls = require('gulp-coveralls');
   var gutil = require('gulp-util');
   var jshint = require('gulp-jshint');
@@ -63,8 +64,8 @@ function startGulp(name) {
   ]);
 
   /**
-  * testing
-  */
+   * testing
+   */
 
   gulp.task('test:node', testmocha);
 
@@ -79,21 +80,21 @@ function startGulp(name) {
   });
 
   /**
-  * file generation
-  */
+   * file generation
+   */
 
   gulp.task('browser:uncompressed', shell.task([
-    './node_modules/.bin/browserify index.js --insert-global-vars=true --standalone=bitcore-' +
-    name + ' -o bitcore-' + name + '.js'
+    './node_modules/.bin/browserify index.js --insert-global-vars=true --standalone=' +
+    fullname + ' -o ' + fullname + '.js'
   ]));
 
   gulp.task('browser:compressed', ['browser:uncompressed'], function() {
-    return gulp.src('bitcore-' + name + '.js')
+    return gulp.src(fullname + '.js')
       .pipe(uglify({
         mangle: true,
         compress: true
       }))
-      .pipe(rename('bitcore-' + name + '.min.js'))
+      .pipe(rename(fullname + '.min.js'))
       .pipe(gulp.dest('.'))
       .on('error', gutil.log);
   });
@@ -107,8 +108,8 @@ function startGulp(name) {
   });
 
   /**
-  * code quality and documentation
-  */
+   * code quality and documentation
+   */
 
   gulp.task('lint', function() {
     return gulp.src(alljs)
@@ -116,7 +117,7 @@ function startGulp(name) {
       .pipe(jshint.reporter('default'));
   });
 
-  gulp.task('plato', shell.task(['plato -d report -r -l .jshintrc -t bitcore-' + name + ' lib']));
+  gulp.task('plato', shell.task(['plato -d report -r -l .jshintrc -t ' + fullname + ' lib']));
 
   gulp.task('coverage', shell.task(['node_modules/.bin/./istanbul cover node_modules/.bin/_mocha -- --recursive']));
 
@@ -125,8 +126,8 @@ function startGulp(name) {
   });
 
   /**
-  * watch tasks
-  */
+   * watch tasks
+   */
 
   gulp.task('watch:test', function() {
     // todo: only run tests that are linked to file changes by doing
