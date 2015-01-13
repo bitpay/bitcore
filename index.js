@@ -51,6 +51,7 @@ function ignoreerror() {
  */
 function startGulp(name, opts) {
 
+  opts = opts || {};
   var browser = !opts.skipBrowser;
   var fullname = name ? 'bitcore-' + name : 'bitcore';
   var files = ['lib/**/*.js'];
@@ -83,7 +84,7 @@ function startGulp(name, opts) {
       runsequence(['test:node'], ['test:browser'], callback);
     });
   } else {
-    gulp.task('test', 'test:node');
+    gulp.task('test', ['test:node']);
   }
 
   /**
@@ -236,7 +237,7 @@ function startGulp(name, opts) {
   });
 
   gulp.task('release:build-commit', ['release:add-built-files'], function() {
-    var pjson = require('./package.json');
+    var pjson = require('../../package.json');
     return gulp.src(buildFiles)
       .pipe(git.commit('Build: ' + pjson.version, {
         args: ''
@@ -244,7 +245,7 @@ function startGulp(name, opts) {
   });
 
   gulp.task('release:version-commit', function() {
-    var pjson = require('./package.json');
+    var pjson = require('../../package.json');
     return gulp.src(releaseFiles)
       .pipe(git.commit('Bump package version to ' + pjson.version, {
         args: ''
@@ -264,7 +265,7 @@ function startGulp(name, opts) {
   });
 
   gulp.task('release:push-tag', function(cb) {
-    var pjson = require('./package.json');
+    var pjson = require('../../package.json');
     var name = 'v' + pjson.version;
     git.tag(name, 'Release ' + name, function() {
       git.push('bitpay', name, cb);
@@ -284,8 +285,6 @@ function startGulp(name, opts) {
       ['release:merge-master'],
       // Run npm install
       ['release:install'],
-      // Build browser bundle
-      ['browser:compressed'],
       // Run tests with gulp test
       ['test'],
       // Update package.json and bower.json
