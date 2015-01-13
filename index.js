@@ -49,8 +49,9 @@ function ignoreerror() {
  * <li> `release` - automates release process (only for maintainers)
  * </ul>
  */
-function startGulp(name) {
+function startGulp(name, opts) {
 
+  var browser = !opts.skipBrowser;
   var fullname = name ? 'bitcore-' + name : 'bitcore';
   var files = ['lib/**/*.js'];
   var tests = ['test/**/*.js'];
@@ -77,37 +78,42 @@ function startGulp(name) {
 
   gulp.task('test:browser', ['browser:uncompressed', 'browser:maketests'], testkarma);
 
-  gulp.task('test', function(callback) {
-    runsequence(['test:node'], ['test:browser'], callback);
-  });
+  if (browser) {
+    gulp.task('test', function(callback) {
+      runsequence(['test:node'], ['test:browser'], callback);
+    });
+  } else {
+    gulp.task('test', 'test:node');
+  }
 
   /**
    * file generation
    */
+  if (browser) {
+    gulp.task('browser:uncompressed', shell.task([
+      './node_modules/.bin/browserify index.js --insert-global-vars=true --standalone=' +
+      fullname + ' -o ' + fullname + '.js'
+    ]));
 
-  gulp.task('browser:uncompressed', shell.task([
-    './node_modules/.bin/browserify index.js --insert-global-vars=true --standalone=' +
-    fullname + ' -o ' + fullname + '.js'
-  ]));
+    gulp.task('browser:compressed', ['browser:uncompressed'], function() {
+      return gulp.src(fullname + '.js')
+        .pipe(uglify({
+          mangle: true,
+          compress: true
+        }))
+        .pipe(rename(fullname + '.min.js'))
+        .pipe(gulp.dest('.'))
+        .on('error', gutil.log);
+    });
 
-  gulp.task('browser:compressed', ['browser:uncompressed'], function() {
-    return gulp.src(fullname + '.js')
-      .pipe(uglify({
-        mangle: true,
-        compress: true
-      }))
-      .pipe(rename(fullname + '.min.js'))
-      .pipe(gulp.dest('.'))
-      .on('error', gutil.log);
-  });
+    gulp.task('browser:maketests', shell.task([
+      'find test/ -type f -name "*.js" | xargs ./node_modules/.bin/browserify -t brfs -o tests.js'
+    ]));
 
-  gulp.task('browser:maketests', shell.task([
-    'find test/ -type f -name "*.js" | xargs ./node_modules/.bin/browserify -t brfs -o tests.js'
-  ]));
-
-  gulp.task('browser', function(callback) {
-    runsequence(['browser:compressed'], ['browser:maketests'], callback);
-  });
+    gulp.task('browser', function(callback) {
+      runsequence(['browser:compressed'], ['browser:maketests'], callback);
+    });
+  }
 
   /**
    * code quality and documentation
@@ -143,11 +149,13 @@ function startGulp(name) {
     return gulp.watch(alljs, ['test:node']);
   });
 
-  gulp.task('watch:test:browser', function() {
-    // todo: only run tests that are linked to file changes by doing
-    // something smart like reading through the require statements
-    return gulp.watch(alljs, ['test:browser']);
-  });
+  if (browser) {
+    gulp.task('watch:test:browser', function() {
+      // todo: only run tests that are linked to file changes by doing
+      // something smart like reading through the require statements
+      return gulp.watch(alljs, ['test:browser']);
+    });
+  }
 
   gulp.task('watch:jsdoc', function() {
     // todo: only run tests that are linked to file changes by doing
@@ -167,11 +175,11 @@ function startGulp(name) {
     return gulp.watch(alljs, ['lint']);
   });
 
-  gulp.task('watch:browser', function() {
-    return gulp.watch(alljs, ['browser']);
-  });
-
-
+  if (browser) {
+    gulp.task('watch:browser', function() {
+      return gulp.watch(alljs, ['browser']);
+    });
+  }
 
   /**
    * Release automation
@@ -183,8 +191,13 @@ function startGulp(name) {
     ]);
   });
 
+  var releaseFiles = ['./package.json'];
+  if (browser) {
+    releaseFiles.push('./bower.json');
+  }
+
   gulp.task('release:bump', function() {
-    return gulp.src(['./bower.json', './package.json'])
+    return gulp.src(releaseFiles)
       .pipe(bump({
         type: 'patch'
       }))
@@ -209,7 +222,12 @@ function startGulp(name) {
     }, cb);
   });
 
-  var buildFiles = [fullname + '.js', fullname + '.min.js', './package.json', './bower.json'];
+  var buildFiles = ['./package.json'];
+  if (browser) {
+    buildFiles.push(fullname + '.js');
+    buildFiles.push(fullname + '.min.js');
+    buildFiles.push('./bower.json');
+  }
   gulp.task('release:add-built-files', function() {
     return gulp.src(buildFiles)
       .pipe(git.add({
@@ -227,8 +245,7 @@ function startGulp(name) {
 
   gulp.task('release:version-commit', function() {
     var pjson = require('./package.json');
-    var files = ['./package.json', './bower.json'];
-    return gulp.src(files)
+    return gulp.src(releaseFiles)
       .pipe(git.commit('Bump package version to ' + pjson.version, {
         args: ''
       }));
