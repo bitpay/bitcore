@@ -91,7 +91,7 @@
     "chai": "~1.10.0",
     "closure-compiler-jar": "git://github.com/eordano/closure-compiler-jar.git",
     "gulp": "^3.8.10",
-    "gulp-bitcore": "git://github.com/maraoz/gulp-bitcore.git",
+    "gulp-bitcore": "^0.2.2",
     "gulp-bump": "^0.1.11",
     "gulp-closure-compiler": "^0.2.9",
     "gulp-coveralls": "^0.1.3",
