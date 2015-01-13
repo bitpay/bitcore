@@ -4,6 +4,7 @@ var chai = require('chai');
 var should = chai.should();
 
 var Mnemonic = require('..');
+var errors = require('../lib/errors');
 
 var ON_TRAVIS = typeof(process) != 'undefined' && (process.env.TRAVIS || process.env.CI);
 
@@ -138,7 +139,61 @@ describe('Mnemonic', function() {
     should.exist(Mnemonic);
   });
 
-  describe('#Mnemonic', function() {
+  describe('# Mnemonic', function() {
+
+    describe('Constructor', function() {
+      it('does not require new keyword', function() {
+        var mnemonic = Mnemonic();
+        mnemonic.should.be.instanceof(Mnemonic);
+      });
+
+      it('should fail with invalid data', function() {
+        (function(){
+          var mnemonic = new Mnemonic({}); 
+        }).should.throw(errors.InvalidArgument);
+      });
+
+      it('should fail with unknown word list', function() {
+        (function(){
+          var mnemonic = new Mnemonic('pilote foster august tomorrow kit daughter unknown awesome model town village master');
+        }).should.throw(errors.Mnemonic.UnknownWordlist);
+      });
+
+      it('should fail with invalid mnemonic', function() {
+        (function(){
+          var mnemonic = new Mnemonic('monster foster august tomorrow kit daughter unknown awesome model town village pilot');
+        }).should.throw(errors.Mnemonic.InvalidMnemonic);
+      });
+
+      it('should fail with invalid ENT', function() {
+        (function(){
+          var mnemonic = new Mnemonic(64);
+        }).should.throw(errors.InvalidArgument);
+      });
+
+      it('constructor defaults to english worldlist', function() {
+        var mnemonic = new Mnemonic();
+        mnemonic.wordlist.should.equal(Mnemonic.Words.ENGLISH);
+      });
+
+      it('allow using different worldlists', function() {
+        var mnemonic = new Mnemonic(Mnemonic.Words.SPANISH);
+        mnemonic.wordlist.should.equal(Mnemonic.Words.SPANISH);
+      });
+
+      it('constructor honor both length and wordlist', function() {
+        var mnemonic = new Mnemonic(32 * 7, Mnemonic.Words.SPANISH);
+        mnemonic.phrase.split(' ').length.should.equal(21);
+        mnemonic.wordlist.should.equal(Mnemonic.Words.SPANISH);
+      });
+
+      it('constructor should detect standard wordlist', function() {
+        var mnemonic = new Mnemonic('afirmar diseño hielo fideo etapa ogro cambio fideo toalla pomelo número buscar');
+        mnemonic.wordlist.should.equal(Mnemonic.Words.SPANISH);
+      });
+
+    });
+
     it('english wordlist is complete', function() {
       Mnemonic.Words.ENGLISH.length.should.equal(2048);
       Mnemonic.Words.ENGLISH[0].should.equal('abandon');
@@ -157,16 +212,6 @@ describe('Mnemonic', function() {
     it('chinese wordlist is complete', function() {
       Mnemonic.Words.CHINESE.length.should.equal(2048);
       Mnemonic.Words.CHINESE[0].should.equal('的');
-    });
-
-    it('constructor defaults to english worldlist', function() {
-      var mnemonic = new Mnemonic();
-      mnemonic.wordlist.should.equal(Mnemonic.Words.ENGLISH);
-    });
-
-    it('allow using different worldlists', function() {
-      var mnemonic = new Mnemonic(Mnemonic.Words.SPANISH);
-      mnemonic.wordlist.should.equal(Mnemonic.Words.SPANISH);
     });
 
     it('allows use different phrase lengths', function() {
@@ -188,23 +233,22 @@ describe('Mnemonic', function() {
       mnemonic.phrase.split(' ').length.should.equal(24);
     });
 
-    it('constructor honor both length and wordlist', function() {
-      var mnemonic = new Mnemonic(32 * 7, Mnemonic.Words.SPANISH);
-      mnemonic.phrase.split(' ').length.should.equal(21);
-      mnemonic.wordlist.should.equal(Mnemonic.Words.SPANISH);
-    });
-
-    it('constructor should detect standard wordlist', function() {
-      var mnemonic = new Mnemonic('afirmar diseño hielo fideo etapa ogro cambio fideo toalla pomelo número buscar');
-      mnemonic.wordlist.should.equal(Mnemonic.Words.SPANISH);
-    });
-
     it('validates a phrase', function() {
       var valid = Mnemonic.isValid('afirmar diseño hielo fideo etapa ogro cambio fideo toalla pomelo número buscar');
       valid.should.be.true;
 
       var invalid = Mnemonic.isValid('afirmar diseño hielo fideo etapa ogro cambio fideo hielo pomelo número buscar');
       invalid.should.be.false;
+    });
+
+    it('has a toString method', function() {
+      var mnemonic = new Mnemonic();
+      mnemonic.toString().should.equal(mnemonic.phrase);
+    });
+
+    it('has a toString method', function() {
+      var mnemonic = new Mnemonic();
+      mnemonic.inspect().should.have.string('<Mnemonic:');
     });
 
     it('derives a seed without a passphrase', function() {
