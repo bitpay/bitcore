@@ -9,6 +9,8 @@ var errors = require('../lib/errors');
 var ON_TRAVIS = typeof(process) != 'undefined' && (process.env.TRAVIS || process.env.CI);
 
 describe('Mnemonic', function() {
+  this.timeout(10000);
+
   // From python reference code, formatting unchanged
   var bip39_vectors = {
       "english": [
