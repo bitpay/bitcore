@@ -6,6 +6,8 @@ var should = chai.should();
 var pbkdf2 = require('../lib/pbkdf2');
 
 describe('pbkdf2', function() {
+  this.timeout(10000);
+
   // http://stackoverflow.com/questions/15593184/pbkdf2-hmac-sha-512-test-vectors
   it('passes test vector 1', function() {
     var key = 'password';
