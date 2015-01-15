@@ -2,40 +2,15 @@
   "name": "bitcore",
   "version": "0.8.5",
   "dependencies": {
-    "aes": {
-      "version": "0.1.0",
-      "from": "aes@=0.1.0",
-      "resolved": "https://registry.npmjs.org/aes/-/aes-0.1.0.tgz"
-    },
-    "asn1.js": {
-      "version": "0.4.1",
-      "from": "aes@=0.4.1",
-      "resolved": "https://registry.npmjs.org/asn1.js/-/asn1.js-0.4.1.tgz"
-    },
     "bn.js": {
       "version": "0.16.1",
       "from": "bn.js@0.16.1",
       "resolved": "https://registry.npmjs.org/bn.js/-/bn.js-0.16.1.tgz"
     },
-    "browser-request": {
-      "version": "0.3.3",
-      "from": "browser-request@*",
-      "resolved": "https://registry.npmjs.org/browser-request/-/browser-request-0.3.3.tgz"
-    },
     "bs58": {
       "version": "2.0.0",
       "from": "bs58@2.0.0",
       "resolved": "https://registry.npmjs.org/bs58/-/bs58-2.0.0.tgz"
-    },
-    "bufferput": {
-      "version": "0.1.2",
-      "from": "bufferput@0.1.2",
-      "resolved": "https://registry.npmjs.org/bufferput/-/bufferput-0.1.2.tgz"
-    },
-    "buffers": {
-      "version": "0.1.1",
-      "from": "buffers@0.1.1",
-      "resolved": "https://registry.npmjs.org/buffers/-/buffers-0.1.1.tgz"
     },
     "elliptic": {
       "version": "0.16.0",
@@ -84,30 +59,10 @@
        "from": "lodash@=2.4.1",
        "resolved": "https://registry.npmjs.org/lodash/-/lodash-2.4.1.tgz"
     },
-    "jsrsasign": {
-      "version": "0.0.3",
-      "from": "jsrsasign@0.0.3",
-      "resolved": "https://registry.npmjs.org/jsrsasign/-/jsrsasign-0.0.3.tgz"
-    },
-    "protobufjs": {
-      "version": "3.0.0",
-      "from": "protobufjs@3.0.0",
-      "resolved": "https://registry.npmjs.org/protobufjs/-/protobufjs-3.0.0.tgz"
-    },
-    "request": {
-      "version": "2.51.0",
-      "from": "request@*",
-      "resolved": "https://registry.npmjs.org/request/-/request-2.51.0.tgz"
-    },
     "sha512": {
       "version": "0.0.1",
       "from": "sha512@=0.0.1",
       "resolved": "https://registry.npmjs.org/sha512/-/sha512-0.0.1.tgz"
-    },
-    "socks5-client": {
-      "version": "0.3.6",
-      "from": "socks5-client@0.3.6",
-      "resolved": "https://registry.npmjs.org/socks5-client/-/socks5-client-0.3.6.tgz"
     }
   }
 }
