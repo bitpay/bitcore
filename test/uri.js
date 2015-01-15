@@ -68,6 +68,11 @@ describe('URI', function() {
     }).should.throw(TypeError);
   });
 
+  it('do not need new keyword', function() {
+    var uri = URI('bitcoin:1DP69gMMvSuYhbnxsi4EJEFufUAbDrEQfj');
+    uri.should.be.instanceof(URI);
+  });
+
   describe('instantiation from bitcoin uri', function() {
     /* jshint maxstatements: 25 */
     var uri;
