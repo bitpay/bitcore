@@ -96,10 +96,10 @@ function startGulp(name, opts) {
     var browserifyCommand;
 
     if (isSubmodule) {
-      browserifyCommand = './node_modules/.bin/browserify --require index.js:' + fullname + ' --external bitcore -o ' + fullname + '.js';
+      browserifyCommand = './node_modules/.bin/browserify --require ./index.js:' + fullname + ' --external bitcore -o ' + fullname + '.js';
       console.log(browserifyCommand);
     } else {
-      browserifyCommand = './node_modules/.bin/browserify --require index.js:bitcore -o bitcore.js';
+      browserifyCommand = './node_modules/.bin/browserify --require ./index.js:bitcore -o bitcore.js';
     }
 
     gulp.task('browser:uncompressed', shell.task([
