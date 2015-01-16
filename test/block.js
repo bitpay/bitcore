@@ -27,9 +27,8 @@ describe('Block', function() {
   var blockbuf = new Buffer(blockhex, 'hex');
   var size = data.blocksize;
   var bh = BlockHeader.fromBuffer(new Buffer(data.blockheaderhex, 'hex'));
-  var txsvi = Varint().fromNumber(data.txsvi);
   var txs = [];
-  JSON.parse(dataJson).txs.forEach(function(tx){
+  JSON.parse(dataJson).transactions.forEach(function(tx){
     txs.push(new Transaction().fromJSON(tx));
   });
   var json = dataJson;
@@ -45,7 +44,7 @@ describe('Block', function() {
 
   it('should not make an empty block', function() {
     (function() {
-      var b = new Block();
+      return new Block();
     }).should.throw('Unrecognized argument for Block');
   });
 
@@ -56,20 +55,18 @@ describe('Block', function() {
         magicnum: magicnum,
         size: size,
         header: bh,
-        txsvi: txsvi,
-        txs: txs
+        transactions: txs
       });
       should.exist(b.magicnum);
       should.exist(b.size);
-      should.exist(b.txsvi);
       should.exist(b.header);
-      should.exist(b.txs);
+      should.exist(b.transactions);
     });
 
     it('should properly deserialize blocks', function() {
       dataBlocks.forEach(function(block){
-        var b = Block.fromBuffer(new Buffer(block.data, 'hex'));
-        b.txs.length.should.equal(block.transactions);
+        var b = Block.fromBuffer(new Buffer(block.data, 'hex'), {skipMagic: true});
+        b.transactions.length.should.equal(block.transactions);
       });
     });
 
@@ -98,8 +95,7 @@ describe('Block', function() {
       should.exist(block.magicnum);
       should.exist(block.size);
       should.exist(block.header);
-      should.exist(block.txsvi);
-      should.exist(block.txs);
+      should.exist(block.transactions);
     });
 
     it('should set these known values', function() {
@@ -108,8 +104,7 @@ describe('Block', function() {
       should.exist(block.magicnum);
       should.exist(block.size);
       should.exist(block.header);
-      should.exist(block.txsvi);
-      should.exist(block.txs);
+      should.exist(block.transactions);
     });
 
     it('accepts an object as argument', function() {
@@ -127,8 +122,7 @@ describe('Block', function() {
       should.exist(b.magicnum);
       should.exist(b.size);
       should.exist(b.header);
-      should.exist(b.txsvi);
-      should.exist(b.txs);
+      should.exist(b.transactions);
     });
 
   });
@@ -225,14 +219,14 @@ describe('Block', function() {
 
     it('should describe as invalid merkle root', function() {
       var x = Block.fromRawBlock(dataRawBlockBinary);
-      x.txs.push(new Transaction());
+      x.transactions.push(new Transaction());
       var valid = x.validMerkleRoot();
       valid.should.equal(false);
     });
 
     it('should get a null hash merkle root', function() {
       var x = Block.fromRawBlock(dataRawBlockBinary);
-      x.txs = []; // empty the txs
+      x.transactions = []; // empty the txs
       var mr = x.getMerkleRoot();
       mr.should.deep.equal(Block.Values.NULL_HASH);
     });
