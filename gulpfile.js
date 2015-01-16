@@ -1,5 +1,5 @@
 
 
-var gulp_bitcore = require('gulp-bitcore');
+var bitcoreTasks = require('bitcore-build');
 
-gulp_bitcore();
+bitcoreTasks();
