@@ -95,9 +95,9 @@ function startGulp(name, opts) {
     var browserifyCommand;
 
     if (isSubmodule) {
-      browserifyCommand = './node_modules/.bin/browserify --require ./index.js:' + fullname + ' --external bitcore -o ' + fullname + '.js';
+      browserifyCommand = './node_modules/bitcore-build/node_modules/.bin/browserify --require ./index.js:' + fullname + ' --external bitcore -o ' + fullname + '.js';
     } else {
-      browserifyCommand = './node_modules/.bin/browserify --require ./index.js:bitcore -o bitcore.js';
+      browserifyCommand = './node_modules/bitcore-build/node_modules/.bin/browserify --require ./index.js:bitcore -o bitcore.js';
     }
 
     gulp.task('browser:uncompressed', shell.task([
@@ -116,7 +116,7 @@ function startGulp(name, opts) {
     });
 
     gulp.task('browser:maketests', shell.task([
-      'find test/ -type f -name "*.js" | xargs ./node_modules/.bin/browserify -t brfs -o tests.js'
+      'find test/ -type f -name "*.js" | xargs ./node_modules/bitcore-build/node_modules/.bin/browserify -t brfs -o tests.js'
     ]));
 
     gulp.task('browser', function(callback) {
@@ -136,7 +136,7 @@ function startGulp(name, opts) {
 
   gulp.task('plato', shell.task(['plato -d report -r -l .jshintrc -t ' + fullname + ' lib']));
 
-  gulp.task('coverage', shell.task(['node_modules/.bin/./istanbul cover node_modules/.bin/_mocha -- --recursive']));
+  gulp.task('coverage', shell.task(['./node_modules/bitcore-build/node_modules/.bin/./istanbul cover ./node_modules/bitcore-build/node_modules/.bin/_mocha -- --recursive']));
 
   gulp.task('coveralls', ['coverage'], function() {
     gulp.src('coverage/lcov.info').pipe(coveralls());
