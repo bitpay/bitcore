@@ -1,12 +1,12 @@
 {
   "name": "bitcore-payment-protocol",
-  "main": "bitcore-payment-protocol.min.js",
+  "main": "./bitcore-payment-protocol.min.js",
   "version": "0.8.5",
-  "homepage": "http://bitcore.io",
+  "homepage": "https://github.com/bitpay/bitcore-payment-protocol",
   "authors": [
     "BitPay, Inc."
   ],
-  "description": "Payment Protocol (BIP70 and related) support for bitcore",
+  "description": "BIP70 Payment Protocol support for bitcore",
   "moduleType": [
     "globals"
   ],
