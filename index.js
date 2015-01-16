@@ -69,7 +69,7 @@ function startGulp(name, opts) {
   };
 
   var testkarma = shell.task([
-    './node_modules/gulp-bitcore/node_modules/karma/bin/karma start ./node_modules/gulp-bitcore/karma.conf.js'
+    './node_modules/bitcore-build/node_modules/karma/bin/karma start ./node_modules/bitcore-build/karma.conf.js'
   ]);
 
   gulp.task('test:node', testmocha);
