@@ -1,6 +1,5 @@
 'use strict';
 
-var assert = require('assert');
 var bitcore = require('..');
 var BN = require('../lib/crypto/bn');
 var BufferReader = bitcore.encoding.BufferReader;
@@ -11,7 +10,6 @@ var chai = require('chai');
 var fs = require('fs');
 var should = chai.should();
 var Transaction = bitcore.Transaction;
-var Varint = bitcore.encoding.Varint;
 
 // https://test-insight.bitpay.com/block/000000000b99b16390660d79fcc138d2ad0c89a0d044c4201a02bdf1f61ffa11
 var dataRawBlockBuffer = fs.readFileSync('test/data/blk86756-testnet.dat');
