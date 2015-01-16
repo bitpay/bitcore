@@ -1,24 +1,41 @@
 {
-  "name": "gulp-bitcore",
-  "version": "0.3.0",
-  "description": "A helper for common tasks across bitcore modules'",
+  "name": "bitcore-build",
+  "version": "0.4.0",
+  "description": "A helper for common tasks to build bitcore modules'",
   "main": "index.js",
   "scripts": {
     "test": "gulp test"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/bitpay/gulp-bitcore"
+    "url": "git://github.com/bitpay/bitcore-build"
   },
   "keywords": [
     "bitcore"
   ],
-  "author": "Esteban Ordano",
+  "contributors": [
+    {
+      "name": "Esteban Ordano",
+      "email": "esteban@bitpay.com"
+    },
+    {
+      "name": "Manuel Araoz",
+      "email": "maraoz@bitpay.com"
+    },
+    {
+      "name": "Braydon Fuller",
+      "email": "braydon@bitpay.com"
+    },
+    {
+      "name": "Yemel Jardi",
+      "email": "yemel@bitpay.com"
+    }
+  ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/bitpay/gulp-bitcore/issues"
+    "url": "https://github.com/bitpay/bitcore-build/issues"
   },
-  "homepage": "https://github.com/bitpay/gulp-bitcore",
+  "homepage": "https://github.com/bitpay/bitcore-build",
   "dependencies": {
     "brfs": "^1.2.0",
     "browserify": "~6.3.3",
