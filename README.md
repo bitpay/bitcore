@@ -26,7 +26,7 @@ gulp.task('default', ['lint', 'test', 'browser', 'coverage']);
 * If the module is node-only, avoid adding the browser tasks with:
 ```javascript
 var bitcoreTasks = require('bitcore-build');
-bitcoreTasks('submodule', {skipBrosers: true});
+bitcoreTasks('submodule', {skipBrowsers: true});
 ```
 
 ## Contributing
