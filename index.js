@@ -1,25 +1,3 @@
-'use strict';
-
-var gulp = require('gulp');
-
-var coveralls = require('gulp-coveralls');
-var gutil = require('gulp-util');
-var jshint = require('gulp-jshint');
-var mocha = require('gulp-mocha');
-var rename = require('gulp-rename');
-var runsequence = require('run-sequence');
-var shell = require('gulp-shell');
-var uglify = require('gulp-uglify');
-var bump = require('gulp-bump');
-var git = require('gulp-git');
-
-function ignoreerror() {
-  /* jshint ignore:start */ // using `this` in this context is weird 
-  this.emit('end');
-  /* jshint ignore:end */
-}
-
-
 /**
  * @file gulpfile.js
  *
@@ -49,6 +27,27 @@ function ignoreerror() {
  * <li> `release` - automates release process (only for maintainers)
  * </ul>
  */
+'use strict';
+
+var gulp = require('gulp');
+
+var coveralls = require('gulp-coveralls');
+var gutil = require('gulp-util');
+var jshint = require('gulp-jshint');
+var mocha = require('gulp-mocha');
+var rename = require('gulp-rename');
+var runsequence = require('run-sequence');
+var shell = require('gulp-shell');
+var uglify = require('gulp-uglify');
+var bump = require('gulp-bump');
+var git = require('gulp-git');
+
+function ignoreerror() {
+  /* jshint ignore:start */ // using `this` in this context is weird 
+  this.emit('end');
+  /* jshint ignore:end */
+}
+
 function startGulp(name, opts) {
 
   opts = opts || {};
