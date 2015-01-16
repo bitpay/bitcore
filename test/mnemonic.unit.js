@@ -4,7 +4,7 @@ var chai = require('chai');
 var should = chai.should();
 
 var Mnemonic = require('..');
-var errors = require('../lib/errors');
+var errors = require('bitcore').errors;
 
 var ON_TRAVIS = typeof(process) != 'undefined' && (process.env.TRAVIS || process.env.CI);
 
