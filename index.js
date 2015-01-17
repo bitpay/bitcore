@@ -58,6 +58,10 @@ function startGulp(name, opts) {
   var tests = ['test/**/*.js'];
   var alljs = files.concat(tests);
 
+  var buildPath = './node_modules/bitcore-build/';
+  var buildModulesPath = buildPath + 'node_modules/';
+  var buildBinPath = buildPath + 'node_modules/.bin/';
+
   /**
    * testing
    */
@@ -68,7 +72,7 @@ function startGulp(name, opts) {
   };
 
   var testkarma = shell.task([
-    './node_modules/bitcore-build/node_modules/karma/bin/karma start ./node_modules/bitcore-build/karma.conf.js'
+    buildModulesPath + 'karma/bin/karma start ' + buildPath + 'karma.conf.js'
   ]);
 
   gulp.task('test:node', testmocha);
@@ -95,9 +99,9 @@ function startGulp(name, opts) {
     var browserifyCommand;
 
     if (isSubmodule) {
-      browserifyCommand = './node_modules/.bin/browserify --require ./index.js:' + fullname + ' --external bitcore -o ' + fullname + '.js';
+      browserifyCommand = buildBinPath + 'browserify --require ./index.js:' + fullname + ' --external bitcore -o ' + fullname + '.js';
     } else {
-      browserifyCommand = './node_modules/.bin/browserify --require ./index.js:bitcore -o bitcore.js';
+      browserifyCommand = buildBinPath + 'browserify --require ./index.js:bitcore -o bitcore.js';
     }
 
     gulp.task('browser:uncompressed', shell.task([
@@ -116,7 +120,7 @@ function startGulp(name, opts) {
     });
 
     gulp.task('browser:maketests', shell.task([
-      'find test/ -type f -name "*.js" | xargs ./node_modules/.bin/browserify -t brfs -o tests.js'
+      'find test/ -type f -name "*.js" | xargs ' + buildBinPath + 'browserify -t brfs -o tests.js'
     ]));
 
     gulp.task('browser', function(callback) {
@@ -134,9 +138,9 @@ function startGulp(name, opts) {
       .pipe(jshint.reporter('default'));
   });
 
-  gulp.task('plato', shell.task(['plato -d report -r -l .jshintrc -t ' + fullname + ' lib']));
+  gulp.task('plato', shell.task([buildBinPath + 'plato -d report -r -l .jshintrc -t ' + fullname + ' lib']));
 
-  gulp.task('coverage', shell.task(['node_modules/.bin/./istanbul cover node_modules/.bin/_mocha -- --recursive']));
+  gulp.task('coverage', shell.task([buildBinPath + './istanbul cover ' + buildBinPath + '_mocha -- --recursive']));
 
   gulp.task('coveralls', ['coverage'], function() {
     gulp.src('coverage/lcov.info').pipe(coveralls());
