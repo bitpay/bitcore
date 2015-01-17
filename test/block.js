@@ -20,10 +20,8 @@ var dataBlocks = require('./data/bitcoind/blocks');
 
 describe('Block', function() {
 
-  var magicnum = data.magicnum;
   var blockhex = data.blockhex;
   var blockbuf = new Buffer(blockhex, 'hex');
-  var size = data.blocksize;
   var bh = BlockHeader.fromBuffer(new Buffer(data.blockheaderhex, 'hex'));
   var txs = [];
   JSON.parse(dataJson).transactions.forEach(function(tx){
