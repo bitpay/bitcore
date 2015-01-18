@@ -1,6 +1,6 @@
 {
   "name": "bitcore-build",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "A helper for common tasks to build bitcore modules'",
   "main": "index.js",
   "scripts": {
