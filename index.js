@@ -170,12 +170,6 @@ function startGulp(name, opts) {
     });
   }
 
-  gulp.task('watch:jsdoc', function() {
-    // todo: only run tests that are linked to file changes by doing
-    // something smart like reading through the require statements
-    return gulp.watch(alljs, ['jsdoc']);
-  });
-
   gulp.task('watch:coverage', function() {
     // todo: only run tests that are linked to file changes by doing
     // something smart like reading through the require statements
