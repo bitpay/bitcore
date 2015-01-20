@@ -21,7 +21,6 @@
   "ignore": [
     "**/.*",
     "index.js",
-    "lib",
     "gulpfile.js",
     "README.md",
     "node_modules",
