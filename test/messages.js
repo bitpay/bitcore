@@ -17,7 +17,8 @@ describe('Messages', function() {
       var message = new Messages.Version();
       message.command.should.equal('version');
       message.version.should.equal(70000);
-      message.subversion.should.equal('/BitcoinX:0.1/');
+      var version = require('../package.json').version;
+      message.subversion.should.equal('/bitcore:' + version + '/');
       should.exist(message.nonce);
     });
 
