@@ -1,5 +1,6 @@
 'use strict';
 
+var _ = require('lodash');
 var chai = require('chai');
 var Net = require('net');
 var Socks5Client = require('socks5-client');
@@ -7,6 +8,8 @@ var Socks5Client = require('socks5-client');
 /* jshint unused: false */
 var should = chai.should();
 var expect = chai.expect;
+var sinon = require('sinon');
+var fs = require('fs');
 
 var bitcore = require('bitcore');
 var P2P = require('../');
@@ -14,6 +17,58 @@ var Peer = P2P.Peer;
 var Networks = bitcore.Networks;
 
 describe('Peer', function() {
+
+  describe('Integration test', function() {
+    it('parses this stream of data from a connection', function(callback) {
+      var peer = new P2P.Peer('');
+      var stub = sinon.stub();
+      var dataCallback;
+      var connectCallback;
+      var expected = {
+        version: 1,
+        verack: 1,
+        inv: 18,
+        addr: 4
+      };
+      var received = {
+        version: 0,
+        verack: 0,
+        inv: 0,
+        addr: 0
+      };
+      stub.on = function() {
+        if (arguments[0] === 'data') {
+          dataCallback = arguments[1];
+        }
+        if (arguments[0] === 'connect') {
+          connectCallback = arguments[1];
+        }
+      };
+      stub.write = function() {
+      };
+      stub.connect = function() {
+        connectCallback();
+      };
+      peer._getSocket = function() {
+        return stub;
+      };
+      peer.on('connect', function() {
+        dataCallback(fs.readFileSync('./test/connection.log'));
+      });
+      var check = function(message) {
+        received[message.command]++; 
+        if (_.isEqual(received, expected)) {
+          callback();
+        }
+      };
+      peer.on('version', check);
+      peer.on('verack', check);
+      peer.on('addr', check);
+      peer.on('inv', check);
+      peer.connect();
+    });
+  });
+
 
   it('should be able to create instance', function() {
     var peer = new Peer('localhost');
