@@ -9,9 +9,8 @@ The quickest way to get connected is to run the following:
 
 ```javascript
 
-var bitcore = require('bitcore');
-var Pool = bitcore.transport.Pool;
-var Networks = bitcore.Networks;
+var Pool = require('bitcore-p2p').Pool;
+var Networks = require('bitcore').Networks;
 
 var pool = new Pool(Networks.livenet);
 

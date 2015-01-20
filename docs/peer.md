@@ -12,8 +12,7 @@ Represents a node from the p2p bitcoin network. The Peer class supports connecti
 The code to create a new peer looks like this:
 
 ```javascript
-var bitcore = require('bitcore');
-var Peer = bitcore.transport.Peer;
+var Peer = require('bitcore-p2p').Peer;
 
 // default port
 var livenetPeer = new Peer('5.9.85.34');
@@ -39,8 +38,7 @@ A peer instance is always in one of the following states:
 You can subscribe to the change of those states as follows:
 
 ```javascript
-var bitcore = require('bitcore');
-var Peer = bitcore.transport.Peer;
+var Peer = require('bitcore-p2p').Peer;
 
 var peer = new Peer('5.9.85.34');
 
@@ -61,8 +59,8 @@ peer.connect();
 Once connected, a peer instance can send and receive messages. Every time a message arrives it's emitted as a new event. Let's see an example of this:
 
 ```javascript
-var bitcore = require('bitcore');
-var peer = new bitcore.transport.Peer('5.9.85.34');
+var Peer = require('bitcore-p2p').Peer;
+var peer = new Peer('5.9.85.34');
 
 // handle events
 peer.on('inv', function(message) {
@@ -82,16 +80,18 @@ peer.connect();
 
 ## Sending messages
 
-In order to send messages the Peer class offers the `sendMessage(message)` method, which receives an instance of a message. All supported messages can be found on the `bitcore.transport.Messages` module. For more information about messages refer to the [protocol specification](https://en.bitcoin.it/wiki/Protocol_specification).
+In order to send messages the Peer class offers the `sendMessage(message)` method, which receives an instance of a message. All supported messages can be found in the `Messages` module. For more information about messages refer to the [protocol specification](https://en.bitcoin.it/wiki/Protocol_specification).
 
 An example for requesting other connected nodes to a peers looks like this:
 
 ```javascript
-var bitcore = require('bitcore');
-var peer = new bitcore.transport.Peer('5.9.85.34');
+var p2p = require('bitcore-p2p')
+var Peer = p2p.Peer;
+var Messages = p2p.Messages;
+var peer = new Peer('5.9.85.34');
 
 peer.on('ready', function() {
-  var message = new bitcore.transport.Messages.GetAddresses();
+  var message = new Messages.GetAddresses();
   peer.sendMessage(message);
 });
 
