@@ -9,7 +9,7 @@ The bitcoin protocol specifies a set of [messages](https://en.bitcoin.it/wiki/Pr
 
 ### Version
 
-The version message (`ver`) is used on connection creation, to advertise the type of node. The remote node will respond with its version, and no communication is possible until both peers have exchanged their versions. By default, bitcore advertises itself as named `bitcore:0.8`.
+The version message (`ver`) is used on connection creation, to advertise the type of node. The remote node will respond with its version, and no communication is possible until both peers have exchanged their versions. By default, bitcore advertises itself as named `bitcore` with the current version of the `bitcore-p2p` package.
 
 ### VerAck
 
