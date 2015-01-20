@@ -20,6 +20,9 @@
   "license": "MIT",
   "ignore": [
     "**/.*",
+    "index.js",
+    "gulpfile.js",
+    "README.md",
     "node_modules",
     "bower_components",
     "test",
