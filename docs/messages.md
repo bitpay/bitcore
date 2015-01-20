@@ -3,7 +3,7 @@ description: A superclass for the messages of the bitcoin network
 ---
 # Messages
 
-The bitcoin protocol specifies a set of [messages](https://en.bitcoin.it/wiki/Protocol_specification) that can be sent from peer to peer. `bitcore-p2p` provides partial support for some of these messages.
+The bitcoin protocol specifies a set of [messages](https://en.bitcoin.it/wiki/Protocol_specification) that can be sent from peer to peer. `bitcore-p2p` provides support for some of these messages.
 
 ## List of Messages
 
