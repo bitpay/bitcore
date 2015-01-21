@@ -1,3 +1,4 @@
+---
 title: Browser Builds
 description: Guide to writing modules and optimizing browser bundles.
 ---

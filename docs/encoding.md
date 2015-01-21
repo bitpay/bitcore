@@ -1,3 +1,4 @@
+---
 title: Encoding
 description: Utilities for encoding information in bitcoin standard formats.
 ---

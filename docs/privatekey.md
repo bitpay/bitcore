@@ -1,3 +1,4 @@
+---
 title: Private Key
 description: A simple interface to generate, import and handle private keys.
 ---

@@ -1,3 +1,4 @@
+---
 title: UnspentOutput
 description: A stateless model to represent an unspent output and associated information.
 ---
