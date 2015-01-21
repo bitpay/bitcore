@@ -210,7 +210,18 @@ describe('Address', function() {
         should.not.exist(error);
       }
     });
+  });
 
+  describe('instantiation', function() {
+    it('can be instantiated from another address', function() {
+      var address = Address.fromBuffer(buf);
+      var address2 = new Address({
+        hashBuffer: address.hashBuffer,
+        network: address.network,
+        type: address.type
+      });
+      address.toString().should.equal(address2.toString());
+    });
   });
 
   describe('encodings', function() {
@@ -233,7 +244,7 @@ describe('Address', function() {
     it('should error because of unrecognized data format', function() {
       (function() {
         return new Address(new Error());
-      }).should.throw('First argument is an unrecognized data format.');
+      }).should.throw(bitcore.errors.InvalidArgument);
     });
 
     it('should error because of incorrect format for pubkey hash', function() {
@@ -454,6 +465,16 @@ describe('Address', function() {
       new Address(PKHTestnet[0]).isPayToPublicKeyHash().should.equal(true);
       new Address(PKHTestnet[0]).isPayToScriptHash().should.equal(false);
     });
+  });
+
+  it('throws an error if it couldn\'t instantiate', function() {
+    expect(function() {
+      return new Address(1);
+    }).to.throw(TypeError);
+  });
+  it('can roundtrip from/to a object', function() {
+    var address = new Address(P2SHLivenet[0]);
+    expect(new Address(address.toObject()).toString()).to.equal(P2SHLivenet[0]);
   });
 
   describe('creating a P2SH address from public keys', function() {

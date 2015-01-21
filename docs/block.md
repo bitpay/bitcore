@@ -1,3 +1,4 @@
+---
 title: Block
 description: A simple interface to parse and validate a bitcoin blocks.
 ---

@@ -4,8 +4,6 @@ node_modules
 browser/tests.js
 docs/api
 
-lib/errors/index.js
-
 CONTRIBUTING.html
 LICENSE.html
 README.html
@@ -16,4 +14,8 @@ apiref
 bower_components
 report
 .DS_Store
-browser
+
+
+bitcore.js
+bitcore.min.js
+tests.js

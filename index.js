@@ -35,7 +35,6 @@ bitcore.HDPrivateKey = require('./lib/hdprivatekey.js');
 bitcore.HDPublicKey = require('./lib/hdpublickey.js');
 bitcore.Networks = require('./lib/networks');
 bitcore.Opcode = require('./lib/opcode');
-bitcore.PaymentProtocol = require('./lib/paymentprotocol');
 bitcore.PrivateKey = require('./lib/privatekey');
 bitcore.PublicKey = require('./lib/publickey');
 bitcore.Script = require('./lib/script');
@@ -50,8 +49,8 @@ bitcore.deps.bs58 = require('bs58');
 bitcore.deps.Buffer = Buffer;
 bitcore.deps.elliptic = require('elliptic');
 
-// transport
-bitcore.transport = require('./lib/transport');
-
 // Internal usage, exposed for testing/advanced tweaking
 bitcore._HDKeyCache = require('./lib/hdkeycache');
+
+// module information
+bitcore.version = 'v'+require('./package.json').version;
