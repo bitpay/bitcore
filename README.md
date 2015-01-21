@@ -40,9 +40,8 @@ The complete docs are hosted here: [bitcore documentation](http://bitcore.io/gui
 
 To get community assistance and ask for help with implementation questions, please use our [community forums](http://bitpaylabs.com/c/bitcore).
 
-
-## Ecosystem
-This module provides bitcoin's core features. Other features and protocol extensions are builed into separate modules. Below a list of official bitcore submodules:
+## Modules
+This module provides bitcoin's core features. Other features and protocol extensions are built into separate modules. Below a list of official bitcore submodules:
 
 Module | Version | Building | Coverage
 -------|---------|----------|---------
