@@ -148,7 +148,9 @@ describe('Transaction', function() {
       it('fails when Inputs are not subclassed and verifySignature is called', function() {
         var tx = new Transaction(tx_1_hex);
         expect(function() {
-          return tx.isValidSignature({inputIndex: 0});
+          return tx.isValidSignature({
+            inputIndex: 0
+          });
         }).to.throw(errors.Transaction.UnableToVerifySignature);
       });
     });
@@ -236,8 +238,12 @@ describe('Transaction', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith1BTC)
         .to(fromAddress, 1);
-      expect(function() { return transaction.serialize(); }).to.throw();
-      expect(function() { return transaction.serialize(true); }).to.not.throw();
+      expect(function() {
+        return transaction.serialize();
+      }).to.throw();
+      expect(function() {
+        return transaction.serialize(true);
+      }).to.not.throw();
     });
   });
 
@@ -281,6 +287,14 @@ describe('Transaction', function() {
       transaction.change(changeAddress);
       expect(JSON.parse(transaction.toJSON()).change).to.equal(changeAddress.toString());
     });
+    it('serializes correctly p2sh multisig signed tx', function() {
+      var t = new Transaction(tx2hex);
+      expect(t.toString()).to.equal(tx2hex);
+      var r = new Transaction(t);
+      expect(r.toString()).to.equal(tx2hex);
+      var j = new Transaction(t.toObject());
+      expect(j.toString()).to.equal(tx2hex);
+    });
   });
 
   describe('serialization of inputs', function() {
@@ -313,3 +327,6 @@ var tx_empty_hex = '01000000000000000000';
 /* jshint maxlen: 1000 */
 var tx_1_hex = '01000000015884e5db9de218238671572340b207ee85b628074e7e467096c267266baf77a4000000006a473044022013fa3089327b50263029265572ae1b022a91d10ac80eb4f32f291c914533670b02200d8a5ed5f62634a7e1a0dc9188a3cc460a986267ae4d58faf50c79105431327501210223078d2942df62c45621d209fab84ea9a7a23346201b7727b9b45a29c4e76f5effffffff0150690f00000000001976a9147821c0a3768aa9d1a37e16cf76002aef5373f1a888ac00000000';
 var tx_1_id = '779a3e5b3c2c452c85333d8521f804c1a52800e60f4b7c3bbe36f4bab350b72c';
+
+
+var tx2hex = '0100000001e07d8090f4d4e6fcba6a2819e805805517eb19e669e9d2f856b41d4277953d640000000091004730440220248bc60bb309dd0215fbde830b6371e3fdc55685d11daa9a3c43828892e26ce202205f10cd4011f3a43657260a211f6c4d1fa81b6b6bdd6577263ed097cc22f4e5b50147522102fa38420cec94843ba963684b771ba3ca7ce1728dc2c7e7cade0bf298324d6b942103f948a83c20b2e7228ca9f3b71a96c2f079d9c32164cd07f08fbfdb483427d2ee52aeffffffff01180fe200000000001976a914ccee7ce8e8b91ec0bc23e1cfb6324461429e6b0488ac00000000';
