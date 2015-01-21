@@ -308,7 +308,7 @@ function startGulp(name, opts) {
       // Checkout the `master` branch
       ['release:checkout-master'],
       // Bump package.json and bower.json, again
-      ['release:bump'],
+      ['release:bump' + importance],
       // Version commit with no binary files to master
       ['release:version-commit'],
       // Push to master
