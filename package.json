@@ -81,7 +81,7 @@
     "sha512": "=0.0.1"
   },
   "devDependencies": {
-    "bitcore-build": "=0.4.2",
+    "bitcore-build": "^0.5.0",
     "brfs": "^1.2.0",
     "chai": "^1.10.0",
     "gulp": "^3.8.10"
