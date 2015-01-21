@@ -41,7 +41,7 @@ The complete docs are hosted here: [bitcore documentation](http://bitcore.io/gui
 To get community assistance and ask for help with implementation questions, please use our [community forums](http://bitpaylabs.com/c/bitcore).
 
 ## Modules
-This module provides bitcoin's core features. Other features and protocol extensions are built into separate modules. Below a list of official bitcore submodules:
+This module provides bitcoin's core features. Other features and protocol extensions are built into separate modules. Here is a list of official bitcore modules:
 
 Module | Version | Building | Coverage
 -------|---------|----------|---------
