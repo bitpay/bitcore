@@ -286,33 +286,34 @@ function startGulp(name, opts) {
 
   // requires https://hub.github.com/
   var release = function(importance, cb) {
+    var bumper = 'release:bump:' + importance;
     return runsequence(
       // Checkout the `releases` branch
-      ['release:checkout-releases'],
+      'release:checkout-releases',
       // Merge the master branch
-      ['release:merge-master'],
+      'release:merge-master',
       // Run npm install
-      ['release:install'],
+      'release:install',
       // Run tests with gulp test
-      ['test'],
+      'test',
       // Update package.json and bower.json
-      ['release:bump:' + importance],
+      bumper,
       // Commit 
-      ['release:build-commit'],
+      'release:build-commit',
       // Run git push bitpay $VERSION
-      ['release:push-tag'],
+      'release:push-tag',
       // Push to releases branch
-      ['release:push-releases'],
+      'release:push-releases',
       // Run npm publish
-      ['release:publish'],
+      'release:publish',
       // Checkout the `master` branch
-      ['release:checkout-master'],
+      'release:checkout-master',
       // Bump package.json and bower.json, again
-      ['release:bump' + importance],
+      bumper,
       // Version commit with no binary files to master
-      ['release:version-commit'],
+      'release:version-commit',
       // Push to master
-      ['release:push'],
+      'release:push',
       cb);
   };
 
