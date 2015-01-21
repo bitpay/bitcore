@@ -37,6 +37,7 @@ var jshint = require('gulp-jshint');
 var mocha = require('gulp-mocha');
 var rename = require('gulp-rename');
 var runsequence = require('run-sequence');
+runsequence.use(gulp);
 var shell = require('gulp-shell');
 var uglify = require('gulp-uglify');
 var bump = require('gulp-bump');
@@ -203,13 +204,13 @@ function startGulp(name, opts) {
     releaseFiles.push('./bower.json');
   }
 
-  gulp.task('release:bump', function() {
+  var bump_version = function(importance) {
     return gulp.src(releaseFiles)
       .pipe(bump({
-        type: 'patch'
+        type: importance
       }))
       .pipe(gulp.dest('./'));
-  });
+  };
 
   gulp.task('release:checkout-releases', function(cb) {
     git.checkout('releases', {
@@ -282,37 +283,51 @@ function startGulp(name, opts) {
     'npm publish'
   ]));
 
+
   // requires https://hub.github.com/
-  gulp.task('release', function(cb) {
-    runsequence(
+  var release = function(importance, cb) {
+    var bumper = 'release:bump:' + importance;
+    return runsequence(
       // Checkout the `releases` branch
-      ['release:checkout-releases'],
+      'release:checkout-releases',
       // Merge the master branch
-      ['release:merge-master'],
+      'release:merge-master',
       // Run npm install
-      ['release:install'],
+      'release:install',
       // Run tests with gulp test
-      ['test'],
+      'test',
       // Update package.json and bower.json
-      ['release:bump'],
+      bumper,
       // Commit 
-      ['release:build-commit'],
+      'release:build-commit',
       // Run git push bitpay $VERSION
-      ['release:push-tag'],
+      'release:push-tag',
       // Push to releases branch
-      ['release:push-releases'],
+      'release:push-releases',
       // Run npm publish
-      ['release:publish'],
+      'release:publish',
       // Checkout the `master` branch
-      ['release:checkout-master'],
+      'release:checkout-master',
       // Bump package.json and bower.json, again
-      ['release:bump'],
+      bumper,
       // Version commit with no binary files to master
-      ['release:version-commit'],
+      'release:version-commit',
       // Push to master
-      ['release:push'],
+      'release:push',
       cb);
+  };
+
+  ['patch', 'minor', 'major'].forEach(function(importance) {
+    gulp.task('release:' + importance, function(cb) {
+      release(importance, cb);
+    });
+    gulp.task('release:bump:' + importance, function() {
+      bump_version(importance);
+    });
   });
+  gulp.task('release', ['release:patch']);
+
+
 
 }
 
