@@ -40,6 +40,7 @@
     "type": "git",
     "url": "https://github.com/bitpay/bitcore-payment-protocol.git"
   },
+  "browser": "lib/browser.js",
   "dependencies": {
     "asn1.js": "=0.4.1",
     "bitcore": "^0.8.6",
