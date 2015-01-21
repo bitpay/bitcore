@@ -203,13 +203,13 @@ function startGulp(name, opts) {
     releaseFiles.push('./bower.json');
   }
 
-  gulp.task('release:bump', function() {
+  var bump_version = function(importance) {
     return gulp.src(releaseFiles)
       .pipe(bump({
-        type: 'patch'
+        type: importance
       }))
       .pipe(gulp.dest('./'));
-  });
+  };
 
   gulp.task('release:checkout-releases', function(cb) {
     git.checkout('releases', {
@@ -282,9 +282,10 @@ function startGulp(name, opts) {
     'npm publish'
   ]));
 
+
   // requires https://hub.github.com/
-  gulp.task('release', function(cb) {
-    runsequence(
+  var release = function(importance, cb) {
+    return runsequence(
       // Checkout the `releases` branch
       ['release:checkout-releases'],
       // Merge the master branch
@@ -294,7 +295,7 @@ function startGulp(name, opts) {
       // Run tests with gulp test
       ['test'],
       // Update package.json and bower.json
-      ['release:bump'],
+      ['release:bump:' + importance],
       // Commit 
       ['release:build-commit'],
       // Run git push bitpay $VERSION
@@ -312,7 +313,19 @@ function startGulp(name, opts) {
       // Push to master
       ['release:push'],
       cb);
+  };
+
+  ['patch', 'minor', 'major'].forEach(function(importance) {
+    gulp.task('release:' + importance, function(cb) {
+      release(importance, cb);
+    });
+    gulp.task('release:bump:' + importance, function() {
+      bump_version(importance);
+    });
   });
+  gulp.task('release', ['release:patch']);
+
+
 
 }
 
