@@ -31,13 +31,13 @@
   "license": "MIT",
   "devDependencies": {
     "assert": "^1.1.2",
+    "bitcore-build": "^0.5.0",
     "brfs": "^1.2.0",
     "chai": "^1.10.0",
-    "gulp": "^3.8.10",
-    "bitcore-build": "^0.4.0"
+    "gulp": "^3.8.10"
   },
   "dependencies": {
-    "bitcore": "git://github.com/bitpay/bitcore",
+    "bitcore": "^0.9.0",
     "lodash": "^2.4.1"
   }
 }
