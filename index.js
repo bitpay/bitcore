@@ -37,6 +37,7 @@ var jshint = require('gulp-jshint');
 var mocha = require('gulp-mocha');
 var rename = require('gulp-rename');
 var runsequence = require('run-sequence');
+runsequence.use(gulp);
 var shell = require('gulp-shell');
 var uglify = require('gulp-uglify');
 var bump = require('gulp-bump');
