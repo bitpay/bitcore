@@ -18,12 +18,16 @@ Sample usage:
 var hdPrivateKey = new HDPrivateKey();
 var retrieved = new HDPrivateKey('xpriv...');
 var derived = privateKey.derive("m/0'");
-var derivedByNumber = privateKey.derive(1).derive(2, true);
-var derivedByArgument = privateKey.derive("m/1/2'");
+var derivedByNumber = hdPrivateKey.derive(1).derive(2, true);
+var derivedByArgument = hdPrivateKey.derive("m/1/2'");
 assert(derivedByNumber.xprivkey === derivedByArgument.xprivkey);
 
 var address = new Address(privateKey.publicKey, Networks.livenet);
 var redeem = new Transaction().from(output).to(target, 10000).sign(derived.privateKey);
+
+// obtain HDPublicKey
+var hdPublicKey = hdPrivateKey.hdPublicKey;
+
 ```
 
 ## HDPublicKey
