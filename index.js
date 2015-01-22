@@ -223,12 +223,6 @@ function startGulp(name, opts) {
     });
   });
 
-  gulp.task('release:merge-master', function(cb) {
-    git.merge('master', {
-      args: ''
-    }, cb);
-  });
-
   gulp.task('release:checkout-master', function(cb) {
     git.checkout('master', {
       args: ''
@@ -289,12 +283,12 @@ function startGulp(name, opts) {
     return runsequence(
       // Checkout the release temporal branch
       'release:checkout-releases',
-      // Merge the master branch
-      'release:merge-master',
       // Run npm install
       'release:install',
       // Run tests with gulp test
       'test',
+      // build browser files
+      'browser',
       // Update package.json and bower.json
       bumper,
       // Commit 
