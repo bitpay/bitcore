@@ -92,6 +92,10 @@ function startGulp(name, opts) {
     gulp.task('test', ['test:node']);
   }
 
+  gulp.task('noop', function() {
+    return gutil.noop();
+  });
+
   /**
    * file generation
    */
@@ -288,7 +292,7 @@ function startGulp(name, opts) {
       // Run tests with gulp test
       'test',
       // build browser files
-      'browser',
+      browser ? 'browser' : 'noop',
       // Update package.json and bower.json
       bumper,
       // Commit 
