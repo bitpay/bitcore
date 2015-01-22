@@ -213,8 +213,9 @@ function startGulp(name, opts) {
   };
 
   gulp.task('release:checkout-releases', function(cb) {
-    git.checkout('releases', {
-      args: ''
+    var pjson = require('../../package.json');
+    git.checkout('releases/' + pjson.version + '-build', {
+      args: '-b'
     }, cb);
   });
 
@@ -259,12 +260,6 @@ function startGulp(name, opts) {
       }));
   });
 
-  gulp.task('release:push-releases', function(cb) {
-    git.push('bitpay', 'releases', {
-      args: ''
-    }, cb);
-  });
-
   gulp.task('release:push', function(cb) {
     git.push('bitpay', 'master', {
       args: ''
@@ -288,7 +283,7 @@ function startGulp(name, opts) {
   var release = function(importance, cb) {
     var bumper = 'release:bump:' + importance;
     return runsequence(
-      // Checkout the `releases` branch
+      // Checkout the `releases-` branch
       'release:checkout-releases',
       // Merge the master branch
       'release:merge-master',
@@ -302,8 +297,6 @@ function startGulp(name, opts) {
       'release:build-commit',
       // Run git push bitpay $VERSION
       'release:push-tag',
-      // Push to releases branch
-      'release:push-releases',
       // Run npm publish
       'release:publish',
       // Checkout the `master` branch
