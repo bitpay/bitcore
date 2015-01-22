@@ -55,7 +55,6 @@
     "bitcore": "^0.9.0",
     "bufferput": "^0.1.2",
     "buffers": "^0.1.1",
-    "karma-detect-browsers": "^0.1.3",
     "socks5-client": "^0.3.6"
   },
   "devDependencies": {
