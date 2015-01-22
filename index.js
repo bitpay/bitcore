@@ -93,7 +93,6 @@ function startGulp(name, opts) {
   }
 
   gulp.task('noop', function() {
-    return gutil.noop();
   });
 
   /**
