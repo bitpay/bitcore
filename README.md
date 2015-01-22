@@ -14,9 +14,6 @@ See [the main bitcore repo](https://github.com/bitpay/bitcore) for more informat
 ```sh
 npm install bitcore-p2p
 ```
-```sh
-bower install bitcore-p2p
-```
 In order to connect to the bitcore network, you'll need to know the IP address of at least one node of the network. You can do that by using the known DNS servers. Then, you can connect to it:
 
 ```javascript

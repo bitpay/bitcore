@@ -17,11 +17,6 @@ For node projects:
 npm install bitcore-p2p --save
 ```
 
-For client-side projects:
-```bash
-bower install bitcore-p2p --save
-```
-
 ## Quick Start
 
 ```javascript
