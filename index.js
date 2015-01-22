@@ -214,9 +214,13 @@ function startGulp(name, opts) {
 
   gulp.task('release:checkout-releases', function(cb) {
     var pjson = require('../../package.json');
-    git.checkout('releases/' + pjson.version + '-build', {
-      args: '-b'
-    }, cb);
+    git.branch('releases/' + pjson.version + '-build', {
+      args: ''
+    }, function() {
+      git.checkout('releases/' + pjson.version + '-build', {
+        args: ''
+      }, cb);
+    });
   });
 
   gulp.task('release:merge-master', function(cb) {
