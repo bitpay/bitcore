@@ -289,12 +289,12 @@ function startGulp(name, opts) {
     return runsequence(
       // Checkout the release temporal branch
       'release:checkout-releases',
-      // Merge the master branch
-      'release:merge-master',
       // Run npm install
       'release:install',
       // Run tests with gulp test
       'test',
+      // build browser files
+      'browser',
       // Update package.json and bower.json
       bumper,
       // Commit 
