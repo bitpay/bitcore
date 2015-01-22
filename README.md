@@ -16,7 +16,7 @@ npm install bitcore-mnemonic
 bower install bitcore-mnemonic
 ```
 
-There are many examples of how to use it on the developer guide [section for mnemonic](http://bitcore.io/guide/mnemonic.html). For example, the following code would generate a new random mnemonic code and convert it to a `HDPrivateKey`.
+There are many examples of how to use it on the developer guide [section for mnemonic](http://bitcore.io/guide/module/mnemonic/index.html). For example, the following code would generate a new random mnemonic code and convert it to a `HDPrivateKey`.
 
 ```javascript
 var Mnemonic = require('bitcore-mnemonic');
