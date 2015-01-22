@@ -213,11 +213,11 @@ function startGulp(name, opts) {
   };
 
   gulp.task('release:checkout-releases', function(cb) {
-    var pjson = require('../../package.json');
-    git.branch('releases/' + pjson.version + '-build', {
+    var tempBranch = 'releases/' + new Date().getTime() + '-build';
+    git.branch(tempBranch, {
       args: ''
     }, function() {
-      git.checkout('releases/' + pjson.version + '-build', {
+      git.checkout(tempBranch, {
         args: ''
       }, cb);
     });
@@ -287,7 +287,7 @@ function startGulp(name, opts) {
   var release = function(importance, cb) {
     var bumper = 'release:bump:' + importance;
     return runsequence(
-      // Checkout the `releases-` branch
+      // Checkout the release temporal branch
       'release:checkout-releases',
       // Merge the master branch
       'release:merge-master',
