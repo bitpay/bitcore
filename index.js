@@ -223,12 +223,6 @@ function startGulp(name, opts) {
     });
   });
 
-  gulp.task('release:merge-master', function(cb) {
-    git.merge('master', {
-      args: ''
-    }, cb);
-  });
-
   gulp.task('release:checkout-master', function(cb) {
     git.checkout('master', {
       args: ''
