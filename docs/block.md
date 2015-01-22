@@ -16,10 +16,8 @@ var block = new Block(hexaEncodedBlock);
 assert(block.validMerkleRoot());
 
 // blocks have several properties
-assert(block.magicnum);
-assert(block.size);
 assert(block.header); // an instance of block header, more info below
-assert(block.txs); // an array of transactions, more info below
+assert(block.transactions); // an array of transactions, more info below
 
 ```
 
@@ -52,8 +50,8 @@ For more information about the specific properties of a block header please visi
 The set of transactions in a block is an array of instances of [Transaction](transaction.md) and can be explored by iterating on the block's `transactions` member.
 
 ```javascript
-for (var i in block.txs) {
-  var transaction = block.txs[i];
+for (var i in block.transactions) {
+  var transaction = block.transactions[i];
 }
 ```
 
