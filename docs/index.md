@@ -45,17 +45,20 @@ Some functionality is implemented as a module that can be installed seperately:
 
 # Examples 
 
-## Create a Private Key
+## Create and Save a Private Key
 
 ```javascript
-var privKey = new bitcore.PrivateKey();
+var privateKey = new bitcore.PrivateKey();
+
+var exported = privateKey.toWIF();
+// e.g. L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m
+var imported = bitcore.PrivateKey.fromWIF(exported);
 ```
 
 ## Create an Address
 
 ```javascript
-var privKey = new bitcore.PrivateKey();
-var address = privKey.toAddress();
+var address = privateKey.toAddress();
 ```
 
 ## Create a Multisig Address
