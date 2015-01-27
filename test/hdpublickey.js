@@ -153,6 +153,17 @@ describe('HDPublicKey interface', function() {
     pubKey.inspect().should.equal('<HDPublicKey: ' + pubKey.xpubkey + '>');
   });
 
+  describe('conversion to/from buffer', function() {
+
+    it('should roundtrip to an equivalent object', function() {
+      var pubKey = new HDPublicKey(xpubkey);
+      var toBuffer = pubKey.toBuffer();
+      var fromBuffer = HDPublicKey.fromBuffer(toBuffer);
+      var roundTrip = new HDPublicKey(fromBuffer.toBuffer());
+      roundTrip.xpubkey.should.equal(xpubkey);
+    });
+  });
+
   describe('conversion to different formats', function() {
     var plainObject = {
       'network':'livenet',

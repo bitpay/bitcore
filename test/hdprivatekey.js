@@ -262,7 +262,7 @@ describe('HDPrivate key interface', function() {
     });
   });
 
-  describe.only('conversion to/from buffer', function() {
+  describe('conversion to/from buffer', function() {
     var str = 'xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi';
     it('should roundtrip to/from a buffer', function() {
       var priv = new HDPrivateKey(str);
