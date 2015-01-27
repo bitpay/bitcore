@@ -30,7 +30,8 @@
     "chai": "^1.9.1",
     "mocha": "^1.18.2",
     "sinon": "^1.10.3",
-    "memdown": "^1.0.0"
+    "memdown": "^1.0.0",
+    "jsdoc": "^3.3.0"
   },
   "scripts": {
     "start": "node server.js"

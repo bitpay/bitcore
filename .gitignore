@@ -28,3 +28,4 @@ node_modules
 .lock-wscript
 
 *.swp
+out/
