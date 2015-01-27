@@ -51,6 +51,7 @@ bitcore.deps.elliptic = require('elliptic');
 
 // Internal usage, exposed for testing/advanced tweaking
 bitcore._HDKeyCache = require('./lib/hdkeycache');
+bitcore.Transaction.sighash = require('./lib/transaction/sighash');
 
 // module information
 bitcore.version = 'v'+require('./package.json').version;
