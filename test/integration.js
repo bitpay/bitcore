@@ -10,6 +10,7 @@ var levelup = require('levelup');
 var memdown = require('memdown');
 
 var Wallet = require('../lib/model/wallet');
+var Address = require('../lib/model/address');
 var Copayer = require('../lib/model/copayer');
 var CopayServer = require('../lib/server');
 
@@ -320,31 +321,60 @@ describe('Copay server', function() {
     });
   };
 
-  describe('#createTx', function() {
+  describe('#createAddress', function() {
     beforeEach(function() {
       server = new CopayServer({
         db: db,
       });
     });
 
-    it.skip('should create tx', function (done) {
-      server._verifyMessageSignature = sinon.stub().returns(true);
+    it('should create address', function (done) {
+      server._doCreateAddress = sinon.stub().returns(new Address({ address: 'addr1', path: 'path1' }));
       helpers.createAndJoinWallet('123', 2, 2, function (err, wallet) {
-        var txOpts = {
-          copayerId: '1',
-          walletId: '123',
-          toAddress: 'dummy',
-          amount: 100,
-          message: 'some message',
-          otToken: 'dummy',
-          requestSignature: 'dummy',
-        };
-        server.createTx(txOpts, function (err, res) {
+        server.createAddress({ walletId: '123' }, function (err, address) {
           should.not.exist(err);
-          res.ntxid.should.exist;
-          res.txRaw.should.exist;
+          address.should.exist;
+          address.address.should.equal('addr1');
+          address.path.should.equal('path1');
           done();
         });
+      });
+    });
+  });
+
+  describe('#createTx', function() {
+    beforeEach(function(done) {
+      server = new CopayServer({
+        db: db,
+      });
+      server._doCreateAddress = sinon.stub().returns(new Address({ address: 'addr1', path: 'path1' }));
+      helpers.createAndJoinWallet('123', 2, 2, function (err, wallet) {
+        server.createAddress({ walletId: '123' }, function (err, address) {
+          done();
+        });
+      });
+    });
+
+    it.skip('should create tx', function (done) {
+      server._verifyMessageSignature = sinon.stub().returns(true);
+      var bc = sinon.stub();
+      bc.getUnspentUtxos = sinon.stub().yields(null, ['utxo1', 'utxo2']);
+
+      server._getBlockExplorer = sinon.stub().returns(bc);
+      var txOpts = {
+        copayerId: '1',
+        walletId: '123',
+        toAddress: 'dummy',
+        amount: 100,
+        message: 'some message',
+        otToken: 'dummy',
+        requestSignature: 'dummy',
+      };
+      server.createTx(txOpts, function (err, tx) {
+        should.not.exist(err);
+        tx.should.exist;
+        tx.raw.should.exist;
+        done();
       });
     });
   });
