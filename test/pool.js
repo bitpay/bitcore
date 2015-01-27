@@ -23,16 +23,13 @@ describe('Pool', function() {
     var pool = new Pool();
     should.exist(pool.network);
     expect(pool.network).to.satisfy(function(network) {
-      if (network === Networks.testnet || network === Networks.livenet) {
-        return true;
-      }
-      return false;
+      return network === Networks.testnet || network === Networks.livenet;
     });
   });
 
   it('should be able to create instance setting the network', function() {
-    var pool = new Peer(Networks.testnet);
-    pool.network.should.equal(Networks.livenet);
+    var pool = new Pool(Networks.testnet);
+    pool.network.should.equal(Networks.testnet);
   });
 
   it('should discover peers via dns', function() {
@@ -102,6 +99,5 @@ describe('Pool', function() {
     pool.connect();
 
   });
-
 
 });
