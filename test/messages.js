@@ -36,31 +36,32 @@ describe('Messages', function() {
 
     it('should be able to parse payload', function() {
       var payload = new Buffer(Data.VERSION.payload, 'hex');
-      new Messages.Version().fromBuffer(payload);
+      var m = Messages.Version.fromBuffer(payload);
+      should.exist(m);
     });
   });
 
-  describe('VerAck', function() {
+  var name = 'VerAck';
+  describe(name, function() {
+    var message = new Messages[name]();
     it('should be able to create instance', function() {
-      var message = new Messages.VerAck();
-      message.command.should.equal('verack');
+      message.command.should.equal(name.toLowerCase());
     });
 
     it('should be able to serialize the payload', function() {
-      var message = new Messages.VerAck();
       var payload = message.getPayload();
       should.exist(payload);
     });
 
     it('should be able to serialize the message', function() {
-      var message = new Messages.VerAck();
       var buffer = message.serialize(Networks.livenet);
       should.exist(buffer);
     });
 
     it('should be able to parse payload', function() {
-      var payload = new Buffer(Data.VERACK.payload, 'hex');
-      new Messages.VerAck().fromBuffer(payload);
+      var payload = new Buffer(Data[name.toUpperCase()].payload, 'hex');
+      var m = Messages[name].fromBuffer(payload);
+      should.exist(m);
     });
   });
 
@@ -84,7 +85,8 @@ describe('Messages', function() {
 
     it('should be able to parse payload', function() {
       var payload = new Buffer(Data.INV.payload, 'hex');
-      new Messages.Inventory().fromBuffer(payload);
+      var m = Messages.Inventory.fromBuffer(payload);
+      should.exist(m);
     });
   });
 
@@ -108,9 +110,16 @@ describe('Messages', function() {
 
     it('should be able to parse payload', function() {
       var payload = new Buffer(Data.ADDR.payload, 'hex');
-      new Messages.Addresses().fromBuffer(payload);
+      var m = Messages.Addresses.fromBuffer(payload);
+      should.exist(m);
     });
   });
+
+  /*
+  Data.forEach(function(x) {
+    console.log(x);
+  });
+ */
 
   describe('Ping', function() {
     it('should be able to create instance', function() {
@@ -132,7 +141,8 @@ describe('Messages', function() {
 
     it('should be able to parse payload', function() {
       var payload = new Buffer(Data.PING.payload, 'hex');
-      new Messages.Ping().fromBuffer(payload);
+      var m = Messages.Ping.fromBuffer(payload);
+      should.exist(m);
     });
   });
 
@@ -156,7 +166,8 @@ describe('Messages', function() {
 
     it('should be able to parse payload', function() {
       var payload = new Buffer(Data.PING.payload, 'hex');
-      new Messages.Pong().fromBuffer(payload);
+      var m = Messages.Pong.fromBuffer(payload);
+      should.exist(m);
     });
   });
 

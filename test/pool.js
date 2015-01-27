@@ -66,7 +66,7 @@ describe('Pool', function() {
     // mock a addr peer event
     var peerMessageStub = sinon.stub(Peer.prototype, '_readMessage', function() {
       var payload = new Buffer(MessagesData.ADDR.payload, 'hex');
-      var message = new Messages.Addresses().fromBuffer(payload);
+      var message = Messages.Addresses.fromBuffer(payload);
       this.emit(message.command, message);
     });
 
