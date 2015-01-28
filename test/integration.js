@@ -324,6 +324,46 @@ describe('Copay server', function() {
     });
   };
 
+  describe('#_verifyMessageSignature', function() {
+    beforeEach(function() {
+      server = new CopayServer({
+        storage: storage,
+      });
+    });
+
+    it('should successfully verify message signature', function (done) {
+      server._doVerifyMessageSignature = sinon.stub().returns(true);
+      helpers.createAndJoinWallet('123', 2, 2, function (err, wallet) {
+        var opts = {
+          walletId: '123',
+          copayerId: '1',
+          message: 'hello world',
+          signature: 'dummy',
+        };
+        server.verifyMessageSignature(opts, function (err, isValid) {
+          should.not.exist(err);
+          isValid.should.be.true;
+          done();
+        });
+      });
+    });
+
+    it('should fail to verify message signature when copayer does not exist', function (done) {
+      helpers.createAndJoinWallet('123', 2, 2, function (err, wallet) {
+        var opts = {
+          walletId: '123',
+          copayerId: '999',
+          message: 'hello world',
+          signature: 'dummy',
+        };
+        server.verifyMessageSignature(opts, function (err, isValid) {
+          err.should.exist;
+          done();
+        });
+      });
+    });
+  });
+
   describe('#createAddress', function() {
     beforeEach(function() {
       server = new CopayServer({
