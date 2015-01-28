@@ -49,6 +49,11 @@ describe('Transaction', function() {
     object.outputs[0].satoshis.should.equal(testAmount - 10000);
   });
 
+  it('can take a string argument as an amount', function() {
+    var stringTx = new Transaction().to('mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc', '10000');
+    (stringTx._outputAmount).should.equal(10000);
+  });
+
   it('returns the fee correctly', function() {
     testTransaction.getFee().should.equal(10000);
   });
