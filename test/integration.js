@@ -9,23 +9,26 @@ var should = chai.should();
 var levelup = require('levelup');
 var memdown = require('memdown');
 
+var Storage = require('../lib/storage');
+
 var Wallet = require('../lib/model/wallet');
 var Address = require('../lib/model/address');
 var Copayer = require('../lib/model/copayer');
 var CopayServer = require('../lib/server');
 
-var db;
+var db, storage;
 var server;
 
 describe('Copay server', function() {
   beforeEach(function() {
     db = levelup(memdown, { valueEncoding: 'json' });
+    storage = new Storage({ db: db });
   });
 
   describe('#getWallet', function() {
     beforeEach(function() {
       server = new CopayServer({
-        db: db,
+        storage: storage,
       });
     });
 
@@ -102,7 +105,7 @@ describe('Copay server', function() {
   describe('#createWallet', function() {
     beforeEach(function() {
       server = new CopayServer({
-        db: db,
+        storage: storage,
       });
     });
 
@@ -151,7 +154,7 @@ describe('Copay server', function() {
   describe('#joinWallet', function() {
     beforeEach(function() {
       server = new CopayServer({
-        db: db,
+        storage: storage,
       });
     });
 
@@ -324,7 +327,7 @@ describe('Copay server', function() {
   describe('#createAddress', function() {
     beforeEach(function() {
       server = new CopayServer({
-        db: db,
+        storage: storage,
       });
     });
 
@@ -345,7 +348,7 @@ describe('Copay server', function() {
   describe('#createTx', function() {
     beforeEach(function(done) {
       server = new CopayServer({
-        db: db,
+        storage: storage,
       });
       server._doCreateAddress = sinon.stub().returns(new Address({ address: 'addr1', path: 'path1' }));
       helpers.createAndJoinWallet('123', 2, 2, function (err, wallet) {
