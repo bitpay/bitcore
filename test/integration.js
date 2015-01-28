@@ -68,7 +68,7 @@ describe('Copay server', function() {
       });
     });
 
-    it('should return undefined when requesting non-existent wallet', function (done) {
+    it('should fail when requesting non-existent wallet', function (done) {
       var w1 = new Wallet({
         id: '123',
         name: 'my wallet',
@@ -95,8 +95,8 @@ describe('Copay server', function() {
       }]);
 
       server.getWallet({ id: '345' }, function (err, wallet) {
-        should.not.exist(err);
-        should.not.exist(wallet);
+        should.exist(err);
+        err.should.equal('Wallet not found');
         done();
       });
     });
