@@ -324,7 +324,7 @@ describe('Copay server', function() {
     });
   };
 
-  describe('#_verifyMessageSignature', function() {
+  describe('#verifyMessageSignature', function() {
     beforeEach(function() {
       server = new CopayServer({
         storage: storage,
@@ -357,7 +357,7 @@ describe('Copay server', function() {
           signature: 'dummy',
         };
         server.verifyMessageSignature(opts, function (err, isValid) {
-          err.should.exist;
+          err.should.equal('Copayer not found');
           done();
         });
       });
