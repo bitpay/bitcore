@@ -12,6 +12,7 @@ var BufferWriter = bitcore.encoding.BufferWriter;
 var BufferReader = bitcore.encoding.BufferReader;
 var Output = bitcore.Transaction.Output;
 var Script = bitcore.Script;
+var Networks = bitcore.Networks;
 
 var errors = bitcore.errors;
 
@@ -50,5 +51,14 @@ describe('Output', function() {
   
   it('has a inspect property', function() {
     output.inspect().should.equal('<Output (0 sats) <Script: >>');
+  });
+
+  it('returns an address if the script type is recognized', function() {
+    var address = '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa';
+    var output = new Output({
+      satoshis: 50 * 1e8,
+      script: Script.fromAddress(address, Networks.livenet)
+    });
+    (output.address.toString()).should.equal(address);
   });
 });
