@@ -399,11 +399,10 @@ describe('Copay server', function() {
     });
 
     it.skip('should create tx', function (done) {
-      server._verifyMessageSignature = sinon.stub().returns(true);
       var bc = sinon.stub();
       bc.getUnspentUtxos = sinon.stub().yields(null, ['utxo1', 'utxo2']);
-
       server._getBlockExplorer = sinon.stub().returns(bc);
+
       var txOpts = {
         copayerId: '1',
         walletId: '123',
