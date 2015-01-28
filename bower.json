@@ -1,7 +1,7 @@
 {
   "name": "bitcore",
   "main": "./bitcore.min.js",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "homepage": "http://bitcore.io",
   "authors": [
     "BitPay, Inc."
