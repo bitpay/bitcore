@@ -234,6 +234,9 @@ describe('HDPrivate key interface', function() {
       valid = HDPrivateKey.isValidPath('m/');
       valid.should.equal(false);
 
+      valid = HDPrivateKey.isValidPath('m/12asd');
+      valid.should.equal(false);
+
       valid = HDPrivateKey.isValidPath(HDPrivateKey.MaxHardened);
       valid.should.equal(false);
     });
@@ -258,6 +261,15 @@ describe('HDPrivate key interface', function() {
       expect(indexes).to.be.null;
 
       indexes = HDPrivateKey._getDerivationIndexes("bad path");
+      expect(indexes).to.be.null;
+
+      indexes = HDPrivateKey._getDerivationIndexes("K");
+      expect(indexes).to.be.null;
+
+      indexes = HDPrivateKey._getDerivationIndexes("m/");
+      expect(indexes).to.be.null;
+
+      indexes = HDPrivateKey._getDerivationIndexes("m/123asd");
       expect(indexes).to.be.null;
     });
   });
