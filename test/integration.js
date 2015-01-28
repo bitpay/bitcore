@@ -398,10 +398,12 @@ describe('Copay server', function() {
       });
     });
 
-    it.skip('should create tx', function (done) {
+    it('should create tx', function (done) {
       var bc = sinon.stub();
-      bc.getUnspentUtxos = sinon.stub().yields(null, ['utxo1', 'utxo2']);
+      bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, ['utxo1', 'utxo2']);
       server._getBlockExplorer = sinon.stub().returns(bc);
+
+      server._createRawTx = sinon.stub().returns('raw');
 
       var txOpts = {
         copayerId: '1',
@@ -415,7 +417,9 @@ describe('Copay server', function() {
       server.createTx(txOpts, function (err, tx) {
         should.not.exist(err);
         tx.should.exist;
-        tx.raw.should.exist;
+        tx.rawTx.should.equal('raw');
+        tx.isAccepted().should.equal.false;
+        tx.isRejected().should.equal.false;
         done();
       });
     });
