@@ -41,326 +41,57 @@ describe('Messages', function() {
     });
   });
 
-  var name = 'VerAck';
-  describe(name, function() {
-    var message = new Messages[name]();
-    it('should be able to create instance', function() {
-      message.command.should.equal(name.toLowerCase());
-    });
+  var commands = {
+    VerAck: 'verack',
+    Inventory: 'inv',
+    Addresses: 'addr',
+    Ping: 'ping',
+    Pong: 'pong',
+    Alert: 'alert',
+    Reject: 'reject',
+    Block: 'block',
+    GetBlocks: 'getblocks',
+    GetHeaders: 'getheaders',
+    GetData: 'getdata',
+    GetAddresses: 'getaddr',
+    Headers: 'headers',
+    Transaction: 'tx'
+  };
+  // TODO: add data for these 
+  var noPayload = ['Alert', 'Reject', 'GetBlocks', 'GetHeaders', 'GetData', 'Headers'];
+  var names = Object.keys(commands);
+  describe.only('named', function() {
+    names.forEach(function(name) {
+      var command = commands[name];
+      var data = Data[command.toUpperCase()];
+      it('should have data for ' + name, function() {
+        should.exist(data);
+      });
+      describe(name, function() {
+        var message = new Messages[name]();
+        it('should be able to create instance', function() {
+          message.command.should.equal(command);
+        });
 
-    it('should be able to serialize the payload', function() {
-      var payload = message.getPayload();
-      should.exist(payload);
-    });
+        it('should be able to serialize the payload', function() {
+          var payload = message.getPayload();
+          should.exist(payload);
+        });
 
-    it('should be able to serialize the message', function() {
-      var buffer = message.serialize(Networks.livenet);
-      should.exist(buffer);
-    });
+        it('should be able to serialize the message', function() {
+          var buffer = message.serialize(Networks.livenet);
+          should.exist(buffer);
+        });
 
-    it('should be able to parse payload', function() {
-      var payload = new Buffer(Data[name.toUpperCase()].payload, 'hex');
-      var m = Messages[name].fromBuffer(payload);
-      should.exist(m);
-    });
-  });
-
-  describe('Inventory', function() {
-    it('should be able to create instance', function() {
-      var message = new Messages.Inventory();
-      message.command.should.equal('inv');
-    });
-
-    it('should be able to serialize the payload', function() {
-      var message = new Messages.Inventory();
-      var payload = message.getPayload();
-      should.exist(payload);
-    });
-
-    it('should be able to serialize the message', function() {
-      var message = new Messages.Inventory();
-      var buffer = message.serialize(Networks.livenet);
-      should.exist(buffer);
-    });
-
-    it('should be able to parse payload', function() {
-      var payload = new Buffer(Data.INV.payload, 'hex');
-      var m = Messages.Inventory.fromBuffer(payload);
-      should.exist(m);
-    });
-  });
-
-  describe('Addresses', function() {
-    it('should be able to create instance', function() {
-      var message = new Messages.Addresses();
-      message.command.should.equal('addr');
-    });
-
-    it('should be able to serialize the payload', function() {
-      var message = new Messages.Addresses();
-      var payload = message.getPayload();
-      should.exist(payload);
-    });
-
-    it('should be able to serialize the message', function() {
-      var message = new Messages.Addresses();
-      var buffer = message.serialize(Networks.livenet);
-      should.exist(buffer);
-    });
-
-    it('should be able to parse payload', function() {
-      var payload = new Buffer(Data.ADDR.payload, 'hex');
-      var m = Messages.Addresses.fromBuffer(payload);
-      should.exist(m);
+        if (noPayload.indexOf(name) === -1) {
+          it('should be able to parse payload', function() {
+            var payload = new Buffer(data.payload, 'hex');
+            var m = Messages[name].fromBuffer(payload);
+            should.exist(m);
+          });
+        }
+      });
     });
   });
 
-  /*
-  Data.forEach(function(x) {
-    console.log(x);
-  });
- */
-
-  describe('Ping', function() {
-    it('should be able to create instance', function() {
-      var message = new Messages.Ping();
-      message.command.should.equal('ping');
-    });
-
-    it('should be able to serialize the payload', function() {
-      var message = new Messages.Ping();
-      var payload = message.getPayload();
-      should.exist(payload);
-    });
-
-    it('should be able to serialize the message', function() {
-      var message = new Messages.Ping();
-      var buffer = message.serialize(Networks.livenet);
-      should.exist(buffer);
-    });
-
-    it('should be able to parse payload', function() {
-      var payload = new Buffer(Data.PING.payload, 'hex');
-      var m = Messages.Ping.fromBuffer(payload);
-      should.exist(m);
-    });
-  });
-
-  describe('Pong', function() {
-    it('should be able to create instance', function() {
-      var message = new Messages.Pong();
-      message.command.should.equal('pong');
-    });
-
-    it('should be able to serialize the payload', function() {
-      var message = new Messages.Pong();
-      var payload = message.getPayload();
-      should.exist(payload);
-    });
-
-    it('should be able to serialize the message', function() {
-      var message = new Messages.Pong();
-      var buffer = message.serialize(Networks.livenet);
-      should.exist(buffer);
-    });
-
-    it('should be able to parse payload', function() {
-      var payload = new Buffer(Data.PING.payload, 'hex');
-      var m = Messages.Pong.fromBuffer(payload);
-      should.exist(m);
-    });
-  });
-
-  describe('Alert', function() {
-    it('should be able to create instance', function() {
-      var message = new Messages.Alert();
-      message.command.should.equal('alert');
-    });
-
-    it('should be able to serialize the payload', function() {
-      var message = new Messages.Alert();
-      var payload = message.getPayload();
-      should.exist(payload);
-    });
-
-    it('should be able to serialize the message', function() {
-      var message = new Messages.Alert();
-      var buffer = message.serialize(Networks.livenet);
-      should.exist(buffer);
-    });
-  });
-
-  describe('Reject', function() {
-    it('should be able to create instance', function() {
-      var message = new Messages.Reject();
-      message.command.should.equal('reject');
-    });
-
-    it('should be able to serialize the payload', function() {
-      var message = new Messages.Reject();
-      var payload = message.getPayload();
-      should.exist(payload);
-    });
-
-    it('should be able to serialize the message', function() {
-      var message = new Messages.Reject();
-      var buffer = message.serialize(Networks.livenet);
-      should.exist(buffer);
-    });
-  });
-
-  describe('Block', function() {
-    var blockHex = '0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4a29ab5f49ffff001d1dac2b7c0101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000';
-    var block = new bitcore.Block(new Buffer(blockHex, 'hex'));
-
-    it('should be able to create instance', function() {
-      var message = new Messages.Block(block);
-      message.command.should.equal('block');
-    });
-
-    it('should be able to serialize the payload', function() {
-      var message = new Messages.Block(block);
-      var payload = message.getPayload();
-      should.exist(payload);
-    });
-
-    it('should be able to serialize the message', function() {
-      var message = new Messages.Block(block);
-      var buffer = message.serialize(Networks.livenet);
-      should.exist(buffer);
-    });
-  });
-
-  describe('GetBlocks', function() {
-    it('should be able to create instance', function() {
-      var message = new Messages.GetBlocks();
-      message.command.should.equal('getblocks');
-    });
-
-    it('should be able to serialize the payload', function() {
-      var message = new Messages.GetBlocks();
-      var payload = message.getPayload();
-      should.exist(payload);
-    });
-
-    it('should be able to serialize the message', function() {
-      var message = new Messages.GetBlocks();
-      var buffer = message.serialize(Networks.livenet);
-      should.exist(buffer);
-    });
-  });
-
-  describe('GetHeaders', function() {
-    it('should be able to create instance', function() {
-      var message = new Messages.GetHeaders();
-      message.command.should.equal('getheaders');
-    });
-
-    it('should be able to serialize the payload', function() {
-      var message = new Messages.GetHeaders();
-      var payload = message.getPayload();
-      should.exist(payload);
-    });
-
-    it('should be able to serialize the message', function() {
-      var message = new Messages.GetHeaders();
-      var buffer = message.serialize(Networks.livenet);
-      should.exist(buffer);
-    });
-  });
-
-  describe('GetData', function() {
-    it('should be able to create instance', function() {
-      var message = new Messages.GetData();
-      message.command.should.equal('getdata');
-    });
-
-    it('should be able to serialize the payload', function() {
-      var message = new Messages.GetData();
-      var payload = message.getPayload();
-      should.exist(payload);
-    });
-
-    it('should be able to serialize the message', function() {
-      var message = new Messages.GetData();
-      var buffer = message.serialize(Networks.livenet);
-      should.exist(buffer);
-    });
-  });
-
-  describe('GetData', function() {
-    it('should be able to create instance', function() {
-      var message = new Messages.GetData();
-      message.command.should.equal('getdata');
-    });
-
-    it('should be able to serialize the payload', function() {
-      var message = new Messages.GetData();
-      var payload = message.getPayload();
-      should.exist(payload);
-    });
-
-    it('should be able to serialize the message', function() {
-      var message = new Messages.GetData();
-      var buffer = message.serialize(Networks.livenet);
-      should.exist(buffer);
-    });
-  });
-
-  describe('GetAddresses', function() {
-    it('should be able to create instance', function() {
-      var message = new Messages.GetAddresses();
-      message.command.should.equal('getaddr');
-    });
-
-    it('should be able to serialize the payload', function() {
-      var message = new Messages.GetAddresses();
-      var payload = message.getPayload();
-      should.exist(payload);
-    });
-
-    it('should be able to serialize the message', function() {
-      var message = new Messages.GetAddresses();
-      var buffer = message.serialize(Networks.livenet);
-      should.exist(buffer);
-    });
-  });
-
-  describe('Headers', function() {
-    it('should be able to create instance', function() {
-      var message = new Messages.Headers();
-      message.command.should.equal('headers');
-    });
-
-    it('should be able to serialize the payload', function() {
-      var message = new Messages.Headers();
-      var payload = message.getPayload();
-      should.exist(payload);
-    });
-
-    it('should be able to serialize the message', function() {
-      var message = new Messages.Headers();
-      var buffer = message.serialize(Networks.livenet);
-      should.exist(buffer);
-    });
-  });
-
-  describe('Transaction', function() {
-    it('should be able to create instance', function() {
-      var message = new Messages.Transaction(new bitcore.Transaction());
-      message.command.should.equal('tx');
-    });
-
-    it('should be able to serialize the payload', function() {
-      var message = new Messages.Transaction(new bitcore.Transaction());
-      var payload = message.getPayload();
-      should.exist(payload);
-    });
-
-    it('should be able to serialize the message', function() {
-      var message = new Messages.Transaction(new bitcore.Transaction());
-      var buffer = message.serialize(Networks.livenet);
-      should.exist(buffer);
-    });
-  });
 });
