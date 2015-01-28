@@ -420,6 +420,10 @@ describe('Copay server', function() {
         tx.rawTx.should.equal('raw');
         tx.isAccepted().should.equal.false;
         tx.isRejected().should.equal.false;
+        server.getPendingTxs({ walletId: '123' }, function (err, txs) {
+          should.not.exist(err);
+          txs.length.should.equal(1);
+        });
         done();
       });
     });
