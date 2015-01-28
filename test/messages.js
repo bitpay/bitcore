@@ -60,7 +60,7 @@ describe('Messages', function() {
   // TODO: add data for these 
   var noPayload = ['Alert', 'Reject', 'GetBlocks', 'GetHeaders', 'GetData', 'Headers'];
   var names = Object.keys(commands);
-  describe.only('named', function() {
+  describe('named', function() {
     names.forEach(function(name) {
       var command = commands[name];
       var data = Data[command.toUpperCase()];
