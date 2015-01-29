@@ -16,8 +16,42 @@ var Address = require('../lib/model/address');
 var Copayer = require('../lib/model/copayer');
 var CopayServer = require('../lib/server');
 
+
+var helpers = {};
+helpers.createAndJoinWallet = function (id, m, n, cb) {
+  var walletOpts = {
+    id: id,
+    name: id + ' wallet',
+    m: m,
+    n: n,
+    pubKey: 'dummy',
+  };
+  server.createWallet(walletOpts, function(err) {
+    if (err) return cb(err);
+
+    async.each(_.range(1, n + 1), function (i, cb) {
+      var copayerOpts = {
+        walletId: id,
+        id: '' + i,
+        name: 'copayer ' + i,
+        xPubKey: 'dummy' + i,
+        xPubKeySignature: 'dummy',
+      };
+      server.joinWallet(copayerOpts, function (err) {
+        return cb(err);
+      });
+    }, function (err) {
+      if (err) return cb(err);
+      server.getWallet({ id: id, includeCopayers: true }, function (err, wallet) {
+        return cb(err, wallet);
+      });
+    });
+  });
+};
+
 var db, storage;
 var server;
+
 
 describe('Copay server', function() {
   beforeEach(function() {
@@ -292,37 +326,6 @@ describe('Copay server', function() {
   });
 
 
-  var helpers = {};
-  helpers.createAndJoinWallet = function (id, m, n, cb) {
-    var walletOpts = {
-      id: id,
-      name: id + ' wallet',
-      m: m,
-      n: n,
-      pubKey: 'dummy',
-    };
-    server.createWallet(walletOpts, function(err) {
-      if (err) return cb(err);
-
-      async.each(_.range(1, n + 1), function (i, cb) {
-        var copayerOpts = {
-          walletId: id,
-          id: '' + i,
-          name: 'copayer ' + i,
-          xPubKey: 'dummy' + i,
-          xPubKeySignature: 'dummy',
-        };
-        server.joinWallet(copayerOpts, function (err) {
-          return cb(err);
-        });
-      }, function (err) {
-        if (err) return cb(err);
-        server.getWallet({ id: id, includeCopayers: true }, function (err, wallet) {
-          return cb(err, wallet);
-        });
-      });
-    });
-  };
 
   describe('#verifyMessageSignature', function() {
     beforeEach(function() {
