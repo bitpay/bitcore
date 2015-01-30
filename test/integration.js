@@ -423,7 +423,7 @@ describe('Copay server', function() {
         copayerId: '1',
         walletId: '123',
         toAddress: 'dummy',
-        amount: 100,
+        amount: 80,
         message: 'some message',
         otToken: 'dummy',
         requestSignature: 'dummy',
@@ -437,7 +437,12 @@ describe('Copay server', function() {
         server.getPendingTxs({ walletId: '123' }, function (err, txs) {
           should.not.exist(err);
           txs.length.should.equal(1);
-          done();
+          server.getBalance({ walletId: '123' }, function (err, balance) {
+            should.not.exist(err);
+            balance.totalAmount.should.equal(300);
+            balance.lockedAmount.should.equal(200);
+            done();
+          });
         });
       });
     });
