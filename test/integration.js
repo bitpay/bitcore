@@ -48,6 +48,17 @@ helpers.createAndJoinWallet = function (id, m, n, cb) {
     });
   });
 };
+helpers.createUtxos = function (amounts) {
+  amounts = [].concat(amounts);
+
+  return _.map(amounts, function (amount) {
+    return {
+      txid: 'dummy' + Math.random(),
+      vout: Math.floor((Math.random() * 10) + 1),
+      amount: amount,
+    };
+  });
+};
 
 var db, storage;
 var server;
@@ -403,7 +414,7 @@ describe('Copay server', function() {
 
     it('should create tx', function (done) {
       var bc = sinon.stub();
-      bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, ['utxo1', 'utxo2']);
+      bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, helpers.createUtxos([100, 200]));
       server._getBlockExplorer = sinon.stub().returns(bc);
 
       server._createRawTx = sinon.stub().returns('raw');
@@ -426,9 +437,18 @@ describe('Copay server', function() {
         server.getPendingTxs({ walletId: '123' }, function (err, txs) {
           should.not.exist(err);
           txs.length.should.equal(1);
+          done();
         });
-        done();
       });
+    });
+
+    it.skip('should fail to create tx when insufficient funds', function (done) {
+    });
+
+    it.skip('should create tx when there is a pending tx and enough UTXOs', function (done) {
+    });
+
+    it.skip('should fail to create tx when there is a pending tx and not enough UTXOs', function (done) {
     });
   });
 });
