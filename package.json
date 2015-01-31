@@ -1,6 +1,10 @@
 {
   "name": "bitcore",
   "description": "Bitcoin Library",
+  "engines": {
+    "node": "<0.10.36"
+  },
+  "engineStrict": true,
   "version": "0.1.41",
   "author": {
     "name": "Stephen Pair",
@@ -61,13 +65,13 @@
     "bignum": "=0.6.2",
     "bindings": "=1.1.1",
     "binary": "^0.3.0",
-    "bn.js": "=0.15.0",
+    "bn.js": "=1.0.0",
     "brfs": "=1.0.0",
     "bufferput": "git://github.com/bitpay/node-bufferput.git",
     "buffers": "=0.1.1",
     "buffertools": "=2.1.2",
     "browserify-buffertools": "git://github.com/maraoz/browserify-buffertools.git",
-    "elliptic": "=0.15.12",
+    "elliptic": "=1.0.0",
     "hash.js": "=0.3.2",
     "jsrsasign": "=0.0.3",
     "preconditions": "^1.0.7",
