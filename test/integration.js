@@ -203,6 +203,7 @@ describe('Copay server', function() {
       server = new CopayServer({
         storage: storage,
       });
+      server._verifySignature = sinon.stub().returns(true);
     });
 
     it('should join existing wallet', function (done) {
