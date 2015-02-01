@@ -16,6 +16,7 @@ var Address = require('../lib/model/address');
 var Copayer = require('../lib/model/copayer');
 var CopayServer = require('../lib/server');
 
+var aPubKey = '042F65F56A6C06C2B651C473AC221B2460DA57859AFB72564E9781B655EBC0AFAF322B9A732324ECC92A3319DFB1F0D53F0CB7E6620C98BD1EF53106A7CF3F6DB9';
 
 var helpers = {};
 helpers.createAndJoinWallet = function (id, m, n, cb) {
@@ -24,7 +25,7 @@ helpers.createAndJoinWallet = function (id, m, n, cb) {
     name: id + ' wallet',
     m: m,
     n: n,
-    pubKey: 'dummy',
+    pubKey: aPubKey,
   };
   server.createWallet(walletOpts, function(err) {
     if (err) return cb(err);
@@ -78,19 +79,21 @@ describe('Copay server', function() {
     });
 
     it('should get existing wallet', function (done) {
+
       var w1 = new Wallet({
         id: '123',
         name: 'my wallet',
         m: 2,
         n: 3,
-        pubKey: 'dummy',
+        pubKey: aPubKey,
       });
+
       var w2 = new Wallet({
         id: '234',
         name: 'my wallet 2',
         m: 3,
         n: 4,
-        pubKey: 'dummy',
+        pubKey: aPubKey,
       });
 
       db.batch([{
@@ -119,16 +122,15 @@ describe('Copay server', function() {
         name: 'my wallet',
         m: 2,
         n: 3,
-        pubKey: 'dummy',
+        pubKey: aPubKey,
       });
       var w2 = new Wallet({
         id: '234',
         name: 'my wallet 2',
         m: 3,
         n: 4,
-        pubKey: 'dummy',
+        pubKey: aPubKey,
       });
-
       db.batch([{
         type: 'put',
         key: 'wallet-123',
@@ -160,7 +162,7 @@ describe('Copay server', function() {
         name: 'my wallet',
         m: 2,
         n: 3,
-        pubKey: 'dummy',
+        pubKey: aPubKey,
       };
       server.createWallet(opts, function(err) {
         should.not.exist(err);
@@ -179,7 +181,7 @@ describe('Copay server', function() {
         name: 'my wallet',
         m: 2,
         n: 3,
-        pubKey: 'dummy',
+        pubKey: aPubKey,
       };
       server.createWallet(opts, function(err) {
         should.not.exist(err);
@@ -209,7 +211,7 @@ describe('Copay server', function() {
         name: 'my wallet',
         m: 2,
         n: 3,
-        pubKey: 'dummy',
+        pubKey: aPubKey,
       };
       server.createWallet(walletOpts, function(err) {
         should.not.exist(err);
@@ -240,7 +242,7 @@ describe('Copay server', function() {
         name: 'my wallet',
         m: 2,
         n: 3,
-        pubKey: 'dummy',
+        pubKey: aPubKey,
       };
       server.createWallet(walletOpts, function(err) {
         should.not.exist(err);
@@ -264,7 +266,7 @@ describe('Copay server', function() {
         name: 'my wallet',
         m: 1,
         n: 1,
-        pubKey: 'dummy',
+        pubKey: aPubKey,
       };
       server.createWallet(walletOpts, function(err) {
         should.not.exist(err);
@@ -302,7 +304,7 @@ describe('Copay server', function() {
         name: 'my wallet',
         m: 1,
         n: 1,
-        pubKey: 'dummy',
+        pubKey: aPubKey,
       };
       server.createWallet(walletOpts, function(err) {
         should.not.exist(err);
