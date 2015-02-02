@@ -21,6 +21,7 @@
     "bitcore": "^0.8.6",
     "bitcore-explorers": "^0.9.1",
     "express": "^4.10.0",
+    "inherits": "^2.0.1",
     "leveldown": "^0.10.0",
     "levelup": "^0.19.0",
     "lodash": "^2.4.1",
