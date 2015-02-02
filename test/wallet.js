@@ -27,8 +27,8 @@ describe('Wallet', function() {
   describe('#getCurrentAddressPath', function() {
     it('return a valid BIP32 path for defaut wallet Index', function() {
       var w = new Wallet();
-      w.getCurrentAddressPath(false).should.equal('m/45\'/2147483647/0/0');
-      w.getCurrentAddressPath(true).should.equal('m/45\'/2147483647/1/0');
+      w.getCurrentAddressPath(false).should.equal('m/2147483647/0/0');
+      w.getCurrentAddressPath(true).should.equal('m/2147483647/1/0');
     });
 
 

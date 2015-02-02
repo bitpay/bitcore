@@ -546,11 +546,7 @@ describe('Copay server', function() {
       });
     });
 
-    it('should create address', function(done) {
-      server._doCreateAddress = sinon.stub().returns(new Address({
-        address: 'addr1',
-        path: 'path1',
-      }));
+    it('should create main address', function(done) {
       helpers.createAndJoinWallet('123', 2, 2, function(err, wallet) {
         server.createAddress({
           walletId: '123',
@@ -558,12 +554,29 @@ describe('Copay server', function() {
         }, function(err, address) {
           should.not.exist(err);
           address.should.exist;
-          address.address.should.equal('addr1');
-          address.path.should.equal('path1');
+          address.address.should.equal('3BPfHzwq5j72TBYtYv3Uggk3vyHFHX3QpA');
+          address.path.should.equal('m/0/0/1');
           done();
         });
       });
     });
+
+
+    it('should create change address', function(done) {
+      helpers.createAndJoinWallet('123', 2, 2, function(err, wallet) {
+        server.createAddress({
+          walletId: '123',
+          isChange: true,
+        }, function(err, address) {
+          should.not.exist(err);
+          address.should.exist;
+          address.address.should.equal('39Dzj5mBJWvzH7bDfmYzXDvTbZS5HdQ4a4');
+          address.path.should.equal('m/0/1/1');
+          done();
+        });
+      });
+    });
+
   });
 
   describe('#createTx', function() {
