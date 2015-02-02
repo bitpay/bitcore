@@ -560,7 +560,7 @@ describe('Copay server', function() {
       });
     });
 
-    it('should create tx', function(done) {
+    it.skip('should create tx', function(done) {
       var bc = sinon.stub();
       bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, helpers.createUtxos([100, 200]));
       server._getBlockExplorer = sinon.stub().returns(bc);
