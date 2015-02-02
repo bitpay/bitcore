@@ -69,6 +69,7 @@ helpers.createAndJoinWallet = function(id, m, n, cb) {
     if (err) return cb(err);
 
     async.each(_.range(1, n + 1), function(i, cb) {
+
       var copayerOpts = {
         walletId: id,
         id: '' + i,
@@ -76,11 +77,13 @@ helpers.createAndJoinWallet = function(id, m, n, cb) {
         xPubKey: someXPubKeys[i - 1],
         xPubKeySignature: someXPubKeysSignatures[i - 1],
       };
+
       server.joinWallet(copayerOpts, function(err) {
         return cb(err);
       });
     }, function(err) {
       if (err) return cb(err);
+
       server.getWallet({
         id: id,
         includeCopayers: true
@@ -461,7 +464,20 @@ describe('Copay server', function() {
       });
     });
 
+    it('should set index in 1-1 wallet creation.', function(done) {
+      helpers.createAndJoinWallet('123', 1, 1, function(err, wallet) {
+        wallet.receiveAddressIndex.should.equal(0);
+        wallet.changeAddressIndex.should.equal(0);
+        wallet.copayerIndex.should.equal(0x80000000 - 1);
 
+        var copayer = wallet.copayers[0];
+        copayer.receiveAddressIndex.should.equal(0);
+        copayer.changeAddressIndex.should.equal(0);
+        copayer.copayerIndex.should.equal(0);
+        done();
+      });
+    });
+ 
 
     it('should set pkr and status = complete on last copayer joining', function(done) {
       helpers.createAndJoinWallet('123', 2, 3, function(err, wallet) {
@@ -472,14 +488,16 @@ describe('Copay server', function() {
           wallet.status.should.equal('complete');
           wallet.publicKeyRing.length.should.equal(3);
           _.each([0,1,2], function(i) {
-            wallet.copayers[i].copayerIndex.should.equal(i);
+            var copayer = wallet.copayers[i];
+            copayer.receiveAddressIndex.should.equal(0);
+            copayer.changeAddressIndex.should.equal(0);
+            copayer.copayerIndex.should.equal(i);
           });
           done();
         });
       });
     });
   });
-
 
 
   describe('#verifyMessageSignature', function() {
