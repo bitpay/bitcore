@@ -428,10 +428,12 @@ describe('Copay server', function() {
           name: 'me',
           xPubKey: someXPubKeys[0],
         };
-        server.joinWallet(copayerOpts, function(err) {
-          err.should.contain('Bad request');
+        try {
+        server.joinWallet(copayerOpts, function(err) {});
+        } catch (e) {
+          e.should.contain('xPubKeySignature');
           done();
-        });
+        }
       });
     });
 
@@ -526,11 +528,12 @@ describe('Copay server', function() {
     it('should create address', function(done) {
       server._doCreateAddress = sinon.stub().returns(new Address({
         address: 'addr1',
-        path: 'path1'
+        path: 'path1',
       }));
       helpers.createAndJoinWallet('123', 2, 2, function(err, wallet) {
         server.createAddress({
-          walletId: '123'
+          walletId: '123',
+          isChange: false,
         }, function(err, address) {
           should.not.exist(err);
           address.should.exist;
