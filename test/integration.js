@@ -479,7 +479,7 @@ describe('Copay server', function() {
     });
  
 
-    it('should set pkr and status = complete on last copayer joining', function(done) {
+    it('should set pkr and status = complete on last copayer joining (2-3)', function(done) {
       helpers.createAndJoinWallet('123', 2, 3, function(err, wallet) {
         server.getWallet({
           id: '123'
