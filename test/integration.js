@@ -471,6 +471,9 @@ describe('Copay server', function() {
           should.not.exist(err);
           wallet.status.should.equal('complete');
           wallet.publicKeyRing.length.should.equal(3);
+          _.each([0,1,2], function(i) {
+            wallet.copayers[i].copayerIndex.should.equal(i);
+          });
           done();
         });
       });
