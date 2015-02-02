@@ -25,6 +25,9 @@ From the bitcoin protocol spec: `getdata` is used in response to `inv`, to retri
 
 GetData inherits from Inventory, as they both have the same structure.
 
+### NotFound
+notfound is a response to a getdata, sent if any requested data items could not be relayed, for example, because the requested transaction was not in the memory pool or relay set. Contains inventory information specifying which items were not found.
+
 ### Ping
 
 Sent to another peer mainly to check the connection is still alive.

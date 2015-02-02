@@ -11,6 +11,10 @@
     "message": "",
     "payload": ""
   },
+  "NOTFOUND": {
+    "message": "f9beb4d96e6f74666f756e6400000000250000001d33d53201010000003a4af715be220eae7b2657582869daddf79ac4afb4a0e1cafa5b57e1afb8dfe2",
+    "payload": "01010000003a4af715be220eae7b2657582869daddf79ac4afb4a0e1cafa5b57e1afb8dfe2"
+  },
   "GETBLOCKS": {
     "message": "",
     "payload": ""

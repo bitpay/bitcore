@@ -27,7 +27,8 @@ describe('Messages', function() {
     GetData: 'getdata',
     GetAddresses: 'getaddr',
     Headers: 'headers',
-    Transaction: 'tx'
+    Transaction: 'tx',
+    NotFound: 'notfound'
   };
   // TODO: add data for these 
   var noPayload = ['Alert', 'Reject', 'GetBlocks', 'GetHeaders', 'GetData', 'Headers'];
