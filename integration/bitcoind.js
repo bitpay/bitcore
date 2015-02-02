@@ -26,6 +26,10 @@ var blockHash = {
   'livenet': '000000000000000013413cf2536b491bf0988f52e90c476ffeb701c8bfdb1db9',
   'testnet': '0000000058cc069d964711cd25083c0a709f4df2b34c8ff9302ce71fe5b45786'
 };
+var stopBlock = {
+  'livenet': '000000000000000006181d9d183e2191a5e704d6ed3513f29b0970198fb34d2e',
+  'testnet': '000000003d594c41db49d5a8b850344943438620acf79ce8aa88177f5b35e337'
+};
 var txHash = {
   'livenet': '22231e8219a0617a0ded618b5dc713fdf9b0db8ebd5bb3322d3011a703119d3b',
   'testnet': '22231e8219a0617a0ded618b5dc713fdf9b0db8ebd5bb3322d3011a703119d3b'
@@ -149,6 +153,34 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
         cb();
       });
       var message = Messages.GetData.forTransaction(hash);
+      peer.sendMessage(message);
+    });
+  });
+  var from = [blockHash[network.name]];
+  var stop = stopBlock[network.name];
+  it('can get headers', function(cb) {
+    connect(function(peer) {
+      peer.once('headers', function(message) {
+        (message instanceof Messages.Headers).should.equal(true);
+        message.headers.length.should.equal(2);
+        cb();
+      });
+      var message = new Messages.GetHeaders(from, stop);
+      peer.sendMessage(message);
+    });
+  });
+  it.skip('can get blocks', function(cb) {
+    connect(function(peer) {
+      peer.on('inv', function(message) {
+        (message instanceof Messages.Inventory).should.equal(true);
+        console.log('inv' + message.inventory.length);
+        if (message.inventory.length === 2) {
+          console.log(message);
+          message.inventory[0].type.should.equal(Messages.Inventory.TYPE.BLOCK);
+          cb();
+        }
+      });
+      var message = new Messages.GetBlocks(from, stop);
       peer.sendMessage(message);
     });
   });
