@@ -18,12 +18,17 @@ var Pool = p2p.Pool;
 var Networks = bitcore.Networks;
 var Messages = p2p.Messages;
 var Block = bitcore.Block;
+var Transaction = bitcore.Transaction;
 
 // config 
 var network = Networks.livenet;
 var blockHash = {
   'livenet': '000000000000000013413cf2536b491bf0988f52e90c476ffeb701c8bfdb1db9',
   'testnet': '0000000058cc069d964711cd25083c0a709f4df2b34c8ff9302ce71fe5b45786'
+};
+var txHash = {
+  'livenet': '22231e8219a0617a0ded618b5dc713fdf9b0db8ebd5bb3322d3011a703119d3b',
+  'testnet': '22231e8219a0617a0ded618b5dc713fdf9b0db8ebd5bb3322d3011a703119d3b'
 };
 
 // These tests require a running bitcoind instance
@@ -126,15 +131,25 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
   });
   it('can request block data', function(cb) {
     connect(function(peer) {
-      peer.on('block', function(message) {
+      peer.once('block', function(message) {
         (message.block instanceof Block).should.equal(true);
         cb();
       });
-      // TODO: replace this for a new Messages.GetData.forTransaction(hash)
-      var message = new Messages.GetData([{
-        type: Messages.Inventory.TYPE.BLOCK,
-        hash: BufferUtil.reverse(new Buffer(blockHash[network.name], 'hex'))
-      }]);
+      // TODO: replace this for a new Messages.GetData.forBlock(hash)
+      var message = Messages.GetData.forBlock(blockHash[network.name]);
+      peer.sendMessage(message);
+    });
+  });
+  it('can handle request tx data not found', function(cb) {
+    connect(function(peer) {
+      var hash = 'e2dfb8afe1575bfacae1a0b4afc49af7ddda69285857267bae0e22be15f74a3a';
+      var expected = Messages.NotFound.forTransaction(hash);
+      peer.once('notfound', function(message) {
+        (message instanceof Messages.NotFound).should.equal(true);
+        message.should.deep.equal(expected);
+        cb();
+      });
+      var message = Messages.GetData.forTransaction(hash);
       peer.sendMessage(message);
     });
   });
