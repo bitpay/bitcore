@@ -135,7 +135,6 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
         (message.block instanceof Block).should.equal(true);
         cb();
       });
-      // TODO: replace this for a new Messages.GetData.forBlock(hash)
       var message = Messages.GetData.forBlock(blockHash[network.name]);
       peer.sendMessage(message);
     });
