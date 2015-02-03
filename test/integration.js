@@ -586,6 +586,24 @@ describe('Copay server', function() {
       });
     });
 
+    it('should create many addresses on simultaneous requests', function(done) {
+      helpers.createAndJoinWallet('123', 2, 2, function(err, wallet) {
+        async.map(_.range(10), function (i, cb) {
+          server.createAddress({
+            walletId: '123',
+            isChange: false,
+          }, cb);
+        }, function (err, addresses) {
+          addresses.length.should.equal(10);
+          addresses[0].path.should.equal('m/2147483647/0/1');
+          addresses[9].path.should.equal('m/2147483647/0/10');
+          // No two identical addresses
+          _.keys(_.groupBy(addresses, 'address')).length.should.equal(10);
+          done();
+        });
+      });
+    });
+
   });
 
   describe('#createTx', function() {
