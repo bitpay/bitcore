@@ -20,8 +20,8 @@
     "payload": ""
   },
   "GETDATA": {
-    "message": "",
-    "payload": ""
+    "message": "f9beb4d967657464617461000000000025000000253fc50c01020000003c2a5e4dcb5a44daf5ebff14a89d26a99b8aa1c1d757694b03d7e6ca7eeda6ca",
+    "payload": "01020000003c2a5e4dcb5a44daf5ebff14a89d26a99b8aa1c1d757694b03d7e6ca7eeda6ca"
   },
   "GETADDR": {
     "message": "",

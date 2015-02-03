@@ -31,7 +31,7 @@ describe('Messages', function() {
     NotFound: 'notfound'
   };
   // TODO: add data for these 
-  var noPayload = ['Alert', 'Reject', 'GetBlocks', 'GetHeaders', 'GetData'];
+  var noPayload = ['Alert', 'Reject', 'GetBlocks', 'GetHeaders'];
   var names = Object.keys(commands);
   describe('named', function() {
     names.forEach(function(name) {
