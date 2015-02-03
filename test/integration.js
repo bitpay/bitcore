@@ -494,21 +494,6 @@ describe('Copay server', function() {
       });
     });
 
-    it('should set index in 1-1 wallet creation.', function(done) {
-      helpers.createAndJoinWallet('123', 1, 1, function(err, wallet) {
-        wallet.receiveAddressIndex.should.equal(0);
-        wallet.changeAddressIndex.should.equal(0);
-        wallet.copayerIndex.should.equal(0x80000000 - 1);
-
-        var copayer = wallet.copayers[0];
-        copayer.receiveAddressIndex.should.equal(0);
-        copayer.changeAddressIndex.should.equal(0);
-        copayer.copayerIndex.should.equal(0);
-        done();
-      });
-    });
-
-
     it('should set pkr and status = complete on last copayer joining (2-3)', function(done) {
       helpers.createAndJoinWallet('123', 2, 3, function(err, wallet) {
         server.getWallet({
@@ -517,12 +502,6 @@ describe('Copay server', function() {
           should.not.exist(err);
           wallet.status.should.equal('complete');
           wallet.publicKeyRing.length.should.equal(3);
-          _.each([0, 1, 2], function(i) {
-            var copayer = wallet.copayers[i];
-            copayer.receiveAddressIndex.should.equal(0);
-            copayer.changeAddressIndex.should.equal(0);
-            copayer.copayerIndex.should.equal(i);
-          });
           done();
         });
       });
@@ -584,8 +563,8 @@ describe('Copay server', function() {
         }, function(err, address) {
           should.not.exist(err);
           address.should.exist;
-          address.address.should.equal('3BPfHzwq5j72TBYtYv3Uggk3vyHFHX3QpA');
-          address.path.should.equal('m/0/0/1');
+          address.address.should.equal('3H4pNP6J4PW4NnvdrTg37VvZ7h2QWuAwtA');
+          address.path.should.equal('m/2147483647/0/1');
           done();
         });
       });
@@ -600,8 +579,8 @@ describe('Copay server', function() {
         }, function(err, address) {
           should.not.exist(err);
           address.should.exist;
-          address.address.should.equal('39Dzj5mBJWvzH7bDfmYzXDvTbZS5HdQ4a4');
-          address.path.should.equal('m/0/1/1');
+          address.address.should.equal('3GesnvqTsw3PQbyZwf4D96ZZiFrhVkYsJn');
+          address.path.should.equal('m/2147483647/1/1');
           done();
         });
       });
@@ -626,7 +605,7 @@ describe('Copay server', function() {
       });
     });
 
-    it.only('should create tx', function(done) {
+    it.skip('should create tx', function(done) {
       var bc = sinon.stub();
       bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, helpers.createUtxos(wallet, [100, 200]));
       server._getBlockExplorer = sinon.stub().returns(bc);
