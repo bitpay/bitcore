@@ -193,6 +193,14 @@ describe('Script', function() {
 
   });
 
+  describe('toHex', function() {
+    it('should return an hexa string "03010203" as expected from [3, 1, 2, 3]', function() {
+      var buf = new Buffer([3, 1, 2, 3]);
+      var script = Script.fromBuffer(buf);
+      script.toHex().should.equal('03010203');
+    });
+  });
+
   describe('#isDataOut', function() {
 
     it('should know this is a (blank) OP_RETURN script', function() {
