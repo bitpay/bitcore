@@ -638,6 +638,70 @@ describe('Copay server', function() {
         });
       });
     });
+
+    it('should not create address if unable to store wallet', function(done) {
+      helpers.createAndJoinWallet('123', 2, 2, function(err, wallet) {
+        
+        var storeWalletStub = sinon.stub(server.storage, 'storeWallet');
+        storeWalletStub.yields('dummy error');
+
+        server.createAddress({
+          walletId: '123',
+          isChange: true,
+        }, function(err, address) {
+          err.should.exist;
+          should.not.exist(address);
+
+          server.getAddresses({ walletId: '123' }, function (err, addresses) {
+            addresses.length.should.equal(0);
+  
+            server.storage.storeWallet.restore();
+            server.createAddress({
+              walletId: '123',
+              isChange: true,
+            }, function(err, address) {
+              should.not.exist(err);
+              address.should.exist;
+              address.address.should.equal('3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH');
+              address.path.should.equal('m/2147483647/1/0');
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('should not create address if unable to store addresses', function(done) {
+      helpers.createAndJoinWallet('123', 2, 2, function(err, wallet) {
+        
+        var storeAddressStub = sinon.stub(server.storage, 'storeAddress');
+        storeAddressStub.yields('dummy error');
+
+        server.createAddress({
+          walletId: '123',
+          isChange: true,
+        }, function(err, address) {
+          err.should.exist;
+          should.not.exist(address);
+
+          server.getAddresses({ walletId: '123' }, function (err, addresses) {
+            addresses.length.should.equal(0);
+  
+            server.storage.storeAddress.restore();
+            server.createAddress({
+              walletId: '123',
+              isChange: true,
+            }, function(err, address) {
+              should.not.exist(err);
+              address.should.exist;
+              address.address.should.equal('3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH');
+              address.path.should.equal('m/2147483647/1/0');
+              done();
+            });
+          });
+        });
+      });
+    });
   });
 
   describe('#createTx', function() {
