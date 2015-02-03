@@ -8,7 +8,9 @@ var sinon = require('sinon');
 var should = chai.should();
 var levelup = require('levelup');
 var memdown = require('memdown');
+var Bitcore = require('bitcore');
 
+var SignUtils = require('../lib/signutils');
 var Storage = require('../lib/storage');
 
 var Wallet = require('../lib/model/wallet');
@@ -93,14 +95,15 @@ helpers.createAndJoinWallet = function(id, m, n, cb) {
     });
   });
 };
-helpers.createUtxos = function(amounts) {
+helpers.createUtxos = function(wallet, amounts) {
   amounts = [].concat(amounts);
 
   return _.map(amounts, function(amount) {
     return {
-      txid: 'dummy' + Math.random(),
+      txid: SignUtils.hash(Math.random().toString()).toString('hex'),
       vout: Math.floor((Math.random() * 10) + 1),
       amount: amount,
+      scriptPubKey: new Bitcore.Script.buildMultisigOut(wallet.publicKeyRing, wallet.n),
     };
   });
 };
@@ -607,11 +610,13 @@ describe('Copay server', function() {
   });
 
   describe('#createTx', function() {
+    var wallet;
     beforeEach(function(done) {
       server = new CopayServer({
         storage: storage,
       });
-      helpers.createAndJoinWallet('123', 2, 2, function(err, wallet) {
+      helpers.createAndJoinWallet('123', 2, 2, function(err, w) {
+        wallet = w;
         server.createAddress({
           walletId: '123',
           isChange: false,
@@ -621,12 +626,12 @@ describe('Copay server', function() {
       });
     });
 
-    it('should create tx', function(done) {
+    it.only('should create tx', function(done) {
       var bc = sinon.stub();
-      bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, helpers.createUtxos([100, 200]));
+      bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, helpers.createUtxos(wallet, [100, 200]));
       server._getBlockExplorer = sinon.stub().returns(bc);
 
-      server._createRawTx = sinon.stub().returns('raw');
+      //server._createRawTx = sinon.stub().returns('raw');
 
       var txOpts = {
         copayerId: '1',
@@ -640,7 +645,8 @@ describe('Copay server', function() {
       server.createTx(txOpts, function(err, tx) {
         should.not.exist(err);
         tx.should.exist;
-        tx.rawTx.should.equal('raw');
+        console.log(tx);
+        //tx.rawTx.should.equal('raw');
         tx.isAccepted().should.equal.false;
         tx.isRejected().should.equal.false;
         server.getPendingTxs({
