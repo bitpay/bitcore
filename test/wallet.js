@@ -18,29 +18,21 @@ describe('Wallet', function() {
   describe('#createAddress', function() {
     it('create an address', function() {
       var w = Wallet.fromObj(testWallet);
-      var a = w.createAddress('m/1/1');
-      a.address.should.equal('32HG4C9tWMhWoDoTHFvjmbV5sUJMjWs4vL');
-      a.path.should.equal('m/1/1');
+      var a = w.createAddress(false);
+      a.address.should.equal('35Du8JgkFoiN5znoETnkGZAv99v6eCwGMB');
+      a.path.should.equal('m/2147483647/0/1');
       a.createdOn.should.be.above(1);
     });
   });
-  describe('#getCurrentAddressPath', function() {
-    it('return a valid BIP32 path for defaut wallet Index', function() {
-      var w = new Wallet();
-      w.getCurrentAddressPath(false).should.equal('m/2147483647/0/0');
-      w.getCurrentAddressPath(true).should.equal('m/2147483647/1/0');
-    });
-
-
-  });
-
 });
 
 
 var testWallet = {
-  receiveAddressIndex: 0,
-  changeAddressIndex: 0,
-  copayerIndex: 2147483647,
+  addressManager: {
+    receiveAddressIndex: 0,
+    changeAddressIndex: 0,
+    copayerIndex: 2147483647,
+  },
   createdOn: 1422904188,
   id: '123',
   name: '123 wallet',
@@ -52,9 +44,11 @@ var testWallet = {
     'xpub661MyMwAqRbcFXUfkjfSaRwxJbAPpzNUvTiNFjgZwDJ8sZuhyodkP24L4LvsrgThYAAwKkVVSSmL7Ts7o9EHEHPB3EE89roAra7njoSeiMd'
   ],
   copayers: [{
-    receiveAddressIndex: 0,
-    changeAddressIndex: 0,
-    copayerIndex: 0,
+    addressManager: {
+      receiveAddressIndex: 0,
+      changeAddressIndex: 0,
+      copayerIndex: 0,
+    },
     createdOn: 1422904189,
     id: '1',
     name: 'copayer 1',
@@ -63,9 +57,11 @@ var testWallet = {
     version: '1.0.0',
     signingPubKey: '03814ac7decf64321a3c6967bfb746112fdb5b583531cd512cc3787eaf578947dc'
   }, {
-    receiveAddressIndex: 0,
-    changeAddressIndex: 0,
-    copayerIndex: 1,
+    addressManager: {
+      receiveAddressIndex: 0,
+      changeAddressIndex: 0,
+      copayerIndex: 1,
+    },
     createdOn: 1422904189,
     id: '2',
     name: 'copayer 2',
@@ -74,9 +70,11 @@ var testWallet = {
     version: '1.0.0',
     signingPubKey: '03fc086d2bd8b6507b1909b24c198c946e68775d745492ea4ca70adfce7be92a60'
   }, {
-    receiveAddressIndex: 0,
-    changeAddressIndex: 0,
-    copayerIndex: 2,
+    addressManager: {
+      receiveAddressIndex: 0,
+      changeAddressIndex: 0,
+      copayerIndex: 2,
+    },
     createdOn: 1422904189,
     id: '3',
     name: 'copayer 3',
