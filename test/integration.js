@@ -253,6 +253,33 @@ describe('Copay server', function() {
         });
       });
     });
+
+    it('should fail to create wallet with invalid copayer pairs', function(done) {
+      var invalidPairs = [
+        { m: 0, n: 0 }, 
+        { m: 0, n: 2 }, 
+        { m: 2, n: 1 }, 
+        { m: 0, n: 10 }, 
+        { m: 1, n: 20 }, 
+        { m: 10, n: 10 },
+      ];
+      var opts = {
+        id: '123',
+        name: 'my wallet',
+        pubKey: aPubKey,
+      };
+      async.each(invalidPairs, function (pair, cb) {
+        opts.m = pair.m;
+        opts.n = pair.n;
+        server.createWallet(opts, function(err) {
+          should.exist(err);
+          err.should.contain('Invalid m/n combination');
+          return cb();
+        });
+      }, function (err) {
+        done();
+      });
+    });    
   });
 
   describe('#joinWallet', function() {
