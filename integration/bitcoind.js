@@ -34,7 +34,7 @@ var txHash = {
 // These tests require a running bitcoind instance
 describe('Integration with ' + network.name + ' bitcoind', function() {
 
-  this.timeout(5000);
+  this.timeout(15000);
   it('handshakes', function(cb) {
     var peer = new Peer('localhost', network);
     peer.once('version', function(m) {
