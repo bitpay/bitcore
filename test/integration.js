@@ -53,7 +53,7 @@ var someXPubKeysSignatures = [
 
 //Copayer signature
 var aText = 'hello world';
-var aTextSignature = '3045022100addd20e5413865d65d561ad2979f2289a40d52594b1f804840babd9a63e4ebbf02204b86285e1fcab02df772e7a1325fc4b511ecad79a8f80a2bd1ad8bfa858ac3d4';  // with someXPrivKey[0].derive('m/1/0')=5c0e043a513032907d181325a8e7990b076c0af15ed13dc5e611cda9bb3ae52a;
+var aTextSignature = '3045022100addd20e5413865d65d561ad2979f2289a40d52594b1f804840babd9a63e4ebbf02204b86285e1fcab02df772e7a1325fc4b511ecad79a8f80a2bd1ad8bfa858ac3d4'; // with someXPrivKey[0].derive('m/1/0')=5c0e043a513032907d181325a8e7990b076c0af15ed13dc5e611cda9bb3ae52a;
 
 
 var helpers = {};
@@ -432,7 +432,7 @@ describe('Copay server', function() {
           xPubKey: someXPubKeys[0],
         };
         try {
-        server.joinWallet(copayerOpts, function(err) {});
+          server.joinWallet(copayerOpts, function(err) {});
         } catch (e) {
           e.should.contain('xPubKeySignature');
           done();
@@ -477,7 +477,7 @@ describe('Copay server', function() {
         done();
       });
     });
- 
+
 
     it('should set pkr and status = complete on last copayer joining (2-3)', function(done) {
       helpers.createAndJoinWallet('123', 2, 3, function(err, wallet) {
@@ -487,7 +487,7 @@ describe('Copay server', function() {
           should.not.exist(err);
           wallet.status.should.equal('complete');
           wallet.publicKeyRing.length.should.equal(3);
-          _.each([0,1,2], function(i) {
+          _.each([0, 1, 2], function(i) {
             var copayer = wallet.copayers[i];
             copayer.receiveAddressIndex.should.equal(0);
             copayer.changeAddressIndex.should.equal(0);
@@ -584,20 +584,17 @@ describe('Copay server', function() {
       server = new CopayServer({
         storage: storage,
       });
-      server._doCreateAddress = sinon.stub().returns(new Address({
-        address: 'addr1',
-        path: 'path1'
-      }));
       helpers.createAndJoinWallet('123', 2, 2, function(err, wallet) {
         server.createAddress({
-          walletId: '123'
+          walletId: '123',
+          isChange: false,
         }, function(err, address) {
           done();
         });
       });
     });
 
-    it.skip('should create tx', function(done) {
+    it.only('should create tx', function(done) {
       var bc = sinon.stub();
       bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, helpers.createUtxos([100, 200]));
       server._getBlockExplorer = sinon.stub().returns(bc);
