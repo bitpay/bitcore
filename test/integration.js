@@ -594,7 +594,7 @@ describe('Copay server', function() {
       });
     });
 
-    it.only('should create tx', function(done) {
+    it('should create tx', function(done) {
       var bc = sinon.stub();
       bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, helpers.createUtxos([100, 200]));
       server._getBlockExplorer = sinon.stub().returns(bc);
@@ -626,7 +626,7 @@ describe('Copay server', function() {
           }, function(err, balance) {
             should.not.exist(err);
             balance.totalAmount.should.equal(300);
-            balance.lockedAmount.should.equal(200);
+            balance.lockedAmount.should.equal(100);
             done();
           });
         });
