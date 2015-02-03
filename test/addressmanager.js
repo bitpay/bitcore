@@ -29,8 +29,8 @@ describe('AddressManager', function() {
       var am = new AddressManager({
         copayerIndex: 2
       });
-      am.getNewAddressPath(false).should.equal('m/2/0/1');
-      am.getNewAddressPath(true).should.equal('m/2/1/1');
+      am.getNewAddressPath(false).should.equal('m/2/0/0');
+      am.getNewAddressPath(true).should.equal('m/2/1/0');
     });
   });
 });
