@@ -250,6 +250,14 @@ describe('Transaction', function() {
         return transaction.serialize(true);
       }).to.not.throw();
     });
+    it('stores the fee set by the user', function() {
+      var fee = 1000000;
+      var serialized = new Transaction()
+        .fee(fee)
+        .toObject();
+      var deserialized = new Transaction(serialized);
+      expect(deserialized._fee).to.equal(fee);
+    });
   });
 
   describe('checked serialize', function() {
@@ -265,7 +273,8 @@ describe('Transaction', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith1BTC)
         .change(changeAddress)
-        .to(toAddress, 1);
+        .fee(50000000)
+        .to(toAddress, 40000000);
       expect(function() {
         return transaction.serialize();
       }).to.throw(errors.Transaction.FeeError);
@@ -323,6 +332,29 @@ describe('Transaction', function() {
         }, [public1, public2], 2);
       var deserialized = new Transaction(transaction.toObject());
       expect(deserialized.inputs[0] instanceof Transaction.Input.MultiSigScriptHash).to.equal(true);
+    });
+  });
+
+  describe('checks on adding inputs', function() {
+    var transaction = new Transaction();
+    it('fails if no output script is provided', function() {
+      expect(function() {
+        transaction.addInput(new Transaction.Input());
+      }).to.throw(errors.Transaction.NeedMoreInfo);
+    });
+    it('fails if no satoshi amount is provided', function() {
+      var input = new Transaction.Input();
+      expect(function() {
+        transaction.addInput(input);
+      }).to.throw(errors.Transaction.NeedMoreInfo);
+      expect(function() {
+        transaction.addInput(new Transaction.Input(), Script.empty());
+      }).to.throw(errors.Transaction.NeedMoreInfo);
+    });
+    it('allows output and transaction to be feed as arguments', function() {
+      expect(function() {
+        transaction.addInput(new Transaction.Input(), Script.empty(), 0);
+      }).to.not.throw();
     });
   });
 });
