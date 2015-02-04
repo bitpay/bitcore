@@ -329,6 +329,29 @@ describe('Transaction', function() {
       expect(deserialized.inputs[0] instanceof Transaction.Input.MultiSigScriptHash).to.equal(true);
     });
   });
+
+  describe('checks on adding inputs', function() {
+    var transaction = new Transaction();
+    it('fails if no output script is provided', function() {
+      expect(function() {
+        transaction.addInput(new Transaction.Input());
+      }).to.throw(errors.Transaction.NeedMoreInfo);
+    });
+    it('fails if no satoshi amount is provided', function() {
+      var input = new Transaction.Input();
+      expect(function() {
+        transaction.addInput(input);
+      }).to.throw(errors.Transaction.NeedMoreInfo);
+      expect(function() {
+        transaction.addInput(new Transaction.Input(), Script.empty());
+      }).to.throw(errors.Transaction.NeedMoreInfo);
+    });
+    it('allows output and transaction to be feed as arguments', function() {
+      expect(function() {
+        transaction.addInput(new Transaction.Input(), Script.empty(), 0);
+      }).to.not.throw();
+    });
+  });
 });
 
 var tx_empty_hex = '01000000000000000000';
