@@ -97,11 +97,7 @@ helpers.createAndJoinWallet = function(id, m, n, cb) {
 };
 
 helpers.randomTXID = function() {
-  var ret = '';
-  for (var i = 0; i < 64 / 4; i++)
-    ret += Math.floor(Math.random() * 255 * 255).toString(16);
-
-  return ret;
+  return Bitcore.crypto.Hash.sha256(new Buffer(Math.random() * 100000)).toString('hex');;
 };
 
 helpers.createUtxos = function(server, wallet, amounts, cb) {
@@ -113,7 +109,6 @@ helpers.createUtxos = function(server, wallet, amounts, cb) {
         isChange: false,
       }, function(err, address) {
         addresses.push(address);
-        console.log('[integration.js.115:address:]', address); //TODO
         next(err);
       });
     },
@@ -126,7 +121,7 @@ helpers.createUtxos = function(server, wallet, amounts, cb) {
           txid: helpers.randomTXID(),
           vout: Math.floor((Math.random() * 10) + 1),
           amount: amount,
-          scriptPubKey: addresses[i].getScriptPubKey(wallet.m),
+          scriptPubKey: addresses[i].getScriptPubKey(wallet.m).toBuffer().toString('hex'),
         };
       }));
     });
@@ -623,12 +618,12 @@ describe('Copay server', function() {
 
     it('should create many addresses on simultaneous requests', function(done) {
       helpers.createAndJoinWallet('123', 2, 2, function(err, wallet) {
-        async.map(_.range(10), function (i, cb) {
+        async.map(_.range(10), function(i, cb) {
           server.createAddress({
             walletId: '123',
             isChange: false,
           }, cb);
-        }, function (err, addresses) {
+        }, function(err, addresses) {
           addresses.length.should.equal(10);
           addresses[0].path.should.equal('m/2147483647/0/0');
           addresses[9].path.should.equal('m/2147483647/0/9');
@@ -721,30 +716,27 @@ describe('Copay server', function() {
       });
     });
 
-    it.skip('should create tx', function(done) {
+    it('should create tx', function(done) {
 
       helpers.createUtxos(server, wallet, [100, 200], function(utxos) {
 
-        console.log('[integration.js.670:utxos:]', utxos); //TODO
         var bc = sinon.stub();
         bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
         server._getBlockExplorer = sinon.stub().returns(bc);
-        //server._createRawTx = sinon.stub().returns('raw');
 
         var txOpts = {
           copayerId: '1',
           walletId: '123',
-          toAddress: 'dummy',
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 80,
           message: 'some message',
           otToken: 'dummy',
           requestSignature: 'dummy',
         };
+
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
           tx.should.exist;
-          console.log(tx);
-          //tx.rawTx.should.equal('raw');
           tx.isAccepted().should.equal.false;
           tx.isRejected().should.equal.false;
           server.getPendingTxs({
@@ -765,10 +757,146 @@ describe('Copay server', function() {
       });
     });
 
-    it.skip('should fail to create tx when insufficient funds', function(done) {});
+    it('should fail to create tx when insufficient funds', function(done) {
 
-    it.skip('should create tx when there is a pending tx and enough UTXOs', function(done) {});
+      helpers.createUtxos(server, wallet, [100], function(utxos) {
 
-    it.skip('should fail to create tx when there is a pending tx and not enough UTXOs', function(done) {});
+        var bc = sinon.stub();
+        bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
+        server._getBlockExplorer = sinon.stub().returns(bc);
+
+        var txOpts = {
+          copayerId: '1',
+          walletId: '123',
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 120,
+          message: 'some message',
+          otToken: 'dummy',
+          requestSignature: 'dummy',
+        };
+
+        server.createTx(txOpts, function(err, tx) {
+          err.should.contain('insufficient');
+          server.getPendingTxs({
+            walletId: '123'
+          }, function(err, txs) {
+            should.not.exist(err);
+            txs.length.should.equal(0);
+            server.getBalance({
+              walletId: '123'
+            }, function(err, balance) {
+              should.not.exist(err);
+              balance.lockedAmount.should.equal(0);
+              balance.totalAmount.should.equal(100);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('should create tx when there is a pending tx and enough UTXOs', function(done) {
+
+      helpers.createUtxos(server, wallet, [10.1, 10.2, 10.3], function(utxos) {
+
+        var bc = sinon.stub();
+        bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
+        server._getBlockExplorer = sinon.stub().returns(bc);
+
+        var txOpts = {
+          copayerId: '1',
+          walletId: '123',
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 12,
+          message: 'some message',
+          otToken: 'dummy',
+          requestSignature: 'dummy',
+        };
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(err);
+          tx.should.exist;
+
+          var txOpts2 = {
+            copayerId: '1',
+            walletId: '123',
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 8,
+            message: 'some message 2',
+            otToken: 'dummy',
+            requestSignature: 'dummy',
+          };
+          server.createTx(txOpts2, function(err, tx) {
+            should.not.exist(err);
+            tx.should.exist;
+            server.getPendingTxs({
+              walletId: '123'
+            }, function(err, txs) {
+              should.not.exist(err);
+              txs.length.should.equal(2);
+              server.getBalance({
+                walletId: '123'
+              }, function(err, balance) {
+                should.not.exist(err);
+                balance.totalAmount.should.equal(30.6);
+                balance.lockedAmount.should.equal(30.6);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should fail to create tx when there is a pending tx and not enough UTXOs', function(done) {
+      helpers.createUtxos(server, wallet, [10.1, 10.2, 10.3], function(utxos) {
+
+        var bc = sinon.stub();
+        bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
+        server._getBlockExplorer = sinon.stub().returns(bc);
+
+        var txOpts = {
+          copayerId: '1',
+          walletId: '123',
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 12,
+          message: 'some message',
+          otToken: 'dummy',
+          requestSignature: 'dummy',
+        };
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(err);
+          tx.should.exist;
+
+          var txOpts2 = {
+            copayerId: '1',
+            walletId: '123',
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 24,
+            message: 'some message 2',
+            otToken: 'dummy',
+            requestSignature: 'dummy',
+          };
+          server.createTx(txOpts2, function(err, tx) {
+            err.should.contain('insufficient');
+            should.not.exist(tx);
+            server.getPendingTxs({
+              walletId: '123'
+            }, function(err, txs) {
+              should.not.exist(err);
+              txs.length.should.equal(1);
+              server.getBalance({
+                walletId: '123'
+              }, function(err, balance) {
+                should.not.exist(err);
+                balance.totalAmount.should.equal(30.6);
+                balance.lockedAmount.should.equal(20.3);
+                done();
+              });
+            });
+          });
+        });
+      });
+
+    });
   });
 });
