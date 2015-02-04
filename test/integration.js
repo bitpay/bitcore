@@ -778,7 +778,8 @@ describe('Copay server', function() {
         };
 
         server.createTx(txOpts, function(err, tx) {
-          err.should.contain('insufficient');
+          err.code.should.equal('INSUFFICIENTFUNDS');
+          err.message.should.equal('Insufficient funds');
           server.getPendingTxs({
             walletId: '123'
           }, function(err, txs) {
@@ -879,7 +880,8 @@ describe('Copay server', function() {
             requestSignature: 'dummy',
           };
           server.createTx(txOpts2, function(err, tx) {
-            err.should.contain('insufficient');
+            err.code.should.equal('INSUFFICIENTFUNDS');
+            err.message.should.equal('Insufficient funds');
             should.not.exist(tx);
             server.getPendingTxs({
               walletId: '123'
