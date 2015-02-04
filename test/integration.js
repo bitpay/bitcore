@@ -43,7 +43,7 @@ var someXPubKeys = [
   'xpub661MyMwAqRbcG67ioS7rz3fFg7EDQNLJ9m1etAPwBecZhL5kKAKe4JU5jCTzRcEWp28XCYA1gKh7jyficSr97gcR2pjDL5jbWua1CwTKWV4',
 ];
 
-
+// with keyPair.priv
 var someXPubKeysSignatures = [
   '30440220192ae7345d980f45f908bd63ccad60ce04270d07b91f1a9d92424a07a38af85202201591f0f71dd4e79d9206d2306862e6b8375e13a62c193953d768e884b6fb5a46',
   '30440220134d13139323ba16ff26471c415035679ee18b2281bf85550ccdf6a370899153022066ef56ff97091b9be7dede8e40f50a3a8aad8205f2e3d8e194f39c20f3d15c62',
@@ -51,7 +51,7 @@ var someXPubKeysSignatures = [
   '304402203ae5bf7fa8935b8ab2ac33724dbb191356cecb47c8371d2c9389e918a3600918022073b48705306730c8fe4ab22d5f6ed3ca3def27eb6e8c5cc8f53e23c11fa5e5ef',
   '3045022100eabd2a605403b377a8db9eec57726da0309a7eb385e7e4e5273b9862046f25ef02204d18755a90580a98f45e162ae5d5dc39aa3aa708a0d79433ed259e70a832b49c',
   '3045022100c282254773c65025054e18a61ee550cbf78b88fc72ef66770050815b62502d9c02206e0df528203c9201c144f865df71f5d2471668f4ed8387979fcee20f6fa121a9',
-]; // with keyPair.priv
+];
 
 //Copayer signature
 var aText = 'hello world';
@@ -116,15 +116,58 @@ helpers.createUtxos = function(server, wallet, amounts, cb) {
       amounts = [].concat(amounts);
 
       var i = 0;
-      return cb(_.map(amounts, function(amount) {
+      var utxos = _.map(amounts, function(amount) {
         return {
           txid: helpers.randomTXID(),
           vout: Math.floor((Math.random() * 10) + 1),
           amount: amount,
           scriptPubKey: addresses[i].getScriptPubKey(wallet.m).toBuffer().toString('hex'),
+          address: addresses[i].address,
         };
-      }));
+      });
+
+      var bc = sinon.stub();
+      bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
+      server._getBlockExplorer = sinon.stub().returns(bc);
+
+      return cb();
     });
+};
+
+helpers.clientSign = function(tx, xpriv, n) {
+  //Derive proper key to sign, for each input
+  var privs = [],
+    derived = {};
+  var xpriv = new Bitcore.HDPrivateKey(someXPrivKey[0]);
+
+  _.each(tx.inputs, function(i) {
+    if (!derived[i.path]) {
+      privs.push(xpriv.derive(i.path).privateKey);
+      derived[i.path] = true;
+    }
+  });
+
+  var t = new Bitcore.Transaction();
+
+  _.each(tx.inputs, function(i) {
+    t.from(i, i.publicKeys, n);
+  });
+
+  t.to(tx.toAddress, tx.amount)
+    .change(tx.changeAddress)
+    .sign(privs);
+
+  var signatures = [];
+  console.log('Bitcore Transaction:', t); //TODO
+  _.each(privs, function(p) {
+    var s = t.getSignatures(p)[0].signature.toDER().toString('hex');
+
+    console.log('\n## Priv key:', p);
+    console.log('\t\t->> signature ->>', s); //TODO
+    signatures.push(s);
+  });
+
+  return signatures;
 };
 
 var db, storage;
@@ -638,7 +681,7 @@ describe('Copay server', function() {
 
     it('should not create address if unable to store wallet', function(done) {
       helpers.createAndJoinWallet('123', 2, 2, function(err, wallet) {
-        
+
         var storeWalletStub = sinon.stub(server.storage, 'storeWallet');
         storeWalletStub.yields('dummy error');
 
@@ -649,9 +692,11 @@ describe('Copay server', function() {
           err.should.exist;
           should.not.exist(address);
 
-          server.getAddresses({ walletId: '123' }, function (err, addresses) {
+          server.getAddresses({
+            walletId: '123'
+          }, function(err, addresses) {
             addresses.length.should.equal(0);
-  
+
             server.storage.storeWallet.restore();
             server.createAddress({
               walletId: '123',
@@ -670,7 +715,7 @@ describe('Copay server', function() {
 
     it('should not create address if unable to store addresses', function(done) {
       helpers.createAndJoinWallet('123', 2, 2, function(err, wallet) {
-        
+
         var storeAddressStub = sinon.stub(server.storage, 'storeAddress');
         storeAddressStub.yields('dummy error');
 
@@ -681,9 +726,11 @@ describe('Copay server', function() {
           err.should.exist;
           should.not.exist(address);
 
-          server.getAddresses({ walletId: '123' }, function (err, addresses) {
+          server.getAddresses({
+            walletId: '123'
+          }, function(err, addresses) {
             addresses.length.should.equal(0);
-  
+
             server.storage.storeAddress.restore();
             server.createAddress({
               walletId: '123',
@@ -722,10 +769,6 @@ describe('Copay server', function() {
 
       helpers.createUtxos(server, wallet, [100, 200], function(utxos) {
 
-        var bc = sinon.stub();
-        bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
-        server._getBlockExplorer = sinon.stub().returns(bc);
-
         var txOpts = {
           copayerId: '1',
           walletId: '123',
@@ -763,10 +806,6 @@ describe('Copay server', function() {
 
       helpers.createUtxos(server, wallet, [100], function(utxos) {
 
-        var bc = sinon.stub();
-        bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
-        server._getBlockExplorer = sinon.stub().returns(bc);
-
         var txOpts = {
           copayerId: '1',
           walletId: '123',
@@ -801,10 +840,6 @@ describe('Copay server', function() {
     it('should create tx when there is a pending tx and enough UTXOs', function(done) {
 
       helpers.createUtxos(server, wallet, [10.1, 10.2, 10.3], function(utxos) {
-
-        var bc = sinon.stub();
-        bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
-        server._getBlockExplorer = sinon.stub().returns(bc);
 
         var txOpts = {
           copayerId: '1',
@@ -853,10 +888,6 @@ describe('Copay server', function() {
     it('should fail to create tx when there is a pending tx and not enough UTXOs', function(done) {
       helpers.createUtxos(server, wallet, [10.1, 10.2, 10.3], function(utxos) {
 
-        var bc = sinon.stub();
-        bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
-        server._getBlockExplorer = sinon.stub().returns(bc);
-
         var txOpts = {
           copayerId: '1',
           walletId: '123',
@@ -903,4 +934,58 @@ describe('Copay server', function() {
 
     });
   });
+
+  describe.only('#signTx', function() {
+    var wallet, txid;
+
+    beforeEach(function(done) {
+      server = new CopayServer({
+        storage: storage,
+      });
+      helpers.createAndJoinWallet('123', 2, 2, function(err, w) {
+        wallet = w;
+        server.createAddress({
+          walletId: '123',
+          isChange: false,
+        }, function(err, address) {
+          helpers.createUtxos(server, wallet, [10, 20, 30], function(utxos) {
+            var txOpts = {
+              copayerId: '1',
+              walletId: '123',
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 10,
+              message: 'some message',
+              otToken: 'dummy',
+              requestSignature: 'dummy',
+            };
+            server.createTx(txOpts, function(err, tx) {
+              should.not.exist(err);
+              tx.should.exist;
+              txid = tx.id;
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('should sign a TX', function(done) {
+      server.getPendingTxs({
+        walletId: '123'
+      }, function(err, txs) {
+        var tx = txs[0];
+        tx.id.should.equal(txid);
+
+        // 
+        var signatures = helpers.clientSign(tx, someXPrivKey[0], wallet.n);
+
+        // TODO send signatures
+
+
+        done();
+      });
+
+    });
+  });
+
 });
