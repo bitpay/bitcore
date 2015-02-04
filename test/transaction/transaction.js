@@ -245,6 +245,14 @@ describe('Transaction', function() {
         return transaction.serialize(true);
       }).to.not.throw();
     });
+    it('stores the fee set by the user', function() {
+      var fee = 1000000;
+      var serialized = new Transaction()
+        .fee(fee)
+        .toObject();
+      var deserialized = new Transaction(serialized);
+      expect(deserialized._fee).to.equal(fee);
+    });
   });
 
   describe('checked serialize', function() {
