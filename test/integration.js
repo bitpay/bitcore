@@ -218,7 +218,7 @@ describe('Copay server', function() {
         id: '345'
       }, function(err, wallet) {
         should.exist(err);
-        err.should.equal('Wallet not found');
+        err.message.should.equal('Wallet not found');
         done();
       });
     });
@@ -306,7 +306,7 @@ describe('Copay server', function() {
         opts.n = pair.n;
         server.createWallet(opts, function(err) {
           should.exist(err);
-          err.should.contain('Invalid m/n combination');
+          err.message.should.equal('Invalid combination of required copayers / total copayers');
           return cb();
         });
       }, function(err) {
@@ -413,7 +413,8 @@ describe('Copay server', function() {
             wallet.status.should.equal('complete');
             server.joinWallet(copayer2Opts, function(err) {
               should.exist(err);
-              err.should.equal('Wallet full');
+              err.code.should.equal('WFULL');
+              err.message.should.equal('Wallet full');
               done();
             });
           });
@@ -442,7 +443,8 @@ describe('Copay server', function() {
           should.not.exist(err);
           server.joinWallet(copayerOpts, function(err) {
             should.exist(err);
-            err.should.equal('Copayer already in wallet');
+            err.code.should.equal('CINWALLET');
+            err.message.should.equal('Copayer already in wallet');
             done();
           });
         });
@@ -468,7 +470,7 @@ describe('Copay server', function() {
           xPubKeySignature: 'bad sign',
         };
         server.joinWallet(copayerOpts, function(err) {
-          err.should.contain('Bad request');
+          err.message.should.equal('Bad request');
           done();
         });
       });
@@ -518,7 +520,7 @@ describe('Copay server', function() {
           xPubKeySignature: someXPubKeysSignatures[0],
         };
         server.joinWallet(copayerOpts, function(err) {
-          err.should.contain('Bad request');
+          err.message.should.equal('Bad request');
           done();
         });
       });
@@ -571,7 +573,7 @@ describe('Copay server', function() {
           signature: 'dummy',
         };
         server.verifyMessageSignature(opts, function(err, isValid) {
-          err.should.equal('Copayer not found');
+          err.message.should.equal('Copayer not found');
           done();
         });
       });
