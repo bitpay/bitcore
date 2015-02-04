@@ -260,7 +260,8 @@ describe('Transaction', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith1BTC)
         .change(changeAddress)
-        .to(toAddress, 1);
+        .fee(50000000)
+        .to(toAddress, 40000000);
       expect(function() {
         return transaction.serialize();
       }).to.throw(errors.Transaction.FeeError);
