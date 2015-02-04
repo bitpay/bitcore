@@ -33,7 +33,7 @@ To get started, just `npm install bitcore` or `bower install bitcore`.
 
 ## Modules
 
-Some functionality is implemented as a module that can be installed seperately:
+Some functionality is implemented as a module that can be installed separately:
 
 * [Payment Protocol Support](https://github.com/bitpay/bitcore-payment-protocol)
 * [Peer to Peer Networking](https://github.com/bitpay/bitcore-p2p)
