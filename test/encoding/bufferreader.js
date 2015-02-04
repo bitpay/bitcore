@@ -35,10 +35,8 @@ describe('BufferReader', function() {
   describe('#eof', function() {
 
     it('should return true for a blank br', function() {
-      var br = new BufferReader({
-        buf: new Buffer([])
-      });
-      br.eof().should.equal(true);
+      var br = new BufferReader(new Buffer([]));
+      br.finished().should.equal(true);
     });
 
   });
