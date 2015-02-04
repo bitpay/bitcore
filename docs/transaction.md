@@ -56,15 +56,13 @@ To send a transaction to a multisig address, the API is the same as in the above
       .change(address)
       .sign(myKeys);
 
-  var serialized = multiSigTx.serialize();
+  var serialized = multiSigTx.toObject();
 ```
 
 This can be serialized and sent to another party, to complete with the needed signatures:
 
 ```javascript
   var multiSigTx = new Transaction(serialized)
-      .from(utxo, publicKeys, threshold)       // provide info about the multisig output
-                                               // (lost on serialization)
       .sign(anotherSetOfKeys);
 
   assert(multiSigTx.isFullySigned());
