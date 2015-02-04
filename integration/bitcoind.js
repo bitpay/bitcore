@@ -83,9 +83,11 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
       });
     });
   });
-  it('handles addr', function(cb) {
+  it.only('handles addr', function(cb) {
     connect(function(peer) {
       peer.once('addr', function(message) {
+        console.log(message.serialize(network).toString('hex'));
+        console.log(message.getPayload().toString('hex'));
         message.addresses.forEach(function(address) {
           // console.log(address.ip.v4 + ':' + address.port);
           (address.time instanceof Date).should.equal(true);
@@ -98,7 +100,7 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
       peer.sendMessage(message);
     });
   });
-  it('can request inv detailed info', function(cb) {
+  it('requests inv detailed info', function(cb) {
     connect(function(peer) {
       peer.once('block', function(message) {
         //console.log(message.block.toJSON());
@@ -116,7 +118,7 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
       });
     });
   });
-  it('can send tx inv and receive getdata for that tx', function(cb) {
+  it('sends tx inv and receives getdata for that tx', function(cb) {
     connect(function(peer) {
       var type = Messages.Inventory.TYPE.TX;
       var inv = [{
@@ -133,7 +135,7 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
       peer.sendMessage(message);
     });
   });
-  it('can request block data', function(cb) {
+  it('requests block data', function(cb) {
     connect(function(peer) {
       peer.once('block', function(message) {
         (message.block instanceof Block).should.equal(true);
@@ -144,7 +146,7 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
     });
   });
   var fakeHash = 'e2dfb8afe1575bfacae1a0b4afc49af7ddda69285857267bae0e22be15f74a3a';
-  it('can handle request tx data not found', function(cb) {
+  it('handles request tx data not found', function(cb) {
     connect(function(peer) {
       var expected = Messages.NotFound.forTransaction(fakeHash);
       peer.once('notfound', function(message) {
@@ -158,7 +160,7 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
   });
   var from = [blockHash[network.name]];
   var stop = stopBlock[network.name];
-  it('can get headers', function(cb) {
+  it('gets headers', function(cb) {
     connect(function(peer) {
       peer.once('headers', function(message) {
         (message instanceof Messages.Headers).should.equal(true);
@@ -169,7 +171,7 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
       peer.sendMessage(message);
     });
   });
-  it('can get blocks', function(cb) {
+  it('gets blocks', function(cb) {
     connect(function(peer) {
       peer.once('inv', function(message) {
         (message instanceof Messages.Inventory).should.equal(true);
@@ -182,7 +184,20 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
       peer.sendMessage(message);
     });
   });
-  it('can send inv and respond with info', function(cb) {
+  it('sends inv and responds with info', function(cb) {
+    connect(function(peer) {
+      var randomHash = Random.getRandomBuffer(32);// needs to be random for repeatability
+      var expected = Messages.GetData.forBlock(randomHash);
+      peer.once('getdata', function(message) {
+        (message instanceof Messages.GetData).should.equal(true);
+        message.should.deep.equal(expected);
+        cb();
+      });
+      var message = Messages.Inventory.forBlock(randomHash);
+      peer.sendMessage(message);
+    });
+  });
+  it('aasdasd', function(cb) {
     connect(function(peer) {
       var randomHash = Random.getRandomBuffer(32);// needs to be random for repeatability
       var expected = Messages.GetData.forBlock(randomHash);
