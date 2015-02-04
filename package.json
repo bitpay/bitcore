@@ -26,7 +26,8 @@
     "levelup": "^0.19.0",
     "lodash": "^2.4.1",
     "npmlog": "^0.1.1",
-    "preconditions": "^1.0.7"
+    "preconditions": "^1.0.7",
+    "guid":"*"
   },
   "devDependencies": {
     "chai": "^1.9.1",
