@@ -10,6 +10,7 @@ var levelup = require('levelup');
 var memdown = require('memdown');
 var Bitcore = require('bitcore');
 
+var Utils = require('../lib/utils');
 var SignUtils = require('../lib/signutils');
 var Storage = require('../lib/storage');
 
@@ -100,8 +101,19 @@ helpers.randomTXID = function() {
   return Bitcore.crypto.Hash.sha256(new Buffer(Math.random() * 100000)).toString('hex');;
 };
 
+
+helpers.toSatoshi = function(btc) {
+  if (_.isArray(btc)) {
+    return _.map(btc, helpers.toSatoshi);
+  } else {
+    return Utils.strip(btc * 1e8);
+  }
+};
+
+// Amounts in satoshis 
 helpers.createUtxos = function(server, wallet, amounts, cb) {
   var addresses = [];
+
 
   async.each(amounts, function(a, next) {
       server.createAddress({
@@ -120,7 +132,7 @@ helpers.createUtxos = function(server, wallet, amounts, cb) {
         return {
           txid: helpers.randomTXID(),
           vout: Math.floor((Math.random() * 10) + 1),
-          amount: amount,
+          satoshis: amount,
           scriptPubKey: addresses[i].getScriptPubKey(wallet.m).toBuffer().toString('hex'),
           address: addresses[i].address,
         };
@@ -158,12 +170,11 @@ helpers.clientSign = function(tx, xpriv, n) {
     .sign(privs);
 
   var signatures = [];
-  console.log('Bitcore Transaction:', t); //TODO
+  //console.log('Bitcore Transaction:', t); //TODO
   _.each(privs, function(p) {
     var s = t.getSignatures(p)[0].signature.toDER().toString('hex');
-
-    console.log('\n## Priv key:', p);
-    console.log('\t\t->> signature ->>', s); //TODO
+    // console.log('\n## Priv key:', p);
+    // console.log('\t\t->> signature ->>', s); //TODO
     signatures.push(s);
   });
 
@@ -767,13 +778,13 @@ describe('Copay server', function() {
 
     it('should create tx', function(done) {
 
-      helpers.createUtxos(server, wallet, [100, 200], function(utxos) {
+      helpers.createUtxos(server, wallet, helpers.toSatoshi([100, 200]), function(utxos) {
 
         var txOpts = {
           copayerId: '1',
           walletId: '123',
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-          amount: 80,
+          amount: helpers.toSatoshi(80),
           message: 'some message',
           otToken: 'dummy',
           requestSignature: 'dummy',
@@ -793,8 +804,8 @@ describe('Copay server', function() {
               walletId: '123'
             }, function(err, balance) {
               should.not.exist(err);
-              balance.totalAmount.should.equal(300);
-              balance.lockedAmount.should.equal(100);
+              balance.totalAmount.should.equal(helpers.toSatoshi(300));
+              balance.lockedAmount.should.equal(helpers.toSatoshi(100));
               done();
             });
           });
@@ -804,13 +815,13 @@ describe('Copay server', function() {
 
     it('should fail to create tx when insufficient funds', function(done) {
 
-      helpers.createUtxos(server, wallet, [100], function(utxos) {
+      helpers.createUtxos(server, wallet, helpers.toSatoshi([100]), function() {
 
         var txOpts = {
           copayerId: '1',
           walletId: '123',
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-          amount: 120,
+          amount: helpers.toSatoshi(120),
           message: 'some message',
           otToken: 'dummy',
           requestSignature: 'dummy',
@@ -829,7 +840,7 @@ describe('Copay server', function() {
             }, function(err, balance) {
               should.not.exist(err);
               balance.lockedAmount.should.equal(0);
-              balance.totalAmount.should.equal(100);
+              balance.totalAmount.should.equal(10000000000);
               done();
             });
           });
@@ -839,13 +850,13 @@ describe('Copay server', function() {
 
     it('should create tx when there is a pending tx and enough UTXOs', function(done) {
 
-      helpers.createUtxos(server, wallet, [10.1, 10.2, 10.3], function(utxos) {
+      helpers.createUtxos(server, wallet, helpers.toSatoshi([10.1, 10.2, 10.3]), function(utxos) {
 
         var txOpts = {
           copayerId: '1',
           walletId: '123',
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-          amount: 12,
+          amount: helpers.toSatoshi(12),
           message: 'some message',
           otToken: 'dummy',
           requestSignature: 'dummy',
@@ -875,8 +886,8 @@ describe('Copay server', function() {
                 walletId: '123'
               }, function(err, balance) {
                 should.not.exist(err);
-                balance.totalAmount.should.equal(30.6);
-                balance.lockedAmount.should.equal(30.6);
+                balance.totalAmount.should.equal(3060000000);
+                balance.lockedAmount.should.equal(3060000000);
                 done();
               });
             });
@@ -886,13 +897,13 @@ describe('Copay server', function() {
     });
 
     it('should fail to create tx when there is a pending tx and not enough UTXOs', function(done) {
-      helpers.createUtxos(server, wallet, [10.1, 10.2, 10.3], function(utxos) {
+      helpers.createUtxos(server, wallet, helpers.toSatoshi([10.1, 10.2, 10.3]), function(utxos) {
 
         var txOpts = {
           copayerId: '1',
           walletId: '123',
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-          amount: 12,
+          amount: helpers.toSatoshi(12),
           message: 'some message',
           otToken: 'dummy',
           requestSignature: 'dummy',
@@ -905,7 +916,7 @@ describe('Copay server', function() {
             copayerId: '1',
             walletId: '123',
             toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 24,
+            amount: helpers.toSatoshi(24),
             message: 'some message 2',
             otToken: 'dummy',
             requestSignature: 'dummy',
@@ -923,8 +934,8 @@ describe('Copay server', function() {
                 walletId: '123'
               }, function(err, balance) {
                 should.not.exist(err);
-                balance.totalAmount.should.equal(30.6);
-                balance.lockedAmount.should.equal(20.3);
+                balance.totalAmount.should.equal(helpers.toSatoshi(30.6));
+                balance.lockedAmount.should.equal(helpers.toSatoshi(20.3));
                 done();
               });
             });
@@ -935,7 +946,7 @@ describe('Copay server', function() {
     });
   });
 
-  describe.only('#signTx', function() {
+  describe('#signTx', function() {
     var wallet, txid;
 
     beforeEach(function(done) {
@@ -948,12 +959,12 @@ describe('Copay server', function() {
           walletId: '123',
           isChange: false,
         }, function(err, address) {
-          helpers.createUtxos(server, wallet, [10, 20, 30], function(utxos) {
+          helpers.createUtxos(server, wallet, helpers.toSatoshi([1, 2, 3, 4, 5, 6, 7, 8]), function(utxos) {
             var txOpts = {
               copayerId: '1',
               walletId: '123',
               toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-              amount: 10,
+              amount: helpers.toSatoshi(10),
               message: 'some message',
               otToken: 'dummy',
               requestSignature: 'dummy',
@@ -978,11 +989,15 @@ describe('Copay server', function() {
 
         // 
         var signatures = helpers.clientSign(tx, someXPrivKey[0], wallet.n);
+        server.signTx({
+          walletId: '123',
+          copayerId: '1',
+          txProposalId: txid,
+          signatures: signatures,
+        }, function(err) {
+          done();
+        });
 
-        // TODO send signatures
-
-
-        done();
       });
 
     });
