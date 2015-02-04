@@ -67,7 +67,7 @@ var address = privateKey.toAddress();
 
 ```javascript
 // Build a 2-of-3 address from public keys
-var P2SHAddress = new bitcore.Address([publicKey1, publicKey2, publicKey3], 2);
+var p2shAddress = new bitcore.Address([publicKey1, publicKey2, publicKey3], 2);
 ```
 
 ## Request a Payment

@@ -38,7 +38,7 @@ A pay-to-script-hash multisignature Address can be instantiated from an array of
 
 ```javascript
 // a 2-of-3 address from public keys
-var P2SHAddress = new Address([publicKey1, publicKey2, publicKey3], 2);
+var p2shAddress = new Address([publicKey1, publicKey2, publicKey3], 2);
 ```
 
 ## Validating an Address
