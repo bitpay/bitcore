@@ -357,6 +357,40 @@ describe('Transaction', function() {
       }).to.not.throw();
     });
   });
+
+  describe('removeInput and removeOutput', function() {
+    it('can remove an input by index', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith1BTC);
+      transaction.inputs.length.should.equal(1);
+      transaction.removeInput(0);
+      transaction._inputAmount.should.equal(0);
+      transaction.inputs.length.should.equal(0);
+    });
+    it('can remove an input by transaction id', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith1BTC);
+      transaction.inputs.length.should.equal(1);
+      transaction.removeInput(simpleUtxoWith1BTC.txId, simpleUtxoWith1BTC.outputIndex);
+      transaction._inputAmount.should.equal(0);
+      transaction.inputs.length.should.equal(0);
+    });
+    it('fails if the index provided is invalid', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith1BTC);
+      expect(function() {
+        transaction.removeInput(2);
+      }).to.throw(errors.Transaction.InvalidIndex);
+    });
+    it('an output can be removed by index', function() {
+      var transaction = new Transaction()
+        .to(toAddress, 40000000)
+        .to(toAddress, 40000000);
+      transaction.outputs.length.should.equal(2);
+      transaction.removeOutput(0);
+      transaction.outputs.length.should.equal(1);
+    });
+  });
 });
 
 var tx_empty_hex = '01000000000000000000';
