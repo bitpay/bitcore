@@ -268,10 +268,17 @@ describe('PrivateKey', function() {
 
   });
 
-  describe('#toBuffer', function() {
-    it('should output known buffer', function() {
+  describe('buffer serialization', function() {
+    it('returns an expected value when creating a PrivateKey from a buffer', function() {
       var privkey = new PrivateKey(BN.fromBuffer(buf), 'livenet');
       privkey.toString().should.equal(buf.toString('hex'));
+    });
+
+    it('roundtrips correctly when using toBuffer/fromBuffer', function() {
+      var privkey = new PrivateKey(BN.fromBuffer(buf));
+      var toBuffer = new PrivateKey(privkey.toBuffer());
+      var fromBuffer = PrivateKey.fromBuffer(toBuffer.toBuffer());
+      fromBuffer.toString().should.equal(privkey.toString());
     });
   });
 
