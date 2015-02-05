@@ -106,7 +106,7 @@ describe('BufferWriter', function() {
     
     it('should write 1', function() {
       var bw = new BufferWriter();
-      bw.writeUInt64BEBN(BN(1)).concat().toString('hex').should.equal('0000000000000001');
+      bw.writeUInt64BEBN(new BN(1)).concat().toString('hex').should.equal('0000000000000001');
     });
 
   });
@@ -115,7 +115,7 @@ describe('BufferWriter', function() {
     
     it('should write 1', function() {
       var bw = new BufferWriter();
-      bw.writeUInt64LEBN(BN(1)).concat().toString('hex').should.equal('0100000000000000');
+      bw.writeUInt64LEBN(new BN(1)).concat().toString('hex').should.equal('0100000000000000');
     });
 
   });
@@ -161,25 +161,25 @@ describe('BufferWriter', function() {
     
     it('should write a 1 byte varint', function() {
       var bw = new BufferWriter();
-      bw.writeVarintBN(BN(1));
+      bw.writeVarintBN(new BN(1));
       bw.concat().length.should.equal(1);
     });
 
     it('should write a 3 byte varint', function() {
       var bw = new BufferWriter();
-      bw.writeVarintBN(BN(1000));
+      bw.writeVarintBN(new BN(1000));
       bw.concat().length.should.equal(3);
     });
 
     it('should write a 5 byte varint', function() {
       var bw = new BufferWriter();
-      bw.writeVarintBN(BN(Math.pow(2, 16 + 1)));
+      bw.writeVarintBN(new BN(Math.pow(2, 16 + 1)));
       bw.concat().length.should.equal(5);
     });
 
     it('should write a 9 byte varint', function() {
       var bw = new BufferWriter();
-      bw.writeVarintBN(BN(Math.pow(2, 32 + 1)));
+      bw.writeVarintBN(new BN(Math.pow(2, 32 + 1)));
       bw.concat().length.should.equal(9);
     });
 

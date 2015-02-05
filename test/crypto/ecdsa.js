@@ -83,7 +83,7 @@ describe('ECDSA', function() {
     it('should generate a random k that is (almost always) greater than this relatively small number', function() {
       ecdsa.randomK();
       var k1 = ecdsa.k;
-      var k2 = new BN(Math.pow(2, 32)).mul(BN(Math.pow(2, 32))).mul(BN(Math.pow(2, 32)));
+      var k2 = new BN(Math.pow(2, 32)).mul(new BN(Math.pow(2, 32))).mul(new BN(Math.pow(2, 32)));
       k2.gt(k1).should.equal(false);
     });
 
@@ -110,7 +110,7 @@ describe('ECDSA', function() {
       // https://github.com/bitcoinjs/bitcoinjs-lib/blob/10630873ebaa42381c5871e20336fbfb46564ac8/test/fixtures/ecdsa.json#L6
       var ecdsa = new ECDSA();
       ecdsa.hashbuf = Hash.sha256(new Buffer('Everything should be made as simple as possible, but not simpler.'));
-      ecdsa.privkey = new Privkey(BN(1));
+      ecdsa.privkey = new Privkey(new BN(1));
       ecdsa.privkey2pubkey();
       ecdsa.deterministicK();
       ecdsa.k.toBuffer().toString('hex')
@@ -175,7 +175,7 @@ describe('ECDSA', function() {
     it('should return an error if the signature is incorrect', function() {
       ecdsa.sig = Signature.fromString('3046022100e9915e6236695f093a4128ac2a956c40' +
         'ed971531de2f4f41ba05fac7e2bd019c02210094e6a4a769cc7f2a8ab3db696c7cd8d56bcdbfff860a8c81de4bc6a798b90827');
-      ecdsa.sig.r = ecdsa.sig.r.add(BN(1));
+      ecdsa.sig.r = ecdsa.sig.r.add(new BN(1));
       ecdsa.sigError().should.equal('Invalid signature');
     });
 
@@ -248,7 +248,7 @@ describe('ECDSA', function() {
       it('should verify a valid signature, and unverify an invalid signature', function() {
         var sig = ECDSA.sign(ecdsa.hashbuf, ecdsa.privkey);
         ECDSA.verify(ecdsa.hashbuf, sig, ecdsa.pubkey).should.equal(true);
-        var fakesig = new Signature(sig.r.add(1), sig.s);
+        var fakesig = new Signature(sig.r.add(new BN(1)), sig.s);
         ECDSA.verify(ecdsa.hashbuf, fakesig, ecdsa.pubkey).should.equal(false);
       });
       it('should work with big and little endian', function() {
@@ -290,7 +290,7 @@ describe('ECDSA', function() {
         it('should validate invalid.sigError vector ' + i + ': ' + obj.description, function() {
           var ecdsa = ECDSA().set({
             pubkey: Pubkey.fromPoint(point.fromX(true, 1)),
-            sig: new Signature(BN(obj.signature.r), new BN(obj.signature.s)),
+            sig: new Signature(new BN(obj.signature.r), new BN(obj.signature.s)),
             hashbuf: Hash.sha256(new Buffer(obj.message))
           });
           ecdsa.sigError().should.equal(obj.exception);

@@ -129,7 +129,7 @@ describe('PrivateKey', function() {
 
     it('should not be able to instantiate with unknown network', function() {
       expect(function() {
-        return new PrivateKey(BN(2), 'unknown');
+        return new PrivateKey(new BN(2), 'unknown');
       }).to.throw('Must specify the network ("livenet" or "testnet")');
     });
 
@@ -288,7 +288,7 @@ describe('PrivateKey', function() {
 
     it('should set bn gt 0 and lt n, and should be compressed', function() {
       var privkey = PrivateKey.fromRandom();
-      privkey.bn.gt(BN(0)).should.equal(true);
+      privkey.bn.gt(new BN(0)).should.equal(true);
       privkey.bn.lt(Point.getN()).should.equal(true);
       privkey.compressed.should.equal(true);
     });
@@ -336,7 +336,7 @@ describe('PrivateKey', function() {
     it('should convert this known PrivateKey to known PublicKey', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
       var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
-      var privkey = new PrivateKey(BN(new Buffer(privhex, 'hex')));
+      var privkey = new PrivateKey(new BN(new Buffer(privhex, 'hex')));
       var pubkey = privkey.toPublicKey();
       pubkey.toString().should.equal(pubhex);
     });
@@ -344,7 +344,7 @@ describe('PrivateKey', function() {
     it('should have a "publicKey" property', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
       var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
-      var privkey = new PrivateKey(BN(new Buffer(privhex, 'hex')));
+      var privkey = new PrivateKey(new BN(new Buffer(privhex, 'hex')));
       privkey.publicKey.toString().should.equal(pubhex);
     });
 
