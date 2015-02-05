@@ -986,7 +986,6 @@ describe('Copay server', function() {
       }, function(err, txs) {
         var tx = txs[0];
         tx.id.should.equal(txid);
-console.log('[integration.js.988:tx:]',tx); //TODO
 
         // 
         var signatures = helpers.clientSign(tx, someXPrivKey[0], wallet.n);
