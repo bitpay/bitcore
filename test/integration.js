@@ -170,14 +170,11 @@ helpers.clientSign = function(tx, xpriv, n) {
     .sign(privs);
 
   var signatures = [];
-  //console.log('Bitcore Transaction:', t); //TODO
   _.each(privs, function(p) {
-    var s = t.getSignatures(p)[0].signature.toDER().toString('hex');
-    // console.log('\n## Priv key:', p);
-    // console.log('\t\t->> signature ->>', s); //TODO
-    signatures.push(s);
-  });
-
+     var s = t.getSignatures(p)[0].signature.toDER().toString('hex');
+     signatures.push(s);
+   });
+  //
   return signatures;
 };
 
@@ -980,28 +977,67 @@ describe('Copay server', function() {
       });
     });
 
-    it('should sign a TX', function(done) {
+   it('should sign a TX with multiple inputs, different paths', function(done) {
       server.getPendingTxs({
         walletId: '123'
       }, function(err, txs) {
         var tx = txs[0];
         tx.id.should.equal(txid);
 
-        // 
         var signatures = helpers.clientSign(tx, someXPrivKey[0], wallet.n);
-console.log('[integration.js.992:signatures:]',signatures); //TODO
         server.signTx({
           walletId: '123',
           copayerId: '1',
           txProposalId: txid,
           signatures: signatures,
         }, function(err) {
+          should.not.exist(err);
           done();
         });
-
       });
-
     });
+
+   it('should fail if one signature is broken', function(done) {
+      server.getPendingTxs({
+        walletId: '123'
+      }, function(err, txs) {
+        var tx = txs[0];
+        tx.id.should.equal(txid);
+
+        var signatures = helpers.clientSign(tx, someXPrivKey[0], wallet.n);
+        signatures[0]=1;
+
+        server.signTx({
+          walletId: '123',
+          copayerId: '1',
+          txProposalId: txid,
+          signatures: signatures,
+        }, function(err) {
+          err.message.should.contain('signatures');
+          done();
+        });
+      });
+    });
+   it('should fail on invalids signature', function(done) {
+      server.getPendingTxs({
+        walletId: '123'
+      }, function(err, txs) {
+        var tx = txs[0];
+        tx.id.should.equal(txid);
+
+        var signatures = ['11', '22', '33', '44'];
+        server.signTx({
+          walletId: '123',
+          copayerId: '1',
+          txProposalId: txid,
+          signatures: signatures,
+        }, function(err) {
+          err.message.should.contain('signatures');
+          done();
+        });
+      });
+    });
+
   });
 
 });
