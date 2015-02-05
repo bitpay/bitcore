@@ -185,13 +185,13 @@ describe('BlockHeader', function() {
     it('should instantiate from a raw block binary', function() {
       var x = BlockHeader.fromRawBlock(dataRawBlockBinary);
       x.version.should.equal(2);
-      BN(x.bits).toString('hex').should.equal('1c3fffc0');
+      new BN(x.bits).toString('hex').should.equal('1c3fffc0');
     });
 
     it('should instantiate from raw block buffer', function() {
       var x = BlockHeader.fromRawBlock(dataRawBlockBuffer);
       x.version.should.equal(2);
-      BN(x.bits).toString('hex').should.equal('1c3fffc0');
+      new BN(x.bits).toString('hex').should.equal('1c3fffc0');
     });
 
   });

@@ -135,7 +135,7 @@ describe('PrivateKey', function() {
 
     it('should not create a zero private key', function() {
       expect(function() {
-        var bn = BN(0);
+        var bn = new BN(0);
         return new PrivateKey(bn);
        }).to.throw(TypeError);
     });

@@ -83,7 +83,7 @@ describe('BN', function() {
 
   describe('#toString', function() {
     it('should make a string', function() {
-      BN(5).toString().should.equal('5');
+      new BN(5).toString().should.equal('5');
     });
   });
 
