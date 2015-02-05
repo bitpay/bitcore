@@ -134,7 +134,7 @@ helpers.createUtxos = function(server, wallet, amounts, cb) {
           vout: Math.floor((Math.random() * 10) + 1),
           satoshis: amount,
           scriptPubKey: addresses[i].getScriptPubKey(wallet.m).toBuffer().toString('hex'),
-          address: addresses[i].address,
+          address: addresses[i++].address,
         };
       });
 
@@ -154,9 +154,9 @@ helpers.clientSign = function(tx, xpriv, n) {
 
   _.each(tx.inputs, function(i) {
     if (!derived[i.path]) {
-      privs.push(xpriv.derive(i.path).privateKey);
-      derived[i.path] = true;
-    }
+      derived[i.path] = xpriv.derive(i.path).privateKey;
+    } 
+    privs.push(derived[i.path]);
   });
 
   var t = new Bitcore.Transaction();
@@ -986,9 +986,11 @@ describe('Copay server', function() {
       }, function(err, txs) {
         var tx = txs[0];
         tx.id.should.equal(txid);
+console.log('[integration.js.988:tx:]',tx); //TODO
 
         // 
         var signatures = helpers.clientSign(tx, someXPrivKey[0], wallet.n);
+console.log('[integration.js.992:signatures:]',signatures); //TODO
         server.signTx({
           walletId: '123',
           copayerId: '1',
