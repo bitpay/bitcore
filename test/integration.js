@@ -940,8 +940,6 @@ describe('Copay server', function() {
     it('should sign and broadcast a tx', function(done) {
       helpers.stubBlockExplorer(server, utxos, '1122334455');
       var txOpts = {
-        copayerId: '1',
-        walletId: '123',
         toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
         amount: helpers.toSatoshi(10),
         message: 'some message',
@@ -953,15 +951,11 @@ describe('Copay server', function() {
         txp.should.exist;
         var txpid = txp.id;
 
-        server.getPendingTxs({
-          walletId: '123'
-        }, function(err, txps) {
+        server.getPendingTxs({}, function(err, txps) {
           var txp = txps[0];
           txp.id.should.equal(txpid);
           var signatures = helpers.clientSign(txp, someXPrivKey[0], wallet.n);
           server.signTx({
-            walletId: '123',
-            copayerId: '1',
             txProposalId: txpid,
             signatures: signatures,
           }, function(err, txp) {
@@ -979,8 +973,6 @@ describe('Copay server', function() {
 
       helpers.stubBlockExplorer(server, utxos);
       var txOpts = {
-        copayerId: '1',
-        walletId: '123',
         toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
         amount: helpers.toSatoshi(10),
         message: 'some message',
@@ -992,9 +984,7 @@ describe('Copay server', function() {
         txp.should.exist;
         var txpid = txp.id;
 
-        server.getPendingTxs({
-          walletId: '123'
-        }, function(err, txps) {
+        server.getPendingTxs({}, function(err, txps) {
           var txp = txps[0];
           txp.id.should.equal(txpid);
           var signatures = helpers.clientSign(txp, someXPrivKey[0], wallet.n);
@@ -1003,9 +993,16 @@ describe('Copay server', function() {
             signatures: signatures,
           }, function(err, txp) {
             err.should.contain('broadcast');
-            txp.status.should.equal('accepted');
-            should.not.exist(txp.txid);
-            done();
+
+            server.getPendingTxs({}, function(err, txps) {
+              should.not.exist(err);
+              txps.length.should.equal(0);
+              server.getTx({ id: txpid }, function (err, txp) {
+                txp.status.should.equal('accepted');
+                should.not.exist(txp.txid);
+                done();
+              });
+            });
           });
         });
       });
