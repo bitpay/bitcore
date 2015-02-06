@@ -159,7 +159,7 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
   });
   var from = [blockHash[network.name]];
   var stop = stopBlock[network.name];
-  it('gets headers', function(cb) {
+  it.only('gets headers', function(cb) {
     connect(function(peer) {
       peer.once('headers', function(message) {
         (message instanceof Messages.Headers).should.equal(true);
