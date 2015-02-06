@@ -137,14 +137,26 @@ helpers.createUtxos = function(server, wallet, amounts, cb) {
           address: addresses[i++].address,
         };
       });
-
-      var bc = sinon.stub();
-      bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
-      server._getBlockExplorer = sinon.stub().returns(bc);
-
-      return cb();
+      return cb(utxos);
     });
 };
+
+
+helpers.stubBlockExplorer = function(server, utxos, txid) {
+
+  var bc = sinon.stub();
+  bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
+
+  if (txid) {
+    bc.broadcast = sinon.stub().callsArgWith(1, null, txid);
+  } else {
+    bc.broadcast = sinon.stub().callsArgWith(1, 'broadcast error');
+  }
+
+  server._getBlockExplorer = sinon.stub().returns(bc);
+};
+
+
 
 helpers.clientSign = function(tx, xpriv, n) {
   //Derive proper key to sign, for each input
@@ -155,7 +167,7 @@ helpers.clientSign = function(tx, xpriv, n) {
   _.each(tx.inputs, function(i) {
     if (!derived[i.path]) {
       derived[i.path] = xpriv.derive(i.path).privateKey;
-    } 
+    }
     privs.push(derived[i.path]);
   });
 
@@ -171,9 +183,9 @@ helpers.clientSign = function(tx, xpriv, n) {
 
   var signatures = [];
   _.each(privs, function(p) {
-     var s = t.getSignatures(p)[0].signature.toDER().toString('hex');
-     signatures.push(s);
-   });
+    var s = t.getSignatures(p)[0].signature.toDER().toString('hex');
+    signatures.push(s);
+  });
   //
   return signatures;
 };
@@ -777,6 +789,8 @@ describe('Copay server', function() {
 
       helpers.createUtxos(server, wallet, helpers.toSatoshi([100, 200]), function(utxos) {
 
+        helpers.stubBlockExplorer(server, utxos);
+
         var txOpts = {
           copayerId: '1',
           walletId: '123',
@@ -812,7 +826,8 @@ describe('Copay server', function() {
 
     it('should fail to create tx when insufficient funds', function(done) {
 
-      helpers.createUtxos(server, wallet, helpers.toSatoshi([100]), function() {
+      helpers.createUtxos(server, wallet, helpers.toSatoshi([100]), function(utxos) {
+        helpers.stubBlockExplorer(server, utxos);
 
         var txOpts = {
           copayerId: '1',
@@ -848,6 +863,7 @@ describe('Copay server', function() {
     it('should create tx when there is a pending tx and enough UTXOs', function(done) {
 
       helpers.createUtxos(server, wallet, helpers.toSatoshi([10.1, 10.2, 10.3]), function(utxos) {
+        helpers.stubBlockExplorer(server, utxos);
 
         var txOpts = {
           copayerId: '1',
@@ -896,6 +912,7 @@ describe('Copay server', function() {
     it('should fail to create tx when there is a pending tx and not enough UTXOs', function(done) {
       helpers.createUtxos(server, wallet, helpers.toSatoshi([10.1, 10.2, 10.3]), function(utxos) {
 
+        helpers.stubBlockExplorer(server, utxos);
         var txOpts = {
           copayerId: '1',
           walletId: '123',
@@ -957,6 +974,7 @@ describe('Copay server', function() {
           isChange: false,
         }, function(err, address) {
           helpers.createUtxos(server, wallet, helpers.toSatoshi([1, 2, 3, 4, 5, 6, 7, 8]), function(utxos) {
+            helpers.stubBlockExplorer(server, utxos);
             var txOpts = {
               copayerId: '1',
               walletId: '123',
@@ -977,7 +995,7 @@ describe('Copay server', function() {
       });
     });
 
-   it('should sign a TX with multiple inputs, different paths', function(done) {
+    it('should sign a TX with multiple inputs, different paths', function(done) {
       server.getPendingTxs({
         walletId: '123'
       }, function(err, txs) {
@@ -997,7 +1015,7 @@ describe('Copay server', function() {
       });
     });
 
-   it('should fail if one signature is broken', function(done) {
+    it('should fail if one signature is broken', function(done) {
       server.getPendingTxs({
         walletId: '123'
       }, function(err, txs) {
@@ -1005,7 +1023,7 @@ describe('Copay server', function() {
         tx.id.should.equal(txid);
 
         var signatures = helpers.clientSign(tx, someXPrivKey[0], wallet.n);
-        signatures[0]=1;
+        signatures[0] = 1;
 
         server.signTx({
           walletId: '123',
@@ -1018,7 +1036,7 @@ describe('Copay server', function() {
         });
       });
     });
-   it('should fail on invalids signature', function(done) {
+    it('should fail on invalids signature', function(done) {
       server.getPendingTxs({
         walletId: '123'
       }, function(err, txs) {
@@ -1040,4 +1058,102 @@ describe('Copay server', function() {
 
   });
 
+
+  describe('#signTx and broadcast', function() {
+    var wallet, utxos;
+
+    beforeEach(function(done) {
+      server = new CopayServer({
+        storage: storage,
+      });
+      helpers.createAndJoinWallet('123', 1, 1, function(err, w) {
+        wallet = w;
+        server.createAddress({
+          walletId: '123',
+          isChange: false,
+        }, function(err, address) {
+          helpers.createUtxos(server, wallet, helpers.toSatoshi([1, 2, 3, 4, 5, 6, 7, 8]), function(inutxos) {
+            utxos = inutxos;
+            done();
+          });
+        });
+      });
+    });
+
+    it('should sign and broadcast a tx', function(done) {
+      helpers.stubBlockExplorer(server, utxos, '1122334455');
+      var txOpts = {
+        copayerId: '1',
+        walletId: '123',
+        toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+        amount: helpers.toSatoshi(10),
+        message: 'some message',
+        otToken: 'dummy',
+        requestSignature: 'dummy',
+      };
+      server.createTx(txOpts, function(err, txp) {
+        should.not.exist(err);
+        txp.should.exist;
+        var txpid = txp.id;
+
+        server.getPendingTxs({
+          walletId: '123'
+        }, function(err, txps) {
+          var txp = txps[0];
+          txp.id.should.equal(txpid);
+          var signatures = helpers.clientSign(txp, someXPrivKey[0], wallet.n);
+          server.signTx({
+            walletId: '123',
+            copayerId: '1',
+            txProposalId: txpid,
+            signatures: signatures,
+          }, function(err, txp) {
+            should.not.exist(err);
+            txp.status.should.equal('broadcasted');
+            txp.txid.should.equal('1122334455');
+            done();
+          });
+        });
+      });
+    });
+
+
+    it('should keep tx as *accepted* if unable to broadcast it', function(done) {
+
+      helpers.stubBlockExplorer(server, utxos);
+      var txOpts = {
+        copayerId: '1',
+        walletId: '123',
+        toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+        amount: helpers.toSatoshi(10),
+        message: 'some message',
+        otToken: 'dummy',
+        requestSignature: 'dummy',
+      };
+      server.createTx(txOpts, function(err, txp) {
+        should.not.exist(err);
+        txp.should.exist;
+        var txpid = txp.id;
+
+        server.getPendingTxs({
+          walletId: '123'
+        }, function(err, txps) {
+          var txp = txps[0];
+          txp.id.should.equal(txpid);
+          var signatures = helpers.clientSign(txp, someXPrivKey[0], wallet.n);
+          server.signTx({
+            walletId: '123',
+            copayerId: '1',
+            txProposalId: txpid,
+            signatures: signatures,
+          }, function(err, txp) {
+            err.should.contain('broadcast');
+            txp.status.should.equal('accepted');
+            should.not.exist(txp.txid);
+            done();
+          });
+        });
+      });
+    });
+  });
 });
