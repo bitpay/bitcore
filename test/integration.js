@@ -697,7 +697,8 @@ describe('Copay server', function() {
       });
     });
 
-    it('should create tx', function(done) {
+    it('should create a tx', function(done) {
+
       helpers.createUtxos(server, wallet, helpers.toSatoshi([100, 200]), function(utxos) {
         helpers.stubBlockExplorer(server, utxos);
         var txOpts = {
