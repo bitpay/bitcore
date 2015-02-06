@@ -184,30 +184,26 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
       peer.sendMessage(message);
     });
   });
-  it('sends inv and responds with info', function(cb) {
+  var testInvGetData = function(expected, message, cb) {
     connect(function(peer) {
-      var randomHash = Random.getRandomBuffer(32);// needs to be random for repeatability
-      var expected = Messages.GetData.forBlock(randomHash);
       peer.once('getdata', function(message) {
         (message instanceof Messages.GetData).should.equal(true);
         message.should.deep.equal(expected);
         cb();
       });
-      var message = Messages.Inventory.forBlock(randomHash);
       peer.sendMessage(message);
     });
+  };
+  it('sends block inv and receives getdata', function(cb) {
+    var randomHash = Random.getRandomBuffer(32); // needs to be random for repeatability
+    var expected = Messages.GetData.forBlock(randomHash);
+    var message = Messages.Inventory.forBlock(randomHash);
+    testInvGetData(expected, message, cb);
   });
-  it('aasdasd', function(cb) {
-    connect(function(peer) {
-      var randomHash = Random.getRandomBuffer(32);// needs to be random for repeatability
-      var expected = Messages.GetData.forBlock(randomHash);
-      peer.once('getdata', function(message) {
-        (message instanceof Messages.GetData).should.equal(true);
-        message.should.deep.equal(expected);
-        cb();
-      });
-      var message = Messages.Inventory.forBlock(randomHash);
-      peer.sendMessage(message);
-    });
+  it('sends tx inv and receives getdata', function(cb) {
+    var randomHash = Random.getRandomBuffer(32); // needs to be random for repeatability
+    var expected = Messages.GetData.forTransaction(randomHash);
+    var message = Messages.Inventory.forTransaction(randomHash);
+    testInvGetData(expected, message, cb);
   });
 });
