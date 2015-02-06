@@ -47,7 +47,6 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
       Math.abs(new Date() - m.timestamp).should.be.below(10000); // less than 10 seconds of time difference
       m.nonce.length.should.equal(8);
       m.start_height.should.be.above(300000);
-      console.log(peer.host);
       cb();
     });
     peer.once('verack', function(m) {
@@ -164,6 +163,8 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
       peer.once('headers', function(message) {
         (message instanceof Messages.Headers).should.equal(true);
         message.headers.length.should.equal(3);
+        //console.log(message.serialize(network).toString('hex'));
+        //console.log(message.getPayload().toString('hex'));
         cb();
       });
       var message = new Messages.GetHeaders(from, stop);
