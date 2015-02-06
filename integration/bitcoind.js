@@ -39,7 +39,7 @@ var txHash = {
 describe('Integration with ' + network.name + ' bitcoind', function() {
 
   this.timeout(15000);
-  it('handshakes', function(cb) {
+  it.only('handshakes', function(cb) {
     var peer = new Peer('localhost', network);
     peer.once('version', function(m) {
       m.version.should.be.above(70000);
@@ -47,6 +47,7 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
       Math.abs(new Date() - m.timestamp).should.be.below(10000); // less than 10 seconds of time difference
       m.nonce.length.should.equal(8);
       m.start_height.should.be.above(300000);
+      console.log(peer.host);
       cb();
     });
     peer.once('verack', function(m) {
