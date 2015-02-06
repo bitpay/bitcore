@@ -18,8 +18,8 @@ describe('Signature', function() {
   });
 
   it('should work with conveniently setting r, s', function() {
-    var r = BN();
-    var s = BN();
+    var r = new BN();
+    var s = new BN();
     var sig = new Signature(r, s);
     should.exist(sig);
     sig.r.toString().should.equal(r.toString());
@@ -47,8 +47,8 @@ describe('Signature', function() {
         blank
       ]);
       var sig = Signature.fromCompact(compressed);
-      sig.r.cmp(0).should.equal(0);
-      sig.s.cmp(0).should.equal(0);
+      sig.r.cmp(BN.Zero).should.equal(0);
+      sig.s.cmp(BN.Zero).should.equal(0);
     });
 
   });
@@ -166,8 +166,8 @@ describe('Signature', function() {
   describe('#toDER', function() {
 
     it('should convert these known r and s values into a known signature', function() {
-      var r = BN('63173831029936981022572627018246571655303050627048489594159321588908385378810');
-      var s = BN('4331694221846364448463828256391194279133231453999942381442030409253074198130');
+      var r = new BN('63173831029936981022572627018246571655303050627048489594159321588908385378810');
+      var s = new BN('4331694221846364448463828256391194279133231453999942381442030409253074198130');
       var sig = new Signature({
         r: r,
         s: s
@@ -180,8 +180,8 @@ describe('Signature', function() {
 
   describe('#toString', function() {
     it('should convert this signature in to hex DER', function() {
-      var r = BN('63173831029936981022572627018246571655303050627048489594159321588908385378810');
-      var s = BN('4331694221846364448463828256391194279133231453999942381442030409253074198130');
+      var r = new BN('63173831029936981022572627018246571655303050627048489594159321588908385378810');
+      var s = new BN('4331694221846364448463828256391194279133231453999942381442030409253074198130');
       var sig = new Signature({
         r: r,
         s: s
@@ -234,9 +234,9 @@ describe('Signature', function() {
   });
   describe('#hasLowS', function() {
     it('should detect high and low S', function() {
-      var r = BN('63173831029936981022572627018246571655303050627048489594159321588908385378810');
-      var s = BN('4331694221846364448463828256391194279133231453999942381442030409253074198130');
-      var s2 = BN('7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B2000');
+      var r = new BN('63173831029936981022572627018246571655303050627048489594159321588908385378810');
+      var s = new BN('4331694221846364448463828256391194279133231453999942381442030409253074198130');
+      var s2 = new BN('7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B2000');
       var sig = new Signature({
         r: r,
         s: s

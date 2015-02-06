@@ -70,7 +70,7 @@ describe('BN', function() {
   describe('to/from ScriptNumBuffer', function() {
     [0, 1, 10, 256, 1000, 65536, 65537, -1, -1000, -65536, -65537].forEach(function(n) {
       it('rountrips correctly for ' + n, function() {
-        BN.fromScriptNumBuffer(BN(n).toScriptNumBuffer()).toNumber().should.equal(n);
+        BN.fromScriptNumBuffer(new BN(n).toScriptNumBuffer()).toNumber().should.equal(n);
       });
     });
   });
@@ -83,7 +83,7 @@ describe('BN', function() {
 
   describe('#toString', function() {
     it('should make a string', function() {
-      BN(5).toString().should.equal('5');
+      new BN(5).toString().should.equal('5');
     });
   });
 
