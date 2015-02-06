@@ -539,145 +539,141 @@ describe('Copay server', function() {
 
 
   describe('#verifyMessageSignature', function() {
-    beforeEach(function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet('123', 2, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
     });
 
     it('should successfully verify message signature', function(done) {
-      helpers.createAndJoinWallet('123', 2, 2, function(server) {
-        var opts = {
-          message: aText,
-          signature: aTextSignature,
-        };
-        server.verifyMessageSignature(opts, function(err, isValid) {
-          should.not.exist(err);
-          isValid.should.equal(true);
-          done();
-        });
+      var opts = {
+        message: aText,
+        signature: aTextSignature,
+      };
+      server.verifyMessageSignature(opts, function(err, isValid) {
+        should.not.exist(err);
+        isValid.should.equal(true);
+        done();
       });
     });
 
     it('should fail to verify message signature for different copayer', function(done) {
-      helpers.createAndJoinWallet('123', 2, 2, function() {
-        var opts = {
-          message: aText,
-          signature: aTextSignature,
-        };
-        helpers.getAuthServer('2', function (server) {
-          server.verifyMessageSignature(opts, function(err, isValid) {
-            should.not.exist(err);
-            isValid.should.be.false;
-            done();
-          });
+      var opts = {
+        message: aText,
+        signature: aTextSignature,
+      };
+      helpers.getAuthServer('2', function (server) {
+        server.verifyMessageSignature(opts, function(err, isValid) {
+          should.not.exist(err);
+          isValid.should.be.false;
+          done();
         });
       });
     });
   });
 
   describe('#createAddress', function() {
-    beforeEach(function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet('123', 2, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
     });
 
     it('should create main address', function(done) {
-      helpers.createAndJoinWallet('123', 2, 2, function(server) {
-        server.createAddress({
-          isChange: false,
-        }, function(err, address) {
-          should.not.exist(err);
-          address.should.exist;
-          address.address.should.equal('36JdLEUDa6UwCfMhhkdZ2VFnDrGUoLedsR');
-          address.path.should.equal('m/2147483647/0/0');
-          done();
-        });
+      server.createAddress({
+        isChange: false,
+      }, function(err, address) {
+        should.not.exist(err);
+        address.should.exist;
+        address.address.should.equal('36JdLEUDa6UwCfMhhkdZ2VFnDrGUoLedsR');
+        address.path.should.equal('m/2147483647/0/0');
+        done();
       });
     });
 
 
     it('should create change address', function(done) {
-      helpers.createAndJoinWallet('123', 2, 2, function(server) {
-        server.createAddress({
-          isChange: true,
-        }, function(err, address) {
-          should.not.exist(err);
-          address.should.exist;
-          address.address.should.equal('3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH');
-          address.path.should.equal('m/2147483647/1/0');
-          done();
-        });
+      server.createAddress({
+        isChange: true,
+      }, function(err, address) {
+        should.not.exist(err);
+        address.should.exist;
+        address.address.should.equal('3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH');
+        address.path.should.equal('m/2147483647/1/0');
+        done();
       });
     });
 
     it('should create many addresses on simultaneous requests', function(done) {
-      helpers.createAndJoinWallet('123', 2, 2, function(server) {
-        async.map(_.range(10), function(i, cb) {
-          server.createAddress({
-            isChange: false,
-          }, cb);
-        }, function(err, addresses) {
-          addresses.length.should.equal(10);
-          addresses[0].path.should.equal('m/2147483647/0/0');
-          addresses[9].path.should.equal('m/2147483647/0/9');
-          // No two identical addresses
-          _.keys(_.groupBy(addresses, 'address')).length.should.equal(10);
-          done();
-        });
+      async.map(_.range(10), function(i, cb) {
+        server.createAddress({
+          isChange: false,
+        }, cb);
+      }, function(err, addresses) {
+        addresses.length.should.equal(10);
+        addresses[0].path.should.equal('m/2147483647/0/0');
+        addresses[9].path.should.equal('m/2147483647/0/9');
+        // No two identical addresses
+        _.keys(_.groupBy(addresses, 'address')).length.should.equal(10);
+        done();
       });
     });
 
     it('should not create address if unable to store wallet', function(done) {
-      helpers.createAndJoinWallet('123', 2, 2, function(server) {
+      var storeWalletStub = sinon.stub(server.storage, 'storeWallet');
+      storeWalletStub.yields('dummy error');
 
-        var storeWalletStub = sinon.stub(server.storage, 'storeWallet');
-        storeWalletStub.yields('dummy error');
+      server.createAddress({
+        isChange: true,
+      }, function(err, address) {
+        err.should.exist;
+        should.not.exist(address);
 
-        server.createAddress({
-          isChange: true,
-        }, function(err, address) {
-          err.should.exist;
-          should.not.exist(address);
+        server.getAddresses({}, function(err, addresses) {
+          addresses.length.should.equal(0);
 
-          server.getAddresses({}, function(err, addresses) {
-            addresses.length.should.equal(0);
-
-            server.storage.storeWallet.restore();
-            server.createAddress({
-              isChange: true,
-            }, function(err, address) {
-              should.not.exist(err);
-              address.should.exist;
-              address.address.should.equal('3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH');
-              address.path.should.equal('m/2147483647/1/0');
-              done();
-            });
+          server.storage.storeWallet.restore();
+          server.createAddress({
+            isChange: true,
+          }, function(err, address) {
+            should.not.exist(err);
+            address.should.exist;
+            address.address.should.equal('3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH');
+            address.path.should.equal('m/2147483647/1/0');
+            done();
           });
         });
       });
     });
 
     it('should not create address if unable to store addresses', function(done) {
-      helpers.createAndJoinWallet('123', 2, 2, function(server) {
+      var storeAddressStub = sinon.stub(server.storage, 'storeAddress');
+      storeAddressStub.yields('dummy error');
 
-        var storeAddressStub = sinon.stub(server.storage, 'storeAddress');
-        storeAddressStub.yields('dummy error');
+      server.createAddress({
+        isChange: true,
+      }, function(err, address) {
+        err.should.exist;
+        should.not.exist(address);
 
-        server.createAddress({
-          isChange: true,
-        }, function(err, address) {
-          err.should.exist;
-          should.not.exist(address);
+        server.getAddresses({}, function(err, addresses) {
+          addresses.length.should.equal(0);
 
-          server.getAddresses({}, function(err, addresses) {
-            addresses.length.should.equal(0);
-
-            server.storage.storeAddress.restore();
-            server.createAddress({
-              isChange: true,
-            }, function(err, address) {
-              should.not.exist(err);
-              address.should.exist;
-              address.address.should.equal('3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH');
-              address.path.should.equal('m/2147483647/1/0');
-              done();
-            });
+          server.storage.storeAddress.restore();
+          server.createAddress({
+            isChange: true,
+          }, function(err, address) {
+            should.not.exist(err);
+            address.should.exist;
+            address.address.should.equal('3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH');
+            address.path.should.equal('m/2147483647/1/0');
+            done();
           });
         });
       });
