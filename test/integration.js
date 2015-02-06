@@ -60,7 +60,22 @@ var aTextSignature = '3045022100addd20e5413865d65d561ad2979f2289a40d52594b1f8048
 
 
 var helpers = {};
+helpers.getAuthServer = function (copayerId, cb) {
+  var signatureStub = sinon.stub(CopayServer.prototype, '_verifySignature');
+  signatureStub.returns(true);
+  CopayServer.getInstanceWithAuth({
+    copayerId: copayerId,
+    message: 'dummy',
+    signature: 'dummy',
+  }, function (err, server) {
+    signatureStub.restore();
+    return cb(server);
+  });
+};
+
 helpers.createAndJoinWallet = function(id, m, n, cb) {
+  var server = new CopayServer();
+
   var walletOpts = {
     id: id,
     name: id + ' wallet',
@@ -84,14 +99,13 @@ helpers.createAndJoinWallet = function(id, m, n, cb) {
       server.joinWallet(copayerOpts, function(err) {
         return cb(err);
       });
-    }, function(err) {
-      if (err) return cb(err);
+    }, function (err) {
+      if (err) return new Error('Could not generate wallet');
 
-      server.getWallet({
-        id: id,
-        includeCopayers: true
-      }, function(err, wallet) {
-        return cb(err, wallet);
+      helpers.getAuthServer('1', function (s) {
+        s.getWallet({}, function (err, w) {
+          cb(s, w);
+        });
       });
     });
   });
@@ -114,10 +128,8 @@ helpers.toSatoshi = function(btc) {
 helpers.createUtxos = function(server, wallet, amounts, cb) {
   var addresses = [];
 
-
   async.each(amounts, function(a, next) {
       server.createAddress({
-        walletId: wallet.id,
         isChange: false,
       }, function(err, address) {
         addresses.push(address);
@@ -191,7 +203,6 @@ helpers.clientSign = function(tx, xpriv, n) {
 };
 
 var db, storage;
-var server;
 
 
 describe('Copay server', function() {
@@ -202,96 +213,27 @@ describe('Copay server', function() {
     storage = new Storage({
       db: db
     });
+    CopayServer.initialize({ storage: storage });
   });
 
-  describe('#getWallet', function() {
+  describe.skip('#getInstanceWithAuth', function() {
     beforeEach(function() {
-      server = new CopayServer({
-        storage: storage,
-      });
     });
 
-    it('should get existing wallet', function(done) {
-
-      var w1 = new Wallet({
-        id: '123',
-        name: 'my wallet',
-        m: 2,
-        n: 3,
-        pubKey: aPubKey,
-      });
-
-      var w2 = new Wallet({
-        id: '234',
-        name: 'my wallet 2',
-        m: 3,
-        n: 4,
-        pubKey: aPubKey,
-      });
-
-      db.batch([{
-        type: 'put',
-        key: 'wallet-123',
-        value: w1,
-      }, {
-        type: 'put',
-        key: 'wallet-234',
-        value: w2,
-      }]);
-
-      server.getWallet({
-        id: '123',
-        includeCopayers: true
-      }, function(err, wallet) {
-        should.not.exist(err);
-        wallet.id.should.equal('123');
-        wallet.name.should.equal('my wallet');
-        wallet.status.should.equal('pending');
-        wallet.copayers.length.should.equal(0);
-        done();
-      });
+    it('should get server instance for existing copayer', function(done) {
     });
 
-    it('should fail when requesting non-existent wallet', function(done) {
-      var w1 = new Wallet({
-        id: '123',
-        name: 'my wallet',
-        m: 2,
-        n: 3,
-        pubKey: aPubKey,
-      });
-      var w2 = new Wallet({
-        id: '234',
-        name: 'my wallet 2',
-        m: 3,
-        n: 4,
-        pubKey: aPubKey,
-      });
-      db.batch([{
-        type: 'put',
-        key: 'wallet-123',
-        value: w1,
-      }, {
-        type: 'put',
-        key: 'wallet-234',
-        value: w2,
-      }]);
+    it('should fail when requesting for non-existent copayer', function(done) {
+    });
 
-      server.getWallet({
-        id: '345'
-      }, function(err, wallet) {
-        should.exist(err);
-        err.message.should.equal('Wallet not found');
-        done();
-      });
+    it('should fail when message signature cannot be verified', function(done) {
     });
   });
 
   describe('#createWallet', function() {
+    var server;
     beforeEach(function() {
-      server = new CopayServer({
-        storage: storage,
-      });
+      server = new CopayServer();
     });
 
     it('should create and store wallet', function(done) {
@@ -304,9 +246,7 @@ describe('Copay server', function() {
       };
       server.createWallet(opts, function(err) {
         should.not.exist(err);
-        server.getWallet({
-          id: '123'
-        }, function(err, wallet) {
+        server.storage.fetchWallet('123', function(err, wallet) {
           should.not.exist(err);
           wallet.id.should.equal('123');
           wallet.name.should.equal('my wallet');
@@ -325,9 +265,7 @@ describe('Copay server', function() {
       };
       server.createWallet(opts, function(err) {
         should.not.exist(err);
-        server.getWallet({
-          id: '123'
-        }, function(err, wallet) {
+        server.storage.fetchWallet('123', function(err, wallet) {
           should.not.exist(err);
           wallet.id.should.equal('123');
           wallet.name.should.equal('my wallet');
@@ -379,10 +317,9 @@ describe('Copay server', function() {
   });
 
   describe('#joinWallet', function() {
+    var server;
     beforeEach(function() {
-      server = new CopayServer({
-        storage: storage,
-      });
+      server = new CopayServer();
     });
 
     it('should join existing wallet', function(done) {
@@ -405,16 +342,15 @@ describe('Copay server', function() {
         };
         server.joinWallet(copayerOpts, function(err) {
           should.not.exist(err);
-          server.getWallet({
-            id: '123',
-            includeCopayers: true
-          }, function(err, wallet) {
-            wallet.id.should.equal('123');
-            wallet.copayers.length.should.equal(1);
-            var copayer = wallet.copayers[0];
-            copayer.id.should.equal('999');
-            copayer.name.should.equal('me');
-            done();
+          helpers.getAuthServer('999', function (server) {
+            server.getWallet({}, function(err, wallet) {
+              wallet.id.should.equal('123');
+              wallet.copayers.length.should.equal(1);
+              var copayer = wallet.copayers[0];
+              copayer.id.should.equal('999');
+              copayer.name.should.equal('me');
+              done();
+            });
           });
         });
       });
@@ -470,15 +406,15 @@ describe('Copay server', function() {
         };
         server.joinWallet(copayer1Opts, function(err) {
           should.not.exist(err);
-          server.getWallet({
-            id: '123'
-          }, function(err, wallet) {
-            wallet.status.should.equal('complete');
-            server.joinWallet(copayer2Opts, function(err) {
-              should.exist(err);
-              err.code.should.equal('WFULL');
-              err.message.should.equal('Wallet full');
-              done();
+          helpers.getAuthServer('111', function (server) {
+            server.getWallet({}, function(err, wallet) {
+              wallet.status.should.equal('complete');
+              server.joinWallet(copayer2Opts, function(err) {
+                should.exist(err);
+                err.code.should.equal('WFULL');
+                err.message.should.equal('Wallet full');
+                done();
+              });
             });
           });
         });
@@ -590,10 +526,8 @@ describe('Copay server', function() {
     });
 
     it('should set pkr and status = complete on last copayer joining (2-3)', function(done) {
-      helpers.createAndJoinWallet('123', 2, 3, function(err, wallet) {
-        server.getWallet({
-          id: '123'
-        }, function(err, wallet) {
+      helpers.createAndJoinWallet('123', 2, 3, function(server) {
+        server.getWallet({}, function(err, wallet) {
           should.not.exist(err);
           wallet.status.should.equal('complete');
           wallet.publicKeyRing.length.should.equal(3);
@@ -606,16 +540,11 @@ describe('Copay server', function() {
 
   describe('#verifyMessageSignature', function() {
     beforeEach(function() {
-      server = new CopayServer({
-        storage: storage,
-      });
     });
 
     it('should successfully verify message signature', function(done) {
-      helpers.createAndJoinWallet('123', 2, 2, function(err, wallet) {
+      helpers.createAndJoinWallet('123', 2, 2, function(server) {
         var opts = {
-          walletId: '123',
-          copayerId: '1',
           message: aText,
           signature: aTextSignature,
         };
@@ -627,17 +556,18 @@ describe('Copay server', function() {
       });
     });
 
-    it('should fail to verify message signature when copayer does not exist', function(done) {
-      helpers.createAndJoinWallet('123', 2, 2, function(err, wallet) {
+    it('should fail to verify message signature for different copayer', function(done) {
+      helpers.createAndJoinWallet('123', 2, 2, function() {
         var opts = {
-          walletId: '123',
-          copayerId: '999',
-          message: 'hello world',
-          signature: 'dummy',
+          message: aText,
+          signature: aTextSignature,
         };
-        server.verifyMessageSignature(opts, function(err, isValid) {
-          err.message.should.equal('Copayer not found');
-          done();
+        helpers.getAuthServer('2', function (server) {
+          server.verifyMessageSignature(opts, function(err, isValid) {
+            should.not.exist(err);
+            isValid.should.be.false;
+            done();
+          });
         });
       });
     });
@@ -645,15 +575,11 @@ describe('Copay server', function() {
 
   describe('#createAddress', function() {
     beforeEach(function() {
-      server = new CopayServer({
-        storage: storage,
-      });
     });
 
     it('should create main address', function(done) {
-      helpers.createAndJoinWallet('123', 2, 2, function(err, wallet) {
+      helpers.createAndJoinWallet('123', 2, 2, function(server) {
         server.createAddress({
-          walletId: '123',
           isChange: false,
         }, function(err, address) {
           should.not.exist(err);
@@ -667,9 +593,8 @@ describe('Copay server', function() {
 
 
     it('should create change address', function(done) {
-      helpers.createAndJoinWallet('123', 2, 2, function(err, wallet) {
+      helpers.createAndJoinWallet('123', 2, 2, function(server) {
         server.createAddress({
-          walletId: '123',
           isChange: true,
         }, function(err, address) {
           should.not.exist(err);
@@ -682,10 +607,9 @@ describe('Copay server', function() {
     });
 
     it('should create many addresses on simultaneous requests', function(done) {
-      helpers.createAndJoinWallet('123', 2, 2, function(err, wallet) {
+      helpers.createAndJoinWallet('123', 2, 2, function(server) {
         async.map(_.range(10), function(i, cb) {
           server.createAddress({
-            walletId: '123',
             isChange: false,
           }, cb);
         }, function(err, addresses) {
@@ -700,26 +624,22 @@ describe('Copay server', function() {
     });
 
     it('should not create address if unable to store wallet', function(done) {
-      helpers.createAndJoinWallet('123', 2, 2, function(err, wallet) {
+      helpers.createAndJoinWallet('123', 2, 2, function(server) {
 
         var storeWalletStub = sinon.stub(server.storage, 'storeWallet');
         storeWalletStub.yields('dummy error');
 
         server.createAddress({
-          walletId: '123',
           isChange: true,
         }, function(err, address) {
           err.should.exist;
           should.not.exist(address);
 
-          server.getAddresses({
-            walletId: '123'
-          }, function(err, addresses) {
+          server.getAddresses({}, function(err, addresses) {
             addresses.length.should.equal(0);
 
             server.storage.storeWallet.restore();
             server.createAddress({
-              walletId: '123',
               isChange: true,
             }, function(err, address) {
               should.not.exist(err);
@@ -734,26 +654,22 @@ describe('Copay server', function() {
     });
 
     it('should not create address if unable to store addresses', function(done) {
-      helpers.createAndJoinWallet('123', 2, 2, function(err, wallet) {
+      helpers.createAndJoinWallet('123', 2, 2, function(server) {
 
         var storeAddressStub = sinon.stub(server.storage, 'storeAddress');
         storeAddressStub.yields('dummy error');
 
         server.createAddress({
-          walletId: '123',
           isChange: true,
         }, function(err, address) {
           err.should.exist;
           should.not.exist(address);
 
-          server.getAddresses({
-            walletId: '123'
-          }, function(err, addresses) {
+          server.getAddresses({}, function(err, addresses) {
             addresses.length.should.equal(0);
 
             server.storage.storeAddress.restore();
             server.createAddress({
-              walletId: '123',
               isChange: true,
             }, function(err, address) {
               should.not.exist(err);
@@ -769,15 +685,12 @@ describe('Copay server', function() {
   });
 
   describe('#createTx', function() {
-    var wallet;
+    var server, wallet;
     beforeEach(function(done) {
-      server = new CopayServer({
-        storage: storage,
-      });
-      helpers.createAndJoinWallet('123', 2, 2, function(err, w) {
+      helpers.createAndJoinWallet('123', 2, 2, function(s, w) {
+        server = s;
         wallet = w;
         server.createAddress({
-          walletId: '123',
           isChange: false,
         }, function(err, address) {
           done();
@@ -786,14 +699,9 @@ describe('Copay server', function() {
     });
 
     it('should create tx', function(done) {
-
       helpers.createUtxos(server, wallet, helpers.toSatoshi([100, 200]), function(utxos) {
-
         helpers.stubBlockExplorer(server, utxos);
-
         var txOpts = {
-          copayerId: '1',
-          walletId: '123',
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: helpers.toSatoshi(80),
           message: 'some message',
@@ -806,14 +714,10 @@ describe('Copay server', function() {
           tx.should.exist;
           tx.isAccepted().should.equal.false;
           tx.isRejected().should.equal.false;
-          server.getPendingTxs({
-            walletId: '123'
-          }, function(err, txs) {
+          server.getPendingTxs({}, function(err, txs) {
             should.not.exist(err);
             txs.length.should.equal(1);
-            server.getBalance({
-              walletId: '123'
-            }, function(err, balance) {
+            server.getBalance({}, function(err, balance) {
               should.not.exist(err);
               balance.totalAmount.should.equal(helpers.toSatoshi(300));
               balance.lockedAmount.should.equal(helpers.toSatoshi(100));
@@ -825,13 +729,9 @@ describe('Copay server', function() {
     });
 
     it('should fail to create tx when insufficient funds', function(done) {
-
       helpers.createUtxos(server, wallet, helpers.toSatoshi([100]), function(utxos) {
         helpers.stubBlockExplorer(server, utxos);
-
         var txOpts = {
-          copayerId: '1',
-          walletId: '123',
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: helpers.toSatoshi(120),
           message: 'some message',
@@ -842,14 +742,10 @@ describe('Copay server', function() {
         server.createTx(txOpts, function(err, tx) {
           err.code.should.equal('INSUFFICIENTFUNDS');
           err.message.should.equal('Insufficient funds');
-          server.getPendingTxs({
-            walletId: '123'
-          }, function(err, txs) {
+          server.getPendingTxs({}, function(err, txs) {
             should.not.exist(err);
             txs.length.should.equal(0);
-            server.getBalance({
-              walletId: '123'
-            }, function(err, balance) {
+            server.getBalance({}, function(err, balance) {
               should.not.exist(err);
               balance.lockedAmount.should.equal(0);
               balance.totalAmount.should.equal(10000000000);
@@ -861,13 +757,9 @@ describe('Copay server', function() {
     });
 
     it('should create tx when there is a pending tx and enough UTXOs', function(done) {
-
       helpers.createUtxos(server, wallet, helpers.toSatoshi([10.1, 10.2, 10.3]), function(utxos) {
         helpers.stubBlockExplorer(server, utxos);
-
         var txOpts = {
-          copayerId: '1',
-          walletId: '123',
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: helpers.toSatoshi(12),
           message: 'some message',
@@ -879,8 +771,6 @@ describe('Copay server', function() {
           tx.should.exist;
 
           var txOpts2 = {
-            copayerId: '1',
-            walletId: '123',
             toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
             amount: 8,
             message: 'some message 2',
@@ -890,14 +780,10 @@ describe('Copay server', function() {
           server.createTx(txOpts2, function(err, tx) {
             should.not.exist(err);
             tx.should.exist;
-            server.getPendingTxs({
-              walletId: '123'
-            }, function(err, txs) {
+            server.getPendingTxs({}, function(err, txs) {
               should.not.exist(err);
               txs.length.should.equal(2);
-              server.getBalance({
-                walletId: '123'
-              }, function(err, balance) {
+              server.getBalance({}, function(err, balance) {
                 should.not.exist(err);
                 balance.totalAmount.should.equal(3060000000);
                 balance.lockedAmount.should.equal(3060000000);
@@ -911,11 +797,8 @@ describe('Copay server', function() {
 
     it('should fail to create tx when there is a pending tx and not enough UTXOs', function(done) {
       helpers.createUtxos(server, wallet, helpers.toSatoshi([10.1, 10.2, 10.3]), function(utxos) {
-
         helpers.stubBlockExplorer(server, utxos);
         var txOpts = {
-          copayerId: '1',
-          walletId: '123',
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: helpers.toSatoshi(12),
           message: 'some message',
@@ -927,8 +810,6 @@ describe('Copay server', function() {
           tx.should.exist;
 
           var txOpts2 = {
-            copayerId: '1',
-            walletId: '123',
             toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
             amount: helpers.toSatoshi(24),
             message: 'some message 2',
@@ -939,14 +820,10 @@ describe('Copay server', function() {
             err.code.should.equal('INSUFFICIENTFUNDS');
             err.message.should.equal('Insufficient funds');
             should.not.exist(tx);
-            server.getPendingTxs({
-              walletId: '123'
-            }, function(err, txs) {
+            server.getPendingTxs({}, function(err, txs) {
               should.not.exist(err);
               txs.length.should.equal(1);
-              server.getBalance({
-                walletId: '123'
-              }, function(err, balance) {
+              server.getBalance({}, function(err, balance) {
                 should.not.exist(err);
                 balance.totalAmount.should.equal(helpers.toSatoshi(30.6));
                 balance.lockedAmount.should.equal(helpers.toSatoshi(20.3));
@@ -961,23 +838,18 @@ describe('Copay server', function() {
   });
 
   describe('#signTx', function() {
-    var wallet, txid;
+    var server, wallet, txid;
 
     beforeEach(function(done) {
-      server = new CopayServer({
-        storage: storage,
-      });
-      helpers.createAndJoinWallet('123', 2, 2, function(err, w) {
+      helpers.createAndJoinWallet('123', 2, 2, function(s, w) {
+        server = s;
         wallet = w;
         server.createAddress({
-          walletId: '123',
           isChange: false,
         }, function(err, address) {
           helpers.createUtxos(server, wallet, helpers.toSatoshi([1, 2, 3, 4, 5, 6, 7, 8]), function(utxos) {
             helpers.stubBlockExplorer(server, utxos);
             var txOpts = {
-              copayerId: '1',
-              walletId: '123',
               toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
               amount: helpers.toSatoshi(10),
               message: 'some message',
@@ -995,17 +867,13 @@ describe('Copay server', function() {
       });
     });
 
-    it('should sign a TX with multiple inputs, different paths', function(done) {
-      server.getPendingTxs({
-        walletId: '123'
-      }, function(err, txs) {
+   it('should sign a TX with multiple inputs, different paths', function(done) {
+      server.getPendingTxs({}, function(err, txs) {
         var tx = txs[0];
         tx.id.should.equal(txid);
 
         var signatures = helpers.clientSign(tx, someXPrivKey[0], wallet.n);
         server.signTx({
-          walletId: '123',
-          copayerId: '1',
           txProposalId: txid,
           signatures: signatures,
         }, function(err) {
@@ -1015,10 +883,8 @@ describe('Copay server', function() {
       });
     });
 
-    it('should fail if one signature is broken', function(done) {
-      server.getPendingTxs({
-        walletId: '123'
-      }, function(err, txs) {
+   it('should fail if one signature is broken', function(done) {
+      server.getPendingTxs({}, function(err, txs) {
         var tx = txs[0];
         tx.id.should.equal(txid);
 
@@ -1026,8 +892,6 @@ describe('Copay server', function() {
         signatures[0] = 1;
 
         server.signTx({
-          walletId: '123',
-          copayerId: '1',
           txProposalId: txid,
           signatures: signatures,
         }, function(err) {
@@ -1036,17 +900,13 @@ describe('Copay server', function() {
         });
       });
     });
-    it('should fail on invalids signature', function(done) {
-      server.getPendingTxs({
-        walletId: '123'
-      }, function(err, txs) {
+   it('should fail on invalids signature', function(done) {
+      server.getPendingTxs({}, function(err, txs) {
         var tx = txs[0];
         tx.id.should.equal(txid);
 
         var signatures = ['11', '22', '33', '44'];
         server.signTx({
-          walletId: '123',
-          copayerId: '1',
           txProposalId: txid,
           signatures: signatures,
         }, function(err) {
@@ -1060,16 +920,13 @@ describe('Copay server', function() {
 
 
   describe('#signTx and broadcast', function() {
-    var wallet, utxos;
+    var server, wallet, utxos;
 
     beforeEach(function(done) {
-      server = new CopayServer({
-        storage: storage,
-      });
-      helpers.createAndJoinWallet('123', 1, 1, function(err, w) {
+      helpers.createAndJoinWallet('123', 1, 1, function(s, w) {
+        server = s;
         wallet = w;
         server.createAddress({
-          walletId: '123',
           isChange: false,
         }, function(err, address) {
           helpers.createUtxos(server, wallet, helpers.toSatoshi([1, 2, 3, 4, 5, 6, 7, 8]), function(inutxos) {
@@ -1083,8 +940,6 @@ describe('Copay server', function() {
     it('should sign and broadcast a tx', function(done) {
       helpers.stubBlockExplorer(server, utxos, '1122334455');
       var txOpts = {
-        copayerId: '1',
-        walletId: '123',
         toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
         amount: helpers.toSatoshi(10),
         message: 'some message',
@@ -1096,15 +951,11 @@ describe('Copay server', function() {
         txp.should.exist;
         var txpid = txp.id;
 
-        server.getPendingTxs({
-          walletId: '123'
-        }, function(err, txps) {
+        server.getPendingTxs({}, function(err, txps) {
           var txp = txps[0];
           txp.id.should.equal(txpid);
           var signatures = helpers.clientSign(txp, someXPrivKey[0], wallet.n);
           server.signTx({
-            walletId: '123',
-            copayerId: '1',
             txProposalId: txpid,
             signatures: signatures,
           }, function(err, txp) {
@@ -1122,8 +973,6 @@ describe('Copay server', function() {
 
       helpers.stubBlockExplorer(server, utxos);
       var txOpts = {
-        copayerId: '1',
-        walletId: '123',
         toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
         amount: helpers.toSatoshi(10),
         message: 'some message',
@@ -1135,22 +984,25 @@ describe('Copay server', function() {
         txp.should.exist;
         var txpid = txp.id;
 
-        server.getPendingTxs({
-          walletId: '123'
-        }, function(err, txps) {
+        server.getPendingTxs({}, function(err, txps) {
           var txp = txps[0];
           txp.id.should.equal(txpid);
           var signatures = helpers.clientSign(txp, someXPrivKey[0], wallet.n);
           server.signTx({
-            walletId: '123',
-            copayerId: '1',
             txProposalId: txpid,
             signatures: signatures,
           }, function(err, txp) {
             err.should.contain('broadcast');
-            txp.status.should.equal('accepted');
-            should.not.exist(txp.txid);
-            done();
+
+            server.getPendingTxs({}, function(err, txps) {
+              should.not.exist(err);
+              txps.length.should.equal(0);
+              server.getTx({ id: txpid }, function (err, txp) {
+                txp.status.should.equal('accepted');
+                should.not.exist(txp.txid);
+                done();
+              });
+            });
           });
         });
       });
