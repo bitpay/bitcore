@@ -39,7 +39,7 @@ var txHash = {
 describe('Integration with ' + network.name + ' bitcoind', function() {
 
   this.timeout(15000);
-  it.only('handshakes', function(cb) {
+  it('handshakes', function(cb) {
     var peer = new Peer('localhost', network);
     peer.once('version', function(m) {
       m.version.should.be.above(70000);
@@ -84,11 +84,9 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
       });
     });
   });
-  it.only('handles addr', function(cb) {
+  it('handles addr', function(cb) {
     connect(function(peer) {
       peer.once('addr', function(message) {
-        console.log(message.serialize(network).toString('hex'));
-        console.log(message.getPayload().toString('hex'));
         message.addresses.forEach(function(address) {
           // console.log(address.ip.v4 + ':' + address.port);
           (address.time instanceof Date).should.equal(true);
