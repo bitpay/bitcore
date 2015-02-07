@@ -60,14 +60,14 @@ var aTextSignature = '3045022100addd20e5413865d65d561ad2979f2289a40d52594b1f8048
 
 
 var helpers = {};
-helpers.getAuthServer = function (copayerId, cb) {
+helpers.getAuthServer = function(copayerId, cb) {
   var signatureStub = sinon.stub(CopayServer.prototype, '_verifySignature');
   signatureStub.returns(true);
   CopayServer.getInstanceWithAuth({
     copayerId: copayerId,
     message: 'dummy',
     signature: 'dummy',
-  }, function (err, server) {
+  }, function(err, server) {
     signatureStub.restore();
     return cb(server);
   });
@@ -99,11 +99,11 @@ helpers.createAndJoinWallet = function(id, m, n, cb) {
       server.joinWallet(copayerOpts, function(err) {
         return cb(err);
       });
-    }, function (err) {
+    }, function(err) {
       if (err) return new Error('Could not generate wallet');
 
-      helpers.getAuthServer('1', function (s) {
-        s.getWallet({}, function (err, w) {
+      helpers.getAuthServer('1', function(s) {
+        s.getWallet({}, function(err, w) {
           cb(s, w);
         });
       });
@@ -213,21 +213,19 @@ describe('Copay server', function() {
     storage = new Storage({
       db: db
     });
-    CopayServer.initialize({ storage: storage });
+    CopayServer.initialize({
+      storage: storage
+    });
   });
 
   describe.skip('#getInstanceWithAuth', function() {
-    beforeEach(function() {
-    });
+    beforeEach(function() {});
 
-    it('should get server instance for existing copayer', function(done) {
-    });
+    it('should get server instance for existing copayer', function(done) {});
 
-    it('should fail when requesting for non-existent copayer', function(done) {
-    });
+    it('should fail when requesting for non-existent copayer', function(done) {});
 
-    it('should fail when message signature cannot be verified', function(done) {
-    });
+    it('should fail when message signature cannot be verified', function(done) {});
   });
 
   describe('#createWallet', function() {
@@ -342,7 +340,7 @@ describe('Copay server', function() {
         };
         server.joinWallet(copayerOpts, function(err) {
           should.not.exist(err);
-          helpers.getAuthServer('999', function (server) {
+          helpers.getAuthServer('999', function(server) {
             server.getWallet({}, function(err, wallet) {
               wallet.id.should.equal('123');
               wallet.copayers.length.should.equal(1);
@@ -406,7 +404,7 @@ describe('Copay server', function() {
         };
         server.joinWallet(copayer1Opts, function(err) {
           should.not.exist(err);
-          helpers.getAuthServer('111', function (server) {
+          helpers.getAuthServer('111', function(server) {
             server.getWallet({}, function(err, wallet) {
               wallet.status.should.equal('complete');
               server.joinWallet(copayer2Opts, function(err) {
@@ -873,7 +871,7 @@ describe('Copay server', function() {
       });
     });
 
-   it('should sign a TX with multiple inputs, different paths', function(done) {
+    it('should sign a TX with multiple inputs, different paths', function(done) {
       server.getPendingTxs({}, function(err, txs) {
         var tx = txs[0];
         tx.id.should.equal(txid);
@@ -889,7 +887,7 @@ describe('Copay server', function() {
       });
     });
 
-   it('should fail if one signature is broken', function(done) {
+    it('should fail if one signature is broken', function(done) {
       server.getPendingTxs({}, function(err, txs) {
         var tx = txs[0];
         tx.id.should.equal(txid);
@@ -1003,7 +1001,9 @@ describe('Copay server', function() {
             server.getPendingTxs({}, function(err, txps) {
               should.not.exist(err);
               txps.length.should.equal(0);
-              server.getTx({ id: txpid }, function (err, txp) {
+              server.getTx({
+                id: txpid
+              }, function(err, txp) {
                 txp.status.should.equal('accepted');
                 should.not.exist(txp.txid);
                 done();
@@ -1026,6 +1026,99 @@ describe('Copay server', function() {
     });
 
     it.skip('proposal creator should be able to delete proposal if there are no other signatures', function (done) {
+    });
+  });
+
+  describe('#getTxs', function() {
+    var server, wallet, clock;
+
+    beforeEach(function(done) {
+      console.log('\tCreating TXS...');
+      clock = sinon.useFakeTimers();
+      helpers.createAndJoinWallet('123', 1, 1, function(s, w) {
+        server = s;
+        wallet = w;
+        server.createAddress({
+          isChange: false,
+        }, function(err, address) {
+          helpers.createUtxos(server, wallet, helpers.toSatoshi(_.range(10)), function(utxos) {
+            helpers.stubBlockExplorer(server, utxos);
+            var txOpts = {
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: helpers.toSatoshi(0.1),
+            };
+            async.eachSeries(_.range(10), function(i, next) {
+                clock.tick(10000);
+                server.createTx(txOpts, function(err, tx) {
+                  next();
+                });
+              },
+              done
+            );
+          });
+        });
+      });
+    });
+    afterEach(function() {
+      clock.restore();
+    });
+
+    it('should pull 4 txs, down to to time 60', function(done) {
+      server.getTxs({
+        minTs: 60,
+        limit: 8
+      }, function(err, txps) {
+        should.not.exist(err);
+        var times = _.pluck(txps,'createdOn');
+        times.should.deep.equal([90,80,70,60]);
+        done();
+      });
+    });
+
+    it('should pull the first 5 txs', function(done) {
+      server.getTxs({
+        maxTs: 50,
+        limit: 5
+      }, function(err, txps) {
+        should.not.exist(err);
+        var times = _.pluck(txps,'createdOn');
+        times.should.deep.equal([50,40,30,20,10]);
+        done();
+      });
+    });
+
+    it('should pull the last 4 txs', function(done) {
+      server.getTxs({
+        limit: 4
+      }, function(err, txps) {
+        should.not.exist(err);
+        var times = _.pluck(txps,'createdOn');
+        times.should.deep.equal([90,80,70,60]);
+        done();
+      });
+    });
+
+    it('should pull all txs', function(done) {
+      server.getTxs({
+      }, function(err, txps) {
+        should.not.exist(err);
+        var times = _.pluck(txps,'createdOn');
+        times.should.deep.equal([90,80,70,60,50,40,30,20,10]);
+        done();
+      });
+    });
+
+
+    it('should txs from times 50 to 70', function(done) {
+      server.getTxs({
+        minTs: 50,
+        maxTs: 70,
+      }, function(err, txps) {
+        should.not.exist(err);
+        var times = _.pluck(txps,'createdOn');
+        times.should.deep.equal([70,60,50]);
+        done();
+      });
     });
   });
 });
