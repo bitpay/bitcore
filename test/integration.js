@@ -610,6 +610,9 @@ describe('Copay server', function() {
       });
     });
 
+    it.skip('should fail to create address when wallet is not complete', function(done) {
+    });
+
     it('should create many addresses on simultaneous requests', function(done) {
       async.map(_.range(10), function(i, cb) {
         server.createAddress({
@@ -722,6 +725,12 @@ describe('Copay server', function() {
           });
         });
       });
+    });
+
+    it.skip('should fail to create tx when wallet is not complete', function(done) {
+    });
+
+    it.skip('should fail to create tx when wallet is not complete', function(done) {
     });
 
     it('should fail to create tx when insufficient funds', function(done) {
@@ -896,7 +905,7 @@ describe('Copay server', function() {
         });
       });
     });
-   it('should fail on invalids signature', function(done) {
+   it('should fail on invalid signature', function(done) {
       server.getPendingTxs({}, function(err, txs) {
         var tx = txs[0];
         tx.id.should.equal(txid);
@@ -1002,6 +1011,20 @@ describe('Copay server', function() {
           });
         });
       });
+    });
+  });
+
+  describe('Multisignature wallet', function() {
+    it.skip('all copayers should see pending proposal created by one copayer', function (done) {
+    });
+
+    it.skip('tx proposals should not be broadcast until quorum is reached', function (done) {
+    });
+
+    it.skip('tx proposals should accept as many rejections as possible without finally rejecting', function (done) {
+    });
+
+    it.skip('proposal creator should be able to delete proposal if there are no other signatures', function (done) {
     });
   });
 });
