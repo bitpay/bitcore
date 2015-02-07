@@ -710,8 +710,6 @@ describe('Copay server', function() {
 
     it.skip('should fail to create tx when wallet is not complete', function(done) {});
 
-    it.skip('should fail to create tx when wallet is not complete', function(done) {});
-
     it('should fail to create tx when insufficient funds', function(done) {
       helpers.createUtxos(server, wallet, helpers.toSatoshi([100]), function(utxos) {
         helpers.stubBlockExplorer(server, utxos);
@@ -1009,6 +1007,10 @@ describe('Copay server', function() {
     var server, wallet, clock;
 
     beforeEach(function(done) {
+      if (server) 
+        return done();
+
+      this.timeout(5000);
       console.log('\tCreating TXS...');
       clock = sinon.useFakeTimers();
       helpers.createAndJoinWallet(1, 1, function(s, w) {
@@ -1028,8 +1030,9 @@ describe('Copay server', function() {
                 server.createTx(txOpts, function(err, tx) {
                   next();
                 });
-              },
-              done
+              }, function(err) {
+                return done(err);
+              }
             );
           });
         });
