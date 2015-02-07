@@ -75,6 +75,7 @@ helpers.getAuthServer = function(copayerId, cb) {
 
 helpers.createAndJoinWallet = function(id, m, n, cb) {
   var server = new CopayServer();
+  var copayerIds = [];
 
   var walletOpts = {
     id: id,
@@ -90,19 +91,19 @@ helpers.createAndJoinWallet = function(id, m, n, cb) {
 
       var copayerOpts = {
         walletId: id,
-        id: '' + i,
         name: 'copayer ' + i,
         xPubKey: someXPubKeys[i - 1],
         xPubKeySignature: someXPubKeysSignatures[i - 1],
       };
 
-      server.joinWallet(copayerOpts, function(err) {
+      server.joinWallet(copayerOpts, function(err, copayerId) {
+        copayerIds.push(copayerId);
         return cb(err);
       });
     }, function(err) {
       if (err) return new Error('Could not generate wallet');
 
-      helpers.getAuthServer('1', function(s) {
+      helpers.getAuthServer(copayerIds[0], function(s) {
         s.getWallet({}, function(err, w) {
           cb(s, w);
         });
@@ -333,20 +334,19 @@ describe('Copay server', function() {
         should.not.exist(err);
         var copayerOpts = {
           walletId: '123',
-          id: '999',
           name: 'me',
           xPubKey: aXPubKey,
           xPubKeySignature: aXPubKeySignature,
         };
-        server.joinWallet(copayerOpts, function(err) {
+        server.joinWallet(copayerOpts, function(err, copayerId) {
           should.not.exist(err);
-          helpers.getAuthServer('999', function(server) {
+          helpers.getAuthServer(copayerId, function(server) {
             server.getWallet({}, function(err, wallet) {
               wallet.id.should.equal('123');
               wallet.copayers.length.should.equal(1);
               var copayer = wallet.copayers[0];
-              copayer.id.should.equal('999');
               copayer.name.should.equal('me');
+              copayer.id.should.equal(copayerId);
               done();
             });
           });
@@ -366,7 +366,6 @@ describe('Copay server', function() {
         should.not.exist(err);
         var copayerOpts = {
           walletId: '234',
-          id: '999',
           name: 'me',
           xPubKey: 'dummy',
           xPubKeySignature: 'dummy',
@@ -402,12 +401,12 @@ describe('Copay server', function() {
           xPubKey: someXPubKeys[1],
           xPubKeySignature: someXPubKeysSignatures[1],
         };
-        server.joinWallet(copayer1Opts, function(err) {
+        server.joinWallet(copayer1Opts, function(err, copayer1Id) {
           should.not.exist(err);
-          helpers.getAuthServer('111', function(server) {
+          helpers.getAuthServer(copayer1Id, function(server) {
             server.getWallet({}, function(err, wallet) {
               wallet.status.should.equal('complete');
-              server.joinWallet(copayer2Opts, function(err) {
+              server.joinWallet(copayer2Opts, function(err, copayer2Id) {
                 should.exist(err);
                 err.code.should.equal('WFULL');
                 err.message.should.equal('Wallet full');
@@ -563,7 +562,7 @@ describe('Copay server', function() {
         message: aText,
         signature: aTextSignature,
       };
-      helpers.getAuthServer('2', function (server) {
+      helpers.getAuthServer(wallet.copayers[1].id, function (server) {
         server.verifyMessageSignature(opts, function(err, isValid) {
           should.not.exist(err);
           isValid.should.be.false;
