@@ -715,7 +715,42 @@ describe('Copay server', function() {
       });
     });
 
-    it.skip('should fail to create tx when wallet is not complete', function(done) {});
+    it('should fail to create tx when wallet is not complete', function(done) {
+      var server = new CopayServer();
+      var walletOpts = {
+        name: 'my wallet',
+        m: 2,
+        n: 3,
+        pubKey: keyPair.pub,
+      };
+      server.createWallet(walletOpts, function(err, walletId) {
+        should.not.exist(err);
+        var copayerOpts = {
+          walletId: walletId,
+          name: 'me',
+          xPubKey: aXPubKey,
+          xPubKeySignature: aXPubKeySignature,
+        };
+        server.joinWallet(copayerOpts, function(err, copayerId) {
+          should.not.exist(err);
+          helpers.getAuthServer(copayerId, function(server, wallet) {
+            var txOpts = {
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: helpers.toSatoshi(80),
+              message: 'some message',
+              otToken: 'dummy',
+              requestSignature: 'dummy',
+            };
+            server.createTx(txOpts, function(err, tx) {
+              should.not.exist(tx);
+              err.should.exist;
+              err.message.should.contain('not complete');
+              done();
+            });
+          });
+        });
+      });
+    });
 
     it('should fail to create tx when insufficient funds', function(done) {
       helpers.createUtxos(server, wallet, helpers.toSatoshi([100]), function(utxos) {
