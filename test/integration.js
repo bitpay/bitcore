@@ -308,46 +308,63 @@ describe('Copay server', function() {
   });
 
   describe('#joinWallet', function() {
-    var server;
-    beforeEach(function() {
+    var server, walletId;
+    beforeEach(function(done) {
       server = new CopayServer();
-    });
-
-    it('should join existing wallet', function(done) {
       var walletOpts = {
         name: 'my wallet',
         m: 2,
         n: 3,
         pubKey: keyPair.pub,
       };
-
-      server.createWallet(walletOpts, function(err, walletId) {
+      server.createWallet(walletOpts, function(err, wId) {
         should.not.exist(err);
-        var copayerOpts = {
-          walletId: walletId,
-          name: 'me',
-          xPubKey: aXPubKey,
-          xPubKeySignature: aXPubKeySignature,
-        };
-        server.joinWallet(copayerOpts, function(err, copayerId) {
-          should.not.exist(err);
-          helpers.getAuthServer(copayerId, function(server) {
-            server.getWallet({}, function(err, wallet) {
-              wallet.id.should.equal(walletId);
-              wallet.copayers.length.should.equal(1);
-              var copayer = wallet.copayers[0];
-              copayer.name.should.equal('me');
-              copayer.id.should.equal(copayerId);
-              done();
-            });
+        should.exist.walletId;
+        walletId = wId;
+        done();
+      });
+    });
+
+    it('should join existing wallet', function(done) {
+      var copayerOpts = {
+        walletId: walletId,
+        name: 'me',
+        xPubKey: aXPubKey,
+        xPubKeySignature: aXPubKeySignature,
+      };
+      server.joinWallet(copayerOpts, function(err, copayerId) {
+        should.not.exist(err);
+        helpers.getAuthServer(copayerId, function(server) {
+          server.getWallet({}, function(err, wallet) {
+            wallet.id.should.equal(walletId);
+            wallet.copayers.length.should.equal(1);
+            var copayer = wallet.copayers[0];
+            copayer.name.should.equal('me');
+            copayer.id.should.equal(copayerId);
+            done();
           });
         });
       });
     });
 
+    it('should fail to join with no name', function(done) {
+      var copayerOpts = {
+        walletId: walletId,
+        name: '',
+        xPubKey: someXPubKeys[0],
+        xPubKeySignature: someXPubKeysSignatures[0],
+      };
+      server.joinWallet(copayerOpts, function(err, copayerId) {
+        should.not.exist(copayerId);
+        err.should.exist;
+        err.message.should.contain('name');
+        done();
+      });
+    });
+
     it('should fail to join non-existent wallet', function(done) {
       var copayerOpts = {
-        walletId: '234',
+        walletId: '123',
         name: 'me',
         xPubKey: 'dummy',
         xPubKeySignature: 'dummy',
@@ -359,143 +376,77 @@ describe('Copay server', function() {
     });
 
     it('should fail to join full wallet', function(done) {
-      var walletOpts = {
-        name: 'my wallet',
-        m: 1,
-        n: 1,
-        pubKey: keyPair.pub,
-      };
-      server.createWallet(walletOpts, function(err, walletId) {
-        should.not.exist(err);
-        var copayer1Opts = {
-          walletId: walletId,
-          id: '111',
+      helpers.createAndJoinWallet(1, 1, function(s, wallet) {
+        var copayerOpts = {
+          walletId: wallet.id,
           name: 'me',
-          xPubKey: someXPubKeys[0],
-          xPubKeySignature: someXPubKeysSignatures[0],
-        };
-        var copayer2Opts = {
-          walletId: walletId,
-          id: '222',
-          name: 'me 2',
           xPubKey: someXPubKeys[1],
           xPubKeySignature: someXPubKeysSignatures[1],
         };
-        server.joinWallet(copayer1Opts, function(err, copayer1Id) {
-          should.not.exist(err);
-          helpers.getAuthServer(copayer1Id, function(server) {
-            server.getWallet({}, function(err, wallet) {
-              wallet.status.should.equal('complete');
-              server.joinWallet(copayer2Opts, function(err, copayer2Id) {
-                should.exist(err);
-                err.code.should.equal('WFULL');
-                err.message.should.equal('Wallet full');
-                done();
-              });
-            });
-          });
+        server.joinWallet(copayerOpts, function(err) {
+          should.exist(err);
+          err.code.should.equal('WFULL');
+          err.message.should.equal('Wallet full');
+          done();
         });
       });
     });
 
     it('should fail to re-join wallet', function(done) {
-      var walletOpts = {
-        name: 'my wallet',
-        m: 1,
-        n: 1,
-        pubKey: keyPair.pub,
+      var copayerOpts = {
+        walletId: walletId,
+        name: 'me',
+        xPubKey: someXPubKeys[0],
+        xPubKeySignature: someXPubKeysSignatures[0],
       };
-      server.createWallet(walletOpts, function(err, walletId) {
+      server.joinWallet(copayerOpts, function(err) {
         should.not.exist(err);
-        var copayerOpts = {
-          walletId: walletId,
-          id: '111',
-          name: 'me',
-          xPubKey: someXPubKeys[0],
-          xPubKeySignature: someXPubKeysSignatures[0],
-        };
         server.joinWallet(copayerOpts, function(err) {
-          should.not.exist(err);
-          server.joinWallet(copayerOpts, function(err) {
-            should.exist(err);
-            err.code.should.equal('CINWALLET');
-            err.message.should.equal('Copayer already in wallet');
-            done();
-          });
+          should.exist(err);
+          err.code.should.equal('CINWALLET');
+          err.message.should.equal('Copayer already in wallet');
+          done();
         });
       });
     });
-
 
     it('should fail to join with bad formated signature', function(done) {
-      var walletOpts = {
-        id: '123',
-        name: 'my wallet',
-        m: 1,
-        n: 1,
-        pubKey: aPubKey,
+      var copayerOpts = {
+        walletId: walletId,
+        name: 'me',
+        xPubKey: someXPubKeys[0],
+        xPubKeySignature: 'bad sign',
       };
-      server.createWallet(walletOpts, function(err, walletId) {
-        should.not.exist(err);
-        var copayerOpts = {
-          walletId: walletId,
-          name: 'me',
-          xPubKey: someXPubKeys[0],
-          xPubKeySignature: 'bad sign',
-        };
-        server.joinWallet(copayerOpts, function(err) {
-          err.message.should.equal('Bad request');
-          done();
-        });
+      server.joinWallet(copayerOpts, function(err) {
+        err.message.should.equal('Bad request');
+        done();
       });
     });
 
-
     it('should fail to join with null signature', function(done) {
-      var walletOpts = {
-        id: '123',
-        name: 'my wallet',
-        m: 1,
-        n: 1,
-        pubKey: aPubKey,
+      var copayerOpts = {
+        walletId: walletId,
+        name: 'me',
+        xPubKey: someXPubKeys[0],
       };
-      server.createWallet(walletOpts, function(err) {
-        should.not.exist(err);
-        var copayerOpts = {
-          walletId: '123',
-          id: '111',
-          name: 'me',
-          xPubKey: someXPubKeys[0],
-        };
-        try {
-          server.joinWallet(copayerOpts, function(err) {});
-        } catch (e) {
-          e.should.contain('xPubKeySignature');
-          done();
-        }
-      });
+      try {
+        server.joinWallet(copayerOpts, function(err) {});
+      } catch (e) {
+        e.should.contain('xPubKeySignature');
+        done();
+      }
     });
 
     it('should fail to join with wrong signature', function(done) {
-      var walletOpts = {
-        id: '123',
-        name: 'my wallet',
-        m: 1,
-        n: 1,
-        pubKey: aPubKey,
+      var copayerOpts = {
+        walletId: walletId,
+        name: 'me',
+        xPubKey: someXPubKeys[0],
+        xPubKeySignature: someXPubKeysSignatures[1],
       };
-      server.createWallet(walletOpts, function(err, walletId) {
-        should.not.exist(err);
-        var copayerOpts = {
-          walletId: walletId,
-          name: 'me',
-          xPubKey: someXPubKeys[0],
-          xPubKeySignature: someXPubKeysSignatures[0],
-        };
-        server.joinWallet(copayerOpts, function(err) {
-          err.message.should.equal('Bad request');
-          done();
-        });
+      server.joinWallet(copayerOpts, function(err) {
+        err.message.should.equal('Bad request');
+        done();
       });
     });
 
