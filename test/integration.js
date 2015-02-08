@@ -978,14 +978,11 @@ describe('Copay server', function() {
 
             server.getPendingTxs({}, function(err, txps) {
               should.not.exist(err);
-              txps.length.should.equal(0);
-              server.getTx({
-                id: txpid
-              }, function(err, txp) {
-                txp.status.should.equal('accepted');
-                should.not.exist(txp.txid);
-                done();
-              });
+              txps.length.should.equal(1);
+              var txp = txps[0];
+              txp.status.should.equal('accepted');
+              should.not.exist(txp.txid);
+              done();
             });
           });
         });
