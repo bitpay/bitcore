@@ -349,7 +349,7 @@ describe('Copay server', function() {
         n: 1,
         pubKey: keyPair.pub,
       };
-      server.createWallet(walletOpts, function(err,walletId) {
+      server.createWallet(walletOpts, function(err, walletId) {
         should.not.exist(err);
         var copayer1Opts = {
           walletId: walletId,
@@ -568,7 +568,37 @@ describe('Copay server', function() {
       });
     });
 
-    it.skip('should fail to create address when wallet is not complete', function(done) {});
+    it('should fail to create address when wallet is not complete', function(done) {
+      var server = new CopayServer();
+      var walletOpts = {
+        name: 'my wallet',
+        m: 2,
+        n: 3,
+        pubKey: keyPair.pub,
+      };
+      server.createWallet(walletOpts, function(err, walletId) {
+        should.not.exist(err);
+        var copayerOpts = {
+          walletId: walletId,
+          name: 'me',
+          xPubKey: aXPubKey,
+          xPubKeySignature: aXPubKeySignature,
+        };
+        server.joinWallet(copayerOpts, function(err, copayerId) {
+          should.not.exist(err);
+          helpers.getAuthServer(copayerId, function(server) {
+            server.createAddress({
+              isChange: false,
+            }, function(err, address) {
+              should.not.exist(address);
+              err.should.exist;
+              err.message.should.contain('not complete');
+              done();
+            });
+          });
+        });
+      });
+    });
 
     it('should create many addresses on simultaneous requests', function(done) {
       async.map(_.range(10), function(i, cb) {
@@ -981,7 +1011,7 @@ describe('Copay server', function() {
     var server, wallet, clock;
 
     beforeEach(function(done) {
-      if (server) 
+      if (server)
         return done();
 
       this.timeout(5000);
@@ -1000,14 +1030,13 @@ describe('Copay server', function() {
               amount: helpers.toSatoshi(0.1),
             };
             async.eachSeries(_.range(10), function(i, next) {
-                clock.tick(10000);
-                server.createTx(txOpts, function(err, tx) {
-                  next();
-                });
-              }, function(err) {
-                return done(err);
-              }
-            );
+              clock.tick(10000);
+              server.createTx(txOpts, function(err, tx) {
+                next();
+              });
+            }, function(err) {
+              return done(err);
+            });
           });
         });
       });
