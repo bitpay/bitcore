@@ -563,10 +563,8 @@ describe('Copay server', function() {
       });
     });
 
-    it('should not create address if unable to store wallet', function(done) {
-      var storeWalletStub = sinon.stub(server.storage, 'storeWallet');
-      storeWalletStub.yields('dummy error');
-
+    it('should not create address if unable to store it', function(done) {
+      sinon.stub(server.storage, 'storeAddressAndWallet').yields('dummy error');
       server.createAddress({}, function(err, address) {
         err.should.exist;
         should.not.exist(address);
@@ -574,30 +572,7 @@ describe('Copay server', function() {
         server.getAddresses({}, function(err, addresses) {
           addresses.length.should.equal(0);
 
-          server.storage.storeWallet.restore();
-          server.createAddress({}, function(err, address) {
-            should.not.exist(err);
-            address.should.exist;
-            address.address.should.equal('36JdLEUDa6UwCfMhhkdZ2VFnDrGUoLedsR');
-            address.path.should.equal('m/2147483647/0/0');
-            done();
-          });
-        });
-      });
-    });
-
-    it('should not create address if unable to store addresses', function(done) {
-      var storeAddressStub = sinon.stub(server.storage, 'storeAddress');
-      storeAddressStub.yields('dummy error');
-
-      server.createAddress({}, function(err, address) {
-        err.should.exist;
-        should.not.exist(address);
-
-        server.getAddresses({}, function(err, addresses) {
-          addresses.length.should.equal(0);
-
-          server.storage.storeAddress.restore();
+          server.storage.storeAddressAndWallet.restore();
           server.createAddress({}, function(err, address) {
             should.not.exist(err);
             address.should.exist;
