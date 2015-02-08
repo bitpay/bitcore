@@ -652,14 +652,12 @@ describe('Copay server', function() {
     });
 
     it('should create a tx', function(done) {
-
       helpers.createUtxos(server, wallet, helpers.toSatoshi([100, 200]), function(utxos) {
         helpers.stubBlockExplorer(server, utxos);
         var txOpts = {
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: helpers.toSatoshi(80),
           message: 'some message',
-          otToken: 'dummy',
           requestSignature: 'dummy',
         };
 
@@ -705,7 +703,6 @@ describe('Copay server', function() {
               toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
               amount: helpers.toSatoshi(80),
               message: 'some message',
-              otToken: 'dummy',
               requestSignature: 'dummy',
             };
             server.createTx(txOpts, function(err, tx) {
@@ -728,7 +725,6 @@ describe('Copay server', function() {
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: helpers.toSatoshi(120),
           message: 'some message',
-          otToken: 'dummy',
           requestSignature: 'dummy',
         };
 
@@ -760,7 +756,6 @@ describe('Copay server', function() {
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: helpers.toSatoshi(12),
           message: 'some message',
-          otToken: 'dummy',
           requestSignature: 'dummy',
         };
         server.createTx(txOpts, function(err, tx) {
@@ -771,7 +766,6 @@ describe('Copay server', function() {
             toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
             amount: 8,
             message: 'some message 2',
-            otToken: 'dummy',
             requestSignature: 'dummy',
           };
           server.createTx(txOpts2, function(err, tx) {
@@ -799,7 +793,6 @@ describe('Copay server', function() {
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: helpers.toSatoshi(12),
           message: 'some message',
-          otToken: 'dummy',
           requestSignature: 'dummy',
         };
         server.createTx(txOpts, function(err, tx) {
@@ -810,7 +803,6 @@ describe('Copay server', function() {
             toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
             amount: helpers.toSatoshi(24),
             message: 'some message 2',
-            otToken: 'dummy',
             requestSignature: 'dummy',
           };
           server.createTx(txOpts2, function(err, tx) {
@@ -824,6 +816,43 @@ describe('Copay server', function() {
                 should.not.exist(err);
                 balance.totalAmount.should.equal(helpers.toSatoshi(30.6));
                 balance.lockedAmount.should.equal(helpers.toSatoshi(20.3));
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should create tx using different UTXOs for simultaneous requests', function(done) {
+      var ntxs = 3;
+      helpers.createUtxos(server, wallet, helpers.toSatoshi(_.times(3, function() {
+        return 100;
+      })), function(utxos) {
+        helpers.stubBlockExplorer(server, utxos);
+        server.getBalance({}, function(err, balance) {
+          should.not.exist(err);
+          balance.totalAmount.should.equal(helpers.toSatoshi(ntxs * 100));
+          balance.lockedAmount.should.equal(helpers.toSatoshi(0));
+
+          var txOpts = {
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: helpers.toSatoshi(80),
+            requestSignature: 'dummy',
+          };
+          async.map(_.range(ntxs), function(i, cb) {
+            server.createTx(txOpts, function(err, tx) {
+              cb(err, tx);
+            });
+          }, function(err) {
+            server.getPendingTxs({}, function(err, txs) {
+              should.not.exist(err);
+              txs.length.should.equal(ntxs);
+              _.uniq(_.pluck(txs, 'changeAddress')).length.should.equal(ntxs);
+              server.getBalance({}, function(err, balance) {
+                should.not.exist(err);
+                balance.totalAmount.should.equal(helpers.toSatoshi(ntxs * 100));
+                balance.lockedAmount.should.equal(balance.totalAmount);
                 done();
               });
             });
@@ -849,7 +878,6 @@ describe('Copay server', function() {
               toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
               amount: helpers.toSatoshi(10),
               message: 'some message',
-              otToken: 'dummy',
               requestSignature: 'dummy',
             };
             server.createTx(txOpts, function(err, tx) {
@@ -937,7 +965,6 @@ describe('Copay server', function() {
         toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
         amount: helpers.toSatoshi(10),
         message: 'some message',
-        otToken: 'dummy',
         requestSignature: 'dummy',
       };
       server.createTx(txOpts, function(err, txp) {
@@ -969,7 +996,6 @@ describe('Copay server', function() {
         toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
         amount: helpers.toSatoshi(10),
         message: 'some message',
-        otToken: 'dummy',
         requestSignature: 'dummy',
       };
       server.createTx(txOpts, function(err, txp) {
@@ -1024,7 +1050,6 @@ describe('Copay server', function() {
         toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
         amount: helpers.toSatoshi(10),
         message: 'some message',
-        otToken: 'dummy',
         requestSignature: 'dummy',
       };
       server.createTx(txOpts, function(err, txp) {
@@ -1035,6 +1060,7 @@ describe('Copay server', function() {
             should.not.exist(err);
             txps.length.should.equal(1);
             txps[0].id.should.equal(txp.id);
+            txps[0].message.should.equal('some message');
             done();
           });
         });
