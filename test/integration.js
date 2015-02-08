@@ -568,16 +568,18 @@ describe('Copay server', function() {
     });
 
     it('should create many addresses on simultaneous requests', function(done) {
-      async.map(_.range(10), function(i, cb) {
+      var N = 5;
+      async.map(_.range(N), function(i, cb) {
         server.createAddress({
           isChange: false,
         }, cb);
       }, function(err, addresses) {
-        addresses.length.should.equal(10);
-        addresses[0].path.should.equal('m/2147483647/0/0');
-        addresses[9].path.should.equal('m/2147483647/0/9');
+        addresses.length.should.equal(N);
+        _.each(_.range(N), function(i) {
+          addresses[i].path.should.equal('m/2147483647/0/' + i);
+        });
         // No two identical addresses
-        _.keys(_.groupBy(addresses, 'address')).length.should.equal(10);
+        _.uniq(_.pluck(addresses, 'address')).length.should.equal(N);
         done();
       });
     });
@@ -825,14 +827,14 @@ describe('Copay server', function() {
     });
 
     it('should create tx using different UTXOs for simultaneous requests', function(done) {
-      var ntxs = 3;
-      helpers.createUtxos(server, wallet, helpers.toSatoshi(_.times(3, function() {
+      var N = 5;
+      helpers.createUtxos(server, wallet, helpers.toSatoshi(_.times(N, function() {
         return 100;
       })), function(utxos) {
         helpers.stubBlockExplorer(server, utxos);
         server.getBalance({}, function(err, balance) {
           should.not.exist(err);
-          balance.totalAmount.should.equal(helpers.toSatoshi(ntxs * 100));
+          balance.totalAmount.should.equal(helpers.toSatoshi(N * 100));
           balance.lockedAmount.should.equal(helpers.toSatoshi(0));
 
           var txOpts = {
@@ -840,18 +842,18 @@ describe('Copay server', function() {
             amount: helpers.toSatoshi(80),
             requestSignature: 'dummy',
           };
-          async.map(_.range(ntxs), function(i, cb) {
+          async.map(_.range(N), function(i, cb) {
             server.createTx(txOpts, function(err, tx) {
               cb(err, tx);
             });
           }, function(err) {
             server.getPendingTxs({}, function(err, txs) {
               should.not.exist(err);
-              txs.length.should.equal(ntxs);
-              _.uniq(_.pluck(txs, 'changeAddress')).length.should.equal(ntxs);
+              txs.length.should.equal(N);
+              _.uniq(_.pluck(txs, 'changeAddress')).length.should.equal(N);
               server.getBalance({}, function(err, balance) {
                 should.not.exist(err);
-                balance.totalAmount.should.equal(helpers.toSatoshi(ntxs * 100));
+                balance.totalAmount.should.equal(helpers.toSatoshi(N * 100));
                 balance.lockedAmount.should.equal(balance.totalAmount);
                 done();
               });
