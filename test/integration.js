@@ -130,9 +130,7 @@ helpers.createUtxos = function(server, wallet, amounts, cb) {
   var addresses = [];
 
   async.each(amounts, function(a, next) {
-      server.createAddress({
-        isChange: false,
-      }, function(err, address) {
+      server.createAddress({}, function(err, address) {
         addresses.push(address);
         next(err);
       });
@@ -510,27 +508,12 @@ describe('Copay server', function() {
       });
     });
 
-    it('should create main address', function(done) {
-      server.createAddress({
-        isChange: false,
-      }, function(err, address) {
+    it('should create address', function(done) {
+      server.createAddress({}, function(err, address) {
         should.not.exist(err);
         address.should.exist;
         address.address.should.equal('36JdLEUDa6UwCfMhhkdZ2VFnDrGUoLedsR');
         address.path.should.equal('m/2147483647/0/0');
-        done();
-      });
-    });
-
-
-    it('should create change address', function(done) {
-      server.createAddress({
-        isChange: true,
-      }, function(err, address) {
-        should.not.exist(err);
-        address.should.exist;
-        address.address.should.equal('3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH');
-        address.path.should.equal('m/2147483647/1/0');
         done();
       });
     });
@@ -554,9 +537,7 @@ describe('Copay server', function() {
         server.joinWallet(copayerOpts, function(err, copayerId) {
           should.not.exist(err);
           helpers.getAuthServer(copayerId, function(server) {
-            server.createAddress({
-              isChange: false,
-            }, function(err, address) {
+            server.createAddress({}, function(err, address) {
               should.not.exist(address);
               err.should.exist;
               err.message.should.contain('not complete');
@@ -570,9 +551,7 @@ describe('Copay server', function() {
     it('should create many addresses on simultaneous requests', function(done) {
       var N = 5;
       async.map(_.range(N), function(i, cb) {
-        server.createAddress({
-          isChange: false,
-        }, cb);
+        server.createAddress({}, cb);
       }, function(err, addresses) {
         addresses.length.should.equal(N);
         _.each(_.range(N), function(i) {
@@ -588,9 +567,7 @@ describe('Copay server', function() {
       var storeWalletStub = sinon.stub(server.storage, 'storeWallet');
       storeWalletStub.yields('dummy error');
 
-      server.createAddress({
-        isChange: true,
-      }, function(err, address) {
+      server.createAddress({}, function(err, address) {
         err.should.exist;
         should.not.exist(address);
 
@@ -598,13 +575,11 @@ describe('Copay server', function() {
           addresses.length.should.equal(0);
 
           server.storage.storeWallet.restore();
-          server.createAddress({
-            isChange: true,
-          }, function(err, address) {
+          server.createAddress({}, function(err, address) {
             should.not.exist(err);
             address.should.exist;
-            address.address.should.equal('3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH');
-            address.path.should.equal('m/2147483647/1/0');
+            address.address.should.equal('36JdLEUDa6UwCfMhhkdZ2VFnDrGUoLedsR');
+            address.path.should.equal('m/2147483647/0/0');
             done();
           });
         });
@@ -615,9 +590,7 @@ describe('Copay server', function() {
       var storeAddressStub = sinon.stub(server.storage, 'storeAddress');
       storeAddressStub.yields('dummy error');
 
-      server.createAddress({
-        isChange: true,
-      }, function(err, address) {
+      server.createAddress({}, function(err, address) {
         err.should.exist;
         should.not.exist(address);
 
@@ -625,13 +598,11 @@ describe('Copay server', function() {
           addresses.length.should.equal(0);
 
           server.storage.storeAddress.restore();
-          server.createAddress({
-            isChange: true,
-          }, function(err, address) {
+          server.createAddress({}, function(err, address) {
             should.not.exist(err);
             address.should.exist;
-            address.address.should.equal('3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH');
-            address.path.should.equal('m/2147483647/1/0');
+            address.address.should.equal('36JdLEUDa6UwCfMhhkdZ2VFnDrGUoLedsR');
+            address.path.should.equal('m/2147483647/0/0');
             done();
           });
         });
@@ -645,9 +616,7 @@ describe('Copay server', function() {
       helpers.createAndJoinWallet(2, 2, function(s, w) {
         server = s;
         wallet = w;
-        server.createAddress({
-          isChange: false,
-        }, function(err, address) {
+        server.createAddress({}, function(err, address) {
           done();
         });
       });
@@ -871,9 +840,7 @@ describe('Copay server', function() {
       helpers.createAndJoinWallet(2, 2, function(s, w) {
         server = s;
         wallet = w;
-        server.createAddress({
-          isChange: false,
-        }, function(err, address) {
+        server.createAddress({}, function(err, address) {
           helpers.createUtxos(server, wallet, helpers.toSatoshi([1, 2, 3, 4, 5, 6, 7, 8]), function(utxos) {
             helpers.stubBlockExplorer(server, utxos);
             var txOpts = {
@@ -950,9 +917,7 @@ describe('Copay server', function() {
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
         wallet = w;
-        server.createAddress({
-          isChange: false,
-        }, function(err, address) {
+        server.createAddress({}, function(err, address) {
           helpers.createUtxos(server, wallet, helpers.toSatoshi([1, 2, 3, 4, 5, 6, 7, 8]), function(inutxos) {
             utxos = inutxos;
             done();
@@ -1035,9 +1000,7 @@ describe('Copay server', function() {
       helpers.createAndJoinWallet(2, 3, function(s, w) {
         server = s;
         wallet = w;
-        server.createAddress({
-          isChange: false,
-        }, function(err, address) {
+        server.createAddress({}, function(err, address) {
           helpers.createUtxos(server, wallet, helpers.toSatoshi([1, 2, 3, 4, 5, 6, 7, 8]), function(inutxos) {
             utxos = inutxos;
             done();
@@ -1091,9 +1054,7 @@ describe('Copay server', function() {
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
         wallet = w;
-        server.createAddress({
-          isChange: false,
-        }, function(err, address) {
+        server.createAddress({}, function(err, address) {
           helpers.createUtxos(server, wallet, helpers.toSatoshi(_.range(10)), function(utxos) {
             helpers.stubBlockExplorer(server, utxos);
             var txOpts = {
