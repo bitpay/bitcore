@@ -68,6 +68,7 @@ helpers.getAuthServer = function(copayerId, cb) {
     message: 'dummy',
     signature: 'dummy',
   }, function(err, server) {
+    if (err || !server) throw new Error('Could not login as copayerId ' + copayerId);
     signatureStub.restore();
     return cb(server);
   });
@@ -945,7 +946,6 @@ describe('Copay server', function() {
 
   describe('#signTx and broadcast', function() {
     var server, wallet, utxos;
-
     beforeEach(function(done) {
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
@@ -994,7 +994,6 @@ describe('Copay server', function() {
 
 
     it('should keep tx as *accepted* if unable to broadcast it', function(done) {
-
       helpers.stubBlockExplorer(server, utxos);
       var txOpts = {
         toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
@@ -1033,7 +1032,44 @@ describe('Copay server', function() {
   });
 
   describe('Multisignature wallet', function() {
-    it.skip('all copayers should see pending proposal created by one copayer', function(done) {});
+    var server, wallet, utxos;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 3, function(s, w) {
+        server = s;
+        wallet = w;
+        server.createAddress({
+          isChange: false,
+        }, function(err, address) {
+          helpers.createUtxos(server, wallet, helpers.toSatoshi([1, 2, 3, 4, 5, 6, 7, 8]), function(inutxos) {
+            utxos = inutxos;
+            done();
+          });
+        });
+      });
+    });
+
+    it('other copayers should see pending proposal created by one copayer', function(done) {
+      helpers.stubBlockExplorer(server, utxos);
+      var txOpts = {
+        toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+        amount: helpers.toSatoshi(10),
+        message: 'some message',
+        otToken: 'dummy',
+        requestSignature: 'dummy',
+      };
+      server.createTx(txOpts, function(err, txp) {
+        should.not.exist(err);
+        should.exist.txp;
+        helpers.getAuthServer(wallet.copayers[1].id, function(server2, wallet) {
+          server2.getPendingTxs({}, function(err, txps) {
+            should.not.exist(err);
+            txps.length.should.equal(1);
+            txps[0].id.should.equal(txp.id);
+            done();
+          });
+        });
+      });
+    });
 
     it.skip('tx proposals should not be broadcast until quorum is reached', function(done) {});
 
