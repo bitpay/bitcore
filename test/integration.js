@@ -253,6 +253,21 @@ describe('Copay server', function() {
       });
     });
 
+    it('should fail to create wallet with no name', function(done) {
+      var opts = {
+        name: '',
+        m: 2,
+        n: 3,
+        pubKey: aPubKey,
+      };
+      server.createWallet(opts, function(err, walletId) {
+        should.not.exist(walletId);
+        err.should.exist;
+        err.message.should.contain('name');
+        done();
+      });
+    });
+
     it('should fail to create wallet with invalid copayer pairs', function(done) {
       var invalidPairs = [{
         m: 0,
@@ -753,6 +768,8 @@ describe('Copay server', function() {
       });
     });
 
+    it.skip('should fail to create tx for address of different network', function(done) {});
+
     it('should fail to create tx when insufficient funds', function(done) {
       helpers.createUtxos(server, wallet, helpers.toSatoshi([100]), function(utxos) {
         helpers.stubBlockExplorer(server, utxos);
@@ -780,6 +797,10 @@ describe('Copay server', function() {
         });
       });
     });
+
+    it.skip('should fail to create tx when insufficient funds for fee', function(done) {});
+
+    it.skip('should fail to create tx for dust amount', function(done) {});
 
     it('should create tx when there is a pending tx and enough UTXOs', function(done) {
       helpers.createUtxos(server, wallet, helpers.toSatoshi([10.1, 10.2, 10.3]), function(utxos) {
@@ -858,7 +879,6 @@ describe('Copay server', function() {
           });
         });
       });
-
     });
   });
 
@@ -940,7 +960,6 @@ describe('Copay server', function() {
         });
       });
     });
-
   });
 
 
@@ -1031,7 +1050,7 @@ describe('Copay server', function() {
     });
   });
 
-  describe('Multisignature wallet', function() {
+  describe('Tx proposal workflow', function() {
     var server, wallet, utxos;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(2, 3, function(s, w) {
@@ -1071,7 +1090,9 @@ describe('Copay server', function() {
       });
     });
 
-    it.skip('tx proposals should not be broadcast until quorum is reached', function(done) {});
+    it.skip('tx proposals should not be broadcast until quorum is reached', function(done) {
+
+    });
 
     it.skip('tx proposals should accept as many rejections as possible without finally rejecting', function(done) {});
 
