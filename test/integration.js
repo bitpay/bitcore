@@ -252,29 +252,6 @@ describe('Copay server', function() {
       });
     });
 
-    // non sense with server generated UUIDs
-    it.skip('should fail to recreate existing wallet', function(done) {
-      var opts = {
-        id: '123',
-        name: 'my wallet',
-        m: 2,
-        n: 3,
-        pubKey: aPubKey,
-      };
-      server.createWallet(opts, function(err) {
-        should.not.exist(err);
-        server.storage.fetchWallet('123', function(err, wallet) {
-          should.not.exist(err);
-          wallet.id.should.equal('123');
-          wallet.name.should.equal('my wallet');
-          server.createWallet(opts, function(err) {
-            should.exist(err);
-            done();
-          });
-        });
-      });
-    });
-
     it('should fail to create wallet with invalid copayer pairs', function(done) {
       var invalidPairs = [{
         m: 0,
