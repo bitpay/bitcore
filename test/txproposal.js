@@ -101,7 +101,7 @@ var aTXP = function() {
     }],
     "inputPaths": ["m/2147483647/0/1"],
     "requiredSignatures": 2,
-    "maxRejections": 0,
+    "requiredRejections": 1,
     "status": "pending",
     "actions": []
   }
