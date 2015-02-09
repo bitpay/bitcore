@@ -36,51 +36,110 @@ var transaction = new Transaction().fee(5430); // Minimum non-dust amount
 var transaction = new Transaction().fee(1e8);  // Generous fee of 1 BTC
 ```
 
-## Transaction API
+## Adding inputs
 
-## Input
+Transaction inputs are instances of either [Input](https://github.com/bitpay/bitcore/tree/master/lib/transaction/input) or its subclasses. `Input` has some abstract methods, as there is no actual concept of a "signed input" in the bitcoin scripting system (just valid signatures for <tt>OP_CHECKSIG</tt> and similar opcodes). They are stored in the `input` property of `Transaction` instances.
 
-Transaction inputs are instances of either [Input](https://github.com/bitpay/bitcore/tree/master/lib/transaction/input) or its subclasses.
+Bitcore contains two implementations of `Input`, one for spending *Pay to Public Key Hash* outputs (called `PublicKeyHashInput`) and another to spend *Pay to Script Hash* outputs for which the redeem script is a Multisig script (called `MultisigScriptHashInput`).
 
-## Output
+All inputs have the following five properties:
 
-Transaction outputs are a very thin wrapper around the information provided by a transaction output: its script and its output amount.
+* `prevTxId`: a `Buffer` with the id of the transaction with the output this input is spending
+* `outputIndex`: a `number` the index of the output in the previous transaction
+* `sequenceNumber`: a `number`, the sequence number, see [bitcoin's developer guide on nLockTime and the sequence number](https://bitcoin.org/en/developer-guide#locktime-and-sequence-number).
+* `script`: the `Script` instance for this input. Usually called `scriptSig` in the bitcoin community.
+* `output`: if available, a `Output` instance of the output associated with this input.
+
+Both `PublicKeyHashInput` and `MultisigScriptHashInput` cache the information about signatures, even though this information could somehow be encoded in the script. Both need to have the `output` property set in order to calculate the `sighash` so signatures can be created.
+
+Some methods related to adding inputs are:
+
+* `from`: A high level interface to add an input from a UTXO. It has a series of variants:
+  - `from(utxo)`: add an input from an [Unspent Transaction Output](http://bitcore.io/guide/unspentoutput.html). Currently, only P2PKH outputs are supported.
+  - `from(utxos)`: same as above, but passing in an array of Unspent Outputs.
+  - `from(utxo, publicKeys, threshold)`: add an input that spends a UTXO with a P2SH output for a Multisig script. The `publicKeys` argument is an array of public keys, and `threshold` is the number of required signatures in the Multisig script.
+* `addInput`: Performs a series of checks on an input and appends it to the end of the `input` vector and updates the amount of incoming bitcoins of the transaction.
+* `uncheckedAddInput`: adds an input to the end of the `input` vector and updates the `_inputAmount` without performing any checks.
+
+### PublicKeyHashInput
+
+This input uses the `script` property to mark the input as unsigned if the script is empty.
+
+### MultisigScriptHashInput
+
+This input contains a set of signatures in a `signatures` property, and each time a signature is added, a potentially partial and/or invalid script is created. The `isFullySigned` method will only return true if all needed signatures are already added and valid. If `addSignature` is added after all need signatures are already set, an exception will be thrown.
+
+## Signing a Transaction
+
+The following methods are used to manage signatures for a transaction:
+
+* `getSignatures`: takes an array of `PrivateKey` or strings from which a `PrivateKey` can be instantiated; the transaction to be signed; the kind of [signature hash to use](https://bitcoin.org/en/developer-guide#signature-hash-types). Returns an array of objects with the following properties:
+  - `signature`: an instance of [Signature](https://github.com/bitpay/bitcore/blob/master/lib/crypto/signature.js)
+  - `prevTxId`: this input's `prevTxId`,
+  - `outputIndex`: this input's `outputIndex`,
+  - `inputIndex`: this input's index in the transaction
+  - `sigtype`: the "sighash", the type of transaction hash used to calculate the signature
+  - `publicKey`: a `PublicKey` of the `PrivateKey` used to create the signature
+* `addSignature`: takes an element outputed by `getSignatures` and applies the signature to this input (modifies the script to include the new signature).
+* `clearSignatures`: removes all signatures for this input
+* `isFullySigned`: returns true if the input is fully signed
+
+## Adding outputs
+
+Outputs can be added by:
+
+* The `addOutput(output)` method, which pushes an `Output` to the end of the `outputs` property and updates the `_outputAmount`. It also clears signatures (as the hash of the transaction may have changed) and updates the change output.
+* The `to(address, amount)` method, that adds an output with the script that corresponds to the given address. Builds an output and calls the `addOutput` method.
+* Specifying a [change address](#Fee_calculation)
+
+## Serialization
+
+There are a series of methods used for serialization:
+
+* `toObject`: Returns a plain javascript object with no methods and enough information to fully restore the state of this transaction. Using other serialization methods (except for `toJSON`) will cause a some information to be lost.
+* `toJSON`: Returns a string with a JSON-encoded version of the output for `toObject`.
+* `toString` or `uncheckedSerialize`: Returns an hexadecimal serialization of the transaction, in the [serialization format for bitcoin](https://bitcoin.org/en/developer-reference#raw-transaction-format).
+* `serialize`: Does a series of checks before serializing the transaction:
+  - Check that the fee to be used is not very small or very large
+  - Check for dust outputs
+* `inspect`: Returns a string with some information about the transaction (currently a string formated as `<Transaction 000...000>`, that only shows the serialized value of the transaction.
+* `toBuffer`: Serializes the transaction for sending over the wire in the bitcoin network
+* `toBufferWriter`: Uses an already existing BufferWriter to copy over the serialized transaction
+
+## Fee calculation
+
+When outputs' value don't sum up to the same amount that inputs, the difference in bitcoins goes to the miner of the block that includes this transaction. The concept of a "change address" usually is associated with this: an output with an address that can be spent by the creator of the transaction.
+
+For this reason, some methods in the Transaction class are provided:
+
+* `change(address)`: Set up the change address. This will set an internal `_change` property that will store the change address.
+* `fee(amount)`: Sets up the exact amount of fee to pay. If no change address is provided, this will raise an exception.
+* `getFee()`: returns the estimated fee amount to be paid, based on the size of the transaction, but disregarding the priority of the outputs.
+
+Internally, a `_changeOutput` property stores the index of the change output (so it can get updated when a new input or output is added).
 
 ## Multisig Transactions
 
 To send a transaction to a multisig address, the API is the same as in the above example. To spend outputs that require multiple signatures, the process needs extra information: the public keys of the signers that can unlock that output.
 
 ```javascript
-  var multiSigTx = new Transaction()
-      .from(utxo, publicKeys, threshold)
-      .change(address)
-      .sign(myKeys);
+var multiSigTx = new Transaction()
+    .from(utxo, publicKeys, threshold)
+    .change(address)
+    .sign(myKeys);
 
-  var serialized = multiSigTx.toObject();
+var serialized = multiSigTx.toObject();
 ```
 
 This can be serialized and sent to another party, to complete with the needed signatures:
 
 ```javascript
-  var multiSigTx = new Transaction(serialized)
-      .sign(anotherSetOfKeys);
+var multiSigTx = new Transaction(serialized)
+    .sign(anotherSetOfKeys);
 
-  assert(multiSigTx.isFullySigned());
-```
-
-## Advanced topics
-
-### Internal Workings
-
-There are a number of data structures being stored internally in a `Transaction` instance. These are kept up to date and change through successive calls to its methods.
-
-* `inputs`: The ordered set of inputs for this transaction
-* `outputs`: This is the ordered set of output scripts
-* `_inputAmount`: sum of the amount for all the inputs
-* `_outputAmount`: sum of the amount for all the outputs
-* `_fee`: if user specified a non-standard fee, the amount (in satoshis) will be stored in this variable so the change amount can be calculated.
-* `_change`: stores the value provided by calling the `change` method.
+assert(multiSigTx.isFullySigned());
+``` 
 
 ## Upcoming changes
 
-We're debating an API for Merge Avoidance, CoinJoin, Smart contracts, CoinSwap, and Stealth Addresses. We're expecting to have all of them by some time in early 2015. First draft implementations of Payment Channel smart contracts extensions to this library are already being implemented independently.
+We're debating an API for Merge Avoidance, CoinJoin, Smart contracts, CoinSwap, and Stealth Addresses. We're expecting to have all of them by some time in 2015. Payment channel creation is avaliable in the [bitcore-channel](https://github.com/bitpay/bitcore-channel) module.

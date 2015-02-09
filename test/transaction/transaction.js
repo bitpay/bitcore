@@ -229,6 +229,12 @@ describe('Transaction', function() {
         .sign(privateKey);
       transaction.outputs.length.should.equal(1);
     });
+    it('getFee() returns the difference between inputs and outputs if no change address set', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith100000Satoshis)
+        .to(toAddress, 1000);
+      transaction.getFee().should.equal(99000);
+    });
   });
 
   describe('serialization', function() {
