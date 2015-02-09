@@ -87,7 +87,6 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
     connect(function(peer) {
       peer.once('addr', function(message) {
         message.addresses.forEach(function(address) {
-          // console.log(address.ip.v4 + ':' + address.port);
           (address.time instanceof Date).should.equal(true);
           should.exist(address.ip);
           (address.services instanceof BN).should.equal(true);
@@ -101,12 +100,10 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
   it('requests inv detailed info', function(cb) {
     connect(function(peer) {
       peer.once('block', function(message) {
-        //console.log(message.block.toJSON());
         should.exist(message.block);
         cb();
       });
       peer.once('tx', function(message) {
-        //console.log(message.transaction.toJSON());
         should.exist(message.transaction);
         cb();
       });
@@ -163,8 +160,6 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
       peer.once('headers', function(message) {
         (message instanceof Messages.Headers).should.equal(true);
         message.headers.length.should.equal(3);
-        //console.log(message.serialize(network).toString('hex'));
-        //console.log(message.getPayload().toString('hex'));
         cb();
       });
       var message = new Messages.GetHeaders(from, stop);
