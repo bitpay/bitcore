@@ -279,7 +279,7 @@ describe('Transaction', function() {
         return transaction.serialize();
       }).to.throw(errors.Transaction.FeeError);
     });
-    it('fails if a dust transaction is created', function() {
+    it('fails if a dust output is created', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith1BTC)
         .to(toAddress, 1)
@@ -288,6 +288,16 @@ describe('Transaction', function() {
       expect(function() {
         return transaction.serialize();
       }).to.throw(errors.Transaction.DustOutputs);
+    });
+    it('doesn\'t fail if a dust output is an op_return', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith1BTC)
+        .addData('not dust!')
+        .change(changeAddress)
+        .sign(privateKey);
+      expect(function() {
+        return transaction.serialize();
+      }).to.not.throw(errors.Transaction.DustOutputs);
     });
   });
 
