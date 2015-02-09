@@ -222,7 +222,6 @@ describe('HDPrivate key interface', function() {
       'K',
       'm/',
       'm/12asd',
-      HDPrivateKey.MaxHardened,
       'm/1/2//3'
     ];
 
@@ -237,7 +236,7 @@ describe('HDPrivate key interface', function() {
       var indexes;
 
       indexes = HDPrivateKey._getDerivationIndexes('m/-1/12');
-      indexes.should.eql([-1, 12]);
+      expect(indexes).to.equal(null);
 
       indexes = HDPrivateKey._getDerivationIndexes('m/0/12/12\'');
       indexes.should.eql([0, 12, HDPrivateKey.Hardened + 12]);
