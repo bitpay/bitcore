@@ -68,6 +68,7 @@ helpers.getAuthServer = function(copayerId, cb) {
     message: 'dummy',
     signature: 'dummy',
   }, function(err, server) {
+    if (err || !server) throw new Error('Could not login as copayerId ' + copayerId);
     signatureStub.restore();
     return cb(server);
   });
@@ -129,9 +130,7 @@ helpers.createUtxos = function(server, wallet, amounts, cb) {
   var addresses = [];
 
   async.each(amounts, function(a, next) {
-      server.createAddress({
-        isChange: false,
-      }, function(err, address) {
+      server.createAddress({}, function(err, address) {
         addresses.push(address);
         next(err);
       });
@@ -252,26 +251,18 @@ describe('Copay server', function() {
       });
     });
 
-    // non sense with server generated UUIDs
-    it.skip('should fail to recreate existing wallet', function(done) {
+    it('should fail to create wallet with no name', function(done) {
       var opts = {
-        id: '123',
-        name: 'my wallet',
+        name: '',
         m: 2,
         n: 3,
         pubKey: aPubKey,
       };
-      server.createWallet(opts, function(err) {
-        should.not.exist(err);
-        server.storage.fetchWallet('123', function(err, wallet) {
-          should.not.exist(err);
-          wallet.id.should.equal('123');
-          wallet.name.should.equal('my wallet');
-          server.createWallet(opts, function(err) {
-            should.exist(err);
-            done();
-          });
-        });
+      server.createWallet(opts, function(err, walletId) {
+        should.not.exist(walletId);
+        err.should.exist;
+        err.message.should.contain('name');
+        done();
       });
     });
 
@@ -315,46 +306,63 @@ describe('Copay server', function() {
   });
 
   describe('#joinWallet', function() {
-    var server;
-    beforeEach(function() {
+    var server, walletId;
+    beforeEach(function(done) {
       server = new CopayServer();
-    });
-
-    it('should join existing wallet', function(done) {
       var walletOpts = {
         name: 'my wallet',
         m: 2,
         n: 3,
         pubKey: keyPair.pub,
       };
-
-      server.createWallet(walletOpts, function(err, walletId) {
+      server.createWallet(walletOpts, function(err, wId) {
         should.not.exist(err);
-        var copayerOpts = {
-          walletId: walletId,
-          name: 'me',
-          xPubKey: aXPubKey,
-          xPubKeySignature: aXPubKeySignature,
-        };
-        server.joinWallet(copayerOpts, function(err, copayerId) {
-          should.not.exist(err);
-          helpers.getAuthServer(copayerId, function(server) {
-            server.getWallet({}, function(err, wallet) {
-              wallet.id.should.equal(walletId);
-              wallet.copayers.length.should.equal(1);
-              var copayer = wallet.copayers[0];
-              copayer.name.should.equal('me');
-              copayer.id.should.equal(copayerId);
-              done();
-            });
+        should.exist.walletId;
+        walletId = wId;
+        done();
+      });
+    });
+
+    it('should join existing wallet', function(done) {
+      var copayerOpts = {
+        walletId: walletId,
+        name: 'me',
+        xPubKey: aXPubKey,
+        xPubKeySignature: aXPubKeySignature,
+      };
+      server.joinWallet(copayerOpts, function(err, copayerId) {
+        should.not.exist(err);
+        helpers.getAuthServer(copayerId, function(server) {
+          server.getWallet({}, function(err, wallet) {
+            wallet.id.should.equal(walletId);
+            wallet.copayers.length.should.equal(1);
+            var copayer = wallet.copayers[0];
+            copayer.name.should.equal('me');
+            copayer.id.should.equal(copayerId);
+            done();
           });
         });
       });
     });
 
+    it('should fail to join with no name', function(done) {
+      var copayerOpts = {
+        walletId: walletId,
+        name: '',
+        xPubKey: someXPubKeys[0],
+        xPubKeySignature: someXPubKeysSignatures[0],
+      };
+      server.joinWallet(copayerOpts, function(err, copayerId) {
+        should.not.exist(copayerId);
+        err.should.exist;
+        err.message.should.contain('name');
+        done();
+      });
+    });
+
     it('should fail to join non-existent wallet', function(done) {
       var copayerOpts = {
-        walletId: '234',
+        walletId: '123',
         name: 'me',
         xPubKey: 'dummy',
         xPubKeySignature: 'dummy',
@@ -366,143 +374,77 @@ describe('Copay server', function() {
     });
 
     it('should fail to join full wallet', function(done) {
-      var walletOpts = {
-        name: 'my wallet',
-        m: 1,
-        n: 1,
-        pubKey: keyPair.pub,
-      };
-      server.createWallet(walletOpts, function(err,walletId) {
-        should.not.exist(err);
-        var copayer1Opts = {
-          walletId: walletId,
-          id: '111',
+      helpers.createAndJoinWallet(1, 1, function(s, wallet) {
+        var copayerOpts = {
+          walletId: wallet.id,
           name: 'me',
-          xPubKey: someXPubKeys[0],
-          xPubKeySignature: someXPubKeysSignatures[0],
-        };
-        var copayer2Opts = {
-          walletId: walletId,
-          id: '222',
-          name: 'me 2',
           xPubKey: someXPubKeys[1],
           xPubKeySignature: someXPubKeysSignatures[1],
         };
-        server.joinWallet(copayer1Opts, function(err, copayer1Id) {
-          should.not.exist(err);
-          helpers.getAuthServer(copayer1Id, function(server) {
-            server.getWallet({}, function(err, wallet) {
-              wallet.status.should.equal('complete');
-              server.joinWallet(copayer2Opts, function(err, copayer2Id) {
-                should.exist(err);
-                err.code.should.equal('WFULL');
-                err.message.should.equal('Wallet full');
-                done();
-              });
-            });
-          });
+        server.joinWallet(copayerOpts, function(err) {
+          should.exist(err);
+          err.code.should.equal('WFULL');
+          err.message.should.equal('Wallet full');
+          done();
         });
       });
     });
 
     it('should fail to re-join wallet', function(done) {
-      var walletOpts = {
-        name: 'my wallet',
-        m: 1,
-        n: 1,
-        pubKey: keyPair.pub,
+      var copayerOpts = {
+        walletId: walletId,
+        name: 'me',
+        xPubKey: someXPubKeys[0],
+        xPubKeySignature: someXPubKeysSignatures[0],
       };
-      server.createWallet(walletOpts, function(err, walletId) {
+      server.joinWallet(copayerOpts, function(err) {
         should.not.exist(err);
-        var copayerOpts = {
-          walletId: walletId,
-          id: '111',
-          name: 'me',
-          xPubKey: someXPubKeys[0],
-          xPubKeySignature: someXPubKeysSignatures[0],
-        };
         server.joinWallet(copayerOpts, function(err) {
-          should.not.exist(err);
-          server.joinWallet(copayerOpts, function(err) {
-            should.exist(err);
-            err.code.should.equal('CINWALLET');
-            err.message.should.equal('Copayer already in wallet');
-            done();
-          });
+          should.exist(err);
+          err.code.should.equal('CINWALLET');
+          err.message.should.equal('Copayer already in wallet');
+          done();
         });
       });
     });
-
 
     it('should fail to join with bad formated signature', function(done) {
-      var walletOpts = {
-        id: '123',
-        name: 'my wallet',
-        m: 1,
-        n: 1,
-        pubKey: aPubKey,
+      var copayerOpts = {
+        walletId: walletId,
+        name: 'me',
+        xPubKey: someXPubKeys[0],
+        xPubKeySignature: 'bad sign',
       };
-      server.createWallet(walletOpts, function(err, walletId) {
-        should.not.exist(err);
-        var copayerOpts = {
-          walletId: walletId,
-          name: 'me',
-          xPubKey: someXPubKeys[0],
-          xPubKeySignature: 'bad sign',
-        };
-        server.joinWallet(copayerOpts, function(err) {
-          err.message.should.equal('Bad request');
-          done();
-        });
+      server.joinWallet(copayerOpts, function(err) {
+        err.message.should.equal('Bad request');
+        done();
       });
     });
 
-
     it('should fail to join with null signature', function(done) {
-      var walletOpts = {
-        id: '123',
-        name: 'my wallet',
-        m: 1,
-        n: 1,
-        pubKey: aPubKey,
+      var copayerOpts = {
+        walletId: walletId,
+        name: 'me',
+        xPubKey: someXPubKeys[0],
       };
-      server.createWallet(walletOpts, function(err) {
-        should.not.exist(err);
-        var copayerOpts = {
-          walletId: '123',
-          id: '111',
-          name: 'me',
-          xPubKey: someXPubKeys[0],
-        };
-        try {
-          server.joinWallet(copayerOpts, function(err) {});
-        } catch (e) {
-          e.should.contain('xPubKeySignature');
-          done();
-        }
-      });
+      try {
+        server.joinWallet(copayerOpts, function(err) {});
+      } catch (e) {
+        e.should.contain('xPubKeySignature');
+        done();
+      }
     });
 
     it('should fail to join with wrong signature', function(done) {
-      var walletOpts = {
-        id: '123',
-        name: 'my wallet',
-        m: 1,
-        n: 1,
-        pubKey: aPubKey,
+      var copayerOpts = {
+        walletId: walletId,
+        name: 'me',
+        xPubKey: someXPubKeys[0],
+        xPubKeySignature: someXPubKeysSignatures[1],
       };
-      server.createWallet(walletOpts, function(err, walletId) {
-        should.not.exist(err);
-        var copayerOpts = {
-          walletId: walletId,
-          name: 'me',
-          xPubKey: someXPubKeys[0],
-          xPubKeySignature: someXPubKeysSignatures[0],
-        };
-        server.joinWallet(copayerOpts, function(err) {
-          err.message.should.equal('Bad request');
-          done();
-        });
+      server.joinWallet(copayerOpts, function(err) {
+        err.message.should.equal('Bad request');
+        done();
       });
     });
 
@@ -566,10 +508,8 @@ describe('Copay server', function() {
       });
     });
 
-    it('should create main address', function(done) {
-      server.createAddress({
-        isChange: false,
-      }, function(err, address) {
+    it('should create address', function(done) {
+      server.createAddress({}, function(err, address) {
         should.not.exist(err);
         address.should.exist;
         address.address.should.equal('36JdLEUDa6UwCfMhhkdZ2VFnDrGUoLedsR');
@@ -578,84 +518,66 @@ describe('Copay server', function() {
       });
     });
 
-
-    it('should create change address', function(done) {
-      server.createAddress({
-        isChange: true,
-      }, function(err, address) {
+    it('should fail to create address when wallet is not complete', function(done) {
+      var server = new CopayServer();
+      var walletOpts = {
+        name: 'my wallet',
+        m: 2,
+        n: 3,
+        pubKey: keyPair.pub,
+      };
+      server.createWallet(walletOpts, function(err, walletId) {
         should.not.exist(err);
-        address.should.exist;
-        address.address.should.equal('3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH');
-        address.path.should.equal('m/2147483647/1/0');
-        done();
-      });
-    });
-
-    it.skip('should fail to create address when wallet is not complete', function(done) {});
-
-    it('should create many addresses on simultaneous requests', function(done) {
-      async.map(_.range(10), function(i, cb) {
-        server.createAddress({
-          isChange: false,
-        }, cb);
-      }, function(err, addresses) {
-        addresses.length.should.equal(10);
-        addresses[0].path.should.equal('m/2147483647/0/0');
-        addresses[9].path.should.equal('m/2147483647/0/9');
-        // No two identical addresses
-        _.keys(_.groupBy(addresses, 'address')).length.should.equal(10);
-        done();
-      });
-    });
-
-    it('should not create address if unable to store wallet', function(done) {
-      var storeWalletStub = sinon.stub(server.storage, 'storeWallet');
-      storeWalletStub.yields('dummy error');
-
-      server.createAddress({
-        isChange: true,
-      }, function(err, address) {
-        err.should.exist;
-        should.not.exist(address);
-
-        server.getAddresses({}, function(err, addresses) {
-          addresses.length.should.equal(0);
-
-          server.storage.storeWallet.restore();
-          server.createAddress({
-            isChange: true,
-          }, function(err, address) {
-            should.not.exist(err);
-            address.should.exist;
-            address.address.should.equal('3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH');
-            address.path.should.equal('m/2147483647/1/0');
-            done();
+        var copayerOpts = {
+          walletId: walletId,
+          name: 'me',
+          xPubKey: aXPubKey,
+          xPubKeySignature: aXPubKeySignature,
+        };
+        server.joinWallet(copayerOpts, function(err, copayerId) {
+          should.not.exist(err);
+          helpers.getAuthServer(copayerId, function(server) {
+            server.createAddress({}, function(err, address) {
+              should.not.exist(address);
+              err.should.exist;
+              err.message.should.contain('not complete');
+              done();
+            });
           });
         });
       });
     });
 
-    it('should not create address if unable to store addresses', function(done) {
-      var storeAddressStub = sinon.stub(server.storage, 'storeAddress');
-      storeAddressStub.yields('dummy error');
+    it('should create many addresses on simultaneous requests', function(done) {
+      var N = 5;
+      async.map(_.range(N), function(i, cb) {
+        server.createAddress({}, cb);
+      }, function(err, addresses) {
+        addresses.length.should.equal(N);
+        _.each(_.range(N), function(i) {
+          addresses[i].path.should.equal('m/2147483647/0/' + i);
+        });
+        // No two identical addresses
+        _.uniq(_.pluck(addresses, 'address')).length.should.equal(N);
+        done();
+      });
+    });
 
-      server.createAddress({
-        isChange: true,
-      }, function(err, address) {
+    it('should not create address if unable to store it', function(done) {
+      sinon.stub(server.storage, 'storeAddressAndWallet').yields('dummy error');
+      server.createAddress({}, function(err, address) {
         err.should.exist;
         should.not.exist(address);
 
         server.getAddresses({}, function(err, addresses) {
           addresses.length.should.equal(0);
 
-          server.storage.storeAddress.restore();
-          server.createAddress({
-            isChange: true,
-          }, function(err, address) {
+          server.storage.storeAddressAndWallet.restore();
+          server.createAddress({}, function(err, address) {
             should.not.exist(err);
             address.should.exist;
-            address.address.should.equal('3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH');
-            address.path.should.equal('m/2147483647/1/0');
+            address.address.should.equal('36JdLEUDa6UwCfMhhkdZ2VFnDrGUoLedsR');
+            address.path.should.equal('m/2147483647/0/0');
             done();
           });
         });
@@ -669,29 +591,25 @@ describe('Copay server', function() {
       helpers.createAndJoinWallet(2, 2, function(s, w) {
         server = s;
         wallet = w;
-        server.createAddress({
-          isChange: false,
-        }, function(err, address) {
+        server.createAddress({}, function(err, address) {
           done();
         });
       });
     });
 
     it('should create a tx', function(done) {
-
       helpers.createUtxos(server, wallet, helpers.toSatoshi([100, 200]), function(utxos) {
         helpers.stubBlockExplorer(server, utxos);
         var txOpts = {
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: helpers.toSatoshi(80),
           message: 'some message',
-          otToken: 'dummy',
-          requestSignature: 'dummy',
         };
 
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
           tx.should.exist;
+          tx.message.should.equal('some message');
           tx.isAccepted().should.equal.false;
           tx.isRejected().should.equal.false;
           server.getPendingTxs({}, function(err, txs) {
@@ -708,7 +626,75 @@ describe('Copay server', function() {
       });
     });
 
-    it.skip('should fail to create tx when wallet is not complete', function(done) {});
+    it('should fail to create tx when wallet is not complete', function(done) {
+      var server = new CopayServer();
+      var walletOpts = {
+        name: 'my wallet',
+        m: 2,
+        n: 3,
+        pubKey: keyPair.pub,
+      };
+      server.createWallet(walletOpts, function(err, walletId) {
+        should.not.exist(err);
+        var copayerOpts = {
+          walletId: walletId,
+          name: 'me',
+          xPubKey: aXPubKey,
+          xPubKeySignature: aXPubKeySignature,
+        };
+        server.joinWallet(copayerOpts, function(err, copayerId) {
+          should.not.exist(err);
+          helpers.getAuthServer(copayerId, function(server, wallet) {
+            var txOpts = {
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: helpers.toSatoshi(80),
+            };
+            server.createTx(txOpts, function(err, tx) {
+              should.not.exist(tx);
+              err.should.exist;
+              err.message.should.contain('not complete');
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('should fail to create tx for address invalid address', function(done) {
+      helpers.createUtxos(server, wallet, helpers.toSatoshi([100, 200]), function(utxos) {
+        helpers.stubBlockExplorer(server, utxos);
+        var txOpts = {
+          toAddress: 'invalid address',
+          amount: helpers.toSatoshi(80),
+        };
+
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(tx);
+          err.should.exist;
+          err.code.should.equal('INVALIDADDRESS');
+          err.message.should.equal('Invalid address');
+          done();
+        });
+      });
+    });
+
+    it('should fail to create tx for address of different network', function(done) {
+      helpers.createUtxos(server, wallet, helpers.toSatoshi([100, 200]), function(utxos) {
+        helpers.stubBlockExplorer(server, utxos);
+        var txOpts = {
+          toAddress: 'myE38JHdxmQcTJGP1ZiX4BiGhDxMJDvLJD', // testnet
+          amount: helpers.toSatoshi(80),
+        };
+
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(tx);
+          err.should.exist;
+          err.code.should.equal('INVALIDADDRESS');
+          err.message.should.equal('Incorrect address network');
+          done();
+        });
+      });
+    });
 
     it('should fail to create tx when insufficient funds', function(done) {
       helpers.createUtxos(server, wallet, helpers.toSatoshi([100]), function(utxos) {
@@ -716,9 +702,6 @@ describe('Copay server', function() {
         var txOpts = {
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: helpers.toSatoshi(120),
-          message: 'some message',
-          otToken: 'dummy',
-          requestSignature: 'dummy',
         };
 
         server.createTx(txOpts, function(err, tx) {
@@ -738,15 +721,16 @@ describe('Copay server', function() {
       });
     });
 
+    it.skip('should fail to create tx when insufficient funds for fee', function(done) {});
+
+    it.skip('should fail to create tx for dust amount', function(done) {});
+
     it('should create tx when there is a pending tx and enough UTXOs', function(done) {
       helpers.createUtxos(server, wallet, helpers.toSatoshi([10.1, 10.2, 10.3]), function(utxos) {
         helpers.stubBlockExplorer(server, utxos);
         var txOpts = {
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: helpers.toSatoshi(12),
-          message: 'some message',
-          otToken: 'dummy',
-          requestSignature: 'dummy',
         };
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
@@ -755,9 +739,6 @@ describe('Copay server', function() {
           var txOpts2 = {
             toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
             amount: 8,
-            message: 'some message 2',
-            otToken: 'dummy',
-            requestSignature: 'dummy',
           };
           server.createTx(txOpts2, function(err, tx) {
             should.not.exist(err);
@@ -783,9 +764,6 @@ describe('Copay server', function() {
         var txOpts = {
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: helpers.toSatoshi(12),
-          message: 'some message',
-          otToken: 'dummy',
-          requestSignature: 'dummy',
         };
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
@@ -794,9 +772,6 @@ describe('Copay server', function() {
           var txOpts2 = {
             toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
             amount: helpers.toSatoshi(24),
-            message: 'some message 2',
-            otToken: 'dummy',
-            requestSignature: 'dummy',
           };
           server.createTx(txOpts2, function(err, tx) {
             err.code.should.equal('INSUFFICIENTFUNDS');
@@ -815,7 +790,42 @@ describe('Copay server', function() {
           });
         });
       });
+    });
 
+    it('should create tx using different UTXOs for simultaneous requests', function(done) {
+      var N = 5;
+      helpers.createUtxos(server, wallet, helpers.toSatoshi(_.times(N, function() {
+        return 100;
+      })), function(utxos) {
+        helpers.stubBlockExplorer(server, utxos);
+        server.getBalance({}, function(err, balance) {
+          should.not.exist(err);
+          balance.totalAmount.should.equal(helpers.toSatoshi(N * 100));
+          balance.lockedAmount.should.equal(helpers.toSatoshi(0));
+
+          var txOpts = {
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: helpers.toSatoshi(80),
+          };
+          async.map(_.range(N), function(i, cb) {
+            server.createTx(txOpts, function(err, tx) {
+              cb(err, tx);
+            });
+          }, function(err) {
+            server.getPendingTxs({}, function(err, txs) {
+              should.not.exist(err);
+              txs.length.should.equal(N);
+              _.uniq(_.pluck(txs, 'changeAddress')).length.should.equal(N);
+              server.getBalance({}, function(err, balance) {
+                should.not.exist(err);
+                balance.totalAmount.should.equal(helpers.toSatoshi(N * 100));
+                balance.lockedAmount.should.equal(balance.totalAmount);
+                done();
+              });
+            });
+          });
+        });
+      });
     });
   });
 
@@ -826,17 +836,12 @@ describe('Copay server', function() {
       helpers.createAndJoinWallet(2, 2, function(s, w) {
         server = s;
         wallet = w;
-        server.createAddress({
-          isChange: false,
-        }, function(err, address) {
+        server.createAddress({}, function(err, address) {
           helpers.createUtxos(server, wallet, helpers.toSatoshi([1, 2, 3, 4, 5, 6, 7, 8]), function(utxos) {
             helpers.stubBlockExplorer(server, utxos);
             var txOpts = {
               toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
               amount: helpers.toSatoshi(10),
-              message: 'some message',
-              otToken: 'dummy',
-              requestSignature: 'dummy',
             };
             server.createTx(txOpts, function(err, tx) {
               should.not.exist(err);
@@ -897,20 +902,16 @@ describe('Copay server', function() {
         });
       });
     });
-
   });
 
 
   describe('#signTx and broadcast', function() {
     var server, wallet, utxos;
-
     beforeEach(function(done) {
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
         wallet = w;
-        server.createAddress({
-          isChange: false,
-        }, function(err, address) {
+        server.createAddress({}, function(err, address) {
           helpers.createUtxos(server, wallet, helpers.toSatoshi([1, 2, 3, 4, 5, 6, 7, 8]), function(inutxos) {
             utxos = inutxos;
             done();
@@ -924,9 +925,6 @@ describe('Copay server', function() {
       var txOpts = {
         toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
         amount: helpers.toSatoshi(10),
-        message: 'some message',
-        otToken: 'dummy',
-        requestSignature: 'dummy',
       };
       server.createTx(txOpts, function(err, txp) {
         should.not.exist(err);
@@ -952,14 +950,10 @@ describe('Copay server', function() {
 
 
     it('should keep tx as *accepted* if unable to broadcast it', function(done) {
-
       helpers.stubBlockExplorer(server, utxos);
       var txOpts = {
         toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
         amount: helpers.toSatoshi(10),
-        message: 'some message',
-        otToken: 'dummy',
-        requestSignature: 'dummy',
       };
       server.createTx(txOpts, function(err, txp) {
         should.not.exist(err);
@@ -978,14 +972,11 @@ describe('Copay server', function() {
 
             server.getPendingTxs({}, function(err, txps) {
               should.not.exist(err);
-              txps.length.should.equal(0);
-              server.getTx({
-                id: txpid
-              }, function(err, txp) {
-                txp.status.should.equal('accepted');
-                should.not.exist(txp.txid);
-                done();
-              });
+              txps.length.should.equal(1);
+              var txp = txps[0];
+              txp.status.should.equal('accepted');
+              should.not.exist(txp.txid);
+              done();
             });
           });
         });
@@ -993,10 +984,46 @@ describe('Copay server', function() {
     });
   });
 
-  describe('Multisignature wallet', function() {
-    it.skip('all copayers should see pending proposal created by one copayer', function(done) {});
+  describe('Tx proposal workflow', function() {
+    var server, wallet, utxos;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 3, function(s, w) {
+        server = s;
+        wallet = w;
+        server.createAddress({}, function(err, address) {
+          helpers.createUtxos(server, wallet, helpers.toSatoshi([1, 2, 3, 4, 5, 6, 7, 8]), function(inutxos) {
+            utxos = inutxos;
+            done();
+          });
+        });
+      });
+    });
 
-    it.skip('tx proposals should not be broadcast until quorum is reached', function(done) {});
+    it('other copayers should see pending proposal created by one copayer', function(done) {
+      helpers.stubBlockExplorer(server, utxos);
+      var txOpts = {
+        toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+        amount: helpers.toSatoshi(10),
+        message: 'some message',
+      };
+      server.createTx(txOpts, function(err, txp) {
+        should.not.exist(err);
+        should.exist.txp;
+        helpers.getAuthServer(wallet.copayers[1].id, function(server2, wallet) {
+          server2.getPendingTxs({}, function(err, txps) {
+            should.not.exist(err);
+            txps.length.should.equal(1);
+            txps[0].id.should.equal(txp.id);
+            txps[0].message.should.equal('some message');
+            done();
+          });
+        });
+      });
+    });
+
+    it.skip('tx proposals should not be broadcast until quorum is reached', function(done) {
+
+    });
 
     it.skip('tx proposals should accept as many rejections as possible without finally rejecting', function(done) {});
 
@@ -1007,7 +1034,7 @@ describe('Copay server', function() {
     var server, wallet, clock;
 
     beforeEach(function(done) {
-      if (server) 
+      if (server)
         return done();
 
       this.timeout(5000);
@@ -1016,9 +1043,7 @@ describe('Copay server', function() {
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
         wallet = w;
-        server.createAddress({
-          isChange: false,
-        }, function(err, address) {
+        server.createAddress({}, function(err, address) {
           helpers.createUtxos(server, wallet, helpers.toSatoshi(_.range(10)), function(utxos) {
             helpers.stubBlockExplorer(server, utxos);
             var txOpts = {
@@ -1026,14 +1051,13 @@ describe('Copay server', function() {
               amount: helpers.toSatoshi(0.1),
             };
             async.eachSeries(_.range(10), function(i, next) {
-                clock.tick(10000);
-                server.createTx(txOpts, function(err, tx) {
-                  next();
-                });
-              }, function(err) {
-                return done(err);
-              }
-            );
+              clock.tick(10000);
+              server.createTx(txOpts, function(err, tx) {
+                next();
+              });
+            }, function(err) {
+              return done(err);
+            });
           });
         });
       });
