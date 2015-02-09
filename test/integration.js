@@ -427,12 +427,11 @@ describe('Copay server', function() {
         name: 'me',
         xPubKey: someXPubKeys[0],
       };
-      try {
-        server.joinWallet(copayerOpts, function(err) {});
-      } catch (e) {
-        e.should.contain('xPubKeySignature');
+      server.joinWallet(copayerOpts, function(err) {
+        err.should.exist;
+        err.message.should.contain('argument missing');
         done();
-      }
+      });
     });
 
     it('should fail to join with wrong signature', function(done) {
