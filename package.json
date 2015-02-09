@@ -27,7 +27,8 @@
     "lodash": "^2.4.1",
     "npmlog": "^0.1.1",
     "preconditions": "^1.0.7",
-    "uuid":"*"
+    "request": "^2.53.0",
+    "uuid": "*"
   },
   "devDependencies": {
     "chai": "^1.9.1",
