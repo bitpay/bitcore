@@ -63,6 +63,19 @@ function getCredentials(req) {
   };
 };
 
+function getServerWithAuth(req, res, cb) {
+  var credentials = getCredentials(req);
+
+  CopayServer.getInstanceWithAuth({
+    copayerId: credentials.copayerId,
+    message: 'hello world!',
+    signature: '3045022100addd20e5413865d65d561ad2979f2289a40d52594b1f804840babd9a63e4ebbf02204b86285e1fcab02df772e7a1325fc4b511ecad79a8f80a2bd1ad8bfa858ac3d4',
+  }, function(err, server) {
+    if (err) return returnError(err, res);
+    return cb(server);
+  });
+};
+
 function authenticate() {
   return true;
 };
@@ -94,52 +107,69 @@ function parsePost(req, res, cb) {
 
 router.post('/v1/wallets/', function(req, res) {
   parsePost(req, res, function(params) {
-    try {
-      var server = CopayServer.getInstance();
-      server.createWallet(params, function(err, wallet) {
-        if (err) returnError(err, res);
+    var server = CopayServer.getInstance();
+    server.createWallet(params, function(err, wallet) {
+      if (err) returnError(err, res);
 
-        res.json(wallet);
-      });
-    } catch (ex) {
-      returnError(ex, res);
-    }
+      res.json(wallet);
+    });
   });
 });
 
 router.post('/v1/wallets/:id/join/', function(req, res) {
   parsePost(req, res, function(params) {
     params.walletId = req.params['id'];
-    try {
-      var server = CopayServer.getInstance();
-      server.joinWallet(params, function(err) {
-        if (err) returnError(err, res);
+    var server = CopayServer.getInstance();
+    server.joinWallet(params, function(err) {
+      if (err) returnError(err, res);
 
-        res.end();
-      });
-    } catch (ex) {
-      returnError(ex, res);
-    }
+      res.end();
+    });
   });
 });
 
 router.get('/v1/wallets/', function(req, res) {
   var credentials = getCredentials(req);
 
-  CopayServer.getInstanceWithAuth({
+  CopayServer.getInstanceWithAuth(getCredentials(req) {
     copayerId: credentials.copayerId,
     message: 'hello world!',
     signature: '3045022100addd20e5413865d65d561ad2979f2289a40d52594b1f804840babd9a63e4ebbf02204b86285e1fcab02df772e7a1325fc4b511ecad79a8f80a2bd1ad8bfa858ac3d4',
   }, function(err, server) {
     if (err) return returnError(err, res);
-    try {
-      server.getWallet({}, function(err, wallet) {
+    server.getWallet({}, function(err, wallet) {
+      if (err) returnError(err, res);
+      res.json(wallet);
+    });
+  });
+});
+
+router.post('/v1/addresses/', function(req, res) {
+  parsePost(req, res, function(params) {
+    getServerWithAuth(req, res, function(server) {
+      server.createAddress(params, function(err, address) {
         if (err) returnError(err, res);
-        res.json(wallet);
+        res.json(address);
       });
-    } catch (ex) {
-      returnError(ex, res);
-    }
+    });
+  });
+});
+
+router.get('/v1/addresses/', function(req, res) {
+  getServerWithAuth(req, res, function(server) {
+    server.getAddresses({}, function(err, addresses) {
+      if (err) returnError(err, res);
+      res.json(addresses);
+    });
+  });
+});
+
+router.get('/v1/balance/', function(req, res) {
+  getServerWithAuth(req, res, function(server) {
+    server.getBalance({}, function(err, balance) {
+      if (err) returnError(err, res);
+      res.json(balance);
+    });
   });
 });
 
