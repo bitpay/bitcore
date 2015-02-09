@@ -12,7 +12,7 @@ describe('Wallet', function() {
   describe('#fromObj', function() {
     it('read a wallet', function() {
       var w = Wallet.fromObj(testWallet);
-      w.status.should.equal('complete');
+      w.isComplete().should.be.true;
     });
   });
   describe('#createAddress', function() {
