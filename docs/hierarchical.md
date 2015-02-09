@@ -36,7 +36,7 @@ An instance of a PublicKey that can be derived to build extended public keys. No
 
 ```javascript
 var hdPrivateKey = new HDPrivateKey();
-var hdPublicKey = privateKey.hdPublicKey;
+var hdPublicKey = hdPrivateKey.hdPublicKey;
 try {
   new HDPublicKey();
 } catch(e) {
