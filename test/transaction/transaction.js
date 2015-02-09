@@ -407,6 +407,46 @@ describe('Transaction', function() {
       transaction.outputs.length.should.equal(1);
     });
   });
+
+  describe.only('setting the nLockTime', function() {
+    var MILLIS_IN_SECOND = 1000;
+    var timestamp = 1423504946;
+    var blockHeight = 342734;
+    var date = new Date(timestamp * MILLIS_IN_SECOND);
+    it('accepts a date instance', function() {
+      var transaction = new Transaction()
+        .lockUntilDate(date);
+      transaction.nLockTime.should.equal(timestamp);
+    });
+    it('accepts a number instance with a timestamp', function() {
+      var transaction = new Transaction()
+        .lockUntilDate(timestamp);
+      transaction.nLockTime.should.equal(timestamp);
+    });
+    it('accepts a block height', function() {
+      var transaction = new Transaction()
+        .lockUntilBlockHeight(blockHeight);
+      transaction.nLockTime.should.equal(blockHeight);
+    });
+    it('fails if the block height is too high', function() {
+      expect(function() {
+        return new Transaction().lockUntilBlockHeight(5e8);
+      }).to.throw(errors.Transaction.BlockHeightTooHigh);
+    });
+    it('fails if the date is too early', function() {
+      expect(function() {
+        return new Transaction().lockUntilDate(1);
+      }).to.throw(errors.Transaction.LockTimeTooEarly);
+      expect(function() {
+        return new Transaction().lockUntilDate(499999999);
+      }).to.throw(errors.Transaction.LockTimeTooEarly);
+    });
+    it('fails if the date is negative', function() {
+      expect(function() {
+        return new Transaction().lockUntilBlockHeight(-1);
+      }).to.throw(errors.Transaction.NLockTimeOutOfRange);
+    });
+  });
 });
 
 var tx_empty_hex = '01000000000000000000';
