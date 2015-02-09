@@ -1123,4 +1123,89 @@ describe('Copay server', function() {
       });
     });
   });
+
+
+  describe('#removeWallet', function() {
+    var server, wallet, clock;
+
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 1, function(s, w) {
+        server = s;
+        wallet = w;
+
+        server.createAddress({}, function(err, address) {
+          helpers.createUtxos(server, wallet, helpers.toSatoshi(_.range(2)), function(utxos) {
+            helpers.stubBlockExplorer(server, utxos);
+            var txOpts = {
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: helpers.toSatoshi(0.1),
+            };
+            async.eachSeries(_.range(2), function(i, next) {
+              server.createTx(txOpts, function(err, tx) {
+                next();
+              });
+            }, done);
+          });
+        });
+      });
+    });
+    it('should delete a wallet', function(done) {
+      var i = 0;
+      var count = function() {
+        return ++i;
+      };
+      server.storage._dump(function() {
+        i.should.above(1);
+        server.removeWallet({}, function(err) {
+          i = 0;
+          server.storage._dump(function() {
+            i.should.equal(0);
+            done();
+          }, count);
+        });
+      }, count);
+    });
+
+    // creates 2 wallet, and deletes only 1.
+    it('should delete a wallet, and only that wallet', function(done) {
+      var i = 0;
+      var db = [];
+      var cat = function(data) {
+        db.push(data);
+      };
+      server.storage._dump(function() {
+        var before = _.clone(db);
+        db.length.should.above(1);
+
+        helpers.createAndJoinWallet(2, 3, function(s, w) {
+          server = s;
+          wallet = w;
+
+          server.createAddress({}, function(err, address) {
+            helpers.createUtxos(server, wallet, helpers.toSatoshi(_.range(2)), function(utxos) {
+              helpers.stubBlockExplorer(server, utxos);
+              var txOpts = {
+                toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+                amount: helpers.toSatoshi(0.1),
+              };
+              async.eachSeries(_.range(2), function(i, next) {
+                server.createTx(txOpts, function(err, tx) {
+                  next();
+                });
+              }, function() {
+                server.removeWallet({}, function(err) {
+                  db=[];
+                  server.storage._dump(function() {
+                    var after = _.clone(db);
+                    after.should.deep.equal(before);
+                    done();
+                  }, cat);
+                });
+              }, cat);
+            });
+          });
+        });
+      }, cat);
+    });
+  });
 });
