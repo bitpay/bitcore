@@ -140,6 +140,26 @@ var multiSigTx = new Transaction(serialized)
 assert(multiSigTx.isFullySigned());
 ``` 
 
+## Time-Locking transaction
+All bitcoin transactions contain a locktime field.
+The locktime indicates the earliest time a transaction can be added to the blockchain.
+Locktime allows signers to create time-locked transactions which will only become valid in the future, giving the signers a chance to change their minds.
+Locktime can be set in the form of a bitcoin block height (the transaction can only be included in a block with a higher height than specified) or a linux timestamp (transaction can only be confirmed after that time).
+For more information see [bitcoin's development guide section on locktime](https://bitcoin.org/en/developer-guide#locktime-and-sequence-number).
+
+In bitcore, you can set a `Transaction`'s locktime by using the methods `Transaction#lockUntilDate` and `Transaction#lockUntilBlockHeight`. You can also get a friendly version of the locktime field via `Transaction#getLockTime`;
+
+For example:
+```javascript
+var future = new Date(2025,10,30); // Sun Nov 30 2025
+var transaction = new Transaction()
+  .lockUntilDate(future);
+console.log(transaction.getLockTime());
+// output similar to: Sun Nov 30 2025 00:00:00 GMT-0300 (ART)
+```
+
+
+
 ## Upcoming changes
 
 We're debating an API for Merge Avoidance, CoinJoin, Smart contracts, CoinSwap, and Stealth Addresses. We're expecting to have all of them by some time in 2015. Payment channel creation is avaliable in the [bitcore-channel](https://github.com/bitpay/bitcore-channel) module.

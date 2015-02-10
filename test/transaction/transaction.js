@@ -135,7 +135,7 @@ describe('Transaction', function() {
 
   describe('adding inputs', function() {
 
-    it('it only adds once one utxo', function() {
+    it('only adds once one utxo', function() {
       var tx = new Transaction();
       tx.from(simpleUtxoWith1BTC);
       tx.from(simpleUtxoWith1BTC);
@@ -408,25 +408,35 @@ describe('Transaction', function() {
     });
   });
 
-  describe('setting the nLockTime', function() {
+  describe('handling the nLockTime', function() {
     var MILLIS_IN_SECOND = 1000;
     var timestamp = 1423504946;
     var blockHeight = 342734;
     var date = new Date(timestamp * MILLIS_IN_SECOND);
+    it('handles a simple example', function() {
+      var future = new Date(2025,10,30); // Sun Nov 30 2025
+      var transaction = new Transaction()
+        .lockUntilDate(future);
+      transaction.nLockTime.should.equal(future.getTime()/1000);
+      transaction.getLockTime().should.deep.equal(future);
+    });
     it('accepts a date instance', function() {
       var transaction = new Transaction()
         .lockUntilDate(date);
       transaction.nLockTime.should.equal(timestamp);
+      transaction.getLockTime().should.deep.equal(date);
     });
     it('accepts a number instance with a timestamp', function() {
       var transaction = new Transaction()
         .lockUntilDate(timestamp);
       transaction.nLockTime.should.equal(timestamp);
+      transaction.getLockTime().should.deep.equal(new Date(timestamp*1000));
     });
     it('accepts a block height', function() {
       var transaction = new Transaction()
         .lockUntilBlockHeight(blockHeight);
       transaction.nLockTime.should.equal(blockHeight);
+      transaction.getLockTime().should.deep.equal(blockHeight);
     });
     it('fails if the block height is too high', function() {
       expect(function() {
@@ -441,7 +451,7 @@ describe('Transaction', function() {
         return new Transaction().lockUntilDate(499999999);
       }).to.throw(errors.Transaction.LockTimeTooEarly);
     });
-    it('fails if the date is negative', function() {
+    it('fails if the block height is negative', function() {
       expect(function() {
         return new Transaction().lockUntilBlockHeight(-1);
       }).to.throw(errors.Transaction.NLockTimeOutOfRange);
