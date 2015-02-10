@@ -112,11 +112,11 @@ When outputs' value don't sum up to the same amount that inputs, the difference 
 
 For this reason, some methods in the Transaction class are provided:
 
-* `change(address)`: Set up the change address. This will set an internal `_change` property that will store the change address.
+* `change(address)`: Set up the change address. This will set an internal `_changeScript` property that will store the change script associated with that address.
 * `fee(amount)`: Sets up the exact amount of fee to pay. If no change address is provided, this will raise an exception.
 * `getFee()`: returns the estimated fee amount to be paid, based on the size of the transaction, but disregarding the priority of the outputs.
 
-Internally, a `_changeOutput` property stores the index of the change output (so it can get updated when a new input or output is added).
+Internally, a `_changeIndex` property stores the index of the change output (so it can get updated when a new input or output is added).
 
 ## Multisig Transactions
 

@@ -142,7 +142,16 @@ describe('Transaction', function() {
       tx.inputs.length.should.equal(1);
     });
 
-    describe('not enough information errors', function() {
+    describe('isFullySigned', function() {
+      it('works for normal p2pkh', function() {
+        var transaction = new Transaction()
+          .from(simpleUtxoWith100000Satoshis)
+          .to(toAddress, 50000)
+          .change(changeAddress)
+          .sign(privateKey);
+        transaction.isFullySigned().should.equal(true);
+      });
+
       it('fails when Inputs are not subclassed and isFullySigned is called', function() {
         var tx = new Transaction(tx_1_hex);
         expect(function() {
@@ -172,6 +181,7 @@ describe('Transaction', function() {
       transaction.outputs[1].satoshis.should.equal(40000);
       transaction.outputs[1].script.toString()
         .should.equal(Script.fromAddress(changeAddress).toString());
+      transaction.getChangeOutput().script.should.deep.equal(Script.fromAddress(changeAddress));
     });
     it('accepts a P2SH address for change', function() {
       var transaction = new Transaction()
@@ -243,7 +253,8 @@ describe('Transaction', function() {
         .change(changeAddress)
         .toObject();
       var deserialized = new Transaction(serialized);
-      expect(deserialized._change.toString()).to.equal(changeAddress);
+      expect(deserialized._changeScript.toString()).to.equal(Script.fromAddress(changeAddress).toString());
+      expect(deserialized.getChangeOutput()).to.equal(null);
     });
     it('can avoid checked serialize', function() {
       var transaction = new Transaction()
@@ -309,13 +320,23 @@ describe('Transaction', function() {
 
   describe('to and from JSON', function() {
     it('takes a string that is a valid JSON and deserializes from it', function() {
-      var transaction = new Transaction();
-      expect(new Transaction(transaction.toJSON()).serialize()).to.equal(transaction.serialize());
+      var simple = new Transaction();
+      expect(new Transaction(simple.toJSON()).serialize()).to.equal(simple.serialize());
+      var complex = new Transaction()
+        .from(simpleUtxoWith100000Satoshis)
+        .to(toAddress, 50000)
+        .change(changeAddress)
+        .sign(privateKey);
+      var cj = complex.toJSON();
+      var ctx = new Transaction(cj);
+      expect(ctx.serialize()).to.equal(complex.serialize());
+
     });
     it('serializes the `change` information', function() {
       var transaction = new Transaction();
       transaction.change(changeAddress);
-      expect(JSON.parse(transaction.toJSON()).change).to.equal(changeAddress.toString());
+      expect(JSON.parse(transaction.toJSON()).changeScript).to.equal(Script.fromAddress(changeAddress).toString());
+      expect(new Transaction(transaction.toJSON()).serialize()).to.equal(transaction.serialize());
     });
     it('serializes correctly p2sh multisig signed tx', function() {
       var t = new Transaction(tx2hex);
@@ -413,11 +434,15 @@ describe('Transaction', function() {
     var timestamp = 1423504946;
     var blockHeight = 342734;
     var date = new Date(timestamp * MILLIS_IN_SECOND);
+    it('handles a null locktime', function() {
+      var transaction = new Transaction();
+      expect(transaction.getLockTime()).to.equal(null);
+    });
     it('handles a simple example', function() {
-      var future = new Date(2025,10,30); // Sun Nov 30 2025
+      var future = new Date(2025, 10, 30); // Sun Nov 30 2025
       var transaction = new Transaction()
         .lockUntilDate(future);
-      transaction.nLockTime.should.equal(future.getTime()/1000);
+      transaction.nLockTime.should.equal(future.getTime() / 1000);
       transaction.getLockTime().should.deep.equal(future);
     });
     it('accepts a date instance', function() {
@@ -430,7 +455,7 @@ describe('Transaction', function() {
       var transaction = new Transaction()
         .lockUntilDate(timestamp);
       transaction.nLockTime.should.equal(timestamp);
-      transaction.getLockTime().should.deep.equal(new Date(timestamp*1000));
+      transaction.getLockTime().should.deep.equal(new Date(timestamp * 1000));
     });
     it('accepts a block height', function() {
       var transaction = new Transaction()
