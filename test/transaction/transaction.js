@@ -408,7 +408,7 @@ describe('Transaction', function() {
     });
   });
 
-  describe.only('setting the nLockTime', function() {
+  describe('setting the nLockTime', function() {
     var MILLIS_IN_SECOND = 1000;
     var timestamp = 1423504946;
     var blockHeight = 342734;
