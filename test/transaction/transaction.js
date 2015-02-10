@@ -197,11 +197,17 @@ describe('Transaction', function() {
         .from(simpleUtxoWith100000Satoshis)
         .to(toAddress, 50000)
         .change(changeAddress)
-        .sign(privateKey)
+        .fee(0)
+        .sign(privateKey);
+
+      transaction.getChangeOutput().satoshis.should.equal(50000);
+
+      transaction = transaction
         .to(toAddress, 20000)
         .sign(privateKey);
+
       transaction.outputs.length.should.equal(3);
-      transaction.outputs[2].satoshis.should.equal(20000);
+      transaction.outputs[2].satoshis.should.equal(30000);
       transaction.outputs[2].script.toString()
         .should.equal(Script.fromAddress(changeAddress).toString());
     });
