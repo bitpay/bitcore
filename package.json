@@ -52,7 +52,7 @@
     "url": "https://github.com/bitpay/bitcore-p2p.git"
   },
   "dependencies": {
-    "bitcore": "^0.9.0",
+    "bitcore": "^0.9.5",
     "bufferput": "^0.1.2",
     "buffers": "^0.1.1",
     "socks5-client": "^0.3.6"

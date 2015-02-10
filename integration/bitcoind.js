@@ -27,8 +27,8 @@ var blockHash = {
   'testnet': '0000000058cc069d964711cd25083c0a709f4df2b34c8ff9302ce71fe5b45786'
 };
 var stopBlock = {
-  'livenet': '000000000000000006181d9d183e2191a5e704d6ed3513f29b0970198fb34d2e',
-  'testnet': '000000003d594c41db49d5a8b850344943438620acf79ce8aa88177f5b35e337'
+  'livenet': '00000000000000000b539ef570128acb953af3dbcfc19dd8e6066949672311a1',
+  'testnet': '00000000d0bc4271bcefaa7eb25000e345910ba16b91eb375cd944b68624de9f'
 };
 var txHash = {
   'livenet': '22231e8219a0617a0ded618b5dc713fdf9b0db8ebd5bb3322d3011a703119d3b',
@@ -87,7 +87,6 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
     connect(function(peer) {
       peer.once('addr', function(message) {
         message.addresses.forEach(function(address) {
-          // console.log(address.ip.v4 + ':' + address.port);
           (address.time instanceof Date).should.equal(true);
           should.exist(address.ip);
           (address.services instanceof BN).should.equal(true);
@@ -98,15 +97,13 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
       peer.sendMessage(message);
     });
   });
-  it('can request inv detailed info', function(cb) {
+  it('requests inv detailed info', function(cb) {
     connect(function(peer) {
       peer.once('block', function(message) {
-        //console.log(message.block.toJSON());
         should.exist(message.block);
         cb();
       });
       peer.once('tx', function(message) {
-        //console.log(message.transaction.toJSON());
         should.exist(message.transaction);
         cb();
       });
@@ -116,7 +113,7 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
       });
     });
   });
-  it('can send tx inv and receive getdata for that tx', function(cb) {
+  it('sends tx inv and receives getdata for that tx', function(cb) {
     connect(function(peer) {
       var type = Messages.Inventory.TYPE.TX;
       var inv = [{
@@ -133,7 +130,7 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
       peer.sendMessage(message);
     });
   });
-  it('can request block data', function(cb) {
+  it('requests block data', function(cb) {
     connect(function(peer) {
       peer.once('block', function(message) {
         (message.block instanceof Block).should.equal(true);
@@ -143,39 +140,37 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
       peer.sendMessage(message);
     });
   });
-  it('can handle request tx data not found', function(cb) {
+  var fakeHash = 'e2dfb8afe1575bfacae1a0b4afc49af7ddda69285857267bae0e22be15f74a3a';
+  it('handles request tx data not found', function(cb) {
     connect(function(peer) {
-      var hash = 'e2dfb8afe1575bfacae1a0b4afc49af7ddda69285857267bae0e22be15f74a3a';
-      var expected = Messages.NotFound.forTransaction(hash);
+      var expected = Messages.NotFound.forTransaction(fakeHash);
       peer.once('notfound', function(message) {
         (message instanceof Messages.NotFound).should.equal(true);
         message.should.deep.equal(expected);
         cb();
       });
-      var message = Messages.GetData.forTransaction(hash);
+      var message = Messages.GetData.forTransaction(fakeHash);
       peer.sendMessage(message);
     });
   });
   var from = [blockHash[network.name]];
   var stop = stopBlock[network.name];
-  it('can get headers', function(cb) {
+  it('gets headers', function(cb) {
     connect(function(peer) {
       peer.once('headers', function(message) {
         (message instanceof Messages.Headers).should.equal(true);
-        message.headers.length.should.equal(2);
+        message.headers.length.should.equal(3);
         cb();
       });
       var message = new Messages.GetHeaders(from, stop);
       peer.sendMessage(message);
     });
   });
-  it.skip('can get blocks', function(cb) {
+  it('gets blocks', function(cb) {
     connect(function(peer) {
-      peer.on('inv', function(message) {
+      peer.once('inv', function(message) {
         (message instanceof Messages.Inventory).should.equal(true);
-        console.log('inv' + message.inventory.length);
         if (message.inventory.length === 2) {
-          console.log(message);
           message.inventory[0].type.should.equal(Messages.Inventory.TYPE.BLOCK);
           cb();
         }
@@ -183,5 +178,27 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
       var message = new Messages.GetBlocks(from, stop);
       peer.sendMessage(message);
     });
+  });
+  var testInvGetData = function(expected, message, cb) {
+    connect(function(peer) {
+      peer.once('getdata', function(message) {
+        (message instanceof Messages.GetData).should.equal(true);
+        message.should.deep.equal(expected);
+        cb();
+      });
+      peer.sendMessage(message);
+    });
+  };
+  it('sends block inv and receives getdata', function(cb) {
+    var randomHash = Random.getRandomBuffer(32); // needs to be random for repeatability
+    var expected = Messages.GetData.forBlock(randomHash);
+    var message = Messages.Inventory.forBlock(randomHash);
+    testInvGetData(expected, message, cb);
+  });
+  it('sends tx inv and receives getdata', function(cb) {
+    var randomHash = Random.getRandomBuffer(32); // needs to be random for repeatability
+    var expected = Messages.GetData.forTransaction(randomHash);
+    var message = Messages.Inventory.forTransaction(randomHash);
+    testInvGetData(expected, message, cb);
   });
 });

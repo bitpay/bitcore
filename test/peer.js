@@ -12,15 +12,15 @@ var sinon = require('sinon');
 var fs = require('fs');
 
 var bitcore = require('bitcore');
-var P2P = require('../');
-var Peer = P2P.Peer;
+var p2p = require('../');
+var Peer = p2p.Peer;
 var Networks = bitcore.Networks;
 
 describe('Peer', function() {
 
   describe('Integration test', function() {
     it('parses this stream of data from a connection', function(callback) {
-      var peer = new P2P.Peer('');
+      var peer = new p2p.Peer('');
       var stub = sinon.stub();
       var dataCallback;
       var connectCallback;
