@@ -130,11 +130,11 @@ helpers.stubBlockExplorer = function(server, utxos, txid) {
 
 
 
-helpers.clientSign = function(tx, xpriv, n) {
+helpers.clientSign = function(tx, xprivHex) {
   //Derive proper key to sign, for each input
   var privs = [],
     derived = {};
-  var xpriv = new Bitcore.HDPrivateKey(TestData.copayers[0].xPrivKey);
+  var xpriv = new Bitcore.HDPrivateKey(xprivHex);
 
   _.each(tx.inputs, function(i) {
     if (!derived[i.path]) {
@@ -146,7 +146,7 @@ helpers.clientSign = function(tx, xpriv, n) {
   var t = new Bitcore.Transaction();
 
   _.each(tx.inputs, function(i) {
-    t.from(i, i.publicKeys, n);
+    t.from(i, i.publicKeys, tx.requiredSignatures);
   });
 
   t.to(tx.toAddress, tx.amount)
@@ -435,7 +435,7 @@ describe('Copay server', function() {
   describe('#verifyMessageSignature', function() {
     var server, wallet;
     beforeEach(function(done) {
-      helpers.createAndJoinWallet(2, 2, function(s, w) {
+      helpers.createAndJoinWallet(2, 3, function(s, w) {
         server = s;
         wallet = w;
         done();
@@ -559,7 +559,7 @@ describe('Copay server', function() {
   describe('#createTx', function() {
     var server, wallet, copayerPriv;
     beforeEach(function(done) {
-      helpers.createAndJoinWallet(2, 2, function(s, w, c) {
+      helpers.createAndJoinWallet(2, 3, function(s, w, c) {
         server = s;
         wallet = w;
         copayerPriv = c;
@@ -770,7 +770,7 @@ describe('Copay server', function() {
     var server, wallet, copayerPriv, txid, copayerIds;
 
     beforeEach(function(done) {
-      helpers.createAndJoinWallet(2, 2, function(s, w, c, ids) {
+      helpers.createAndJoinWallet(2, 3, function(s, w, c, ids) {
         server = s;
         wallet = w;
         copayerPriv = c;
@@ -820,7 +820,7 @@ describe('Copay server', function() {
     var server, wallet, copayerPriv, txid, copayerIds;
 
     beforeEach(function(done) {
-      helpers.createAndJoinWallet(2, 2, function(s, w, c, ids) {
+      helpers.createAndJoinWallet(2, 3, function(s, w, c, ids) {
         server = s;
         wallet = w;
         copayerPriv = c;
@@ -845,7 +845,7 @@ describe('Copay server', function() {
         var tx = txs[0];
         tx.id.should.equal(txid);
 
-        var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey, wallet.n);
+        var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
         server.signTx({
           txProposalId: txid,
           signatures: signatures,
@@ -867,12 +867,28 @@ describe('Copay server', function() {
       });
     });
 
+
+    it('should fail to sign with a xpriv from other copayer', function(done) {
+      server.getPendingTxs({}, function(err, txs) {
+        var tx = txs[0];
+        tx.id.should.equal(txid);
+        var signatures = helpers.clientSign(tx, TestData.copayers[1].xPrivKey);
+        server.signTx({
+          txProposalId: txid,
+          signatures: signatures,
+        }, function(err) {
+          err.code.should.contain('BADSIG');
+          done();
+        });
+      });
+    });
+
     it('should fail if one signature is broken', function(done) {
       server.getPendingTxs({}, function(err, txs) {
         var tx = txs[0];
         tx.id.should.equal(txid);
 
-        var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey, wallet.n);
+        var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
         signatures[0] = 1;
 
         server.signTx({
@@ -884,6 +900,7 @@ describe('Copay server', function() {
         });
       });
     });
+
     it('should fail on invalid signature', function(done) {
       server.getPendingTxs({}, function(err, txs) {
         var tx = txs[0];
@@ -905,7 +922,7 @@ describe('Copay server', function() {
         var tx = txs[0];
         tx.id.should.equal(txid);
 
-        var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey, wallet.n);
+        var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
         server.signTx({
           txProposalId: txid,
           signatures: signatures,
@@ -928,7 +945,7 @@ describe('Copay server', function() {
         server.rejectTx({
           txProposalId: txid,
         }, function(err) {
-          var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey, wallet.n);
+          var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
           server.signTx({
             txProposalId: txid,
             signatures: signatures,
@@ -970,7 +987,7 @@ describe('Copay server', function() {
         server.getPendingTxs({}, function(err, txps) {
           var txp = txps[0];
           txp.id.should.equal(txpid);
-          var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey, wallet.n);
+          var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey);
           server.signTx({
             txProposalId: txpid,
             signatures: signatures,
@@ -996,7 +1013,7 @@ describe('Copay server', function() {
         server.getPendingTxs({}, function(err, txps) {
           var txp = txps[0];
           txp.id.should.equal(txpid);
-          var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey, wallet.n);
+          var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey);
           server.signTx({
             txProposalId: txpid,
             signatures: signatures,
@@ -1232,6 +1249,92 @@ describe('Copay server', function() {
           });
         });
       }, cat);
+    });
+  });
+
+
+  describe('#removePendingTx', function() {
+    var server, wallet, copayerPriv, txp;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 3, function(s, w, c) {
+        server = s;
+        wallet = w;
+        copayerPriv = c;
+        server.createAddress({}, function(err, address) {
+          helpers.createUtxos(server, wallet, helpers.toSatoshi([100, 200]), function(utxos) {
+            helpers.stubBlockExplorer(server, utxos);
+            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, 'some message', copayerPriv[0].privKey);
+            server.createTx(txOpts, function(err, tx) {
+              server.getPendingTxs({}, function(err, txs) {
+                txp = txs[0];
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should allow creator to remove an unsigned TX', function(done) {
+      server.removePendingTx({
+        id: txp.id
+      }, function(err) {
+        should.not.exist(err);
+        server.getPendingTxs({}, function(err, txs) {
+          txs.length.should.equal(0);
+          done();
+        });
+      });
+    });
+
+    it('should allow creator to remove an signed TX by himself', function(done) {
+      var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey);
+      server.signTx({
+        txProposalId: txp[0],
+        signatures: signatures,
+      }, function(err) {
+        server.removePendingTx({
+          id: txp.id
+        }, function(err) {
+          should.not.exist(err);
+          server.getPendingTxs({}, function(err, txs) {
+            txs.length.should.equal(0);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should not allow non-creator copayer to remove an unsigned TX ', function(done) {
+      helpers.getAuthServer(wallet.copayers[1].id, function(server2) {
+        server2.removePendingTx({
+          id: txp.id
+        }, function(err) {
+          err.message.should.contain('Not allowed');
+          server2.getPendingTxs({}, function(err, txs) {
+            txs.length.should.equal(1);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should not allow creator copayer to remove an TX signed by other copayer', function(done) {
+      helpers.getAuthServer(wallet.copayers[1].id, function(server2) {
+        var signatures = helpers.clientSign(txp, TestData.copayers[1].xPrivKey);
+        server2.signTx({
+          txProposalId: txp.id,
+          signatures: signatures,
+        }, function(err) {
+          should.not.exist(err);
+          server.removePendingTx({
+            id: txp.id
+          }, function(err) {
+            err.message.should.contain('Not allowed');
+            done();
+          });
+        });
+      });
     });
   });
 });
