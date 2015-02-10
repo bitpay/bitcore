@@ -120,6 +120,8 @@ describe('Transaction', function() {
     script: Script.buildPublicKeyHashOut(fromAddress).toString(),
     satoshis: 100000
   };
+  var weirdUtxoWith100000Satoshis = JSON.parse(JSON.stringify(simpleUtxoWith100000Satoshis));
+  weirdUtxoWith100000Satoshis.script = new Script().add('OP_TRUE');
   var toAddress = 'mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc';
   var changeAddress = 'mgBCJAsvzgT2qNNeXsoECg2uPKrUsZ76up';
   var changeAddressP2SH = '2N7T3TAetJrSCruQ39aNrJvYLhG1LJosujf';
@@ -487,6 +489,12 @@ describe('Transaction', function() {
         return new Transaction().lockUntilBlockHeight(-1);
       }).to.throw(errors.Transaction.NLockTimeOutOfRange);
     });
+  });
+  it('handles weird output', function() {
+    var transaction = new Transaction()
+      .from(weirdUtxoWith100000Satoshis)
+      .to(toAddress, 50000);
+    should.exist(transaction);
   });
 });
 
