@@ -162,9 +162,15 @@ helpers.clientSign = function(tx, xpriv, n) {
   return signatures;
 };
 
-helpers.addProposalSignature = function(txOpts, privKey) {
-  var msg = txOpts.toAddress + '|' + txOpts.amount + '|' + txOpts.message;
-  txOpts.proposalSignature = SignUtils.sign(msg, privKey);
+helpers.createProposalOpts = function(toAddress, amount, message, signingKey) {
+  var opts = {
+    toAddress: toAddress,
+    amount: helpers.toSatoshi(amount),
+    message: message,
+  };
+  var msg = opts.toAddress + '|' + opts.amount + '|' + opts.message;
+  opts.proposalSignature = SignUtils.sign(msg, signingKey);
+  return opts;
 };
 
 var db, storage;
@@ -566,13 +572,7 @@ describe('Copay server', function() {
     it('should create a tx', function(done) {
       helpers.createUtxos(server, wallet, helpers.toSatoshi([100, 200]), function(utxos) {
         helpers.stubBlockExplorer(server, utxos);
-        var txOpts = {
-          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-          amount: helpers.toSatoshi(80),
-          message: 'some message',
-        };
-        helpers.addProposalSignature(txOpts, copayerPriv[0].privKey);
-
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, 'some message', copayerPriv[0].privKey);
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
           tx.should.exist;
@@ -612,11 +612,7 @@ describe('Copay server', function() {
         server.joinWallet(copayerOpts, function(err, copayerId) {
           should.not.exist(err);
           helpers.getAuthServer(copayerId, function(server, wallet) {
-            var txOpts = {
-              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-              amount: helpers.toSatoshi(80),
-            };
-            helpers.addProposalSignature(txOpts, copayerPriv[0].privKey);
+            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, null, copayerPriv[0].privKey);
             server.createTx(txOpts, function(err, tx) {
               should.not.exist(tx);
               err.should.exist;
@@ -631,11 +627,7 @@ describe('Copay server', function() {
     it('should fail to create tx for address invalid address', function(done) {
       helpers.createUtxos(server, wallet, helpers.toSatoshi([100, 200]), function(utxos) {
         helpers.stubBlockExplorer(server, utxos);
-        var txOpts = {
-          toAddress: 'invalid address',
-          amount: helpers.toSatoshi(80),
-        };
-        helpers.addProposalSignature(txOpts, copayerPriv[0].privKey);
+        var txOpts = helpers.createProposalOpts('invalid address', 80, null, copayerPriv[0].privKey);
 
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(tx);
@@ -650,11 +642,7 @@ describe('Copay server', function() {
     it('should fail to create tx for address of different network', function(done) {
       helpers.createUtxos(server, wallet, helpers.toSatoshi([100, 200]), function(utxos) {
         helpers.stubBlockExplorer(server, utxos);
-        var txOpts = {
-          toAddress: 'myE38JHdxmQcTJGP1ZiX4BiGhDxMJDvLJD', // testnet
-          amount: helpers.toSatoshi(80),
-        };
-        helpers.addProposalSignature(txOpts, copayerPriv[0].privKey);
+        var txOpts = helpers.createProposalOpts('myE38JHdxmQcTJGP1ZiX4BiGhDxMJDvLJD', 80, null, copayerPriv[0].privKey);
 
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(tx);
@@ -669,12 +657,7 @@ describe('Copay server', function() {
     it('should fail to create tx when insufficient funds', function(done) {
       helpers.createUtxos(server, wallet, helpers.toSatoshi([100]), function(utxos) {
         helpers.stubBlockExplorer(server, utxos);
-        var txOpts = {
-          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-          amount: helpers.toSatoshi(120),
-        };
-        helpers.addProposalSignature(txOpts, copayerPriv[0].privKey);
-
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 120, null, copayerPriv[0].privKey);
         server.createTx(txOpts, function(err, tx) {
           err.code.should.equal('INSUFFICIENTFUNDS');
           err.message.should.equal('Insufficient funds');
@@ -699,20 +682,11 @@ describe('Copay server', function() {
     it('should create tx when there is a pending tx and enough UTXOs', function(done) {
       helpers.createUtxos(server, wallet, helpers.toSatoshi([10.1, 10.2, 10.3]), function(utxos) {
         helpers.stubBlockExplorer(server, utxos);
-        var txOpts = {
-          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-          amount: helpers.toSatoshi(12),
-        };
-        helpers.addProposalSignature(txOpts, copayerPriv[0].privKey);
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 12, null, copayerPriv[0].privKey);
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
           tx.should.exist;
-
-          var txOpts2 = {
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 8,
-          };
-          helpers.addProposalSignature(txOpts2, copayerPriv[0].privKey);
+          var txOpts2 = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 8, null, copayerPriv[0].privKey);
           server.createTx(txOpts2, function(err, tx) {
             should.not.exist(err);
             tx.should.exist;
@@ -734,20 +708,11 @@ describe('Copay server', function() {
     it('should fail to create tx when there is a pending tx and not enough UTXOs', function(done) {
       helpers.createUtxos(server, wallet, helpers.toSatoshi([10.1, 10.2, 10.3]), function(utxos) {
         helpers.stubBlockExplorer(server, utxos);
-        var txOpts = {
-          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-          amount: helpers.toSatoshi(12),
-        };
-        helpers.addProposalSignature(txOpts, copayerPriv[0].privKey);
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 12, null, copayerPriv[0].privKey);
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
           tx.should.exist;
-
-          var txOpts2 = {
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: helpers.toSatoshi(24),
-          };
-          helpers.addProposalSignature(txOpts2, copayerPriv[0].privKey);
+          var txOpts2 = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 24, null, copayerPriv[0].privKey);
           server.createTx(txOpts2, function(err, tx) {
             err.code.should.equal('INSUFFICIENTFUNDS');
             err.message.should.equal('Insufficient funds');
@@ -777,12 +742,7 @@ describe('Copay server', function() {
           should.not.exist(err);
           balance.totalAmount.should.equal(helpers.toSatoshi(N * 100));
           balance.lockedAmount.should.equal(helpers.toSatoshi(0));
-
-          var txOpts = {
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: helpers.toSatoshi(80),
-          };
-          helpers.addProposalSignature(txOpts, copayerPriv[0].privKey);
+          var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, null, copayerPriv[0].privKey);
           async.map(_.range(N), function(i, cb) {
             server.createTx(txOpts, function(err, tx) {
               cb(err, tx);
@@ -816,11 +776,7 @@ describe('Copay server', function() {
         server.createAddress({}, function(err, address) {
           helpers.createUtxos(server, wallet, helpers.toSatoshi([1, 2, 3, 4, 5, 6, 7, 8]), function(utxos) {
             helpers.stubBlockExplorer(server, utxos);
-            var txOpts = {
-              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-              amount: helpers.toSatoshi(10),
-            };
-            helpers.addProposalSignature(txOpts, copayerPriv[0].privKey);
+            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, copayerPriv[0].privKey);
             server.createTx(txOpts, function(err, tx) {
               should.not.exist(err);
               tx.should.exist;
@@ -901,11 +857,7 @@ describe('Copay server', function() {
 
     it('should sign and broadcast a tx', function(done) {
       helpers.stubBlockExplorer(server, utxos, '1122334455');
-      var txOpts = {
-        toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-        amount: helpers.toSatoshi(10),
-      };
-      helpers.addProposalSignature(txOpts, copayerPriv[0].privKey);
+      var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, copayerPriv[0].privKey);
       server.createTx(txOpts, function(err, txp) {
         should.not.exist(err);
         txp.should.exist;
@@ -931,11 +883,7 @@ describe('Copay server', function() {
 
     it('should keep tx as *accepted* if unable to broadcast it', function(done) {
       helpers.stubBlockExplorer(server, utxos);
-      var txOpts = {
-        toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-        amount: helpers.toSatoshi(10),
-      };
-      helpers.addProposalSignature(txOpts, copayerPriv[0].privKey);
+      var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, copayerPriv[0].privKey);
       server.createTx(txOpts, function(err, txp) {
         should.not.exist(err);
         txp.should.exist;
@@ -983,12 +931,7 @@ describe('Copay server', function() {
 
     it('other copayers should see pending proposal created by one copayer', function(done) {
       helpers.stubBlockExplorer(server, utxos);
-      var txOpts = {
-        toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-        amount: helpers.toSatoshi(10),
-        message: 'some message',
-      };
-      helpers.addProposalSignature(txOpts, copayerPriv[0].privKey);
+      var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, 'some message', copayerPriv[0].privKey);
       server.createTx(txOpts, function(err, txp) {
         should.not.exist(err);
         should.exist.txp;
@@ -1017,9 +960,7 @@ describe('Copay server', function() {
     var server, wallet, copayerPriv, clock;
 
     beforeEach(function(done) {
-      if (server)
-        return done();
-
+      if (server) return done();
       this.timeout(5000);
       console.log('\tCreating TXS...');
       clock = sinon.useFakeTimers();
@@ -1030,11 +971,7 @@ describe('Copay server', function() {
         server.createAddress({}, function(err, address) {
           helpers.createUtxos(server, wallet, helpers.toSatoshi(_.range(10)), function(utxos) {
             helpers.stubBlockExplorer(server, utxos);
-            var txOpts = {
-              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-              amount: helpers.toSatoshi(0.1),
-            };
-            helpers.addProposalSignature(txOpts, copayerPriv[0].privKey);
+            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.1, null, copayerPriv[0].privKey);
             async.eachSeries(_.range(10), function(i, next) {
               clock.tick(10000);
               server.createTx(txOpts, function(err, tx) {
@@ -1179,7 +1116,7 @@ describe('Copay server', function() {
                 });
               }, function() {
                 server.removeWallet({}, function(err) {
-                  db=[];
+                  db = [];
                   server.storage._dump(function() {
                     var after = _.clone(db);
                     after.should.deep.equal(before);
