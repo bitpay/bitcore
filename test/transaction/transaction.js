@@ -120,6 +120,8 @@ describe('Transaction', function() {
     script: Script.buildPublicKeyHashOut(fromAddress).toString(),
     satoshis: 100000
   };
+  var anyoneCanSpendUTXO = JSON.parse(JSON.stringify(simpleUtxoWith100000Satoshis));
+  anyoneCanSpendUTXO.script = new Script().add('OP_TRUE');
   var toAddress = 'mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc';
   var changeAddress = 'mgBCJAsvzgT2qNNeXsoECg2uPKrUsZ76up';
   var changeAddressP2SH = '2N7T3TAetJrSCruQ39aNrJvYLhG1LJosujf';
@@ -135,14 +137,23 @@ describe('Transaction', function() {
 
   describe('adding inputs', function() {
 
-    it('it only adds once one utxo', function() {
+    it('only adds once one utxo', function() {
       var tx = new Transaction();
       tx.from(simpleUtxoWith1BTC);
       tx.from(simpleUtxoWith1BTC);
       tx.inputs.length.should.equal(1);
     });
 
-    describe('not enough information errors', function() {
+    describe('isFullySigned', function() {
+      it('works for normal p2pkh', function() {
+        var transaction = new Transaction()
+          .from(simpleUtxoWith100000Satoshis)
+          .to(toAddress, 50000)
+          .change(changeAddress)
+          .sign(privateKey);
+        transaction.isFullySigned().should.equal(true);
+      });
+
       it('fails when Inputs are not subclassed and isFullySigned is called', function() {
         var tx = new Transaction(tx_1_hex);
         expect(function() {
@@ -172,6 +183,7 @@ describe('Transaction', function() {
       transaction.outputs[1].satoshis.should.equal(40000);
       transaction.outputs[1].script.toString()
         .should.equal(Script.fromAddress(changeAddress).toString());
+      transaction.getChangeOutput().script.should.deep.equal(Script.fromAddress(changeAddress));
     });
     it('accepts a P2SH address for change', function() {
       var transaction = new Transaction()
@@ -187,11 +199,17 @@ describe('Transaction', function() {
         .from(simpleUtxoWith100000Satoshis)
         .to(toAddress, 50000)
         .change(changeAddress)
-        .sign(privateKey)
+        .fee(0)
+        .sign(privateKey);
+
+      transaction.getChangeOutput().satoshis.should.equal(50000);
+
+      transaction = transaction
         .to(toAddress, 20000)
         .sign(privateKey);
+
       transaction.outputs.length.should.equal(3);
-      transaction.outputs[2].satoshis.should.equal(20000);
+      transaction.outputs[2].satoshis.should.equal(30000);
       transaction.outputs[2].script.toString()
         .should.equal(Script.fromAddress(changeAddress).toString());
     });
@@ -243,7 +261,8 @@ describe('Transaction', function() {
         .change(changeAddress)
         .toObject();
       var deserialized = new Transaction(serialized);
-      expect(deserialized._change.toString()).to.equal(changeAddress);
+      expect(deserialized._changeScript.toString()).to.equal(Script.fromAddress(changeAddress).toString());
+      expect(deserialized.getChangeOutput()).to.equal(null);
     });
     it('can avoid checked serialize', function() {
       var transaction = new Transaction()
@@ -309,13 +328,23 @@ describe('Transaction', function() {
 
   describe('to and from JSON', function() {
     it('takes a string that is a valid JSON and deserializes from it', function() {
-      var transaction = new Transaction();
-      expect(new Transaction(transaction.toJSON()).serialize()).to.equal(transaction.serialize());
+      var simple = new Transaction();
+      expect(new Transaction(simple.toJSON()).serialize()).to.equal(simple.serialize());
+      var complex = new Transaction()
+        .from(simpleUtxoWith100000Satoshis)
+        .to(toAddress, 50000)
+        .change(changeAddress)
+        .sign(privateKey);
+      var cj = complex.toJSON();
+      var ctx = new Transaction(cj);
+      expect(ctx.serialize()).to.equal(complex.serialize());
+
     });
     it('serializes the `change` information', function() {
       var transaction = new Transaction();
       transaction.change(changeAddress);
-      expect(JSON.parse(transaction.toJSON()).change).to.equal(changeAddress.toString());
+      expect(JSON.parse(transaction.toJSON()).changeScript).to.equal(Script.fromAddress(changeAddress).toString());
+      expect(new Transaction(transaction.toJSON()).serialize()).to.equal(transaction.serialize());
     });
     it('serializes correctly p2sh multisig signed tx', function() {
       var t = new Transaction(tx2hex);
@@ -407,6 +436,74 @@ describe('Transaction', function() {
       transaction.outputs.length.should.equal(1);
     });
   });
+
+  describe('handling the nLockTime', function() {
+    var MILLIS_IN_SECOND = 1000;
+    var timestamp = 1423504946;
+    var blockHeight = 342734;
+    var date = new Date(timestamp * MILLIS_IN_SECOND);
+    it('handles a null locktime', function() {
+      var transaction = new Transaction();
+      expect(transaction.getLockTime()).to.equal(null);
+    });
+    it('handles a simple example', function() {
+      var future = new Date(2025, 10, 30); // Sun Nov 30 2025
+      var transaction = new Transaction()
+        .lockUntilDate(future);
+      transaction.nLockTime.should.equal(future.getTime() / 1000);
+      transaction.getLockTime().should.deep.equal(future);
+    });
+    it('accepts a date instance', function() {
+      var transaction = new Transaction()
+        .lockUntilDate(date);
+      transaction.nLockTime.should.equal(timestamp);
+      transaction.getLockTime().should.deep.equal(date);
+    });
+    it('accepts a number instance with a timestamp', function() {
+      var transaction = new Transaction()
+        .lockUntilDate(timestamp);
+      transaction.nLockTime.should.equal(timestamp);
+      transaction.getLockTime().should.deep.equal(new Date(timestamp * 1000));
+    });
+    it('accepts a block height', function() {
+      var transaction = new Transaction()
+        .lockUntilBlockHeight(blockHeight);
+      transaction.nLockTime.should.equal(blockHeight);
+      transaction.getLockTime().should.deep.equal(blockHeight);
+    });
+    it('fails if the block height is too high', function() {
+      expect(function() {
+        return new Transaction().lockUntilBlockHeight(5e8);
+      }).to.throw(errors.Transaction.BlockHeightTooHigh);
+    });
+    it('fails if the date is too early', function() {
+      expect(function() {
+        return new Transaction().lockUntilDate(1);
+      }).to.throw(errors.Transaction.LockTimeTooEarly);
+      expect(function() {
+        return new Transaction().lockUntilDate(499999999);
+      }).to.throw(errors.Transaction.LockTimeTooEarly);
+    });
+    it('fails if the block height is negative', function() {
+      expect(function() {
+        return new Transaction().lockUntilBlockHeight(-1);
+      }).to.throw(errors.Transaction.NLockTimeOutOfRange);
+    });
+  });
+
+  it('handles anyone-can-spend utxo', function() {
+    var transaction = new Transaction()
+      .from(anyoneCanSpendUTXO)
+      .to(toAddress, 50000);
+    should.exist(transaction);
+  });
+
+  it('handles unsupported utxo in tx object', function() {
+    var transaction = new Transaction();
+    transaction.fromJSON.bind(transaction, unsupportedTxObj)
+    .should.throw('Unsupported input script type: OP_1 OP_ADD OP_2 OP_EQUAL');
+  });
+
 });
 
 var tx_empty_hex = '01000000000000000000';
@@ -417,3 +514,5 @@ var tx_1_id = '779a3e5b3c2c452c85333d8521f804c1a52800e60f4b7c3bbe36f4bab350b72c'
 
 
 var tx2hex = '0100000001e07d8090f4d4e6fcba6a2819e805805517eb19e669e9d2f856b41d4277953d640000000091004730440220248bc60bb309dd0215fbde830b6371e3fdc55685d11daa9a3c43828892e26ce202205f10cd4011f3a43657260a211f6c4d1fa81b6b6bdd6577263ed097cc22f4e5b50147522102fa38420cec94843ba963684b771ba3ca7ce1728dc2c7e7cade0bf298324d6b942103f948a83c20b2e7228ca9f3b71a96c2f079d9c32164cd07f08fbfdb483427d2ee52aeffffffff01180fe200000000001976a914ccee7ce8e8b91ec0bc23e1cfb6324461429e6b0488ac00000000';
+
+var unsupportedTxObj = '{"version":1,"inputs":[{"prevTxId":"a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458","outputIndex":0,"sequenceNumber":4294967295,"script":"OP_1","output":{"satoshis":1020000,"script":"OP_1 OP_ADD OP_2 OP_EQUAL"}}],"outputs":[{"satoshis":1010000,"script":"OP_DUP OP_HASH160 20 0x7821c0a3768aa9d1a37e16cf76002aef5373f1a8 OP_EQUALVERIFY OP_CHECKSIG"}],"nLockTime":0}';

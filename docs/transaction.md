@@ -112,11 +112,11 @@ When outputs' value don't sum up to the same amount that inputs, the difference 
 
 For this reason, some methods in the Transaction class are provided:
 
-* `change(address)`: Set up the change address. This will set an internal `_change` property that will store the change address.
+* `change(address)`: Set up the change address. This will set an internal `_changeScript` property that will store the change script associated with that address.
 * `fee(amount)`: Sets up the exact amount of fee to pay. If no change address is provided, this will raise an exception.
 * `getFee()`: returns the estimated fee amount to be paid, based on the size of the transaction, but disregarding the priority of the outputs.
 
-Internally, a `_changeOutput` property stores the index of the change output (so it can get updated when a new input or output is added).
+Internally, a `_changeIndex` property stores the index of the change output (so it can get updated when a new input or output is added).
 
 ## Multisig Transactions
 
@@ -139,6 +139,26 @@ var multiSigTx = new Transaction(serialized)
 
 assert(multiSigTx.isFullySigned());
 ``` 
+
+## Time-Locking transaction
+All bitcoin transactions contain a locktime field.
+The locktime indicates the earliest time a transaction can be added to the blockchain.
+Locktime allows signers to create time-locked transactions which will only become valid in the future, giving the signers a chance to change their minds.
+Locktime can be set in the form of a bitcoin block height (the transaction can only be included in a block with a higher height than specified) or a linux timestamp (transaction can only be confirmed after that time).
+For more information see [bitcoin's development guide section on locktime](https://bitcoin.org/en/developer-guide#locktime-and-sequence-number).
+
+In bitcore, you can set a `Transaction`'s locktime by using the methods `Transaction#lockUntilDate` and `Transaction#lockUntilBlockHeight`. You can also get a friendly version of the locktime field via `Transaction#getLockTime`;
+
+For example:
+```javascript
+var future = new Date(2025,10,30); // Sun Nov 30 2025
+var transaction = new Transaction()
+  .lockUntilDate(future);
+console.log(transaction.getLockTime());
+// output similar to: Sun Nov 30 2025 00:00:00 GMT-0300 (ART)
+```
+
+
 
 ## Upcoming changes
 
