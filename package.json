@@ -52,7 +52,7 @@
     "url": "https://github.com/bitpay/bitcore-p2p.git"
   },
   "dependencies": {
-    "bitcore": "^0.9.5",
+    "bitcore": "^0.10.0",
     "bufferput": "^0.1.2",
     "buffers": "^0.1.1",
     "socks5-client": "^0.3.6"
@@ -62,7 +62,6 @@
     "brfs": "^1.2.0",
     "chai": "~1.10.0",
     "gulp": "^3.8.10",
-    "lodash": "^2.4.1",
     "sinon": "^1.12.2"
   },
   "license": "MIT"

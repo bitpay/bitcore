@@ -1,14 +1,13 @@
 'use strict';
 
-var _ = require('lodash');
 var chai = require('chai');
 
 /* jshint unused: false */
 var should = chai.should();
 var sinon = require('sinon');
-var _ = require('lodash');
 
 var bitcore = require('bitcore');
+var _ = bitcore.deps._;
 var Random = bitcore.crypto.Random;
 var BN = bitcore.crypto.BN;
 var BufferUtil = bitcore.util.buffer;

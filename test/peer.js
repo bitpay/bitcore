@@ -1,6 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
 var chai = require('chai');
 var Net = require('net');
 var Socks5Client = require('socks5-client');
@@ -12,6 +11,7 @@ var sinon = require('sinon');
 var fs = require('fs');
 
 var bitcore = require('bitcore');
+var _ = bitcore.deps._;
 var p2p = require('../');
 var Peer = p2p.Peer;
 var Networks = bitcore.Networks;
