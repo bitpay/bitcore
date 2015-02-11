@@ -1310,7 +1310,7 @@ describe('Copay server', function() {
         server2.removePendingTx({
           id: txp.id
         }, function(err) {
-          err.message.should.contain('Not allowed');
+          err.message.should.contain('creators');
           server2.getPendingTxs({}, function(err, txs) {
             txs.length.should.equal(1);
             done();
@@ -1330,7 +1330,7 @@ describe('Copay server', function() {
           server.removePendingTx({
             id: txp.id
           }, function(err) {
-            err.message.should.contain('Not allowed');
+            err.message.should.contain('other copayers');
             done();
           });
         });
