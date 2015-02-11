@@ -177,27 +177,68 @@ var db, storage;
 
 
 describe('Copay server', function() {
-  beforeEach(function() {
-    db = levelup(memdown, {
-      valueEncoding: 'json'
+    beforeEach(function() {
+      db = levelup(memdown, {
+        valueEncoding: 'json'
+      });
+      storage = new Storage({
+        db: db
+      });
+      CopayServer.initialize({
+        storage: storage
+      });
     });
-    storage = new Storage({
-      db: db
+
+    describe('#getInstanceWithAuth', function() {
+        beforeEach(function() {});
+
+        it('should get server instance for existing copayer', function(done) {
+            helpers.createAndJoinWallet(1, 2, function(s, wallet, copayers, copayerIds) {
+                var xpriv = copayers[0].xPrivKey;
+                var priv = Bitcore.HDPrivateKey
+                  .fromString(xpriv)
+                  .derive('m/1/0')
+                  .privateKey
+                  .toString();
+
+              var message = 'hola';
+              var sig = SignUtils.sign(message, priv);
+
+              CopayServer.getInstanceWithAuth({
+                copayerId: copayerIds[0],
+                message: message,
+                signature: sig,
+              }, function(err, server) {
+                should.not.exist(err);
+                done();
+              });
+            });
+        });
+
+      it('should fail when requesting for non-existent copayer', function(done) {
+        CopayServer.getInstanceWithAuth({
+          copayerId: 'ads',
+          message: 'dummy',
+          signature: 'dummy',
+        }, function(err, server) {
+          err.should.contain('Copayer not found');
+          done();
+        });
+      });
+
+      it('should fail when message signature cannot be verified', function(done) {
+        helpers.createAndJoinWallet(1, 2, function(s, wallet, copayers, copayerIds) {
+          CopayServer.getInstanceWithAuth({
+            copayerId: copayerIds[0],
+            message: 'dummy',
+            signature: 'dummy',
+          }, function(err, server) {
+            err.should.contain('Invalid signature');
+            done();
+          });
+        });
+      });
     });
-    CopayServer.initialize({
-      storage: storage
-    });
-  });
-
-  describe.skip('#getInstanceWithAuth', function() {
-    beforeEach(function() {});
-
-    it('should get server instance for existing copayer', function(done) {});
-
-    it('should fail when requesting for non-existent copayer', function(done) {});
-
-    it('should fail when message signature cannot be verified', function(done) {});
-  });
 
   describe('#createWallet', function() {
     var server;
