@@ -490,12 +490,20 @@ describe('Transaction', function() {
       }).to.throw(errors.Transaction.NLockTimeOutOfRange);
     });
   });
+
   it('handles anyone-can-spend utxo', function() {
     var transaction = new Transaction()
       .from(anyoneCanSpendUTXO)
       .to(toAddress, 50000);
     should.exist(transaction);
   });
+
+  it('handles unsupported utxo in tx object', function() {
+    var transaction = new Transaction();
+    transaction.fromJSON.bind(transaction, unsupportedTxObj)
+    .should.throw('Unsupported input script type: OP_1 OP_ADD OP_2 OP_EQUAL');
+  });
+
 });
 
 var tx_empty_hex = '01000000000000000000';
@@ -506,3 +514,5 @@ var tx_1_id = '779a3e5b3c2c452c85333d8521f804c1a52800e60f4b7c3bbe36f4bab350b72c'
 
 
 var tx2hex = '0100000001e07d8090f4d4e6fcba6a2819e805805517eb19e669e9d2f856b41d4277953d640000000091004730440220248bc60bb309dd0215fbde830b6371e3fdc55685d11daa9a3c43828892e26ce202205f10cd4011f3a43657260a211f6c4d1fa81b6b6bdd6577263ed097cc22f4e5b50147522102fa38420cec94843ba963684b771ba3ca7ce1728dc2c7e7cade0bf298324d6b942103f948a83c20b2e7228ca9f3b71a96c2f079d9c32164cd07f08fbfdb483427d2ee52aeffffffff01180fe200000000001976a914ccee7ce8e8b91ec0bc23e1cfb6324461429e6b0488ac00000000';
+
+var unsupportedTxObj = '{"version":1,"inputs":[{"prevTxId":"a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458","outputIndex":0,"sequenceNumber":4294967295,"script":"OP_1","output":{"satoshis":1020000,"script":"OP_1 OP_ADD OP_2 OP_EQUAL"}}],"outputs":[{"satoshis":1010000,"script":"OP_DUP OP_HASH160 20 0x7821c0a3768aa9d1a37e16cf76002aef5373f1a8 OP_EQUALVERIFY OP_CHECKSIG"}],"nLockTime":0}';
