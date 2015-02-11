@@ -36,6 +36,49 @@ var transaction = new Transaction().fee(5430); // Minimum non-dust amount
 var transaction = new Transaction().fee(1e8);  // Generous fee of 1 BTC
 ```
 
+## Multisig Transactions
+
+To send a transaction to a multisig address, the API is the same as in the above example. To spend outputs that require multiple signatures, the process needs extra information: the public keys of the signers that can unlock that output.
+
+```javascript
+var multiSigTx = new Transaction()
+    .from(utxo, publicKeys, threshold)
+    .change(address)
+    .sign(myKeys);
+
+var serialized = multiSigTx.toObject();
+```
+
+This can be serialized and sent to another party, to complete with the needed signatures:
+
+```javascript
+var multiSigTx = new Transaction(serialized)
+    .sign(anotherSetOfKeys);
+
+assert(multiSigTx.isFullySigned());
+``` 
+
+Also, you can just send over the signature for your private key:
+
+```javascript
+var multiSigTx = new Transaction()
+    .from(utxo, publicKeys, threshold)
+    .change(address);
+
+var signature = multiSigTx.getSignatures(privateKey)[0];
+console.log(signature.toJSON());
+console.log(signature.toObject());
+console.log(signature.signature.toString()); // Outputs a DER signature
+console.log(signature.sigtype);
+```
+
+Transfer that over the wire, and on the other side, apply it to a transaction:
+
+```javascript
+assert(transaction.isValidSignature(receivedSig));
+transaction.applySignature(receivedSig);
+```
+
 ## Adding inputs
 
 Transaction inputs are instances of either [Input](https://github.com/bitpay/bitcore/tree/master/lib/transaction/input) or its subclasses. `Input` has some abstract methods, as there is no actual concept of a "signed input" in the bitcoin scripting system (just valid signatures for <tt>OP_CHECKSIG</tt> and similar opcodes). They are stored in the `input` property of `Transaction` instances.
@@ -117,28 +160,6 @@ For this reason, some methods in the Transaction class are provided:
 * `getFee()`: returns the estimated fee amount to be paid, based on the size of the transaction, but disregarding the priority of the outputs.
 
 Internally, a `_changeIndex` property stores the index of the change output (so it can get updated when a new input or output is added).
-
-## Multisig Transactions
-
-To send a transaction to a multisig address, the API is the same as in the above example. To spend outputs that require multiple signatures, the process needs extra information: the public keys of the signers that can unlock that output.
-
-```javascript
-var multiSigTx = new Transaction()
-    .from(utxo, publicKeys, threshold)
-    .change(address)
-    .sign(myKeys);
-
-var serialized = multiSigTx.toObject();
-```
-
-This can be serialized and sent to another party, to complete with the needed signatures:
-
-```javascript
-var multiSigTx = new Transaction(serialized)
-    .sign(anotherSetOfKeys);
-
-assert(multiSigTx.isFullySigned());
-``` 
 
 ## Time-Locking transaction
 All bitcoin transactions contain a locktime field.
