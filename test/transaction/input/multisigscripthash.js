@@ -11,6 +11,7 @@ var PrivateKey = bitcore.PrivateKey;
 var Address = bitcore.Address;
 var Script = bitcore.Script;
 var Signature = bitcore.crypto.Signature;
+var MultiSigScriptHashInput = bitcore.Transaction.Input.MultiSigScriptHash;
 
 describe('MultiSigScriptHashInput', function() {
 
@@ -92,5 +93,22 @@ describe('MultiSigScriptHashInput', function() {
     var input = transaction.inputs[0];
     var sigs = input.getSignatures(transaction, privateKey1, 0);
     sigs[0].sigtype.should.equal(Signature.SIGHASH_ALL);
+  });
+  it('roundtrips to/from object', function() {
+    var transaction = new Transaction()
+      .from(output, [public1, public2, public3], 2)
+      .to(address, 1000000)
+      .sign(privateKey1);
+    var input = transaction.inputs[0];
+    var roundtrip = new MultiSigScriptHashInput(input.toObject());
+    roundtrip.toObject().should.deep.equal(input.toObject());
+  });
+  it('roundtrips to/from object when not signed', function() {
+    var transaction = new Transaction()
+      .from(output, [public1, public2, public3], 2)
+      .to(address, 1000000);
+    var input = transaction.inputs[0];
+    var roundtrip = new MultiSigScriptHashInput(input.toObject());
+    roundtrip.toObject().should.deep.equal(input.toObject());
   });
 });
