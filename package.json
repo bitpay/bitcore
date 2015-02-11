@@ -1,6 +1,6 @@
 {
   "name": "bitcore-payment-protocol",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "description": "Payment Protocol (BIP70 and related) support for bitcore",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
