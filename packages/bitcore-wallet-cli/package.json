@@ -20,6 +20,7 @@
     "async": "^0.9.0",
     "bitcore": "*",
     "bitcore-explorers": "^0.9.1",
+    "commander": "^2.6.0",
     "express": "^4.10.0",
     "inherits": "^2.0.1",
     "leveldown": "^0.10.0",
@@ -27,7 +28,8 @@
     "lodash": "^2.4.1",
     "npmlog": "^0.1.1",
     "preconditions": "^1.0.7",
-    "uuid":"*"
+    "request": "^2.53.0",
+    "uuid": "*"
   },
   "devDependencies": {
     "chai": "^1.9.1",
