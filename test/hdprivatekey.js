@@ -14,7 +14,6 @@ var Base58Check = bitcore.encoding.Base58Check;
 
 var xprivkey = 'xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi';
 var json = '{"network":"livenet","depth":0,"fingerPrint":876747070,"parentFingerPrint":0,"childIndex":0,"chainCode":"873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d508","privateKey":"e8f32e723decf4051aefac8e2c93c9c5b214313817cdb01a1494b917c8436b35","checksum":-411132559,"xprivkey":"xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi"}';
-
 describe('HDPrivate key interface', function() {
   /* jshint maxstatements: 50 */
   var expectFail = function(func, error) {
@@ -113,36 +112,33 @@ describe('HDPrivate key interface', function() {
     derivedByNumber.xprivkey.should.equal(derivedByArgument.xprivkey);
   });
 
-  it('returns itself with "m" parameter', function() {
+  it('returns itself with \'m\' parameter', function() {
     var privateKey = new HDPrivateKey(xprivkey);
     privateKey.should.equal(privateKey.derive('m'));
   });
 
   it('returns InvalidArgument if invalid data is given to getSerializedError', function() {
     expect(
-      HDPrivateKey.getSerializedError(1) instanceof
-      hdErrors.UnrecognizedArgument
+      HDPrivateKey.getSerializedError(1) instanceof hdErrors.UnrecognizedArgument
     ).to.equal(true);
   });
 
   it('returns InvalidLength if data of invalid length is given to getSerializedError', function() {
+    var b58s = Base58Check.encode(new buffer.Buffer('onestring'));
     expect(
-      HDPrivateKey.getSerializedError(Base58Check.encode(new buffer.Buffer('onestring'))) instanceof
-      hdErrors.InvalidLength
+      HDPrivateKey.getSerializedError(b58s) instanceof hdErrors.InvalidLength
     ).to.equal(true);
   });
 
   it('returns InvalidNetworkArgument if an invalid network is provided', function() {
     expect(
-      HDPrivateKey.getSerializedError(xprivkey, 'invalidNetwork') instanceof
-      errors.InvalidNetworkArgument
+      HDPrivateKey.getSerializedError(xprivkey, 'invalidNetwork') instanceof errors.InvalidNetworkArgument
     ).to.equal(true);
   });
 
   it('recognizes that the wrong network was asked for', function() {
     expect(
-      HDPrivateKey.getSerializedError(xprivkey, 'testnet') instanceof
-      errors.InvalidNetwork
+      HDPrivateKey.getSerializedError(xprivkey, 'testnet') instanceof errors.InvalidNetwork
     ).to.equal(true);
   });
 
@@ -200,7 +196,7 @@ describe('HDPrivate key interface', function() {
     it('validates correct paths', function() {
       var valid;
 
-      valid = HDPrivateKey.isValidPath("m/0'/1/2'");
+      valid = HDPrivateKey.isValidPath('m/0\'/1/2\'');
       valid.should.equal(true);
 
       valid = HDPrivateKey.isValidPath('m');
@@ -219,47 +215,36 @@ describe('HDPrivate key interface', function() {
       valid.should.equal(true);
     });
 
-    it('rejects illegal paths', function() {
-      var valid;
 
-      valid = HDPrivateKey.isValidPath('m/-1/12');
-      valid.should.equal(false);
+    var invalid = [
+      'm/-1/12',
+      'bad path',
+      'K',
+      'm/',
+      'm/12asd',
+      'm/1/2//3'
+    ];
 
-      valid = HDPrivateKey.isValidPath('bad path');
-      valid.should.equal(false);
-
-      valid = HDPrivateKey.isValidPath('K');
-      valid.should.equal(false);
-
-      valid = HDPrivateKey.isValidPath('m/');
-      valid.should.equal(false);
-
-      valid = HDPrivateKey.isValidPath(HDPrivateKey.MaxHardened);
-      valid.should.equal(false);
+    invalid.forEach(function(datum) {
+      it('rejects illegal path ' + datum, function() {
+        HDPrivateKey.isValidPath(datum).should.equal(false);
+        expect(HDPrivateKey._getDerivationIndexes(datum)).to.equal(null);
+      });
     });
 
     it('generates deriving indexes correctly', function() {
       var indexes;
 
       indexes = HDPrivateKey._getDerivationIndexes('m/-1/12');
-      indexes.should.eql([-1, 12]);
+      expect(indexes).to.equal(null);
 
-      indexes = HDPrivateKey._getDerivationIndexes("m/0/12/12'");
+      indexes = HDPrivateKey._getDerivationIndexes('m/0/12/12\'');
       indexes.should.eql([0, 12, HDPrivateKey.Hardened + 12]);
 
-      indexes = HDPrivateKey._getDerivationIndexes("m/0/12/12'");
+      indexes = HDPrivateKey._getDerivationIndexes('m/0/12/12\'');
       indexes.should.eql([0, 12, HDPrivateKey.Hardened + 12]);
     });
 
-    it('rejects invalid derivation path', function() {
-      var indexes;
-
-      indexes = HDPrivateKey._getDerivationIndexes("m/");
-      expect(indexes).to.be.null;
-
-      indexes = HDPrivateKey._getDerivationIndexes("bad path");
-      expect(indexes).to.be.null;
-    });
   });
 
   describe('conversion to/from buffer', function() {
@@ -275,15 +260,16 @@ describe('HDPrivate key interface', function() {
 
   describe('conversion to plain object/json', function() {
     var plainObject = {
-      'network':'livenet',
-      'depth':0,
-      'fingerPrint':876747070,
-      'parentFingerPrint':0,
-      'childIndex':0,
-      'chainCode':'873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d508',
-      'privateKey':'e8f32e723decf4051aefac8e2c93c9c5b214313817cdb01a1494b917c8436b35',
-      'checksum':-411132559,
-      'xprivkey':'xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi'
+      'network': 'livenet',
+      'depth': 0,
+      'fingerPrint': 876747070,
+      'parentFingerPrint': 0,
+      'childIndex': 0,
+      'chainCode': '873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d508',
+      'privateKey': 'e8f32e723decf4051aefac8e2c93c9c5b214313817cdb01a1494b917c8436b35',
+      'checksum': -411132559,
+      'xprivkey': 'xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvN' +
+        'KmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi'
     };
     it('toObject leaves no Buffer instances', function() {
       var privKey = new HDPrivateKey(xprivkey);
@@ -307,4 +293,3 @@ describe('HDPrivate key interface', function() {
     });
   });
 });
-
