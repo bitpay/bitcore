@@ -1208,6 +1208,21 @@ describe('Copay server', function() {
       });
     });
 
+    it('should pull the last 5 notifications, using now', function(done) {
+      server.getNotifications({
+        limit: 5,
+        reverse: true,
+        maxTs: Date.now()/1000,
+        minTs: Date.now()/1000-1000,
+      }, function(err, notifications) {
+        should.not.exist(err);
+        var types = _.pluck(notifications, 'type');
+        types.should.deep.equal(['NewTxProposal', 'NewTxProposal', 'NewTxProposal', 'NewAddress', 'NewAddress']);
+        done();
+      });
+    });
+
+
 
 
     it('should pull the first 5 notifications after wallet creation', function(done) {
