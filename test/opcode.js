@@ -143,5 +143,10 @@ describe('Opcode', function() {
 
   });
 
+  describe('#inspect', function() {
+    it('should output opcode by name, hex, and decimal', function() {
+      Opcode.fromString('OP_NOP').inspect().should.equal('<Opcode: OP_NOP, hex: 61, decimal: 97>');
+    });
+  });
 
 });
