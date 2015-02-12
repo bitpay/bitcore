@@ -1202,6 +1202,7 @@ describe('Copay server', function() {
         server.removeWallet({}, function(err) {
           i = 0;
           server.storage._dump(function() {
+            server.storage._dump();
             i.should.equal(0);
             done();
           }, count);
