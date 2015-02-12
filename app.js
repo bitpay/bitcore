@@ -94,7 +94,7 @@ router.post('/v1/wallets/', function(req, res) {
   });
 });
 
-router.post('/v1/wallets/join/', function(req, res) {
+router.post('/v1/wallets/:id/copayers/', function(req, res) {
   req.body.walletId = req.params['id'];
   var server = CopayServer.getInstance();
   server.joinWallet(req.body, function(err) {
