@@ -177,68 +177,70 @@ var db, storage;
 
 
 describe('Copay server', function() {
-    beforeEach(function() {
-      db = levelup(memdown, {
-        valueEncoding: 'json'
-      });
-      storage = new Storage({
-        db: db
-      });
-      CopayServer.initialize({
-        storage: storage
-      });
+  beforeEach(function() {
+    db = levelup(memdown, {
+      valueEncoding: 'json'
     });
+    storage = new Storage({
+      db: db
+    });
+    CopayServer.initialize({
+      storage: storage
+    });
+  });
 
-    describe('#getInstanceWithAuth', function() {
-        beforeEach(function() {});
+  describe('#getInstanceWithAuth', function() {
+    beforeEach(function() {});
 
-        it('should get server instance for existing copayer', function(done) {
-            helpers.createAndJoinWallet(1, 2, function(s, wallet, copayers, copayerIds) {
-                var xpriv = copayers[0].xPrivKey;
-                var priv = Bitcore.HDPrivateKey
-                  .fromString(xpriv)
-                  .derive('m/1/0')
-                  .privateKey
-                  .toString();
+    it('should get server instance for existing copayer', function(done) {
+      helpers.createAndJoinWallet(1, 2, function(s, wallet, copayers, copayerIds) {
+        var xpriv = copayers[0].xPrivKey;
+        var priv = Bitcore.HDPrivateKey
+          .fromString(xpriv)
+          .derive('m/1/0')
+          .privateKey
+          .toString();
 
-              var message = 'hola';
-              var sig = SignUtils.sign(message, priv);
+        var message = 'hola';
+        var sig = SignUtils.sign(message, priv);
 
-              CopayServer.getInstanceWithAuth({
-                copayerId: copayerIds[0],
-                message: message,
-                signature: sig,
-              }, function(err, server) {
-                should.not.exist(err);
-                done();
-              });
-            });
-        });
-
-      it('should fail when requesting for non-existent copayer', function(done) {
         CopayServer.getInstanceWithAuth({
-          copayerId: 'ads',
-          message: 'dummy',
-          signature: 'dummy',
+          copayerId: copayerIds[0],
+          message: message,
+          signature: sig,
         }, function(err, server) {
-          err.should.contain('Copayer not found');
+          should.not.exist(err);
           done();
         });
       });
+    });
 
-      it('should fail when message signature cannot be verified', function(done) {
-        helpers.createAndJoinWallet(1, 2, function(s, wallet, copayers, copayerIds) {
-          CopayServer.getInstanceWithAuth({
-            copayerId: copayerIds[0],
-            message: 'dummy',
-            signature: 'dummy',
-          }, function(err, server) {
-            err.should.contain('Invalid signature');
-            done();
-          });
+    it('should fail when requesting for non-existent copayer', function(done) {
+      CopayServer.getInstanceWithAuth({
+        copayerId: 'ads',
+        message: TestData.message.text,
+        signature: TestData.message.signature,
+      }, function(err, server) {
+        err.code.should.equal('NOTAUTHORIZED');
+        err.message.should.contain('Copayer not found');
+        done();
+      });
+    });
+
+    it('should fail when message signature cannot be verified', function(done) {
+      helpers.createAndJoinWallet(1, 2, function(s, wallet, copayers, copayerIds) {
+        CopayServer.getInstanceWithAuth({
+          copayerId: copayerIds[0],
+          message: 'dummy',
+          signature: 'dummy',
+        }, function(err, server) {
+          err.code.should.equal('NOTAUTHORIZED');
+          err.message.should.contain('Invalid signature');
+          done();
         });
       });
     });
+  });
 
   describe('#createWallet', function() {
     var server;
@@ -1253,8 +1255,8 @@ describe('Copay server', function() {
       server.getNotifications({
         limit: 5,
         reverse: true,
-        maxTs: Date.now()/1000,
-        minTs: Date.now()/1000-1000,
+        maxTs: Date.now() / 1000,
+        minTs: Date.now() / 1000 - 1000,
       }, function(err, notifications) {
         should.not.exist(err);
         var types = _.pluck(notifications, 'type');
