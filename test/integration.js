@@ -1264,11 +1264,12 @@ describe('Copay server', function() {
     });
 
 
-    it('should notify sign, acceptance, and broadcast', function(done) {
+    it('should notify sign, acceptance, and broadcast, and emit', function(done) {
       server.getPendingTxs({}, function(err, txs) {
         var tx = txs[2];
         var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
         helpers.stubBlockExplorer(server, [], '1122334455');
+        sinon.spy(server, 'emit');
         server.signTx({
           txProposalId: tx.id,
           signatures: signatures,
@@ -1279,13 +1280,17 @@ describe('Copay server', function() {
           }, function(err, notifications) {
             should.not.exist(err);
             var types = _.pluck(notifications, 'type');
-            types.should.deep.equal(['NewOutgoingTx','TxProposalFinallyAccepted', 'TxProposalAcceptedBy']);
+            types.should.deep.equal(['NewOutgoingTx', 'TxProposalFinallyAccepted', 'TxProposalAcceptedBy']);
+            // Check also events
+            server.emit.getCall(0).args[0].type.should.equal('TxProposalAcceptedBy');
+            server.emit.getCall(1).args[0].type.should.equal('TxProposalFinallyAccepted');;
+            server.emit.getCall(2).args[0].type.should.equal('NewOutgoingTx');
+
             done();
           });
         });
       });
     });
-
   });
 
   describe('#removeWallet', function() {
