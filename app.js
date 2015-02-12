@@ -75,7 +75,7 @@ function getServerWithAuth(req, res, cb) {
   var credentials = getCredentials(req);
   var auth = {
     copayerId: credentials.copayerId,
-    message: req.url + '|' + JSON.stringify(req.body),
+    message: req.url + req.body ? '|' + JSON.stringify(req.body) : '',
     signature: credentials.signature,
   };
 
@@ -87,20 +87,20 @@ function getServerWithAuth(req, res, cb) {
 
 router.post('/v1/wallets/', function(req, res) {
   var server = CopayServer.getInstance();
-  server.createWallet(req.body, function(err, wallet) {
+  server.createWallet(req.body, function(err, walletId) {
     if (err) returnError(err, res);
 
-    res.json(wallet);
+    res.json(walletId);
   });
 });
 
 router.post('/v1/wallets/:id/copayers/', function(req, res) {
   req.body.walletId = req.params['id'];
   var server = CopayServer.getInstance();
-  server.joinWallet(req.body, function(err) {
+  server.joinWallet(req.body, function(err, copayerId) {
     if (err) returnError(err, res);
 
-    res.end();
+    res.json(copayerId);
   });
 });
 
