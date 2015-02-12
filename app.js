@@ -3,14 +3,15 @@
 var _ = require('lodash');
 var async = require('async');
 var log = require('npmlog');
-var CopayServer = require('./lib/server');
 var express = require('express');
 var querystring = require('querystring');
+var bodyParser = require('body-parser')
+
+var CopayServer = require('./lib/server');
 
 log.debug = log.verbose;
 log.level = 'debug';
 
-var POST_LIMIT = 1024 * 100 /* Max POST 100 kb */ ;
 
 CopayServer.initialize();
 
@@ -31,6 +32,12 @@ var allowCORS = function(req, res, next) {
   next();
 }
 app.use(allowCORS);
+
+var POST_LIMIT = 1024 * 100 /* Max POST 100 kb */ ;
+
+app.use(bodyParser.json({
+  limit: POST_LIMIT
+}));
 
 var port = process.env.COPAY_PORT || 3001;
 var router = express.Router();
@@ -60,82 +67,45 @@ function getCredentials(req) {
 
   return {
     copayerId: identity,
+    signature: req.header('x-signature'),
   };
 };
 
 function getServerWithAuth(req, res, cb) {
   var credentials = getCredentials(req);
-
-  CopayServer.getInstanceWithAuth({
+  var auth = {
     copayerId: credentials.copayerId,
-    message: 'hello world!',
-    signature: '3045022100addd20e5413865d65d561ad2979f2289a40d52594b1f804840babd9a63e4ebbf02204b86285e1fcab02df772e7a1325fc4b511ecad79a8f80a2bd1ad8bfa858ac3d4',
-  }, function(err, server) {
+    message: req.url + '|' + JSON.stringify(req.body),
+    signature: credentials.signature,
+  };
+
+  CopayServer.getInstanceWithAuth(auth, function(err, server) {
     if (err) return returnError(err, res);
     return cb(server);
   });
 };
 
-function authenticate() {
-  return true;
-};
-
-function parsePost(req, res, cb) {
-  var queryData = '';
-  req.on('data', function(data) {
-    queryData += data;
-    if (queryData.length > POST_LIMIT) {
-      queryData = '';
-      res.writeHead(413, {
-        'Content-Type': 'text/plain'
-      });
-      res.end();
-      req.connection.destroy();
-    }
-  }).on('end', function() {
-    try {
-      var params = JSON.parse(queryData);
-      cb(params);
-    } catch (ex) {
-      returnError({
-        code: 400,
-        message: 'Unable to parse request'
-      }, res);
-    }
-  });
-};
-
 router.post('/v1/wallets/', function(req, res) {
-  parsePost(req, res, function(params) {
-    var server = CopayServer.getInstance();
-    server.createWallet(params, function(err, wallet) {
-      if (err) returnError(err, res);
+  var server = CopayServer.getInstance();
+  server.createWallet(req.body, function(err, wallet) {
+    if (err) returnError(err, res);
 
-      res.json(wallet);
-    });
+    res.json(wallet);
   });
 });
 
-router.post('/v1/wallets/:id/join/', function(req, res) {
-  parsePost(req, res, function(params) {
-    params.walletId = req.params['id'];
-    var server = CopayServer.getInstance();
-    server.joinWallet(params, function(err) {
-      if (err) returnError(err, res);
+router.post('/v1/wallets/join/', function(req, res) {
+  req.body.walletId = req.params['id'];
+  var server = CopayServer.getInstance();
+  server.joinWallet(req.body, function(err) {
+    if (err) returnError(err, res);
 
-      res.end();
-    });
+    res.end();
   });
 });
 
 router.get('/v1/wallets/', function(req, res) {
-  var credentials = getCredentials(req);
-
-  CopayServer.getInstanceWithAuth(getCredentials(req) {
-    copayerId: credentials.copayerId,
-    message: 'hello world!',
-    signature: '3045022100addd20e5413865d65d561ad2979f2289a40d52594b1f804840babd9a63e4ebbf02204b86285e1fcab02df772e7a1325fc4b511ecad79a8f80a2bd1ad8bfa858ac3d4',
-  }, function(err, server) {
+  getServerWithAuth(req, res, function(server) {
     if (err) return returnError(err, res);
     server.getWallet({}, function(err, wallet) {
       if (err) returnError(err, res);
@@ -145,12 +115,10 @@ router.get('/v1/wallets/', function(req, res) {
 });
 
 router.post('/v1/addresses/', function(req, res) {
-  parsePost(req, res, function(params) {
-    getServerWithAuth(req, res, function(server) {
-      server.createAddress(params, function(err, address) {
-        if (err) returnError(err, res);
-        res.json(address);
-      });
+  getServerWithAuth(req, res, function(server) {
+    server.createAddress(req.body, function(err, address) {
+      if (err) returnError(err, res);
+      res.json(address);
     });
   });
 });
