@@ -1168,6 +1168,126 @@ describe('Copay server', function() {
   });
 
 
+
+  describe('Notifications', function() {
+    var server, wallet, copayerPriv;
+
+    beforeEach(function(done) {
+      if (server) return done();
+      console.log('\tCreating TXS...');
+      helpers.createAndJoinWallet(1, 1, function(s, w, c) {
+        server = s;
+        wallet = w;
+        copayerPriv = c;
+        server.createAddress({}, function(err, address) {
+          helpers.createUtxos(server, wallet, helpers.toSatoshi(_.range(4)), function(utxos) {
+            helpers.stubBlockExplorer(server, utxos);
+            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.01, null, copayerPriv[0].privKey);
+            async.eachSeries(_.range(3), function(i, next) {
+              server.createTx(txOpts, function(err, tx) {
+                should.not.exist(err);
+                next();
+              });
+            }, function(err) {
+              return done(err);
+            });
+          });
+        });
+      });
+    });
+
+    it('should pull the last 5 notifications after 3 TXs', function(done) {
+      server.getNotifications({
+        limit: 5,
+        reverse: true,
+      }, function(err, notifications) {
+        should.not.exist(err);
+        var types = _.pluck(notifications, 'type');
+        types.should.deep.equal(['NewTxProposal', 'NewTxProposal', 'NewTxProposal', 'NewAddress', 'NewAddress']);
+        done();
+      });
+    });
+
+
+
+    it('should pull the first 5 notifications after wallet creation', function(done) {
+      server.getNotifications({
+        minTs: 0,
+        limit: 5
+      }, function(err, notifications) {
+        should.not.exist(err);
+        var types = _.pluck(notifications, 'type');
+        types.should.deep.equal(['NewCopayer', 'NewAddress', 'NewAddress', 'NewAddress', 'NewAddress']);
+        done();
+      });
+    });
+
+    it('should notify sign and acceptance', function(done) {
+      server.getPendingTxs({}, function(err, txs) {
+        var tx = txs[0];
+        var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+        server.signTx({
+          txProposalId: tx.id,
+          signatures: signatures,
+        }, function(err) {
+          server.getNotifications({
+            limit: 3,
+            reverse: true,
+          }, function(err, notifications) {
+            should.not.exist(err);
+            var types = _.pluck(notifications, 'type');
+            types.should.deep.equal(['TxProposalFinallyAccepted', 'TxProposalAcceptedBy', 'NewTxProposal']);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should notify rejection', function(done) {
+      server.getPendingTxs({}, function(err, txs) {
+        var tx = txs[1];
+        server.rejectTx({
+          txProposalId: tx.id,
+        }, function(err) {
+          should.not.exist(err);
+          server.getNotifications({
+            limit: 2,
+            reverse: true,
+          }, function(err, notifications) {
+            should.not.exist(err);
+            var types = _.pluck(notifications, 'type');
+            types.should.deep.equal(['TxProposalFinallyRejected', 'TxProposalRejectedBy']);
+            done();
+          });
+        });
+      });
+    });
+
+
+    it('should notify sign, acceptance, and broadcast', function(done) {
+      server.getPendingTxs({}, function(err, txs) {
+        var tx = txs[2];
+        var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+        helpers.stubBlockExplorer(server, [], '1122334455');
+        server.signTx({
+          txProposalId: tx.id,
+          signatures: signatures,
+        }, function(err) {
+          server.getNotifications({
+            limit: 3,
+            reverse: true,
+          }, function(err, notifications) {
+            should.not.exist(err);
+            var types = _.pluck(notifications, 'type');
+            types.should.deep.equal(['NewOutgoingTx','TxProposalFinallyAccepted', 'TxProposalAcceptedBy']);
+            done();
+          });
+        });
+      });
+    });
+
+  });
+
   describe('#removeWallet', function() {
     var server, wallet, clock;
 
