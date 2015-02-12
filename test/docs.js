@@ -1,18 +1,17 @@
 'use strict';
 
-/* jshint maxstatements: 30 */
-
 var chai = require('chai');
 var should = chai.should();
-var expect = chai.expect;
 
 var bitcore = require('..');
+var fs = require('fs');
 
-describe('Address', function() {
+describe('Documentation', function() {
 
-  it('should throw an error because of bad network param', function() {
-    (function(){
-      return new Address(PKHLivenet[0], 'main', 'pubkeyhash');
-    }).should.throw('Second argument must be "livenet" or "testnet".');
+  it('major and minor versions should match', function() {
+    var versionRE = /v[0-9]+\.[0-9]+/;
+    var docIndex = fs.readFileSync('./docs/index.md', 'ascii');
+    var docVersion = docIndex.match(versionRE)[0];
+    bitcore.version.indexOf(docVersion).should.equal(0);
   });
 });
