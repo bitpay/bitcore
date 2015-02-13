@@ -7,6 +7,7 @@ var common = require('./common');
 program
   .version('0.0.1')
   .option('-c,--config [file]', 'Wallet config filename')
+  .option('-v,--verbose', 'be verbose')
   .parse(process.argv);
 
 var args = program.args;
@@ -14,8 +15,10 @@ var cli = new CliLib({
   filename: program.config
 });
 
-cli.status(function(err, xx) {
+cli.status(function(err, x) {
   common.die(err);
-  console.log(' * Status:', xx);
-});
+  console.log('* Wallet %s [%s]: %d-%d %s ', x.name, x.isTestnet ? 'testnet' : 'livenet', x.m, x.n, x.status);
 
+  if (program.verbose)
+    console.log('* Raw Server Response:\n', x); //TODO
+});
