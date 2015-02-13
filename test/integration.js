@@ -1065,7 +1065,15 @@ describe('Copay server', function() {
             should.not.exist(err);
             txp.status.should.equal('broadcasted');
             txp.txid.should.equal('1122334455');
-            done();
+            server.getTx({
+              id: txp.id
+            }, function(err, txp) {
+              var actions = _.values(txp.actions);
+              actions.length.should.equal(1);
+              actions[0].copayerId.should.equal(wallet.copayers[0].id);
+              actions[0].copayerName.should.equal(wallet.copayers[0].name);
+              done();
+            });
           });
         });
       });
