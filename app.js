@@ -39,6 +39,9 @@ app.use(bodyParser.json({
   limit: POST_LIMIT
 }));
 
+app.use(require('morgan')('dev'));
+
+
 var port = process.env.COPAY_PORT || 3001;
 var router = express.Router();
 
@@ -59,7 +62,6 @@ function returnError(err, res, req) {
     }
     var m = message || err.toString();
 
-    console.log('[app.js.60]'); //TODO
     log.error('Error: ' + req.url + ' :' + code + ':' + m);
     res.status(code || 500).json({
       error: m,
