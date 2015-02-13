@@ -181,6 +181,26 @@ router.get('/v1/balance/', function(req, res) {
   });
 });
 
+router.post('/v1/txproposals/:id/signatures', function(req, res) {
+  req.body.txProposalId = req.params['id'];
+  getServerWithAuth(req, res, function(server) {
+    server.signTx(req.body, function(err, txp) {
+      if (err) return returnError(err, res, req);
+      res.end();
+    });
+  });
+});
+
+router.post('/v1/txproposals/:id/rejections', function(req, res) {
+  req.body.txProposalId = req.params['id'];
+  getServerWithAuth(req, res, function(server) {
+    server.signTx(req.body, function(err, txp) {
+      if (err) return returnError(err, res, req);
+      res.end();
+    });
+  });
+});
+
 // TODO: DEBUG only!
 router.get('/v1/dump', function(req, res) {
   var server = CopayServer.getInstance();
