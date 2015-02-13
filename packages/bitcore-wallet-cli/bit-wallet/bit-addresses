@@ -7,8 +7,8 @@ var common = require('./common');
 
 program
   .version('0.0.1')
-  .option('-c,--config [file]', 'Wallet config filename')
-  .option('-v,--verbose', 'be verbose')
+  .option('-c, --config [file]', 'Wallet config filename')
+  .option('-v, --verbose', 'be verbose')
   .parse(process.argv);
 
 var args = program.args;
