@@ -57,8 +57,8 @@ helpers.createAndJoinWallet = function(m, n, cb) {
         xPubKeySignature: TestData.copayers[i].xPubKeySignature,
       };
 
-      server.joinWallet(copayerOpts, function(err, copayerId) {
-        copayerIds.push(copayerId);
+      server.joinWallet(copayerOpts, function(err, result) {
+        copayerIds.push(result.copayerId);
         return cb(err);
       });
     }, function(err) {
@@ -345,8 +345,9 @@ describe('Copay server', function() {
         xPubKey: TestData.copayers[0].xPubKey,
         xPubKeySignature: TestData.copayers[0].xPubKeySignature,
       };
-      server.joinWallet(copayerOpts, function(err, copayerId) {
+      server.joinWallet(copayerOpts, function(err, result) {
         should.not.exist(err);
+        var copayerId = result.copayerId;
         helpers.getAuthServer(copayerId, function(server) {
           server.getWallet({}, function(err, wallet) {
             wallet.id.should.equal(walletId);
@@ -367,8 +368,8 @@ describe('Copay server', function() {
         xPubKey: TestData.copayers[0].xPubKey,
         xPubKeySignature: TestData.copayers[0].xPubKeySignature,
       };
-      server.joinWallet(copayerOpts, function(err, copayerId) {
-        should.not.exist(copayerId);
+      server.joinWallet(copayerOpts, function(err, result) {
+        should.not.exist(result);
         err.should.exist;
         err.message.should.contain('name');
         done();
@@ -548,9 +549,9 @@ describe('Copay server', function() {
           xPubKey: TestData.copayers[0].xPubKey,
           xPubKeySignature: TestData.copayers[0].xPubKeySignature,
         };
-        server.joinWallet(copayerOpts, function(err, copayerId) {
+        server.joinWallet(copayerOpts, function(err, result) {
           should.not.exist(err);
-          helpers.getAuthServer(copayerId, function(server) {
+          helpers.getAuthServer(result.copayerId, function(server) {
             server.createAddress({}, function(err, address) {
               should.not.exist(address);
               err.should.exist;
@@ -652,9 +653,9 @@ describe('Copay server', function() {
           xPubKey: TestData.copayers[0].xPubKey,
           xPubKeySignature: TestData.copayers[0].xPubKeySignature,
         };
-        server.joinWallet(copayerOpts, function(err, copayerId) {
+        server.joinWallet(copayerOpts, function(err, result) {
           should.not.exist(err);
-          helpers.getAuthServer(copayerId, function(server, wallet) {
+          helpers.getAuthServer(result.copayerId, function(server, wallet) {
             var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, null, copayerPriv[0].privKey);
             server.createTx(txOpts, function(err, tx) {
               should.not.exist(tx);

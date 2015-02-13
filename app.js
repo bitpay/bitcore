@@ -88,19 +88,21 @@ function getServerWithAuth(req, res, cb) {
 router.post('/v1/wallets/', function(req, res) {
   var server = CopayServer.getInstance();
   server.createWallet(req.body, function(err, walletId) {
-    if (err) returnError(err, res);
+    if (err) return returnError(err, res);
 
-    res.json(walletId);
+    res.json({
+      walletId: walletId,
+    });
   });
 });
 
 router.post('/v1/wallets/:id/copayers/', function(req, res) {
   req.body.walletId = req.params['id'];
   var server = CopayServer.getInstance();
-  server.joinWallet(req.body, function(err, copayerId) {
-    if (err) returnError(err, res);
+  server.joinWallet(req.body, function(err, result) {
+    if (err) return returnError(err, res);
 
-    res.json(copayerId);
+    res.json(result);
   });
 });
 
@@ -117,7 +119,7 @@ router.get('/v1/wallets/', function(req, res) {
 router.post('/v1/addresses/', function(req, res) {
   getServerWithAuth(req, res, function(server) {
     server.createAddress(req.body, function(err, address) {
-      if (err) returnError(err, res);
+      if (err) return returnError(err, res);
       res.json(address);
     });
   });
@@ -126,7 +128,7 @@ router.post('/v1/addresses/', function(req, res) {
 router.get('/v1/addresses/', function(req, res) {
   getServerWithAuth(req, res, function(server) {
     server.getAddresses({}, function(err, addresses) {
-      if (err) returnError(err, res);
+      if (err) return returnError(err, res);
       res.json(addresses);
     });
   });
@@ -135,7 +137,7 @@ router.get('/v1/addresses/', function(req, res) {
 router.get('/v1/balance/', function(req, res) {
   getServerWithAuth(req, res, function(server) {
     server.getBalance({}, function(err, balance) {
-      if (err) returnError(err, res);
+      if (err) return returnError(err, res);
       res.json(balance);
     });
   });

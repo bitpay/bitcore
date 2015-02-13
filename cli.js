@@ -3,17 +3,23 @@ var async = require('async');
 var log = require('npmlog');
 var fs = require('fs');
 
-var clilib = require('./lib/clilib');
+var CliLib = require('./lib/clilib');
 
-fs.unlinkSync('.bit');
+try {
+  fs.unlinkSync('copay.dat');
+} catch (e) {}
 
-clilib.createWallet('my wallet', 'me', 1, 1, function(err, secret) {
+var cli = new CliLib({
+  filename: 'copay.dat'
+});
+
+cli.createWallet('my wallet', 'me', 1, 1, 'testnet', function(err, secret) {
   if (err) {
     console.log(err);
     process.exit();
   }
 
-  clilib.status(function(err, status) {
+  cli.status(function(err, status) {
     if (err) {
       console.log(err);
       process.exit();
