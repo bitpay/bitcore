@@ -59,7 +59,7 @@ function returnError(err, res, req) {
     }
     var m = message || err.toString();
 
-console.log('[app.js.60]'); //TODO
+    console.log('[app.js.60]'); //TODO
     log.error('Error: ' + req.url + ' :' + code + ':' + m);
     res.status(code || 500).json({
       error: m,
@@ -113,9 +113,33 @@ router.post('/v1/wallets/:id/copayers/', function(req, res) {
 
 router.get('/v1/wallets/', function(req, res) {
   getServerWithAuth(req, res, function(server) {
-    server.getWallet({}, function(err, wallet) {
-      if (err) returnError(err, res, req);
-      res.json(wallet);
+    var result = {};
+    async.parallel([
+
+      function(next) {
+        server.getWallet({}, function(err, wallet) {
+          if (err) return next(err);
+          result.wallet = wallet;
+          next();
+        });
+      },
+      function(next) {
+        server.getBalance({}, function(err, balance) {
+          if (err) return next(err);
+          result.balance = balance;
+          next();
+        });
+      },
+      function(next) {
+        server.getPendingTxs({}, function(err, pendingTxps) {
+          if (err) return next(err);
+          result.pendingTxps = pendingTxps;
+          next();
+        });
+      },
+    ], function(err) {
+      if (err) return returnError(err, res, req);
+      res.json(result);
     });
   });
 });
@@ -151,7 +175,7 @@ router.get('/v1/addresses/', function(req, res) {
 router.get('/v1/balance/', function(req, res) {
   getServerWithAuth(req, res, function(server) {
     server.getBalance({}, function(err, balance) {
-      if (err) return returnError(err, res,req);
+      if (err) return returnError(err, res, req);
       res.json(balance);
     });
   });
