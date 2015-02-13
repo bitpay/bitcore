@@ -8,6 +8,7 @@ program
   .command('create <walletName> <m-n> [username]', 'creates a wallet')
   .command('join <secret> [username]', 'join a wallet')
   .command('status', 'get wallet status')
+  .command('send <address> <amount> <note>', 'send bitcoins')
   .parse(process.argv);
 
 
