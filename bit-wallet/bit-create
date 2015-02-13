@@ -6,8 +6,8 @@ var common = require('./common');
 
 program
   .version('0.0.1')
-  .option('-c,--config [file]', 'Wallet config filename')
-  .option('-n,--network [networkname]', 'livenet|testnet', String, 'livenet')
+  .option('-c, --config [file]', 'Wallet config filename')
+  .option('-n, --network [networkname]', 'livenet|testnet', String, 'livenet')
   .usage('[options] <walletName> <m-n> [copayerName]')
   .parse(process.argv);
 
