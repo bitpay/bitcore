@@ -1,0 +1,27 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+var CliLib = require('../lib/clilib.js');
+var common = require('./common');
+
+program
+  .version('0.0.1')
+  .option('-c,--config [file]', 'Wallet config filename')
+  .usage('[options] <secret> [copayerName]')
+  .parse(process.argv);
+
+var args = program.args;
+if (!args[0])
+  program.help();
+
+var secret = args[0];
+var copayerName = args[1] || process.env.USER;
+
+var cli = new CliLib({
+  filename: program.config
+});
+
+cli.joinWallet(secret, copayerName, function(err, xx) {
+  common.die(err);
+  console.log(' * Wallet Joined.', xx || '');
+});

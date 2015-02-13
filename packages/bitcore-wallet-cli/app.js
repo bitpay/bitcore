@@ -44,6 +44,8 @@ var router = express.Router();
 
 function returnError(err, res) {
   if (err instanceof CopayServer.ClientError) {
+
+console.log('[app.js.47]'); //TODO
     var status = (err.code == 'NOTAUTHORIZED') ? 401 : 400;
     res.status(status).json({
       code: err.code,
@@ -78,7 +80,6 @@ function getServerWithAuth(req, res, cb) {
     message: req.url + '|' + JSON.stringify(req.body),
     signature: credentials.signature,
   };
-
   CopayServer.getInstanceWithAuth(auth, function(err, server) {
     if (err) return returnError(err, res);
     return cb(server);
@@ -87,26 +88,27 @@ function getServerWithAuth(req, res, cb) {
 
 router.post('/v1/wallets/', function(req, res) {
   var server = CopayServer.getInstance();
-  server.createWallet(req.body, function(err, wallet) {
-    if (err) returnError(err, res);
+  server.createWallet(req.body, function(err, walletId) {
+    if (err) return returnError(err, res);
 
-    res.json(wallet);
+    res.json({
+      walletId: walletId,
+    });
   });
 });
 
 router.post('/v1/wallets/:id/copayers/', function(req, res) {
   req.body.walletId = req.params['id'];
   var server = CopayServer.getInstance();
-  server.joinWallet(req.body, function(err) {
-    if (err) returnError(err, res);
+  server.joinWallet(req.body, function(err, result) {
+    if (err) return returnError(err, res);
 
-    res.end();
+    res.json(result);
   });
 });
 
 router.get('/v1/wallets/', function(req, res) {
   getServerWithAuth(req, res, function(server) {
-    if (err) return returnError(err, res);
     server.getWallet({}, function(err, wallet) {
       if (err) returnError(err, res);
       res.json(wallet);
@@ -117,7 +119,7 @@ router.get('/v1/wallets/', function(req, res) {
 router.post('/v1/addresses/', function(req, res) {
   getServerWithAuth(req, res, function(server) {
     server.createAddress(req.body, function(err, address) {
-      if (err) returnError(err, res);
+      if (err) return returnError(err, res);
       res.json(address);
     });
   });
@@ -126,7 +128,7 @@ router.post('/v1/addresses/', function(req, res) {
 router.get('/v1/addresses/', function(req, res) {
   getServerWithAuth(req, res, function(server) {
     server.getAddresses({}, function(err, addresses) {
-      if (err) returnError(err, res);
+      if (err) return returnError(err, res);
       res.json(addresses);
     });
   });
@@ -135,7 +137,7 @@ router.get('/v1/addresses/', function(req, res) {
 router.get('/v1/balance/', function(req, res) {
   getServerWithAuth(req, res, function(server) {
     server.getBalance({}, function(err, balance) {
-      if (err) returnError(err, res);
+      if (err) return returnError(err, res);
       res.json(balance);
     });
   });
