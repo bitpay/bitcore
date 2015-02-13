@@ -21,4 +21,12 @@ cli.status(function(err, x) {
 
   if (program.verbose)
     console.log('* Raw Server Response:\n', x); //TODO
+
+
+  cli.txProposals(function(err, x) {
+    console.log('[bit-status.27]', x); //TODO
+
+    if (program.verbose)
+      console.log('* Raw Server Response:\n', x); //TODO
+  });
 });
