@@ -42,11 +42,11 @@ app.use(bodyParser.json({
 var port = process.env.COPAY_PORT || 3001;
 var router = express.Router();
 
-function returnError(err, res) {
+function returnError(err, res, req) {
   if (err instanceof CopayServer.ClientError) {
 
-console.log('[app.js.47]'); //TODO
     var status = (err.code == 'NOTAUTHORIZED') ? 401 : 400;
+    log.error('Err: ' + status + ':' + req.url + ' :' + err.code + ':' + err.message);
     res.status(status).json({
       code: err.code,
       error: err.message,
@@ -57,8 +57,12 @@ console.log('[app.js.47]'); //TODO
       code = err.code;
       message = err.message;
     }
+    var m = message || err.toString();
+
+console.log('[app.js.60]'); //TODO
+    log.error('Error: ' + req.url + ' :' + code + ':' + m);
     res.status(code || 500).json({
-      error: message || err.toString(),
+      error: m,
     }).end();
   }
 };
@@ -81,7 +85,7 @@ function getServerWithAuth(req, res, cb) {
     signature: credentials.signature,
   };
   CopayServer.getInstanceWithAuth(auth, function(err, server) {
-    if (err) return returnError(err, res);
+    if (err) return returnError(err, res, req);
     return cb(server);
   });
 };
@@ -89,7 +93,7 @@ function getServerWithAuth(req, res, cb) {
 router.post('/v1/wallets/', function(req, res) {
   var server = CopayServer.getInstance();
   server.createWallet(req.body, function(err, walletId) {
-    if (err) return returnError(err, res);
+    if (err) return returnError(err, res, req);
 
     res.json({
       walletId: walletId,
@@ -101,7 +105,7 @@ router.post('/v1/wallets/:id/copayers/', function(req, res) {
   req.body.walletId = req.params['id'];
   var server = CopayServer.getInstance();
   server.joinWallet(req.body, function(err, result) {
-    if (err) return returnError(err, res);
+    if (err) return returnError(err, res, req);
 
     res.json(result);
   });
@@ -110,16 +114,26 @@ router.post('/v1/wallets/:id/copayers/', function(req, res) {
 router.get('/v1/wallets/', function(req, res) {
   getServerWithAuth(req, res, function(server) {
     server.getWallet({}, function(err, wallet) {
-      if (err) returnError(err, res);
+      if (err) returnError(err, res, req);
       res.json(wallet);
     });
   });
 });
 
+router.post('/v1/txproposals/', function(req, res) {
+  getServerWithAuth(req, res, function(server) {
+    server.createTx(req.body, function(err, txp) {
+      if (err) return returnError(err, res, req);
+      res.json(txp);
+    });
+  });
+});
+
+
 router.post('/v1/addresses/', function(req, res) {
   getServerWithAuth(req, res, function(server) {
     server.createAddress(req.body, function(err, address) {
-      if (err) return returnError(err, res);
+      if (err) return returnError(err, res, req);
       res.json(address);
     });
   });
@@ -128,7 +142,7 @@ router.post('/v1/addresses/', function(req, res) {
 router.get('/v1/addresses/', function(req, res) {
   getServerWithAuth(req, res, function(server) {
     server.getAddresses({}, function(err, addresses) {
-      if (err) return returnError(err, res);
+      if (err) return returnError(err, res, req);
       res.json(addresses);
     });
   });
@@ -137,7 +151,7 @@ router.get('/v1/addresses/', function(req, res) {
 router.get('/v1/balance/', function(req, res) {
   getServerWithAuth(req, res, function(server) {
     server.getBalance({}, function(err, balance) {
-      if (err) return returnError(err, res);
+      if (err) return returnError(err, res,req);
       res.json(balance);
     });
   });
