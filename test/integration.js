@@ -167,9 +167,13 @@ helpers.createProposalOpts = function(toAddress, amount, message, signingKey) {
     toAddress: toAddress,
     amount: helpers.toSatoshi(amount),
     message: message,
+    proposalSignature: null,
   };
   var msg = opts.toAddress + '|' + opts.amount + '|' + opts.message;
-  opts.proposalSignature = SignUtils.sign(msg, signingKey);
+  try {
+    opts.proposalSignature = SignUtils.sign(msg, signingKey);
+  } catch (ex) {}
+
   return opts;
 };
 
@@ -663,6 +667,34 @@ describe('Copay server', function() {
               done();
             });
           });
+        });
+      });
+    });
+
+    it('should fail to create tx with invalid proposal signature', function(done) {
+      helpers.createUtxos(server, wallet, [100, 200], function(utxos) {
+        helpers.stubBlockExplorer(server, utxos);
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, null, 'dummy');
+
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(tx);
+          err.should.exist;
+          err.message.should.equal('Invalid proposal signature');
+          done();
+        });
+      });
+    });
+
+    it('should fail to create tx with proposal signed by another copayer', function(done) {
+      helpers.createUtxos(server, wallet, [100, 200], function(utxos) {
+        helpers.stubBlockExplorer(server, utxos);
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, null, TestData.copayers[1].privKey);
+
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(tx);
+          err.should.exist;
+          err.message.should.equal('Invalid proposal signature');
+          done();
         });
       });
     });
