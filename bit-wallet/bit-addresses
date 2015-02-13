@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+var _ = require('lodash');
 var program = require('commander');
 var CliLib = require('../lib/clilib.js');
 var common = require('./common');
@@ -15,9 +16,13 @@ var cli = new CliLib({
   filename: program.config
 });
 
-cli.status(function(err, x) {
+cli.addresses(function(err, x) {
   common.die(err);
-  console.log('* Wallet %s [%s]: %d-%d %s ', x.name, x.isTestnet ? 'testnet' : 'livenet', x.m, x.n, x.status);
+
+  console.log('* Addresses:');
+  _.each(x, function(a){
+    console.log('      ', a.address);
+  });
 
   if (program.verbose)
     console.log('* Raw Server Response:\n', x); //TODO
