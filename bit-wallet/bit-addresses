@@ -2,8 +2,8 @@
 
 var _ = require('lodash');
 var program = require('commander');
-var CliLib = require('../lib/clilib.js');
 var common = require('./common');
+var ClientLib = require('../lib/clientlib.js');
 
 program
   .version('0.0.1')
@@ -12,7 +12,7 @@ program
   .parse(process.argv);
 
 var args = program.args;
-var cli = new CliLib({
+var cli = new ClientLib({
   filename: program.config
 });
 
