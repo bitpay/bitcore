@@ -146,6 +146,17 @@ router.get('/v1/wallets/', function(req, res) {
   });
 });
 
+
+router.get('/v1/txproposals/', function(req, res) {
+  getServerWithAuth(req, res, function(server) {
+    server.getPendingTxs({}, function(err, pendings) {
+      if (err) return returnError(err, res, req);
+      res.json(pendings);
+    });
+  });
+});
+
+
 router.post('/v1/txproposals/', function(req, res) {
   getServerWithAuth(req, res, function(server) {
     server.createTx(req.body, function(err, txp) {

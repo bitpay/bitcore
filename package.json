@@ -26,11 +26,11 @@
     "inherits": "^2.0.1",
     "leveldown": "^0.10.0",
     "levelup": "^0.19.0",
-    "lodash": "^2.4.1",
+    "lodash": "^3.2.0",
+    "morgan": "*",
     "npmlog": "^0.1.1",
     "preconditions": "^1.0.7",
     "request": "^2.53.0",
-    "morgan": "*",
     "uuid": "*"
   },
   "devDependencies": {
