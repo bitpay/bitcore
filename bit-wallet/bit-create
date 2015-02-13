@@ -1,0 +1,29 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+var cli = require('../lib/clilib.js');
+var common = require('./common');
+
+program
+  .version('0.0.1')
+  .option('-c,--config [file]', 'Wallet config filename')
+  .usage('[options] <walletName> <m-n> [copayerName]')
+  .parse(process.argv);
+
+var args = program.args;
+if (!args[0])
+  program.help();
+
+var walletName = args[0];
+var copayerName = args[2] || process.env.USER;
+
+var mn = common.parseMN(args[1]);
+
+cli.setFilename(program.config);
+
+cli.createWallet(walletName, copayerName, mn[0], mn[1], function(err, secret) {
+  common.die(err);
+  console.log(' * Wallet Created.');
+  console.log('   - Secret to share:\n\t' + secret);
+});
+
