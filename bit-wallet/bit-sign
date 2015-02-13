@@ -33,13 +33,20 @@ cli.txProposals({}, function(err, x) {
   });
 
   if (!txps.length)
-    common.die('Could not find TX Proposal:' +  txpid);
+    common.die('Could not find TX Proposal:' + txpid);
 
   if (txps.length > 1)
-    common.die('More that one TX Proposals match:' +  txpid + ' : ' + _.map(txps, function(x) {
+    common.die('More that one TX Proposals match:' + txpid + ' : ' + _.map(txps, function(x) {
       return x.id;
     }).join(' '));;
 
   var txp = txps[0];
-  cli.sign(txp);
+  cli.sign(txp, function(err, x) {
+    common.die(err);
+
+    if (program.verbose)
+      console.log('* Raw Server Response:\n', x); //TODO
+
+    console.log('Transaction signed.');
+  });
 });
