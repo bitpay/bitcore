@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-var cli = require('../lib/clilib.js');
+var CliLib = require('../lib/clilib.js');
 var common = require('./common');
 
 program
@@ -10,8 +10,9 @@ program
   .parse(process.argv);
 
 var args = program.args;
-
-cli.setFilename(program.config);
+var cli = new CliLib({
+  filename: program.config
+});
 
 cli.status(function(err, xx) {
   common.die(err);
