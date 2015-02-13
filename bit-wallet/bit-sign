@@ -29,10 +29,7 @@ cli.txProposals({}, function(err, x) {
     console.log('* Raw Server Response:\n', x); //TODO
 
   var txps = _.filter(x, function(x) {
-
-    var sid = common.shortID(x.id);
-
-    return _.endsWith(sid, txpid);
+    return _.endsWith(common.shortID(x.id), txpid);
   });
 
   if (!txps.length)
@@ -44,6 +41,5 @@ cli.txProposals({}, function(err, x) {
     }).join(' '));;
 
   var txp = txps[0];
-
   cli.sign(txp);
 });
