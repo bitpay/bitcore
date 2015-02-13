@@ -1,0 +1,21 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+var CliLib = require('../lib/clilib.js');
+var common = require('./common');
+
+program
+  .version('0.0.1')
+  .option('-c,--config [file]', 'Wallet config filename')
+  .parse(process.argv);
+
+var args = program.args;
+var cli = new CliLib({
+  filename: program.config
+});
+
+cli.status(function(err, xx) {
+  common.die(err);
+  console.log(' * Status:', xx);
+});
+
