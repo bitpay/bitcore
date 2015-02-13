@@ -1,0 +1,24 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+var CliLib = require('../lib/clilib.js');
+var common = require('./common');
+
+program
+  .version('0.0.1')
+  .option('-c,--config [file]', 'Wallet config filename')
+  .option('-v,--verbose', 'be verbose')
+  .parse(process.argv);
+
+var args = program.args;
+var cli = new CliLib({
+  filename: program.config
+});
+
+cli.balance(function(err, x) {
+  common.die(err);
+  console.log('* Wallet balance', x);
+
+  if (program.verbose)
+    console.log('* Raw Server Response:\n', x); //TODO
+});
