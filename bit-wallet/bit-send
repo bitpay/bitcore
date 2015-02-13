@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-var CliLib = require('../lib/clilib.js');
+var ClientLib = require('../lib/clientlib.js');
 var common = require('./common');
 
 program
@@ -19,7 +19,7 @@ if (!args[0] || !args[1] || !args[2])
   var amount = args[1];
   var message = args[2];
 
-  var cli = new CliLib({
+  var cli = new ClientLib({
 filename: program.config
 });
 
