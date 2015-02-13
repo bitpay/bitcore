@@ -24,4 +24,8 @@ common.parseMN = function(MN) {
 };
 
 
+common.shortID = function(id) {
+  return id.substr(id.length - 4);
+};
+
 module.exports = common;
