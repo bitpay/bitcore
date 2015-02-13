@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-var cli = require('../lib/clilib.js');
+var CliLib = require('../lib/clilib.js');
 var common = require('./common');
 
 program
   .version('0.0.1')
   .option('-c,--config [file]', 'Wallet config filename')
+  .option('-n,--network [networkname]', 'livenet|testnet', String, 'livenet')
   .usage('[options] <walletName> <m-n> [copayerName]')
   .parse(process.argv);
 
@@ -16,12 +17,14 @@ if (!args[0])
 
 var walletName = args[0];
 var copayerName = args[2] || process.env.USER;
+var network = program.network;
 
 var mn = common.parseMN(args[1]);
 
-cli.setFilename(program.config);
-
-cli.createWallet(walletName, copayerName, mn[0], mn[1], function(err, secret) {
+var cli = new CliLib({
+  filename: program.config
+});
+cli.createWallet(walletName, copayerName, mn[0], mn[1], network, function(err, secret) {
   common.die(err);
   console.log(' * Wallet Created.');
   console.log('   - Secret to share:\n\t' + secret);
