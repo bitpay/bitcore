@@ -44,6 +44,8 @@ var router = express.Router();
 
 function returnError(err, res) {
   if (err instanceof CopayServer.ClientError) {
+
+console.log('[app.js.47]'); //TODO
     var status = (err.code == 'NOTAUTHORIZED') ? 401 : 400;
     res.status(status).json({
       code: err.code,
