@@ -9,7 +9,7 @@ var bitcore = require('..');
 var buffer = require('buffer');
 var errors = bitcore.errors;
 var hdErrors = bitcore.errors.HDPublicKey;
-var bufferUtil = bitcore.util.buffer;
+var BufferUtil = bitcore.util.buffer;
 var HDPrivateKey = bitcore.HDPrivateKey;
 var HDPublicKey = bitcore.HDPublicKey;
 var Base58Check = bitcore.encoding.Base58Check;
@@ -117,7 +117,7 @@ describe('HDPublicKey interface', function() {
 
     it('checks the checksum', function() {
       var buffers = new HDPublicKey(xpubkey)._buffers;
-      buffers.checksum = bufferUtil.integerAsBuffer(1);
+      buffers.checksum = BufferUtil.integerAsBuffer(1);
       expectFail(function() {
         return new HDPublicKey(buffers);
       }, errors.InvalidB58Checksum);
