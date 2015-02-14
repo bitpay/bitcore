@@ -207,7 +207,17 @@ router.post('/v1/txproposals/:id/signatures/', function(req, res) {
 router.post('/v1/txproposals/:id/rejections', function(req, res) {
   getServerWithAuth(req, res, function(server) {
     req.body.txProposalId = req.params['id'];
-    server.signTx(req.body, function(err, txp) {
+    server.rejectTx(req.body, function(err, txp) {
+      if (err) return returnError(err, res, req);
+      res.end();
+    });
+  });
+});
+
+router.delete('/v1/txproposals/:id/', function(req, res) {
+  getServerWithAuth(req, res, function(server) {
+    req.body.txProposalId = req.params['id'];
+    server.removePendingTx(req.body, function(err, txp) {
       if (err) return returnError(err, res, req);
       res.end();
     });
