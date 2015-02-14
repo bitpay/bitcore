@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-var CliLib = require('../lib/clilib.js');
+var ClientLib = require('../lib/clientlib.js');
 var common = require('./common');
 
 program
@@ -21,7 +21,7 @@ var network = program.network;
 
 var mn = common.parseMN(args[1]);
 
-var cli = new CliLib({
+var cli = new ClientLib({
   filename: program.config
 });
 cli.createWallet(walletName, copayerName, mn[0], mn[1], network, function(err, secret) {

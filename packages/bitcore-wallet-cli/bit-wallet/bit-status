@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
+var _ = require('lodash');
 var program = require('commander');
-var CliLib = require('../lib/clilib.js');
+
+var ClientLib = require('../lib/clientlib.js');
 var common = require('./common');
 
 program
@@ -11,14 +13,33 @@ program
   .parse(process.argv);
 
 var args = program.args;
-var cli = new CliLib({
+var cli = new ClientLib({
   filename: program.config
 });
 
-cli.status(function(err, x) {
+cli.status(function(err, res) {
   common.die(err);
+
+  var x = res.wallet;
   console.log('* Wallet %s [%s]: %d-%d %s ', x.name, x.isTestnet ? 'testnet' : 'livenet', x.m, x.n, x.status);
 
-  if (program.verbose)
-    console.log('* Raw Server Response:\n', x); //TODO
+  var x = res.balance;
+  console.log('* Balance %d (Locked: %d)', x.totalAmount, x.lockedAmount);
+
+  if (!_.isEmpty(res.pendingTxps)) {
+    console.log("* TX Proposals:")
+    _.each(res.pendingTxps, function(x) {
+      console.log("\t%s [%s by %s] %dSAT => %s", common.shortID(x.id), x.message, x.creatorName, x.amount, x.toAddress);
+
+      if (!_.isEmpty(x.actions)) {
+        console.log('\t\t * Actions');
+        console.log('\t\t', _.map(x.actions, function(a) {
+          return a.copayerName + ': ' + a.type + ''
+        }).join('. '));
+      }
+
+      if (program.verbose)
+        console.log('* Raw Server Response:\n', res); //TODO
+    });
+  }
 });

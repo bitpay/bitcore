@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-var cli = require('../lib/clilib.js');
  
 program
   .version('0.0.1')
@@ -12,6 +11,7 @@ program
   .command('addresses', 'list addresses')
   .command('balance', 'wallet balance')
   .command('send <address> <amount> <note>', 'send bitcoins')
+  .command('sign <txpId>', 'sign a Transaction Proposal')
   .parse(process.argv);
 
 

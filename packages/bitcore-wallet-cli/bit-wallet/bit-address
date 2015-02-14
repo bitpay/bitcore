@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-var CliLib = require('../lib/clilib.js');
+var ClientLib = require('../lib/clientlib.js');
 var common = require('./common');
 
 program
@@ -11,7 +11,7 @@ program
   .parse(process.argv);
 
 var args = program.args;
-var cli = new CliLib({
+var cli = new ClientLib({
   filename: program.config
 });
 

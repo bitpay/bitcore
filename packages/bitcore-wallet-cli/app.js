@@ -39,6 +39,9 @@ app.use(bodyParser.json({
   limit: POST_LIMIT
 }));
 
+app.use(require('morgan')('dev'));
+
+
 var port = process.env.COPAY_PORT || 3001;
 var router = express.Router();
 
@@ -59,7 +62,6 @@ function returnError(err, res, req) {
     }
     var m = message || err.toString();
 
-    console.log('[app.js.60]'); //TODO
     log.error('Error: ' + req.url + ' :' + code + ':' + m);
     res.status(code || 500).json({
       error: m,
@@ -144,6 +146,17 @@ router.get('/v1/wallets/', function(req, res) {
   });
 });
 
+
+router.get('/v1/txproposals/', function(req, res) {
+  getServerWithAuth(req, res, function(server) {
+    server.getPendingTxs({}, function(err, pendings) {
+      if (err) return returnError(err, res, req);
+      res.json(pendings);
+    });
+  });
+});
+
+
 router.post('/v1/txproposals/', function(req, res) {
   getServerWithAuth(req, res, function(server) {
     server.createTx(req.body, function(err, txp) {
@@ -181,9 +194,9 @@ router.get('/v1/balance/', function(req, res) {
   });
 });
 
-router.post('/v1/txproposals/:id/signatures', function(req, res) {
-  req.body.txProposalId = req.params['id'];
+router.post('/v1/txproposals/:id/signatures/', function(req, res) {
   getServerWithAuth(req, res, function(server) {
+    req.body.txProposalId = req.params['id'];
     server.signTx(req.body, function(err, txp) {
       if (err) return returnError(err, res, req);
       res.end();
@@ -192,8 +205,8 @@ router.post('/v1/txproposals/:id/signatures', function(req, res) {
 });
 
 router.post('/v1/txproposals/:id/rejections', function(req, res) {
-  req.body.txProposalId = req.params['id'];
   getServerWithAuth(req, res, function(server) {
+    req.body.txProposalId = req.params['id'];
     server.signTx(req.body, function(err, txp) {
       if (err) return returnError(err, res, req);
       res.end();

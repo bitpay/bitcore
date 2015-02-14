@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-var CliLib = require('../lib/clilib.js');
+var ClientLib = require('../lib/clientlib.js');
 var common = require('./common');
 
 program
@@ -19,15 +19,15 @@ if (!args[0] || !args[1] || !args[2])
   var amount = args[1];
   var message = args[2];
 
-  var cli = new CliLib({
-filename: program.config
+var cli = new ClientLib({
+  filename: program.config
 });
 
 cli.send({toAddress: address, amount: amount, message:message}, function(err, x) {
     common.die(err);
     console.log(' * Tx created: ID %s [%s] RequiredSignatures:', 
-    x.id, x.status, x.requiredSignatures);
+      x.id, x.status, x.requiredSignatures);
 
     if (program.verbose)
-      console.log('* Raw Server Response:\n', x); //TODO
-});
+    console.log('* Raw Server Response:\n', x); //TODO
+    });
