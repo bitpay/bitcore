@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-var CliLib = require('../lib/clilib.js');
+var ClientLib = require('../lib/clientlib.js');
 var common = require('./common');
 
 program
@@ -17,7 +17,7 @@ if (!args[0])
 var secret = args[0];
 var copayerName = args[1] || process.env.USER;
 
-var cli = new CliLib({
+var cli = new ClientLib({
   filename: program.config
 });
 
