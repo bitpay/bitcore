@@ -114,7 +114,14 @@ helpers.createUtxos = function(server, wallet, amounts, cb) {
 };
 
 
-helpers.stubBlockExplorer = function(server, utxos, txid) {
+helpers.stubBlockExplorer = function(server, inUtxos, txid) {
+
+  var utxos = _.map(inUtxos, function(x) {
+    x.toObject = function() {
+      return this;
+    };
+    return x;
+  });
 
   var bc = sinon.stub();
   bc.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);

@@ -28,14 +28,24 @@ describe('TXProposal', function() {
   describe('#sign', function() {
     it('should sign 2-2', function() {
       var txp = TXP.fromObj(aTXP());
-      txp.sign('1', theSignatures);
+      txp.sign('1', theSignatures, theXPub);
       txp.isAccepted().should.equal(false);
       txp.isRejected().should.equal(false);
-      txp.sign('2', theSignatures);
+      txp.sign('2', theSignatures, theXPub);
       txp.isAccepted().should.equal(true);
       txp.isRejected().should.equal(false);
     });
   });
+
+  describe('#getRawTx', function() {
+    it('should generate correct raw transaction for signed 2-2', function() {
+      var txp = TXP.fromObj(aTXP());
+      txp.sign('1', theSignatures, theXPub);
+      txp.getRawTx().should.equal('0100000001ab069f7073be9b491bb1ad4233a45d2e383082ccc7206df905662d6d8499e66e080000009200483045022100896aeb8db75fec22fddb5facf791927a996eb3aee23ee6deaa15471ea46047de02204c0c33f42a9d3ff93d62738712a8c8a5ecd21b45393fdd144e7b01b5a186f1f9014752210319008ffe1b3e208f5ebed8f46495c056763f87b07930a7027a92ee477fb0cb0f2103b5f035af8be40d0db5abb306b7754949ab39032cf99ad177691753b37d10130152aeffffffff0280f0fa02000000001976a91451224bca38efcaa31d5340917c3f3f713b8b20e488ac70c9fa020000000017a914778192003f0e9e1d865c082179cc3dae5464b03d8700000000');
+    });
+  });
+
+
 
   describe('#reject', function() {
     it('should reject 2-2', function() {
@@ -59,26 +69,10 @@ describe('TXProposal', function() {
     });
   });
 
-
-  describe('#checkSignatures', function() {
-    it('should check signatures', function() {
-      var txp = TXP.fromObj(aTXP());
-      var xpriv = new Bitcore.HDPrivateKey(theXPriv);
-      var priv = xpriv.derive(txp.inputPaths[0]).privateKey;
-
-      var t = txp._getBitcoreTx();
-      t.sign(priv);
-
-      var s = t.getSignatures(priv)[0].signature.toDER().toString('hex');
-      var xpub = new Bitcore.HDPublicKey(xpriv);
-
-      var res = txp.checkSignatures([s], xpub);
-      res.should.equal(true);
-    });
-  });
 });
 
 var theXPriv = 'xprv9s21ZrQH143K2rMHbXTJmWTuFx6ssqn1vyRoZqPkCXYchBSkp5ey8kMJe84sxfXq5uChWH4gk94rWbXZt2opN9kg4ufKGvUM7HQSLjnoh7e';
+var theXPub = 'xpub661MyMwAqRbcFLRkhYzK8eQdoywNHJVsJCMQNDoMks5bZymuMcyDgYfnVQYq2Q9npnVmdTAthYGc3N3uxm5sEdnTpSqBc4YYTAhNnoSxCm9';
 var theSignatures = ['3045022100896aeb8db75fec22fddb5facf791927a996eb3aee23ee6deaa15471ea46047de02204c0c33f42a9d3ff93d62738712a8c8a5ecd21b45393fdd144e7b01b5a186f1f9'];
 
 var aTXP = function() {
