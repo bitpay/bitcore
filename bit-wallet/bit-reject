@@ -41,12 +41,12 @@ cli.txProposals({}, function(err, x) {
     }).join(' '));;
 
   var txp = txps[0];
-  cli.sign(txp, function(err, x) {
+  cli.reject(txp, function(err, x) {
     common.die(err);
 
     if (program.verbose)
       console.log('* Raw Server Response:\n', x); //TODO
 
-    console.log('Transaction signed.');
+    console.log('Transaction rejected.');
   });
 });
