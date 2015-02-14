@@ -28,10 +28,10 @@ describe('TXProposal', function() {
   describe('#sign', function() {
     it('should sign 2-2', function() {
       var txp = TXP.fromObj(aTXP());
-      txp.sign('1', theSignatures);
+      txp.sign('1', theSignatures, theXPub);
       txp.isAccepted().should.equal(false);
       txp.isRejected().should.equal(false);
-      txp.sign('2', theSignatures);
+      txp.sign('2', theSignatures, theXPub);
       txp.isAccepted().should.equal(true);
       txp.isRejected().should.equal(false);
     });
@@ -59,26 +59,10 @@ describe('TXProposal', function() {
     });
   });
 
-
-  describe('#checkSignatures', function() {
-    it('should check signatures', function() {
-      var txp = TXP.fromObj(aTXP());
-      var xpriv = new Bitcore.HDPrivateKey(theXPriv);
-      var priv = xpriv.derive(txp.inputPaths[0]).privateKey;
-
-      var t = txp._getBitcoreTx();
-      t.sign(priv);
-
-      var s = t.getSignatures(priv)[0].signature.toDER().toString('hex');
-      var xpub = new Bitcore.HDPublicKey(xpriv);
-
-      var res = txp.checkSignatures([s], xpub);
-      res.should.equal(true);
-    });
-  });
 });
 
 var theXPriv = 'xprv9s21ZrQH143K2rMHbXTJmWTuFx6ssqn1vyRoZqPkCXYchBSkp5ey8kMJe84sxfXq5uChWH4gk94rWbXZt2opN9kg4ufKGvUM7HQSLjnoh7e';
+var theXPub = 'xpub661MyMwAqRbcFLRkhYzK8eQdoywNHJVsJCMQNDoMks5bZymuMcyDgYfnVQYq2Q9npnVmdTAthYGc3N3uxm5sEdnTpSqBc4YYTAhNnoSxCm9';
 var theSignatures = ['3045022100896aeb8db75fec22fddb5facf791927a996eb3aee23ee6deaa15471ea46047de02204c0c33f42a9d3ff93d62738712a8c8a5ecd21b45393fdd144e7b01b5a186f1f9'];
 
 var aTXP = function() {
