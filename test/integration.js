@@ -1323,8 +1323,6 @@ describe('Copay server', function() {
           done();
         });
     });
-
-    it.skip('proposal creator should be able to delete proposal if there are no other signatures', function(done) {});
   });
 
 
