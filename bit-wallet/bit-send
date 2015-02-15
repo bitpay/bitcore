@@ -2,32 +2,31 @@
 
 var program = require('commander');
 var Client = require('../lib/client');
-var common = require('./common');
+var utils = require('./cli-utils');
 
 program
-.version('0.0.1')
-.option('-c, --config [file]', 'Wallet config filename')
-.option('-v, --verbose', 'be verbose')
-.usage('[options] <address> <amount> <message>')
-.parse(process.argv);
+  .version('0.0.1')
+  .option('-c, --config [file]', 'Wallet config filename')
+  .option('-v, --verbose', 'be verbose')
+  .usage('[options] <address> <amount> <message>')
+  .parse(process.argv);
 
 var args = program.args;
 if (!args[0] || !args[1] || !args[2])
   program.help();
 
-  var address = args[0];
-  var amount = args[1];
-  var message = args[2];
+var address = args[0];
+var amount = args[1];
+var message = args[2];
 
-var cli = new Client({
-  filename: program.config
+var client = utils.getClient(program);
+
+client.sendTxProposal({
+  toAddress: address,
+  amount: amount,
+  message: message
+}, function(err, x) {
+  utils.die(err);
+  console.log(' * Tx created: ID %s [%s] RequiredSignatures:',
+    x.id, x.status, x.requiredSignatures);
 });
-
-cli.sendTxProposal({toAddress: address, amount: amount, message:message}, function(err, x) {
-    common.die(err);
-    console.log(' * Tx created: ID %s [%s] RequiredSignatures:', 
-      x.id, x.status, x.requiredSignatures);
-
-    if (program.verbose)
-    console.log('* Raw Server Response:\n', x); //TODO
-    });
