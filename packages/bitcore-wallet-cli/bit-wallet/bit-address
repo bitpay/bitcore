@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-var ClientLib = require('../lib/clientlib.js');
+var Client = require('../lib/client');
 var common = require('./common');
 
 program
@@ -11,11 +11,11 @@ program
   .parse(process.argv);
 
 var args = program.args;
-var cli = new ClientLib({
+var cli = new Client({
   filename: program.config
 });
 
-cli.address(function(err, x) {
+cli.createAddress(function(err, x) {
   common.die(err);
   console.log('* New Address %s ', x.address);
 

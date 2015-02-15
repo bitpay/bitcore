@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-var ClientLib = require('../lib/clientlib.js');
+var ClientLib = require('../lib/client');
 var common = require('./common');
 
 program

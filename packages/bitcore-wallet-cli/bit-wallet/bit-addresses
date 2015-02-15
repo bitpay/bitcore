@@ -3,7 +3,7 @@
 var _ = require('lodash');
 var program = require('commander');
 var common = require('./common');
-var ClientLib = require('../lib/clientlib.js');
+var Client = require('../lib/client');
 
 program
   .version('0.0.1')
@@ -12,11 +12,11 @@ program
   .parse(process.argv);
 
 var args = program.args;
-var cli = new ClientLib({
+var cli = new Client({
   filename: program.config
 });
 
-cli.addresses(function(err, x) {
+cli.getAddresses(function(err, x) {
   common.die(err);
 
   console.log('* Addresses:');
