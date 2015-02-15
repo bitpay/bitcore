@@ -2,7 +2,7 @@
 
 var program = require('commander');
 var Client = require('../lib/client');
-var common = require('./common');
+var utils  = require('./cli-utils');
 
 program
   .version('0.0.1')
@@ -11,14 +11,8 @@ program
   .parse(process.argv);
 
 var args = program.args;
-var cli = new Client({
-  filename: program.config
-});
-
-cli.createAddress(function(err, x) {
-  common.die(err);
+var client = utils.getClient(program);
+client.createAddress(function(err, x) {
+  utils.die(err);
   console.log('* New Address %s ', x.address);
-
-  if (program.verbose)
-    console.log('* Raw Server Response:\n', x); //TODO
 });
