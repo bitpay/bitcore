@@ -23,6 +23,9 @@ client.getTxProposals({}, function(err, txps) {
   var txp = utils.findOneTxProposal(txps, txpid);
   client.rejectTxProposal(txp, reason, function(err, tx) {
     utils.die(err);
-    console.log('Transaction rejected.');
+    if (x.status == 'rejected')
+      console.log('Transaction finally rejected.');
+    else 
+      console.log('Transaction rejected by you.');
   });
 });

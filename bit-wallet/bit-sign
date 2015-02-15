@@ -21,6 +21,9 @@ client.getTxProposals({}, function(err, txps) {
   var txp = utils.findOneTxProposal(txps, txpid);
   client.signTxProposal(txp, function(err, x) {
     utils.die(err);
-    console.log('Transaction signed.');
+    if (x.status == 'broadcasted')
+      console.log('Transaction Broadcasted: TXID: ' + x.txid);
+    else 
+      console.log('Transaction signed by you.');
   });
 });
