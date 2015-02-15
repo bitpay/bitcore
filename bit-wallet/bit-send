@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-var ClientLib = require('../lib/clientlib.js');
+var Client = require('../lib/client');
 var common = require('./common');
 
 program
@@ -19,11 +19,11 @@ if (!args[0] || !args[1] || !args[2])
   var amount = args[1];
   var message = args[2];
 
-var cli = new ClientLib({
+var cli = new Client({
   filename: program.config
 });
 
-cli.send({toAddress: address, amount: amount, message:message}, function(err, x) {
+cli.sendTxProposal({toAddress: address, amount: amount, message:message}, function(err, x) {
     common.die(err);
     console.log(' * Tx created: ID %s [%s] RequiredSignatures:', 
       x.id, x.status, x.requiredSignatures);
