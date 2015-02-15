@@ -1158,26 +1158,52 @@ describe('Copay server', function() {
       var txpId;
       async.waterfall([
 
-          function(next) {
-            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, 'some message', TestData.copayers[0].privKey);
-            server.createTx(txOpts, function(err, txp) {
-              txpId = txp.id;
-              should.not.exist(err);
-              should.exist.txp;
-              next();
-            });
-          },
-          function(next) {
-            server.getPendingTxs({}, function(err, txps) {
-              should.not.exist(err);
-              txps.length.should.equal(1);
-              var txp = txps[0];
-              _.keys(txp.actions).should.be.empty;
-              next(null, txp);
-            });
-          },
-          function(txp, next) {
-            var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey);
+        function(next) {
+          var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, 'some message', TestData.copayers[0].privKey);
+          server.createTx(txOpts, function(err, txp) {
+            txpId = txp.id;
+            should.not.exist(err);
+            should.exist.txp;
+            next();
+          });
+        },
+        function(next) {
+          server.getPendingTxs({}, function(err, txps) {
+            should.not.exist(err);
+            txps.length.should.equal(1);
+            var txp = txps[0];
+            _.keys(txp.actions).should.be.empty;
+            next(null, txp);
+          });
+        },
+        function(txp, next) {
+          var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey);
+          server.signTx({
+            txProposalId: txpId,
+            signatures: signatures,
+          }, function(err) {
+            should.not.exist(err);
+            next();
+          });
+        },
+        function(next) {
+          server.getPendingTxs({}, function(err, txps) {
+            should.not.exist(err);
+            txps.length.should.equal(1);
+            var txp = txps[0];
+            txp.isPending().should.be.true;
+            txp.isRejected().should.be.false;
+            txp.isAccepted().should.be.false;
+            _.keys(txp.actions).length.should.equal(1);
+            var action = txp.actions[wallet.copayers[0].id];
+            action.type.should.equal('accept');
+            next(null, txp);
+          });
+        },
+        function(txp, next) {
+          helpers.getAuthServer(wallet.copayers[1].id, function(server, wallet) {
+            helpers.stubBlockExplorer(server, utxos, '999');
+            var signatures = helpers.clientSign(txp, TestData.copayers[1].xPrivKey);
             server.signTx({
               txProposalId: txpId,
               signatures: signatures,
@@ -1185,143 +1211,110 @@ describe('Copay server', function() {
               should.not.exist(err);
               next();
             });
-          },
-          function(next) {
-            server.getPendingTxs({}, function(err, txps) {
-              should.not.exist(err);
-              txps.length.should.equal(1);
-              var txp = txps[0];
-              txp.isPending().should.be.true;
-              txp.isRejected().should.be.false;
-              txp.isAccepted().should.be.false;
-              _.keys(txp.actions).length.should.equal(1);
-              var action = txp.actions[wallet.copayers[0].id];
-              action.type.should.equal('accept');
-              next(null, txp);
-            });
-          },
-          function(txp, next) {
-            helpers.getAuthServer(wallet.copayers[1].id, function(server, wallet) {
-              helpers.stubBlockExplorer(server, utxos, '999');
-              var signatures = helpers.clientSign(txp, TestData.copayers[1].xPrivKey);
-              server.signTx({
-                txProposalId: txpId,
-                signatures: signatures,
-              }, function(err) {
-                should.not.exist(err);
-                next();
-              });
-            });
-          },
-          function(next) {
-            server.getPendingTxs({}, function(err, txps) {
-              should.not.exist(err);
-              txps.length.should.equal(0);
-              next();
-            });
-          },
-          function(next) {
-            server.getTx({
-              id: txpId
-            }, function(err, txp) {
-              should.not.exist(err);
-              txp.isPending().should.be.false;
-              txp.isRejected().should.be.false;
-              txp.isAccepted().should.be.true;
-              txp.isBroadcasted().should.be.true;
-              txp.txid.should.equal('999');
-              _.keys(txp.actions).length.should.equal(2);
-              next();
-            });
-          },
-        ],
-        function() {
-          done();
-        });
-
+          });
+        },
+        function(next) {
+          server.getPendingTxs({}, function(err, txps) {
+            should.not.exist(err);
+            txps.length.should.equal(0);
+            next();
+          });
+        },
+        function(next) {
+          server.getTx({
+            id: txpId
+          }, function(err, txp) {
+            should.not.exist(err);
+            txp.isPending().should.be.false;
+            txp.isRejected().should.be.false;
+            txp.isAccepted().should.be.true;
+            txp.isBroadcasted().should.be.true;
+            txp.txid.should.equal('999');
+            _.keys(txp.actions).length.should.equal(2);
+            done();
+          });
+        },
+      ]);
     });
 
     it('tx proposals should accept as many rejections as possible without finally rejecting', function(done) {
       var txpId;
       async.waterfall([
 
-          function(next) {
-            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, 'some message', TestData.copayers[0].privKey);
-            server.createTx(txOpts, function(err, txp) {
-              txpId = txp.id;
-              should.not.exist(err);
-              should.exist.txp;
-              next();
-            });
-          },
-          function(next) {
-            server.getPendingTxs({}, function(err, txps) {
-              should.not.exist(err);
-              txps.length.should.equal(1);
-              var txp = txps[0];
-              _.keys(txp.actions).should.be.empty;
-              next();
-            });
-          },
-          function(next) {
+        function(next) {
+          var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, 'some message', TestData.copayers[0].privKey);
+          server.createTx(txOpts, function(err, txp) {
+            txpId = txp.id;
+            should.not.exist(err);
+            should.exist.txp;
+            next();
+          });
+        },
+        function(next) {
+          server.getPendingTxs({}, function(err, txps) {
+            should.not.exist(err);
+            txps.length.should.equal(1);
+            var txp = txps[0];
+            _.keys(txp.actions).should.be.empty;
+            next();
+          });
+        },
+        function(next) {
+          server.rejectTx({
+            txProposalId: txpId,
+            reason: 'just because'
+          }, function(err) {
+            should.not.exist(err);
+            next();
+          });
+        },
+        function(next) {
+          server.getPendingTxs({}, function(err, txps) {
+            should.not.exist(err);
+            txps.length.should.equal(1);
+            var txp = txps[0];
+            txp.isPending().should.be.true;
+            txp.isRejected().should.be.false;
+            txp.isAccepted().should.be.false;
+            _.keys(txp.actions).length.should.equal(1);
+            var action = txp.actions[wallet.copayers[0].id];
+            action.type.should.equal('reject');
+            action.comment.should.equal('just because');
+            next();
+          });
+        },
+        function(next) {
+          helpers.getAuthServer(wallet.copayers[1].id, function(server, wallet) {
+            helpers.stubBlockExplorer(server, utxos, '999');
             server.rejectTx({
               txProposalId: txpId,
-              reason: 'just because'
+              reason: 'some other reason'
             }, function(err) {
               should.not.exist(err);
               next();
             });
-          },
-          function(next) {
-            server.getPendingTxs({}, function(err, txps) {
-              should.not.exist(err);
-              txps.length.should.equal(1);
-              var txp = txps[0];
-              txp.isPending().should.be.true;
-              txp.isRejected().should.be.false;
-              txp.isAccepted().should.be.false;
-              _.keys(txp.actions).length.should.equal(1);
-              var action = txp.actions[wallet.copayers[0].id];
-              action.type.should.equal('reject');
-              action.comment.should.equal('just because');
-              next();
-            });
-          },
-          function(next) {
-            helpers.getAuthServer(wallet.copayers[1].id, function(server, wallet) {
-              helpers.stubBlockExplorer(server, utxos, '999');
-              server.rejectTx({
-                txProposalId: txpId,
-                reason: 'some other reason'
-              }, function(err) {
-                should.not.exist(err);
-                next();
-              });
-            });
-          },
-          function(next) {
-            server.getPendingTxs({}, function(err, txps) {
-              should.not.exist(err);
-              txps.length.should.equal(0);
-              next();
-            });
-          },
-          function(next) {
-            server.getTx({
-              id: txpId
-            }, function(err, txp) {
-              should.not.exist(err);
-              txp.isPending().should.be.false;
-              txp.isRejected().should.be.true;
-              txp.isAccepted().should.be.false;
-              _.keys(txp.actions).length.should.equal(2);
-              next();
-            });
-          },
-        ],
-        function() {
-          done();
-        });
+          });
+        },
+        function(next) {
+          server.getPendingTxs({}, function(err, txps) {
+            should.not.exist(err);
+            txps.length.should.equal(0);
+            next();
+          });
+        },
+        function(next) {
+          server.getTx({
+            id: txpId
+          }, function(err, txp) {
+            should.not.exist(err);
+            txp.isPending().should.be.false;
+            txp.isRejected().should.be.true;
+            txp.isAccepted().should.be.false;
+            _.keys(txp.actions).length.should.equal(2);
+            done();
+          });
+        },
+      ]);
     });
   });
 
