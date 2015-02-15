@@ -100,4 +100,46 @@ describe('Pool', function() {
 
   });
 
+  it('should propagate connect, ready, and disconnect peer events', function(done) {
+    var peerConnectStub = sinon.stub(Peer.prototype, 'connect', function() {
+      this.emit('connect', this, {});
+      this.emit('ready');
+    });
+    var peerDisconnectStub = sinon.stub(Peer.prototype, 'disconnect', function() {
+      this.emit('disconnect', this, {});
+    });
+
+    var pool = new Pool();
+    pool._addAddr({
+      ip: {
+        v4: 'localhost'
+      }
+    });
+
+    // Not great, but needed so pool won't catch its on event and fail the test
+    pool.removeAllListeners('peerdisconnect');
+
+    var poolDisconnectStub;
+    pool.on('peerconnect', function(peer, addr) {
+      pool.on('peerready', function(peer, addr) {
+        // disconnect when the peer is ready
+        poolDisconnectStub = sinon.stub(Pool.prototype, 'disconnect', function() {
+          peer.disconnect();
+        });
+        pool.disconnect();
+      });
+    });
+    pool.on('peerdisconnect', function(peer, addr) {
+      // Restore stubs
+      peerConnectStub.restore();
+      peerDisconnectStub.restore();
+      poolDisconnectStub.restore();
+
+      // done
+      done();
+    });
+
+    pool.connect();
+  });
+
 });
