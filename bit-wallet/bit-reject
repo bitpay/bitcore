@@ -2,7 +2,7 @@
 
 var _ = require('lodash');
 var program = require('commander');
-var ClientLib = require('../lib/clientlib.js');
+var Client = require('../lib/client');
 var common = require('./common');
 
 program
@@ -18,11 +18,11 @@ if (!args[0])
 
 var txpid = args[0];
 
-var cli = new ClientLib({
+var cli = new Client({
   filename: program.config
 });
 
-cli.txProposals({}, function(err, x) {
+cli.getTxProposals({}, function(err, x) {
   common.die(err);
 
   if (program.verbose)
@@ -41,7 +41,7 @@ cli.txProposals({}, function(err, x) {
     }).join(' '));;
 
   var txp = txps[0];
-  cli.reject(txp, function(err, x) {
+  cli.rejectTxProposal(txp, function(err, x) {
     common.die(err);
 
     if (program.verbose)
