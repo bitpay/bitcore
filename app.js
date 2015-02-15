@@ -199,6 +199,7 @@ router.post('/v1/txproposals/:id/signatures/', function(req, res) {
     req.body.txProposalId = req.params['id'];
     server.signTx(req.body, function(err, txp) {
       if (err) return returnError(err, res, req);
+      res.json(txp);
       res.end();
     });
   });
@@ -210,6 +211,7 @@ router.post('/v1/txproposals/:id/broadcast/', function(req, res) {
     req.body.txProposalId = req.params['id'];
     server.broadcastTx(req.body, function(err, txp) {
       if (err) return returnError(err, res, req);
+      res.json(txp);
       res.end();
     });
   });
@@ -220,6 +222,7 @@ router.post('/v1/txproposals/:id/rejections', function(req, res) {
     req.body.txProposalId = req.params['id'];
     server.rejectTx(req.body, function(err, txp) {
       if (err) return returnError(err, res, req);
+      res.json(txp);
       res.end();
     });
   });
