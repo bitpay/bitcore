@@ -2,7 +2,7 @@
 
 var _ = require('lodash');
 var program = require('commander');
-var common = require('./common');
+var utils  = require('./cli-utils');
 var Client = require('../lib/client');
 
 program
@@ -12,18 +12,12 @@ program
   .parse(process.argv);
 
 var args = program.args;
-var cli = new Client({
-  filename: program.config
-});
-
-cli.getAddresses(function(err, x) {
-  common.die(err);
+var client = utils.getClient(program);
+client.getAddresses(function(err, x) {
+  utils.die(err);
 
   console.log('* Addresses:');
   _.each(x, function(a){
     console.log('      ', a.address);
   });
-
-  if (program.verbose)
-    console.log('* Raw Server Response:\n', x); //TODO
 });
