@@ -13,9 +13,7 @@ program
   .parse(process.argv);
 
 var args = program.args;
-if (!args[0])
-  program.help();
-var txpid = args[0];
+var txpid = args[0] || '';
 var reason = args[1] || '';
 var client = utils.getClient(program);
 
