@@ -1499,7 +1499,7 @@ describe('Copay server', function() {
 
     it('should allow creator to remove an unsigned TX', function(done) {
       server.removePendingTx({
-        id: txp.id
+        txProposalId: txp.id
       }, function(err) {
         should.not.exist(err);
         server.getPendingTxs({}, function(err, txs) {
@@ -1516,7 +1516,7 @@ describe('Copay server', function() {
         signatures: signatures,
       }, function(err) {
         server.removePendingTx({
-          id: txp.id
+          txProposalId: txp.id
         }, function(err) {
           should.not.exist(err);
           server.getPendingTxs({}, function(err, txs) {
@@ -1530,7 +1530,7 @@ describe('Copay server', function() {
     it('should not allow non-creator copayer to remove an unsigned TX ', function(done) {
       helpers.getAuthServer(wallet.copayers[1].id, function(server2) {
         server2.removePendingTx({
-          id: txp.id
+          txProposalId: txp.id
         }, function(err) {
           err.message.should.contain('creators');
           server2.getPendingTxs({}, function(err, txs) {
@@ -1550,7 +1550,7 @@ describe('Copay server', function() {
         }, function(err) {
           should.not.exist(err);
           server.removePendingTx({
-            id: txp.id
+            txProposalId: txp.id
           }, function(err) {
             err.message.should.contain('other copayers');
             done();

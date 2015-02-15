@@ -9,14 +9,14 @@ program
   .version('0.0.1')
   .option('-c,--config [file]', 'Wallet config filename')
   .option('-v,--verbose', 'be verbose')
-  .usage('[options] <txpid> [reason]')
+  .usage('[options] <txpid>')
   .parse(process.argv);
 
 var args = program.args;
 if (!args[0])
   program.help();
+
 var txpid = args[0];
-var reason = args[1] || '';
 
 var cli = new Client({
   filename: program.config
@@ -30,12 +30,9 @@ cli.getTxProposals({}, function(err, txps) {
 
   var txp = common.findOneTxProposal(txps, txpid);
 
-  cli.rejectTxProposal(txp, reason, function(err, tx) {
+  cli.removeTxProposal(txp, function(err) {
     common.die(err);
 
-    if (program.verbose)
-      console.log('* Raw Server Response:\n', tx); //TODO
-
-    console.log('Transaction rejected.');
+    console.log('Transaction removed.');
   });
 });
