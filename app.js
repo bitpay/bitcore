@@ -217,7 +217,7 @@ router.post('/v1/txproposals/:id/rejections', function(req, res) {
 router.delete('/v1/txproposals/:id/', function(req, res) {
   getServerWithAuth(req, res, function(server) {
     req.body.txProposalId = req.params['id'];
-    server.removePendingTx(req.body, function(err, txp) {
+    server.removePendingTx(req.body, function(err) {
       if (err) return returnError(err, res, req);
       res.end();
     });
