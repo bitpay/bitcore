@@ -2,9 +2,7 @@
 
 var _ = require('lodash');
 var program = require('commander');
-
-var Client = require('../lib/client');
-var common = require('./common');
+var utils  = require('./cli-utils');
 
 program
   .version('0.0.1')
@@ -13,12 +11,10 @@ program
   .parse(process.argv);
 
 var args = program.args;
-var cli = new Client({
-  filename: program.config
-});
+var client = utils.getClient(program);
 
-cli.getStatus(function(err, res) {
-  common.die(err);
+client.getStatus(function(err, res) {
+  utils.die(err);
 
   var x = res.wallet;
   console.log('* Wallet %s [%s]: %d-%d %s ', x.name, x.isTestnet ? 'testnet' : 'livenet', x.m, x.n, x.status);
@@ -29,7 +25,7 @@ cli.getStatus(function(err, res) {
   if (!_.isEmpty(res.pendingTxps)) {
     console.log("* TX Proposals:")
     _.each(res.pendingTxps, function(x) {
-      console.log("\t%s [%s by %s] %dSAT => %s", common.shortID(x.id), x.message, x.creatorName, x.amount, x.toAddress);
+      console.log("\t%s [%s by %s] %dSAT => %s", utils.shortID(x.id), x.message, x.creatorName, x.amount, x.toAddress);
 
       if (!_.isEmpty(x.actions)) {
         console.log('\t\t * Actions');

@@ -2,7 +2,7 @@
 
 var program = require('commander');
 var ClientLib = require('../lib/client');
-var common = require('./common');
+var utils  = require('./cli-utils');
 
 program
   .version('0.0.1')
@@ -19,13 +19,11 @@ var walletName = args[0];
 var copayerName = args[2] || process.env.USER;
 var network = program.network;
 
-var mn = common.parseMN(args[1]);
+var mn = utils.parseMN(args[1]);
 
-var cli = new ClientLib({
-  filename: program.config
-});
-cli.createWallet(walletName, copayerName, mn[0], mn[1], network, function(err, secret) {
-  common.die(err);
+var client = utils.getClient(program);
+client.createWallet(walletName, copayerName, mn[0], mn[1], network, function(err, secret) {
+  utils.die(err);
   console.log(' * Wallet Created.');
   console.log('   - Secret to share:\n\t' + secret);
 });

@@ -2,8 +2,7 @@
 
 var _ = require('lodash');
 var program = require('commander');
-var ClientLib = require('../lib/client');
-var common = require('./common');
+var utils  = require('./cli-utils');
 
 program
   .version('0.0.1')
@@ -18,24 +17,13 @@ if (!args[0])
 
 var txpid = args[0];
 
-var cli = new ClientLib({
-  filename: program.config
-});
+var client = utils.getClient(program);
+client.getTxProposals({}, function(err, txps) {
+  utils.die(err);
 
-cli.getTxProposals({}, function(err, txps) {
-  common.die(err);
-
-  if (program.verbose)
-    console.log('* Raw Server Response:\n', txps); //TODO
-
-  var txp = common.findOneTxProposal(txps, txpid);
-
-  cli.signTxProposal(txp, function(err, tx) {
-    common.die(err);
-
-    if (program.verbose)
-      console.log('* Raw Server Response:\n', tx); //TODO
-
+  var txp = utils.findOneTxProposal(txps, txpid);
+  client.signTxProposal(txp, function(err, x) {
+    utils.die(err);
     console.log('Transaction signed.');
   });
 });
