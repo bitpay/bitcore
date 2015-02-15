@@ -2,7 +2,7 @@
 
 var program = require('commander');
 var Client = require('../lib/client');
-var common = require('./common');
+var utils  = require('./cli-utils');
 
 program
   .version('0.0.1')
@@ -11,14 +11,9 @@ program
   .parse(process.argv);
 
 var args = program.args;
-var cli = new Client({
-  filename: program.config
-});
+var client = utils.getClient(program);
 
-cli.getBalance(function(err, x) {
-  common.die(err);
+client.getBalance(function(err, x) {
+  utils.die(err);
   console.log('* Wallet balance', x);
-
-  if (program.verbose)
-    console.log('* Raw Server Response:\n', x); //TODO
 });
