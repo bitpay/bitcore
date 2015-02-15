@@ -204,6 +204,17 @@ router.post('/v1/txproposals/:id/signatures/', function(req, res) {
   });
 });
 
+// TODO Check HTTP verb and URL name
+router.post('/v1/txproposals/:id/broadcast/', function(req, res) {
+  getServerWithAuth(req, res, function(server) {
+    req.body.txProposalId = req.params['id'];
+    server.broadcastTx(req.body, function(err, txp) {
+      if (err) return returnError(err, res, req);
+      res.end();
+    });
+  });
+});
+
 router.post('/v1/txproposals/:id/rejections', function(req, res) {
   getServerWithAuth(req, res, function(server) {
     req.body.txProposalId = req.params['id'];
