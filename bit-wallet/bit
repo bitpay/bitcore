@@ -13,6 +13,7 @@ program
   .command('send <address> <amount> <note>', 'send bitcoins')
   .command('sign <txpId>', 'sign a transaction proposal')
   .command('reject <txpId> [reason]', 'reject a transaction proposal')
+  .command('broadcast <txpId>', 'broadcast a transaction proposal to the Bitcoin network')
   .command('rm <txpId>', 'remove a transaction proposal')
   .parse(process.argv);
 
