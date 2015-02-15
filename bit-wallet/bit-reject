@@ -22,30 +22,19 @@ var cli = new Client({
   filename: program.config
 });
 
-cli.getTxProposals({}, function(err, x) {
+cli.getTxProposals({}, function(err, txps) {
   common.die(err);
 
   if (program.verbose)
-    console.log('* Raw Server Response:\n', x); //TODO
+    console.log('* Raw Server Response:\n', txps); //TODO
 
-  var txps = _.filter(x, function(x) {
-    return _.endsWith(common.shortID(x.id), txpid);
-  });
+  var txp = common.findOneTxProposal(txps, txpid);
 
-  if (!txps.length)
-    common.die('Could not find TX Proposal:' + txpid);
-
-  if (txps.length > 1)
-    common.die('More than one TX Proposals match:' + txpid + ' : ' + _.map(txps, function(x) {
-      return x.id;
-    }).join(' '));;
-
-  var txp = txps[0];
-  cli.rejectTxProposal(txp, reason, function(err, x) {
+  cli.rejectTxProposal(txp, reason, function(err, tx) {
     common.die(err);
 
     if (program.verbose)
-      console.log('* Raw Server Response:\n', x); //TODO
+      console.log('* Raw Server Response:\n', tx); //TODO
 
     console.log('Transaction rejected.');
   });
