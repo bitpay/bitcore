@@ -83,7 +83,7 @@ function getServerWithAuth(req, res, cb) {
   var credentials = getCredentials(req);
   var auth = {
     copayerId: credentials.copayerId,
-    message: req.url + '|' + JSON.stringify(req.body),
+    message: req.method.toLowerCase() + '|' + req.url + '|' + JSON.stringify(req.body),
     signature: credentials.signature,
   };
   CopayServer.getInstanceWithAuth(auth, function(err, server) {
