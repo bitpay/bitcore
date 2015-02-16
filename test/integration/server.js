@@ -10,15 +10,15 @@ var levelup = require('levelup');
 var memdown = require('memdown');
 var Bitcore = require('bitcore');
 
-var Utils = require('../lib/utils');
-var SignUtils = require('../lib/signutils');
-var Storage = require('../lib/storage');
+var Utils = require('../../lib/utils');
+var SignUtils = require('../../lib/signutils');
+var Storage = require('../../lib/storage');
 
-var Wallet = require('../lib/model/wallet');
-var Address = require('../lib/model/address');
-var Copayer = require('../lib/model/copayer');
-var CopayServer = require('../lib/server');
-var TestData = require('./testdata');
+var Wallet = require('../../lib/model/wallet');
+var Address = require('../../lib/model/address');
+var Copayer = require('../../lib/model/copayer');
+var CopayServer = require('../../lib/server');
+var TestData = require('../testdata');
 
 
 var helpers = {};
