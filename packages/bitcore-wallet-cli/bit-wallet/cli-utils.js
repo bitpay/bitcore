@@ -2,16 +2,16 @@
 var _ = require('lodash');
 var Client = require('../lib/client');
 
-var lib = function() {};
+var Utils = function() {};
 
-var die = lib.die = function(err) {
+var die = Utils.die = function(err) {
   if (err) {
     console.error(err);
     process.exit(1);
   }
 };
 
-lib.parseMN = function(MN) {
+Utils.parseMN = function(MN) {
   if (!MN) 
     die('No m-n parameter');
   var mn = MN.split('-');
@@ -27,11 +27,11 @@ lib.parseMN = function(MN) {
 };
 
 
-lib.shortID = function(id) {
+Utils.shortID = function(id) {
   return id.substr(id.length - 4);
 };
 
-lib.getClient = function(args) {
+Utils.getClient = function(args) {
   var storage = new Client.FileStorage({
     filename: args.config
   });
@@ -41,16 +41,16 @@ lib.getClient = function(args) {
   });
 }
 
-lib.findOneTxProposal = function(txps, id) {
+Utils.findOneTxProposal = function(txps, id) {
   var matches = _.filter(txps, function(tx) {
-    return _.endsWith(lib.shortID(tx.id), id);
+    return _.endsWith(Utils.shortID(tx.id), id);
   });
 
   if (!matches.length)
-    lib.die('Could not find TX Proposal:' + id);
+    Utils.die('Could not find TX Proposal:' + id);
 
   if (matches.length > 1)
-    lib.die('More than one TX Proposals match:' + id + ' : ' + _.map(matches, function(tx) {
+    Utils.die('More than one TX Proposals match:' + id + ' : ' + _.map(matches, function(tx) {
       return tx.id;
     }).join(' '));;
 
@@ -59,4 +59,4 @@ lib.findOneTxProposal = function(txps, id) {
 
 
 
-module.exports = lib;
+module.exports = Utils;
