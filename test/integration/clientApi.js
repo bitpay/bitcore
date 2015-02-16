@@ -73,7 +73,7 @@ describe('client API', function() {
       }, response);
       client.request = request;
       client.createAddress(function(err, x) {
-        err.code.should.equal('SERVERCOMPROMISSED');
+        err.code.should.equal('SERVERCOMPROMISED');
         err.message.should.contain('fake address');
         done();
       });
