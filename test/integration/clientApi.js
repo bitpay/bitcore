@@ -60,7 +60,6 @@ describe('client API', function() {
         done();
       });
     })
-  });
     it('should detect fake addresses', function(done) {
       var response = {
         createdOn: 1424105995,
@@ -78,5 +77,5 @@ describe('client API', function() {
         done();
       });
     })
-
+  });
 });
