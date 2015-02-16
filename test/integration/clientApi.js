@@ -19,6 +19,17 @@ var wallet11 = {
   "publicKeyRing": ["tpubD6NzVbkrYhZ4YBumFxZEowDuA8iirsny2nmmFUkuxBkkZoGdPyf61Waei3tDYvVa1yqW82Xhmmd6oiibeDyM1MS3zTiky7Yg75UEV9oQhFJ"]
 };
 
+var incompleteWallet22 = {
+  "m": 2,
+  "n": 2,
+  "walletPrivKey": "L3XSE3KNjQM1XRP1h5yMCSKsN4hs3D6eK7Vwn5M88Bs6jpCnXR3R",
+  "network": "testnet",
+  "secret": "d9cf45a1-6793-4df4-94df-c99d2c2e1fe9:bc2488c1b83e455a4b908a0d0aeaf70351efc48fbcaa454bffefdef419a5ee6a:T",
+  "xPrivKey": "tprv8ZgxMBicQKsPdoC5DGtnXx7fp7YnUtGv8b7fU2oDQfDpHFQh1QCgpKc8GHpdsBN5THaHYMV5LgD5cP5NYaacGVr786p3mVLSZff9berTV8h",
+  "copayerId": "c3a33ca0-37cf-4e80-b745-71272683835c",
+  "signingPrivKey": "6e129c4996666e5ecdf78aed626c01977fa19eacce6659738ebe065f86523e9b",
+  "publicKeyRing": []
+};
 
 
 describe('client API', function() {
@@ -28,8 +39,8 @@ describe('client API', function() {
   beforeEach(function() {
 
     var fsmock = {};;
-    fsmock.readFileSync = sinon.mock().returns(JSON.stringify(wallet11));
-    fsmock.writeFileSync = sinon.mock();
+    fsmock.readFile = sinon.mock().yields(null, JSON.stringify(wallet11));
+    fsmock.writeFile = sinon.mock().yields();
     var storage = new Client.FileStorage({
       filename: 'dummy',
       fs: fsmock,
@@ -77,5 +88,20 @@ describe('client API', function() {
         done();
       });
     })
+
+    it('should complain wallet is not complete', function(done) {
+      var request = sinon.mock().yields(null, {
+        statusCode: 200
+      }, {
+        dummy: true
+      });
+      client.request = request;
+      client.storage.fs.readFile = sinon.mock().yields(null, JSON.stringify(incompleteWallet22));
+      client.createAddress(function(err, x) {
+        err.should.contain('Incomplete');
+        done();
+      });
+    })
+
   });
 });
