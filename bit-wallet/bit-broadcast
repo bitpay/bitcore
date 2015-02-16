@@ -3,29 +3,29 @@
 var _ = require('lodash');
 var program = require('commander');
 var Client = require('../lib/client');
-var utils  = require('./cli-utils');
+var utils = require('./cli-utils');
 
 program
   .version('0.0.1')
   .option('-c,--config [file]', 'Wallet config filename')
   .option('-v,--verbose', 'be verbose')
-  .usage('[options] <txpid> [reason]')
+  .usage('[options] <txpid>')
   .parse(process.argv);
 
 var args = program.args;
-var txpid = args[0] || '';
-var reason = args[1] || '';
+if (!args[0])
+  program.help();
+
+var txpid = args[0];
 var client = utils.getClient(program);
 
 client.getTxProposals({}, function(err, txps) {
   utils.die(err);
 
   var txp = utils.findOneTxProposal(txps, txpid);
-  client.rejectTxProposal(txp, reason, function(err, tx) {
+  client.broadcastTxProposal(txp, function(err, txid) {
     utils.die(err);
-    if (x.status == 'rejected')
-      console.log('Transaction finally rejected.');
-    else 
-      console.log('Transaction rejected by you.');
+    console.log('Transaction Broadcasted: TXID: ' + x.txid);
+ 
   });
 });
