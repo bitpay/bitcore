@@ -18,7 +18,7 @@ var secret = args[0];
 var copayerName = args[1] || process.env.USER;
 
 var client = utils.getClient(program);
-cli.joinWallet(secret, copayerName, function(err, xx) {
+client.joinWallet(secret, copayerName, function(err, xx) {
   utils.die(err);
   console.log(' * Wallet Joined.', xx || '');
 });
