@@ -771,7 +771,18 @@ describe('Copay server', function() {
       });
     });
 
-    it.skip('should fail to create tx for dust amount', function(done) {});
+    it('should fail to create tx for dust amount', function(done) {
+      helpers.createUtxos(server, wallet, [1], function(utxos) {
+        helpers.stubBlockExplorer(server, utxos);
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.00000001, null, TestData.copayers[0].privKey);
+        server.createTx(txOpts, function(err, tx) {
+          should.exist(err);
+          err.code.should.equal('DUSTAMOUNT');
+          err.message.should.equal('Amount below dust threshold');
+          done();
+        });
+      });
+    });
 
     it('should create tx when there is a pending tx and enough UTXOs', function(done) {
       helpers.createUtxos(server, wallet, [10.1, 10.2, 10.3], function(utxos) {
