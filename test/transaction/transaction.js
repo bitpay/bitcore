@@ -20,7 +20,7 @@ describe('Transaction', function() {
 
   it('should serialize and deserialize correctly a given transaction', function() {
     var transaction = new Transaction(tx_1_hex);
-    transaction.serialize().should.equal(tx_1_hex);
+    transaction.uncheckedSerialize().should.equal(tx_1_hex);
   });
 
   it('fails if an invalid parameter is passed to constructor', function() {
@@ -59,13 +59,13 @@ describe('Transaction', function() {
   });
 
   it('serialize to Object roundtrip', function() {
-    new Transaction(testTransaction.toObject()).serialize().should.equal(testTransaction.serialize());
+    new Transaction(testTransaction.toObject()).uncheckedSerialize().should.equal(testTransaction.serialize());
   });
 
   it('constructor returns a shallow copy of another transaction', function() {
     var transaction = new Transaction(tx_1_hex);
     var copy = new Transaction(transaction);
-    copy.serialize().should.equal(transaction.serialize());
+    copy.uncheckedSerialize().should.equal(transaction.uncheckedSerialize());
   });
 
   it('should display correctly in console', function() {
@@ -80,12 +80,12 @@ describe('Transaction', function() {
 
   it('serializes an empty transaction', function() {
     var transaction = new Transaction();
-    transaction.serialize().should.equal(tx_empty_hex);
+    transaction.uncheckedSerialize().should.equal(tx_empty_hex);
   });
 
   it('serializes and deserializes correctly', function() {
     var transaction = new Transaction(tx_1_hex);
-    transaction.serialize().should.equal(tx_1_hex);
+    transaction.uncheckedSerialize().should.equal(tx_1_hex);
   });
 
   describe('transaction creation test vector', function() {
@@ -238,7 +238,17 @@ describe('Transaction', function() {
       transaction.outputs.length.should.equal(2);
       transaction.outputs[1].satoshis.should.equal(10000);
     });
-    it('coverage: on second call to sign, change is not recalculated', function() {
+    it('if fee is too small, fail serialization', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith100000Satoshis)
+        .to(toAddress, 99999)
+        .change(changeAddress)
+        .sign(privateKey);
+      expect(function() {
+        return transaction.serialize();
+      }).to.throw(errors.Transaction.FeeError);
+    });
+    it('on second call to sign, change is not recalculated', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith100000Satoshis)
         .to(toAddress, 100000)
@@ -329,7 +339,7 @@ describe('Transaction', function() {
   describe('to and from JSON', function() {
     it('takes a string that is a valid JSON and deserializes from it', function() {
       var simple = new Transaction();
-      expect(new Transaction(simple.toJSON()).serialize()).to.equal(simple.serialize());
+      expect(new Transaction(simple.toJSON()).uncheckedSerialize()).to.equal(simple.uncheckedSerialize());
       var complex = new Transaction()
         .from(simpleUtxoWith100000Satoshis)
         .to(toAddress, 50000)
@@ -337,14 +347,14 @@ describe('Transaction', function() {
         .sign(privateKey);
       var cj = complex.toJSON();
       var ctx = new Transaction(cj);
-      expect(ctx.serialize()).to.equal(complex.serialize());
+      expect(ctx.uncheckedSerialize()).to.equal(complex.uncheckedSerialize());
 
     });
     it('serializes the `change` information', function() {
       var transaction = new Transaction();
       transaction.change(changeAddress);
       expect(JSON.parse(transaction.toJSON()).changeScript).to.equal(Script.fromAddress(changeAddress).toString());
-      expect(new Transaction(transaction.toJSON()).serialize()).to.equal(transaction.serialize());
+      expect(new Transaction(transaction.toJSON()).uncheckedSerialize()).to.equal(transaction.uncheckedSerialize());
     });
     it('serializes correctly p2sh multisig signed tx', function() {
       var t = new Transaction(tx2hex);
