@@ -43,16 +43,45 @@ describe('Pool', function() {
     stub.restore();
   });
 
-  it('should not discover peers via dns', function() {
-    var pool = new Pool();
-    pool._addAddr({
-      ip: {
-        v4: '10.10.10.1'
-      }
+  it('can optionally connect without dns seeds', function() {
+    var stub = sinon.stub(dns, 'resolve', function(seed, callback) {
+      throw new Error('DNS should not be called');
     });
+    var options = {
+      discover: false,
+      addrs: [
+        {
+          ip: {
+            v4: '10.10.10.1'
+          }
+        }
+      ]
+    };
+    var pool = new Pool(Networks.livenet, options);
     pool.connect();
     pool.disconnect();
     pool._addrs.length.should.equal(1);
+    stub.restore();
+  });
+
+  it('will add addrs via options argument', function() {
+    var options = {
+      discover: false,
+      addrs: [
+        {
+          ip: {
+            v4: '10.10.10.1'
+          }
+        },
+        {
+          ip: {
+            v4: '10.10.10.245'
+          }
+        }
+      ]
+    };
+    var pool = new Pool(Networks.livenet, options);
+    pool._addrs.length.should.equal(2);
   });
 
   it('should add new addrs as they are announced over the network', function(done) {
@@ -70,17 +99,73 @@ describe('Pool', function() {
       this.emit(message.command, message);
     });
 
-    var pool = new Pool();
+    var options = {
+      discover: false,
+      addrs: [
+        {
+          ip: {
+            v4: 'localhost'
+          }
+        }
+      ]
+    };
 
-    pool._addAddr({
-      ip: {
-        v4: 'localhost'
-      }
-    });
+    var pool = new Pool(Networks.testnet, options);
 
     // listen for the event
     pool.on('peeraddr', function(peer, message) {
       pool._addrs.length.should.equal(502);
+
+      // restore stubs
+      peerConnectStub.restore();
+      peerMessageStub.restore();
+
+      for (var i = 0; i < pool._addrs.length; i++) {
+        should.exist(pool._addrs[i].hash);
+        should.exist(pool._addrs[i].ip);
+        should.exist(pool._addrs[i].ip.v4);
+      }
+
+      // done
+      done();
+    });
+
+    pool.connect();
+
+  });
+
+  it('can optionally not listen to new addrs messages', function(done) {
+
+    // only emit an event, no need to connect
+    var peerConnectStub = sinon.stub(Peer.prototype, 'connect', function() {
+      this._readMessage();
+      this.emit('ready');
+    });
+
+    // mock a addr peer event
+    var peerMessageStub = sinon.stub(Peer.prototype, '_readMessage', function() {
+      var payload = new Buffer(MessagesData.ADDR.payload, 'hex');
+      var message = new Messages.Addresses().fromBuffer(payload);
+      this.emit(message.command, message);
+    });
+
+    var options = {
+      discover: false,
+      listenAddr: false,
+      addrs: [
+        {
+          ip: {
+            v4: 'localhost'
+          }
+        }
+      ]
+    };
+
+    var pool = new Pool(Networks.testnet, options);
+
+    // listen for the event
+    pool.on('peeraddr', function(peer, message) {
+      pool._addrs.length.should.equal(1);
 
       // restore stubs
       peerConnectStub.restore();

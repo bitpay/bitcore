@@ -28,3 +28,25 @@ pool.disconnect()
 ```
 
 For more information about Peer events please read the [Peer](peer.md) documentation. Peer events are relayed to the pool, a peer event `inv` in the pool would be `peerinv`. When a peer is disconnected the pool will try to connect to the list of known addresses to maintain connection.
+
+## Trusted Peers
+
+By default, peers will be added via DNS discovery and as peers are announced in the network. To connect only to specific trusted peers, configurations options can be included:
+
+```javascript
+
+var pool = new Pool(Networks.livenet, {
+  discover: false,
+  listenAddr: false,
+  addrs: [
+    {
+      ip: {
+        v4: '127.0.0.1'
+      }
+    }
+  ]
+});
+
+pool.connect();
+
+```
