@@ -728,7 +728,7 @@ describe('Copay server', function() {
 
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(tx);
-          err.should.exist;
+          should.exist(err);
           err.code.should.equal('INVALIDADDRESS');
           err.message.should.equal('Incorrect address network');
           done();
@@ -741,6 +741,7 @@ describe('Copay server', function() {
         helpers.stubBlockExplorer(server, utxos);
         var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 120, null, TestData.copayers[0].privKey);
         server.createTx(txOpts, function(err, tx) {
+          should.exist(err);
           err.code.should.equal('INSUFFICIENTFUNDS');
           err.message.should.equal('Insufficient funds');
           server.getPendingTxs({}, function(err, txs) {
@@ -757,7 +758,18 @@ describe('Copay server', function() {
       });
     });
 
-    it.skip('should fail to create tx when insufficient funds for fee', function(done) {});
+    it('should fail to create tx when insufficient funds for fee', function(done) {
+      helpers.createUtxos(server, wallet, [100], function(utxos) {
+        helpers.stubBlockExplorer(server, utxos);
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 100, null, TestData.copayers[0].privKey);
+        server.createTx(txOpts, function(err, tx) {
+          should.exist(err);
+          err.code.should.equal('INSUFFICIENTFUNDS');
+          err.message.should.equal('Insufficient funds');
+          done();
+        });
+      });
+    });
 
     it.skip('should fail to create tx for dust amount', function(done) {});
 
@@ -911,7 +923,7 @@ describe('Copay server', function() {
             var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey);
             server.createTx(txOpts, function(err, tx) {
               should.not.exist(err);
-              tx.should.exist;
+              should.exist(tx);
               txid = tx.id;
               done();
             });
@@ -986,12 +998,30 @@ describe('Copay server', function() {
         var tx = txs[0];
         tx.id.should.equal(txid);
 
-        var signatures = ['11', '22', '33', '44'];
+        var signatures = ['11', '22', '33', '44', '55'];
         server.signTx({
           txProposalId: txid,
           signatures: signatures,
         }, function(err) {
-          err.message.should.contain('signatures');
+          should.exist(err);
+          err.message.should.contain('Bad signatures');
+          done();
+        });
+      });
+    });
+
+    it('should fail on wrong number of invalid signatures', function(done) {
+      server.getPendingTxs({}, function(err, txs) {
+        var tx = txs[0];
+        tx.id.should.equal(txid);
+
+        var signatures = _.take(helpers.clientSign(tx, TestData.copayers[0].xPrivKey), 2);
+        server.signTx({
+          txProposalId: txid,
+          signatures: signatures,
+        }, function(err) {
+          should.exist(err);
+          err.message.should.contain('Bad signatures');
           done();
         });
       });
