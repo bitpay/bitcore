@@ -150,4 +150,44 @@ describe(' client API ', function() {
       });
     })
   })
+
+  describe(' createAddress ', function() {
+    it(' should check address ', function(done) {
+
+      var response = {
+        createdOn: 1424105995,
+        address: '2N3fA6wDtnebzywPkGuNK9KkFaEzgbPRRTq',
+        path: 'm/2147483647/0/7',
+        publicKeys: ['03f6a5fe8db51bfbaf26ece22a3e3bc242891a47d3048fc70bc0e8c03a071ad76f']
+      };
+      var request = sinon.mock().yields(null, {
+        statusCode: 200
+      }, response);
+      client.request = request;
+
+
+      client.createAddress(function(err, x) {
+        should.not.exist(err);
+        x.address.should.equal('2N3fA6wDtnebzywPkGuNK9KkFaEzgbPRRTq');
+        done();
+      });
+    })
+    it(' should detect fake addresses ', function(done) {
+      var response = {
+        createdOn: 1424105995,
+        address: '2N3fA6wDtnebzywPkGuNK9KkFaEzgbPRRTq',
+        path: 'm/2147483647/0/8',
+        publicKeys: ['03f6a5fe8db51bfbaf26ece22a3e3bc242891a47d3048fc70bc0e8c03a071ad76f']
+      };
+      var request = sinon.mock().yields(null, {
+        statusCode: 200
+      }, response);
+      client.request = request;
+      client.createAddress(function(err, x) {
+        err.code.should.equal('SERVERCOMPROMISED');
+        err.message.should.contain('fake address');
+        done();
+      });
+    })
+  })
 });
