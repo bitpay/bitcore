@@ -11,7 +11,7 @@ var memdown = require('memdown');
 var Bitcore = require('bitcore');
 
 var Utils = require('../../lib/utils');
-var SignUtils = require('../../lib/signutils');
+var WalletUtils = require('../../lib/walletutils');
 var Storage = require('../../lib/storage');
 
 var Wallet = require('../../lib/model/wallet');
@@ -176,9 +176,9 @@ helpers.createProposalOpts = function(toAddress, amount, message, signingKey) {
     message: message,
     proposalSignature: null,
   };
-  var msg = opts.toAddress + '|' + opts.amount + '|' + opts.message;
+  var hash = WalletUtils.getProposalHash(opts.toAddress, opts.amount, opts.message);
   try {
-    opts.proposalSignature = SignUtils.sign(msg, signingKey);
+    opts.proposalSignature = WalletUtils.signMessage(hash, signingKey);
   } catch (ex) {}
 
   return opts;
@@ -213,7 +213,7 @@ describe('Copay server', function() {
           .toString();
 
         var message = 'hola';
-        var sig = SignUtils.sign(message, priv);
+        var sig = WalletUtils.signMessage(message, priv);
 
         CopayServer.getInstanceWithAuth({
           copayerId: wallet.copayers[0].id,
@@ -706,7 +706,7 @@ describe('Copay server', function() {
       });
     });
 
-    it('should fail to create tx for address invalid address', function(done) {
+    it('should fail to create tx for invalid address', function(done) {
       helpers.createUtxos(server, wallet, [100, 200], function(utxos) {
         helpers.stubBlockExplorer(server, utxos);
         var txOpts = helpers.createProposalOpts('invalid address', 80, null, TestData.copayers[0].privKey);
