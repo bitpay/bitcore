@@ -11,6 +11,7 @@ var memdown = require('memdown');
 var Bitcore = require('bitcore');
 
 var Utils = require('../../lib/utils');
+var WalletUtils = require('../../lib/walletutils');
 var SignUtils = require('../../lib/signutils');
 var Storage = require('../../lib/storage');
 
@@ -176,9 +177,9 @@ helpers.createProposalOpts = function(toAddress, amount, message, signingKey) {
     message: message,
     proposalSignature: null,
   };
-  var msg = opts.toAddress + '|' + opts.amount + '|' + (opts.message || '');
+  var hash = WalletUtils.getProposalHash(opts.toAddress, opts.amount, opts.message);
   try {
-    opts.proposalSignature = SignUtils.sign(msg, signingKey);
+    opts.proposalSignature = SignUtils.sign(hash, signingKey);
   } catch (ex) {}
 
   return opts;
