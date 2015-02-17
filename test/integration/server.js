@@ -12,7 +12,6 @@ var Bitcore = require('bitcore');
 
 var Utils = require('../../lib/utils');
 var WalletUtils = require('../../lib/walletutils');
-var SignUtils = require('../../lib/signutils');
 var Storage = require('../../lib/storage');
 
 var Wallet = require('../../lib/model/wallet');
@@ -179,7 +178,7 @@ helpers.createProposalOpts = function(toAddress, amount, message, signingKey) {
   };
   var hash = WalletUtils.getProposalHash(opts.toAddress, opts.amount, opts.message);
   try {
-    opts.proposalSignature = SignUtils.sign(hash, signingKey);
+    opts.proposalSignature = WalletUtils.signMessage(hash, signingKey);
   } catch (ex) {}
 
   return opts;
@@ -214,7 +213,7 @@ describe('Copay server', function() {
           .toString();
 
         var message = 'hola';
-        var sig = SignUtils.sign(message, priv);
+        var sig = WalletUtils.signMessage(message, priv);
 
         CopayServer.getInstanceWithAuth({
           copayerId: wallet.copayers[0].id,
