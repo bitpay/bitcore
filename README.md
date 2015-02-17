@@ -42,11 +42,14 @@ A Multisig HD Wallet Service, with minimun server trust.
   ```
   
 # Server API
-create a wallet
+
+## create a wallet
  POST  `/v1/wallets`
-join a wallet
+## join a wallet
  POST  `/v1/wallets/:id/copayers`
+
  ...
+
  [To be completed, see app.js]
  
 # Security Considerations
