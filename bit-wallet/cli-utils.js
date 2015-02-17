@@ -33,7 +33,7 @@ Utils.shortID = function(id) {
 
 Utils.getClient = function(args) {
   var storage = new Client.FileStorage({
-    filename: args.config
+    filename: args.config || process.env['BIT_FILE'],
   });
   return new Client({
     storage: storage,
