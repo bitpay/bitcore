@@ -149,6 +149,28 @@ describe('client API ', function() {
     });
   });
 
+
+  describe('#export & #import 2-2 wallet', function() {
+    it('round trip ', function(done) {
+      client.storage.fs.readFile = sinon.stub().yields(null, JSON.stringify(TestData.storage.complete22));
+      client.export(function(err, str) {
+        should.not.exist(err);
+
+        client.storage.fs.readFile = sinon.stub().yields(null); 
+        client.import(str, function(err,wallet) {
+          should.not.exist(err);
+          var wallet = JSON.parse(client.storage.fs.writeFile.getCall(0).args[1]);
+
+          TestData.storage.complete22.should.deep.equal(wallet);
+
+          done();
+        }); 
+      });
+    });
+  });
+
+
+
   describe('#signTxProposal ', function() {
     it.skip('should sign tx proposal', function(done) {});
 
