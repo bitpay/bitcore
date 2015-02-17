@@ -17,6 +17,7 @@ program
   .command('rm <txpId>', 'remove a transaction proposal')
   .command('export', 'export wallet critical data')
   .command('import', 'import wallet critical data')
+  .command('confirm', 'show copayer\'s data for confirmation')
   .parse(process.argv);
 
 
