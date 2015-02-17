@@ -1,0 +1,28 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+var qr  = require('qr-image');
+
+var Client = require('../lib/client');
+var utils  = require('./cli-utils');
+
+program
+  .version('0.0.1')
+  .option('-c, --config [file]', 'Wallet config filename')
+  .option('-v, --verbose', 'be verbose')
+  .option('-q, --qr')
+  .parse(process.argv);
+
+var args = program.args;
+var client = utils.getClient(program);
+
+client.export(function(err, x) {
+  utils.die(err);
+  if (program.qr) {
+    var filename = program.config + '.svg';
+    var qr_svg = qr.image(x, { type: 'svg' });
+    qr_svg.pipe(require('fs').createWriteStream(filename));
+  } else {
+    console.log('Wallet Critical Data:\n', x);
+  }
+});
