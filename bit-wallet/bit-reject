@@ -9,6 +9,7 @@ program
   .version('0.0.1')
   .option('-c,--config [file]', 'Wallet config filename')
   .option('-v,--verbose', 'be verbose')
+  .option('-h, --host [host]', 'Bitcore Wallet Service URL (eg: http://localhost:3001/copay/api')
   .usage('[options] <txpid> [reason]')
   .parse(process.argv);
 

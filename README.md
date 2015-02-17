@@ -23,6 +23,7 @@ A Multisig HD Wallet Service, with minimun server trust.
    ./bit -c pete.dat status
    
    export BIT_FILE=pete.dat
+   export BIT_HOST=http://pepe.com/bws
    ./bit address 
      [1bitcoinaddress]
    ./bit balance
