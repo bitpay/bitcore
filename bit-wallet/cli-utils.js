@@ -37,6 +37,7 @@ Utils.getClient = function(args) {
   });
   return new Client({
     storage: storage,
+    baseUrl: args.host || process.env['BIT_HOST'],
     verbose: args.verbose
   });
 }
