@@ -22,6 +22,7 @@ client.export(function(err, x) {
     var filename = program.config + '.svg';
     var qr_svg = qr.image(x, { type: 'svg' });
     qr_svg.pipe(require('fs').createWriteStream(filename));
+    console.log('Wallet Critical Data: exported to ' + filename);
   } else {
     console.log('Wallet Critical Data:\n', x);
   }
