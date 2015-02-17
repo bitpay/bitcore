@@ -1,0 +1,27 @@
+#!/usr/bin/env node
+var program = require('commander');
+
+var Client = require('../lib/client');
+var utils  = require('./cli-utils');
+
+var fs = require('fs');
+
+program
+  .version('0.0.1')
+  .option('-c, --config [file]', 'Wallet config filename')
+  .option('-v, --verbose', 'be verbose')
+  .usage('import [options] <file>')
+  .parse(process.argv);
+
+var args = program.args;
+
+if (!args[0])
+  program.help();
+
+var client = utils.getClient(program);
+var str = fs.readFileSync(args[0]);
+
+client.import(str, function(err, x) {
+  utils.die(err);
+  console.log('Wallet Imported');
+});
