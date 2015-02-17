@@ -28,6 +28,14 @@
    ./bit send 1xxxxx 100 "100 satoshis to mother"
    ./bit status
    
+   # Export your critical wallet data (you need quorum of wallet's copayer to extract coins)
+   ./bit export
+   # Or export it to a QR 
+   ./bit export --qr
+   
+   # Import it later
+   ./bit import <file>
+   
    # List all commands:
     ./bit --help
   ```
