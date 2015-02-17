@@ -1,6 +1,6 @@
 'use strict';
 
-var HDPath = require('../lib/model/hdpath');
+var HDPath = require('../lib/hdpath');
 
 describe('HDPath model', function() {
   it('should have the correct constants', function() {
