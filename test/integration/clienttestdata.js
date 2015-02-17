@@ -13,103 +13,116 @@ var storage = {
   incompleteWallet22: {
     "m": 2,
     "n": 2,
-    "walletPrivKey":"L2Fu6TM1AqSNBaQcjgjvYjGf3EzS3MVSTwEeTw3bvy52x7ZkffWj",
+    "walletPrivKey": "L2Fu6TM1AqSNBaQcjgjvYjGf3EzS3MVSTwEeTw3bvy52x7ZkffWj",
     "network": "testnet",
     "secret": "b6f57154-0df8-4845-a61d-47ecd648c2d4:eab5a55d9214845ee8d13ea1033e42ec8d7f780ae6e521d830252a80433e91a5:T",
     "xPrivKey": "tprv8ZgxMBicQKsPfFVXegcKyJjy2Y5DSrHNrtGBHG1f9pPX75QQdHwHGjWUtR7cCUXV7QcCCDon4cieHWTYscy8M7oXwF3qd3ssfBiV9M68bPB",
     "copayerId": "3fc03e7a-6ebc-409b-a4b7-45b14d5a8199",
     "signingPrivKey": "0d3c796fb12e387c4b5a5c566312b2b22fa0553ca041d859e3f0987215ca3a4f",
     "publicKeyRing": []
-  }
+  },
+  complete22: {
+    "xPrivKey": "xprv9s21ZrQH143K3nwnRt6W25h7smm4k4nbuN4QKnNkTMDHFcB11wJXYF78TpwQ3xKjik9M66nRd9WUiHB5C8XgoWSbpMRMc2AxpcUNUsi4thi",
+    "m": 2,
+    "publicKeyRing": ["xpub661MyMwAqRbcGzNFbVQLh6CV6ukHuhBn4Bf4CGrQ6pFfNNdJ3pxrEVDtFHGsTzyz6Py23FhP8GWAqew3PsvnstEs2iayH1PK5Mx1bSVSEAG", "xpub661MyMwAqRbcGH2FXudWPDdrRobZ9XWTGaz18AnN1gkG8QW9ZUcn63RcK5qJJ5DXYXeAWBNqprdvvg8VHA5twmBHCUc6gWygXkwmU1Dohwh"],
+    "copayerId": "020b41cfea5fae42050580474a195a8385b093f291af4079759851d8819383a680",
+    "signingPrivKey": "KyhU3befBaePqHuPQNNyY1XFUgnArR3GUKZpZwV5vS7u1pcR3uzB",
+    "network": "livenet"
+  },
 };
 
 var serverResponse = {
   completeWallet: {
     wallet: {
-    m: 2,
-    n: 2,
-    status: 'complete',
-    publicKeyRing: ['tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
-      'tpubD6NzVbkrYhZ4WSuBBLyubi8DHMipbFQcZoLJHjb21gEtznCEJMJhwkvaSshHVLtq8C1uNMKD4GtADVYY6WZt1cyT218JUm3PiNKYVkMATWV'
-    ],
-    addressIndex: 0,
-    copayers: [{
-      xPubKey: 'tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
-      xPubKeySignature: '3045022100ef86122060bbb7681db05486f8b1ee1579c5800e8da78182a87384f05542a4cc0220215ce7ef8c484b64178779414efdf2b7033d25ed752eebf4eb3241f9fa8e6b67',
-    }, {
-      xPubKey: 'tpubD6NzVbkrYhZ4YiXKYLGvNiQ5bZb9cBUHSBrxZn3xa6BuwZfBFgksTE8M4ZFBLWVJ4PLnAJs2JKhkpJVqsrJEAkGpb62rx62Bk4o4N5Lz8dQ',
-      xPubKeySignature: '3045022100e03b069db333428153c306c9bf66ebc7f25e7d7f3d087e1ca7234fbbb1a47efa02207421fb375d0dd7a7f2116301f2cdf1bce88554a6c88a82d4ec9fb37fb6680ae8',
-    }],
-    pubKey: ' { "x": "b2903ab878ed1316f82b859e9807e23bab3d579175563e1068d2ed9c9e37873c", "y": "5f30165915557394223a58329c1527dfa0f34f483d8aed02e0638f9124dbddef", "compressed": true }',
-    network: 'testnet',
-  }},
+      m: 2,
+      n: 2,
+      status: 'complete',
+      publicKeyRing: ['tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
+        'tpubD6NzVbkrYhZ4WSuBBLyubi8DHMipbFQcZoLJHjb21gEtznCEJMJhwkvaSshHVLtq8C1uNMKD4GtADVYY6WZt1cyT218JUm3PiNKYVkMATWV'
+      ],
+      addressIndex: 0,
+      copayers: [{
+        xPubKey: 'tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
+        xPubKeySignature: '3045022100ef86122060bbb7681db05486f8b1ee1579c5800e8da78182a87384f05542a4cc0220215ce7ef8c484b64178779414efdf2b7033d25ed752eebf4eb3241f9fa8e6b67',
+      }, {
+        xPubKey: 'tpubD6NzVbkrYhZ4YiXKYLGvNiQ5bZb9cBUHSBrxZn3xa6BuwZfBFgksTE8M4ZFBLWVJ4PLnAJs2JKhkpJVqsrJEAkGpb62rx62Bk4o4N5Lz8dQ',
+        xPubKeySignature: '3045022100e03b069db333428153c306c9bf66ebc7f25e7d7f3d087e1ca7234fbbb1a47efa02207421fb375d0dd7a7f2116301f2cdf1bce88554a6c88a82d4ec9fb37fb6680ae8',
+      }],
+      pubKey: ' { "x": "b2903ab878ed1316f82b859e9807e23bab3d579175563e1068d2ed9c9e37873c", "y": "5f30165915557394223a58329c1527dfa0f34f483d8aed02e0638f9124dbddef", "compressed": true }',
+      network: 'testnet',
+    }
+  },
 
   missingMyPubKey: {
     wallet: {
-    m: 2,
-    n: 2,
-    status: 'complete',
-    publicKeyRing: ['tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
-      'tpubD6NzVbkrYhZ4WSuBBLyubi8DHMipbFQcZoLJHjb21gEtznCEJMJhwkvaSshHVLtq8C1uNMKD4GtADVYY6WZt1cyT218JUm3PiNKYVkMATWV'
-    ],
-    addressIndex: 0,
-    copayers: [{
-      xPubKey: 'tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
-      xPubKeySignature: '3045022100ef86122060bbb7681db05486f8b1ee1579c5800e8da78182a87384f05542a4cc0220215ce7ef8c484b64178779414efdf2b7033d25ed752eebf4eb3241f9fa8e6b67',
-    }, {
-      xPubKey: 'tpubD6NzVbkrYhZ4WSuBBLyubi8DHMipbFQcZoLJHjb21gEtznCEJMJhwkvaSshHVLtq8C1uNMKD4GtADVYY6WZt1cyT218JUm3PiNKYVkMATWV',
-      xPubKeySignature: '3044022025c93b418ebdbb66a0f2b21af709420e8ae769bf054f29aaa252cb5417c46a2302205e0c8b931324736b7eea4971a48039614e19abe26e13ab0ef1547aef92b55aab',
-    }],
-    pubKey: ' { "x": "b2903ab878ed1316f82b859e9807e23bab3d579175563e1068d2ed9c9e37873c", "y": "5f30165915557394223a58329c1527dfa0f34f483d8aed02e0638f9124dbddef", "compressed": true }',
-    network: 'testnet',
-  }},
+      m: 2,
+      n: 2,
+      status: 'complete',
+      publicKeyRing: ['tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
+        'tpubD6NzVbkrYhZ4WSuBBLyubi8DHMipbFQcZoLJHjb21gEtznCEJMJhwkvaSshHVLtq8C1uNMKD4GtADVYY6WZt1cyT218JUm3PiNKYVkMATWV'
+      ],
+      addressIndex: 0,
+      copayers: [{
+        xPubKey: 'tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
+        xPubKeySignature: '3045022100ef86122060bbb7681db05486f8b1ee1579c5800e8da78182a87384f05542a4cc0220215ce7ef8c484b64178779414efdf2b7033d25ed752eebf4eb3241f9fa8e6b67',
+      }, {
+        xPubKey: 'tpubD6NzVbkrYhZ4WSuBBLyubi8DHMipbFQcZoLJHjb21gEtznCEJMJhwkvaSshHVLtq8C1uNMKD4GtADVYY6WZt1cyT218JUm3PiNKYVkMATWV',
+        xPubKeySignature: '3044022025c93b418ebdbb66a0f2b21af709420e8ae769bf054f29aaa252cb5417c46a2302205e0c8b931324736b7eea4971a48039614e19abe26e13ab0ef1547aef92b55aab',
+      }],
+      pubKey: ' { "x": "b2903ab878ed1316f82b859e9807e23bab3d579175563e1068d2ed9c9e37873c", "y": "5f30165915557394223a58329c1527dfa0f34f483d8aed02e0638f9124dbddef", "compressed": true }',
+      network: 'testnet',
+    }
+  },
 
 
   incompleteWallet: {
     wallet: {
-    m: 2,
-    n: 2,
-    status: 'pending',
-    publicKeyRing: ['tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
-      'tpubD6NzVbkrYhZ4WSuBBLyubi8DHMipbFQcZoLJHjb21gEtznCEJMJhwkvaSshHVLtq8C1uNMKD4GtADVYY6WZt1cyT218JUm3PiNKYVkMATWV'
-    ],
-    addressIndex: 0,
-    copayers: [{
-      xPubKey: 'tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
-      xPubKeySignature: '3045022100ef86122060bbb7681db05486f8b1ee1579c5800e8da78182a87384f05542a4cc0220215ce7ef8c484b64178779414efdf2b7033d25ed752eebf4eb3241f9fa8e6b67',
-    }],
-    pubKey: ' { "x": "b2903ab878ed1316f82b859e9807e23bab3d579175563e1068d2ed9c9e37873c", "y": "5f30165915557394223a58329c1527dfa0f34f483d8aed02e0638f9124dbddef", "compressed": true }',
-    network: 'testnet',
-  }},
+      m: 2,
+      n: 2,
+      status: 'pending',
+      publicKeyRing: ['tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
+        'tpubD6NzVbkrYhZ4WSuBBLyubi8DHMipbFQcZoLJHjb21gEtznCEJMJhwkvaSshHVLtq8C1uNMKD4GtADVYY6WZt1cyT218JUm3PiNKYVkMATWV'
+      ],
+      addressIndex: 0,
+      copayers: [{
+        xPubKey: 'tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
+        xPubKeySignature: '3045022100ef86122060bbb7681db05486f8b1ee1579c5800e8da78182a87384f05542a4cc0220215ce7ef8c484b64178779414efdf2b7033d25ed752eebf4eb3241f9fa8e6b67',
+      }],
+      pubKey: ' { "x": "b2903ab878ed1316f82b859e9807e23bab3d579175563e1068d2ed9c9e37873c", "y": "5f30165915557394223a58329c1527dfa0f34f483d8aed02e0638f9124dbddef", "compressed": true }',
+      network: 'testnet',
+    }
+  },
 
   corruptWallet22: {
     wallet: {
-    m: 2,
-    n: 2,
-    status: 'complete',
-    publicKeyRing: ['tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
-      'tpubD6NzVbkrYhZ4WSuBBLyubi8DHMipbFQcZoLJHjb21gEtznCEJMJhwkvaSshHVLtq8C1uNMKD4GtADVYY6WZt1cyT218JUm3PiNKYVkMATWV'
-    ],
-    copayers: [{
-      xPubKey: 'tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
-      xPubKeySignature: '3045022100ef86122060bbb7681db05486f8b1ee1579c5800e8da78182a87384f05542a4cc0220215ce7ef8c484b64178779414efdf2b7033d25ed752eebf4eb3241f9fa8e6b67',
-    }, {
-      xPubKey: 'tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
-      xPubKeySignature: 'bababa',
-    }],
-  }},
+      m: 2,
+      n: 2,
+      status: 'complete',
+      publicKeyRing: ['tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
+        'tpubD6NzVbkrYhZ4WSuBBLyubi8DHMipbFQcZoLJHjb21gEtznCEJMJhwkvaSshHVLtq8C1uNMKD4GtADVYY6WZt1cyT218JUm3PiNKYVkMATWV'
+      ],
+      copayers: [{
+        xPubKey: 'tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
+        xPubKeySignature: '3045022100ef86122060bbb7681db05486f8b1ee1579c5800e8da78182a87384f05542a4cc0220215ce7ef8c484b64178779414efdf2b7033d25ed752eebf4eb3241f9fa8e6b67',
+      }, {
+        xPubKey: 'tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
+        xPubKeySignature: 'bababa',
+      }],
+    }
+  },
   corruptWallet222: {
     wallet: {
-    m: 2,
-    n: 2,
-    status: 'complete',
-    publicKeyRing: ['tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
-      'tpubD6NzVbkrYhZ4WSuBBLyubi8DHMipbFQcZoLJHjb21gEtznCEJMJhwkvaSshHVLtq8C1uNMKD4GtADVYY6WZt1cyT218JUm3PiNKYVkMATWV'
-    ],
-    copayers: [{
-      xPubKey: 'tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
-    }, ],
-  }},
+      m: 2,
+      n: 2,
+      status: 'complete',
+      publicKeyRing: ['tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
+        'tpubD6NzVbkrYhZ4WSuBBLyubi8DHMipbFQcZoLJHjb21gEtznCEJMJhwkvaSshHVLtq8C1uNMKD4GtADVYY6WZt1cyT218JUm3PiNKYVkMATWV'
+      ],
+      copayers: [{
+        xPubKey: 'tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
+      }, ],
+    }
+  },
 };
 
 module.exports.serverResponse = serverResponse;
