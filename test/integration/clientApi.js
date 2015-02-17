@@ -48,7 +48,7 @@ describe(' client API ', function() {
     })
 
 
-    it('should complain wallet is not complete ', function(done) {
+    it('should handle incomple wallets', function(done) {
       var request = sinon.stub();
 
       // Wallet request
@@ -64,7 +64,7 @@ describe(' client API ', function() {
       });
     })
 
-    it(' should reject wallets with bad signatures', function(done) {
+    it('should reject wallets with bad signatures', function(done) {
       var request = sinon.stub();
       // Wallet request
       request.onCall(0).yields(null, {
@@ -78,7 +78,7 @@ describe(' client API ', function() {
         done();
       });
     })
-    it(' should reject wallets with missing signatures ', function(done) {
+    it('should reject wallets with missing signatures ', function(done) {
       var request = sinon.stub();
       // Wallet request
       request.onCall(0).yields(null, {
@@ -92,6 +92,23 @@ describe(' client API ', function() {
         done();
       });
     })
+
+    it('should reject wallets missing caller"s pubkey', function(done) {
+      var request = sinon.stub();
+      // Wallet request
+      request.onCall(0).yields(null, {
+        statusCode: 200,
+      }, TestData.serverResponse.missingMyPubKey);
+
+      client.request = request;
+      client.storage.fs.readFile = sinon.stub().yields(null, JSON.stringify(TestData.storage.incompleteWallet22));
+      client.createAddress(function(err, x) {
+        err.should.contain('verified');
+        done();
+      });
+    })
+
+
   });
 
   describe(' createAddress ', function() {
