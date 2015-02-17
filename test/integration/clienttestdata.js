@@ -25,6 +25,27 @@ var storage = {
 
 var serverResponse = {
   completeWallet: {
+    wallet: {
+    m: 2,
+    n: 2,
+    status: 'complete',
+    publicKeyRing: ['tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
+      'tpubD6NzVbkrYhZ4WSuBBLyubi8DHMipbFQcZoLJHjb21gEtznCEJMJhwkvaSshHVLtq8C1uNMKD4GtADVYY6WZt1cyT218JUm3PiNKYVkMATWV'
+    ],
+    addressIndex: 0,
+    copayers: [{
+      xPubKey: 'tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
+      xPubKeySignature: '3045022100ef86122060bbb7681db05486f8b1ee1579c5800e8da78182a87384f05542a4cc0220215ce7ef8c484b64178779414efdf2b7033d25ed752eebf4eb3241f9fa8e6b67',
+    }, {
+      xPubKey: 'tpubD6NzVbkrYhZ4YiXKYLGvNiQ5bZb9cBUHSBrxZn3xa6BuwZfBFgksTE8M4ZFBLWVJ4PLnAJs2JKhkpJVqsrJEAkGpb62rx62Bk4o4N5Lz8dQ',
+      xPubKeySignature: '3045022100e03b069db333428153c306c9bf66ebc7f25e7d7f3d087e1ca7234fbbb1a47efa02207421fb375d0dd7a7f2116301f2cdf1bce88554a6c88a82d4ec9fb37fb6680ae8',
+    }],
+    pubKey: ' { "x": "b2903ab878ed1316f82b859e9807e23bab3d579175563e1068d2ed9c9e37873c", "y": "5f30165915557394223a58329c1527dfa0f34f483d8aed02e0638f9124dbddef", "compressed": true }',
+    network: 'testnet',
+  }},
+
+  missingMyPubKey: {
+    wallet: {
     m: 2,
     n: 2,
     status: 'complete',
@@ -41,10 +62,11 @@ var serverResponse = {
     }],
     pubKey: ' { "x": "b2903ab878ed1316f82b859e9807e23bab3d579175563e1068d2ed9c9e37873c", "y": "5f30165915557394223a58329c1527dfa0f34f483d8aed02e0638f9124dbddef", "compressed": true }',
     network: 'testnet',
-  },
+  }},
 
 
   incompleteWallet: {
+    wallet: {
     m: 2,
     n: 2,
     status: 'pending',
@@ -58,9 +80,10 @@ var serverResponse = {
     }],
     pubKey: ' { "x": "b2903ab878ed1316f82b859e9807e23bab3d579175563e1068d2ed9c9e37873c", "y": "5f30165915557394223a58329c1527dfa0f34f483d8aed02e0638f9124dbddef", "compressed": true }',
     network: 'testnet',
-  },
+  }},
 
   corruptWallet22: {
+    wallet: {
     m: 2,
     n: 2,
     status: 'complete',
@@ -74,8 +97,9 @@ var serverResponse = {
       xPubKey: 'tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
       xPubKeySignature: 'bababa',
     }],
-  },
+  }},
   corruptWallet222: {
+    wallet: {
     m: 2,
     n: 2,
     status: 'complete',
@@ -85,7 +109,7 @@ var serverResponse = {
     copayers: [{
       xPubKey: 'tpubD6NzVbkrYhZ4Y1CGuCZ88eZvhDSTjAqjotZWGXC7e4GEoyXq3SQgZK9iRz4qC2h8MrzqrYBndCMQDiaaLdqpY8ihYmJC9Msvns83jGopb3E',
     }, ],
-  }
+  }},
 };
 
 module.exports.serverResponse = serverResponse;
