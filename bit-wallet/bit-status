@@ -17,7 +17,7 @@ client.getStatus(function(err, res) {
   utils.die(err);
 
   var x = res.wallet;
-  console.log('* Wallet %s [%s]: %d-%d %s ', x.name, x.isTestnet ? 'testnet' : 'livenet', x.m, x.n, x.status);
+  console.log('* Wallet %s [%s]: %d-%d %s ', x.name, x.network, x.m, x.n, x.status);
 
   var x = res.balance;
   console.log('* Balance %d (Locked: %d)', x.totalAmount, x.lockedAmount);
