@@ -176,7 +176,7 @@ helpers.createProposalOpts = function(toAddress, amount, message, signingKey) {
     message: message,
     proposalSignature: null,
   };
-  var msg = opts.toAddress + '|' + opts.amount + '|' + opts.message;
+  var msg = opts.toAddress + '|' + opts.amount + '|' + (opts.message || '');
   try {
     opts.proposalSignature = SignUtils.sign(msg, signingKey);
   } catch (ex) {}
@@ -706,7 +706,7 @@ describe('Copay server', function() {
       });
     });
 
-    it('should fail to create tx for address invalid address', function(done) {
+    it('should fail to create tx for invalid address', function(done) {
       helpers.createUtxos(server, wallet, [100, 200], function(utxos) {
         helpers.stubBlockExplorer(server, utxos);
         var txOpts = helpers.createProposalOpts('invalid address', 80, null, TestData.copayers[0].privKey);
