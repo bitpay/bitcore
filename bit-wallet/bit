@@ -16,6 +16,7 @@ program
   .command('broadcast <txpId>', 'broadcast a transaction proposal to the Bitcoin network')
   .command('rm <txpId>', 'remove a transaction proposal')
   .command('export', 'export wallet critical data')
+  .command('import', 'import wallet critical data')
   .parse(process.argv);
 
 
