@@ -177,7 +177,7 @@ describe('client API ', function() {
         statusCode: 200
       }, TestData.serverResponse.pendingTxs);
       client.request = request;
- 
+
       client.getTxProposals({}, function(err, x) {
         should.not.exist(err);
         x.length.should.equal(1);
@@ -194,6 +194,7 @@ describe('client API ', function() {
 
   describe('#sendTxProposal ', function() {
     it('should send tx proposal with encrypted message', function(done) {
+      client.storage.fs.readFile = sinon.stub().yields(null, JSON.stringify(TestData.storage.complete11));
       var response = {};
       var request = sinon.mock().yields(null, {
         statusCode: 200
@@ -210,7 +211,7 @@ describe('client API ', function() {
         callArgs.toAddress.should.equal(args.toAddress);
         callArgs.amount.should.equal(20000);
         callArgs.message.should.not.equal(args.message);
-        var decryptedMsg = WalletUtils.decryptMessage(callArgs.message, '42798f82c4ed9ace4d66335165071edf180e70bc0fc08dacb3e35185a2141d5b');
+        var decryptedMsg = WalletUtils.decryptMessage(callArgs.message, TestData.storage.complete11.sharedEncryptingKey);
         decryptedMsg.should.equal(args.message);
         done();
       });
