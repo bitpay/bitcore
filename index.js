@@ -128,7 +128,7 @@ function startGulp(name, opts) {
     ]));
 
     gulp.task('browser', function(callback) {
-      runsequence(['browser:compressed'], ['browser:maketests'], callback);
+      runsequence(['browser:compressed'], callback);
     });
   }
 
