@@ -664,7 +664,6 @@ describe('Copay server', function() {
 
     it('should create a tx', function(done) {
       helpers.createUtxos(server, wallet, [100, 200], function(utxos) {
-
         helpers.stubBlockExplorer(server, utxos);
         var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, 'some message', TestData.copayers[0].privKey);
         server.createTx(txOpts, function(err, tx) {

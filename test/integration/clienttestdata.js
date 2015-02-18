@@ -30,6 +30,16 @@ var storage = {
     "signingPrivKey": "KyhU3befBaePqHuPQNNyY1XFUgnArR3GUKZpZwV5vS7u1pcR3uzB",
     "network": "livenet"
   },
+  complete11: {
+    "copayerId": "02da4d1bd797b41a5565fe54f22583051bd3c29dbbc86eedadb6af6e9200af1048",
+    "xPrivKey": "tprv8ZgxMBicQKsPeCyWCzmvnAkJUBEKpqggFmEmaR6CeyHeJj8oB8uFRWZonK7qLD1ih35tiRr1xnXg9a2rGLiYGQWVgvjhubzuUvVyanPXNuU",
+    "publicKeyRing": ["tpubD6NzVbkrYhZ4Xg1J6eSXBaQR3CkFzAsaq4qYrw8W5F639DPZoXiqc1BfxSR2J1muzEE2qq7rZEDUgwyuwv1nYQgA9uorLghrT76FE5CjAuz"],
+    "network": "testnet",
+    "m": 1,
+    "n": 1,
+    "signingPrivKey": "Kzs8tquNTCsxwbEB9RiSNmcti4QXaW1i9UyLBV329VM5zU7o5nGB",
+    "walletPrivKey": "L259i9W123MrrEjBUTzPVvo3ZMoJV26WB7Abr9LcVsiuWpj6sEL1"
+  },
 };
 
 var serverResponse = {
@@ -126,32 +136,30 @@ var serverResponse = {
   },
   pendingTxs: [{
     version: '1.0.0',
-    createdOn: 1424280917,
-    id: '0142428091712494d9e6a3-dbdc-4a59-a1fb-225f39f5a024',
-    creatorId: '0399e8f038c092f3c13345f2975dc048ffdff7786daa11edc569ecdf253941d6ef',
+    createdOn: 1424287779,
+    id: '01424287779165d80a7123-f5c4-4144-ac1b-663220c01c55',
+    creatorId: '02da4d1bd797b41a5565fe54f22583051bd3c29dbbc86eedadb6af6e9200af1048',
     toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-    amount: '10000',
-    message: '{"iv":"DSQtJyxpHpEenAXR0R+0zg==","v":1,"iter":1,"ks":128,"ts":64,"mode":"ccm","adata":"","cipher":"aes","ct":"XUOT38qT8JV08Ll7"}',
-    changeAddress: '2NFX68fh3qkWP11geyVArsjkc7sWwtEdKeX',
+    amount: 10000,
+    message: '{"iv":"Ij6LjNp6Cjlrpx1MklQk9A==","v":1,"iter":1,"ks":128,"ts":64,"mode":"ccm","adata":"","cipher":"aes","ct":"uyxcL8bBgRS0W2KA"}',
+    changeAddress: '2Mu4nmHhBWFk766M4yXJi2oyi59HZLKHWqn',
     inputs: [{
-      address: '2MwKHNRTm1EdUUbwZ8dsqaqp58ACge6Uekn',
-      txid: '6b25d0a580d86befb4d094ffecd891abb1fc58508456d8a40b75183c98f481ed',
+      address: '2MvBhgsQX6EusXvNGdcjM5dschDkaos1uuk',
+      txid: '006a2915d8f1811620f8b83357869a94c53714f90ce4be4a5ca0d5305a21400d',
       vout: 0,
-      scriptPubKey: 'a9142ca4fd690042933f3336dd6c8f9f5daa8ab7b50a87',
+      scriptPubKey: 'a914203dd60a7659995a6e3bba7caac3c2d684c836ce87',
       amount: 0.1,
       path: 'm/2147483647/0/0',
-      publicKeys: ['028c00c47a3df50868875cc7b8eb7ababf6c19e4a037c9f893fea5c2f975274606',
-        '02f2ab07b43a4b7df05475c0a910a3fb10c8f9ae84dac67a85cbf71bc3ca177968',
-        '0223874637af10e54b7004899b0aa66a60376fa520de7b9f5ee19a9fb0957ebc13'
-      ]
+      publicKeys: ['0371629fe3547002723ef57ad4dae0d97653cf89b0a570637cffca2f23982f0f92']
     }],
-    requiredSignatures: 2,
-    requiredRejections: 2,
+    requiredSignatures: 1,
+    requiredRejections: 1,
     status: 'pending',
     inputPaths: ['m/2147483647/0/0'],
     actions: {},
     creatorName: 'ematiu'
   }],
+
 };
 
 module.exports.serverResponse = serverResponse;
