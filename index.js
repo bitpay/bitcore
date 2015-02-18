@@ -232,26 +232,52 @@ function startGulp(name, opts) {
     }, cb);
   });
 
+  gulp.task('release:sign-built-files', shell.task([
+    'gpg --yes --out bitcore.js.sig --sign bitcore.js',
+    'gpg --yes --out bitcore.min.js.sig --sign bitcore.min.js'
+  ]));
+
   var buildFiles = ['./package.json'];
+  var signatureFiles = [];
   if (browser) {
     buildFiles.push(fullname + '.js');
+    buildFiles.push(fullname + '.js.sig');
     buildFiles.push(fullname + '.min.js');
+    buildFiles.push(fullname + '.min.js.sig');
+
     buildFiles.push('./bower.json');
+
+    signatureFiles.push(fullname + '.js.sig');
+    signatureFiles.push(fullname + '.min.js.sig');
   }
-  gulp.task('release:add-built-files', function() {
+  var addFiles = function() {
+    var pjson = require('../../package.json');
     return gulp.src(buildFiles)
       .pipe(git.add({
         args: '-f'
       }));
-  });
+  };
 
-  gulp.task('release:build-commit', ['release:add-built-files'], function() {
+  var buildCommit = function() {
     var pjson = require('../../package.json');
     return gulp.src(buildFiles)
       .pipe(git.commit('Build: ' + pjson.version, {
         args: ''
       }));
-  });
+  };
+
+  gulp.task('release:add-signed-files', ['release:sign-built-files'], addFiles);
+  gulp.task('release:add-built-files', addFiles);
+
+  if (browser) {
+    gulp.task('release:build-commit', [
+      'release:add-signed-files'
+    ], buildCommit);
+  } else {
+    gulp.task('release:build-commit', [
+      'release:add-built-files'
+    ], buildCommit);
+  }
 
   gulp.task('release:version-commit', function() {
     var pjson = require('../../package.json');
