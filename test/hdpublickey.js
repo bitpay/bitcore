@@ -122,7 +122,6 @@ describe('HDPublicKey interface', function() {
         return new HDPublicKey(buffers);
       }, errors.InvalidB58Checksum);
     });
-
   });
 
   describe('error checking on serialization', function() {
@@ -246,7 +245,7 @@ describe('HDPublicKey interface', function() {
 
   it('rejects illegal paths', function() {
     var valid;
-    
+
     valid = HDPublicKey.isValidPath('m/-1/12');
     valid.should.equal(false);
 

@@ -78,14 +78,13 @@ describe('HDPrivate key interface', function() {
     ));
   });
 
-  describe('should error with a nonsensical argument', function() {
-    it('like a number', function() {
+  describe('instantiation', function() {
+    it('invalid argument: can not instantiate from a number', function() {
       expectFailBuilding(1, hdErrors.UnrecognizedArgument);
     });
-  });
-
-  it('allows no-new calling', function() {
-    HDPrivateKey(xprivkey).toString().should.equal(xprivkey);
+    it('allows no-new calling', function() {
+      HDPrivateKey(xprivkey).toString().should.equal(xprivkey);
+    });
   });
 
   it('inspect() displays correctly', function() {
