@@ -499,6 +499,12 @@ describe('Address', function() {
       var address2 = Address.createMultisig(publics, 2);
       address.toString().should.equal(address2.toString());
     });
+
+    it('fails if invalid array is provided', function() {
+      expect(function() {
+        return Address.createMultisig([],3,'testnet');
+      }).to.throw('Number of required signatures must be less than or equal to the number of public keys');
+    });
   });
 
 });

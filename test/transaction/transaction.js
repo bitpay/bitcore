@@ -126,6 +126,10 @@ describe('Transaction', function() {
   var changeAddress = 'mgBCJAsvzgT2qNNeXsoECg2uPKrUsZ76up';
   var changeAddressP2SH = '2N7T3TAetJrSCruQ39aNrJvYLhG1LJosujf';
   var privateKey = 'cSBnVM4xvxarwGQuAfQFwqDg9k5tErHUHzgWsEfD4zdwUasvqRVY';
+  var private1 = '6ce7e97e317d2af16c33db0b9270ec047a91bff3eff8558afb5014afb2bb5976';
+  var private2 = 'c9b26b0f771a0d2dad88a44de90f05f416b3b385ff1d989343005546a0032890';
+  var public1 = new PrivateKey(private1).publicKey;
+  var public2 = new PrivateKey(private2).publicKey;
 
   var simpleUtxoWith1BTC = {
     address: fromAddress,
@@ -374,10 +378,6 @@ describe('Transaction', function() {
       expect(deserialized.inputs[0] instanceof Transaction.Input.PublicKeyHash).to.equal(true);
     });
     it('can serialize and deserialize a P2SH input', function() {
-      var private1 = '6ce7e97e317d2af16c33db0b9270ec047a91bff3eff8558afb5014afb2bb5976';
-      var private2 = 'c9b26b0f771a0d2dad88a44de90f05f416b3b385ff1d989343005546a0032890';
-      var public1 = new PrivateKey(private1).publicKey;
-      var public2 = new PrivateKey(private2).publicKey;
       var transaction = new Transaction()
         .from({
           txId: '0000', // Not relevant
@@ -410,6 +410,17 @@ describe('Transaction', function() {
       expect(function() {
         transaction.addInput(new Transaction.Input(), Script.empty(), 0);
       }).to.not.throw();
+    });
+    it('does not allow a threshold number greater than the amount of public keys', function() {
+      expect(function() {
+        transaction = new Transaction();
+        return transaction.from({
+          txId: '0000000000000000000000000000000000000000000000000000000000000000',
+          outputIndex: 0,
+          script: Script(),
+          satoshis: 10000
+        }, [], 1);
+      }).to.throw('Number of required signatures must be greater than the number of public keys');
     });
   });
 
