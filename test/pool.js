@@ -194,12 +194,8 @@ describe('Pool', function() {
       this.emit('disconnect', this, {});
     });
 
-    var pool = new Pool();
-    pool._addAddr({
-      ip: {
-        v4: 'localhost'
-      }
-    });
+    var pool = new Pool(null, { size: 1 });
+    pool._addAddr({ ip: { v4: 'localhost' } });
 
     // Not great, but needed so pool won't catch its on event and fail the test
     pool.removeAllListeners('peerdisconnect');
@@ -225,6 +221,26 @@ describe('Pool', function() {
     });
 
     pool.connect();
+  });
+
+  it('should propagate Pool.relay property to peers', function(done) {
+    var count = 0;
+    var peerConnectStub = sinon.stub(Peer.prototype, 'connect', function() {
+      this.emit('connect', this, {});
+    });
+    [true, false].forEach(function(relay) {
+      var pool = new Pool(null,{ relay: relay, size: 1, dnsSeed: false });
+      pool._addAddr({ ip: { v4: 'localhost' } });
+      pool.on('peerconnect', function(peer, addr) {
+        peer.relay.should.equal(relay);
+        pool.disconnect();
+        if(++count == 2) {
+          done();
+        }
+      });
+      pool.connect();
+    });
+    peerConnectStub.restore();
   });
 
 });
