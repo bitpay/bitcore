@@ -20,6 +20,10 @@ client.getStatus(function(err, res) {
   var x = res.wallet;
   console.log('* Wallet %s [%s]: %d-%d %s ', x.name, x.network, x.m, x.n, x.status);
 
+  if (x.status != 'complete')
+    console.log('  Missing copayers:', x.n - x.copayers.length);
+  console.log('* Copayers:', _.pluck(x.copayers,'name').join(', '));
+
   var x = res.balance;
   console.log('* Balance %d (Locked: %d)', x.totalAmount, x.lockedAmount);
 
