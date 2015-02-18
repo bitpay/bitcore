@@ -3,7 +3,7 @@
 var should = require('chai').should();
 var bitcore = require('../..');
 var Base58Check = bitcore.encoding.Base58Check;
-var base58 = bitcore.encoding.Base58;
+var Base58 = bitcore.encoding.Base58;
 
 describe('Base58Check', function() {
   var buf = new Buffer([0, 1, 2, 3, 253, 254, 255]);
@@ -72,9 +72,9 @@ describe('Base58Check', function() {
     });
 
     it('should throw an error when there is a checksum mismatch', function() {
-      var buf2 = base58.decode(enc);
+      var buf2 = Base58.decode(enc);
       buf2[0] = buf2[0] + 1;
-      var enc2 = base58.encode(buf2);
+      var enc2 = Base58.encode(buf2);
       (function() {
         Base58Check.decode(enc2);
       }).should.throw('Checksum mismatch');
