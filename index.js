@@ -316,10 +316,10 @@ function startGulp(name, opts) {
       'release:install',
       // Run tests with gulp test
       'test',
-      // build browser files
-      browser ? 'browser' : 'noop',
       // Update package.json and bower.json
       bumper,
+      // build browser files
+      browser ? 'browser' : 'noop',
       // Commit 
       'release:build-commit',
       // Run git push bitpay $VERSION
