@@ -20,7 +20,7 @@ Utils.parseMN = function(MN) {
   var n = parseInt(mn[1]);
 
   if (!m || ! n) {
-    die('Bad m-n parameter');
+    die('Bad m-n parameter:' + MN);
   }
 
   return [m, n];
