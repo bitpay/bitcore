@@ -34,9 +34,6 @@ client.getStatus(function(err, res) {
           return a.copayerName + ': ' + a.type + ''
         }).join('. '));
       }
-
-      if (program.verbose)
-        console.log('* Raw Server Response:\n', res); //TODO
     });
   }
 });
