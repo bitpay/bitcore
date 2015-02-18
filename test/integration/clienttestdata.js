@@ -124,6 +124,34 @@ var serverResponse = {
       }, ],
     }
   },
+  pendingTxs: [{
+    version: '1.0.0',
+    createdOn: 1424280917,
+    id: '0142428091712494d9e6a3-dbdc-4a59-a1fb-225f39f5a024',
+    creatorId: '0399e8f038c092f3c13345f2975dc048ffdff7786daa11edc569ecdf253941d6ef',
+    toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+    amount: '10000',
+    message: '{"iv":"DSQtJyxpHpEenAXR0R+0zg==","v":1,"iter":1,"ks":128,"ts":64,"mode":"ccm","adata":"","cipher":"aes","ct":"XUOT38qT8JV08Ll7"}',
+    changeAddress: '2NFX68fh3qkWP11geyVArsjkc7sWwtEdKeX',
+    inputs: [{
+      address: '2MwKHNRTm1EdUUbwZ8dsqaqp58ACge6Uekn',
+      txid: '6b25d0a580d86befb4d094ffecd891abb1fc58508456d8a40b75183c98f481ed',
+      vout: 0,
+      scriptPubKey: 'a9142ca4fd690042933f3336dd6c8f9f5daa8ab7b50a87',
+      amount: 0.1,
+      path: 'm/2147483647/0/0',
+      publicKeys: ['028c00c47a3df50868875cc7b8eb7ababf6c19e4a037c9f893fea5c2f975274606',
+        '02f2ab07b43a4b7df05475c0a910a3fb10c8f9ae84dac67a85cbf71bc3ca177968',
+        '0223874637af10e54b7004899b0aa66a60376fa520de7b9f5ee19a9fb0957ebc13'
+      ]
+    }],
+    requiredSignatures: 2,
+    requiredRejections: 2,
+    status: 'pending',
+    inputPaths: ['m/2147483647/0/0'],
+    actions: {},
+    creatorName: 'ematiu'
+  }],
 };
 
 module.exports.serverResponse = serverResponse;
