@@ -24,6 +24,7 @@ var storage = {
   complete22: {
     "xPrivKey": "xprv9s21ZrQH143K3nwnRt6W25h7smm4k4nbuN4QKnNkTMDHFcB11wJXYF78TpwQ3xKjik9M66nRd9WUiHB5C8XgoWSbpMRMc2AxpcUNUsi4thi",
     "m": 2,
+    "n": 2,
     "publicKeyRing": ["xpub661MyMwAqRbcGzNFbVQLh6CV6ukHuhBn4Bf4CGrQ6pFfNNdJ3pxrEVDtFHGsTzyz6Py23FhP8GWAqew3PsvnstEs2iayH1PK5Mx1bSVSEAG", "xpub661MyMwAqRbcGH2FXudWPDdrRobZ9XWTGaz18AnN1gkG8QW9ZUcn63RcK5qJJ5DXYXeAWBNqprdvvg8VHA5twmBHCUc6gWygXkwmU1Dohwh"],
     "copayerId": "020b41cfea5fae42050580474a195a8385b093f291af4079759851d8819383a680",
     "signingPrivKey": "KyhU3befBaePqHuPQNNyY1XFUgnArR3GUKZpZwV5vS7u1pcR3uzB",
