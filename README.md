@@ -89,4 +89,11 @@ A Multisig HD Wallet Service, with minimun server trust.
 
 # Export Format
  Exporting a wallet will expose copayer's extended private key and other's copayers extended public keys. This information is enough to extract funds from the wallet, given the required quorum is meet.
+ 
+ The format is:
+ `["(copayer extender private key)", "required signatured", "(array of other copayer's extended public keys, excluding this copayer)"]`
+ Example, of a 1-2 wallet:
+ ```
+  ["tprv8ZgxMBicQKsPds3YbNWdCcsvxhnpjEecCJv1pBPCLEekwhwWNqpRwA283ASepgTnwAXhu4vZPeRAiX1CpPcjcY6izWSC3NVqyk1gWhF8xWy",1,["tpubD6NzVbkrYhZ4Y1DE1F6s4NWbLjwQSReggiksexkJ7R7p4tCKH1vmu7G9TafmkGs252PMrs5j6xz7uSiDLbUsE43eHbRa5wCauXqhJnhN9MB"]]
+```
 
