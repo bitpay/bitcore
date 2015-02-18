@@ -78,14 +78,39 @@ describe('HDPrivate key interface', function() {
     ));
   });
 
-  describe('should error with a nonsensical argument', function() {
-    it('like a number', function() {
+  describe('instantiation', function() {
+    it('invalid argument: can not instantiate from a number', function() {
       expectFailBuilding(1, hdErrors.UnrecognizedArgument);
     });
-  });
-
-  it('allows no-new calling', function() {
-    HDPrivateKey(xprivkey).toString().should.equal(xprivkey);
+    it('allows no-new calling', function() {
+      HDPrivateKey(xprivkey).toString().should.equal(xprivkey);
+    });
+    var expectStaticMethodFail = function(staticMethod, argument, message) {
+      expect(HDPrivateKey[staticMethod].bind(null, argument)).to.throw(message);
+    };
+    it('fromJSON checks that a valid JSON is provided', function() {
+      var errorMessage = 'No valid JSON string was provided';
+      var method = 'fromJSON';
+      expectStaticMethodFail(method, undefined, errorMessage); 
+      expectStaticMethodFail(method, null, errorMessage); 
+      expectStaticMethodFail(method, 'invalid JSON', errorMessage); 
+      expectStaticMethodFail(method, '{\'singlequotes\': true}', errorMessage); 
+      expectStaticMethodFail(method, {}, errorMessage); 
+    });
+    it('fromString checks that a string is provided', function() {
+      var errorMessage = 'No valid string was provided';
+      var method = 'fromString';
+      expectStaticMethodFail(method, undefined, errorMessage); 
+      expectStaticMethodFail(method, null, errorMessage); 
+      expectStaticMethodFail(method, {}, errorMessage); 
+    });
+    it('fromObject checks that an object is provided', function() {
+      var errorMessage = 'No valid argument was provided';
+      var method = 'fromObject';
+      expectStaticMethodFail(method, undefined, errorMessage); 
+      expectStaticMethodFail(method, null, errorMessage); 
+      expectStaticMethodFail(method, '', errorMessage); 
+    });
   });
 
   it('inspect() displays correctly', function() {
