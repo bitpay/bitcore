@@ -80,6 +80,7 @@ describe('WalletUtils', function() {
       var texts = {
         '1': 1,
         '0': 0,
+        '1.': 1,
         '000000.0000': 0,
         '123': 123,
         '123sat': 123,
@@ -113,8 +114,12 @@ describe('WalletUtils', function() {
         '-3',
         '1 b t c',
         'btc1',
+        'btc 1',
         '1,234',
         '0.000000001btc',
+        '0.1sat',
+        '0.123bit',
+        '2.000000009btc',
       ];
       _.each(texts, function(text) {
         var valid = true;
