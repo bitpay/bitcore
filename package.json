@@ -30,8 +30,9 @@
     "morgan": "*",
     "npmlog": "^0.1.1",
     "preconditions": "^1.0.7",
-    "request": "^2.53.0",
     "qr-image": "*",
+    "request": "^2.53.0",
+    "sjcl": "^1.0.2",
     "uuid": "*"
   },
   "devDependencies": {
