@@ -122,7 +122,35 @@ describe('HDPublicKey interface', function() {
         return new HDPublicKey(buffers);
       }, errors.InvalidB58Checksum);
     });
+  });
 
+  describe('building with static methods', function() {
+    var expectStaticMethodFail = function(staticMethod, argument, message) {
+      expect(HDPublicKey[staticMethod].bind(null, argument)).to.throw(message);
+    };
+    it('fromJSON checks that a valid JSON is provided', function() {
+      var errorMessage = 'No valid JSON string was provided';
+      var method = 'fromJSON';
+      expectStaticMethodFail(method, undefined, errorMessage);
+      expectStaticMethodFail(method, null, errorMessage);
+      expectStaticMethodFail(method, 'invalid JSON', errorMessage);
+      expectStaticMethodFail(method, '{\'singlequotes\': true}', errorMessage);
+      expectStaticMethodFail(method, {}, errorMessage);
+    });
+    it('fromString checks that a string is provided', function() {
+      var errorMessage = 'No valid string was provided';
+      var method = 'fromString';
+      expectStaticMethodFail(method, undefined, errorMessage);
+      expectStaticMethodFail(method, null, errorMessage);
+      expectStaticMethodFail(method, {}, errorMessage);
+    });
+    it('fromObject checks that an object is provided', function() {
+      var errorMessage = 'No valid argument was provided';
+      var method = 'fromObject';
+      expectStaticMethodFail(method, undefined, errorMessage);
+      expectStaticMethodFail(method, null, errorMessage);
+      expectStaticMethodFail(method, '', errorMessage);
+    });
   });
 
   describe('error checking on serialization', function() {
@@ -246,7 +274,7 @@ describe('HDPublicKey interface', function() {
 
   it('rejects illegal paths', function() {
     var valid;
-    
+
     valid = HDPublicKey.isValidPath('m/-1/12');
     valid.should.equal(false);
 
