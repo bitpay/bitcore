@@ -233,8 +233,8 @@ function startGulp(name, opts) {
   });
 
   gulp.task('release:sign-built-files', shell.task([
-    'gpg --yes --out bitcore.js.sig --sign bitcore.js',
-    'gpg --yes --out bitcore.min.js.sig --sign bitcore.min.js'
+    'gpg --yes --out ' + fullname + '.js.sig --detach-sig ' + fullname + '.js',
+    'gpg --yes --out ' + fullname + '.min.js.sig --detach-sig ' + fullname + '.min.js'
   ]));
 
   var buildFiles = ['./package.json'];
