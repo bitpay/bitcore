@@ -160,7 +160,6 @@ describe('client API ', function() {
         client.import(str, function(err,wallet) {
           should.not.exist(err);
           var wallet = JSON.parse(client.storage.fs.writeFile.getCall(0).args[1]);
-
           TestData.storage.complete22.should.deep.equal(wallet);
 
           done();
@@ -169,7 +168,9 @@ describe('client API ', function() {
     });
   });
 
-
+  describe('#recreate', function() {
+    it.skip('Should recreate a wallet acording stored data', function(done) {});
+  });
 
   describe('#signTxProposal ', function() {
     it.skip('should sign tx proposal', function(done) {});
