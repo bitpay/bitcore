@@ -9,6 +9,7 @@ var utils  = require('./cli-utils');
 program
   .version('0.0.1')
   .option('-c, --config [file]', 'Wallet config filename')
+  .option('-h, --host [host]', 'Bitcore Wallet Service URL (eg: http://localhost:3001/copay/api')
   .option('-v, --verbose', 'be verbose')
   .option('-q, --qr')
   .parse(process.argv);
