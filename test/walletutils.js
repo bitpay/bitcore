@@ -65,4 +65,13 @@ describe('WalletUtils', function() {
       WalletUtils.verifyMessage(aLongerText, sig, aPubKey).should.equal(true);
     });
   });
+
+  describe('#encryptMessage #decryptMessage round trip', function() {
+    it('should encrypt and decrypt', function() {
+      var pwd = '0dea92f1df6675085b5cdd965487bb862f84f2755bcb56fa45dbf5b387a6c4a0';
+      var ct = WalletUtils.encryptMessage('hello world', pwd);
+      var msg = WalletUtils.decryptMessage(ct, pwd);
+      msg.should.equal('hello world');
+    });
+  });
 });
