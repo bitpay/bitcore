@@ -8,6 +8,7 @@ var Client = require('../../lib/client');
 var API = Client.API;
 var Bitcore = require('bitcore');
 var TestData = require('./clienttestdata');
+var WalletUtils = require('../../lib/walletutils');
 
 describe('client API ', function() {
   var client;
@@ -156,20 +157,45 @@ describe('client API ', function() {
       client.export(function(err, str) {
         should.not.exist(err);
 
-        client.storage.fs.readFile = sinon.stub().yields(null); 
-        client.import(str, function(err,wallet) {
+        client.storage.fs.readFile = sinon.stub().yields(null);
+        client.import(str, function(err, wallet) {
           should.not.exist(err);
           var wallet = JSON.parse(client.storage.fs.writeFile.getCall(0).args[1]);
           TestData.storage.complete22.should.deep.equal(wallet);
 
           done();
-        }); 
+        });
       });
     });
   });
 
   describe('#recreate', function() {
     it.skip('Should recreate a wallet acording stored data', function(done) {});
+  });
+
+  describe('#sendTxProposal ', function() {
+    it('should send tx proposal with encrypted message', function(done) {
+      var response = {};
+      var request = sinon.mock().yields(null, {
+        statusCode: 200
+      }, response);
+      client.request = request;
+
+      var args = {
+        toAddress: '2N3fA6wDtnebzywPkGuNK9KkFaEzgbPRRTq',
+        amount: 100000,
+        message: 'some message',
+      };
+      client.sendTxProposal(args, function(err) {
+        var callArgs = request.getCall(0).args[0].body;
+        callArgs.toAddress.should.equal(args.toAddress);
+        callArgs.amount.should.equal(args.amount);
+        callArgs.message.should.not.equal(args.message);
+        var decryptedMsg = WalletUtils.decryptMessage(callArgs.message, '42798f82c4ed9ace4d66335165071edf180e70bc0fc08dacb3e35185a2141d5b');
+        decryptedMsg.should.equal(args.message);
+        done();
+      });
+    });
   });
 
   describe('#signTxProposal ', function() {
