@@ -69,6 +69,10 @@ A Multisig HD Wallet Service, with minimun server trust.
 
  [To be completed, see app.js]
  
+# Local  data
+
+Copayers store its extended private key and their copayer's extended public key locally. We call this the ``Wallet Critical Data``. 
+
 # Security Considerations
  * Private keys are never send to the server. Copayers store them locally.
  * Extended public keys are stored on the server. This allow the server to easily check wallet's balances, send offline notifications to copayers, etc.
@@ -84,16 +88,24 @@ A Multisig HD Wallet Service, with minimun server trust.
  * It could be possible to see past (and future) wallet's transactions.
  * It is not possible to spend wallet's funds, since private keys are never send or stored at the server
  * It is not possible to tamper tx proposal or wallet addresses since they are computed and verified by copayers
- * Copayers could switch to other server using their local data (see `recreate` command). In this case only the wallet extended data will be lost. (Decorated TX History, and some copayer metadata).
+ * Copayers could switch to other server using their local data (see `recreate` command). In this case only the wallet extended data will be lost. (Decorated TX History,  some copayer metadata, pending transaction proposals, transacion proposal metadata).
 
 
 # Export Format
  Exporting a wallet will expose copayer's extended private key and other's copayers extended public keys. This information is enough to extract funds from the wallet, given the required quorum is meet.
  
  The format is:
- `["(copayer extender private key)", "required signatured", "(array of other copayer's extended public keys, excluding this copayer)"]`
- Example, of a 1-2 wallet:
+ ``` json
+ [ "(copayer extender private key)", 
+ "required signatured", 
+ "(array of other copayer's extended public keys, excluding this copayer)"]
  ```
-  ["tprv8ZgxMBicQKsPds3YbNWdCcsvxhnpjEecCJv1pBPCLEekwhwWNqpRwA283ASepgTnwAXhu4vZPeRAiX1CpPcjcY6izWSC3NVqyk1gWhF8xWy",1,["tpubD6NzVbkrYhZ4Y1DE1F6s4NWbLjwQSReggiksexkJ7R7p4tCKH1vmu7G9TafmkGs252PMrs5j6xz7uSiDLbUsE43eHbRa5wCauXqhJnhN9MB"]]
+ Example, of a 1-2 wallet:
+ ``` json
+  [
+  "tprv8ZgxMBicQKsPds3YbNWdCcsvxhnpjEecCJv1pBPCLEekwhwWNqpRwA283ASepgTnwAXhu4vZPeRAiX1CpPcjcY6izWSC3NVqyk1gWhF8xWy",
+  1,
+  ["tpubD6NzVbkrYhZ4Y1DE1F6s4NWbLjwQSReggiksexkJ7R7p4tCKH1vmu7G9TafmkGs252PMrs5j6xz7uSiDLbUsE43eHbRa5wCauXqhJnhN9MB"]
+  ]
 ```
 
