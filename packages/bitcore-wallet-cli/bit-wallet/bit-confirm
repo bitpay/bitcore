@@ -1,0 +1,34 @@
+#!/usr/bin/env node
+
+var _ = require('lodash');
+var program = require('commander');
+var Client = require('../lib/client');
+var utils = require('./cli-utils');
+
+program
+  .version('0.0.1')
+  .option('-c, --config [file]', 'Wallet config filename')
+  .option('-h, --host [host]', 'Bitcore Wallet Service URL (eg: http://localhost:3001/copay/api')
+  .option('-v, --verbose', 'be verbose')
+  .parse(process.argv);
+var client = utils.getClient(program);
+
+client.getStatus(function(err, x, myCopayerId) {
+  utils.die(err);
+  console.log('\n  To be sure that none Copayer has joined more that once to this wallet, you can asked them their confirmation number. They can grab them using this (bit confirm) command.');
+
+  console.log('\n * Copayer confirmations ids:');
+
+  var myConfirmationId;
+  _.each(x.wallet.copayers, function(x) {
+    var confirmationId = utils.confirmationId(x);
+    if (x.id != myCopayerId)
+      console.log('\t\t* %s : %s', x.name, confirmationId);
+    else 
+      myConfirmationId = confirmationId;
+  });
+
+
+  console.log('\t\t---');
+  console.log('\t\tYour confirmation ID: %s', myConfirmationId);
+});

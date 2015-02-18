@@ -31,6 +31,10 @@ Utils.shortID = function(id) {
   return id.substr(id.length - 4);
 };
 
+Utils.confirmationId = function(copayer) {
+  return parseInt(copayer.xPubKeySignature.substr(-4), 16).toString().substr(-4);
+}
+
 Utils.getClient = function(args) {
   var storage = new Client.FileStorage({
     filename: args.config || process.env['BIT_FILE'],
