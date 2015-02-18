@@ -28,7 +28,7 @@ describe('sighash', function() {
       var tx = new Transaction(txbuf);
 
       //make sure transacion to/from buffer is isomorphic
-      tx.serialize().should.equal(txbuf.toString('hex'));
+      tx.uncheckedSerialize().should.equal(txbuf.toString('hex'));
 
       //sighash ought to be correct
       sighash.sighash(tx, nhashtype, nin, subscript).toString('hex').should.equal(sighashbuf.toString('hex'));
