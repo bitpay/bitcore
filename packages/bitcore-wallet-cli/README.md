@@ -25,8 +25,6 @@ A Multisig HD Wallet Service, with minimun server trust.
    
  # Sets default file to use  
    export BIT_FILE=pete.dat
-   
- # Create an address  
    ./bit address 
      [1bitcoinaddress]
    ./bit balance
