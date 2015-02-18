@@ -9,8 +9,8 @@ program
   .version('0.0.1')
   .option('-c, --config [file]', 'Wallet config filename')
   .option('-h, --host [host]', 'Bitcore Wallet Service URL (eg: http://localhost:3001/copay/api')
-  .option('-t, --testnet', 'Create a Testnet Wallet')
-  .usage('[options] <walletName> <m-n> [copayerName]')
+  .usage('[options] walletname')
+  .description('Creates a wallet on the remove server given the local information')
   .parse(process.argv);
 
 var args = program.args;
@@ -18,15 +18,8 @@ if (!args[0])
   program.help();
 
 var walletName = args[0];
-var copayerName = args[2] || process.env.USER;
-var network = program.testnet ? 'testnet' : 'livenet';
-
-var mn = utils.parseMN(args[1]);
-
 var client = utils.getClient(program);
-client.createWallet(walletName, copayerName, mn[0], mn[1], network, function(err, secret) {
+client.reCreateWallet(walletName, function(err) {
   utils.die(err);
-  console.log(' * ' + _.capitalize(network) + ' Wallet Created.');
-  if (secret)
-    console.log('   - Secret to share:\n\t' + secret);
+  console.log(' *  Wallet Created.');
 });
