@@ -28,17 +28,19 @@ var storage = {
     "publicKeyRing": ["xpub661MyMwAqRbcGzNFbVQLh6CV6ukHuhBn4Bf4CGrQ6pFfNNdJ3pxrEVDtFHGsTzyz6Py23FhP8GWAqew3PsvnstEs2iayH1PK5Mx1bSVSEAG", "xpub661MyMwAqRbcGH2FXudWPDdrRobZ9XWTGaz18AnN1gkG8QW9ZUcn63RcK5qJJ5DXYXeAWBNqprdvvg8VHA5twmBHCUc6gWygXkwmU1Dohwh"],
     "copayerId": "020b41cfea5fae42050580474a195a8385b093f291af4079759851d8819383a680",
     "signingPrivKey": "KyhU3befBaePqHuPQNNyY1XFUgnArR3GUKZpZwV5vS7u1pcR3uzB",
+    "sharedEncryptingKey": "ezDRS2NRchMJLf1IWtjL5A==",
     "network": "livenet"
   },
   complete11: {
-    "copayerId": "02da4d1bd797b41a5565fe54f22583051bd3c29dbbc86eedadb6af6e9200af1048",
-    "xPrivKey": "tprv8ZgxMBicQKsPeCyWCzmvnAkJUBEKpqggFmEmaR6CeyHeJj8oB8uFRWZonK7qLD1ih35tiRr1xnXg9a2rGLiYGQWVgvjhubzuUvVyanPXNuU",
-    "publicKeyRing": ["tpubD6NzVbkrYhZ4Xg1J6eSXBaQR3CkFzAsaq4qYrw8W5F639DPZoXiqc1BfxSR2J1muzEE2qq7rZEDUgwyuwv1nYQgA9uorLghrT76FE5CjAuz"],
+    "copayerId": "036ed70f51adf14e3e55aba727d28adec1851aff6865552aa9ec9b9dbafecd4a87",
+    "xPrivKey": "tprv8ZgxMBicQKsPdjYWSKKh8SuMZAQ6K3J6v5H3A8ZVyyvXk4h1xft3qeRTmCZbxQB77n3ndfF6G4AevqgpiAVuCmZqYURH3wzSQviTvP1nkYN",
+    "publicKeyRing": ["tpubD6NzVbkrYhZ4XCaJKxzHXrZU8Bv2UNV1VNspSeboQFivaYwnb4he293KwLPxnNNSBEj3RAE5EEaHqPWatzexGd613hGMLLQz5BEgjtpgWnZ"],
     "network": "testnet",
     "m": 1,
     "n": 1,
-    "signingPrivKey": "Kzs8tquNTCsxwbEB9RiSNmcti4QXaW1i9UyLBV329VM5zU7o5nGB",
-    "walletPrivKey": "L259i9W123MrrEjBUTzPVvo3ZMoJV26WB7Abr9LcVsiuWpj6sEL1"
+    "signingPrivKey": "KxyNf4A1Td61GMrnC6LNQYsfE9zKvgsFmmgkPYrPoJHva4j9YSL1",
+    "walletPrivKey": "L4JHs2ZggZkEuRLffH2WVe337nwZWMxytxViLLGyAfGREk6bUCXo",
+    "sharedEncryptingKey": "ezDRS2NRchMJLf1IWtjL5A=="
   },
 };
 
@@ -141,7 +143,7 @@ var serverResponse = {
     creatorId: '02da4d1bd797b41a5565fe54f22583051bd3c29dbbc86eedadb6af6e9200af1048',
     toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
     amount: 10000,
-    message: '{"iv":"Ij6LjNp6Cjlrpx1MklQk9A==","v":1,"iter":1,"ks":128,"ts":64,"mode":"ccm","adata":"","cipher":"aes","ct":"uyxcL8bBgRS0W2KA"}',
+    message: '{"iv":"vDH4J15lBiokSP+iUS4ofA==","v":1,"iter":1,"ks":128,"ts":64,"mode":"ccm","adata":"","cipher":"aes","ct":"X/vPh+vh/Qv8IRSx"}',
     changeAddress: '2Mu4nmHhBWFk766M4yXJi2oyi59HZLKHWqn',
     inputs: [{
       address: '2MvBhgsQX6EusXvNGdcjM5dschDkaos1uuk',
