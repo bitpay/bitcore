@@ -183,13 +183,13 @@ describe('client API ', function() {
 
       var args = {
         toAddress: '2N3fA6wDtnebzywPkGuNK9KkFaEzgbPRRTq',
-        amount: 100000,
+        amount: '200bit',
         message: 'some message',
       };
       client.sendTxProposal(args, function(err) {
         var callArgs = request.getCall(0).args[0].body;
         callArgs.toAddress.should.equal(args.toAddress);
-        callArgs.amount.should.equal(args.amount);
+        callArgs.amount.should.equal(20000);
         callArgs.message.should.not.equal(args.message);
         var decryptedMsg = WalletUtils.decryptMessage(callArgs.message, '42798f82c4ed9ace4d66335165071edf180e70bc0fc08dacb3e35185a2141d5b');
         decryptedMsg.should.equal(args.message);
