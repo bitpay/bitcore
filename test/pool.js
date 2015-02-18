@@ -48,7 +48,7 @@ describe('Pool', function() {
       throw new Error('DNS should not be called');
     });
     var options = {
-      discover: false,
+      dnsSeed: false,
       addrs: [
         {
           ip: {
@@ -66,7 +66,7 @@ describe('Pool', function() {
 
   it('will add addrs via options argument', function() {
     var options = {
-      discover: false,
+      dnsSeed: false,
       addrs: [
         {
           ip: {
@@ -100,7 +100,7 @@ describe('Pool', function() {
     });
 
     var options = {
-      discover: false,
+      dnsSeed: false,
       addrs: [
         {
           ip: {
@@ -150,7 +150,7 @@ describe('Pool', function() {
     });
 
     var options = {
-      discover: false,
+      dnsSeed: false,
       listenAddr: false,
       addrs: [
         {

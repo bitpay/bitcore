@@ -36,9 +36,9 @@ By default, peers will be added via DNS discovery and as peers are announced in 
 ```javascript
 
 var pool = new Pool(Networks.livenet, {
-  discover: false,
-  listenAddr: false,
-  addrs: [
+  dnsSeed: false, // prevent seeding with DNS discovered known peers upon connecting
+  listenAddr: false, // prevent new peers being added from addr messages
+  addrs: [ // initial peers to connect to
     {
       ip: {
         v4: '127.0.0.1'
