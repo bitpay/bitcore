@@ -169,6 +169,25 @@ describe('client API ', function() {
     });
   });
 
+
+  describe('#getTxProposals', function() {
+    it('should return tx proposals and decrypt message', function(done) {
+      client.storage.fs.readFile = sinon.stub().yields(null, JSON.stringify(TestData.storage.complete11));
+      var request = sinon.mock().yields(null, {
+        statusCode: 200
+      }, TestData.serverResponse.pendingTxs);
+      client.request = request;
+ 
+      client.getTxProposals({}, function(err, x) {
+        should.not.exist(err);
+        x.length.should.equal(1);
+        x[0].id.should.equal(TestData.serverResponse.pendingTxs[0].id);
+        x[0].message.should.equal('hola');
+        done();
+      });
+    });
+  });
+
   describe('#recreate', function() {
     it.skip('Should recreate a wallet acording stored data', function(done) {});
   });

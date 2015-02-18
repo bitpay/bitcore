@@ -106,7 +106,7 @@ helpers.createUtxos = function(server, wallet, amounts, cb) {
         return {
           txid: helpers.randomTXID(),
           vout: Math.floor((Math.random() * 10) + 1),
-          satoshis: helpers.toSatoshi(amount),
+          satoshis: helpers.toSatoshi(amount).toString(),
           scriptPubKey: addresses[i].getScriptPubKey(wallet.m).toBuffer().toString('hex'),
           address: addresses[i++].address,
         };

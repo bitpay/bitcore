@@ -30,6 +30,16 @@ var storage = {
     "signingPrivKey": "KyhU3befBaePqHuPQNNyY1XFUgnArR3GUKZpZwV5vS7u1pcR3uzB",
     "network": "livenet"
   },
+  complete11: {
+    "copayerId": "02da4d1bd797b41a5565fe54f22583051bd3c29dbbc86eedadb6af6e9200af1048",
+    "xPrivKey": "tprv8ZgxMBicQKsPeCyWCzmvnAkJUBEKpqggFmEmaR6CeyHeJj8oB8uFRWZonK7qLD1ih35tiRr1xnXg9a2rGLiYGQWVgvjhubzuUvVyanPXNuU",
+    "publicKeyRing": ["tpubD6NzVbkrYhZ4Xg1J6eSXBaQR3CkFzAsaq4qYrw8W5F639DPZoXiqc1BfxSR2J1muzEE2qq7rZEDUgwyuwv1nYQgA9uorLghrT76FE5CjAuz"],
+    "network": "testnet",
+    "m": 1,
+    "n": 1,
+    "signingPrivKey": "Kzs8tquNTCsxwbEB9RiSNmcti4QXaW1i9UyLBV329VM5zU7o5nGB",
+    "walletPrivKey": "L259i9W123MrrEjBUTzPVvo3ZMoJV26WB7Abr9LcVsiuWpj6sEL1"
+  },
 };
 
 var serverResponse = {
@@ -124,6 +134,32 @@ var serverResponse = {
       }, ],
     }
   },
+  pendingTxs: [{
+    version: '1.0.0',
+    createdOn: 1424287779,
+    id: '01424287779165d80a7123-f5c4-4144-ac1b-663220c01c55',
+    creatorId: '02da4d1bd797b41a5565fe54f22583051bd3c29dbbc86eedadb6af6e9200af1048',
+    toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+    amount: 10000,
+    message: '{"iv":"Ij6LjNp6Cjlrpx1MklQk9A==","v":1,"iter":1,"ks":128,"ts":64,"mode":"ccm","adata":"","cipher":"aes","ct":"uyxcL8bBgRS0W2KA"}',
+    changeAddress: '2Mu4nmHhBWFk766M4yXJi2oyi59HZLKHWqn',
+    inputs: [{
+      address: '2MvBhgsQX6EusXvNGdcjM5dschDkaos1uuk',
+      txid: '006a2915d8f1811620f8b83357869a94c53714f90ce4be4a5ca0d5305a21400d',
+      vout: 0,
+      scriptPubKey: 'a914203dd60a7659995a6e3bba7caac3c2d684c836ce87',
+      amount: 0.1,
+      path: 'm/2147483647/0/0',
+      publicKeys: ['0371629fe3547002723ef57ad4dae0d97653cf89b0a570637cffca2f23982f0f92']
+    }],
+    requiredSignatures: 1,
+    requiredRejections: 1,
+    status: 'pending',
+    inputPaths: ['m/2147483647/0/0'],
+    actions: {},
+    creatorName: 'ematiu'
+  }],
+
 };
 
 module.exports.serverResponse = serverResponse;
