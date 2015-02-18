@@ -83,7 +83,7 @@ var publicKeys = [
   '026477115981fe981a6918a6297d9803c4dc04f328f22041bedff886bbc2962e01',
   '02c96db2302d19b43d4c69368babace7854cc84eb9e061cde51cfa77ca4a22b8b9',
   '03c6103b3b83e4a24a0e33a4df246ef11772f9992663db0c35759a5e2ebf68d8e9'
-].map(bitcore.PublicKey);
+];
 var requiredSignatures = 2;
 
 var address = new bitcore.Address(publicKeys, requiredSignatures);
@@ -101,8 +101,8 @@ var address = new bitcore.Address(publicKeys, 2); // 2 of 2
 var utxo = {
   "txId" : "153068cdd81b73ec9d8dcce27f2c77ddda12dee3db424bff5cafdbe9f01c1756",
   "outputIndex" : 0,
-  "address" : "2MvR3wixpB1usCNRugN6ufwxfT4GEFxoRhQ",
-  "script" : "a91422c4270d877177c1dd33037fb5b7bb3fd76cbb8b87",
+  "address" : address.toString(),
+  "script" : new bitcore.Script(address).toHex(),
   "satoshis" : 20000
 };
 
