@@ -170,7 +170,7 @@ describe('client API ', function() {
   });
 
 
-  describe.only('#getTxProposals', function() {
+  describe('#getTxProposals', function() {
     it('should return tx proposals and decrypt message', function(done) {
       client.storage.fs.readFile = sinon.stub().yields(null, JSON.stringify(TestData.storage.complete22));
       var request = sinon.mock().yields(null, {
