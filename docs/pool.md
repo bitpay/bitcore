@@ -31,7 +31,7 @@ For more information about Peer events please read the [Peer](peer.md) documenta
 
 ## Trusted Peers
 
-By default, peers will be added via DNS discovery and as peers are announced in the network. To connect only to specific trusted peers, configurations options can be included:
+By default, peers will be added via DNS discovery and as peers are announced in the network. Configuration options can be included to connect only to specific trusted peers:
 
 ```javascript
 
