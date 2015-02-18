@@ -6,7 +6,6 @@ var sinon = require('sinon');
 var should = chai.should();
 var WalletUtils = require('../lib/walletutils');
 
-
 var aText = 'hola';
 var aPubKey = '03bec86ad4a8a91fe7c11ec06af27246ec55094db3d86098b7d8b2f12afe47627f';
 var aPrivKey = '09458c090a69a38368975fb68115df2f4b0ab7d1bc463fc60c67aa1730641d6c';
@@ -58,6 +57,7 @@ describe('WalletUtils', function() {
       res.should.equal(true);
     });
   });
+
   describe('#signMessage #verifyMessage round trip', function() {
     it('Should sign and verify', function() {
       var aLongerText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
@@ -74,4 +74,58 @@ describe('WalletUtils', function() {
       msg.should.equal('hello world');
     });
   });
+
+  describe('#parseAmount', function() {
+    it('should successfully parse amounts', function() {
+      var texts = {
+        '1': 1,
+        '0': 0,
+        '000000.0000': 0,
+        '123': 123,
+        '123sat': 123,
+        '123 sat': 123,
+        '00123 sat': 123,
+        '1.23bit': 123,
+        '1.23 bit': 123,
+        '0 bit': 0,
+        '.45bit': 45,
+        '1btc': 100000000,
+        '  1btc': 100000000,
+        '9999btc': 999900000000,
+        '0.00000001btc': 1,
+        '00000.00000001BTC': 1,
+        '0.00000001 BTC': 1,
+        '0.123btc': 12300000,
+        '0.123   bTc': 12300000,
+      };
+      _.each(texts, function(satoshi, text) {
+        var amount = WalletUtils.parseAmount(text);
+        amount.should.equal(satoshi);
+      });
+    });
+    it('should fail to parse incorrect amounts', function() {
+      var texts = [
+        '',
+        '  ',
+        'btc',
+        '1satoshi',
+        'no-number',
+        '-3',
+        '1 b t c',
+        'btc1',
+        '1,234',
+        '0.000000001btc',
+      ];
+      _.each(texts, function(text) {
+        var valid = true;
+        try {
+          var amount = WalletUtils.parseAmount(text);
+        } catch (e) {
+          valid = false;
+        }
+        valid.should.be.false;
+      });
+    });
+  });
+
 });
