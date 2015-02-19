@@ -83,14 +83,14 @@ fsmock._get = function(name) {
 };
 
 
-var utxos = [];
 var blockExplorerMock = {};
+blockExplorerMock.utxos = [];
 
 
 
 
 blockExplorerMock.getUnspentUtxos = function(dummy, cb) {
-  var ret = _.map(utxos || [], function(x) {
+  var ret = _.map(blockExplorerMock.utxos || [], function(x) {
     x.toObject = function() {
       return this;
     };
@@ -100,17 +100,23 @@ blockExplorerMock.getUnspentUtxos = function(dummy, cb) {
 };
 
 blockExplorerMock.setUtxo = function(address, amount, m) {
-  utxos.push({
+  blockExplorerMock.utxos.push({
     txid: Bitcore.crypto.Hash.sha256(new Buffer(Math.random() * 100000)).toString('hex'),
     vout: Math.floor((Math.random() * 10) + 1),
     amount: amount,
     address: address.address,
-    scriptPubKey: Bitcore.Script.buildMultisigOut(address.publicKeys, m).toScriptHashOut(),
+    scriptPubKey: Bitcore.Script.buildMultisigOut(address.publicKeys, m).toScriptHashOut().toString(),
   });
 };
 
+
+blockExplorerMock.broadcast = function(raw, cb) {
+  blockExplorerMock.lastBroadcasted = raw;
+  return cb(null, (new Bitcore.Transaction(raw)).id);
+};
+
 blockExplorerMock.reset = function() {
-  utxos = [];
+  blockExplorerMock.utxos = [];
 };
 
 describe('client API ', function() {
@@ -355,15 +361,15 @@ describe('client API ', function() {
   });
 
 
-  describe.only('Send Transactions', function() {
+  describe('Send Transactions', function() {
     it('Send and broadcast in 1-1 wallet', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 10, 1);
+          blockExplorerMock.setUtxo(x0, 1, 1);
           var opts = {
-            amount: 10000,
+            amount: '0.1btc',
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hola 1-1',
           };
@@ -373,8 +379,10 @@ describe('client API ', function() {
             x.requiredSignatures.should.equal(1);
             x.status.should.equal('pending');
             x.changeAddress.path.should.equal('m/2147483647/1/0');
-            clients[0].signTxProposal(x.id, function(err, res) {
-              should.not.exist(err, err.message);
+            clients[0].signTxProposal(x, function(err, tx) {
+              should.not.exist(err);
+              tx.status.should.equal('broadcasted');
+              tx.txid.should.equal((new Bitcore.Transaction(blockExplorerMock.lastBroadcasted)).id);
               done();
             });
           });
@@ -397,15 +405,91 @@ describe('client API ', function() {
             x.status.should.equal('pending');
             x.requiredRejections.should.equal(2);
             x.requiredSignatures.should.equal(2);
-            clients[0].signTxProposal(x.id, function(err, res) {
-              should.not.exist(err, err.message);
-              done();
+            clients[0].signTxProposal(x, function(err, tx) {
+              should.not.exist(err, err);
+              tx.status.should.equal('pending');
+              clients[1].signTxProposal(x, function(err, tx) {
+                should.not.exist(err);
+                tx.status.should.equal('broadcasted');
+                tx.txid.should.equal((new Bitcore.Transaction(blockExplorerMock.lastBroadcasted)).id);
+                done();
+              });
             });
           });
         });
       });
     });
- 
+
+    it('Send, reject, 2 signs and broadcast in 2-3 wallet', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 3, function(err, w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          blockExplorerMock.setUtxo(x0, 10, 1);
+          var opts = {
+            amount: 10000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hola 1-1',
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            x.status.should.equal('pending');
+            x.requiredRejections.should.equal(2);
+            x.requiredSignatures.should.equal(2);
+            clients[0].rejectTxProposal(x, 'no me gusto', function(err, tx) {
+              should.not.exist(err, err);
+              tx.status.should.equal('pending');
+              clients[1].signTxProposal(x, function(err, tx) {
+                should.not.exist(err);
+                clients[2].signTxProposal(x, function(err, tx) {
+                  should.not.exist(err);
+                  tx.status.should.equal('broadcasted');
+                  tx.txid.should.equal((new Bitcore.Transaction(blockExplorerMock.lastBroadcasted)).id);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('Send, reject in 3-4 wallet', function(done) {
+      helpers.createAndJoinWallet(clients, 3, 4, function(err, w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          blockExplorerMock.setUtxo(x0, 10, 1);
+          var opts = {
+            amount: 10000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hola 1-1',
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            x.status.should.equal('pending');
+            x.requiredRejections.should.equal(2);
+            x.requiredSignatures.should.equal(3);
+
+            clients[0].rejectTxProposal(x, 'no me gusto', function(err, tx) {
+              should.not.exist(err, err);
+              tx.status.should.equal('pending');
+              clients[1].signTxProposal(x, function(err, tx) {
+                should.not.exist(err);
+                tx.status.should.equal('pending');
+                clients[2].rejectTxProposal(x, 'tampoco me gusto', function(err, tx) {
+                  should.not.exist(err);
+                  tx.status.should.equal('rejected');
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
+
   });
 
 
