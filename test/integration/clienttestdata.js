@@ -26,7 +26,7 @@ var storage = {
     "m": 2,
     "n": 2,
     "publicKeyRing": ["xpub661MyMwAqRbcGzNFbVQLh6CV6ukHuhBn4Bf4CGrQ6pFfNNdJ3pxrEVDtFHGsTzyz6Py23FhP8GWAqew3PsvnstEs2iayH1PK5Mx1bSVSEAG", "xpub661MyMwAqRbcGH2FXudWPDdrRobZ9XWTGaz18AnN1gkG8QW9ZUcn63RcK5qJJ5DXYXeAWBNqprdvvg8VHA5twmBHCUc6gWygXkwmU1Dohwh"],
-    "copayerId": "020b41cfea5fae42050580474a195a8385b093f291af4079759851d8819383a680",
+    "copayerId": "c6ef9ad6de90b16174a0c0bdc430238ef6c04cb12e3bafa7c46e5acfb2b9d0b9",
     "signingPrivKey": "KyhU3befBaePqHuPQNNyY1XFUgnArR3GUKZpZwV5vS7u1pcR3uzB",
     "sharedEncryptingKey": "ezDRS2NRchMJLf1IWtjL5A==",
     "network": "livenet"
