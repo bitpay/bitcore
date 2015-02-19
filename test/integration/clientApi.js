@@ -355,7 +355,7 @@ describe('client API ', function() {
   });
 
 
-  describe.only('Send TXs', function() {
+  describe.only('Send Transactions', function() {
     it('Send and broadcast in 1-1 wallet', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
         clients[0].createAddress(function(err, x0) {
@@ -363,19 +363,52 @@ describe('client API ', function() {
           should.exist(x0.address);
           blockExplorerMock.setUtxo(x0, 10, 1);
           var opts = {
-            amount: 1000,
+            amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hola 1-1',
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
-console.log('[clientApi.js.372]',x); //TODO
-            done();
+            x.requiredRejections.should.equal(1);
+            x.requiredSignatures.should.equal(1);
+            x.status.should.equal('pending');
+            x.changeAddress.path.should.equal('m/2147483647/1/0');
+            clients[0].signTxProposal(x.id, function(err, res) {
+              should.not.exist(err, err.message);
+              done();
+            });
           });
         });
       });
     });
+    it('Send and broadcast in 2-3 wallet', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 3, function(err, w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          blockExplorerMock.setUtxo(x0, 10, 1);
+          var opts = {
+            amount: 10000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hola 1-1',
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            x.status.should.equal('pending');
+            x.requiredRejections.should.equal(2);
+            x.requiredSignatures.should.equal(2);
+            clients[0].signTxProposal(x.id, function(err, res) {
+              should.not.exist(err, err.message);
+              done();
+            });
+          });
+        });
+      });
+    });
+ 
   });
+
+
   /*
   describe('TODO', function(x) {
     it('should detect fake addresses ', function(done) {
