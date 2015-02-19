@@ -229,7 +229,7 @@ describe('Pool', function() {
       this.emit('connect', this, {});
     });
     [true, false].forEach(function(relay) {
-      var pool = new Pool(null,{ relay: relay, size: 1, dnsSeed: false });
+      var pool = new Pool(null,{ relay: relay, dnsSeed: false });
       pool._addAddr({ ip: { v4: 'localhost' } });
       pool.on('peerconnect', function(peer, addr) {
         peer.relay.should.equal(relay);
