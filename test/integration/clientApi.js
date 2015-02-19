@@ -184,7 +184,7 @@ describe('client API ', function() {
         should.not.exist(err);
         should.exist(w.secret);
         clients[4].joinWallet(w.secret, 'copayer', function(err, result) {
-          err.should.contain('Request error');
+          err.code.should.contain('WFULL');
           done();
         });
       });
@@ -192,7 +192,7 @@ describe('client API ', function() {
     it('should fail with a unknown secret', function(done) {
       var oldSecret = '3f8e5acb-ceeb-4aae-134f-692d934e3b1c:L2gohj8s2fLKqVU5cQutAVGciutUxczFxLxxXHFsjzLh71ZjkFQQ:T';
       clients[0].joinWallet(oldSecret, 'copayer', function(err, result) {
-        err.should.contain('Request error');
+        err.code.should.contain('BADREQUEST');
         done();
       });
     });
@@ -212,7 +212,7 @@ describe('client API ', function() {
             clients[1]._doGetRequest = sinon.stub().yields(null, x);
 
             clients[1].getBalance(function(err, x) {
-              err.should.contain('verified');
+              err.code.should.contain('SERVERCOMPROMISED');
               done();
             });
           });
@@ -236,7 +236,7 @@ describe('client API ', function() {
             clients[1]._doGetRequest = sinon.stub().yields(null, x);
 
             clients[1].getBalance(function(err, x) {
-              err.should.contain('verified');
+              err.code.should.contain('SERVERCOMPROMISED');
               done();
             });
           });
@@ -264,7 +264,7 @@ describe('client API ', function() {
             clients[1]._doGetRequest = sinon.stub().yields(null, x);
 
             clients[1].getBalance(function(err, x) {
-              err.should.contain('verified');
+              err.code.should.contain('SERVERCOMPROMISED');
               done();
             });
           });
@@ -361,7 +361,7 @@ describe('client API ', function() {
   });
 
 
-  describe('Send Transactions', function() {
+  describe('Transactions Signatures and Rejection', function() {
     it('Send and broadcast in 1-1 wallet', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
         clients[0].createAddress(function(err, x0) {
@@ -509,11 +509,11 @@ describe('client API ', function() {
               should.not.exist(err, err);
               tx.status.should.equal('pending');
               clients[0].signTxProposal(x, function(err, tx) {
-                err.should.contain('error');
+                err.code.should.contain('CVOTED');
                 clients[1].rejectTxProposal(x, 'xx', function(err, tx) {
                   should.not.exist(err);
                   clients[1].rejectTxProposal(x, 'xx', function(err, tx) {
-                    err.should.contain('error');
+                    err.code.should.contain('CVOTED');
                     done();
                   });
                 });
@@ -523,11 +523,33 @@ describe('client API ', function() {
         });
       });
     });
-
-
-
-
   });
+
+  describe('Transaction Troposals and Locked funds', function() {
+    it('Should not allow to propose txs if not funds are available', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 2, function(err, w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          blockExplorerMock.setUtxo(x0, 1, 2);
+          blockExplorerMock.setUtxo(x0, 1, 2);
+          var opts = {
+            amount: '1.2btc',
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hola 1-1',
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            clients[0].sendTxProposal(opts, function(err, x) {
+              err.code.should.contain('INSUFFICIENTFUNDS');
+              done();
+            });
+          });
+        });
+      });
+    });
+  });
+
 
 
   /*
