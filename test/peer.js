@@ -20,7 +20,7 @@ describe('Peer', function() {
 
   describe('Integration test', function() {
     it('parses this stream of data from a connection', function(callback) {
-      var peer = new p2p.Peer('');
+      var peer = new Peer('');
       var stub = sinon.stub();
       var dataCallback;
       var connectCallback;
@@ -120,4 +120,25 @@ describe('Peer', function() {
 
     peer.should.equal(peer2);
   });
+
+  it('Peer.relay setting set properly', function() {
+    var peer = new Peer('localhost');
+    peer.relay.should.equal(true);
+    var peer2 = new Peer('localhost', null, null, false);
+    peer2.relay.should.equal(false);
+    var peer3 = new Peer('localhost', null, null, true);
+    peer3.relay.should.equal(true);
+  });
+
+  it('Peer.relay setting respected', function() {
+    [true,false].forEach(function(relay) {
+      var peer = new Peer('localhost', null, null, relay);
+      var peerSendMessageStub = sinon.stub(Peer.prototype, 'sendMessage', function(message) {
+        message.relay.should.equal(relay);
+      });
+      peer._sendVersion();
+      peerSendMessageStub.restore();
+    });
+  });
+
 });

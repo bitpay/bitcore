@@ -113,7 +113,22 @@ describe('Messages', function() {
       clazz.forBlock(BufferUtils.reverse(new Buffer(hash, 'hex'))).should.deep.equal(b);
       clazz.forTransaction(BufferUtils.reverse(new Buffer(hash, 'hex'))).should.deep.equal(t);
     });
+  });
 
+  it('Version#fromBuffer works w/o fRelay arg', function() {
+    var messageHex = Data.VERSION_NO_FRELAY.payload;
+    var message = new Messages.Version()
+          .fromBuffer(new Buffer(messageHex, 'hex'));
+  });
+
+  it('Version#relay setting works', function() {
+    [true,false].forEach(function(relay) {
+      var message = new Messages.Version(null,null,relay);
+      message.relay.should.equal(relay);
+      var messageBuf = message.getPayload();
+      var newMessage = new Messages.Version().fromBuffer(messageBuf)
+      newMessage.relay.should.equal(relay);
+    });
   });
 
 });
