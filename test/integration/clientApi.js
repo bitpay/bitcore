@@ -4,14 +4,19 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
+var levelup = require('levelup');
+var memdown = require('memdown');
+var request = require('supertest');
 var Client = require('../../lib/client');
 var API = Client.API;
 var Bitcore = require('bitcore');
 var TestData = require('./clienttestdata');
 var WalletUtils = require('../../lib/walletutils');
+var ExpressApp = require('../../lib/expressapp');
+var Storage = require('../../lib/storage');
 
 describe('client API ', function() {
-  var client;
+  var client, app;
 
   beforeEach(function() {
     var fsmock = {};;
@@ -24,10 +29,40 @@ describe('client API ', function() {
     client = new Client({
       storage: storage
     });
+
+    var db = levelup(memdown, {
+      valueEncoding: 'json'
+    });
+    var storage = new Storage({
+      db: db
+    });
+    app = ExpressApp.start({
+      CopayServer: {
+        storage: storage
+      }
+    });
   });
 
+  var helpers = {};
+
+  helpers.request = function(args) {
+    if (args.method == 'get') {
+      request(app)
+        .get(relUrl)
+        .end(cb);
+    } else {
+      request(app)
+        .post(relUrl)
+        .send(body)
+        .end(function(err, res) {
+          console.log('[clientApi.js.59:err:]', err, res); //TODO
+          return cb(err, res);
+        });
+    }
+  };
+
   describe('#_tryToComplete ', function() {
-    it('should complete a wallet ', function(done) {
+    it.only('should complete a wallet ', function(done) {
       var request = sinon.stub();
 
       // Wallet request
