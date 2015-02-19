@@ -182,7 +182,7 @@ describe('client API ', function() {
         should.not.exist(err);
         x.length.should.equal(1);
         x[0].id.should.equal(TestData.serverResponse.pendingTxs[0].id);
-        x[0].message.should.equal('hola');
+        x[0].decryptedMessage.should.equal('hola');
         done();
       });
     });
@@ -222,7 +222,9 @@ describe('client API ', function() {
     it.skip('should sign tx proposal', function(done) {});
 
     it('should detect fake tx proposal signature', function(done) {
+      client.storage.fs.readFile = sinon.stub().yields(null, JSON.stringify(TestData.storage.complete11));
       var txp = {
+        creatorId: '56cb00afd85f4f37fa900ac4e367676f2eb6189a773633eb9f119eb21a22ba44',
         toAddress: '2N3fA6wDtnebzywPkGuNK9KkFaEzgbPRRTq',
         amount: 100000,
         message: 'some message',
