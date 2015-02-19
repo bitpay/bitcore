@@ -30,7 +30,7 @@ client.getStatus(function(err, res) {
   if (!_.isEmpty(res.pendingTxps)) {
     console.log("* TX Proposals:")
     _.each(res.pendingTxps, function(x) {
-      console.log("\t%s [%s by %s] %dSAT => %s", utils.shortID(x.id), x.message, x.creatorName, x.amount, x.toAddress);
+      console.log("\t%s [%s by %s] %dSAT => %s", utils.shortID(x.id), x.decryptedMessage, x.creatorName, x.amount, x.toAddress);
 
       if (!_.isEmpty(x.actions)) {
         console.log('\t\t * Actions');

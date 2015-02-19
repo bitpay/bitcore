@@ -26,13 +26,13 @@ var storage = {
     "m": 2,
     "n": 2,
     "publicKeyRing": ["xpub661MyMwAqRbcGzNFbVQLh6CV6ukHuhBn4Bf4CGrQ6pFfNNdJ3pxrEVDtFHGsTzyz6Py23FhP8GWAqew3PsvnstEs2iayH1PK5Mx1bSVSEAG", "xpub661MyMwAqRbcGH2FXudWPDdrRobZ9XWTGaz18AnN1gkG8QW9ZUcn63RcK5qJJ5DXYXeAWBNqprdvvg8VHA5twmBHCUc6gWygXkwmU1Dohwh"],
-    "copayerId": "020b41cfea5fae42050580474a195a8385b093f291af4079759851d8819383a680",
+    "copayerId": "c6ef9ad6de90b16174a0c0bdc430238ef6c04cb12e3bafa7c46e5acfb2b9d0b9",
     "signingPrivKey": "KyhU3befBaePqHuPQNNyY1XFUgnArR3GUKZpZwV5vS7u1pcR3uzB",
     "sharedEncryptingKey": "ezDRS2NRchMJLf1IWtjL5A==",
     "network": "livenet"
   },
   complete11: {
-    "copayerId": "036ed70f51adf14e3e55aba727d28adec1851aff6865552aa9ec9b9dbafecd4a87",
+    "copayerId": "56cb00afd85f4f37fa900ac4e367676f2eb6189a773633eb9f119eb21a22ba44",
     "xPrivKey": "tprv8ZgxMBicQKsPdjYWSKKh8SuMZAQ6K3J6v5H3A8ZVyyvXk4h1xft3qeRTmCZbxQB77n3ndfF6G4AevqgpiAVuCmZqYURH3wzSQviTvP1nkYN",
     "publicKeyRing": ["tpubD6NzVbkrYhZ4XCaJKxzHXrZU8Bv2UNV1VNspSeboQFivaYwnb4he293KwLPxnNNSBEj3RAE5EEaHqPWatzexGd613hGMLLQz5BEgjtpgWnZ"],
     "network": "testnet",
