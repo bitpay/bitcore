@@ -8,6 +8,7 @@ var Buffers = require('buffers');
 var bitcore = require('bitcore');
 var Data = require('./data/messages');
 var P2P = require('../');
+var BloomFilter = P2P.BloomFilter;
 var Messages = P2P.Messages;
 var Networks = bitcore.Networks;
 var BufferUtils = bitcore.util.buffer;
@@ -26,6 +27,9 @@ describe('Messages', function() {
     Alert: 'alert',
     Reject: 'reject',
     Block: 'block',
+    FilterLoad: 'filterload',
+    FilterAdd: 'filteradd',
+    FilterClear: 'filterclear',
     GetBlocks: 'getblocks',
     GetHeaders: 'getheaders',
     GetData: 'getdata',
@@ -34,7 +38,7 @@ describe('Messages', function() {
     Transaction: 'tx',
     NotFound: 'notfound'
   };
-  // TODO: add data for these 
+  // TODO: add data for these
   var noPayload = ['Reject', 'GetBlocks', 'GetHeaders'];
   var names = Object.keys(commands);
   describe('named', function() {
@@ -129,6 +133,12 @@ describe('Messages', function() {
       var newMessage = new Messages.Version().fromBuffer(messageBuf)
       newMessage.relay.should.equal(relay);
     });
+  });
+
+  it('FilterLoad#fromBuffer method works', function() {
+    var testPayload = Data.FILTERLOAD.payload;
+    var msg = new Messages.FilterLoad().fromBuffer(new Buffer(testPayload, 'hex'));
+    msg.getPayload().toString('hex').should.equal(testPayload);
   });
 
 });
