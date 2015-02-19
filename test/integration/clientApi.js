@@ -45,7 +45,7 @@ helpers.createAndJoinWallet = function(clients, m, n, cb) {
       if (n == 1) return cb();
 
       should.exist(secret);
-      async.each(_.range(n-1), function(i, cb) {
+      async.each(_.range(n - 1), function(i, cb) {
         clients[i + 1].joinWallet(secret, 'copayer ' + (i + 1), function(err, result) {
           should.not.exist(err);
           return cb(err);
@@ -75,6 +75,17 @@ describe('client API ', function() {
 
   beforeEach(function() {
     clients = [];
+    var db = levelup(memdown, {
+      valueEncoding: 'json'
+    });
+    var storage = new Storage({
+      db: db
+    });
+    var app = ExpressApp.start({
+      CopayServer: {
+        storage: storage
+      }
+    });
     // Generates 5 clients
     _.each(_.range(5), function(i) {
       var storage = new Client.FileStorage({
@@ -84,21 +95,11 @@ describe('client API ', function() {
       var client = new Client({
         storage: storage,
       });
-      var db = levelup(memdown, {
-        valueEncoding: 'json'
-      });
-      var storage = new Storage({
-        db: db
-      });
-      var app = ExpressApp.start({
-        CopayServer: {
-          storage: storage
-        }
-      });
+
       client.request = helpers.getRequest(app);
       clients.push(client);
     });
-    content={};
+    content = {};
   });
 
   describe.only('#getBalance', function() {
