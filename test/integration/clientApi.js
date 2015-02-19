@@ -182,7 +182,7 @@ describe('client API ', function() {
         should.not.exist(err);
         x.length.should.equal(1);
         x[0].id.should.equal(TestData.serverResponse.pendingTxs[0].id);
-        x[0].message.should.equal('hola');
+        x[0].decryptedMessage.should.equal('hola');
         done();
       });
     });

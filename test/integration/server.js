@@ -159,7 +159,7 @@ helpers.clientSign = function(tx, xprivHex) {
   });
 
   t.to(tx.toAddress, tx.amount)
-    .change(tx.changeAddress)
+    .change(tx.changeAddress.address)
     .sign(privs);
 
   var signatures = [];
