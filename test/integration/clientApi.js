@@ -91,10 +91,11 @@ blockExplorerMock.utxos = [];
 
 blockExplorerMock.getUnspentUtxos = function(dummy, cb) {
   var ret = _.map(blockExplorerMock.utxos || [], function(x) {
-    x.toObject = function() {
+    var y = _.clone(x);
+    y.toObject = function() {
       return this;
     };
-    return x;
+    return y;
   });
   return cb(null, ret);
 };
@@ -526,7 +527,7 @@ describe('client API ', function() {
   });
 
   describe('Transaction Troposals and Locked funds', function() {
-    it('Should not allow to propose txs if not funds are available', function(done) {
+    it('Should lock and release funds', function(done) {
       helpers.createAndJoinWallet(clients, 2, 2, function(err, w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
@@ -540,9 +541,18 @@ describe('client API ', function() {
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
-            clients[0].sendTxProposal(opts, function(err, x) {
+
+            clients[0].sendTxProposal(opts, function(err, y) {
               err.code.should.contain('INSUFFICIENTFUNDS');
-              done();
+
+              clients[0].rejectTxProposal(x, 'no', function(err, z) {
+                should.not.exist(err);
+                z.status.should.equal('rejected');
+                clients[0].sendTxProposal(opts, function(err, x) {
+                  should.not.exist(err);
+                  done();
+                });
+              });
             });
           });
         });
