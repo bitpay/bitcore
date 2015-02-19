@@ -32,7 +32,7 @@ var storage = {
     "network": "livenet"
   },
   complete11: {
-    "copayerId": "036ed70f51adf14e3e55aba727d28adec1851aff6865552aa9ec9b9dbafecd4a87",
+    "copayerId": "56cb00afd85f4f37fa900ac4e367676f2eb6189a773633eb9f119eb21a22ba44",
     "xPrivKey": "tprv8ZgxMBicQKsPdjYWSKKh8SuMZAQ6K3J6v5H3A8ZVyyvXk4h1xft3qeRTmCZbxQB77n3ndfF6G4AevqgpiAVuCmZqYURH3wzSQviTvP1nkYN",
     "publicKeyRing": ["tpubD6NzVbkrYhZ4XCaJKxzHXrZU8Bv2UNV1VNspSeboQFivaYwnb4he293KwLPxnNNSBEj3RAE5EEaHqPWatzexGd613hGMLLQz5BEgjtpgWnZ"],
     "network": "testnet",

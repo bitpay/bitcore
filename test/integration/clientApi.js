@@ -222,7 +222,9 @@ describe('client API ', function() {
     it.skip('should sign tx proposal', function(done) {});
 
     it('should detect fake tx proposal signature', function(done) {
+      client.storage.fs.readFile = sinon.stub().yields(null, JSON.stringify(TestData.storage.complete11));
       var txp = {
+        creatorId: '56cb00afd85f4f37fa900ac4e367676f2eb6189a773633eb9f119eb21a22ba44',
         toAddress: '2N3fA6wDtnebzywPkGuNK9KkFaEzgbPRRTq',
         amount: 100000,
         message: 'some message',
