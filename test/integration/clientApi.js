@@ -6,6 +6,7 @@ var sinon = require('sinon');
 var should = chai.should();
 var levelup = require('levelup');
 var memdown = require('memdown');
+var async = require('async');
 var request = require('supertest');
 var Client = require('../../lib/client');
 var API = Client.API;
@@ -15,66 +16,124 @@ var WalletUtils = require('../../lib/walletutils');
 var ExpressApp = require('../../lib/expressapp');
 var Storage = require('../../lib/storage');
 
+
+var helpers = {};
+
+helpers.getRequest = function(app) {
+  return function(args, cb) {
+    var req = request(app);
+    var r = req[args.method](args.relUrl);
+
+    if (args.headers) {
+      _.each(args.headers, function(v, k) {
+        r.set(k, v);
+      })
+    }
+    if (!_.isEmpty(args.body)) {
+      r.send(args.body);
+    };
+    r.end(function(err, res) {
+      return cb(err, res, res.body);
+    });
+  };
+};
+
+helpers.createAndJoinWallet = function(clients, m, n, cb) {
+  clients[0].createWallet('wallet name', 'creator copayer', m, n, 'testnet',
+    function(err, secret) {
+      if (err) return cb(err);
+      if (n == 1) return cb();
+
+      should.exist(secret);
+      async.each(_.range(n-1), function(i, cb) {
+        clients[i + 1].joinWallet(secret, 'copayer ' + (i + 1), function(err, result) {
+          should.not.exist(err);
+          return cb(err);
+        });
+      }, function(err) {
+        if (err) return new Error('Could not generate wallet');
+        return cb();
+      });
+    });
+};
+
+var fsmock = {};
+var content = {};
+fsmock.readFile = function(name, enc, cb) {
+  if (!content || _.isEmpty(content[name]))
+    return cb('empty');
+
+  return cb(null, content[name]);
+};
+fsmock.writeFile = function(name, data, cb) {
+  content[name] = data;
+  return cb();
+};
+
 describe('client API ', function() {
-  var client, app;
+  var clients;
 
   beforeEach(function() {
-    var fsmock = {};;
-    fsmock.readFile = sinon.mock().yields(null, JSON.stringify(TestData.storage.wallet11));
-    fsmock.writeFile = sinon.mock().yields();
-    var storage = new Client.FileStorage({
-      filename: 'dummy',
-      fs: fsmock,
+    clients = [];
+    // Generates 5 clients
+    _.each(_.range(5), function(i) {
+      var storage = new Client.FileStorage({
+        filename: 'client' + i,
+        fs: fsmock,
+      });
+      var client = new Client({
+        storage: storage,
+      });
+      var db = levelup(memdown, {
+        valueEncoding: 'json'
+      });
+      var storage = new Storage({
+        db: db
+      });
+      var app = ExpressApp.start({
+        CopayServer: {
+          storage: storage
+        }
+      });
+      client.request = helpers.getRequest(app);
+      clients.push(client);
     });
-    client = new Client({
-      storage: storage
-    });
+    content={};
+  });
 
-    var db = levelup(memdown, {
-      valueEncoding: 'json'
+  describe.only('#getBalance', function() {
+    it('should check balance in a 1-1 ', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
+        should.not.exist(err);
+        clients[0].getBalance(function(err, x) {
+          should.not.exist(err);
+          done();
+        })
+      });
     });
-    var storage = new Storage({
-      db: db
-    });
-    app = ExpressApp.start({
-      CopayServer: {
-        storage: storage
-      }
+    it('should be able to check balance in a 2-3 wallet ', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 3, function(err) {
+        should.not.exist(err);
+        clients[0].getBalance(function(err, x) {
+          should.not.exist(err);
+          clients[1].getBalance(function(err, x) {
+            should.not.exist(err);
+            clients[2].getBalance(function(err, x) {
+              should.not.exist(err);
+              done();
+            })
+          })
+        })
+      });
     });
   });
 
-  var helpers = {};
-
-  helpers.request = function(args) {
-    if (args.method == 'get') {
-      request(app)
-        .get(relUrl)
-        .end(cb);
-    } else {
-      request(app)
-        .post(relUrl)
-        .send(body)
-        .end(function(err, res) {
-          console.log('[clientApi.js.59:err:]', err, res); //TODO
-          return cb(err, res);
-        });
-    }
-  };
-
   describe('#_tryToComplete ', function() {
-    it.only('should complete a wallet ', function(done) {
-      var request = sinon.stub();
+    it('should complete a wallet ', function(done) {
+      client.storage.fs.readFile =
+        sinon.stub().yields(null, JSON.stringify(TestData.storage.incompleteWallet22));
 
-      // Wallet request
-      request.onCall(0).yields(null, {
-        statusCode: 200,
-      }, TestData.serverResponse.completeWallet);
-      request.onCall(1).yields(null, {
-        statusCode: 200,
-      }, "pepe");
 
-      client.request = request;
-      client.storage.fs.readFile = sinon.stub().yields(null, JSON.stringify(TestData.storage.incompleteWallet22));
       client.getBalance(function(err, x) {
         should.not.exist(err);
         done();
