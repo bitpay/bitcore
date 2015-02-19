@@ -49,10 +49,16 @@ describe('Pool', function() {
     });
     var options = {
       dnsSeed: false,
+      maxSize: 1,
       addrs: [
         {
           ip: {
-            v4: '10.10.10.1'
+            v4: 'localhost'
+          }
+        },
+        {
+          ip: {
+            v4: 'localhost2'
           }
         }
       ]
@@ -60,7 +66,7 @@ describe('Pool', function() {
     var pool = new Pool(Networks.livenet, options);
     pool.connect();
     pool.disconnect();
-    pool._addrs.length.should.equal(1);
+    pool._addrs.length.should.equal(2);
     stub.restore();
   });
 
@@ -70,18 +76,13 @@ describe('Pool', function() {
       addrs: [
         {
           ip: {
-            v4: '10.10.10.1'
-          }
-        },
-        {
-          ip: {
-            v4: '10.10.10.245'
+            v4: 'localhost'
           }
         }
       ]
     };
     var pool = new Pool(Networks.livenet, options);
-    pool._addrs.length.should.equal(2);
+    pool._addrs.length.should.equal(1);
   });
 
   it('should add new addrs as they are announced over the network', function(done) {
@@ -193,12 +194,18 @@ describe('Pool', function() {
     var peerDisconnectStub = sinon.stub(Peer.prototype, 'disconnect', function() {
       this.emit('disconnect', this, {});
     });
+    var poolRemoveStub = sinon.stub(Pool.prototype, '_removeConnectedPeer', function() {});
 
-    var pool = new Pool(null, { dnsSeed: false });
-    pool._addAddr({ ip: { v4: 'localhost' } });
-
-    // Not great, but needed so pool won't catch its on event and fail the test
-    pool.removeAllListeners('peerdisconnect');
+    var pool = new Pool(null, {
+      dnsSeed: false,
+      addrs: [
+        {
+          ip: {
+            v4: 'localhost'
+          }
+        }
+      ]
+    });
 
     var poolDisconnectStub;
     pool.on('peerconnect', function(peer, addr) {
@@ -215,6 +222,7 @@ describe('Pool', function() {
       peerConnectStub.restore();
       peerDisconnectStub.restore();
       poolDisconnectStub.restore();
+      poolRemoveStub.restore();
 
       // done
       done();
@@ -241,6 +249,39 @@ describe('Pool', function() {
       pool.connect();
     });
     peerConnectStub.restore();
+  });
+
+  it('should output the console correctly', function() {
+    var pool = new Pool();
+    pool.inspect().should.equal('<Pool network: livenet, connected: 0, available: 0>');
+  });
+
+  it('should emit seederrors with error', function(done) {
+    var dnsStub = sinon.stub(dns, 'resolve', function(seed, callback) {
+      callback(new Error('A DNS error'));
+    });
+    var pool = new Pool(Networks.livenet, {maxSize: 1});
+    pool.once('seederror', function(error) {
+      should.exist(error);
+      pool.disconnect();
+      dnsStub.restore();
+      done();
+    });
+    pool.connect();
+  });
+
+  it('should emit seederrors with notfound', function(done) {
+    var dnsStub = sinon.stub(dns, 'resolve', function(seed, callback) {
+      callback(null, []);
+    });
+    var pool = new Pool(Networks.livenet, {maxSize: 1});
+    pool.once('seederror', function(error) {
+      should.exist(error);
+      pool.disconnect();
+      dnsStub.restore();
+      done();
+    });
+    pool.connect();
   });
 
 });
