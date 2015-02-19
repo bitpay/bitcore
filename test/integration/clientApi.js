@@ -489,6 +489,43 @@ describe('client API ', function() {
       });
     });
 
+    it('Should not allow to reject or sign twice', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 3, function(err, w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          blockExplorerMock.setUtxo(x0, 10, 1);
+          var opts = {
+            amount: 10000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hola 1-1',
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            x.status.should.equal('pending');
+            x.requiredRejections.should.equal(2);
+            x.requiredSignatures.should.equal(2);
+            clients[0].signTxProposal(x, function(err, tx) {
+              should.not.exist(err, err);
+              tx.status.should.equal('pending');
+              clients[0].signTxProposal(x, function(err, tx) {
+                err.should.contain('error');
+                clients[1].rejectTxProposal(x, 'xx', function(err, tx) {
+                  should.not.exist(err);
+                  clients[1].rejectTxProposal(x, 'xx', function(err, tx) {
+                    err.should.contain('error');
+                    done();
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
+
+
 
   });
 
