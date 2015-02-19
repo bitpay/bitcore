@@ -20,7 +20,6 @@ var Copayer = require('../../lib/model/copayer');
 var CopayServer = require('../../lib/server');
 var TestData = require('../testdata');
 
-
 var helpers = {};
 helpers.getAuthServer = function(copayerId, cb) {
   var signatureStub = sinon.stub(CopayServer.prototype, '_verifySignature');
