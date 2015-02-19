@@ -194,7 +194,7 @@ describe('Pool', function() {
       this.emit('disconnect', this, {});
     });
 
-    var pool = new Pool(null, { size: 1 });
+    var pool = new Pool(null, { dnsSeed: false });
     pool._addAddr({ ip: { v4: 'localhost' } });
 
     // Not great, but needed so pool won't catch its on event and fail the test
