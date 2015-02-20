@@ -1126,10 +1126,9 @@ describe('Copay server', function() {
             server.getTx({
               id: txp.id
             }, function(err, txp) {
-              var actions = _.values(txp.actions);
-              actions.length.should.equal(1);
-              actions[0].copayerId.should.equal(wallet.copayers[0].id);
-              actions[0].copayerName.should.equal(wallet.copayers[0].name);
+              txp.actions.length.should.equal(1);
+              txp.actions[0].copayerId.should.equal(wallet.copayers[0].id);
+              txp.actions[0].copayerName.should.equal(wallet.copayers[0].name);
               done();
             });
           });
@@ -1221,7 +1220,7 @@ describe('Copay server', function() {
             should.not.exist(err);
             txps.length.should.equal(1);
             var txp = txps[0];
-            _.keys(txp.actions).should.be.empty;
+            txp.actions.should.be.empty;
             next(null, txp);
           });
         },
@@ -1243,8 +1242,8 @@ describe('Copay server', function() {
             txp.isPending().should.be.true;
             txp.isRejected().should.be.false;
             txp.isAccepted().should.be.false;
-            _.keys(txp.actions).length.should.equal(1);
-            var action = txp.actions[wallet.copayers[0].id];
+            txp.actions.length.should.equal(1);
+            var action = txp.getActionBy(wallet.copayers[0].id);
             action.type.should.equal('accept');
             next(null, txp);
           });
@@ -1279,7 +1278,7 @@ describe('Copay server', function() {
             txp.isAccepted().should.be.true;
             txp.isBroadcasted().should.be.true;
             txp.txid.should.equal('999');
-            _.keys(txp.actions).length.should.equal(2);
+            txp.actions.length.should.equal(2);
             done();
           });
         },
@@ -1304,7 +1303,7 @@ describe('Copay server', function() {
             should.not.exist(err);
             txps.length.should.equal(1);
             var txp = txps[0];
-            _.keys(txp.actions).should.be.empty;
+            txp.actions.should.be.empty;
             next();
           });
         },
@@ -1325,8 +1324,8 @@ describe('Copay server', function() {
             txp.isPending().should.be.true;
             txp.isRejected().should.be.false;
             txp.isAccepted().should.be.false;
-            _.keys(txp.actions).length.should.equal(1);
-            var action = txp.actions[wallet.copayers[0].id];
+            txp.actions.length.should.equal(1);
+            var action = txp.getActionBy(wallet.copayers[0].id);
             action.type.should.equal('reject');
             action.comment.should.equal('just because');
             next();
@@ -1359,7 +1358,7 @@ describe('Copay server', function() {
             txp.isPending().should.be.false;
             txp.isRejected().should.be.true;
             txp.isAccepted().should.be.false;
-            _.keys(txp.actions).length.should.equal(2);
+            txp.actions.length.should.equal(2);
             done();
           });
         },
