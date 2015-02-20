@@ -1,4 +1,4 @@
-.PHONY: test
+.PHONY: test cover
 test:
 	./node_modules/.bin/mocha 
 cover:
