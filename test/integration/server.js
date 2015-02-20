@@ -17,14 +17,14 @@ var Storage = require('../../lib/storage');
 var Wallet = require('../../lib/model/wallet');
 var Address = require('../../lib/model/address');
 var Copayer = require('../../lib/model/copayer');
-var CopayServer = require('../../lib/server');
+var WalletService = require('../../lib/server');
 var TestData = require('../testdata');
 
 var helpers = {};
 helpers.getAuthServer = function(copayerId, cb) {
-  var signatureStub = sinon.stub(CopayServer.prototype, '_verifySignature');
+  var signatureStub = sinon.stub(WalletService.prototype, '_verifySignature');
   signatureStub.returns(true);
-  CopayServer.getInstanceWithAuth({
+  WalletService.getInstanceWithAuth({
     copayerId: copayerId,
     message: 'dummy',
     signature: 'dummy',
@@ -36,7 +36,7 @@ helpers.getAuthServer = function(copayerId, cb) {
 };
 
 helpers.createAndJoinWallet = function(m, n, cb) {
-  var server = new CopayServer();
+  var server = new WalletService();
   var copayerIds = [];
   var offset = helpers.offset || 0;
 
@@ -196,7 +196,7 @@ describe('Copay server', function() {
     storage = new Storage({
       db: db
     });
-    CopayServer.initialize({
+    WalletService.initialize({
       storage: storage
     });
     helpers.offset = 0;
@@ -218,7 +218,7 @@ describe('Copay server', function() {
         var message = 'hola';
         var sig = WalletUtils.signMessage(message, priv);
 
-        CopayServer.getInstanceWithAuth({
+        WalletService.getInstanceWithAuth({
           copayerId: wallet.copayers[0].id,
           message: message,
           signature: sig,
@@ -230,7 +230,7 @@ describe('Copay server', function() {
     });
 
     it('should fail when requesting for non-existent copayer', function(done) {
-      CopayServer.getInstanceWithAuth({
+      WalletService.getInstanceWithAuth({
         copayerId: 'ads',
         message: TestData.message.text,
         signature: TestData.message.signature,
@@ -243,7 +243,7 @@ describe('Copay server', function() {
 
     it('should fail when message signature cannot be verified', function(done) {
       helpers.createAndJoinWallet(1, 2, function(s, wallet) {
-        CopayServer.getInstanceWithAuth({
+        WalletService.getInstanceWithAuth({
           copayerId: wallet.copayers[0].id,
           message: 'dummy',
           signature: 'dummy',
@@ -259,7 +259,7 @@ describe('Copay server', function() {
   describe('#createWallet', function() {
     var server;
     beforeEach(function() {
-      server = new CopayServer();
+      server = new WalletService();
     });
 
     it('should create and store wallet', function(done) {
@@ -337,7 +337,7 @@ describe('Copay server', function() {
   describe('#joinWallet', function() {
     var server, walletId;
     beforeEach(function(done) {
-      server = new CopayServer();
+      server = new WalletService();
       var walletOpts = {
         name: 'my wallet',
         m: 2,
@@ -587,7 +587,7 @@ describe('Copay server', function() {
 
   describe('Wallet not complete tests', function() {
     it('should fail to create address when wallet is not complete', function(done) {
-      var server = new CopayServer();
+      var server = new WalletService();
       var walletOpts = {
         name: 'my wallet',
         m: 2,
@@ -617,7 +617,7 @@ describe('Copay server', function() {
     });
 
     it('should fail to create tx when wallet is not complete', function(done) {
-      var server = new CopayServer();
+      var server = new WalletService();
       var walletOpts = {
         name: 'my wallet',
         m: 2,
