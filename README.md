@@ -2,7 +2,7 @@
 
 
 [![Build Status](https://img.shields.io/travis/bitpay/bitcore-wallet-service.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-wallet-service)
-[![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore-wallet-service.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore-wallet-service)
+[![Coverage Status](https://coveralls.io/repos/bitpay/bitcore-wallet-service/badge.svg)](https://coveralls.io/r/bitpay/bitcore-wallet-service)
 
 
 A Multisig HD Wallet Service, with minimun server trust.
