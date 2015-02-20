@@ -132,7 +132,7 @@ describe('client API ', function() {
       db: db
     });
     app = ExpressApp.start({
-      CopayServer: {
+      WalletService: {
         storage: storage,
         blockExplorer: blockExplorerMock,
       }
