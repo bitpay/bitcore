@@ -1,10 +1,10 @@
 'use strict';
 
-var bitcore = require('..'),
-    MerkleBlock = bitcore.MerkleBlock,
-    BufferReader = bitcore.encoding.BufferReader,
-    BufferWriter = bitcore.encoding.BufferWriter,
-    data = require('./data/merkleblocks.js');
+var bitcore = require('..');
+var MerkleBlock = bitcore.MerkleBlock;
+var BufferReader = bitcore.encoding.BufferReader;
+var BufferWriter = bitcore.encoding.BufferWriter;
+var data = require('./data/merkleblocks.js');
 
 describe('MerkleBlock', function() {
   var blockhex  = data.HEX[0];
