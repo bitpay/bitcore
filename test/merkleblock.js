@@ -1,9 +1,7 @@
 'use strict';
 
 var bitcore = require('..'),
-    BufferUtil = bitcore.util.buffer,
     MerkleBlock = bitcore.MerkleBlock,
-    BlockHeader = bitcore.BlockHeader,
     BufferReader = bitcore.encoding.BufferReader,
     BufferWriter = bitcore.encoding.BufferWriter,
     data = require('./data/merkleblocks.js');
@@ -71,6 +69,10 @@ describe('MerkleBlock', function() {
       should.exist(block.numTransactions);
       should.exist(block.hashes);
       should.exist(block.flags);
+      should.exist(b.header);
+      should.exist(b.numTransactions);
+      should.exist(b.hashes);
+      should.exist(b.flags);
     });
 
   });
