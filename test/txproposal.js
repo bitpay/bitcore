@@ -37,7 +37,7 @@ describe('TXProposal', function() {
     });
   });
 
-  describe.skip('#getRawTx', function() {
+  describe('#getRawTx', function() {
     it('should generate correct raw transaction for signed 2-2', function() {
       var txp = TXP.fromObj(aTXP());
       txp.sign('1', theSignatures, theXPub);
