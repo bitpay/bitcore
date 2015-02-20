@@ -370,7 +370,7 @@ describe('client API ', function() {
           should.exist(x0.address);
           blockExplorerMock.setUtxo(x0, 1, 1);
           var opts = {
-            amount: '0.1btc',
+            amount: 10000000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hola 1-1',
           };
@@ -526,7 +526,7 @@ describe('client API ', function() {
     });
   });
 
-  describe('Transaction Troposals and Locked funds', function() {
+  describe('Transaction proposals and locked funds', function() {
     it('Should lock and release funds', function(done) {
       helpers.createAndJoinWallet(clients, 2, 2, function(err, w) {
         clients[0].createAddress(function(err, x0) {
@@ -535,7 +535,7 @@ describe('client API ', function() {
           blockExplorerMock.setUtxo(x0, 1, 2);
           blockExplorerMock.setUtxo(x0, 1, 2);
           var opts = {
-            amount: '1.2btc',
+            amount: 120000000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hola 1-1',
           };
