@@ -58,6 +58,12 @@ describe('Transaction', function() {
     testTransaction.getFee().should.equal(10000);
   });
 
+  it('returns the fee correctly in a roundtrip', function() {
+    var serializedTx = testTransaction.serialize();
+    var transaction = new Transaction(serializedTx);
+    transaction.getFee().should.equal(10000);
+  });
+
   it('serialize to Object roundtrip', function() {
     new Transaction(testTransaction.toObject()).uncheckedSerialize().should.equal(testTransaction.serialize());
   });
