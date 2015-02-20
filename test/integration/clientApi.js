@@ -447,7 +447,6 @@ describe('client API ', function() {
       });
     });
     it('Should keep message and refusal texts', function(done) {
-      var msg = 'abcdefg';
       helpers.createAndJoinWallet(clients, 2, 3, function(err, w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
@@ -455,18 +454,60 @@ describe('client API ', function() {
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: msg,
+            message: 'some message',
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
-            clients[1].rejectTxProposal(x, 'xx', function(err, tx1) {
+            clients[1].rejectTxProposal(x, 'rejection comment', function(err, tx1) {
               should.not.exist(err);
               clients[2].getTxProposals({}, function(err, txs) {
                 should.not.exist(err);
-                txs[0].decryptedMessage.should.equal(msg);
-                _.values(txs[0].actions)[0].comment.should.equal('xx');
+                txs[0].decryptedMessage.should.equal('some message');
+                txs[0].actions[0].comment.should.equal('rejection comment');
                 done();
               });
+            });
+          });
+        });
+      });
+    });
+    it('Should encrypt proposal message', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 3, function(err, w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          blockExplorerMock.setUtxo(x0, 10, 2);
+          var opts = {
+            amount: 10000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'some message',
+          };
+          var spy = sinon.spy(clients[0], '_doPostRequest');
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            spy.calledOnce.should.be.true;
+            JSON.stringify(spy.getCall(0).args).should.not.contain('some message');
+            done();
+          });
+        });
+      });
+    });
+    it.only('Should encrypt proposal refusal comment', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 3, function(err, w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          blockExplorerMock.setUtxo(x0, 10, 2);
+          var opts = {
+            amount: 10000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            var spy = sinon.spy(clients[1], '_doPostRequest');
+            clients[1].rejectTxProposal(x, 'rejection comment', function(err, tx1) {
+              should.not.exist(err);
+              spy.calledOnce.should.be.true;
+              JSON.stringify(spy.getCall(0).args).should.not.contain('rejection comment');
+              done();
             });
           });
         });
