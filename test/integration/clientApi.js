@@ -491,7 +491,7 @@ describe('client API ', function() {
         });
       });
     });
-    it.only('Should encrypt proposal refusal comment', function(done) {
+    it('Should encrypt proposal refusal comment', function(done) {
       helpers.createAndJoinWallet(clients, 2, 3, function(err, w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
