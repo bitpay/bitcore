@@ -41,7 +41,8 @@
     "sinon": "^1.10.3",
     "memdown": "^1.0.0",
     "jsdoc": "^3.3.0",
-    "supertest": "*"
+    "supertest": "*",
+    "istanbul": "*"
   },
   "scripts": {
     "start": "node server.js"
