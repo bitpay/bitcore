@@ -1,5 +1,4 @@
 .PHONY: test cover
-	:w
 test:
 	./node_modules/.bin/mocha 
 cover:
