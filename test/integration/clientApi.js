@@ -414,7 +414,7 @@ describe('client API ', function() {
   });
 
 
-  describe('Transaction Troposals Creation and Locked funds', function() {
+  describe('Transaction Proposals Creation and Locked funds', function() {
     it('Should lock and release funds', function(done) {
       helpers.createAndJoinWallet(clients, 2, 2, function(err, w) {
         clients[0].createAddress(function(err, x0) {
