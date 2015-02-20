@@ -1,4 +1,3 @@
-
 var _ = require('lodash');
 var Client = require('../lib/client');
 
@@ -12,14 +11,14 @@ var die = Utils.die = function(err) {
 };
 
 Utils.parseMN = function(MN) {
-  if (!MN) 
+  if (!MN)
     die('No m-n parameter');
   var mn = MN.split('-');
 
-  var m = parseInt(mn[0]); 
+  var m = parseInt(mn[0]);
   var n = parseInt(mn[1]);
 
-  if (!m || ! n) {
+  if (!m || !n) {
     die('Bad m-n parameter:' + MN);
   }
 
@@ -62,6 +61,33 @@ Utils.findOneTxProposal = function(txps, id) {
   return matches[0];
 };
 
+Utils.UNITS = {
+  'btc': 100000000,
+  'bit': 100,
+  'sat': 1,
+};
+
+Utils.parseAmount = function(text) {
+  if (!_.isString(text))
+    text = text.toString();
+
+  var regex = '^(\\d*(\\.\\d{0,8})?)\\s*(' + _.keys(Utils.UNITS).join('|') + ')?$';
+  var match = new RegExp(regex, 'i').exec(text.trim());
+
+  if (!match || match.length === 0) throw new Error('Invalid amount');
+
+  var amount = parseFloat(match[1]);
+  if (!_.isNumber(amount) || _.isNaN(amount)) throw new Error('Invalid amount');
+
+  var unit = (match[3] || 'sat').toLowerCase();
+  var rate = Utils.UNITS[unit];
+  if (!rate) throw new Error('Invalid unit')
+
+  var amountSat = parseFloat((amount * rate).toPrecision(12));
+  if (amountSat != Math.round(amountSat)) throw new Error('Invalid amount');
+
+  return amountSat;
+};
 
 
 module.exports = Utils;

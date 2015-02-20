@@ -17,7 +17,12 @@ if (!args[0] || !args[1] || !args[2])
   program.help();
 
 var address = args[0];
-var amount = args[1];
+var amount;
+try {
+  amount = utils.parseAmount(args[1]);
+} catch (ex) {
+  utils.die(ex);
+}
 var message = args[2];
 
 var client = utils.getClient(program);
