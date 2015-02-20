@@ -593,6 +593,7 @@ describe('client API ', function() {
   });
 
   describe('Transactions Signatures and Rejection', function() {
+    this.timeout(5000);
     it('Send and broadcast in 1-1 wallet', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
         clients[0].createAddress(function(err, x0) {
