@@ -425,7 +425,7 @@ describe('client API ', function() {
           var opts = {
             amount: 120000000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hola 1-1',
+            message: 'hello 1-1',
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
@@ -447,7 +447,6 @@ describe('client API ', function() {
       });
     });
     it('Should keep message and refusal texts', function(done) {
-      var msg = 'abcdefg';
       helpers.createAndJoinWallet(clients, 2, 3, function(err, w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
@@ -455,18 +454,60 @@ describe('client API ', function() {
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: msg,
+            message: 'some message',
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
-            clients[1].rejectTxProposal(x, 'xx', function(err, tx1) {
+            clients[1].rejectTxProposal(x, 'rejection comment', function(err, tx1) {
               should.not.exist(err);
               clients[2].getTxProposals({}, function(err, txs) {
                 should.not.exist(err);
-                txs[0].decryptedMessage.should.equal(msg);
-                _.values(txs[0].actions)[0].comment.should.equal('xx');
+                txs[0].message.should.equal('some message');
+                txs[0].actions[0].comment.should.equal('rejection comment');
                 done();
               });
+            });
+          });
+        });
+      });
+    });
+    it('Should encrypt proposal message', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 3, function(err, w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          blockExplorerMock.setUtxo(x0, 10, 2);
+          var opts = {
+            amount: 10000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'some message',
+          };
+          var spy = sinon.spy(clients[0], '_doPostRequest');
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            spy.calledOnce.should.be.true;
+            JSON.stringify(spy.getCall(0).args).should.not.contain('some message');
+            done();
+          });
+        });
+      });
+    });
+    it('Should encrypt proposal refusal comment', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 3, function(err, w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          blockExplorerMock.setUtxo(x0, 10, 2);
+          var opts = {
+            amount: 10000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            var spy = sinon.spy(clients[1], '_doPostRequest');
+            clients[1].rejectTxProposal(x, 'rejection comment', function(err, tx1) {
+              should.not.exist(err);
+              spy.calledOnce.should.be.true;
+              JSON.stringify(spy.getCall(0).args).should.not.contain('rejection comment');
+              done();
             });
           });
         });
@@ -482,7 +523,7 @@ describe('client API ', function() {
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hola',
+            message: 'hello',
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
@@ -521,7 +562,7 @@ describe('client API ', function() {
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hola',
+            message: 'hello',
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
@@ -560,7 +601,7 @@ describe('client API ', function() {
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hola',
+            message: 'hello',
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
@@ -603,7 +644,7 @@ describe('client API ', function() {
           var opts = {
             amount: 10000000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hola 1-1',
+            message: 'hello 1-1',
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
@@ -630,7 +671,7 @@ describe('client API ', function() {
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hola 1-1',
+            message: 'hello 1-1',
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
@@ -661,14 +702,14 @@ describe('client API ', function() {
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hola 1-1',
+            message: 'hello 1-1',
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
             x.status.should.equal('pending');
             x.requiredRejections.should.equal(2);
             x.requiredSignatures.should.equal(2);
-            clients[0].rejectTxProposal(x, 'no me gusto', function(err, tx) {
+            clients[0].rejectTxProposal(x, 'wont sign', function(err, tx) {
               should.not.exist(err, err);
               tx.status.should.equal('pending');
               clients[1].signTxProposal(x, function(err, tx) {
@@ -695,7 +736,7 @@ describe('client API ', function() {
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hola 1-1',
+            message: 'hello 1-1',
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
@@ -703,13 +744,13 @@ describe('client API ', function() {
             x.requiredRejections.should.equal(2);
             x.requiredSignatures.should.equal(3);
 
-            clients[0].rejectTxProposal(x, 'no me gusto', function(err, tx) {
+            clients[0].rejectTxProposal(x, 'wont sign', function(err, tx) {
               should.not.exist(err, err);
               tx.status.should.equal('pending');
               clients[1].signTxProposal(x, function(err, tx) {
                 should.not.exist(err);
                 tx.status.should.equal('pending');
-                clients[2].rejectTxProposal(x, 'tampoco me gusto', function(err, tx) {
+                clients[2].rejectTxProposal(x, 'me neither', function(err, tx) {
                   should.not.exist(err);
                   tx.status.should.equal('rejected');
                   done();
@@ -730,7 +771,7 @@ describe('client API ', function() {
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hola 1-1',
+            message: 'hello 1-1',
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
