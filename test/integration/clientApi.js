@@ -351,8 +351,9 @@ describe('client API ', function() {
             console.log('[clientApi.js.326:address:]', address); //TODO
 
             // Tamper data
-            address.publicKeys = ['0322defe0c3eb9fcd8bc01878e6dbca7a6846880908d214b50a752445040cc5c54', 
-              '02bf3aadc17131ca8144829fa1883c1ac0a8839067af4bca47a90ccae63d0d8037'];
+            address.publicKeys = ['0322defe0c3eb9fcd8bc01878e6dbca7a6846880908d214b50a752445040cc5c54',
+              '02bf3aadc17131ca8144829fa1883c1ac0a8839067af4bca47a90ccae63d0d8037'
+            ];
 
             // Tamper response
             clients[1]._doPostRequest = sinon.stub().yields(null, address);
@@ -412,6 +413,184 @@ describe('client API ', function() {
     });
   });
 
+
+  describe('Transaction Troposals Creation and Locked funds', function() {
+    it('Should lock and release funds', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 2, function(err, w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          blockExplorerMock.setUtxo(x0, 1, 2);
+          blockExplorerMock.setUtxo(x0, 1, 2);
+          var opts = {
+            amount: 120000000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hola 1-1',
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+
+            clients[0].sendTxProposal(opts, function(err, y) {
+              err.code.should.contain('INSUFFICIENTFUNDS');
+
+              clients[0].rejectTxProposal(x, 'no', function(err, z) {
+                should.not.exist(err);
+                z.status.should.equal('rejected');
+                clients[0].sendTxProposal(opts, function(err, x) {
+                  should.not.exist(err);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+    it('Should keep message and refusal texts', function(done) {
+      var msg = 'abcdefg';
+      helpers.createAndJoinWallet(clients, 2, 3, function(err, w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          blockExplorerMock.setUtxo(x0, 10, 2);
+          var opts = {
+            amount: 10000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: msg,
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            clients[1].rejectTxProposal(x, 'xx', function(err, tx1) {
+              should.not.exist(err);
+              clients[2].getTxProposals({}, function(err, txs) {
+                should.not.exist(err);
+                txs[0].decryptedMessage.should.equal(msg);
+                _.values(txs[0].actions)[0].comment.should.equal('xx');
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+    it('should detect fake tx proposals (wrong signature)', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 2, function(err) {
+        should.not.exist(err);
+
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          blockExplorerMock.setUtxo(x0, 10, 2);
+          var opts = {
+            amount: 10000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hola',
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+
+
+            // Get right response
+            clients[0]._load(function(err, data) {
+              var url = '/v1/txproposals/';
+              clients[0]._doGetRequest(url, data, function(err, txps) {
+
+                // Tamper data
+                txps[0].proposalSignature = '304402206e4a1db06e00068582d3be41cfc795dcf702451c132581e661e7241ef34ca19202203e17598b4764913309897d56446b51bc1dcd41a25d90fdb5f87a6b58fe3a6920';
+
+                // Tamper response
+                clients[0]._doGetRequest = sinon.stub().yields(null, txps);
+
+                // Grab real response
+                clients[0].getTxProposals({}, function(err, txps) {
+                  should.exist(err);
+                  err.code.should.contain('SERVERCOMPROMISED');
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+    it('should detect fake tx proposals (tampered amount)', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 2, function(err) {
+        should.not.exist(err);
+
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          blockExplorerMock.setUtxo(x0, 10, 2);
+          var opts = {
+            amount: 10000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hola',
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+
+
+            // Get right response
+            clients[0]._load(function(err, data) {
+              var url = '/v1/txproposals/';
+              clients[0]._doGetRequest(url, data, function(err, txps) {
+
+                // Tamper data
+                txps[0].amount = 100000;
+
+                // Tamper response
+                clients[0]._doGetRequest = sinon.stub().yields(null, txps);
+
+                // Grab real response
+                clients[0].getTxProposals({}, function(err, txps) {
+                  should.exist(err);
+                  err.code.should.contain('SERVERCOMPROMISED');
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+    it('should detect fake tx proposals (change address not it wallet)', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 2, function(err) {
+        should.not.exist(err);
+
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          blockExplorerMock.setUtxo(x0, 10, 2);
+          var opts = {
+            amount: 10000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hola',
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+
+
+            // Get right response
+            clients[0]._load(function(err, data) {
+              var url = '/v1/txproposals/';
+              clients[0]._doGetRequest(url, data, function(err, txps) {
+                // Tamper data
+                txps[0].changeAddress.address = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+
+                // Tamper response
+                clients[0]._doGetRequest = sinon.stub().yields(null, txps);
+
+                // Grab real response
+                clients[0].getTxProposals({}, function(err, txps) {
+                  should.exist(err);
+                  err.code.should.contain('SERVERCOMPROMISED');
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
+
+  });
 
   describe('Transactions Signatures and Rejection', function() {
     it('Send and broadcast in 1-1 wallet', function(done) {
@@ -575,117 +754,5 @@ describe('client API ', function() {
         });
       });
     });
-
-
   });
-
-  describe('Send Transaction Troposals and Locked funds', function() {
-    it('Should lock and release funds', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 2, function(err, w) {
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 1, 2);
-          blockExplorerMock.setUtxo(x0, 1, 2);
-          var opts = {
-            amount: 120000000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hola 1-1',
-          };
-          clients[0].sendTxProposal(opts, function(err, x) {
-            should.not.exist(err);
-
-            clients[0].sendTxProposal(opts, function(err, y) {
-              err.code.should.contain('INSUFFICIENTFUNDS');
-
-              clients[0].rejectTxProposal(x, 'no', function(err, z) {
-                should.not.exist(err);
-                z.status.should.equal('rejected');
-                clients[0].sendTxProposal(opts, function(err, x) {
-                  should.not.exist(err);
-                  done();
-                });
-              });
-            });
-          });
-        });
-      });
-    });
-    it('Should keep message and refusal texts', function(done) {
-      var msg = 'abcdefg';
-      helpers.createAndJoinWallet(clients, 2, 3, function(err, w) {
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          blockExplorerMock.setUtxo(x0, 10, 2);
-          var opts = {
-            amount: 10000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: msg,
-          };
-          clients[0].sendTxProposal(opts, function(err, x) {
-            should.not.exist(err);
-            clients[1].rejectTxProposal(x, 'xx', function(err, tx1) {
-              should.not.exist(err);
-              clients[2].getTxProposals({}, function(err, txs) {
-                should.not.exist(err);
-                txs[0].decryptedMessage.should.equal(msg);
-                _.values(txs[0].actions)[0].comment.should.equal('xx');
-                done();
-              });
-            });
-          });
-        });
-      });
-    });
-  });
-
-
-
-  /*
-
-
-  describe('#signTxProposal ', function() {
-    it.skip('should sign tx proposal', function(done) {});
-
-    it('should detect fake tx proposal signature', function(done) {
-      client.storage.fs.readFile = sinon.stub().yields(null, JSON.stringify(TestData.storage.complete11));
-      var txp = {
-        creatorId: '56cb00afd85f4f37fa900ac4e367676f2eb6189a773633eb9f119eb21a22ba44',
-        toAddress: '2N3fA6wDtnebzywPkGuNK9KkFaEzgbPRRTq',
-        amount: 100000,
-        message: 'some message',
-        proposalSignature: 'dummy',
-        changeAddress: {
-          address: '2N3fA6wDtnebzywPkGuNK9KkFaEzgbPRRTq',
-          path: 'm/2147483647/0/7',
-          publicKeys: ['03f6a5fe8db51bfbaf26ece22a3e3bc242891a47d3048fc70bc0e8c03a071ad76f']
-        },
-      };
-      client.signTxProposal(txp, function(err) {
-        err.code.should.equal('SERVERCOMPROMISED');
-        err.message.should.contain('fake transaction proposal');
-        done();
-      });
-    });
-
-    it('should detect fake tx proposal change address', function(done) {
-      var txp = {
-        toAddress: '2N3fA6wDtnebzywPkGuNK9KkFaEzgbPRRTq',
-        amount: 100000,
-        message: 'some message',
-        proposalSignature: '3045022100e2d9ef7ed592217ab2256fdcf9627075f35ecdf431dde8c9a9c9422b7b1fb00f02202bc8ce066db4401bdbafb2492c3138debbc69c4c01db50d8c22a227e744c8906',
-        changeAddress: {
-          address: '2N3fA6wDtnebzywPkGuNK9KkFaEzgbPRRTq',
-          path: 'm/2147483647/0/8',
-          publicKeys: ['03f6a5fe8db51bfbaf26ece22a3e3bc242891a47d3048fc70bc0e8c03a071ad76f']
-        },
-      };
-      client.signTxProposal(txp, function(err) {
-        err.code.should.equal('SERVERCOMPROMISED');
-        err.message.should.contain('fake transaction proposal');
-        done();
-      });
-    });
-  });
- */
 });
