@@ -1,8 +1,8 @@
 # bitcore-wallet-service
 
-[![NPM Package](https://img.shields.io/npm/v/bitcore.svg?style=flat-square)](https://www.npmjs.org/package/bitcore)
-[![Build Status](https://img.shields.io/travis/bitpay/bitcore.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore)
-[![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore)
+[![NPM Package](https://img.shields.io/npm/v/bitcore-wallet-service.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-wallet-service)
+[![Build Status](https://img.shields.io/travis/bitpay/bitcore-wallet-service.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-wallet-service)
+[![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore-wallet-service.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore-wallet-service)
 
 
 A Multisig HD Wallet Service, with minimun server trust.
