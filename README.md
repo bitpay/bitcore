@@ -84,7 +84,15 @@ To build bitcore full bundle for the browser:
 gulp browser
 ```
 
-This will generate files named `browser/bitcore.js` and `browser/bitcore.min.js`.
+This will generate files named `bitcore.js` and `bitcore.min.js`.
+
+You can also use our pre-generated files, provided for each release along with a PGP signature by one of the project's main contributors. To get them, checkout a release commit (for example, https://github.com/bitpay/bitcore/commit/2670cd1ac5ec1742aae0599e1583c063415959ff for v0.10.4).
+
+To verify signatures, use the following PGP keys:
+- @maraoz: https://pgp.mit.edu/pks/lookup?op=get&search=0x64F3727BFE0B3196
+- @eordano: https://pgp.mit.edu/pks/lookup?op=get&search=0x00BD4BAF1DEEAC20
+- @yemel: https://pgp.mit.edu/pks/lookup?op=get&search=0xB4A468A6F14B6843
+- @braydonf: https://pgp.mit.edu/pks/lookup?op=get&search=0x9BBF07CAC07A276D
 
 ## Tests
 
