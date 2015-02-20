@@ -202,7 +202,7 @@ describe('client API ', function() {
         should.not.exist(err);
 
         // Get right response
-        var data = clients[0]._load(function(err, data) {
+        clients[0]._load(function(err, data) {
           var url = '/v1/wallets/';
           clients[0]._doGetRequest(url, data, function(err, x) {
 
@@ -316,6 +316,57 @@ describe('client API ', function() {
         });
       });
     });
+    it('should detect fake addresses', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 2, function(err) {
+        should.not.exist(err);
+
+        // Get right response
+        clients[0]._load(function(err, data) {
+          var url = '/v1/addresses/';
+          clients[0]._doPostRequest(url, {}, data, function(err, address) {
+
+            // Tamper data
+            address.address = '2N86pNEpREGpwZyHVC5vrNUCbF9nM1Geh4K';
+
+            // Tamper response
+            clients[1]._doPostRequest = sinon.stub().yields(null, address);
+
+            // Grab real response
+            clients[1].createAddress(function(err, x0) {
+              err.code.should.contain('SERVERCOMPROMISED');
+              done();
+            });
+          });
+        });
+      });
+    });
+    it('should detect fake public keys', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 2, function(err) {
+        should.not.exist(err);
+
+        // Get right response
+        clients[0]._load(function(err, data) {
+          var url = '/v1/addresses/';
+          clients[0]._doPostRequest(url, {}, data, function(err, address) {
+            console.log('[clientApi.js.326:address:]', address); //TODO
+
+            // Tamper data
+            address.publicKeys = ['0322defe0c3eb9fcd8bc01878e6dbca7a6846880908d214b50a752445040cc5c54', 
+              '02bf3aadc17131ca8144829fa1883c1ac0a8839067af4bca47a90ccae63d0d8037'];
+
+            // Tamper response
+            clients[1]._doPostRequest = sinon.stub().yields(null, address);
+
+            // Grab real response
+            clients[1].createAddress(function(err, x0) {
+              err.code.should.contain('SERVERCOMPROMISED');
+              done();
+            });
+          });
+        });
+      });
+    });
+
   });
 
 
@@ -524,9 +575,11 @@ describe('client API ', function() {
         });
       });
     });
+
+
   });
 
-  describe('Transaction proposals and locked funds', function() {
+  describe('Send Transaction Troposals and Locked funds', function() {
     it('Should lock and release funds', function(done) {
       helpers.createAndJoinWallet(clients, 2, 2, function(err, w) {
         clients[0].createAddress(function(err, x0) {
@@ -558,75 +611,38 @@ describe('client API ', function() {
         });
       });
     });
+    it('Should keep message and refusal texts', function(done) {
+      var msg = 'abcdefg';
+      helpers.createAndJoinWallet(clients, 2, 3, function(err, w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          blockExplorerMock.setUtxo(x0, 10, 2);
+          var opts = {
+            amount: 10000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: msg,
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            clients[1].rejectTxProposal(x, 'xx', function(err, tx1) {
+              should.not.exist(err);
+              clients[2].getTxProposals({}, function(err, txs) {
+                should.not.exist(err);
+                txs[0].decryptedMessage.should.equal(msg);
+                _.values(txs[0].actions)[0].comment.should.equal('xx');
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
   });
 
 
 
   /*
-  describe('TODO', function(x) {
-    it('should detect fake addresses ', function(done) {
-      var response = {
-        createdOn: 1424105995,
-        address: '2N3fA6wDtnebzywPkGuNK9KkFaEzgbPRRTq',
-        path: 'm/2147483647/0/8',
-        publicKeys: ['03f6a5fe8db51bfbaf26ece22a3e3bc242891a47d3048fc70bc0e8c03a071ad76f']
-      };
-      var request = sinon.mock().yields(null, {
-        statusCode: 200
-      }, response);
-      client.request = request;
-      client.createAddress(function(err, x) {
-        err.code.should.equal('SERVERCOMPROMISED');
-        err.message.should.contain('fake address');
-        done();
-      });
-    });
-  });
 
-
-  describe('#getTxProposals', function() {
-    it('should return tx proposals and decrypt message', function(done) {
-      client.storage.fs.readFile = sinon.stub().yields(null, JSON.stringify(TestData.storage.complete11));
-      var request = sinon.mock().yields(null, {
-        statusCode: 200
-      }, TestData.serverResponse.pendingTxs);
-      client.request = request;
-
-      client.getTxProposals({}, function(err, x) {
-        should.not.exist(err);
-        x.length.should.equal(1);
-        x[0].id.should.equal(TestData.serverResponse.pendingTxs[0].id);
-        x[0].decryptedMessage.should.equal('hola');
-        done();
-      });
-    });
-  });
-
-  describe('#sendTxProposal ', function() {
-    it('should send tx proposal with encrypted message', function(done) {
-      client.storage.fs.readFile = sinon.stub().yields(null, JSON.stringify(TestData.storage.complete11));
-      var response = {};
-      var request = sinon.mock().yields(null, {
-        statusCode: 200
-      }, response);
-      client.request = request;
-
-      var args = {
-        toAddress: '2N3fA6wDtnebzywPkGuNK9KkFaEzgbPRRTq',
-        amount: '200bit',
-        message: 'some message',
-      };
-      client.sendTxProposal(args, function(err) {
-        var callArgs = request.getCall(0).args[0].body;
-        callArgs.toAddress.should.equal(args.toAddress);
-        callArgs.amount.should.equal(20000);
-        callArgs.message.should.not.equal(args.message);
-        var decryptedMsg = WalletUtils.decryptMessage(callArgs.message, TestData.storage.complete11.sharedEncryptingKey);
-        decryptedMsg.should.equal(args.message);
-        done();
-      });
-    });
-  });
 
   describe('#signTxProposal ', function() {
     it.skip('should sign tx proposal', function(done) {});
