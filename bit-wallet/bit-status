@@ -25,19 +25,20 @@ client.getStatus(function(err, res) {
   console.log('* Copayers:', _.pluck(x.copayers,'name').join(', '));
 
   var x = res.balance;
-  console.log('* Balance %d (Locked: %d)', x.totalAmount, x.lockedAmount);
+  console.log('* Balance %dSAT (Locked: %dSAT)', x.totalAmount, x.lockedAmount);
 
   if (!_.isEmpty(res.pendingTxps)) {
     console.log("* TX Proposals:")
     _.each(res.pendingTxps, function(x) {
-      console.log("\t%s [%s by %s] %dSAT => %s", utils.shortID(x.id), x.message, x.creatorName, x.amount, x.toAddress);
+      missingSignatures = x.requiredSignatures - _.filter(_.values(x.actions), function (a) { return a.type == 'accept'; }).length;
+      console.log("\t%s [\"%s\" by %s] %dSAT => %s", utils.shortID(x.id), x.message, x.creatorName, x.amount, x.toAddress);
 
       if (!_.isEmpty(x.actions)) {
-        console.log('\t\t * Actions');
-        console.log('\t\t', _.map(x.actions, function(a) {
-          return a.copayerName + ': ' + a.type + ''
+        console.log('\t\tActions: ', _.map(x.actions, function(a) {
+          return a.copayerName + ' ' + (a.type == 'accept' ? '✓' : '✗') + (a.comment ? ' (' + a.comment + ')' : '');
         }).join('. '));
       }
+      console.log('\t\tMissing signatures: ' + missingSignatures);
     });
   }
 });
