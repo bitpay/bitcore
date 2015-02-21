@@ -125,33 +125,34 @@ helpers.stubBroadcastFail = function() {
 };
 
 
-helpers.clientSign = function(tx, xprivHex) {
+helpers.clientSign = function(txp, xprivHex) {
   //Derive proper key to sign, for each input
   var privs = [],
     derived = {};
   var xpriv = new Bitcore.HDPrivateKey(xprivHex);
 
-  _.each(tx.inputs, function(i) {
+  _.each(txp.inputs, function(i) {
     if (!derived[i.path]) {
       derived[i.path] = xpriv.derive(i.path).privateKey;
+      privs.push(derived[i.path]);
     }
-    privs.push(derived[i.path]);
   });
 
   var t = new Bitcore.Transaction();
 
-  _.each(tx.inputs, function(i) {
-    t.from(i, i.publicKeys, tx.requiredSignatures);
+  _.each(txp.inputs, function(i) {
+    t.from(i, i.publicKeys, txp.requiredSignatures);
   });
 
-  t.to(tx.toAddress, tx.amount)
-    .change(tx.changeAddress.address)
-    .sign(privs);
+  t.to(txp.toAddress, txp.amount)
+    .change(txp.changeAddress.address);
 
   var signatures = _.map(privs, function(priv, i) {
-    return _.find(t.getSignatures(priv), {
-      inputIndex: i
-    }).signature.toDER().toString('hex');
+    return t.getSignatures(priv);
+  });
+
+  signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
+    return s.signature.toDER().toString('hex');
   });
 
   return signatures;
@@ -1080,7 +1081,7 @@ describe('Copay server', function() {
       });
     });
 
-    it.only('should sign and broadcast a tx', function(done) {
+    it('should sign and broadcast a tx', function(done) {
       helpers.stubBroadcast('1122334455');
       var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey);
       server.createTx(txOpts, function(err, txp) {
@@ -1486,7 +1487,7 @@ describe('Copay server', function() {
       }, function(err, notifications) {
         should.not.exist(err);
         var types = _.pluck(notifications, 'type');
-        types.should.deep.equal(['NewCopayer', 'NewAddress', 'NewAddress', 'NewAddress', 'NewAddress']);
+        types.should.deep.equal(['NewCopayer', 'NewAddress', 'NewAddress', 'NewAddress', 'NewTxProposal']);
         done();
       });
     });
