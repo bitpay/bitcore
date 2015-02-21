@@ -92,8 +92,6 @@ helpers.stubUtxos = function(server, wallet, amounts, cb) {
   var amounts = [].concat(amounts);
 
   async.map(_.range(Math.ceil(amounts.length / 2)), function(i, next) {
-    // async.map(_.range(amounts.length), function(i, next) {
-    // async.map(_.range(2), function(i, next) {
     server.createAddress({}, function(err, address) {
       next(err, address);
     });
