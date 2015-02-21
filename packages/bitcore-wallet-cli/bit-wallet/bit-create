@@ -19,7 +19,12 @@ var walletName = args[0];
 var copayerName = args[2] || process.env.USER;
 var network = program.testnet ? 'testnet' : 'livenet';
 
-var mn = utils.parseMN(args[1]);
+var mn;
+try {
+  mn = utils.parseMN(args[1]);
+} catch (ex) {
+  die(ex);
+}
 
 var client = utils.getClient(program);
 client.createWallet(walletName, copayerName, mn[0], mn[1], network, function(err, secret) {

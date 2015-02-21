@@ -10,17 +10,17 @@ var die = Utils.die = function(err) {
   }
 };
 
-Utils.parseMN = function(MN) {
-  if (!MN)
-    die('No m-n parameter');
-  var mn = MN.split('-');
+Utils.parseMN = function(text) {
+  if (!text) throw new Error('No m-n parameter');
 
-  var m = parseInt(mn[0]);
-  var n = parseInt(mn[1]);
+  var regex = /^(\d+)(-|of|-of-)?(\d+)$/i;
+  var match = regex.exec(text.trim());
 
-  if (!m || !n) {
-    die('Bad m-n parameter:' + MN);
-  }
+  if (!match || match.length === 0) throw new Error('Invalid m-n parameter');
+
+  var m = parseInt(match[1]);
+  var n = parseInt(match[3]);
+  if (m > n) throw new Error('Invalid m-n parameter');
 
   return [m, n];
 };
