@@ -16,41 +16,40 @@ A Multisig HD Wallet Service, with minimun server trust.
  # Try the CLI interface
  cd bit-wallet
  
- # Create a 2-2 wallet (john.dat is the file were the wallet critical data will be stored, add -t for testnet)
- ./bit -c john.dat create 2-2 john 
+ # Create a 2-of-2 wallet (john.dat is the file where the wallet critical data will be stored, add -t for testnet)
+ ./bit -f john.dat create 2-2 john 
   * Secret to share:
-  	0a18bed5-5607-4fde-a809-dc6561bc0664:L3WtafRAEHty7h2J7VCHdiyzFboAdVFnNZXMmqDGw4yiu5kW9Tp4:T
- ./bit -c join.dat status
+    0a18bed5-5607-4fde-a809-dc6561bc0664:L3WtafRAEHty7h2J7VCHdiyzFboAdVFnNZXMmqDGw4yiu5kW9Tp4:T
+ ./bit -f join.dat status
  
- # User -h or BIT_HOST to setup the base URL for your server.
+ # Use -h or BIT_HOST to setup the base URL for your server.
  
  # Join the wallet from other copayer
-   ./bit -c pete.dat join	0a18bed5-5607-4fde-a809-dc6561bc0664:L3WtafRAEHty7h2J7VCHdiyzFboAdVFnNZXMmqDGw4yiu5kW9Tp4:T
-   ./bit -c pete.dat status
+   ./bit -f pete.dat join 0a18bed5-5607-4fde-a809-dc6561bc0664:L3WtafRAEHty7h2J7VCHdiyzFboAdVFnNZXMmqDGw4yiu5kW9Tp4:T
+   ./bit -f pete.dat status
    
- # Sets default file to use  
+ # Set default file to use  
    export BIT_FILE=pete.dat
-   export BIT_HOST=http://pepe.com/bws
    ./bit address 
      [1bitcoinaddress]
    ./bit balance
    
- # Spend coins. Values always in satoshis
-   ./bit send 1xxxxx 100 "100 satoshis to mother"
+ # Spend coins. Amount can be specified in btc, bit or sat (default)
+   ./bit send 1xxxxx 100bit "100 bits to mother"
  
  # List pending TX Proposals
    ./bit status
    
  # Sign or reject TXs from other copayers
-   ./bit -c pete.data reject <id>
-   ./bit -c pete.data sign <id>
+   ./bit -f pete.data reject <id>
+   ./bit -f pete.data sign <id>
    
  # Export your critical wallet data (you need *quorum* of wallet's copayer to extract coins)
    ./bit export
    # Or export it to a QR 
    ./bit export --qr
    
- # Import it later. It can be safetly used from multiple devices.
+ # Import it later. It can be safely used from multiple devices.
    ./bit import <file>
    
  # In case you use a new server, recreate the wallet from our local information
@@ -79,32 +78,32 @@ Copayers store its extended private key and their copayer's extended public key 
 
 # Security Considerations
  * Private keys are never send to the server. Copayers store them locally.
- * Extended public keys are stored on the server. This allow the server to easily check wallet's balances, send offline notifications to copayers, etc.
- * During wallet creation a wallet secret is created by the initial copayer containg a private key. Following copayers need to proof the have the secret by signing their information with it to join the wallet. The secret should be shared using secured channels.
+ * Extended public keys are stored on the server. This allows the server to easily check wallet balance, send offline notifications to copayers, etc.
+ * During wallet creation a wallet secret is created by the initial copayer containg a private key. All copayers need to prove they have the secret by signing their information with this private key when joining the wallet. The secret should be shared using secured channels.
 
 ## All server responses are verified:
   * Addresses, change addresses are derived independently and locally by the copayers from their local data.
   * TX Proposals templates are signed by copayers, and verified by others, so the server cannot create / tamper them
 
 ## Notes
- * A copayer could join the wallet more that one time, and there is not mechanism to prevent it. Copayers should use the command 'confirm' to check others copayer's identity.
+ * A copayer could join the wallet more than once, and there is no mechanism to prevent it. Copayers should use the command 'confirm' to check other copayer's identity.
+
 ##  In case the server is compromised
  * It could be possible to see past (and future) wallet's transactions.
- * It is not possible to spend wallet's funds, since private keys are never send or stored at the server
- * It is not possible to tamper tx proposal or wallet addresses since they are computed and verified by copayers
- * Copayers could switch to other server using their local data (see `recreate` command). In this case only the wallet extended data will be lost. (Decorated TX History,  some copayer metadata, pending transaction proposals, transacion proposal metadata).
-
+ * It is not possible to spend wallet funds, since private keys are never sent nor stored at the server
+ * It is not possible to tamper tx proposals or wallet addresses since they are computed and verified by copayers
+ * Copayers could switch to another server using their local data (see `recreate` command). In this case only the wallet extended data will be lost (pending and past transaction proposals, some copayer metadata).
 
 # Export Format
- Exporting a wallet will expose copayer's extended private key and other's copayers extended public keys. This information is enough to extract funds from the wallet, given the required quorum is meet.
+ Exporting a wallet will expose copayer's extended private key and other copayer's extended public keys. This information is enough to extract funds from the wallet, given the required quorum is met.
  
  The format is:
  ``` json
- [ "(copayer extender private key)", 
- "required signatured", 
- "(array of other copayer's extended public keys, excluding this copayer)"]
+ [ "(copayer extended private key)", 
+ "required signature", 
+ "(array of other copayers extended public keys, excluding own)"]
  ```
- Example, of a 1-2 wallet:
+ Example, of a 1-of-2 wallet:
  ``` json
   [
   "tprv8ZgxMBicQKsPds3YbNWdCcsvxhnpjEecCJv1pBPCLEekwhwWNqpRwA283ASepgTnwAXhu4vZPeRAiX1CpPcjcY6izWSC3NVqyk1gWhF8xWy",
