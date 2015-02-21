@@ -36,7 +36,7 @@ Utils.confirmationId = function(copayer) {
 
 Utils.getClient = function(args) {
   var storage = new Client.FileStorage({
-    filename: args.config || process.env['BIT_FILE'],
+    filename: args.file || process.env['BIT_FILE'],
   });
   return new Client({
     storage: storage,
@@ -89,5 +89,14 @@ Utils.parseAmount = function(text) {
   return amountSat;
 };
 
+Utils.configureCommander = function(program) {
+  program
+    .version('0.0.1')
+    .option('-f, --file [filename]', 'Wallet file', 'bit.dat')
+    .option('-h, --host [host]', 'Bitcore Wallet Service URL (eg: http://localhost:3001/copay/api')
+    .option('-v, --verbose', 'be verbose')
+
+  return program;
+};
 
 module.exports = Utils;

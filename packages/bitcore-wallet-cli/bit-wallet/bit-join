@@ -3,11 +3,9 @@
 var program = require('commander');
 var Client = require('../lib/client');
 var utils  = require('./cli-utils');
+program = utils.configureCommander(program);
 
 program
-  .version('0.0.1')
-  .option('-c, --config [file]', 'Wallet config filename')
-  .option('-h, --host [host]', 'Bitcore Wallet Service URL (eg: http://localhost:3001/copay/api')
   .usage('[options] <secret> [copayerName]')
   .parse(process.argv);
 
