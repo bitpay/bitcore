@@ -91,27 +91,29 @@ helpers.toSatoshi = function(btc) {
 helpers.stubUtxos = function(server, wallet, amounts, cb) {
   var amounts = [].concat(amounts);
 
-  async.map(amounts, function(a, next) {
-      server.createAddress({}, function(err, address) {
-        next(err, address);
-      });
-    },
-    function(err, addresses) {
-      var i = 0;
-      var utxos = _.map(amounts, function(amount) {
-        return {
-          txid: helpers.randomTXID(),
-          vout: Math.floor((Math.random() * 10) + 1),
-          satoshis: helpers.toSatoshi(amount).toString(),
-          scriptPubKey: addresses[i].getScriptPubKey(wallet.m).toBuffer().toString('hex'),
-          address: addresses[i++].address,
-        };
-      });
-
-      blockExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
-
-      return cb(utxos);
+  async.map(_.range(Math.ceil(amounts.length / 2)), function(i, next) {
+    // async.map(_.range(amounts.length), function(i, next) {
+    // async.map(_.range(2), function(i, next) {
+    server.createAddress({}, function(err, address) {
+      next(err, address);
     });
+  }, function(err, addresses) {
+    if (err) throw new Error('Could not generate addresses');
+
+    var utxos = _.map(amounts, function(amount, i) {
+      var address = addresses[i % addresses.length];
+      return {
+        txid: helpers.randomTXID(),
+        vout: Math.floor((Math.random() * 10) + 1),
+        satoshis: helpers.toSatoshi(amount).toString(),
+        scriptPubKey: address.getScriptPubKey(wallet.m).toBuffer().toString('hex'),
+        address: address.address,
+      };
+    });
+    blockExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
+
+    return cb(utxos);
+  });
 };
 
 helpers.stubBroadcast = function(txid) {
@@ -146,12 +148,12 @@ helpers.clientSign = function(tx, xprivHex) {
     .change(tx.changeAddress.address)
     .sign(privs);
 
-  var signatures = [];
-  _.each(privs, function(p) {
-    var s = t.getSignatures(p)[0].signature.toDER().toString('hex');
-    signatures.push(s);
+  var signatures = _.map(privs, function(priv, i) {
+    return _.find(t.getSignatures(priv), {
+      inputIndex: i
+    }).signature.toDER().toString('hex');
   });
-  //
+
   return signatures;
 };
 
@@ -1078,7 +1080,7 @@ describe('Copay server', function() {
       });
     });
 
-    it('should sign and broadcast a tx', function(done) {
+    it.only('should sign and broadcast a tx', function(done) {
       helpers.stubBroadcast('1122334455');
       var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey);
       server.createTx(txOpts, function(err, txp) {
