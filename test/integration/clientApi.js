@@ -81,6 +81,9 @@ fsmock.reset = function() {
 fsmock._get = function(name) {
   return content[name];
 };
+fsmock._set = function(name, data) {
+  return content[name] = data;
+};
 
 
 var blockExplorerMock = {};
@@ -269,6 +272,23 @@ describe('client API ', function() {
               done();
             });
           });
+        });
+      });
+    });
+  });
+
+  describe('Access control', function() {
+    it('should not be able to create address if not rwPubKey', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
+        should.not.exist(err);
+
+        var data = JSON.parse(fsmock._get('client0'));
+        delete data.rwPrivKey;
+        fsmock._set('client0', JSON.stringify(data));
+        data.rwPrivKey = null;
+        clients[0].createAddress(function(err, x0) {
+          err.code.should.equal('NOTAUTHORIZED');
+          done();
         });
       });
     });
