@@ -4,11 +4,9 @@ var _ = require('lodash');
 var program = require('commander');
 var ClientLib = require('../lib/client');
 var utils = require('./cli-utils');
+program = utils.configureCommander(program);
 
 program
-  .version('0.0.1')
-  .option('-c, --config [file]', 'Wallet config filename')
-  .option('-h, --host [host]', 'Bitcore Wallet Service URL (eg: http://localhost:3001/copay/api')
   .usage('[options] walletname')
   .description('Creates a wallet on the remove server given the local information')
   .parse(process.argv);
