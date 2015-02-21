@@ -534,6 +534,7 @@ describe('Copay server', function() {
         should.not.exist(err);
         address.should.exist;
         address.address.should.equal('38Jf1QE7ddXscW76ACgJrNkMWBwDAgMm6M');
+        address.isChange.should.be.false;
         address.path.should.equal('m/2147483647/0/0');
         done();
       });
@@ -669,6 +670,13 @@ describe('Copay server', function() {
               should.not.exist(err);
               balance.totalAmount.should.equal(helpers.toSatoshi(300));
               balance.lockedAmount.should.equal(helpers.toSatoshi(100));
+              server.getAddresses({}, function(err, addresses) {
+                should.not.exist(err);
+                var change = _.filter(addresses, {
+                  isChange: true
+                });
+                change.length.should.equal(1);
+              });
               done();
             });
           });
