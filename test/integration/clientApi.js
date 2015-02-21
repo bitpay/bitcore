@@ -164,7 +164,7 @@ describe('client API ', function() {
         })
       });
     });
-    it.only('should be able to complete wallets in copayer that joined later', function(done) {
+    it('should be able to complete wallets in copayer that joined later', function(done) {
       helpers.createAndJoinWallet(clients, 2, 3, function(err) {
         should.not.exist(err);
         clients[0].getBalance(function(err, x) {
@@ -348,7 +348,6 @@ describe('client API ', function() {
         clients[0]._load(function(err, data) {
           var url = '/v1/addresses/';
           clients[0]._doPostRequest(url, {}, data, function(err, address) {
-            console.log('[clientApi.js.326:address:]', address); //TODO
 
             // Tamper data
             address.publicKeys = ['0322defe0c3eb9fcd8bc01878e6dbca7a6846880908d214b50a752445040cc5c54',
@@ -460,6 +459,7 @@ describe('client API ', function() {
             should.not.exist(err);
             clients[1].rejectTxProposal(x, 'rejection comment', function(err, tx1) {
               should.not.exist(err);
+
               clients[2].getTxProposals({}, function(err, txs) {
                 should.not.exist(err);
                 txs[0].message.should.equal('some message');
