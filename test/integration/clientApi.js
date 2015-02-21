@@ -164,7 +164,7 @@ describe('client API ', function() {
         })
       });
     });
-    it('should be able to complete wallets in copayer that joined later', function(done) {
+    it.only('should be able to complete wallets in copayer that joined later', function(done) {
       helpers.createAndJoinWallet(clients, 2, 3, function(err) {
         should.not.exist(err);
         clients[0].getBalance(function(err, x) {
