@@ -1452,40 +1452,40 @@ describe('Copay server', function() {
       });
     });
 
-    it('should pull the last 5 notifications after 3 TXs', function(done) {
+    it('should pull the last 4 notifications after 3 TXs', function(done) {
       server.getNotifications({
-        limit: 5,
+        limit: 4,
         reverse: true,
       }, function(err, notifications) {
         should.not.exist(err);
         var types = _.pluck(notifications, 'type');
-        types.should.deep.equal(['NewTxProposal', 'NewTxProposal', 'NewTxProposal', 'NewAddress', 'NewAddress']);
+        types.should.deep.equal(['NewTxProposal', 'NewTxProposal', 'NewTxProposal', 'NewAddress']);
         done();
       });
     });
 
-    it('should pull the last 5 notifications, using now', function(done) {
+    it('should pull the last 4 notifications, using now', function(done) {
       server.getNotifications({
-        limit: 5,
+        limit: 4,
         reverse: true,
         maxTs: Date.now() / 1000,
         minTs: Date.now() / 1000 - 1000,
       }, function(err, notifications) {
         should.not.exist(err);
         var types = _.pluck(notifications, 'type');
-        types.should.deep.equal(['NewTxProposal', 'NewTxProposal', 'NewTxProposal', 'NewAddress', 'NewAddress']);
+        types.should.deep.equal(['NewTxProposal', 'NewTxProposal', 'NewTxProposal', 'NewAddress']);
         done();
       });
     });
 
-    it('should pull the first 5 notifications after wallet creation', function(done) {
+    it('should pull all notifications after wallet creation', function(done) {
       server.getNotifications({
         minTs: 0,
-        limit: 5
       }, function(err, notifications) {
         should.not.exist(err);
         var types = _.pluck(notifications, 'type');
-        types.should.deep.equal(['NewCopayer', 'NewAddress', 'NewAddress', 'NewAddress', 'NewTxProposal']);
+        types[0].should.equal('NewCopayer');
+        types[types.length - 1].should.equal('NewTxProposal');
         done();
       });
     });
