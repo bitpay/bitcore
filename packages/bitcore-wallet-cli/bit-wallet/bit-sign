@@ -20,10 +20,10 @@ client.getTxProposals({}, function(err, txps) {
   utils.die(err);
 
   var txp = utils.findOneTxProposal(txps, txpid);
-  client.signTxProposal(txp, function(err, x) {
+  client.signTxProposal(txp, function(err, tx) {
     utils.die(err);
-    if (x.status == 'broadcasted')
-      console.log('Transaction Broadcasted: TXID: ' + x.txid);
+    if (tx.status == 'broadcasted')
+      console.log('Transaction Broadcasted: TXID: ' + tx.txid);
     else 
       console.log('Transaction signed by you.');
   });
