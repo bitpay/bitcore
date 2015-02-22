@@ -35,7 +35,9 @@ A Multisig HD Wallet Service, with minimun server trust.
    
  # Spend coins. Amount can be specified in btc, bit or sat (default)
    ./bit send 1xxxxx 100bit "100 bits to mother"
- 
+
+ # You can use 100bit or 0.00001btc or 10000sat.  (Set up BIT_UNIT to btc/sat/bit so select output unit).
+
  # List pending TX Proposals
    ./bit status
    
@@ -45,7 +47,7 @@ A Multisig HD Wallet Service, with minimun server trust.
    
    # List all commands:
     ./bit --help
-    
+ 
     
   ```
 
