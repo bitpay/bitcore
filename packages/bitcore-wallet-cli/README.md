@@ -17,10 +17,10 @@ A Multisig HD Wallet Service, with minimun server trust.
  cd bit-wallet
  
  # Create a 2-of-2 wallet (john.dat is the file where the wallet critical data will be stored, add -t for testnet)
- ./bit -f john.dat create 2-2 john 
+ ./bit  create 2-2 john 
   * Secret to share:
     0a18bed5-5607-4fde-a809-dc6561bc0664:L3WtafRAEHty7h2J7VCHdiyzFboAdVFnNZXMmqDGw4yiu5kW9Tp4:T
- ./bit -f join.dat status
+ ./bit  status
  
  # Use -h or BIT_HOST to setup the base URL for your server.
  
@@ -43,17 +43,6 @@ A Multisig HD Wallet Service, with minimun server trust.
  # Sign or reject TXs from other copayers
    ./bit -f pete.data reject <id>
    ./bit -f pete.data sign <id>
-   
- # Export your critical wallet data (you need *quorum* of wallet's copayer to extract coins)
-   ./bit export
-   # Or export it to a QR 
-   ./bit export --qr
-   
- # Import it later. It can be safely used from multiple devices.
-   ./bit import <file>
-   
- # In case you use a new server, recreate the wallet from our local information
-   ./bit recreate 
    
    # List all commands:
     ./bit --help
@@ -106,6 +95,11 @@ bit import wallet.dat
 ```
 bit export -o output.dat -e
 bit import output.dat 
+```
+
+## If you need to migrate to other server, after importing the wallet use `recreate` 
+```
+bit recreate 
 ```
 
 # Airgapped Operation (TODO)
