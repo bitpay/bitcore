@@ -200,7 +200,7 @@ describe('Copay server', function() {
         var xpriv = TestData.copayers[0].xPrivKey;
         var priv = Bitcore.HDPrivateKey
           .fromString(xpriv)
-          .derive('m/1/0')
+          .derive('m/1/1')
           .privateKey
           .toString();
 
