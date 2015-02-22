@@ -277,7 +277,7 @@ describe('client API ', function() {
     });
   });
 
-  describe('Access control', function() {
+  describe('Access control & export', function() {
     it('should not be able to create address if not rwPubKey', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function(err) {
         should.not.exist(err);
@@ -292,8 +292,77 @@ describe('client API ', function() {
         });
       });
     });
-  });
+    it('should not be able to create address from a ro export', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
+        should.not.exist(err);
+        clients[0].export({
+          access: 'readonly'
+        }, function(err, str) {
+          should.not.exist(err);
+          clients[1].import(str, function(err, wallet) {
+            should.not.exist(err);
+            clients[1].createAddress(function(err, x0) {
+              err.code.should.equal('NOTAUTHORIZED');
+              clients[0].createAddress(function(err, x0) {
+                should.not.exist(err);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+    it('should be able to create address from a rw export', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
+        should.not.exist(err);
+        clients[0].export({
+          access: 'readwrite'
+        }, function(err, str) {
+          should.not.exist(err);
+          clients[1].import(str, function(err, wallet) {
+            should.not.exist(err);
+            clients[1].createAddress(function(err, x0) {
+              should.not.exist(err);
+              done();
+            });
+          });
+        });
+      });
+    });
 
+    it('should not be able to create tx proposals from a rw export', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
+        should.not.exist(err);
+        clients[0].export({
+          access: 'readwrite'
+        }, function(err, str) {
+          clients[1].import(str, function(err, wallet) {
+            should.not.exist(err);
+            clients[1].createAddress(function(err, x0) {
+              should.not.exist(err);
+              blockExplorerMock.setUtxo(x0, 1, 1);
+              var opts = {
+                amount: 10000000,
+                toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+                message: 'hello 1-1',
+              };
+              clients[1].sendTxProposal(opts, function(err, x) {
+                should.not.exist(err);
+                clients[1].signTxProposal(x, function(err, tx) {
+                  err.code.should.be.equal('BADSIGNATURES');
+                  clients[1].getTxProposals({}, function(err, txs) {
+                    should.not.exist(err);
+                    txs[0].status.should.equal('pending');
+                    done();
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
 
   describe('Address Creation', function() {
     it('should be able to create address in all copayers in a 2-3 wallet', function(done) {
@@ -395,7 +464,7 @@ describe('client API ', function() {
     it('round trip #import #export', function(done) {
       helpers.createAndJoinWallet(clients, 2, 2, function(err, w) {
         should.not.exist(err);
-        clients[0].export(function(err, str) {
+        clients[0].export({}, function(err, str) {
           should.not.exist(err);
           var original = JSON.parse(fsmock._get('client0'));
           clients[2].import(str, function(err, wallet) {
