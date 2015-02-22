@@ -1,27 +1,57 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-var qr  = require('qr-image');
+var qr = require('qr-image');
+var fs = require('fs');
+var _ = require('lodash');
 
 var Client = require('../lib/client');
-var utils  = require('./cli-utils');
+var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
 program
-  .option('-q, --qr')
+  .option('-a, --access [level]', 'access privileges for exported data (full, readwrite, readonly)', 'full')
+  .option('-q, --qr', 'export a QR code')
+  .option('-o, --output [filename]', 'output file');
+
+program.on('--help', function() {
+  console.log('  Access Levels:');
+  console.log('');
+  console.log('    readonly : allows to read wallet data: balance, tx proposals ');
+  console.log('    readwrite: + allows to create addresses and unsigned tx prposals ');
+  console.log('    full     : + allows sign tx prposals ');
+  console.log('');
+});
+
+program
   .parse(process.argv);
 
 var args = program.args;
 var client = utils.getClient(program);
 
-client.export(function(err, x) {
+if (!_.contains(['full', 'readwrite', 'readonly'], program.access)) {
+  program.help();
+}
+
+var msg = ' Access Level: ' + program.access;
+
+client.export({
+  access: program.access
+}, function(err, x) {
   utils.die(err);
   if (program.qr) {
-    var filename = program.config + '.svg';
-    var qr_svg = qr.image(x, { type: 'svg' });
-    qr_svg.pipe(require('fs').createWriteStream(filename));
-    console.log('Wallet Critical Data: exported to ' + filename);
+    var filename = program.file + '.svg';
+    var qr_svg = qr.image(x, {
+      type: 'svg'
+    });
+    qr_svg.pipe(fs.createWriteStream(filename));
+    console.log('Wallet Critical Data: exported to %s. %s\n',filename, msg);
   } else {
-    console.log('Wallet Critical Data:\n', x);
+    if (program.output) {
+      fs.writeFileSync(program.output, x);
+      console.log('Wallet Critical Data saved at %s. %s\n', program.output, msg);
+    } else {
+      console.log('Wallet Critical Data (%s)\n%s', msg,  x);
+    }
   }
 });

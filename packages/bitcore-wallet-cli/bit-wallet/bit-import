@@ -22,5 +22,5 @@ var str = fs.readFileSync(args[0]);
 
 client.import(str, function(err, x) {
   utils.die(err);
-  console.log('Wallet Imported');
+  console.log('Wallet Imported. Access level:' + x);
 });
