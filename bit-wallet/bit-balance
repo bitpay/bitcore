@@ -13,5 +13,5 @@ var client = utils.getClient(program);
 
 client.getBalance(function(err, x) {
   utils.die(err);
-  console.log('* Wallet balance', x);
+  console.log('* Wallet balance %s (Locked %s)', utils.renderAmount(x.totalAmount), utils.renderAmount(x.lockedAmount) );
 });
