@@ -11,7 +11,6 @@ var request = require('supertest');
 var Client = require('../../lib/client');
 var API = Client.API;
 var Bitcore = require('bitcore');
-var TestData = require('./clienttestdata');
 var WalletUtils = require('../../lib/walletutils');
 var ExpressApp = require('../../lib/expressapp');
 var Storage = require('../../lib/storage');
@@ -138,7 +137,8 @@ describe('client API ', function() {
       WalletService: {
         storage: storage,
         blockExplorer: blockExplorerMock,
-      }
+      },
+      disableLogs: true,
     });
     // Generates 5 clients
     _.each(_.range(5), function(i) {
@@ -156,6 +156,70 @@ describe('client API ', function() {
     fsmock.reset();
     blockExplorerMock.reset();
   });
+
+  describe('Server internals', function() {
+    it('should allow cors', function(done) {
+      clients[0]._doRequest('options', '/', null, {}, function(err, x, headers) {
+        headers['access-control-allow-origin'].should.equal('*');
+        should.exist(headers['access-control-allow-methods']);
+        should.exist(headers['access-control-allow-headers']);
+        done();
+      });
+    });
+
+    it('should handle critical errors', function(done) {
+      var s = sinon.stub();
+      s.storeWallet = sinon.stub().yields('bigerror');
+      s.fetchWallet = sinon.stub().yields(null);
+      app = ExpressApp.start({
+        WalletService: {
+          storage: s,
+          blockExplorer: blockExplorerMock,
+        },
+        disableLogs: true,
+      });
+      var s2 = sinon.stub();
+      s2.load = sinon.stub().yields(null);
+      var client = new Client({
+        storage: s2,
+      });
+      client.request = helpers.getRequest(app);
+      client.createWallet('1', '2', 1, 1, 'testnet',
+        function(err) {
+          err.code.should.equal('ERROR');
+          done();
+        });
+    });
+
+    it('should handle critical errors (Case2)', function(done) {
+      var s = sinon.stub();
+      s.storeWallet = sinon.stub().yields({
+        code: 501,
+        message: 'wow'
+      });
+      s.fetchWallet = sinon.stub().yields(null);
+      app = ExpressApp.start({
+        WalletService: {
+          storage: s,
+          blockExplorer: blockExplorerMock,
+        },
+        disableLogs: true,
+      });
+      var s2 = sinon.stub();
+      s2.load = sinon.stub().yields(null);
+      var client = new Client({
+        storage: s2,
+      });
+      client.request = helpers.getRequest(app);
+      client.createWallet('1', '2', 1, 1, 'testnet',
+        function(err) {
+          err.code.should.equal('ERROR');
+          done();
+        });
+    });
+
+  });
+
 
   describe('Wallet Creation', function() {
     it('should check balance in a 1-1 ', function(done) {
@@ -362,6 +426,70 @@ describe('client API ', function() {
         });
       });
     });
+
+    it('should be able get Tx proposals from a file', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 2, function(err, w) {
+        should.not.exist(err);
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          blockExplorerMock.setUtxo(x0, 1, 1);
+          var opts = {
+            amount: 10000000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hello 1-1',
+          };
+          clients[1].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            clients[1].getTxProposals({
+              getRawTxps: true
+            }, function(err, txs, rawTxps) {
+              should.not.exist(err);
+
+              clients[0].parseTxProposals(rawTxps, function(err, txs2) {
+                should.not.exist(err);
+                txs[0].should.deep.equal(txs2[0]);
+                done();
+              });
+
+            });
+          });
+        });
+      });
+    });
+    it('should detect fakes from Tx proposals file', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 2, function(err, w) {
+        should.not.exist(err);
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          blockExplorerMock.setUtxo(x0, 1, 1);
+          var opts = {
+            amount: 10000000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hello 1-1',
+          };
+          clients[1].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            clients[1].getTxProposals({
+              getRawTxps: true
+            }, function(err, txs, rawTxps) {
+              should.not.exist(err);
+
+              //Tamper 
+              rawTxps[0].amount++;
+
+              clients[0].parseTxProposals(rawTxps, function(err, txs2) {
+                err.code.should.equal('SERVERCOMPROMISED');
+                done();
+              });
+
+            });
+          });
+        });
+      });
+    });
+
+
+
   });
 
   describe('Address Creation', function() {
