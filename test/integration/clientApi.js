@@ -193,8 +193,20 @@ describe('client API ', function() {
         });
       });
     });
-    it('should fail with a unknown secret', function(done) {
-      var oldSecret = '3f8e5acb-ceeb-4aae-134f-692d934e3b1c:L2gohj8s2fLKqVU5cQutAVGciutUxczFxLxxXHFsjzLh71ZjkFQQ:T';
+    it('should fail with an invalid secret', function(done) {
+      // Invalid length
+      clients[0].joinWallet('dummy', 'copayer', function(err, result) {
+        err.message.should.contain('Invalid secret');
+        // Right length, invalid char for base 58
+        clients[0].joinWallet('lPU9zqUiQFRnt3sWBQ1pnPKx9xC3KD83jxhYVJbLABxn1qhdBfQ7dYtzQqNKpSrDWDqF261S1zT', 'copayer', function(err, result) {
+          err.message.should.contain('Invalid secret');
+          done();
+        });
+      });
+    });
+    it('should fail with an unknown secret', function(done) {
+      // Unknown walletId
+      var oldSecret = 'VPU9zqUiQFRnt3sWBQ1pnPKx9xC3KD83jxhYVJbLABxn1qhdBfQ7dYtzQqNKpSrDWDqF261S1zT';
       clients[0].joinWallet(oldSecret, 'copayer', function(err, result) {
         err.code.should.contain('BADREQUEST');
         done();
