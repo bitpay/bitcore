@@ -23,15 +23,14 @@ A Multisig HD Wallet Service, with minimun server trust.
  ./bit  status
  
  # Use -h or BIT_HOST to setup the base URL for your server.
+ # Use -f or BIT_FILE to setup the wallet data file
  
  # Join the wallet from other copayer
    ./bit -f pete.dat join 0a18bed5-5607-4fde-a809-dc6561bc0664:L3WtafRAEHty7h2J7VCHdiyzFboAdVFnNZXMmqDGw4yiu5kW9Tp4:T
-   ./bit -f pete.dat status
    
- # Set default file to use  
    export BIT_FILE=pete.dat
+   ./bit -f pete.dat status
    ./bit address 
-     [1bitcoinaddress]
    ./bit balance
    
  # Spend coins. Amount can be specified in btc, bit or sat (default)
@@ -41,27 +40,19 @@ A Multisig HD Wallet Service, with minimun server trust.
    ./bit status
    
  # Sign or reject TXs from other copayers
-   ./bit -f pete.data reject <id>
-   ./bit -f pete.data sign <id>
+   ./bit -f pete.dat reject <id>
+   ./bit -f pete.dat sign <id>
    
    # List all commands:
     ./bit --help
     
     
   ```
-  
-# Server API
 
-## create a wallet
- POST  `/v1/wallets`
-## join a wallet
- POST  `/v1/wallets/:id/copayers`
-
- ...
-
- [To be completed, see app.js]
- 
 # Advanced Operation
+
+## Mobility
+You can safely access a wallet from different devices. Just copy the wallet file (`bit.dat` by default). If you need to reduce the file to the mínimum (for example to fit it on a QR) or change it's access level (by removing certain data on it), see `export` in the following section.
 
 ## Export, with different access levels
 It is possible to export a wallet with restricted access level. The levels are:
@@ -73,22 +64,18 @@ It is possible to export a wallet with restricted access level. The levels are:
 `readonly` will only export the Wallet's Extended PublicKeys, and only the derived private key required for signing 'GET' request (readonly) to the server. `readwrite` will add the derived private key required for signing all other requests (as POST) so readwrite access will be possible. And `full` will export also the Extended Private Key, which is necesary for signing wallet's transactions.  `bit import` can handle any for the levels correctly.
 
 
-### full access
 ```
+# full access
 bit export -o wallet.dat
-```
-### readonly access 
-```
+# readonly access 
 bit export -o wallet.dat --access readonly
-```
-### readwrite access (can create addresses, propose transactions, reject TX, but does not have signing keys)
-```
-bit export -o wallet.dat --access readwrite
-```
+# readwrite access (can create addresses, propose transactions, reject TX, but does not have signing keys)
 
-### Import profile on other device, with giveng access level
-```
+# Import the wallet , with giveng access level
 bit import wallet.dat
+
+# Export also support QR output:
+bit export --qr
 ```
 
 ## Export / Import with a new given password (TODO)
@@ -178,5 +165,18 @@ Copayers store its extended private key and their copayer's extended public key 
  * It is not possible to tamper tx proposals or wallet addresses since they are computed and verified by copayers
  * Copayers could switch to another server using their local data (see `recreate` command). In this case only the wallet extended data will be lost (pending and past transaction proposals, some copayer metadata).
 
+
+  
+# Server API
+
+## create a wallet
+ POST  `/v1/wallets`
+## join a wallet
+ POST  `/v1/wallets/:id/copayers`
+
+ ...
+
+ [To be completed, see expressapp.js]
+ 
 
 
