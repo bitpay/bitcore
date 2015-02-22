@@ -858,8 +858,44 @@ describe('client API ', function() {
         });
       });
     });
-
-
+    it('Should return only main addresses (case 1)', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
+        should.not.exist(err);
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          blockExplorerMock.setUtxo(x0, 1, 1);
+          var opts = {
+            amount: 10000000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hello 1-1',
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            clients[0].getMainAddresses({}, function(err, addr) {
+              should.not.exist(err);
+              addr.length.should.equal(1);
+              done();
+            });
+          });
+        });
+      });
+    });
+    it('Should return only main addresses (case 2)', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
+        should.not.exist(err);
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            clients[0].getMainAddresses({doNotVerify: true}, function(err, addr) {
+              should.not.exist(err);
+              addr.length.should.equal(2);
+              done();
+            });
+          });
+        });
+      });
+    });
   });
 
   describe('Transactions Signatures and Rejection', function() {
