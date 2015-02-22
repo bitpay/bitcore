@@ -194,11 +194,11 @@ describe('client API ', function() {
       });
     });
     it('should fail with an invalid secret', function(done) {
-      // Invalid length
+      // Invalid
       clients[0].joinWallet('dummy', 'copayer', function(err, result) {
         err.message.should.contain('Invalid secret');
         // Right length, invalid char for base 58
-        clients[0].joinWallet('lPU9zqUiQFRnt3sWBQ1pnPKx9xC3KD83jxhYVJbLABxn1qhdBfQ7dYtzQqNKpSrDWDqF261S1zT', 'copayer', function(err, result) {
+        clients[0].joinWallet('DsZbqNQQ9LrTKU8EknR7gFKyCQMPg2UUHNPZ1BzM5EbJwjRZaUNBfNtdWLluuFc0f7f7sTCkh7T', 'copayer', function(err, result) {
           err.message.should.contain('Invalid secret');
           done();
         });
@@ -206,7 +206,7 @@ describe('client API ', function() {
     });
     it('should fail with an unknown secret', function(done) {
       // Unknown walletId
-      var oldSecret = 'VPU9zqUiQFRnt3sWBQ1pnPKx9xC3KD83jxhYVJbLABxn1qhdBfQ7dYtzQqNKpSrDWDqF261S1zT';
+      var oldSecret = '3bJKRn1HkQTpwhVaJMaJ22KwsjN24ML9uKfkSrP7iDuq91vSsTEygfGMMpo6kWLp1pXG9wZSKcT';
       clients[0].joinWallet(oldSecret, 'copayer', function(err, result) {
         err.code.should.contain('BADREQUEST');
         done();
