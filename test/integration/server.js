@@ -560,7 +560,7 @@ describe('Copay server', function() {
         err.should.exist;
         should.not.exist(address);
 
-        server.getAddresses({}, function(err, addresses) {
+        server.getMainAddresses({}, function(err, addresses) {
           addresses.length.should.equal(0);
 
           server.storage.storeAddressAndWallet.restore();
