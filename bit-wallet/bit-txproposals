@@ -3,22 +3,36 @@
 var _ = require('lodash');
 var fs = require('fs');
 var program = require('commander');
-var utils  = require('./cli-utils');
+var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
 program
+  .option('-i, --input [filename]', 'input file')
   .option('-o, --output [filename]', 'output file')
   .parse(process.argv);
 
 var args = program.args;
 var client = utils.getClient(program);
 
-client.getTxProposals({}, function(err, txps) {
+var txData;
+
+function end(err, txps, rawtxps) {
   utils.die(err);
+  if (program.input) {
+    console.log('\n* From File : %s\n', program.input);
+  }
   utils.renderTxProposals(txps);
   if (program.output) {
-    fs.writeFileSync(program.output, JSON.stringify(txps));
+    fs.writeFileSync(program.output, JSON.stringify(rawtxps));
     console.log(' * Proposals Saved to: %s\n', program.output);
   }
+};
 
-});
+
+if (program.input) {
+  var txData = fs.readFileSync(program.input);
+  txData = JSON.parse(txData);
+  client.parseTxProposals(txData, end);
+} else {
+  client.getTxProposals({getRawTxps: !!program.output}, end);
+}
