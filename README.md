@@ -72,6 +72,96 @@ A Multisig HD Wallet Service, with minimun server trust.
 
  [To be completed, see app.js]
  
+# Advanced Operation
+
+## Export, with different access levels
+It is possible to export a wallet with restricted access level. The levels are:
+
+    readonly : allows to read wallet data: balance, tx proposals 
+    readwrite: + allows to create addresses and unsigned tx prposals 
+    full     : + allows sign tx prposals 
+
+`readonly` will only export the Wallet's Extended PublicKeys, and only the derived private key required for signing 'GET' request (readonly) to the server. `readwrite` will add the derived private key required for signing all other requests (as POST) so readwrite access will be possible. And `full` will export also the Extended Private Key, which is necesary for signing wallet's transactions.  `bit import` can handle any for the levels correctly.
+
+
+### full access
+```
+bit export -o wallet.dat
+```
+### readonly access 
+```
+bit export -o wallet.dat --access readonly
+```
+### readwrite access (can create addresses, propose transactions, reject TX, but does not have signing keys)
+```
+bit export -o wallet.dat --access readwrite
+```
+
+### Import profile on other device, with giveng access level
+```
+bit import wallet.dat
+```
+
+## Export / Import with a new given password (TODO)
+```
+bit export -o output.dat -e
+bit import output.dat 
+```
+
+# Airgapped Operation (TODO)
+
+### On the Air-gapped device
+```
+git genkey
+git export -o wallet.dat --readonly  (or --nosigning)
+```
+### Proxy machine
+```
+git join secret -i wallet.dat
+git balance
+git txproposals -o txproposals.dat
+```
+### (export with filter)
+```
+git txproposals  e01e -o txprosals.dat
+```
+
+## Back to air-gapped device
+
+### To recheck tx proposals:
+```
+git txproposals -i txproposals.dat
+```
+### Sign them
+```
+git sign  -i txproposals.dat -o txproposals-signed.dat
+# Or With filter
+git sign  e01e -i txproposals.dat -o txproposals-signed.dat
+```
+## Back to proxy machine
+```
+git sign -i txproposals-signed.dat
+```
+
+# Password protection (TODO)
+
+### encrypts everything by default
+```
+git create myWallet 2-3 -p password  
+# Or (interactive mode)
+git create myWallet 2-3 -p
+Enter password:
+```
+
+### allows readonly operations without password (encrypts xpriv, and leave readonlySigningKey unencrypted)
+```
+git create myWallet 2-3 -p --nopasswd:ro
+```
+### allows readwrite operations without password (only encrypts xpriv)
+```
+git create myWallet 2-3 -p --nopasswd:rw
+```
+ 
 # Local  data
 
 Copayers store its extended private key and their copayer's extended public key locally. We call this the ``Wallet Critical Data``. 
@@ -94,21 +184,5 @@ Copayers store its extended private key and their copayer's extended public key 
  * It is not possible to tamper tx proposals or wallet addresses since they are computed and verified by copayers
  * Copayers could switch to another server using their local data (see `recreate` command). In this case only the wallet extended data will be lost (pending and past transaction proposals, some copayer metadata).
 
-# Export Format
- Exporting a wallet will expose copayer's extended private key and other copayer's extended public keys. This information is enough to extract funds from the wallet, given the required quorum is met.
- 
- The format is:
- ``` json
- [ "(copayer extended private key)", 
- "required signature", 
- "(array of other copayers extended public keys, excluding own)"]
- ```
- Example, of a 1-of-2 wallet:
- ``` json
-  [
-  "tprv8ZgxMBicQKsPds3YbNWdCcsvxhnpjEecCJv1pBPCLEekwhwWNqpRwA283ASepgTnwAXhu4vZPeRAiX1CpPcjcY6izWSC3NVqyk1gWhF8xWy",
-  1,
-  ["tpubD6NzVbkrYhZ4Y1DE1F6s4NWbLjwQSReggiksexkJ7R7p4tCKH1vmu7G9TafmkGs252PMrs5j6xz7uSiDLbUsE43eHbRa5wCauXqhJnhN9MB"]
-  ]
-```
+
 
