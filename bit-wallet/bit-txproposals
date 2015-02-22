@@ -7,8 +7,8 @@ var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
 program
-  .option('-i, --input [filename]', 'input file')
-  .option('-o, --output [filename]', 'output file')
+  .option('-i, --input [filename]', 'use input file instead of server\'s')
+  .option('-o, --output [filename]', 'write tx to output file')
   .parse(process.argv);
 
 var args = program.args;
