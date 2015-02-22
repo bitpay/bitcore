@@ -2,7 +2,7 @@
 
 var _ = require('lodash');
 var program = require('commander');
-var utils  = require('./cli-utils');
+var utils = require('./cli-utils');
 var Client = require('../lib/client');
 program = utils.configureCommander(program);
 
@@ -11,11 +11,13 @@ program
 
 var args = program.args;
 var client = utils.getClient(program);
-client.getAddresses(function(err, x) {
+client.getMainAddresses({
+  doNotVerify: true
+}, function(err, x) {
   utils.die(err);
 
   console.log('* Addresses:');
-  _.each(x, function(a){
+  _.each(x, function(a) {
     console.log('      ', a.address);
   });
 });
