@@ -19,14 +19,14 @@ A Multisig HD Wallet Service, with minimun server trust.
  # Create a 2-of-2 wallet (john.dat is the file where the wallet critical data will be stored, add -t for testnet)
  ./bit  create 2-2 john 
   * Secret to share:
-    XYbdNQjWgoTr8uzGMcmkdqKy4fVLGePvfVXQHb8YZM2RJKfvf2pcE8KzTZtxHQNVFM2aJYsFv3T
+    JevjEwaaxW6gdAZjqgWcimL525DR8zQsAXf4cscWDa8u1qKTN5eFGSFssuSvT1WySu4YYLYMUPT
  ./bit  status
  
  # Use -h or BIT_HOST to setup the base URL for your server.
  # Use -f or BIT_FILE to setup the wallet data file
  
  # Join the wallet from other copayer
-   ./bit -f pete.dat join XYbdNQjWgoTr8uzGMcmkdqKy4fVLGePvfVXQHb8YZM2RJKfvf2pcE8KzTZtxHQNVFM2aJYsFv3T
+   ./bit -f pete.dat join JevjEwaaxW6gdAZjqgWcimL525DR8zQsAXf4cscWDa8u1qKTN5eFGSFssuSvT1WySu4YYLYMUPT
    
    export BIT_FILE=pete.dat
    ./bit -f pete.dat status
