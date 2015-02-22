@@ -99,4 +99,39 @@ Utils.configureCommander = function(program) {
   return program;
 };
 
+Utils.renderAmount = function(amount) {
+  var unit = process.env.BIT_UNIT || 'bit';
+  if (unit === 'SAT') {
+    // Do nothing
+  } else if (process.env.BIT_UNIT === 'btc') {
+    amount = amount / 1e8;
+  } else {
+    amount = amount / 100;
+  }
+  amount = (parseFloat(amount.toPrecision(12)));
+  return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + ' ' + unit;
+};
+
+Utils.renderTxProposals = function(txps) {
+  if (_.isEmpty(txps))
+    return;
+
+  console.log("* TX Proposals:")
+
+  _.each(txps, function(x) {
+    var missingSignatures = x.requiredSignatures - _.filter(_.values(x.actions), function(a) {
+      return a.type == 'accept';
+    }).length;
+    console.log("\t%s [\"%s\" by %s] %s => %s", Utils.shortID(x.id), x.message, x.creatorName, Utils.renderAmount(x.amount), x.toAddress);
+
+    if (!_.isEmpty(x.actions)) {
+      console.log('\t\tActions: ', _.map(x.actions, function(a) {
+        return a.copayerName + ' ' + (a.type == 'accept' ? '✓' : '✗') + (a.comment ? ' (' + a.comment + ')' : '');
+      }).join('. '));
+    }
+    console.log('\t\tMissing signatures: ' + missingSignatures);
+  });
+
+};
+
 module.exports = Utils;

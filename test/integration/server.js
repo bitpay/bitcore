@@ -100,13 +100,15 @@ helpers.stubUtxos = function(server, wallet, amounts, cb) {
 
     var utxos = _.map(amounts, function(amount, i) {
       var address = addresses[i % addresses.length];
-      return {
+      var obj = {
         txid: helpers.randomTXID(),
         vout: Math.floor((Math.random() * 10) + 1),
         satoshis: helpers.toSatoshi(amount).toString(),
         scriptPubKey: address.getScriptPubKey(wallet.m).toBuffer().toString('hex'),
         address: address.address,
       };
+      obj.toObject = function() {return obj;};
+      return obj;
     });
     blockExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
 
@@ -190,6 +192,7 @@ describe('Copay server', function() {
     });
     helpers.offset = 0;
   });
+
 
   describe('#getInstanceWithAuth', function() {
     beforeEach(function() {});

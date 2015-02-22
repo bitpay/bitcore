@@ -1,0 +1,38 @@
+#!/usr/bin/env node
+
+var _ = require('lodash');
+var fs = require('fs');
+var program = require('commander');
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+
+program
+  .option('-i, --input [filename]', 'use input file instead of server\'s')
+  .option('-o, --output [filename]', 'write tx to output file')
+  .parse(process.argv);
+
+var args = program.args;
+var client = utils.getClient(program);
+
+var txData;
+
+function end(err, txps, rawtxps) {
+  utils.die(err);
+  if (program.input) {
+    console.log('\n* From File : %s\n', program.input);
+  }
+  utils.renderTxProposals(txps);
+  if (program.output) {
+    fs.writeFileSync(program.output, JSON.stringify(rawtxps));
+    console.log(' * Proposals Saved to: %s\n', program.output);
+  }
+};
+
+
+if (program.input) {
+  var txData = fs.readFileSync(program.input);
+  txData = JSON.parse(txData);
+  client.parseTxProposals(txData, end);
+} else {
+  client.getTxProposals({getRawTxps: !!program.output}, end);
+}
