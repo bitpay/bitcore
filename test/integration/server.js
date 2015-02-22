@@ -107,7 +107,9 @@ helpers.stubUtxos = function(server, wallet, amounts, cb) {
         scriptPubKey: address.getScriptPubKey(wallet.m).toBuffer().toString('hex'),
         address: address.address,
       };
-      obj.toObject = function() {return obj;};
+      obj.toObject = function() {
+        return obj;
+      };
       return obj;
     });
     blockExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
@@ -670,7 +672,7 @@ describe('Copay server', function() {
               should.not.exist(err);
               balance.totalAmount.should.equal(helpers.toSatoshi(300));
               balance.lockedAmount.should.equal(helpers.toSatoshi(100));
-              server.getAddresses({}, function(err, addresses) {
+              server.storage.fetchAddresses(wallet.id, function(err, addresses) {
                 should.not.exist(err);
                 var change = _.filter(addresses, {
                   isChange: true
