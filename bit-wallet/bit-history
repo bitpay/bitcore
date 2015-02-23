@@ -25,6 +25,7 @@ client.getTxHistory({}, function (err, txs) {
     var time = moment(tx.time * 1000).fromNow();
     var amount = Utils.renderAmount(tx.amount);
     var confirmations = tx.confirmations || 0;
+    var proposal = tx.proposalId ? '["' + tx.message + '" by ' + tx.creatorName + '] ' : '';
     switch (tx.action) {
       case 'received':
         direction = '<=';
@@ -37,6 +38,6 @@ client.getTxHistory({}, function (err, txs) {
       break;
     }
 
-    console.log("\t%s: %s %s %s (%s confirmations)", time, direction, tx.action, amount, confirmations);
+    console.log("\t%s: %s %s %s %s(%s confirmations)", time, direction, tx.action, amount, proposal, confirmations);
   });
 });
