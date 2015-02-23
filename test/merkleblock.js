@@ -130,5 +130,17 @@ describe('MerkleBlock', function() {
   });
 
 
+  describe('#validMerkleTree', function() {
+
+    it('should validate good merkleblocks', function() {
+      data.JSON.forEach(function(json) {
+        var b = MerkleBlock(JSON.stringify(json));
+        b.validMerkleTree().should.equal(true);
+      });
+    });
+
+  });
+
+
 });
 
