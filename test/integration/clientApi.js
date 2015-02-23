@@ -378,7 +378,6 @@ describe('client API ', function() {
           clients[1].import(str, function(err, wallet) {
             should.not.exist(err);
 
-            console.log('[clientApi.js.380]'); //TODO
             clients[1].createAddress(function(err, x0) {
               err.code.should.equal('NOTAUTHORIZED');
               clients[0].createAddress(function(err, x0) {
@@ -508,17 +507,19 @@ describe('client API ', function() {
     });
 
     it('should create from proxy from airgapped', function(done) {
-      // client0 -> airgapped
-      // client1 -> proxy
-      clients[0].generateKey('testnet', function(err) {
+
+      var airgapped = clients[0];
+      var proxy = clients[1];
+
+      airgapped.generateKey('testnet', function(err) {
         should.not.exist(err);
-        clients[0].export({
+        airgapped.export({
           access: 'readwrite'
         }, function(err, str) {
-          clients[1].import(str, function(err) {
+          proxy.import(str, function(err) {
             should.not.exist(err);
 
-            clients[1].createWallet('1', '2', 1, 1, 'testnet',
+            proxy.createWallet('1', '2', 1, 1, 'testnet',
               function(err) {
                 should.not.exist(err);
                 // should keep cpub 
@@ -537,18 +538,22 @@ describe('client API ', function() {
     });
 
     it('should join from proxy from airgapped', function(done) {
-      // client0 -> airgapped
-      // client1 -> proxy
-      clients[0].generateKey('testnet', function(err) {
+
+      var airgapped = clients[0];
+      var proxy = clients[1];
+      var other = clients[2]; // Other copayer
+
+      airgapped.generateKey('testnet', function(err) {
         should.not.exist(err);
-        clients[0].export({
+        airgapped.export({
           access: 'readwrite'
         }, function(err, str) {
-          clients[1].import(str, function(err) {
+          proxy.import(str, function(err) {
             should.not.exist(err);
-            clients[2].createWallet('1', '2', 1, 2, 'testnet', function(err, secret) {
+
+            other.createWallet('1', '2', 1, 2, 'testnet', function(err, secret) {
               should.not.exist(err);
-              clients[1].joinWallet(secret, 'john', function(err) {
+              proxy.joinWallet(secret, 'john', function(err) {
                 should.not.exist(err);
                 // should keep cpub 
                 var c0 = JSON.parse(fsmock._get('client0'));
