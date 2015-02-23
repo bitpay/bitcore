@@ -10,7 +10,7 @@ Bitcore and most official submodules work in the browser, thanks to [browserify]
 The easiest and recommended way to use them, is via [Bower](http://bower.io/), a browser package manager, and get the release bundles.
 For example, when building an app that uses `bitcore` and `bitcore-ecies`, you do:
 
-```
+```sh
 bower install bitcore
 bower install bitcore-ecies
 ```
@@ -58,12 +58,12 @@ After this, you can include the bundled release versions in your HTML file:
 
 If you want to use a specific version of a module, instead of a release version (not recommended), you must run browserify yourself. 
 You can get a minified browser bundle by running the following on the project root folder.
-```
+```sh
 browserify --require ./index.js:bitcore | uglifyjs > bitcore.min.js
 ```
 (for bitcore)
 
-```
+```sh
 browserify --require ./index.js:bitcore-ecies --external bitcore | uglifyjs > bitcore-ecies.min.js
 ```
 (for a bitcore module, `bitcore-ecies` in the example)
