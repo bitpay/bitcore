@@ -458,7 +458,9 @@ describe('client API ', function() {
             }, function(err, txs, rawTxps) {
               should.not.exist(err);
 
-              clients[0].parseTxProposals(rawTxps, function(err, txs2) {
+              clients[0].parseTxProposals({
+                txps: rawTxps
+              }, function(err, txs2) {
                 should.not.exist(err);
                 txs[0].should.deep.equal(txs2[0]);
                 done();
@@ -490,7 +492,9 @@ describe('client API ', function() {
               //Tamper 
               rawTxps[0].amount++;
 
-              clients[0].parseTxProposals(rawTxps, function(err, txs2) {
+              clients[0].parseTxProposals({
+                txps: rawTxps
+              }, function(err, txs2) {
                 err.code.should.equal('SERVERCOMPROMISED');
                 done();
               });
@@ -500,43 +504,81 @@ describe('client API ', function() {
         });
       });
     });
-    it('should be able export signatures and sign later from a ro client', 
-       function(done) {
-      helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
+
+    it('should complete public key ring from file', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 2, function(err, w) {
         should.not.exist(err);
-        clients[0].createAddress(function(err, x0) {
+
+        clients[1].createAddress(function(err, x0) {
           should.not.exist(err);
           blockExplorerMock.setUtxo(x0, 1, 1);
-          blockExplorerMock.setUtxo(x0, 1, 2);
           var opts = {
-            amount: 150000000,
+            amount: 10000000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hello 1-1',
           };
-          clients[0].sendTxProposal(opts, function(err, txp) {
+          clients[1].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
-            clients[0].getSignatures(txp, function(err, signatures) {
+            clients[1].getTxProposals({
+              getRawTxps: true
+            }, function(err, txs, rawTxps) {
               should.not.exist(err);
-              signatures.length.should.equal(txp.inputs.length);
-              signatures[0].length.should.above(62 * 2);
 
-              txp.signatures = signatures;
-
-              // Make client RO
-              var data = JSON.parse(fsmock._get('client0'));
-              delete data.xPrivKey;
-              fsmock._set('client0', JSON.stringify(data));
-
-              clients[0].signTxProposal(txp, function(err, txp) {
+              clients[1].getEncryptedPublicKeyRing(function(err, pkr) {
                 should.not.exist(err);
-                txp.status.should.equal('broadcasted');
-                done();
+
+                // Will trigger _tryToComplete and use pkr
+                // then, needs pkr to verify the txps
+                clients[0].parseTxProposals({
+                  txps: rawTxps,
+                  pkr: pkr,
+                }, function(err, txs2) {
+                  should.not.exist(err);
+                  done();
+                });
               });
             });
           });
         });
       });
     });
+    it('should be able export signatures and sign later from a ro client',
+      function(done) {
+        helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
+          should.not.exist(err);
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            blockExplorerMock.setUtxo(x0, 1, 1);
+            blockExplorerMock.setUtxo(x0, 1, 2);
+            var opts = {
+              amount: 150000000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: 'hello 1-1',
+            };
+            clients[0].sendTxProposal(opts, function(err, txp) {
+              should.not.exist(err);
+              clients[0].getSignatures(txp, function(err, signatures) {
+                should.not.exist(err);
+                signatures.length.should.equal(txp.inputs.length);
+                signatures[0].length.should.above(62 * 2);
+
+                txp.signatures = signatures;
+
+                // Make client RO
+                var data = JSON.parse(fsmock._get('client0'));
+                delete data.xPrivKey;
+                fsmock._set('client0', JSON.stringify(data));
+
+                clients[0].signTxProposal(txp, function(err, txp) {
+                  should.not.exist(err);
+                  txp.status.should.equal('broadcasted');
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
   });
 
   describe('Address Creation', function() {
@@ -977,29 +1019,29 @@ describe('client API ', function() {
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
-          clients[0].getStatus( function(err, st) {
-            should.not.exist(err);
-            var x = st.pendingTxps[0];
-            x.status.should.equal('pending');
-            x.requiredRejections.should.equal(2);
-            x.requiredSignatures.should.equal(2);
-            var w = st.wallet;
-            w.copayers.length.should.equal(3);
-            w.status.should.equal('complete');
-            var b = st.balance;
-            b.totalAmount.should.equal(1000000000);
-            b.lockedAmount.should.equal(1000000000);
+            clients[0].getStatus(function(err, st) {
+              should.not.exist(err);
+              var x = st.pendingTxps[0];
+              x.status.should.equal('pending');
+              x.requiredRejections.should.equal(2);
+              x.requiredSignatures.should.equal(2);
+              var w = st.wallet;
+              w.copayers.length.should.equal(3);
+              w.status.should.equal('complete');
+              var b = st.balance;
+              b.totalAmount.should.equal(1000000000);
+              b.lockedAmount.should.equal(1000000000);
 
 
-            clients[0].signTxProposal(x, function(err, tx) {
-              should.not.exist(err, err);
-              tx.status.should.equal('pending');
-              clients[1].signTxProposal(x, function(err, tx) {
-                should.not.exist(err);
-                tx.status.should.equal('broadcasted');
-                tx.txid.should.equal((new Bitcore.Transaction(blockExplorerMock.lastBroadcasted)).id);
-                done();
-              });
+              clients[0].signTxProposal(x, function(err, tx) {
+                should.not.exist(err, err);
+                tx.status.should.equal('pending');
+                clients[1].signTxProposal(x, function(err, tx) {
+                  should.not.exist(err);
+                  tx.status.should.equal('broadcasted');
+                  tx.txid.should.equal((new Bitcore.Transaction(blockExplorerMock.lastBroadcasted)).id);
+                  done();
+                });
               });
             });
           });

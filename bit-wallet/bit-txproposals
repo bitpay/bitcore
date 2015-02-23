@@ -23,8 +23,15 @@ function end(err, txps, rawtxps) {
   }
   utils.renderTxProposals(txps);
   if (program.output) {
-    fs.writeFileSync(program.output, JSON.stringify(rawtxps));
-    console.log(' * Proposals Saved to: %s\n', program.output);
+
+    client.getEncryptedPublicKeyRing(function (err, pkr) {
+      var txData = {
+        pkr: pkr,
+        txps: txps,
+      };
+      fs.writeFileSync(program.output, JSON.stringify(txData));
+      console.log(' * Proposals Saved to: %s\n', program.output);
+    });
   }
 };
 
