@@ -1,10 +1,13 @@
 'use strict';
-
 var bitcore = require('..');
 var MerkleBlock = bitcore.MerkleBlock;
 var BufferReader = bitcore.encoding.BufferReader;
 var BufferWriter = bitcore.encoding.BufferWriter;
+var BufferUtil = bitcore.util.buffer;
+var Transaction = bitcore.Transaction;
 var data = require('./data/merkleblocks.js');
+var transactionVector = require('./data/tx_creation');
+
 
 describe('MerkleBlock', function() {
   var blockhex  = data.HEX[0];
@@ -139,8 +142,53 @@ describe('MerkleBlock', function() {
       });
     });
 
+    it('should not validate merkleblocks with too many hashes', function() {
+      var json = data.JSON[0];
+      var b = MerkleBlock(JSON.stringify(data.JSON[0]));
+      // Add too many hashes
+      var i = 0;
+      while(i <= b.numTransactions) {
+        b.hashes.push('bad' + i++);
+      }
+      b.validMerkleTree().should.equal(false);
+    });
+
+    it('should not validate merkleblocks with too few bit flags', function() {
+      var json = JSON.stringify(data.JSON[0]);
+      var b = MerkleBlock(json);
+      b.flags.pop()
+      b.validMerkleTree().should.equal(false);
+    });
+
   });
 
+  describe('#hasTransaction', function() {
+
+    it('should find transactions via hash string', function() {
+      var json = data.JSON[0];
+      var txId = BufferUtil.reverse(new Buffer(json.hashes[1],'hex')).toString('hex');
+      var b = MerkleBlock(JSON.stringify(json));
+      b.hasTransaction(txId).should.equal(true);
+      b.hasTransaction(txId + 'abcd').should.equal(false);
+    });
+
+    it('should find transactions via Transaction object', function() {
+      var json = data.JSON[0];
+      var txBuf = new Buffer(data.TXHEX[0][0],'hex');
+      var tx = new Transaction().fromBuffer(txBuf);
+      var b = MerkleBlock(JSON.stringify(json));
+      b.hasTransaction(tx).should.equal(true);
+    });
+
+    it('should not find non-existant Transaction object', function() {
+      // Reuse another transaction already in data/ dir
+      var serialized = transactionVector[0][7];
+      var tx = new Transaction().fromBuffer(new Buffer(serialized, 'hex'));
+      var b = MerkleBlock(JSON.stringify(data.JSON[0]));
+      b.hasTransaction(tx).should.equal(false);
+    });
+
+  });
 
 });
 
