@@ -977,9 +977,20 @@ describe('client API ', function() {
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
+          clients[0].getStatus( function(err, st) {
+            should.not.exist(err);
+            var x = st.pendingTxps[0];
             x.status.should.equal('pending');
             x.requiredRejections.should.equal(2);
             x.requiredSignatures.should.equal(2);
+            var w = st.wallet;
+            w.copayers.length.should.equal(3);
+            w.status.should.equal('complete');
+            var b = st.balance;
+            b.totalAmount.should.equal(1000000000);
+            b.lockedAmount.should.equal(1000000000);
+
+
             clients[0].signTxProposal(x, function(err, tx) {
               should.not.exist(err, err);
               tx.status.should.equal('pending');
@@ -988,6 +999,7 @@ describe('client API ', function() {
                 tx.status.should.equal('broadcasted');
                 tx.txid.should.equal((new Bitcore.Transaction(blockExplorerMock.lastBroadcasted)).id);
                 done();
+              });
               });
             });
           });
