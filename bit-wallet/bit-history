@@ -24,16 +24,19 @@ client.getTxHistory({}, function (err, txs) {
   _.each(txs, function(tx) {
     var time = moment(tx.time * 1000).fromNow();
     var amount = Utils.renderAmount(tx.amount);
+    var confirmations = tx.confirmations || 0;
     switch (tx.action) {
       case 'received':
-        console.log("\t%s: <= %s", time, amount);
-      break;
-      case 'sent':
-        console.log("\t%s: %s => %s", time, amount, tx.addressTo);
+        direction = '<=';
       break;
       case 'moved':
-        console.log("\t%s: == %s", time, amount);
+        direction = '==';
+      break;
+      case 'sent':
+        direction = '=>';
       break;
     }
+
+    console.log("\t%s: %s %s %s (%s confirmations)", time, direction, tx.action, amount, confirmations);
   });
 });
