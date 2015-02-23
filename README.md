@@ -91,7 +91,7 @@ bit import output.dat
 bit recreate 
 ```
 
-# Airgapped Operation (TODO)
+# Airgapped Operation
 
 ### On the Air-gapped device
 ```
