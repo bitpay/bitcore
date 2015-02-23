@@ -102,19 +102,18 @@ git export -o wallet.dat --readonly  (or --nosigning)
 ```
 git join secret -i wallet.dat
 git balance
+# Export pending transaction to be signed offline
 git txproposals -o txproposals.dat
-```
-### (export with filter)
-```
-git txproposals  e01e -o txprosals.dat
 ```
 
 ## Back to air-gapped device
 
-### To recheck tx proposals:
+### To check tx proposals:
 ```
 git txproposals -i txproposals.dat
 ```
+First time txproposals is running on the air gapped devices, the public keys of the copayers will be imported from the txproposals archive. That information is exported automatically by the proxy machine, and encrypted copayer's xpriv derivatives.
+
 ### Sign them
 ```
 git sign  -i txproposals.dat -o txproposals-signed.dat
