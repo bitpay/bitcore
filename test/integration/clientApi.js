@@ -353,7 +353,7 @@ describe('client API ', function() {
     });
   });
 
-  describe('Access control & export', function() {
+  describe('Access control', function() {
     it('should not be able to create address if not rwPubKey', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function(err) {
         should.not.exist(err);
@@ -438,7 +438,8 @@ describe('client API ', function() {
         });
       });
     });
-
+  });
+  describe('Air gapped flows', function() {
     it('should be able get Tx proposals from a file', function(done) {
       helpers.createAndJoinWallet(clients, 1, 2, function(err, w) {
         should.not.exist(err);
@@ -499,9 +500,43 @@ describe('client API ', function() {
         });
       });
     });
+    it('should be able export signatures and sign later from a ro client', 
+       function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
+        should.not.exist(err);
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          blockExplorerMock.setUtxo(x0, 1, 1);
+          blockExplorerMock.setUtxo(x0, 1, 2);
+          var opts = {
+            amount: 150000000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hello 1-1',
+          };
+          clients[0].sendTxProposal(opts, function(err, txp) {
+            should.not.exist(err);
+            clients[0].getSignatures(txp, function(err, signatures) {
+              should.not.exist(err);
+              signatures.length.should.equal(txp.inputs.length);
+              signatures[0].length.should.above(62 * 2);
 
+              txp.signatures = signatures;
 
+              // Make client RO
+              var data = JSON.parse(fsmock._get('client0'));
+              delete data.xPrivKey;
+              fsmock._set('client0', JSON.stringify(data));
 
+              clients[0].signTxProposal(txp, function(err, txp) {
+                should.not.exist(err);
+                txp.status.should.equal('broadcasted');
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
   });
 
   describe('Address Creation', function() {
@@ -887,7 +922,9 @@ describe('client API ', function() {
           should.not.exist(err);
           clients[0].createAddress(function(err, x0) {
             should.not.exist(err);
-            clients[0].getMainAddresses({doNotVerify: true}, function(err, addr) {
+            clients[0].getMainAddresses({
+              doNotVerify: true
+            }, function(err, addr) {
               should.not.exist(err);
               addr.length.should.equal(2);
               done();
