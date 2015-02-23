@@ -8,6 +8,7 @@ var bitcore = require('..');
 var errors = bitcore.errors;
 var hdErrors = errors.HDPrivateKey;
 var buffer = require('buffer');
+var Networks = bitcore.Networks;
 var BufferUtil = bitcore.util.buffer;
 var HDPrivateKey = bitcore.HDPrivateKey;
 var Base58Check = bitcore.encoding.Base58Check;
@@ -85,17 +86,25 @@ describe('HDPrivate key interface', function() {
     it('allows no-new calling', function() {
       HDPrivateKey(xprivkey).toString().should.equal(xprivkey);
     });
+    it('allows the use of a copy constructor', function() {
+      HDPrivateKey(HDPrivateKey(xprivkey))
+        .xprivkey.should.equal(xprivkey);
+    });
+  });
+
+  describe('public key', function() {
+    var testnetKey = new HDPrivateKey('tprv8ZgxMBicQKsPdEeU2KiGFnUgRGriMnQxrwrg6FWCBg4jeiidHRyCCdA357kfkZiGaXEapWZsGDKikeeEbvgXo3UmEdbEKNdQH9VXESmGuUK');
+    var livenetKey = new HDPrivateKey('xprv9s21ZrQH143K3e39bnn1vyS7YFa1EAJAFGDoeHaSBsgBxgAkTEXeSx7xLvhNQNJxJwhzziWcK3znUFKRPRwWBPkKZ8ijUBa5YYpYPQmeBDX');
+
+    it('matches the network', function() {
+      testnetKey.publicKey.network.should.equal(Networks.testnet);
+      livenetKey.publicKey.network.should.equal(Networks.livenet);
+    });
   });
 
   it('inspect() displays correctly', function() {
     HDPrivateKey(xprivkey).inspect().should.equal('<HDPrivateKey: ' + xprivkey + '>');
   });
-
-  it('allows the use of a copy constructor', function() {
-    HDPrivateKey(HDPrivateKey(xprivkey))
-      .xprivkey.should.equal(xprivkey);
-  });
-
   it('fails when trying to derive with an invalid argument', function() {
     expectDerivationFail([], hdErrors.InvalidDerivationArgument);
   });
