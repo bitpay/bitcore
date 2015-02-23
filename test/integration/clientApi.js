@@ -377,6 +377,8 @@ describe('client API ', function() {
           should.not.exist(err);
           clients[1].import(str, function(err, wallet) {
             should.not.exist(err);
+
+            console.log('[clientApi.js.380]'); //TODO
             clients[1].createAddress(function(err, x0) {
               err.code.should.equal('NOTAUTHORIZED');
               clients[0].createAddress(function(err, x0) {
@@ -439,7 +441,7 @@ describe('client API ', function() {
       });
     });
   });
-  describe('Air gapped flows', function() {
+  describe('Air gapped related flows', function() {
     it('should be able get Tx proposals from a file', function(done) {
       helpers.createAndJoinWallet(clients, 1, 2, function(err, w) {
         should.not.exist(err);
@@ -505,66 +507,65 @@ describe('client API ', function() {
       });
     });
 
-    it('should complete public key ring from file', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 2, function(err, w) {
+    it('should create from proxy from airgapped', function(done) {
+      // client0 -> airgapped
+      // client1 -> proxy
+      clients[0].generateKey('testnet', function(err) {
         should.not.exist(err);
-
-        clients[1].createAddress(function(err, x0) {
-          should.not.exist(err);
-          blockExplorerMock.setUtxo(x0, 1, 1);
-          var opts = {
-            amount: 10000000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hello 1-1',
-          };
-          clients[1].sendTxProposal(opts, function(err, x) {
+        clients[0].export({
+          access: 'readwrite'
+        }, function(err, str) {
+          clients[1].import(str, function(err) {
             should.not.exist(err);
 
-            // Create the proxy, ro, connected, device (2)
-            clients[0].export({
-              access: 'readonly'
-            }, function(err, str) {
-              should.not.exist(err);
-              clients[2].import(str, function(err, wallet) {
+            clients[1].createWallet('1', '2', 1, 1, 'testnet',
+              function(err) {
                 should.not.exist(err);
-
-                clients[2].getTxProposals({
-                  getRawTxps: true
-                }, function(err, txs, rawTxps) {
-                  should.not.exist(err);
-
-
-                  clients[2].getEncryptedWalletData(function(err, toComplete) {
-                    should.not.exist(err);
-
-                    // Disable networking
-                    clients[0].request = sinon.stub().yields('no network');
-
-                    // Make client incomplete
-                    var data = JSON.parse(fsmock._get('client0'));
-                    delete data.n;
-                    fsmock._set('client0', JSON.stringify(data));
-
-                    // Back to the air gapped
-                    //
-                    // Will trigger _tryToComplete and use pkr
-                    // then, needs pkr to verify the txps
-
-                    clients[0].parseTxProposals({
-                      txps: rawTxps,
-                      toComplete: toComplete,
-                    }, function(err, txs2) {
-                      should.not.exist(err);
-                      done();
-                    });
-                  });
+                // should keep cpub 
+                var c0 = JSON.parse(fsmock._get('client0'));
+                var c1 = JSON.parse(fsmock._get('client1'));
+                _.each(['copayerId', 'network', 'publicKeyRing',
+                  'roPrivKey', 'rwPrivKey'
+                ], function(k) {
+                  c0[k].should.deep.equal(c1[k]);
                 });
+                done();
               });
+          });
+        });
+      });
+    });
+
+    it('should join from proxy from airgapped', function(done) {
+      // client0 -> airgapped
+      // client1 -> proxy
+      clients[0].generateKey('testnet', function(err) {
+        should.not.exist(err);
+        clients[0].export({
+          access: 'readwrite'
+        }, function(err, str) {
+          clients[1].import(str, function(err) {
+            should.not.exist(err);
+            clients[2].createWallet('1', '2', 1, 2, 'testnet', function(err, secret) {
+              should.not.exist(err);
+              clients[1].joinWallet(secret, 'john', function(err) {
+                should.not.exist(err);
+                // should keep cpub 
+                var c0 = JSON.parse(fsmock._get('client0'));
+                var c1 = JSON.parse(fsmock._get('client1'));
+                _.each(['copayerId', 'network', 'publicKeyRing',
+                  'roPrivKey', 'rwPrivKey'
+                ], function(k) {
+                  c0[k].should.deep.equal(c1[k]);
+                });
+                done();
+              })
             });
           });
         });
       });
     });
+
     it('should be able export signatures and sign later from a ro client',
       function(done) {
         helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
@@ -704,9 +705,9 @@ describe('client API ', function() {
     it('round trip #import #export', function(done) {
       helpers.createAndJoinWallet(clients, 2, 2, function(err, w) {
         should.not.exist(err);
-        clients[0].export({}, function(err, str) {
+        clients[1].export({}, function(err, str) {
           should.not.exist(err);
-          var original = JSON.parse(fsmock._get('client0'));
+          var original = JSON.parse(fsmock._get('client1'));
           clients[2].import(str, function(err, wallet) {
             should.not.exist(err);
             var clone = JSON.parse(fsmock._get('client2'));
@@ -719,7 +720,7 @@ describe('client API ', function() {
       });
     });
     it('should recreate a wallet, create addresses and receive money', function(done) {
-      var backup = '["tprv8ZgxMBicQKsPehCdj4HM1MZbKVXBFt5Dj9nQ44M99EdmdiUfGtQBDTSZsKmzdUrB1vEuP6ipuoa39UXwPS2CvnjE1erk5aUjc5vQZkWvH4B",2,["tpubD6NzVbkrYhZ4XCNDPDtyRWPxvJzvTkvUE2cMPB8jcUr9Dkicv6cYQmA18DBAid6eRK1BGCU9nzgxxVdQUGLYJ34XsPXPW4bxnH4PH6oQBF3"],"sd0kzXmlXBgTGHrKaBW4aA=="]';
+      var backup = '["tprv8ZgxMBicQKsPehCdj4HM1MZbKVXBFt5Dj9nQ44M99EdmdiUfGtQBDTSZsKmzdUrB1vEuP6ipuoa39UXwPS2CvnjE1erk5aUjc5vQZkWvH4B",2,2,["tpubD6NzVbkrYhZ4XCNDPDtyRWPxvJzvTkvUE2cMPB8jcUr9Dkicv6cYQmA18DBAid6eRK1BGCU9nzgxxVdQUGLYJ34XsPXPW4bxnH4PH6oQBF3"],"sd0kzXmlXBgTGHrKaBW4aA=="]';
       clients[0].import(backup, function(err, wallet) {
         should.not.exist(err);
         clients[0].reCreateWallet('pepe', function(err, wallet) {
