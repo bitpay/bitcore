@@ -215,8 +215,8 @@ function startGulp(name, opts) {
       .pipe(gulp.dest('./'));
   };
 
+  var tempBranch = 'releases/' + new Date().getTime() + '-build';
   gulp.task('release:checkout-releases', function(cb) {
-    var tempBranch = 'releases/' + new Date().getTime() + '-build';
     git.branch(tempBranch, {
       args: ''
     }, function() {
@@ -224,6 +224,12 @@ function startGulp(name, opts) {
         args: ''
       }, cb);
     });
+  });
+
+  gulp.task('release:cleanup', function(cb) {
+    git.branch(tempBranch, {
+      args: '-D'
+    }, cb);
   });
 
   gulp.task('release:checkout-master', function(cb) {
@@ -334,6 +340,8 @@ function startGulp(name, opts) {
       'release:version-commit',
       // Push to master
       'release:push',
+      // remove release branch
+      'release:cleanup',
       cb);
   };
 
