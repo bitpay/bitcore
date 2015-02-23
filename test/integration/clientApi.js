@@ -519,22 +519,35 @@ describe('client API ', function() {
           };
           clients[1].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
-            clients[1].getTxProposals({
-              getRawTxps: true
-            }, function(err, txs, rawTxps) {
-              should.not.exist(err);
 
-              clients[1].getEncryptedPublicKeyRing(function(err, pkr) {
+            // Create the proxy, ro, connected, device (2)
+            clients[0].export({
+              access: 'readonly'
+            }, function(err, str) {
+              should.not.exist(err);
+              clients[2].import(str, function(err, wallet) {
                 should.not.exist(err);
 
-                // Will trigger _tryToComplete and use pkr
-                // then, needs pkr to verify the txps
-                clients[0].parseTxProposals({
-                  txps: rawTxps,
-                  pkr: pkr,
-                }, function(err, txs2) {
+                clients[2].getTxProposals({
+                  getRawTxps: true
+                }, function(err, txs, rawTxps) {
                   should.not.exist(err);
-                  done();
+
+                  clients[2].getEncryptedPublicKeyRing(function(err, pkr) {
+                    should.not.exist(err);
+
+                    // Back to the air gapped
+                    //
+                    // Will trigger _tryToComplete and use pkr
+                    // then, needs pkr to verify the txps
+                    clients[0].parseTxProposals({
+                      txps: rawTxps,
+                      pkr: pkr,
+                    }, function(err, txs2) {
+                      should.not.exist(err);
+                      done();
+                    });
+                  });
                 });
               });
             });
