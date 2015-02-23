@@ -80,16 +80,6 @@ describe('MerkleBlock', function() {
 
   });
 
-  // TODO
-  //describe('#fromString/#toString', function() {
-
-    //it('should output/input a block hex string', function() {
-      //var b = MerkleBlock.fromString(blockhex);
-      //b.toString().should.equal(blockhex);
-    //});
-
-  //});
-
   describe('#fromBuffer', function() {
 
     it('should make a block from this known buffer', function() {
@@ -139,11 +129,20 @@ describe('MerkleBlock', function() {
       data.JSON.forEach(function(json) {
         var b = MerkleBlock(JSON.stringify(json));
         b.validMerkleTree().should.equal(true);
+        b._validMerkleTree.should.equal(true);
       });
     });
 
+    it('should respect _validMerkleTrees', function() {
+      var b = MerkleBlock(blockJSON);
+      b._validMerkleTree = false;
+      b.validMerkleTree().should.equal(false);
+      b._validMerkleTree = true;
+      b._validMerkleTree.should.equal(true);
+      b.validMerkleTree().should.equal(true);
+    });
+
     it('should not validate merkleblocks with too many hashes', function() {
-      var json = data.JSON[0];
       var b = MerkleBlock(JSON.stringify(data.JSON[0]));
       // Add too many hashes
       var i = 0;
@@ -154,8 +153,7 @@ describe('MerkleBlock', function() {
     });
 
     it('should not validate merkleblocks with too few bit flags', function() {
-      var json = JSON.stringify(data.JSON[0]);
-      var b = MerkleBlock(json);
+      var b = MerkleBlock(blockJSON);
       b.flags.pop()
       b.validMerkleTree().should.equal(false);
     });
