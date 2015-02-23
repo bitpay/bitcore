@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 
 var _ = require('lodash');
+var fs = require('fs');
 var program = require('commander');
-var utils  = require('./cli-utils');
+var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
 program
   .usage('[options] <txpid>')
+  .option('-i, --input [filename]', 'use signatures from file')
+  .option('-o, --output [filename]', 'write signatures to  file')
   .parse(process.argv);
 
 var args = program.args;
@@ -17,11 +20,33 @@ client.getTxProposals({}, function(err, txps) {
   utils.die(err);
 
   var txp = utils.findOneTxProposal(txps, txpid);
-  client.signTxProposal(txp, function(err, tx) {
-    utils.die(err);
-    if (tx.status == 'broadcasted')
-      console.log('Transaction Broadcasted: TXID: ' + tx.txid);
-    else 
-      console.log('Transaction signed by you.');
-  });
+
+  if (program.output) {
+    client.getSignatures(txp, function(err, signatures) {
+      utils.die(err);
+      var out = {
+        id: txp.id,
+        signatures: signatures,
+      };
+      fs.writeFileSync(program.output, JSON.stringify(out));
+      console.log('Signatures written to file.');
+    });
+  } else {
+
+    if (program.input) {
+      var infile = JSON.parse(fs.readFileSync(program.input));
+      if (infile.id != txp.id)
+        utils.die('Signatures does not match Transaction')
+
+      txp.signatures = infile.signatures;
+    }
+
+    client.signTxProposal(txp, function(err, tx) {
+      utils.die(err);
+      if (tx.status == 'broadcasted')
+        console.log('Transaction Broadcasted: TXID: ' + tx.txid);
+      else
+        console.log('Transaction signed by you.');
+    });
+  }
 });
