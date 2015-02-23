@@ -95,53 +95,53 @@ bit recreate
 
 ### On the Air-gapped device
 ```
-git genkey
-git export -o wallet.dat --readonly  (or --nosigning)
+bit genkey
+bit export -o wallet.dat --readonly  (or --nosigning)
 ```
 ### Proxy machine
 ```
-git join secret -i wallet.dat
-git balance
+bit join secret -i wallet.dat
+bit balance
 # Export pending transaction to be signed offline
-git txproposals -o txproposals.dat
+bit txproposals -o txproposals.dat
 ```
 
 ## Back to air-gapped device
 
 ### To check tx proposals:
 ```
-git txproposals -i txproposals.dat
+bit txproposals -i txproposals.dat
 ```
 First time txproposals is running on the air gapped devices, the public keys of the copayers will be imported from the txproposals archive. That information is exported automatically by the proxy machine, and encrypted copayer's xpriv derivatives.
 
 ### Sign them
 ```
-git sign  -i txproposals.dat -o txproposals-signed.dat
+bit sign  -i txproposals.dat -o txproposals-signed.dat
 # Or With filter
-git sign  e01e -i txproposals.dat -o txproposals-signed.dat
+bit sign  e01e -i txproposals.dat -o txproposals-signed.dat
 ```
 ## Back to proxy machine
 ```
-git sign -i txproposals-signed.dat
+bit sign -i txproposals-signed.dat
 ```
 
 # Password protection (TODO)
 
 ### encrypts everything by default
 ```
-git create myWallet 2-3 -p password  
+bit create myWallet 2-3 -p password  
 # Or (interactive mode)
-git create myWallet 2-3 -p
+bit create myWallet 2-3 -p
 Enter password:
 ```
 
 ### allows readonly operations without password (encrypts xpriv, and leave readonlySigningKey unencrypted)
 ```
-git create myWallet 2-3 -p --nopasswd:ro
+bit create myWallet 2-3 -p --nopasswd:ro
 ```
 ### allows readwrite operations without password (only encrypts xpriv)
 ```
-git create myWallet 2-3 -p --nopasswd:rw
+bit create myWallet 2-3 -p --nopasswd:rw
 ```
  
 # Local  data
