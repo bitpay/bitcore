@@ -12,7 +12,7 @@ For example, when building an app that uses `bitcore` and `bitcore-ecies`, you d
 
 ```
 bower install bitcore
-bower install
+bower install bitcore-ecies
 ```
 
 You can also use a `bower.json` file to store the dependencies of your project:
