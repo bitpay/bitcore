@@ -23,15 +23,16 @@ client.getTxHistory({}, function (err, txs) {
 
   _.each(txs, function(tx) {
     var time = moment().fromNow(tx.time);
+    var amount = Utils.renderAmount(tx.amount);
     switch (tx.action) {
       case 'received':
-        console.log("\t%s: <= %s", time, Utils.renderAmount(tx.amount));
+        console.log("\t%s: <= %s", time, amount);
       break;
       case 'sent':
-        console.log("\t%s: %s => %s", time, Utils.renderAmount(tx.amount), tx.addressTo);
+        console.log("\t%s: %s => %s", time, amount, tx.addressTo);
       break;
       case 'moved':
-        console.log("\t%s: == %s", time, Utils.renderAmount(tx.amount));
+        console.log("\t%s: == %s", time, amount);
       break;
     }
   });
