@@ -1,0 +1,38 @@
+#!/usr/bin/env node
+
+var _ = require('lodash');
+var fs = require('fs');
+var moment = require('moment');
+var program = require('commander');
+var Utils = require('./cli-utils');
+program = Utils.configureCommander(program);
+
+program
+  .parse(process.argv);
+
+var args = program.args;
+var client = Utils.getClient(program);
+
+var txData;
+
+client.getTxHistory({}, function (err, txs) {
+  if (_.isEmpty(txs))
+  return;
+
+  console.log("* TX History:")
+
+  _.each(txs, function(tx) {
+    var time = moment().fromNow(tx.time);
+    switch (tx.action) {
+      case 'received':
+        console.log("\t%s: <= %s", time, Utils.renderAmount(tx.amount));
+      break;
+      case 'sent':
+        console.log("\t%s: %s => %s", time, Utils.renderAmount(tx.amount), tx.addressTo);
+      break;
+      case 'moved':
+        console.log("\t%s: == %s", time, Utils.renderAmount(tx.amount));
+      break;
+    }
+  });
+});
