@@ -34,7 +34,7 @@ describe('MerkleBlock', function() {
     it('should not make an empty block', function() {
       (function() {
         return new MerkleBlock();
-      }).should.throw('Unrecognized argument for Block');
+      }).should.throw('Unrecognized argument for MerkleBlock');
     });
   });
 
