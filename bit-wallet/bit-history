@@ -22,7 +22,7 @@ client.getTxHistory({}, function (err, txs) {
   console.log("* TX History:")
 
   _.each(txs, function(tx) {
-    var time = moment().fromNow(tx.time);
+    var time = moment(tx.time * 1000).fromNow();
     var amount = Utils.renderAmount(tx.amount);
     switch (tx.action) {
       case 'received':
