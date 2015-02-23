@@ -533,16 +533,26 @@ describe('client API ', function() {
                 }, function(err, txs, rawTxps) {
                   should.not.exist(err);
 
-                  clients[2].getEncryptedPublicKeyRing(function(err, pkr) {
+
+                  clients[2].getEncryptedWalletData(function(err, toComplete) {
                     should.not.exist(err);
+
+                    // Disable networking
+                    clients[0].request = sinon.stub().yields('no network');
+
+                    // Make client incomplete
+                    var data = JSON.parse(fsmock._get('client0'));
+                    delete data.n;
+                    fsmock._set('client0', JSON.stringify(data));
 
                     // Back to the air gapped
                     //
                     // Will trigger _tryToComplete and use pkr
                     // then, needs pkr to verify the txps
+
                     clients[0].parseTxProposals({
                       txps: rawTxps,
-                      pkr: pkr,
+                      toComplete: toComplete,
                     }, function(err, txs2) {
                       should.not.exist(err);
                       done();
