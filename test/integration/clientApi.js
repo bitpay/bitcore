@@ -221,6 +221,23 @@ describe('client API ', function() {
   });
 
 
+  describe.skip('Storage Encryption', function() {
+    it('should check balance in a 1-1 ', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
+        should.not.exist(err);
+
+        clients[0].getBalance(function(err, x) {
+          should.not.exist(err);
+
+          var wcd = JSON.parse(fsmock._get('client0'));
+          console.log('[clientApi.js.236]', wcd); //TODO
+          done();
+        })
+      });
+    });
+  });
+
+
   describe('Wallet Creation', function() {
     it('should check balance in a 1-1 ', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function(err) {
@@ -281,7 +298,7 @@ describe('client API ', function() {
         should.not.exist(err);
 
         // Get right response
-        clients[0]._load(function(err, data) {
+        clients[0]._load({}, function(err, data) {
           var url = '/v1/wallets/';
           clients[0]._doGetRequest(url, data, function(err, x) {
 
@@ -305,7 +322,7 @@ describe('client API ', function() {
         should.not.exist(err);
 
         // Get right response
-        var data = clients[0]._load(function(err, data) {
+        var data = clients[0]._load({}, function(err, data) {
           var url = '/v1/wallets/';
           clients[0]._doGetRequest(url, data, function(err, x) {
 
@@ -330,7 +347,7 @@ describe('client API ', function() {
         should.not.exist(err);
 
         // Get right response
-        var data = clients[0]._load(function(err, data) {
+        var data = clients[0]._load({}, function(err, data) {
           var url = '/v1/wallets/';
           clients[0]._doGetRequest(url, data, function(err, x) {
 
@@ -362,6 +379,12 @@ describe('client API ', function() {
         delete data.rwPrivKey;
         fsmock._set('client0', JSON.stringify(data));
         data.rwPrivKey = null;
+
+        // Overwrite client's API auth checks
+        clients[0]._processWcdAfterRead = function(rawData, xx, cb) {
+          return cb(null, rawData);
+        };
+
         clients[0].createAddress(function(err, x0) {
           err.code.should.equal('NOTAUTHORIZED');
           done();
@@ -377,6 +400,11 @@ describe('client API ', function() {
           should.not.exist(err);
           clients[1].import(str, function(err, wallet) {
             should.not.exist(err);
+
+            // Overwrite client's API auth checks
+            clients[1]._processWcdAfterRead = function(rawData, xx, cb) {
+              return cb(null, rawData);
+            };
 
             clients[1].createAddress(function(err, x0) {
               err.code.should.equal('NOTAUTHORIZED');
@@ -425,7 +453,14 @@ describe('client API ', function() {
               };
               clients[1].sendTxProposal(opts, function(err, x) {
                 should.not.exist(err);
+
+                // Overwrite client's API auth checks
+                clients[1]._processWcdAfterRead = function(rawData, xx, cb) {
+                  return cb(null, rawData);
+                };
+
                 clients[1].signTxProposal(x, function(err, tx) {
+console.log('[clientApi.js.456:err:]',err); //TODO
                   err.code.should.be.equal('BADSIGNATURES');
                   clients[1].getTxProposals({}, function(err, txs) {
                     should.not.exist(err);
@@ -656,7 +691,7 @@ describe('client API ', function() {
         should.not.exist(err);
 
         // Get right response
-        clients[0]._load(function(err, data) {
+        clients[0]._load({}, function(err, data) {
           var url = '/v1/addresses/';
           clients[0]._doPostRequest(url, {}, data, function(err, address) {
 
@@ -680,7 +715,7 @@ describe('client API ', function() {
         should.not.exist(err);
 
         // Get right response
-        clients[0]._load(function(err, data) {
+        clients[0]._load({}, function(err, data) {
           var url = '/v1/addresses/';
           clients[0]._doPostRequest(url, {}, data, function(err, address) {
 
@@ -865,7 +900,7 @@ describe('client API ', function() {
 
 
             // Get right response
-            clients[0]._load(function(err, data) {
+            clients[0]._load({}, function(err, data) {
               var url = '/v1/txproposals/';
               clients[0]._doGetRequest(url, data, function(err, txps) {
 
@@ -904,7 +939,7 @@ describe('client API ', function() {
 
 
             // Get right response
-            clients[0]._load(function(err, data) {
+            clients[0]._load({}, function(err, data) {
               var url = '/v1/txproposals/';
               clients[0]._doGetRequest(url, data, function(err, txps) {
 
@@ -943,7 +978,7 @@ describe('client API ', function() {
 
 
             // Get right response
-            clients[0]._load(function(err, data) {
+            clients[0]._load({}, function(err, data) {
               var url = '/v1/txproposals/';
               clients[0]._doGetRequest(url, data, function(err, txps) {
                 // Tamper data
