@@ -345,6 +345,8 @@ describe('Copay server', function() {
         done();
       });
     });
+
+    it.skip('should fail to create wallet with invalid pubKey argument', function(done) {});
   });
 
   describe('#joinWallet', function() {
@@ -450,6 +452,8 @@ describe('Copay server', function() {
         });
       });
     });
+
+    it.skip('should fail two wallets with same xPubKey', function(done) {});
 
     it('should fail to join with bad formated signature', function(done) {
       var copayerOpts = {
@@ -758,6 +762,8 @@ describe('Copay server', function() {
       });
     });
 
+    it.skip('should fail to create tx for invalid amount', function(done) {});
+
     it('should fail to create tx when insufficient funds', function(done) {
       helpers.stubUtxos(server, wallet, [100], function() {
         var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 120, null, TestData.copayers[0].privKey);
@@ -802,6 +808,8 @@ describe('Copay server', function() {
         });
       });
     });
+
+    it.skip('should fail gracefully when bitcore throws exception on raw tx creation', function(done) {});
 
     it('should create tx when there is a pending tx and enough UTXOs', function(done) {
       helpers.stubUtxos(server, wallet, [10.1, 10.2, 10.3], function() {
@@ -930,6 +938,8 @@ describe('Copay server', function() {
         });
       });
     });
+
+    it.skip('should fail to reject non-pending TX', function(done) {});
   });
 
   describe('#signTx', function() {
@@ -1086,6 +1096,17 @@ describe('Copay server', function() {
       });
     });
   });
+
+  describe.skip('#broadcastTx', function() {
+    it.skip('should keep tx as accepted if unable to broadcast it', function(done) {});
+    it.skip('should brodcast a tx', function(done) {
+      // TODO: check final status == 'broadcasted' & broadcastedOn
+    });
+    it.skip('should fail to brodcast an already broadcasted tx', function(done) {});
+    it.skip('should brodcast a not yet accepted tx', function(done) {});
+    it.skip('should brodcast a tx', function(done) {});
+  });
+
 
   describe('Tx proposal workflow', function() {
     var server, wallet;
@@ -1638,6 +1659,8 @@ describe('Copay server', function() {
       });
     });
 
+    it.skip('should fail to remove non-pending TX', function(done) {});
+
     it('should not allow non-creator copayer to remove an unsigned TX ', function(done) {
       helpers.getAuthServer(wallet.copayers[1].id, function(server2) {
         server2.removePendingTx({
@@ -1663,6 +1686,7 @@ describe('Copay server', function() {
           server.removePendingTx({
             txProposalId: txp.id
           }, function(err) {
+            err.code.should.equal('TXACTIONED');
             err.message.should.contain('other copayers');
             done();
           });
