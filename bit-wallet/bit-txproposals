@@ -24,9 +24,9 @@ function end(err, txps, rawtxps) {
   utils.renderTxProposals(txps);
   if (program.output) {
 
-    client.getEncryptedPublicKeyRing(function (err, pkr) {
+    client.getEncryptedWalletData(function (err, toComplete) {
       var txData = {
-        pkr: pkr,
+        toComplete: toComplete,
         txps: txps,
       };
       fs.writeFileSync(program.output, JSON.stringify(txData));
