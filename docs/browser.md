@@ -54,7 +54,7 @@ After this, you can include the bundled release versions in your HTML file:
 </html>
 ```
 
-## Building custom bundles
+## Building Custom Bundles
 
 If you want to use a specific version of a module, instead of a release version (not recommended), you must run browserify yourself. 
 You can get a minified browser bundle by running the following on the project root folder.
@@ -69,7 +69,7 @@ browserify --require ./index.js:bitcore-ecies --external bitcore | uglifyjs > bi
 (for a bitcore module, `bitcore-ecies` in the example)
 
 
-## Development of modules
+## Development of Modules
 
 *Note:* You probably don't want to use this method, but `bitcore-build`, as explained above. This is left here as documentation on what happens under the hood with `bitcore-build`.
 
