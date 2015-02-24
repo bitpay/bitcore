@@ -1,5 +1,6 @@
 var _ = require('lodash');
 var Client = require('../lib/client');
+var read = require('read')
 
 var Utils = function() {};
 
@@ -38,12 +39,27 @@ Utils.getClient = function(args) {
   var storage = new Client.FileStorage({
     filename: args.file || process.env['BIT_FILE'],
   });
-  return new Client({
+  var c = new Client({
     storage: storage,
     baseUrl: args.host || process.env['BIT_HOST'],
-    verbose: args.verbose
-    password: args.password,
+    verbose: args.verbose,
   });
+
+
+  if (args.nopasswd)
+    c.setNopasswdAccess(args.nopasswd);
+
+  c.on('needPassword', function(cb) {
+    if (args.password) {
+      return cb(args.password);
+    } else {
+      read({ prompt: 'Password: ', silent: true }, function(er, password) {
+        return cb(password);
+      })
+    }
+  });
+
+  return c;
 }
 
 Utils.findOneTxProposal = function(txps, id) {

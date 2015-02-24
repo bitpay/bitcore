@@ -221,20 +221,105 @@ describe('client API ', function() {
   });
 
 
-  describe.skip('Storage Encryption', function() {
-    it('should check balance in a 1-1 ', function(done) {
+  describe('Storage Encryption', function() {
+    beforeEach(function() {
+      _.each(_.range(3), function(i) {
+        clients[i].on('needPassword', function(cb) {
+          return cb('1234#$@#%F,./.**');
+        });
+      });
+    });
+
+
+    it('full encryption roundtrip', function(done) {
+      clients[0].setNopasswdAccess('none');
       helpers.createAndJoinWallet(clients, 1, 1, function(err) {
         should.not.exist(err);
 
-        clients[0].getBalance(function(err, x) {
+        // Load it
+        var wcd = JSON.parse(fsmock._get('client0'));
+        fsmock._set('client1', wcd);
+        clients[1].getBalance(function(err, bal0) {
           should.not.exist(err);
-
-          var wcd = JSON.parse(fsmock._get('client0'));
-          console.log('[clientApi.js.236]', wcd); //TODO
           done();
-        })
+        });
       });
     });
+
+    it('should fail if wrong password', function(done) {
+      clients[0].setNopasswdAccess('none');
+      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
+        should.not.exist(err);
+
+        // Load it
+        var wcd = JSON.parse(fsmock._get('client0'));
+        fsmock._set('client4', wcd);
+
+        clients[4].on('needPassword', function(cb) {
+          return cb('1');
+        });
+
+        clients[4].getBalance(function(err, bal0) {
+          err.should.equal('NOTAUTH');
+          done();
+        });
+      });
+    });
+
+
+    it('should encrypt everything', function(done) {
+      clients[0].setNopasswdAccess('none');
+      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
+        should.not.exist(err);
+        var wcd = JSON.parse(fsmock._get('client0'));
+        _.keys(wcd).should.deep.equal(['enc']);
+        done();
+      });
+    });
+
+    it('should encrypt xpriv access', function(done) {
+      clients[0].setNopasswdAccess('readwrite');
+      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
+        should.not.exist(err);
+        var wcd = JSON.parse(fsmock._get('client0'));
+        should.exist(wcd.enc);
+        should.not.exist(wcd.xpriv);
+        done();
+      });
+    });
+
+    it('should encrypt rwkey', function(done) {
+      clients[0].setNopasswdAccess('readonly');
+      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
+        should.not.exist(err);
+        var wcd = JSON.parse(fsmock._get('client0'));
+        should.exist(wcd.enc);
+        should.not.exist(wcd.xpriv);
+        should.not.exist(wcd.rwPrivKey);
+        done();
+      });
+    });
+
+
+    _.each(['full', 'readwrite', 'readonly', 'none'], function(k) {
+      it('full encryption roundtrip: type:' + k, function(done) {
+        clients[0].setNopasswdAccess(k);
+        helpers.createAndJoinWallet(clients, 1, 1, function(err) {
+          should.not.exist(err);
+
+          // Load it
+          var wcd = JSON.parse(fsmock._get('client0'));
+          fsmock._set('client1', wcd);
+          clients[1].getBalance(function(err, bal0) {
+            should.not.exist(err);
+            done();
+          });
+        });
+      });
+    });
+
+    it.skip('should not ask for password if not needed (readonly)', function(done) {});
+    it.skip('should not ask for password if not needed (readwrite)', function(done) {});
   });
 
 
@@ -460,7 +545,6 @@ describe('client API ', function() {
                 };
 
                 clients[1].signTxProposal(x, function(err, tx) {
-console.log('[clientApi.js.456:err:]',err); //TODO
                   err.code.should.be.equal('BADSIGNATURES');
                   clients[1].getTxProposals({}, function(err, txs) {
                     should.not.exist(err);
