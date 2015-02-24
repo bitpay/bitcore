@@ -8,6 +8,7 @@ program = utils.configureCommander(program);
 
 program
   .option('-t, --testnet', 'Create a Testnet Wallet')
+  .option('-n, --nopasswd [level]', 'Set access for no password usage: none(default), readonly, readwrite, full', 'none')
   .usage('[options] <walletName> <m-n> [copayerName]')
   .parse(process.argv);
 
