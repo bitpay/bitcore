@@ -4,7 +4,6 @@
 [![Build Status](https://img.shields.io/travis/bitpay/bitcore-wallet-service.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-wallet-service)
 [![Coverage Status](https://coveralls.io/repos/bitpay/bitcore-wallet-service/badge.svg?branch=master)](https://coveralls.io/r/bitpay/bitcore-wallet-service?branch=master)
 
-
 A Multisig HD Wallet Service, with minimun server trust.
 
 # Quick Guide
@@ -119,38 +118,37 @@ bit recreate
 
 # Airgapped Operation
 
-### On the Air-gapped device
+Air gapped (non connected) devices are supported. This setup can be useful is maximun security is needed, to prevent private keys to get compromissed. In this setup a device is installed without network access, and transactions are signed off-line. Transactions can be pulled from the server using a `proxy` device, then downloaded to a pendrive to be moved to the air-gapped device, signed there and then moved back the `proxy` device to be send back to the server. Note that Private keys are generated off-line in the airgapped device.
+
+
 ```
-bit genkey
-bit export -o wallet.dat --readonly  (or --nosigning)
-```
-### Proxy machine
-```
-bit join secret -i wallet.dat
-bit balance
+
+# On the Air-gapped device
+airgapped$ bit genkey
+airgapped$ bit export -o wallet.dat --readonly  #(or --readwrite if you need the proxy to be able to propose transactions)
+
+# On the proxy machine
+proxy$ bit join secret -i wallet.dat
+proxy$ bit balance
+
 # Export pending transaction to be signed offline
-bit txproposals -o txproposals.dat
-```
+proxy$ bit txproposals -o txproposals.dat
 
 ## Back to air-gapped device
 
-### To check tx proposals:
-```
-bit txproposals -i txproposals.dat
-```
-First time txproposals is running on the air gapped devices, the public keys of the copayers will be imported from the txproposals archive. That information is exported automatically by the proxy machine, and encrypted copayer's xpriv derivatives.
+# Check tx proposals:
+airgapped$  bit txproposals -i txproposals.dat
 
-### Sign them
-```
-bit sign  -i txproposals.dat -o txproposals-signed.dat
-# Or With filter
-bit sign  e01e -i txproposals.dat -o txproposals-signed.dat
-```
+# First time txproposals is running on the air gapped devices, the public keys of the copayers will be imported from the txproposals archive. That information is exported automatically by the proxy machine, and encrypted copayer's xpriv derivatives.
+
+# Sign them
+airgapped$  bit sign  -i txproposals.dat -o txproposals-signed.dat
+
 ## Back to proxy machine
-```
-bit sign -i txproposals-signed.dat
-```
 
+# Send signatures to the server
+proxy$  bit sign -i txproposals-signed.dat
+```
 
 # Security Considerations
  * Private keys are never send to the server. Copayers store them locally.
