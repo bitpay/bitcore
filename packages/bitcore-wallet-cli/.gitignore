@@ -30,6 +30,6 @@ node_modules
 
 *.swp
 out/
-db/
+db/*
 
 .bit
