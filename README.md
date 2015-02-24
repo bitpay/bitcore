@@ -8,7 +8,7 @@ A Multisig HD Wallet Service, with minimun server trust.
 
 # Quick Guide
 
-``` bash
+``` shell
  # Start the server
  npm ./app.js
  
@@ -60,18 +60,15 @@ Copayers store its extended private key and their copayer's extended public key 
 
 Local data can be encrypted by the bit-wallet. Use the `-n` parameter to define the access level permited for no password operation. Available access levels are: `none` (password is required for everything, localfile is fully encrypted) `readonly`, `readwrite` and `full` (password is not ever required, local file is fully unencrypted) .
 
-### encrypts everything by default
-```
+``` bash
+# encrypts everything by default
 bit create myWallet 2-3 --nopasswd none  
 Password:
-```
 
-### allows readonly operations without password (encrypts xpriv, and leave readonlySigningKey unencrypted)
-```
+# allows readonly operations without password (encrypts xpriv, and leave readonlySigningKey unencrypted)
 bit create myWallet 2-3 -p --nopasswd readonly
-```
-### allows readwrite operations without password (only encrypts xpriv)
-```
+
+# allows readwrite operations without password (only encrypts xpriv)
 bit create myWallet 2-3 -p --nopasswd readwrite
 ```
  
@@ -83,11 +80,11 @@ You can safely access a wallet from different devices. Just copy the wallet file
 
 ## Export, with different access levels
 It is possible to export a wallet with restricted access level. The levels are:
-
+```
     readonly : allows to read wallet data: balance, tx proposals 
     readwrite: + allows to create addresses and unsigned tx prposals 
     full     : + allows sign tx prposals 
-
+```
 `readonly` will only export the Wallet's Extended PublicKeys, and only the derived private key required for signing 'GET' request (readonly) to the server. `readwrite` will add the derived private key required for signing all other requests (as POST) so readwrite access will be possible. And `full` will export also the Extended Private Key, which is necesary for signing wallet's transactions.  `bit import` can handle any for the levels correctly.
 
 
@@ -105,16 +102,17 @@ bit import wallet.dat
 bit export --qr
 ```
 
-## Export / Import with a new given password (TODO)
+## If the wallet need to be migrated to other server, after importing the wallet use the `recreate` command 
+```
+bit recreate 
+```
+
+## Export / Import with a new given password (TO Be Done)
 ```
 bit export -o output.dat -e
 bit import output.dat 
 ```
 
-## If you need to migrate to other server, after importing the wallet use `recreate` 
-```
-bit recreate 
-```
 
 # Airgapped Operation
 
