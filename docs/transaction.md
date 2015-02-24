@@ -161,7 +161,7 @@ These are the current default values in the bitcore library involved on these ch
 
 * `Transaction.FEE_PER_KB`: `10000` (satoshis per kilobyte)
 * `Transaction.FEE_SECURITY_MARGIN`: `15`
-* `Transaction.DUST_AMOUNT`: `5460` (satoshis)
+* `Transaction.DUST_AMOUNT`: `546` (satoshis)
 
 ## Fee calculation
 
