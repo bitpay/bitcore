@@ -267,6 +267,10 @@ describe('PrivateKey', function() {
       a.should.equal(false);
     });
 
+    it('should recognize that undefined is an invalid private key', function() {
+      PrivateKey.isValid().should.equal(false);
+    });
+
     it('should validate as true', function() {
       var a = PrivateKey.isValid('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
       a.should.equal(true);
