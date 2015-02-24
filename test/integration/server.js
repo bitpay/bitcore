@@ -1257,14 +1257,87 @@ describe('Copay server', function() {
     });
   });
 
-  describe.skip('#broadcastTx', function() {
-    it.skip('should keep tx as accepted if unable to broadcast it', function(done) {});
-    it.skip('should brodcast a tx', function(done) {
-      // TODO: check final status == 'broadcasted' & broadcastedOn
+  describe('#broadcastTx', function() {
+    var server, wallet, txpid;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 1, function(s, w) {
+        server = s;
+        wallet = w;
+        helpers.stubUtxos(server, wallet, [10, 10], function() {
+          var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, 'some message', TestData.copayers[0].privKey);
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            helpers.stubBroadcastFail();
+            var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey);
+            server.signTx({
+              txProposalId: txp.id,
+              signatures: signatures,
+            }, function(err, txp) {
+              should.exist(err);
+              should.exist(txp);
+              txp.isAccepted().should.be.true;
+              txpid = txp.id;
+              done();
+            });
+          });
+        });
+      });
     });
-    it.skip('should fail to brodcast an already broadcasted tx', function(done) {});
-    it.skip('should brodcast a not yet accepted tx', function(done) {});
-    it.skip('should brodcast a tx', function(done) {});
+
+    it('should brodcast a tx', function(done) {
+      var clock = sinon.useFakeTimers(1234000);
+      helpers.stubBroadcast('999');
+      server.broadcastTx({
+        txProposalId: txpid
+      }, function(err) {
+        should.not.exist(err);
+        server.getTx({
+          id: txpid
+        }, function(err, txp) {
+          should.not.exist(err);
+          txp.txid.should.equal('999');
+          txp.isBroadcasted().should.be.true;
+          txp.broadcastedOn.should.equal(1234);
+          clock.restore();
+          done();
+        });
+      });
+    });
+
+    it('should fail to brodcast an already broadcasted tx', function(done) {
+      helpers.stubBroadcast('999');
+      server.broadcastTx({
+        txProposalId: txpid
+      }, function(err) {
+        should.not.exist(err);
+        server.broadcastTx({
+          txProposalId: txpid
+        }, function(err, txid) {
+          should.exist(err);
+          should.not.exist(txid);
+          err.code.should.equal('TXALREADYBROADCASTED');
+          done();
+        });
+      });
+    });
+
+    it('should fail to brodcast a not yet accepted tx', function(done) {
+      helpers.stubBroadcast('999');
+      var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, 'some other message', TestData.copayers[0].privKey);
+      server.createTx(txOpts, function(err, txp) {
+        should.not.exist(err);
+        should.exist(txp);
+        server.broadcastTx({
+          txProposalId: txp.id
+        }, function(err, txid) {
+          should.exist(err);
+          should.not.exist(txid);
+          err.code.should.equal('TXNOTACCEPTED');
+          done();
+        });
+      });
+    });
   });
 
 
@@ -1285,7 +1358,7 @@ describe('Copay server', function() {
       var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, 'some message', TestData.copayers[0].privKey);
       server.createTx(txOpts, function(err, txp) {
         should.not.exist(err);
-        should.exist.txp;
+        should.exist(txp);
         helpers.getAuthServer(wallet.copayers[1].id, function(server2, wallet) {
           server2.getPendingTxs({}, function(err, txps) {
             should.not.exist(err);
@@ -1307,7 +1380,7 @@ describe('Copay server', function() {
           server.createTx(txOpts, function(err, txp) {
             txpId = txp.id;
             should.not.exist(err);
-            should.exist.txp;
+            should.exist(txp);
             next();
           });
         },
@@ -1393,7 +1466,7 @@ describe('Copay server', function() {
           server.createTx(txOpts, function(err, txp) {
             txpId = txp.id;
             should.not.exist(err);
-            should.exist.txp;
+            should.exist(txp);
             next();
           });
         },
