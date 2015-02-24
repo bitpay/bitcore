@@ -340,56 +340,53 @@ describe('Transaction', function() {
       }).to.not.throw(errors.Transaction.DustOutputs);
     });
     describe('skipping checks', function() {
+      var buildSkipTest = function(builder, check) {
+        return function() {
+          var transaction = new Transaction();
+          transaction.from(simpleUtxoWith1BTC)
+          builder(transaction);
+
+          var options = {};
+          options[check] = true;
+
+          expect(function() {
+            return transaction.serialize(options);
+          }).not.to.throw();
+          expect(function() {
+            return transaction.serialize();
+          }).to.throw();
+        };
+      };
       it('can skip the check for too much fee', function() {
-        var transaction = new Transaction()
-          .from(simpleUtxoWith1BTC)
-          .fee(50000000)
-          .change(changeAddress)
-          .sign(privateKey);
-        expect(function() {
-          return transaction.serialize({disableLargeFees: true});
-        }).to.not.throw();
-        expect(function() {
-          return transaction.serialize();
-        }).to.throw();
+        buildSkipTest(function(transaction) {
+          return transaction
+            .fee(50000000)
+            .change(changeAddress)
+            .sign(privateKey);
+        }, 'disableLargeFees');
       });
       it('can skip the check for a fee that is too small', function() {
-        var transaction = new Transaction()
-          .from(simpleUtxoWith1BTC)
-          .fee(1)
-          .change(changeAddress)
-          .sign(privateKey);
-        expect(function() {
-          return transaction.serialize({disableSmallFees: true});
-        }).to.not.throw();
-        expect(function() {
-          return transaction.serialize();
-        }).to.throw();
+        buildSkipTest(function(transaction) {
+          return transaction
+            .fee(1)
+            .change(changeAddress)
+            .sign(privateKey);
+        }, 'disableSmallFees');
       });
       it('can skip the check that prevents dust outputs', function() {
-        var transaction = new Transaction()
-          .from(simpleUtxoWith1BTC)
-          .to(toAddress, 1000)
-          .change(changeAddress)
-          .sign(privateKey);
-        expect(function() {
-          return transaction.serialize({disableDustOutputs: true});
-        }).to.not.throw();
-        expect(function() {
-          return transaction.serialize();
-        }).to.throw();
+        buildSkipTest(function(transaction) {
+          return transaction
+            .to(toAddress, 1000)
+            .change(changeAddress)
+            .sign(privateKey);
+        }, 'disableDustOutputs');
       });
       it('can skip the check that prevents unsigned outputs', function() {
-        var transaction = new Transaction()
-          .from(simpleUtxoWith1BTC)
-          .to(toAddress, 10000)
-          .change(changeAddress);
-        expect(function() {
-          return transaction.serialize({disableIsFullySigned: true});
-        }).to.not.throw();
-        expect(function() {
-          return transaction.serialize();
-        }).to.throw();
+        buildSkipTest(function(transaction) {
+          return transaction
+            .to(toAddress, 10000)
+            .change(changeAddress);
+        }, 'disableIsFullySigned');
       });
     });
   });
