@@ -8,6 +8,7 @@ program = utils.configureCommander(program);
 
 program
   .option('-t, --testnet', 'Create a Testnet Extended Private Key')
+  .option('-n, --nopasswd [level]', 'Set access for no password usage: none(default), readonly, readwrite, full', 'none')
   .parse(process.argv);
 
 var args = program.args;
