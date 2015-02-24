@@ -142,12 +142,26 @@ There are a series of methods used for serialization:
 * `toObject`: Returns a plain javascript object with no methods and enough information to fully restore the state of this transaction. Using other serialization methods (except for `toJSON`) will cause a some information to be lost.
 * `toJSON`: Returns a string with a JSON-encoded version of the output for `toObject`.
 * `toString` or `uncheckedSerialize`: Returns an hexadecimal serialization of the transaction, in the [serialization format for bitcoin](https://bitcoin.org/en/developer-reference#raw-transaction-format).
-* `serialize`: Does a series of checks before serializing the transaction:
-  - Check that the fee to be used is not very small or very large
-  - Check for dust outputs
+* `serialize`: Does a series of checks before serializing the transaction
 * `inspect`: Returns a string with some information about the transaction (currently a string formated as `<Transaction 000...000>`, that only shows the serialized value of the transaction.
 * `toBuffer`: Serializes the transaction for sending over the wire in the bitcoin network
 * `toBufferWriter`: Uses an already existing BufferWriter to copy over the serialized transaction
+
+## Serialization Checks
+
+When serializing, the bitcore library performs a series of checks. These can be disabled by providing an object to the `serialize` method with the checks that you'll like to skip.
+
+* `disableLargeFees` avoids checking that the fee is no more than `Transaction.FEE_PER_KB * Transaction.FEE_SECURITY_MARGIN * size_in_kb`.
+* `disableSmallFees` avoids checking that the fee is less than `Transaction.FEE_PER_KB * size_in_kb / Transaction.FEE_SECURITY_MARGIN`.
+* `disableIsFullySigned` does not check if all inputs are fully signed
+* `disableDustOutputs` does not check for dust outputs being generated
+* `disableMoreOutputThanInput` avoids checking that the sum of the output amounts is less than or equal to the sum of the amounts for the outputs being spent in the transaction
+
+These are the current default values in the bitcore library involved on these checks:
+
+* `Transaction.FEE_PER_KB`: `10000` (satoshis per kilobyte)
+* `Transaction.FEE_SECURITY_MARGIN`: `15`
+* `Transaction.DUST_AMOUNT`: `546` (satoshis)
 
 ## Fee calculation
 
