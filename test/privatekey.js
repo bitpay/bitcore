@@ -225,6 +225,12 @@ describe('PrivateKey', function() {
       address.toString().should.equal('mtX8nPZZdJ8d3QNLRJ1oJTiEi26Sj6LQXS');
     });
 
+    it('creates network specific address', function() {
+      var pk = PrivateKey.fromWIF('cR4qogdN9UxLZJXCNFNwDRRZNeLRWuds9TTSuLNweFVjiaE4gPaq');
+      pk.toAddress(Networks.livenet).network.name.should.equal(Networks.livenet.name);
+      pk.toAddress(Networks.testnet).network.name.should.equal(Networks.testnet.name);
+    });
+
   });
 
   describe('#inspect', function() {
