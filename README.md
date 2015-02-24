@@ -29,7 +29,12 @@ A Multisig HD Wallet Service, with minimun server trust.
    
    export BIT_FILE=pete.dat
    ./bit -f pete.dat status
-   ./bit address 
+
+ # Generate addresses to receive money
+   ./bit address
+   * New Address 3xxxxxx
+
+ # Check your balance
    ./bit balance
    
  # Spend coins. Amount can be specified in btc, bit or sat (default)
@@ -43,9 +48,14 @@ A Multisig HD Wallet Service, with minimun server trust.
  # Sign or reject TXs from other copayers
    ./bit -f pete.dat reject <id>
    ./bit -f pete.dat sign <id>
+
+ # List transaction history
+   a few minutes ago: => sent 100 bit ["100 bits to mother" by pete] (1 confirmations)
+   a day ago: <= received 1,400 bit (48 confirmations)
+   a day ago: <= received 300 bit (52 confirmations)
    
-   # List all commands:
-    ./bit --help
+ # List all commands:
+  ./bit --help
  
     
   ```
