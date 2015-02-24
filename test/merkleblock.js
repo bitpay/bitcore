@@ -3,7 +3,6 @@ var bitcore = require('..');
 var MerkleBlock = bitcore.MerkleBlock;
 var BufferReader = bitcore.encoding.BufferReader;
 var BufferWriter = bitcore.encoding.BufferWriter;
-var BufferUtil = bitcore.util.buffer;
 var Transaction = bitcore.Transaction;
 var data = require('./data/merkleblocks.js');
 var transactionVector = require('./data/tx_creation');
@@ -154,7 +153,7 @@ describe('MerkleBlock', function() {
 
     it('should find transactions via hash string', function() {
       var json = data.JSON[0];
-      var txId = BufferUtil.reverse(new Buffer(json.hashes[1],'hex')).toString('hex');
+      var txId = new Buffer(json.hashes[1],'hex').toString('hex');
       var b = MerkleBlock(JSON.stringify(json));
       b.hasTransaction(txId).should.equal(true);
       b.hasTransaction(txId + 'abcd').should.equal(false);
