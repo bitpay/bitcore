@@ -388,6 +388,13 @@ describe('Transaction', function() {
             .change(changeAddress);
         }, 'disableIsFullySigned');
       });
+      it('can skip the check that avoids spending more bitcoins than the inputs for a transaction', function() {
+        buildSkipTest(function(transaction) {
+          return transaction
+            .to(toAddress, 10000000000)
+            .change(changeAddress);
+        }, 'disableMoreOutputThanInput');
+      });
     });
   });
 
