@@ -9,8 +9,11 @@ A Multisig HD Wallet Service, with minimun server trust.
 # Quick Guide
 
 ``` shell
+ # Install dependencies
+ npm install
+
  # Start the server
- npm ./app.js
+ npm start
  
  # Try the CLI interface
  cd bit-wallet
