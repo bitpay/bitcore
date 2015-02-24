@@ -5,7 +5,7 @@ description: Guide to using and writing modules and optimizing browser bundles.
 
 # Browser Builds
 
-Bitcore and most official submodules work in the browser, thanks to [browserify](http://browserify.org/) (some modules make no sense in the browser, like `bitcore-p2p`).
+Bitcore and most official submodules work in the browser, thanks to [browserify](http://browserify.org/) (some modules are not fully compatible with web browsers).
 
 The easiest and recommended way to use them, is via [Bower](http://bower.io/), a browser package manager, and get the release bundles.
 For example, when building an app that uses `bitcore` and `bitcore-ecies`, you do:
@@ -75,7 +75,7 @@ browserify --require ./index.js:bitcore-ecies --external bitcore | uglifyjs > bi
 
 When developing a module that will depend on Bitcore, it's recommended to exclude Bitcore in the distributed browser bundle when using browserify and to use the `--external bitcore` parameter. It will produce a smaller browser bundle, as it will only include the JavaScript that is nessessary, and will depend on the Bitcore browser build which is better for distribution.
 
-### Building the bundle manually
+### Building the Bundle Manually
 
 **Step 1**: Require Bitcore
 
