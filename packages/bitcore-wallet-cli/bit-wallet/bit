@@ -24,5 +24,6 @@ program
   .command('genkey', 'generates extended private key for later wallet usage')
   .parse(process.argv);
 
-
+if (!program.args.length || !program.runningCommand)
+  program.help();
 
