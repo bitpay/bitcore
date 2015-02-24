@@ -65,7 +65,7 @@ var fsmock = {};
 var content = {};
 fsmock.readFile = function(name, enc, cb) {
   if (!content || _.isEmpty(content[name]))
-    return cb('empty');
+    return cb('NOTFOUND');
 
   return cb(null, content[name]);
 };
@@ -227,6 +227,10 @@ describe('client API ', function() {
         clients[i].on('needPassword', function(cb) {
           return cb('1234#$@#%F,./.**');
         });
+        clients[i].on('needNewPassword', function(cb) {
+          return cb('1234#$@#%F,./.**');
+        });
+ 
       });
     });
 
@@ -637,7 +641,6 @@ describe('client API ', function() {
         }, function(err, str) {
           proxy.import(str, function(err) {
             should.not.exist(err);
-
             proxy.createWallet('1', '2', 1, 1, 'testnet',
               function(err) {
                 should.not.exist(err);
