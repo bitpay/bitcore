@@ -50,6 +50,32 @@ A Multisig HD Wallet Service, with minimun server trust.
  
     
   ```
+  
+  
+# Local  data
+
+Copayers store its extended private key and their copayer's extended public key locally. We call this the ``Wallet Critical Data``. Extended private keys are never sent to the server.
+  
+  
+# Password protection 
+
+Local data can be encrypted by the bit-wallet. Use the `-n` parameter to define the access level permited for no password operation. Available access levels are: `none` (password is required for everything, localfile is fully encrypted) `readonly`, `readwrite` and `full` (password is not ever required, local file is fully unencrypted) .
+
+### encrypts everything by default
+```
+bit create myWallet 2-3 --nopasswd none  
+Password:
+```
+
+### allows readonly operations without password (encrypts xpriv, and leave readonlySigningKey unencrypted)
+```
+bit create myWallet 2-3 -p --nopasswd readonly
+```
+### allows readwrite operations without password (only encrypts xpriv)
+```
+bit create myWallet 2-3 -p --nopasswd readwrite
+```
+ 
 
 # Advanced Operation
 
@@ -125,28 +151,6 @@ bit sign  e01e -i txproposals.dat -o txproposals-signed.dat
 bit sign -i txproposals-signed.dat
 ```
 
-# Password protection (TODO)
-
-### encrypts everything by default
-```
-bit create myWallet 2-3 -p password  
-# Or (interactive mode)
-bit create myWallet 2-3 -p
-Enter password:
-```
-
-### allows readonly operations without password (encrypts xpriv, and leave readonlySigningKey unencrypted)
-```
-bit create myWallet 2-3 -p --nopasswd:ro
-```
-### allows readwrite operations without password (only encrypts xpriv)
-```
-bit create myWallet 2-3 -p --nopasswd:rw
-```
- 
-# Local  data
-
-Copayers store its extended private key and their copayer's extended public key locally. We call this the ``Wallet Critical Data``. 
 
 # Security Considerations
  * Private keys are never send to the server. Copayers store them locally.
