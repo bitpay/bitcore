@@ -102,23 +102,8 @@ Run all the tests:
 gulp test
 ```
 
-Run the NodeJS tests with mocha:
-
-```sh
-gulp test:node
-```
-
-Run the browser tests with karma:
-
-```sh
-gulp test:browser
-```
-
-Create a test coverage report (you can open `coverage/lcov-report/index.html` to visualize it):
-
-```sh
-gulp coverage
-```
+You can also run just the NodeJS tests with `gulp test:node`, just the browser tests with `gulp test:browser`
+or create a test coverage report (you can open `coverage/lcov-report/index.html` to visualize it) with `gulp coverage`.
 
 ## License
 
