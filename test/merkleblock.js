@@ -129,17 +129,7 @@ describe('MerkleBlock', function() {
       data.JSON.forEach(function(json) {
         var b = MerkleBlock(JSON.stringify(json));
         b.validMerkleTree().should.equal(true);
-        b._validMerkleTree.should.equal(true);
       });
-    });
-
-    it('should respect _validMerkleTrees', function() {
-      var b = MerkleBlock(blockJSON);
-      b._validMerkleTree = false;
-      b.validMerkleTree().should.equal(false);
-      b._validMerkleTree = true;
-      b._validMerkleTree.should.equal(true);
-      b.validMerkleTree().should.equal(true);
     });
 
     it('should not validate merkleblocks with too many hashes', function() {
