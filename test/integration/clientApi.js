@@ -221,6 +221,108 @@ describe('client API ', function() {
   });
 
 
+  describe('Storage Encryption', function() {
+    beforeEach(function() {
+      _.each(_.range(3), function(i) {
+        clients[i].on('needPassword', function(cb) {
+          return cb('1234#$@#%F,./.**');
+        });
+      });
+    });
+
+
+    it('full encryption roundtrip', function(done) {
+      clients[0].setNopasswdAccess('none');
+      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
+        should.not.exist(err);
+
+        // Load it
+        var wcd = JSON.parse(fsmock._get('client0'));
+        fsmock._set('client1', wcd);
+        clients[1].getBalance(function(err, bal0) {
+          should.not.exist(err);
+          done();
+        });
+      });
+    });
+
+    it('should fail if wrong password', function(done) {
+      clients[0].setNopasswdAccess('none');
+      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
+        should.not.exist(err);
+
+        // Load it
+        var wcd = JSON.parse(fsmock._get('client0'));
+        fsmock._set('client4', wcd);
+
+        clients[4].on('needPassword', function(cb) {
+          return cb('1');
+        });
+
+        clients[4].getBalance(function(err, bal0) {
+          err.should.equal('NOTAUTH');
+          done();
+        });
+      });
+    });
+
+
+    it('should encrypt everything', function(done) {
+      clients[0].setNopasswdAccess('none');
+      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
+        should.not.exist(err);
+        var wcd = JSON.parse(fsmock._get('client0'));
+        _.keys(wcd).should.deep.equal(['enc']);
+        done();
+      });
+    });
+
+    it('should encrypt xpriv access', function(done) {
+      clients[0].setNopasswdAccess('readwrite');
+      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
+        should.not.exist(err);
+        var wcd = JSON.parse(fsmock._get('client0'));
+        should.exist(wcd.enc);
+        should.not.exist(wcd.xpriv);
+        done();
+      });
+    });
+
+    it('should encrypt rwkey', function(done) {
+      clients[0].setNopasswdAccess('readonly');
+      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
+        should.not.exist(err);
+        var wcd = JSON.parse(fsmock._get('client0'));
+        should.exist(wcd.enc);
+        should.not.exist(wcd.xpriv);
+        should.not.exist(wcd.rwPrivKey);
+        done();
+      });
+    });
+
+
+    _.each(['full', 'readwrite', 'readonly', 'none'], function(k) {
+      it('full encryption roundtrip: type:' + k, function(done) {
+        clients[0].setNopasswdAccess(k);
+        helpers.createAndJoinWallet(clients, 1, 1, function(err) {
+          should.not.exist(err);
+
+          // Load it
+          var wcd = JSON.parse(fsmock._get('client0'));
+          fsmock._set('client1', wcd);
+          clients[1].getBalance(function(err, bal0) {
+            should.not.exist(err);
+            done();
+          });
+        });
+      });
+    });
+
+    it.skip('should not ask for password if not needed (readonly)', function(done) {});
+    it.skip('should not ask for password if not needed (readwrite)', function(done) {});
+  });
+
+
   describe('Wallet Creation', function() {
     it('should check balance in a 1-1 ', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function(err) {
@@ -281,7 +383,7 @@ describe('client API ', function() {
         should.not.exist(err);
 
         // Get right response
-        clients[0]._load(function(err, data) {
+        clients[0]._load({}, function(err, data) {
           var url = '/v1/wallets/';
           clients[0]._doGetRequest(url, data, function(err, x) {
 
@@ -305,7 +407,7 @@ describe('client API ', function() {
         should.not.exist(err);
 
         // Get right response
-        var data = clients[0]._load(function(err, data) {
+        var data = clients[0]._load({}, function(err, data) {
           var url = '/v1/wallets/';
           clients[0]._doGetRequest(url, data, function(err, x) {
 
@@ -330,7 +432,7 @@ describe('client API ', function() {
         should.not.exist(err);
 
         // Get right response
-        var data = clients[0]._load(function(err, data) {
+        var data = clients[0]._load({}, function(err, data) {
           var url = '/v1/wallets/';
           clients[0]._doGetRequest(url, data, function(err, x) {
 
@@ -362,6 +464,12 @@ describe('client API ', function() {
         delete data.rwPrivKey;
         fsmock._set('client0', JSON.stringify(data));
         data.rwPrivKey = null;
+
+        // Overwrite client's API auth checks
+        clients[0]._processWcdAfterRead = function(rawData, xx, cb) {
+          return cb(null, rawData);
+        };
+
         clients[0].createAddress(function(err, x0) {
           err.code.should.equal('NOTAUTHORIZED');
           done();
@@ -377,6 +485,11 @@ describe('client API ', function() {
           should.not.exist(err);
           clients[1].import(str, function(err, wallet) {
             should.not.exist(err);
+
+            // Overwrite client's API auth checks
+            clients[1]._processWcdAfterRead = function(rawData, xx, cb) {
+              return cb(null, rawData);
+            };
 
             clients[1].createAddress(function(err, x0) {
               err.code.should.equal('NOTAUTHORIZED');
@@ -425,6 +538,12 @@ describe('client API ', function() {
               };
               clients[1].sendTxProposal(opts, function(err, x) {
                 should.not.exist(err);
+
+                // Overwrite client's API auth checks
+                clients[1]._processWcdAfterRead = function(rawData, xx, cb) {
+                  return cb(null, rawData);
+                };
+
                 clients[1].signTxProposal(x, function(err, tx) {
                   err.code.should.be.equal('BADSIGNATURES');
                   clients[1].getTxProposals({}, function(err, txs) {
@@ -656,7 +775,7 @@ describe('client API ', function() {
         should.not.exist(err);
 
         // Get right response
-        clients[0]._load(function(err, data) {
+        clients[0]._load({}, function(err, data) {
           var url = '/v1/addresses/';
           clients[0]._doPostRequest(url, {}, data, function(err, address) {
 
@@ -680,7 +799,7 @@ describe('client API ', function() {
         should.not.exist(err);
 
         // Get right response
-        clients[0]._load(function(err, data) {
+        clients[0]._load({}, function(err, data) {
           var url = '/v1/addresses/';
           clients[0]._doPostRequest(url, {}, data, function(err, address) {
 
@@ -865,7 +984,7 @@ describe('client API ', function() {
 
 
             // Get right response
-            clients[0]._load(function(err, data) {
+            clients[0]._load({}, function(err, data) {
               var url = '/v1/txproposals/';
               clients[0]._doGetRequest(url, data, function(err, txps) {
 
@@ -904,7 +1023,7 @@ describe('client API ', function() {
 
 
             // Get right response
-            clients[0]._load(function(err, data) {
+            clients[0]._load({}, function(err, data) {
               var url = '/v1/txproposals/';
               clients[0]._doGetRequest(url, data, function(err, txps) {
 
@@ -943,7 +1062,7 @@ describe('client API ', function() {
 
 
             // Get right response
-            clients[0]._load(function(err, data) {
+            clients[0]._load({}, function(err, data) {
               var url = '/v1/txproposals/';
               clients[0]._doGetRequest(url, data, function(err, txps) {
                 // Tamper data
