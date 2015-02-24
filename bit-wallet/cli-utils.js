@@ -109,7 +109,7 @@ Utils.parseAmount = function(text) {
 Utils.configureCommander = function(program) {
   program
     .version('0.0.1')
-    .option('-f, --file [filename]', 'Wallet file', 'bit.dat')
+    .option('-f, --file [filename]', 'Wallet file', process.env['HOME'] + '/.bit.dat')
     .option('-h, --host [host]', 'Bitcore Wallet Service URL (eg: http://localhost:3001/copay/api')
     .option('-v, --verbose', 'be verbose')
 
