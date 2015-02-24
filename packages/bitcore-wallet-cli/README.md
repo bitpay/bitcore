@@ -60,7 +60,7 @@ Copayers store its extended private key and their copayer's extended public key 
 
 Local data can be encrypted by the bit-wallet. Use the `-n` parameter to define the access level permited for no password operation. Available access levels are: `none` (password is required for everything, localfile is fully encrypted) `readonly`, `readwrite` and `full` (password is not ever required, local file is fully unencrypted) .
 
-``` bash
+``` shell
 # encrypts everything by default
 bit create myWallet 2-3 --nopasswd none  
 Password:
@@ -88,7 +88,7 @@ It is possible to export a wallet with restricted access level. The levels are:
 `readonly` will only export the Wallet's Extended PublicKeys, and only the derived private key required for signing 'GET' request (readonly) to the server. `readwrite` will add the derived private key required for signing all other requests (as POST) so readwrite access will be possible. And `full` will export also the Extended Private Key, which is necesary for signing wallet's transactions.  `bit import` can handle any for the levels correctly.
 
 
-```
+``` shell
 # full access
 bit export -o wallet.dat
 # readonly access 
@@ -102,13 +102,10 @@ bit import wallet.dat
 bit export --qr
 ```
 
-## If the wallet need to be migrated to other server, after importing the wallet use the `recreate` command 
-```
-bit recreate 
-```
+## If the wallet need to be migrated to other server, after importing the wallet use `bit-recreate` command 
 
 ## Export / Import with a new given password (TO Be Done)
-```
+``` shell
 bit export -o output.dat -e
 bit import output.dat 
 ```
@@ -119,7 +116,7 @@ bit import output.dat
 Air gapped (non connected) devices are supported. This setup can be useful is maximun security is needed, to prevent private keys to get compromissed. In this setup a device is installed without network access, and transactions are signed off-line. Transactions can be pulled from the server using a `proxy` device, then downloaded to a pendrive to be moved to the air-gapped device, signed there and then moved back the `proxy` device to be send back to the server. Note that Private keys are generated off-line in the airgapped device.
 
 
-```
+``` shell
 
 # On the Air-gapped device
 airgapped$ bit genkey
