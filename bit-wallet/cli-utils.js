@@ -53,11 +53,29 @@ Utils.getClient = function(args) {
     if (args.password) {
       return cb(args.password);
     } else {
-      read({ prompt: 'Password: ', silent: true }, function(er, password) {
+      read({
+        prompt: 'Password for ' + args.file + ' : ',
+        silent: true
+      }, function(er, password) {
         return cb(password);
       })
     }
   });
+
+  c.on('needNewPassword', function(cb) {
+    if (args.password) {
+      return cb(args.password);
+    } else {
+      read({
+        prompt: 'New Password: ',
+        silent: true
+      }, function(er, password) {
+        return cb(password);
+      })
+    }
+  });
+
+
 
   return c;
 }
