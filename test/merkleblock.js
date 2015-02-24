@@ -1,4 +1,7 @@
 'use strict';
+
+var should = require('chai').should();
+
 var bitcore = require('..');
 var MerkleBlock = bitcore.MerkleBlock;
 var BufferReader = bitcore.encoding.BufferReader;
@@ -143,7 +146,7 @@ describe('MerkleBlock', function() {
 
     it('should not validate merkleblocks with too few bit flags', function() {
       var b = MerkleBlock(blockJSON);
-      b.flags.pop()
+      b.flags.pop();
       b.validMerkleTree().should.equal(false);
     });
 
@@ -173,6 +176,22 @@ describe('MerkleBlock', function() {
       var tx = new Transaction().fromBuffer(new Buffer(serialized, 'hex'));
       var b = MerkleBlock(JSON.stringify(data.JSON[0]));
       b.hasTransaction(tx).should.equal(false);
+    });
+
+    it('should not match with merkle nodes', function() {
+      var b = MerkleBlock(JSON.stringify(data.JSON[0]));
+
+      var hashData = [
+        ['3612262624047ee87660be1a707519a443b1c1ce3d248cbfc6c15870f6c5daa2', false],
+        ['019f5b01d4195ecbc9398fbf3c3b1fa9bb3183301d7a1fb3bd174fcfa40a2b65', true],
+        ['41ed70551dd7e841883ab8f0b16bf04176b7d1480e4f0af9f3d4c3595768d068', false],
+        ['20d2a7bc994987302e5b1ac80fc425fe25f8b63169ea78e68fbaaefa59379bbf', false]
+      ];
+
+      hashData.forEach(function check(d){
+        b.hasTransaction(d[0]).should.equal(d[1]);
+      });
+
     });
 
   });
