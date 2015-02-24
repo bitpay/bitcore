@@ -149,7 +149,7 @@ There are a series of methods used for serialization:
 
 ## Serialization Checks
 
-When serializing, the Bitcore library performs a series of checks. These can be disabled by providing an object to the `serialize` method with the checks that you'll like to skip.
+When serializing, the bitcore library performs a series of checks. These can be disabled by providing an object to the `serialize` method with the checks that you'll like to skip.
 
 * `disableLargeFees` avoids checking that the fee is no more than `Transaction.FEE_PER_KB * Transaction.FEE_SECURITY_MARGIN * size_in_kb`.
 * `disableSmallFees` avoids checking that the fee is less than `Transaction.FEE_PER_KB * size_in_kb / Transaction.FEE_SECURITY_MARGIN`.
@@ -157,7 +157,7 @@ When serializing, the Bitcore library performs a series of checks. These can be 
 * `disableDustOutputs` does not check for dust outputs being generated
 * `disableMoreOutputThanInput` avoids checking that the sum of the output amounts is less than or equal to the sum of the amounts for the outputs being spent in the transaction
 
-These are the current default values in the Bitcore library involved on these checks:
+These are the current default values in the bitcore library involved on these checks:
 
 * `Transaction.FEE_PER_KB`: `10000` (satoshis per kilobyte)
 * `Transaction.FEE_SECURITY_MARGIN`: `15`
