@@ -24,7 +24,7 @@ var mn;
 try {
   mn = utils.parseMN(args[1]);
 } catch (ex) {
-  die(ex);
+  utils.die(ex);
 }
 
 var client = utils.getClient(program);
