@@ -124,7 +124,10 @@ bit import output.dat
 ```
 
 
-# Airgapped Operation
+# Airgapped Operation 
+
+
+## WARNING: THIS IS STILL WIP ##
 
 Air gapped (non connected) devices are supported. This setup can be useful is maximun security is needed, to prevent private keys to get compromissed. In this setup a device is installed without network access, and transactions are signed off-line. Transactions can be pulled from the server using a `proxy` device, then downloaded to a pendrive to be moved to the air-gapped device, signed there and then moved back the `proxy` device to be send back to the server. Note that Private keys are generated off-line in the airgapped device.
 
@@ -133,10 +136,12 @@ Air gapped (non connected) devices are supported. This setup can be useful is ma
 
 # On the Air-gapped device
 airgapped$ bit genkey
-airgapped$ bit export -o wallet.dat --readonly  #(or --readwrite if you need the proxy to be able to propose transactions)
+airgapped$ bit export -o toProxy  --access readwrite  #(or --readonly if proxy wont be allowed to propose transactions)
 
 # On the proxy machine
-proxy$ bit join secret -i wallet.dat
+proxy$ bit import toProxy
+proxy$ bit join secret      # Or bit create 
+proxy$ bit address          # Only if readwrite access was granted
 proxy$ bit balance
 
 # Export pending transaction to be signed offline
