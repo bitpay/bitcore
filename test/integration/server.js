@@ -1085,85 +1085,6 @@ describe('Copay server', function() {
         });
       });
     });
-
-  });
-
-
-  describe('#signTx and broadcast', function() {
-    var server, wallet;
-    beforeEach(function(done) {
-      helpers.createAndJoinWallet(1, 1, function(s, w) {
-        server = s;
-        wallet = w;
-        helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
-          done();
-        });
-      });
-    });
-
-    it('should sign and broadcast a tx', function(done) {
-      helpers.stubBroadcast('1122334455');
-      var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey);
-      server.createTx(txOpts, function(err, txp) {
-        should.not.exist(err);
-        txp.should.exist;
-        var txpid = txp.id;
-
-        server.getPendingTxs({}, function(err, txps) {
-          var txp = txps[0];
-          txp.id.should.equal(txpid);
-          var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey);
-          server.signTx({
-            txProposalId: txpid,
-            signatures: signatures,
-          }, function(err, txp) {
-            should.not.exist(err);
-            txp.status.should.equal('broadcasted');
-            txp.txid.should.equal('1122334455');
-            server.getTx({
-              id: txp.id
-            }, function(err, txp) {
-              txp.actions.length.should.equal(1);
-              txp.actions[0].copayerId.should.equal(wallet.copayers[0].id);
-              txp.actions[0].copayerName.should.equal(wallet.copayers[0].name);
-              done();
-            });
-          });
-        });
-      });
-    });
-
-
-    it('should keep tx as *accepted* if unable to broadcast it', function(done) {
-      helpers.stubBroadcastFail();
-      var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey);
-      server.createTx(txOpts, function(err, txp) {
-        should.not.exist(err);
-        txp.should.exist;
-        var txpid = txp.id;
-
-        server.getPendingTxs({}, function(err, txps) {
-          var txp = txps[0];
-          txp.id.should.equal(txpid);
-          var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey);
-          server.signTx({
-            txProposalId: txpid,
-            signatures: signatures,
-          }, function(err, txp) {
-            err.should.contain('broadcast');
-
-            server.getPendingTxs({}, function(err, txps) {
-              should.not.exist(err);
-              txps.length.should.equal(1);
-              var txp = txps[0];
-              txp.status.should.equal('accepted');
-              should.not.exist(txp.txid);
-              done();
-            });
-          });
-        });
-      });
-    });
   });
 
   describe('Tx proposal workflow', function() {
@@ -1196,7 +1117,7 @@ describe('Copay server', function() {
       });
     });
 
-    it('tx proposals should not be broadcast until quorum is reached', function(done) {
+    it('tx proposals should not be finally accepted until quorum is reached', function(done) {
       var txpId;
       async.waterfall([
 
@@ -1234,12 +1155,18 @@ describe('Copay server', function() {
             txps.length.should.equal(1);
             var txp = txps[0];
             txp.isPending().should.be.true;
-            txp.isRejected().should.be.false;
             txp.isAccepted().should.be.false;
+            txp.isRejected().should.be.false;
+            txp.isBroadcasted().should.be.false;
             txp.actions.length.should.equal(1);
             var action = txp.getActionBy(wallet.copayers[0].id);
             action.type.should.equal('accept');
-            next(null, txp);
+            server.getNotifications({}, function(err, notifications) {
+              should.not.exist(err);
+              var last = _.last(notifications);
+              last.type.should.not.equal('TxProposalFinallyAccepted');
+              next(null, txp);
+            });
           });
         },
         function(txp, next) {
@@ -1257,22 +1184,20 @@ describe('Copay server', function() {
         function(next) {
           server.getPendingTxs({}, function(err, txps) {
             should.not.exist(err);
-            txps.length.should.equal(0);
-            next();
-          });
-        },
-        function(next) {
-          server.getTx({
-            id: txpId
-          }, function(err, txp) {
-            should.not.exist(err);
-            txp.isPending().should.be.false;
-            txp.isRejected().should.be.false;
+            txps.length.should.equal(1);
+            var txp = txps[0];
+            txp.isPending().should.be.true;
             txp.isAccepted().should.be.true;
-            txp.isBroadcasted().should.be.true;
-            txp.txid.should.equal('999');
+            txp.isBroadcasted().should.be.false;
+            should.not.exist(txp.txid);
             txp.actions.length.should.equal(2);
-            done();
+            server.getNotifications({}, function(err, notifications) {
+              should.not.exist(err);
+              var last = _.last(notifications);
+              last.type.should.equal('TxProposalFinallyAccepted');
+              last.data.txProposalId.should.equal(txp.id);
+              done();
+            });
           });
         },
       ]);
@@ -1553,25 +1478,31 @@ describe('Copay server', function() {
       server.getPendingTxs({}, function(err, txs) {
         var tx = txs[2];
         var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
-        helpers.stubBroadcast('1122334455');
         sinon.spy(server, 'emit');
         server.signTx({
           txProposalId: tx.id,
           signatures: signatures,
         }, function(err) {
-          server.getNotifications({
-            limit: 3,
-            reverse: true,
-          }, function(err, notifications) {
+          should.not.exist(err);
+          helpers.stubBroadcast('1122334455');
+          server.broadcastTx({
+            txProposalId: tx.id
+          }, function(err, txp) {
             should.not.exist(err);
-            var types = _.pluck(notifications, 'type');
-            types.should.deep.equal(['NewOutgoingTx', 'TxProposalFinallyAccepted', 'TxProposalAcceptedBy']);
-            // Check also events
-            server.emit.getCall(0).args[0].type.should.equal('TxProposalAcceptedBy');
-            server.emit.getCall(1).args[0].type.should.equal('TxProposalFinallyAccepted');;
-            server.emit.getCall(2).args[0].type.should.equal('NewOutgoingTx');
+            server.getNotifications({
+              limit: 3,
+              reverse: true,
+            }, function(err, notifications) {
+              should.not.exist(err);
+              var types = _.pluck(notifications, 'type');
+              types.should.deep.equal(['NewOutgoingTx', 'TxProposalFinallyAccepted', 'TxProposalAcceptedBy']);
+              // Check also events
+              server.emit.getCall(0).args[0].type.should.equal('TxProposalAcceptedBy');
+              server.emit.getCall(1).args[0].type.should.equal('TxProposalFinallyAccepted');;
+              server.emit.getCall(2).args[0].type.should.equal('NewOutgoingTx');
 
-            done();
+              done();
+            });
           });
         });
       });
@@ -1860,44 +1791,50 @@ describe('Copay server', function() {
           should.not.exist(err);
           should.exist(tx);
 
-          helpers.stubBroadcast('1122334455');
           var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
           server.signTx({
             txProposalId: tx.id,
             signatures: signatures,
           }, function(err, tx) {
             should.not.exist(err);
-            var txs = [{
-              txid: '1122334455',
-              confirmations: 1,
-              fees: 5460,
-              minedTs: 1,
-              inputs: [{
-                address: tx.inputs[0].address,
-                amount: utxos[0].satoshis,
-              }],
-              outputs: [{
-                address: 'external',
-                amount: helpers.toSatoshi(80) - 5460,
-              }, {
-                address: changeAddresses[0].address,
-                amount: helpers.toSatoshi(20) - 5460,
-              }],
-            }];
-            helpers.stubHistory(txs);
 
-            server.getTxHistory({}, function(err, txs) {
+            helpers.stubBroadcast('1122334455');
+            server.broadcastTx({
+              txProposalId: tx.id
+            }, function(err, txp) {
               should.not.exist(err);
-              should.exist(txs);
-              txs.length.should.equal(1);
-              var tx = txs[0];
-              tx.action.should.equal('sent');
-              tx.amount.should.equal(helpers.toSatoshi(80));
-              tx.message.should.equal('some message');
-              tx.actions.length.should.equal(1);
-              tx.actions[0].type.should.equal('accept');
-              tx.actions[0].copayerName.should.equal('copayer 1');
-              done();
+              var txs = [{
+                txid: '1122334455',
+                confirmations: 1,
+                fees: 5460,
+                minedTs: 1,
+                inputs: [{
+                  address: tx.inputs[0].address,
+                  amount: utxos[0].satoshis,
+                }],
+                outputs: [{
+                  address: 'external',
+                  amount: helpers.toSatoshi(80) - 5460,
+                }, {
+                  address: changeAddresses[0].address,
+                  amount: helpers.toSatoshi(20) - 5460,
+                }],
+              }];
+              helpers.stubHistory(txs);
+
+              server.getTxHistory({}, function(err, txs) {
+                should.not.exist(err);
+                should.exist(txs);
+                txs.length.should.equal(1);
+                var tx = txs[0];
+                tx.action.should.equal('sent');
+                tx.amount.should.equal(helpers.toSatoshi(80));
+                tx.message.should.equal('some message');
+                tx.actions.length.should.equal(1);
+                tx.actions[0].type.should.equal('accept');
+                tx.actions[0].copayerName.should.equal('copayer 1');
+                done();
+              });
             });
           });
         });
