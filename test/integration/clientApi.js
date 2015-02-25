@@ -230,7 +230,7 @@ describe('client API ', function() {
         clients[i].on('needNewPassword', function(cb) {
           return cb('1234#$@#%F,./.**');
         });
- 
+
       });
     });
 
@@ -722,7 +722,7 @@ describe('client API ', function() {
 
                 clients[0].signTxProposal(txp, function(err, txp) {
                   should.not.exist(err);
-                  txp.status.should.equal('broadcasted');
+                  txp.status.should.equal('accepted');
                   done();
                 });
               });
@@ -1141,17 +1141,20 @@ describe('client API ', function() {
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hello 1-1',
           };
-          clients[0].sendTxProposal(opts, function(err, x) {
+          clients[0].sendTxProposal(opts, function(err, txp) {
             should.not.exist(err);
-            x.requiredRejections.should.equal(1);
-            x.requiredSignatures.should.equal(1);
-            x.status.should.equal('pending');
-            x.changeAddress.path.should.equal('m/2147483647/1/0');
-            clients[0].signTxProposal(x, function(err, tx) {
+            txp.requiredRejections.should.equal(1);
+            txp.requiredSignatures.should.equal(1);
+            txp.status.should.equal('pending');
+            txp.changeAddress.path.should.equal('m/2147483647/1/0');
+            clients[0].signTxProposal(txp, function(err, txp) {
               should.not.exist(err);
-              tx.status.should.equal('broadcasted');
-              tx.txid.should.equal((new Bitcore.Transaction(blockExplorerMock.lastBroadcasted)).id);
-              done();
+              txp.status.should.equal('accepted');
+              clients[0].broadcastTxProposal(txp, function(err, txp) {
+                txp.status.should.equal('broadcasted');
+                txp.txid.should.equal((new Bitcore.Transaction(blockExplorerMock.lastBroadcasted)).id);
+                done();
+              });
             });
           });
         });
@@ -1168,14 +1171,14 @@ describe('client API ', function() {
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hello 1-1',
           };
-          clients[0].sendTxProposal(opts, function(err, x) {
+          clients[0].sendTxProposal(opts, function(err, txp) {
             should.not.exist(err);
             clients[0].getStatus(function(err, st) {
               should.not.exist(err);
-              var x = st.pendingTxps[0];
-              x.status.should.equal('pending');
-              x.requiredRejections.should.equal(2);
-              x.requiredSignatures.should.equal(2);
+              var txp = st.pendingTxps[0];
+              txp.status.should.equal('pending');
+              txp.requiredRejections.should.equal(2);
+              txp.requiredSignatures.should.equal(2);
               var w = st.wallet;
               w.copayers.length.should.equal(3);
               w.status.should.equal('complete');
@@ -1184,14 +1187,17 @@ describe('client API ', function() {
               b.lockedAmount.should.equal(1000000000);
 
 
-              clients[0].signTxProposal(x, function(err, tx) {
+              clients[0].signTxProposal(txp, function(err, txp) {
                 should.not.exist(err, err);
-                tx.status.should.equal('pending');
-                clients[1].signTxProposal(x, function(err, tx) {
+                txp.status.should.equal('pending');
+                clients[1].signTxProposal(txp, function(err, txp) {
                   should.not.exist(err);
-                  tx.status.should.equal('broadcasted');
-                  tx.txid.should.equal((new Bitcore.Transaction(blockExplorerMock.lastBroadcasted)).id);
-                  done();
+                  txp.status.should.equal('accepted');
+                  clients[1].broadcastTxProposal(txp, function(err, txp) {
+                    txp.status.should.equal('broadcasted');
+                    txp.txid.should.equal((new Bitcore.Transaction(blockExplorerMock.lastBroadcasted)).id);
+                    done();
+                  });
                 });
               });
             });
@@ -1211,21 +1217,24 @@ describe('client API ', function() {
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hello 1-1',
           };
-          clients[0].sendTxProposal(opts, function(err, x) {
+          clients[0].sendTxProposal(opts, function(err, txp) {
             should.not.exist(err);
-            x.status.should.equal('pending');
-            x.requiredRejections.should.equal(2);
-            x.requiredSignatures.should.equal(2);
-            clients[0].rejectTxProposal(x, 'wont sign', function(err, tx) {
+            txp.status.should.equal('pending');
+            txp.requiredRejections.should.equal(2);
+            txp.requiredSignatures.should.equal(2);
+            clients[0].rejectTxProposal(txp, 'wont sign', function(err, txp) {
               should.not.exist(err, err);
-              tx.status.should.equal('pending');
-              clients[1].signTxProposal(x, function(err, tx) {
+              txp.status.should.equal('pending');
+              clients[1].signTxProposal(txp, function(err, txp) {
                 should.not.exist(err);
-                clients[2].signTxProposal(x, function(err, tx) {
+                clients[2].signTxProposal(txp, function(err, txp) {
                   should.not.exist(err);
-                  tx.status.should.equal('broadcasted');
-                  tx.txid.should.equal((new Bitcore.Transaction(blockExplorerMock.lastBroadcasted)).id);
-                  done();
+                  txp.status.should.equal('accepted');
+                  clients[2].broadcastTxProposal(txp, function(err, txp) {
+                    txp.status.should.equal('broadcasted');
+                    txp.txid.should.equal((new Bitcore.Transaction(blockExplorerMock.lastBroadcasted)).id);
+                    done();
+                  });
                 });
               });
             });
@@ -1245,21 +1254,21 @@ describe('client API ', function() {
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hello 1-1',
           };
-          clients[0].sendTxProposal(opts, function(err, x) {
+          clients[0].sendTxProposal(opts, function(err, txp) {
             should.not.exist(err);
-            x.status.should.equal('pending');
-            x.requiredRejections.should.equal(2);
-            x.requiredSignatures.should.equal(3);
+            txp.status.should.equal('pending');
+            txp.requiredRejections.should.equal(2);
+            txp.requiredSignatures.should.equal(3);
 
-            clients[0].rejectTxProposal(x, 'wont sign', function(err, tx) {
+            clients[0].rejectTxProposal(txp, 'wont sign', function(err, txp) {
               should.not.exist(err, err);
-              tx.status.should.equal('pending');
-              clients[1].signTxProposal(x, function(err, tx) {
+              txp.status.should.equal('pending');
+              clients[1].signTxProposal(txp, function(err, txp) {
                 should.not.exist(err);
-                tx.status.should.equal('pending');
-                clients[2].rejectTxProposal(x, 'me neither', function(err, tx) {
+                txp.status.should.equal('pending');
+                clients[2].rejectTxProposal(txp, 'me neither', function(err, txp) {
                   should.not.exist(err);
-                  tx.status.should.equal('rejected');
+                  txp.status.should.equal('rejected');
                   done();
                 });
               });
@@ -1280,19 +1289,21 @@ describe('client API ', function() {
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hello 1-1',
           };
-          clients[0].sendTxProposal(opts, function(err, x) {
+          clients[0].sendTxProposal(opts, function(err, txp) {
             should.not.exist(err);
-            x.status.should.equal('pending');
-            x.requiredRejections.should.equal(2);
-            x.requiredSignatures.should.equal(2);
-            clients[0].signTxProposal(x, function(err, tx) {
-              should.not.exist(err, err);
-              tx.status.should.equal('pending');
-              clients[0].signTxProposal(x, function(err, tx) {
+            txp.status.should.equal('pending');
+            txp.requiredRejections.should.equal(2);
+            txp.requiredSignatures.should.equal(2);
+            clients[0].signTxProposal(txp, function(err, txp) {
+              should.not.exist(err);
+              txp.status.should.equal('pending');
+              clients[0].signTxProposal(txp, function(err) {
+                should.exist(err);
                 err.code.should.contain('CVOTED');
-                clients[1].rejectTxProposal(x, 'xx', function(err, tx) {
+                clients[1].rejectTxProposal(txp, 'xx', function(err, txp) {
                   should.not.exist(err);
-                  clients[1].rejectTxProposal(x, 'xx', function(err, tx) {
+                  clients[1].rejectTxProposal(txp, 'xx', function(err) {
+                    should.exist(err);
                     err.code.should.contain('CVOTED');
                     done();
                   });
