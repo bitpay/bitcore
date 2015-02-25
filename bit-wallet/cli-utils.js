@@ -6,7 +6,11 @@ var Utils = function() {};
 
 var die = Utils.die = function(err) {
   if (err) {
-    console.error(err);
+    if (err.code && err.code == 'ECONNREFUSED') {
+      console.error('Could not connect to Bicore Wallet Service');
+    } else {
+      console.error(err);
+    }
     process.exit(1);
   }
 };
@@ -49,14 +53,19 @@ Utils.getClient = function(args) {
   if (args.nopasswd)
     c.setNopasswdAccess(args.nopasswd);
 
+  var setPassword;
   c.on('needPassword', function(cb) {
     if (args.password) {
       return cb(args.password);
     } else {
+      if (setPassword)
+        return cb(setPassword);
+
       read({
         prompt: 'Password for ' + args.file + ' : ',
         silent: true
       }, function(er, password) {
+        setPassword = password;
         return cb(password);
       })
     }

@@ -9,6 +9,7 @@ program = utils.configureCommander(program);
 
 program
   .version('0.0.1')
+  .option('-n, --nopasswd [level]', 'Set access for no password usage: none(default), readonly, readwrite, full', 'none')
   .usage('import [options] <file>')
   .parse(process.argv);
 
