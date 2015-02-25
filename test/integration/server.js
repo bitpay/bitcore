@@ -1487,7 +1487,7 @@ describe('Copay server', function() {
           helpers.stubBroadcast('1122334455');
           server.broadcastTx({
             txProposalId: tx.id
-          }, function(err, txid) {
+          }, function(err, txp) {
             should.not.exist(err);
             server.getNotifications({
               limit: 3,
@@ -1801,7 +1801,7 @@ describe('Copay server', function() {
             helpers.stubBroadcast('1122334455');
             server.broadcastTx({
               txProposalId: tx.id
-            }, function(err, txid) {
+            }, function(err, txp) {
               should.not.exist(err);
               var txs = [{
                 txid: '1122334455',
