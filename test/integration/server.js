@@ -993,7 +993,7 @@ describe('Copay server', function() {
             should.not.exist(err);
             txs.should.be.empty;
             server.getTx({
-              id: txid
+              txProposalId: txid
             }, function(err, tx) {
               var actors = tx.getActors();
               actors.length.should.equal(1);
@@ -1237,7 +1237,7 @@ describe('Copay server', function() {
         function(next) {
           helpers.getAuthServer(wallet.copayers[2].id, function(server) {
             server.getTx({
-              id: txid
+              txProposalId: txid
             }, function(err, tx) {
               should.not.exist(err);
               var signatures = helpers.clientSign(tx, TestData.copayers[2].xPrivKey);
@@ -1292,7 +1292,7 @@ describe('Copay server', function() {
       }, function(err) {
         should.not.exist(err);
         server.getTx({
-          id: txpid
+          txProposalId: txpid
         }, function(err, txp) {
           should.not.exist(err);
           txp.txid.should.equal('999');
@@ -1343,7 +1343,7 @@ describe('Copay server', function() {
       }, function(err) {
         should.exist(err);
         server.getTx({
-          id: txpid
+          txProposalId: txpid
         }, function(err, txp) {
           should.not.exist(err);
           should.not.exist(txp.txid);
@@ -1539,7 +1539,7 @@ describe('Copay server', function() {
         },
         function(next) {
           server.getTx({
-            id: txpId
+            txProposalId: txpId
           }, function(err, txp) {
             should.not.exist(err);
             txp.isPending().should.be.false;
