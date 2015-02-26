@@ -1267,7 +1267,6 @@ describe('Copay server', function() {
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
-            helpers.stubBroadcastFail();
             var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey);
             server.signTx({
               txProposalId: txp.id,
@@ -1276,6 +1275,7 @@ describe('Copay server', function() {
               should.not.exist(err);
               should.exist(txp);
               txp.isAccepted().should.be.true;
+              txp.isBroadcasted().should.be.false;
               txpid = txp.id;
               done();
             });
