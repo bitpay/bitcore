@@ -84,10 +84,8 @@ fsmock._set = function(name, data) {
   return content[name] = data;
 };
 
-
 var blockExplorerMock = {};
 blockExplorerMock.utxos = [];
-
 
 
 
@@ -112,7 +110,6 @@ blockExplorerMock.setUtxo = function(address, amount, m) {
   });
 };
 
-
 blockExplorerMock.broadcast = function(raw, cb) {
   blockExplorerMock.lastBroadcasted = raw;
   return cb(null, (new Bitcore.Transaction(raw)).id);
@@ -121,6 +118,8 @@ blockExplorerMock.broadcast = function(raw, cb) {
 blockExplorerMock.reset = function() {
   blockExplorerMock.utxos = [];
 };
+
+
 
 describe('client API ', function() {
   var clients, app;
@@ -217,9 +216,7 @@ describe('client API ', function() {
           done();
         });
     });
-
   });
-
 
   describe('Storage Encryption', function() {
     beforeEach(function() {
@@ -325,7 +322,6 @@ describe('client API ', function() {
     it.skip('should not ask for password if not needed (readonly)', function(done) {});
     it.skip('should not ask for password if not needed (readwrite)', function(done) {});
   });
-
 
   describe('Wallet Creation', function() {
     it('should check balance in a 1-1 ', function(done) {
@@ -563,6 +559,7 @@ describe('client API ', function() {
       });
     });
   });
+
   describe('Air gapped related flows', function() {
     it('should be able get Tx proposals from a file', function(done) {
       helpers.createAndJoinWallet(clients, 1, 2, function(err, w) {
@@ -823,9 +820,7 @@ describe('client API ', function() {
         });
       });
     });
-
   });
-
 
   describe('Wallet Backups and Mobility', function() {
 
@@ -869,9 +864,8 @@ describe('client API ', function() {
     });
   });
 
-
   describe('Transaction Proposals Creation and Locked funds', function() {
-    it('Should lock and release funds', function(done) {
+    it('Should lock and release funds through rejection', function(done) {
       helpers.createAndJoinWallet(clients, 2, 2, function(err, w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
@@ -892,6 +886,37 @@ describe('client API ', function() {
               clients[0].rejectTxProposal(x, 'no', function(err, z) {
                 should.not.exist(err);
                 z.status.should.equal('rejected');
+                clients[0].sendTxProposal(opts, function(err, x) {
+                  should.not.exist(err);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+    it('Should lock and release funds through removal', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 2, function(err, w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          blockExplorerMock.setUtxo(x0, 1, 2);
+          blockExplorerMock.setUtxo(x0, 1, 2);
+          var opts = {
+            amount: 120000000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hello 1-1',
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+
+            clients[0].sendTxProposal(opts, function(err, y) {
+              err.code.should.contain('INSUFFICIENTFUNDS');
+
+              clients[0].removeTxProposal(x, function(err) {
+                should.not.exist(err);
+
                 clients[0].sendTxProposal(opts, function(err, x) {
                   should.not.exist(err);
                   done();
