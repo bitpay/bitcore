@@ -14,6 +14,7 @@ var Bitcore = require('bitcore');
 var WalletUtils = require('../../lib/walletutils');
 var ExpressApp = require('../../lib/expressapp');
 var Storage = require('../../lib/storage');
+var TestData = require('../testdata');
 
 
 var helpers = {};
@@ -84,10 +85,8 @@ fsmock._set = function(name, data) {
   return content[name] = data;
 };
 
+
 var blockExplorerMock = {};
-blockExplorerMock.utxos = [];
-
-
 
 blockExplorerMock.getUnspentUtxos = function(dummy, cb) {
   var ret = _.map(blockExplorerMock.utxos || [], function(x) {
@@ -115,8 +114,17 @@ blockExplorerMock.broadcast = function(raw, cb) {
   return cb(null, (new Bitcore.Transaction(raw)).id);
 };
 
+blockExplorerMock.setHistory = function(txs) {
+  blockExplorerMock.txHistory = txs;
+};
+
+blockExplorerMock.getTransactions = function(addresses, cb) {
+  return cb(null, blockExplorerMock.txHistory || []);
+};
+
 blockExplorerMock.reset = function() {
   blockExplorerMock.utxos = [];
+  blockExplorerMock.txHistory = [];
 };
 
 
@@ -1339,5 +1347,36 @@ describe('client API ', function() {
         });
       });
     });
+  });
+
+  describe('Transaction history', function() {
+    it('should get transaction history', function(done) {
+      blockExplorerMock.setHistory(TestData.history);
+      helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          clients[0].getTxHistory({}, function(err, txs) {
+            should.not.exist(err);
+            should.exist(txs);
+            txs.length.should.equal(2);
+            done();
+          });
+        });
+      });
+    });
+    it('should get empty transaction history when there are no addresses', function(done) {
+      blockExplorerMock.setHistory(TestData.history);
+      helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
+        clients[0].getTxHistory({}, function(err, txs) {
+          should.not.exist(err);
+          should.exist(txs);
+          txs.length.should.equal(0);
+          done();
+        });
+      });
+    });
+    it.skip('should get transaction history decorated with proposal', function(done) {});
+    it.skip('should get paginated transaction history', function(done) {});
   });
 });
