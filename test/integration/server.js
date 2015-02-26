@@ -1571,7 +1571,7 @@ describe('Copay server', function() {
       });
     });
 
-    it('should get transaction proposal', function(done) {
+    it('should get own transaction proposal', function(done) {
       server.getTx({
         txProposalId: txpid
       }, function(err, txp) {
@@ -1581,6 +1581,7 @@ describe('Copay server', function() {
         done();
       });
     });
+    it.skip('should get someone elses transaction proposal', function(done) {});
     it('should fail to get non-existent transaction proposal', function(done) {
       server.getTx({
         txProposalId: 'dummy'
@@ -1591,6 +1592,8 @@ describe('Copay server', function() {
         done();
       });
     });
+    it.skip('should get accepted/rejected transaction proposal', function(done) {});
+    it.skip('should get broadcasted transaction proposal', function(done) {});
   });
 
   describe('#getTxs', function() {
