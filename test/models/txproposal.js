@@ -4,7 +4,7 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var TXP = require('../lib/model/txproposal');
+var TXP = require('../../lib/model/txproposal');
 var Bitcore = require('bitcore');
 
 
