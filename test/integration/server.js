@@ -1553,6 +1553,45 @@ describe('Copay server', function() {
     });
   });
 
+  describe('#getTx', function() {
+    var server, wallet, txpid;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 3, function(s, w) {
+        server = s;
+        wallet = w;
+        helpers.stubUtxos(server, wallet, 10, function() {
+          var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, 'some message', TestData.copayers[0].privKey);
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            txpid = txp.id;
+            done();
+          });
+        });
+      });
+    });
+
+    it('should get transaction proposal', function(done) {
+      server.getTx({
+        txProposalId: txpid
+      }, function(err, txp) {
+        should.not.exist(err);
+        should.exist(txp);
+        txp.id.should.equal(txpid);
+        done();
+      });
+    });
+    it('should fail to get non-existent transaction proposal', function(done) {
+      server.getTx({
+        txProposalId: 'dummy'
+      }, function(err, txp) {
+        should.exist(err);
+        should.not.exist(txp);
+        err.message.should.contain('not found');
+        done();
+      });
+    });
+  });
 
   describe('#getTxs', function() {
     var server, wallet, clock;
