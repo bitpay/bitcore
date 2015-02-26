@@ -228,12 +228,11 @@ describe('Copay server', function() {
           .privateKey
           .toString();
 
-        var message = 'hola';
-        var sig = WalletUtils.signMessage(message, priv);
+        var sig = WalletUtils.signMessage('hello world', priv);
 
         WalletService.getInstanceWithAuth({
           copayerId: wallet.copayers[0].id,
-          message: message,
+          message: 'hello world',
           signature: sig,
         }, function(err, server) {
           should.not.exist(err);
@@ -1274,7 +1273,7 @@ describe('Copay server', function() {
               txProposalId: txp.id,
               signatures: signatures,
             }, function(err, txp) {
-              should.exist(err);
+              should.not.exist(err);
               should.exist(txp);
               txp.isAccepted().should.be.true;
               txpid = txp.id;
@@ -1313,9 +1312,8 @@ describe('Copay server', function() {
         should.not.exist(err);
         server.broadcastTx({
           txProposalId: txpid
-        }, function(err, txid) {
+        }, function(err) {
           should.exist(err);
-          should.not.exist(txid);
           err.code.should.equal('TXALREADYBROADCASTED');
           done();
         });
@@ -1330,10 +1328,28 @@ describe('Copay server', function() {
         should.exist(txp);
         server.broadcastTx({
           txProposalId: txp.id
-        }, function(err, txid) {
+        }, function(err) {
           should.exist(err);
-          should.not.exist(txid);
           err.code.should.equal('TXNOTACCEPTED');
+          done();
+        });
+      });
+    });
+
+    it('should keep tx as accepted if unable to broadcast it', function(done) {
+      helpers.stubBroadcastFail();
+      server.broadcastTx({
+        txProposalId: txpid
+      }, function(err) {
+        should.exist(err);
+        server.getTx({
+          id: txpid
+        }, function(err, txp) {
+          should.not.exist(err);
+          should.not.exist(txp.txid);
+          txp.isBroadcasted().should.be.false;
+          should.not.exist(txp.broadcastedOn);
+          txp.isAccepted().should.be.true;
           done();
         });
       });
