@@ -16,11 +16,8 @@ var args = program.args;
 var txpid = args[0] || '';
 
 var client = utils.getClient(program);
-client.getTxProposals({}, function(err, txps) {
-  utils.die(err);
 
-  var txp = utils.findOneTxProposal(txps, txpid);
-
+function end(txp) {
   if (program.output) {
     client.getSignatures(txp, function(err, signatures) {
       utils.die(err);
@@ -34,6 +31,7 @@ client.getTxProposals({}, function(err, txps) {
   } else {
 
     if (program.input) {
+
       var infile = JSON.parse(fs.readFileSync(program.input));
       if (infile.id != txp.id)
         utils.die('Signatures does not match Transaction')
@@ -49,4 +47,17 @@ client.getTxProposals({}, function(err, txps) {
         console.log('Transaction signed by you.');
     });
   }
-});
+
+};
+
+if (program.input && program.output) {
+  var inFile = JSON.parse(fs.readFileSync(program.input));
+  end(inFile.txps[0]);
+} else {
+  client.getTxProposals({}, function(err, txps) {
+    utils.die(err);
+    var txp = utils.findOneTxProposal(txps, txpid);
+    utils.die(err);
+    end(txp);
+  });
+}
