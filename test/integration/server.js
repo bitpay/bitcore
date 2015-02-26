@@ -228,12 +228,11 @@ describe('Copay server', function() {
           .privateKey
           .toString();
 
-        var message = 'hola';
-        var sig = WalletUtils.signMessage(message, priv);
+        var sig = WalletUtils.signMessage('hello world', priv);
 
         WalletService.getInstanceWithAuth({
           copayerId: wallet.copayers[0].id,
-          message: message,
+          message: 'hello world',
           signature: sig,
         }, function(err, server) {
           should.not.exist(err);
@@ -302,7 +301,7 @@ describe('Copay server', function() {
       };
       server.createWallet(opts, function(err, walletId) {
         should.not.exist(walletId);
-        err.should.exist;
+        should.exist(err);
         err.message.should.contain('name');
         done();
       });
@@ -342,6 +341,21 @@ describe('Copay server', function() {
           return cb();
         });
       }, function(err) {
+        done();
+      });
+    });
+
+    it('should fail to create wallet with invalid pubKey argument', function(done) {
+      var opts = {
+        name: 'my wallet',
+        m: 2,
+        n: 3,
+        pubKey: 'dummy',
+      };
+      server.createWallet(opts, function(err, walletId) {
+        should.not.exist(walletId);
+        should.exist(err);
+        err.message.should.contain('Invalid public key');
         done();
       });
     });
@@ -397,7 +411,7 @@ describe('Copay server', function() {
       };
       server.joinWallet(copayerOpts, function(err, result) {
         should.not.exist(result);
-        err.should.exist;
+        should.exist(err);
         err.message.should.contain('name');
         done();
       });
@@ -451,6 +465,40 @@ describe('Copay server', function() {
       });
     });
 
+    it('should fail two wallets with same xPubKey', function(done) {
+      var copayerOpts = {
+        walletId: walletId,
+        name: 'me',
+        xPubKey: TestData.copayers[0].xPubKey,
+        xPubKeySignature: TestData.copayers[0].xPubKeySignature,
+      };
+      server.joinWallet(copayerOpts, function(err) {
+        should.not.exist(err);
+
+        var walletOpts = {
+          name: 'my other wallet',
+          m: 1,
+          n: 1,
+          pubKey: TestData.keyPair.pub,
+        };
+        server.createWallet(walletOpts, function(err, walletId) {
+          should.not.exist(err);
+          copayerOpts = {
+            walletId: walletId,
+            name: 'me',
+            xPubKey: TestData.copayers[0].xPubKey,
+            xPubKeySignature: TestData.copayers[0].xPubKeySignature,
+          };
+          server.joinWallet(copayerOpts, function(err) {
+            should.exist(err);
+            err.code.should.equal('CREGISTERED');
+            err.message.should.equal('Copayer ID already registered on server');
+            done();
+          });
+        });
+      });
+    });
+
     it('should fail to join with bad formated signature', function(done) {
       var copayerOpts = {
         walletId: walletId,
@@ -471,7 +519,7 @@ describe('Copay server', function() {
         xPubKey: TestData.copayers[0].xPubKey[0],
       };
       server.joinWallet(copayerOpts, function(err) {
-        err.should.exist;
+        should.exist(err);
         err.message.should.contain('argument missing');
         done();
       });
@@ -579,7 +627,7 @@ describe('Copay server', function() {
     it('should not create address if unable to store it', function(done) {
       sinon.stub(server.storage, 'storeAddressAndWallet').yields('dummy error');
       server.createAddress({}, function(err, address) {
-        err.should.exist;
+        should.exist(err);
         should.not.exist(address);
 
         server.getMainAddresses({}, function(err, addresses) {
@@ -621,7 +669,7 @@ describe('Copay server', function() {
           helpers.getAuthServer(result.copayerId, function(server) {
             server.createAddress({}, function(err, address) {
               should.not.exist(address);
-              err.should.exist;
+              should.exist(err);
               err.message.should.contain('not complete');
               done();
             });
@@ -652,7 +700,7 @@ describe('Copay server', function() {
             var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, null, TestData.copayers[0].privKey);
             server.createTx(txOpts, function(err, tx) {
               should.not.exist(tx);
-              err.should.exist;
+              should.exist(err);
               err.message.should.contain('not complete');
               done();
             });
@@ -710,7 +758,7 @@ describe('Copay server', function() {
 
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(tx);
-          err.should.exist;
+          should.exist(err);
           err.message.should.equal('Invalid proposal signature');
           done();
         });
@@ -723,7 +771,7 @@ describe('Copay server', function() {
 
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(tx);
-          err.should.exist;
+          should.exist(err);
           err.message.should.equal('Invalid proposal signature');
           done();
         });
@@ -736,7 +784,7 @@ describe('Copay server', function() {
 
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(tx);
-          err.should.exist;
+          should.exist(err);
           err.code.should.equal('INVALIDADDRESS');
           err.message.should.equal('Invalid address');
           done();
@@ -755,6 +803,16 @@ describe('Copay server', function() {
           err.message.should.equal('Incorrect address network');
           done();
         });
+      });
+    });
+
+    it('should fail to create tx for invalid amount', function(done) {
+      var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0, null, TestData.copayers[0].privKey);
+      server.createTx(txOpts, function(err, tx) {
+        should.not.exist(tx);
+        should.exist(err);
+        err.message.should.equal('Invalid amount');
+        done();
       });
     });
 
@@ -798,6 +856,23 @@ describe('Copay server', function() {
           should.exist(err);
           err.code.should.equal('DUSTAMOUNT');
           err.message.should.equal('Amount below dust threshold');
+          done();
+        });
+      });
+    });
+
+    it('should fail gracefully when bitcore throws exception on raw tx creation', function(done) {
+      helpers.stubUtxos(server, wallet, [10], function() {
+        var bitcoreStub = sinon.stub(Bitcore, 'Transaction');
+        bitcoreStub.throws({
+          name: 'dummy',
+          message: 'dummy exception'
+        });
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 2, null, TestData.copayers[0].privKey);
+        server.createTx(txOpts, function(err, tx) {
+          should.exist(err);
+          err.message.should.equal('dummy exception');
+          bitcoreStub.restore();
           done();
         });
       });
@@ -889,7 +964,7 @@ describe('Copay server', function() {
     var server, wallet, txid;
 
     beforeEach(function(done) {
-      helpers.createAndJoinWallet(2, 3, function(s, w) {
+      helpers.createAndJoinWallet(2, 2, function(s, w) {
         server = s;
         wallet = w;
         helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
@@ -916,19 +991,62 @@ describe('Copay server', function() {
           should.not.exist(err);
           server.getPendingTxs({}, function(err, txs) {
             should.not.exist(err);
-            var tx = txs[0];
-            tx.id.should.equal(txid);
-
-            var actors = tx.getActors();
-            actors.length.should.equal(1);
-            actors[0].should.equal(wallet.copayers[0].id);
-            var action = tx.getActionBy(wallet.copayers[0].id);
-            action.type.should.equal('reject');
-            action.comment.should.equal('some reason');
-            done();
+            txs.should.be.empty;
+            server.getTx({
+              txProposalId: txid
+            }, function(err, tx) {
+              var actors = tx.getActors();
+              actors.length.should.equal(1);
+              actors[0].should.equal(wallet.copayers[0].id);
+              var action = tx.getActionBy(wallet.copayers[0].id);
+              action.type.should.equal('reject');
+              action.comment.should.equal('some reason');
+              done();
+            });
           });
         });
       });
+    });
+
+    it('should fail to reject non-pending TX', function(done) {
+      async.waterfall([
+
+        function(next) {
+          server.getPendingTxs({}, function(err, txs) {
+            var tx = txs[0];
+            tx.id.should.equal(txid);
+            next();
+          });
+        },
+        function(next) {
+          server.rejectTx({
+            txProposalId: txid,
+            reason: 'some reason',
+          }, function(err) {
+            should.not.exist(err);
+            next();
+          });
+        },
+        function(next) {
+          server.getPendingTxs({}, function(err, txs) {
+            should.not.exist(err);
+            txs.should.be.empty;
+            next();
+          });
+        },
+        function(next) {
+          helpers.getAuthServer(wallet.copayers[1].id, function(server) {
+            server.rejectTx({
+              txProposalId: txid,
+              reason: 'some other reason',
+            }, function(err) {
+              should.exist(err);
+              err.code.should.equal('TXNOTPENDING');
+              done();
+            });
+          });
+        },
+      ]);
     });
   });
 
@@ -1085,7 +1203,159 @@ describe('Copay server', function() {
         });
       });
     });
+
+    it('should fail to sign a non-pending TX', function(done) {
+      async.waterfall([
+
+        function(next) {
+          server.rejectTx({
+            txProposalId: txid,
+            reason: 'some reason',
+          }, function(err) {
+            should.not.exist(err);
+            next();
+          });
+        },
+        function(next) {
+          helpers.getAuthServer(wallet.copayers[1].id, function(server) {
+            server.rejectTx({
+              txProposalId: txid,
+              reason: 'some reason',
+            }, function(err) {
+              should.not.exist(err);
+              next();
+            });
+          });
+        },
+        function(next) {
+          server.getPendingTxs({}, function(err, txs) {
+            should.not.exist(err);
+            txs.should.be.empty;
+            next();
+          });
+        },
+        function(next) {
+          helpers.getAuthServer(wallet.copayers[2].id, function(server) {
+            server.getTx({
+              txProposalId: txid
+            }, function(err, tx) {
+              should.not.exist(err);
+              var signatures = helpers.clientSign(tx, TestData.copayers[2].xPrivKey);
+              server.signTx({
+                txProposalId: txid,
+                signatures: signatures,
+              }, function(err) {
+                should.exist(err);
+                err.code.should.equal('TXNOTPENDING');
+                done();
+              });
+            });
+          });
+        },
+      ]);
+    });
   });
+
+  describe('#broadcastTx', function() {
+    var server, wallet, txpid;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 1, function(s, w) {
+        server = s;
+        wallet = w;
+        helpers.stubUtxos(server, wallet, [10, 10], function() {
+          var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, 'some message', TestData.copayers[0].privKey);
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey);
+            server.signTx({
+              txProposalId: txp.id,
+              signatures: signatures,
+            }, function(err, txp) {
+              should.not.exist(err);
+              should.exist(txp);
+              txp.isAccepted().should.be.true;
+              txp.isBroadcasted().should.be.false;
+              txpid = txp.id;
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('should brodcast a tx', function(done) {
+      var clock = sinon.useFakeTimers(1234000);
+      helpers.stubBroadcast('999');
+      server.broadcastTx({
+        txProposalId: txpid
+      }, function(err) {
+        should.not.exist(err);
+        server.getTx({
+          txProposalId: txpid
+        }, function(err, txp) {
+          should.not.exist(err);
+          txp.txid.should.equal('999');
+          txp.isBroadcasted().should.be.true;
+          txp.broadcastedOn.should.equal(1234);
+          clock.restore();
+          done();
+        });
+      });
+    });
+
+    it('should fail to brodcast an already broadcasted tx', function(done) {
+      helpers.stubBroadcast('999');
+      server.broadcastTx({
+        txProposalId: txpid
+      }, function(err) {
+        should.not.exist(err);
+        server.broadcastTx({
+          txProposalId: txpid
+        }, function(err) {
+          should.exist(err);
+          err.code.should.equal('TXALREADYBROADCASTED');
+          done();
+        });
+      });
+    });
+
+    it('should fail to brodcast a not yet accepted tx', function(done) {
+      helpers.stubBroadcast('999');
+      var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, 'some other message', TestData.copayers[0].privKey);
+      server.createTx(txOpts, function(err, txp) {
+        should.not.exist(err);
+        should.exist(txp);
+        server.broadcastTx({
+          txProposalId: txp.id
+        }, function(err) {
+          should.exist(err);
+          err.code.should.equal('TXNOTACCEPTED');
+          done();
+        });
+      });
+    });
+
+    it('should keep tx as accepted if unable to broadcast it', function(done) {
+      helpers.stubBroadcastFail();
+      server.broadcastTx({
+        txProposalId: txpid
+      }, function(err) {
+        should.exist(err);
+        server.getTx({
+          txProposalId: txpid
+        }, function(err, txp) {
+          should.not.exist(err);
+          should.not.exist(txp.txid);
+          txp.isBroadcasted().should.be.false;
+          should.not.exist(txp.broadcastedOn);
+          txp.isAccepted().should.be.true;
+          done();
+        });
+      });
+    });
+  });
+
 
   describe('Tx proposal workflow', function() {
     var server, wallet;
@@ -1104,7 +1374,7 @@ describe('Copay server', function() {
       var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, 'some message', TestData.copayers[0].privKey);
       server.createTx(txOpts, function(err, txp) {
         should.not.exist(err);
-        should.exist.txp;
+        should.exist(txp);
         helpers.getAuthServer(wallet.copayers[1].id, function(server2, wallet) {
           server2.getPendingTxs({}, function(err, txps) {
             should.not.exist(err);
@@ -1126,7 +1396,7 @@ describe('Copay server', function() {
           server.createTx(txOpts, function(err, txp) {
             txpId = txp.id;
             should.not.exist(err);
-            should.exist.txp;
+            should.exist(txp);
             next();
           });
         },
@@ -1212,7 +1482,7 @@ describe('Copay server', function() {
           server.createTx(txOpts, function(err, txp) {
             txpId = txp.id;
             should.not.exist(err);
-            should.exist.txp;
+            should.exist(txp);
             next();
           });
         },
@@ -1269,7 +1539,7 @@ describe('Copay server', function() {
         },
         function(next) {
           server.getTx({
-            id: txpId
+            txProposalId: txpId
           }, function(err, txp) {
             should.not.exist(err);
             txp.isPending().should.be.false;
@@ -1283,6 +1553,48 @@ describe('Copay server', function() {
     });
   });
 
+  describe('#getTx', function() {
+    var server, wallet, txpid;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 3, function(s, w) {
+        server = s;
+        wallet = w;
+        helpers.stubUtxos(server, wallet, 10, function() {
+          var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, 'some message', TestData.copayers[0].privKey);
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            txpid = txp.id;
+            done();
+          });
+        });
+      });
+    });
+
+    it('should get own transaction proposal', function(done) {
+      server.getTx({
+        txProposalId: txpid
+      }, function(err, txp) {
+        should.not.exist(err);
+        should.exist(txp);
+        txp.id.should.equal(txpid);
+        done();
+      });
+    });
+    it.skip('should get someone elses transaction proposal', function(done) {});
+    it('should fail to get non-existent transaction proposal', function(done) {
+      server.getTx({
+        txProposalId: 'dummy'
+      }, function(err, txp) {
+        should.exist(err);
+        should.not.exist(txp);
+        err.message.should.contain('not found');
+        done();
+      });
+    });
+    it.skip('should get accepted/rejected transaction proposal', function(done) {});
+    it.skip('should get broadcasted transaction proposal', function(done) {});
+  });
 
   describe('#getTxs', function() {
     var server, wallet, clock;
@@ -1623,9 +1935,10 @@ describe('Copay server', function() {
     it('should allow creator to remove an signed TX by himself', function(done) {
       var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey);
       server.signTx({
-        txProposalId: txp[0],
+        txProposalId: txp.id,
         signatures: signatures,
       }, function(err) {
+        should.not.exist(err);
         server.removePendingTx({
           txProposalId: txp.id
         }, function(err) {
@@ -1636,6 +1949,58 @@ describe('Copay server', function() {
           });
         });
       });
+    });
+
+    it('should fail to remove non-pending TX', function(done) {
+      async.waterfall([
+
+        function(next) {
+          var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey);
+          server.signTx({
+            txProposalId: txp.id,
+            signatures: signatures,
+          }, function(err) {
+            should.not.exist(err);
+            next();
+          });
+        },
+        function(next) {
+          helpers.getAuthServer(wallet.copayers[1].id, function(server) {
+            server.rejectTx({
+              txProposalId: txp.id,
+            }, function(err) {
+              should.not.exist(err);
+              next();
+            });
+          });
+        },
+        function(next) {
+          helpers.getAuthServer(wallet.copayers[2].id, function(server) {
+            server.rejectTx({
+              txProposalId: txp.id,
+            }, function(err) {
+              should.not.exist(err);
+              next();
+            });
+          });
+        },
+        function(next) {
+          server.getPendingTxs({}, function(err, txs) {
+            should.not.exist(err);
+            txs.should.be.empty;
+            next();
+          });
+        },
+        function(next) {
+          server.removePendingTx({
+            txProposalId: txp.id
+          }, function(err) {
+            should.exist(err);
+            err.code.should.equal('TXNOTPENDING');
+            done();
+          });
+        },
+      ]);
     });
 
     it('should not allow non-creator copayer to remove an unsigned TX ', function(done) {
@@ -1663,6 +2028,7 @@ describe('Copay server', function() {
           server.removePendingTx({
             txProposalId: txp.id
           }, function(err) {
+            err.code.should.equal('TXACTIONED');
             err.message.should.contain('other copayers');
             done();
           });

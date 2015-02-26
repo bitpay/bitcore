@@ -4,7 +4,7 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var AddressManager = require('../lib/model/addressmanager');
+var AddressManager = require('../../lib/model/addressmanager');
 
 
 describe('AddressManager', function() {
