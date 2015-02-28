@@ -4,7 +4,7 @@
 [![Build Status](https://img.shields.io/travis/bitpay/bitcore-wallet-service.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-wallet-service)
 [![Coverage Status](https://coveralls.io/repos/bitpay/bitcore-wallet-service/badge.svg?branch=master)](https://coveralls.io/r/bitpay/bitcore-wallet-service?branch=master)
 
-A Multisig HD Wallet Service, with minimun server trust.
+A Multisig HD Wallet Service, with minimum server trust.
 
 # Quick Guide
 
@@ -43,7 +43,7 @@ A Multisig HD Wallet Service, with minimun server trust.
  # Spend coins. Amount can be specified in btc, bit or sat (default)
    ./bit send 1xxxxx 100bit "100 bits to mother"
 
- # You can use 100bit or 0.00001btc or 10000sat.  (Set up BIT_UNIT to btc/sat/bit so select output unit).
+ # You can use 100bit or 0.00001btc or 10000sat.  (Set BIT_UNIT to btc/sat/bit to select output unit).
 
  # List pending TX Proposals
    ./bit status
@@ -66,7 +66,7 @@ A Multisig HD Wallet Service, with minimun server trust.
   
 # Local  data
 
-Copayers store its extended private key and their copayer's extended public key locally. We call this the ``Wallet Critical Data``. Extended private keys are never sent to the server.
+Copayers store their extended private key and their copayers' extended public key locally. We call this the ``Wallet Critical Data``. Extended private keys are never sent to the server.
   
   
 # Password protection 
@@ -89,7 +89,7 @@ bit create myWallet 2-3 -p --nopasswd readwrite
 # Advanced Operation
 
 ## Mobility
-You can safely access a wallet from different devices. Just copy the wallet file (`bit.dat` by default). If you need to reduce the file to the mínimum (for example to fit it on a QR) or change it's access level (by removing certain data on it), see `export` in the following section.
+You can safely access a wallet from different devices. Just copy the wallet file (`bit.dat` by default). If you need to reduce the file to the minimum (for example to fit it on a QR) or change its access level (by removing certain data on it), see `export` in the following section.
 
 ## Export, with different access levels
 It is possible to export a wallet with restricted access level. The levels are:
@@ -115,7 +115,7 @@ bit import wallet.dat
 bit export --qr
 ```
 
-## If the wallet need to be migrated to other server, after importing the wallet use `bit-recreate` command 
+## If the wallet needs to be migrated to another server, after importing the wallet, use the `bit-recreate` command 
 
 ## Export / Import with a new given password (TO Be Done)
 ``` shell
@@ -129,14 +129,14 @@ bit import output.dat
 
 ## WARNING: THIS IS STILL WIP ##
 
-Air gapped (non connected) devices are supported. This setup can be useful is maximun security is needed, to prevent private keys to get compromissed. In this setup a device is installed without network access, and transactions are signed off-line. Transactions can be pulled from the server using a `proxy` device, then downloaded to a pendrive to be moved to the air-gapped device, signed there and then moved back the `proxy` device to be send back to the server. Note that Private keys are generated off-line in the airgapped device.
+Air gapped (non connected) devices are supported. This setup can be useful if maximum security is needed, to prevent private keys from being compromised. In this setup, a device is installed without network access, and transactions are signed off-line. Transactions can be pulled from the server using a `proxy` device, then downloaded to a pendrive to be moved to the air-gapped device, signed there, and then moved back the `proxy` device to be sent back to the server. Note that Private keys are generated off-line in the airgapped device.
 
 
 ``` shell
 
 # On the Air-gapped device
 airgapped$ bit genkey
-airgapped$ bit export -o toProxy  --access readwrite  #(or --readonly if proxy wont be allowed to propose transactions)
+airgapped$ bit export -o toProxy  --access readwrite  #(or --readonly if proxy won't be allowed to propose transactions)
 
 # On the proxy machine
 proxy$ bit import toProxy
@@ -164,21 +164,21 @@ proxy$  bit sign -i txproposals-signed.dat
 ```
 
 # Security Considerations
- * Private keys are never send to the server. Copayers store them locally.
+ * Private keys are never sent to the server. Copayers store them locally.
  * Extended public keys are stored on the server. This allows the server to easily check wallet balance, send offline notifications to copayers, etc.
- * During wallet creation a wallet secret is created by the initial copayer containg a private key. All copayers need to prove they have the secret by signing their information with this private key when joining the wallet. The secret should be shared using secured channels.
+ * During wallet creation, the initial copayer creates a wallet secret that contains a private key. All copayers need to prove they have the secret by signing their information with this private key when joining the wallet. The secret should be shared using secured channels.
 
 ## All server responses are verified:
-  * Addresses, change addresses are derived independently and locally by the copayers from their local data.
-  * TX Proposals templates are signed by copayers, and verified by others, so the server cannot create / tamper them
+  * Addresses and change addresses are derived independently and locally by the copayers from their local data.
+  * TX Proposals templates are signed by copayers and verified by others, so the server cannot create or tamper with them.
 
 ## Notes
- * A copayer could join the wallet more than once, and there is no mechanism to prevent it. Copayers should use the command 'confirm' to check other copayer's identity.
+ * A copayer could join the wallet more than once, and there is no mechanism to prevent this. Copayers should use the command 'confirm' to check other copayer's identity.
 
 ##  In case the server is compromised
  * It could be possible to see past (and future) wallet's transactions.
  * It is not possible to spend wallet funds, since private keys are never sent nor stored at the server
- * It is not possible to tamper tx proposals or wallet addresses since they are computed and verified by copayers
+ * It is not possible to tamper with tx proposals or wallet addresses since they are computed and verified by copayers
  * Copayers could switch to another server using their local data (see `recreate` command). In this case only the wallet extended data will be lost (pending and past transaction proposals, some copayer metadata).
 
 
