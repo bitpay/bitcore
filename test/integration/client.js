@@ -864,6 +864,32 @@ describe('client API ', function() {
     it.skip('should get paginated transaction history', function(done) {});
   });
 
+  describe('Export & Import', function() {
+    it('should export & import', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
+        clients[0].createAddress(function(err, address) {
+          should.not.exist(err);
+          should.exist(address.address);
+
+          var exported = clients[0].export();
+
+          var importedClient = new Client({
+            request: helpers.getRequest(app),
+          });
+          importedClient.import(exported);
+
+          importedClient.getMainAddresses({}, function(err, list) {
+            should.not.exist(err);
+            should.exist(list);
+            list.length.should.equal(1);
+            list[0].address.should.equal(address.address);
+            done();
+          });
+        });
+      })
+    });
+  });
+
   describe('Air gapped related flows', function() {
     it('should create wallet in proxy from airgapped', function(done) {
       var airgapped = new AirGapped({
