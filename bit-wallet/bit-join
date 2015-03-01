@@ -7,7 +7,6 @@ program = utils.configureCommander(program);
 
 program
   .usage('[options] <secret> [copayerName]')
-  .option('-n, --nopasswd [level]', 'Set access for no password usage: none(default), readonly, readwrite, full', 'none')
   .parse(process.argv);
 
 var args = program.args;

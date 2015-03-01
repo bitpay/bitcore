@@ -2,6 +2,7 @@ var _ = require('lodash');
 var Client = require('../lib/client');
 var FileStorage = require('./filestorage');
 var read = require('read')
+var log = require('npmlog');
 
 var Utils = function() {};
 
@@ -50,10 +51,19 @@ Utils.getClient = function(args, cb) {
   });
   storage.load(function(err, walletData) {
     if (err && err.code != 'ENOENT') die(err);
-    if (walletData) {
-      client.import(walletData);
-    }
-    return cb(client);
+    if (!walletData) return cb(client);
+
+    client.import(walletData);
+    client.openWallet(function(err, justCompleted) {
+      if (client.isComplete() && justCompleted) {
+        Utils.saveClient(args, client, function() {
+          log.info('Your wallet has just been completed. Please backup your wallet file or use the export command.');
+          return cb(client);
+        });
+      } else {
+        return cb(client);
+      }
+    });
   });
 };
 
