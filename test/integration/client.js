@@ -915,9 +915,13 @@ describe('client API ', function() {
       importedClient.credentials.copayerName.should.equal(copayerName);
     });
     it('should export & import encrypted', function() {
+      var xPrivKey = clients[0].credentials.xPrivKey;
+      should.exist(xPrivKey);
+
       var exported = clients[0].export({
         password: '123'
       });
+      exported.should.not.contain(xPrivKey);
 
       importedClient = new Client({
         request: helpers.getRequest(app),
@@ -925,6 +929,8 @@ describe('client API ', function() {
       importedClient.import(exported, {
         password: '123'
       });
+      should.exist(importedClient.credentials.xPrivKey);
+      importedClient.credentials.xPrivKey.should.equal(xPrivKey);
     });
     it('should export & import compressed & encrypted', function() {
       var exported = clients[0].export({
