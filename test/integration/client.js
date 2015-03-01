@@ -865,29 +865,85 @@ describe('client API ', function() {
   });
 
   describe('Export & Import', function() {
-    it('should export & import', function(done) {
+    var address, importedClient;
+    beforeEach(function(done) {
+      importedClient = null;
       helpers.createAndJoinWallet(clients, 1, 1, function() {
-        clients[0].createAddress(function(err, address) {
+        clients[0].createAddress(function(err, addr) {
           should.not.exist(err);
-          should.exist(address.address);
-
-          var exported = clients[0].export();
-
-          var importedClient = new Client({
-            request: helpers.getRequest(app),
-          });
-          importedClient.import(exported);
-
-          importedClient.getMainAddresses({}, function(err, list) {
-            should.not.exist(err);
-            should.exist(list);
-            list.length.should.equal(1);
-            list[0].address.should.equal(address.address);
-            done();
-          });
+          should.exist(addr.address);
+          address = addr.address;
+          done();
         });
-      })
+      });
     });
+    afterEach(function(done) {
+      importedClient.getMainAddresses({}, function(err, list) {
+        should.not.exist(err);
+        should.exist(list);
+        list.length.should.equal(1);
+        list[0].address.should.equal(address);
+        done();
+      });
+    });
+
+    it('should export & import', function() {
+      var exported = clients[0].export();
+
+      importedClient = new Client({
+        request: helpers.getRequest(app),
+      });
+      importedClient.import(exported);
+    });
+    it.skip('should export & import compressed', function() {
+      var walletId = clients[0].credentials.walletId;
+      var walletName = clients[0].credentials.walletName;
+      var copayerName = clients[0].credentials.copayerName;
+
+      var exported = clients[0].export({
+        compressed: true
+      });
+
+      importedClient = new Client({
+        request: helpers.getRequest(app),
+      });
+      importedClient.import(exported, {
+        compressed: true
+      });
+      importedClient.credentials.walletId.should.equal(walletId);
+      importedClient.credentials.walletName.should.equal(walletName);
+      importedClient.credentials.copayerName.should.equal(copayerName);
+    });
+    it('should export & import encrypted', function() {
+      var exported = clients[0].export({
+        password: '123'
+      });
+
+      importedClient = new Client({
+        request: helpers.getRequest(app),
+      });
+      importedClient.import(exported, {
+        password: '123'
+      });
+    });
+    it('should export & import compressed & encrypted', function() {
+      var exported = clients[0].export({
+        compressed: true,
+        password: '123'
+      });
+
+      importedClient = new Client({
+        request: helpers.getRequest(app),
+      });
+      importedClient.import(exported, {
+        compressed: true,
+        password: '123'
+      });
+    });
+    it.skip('should fail to export compressed & import uncompressed', function() {});
+    it.skip('should fail to export uncompressed & import compressed', function() {});
+    it.skip('should fail to export unencrypted & import with password', function() {});
+    it.skip('should fail to export encrypted & import with incorrect password', function() {});
   });
 
   describe('Air gapped related flows', function() {
