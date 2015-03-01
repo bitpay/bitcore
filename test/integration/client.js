@@ -324,6 +324,7 @@ describe('client API ', function() {
         });
       });
     });
+    it.skip('should return wallet status even if wallet is not yet complete', function(done) {});
   });
 
   describe('Address Creation', function() {
