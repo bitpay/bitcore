@@ -949,7 +949,7 @@ describe('client API ', function() {
       });
     });
 
-    it.skip('should be able to sign from airgapped client and broadcast from proxy', function(done) {
+    it('should be able to sign from airgapped client and broadcast from proxy', function(done) {
       var airgapped = new AirGapped({
         network: 'testnet'
       });
@@ -993,7 +993,12 @@ describe('client API ', function() {
             }, next);
           },
           function(txps, rawTxps, next) {
-            var signatures = airgapped.signTxProposal(rawTxps[0]);
+            // TODO: these params should be grouped, signed, encrypted, etc
+            var pkr = proxy.credentials.publicKeyRing;
+            var m = proxy.credentials.m;
+            var n = proxy.credentials.n;
+
+            var signatures = airgapped.signTxProposal(rawTxps[0], pkr, m, n);
             next(null, signatures);
           },
           function(signatures, next) {
