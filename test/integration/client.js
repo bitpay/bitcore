@@ -1,6 +1,7 @@
 'use strict';
 
 var _ = require('lodash');
+var $ = require('preconditions').singleton();
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
@@ -20,6 +21,7 @@ var TestData = require('../testdata');
 var helpers = {};
 
 helpers.getRequest = function(app) {
+  $.checkArgument(app);
   return function(args, cb) {
     var req = request(app);
     var r = req[args.method](args.relUrl);
@@ -36,6 +38,13 @@ helpers.getRequest = function(app) {
       return cb(err, res, res.body);
     });
   };
+};
+
+helpers.newClient = function(app) {
+  $.checkArgument(app);
+  return new Client({
+    request: helpers.getRequest(app),
+  });
 };
 
 helpers.createAndJoinWallet = function(clients, m, n, cb) {
@@ -148,9 +157,7 @@ describe('client API ', function() {
     });
     // Generates 5 clients
     clients = _.map(_.range(5), function(i) {
-      return new Client({
-        request: helpers.getRequest(app),
-      });
+      return helpers.newClient(app);
     });
     blockExplorerMock.reset();
   });
@@ -179,10 +186,8 @@ describe('client API ', function() {
       });
       var s2 = sinon.stub();
       s2.load = sinon.stub().yields(null);
-      var client = new Client({
-        storage: s2,
-      });
-      client.request = helpers.getRequest(app);
+      var client = helpers.newClient(app);
+      client.storage = s2;
       client.createWallet('1', '2', 1, 1, 'testnet',
         function(err) {
           err.code.should.equal('ERROR');
@@ -206,10 +211,8 @@ describe('client API ', function() {
       });
       var s2 = sinon.stub();
       s2.load = sinon.stub().yields(null);
-      var client = new Client({
-        storage: s2,
-      });
-      client.request = helpers.getRequest(app);
+      var client = helpers.newClient(app);
+      client.storage = s2;
       client.createWallet('1', '2', 1, 1, 'testnet',
         function(err) {
           err.code.should.equal('ERROR');
@@ -865,92 +868,120 @@ describe('client API ', function() {
     it.skip('should get paginated transaction history', function(done) {});
   });
 
-  describe('Export & Import', function() {
-    var address, importedClient;
-    beforeEach(function(done) {
-      importedClient = null;
-      helpers.createAndJoinWallet(clients, 1, 1, function() {
-        clients[0].createAddress(function(err, addr) {
-          should.not.exist(err);
-          should.exist(addr.address);
-          address = addr.address;
-          done();
+  describe('Mobility, backup & recovery', function() {
+    describe('Export & Import', function() {
+      describe('Success', function() {
+        var address, importedClient;
+        beforeEach(function(done) {
+          importedClient = null;
+          helpers.createAndJoinWallet(clients, 1, 1, function() {
+            clients[0].createAddress(function(err, addr) {
+              should.not.exist(err);
+              should.exist(addr.address);
+              address = addr.address;
+              done();
+            });
+          });
+        });
+        afterEach(function(done) {
+          importedClient.getMainAddresses({}, function(err, list) {
+            should.not.exist(err);
+            should.exist(list);
+            list.length.should.equal(1);
+            list[0].address.should.equal(address);
+            done();
+          });
+        });
+
+        it('should export & import', function() {
+          var exported = clients[0].export();
+
+          importedClient = helpers.newClient(app);
+          importedClient.import(exported);
+        });
+        it.skip('should export & import compressed', function() {
+          var walletId = clients[0].credentials.walletId;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+
+          var exported = clients[0].export({
+            compressed: true
+          });
+
+          importedClient = helpers.newClient(app);
+          importedClient.import(exported, {
+            compressed: true
+          });
+          importedClient.credentials.walletId.should.equal(walletId);
+          importedClient.credentials.walletName.should.equal(walletName);
+          importedClient.credentials.copayerName.should.equal(copayerName);
+        });
+        it('should export & import encrypted', function() {
+          var xPrivKey = clients[0].credentials.xPrivKey;
+          should.exist(xPrivKey);
+
+          var exported = clients[0].export({
+            password: '123'
+          });
+          exported.should.not.contain(xPrivKey);
+
+          importedClient = helpers.newClient(app);
+          importedClient.import(exported, {
+            password: '123'
+          });
+          should.exist(importedClient.credentials.xPrivKey);
+          importedClient.credentials.xPrivKey.should.equal(xPrivKey);
+        });
+        it('should export & import compressed & encrypted', function() {
+          var exported = clients[0].export({
+            compressed: true,
+            password: '123'
+          });
+
+          importedClient = helpers.newClient(app);
+          importedClient.import(exported, {
+            compressed: true,
+            password: '123'
+          });
+        });
+      });
+      describe('Fail', function() {
+        it.skip('should fail to export compressed & import uncompressed', function() {});
+        it.skip('should fail to export uncompressed & import compressed', function() {});
+        it.skip('should fail to export unencrypted & import with password', function() {});
+        it.skip('should fail to export encrypted & import with incorrect password', function() {});
+      });
+    });
+
+    describe('Recovery', function() {
+      it('should be able to regain access to a 1-1 wallet with just the xPriv', function(done) {
+        helpers.createAndJoinWallet(clients, 1, 1, function() {
+          var xpriv = clients[0].credentials.xPrivKey;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+
+          clients[0].createAddress(function(err, addr) {
+            should.not.exist(err);
+            should.exist(addr);
+
+            var recoveryClient = helpers.newClient(app);
+            recoveryClient.seedFromExtendedPrivateKey(xpriv);
+            recoveryClient.openWallet(function(err) {
+              console.log(err);
+              should.not.exist(err);
+              recoveryClient.credentials.walletName.should.equal(walletName);
+              recoveryClient.credentials.copayerName.should.equal(copayerName);
+              recoveryClient.getMainAddresses({}, function(err, list) {
+                should.not.exist(err);
+                should.exist(list);
+                list[0].address.should.equal(addr.address);
+                done();
+              });
+            });
+          });
         });
       });
     });
-    afterEach(function(done) {
-      importedClient.getMainAddresses({}, function(err, list) {
-        should.not.exist(err);
-        should.exist(list);
-        list.length.should.equal(1);
-        list[0].address.should.equal(address);
-        done();
-      });
-    });
-
-    it('should export & import', function() {
-      var exported = clients[0].export();
-
-      importedClient = new Client({
-        request: helpers.getRequest(app),
-      });
-      importedClient.import(exported);
-    });
-    it.skip('should export & import compressed', function() {
-      var walletId = clients[0].credentials.walletId;
-      var walletName = clients[0].credentials.walletName;
-      var copayerName = clients[0].credentials.copayerName;
-
-      var exported = clients[0].export({
-        compressed: true
-      });
-
-      importedClient = new Client({
-        request: helpers.getRequest(app),
-      });
-      importedClient.import(exported, {
-        compressed: true
-      });
-      importedClient.credentials.walletId.should.equal(walletId);
-      importedClient.credentials.walletName.should.equal(walletName);
-      importedClient.credentials.copayerName.should.equal(copayerName);
-    });
-    it('should export & import encrypted', function() {
-      var xPrivKey = clients[0].credentials.xPrivKey;
-      should.exist(xPrivKey);
-
-      var exported = clients[0].export({
-        password: '123'
-      });
-      exported.should.not.contain(xPrivKey);
-
-      importedClient = new Client({
-        request: helpers.getRequest(app),
-      });
-      importedClient.import(exported, {
-        password: '123'
-      });
-      should.exist(importedClient.credentials.xPrivKey);
-      importedClient.credentials.xPrivKey.should.equal(xPrivKey);
-    });
-    it('should export & import compressed & encrypted', function() {
-      var exported = clients[0].export({
-        compressed: true,
-        password: '123'
-      });
-
-      importedClient = new Client({
-        request: helpers.getRequest(app),
-      });
-      importedClient.import(exported, {
-        compressed: true,
-        password: '123'
-      });
-    });
-    it.skip('should fail to export compressed & import uncompressed', function() {});
-    it.skip('should fail to export uncompressed & import compressed', function() {});
-    it.skip('should fail to export unencrypted & import with password', function() {});
-    it.skip('should fail to export encrypted & import with incorrect password', function() {});
   });
 
   describe('Air gapped related flows', function() {
@@ -960,9 +991,7 @@ describe('client API ', function() {
       });
       var seed = airgapped.getSeed();
 
-      var proxy = new Client({
-        request: helpers.getRequest(app),
-      });
+      var proxy = helpers.newClient(app);
       proxy.seedFromAirGapped(seed);
       should.not.exist(proxy.credentials.xPrivKey);
       proxy.createWallet('wallet name', 'creator', 1, 1, 'testnet', function(err) {
@@ -981,9 +1010,7 @@ describe('client API ', function() {
       });
       var seed = airgapped.getSeed();
 
-      var proxy = new Client({
-        request: helpers.getRequest(app),
-      });
+      var proxy = helpers.newClient(app);
       proxy.seedFromAirGapped(seed);
 
       async.waterfall([
