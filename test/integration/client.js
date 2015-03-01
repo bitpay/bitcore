@@ -865,69 +865,6 @@ describe('client API ', function() {
   });
 
   describe('Air gapped related flows', function() {
-    it('should be able get Tx proposals from a file', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 2, function(w) {
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          blockExplorerMock.setUtxo(x0, 1, 1);
-          var opts = {
-            amount: 10000000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hello 1-1',
-          };
-          clients[1].sendTxProposal(opts, function(err, x) {
-            should.not.exist(err);
-            clients[1].getTxProposals({
-              getRawTxps: true
-            }, function(err, txs, rawTxps) {
-              should.not.exist(err);
-
-              clients[0].parseTxProposals({
-                txps: rawTxps
-              }, function(err, txs2) {
-                should.not.exist(err);
-                txs[0].should.deep.equal(txs2[0]);
-                done();
-              });
-
-            });
-          });
-        });
-      });
-    });
-    it('should detect fakes from Tx proposals file', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 2, function(w) {
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          blockExplorerMock.setUtxo(x0, 1, 1);
-          var opts = {
-            amount: 10000000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hello 1-1',
-          };
-          clients[1].sendTxProposal(opts, function(err, x) {
-            should.not.exist(err);
-            clients[1].getTxProposals({
-              getRawTxps: true
-            }, function(err, txs, rawTxps) {
-              should.not.exist(err);
-
-              //Tamper 
-              rawTxps[0].amount++;
-
-              clients[0].parseTxProposals({
-                txps: rawTxps
-              }, function(err, txs2) {
-                err.code.should.equal('SERVERCOMPROMISED');
-                done();
-              });
-
-            });
-          });
-        });
-      });
-    });
-
     it('should create wallet in proxy from airgapped', function(done) {
       var airgapped = new AirGapped({
         network: 'testnet'
@@ -989,16 +926,11 @@ describe('client API ', function() {
           },
           function(txp, next) {
             proxy.getTxProposals({
-              getRawTxps: true
+              forAirGapped: true
             }, next);
           },
-          function(txps, rawTxps, next) {
-            // TODO: these params should be grouped, signed, encrypted, etc
-            var pkr = proxy.credentials.publicKeyRing;
-            var m = proxy.credentials.m;
-            var n = proxy.credentials.n;
-
-            var signatures = airgapped.signTxProposal(rawTxps[0], pkr, m, n);
+          function(bundle, next) {
+            var signatures = airgapped.signTxProposal(bundle.txps[0], bundle.publicKeyRing, bundle.m, bundle.n);
             next(null, signatures);
           },
           function(signatures, next) {
@@ -1028,7 +960,7 @@ describe('client API ', function() {
         }
       );
     });
-    it.skip('should be able to detect tampered pkr when signing on airgapped client', function(done) {});
+    it.skip('should be able to detect tampered PKR when signing on airgapped client', function(done) {});
     it.skip('should be able to detect tampered proposal when signing on airgapped client', function(done) {});
     it.skip('should be able to detect tampered change address when signing on airgapped client', function(done) {});
   });
