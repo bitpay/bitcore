@@ -19,10 +19,10 @@ A Multisig HD Wallet Service, with minimum server trust.
  cd bit-wallet
  
  # Create a 2-of-2 wallet (john.dat is the file where the wallet critical data will be stored, add -t for testnet)
- ./bit  create 2-2 john 
+ ./bit create 2-2 john 
   * Secret to share:
     JevjEwaaxW6gdAZjqgWcimL525DR8zQsAXf4cscWDa8u1qKTN5eFGSFssuSvT1WySu4YYLYMUPT
- ./bit  status
+ ./bit status
  
  # Use -h or BIT_HOST to setup the base URL for your server.
  # Use -f or BIT_FILE to setup the wallet data file
@@ -66,7 +66,7 @@ A Multisig HD Wallet Service, with minimum server trust.
   
 # Local  data
 
-Copayers store their extended private key and their copayer's extended public key locally. We call this the ``Wallet Critical Data``. Extended private keys are never sent to the server.
+Copayers store their extended private key and their copayers' extended public key locally. We call this the ``Wallet Critical Data``. Extended private keys are never sent to the server.
   
   
 # Password protection 
