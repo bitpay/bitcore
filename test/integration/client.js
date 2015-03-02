@@ -1,6 +1,7 @@
 'use strict';
 
 var _ = require('lodash');
+var $ = require('preconditions').singleton();
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
@@ -9,7 +10,7 @@ var memdown = require('memdown');
 var async = require('async');
 var request = require('supertest');
 var Client = require('../../lib/client');
-var API = Client.API;
+var AirGapped = Client.AirGapped;
 var Bitcore = require('bitcore');
 var WalletUtils = require('../../lib/walletutils');
 var ExpressApp = require('../../lib/expressapp');
@@ -20,6 +21,7 @@ var TestData = require('../testdata');
 var helpers = {};
 
 helpers.getRequest = function(app) {
+  $.checkArgument(app);
   return function(args, cb) {
     var req = request(app);
     var r = req[args.method](args.relUrl);
@@ -38,51 +40,58 @@ helpers.getRequest = function(app) {
   };
 };
 
+helpers.newClient = function(app) {
+  $.checkArgument(app);
+  return new Client({
+    request: helpers.getRequest(app),
+  });
+};
+
 helpers.createAndJoinWallet = function(clients, m, n, cb) {
   clients[0].createWallet('wallet name', 'creator', m, n, 'testnet',
     function(err, secret) {
-      if (err) return cb(err);
-      if (n == 1) return cb();
+      should.not.exist(err);
 
-      should.exist(secret);
-      async.each(_.range(n - 1), function(i, cb) {
-        clients[i + 1].joinWallet(secret, 'copayer ' + (i + 1), function(err, result) {
+      if (n > 1) {
+        should.exist(secret);
+      }
+
+      async.series([
+
+          function(next) {
+            async.each(_.range(1, n), function(i, cb) {
+              clients[i].joinWallet(secret, 'copayer ' + i, cb);
+            }, next);
+          },
+          function(next) {
+            async.each(_.range(n), function(i, cb) {
+              clients[i].openWallet(cb);
+            }, next);
+          },
+        ],
+        function(err) {
           should.not.exist(err);
-          return cb(err);
+          return cb({
+            m: m,
+            n: n,
+            secret: secret,
+          });
         });
-      }, function(err) {
-        if (err) return cb(err);
-        return cb(null, {
-          m: m,
-          n: n,
-          secret: secret,
-        });
-      });
     });
 };
 
-
-var fsmock = {};
-var content = {};
-fsmock.readFile = function(name, enc, cb) {
-  if (!content || _.isEmpty(content[name]))
-    return cb('NOTFOUND');
-
-  return cb(null, content[name]);
-};
-fsmock.writeFile = function(name, data, cb) {
-  content[name] = data;
-  return cb();
-};
-fsmock.reset = function() {
-  content = {};
-};
-
-fsmock._get = function(name) {
-  return content[name];
-};
-fsmock._set = function(name, data) {
-  return content[name] = data;
+helpers.tamperResponse = function(clients, method, url, args, tamper, cb) {
+  clients = [].concat(clients);
+  // Use first client to get a clean response from server
+  clients[0]._doRequest(method, url, args, function(err, result) {
+    should.not.exist(err);
+    tamper(result);
+    // Return tampered data for every client in the list
+    _.each(clients, function(client) {
+      client._doRequest = sinon.stub().withArgs(method, url).yields(null, result);
+    });
+    return cb();
+  });
 };
 
 
@@ -133,7 +142,6 @@ describe('client API ', function() {
   var clients, app;
 
   beforeEach(function() {
-    clients = [];
     var db = levelup(memdown, {
       valueEncoding: 'json'
     });
@@ -148,25 +156,16 @@ describe('client API ', function() {
       disableLogs: true,
     });
     // Generates 5 clients
-    _.each(_.range(5), function(i) {
-      var storage = new Client.FileStorage({
-        filename: 'client' + i,
-        fs: fsmock,
-      });
-      var client = new Client({
-        storage: storage,
-      });
-
-      client.request = helpers.getRequest(app);
-      clients.push(client);
+    clients = _.map(_.range(5), function(i) {
+      return helpers.newClient(app);
     });
-    fsmock.reset();
     blockExplorerMock.reset();
   });
 
   describe('Server internals', function() {
     it('should allow cors', function(done) {
-      clients[0]._doRequest('options', '/', null, {}, function(err, x, headers) {
+      clients[0].credentials = {};
+      clients[0]._doRequest('options', '/', {}, function(err, x, headers) {
         headers['access-control-allow-origin'].should.equal('*');
         should.exist(headers['access-control-allow-methods']);
         should.exist(headers['access-control-allow-headers']);
@@ -187,10 +186,8 @@ describe('client API ', function() {
       });
       var s2 = sinon.stub();
       s2.load = sinon.stub().yields(null);
-      var client = new Client({
-        storage: s2,
-      });
-      client.request = helpers.getRequest(app);
+      var client = helpers.newClient(app);
+      client.storage = s2;
       client.createWallet('1', '2', 1, 1, 'testnet',
         function(err) {
           err.code.should.equal('ERROR');
@@ -214,10 +211,8 @@ describe('client API ', function() {
       });
       var s2 = sinon.stub();
       s2.load = sinon.stub().yields(null);
-      var client = new Client({
-        storage: s2,
-      });
-      client.request = helpers.getRequest(app);
+      var client = helpers.newClient(app);
+      client.storage = s2;
       client.createWallet('1', '2', 1, 1, 'testnet',
         function(err) {
           err.code.should.equal('ERROR');
@@ -226,115 +221,9 @@ describe('client API ', function() {
     });
   });
 
-  describe('Storage Encryption', function() {
-    beforeEach(function() {
-      _.each(_.range(3), function(i) {
-        clients[i].on('needPassword', function(cb) {
-          return cb('1234#$@#%F,./.**');
-        });
-        clients[i].on('needNewPassword', function(cb) {
-          return cb('1234#$@#%F,./.**');
-        });
-
-      });
-    });
-
-
-    it('full encryption roundtrip', function(done) {
-      clients[0].setNopasswdAccess('none');
-      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
-        should.not.exist(err);
-
-        // Load it
-        var wcd = JSON.parse(fsmock._get('client0'));
-        fsmock._set('client1', wcd);
-        clients[1].getBalance(function(err, bal0) {
-          should.not.exist(err);
-          done();
-        });
-      });
-    });
-
-    it('should fail if wrong password', function(done) {
-      clients[0].setNopasswdAccess('none');
-      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
-        should.not.exist(err);
-
-        // Load it
-        var wcd = JSON.parse(fsmock._get('client0'));
-        fsmock._set('client4', wcd);
-
-        clients[4].on('needPassword', function(cb) {
-          return cb('1');
-        });
-
-        clients[4].getBalance(function(err, bal0) {
-          err.should.equal('NOTAUTH');
-          done();
-        });
-      });
-    });
-
-
-    it('should encrypt everything', function(done) {
-      clients[0].setNopasswdAccess('none');
-      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
-        should.not.exist(err);
-        var wcd = JSON.parse(fsmock._get('client0'));
-        _.keys(wcd).should.deep.equal(['enc']);
-        done();
-      });
-    });
-
-    it('should encrypt xpriv access', function(done) {
-      clients[0].setNopasswdAccess('readwrite');
-      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
-        should.not.exist(err);
-        var wcd = JSON.parse(fsmock._get('client0'));
-        should.exist(wcd.enc);
-        should.not.exist(wcd.xpriv);
-        done();
-      });
-    });
-
-    it('should encrypt rwkey', function(done) {
-      clients[0].setNopasswdAccess('readonly');
-      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
-        should.not.exist(err);
-        var wcd = JSON.parse(fsmock._get('client0'));
-        should.exist(wcd.enc);
-        should.not.exist(wcd.xpriv);
-        should.not.exist(wcd.rwPrivKey);
-        done();
-      });
-    });
-
-
-    _.each(['full', 'readwrite', 'readonly', 'none'], function(k) {
-      it('full encryption roundtrip: type:' + k, function(done) {
-        clients[0].setNopasswdAccess(k);
-        helpers.createAndJoinWallet(clients, 1, 1, function(err) {
-          should.not.exist(err);
-
-          // Load it
-          var wcd = JSON.parse(fsmock._get('client0'));
-          fsmock._set('client1', wcd);
-          clients[1].getBalance(function(err, bal0) {
-            should.not.exist(err);
-            done();
-          });
-        });
-      });
-    });
-
-    it.skip('should not ask for password if not needed (readonly)', function(done) {});
-    it.skip('should not ask for password if not needed (readwrite)', function(done) {});
-  });
-
   describe('Wallet Creation', function() {
     it('should check balance in a 1-1 ', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
-        should.not.exist(err);
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
         clients[0].getBalance(function(err, x) {
           should.not.exist(err);
           done();
@@ -342,8 +231,7 @@ describe('client API ', function() {
       });
     });
     it('should be able to complete wallets in copayer that joined later', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 3, function(err) {
-        should.not.exist(err);
+      helpers.createAndJoinWallet(clients, 2, 3, function() {
         clients[0].getBalance(function(err, x) {
           should.not.exist(err);
           clients[1].getBalance(function(err, x) {
@@ -358,8 +246,7 @@ describe('client API ', function() {
     });
 
     it('should not allow to join a full wallet ', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 2, function(err, w) {
-        should.not.exist(err);
+      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
         should.exist(w.secret);
         clients[4].joinWallet(w.secret, 'copayer', function(err, result) {
           err.code.should.contain('WFULL');
@@ -386,362 +273,67 @@ describe('client API ', function() {
         done();
       });
     });
+
     it('should reject wallets with bad signatures', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 3, function(err) {
-        should.not.exist(err);
+      // Do not complete clients[1] pkr
+      var openWalletStub = sinon.stub(clients[1], 'openWallet').yields();
 
-        // Get right response
-        clients[0]._load({}, function(err, data) {
-          var url = '/v1/wallets/';
-          clients[0]._doGetRequest(url, data, function(err, x) {
-
-            // Tamper data
-            x.wallet.copayers[0].xPubKey = x.wallet.copayers[1].xPubKey;
-
-            // Tamper response
-            clients[1]._doGetRequest = sinon.stub().yields(null, x);
-
-            clients[1].getBalance(function(err, x) {
-              err.code.should.contain('SERVERCOMPROMISED');
-              done();
-            });
+      helpers.createAndJoinWallet(clients, 2, 3, function() {
+        helpers.tamperResponse([clients[0], clients[1]], 'get', '/v1/wallets/', {}, function(status) {
+          status.wallet.copayers[0].xPubKey = status.wallet.copayers[1].xPubKey;
+        }, function() {
+          openWalletStub.restore();
+          clients[1].openWallet(function(err, x) {
+            err.code.should.contain('SERVERCOMPROMISED');
+            done();
           });
         });
       });
     });
 
     it('should reject wallets with missing signatures', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 3, function(err) {
-        should.not.exist(err);
+      // Do not complete clients[1] pkr
+      var openWalletStub = sinon.stub(clients[1], 'openWallet').yields();
 
-        // Get right response
-        var data = clients[0]._load({}, function(err, data) {
-          var url = '/v1/wallets/';
-          clients[0]._doGetRequest(url, data, function(err, x) {
-
-            // Tamper data
-            delete x.wallet.copayers[1].xPubKey;
-
-            // Tamper response
-            clients[1]._doGetRequest = sinon.stub().yields(null, x);
-
-            clients[1].getBalance(function(err, x) {
-              err.code.should.contain('SERVERCOMPROMISED');
-              done();
-            });
+      helpers.createAndJoinWallet(clients, 2, 3, function() {
+        helpers.tamperResponse([clients[0], clients[1]], 'get', '/v1/wallets/', {}, function(status) {
+          delete status.wallet.copayers[1].xPubKey;
+        }, function() {
+          openWalletStub.restore();
+          clients[1].openWallet(function(err, x) {
+            err.code.should.contain('SERVERCOMPROMISED');
+            done();
           });
         });
       });
     });
 
+    it('should reject wallets missing callers pubkey', function(done) {
+      // Do not complete clients[1] pkr
+      var openWalletStub = sinon.stub(clients[1], 'openWallet').yields();
 
-    it('should reject wallets missing caller"s pubkey', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 3, function(err) {
-        should.not.exist(err);
-
-        // Get right response
-        var data = clients[0]._load({}, function(err, data) {
-          var url = '/v1/wallets/';
-          clients[0]._doGetRequest(url, data, function(err, x) {
-
-            // Tamper data. Replace caller's pubkey
-            x.wallet.copayers[1].xPubKey = (new Bitcore.HDPrivateKey()).publicKey;
-            // Add a correct signature
-            x.wallet.copayers[1].xPubKeySignature = WalletUtils.signMessage(
-              x.wallet.copayers[1].xPubKey, data.walletPrivKey),
-
-            // Tamper response
-            clients[1]._doGetRequest = sinon.stub().yields(null, x);
-
-            clients[1].getBalance(function(err, x) {
-              err.code.should.contain('SERVERCOMPROMISED');
-              done();
-            });
+      helpers.createAndJoinWallet(clients, 2, 3, function() {
+        helpers.tamperResponse([clients[0], clients[1]], 'get', '/v1/wallets/', {}, function(status) {
+          // Replace caller's pubkey
+          status.wallet.copayers[1].xPubKey = (new Bitcore.HDPrivateKey()).publicKey;
+          // Add a correct signature
+          status.wallet.copayers[1].xPubKeySignature = WalletUtils.signMessage(status.wallet.copayers[1].xPubKey, clients[0].credentials.walletPrivKey);
+        }, function() {
+          openWalletStub.restore();
+          clients[1].openWallet(function(err, x) {
+            err.code.should.contain('SERVERCOMPROMISED');
+            done();
           });
         });
       });
     });
-  });
-
-  describe('Access control', function() {
-    it('should not be able to create address if not rwPubKey', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
-        should.not.exist(err);
-
-        var data = JSON.parse(fsmock._get('client0'));
-        delete data.rwPrivKey;
-        fsmock._set('client0', JSON.stringify(data));
-        data.rwPrivKey = null;
-
-        // Overwrite client's API auth checks
-        clients[0]._processWcdAfterRead = function(rawData, xx, cb) {
-          return cb(null, rawData);
-        };
-
-        clients[0].createAddress(function(err, x0) {
-          err.code.should.equal('NOTAUTHORIZED');
-          done();
-        });
-      });
-    });
-    it('should not be able to create address from a ro export', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
-        should.not.exist(err);
-        clients[0].export({
-          access: 'readonly'
-        }, function(err, str) {
-          should.not.exist(err);
-          clients[1].import(str, function(err, wallet) {
-            should.not.exist(err);
-
-            // Overwrite client's API auth checks
-            clients[1]._processWcdAfterRead = function(rawData, xx, cb) {
-              return cb(null, rawData);
-            };
-
-            clients[1].createAddress(function(err, x0) {
-              err.code.should.equal('NOTAUTHORIZED');
-              clients[0].createAddress(function(err, x0) {
-                should.not.exist(err);
-                done();
-              });
-            });
-          });
-        });
-      });
-    });
-    it('should be able to create address from a rw export', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 1, function(err) {
-        should.not.exist(err);
-        clients[0].export({
-          access: 'readwrite'
-        }, function(err, str) {
-          should.not.exist(err);
-          clients[1].import(str, function(err, wallet) {
-            should.not.exist(err);
-            clients[1].createAddress(function(err, x0) {
-              should.not.exist(err);
-              done();
-            });
-          });
-        });
-      });
-    });
-
-    it('should not be able to create tx proposals from a rw export', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
-        should.not.exist(err);
-        clients[0].export({
-          access: 'readwrite'
-        }, function(err, str) {
-          clients[1].import(str, function(err, wallet) {
-            should.not.exist(err);
-            clients[1].createAddress(function(err, x0) {
-              should.not.exist(err);
-              blockExplorerMock.setUtxo(x0, 1, 1);
-              var opts = {
-                amount: 10000000,
-                toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-                message: 'hello 1-1',
-              };
-              clients[1].sendTxProposal(opts, function(err, x) {
-                should.not.exist(err);
-
-                // Overwrite client's API auth checks
-                clients[1]._processWcdAfterRead = function(rawData, xx, cb) {
-                  return cb(null, rawData);
-                };
-
-                clients[1].signTxProposal(x, function(err, tx) {
-                  err.code.should.be.equal('BADSIGNATURES');
-                  clients[1].getTxProposals({}, function(err, txs) {
-                    should.not.exist(err);
-                    txs[0].status.should.equal('pending');
-                    done();
-                  });
-                });
-              });
-            });
-          });
-        });
-      });
-    });
-  });
-
-  describe('Air gapped related flows', function() {
-    it('should be able get Tx proposals from a file', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 2, function(err, w) {
-        should.not.exist(err);
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          blockExplorerMock.setUtxo(x0, 1, 1);
-          var opts = {
-            amount: 10000000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hello 1-1',
-          };
-          clients[1].sendTxProposal(opts, function(err, x) {
-            should.not.exist(err);
-            clients[1].getTxProposals({
-              getRawTxps: true
-            }, function(err, txs, rawTxps) {
-              should.not.exist(err);
-
-              clients[0].parseTxProposals({
-                txps: rawTxps
-              }, function(err, txs2) {
-                should.not.exist(err);
-                txs[0].should.deep.equal(txs2[0]);
-                done();
-              });
-
-            });
-          });
-        });
-      });
-    });
-    it('should detect fakes from Tx proposals file', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 2, function(err, w) {
-        should.not.exist(err);
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          blockExplorerMock.setUtxo(x0, 1, 1);
-          var opts = {
-            amount: 10000000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hello 1-1',
-          };
-          clients[1].sendTxProposal(opts, function(err, x) {
-            should.not.exist(err);
-            clients[1].getTxProposals({
-              getRawTxps: true
-            }, function(err, txs, rawTxps) {
-              should.not.exist(err);
-
-              //Tamper 
-              rawTxps[0].amount++;
-
-              clients[0].parseTxProposals({
-                txps: rawTxps
-              }, function(err, txs2) {
-                err.code.should.equal('SERVERCOMPROMISED');
-                done();
-              });
-
-            });
-          });
-        });
-      });
-    });
-
-    it('should create from proxy from airgapped', function(done) {
-
-      var airgapped = clients[0];
-      var proxy = clients[1];
-
-      airgapped.generateKey('testnet', function(err) {
-        should.not.exist(err);
-        airgapped.export({
-          access: 'readwrite'
-        }, function(err, str) {
-          proxy.import(str, function(err) {
-            should.not.exist(err);
-            proxy.createWallet('1', '2', 1, 1, 'testnet',
-              function(err) {
-                should.not.exist(err);
-                // should keep cpub 
-                var c0 = JSON.parse(fsmock._get('client0'));
-                var c1 = JSON.parse(fsmock._get('client1'));
-                _.each(['copayerId', 'network', 'publicKeyRing',
-                  'roPrivKey', 'rwPrivKey'
-                ], function(k) {
-                  c0[k].should.deep.equal(c1[k]);
-                });
-                done();
-              });
-          });
-        });
-      });
-    });
-
-    it('should join from proxy from airgapped', function(done) {
-
-      var airgapped = clients[0];
-      var proxy = clients[1];
-      var other = clients[2]; // Other copayer
-
-      airgapped.generateKey('testnet', function(err) {
-        should.not.exist(err);
-        airgapped.export({
-          access: 'readwrite'
-        }, function(err, str) {
-          proxy.import(str, function(err) {
-            should.not.exist(err);
-
-            other.createWallet('1', '2', 1, 2, 'testnet', function(err, secret) {
-              should.not.exist(err);
-              proxy.joinWallet(secret, 'john', function(err) {
-                should.not.exist(err);
-                // should keep cpub 
-                var c0 = JSON.parse(fsmock._get('client0'));
-                var c1 = JSON.parse(fsmock._get('client1'));
-                _.each(['copayerId', 'network', 'publicKeyRing',
-                  'roPrivKey', 'rwPrivKey'
-                ], function(k) {
-                  c0[k].should.deep.equal(c1[k]);
-                });
-                done();
-              })
-            });
-          });
-        });
-      });
-    });
-
-    it('should be able export signatures and sign later from a ro client',
-      function(done) {
-        helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
-          should.not.exist(err);
-          clients[0].createAddress(function(err, x0) {
-            should.not.exist(err);
-            blockExplorerMock.setUtxo(x0, 1, 1);
-            blockExplorerMock.setUtxo(x0, 1, 2);
-            var opts = {
-              amount: 150000000,
-              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-              message: 'hello 1-1',
-            };
-            clients[0].sendTxProposal(opts, function(err, txp) {
-              should.not.exist(err);
-              clients[0].getSignatures(txp, function(err, signatures) {
-                should.not.exist(err);
-                signatures.length.should.equal(txp.inputs.length);
-                signatures[0].length.should.above(62 * 2);
-
-                txp.signatures = signatures;
-
-                // Make client RO
-                var data = JSON.parse(fsmock._get('client0'));
-                delete data.xPrivKey;
-                fsmock._set('client0', JSON.stringify(data));
-
-                clients[0].signTxProposal(txp, function(err, txp) {
-                  should.not.exist(err);
-                  txp.status.should.equal('accepted');
-                  done();
-                });
-              });
-            });
-          });
-        });
-      });
+    it.skip('should return wallet status even if wallet is not yet complete', function(done) {});
   });
 
   describe('Address Creation', function() {
     it('should be able to create address in all copayers in a 2-3 wallet', function(done) {
       this.timeout(5000);
-      helpers.createAndJoinWallet(clients, 2, 3, function(err) {
-        should.not.exist(err);
+      helpers.createAndJoinWallet(clients, 2, 3, function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
@@ -758,8 +350,8 @@ describe('client API ', function() {
       });
     });
     it('should see balance on address created by others', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 2, function(err, w) {
-        should.not.exist(err);
+      this.timeout(5000);
+      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
@@ -779,93 +371,28 @@ describe('client API ', function() {
       });
     });
     it('should detect fake addresses', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 2, function(err) {
-        should.not.exist(err);
-
-        // Get right response
-        clients[0]._load({}, function(err, data) {
-          var url = '/v1/addresses/';
-          clients[0]._doPostRequest(url, {}, data, function(err, address) {
-
-            // Tamper data
-            address.address = '2N86pNEpREGpwZyHVC5vrNUCbF9nM1Geh4K';
-
-            // Tamper response
-            clients[1]._doPostRequest = sinon.stub().yields(null, address);
-
-            // Grab real response
-            clients[1].createAddress(function(err, x0) {
-              err.code.should.contain('SERVERCOMPROMISED');
-              done();
-            });
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
+        helpers.tamperResponse(clients[0], 'post', '/v1/addresses/', {}, function(address) {
+          address.address = '2N86pNEpREGpwZyHVC5vrNUCbF9nM1Geh4K';
+        }, function() {
+          clients[0].createAddress(function(err, x0) {
+            err.code.should.contain('SERVERCOMPROMISED');
+            done();
           });
         });
       });
     });
     it('should detect fake public keys', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 2, function(err) {
-        should.not.exist(err);
-
-        // Get right response
-        clients[0]._load({}, function(err, data) {
-          var url = '/v1/addresses/';
-          clients[0]._doPostRequest(url, {}, data, function(err, address) {
-
-            // Tamper data
-            address.publicKeys = ['0322defe0c3eb9fcd8bc01878e6dbca7a6846880908d214b50a752445040cc5c54',
-              '02bf3aadc17131ca8144829fa1883c1ac0a8839067af4bca47a90ccae63d0d8037'
-            ];
-
-            // Tamper response
-            clients[1]._doPostRequest = sinon.stub().yields(null, address);
-
-            // Grab real response
-            clients[1].createAddress(function(err, x0) {
-              err.code.should.contain('SERVERCOMPROMISED');
-              done();
-            });
-          });
-        });
-      });
-    });
-  });
-
-  describe('Wallet Backups and Mobility', function() {
-
-    it('round trip #import #export', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 2, function(err, w) {
-        should.not.exist(err);
-        clients[1].export({}, function(err, str) {
-          should.not.exist(err);
-          var original = JSON.parse(fsmock._get('client1'));
-          clients[2].import(str, function(err, wallet) {
-            should.not.exist(err);
-            var clone = JSON.parse(fsmock._get('client2'));
-            delete original.walletPrivKey; // no need to persist it.
-            clone.should.deep.equal(original);
-            done();
-          });
-
-        });
-      });
-    });
-    it('should recreate a wallet, create addresses and receive money', function(done) {
-      var backup = '["tprv8ZgxMBicQKsPehCdj4HM1MZbKVXBFt5Dj9nQ44M99EdmdiUfGtQBDTSZsKmzdUrB1vEuP6ipuoa39UXwPS2CvnjE1erk5aUjc5vQZkWvH4B",2,2,["tpubD6NzVbkrYhZ4XCNDPDtyRWPxvJzvTkvUE2cMPB8jcUr9Dkicv6cYQmA18DBAid6eRK1BGCU9nzgxxVdQUGLYJ34XsPXPW4bxnH4PH6oQBF3"],"sd0kzXmlXBgTGHrKaBW4aA=="]';
-      clients[0].import(backup, function(err, wallet) {
-        should.not.exist(err);
-        clients[0].reCreateWallet('pepe', function(err, wallet) {
-          should.not.exist(err);
-
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
+        helpers.tamperResponse(clients[0], 'post', '/v1/addresses/', {}, function(address) {
+          address.publicKeys = [
+            '0322defe0c3eb9fcd8bc01878e6dbca7a6846880908d214b50a752445040cc5c54',
+            '02bf3aadc17131ca8144829fa1883c1ac0a8839067af4bca47a90ccae63d0d8037'
+          ];
+        }, function() {
           clients[0].createAddress(function(err, x0) {
-            should.not.exist(err);
-            should.exist(x0.address);
-            blockExplorerMock.setUtxo(x0, 10, 2);
-            clients[0].getBalance(function(err, bal0) {
-              should.not.exist(err);
-              bal0.totalAmount.should.equal(10 * 1e8);
-              bal0.lockedAmount.should.equal(0);
-              done();
-            });
+            err.code.should.contain('SERVERCOMPROMISED');
+            done();
           });
         });
       });
@@ -874,7 +401,7 @@ describe('client API ', function() {
 
   describe('Transaction Proposals Creation and Locked funds', function() {
     it('Should lock and release funds through rejection', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 2, function(err, w) {
+      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
@@ -905,7 +432,7 @@ describe('client API ', function() {
       });
     });
     it('Should lock and release funds through removal', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 2, function(err, w) {
+      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
@@ -936,7 +463,7 @@ describe('client API ', function() {
       });
     });
     it('Should keep message and refusal texts', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 3, function(err, w) {
+      helpers.createAndJoinWallet(clients, 2, 3, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           blockExplorerMock.setUtxo(x0, 10, 2);
@@ -962,7 +489,7 @@ describe('client API ', function() {
       });
     });
     it('Should encrypt proposal message', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 3, function(err, w) {
+      helpers.createAndJoinWallet(clients, 2, 3, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           blockExplorerMock.setUtxo(x0, 10, 2);
@@ -982,7 +509,7 @@ describe('client API ', function() {
       });
     });
     it('Should encrypt proposal refusal comment', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 3, function(err, w) {
+      helpers.createAndJoinWallet(clients, 2, 3, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           blockExplorerMock.setUtxo(x0, 10, 2);
@@ -1004,9 +531,7 @@ describe('client API ', function() {
       });
     });
     it('should detect fake tx proposals (wrong signature)', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 2, function(err) {
-        should.not.exist(err);
-
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           blockExplorerMock.setUtxo(x0, 10, 2);
@@ -1018,34 +543,22 @@ describe('client API ', function() {
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
 
-
-            // Get right response
-            clients[0]._load({}, function(err, data) {
-              var url = '/v1/txproposals/';
-              clients[0]._doGetRequest(url, data, function(err, txps) {
-
-                // Tamper data
-                txps[0].proposalSignature = '304402206e4a1db06e00068582d3be41cfc795dcf702451c132581e661e7241ef34ca19202203e17598b4764913309897d56446b51bc1dcd41a25d90fdb5f87a6b58fe3a6920';
-
-                // Tamper response
-                clients[0]._doGetRequest = sinon.stub().yields(null, txps);
-
-                // Grab real response
-                clients[0].getTxProposals({}, function(err, txps) {
-                  should.exist(err);
-                  err.code.should.contain('SERVERCOMPROMISED');
-                  done();
-                });
+            helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function(txps) {
+              txps[0].proposalSignature = '304402206e4a1db06e00068582d3be41cfc795dcf702451c132581e661e7241ef34ca19202203e17598b4764913309897d56446b51bc1dcd41a25d90fdb5f87a6b58fe3a6920';
+            }, function() {
+              clients[0].getTxProposals({}, function(err, txps) {
+                should.exist(err);
+                err.code.should.contain('SERVERCOMPROMISED');
+                done();
               });
             });
           });
         });
       });
     });
-    it('should detect fake tx proposals (tampered amount)', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 2, function(err) {
-        should.not.exist(err);
 
+    it('should detect fake tx proposals (tampered amount)', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           blockExplorerMock.setUtxo(x0, 10, 2);
@@ -1057,24 +570,13 @@ describe('client API ', function() {
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
 
-
-            // Get right response
-            clients[0]._load({}, function(err, data) {
-              var url = '/v1/txproposals/';
-              clients[0]._doGetRequest(url, data, function(err, txps) {
-
-                // Tamper data
-                txps[0].amount = 100000;
-
-                // Tamper response
-                clients[0]._doGetRequest = sinon.stub().yields(null, txps);
-
-                // Grab real response
-                clients[0].getTxProposals({}, function(err, txps) {
-                  should.exist(err);
-                  err.code.should.contain('SERVERCOMPROMISED');
-                  done();
-                });
+            helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function(txps) {
+              txps[0].amount = 100000;
+            }, function() {
+              clients[0].getTxProposals({}, function(err, txps) {
+                should.exist(err);
+                err.code.should.contain('SERVERCOMPROMISED');
+                done();
               });
             });
           });
@@ -1082,9 +584,7 @@ describe('client API ', function() {
       });
     });
     it('should detect fake tx proposals (change address not it wallet)', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 2, function(err) {
-        should.not.exist(err);
-
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           blockExplorerMock.setUtxo(x0, 10, 2);
@@ -1096,23 +596,13 @@ describe('client API ', function() {
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
 
-
-            // Get right response
-            clients[0]._load({}, function(err, data) {
-              var url = '/v1/txproposals/';
-              clients[0]._doGetRequest(url, data, function(err, txps) {
-                // Tamper data
-                txps[0].changeAddress.address = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
-
-                // Tamper response
-                clients[0]._doGetRequest = sinon.stub().yields(null, txps);
-
-                // Grab real response
-                clients[0].getTxProposals({}, function(err, txps) {
-                  should.exist(err);
-                  err.code.should.contain('SERVERCOMPROMISED');
-                  done();
-                });
+            helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function(txps) {
+              txps[0].changeAddress.address = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+            }, function() {
+              clients[0].getTxProposals({}, function(err, txps) {
+                should.exist(err);
+                err.code.should.contain('SERVERCOMPROMISED');
+                done();
               });
             });
           });
@@ -1120,8 +610,7 @@ describe('client API ', function() {
       });
     });
     it('Should return only main addresses (case 1)', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
-        should.not.exist(err);
+      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           blockExplorerMock.setUtxo(x0, 1, 1);
@@ -1142,8 +631,7 @@ describe('client API ', function() {
       });
     });
     it('Should return only main addresses (case 2)', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
-        should.not.exist(err);
+      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           clients[0].createAddress(function(err, x0) {
@@ -1164,7 +652,7 @@ describe('client API ', function() {
   describe('Transactions Signatures and Rejection', function() {
     this.timeout(5000);
     it('Send and broadcast in 1-1 wallet', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
+      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
@@ -1194,7 +682,7 @@ describe('client API ', function() {
       });
     });
     it('Send and broadcast in 2-3 wallet', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 3, function(err, w) {
+      helpers.createAndJoinWallet(clients, 2, 3, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
@@ -1240,7 +728,7 @@ describe('client API ', function() {
     });
 
     it('Send, reject, 2 signs and broadcast in 2-3 wallet', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 3, function(err, w) {
+      helpers.createAndJoinWallet(clients, 2, 3, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
@@ -1277,7 +765,7 @@ describe('client API ', function() {
     });
 
     it('Send, reject in 3-4 wallet', function(done) {
-      helpers.createAndJoinWallet(clients, 3, 4, function(err, w) {
+      helpers.createAndJoinWallet(clients, 3, 4, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
@@ -1312,7 +800,7 @@ describe('client API ', function() {
     });
 
     it('Should not allow to reject or sign twice', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 3, function(err, w) {
+      helpers.createAndJoinWallet(clients, 2, 3, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
@@ -1352,7 +840,7 @@ describe('client API ', function() {
   describe('Transaction history', function() {
     it('should get transaction history', function(done) {
       blockExplorerMock.setHistory(TestData.history);
-      helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
+      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
@@ -1367,7 +855,7 @@ describe('client API ', function() {
     });
     it('should get empty transaction history when there are no addresses', function(done) {
       blockExplorerMock.setHistory(TestData.history);
-      helpers.createAndJoinWallet(clients, 1, 1, function(err, w) {
+      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
         clients[0].getTxHistory({}, function(err, txs) {
           should.not.exist(err);
           should.exist(txs);
@@ -1378,5 +866,218 @@ describe('client API ', function() {
     });
     it.skip('should get transaction history decorated with proposal', function(done) {});
     it.skip('should get paginated transaction history', function(done) {});
+  });
+
+  describe('Mobility, backup & recovery', function() {
+    describe('Export & Import', function() {
+      describe('Success', function() {
+        var address, importedClient;
+        beforeEach(function(done) {
+          importedClient = null;
+          helpers.createAndJoinWallet(clients, 1, 1, function() {
+            clients[0].createAddress(function(err, addr) {
+              should.not.exist(err);
+              should.exist(addr.address);
+              address = addr.address;
+              done();
+            });
+          });
+        });
+        afterEach(function(done) {
+          importedClient.getMainAddresses({}, function(err, list) {
+            should.not.exist(err);
+            should.exist(list);
+            list.length.should.equal(1);
+            list[0].address.should.equal(address);
+            done();
+          });
+        });
+
+        it('should export & import', function() {
+          var exported = clients[0].export();
+
+          importedClient = helpers.newClient(app);
+          importedClient.import(exported);
+        });
+        it.skip('should export & import compressed', function() {
+          var walletId = clients[0].credentials.walletId;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+
+          var exported = clients[0].export({
+            compressed: true
+          });
+
+          importedClient = helpers.newClient(app);
+          importedClient.import(exported, {
+            compressed: true
+          });
+          importedClient.credentials.walletId.should.equal(walletId);
+          importedClient.credentials.walletName.should.equal(walletName);
+          importedClient.credentials.copayerName.should.equal(copayerName);
+        });
+        it('should export & import encrypted', function() {
+          var xPrivKey = clients[0].credentials.xPrivKey;
+          should.exist(xPrivKey);
+
+          var exported = clients[0].export({
+            password: '123'
+          });
+          exported.should.not.contain(xPrivKey);
+
+          importedClient = helpers.newClient(app);
+          importedClient.import(exported, {
+            password: '123'
+          });
+          should.exist(importedClient.credentials.xPrivKey);
+          importedClient.credentials.xPrivKey.should.equal(xPrivKey);
+        });
+        it('should export & import compressed & encrypted', function() {
+          var exported = clients[0].export({
+            compressed: true,
+            password: '123'
+          });
+
+          importedClient = helpers.newClient(app);
+          importedClient.import(exported, {
+            compressed: true,
+            password: '123'
+          });
+        });
+      });
+      describe('Fail', function() {
+        it.skip('should fail to export compressed & import uncompressed', function() {});
+        it.skip('should fail to export uncompressed & import compressed', function() {});
+        it.skip('should fail to export unencrypted & import with password', function() {});
+        it.skip('should fail to export encrypted & import with incorrect password', function() {});
+      });
+    });
+
+    describe('Recovery', function() {
+      it('should be able to regain access to a 1-1 wallet with just the xPriv', function(done) {
+        helpers.createAndJoinWallet(clients, 1, 1, function() {
+          var xpriv = clients[0].credentials.xPrivKey;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+
+          clients[0].createAddress(function(err, addr) {
+            should.not.exist(err);
+            should.exist(addr);
+
+            var recoveryClient = helpers.newClient(app);
+            recoveryClient.seedFromExtendedPrivateKey(xpriv);
+            recoveryClient.openWallet(function(err) {
+              console.log(err);
+              should.not.exist(err);
+              recoveryClient.credentials.walletName.should.equal(walletName);
+              recoveryClient.credentials.copayerName.should.equal(copayerName);
+              recoveryClient.getMainAddresses({}, function(err, list) {
+                should.not.exist(err);
+                should.exist(list);
+                list[0].address.should.equal(addr.address);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+
+  describe('Air gapped related flows', function() {
+    it('should create wallet in proxy from airgapped', function(done) {
+      var airgapped = new AirGapped({
+        network: 'testnet'
+      });
+      var seed = airgapped.getSeed();
+
+      var proxy = helpers.newClient(app);
+      proxy.seedFromAirGapped(seed);
+      should.not.exist(proxy.credentials.xPrivKey);
+      proxy.createWallet('wallet name', 'creator', 1, 1, 'testnet', function(err) {
+        should.not.exist(err);
+        proxy.getStatus(function(err, status) {
+          should.not.exist(err);
+          status.wallet.name.should.equal('wallet name');
+          done();
+        });
+      });
+    });
+
+    it('should be able to sign from airgapped client and broadcast from proxy', function(done) {
+      var airgapped = new AirGapped({
+        network: 'testnet'
+      });
+      var seed = airgapped.getSeed();
+
+      var proxy = helpers.newClient(app);
+      proxy.seedFromAirGapped(seed);
+
+      async.waterfall([
+
+          function(next) {
+            proxy.createWallet('wallet name', 'creator', 1, 1, 'testnet', function(err) {
+              should.not.exist(err);
+              proxy.createAddress(function(err, address) {
+                should.not.exist(err);
+                should.exist(address.address);
+                blockExplorerMock.setUtxo(address, 1, 1);
+                var opts = {
+                  amount: 1200000,
+                  toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+                  message: 'hello 1-1',
+                };
+                proxy.sendTxProposal(opts, next);
+              });
+            });
+          },
+          function(txp, next) {
+            should.exist(txp);
+            proxy.signTxProposal(txp, function(err, txp) {
+              should.exist(err);
+              should.not.exist(txp);
+              err.message.should.equal('You do not have the required keys to sign transactions');
+              next(null, txp);
+            });
+          },
+          function(txp, next) {
+            proxy.getTxProposals({
+              forAirGapped: true
+            }, next);
+          },
+          function(bundle, next) {
+            var signatures = airgapped.signTxProposal(bundle.txps[0], bundle.publicKeyRing, bundle.m, bundle.n);
+            next(null, signatures);
+          },
+          function(signatures, next) {
+            proxy.getTxProposals({}, function(err, txps) {
+              should.not.exist(err);
+              var txp = txps[0];
+              txp.signatures = signatures;
+              async.each(txps, function(txp, cb) {
+                proxy.signTxProposal(txp, function(err, txp) {
+                  should.not.exist(err);
+                  proxy.broadcastTxProposal(txp, function(err, txp) {
+                    should.not.exist(err);
+                    txp.status.should.equal('broadcasted');
+                    should.exist(txp.txid);
+                    cb();
+                  });
+                });
+              }, function(err) {
+                next(err);
+              });
+            });
+          },
+        ],
+        function(err) {
+          should.not.exist(err);
+          done();
+        }
+      );
+    });
+    it.skip('should be able to detect tampered PKR when signing on airgapped client', function(done) {});
+    it.skip('should be able to detect tampered proposal when signing on airgapped client', function(done) {});
+    it.skip('should be able to detect tampered change address when signing on airgapped client', function(done) {});
   });
 });

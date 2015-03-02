@@ -1,6 +1,8 @@
 var _ = require('lodash');
 var Client = require('../lib/client');
+var FileStorage = require('./filestorage');
 var read = require('read')
+var log = require('npmlog');
 
 var Utils = function() {};
 
@@ -39,55 +41,75 @@ Utils.confirmationId = function(copayer) {
   return parseInt(copayer.xPubKeySignature.substr(-4), 16).toString().substr(-4);
 }
 
-Utils.getClient = function(args) {
-  var storage = new Client.FileStorage({
+Utils.getClient = function(args, cb) {
+  var storage = new FileStorage({
     filename: args.file || process.env['BIT_FILE'],
   });
-  var c = new Client({
-    storage: storage,
+  var client = new Client({
     baseUrl: args.host || process.env['BIT_HOST'],
     verbose: args.verbose,
   });
+  storage.load(function(err, walletData) {
+    if (err && err.code != 'ENOENT') die(err);
+    if (!walletData) return cb(client);
 
-
-  if (args.nopasswd)
-    c.setNopasswdAccess(args.nopasswd);
-
-  var setPassword;
-  c.on('needPassword', function(cb) {
-    if (args.password) {
-      return cb(args.password);
-    } else {
-      if (setPassword)
-        return cb(setPassword);
-
-      read({
-        prompt: 'Password for ' + args.file + ' : ',
-        silent: true
-      }, function(er, password) {
-        setPassword = password;
-        return cb(password);
-      })
-    }
+    client.import(walletData);
+    client.openWallet(function(err, justCompleted) {
+      if (client.isComplete() && justCompleted) {
+        Utils.saveClient(args, client, function() {
+          log.info('Your wallet has just been completed. Please backup your wallet file or use the export command.');
+          return cb(client);
+        });
+      } else {
+        return cb(client);
+      }
+    });
   });
+};
 
-  c.on('needNewPassword', function(cb) {
-    if (args.password) {
-      return cb(args.password);
-    } else {
-      read({
-        prompt: 'New Password: ',
-        silent: true
-      }, function(er, password) {
-        return cb(password);
-      })
-    }
+Utils.saveClient = function(args, client, cb) {
+  var storage = new FileStorage({
+    filename: args.file || process.env['BIT_FILE'],
   });
+  var str = client.export();
+  storage.save(str, function(err) {
+    die(err);
+    return cb();
+  });
+};
+
+// var setPassword;
+// c.on('needPassword', function(cb) {
+//   if (args.password) {
+//     return cb(args.password);
+//   } else {
+//     if (setPassword)
+//       return cb(setPassword);
+
+//     read({
+//       prompt: 'Password for ' + args.file + ' : ',
+//       silent: true
+//     }, function(er, password) {
+//       setPassword = password;
+//       return cb(password);
+//     })
+//   }
+// });
+
+// c.on('needNewPassword', function(cb) {
+//   if (args.password) {
+//     return cb(args.password);
+//   } else {
+//     read({
+//       prompt: 'New Password: ',
+//       silent: true
+//     }, function(er, password) {
+//       return cb(password);
+//     })
+//   }
+// });
 
 
-
-  return c;
-}
 
 Utils.findOneTxProposal = function(txps, id) {
   var matches = _.filter(txps, function(tx) {
@@ -173,7 +195,11 @@ Utils.renderTxProposals = function(txps) {
         return a.copayerName + ' ' + (a.type == 'accept' ? '✓' : '✗') + (a.comment ? ' (' + a.comment + ')' : '');
       }).join('. '));
     }
-    console.log('\t\tMissing signatures: ' + missingSignatures);
+    if (missingSignatures > 0) {
+      console.log('\t\tMissing signatures: ' + missingSignatures);
+    } else {
+      console.log('\t\tReady to broadcast');
+    }
   });
 
 };
