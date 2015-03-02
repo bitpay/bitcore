@@ -24,6 +24,8 @@ var transaction = new Transaction()
     .sign(privkeySet)     // Signs all the inputs it can
 ```
 
+You can obtain the input and output total amounts of the transaction in satoshis by accessing the fields `inputAmount` and `outputAmount`.
+
 Now, this could just be serialized to hexadecimal ASCII values (`transaction.serialize()`) and sent over to the bitcoind reference client.
 
 ```bash
@@ -102,7 +104,7 @@ Some methods related to adding inputs are:
   - `from(utxos)`: same as above, but passing in an array of Unspent Outputs.
   - `from(utxo, publicKeys, threshold)`: add an input that spends a UTXO with a P2SH output for a Multisig script. The `publicKeys` argument is an array of public keys, and `threshold` is the number of required signatures in the Multisig script.
 * `addInput`: Performs a series of checks on an input and appends it to the end of the `input` vector and updates the amount of incoming bitcoins of the transaction.
-* `uncheckedAddInput`: adds an input to the end of the `input` vector and updates the `_inputAmount` without performing any checks.
+* `uncheckedAddInput`: adds an input to the end of the `input` vector and updates the `inputAmount` without performing any checks.
 
 ### PublicKeyHashInput
 
@@ -131,7 +133,7 @@ The following methods are used to manage signatures for a transaction:
 
 Outputs can be added by:
 
-* The `addOutput(output)` method, which pushes an `Output` to the end of the `outputs` property and updates the `_outputAmount`. It also clears signatures (as the hash of the transaction may have changed) and updates the change output.
+* The `addOutput(output)` method, which pushes an `Output` to the end of the `outputs` property and updates the `outputAmount` field. It also clears signatures (as the hash of the transaction may have changed) and updates the change output.
 * The `to(address, amount)` method, that adds an output with the script that corresponds to the given address. Builds an output and calls the `addOutput` method.
 * Specifying a [change address](#Fee_calculation)
 
