@@ -64,13 +64,13 @@ describe('Transaction.Input', function() {
         input.toString();
       }).to.throw('Need a script to create an input');
     });
-    it('fromJSON', function() {
+    it('fromJSON should work', function() {
       var input = Input.fromJSON(coinbaseJSON);
       var otherInput = Input.fromJSON(otherJSON);
       should.exist(input);
       should.exist(otherInput);
     });
-    it('fromObject', function() {
+    it('fromObject should work', function() {
       var input = Input.fromJSON(coinbaseJSON);
       var obj = input.toObject();
       obj.script = new Buffer(obj.script, 'hex');
@@ -80,7 +80,7 @@ describe('Transaction.Input', function() {
     });
   });
 
-  it('_estimateSize', function() {
+  it('_estimateSize returns correct size', function() {
     var input = new Input(output);
     input._estimateSize().should.equal(66);
   });
