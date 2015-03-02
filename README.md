@@ -66,7 +66,7 @@ A Multisig HD Wallet Service, with minimum server trust.
   
 # Local  data
 
-Copayers store their extended private key and their copayers' extended public key locally. We call this the ``Wallet Critical Data``. Extended private keys are never sent to the server.
+Copayers store their extended private key and their copayer's extended public key locally. We call this the ``Wallet Critical Data``. Extended private keys are never sent to the server.
   
   
 # Password protection 
@@ -95,8 +95,8 @@ You can safely access a wallet from different devices. Just copy the wallet file
 It is possible to export a wallet with restricted access level. The levels are:
 ```
     readonly : allows to read wallet data: balance, tx proposals 
-    readwrite: + allows to create addresses and unsigned tx prposals 
-    full     : + allows sign tx prposals 
+    readwrite: + allows to create addresses and unsigned tx proposals 
+    full     : + allows sign tx proposals 
 ```
 `readonly` will only export the Wallet's Extended PublicKeys, and only the derived private key required for signing 'GET' request (readonly) to the server. `readwrite` will add the derived private key required for signing all other requests (as POST) so readwrite access will be possible. And `full` will export also the Extended Private Key, which is necesary for signing wallet's transactions.  `bit import` can handle any for the levels correctly.
 
@@ -108,7 +108,7 @@ bit export -o wallet.dat
 bit export -o wallet.dat --access readonly
 # readwrite access (can create addresses, propose transactions, reject TX, but does not have signing keys)
 
-# Import the wallet , with giveng access level
+# Import the wallet , with given access level
 bit import wallet.dat
 
 # Export also support QR output:
