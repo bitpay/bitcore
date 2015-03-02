@@ -12,26 +12,20 @@ program
   .parse(process.argv);
 
 var args = program.args;
-if (!args[0])
-  program.help();
+var txpid = args[0] || '';
 
-var txpid = args[0];
-
-var cli = new Client({
-  filename: program.config
-});
-
-cli.getTxProposals({}, function(err, txps) {
-  utils.die(err);
-
-  if (program.verbose)
-    console.log('* Raw Server Response:\n', txps); //TODO
-
-  var txp = utils.findOneTxProposal(txps, txpid);
-
-  cli.removeTxProposal(txp, function(err) {
+utils.getClient(program, function (client) {
+  client.getTxProposals({}, function(err, txps) {
     utils.die(err);
 
-    console.log('Transaction removed.');
+    if (program.verbose)
+      console.log('* Raw Server Response:\n', txps); //TODO
+
+    var txp = utils.findOneTxProposal(txps, txpid);
+    client.removeTxProposal(txp, function(err) {
+      utils.die(err);
+
+      console.log('Transaction removed.');
+    });
   });
 });

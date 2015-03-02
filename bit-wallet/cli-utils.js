@@ -195,7 +195,11 @@ Utils.renderTxProposals = function(txps) {
         return a.copayerName + ' ' + (a.type == 'accept' ? '✓' : '✗') + (a.comment ? ' (' + a.comment + ')' : '');
       }).join('. '));
     }
-    console.log('\t\tMissing signatures: ' + missingSignatures);
+    if (missingSignatures > 0) {
+      console.log('\t\tMissing signatures: ' + missingSignatures);
+    } else {
+      console.log('\t\tReady to broadcast');
+    }
   });
 
 };
