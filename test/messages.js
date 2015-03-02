@@ -27,6 +27,7 @@ describe('Messages', function() {
     Alert: 'alert',
     Reject: 'reject',
     Block: 'block',
+    MerkleBlock: 'merkleblock',
     FilterLoad: 'filterload',
     FilterAdd: 'filteradd',
     FilterClear: 'filterclear',
@@ -111,10 +112,13 @@ describe('Messages', function() {
     var hash = 'eb951630aba498b9a0d10f72b5ea9e39d5ff04b03dc2231e662f52057f948aa1';
     [Messages.Inventory, Messages.GetData, Messages.NotFound].forEach(function(clazz) {
       var b = clazz.forBlock(hash);
+      var mb = clazz.forMerkleBlock(hash);
       (b instanceof clazz).should.equal(true);
       var t = clazz.forTransaction(hash);
       (t instanceof clazz).should.equal(true);
       clazz.forBlock(BufferUtils.reverse(new Buffer(hash, 'hex'))).should.deep.equal(b);
+      clazz.forMerkleBlock(BufferUtils.reverse(new Buffer(hash, 'hex'))).should.deep.equal(mb);
+      clazz.forFilteredBlock(BufferUtils.reverse(new Buffer(hash, 'hex'))).should.deep.equal(mb);
       clazz.forTransaction(BufferUtils.reverse(new Buffer(hash, 'hex'))).should.deep.equal(t);
     });
   });
@@ -138,6 +142,12 @@ describe('Messages', function() {
   it('FilterLoad#fromBuffer method works', function() {
     var testPayload = Data.FILTERLOAD.payload;
     var msg = new Messages.FilterLoad().fromBuffer(new Buffer(testPayload, 'hex'));
+    msg.getPayload().toString('hex').should.equal(testPayload);
+  });
+
+  it('MerkleBlock#fromBuffer method works', function() {
+    var testPayload = Data.MERKLEBLOCK.payload;
+    var msg = new Messages.MerkleBlock().fromBuffer(new Buffer(testPayload, 'hex'));
     msg.getPayload().toString('hex').should.equal(testPayload);
   });
 
