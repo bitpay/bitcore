@@ -13,17 +13,18 @@ program
 var args = program.args;
 var txpid = args[0] || '';
 var reason = args[1] || '';
-var client = utils.getClient(program);
 
-client.getTxProposals({}, function(err, txps) {
-  utils.die(err);
-
-  var txp = utils.findOneTxProposal(txps, txpid);
-  client.rejectTxProposal(txp, reason, function(err, tx) {
+utils.getClient(program, function (client) {
+  client.getTxProposals({}, function(err, txps) {
     utils.die(err);
-    if (tx.status == 'rejected')
-      console.log('Transaction finally rejected.');
-    else 
-      console.log('Transaction rejected by you.');
+
+    var txp = utils.findOneTxProposal(txps, txpid);
+    client.rejectTxProposal(txp, reason, function(err, tx) {
+      utils.die(err);
+      if (tx.status == 'rejected')
+        console.log('Transaction finally rejected.');
+      else 
+        console.log('Transaction rejected by you.');
+    });
   });
 });

@@ -11,19 +11,16 @@ program
   .parse(process.argv);
 
 var args = program.args;
-if (!args[0])
-  program.help();
+var txpid = args[0] || '';
 
-var txpid = args[0];
-var client = utils.getClient(program);
-
-client.getTxProposals({}, function(err, txps) {
-  utils.die(err);
-
-  var txp = utils.findOneTxProposal(txps, txpid);
-  client.broadcastTxProposal(txp, function(err, txid) {
+utils.getClient(program, function (client) {
+  client.getTxProposals({}, function(err, txps) {
     utils.die(err);
-    console.log('Transaction Broadcasted: TXID: ' + x.txid);
- 
+
+    var txp = utils.findOneTxProposal(txps, txpid);
+    client.broadcastTxProposal(txp, function(err, txp) {
+      utils.die(err);
+      console.log('Transaction Broadcasted: TXID: ' + txp.txid);
+    });
   });
 });

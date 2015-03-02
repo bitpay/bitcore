@@ -1,4 +1,3 @@
-
 var fs = require('fs')
 
 function FileStorage(opts) {
@@ -18,16 +17,14 @@ FileStorage.prototype.save = function(data, cb) {
 };
 
 FileStorage.prototype.load = function(cb) {
-  this.fs.readFile(this.filename, 'utf8', function(err,data) {
+  this.fs.readFile(this.filename, 'utf8', function(err, data) {
     if (err) return cb(err);
     try {
       data = JSON.parse(data);
-    } catch (e) {
-    }
+    } catch (e) {}
     return cb(null, data);
   });
 };
 
 
 module.exports = FileStorage;
-
