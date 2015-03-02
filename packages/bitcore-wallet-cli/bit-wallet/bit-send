@@ -31,14 +31,14 @@ try {
 }
 var note = args[2];
 
-var client = utils.getClient(program);
-
-client.sendTxProposal({
-  toAddress: address,
-  amount: amount,
-  message: note
-}, function(err, x) {
-  utils.die(err);
-  console.log(' * Tx created: ID %s [%s] RequiredSignatures:',
-    x.id, x.status, x.requiredSignatures);
+utils.getClient(program, function (client) {
+  client.sendTxProposal({
+    toAddress: address,
+    amount: amount,
+    message: note
+  }, function(err, x) {
+    utils.die(err);
+    console.log(' * Tx created: ID %s [%s] RequiredSignatures:',
+      x.id, x.status, x.requiredSignatures);
+  });
 });

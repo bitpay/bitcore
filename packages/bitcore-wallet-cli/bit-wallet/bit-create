@@ -8,7 +8,6 @@ program = utils.configureCommander(program);
 
 program
   .option('-t, --testnet', 'Create a Testnet Wallet')
-  .option('-n, --nopasswd [level]', 'Set access for no password usage: none(default), readonly, readwrite, full', 'none')
   .usage('[options] <walletName> <m-n> [copayerName]')
   .parse(process.argv);
 
@@ -27,10 +26,14 @@ try {
   utils.die(ex);
 }
 
-var client = utils.getClient(program);
-client.createWallet(walletName, copayerName, mn[0], mn[1], network, function(err, secret) {
-  utils.die(err);
-  console.log(' * ' + _.capitalize(network) + ' Wallet Created.');
-  if (secret)
-    console.log('   - Secret to share:\n\t' + secret);
+utils.getClient(program, function (client) {
+  client.createWallet(walletName, copayerName, mn[0], mn[1], network, function(err, secret) {
+    utils.die(err);
+    console.log(' * ' + _.capitalize(network) + ' Wallet Created.');
+    utils.saveClient(program, client, function () {
+      if (secret) {
+        console.log('   - Secret to share:\n\t' + secret);
+      }
+    });
+  });
 });

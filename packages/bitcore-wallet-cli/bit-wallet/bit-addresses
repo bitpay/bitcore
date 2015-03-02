@@ -10,14 +10,20 @@ program
   .parse(process.argv);
 
 var args = program.args;
-var client = utils.getClient(program);
-client.getMainAddresses({
-  doNotVerify: true
-}, function(err, x) {
-  utils.die(err);
 
-  console.log('* Addresses:');
-  _.each(x, function(a) {
-    console.log('      ', a.address);
+utils.getClient(program, function (client) {
+  client.getMainAddresses({
+    doNotVerify: true
+  }, function(err, x) {
+    utils.die(err);
+
+    if (x.length > 0) {
+      console.log('* Addresses:');
+      _.each(x, function(a) {
+        console.log('      ', a.address);
+      });
+    } else {
+      console.log('* No addresses.');
+    }
   });
 });
