@@ -2,8 +2,7 @@
 
 var _ = require('lodash');
 var program = require('commander');
-var Client = require('../lib/client');
-var utils  = require('./cli-utils');
+var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
 program
@@ -12,10 +11,11 @@ program
   .parse(process.argv);
 
 var args = program.args;
-var client = utils.getClient(program);
-var network = program.testnet ? 'testnet' : 'livenet';
+utils.getClient(program, function(client) {
+  var network = program.testnet ? 'testnet' : 'livenet';
 
-client.generateKey(network, function(err) {
-  utils.die(err);
-  console.log(' * ' + _.capitalize(network) + ' Extended Private Key Created.');
+  client.generateKey(network, function(err) {
+    utils.die(err);
+    console.log(' * ' + _.capitalize(network) + ' Extended Private Key Created.');
+  });
 });

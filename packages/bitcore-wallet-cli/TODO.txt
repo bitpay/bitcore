@@ -1,7 +1,0 @@
-- Check length < 100 for both wallet.name & copayer.name
-- Proposal with spent input should be tagged as invalid or removed
-- Cron job to broadcast accepted txps that failed to broadcast (we may need to track broadcast attempts for this).
-- Payment protocol
-- Automatically create ./db directory
-
-- check parameters for KEY at storage
