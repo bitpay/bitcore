@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-var Client = require('../lib/client');
 var utils  = require('./cli-utils');
 program = utils.configureCommander(program);
 
@@ -9,10 +8,9 @@ program
   .parse(process.argv);
 
 var args = program.args;
-
 utils.getClient(program, function (client) {
-  client.getBalance(function(err, x) {
+  client.createAddress(function(err, x) {
     utils.die(err);
-    console.log('* Wallet balance %s (Locked %s)', utils.renderAmount(x.totalAmount), utils.renderAmount(x.lockedAmount) );
+    console.log('* New Address %s ', x.address);
   });
 });

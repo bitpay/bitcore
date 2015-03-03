@@ -2,7 +2,6 @@
 
 var _ = require('lodash');
 var program = require('commander');
-var ClientLib = require('../lib/client');
 var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
@@ -16,8 +15,9 @@ if (!args[0])
   program.help();
 
 var walletName = args[0];
-var client = utils.getClient(program);
-client.reCreateWallet(walletName, function(err) {
-  utils.die(err);
-  console.log(' *  Wallet Created.');
+utils.getClient(program, function(client) {
+  client.reCreateWallet(walletName, function(err) {
+    utils.die(err);
+    console.log(' *  Wallet Created.');
+  });
 });

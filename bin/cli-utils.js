@@ -1,8 +1,9 @@
 var _ = require('lodash');
-var Client = require('../lib/client');
-var FileStorage = require('./filestorage');
 var read = require('read')
 var log = require('npmlog');
+
+var Client = require('bitcore-wallet-client');
+var FileStorage = require('./filestorage');
 
 var Utils = function() {};
 

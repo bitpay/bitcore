@@ -1,9 +1,9 @@
 #!/usr/bin/env node
+
 var program = require('commander');
 
-var Client = require('../lib/client');
 var fs = require('fs');
-var utils  = require('./cli-utils');
+var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
 
@@ -18,10 +18,11 @@ var args = program.args;
 if (!args[0])
   program.help();
 
-var client = utils.getClient(program);
 var str = fs.readFileSync(args[0]);
 
-client.import(str, function(err, x) {
-  utils.die(err);
-  console.log('Wallet Imported. Access level:' + x);
+utils.getClient(program, function(client) {
+  client.import(str, function(err, x) {
+    utils.die(err);
+    console.log('Wallet Imported. Access level:' + x);
+  });
 });

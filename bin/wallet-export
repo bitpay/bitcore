@@ -4,8 +4,6 @@ var program = require('commander');
 var qr = require('qr-image');
 var fs = require('fs');
 var _ = require('lodash');
-
-var Client = require('../lib/client');
 var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
@@ -27,31 +25,32 @@ program
   .parse(process.argv);
 
 var args = program.args;
-var client = utils.getClient(program);
+utils.getClient(program, function(client) {
 
-if (!_.contains(['full', 'readwrite', 'readonly'], program.access)) {
-  program.help();
-}
-
-var msg = ' Access Level: ' + program.access;
-
-client.export({
-  access: program.access
-}, function(err, x) {
-  utils.die(err);
-  if (program.qr) {
-    var filename = program.file + '.svg';
-    var qr_svg = qr.image(x, {
-      type: 'svg'
-    });
-    qr_svg.pipe(fs.createWriteStream(filename));
-    console.log('Wallet Critical Data: exported to %s. %s\n',filename, msg);
-  } else {
-    if (program.output) {
-      fs.writeFileSync(program.output, x);
-      console.log('Wallet Critical Data saved at %s. %s\n', program.output, msg);
-    } else {
-      console.log('Wallet Critical Data (%s)\n%s', msg,  x);
-    }
+  if (!_.contains(['full', 'readwrite', 'readonly'], program.access)) {
+    program.help();
   }
+
+  var msg = ' Access Level: ' + program.access;
+
+  client.export({
+    access: program.access
+  }, function(err, x) {
+    utils.die(err);
+    if (program.qr) {
+      var filename = program.file + '.svg';
+      var qr_svg = qr.image(x, {
+        type: 'svg'
+      });
+      qr_svg.pipe(fs.createWriteStream(filename));
+      console.log('Wallet Critical Data: exported to %s. %s\n', filename, msg);
+    } else {
+      if (program.output) {
+        fs.writeFileSync(program.output, x);
+        console.log('Wallet Critical Data saved at %s. %s\n', program.output, msg);
+      } else {
+        console.log('Wallet Critical Data (%s)\n%s', msg, x);
+      }
+    }
+  });
 });
