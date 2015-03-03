@@ -9,13 +9,16 @@ var levelup = require('levelup');
 var memdown = require('memdown');
 var async = require('async');
 var request = require('supertest');
-var Client = require('../../lib/client');
-var AirGapped = Client.AirGapped;
+
 var Bitcore = require('bitcore');
-var WalletUtils = require('../../lib/walletutils');
-var ExpressApp = require('../../lib/expressapp');
-var Storage = require('../../lib/storage');
-var TestData = require('../testdata');
+var WalletUtils = require('bitcore-wallet-utils');
+var BWS = require('bitcore-wallet-service');
+
+var Client = require('../lib');
+var AirGapped = Client.AirGapped;
+var ExpressApp = BWS.ExpressApp;
+var Storage = BWS.Storage;
+var TestData = require('./testdata');
 
 
 var helpers = {};
