@@ -4,7 +4,7 @@
 [![Build Status](https://img.shields.io/travis/bitpay/bitcore-wallet-service.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-wallet-service)
 [![Coverage Status](https://coveralls.io/repos/bitpay/bitcore-wallet-service/badge.svg?branch=master)](https://coveralls.io/r/bitpay/bitcore-wallet-service?branch=master)
 
-A Multisig HD Wallet Service, with minimum server trust.
+A Multisig HD Wallet Service, with minimum trust.
 
 # Quick Guide
 
@@ -12,7 +12,7 @@ A Multisig HD Wallet Service, with minimum server trust.
  # Install dependencies
  npm install
 
- # Start the server
+ # Start BWS
  npm start
  
  # Try the CLI interface
@@ -24,7 +24,7 @@ A Multisig HD Wallet Service, with minimum server trust.
     JevjEwaaxW6gdAZjqgWcimL525DR8zQsAXf4cscWDa8u1qKTN5eFGSFssuSvT1WySu4YYLYMUPT
  ./bit  status
  
- # Use -h or BIT_HOST to setup the base URL for your server.
+ # Use -h or BIT_HOST to setup the BWS URL .
  # Use -f or BIT_FILE to setup the wallet data file
  
  # Join the wallet from other copayer
@@ -66,7 +66,7 @@ A Multisig HD Wallet Service, with minimum server trust.
   
 # Local  data
 
-Copayers store their extended private key and their copayers' extended public key locally. We call this the ``Wallet Critical Data``. Extended private keys are never sent to the server.
+Copayers store their extended private key and their copayers' extended public key locally. We call this the ``Wallet Critical Data``. Extended private keys are never sent to BWS.
   
   
 # Password protection 
@@ -98,7 +98,7 @@ It is possible to export a wallet with restricted access level. The levels are:
     readwrite: + allows to create addresses and unsigned tx prposals 
     full     : + allows sign tx prposals 
 ```
-`readonly` will only export the Wallet's Extended PublicKeys, and only the derived private key required for signing 'GET' request (readonly) to the server. `readwrite` will add the derived private key required for signing all other requests (as POST) so readwrite access will be possible. And `full` will export also the Extended Private Key, which is necesary for signing wallet's transactions.  `bit import` can handle any for the levels correctly.
+`readonly` will only export the Wallet's Extended PublicKeys, and only the derived private key required for signing 'GET' request (readonly) to BWS. `readwrite` will add the derived private key required for signing all other requests (as POST) so readwrite access will be possible. And `full` will export also the Extended Private Key, which is necesary for signing wallet's transactions.  `bit import` can handle any for the levels correctly.
 
 
 ``` shell
@@ -115,7 +115,7 @@ bit import wallet.dat
 bit export --qr
 ```
 
-## If the wallet needs to be migrated to another server, after importing the wallet, use the `bit-recreate` command 
+## If the wallet needs to be migrated to another BWS instance, after importing the wallet, use the `bit-recreate` command 
 
 ## Export / Import with a new given password (TO Be Done)
 ``` shell
@@ -129,7 +129,7 @@ bit import output.dat
 
 ## WARNING: THIS IS STILL WIP ##
 
-Air gapped (non connected) devices are supported. This setup can be useful if maximum security is needed, to prevent private keys from being compromised. In this setup, a device is installed without network access, and transactions are signed off-line. Transactions can be pulled from the server using a `proxy` device, then downloaded to a pendrive to be moved to the air-gapped device, signed there, and then moved back the `proxy` device to be sent back to the server. Note that Private keys are generated off-line in the airgapped device.
+Air gapped (non connected) devices are supported. This setup can be useful if maximum security is needed, to prevent private keys from being compromised. In this setup, a device is installed without network access, and transactions are signed off-line. Transactions can be pulled from BWS using a `proxy` device, then downloaded to a pendrive to be moved to the air-gapped device, signed there, and then moved back the `proxy` device to be sent back to BWS. Note that Private keys are generated off-line in the airgapped device.
 
 
 ``` shell
@@ -159,31 +159,31 @@ airgapped$  bit sign  -i txproposals.dat -o txproposals-signed.dat
 
 ## Back to proxy machine
 
-# Send signatures to the server
+# Send signatures to BWS
 proxy$  bit sign -i txproposals-signed.dat
 ```
 
 # Security Considerations
- * Private keys are never sent to the server. Copayers store them locally.
- * Extended public keys are stored on the server. This allows the server to easily check wallet balance, send offline notifications to copayers, etc.
+ * Private keys are never sent to BWS. Copayers store them locally.
+ * Extended public keys are stored on BWS. This allows BWS to easily check wallet balance, send offline notifications to copayers, etc.
  * During wallet creation, the initial copayer creates a wallet secret that contains a private key. All copayers need to prove they have the secret by signing their information with this private key when joining the wallet. The secret should be shared using secured channels.
 
-## All server responses are verified:
+## All BWS responses are verified:
   * Addresses and change addresses are derived independently and locally by the copayers from their local data.
-  * TX Proposals templates are signed by copayers and verified by others, so the server cannot create or tamper with them.
+  * TX Proposals templates are signed by copayers and verified by others, so the BWS cannot create or tamper with them.
 
 ## Notes
  * A copayer could join the wallet more than once, and there is no mechanism to prevent this. Copayers should use the command 'confirm' to check other copayer's identity.
 
-##  In case the server is compromised
+##  In case the BWS is compromised
  * It could be possible to see past (and future) wallet's transactions.
- * It is not possible to spend wallet funds, since private keys are never sent nor stored at the server
+ * It is not possible to spend wallet funds, since private keys are never sent nor stored at BWS
  * It is not possible to tamper with tx proposals or wallet addresses since they are computed and verified by copayers
- * Copayers could switch to another server using their local data (see `recreate` command). In this case only the wallet extended data will be lost (pending and past transaction proposals, some copayer metadata).
+ * Copayers could switch to another BWS instance using their local data (see `recreate` command). In this case only the wallet extended data will be lost (pending and past transaction proposals, some copayer metadata).
 
 
   
-# Server API
+# REST API
 
 ## create a wallet
  POST  `/v1/wallets`
