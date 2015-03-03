@@ -1,1 +1,2 @@
-module.exports = require('./lib/expressapp');
+module.exports.ExpressApp = require('./lib/expressapp');
+module.exports.Storage = require('./lib/storage');
