@@ -15,6 +15,7 @@ var WalletUtils = require('bitcore-wallet-utils');
 var BWS = require('bitcore-wallet-service');
 
 var Client = require('../lib');
+console.log('[client.js.18:BWS:]', BWS); //TODO
 var ExpressApp = BWS.ExpressApp;
 var Storage = BWS.Storage;
 var TestData = require('./testdata');

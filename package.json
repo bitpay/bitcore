@@ -21,7 +21,7 @@
   "dependencies": {
     "async": "^0.9.0",
     "bitcore": "^0.11.2",
-    "bitcore-wallet-utils": "git+https://github.com/bitpay/bitcore-wallet-utils.git",
+    "bitcore-wallet-utils": "0.0.1",
     "coveralls": "^2.11.2",
     "lodash": "^3.3.1",
     "npmlog": "^1.2.0",
@@ -30,8 +30,9 @@
     "sjcl": "^1.0.2"
   },
   "devDependencies": {
-    "bitcore-wallet-service": "git+https://github.com/bitpay/bitcore-wallet-service.git",
+    "bitcore-wallet-service": "0.0.3",
     "chai": "^1.9.1",
+    "leveldown": "^0.10.0",
     "levelup": "^0.19.0",
     "istanbul": "*",
     "jsdoc": "^3.3.0-beta1",
@@ -48,7 +49,7 @@
   },
   "contributors": [{
       "name": "Ivan Socolsky",
-      "email": "ivan@gmail.com"
+      "email": "ivan@bitpay..com"
     },
     {
       "name": "Matias Alejo Garcia",
