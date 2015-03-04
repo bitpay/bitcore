@@ -10,7 +10,6 @@
     "wallet",
     "bitcore"
   ],
-  "main": "app.js",
   "repository": {
     "url": "git@github.com:bitpay/bitcore-wallet-service.git",
     "type": "git"
@@ -56,7 +55,7 @@
   },
   "contributors": [{
       "name": "Ivan Socolsky",
-      "email": "ivan@gmail.com"
+      "email": "ivan@bitpay.com"
     },
 
     {
