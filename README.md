@@ -62,19 +62,7 @@ A simple Command Line Interface Wallet using [Bitcore Wallet Service] (https://g
   
 # Password protection 
 
-Local data can be encrypted by the bitcore-wallet. Use the `-n` parameter to define the access level permited for no password operation. Available access levels are: `none` (password is required for everything, localfile is fully encrypted) `readonly`, `readwrite` and `full` (password is not ever required, local file is fully unencrypted) .
-
-``` shell
-# encrypts everything by default
-./wallet create myWallet 2-3 --nopasswd none  
-Password:
-
-# allows readonly operations without password (encrypts xpriv, and leave readonlySigningKey unencrypted)
-./wallet create myWallet 2-3 -p --nopasswd readonly
-
-# allows readwrite operations without password (only encrypts xpriv)
-./wallet create myWallet 2-3 -p --nopasswd readwrite
-```
+Currently there is no password protection. This feature will be available soon.
  
 
 # Advanced Operation
