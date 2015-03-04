@@ -15,11 +15,9 @@ var WalletUtils = require('bitcore-wallet-utils');
 var BWS = require('bitcore-wallet-service');
 
 var Client = require('../lib');
-var AirGapped = Client.AirGapped;
 var ExpressApp = BWS.ExpressApp;
 var Storage = BWS.Storage;
 var TestData = require('./testdata');
-
 
 var helpers = {};
 
@@ -233,7 +231,7 @@ describe('client API ', function() {
         })
       });
     });
-    it('should be able to complete wallets in copayer that joined later', function(done) {
+    it('should be able to complete wallet in copayer that joined later', function(done) {
       helpers.createAndJoinWallet(clients, 2, 3, function() {
         clients[0].getBalance(function(err, x) {
           should.not.exist(err);
@@ -277,7 +275,7 @@ describe('client API ', function() {
       });
     });
 
-    it('should reject wallets with bad signatures', function(done) {
+    it('should detect wallets with bad signatures', function(done) {
       // Do not complete clients[1] pkr
       var openWalletStub = sinon.stub(clients[1], 'openWallet').yields();
 
@@ -294,7 +292,7 @@ describe('client API ', function() {
       });
     });
 
-    it('should reject wallets with missing signatures', function(done) {
+    it('should detect wallets with missing signatures', function(done) {
       // Do not complete clients[1] pkr
       var openWalletStub = sinon.stub(clients[1], 'openWallet').yields();
 
@@ -311,7 +309,7 @@ describe('client API ', function() {
       });
     });
 
-    it('should reject wallets missing callers pubkey', function(done) {
+    it('should detect wallets missing callers pubkey', function(done) {
       // Do not complete clients[1] pkr
       var openWalletStub = sinon.stub(clients[1], 'openWallet').yields();
 
@@ -330,7 +328,21 @@ describe('client API ', function() {
         });
       });
     });
-    it.skip('should return wallet status even if wallet is not yet complete', function(done) {});
+    it('should return wallet status even if wallet is not yet complete', function(done) {
+      clients[0].createWallet('wallet name', 'creator', 1, 2, 'testnet', function(err, secret) {
+        should.not.exist(err);
+        should.exist(secret);
+
+        clients[0].getStatus(function(err, status) {
+          should.not.exist(err);
+          should.exist(status);
+          status.wallet.status.should.equal('pending');
+          should.exist(status.wallet.secret);
+          status.wallet.secret.should.equal(secret);
+          done();
+        });
+      });
+    });
   });
 
   describe('Address Creation', function() {
@@ -947,6 +959,16 @@ describe('client API ', function() {
             password: '123'
           });
         });
+        it('should export without signing rights', function() {
+          clients[0].canSign().should.be.true;
+          var exported = clients[0].export({
+            noSign: true,
+          });
+
+          importedClient = helpers.newClient(app);
+          importedClient.import(exported);
+          importedClient.canSign().should.be.false;
+        });
       });
       describe('Fail', function() {
         it.skip('should fail to export compressed & import uncompressed', function() {});
@@ -984,21 +1006,69 @@ describe('client API ', function() {
           });
         });
       });
+      it('should be able to recreate wallet', function(done) {
+        helpers.createAndJoinWallet(clients, 2, 2, function() {
+          clients[0].createAddress(function(err, addr) {
+            should.not.exist(err);
+            should.exist(addr);
+
+            var db = levelup(memdown, {
+              valueEncoding: 'json'
+            });
+            var storage = new Storage({
+              db: db
+            });
+            var newApp = ExpressApp.start({
+              WalletService: {
+                storage: storage,
+                blockExplorer: blockExplorerMock,
+              },
+              disableLogs: true,
+            });
+
+            var recoveryClient = helpers.newClient(newApp);
+            recoveryClient.import(clients[0].export());
+
+            recoveryClient.getStatus(function(err, status) {
+              should.exist(err);
+              err.code.should.equal('NOTAUTHORIZED');
+              recoveryClient.recreateWallet(function(err) {
+                should.not.exist(err);
+                recoveryClient.getStatus(function(err, status) {
+                  should.not.exist(err);
+                  recoveryClient.createAddress(function(err, addr2) {
+                    should.not.exist(err);
+                    should.exist(addr2);
+                    addr2.address.should.equal(addr.address);
+                    addr2.path.should.equal(addr.path);
+                    done();
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
     });
   });
 
   describe('Air gapped related flows', function() {
     it('should create wallet in proxy from airgapped', function(done) {
-      var airgapped = new AirGapped({
-        network: 'testnet'
+      var airgapped = new Client();
+      airgapped.seedFromRandom('testnet');
+      var exported = airgapped.export({
+        noSign: true
       });
-      var seed = airgapped.getSeed();
 
       var proxy = helpers.newClient(app);
-      proxy.seedFromAirGapped(seed);
+      proxy.import(exported);
+      should.not.exist(proxy.credentials.xPrivKey);
+
+      var seedSpy = sinon.spy(proxy, 'seedFromRandom');
       should.not.exist(proxy.credentials.xPrivKey);
       proxy.createWallet('wallet name', 'creator', 1, 1, 'testnet', function(err) {
         should.not.exist(err);
+        seedSpy.called.should.be.false;
         proxy.getStatus(function(err, status) {
           should.not.exist(err);
           status.wallet.name.should.equal('wallet name');
@@ -1006,15 +1076,35 @@ describe('client API ', function() {
         });
       });
     });
-
-    it('should be able to sign from airgapped client and broadcast from proxy', function(done) {
-      var airgapped = new AirGapped({
-        network: 'testnet'
+    it('should fail to create wallet in proxy from airgapped when networks do not match', function(done) {
+      var airgapped = new Client();
+      airgapped.seedFromRandom('testnet');
+      var exported = airgapped.export({
+        noSign: true
       });
-      var seed = airgapped.getSeed();
 
       var proxy = helpers.newClient(app);
-      proxy.seedFromAirGapped(seed);
+      proxy.import(exported);
+      should.not.exist(proxy.credentials.xPrivKey);
+
+      var seedSpy = sinon.spy(proxy, 'seedFromRandom');
+      should.not.exist(proxy.credentials.xPrivKey);
+      proxy.createWallet('wallet name', 'creator', 1, 1, 'livenet', function(err) {
+        should.exist(err);
+        err.message.should.equal('Existing keys were created for a different network');
+        done();
+      });
+    });
+    it('should be able to sign from airgapped client and broadcast from proxy', function(done) {
+      var airgapped = new Client();
+      airgapped.seedFromRandom('testnet');
+      var exported = airgapped.export({
+        noSign: true
+      });
+
+      var proxy = helpers.newClient(app);
+      proxy.import(exported);
+      should.not.exist(proxy.credentials.xPrivKey);
 
       async.waterfall([
 
@@ -1049,7 +1139,7 @@ describe('client API ', function() {
             }, next);
           },
           function(bundle, next) {
-            var signatures = airgapped.signTxProposal(bundle.txps[0], bundle.publicKeyRing, bundle.m, bundle.n);
+            var signatures = airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
             next(null, signatures);
           },
           function(signatures, next) {
