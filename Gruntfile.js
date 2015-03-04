@@ -10,17 +10,10 @@ module.exports = function(grunt) {
           destination: 'docs',
         }
       }
-    },
-    jsdoc2md: {
-      dist: {
-        src: "lib/*.js",
-        dest: "docs/api.md"
-      },
     }
   });
 
   grunt.loadNpmTasks('grunt-jsdoc');
-  grunt.loadNpmTasks("grunt-jsdoc-to-markdown");
 
   // Default task(s).
   grunt.registerTask('default', []);
