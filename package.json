@@ -10,6 +10,7 @@
     "wallet",
     "client"
   ],
+  "main": "index.js",
   "repository": {
     "url": "git@github.com:bitpay/bitcore-wallet-client.git",
     "type": "git"
@@ -44,5 +45,14 @@
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
     "test": "./node_modules/.bin/mocha",
     "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage"
-  }
+  },
+  "contributors": [{
+      "name": "Ivan Socolsky",
+      "email": "ivan@gmail.com"
+    },
+    {
+      "name": "Matias Alejo Garcia",
+      "email": "ematiu@gmail.com"
+    }
+  ]
 }
