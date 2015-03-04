@@ -24,7 +24,9 @@
     "coveralls": "^2.11.2",
     "lodash": "^3.3.1",
     "npmlog": "^1.2.0",
-    "preconditions": "^1.0.8"
+    "preconditions": "^1.0.8",
+    "request": "^2.53.0",
+    "sjcl": "^1.0.2"
   },
   "devDependencies": {
     "bitcore-wallet-service": "git+https://github.com/bitpay/bitcore-wallet-service.git",
