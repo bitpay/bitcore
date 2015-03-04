@@ -46,9 +46,15 @@ describe('Messages', function() {
     names.forEach(function(name) {
       var command = commands[name];
       var data = Data[command.toUpperCase()];
+
       it('should have data for ' + name, function() {
         should.exist(data);
       });
+
+      it('command for name ' + name, function() {
+        Messages.Message.COMMANDS[command].should.equal(Messages[name]);
+      });
+
       describe(name, function() {
         var message = new Messages[name]();
         it('should be able to create instance', function() {
