@@ -9,55 +9,51 @@ program = utils.configureCommander(program);
 program
   .usage('[options] <txpid>')
   .option('-i, --input [filename]', 'use signatures from file')
-  .option('-o, --output [filename]', 'write signatures to  file')
   .parse(process.argv);
 
 var args = program.args;
-var txpid = args[0] || '';
+var txpid = args[0] || null;
 
-function end(client, txp) {
-  if (program.output) {
-    client.getSignatures(txp, function(err, signatures) {
-      utils.die(err);
-      var out = {
-        id: txp.id,
-        signatures: signatures,
-      };
-      fs.writeFileSync(program.output, JSON.stringify(out));
-      console.log('Signatures written to file.');
-    });
-  } else {
+function processBatch(client, signatures) {
+  client.getTxProposals({}, function(err, txps) {
+    utils.die(err);
 
-    if (program.input) {
-
-      var infile = JSON.parse(fs.readFileSync(program.input));
-      if (infile.id != txp.id)
-        utils.die('Signatures does not match Transaction')
-
-      txp.signatures = infile.signatures;
+    var selected = [];
+    if (txpid) {
+      txp = utils.findOneTxProposal(txps, txpid);
+      selected.push(txp);
+    } else {
+      if (txps.length == 0) {
+        utils.die('There are no pending transaction proposals.');
+      }
+      selected = txps;
     }
 
-    client.signTxProposal(txp, function(err, tx) {
-      utils.die(err);
-      if (tx.status == 'broadcasted')
-        console.log('Transaction Broadcasted: TXID: ' + tx.txid);
-      else
-        console.log('Transaction signed by you.');
+    _.each(selected, function (txp) {
+      var sigs = _.find(signatures, { txpId: txp.id });
+      if (sigs) {
+        txp.signatures = sigs.signatures;
+        client.signTxProposal(txp, function(err, tx) {
+          utils.die(err);
+          console.log('Transaction %s signed by you.', txp.id);
+        });
+      }
     });
-  }
-
+  });
 };
 
 utils.getClient(program, function (client) {
-  if (program.input && program.output) {
+  if (program.input) {
     var inFile = JSON.parse(fs.readFileSync(program.input));
-    end(client, inFile.txps[0]);
+    processBatch(client, inFile);
   } else {
     client.getTxProposals({}, function(err, txps) {
       utils.die(err);
       var txp = utils.findOneTxProposal(txps, txpid);
-      utils.die(err);
-      end(client, txp);
+      client.signTxProposal(txp, function(err, tx) {
+        utils.die(err);
+        console.log('Transaction signed by you.');
+      });
     });
   }
 });
