@@ -50,6 +50,7 @@
     "wallet": "./bin/wallet",
     "wallet-address": "./bin/wallet-address",
     "wallet-addresses": "./bin/wallet-addresses",
+    "wallet-airsign": "./bin/wallet-airsign",
     "wallet-balance": "./bin/wallet-balance",
     "wallet-broadcast": "./bin/wallet-broadcast",
     "wallet-confirm": "./bin/wallet-confirm",
