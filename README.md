@@ -6,7 +6,7 @@ A simple Command Line Interface Wallet using [Bitcore Wallet Service] (https://g
 # Quick Guide
 
 ``` shell
- # Use -h or BIT_HOST to setup the BWS URL (defaults to localhost:3001)
+ # Use -h or BWS_HOST to setup the BWS URL (defaults to localhost:3001)
  # 
  # Start a local BWS instance be doing:
  # git clone https://github.com/bitpay/bitcore-wallet-service.git bws
@@ -14,22 +14,22 @@ A simple Command Line Interface Wallet using [Bitcore Wallet Service] (https://g
 
  cd bin
  
- # Create a 2-of-2 wallet (.bit.dat is the default filename (saved on HOME ) where the wallet critical data will be stored)
+ # Create a 2-of-2 wallet (.wallet.dat is the default filename (saved on HOME ) where the wallet critical data will be stored)
  #
  # TIP: add -t for testnet
-  wallet create john 2-2 
+  wallet create myFirstWallet 2-2 
   * Secret to share:
     JevjEwaaxW6gdAZjqgWcimL525DR8zQsAXf4cscWDa8u1qKTN5eFGSFssuSvT1WySu4YYLYMUPT
 
   wallet status
  
- # Use -f or BIT_FILE to setup the wallet data file
+ # Use -f or WALLET_FILE to setup the wallet data file
  
  # Join the wallet from other copayer
    wallet -f pete.dat join JevjEwaaxW6gdAZjqgWcimL525DR8zQsAXf4cscWDa8u1qKTN5eFGSFssuSvT1WySu4YYLYMUPT
    
-   export BIT_FILE=pete.dat
-   wallet -f pete.dat status
+   export WALLET_FILE=pete.dat
+   wallet status
 
  # Generate addresses to receive money
    wallet address

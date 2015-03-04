@@ -50,15 +50,22 @@ Utils.getAirClient = function(args, cb) {
 };
 
 Utils._getClient = function(args, airgapped, cb) {
+
+  var file = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
+
+  console.log('* Loading file', file);
+
   var storage = new FileStorage({
-    filename: args.file || process.env['BIT_FILE'],
+    filename: file,
   });
   var client = new Client({
-    baseUrl: args.host || process.env['BIT_HOST'],
+    baseUrl: args.host || process.env['BWS_HOST'],
     verbose: args.verbose,
   });
   storage.load(function(err, walletData) {
+
     if (err && err.code != 'ENOENT') die(err);
+
     if (!walletData) return cb(client);
 
     client.import(walletData);
@@ -78,8 +85,12 @@ Utils._getClient = function(args, airgapped, cb) {
 };
 
 Utils.saveClient = function(args, client, cb) {
+  var file = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
+
+  console.log('* Saving file', file);
+
   var storage = new FileStorage({
-    filename: args.file || process.env['BIT_FILE'],
+    filename: file,
   });
   var str = client.export();
   storage.save(str, function(err) {
@@ -168,7 +179,7 @@ Utils.parseAmount = function(text) {
 Utils.configureCommander = function(program) {
   program
     .version('0.0.1')
-    .option('-f, --file [filename]', 'Wallet file', process.env['HOME'] + '/.bit.dat')
+    .option('-f, --file [filename]', 'Wallet file')
     .option('-h, --host [host]', 'Bitcore Wallet Service URL (eg: http://localhost:3001/copay/api')
     .option('-v, --verbose', 'be verbose')
 
