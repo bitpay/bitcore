@@ -17,11 +17,11 @@ A simple Command Line Interface Wallet using [Bitcore Wallet Service] (https://g
  # Create a 2-of-2 wallet (.bit.dat is the default filename (saved on HOME ) where the wallet critical data will be stored)
  #
  # TIP: add -t for testnet
- wallet create john 2-2 
+  wallet create john 2-2 
   * Secret to share:
     JevjEwaaxW6gdAZjqgWcimL525DR8zQsAXf4cscWDa8u1qKTN5eFGSFssuSvT1WySu4YYLYMUPT
 
- wallet status
+  wallet status
  
  # Use -f or BIT_FILE to setup the wallet data file
  
@@ -56,7 +56,7 @@ A simple Command Line Interface Wallet using [Bitcore Wallet Service] (https://g
    a day ago: <= received 300 bit (52 confirmations)
    
  # List all commands:
-  wallet --help
+   wallet --help
  
     
   ```
@@ -67,16 +67,12 @@ A simple Command Line Interface Wallet using [Bitcore Wallet Service] (https://g
 Currently there is no password protection. This feature will be available soon.
  
 
-# Advanced Operation
-
-
-[TODO]
 
 # Airgapped Operation 
 
-Air gapped (non connected) devices are supported. This setup can be useful if maximum security is needed, to prevent private keys from being compromised. In this setup, a device is installed without network access, and transactions are signed off-line. Transactions can be pulled from BWS using a `proxy` device, then downloaded to a pendrive to be moved to the air-gapped device, signed there, and then moved back the `proxy` device to be sent back to BWS. Note that Private keys are generated off-line in the airgapped device.
-
 [TODO]
+
+Air gapped (non connected) devices are supported. This setup can be useful if maximum security is needed, to prevent private keys from being compromised. In this setup, a device is installed without network access, and transactions are signed off-line. Transactions can be pulled from BWS using a `proxy` device, then downloaded to a pendrive to be moved to the air-gapped device, signed there, and then moved back the `proxy` device to be sent back to BWS. Note that Private keys are generated off-line in the airgapped device.
 
 
 ``` shell
@@ -110,4 +106,4 @@ airgapped$  wallet sign  -i txproposals.dat -o txproposals-signed.dat
 proxy$  wallet sign -i txproposals-signed.dat
 ```
 
-# Security Considerations
+
