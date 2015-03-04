@@ -19,9 +19,10 @@
   "dependencies": {
     "async": "^0.9.0",
     "bitcore": "^0.11.2",
+    "bitcore-wallet-utils": "git+https://github.com/bitpay/bitcore-wallet-utils.git",
+    "coveralls": "^2.11.2",
     "lodash": "^3.3.1",
-    "preconditions": "^1.0.8",
-    "bitcore-wallet-utils": "git+https://github.com/bitpay/bitcore-wallet-utils.git"
+    "preconditions": "^1.0.8"
   },
   "devDependencies": {
     "bitcore-wallet-service": "git+https://github.com/bitpay/bitcore-wallet-service.git",
