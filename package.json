@@ -7,14 +7,15 @@
     "bitcoin",
     "copay",
     "multisig",
-    "wallet"
+    "wallet",
+    "client"
   ],
   "repository": {
-    "url": "git@github.com:bitpay/bitcore-wallet-service.git",
+    "url": "git@github.com:bitpay/bitcore-wallet-client.git",
     "type": "git"
   },
   "bugs": {
-    "url": "https://github.com/bitpay/bitcore-wallet-service/issues"
+    "url": "https://github.com/bitpay/bitcore-wallet-client/issues"
   },
   "dependencies": {
     "async": "^0.9.0",
@@ -22,7 +23,10 @@
     "bitcore-wallet-utils": "git+https://github.com/bitpay/bitcore-wallet-utils.git",
     "coveralls": "^2.11.2",
     "lodash": "^3.3.1",
-    "preconditions": "^1.0.8"
+    "npmlog": "^1.2.0",
+    "preconditions": "^1.0.8",
+    "request": "^2.53.0",
+    "sjcl": "^1.0.2"
   },
   "devDependencies": {
     "bitcore-wallet-service": "git+https://github.com/bitpay/bitcore-wallet-service.git",
