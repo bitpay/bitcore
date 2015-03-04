@@ -20,14 +20,12 @@
     "async": "^0.9.0",
     "bitcore": "^0.11.2",
     "bitcore-wallet-utils": "git+https://github.com/bitpay/bitcore-wallet-utils.git",
+    "coveralls": "^2.11.2",
     "lodash": "^3.3.1",
-    "npmlog": "^1.2.0",
-    "preconditions": "^1.0.8",
-    "request": "^2.53.0",
-    "sjcl": "^1.0.2"
+    "preconditions": "^1.0.8"
   },
   "devDependencies": {
-    "bitcore-wallet-service": "git+https://github.com/matiu/bitcore-wallet-service.git#ac7a6be7c12550ec6afa758447eac7a814ce9bc9",
+    "bitcore-wallet-service": "git+https://github.com/bitpay/bitcore-wallet-service.git",
     "chai": "^1.9.1",
     "levelup": "^0.19.0",
     "istanbul": "*",

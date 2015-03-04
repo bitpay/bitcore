@@ -537,7 +537,7 @@ describe('client API ', function() {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
-          blockExplorerMock.setUtxo(x0, 10, 2);
+          blockExplorerMock.setUtxo(x0, 10, 1);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -564,7 +564,7 @@ describe('client API ', function() {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
-          blockExplorerMock.setUtxo(x0, 10, 2);
+          blockExplorerMock.setUtxo(x0, 10, 1);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -590,7 +590,7 @@ describe('client API ', function() {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
-          blockExplorerMock.setUtxo(x0, 10, 2);
+          blockExplorerMock.setUtxo(x0, 10, 1);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
