@@ -14,7 +14,7 @@ log.debug = log.verbose;
 var Bitcore = require('bitcore');
 
 var Utils = require('../../lib/utils');
-var WalletUtils = require('../../lib/walletutils');
+var WalletUtils = require('bitcore-wallet-utils');
 var Storage = require('../../lib/storage');
 
 var Wallet = require('../../lib/model/wallet');

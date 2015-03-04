@@ -19,6 +19,7 @@
   "dependencies": {
     "async": "^0.9.0",
     "bitcore": "git+https://github.com/eordano/bitcore.git#7e88167891811163071ae35dc3dbb705ab6ccff8",
+    "bitcore-wallet-utils": "git+https://github.com/bitpay/bitcore-wallet-utils.git",
     "bitcore-explorers": "^0.9.1",
     "body-parser": "^1.11.0",
     "commander": "^2.6.0",
