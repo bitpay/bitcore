@@ -7,6 +7,18 @@
 
 A client library for bitcore-wallet-service
 
+# Quick Start
+
+``` javascript
+  var client = new Client({
+    baseUrl: bwc_instance_url,
+    verbose: true,
+  });
+
+ client.createWallet("my Wallet", "John", 2, 3, 'testnet', function(err, secret) {
+    console.log(' Wallet Created. Share this secret with your copayers:' + secret);
+    
+ 
 # API
 
 [TODO: Describe API calls? Or link jsdoc]
