@@ -1,2 +1,2 @@
-var Client = require('./lib/index.js');
+var Client = require('./lib');
 module.exports = Client;
