@@ -5,7 +5,14 @@
 [![Coverage Status](https://coveralls.io/repos/bitpay/bitcore-wallet-client/badge.svg)](https://coveralls.io/r/bitpay/bitcore-wallet-client)
 
 
-A client library for bitcore-wallet-service
+The *official* client library for [bitcore-wallet-service] (https://github.com/bitpay/bitcore-wallet-service). 
+
+# Description
+
+This package communicated to BWS (Bitcore wallet service) using its REST API. All REST endpoints are wrapped on simple async call. All relevant responses from BWS are checked independently by the peers, thus the importance of using this library with talking with a third party BWS instance.
+
+See [Bitcore-wallet] (https://github.com/bitpay/bitcore-wallet) for a simple CLI wallet implementation that relays on BWS and uses bitcore-wallet-client.
+
 
 # Quick Start
 
