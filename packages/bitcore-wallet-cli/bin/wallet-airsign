@@ -1,0 +1,45 @@
+#!/usr/bin/env node
+
+var _ = require('lodash');
+var fs = require('fs');
+var program = require('commander');
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+
+program
+  .usage('[options]')
+  .option('-i, --input [filename]', 'sign all transactions in file')
+  .option('-o, --output [filename]', 'write signatures to file')
+  .parse(process.argv);
+
+var args = program.args;
+if (!program.input || !program.output) {
+  program.help();
+};
+
+utils.getAirClient(program, function (client) {
+  var task = JSON.parse(fs.readFileSync(program.input));
+  var errors = [];
+  var signatures = _.map(task.txps, function (txp) {
+    try {
+      return {
+        txpId: txp.id,
+        signatures: client.signTxProposalFromAirGapped(txp, task.encryptedPkr, task.m, task.n),
+      };
+    } catch (ex) {
+      errors.push({
+        txp: txp,
+        error: ex
+      });
+    }
+  });
+  if (errors.length == 0) {
+    fs.writeFileSync(program.output, JSON.stringify(signatures));
+    console.log('Signatures written to file.');
+  } else {
+    console.log('Error signing transactions:');
+    _.each(errors, function (e) {
+      console.log('\tTransaction %s: %s', e.id, e.error.message);
+    });
+  }
+});

@@ -6,18 +6,15 @@ var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
 program
-  .usage('[options] walletname')
-  .description('Creates a wallet on the remove server given the local information')
+  .usage('[options]')
+  .description('Creates a wallet on the remote server given the local information')
   .parse(process.argv);
 
 var args = program.args;
-if (!args[0])
-  program.help();
-
-var walletName = args[0];
-utils.getClient(program, function(client) {
-  client.reCreateWallet(walletName, function(err) {
+utils.getClient(program, function (client) {
+  var client = utils.getClient(program);
+  client.recreateWallet(walletName, function(err) {
     utils.die(err);
-    console.log(' *  Wallet Created.');
+    console.log(' *  Wallet created.');
   });
 });

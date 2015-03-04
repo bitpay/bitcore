@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-var utils  = require('./cli-utils');
+var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
 program

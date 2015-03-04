@@ -7,7 +7,7 @@ var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
 program
-  .option('-o, --output [filename]', 'write tx to output file for offline signing')
+  .option('-o, --output [filename]', 'write tx to output file for air-gapped signing')
   .parse(process.argv);
 
 var args = program.args;

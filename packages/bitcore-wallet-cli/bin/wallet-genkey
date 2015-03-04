@@ -2,20 +2,20 @@
 
 var _ = require('lodash');
 var program = require('commander');
+var fs = require('fs');
 var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
 program
   .option('-t, --testnet', 'Create a Testnet Extended Private Key')
-  .option('-n, --nopasswd [level]', 'Set access for no password usage: none(default), readonly, readwrite, full', 'none')
   .parse(process.argv);
 
 var args = program.args;
-utils.getClient(program, function(client) {
-  var network = program.testnet ? 'testnet' : 'livenet';
-
-  client.generateKey(network, function(err) {
-    utils.die(err);
+var network = program.testnet ? 'testnet' : 'livenet';
+utils.getAirClient(program, function (client) {
+  client.seedFromRandom(network);
+  utils.saveClient(program, client, function () {
     console.log(' * ' + _.capitalize(network) + ' Extended Private Key Created.');
+    console.log('   To operate with the corresponding public keys from a proxy device, please run `bit-export --nosign` and then on the proxy device `bit-import`.');
   });
 });

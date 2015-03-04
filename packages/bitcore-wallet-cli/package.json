@@ -25,7 +25,14 @@
     "qr-image": "^3.1.0",
     "read": "^1.0.5"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "bitcore-wallet-service": "git+https://github.com/bitpay/bitcore-wallet-service.git",
+    "chai": "^1.9.1",
+    "istanbul": "*",
+    "jsdoc": "^3.3.0-beta1",
+    "mocha": "^1.18.2",
+    "sinon": "^1.10.3"
+  },
   "scripts": {
     "start": "node app.js",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
@@ -43,6 +50,7 @@
     "wallet": "./bin/wallet",
     "wallet-address": "./bin/wallet-address",
     "wallet-addresses": "./bin/wallet-addresses",
+    "wallet-airsign": "./bin/wallet-airsign",
     "wallet-balance": "./bin/wallet-balance",
     "wallet-broadcast": "./bin/wallet-broadcast",
     "wallet-confirm": "./bin/wallet-confirm",

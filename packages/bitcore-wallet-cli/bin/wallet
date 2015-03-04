@@ -22,6 +22,7 @@ program
   .command('recreate', 'recreate a wallet on a remove server given local infomation')
   .command('txproposals', 'list transactions proposals')
   .command('genkey', 'generates extended private key for later wallet usage')
+  .command('airsign', 'sign a list of transaction proposals from an air-gapped device')
   .parse(process.argv);
 
 if (!program.args.length || !program.runningCommand)
