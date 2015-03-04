@@ -21,7 +21,7 @@ if (!args[0])
 var file = args[0];
 
 var str = fs.readFileSync(file, { encoding: 'utf8' });
-utils.getClient(program, function (client) {
+utils.getClient(program, { mustExist: true }, function (client) {
   try {
     client.import(str, {
       compressed: !!program.qr,

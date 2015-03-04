@@ -42,7 +42,7 @@ function processBatch(client, signatures) {
   });
 };
 
-utils.getClient(program, function (client) {
+utils.getClient(program, { mustExist: true }, function (client) {
   if (program.input) {
     var inFile = JSON.parse(fs.readFileSync(program.input));
     processBatch(client, inFile);

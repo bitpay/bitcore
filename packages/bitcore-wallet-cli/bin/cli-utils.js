@@ -41,19 +41,10 @@ Utils.confirmationId = function(copayer) {
   return parseInt(copayer.xPubKeySignature.substr(-4), 16).toString().substr(-4);
 }
 
-Utils.getClient = function(args, cb) {
-  return Utils._getClient(args, false, cb);
-};
-
-Utils.getAirClient = function(args, cb) {
-  return Utils._getClient(args, true, cb);
-};
-
-Utils._getClient = function(args, airgapped, cb) {
+Utils.getClient = function(args, opts, cb) {
+  opts = opts || {};
 
   var file = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
-
-  console.log('* Loading file', file);
 
   var storage = new FileStorage({
     filename: file,
@@ -62,14 +53,26 @@ Utils._getClient = function(args, airgapped, cb) {
     baseUrl: args.host || process.env['BWS_HOST'],
     verbose: args.verbose,
   });
-  storage.load(function(err, walletData) {
 
-    if (err && err.code != 'ENOENT') die(err);
+  storage.load(function(err, walletData) {
+    if (err) {
+      if (err.code == 'ENOENT') {
+        if (opts.mustExist) {
+          die(new Error('File "' + file + '" not found.'));
+        }
+      } else {
+        die(err);
+      }
+    }
+
+    if (walletData && opts.mustBeNew) {
+      die(new Error('File "' + file + '" already exists.'));
+    }
 
     if (!walletData) return cb(client);
 
     client.import(walletData);
-    if (airgapped) return cb(client);
+    if (opts.airGapped) return cb(client);
 
     client.openWallet(function(err, justCompleted) {
       if (!err && client.isComplete() && justCompleted) {

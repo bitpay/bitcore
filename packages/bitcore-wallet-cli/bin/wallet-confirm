@@ -8,7 +8,7 @@ program = utils.configureCommander(program);
 program
   .parse(process.argv);
 
-utils.getClient(program, function (client) {
+utils.getClient(program, { mustExist: true }, function (client) {
   client.getStatus(function(err, x) {
     utils.die(err);
 

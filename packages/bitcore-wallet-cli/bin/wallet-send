@@ -30,7 +30,7 @@ try {
 }
 var note = args[2];
 
-utils.getClient(program, function (client) {
+utils.getClient(program, { mustExist: true }, function (client) {
   client.sendTxProposal({
     toAddress: address,
     amount: amount,

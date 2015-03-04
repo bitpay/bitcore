@@ -17,7 +17,7 @@ if (!program.input || !program.output) {
   program.help();
 };
 
-utils.getAirClient(program, function (client) {
+utils.getClient(program, { mustExist: true, airGapped: true }, function (client) {
   var task = JSON.parse(fs.readFileSync(program.input));
   var errors = [];
   var signatures = _.map(task.txps, function (txp) {
