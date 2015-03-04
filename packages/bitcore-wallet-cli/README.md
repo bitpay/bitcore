@@ -1,18 +1,14 @@
 # bitcore-wallet
 
-CLI Wallet using Bitcore Wallet Service (BWS)
+A simple Command Line Interfase Wallet using [Bitcore Wallet Service] (https://github.com/bitpay/bitcore-wallet-service) and its *official* client lib, pbitcore-wallet-client] (https://github.com/bitpay/bitcore-wallet-client)
+
 
 # Quick Guide
 
 ``` shell
- # Install dependencies
- npm install
+ # Use -h or BIT_HOST to setup the BWS URL (defaults to localhost:3001)
 
- # Start BWS
- npm start
- 
- # Try the CLI interface
- cd bit-wallet
+ cd bin
  
  # Create a 2-of-2 wallet (john.dat is the file where the wallet critical data will be stored, add -t for testnet)
  ./bit  create 2-2 john 
@@ -20,7 +16,6 @@ CLI Wallet using Bitcore Wallet Service (BWS)
     JevjEwaaxW6gdAZjqgWcimL525DR8zQsAXf4cscWDa8u1qKTN5eFGSFssuSvT1WySu4YYLYMUPT
  ./bit  status
  
- # Use -h or BIT_HOST to setup the BWS URL .
  # Use -f or BIT_FILE to setup the wallet data file
  
  # Join the wallet from other copayer
