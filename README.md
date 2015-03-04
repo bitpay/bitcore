@@ -7,6 +7,10 @@ A simple Command Line Interfase Wallet using [Bitcore Wallet Service] (https://g
 
 ``` shell
  # Use -h or BIT_HOST to setup the BWS URL (defaults to localhost:3001)
+ # 
+ # Start a local BWS instance be doing:
+ # git clone https://github.com/bitpay/bitcore-wallet-service.git bws
+ # cd bws; npm install; npm start
 
  cd bin
  
@@ -74,48 +78,14 @@ bit create myWallet 2-3 -p --nopasswd readwrite
 
 # Advanced Operation
 
-## Mobility
-You can safely access a wallet from different devices. Just copy the wallet file (`bit.dat` by default). If you need to reduce the file to the minimum (for example to fit it on a QR) or change its access level (by removing certain data on it), see `export` in the following section.
 
-## Export, with different access levels
-It is possible to export a wallet with restricted access level. The levels are:
-```
-    readonly : allows to read wallet data: balance, tx proposals 
-    readwrite: + allows to create addresses and unsigned tx prposals 
-    full     : + allows sign tx prposals 
-```
-`readonly` will only export the Wallet's Extended PublicKeys, and only the derived private key required for signing 'GET' request (readonly) to BWS. `readwrite` will add the derived private key required for signing all other requests (as POST) so readwrite access will be possible. And `full` will export also the Extended Private Key, which is necesary for signing wallet's transactions.  `bit import` can handle any for the levels correctly.
-
-
-``` shell
-# full access
-bit export -o wallet.dat
-# readonly access 
-bit export -o wallet.dat --access readonly
-# readwrite access (can create addresses, propose transactions, reject TX, but does not have signing keys)
-
-# Import the wallet , with giveng access level
-bit import wallet.dat
-
-# Export also support QR output:
-bit export --qr
-```
-
-## If the wallet needs to be migrated to another BWS instance, after importing the wallet, use the `bit-recreate` command 
-
-## Export / Import with a new given password (TO Be Done)
-``` shell
-bit export -o output.dat -e
-bit import output.dat 
-```
-
+[TODO]
 
 # Airgapped Operation 
 
-
-## WARNING: THIS IS STILL WIP ##
-
 Air gapped (non connected) devices are supported. This setup can be useful if maximum security is needed, to prevent private keys from being compromised. In this setup, a device is installed without network access, and transactions are signed off-line. Transactions can be pulled from BWS using a `proxy` device, then downloaded to a pendrive to be moved to the air-gapped device, signed there, and then moved back the `proxy` device to be sent back to BWS. Note that Private keys are generated off-line in the airgapped device.
+
+[TODO]
 
 
 ``` shell
