@@ -48,7 +48,7 @@ See [Bitcore-wallet] (https://github.com/bitpay/bitcore-wallet) for a simple CLI
 * [class: API](#API)
   * [new API(opts)](#new_API)
   * [API.seedFromExtendedPrivateKey(xPrivKey)](#API#seedFromExtendedPrivateKey)
-  * [API.seedFromAirGapped(xPrivKey)](#API#seedFromAirGapped)
+  * [API.seedFromRandom(xPrivKey)](#API#seedFromRandom)
   * [ApI.export(opts)](#API#export)
   * [ApI.import(opts)](#API#import)
   * [ApI.toString()](#API#toString)
@@ -91,13 +91,13 @@ Seed from extended private key
 
 - xPrivKey `String`  
 
-<a name="API#seedFromAirGapped"></a>
-##API.seedFromAirGapped(xPrivKey)
-Seed from extended private key
+<a name="API#seedFromRandom"></a>
+##API.seedFromRandom(xPrivKey)
+Seed from random
 
 **Params**
 
-- xPrivKey `String`  
+- network `String`  
 
 <a name="API#export"></a>
 ##API.export(opts)
