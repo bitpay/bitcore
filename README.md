@@ -23,7 +23,14 @@ Peers can safely access a wallet from different devices at the same time  by cop
 
 ## Agent support
 
+BWS supports signing and non signing agents. 
+
+Agents can be given a wallet secret, and join the wallet during creation, and act as with the same status of a regular peer. Agents can also be created by *cloning* one peer's data (and optionally removing its private key). By removing the private key, the resulting agent wont be able to sign transactions.  
+
+Agent support is [planned to be extended](https://github.com/bitpay/bitcore-wallet-service/issues/114) in following releases.
+
 ## Airgapped Operation 
+[TODO be documented]
 
 ## Security Considerations
  * Private keys are never sent to BWS. Copayers store them locally.
@@ -35,27 +42,51 @@ Peers can safely access a wallet from different devices at the same time  by cop
   * TX Proposals templates are signed by copayers and verified by others, so the BWS cannot create or tamper with them.
 
 ## Notes
- * A copayer could join the wallet more than once, and there is no mechanism to prevent this. Copayers should use the command 'confirm' to check other copayer's identity.
+ * A copayer could join the wallet more than once, and there is no mechanism to prevent this. See [wallet]((https://github.com/bitpay/bitcore-wallet)'s confirm command, for a method for confirming copayers.
 
-##  In case the BWS is compromised
- * It could be possible to see past (and future) wallet's transactions.
- * It is not possible to spend wallet funds, since private keys are never sent nor stored at BWS
- * It is not possible to tamper with tx proposals or wallet addresses since they are computed and verified by copayers
- * Copayers could switch to another BWS instance using their local data (see `recreate` command). In this case only the wallet extended data will be lost (pending and past transaction proposals, some copayer metadata).
-
-
-  
 # REST API
 
-## create a wallet
- POST  `/v1/wallets`
-## join a wallet
- POST  `/v1/wallets/:id/copayers`
+## Authentication
 
- ...
+  In order to access a wallet, clients are required to send the headers:
+```
+  x-identity
+  x-signature
+```
+Identity is the Peer-ID, this will identify the peer and its wallet. Signature is the current request signature, using `requestSigningKey`, the `m/1/1` derivative of the Extended Private Key.
 
- [To be completed, see expressapp.js]
+See [Bitcore Wallet Client](https://github.com/bitpay/bitcore-wallet-client/blob/master/lib/api.js#L73) for implementation details.
+
+
+## GET Endpoinds
+`/v1/wallets/`: Get wallet information
+
+`/v1/txhistory/`: Get Wallet's transaction history
+
+`/v1/txproposals/`:  Get Wallet's pending transaction proposals and their status
+
+`/v1/addresses/`: Get Wallet's main addresses (does not include change addresses)
+
+`/v1/balance/`:  Get Wallet's balance
+
+## POST Endpoinds
+`/v1/wallets/`: Create a new Wallet
+
+`/v1/wallets/:id/copayers/`: Join a Wallet in creation
+
+`/v1/txproposals/`: Add a new transactionproposal
+
+`/v1/addresses/`: Request a new main address from wallet
+
+`/v1/txproposals/:id/signatures/`: Sign a transaction proposal
+
+`/v1/txproposals/:id/broadcast/`: Broadcast a transaction proposal
+
+`/v1/txproposals/:id/rejections`: Reject a transaction proposal
+
+## DELETE Endpoinds
+`/v1/txproposals/:id/`: Deletes a transaction proposal. Only the creator can delete a TX Proposal, and only if it has no other signatures or rejections
+
  
-
 
 
