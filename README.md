@@ -14,7 +14,9 @@ A simple Command Line Interface Wallet using [Bitcore Wallet Service] (https://g
 
  cd bin
  
- # Create a 2-of-2 wallet (.bit.dat is the default filename (saved on HOME ) where the wallet critical data will be stored, add -t for testnet)
+ # Create a 2-of-2 wallet (.bit.dat is the default filename (saved on HOME ) where the wallet critical data will be stored)
+ #
+ # TIP: add -t for testnet
  ./wallet create john 2-2 
   * Secret to share:
     JevjEwaaxW6gdAZjqgWcimL525DR8zQsAXf4cscWDa8u1qKTN5eFGSFssuSvT1WySu4YYLYMUPT
