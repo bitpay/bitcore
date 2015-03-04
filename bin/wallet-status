@@ -16,8 +16,10 @@ utils.getClient(program, function (client) {
     var x = res.wallet;
     console.log('* Wallet %s [%s]: %d-of-%d %s ', x.name, x.network, x.m, x.n, x.status);
 
-    if (x.status != 'complete')
+    if (x.status != 'complete') {
       console.log('  Missing copayers:', x.n - x.copayers.length);
+      console.log('  Wallet secret:', x.secret);
+    }
     console.log('* Copayers:', _.pluck(x.copayers,'name').join(', '));
 
     var x = res.balance;

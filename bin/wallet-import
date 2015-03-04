@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-
 var fs = require('fs');
 var utils = require('./cli-utils');
 program = utils.configureCommander(program);
@@ -9,8 +8,9 @@ program = utils.configureCommander(program);
 
 program
   .version('0.0.1')
-  .option('-n, --nopasswd [level]', 'Set access for no password usage: none(default), readonly, readwrite, full', 'none')
-  .usage('import [options] <file>')
+  .option('-q, --qr', 'import from a QR code')
+  .option('-p, --password [password]', 'a password to decrypt the data being imported')
+  .usage('[options] <file>')
   .parse(process.argv);
 
 var args = program.args;
@@ -18,11 +18,21 @@ var args = program.args;
 if (!args[0])
   program.help();
 
-var str = fs.readFileSync(args[0]);
+var file = args[0];
 
-utils.getClient(program, function(client) {
-  client.import(str, function(err, x) {
-    utils.die(err);
-    console.log('Wallet Imported. Access level:' + x);
+var str = fs.readFileSync(file, { encoding: 'utf8' });
+utils.getClient(program, function (client) {
+  try {
+    client.import(str, {
+      compressed: !!program.qr,
+      password: program.password,
+    });
+  } catch (ex) {
+    utils.die(ex);
+  }
+
+  utils.saveClient(program, client, function () {    
+    var access = client.canSign() ? 'with signing capability' : 'without signing capability';
+    console.log('Wallet Imported ' + access + '.');
   });
 });

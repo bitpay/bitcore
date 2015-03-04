@@ -4,7 +4,7 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var CliUtils = require('../cli-utils');
+var CliUtils = require('../bin/cli-utils');
 
 describe('CliUtils', function() {
   describe('#parseMN', function() {
