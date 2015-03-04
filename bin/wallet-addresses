@@ -10,7 +10,7 @@ program
 
 var args = program.args;
 
-utils.getClient(program, function (client) {
+utils.getClient(program, { mustExist: true }, function (client) {
   client.getMainAddresses({
     doNotVerify: true
   }, function(err, x) {

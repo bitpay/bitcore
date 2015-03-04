@@ -13,7 +13,7 @@ var args = program.args;
 var txpid = args[0] || '';
 var reason = args[1] || '';
 
-utils.getClient(program, function (client) {
+utils.getClient(program, { mustExist: true }, function (client) {
   client.getTxProposals({}, function(err, txps) {
     utils.die(err);
 
