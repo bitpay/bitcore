@@ -12,7 +12,7 @@ program
 
 var args = program.args;
 
-utils.getClient(program, function (client) {
+utils.getClient(program, { mustExist: true }, function (client) {
   client.getTxProposals({forAirGapped: !!program.output}, function (err, res) {
     utils.die(err);
     

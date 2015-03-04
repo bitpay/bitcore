@@ -8,7 +8,7 @@ program
   .parse(process.argv);
 
 var args = program.args;
-utils.getClient(program, function (client) {
+utils.getClient(program, { mustExist: true }, function (client) {
   client.createAddress(function(err, x) {
     utils.die(err);
     console.log('* New Address %s ', x.address);
