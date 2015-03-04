@@ -1,6 +1,6 @@
 # bitcore-wallet
 
-A simple Command Line Interfase Wallet using [Bitcore Wallet Service] (https://github.com/bitpay/bitcore-wallet-service) and its *official* client lib, bitcore-wallet-client] (https://github.com/bitpay/bitcore-wallet-client)
+A simple Command Line Interface Wallet using [Bitcore Wallet Service] (https://github.com/bitpay/bitcore-wallet-service) and its *official* client lib, bitcore-wallet-client] (https://github.com/bitpay/bitcore-wallet-client)
 
 
 # Quick Guide
@@ -14,10 +14,11 @@ A simple Command Line Interfase Wallet using [Bitcore Wallet Service] (https://g
 
  cd bin
  
- # Create a 2-of-2 wallet (john.dat is the file where the wallet critical data will be stored, add -t for testnet)
+ # Create a 2-of-2 wallet (.bit.dat is the default filename (saved on HOME ) where the wallet critical data will be stored, add -t for testnet)
  ./wallet create john 2-2 
   * Secret to share:
     JevjEwaaxW6gdAZjqgWcimL525DR8zQsAXf4cscWDa8u1qKTN5eFGSFssuSvT1WySu4YYLYMUPT
+
  ./wallet status
  
  # Use -f or BIT_FILE to setup the wallet data file
@@ -65,14 +66,14 @@ Local data can be encrypted by the bitcore-wallet. Use the `-n` parameter to def
 
 ``` shell
 # encrypts everything by default
-wallet create myWallet 2-3 --nopasswd none  
+./wallet create myWallet 2-3 --nopasswd none  
 Password:
 
 # allows readonly operations without password (encrypts xpriv, and leave readonlySigningKey unencrypted)
-wallet create myWallet 2-3 -p --nopasswd readonly
+./wallet create myWallet 2-3 -p --nopasswd readonly
 
 # allows readwrite operations without password (only encrypts xpriv)
-wallet create myWallet 2-3 -p --nopasswd readwrite
+./wallet create myWallet 2-3 -p --nopasswd readwrite
 ```
  
 
