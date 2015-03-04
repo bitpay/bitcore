@@ -11,14 +11,32 @@ A client library for bitcore-wallet-service
 
 ``` javascript
   var client = new Client({
-    baseUrl: bwc_instance_url,
+    baseUrl: bws_instance_url,
     verbose: true,
   });
 
- client.createWallet("my Wallet", "John", 2, 3, 'testnet', function(err, secret) {
+ client.createWallet("my Wallet", "Irene", 2, 3, 'testnet', function(err, secret) {
+    // Handle err
     console.log(' Wallet Created. Share this secret with your copayers:' + secret);
-    
+    fs.writeFileSync('wallet.dat', client.export());
+ });
  
+ // Then, from other Copayer
+ 
+   var client = new Client({
+    baseUrl: bws_instance_url,
+    verbose: true,
+  });
+
+ client.joinWallet(secret,  "Thomas", function(err, secret) {
+    // Handle err
+    console.log(' Wallet Joined!);
+    fs.writeFileSync('wallet.dat', client.export());
+ });
+ 
+```
+
+
 # API
 
 [TODO: Describe API calls? Or link jsdoc]
