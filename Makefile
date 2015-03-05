@@ -1,4 +1,6 @@
 
+BIN_PATH:=node_modules/.bin/
+
 all:	bitcore-wallet-client.min.js
 
 clean:
@@ -6,11 +8,11 @@ clean:
 	rm bitcore-wallet-client.min.js
 
 bitcore-wallet-client.js: index.js lib/*.js
-	browserify $< > $@
+	${BIN_PATH}browserify $< > $@
 
 
 bitcore-wallet-client.min.js: bitcore-wallet-client.js
-	node_modules/.bin/uglify  -s $<  -o $@
+	${BIN_PATH}uglify  -s $<  -o $@
 
 
 
