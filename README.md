@@ -94,8 +94,6 @@ Note that the scripts created two files named `irene.dat` and `thomas.dat`. With
 * [API.seedFromRandom(xPrivKey)](#API#seedFromRandom)
 * [ApI.export(opts)](#API#export)
 * [ApI.import(opts)](#API#import)
-* [ApI.toString()](#API#toString)
-* [ApI.fromString(str)](#API#fromString)
 * [API.isComplete()](#API#isComplete)
 * [API.openWallet(cb)](#API#openWallet)
 * [API.createWallet(walletName, copayerName, m, n, network, cb)](#API#createWallet)
@@ -157,18 +155,6 @@ Import wallet
 - opts `Object`  
   - compressed `Boolean`  
   - password `String`  
-
-<a name="API#toString"></a>
-###API.toString()
-Return a serialized object with credentials
-
-<a name="API#fromString"></a>
-###API.fromString(str)
-Get credentials from an object
-
-**Params**
-
-- str `Object`  
 
 <a name="API#isComplete"></a>
 ###API.isComplete()
