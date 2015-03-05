@@ -7,18 +7,18 @@ var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
 program
-  .usage('[options]')
-  .option('-i, --input [filename]', 'sign all transactions in file')
+  .usage('[options] <file>')
   .option('-o, --output [filename]', 'write signatures to file')
   .parse(process.argv);
 
 var args = program.args;
-if (!program.input || !program.output) {
+if (!args[0])
   program.help();
-};
+
+var file = args[0];
 
 utils.getClient(program, { mustExist: true, airGapped: true }, function (client) {
-  var task = JSON.parse(fs.readFileSync(program.input));
+  var task = JSON.parse(fs.readFileSync(file));
   var errors = [];
   var signatures = _.map(task.txps, function (txp) {
     try {
@@ -34,12 +34,16 @@ utils.getClient(program, { mustExist: true, airGapped: true }, function (client)
     }
   });
   if (errors.length == 0) {
-    fs.writeFileSync(program.output, JSON.stringify(signatures));
-    console.log('Signatures written to file.');
+    if (program.output) {
+      fs.writeFileSync(program.output, JSON.stringify(signatures));
+      console.log('Signatures written to file.');
+    } else {
+      console.log(JSON.stringify(signatures));
+    }
   } else {
     console.log('Error signing transactions:');
     _.each(errors, function (e) {
-      console.log('\tTransaction %s: %s', e.id, e.error.message);
+      console.log('\tTransaction %s: %s', e.txp.id, e.error.message);
     });
   }
 });
