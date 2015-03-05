@@ -8,22 +8,22 @@ The *official* client library for [bitcore-wallet-service] (https://github.com/b
 
 ## Description
 
-This package communicated to BWS [Bitcore wallet service](https://github.com/bitpay/bitcore-wallet-service) using its REST API. All REST endpoints are wrapped on simple async call. All relevant responses from BWS are checked independently by the peers, thus the importance of using this library with talking with a third party BWS instance.
+This package communicates with BWS [Bitcore wallet service](https://github.com/bitpay/bitcore-wallet-service) using the REST API. All REST endpoints are wrapped as simple async methods. All relevant responses from BWS are checked independently by the peers, thus the importance of using this library when talking to a third party BWS instance.
 
 See [Bitcore-wallet] (https://github.com/bitpay/bitcore-wallet) for a simple CLI wallet implementation that relays on BWS and uses bitcore-wallet-client.
 
 ## Get Started
 
-To get going with bitcore-wallet-client you can use one of the following ways:
+You can start using bitcore-wallet-client in any of these two ways:
 
 * via [Bower](http://bower.io/): by running `bower install bitcore-wallet-client` from your console
 * or via [NPM](https://www.npmjs.com/package/bitcore-wallet-client): by running `npm install bitcore-wallet-client` from your console.
 
 ## Example
 
-Start your own local [Bitcore wallet service](https://github.com/bitpay/bitcore-wallet-service) instance. In this example we suppose that you have `bitcore-wallet-service` running on your `localhost:3001`.
+Start your own local [Bitcore wallet service](https://github.com/bitpay/bitcore-wallet-service) instance. In this example we assume you have `bitcore-wallet-service` running on your `localhost:3001`.
 
-Then create two files `one.js` and `two.js` with the follow contents:
+Then create two files `one.js` and `two.js` with the content below:
 
 **one.js**
 
@@ -32,7 +32,7 @@ var Client = require('bitcore-wallet-client');
 var fs = require('fs');
 var BWS_INSTANCE_URL = 'http://localhost:3001/copay/api'
 
-varthomas = new Client({
+var client = new Client({
   baseUrl: BWS_INSTANCE_URL,
   verbose: false,
 });
@@ -59,7 +59,7 @@ var client = new Client({
 
 client.joinWallet(secret,  "Thomas", function(err, wallet) {
   // Handle err
-  console.log('Wallet Joined!');
+  console.log('Joined ' + wallet.name + '!');
   fs.writeFileSync('thomas.dat', client.export());
 });
 ```
@@ -82,7 +82,7 @@ Join to this wallet with generated secret:
 
 ```
 $ node two.js JbTDjtUkvWS4c3mgAtJf4zKyRGzdQzZacfx2S7gRqPLcbeAWaSDEnazFJF6mKbzBvY1ZRwZCbvT
-Wallet Joined!
+Joined My Wallet!
 ```
 
 Note that the scripts created two files named `irene.dat` and `thomas.dat`. With these files you can get status, generate addresses, create proposals, sign transactions, etc.
