@@ -6,6 +6,7 @@ program = utils.configureCommander(program);
 
 program
   .usage('[options] <secret> [copayerName]')
+  .option('-p, --password', 'Encrypt wallet. Will ask password interactively')
   .parse(process.argv);
 
 var args = program.args;

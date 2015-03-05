@@ -17,7 +17,7 @@ if (!args[0])
 
 var file = args[0];
 
-utils.getClient(program, { mustExist: true, airGapped: true }, function (client) {
+utils.getClient(program, { mustExist: true, doNotComplete: true }, function (client) {
   var task = JSON.parse(fs.readFileSync(file));
   var errors = [];
   var signatures = _.map(task.txps, function (txp) {

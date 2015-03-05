@@ -11,24 +11,24 @@ program = utils.configureCommander(program);
 program
   .option('-n, --nosign', 'export wallet credentials without transaction signing keys (extended private key)')
   .option('-q, --qr', 'export a QR code')
-  .option('-p, --password [password]', 'a password to encrypt the exported data')
-  .option('-o, --output [filename]', 'output file');
+  .option('-e, --exportpassword <password>', 'a password to encrypt the exported data')
+  .option('-o, --output <filename>', 'output file');
 
 program
   .parse(process.argv);
 
 var args = program.args;
 
-utils.getClient(program, { mustExist: true }, function (client) {
+utils.getClient(program, { doNotComplete: true, mustExist: true }, function (client) {
   var x;
   try {
     x = client.export({
       compressed: !!program.qr,
       noSign: !!program.nosign,
-      password: program.password,
+      password: program.exportpassword,
     });
   } catch (ex) {
-    die(ex);
+    utils.die(ex);
   }
 
   var access = !!program.nosign ? 'without signing capability' : 'with signing capability';

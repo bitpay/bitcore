@@ -1,8 +1,9 @@
 var _ = require('lodash');
-var Client = require('bitcore-wallet-client');
-var FileStorage = require('./filestorage');
 var read = require('read')
 var log = require('npmlog');
+var Client = require('bitcore-wallet-client');
+var FileStorage = require('./filestorage');
+
 
 var Utils = function() {};
 
@@ -41,14 +42,52 @@ Utils.confirmationId = function(copayer) {
   return parseInt(copayer.xPubKeySignature.substr(-4), 16).toString().substr(-4);
 }
 
+
+Utils.doLoad = function(client, doNotComplete, walletData, password, filename, cb) {
+  var opts = {};
+  if (password) {
+    opts.password = password;
+  }
+  try {
+    client.import(walletData, opts);
+  } catch (e) {
+    die('Could not open wallet.' + (password ? ' Wrong password?' : ''));
+  };
+  if (doNotComplete) return cb(client);
+
+  client.openWallet(function(err, justCompleted) {
+    if (!err && client.isComplete() && justCompleted) {
+      Utils.doSave(client, filename, password, function() {
+        log.info('Your wallet has just been completed. Please backup your wallet file or use the export command.');
+        return cb(client);
+      });
+    } else {
+      return cb(client);
+    }
+  });
+};
+
+Utils.loadEncrypted = function(client, opts, walletData, filename, cb) {
+  read({
+    prompt: 'Enter password to decrypt:',
+    silent: true
+  }, function(er, password) {
+    if (er) die(err);
+    if (!password) die("no password given");
+
+    return Utils.doLoad(client, opts.doNotComplete, walletData, password, filename, cb);
+  });
+};
+
 Utils.getClient = function(args, opts, cb) {
   opts = opts || {};
 
-  var file = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
+  var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
 
   var storage = new FileStorage({
-    filename: file,
+    filename: filename,
   });
+
   var client = new Client({
     baseUrl: args.host || process.env['BWS_HOST'],
     verbose: args.verbose,
@@ -58,7 +97,7 @@ Utils.getClient = function(args, opts, cb) {
     if (err) {
       if (err.code == 'ENOENT') {
         if (opts.mustExist) {
-          die(new Error('File "' + file + '" not found.'));
+          die('File "' + filename + '" not found.');
         }
       } else {
         die(err);
@@ -66,74 +105,72 @@ Utils.getClient = function(args, opts, cb) {
     }
 
     if (walletData && opts.mustBeNew) {
-      die(new Error('File "' + file + '" already exists.'));
+      die('File "' + filename + '" already exists.');
     }
-
     if (!walletData) return cb(client);
 
-    client.import(walletData);
-    if (opts.airGapped) return cb(client);
+    var json;
+    try {
+      json = JSON.parse(walletData);
+    } catch (e) {
+      die('Invalid input file');
+    };
 
-    client.openWallet(function(err, justCompleted) {
-      if (!err && client.isComplete() && justCompleted) {
-        Utils.saveClient(args, client, function() {
-          log.info('Your wallet has just been completed. Please backup your wallet file or use the export command.');
-          return cb(client);
-        });
-      } else {
-        return cb(client);
-      }
-    });
+    if (json.ct) {
+      Utils.loadEncrypted(client, opts, walletData, filename, cb);
+    } else {
+      Utils.doLoad(client, opts.doNotComplete, walletData, null, filename, cb);
+    }
   });
 };
 
-Utils.saveClient = function(args, client, cb) {
-  var file = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
-
-  console.log('* Saving file', file);
+Utils.doSave = function(client, filename, password, cb) {
+  var opts = {};
+  if (password) {
+    opts.password = password;
+  }
+  var str = client.export(opts);
 
   var storage = new FileStorage({
-    filename: file,
+    filename: filename,
   });
-  var str = client.export();
+
   storage.save(str, function(err) {
     die(err);
     return cb();
   });
 };
 
-// var setPassword;
-// c.on('needPassword', function(cb) {
-//   if (args.password) {
-//     return cb(args.password);
-//   } else {
-//     if (setPassword)
-//       return cb(setPassword);
+Utils.saveEncrypted = function(client, filename, cb) {
+  read({
+    prompt: 'Enter password to encrypt:',
+    silent: true
+  }, function(er, password) {
+    if (er) Utils.die(err);
+    if (!password) Utils.die("no password given");
+    read({
+      prompt: 'Confirm password:',
+      silent: true
+    }, function(er, password2) {
+      if (er) Utils.die(err);
+      if (password != password2)
+        Utils.die("passwords were not equal");
 
-//     read({
-//       prompt: 'Password for ' + args.file + ' : ',
-//       silent: true
-//     }, function(er, password) {
-//       setPassword = password;
-//       return cb(password);
-//     })
-//   }
-// });
+      Utils.doSave(client, filename, password, cb);
+    });
+  });
+};
 
-// c.on('needNewPassword', function(cb) {
-//   if (args.password) {
-//     return cb(args.password);
-//   } else {
-//     read({
-//       prompt: 'New Password: ',
-//       silent: true
-//     }, function(er, password) {
-//       return cb(password);
-//     })
-//   }
-// });
+Utils.saveClient = function(args, client, cb) {
+  var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
+  console.log(' * Saving file', filename);
 
-
+  if (args.password) {
+    Utils.saveEncrypted(client, filename, cb);
+  } else {
+    Utils.doSave(client, filename, null, cb);
+  };
+};
 
 Utils.findOneTxProposal = function(txps, id) {
   var matches = _.filter(txps, function(tx) {
