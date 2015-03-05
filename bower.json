@@ -15,7 +15,11 @@
   ],
   "ignore": [
     "**/.*",
+    "lib",
     "node_modules",
-    "bower_components"
+    "Gruntfiles.js",
+    "Makefile",
+    "index.js",
+    "test"
   ]
 }
