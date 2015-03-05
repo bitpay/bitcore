@@ -31,17 +31,16 @@ Then create two files `one.js` and `two.js` with the follow contents:
 var Client = require('bitcore-wallet-client');
 var fs = require('fs');
 var BWS_INSTANCE_URL = 'http://localhost:3001/copay/api'
-var WALLET = 'oneWallet.dat';
 
-var client = new Client({
+varthomas = new Client({
   baseUrl: BWS_INSTANCE_URL,
   verbose: false,
 });
 
 client.createWallet("My Wallet", "Irene", 2, 2, 'testnet', function(err, secret) {
   // Handle err
-  console.log(' Wallet Created. Share this secret with your copayers: ' + secret);
-  fs.writeFileSync(WALLET, client.export());
+  console.log('Wallet Created. Share this secret with your copayers: ' + secret);
+  fs.writeFileSync('irene.dat', client.export());
 });
 ```
 
@@ -51,7 +50,6 @@ client.createWallet("My Wallet", "Irene", 2, 2, 'testnet', function(err, secret)
 var Client = require('bitcore-wallet-client');
 var fs = require('fs');
 var BWS_INSTANCE_URL = 'http://localhost:3001/copay/api'
-var WALLET = 'twoWallet.dat';
 var secret = process.argv[2];
 
 var client = new Client({
@@ -62,7 +60,7 @@ var client = new Client({
 client.joinWallet(secret,  "Thomas", function(err, wallet) {
   // Handle err
   console.log('Wallet Joined!');
-  fs.writeFileSync(WALLET, client.export());
+  fs.writeFileSync('thomas.dat', client.export());
 });
 ```
 
@@ -87,7 +85,7 @@ $ node two.js JbTDjtUkvWS4c3mgAtJf4zKyRGzdQzZacfx2S7gRqPLcbeAWaSDEnazFJF6mKbzBvY
 Wallet Joined!
 ```
 
-Note that the scripts created two files named `oneWallet.dat` and `twoWallet.dat`. With these files you can get status, generate addresses, to send transactions, etc.
+Note that the scripts created two files named `irene.dat` and `thomas.dat`. With these files you can get status, generate addresses, create proposals, sign transactions, etc.
 
 ## API Client
 
@@ -148,6 +146,7 @@ Export wallet
 - opts `Object`  
   - compressed `Boolean`  
   - password `String`  
+  - noSign `Boolean`  
 
 <a name="API#import"></a>
 ###API.import(opts)
@@ -177,7 +176,7 @@ Return if wallet is complete
 
 <a name="API#openWallet"></a>
 ###API.openWallet(cb)
-Opens a wallet and tries to complete the public key ring.
+Open a wallet and try to complete the public key ring.
 
 **Params**
 
