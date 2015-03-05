@@ -2,7 +2,7 @@
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "keywords": [
     "bitcoin",
     "copay",
@@ -23,12 +23,13 @@
     "async": "^0.9.0",
     "bitcore": "^0.11.2",
     "bitcore-wallet-utils": "0.0.2",
+    "browserify": "^9.0.3",
     "coveralls": "^2.11.2",
     "lodash": "^3.3.1",
-    "npmlog": "^1.2.0",
     "preconditions": "^1.0.8",
     "request": "^2.53.0",
-    "sjcl": "^1.0.2"
+    "sjcl": "^1.0.2",
+    "uglify": "^0.1.1"
   },
   "devDependencies": {
     "bitcore-wallet-service": "0.0.3",
@@ -49,7 +50,8 @@
     "test": "./node_modules/.bin/mocha",
     "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage"
   },
-  "contributors": [{
+  "contributors": [
+    {
       "name": "Ivan Socolsky",
       "email": "ivan@bitpay..com"
     },
