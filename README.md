@@ -14,49 +14,58 @@ A simple Command Line Interface Wallet using [Bitcore Wallet Service] (https://g
 
  cd bin
  
- # Create a 2-of-2 wallet (.wallet.dat is the default filename (saved on HOME ) where the wallet critical data will be stored)
+ # Create a 2-of-2 wallet (~/.wallet.dat is the default filename where the wallet critical data will be stored)
  #
  # TIP: add -t for testnet
-  wallet create myFirstWallet 2-2 
+ wallet create 'my wallet' 2-2 
   * Secret to share:
     JevjEwaaxW6gdAZjqgWcimL525DR8zQsAXf4cscWDa8u1qKTN5eFGSFssuSvT1WySu4YYLYMUPT
 
-  wallet status
+ # Check the status of your wallet 
+ wallet status
  
+  * Wallet my wallet [livenet]: 2-of-2 pending
+    Missing copayers: 1
+
  # Use -f or WALLET_FILE to setup the wallet data file
  
- # Join the wallet from other copayer
-   wallet -f pete.dat join JevjEwaaxW6gdAZjqgWcimL525DR8zQsAXf4cscWDa8u1qKTN5eFGSFssuSvT1WySu4YYLYMUPT
+ # Join the wallet as another copayer
+ wallet -f pete.dat join JevjEwaaxW6gdAZjqgWcimL525DR8zQsAXf4cscWDa8u1qKTN5eFGSFssuSvT1WySu4YYLYMUPT
    
-   export WALLET_FILE=pete.dat
-   wallet status
+ export WALLET_FILE=pete.dat
+ wallet status
 
  # Generate addresses to receive money
-   wallet address
-   * New Address 3xxxxxx
+ wallet address
+  * New Address 3xxxxxx
 
  # Check your balance
-   wallet balance
+ wallet balance
    
  # Spend coins. Amount can be specified in btc, bit or sat (default)
-   wallet send 1xxxxx 100bit "100 bits to mother"
+ wallet send 1xxxxx 1000bit "1000 bits to mother"
+  * Tx created: ID 01425517364314b9ac6017-e97d-46d5-a12a-9d4e5550abef [pending] RequiredSignatures: 2
 
- # You can use 100bit or 0.00001btc or 10000sat.  (Set BIT_UNIT to btc/sat/bit to select output unit).
+ # You can use 1000bit or 0.0001btc or 100000sat. (Set BIT_UNIT to btc/sat/bit to select output unit).
 
  # List pending TX Proposals
-   wallet txproposals
+ wallet txproposals
+  * TX Proposals:
+   abef ["1000 bits to mother" by pete] 1,000 bit => 1xxxxx
+     Missing signatures: 2
    
  # Sign or reject TXs from other copayers
-   wallet -f pete.dat reject <id>
-   wallet -f pete.dat sign <id>
+ wallet -f pete.dat reject <id>
+ wallet -f pete.dat sign <id>
 
  # List transaction history
-   a few minutes ago: => sent 100 bit ["100 bits to mother" by pete] (1 confirmations)
+ wallet history
+   a few minutes ago: => sent 1,000 bit ["1000 bits to mother" by pete] (1 confirmations)
    a day ago: <= received 1,400 bit (48 confirmations)
-   a day ago: <= received 300 bit (52 confirmations)
+   a day ago: <= received 300 bit (62 confirmations)
    
  # List all commands:
-   wallet --help
+ wallet --help
  
     
   ```
@@ -69,8 +78,6 @@ Currently there is no password protection. This feature will be available soon.
 
 
 # Airgapped Operation 
-
-[TODO]
 
 Air gapped (non connected) devices are supported. This setup can be useful if maximum security is needed, to prevent private keys from being compromised. In this setup, a device is installed without network access, and transactions are signed off-line. Transactions can be pulled from BWS using a `proxy` device, then downloaded to a pendrive to be moved to the air-gapped device, signed there, and then moved back the `proxy` device to be sent back to BWS. Note that Private keys are generated off-line in the airgapped device.
 
