@@ -7,7 +7,6 @@ program = utils.configureCommander(program);
 
 
 program
-  .version('0.0.1')
   .option('-q, --qr', 'import from a QR code')
   .option('-e, --exportpassword <password>', 'a password to decrypt the data being imported')
   .option('-p, --password', 'Encrypt wallet. Will ask password interactively')
