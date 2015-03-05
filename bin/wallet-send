@@ -38,6 +38,6 @@ utils.getClient(program, { mustExist: true }, function (client) {
   }, function(err, x) {
     utils.die(err);
     console.log(' * Tx created: ID %s [%s] RequiredSignatures:',
-      x.id, x.status, x.requiredSignatures);
+      utils.shortID(x.id), x.status, x.requiredSignatures);
   });
 });
