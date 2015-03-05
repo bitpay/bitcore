@@ -14,7 +14,8 @@ Bitcore Wallet Service facilitates multisig HD wallets creation and operation th
 BWS can usually be installed within minutes and acommodates all the needed infrastruture for peers in a multisig wallet to communicate, and operate with minimun server trust.
   
 See [Bitcore-wallet-client] (https://github.com/bitpay/bitcore-wallet-client) for the *official* client library that communicates to BWS, and verifies its responsed. Also check [Bitcore-wallet] (https://github.com/bitpay/bitcore-wallet) for a simple CLI wallet implementation that relays on BWS.
-  
+
+BWS have a extensive test suite but have not been tested on production environments yet and have been recently released, so it it is still should be considered  BETA software.  
 
 # Security Considerations
  * Private keys are never sent to BWS. Copayers store them locally.
@@ -137,9 +138,6 @@ Returns:
  * TX Proposal object. (see [fields on the source code](https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/txproposal.js)). `.id` is probably needed in this case.
    
 
-#  Is BWS production ready?
-
-BWS have a extensive test suite but have not been tested on production environments yet and have been recently released, so it it is still should be considered  BETA software.
 
 
 `
