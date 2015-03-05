@@ -15,25 +15,8 @@ BWS can usually be installed within minutes and acommodates all the needed infra
   
 See [Bitcore-wallet-client] (https://github.com/bitpay/bitcore-wallet-client) for the *official* client library that communicates to BWS, and verifies its responsed. Also check [Bitcore-wallet] (https://github.com/bitpay/bitcore-wallet) for a simple CLI wallet implementation that relays on BWS.
   
- 
-# Peer's Local  data
-Peer need to store their *extended private key* and other participant peers' extended public key locally. We call this the ``Credentials``. *Extended private keys* are **never** sent to BWS.
- 
-## Mobility
-Peers can safely access a wallet from different devices at the same time  by copying their credentials.
 
-## Agent support
-
-BWS supports signing and non signing agents. 
-
-Agents can be given a wallet secret, and join the wallet during creation, and act as with the same status of a regular peer. Agents can also be created by *cloning* one peer's data (and optionally removing its private key). By removing the private key, the resulting agent wont be able to sign transactions.  
-
-Agent support is [planned to be extended](https://github.com/bitpay/bitcore-wallet-service/issues/114) in following releases.
-
-## Airgapped Operation 
-[TODO be documented]
-
-## Security Considerations
+# Security Considerations
  * Private keys are never sent to BWS. Copayers store them locally.
  * Extended public keys are stored on BWS. This allows BWS to easily check wallet balance, send offline notifications to copayers, etc.
  * During wallet creation, the initial copayer creates a wallet secret that contains a private key. All copayers need to prove they have the secret by signing their information with this private key when joining the wallet. The secret should be shared using secured channels.
@@ -43,7 +26,6 @@ Agent support is [planned to be extended](https://github.com/bitpay/bitcore-wall
   * TX Proposals templates are signed by copayers and verified by others, so the BWS cannot create or tamper with them.
 
 # REST API
-
 ## Authentication
 
   In order to access a wallet, clients are required to send the headers:
