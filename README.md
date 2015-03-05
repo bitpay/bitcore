@@ -37,13 +37,10 @@ Agent support is [planned to be extended](https://github.com/bitpay/bitcore-wall
  * Private keys are never sent to BWS. Copayers store them locally.
  * Extended public keys are stored on BWS. This allows BWS to easily check wallet balance, send offline notifications to copayers, etc.
  * During wallet creation, the initial copayer creates a wallet secret that contains a private key. All copayers need to prove they have the secret by signing their information with this private key when joining the wallet. The secret should be shared using secured channels.
-
-## All BWS responses are verified:
+ * A copayer could join the wallet more than once, and there is no mechanism to prevent this. See [wallet]((https://github.com/bitpay/bitcore-wallet)'s confirm command, for a method for confirming copayers.
+ * All BWS responses are verified:
   * Addresses and change addresses are derived independently and locally by the copayers from their local data.
   * TX Proposals templates are signed by copayers and verified by others, so the BWS cannot create or tamper with them.
-
-## Notes
- * A copayer could join the wallet more than once, and there is no mechanism to prevent this. See [wallet]((https://github.com/bitpay/bitcore-wallet)'s confirm command, for a method for confirming copayers.
 
 # REST API
 
