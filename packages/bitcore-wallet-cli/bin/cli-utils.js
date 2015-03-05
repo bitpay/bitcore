@@ -83,6 +83,11 @@ Utils.getClient = function(args, opts, cb) {
   opts = opts || {};
 
   var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
+  var baseUrl = args.host || process.env['BWS_HOST'];
+
+  if (!_.isString(filename) || !_.isString(baseUrl)) {
+    args.help();
+  }
 
   var storage = new FileStorage({
     filename: filename,
