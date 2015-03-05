@@ -51,7 +51,7 @@ Utils.doLoad = function(client, doNotComplete, walletData, password, filename, c
   try {
     client.import(walletData, opts);
   } catch (e) {
-    Utils.die('Could not open wallet.' + (password ? ' Wrong password?' : ''));
+    die('Could not open wallet.' + (password ? ' Wrong password?' : ''));
   };
   if (doNotComplete) return cb(client);
 
@@ -72,8 +72,8 @@ Utils.loadEncrypted = function(client, opts, walletData, filename, cb) {
     prompt: 'Enter password to decrypt:',
     silent: true
   }, function(er, password) {
-    if (er) Utils.die(err);
-    if (!password) Utils.die("no password given");
+    if (er) die(err);
+    if (!password) die("no password given");
 
     return Utils.doLoad(client, opts.doNotComplete, walletData, password, filename, cb);
   });
@@ -97,7 +97,7 @@ Utils.getClient = function(args, opts, cb) {
     if (err) {
       if (err.code == 'ENOENT') {
         if (opts.mustExist) {
-          die(new Error('File "' + filename + '" not found.'));
+          die('File "' + filename + '" not found.');
         }
       } else {
         die(err);
@@ -105,11 +105,17 @@ Utils.getClient = function(args, opts, cb) {
     }
 
     if (walletData && opts.mustBeNew) {
-      die(new Error('File "' + filename + '" already exists.'));
+      die('File "' + filename + '" already exists.');
     }
     if (!walletData) return cb(client);
 
-    var json = JSON.parse(walletData);
+    var json;
+    try {
+      json = JSON.parse(walletData);
+    } catch (e) {
+      die('Invalid input file');
+    };
+
     if (json.ct) {
       Utils.loadEncrypted(client, opts, walletData, filename, cb);
     } else {
