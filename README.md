@@ -98,11 +98,6 @@ Note that the scripts created two files named `oneWallet.dat` and `twoWallet.dat
 * [ApI.import(opts)](#API#import)
 * [ApI.toString()](#API#toString)
 * [ApI.fromString(str)](#API#fromString)
-* [ApI._doRequest(method, url, args, cb)](#API#_doRequest)
-* [ApI._doPostRequest(url, args, cb)](#API#_doPostRequest)
-* [ApI._doGetRequest(url, cb)](#API#_doGetRequest)
-* [API._doDeleteRequest(url, cb)](#API#_doDeleteRequest)
-* [API._doJoinWallet(walletId, walletPrivKey, xPubKey, copayerName, cb)](#API#_doJoinWallet)
 * [API.isComplete()](#API#isComplete)
 * [API.openWallet(cb)](#API#openWallet)
 * [API.createWallet(walletName, copayerName, m, n, network, cb)](#API#createWallet)
@@ -175,57 +170,6 @@ Get credentials from an object
 **Params**
 
 - str `Object`  
-
-<a name="API#_doRequest"></a>
-###API._doRequest(method, url, args, cb)
-Do a request
-
-**Params**
-
-- method `Object`  
-- url `String`  
-- args `Object`  
-- cb `Callback`  
-
-<a name="API#_doPostRequest"></a>
-###API._doPostRequest(url, args, cb)
-Post a request
-
-**Params**
-
-- url `String`  
-- args `Object`  
-- cb `Callback`  
-
-<a name="API#_doGetRequest"></a>
-###API._doGetRequest(url, cb)
-Get a request
-
-**Params**
-
-- url `String`  
-- cb `Callback`  
-
-<a name="API#_doDeleteRequest"></a>
-###API._doDeleteRequest(url, cb)
-Delete a request
-
-**Params**
-
-- url `String`  
-- cb `Callback`  
-
-<a name="API#_doJoinWallet"></a>
-###API._doJoinWallet(walletId, walletPrivKey, xPubKey, copayerName, cb)
-Join
-
-**Params**
-
-- walletId `String`  
-- walletPrivKey `String`  
-- xPubKey `String`  
-- copayerName `String`  
-- cb `Callback`  
 
 <a name="API#isComplete"></a>
 ###API.isComplete()
