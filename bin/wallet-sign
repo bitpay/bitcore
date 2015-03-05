@@ -12,7 +12,7 @@ program
   .parse(process.argv);
 
 var args = program.args;
-var txpid = args[0] || null;
+var txpid = args[0] || '';
 
 function processBatch(client, signatures) {
   client.getTxProposals({}, function(err, txps) {
