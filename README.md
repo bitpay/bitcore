@@ -8,30 +8,29 @@ The *official* client library for [bitcore-wallet-service] (https://github.com/b
 
 ## Description
 
-This package communicated to BWS [Bitcore wallet service](https://github.com/bitpay/bitcore-wallet-service) using its REST API. All REST endpoints are wrapped on simple async call. All relevant responses from BWS are checked independently by the peers, thus the importance of using this library with talking with a third party BWS instance.
+This package communicates with BWS [Bitcore wallet service](https://github.com/bitpay/bitcore-wallet-service) using the REST API. All REST endpoints are wrapped as simple async methods. All relevant responses from BWS are checked independently by the peers, thus the importance of using this library when talking to a third party BWS instance.
 
 See [Bitcore-wallet] (https://github.com/bitpay/bitcore-wallet) for a simple CLI wallet implementation that relays on BWS and uses bitcore-wallet-client.
 
 ## Get Started
 
-To get going with bitcore-wallet-client you can use one of the following ways:
+You can start using bitcore-wallet-client in any of these two ways:
 
 * via [Bower](http://bower.io/): by running `bower install bitcore-wallet-client` from your console
 * or via [NPM](https://www.npmjs.com/package/bitcore-wallet-client): by running `npm install bitcore-wallet-client` from your console.
 
 ## Example
 
-Start your own local [Bitcore wallet service](https://github.com/bitpay/bitcore-wallet-service) instance. In this example we suppose that you have `bitcore-wallet-service` running on your `localhost:3001`.
+Start your own local [Bitcore wallet service](https://github.com/bitpay/bitcore-wallet-service) instance. In this example we assume you have `bitcore-wallet-service` running on your `localhost:3001`.
 
-Then create two files `one.js` and `two.js` with the follow contents:
+Then create two files `irene.js` and `thomas.js` with the content below:
 
-**one.js**
+**irene.js**
 
 ``` javascript
 var Client = require('bitcore-wallet-client');
 var fs = require('fs');
 var BWS_INSTANCE_URL = 'http://localhost:3001/copay/api'
-var WALLET = 'oneWallet.dat';
 
 var client = new Client({
   baseUrl: BWS_INSTANCE_URL,
@@ -40,18 +39,17 @@ var client = new Client({
 
 client.createWallet("My Wallet", "Irene", 2, 2, 'testnet', function(err, secret) {
   // Handle err
-  console.log(' Wallet Created. Share this secret with your copayers: ' + secret);
-  fs.writeFileSync(WALLET, client.export());
+  console.log('Wallet Created. Share this secret with your copayers: ' + secret);
+  fs.writeFileSync('irene.dat', client.export());
 });
 ```
 
-**two.js**
+**thomas.js**
 
 ``` javascript
 var Client = require('bitcore-wallet-client');
 var fs = require('fs');
 var BWS_INSTANCE_URL = 'http://localhost:3001/copay/api'
-var WALLET = 'twoWallet.dat';
 var secret = process.argv[2];
 
 var client = new Client({
@@ -61,8 +59,8 @@ var client = new Client({
 
 client.joinWallet(secret,  "Thomas", function(err, wallet) {
   // Handle err
-  console.log('Wallet Joined!');
-  fs.writeFileSync(WALLET, client.export());
+  console.log('Joined ' + wallet.name + '!');
+  fs.writeFileSync('thomas.dat', client.export());
 });
 ```
 
@@ -75,7 +73,7 @@ npm i bitcore-wallet-client
 Create a new wallet with the first script:
 
 ```
-$ node one.js
+$ node irene.js
 info Generating new keys 
  Wallet Created. Share this secret with your copayers: JbTDjtUkvWS4c3mgAtJf4zKyRGzdQzZacfx2S7gRqPLcbeAWaSDEnazFJF6mKbzBvY1ZRwZCbvT
 ```
@@ -83,11 +81,11 @@ info Generating new keys
 Join to this wallet with generated secret:
 
 ```
-$ node two.js JbTDjtUkvWS4c3mgAtJf4zKyRGzdQzZacfx2S7gRqPLcbeAWaSDEnazFJF6mKbzBvY1ZRwZCbvT
-Wallet Joined!
+$ node thomas.js JbTDjtUkvWS4c3mgAtJf4zKyRGzdQzZacfx2S7gRqPLcbeAWaSDEnazFJF6mKbzBvY1ZRwZCbvT
+Joined My Wallet!
 ```
 
-Note that the scripts created two files named `oneWallet.dat` and `twoWallet.dat`. With these files you can get status, generate addresses, to send transactions, etc.
+Note that the scripts created two files named `irene.dat` and `thomas.dat`. With these files you can get status, generate addresses, create proposals, sign transactions, etc.
 
 ## API Client
 
@@ -96,13 +94,6 @@ Note that the scripts created two files named `oneWallet.dat` and `twoWallet.dat
 * [API.seedFromRandom(xPrivKey)](#API#seedFromRandom)
 * [ApI.export(opts)](#API#export)
 * [ApI.import(opts)](#API#import)
-* [ApI.toString()](#API#toString)
-* [ApI.fromString(str)](#API#fromString)
-* [ApI._doRequest(method, url, args, cb)](#API#_doRequest)
-* [ApI._doPostRequest(url, args, cb)](#API#_doPostRequest)
-* [ApI._doGetRequest(url, cb)](#API#_doGetRequest)
-* [API._doDeleteRequest(url, cb)](#API#_doDeleteRequest)
-* [API._doJoinWallet(walletId, walletPrivKey, xPubKey, copayerName, cb)](#API#_doJoinWallet)
 * [API.isComplete()](#API#isComplete)
 * [API.openWallet(cb)](#API#openWallet)
 * [API.createWallet(walletName, copayerName, m, n, network, cb)](#API#createWallet)
@@ -153,6 +144,7 @@ Export wallet
 - opts `Object`  
   - compressed `Boolean`  
   - password `String`  
+  - noSign `Boolean`  
 
 <a name="API#import"></a>
 ###API.import(opts)
@@ -164,76 +156,13 @@ Import wallet
   - compressed `Boolean`  
   - password `String`  
 
-<a name="API#toString"></a>
-###API.toString()
-Return a serialized object with credentials
-
-<a name="API#fromString"></a>
-###API.fromString(str)
-Get credentials from an object
-
-**Params**
-
-- str `Object`  
-
-<a name="API#_doRequest"></a>
-###API._doRequest(method, url, args, cb)
-Do a request
-
-**Params**
-
-- method `Object`  
-- url `String`  
-- args `Object`  
-- cb `Callback`  
-
-<a name="API#_doPostRequest"></a>
-###API._doPostRequest(url, args, cb)
-Post a request
-
-**Params**
-
-- url `String`  
-- args `Object`  
-- cb `Callback`  
-
-<a name="API#_doGetRequest"></a>
-###API._doGetRequest(url, cb)
-Get a request
-
-**Params**
-
-- url `String`  
-- cb `Callback`  
-
-<a name="API#_doDeleteRequest"></a>
-###API._doDeleteRequest(url, cb)
-Delete a request
-
-**Params**
-
-- url `String`  
-- cb `Callback`  
-
-<a name="API#_doJoinWallet"></a>
-###API._doJoinWallet(walletId, walletPrivKey, xPubKey, copayerName, cb)
-Join
-
-**Params**
-
-- walletId `String`  
-- walletPrivKey `String`  
-- xPubKey `String`  
-- copayerName `String`  
-- cb `Callback`  
-
 <a name="API#isComplete"></a>
 ###API.isComplete()
 Return if wallet is complete
 
 <a name="API#openWallet"></a>
 ###API.openWallet(cb)
-Opens a wallet and tries to complete the public key ring.
+Open a wallet and try to complete the public key ring.
 
 **Params**
 
