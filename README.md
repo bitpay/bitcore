@@ -16,7 +16,7 @@ cd bin
  
 # Create a 2-of-2 wallet (~/.wallet.dat is the default filename where the wallet critical data will be stored)
 #
-# TIP: add -t for testnet
+# TIP: add -t for testnet, and -p to encrypt the credentials file
 wallet create 'my wallet' 2-2 
   * Secret to share:
     JevjEwaaxW6gdAZjqgWcimL525DR8zQsAXf4cscWDa8u1qKTN5eFGSFssuSvT1WySu4YYLYMUPT
@@ -29,7 +29,7 @@ wallet status
 
 # Use -f or WALLET_FILE to setup the wallet data file
  
-# Join the wallet as another copayer
+# Join the wallet as another copayer (add -p to encrypt credentials file)
 wallet -f pete.dat join JevjEwaaxW6gdAZjqgWcimL525DR8zQsAXf4cscWDa8u1qKTN5eFGSFssuSvT1WySu4YYLYMUPT
    
 export WALLET_FILE=pete.dat
