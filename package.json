@@ -26,12 +26,6 @@
     "read": "^1.0.5"
   },
   "devDependencies": {
-    "bitcore-wallet-service": "git+https://github.com/bitpay/bitcore-wallet-service.git",
-    "chai": "^1.9.1",
-    "istanbul": "*",
-    "jsdoc": "^3.3.0-beta1",
-    "mocha": "^1.18.2",
-    "sinon": "^1.10.3"
   },
   "scripts": {
     "start": "node app.js",

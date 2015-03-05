@@ -7,6 +7,7 @@ program = utils.configureCommander(program);
 
 program
   .option('-t, --testnet', 'Create a Testnet Wallet')
+  .option('-p, --password', 'Encrypt wallet. Will ask password interactively')
   .usage('[options] <walletName> <m-n> [copayerName]')
   .parse(process.argv);
 
