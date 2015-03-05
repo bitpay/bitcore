@@ -13,7 +13,7 @@ program
 
 var args = program.args;
 var network = program.testnet ? 'testnet' : 'livenet';
-utils.getClient(program, { airGapped: true, mustBeNew: true },  function (client) {
+utils.getClient(program, { doNotComplete: true, mustBeNew: true },  function (client) {
   client.seedFromRandom(network);
   utils.saveClient(program, client, function () {
     console.log(' * ' + _.capitalize(network) + ' Extended Private Key Created.');

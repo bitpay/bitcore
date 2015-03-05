@@ -43,7 +43,7 @@ Utils.confirmationId = function(copayer) {
 }
 
 
-Utils.doLoad = function(client, isAirGapped, walletData, password, filename, cb) {
+Utils.doLoad = function(client, doNotComplete, walletData, password, filename, cb) {
   var opts = {};
   if (password) {
     opts.password = password;
@@ -53,7 +53,7 @@ Utils.doLoad = function(client, isAirGapped, walletData, password, filename, cb)
   } catch (e) {
     Utils.die('Could not open wallet.' + (password ? ' Wrong password?' : ''));
   };
-  if (isAirGapped) return cb(client);
+  if (doNotComplete) return cb(client);
 
   client.openWallet(function(err, justCompleted) {
     if (!err && client.isComplete() && justCompleted) {
@@ -75,7 +75,7 @@ Utils.loadEncrypted = function(client, opts, walletData, filename, cb) {
     if (er) Utils.die(err);
     if (!password) Utils.die("no password given");
 
-    return Utils.doLoad(client, opts.airGapped, walletData, password, filename, cb);
+    return Utils.doLoad(client, opts.doNotComplete, walletData, password, filename, cb);
   });
 };
 
@@ -113,7 +113,7 @@ Utils.getClient = function(args, opts, cb) {
     if (json.ct) {
       Utils.loadEncrypted(client, opts, walletData, filename, cb);
     } else {
-      Utils.doLoad(client, opts.airGapped, walletData, null, filename, cb);
+      Utils.doLoad(client, opts.doNotComplete, walletData, null, filename, cb);
     }
   });
 };
