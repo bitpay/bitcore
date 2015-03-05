@@ -23,9 +23,9 @@ You can start using bitcore-wallet-client in any of these two ways:
 
 Start your own local [Bitcore wallet service](https://github.com/bitpay/bitcore-wallet-service) instance. In this example we assume you have `bitcore-wallet-service` running on your `localhost:3001`.
 
-Then create two files `one.js` and `two.js` with the content below:
+Then create two files `irene.js` and `thomas.js` with the content below:
 
-**one.js**
+**irene.js**
 
 ``` javascript
 var Client = require('bitcore-wallet-client');
@@ -44,7 +44,7 @@ client.createWallet("My Wallet", "Irene", 2, 2, 'testnet', function(err, secret)
 });
 ```
 
-**two.js**
+**thomas.js**
 
 ``` javascript
 var Client = require('bitcore-wallet-client');
@@ -73,7 +73,7 @@ npm i bitcore-wallet-client
 Create a new wallet with the first script:
 
 ```
-$ node one.js
+$ node irene.js
 info Generating new keys 
  Wallet Created. Share this secret with your copayers: JbTDjtUkvWS4c3mgAtJf4zKyRGzdQzZacfx2S7gRqPLcbeAWaSDEnazFJF6mKbzBvY1ZRwZCbvT
 ```
@@ -81,7 +81,7 @@ info Generating new keys
 Join to this wallet with generated secret:
 
 ```
-$ node two.js JbTDjtUkvWS4c3mgAtJf4zKyRGzdQzZacfx2S7gRqPLcbeAWaSDEnazFJF6mKbzBvY1ZRwZCbvT
+$ node thomas.js JbTDjtUkvWS4c3mgAtJf4zKyRGzdQzZacfx2S7gRqPLcbeAWaSDEnazFJF6mKbzBvY1ZRwZCbvT
 Joined My Wallet!
 ```
 
