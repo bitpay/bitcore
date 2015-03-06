@@ -645,7 +645,7 @@ describe('Copay server', function() {
     });
   });
 
-  describe.only('#getBalance', function() {
+  describe('#getBalance', function() {
     var server, wallet;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(1, 1, function(s, w) {
@@ -698,6 +698,20 @@ describe('Copay server', function() {
           should.exist(balance.byAddress);
           balance.byAddress.length.should.equal(0);
           done();
+        });
+      });
+    });
+    it('should only include addresses with balance', function(done) {
+      helpers.stubUtxos(server, wallet, 1, function(utxos) {
+        server.createAddress({}, function(err, address) {
+          should.not.exist(err);
+          server.getBalance({}, function(err, balance) {
+            should.not.exist(err);
+            balance.byAddress.length.should.equal(1);
+            balance.byAddress[0].amount.should.equal(helpers.toSatoshi(1));
+            balance.byAddress[0].address.should.equal(utxos[0].address);
+            done();
+          });
         });
       });
     });
