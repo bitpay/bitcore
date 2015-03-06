@@ -17,9 +17,10 @@
     "**/.*",
     "lib",
     "node_modules",
-    "Gruntfiles.js",
+    "Gruntfile.js",
     "Makefile",
     "index.js",
-    "test"
+    "test",
+    "Makefile"
   ]
 }
