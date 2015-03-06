@@ -116,12 +116,12 @@ API._parseError = function(body) {
     }
   }
   var ret;
-  if (body.code) {
+  if (body && body.code) {
     ret = new ClientError(body.code, body.message);
   } else {
     ret = {
       code: 'ERROR',
-      error: body.error || 'There was an unknown error processing the request',
+      error: body ? body.error : 'There was an unknown error processing the request',
     };
   }
   log.error(ret);
@@ -271,12 +271,12 @@ API.prototype._doRequest = function(method, url, args, cb) {
     relUrl: this.basePath + url,
     headers: {
       'x-identity': this.credentials.copayerId,
-      'x-signature': reqSignature,
+      'x-signature': reqSignature
     },
     method: method,
     url: absUrl,
     body: args,
-    json: true,
+    json: true
   };
 
   log.debug('Request Args', util.inspect(args, {
@@ -1145,8 +1145,8 @@ _.each(levels, function(level, levelName) {
         extraArgs,
         extraArgs = [].slice.call(arguments, 1);
       if (console[levelName]) {
-        extraArgs.unshift(str);
-        console[levelName].apply(console, extraArgs);
+          extraArgs.unshift(str);
+          console[levelName].apply(console, extraArgs);
       } else {
         if (extraArgs.length) {
           str += JSON.stringify(extraArgs);
@@ -26863,7 +26863,7 @@ module.exports={
   "homepage": "https://github.com/bitpay/bitcore",
   "_id": "bitcore@0.11.3",
   "_shasum": "5d310804c38b76656be6079d1209db435ebb0a33",
-  "_from": "bitcore@>=0.11.2-0 <0.12.0-0",
+  "_from": "bitcore@^0.11.2",
   "_npmVersion": "2.5.1",
   "_nodeVersion": "0.12.0",
   "_npmUser": {
@@ -43111,7 +43111,7 @@ module.exports={
   "gitHead": "17dc013761dd1efcfb868e2b06b0b897627b40be",
   "_id": "elliptic@1.0.1",
   "_shasum": "d180376b66a17d74995c837796362ac4d22aefe3",
-  "_from": "elliptic@>=1.0.0-0 <2.0.0-0",
+  "_from": "elliptic@^1.0.0",
   "_npmVersion": "1.4.28",
   "_npmUser": {
     "name": "indutny",
@@ -80833,12 +80833,14 @@ module.exports = require('./db.json')
   uuid.unparse = unparse;
   uuid.BufferClass = BufferClass;
 
-  if (typeof define === 'function' && define.amd) {
-    // Publish as AMD module
-    define(function() {return uuid;});
-  } else if (typeof(module) != 'undefined' && module.exports) {
+  if (typeof(module) != 'undefined' && module.exports) {
     // Publish as node.js module
     module.exports = uuid;
+  } else  if (typeof define === 'function' && define.amd) {
+    // Publish as AMD module
+    define(function() {return uuid;});
+ 
+
   } else {
     // Publish as global (in browsers)
     var _previousRoot = _global.uuid;
