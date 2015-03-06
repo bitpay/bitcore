@@ -1,3 +1,4 @@
+<img src="http://bitcore.io/css/images/module-p2p.png" alt="bitcore payment protocol" height="35">
 P2P Networking capabilities for bitcore
 =======
 
