@@ -550,7 +550,6 @@ describe('Copay server', function() {
     });
   });
 
-
   describe('#verifyMessageSignature', function() {
     var server, wallet;
     beforeEach(function(done) {
@@ -646,6 +645,56 @@ describe('Copay server', function() {
     });
   });
 
+  describe.only('#getBalance', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 1, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should get balance', function(done) {
+      helpers.stubUtxos(server, wallet, 10, function() {
+        server.getBalance({}, function(err, balance) {
+          should.not.exist(err);
+          should.exist(balance);
+          balance.totalAmount.should.equal(helpers.toSatoshi(10));
+          balance.lockedAmount.should.equal(0);
+          should.exist(balance.byAddress);
+          balance.byAddress.length.should.equal(1);
+          balance.byAddress[0].amount.should.equal(helpers.toSatoshi(10));
+          done();
+        });
+      });
+    });
+    it('should get balance when there are no addresses', function(done) {
+      server.getBalance({}, function(err, balance) {
+        should.not.exist(err);
+        should.exist(balance);
+        balance.totalAmount.should.equal(0);
+        balance.lockedAmount.should.equal(0);
+        should.exist(balance.byAddress);
+        balance.byAddress.length.should.equal(0);
+        done();
+      });
+    });
+    it('should get balance when there are no funds', function(done) {
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+        server.getBalance({}, function(err, balance) {
+          should.not.exist(err);
+          should.exist(balance);
+          balance.totalAmount.should.equal(0);
+          balance.lockedAmount.should.equal(0);
+          should.exist(balance.byAddress);
+          balance.byAddress.length.should.equal(1);
+          done();
+        });
+      });
+    });
+  });
 
   describe('Wallet not complete tests', function() {
     it('should fail to create address when wallet is not complete', function(done) {
@@ -709,7 +758,6 @@ describe('Copay server', function() {
       });
     });
   });
-
 
   describe('#createTx', function() {
     var server, wallet;
@@ -958,7 +1006,6 @@ describe('Copay server', function() {
       });
     });
   });
-
 
   describe('#rejectTx', function() {
     var server, wallet, txid;
@@ -1356,7 +1403,6 @@ describe('Copay server', function() {
     });
   });
 
-
   describe('Tx proposal workflow', function() {
     var server, wallet;
     beforeEach(function(done) {
@@ -1682,8 +1728,6 @@ describe('Copay server', function() {
     });
   });
 
-
-
   describe('Notifications', function() {
     var server, wallet;
 
@@ -1901,7 +1945,6 @@ describe('Copay server', function() {
     });
   });
 
-
   describe('#removePendingTx', function() {
     var server, wallet, txp;
     beforeEach(function(done) {
@@ -2036,7 +2079,6 @@ describe('Copay server', function() {
       });
     });
   });
-
 
   describe('#getTxHistory', function() {
     var server, wallet, mainAddresses, changeAddresses;
