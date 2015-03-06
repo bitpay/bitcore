@@ -656,16 +656,22 @@ describe('Copay server', function() {
     });
 
     it('should get balance', function(done) {
-      helpers.stubUtxos(server, wallet, 10, function() {
+      helpers.stubUtxos(server, wallet, [1, 2, 3], function() {
         server.getBalance({}, function(err, balance) {
           should.not.exist(err);
           should.exist(balance);
-          balance.totalAmount.should.equal(helpers.toSatoshi(10));
+          balance.totalAmount.should.equal(helpers.toSatoshi(6));
           balance.lockedAmount.should.equal(0);
           should.exist(balance.byAddress);
-          balance.byAddress.length.should.equal(1);
-          balance.byAddress[0].amount.should.equal(helpers.toSatoshi(10));
-          done();
+          balance.byAddress.length.should.equal(2);
+          balance.byAddress[0].amount.should.equal(helpers.toSatoshi(4));
+          balance.byAddress[1].amount.should.equal(helpers.toSatoshi(2));
+          server.getMainAddresses({}, function(err, addresses) {
+            should.not.exist(err);
+            var addresses = _.uniq(_.pluck(addresses, 'address'));
+            _.intersection(addresses, _.pluck(balance.byAddress, 'address')).length.should.equal(2);
+            done();
+          });
         });
       });
     });
@@ -681,6 +687,7 @@ describe('Copay server', function() {
       });
     });
     it('should get balance when there are no funds', function(done) {
+      blockExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, []);
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
         server.getBalance({}, function(err, balance) {
@@ -689,7 +696,7 @@ describe('Copay server', function() {
           balance.totalAmount.should.equal(0);
           balance.lockedAmount.should.equal(0);
           should.exist(balance.byAddress);
-          balance.byAddress.length.should.equal(1);
+          balance.byAddress.length.should.equal(0);
           done();
         });
       });
