@@ -1,3 +1,4 @@
+<img src="http://bitcore.io/css/images/module-mnemonic.png" alt="bitcore mnemonics" height="35">
 BIP39 Mnemonics for bitcore
 =======
 
