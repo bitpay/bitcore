@@ -1,3 +1,4 @@
+<img src="http://bitcore.io/css/images/module-payment-protocol.png" alt="bitcore payment protocol" height="35">
 BIP70 Payment Protocol support for bitcore
 =======
 
