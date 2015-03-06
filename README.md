@@ -71,6 +71,7 @@ Returns:
 Returns:
  * totalAmount: Wallet's total balance
  * lockedAmount: Current balance of outstanding transaction proposals, that cannot be used on new transactions. 
+ * byAddress array ['address', 'path', 'amount']: A list of addresses holding funds.
  
 ## POST Endpoinds
 `/v1/wallets/`: Create a new Wallet
