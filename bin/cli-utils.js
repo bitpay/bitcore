@@ -85,6 +85,7 @@ Utils.getClient = function(args, opts, cb) {
   var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
   var baseUrl = args.host || process.env['BWS_HOST'];
 
+  console.log('loading file ' + filename);
   var storage = new FileStorage({
     filename: filename,
   });
@@ -182,8 +183,9 @@ Utils.findOneTxProposal = function(txps, id) {
     Utils.die('Could not find TX Proposal:' + id);
 
   if (matches.length > 1) {
+    console.log('More than one TX Proposals match:' + id);
     Utils.renderTxProposals(txps);
-    Utils.die('More than one TX Proposals match:' + id);
+    program.exit(1);
   }
 
   return matches[0];
