@@ -1648,7 +1648,18 @@ describe('Copay server', function() {
         done();
       });
     });
-    it.skip('should get someone elses transaction proposal', function(done) {});
+    it('should get someone elses transaction proposal', function(done) {
+      helpers.getAuthServer(wallet.copayers[1].id, function(server2, wallet) {
+        server2.getTx({
+          txProposalId: txpid
+        }, function(err, res) {
+          should.not.exist(err);
+          res.id.should.equal(txpid);
+          done();
+        });
+      });
+
+    });
     it('should fail to get non-existent transaction proposal', function(done) {
       server.getTx({
         txProposalId: 'dummy'
