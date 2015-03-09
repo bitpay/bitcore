@@ -181,10 +181,11 @@ Utils.findOneTxProposal = function(txps, id) {
   if (!matches.length)
     Utils.die('Could not find TX Proposal:' + id);
 
-  if (matches.length > 1)
-    Utils.die('More than one TX Proposals match:' + id + ' : ' + _.map(matches, function(tx) {
-      return tx.id;
-    }).join(' '));;
+  if (matches.length > 1) {
+    console.log('More than one TX Proposals match:' + id);
+    Utils.renderTxProposals(txps);
+    program.exit(1);
+  }
 
   return matches[0];
 };
