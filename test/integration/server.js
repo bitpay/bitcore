@@ -820,6 +820,26 @@ describe('Copay server', function() {
       });
     });
 
+    it('should create a tx using the uxtos with minimum amount first', function(done) {
+      helpers.stubUtxos(server, wallet, [100, 200, 300], function() {
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 150, 'some message', TestData.copayers[0].privKey);
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(err);
+          should.exist(tx);
+          server.getPendingTxs({}, function(err, txs) {
+            should.not.exist(err);
+            txs.length.should.equal(1);
+            server.getBalance({}, function(err, balance) {
+              should.not.exist(err);
+              balance.totalAmount.should.equal(helpers.toSatoshi(600));
+              balance.lockedAmount.should.equal(helpers.toSatoshi(300));
+              done();
+            });
+          });
+        });
+      });
+    });
+
 
     it('should fail to create tx with invalid proposal signature', function(done) {
       helpers.stubUtxos(server, wallet, [100, 200], function() {
