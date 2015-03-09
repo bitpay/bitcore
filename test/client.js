@@ -164,6 +164,16 @@ describe('client API ', function() {
     blockExplorerMock.reset();
   });
 
+
+  describe('Client Internals', function() {
+    it('should expose bitcore', function() {
+      should.exist(Client.Bitcore);
+      should.exist(Client.Bitcore.HDPublicKey);
+    });
+  });
+
+
+
   describe('Server internals', function() {
     it('should allow cors', function(done) {
       clients[0].credentials = {};
