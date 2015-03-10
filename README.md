@@ -91,8 +91,9 @@ Returns:
 Required Arguments:
  * walletId: Id of the wallet to join
  * name: Copayer Name
- * xPubKey: Peer's extended public key
- * xPubKeySignature: xPubKey signature with Wallet Creation private key
+ * xPubKey - Extended Public Key for this copayer.
+ * requestPubKey - Public Key used to check requests from this copayer.
+ * copayerSignature - Signature sed by other copayers to verify the that the copayer joining knows the wallet secret.
 
 Returns:
  * copayerId: Assigned ID of the copayer (to be used on x-identity header)
