@@ -1,12 +1,17 @@
 'use strict';
 
 var chai = require('chai');
+var should = chai.should();
 
 var assert = require('assert');
 var bitcore = require('bitcore');
 var Data = require('./data/messages');
 var P2P = require('../');
 var BloomFilter = P2P.BloomFilter;
+
+function getPayloadBuffer(messageBuffer) {
+  return new Buffer(messageBuffer.slice(48), 'hex');
+}
 
 // convert a hex string to a bytes buffer
 function ParseHex(str) {
@@ -22,9 +27,9 @@ function ParseHex(str) {
 describe('BloomFilter', function() {
 
   it('BloomFilter#fromBuffer and toBuffer methods work', function() {
-    var testPayload = Data.FILTERLOAD.payload;
-    var filter = new BloomFilter.fromBuffer(new Buffer(testPayload, 'hex'));
-    filter.toBuffer().toString('hex').should.equal(testPayload);
+    var testPayloadBuffer = getPayloadBuffer(Data.filterload.message);
+    var filter = new BloomFilter.fromBuffer(testPayloadBuffer);
+    filter.toBuffer().should.deep.equal(testPayloadBuffer);
   });
 
   // test data from: https://github.com/bitcoin/bitcoin/blob/master/src/test/bloom_tests.cpp

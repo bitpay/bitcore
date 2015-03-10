@@ -10,12 +10,16 @@ var bitcore = require('bitcore');
 var P2P = require('../');
 var Peer = P2P.Peer;
 var MessagesData = require('./data/messages');
-var Messages = P2P.Messages;
+var messages = P2P.messages;
 var Pool = P2P.Pool;
 var Networks = bitcore.Networks;
 
 var dns = require('dns');
 var sinon = require('sinon');
+
+function getPayloadBuffer(messageBuffer) {
+  return new Buffer(messageBuffer.slice(48), 'hex');
+}
 
 describe('Pool', function() {
 
@@ -95,8 +99,8 @@ describe('Pool', function() {
 
     // mock a addr peer event
     var peerMessageStub = sinon.stub(Peer.prototype, '_readMessage', function() {
-      var payload = new Buffer(MessagesData.ADDR.payload, 'hex');
-      var message = new Messages.Addresses().fromBuffer(payload);
+      var payloadBuffer = getPayloadBuffer(MessagesData.addr.message);
+      var message = messages.buildFromBuffer('addr', payloadBuffer);
       this.emit(message.command, message);
     });
 
@@ -145,8 +149,8 @@ describe('Pool', function() {
 
     // mock a addr peer event
     var peerMessageStub = sinon.stub(Peer.prototype, '_readMessage', function() {
-      var payload = new Buffer(MessagesData.ADDR.payload, 'hex');
-      var message = new Messages.Addresses().fromBuffer(payload);
+      var payloadBuffer = getPayloadBuffer(MessagesData.addr.message);
+      var message = messages.buildFromBuffer('addr', payloadBuffer);
       this.emit(message.command, message);
     });
 

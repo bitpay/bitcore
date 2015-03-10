@@ -12,8 +12,8 @@ var fs = require('fs');
 
 var bitcore = require('bitcore');
 var _ = bitcore.deps._;
-var p2p = require('../');
-var Peer = p2p.Peer;
+var P2P = require('../');
+var Peer = P2P.Peer;
 var Networks = bitcore.Networks;
 
 describe('Peer', function() {
@@ -52,7 +52,7 @@ describe('Peer', function() {
         return stub;
       };
       peer.on('connect', function() {
-        dataCallback(fs.readFileSync('./test/connection.log'));
+        dataCallback(fs.readFileSync('./test/data/connection.log'));
       });
       var check = function(message) {
         received[message.command]++;
@@ -77,28 +77,28 @@ describe('Peer', function() {
   });
 
   it('should be able to create instance setting a port', function() {
-    var peer = new Peer('localhost', 8111);
+    var peer = new Peer({host: 'localhost', port: 8111});
     peer.host.should.equal('localhost');
     peer.network.should.equal(Networks.livenet);
     peer.port.should.equal(8111);
   });
 
   it('should be able to create instance setting a network', function() {
-    var peer = new Peer('localhost', Networks.testnet);
+    var peer = new Peer({host: 'localhost', network: Networks.testnet});
     peer.host.should.equal('localhost');
     peer.network.should.equal(Networks.testnet);
     peer.port.should.equal(Networks.testnet.port);
   });
 
   it('should be able to create instance setting port and network', function() {
-    var peer = new Peer('localhost', 8111, Networks.testnet);
+    var peer = new Peer({host: 'localhost', port: 8111, network: Networks.testnet});
     peer.host.should.equal('localhost');
     peer.network.should.equal(Networks.testnet);
     peer.port.should.equal(8111);
   });
 
   it('should support creating instance without new', function() {
-    var peer = Peer('localhost', 8111, Networks.testnet);
+    var peer = Peer({host: 'localhost', port: 8111, network: Networks.testnet});
     peer.host.should.equal('localhost');
     peer.network.should.equal(Networks.testnet);
     peer.port.should.equal(8111);
@@ -122,17 +122,17 @@ describe('Peer', function() {
   });
 
   it('Peer.relay setting set properly', function() {
-    var peer = new Peer('localhost');
+    var peer = new Peer({host: 'localhost'});
     peer.relay.should.equal(true);
-    var peer2 = new Peer('localhost', null, null, false);
+    var peer2 = new Peer({host: 'localhost', relay: false});
     peer2.relay.should.equal(false);
-    var peer3 = new Peer('localhost', null, null, true);
+    var peer3 = new Peer({host: 'localhost', relay: true});
     peer3.relay.should.equal(true);
   });
 
   it('Peer.relay setting respected', function() {
     [true,false].forEach(function(relay) {
-      var peer = new Peer('localhost', null, null, relay);
+      var peer = new Peer({host: 'localhost', relay: relay});
       var peerSendMessageStub = sinon.stub(Peer.prototype, 'sendMessage', function(message) {
         message.relay.should.equal(relay);
       });
