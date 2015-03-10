@@ -856,7 +856,7 @@ describe('Copay server', function() {
 
     it('should create a tx using the uxtos with minimum amount first', function(done) {
       helpers.stubUtxos(server, wallet, [100, 200, 300], function() {
-        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 150, 'some message', TestData.copayers[0].privKey);
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 150, 'some message', TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
           should.exist(tx);
