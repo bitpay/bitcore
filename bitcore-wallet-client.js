@@ -1082,8 +1082,10 @@ var client = module.exports = require('./api');
  */
 client.Verifier = require('./verifier');
 
+// Expose bitcore
+client.Bitcore = require('bitcore');
 
-},{"./api":2,"./verifier":8}],6:[function(require,module,exports){
+},{"./api":2,"./verifier":8,"bitcore":12}],6:[function(require,module,exports){
 var _ = require('lodash');
 /**
  * @desc
@@ -1145,8 +1147,8 @@ _.each(levels, function(level, levelName) {
         extraArgs,
         extraArgs = [].slice.call(arguments, 1);
       if (console[levelName]) {
-          extraArgs.unshift(str);
-          console[levelName].apply(console, extraArgs);
+        extraArgs.unshift(str);
+        console[levelName].apply(console, extraArgs);
       } else {
         if (extraArgs.length) {
           str += JSON.stringify(extraArgs);
@@ -26863,7 +26865,7 @@ module.exports={
   "homepage": "https://github.com/bitpay/bitcore",
   "_id": "bitcore@0.11.3",
   "_shasum": "5d310804c38b76656be6079d1209db435ebb0a33",
-  "_from": "bitcore@^0.11.2",
+  "_from": "bitcore@>=0.11.2-0 <0.12.0-0",
   "_npmVersion": "2.5.1",
   "_nodeVersion": "0.12.0",
   "_npmUser": {
@@ -43111,7 +43113,7 @@ module.exports={
   "gitHead": "17dc013761dd1efcfb868e2b06b0b897627b40be",
   "_id": "elliptic@1.0.1",
   "_shasum": "d180376b66a17d74995c837796362ac4d22aefe3",
-  "_from": "elliptic@^1.0.0",
+  "_from": "elliptic@>=1.0.0-0 <2.0.0-0",
   "_npmVersion": "1.4.28",
   "_npmUser": {
     "name": "indutny",
@@ -80833,14 +80835,12 @@ module.exports = require('./db.json')
   uuid.unparse = unparse;
   uuid.BufferClass = BufferClass;
 
-  if (typeof(module) != 'undefined' && module.exports) {
-    // Publish as node.js module
-    module.exports = uuid;
-  } else  if (typeof define === 'function' && define.amd) {
+  if (typeof define === 'function' && define.amd) {
     // Publish as AMD module
     define(function() {return uuid;});
- 
-
+  } else if (typeof(module) != 'undefined' && module.exports) {
+    // Publish as node.js module
+    module.exports = uuid;
   } else {
     // Publish as global (in browsers)
     var _previousRoot = _global.uuid;
