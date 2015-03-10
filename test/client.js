@@ -688,6 +688,7 @@ describe('client API ', function() {
               should.not.exist(err);
               txp.status.should.equal('accepted');
               clients[0].broadcastTxProposal(txp, function(err, txp) {
+                should.not.exist(err);
                 txp.status.should.equal('broadcasted');
                 txp.txid.should.equal((new Bitcore.Transaction(blockExplorerMock.lastBroadcasted)).id);
                 done();
@@ -884,7 +885,7 @@ describe('client API ', function() {
     it.skip('should get paginated transaction history', function(done) {});
   });
 
-  describe('Mobility, backup & recovery', function() {
+  describe('Mobility, backup & restore', function() {
     describe('Export & Import', function() {
       describe('Success', function() {
         var address, importedClient;
@@ -1066,7 +1067,6 @@ describe('client API ', function() {
       should.not.exist(proxy.credentials.xPrivKey);
 
       var seedSpy = sinon.spy(proxy, 'seedFromRandom');
-      should.not.exist(proxy.credentials.xPrivKey);
       proxy.createWallet('wallet name', 'creator', 1, 1, 'testnet', function(err) {
         should.not.exist(err);
         seedSpy.called.should.be.false;
