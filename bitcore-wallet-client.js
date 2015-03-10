@@ -139,7 +139,7 @@ API._parseError = function(body) {
  * @param {String} privKey - Private key to sign the request
  */
 API._signRequest = function(method, url, args, privKey) {
-  var message = method.toLowerCase() + '|' + url + '|' + JSON.stringify(args);
+  var message = [method.toLowerCase(), url, JSON.stringify(args)].join('|');
   return WalletUtils.signMessage(message, privKey);
 };
 
@@ -276,7 +276,8 @@ API.prototype._doRequest = function(method, url, args, cb) {
     method: method,
     url: absUrl,
     body: args,
-    json: true
+    json: true,
+    withCredentials: false
   };
 
   log.debug('Request Args', util.inspect(args, {
@@ -337,16 +338,20 @@ API.prototype._doDeleteRequest = function(url, cb) {
  * @param {String} walletId
  * @param {String} walletPrivKey
  * @param {String} xPubKey
+ * @param {String} requestPubKey
  * @param {String} copayerName
  * @param {Callback} cb
  */
-API.prototype._doJoinWallet = function(walletId, walletPrivKey, xPubKey, copayerName, cb) {
+API.prototype._doJoinWallet = function(walletId, walletPrivKey, xPubKey, requestPubKey, copayerName, cb) {
   var args = {
     walletId: walletId,
     name: copayerName,
     xPubKey: xPubKey,
-    xPubKeySignature: WalletUtils.signMessage(xPubKey, walletPrivKey),
+    requestPubKey: requestPubKey
   };
+  var hash = WalletUtils.getCopayerHash(args.name, args.xPubKey, args.requestPubKey);
+  args.copayerSignature = WalletUtils.signMessage(hash, walletPrivKey);
+
   var url = '/v1/wallets/' + walletId + '/copayers';
   this._doPostRequest(url, args, function(err, body) {
     if (err) return cb(err);
@@ -393,7 +398,9 @@ API.prototype.openWallet = function(cb) {
       log.warn('Could not perform verification of other copayers in the wallet');
     }
 
-    self.credentials.addPublicKeyRing(_.pluck(wallet.copayers, 'xPubKey'));
+    self.credentials.addPublicKeyRing(_.map(wallet.copayers, function(copayer) {
+      return _.pick(copayer, ['xPubKey', 'requestPubKey']);
+    }));
     if (!self.credentials.hasWalletInfo()) {
       var me = _.find(wallet.copayers, {
         id: self.credentials.copayerId
@@ -450,7 +457,7 @@ API.prototype.createWallet = function(walletName, copayerName, m, n, network, cb
     var secret = WalletUtils.toSecret(walletId, walletPrivKey, network);
     self.credentials.addWalletInfo(walletId, walletName, m, n, walletPrivKey.toString(), copayerName);
 
-    self._doJoinWallet(walletId, walletPrivKey, self.credentials.xPubKey, copayerName,
+    self._doJoinWallet(walletId, walletPrivKey, self.credentials.xPubKey, self.credentials.requestPubKey, copayerName,
       function(err, wallet) {
         if (err) return cb(err);
         return cb(null, n > 1 ? secret : null);
@@ -479,7 +486,7 @@ API.prototype.joinWallet = function(secret, copayerName, cb) {
     self.seedFromRandom(secretData.network);
   }
 
-  self._doJoinWallet(secretData.walletId, secretData.walletPrivKey, self.credentials.xPubKey, copayerName,
+  self._doJoinWallet(secretData.walletId, secretData.walletPrivKey, self.credentials.xPubKey, self.credentials.requestPubKey, copayerName,
     function(err, wallet) {
       if (err) return cb(err);
       self.credentials.addWalletInfo(wallet.id, wallet.name, wallet.m, wallet.n, secretData.walletPrivKey, copayerName);
@@ -512,14 +519,14 @@ API.prototype.recreateWallet = function(cb) {
 
     var secret = WalletUtils.toSecret(walletId, walletPrivKey, self.credentials.network);
     var i = 1;
-    async.each(self.credentials.publicKeyRing, function(xpub, next) {
+    async.each(self.credentials.publicKeyRing, function(item, next) {
       var copayerName;
-      if (xpub == self.credentials.xPubKey) {
+      if (item.xPubKey == self.credentials.xPubKey) {
         copayerName = self.credentials.copayerName;
       } else {
         copayerName = 'recovered copayer #' + (i++);
       }
-      self._doJoinWallet(walletId, walletPrivKey, xpub, copayerName, next);
+      self._doJoinWallet(walletId, walletPrivKey, item.xPubKey, item.requestPubKey, copayerName, next);
     }, cb);
   });
 };
@@ -898,6 +905,7 @@ var FIELDS = [
   'xPrivKey',
   'xPubKey',
   'requestPrivKey',
+  'requestPubKey',
   'copayerId',
   'publicKeyRing',
   'walletId',
@@ -953,8 +961,13 @@ Credentials.prototype._expand = function() {
 
   if (this.xPrivKey) {
     var xPrivKey = new Bitcore.HDPrivateKey.fromString(this.xPrivKey);
-    this.xPubKey = (new Bitcore.HDPublicKey(xPrivKey)).toString();
-    this.requestPrivKey = xPrivKey.derive('m/1/1').privateKey.toString();
+
+    var addressDerivation = xPrivKey.derive(WalletUtils.PATHS.BASE_ADDRESS_DERIVATION);
+    this.xPubKey = (new Bitcore.HDPublicKey(addressDerivation)).toString();
+
+    var requestDerivation = xPrivKey.derive(WalletUtils.PATHS.REQUEST_KEY);
+    this.requestPrivKey = requestDerivation.privateKey.toString();
+    this.requestPubKey = requestDerivation.publicKey.toString();
   }
   var network = WalletUtils.getNetworkFromXPubKey(this.xPubKey);
   if (this.network) {
@@ -998,7 +1011,10 @@ Credentials.prototype.addWalletInfo = function(walletId, walletName, m, n, walle
   this.sharedEncryptingKey = WalletUtils.privateKeyToAESKey(walletPrivKey);
   this.copayerName = copayerName;
   if (n == 1) {
-    this.addPublicKeyRing([this.xPubKey]);
+    this.addPublicKeyRing([{
+      xPubKey: this.xPubKey,
+      requestPubKey: this.requestPubKey,
+    }]);
   }
 };
 
@@ -1022,14 +1038,15 @@ Credentials.prototype.isComplete = function() {
 
 Credentials.prototype.exportCompressed = function() {
   var self = this;
-
   var values = _.map(EXPORTABLE_FIELDS, function(field) {
     if ((field == 'xPubKey' || field == 'requestPrivKey') && self.canSign()) return '';
     if (field == 'requestPrivKey') {
       return Bitcore.PrivateKey.fromString(self.requestPrivKey).toWIF();
     }
     if (field == 'publicKeyRing') {
-      return _.without(self.publicKeyRing, self.xPubKey);
+      return _.reject(self.publicKeyRing, {
+        xPubKey: self.xPubKey
+      });
     }
     return self[field];
   });
@@ -1058,7 +1075,10 @@ Credentials.importCompressed = function(compressed) {
   x._expand();
 
   x.network = WalletUtils.getNetworkFromXPubKey(x.xPubKey);
-  x.publicKeyRing.push(x.xPubKey);
+  x.publicKeyRing.push({
+    xPubKey: x.xPubKey,
+    requestPubKey: x.requestPubKey,
+  });
   return x;
 };
 
@@ -1278,14 +1298,19 @@ Verifier.checkCopayers = function(credentials, copayers) {
     }
 
     // Not signed pub keys
-    if (!copayer.xPubKey || !copayer.xPubKeySignature ||
-      !WalletUtils.verifyMessage(copayer.xPubKey, copayer.xPubKeySignature, walletPubKey)) {
-      log.error('Invalid signatures in server response');
+    if (!copayer.name || !copayer.xPubKey || !copayer.requestPubKey || !copayer.signature) {
+      log.error('Missing copayer fields in server response');
       error = true;
+    } else {
+      var hash = WalletUtils.getCopayerHash(copayer.name, copayer.xPubKey, copayer.requestPubKey);
+      if (!WalletUtils.verifyMessage(hash, copayer.signature, walletPubKey)) {
+        log.error('Invalid signatures in server response');
+        error = true;
+      }
     }
   });
-  if (error)
-    return false;
+
+  if (error) return false;
 
   if (!_.contains(_.pluck(copayers, 'xPubKey'), credentials.xPubKey)) {
     log.error('Server response does not contains our public keys')
@@ -1305,13 +1330,14 @@ Verifier.checkTxProposal = function(credentials, txp) {
   $.checkArgument(txp.creatorId);
   $.checkState(credentials.isComplete());
 
-  var creatorXPubKey = _.find(credentials.publicKeyRing, function(xPubKey) {
-    if (WalletUtils.xPubToCopayerId(xPubKey) === txp.creatorId) return true;
+  var creatorKeys = _.find(credentials.publicKeyRing, function(item) {
+    if (WalletUtils.xPubToCopayerId(item.xPubKey) === txp.creatorId) return true;
   });
 
-  if (!creatorXPubKey) return false;
+  if (!creatorKeys) return false;
 
-  var creatorSigningPubKey = (new Bitcore.HDPublicKey(creatorXPubKey)).derive('m/1/1').publicKey.toString();
+  // TODO: this should be an independent key
+  var creatorSigningPubKey = creatorKeys.requestPubKey;
 
   var hash = WalletUtils.getProposalHash(txp.toAddress, txp.amount, txp.encryptedMessage || txp.message);
   log.debug('Regenerating & verifying tx proposal hash -> Hash: ', hash, ' Signature: ', txp.proposalSignature);
@@ -2472,6 +2498,12 @@ var encoding = Bitcore.encoding;
 
 function WalletUtils() {};
 
+WalletUtils.PATHS = {
+  BASE_ADDRESS_DERIVATION: "m/45'",
+  REQUEST_KEY: "m/1'/0",
+  TXPROPOSAL_KEY: "m/1'/1",
+};
+
 /* TODO: It would be nice to be compatible with bitcoind signmessage. How
  * the hash is calculated there? */
 WalletUtils.hashMessage = function(text) {
@@ -2510,8 +2542,8 @@ WalletUtils.verifyMessage = function(text, signature, pubKey) {
 };
 
 WalletUtils.deriveAddress = function(publicKeyRing, path, m, network) {
-  var publicKeys = _.map(publicKeyRing, function(xPubKey) {
-    var xpub = new Bitcore.HDPublicKey(xPubKey);
+  var publicKeys = _.map(publicKeyRing, function(item) {
+    var xpub = new Bitcore.HDPublicKey(item.xPubKey);
     return xpub.derive(path).publicKey;
   });
 
@@ -2525,7 +2557,11 @@ WalletUtils.deriveAddress = function(publicKeyRing, path, m, network) {
 };
 
 WalletUtils.getProposalHash = function(toAddress, amount, message) {
-  return toAddress + '|' + amount + '|' + (message || '');
+  return [toAddress, amount, (message || '')].join('|');
+};
+
+WalletUtils.getCopayerHash = function(name, xPubKey, requestPubKey) {
+  return [name, xPubKey, requestPubKey].join('|');
 };
 
 WalletUtils.xPubToCopayerId = function(xpub) {
@@ -2603,7 +2639,7 @@ WalletUtils.signTxp = function(txp, xPrivKey) {
     derived = {};
 
   var network = new Bitcore.Address(txp.toAddress).network.name;
-  var xpriv = new Bitcore.HDPrivateKey(xPrivKey, network);
+  var xpriv = new Bitcore.HDPrivateKey(xPrivKey, network).derive(WalletUtils.PATHS.BASE_ADDRESS_DERIVATION);
 
   _.each(txp.inputs, function(i) {
     if (!derived[i.path]) {
