@@ -32,7 +32,7 @@ describe('Pool', function() {
   });
 
   it('should be able to create instance setting the network', function() {
-    var pool = new Pool(Networks.testnet);
+    var pool = new Pool({network: Networks.testnet});
     pool.network.should.equal(Networks.testnet);
   });
 
@@ -40,7 +40,7 @@ describe('Pool', function() {
     var stub = sinon.stub(dns, 'resolve', function(seed, callback) {
       callback(null, ['10.10.10.1', '10.10.10.2', '10.10.10.3']);
     });
-    var pool = new Pool(Networks.livenet);
+    var pool = new Pool({network: Networks.livenet});
     pool.connect();
     pool.disconnect();
     pool._addrs.length.should.equal(3);
@@ -52,6 +52,7 @@ describe('Pool', function() {
       throw new Error('DNS should not be called');
     });
     var options = {
+      network: Networks.livenet,
       dnsSeed: false,
       maxSize: 1,
       addrs: [
@@ -67,7 +68,7 @@ describe('Pool', function() {
         }
       ]
     };
-    var pool = new Pool(Networks.livenet, options);
+    var pool = new Pool(options);
     pool.connect();
     pool.disconnect();
     pool._addrs.length.should.equal(2);
@@ -76,6 +77,7 @@ describe('Pool', function() {
 
   it('will add addrs via options argument', function() {
     var options = {
+      network: Networks.livenet,
       dnsSeed: false,
       addrs: [
         {
@@ -85,7 +87,7 @@ describe('Pool', function() {
         }
       ]
     };
-    var pool = new Pool(Networks.livenet, options);
+    var pool = new Pool(options);
     pool._addrs.length.should.equal(1);
   });
 
@@ -105,6 +107,7 @@ describe('Pool', function() {
     });
 
     var options = {
+      network: Networks.testnet,
       dnsSeed: false,
       addrs: [
         {
@@ -115,7 +118,7 @@ describe('Pool', function() {
       ]
     };
 
-    var pool = new Pool(Networks.testnet, options);
+    var pool = new Pool(options);
 
     // listen for the event
     pool.on('peeraddr', function(peer, message) {
@@ -155,6 +158,7 @@ describe('Pool', function() {
     });
 
     var options = {
+      network: Networks.testnet,
       dnsSeed: false,
       listenAddr: false,
       addrs: [
@@ -166,7 +170,7 @@ describe('Pool', function() {
       ]
     };
 
-    var pool = new Pool(Networks.testnet, options);
+    var pool = new Pool(options);
 
     // listen for the event
     pool.on('peeraddr', function(peer, message) {
@@ -200,7 +204,7 @@ describe('Pool', function() {
     });
     var poolRemoveStub = sinon.stub(Pool.prototype, '_removeConnectedPeer', function() {});
 
-    var pool = new Pool(null, {
+    var pool = new Pool({
       dnsSeed: false,
       addrs: [
         {
@@ -241,7 +245,7 @@ describe('Pool', function() {
       this.emit('connect', this, {});
     });
     [true, false].forEach(function(relay) {
-      var pool = new Pool(null,{ relay: relay, dnsSeed: false });
+      var pool = new Pool({relay: relay, dnsSeed: false});
       pool._addAddr({ ip: { v4: 'localhost' } });
       pool.on('peerconnect', function(peer, addr) {
         peer.relay.should.equal(relay);
@@ -264,7 +268,7 @@ describe('Pool', function() {
     var dnsStub = sinon.stub(dns, 'resolve', function(seed, callback) {
       callback(new Error('A DNS error'));
     });
-    var pool = new Pool(Networks.livenet, {maxSize: 1});
+    var pool = new Pool({network: Networks.livenet, maxSize: 1});
     pool.once('seederror', function(error) {
       should.exist(error);
       pool.disconnect();
@@ -278,7 +282,7 @@ describe('Pool', function() {
     var dnsStub = sinon.stub(dns, 'resolve', function(seed, callback) {
       callback(null, []);
     });
-    var pool = new Pool(Networks.livenet, {maxSize: 1});
+    var pool = new Pool({network: Networks.livenet, maxSize: 1});
     pool.once('seederror', function(error) {
       should.exist(error);
       pool.disconnect();
