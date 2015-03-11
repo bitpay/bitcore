@@ -665,6 +665,16 @@ describe('Transaction', function() {
 
       _.shuffle.restore();
     });
+
+    it('fails if the provided function does not work as expected', function() {
+      var sorting = function(array) {
+        return [];
+      };
+      expect(function() {
+        transaction.sortOutputs(sorting);
+      }).to.throw(errors.Transaction.InvalidSorting);
+    });
+
   });
 });
 
