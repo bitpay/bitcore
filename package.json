@@ -91,7 +91,8 @@
     "bitcore-build": "bitpay/bitcore-build",
     "brfs": "^1.2.0",
     "chai": "^1.10.0",
-    "gulp": "^3.8.10"
+    "gulp": "^3.8.10",
+    "sinon": "^1.13.0"
   },
   "license": "MIT"
 }
