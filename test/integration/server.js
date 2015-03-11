@@ -18,6 +18,7 @@ var WalletUtils = require('bitcore-wallet-utils');
 var Storage = require('../../lib/storage');
 
 var Wallet = require('../../lib/model/wallet');
+var TxProposal = require('../../lib/model/txproposal');
 var Address = require('../../lib/model/address');
 var Copayer = require('../../lib/model/copayer');
 var WalletService = require('../../lib/server');
@@ -1005,6 +1006,25 @@ describe('Copay server', function() {
       });
     });
 
+    it('should fail with insufficient funds if fee is too large', function(done) {
+      helpers.stubUtxos(server, wallet, 10, function() {
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, null, TestData.copayers[0].privKey_1H_0);
+
+        var txpStub = sinon.stub(TxProposal.prototype, 'getBitcoreTx').throws({
+          name: 'bitcore.ErrorTransactionFeeError'
+        });
+
+        server.createTx(txOpts, function(err, tx) {
+          should.exist(err);
+          err.code.should.equal('INSUFFICIENTFUNDS');
+          err.message.should.equal('Insufficient funds for fee');
+
+          txpStub.restore();
+          done();
+        });
+      });
+    });
+
     it('should fail gracefully when bitcore throws exception on raw tx creation', function(done) {
       helpers.stubUtxos(server, wallet, [10], function() {
         var bitcoreStub = sinon.stub(Bitcore, 'Transaction');
@@ -1055,8 +1075,7 @@ describe('Copay server', function() {
           should.exist(tx);
           var txOpts2 = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 24, null, TestData.copayers[0].privKey_1H_0);
           server.createTx(txOpts2, function(err, tx) {
-            err.code.should.equal('INSUFFICIENTFUNDS');
-            err.message.should.equal('Insufficient funds');
+            err.code.should.equal('LOCKEDFUNDS');
             should.not.exist(tx);
             server.getPendingTxs({}, function(err, txs) {
               should.not.exist(err);
