@@ -984,6 +984,27 @@ describe('Copay server', function() {
       });
     });
 
+    it.only('should fail with different error for insufficient funds and locked funds', function(done) {
+      helpers.stubUtxos(server, wallet, [10, 10], function() {
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 11, null, TestData.copayers[0].privKey_1H_0);
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(err);
+          server.getBalance({}, function(err, balance) {
+            should.not.exist(err);
+            balance.totalAmount.should.equal(helpers.toSatoshi(20));
+            balance.lockedAmount.should.equal(helpers.toSatoshi(20));
+            txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 8, null, TestData.copayers[0].privKey_1H_0);
+            server.createTx(txOpts, function(err, tx) {
+              should.exist(err);
+              err.code.should.equal('LOCKEDFUNDS');
+              err.message.should.equal('Funds are locked by pending transaction proposals');
+              done();
+            });
+          });
+        });
+      });
+    });
+
     it('should fail gracefully when bitcore throws exception on raw tx creation', function(done) {
       helpers.stubUtxos(server, wallet, [10], function() {
         var bitcoreStub = sinon.stub(Bitcore, 'Transaction');
