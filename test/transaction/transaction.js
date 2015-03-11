@@ -5,6 +5,7 @@
 var should = require('chai').should();
 var expect = require('chai').expect;
 var _ = require('lodash');
+var sinon = require('sinon');
 
 var bitcore = require('../..');
 var Transaction = bitcore.Transaction;
@@ -619,6 +620,52 @@ describe('Transaction', function() {
     });
   });
 
+  describe('output ordering', function() {
+
+    var tenth = 1e7;
+    var fourth = 25e6;
+    var half = 5e7;
+    var transaction, out1, out2, out3, out4;
+
+    beforeEach(function() {
+      transaction = new Transaction()
+        .from(simpleUtxoWith1BTC)
+        .to(toAddress, tenth)
+        .to(toAddress, fourth)
+        .to(toAddress, half)
+        .change(changeAddress);
+      out1 = transaction.outputs[0];
+      out2 = transaction.outputs[1];
+      out3 = transaction.outputs[2];
+      out4 = transaction.outputs[3];
+    });
+
+    it('allows the user to sort outputs according to a criteria', function() {
+      var sorting = function(array) {
+        return [array[3], array[2], array[1], array[0]];
+      };
+      transaction.sortOutputs(sorting);
+      transaction.outputs[0].should.equal(out4);
+      transaction.outputs[1].should.equal(out3);
+      transaction.outputs[2].should.equal(out2);
+      transaction.outputs[3].should.equal(out1);
+    });
+
+    it('allows the user to randomize the output order', function() {
+      var shuffle = sinon.stub(_, 'shuffle');
+      shuffle.onFirstCall().returns([out2, out1, out4, out3]);
+
+      transaction._changeIndex.should.equal(3);
+      transaction.shuffleOutputs();
+      transaction.outputs[0].should.equal(out2);
+      transaction.outputs[1].should.equal(out1);
+      transaction.outputs[2].should.equal(out4);
+      transaction.outputs[3].should.equal(out3);
+      transaction._changeIndex.should.equal(2);
+
+      _.shuffle.restore();
+    });
+  });
 });
 
 var tx_empty_hex = '01000000000000000000';
