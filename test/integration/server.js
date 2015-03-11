@@ -984,7 +984,7 @@ describe('Copay server', function() {
       });
     });
 
-    it.only('should fail with different error for insufficient funds and locked funds', function(done) {
+    it('should fail with different error for insufficient funds and locked funds', function(done) {
       helpers.stubUtxos(server, wallet, [10, 10], function() {
         var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 11, null, TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
