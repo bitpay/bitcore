@@ -139,6 +139,7 @@ describe('Peer', function() {
     var peer = new Peer({host: 'localhost'});
     var socket = new EventEmitter();
     socket.connect = sinon.spy();
+    socket.destroy = sinon.spy();
     peer._getSocket = function() {
       return socket;
     };
