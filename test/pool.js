@@ -293,4 +293,25 @@ describe('Pool', function() {
     pool.connect();
   });
 
+  it('send message to all peers', function(done) {
+    var message = 'message';
+    var peerConnectStub = sinon.stub(Peer.prototype, 'connect', function() {
+      var self = this;
+      process.nextTick(function() {
+        self.emit('ready');
+      });
+    });
+    var peerMessageStub = sinon.stub(Peer.prototype, 'sendMessage', function(message) {
+      message.should.equal(message);
+      peerConnectStub.restore();
+      peerMessageStub.restore();
+      done();
+    });
+    var pool = new Pool({network: Networks.livenet, maxSize: 1});
+    pool.on('peerready', function() {
+      pool.sendMessage(message);
+    });
+    pool.connect();
+  });
+
 });
