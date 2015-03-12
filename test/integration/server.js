@@ -803,6 +803,8 @@ describe('Copay server', function() {
           tx.message.should.equal('some message');
           tx.isAccepted().should.equal.false;
           tx.isRejected().should.equal.false;
+          tx.amount.should.equal(helpers.toSatoshi(80));
+          tx.fee.should.equal(Bitcore.Transaction.FEE_PER_KB);
           server.getPendingTxs({}, function(err, txs) {
             should.not.exist(err);
             txs.length.should.equal(1);
