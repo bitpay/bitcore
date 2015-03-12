@@ -19,7 +19,6 @@
   },
   "dependencies": {
     "async": "^0.9.0",
-    "bitcore": "^0.11.2",
     "bitcore-wallet-utils": "0.0.3",
     "bitcore-explorers": "^0.9.1",
     "body-parser": "^1.11.0",
