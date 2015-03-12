@@ -22,6 +22,17 @@ describe('TXProposal', function() {
       var t = txp.getBitcoreTx();
       should.exist(t);
     });
+    it('should order ouputs as specified by outputOrder', function() {
+      var txp = TXP.fromObj(aTXP());
+
+      txp.outputOrder = [0, 1];
+      var t = txp._getBitcoreTx();
+      t.getChangeOutput().should.deep.equal(t.outputs[1]);
+
+      txp.outputOrder = [1, 0];
+      var t = txp._getBitcoreTx();
+      t.getChangeOutput().should.deep.equal(t.outputs[0]);
+    });
   });
 
 
@@ -108,6 +119,7 @@ var aTXP = function() {
     "requiredSignatures": 2,
     "requiredRejections": 1,
     "status": "pending",
-    "actions": []
+    "actions": [],
+    "outputOrder": [0, 1],
   }
 };
