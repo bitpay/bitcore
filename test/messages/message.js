@@ -1,8 +1,8 @@
 'use strict';
 
 var should = require('chai').should();
-var P2P = require('../');
-var Message = P2P.Message;
+var P2P = require('../../');
+var Message = P2P.Messages.Message;
 
 describe('P2P Message', function() {
 

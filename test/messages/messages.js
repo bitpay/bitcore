@@ -4,9 +4,9 @@ var chai = require('chai');
 var should = chai.should();
 
 var Buffers = require('buffers');
-var P2P = require('../');
-var messages = P2P.messages;
+var P2P = require('../../');
 var Messages = P2P.Messages;
+var messages = new Messages();
 var bitcore = require('bitcore');
 
 describe('Messages', function() {

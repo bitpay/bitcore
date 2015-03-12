@@ -1,10 +1,10 @@
 'use strict';
 
 var should = require('chai').should();
-var P2P = require('../');
-var Commands = P2P.Commands;
-var commandData = require('./data/messages.json');
-var Data = require('./data/messages');//todo merge with commandData
+var P2P = require('../../');
+var Commands = P2P.Messages.Commands;
+var commandData = require('../data/messages.json');
+var Data = require('../data/messages');//todo merge with commandData
 var bitcore = require('bitcore');
 
 function getPayloadBuffer(messageBuffer) {

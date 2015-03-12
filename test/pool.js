@@ -10,7 +10,8 @@ var bitcore = require('bitcore');
 var P2P = require('../');
 var Peer = P2P.Peer;
 var MessagesData = require('./data/messages');
-var messages = P2P.messages;
+var Messages = P2P.Messages;
+var messages = new Messages();
 var Pool = P2P.Pool;
 var Networks = bitcore.Networks;
 
