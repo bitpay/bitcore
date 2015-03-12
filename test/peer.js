@@ -14,6 +14,9 @@ var bitcore = require('bitcore');
 var _ = bitcore.deps._;
 var P2P = require('../');
 var Peer = P2P.Peer;
+var EventEmitter = require('events').EventEmitter;
+var Messages = P2P.Messages;
+var messages = new Messages();
 var Networks = bitcore.Networks;
 
 describe('Peer', function() {
@@ -119,6 +122,49 @@ describe('Peer', function() {
     socket.should.be.instanceof(Socks5Client);
 
     peer.should.equal(peer2);
+  });
+
+  it('send pong on ping', function(done) {
+    var peer = new Peer({host: 'localhost'});
+    var pingMessage = messages.build('ping');
+    peer.sendMessage = function(message) {
+      message.command.should.equal('pong');
+      message.nonce.should.equal(pingMessage.nonce);
+      done();
+    };
+    peer.emit('ping', pingMessage);
+  });
+
+  it('relay error from socket', function(done) {
+    var peer = new Peer({host: 'localhost'});
+    var socket = new EventEmitter();
+    socket.connect = sinon.spy();
+    peer._getSocket = function() {
+      return socket;
+    };
+    var error = new Error('error');
+    peer.on('error', function(err) {
+      err.should.equal(error);
+      done();
+    });
+    peer.connect();
+    peer.socket.emit('error', error);
+  });
+
+  it('disconnect with max buffer length', function(done) {
+    var peer = new Peer({host: 'localhost'});
+    var socket = new EventEmitter();
+    socket.connect = sinon.spy();
+    peer._getSocket = function() {
+      return socket;
+    };
+    peer.disconnect = function() {
+      done();
+    };
+    peer.connect();
+    var buffer = new Buffer(Array(Peer.MAX_RECEIVE_BUFFER + 1));
+    peer.socket.emit('data', buffer);
+
   });
 
   it('relay set properly', function() {
