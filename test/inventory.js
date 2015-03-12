@@ -9,6 +9,7 @@ var P2P = require('../');
 var Inventory = P2P.Inventory;
 var BufferUtils = bitcore.util.buffer;
 var BufferWriter = bitcore.encoding.BufferWriter;
+var BufferReader = bitcore.encoding.BufferReader;
 
 describe('Inventory', function() {
 
@@ -87,6 +88,16 @@ describe('Inventory', function() {
   describe('#fromBuffer', function() {
     it('deserialize a buffer', function() {
       var inventory = Inventory.fromBuffer(inventoryBuffer);
+      should.exist(inventory);
+      inventory.type.should.equal(Inventory.TYPE.TX);
+      inventory.hash.should.deep.equal(hash);
+    });
+  });
+
+  describe('#fromBufferWriter', function() {
+    it('deserialize from a buffer reader', function() {
+      var bw = new BufferReader(inventoryBuffer);
+      var inventory = Inventory.fromBufferReader(bw);
       should.exist(inventory);
       inventory.type.should.equal(Inventory.TYPE.TX);
       inventory.hash.should.deep.equal(hash);
