@@ -10,8 +10,8 @@ var memdown = require('memdown');
 var async = require('async');
 var request = require('supertest');
 
-var Bitcore = require('bitcore');
 var WalletUtils = require('bitcore-wallet-utils');
+var Bitcore = WalletUtils.Bitcore;
 var BWS = require('bitcore-wallet-service');
 
 var Client = require('../lib');
