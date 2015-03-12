@@ -24,7 +24,7 @@ function getPayloadBuffer(messageBuffer) {
 
 describe('Pool', function() {
 
-  it('should be able to create instance', function() {
+  it('create instance', function() {
     var pool = new Pool();
     should.exist(pool.network);
     expect(pool.network).to.satisfy(function(network) {
@@ -32,12 +32,12 @@ describe('Pool', function() {
     });
   });
 
-  it('should be able to create instance setting the network', function() {
+  it('create instance setting the network', function() {
     var pool = new Pool({network: Networks.testnet});
     pool.network.should.equal(Networks.testnet);
   });
 
-  it('should discover peers via dns', function() {
+  it('discover peers via dns', function() {
     var stub = sinon.stub(dns, 'resolve', function(seed, callback) {
       callback(null, ['10.10.10.1', '10.10.10.2', '10.10.10.3']);
     });
@@ -48,7 +48,7 @@ describe('Pool', function() {
     stub.restore();
   });
 
-  it('can optionally connect without dns seeds', function() {
+  it('optionally connect without dns seeds', function() {
     var stub = sinon.stub(dns, 'resolve', function(seed, callback) {
       throw new Error('DNS should not be called');
     });
@@ -92,7 +92,7 @@ describe('Pool', function() {
     pool._addrs.length.should.equal(1);
   });
 
-  it('should add new addrs as they are announced over the network', function(done) {
+  it('add new addrs as they are announced over the network', function(done) {
 
     // only emit an event, no need to connect
     var peerConnectStub = sinon.stub(Peer.prototype, 'connect', function() {
@@ -103,7 +103,7 @@ describe('Pool', function() {
     // mock a addr peer event
     var peerMessageStub = sinon.stub(Peer.prototype, '_readMessage', function() {
       var payloadBuffer = getPayloadBuffer(MessagesData.addr.message);
-      var message = messages.buildFromBuffer('addr', payloadBuffer);
+      var message = messages._buildFromBuffer('addr', payloadBuffer);
       this.emit(message.command, message);
     });
 
@@ -154,7 +154,7 @@ describe('Pool', function() {
     // mock a addr peer event
     var peerMessageStub = sinon.stub(Peer.prototype, '_readMessage', function() {
       var payloadBuffer = getPayloadBuffer(MessagesData.addr.message);
-      var message = messages.buildFromBuffer('addr', payloadBuffer);
+      var message = messages._buildFromBuffer('addr', payloadBuffer);
       this.emit(message.command, message);
     });
 
@@ -195,7 +195,7 @@ describe('Pool', function() {
 
   });
 
-  it('should propagate connect, ready, and disconnect peer events', function(done) {
+  it('propagate connect, ready, and disconnect peer events', function(done) {
     var peerConnectStub = sinon.stub(Peer.prototype, 'connect', function() {
       this.emit('connect', this, {});
       this.emit('ready');
@@ -240,7 +240,7 @@ describe('Pool', function() {
     pool.connect();
   });
 
-  it('should propagate Pool.relay property to peers', function(done) {
+  it('propagate relay property to peers', function(done) {
     var count = 0;
     var peerConnectStub = sinon.stub(Peer.prototype, 'connect', function() {
       this.emit('connect', this, {});
@@ -260,12 +260,12 @@ describe('Pool', function() {
     peerConnectStub.restore();
   });
 
-  it('should output the console correctly', function() {
+  it('output the console correctly', function() {
     var pool = new Pool();
     pool.inspect().should.equal('<Pool network: livenet, connected: 0, available: 0>');
   });
 
-  it('should emit seederrors with error', function(done) {
+  it('emit seederrors with error', function(done) {
     var dnsStub = sinon.stub(dns, 'resolve', function(seed, callback) {
       callback(new Error('A DNS error'));
     });
@@ -279,7 +279,7 @@ describe('Pool', function() {
     pool.connect();
   });
 
-  it('should emit seederrors with notfound', function(done) {
+  it('emit seederrors with notfound', function(done) {
     var dnsStub = sinon.stub(dns, 'resolve', function(seed, callback) {
       callback(null, []);
     });

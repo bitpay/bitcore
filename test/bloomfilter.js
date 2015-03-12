@@ -26,7 +26,7 @@ function ParseHex(str) {
 
 describe('BloomFilter', function() {
 
-  it('BloomFilter#fromBuffer and toBuffer methods work', function() {
+  it('#fromBuffer and #toBuffer round trip', function() {
     var testPayloadBuffer = getPayloadBuffer(Data.filterload.message);
     var filter = new BloomFilter.fromBuffer(testPayloadBuffer);
     filter.toBuffer().should.deep.equal(testPayloadBuffer);
@@ -34,7 +34,7 @@ describe('BloomFilter', function() {
 
   // test data from: https://github.com/bitcoin/bitcoin/blob/master/src/test/bloom_tests.cpp
 
-  it('correctly serialize filter with public keys added', function() {
+  it('serialize filter with public keys added', function() {
 
     var privateKey = bitcore.PrivateKey.fromWIF('5Kg1gnAjaLfKiwhhPpGS3QfRg2m6awQvaj98JCZBZQ5SuS2F15C');
     var publicKey = privateKey.toPublicKey();
@@ -49,7 +49,7 @@ describe('BloomFilter', function() {
 
   });
 
-  it('correctly serialize to a buffer', function() {
+  it('serialize to a buffer', function() {
 
     var filter = BloomFilter.create(3, 0.01, 0, BloomFilter.BLOOM_UPDATE_ALL);
 
@@ -68,7 +68,7 @@ describe('BloomFilter', function() {
     actual.should.deep.equal(expected);
   });
 
- it('correctly deserialize a buffer', function() {
+ it('deserialize a buffer', function() {
 
    var buffer = new Buffer('03614e9b050000000000000001', 'hex');
    var filter = BloomFilter.fromBuffer(buffer);

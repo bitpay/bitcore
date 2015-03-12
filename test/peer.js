@@ -69,42 +69,42 @@ describe('Peer', function() {
   });
 
 
-  it('should be able to create instance', function() {
+  it('create instance', function() {
     var peer = new Peer('localhost');
     peer.host.should.equal('localhost');
     peer.network.should.equal(Networks.livenet);
     peer.port.should.equal(Networks.livenet.port);
   });
 
-  it('should be able to create instance setting a port', function() {
+  it('create instance setting a port', function() {
     var peer = new Peer({host: 'localhost', port: 8111});
     peer.host.should.equal('localhost');
     peer.network.should.equal(Networks.livenet);
     peer.port.should.equal(8111);
   });
 
-  it('should be able to create instance setting a network', function() {
+  it('create instance setting a network', function() {
     var peer = new Peer({host: 'localhost', network: Networks.testnet});
     peer.host.should.equal('localhost');
     peer.network.should.equal(Networks.testnet);
     peer.port.should.equal(Networks.testnet.port);
   });
 
-  it('should be able to create instance setting port and network', function() {
+  it('create instance setting port and network', function() {
     var peer = new Peer({host: 'localhost', port: 8111, network: Networks.testnet});
     peer.host.should.equal('localhost');
     peer.network.should.equal(Networks.testnet);
     peer.port.should.equal(8111);
   });
 
-  it('should support creating instance without new', function() {
+  it('create instance without new', function() {
     var peer = Peer({host: 'localhost', port: 8111, network: Networks.testnet});
     peer.host.should.equal('localhost');
     peer.network.should.equal(Networks.testnet);
     peer.port.should.equal(8111);
   });
 
-  it('should be able to set a proxy', function() {
+  it('set a proxy', function() {
     var peer, peer2, socket;
 
     peer = new Peer('localhost');
@@ -121,7 +121,7 @@ describe('Peer', function() {
     peer.should.equal(peer2);
   });
 
-  it('Peer.relay setting set properly', function() {
+  it('relay set properly', function() {
     var peer = new Peer({host: 'localhost'});
     peer.relay.should.equal(true);
     var peer2 = new Peer({host: 'localhost', relay: false});
@@ -130,7 +130,7 @@ describe('Peer', function() {
     peer3.relay.should.equal(true);
   });
 
-  it('Peer.relay setting respected', function() {
+  it('relay setting respected', function() {
     [true,false].forEach(function(relay) {
       var peer = new Peer({host: 'localhost', relay: relay});
       var peerSendMessageStub = sinon.stub(Peer.prototype, 'sendMessage', function(message) {

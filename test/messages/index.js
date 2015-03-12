@@ -25,24 +25,21 @@ describe('Messages', function() {
         Block: bitcore.Block,
         Transaction: bitcore.Transaction
       });
-      should.exist(messages.commands);
+      should.exist(messages.builder.commands);
+      should.exist(messages.builder.constructors);
+      messages.builder.constructors.Block.should.equal(bitcore.Block);
+      messages.builder.constructors.Transaction.should.equal(bitcore.Transaction);
       messages.magicNumber.should.equal(magicNumber);
-
-      // check that commands are mapped as messages
-      for(var key in messages.commands) {
-        messages[key].should.equal(messages.commands[key]);
-      }
-
     });
   });
 
-  describe('#parseMessage', function() {
+  describe('#parseBuffer', function() {
     it('fails with invalid command', function() {
       var invalidCommand = 'f9beb4d96d616c6963696f757300000025000000bd5e830c' +
         '0102000000ec3995c1bf7269ff728818a65e53af00cbbee6b6eca8ac9ce7bc79d87' +
         '7041ed8';
       var fails = function() {
-        messages.parseMessage(buildMessage(invalidCommand));
+        messages.parseBuffer(buildMessage(invalidCommand));
       };
       fails.should.throw('Unsupported message command: malicious');
     });
@@ -59,7 +56,7 @@ describe('Messages', function() {
         '00000069ebcbc34a4f9890da9aea0f773beba883a9afb1ab9ad7647dd4a1cd346c3' +
         '728';
       [malformed1, malformed2, malformed3].forEach(function(malformed) {
-        var ret = messages.parseMessage(buildMessage(malformed));
+        var ret = messages.parseBuffer(buildMessage(malformed));
         should.not.exist(ret);
       });
     });

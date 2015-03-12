@@ -4,10 +4,10 @@ var should = require('chai').should();
 var P2P = require('../../');
 var Message = P2P.Messages.Message;
 
-describe('P2P Message', function() {
+describe('Message', function() {
 
   describe('@constructor', function() {
-    it('should construct with magic number and command', function() {
+    it('construct with magic number and command', function() {
       var message = new Message({magicNumber: 0xd9b4bef9, command: 'command'});
       message.command.should.equal('command');
       message.magicNumber.should.equal(0xd9b4bef9);
@@ -15,7 +15,7 @@ describe('P2P Message', function() {
   });
 
   describe('#toBuffer', function() {
-    it('should serialize to a buffer', function() {
+    it('serialize to a buffer', function() {
       var message = new Message({magicNumber: 0xd9b4bef9, command: 'command'});
       message.getPayload = function() {
         return new Buffer(0);
