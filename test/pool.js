@@ -17,6 +17,7 @@ var Networks = bitcore.Networks;
 
 var dns = require('dns');
 var sinon = require('sinon');
+var net = require('net');
 
 function getPayloadBuffer(messageBuffer) {
   return new Buffer(messageBuffer.slice(48), 'hex');
@@ -49,6 +50,11 @@ describe('Pool', function() {
   });
 
   it('optionally connect without dns seeds', function() {
+    sinon.stub(Peer.prototype, 'connect', function() {
+      this.socket = {
+        destroy: sinon.stub()
+      };
+    });
     var stub = sinon.stub(dns, 'resolve', function(seed, callback) {
       throw new Error('DNS should not be called');
     });
@@ -74,6 +80,7 @@ describe('Pool', function() {
     pool.disconnect();
     pool._addrs.length.should.equal(2);
     stub.restore();
+    Peer.prototype.connect.restore();
   });
 
   it('will add addrs via options argument', function() {
@@ -295,23 +302,81 @@ describe('Pool', function() {
 
   it('send message to all peers', function(done) {
     var message = 'message';
-    var peerConnectStub = sinon.stub(Peer.prototype, 'connect', function() {
+    sinon.stub(Peer.prototype, 'connect', function() {
+      this.socket = {
+        destroy: sinon.stub()
+      };
       var self = this;
       process.nextTick(function() {
         self.emit('ready');
       });
     });
-    var peerMessageStub = sinon.stub(Peer.prototype, 'sendMessage', function(message) {
+    sinon.stub(Peer.prototype, 'sendMessage', function(message) {
       message.should.equal(message);
-      peerConnectStub.restore();
-      peerMessageStub.restore();
+      Peer.prototype.connect.restore();
+      Peer.prototype.sendMessage.restore();
+      pool.disconnect();
       done();
     });
-    var pool = new Pool({network: Networks.livenet, maxSize: 1});
+    var pool = new Pool({
+      network: Networks.livenet,
+      maxSize: 1,
+      dnsSeed: false,
+      addrs: [
+        {
+          ip:{
+            v4: 'localhost'
+          }
+        }
+      ]
+    });
     pool.on('peerready', function() {
       pool.sendMessage(message);
     });
     pool.connect();
   });
+
+  describe('#listen', function() {
+
+    it('create a server', function(done) {
+      var netStub = sinon.stub(net, 'createServer', function() {
+        return {
+          listen: function() {
+            netStub.restore();
+            done();
+          }
+        };
+      });
+      var pool = new Pool({network: Networks.livenet, maxSize: 1});
+      pool.listen();
+    });
+
+    it('should handle an ipv6 connection', function(done) {
+      var ipv6 = '2001:0db8:85a3:0042:1000:8a2e:0370:7334';
+      sinon.stub(net, 'createServer', function(callback) {
+        callback({
+          remoteAddress: ipv6
+        });
+        return {
+          listen: sinon.stub()
+        };
+      });
+      sinon.stub(net, 'isIPv6', function() {
+        return true;
+      });
+      var pool = new Pool({network: Networks.livenet, maxSize: 1});
+      pool._addAddr = function(addr) {
+        should.exist(addr.ip.v6);
+        addr.ip.v6.should.equal(ipv6);
+        net.isIPv6.restore();
+        net.createServer.restore();
+        done();
+      };
+      pool._addConnectedPeer = sinon.stub();
+      pool.listen();
+    });
+
+  });
+
 
 });

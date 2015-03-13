@@ -4,6 +4,7 @@ var should = require('chai').should();
 var P2P = require('../../../');
 var Messages = P2P.Messages;
 var sinon = require('sinon');
+var bitcore = require('bitcore');
 
 describe('Command Messages', function() {
 
@@ -13,7 +14,7 @@ describe('Command Messages', function() {
   describe('Inventory helpers for: ' + constructors.join(', '), function() {
 
     var fakeHash = 'e2dfb8afe1575bfacae1a0b4afc49af7ddda69285857267bae0e22be15f74a3a';
-    
+
     describe('#forTransaction', function() {
       constructors.forEach(function(name) {
         it(name, function() {
@@ -23,7 +24,7 @@ describe('Command Messages', function() {
         });
       });
     });
-    
+
     describe('#forBlock', function() {
       constructors.forEach(function(name) {
         it(name, function() {
@@ -33,7 +34,7 @@ describe('Command Messages', function() {
         });
       });
     });
-    
+
     describe('#forFilteredBlock', function() {
       constructors.forEach(function(name) {
         it(name, function() {
@@ -46,9 +47,31 @@ describe('Command Messages', function() {
 
   });
 
+  describe('Transaction', function() {
+
+    it('should accept a transaction instance as an argument', function() {
+      var tx = new bitcore.Transaction();
+      var message = messages.Transaction(tx);
+      message.transaction.should.be.instanceof(bitcore.Transaction);
+    });
+
+  });
+
+  describe('Block', function() {
+
+    it('should accept a block instance as an argument', function() {
+      var block = new bitcore.Block({
+        header: {},
+        transactions: []
+      });
+      var message = messages.Block(block);
+      message.block.should.be.instanceof(bitcore.Block);
+    });
+
+  });
 
   describe('FilterLoad', function() {
-    
+
     it('should return a null payload', function() {
       var message = messages.FilterLoad();
       var payload = message.getPayload();
@@ -69,7 +92,7 @@ describe('Command Messages', function() {
       var message = messagesCustom.Transaction.fromBuffer();
       should.exist(message);
     });
-    
+
     it('should work with Transaction.fromBuffer', function(done) {
       var Transaction = sinon.stub();
       Transaction.fromBuffer = function() {
@@ -83,7 +106,7 @@ describe('Command Messages', function() {
   });
 
   describe('Block', function() {
-    
+
     it('should be able to pass a custom Block', function(done) {
       var Block = sinon.stub();
       Block.fromBuffer = function() {
@@ -97,7 +120,7 @@ describe('Command Messages', function() {
   });
 
   describe('GetBlocks', function() {
-    
+
     it('should error with invalid stop', function() {
       var invalidStop = '000000';
       var starts = ['000000000000000013413cf2536b491bf0988f52e90c476ffeb701c8bfdb1db9'];
@@ -111,7 +134,7 @@ describe('Command Messages', function() {
   });
 
   describe('GetHeaders', function() {
-    
+
     it('should error with invalid stop', function() {
       var invalidStop = '000000';
       var starts = ['000000000000000013413cf2536b491bf0988f52e90c476ffeb701c8bfdb1db9'];
@@ -125,7 +148,7 @@ describe('Command Messages', function() {
   });
 
   describe('MerkleBlock', function() {
-    
+
     it('should return null buffer for payload', function() {
       var message = messages.MerkleBlock();
       var payload = message.getPayload();
