@@ -26,11 +26,11 @@ describe('TXProposal', function() {
       var txp = TXP.fromObj(aTXP());
 
       txp.outputOrder = [0, 1];
-      var t = txp._getBitcoreTx();
+      var t = txp.getBitcoreTx();
       t.getChangeOutput().should.deep.equal(t.outputs[1]);
 
       txp.outputOrder = [1, 0];
-      var t = txp._getBitcoreTx();
+      var t = txp.getBitcoreTx();
       t.getChangeOutput().should.deep.equal(t.outputs[0]);
     });
   });
