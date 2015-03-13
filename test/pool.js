@@ -336,6 +336,33 @@ describe('Pool', function() {
     pool.connect();
   });
 
+  describe('#_addConnectedPeer', function() {
+
+    it('should add a peer', function() {
+      /* jshint sub: true */
+      var pool = new Pool({network: Networks.livenet, maxSize: 1});
+      pool._addPeerEventHandlers = sinon.stub();
+      pool._addConnectedPeer({
+        on: sinon.stub()
+      }, {hash: 'hash'});
+      should.exist(pool._connectedPeers['hash']);
+      pool._addPeerEventHandlers.calledOnce.should.equal(true);
+    });
+
+    it('should not already added peer', function() {
+      /* jshint sub: true */
+      var pool = new Pool({network: Networks.livenet, maxSize: 1});
+      pool._addPeerEventHandlers = sinon.stub();
+      pool._connectedPeers['hash'] = {};
+      pool._addConnectedPeer({
+        on: sinon.stub()
+      }, {hash: 'hash'});
+      should.exist(pool._connectedPeers['hash']);
+      pool._addPeerEventHandlers.calledOnce.should.equal(false);
+    });
+
+  });
+
   describe('#listen', function() {
 
     it('create a server', function(done) {
@@ -368,6 +395,31 @@ describe('Pool', function() {
       pool._addAddr = function(addr) {
         should.exist(addr.ip.v6);
         addr.ip.v6.should.equal(ipv6);
+        net.isIPv6.restore();
+        net.createServer.restore();
+        done();
+      };
+      pool._addConnectedPeer = sinon.stub();
+      pool.listen();
+    });
+
+    it('should handle an ipv4 connection', function(done) {
+      var ipv4 = '127.0.0.1';
+      sinon.stub(net, 'createServer', function(callback) {
+        callback({
+          remoteAddress: ipv4
+        });
+        return {
+          listen: sinon.stub()
+        };
+      });
+      sinon.stub(net, 'isIPv6', function() {
+        return false;
+      });
+      var pool = new Pool({network: Networks.livenet, maxSize: 1});
+      pool._addAddr = function(addr) {
+        should.exist(addr.ip.v4);
+        addr.ip.v4.should.equal(ipv4);
         net.isIPv6.restore();
         net.createServer.restore();
         done();
