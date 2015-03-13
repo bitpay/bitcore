@@ -51,7 +51,6 @@ describe('Messages Builder', function() {
           message.toBuffer().should.deep.equal(expectedBuffer);
           done();
         });
-
       });
     });
 

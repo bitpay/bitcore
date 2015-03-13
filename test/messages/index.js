@@ -33,6 +33,21 @@ describe('Messages', function() {
     });
   });
 
+  describe('@constructor for all command messages', function() {
+    var messages = new Messages();
+    Object.keys(messages.builder.commandsMap).forEach(function(command) {
+      var name = messages.builder.commandsMap[command];
+      it('message.' + name, function(done) {
+        should.exist(messages[name]);
+        messages[name].super_.should.equal(Messages.Message);
+        var message = messages[name]();
+        should.exist(message);
+        message.should.be.instanceof(messages[name]);
+        done();
+      });
+    });
+  });
+
   describe('#parseBuffer', function() {
     it('fails with invalid command', function() {
       var invalidCommand = 'f9beb4d96d616c6963696f757300000025000000bd5e830c' +
