@@ -78,14 +78,4 @@ describe('Messages', function() {
 
   });
 
-  describe('#discardUntilNextMessage', function() {
-  });
-
-  describe('#buildFromBuffer', function() {
-  });
-
-  describe('#build/#buildFromObject', function() {
-  });
-
-
 });

@@ -336,8 +336,17 @@ describe('Pool', function() {
     pool.connect();
   });
 
-  it('not call _fillConnections if keepalive is false', function(done) {
-    done();
+  it('not call _fillConnections if keepalive is false on seed', function(done) {
+    var pool = new Pool({network: Networks.livenet, maxSize: 1});
+    pool._fillConnections = sinon.stub();
+    pool.keepalive = false;
+    pool.on('seed', function() {
+      process.nextTick(function() {
+        pool._fillConnections.called.should.equal(false);
+        done();
+      });
+    });
+    pool.emit('seed', []);
   });
 
   it('keep original time for handling peeraddr messages', function(done) {
