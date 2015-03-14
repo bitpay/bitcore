@@ -336,6 +336,80 @@ describe('Pool', function() {
     pool.connect();
   });
 
+  it('not call _fillConnections if keepalive is false', function(done) {
+    done();
+  });
+
+  it('keep original time for handling peeraddr messages', function(done) {
+    var pool = new Pool({network: Networks.livenet, maxSize: 1});
+    var now = new Date();
+    pool._addAddr = function(addr) {
+      addr.time.should.equal(now);
+      done();
+    };
+    pool.emit('peeraddr', {}, {
+      addresses: [
+        {
+          time: now
+        }
+      ]
+    });
+  });
+
+  it('replace time if time is invalid on peeraddr messages', function(done) {
+    var pool = new Pool({network: Networks.livenet, maxSize: 1});
+    var future = new Date(new Date().getTime() + 10 * 70 * 1000);
+    var past = new Date(new Date().getTime() - 4 * 24 * 60 * 60 * 1000); // 4 days ago
+    pool._addAddr = function(addr) {
+      addr.time.should.not.equal(future);
+      addr.time.getTime().should.be.below(past.getTime());
+      done();
+    };
+    pool.emit('peeraddr', {}, {
+      addresses: [
+        {
+          time: future
+        }
+      ]
+    });
+  });
+
+  describe('#_removeConnectedPeer', function() {
+    it('disconnect peer if peer status is not disconnected', function(done) {
+      var pool = new Pool({network: Networks.livenet, maxSize: 1});
+      /* jshint sub: true */
+      pool._connectedPeers['hash'] = {
+        status: Peer.STATUS.CONNECTED,
+        disconnect: function() {
+          done();
+        }
+      };
+      pool._removeConnectedPeer({
+        hash: 'hash'
+      });
+    });
+  });
+
+  describe('#_connectPeer', function() {
+    it('connect ipv6 peer', function() {
+      var connectStub = sinon.stub(Peer.prototype, 'connect');
+      var pool = new Pool({network: Networks.livenet, maxSize: 1});
+      var ipv6 = '2001:0db8:85a3:0042:1000:8a2e:0370:7334';
+      pool._addPeerEventHandlers = sinon.stub();
+      pool._connectPeer({
+        ip: {
+          v6: ipv6
+        },
+        hash: 'hash'
+      });
+      /* jshint sub: true */
+      should.exist(pool._connectedPeers['hash']);
+      pool._addPeerEventHandlers.calledOnce.should.equal(true);
+      Peer.prototype.connect.calledOnce.should.equal(true);
+      connectStub.restore();
+    });
+  });
+
   describe('#_addConnectedPeer', function() {
 
     it('should add a peer', function() {
