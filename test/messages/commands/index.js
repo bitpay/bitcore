@@ -10,6 +10,29 @@ describe('Command Messages', function() {
 
   var messages = new Messages();
   var constructors = ['GetData', 'Inventory', 'NotFound'];
+  var commandsMap = {
+    version: 'Version',
+    verack: 'VerAck',
+    ping: 'Ping',
+    pong: 'Pong',
+    block: 'Block',
+    tx: 'Transaction',
+    getdata: 'GetData',
+    headers: 'Headers',
+    notfound: 'NotFound',
+    inv: 'Inventory',
+    addr: 'Address',
+    alert: 'Alert',
+    reject: 'Reject',
+    merkleblock: 'MerkleBlock',
+    filterload: 'FilterLoad',
+    filteradd: 'FilterAdd',
+    filterclear: 'FilterClear',
+    getblocks: 'GetBlocks',
+    getheaders: 'GetHeaders',
+    mempool: 'MemPool',
+    getaddr: 'GetAddr'
+  };
 
   describe('Inventory helpers for: ' + constructors.join(', '), function() {
 
@@ -157,5 +180,18 @@ describe('Command Messages', function() {
 
   });
 
+
+  describe('Default Magic Number', function() {
+
+    Object.keys(commandsMap).forEach(function(command) {
+      it(command, function() {
+        var messageConstructor = require('../../../lib/messages/commands/' + command)({});
+        var message = new messageConstructor();
+        var defaultMagic = bitcore.Networks.defaultNetwork.networkMagic.readUInt32LE(0);
+        message.magicNumber.should.equal(defaultMagic);
+      });
+    });
+
+  });
 
 });
