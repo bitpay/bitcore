@@ -71,7 +71,6 @@ describe('Peer', function() {
     });
   });
 
-
   it('create instance', function() {
     var peer = new Peer('localhost');
     peer.host.should.equal('localhost');
@@ -166,6 +165,39 @@ describe('Peer', function() {
     var buffer = new Buffer(Array(Peer.MAX_RECEIVE_BUFFER + 1));
     peer.socket.emit('data', buffer);
 
+  });
+
+  it('should send version on version if not already sent', function(done) {
+    var peer = new Peer({host:'localhost'});
+    var commands = {};
+    peer.sendMessage = function(message) {
+      commands[message.command] = true;
+      if (commands.verack && commands.version) {
+        done();
+      }
+    };
+    peer.socket = {};
+    peer.emit('version', {
+      version: 'version',
+      subversion: 'subversion',
+      startHeight: 'startHeight'
+    });
+  });
+
+  it('should not send version on version if already sent', function(done) {
+    var peer = new Peer({host:'localhost'});
+    peer.versionSent = true;
+    var commands = {};
+    peer.sendMessage = function(message) {
+      message.command.should.not.equal('version');
+      done();
+    };
+    peer.socket = {};
+    peer.emit('version', {
+      version: 'version',
+      subversion: 'subversion',
+      startHeight: 'startHeight'
+    });
   });
 
   it('relay set properly', function() {
