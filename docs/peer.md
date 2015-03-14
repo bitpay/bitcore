@@ -1,3 +1,4 @@
+---
 title: Peer
 description: The Peer class provides a simple interface for connecting to a node in the bitcoin network.
 ---
@@ -15,15 +16,15 @@ The code to create a new peer looks like this:
 var Peer = require('bitcore-p2p').Peer;
 
 // default port
-var livenetPeer = new Peer('5.9.85.34');
-var testnetPeer = new Peer('5.9.85.34', bitcore.testnet);
+var livenetPeer = new Peer({host: '5.9.85.34'});
+var testnetPeer = new Peer({host: '5.9.85.34', network: Networks.testnet});
 
 // custom port
-var livenetPeer = new Peer('5.9.85.34', 8334);
-var testnetPeer = new Peer('5.9.85.34', 18334, bitcore.testnet);
+var livenetPeer = new Peer({host: '5.9.85.34', port: 8334});
+var testnetPeer = new Peer({host: '5.9.85.34', port: 18334, network: Networks.testnet});
 
 // use sock5 proxy (Tor)
-var peer = new Peer('5.9.85.34').setProxy('localhost', 9050);
+var peer = new Peer({host: '5.9.85.34'}).setProxy('localhost', 9050);
 ```
 
 ## States
@@ -40,7 +41,7 @@ You can subscribe to the change of those states as follows:
 ```javascript
 var Peer = require('bitcore-p2p').Peer;
 
-var peer = new Peer('5.9.85.34');
+var peer = new Peer({host: '5.9.85.34'});
 
 peer.on('ready', function() {
   // peer info
@@ -60,7 +61,7 @@ Once connected, a peer instance can send and receive messages. Every time a mess
 
 ```javascript
 var Peer = require('bitcore-p2p').Peer;
-var peer = new Peer('5.9.85.34');
+var peer = new Peer({host: '5.9.85.34'});
 
 // handle events
 peer.on('inv', function(message) {
@@ -88,7 +89,7 @@ An example for requesting other connected nodes to a peers looks like this:
 var p2p = require('bitcore-p2p')
 var Peer = p2p.Peer;
 var Messages = p2p.Messages;
-var peer = new Peer('5.9.85.34');
+var peer = new Peer({host: '5.9.85.34'});
 
 peer.on('ready', function() {
   var message = new Messages.GetAddresses();
