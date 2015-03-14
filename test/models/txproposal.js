@@ -5,7 +5,7 @@ var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
 var TXP = require('../../lib/model/txproposal');
-var Bitcore = require('bitcore');
+var Bitcore = require('bitcore-wallet-utils').Bitcore;
 
 
 describe('TXProposal', function() {
@@ -21,6 +21,17 @@ describe('TXProposal', function() {
       var txp = TXP.fromObj(aTXP());
       var t = txp.getBitcoreTx();
       should.exist(t);
+    });
+    it('should order ouputs as specified by outputOrder', function() {
+      var txp = TXP.fromObj(aTXP());
+
+      txp.outputOrder = [0, 1];
+      var t = txp.getBitcoreTx();
+      t.getChangeOutput().should.deep.equal(t.outputs[1]);
+
+      txp.outputOrder = [1, 0];
+      var t = txp.getBitcoreTx();
+      t.getChangeOutput().should.deep.equal(t.outputs[0]);
     });
   });
 
@@ -108,6 +119,7 @@ var aTXP = function() {
     "requiredSignatures": 2,
     "requiredRejections": 1,
     "status": "pending",
-    "actions": []
+    "actions": [],
+    "outputOrder": [0, 1],
   }
 };
