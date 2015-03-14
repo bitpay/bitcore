@@ -126,7 +126,7 @@ describe('Peer', function() {
 
   it('send pong on ping', function(done) {
     var peer = new Peer({host: 'localhost'});
-    var pingMessage = messages.build('ping');
+    var pingMessage = messages.Ping();
     peer.sendMessage = function(message) {
       message.command.should.equal('pong');
       message.nonce.should.equal(pingMessage.nonce);
