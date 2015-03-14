@@ -32,6 +32,8 @@ node_modules
 out/
 db/*
 
-.bit
-
 docs
+
+bitcore-wallet-client.js
+bitcore-wallet-client.min.js
+
