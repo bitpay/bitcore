@@ -938,7 +938,7 @@ describe('Copay server', function() {
         server.createTx(txOpts, function(err, tx) {
           should.exist(err);
           err.code.should.equal('INSUFFICIENTFUNDS');
-          err.message.should.equal('Insufficient funds');
+          err.message.should.equal('Insufficient funds for fee');
           done();
         });
       });
