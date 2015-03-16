@@ -10,8 +10,8 @@ var memdown = require('memdown');
 var async = require('async');
 var request = require('supertest');
 
-var Bitcore = require('bitcore');
 var WalletUtils = require('bitcore-wallet-utils');
+var Bitcore = WalletUtils.Bitcore;
 var BWS = require('bitcore-wallet-service');
 
 var Client = require('../lib');
@@ -426,6 +426,47 @@ describe('client API ', function() {
   });
 
   describe('Transaction Proposals Creation and Locked funds', function() {
+    it('Should fail to create proposal with insufficient funds', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          blockExplorerMock.setUtxo(x0, 1, 2);
+          blockExplorerMock.setUtxo(x0, 1, 2);
+          var opts = {
+            amount: 300000000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hello 1-1',
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.exist(err);
+            err.code.should.contain('INSUFFICIENTFUNDS');
+            done();
+          });
+        });
+      });
+    });
+    it('Should fail to create proposal with insufficient funds for fee', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          blockExplorerMock.setUtxo(x0, 1, 2);
+          blockExplorerMock.setUtxo(x0, 1, 2);
+          var opts = {
+            amount: 200000000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hello 1-1',
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.exist(err);
+            err.code.should.contain('INSUFFICIENTFUNDS');
+            err.message.should.contain('for fee');
+            done();
+          });
+        });
+      });
+    });
     it('Should lock and release funds through rejection', function(done) {
       helpers.createAndJoinWallet(clients, 2, 2, function(w) {
         clients[0].createAddress(function(err, x0) {
@@ -442,7 +483,7 @@ describe('client API ', function() {
             should.not.exist(err);
 
             clients[0].sendTxProposal(opts, function(err, y) {
-              err.code.should.contain('INSUFFICIENTFUNDS');
+              err.code.should.contain('LOCKEDFUNDS');
 
               clients[0].rejectTxProposal(x, 'no', function(err, z) {
                 should.not.exist(err);
@@ -473,7 +514,7 @@ describe('client API ', function() {
             should.not.exist(err);
 
             clients[0].sendTxProposal(opts, function(err, y) {
-              err.code.should.contain('INSUFFICIENTFUNDS');
+              err.code.should.contain('LOCKEDFUNDS');
 
               clients[0].removeTxProposal(x, function(err) {
                 should.not.exist(err);
