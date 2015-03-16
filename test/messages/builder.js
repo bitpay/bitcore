@@ -63,7 +63,7 @@ describe('Messages Builder', function() {
 
       it('#relay setting works', function() {
         [true,false].forEach(function(relay) {
-          var message = b.commands.version.fromObject({relay: relay});
+          var message = new b.commands.version({relay: relay});
           message.relay.should.equal(relay);
           var messageBuf = message.getPayload();
           var newMessage = b.commands.version.fromBuffer(messageBuf);
