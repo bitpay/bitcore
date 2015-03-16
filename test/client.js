@@ -985,7 +985,7 @@ describe('client API ', function() {
           importedClient = helpers.newClient(app);
           importedClient.import(exported);
         });
-        it.skip('should export & import compressed', function() {
+        it('should export & import compressed', function(done) {
           var walletId = clients[0].credentials.walletId;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
@@ -998,9 +998,13 @@ describe('client API ', function() {
           importedClient.import(exported, {
             compressed: true
           });
-          importedClient.credentials.walletId.should.equal(walletId);
-          importedClient.credentials.walletName.should.equal(walletName);
-          importedClient.credentials.copayerName.should.equal(copayerName);
+          importedClient.openWallet(function(err) {
+            should.not.exist(err);
+            importedClient.credentials.walletId.should.equal(walletId);
+            importedClient.credentials.walletName.should.equal(walletName);
+            importedClient.credentials.copayerName.should.equal(copayerName);
+            done();
+          });
         });
         it('should export without signing rights', function() {
           clients[0].canSign().should.be.true;
