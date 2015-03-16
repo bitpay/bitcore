@@ -56,15 +56,16 @@ Utils.doLoad = function(client, doNotComplete, walletData, password, filename, c
   };
   if (doNotComplete) return cb(client);
 
-  client.openWallet(function(err, justCompleted) {
-    if (!err && client.isComplete() && justCompleted) {
-      Utils.doSave(client, filename, password, function() {
-        log.info('Your wallet has just been completed. Please backup your wallet file or use the export command.');
-        return cb(client);
-      });
-    } else {
-      return cb(client);
-    }
+
+  client.on('walletCompleted', function(wallet) {
+    Utils.doSave(client, filename, password, function() {
+      log.info('Your wallet has just been completed. Please backup your wallet file or use the export command.');
+    });
+  });
+  client.openWallet(function(err, isComplete) {
+    if (err) throw err;
+
+    return cb(client);
   });
 };
 
