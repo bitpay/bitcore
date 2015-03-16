@@ -983,34 +983,6 @@ describe('client API ', function() {
           importedClient.credentials.walletName.should.equal(walletName);
           importedClient.credentials.copayerName.should.equal(copayerName);
         });
-        it('should export & import encrypted', function() {
-          var xPrivKey = clients[0].credentials.xPrivKey;
-          should.exist(xPrivKey);
-
-          var exported = clients[0].export({
-            password: '123'
-          });
-          exported.should.not.contain(xPrivKey);
-
-          importedClient = helpers.newClient(app);
-          importedClient.import(exported, {
-            password: '123'
-          });
-          should.exist(importedClient.credentials.xPrivKey);
-          importedClient.credentials.xPrivKey.should.equal(xPrivKey);
-        });
-        it('should export & import compressed & encrypted', function() {
-          var exported = clients[0].export({
-            compressed: true,
-            password: '123'
-          });
-
-          importedClient = helpers.newClient(app);
-          importedClient.import(exported, {
-            compressed: true,
-            password: '123'
-          });
-        });
         it('should export without signing rights', function() {
           clients[0].canSign().should.be.true;
           var exported = clients[0].export({
@@ -1025,8 +997,6 @@ describe('client API ', function() {
       describe('Fail', function() {
         it.skip('should fail to export compressed & import uncompressed', function() {});
         it.skip('should fail to export uncompressed & import compressed', function() {});
-        it.skip('should fail to export unencrypted & import with password', function() {});
-        it.skip('should fail to export encrypted & import with incorrect password', function() {});
       });
     });
 
