@@ -76,6 +76,11 @@ describe('BIP32 compliance', function() {
     publicKey.toString().should.equal(publicKey.xpubkey);
   });
 
+  it('cache for xpubkey works for test vector 1', function() {
+    var pk = HDPrivateKey(vector1_m_private);
+    pk.xpubkey.should.equal(pk.xpubkey);
+  });
+
   it('should get the extended public key from the extended private key for test vector 1', function() {
     HDPrivateKey(vector1_m_private).xpubkey.should.equal(vector1_m_public);
   });
