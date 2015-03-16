@@ -255,6 +255,25 @@ describe('client API ', function() {
         })
       });
     });
+    it('should fire event when wallet is complete', function(done) {
+      var checks = 0;
+      clients[0].on('walletCompleted', function(wallet) {
+        wallet.name.should.equal('wallet name');
+        wallet.status.should.equal('complete');
+        if (++checks == 2) done();
+      });
+      clients[0].createWallet('wallet name', 'creator', 2, 2, 'testnet', function(err, secret) {
+        should.not.exist(err);
+        clients[1].joinWallet(secret, 'guest', function(err) {
+          should.not.exist(err);
+          clients[0].openWallet(function(err, isComplete) {
+            should.not.exist(err);
+            isComplete.should.be.true;
+            if (++checks == 2) done();
+          });
+        });
+      });
+    });
 
     it('should not allow to join a full wallet ', function(done) {
       helpers.createAndJoinWallet(clients, 2, 2, function(w) {
@@ -1014,7 +1033,6 @@ describe('client API ', function() {
             var recoveryClient = helpers.newClient(app);
             recoveryClient.seedFromExtendedPrivateKey(xpriv);
             recoveryClient.openWallet(function(err) {
-              console.log(err);
               should.not.exist(err);
               recoveryClient.credentials.walletName.should.equal(walletName);
               recoveryClient.credentials.copayerName.should.equal(copayerName);
