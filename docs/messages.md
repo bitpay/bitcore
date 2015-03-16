@@ -6,7 +6,7 @@ description: A superclass for the messages of the bitcoin network
 
 The bitcoin protocol specifies a set of [messages](https://en.bitcoin.it/wiki/Protocol_specification) that can be sent from peer to peer. `bitcore-p2p` provides support for some of these messages.
 
-To create a messages, you can use any of the message constructors, here is a simple example:
+To create a message, you can use any of the message constructors, here is a simple example:
 
 ```javascript
 var messages = new Messages();
