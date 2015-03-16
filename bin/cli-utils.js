@@ -1,4 +1,5 @@
 var _ = require('lodash');
+var url = require('url');
 var read = require('read')
 var log = require('npmlog');
 var Client = require('bitcore-wallet-client');
@@ -83,14 +84,14 @@ Utils.getClient = function(args, opts, cb) {
   opts = opts || {};
 
   var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
-  var baseUrl = args.host || process.env['BWS_HOST'];
+  var host = args.host || process.env['BWS_HOST'] || 'http://localhost:3001/';
 
   var storage = new FileStorage({
     filename: filename,
   });
 
   var client = new Client({
-    baseUrl: args.host || process.env['BWS_HOST'],
+    baseUrl: url.resolve(host, '/bws/api'),
     verbose: args.verbose,
   });
 
