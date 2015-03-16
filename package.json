@@ -23,23 +23,26 @@
     "moment": "^2.9.0",
     "npmlog": "^1.2.0",
     "qr-image": "^3.1.0",
-    "read": "^1.0.5"
+    "read": "^1.0.5",
+    "sjcl": "^1.0.2"
   },
-  "devDependencies": {
-  },
+  "devDependencies": {},
   "scripts": {
     "start": "node app.js",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
     "test": "./node_modules/.bin/mocha",
     "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage"
   },
-  "contributors": [{
-    "name": "Ivan Socolsky",
-    "email": "ivan@gmail.com"
-  }, {
-    "name": "Matias Alejo Garcia",
-    "email": "ematiu@gmail.com"
-  }],
+  "contributors": [
+    {
+      "name": "Ivan Socolsky",
+      "email": "ivan@gmail.com"
+    },
+    {
+      "name": "Matias Alejo Garcia",
+      "email": "ematiu@gmail.com"
+    }
+  ],
   "bin": {
     "wallet": "./bin/wallet",
     "wallet-address": "./bin/wallet-address",

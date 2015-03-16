@@ -4,7 +4,11 @@ var read = require('read')
 var log = require('npmlog');
 var Client = require('bitcore-wallet-client');
 var FileStorage = require('./filestorage');
+var sjcl = require('sjcl');
 
+var WALLET_ENCRYPTION_OPTS = {
+  iter: 5000
+};
 
 var Utils = function() {};
 
@@ -45,14 +49,18 @@ Utils.confirmationId = function(copayer) {
 
 
 Utils.doLoad = function(client, doNotComplete, walletData, password, filename, cb) {
-  var opts = {};
   if (password) {
-    opts.password = password;
+    try {
+      walletData = sjcl.decrypt(password, walletData);
+    } catch (e) {
+      die('Could not open wallet. Wrong password.');
+    }
   }
+
   try {
-    client.import(walletData, opts);
+    client.import(walletData);
   } catch (e) {
-    die('Could not open wallet.' + (password ? ' Wrong password?' : ''));
+    die('Corrupt wallet file.');
   };
   if (doNotComplete) return cb(client);
 
@@ -129,10 +137,11 @@ Utils.getClient = function(args, opts, cb) {
 
 Utils.doSave = function(client, filename, password, cb) {
   var opts = {};
+
+  var str = client.export();
   if (password) {
-    opts.password = password;
+    str = sjcl.encrypt(password, str, WALLET_ENCRYPTION_OPTS);
   }
-  var str = client.export(opts);
 
   var storage = new FileStorage({
     filename: filename,
