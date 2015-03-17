@@ -1,9 +1,46 @@
+---
 title: Messages
 description: A superclass for the messages of the bitcoin network
 ---
 # Messages
 
 The bitcoin protocol specifies a set of [messages](https://en.bitcoin.it/wiki/Protocol_specification) that can be sent from peer to peer. `bitcore-p2p` provides support for some of these messages.
+
+To create a message, you can use any of the message constructors, here is a simple example:
+
+```javascript
+var messages = new Messages();
+var message = messages.Ping();
+```
+
+There are also several convenient helpers for inventory based messages:
+
+```javascript
+message = messages.GetData.forTransaction(txHash);
+message = messages.GetData.forBlock(blockHash);
+message = messages.Inventory.forTransaction(txHash);
+```
+
+As well as sending "tx" and "block" messages with Bitcore instances:
+
+```javascript
+message = messages.Block(block);
+message = messages.Transaction(transaction);
+```
+
+Note: A list of further messages is available below.
+
+For advanced usage, you can also customize which constructor is used for Block and Transaction messages by passing it as an argument to Messages, for example:
+
+```javascript
+var messages = new Messages({Block: MyBlock, Transaction: MyTransaction});
+```
+
+And additionally custom network magic:
+
+```javascript
+var messages = new Messages({magicNumber: 0x0b120907});
+```
 
 ## List of Messages
 

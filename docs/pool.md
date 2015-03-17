@@ -1,3 +1,4 @@
+---
 title: Pool
 description: A simple interface to create and maintain a set of connections to bitcoin nodes.
 ---
@@ -12,7 +13,7 @@ The quickest way to get connected is to run the following:
 var Pool = require('bitcore-p2p').Pool;
 var Networks = require('bitcore').Networks;
 
-var pool = new Pool(Networks.livenet);
+var pool = new Pool({network: Networks.livenet});
 
 // connect to the network
 pool.connect();
@@ -35,7 +36,8 @@ By default, peers will be added via DNS discovery and as peers are announced in 
 
 ```javascript
 
-var pool = new Pool(Networks.livenet, {
+var pool = new Pool({
+  network: Networks.livenet, // the network object
   dnsSeed: false, // prevent seeding with DNS discovered known peers upon connecting
   listenAddr: false, // prevent new peers being added from addr messages
   addrs: [ // initial peers to connect to
@@ -50,3 +52,14 @@ var pool = new Pool(Networks.livenet, {
 pool.connect();
 
 ```
+
+## Listening for Peers
+
+It's also possible to listen to incoming socket connections to add peers to the pool. To enable this capability, you can do the following:
+
+```javascript
+var pool = new Pool({network: Networks.livenet});
+pool.listen();
+```
+
+When there are incoming connections the peer will be added to the pool.

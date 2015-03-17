@@ -53,8 +53,7 @@
   },
   "dependencies": {
     "bitcore": "^0.11.0",
-    "bloom-filter": "^0.1.1",
-    "bufferput": "^0.1.2",
+    "bloom-filter": "^0.2.0",
     "buffers": "^0.1.1",
     "socks5-client": "^0.3.6"
   },
