@@ -104,7 +104,6 @@ Note that the scripts created two files named `irene.dat` and `thomas.dat`. With
 * [API.getMainAddresses(opts, cb)](#API#getMainAddresses)
 * [API.getBalance(cb)](#API#getBalance)
 * [API.getTxProposals(opts)](#API#getTxProposals)
-* [API.getSignatures(opts)](#API#getSignatures)
 * [API.signTxProposal(txp, cb)](#API#signTxProposal)
 * [API.rejectTxProposal(txp, reason, cb)](#API#rejectTxProposal)
 * [API.broadcastTxProposal(txp, cb)](#API#broadcastTxProposal)
@@ -254,17 +253,6 @@ Get list of transactions proposals
   - forAirGapped `Boolean`  
 
 **Returns**: `Callback` - cb - Return error or array of transactions proposals  
-<a name="API#getSignatures"></a>
-###API.getSignatures(opts)
-Get list of transactions proposals
-
-**Params**
-
-- opts `Object`  
-  - doNotVerify `Boolean`  
-  - forAirGapped `Boolean`  
-
-**Returns**: `Callback` - cb - Return error or array of transactions proposals  
 <a name="API#signTxProposal"></a>
 ###API.signTxProposal(txp, cb)
 Sign a transaction proposal
@@ -272,6 +260,19 @@ Sign a transaction proposal
 **Params**
 
 - txp `Object`  
+- cb `Callback`  
+
+**Returns**: `Callback` - cb - Return error or object  
+<a name="API#signTxProposalFromAirgapped"></a>
+###API.signTxProposalFromAirGapped(txp, encryptedPkr, m, n)
+Sign a transaction proposal from an airgapped device
+
+**Params**
+
+- txp `Object`  
+- encryptedPkr `String`
+- m `Number`
+- n `Number`
 - cb `Callback`  
 
 **Returns**: `Callback` - cb - Return error or object  
