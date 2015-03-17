@@ -2206,7 +2206,7 @@ describe('Copay server', function() {
         txid: '1',
         confirmations: 1,
         fees: 100,
-        minedTs: 1,
+        time: 1,
         inputs: [{
           address: 'external',
           amount: 500,
@@ -2234,7 +2234,7 @@ describe('Copay server', function() {
         txid: '1',
         confirmations: 1,
         fees: 100,
-        minedTs: 1,
+        time: 1,
         inputs: [{
           address: mainAddresses[0].address,
           amount: 500,
@@ -2262,7 +2262,7 @@ describe('Copay server', function() {
         txid: '1',
         confirmations: 1,
         fees: 100,
-        minedTs: 1,
+        time: 1,
         inputs: [{
           address: mainAddresses[0].address,
           amount: 500,
@@ -2312,7 +2312,7 @@ describe('Copay server', function() {
                 txid: '1122334455',
                 confirmations: 1,
                 fees: 5460,
-                minedTs: 1,
+                time: 1,
                 inputs: [{
                   address: tx.inputs[0].address,
                   amount: utxos[0].satoshis,
@@ -2342,6 +2342,55 @@ describe('Copay server', function() {
               });
             });
           });
+        });
+      });
+    });
+    describe('Pagination', function() {
+      beforeEach(function() {
+        server._normalizeTxHistory = sinon.stub().returnsArg(0);
+        var timestamps = [10, 50, 30, 40, 20];
+        var txs = _.map(timestamps, function(ts, idx) {
+          return {
+            txid: (idx + 1).toString(),
+            confirmations: ts / 10,
+            fees: 100,
+            time: ts,
+            inputs: [{
+              address: 'external',
+              amount: 500,
+            }],
+            outputs: [{
+              address: mainAddresses[0].address,
+              amount: 200,
+            }],
+          };
+        });
+
+        helpers.stubHistory(txs);
+      });
+      it('should get paginated tx history', function(done) {
+        server.getTxHistory({
+          minTs: 15,
+          maxTs: 45,
+        }, function(err, txs) {
+          should.not.exist(err);
+          should.exist(txs);
+          txs.length.should.equal(3);
+          _.pluck(txs, 'time').should.deep.equal([20, 30, 40]);
+          done();
+        });
+      });
+      it('should get paginated tx history with limit', function(done) {
+        server.getTxHistory({
+          minTs: 15,
+          maxTs: 45,
+          limit: 2,
+        }, function(err, txs) {
+          should.not.exist(err);
+          should.exist(txs);
+          txs.length.should.equal(2);
+          _.pluck(txs, 'time').should.deep.equal([20, 30]);
+          done();
         });
       });
     });
