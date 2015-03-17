@@ -1212,8 +1212,88 @@ describe('client API ', function() {
         }
       );
     });
-    it.skip('should be able to detect tampered PKR when signing on airgapped client', function(done) {});
-    it.skip('should be able to detect tampered proposal when signing on airgapped client', function(done) {});
-    it.skip('should be able to detect tampered change address when signing on airgapped client', function(done) {});
+    describe('Failure and tampering', function() {
+      var airgapped, proxy, bundle;
+
+      beforeEach(function(done) {
+        airgapped = new Client();
+        airgapped.seedFromRandom('testnet');
+        var exported = airgapped.export({
+          noSign: true
+        });
+
+        proxy = helpers.newClient(app);
+        proxy.import(exported);
+        should.not.exist(proxy.credentials.xPrivKey);
+
+        async.waterfall([
+
+            function(next) {
+              proxy.createWallet('wallet name', 'creator', 1, 1, 'testnet', function(err) {
+                should.not.exist(err);
+                proxy.createAddress(function(err, address) {
+                  should.not.exist(err);
+                  should.exist(address.address);
+                  blockExplorerMock.setUtxo(address, 1, 1);
+                  var opts = {
+                    amount: 1200000,
+                    toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+                    message: 'hello 1-1',
+                  };
+                  proxy.sendTxProposal(opts, next);
+                });
+              });
+            },
+            function(txp, next) {
+              proxy.getTxProposals({
+                forAirGapped: true
+              }, function(err, result) {
+                should.not.exist(err);
+                bundle = result;
+                next();
+              });
+            },
+          ],
+          function(err) {
+            should.not.exist(err);
+            done();
+          }
+        );
+      });
+      it('should fail to sign from airgapped client when there is no extended private key', function(done) {
+        delete airgapped.credentials.xPrivKey;
+        (function() {
+          airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
+        }).should.throw(Error, 'You do not have the required keys to sign transactions');
+        done();
+      });
+      it('should fail gracefully when PKR cannot be decrypted in airgapped client', function(done) {
+        bundle.encryptedPkr = 'dummy';
+        (function() {
+          airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
+        }).should.throw(Error, 'Could not decrypt public key ring');
+        done();
+      });
+      it('should be able to detect invalid or tampered PKR when signing on airgapped client', function(done) {
+        (function() {
+          airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, 2);
+        }).should.throw(Error, 'Invalid public key ring');
+        done();
+      });
+      it('should be able to detect tampered proposal when signing on airgapped client', function(done) {
+        bundle.txps[0].encryptedMessage = 'tampered message';
+        (function() {
+          airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
+        }).should.throw(Error, 'Fake transaction proposal');
+        done();
+      });
+      it('should be able to detect tampered change address when signing on airgapped client', function(done) {
+        bundle.txps[0].changeAddress.address = 'mqNkvNuhzZKeXYNRZ1bdj55smmW3acr6K7';
+        (function() {
+          airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
+        }).should.throw(Error, 'Fake transaction proposal');
+        done();
+      });
+    });
   });
 });
