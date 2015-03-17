@@ -1,9 +1,14 @@
 var _ = require('lodash');
+var url = require('url');
 var read = require('read')
 var log = require('npmlog');
 var Client = require('bitcore-wallet-client');
 var FileStorage = require('./filestorage');
+var sjcl = require('sjcl');
 
+var WALLET_ENCRYPTION_OPTS = {
+  iter: 5000
+};
 
 var Utils = function() {};
 
@@ -44,26 +49,31 @@ Utils.confirmationId = function(copayer) {
 
 
 Utils.doLoad = function(client, doNotComplete, walletData, password, filename, cb) {
-  var opts = {};
   if (password) {
-    opts.password = password;
+    try {
+      walletData = sjcl.decrypt(password, walletData);
+    } catch (e) {
+      die('Could not open wallet. Wrong password.');
+    }
   }
+
   try {
-    client.import(walletData, opts);
+    client.import(walletData);
   } catch (e) {
-    die('Could not open wallet.' + (password ? ' Wrong password?' : ''));
+    die('Corrupt wallet file.');
   };
   if (doNotComplete) return cb(client);
 
-  client.openWallet(function(err, justCompleted) {
-    if (!err && client.isComplete() && justCompleted) {
-      Utils.doSave(client, filename, password, function() {
-        log.info('Your wallet has just been completed. Please backup your wallet file or use the export command.');
-        return cb(client);
-      });
-    } else {
-      return cb(client);
-    }
+
+  client.on('walletCompleted', function(wallet) {
+    Utils.doSave(client, filename, password, function() {
+      log.info('Your wallet has just been completed. Please backup your wallet file or use the export command.');
+    });
+  });
+  client.openWallet(function(err, isComplete) {
+    if (err) throw err;
+
+    return cb(client);
   });
 };
 
@@ -83,14 +93,14 @@ Utils.getClient = function(args, opts, cb) {
   opts = opts || {};
 
   var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
-  var baseUrl = args.host || process.env['BWS_HOST'];
+  var host = args.host || process.env['BWS_HOST'] || 'http://localhost:3001/';
 
   var storage = new FileStorage({
     filename: filename,
   });
 
   var client = new Client({
-    baseUrl: args.host || process.env['BWS_HOST'],
+    baseUrl: url.resolve(host, '/bws/api'),
     verbose: args.verbose,
   });
 
@@ -127,10 +137,11 @@ Utils.getClient = function(args, opts, cb) {
 
 Utils.doSave = function(client, filename, password, cb) {
   var opts = {};
+
+  var str = client.export();
   if (password) {
-    opts.password = password;
+    str = sjcl.encrypt(password, str, WALLET_ENCRYPTION_OPTS);
   }
-  var str = client.export(opts);
 
   var storage = new FileStorage({
     filename: filename,
