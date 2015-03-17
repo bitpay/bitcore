@@ -9,7 +9,6 @@ var bitcore = require('bitcore');
 describe('Command Messages', function() {
 
   var messages = new Messages();
-  var constructors = ['GetData', 'Inventory', 'NotFound'];
   var commandsMap = {
     version: 'Version',
     verack: 'VerAck',
@@ -33,42 +32,6 @@ describe('Command Messages', function() {
     mempool: 'MemPool',
     getaddr: 'GetAddr'
   };
-
-  describe('Inventory helpers for: ' + constructors.join(', '), function() {
-
-    var fakeHash = 'e2dfb8afe1575bfacae1a0b4afc49af7ddda69285857267bae0e22be15f74a3a';
-
-    describe('#forTransaction', function() {
-      constructors.forEach(function(name) {
-        it(name, function() {
-          var message = messages[name].forTransaction(fakeHash);
-          should.exist(message);
-          message.should.be.instanceof(messages[name]);
-        });
-      });
-    });
-
-    describe('#forBlock', function() {
-      constructors.forEach(function(name) {
-        it(name, function() {
-          var message = messages[name].forBlock(fakeHash);
-          should.exist(message);
-          message.should.be.instanceof(messages[name]);
-        });
-      });
-    });
-
-    describe('#forFilteredBlock', function() {
-      constructors.forEach(function(name) {
-        it(name, function() {
-          var message = messages[name].forFilteredBlock(fakeHash);
-          should.exist(message);
-          message.should.be.instanceof(messages[name]);
-        });
-      });
-    });
-
-  });
 
   describe('Transaction', function() {
 

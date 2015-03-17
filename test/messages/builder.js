@@ -73,6 +73,42 @@ describe('Messages Builder', function() {
 
     });
 
-  });
+    describe('Inventory helpers for: ' + b.inventoryCommands.join(', '), function() {
 
+      var constructors = b.inventoryCommands;
+      var fakeHash = 'e2dfb8afe1575bfacae1a0b4afc49af7ddda69285857267bae0e22be15f74a3a';
+
+      describe('#forTransaction', function() {
+        constructors.forEach(function(name) {
+          it(name, function() {
+            should.exist(b.commands[name].forTransaction);
+            var message = b.commands[name].forTransaction(fakeHash);
+            should.exist(message);
+            message.should.be.instanceof(b.commands[name]);
+          });
+        });
+      });
+
+      describe('#forBlock', function() {
+        constructors.forEach(function(name) {
+          it(name, function() {
+            var message = b.commands[name].forBlock(fakeHash);
+            should.exist(message);
+            message.should.be.instanceof(b.commands[name]);
+          });
+        });
+      });
+
+      describe('#forFilteredBlock', function() {
+        constructors.forEach(function(name) {
+          it(name, function() {
+            var message = b.commands[name].forFilteredBlock(fakeHash);
+            should.exist(message);
+            message.should.be.instanceof(b.commands[name]);
+          });
+        });
+      });
+
+    });
+  });
 });
