@@ -2206,7 +2206,7 @@ describe('Copay server', function() {
         txid: '1',
         confirmations: 1,
         fees: 100,
-        minedTs: 1,
+        time: 1,
         inputs: [{
           address: 'external',
           amount: 500,
@@ -2234,7 +2234,7 @@ describe('Copay server', function() {
         txid: '1',
         confirmations: 1,
         fees: 100,
-        minedTs: 1,
+        time: 1,
         inputs: [{
           address: mainAddresses[0].address,
           amount: 500,
@@ -2262,7 +2262,7 @@ describe('Copay server', function() {
         txid: '1',
         confirmations: 1,
         fees: 100,
-        minedTs: 1,
+        time: 1,
         inputs: [{
           address: mainAddresses[0].address,
           amount: 500,
@@ -2312,7 +2312,7 @@ describe('Copay server', function() {
                 txid: '1122334455',
                 confirmations: 1,
                 fees: 5460,
-                minedTs: 1,
+                time: 1,
                 inputs: [{
                   address: tx.inputs[0].address,
                   amount: utxos[0].satoshis,
@@ -2344,6 +2344,67 @@ describe('Copay server', function() {
           });
         });
       });
+    });
+    it('should get various paginated tx history', function(done) {
+      var testCases = [{
+        opts: {
+          minTs: 15,
+          maxTs: 45,
+        },
+        expected: [20, 30, 40],
+      }, {
+        opts: {
+          minTs: 15,
+          maxTs: 45,
+          limit: 2,
+        },
+        expected: [20, 30],
+      }, {
+        opts: {
+          maxTs: 35,
+        },
+        expected: [10, 20, 30],
+      }, {
+        opts: {
+          minTs: 15,
+        },
+        expected: [20, 30, 40, 50],
+      }, {
+        opts: {
+          minTs: 15,
+          limit: 3,
+        },
+        expected: [20, 30, 40],
+      }];
+
+      server._normalizeTxHistory = sinon.stub().returnsArg(0);
+      var timestamps = [10, 50, 30, 40, 20];
+      var txs = _.map(timestamps, function(ts, idx) {
+        return {
+          txid: (idx + 1).toString(),
+          confirmations: ts / 10,
+          fees: 100,
+          time: ts,
+          inputs: [{
+            address: 'external',
+            amount: 500,
+          }],
+          outputs: [{
+            address: mainAddresses[0].address,
+            amount: 200,
+          }],
+        };
+      });
+      helpers.stubHistory(txs);
+
+      async.each(testCases, function(testCase, next) {
+        server.getTxHistory(testCase.opts, function(err, txs) {
+          should.not.exist(err);
+          should.exist(txs);
+          _.pluck(txs, 'time').should.deep.equal(testCase.expected);
+          next();
+        });
+      }, done);
     });
   });
 });
