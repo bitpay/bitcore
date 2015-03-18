@@ -641,18 +641,17 @@ describe('Script', function() {
     it('priorize the network argument', function() {
       var script = new Script(liveAddress);
       script.toAddress(Networks.testnet).toString().should.equal(testAddress.toString());
-
-      var s = new Script('OP_DUP OP_HASH160 20 0x06c06f6d931d7bfba2b5bd5ad0d19a8f257af3e3 OP_EQUALVERIFY OP_CHECKSIG');
       script.toAddress(Networks.testnet).network.should.equal(Networks.testnet);
     });
     it('use the inherited network', function() {
       var script = new Script(liveAddress);
       script.toAddress().toString().should.equal(liveAddress.toString());
-      var script = new Script(testAddress);
+      script = new Script(testAddress);
       script.toAddress().toString().should.equal(testAddress.toString());
     });
     it('uses default network', function() {
-      var script = new Script('OP_DUP OP_HASH160 20 0x06c06f6d931d7bfba2b5bd5ad0d19a8f257af3e3 OP_EQUALVERIFY OP_CHECKSIG');
+      var script = new Script('OP_DUP OP_HASH160 20 ' +
+        '0x06c06f6d931d7bfba2b5bd5ad0d19a8f257af3e3 OP_EQUALVERIFY OP_CHECKSIG');
       script.toAddress().network.should.equal(Networks.defaultNetwork);
     });
     it('for a P2PKH address', function() {
@@ -668,10 +667,36 @@ describe('Script', function() {
       script.toAddress().toString().should.equal(stringAddress);
     });
     it('fails if content is not recognized', function() {
-      expect(function() {
-        return Script().toAddress(Networks.livenet);
-      }).to.throw();
+      Script().toAddress(Networks.livenet).should.equal(false);
     });
+
+    // taken from txid 7e519caca256423320b92e3e17be5701f87afecbdb3f53af598032bfd8d164f5
+    it('works for p2pkh output', function() {
+      var script = new Script('OP_DUP OP_HASH160 20 ' +
+        '0xc8e11b0eb0d2ad5362d894f048908341fa61b6e1 OP_EQUALVERIFY OP_CHECKSIG');
+      script.toAddress().toString().should.equal('1KK9oz4bFH8c1t6LmighHaoSEGx3P3FEmc');
+    });
+    it('works for p2pkh input', function() {
+      var script = new Script('72 0x3045022100eff96230ca0f55b1e8c7a63e014f48611ff1af40875ecd33dee9062d7a6f5e2002206320405b5f6992c756e03e66b21a05a812b60996464ac6af815c2638b930dd7a01 65 0x04150defa035a2c7d826d7d5fc8ab2154bd1bb832f1a5c8ecb338f436362ad232e428b57db44677c5a8bd42c5ed9e2d7e04e742c59bee1b40080cfd57dec64b23a');
+      script.toAddress().toString().should.equal('1KK9oz4bFH8c1t6LmighHaoSEGx3P3FEmc');
+    });
+
+    // taken from txid fe1f764299dc7f3b5a8fae912050df2b633bf99554c68bf1c456edb9c2b63585
+    it('works for p2sh output', function() {
+      var script = new Script('OP_HASH160 20 0x99d29051af0c29adcb9040034752bba7dde33e35 OP_EQUAL');
+      script.toAddress().toString().should.equal('3FiMZ7stbfH2WG5JQ7CiuzrFo7CEnGUcAP');
+    });
+    it('works for p2sh input', function() {
+      var script = new Script('OP_FALSE 72 0x3045022100e824fbe979fac5834d0062dd5a4e82a898e00ac454bd254cd708ad28530816f202206251ff0fa4dd70c0524c690d4e4deb2bd167297e7bbdf6743b4a8050d681555001 37 0x512102ff3ae0aaa4679ea156d5581dbe6695cc0c311df0aa42af76670d0debbd8f672951ae');
+      script.toAddress().toString().should.equal('3GYicPxCvsKvbJmZNBBeWkC3cLuGFhtrQi');
+    });
+
+    // no address scripts
+    it('works for OP_RETURN script', function() {
+      var script = new Script('OP_RETURN 20 0x99d29051af0c29adcb9040034752bba7dde33e35');
+      script.toAddress().should.equal(false);
+    });
+
   });
 
 });
