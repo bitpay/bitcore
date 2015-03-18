@@ -280,13 +280,13 @@ describe('Address', function() {
     it('should error because of incorrect type for script transform', function() {
       (function() {
         return Address._transformScript(new Buffer(20));
-      }).should.throw('script must be an instance of Script.');
+      }).should.throw('Invalid Argument: script must be a Script instance');
     });
 
     it('should error because of incorrect type for string transform', function() {
       (function() {
         return Address._transformString(new Buffer(20));
-      }).should.throw('Address supplied is not a string.');
+      }).should.throw('data parameter supplied is not a string.');
     });
 
     it('should make an address from a pubkey hash buffer', function() {
