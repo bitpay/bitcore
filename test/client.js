@@ -951,7 +951,57 @@ describe('client API ', function() {
       });
     });
     it.skip('should get transaction history decorated with proposal', function(done) {});
-    it.skip('should get paginated transaction history', function(done) {});
+    it('should get paginated transaction history', function(done) {
+      var testCases = [{
+        opts: {
+          minTs: 1424471042
+        },
+        expected: 1
+      }, {
+        opts: {
+          maxTs: 1424471042
+        },
+        expected: 1
+      }, {
+        opts: {
+          minTs: 1424471042,
+          maxTs: 1424500000,
+        },
+        expected: 1
+      }, {
+        opts: {
+          maxTs: 1300000000,
+        },
+        expected: 0
+      }, {
+        opts: {
+          limit: 1,
+        },
+        expected: 1
+      }, {
+        opts: {
+          minTs: 1424471042,
+          limit: 10,
+        },
+        expected: 1
+      }, ];
+
+      blockExplorerMock.setHistory(TestData.history);
+      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          async.each(testCases, function(testCase, next) {
+            clients[0].getTxHistory(testCase.opts, function(err, txs) {
+              should.not.exist(err);
+              should.exist(txs);
+              txs.length.should.equal(testCase.expected);
+              next();
+            });
+          }, done);
+        });
+      });
+    });
   });
 
   describe('Mobility, backup & restore', function() {
