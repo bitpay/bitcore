@@ -2345,54 +2345,66 @@ describe('Copay server', function() {
         });
       });
     });
-    describe('Pagination', function() {
-      beforeEach(function() {
-        server._normalizeTxHistory = sinon.stub().returnsArg(0);
-        var timestamps = [10, 50, 30, 40, 20];
-        var txs = _.map(timestamps, function(ts, idx) {
-          return {
-            txid: (idx + 1).toString(),
-            confirmations: ts / 10,
-            fees: 100,
-            time: ts,
-            inputs: [{
-              address: 'external',
-              amount: 500,
-            }],
-            outputs: [{
-              address: mainAddresses[0].address,
-              amount: 200,
-            }],
-          };
-        });
-
-        helpers.stubHistory(txs);
-      });
-      it('should get paginated tx history', function(done) {
-        server.getTxHistory({
+    it('should get various paginated tx history', function(done) {
+      var testCases = [{
+        opts: {
           minTs: 15,
           maxTs: 45,
-        }, function(err, txs) {
-          should.not.exist(err);
-          should.exist(txs);
-          txs.length.should.equal(3);
-          _.pluck(txs, 'time').should.deep.equal([20, 30, 40]);
-          done();
-        });
-      });
-      it('should get paginated tx history with limit', function(done) {
-        server.getTxHistory({
+        },
+        expected: [20, 30, 40],
+      }, {
+        opts: {
           minTs: 15,
           maxTs: 45,
           limit: 2,
-        }, function(err, txs) {
+        },
+        expected: [20, 30],
+      }, {
+        opts: {
+          maxTs: 35,
+        },
+        expected: [10, 20, 30],
+      }, {
+        opts: {
+          minTs: 15,
+        },
+        expected: [20, 30, 40, 50],
+      }, {
+        opts: {
+          minTs: 15,
+          limit: 3,
+        },
+        expected: [20, 30, 40],
+      }];
+
+      server._normalizeTxHistory = sinon.stub().returnsArg(0);
+      var timestamps = [10, 50, 30, 40, 20];
+      var txs = _.map(timestamps, function(ts, idx) {
+        return {
+          txid: (idx + 1).toString(),
+          confirmations: ts / 10,
+          fees: 100,
+          time: ts,
+          inputs: [{
+            address: 'external',
+            amount: 500,
+          }],
+          outputs: [{
+            address: mainAddresses[0].address,
+            amount: 200,
+          }],
+        };
+      });
+      helpers.stubHistory(txs);
+
+      async.each(testCases, function(testCase, next) {
+        server.getTxHistory(testCase.opts, function(err, txs) {
           should.not.exist(err);
           should.exist(txs);
-          txs.length.should.equal(2);
-          _.pluck(txs, 'time').should.deep.equal([20, 30]);
-          done();
+          _.pluck(txs, 'time').should.deep.equal(testCase.expected);
+          next();
         });
-      });
+      }, done);
     });
   });
 });
