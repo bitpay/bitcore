@@ -21,7 +21,7 @@ npm install bitcore-p2p --save
 
 ```javascript
 var Peer = require('bitcore-p2p').Peer;
-var peer = new Peer('5.9.85.34');
+var peer = new Peer({host: '5.9.85.34'});
 
 // handle events
 peer.on('inv', function(message) {
