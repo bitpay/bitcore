@@ -2351,30 +2351,30 @@ describe('Copay server', function() {
           minTs: 15,
           maxTs: 45,
         },
-        expected: [20, 30, 40],
+        expected: [40, 30, 20],
       }, {
         opts: {
           minTs: 15,
           maxTs: 45,
           limit: 2,
         },
-        expected: [20, 30],
+        expected: [40, 30],
       }, {
         opts: {
           maxTs: 35,
         },
-        expected: [10, 20, 30],
+        expected: [30, 20, 10],
       }, {
         opts: {
           minTs: 15,
         },
-        expected: [20, 30, 40, 50],
+        expected: [50, 40, 30, 20],
       }, {
         opts: {
           minTs: 15,
           limit: 3,
         },
-        expected: [20, 30, 40],
+        expected: [50, 40, 30],
       }];
 
       server._normalizeTxHistory = sinon.stub().returnsArg(0);
