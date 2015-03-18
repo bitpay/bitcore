@@ -11,6 +11,8 @@ var Opcode = bitcore.Opcode;
 var PublicKey = bitcore.PublicKey;
 var Address = bitcore.Address;
 
+var script_valid = require('../data/bitcoind/script_valid');
+
 describe('Script', function() {
 
   it('should make a new script', function() {
@@ -712,6 +714,23 @@ describe('Script', function() {
       script.toAddress().should.equal(false);
     });
 
+  });
+  describe('equals', function() {
+    it('returns true for same script', function() {
+      Script('OP_TRUE').equals(Script('OP_TRUE')).should.equal(true);
+    });
+    it('returns false for different chunks sizes', function() {
+      Script('OP_TRUE').equals(Script('OP_TRUE OP_TRUE')).should.equal(false);
+    });
+    it('returns false for different opcodes', function() {
+      Script('OP_TRUE OP_TRUE').equals(Script('OP_TRUE OP_FALSE')).should.equal(false);
+    });
+    it('returns false for different data', function() {
+      Script().add(new Buffer('a')).equals(Script('OP_TRUE')).should.equal(false);
+    });
+    it('returns false for different data', function() {
+      Script().add(new Buffer('a')).equals(Script().add(new Buffer('b'))).should.equal(false);
+    });
   });
 
 });
