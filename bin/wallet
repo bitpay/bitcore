@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-
 var npm = JSON.parse(require('fs').readFileSync('../package.json'));
  
 program
