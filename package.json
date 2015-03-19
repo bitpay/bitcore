@@ -2,7 +2,7 @@
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "keywords": [
     "bitcoin",
     "copay",
@@ -31,7 +31,7 @@
     "uglify": "^0.1.1"
   },
   "devDependencies": {
-    "bitcore-wallet-service": "^0.0.9",
+    "bitcore-wallet-service": "^0.0.10",
     "chai": "^1.9.1",
     "leveldown": "^0.10.0",
     "levelup": "^0.19.0",
