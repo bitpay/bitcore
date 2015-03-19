@@ -74,8 +74,13 @@ wallet --help
   
 # Password protection 
 
-Currently there is no password protection. This feature will be available soon.
- 
+It is possible (and recommeded) to encrypt the wallet's credentials (.dat file). this is done 
+be adding the `-p` parameter to `join` or `create` or `genkey`. The password will be asked 
+interactively. Following commands that use the crendetials will require the password to work.
+
+Password-based key derication function 2 (http://en.wikipedia.org/wiki/PBKDF2) is used to derive
+the key to encrypt the data. AES is used to do the actual encryption, using the implementation
+of SJCL (https://bitwiseshiftleft.github.io/sjcl/).
 
 
 # Airgapped Operation 
@@ -93,6 +98,7 @@ airgapped$ wallet genkey
 
 airgapped$ wallet export -o toproxy --nosign
   * Wallet data saved at toproxy without signing capability.
+
 
 # On the proxy machine
 proxy$ wallet import toproxy
