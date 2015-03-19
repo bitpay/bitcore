@@ -26,7 +26,7 @@ try {
   utils.die(ex);
 }
 
-utils.getClient(program, { }, function (client) {
+utils.getClient(program, { doNotComplete: true }, function (client) {
   client.createWallet(walletName, copayerName, mn[0], mn[1], network, function(err, secret) {
     utils.die(err);
     console.log(' * ' + _.capitalize(network) + ' Wallet Created.');
