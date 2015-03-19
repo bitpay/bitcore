@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-var npm = JSON.parse(require('fs').readFileSync('../package.json'));
  
 program
-  .version(npm.version)
+  .version('0.0.7')
   .command('create <walletName> <m-n> [username]', 'creates a wallet')
   .command('join <secret> [username]', 'join a wallet')
   .command('status', 'get wallet status')
