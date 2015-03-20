@@ -100,6 +100,14 @@ describe('HDPrivate key interface', function() {
       testnetKey.publicKey.network.should.equal(Networks.testnet);
       livenetKey.publicKey.network.should.equal(Networks.livenet);
     });
+
+    it('cache for xpubkey works', function() {
+      var privateKey = new HDPrivateKey(xprivkey);
+      should.not.exist(privateKey._hdPublicKey);
+      privateKey.xpubkey.should.equal(privateKey.xpubkey);
+      should.exist(privateKey._hdPublicKey);
+    });
+
   });
 
   it('inspect() displays correctly', function() {
