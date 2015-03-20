@@ -2383,6 +2383,18 @@ describe('Copay server', function() {
           limit: 0,
         },
         expected: [],
+      }, {
+        opts: {
+          skip: 4,
+          limit: 20,
+        },
+        expected: [10],
+      }, {
+        opts: {
+          skip: 20,
+          limit: 1,
+        },
+        expected: [],
       }];
 
       server._normalizeTxHistory = sinon.stub().returnsArg(0);
