@@ -283,9 +283,15 @@ describe('Mnemonic', function() {
       should.exist(pk);
     });
 
-    it('Mnemonic.fromSeed should fail with invalid data', function() {
+    it('Mnemonic.fromSeed should fail with invalid wordlist', function() {
       (function(){
         var mnemonic = Mnemonic.fromSeed(new Buffer(1));
+      }).should.throw(errors.InvalidArgument);
+    });
+
+    it('Mnemonic.fromSeed should fail with invalid seed', function() {
+      (function(){
+        var mnemonic = Mnemonic.fromSeed();
       }).should.throw(errors.InvalidArgument);
     });
 
