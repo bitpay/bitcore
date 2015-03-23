@@ -486,6 +486,28 @@ describe('Pool', function() {
       pool.listen();
     });
 
+    it('include port for addr on incoming connections', function(done) {
+      var port = 12345;
+      sinon.stub(net, 'createServer', function(callback) {
+        callback({
+          remoteAddress: '127.0.0.1',
+          remotePort: port
+        });
+        return {
+          listen: sinon.stub()
+        };
+      });
+      var pool = new Pool({network: Networks.livenet, maxSize: 1});
+      pool._addAddr = function(addr) {
+        should.exist(addr.port);
+        addr.port.should.equal(port);
+        net.createServer.restore();
+        done();
+      };
+      pool._addConnectedPeer = sinon.stub();
+      pool.listen();
+    });
+
     it('should handle an ipv4 connection', function(done) {
       var ipv4 = '127.0.0.1';
       sinon.stub(net, 'createServer', function(callback) {
