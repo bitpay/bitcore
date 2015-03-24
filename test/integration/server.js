@@ -1611,6 +1611,7 @@ describe('Copay server', function() {
               should.not.exist(err);
               var last = _.last(notifications);
               last.type.should.equal('TxProposalFinallyAccepted');
+              last.creatorId.should.equal(wallet.copayers[1].id);
               last.data.txProposalId.should.equal(txp.id);
               done();
             });
@@ -1868,6 +1869,9 @@ describe('Copay server', function() {
         should.not.exist(err);
         var types = _.pluck(notifications, 'type');
         types.should.deep.equal(['NewTxProposal', 'NewTxProposal', 'NewTxProposal', 'NewAddress']);
+        var creators = _.uniq(_.pluck(notifications, 'creatorId'));
+        creators.length.should.equal(1);
+        creators[0].should.equal(wallet.copayers[0].id);
         done();
       });
     });
@@ -1964,9 +1968,9 @@ describe('Copay server', function() {
               var types = _.pluck(notifications, 'type');
               types.should.deep.equal(['NewOutgoingTx', 'TxProposalFinallyAccepted', 'TxProposalAcceptedBy']);
               // Check also events
-              server._emit.getCall(0).args[0].type.should.equal('TxProposalAcceptedBy');
-              server._emit.getCall(1).args[0].type.should.equal('TxProposalFinallyAccepted');;
-              server._emit.getCall(2).args[0].type.should.equal('NewOutgoingTx');
+              server._emit.getCall(0).args[1].type.should.equal('TxProposalAcceptedBy');
+              server._emit.getCall(1).args[1].type.should.equal('TxProposalFinallyAccepted');;
+              server._emit.getCall(2).args[1].type.should.equal('NewOutgoingTx');
 
               done();
             });
