@@ -20,7 +20,7 @@ describe('Networks', function() {
       pubkeyhash: 0x10,
       privatekey: 0x90,
       scripthash: 0x08,
-      xpubkey:  0x0278b20e,
+      xpubkey: 0x0278b20e,
       xprivkey: 0x0278ade4,
       networkMagic: 0xe7beb4d4,
       port: 20001,
@@ -47,7 +47,7 @@ describe('Networks', function() {
       pubkeyhash: 0x13,
       privatekey: 0x93,
       scripthash: 0x11,
-      xpubkey:  0x0278b20f,
+      xpubkey: 0x0278b20f,
       xprivkey: 0x0278ade5,
       networkMagic: 0xe7beb4d5,
       port: 20008,
@@ -57,7 +57,7 @@ describe('Networks', function() {
     };
     networks.add(custom);
     var network = networks.get(undefined);
-    should.not.exist( network );
+    should.not.exist(network);
   });
 
   var constants = ['name', 'alias', 'pubkeyhash', 'scripthash', 'xpubkey', 'xprivkey'];
