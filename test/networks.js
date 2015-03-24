@@ -40,6 +40,25 @@ describe('Networks', function() {
       }
     }
   });
+  
+  it('should not set a network map for an undefined value', function() {
+    var custom = {
+      name: 'somenet',
+      pubkeyhash: 0x13,
+      privatekey: 0x93,
+      scripthash: 0x11,
+      xpubkey:  0x0278b20f,
+      xprivkey: 0x0278ade5,
+      networkMagic: 0xe7beb4d5,
+      port: 20008,
+      dnsSeeds: [
+        'somenet.localhost'
+      ]
+    };
+    networks.add(custom);
+    var network = networks.get(undefined);
+    should.not.exist( network );
+  });
 
   var constants = ['name', 'alias', 'pubkeyhash', 'scripthash', 'xpubkey', 'xprivkey'];
 
