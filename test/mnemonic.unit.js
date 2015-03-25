@@ -162,7 +162,7 @@ describe('Mnemonic', function() {
 
       it('should fail with invalid data', function() {
         (function(){
-          var mnemonic = new Mnemonic({}); 
+          var mnemonic = new Mnemonic({});
         }).should.throw(errors.InvalidArgument);
       });
 
@@ -206,6 +206,7 @@ describe('Mnemonic', function() {
       });
 
     });
+
 
     it('english wordlist is complete', function() {
       Mnemonic.Words.ENGLISH.length.should.equal(2048);
@@ -282,6 +283,19 @@ describe('Mnemonic', function() {
       should.exist(pk);
     });
 
+    it('Mnemonic.fromSeed should fail with invalid wordlist', function() {
+      (function(){
+        var mnemonic = Mnemonic.fromSeed(new Buffer(1));
+      }).should.throw(errors.InvalidArgument);
+    });
+
+    it('Mnemonic.fromSeed should fail with invalid seed', function() {
+      (function(){
+        var mnemonic = Mnemonic.fromSeed();
+      }).should.throw(errors.InvalidArgument);
+    });
+
+
     //do not run these slow tests on TRAVIS which often fails
     var vectors = bip39_vectors['english'];
     if (!ON_TRAVIS) {
@@ -293,7 +307,7 @@ describe('Mnemonic', function() {
             var code = vector[0];
             var mnemonic = vector[1];
             var seed = vector[2];
-            var mnemonic1 = Mnemonic._entropy2mnemonic(new Buffer(code, 'hex'), wordlist);
+            var mnemonic1 = Mnemonic.fromSeed(new Buffer(code, 'hex'), wordlist).phrase;
             mnemonic1.should.equal(mnemonic);
 
             var m = new Mnemonic(mnemonic);
