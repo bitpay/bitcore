@@ -17,7 +17,7 @@ var Bitcore = WalletUtils.Bitcore;
 var sjcl = require('sjcl');
 
 var request;
-if (typeof process != 'undefined') {
+if (process && !process.browser) {
   request = require('request');
 }
 else {
