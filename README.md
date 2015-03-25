@@ -142,7 +142,6 @@ Export wallet
 
 - opts `Object`  
   - compressed `Boolean`  
-  - password `String`  
   - noSign `Boolean`  
 
 <a name="API#import"></a>
@@ -153,7 +152,6 @@ Import wallet
 
 - opts `Object`  
   - compressed `Boolean`  
-  - password `String`  
 
 <a name="API#isComplete"></a>
 ###API.isComplete()
@@ -314,6 +312,8 @@ Get transaction history
 **Params**
 
 - opts `Object`  
+  - skip `Number`  
+  - limit `Number`  
 - cb `Callback`  
 
 **Returns**: `Callback` - cb - Return error or array of transactions
