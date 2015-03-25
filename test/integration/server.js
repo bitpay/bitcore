@@ -956,6 +956,22 @@ describe('Copay server', function() {
       });
     });
 
+    it('should fail to create tx that would return change for dust amount', function(done) {
+      helpers.stubUtxos(server, wallet, [1], function() {
+        var fee = Bitcore.Transaction.FEE_PER_KB / 1e8;
+        var change = 0.00000001;
+        var amount = 1 - fee - change;
+
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', amount, null, TestData.copayers[0].privKey_1H_0);
+        server.createTx(txOpts, function(err, tx) {
+          should.exist(err);
+          err.code.should.equal('DUSTAMOUNT');
+          err.message.should.equal('Amount below dust threshold');
+          done();
+        });
+      });
+    });
+
     it('should fail with different error for insufficient funds and locked funds', function(done) {
       helpers.stubUtxos(server, wallet, [10, 10], function() {
         var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 11, null, TestData.copayers[0].privKey_1H_0);
@@ -977,20 +993,18 @@ describe('Copay server', function() {
       });
     });
 
-    it('should fail with insufficient funds if fee is too large', function(done) {
-      helpers.stubUtxos(server, wallet, 10, function() {
-        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, null, TestData.copayers[0].privKey_1H_0);
+    it('should create tx with 0 change output', function(done) {
+      helpers.stubUtxos(server, wallet, [1], function() {
+        var fee = Bitcore.Transaction.FEE_PER_KB / 1e8;
+        var amount = 1 - fee;
 
-        var txpStub = sinon.stub(TxProposal.prototype, 'getBitcoreTx').throws({
-          name: 'bitcore.ErrorTransactionFeeError'
-        });
-
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', amount, null, TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
-          should.exist(err);
-          err.code.should.equal('INSUFFICIENTFUNDS');
-          err.message.should.equal('Insufficient funds for fee');
-
-          txpStub.restore();
+          should.not.exist(err);
+          should.exist(tx);
+          var bitcoreTx = tx.getBitcoreTx();
+          bitcoreTx.outputs.length.should.equal(1);
+          bitcoreTx.outputs[0].satoshis.should.equal(tx.amount);
           done();
         });
       });
