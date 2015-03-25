@@ -46,15 +46,23 @@ Returns:
  * Wallet object. (see [fields on the source code](https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/wallet.js)).
 
 `/v1/txhistory/`: Get Wallet's transaction history
-
+ 
+Optional Arguments:
+ * skip: Records to skip from the result (defaults to 0)
+ * limit: Total number of records to return (return all available records if not specified).
+ 
 Returns:
- *  History of incomming and outgoing transactions of the wallet. The list is returned complete (Pagination and filter are [ToDos](https://github.com/bitpay/bitcore-wallet-service/issues/121))
-Each item has the following fields:
-https://github.com/bitpay/bitcore-wallet-service/issues/121
-  * proposalId
-  * creatorName
-  * message
-  * actions array ['createdOn', 'type', 'copayerId', 'copayerName', 'comment']
+ * History of incomming and outgoing transactions of the wallet. The list is paginated using the `skip` & `limit` params. Each item has the following fields:
+ * action ('sent', 'received', 'moved')
+ * amount
+ * fees
+ * time
+ * addressTo
+ * confirmations
+ * proposalId
+ * creatorName
+ * message
+ * actions array ['createdOn', 'type', 'copayerId', 'copayerName', 'comment']
   
  
 `/v1/txproposals/`:  Get Wallet's pending transaction proposals and their status

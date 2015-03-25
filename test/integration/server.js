@@ -2347,34 +2347,54 @@ describe('Copay server', function() {
     });
     it('should get various paginated tx history', function(done) {
       var testCases = [{
+        opts: {},
+        expected: [50, 40, 30, 20, 10],
+      }, {
         opts: {
-          minTs: 15,
-          maxTs: 45,
+          skip: 1,
+          limit: 3,
         },
         expected: [40, 30, 20],
       }, {
         opts: {
-          minTs: 15,
-          maxTs: 45,
+          skip: 1,
           limit: 2,
         },
         expected: [40, 30],
       }, {
         opts: {
-          maxTs: 35,
+          skip: 2,
         },
         expected: [30, 20, 10],
       }, {
         opts: {
-          minTs: 15,
+          limit: 4,
         },
         expected: [50, 40, 30, 20],
       }, {
         opts: {
-          minTs: 15,
+          skip: 0,
           limit: 3,
         },
         expected: [50, 40, 30],
+      }, {
+        opts: {
+          skip: 0,
+          limit: 0,
+        },
+        expected: [],
+      }, {
+        opts: {
+          skip: 4,
+          limit: 20,
+        },
+        expected: [10],
+      }, {
+        opts: {
+          skip: 20,
+          limit: 1,
+        },
+        expected: [],
       }];
 
       server._normalizeTxHistory = sinon.stub().returnsArg(0);
