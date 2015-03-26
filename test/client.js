@@ -953,37 +953,29 @@ describe('client API ', function() {
     it.skip('should get transaction history decorated with proposal', function(done) {});
     it('should get paginated transaction history', function(done) {
       var testCases = [{
-        opts: {
-          minTs: 1424471042
-        },
-        expected: 1
+        opts: {},
+        expected: [20, 10]
       }, {
         opts: {
-          maxTs: 1424471042
+          skip: 1,
         },
-        expected: 1
-      }, {
-        opts: {
-          minTs: 1424471042,
-          maxTs: 1424500000,
-        },
-        expected: 1
-      }, {
-        opts: {
-          maxTs: 1300000000,
-        },
-        expected: 0
+        expected: [10]
       }, {
         opts: {
           limit: 1,
         },
-        expected: 1
+        expected: [20]
       }, {
         opts: {
-          minTs: 1424471042,
+          skip: 3,
+        },
+        expected: []
+      }, {
+        opts: {
+          skip: 1,
           limit: 10,
         },
-        expected: 1
+        expected: [10]
       }, ];
 
       blockExplorerMock.setHistory(TestData.history);
@@ -995,7 +987,8 @@ describe('client API ', function() {
             clients[0].getTxHistory(testCase.opts, function(err, txs) {
               should.not.exist(err);
               should.exist(txs);
-              txs.length.should.equal(testCase.expected);
+              var times = _.pluck(txs, 'time');
+              times.should.deep.equal(testCase.expected);
               next();
             });
           }, done);
