@@ -115,6 +115,12 @@ describe('Mnemonic', function() {
 
       var invalid = Mnemonic.isValid('afirmar diseño hielo fideo etapa ogro cambio fideo hielo pomelo número buscar');
       invalid.should.equal(false);
+
+      var invalid2 = Mnemonic.isValid('afirmar diseño hielo fideo etapa ogro cambio fideo hielo pomelo número oneInvalidWord');
+      invalid2.should.equal(false);
+
+      var invalid3 = Mnemonic.isValid('totally invalid phrase');
+      invalid3.should.equal(false);
     });
 
     it('has a toString method', function() {
@@ -155,6 +161,12 @@ describe('Mnemonic', function() {
       (function() {
         return Mnemonic.fromSeed();
       }).should.throw(errors.InvalidArgument);
+    });
+
+    it('Constructor should fail with invalid seed', function() {
+      (function() {
+        return new Mnemonic(new Buffer(1));
+      }).should.throw(errors.InvalidEntropy);
     });
 
     var vectors = bip39_vectors.english;
