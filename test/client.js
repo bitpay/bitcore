@@ -774,7 +774,7 @@ describe('client API', function() {
         var tx = txps[0];
         // From the hardcoded paypro request
         tx.amount.should.equal(404500);
-        tx.toAddress.should.equal('2N1RroARCQ9UUYg8znzayScxcfamc6iX4Et');
+        tx.toAddress.should.equal('mjfjcbuYwBUdEyq2m7AezjCAR4etUBqyiE');
         tx.message.should.equal('Payment request for BitPay invoice CibEJJtG1t9H77KmM61E2t for merchant testCopay');
         tx.payProUrl.should.equal('dummy');
         done();
