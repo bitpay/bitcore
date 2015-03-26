@@ -1,4 +1,5 @@
 <img src="http://bitcore.io/css/images/bitcore-p2p.svg" alt="bitcore payment protocol" height="35" width="102">
+
 Bitcore P2P
 =======
 
