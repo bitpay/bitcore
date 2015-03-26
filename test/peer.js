@@ -151,6 +151,26 @@ describe('Peer', function() {
     peer.socket.emit('error', error);
   });
 
+  it('will not disconnect twice on disconnect and error', function(done) {
+    var peer = new Peer({host: 'localhost'});
+    var socket = new EventEmitter();
+    socket.connect = sinon.stub();
+    socket.destroy = sinon.stub();
+    peer._getSocket = function() {
+      return socket;
+    };
+    peer.on('error', sinon.stub());
+    peer.connect();
+    var called = 0;
+    peer.on('disconnect', function() {
+      called++;
+      called.should.not.be.above(1);
+      done();
+    });
+    peer.disconnect();
+    peer.socket.emit('error', new Error('fake error'));
+  });
+
   it('disconnect with max buffer length', function(done) {
     var peer = new Peer({host: 'localhost'});
     var socket = new EventEmitter();
