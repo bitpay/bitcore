@@ -417,6 +417,22 @@ describe('Pool', function() {
       Peer.prototype.connect.calledOnce.should.equal(true);
       connectStub.restore();
     });
+
+    it('will pass network to peer', function() {
+      var connectStub = sinon.stub(Peer.prototype, 'connect');
+      var pool = new Pool({network: Networks.testnet, maxSize: 1});
+      var ipv6 = '2001:0db8:85a3:0042:1000:8a2e:0370:7334';
+      pool._addPeerEventHandlers = sinon.stub();
+      pool._connectPeer({
+        ip: {
+          v6: ipv6
+        },
+        hash: 'hash'
+      });
+      /* jshint sub: true */
+      pool._connectedPeers['hash'].network.should.equal(pool.network);
+      connectStub.restore();
+    });
   });
 
   describe('#_addConnectedPeer', function() {
@@ -442,6 +458,16 @@ describe('Pool', function() {
       }, {hash: 'hash'});
       should.exist(pool._connectedPeers['hash']);
       pool._addPeerEventHandlers.calledOnce.should.equal(false);
+    });
+
+    it('will pass network to peer', function() {
+      /* jshint sub: true */
+      var pool = new Pool({network: Networks.testnet, maxSize: 1});
+      pool._addConnectedPeer({
+        on: sinon.stub()
+      }, {hash: 'hash'});
+      should.exist(pool._connectedPeers['hash']);
+      pool._connectedPeers['hash'].network.should.equal(pool.network);
     });
 
   });
