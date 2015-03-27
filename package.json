@@ -21,7 +21,8 @@
   },
   "dependencies": {
     "async": "^0.9.0",
-    "bitcore-wallet-utils": "^0.0.5",
+    "bitcore-payment-protocol": "^0.10.1",
+    "bitcore-wallet-utils": "^0.0.7",
     "browser-request": "^0.3.3",
     "browserify": "^9.0.3",
     "coveralls": "^2.11.2",
@@ -33,13 +34,15 @@
     "uglify": "^0.1.1"
   },
   "devDependencies": {
-    "bitcore-wallet-service": "^0.0.14",
+    "bitcore-wallet-service": "^0.0.15",
     "chai": "^1.9.1",
-    "leveldown": "^0.10.0",
-    "levelup": "^0.19.0",
     "grunt-jsdoc": "^0.5.8",
+    "http": "0.0.0",
+    "https": "^1.0.0",
     "istanbul": "*",
     "jsdoc": "^3.3.0-beta1",
+    "leveldown": "^0.10.0",
+    "levelup": "^0.19.0",
     "memdown": "^1.0.0",
     "mocha": "^1.18.2",
     "sinon": "^1.10.3",
@@ -51,11 +54,14 @@
     "test": "./node_modules/.bin/mocha",
     "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage"
   },
-  "contributors": [{
-    "name": "Ivan Socolsky",
-    "email": "ivan@bitpay.com"
-  }, {
-    "name": "Matias Alejo Garcia",
-    "email": "ematiu@gmail.com"
-  }]
+  "contributors": [
+    {
+      "name": "Ivan Socolsky",
+      "email": "ivan@bitpay.com"
+    },
+    {
+      "name": "Matias Alejo Garcia",
+      "email": "ematiu@gmail.com"
+    }
+  ]
 }
