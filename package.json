@@ -22,7 +22,7 @@
   "dependencies": {
     "async": "^0.9.0",
     "bitcore-payment-protocol": "^0.10.1",
-    "bitcore-wallet-utils": "^0.0.5",
+    "bitcore-wallet-utils": "^0.0.7",
     "browser-request": "^0.3.3",
     "browserify": "^9.0.3",
     "coveralls": "^2.11.2",
