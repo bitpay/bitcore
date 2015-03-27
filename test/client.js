@@ -171,8 +171,6 @@ describe('client API ', function() {
     });
   });
 
-
-
   describe('Server internals', function() {
     it('should allow cors', function(done) {
       clients[0].credentials = {};
@@ -1336,6 +1334,86 @@ describe('client API ', function() {
           airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
         }).should.throw(Error, 'Fake transaction proposal');
         done();
+      });
+    });
+  });
+
+  describe('#formatAmount', function() {
+    it.only('should successfully format amount', function() {
+      var cases = [{
+        args: {
+          satoshis: 1,
+          unit: 'bit',
+          locale: 'en',
+        },
+        expected: '0',
+      }, {
+        args: {
+          satoshis: 1,
+          unit: 'btc',
+          locale: 'en',
+        },
+        expected: '0.000000',
+      }, {
+        args: {
+          satoshis: 0,
+          unit: 'bit',
+          locale: 'en',
+        },
+        expected: '0',
+      }, {
+        args: {
+          satoshis: 12345678,
+          unit: 'bit',
+          locale: 'en',
+        },
+        expected: '123,457',
+      }, {
+        args: {
+          satoshis: 12345678,
+          unit: 'btc',
+          locale: 'en',
+        },
+        expected: '0.123457',
+      }, {
+        args: {
+          satoshis: 12345611,
+          unit: 'btc',
+          locale: 'en',
+        },
+        expected: '0.123456',
+      }, {
+        args: {
+          satoshis: 1234567899999,
+          unit: 'btc',
+          locale: 'en',
+        },
+        expected: '12,345.679000',
+      }, {
+        args: {
+          satoshis: 12345678,
+          unit: 'bit',
+          locale: 'es',
+        },
+        expected: '123.457',
+      }, {
+        args: {
+          satoshis: 12345678,
+          unit: 'btc',
+          locale: 'es',
+        },
+        expected: '0,123457',
+      }, {
+        args: {
+          satoshis: 1234567899999,
+          unit: 'btc',
+          locale: 'es',
+        },
+        expected: '12.345,679000',
+      }, ];
+
+      _.each(cases, function(testCase) {
+        Client.formatAmount(testCase.args.satoshis, testCase.args.unit, testCase.args.locale).should.equal(testCase.expected);
       });
     });
   });
