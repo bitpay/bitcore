@@ -741,7 +741,7 @@ describe('client API', function() {
 
     beforeEach(function(done) {
       getter = sinon.stub();
-      getter.yields(null, new Buffer(TestData.paypro, 'hex'));
+      getter.yields(null, TestData.payProBuf);
       helpers.createAndJoinWallet(clients, 2, 2, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
