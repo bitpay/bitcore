@@ -31,6 +31,16 @@ describe('Messages', function() {
       messages.builder.constructors.Transaction.should.equal(bitcore.Transaction);
       messages.magicNumber.should.equal(magicNumber);
     });
+    it('magicNumber should be unique for each set of messages', function() {
+      var messages = new Messages({magicNumber: 123456});
+      var messages2 = new Messages({magicNumber: 987654});
+      messages.magicNumber.should.equal(123456);
+      messages2.magicNumber.should.equal(987654);
+      var message1 = messages.Version();
+      message1.magicNumber.should.equal(123456);
+      var message2 = messages2.Version();
+      message2.magicNumber.should.equal(987654);
+    });
   });
 
   describe('@constructor for all command messages', function() {
