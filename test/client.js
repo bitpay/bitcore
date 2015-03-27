@@ -1339,7 +1339,7 @@ describe('client API ', function() {
   });
 
   describe('#formatAmount', function() {
-    it.only('should successfully format amount', function() {
+    it('should successfully format amount', function() {
       var cases = [{
         args: {
           satoshis: 1,
