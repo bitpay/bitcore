@@ -20,6 +20,7 @@ var Storage = BWS.Storage;
 var TestData = require('./testdata');
 
 var helpers = {};
+chai.config.includeStack = true;
 
 helpers.getRequest = function(app) {
   $.checkArgument(app);
