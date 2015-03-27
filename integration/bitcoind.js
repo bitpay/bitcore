@@ -122,7 +122,7 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
         hash: new Buffer(Random.getRandomBuffer(32)) // needs to be random for repeatability
       }];
       peer.once('getdata', function(message) {
-        message.inventory.should.deep.equal(inv);
+        message.inventory[0].should.deep.equal(inv[0]);
         cb();
       });
       var message = messages.Inventory(inv);
@@ -145,7 +145,7 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
     connect(function(peer) {
       var expected = messages.NotFound.forTransaction(fakeHash);
       peer.once('notfound', function(message) {
-        (message instanceof messages.NotFound).should.equal(true);
+        message.command.should.equal('notfound');
         message.inventory[0].type.should.equal(Inventory.TYPE.TX);
         var expectedHash = expected.inventory[0].hash.toString('hex');
         message.inventory[0].hash.toString('hex').should.equal(expectedHash);
@@ -160,7 +160,7 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
   it('gets headers', function(cb) {
     connect(function(peer) {
       peer.once('headers', function(message) {
-        (message instanceof messages.Headers).should.equal(true);
+        message.command.should.equal('headers');
         message.headers.length.should.equal(3);
         cb();
       });
