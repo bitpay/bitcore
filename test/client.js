@@ -171,8 +171,6 @@ describe('client API ', function() {
     });
   });
 
-
-
   describe('Server internals', function() {
     it('should allow cors', function(done) {
       clients[0].credentials = {};
