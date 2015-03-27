@@ -29,7 +29,7 @@ var unit;
 var amount = 100;
 
 // using a unit code
-var unitPreference = Unit.BTC;
+var unitPreference = unit.BTC;
 unit = new Unit(amount, unitPreference);
 
 // using a known unit
