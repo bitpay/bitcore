@@ -129,7 +129,24 @@ describe('Command Messages', function() {
         var message = messages.MerkleBlock({merkleBlock: 'not a merkle block'});
       }).should.throw('An instance of MerkleBlock');
     });
+  });
 
+  describe('Version', function() {
+    it('should set the default relay property as true', function() {
+      var message = messages.Version();
+      should.exist(message.relay);
+      message.relay.should.equal(true);
+    });
+    it('should set the relay as false', function() {
+      var message = messages.Version({relay: false});
+      should.exist(message.relay);
+      message.relay.should.equal(false);
+    });
+    it('should set the relay as true', function() {
+      var message = messages.Version({relay: true});
+      should.exist(message.relay);
+      message.relay.should.equal(true);
+    });
   });
 
 });
