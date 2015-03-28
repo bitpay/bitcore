@@ -7,6 +7,8 @@ var networks = bitcore.Networks;
 
 describe('Networks', function() {
 
+  var customnet;
+
   it('should contain all Networks', function() {
     should.exist(networks.livenet);
     should.exist(networks.testnet);
@@ -30,7 +32,7 @@ describe('Networks', function() {
       ]
     };
     networks.add(custom);
-    var customnet = networks.get('customnet');
+    customnet = networks.get('customnet');
     for (var key in custom) {
       if (key !== 'networkMagic') {
         customnet[key].should.equal(custom[key]);
@@ -39,6 +41,12 @@ describe('Networks', function() {
         customnet[key].should.deep.equal(expected);
       }
     }
+  });
+
+  it('can remove a custom network', function() {
+    networks.remove(customnet);
+    var net = networks.get('customnet');
+    should.equal(net, undefined);
   });
   
   it('should not set a network map for an undefined value', function() {
@@ -58,6 +66,7 @@ describe('Networks', function() {
     networks.add(custom);
     var network = networks.get(undefined);
     should.not.exist(network);
+    networks.remove(custom);
   });
 
   var constants = ['name', 'alias', 'pubkeyhash', 'scripthash', 'xpubkey', 'xprivkey'];
