@@ -83,6 +83,12 @@ describe('Networks', function() {
     expect(networks.get(0x6f, 'privatekey')).to.equal(undefined);
   });
 
+  it('can test for multiple keys', function() {
+    expect(networks.get(0x6f, ['pubkeyhash', 'scripthash'])).to.equal(networks.testnet);
+    expect(networks.get(0xc4, ['pubkeyhash', 'scripthash'])).to.equal(networks.testnet);
+    expect(networks.get(0x6f, ['privatekey', 'port'])).to.equal(undefined);
+  });
+
   it('converts to string using the "name" property', function() {
     networks.livenet.toString().should.equal('livenet');
   });
