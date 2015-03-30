@@ -601,14 +601,23 @@ describe('Copay server', function() {
       });
     });
 
-    it('should create address', function(done) {
+    it.only('should create address', function(done) {
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
         address.should.exist;
         address.address.should.equal('3KxttbKQQPWmpsnXZ3rB4mgJTuLnVR7frg');
         address.isChange.should.be.false;
         address.path.should.equal('m/2147483647/0/0');
-        done();
+        server.getNotifications({}, function(err, notifications) {
+          should.not.exist(err);
+          var notif = _.find(notifications, {
+            type: 'NewAddress'
+          });
+          should.exist(notif);
+          notif.length.should.equal(1);
+          notif[0].data.address.should.equal('3KxttbKQQPWmpsnXZ3rB4mgJTuLnVR7frg');
+          done();
+        });
       });
     });
 
