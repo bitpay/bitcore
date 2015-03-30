@@ -150,22 +150,22 @@ helpers.stubUtxos = function(server, wallet, amounts, cb) {
       };
       return obj;
     });
-    blockExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
+    blockchainExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
 
     return cb(utxos);
   });
 };
 
 helpers.stubBroadcast = function(txid) {
-  blockExplorer.broadcast = sinon.stub().callsArgWith(1, null, txid);
+  blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, null, txid);
 };
 
 helpers.stubBroadcastFail = function() {
-  blockExplorer.broadcast = sinon.stub().callsArgWith(1, 'broadcast error');
+  blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, 'broadcast error');
 };
 
 helpers.stubHistory = function(txs) {
-  blockExplorer.getTransactions = sinon.stub().callsArgWith(1, null, txs);
+  blockchainExplorer.getTransactions = sinon.stub().callsArgWith(1, null, txs);
 };
 
 helpers.clientSign = WalletUtils.signTxp;
@@ -198,7 +198,7 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
   });
 };
 
-var db, storage, blockExplorer;
+var db, storage, blockchainExplorer;
 
 
 describe('Copay server', function() {
@@ -209,11 +209,11 @@ describe('Copay server', function() {
     storage = new Storage({
       db: db
     });
-    blockExplorer = sinon.stub();
+    blockchainExplorer = sinon.stub();
 
     WalletService.initialize({
       storage: storage,
-      blockExplorer: blockExplorer,
+      blockchainExplorer: blockchainExplorer,
     });
     helpers.offset = 0;
   });
@@ -699,7 +699,7 @@ describe('Copay server', function() {
       });
     });
     it('should get balance when there are no funds', function(done) {
-      blockExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, []);
+      blockchainExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, []);
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
         server.getBalance({}, function(err, balance) {
