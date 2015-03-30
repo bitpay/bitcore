@@ -1908,6 +1908,19 @@ describe('Copay server', function() {
       });
     });
 
+    it('should contain walletId & creatorId on NewCopayer', function(done) {
+      server.getNotifications({
+        minTs: 0,
+      }, function(err, notifications) {
+        should.not.exist(err);
+        var newCopayer = notifications[0];
+        newCopayer.type.should.equal('NewCopayer');
+        newCopayer.walletId.should.equal(wallet.id);
+        newCopayer.creatorId.should.equal(wallet.copayers[0].id);
+        done();
+      });
+    });
+
     it('should notify sign and acceptance', function(done) {
       server.getPendingTxs({}, function(err, txs) {
         helpers.stubBroadcastFail();
