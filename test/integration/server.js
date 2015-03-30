@@ -601,7 +601,7 @@ describe('Copay server', function() {
       });
     });
 
-    it.only('should create address', function(done) {
+    it('should create address', function(done) {
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
         address.should.exist;
@@ -614,8 +614,7 @@ describe('Copay server', function() {
             type: 'NewAddress'
           });
           should.exist(notif);
-          notif.length.should.equal(1);
-          notif[0].data.address.should.equal('3KxttbKQQPWmpsnXZ3rB4mgJTuLnVR7frg');
+          notif.data.address.should.equal('3KxttbKQQPWmpsnXZ3rB4mgJTuLnVR7frg');
           done();
         });
       });
