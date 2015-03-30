@@ -800,6 +800,8 @@ describe('Copay server', function() {
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
           should.exist(tx);
+          tx.walletId.should.equal(wallet.id);
+          tx.creatorId.should.equal(wallet.copayers[0].id);
           tx.message.should.equal('some message');
           tx.isAccepted().should.equal.false;
           tx.isRejected().should.equal.false;
@@ -1611,6 +1613,7 @@ describe('Copay server', function() {
               should.not.exist(err);
               var last = _.last(notifications);
               last.type.should.equal('TxProposalFinallyAccepted');
+              last.walletId.should.equal(wallet.id);
               last.creatorId.should.equal(wallet.copayers[1].id);
               last.data.txProposalId.should.equal(txp.id);
               done();
@@ -1869,6 +1872,9 @@ describe('Copay server', function() {
         should.not.exist(err);
         var types = _.pluck(notifications, 'type');
         types.should.deep.equal(['NewTxProposal', 'NewTxProposal', 'NewTxProposal', 'NewAddress']);
+        var walletIds = _.uniq(_.pluck(notifications, 'walletId'));
+        walletIds.length.should.equal(1);
+        walletIds[0].should.equal(wallet.id);
         var creators = _.uniq(_.pluck(notifications, 'creatorId'));
         creators.length.should.equal(1);
         creators[0].should.equal(wallet.copayers[0].id);
@@ -1898,6 +1904,19 @@ describe('Copay server', function() {
         var types = _.pluck(notifications, 'type');
         types[0].should.equal('NewCopayer');
         types[types.length - 1].should.equal('NewTxProposal');
+        done();
+      });
+    });
+
+    it('should contain walletId & creatorId on NewCopayer', function(done) {
+      server.getNotifications({
+        minTs: 0,
+      }, function(err, notifications) {
+        should.not.exist(err);
+        var newCopayer = notifications[0];
+        newCopayer.type.should.equal('NewCopayer');
+        newCopayer.walletId.should.equal(wallet.id);
+        newCopayer.creatorId.should.equal(wallet.copayers[0].id);
         done();
       });
     });

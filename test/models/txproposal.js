@@ -91,6 +91,7 @@ var aTXP = function() {
     "version": "1.0.0",
     "createdOn": 1423146231,
     "id": "75c34f49-1ed6-255f-e9fd-0c71ae75ed1e",
+    "walletId": "1",
     "creatorId": "1",
     "toAddress": "18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7",
     "amount": 50000000,
