@@ -28,6 +28,12 @@ describe('Message Utils', function() {
         utils.sanitizeStartStop({starts: ['0000'], stop: stop});
       }).should.throw('Invalid hash');
     });
+    it('should keep buffers as buffers', function() {
+      /*jshint immed: false */
+      var starts = [new Buffer(Array(32))];
+      var obj = utils.sanitizeStartStop({starts: starts});
+      obj.starts[0].should.deep.equal(starts[0]);
+    });
   });
 
 });

@@ -8,6 +8,12 @@ var P2P = require('../../');
 var Messages = P2P.Messages;
 var messages = new Messages();
 var bitcore = require('bitcore');
+var Data = require('../data/messages');//todo merge with commandData
+var commandData = require('../data/messages.json');
+
+function getPayloadBuffer(messageBuffer) {
+  return new Buffer(messageBuffer.slice(48), 'hex');
+}
 
 describe('Messages', function() {
 
@@ -31,6 +37,16 @@ describe('Messages', function() {
       messages.builder.constructors.Transaction.should.equal(bitcore.Transaction);
       messages.magicNumber.should.equal(magicNumber);
     });
+    it('magicNumber should be unique for each set of messages', function() {
+      var messages = new Messages({magicNumber: 123456});
+      var messages2 = new Messages({magicNumber: 987654});
+      messages.magicNumber.should.equal(123456);
+      messages2.magicNumber.should.equal(987654);
+      var message1 = messages.Version();
+      message1.magicNumber.should.equal(123456);
+      var message2 = messages2.Version();
+      message2.magicNumber.should.equal(987654);
+    });
   });
 
   describe('@constructor for all command messages', function() {
@@ -39,13 +55,105 @@ describe('Messages', function() {
       var name = messages.builder.commandsMap[command];
       it('message.' + name, function(done) {
         should.exist(messages[name]);
-        messages[name].super_.should.equal(Messages.Message);
         var message = messages[name]();
         should.exist(message);
-        message.should.be.instanceof(messages[name]);
+        message.should.be.instanceof(messages[name]._constructor);
         done();
       });
     });
+  });
+
+  describe('#fromBuffer/#toBuffer round trip for all commands', function() {
+    var messages = new Messages();
+    Object.keys(messages.builder.commandsMap).forEach(function(command) {
+      var name = messages.builder.commandsMap[command];
+      it(name, function(done) {
+        var payloadBuffer = getPayloadBuffer(commandData[command].message);
+        should.exist(messages[name]);
+        var message = messages[name].fromBuffer(payloadBuffer);
+        var outputBuffer = message.getPayload();
+        outputBuffer.toString('hex').should.equal(payloadBuffer.toString('hex'));
+        outputBuffer.should.deep.equal(payloadBuffer);
+        var expectedBuffer = new Buffer(commandData[command].message, 'hex');
+        message.toBuffer().should.deep.equal(expectedBuffer);
+        done();
+      });
+    });
+  });
+
+  describe('Default Magic Number', function() {
+    var messages = new Messages();
+    Object.keys(messages.builder.commandsMap).forEach(function(command) {
+      var name = messages.builder.commandsMap[command];
+      it(name, function() {
+        var message = messages[name]();
+        var defaultMagic = bitcore.Networks.defaultNetwork.networkMagic.readUInt32LE(0);
+        message.magicNumber.should.equal(defaultMagic);
+      });
+    });
+
+  });
+
+  describe('messages.Version', function() {
+    var messages = new Messages();
+    it('#fromBuffer works w/o fRelay arg', function() {
+      var payloadBuffer = getPayloadBuffer(Data.version.messagenofrelay);
+      var message = messages.Version.fromBuffer(payloadBuffer);
+      message.relay.should.equal(true);
+    });
+
+    it('#relay setting works', function() {
+      [true,false].forEach(function(relay) {
+        var message = messages.Version({relay: relay});
+        message.relay.should.equal(relay);
+        var messageBuf = message.getPayload();
+        var newMessage = messages.Version.fromBuffer(messageBuf);
+        newMessage.relay.should.equal(relay);
+      });
+    });
+  });
+
+  describe('Inventory Helpers', function() {
+
+    var messages = new Messages();
+
+    var constructors = messages.builder.inventoryCommands;
+    var fakeHash = 'e2dfb8afe1575bfacae1a0b4afc49af7ddda69285857267bae0e22be15f74a3a';
+
+    describe('#forTransaction', function() {
+      constructors.forEach(function(command) {
+        var name = messages.builder.commandsMap[command];
+        it(name, function() {
+          should.exist(messages[name].forTransaction);
+          var message = messages[name].forTransaction(fakeHash);
+          should.exist(message);
+          message.should.be.instanceof(messages[name]._constructor);
+        });
+      });
+    });
+
+    describe('#forBlock', function() {
+      constructors.forEach(function(command) {
+        var name = messages.builder.commandsMap[command];
+        it(name, function() {
+          var message = messages[name].forBlock(fakeHash);
+          should.exist(message);
+          message.should.be.instanceof(messages[name]._constructor);
+        });
+      });
+    });
+
+    describe('#forFilteredBlock', function() {
+      constructors.forEach(function(command) {
+        var name = messages.builder.commandsMap[command];
+        it(name, function() {
+          var message = messages[name].forFilteredBlock(fakeHash);
+          should.exist(message);
+          message.should.be.instanceof(messages[name]._constructor);
+        });
+      });
+    });
+
   });
 
   describe('#parseBuffer', function() {

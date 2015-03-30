@@ -9,29 +9,6 @@ var bitcore = require('bitcore');
 describe('Command Messages', function() {
 
   var messages = new Messages();
-  var commandsMap = {
-    version: 'Version',
-    verack: 'VerAck',
-    ping: 'Ping',
-    pong: 'Pong',
-    block: 'Block',
-    tx: 'Transaction',
-    getdata: 'GetData',
-    headers: 'Headers',
-    notfound: 'NotFound',
-    inv: 'Inventory',
-    addr: 'Address',
-    alert: 'Alert',
-    reject: 'Reject',
-    merkleblock: 'MerkleBlock',
-    filterload: 'FilterLoad',
-    filteradd: 'FilterAdd',
-    filterclear: 'FilterClear',
-    getblocks: 'GetBlocks',
-    getheaders: 'GetHeaders',
-    mempool: 'MemPool',
-    getaddr: 'GetAddr'
-  };
 
   describe('Transaction', function() {
 
@@ -63,6 +40,12 @@ describe('Command Messages', function() {
       var payload = message.getPayload();
       payload.length.should.equal(0);
       payload.should.be.instanceof(Buffer);
+    });
+
+    it('should error if filter is not a bloom filter', function() {
+      (function() {
+        var message = messages.FilterLoad({filter: 'not a bloom filter'});
+      }).should.throw('An instance of BloomFilter');
     });
 
   });
@@ -141,18 +124,10 @@ describe('Command Messages', function() {
       payload.length.should.equal(0);
     });
 
-  });
-
-
-  describe('Default Magic Number', function() {
-
-    Object.keys(commandsMap).forEach(function(command) {
-      it(command, function() {
-        var messageConstructor = require('../../../lib/messages/commands/' + command)({});
-        var message = new messageConstructor();
-        var defaultMagic = bitcore.Networks.defaultNetwork.networkMagic.readUInt32LE(0);
-        message.magicNumber.should.equal(defaultMagic);
-      });
+    it('should error if merkleBlock is not a MerkleBlock', function() {
+      (function() {
+        var message = messages.MerkleBlock({merkleBlock: 'not a merkle block'});
+      }).should.throw('An instance of MerkleBlock');
     });
 
   });
