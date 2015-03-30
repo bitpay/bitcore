@@ -256,11 +256,15 @@ describe('Script', function() {
   describe('#isPublicKeyHashOut', function() {
 
     it('should identify this known pubkeyhashout as pubkeyhashout', function() {
-      Script('OP_DUP OP_HASH160 20 0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').isPublicKeyHashOut().should.equal(true);
+      Script('OP_DUP OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').isPublicKeyHashOut().should.equal(true);
     });
 
-    it('should identify this known non-pubkeyhashout as not pubkeyhashout', function() {
-      Script('OP_DUP OP_HASH160 20 0000000000000000000000000000000000000000').isPublicKeyHashOut().should.equal(false);
+    it('should identify this known non-pubkeyhashout as not pubkeyhashout 1', function() {
+      Script('OP_DUP OP_HASH160 20 0x0000000000000000000000000000000000000000').isPublicKeyHashOut().should.equal(false);
+    });
+
+    it('should identify this known non-pubkeyhashout as not pubkeyhashout 2', function() {
+      Script('OP_DUP OP_HASH160 2 0x0000 OP_EQUALVERIFY OP_CHECKSIG').isPublicKeyHashOut().should.equal(false);
     });
 
   });
@@ -348,7 +352,7 @@ describe('Script', function() {
 
   describe('#classify', function() {
     it('should classify public key hash out', function() {
-      Script('OP_DUP OP_HASH160 20 0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').classify().should.equal(Script.types.PUBKEYHASH_OUT);
+      Script('OP_DUP OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').classify().should.equal(Script.types.PUBKEYHASH_OUT);
     });
     it('should classify public key hash in', function() {
       Script('47 0x3044022077a8d81e656c4a1c1721e68ce35fa0b27f13c342998e75854858c12396a15ffa02206378a8c6959283c008c87a14a9c0ada5cf3934ac5ee29f1fef9cac6969783e9801 21 0x03993c230da7dabb956292851ae755f971c50532efc095a16bee07f83ab9d262df').classify().should.equal(Script.types.PUBKEYHASH_IN);
