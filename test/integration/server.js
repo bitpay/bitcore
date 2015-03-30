@@ -1611,6 +1611,7 @@ describe('Copay server', function() {
               should.not.exist(err);
               var last = _.last(notifications);
               last.type.should.equal('TxProposalFinallyAccepted');
+              last.walletId.should.equal(wallet.id);
               last.creatorId.should.equal(wallet.copayers[1].id);
               last.data.txProposalId.should.equal(txp.id);
               done();
@@ -1869,6 +1870,9 @@ describe('Copay server', function() {
         should.not.exist(err);
         var types = _.pluck(notifications, 'type');
         types.should.deep.equal(['NewTxProposal', 'NewTxProposal', 'NewTxProposal', 'NewAddress']);
+        var walletIds = _.uniq(_.pluck(notifications, 'walletId'));
+        walletIds.length.should.equal(1);
+        walletIds[0].should.equal(wallet.id);
         var creators = _.uniq(_.pluck(notifications, 'creatorId'));
         creators.length.should.equal(1);
         creators[0].should.equal(wallet.copayers[0].id);
