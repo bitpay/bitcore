@@ -51,7 +51,9 @@ helpers.newClient = function(app) {
 };
 
 helpers.createAndJoinWallet = function(clients, m, n, cb) {
-  clients[0].createWallet('wallet name', 'creator', m, n, {network: 'testnet'},
+  clients[0].createWallet('wallet name', 'creator', m, n, {
+      network: 'testnet'
+    },
     function(err, secret) {
       should.not.exist(err);
 
@@ -199,7 +201,9 @@ describe('client API', function() {
       s2.load = sinon.stub().yields(null);
       var client = helpers.newClient(app);
       client.storage = s2;
-      client.createWallet('1', '2', 1, 1, {network: 'testnet'},
+      client.createWallet('1', '2', 1, 1, {
+          network: 'testnet'
+        },
         function(err) {
           err.code.should.equal('ERROR');
           done();
@@ -224,7 +228,9 @@ describe('client API', function() {
       s2.load = sinon.stub().yields(null);
       var client = helpers.newClient(app);
       client.storage = s2;
-      client.createWallet('1', '2', 1, 1, {network: 'testnet'},
+      client.createWallet('1', '2', 1, 1, {
+          network: 'testnet'
+        },
         function(err) {
           err.code.should.equal('ERROR');
           done();
@@ -262,7 +268,9 @@ describe('client API', function() {
         wallet.status.should.equal('complete');
         if (++checks == 2) done();
       });
-      clients[0].createWallet('wallet name', 'creator', 2, 2, {network: 'testnet'}, function(err, secret) {
+      clients[0].createWallet('wallet name', 'creator', 2, 2, {
+        network: 'testnet'
+      }, function(err, secret) {
         should.not.exist(err);
         clients[1].joinWallet(secret, 'guest', function(err) {
           should.not.exist(err);
@@ -358,7 +366,9 @@ describe('client API', function() {
       });
     });
     it('should return wallet status even if wallet is not yet complete', function(done) {
-      clients[0].createWallet('wallet name', 'creator', 1, 2, {network: 'testnet'}, function(err, secret) {
+      clients[0].createWallet('wallet name', 'creator', 1, 2, {
+        network: 'testnet'
+      }, function(err, secret) {
         should.not.exist(err);
         should.exist(secret);
 
@@ -1235,7 +1245,9 @@ describe('client API', function() {
       should.not.exist(proxy.credentials.xPrivKey);
 
       var seedSpy = sinon.spy(proxy, 'seedFromRandom');
-      proxy.createWallet('wallet name', 'creator', 1, 1, {network: 'testnet'}, function(err) {
+      proxy.createWallet('wallet name', 'creator', 1, 1, {
+        network: 'testnet'
+      }, function(err) {
         should.not.exist(err);
         seedSpy.called.should.be.false;
         proxy.getStatus(function(err, status) {
@@ -1258,7 +1270,9 @@ describe('client API', function() {
 
       var seedSpy = sinon.spy(proxy, 'seedFromRandom');
       should.not.exist(proxy.credentials.xPrivKey);
-      proxy.createWallet('wallet name', 'creator', 1, 1, {network: 'livenet'}, function(err) {
+      proxy.createWallet('wallet name', 'creator', 1, 1, {
+        network: 'livenet'
+      }, function(err) {
         should.exist(err);
         err.message.should.equal('Existing keys were created for a different network');
         done();
@@ -1278,7 +1292,9 @@ describe('client API', function() {
       async.waterfall([
 
           function(next) {
-            proxy.createWallet('wallet name', 'creator', 1, 1, {network: 'testnet'}, function(err) {
+            proxy.createWallet('wallet name', 'creator', 1, 1, {
+              network: 'testnet'
+            }, function(err) {
               should.not.exist(err);
               proxy.createAddress(function(err, address) {
                 should.not.exist(err);
@@ -1355,7 +1371,9 @@ describe('client API', function() {
         async.waterfall([
 
             function(next) {
-              proxy.createWallet('wallet name', 'creator', 1, 1, {network: 'testnet'}, function(err) {
+              proxy.createWallet('wallet name', 'creator', 1, 1, {
+                network: 'testnet'
+              }, function(err) {
                 should.not.exist(err);
                 proxy.createAddress(function(err, address) {
                   should.not.exist(err);
@@ -1422,7 +1440,7 @@ describe('client API', function() {
       });
     });
   });
-  describe.skip('Legacy Copay Import', function() {
+  describe.only('Legacy Copay Import', function() {
     it.skip('Should get wallets from profile', function(done) {
       var t = ImportData.copayers[0];
       var c = new Client();
@@ -1432,20 +1450,30 @@ describe('client API', function() {
       });
 
     });
-    it('Should import a 1-1 wallet', function(done) {
+    it.only('Should import a 1-1 wallet', function(done) {
+      this.timeout(5000);
       var t = ImportData.copayers[0];
       var c = helpers.newClient(app);
       c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::e2c2d72024979ded'], function(err) {
         should.not.exist(err);
         c.credentials.m.should.equal(1);
         c.credentials.n.should.equal(1);
+
+console.log('[client.js.1463]'); //TODO
         c.createAddress(function(err, x0) {
+
+console.log('[client.js.1466]'); //TODO
           // This is the first 'shared' address, created automatically
           // by old copay
           x0.address.should.equal('2N3w8sJUyAXCQirqNsTayWr7pWADFNdncmf');
+
+console.log('[client.js.1471]'); //TODO
           c.getStatus(function(err, status) {
             should.not.exist(err);
             status.wallet.status.should.equal('complete');
+            c.credentials.walletId.should.equal('e2c2d72024979ded');
+            c.credentials.walletPrivKey.should.equal('f6b5b4d8813f27eaa8ef011f6ce79777fb2f91950ed4084d86f51c013cad65d8');
+            c.credentials.sharedEncryptingKey.should.equal('+Ayk7/8N2zpT4gXekYs+Ew==');
             // TODO? 
             // bal1.totalAmount.should.equal(18979980);
             done();
