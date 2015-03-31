@@ -2,7 +2,7 @@
   "name": "bitcore-wallet-service",
   "description": "A service for Mutisig HD Bitcoin Wallets",
   "author": "BitPay Inc",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "keywords": [
     "bitcoin",
     "copay",
@@ -19,8 +19,8 @@
   },
   "dependencies": {
     "async": "^0.9.0",
-    "bitcore-wallet-utils": "^0.0.7",
     "bitcore-explorers": "^0.9.1",
+    "bitcore-wallet-utils": "^0.0.7",
     "body-parser": "^1.11.0",
     "coveralls": "^2.11.2",
     "express": "^4.10.0",
@@ -36,6 +36,7 @@
     "request": "^2.53.0",
     "sjcl": "^1.0.2",
     "socket.io": "^1.3.5",
+    "socket.io-client": "^1.3.5",
     "uuid": "*"
   },
   "devDependencies": {

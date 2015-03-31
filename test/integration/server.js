@@ -16,6 +16,7 @@ var Utils = require('../../lib/utils');
 var WalletUtils = require('bitcore-wallet-utils');
 var Bitcore = WalletUtils.Bitcore;
 var Storage = require('../../lib/storage');
+var BlockchainMonitor = require('../../lib/blockchainmonitor');
 
 var Wallet = require('../../lib/model/wallet');
 var TxProposal = require('../../lib/model/txproposal');
@@ -150,22 +151,22 @@ helpers.stubUtxos = function(server, wallet, amounts, cb) {
       };
       return obj;
     });
-    blockExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
+    blockchainExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
 
     return cb(utxos);
   });
 };
 
 helpers.stubBroadcast = function(txid) {
-  blockExplorer.broadcast = sinon.stub().callsArgWith(1, null, txid);
+  blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, null, txid);
 };
 
 helpers.stubBroadcastFail = function() {
-  blockExplorer.broadcast = sinon.stub().callsArgWith(1, 'broadcast error');
+  blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, 'broadcast error');
 };
 
 helpers.stubHistory = function(txs) {
-  blockExplorer.getTransactions = sinon.stub().callsArgWith(1, null, txs);
+  blockchainExplorer.getTransactions = sinon.stub().callsArgWith(1, null, txs);
 };
 
 helpers.clientSign = WalletUtils.signTxp;
@@ -198,10 +199,10 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
   });
 };
 
-var db, storage, blockExplorer;
+var db, storage, blockchainExplorer;
 
 
-describe('Copay server', function() {
+describe('Wallet service', function() {
   beforeEach(function() {
     db = levelup(memdown, {
       valueEncoding: 'json'
@@ -209,11 +210,11 @@ describe('Copay server', function() {
     storage = new Storage({
       db: db
     });
-    blockExplorer = sinon.stub();
+    blockchainExplorer = sinon.stub();
 
     WalletService.initialize({
       storage: storage,
-      blockExplorer: blockExplorer,
+      blockchainExplorer: blockchainExplorer,
     });
     helpers.offset = 0;
   });
@@ -608,7 +609,15 @@ describe('Copay server', function() {
         address.address.should.equal('3KxttbKQQPWmpsnXZ3rB4mgJTuLnVR7frg');
         address.isChange.should.be.false;
         address.path.should.equal('m/2147483647/0/0');
-        done();
+        server.getNotifications({}, function(err, notifications) {
+          should.not.exist(err);
+          var notif = _.find(notifications, {
+            type: 'NewAddress'
+          });
+          should.exist(notif);
+          notif.data.address.should.equal('3KxttbKQQPWmpsnXZ3rB4mgJTuLnVR7frg');
+          done();
+        });
       });
     });
 
@@ -691,7 +700,7 @@ describe('Copay server', function() {
       });
     });
     it('should get balance when there are no funds', function(done) {
-      blockExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, []);
+      blockchainExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, []);
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
         server.getBalance({}, function(err, balance) {
@@ -2462,6 +2471,100 @@ describe('Copay server', function() {
           next();
         });
       }, done);
+    });
+  });
+});
+
+
+describe('Blockchain monitor', function() {
+  var addressSubscriber;
+
+  beforeEach(function() {
+    db = levelup(memdown, {
+      valueEncoding: 'json'
+    });
+    storage = new Storage({
+      db: db
+    });
+    blockchainExplorer = sinon.stub();
+
+    WalletService.initialize({
+      storage: storage,
+      blockchainExplorer: blockchainExplorer,
+    });
+    helpers.offset = 0;
+
+    addressSubscriber = sinon.stub();
+    addressSubscriber.subscribe = sinon.stub();
+    sinon.stub(BlockchainMonitor.prototype, '_getAddressSubscriber').onFirstCall().returns(addressSubscriber);
+  });
+
+  afterEach(function() {
+    BlockchainMonitor.prototype._getAddressSubscriber.restore();
+  });
+
+  it('should subscribe wallet', function(done) {
+    var monitor = new BlockchainMonitor();
+    helpers.createAndJoinWallet(2, 2, function(server, wallet) {
+      server.createAddress({}, function(err, address1) {
+        should.not.exist(err);
+        server.createAddress({}, function(err, address2) {
+          should.not.exist(err);
+          monitor.subscribeWallet(server, function(err) {
+            should.not.exist(err);
+            addressSubscriber.subscribe.calledTwice.should.be.true;
+            addressSubscriber.subscribe.calledWith(address1.address).should.be.true;
+            addressSubscriber.subscribe.calledWith(address2.address).should.be.true;
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  it('should be able to subscribe new address', function(done) {
+    var monitor = new BlockchainMonitor();
+    helpers.createAndJoinWallet(2, 2, function(server, wallet) {
+      server.createAddress({}, function(err, address1) {
+        should.not.exist(err);
+        monitor.subscribeWallet(server, function(err) {
+          should.not.exist(err);
+          addressSubscriber.subscribe.calledOnce.should.be.true;
+          addressSubscriber.subscribe.calledWith(address1.address).should.be.true;
+          server.createAddress({}, function(err, address2) {
+            should.not.exist(err);
+            monitor.subscribeAddresses(wallet.id, address2.address);
+            addressSubscriber.subscribe.calledTwice.should.be.true;
+            addressSubscriber.subscribe.calledWith(address2.address).should.be.true;
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  it('should create NewIncomingTx notification when a new tx arrives on registered address', function(done) {
+    var monitor = new BlockchainMonitor();
+    helpers.createAndJoinWallet(2, 2, function(server, wallet) {
+      server.createAddress({}, function(err, address1) {
+        should.not.exist(err);
+        monitor.subscribeWallet(server, function(err) {
+          should.not.exist(err);
+          addressSubscriber.subscribe.calledOnce.should.be.true;
+          addressSubscriber.subscribe.getCall(0).args[0].should.equal(address1.address);
+          var handler = addressSubscriber.subscribe.getCall(0).args[1];
+          _.isFunction(handler).should.be.true;
+
+          monitor.on('notification', function(notification) {
+            notification.type.should.equal('NewIncomingTx');
+            notification.data.address.should.equal(address1.address);
+            notification.data.txid.should.equal('txid');
+            done();
+          });
+
+          handler('txid');
+        });
+      });
     });
   });
 });
