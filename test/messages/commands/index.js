@@ -18,6 +18,13 @@ describe('Command Messages', function() {
       message.transaction.should.be.instanceof(bitcore.Transaction);
     });
 
+    it('version should remain the same', function() {
+      var tx = new bitcore.Transaction();
+      var version = Number(tx.version);
+      var message = messages.Transaction(tx);
+      message.transaction.version.should.equal(version);
+    });
+
   });
 
   describe('Block', function() {
