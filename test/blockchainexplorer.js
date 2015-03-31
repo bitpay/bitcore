@@ -16,6 +16,7 @@ describe('Blockchain explorer', function() {
       should.exist(exp);
       exp.should.respondTo('broadcast');
       exp.should.respondTo('getTransactions');
+      exp.should.respondTo('getActivity');
       exp.should.respondTo('getUnspentUtxos');
       exp.should.respondTo('initSocket');
       var exp = BlockchainExplorer({

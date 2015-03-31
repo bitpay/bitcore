@@ -166,7 +166,7 @@ helpers.stubBroadcastFail = function() {
 };
 
 helpers.stubHistory = function(txs) {
-  blockchainExplorer.getTransactions = sinon.stub().callsArgWith(1, null, txs);
+  blockchainExplorer.getTransactions = sinon.stub().callsArgWith(3, null, txs);
 };
 
 helpers.clientSign = WalletUtils.signTxp;
