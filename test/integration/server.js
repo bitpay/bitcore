@@ -16,6 +16,7 @@ var Utils = require('../../lib/utils');
 var WalletUtils = require('bitcore-wallet-utils');
 var Bitcore = WalletUtils.Bitcore;
 var Storage = require('../../lib/storage');
+var BlockchainMonitor = require('../../lib/blockchainmonitor');
 
 var Wallet = require('../../lib/model/wallet');
 var TxProposal = require('../../lib/model/txproposal');
@@ -201,7 +202,101 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
 var db, storage, blockchainExplorer;
 
 
-describe('Copay server', function() {
+describe('Blockchain monitor', function() {
+  var bcSocket, monitor;
+
+  beforeEach(function() {
+    db = levelup(memdown, {
+      valueEncoding: 'json'
+    });
+    storage = new Storage({
+      db: db
+    });
+    blockchainExplorer = sinon.stub();
+
+    WalletService.initialize({
+      storage: storage,
+      blockchainExplorer: blockchainExplorer,
+    });
+    helpers.offset = 0;
+
+    bcSocket = sinon.stub();
+    bcSocket.emit = sinon.stub();
+    bcSocket.on = sinon.stub();
+    sinon.stub(BlockchainMonitor.prototype, '_getBlockchainExplorerSocket').onFirstCall().returns(bcSocket);
+    monitor = new BlockchainMonitor();
+  });
+
+  afterEach(function() {
+    BlockchainMonitor.prototype._getBlockchainExplorerSocket.restore();
+  });
+
+  it('should subscribe wallet', function(done) {
+    helpers.createAndJoinWallet(2, 2, function(server, wallet) {
+      server.createAddress({}, function(err, address1) {
+        should.not.exist(err);
+        server.createAddress({}, function(err, address2) {
+          should.not.exist(err);
+          monitor.subscribeWallet(server, function(err) {
+            should.not.exist(err);
+            bcSocket.emit.calledTwice.should.be.true;
+            bcSocket.emit.calledWith('subscribe', address1.address).should.be.true;
+            bcSocket.emit.calledWith('subscribe', address2.address).should.be.true;
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  it('should be able to subscribe new address', function(done) {
+    helpers.createAndJoinWallet(2, 2, function(server, wallet) {
+      server.createAddress({}, function(err, address1) {
+        should.not.exist(err);
+        monitor.subscribeWallet(server, function(err) {
+          should.not.exist(err);
+          bcSocket.emit.calledOnce.should.be.true;
+          bcSocket.emit.calledWith('subscribe', address1.address).should.be.true;
+          server.createAddress({}, function(err, address2) {
+            should.not.exist(err);
+            monitor.subscribeAddresses(wallet.id, address2.address);
+            bcSocket.emit.calledTwice.should.be.true;
+            bcSocket.emit.calledWith('subscribe', address2.address).should.be.true;
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  it('should create NewIncomingTx notification when a new tx arrives on registered address', function(done) {
+    helpers.createAndJoinWallet(2, 2, function(server, wallet) {
+      server.createAddress({}, function(err, address1) {
+        should.not.exist(err);
+        monitor.subscribeWallet(server, function(err) {
+          should.not.exist(err);
+          bcSocket.on.calledOnce.should.be.true;
+          bcSocket.on.getCall(0).args[0].should.equal(address1.address);
+          var handler = bcSocket.on.getCall(0).args[1];
+          _.isFunction(handler).should.be.true;
+
+          var emitSpy = sinon.spy(monitor, 'emit');
+          handler('txid');
+          emitSpy.calledOnce.should.be.true;
+          emitSpy.getCall(0).args[0].should.equal('notification');
+          var notification = emitSpy.getCall(0).args[1];
+          notification.type.should.equal('NewIncomingTx');
+          notification.data.address.should.equal(address1.address);
+          notification.data.txid.should.equal('txid');
+          done();
+        });
+      });
+    });
+  });
+});
+
+
+describe('Wallet service', function() {
   beforeEach(function() {
     db = levelup(memdown, {
       valueEncoding: 'json'
