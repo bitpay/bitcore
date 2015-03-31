@@ -71,7 +71,8 @@ describe('Address', function() {
     '15vkcKf7gB23wLAnZLmbVuMiiVDc1Nm4a2',
     '1A6ut1tWnUq1SEQLMr4ttDh24wcbJ5o9TT',
     '1BpbpfLdY7oBS9gK7aDXgvMgr1DPvNhEB2',
-    '1Jz2yCRd5ST1p2gUqFB5wsSQfdm3jaFfg7'
+    '1Jz2yCRd5ST1p2gUqFB5wsSQfdm3jaFfg7',
+    '    1Jz2yCRd5ST1p2gUqFB5wsSQfdm3jaFfg7   \t\n'
   ];
 
   // livenet p2sh
@@ -79,7 +80,8 @@ describe('Address', function() {
     '342ftSRCvFHfCeFFBuz4xwbeqnDw6BGUey',
     '33vt8ViH5jsr115AGkW6cEmEz9MpvJSwDk',
     '37Sp6Rv3y4kVd1nQ1JV5pfqXccHNyZm1x3',
-    '3QjYXhTkvuj8qPaXHTTWb5wjXhdsLAAWVy'
+    '3QjYXhTkvuj8qPaXHTTWb5wjXhdsLAAWVy',
+    '\t \n3QjYXhTkvuj8qPaXHTTWb5wjXhdsLAAWVy \r'
   ];
 
   // testnet p2sh
@@ -209,6 +211,13 @@ describe('Address', function() {
         var error = Address.getValidationError(PKHTestnet[i], 'testnet');
         should.not.exist(error);
       }
+    });
+
+    it('addresses with whitespace are validated correctly', function() {
+      var ws = '  \r \t    \n 1A6ut1tWnUq1SEQLMr4ttDh24wcbJ5o9TT \t \n            \r';
+      var error = Address.getValidationError(ws);
+      should.not.exist(error);
+      Address.fromString(ws).toString().should.equal('1A6ut1tWnUq1SEQLMr4ttDh24wcbJ5o9TT');
     });
   });
 
