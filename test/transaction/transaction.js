@@ -498,17 +498,19 @@ describe('Transaction', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith1BTC);
       transaction.inputs.length.should.equal(1);
+      transaction.inputAmount.should.equal(simpleUtxoWith1BTC.satoshis);
       transaction.removeInput(0);
-      transaction.inputAmount.should.equal(0);
       transaction.inputs.length.should.equal(0);
+      transaction.inputAmount.should.equal(0);
     });
     it('can remove an input by transaction id', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith1BTC);
       transaction.inputs.length.should.equal(1);
+      transaction.inputAmount.should.equal(simpleUtxoWith1BTC.satoshis);
       transaction.removeInput(simpleUtxoWith1BTC.txId, simpleUtxoWith1BTC.outputIndex);
-      transaction.inputAmount.should.equal(0);
       transaction.inputs.length.should.equal(0);
+      transaction.inputAmount.should.equal(0);
     });
     it('fails if the index provided is invalid', function() {
       var transaction = new Transaction()
@@ -522,8 +524,10 @@ describe('Transaction', function() {
         .to(toAddress, 40000000)
         .to(toAddress, 40000000);
       transaction.outputs.length.should.equal(2);
+      transaction.outputAmount.should.equal(80000000);
       transaction.removeOutput(0);
       transaction.outputs.length.should.equal(1);
+      transaction.outputAmount.should.equal(40000000);
     });
   });
 
