@@ -1,7 +1,7 @@
 {
   "name": "bitcore-payment-protocol",
   "main": "./bitcore-payment-protocol.min.js",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "homepage": "https://github.com/bitpay/bitcore-payment-protocol",
   "authors": [
     "BitPay, Inc."
