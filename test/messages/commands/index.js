@@ -10,6 +10,19 @@ describe('Command Messages', function() {
 
   var messages = new Messages();
 
+  describe('Alert', function() {
+
+    it('should accept a transaction instance as an argument', function() {
+      var message = messages.Alert({
+        payload: new Buffer('abcdef', 'hex'),
+        signature: new Buffer('123456', 'hex')
+      });
+      message.payload.should.deep.equal(new Buffer('abcdef', 'hex'));
+      message.signature.should.deep.equal(new Buffer('123456', 'hex'));
+    });
+
+  });
+
   describe('Transaction', function() {
 
     it('should accept a transaction instance as an argument', function() {
@@ -121,6 +134,24 @@ describe('Command Messages', function() {
       }).should.throw('Invalid hash length');
     });
 
+  });
+
+  describe('Headers', function() {
+    it('should error if arg is not an array', function() {
+      (function() {
+        var message = messages.Headers({});
+      }).should.throw('First argument is expected to be an array');
+    });
+    it('should error if arg is an empty array', function() {
+      (function() {
+        var message = messages.Headers([]);
+      }).should.throw('First argument is expected to be an array');
+    });
+    it('should error if arg is not an array of BlockHeaders', function() {
+      (function() {
+        var message = messages.Headers([Number(0)]);
+      }).should.throw('First argument is expected to be an array');
+    });
   });
 
   describe('MerkleBlock', function() {
