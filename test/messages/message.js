@@ -8,7 +8,7 @@ describe('Message', function() {
 
   describe('@constructor', function() {
     it('construct with magic number and command', function() {
-      var message = new Message(null, {magicNumber: 0xd9b4bef9, command: 'command'});
+      var message = new Message({magicNumber: 0xd9b4bef9, command: 'command'});
       message.command.should.equal('command');
       message.magicNumber.should.equal(0xd9b4bef9);
     });
@@ -16,7 +16,7 @@ describe('Message', function() {
 
   describe('#toBuffer', function() {
     it('serialize to a buffer', function() {
-      var message = new Message(null, {magicNumber: 0xd9b4bef9, command: 'command'});
+      var message = new Message({magicNumber: 0xd9b4bef9, command: 'command'});
       message.getPayload = function() {
         return new Buffer(0);
       };
