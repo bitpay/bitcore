@@ -169,6 +169,12 @@ helpers.stubHistory = function(txs) {
   blockchainExplorer.getTransactions = sinon.stub().callsArgWith(3, null, txs);
 };
 
+helpers.stubAddressActivity = function(activeAddresses) {
+  blockchainExplorer.getAddressActivity = function(addresses, cb) {
+    return cb(null, _.intersection(activeAddresses, addresses).length > 0);
+  };
+};
+
 helpers.clientSign = WalletUtils.signTxp;
 
 helpers.createProposalOpts = function(toAddress, amount, message, signingKey) {
@@ -2471,6 +2477,67 @@ describe('Wallet service', function() {
           next();
         });
       }, done);
+    });
+  });
+
+  describe('#scan', function() {
+    WalletService.scanConfig.SCAN_WINDOW = 2;
+
+    it('should scan main addresses', function(done) {
+      helpers.stubAddressActivity(['3K2VWMXheGZ4qG35DyGjA2dLeKfaSr534A']);
+      helpers.createAndJoinWallet(1, 2, function(server, wallet) {
+        var expectedPaths = [
+          'm/2147483647/0/0',
+          'm/2147483647/0/1',
+          'm/2147483647/0/2',
+          'm/2147483647/0/3',
+          'm/2147483647/1/0',
+          'm/2147483647/1/1',
+        ];
+        server.scan({}, function(err) {
+          should.not.exist(err);
+          server.storage.fetchAddresses(wallet.id, function(err, addresses) {
+            should.exist(addresses);
+            addresses.length.should.equal(expectedPaths.length);
+            var paths = _.pluck(addresses, 'path');
+            _.difference(paths, expectedPaths).length.should.equal(0);
+            done();
+          })
+        });
+      });
+    });
+    it('should scan main addresses & copayer addresses', function(done) {
+      helpers.stubAddressActivity(['3K2VWMXheGZ4qG35DyGjA2dLeKfaSr534A']);
+      helpers.createAndJoinWallet(1, 2, function(server, wallet) {
+        var expectedPaths = [
+          'm/2147483647/0/0',
+          'm/2147483647/0/1',
+          'm/2147483647/0/2',
+          'm/2147483647/0/3',
+          'm/2147483647/1/0',
+          'm/2147483647/1/1',
+          'm/0/0/0',
+          'm/0/0/1',
+          'm/0/1/0',
+          'm/0/1/1',
+          'm/1/0/0',
+          'm/1/0/1',
+          'm/1/1/0',
+          'm/1/1/1',
+        ];
+        server.scan({
+          includeCopayerBranches: true
+        }, function(err) {
+          should.not.exist(err);
+          server.storage.fetchAddresses(wallet.id, function(err, addresses) {
+            should.exist(addresses);
+            addresses.length.should.equal(expectedPaths.length);
+            var paths = _.pluck(addresses, 'path');
+            _.difference(paths, expectedPaths).length.should.equal(0);
+            done();
+          })
+        });
+      });
     });
   });
 });
