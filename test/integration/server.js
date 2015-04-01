@@ -166,7 +166,13 @@ helpers.stubBroadcastFail = function() {
 };
 
 helpers.stubHistory = function(txs) {
-  blockchainExplorer.getTransactions = sinon.stub().callsArgWith(1, null, txs);
+  blockchainExplorer.getTransactions = sinon.stub().callsArgWith(3, null, txs);
+};
+
+helpers.stubAddressActivity = function(activeAddresses) {
+  blockchainExplorer.getAddressActivity = function(addresses, cb) {
+    return cb(null, _.intersection(activeAddresses, addresses).length > 0);
+  };
 };
 
 helpers.clientSign = WalletUtils.signTxp;
@@ -2472,6 +2478,123 @@ describe('Wallet service', function() {
         });
       }, done);
     });
+  });
+
+  describe('#scan', function() {
+    var scanConfigOld = WalletService.scanConfig;
+    beforeEach(function() {
+      this.timeout(5000);
+      WalletService.scanConfig.SCAN_WINDOW = 2;
+      WalletService.scanConfig.DERIVATION_DELAY = 0;
+    });
+    afterEach(function() {
+      WalletService.scanConfig = scanConfigOld;
+    });
+
+    it('should scan main addresses', function(done) {
+      helpers.stubAddressActivity(['3K2VWMXheGZ4qG35DyGjA2dLeKfaSr534A']);
+      helpers.createAndJoinWallet(1, 2, function(server, wallet) {
+        var expectedPaths = [
+          'm/2147483647/0/0',
+          'm/2147483647/0/1',
+          'm/2147483647/0/2',
+          'm/2147483647/0/3',
+          'm/2147483647/1/0',
+          'm/2147483647/1/1',
+        ];
+        server.scan({}, function(err) {
+          should.not.exist(err);
+          server.storage.fetchAddresses(wallet.id, function(err, addresses) {
+            should.exist(addresses);
+            addresses.length.should.equal(expectedPaths.length);
+            var paths = _.pluck(addresses, 'path');
+            _.difference(paths, expectedPaths).length.should.equal(0);
+            server.createAddress({}, function(err, address) {
+              should.not.exist(err);
+              address.path.should.equal('m/2147483647/0/4');
+              done();
+            });
+          })
+        });
+      });
+    });
+    it('should scan main addresses & copayer addresses', function(done) {
+      helpers.stubAddressActivity(['3K2VWMXheGZ4qG35DyGjA2dLeKfaSr534A']);
+      helpers.createAndJoinWallet(1, 2, function(server, wallet) {
+        var expectedPaths = [
+          'm/2147483647/0/0',
+          'm/2147483647/0/1',
+          'm/2147483647/0/2',
+          'm/2147483647/0/3',
+          'm/2147483647/1/0',
+          'm/2147483647/1/1',
+          'm/0/0/0',
+          'm/0/0/1',
+          'm/0/1/0',
+          'm/0/1/1',
+          'm/1/0/0',
+          'm/1/0/1',
+          'm/1/1/0',
+          'm/1/1/1',
+        ];
+        server.scan({
+          includeCopayerBranches: true
+        }, function(err) {
+          should.not.exist(err);
+          server.storage.fetchAddresses(wallet.id, function(err, addresses) {
+            should.exist(addresses);
+            addresses.length.should.equal(expectedPaths.length);
+            var paths = _.pluck(addresses, 'path');
+            _.difference(paths, expectedPaths).length.should.equal(0);
+            done();
+          })
+        });
+      });
+    });
+    it('should restore wallet balance', function(done) {
+      async.waterfall([
+
+        function(next) {
+          helpers.createAndJoinWallet(1, 2, function(server, wallet) {
+            helpers.stubUtxos(server, wallet, [1, 2, 3], function(utxos) {
+              should.exist(utxos);
+              helpers.stubAddressActivity(_.pluck(utxos, 'address'));
+              server.getBalance({}, function(err, balance) {
+                balance.totalAmount.should.equal(helpers.toSatoshi(6));
+                next(null, server, wallet);
+              });
+            });
+          });
+        },
+        function(server, wallet, next) {
+          server.removeWallet({}, function(err) {
+            next(err);
+          });
+        },
+        function(next) {
+          // NOTE: this works because it creates the exact same wallet!
+          helpers.createAndJoinWallet(1, 2, function(server, wallet) {
+            server.getBalance({}, function(err, balance) {
+              balance.totalAmount.should.equal(0);
+              next(null, server, wallet);
+            });
+          });
+        },
+        function(server, wallet, next) {
+          server.scan({}, function(err) {
+            should.not.exist(err);
+            server.getBalance(wallet.id, function(err, balance) {
+              balance.totalAmount.should.equal(helpers.toSatoshi(6));
+              next();
+            })
+          });
+        },
+      ], function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+    it.skip('should abort scan if there is an error checking address activity', function(done) {});
   });
 });
 
