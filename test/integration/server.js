@@ -2481,7 +2481,13 @@ describe('Wallet service', function() {
   });
 
   describe('#scan', function() {
-    WalletService.scanConfig.SCAN_WINDOW = 2;
+    var scanWindowOld = WalletService.scanConfig.SCAN_WINDOW;
+    beforeEach(function() {
+      WalletService.scanConfig.SCAN_WINDOW = 2;
+    });
+    afterEach(function() {
+      WalletService.scanConfig.SCAN_WINDOW = scanWindowOld;
+    });
 
     it('should scan main addresses', function(done) {
       helpers.stubAddressActivity(['3K2VWMXheGZ4qG35DyGjA2dLeKfaSr534A']);
@@ -2537,6 +2543,49 @@ describe('Wallet service', function() {
             done();
           })
         });
+      });
+    });
+    it('should restore wallet balance', function(done) {
+      async.waterfall([
+
+        function(next) {
+          helpers.createAndJoinWallet(1, 2, function(server, wallet) {
+            helpers.stubUtxos(server, wallet, [1, 2, 3], function(utxos) {
+              should.exist(utxos);
+              helpers.stubAddressActivity(_.pluck(utxos, 'address'));
+              server.getBalance({}, function(err, balance) {
+                balance.totalAmount.should.equal(helpers.toSatoshi(6));
+                next(null, server, wallet);
+              });
+            });
+          });
+        },
+        function(server, wallet, next) {
+          server.removeWallet({}, function(err) {
+            next(err);
+          });
+        },
+        function(next) {
+          // NOTE: this works because it creates the exact same wallet!
+          helpers.createAndJoinWallet(1, 2, function(server, wallet) {
+            server.getBalance({}, function(err, balance) {
+              balance.totalAmount.should.equal(0);
+              next(null, server, wallet);
+            });
+          });
+        },
+        function(server, wallet, next) {
+          server.scan({}, function(err) {
+            should.not.exist(err);
+            server.getBalance(wallet.id, function(err, balance) {
+              balance.totalAmount.should.equal(helpers.toSatoshi(6));
+              next();
+            })
+          });
+        },
+      ], function(err) {
+        should.not.exist(err);
+        done();
       });
     });
   });
