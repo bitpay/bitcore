@@ -10,6 +10,25 @@ describe('Command Messages', function() {
 
   var messages = new Messages();
 
+  describe('Addr', function() {
+
+    it('should error if arg is not an array of addrs', function() {
+      (function() {
+        var message = messages.Addresses(['not an addr']);
+      }).should.throw('First argument is expected to be an array of addrs');
+    });
+
+    it('should instantiate with an array of addrs', function() {
+      var message = messages.Addresses([{
+        ip: {
+          v4: 'localhost'
+        },
+        services: 1,
+        port: 1234
+      }]);
+    });
+  });
+
   describe('Alert', function() {
 
     it('should accept a transaction instance as an argument', function() {
