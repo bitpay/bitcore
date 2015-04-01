@@ -80,6 +80,28 @@ describe('Command Messages', function() {
 
   });
 
+  describe('Ping', function() {
+
+    it('should error if nonce is not a buffer', function() {
+      (function() {
+        var message = messages.Ping('not a buffer');
+      }).should.throw('First argument is expected to be an 8 byte buffer');
+    });
+
+    it('should error if nonce buffer has invalid length', function() {
+      (function() {
+        var message = messages.Ping(new Buffer(Array(9)));
+      }).should.throw('First argument is expected to be an 8 byte buffer');
+    });
+
+    it('should set a nonce if not included', function() {
+      var message = messages.Ping();
+      should.exist(message.nonce);
+      message.nonce.length.should.equal(8);
+    });
+
+  });
+
   describe('FilterLoad', function() {
 
     it('should return a null payload', function() {
