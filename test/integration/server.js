@@ -2589,6 +2589,7 @@ describe('Wallet service', function() {
         done();
       });
     });
+    it.skip('should abort scan if there is an error checking address activity', function(done) {});
   });
 });
 
