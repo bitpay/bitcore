@@ -102,6 +102,16 @@ describe('Command Messages', function() {
 
   });
 
+  describe('FilterAdd', function() {
+
+    it('should error if arg is not a buffer', function() {
+      (function() {
+        var message = messages.FilterAdd('not a buffer');
+      }).should.throw('First argument is expected to be a Buffer or undefined');
+    });
+
+  });
+
   describe('FilterLoad', function() {
 
     it('should return a null payload', function() {
