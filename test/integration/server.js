@@ -2508,7 +2508,11 @@ describe('Wallet service', function() {
             addresses.length.should.equal(expectedPaths.length);
             var paths = _.pluck(addresses, 'path');
             _.difference(paths, expectedPaths).length.should.equal(0);
-            done();
+            server.createAddress({}, function(err, address) {
+              should.not.exist(err);
+              address.path.should.equal('m/2147483647/0/4');
+              done();
+            });
           })
         });
       });
