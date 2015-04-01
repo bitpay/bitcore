@@ -70,6 +70,22 @@ describe('Command Messages', function() {
 
   });
 
+  describe('Inventory', function() {
+    it('should error if arg is not an array', function() {
+      (function() {
+        var message = messages.Inventory({});
+      }).should.throw('Argument is expected to be an array of inventory objects');
+    });
+    it('should not error if arg is an empty array', function() {
+      var message = messages.Inventory([]);
+    });
+    it('should error if arg is not an array of inventory objects', function() {
+      (function() {
+        var message = messages.Inventory([Number(0)]);
+      }).should.throw('Argument is expected to be an array of inventory objects');
+    });
+  });
+
   describe('Transaction', function() {
 
     it('should be able to pass a custom Transaction', function(done) {
