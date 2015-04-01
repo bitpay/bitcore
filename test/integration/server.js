@@ -2483,6 +2483,7 @@ describe('Wallet service', function() {
   describe('#scan', function() {
     var scanConfigOld = WalletService.scanConfig;
     beforeEach(function() {
+      this.timeout(5000);
       WalletService.scanConfig.SCAN_WINDOW = 2;
       WalletService.scanConfig.DERIVATION_DELAY = 0;
     });
