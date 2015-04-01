@@ -10,12 +10,56 @@ describe('Command Messages', function() {
 
   var messages = new Messages();
 
+  describe('Addr', function() {
+
+    it('should error if arg is not an array of addrs', function() {
+      (function() {
+        var message = messages.Addresses(['not an addr']);
+      }).should.throw('First argument is expected to be an array of addrs');
+    });
+
+    it('should instantiate with an array of addrs', function() {
+      var message = messages.Addresses([{
+        ip: {
+          v4: 'localhost'
+        },
+        services: 1,
+        port: 1234
+      }]);
+    });
+  });
+
+  describe('Alert', function() {
+
+    it('should accept a transaction instance as an argument', function() {
+      var message = messages.Alert({
+        payload: new Buffer('abcdef', 'hex'),
+        signature: new Buffer('123456', 'hex')
+      });
+      message.payload.should.deep.equal(new Buffer('abcdef', 'hex'));
+      message.signature.should.deep.equal(new Buffer('123456', 'hex'));
+    });
+
+  });
+
   describe('Transaction', function() {
 
     it('should accept a transaction instance as an argument', function() {
       var tx = new bitcore.Transaction();
       var message = messages.Transaction(tx);
       message.transaction.should.be.instanceof(bitcore.Transaction);
+    });
+
+    it('should create a transaction instance', function() {
+      var message = messages.Transaction();
+      message.transaction.should.be.instanceof(bitcore.Transaction);
+    });
+
+    it('version should remain the same', function() {
+      var tx = new bitcore.Transaction();
+      var version = Number(tx.version);
+      var message = messages.Transaction(tx);
+      message.transaction.version.should.equal(version);
     });
 
   });
@@ -29,6 +73,60 @@ describe('Command Messages', function() {
       });
       var message = messages.Block(block);
       message.block.should.be.instanceof(bitcore.Block);
+    });
+
+  });
+
+  describe('Pong', function() {
+
+    it('should error if nonce is not a buffer', function() {
+      (function() {
+        var message = messages.Pong('not a buffer');
+      }).should.throw('First argument is expected to be an 8 byte buffer');
+    });
+
+    it('should error if nonce buffer has invalid length', function() {
+      (function() {
+        var message = messages.Pong(new Buffer(Array(9)));
+      }).should.throw('First argument is expected to be an 8 byte buffer');
+    });
+
+    it('should set a nonce if not included', function() {
+      var message = messages.Pong();
+      should.exist(message.nonce);
+      message.nonce.length.should.equal(8);
+    });
+
+  });
+
+  describe('Ping', function() {
+
+    it('should error if nonce is not a buffer', function() {
+      (function() {
+        var message = messages.Ping('not a buffer');
+      }).should.throw('First argument is expected to be an 8 byte buffer');
+    });
+
+    it('should error if nonce buffer has invalid length', function() {
+      (function() {
+        var message = messages.Ping(new Buffer(Array(9)));
+      }).should.throw('First argument is expected to be an 8 byte buffer');
+    });
+
+    it('should set a nonce if not included', function() {
+      var message = messages.Ping();
+      should.exist(message.nonce);
+      message.nonce.length.should.equal(8);
+    });
+
+  });
+
+  describe('FilterAdd', function() {
+
+    it('should error if arg is not a buffer', function() {
+      (function() {
+        var message = messages.FilterAdd('not a buffer');
+      }).should.throw('First argument is expected to be a Buffer or undefined');
     });
 
   });
@@ -48,6 +146,22 @@ describe('Command Messages', function() {
       }).should.throw('An instance of BloomFilter');
     });
 
+  });
+
+  describe('Inventory', function() {
+    it('should error if arg is not an array', function() {
+      (function() {
+        var message = messages.Inventory({});
+      }).should.throw('Argument is expected to be an array of inventory objects');
+    });
+    it('should not error if arg is an empty array', function() {
+      var message = messages.Inventory([]);
+    });
+    it('should error if arg is not an array of inventory objects', function() {
+      (function() {
+        var message = messages.Inventory([Number(0)]);
+      }).should.throw('Argument is expected to be an array of inventory objects');
+    });
   });
 
   describe('Transaction', function() {
@@ -114,6 +228,24 @@ describe('Command Messages', function() {
       }).should.throw('Invalid hash length');
     });
 
+  });
+
+  describe('Headers', function() {
+    it('should error if arg is not an array', function() {
+      (function() {
+        var message = messages.Headers({});
+      }).should.throw('First argument is expected to be an array');
+    });
+    it('should error if arg is an empty array', function() {
+      (function() {
+        var message = messages.Headers([]);
+      }).should.throw('First argument is expected to be an array');
+    });
+    it('should error if arg is not an array of BlockHeaders', function() {
+      (function() {
+        var message = messages.Headers([Number(0)]);
+      }).should.throw('First argument is expected to be an array');
+    });
   });
 
   describe('MerkleBlock', function() {
