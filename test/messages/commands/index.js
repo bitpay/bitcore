@@ -31,6 +31,11 @@ describe('Command Messages', function() {
       message.transaction.should.be.instanceof(bitcore.Transaction);
     });
 
+    it('should create a transaction instance', function() {
+      var message = messages.Transaction();
+      message.transaction.should.be.instanceof(bitcore.Transaction);
+    });
+
     it('version should remain the same', function() {
       var tx = new bitcore.Transaction();
       var version = Number(tx.version);
