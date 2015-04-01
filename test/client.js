@@ -156,7 +156,7 @@ describe('client API', function() {
     app = ExpressApp.start({
       WalletService: {
         storage: storage,
-        blockExplorer: blockExplorerMock,
+        blockchainExplorer: blockExplorerMock,
       },
       disableLogs: true,
     });
@@ -193,7 +193,7 @@ describe('client API', function() {
       app = ExpressApp.start({
         WalletService: {
           storage: s,
-          blockExplorer: blockExplorerMock,
+          blockchainExplorer: blockExplorerMock,
         },
         disableLogs: true,
       });
@@ -220,7 +220,7 @@ describe('client API', function() {
       app = ExpressApp.start({
         WalletService: {
           storage: s,
-          blockExplorer: blockExplorerMock,
+          blockchainExplorer: blockExplorerMock,
         },
         disableLogs: true,
       });
@@ -1440,17 +1440,10 @@ describe('client API', function() {
       });
     });
   });
-  describe.only('Legacy Copay Import', function() {
+  describe('Legacy Copay Import', function() {
     it.skip('Should get wallets from profile', function(done) {
-      var t = ImportData.copayers[0];
-      var c = new Client();
-      c.getWalletIds(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
-        should.not.exist(err);
-        done();
-      });
-
     });
-    it.only('Should import a 1-1 wallet', function(done) {
+    it('Should import a 1-1 wallet', function(done) {
       this.timeout(5000);
       var t = ImportData.copayers[0];
       var c = helpers.newClient(app);
@@ -1459,21 +1452,16 @@ describe('client API', function() {
         c.credentials.m.should.equal(1);
         c.credentials.n.should.equal(1);
 
-console.log('[client.js.1463]'); //TODO
         c.createAddress(function(err, x0) {
-
-console.log('[client.js.1466]'); //TODO
           // This is the first 'shared' address, created automatically
           // by old copay
           x0.address.should.equal('2N3w8sJUyAXCQirqNsTayWr7pWADFNdncmf');
-
-console.log('[client.js.1471]'); //TODO
           c.getStatus(function(err, status) {
             should.not.exist(err);
             status.wallet.status.should.equal('complete');
             c.credentials.walletId.should.equal('e2c2d72024979ded');
-            c.credentials.walletPrivKey.should.equal('f6b5b4d8813f27eaa8ef011f6ce79777fb2f91950ed4084d86f51c013cad65d8');
-            c.credentials.sharedEncryptingKey.should.equal('+Ayk7/8N2zpT4gXekYs+Ew==');
+            c.credentials.walletPrivKey.should.equal('c3463113c6e1d0fc2f2bd520f7d9d62f8e1fdcdd96005254571c64902aeb1648');
+            c.credentials.sharedEncryptingKey.should.equal('x3D/7QHa4PkKMbSXEvXwaw==');
             // TODO? 
             // bal1.totalAmount.should.equal(18979980);
             done();
@@ -1481,15 +1469,49 @@ console.log('[client.js.1471]'); //TODO
         });
       });
     });
-    it('Should import a 2-2 wallet', function(done) {
+    it('Should fail to import the same wallet twice', function(done) {
       var t = ImportData.copayers[0];
       var c = helpers.newClient(app);
       c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
         should.not.exist(err);
         c.getStatus(function(err, status) {
           should.not.exist(err);
-          status.wallet.status.should.equal('pending');
-          done();
+          status.wallet.status.should.equal('complete');
+          c.credentials.walletId.should.equal('4d32f0737a05f072');
+          c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
+            // this throws invalid signature because
+            // the it trys correctly to replace req pub key, but auth fails
+            err.message.should.contain('Invalid signature');
+            done();
+          });
+        });
+      });
+    });
+    it('Should import and complete 2-2 wallet from 2 copayers', function(done) {
+      var t = ImportData.copayers[0];
+      var c = helpers.newClient(app);
+      c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
+        should.not.exist(err);
+        c.getStatus(function(err, status) {
+          should.not.exist(err);
+          status.wallet.status.should.equal('complete');
+          c.credentials.sharedEncryptingKey.should.equal('Ou2j4kq3z1w4yTr9YybVxg==');
+
+          var counts = _.countBy(status.wallet.publicKeyRing, 'isTemporaryRequestKey');
+          counts[false].should.equal(1);
+          counts[true].should.equal(1);
+          status.wallet.publicKeyRing[1].isTemporaryRequestKey.should.equal(true);
+          var t2 = ImportData.copayers[1];
+          var c2 = helpers.newClient(app);
+          c2.createWalletFromOldCopay(t2.username, t2.password, t2.ls['wallet::4d32f0737a05f072'], function(err) {
+            should.not.exist(err);
+            c2.credentials.sharedEncryptingKey.should.equal('Ou2j4kq3z1w4yTr9YybVxg==');
+            c2.getStatus(function(err, status) {
+              should.not.exist(err);
+              status.wallet.status.should.equal('complete');
+              done();
+            });
+          });
         });
       });
     });

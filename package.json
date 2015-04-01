@@ -2,7 +2,7 @@
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "keywords": [
     "bitcoin",
     "copay",
@@ -22,7 +22,7 @@
   "dependencies": {
     "async": "^0.9.0",
     "bitcore-payment-protocol": "^0.10.1",
-    "bitcore-wallet-utils": "^0.0.7",
+    "bitcore-wallet-utils": "^0.0.8",
     "browser-request": "^0.3.3",
     "browserify": "^9.0.3",
     "coveralls": "^2.11.2",
