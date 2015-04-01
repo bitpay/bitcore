@@ -1441,10 +1441,19 @@ describe('client API', function() {
     });
   });
   describe('Legacy Copay Import', function() {
-    it.skip('Should get wallets from profile', function(done) {
+    it('Should get wallets from profile', function(done) {
+      var t = ImportData.copayers[0];
+      var c = helpers.newClient(app);
+      var ids = c.getWalletIdsFromOldCopay(t.username, t.password, t.ls['profile::4872dd8b2ceaa54f922e8e6ba6a8eaa77b488721']);
+      ids.should.deep.equal([
+        '8f197244e661f4d0',
+        '4d32f0737a05f072',
+        'e2c2d72024979ded',
+        '7065a73486c8cb5d'
+      ]);
+      done();
     });
     it('Should import a 1-1 wallet', function(done) {
-      this.timeout(5000);
       var t = ImportData.copayers[0];
       var c = helpers.newClient(app);
       c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::e2c2d72024979ded'], function(err) {
@@ -1487,7 +1496,7 @@ describe('client API', function() {
         });
       });
     });
-    it('Should import and complete 2-2 wallet from 2 copayers', function(done) {
+    it('Should import and complete 2-2 wallet from 2 copayers, and create addresses', function(done) {
       var t = ImportData.copayers[0];
       var c = helpers.newClient(app);
       c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
@@ -1500,16 +1509,78 @@ describe('client API', function() {
           var counts = _.countBy(status.wallet.publicKeyRing, 'isTemporaryRequestKey');
           counts[false].should.equal(1);
           counts[true].should.equal(1);
-          status.wallet.publicKeyRing[1].isTemporaryRequestKey.should.equal(true);
           var t2 = ImportData.copayers[1];
           var c2 = helpers.newClient(app);
           c2.createWalletFromOldCopay(t2.username, t2.password, t2.ls['wallet::4d32f0737a05f072'], function(err) {
             should.not.exist(err);
             c2.credentials.sharedEncryptingKey.should.equal('Ou2j4kq3z1w4yTr9YybVxg==');
+
+            // This should pull the non-temporary keys
             c2.getStatus(function(err, status) {
               should.not.exist(err);
               status.wallet.status.should.equal('complete');
-              done();
+              c2.credentials.hasTemporaryRequestKeys().should.equal(false);
+              c2.createAddress(function(err, x0) {
+                x0.address.should.be.equal('2Mv1DHpozzZ9fup2nZ1kmdRXoNnDJ8b1JF2');
+                c.createAddress(function(err, x0) {
+                  x0.address.should.be.equal('2N2dZ1HogpxHVKv3CD2R4WrhWRwqZtpDc2M');
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('Should import and complete 2-3 wallet from 2 copayers, and create addresses', function(done) {
+      var w = 'wallet::7065a73486c8cb5d';
+      var key = 'fS4HhoRd25KJY4VpNpO1jg==';
+      var t = ImportData.copayers[0];
+      var c = helpers.newClient(app);
+      c.createWalletFromOldCopay(t.username, t.password, t.ls[w], function(err) {
+        should.not.exist(err);
+        c.getStatus(function(err, status) {
+          should.not.exist(err);
+          status.wallet.status.should.equal('complete');
+          c.credentials.sharedEncryptingKey.should.equal(key);
+
+          var counts = _.countBy(status.wallet.publicKeyRing, 'isTemporaryRequestKey');
+          counts[false].should.equal(1);
+          counts[true].should.equal(2);
+          status.wallet.publicKeyRing[1].isTemporaryRequestKey.should.equal(true);
+          var t2 = ImportData.copayers[1];
+          var c2 = helpers.newClient(app);
+          c2.createWalletFromOldCopay(t2.username, t2.password, t2.ls[w], function(err) {
+            should.not.exist(err);
+            c2.credentials.sharedEncryptingKey.should.equal(key);
+
+            c2.getStatus(function(err, status) {
+              should.not.exist(err);
+              status.wallet.status.should.equal('complete');
+              c2.credentials.hasTemporaryRequestKeys().should.equal(true);
+
+              var counts = _.countBy(status.wallet.publicKeyRing, 'isTemporaryRequestKey');
+              counts[false].should.equal(2);
+              counts[true].should.equal(1);
+
+              var t3 = ImportData.copayers[2];
+              var c3 = helpers.newClient(app);
+              c3.createWalletFromOldCopay(t3.username, t3.password, t3.ls[w], function(err) {
+                should.not.exist(err);
+                c3.credentials.sharedEncryptingKey.should.equal(key);
+
+                // This should pull the non-temporary keys
+                c3.getStatus(function(err, status) {
+                  should.not.exist(err);
+                  status.wallet.status.should.equal('complete');
+                  c3.credentials.hasTemporaryRequestKeys().should.equal(false);
+
+                  var counts = _.countBy(status.wallet.publicKeyRing, 'isTemporaryRequestKey');
+                  counts[false].should.equal(3);
+                  done();
+                });
+              });
             });
           });
         });
