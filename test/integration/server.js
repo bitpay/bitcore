@@ -2481,12 +2481,13 @@ describe('Wallet service', function() {
   });
 
   describe('#scan', function() {
-    var scanWindowOld = WalletService.scanConfig.SCAN_WINDOW;
+    var scanConfigOld = WalletService.scanConfig;
     beforeEach(function() {
       WalletService.scanConfig.SCAN_WINDOW = 2;
+      WalletService.scanConfig.DERIVATION_DELAY = 0;
     });
     afterEach(function() {
-      WalletService.scanConfig.SCAN_WINDOW = scanWindowOld;
+      WalletService.scanConfig = scanConfigOld;
     });
 
     it('should scan main addresses', function(done) {
