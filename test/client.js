@@ -132,7 +132,7 @@ blockExplorerMock.setHistory = function(txs) {
   blockExplorerMock.txHistory = txs;
 };
 
-blockExplorerMock.getTransactions = function(addresses, cb) {
+blockExplorerMock.getTransactions = function(addresses, from, to, cb) {
   return cb(null, blockExplorerMock.txHistory || []);
 };
 
@@ -865,7 +865,7 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 10, 1);
+          blockExplorerMock.setUtxo(x0, 10, 2);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -911,7 +911,7 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 10, 1);
+          blockExplorerMock.setUtxo(x0, 10, 2);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -948,7 +948,7 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 10, 1);
+          blockExplorerMock.setUtxo(x0, 10, 3);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -983,7 +983,7 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 10, 1);
+          blockExplorerMock.setUtxo(x0, 10, 2);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',

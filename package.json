@@ -21,8 +21,9 @@
   },
   "dependencies": {
     "async": "^0.9.0",
-    "bitcore-payment-protocol": "^0.10.1",
-    "bitcore-wallet-utils": "^0.0.8",
+    "bitcore": "^0.11.6",
+    "bitcore-payment-protocol": "0.10.2",
+    "bitcore-wallet-utils": "0.0.12",
     "browser-request": "^0.3.3",
     "browserify": "^9.0.3",
     "coveralls": "^2.11.2",
@@ -34,7 +35,7 @@
     "uglify": "^0.1.1"
   },
   "devDependencies": {
-    "bitcore-wallet-service": "^0.0.18",
+    "bitcore-wallet-service": "0.0.20",
     "chai": "^1.9.1",
     "grunt-jsdoc": "^0.5.8",
     "http": "0.0.0",
