@@ -2867,6 +2867,7 @@ describe('Wallet service', function() {
       ];
       WalletService.onNotification(function(n) {
         if (n.type == 'ScanFinished') {
+          should.not.exist(n.creatorId);
           server.storage.fetchAddresses(wallet.id, function(err, addresses) {
             should.exist(addresses);
             addresses.length.should.equal(expectedPaths.length);
