@@ -140,6 +140,12 @@ Returns:
  
 Returns:
  * TX Proposal object. (see [fields on the source code](https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/txproposal.js)). `.status` is probably needed in this case.
+
+`/v1/addresses/scan`: Start an address scan process looking for activity.
+
+ Optional Arguments:
+ * includeCopayerBranches: Scan all copayer branches following BIP45 recommendation (defaults to false). 
+
   
 ## DELETE Endpoinds
 `/v1/txproposals/:id/`: Deletes a transaction proposal. Only the creator can delete a TX Proposal, and only if it has no other signatures or rejections
