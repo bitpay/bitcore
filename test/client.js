@@ -18,6 +18,7 @@ var Client = require('../lib');
 var ExpressApp = BWS.ExpressApp;
 var Storage = BWS.Storage;
 var TestData = require('./testdata');
+var ImportData = require('./legacyImportData.js');
 
 var helpers = {};
 chai.config.includeStack = true;
@@ -50,7 +51,9 @@ helpers.newClient = function(app) {
 };
 
 helpers.createAndJoinWallet = function(clients, m, n, cb) {
-  clients[0].createWallet('wallet name', 'creator', m, n, 'testnet',
+  clients[0].createWallet('wallet name', 'creator', m, n, {
+      network: 'testnet'
+    },
     function(err, secret) {
       should.not.exist(err);
 
@@ -116,7 +119,7 @@ blockExplorerMock.setUtxo = function(address, amount, m) {
     vout: Math.floor((Math.random() * 10) + 1),
     amount: amount,
     address: address.address,
-    scriptPubKey: Bitcore.Script.buildMultisigOut(address.publicKeys, m).toScriptHashOut().toString(),
+    scriptPubKey: address.publicKeys ? Bitcore.Script.buildMultisigOut(address.publicKeys, m).toScriptHashOut().toString() : '',
   });
 };
 
@@ -129,7 +132,7 @@ blockExplorerMock.setHistory = function(txs) {
   blockExplorerMock.txHistory = txs;
 };
 
-blockExplorerMock.getTransactions = function(addresses, cb) {
+blockExplorerMock.getTransactions = function(addresses, from, to, cb) {
   return cb(null, blockExplorerMock.txHistory || []);
 };
 
@@ -153,7 +156,7 @@ describe('client API', function() {
     app = ExpressApp.start({
       WalletService: {
         storage: storage,
-        blockExplorer: blockExplorerMock,
+        blockchainExplorer: blockExplorerMock,
       },
       disableLogs: true,
     });
@@ -190,7 +193,7 @@ describe('client API', function() {
       app = ExpressApp.start({
         WalletService: {
           storage: s,
-          blockExplorer: blockExplorerMock,
+          blockchainExplorer: blockExplorerMock,
         },
         disableLogs: true,
       });
@@ -198,7 +201,9 @@ describe('client API', function() {
       s2.load = sinon.stub().yields(null);
       var client = helpers.newClient(app);
       client.storage = s2;
-      client.createWallet('1', '2', 1, 1, 'testnet',
+      client.createWallet('1', '2', 1, 1, {
+          network: 'testnet'
+        },
         function(err) {
           err.code.should.equal('ERROR');
           done();
@@ -215,7 +220,7 @@ describe('client API', function() {
       app = ExpressApp.start({
         WalletService: {
           storage: s,
-          blockExplorer: blockExplorerMock,
+          blockchainExplorer: blockExplorerMock,
         },
         disableLogs: true,
       });
@@ -223,7 +228,9 @@ describe('client API', function() {
       s2.load = sinon.stub().yields(null);
       var client = helpers.newClient(app);
       client.storage = s2;
-      client.createWallet('1', '2', 1, 1, 'testnet',
+      client.createWallet('1', '2', 1, 1, {
+          network: 'testnet'
+        },
         function(err) {
           err.code.should.equal('ERROR');
           done();
@@ -261,7 +268,9 @@ describe('client API', function() {
         wallet.status.should.equal('complete');
         if (++checks == 2) done();
       });
-      clients[0].createWallet('wallet name', 'creator', 2, 2, 'testnet', function(err, secret) {
+      clients[0].createWallet('wallet name', 'creator', 2, 2, {
+        network: 'testnet'
+      }, function(err, secret) {
         should.not.exist(err);
         clients[1].joinWallet(secret, 'guest', function(err) {
           should.not.exist(err);
@@ -357,7 +366,9 @@ describe('client API', function() {
       });
     });
     it('should return wallet status even if wallet is not yet complete', function(done) {
-      clients[0].createWallet('wallet name', 'creator', 1, 2, 'testnet', function(err, secret) {
+      clients[0].createWallet('wallet name', 'creator', 1, 2, {
+        network: 'testnet'
+      }, function(err, secret) {
         should.not.exist(err);
         should.exist(secret);
 
@@ -854,7 +865,7 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 10, 1);
+          blockExplorerMock.setUtxo(x0, 10, 2);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -900,7 +911,7 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 10, 1);
+          blockExplorerMock.setUtxo(x0, 10, 2);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -937,7 +948,7 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 10, 1);
+          blockExplorerMock.setUtxo(x0, 10, 3);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -972,7 +983,7 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 10, 1);
+          blockExplorerMock.setUtxo(x0, 10, 2);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -1234,7 +1245,9 @@ describe('client API', function() {
       should.not.exist(proxy.credentials.xPrivKey);
 
       var seedSpy = sinon.spy(proxy, 'seedFromRandom');
-      proxy.createWallet('wallet name', 'creator', 1, 1, 'testnet', function(err) {
+      proxy.createWallet('wallet name', 'creator', 1, 1, {
+        network: 'testnet'
+      }, function(err) {
         should.not.exist(err);
         seedSpy.called.should.be.false;
         proxy.getStatus(function(err, status) {
@@ -1257,7 +1270,9 @@ describe('client API', function() {
 
       var seedSpy = sinon.spy(proxy, 'seedFromRandom');
       should.not.exist(proxy.credentials.xPrivKey);
-      proxy.createWallet('wallet name', 'creator', 1, 1, 'livenet', function(err) {
+      proxy.createWallet('wallet name', 'creator', 1, 1, {
+        network: 'livenet'
+      }, function(err) {
         should.exist(err);
         err.message.should.equal('Existing keys were created for a different network');
         done();
@@ -1277,7 +1292,9 @@ describe('client API', function() {
       async.waterfall([
 
           function(next) {
-            proxy.createWallet('wallet name', 'creator', 1, 1, 'testnet', function(err) {
+            proxy.createWallet('wallet name', 'creator', 1, 1, {
+              network: 'testnet'
+            }, function(err) {
               should.not.exist(err);
               proxy.createAddress(function(err, address) {
                 should.not.exist(err);
@@ -1354,7 +1371,9 @@ describe('client API', function() {
         async.waterfall([
 
             function(next) {
-              proxy.createWallet('wallet name', 'creator', 1, 1, 'testnet', function(err) {
+              proxy.createWallet('wallet name', 'creator', 1, 1, {
+                network: 'testnet'
+              }, function(err) {
                 should.not.exist(err);
                 proxy.createAddress(function(err, address) {
                   should.not.exist(err);
@@ -1418,6 +1437,153 @@ describe('client API', function() {
           airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
         }).should.throw(Error, 'Fake transaction proposal');
         done();
+      });
+    });
+  });
+  describe('Legacy Copay Import', function() {
+    it('Should get wallets from profile', function(done) {
+      var t = ImportData.copayers[0];
+      var c = helpers.newClient(app);
+      var ids = c.getWalletIdsFromOldCopay(t.username, t.password, t.ls['profile::4872dd8b2ceaa54f922e8e6ba6a8eaa77b488721']);
+      ids.should.deep.equal([
+        '8f197244e661f4d0',
+        '4d32f0737a05f072',
+        'e2c2d72024979ded',
+        '7065a73486c8cb5d'
+      ]);
+      done();
+    });
+    it('Should import a 1-1 wallet', function(done) {
+      var t = ImportData.copayers[0];
+      var c = helpers.newClient(app);
+      c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::e2c2d72024979ded'], function(err) {
+        should.not.exist(err);
+        c.credentials.m.should.equal(1);
+        c.credentials.n.should.equal(1);
+
+        c.createAddress(function(err, x0) {
+          // This is the first 'shared' address, created automatically
+          // by old copay
+          x0.address.should.equal('2N5YkCb68N3hCd9fyW9cwWyCtKrGfji3FWR');
+          c.getStatus(function(err, status) {
+            should.not.exist(err);
+            status.wallet.status.should.equal('complete');
+            c.credentials.walletId.should.equal('e2c2d72024979ded');
+            c.credentials.walletPrivKey.should.equal('c3463113c6e1d0fc2f2bd520f7d9d62f8e1fdcdd96005254571c64902aeb1648');
+            c.credentials.sharedEncryptingKey.should.equal('x3D/7QHa4PkKMbSXEvXwaw==');
+            // TODO? 
+            // bal1.totalAmount.should.equal(18979980);
+            done();
+          });
+        });
+      });
+    });
+    it('Should fail to import the same wallet twice', function(done) {
+      var t = ImportData.copayers[0];
+      var c = helpers.newClient(app);
+      c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
+        should.not.exist(err);
+        c.getStatus(function(err, status) {
+          should.not.exist(err);
+          status.wallet.status.should.equal('complete');
+          c.credentials.walletId.should.equal('4d32f0737a05f072');
+          c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
+            // this throws invalid signature because
+            // the it trys correctly to replace req pub key, but auth fails
+            err.message.should.contain('Invalid signature');
+            done();
+          });
+        });
+      });
+    });
+    it('Should import and complete 2-2 wallet from 2 copayers, and create addresses', function(done) {
+      var t = ImportData.copayers[0];
+      var c = helpers.newClient(app);
+      c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
+        should.not.exist(err);
+        c.getStatus(function(err, status) {
+          should.not.exist(err);
+          status.wallet.status.should.equal('complete');
+          c.credentials.sharedEncryptingKey.should.equal('Ou2j4kq3z1w4yTr9YybVxg==');
+
+          var counts = _.countBy(status.wallet.publicKeyRing, 'isTemporaryRequestKey');
+          counts[false].should.equal(1);
+          counts[true].should.equal(1);
+          var t2 = ImportData.copayers[1];
+          var c2 = helpers.newClient(app);
+          c2.createWalletFromOldCopay(t2.username, t2.password, t2.ls['wallet::4d32f0737a05f072'], function(err) {
+            should.not.exist(err);
+            c2.credentials.sharedEncryptingKey.should.equal('Ou2j4kq3z1w4yTr9YybVxg==');
+
+            // This should pull the non-temporary keys
+            c2.getStatus(function(err, status) {
+              should.not.exist(err);
+              status.wallet.status.should.equal('complete');
+              c2.credentials.hasTemporaryRequestKeys().should.equal(false);
+              c2.createAddress(function(err, x0) {
+                x0.address.should.be.equal('2N2dZ1HogpxHVKv3CD2R4WrhWRwqZtpDc2M');
+                c.createAddress(function(err, x0) {
+                  x0.address.should.be.equal('2N1Yx4PvkCwH6qn24YjJ3a2gt5rqFmk2CqN');
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('Should import and complete 2-3 wallet from 2 copayers, and create addresses', function(done) {
+      var w = 'wallet::7065a73486c8cb5d';
+      var key = 'fS4HhoRd25KJY4VpNpO1jg==';
+      var t = ImportData.copayers[0];
+      var c = helpers.newClient(app);
+      c.createWalletFromOldCopay(t.username, t.password, t.ls[w], function(err) {
+        should.not.exist(err);
+        c.getStatus(function(err, status) {
+          should.not.exist(err);
+          status.wallet.status.should.equal('complete');
+          c.credentials.sharedEncryptingKey.should.equal(key);
+
+          var counts = _.countBy(status.wallet.publicKeyRing, 'isTemporaryRequestKey');
+          counts[false].should.equal(1);
+          counts[true].should.equal(2);
+          status.wallet.publicKeyRing[1].isTemporaryRequestKey.should.equal(true);
+          var t2 = ImportData.copayers[1];
+          var c2 = helpers.newClient(app);
+          c2.createWalletFromOldCopay(t2.username, t2.password, t2.ls[w], function(err) {
+            should.not.exist(err);
+            c2.credentials.sharedEncryptingKey.should.equal(key);
+
+            c2.getStatus(function(err, status) {
+              should.not.exist(err);
+              status.wallet.status.should.equal('complete');
+              c2.credentials.hasTemporaryRequestKeys().should.equal(true);
+
+              var counts = _.countBy(status.wallet.publicKeyRing, 'isTemporaryRequestKey');
+              counts[false].should.equal(2);
+              counts[true].should.equal(1);
+
+              var t3 = ImportData.copayers[2];
+              var c3 = helpers.newClient(app);
+              c3.createWalletFromOldCopay(t3.username, t3.password, t3.ls[w], function(err) {
+                should.not.exist(err);
+                c3.credentials.sharedEncryptingKey.should.equal(key);
+
+                // This should pull the non-temporary keys
+                c3.getStatus(function(err, status) {
+                  should.not.exist(err);
+                  status.wallet.status.should.equal('complete');
+                  c3.credentials.hasTemporaryRequestKeys().should.equal(false);
+
+                  var counts = _.countBy(status.wallet.publicKeyRing, 'isTemporaryRequestKey');
+                  counts[false].should.equal(3);
+                  done();
+                });
+              });
+            });
+          });
+        });
       });
     });
   });
