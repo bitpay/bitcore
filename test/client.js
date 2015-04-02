@@ -100,10 +100,10 @@ helpers.tamperResponse = function(clients, method, url, args, tamper, cb) {
 };
 
 
-var blockExplorerMock = {};
+var blockchainExplorerMock = {};
 
-blockExplorerMock.getUnspentUtxos = function(dummy, cb) {
-  var ret = _.map(blockExplorerMock.utxos || [], function(x) {
+blockchainExplorerMock.getUnspentUtxos = function(dummy, cb) {
+  var ret = _.map(blockchainExplorerMock.utxos || [], function(x) {
     var y = _.clone(x);
     y.toObject = function() {
       return this;
@@ -113,8 +113,8 @@ blockExplorerMock.getUnspentUtxos = function(dummy, cb) {
   return cb(null, ret);
 };
 
-blockExplorerMock.setUtxo = function(address, amount, m) {
-  blockExplorerMock.utxos.push({
+blockchainExplorerMock.setUtxo = function(address, amount, m) {
+  blockchainExplorerMock.utxos.push({
     txid: Bitcore.crypto.Hash.sha256(new Buffer(Math.random() * 100000)).toString('hex'),
     vout: Math.floor((Math.random() * 10) + 1),
     amount: amount,
@@ -123,22 +123,28 @@ blockExplorerMock.setUtxo = function(address, amount, m) {
   });
 };
 
-blockExplorerMock.broadcast = function(raw, cb) {
-  blockExplorerMock.lastBroadcasted = raw;
+blockchainExplorerMock.broadcast = function(raw, cb) {
+  blockchainExplorerMock.lastBroadcasted = raw;
   return cb(null, (new Bitcore.Transaction(raw)).id);
 };
 
-blockExplorerMock.setHistory = function(txs) {
-  blockExplorerMock.txHistory = txs;
+blockchainExplorerMock.setHistory = function(txs) {
+  blockchainExplorerMock.txHistory = txs;
 };
 
-blockExplorerMock.getTransactions = function(addresses, from, to, cb) {
-  return cb(null, blockExplorerMock.txHistory || []);
+blockchainExplorerMock.getTransactions = function(addresses, from, to, cb) {
+  // TODO: add support for from/to params
+  return cb(null, blockchainExplorerMock.txHistory || []);
 };
 
-blockExplorerMock.reset = function() {
-  blockExplorerMock.utxos = [];
-  blockExplorerMock.txHistory = [];
+blockchainExplorerMock.getAddressActivity = function(addresses, cb) {
+  var addr = _.pluck(blockchainExplorerMock.utxos || [], 'address');
+  return cb(null, _.intersection(addr, addresses).length > 0);
+};
+
+blockchainExplorerMock.reset = function() {
+  blockchainExplorerMock.utxos = [];
+  blockchainExplorerMock.txHistory = [];
 };
 
 
@@ -156,7 +162,7 @@ describe('client API', function() {
     app = ExpressApp.start({
       WalletService: {
         storage: storage,
-        blockchainExplorer: blockExplorerMock,
+        blockchainExplorer: blockchainExplorerMock,
       },
       disableLogs: true,
     });
@@ -164,7 +170,7 @@ describe('client API', function() {
     clients = _.map(_.range(5), function(i) {
       return helpers.newClient(app);
     });
-    blockExplorerMock.reset();
+    blockchainExplorerMock.reset();
   });
 
 
@@ -193,7 +199,7 @@ describe('client API', function() {
       app = ExpressApp.start({
         WalletService: {
           storage: s,
-          blockchainExplorer: blockExplorerMock,
+          blockchainExplorer: blockchainExplorerMock,
         },
         disableLogs: true,
       });
@@ -220,7 +226,7 @@ describe('client API', function() {
       app = ExpressApp.start({
         WalletService: {
           storage: s,
-          blockchainExplorer: blockExplorerMock,
+          blockchainExplorer: blockchainExplorerMock,
         },
         disableLogs: true,
       });
@@ -410,7 +416,7 @@ describe('client API', function() {
           should.not.exist(err);
           should.exist(x0.address);
 
-          blockExplorerMock.setUtxo(x0, 10, w.m);
+          blockchainExplorerMock.setUtxo(x0, 10, w.m);
           clients[0].getBalance(function(err, bal0) {
             should.not.exist(err);
             bal0.totalAmount.should.equal(10 * 1e8);
@@ -459,8 +465,8 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 1, 2);
-          blockExplorerMock.setUtxo(x0, 1, 2);
+          blockchainExplorerMock.setUtxo(x0, 1, 2);
+          blockchainExplorerMock.setUtxo(x0, 1, 2);
           var opts = {
             amount: 300000000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -479,8 +485,8 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 1, 2);
-          blockExplorerMock.setUtxo(x0, 1, 2);
+          blockchainExplorerMock.setUtxo(x0, 1, 2);
+          blockchainExplorerMock.setUtxo(x0, 1, 2);
           var opts = {
             amount: 200000000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -500,8 +506,8 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 1, 2);
-          blockExplorerMock.setUtxo(x0, 1, 2);
+          blockchainExplorerMock.setUtxo(x0, 1, 2);
+          blockchainExplorerMock.setUtxo(x0, 1, 2);
           var opts = {
             amount: 120000000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -531,8 +537,8 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 1, 2);
-          blockExplorerMock.setUtxo(x0, 1, 2);
+          blockchainExplorerMock.setUtxo(x0, 1, 2);
+          blockchainExplorerMock.setUtxo(x0, 1, 2);
           var opts = {
             amount: 120000000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -561,7 +567,7 @@ describe('client API', function() {
       helpers.createAndJoinWallet(clients, 2, 3, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
-          blockExplorerMock.setUtxo(x0, 10, 2);
+          blockchainExplorerMock.setUtxo(x0, 10, 2);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -587,7 +593,7 @@ describe('client API', function() {
       helpers.createAndJoinWallet(clients, 2, 3, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
-          blockExplorerMock.setUtxo(x0, 10, 2);
+          blockchainExplorerMock.setUtxo(x0, 10, 2);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -607,7 +613,7 @@ describe('client API', function() {
       helpers.createAndJoinWallet(clients, 2, 3, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
-          blockExplorerMock.setUtxo(x0, 10, 2);
+          blockchainExplorerMock.setUtxo(x0, 10, 2);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -629,7 +635,7 @@ describe('client API', function() {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
-          blockExplorerMock.setUtxo(x0, 10, 1);
+          blockchainExplorerMock.setUtxo(x0, 10, 1);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -656,7 +662,7 @@ describe('client API', function() {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
-          blockExplorerMock.setUtxo(x0, 10, 1);
+          blockchainExplorerMock.setUtxo(x0, 10, 1);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -682,7 +688,7 @@ describe('client API', function() {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
-          blockExplorerMock.setUtxo(x0, 10, 1);
+          blockchainExplorerMock.setUtxo(x0, 10, 1);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -708,7 +714,7 @@ describe('client API', function() {
       helpers.createAndJoinWallet(clients, 1, 1, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
-          blockExplorerMock.setUtxo(x0, 1, 1);
+          blockchainExplorerMock.setUtxo(x0, 1, 1);
           var opts = {
             amount: 10000000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -744,7 +750,6 @@ describe('client API', function() {
     });
   });
 
-
   describe('Payment Protocol', function() {
     var getter;
 
@@ -755,8 +760,8 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 1, 2);
-          blockExplorerMock.setUtxo(x0, 1, 2);
+          blockchainExplorerMock.setUtxo(x0, 1, 2);
+          blockchainExplorerMock.setUtxo(x0, 1, 2);
           var opts = {
             payProUrl: 'dummy',
           };
@@ -834,7 +839,7 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 1, 1);
+          blockchainExplorerMock.setUtxo(x0, 1, 1);
           var opts = {
             amount: 10000000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -852,7 +857,7 @@ describe('client API', function() {
               clients[0].broadcastTxProposal(txp, function(err, txp) {
                 should.not.exist(err);
                 txp.status.should.equal('broadcasted');
-                txp.txid.should.equal((new Bitcore.Transaction(blockExplorerMock.lastBroadcasted)).id);
+                txp.txid.should.equal((new Bitcore.Transaction(blockchainExplorerMock.lastBroadcasted)).id);
                 done();
               });
             });
@@ -865,7 +870,7 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 10, 2);
+          blockchainExplorerMock.setUtxo(x0, 10, 2);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -895,7 +900,7 @@ describe('client API', function() {
                   txp.status.should.equal('accepted');
                   clients[1].broadcastTxProposal(txp, function(err, txp) {
                     txp.status.should.equal('broadcasted');
-                    txp.txid.should.equal((new Bitcore.Transaction(blockExplorerMock.lastBroadcasted)).id);
+                    txp.txid.should.equal((new Bitcore.Transaction(blockchainExplorerMock.lastBroadcasted)).id);
                     done();
                   });
                 });
@@ -911,7 +916,7 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 10, 2);
+          blockchainExplorerMock.setUtxo(x0, 10, 2);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -932,7 +937,7 @@ describe('client API', function() {
                   txp.status.should.equal('accepted');
                   clients[2].broadcastTxProposal(txp, function(err, txp) {
                     txp.status.should.equal('broadcasted');
-                    txp.txid.should.equal((new Bitcore.Transaction(blockExplorerMock.lastBroadcasted)).id);
+                    txp.txid.should.equal((new Bitcore.Transaction(blockchainExplorerMock.lastBroadcasted)).id);
                     done();
                   });
                 });
@@ -948,7 +953,7 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 10, 3);
+          blockchainExplorerMock.setUtxo(x0, 10, 3);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -983,7 +988,7 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
-          blockExplorerMock.setUtxo(x0, 10, 2);
+          blockchainExplorerMock.setUtxo(x0, 10, 2);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -1018,7 +1023,7 @@ describe('client API', function() {
 
   describe('Transaction history', function() {
     it('should get transaction history', function(done) {
-      blockExplorerMock.setHistory(TestData.history);
+      blockchainExplorerMock.setHistory(TestData.history);
       helpers.createAndJoinWallet(clients, 1, 1, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
@@ -1033,7 +1038,7 @@ describe('client API', function() {
       });
     });
     it('should get empty transaction history when there are no addresses', function(done) {
-      blockExplorerMock.setHistory(TestData.history);
+      blockchainExplorerMock.setHistory(TestData.history);
       helpers.createAndJoinWallet(clients, 1, 1, function(w) {
         clients[0].getTxHistory({}, function(err, txs) {
           should.not.exist(err);
@@ -1071,7 +1076,7 @@ describe('client API', function() {
         expected: [10]
       }, ];
 
-      blockExplorerMock.setHistory(TestData.history);
+      blockchainExplorerMock.setHistory(TestData.history);
       helpers.createAndJoinWallet(clients, 1, 1, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
@@ -1201,7 +1206,7 @@ describe('client API', function() {
             var newApp = ExpressApp.start({
               WalletService: {
                 storage: storage,
-                blockExplorer: blockExplorerMock,
+                blockchainExplorer: blockchainExplorerMock,
               },
               disableLogs: true,
             });
@@ -1222,6 +1227,62 @@ describe('client API', function() {
                     addr2.address.should.equal(addr.address);
                     addr2.path.should.equal(addr.path);
                     done();
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+      it('should be able to recover funds from recreated wallet', function(done) {
+        this.timeout(10000);
+        helpers.createAndJoinWallet(clients, 2, 2, function() {
+          clients[0].createAddress(function(err, addr) {
+            should.not.exist(err);
+            should.exist(addr);
+            blockchainExplorerMock.setUtxo(addr, 1, 2);
+
+            var db = levelup(memdown, {
+              valueEncoding: 'json'
+            });
+            var storage = new Storage({
+              db: db
+            });
+            var newApp = ExpressApp.start({
+              WalletService: {
+                storage: storage,
+                blockchainExplorer: blockchainExplorerMock,
+              },
+              disableLogs: true,
+            });
+
+            var recoveryClient = helpers.newClient(newApp);
+            recoveryClient.import(clients[0].export());
+
+            recoveryClient.getStatus(function(err, status) {
+              should.exist(err);
+              err.code.should.equal('NOTAUTHORIZED');
+              recoveryClient.recreateWallet(function(err) {
+                should.not.exist(err);
+                recoveryClient.getStatus(function(err, status) {
+                  should.not.exist(err);
+                  recoveryClient.startScan({}, function(err) {
+                    should.not.exist(err);
+                    var balance = 0;
+                    async.whilst(function() {
+                      return balance == 0;
+                    }, function(next) {
+                      setTimeout(function() {
+                        recoveryClient.getBalance(function(err, b) {
+                          balance = b.totalAmount;
+                          next(err);
+                        });
+                      }, 200);
+                    }, function(err) {
+                      should.not.exist(err);
+                      balance.should.equal(1e8);
+                      done();
+                    });
                   });
                 });
               });
@@ -1299,7 +1360,7 @@ describe('client API', function() {
               proxy.createAddress(function(err, address) {
                 should.not.exist(err);
                 should.exist(address.address);
-                blockExplorerMock.setUtxo(address, 1, 1);
+                blockchainExplorerMock.setUtxo(address, 1, 1);
                 var opts = {
                   amount: 1200000,
                   toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -1378,7 +1439,7 @@ describe('client API', function() {
                 proxy.createAddress(function(err, address) {
                   should.not.exist(err);
                   should.exist(address.address);
-                  blockExplorerMock.setUtxo(address, 1, 1);
+                  blockchainExplorerMock.setUtxo(address, 1, 1);
                   var opts = {
                     amount: 1200000,
                     toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
