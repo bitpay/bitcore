@@ -2518,11 +2518,18 @@ describe('Wallet service', function() {
   });
 
   describe('#scan', function() {
+    var server, wallet;
     var scanConfigOld = WalletService.scanConfig;
-    beforeEach(function() {
+    beforeEach(function(done) {
       this.timeout(5000);
       WalletService.scanConfig.SCAN_WINDOW = 2;
       WalletService.scanConfig.DERIVATION_DELAY = 0;
+
+      helpers.createAndJoinWallet(1, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
     });
     afterEach(function() {
       WalletService.scanConfig = scanConfigOld;
@@ -2530,76 +2537,70 @@ describe('Wallet service', function() {
 
     it('should scan main addresses', function(done) {
       helpers.stubAddressActivity(['3K2VWMXheGZ4qG35DyGjA2dLeKfaSr534A']);
-      helpers.createAndJoinWallet(1, 2, function(server, wallet) {
-        var expectedPaths = [
-          'm/2147483647/0/0',
-          'm/2147483647/0/1',
-          'm/2147483647/0/2',
-          'm/2147483647/0/3',
-          'm/2147483647/1/0',
-          'm/2147483647/1/1',
-        ];
-        server.scan({}, function(err) {
-          should.not.exist(err);
-          server.storage.fetchAddresses(wallet.id, function(err, addresses) {
-            should.exist(addresses);
-            addresses.length.should.equal(expectedPaths.length);
-            var paths = _.pluck(addresses, 'path');
-            _.difference(paths, expectedPaths).length.should.equal(0);
-            server.createAddress({}, function(err, address) {
-              should.not.exist(err);
-              address.path.should.equal('m/2147483647/0/4');
-              done();
-            });
-          })
-        });
+      var expectedPaths = [
+        'm/2147483647/0/0',
+        'm/2147483647/0/1',
+        'm/2147483647/0/2',
+        'm/2147483647/0/3',
+        'm/2147483647/1/0',
+        'm/2147483647/1/1',
+      ];
+      server.scan({}, function(err) {
+        should.not.exist(err);
+        server.storage.fetchAddresses(wallet.id, function(err, addresses) {
+          should.exist(addresses);
+          addresses.length.should.equal(expectedPaths.length);
+          var paths = _.pluck(addresses, 'path');
+          _.difference(paths, expectedPaths).length.should.equal(0);
+          server.createAddress({}, function(err, address) {
+            should.not.exist(err);
+            address.path.should.equal('m/2147483647/0/4');
+            done();
+          });
+        })
       });
     });
     it('should scan main addresses & copayer addresses', function(done) {
       helpers.stubAddressActivity(['3K2VWMXheGZ4qG35DyGjA2dLeKfaSr534A']);
-      helpers.createAndJoinWallet(1, 2, function(server, wallet) {
-        var expectedPaths = [
-          'm/2147483647/0/0',
-          'm/2147483647/0/1',
-          'm/2147483647/0/2',
-          'm/2147483647/0/3',
-          'm/2147483647/1/0',
-          'm/2147483647/1/1',
-          'm/0/0/0',
-          'm/0/0/1',
-          'm/0/1/0',
-          'm/0/1/1',
-          'm/1/0/0',
-          'm/1/0/1',
-          'm/1/1/0',
-          'm/1/1/1',
-        ];
-        server.scan({
-          includeCopayerBranches: true
-        }, function(err) {
-          should.not.exist(err);
-          server.storage.fetchAddresses(wallet.id, function(err, addresses) {
-            should.exist(addresses);
-            addresses.length.should.equal(expectedPaths.length);
-            var paths = _.pluck(addresses, 'path');
-            _.difference(paths, expectedPaths).length.should.equal(0);
-            done();
-          })
-        });
+      var expectedPaths = [
+        'm/2147483647/0/0',
+        'm/2147483647/0/1',
+        'm/2147483647/0/2',
+        'm/2147483647/0/3',
+        'm/2147483647/1/0',
+        'm/2147483647/1/1',
+        'm/0/0/0',
+        'm/0/0/1',
+        'm/0/1/0',
+        'm/0/1/1',
+        'm/1/0/0',
+        'm/1/0/1',
+        'm/1/1/0',
+        'm/1/1/1',
+      ];
+      server.scan({
+        includeCopayerBranches: true
+      }, function(err) {
+        should.not.exist(err);
+        server.storage.fetchAddresses(wallet.id, function(err, addresses) {
+          should.exist(addresses);
+          addresses.length.should.equal(expectedPaths.length);
+          var paths = _.pluck(addresses, 'path');
+          _.difference(paths, expectedPaths).length.should.equal(0);
+          done();
+        })
       });
     });
     it('should restore wallet balance', function(done) {
       async.waterfall([
 
         function(next) {
-          helpers.createAndJoinWallet(1, 2, function(server, wallet) {
-            helpers.stubUtxos(server, wallet, [1, 2, 3], function(utxos) {
-              should.exist(utxos);
-              helpers.stubAddressActivity(_.pluck(utxos, 'address'));
-              server.getBalance({}, function(err, balance) {
-                balance.totalAmount.should.equal(helpers.toSatoshi(6));
-                next(null, server, wallet);
-              });
+          helpers.stubUtxos(server, wallet, [1, 2, 3], function(utxos) {
+            should.exist(utxos);
+            helpers.stubAddressActivity(_.pluck(utxos, 'address'));
+            server.getBalance({}, function(err, balance) {
+              balance.totalAmount.should.equal(helpers.toSatoshi(6));
+              next(null, server, wallet);
             });
           });
         },
@@ -2831,6 +2832,56 @@ describe('Wallet service', function() {
             });
           });
         });
+      });
+    });
+  });
+
+  describe('#startScan', function() {
+    var server, wallet;
+    var scanConfigOld = WalletService.scanConfig;
+    beforeEach(function(done) {
+      this.timeout(5000);
+      WalletService.scanConfig.SCAN_WINDOW = 2;
+      WalletService.scanConfig.DERIVATION_DELAY = 0;
+
+      helpers.createAndJoinWallet(1, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+    afterEach(function() {
+      WalletService.scanConfig = scanConfigOld;
+      WalletService.onNotification(function() {});
+    });
+
+    it('should start an asynchronous scan', function(done) {
+      helpers.stubAddressActivity(['3K2VWMXheGZ4qG35DyGjA2dLeKfaSr534A']);
+      var expectedPaths = [
+        'm/2147483647/0/0',
+        'm/2147483647/0/1',
+        'm/2147483647/0/2',
+        'm/2147483647/0/3',
+        'm/2147483647/1/0',
+        'm/2147483647/1/1',
+      ];
+      WalletService.onNotification(function(n) {
+        if (n.type == 'ScanFinished') {
+          server.storage.fetchAddresses(wallet.id, function(err, addresses) {
+            should.exist(addresses);
+            addresses.length.should.equal(expectedPaths.length);
+            var paths = _.pluck(addresses, 'path');
+            _.difference(paths, expectedPaths).length.should.equal(0);
+            server.createAddress({}, function(err, address) {
+              should.not.exist(err);
+              address.path.should.equal('m/2147483647/0/4');
+              done();
+            });
+          })
+        }
+      });
+      server.startScan({}, function(err) {
+        should.not.exist(err);
       });
     });
   });
