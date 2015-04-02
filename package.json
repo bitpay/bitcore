@@ -37,6 +37,6 @@
     "gulp": "^3.8.10"
   },
   "dependencies": {
-    "bitcore": "^0.11.4"
+    "bitcore": "^0.11.6"
   }
 }
