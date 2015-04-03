@@ -2688,13 +2688,12 @@ describe('Wallet service', function() {
     });
     it('should start multiple asynchronous scans for different wallets', function(done) {
       helpers.stubAddressActivity(['3K2VWMXheGZ4qG35DyGjA2dLeKfaSr534A']);
-      WalletService.scanConfig.SCAN_WINDOW = 2;
+      WalletService.scanConfig.SCAN_WINDOW = 1;
 
       var scans = 0;
       WalletService.onNotification(function(n) {
         if (n.type == 'ScanFinished') {
           scans++;
-          // console.log('*** [server.js ln2697] n:', n); // TODO
           if (scans == 2) done();
         }
       });
@@ -2718,17 +2717,13 @@ describe('Wallet service', function() {
         server.joinWallet(copayerOpts, function(err, result) {
           should.not.exist(err);
           helpers.getAuthServer(result.copayerId, function(server2) {
-            server.startScan({
-              includeCopayerBranches: true
-            }, function(err) {
+            server.startScan({}, function(err) {
               should.not.exist(err);
               scans.should.equal(0);
-              // console.log('*** [server.js ln2726] scans:', scans); // TODO
             });
             server2.startScan({}, function(err) {
               should.not.exist(err);
               scans.should.equal(0);
-              // console.log('*** [server.js ln2731] scans:', scans); // TODO
             });
             scans.should.equal(0);
           });
