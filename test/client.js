@@ -1037,7 +1037,7 @@ describe('client API', function() {
         });
       });
     });
-    it.only('should get empty transaction history when there are no addresses', function(done) {
+    it('should get empty transaction history when there are no addresses', function(done) {
       blockchainExplorerMock.setHistory(TestData.history);
       helpers.createAndJoinWallet(clients, 1, 1, function(w) {
         clients[0].getTxHistory({}, function(err, txs) {
@@ -1048,11 +1048,11 @@ describe('client API', function() {
         });
       });
     });
-    it.only('should get transaction history decorated with proposal', function(done) {
+    it('should get transaction history decorated with proposal', function(done) {
       async.waterfall([
 
         function(next) {
-          helpers.createAndJoinWallet(clients, 1, 1, function(w) {
+          helpers.createAndJoinWallet(clients, 2, 3, function(w) {
             clients[0].createAddress(function(err, address) {
               should.not.exist(err);
               should.exist(address);
@@ -1061,7 +1061,7 @@ describe('client API', function() {
           });
         },
         function(address, next) {
-          blockchainExplorerMock.setUtxo(address, 10, 1);
+          blockchainExplorerMock.setUtxo(address, 10, 2);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -1069,13 +1069,19 @@ describe('client API', function() {
           };
           clients[0].sendTxProposal(opts, function(err, txp) {
             should.not.exist(err);
-            clients[0].signTxProposal(txp, function(err, txp) {
+            clients[1].rejectTxProposal(txp, 'some reason', function(err, txp) {
               should.not.exist(err);
-              txp.status.should.equal('accepted');
-              clients[0].broadcastTxProposal(txp, function(err, txp) {
+              clients[2].signTxProposal(txp, function(err, txp) {
                 should.not.exist(err);
-                txp.status.should.equal('broadcasted');
-                next(null, txp);
+                clients[0].signTxProposal(txp, function(err, txp) {
+                  should.not.exist(err);
+                  txp.status.should.equal('accepted');
+                  clients[0].broadcastTxProposal(txp, function(err, txp) {
+                    should.not.exist(err);
+                    txp.status.should.equal('broadcasted');
+                    next(null, txp);
+                  });
+                });
               });
             });
           });
@@ -1094,6 +1100,12 @@ describe('client API', function() {
             should.exist(decorated);
             decorated.proposalId.should.equal(txp.id);
             decorated.message.should.equal('some message');
+            decorated.actions.length.should.equal(3);
+            var rejection = _.find(decorated.actions, {
+              type: 'reject'
+            });
+            should.exist(rejection);
+            rejection.comment.should.equal('some reason');
             done();
           });
         }
