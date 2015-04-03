@@ -1037,7 +1037,7 @@ describe('client API', function() {
         });
       });
     });
-    it('should get empty transaction history when there are no addresses', function(done) {
+    it.only('should get empty transaction history when there are no addresses', function(done) {
       blockchainExplorerMock.setHistory(TestData.history);
       helpers.createAndJoinWallet(clients, 1, 1, function(w) {
         clients[0].getTxHistory({}, function(err, txs) {
@@ -1048,7 +1048,57 @@ describe('client API', function() {
         });
       });
     });
-    it.skip('should get transaction history decorated with proposal', function(done) {});
+    it.only('should get transaction history decorated with proposal', function(done) {
+      async.waterfall([
+
+        function(next) {
+          helpers.createAndJoinWallet(clients, 1, 1, function(w) {
+            clients[0].createAddress(function(err, address) {
+              should.not.exist(err);
+              should.exist(address);
+              next(null, address);
+            });
+          });
+        },
+        function(address, next) {
+          blockchainExplorerMock.setUtxo(address, 10, 1);
+          var opts = {
+            amount: 10000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'some message',
+          };
+          clients[0].sendTxProposal(opts, function(err, txp) {
+            should.not.exist(err);
+            clients[0].signTxProposal(txp, function(err, txp) {
+              should.not.exist(err);
+              txp.status.should.equal('accepted');
+              clients[0].broadcastTxProposal(txp, function(err, txp) {
+                should.not.exist(err);
+                txp.status.should.equal('broadcasted');
+                next(null, txp);
+              });
+            });
+          });
+        },
+        function(txp, next) {
+          var history = _.cloneDeep(TestData.history);
+          history[0].txid = txp.txid;
+          blockchainExplorerMock.setHistory(history);
+          clients[0].getTxHistory({}, function(err, txs) {
+            should.not.exist(err);
+            should.exist(txs);
+            txs.length.should.equal(2);
+            var decorated = _.find(txs, {
+              txid: txp.txid
+            });
+            should.exist(decorated);
+            decorated.proposalId.should.equal(txp.id);
+            decorated.message.should.equal('some message');
+            done();
+          });
+        }
+      ]);
+    });
     it('should get paginated transaction history', function(done) {
       var testCases = [{
         opts: {},
