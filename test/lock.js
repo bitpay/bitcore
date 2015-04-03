@@ -8,24 +8,27 @@ var Lock = require('../lib/lock');
 
 describe('Lock', function() {
   it('should lock tasks using the same token', function(done) {
-    var i = 0;
+    var a = false,
+      b = false;
     Lock.get('123', function(lock) {
-      i++;
+      a = true;
       setTimeout(function() {
         lock.free();
-      }, 2);
+      }, 5);
       Lock.get('123', function(lock) {
-        i++;
+        b = true;
         lock.free();
       });
     });
     setTimeout(function() {
-      i.should.equal(1);
+      a.should.equal(true);
+      b.should.equal(false);
     }, 1);
     setTimeout(function() {
-      i.should.equal(2);
+      a.should.equal(true);
+      b.should.equal(true);
       done();
-    }, 3);
+    }, 8);
   });
   it('should not lock tasks using different tokens', function(done) {
     var i = 0;
@@ -33,7 +36,7 @@ describe('Lock', function() {
       i++;
       setTimeout(function() {
         lock.free();
-      }, 2);
+      }, 5);
       Lock.get('456', function(lock) {
         i++;
         lock.free();
