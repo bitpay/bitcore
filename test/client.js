@@ -1601,7 +1601,7 @@ describe('client API', function() {
         c.createAddress(function(err, x0) {
           // This is the first 'shared' address, created automatically
           // by old copay
-          x0.address.should.equal('2N5YkCb68N3hCd9fyW9cwWyCtKrGfji3FWR');
+          x0.address.should.equal('2N3w8sJUyAXCQirqNsTayWr7pWADFNdncmf');
           c.getStatus(function(err, status) {
             should.not.exist(err);
             status.wallet.status.should.equal('complete');
@@ -1658,9 +1658,9 @@ describe('client API', function() {
               status.wallet.status.should.equal('complete');
               c2.credentials.hasTemporaryRequestKeys().should.equal(false);
               c2.createAddress(function(err, x0) {
-                x0.address.should.be.equal('2N2dZ1HogpxHVKv3CD2R4WrhWRwqZtpDc2M');
+                x0.address.should.be.equal('2Mv1DHpozzZ9fup2nZ1kmdRXoNnDJ8b1JF2');
                 c.createAddress(function(err, x0) {
-                  x0.address.should.be.equal('2N1Yx4PvkCwH6qn24YjJ3a2gt5rqFmk2CqN');
+                  x0.address.should.be.equal('2N2dZ1HogpxHVKv3CD2R4WrhWRwqZtpDc2M');
                   done();
                 });
               });
