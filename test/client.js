@@ -830,6 +830,20 @@ describe('client API', function() {
         });
       });
     });
+
+    it('Should handle broken paypro data', function(done) {
+      getter = sinon.stub();
+      getter.yields(null, 'a broken data');
+      clients[0].payProGetter = getter;
+      var opts = {
+        payProUrl: 'dummy',
+      };
+      clients[0].fetchPayPro(opts, function(err, paypro) {
+        should.exist(err);
+        err.should.contain('parse');
+        done();
+      });
+    });
   });
 
   describe('Transactions Signatures and Rejection', function() {
