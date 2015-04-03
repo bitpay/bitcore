@@ -23,6 +23,7 @@ var TxProposal = require('../../lib/model/txproposal');
 var Address = require('../../lib/model/address');
 var Copayer = require('../../lib/model/copayer');
 var WalletService = require('../../lib/server');
+var NotificationBroadcaster = require('../../lib/notificationbroadcaster');
 var TestData = require('../testdata');
 
 var helpers = {};
@@ -2636,6 +2637,100 @@ describe('Wallet service', function() {
 
   });
 
+  describe('#startScan', function() {
+    var server, wallet;
+    var scanConfigOld = WalletService.scanConfig;
+    beforeEach(function(done) {
+      this.timeout(5000);
+      WalletService.scanConfig.SCAN_WINDOW = 2;
+      WalletService.scanConfig.DERIVATION_DELAY = 0;
+
+      helpers.createAndJoinWallet(1, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+    afterEach(function() {
+      WalletService.scanConfig = scanConfigOld;
+      NotificationBroadcaster.removeAllListeners();
+    });
+
+    it('should start an asynchronous scan', function(done) {
+      helpers.stubAddressActivity(['3K2VWMXheGZ4qG35DyGjA2dLeKfaSr534A']);
+      var expectedPaths = [
+        'm/2147483647/0/0',
+        'm/2147483647/0/1',
+        'm/2147483647/0/2',
+        'm/2147483647/0/3',
+        'm/2147483647/1/0',
+        'm/2147483647/1/1',
+      ];
+      WalletService.onNotification(function(n) {
+        if (n.type == 'ScanFinished') {
+          should.not.exist(n.creatorId);
+          server.storage.fetchAddresses(wallet.id, function(err, addresses) {
+            should.exist(addresses);
+            addresses.length.should.equal(expectedPaths.length);
+            var paths = _.pluck(addresses, 'path');
+            _.difference(paths, expectedPaths).length.should.equal(0);
+            server.createAddress({}, function(err, address) {
+              should.not.exist(err);
+              address.path.should.equal('m/2147483647/0/4');
+              done();
+            });
+          })
+        }
+      });
+      server.startScan({}, function(err) {
+        should.not.exist(err);
+      });
+    });
+    it('should start multiple asynchronous scans for different wallets', function(done) {
+      helpers.stubAddressActivity(['3K2VWMXheGZ4qG35DyGjA2dLeKfaSr534A']);
+      WalletService.scanConfig.SCAN_WINDOW = 1;
+
+      var scans = 0;
+      WalletService.onNotification(function(n) {
+        if (n.type == 'ScanFinished') {
+          scans++;
+          if (scans == 2) done();
+        }
+      });
+
+      // Create a second wallet
+      var server2 = new WalletService();
+      var opts = {
+        name: 'second wallet',
+        m: 1,
+        n: 1,
+        pubKey: TestData.keyPair.pub,
+      };
+      server2.createWallet(opts, function(err, walletId) {
+        should.not.exist(err);
+        var copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: walletId,
+          name: 'copayer 1',
+          xPubKey: TestData.copayers[3].xPubKey_45H,
+          requestPubKey: TestData.copayers[3].pubKey_1H_0,
+        });
+        server.joinWallet(copayerOpts, function(err, result) {
+          should.not.exist(err);
+          helpers.getAuthServer(result.copayerId, function(server2) {
+            server.startScan({}, function(err) {
+              should.not.exist(err);
+              scans.should.equal(0);
+            });
+            server2.startScan({}, function(err) {
+              should.not.exist(err);
+              scans.should.equal(0);
+            });
+            scans.should.equal(0);
+          });
+        });
+      });
+    });
+  });
 
   describe('#replaceTemporaryRequestKey', function() {
     var server, walletId;
@@ -2832,57 +2927,6 @@ describe('Wallet service', function() {
             });
           });
         });
-      });
-    });
-  });
-
-  describe('#startScan', function() {
-    var server, wallet;
-    var scanConfigOld = WalletService.scanConfig;
-    beforeEach(function(done) {
-      this.timeout(5000);
-      WalletService.scanConfig.SCAN_WINDOW = 2;
-      WalletService.scanConfig.DERIVATION_DELAY = 0;
-
-      helpers.createAndJoinWallet(1, 2, function(s, w) {
-        server = s;
-        wallet = w;
-        done();
-      });
-    });
-    afterEach(function() {
-      WalletService.scanConfig = scanConfigOld;
-      WalletService.onNotification(function() {});
-    });
-
-    it('should start an asynchronous scan', function(done) {
-      helpers.stubAddressActivity(['3K2VWMXheGZ4qG35DyGjA2dLeKfaSr534A']);
-      var expectedPaths = [
-        'm/2147483647/0/0',
-        'm/2147483647/0/1',
-        'm/2147483647/0/2',
-        'm/2147483647/0/3',
-        'm/2147483647/1/0',
-        'm/2147483647/1/1',
-      ];
-      WalletService.onNotification(function(n) {
-        if (n.type == 'ScanFinished') {
-          should.not.exist(n.creatorId);
-          server.storage.fetchAddresses(wallet.id, function(err, addresses) {
-            should.exist(addresses);
-            addresses.length.should.equal(expectedPaths.length);
-            var paths = _.pluck(addresses, 'path');
-            _.difference(paths, expectedPaths).length.should.equal(0);
-            server.createAddress({}, function(err, address) {
-              should.not.exist(err);
-              address.path.should.equal('m/2147483647/0/4');
-              done();
-            });
-          })
-        }
-      });
-      server.startScan({}, function(err) {
-        should.not.exist(err);
       });
     });
   });
