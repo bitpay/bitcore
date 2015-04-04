@@ -37382,7 +37382,7 @@ module.exports={
   "homepage": "https://github.com/bitpay/bitcore",
   "_id": "bitcore@0.11.6",
   "_shasum": "88329d23725e822ff585193d86c967b9dc5238eb",
-  "_from": "bitcore@>=0.11.6-0 <0.12.0-0",
+  "_from": "bitcore@^0.11.6",
   "_npmVersion": "1.4.28",
   "_npmUser": {
     "name": "maraoz",
@@ -54243,7 +54243,7 @@ module.exports={
   "gitHead": "17dc013761dd1efcfb868e2b06b0b897627b40be",
   "_id": "elliptic@1.0.1",
   "_shasum": "d180376b66a17d74995c837796362ac4d22aefe3",
-  "_from": "elliptic@>=1.0.0-0 <2.0.0-0",
+  "_from": "elliptic@^1.0.0",
   "_npmVersion": "1.4.28",
   "_npmUser": {
     "name": "indutny",
