@@ -14,10 +14,12 @@ var config = {
   WalletService: {
     storageOpts: {
       dbPath: './db',
-      /*
-      dbHost: 'http://db.host.org',
-      dbPort: '8188',
-       */
+      /*  To use multilevel, uncomment this:
+      multiLevel: {
+        host: 'localhost',
+        port: 3002,
+      },
+     */
     },
   },
 };
