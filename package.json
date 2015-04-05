@@ -2,7 +2,7 @@
   "name": "bitcore-wallet",
   "description": "A CLI Mutisig HD Bitcoin Wallet, demo for Bitcore Wallet Service",
   "author": "BitPay Inc",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "keywords": [
     "bitcoin",
     "copay",
