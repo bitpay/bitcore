@@ -26,7 +26,6 @@
     "coveralls": "^2.11.2",
     "express": "^4.10.0",
     "inherits": "^2.0.1",
-    "level": "^0.18.0",
     "leveldown": "^0.10.0",
     "levelup": "^0.19.0",
     "lodash": "^3.3.1",
