@@ -1288,6 +1288,7 @@ describe('client API', function() {
               disableLogs: true,
             });
 
+            var oldPKR = _.clone(clients[0].credentials.publicKeyRing);
             var recoveryClient = helpers.newClient(newApp);
             recoveryClient.import(clients[0].export());
 
@@ -1304,7 +1305,13 @@ describe('client API', function() {
                     should.exist(addr2);
                     addr2.address.should.equal(addr.address);
                     addr2.path.should.equal(addr.path);
-                    done();
+
+                    var recoveryClient2 = helpers.newClient(newApp);
+                    recoveryClient2.import(clients[1].export());
+                    recoveryClient2.getStatus(function(err, status) {
+                      should.not.exist(err);
+                      done();
+                    });
                   });
                 });
               });
@@ -1746,5 +1753,56 @@ describe('client API', function() {
         });
       });
     });
+
+    it.skip('Should import and complete 2-3 wallet from 2 copayers and recreate it', function(done) {
+      var w = 'wallet::7065a73486c8cb5d';
+      var key = 'fS4HhoRd25KJY4VpNpO1jg==';
+      var t = ImportData.copayers[0];
+      var c = helpers.newClient(app);
+      c.createWalletFromOldCopay(t.username, t.password, t.ls[w], function(err) {
+        should.not.exist(err);
+        var t2 = ImportData.copayers[1];
+        var c2 = helpers.newClient(app);
+        c2.createWalletFromOldCopay(t2.username, t2.password, t2.ls[w], function(err) {
+          should.not.exist(err);
+
+          // New BWS server...
+          var db = levelup(memdown, {
+            valueEncoding: 'json'
+          });
+          var storage = new Storage({
+            db: db
+          });
+          var newApp = ExpressApp.start({
+            WalletService: {
+              storage: storage,
+              blockchainExplorer: blockchainExplorerMock,
+            },
+            disableLogs: false,
+          });
+          var oldPKR = _.clone(c.credentials.publicKeyRing);
+          var recoveryClient = helpers.newClient(newApp);
+          recoveryClient.import(c.export());
+          recoveryClient.recreateWallet(function(err) {
+            console.log('[client.js.1790:err:]', err); //TODO
+            should.not.exist(err);
+            recoveryClient.getStatus(function(err, status) {
+              should.not.exist(err);
+              status.wallet.publicKeyRing.should.deep.equal(oldPKR);
+              c2.createWalletFromOldCopay(t2.username, t2.password, t2.ls[w], function(err) {
+                console.log('[client.js.1794:err:]', err); //TODO
+                should.not.exist(err);
+                c2.getStatus(function(err, status) {
+                  console.log('[client.js.1794:err:]', err); //TODO
+                  should.not.exist(err);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
   });
 });
