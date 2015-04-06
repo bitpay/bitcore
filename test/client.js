@@ -1617,7 +1617,29 @@ describe('client API', function() {
         });
       });
     });
-    it('Should fail to import the same wallet twice', function(done) {
+    it('Should to import the same wallet twice with different clients', function(done) {
+      var t = ImportData.copayers[0];
+      var c = helpers.newClient(app);
+      c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
+        should.not.exist(err);
+        c.getStatus(function(err, status) {
+          should.not.exist(err);
+          status.wallet.status.should.equal('complete');
+          c.credentials.walletId.should.equal('4d32f0737a05f072');
+          var c2 = helpers.newClient(app);
+          c2.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
+            should.not.exist(err);
+            c2.getStatus(function(err, status) {
+              should.not.exist(err);
+              status.wallet.status.should.equal('complete');
+              c2.credentials.walletId.should.equal('4d32f0737a05f072');
+              done();
+            });
+          });
+        });
+      });
+    });
+    it('Should not fail when importing the same wallet twice, same copayer', function(done) {
       var t = ImportData.copayers[0];
       var c = helpers.newClient(app);
       c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
@@ -1627,14 +1649,13 @@ describe('client API', function() {
           status.wallet.status.should.equal('complete');
           c.credentials.walletId.should.equal('4d32f0737a05f072');
           c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
-            // this throws invalid signature because
-            // the it trys correctly to replace req pub key, but auth fails
-            err.message.should.contain('Invalid signature');
+            should.not.exist(err);
             done();
           });
         });
       });
     });
+
     it('Should import and complete 2-2 wallet from 2 copayers, and create addresses', function(done) {
       var t = ImportData.copayers[0];
       var c = helpers.newClient(app);
