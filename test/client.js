@@ -283,6 +283,7 @@ describe('client API', function() {
           clients[0].openWallet(function(err, walletStatus) {
             should.not.exist(err);
             should.exist(walletStatus);
+            _.difference(_.pluck(walletStatus.copayers, 'name'), ['creator', 'guest']).length.should.equal(0);
             if (++checks == 2) done();
           });
         });
@@ -1297,6 +1298,7 @@ describe('client API', function() {
                 should.not.exist(err);
                 recoveryClient.getStatus(function(err, status) {
                   should.not.exist(err);
+                  _.difference(_.pluck(status.wallet.copayers, 'name'), ['creator', 'copayer 1']).length.should.equal(0);
                   recoveryClient.createAddress(function(err, addr2) {
                     should.not.exist(err);
                     should.exist(addr2);
