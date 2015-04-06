@@ -31,6 +31,7 @@
     "lodash": "^3.3.1",
     "mocha-lcov-reporter": "0.0.1",
     "morgan": "*",
+    "multilevel": "^6.1.0",
     "npmlog": "^0.1.1",
     "preconditions": "^1.0.7",
     "read": "^1.0.5",
