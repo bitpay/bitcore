@@ -280,9 +280,9 @@ describe('client API', function() {
         should.not.exist(err);
         clients[1].joinWallet(secret, 'guest', function(err) {
           should.not.exist(err);
-          clients[0].openWallet(function(err, isComplete) {
+          clients[0].openWallet(function(err, walletStatus) {
             should.not.exist(err);
-            isComplete.should.be.true;
+            should.exist(walletStatus);
             if (++checks == 2) done();
           });
         });
