@@ -283,6 +283,7 @@ describe('client API', function() {
           clients[0].openWallet(function(err, walletStatus) {
             should.not.exist(err);
             should.exist(walletStatus);
+            _.difference(_.pluck(walletStatus.copayers, 'name'), ['creator', 'guest']).length.should.equal(0);
             if (++checks == 2) done();
           });
         });
