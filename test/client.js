@@ -926,6 +926,32 @@ describe('client API', function() {
       });
     });
 
+    it.skip('Send, reject actions in 2-3 wallet much have correct copayerNames', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 3, function(w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          blockchainExplorerMock.setUtxo(x0, 10, 2);
+          var opts = {
+            amount: 10000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hello 1-1',
+          };
+          clients[0].sendTxProposal(opts, function(err, txp) {
+            should.not.exist(err);
+            clients[0].rejectTxProposal(txp, 'wont sign', function(err, txp) {
+              should.not.exist(err, err);
+              clients[1].signTxProposal(txp, function(err, txp) {
+                should.not.exist(err);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
+
+
     it('Send, reject, 2 signs and broadcast in 2-3 wallet', function(done) {
       helpers.createAndJoinWallet(clients, 2, 3, function(w) {
         clients[0].createAddress(function(err, x0) {
@@ -1288,6 +1314,7 @@ describe('client API', function() {
               disableLogs: true,
             });
 
+            var oldPKR = _.clone(clients[0].credentials.publicKeyRing);
             var recoveryClient = helpers.newClient(newApp);
             recoveryClient.import(clients[0].export());
 
@@ -1304,7 +1331,13 @@ describe('client API', function() {
                     should.exist(addr2);
                     addr2.address.should.equal(addr.address);
                     addr2.path.should.equal(addr.path);
-                    done();
+
+                    var recoveryClient2 = helpers.newClient(newApp);
+                    recoveryClient2.import(clients[1].export());
+                    recoveryClient2.getStatus(function(err, status) {
+                      should.not.exist(err);
+                      done();
+                    });
                   });
                 });
               });
@@ -1617,7 +1650,29 @@ describe('client API', function() {
         });
       });
     });
-    it('Should fail to import the same wallet twice', function(done) {
+    it('Should to import the same wallet twice with different clients', function(done) {
+      var t = ImportData.copayers[0];
+      var c = helpers.newClient(app);
+      c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
+        should.not.exist(err);
+        c.getStatus(function(err, status) {
+          should.not.exist(err);
+          status.wallet.status.should.equal('complete');
+          c.credentials.walletId.should.equal('4d32f0737a05f072');
+          var c2 = helpers.newClient(app);
+          c2.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
+            should.not.exist(err);
+            c2.getStatus(function(err, status) {
+              should.not.exist(err);
+              status.wallet.status.should.equal('complete');
+              c2.credentials.walletId.should.equal('4d32f0737a05f072');
+              done();
+            });
+          });
+        });
+      });
+    });
+    it('Should not fail when importing the same wallet twice, same copayer', function(done) {
       var t = ImportData.copayers[0];
       var c = helpers.newClient(app);
       c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
@@ -1627,14 +1682,13 @@ describe('client API', function() {
           status.wallet.status.should.equal('complete');
           c.credentials.walletId.should.equal('4d32f0737a05f072');
           c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
-            // this throws invalid signature because
-            // the it trys correctly to replace req pub key, but auth fails
-            err.message.should.contain('Invalid signature');
+            should.not.exist(err);
             done();
           });
         });
       });
     });
+
     it('Should import and complete 2-2 wallet from 2 copayers, and create addresses', function(done) {
       var t = ImportData.copayers[0];
       var c = helpers.newClient(app);
@@ -1725,5 +1779,55 @@ describe('client API', function() {
         });
       });
     });
+
+    it('Should import a 2-3 wallet from 2 copayers, and recreate it, and then on the recreated other copayers should be able to access', function(done) {
+      var w = 'wallet::7065a73486c8cb5d';
+      var key = 'fS4HhoRd25KJY4VpNpO1jg==';
+      var t = ImportData.copayers[0];
+      var c = helpers.newClient(app);
+      c.createWalletFromOldCopay(t.username, t.password, t.ls[w], function(err) {
+        should.not.exist(err);
+        var t2 = ImportData.copayers[1];
+        var c2 = helpers.newClient(app);
+        c2.createWalletFromOldCopay(t2.username, t2.password, t2.ls[w], function(err) {
+          should.not.exist(err);
+
+          // New BWS server...
+          var db = levelup(memdown, {
+            valueEncoding: 'json'
+          });
+          var storage = new Storage({
+            db: db
+          });
+          var newApp = ExpressApp.start({
+            WalletService: {
+              storage: storage,
+              blockchainExplorer: blockchainExplorerMock,
+            },
+            disableLogs: true,
+          });
+          var recoveryClient = helpers.newClient(newApp);
+          recoveryClient.import(c.export());
+          recoveryClient.recreateWallet(function(err) {
+            should.not.exist(err);
+            recoveryClient.getStatus(function(err, status) {
+              should.not.exist(err);
+              _.pluck(status.wallet.copayers, 'name').should.deep.equal(['123', '234', '345']);
+              var t2 = ImportData.copayers[1];
+              var c2p = helpers.newClient(newApp);
+              c2p.createWalletFromOldCopay(t2.username, t2.password, t2.ls[w], function(err) {
+                should.not.exist(err);
+                c2p.getStatus(function(err, status) {
+                  should.not.exist(err);
+                  _.pluck(status.wallet.copayers, 'name').should.deep.equal(['123', '234', '345']);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
   });
 });
