@@ -4,9 +4,9 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var Lock = require('../lib/lock');
+var Lock = require('../lib/locallock');
 
-describe('Lock', function() {
+describe('Local lock', function() {
   it('should lock tasks using the same token', function(done) {
     var a = false,
       b = false;
