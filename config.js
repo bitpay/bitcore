@@ -21,6 +21,14 @@ var config = {
       },
      */
     },
+    lockOpts: {
+      /*  To use locker-server, uncomment this:
+      lockerServer: {
+        host: 'localhost',
+        port: 3003,
+      },
+     */
+    },
   },
 };
 module.exports = config;
