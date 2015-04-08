@@ -6,18 +6,25 @@ var sinon = require('sinon');
 var should = chai.should();
 var Lock = require('../lib/locallock');
 
-describe('Local lock', function() {
+
+describe('Local locks', function() {
+  var lock;
+  beforeEach(function() {
+    lock = new Lock();
+  });
   it('should lock tasks using the same token', function(done) {
     var a = false,
       b = false;
-    Lock.get('123', function(lock) {
+    lock.locked('123', 0, 0, function(err, release) {
+      should.not.exist(err);
       a = true;
       setTimeout(function() {
-        lock.free();
+        release();
       }, 5);
-      Lock.get('123', function(lock) {
+      lock.locked('123', 0, 0, function(err, release) {
+        should.not.exist(err);
         b = true;
-        lock.free();
+        release();
       });
     });
     setTimeout(function() {
@@ -32,14 +39,16 @@ describe('Local lock', function() {
   });
   it('should not lock tasks using different tokens', function(done) {
     var i = 0;
-    Lock.get('123', function(lock) {
+    lock.locked('123', 0, 0, function(err, release) {
+      should.not.exist(err);
       i++;
       setTimeout(function() {
-        lock.free();
+        release();
       }, 5);
-      Lock.get('456', function(lock) {
+      lock.locked('456', 0, 0, function(err, release) {
+        should.not.exist(err);
         i++;
-        lock.free();
+        release();
       });
     });
     setTimeout(function() {
