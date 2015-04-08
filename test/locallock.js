@@ -56,4 +56,33 @@ describe('Local locks', function() {
       done();
     }, 1);
   });
+  it('should return error if unable to acquire lock', function(done) {
+    lock.locked('123', 0, 0, function(err, release) {
+      should.not.exist(err);
+      setTimeout(function() {
+        release();
+      }, 5);
+      lock.locked('123', 1, 0, function(err, release) {
+        should.exist(err);
+        err.toString().should.contain('Could not acquire lock 123');
+        done();
+      });
+    });
+  });
+  it('should release lock if acquired for a long time', function(done) {
+    var i = 0;
+    lock.locked('123', 0, 3, function(err, release) {
+      should.not.exist(err);
+      i++;
+      lock.locked('123', 15, 0, function(err, release) {
+        should.not.exist(err);
+        i++;
+      });
+    });
+    setTimeout(function() {
+      i.should.equal(2);
+      done();
+    }, 10);
+  });
+
 });
