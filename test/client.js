@@ -1846,6 +1846,15 @@ describe('client API', function() {
         password: password,
       }, done);
     });
+    it('should not lock if not encrypted', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
+        (function() {
+          clients[0].lock();
+        }).should.throw('encrypted');
+        done();
+      });
+    });
+
     it('should return priv key is not encrypted', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
         clients[0].isPrivKeyEncrypted().should.equal(false);
@@ -1856,6 +1865,16 @@ describe('client API', function() {
     it('should return priv key is encrypted', function() {
       c1.isPrivKeyEncrypted().should.equal(true);
       c1.hasPrivKeyEncrypted().should.equal(true);
+    });
+    it('should prevent to reencrypt the priv key', function() {
+      (function() {
+        c1.encrypt('pepe');
+      }).should.throw('Already');
+    });
+    it('should prevent to encrypt airgapped credentials', function() {
+      (function() {
+        c1.encrypt('pepe');
+      }).should.throw('Already');
     });
     it('should lock and unlock', function() {
       c1.unlock(password);
