@@ -1834,7 +1834,7 @@ describe('client API', function() {
     });
 
   });
-  describe('Private key encryption', function() {
+  describe.only('Private key encryption', function() {
     var password = 'jesuissatoshi';
     var c1, c2;
     var importedClient;
@@ -1874,6 +1874,20 @@ describe('client API', function() {
         c1.setPrivateKeyEncryption('pepe');
       }).should.throw('Already');
     });
+    it('should prevent to disable priv key encryption when locked', function() {
+      (function() {
+        c1.disablePrivateKeyEncryption();
+      }).should.throw('locked');
+      c1.isPrivKeyEncrypted().should.equal(true);
+      c1.hasPrivKeyEncrypted().should.equal(true);
+    });
+    it('should allow to disable priv key encryption when unlocked', function() {
+      c1.unlock(password);
+      c1.disablePrivateKeyEncryption();
+      c1.isPrivKeyEncrypted().should.equal(false);
+      c1.hasPrivKeyEncrypted().should.equal(false);
+    });
+ 
     it('should prevent to encrypt airgapped\'s proxy credentials', function() {
       var airgapped = new Client();
       airgapped.seedFromRandom('testnet');
