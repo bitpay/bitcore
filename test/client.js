@@ -1874,6 +1874,20 @@ describe('client API', function() {
         c1.setPrivateKeyEncryption('pepe');
       }).should.throw('Already');
     });
+    it('should prevent to disable priv key encryption when locked', function() {
+      (function() {
+        c1.disablePrivateKeyEncryption();
+      }).should.throw('locked');
+      c1.isPrivKeyEncrypted().should.equal(true);
+      c1.hasPrivKeyEncrypted().should.equal(true);
+    });
+    it('should allow to disable priv key encryption when unlocked', function() {
+      c1.unlock(password);
+      c1.disablePrivateKeyEncryption();
+      c1.isPrivKeyEncrypted().should.equal(false);
+      c1.hasPrivKeyEncrypted().should.equal(false);
+    });
+ 
     it('should prevent to encrypt airgapped\'s proxy credentials', function() {
       var airgapped = new Client();
       airgapped.seedFromRandom('testnet');
@@ -1904,33 +1918,50 @@ describe('client API', function() {
       }).should.throw('Could not unlock');
     });
 
-    it('should export & import unlocked', function() {
-      (function() {
-        c1.export();
-      }).should.throw('Private Key is encrypted');
-      c1.unlock(password);
-      var exported = c1.export();
-      importedClient = helpers.newClient(app);
-      importedClient.import(exported);
-    });
-    it('should export & import compressed, unlocked', function(done) {
+
+    it('should export & import uncompressed, locked', function(done) {
       var walletId = c1.credentials.walletId;
       var walletName = c1.credentials.walletName;
       var copayerName = c1.credentials.copayerName;
-      c1.unlock(password);
-
       var exported = c1.export({
-        compressed: true
       });
       importedClient = helpers.newClient(app);
       importedClient.import(exported, {
-        compressed: true
       });
       importedClient.openWallet(function(err) {
         should.not.exist(err);
         importedClient.credentials.walletId.should.equal(walletId);
         importedClient.credentials.walletName.should.equal(walletName);
         importedClient.credentials.copayerName.should.equal(copayerName);
+        importedClient.isPrivKeyEncrypted().should.equal(true);
+        importedClient.hasPrivKeyEncrypted().should.equal(true);
+        importedClient.unlock(password);
+        importedClient.isPrivKeyEncrypted().should.equal(false);
+        importedClient.hasPrivKeyEncrypted().should.equal(true);
+        done();
+      });
+    });
+ 
+
+    it('should export & import compressed, locked', function(done) {
+      var walletId = c1.credentials.walletId;
+      var walletName = c1.credentials.walletName;
+      var copayerName = c1.credentials.copayerName;
+      var exported = c1.export({
+        compressed: true
+      });
+      importedClient = helpers.newClient(app);
+      importedClient.import(exported, {
+        compressed: true,
+        password: password,
+      });
+      importedClient.openWallet(function(err) {
+        should.not.exist(err);
+        importedClient.credentials.walletId.should.equal(walletId);
+        importedClient.credentials.walletName.should.equal(walletName);
+        importedClient.credentials.copayerName.should.equal(copayerName);
+        importedClient.isPrivKeyEncrypted().should.equal(true);
+        importedClient.hasPrivKeyEncrypted().should.equal(true);
         done();
       });
     });

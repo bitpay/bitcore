@@ -234,13 +234,10 @@ API.prototype.export = function(opts) {
 
   var output;
 
-  if (this.isPrivKeyEncrypted())
-     throw new Error('Private Key is encrypted, cannot export');
-
   var cred = Credentials.fromObj(this.credentials);
   if (opts.noSign) {
     delete cred.xPrivKey;
-    delete cred.xPrivKeyEnc;
+    delete cred.xPrivKeyEncrypted;
   }
 
   if (opts.compressed) {
@@ -258,6 +255,8 @@ API.prototype.export = function(opts) {
  *
  * @param {Object} opts
  * @param {Boolean} opts.compressed
+ * @param {String} opts.password If the source has the private key encrypted, the password
+ * will be needed for derive credentials fields.
  */
 API.prototype.import = function(str, opts) {
   opts = opts || {};
@@ -265,14 +264,14 @@ API.prototype.import = function(str, opts) {
   var credentials;
   try {
     if (opts.compressed) {
-      credentials = Credentials.importCompressed(str);
+      credentials = Credentials.importCompressed(str, opts.password);
       // HACK: simulate incomplete credentials
       delete credentials.m;
     } else {
       credentials = Credentials.fromObj(JSON.parse(str));
     }
   } catch (ex) {
-    throw new Error('Error importing from source');
+    throw new Error('Error importing from source:' + ex);
   }
   this.credentials = credentials;
 };
@@ -308,7 +307,7 @@ API.prototype._doRequest = function(method, url, args, cb) {
     body: args,
     json: true,
     withCredentials: false,
-    timeout:5000
+    timeout: 5000
   };
 
   log.debug('Request Args', util.inspect(args, {
@@ -320,8 +319,10 @@ API.prototype._doRequest = function(method, url, args, cb) {
       depth: 10
     }));
     if (res.statusCode != 200) {
-      if (res.statusCode == 404) 
-        return cb({code: 'NOTFOUND'});
+      if (res.statusCode == 404)
+        return cb({
+          code: 'NOTFOUND'
+        });
 
       return cb(err || API._parseError(body));
     }
@@ -416,18 +417,30 @@ API.prototype.isComplete = function() {
   return this.credentials && this.credentials.isComplete();
 };
 
+/**
+ * Is private key currently encrypted? (ie, locked)
+ *
+ * @return {Boolean}
+ */
 API.prototype.isPrivKeyEncrypted = function() {
   return this.credentials && this.credentials.isPrivKeyEncrypted();
 };
 
+/**
+ * Is private key encryption setup?
+ *
+ * @return {Boolean}
+ */
 API.prototype.hasPrivKeyEncrypted = function() {
   return this.credentials && this.credentials.hasPrivKeyEncrypted();
 };
 
-API.prototype.lock = function() {
-  return this.credentials.lock();
-};
-
+/**
+ * unlocks the private key. `lock` need to be called explicity
+ * later to remove the unencrypted private key.
+ *
+ * @param password
+ */
 API.prototype.unlock = function(password) {
   try {
     this.credentials.unlock(password);
@@ -436,6 +449,12 @@ API.prototype.unlock = function(password) {
   }
 };
 
+/**
+ * Can this credentials sign a transaction?
+ * (Only returns fail on a 'proxy' setup for airgapped operation)
+ *
+ * @return {undefined}
+ */
 API.prototype.canSign = function() {
   return this.credentials && this.credentials.canSign();
 };
@@ -510,10 +529,22 @@ API.prototype.openWallet = function(cb) {
 };
 
 
-API.prototype.encrypt = function(password) {
-  this.credentials.encrypt(password, API.privateKeyEncryptionOpts);
+/**
+ * sets up encryption for the extended private key
+ *
+ * @param {String} password Password used to encrypt
+ * @param {Object} opts optional: SJCL options to encrypt (.iter, .salt, etc).
+ * @return {undefined}
+ */
+API.prototype.setPrivateKeyEncryption = function(password, opts) {
+  this.credentials.setPrivateKeyEncryption(password, opts || API.privateKeyEncryptionOpts);
 };
 
+/**
+ * Locks private key (removes the unencrypted version and keep only the encrypted)
+ *
+ * @return {undefined}
+ */
 API.prototype.lock = function() {
   this.credentials.lock();
 };
@@ -570,14 +601,7 @@ API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
 
     self._doJoinWallet(walletId, walletPrivKey, self.credentials.xPubKey, self.credentials.requestPubKey, copayerName, {},
       function(err, wallet) {
-
-        if (opts.password) {
-          self.encrypt(opts.password);
-          self.lock();
-        }
-
         if (err) return cb(err);
-
         return cb(null, n > 1 ? secret : null);
       });
   });
@@ -1205,7 +1229,7 @@ var sjcl = require('sjcl');
 var FIELDS = [
   'network',
   'xPrivKey',
-  'xPrivKeyEnc',
+  'xPrivKeyEncrypted',
   'xPubKey',
   'requestPrivKey',
   'requestPubKey',
@@ -1223,6 +1247,7 @@ var FIELDS = [
 
 var EXPORTABLE_FIELDS = [
   'xPrivKey',
+  'xPrivKeyEncrypted',
   'requestPrivKey',
   'xPubKey',
   'm',
@@ -1282,8 +1307,7 @@ Credentials.fromObj = function(obj) {
     x[k] = obj[k];
   });
 
-  $.checkState(x.xPrivKey || x.xPubKey || x.xPrivKeyEnc, "invalid input");
-
+  $.checkState(x.xPrivKey || x.xPubKey || x.xPrivKeyEncrypted, "invalid input");
   return x;
 };
 
@@ -1322,36 +1346,36 @@ Credentials.prototype.hasWalletInfo = function() {
 };
 
 Credentials.prototype.isPrivKeyEncrypted = function() {
-  return (!!this.xPrivKeyEnc) && !this.xPrivKey;
+  return (!!this.xPrivKeyEncrypted) && !this.xPrivKey;
 };
 
 Credentials.prototype.hasPrivKeyEncrypted = function() {
-  return (!!this.xPrivKeyEnc);
+  return (!!this.xPrivKeyEncrypted);
 };
 
-Credentials.prototype.encrypt = function(password, opts) {
-  if (this.xPrivKeyEnc)
+Credentials.prototype.setPrivateKeyEncryption = function(password, opts) {
+  if (this.xPrivKeyEncrypted)
     throw new Error('Encrypted Privkey Already exists');
 
   if (!this.xPrivKey)
     throw new Error('No private key to encrypt');
 
 
-  this.xPrivKeyEnc = sjcl.encrypt(password, this.xPrivKey, opts);
-  if (!this.xPrivKeyEnc)
+  this.xPrivKeyEncrypted = sjcl.encrypt(password, this.xPrivKey, opts);
+  if (!this.xPrivKeyEncrypted)
     throw new Error('Could not encrypt');
 };
 
 Credentials.prototype.lock = function() {
-  if (!this.xPrivKeyEnc)
+  if (!this.xPrivKeyEncrypted)
     throw new Error('Could not lock, no encrypted private key');
 
   delete this.xPrivKey;
 };
 
 Credentials.prototype.unlock = function(password) {
-  if (this.xPrivKeyEnc) {
-    this.xPrivKey = sjcl.decrypt(password, this.xPrivKeyEnc);
+  if (this.xPrivKeyEncrypted) {
+    this.xPrivKey = sjcl.decrypt(password, this.xPrivKeyEncrypted);
   }
 };
 
@@ -1374,7 +1398,7 @@ Credentials.prototype.updatePublicKeyRing = function(publicKeyRing) {
 };
 
 Credentials.prototype.canSign = function() {
-  return (!!this.xPrivKey || !!this.xPrivKeyEnc);
+  return (!!this.xPrivKey || !!this.xPrivKeyEncrypted);
 };
 
 Credentials.prototype.isComplete = function() {
@@ -1409,7 +1433,7 @@ Credentials.prototype.exportCompressed = function() {
   return JSON.stringify(values);
 };
 
-Credentials.importCompressed = function(compressed) {
+Credentials.importCompressed = function(compressed, password) {
   var list;
   try {
     list = JSON.parse(compressed);
@@ -1426,7 +1450,12 @@ Credentials.importCompressed = function(compressed) {
   _.each(EXPORTABLE_FIELDS, function(field, i) {
     x[field] = list[i];
   });
+
+  if (password)
+    x.unlock(password);
   x._expand();
+  if (password)
+    x.lock(password);
 
   x.network = WalletUtils.getNetworkFromXPubKey(x.xPubKey);
   x.publicKeyRing.push({
