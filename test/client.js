@@ -272,12 +272,16 @@ describe('client API', function() {
       clients[0].on('walletCompleted', function(wallet) {
         wallet.name.should.equal('wallet name');
         wallet.status.should.equal('complete');
+        clients[0].isComplete().should.equal(true);
+        clients[0].credentials.isComplete().should.equal(true);
         if (++checks == 2) done();
       });
       clients[0].createWallet('wallet name', 'creator', 2, 2, {
         network: 'testnet'
       }, function(err, secret) {
         should.not.exist(err);
+        clients[0].isComplete().should.equal(false);
+        clients[0].credentials.isComplete().should.equal(false);
         clients[1].joinWallet(secret, 'guest', function(err) {
           should.not.exist(err);
           clients[0].openWallet(function(err, walletStatus) {
@@ -1829,5 +1833,146 @@ describe('client API', function() {
       });
     });
 
+  });
+  describe('Private key encryption', function() {
+    var password = 'jesuissatoshi';
+    var c1, c2;
+    var importedClient;
+
+    beforeEach(function(done) {
+      c1 = clients[1];
+      clients[1].createWallet('wallet name', 'creator', 1, 1, {
+        network: 'testnet',
+      }, function() {
+        clients[1].setPrivateKeyEncryption(password);
+        clients[1].lock();
+        done();
+      });
+    });
+    it('should not lock if not encrypted', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
+        (function() {
+          clients[0].lock();
+        }).should.throw('encrypted');
+        done();
+      });
+    });
+
+    it('should return priv key is not encrypted', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
+        clients[0].isPrivKeyEncrypted().should.equal(false);
+        clients[0].hasPrivKeyEncrypted().should.equal(false);
+        done();
+      });
+    });
+    it('should return priv key is encrypted', function() {
+      c1.isPrivKeyEncrypted().should.equal(true);
+      c1.hasPrivKeyEncrypted().should.equal(true);
+    });
+    it('should prevent to reencrypt the priv key', function() {
+      (function() {
+        c1.setPrivateKeyEncryption('pepe');
+      }).should.throw('Already');
+    });
+    it('should prevent to encrypt airgapped\'s proxy credentials', function() {
+      var airgapped = new Client();
+      airgapped.seedFromRandom('testnet');
+      var exported = airgapped.export({
+        noSign: true
+      });
+      var proxy = helpers.newClient(app);
+      proxy.import(exported);
+      should.not.exist(proxy.credentials.xPrivKey);
+      (function() {
+        proxy.setPrivateKeyEncryption('pepe');
+      }).should.throw('No private key');
+    });
+    it('should lock and unlock', function() {
+      c1.unlock(password);
+      var xpriv = c1.credentials.xPrivKey;
+      c1.isPrivKeyEncrypted().should.equal(false);
+      c1.hasPrivKeyEncrypted().should.equal(true);
+      c1.lock();
+      c1.isPrivKeyEncrypted().should.equal(true);
+      c1.hasPrivKeyEncrypted().should.equal(true);
+      var str = JSON.stringify(c1);
+      str.indexOf(xpriv).should.equal(-1);
+    });
+    it('should fail to unlock with wrong password', function() {
+      (function() {
+        c1.unlock('hola')
+      }).should.throw('Could not unlock');
+    });
+
+    it('should export & import unlocked', function() {
+      (function() {
+        c1.export();
+      }).should.throw('Private Key is encrypted');
+      c1.unlock(password);
+      var exported = c1.export();
+      importedClient = helpers.newClient(app);
+      importedClient.import(exported);
+    });
+    it('should export & import compressed, unlocked', function(done) {
+      var walletId = c1.credentials.walletId;
+      var walletName = c1.credentials.walletName;
+      var copayerName = c1.credentials.copayerName;
+      c1.unlock(password);
+
+      var exported = c1.export({
+        compressed: true
+      });
+      importedClient = helpers.newClient(app);
+      importedClient.import(exported, {
+        compressed: true
+      });
+      importedClient.openWallet(function(err) {
+        should.not.exist(err);
+        importedClient.credentials.walletId.should.equal(walletId);
+        importedClient.credentials.walletName.should.equal(walletName);
+        importedClient.credentials.copayerName.should.equal(copayerName);
+        done();
+      });
+    });
+    it('should not sign when locked', function(done) {
+      c1.createAddress(function(err, x0) {
+        should.not.exist(err);
+        blockchainExplorerMock.setUtxo(x0, 1, 1);
+        var opts = {
+          amount: 10000000,
+          toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          message: 'hello 1-1',
+        };
+        c1.sendTxProposal(opts, function(err, txp) {
+          should.not.exist(err);
+          c1.signTxProposal(txp, function(err) {
+            err.message.should.contain('encrypted');
+            done();
+          });
+        });
+      });
+    });
+    it('should sign when unlocked', function(done) {
+      c1.createAddress(function(err, x0) {
+        should.not.exist(err);
+        blockchainExplorerMock.setUtxo(x0, 1, 1);
+        var opts = {
+          amount: 10000000,
+          toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          message: 'hello 1-1',
+        };
+        c1.sendTxProposal(opts, function(err, txp) {
+          should.not.exist(err);
+          c1.unlock(password);
+          c1.signTxProposal(txp, function(err) {
+            should.not.exist(err);
+            c1.lock();
+            c1.isPrivKeyEncrypted().should.equal(true);
+            c1.hasPrivKeyEncrypted().should.equal(true);
+            done();
+          });
+        });
+      });
+    });
   });
 });

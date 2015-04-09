@@ -37,7 +37,7 @@ var client = new Client({
   verbose: false,
 });
 
-client.createWallet("My Wallet", "Irene", 2, 2, 'testnet', function(err, secret) {
+client.createWallet("My Wallet", "Irene", 2, 2, {network: 'testnet'}, function(err, secret) {
   // Handle err
   console.log('Wallet Created. Share this secret with your copayers: ' + secret);
   fs.writeFileSync('irene.dat', client.export());
@@ -90,25 +90,28 @@ Note that the scripts created two files named `irene.dat` and `thomas.dat`. With
 ## API Client
 
 * [new API(opts)](#new_API)
-* [API.seedFromExtendedPrivateKey(xPrivKey)](#API#seedFromExtendedPrivateKey)
-* [API.seedFromRandom(xPrivKey)](#API#seedFromRandom)
-* [ApI.export(opts)](#API#export)
-* [ApI.import(opts)](#API#import)
-* [API.isComplete()](#API#isComplete)
-* [API.openWallet(cb)](#API#openWallet)
-* [API.createWallet(walletName, copayerName, m, n, network, cb)](#API#createWallet)
-* [API.joinWallet(secret, copayerName, cb)](#API#joinWallet)
-* [API.getStatus(cb)](#API#getStatus)
-* [API.sendTxProposal(opts)](#API#sendTxProposal)
-* [API.createAddress(cb)](#API#createAddress)
-* [API.getMainAddresses(opts, cb)](#API#getMainAddresses)
-* [API.getBalance(cb)](#API#getBalance)
-* [API.getTxProposals(opts)](#API#getTxProposals)
-* [API.signTxProposal(txp, cb)](#API#signTxProposal)
-* [API.rejectTxProposal(txp, reason, cb)](#API#rejectTxProposal)
-* [API.broadcastTxProposal(txp, cb)](#API#broadcastTxProposal)
-* [API.removeTxProposal(txp, cb)](#API#removeTxProposal)
-* [API.getTxHistory(opts, cb)](#API#getTxHistory)
+* [api.seedFromExtendedPrivateKey(xPrivKey)](#API#seedFromExtendedPrivateKey)
+* [api.seedFromRandom(xPrivKey)](#API#seedFromRandom)
+* [api.export(opts)](#API#export)
+* [api.import(opts)](#API#import)
+* [api.isComplete()](#API#isComplete)
+* [api.openWallet(cb)](#API#openWallet)
+* [api.createWallet(walletName, copayerName, m, n, opts, cb)](#API#createWallet)
+* [api.joinWallet(secret, copayerName, cb)](#API#joinWallet)
+* [api.getStatus(cb)](#API#getStatus)
+* [api.sendTxProposal(opts)](#API#sendTxProposal)
+* [api.createAddress(cb)](#API#createAddress)
+* [api.getMainAddresses(opts, cb)](#API#getMainAddresses)
+* [api.getBalance(cb)](#API#getBalance)
+* [api.getTxProposals(opts)](#API#getTxProposals)
+* [api.signTxProposal(txp, cb)](#API#signTxProposal)
+* [api.rejectTxProposal(txp, reason, cb)](#API#rejectTxProposal)
+* [api.broadcastTxProposal(txp, cb)](#API#broadcastTxProposal)
+* [api.removeTxProposal(txp, cb)](#API#removeTxProposal)
+* [api.getTxHistory(opts, cb)](#API#getTxHistory)
+* [api.setPrivateKeyEncryption(password, opts)](#API#getTxHistory)
+* [api.unlock(password)](#API#unlock)
+* [api.lock()](#API#lock)
 
 <a name="new_API"></a>
 ###new API(opts)
@@ -176,7 +179,10 @@ Create a wallet.
 - copayerName `String`  
 - m `Number`  
 - n `Number`  
-- network `String` - 'livenet' or 'testnet'  
+- opts `Object`
+- opts.network `String` - 'livenet' or 'testnet'  
+- opts.walletPrivKey `String` - Optional: Shared private key for the wallet (used by copayers). Default: create a random one
+- opts.id `String` - Optional: ID for the wallet. Default: Create a random one
 - cb `Callback`  
 
 **Returns**: `Callback` - cb - Returns the wallet  
@@ -317,4 +323,41 @@ Get transaction history
 - cb `Callback`  
 
 **Returns**: `Callback` - cb - Return error or array of transactions
+
+###API.setPrivateKeyEncryption(password, opts)
+
+Sets up encryption for the extended private key
+
+**params**
+
+- password `string`  
+- opts `Object`  Optional SJCL's encrypting options (like .iten and .salt) 
+
+Usage example:    
+``` javascript
+  api.setPrivateKeyEncryption('mypassword');
+  ...
+  api.getTxProposals({}, function(err, txps) {
+    api.unlock('mypassword');
+    api.signTxProposal(txps[0], function (err){
+      api.lock();
+    });
+  })
+```
+
+
+###api.unlock(password)
+
+Tries to unlock (decrypt) the extened private key with the provided password.
+(setprivatekeyencryption should be called first). `lock` must be called
+afterwards to remove the uncrypted private key.
+
+**params**
+
+- password `string`  
+
+
+###api.unlock()
+
+Removes the unencrypted private key.
 
