@@ -1834,7 +1834,7 @@ describe('client API', function() {
     });
 
   });
-  describe.only('Private key encryption', function() {
+  describe('Private key encryption', function() {
     var password = 'jesuissatoshi';
     var c1, c2;
     var importedClient;
