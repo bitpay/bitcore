@@ -1871,10 +1871,18 @@ describe('client API', function() {
         c1.encrypt('pepe');
       }).should.throw('Already');
     });
-    it('should prevent to encrypt airgapped credentials', function() {
+    it('should prevent to encrypt airgapped\'s proxy credentials', function() {
+      var airgapped = new Client();
+      airgapped.seedFromRandom('testnet');
+      var exported = airgapped.export({
+        noSign: true
+      });
+      var proxy = helpers.newClient(app);
+      proxy.import(exported);
+      should.not.exist(proxy.credentials.xPrivKey);
       (function() {
-        c1.encrypt('pepe');
-      }).should.throw('Already');
+        proxy.encrypt('pepe');
+      }).should.throw('No private key');
     });
     it('should lock and unlock', function() {
       c1.unlock(password);
