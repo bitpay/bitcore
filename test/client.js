@@ -1843,8 +1843,11 @@ describe('client API', function() {
       c1 = clients[1];
       clients[1].createWallet('wallet name', 'creator', 1, 1, {
         network: 'testnet',
-        password: password,
-      }, done);
+      }, function() {
+        clients[1].setPrivateKeyEncryption(password);
+        clients[1].lock();
+        done();
+      });
     });
     it('should not lock if not encrypted', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
@@ -1868,7 +1871,7 @@ describe('client API', function() {
     });
     it('should prevent to reencrypt the priv key', function() {
       (function() {
-        c1.encrypt('pepe');
+        c1.setPrivateKeyEncryption('pepe');
       }).should.throw('Already');
     });
     it('should prevent to encrypt airgapped\'s proxy credentials', function() {
@@ -1881,7 +1884,7 @@ describe('client API', function() {
       proxy.import(exported);
       should.not.exist(proxy.credentials.xPrivKey);
       (function() {
-        proxy.encrypt('pepe');
+        proxy.setPrivateKeyEncryption('pepe');
       }).should.throw('No private key');
     });
     it('should lock and unlock', function() {
