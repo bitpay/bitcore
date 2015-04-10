@@ -10,7 +10,7 @@ var JSUtil = bitcore.util.js;
 describe('js utils', function() {
 
   describe('isValidJSON', function() {
-    
+
     var hexa = '8080808080808080808080808080808080808080808080808080808080808080';
     var json = '{"key": ["value", "value2"]}';
     var json2 = '["value", "value2", {"key": "value"}]';
@@ -28,6 +28,49 @@ describe('js utils', function() {
     it('correctly validates an array json object', function() {
       var valid = JSUtil.isValidJSON(json);
       valid.should.equal(true);
+    });
+
+  });
+
+  describe('isPositiveInteger', function() {
+    it('false for float', function() {
+      var a = JSUtil.isPositiveInteger(0.1);
+      a.should.equal(false);
+    });
+
+    it('false for string float', function() {
+      var a = JSUtil.isPositiveInteger('0.1');
+      a.should.equal(false);
+    });
+
+    it('false for string integer', function() {
+      var a = JSUtil.isPositiveInteger('1');
+      a.should.equal(false);
+    });
+
+    it('false for negative integer', function() {
+      var a = JSUtil.isPositiveInteger(-1);
+      a.should.equal(false);
+    });
+
+    it('false for negative integer string', function() {
+      var a = JSUtil.isPositiveInteger('-1');
+      a.should.equal(false);
+    });
+
+    it('false for infinity', function() {
+      var a = JSUtil.isPositiveInteger(Infinity);
+      a.should.equal(false);
+    });
+
+    it('false for NaN', function() {
+      var a = JSUtil.isPositiveInteger(NaN);
+      a.should.equal(false);
+    });
+
+    it('true for positive integer', function() {
+      var a = JSUtil.isPositiveInteger(1000);
+      a.should.equal(true);
     });
 
   });

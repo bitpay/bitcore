@@ -30,6 +30,52 @@ describe('Output', function() {
     newOutput.satoshis.should.equal(100);
   });
 
+  it('can be assigned a satoshi amount with a string', function() {
+    var newOutput = new Output({
+      satoshis: '100',
+      script: Script.empty()
+    });
+    newOutput.satoshis.should.equal(100);
+  });
+
+  describe('will error if output is not a positive integer', function() {
+    it('-100', function() {
+      (function() {
+        var newOutput = new Output({
+          satoshis: -100,
+          script: Script.empty()
+        });
+      }).should.throw('Output satoshis is not a positive integer');
+    });
+
+    it('1.1', function() {
+      (function() {
+        var newOutput = new Output({
+          satoshis: 1.1,
+          script: Script.empty()
+        });
+      }).should.throw('Output satoshis is not a positive integer');
+    });
+
+    it('NaN', function() {
+      (function() {
+        var newOutput = new Output({
+          satoshis: NaN,
+          script: Script.empty()
+        });
+      }).should.throw('Output satoshis is not a positive integer');
+    });
+
+    it('Infinity', function() {
+      (function() {
+        var newOutput = new Output({
+          satoshis: Infinity,
+          script: Script.empty()
+        });
+      }).should.throw('Output satoshis is not a positive integer');
+    });
+  });
+
   var expectEqualOutputs = function(a, b) {
     a.satoshis.should.equal(b.satoshis);
     a.script.toString().should.equal(b.script.toString());
