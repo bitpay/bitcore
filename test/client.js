@@ -465,6 +465,33 @@ describe('client API', function() {
   });
 
   describe('Transaction Proposals Creation and Locked funds', function() {
+    it('Should create proposal and getix', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          blockchainExplorerMock.setUtxo(x0, 1, 2);
+          blockchainExplorerMock.setUtxo(x0, 1, 2);
+          var opts = {
+            amount: 3000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hello',
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            clients[0].getTx(x.id, function(err, x2) {
+              x2.creatorName = 'creator';
+              x2.message = opts.message;
+              x2.amount = opts.amount;
+              x2.toAddress = opts.toAddress;
+              should.not.exist(err);
+              done();
+            });
+          });
+        });
+      });
+    });
+ 
     it('Should fail to create proposal with insufficient funds', function(done) {
       helpers.createAndJoinWallet(clients, 2, 2, function(w) {
         clients[0].createAddress(function(err, x0) {

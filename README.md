@@ -100,6 +100,7 @@ Note that the scripts created two files named `irene.dat` and `thomas.dat`. With
 * [api.joinWallet(secret, copayerName, cb)](#API#joinWallet)
 * [api.getStatus(cb)](#API#getStatus)
 * [api.sendTxProposal(opts)](#API#sendTxProposal)
+* [api.getTx(id, cb)](#API#getTx)
 * [api.createAddress(cb)](#API#createAddress)
 * [api.getMainAddresses(opts, cb)](#API#getMainAddresses)
 * [api.getBalance(cb)](#API#getBalance)
@@ -219,6 +220,18 @@ Send a transaction proposal
 
 **Returns**: `Callback` - cb - Return error or the transaction proposal  
 <a name="API#createAddress"></a>
+
+<a name="API#getTx"></a>
+###API.getTx(id, cb)
+Gets a transaction proposal
+
+**Params**
+
+  - id `String`  
+
+**Returns**: `Callback` - cb - Return error or the transaction proposal  
+<a name="API#createAddress"></a>
+
 ###API.createAddress(cb)
 Create a new address
 
