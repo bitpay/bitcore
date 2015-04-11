@@ -11,6 +11,8 @@ var Opcode = bitcore.Opcode;
 var PublicKey = bitcore.PublicKey;
 var Address = bitcore.Address;
 
+var script_valid = require('../data/bitcoind/script_valid');
+
 describe('Script', function() {
 
   it('should make a new script', function() {
@@ -193,24 +195,42 @@ describe('Script', function() {
 
   });
 
+  describe('toHex', function() {
+    it('should return an hexa string "03010203" as expected from [3, 1, 2, 3]', function() {
+      var buf = new Buffer([3, 1, 2, 3]);
+      var script = Script.fromBuffer(buf);
+      script.toHex().should.equal('03010203');
+    });
+  });
+
   describe('#isDataOut', function() {
 
     it('should know this is a (blank) OP_RETURN script', function() {
       Script('OP_RETURN').isDataOut().should.equal(true);
     });
 
-    it('should know this is an OP_RETURN script', function() {
+    it('validates that this 40-byte OP_RETURN is standard', function() {
       var buf = new Buffer(40);
       buf.fill(0);
       Script('OP_RETURN 40 0x' + buf.toString('hex')).isDataOut().should.equal(true);
     });
+    it('validates that this 80-byte OP_RETURN is standard', function() {
+      var buf = new Buffer(80);
+      buf.fill(0);
+      Script('OP_RETURN OP_PUSHDATA1 80 0x' + buf.toString('hex')).isDataOut().should.equal(true);
+    });
 
-    it('should know this is not an OP_RETURN script', function() {
+    it('validates that this 40-byte long OP_CHECKMULTISIG is not standard op_return', function() {
       var buf = new Buffer(40);
       buf.fill(0);
       Script('OP_CHECKMULTISIG 40 0x' + buf.toString('hex')).isDataOut().should.equal(false);
     });
 
+    it('validates that this 81-byte OP_RETURN is not a valid standard OP_RETURN', function() {
+      var buf = new Buffer(81);
+      buf.fill(0);
+      Script('OP_RETURN OP_PUSHDATA1 81 0x' + buf.toString('hex')).isDataOut().should.equal(false);
+    });
   });
 
   describe('#isPublicKeyHashIn', function() {
@@ -236,11 +256,15 @@ describe('Script', function() {
   describe('#isPublicKeyHashOut', function() {
 
     it('should identify this known pubkeyhashout as pubkeyhashout', function() {
-      Script('OP_DUP OP_HASH160 20 0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').isPublicKeyHashOut().should.equal(true);
+      Script('OP_DUP OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').isPublicKeyHashOut().should.equal(true);
     });
 
-    it('should identify this known non-pubkeyhashout as not pubkeyhashout', function() {
-      Script('OP_DUP OP_HASH160 20 0000000000000000000000000000000000000000').isPublicKeyHashOut().should.equal(false);
+    it('should identify this known non-pubkeyhashout as not pubkeyhashout 1', function() {
+      Script('OP_DUP OP_HASH160 20 0x0000000000000000000000000000000000000000').isPublicKeyHashOut().should.equal(false);
+    });
+
+    it('should identify this known non-pubkeyhashout as not pubkeyhashout 2', function() {
+      Script('OP_DUP OP_HASH160 2 0x0000 OP_EQUALVERIFY OP_CHECKSIG').isPublicKeyHashOut().should.equal(false);
     });
 
   });
@@ -290,6 +314,16 @@ describe('Script', function() {
     it('should identify this known non-scripthashin', function() {
       Script('20 0000000000000000000000000000000000000000 OP_CHECKSIG').isScriptHashIn().should.equal(false);
     });
+
+    it('should identify this problematic non-scripthashin scripts', function() {
+      var s = new Script('71 0x3044022017053dad84aa06213749df50a03330cfd24d6' +
+        'b8e7ddbb6de66c03697b78a752a022053bc0faca8b4049fb3944a05fcf7c93b2861' +
+        '734d39a89b73108f605f70f5ed3401 33 0x0225386e988b84248dc9c30f784b06e' +
+        '02fdec57bbdbd443768eb5744a75ce44a4c');
+      var s2 = new Script('OP_RETURN 32 0x19fdb20634911b6459e6086658b3a6ad2dc6576bd6826c73ee86a5f9aec14ed9');
+      s.isScriptHashIn().should.equal(false);
+      s2.isScriptHashIn().should.equal(false);
+    });
   });
 
   describe('#isScripthashOut', function() {
@@ -318,7 +352,7 @@ describe('Script', function() {
 
   describe('#classify', function() {
     it('should classify public key hash out', function() {
-      Script('OP_DUP OP_HASH160 20 0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').classify().should.equal(Script.types.PUBKEYHASH_OUT);
+      Script('OP_DUP OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').classify().should.equal(Script.types.PUBKEYHASH_OUT);
     });
     it('should classify public key hash in', function() {
       Script('47 0x3044022077a8d81e656c4a1c1721e68ce35fa0b27f13c342998e75854858c12396a15ffa02206378a8c6959283c008c87a14a9c0ada5cf3934ac5ee29f1fef9cac6969783e9801 21 0x03993c230da7dabb956292851ae755f971c50532efc095a16bee07f83ab9d262df').classify().should.equal(Script.types.PUBKEYHASH_IN);
@@ -421,6 +455,12 @@ describe('Script', function() {
       var s = Script.buildMultisigOut(sortkeys, 2);
       s.toString().should.equal('OP_2 33 0x021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc18 33 0x022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da 33 0x03e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e9 OP_3 OP_CHECKMULTISIG');
       s.isMultisigOut().should.equal(true);
+    });
+    it('should fail when number of required signatures is greater than number of pubkeys', function() {
+      expect(sortkeys.length).to.equal(3);
+      expect(function() {
+        return Script.buildMultisigOut(sortkeys, 4);
+      }).to.throw('Number of required signatures must be less than or equal to the number of public keys');
     });
     it('should create unsorted script if specified', function() {
       var s = Script.buildMultisigOut(sortkeys, 2);
@@ -617,18 +657,17 @@ describe('Script', function() {
     it('priorize the network argument', function() {
       var script = new Script(liveAddress);
       script.toAddress(Networks.testnet).toString().should.equal(testAddress.toString());
-
-      var s = new Script('OP_DUP OP_HASH160 20 0x06c06f6d931d7bfba2b5bd5ad0d19a8f257af3e3 OP_EQUALVERIFY OP_CHECKSIG');
       script.toAddress(Networks.testnet).network.should.equal(Networks.testnet);
     });
     it('use the inherited network', function() {
       var script = new Script(liveAddress);
       script.toAddress().toString().should.equal(liveAddress.toString());
-      var script = new Script(testAddress);
+      script = new Script(testAddress);
       script.toAddress().toString().should.equal(testAddress.toString());
     });
     it('uses default network', function() {
-      var script = new Script('OP_DUP OP_HASH160 20 0x06c06f6d931d7bfba2b5bd5ad0d19a8f257af3e3 OP_EQUALVERIFY OP_CHECKSIG');
+      var script = new Script('OP_DUP OP_HASH160 20 ' +
+        '0x06c06f6d931d7bfba2b5bd5ad0d19a8f257af3e3 OP_EQUALVERIFY OP_CHECKSIG');
       script.toAddress().network.should.equal(Networks.defaultNetwork);
     });
     it('for a P2PKH address', function() {
@@ -644,9 +683,57 @@ describe('Script', function() {
       script.toAddress().toString().should.equal(stringAddress);
     });
     it('fails if content is not recognized', function() {
-      expect(function() {
-        return Script().toAddress(Networks.livenet);
-      }).to.throw();
+      Script().toAddress(Networks.livenet).should.equal(false);
+    });
+
+    it('works for p2pkh output', function() {
+      // taken from tx 7e519caca256423320b92e3e17be5701f87afecbdb3f53af598032bfd8d164f5
+      var script = new Script('OP_DUP OP_HASH160 20 ' +
+        '0xc8e11b0eb0d2ad5362d894f048908341fa61b6e1 OP_EQUALVERIFY OP_CHECKSIG');
+      script.toAddress().toString().should.equal('1KK9oz4bFH8c1t6LmighHaoSEGx3P3FEmc');
+    });
+    it('works for p2pkh input', function() {
+      // taken from tx 7e519caca256423320b92e3e17be5701f87afecbdb3f53af598032bfd8d164f5
+      var script = new Script('72 0x3045022100eff96230ca0f55b1e8c7a63e014f48611ff1af40875ecd33dee9062d7a6f5e2002206320405b5f6992c756e03e66b21a05a812b60996464ac6af815c2638b930dd7a01 65 0x04150defa035a2c7d826d7d5fc8ab2154bd1bb832f1a5c8ecb338f436362ad232e428b57db44677c5a8bd42c5ed9e2d7e04e742c59bee1b40080cfd57dec64b23a');
+      script.toAddress().toString().should.equal('1KK9oz4bFH8c1t6LmighHaoSEGx3P3FEmc');
+      // taken from tx 7f8f95752a59d715dae9e0008a42e7968d2736741591bbfc6685f6e1649c21ed
+      var s2 = new Script('71 0x3044022017053dad84aa06213749df50a03330cfd24d6b8e7ddbb6de66c03697b78a752a022053bc0faca8b4049fb3944a05fcf7c93b2861734d39a89b73108f605f70f5ed3401 33 0x0225386e988b84248dc9c30f784b06e02fdec57bbdbd443768eb5744a75ce44a4c');
+      s2.toAddress().toString().should.equal('17VArX6GRE6i6MVscBUZoXwi6NhnHa68B7');
+    });
+
+    it('works for p2sh output', function() {
+      // taken from tx fe1f764299dc7f3b5a8fae912050df2b633bf99554c68bf1c456edb9c2b63585
+      var script = new Script('OP_HASH160 20 0x99d29051af0c29adcb9040034752bba7dde33e35 OP_EQUAL');
+      script.toAddress().toString().should.equal('3FiMZ7stbfH2WG5JQ7CiuzrFo7CEnGUcAP');
+    });
+    it('works for p2sh input', function() {
+      // taken from tx fe1f764299dc7f3b5a8fae912050df2b633bf99554c68bf1c456edb9c2b63585
+      var script = new Script('OP_FALSE 72 0x3045022100e824fbe979fac5834d0062dd5a4e82a898e00ac454bd254cd708ad28530816f202206251ff0fa4dd70c0524c690d4e4deb2bd167297e7bbdf6743b4a8050d681555001 37 0x512102ff3ae0aaa4679ea156d5581dbe6695cc0c311df0aa42af76670d0debbd8f672951ae');
+      script.toAddress().toString().should.equal('3GYicPxCvsKvbJmZNBBeWkC3cLuGFhtrQi');
+    });
+
+    // no address scripts
+    it('works for OP_RETURN script', function() {
+      var script = new Script('OP_RETURN 20 0x99d29051af0c29adcb9040034752bba7dde33e35');
+      script.toAddress().should.equal(false);
+    });
+
+  });
+  describe('equals', function() {
+    it('returns true for same script', function() {
+      Script('OP_TRUE').equals(Script('OP_TRUE')).should.equal(true);
+    });
+    it('returns false for different chunks sizes', function() {
+      Script('OP_TRUE').equals(Script('OP_TRUE OP_TRUE')).should.equal(false);
+    });
+    it('returns false for different opcodes', function() {
+      Script('OP_TRUE OP_TRUE').equals(Script('OP_TRUE OP_FALSE')).should.equal(false);
+    });
+    it('returns false for different data', function() {
+      Script().add(new Buffer('a')).equals(Script('OP_TRUE')).should.equal(false);
+    });
+    it('returns false for different data', function() {
+      Script().add(new Buffer('a')).equals(Script().add(new Buffer('b'))).should.equal(false);
     });
   });
 

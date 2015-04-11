@@ -18,4 +18,6 @@ report
 
 bitcore.js
 bitcore.min.js
+bitcore.js.sig
+bitcore.min.js.sig
 tests.js

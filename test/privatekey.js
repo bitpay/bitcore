@@ -9,7 +9,7 @@ var BN = bitcore.crypto.BN;
 var Point = bitcore.crypto.Point;
 var PrivateKey = bitcore.PrivateKey;
 var Networks = bitcore.Networks;
-var base58check = bitcore.encoding.Base58Check;
+var Base58Check = bitcore.encoding.Base58Check;
 
 var validbase58 = require('./data/bitcoind/base58_keys_valid.json');
 var invalidbase58 = require('./data/bitcoind/base58_keys_invalid.json');
@@ -57,7 +57,7 @@ describe('PrivateKey', function() {
   });
 
   it('should create a private key from WIF buffer', function() {
-    var a = new PrivateKey(base58check.decode('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m'));
+    var a = new PrivateKey(Base58Check.decode('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m'));
     should.exist(a);
     should.exist(a.bn);
   });
@@ -100,7 +100,7 @@ describe('PrivateKey', function() {
 
     it('should not be able to instantiate private key WIF is too long', function() {
       expect(function() {
-        var buf = base58check.decode('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
+        var buf = Base58Check.decode('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
         var buf2 = Buffer.concat([buf, new Buffer(0x01)]);
         return new PrivateKey(buf2);
       }).to.throw('Length of buffer must be 33 (uncompressed) or 34 (compressed');
@@ -108,7 +108,7 @@ describe('PrivateKey', function() {
 
     it('should not be able to instantiate private key WIF because of unknown network byte', function() {
       expect(function() {
-        var buf = base58check.decode('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
+        var buf = Base58Check.decode('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
         var buf2 = Buffer.concat([new Buffer('ff', 'hex'), buf.slice(1, 33)]);
         return new PrivateKey(buf2);
       }).to.throw('Invalid network');
@@ -129,13 +129,13 @@ describe('PrivateKey', function() {
 
     it('should not be able to instantiate with unknown network', function() {
       expect(function() {
-        return new PrivateKey(BN(2), 'unknown');
+        return new PrivateKey(new BN(2), 'unknown');
       }).to.throw('Must specify the network ("livenet" or "testnet")');
     });
 
     it('should not create a zero private key', function() {
       expect(function() {
-        var bn = BN(0);
+        var bn = new BN(0);
         return new PrivateKey(bn);
        }).to.throw(TypeError);
     });
@@ -225,6 +225,12 @@ describe('PrivateKey', function() {
       address.toString().should.equal('mtX8nPZZdJ8d3QNLRJ1oJTiEi26Sj6LQXS');
     });
 
+    it('creates network specific address', function() {
+      var pk = PrivateKey.fromWIF('cR4qogdN9UxLZJXCNFNwDRRZNeLRWuds9TTSuLNweFVjiaE4gPaq');
+      pk.toAddress(Networks.livenet).network.name.should.equal(Networks.livenet.name);
+      pk.toAddress(Networks.testnet).network.name.should.equal(Networks.testnet.name);
+    });
+
   });
 
   describe('#inspect', function() {
@@ -261,6 +267,10 @@ describe('PrivateKey', function() {
       a.should.equal(false);
     });
 
+    it('should recognize that undefined is an invalid private key', function() {
+      PrivateKey.isValid().should.equal(false);
+    });
+
     it('should validate as true', function() {
       var a = PrivateKey.isValid('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
       a.should.equal(true);
@@ -268,10 +278,17 @@ describe('PrivateKey', function() {
 
   });
 
-  describe('#toBuffer', function() {
-    it('should output known buffer', function() {
+  describe('buffer serialization', function() {
+    it('returns an expected value when creating a PrivateKey from a buffer', function() {
       var privkey = new PrivateKey(BN.fromBuffer(buf), 'livenet');
       privkey.toString().should.equal(buf.toString('hex'));
+    });
+
+    it('roundtrips correctly when using toBuffer/fromBuffer', function() {
+      var privkey = new PrivateKey(BN.fromBuffer(buf));
+      var toBuffer = new PrivateKey(privkey.toBuffer());
+      var fromBuffer = PrivateKey.fromBuffer(toBuffer.toBuffer());
+      fromBuffer.toString().should.equal(privkey.toString());
     });
   });
 
@@ -288,7 +305,7 @@ describe('PrivateKey', function() {
 
     it('should set bn gt 0 and lt n, and should be compressed', function() {
       var privkey = PrivateKey.fromRandom();
-      privkey.bn.gt(BN(0)).should.equal(true);
+      privkey.bn.gt(new BN(0)).should.equal(true);
       privkey.bn.lt(Point.getN()).should.equal(true);
       privkey.compressed.should.equal(true);
     });
@@ -336,7 +353,7 @@ describe('PrivateKey', function() {
     it('should convert this known PrivateKey to known PublicKey', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
       var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
-      var privkey = new PrivateKey(BN(new Buffer(privhex, 'hex')));
+      var privkey = new PrivateKey(new BN(new Buffer(privhex, 'hex')));
       var pubkey = privkey.toPublicKey();
       pubkey.toString().should.equal(pubhex);
     });
@@ -344,7 +361,7 @@ describe('PrivateKey', function() {
     it('should have a "publicKey" property', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
       var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
-      var privkey = new PrivateKey(BN(new Buffer(privhex, 'hex')));
+      var privkey = new PrivateKey(new BN(new Buffer(privhex, 'hex')));
       privkey.publicKey.toString().should.equal(pubhex);
     });
 

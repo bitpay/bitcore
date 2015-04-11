@@ -4,9 +4,10 @@ var buffer = require('buffer');
 
 var chai = require('chai');
 var should = chai.should();
-var Script = require('../../lib/script');
-var Transaction = require('../../lib/transaction');
-var sighash = require('../../lib/transaction/sighash');
+var bitcore = require('../../');
+var Script = bitcore.Script;
+var Transaction = bitcore.Transaction;
+var sighash = Transaction.sighash;
 
 var vectors_sighash = require('../data/sighash.json');
 
@@ -27,7 +28,7 @@ describe('sighash', function() {
       var tx = new Transaction(txbuf);
 
       //make sure transacion to/from buffer is isomorphic
-      tx.serialize().should.equal(txbuf.toString('hex'));
+      tx.uncheckedSerialize().should.equal(txbuf.toString('hex'));
 
       //sighash ought to be correct
       sighash.sighash(tx, nhashtype, nin, subscript).toString('hex').should.equal(sighashbuf.toString('hex'));

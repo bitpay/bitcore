@@ -1,3 +1,4 @@
+---
 title: Address
 description: A simple interface to generate and validate a bitcoin address.
 ---
@@ -31,6 +32,13 @@ var address = Address.fromPublicKey(publicKey);
 // a testnet address from a public key
 var publicKey = new PublicKey(privateKey);
 var address = new Address(publicKey, Networks.testnet);
+```
+
+A pay-to-script-hash multisignature Address can be instantiated from an array of [PublicKeys](publickey.md).
+
+```javascript
+// a 2-of-3 address from public keys
+var p2shAddress = new Address([publicKey1, publicKey2, publicKey3], 2);
 ```
 
 ## Validating an Address

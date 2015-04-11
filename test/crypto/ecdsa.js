@@ -42,8 +42,8 @@ describe('ECDSA', function() {
 
     it('calulates this known i', function() {
       var hashbuf = Hash.sha256(new Buffer('some data'));
-      var r = BN('71706645040721865894779025947914615666559616020894583599959600180037551395766', 10);
-      var s = BN('109412465507152403114191008482955798903072313614214706891149785278625167723646', 10);
+      var r = new BN('71706645040721865894779025947914615666559616020894583599959600180037551395766', 10);
+      var s = new BN('109412465507152403114191008482955798903072313614214706891149785278625167723646', 10);
       var ecdsa = new ECDSA({
         privkey: new Privkey(BN.fromBuffer(Hash.sha256(new Buffer('test')))),
         hashbuf: hashbuf,
@@ -83,7 +83,7 @@ describe('ECDSA', function() {
     it('should generate a random k that is (almost always) greater than this relatively small number', function() {
       ecdsa.randomK();
       var k1 = ecdsa.k;
-      var k2 = BN(Math.pow(2, 32)).mul(BN(Math.pow(2, 32))).mul(BN(Math.pow(2, 32)));
+      var k2 = new BN(Math.pow(2, 32)).mul(new BN(Math.pow(2, 32))).mul(new BN(Math.pow(2, 32)));
       k2.gt(k1).should.equal(false);
     });
 
@@ -110,7 +110,7 @@ describe('ECDSA', function() {
       // https://github.com/bitcoinjs/bitcoinjs-lib/blob/10630873ebaa42381c5871e20336fbfb46564ac8/test/fixtures/ecdsa.json#L6
       var ecdsa = new ECDSA();
       ecdsa.hashbuf = Hash.sha256(new Buffer('Everything should be made as simple as possible, but not simpler.'));
-      ecdsa.privkey = new Privkey(BN(1));
+      ecdsa.privkey = new Privkey(new BN(1));
       ecdsa.privkey2pubkey();
       ecdsa.deterministicK();
       ecdsa.k.toBuffer().toString('hex')
@@ -125,7 +125,7 @@ describe('ECDSA', function() {
 
   describe('#toPublicKey', function() {
     it('should calculate the correct public key', function() {
-      ecdsa.k = BN('114860389168127852803919605627759231199925249596762615988727970217268189974335', 10);
+      ecdsa.k = new BN('114860389168127852803919605627759231199925249596762615988727970217268189974335', 10);
       ecdsa.sign();
       ecdsa.sig.i = 0;
       var pubkey = ecdsa.toPublicKey();
@@ -133,7 +133,7 @@ describe('ECDSA', function() {
     });
 
     it('should calculate the correct public key for this signature with low s', function() {
-      ecdsa.k = BN('114860389168127852803919605627759231199925249596762615988727970217268189974335', 10);
+      ecdsa.k = new BN('114860389168127852803919605627759231199925249596762615988727970217268189974335', 10);
       ecdsa.sig = Signature.fromString('3045022100ec3cfe0e335791ad278b4ec8eac93d0347' +
         'a97877bb1d54d35d189e225c15f6650220278cf15b05ce47fb37d2233802899d94c774d5480bba9f0f2d996baa13370c43');
       ecdsa.sig.i = 0;
@@ -142,7 +142,7 @@ describe('ECDSA', function() {
     });
 
     it('should calculate the correct public key for this signature with high s', function() {
-      ecdsa.k = BN('114860389168127852803919605627759231199925249596762615988727970217268189974335', 10);
+      ecdsa.k = new BN('114860389168127852803919605627759231199925249596762615988727970217268189974335', 10);
       ecdsa.sign();
       ecdsa.sig = Signature.fromString('3046022100ec3cfe0e335791ad278b4ec8eac93d0347' +
         'a97877bb1d54d35d189e225c15f665022100d8730ea4fa31b804c82ddcc7fd766269f33a079ea38e012c9238f2e2bcff34fe');
@@ -167,15 +167,15 @@ describe('ECDSA', function() {
         '710fb053bb9f2b933173ff9a7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341', 'hex'));
       ecdsa.pubkey = pk;
       ecdsa.sig = new Signature();
-      ecdsa.sig.r = BN(0);
-      ecdsa.sig.s = BN(0);
+      ecdsa.sig.r = new BN(0);
+      ecdsa.sig.s = new BN(0);
       ecdsa.sigError().should.equal('r and s not in range');
     });
 
     it('should return an error if the signature is incorrect', function() {
       ecdsa.sig = Signature.fromString('3046022100e9915e6236695f093a4128ac2a956c40' +
         'ed971531de2f4f41ba05fac7e2bd019c02210094e6a4a769cc7f2a8ab3db696c7cd8d56bcdbfff860a8c81de4bc6a798b90827');
-      ecdsa.sig.r = ecdsa.sig.r.add(BN(1));
+      ecdsa.sig.r = ecdsa.sig.r.add(new BN(1));
       ecdsa.sigError().should.equal('Invalid signature');
     });
 
@@ -248,7 +248,7 @@ describe('ECDSA', function() {
       it('should verify a valid signature, and unverify an invalid signature', function() {
         var sig = ECDSA.sign(ecdsa.hashbuf, ecdsa.privkey);
         ECDSA.verify(ecdsa.hashbuf, sig, ecdsa.pubkey).should.equal(true);
-        var fakesig = new Signature(sig.r.add(1), sig.s);
+        var fakesig = new Signature(sig.r.add(new BN(1)), sig.s);
         ECDSA.verify(ecdsa.hashbuf, fakesig, ecdsa.pubkey).should.equal(false);
       });
       it('should work with big and little endian', function() {
@@ -270,8 +270,8 @@ describe('ECDSA', function() {
             k: BN.fromBuffer(new Buffer(obj.k, 'hex')),
             hashbuf: Hash.sha256(new Buffer(obj.message)),
             sig: new Signature().set({
-              r: BN(obj.signature.r),
-              s: BN(obj.signature.s),
+              r: new BN(obj.signature.r),
+              s: new BN(obj.signature.s),
               i: obj.i
             })
           });
@@ -290,7 +290,7 @@ describe('ECDSA', function() {
         it('should validate invalid.sigError vector ' + i + ': ' + obj.description, function() {
           var ecdsa = ECDSA().set({
             pubkey: Pubkey.fromPoint(point.fromX(true, 1)),
-            sig: new Signature(BN(obj.signature.r), BN(obj.signature.s)),
+            sig: new Signature(new BN(obj.signature.r), new BN(obj.signature.s)),
             hashbuf: Hash.sha256(new Buffer(obj.message))
           });
           ecdsa.sigError().should.equal(obj.exception);

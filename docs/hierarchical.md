@@ -1,3 +1,4 @@
+---
 title: HDKeys
 description: Lets you create and derive extended public and private keys according to the BIP32 standard for Hierarchical Deterministic (HD) keys.
 ---
@@ -17,12 +18,16 @@ Sample usage:
 var hdPrivateKey = new HDPrivateKey();
 var retrieved = new HDPrivateKey('xpriv...');
 var derived = privateKey.derive("m/0'");
-var derivedByNumber = privateKey.derive(1).derive(2, true);
-var derivedByArgument = privateKey.derive("m/1/2'");
+var derivedByNumber = hdPrivateKey.derive(1).derive(2, true);
+var derivedByArgument = hdPrivateKey.derive("m/1/2'");
 assert(derivedByNumber.xprivkey === derivedByArgument.xprivkey);
 
 var address = new Address(privateKey.publicKey, Networks.livenet);
 var redeem = new Transaction().from(output).to(target, 10000).sign(derived.privateKey);
+
+// obtain HDPublicKey
+var hdPublicKey = hdPrivateKey.hdPublicKey;
+
 ```
 
 ## HDPublicKey
@@ -31,7 +36,7 @@ An instance of a PublicKey that can be derived to build extended public keys. No
 
 ```javascript
 var hdPrivateKey = new HDPrivateKey();
-var hdPublicKey = privateKey.hdPublicKey;
+var hdPublicKey = hdPrivateKey.hdPublicKey;
 try {
   new HDPublicKey();
 } catch(e) {

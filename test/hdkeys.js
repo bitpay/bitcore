@@ -10,11 +10,47 @@
 /* jshint maxstatements: 100 */
 /* jshint unused: false */
 
+var _ = require('lodash');
 var should = require('chai').should();
+var expect = require('chai').expect;
 var bitcore = require('..');
 var Networks = bitcore.Networks;
 var HDPrivateKey = bitcore.HDPrivateKey;
 var HDPublicKey = bitcore.HDPublicKey;
+
+describe('HDKeys building with static methods', function() {
+  var classes = [HDPublicKey, HDPrivateKey];
+  var clazz, index;
+
+  _.each(classes, function(clazz) {
+    var expectStaticMethodFail = function(staticMethod, argument, message) {
+      expect(clazz[staticMethod].bind(null, argument)).to.throw(message);
+    };
+    it(clazz.name + ' fromJSON checks that a valid JSON is provided', function() {
+      var errorMessage = 'No valid JSON string was provided';
+      var method = 'fromJSON';
+      expectStaticMethodFail(method, undefined, errorMessage);
+      expectStaticMethodFail(method, null, errorMessage);
+      expectStaticMethodFail(method, 'invalid JSON', errorMessage);
+      expectStaticMethodFail(method, '{\'singlequotes\': true}', errorMessage);
+      expectStaticMethodFail(method, {}, errorMessage);
+    });
+    it(clazz.name + ' fromString checks that a string is provided', function() {
+      var errorMessage = 'No valid string was provided';
+      var method = 'fromString';
+      expectStaticMethodFail(method, undefined, errorMessage);
+      expectStaticMethodFail(method, null, errorMessage);
+      expectStaticMethodFail(method, {}, errorMessage);
+    });
+    it(clazz.name + ' fromObject checks that an object is provided', function() {
+      var errorMessage = 'No valid argument was provided';
+      var method = 'fromObject';
+      expectStaticMethodFail(method, undefined, errorMessage);
+      expectStaticMethodFail(method, null, errorMessage);
+      expectStaticMethodFail(method, '', errorMessage);
+    });
+  });
+});
 
 describe('BIP32 compliance', function() {
 

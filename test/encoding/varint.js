@@ -21,7 +21,7 @@ describe('Varint', function() {
     //various ways to use the constructor
     Varint(Varint(0).toBuffer()).toNumber().should.equal(0);
     Varint(0).toNumber().should.equal(0);
-    Varint(BN(0)).toNumber().should.equal(0);
+    Varint(new BN(0)).toNumber().should.equal(0);
   });
 
   describe('#set', function() {
@@ -80,7 +80,7 @@ describe('Varint', function() {
   describe('#fromBN', function() {
     
     it('should set a number', function() {
-      var varint = Varint().fromBN(BN(5));
+      var varint = Varint().fromBN(new BN(5));
       varint.toNumber().should.equal(5);
     });
 
@@ -109,7 +109,7 @@ describe('Varint', function() {
     
     it('should return a buffer', function() {
       var varint = Varint(5);
-      varint.toBN().toString().should.equal(BN(5).toString());
+      varint.toBN().toString().should.equal(new BN(5).toString());
     });
 
   });

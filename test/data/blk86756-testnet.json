@@ -1,6 +1,4 @@
 {
-  "magicnum": 118034699,
-  "size": 8003,
   "header": {
     "version": 2,
     "prevHash": "4baaa9507c3b27908397ea7bc177a998e9f4fe38b9d5130be7b5353c00000000",
@@ -9,8 +7,7 @@
     "bits": 473956288,
     "nonce": 3594009557
   },
-  "txsvi": "16",
-  "txs": [{
+  "transactions": [{
     "version": 1,
     "txinsvi": "01",
     "txins": [{

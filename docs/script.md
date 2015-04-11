@@ -1,3 +1,4 @@
+---
 title: Script
 description: A powerful interface to create, parse and validate bitcoin scripts.
 ---

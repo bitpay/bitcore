@@ -71,7 +71,7 @@ Write a `.inspect()` method so an instance can be easily debugged in the console
 
 #### G6 - Naming Utility Namespaces
 
-Name them in CamelCase, as they are namespaces.
+Name them in UpperCamelCase, as they are namespaces.
 
 DO:
 ```javascript

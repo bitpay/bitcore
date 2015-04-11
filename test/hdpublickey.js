@@ -9,13 +9,15 @@ var bitcore = require('..');
 var buffer = require('buffer');
 var errors = bitcore.errors;
 var hdErrors = bitcore.errors.HDPublicKey;
-var bufferUtil = bitcore.util.buffer;
+var BufferUtil = bitcore.util.buffer;
 var HDPrivateKey = bitcore.HDPrivateKey;
 var HDPublicKey = bitcore.HDPublicKey;
 var Base58Check = bitcore.encoding.Base58Check;
+var Networks = bitcore.Networks;
 
 var xprivkey = 'xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi';
 var xpubkey = 'xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8';
+var xpubkeyTestnet = 'tpubD6NzVbkrYhZ4WZaiWHz59q5EQ61bd6dUYfU4ggRWAtNAyyYRNWT6ktJ7UHJEXURvTfTfskFQmK7Ff4FRkiRN5wQH8nkGAb6aKB4Yyeqsw5m';
 var json = '{"network":"livenet","depth":0,"fingerPrint":876747070,"parentFingerPrint":0,"childIndex":0,"chainCode":"873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d508","publicKey":"0339a36013301597daef41fbe593a02cc513d0b55527ec2df1050e2e8ff49c85c2","checksum":-1421395167,"xpubkey":"xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8"}';
 var derived_0_1_200000 = 'xpub6BqyndF6rkBNTV6LXwiY8Pco8aqctqq7tGEUdA8fmGDTnDJphn2fmxr3eM8Lm3m8TrNUsLbEjHvpa3adBU18YpEx4tp2Zp6nqax3mQkudhX';
 
@@ -31,7 +33,7 @@ describe('HDPublicKey interface', function() {
       got = e instanceof errorType;
     }
     if (!error instanceof errorType) {
-      console.log('Adsasd', typeof error);
+      console.log('Error', typeof error);
     }
     // expect(got).to.equal(true);
   };
@@ -117,12 +119,11 @@ describe('HDPublicKey interface', function() {
 
     it('checks the checksum', function() {
       var buffers = new HDPublicKey(xpubkey)._buffers;
-      buffers.checksum = bufferUtil.integerAsBuffer(1);
+      buffers.checksum = BufferUtil.integerAsBuffer(1);
       expectFail(function() {
         return new HDPublicKey(buffers);
       }, errors.InvalidB58Checksum);
     });
-
   });
 
   describe('error checking on serialization', function() {
@@ -148,9 +149,28 @@ describe('HDPublicKey interface', function() {
     pubKey.toString().should.equal(pubKey.xpubkey);
   });
 
+  it('publicKey property matches network', function() {
+    var livenet = new HDPublicKey(xpubkey);
+    var testnet = new HDPublicKey(xpubkeyTestnet);
+
+    livenet.publicKey.network.should.equal(Networks.livenet);
+    testnet.publicKey.network.should.equal(Networks.testnet);
+  });
+
   it('inspect() displays correctly', function() {
     var pubKey = new HDPublicKey(xpubkey);
     pubKey.inspect().should.equal('<HDPublicKey: ' + pubKey.xpubkey + '>');
+  });
+
+  describe('conversion to/from buffer', function() {
+
+    it('should roundtrip to an equivalent object', function() {
+      var pubKey = new HDPublicKey(xpubkey);
+      var toBuffer = pubKey.toBuffer();
+      var fromBuffer = HDPublicKey.fromBuffer(toBuffer);
+      var roundTrip = new HDPublicKey(fromBuffer.toBuffer());
+      roundTrip.xpubkey.should.equal(xpubkey);
+    });
   });
 
   describe('conversion to different formats', function() {
@@ -235,7 +255,7 @@ describe('HDPublicKey interface', function() {
 
   it('rejects illegal paths', function() {
     var valid;
-    
+
     valid = HDPublicKey.isValidPath('m/-1/12');
     valid.should.equal(false);
 

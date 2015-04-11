@@ -53,6 +53,30 @@ describe('UnspentOutput', function() {
     expect(new UnspentOutput(sampleData1).inspect()).to.equal(expected);
   });
 
+  describe('checking the constructor parameters', function() {
+    var notDefined = {
+      'txId': 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+      'outputIndex': 0,
+      'script': 'OP_DUP OP_HASH160 20 0x88d9931ea73d60eaf7e5671efc0552b912911f2a OP_EQUALVERIFY OP_CHECKSIG',
+    };
+    var zero = {
+      'txId': 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+      'outputIndex': 0,
+      'script': 'OP_DUP OP_HASH160 20 0x88d9931ea73d60eaf7e5671efc0552b912911f2a OP_EQUALVERIFY OP_CHECKSIG',
+      'amount': 0
+    };
+    it('fails when no amount is defined', function() {
+      expect(function() {
+        return new UnspentOutput(notDefined);
+      }).to.throw('Must provide an amount for the output');
+    });
+    it('does not fail when amount is zero', function() {
+      expect(function() {
+        return new UnspentOutput(zero);
+      }).to.not.throw();
+    });
+  });
+
   it('toString returns txid:vout', function() {
     var expected = 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458:0';
     expect(new UnspentOutput(sampleData1).toString()).to.equal(expected);

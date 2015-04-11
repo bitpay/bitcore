@@ -78,7 +78,7 @@ describe('Point', function() {
 
     it('should accurately multiply g by 2', function() {
       var g = Point.getG();
-      var b = g.mul(BN(2));
+      var b = g.mul(new BN(2));
       b.getX().toString().should.equal('8956589192654700423125292042593569236064414582962220983'+
                                        '3684329913297188986597');
       b.getY().toString().should.equal('1215839929969383032296780861271339863615536788704162817'+
@@ -88,7 +88,7 @@ describe('Point', function() {
     it('should accurately multiply g by n-1', function() {
       var g = Point.getG();
       var n = Point.getN();
-      var b = g.mul(n.sub(1));
+      var b = g.mul(n.sub(new BN(1)));
       b.getX().toString().should.equal('55066263022277343669578718895168534326250603453777594175'+
                                        '500187360389116729240');
       b.getY().toString().should.equal('83121579216557378445487899878180864668798711284981320763'+
@@ -101,7 +101,7 @@ describe('Point', function() {
     it('should accurately multiply g by n+1', function() {
       var g = Point.getG();
       var n = Point.getN();
-      var b = g.mul(n.add(1));
+      var b = g.mul(n.add(new BN(1)));
       b.getX().toString().should.equal('550662630222773436695787188951685343262506034537775941755'+
                                        '00187360389116729240');
       b.getY().toString().should.equal('326705100207588169780830851305070431844712733806592432759'+
