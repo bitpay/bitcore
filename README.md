@@ -17,6 +17,8 @@ See [Bitcore-wallet-client] (https://github.com/bitpay/bitcore-wallet-client) fo
 
 BWS have a extensive test suite but have not been tested on production environments yet and have been recently released, so it it is still should be considered  BETA software.  
 
+More about BWS at http://blog.bitpay.com/2015/03/05/bitcore-wallet.html
+
 # Security Considerations
  * Private keys are never sent to BWS. Copayers store them locally.
  * Extended public keys are stored on BWS. This allows BWS to easily check wallet balance, send offline notifications to copayers, etc.
