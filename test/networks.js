@@ -93,4 +93,10 @@ describe('Networks', function() {
     networks.livenet.toString().should.equal('livenet');
   });
 
+  it('network object should be immutable', function() {
+    expect(networks.testnet.name).to.equal('testnet')
+    var fn = function() { networks.testnet.name = 'livenet' }
+    expect(fn).to.throw(TypeError)
+  });
+
 });
