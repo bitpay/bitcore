@@ -2408,11 +2408,11 @@ describe('Wallet service', function() {
                   amount: utxos[0].satoshis,
                 }],
                 outputs: [{
-                  address: 'external',
-                  amount: helpers.toSatoshi(80) - 5460,
-                }, {
                   address: changeAddresses[0].address,
                   amount: helpers.toSatoshi(20) - 5460,
+                }, {
+                  address: 'external',
+                  amount: helpers.toSatoshi(80) - 5460,
                 }],
               }];
               helpers.stubHistory(txs);
@@ -2425,6 +2425,7 @@ describe('Wallet service', function() {
                 tx.action.should.equal('sent');
                 tx.amount.should.equal(helpers.toSatoshi(80));
                 tx.message.should.equal('some message');
+                tx.addressTo.should.equal('external');
                 tx.actions.length.should.equal(1);
                 tx.actions[0].type.should.equal('accept');
                 tx.actions[0].copayerName.should.equal('copayer 1');
