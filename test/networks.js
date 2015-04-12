@@ -29,7 +29,8 @@ describe('Networks', function() {
       dnsSeeds: [
         'localhost',
         'mynet.localhost'
-      ]
+      ],
+      genesis: new Buffer('a')
     };
     networks.add(custom);
     customnet = networks.get('customnet');
