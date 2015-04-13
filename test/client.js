@@ -465,7 +465,7 @@ describe('client API', function() {
   });
 
   describe('Transaction Proposals Creation and Locked funds', function() {
-    it('Should create proposal and getix', function(done) {
+    it('Should create proposal and get it', function(done) {
       helpers.createAndJoinWallet(clients, 2, 2, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
@@ -480,18 +480,18 @@ describe('client API', function() {
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
             clients[0].getTx(x.id, function(err, x2) {
-              x2.creatorName = 'creator';
-              x2.message = opts.message;
-              x2.amount = opts.amount;
-              x2.toAddress = opts.toAddress;
               should.not.exist(err);
+              x2.creatorName.should.equal('creator');
+              x2.message.should.equal('hello');
+              x2.amount.should.equal(3000);
+              x2.toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
               done();
             });
           });
         });
       });
     });
- 
+
     it('Should fail to create proposal with insufficient funds', function(done) {
       helpers.createAndJoinWallet(clients, 2, 2, function(w) {
         clients[0].createAddress(function(err, x0) {
@@ -1914,7 +1914,7 @@ describe('client API', function() {
       c1.isPrivKeyEncrypted().should.equal(false);
       c1.hasPrivKeyEncrypted().should.equal(false);
     });
- 
+
     it('should prevent to encrypt airgapped\'s proxy credentials', function() {
       var airgapped = new Client();
       airgapped.seedFromRandom('testnet');
@@ -1950,11 +1950,9 @@ describe('client API', function() {
       var walletId = c1.credentials.walletId;
       var walletName = c1.credentials.walletName;
       var copayerName = c1.credentials.copayerName;
-      var exported = c1.export({
-      });
+      var exported = c1.export({});
       importedClient = helpers.newClient(app);
-      importedClient.import(exported, {
-      });
+      importedClient.import(exported, {});
       importedClient.openWallet(function(err) {
         should.not.exist(err);
         importedClient.credentials.walletId.should.equal(walletId);
@@ -1968,7 +1966,7 @@ describe('client API', function() {
         done();
       });
     });
- 
+
 
     it('should export & import compressed, locked', function(done) {
       var walletId = c1.credentials.walletId;
