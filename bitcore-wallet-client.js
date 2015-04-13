@@ -92,6 +92,14 @@ API.prototype.initNotifications = function(cb) {
     }
   });
 
+  socket.on('reconnecting', function() {
+    self.emit('reconnecting');
+  });
+
+  socket.on('reconnect', function() {
+    self.emit('reconnect');
+  });
+
   socket.on('challenge', function(nonce) {
     $.checkArgument(nonce);
 
@@ -315,9 +323,12 @@ API.prototype._doRequest = function(method, url, args, cb) {
   }));
 
   this.request(args, function(err, res, body) {
+    if (err) return cb(err);
+
     log.debug(util.inspect(body, {
       depth: 10
     }));
+
     if (res.statusCode != 200) {
       if (res.statusCode == 404)
         return cb({
@@ -326,8 +337,6 @@ API.prototype._doRequest = function(method, url, args, cb) {
 
       return cb(err || API._parseError(body));
     }
-
-    if (err) return cb(err);
 
     if (body === '{"error":"read ECONNRESET"}')
       return cb(JSON.parse(body));
@@ -538,6 +547,15 @@ API.prototype.openWallet = function(cb) {
  */
 API.prototype.setPrivateKeyEncryption = function(password, opts) {
   this.credentials.setPrivateKeyEncryption(password, opts || API.privateKeyEncryptionOpts);
+};
+
+/**
+ * disables encryption for private key.
+ * wallet must be unlocked
+ *
+ */
+API.prototype.disablePrivateKeyEncryption = function(password, opts) {
+  return this.credentials.disablePrivateKeyEncryption();
 };
 
 /**
@@ -1031,6 +1049,26 @@ API.prototype.getTxHistory = function(opts, cb) {
 };
 
 /**
+ * getTx
+ *
+ * @param {String} TransactionId
+ * @return {Callback} cb - Return error or transaction
+ */
+API.prototype.getTx = function(id, cb) {
+  $.checkState(this.credentials && this.credentials.isComplete());
+
+  var self = this;
+  var url = '/v1/txproposals/' + id;
+  this._doGetRequest(url, function(err, tx) {
+    if (err) return cb(err);
+
+    API._processTxps([tx], self.credentials.sharedEncryptingKey);
+    return cb(null, tx);
+  });
+};
+
+
+/**
  * Start an address scanning process.
  * When finished, the scanning process will send a notification 'ScanFinished' to all copayers.
  *
@@ -1365,6 +1403,18 @@ Credentials.prototype.setPrivateKeyEncryption = function(password, opts) {
   if (!this.xPrivKeyEncrypted)
     throw new Error('Could not encrypt');
 };
+
+
+Credentials.prototype.disablePrivateKeyEncryption = function() {
+  if (!this.xPrivKeyEncrypted)
+    throw new Error('Private Key is not encrypted');
+
+  if (!this.xPrivKey)
+    throw new Error('Wallet is locked, cannot disable encryption');
+
+  this.xPrivKeyEncrypted = null;
+};
+
 
 Credentials.prototype.lock = function() {
   if (!this.xPrivKeyEncrypted)
