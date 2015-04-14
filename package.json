@@ -2,7 +2,7 @@
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "0.0.27",
+  "version": "0.0.28",
   "keywords": [
     "bitcoin",
     "copay",
