@@ -2657,7 +2657,7 @@ describe('Wallet service', function() {
       NotificationBroadcaster.removeAllListeners();
     });
 
-    it.only('should start an asynchronous scan', function(done) {
+    it('should start an asynchronous scan', function(done) {
       helpers.stubAddressActivity(['3K2VWMXheGZ4qG35DyGjA2dLeKfaSr534A']);
       var expectedPaths = [
         'm/2147483647/0/0',
