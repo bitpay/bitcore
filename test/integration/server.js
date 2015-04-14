@@ -2669,18 +2669,42 @@ describe('Wallet service', function() {
       ];
       WalletService.onNotification(function(n) {
         if (n.type == 'ScanFinished') {
-          should.not.exist(n.creatorId);
-          server.storage.fetchAddresses(wallet.id, function(err, addresses) {
-            should.exist(addresses);
-            addresses.length.should.equal(expectedPaths.length);
-            var paths = _.pluck(addresses, 'path');
-            _.difference(paths, expectedPaths).length.should.equal(0);
-            server.createAddress({}, function(err, address) {
-              should.not.exist(err);
-              address.path.should.equal('m/2147483647/0/4');
-              done();
-            });
-          })
+          server.getWallet({}, function(err, wallet) {
+            should.exist(wallet.scanStatus);
+            wallet.scanStatus.should.equal('success');
+            should.not.exist(n.creatorId);
+            server.storage.fetchAddresses(wallet.id, function(err, addresses) {
+              should.exist(addresses);
+              addresses.length.should.equal(expectedPaths.length);
+              var paths = _.pluck(addresses, 'path');
+              _.difference(paths, expectedPaths).length.should.equal(0);
+              server.createAddress({}, function(err, address) {
+                should.not.exist(err);
+                address.path.should.equal('m/2147483647/0/4');
+                done();
+              });
+            })
+          });
+        }
+      });
+      server.startScan({}, function(err) {
+        should.not.exist(err);
+        server.getWallet({}, function(err, wallet) {
+          should.exist(wallet.scanStatus);
+          wallet.scanStatus.should.equal('running');
+        });
+      });
+    });
+    it('should set scan status error when unable to reach blockchain', function(done) {
+      blockchainExplorer.getAddressActivity = sinon.stub().yields('dummy error');
+      WalletService.onNotification(function(n) {
+        if (n.type == 'ScanFinished') {
+          should.exist(n.data.error);
+          server.getWallet({}, function(err, wallet) {
+            should.exist(wallet.scanStatus);
+            wallet.scanStatus.should.equal('error');
+            done();
+          });
         }
       });
       server.startScan({}, function(err) {
