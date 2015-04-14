@@ -2695,6 +2695,22 @@ describe('Wallet service', function() {
         });
       });
     });
+    it('should set scan status error when unable to reach blockchain', function(done) {
+      blockchainExplorer.getAddressActivity = sinon.stub().yields('dummy error');
+      WalletService.onNotification(function(n) {
+        if (n.type == 'ScanFinished') {
+          should.exist(n.data.error);
+          server.getWallet({}, function(err, wallet) {
+            should.exist(wallet.scanStatus);
+            wallet.scanStatus.should.equal('error');
+            done();
+          });
+        }
+      });
+      server.startScan({}, function(err) {
+        should.not.exist(err);
+      });
+    });
     it('should start multiple asynchronous scans for different wallets', function(done) {
       helpers.stubAddressActivity(['3K2VWMXheGZ4qG35DyGjA2dLeKfaSr534A']);
       WalletService.scanConfig.SCAN_WINDOW = 1;
