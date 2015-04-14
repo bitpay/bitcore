@@ -242,6 +242,34 @@ describe('client API', function() {
           done();
         });
     });
+
+    it('should handle critical errors (Case3)', function(done) {
+      var s = sinon.stub();
+      s.storeWallet = sinon.stub().yields({
+        code: 404,
+        message: 'wow'
+      });
+      s.fetchWallet = sinon.stub().yields(null);
+      app = ExpressApp.start({
+        WalletService: {
+          storage: s,
+          blockchainExplorer: blockchainExplorerMock,
+        },
+        disableLogs: true,
+      });
+      var s2 = sinon.stub();
+      s2.load = sinon.stub().yields(null);
+      var client = helpers.newClient(app);
+      client.storage = s2;
+      client.createWallet('1', '2', 1, 1, {
+          network: 'testnet'
+        },
+        function(err) {
+          console.log('err ', err);
+          err.code.should.equal('NOTFOUND');
+          done();
+        });
+    });
   });
 
   describe('Wallet Creation', function() {
