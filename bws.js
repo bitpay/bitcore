@@ -5,6 +5,8 @@ var fs = require('fs');
 var ExpressApp = require('./lib/expressapp');
 var WsApp = require('./lib/wsapp');
 var config = require('./config');
+var sticky = require('sticky-session');
+
 
 var port = process.env.BWS_PORT || config.port || 3232;
 
@@ -22,7 +24,7 @@ if (config.https) {
 
 var startOne = function() {
   var app = ExpressApp.start(config);
-  var server = config.https ? serverModule.createServer(serverOpts, app) :
+  var server = config.https ? sticky(serverModule.createServer(serverOpts, app)) :
     serverModule.Server(app);
   var ws = WsApp.start(server, config);
   server.listen(port);
