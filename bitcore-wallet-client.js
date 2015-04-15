@@ -92,6 +92,14 @@ API.prototype.initNotifications = function(cb) {
     }
   });
 
+  socket.on('reconnecting', function() {
+    self.emit('reconnecting');
+  });
+
+  socket.on('reconnect', function() {
+    self.emit('reconnect');
+  });
+
   socket.on('challenge', function(nonce) {
     $.checkArgument(nonce);
 
@@ -307,7 +315,7 @@ API.prototype._doRequest = function(method, url, args, cb) {
     body: args,
     json: true,
     withCredentials: false,
-    timeout: 5000
+    timeout: 10000
   };
 
   log.debug('Request Args', util.inspect(args, {
@@ -315,9 +323,12 @@ API.prototype._doRequest = function(method, url, args, cb) {
   }));
 
   this.request(args, function(err, res, body) {
+    if (err) return cb(err);
+
     log.debug(util.inspect(body, {
       depth: 10
     }));
+
     if (res.statusCode != 200) {
       if (res.statusCode == 404)
         return cb({
@@ -326,8 +337,6 @@ API.prototype._doRequest = function(method, url, args, cb) {
 
       return cb(err || API._parseError(body));
     }
-
-    if (err) return cb(err);
 
     if (body === '{"error":"read ECONNRESET"}')
       return cb(JSON.parse(body));
@@ -541,6 +550,15 @@ API.prototype.setPrivateKeyEncryption = function(password, opts) {
 };
 
 /**
+ * disables encryption for private key.
+ * wallet must be unlocked
+ *
+ */
+API.prototype.disablePrivateKeyEncryption = function(password, opts) {
+  return this.credentials.disablePrivateKeyEncryption();
+};
+
+/**
  * Locks private key (removes the unencrypted version and keep only the encrypted)
  *
  * @return {undefined}
@@ -647,24 +665,30 @@ API.prototype.recreateWallet = function(cb) {
   var self = this;
 
   var walletPrivKey = Bitcore.PrivateKey.fromString(self.credentials.walletPrivKey);
+  var walletId = self.credentials.walletId;
   var args = {
     name: self.credentials.walletName || 'recovered wallet',
     m: self.credentials.m,
     n: self.credentials.n,
     pubKey: walletPrivKey.toPublicKey().toString(),
     network: self.credentials.network,
-    id: self.credentials.walletId,
+    id: walletId,
   };
   self._doPostRequest('/v1/wallets/', args, function(err, body) {
-    if (err) return cb(err);
+    // Ignore error is wallet already exist
+    if (err && err.code != 'WEXISTS') return cb(err);
 
-    var walletId = body.walletId;
 
     var i = 1;
     async.each(self.credentials.publicKeyRing, function(item, next) {
-      self._doJoinWallet(walletId, walletPrivKey, item.xPubKey, item.requestPubKey, item.copayerName, {
+      var name = item.copayerName || ('copayer ' + i++);
+      self._doJoinWallet(walletId, walletPrivKey, item.xPubKey, item.requestPubKey, name, {
         isTemporaryRequestKey: item.isTemporaryRequestKey,
-      }, next);
+      }, function(err) {
+        //Ignore error is copayer already in wallet
+        if (err && err.code == 'CINWALLET') return next();
+        return next(err);
+      });
     }, cb);
   });
 };
@@ -1031,6 +1055,26 @@ API.prototype.getTxHistory = function(opts, cb) {
 };
 
 /**
+ * getTx
+ *
+ * @param {String} TransactionId
+ * @return {Callback} cb - Return error or transaction
+ */
+API.prototype.getTx = function(id, cb) {
+  $.checkState(this.credentials && this.credentials.isComplete());
+
+  var self = this;
+  var url = '/v1/txproposals/' + id;
+  this._doGetRequest(url, function(err, tx) {
+    if (err) return cb(err);
+
+    API._processTxps([tx], self.credentials.sharedEncryptingKey);
+    return cb(null, tx);
+  });
+};
+
+
+/**
  * Start an address scanning process.
  * When finished, the scanning process will send a notification 'ScanFinished' to all copayers.
  *
@@ -1365,6 +1409,18 @@ Credentials.prototype.setPrivateKeyEncryption = function(password, opts) {
   if (!this.xPrivKeyEncrypted)
     throw new Error('Could not encrypt');
 };
+
+
+Credentials.prototype.disablePrivateKeyEncryption = function() {
+  if (!this.xPrivKeyEncrypted)
+    throw new Error('Private Key is not encrypted');
+
+  if (!this.xPrivKey)
+    throw new Error('Wallet is locked, cannot disable encryption');
+
+  this.xPrivKeyEncrypted = null;
+};
+
 
 Credentials.prototype.lock = function() {
   if (!this.xPrivKeyEncrypted)
