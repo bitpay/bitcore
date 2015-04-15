@@ -1,7 +1,25 @@
 var config = {
   basePath: '/bws/api',
   disableLogs: false,
-  BlockchainMonitor: {
+/*  port: 3232, */
+
+  storageOpts: {
+    dbPath: './db',
+    /*  To use multilevel, uncomment this:
+    multiLevel: {
+      host: 'localhost',
+      port: 3230,
+    },
+    */
+  },
+  lockOpts: {
+    //  To use locker-server, uncomment this:
+    // lockerServer: {
+    //   host: 'localhost',
+    //   port: 3231,
+    // },
+  },
+  blockchainExplorerOpts: {
     livenet: {
       name: 'insight',
       url: 'https://insight.bitpay.com:443',
@@ -9,25 +27,6 @@ var config = {
     testnet: {
       name: 'insight',
       url: 'https://test-insight.bitpay.com:443',
-    },
-  },
-  WalletService: {
-    storageOpts: {
-      dbPath: './db',
-      /*  To use multilevel, uncomment this:
-      multiLevel: {
-        host: 'localhost',
-        port: 3230,
-      },
-     */
-    },
-    lockOpts: {
-      /*  To use locker-server, uncomment this:
-      lockerServer: {
-        host: 'localhost',
-        port: 3231,
-      },
-     */
     },
   },
 };
