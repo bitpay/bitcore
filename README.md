@@ -19,6 +19,18 @@ BWS have a extensive test suite but have not been tested on production environme
 
 More about BWS at http://blog.bitpay.com/2015/03/05/bitcore-wallet.html
 
+# Install
+```
+ npm install bws
+ npm start
+```
+
+BWS supports SSL and Clustering. To configure them see [config.js](https://github.com/bitpay/bitcore-wallet-service/blob/master/config.js). 
+
+To use clustering, an external DB server and Lock server need to be configured. These can be started from `multilevel/multilevel.js` and `locker/locker.js`.
+
+
+
 # Security Considerations
  * Private keys are never sent to BWS. Copayers store them locally.
  * Extended public keys are stored on BWS. This allows BWS to easily check wallet balance, send offline notifications to copayers, etc.
