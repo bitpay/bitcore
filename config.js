@@ -14,11 +14,10 @@ var config = {
   },
   lockOpts: {
     //  To use locker-server, uncomment this:
-    lockerServer: {
-      host: 'localhost',
-      port: 3231,
-    },
-    
+    // lockerServer: {
+    //   host: 'localhost',
+    //   port: 3231,
+    // },
   },
   blockchainExplorerOpts: {
     livenet: {
