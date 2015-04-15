@@ -8,7 +8,7 @@ var db = level('./db', {
   valueEncoding: 'json'
 });
 var HOST = 'localhost';
-var PORT = 3002;
+var PORT = 3230;
 
 
 console.log('Server started at port ' + PORT + '...');
