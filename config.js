@@ -14,17 +14,17 @@ var config = {
   storageOpts: {
     dbPath: './db',
     // Uncomment to use multilevel server
-    // multiLevel: {
-    //   host: 'localhost',
-    //   port: 3230,
-    // },
+     // multiLevel: {
+     //   host: 'localhost',
+     //   port: 3230,
+     // },
   },
   lockOpts: {
     //  To use locker-server, uncomment this:
-    // lockerServer: {
-    //   host: 'localhost',
-    //   port: 3231,
-    // },
+     // lockerServer: {
+     //   host: 'localhost',
+     //   port: 3231,
+     // },
   },
   blockchainExplorerOpts: {
     livenet: {
