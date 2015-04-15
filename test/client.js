@@ -1432,6 +1432,62 @@ describe('client API', function() {
           });
         });
       });
+
+      it('should be able call recreate wallet twice', function(done) {
+        helpers.createAndJoinWallet(clients, 2, 2, function() {
+          clients[0].createAddress(function(err, addr) {
+            should.not.exist(err);
+            should.exist(addr);
+
+            var db = levelup(memdown, {
+              valueEncoding: 'json'
+            });
+            var storage = new Storage({
+              db: db
+            });
+            var newApp = ExpressApp.start({
+              WalletService: {
+                storage: storage,
+                blockchainExplorer: blockchainExplorerMock,
+              },
+              disableLogs: true,
+            });
+
+            var oldPKR = _.clone(clients[0].credentials.publicKeyRing);
+            var recoveryClient = helpers.newClient(newApp);
+            recoveryClient.import(clients[0].export());
+
+            recoveryClient.getStatus(function(err, status) {
+              should.exist(err);
+              err.code.should.equal('NOTAUTHORIZED');
+              recoveryClient.recreateWallet(function(err) {
+                should.not.exist(err);
+              recoveryClient.recreateWallet(function(err) {
+                should.not.exist(err);
+                recoveryClient.getStatus(function(err, status) {
+                  should.not.exist(err);
+                  _.difference(_.pluck(status.wallet.copayers, 'name'), ['creator', 'copayer 1']).length.should.equal(0);
+                  recoveryClient.createAddress(function(err, addr2) {
+                    should.not.exist(err);
+                    should.exist(addr2);
+                    addr2.address.should.equal(addr.address);
+                    addr2.path.should.equal(addr.path);
+
+                    var recoveryClient2 = helpers.newClient(newApp);
+                    recoveryClient2.import(clients[1].export());
+                    recoveryClient2.getStatus(function(err, status) {
+                      should.not.exist(err);
+                      done();
+                    });
+                  });
+                });
+              });
+              });
+            });
+          });
+        });
+      });
+ 
     });
   });
 
