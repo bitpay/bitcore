@@ -6,6 +6,11 @@ var config = {
   cluster: true,
   // Uncomment to use the nr of availalbe CPUs
   clusterInstances: 4,
+
+  // https: true,
+  // privateKeyFile: 'private.pem',
+  // certificateFile: 'cert.pem',
+
   storageOpts: {
     // dbPath: './db',
     multiLevel: {

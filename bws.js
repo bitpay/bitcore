@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+var fs = require('fs');
+
 var ExpressApp = require('./lib/expressapp');
 var WsApp = require('./lib/wsapp');
 var config = require('./config');
@@ -10,11 +12,18 @@ var cluster = require('cluster');
 var http = require('http');
 var numCPUs = require('os').cpus().length;
 
+var serverModule = config.https ? require('https') : require('http');
+var serverOpts = {};
+
+if (config.https) {
+  serverOpts.key = fs.readFileSync(config.privateKeyFile || './ssl/privatekey.pem');
+  serverOpts.cert = fs.readFileSync(config.certificateFile || './ssl/certificate.pem');
+}
 
 var startOne = function() {
   var app = ExpressApp.start(config);
-  //app.listen(port);
-  var server = require('http').Server(app);
+  var server = config.https ? serverModule.createServer(serverOpts, app) :
+    serverModule.Server(app);
   var ws = WsApp.start(server, config);
   server.listen(port);
   console.log('Bitcore Wallet Service running on port ' + port);
