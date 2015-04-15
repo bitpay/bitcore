@@ -2689,10 +2689,6 @@ describe('Wallet service', function() {
       });
       server.startScan({}, function(err) {
         should.not.exist(err);
-        server.getWallet({}, function(err, wallet) {
-          should.exist(wallet.scanStatus);
-          wallet.scanStatus.should.equal('running');
-        });
       });
     });
     it('should set scan status error when unable to reach blockchain', function(done) {
