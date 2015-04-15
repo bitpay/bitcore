@@ -4,7 +4,7 @@ var ExpressApp = require('./lib/expressapp');
 var WsApp = require('./lib/wsapp');
 var config = require('./config');
 
-var port = process.env.BWS_PORT || 3001;
+var port = process.env.BWS_PORT || 3232;
 
 var app = ExpressApp.start(config);
 //app.listen(port);

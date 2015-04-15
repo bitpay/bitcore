@@ -17,7 +17,7 @@ var config = {
       /*  To use multilevel, uncomment this:
       multiLevel: {
         host: 'localhost',
-        port: 3002,
+        port: 3230,
       },
      */
     },
@@ -25,7 +25,7 @@ var config = {
       /*  To use locker-server, uncomment this:
       lockerServer: {
         host: 'localhost',
-        port: 3003,
+        port: 3231,
       },
      */
     },
