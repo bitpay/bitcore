@@ -53,6 +53,7 @@ function API(opts) {
   this.basePath = parsedUrl.path;
   this.baseHost = parsedUrl.protocol + '//' + parsedUrl.host;
   this.payProGetter = null; // Only for testing
+  this.doNotVerifyPayPro = opts.doNotVerifyPayPro;
 
   if (this.verbose) {
     log.setLevel('debug');
@@ -150,11 +151,19 @@ API._decryptMessage = function(message, encryptingKey) {
  * @param {Array} txps
  * @param {String} encryptingKey
  */
-API._processTxps = function(txps, encryptingKey) {
+API.prototype._processTxps = function(txps) {
+  var self = this;
+  var encryptingKey = self.credentials.sharedEncryptingKey;
+
   if (!txps) return;
   _.each([].concat(txps), function(txp) {
     txp.encryptedMessage = txp.message;
     txp.message = API._decryptMessage(txp.message, encryptingKey);
+
+    txp.doNotVerifyPayPro = false;
+    if (self.doNotVerifyPayPro)
+      txp.doNotVerifyPayPro = true;
+
     _.each(txp.actions, function(action) {
       action.comment = API._decryptMessage(action.comment, encryptingKey);
       // TODO get copayerName from Credentials -> copayerId to copayerName
@@ -710,7 +719,7 @@ API.prototype.getStatus = function(cb) {
       var cred = self.credentials;
       result.wallet.secret = WalletUtils.toSecret(cred.walletId, cred.walletPrivKey, cred.network);
     }
-    API._processTxps(result.pendingTxps, self.credentials.sharedEncryptingKey);
+    self._processTxps(result.pendingTxps);
     return cb(err, result);
   });
 };
@@ -829,7 +838,6 @@ API.prototype.getBalance = function(cb) {
  *
  * @param {Object} opts
  * @param {Boolean} opts.doNotVerify
- * @param {Boolean} opts.ignorePayPro
  * @param {Boolean} opts.forAirGapped
  * @return {Callback} cb - Return error or array of transactions proposals
  */
@@ -841,14 +849,10 @@ API.prototype.getTxProposals = function(opts, cb) {
   self._doGetRequest('/v1/txproposals/', function(err, txps) {
     if (err) return cb(err);
 
-    API._processTxps(txps, self.credentials.sharedEncryptingKey);
+    self._processTxps(txps);
     async.every(txps,
       function(txp, acb) {
         if (opts.doNotVerify) return acb(true);
-
-        if (opts.ignorePayPro)
-          txp.ignorePayPro = true;
-
         Verifier.checkTxProposal(self.credentials, txp, {
           payProGetter: self.payProGetter
         }, function(err, isLegit) {
@@ -916,7 +920,7 @@ API.prototype.signTxProposal = function(txp, cb) {
 
     self._doPostRequest(url, args, function(err, txp) {
       if (err) return cb(err);
-      API._processTxps([txp], self.credentials.sharedEncryptingKey);
+      self._processTxps([txp]);
       return cb(null, txp);
     });
   })
@@ -957,7 +961,6 @@ API.prototype.signTxProposalFromAirGapped = function(txp, encryptedPkr, m, n) {
   self.credentials.n = n;
   self.credentials.addPublicKeyRing(publicKeyRing);
 
-  // When forAirGapped=true -> checkTxProposal is sync
   if (!Verifier.checkTxProposalBody(self.credentials, txp))
     throw new Error('Fake transaction proposal');
 
@@ -985,7 +988,7 @@ API.prototype.rejectTxProposal = function(txp, reason, cb) {
   };
   self._doPostRequest(url, args, function(err, txp) {
     if (err) return cb(err);
-    API._processTxps([txp], self.credentials.sharedEncryptingKey);
+    self._processTxps([txp]);
     return cb(null, txp);
   });
 };
@@ -1053,7 +1056,7 @@ API.prototype.getTxHistory = function(opts, cb) {
   var url = '/v1/txhistory/' + qs;
   self._doGetRequest(url, function(err, txs) {
     if (err) return cb(err);
-    API._processTxps(txs, self.credentials.sharedEncryptingKey);
+    self._processTxps(txs);
     return cb(null, txs);
   });
 };
@@ -1072,7 +1075,7 @@ API.prototype.getTx = function(id, cb) {
   this._doGetRequest(url, function(err, tx) {
     if (err) return cb(err);
 
-    API._processTxps([tx], self.credentials.sharedEncryptingKey);
+    self._processTxps([tx]);
     return cb(null, tx);
   });
 };
@@ -2040,7 +2043,7 @@ Verifier.checkTxProposal = function(credentials, txp, opts, cb) {
   if (!this.checkTxProposalBody(credentials, txp))
     return cb(null, false);
 
-  if (txp.payProUrl && !txp.ignorePayPro) {
+  if (txp.payProUrl && !txp.doNotVerifyPayPro) {
     PayProRequest.get({
       url: txp.payProUrl,
       getter: opts.payProGetter,

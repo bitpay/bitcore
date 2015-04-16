@@ -908,9 +908,8 @@ describe('client API', function() {
 
     it('Should ignore PayPro at getTxProposals if instructed', function(done) {
       getter.yields(null, 'kaka');
-      clients[1].getTxProposals({
-        ignorePayPro: true
-      }, function(err, txps) {
+      clients[1].doNotVerifyPayPro = true;
+      clients[1].getTxProposals({}, function(err, txps) {
         should.not.exist(err);
         var tx = txps[0];
         // From the hardcoded paypro request
@@ -924,8 +923,8 @@ describe('client API', function() {
 
     it('Should ignore PayPro at signTxProposal if instructed', function(done) {
       getter.yields(null, 'kaka');
+      clients[1].doNotVerifyPayPro = true;
       clients[1].getTxProposals({
-        ignorePayPro: true
       }, function(err, txps) {
         should.not.exist(err);
         clients[1].signTxProposal(txps[0], function(err, txps) {
