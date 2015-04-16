@@ -855,6 +855,7 @@ describe('client API', function() {
         done();
       });
     });
+
     it('Should Detect tampered PayPro Proposals at getTxProposals', function(done) {
       helpers.tamperResponse(clients[1], 'get', '/v1/txproposals/', {}, function(txps) {
         txps[0].amount++;
@@ -904,6 +905,37 @@ describe('client API', function() {
         done();
       });
     });
+
+    it('Should ignore PayPro at getTxProposals if instructed', function(done) {
+      getter.yields(null, 'kaka');
+      clients[1].getTxProposals({
+        ignorePayPro: true
+      }, function(err, txps) {
+        should.not.exist(err);
+        var tx = txps[0];
+        // From the hardcoded paypro request
+        tx.amount.should.equal(404500);
+        tx.toAddress.should.equal('mjfjcbuYwBUdEyq2m7AezjCAR4etUBqyiE');
+        tx.message.should.equal('Payment request for BitPay invoice CibEJJtG1t9H77KmM61E2t for merchant testCopay');
+        tx.payProUrl.should.equal('dummy');
+        done();
+      });
+    });
+
+    it('Should ignore PayPro at signTxProposal if instructed', function(done) {
+      getter.yields(null, 'kaka');
+      clients[1].getTxProposals({
+        ignorePayPro: true
+      }, function(err, txps) {
+        should.not.exist(err);
+        clients[1].signTxProposal(txps[0], function(err, txps) {
+          should.not.exist(err);
+          done();
+        });
+      });
+    });
+
+
   });
 
   describe('Transactions Signatures and Rejection', function() {
@@ -1490,32 +1522,32 @@ describe('client API', function() {
               err.code.should.equal('NOTAUTHORIZED');
               recoveryClient.recreateWallet(function(err) {
                 should.not.exist(err);
-              recoveryClient.recreateWallet(function(err) {
-                should.not.exist(err);
-                recoveryClient.getStatus(function(err, status) {
+                recoveryClient.recreateWallet(function(err) {
                   should.not.exist(err);
-                  _.difference(_.pluck(status.wallet.copayers, 'name'), ['creator', 'copayer 1']).length.should.equal(0);
-                  recoveryClient.createAddress(function(err, addr2) {
+                  recoveryClient.getStatus(function(err, status) {
                     should.not.exist(err);
-                    should.exist(addr2);
-                    addr2.address.should.equal(addr.address);
-                    addr2.path.should.equal(addr.path);
-
-                    var recoveryClient2 = helpers.newClient(newApp);
-                    recoveryClient2.import(clients[1].export());
-                    recoveryClient2.getStatus(function(err, status) {
+                    _.difference(_.pluck(status.wallet.copayers, 'name'), ['creator', 'copayer 1']).length.should.equal(0);
+                    recoveryClient.createAddress(function(err, addr2) {
                       should.not.exist(err);
-                      done();
+                      should.exist(addr2);
+                      addr2.address.should.equal(addr.address);
+                      addr2.path.should.equal(addr.path);
+
+                      var recoveryClient2 = helpers.newClient(newApp);
+                      recoveryClient2.import(clients[1].export());
+                      recoveryClient2.getStatus(function(err, status) {
+                        should.not.exist(err);
+                        done();
+                      });
                     });
                   });
                 });
-              });
               });
             });
           });
         });
       });
- 
+
     });
   });
 
