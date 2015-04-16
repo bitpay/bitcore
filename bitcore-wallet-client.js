@@ -829,6 +829,7 @@ API.prototype.getBalance = function(cb) {
  *
  * @param {Object} opts
  * @param {Boolean} opts.doNotVerify
+ * @param {Boolean} opts.ignorePayPro
  * @param {Boolean} opts.forAirGapped
  * @return {Callback} cb - Return error or array of transactions proposals
  */
@@ -844,6 +845,9 @@ API.prototype.getTxProposals = function(opts, cb) {
     async.every(txps,
       function(txp, acb) {
         if (opts.doNotVerify) return acb(true);
+
+        if (opts.ignorePayPro)
+          txp.ignorePayPro = true;
 
         Verifier.checkTxProposal(self.credentials, txp, {
           payProGetter: self.payProGetter
@@ -2032,10 +2036,11 @@ Verifier.checkTxProposalBody = function(credentials, txp) {
  * @param {Callback} cb(err, isLegit)
  */
 Verifier.checkTxProposal = function(credentials, txp, opts, cb) {
+
   if (!this.checkTxProposalBody(credentials, txp))
     return cb(null, false);
 
-  if (txp.payProUrl) {
+  if (txp.payProUrl && !txp.ignorePayPro) {
     PayProRequest.get({
       url: txp.payProUrl,
       getter: opts.payProGetter,
