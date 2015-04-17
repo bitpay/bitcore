@@ -33,4 +33,28 @@ describe('AddressManager', function() {
       am.getNewAddressPath(true).should.equal('m/2/1/0');
     });
   });
+  describe('#rewindIndex', function() {
+    it('should rewind main index', function() {
+      var am = AddressManager.create({});
+      am.getNewAddressPath(false).should.equal('m/2147483647/0/0');
+      am.getNewAddressPath(false).should.equal('m/2147483647/0/1');
+      am.getNewAddressPath(false).should.equal('m/2147483647/0/2');
+      am.rewindIndex(false, 2);
+      am.getNewAddressPath(false).should.equal('m/2147483647/0/1');
+    });
+    it('should rewind change index', function() {
+      var am = AddressManager.create({});
+      am.getNewAddressPath(true).should.equal('m/2147483647/1/0');
+      am.rewindIndex(false, 1);
+      am.getNewAddressPath(true).should.equal('m/2147483647/1/1');
+      am.rewindIndex(true, 2);
+      am.getNewAddressPath(true).should.equal('m/2147483647/1/0');
+    });
+    it('should stop at 0', function() {
+      var am = AddressManager.create({});
+      am.getNewAddressPath(false).should.equal('m/2147483647/0/0');
+      am.rewindIndex(false, 20);
+      am.getNewAddressPath(false).should.equal('m/2147483647/0/0');
+    });
+  });
 });
