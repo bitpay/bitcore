@@ -6,6 +6,11 @@ var ExpressApp = require('./lib/expressapp');
 var WsApp = require('./lib/wsapp');
 var config = require('./config');
 var sticky = require('sticky-session');
+var log = require('npmlog');
+log.debug = log.verbose;
+log.disableColor();
+
+
 
 
 var port = process.env.BWS_PORT || config.port || 3232;
@@ -24,24 +29,25 @@ if (config.https) {
 }
 
 var start = function() {
-  var app = ExpressApp.start(config);
   var server;
 
   if (config.cluster) {
     server = sticky(clusterInstances, function() {
+      var app = ExpressApp.start(config);
       var server = config.https ? serverModule.createServer(serverOpts, app) :
         serverModule.Server(app);
       WsApp.start(server, config);
       return server;
     });
   } else {
+    var app = ExpressApp.start(config);
     server = config.https ? serverModule.createServer(serverOpts, app) :
       serverModule.Server(app);
     WsApp.start(server, config);
   }
   server.listen(port, function(err) {
     if (err) console.log('ERROR: ', err);
-    console.log('Bitcore Wallet Service running on port ' + port);
+    log.info('Bitcore Wallet Service running on port ' + port);
   });
 };
 
