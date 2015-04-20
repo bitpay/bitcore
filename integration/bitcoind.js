@@ -17,12 +17,14 @@ var Pool = p2p.Pool;
 var Networks = bitcore.Networks;
 var Messages = p2p.Messages;
 var Inventory = p2p.Inventory;
-var messages = new Messages();
 var Block = bitcore.Block;
 var Transaction = bitcore.Transaction;
 
 // config 
-var network = process.env.NETWORK === 'testnet'? Networks.testnet: Networks.livenet;
+var network = process.env.NETWORK === 'testnet' ? Networks.testnet : Networks.livenet;
+var messages = new Messages({
+  network: network
+});
 var blockHash = {
   'livenet': '000000000000000013413cf2536b491bf0988f52e90c476ffeb701c8bfdb1db9',
   'testnet': '0000000058cc069d964711cd25083c0a709f4df2b34c8ff9302ce71fe5b45786'
@@ -175,11 +177,10 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
       peer.sendMessage(message);
     });
   });
-  it.only('gets blocks', function(cb) {
+  it('gets blocks', function(cb) {
     connect(function(peer) {
       peer.once('inv', function(message) {
         message.command.should.equal('inv');
-        console.log('LLEGO UN INV', message.inventory.length);
         if (message.inventory.length === 2) {
           message.inventory[0].type.should.equal(Inventory.TYPE.BLOCK);
           message.inventory[1].type.should.equal(Inventory.TYPE.BLOCK);
