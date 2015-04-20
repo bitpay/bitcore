@@ -5,24 +5,13 @@ var async = require('async');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var levelup = require('levelup');
-var memdown = require('memdown');
 var mongodb = require('mongodb');
 
-
-var StorageLevelDb = require('../lib/storage');
-var StorageMongoDb = require('../lib/storage_mongo');
+var Storage = require('../lib/storage');
 var Model = require('../lib/model');
 
 
-function initStorageLevelDb(cb) {
-  var db = levelup(memdown, {
-    valueEncoding: 'json'
-  });
-  return cb(null, db);
-};
-
-function initStorageMongoDb(cb) {
+function initDb(cb) {
   var url = 'mongodb://localhost:27017/bws';
   mongodb.MongoClient.connect(url, function(err, db) {
     should.not.exist(err);
@@ -31,21 +20,6 @@ function initStorageMongoDb(cb) {
     });
   });
 };
-
-
-
-var Storage, initDb;
-
-
-var useLevel = false;
-
-if (useLevel) {
-  Storage = StorageLevelDb;
-  initDb = initStorageLevelDb;
-} else {
-  Storage = StorageMongoDb;
-  initDb = initStorageMongoDb;
-}
 
 
 describe('Storage', function() {

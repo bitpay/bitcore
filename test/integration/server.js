@@ -7,22 +7,23 @@ var inspect = require('util').inspect;
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var levelup = require('levelup');
-var memdown = require('memdown');
-var mongodb = require('mongodb');
 var log = require('npmlog');
 log.debug = log.verbose;
+
+var mongodb = require('mongodb');
 
 var Utils = require('../../lib/utils');
 var WalletUtils = require('bitcore-wallet-utils');
 var Bitcore = WalletUtils.Bitcore;
-var Storage = require('../../lib/storage_mongo');
+var Storage = require('../../lib/storage');
 var BlockchainMonitor = require('../../lib/blockchainmonitor');
 
-var Wallet = require('../../lib/model/wallet');
-var TxProposal = require('../../lib/model/txproposal');
-var Address = require('../../lib/model/address');
-var Copayer = require('../../lib/model/copayer');
+var Model = require('../../lib/model');
+var Wallet = Model.Wallet;
+var TxProposal = Model.TxProposal;
+var Address = Model.Address;
+var Copayer = Model.Copayer;
+
 var WalletService = require('../../lib/server');
 var NotificationBroadcaster = require('../../lib/notificationbroadcaster');
 var TestData = require('../testdata');
