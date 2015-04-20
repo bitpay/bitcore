@@ -36,10 +36,10 @@ For advanced usage, you can also customize which constructor is used for Block a
 var messages = new Messages({Block: MyBlock, Transaction: MyTransaction});
 ```
 
-And additionally custom network magic:
+And additionally custom network:
 
 ```javascript
-var messages = new Messages({magicNumber: 0x0b120907});
+var messages = new Messages({network: Networks.testnet});
 ```
 
 ## List of Messages

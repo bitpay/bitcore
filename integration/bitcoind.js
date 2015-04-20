@@ -22,7 +22,7 @@ var Block = bitcore.Block;
 var Transaction = bitcore.Transaction;
 
 // config 
-var network = Networks.livenet;
+var network = process.env.NETWORK === 'testnet'? Networks.testnet: Networks.livenet;
 var blockHash = {
   'livenet': '000000000000000013413cf2536b491bf0988f52e90c476ffeb701c8bfdb1db9',
   'testnet': '0000000058cc069d964711cd25083c0a709f4df2b34c8ff9302ce71fe5b45786'
@@ -40,8 +40,12 @@ var txHash = {
 describe('Integration with ' + network.name + ' bitcoind', function() {
 
   this.timeout(15000);
+  var opts = {
+    host: 'localhost',
+    network: network.name
+  };
   it('handshakes', function(cb) {
-    var peer = new Peer('localhost', network);
+    var peer = new Peer(opts);
     peer.once('version', function(m) {
       m.version.should.be.above(70000);
       m.services.toString().should.equal('1');
@@ -57,7 +61,7 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
     peer.connect();
   });
   var connect = function(cb) {
-    var peer = new Peer('localhost', network);
+    var peer = new Peer(opts);
     peer.once('ready', function() {
       cb(peer);
     });
@@ -164,20 +168,28 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
         message.headers.length.should.equal(3);
         cb();
       });
-      var message = messages.GetHeaders({starts: from, stop: stop});
+      var message = messages.GetHeaders({
+        starts: from,
+        stop: stop
+      });
       peer.sendMessage(message);
     });
   });
-  it('gets blocks', function(cb) {
+  it.only('gets blocks', function(cb) {
     connect(function(peer) {
       peer.once('inv', function(message) {
         message.command.should.equal('inv');
+        console.log('LLEGO UN INV', message.inventory.length);
         if (message.inventory.length === 2) {
           message.inventory[0].type.should.equal(Inventory.TYPE.BLOCK);
+          message.inventory[1].type.should.equal(Inventory.TYPE.BLOCK);
           cb();
         }
       });
-      var message = messages.GetBlocks({starts: from, stop: stop});
+      var message = messages.GetBlocks({
+        starts: from,
+        stop: stop
+      });
       peer.sendMessage(message);
     });
   });

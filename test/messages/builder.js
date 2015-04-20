@@ -18,7 +18,7 @@ describe('Messages Builder', function() {
     it('should return commands with customizations', function() {
       // instantiate
       var b = builder({
-        magicNumber: 0xd9b4bef9,
+        network: bitcore.Networks.testnet,
         Block: bitcore.Block,
         Transaction: bitcore.Transaction
       });

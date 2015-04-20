@@ -8,15 +8,23 @@ describe('Message', function() {
 
   describe('@constructor', function() {
     it('construct with magic number and command', function() {
-      var message = new Message({magicNumber: 0xd9b4bef9, command: 'command'});
+      var message = new Message({
+        network: {
+          networkMagic: 0xd9b4bef9
+        },
+        command: 'command'
+      });
+      should.exist(message);
       message.command.should.equal('command');
-      message.magicNumber.should.equal(0xd9b4bef9);
+      message.network.networkMagic.should.equal(0xd9b4bef9);
     });
   });
 
   describe('#toBuffer', function() {
     it('serialize to a buffer', function() {
-      var message = new Message({magicNumber: 0xd9b4bef9, command: 'command'});
+      var message = new Message({
+        command: 'command'
+      });
       message.getPayload = function() {
         return new Buffer(0);
       };
