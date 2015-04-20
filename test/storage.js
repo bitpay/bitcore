@@ -1,24 +1,62 @@
 'use strict';
 
 var _ = require('lodash');
+var async = require('async');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
 var levelup = require('levelup');
 var memdown = require('memdown');
-var Storage = require('../lib/storage');
+var mongodb = require('mongodb');
 
+
+var StorageLevelDb = require('../lib/storage');
+var StorageMongoDb = require('../lib/storage_mongo');
 var Model = require('../lib/model');
 
 
-describe.only('Storage', function() {
-  var storage;
-  beforeEach(function() {
-    var db = levelup(memdown, {
-      valueEncoding: 'json'
+function initStorageLevelDb(cb) {
+  var db = levelup(memdown, {
+    valueEncoding: 'json'
+  });
+  return cb(null, db);
+};
+
+function initStorageMongoDb(cb) {
+  var url = 'mongodb://localhost:27017/bws';
+  mongodb.MongoClient.connect(url, function(err, db) {
+    should.not.exist(err);
+    db.dropDatabase(function(err) {
+      return cb(null, db);
     });
-    storage = new Storage({
-      db: db
+  });
+};
+
+
+
+var Storage, initDb;
+
+
+var useLevel = false;
+
+if (useLevel) {
+  Storage = StorageLevelDb;
+  initDb = initStorageLevelDb;
+} else {
+  Storage = StorageMongoDb;
+  initDb = initStorageMongoDb;
+}
+
+
+describe('Storage', function() {
+  var storage;
+  beforeEach(function(done) {
+    initDb(function(err, db) {
+      should.not.exist(err);
+      storage = new Storage({
+        db: db
+      });
+      done();
     });
   });
   describe('Store & fetch wallet', function() {
@@ -48,6 +86,126 @@ describe.only('Storage', function() {
         should.not.exist(err);
         should.not.exist(w);
         done();
+      });
+    });
+  });
+  describe('Copayer lookup', function() {
+    it('should correctly store and fetch copayer lookup', function(done) {
+      var wallet = Model.Wallet.create({
+        id: '123',
+        name: 'my wallet',
+        m: 2,
+        n: 3,
+      });
+      _.each(_.range(3), function(i) {
+        var copayer = Model.Copayer.create({
+          name: 'copayer ' + i,
+          xPubKey: 'xPubKey ' + i,
+          requestPubKey: 'requestPubKey ' + i,
+        });
+        wallet.addCopayer(copayer);
+      });
+
+      should.exist(wallet);
+      storage.storeWalletAndUpdateCopayersLookup(wallet, function(err) {
+        should.not.exist(err);
+        storage.fetchCopayerLookup(wallet.copayers[1].id, function(err, lookup) {
+          should.not.exist(err);
+          should.exist(lookup);
+          lookup.walletId.should.equal('123');
+          lookup.requestPubKey.should.equal('requestPubKey 1');
+          done();
+        })
+      });
+    });
+    it('should not return error if copayer not found', function(done) {
+      storage.fetchCopayerLookup('2', function(err, lookup) {
+        should.not.exist(err);
+        should.not.exist(lookup);
+        done();
+      });
+    });
+  });
+
+  describe('Transaction proposals', function() {
+    var wallet, proposals;
+
+    beforeEach(function(done) {
+      wallet = Model.Wallet.create({
+        id: '123',
+        name: 'my wallet',
+        m: 2,
+        n: 3,
+      });
+      _.each(_.range(3), function(i) {
+        var copayer = Model.Copayer.create({
+          name: 'copayer ' + i,
+          xPubKey: 'xPubKey ' + i,
+          requestPubKey: 'requestPubKey ' + i,
+        });
+        wallet.addCopayer(copayer);
+      });
+      should.exist(wallet);
+      storage.storeWalletAndUpdateCopayersLookup(wallet, function(err) {
+        should.not.exist(err);
+
+        proposals = _.map(_.range(4), function(i) {
+          var tx = Model.TxProposal.create({
+            walletId: '123',
+            creatorId: wallet.copayers[0].id,
+            amount: i + 100,
+          });
+          if (i % 2 == 0) {
+            tx.status = 'rejected';
+            tx.isPending().should.be.false;
+          }
+          return tx;
+        });
+        async.each(proposals, function(tx, next) {
+          storage.storeTx('123', tx, next);
+        }, function(err) {
+          should.not.exist(err);
+          done();
+        });
+      });
+    });
+    it('should fetch tx', function(done) {
+      storage.fetchTx('123', proposals[0].id, function(err, tx) {
+        should.not.exist(err);
+        should.exist(tx);
+        tx.id.should.equal(proposals[0].id);
+        tx.walletId.should.equal(proposals[0].walletId);
+        tx.creatorName.should.equal('copayer 0');
+        done();
+      });
+    });
+    it('should fetch all pending txs', function(done) {
+      storage.fetchPendingTxs('123', function(err, txs) {
+        should.not.exist(err);
+        should.exist(txs);
+        txs.length.should.equal(2);
+        txs = _.sortBy(txs, 'amount');
+        txs[0].amount.should.equal(101);
+        txs[1].amount.should.equal(103);
+        done();
+      });
+    });
+    it('should remove tx', function(done) {
+      storage.removeTx('123', proposals[0].id, function(err) {
+        should.not.exist(err);
+        storage.fetchTx('123', proposals[0].id, function(err, tx) {
+          should.not.exist(err);
+          should.not.exist(tx);
+          storage.fetchTxs('123', {}, function(err, txs) {
+            should.not.exist(err);
+            should.exist(txs);
+            txs.length.should.equal(3);
+            _.any(txs, {
+              id: proposals[0].id
+            }).should.be.false;
+            done();
+          });
+        });
       });
     });
   });
