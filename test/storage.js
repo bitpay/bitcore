@@ -27,10 +27,13 @@ describe('Storage', function() {
   beforeEach(function(done) {
     initDb(function(err, db) {
       should.not.exist(err);
-      storage = new Storage({
+      storage = new Storage();
+      storage.connect({
         db: db
+      }, function(err) {
+        should.not.exist(err);
+        done();
       });
-      done();
     });
   });
   describe('Store & fetch wallet', function() {

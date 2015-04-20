@@ -51,7 +51,7 @@ var start = function() {
   });
 };
 
-if (config.cluster && (!config.storageOpts.multiLevel || !config.lockOpts.lockerServer))
-  throw 'When running in cluster mode, multilevel and locker server need to be configured';
+if (config.cluster && !config.lockOpts.lockerServer)
+  throw 'When running in cluster mode, locker server need to be configured';
 
 start();

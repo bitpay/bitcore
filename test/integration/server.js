@@ -244,17 +244,20 @@ function closeDb(cb) {
 describe('Wallet service', function() {
   beforeEach(function(done) {
     openDb(function() {
-      storage = new Storage({
+      storage = new Storage();
+      storage.connect({
         db: db
-      });
-      blockchainExplorer = sinon.stub();
+      }, function(err) {
+        should.not.exist(err);
+        blockchainExplorer = sinon.stub();
 
-      WalletService.initialize({
-        storage: storage,
-        blockchainExplorer: blockchainExplorer,
+        WalletService.initialize({
+          storage: storage,
+          blockchainExplorer: blockchainExplorer,
+        });
+        helpers.offset = 0;
+        done();
       });
-      helpers.offset = 0;
-      done();
     });
   });
   after(function(done) {
@@ -3055,18 +3058,21 @@ describe('Blockchain monitor', function() {
     sinon.stub(BlockchainMonitor.prototype, '_getAddressSubscriber').onFirstCall().returns(addressSubscriber);
 
     openDb(function() {
-      storage = new Storage({
+      storage = new Storage();
+      storage.connect({
         db: db
-      });
-      blockchainExplorer = sinon.stub();
+      }, function(err) {
+        should.not.exist(err);
+        blockchainExplorer = sinon.stub();
 
-      WalletService.initialize({
-        storage: storage,
-        blockchainExplorer: blockchainExplorer,
-      });
-      helpers.offset = 0;
+        WalletService.initialize({
+          storage: storage,
+          blockchainExplorer: blockchainExplorer,
+        });
+        helpers.offset = 0;
 
-      done();
+        done();
+      });
     });
   });
   afterEach(function() {
