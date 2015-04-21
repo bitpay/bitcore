@@ -28,30 +28,35 @@ if (config.https) {
   serverOpts.cert = fs.readFileSync(config.certificateFile || './ssl/certificate.pem');
 }
 
-var start = function() {
+var start = function(cb) {
   var server;
 
   if (config.cluster) {
     server = sticky(clusterInstances, function() {
-      var app = ExpressApp.start(config);
-      var server = config.https ? serverModule.createServer(serverOpts, app) :
+      ExpressApp.start(config, function(err, app) {
+        var server = config.https ? serverModule.createServer(serverOpts, app) :
+          serverModule.Server(app);
+        WsApp.start(server, config);
+        return server;
+      });
+    });
+    return cb(server);
+  } else {
+    ExpressApp.start(config, function(err, app) {
+      server = config.https ? serverModule.createServer(serverOpts, app) :
         serverModule.Server(app);
       WsApp.start(server, config);
-      return server;
+      return cb(server);
     });
-  } else {
-    var app = ExpressApp.start(config);
-    server = config.https ? serverModule.createServer(serverOpts, app) :
-      serverModule.Server(app);
-    WsApp.start(server, config);
-  }
-  server.listen(port, function(err) {
-    if (err) console.log('ERROR: ', err);
-    log.info('Bitcore Wallet Service running on port ' + port);
-  });
+  };
 };
 
 if (config.cluster && !config.lockOpts.lockerServer)
   throw 'When running in cluster mode, locker server need to be configured';
 
-start();
+start(function(server) {
+  server.listen(port, function(err) {
+    if (err) console.log('ERROR: ', err);
+    log.info('Bitcore Wallet Service running on port ' + port);
+  });
+});

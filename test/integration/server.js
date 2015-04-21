@@ -227,15 +227,6 @@ function resetDb(cb) {
   });
 };
 
-function closeDb(cb) {
-  if (!db) return cb();
-  db.close(true, function(err) {
-    should.not.exist(err);
-    db = null;
-    return cb();
-  });
-};
-
 
 describe('Wallet service', function() {
   before(function(done) {
@@ -249,21 +240,20 @@ describe('Wallet service', function() {
   beforeEach(function(done) {
     resetDb(function() {
       blockchainExplorer = sinon.stub();
-
       WalletService.initialize({
         storage: storage,
         blockchainExplorer: blockchainExplorer,
+      }, function() {
+        helpers.offset = 0;
+        done();
       });
-      helpers.offset = 0;
-      done();
     });
   });
   after(function(done) {
-    closeDb(done);
+    WalletService.shutDown(done);
   });
 
   describe('#getInstanceWithAuth', function() {
-    beforeEach(function() {});
 
     it('should get server instance for existing copayer', function(done) {
 
@@ -3066,21 +3056,20 @@ describe('Blockchain monitor', function() {
 
     resetDb(function() {
       blockchainExplorer = sinon.stub();
-
       WalletService.initialize({
         storage: storage,
         blockchainExplorer: blockchainExplorer,
+      }, function() {
+        helpers.offset = 0;
+        done();
       });
-      helpers.offset = 0;
-
-      done();
     });
   });
   afterEach(function() {
     BlockchainMonitor.prototype._getAddressSubscriber.restore();
   });
   after(function(done) {
-    closeDb(done);
+    WalletService.shutDown(done);
   });
 
   it('should subscribe wallet', function(done) {
