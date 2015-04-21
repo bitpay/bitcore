@@ -211,53 +211,51 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
 var db, storage, blockchainExplorer;
 
 function openDb(cb) {
-  function dropDb(cb) {
-    db.dropDatabase(function(err) {
-      should.not.exist(err);
-      return cb();
-    });
-  };
-  if (db) {
-    return dropDb(cb);
-  } else {
-    var url = 'mongodb://localhost:27017/bws';
-    mongodb.MongoClient.connect(url, function(err, _db) {
-      should.not.exist(err);
-      db = _db;
-      return dropDb(cb);
-    });
-  }
+  var url = 'mongodb://localhost:27017/bws';
+  mongodb.MongoClient.connect(url, function(err, _db) {
+    should.not.exist(err);
+    db = _db;
+    return cb();
+  });
+};
+
+function resetDb(cb) {
+  if (!db) return cb();
+  db.dropDatabase(function(err) {
+    should.not.exist(err);
+    return cb();
+  });
 };
 
 function closeDb(cb) {
-  if (db) {
-    db.close(true, function(err) {
-      should.not.exist(err);
-      db = null;
-      return cb();
-    });
-  } else {
+  if (!db) return cb();
+  db.close(true, function(err) {
+    should.not.exist(err);
+    db = null;
     return cb();
-  }
+  });
 };
 
-describe('Wallet service', function() {
-  beforeEach(function(done) {
-    openDb(function() {
-      storage = new Storage();
-      storage.connect({
-        db: db
-      }, function(err) {
-        should.not.exist(err);
-        blockchainExplorer = sinon.stub();
 
-        WalletService.initialize({
-          storage: storage,
-          blockchainExplorer: blockchainExplorer,
-        });
-        helpers.offset = 0;
-        done();
+describe('Wallet service', function() {
+  before(function(done) {
+    openDb(function() {
+      storage = new Storage({
+        db: db
       });
+      done();
+    });
+  });
+  beforeEach(function(done) {
+    resetDb(function() {
+      blockchainExplorer = sinon.stub();
+
+      WalletService.initialize({
+        storage: storage,
+        blockchainExplorer: blockchainExplorer,
+      });
+      helpers.offset = 0;
+      done();
     });
   });
   after(function(done) {
@@ -3052,27 +3050,30 @@ describe('Wallet service', function() {
 describe('Blockchain monitor', function() {
   var addressSubscriber;
 
+  before(function(done) {
+    openDb(function() {
+      storage = new Storage({
+        db: db
+      });
+      done();
+    });
+  });
+
   beforeEach(function(done) {
     addressSubscriber = sinon.stub();
     addressSubscriber.subscribe = sinon.stub();
     sinon.stub(BlockchainMonitor.prototype, '_getAddressSubscriber').onFirstCall().returns(addressSubscriber);
 
-    openDb(function() {
-      storage = new Storage();
-      storage.connect({
-        db: db
-      }, function(err) {
-        should.not.exist(err);
-        blockchainExplorer = sinon.stub();
+    resetDb(function() {
+      blockchainExplorer = sinon.stub();
 
-        WalletService.initialize({
-          storage: storage,
-          blockchainExplorer: blockchainExplorer,
-        });
-        helpers.offset = 0;
-
-        done();
+      WalletService.initialize({
+        storage: storage,
+        blockchainExplorer: blockchainExplorer,
       });
+      helpers.offset = 0;
+
+      done();
     });
   });
   afterEach(function() {

@@ -12,7 +12,7 @@ var Model = require('../lib/model');
 
 
 function initDb(cb) {
-  var url = 'mongodb://localhost:27017/bws';
+  var url = 'mongodb://localhost:27017';
   mongodb.MongoClient.connect(url, function(err, db) {
     should.not.exist(err);
     db.dropDatabase(function(err) {
@@ -27,13 +27,10 @@ describe('Storage', function() {
   beforeEach(function(done) {
     initDb(function(err, db) {
       should.not.exist(err);
-      storage = new Storage();
-      storage.connect({
+      storage = new Storage({
         db: db
-      }, function(err) {
-        should.not.exist(err);
-        done();
       });
+      done();
     });
   });
   describe('Store & fetch wallet', function() {
