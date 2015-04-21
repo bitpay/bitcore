@@ -10,7 +10,8 @@ var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
 
-var mongodb = require('mongodb');
+var fs = require('fs');
+var tingodb = require('tingodb')();
 
 var Utils = require('../../lib/utils');
 var WalletUtils = require('bitcore-wallet-utils');
@@ -211,10 +212,13 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
 var db, storage, blockchainExplorer;
 
 function openDb(cb) {
-  var url = 'mongodb://localhost:27017/bws';
-  mongodb.MongoClient.connect(url, function(err, _db) {
-    should.not.exist(err);
-    db = _db;
+  var tingodb = require('tingodb')();
+  var dbDir = './db/test/';
+  fs.mkdir(dbDir, function(err) {
+    if (err && err.code != 'EEXIST') {
+      throw new Error('Could not create test db directory at ./db/test/');
+    }
+    db = new tingodb.Db(dbDir, {});
     return cb();
   });
 };
@@ -222,7 +226,6 @@ function openDb(cb) {
 function resetDb(cb) {
   if (!db) return cb();
   db.dropDatabase(function(err) {
-    should.not.exist(err);
     return cb();
   });
 };
