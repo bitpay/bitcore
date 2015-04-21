@@ -430,6 +430,24 @@ describe('Script', function() {
     it('should work for no data OP_RETURN', function() {
       Script().add(Opcode.OP_RETURN).add(new Buffer('')).toString().should.equal('OP_RETURN 0');
     });
+    it('works with objects', function() {
+      Script().add({
+        opcodenum: 106
+      }).toString().should.equal('OP_RETURN');
+    });
+    it('works with another script', function() {
+      var someScript = Script('OP_2 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 ' +
+        '21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 OP_2 OP_CHECKMULTISIG');
+      var s = new Script().add(someScript);
+      s.toString()
+        .should.equal(someScript.toString());
+    });
+    it('fails with wrong type', function() {
+      var fails = function() {
+        return new Script().add(true);
+      };
+      fails.should.throw('Invalid script chunk');
+    });
   });
 
   describe('#isStandard', function() {
