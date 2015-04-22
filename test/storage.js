@@ -5,34 +5,41 @@ var async = require('async');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var mongodb = require('mongodb');
+var tingodb = require('tingodb')({
+  memStore: true
+});
 
 var Storage = require('../lib/storage');
 var Model = require('../lib/model');
 
+var db, storage;
 
-function initDb(cb) {
-  var url = 'mongodb://localhost:27017';
-  mongodb.MongoClient.connect(url, function(err, db) {
-    should.not.exist(err);
-    db.dropDatabase(function(err) {
-      return cb(null, db);
-    });
+function openDb(cb) {
+  db = new tingodb.Db('./db/test', {});
+  return cb();
+};
+
+function resetDb(cb) {
+  if (!db) return cb();
+  db.dropDatabase(function(err) {
+    return cb();
   });
 };
 
 
 describe('Storage', function() {
-  var storage;
-  beforeEach(function(done) {
-    initDb(function(err, db) {
-      should.not.exist(err);
+  before(function(done) {
+    openDb(function() {
       storage = new Storage({
         db: db
       });
       done();
     });
   });
+  beforeEach(function(done) {
+    resetDb(done);
+  });
+
   describe('Store & fetch wallet', function() {
     it('should correctly store and fetch wallet', function(done) {
       var wallet = Model.Wallet.create({

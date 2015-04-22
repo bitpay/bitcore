@@ -11,7 +11,9 @@ var log = require('npmlog');
 log.debug = log.verbose;
 
 var fs = require('fs');
-var tingodb = require('tingodb')();
+var tingodb = require('tingodb')({
+  memStore: true
+});
 
 var Utils = require('../../lib/utils');
 var WalletUtils = require('bitcore-wallet-utils');
@@ -212,15 +214,8 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
 var db, storage, blockchainExplorer;
 
 function openDb(cb) {
-  var tingodb = require('tingodb')();
-  var dbDir = './db/test/';
-  fs.mkdir(dbDir, function(err) {
-    if (err && err.code != 'EEXIST') {
-      throw new Error('Could not create test db directory at ./db/test/');
-    }
-    db = new tingodb.Db(dbDir, {});
-    return cb();
-  });
+  db = new tingodb.Db('./db/test', {});
+  return cb();
 };
 
 function resetDb(cb) {
