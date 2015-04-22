@@ -5,7 +5,7 @@ var MongoStorage = require('../lib/storage');
 
 
 var level = new LevelStorage({
-  dbPath: './db/bws.db',
+  dbPath: './db',
 });
 
 var mongo = new MongoStorage();
@@ -29,17 +29,28 @@ mongo.connect({
 
 
 function run(cb) {
+  var pending = 0,
+    ended = false;
   level.db.readStream()
     .on('data', function(data) {
+      pending++;
       migrate(data.key, data.value, function(err) {
         if (err) throw err;
+        pending--;
+        if (pending==0 && ended) {
+          return cb();
+        }
       });
     })
     .on('error', function(err) {
       return cb(err);
     })
     .on('end', function() {
-      return cb();
+      console.log('All old data read')
+      ended = true;
+      if (!pending) {
+        return cb();
+      }
     });
 };
 
