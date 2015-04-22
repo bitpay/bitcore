@@ -31,6 +31,9 @@ BWS supports SSL and Clustering. To configure them see [config.js](https://githu
 
 To use clustering, an external DB server and Lock server need to be configured. The lock server can be started  `locker/locker.js`.
 
+# Migration from LevelDB
+
+Old versions of BWS uses LevelDB to store data. There is a migration script available at: `scripts/level2mongo.js`
 
 
 # Security Considerations
