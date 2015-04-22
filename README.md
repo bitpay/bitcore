@@ -25,9 +25,11 @@ More about BWS at http://blog.bitpay.com/2015/03/05/bitcore-wallet.html
  npm start
 ```
 
+BWS needs mongoDB. You can configure the connection at `config.js`
+
 BWS supports SSL and Clustering. To configure them see [config.js](https://github.com/bitpay/bitcore-wallet-service/blob/master/config.js). 
 
-To use clustering, an external DB server and Lock server need to be configured. These can be started from `multilevel/multilevel.js` and `locker/locker.js`.
+To use clustering, an external DB server and Lock server need to be configured. The lock server can be started  `locker/locker.js`.
 
 
 
