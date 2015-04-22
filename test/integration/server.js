@@ -7,10 +7,13 @@ var inspect = require('util').inspect;
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var levelup = require('levelup');
-var memdown = require('memdown');
 var log = require('npmlog');
 log.debug = log.verbose;
+
+var fs = require('fs');
+var tingodb = require('tingodb')({
+  memStore: true
+});
 
 var Utils = require('../../lib/utils');
 var WalletUtils = require('bitcore-wallet-utils');
@@ -18,10 +21,12 @@ var Bitcore = WalletUtils.Bitcore;
 var Storage = require('../../lib/storage');
 var BlockchainMonitor = require('../../lib/blockchainmonitor');
 
-var Wallet = require('../../lib/model/wallet');
-var TxProposal = require('../../lib/model/txproposal');
-var Address = require('../../lib/model/address');
-var Copayer = require('../../lib/model/copayer');
+var Model = require('../../lib/model');
+var Wallet = Model.Wallet;
+var TxProposal = Model.TxProposal;
+var Address = Model.Address;
+var Copayer = Model.Copayer;
+
 var WalletService = require('../../lib/server');
 var NotificationBroadcaster = require('../../lib/notificationbroadcaster');
 var TestData = require('../testdata');
@@ -208,27 +213,45 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
 
 var db, storage, blockchainExplorer;
 
+function openDb(cb) {
+  db = new tingodb.Db('./db/test', {});
+  return cb();
+};
+
+function resetDb(cb) {
+  if (!db) return cb();
+  db.dropDatabase(function(err) {
+    return cb();
+  });
+};
+
 
 describe('Wallet service', function() {
-  beforeEach(function() {
-    db = levelup(memdown, {
-      valueEncoding: 'json'
+  before(function(done) {
+    openDb(function() {
+      storage = new Storage({
+        db: db
+      });
+      done();
     });
-    storage = new Storage({
-      db: db
+  });
+  beforeEach(function(done) {
+    resetDb(function() {
+      blockchainExplorer = sinon.stub();
+      WalletService.initialize({
+        storage: storage,
+        blockchainExplorer: blockchainExplorer,
+      }, function() {
+        helpers.offset = 0;
+        done();
+      });
     });
-    blockchainExplorer = sinon.stub();
-
-    WalletService.initialize({
-      storage: storage,
-      blockchainExplorer: blockchainExplorer,
-    });
-    helpers.offset = 0;
+  });
+  after(function(done) {
+    WalletService.shutDown(done);
   });
 
-
   describe('#getInstanceWithAuth', function() {
-    beforeEach(function() {});
 
     it('should get server instance for existing copayer', function(done) {
 
@@ -1172,6 +1195,7 @@ describe('Wallet service', function() {
         helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
           var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
           server.createTx(txOpts, function(err, tx) {
+
             should.not.exist(err);
             should.exist(tx);
             txid = tx.id;
@@ -1814,9 +1838,7 @@ describe('Wallet service', function() {
     var server, wallet, clock;
 
     beforeEach(function(done) {
-      if (server) return done();
       this.timeout(5000);
-      console.log('\tCreating TXS...');
       clock = sinon.useFakeTimers();
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
@@ -1824,7 +1846,7 @@ describe('Wallet service', function() {
         helpers.stubUtxos(server, wallet, _.range(10), function() {
           var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.1, null, TestData.copayers[0].privKey_1H_0);
           async.eachSeries(_.range(10), function(i, next) {
-            clock.tick(10000);
+            clock.tick(10 * 1000);
             server.createTx(txOpts, function(err, tx) {
               next();
             });
@@ -1883,17 +1905,18 @@ describe('Wallet service', function() {
     });
 
 
-    it('should txs from times 50 to 70', function(done) {
-      server.getTxs({
-        minTs: 50,
-        maxTs: 70,
-      }, function(err, txps) {
-        should.not.exist(err);
-        var times = _.pluck(txps, 'createdOn');
-        times.should.deep.equal([70, 60, 50]);
-        done();
+    it('should txs from times 50 to 70',
+      function(done) {
+        server.getTxs({
+          minTs: 50,
+          maxTs: 70,
+        }, function(err, txps) {
+          should.not.exist(err);
+          var times = _.pluck(txps, 'createdOn');
+          times.should.deep.equal([70, 60, 50]);
+          done();
+        });
       });
-    });
   });
 
   describe('Notifications', function() {
@@ -2073,62 +2096,110 @@ describe('Wallet service', function() {
         });
       });
     });
+
     it('should delete a wallet', function(done) {
-      var i = 0;
-      var count = function() {
-        return ++i;
-      };
-      server.storage._dump(function() {
-        i.should.above(1);
-        server.removeWallet({}, function(err) {
-          i = 0;
-          server.storage._dump(function() {
-            server.storage._dump();
-            i.should.equal(0);
+      server.removeWallet({}, function(err) {
+        should.not.exist(err);
+        server.getWallet({}, function(err, w) {
+          should.exist(err);
+          err.message.should.equal('Wallet not found');
+          should.not.exist(w);
+          async.parallel([
+
+            function(next) {
+              server.storage.fetchAddresses(wallet.id, function(err, items) {
+                items.length.should.equal(0);
+                next();
+              });
+            },
+            function(next) {
+              server.storage.fetchTxs(wallet.id, {}, function(err, items) {
+                items.length.should.equal(0);
+                next();
+              });
+            },
+            function(next) {
+              server.storage.fetchNotifications(wallet.id, {}, function(err, items) {
+                items.length.should.equal(0);
+                next();
+              });
+            },
+          ], function(err) {
+            should.not.exist(err);
             done();
-          }, count);
+          });
         });
-      }, count);
+      });
     });
 
     // creates 2 wallet, and deletes only 1.
     it('should delete a wallet, and only that wallet', function(done) {
-      var i = 0;
-      var db = [];
-      var cat = function(data) {
-        db.push(data);
-      };
-      server.storage._dump(function() {
-        var before = _.clone(db);
-        db.length.should.above(1);
+      var server2, wallet2;
+      async.series([
 
-        helpers.offset = 1;
-        helpers.createAndJoinWallet(2, 3, function(s, w) {
-          server = s;
-          wallet = w;
+        function(next) {
+          helpers.offset = 1;
+          helpers.createAndJoinWallet(1, 1, function(s, w) {
+            server2 = s;
+            wallet2 = w;
 
-          helpers.stubUtxos(server, wallet, _.range(2), function() {
-            var txOpts = {
-              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-              amount: helpers.toSatoshi(0.1),
-            };
-            async.eachSeries(_.range(2), function(i, next) {
-              server.createTx(txOpts, function(err, tx) {
-                next();
-              });
-            }, function() {
-              server.removeWallet({}, function(err) {
-                db = [];
-                server.storage._dump(function() {
-                  var after = _.clone(db);
-                  after.should.deep.equal(before);
-                  done();
-                }, cat);
-              });
-            }, cat);
+            helpers.stubUtxos(server2, wallet2, _.range(1, 3), function() {
+              var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.1, 'some message', TestData.copayers[1].privKey_1H_0);
+              async.eachSeries(_.range(2), function(i, next) {
+                server2.createTx(txOpts, function(err, tx) {
+                  should.not.exist(err);
+                  next(err);
+                });
+              }, next);
+            });
           });
-        });
-      }, cat);
+        },
+        function(next) {
+          server.removeWallet({}, next);
+        },
+        function(next) {
+          server.getWallet({}, function(err, wallet) {
+            should.exist(err);
+            err.message.should.contain('not found');
+            next();
+          });
+        },
+        function(next) {
+          server2.getWallet({}, function(err, wallet) {
+            should.not.exist(err);
+            should.exist(wallet);
+            wallet.id.should.equal(wallet2.id);
+            next();
+          });
+        },
+        function(next) {
+          server2.getMainAddresses({}, function(err, addresses) {
+            should.not.exist(err);
+            should.exist(addresses);
+            addresses.length.should.above(0);
+            next();
+          });
+        },
+        function(next) {
+          server2.getTxs({}, function(err, txs) {
+            should.not.exist(err);
+            should.exist(txs);
+            txs.length.should.equal(2);
+            next();
+          });
+        },
+        function(next) {
+          server2.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            should.exist(notifications);
+            notifications.length.should.above(0);
+            next();
+          });
+        },
+      ], function(err) {
+        should.not.exist(err);
+        done();
+      });
     });
   });
 
@@ -2967,28 +3038,36 @@ describe('Wallet service', function() {
 describe('Blockchain monitor', function() {
   var addressSubscriber;
 
-  beforeEach(function() {
-    db = levelup(memdown, {
-      valueEncoding: 'json'
+  before(function(done) {
+    openDb(function() {
+      storage = new Storage({
+        db: db
+      });
+      done();
     });
-    storage = new Storage({
-      db: db
-    });
-    blockchainExplorer = sinon.stub();
+  });
 
-    WalletService.initialize({
-      storage: storage,
-      blockchainExplorer: blockchainExplorer,
-    });
-    helpers.offset = 0;
-
+  beforeEach(function(done) {
     addressSubscriber = sinon.stub();
     addressSubscriber.subscribe = sinon.stub();
     sinon.stub(BlockchainMonitor.prototype, '_getAddressSubscriber').onFirstCall().returns(addressSubscriber);
-  });
 
+    resetDb(function() {
+      blockchainExplorer = sinon.stub();
+      WalletService.initialize({
+        storage: storage,
+        blockchainExplorer: blockchainExplorer,
+      }, function() {
+        helpers.offset = 0;
+        done();
+      });
+    });
+  });
   afterEach(function() {
     BlockchainMonitor.prototype._getAddressSubscriber.restore();
+  });
+  after(function(done) {
+    WalletService.shutDown(done);
   });
 
   it('should subscribe wallet', function(done) {

@@ -1,7 +1,7 @@
 var config = {
   basePath: '/bws/api',
   disableLogs: false,
-  port: 3232, 
+  port: 3232,
   // Uncomment to make BWS a forking server
   // cluster: true,
   // Uncomment to use the nr of availalbe CPUs
@@ -12,19 +12,17 @@ var config = {
   // certificateFile: 'cert.pem',
 
   storageOpts: {
-    dbPath: './db',
-    // Uncomment to use multilevel server
-     // multiLevel: {
-     //   host: 'localhost',
-     //   port: 3230,
-     // },
+    mongoDb: {
+      host: 'localhost',
+      port: 27017,
+    },
   },
   lockOpts: {
     //  To use locker-server, uncomment this:
-     // lockerServer: {
-     //   host: 'localhost',
-     //   port: 3231,
-     // },
+    // lockerServer: {
+    //   host: 'localhost',
+    //   port: 3231,
+    // },
   },
   blockchainExplorerOpts: {
     livenet: {
