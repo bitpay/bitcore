@@ -3,6 +3,7 @@
 var should = require('chai').should();
 var P2P = require('../../');
 var Message = P2P.Messages.Message;
+var Networks = require('bitcore').Networks;
 
 describe('Message', function() {
 
@@ -23,7 +24,8 @@ describe('Message', function() {
   describe('#toBuffer', function() {
     it('serialize to a buffer', function() {
       var message = new Message({
-        command: 'command'
+        command: 'command',
+        network: Networks.defaultNetwork
       });
       message.getPayload = function() {
         return new Buffer(0);
