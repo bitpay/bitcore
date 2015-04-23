@@ -94,6 +94,7 @@ var aTXP = function() {
     "walletId": "1",
     "creatorId": "1",
     "toAddress": "18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7",
+    "network": "livenet",
     "amount": 50000000,
     "message": 'some message',
     "proposalSignature": '7035022100896aeb8db75fec22fddb5facf791927a996eb3aee23ee6deaa15471ea46047de02204c0c33f42a9d3ff93d62738712a8c8a5ecd21b45393fdd144e7b01b5a186f1f9',

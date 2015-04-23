@@ -80,10 +80,16 @@ helpers.getSignedCopayerOpts = function(opts) {
   return opts;
 };
 
-helpers.createAndJoinWallet = function(m, n, cb) {
+helpers.createAndJoinWallet = function(m, n, opts, cb) {
+  if (_.isFunction(opts)) {
+    cb = opts;
+    opts = {};
+  }
+  opts = opts || {};
+
   var server = new WalletService();
   var copayerIds = [];
-  var offset = helpers.offset || 0;
+  var offset = opts.offset || 0;
 
   var walletOpts = {
     name: 'a wallet',
@@ -241,10 +247,7 @@ describe('Wallet service', function() {
       WalletService.initialize({
         storage: storage,
         blockchainExplorer: blockchainExplorer,
-      }, function() {
-        helpers.offset = 0;
-        done();
-      });
+      }, done);
     });
   });
   after(function(done) {
@@ -673,6 +676,8 @@ describe('Wallet service', function() {
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
         address.should.exist;
+        address.walletId.should.equal(wallet.id);
+        address.network.should.equal('livenet');
         address.address.should.equal('3KxttbKQQPWmpsnXZ3rB4mgJTuLnVR7frg');
         address.isChange.should.be.false;
         address.path.should.equal('m/2147483647/0/0');
@@ -877,6 +882,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           should.exist(tx);
           tx.walletId.should.equal(wallet.id);
+          tx.network.should.equal('livenet');
           tx.creatorId.should.equal(wallet.copayers[0].id);
           tx.message.should.equal('some message');
           tx.isAccepted().should.equal.false;
@@ -2138,8 +2144,9 @@ describe('Wallet service', function() {
       async.series([
 
         function(next) {
-          helpers.offset = 1;
-          helpers.createAndJoinWallet(1, 1, function(s, w) {
+          helpers.createAndJoinWallet(1, 1, {
+            offset: 1
+          }, function(s, w) {
             server2 = s;
             wallet2 = w;
 
@@ -3057,10 +3064,7 @@ describe('Blockchain monitor', function() {
       WalletService.initialize({
         storage: storage,
         blockchainExplorer: blockchainExplorer,
-      }, function() {
-        helpers.offset = 0;
-        done();
-      });
+      }, done);
     });
   });
   afterEach(function() {
