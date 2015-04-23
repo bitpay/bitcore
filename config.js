@@ -13,8 +13,7 @@ var config = {
 
   storageOpts: {
     mongoDb: {
-      host: 'localhost',
-      port: 27017,
+      uri: 'mongodb://localhost:27017/bws',
     },
   },
   lockOpts: {
