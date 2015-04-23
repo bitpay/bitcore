@@ -882,6 +882,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           should.exist(tx);
           tx.walletId.should.equal(wallet.id);
+          tx.network.should.equal('livenet');
           tx.creatorId.should.equal(wallet.copayers[0].id);
           tx.message.should.equal('some message');
           tx.isAccepted().should.equal.false;
