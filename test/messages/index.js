@@ -8,7 +8,7 @@ var P2P = require('../../');
 var Messages = P2P.Messages;
 var messages = new Messages();
 var bitcore = require('bitcore');
-var Data = require('../data/messages');//todo merge with commandData
+var Data = require('../data/messages'); //todo merge with commandData
 var commandData = require('../data/messages.json');
 
 function getPayloadBuffer(messageBuffer) {
@@ -25,9 +25,9 @@ describe('Messages', function() {
 
   describe('@constructor', function() {
     it('sets properties correctly', function() {
-      var magicNumber = bitcore.Networks.defaultNetwork.networkMagic.readUInt32LE(0);
+      var network = bitcore.Networks.defaultNetwork;
       var messages = new Messages({
-        magicNumber: magicNumber,
+        network: network,
         Block: bitcore.Block,
         Transaction: bitcore.Transaction
       });
@@ -35,17 +35,21 @@ describe('Messages', function() {
       should.exist(messages.builder.constructors);
       messages.builder.constructors.Block.should.equal(bitcore.Block);
       messages.builder.constructors.Transaction.should.equal(bitcore.Transaction);
-      messages.magicNumber.should.equal(magicNumber);
+      messages.network.should.deep.equal(network);
     });
-    it('magicNumber should be unique for each set of messages', function() {
-      var messages = new Messages({magicNumber: 123456});
-      var messages2 = new Messages({magicNumber: 987654});
-      messages.magicNumber.should.equal(123456);
-      messages2.magicNumber.should.equal(987654);
+    it('network should be unique for each set of messages', function() {
+      var messages = new Messages({
+        network: bitcore.Networks.livenet
+      });
+      var messages2 = new Messages({
+        network: bitcore.Networks.testnet
+      });
+      messages.network.should.deep.equal(bitcore.Networks.livenet);
+      messages2.network.should.deep.equal(bitcore.Networks.testnet);
       var message1 = messages.Version();
-      message1.magicNumber.should.equal(123456);
+      message1.network.should.deep.equal(bitcore.Networks.livenet);
       var message2 = messages2.Version();
-      message2.magicNumber.should.equal(987654);
+      message2.network.should.deep.equal(bitcore.Networks.testnet);
     });
   });
 
@@ -81,14 +85,13 @@ describe('Messages', function() {
     });
   });
 
-  describe('Default Magic Number', function() {
+  describe('Default Network', function() {
     var messages = new Messages();
     Object.keys(messages.builder.commandsMap).forEach(function(command) {
       var name = messages.builder.commandsMap[command];
       it(name, function() {
         var message = messages[name]();
-        var defaultMagic = bitcore.Networks.defaultNetwork.networkMagic.readUInt32LE(0);
-        message.magicNumber.should.equal(defaultMagic);
+        message.network.should.deep.equal(bitcore.Networks.defaultNetwork);
       });
     });
 
@@ -103,8 +106,10 @@ describe('Messages', function() {
     });
 
     it('#relay setting works', function() {
-      [true,false].forEach(function(relay) {
-        var message = messages.Version({relay: relay});
+      [true, false].forEach(function(relay) {
+        var message = messages.Version({
+          relay: relay
+        });
         message.relay.should.equal(relay);
         var messageBuf = message.getPayload();
         var newMessage = messages.Version.fromBuffer(messageBuf);
@@ -162,7 +167,8 @@ describe('Messages', function() {
         '0102000000ec3995c1bf7269ff728818a65e53af00cbbee6b6eca8ac9ce7bc79d87' +
         '7041ed8';
       var fails = function() {
-        messages.parseBuffer(buildMessage(invalidCommand));
+        var bufs = buildMessage(invalidCommand);
+        messages.parseBuffer(bufs);
       };
       fails.should.throw('Unsupported message command: malicious');
     });
