@@ -88,7 +88,7 @@
     "sha512": "=0.0.1"
   },
   "devDependencies": {
-    "bitcore-build": "bitpay/bitcore-build",
+    "bitcore-build": "git://github.com/braydonf/bitcore-build#660179f7116b8f4f585f50f238bede741761198f",
     "brfs": "^1.2.0",
     "chai": "^1.10.0",
     "gulp": "^3.8.10",
