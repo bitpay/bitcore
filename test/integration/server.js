@@ -25,6 +25,7 @@ var Wallet = Model.Wallet;
 var TxProposal = Model.TxProposal;
 var Address = Model.Address;
 var Copayer = Model.Copayer;
+var Preferences = Model.Preferences;
 
 var WalletService = require('../../lib/server');
 var TestData = require('../testdata');
@@ -673,7 +674,7 @@ describe('Wallet service', function() {
     it('should create address', function(done) {
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
-        address.should.exist;
+        should.exist(address);
         address.walletId.should.equal(wallet.id);
         address.network.should.equal('livenet');
         address.address.should.equal('3KxttbKQQPWmpsnXZ3rB4mgJTuLnVR7frg');
@@ -718,7 +719,7 @@ describe('Wallet service', function() {
           server.storage.storeAddressAndWallet.restore();
           server.createAddress({}, function(err, address) {
             should.not.exist(err);
-            address.should.exist;
+            should.exist(address);
             address.address.should.equal('3KxttbKQQPWmpsnXZ3rB4mgJTuLnVR7frg');
             address.path.should.equal('m/2147483647/0/0');
             done();
@@ -726,6 +727,46 @@ describe('Wallet service', function() {
         });
       });
     });
+  });
+
+  describe.only('Preferences', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should save & retrieve preferences', function(done) {
+      server.savePreferences({
+        email: 'dummy@dummy.com'
+      }, function(err) {
+        should.not.exist(err);
+        server.getPreferences({}, function(err, preferences) {
+          should.not.exist(err);
+          should.exist(preferences);
+          preferences.email.should.equal('dummy@dummy.com');
+          done();
+        });
+      });
+    });
+    it('should save preferences only for requesting copayer', function(done) {
+      server.savePreferences({
+        email: 'dummy@dummy.com'
+      }, function(err) {
+        should.not.exist(err);
+        helpers.getAuthServer(wallet.copayers[1].id, function(server2) {
+          server2.getPreferences({}, function(err, preferences) {
+            should.not.exist(err);
+            should.not.exist(preferences.email);
+            done();
+          });
+        });
+      });
+    });
+    it.skip('should save preferences only for requesting wallet', function(done) {});
   });
 
   describe('#getBalance', function() {
