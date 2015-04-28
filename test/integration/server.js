@@ -21,11 +21,6 @@ var Bitcore = WalletUtils.Bitcore;
 var Storage = require('../../lib/storage');
 
 var Model = require('../../lib/model');
-var Wallet = Model.Wallet;
-var TxProposal = Model.TxProposal;
-var Address = Model.Address;
-var Copayer = Model.Copayer;
-var Preferences = Model.Preferences;
 
 var WalletService = require('../../lib/server');
 var TestData = require('../testdata');
@@ -729,7 +724,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe.only('Preferences', function() {
+  describe('Preferences', function() {
     var server, wallet;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(2, 2, function(s, w) {
