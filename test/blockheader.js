@@ -68,14 +68,14 @@ describe('BlockHeader', function() {
   describe('#fromJSON', function() {
 
     it('should set all the variables', function() {
-      var bh = BlockHeader.fromJSON({
+      var bh = BlockHeader.fromJSON(JSON.stringify({
         version: version,
         prevHash: prevblockidbuf.toString('hex'),
         merkleRoot: merklerootbuf.toString('hex'),
         time: time,
         bits: bits,
         nonce: nonce
-      });
+      }));
       should.exist(bh.version);
       should.exist(bh.prevHash);
       should.exist(bh.merkleRoot);

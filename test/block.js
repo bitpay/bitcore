@@ -98,11 +98,6 @@ describe('Block', function() {
       should.exist(block.transactions);
     });
 
-    it('accepts an object as argument', function() {
-      var block = Block.fromRawBlock(dataRawBlockBuffer);
-      Block.fromJSON(block.toObject()).should.exist();
-    });
-
   });
 
   describe('#toJSON', function() {
