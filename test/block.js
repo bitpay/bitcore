@@ -167,7 +167,7 @@ describe('Block', function() {
 
   });
 
-  describe.only('#toObject', function() {
+  describe('#toObject', function() {
 
     it('should recover a block from genesis block buffer', function() {
       var block = Block.fromBuffer(blockOneBuf);
@@ -197,6 +197,13 @@ describe('Block', function() {
           nLockTime: 0
         }]
       });
+    });
+
+    it('roundtrips correctly', function() {
+      var block = Block.fromBuffer(blockOneBuf);
+      var obj = block.toObject();
+      var block2 = Block.fromObject(obj);
+      block2.toObject().should.deep.equal(block.toObject());
     });
 
   });
