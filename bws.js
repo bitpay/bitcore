@@ -34,19 +34,21 @@ var start = function(cb) {
   if (config.cluster) {
     server = sticky(clusterInstances, function() {
       ExpressApp.start(config, function(err, app) {
+        if (err) return cb(err);
         var server = config.https ? serverModule.createServer(serverOpts, app) :
           serverModule.Server(app);
         WsApp.start(server, config);
         return server;
       });
     });
-    return cb(server);
+    return cb(null, server);
   } else {
     ExpressApp.start(config, function(err, app) {
+      if (err) return cb(err);
       server = config.https ? serverModule.createServer(serverOpts, app) :
         serverModule.Server(app);
       WsApp.start(server, config);
-      return cb(server);
+      return cb(null, server);
     });
   };
 };
@@ -54,7 +56,11 @@ var start = function(cb) {
 if (config.cluster && !config.lockOpts.lockerServer)
   throw 'When running in cluster mode, locker server need to be configured';
 
-start(function(server) {
+start(function(err, server) {
+  if (err) {
+    console.log('Could not start BWS:', err);
+    process.exit(0);
+  }
   server.listen(port, function(err) {
     if (err) console.log('ERROR: ', err);
     log.info('Bitcore Wallet Service running on port ' + port);
