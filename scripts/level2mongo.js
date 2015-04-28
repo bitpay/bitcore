@@ -10,22 +10,24 @@ var level = new LevelStorage({
 
 var mongo = new MongoStorage();
 mongo.connect({
-  host: 'localhost',
-  port: '27017'
-}, function(err) {
-  if (err) throw err;
-  mongo.db.dropDatabase(function(err) {
+    mongoDb: {
+      uri: 'mongodb://localhost:27017/bws',
+    }
+  },
+  function(err) {
     if (err) throw err;
-    run(function(err) {
+    mongo.db.dropDatabase(function(err) {
       if (err) throw err;
-      console.log('All data successfully migrated');
-      process.exit(0);
-      // mongo._dump(function() {
-      //   process.exit(0);
-      // });
+      run(function(err) {
+        if (err) throw err;
+        console.log('All data successfully migrated');
+        process.exit(0);
+        // mongo._dump(function() {
+        //   process.exit(0);
+        // });
+      });
     });
   });
-});
 
 
 function run(cb) {
