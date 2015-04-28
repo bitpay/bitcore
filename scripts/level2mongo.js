@@ -16,16 +16,13 @@ mongo.connect({
   },
   function(err) {
     if (err) throw err;
-    mongo.db.dropDatabase(function(err) {
+    run(function(err) {
       if (err) throw err;
-      run(function(err) {
-        if (err) throw err;
-        console.log('All data successfully migrated');
-        process.exit(0);
-        // mongo._dump(function() {
-        //   process.exit(0);
-        // });
-      });
+      console.log('All data successfully migrated');
+      process.exit(0);
+      // mongo._dump(function() {
+      //   process.exit(0);
+      // });
     });
   });
 
