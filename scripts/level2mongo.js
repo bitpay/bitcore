@@ -10,11 +10,11 @@ var level = new LevelStorage({
 
 var mongo = new MongoStorage();
 mongo.connect({
-  host: 'localhost',
-  port: '27017'
-}, function(err) {
-  if (err) throw err;
-  mongo.db.dropDatabase(function(err) {
+    mongoDb: {
+      uri: 'mongodb://localhost:27017/bws',
+    }
+  },
+  function(err) {
     if (err) throw err;
     run(function(err) {
       if (err) throw err;
@@ -25,7 +25,6 @@ mongo.connect({
       // });
     });
   });
-});
 
 
 function run(cb) {
