@@ -11,8 +11,6 @@ var Opcode = bitcore.Opcode;
 var PublicKey = bitcore.PublicKey;
 var Address = bitcore.Address;
 
-var script_valid = require('../data/bitcoind/script_valid');
-
 describe('Script', function() {
 
   it('should make a new script', function() {
@@ -328,11 +326,16 @@ describe('Script', function() {
 
   describe('#isScripthashOut', function() {
 
-    it('should identify this known pubkeyhashout as pubkeyhashout', function() {
+    it('should identify this known p2shout as p2shout', function() {
       Script('OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUAL').isScriptHashOut().should.equal(true);
     });
 
-    it('should identify these known non-pubkeyhashout as not pubkeyhashout', function() {
+    it('should identify result of .isScriptHashOut() as p2sh', function() {
+      Script('OP_DUP OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG')
+      .toScriptHashOut().isScriptHashOut().should.equal(true);
+    });
+
+    it('should identify these known non-p2shout as not p2shout', function() {
       Script('OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUAL OP_EQUAL').isScriptHashOut().should.equal(false);
       Script('OP_HASH160 21 0x000000000000000000000000000000000000000000 OP_EQUAL').isScriptHashOut().should.equal(false);
     });
@@ -754,5 +757,6 @@ describe('Script', function() {
       Script().add(new Buffer('a')).equals(Script().add(new Buffer('b'))).should.equal(false);
     });
   });
+
 
 });

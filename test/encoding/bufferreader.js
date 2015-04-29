@@ -21,6 +21,12 @@ describe('BufferReader', function() {
     should.exist(br);
     Buffer.isBuffer(br.buf).should.equal(true);
   });
+    it('should fail for invalid object', function() {
+      var fail = function() {
+        return new BufferReader(5);
+      };
+      fail.should.throw('Unrecognized argument for BufferReader');
+    });
 
   describe('#set', function() {
 
