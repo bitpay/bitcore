@@ -120,7 +120,7 @@ Required Arguments:
  * name: Copayer Name
  * xPubKey - Extended Public Key for this copayer.
  * requestPubKey - Public Key used to check requests from this copayer.
- * copayerSignature - Signature sed by other copayers to verify the that the copayer joining knows the wallet secret.
+ * copayerSignature - Signature used by other copayers to verify that the copayer joining knows the wallet secret.
 
 Returns:
  * copayerId: Assigned ID of the copayer (to be used on x-identity header)
