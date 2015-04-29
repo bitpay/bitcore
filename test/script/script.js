@@ -326,11 +326,16 @@ describe('Script', function() {
 
   describe('#isScripthashOut', function() {
 
-    it('should identify this known pubkeyhashout as pubkeyhashout', function() {
+    it('should identify this known p2shout as p2shout', function() {
       Script('OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUAL').isScriptHashOut().should.equal(true);
     });
 
-    it('should identify these known non-pubkeyhashout as not pubkeyhashout', function() {
+    it('should identify result of .isScriptHashOut() as p2sh', function() {
+      Script('OP_DUP OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG')
+      .toScriptHashOut().isScriptHashOut().should.equal(true);
+    });
+
+    it('should identify these known non-p2shout as not p2shout', function() {
       Script('OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUAL OP_EQUAL').isScriptHashOut().should.equal(false);
       Script('OP_HASH160 21 0x000000000000000000000000000000000000000000 OP_EQUAL').isScriptHashOut().should.equal(false);
     });
