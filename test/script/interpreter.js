@@ -36,6 +36,7 @@ Script.fromBitcoindString = function(str) {
       var tstr = token.slice(1, token.length - 1);
       var cbuf = new Buffer(tstr);
       tbuf = Script().add(cbuf).toBuffer();
+      //bw.writeUInt8(tstr.length);
       bw.write(tbuf);
     } else if (typeof Opcode['OP_' + token] !== 'undefined') {
       opstr = 'OP_' + token;
@@ -196,9 +197,6 @@ describe('Interpreter', function() {
     var scriptPubkey = Script.fromBitcoindString(vector[1]);
     var flags = getFlags(vector[2]);
 
-    //testToFromString(scriptSig);
-    //testToFromString(scriptPubkey);
-
     var hashbuf = new Buffer(32);
     hashbuf.fill(0);
     var credtx = new Transaction();
@@ -242,7 +240,8 @@ describe('Interpreter', function() {
         var fullScriptString = vector[0] + ' ' + vector[1];
         var comment = descstr ? (' (' + descstr + ')') : '';
         it('should pass script_' + (expected ? '' : 'in') + 'valid ' +
-          'vector #' + c + ': ' + fullScriptString + comment, function() {
+          'vector #' + c + ': ' + fullScriptString + comment,
+          function() {
             testFixture(vector, expected);
           });
       });
@@ -279,12 +278,15 @@ describe('Interpreter', function() {
           var tx = new Transaction(txhex);
           var allInputsVerified = true;
           tx.inputs.forEach(function(txin, j) {
+            if (txin.isNull()) {
+              return;
+            }
             var scriptSig = txin.script;
             var txidhex = txin.prevTxId.toString('hex');
             var txoutnum = txin.outputIndex;
             var scriptPubkey = map[txidhex + ':' + txoutnum];
             should.exist(scriptPubkey);
-            should.exist(scriptSig);
+            (scriptSig !== undefined).should.equal(true);
             var interp = new Interpreter();
             var verified = interp.verify(scriptSig, scriptPubkey, tx, j, flags);
             if (!verified) {

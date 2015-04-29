@@ -11,8 +11,6 @@ var Opcode = bitcore.Opcode;
 var PublicKey = bitcore.PublicKey;
 var Address = bitcore.Address;
 
-var script_valid = require('../data/bitcoind/script_valid');
-
 describe('Script', function() {
 
   it('should make a new script', function() {
@@ -752,19 +750,6 @@ describe('Script', function() {
     });
     it('returns false for different data', function() {
       Script().add(new Buffer('a')).equals(Script().add(new Buffer('b'))).should.equal(false);
-    });
-  });
-  describe('coinbase transaction input script for tx ', function() {
-    it('fails for that specific malformed script', function() {
-      var hex = '03984b05' + // push 0x03 bytes with block height
-        'e4' + // attempt to push 0xe4 bytes, but should use OP_PUSHDATA 0xe4
-        'b883e5bda9e7a59ee4bb99e9b1bcfabe6d6d5cb348c1c7d58062783520' +
-        '2f5ad93c2f3db10bb850a1a513979f8328d9f35aff1000000000000000' +
-        '006189dd01cf00004d696e6564206279207975313333353131373131';
-      var fails = function() {
-        return new Script(hex);
-      };
-      fails.should.throw('Invalid script buffer: can\'t parse valid script from given buffer');
     });
   });
 

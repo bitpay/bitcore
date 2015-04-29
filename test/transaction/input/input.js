@@ -73,7 +73,6 @@ describe('Transaction.Input', function() {
     it('fromObject should work', function() {
       var input = Input.fromJSON(coinbaseJSON);
       var obj = input.toObject();
-      obj.script = new Buffer(obj.script, 'hex');
       Input.fromObject(obj).should.deep.equal(input);
       obj.script = 42;
       Input.fromObject.bind(null, obj).should.throw('Invalid argument type: script');
