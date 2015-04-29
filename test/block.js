@@ -188,7 +188,7 @@ describe('Block', function() {
             prevTxId: '0000000000000000000000000000000000000000000000000000000000000000',
             outputIndex: 4294967295,
             sequenceNumber: 4294967295,
-            script: '4 0xffff001d 1 0x04'
+            script: '04ffff001d0104'
           }],
           outputs: [{
             satoshis: 5000000000,

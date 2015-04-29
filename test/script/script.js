@@ -754,13 +754,17 @@ describe('Script', function() {
       Script().add(new Buffer('a')).equals(Script().add(new Buffer('b'))).should.equal(false);
     });
   });
-  describe.only('coinbase transaction input script', function() {
-    it('works for bug found in bitcore-node', function() {
-      var hex = '03984b05e4b883e5bda9e7a59ee4bb99e9b1bcfabe6d6d5cb348c1c7d580627835202f5ad93c2f3db10bb850a1a513979f8328d9f35aff1000000000000000006189dd01cf00004d696e6564206279207975313333353131373131';
-      var s = new Script(hex);
-      var s2 = new Script(s.toString());
-      console.log(s2.toString());
-      s2.toString().should.equal(s.toString());
+  describe('coinbase transaction input script for tx ', function() {
+    it('fails for that specific malformed script', function() {
+      var hex = '03984b05' + // push 0x03 bytes with block height
+        'e4' + // attempt to push 0xe4 bytes, but should use OP_PUSHDATA 0xe4
+        'b883e5bda9e7a59ee4bb99e9b1bcfabe6d6d5cb348c1c7d58062783520' +
+        '2f5ad93c2f3db10bb850a1a513979f8328d9f35aff1000000000000000' +
+        '006189dd01cf00004d696e6564206279207975313333353131373131';
+      var fails = function() {
+        return new Script(hex);
+      };
+      fails.should.throw('Invalid script buffer: can\'t parse valid script from given buffer');
     });
   });
 
