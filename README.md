@@ -11,9 +11,9 @@ A Multisig HD Bitcore Wallet Service.
 
 Bitcore Wallet Service facilitates multisig HD wallets creation and operation thru a (hopefully) simple and intuitive REST API.
 
-BWS can usually be installed within minutes and acommodates all the needed infrastruture for peers in a multisig wallet to communicate, and operate with minimun server trust.
+BWS can usually be installed within minutes and accommodates all the needed infrastructure for peers in a multisig wallet to communicate and operate – with minimum server trust.
   
-See [Bitcore-wallet-client] (https://github.com/bitpay/bitcore-wallet-client) for the *official* client library that communicates to BWS, and verifies its responsed. Also check [Bitcore-wallet] (https://github.com/bitpay/bitcore-wallet) for a simple CLI wallet implementation that relays on BWS.
+See [Bitcore-wallet-client] (https://github.com/bitpay/bitcore-wallet-client) for the *official* client library that communicates to BWS and verifies its response. Also check [Bitcore-wallet] (https://github.com/bitpay/bitcore-wallet) for a simple CLI wallet implementation that relays on BWS.
 
 BWS have a extensive test suite but have not been tested on production environments yet and have been recently released, so it it is still should be considered  BETA software.  
 
@@ -58,7 +58,7 @@ Identity is the Peer-ID, this will identify the peer and its wallet. Signature i
 See [Bitcore Wallet Client](https://github.com/bitpay/bitcore-wallet-client/blob/master/lib/api.js#L73) for implementation details.
 
 
-## GET Endpoinds
+## GET Endpoints
 `/v1/wallets/`: Get wallet information
 
 Returns:
@@ -100,7 +100,7 @@ Returns:
  * lockedAmount: Current balance of outstanding transaction proposals, that cannot be used on new transactions. 
  * byAddress array ['address', 'path', 'amount']: A list of addresses holding funds.
  
-## POST Endpoinds
+## POST Endpoints
 `/v1/wallets/`: Create a new Wallet
 
  Required Arguments:
@@ -166,7 +166,7 @@ Returns:
  * includeCopayerBranches: Scan all copayer branches following BIP45 recommendation (defaults to false). 
 
   
-## DELETE Endpoinds
+## DELETE Endpoints
 `/v1/txproposals/:id/`: Deletes a transaction proposal. Only the creator can delete a TX Proposal, and only if it has no other signatures or rejections
 
  Returns:
