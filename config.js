@@ -39,5 +39,12 @@ var config = {
       url: 'https://test-insight.bitpay.com:443',
     },
   },
+  email: {
+    service: 'Gmail',
+    auth: {
+      user: '',
+      pass: ''
+    }
+  }
 };
 module.exports = config;
