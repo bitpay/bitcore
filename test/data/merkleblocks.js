@@ -28,8 +28,8 @@ module.exports = {
     { // Mainnet Block 100014
       header: {
         version: 1,
-        prevHash: "82bb869cf3a793432a66e826e05a6fc37469f8efb7421dc88067010000000000",
-        merkleRoot: "7f16c5962e8bd963659c793ce370d95f093bc7e367117b3c30c1f8fdd0d97287",
+        prevHash: "0000000000016780c81d42b7eff86974c36f5ae026e8662a4393a7f39c86bb82",
+        merkleRoot: "8772d9d0fdf8c1303c7b1167e3c73b095fd970e33c799c6563d98b2e96c5167f",
         time: 1293629558,
         bits: 453281356,
         nonce: 151839121
@@ -46,8 +46,8 @@ module.exports = {
     { // Mainnet Block 12363
       header: {
         version: 1,
-        prevHash: "f8aeda5ec9058d406dc0c3ad73cd8761accfd07cdc5ee055a0e6c3ac00000000",
-        merkleRoot: "d008a007400650a08aeb612ef60a1f7c72961a8a578093feaf2fb6737a3e3167",
+        prevHash: "00000000acc3e6a055e05edc7cd0cfac6187cd73adc3c06d408d05c95edaaef8",
+        merkleRoot: "67313e7a73b62faffe9380578a1a96727c1f0af62e61eb8aa050064007a008d0",
         time: 1240800408,
         nonce: 2506812214,
         bits: 486604799,
@@ -443,12 +443,12 @@ module.exports = {
         "036bf6944a47791471e9a2cb86615de837f3aa234a7d1cd024026b3e1daee79e"
       ],
       header : {
-        merkleRoot : "cb83ce96b3202ecc3e6cca64c7111f54bf31b0f48e83d253c6ae959c12402f79",
+        prevHash : "000000000000000124f6ce137a43bb288d63cc84f9847033cb84595ead05f9de",
+        merkleRoot : "792f40129c95aec653d2838ef4b031bf541f11c764ca6c3ecc2e20b396ce83cb",
         time : 1389715824,
         version : 2,
         nonce : 322045839,
         bits : 419587686,
-        prevHash : "def905ad5e5984cb337084f984cc638d28bb437a13cef6240100000000000000"
       }
     }
   ]
