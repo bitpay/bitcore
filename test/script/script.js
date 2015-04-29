@@ -754,5 +754,15 @@ describe('Script', function() {
       Script().add(new Buffer('a')).equals(Script().add(new Buffer('b'))).should.equal(false);
     });
   });
+  describe.only('coinbase transaction input script', function() {
+    it('works for bug found in bitcore-node', function() {
+      var hex = '03984b05e4b883e5bda9e7a59ee4bb99e9b1bcfabe6d6d5cb348c1c7d580627835202f5ad93c2f3db10bb850a1a513979f8328d9f35aff1000000000000000006189dd01cf00004d696e6564206279207975313333353131373131';
+      var s = new Script(hex);
+      var s2 = new Script(s.toString());
+      console.log(s2.toString());
+      s2.toString().should.equal(s.toString());
+    });
+  });
+
 
 });

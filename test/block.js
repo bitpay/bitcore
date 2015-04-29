@@ -120,7 +120,7 @@ describe('Block', function() {
 
   });
 
-  describe.only('#fromBuffer', function() {
+  describe('#fromBuffer', function() {
 
     it('should make a block from this known buffer', function() {
       var block = Block.fromBuffer(blockbuf);
