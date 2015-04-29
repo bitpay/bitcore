@@ -233,19 +233,19 @@ function resetDb(cb) {
 
 describe('Wallet service', function() {
   before(function(done) {
-    // openDb(function() {
-    //   storage = new Storage({
-    //     db: db
-    //   });
-    //   done();
-    // });
-    storage = new Storage();
-    storage.connect({
-      mongoDb: {
-        uri: 'mongodb://localhost:27017/bws_test'
-      }
-    }, done);
-  });
+    openDb(function() {
+      storage = new Storage({
+        db: db
+      });
+      done();
+    });
+  // storage = new Storage();
+  // storage.connect({
+  //   mongoDb: {
+  //     uri: 'mongodb://localhost:27017/bws_test'
+  //   }
+  // }, done);
+});
   beforeEach(function(done) {
     resetDb(function() {
       blockchainExplorer = sinon.stub();
