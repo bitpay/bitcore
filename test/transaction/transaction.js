@@ -8,6 +8,7 @@ var _ = require('lodash');
 var sinon = require('sinon');
 
 var bitcore = require('../..');
+var BN = bitcore.crypto.BN;
 var Transaction = bitcore.Transaction;
 var PrivateKey = bitcore.PrivateKey;
 var Script = bitcore.Script;
@@ -355,7 +356,7 @@ describe('Transaction', function() {
       var buildSkipTest = function(builder, check) {
         return function() {
           var transaction = new Transaction();
-          transaction.from(simpleUtxoWith1BTC)
+          transaction.from(simpleUtxoWith1BTC);
           builder(transaction);
 
           var options = {};
@@ -408,6 +409,57 @@ describe('Transaction', function() {
         }, 'disableMoreOutputThanInput');
       });
     });
+  });
+
+  describe('#verify', function() {
+
+    it('not if _satoshis and _satoshisBN have different values', function() {
+      var tx = new Transaction()
+        .from({
+          'txId': testPrevTx,
+          'outputIndex': 0,
+          'script': testScript,
+          'satoshis': testAmount
+        }).to('mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc', testAmount - 10000);
+
+      tx.outputs[0]._satoshis = 100;
+      tx.outputs[0]._satoshisBN = new BN('fffffffffffffff', 16);
+      var verify = tx.verify();
+      verify.should.equal('transaction txout 0 satoshis has corrupted value');
+    });
+
+    it('not if _satoshis is negative', function() {
+      var tx = new Transaction()
+        .from({
+          'txId': testPrevTx,
+          'outputIndex': 0,
+          'script': testScript,
+          'satoshis': testAmount
+        }).to('mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc', testAmount - 10000);
+
+      tx.outputs[0]._satoshis = -100;
+      tx.outputs[0]._satoshisBN = new BN(-100, 10);
+      var verify = tx.verify();
+      verify.should.equal('transaction txout 0 negative');
+    });
+
+    it('not if transaction is greater than max block size', function() {
+
+      var tx = new Transaction()
+        .from({
+          'txId': testPrevTx,
+          'outputIndex': 0,
+          'script': testScript,
+          'satoshis': testAmount
+        }).to('mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc', testAmount - 10000);
+
+      tx.toBuffer = sinon.stub().returns({length: 10000000});
+
+      var verify = tx.verify();
+      verify.should.equal('transaction over the maximum block size');
+
+    });
+
   });
 
   describe('to and from JSON', function() {
@@ -616,7 +668,7 @@ describe('Transaction', function() {
       transaction.outputAmount.should.equal(99990000);
     });
     it('returns correct values for coinjoin transaction', function() {
-      // see livenet tx c16467eea05f1f30d50ed6dbc06a38539d9bb15110e4b7dc6653046a3678a718 
+      // see livenet tx c16467eea05f1f30d50ed6dbc06a38539d9bb15110e4b7dc6653046a3678a718
       var transaction = new Transaction(txCoinJoinHex);
       transaction.outputAmount.should.equal(4191290961);
       expect(function() {
