@@ -1,2 +1,2 @@
-[Copay] Payment sent
-A Payment has been sent from your Copay wallet <%= walletName %>.
+<%= subjectPrefix %>Payment sent
+A Payment has been sent from your wallet <%= walletName %>.

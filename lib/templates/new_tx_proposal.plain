@@ -1,2 +1,2 @@
-[Copay] New spend proposal
-A new spend proposal has been created in your Copay wallet <%= walletName %> by <%= creatorName %>.
+<%= subjectPrefix %>New spend proposal
+A new spend proposal has been created in your wallet <%= walletName %> by <%= creatorName %>.

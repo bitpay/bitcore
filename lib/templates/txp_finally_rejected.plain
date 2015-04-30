@@ -1,2 +1,2 @@
-[Copay] Spend proposal rejected
-A spend proposal in your Copay wallet <%= walletName %> has been rejected by <%= creatorName %>.
+<%= subjectPrefix %>Spend proposal rejected
+A spend proposal in your wallet <%= walletName %> has been rejected by <%= creatorName %>.
