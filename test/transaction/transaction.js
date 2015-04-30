@@ -246,6 +246,18 @@ describe('Transaction', function() {
       transaction.outputs.length.should.equal(2);
       transaction.outputs[1].satoshis.should.equal(10000);
     });
+    it('if satoshis are invalid', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith100000Satoshis)
+        .to(toAddress, 99999)
+        .change(changeAddress)
+        .sign(privateKey);
+      transaction.outputs[0]._satoshis = 100;
+      transaction.outputs[0]._satoshisBN = new BN(101, 10);
+      expect(function() {
+        return transaction.serialize();
+      }).to.throw(errors.Transaction.InvalidSatoshis);
+    });
     it('if fee is too small, fail serialization', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith100000Satoshis)
@@ -425,7 +437,7 @@ describe('Transaction', function() {
       tx.outputs[0]._satoshis = 100;
       tx.outputs[0]._satoshisBN = new BN('fffffffffffffff', 16);
       var verify = tx.verify();
-      verify.should.equal('transaction txout 0 satoshis has corrupted value');
+      verify.should.equal('transaction txout 0 satoshis is invalid');
     });
 
     it('not if _satoshis is negative', function() {
@@ -440,7 +452,7 @@ describe('Transaction', function() {
       tx.outputs[0]._satoshis = -100;
       tx.outputs[0]._satoshisBN = new BN(-100, 10);
       var verify = tx.verify();
-      verify.should.equal('transaction txout 0 negative');
+      verify.should.equal('transaction txout 0 satoshis is invalid');
     });
 
     it('not if transaction is greater than max block size', function() {
