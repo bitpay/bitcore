@@ -39,13 +39,15 @@ var config = {
       url: 'https://test-insight.bitpay.com:443',
     },
   },
-  email: {
-    service: 'Gmail',
-    auth: {
-      user: '',
-      pass: '',
-    },
-    from: 'wallet-service@bitcore.io',
-  },
+  // To use email notifications uncomment this:
+  // email: {
+  //   service: 'Gmail',
+  //   auth: {
+  //     user: '',
+  //     pass: '',
+  //   },
+  //   subjectPrefix: '[Copay]',
+  //   from: 'wallet-service@bitcore.io',
+  // },
 };
 module.exports = config;
