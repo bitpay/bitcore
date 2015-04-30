@@ -322,6 +322,10 @@ describe('Script', function() {
       s.isScriptHashIn().should.equal(false);
       s2.isScriptHashIn().should.equal(false);
     });
+    it('identifies this other problematic non-p2sh in', function() {
+      var s = Script.fromString('73 0x3046022100dc7a0a812de14acc479d98ae209402cc9b5e0692bc74b9fe0a2f083e2f9964b002210087caf04a711bebe5339fd7554c4f7940dc37be216a3ae082424a5e164faf549401');
+      s.isScriptHashIn().should.equal(false);
+    });
   });
 
   describe('#isScripthashOut', function() {
