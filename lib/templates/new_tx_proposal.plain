@@ -1,3 +1,2 @@
-copay@copay.io
-[Copay] New transaction proposal!
-A new transaction proposal has been created by another copayer.
+[Copay] New spend proposal
+A new spend proposal has been created in your Copay wallet <%= walletName %> by <%= creatorName %>.

@@ -1,3 +1,2 @@
-copay@copay.io
-[Copay] Funds received!
-Funds received on your wallet.
+[Copay] New payment received
+A Payment has been received into your Copay wallet <%= walletName %>.

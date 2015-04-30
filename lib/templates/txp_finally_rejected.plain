@@ -1,3 +1,2 @@
-copay@copay.io
-[Copay] A transaction proposal was rejected
-A transaction proposal was rejected by your copayers.
+[Copay] Spend proposal rejected
+A spend proposal in your Copay wallet <%= walletName %> has been rejected by <%= creatorName %>.

@@ -1,3 +1,2 @@
-copay@copay.io
-[Copay] Transaction broadcasted!
-A transaction has been broadcasted.
+[Copay] Payment sent
+A Payment has been sent from your Copay wallet <%= walletName %>.
