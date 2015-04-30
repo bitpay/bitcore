@@ -3014,7 +3014,6 @@ describe('Wallet service', function() {
           should.not.exist(err);
           var copayerId2 = result.copayerId;
 
-
           helpers.getAuthServer(copayerId, function(server) {
             server.getWallet({}, function(err, wallet) {
 
