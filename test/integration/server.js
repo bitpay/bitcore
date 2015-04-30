@@ -239,13 +239,13 @@ describe('Wallet service', function() {
       });
       done();
     });
-  // storage = new Storage();
-  // storage.connect({
-  //   mongoDb: {
-  //     uri: 'mongodb://localhost:27017/bws_test'
-  //   }
-  // }, done);
-});
+    // storage = new Storage();
+    // storage.connect({
+    //   mongoDb: {
+    //     uri: 'mongodb://localhost:27017/bws_test'
+    //   }
+    // }, done);
+  });
   beforeEach(function(done) {
     resetDb(function() {
       blockchainExplorer = sinon.stub();
@@ -254,6 +254,9 @@ describe('Wallet service', function() {
         storage: storage,
         blockchainExplorer: blockchainExplorer,
         mailer: mailer,
+        email: {
+          from: 'bws@dummy.net',
+        }
       }, done);
     });
   });
