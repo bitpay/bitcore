@@ -10,21 +10,25 @@ describe('Transaction deserialization', function() {
   describe('valid transaction test case', function() {
     var index = 0;
     vectors_valid.forEach(function(vector) {
-      if (vector.length > 1) {
-        var hexa = vector[1];
-        Transaction(hexa).serialize(true).should.equal(hexa);
-        index++;
-      }
+      it('vector #' + index, function() {
+        if (vector.length > 1) {
+          var hexa = vector[1];
+          Transaction(hexa).serialize(true).should.equal(hexa);
+          index++;
+        }
+      });
     });
   });
   describe('invalid transaction test case', function() {
     var index = 0;
     vectors_invalid.forEach(function(vector) {
-      if (vector.length > 1) {
-        var hexa = vector[1];
-        Transaction(hexa).serialize(true).should.equal(hexa);
-        index++;
-      }
+      it('invalid vector #' + index, function() {
+        if (vector.length > 1) {
+          var hexa = vector[1];
+          Transaction(hexa).serialize(true).should.equal(hexa);
+          index++;
+        }
+      });
     });
   });
 });

@@ -32,44 +32,44 @@ describe('js utils', function() {
 
   });
 
-  describe('isPositiveInteger', function() {
+  describe('isNaturalNumber', function() {
     it('false for float', function() {
-      var a = JSUtil.isPositiveInteger(0.1);
+      var a = JSUtil.isNaturalNumber(0.1);
       a.should.equal(false);
     });
 
     it('false for string float', function() {
-      var a = JSUtil.isPositiveInteger('0.1');
+      var a = JSUtil.isNaturalNumber('0.1');
       a.should.equal(false);
     });
 
     it('false for string integer', function() {
-      var a = JSUtil.isPositiveInteger('1');
+      var a = JSUtil.isNaturalNumber('1');
       a.should.equal(false);
     });
 
     it('false for negative integer', function() {
-      var a = JSUtil.isPositiveInteger(-1);
+      var a = JSUtil.isNaturalNumber(-1);
       a.should.equal(false);
     });
 
     it('false for negative integer string', function() {
-      var a = JSUtil.isPositiveInteger('-1');
+      var a = JSUtil.isNaturalNumber('-1');
       a.should.equal(false);
     });
 
     it('false for infinity', function() {
-      var a = JSUtil.isPositiveInteger(Infinity);
+      var a = JSUtil.isNaturalNumber(Infinity);
       a.should.equal(false);
     });
 
     it('false for NaN', function() {
-      var a = JSUtil.isPositiveInteger(NaN);
+      var a = JSUtil.isNaturalNumber(NaN);
       a.should.equal(false);
     });
 
     it('true for positive integer', function() {
-      var a = JSUtil.isPositiveInteger(1000);
+      var a = JSUtil.isNaturalNumber(1000);
       a.should.equal(true);
     });
 

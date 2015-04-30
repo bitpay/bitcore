@@ -79,9 +79,9 @@
     "request": "browser-request"
   },
   "dependencies": {
-    "bn.js": "=0.16.1",
+    "bn.js": "=2.0.4",
     "bs58": "=2.0.0",
-    "elliptic": "=0.16.0",
+    "elliptic": "=3.0.3",
     "hash.js": "=0.3.2",
     "inherits": "=2.0.1",
     "lodash": "=2.4.1",
