@@ -3114,11 +3114,20 @@ describe('Wallet service', function() {
           should.not.exist(err);
           var calls = sendMailStub.getCalls();
           calls.length.should.equal(2);
-          var recipients = _.pluck(_.map(calls, function(c) {
+          var emails = _.map(calls, function(c) {
             return c.args[0];
-          }), 'to');
-          _.difference(['copayer1@domain.com', 'copayer2@domain.com'], recipients).should.be.empty;
-          done();
+          });
+          _.difference(['copayer1@domain.com', 'copayer2@domain.com'], _.pluck(emails, 'to')).should.be.empty;
+          var one = emails[0];
+          one.from.should.equal('bws@dummy.net');
+          one.subject.should.contain('New spend proposal');
+          one.text.should.contain(wallet.name);
+          one.text.should.contain(wallet.copayers[0].name);
+          server.storage.fetchUnsentEmails(function(err, unsent) {
+            should.not.exist(err);
+            unsent.should.be.empty;
+            done();
+          });
         });
       });
     });
