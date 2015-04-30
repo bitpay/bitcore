@@ -41,12 +41,12 @@ var config = {
   },
   // To use email notifications uncomment this:
   // email: {
-  //   service: 'Gmail',
   //   auth: {
-  //     user: '',
-  //     pass: '',
+  //     host: 'localhost',
+  //     port: 25,
+  //     ignoreTLS: true,
   //   },
-  //   subjectPrefix: '[Copay]',
+  //   subjectPrefix: '[Wallet Service]',
   //   from: 'wallet-service@bitcore.io',
   // },
 };
