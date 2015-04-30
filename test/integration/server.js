@@ -210,20 +210,32 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
   });
 };
 
-var db, storage, blockchainExplorer, mailer;
+var storage, blockchainExplorer, mailer;
 
-function openDb(cb) {
-  db = new tingodb.Db('./db/test', {});
-  // HACK: There appears to be a bug in TingoDB's close function where the callback is not being executed
-  db.__close = db.close;
-  db.close = function(force, cb) {
-    this.__close(force, cb);
+var useMongo = false;
+
+function initStorage(cb) {
+  function getDb(cb) {
+    if (useMongo) {
+      var mongodb = require('mongodb');
+      mongodb.MongoClient.connect('mongodb://localhost:27017/bws_test', function(err, db) {
+        if (err) throw err;
+        return cb(db);
+      });
+    } else {
+      var db = new tingodb.Db('./db/test', {});
+      return cb(db);
+    }
+  }
+  getDb(function(db) {
+    storage = new Storage({
+      db: db
+    });
     return cb();
-  };
-  return cb();
+  });
 };
 
-function resetDb(cb) {
+function resetStorage(cb) {
   if (!storage.db) return cb();
   storage.db.dropDatabase(function(err) {
     return cb();
@@ -233,21 +245,10 @@ function resetDb(cb) {
 
 describe('Wallet service', function() {
   before(function(done) {
-    openDb(function() {
-      storage = new Storage({
-        db: db
-      });
-      done();
-    });
-    // storage = new Storage();
-    // storage.connect({
-    //   mongoDb: {
-    //     uri: 'mongodb://localhost:27017/bws_test'
-    //   }
-    // }, done);
+    initStorage(done);
   });
   beforeEach(function(done) {
-    resetDb(function() {
+    resetStorage(function() {
       blockchainExplorer = sinon.stub();
       mailer = sinon.stub();
       WalletService.initialize({
@@ -1566,7 +1567,7 @@ describe('Wallet service', function() {
       });
     });
 
-    it('should brodcast a tx', function(done) {
+    it('should broadcast a tx', function(done) {
       var clock = sinon.useFakeTimers(1234000);
       helpers.stubBroadcast('999');
       server.broadcastTx({
@@ -3083,12 +3084,15 @@ describe('Wallet service', function() {
     });
   });
   describe('Email notifications', function() {
-    var server, wallet;
+    var server, wallet, sendMailStub;
     beforeEach(function(done) {
-      mailer.sendMail = sinon.stub().yields();
       helpers.createAndJoinWallet(2, 3, function(s, w) {
         server = s;
         wallet = w;
+        sendMailStub = sinon.stub();
+        sendMailStub.yields();
+        server.emailService.mailer.sendMail = sendMailStub;
+
         var i = 0;
         async.eachSeries(w.copayers, function(copayer, next) {
           helpers.getAuthServer(copayer.id, function(server) {
@@ -3104,20 +3108,17 @@ describe('Wallet service', function() {
     });
 
     it('should notify copayers a new tx proposal has been created', function(done) {
-      WalletService.onNotification(function(n) {
-        if (n.type != 'NewTxProposal') return;
-        var calls = mailer.sendMail.getCalls();
-        calls.length.should.equal(2);
-        var recipients = _.pluck(_.map(calls, function(c) {
-          return c.args[0];
-        }), 'to');
-        _.difference(['copayer1@domain.com', 'copayer2@domain.com'], recipients).should.be.empty;
-        done();
-      });
       helpers.stubUtxos(server, wallet, [1, 1], function() {
         var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, 'some message', TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
+          var calls = sendMailStub.getCalls();
+          calls.length.should.equal(2);
+          var recipients = _.pluck(_.map(calls, function(c) {
+            return c.args[0];
+          }), 'to');
+          _.difference(['copayer1@domain.com', 'copayer2@domain.com'], recipients).should.be.empty;
+          done();
         });
       });
     });

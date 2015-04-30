@@ -45,7 +45,7 @@ var config = {
       user: '',
       pass: '',
     },
-    from: '',
+    from: 'wallet-service@bitcore.io',
   },
 };
 module.exports = config;
