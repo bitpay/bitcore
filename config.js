@@ -43,8 +43,9 @@ var config = {
     service: 'Gmail',
     auth: {
       user: '',
-      pass: ''
-    }
-  }
+      pass: '',
+    },
+    from: '',
+  },
 };
 module.exports = config;
