@@ -6,6 +6,7 @@ var _ = require('lodash');
 var mongodb = require('mongodb');
 var moment = require('moment');
 var async = require('async');
+var config = require('../config');
 
 var otherDate;
 
@@ -15,6 +16,9 @@ try {
 } catch (e) {
   console.log('Enter the date in the format YYYY-MM-DD.');
 }
+
+var c = config.storageOpts.mongoDb;
+var url = 'mongodb://' + (c.host || 'localhost') + ':' + (c.port ||  27017) + '/bws';
 
 var Today = otherDate || moment();
 
@@ -33,16 +37,18 @@ var stats = {
 
 var wallets = {};
 
-var IsToday = function(date) {
+var bwsStats = {};
+
+bwsStats.IsToday = function(date) {
   if (!date) return false;
   var date = moment(date * 1000);
   return (date >= Today.startOf('day') && date <= Today.endOf('day'));
 }
 
-var TotalTxpForToday = function(data) {
+bwsStats.TotalTxpForToday = function(data) {
   if (!data) return;
 
-  if (!IsToday(data.createdOn)) return;
+  if (!bwsStats.IsToday(data.createdOn)) return;
 
   var network = wallets[data.walletId];
   stats[network].totalTx++;
@@ -50,20 +56,20 @@ var TotalTxpForToday = function(data) {
 };
 
 
-var AddingWalletToCache = function(data) {
+bwsStats.AddingWalletToCache = function(data) {
   if (!data) return;
   wallets[data.id] = data.network;
 };
 
-var TotalNewWalletForToday = function(data) {
+bwsStats.TotalNewWalletForToday = function(data) {
   if (!data) return;
 
-  if (!IsToday(data.createdOn)) return;
+  if (!bwsStats.IsToday(data.createdOn)) return;
   stats[data.network].totalNewWallets++;
 
 };
 
-var PrintStats = function() {
+bwsStats.PrintStats = function() {
   console.log('Stats for date : ', Today.format("YYYY-MM-DD"));
   console.log(' ');
 
@@ -76,50 +82,51 @@ var PrintStats = function() {
   }
 };
 
-var ProcessData = function(DB, cb) {
-  ProccesWallets(DB, function() {
-    ProccesTxs(DB, cb);
+bwsStats.ProcessData = function(DB, cb) {
+  bwsStats.ProccesWallets(DB, function() {
+    bwsStats.ProccesTxs(DB, cb);
   });
 };
 
-var ProccesWallets = function(DB, cb) {
+bwsStats.ProccesWallets = function(DB, cb) {
   var collection = DB.collection('wallets');
 
   collection.find({}).toArray(function(err, items) {
     for (var i = 0; i < items.length; i++) {
-      AddingWalletToCache(items[i]);
-      TotalNewWalletForToday(items[i]);
+      bwsStats.AddingWalletToCache(items[i]);
+      bwsStats.TotalNewWalletForToday(items[i]);
     };
     cb();
   });
 };
 
-var ProccesTxs = function(DB, cb) {
+bwsStats.ProccesTxs = function(DB, cb) {
   var collection = DB.collection('txs');
 
   collection.find({}).toArray(function(err, items) {
     for (var i = 0; i < items.length; i++) {
-      TotalTxpForToday(items[i]);
+      bwsStats.TotalTxpForToday(items[i]);
     };
     cb();
   });
 };
 
-
-var url = 'mongodb://localhost:27017/bws';
-mongodb.MongoClient.connect(url, function(err, db) {
-  if (err) {
-    console.log('Unable to connect to the mongoDB server. Error:', err);
-    process.exit(1);
-  }
-  console.log('Connection established to ', url);
-  ProcessData(db, function(err) {
+bwsStats.getStats = function(cb) {
+  mongodb.MongoClient.connect(url, function(err, db) {
     if (err) {
-      console.log('error ', err);
-      process.exit(1);
+      console.log('Unable to connect to the mongoDB server. Error:', err);
+      return;
     }
-    PrintStats();
-    db.close();
-    process.exit(0);
+    console.log('Connection established to ', url);
+    bwsStats.ProcessData(db, function(err) {
+      db.close();
+      if (err) {
+        cb(err, null);
+        return;
+      }
+      cb(null, stats)
+    });
   });
-});
+}
+
+module.exports = bwsStats;
