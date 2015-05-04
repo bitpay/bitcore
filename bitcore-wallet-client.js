@@ -55,6 +55,9 @@ function API(opts) {
   this.payProGetter = null; // Only for testing
   this.doNotVerifyPayPro = opts.doNotVerifyPayPro;
 
+  this.transports = opts.transports || ['polling', 'websocket'];
+
+
   if (this.verbose) {
     log.setLevel('debug');
   } else {
@@ -76,7 +79,7 @@ API.prototype.initNotifications = function(cb) {
     'reconnection': true,
     'reconnectionDelay': 1000,
     'secure': true,
-    'transports': ['polling', 'websocket'],
+    'transports': self.transports,
   });
 
   socket.on('unauthorized', function() {
@@ -541,6 +544,8 @@ API.prototype.openWallet = function(cb) {
       }
       self.emit('walletCompleted', wallet);
     }
+    if (ret.pendingTxps)
+      self._processTxps(ret.pendingTxps);
 
     return cb(null, ret);
   });
@@ -730,6 +735,16 @@ API.prototype._computeProposalSignature = function(args) {
   return WalletUtils.signMessage(hash, this.credentials.requestPrivKey);
 }
 
+/**
+ * fetchPayPro
+ *
+ * @param opts.payProUrl  URL for paypro request
+ * @returns {Callback} cb - Return error or the parsed payment protocol request
+ * Returns (err,paypro)
+ *  paypro.amount
+ *  paypro.toAddress
+ *  paypro.memo
+ */
 API.prototype.fetchPayPro = function(opts, cb) {
   $.checkArgument(opts)
     .checkArgument(opts.payProUrl);
