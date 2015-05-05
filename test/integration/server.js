@@ -865,7 +865,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe.only('#createTx', function() {
+  describe('#createTx', function() {
     var server, wallet;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(2, 3, function(s, w) {
