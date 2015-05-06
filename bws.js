@@ -37,7 +37,7 @@ var start = function(cb) {
         if (err) return cb(err);
         var server = config.https ? serverModule.createServer(serverOpts, app) :
           serverModule.Server(app);
-        WsApp.start(server, config);
+        new WsApp().start(server, config);
         return server;
       });
     });
@@ -47,7 +47,7 @@ var start = function(cb) {
       if (err) return cb(err);
       server = config.https ? serverModule.createServer(serverOpts, app) :
         serverModule.Server(app);
-      WsApp.start(server, config);
+      new WsApp().start(server, config);
       return cb(null, server);
     });
   };
