@@ -20,4 +20,4 @@ server.on('connection', function(socket) {
   });
 });
 
-console.log('Message queue server listening on port ' + opts.port)
+console.log('Message broker server listening on port ' + opts.port)
