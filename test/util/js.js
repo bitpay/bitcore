@@ -68,6 +68,11 @@ describe('js utils', function() {
       a.should.equal(false);
     });
 
+    it('true for zero', function() {
+      var a = JSUtil.isNaturalNumber(0);
+      a.should.equal(true);
+    });
+
     it('true for positive integer', function() {
       var a = JSUtil.isNaturalNumber(1000);
       a.should.equal(true);
