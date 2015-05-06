@@ -2,14 +2,19 @@
 
 'use strict';
 
+var _ = require('lodash');
 var log = require('npmlog');
 log.debug = log.verbose;
 
 var config = require('../config');
-var BlockchainExplorer = require('../lib/blockchainmonitor');
+var BlockchainMonitor = require('../lib/blockchainmonitor');
 
-BlockchainExplorer.start(config, function(err) {
+var bcm = new BlockchainMonitor();
+bcm.start(config, function(err) {
   if (err) throw err;
 
   console.log('Blockchain monitor started');
+  _.each(bcm.explorers, function(explorer) {
+    console.log('\t' + explorer.network.name + ': ' + explorer.url);
+  });
 });
