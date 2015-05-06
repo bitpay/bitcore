@@ -19,7 +19,6 @@ var Utils = require('../../lib/utils');
 var WalletUtils = require('bitcore-wallet-utils');
 var Bitcore = WalletUtils.Bitcore;
 var Storage = require('../../lib/storage');
-var BlockchainMonitor = require('../../lib/blockchainmonitor');
 
 var Model = require('../../lib/model');
 var Wallet = Model.Wallet;
@@ -3027,105 +3026,6 @@ describe('Wallet service', function() {
               });
             });
           });
-        });
-      });
-    });
-  });
-});
-
-
-describe('Blockchain monitor', function() {
-  var addressSubscriber;
-
-  before(function(done) {
-    openDb(function() {
-      storage = new Storage({
-        db: db
-      });
-      done();
-    });
-  });
-
-  beforeEach(function(done) {
-    addressSubscriber = sinon.stub();
-    addressSubscriber.subscribe = sinon.stub();
-    sinon.stub(BlockchainMonitor.prototype, '_getAddressSubscriber').onFirstCall().returns(addressSubscriber);
-
-    resetDb(function() {
-      blockchainExplorer = sinon.stub();
-      WalletService.initialize({
-        storage: storage,
-        blockchainExplorer: blockchainExplorer,
-      }, done);
-    });
-  });
-  afterEach(function() {
-    BlockchainMonitor.prototype._getAddressSubscriber.restore();
-  });
-  after(function(done) {
-    WalletService.shutDown(done);
-  });
-
-  it('should subscribe wallet', function(done) {
-    var monitor = new BlockchainMonitor();
-    helpers.createAndJoinWallet(2, 2, function(server, wallet) {
-      server.createAddress({}, function(err, address1) {
-        should.not.exist(err);
-        server.createAddress({}, function(err, address2) {
-          should.not.exist(err);
-          monitor.subscribeWallet(server, function(err) {
-            should.not.exist(err);
-            addressSubscriber.subscribe.calledTwice.should.be.true;
-            addressSubscriber.subscribe.calledWith(address1.address).should.be.true;
-            addressSubscriber.subscribe.calledWith(address2.address).should.be.true;
-            done();
-          });
-        });
-      });
-    });
-  });
-
-  it('should be able to subscribe new address', function(done) {
-    var monitor = new BlockchainMonitor();
-    helpers.createAndJoinWallet(2, 2, function(server, wallet) {
-      server.createAddress({}, function(err, address1) {
-        should.not.exist(err);
-        monitor.subscribeWallet(server, function(err) {
-          should.not.exist(err);
-          addressSubscriber.subscribe.calledOnce.should.be.true;
-          addressSubscriber.subscribe.calledWith(address1.address).should.be.true;
-          server.createAddress({}, function(err, address2) {
-            should.not.exist(err);
-            monitor.subscribeAddresses(wallet.id, address2.address);
-            addressSubscriber.subscribe.calledTwice.should.be.true;
-            addressSubscriber.subscribe.calledWith(address2.address).should.be.true;
-            done();
-          });
-        });
-      });
-    });
-  });
-
-  it('should create NewIncomingTx notification when a new tx arrives on registered address', function(done) {
-    var monitor = new BlockchainMonitor();
-    helpers.createAndJoinWallet(2, 2, function(server, wallet) {
-      server.createAddress({}, function(err, address1) {
-        should.not.exist(err);
-        monitor.subscribeWallet(server, function(err) {
-          should.not.exist(err);
-          addressSubscriber.subscribe.calledOnce.should.be.true;
-          addressSubscriber.subscribe.getCall(0).args[0].should.equal(address1.address);
-          var handler = addressSubscriber.subscribe.getCall(0).args[1];
-          _.isFunction(handler).should.be.true;
-
-          monitor.on('notification', function(notification) {
-            notification.type.should.equal('NewIncomingTx');
-            notification.data.address.should.equal(address1.address);
-            notification.data.txid.should.equal('txid');
-            done();
-          });
-
-          handler('txid');
         });
       });
     });
