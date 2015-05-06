@@ -23,8 +23,11 @@ var config = {
     //   port: 3231,
     // },
   },
-  messageQueueOpts: {
-    url: 'http://localhost:3380',
+  messageBrokerOpts: {
+    //  To use message broker server, uncomment this:
+    messageBrokerServer: {
+      url: 'http://localhost:3380',
+    },
   },
   blockchainExplorerOpts: {
     livenet: {

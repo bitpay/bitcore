@@ -2050,7 +2050,6 @@ describe('Wallet service', function() {
       server.getPendingTxs({}, function(err, txs) {
         var tx = txs[2];
         var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
-        sinon.spy(server, '_emit');
         server.signTx({
           txProposalId: tx.id,
           signatures: signatures,
@@ -2068,11 +2067,6 @@ describe('Wallet service', function() {
               should.not.exist(err);
               var types = _.pluck(notifications, 'type');
               types.should.deep.equal(['NewOutgoingTx', 'TxProposalFinallyAccepted', 'TxProposalAcceptedBy']);
-              // Check also events
-              server._emit.getCall(0).args[1].type.should.equal('TxProposalAcceptedBy');
-              server._emit.getCall(1).args[1].type.should.equal('TxProposalFinallyAccepted');;
-              server._emit.getCall(2).args[1].type.should.equal('NewOutgoingTx');
-
               done();
             });
           });
@@ -2738,7 +2732,7 @@ describe('Wallet service', function() {
     });
     afterEach(function() {
       WalletService.scanConfig = scanConfigOld;
-      NotificationBroadcaster.removeAllListeners();
+      server.messageBroker.removeAllListeners();
     });
 
     it('should start an asynchronous scan', function(done) {
@@ -2755,7 +2749,7 @@ describe('Wallet service', function() {
         'm/2147483647/1/0',
         'm/2147483647/1/1',
       ];
-      WalletService.onNotification(function(n) {
+      server.messageBroker.onMessage(function(n) {
         if (n.type == 'ScanFinished') {
           server.getWallet({}, function(err, wallet) {
             should.exist(wallet.scanStatus);
@@ -2781,7 +2775,7 @@ describe('Wallet service', function() {
     });
     it('should set scan status error when unable to reach blockchain', function(done) {
       blockchainExplorer.getAddressActivity = sinon.stub().yields('dummy error');
-      WalletService.onNotification(function(n) {
+      server.messageBroker.onMessage(function(n) {
         if (n.type == 'ScanFinished') {
           should.exist(n.data.error);
           server.getWallet({}, function(err, wallet) {
@@ -2800,7 +2794,7 @@ describe('Wallet service', function() {
       WalletService.scanConfig.SCAN_WINDOW = 1;
 
       var scans = 0;
-      WalletService.onNotification(function(n) {
+      server.messageBroker.onMessage(function(n) {
         if (n.type == 'ScanFinished') {
           scans++;
           if (scans == 2) done();
