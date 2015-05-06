@@ -28,7 +28,6 @@ var Address = Model.Address;
 var Copayer = Model.Copayer;
 
 var WalletService = require('../../lib/server');
-var NotificationBroadcaster = require('../../lib/notificationbroadcaster');
 var TestData = require('../testdata');
 
 var helpers = {};
