@@ -1,63 +1,43 @@
 {
   "name": "bitcore",
-  "version": "0.9.0",
+  "version": "0.12.3",
   "dependencies": {
     "bn.js": {
-      "version": "0.16.1",
-      "from": "bn.js@0.16.1",
-      "resolved": "https://registry.npmjs.org/bn.js/-/bn.js-0.16.1.tgz"
+      "version": "2.0.4",
+      "from": "bn.js@=2.0.4",
+      "resolved": "https://registry.npmjs.org/bn.js/-/bn.js-2.0.4.tgz"
     },
     "bs58": {
       "version": "2.0.0",
-      "from": "bs58@2.0.0",
+      "from": "bs58@=2.0.0",
       "resolved": "https://registry.npmjs.org/bs58/-/bs58-2.0.0.tgz"
     },
     "elliptic": {
-      "version": "0.16.0",
-      "from": "elliptic@0.16.0",
-      "resolved": "https://registry.npmjs.org/elliptic/-/elliptic-0.16.0.tgz",
+      "version": "3.0.3",
+      "from": "elliptic@=3.0.3",
+      "resolved": "https://registry.npmjs.org/elliptic/-/elliptic-3.0.3.tgz",
       "dependencies": {
-        "bn.js": {
-          "version": "0.16.1",
-          "from": "bn.js@0.16.1",
-          "resolved": "https://registry.npmjs.org/bn.js/-/bn.js-0.16.1.tgz"
-        },
         "brorand": {
-          "version": "1.0.1",
-          "from": "brorand@1.0.1",
-          "resolved": "https://registry.npmjs.org/brorand/-/brorand-1.0.1.tgz"
-        },
-        "hash.js": {
-          "version": "0.3.2",
-          "from": "hash.js@0.3.2",
-          "resolved": "https://registry.npmjs.org/hash.js/-/hash.js-0.3.2.tgz"
-        },
-        "inherits": {
-          "version": "2.0.1",
-          "from": "inherits@^2.0.1"
+          "version": "1.0.5",
+          "from": "brorand@^1.0.1",
+          "resolved": "https://registry.npmjs.org/brorand/-/brorand-1.0.5.tgz"
         }
       }
+    },
+    "hash.js": {
+      "version": "1.0.2",
+      "from": "hash.js@^1.0.0",
+      "resolved": "https://registry.npmjs.org/hash.js/-/hash.js-1.0.2.tgz"
     },
     "inherits": {
       "version": "2.0.1",
-      "from": "inherits@2.0.1",
+      "from": "inherits@=2.0.1",
       "resolved": "https://registry.npmjs.org/inherits/-/inherits-2.0.1.tgz"
     },
-    "hash.js": {
-      "version": "0.3.2",
-      "from": "hash.js@0.3.2",
-      "resolved": "https://registry.npmjs.org/hash.js/-/hash.js-0.3.2.tgz",
-      "dependencies": {
-        "inherits": {
-          "version": "2.0.1",
-          "from": "inherits@^2.0.1"
-        }
-      }
-    },
     "lodash": {
-       "version": "2.4.1",
-       "from": "lodash@=2.4.1",
-       "resolved": "https://registry.npmjs.org/lodash/-/lodash-2.4.1.tgz"
+      "version": "2.4.1",
+      "from": "lodash@=2.4.1",
+      "resolved": "https://registry.npmjs.org/lodash/-/lodash-2.4.1.tgz"
     },
     "sha512": {
       "version": "0.0.1",

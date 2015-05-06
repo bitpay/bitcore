@@ -45,7 +45,7 @@ describe('Output', function() {
           satoshis: -100,
           script: Script.empty()
         });
-      }).should.throw('Output satoshis is not a positive integer');
+      }).should.throw('Output satoshis is not a natural number');
     });
 
     it('1.1', function() {
@@ -54,7 +54,7 @@ describe('Output', function() {
           satoshis: 1.1,
           script: Script.empty()
         });
-      }).should.throw('Output satoshis is not a positive integer');
+      }).should.throw('Output satoshis is not a natural number');
     });
 
     it('NaN', function() {
@@ -63,7 +63,7 @@ describe('Output', function() {
           satoshis: NaN,
           script: Script.empty()
         });
-      }).should.throw('Output satoshis is not a positive integer');
+      }).should.throw('Output satoshis is not a natural number');
     });
 
     it('Infinity', function() {
@@ -72,7 +72,7 @@ describe('Output', function() {
           satoshis: Infinity,
           script: Script.empty()
         });
-      }).should.throw('Output satoshis is not a positive integer');
+      }).should.throw('Output satoshis is not a natural number');
     });
   });
 
