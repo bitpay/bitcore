@@ -3103,9 +3103,6 @@ describe('Wallet service', function() {
         }, done);
       });
     });
-    afterEach(function() {
-      NotificationBroadcaster.removeAllListeners();
-    });
 
     it('should notify copayers a new tx proposal has been created', function(done) {
       helpers.stubUtxos(server, wallet, [1, 1], function() {
