@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+var async = require('async');
 var fs = require('fs');
 
 var ExpressApp = require('./lib/expressapp');
@@ -29,32 +30,39 @@ if (config.https) {
 }
 
 var start = function(cb) {
-  var server;
+  var expressApp = new ExpressApp();
+  var wsApp = new WsApp();
+
+  function doStart(cb) {
+    var server = config.https ? serverModule.createServer(serverOpts, expressApp.app) : serverModule.Server(expressApp.app);
+    async.parallel([
+
+      function(done) {
+        expressApp.start(config, done);
+      },
+      function(done) {
+        wsApp.start(server, config, done);
+      },
+    ], function(err) {
+      if (err) {
+        log.error('Could not start BWS instance', err);
+      }
+      if (cb) return cb(err);
+    });
+
+    return server;
+  };
 
   if (config.cluster) {
-    server = sticky(clusterInstances, function() {
-      ExpressApp.start(config, function(err, app) {
-        if (err) return cb(err);
-        var server = config.https ? serverModule.createServer(serverOpts, app) :
-          serverModule.Server(app);
-        var wsApp = new WsApp();
-        wsApp.start(server, config, function(err) {
-          return server;
-        });
-      });
+    var server = sticky(clusterInstances, function() {
+      return doStart();
     });
     return cb(null, server);
   } else {
-    ExpressApp.start(config, function(err, app) {
-      if (err) return cb(err);
-      server = config.https ? serverModule.createServer(serverOpts, app) :
-        serverModule.Server(app);
-      var wsApp = new WsApp();
-      wsApp.start(server, config, function(err) {
-        return cb(err, server);
-      });
+    var server = doStart(function(err) {
+      return cb(err, server);
     });
-  };
+  }
 };
 
 if (config.cluster && !config.lockOpts.lockerServer)
