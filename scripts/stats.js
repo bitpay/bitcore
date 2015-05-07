@@ -8,52 +8,25 @@ var moment = require('moment');
 var async = require('async');
 var config = require('../config');
 
-var otherDate;
-
-//trying to parse optional parameter to get stats on any given date
-try {
-  otherDate = process.argv[2] && moment(process.argv[2]).isValid() ? moment(process.argv[2]) : null;
-} catch (e) {
-  console.log('Enter the date in the format YYYY-MM-DD.');
-}
 
 var c = config.storageOpts.mongoDb;
 var url = 'mongodb://' + (c.host || 'localhost') + ':' + (c.port ||  27017) + '/bws';
 
-var Today = otherDate || moment();
+var startDate = moment();
+var endDate = moment();
 
-var stats = {
-  'livenet': {
-    totalTx: 0,
-    totalAmount: 0,
-    totalNewWallets: 0
-  },
-  'testnet': {
-    totalTx: 0,
-    totalAmount: 0,
-    totalNewWallets: 0
-  }
-}
+var stats = {};
 
 var wallets = {};
 
 var bwsStats = {};
 
-bwsStats.IsToday = function(date) {
-  if (!date) return false;
-  var date = moment(date * 1000);
-  return (date >= Today.startOf('day') && date <= Today.endOf('day'));
+bwsStats.cleanUp = function() {
+  stats = {
+    'livenet': {},
+    'testnet': {}
+  };
 }
-
-bwsStats.TotalTxpForToday = function(data) {
-  if (!data) return;
-
-  if (!bwsStats.IsToday(data.createdOn)) return;
-
-  var network = wallets[data.walletId];
-  stats[network].totalTx++;
-  stats[network].totalAmount += data.amount;
-};
 
 
 bwsStats.AddingWalletToCache = function(data) {
@@ -63,55 +36,107 @@ bwsStats.AddingWalletToCache = function(data) {
 
 bwsStats.TotalNewWalletForToday = function(data) {
   if (!data) return;
-
-  if (!bwsStats.IsToday(data.createdOn)) return;
-  stats[data.network].totalNewWallets++;
-
-};
-
-bwsStats.PrintStats = function() {
-  console.log('Stats for date : ', Today.format("YYYY-MM-DD"));
-  console.log(' ');
-
-  for (var s in stats) {
-    console.log(' ');
-    console.log(s + ' stats--------------------------------- ')
-    console.log('New wallets : ', stats[s].totalNewWallets);
-    console.log('Total tx  : ', stats[s].totalTx);
-    console.log('Total amount in tx (BTC) : ', stats[s].totalAmount * 1 / 1e8);
+  var day = moment(data.createdOn * 1000).format('YYYYMMDD');
+  if (!stats[data.network][day]) {
+    stats[data.network][day] = {
+      totalTx: 0,
+      totalAmount: 0,
+      totalNewWallets: 0
+    };
   }
+  stats[data.network][day].totalNewWallets++;
 };
+
+bwsStats.TotalTxpForToday = function(data) {
+  if (!data) return;
+  var day = moment(data.createdOn * 1000).format('YYYYMMDD');
+  var network = wallets[data.walletId];
+  if (!stats[network][day]) {
+    stats[network][day] = {
+      totalTx: 0,
+      totalAmount: 0,
+      totalNewWallets: 0
+    };
+  }
+  stats[network][day].totalTx++;
+  stats[network][day].totalAmount += data.amount;
+};
+
 
 bwsStats.ProcessData = function(DB, cb) {
   bwsStats.ProccesWallets(DB, function() {
-    bwsStats.ProccesTxs(DB, cb);
+    bwsStats.ProccesNewWallets(DB, function() {
+      bwsStats.ProccesTxs(DB, cb);
+    });
   });
 };
 
+
 bwsStats.ProccesWallets = function(DB, cb) {
   var collection = DB.collection('wallets');
-
   collection.find({}).toArray(function(err, items) {
-    for (var i = 0; i < items.length; i++) {
-      bwsStats.AddingWalletToCache(items[i]);
-      bwsStats.TotalNewWalletForToday(items[i]);
-    };
+    if (err) {
+      console.log('Error.', err);
+    }
+
+    items.forEach(function(it) {
+      bwsStats.AddingWalletToCache(it);
+    });
+    cb();
+  });
+};
+
+bwsStats.ProccesNewWallets = function(DB, cb) {
+  var collection = DB.collection('wallets');
+  var start = Math.floor(startDate.startOf('day').valueOf() / 1000);
+  var end = Math.floor(endDate.endOf('day').valueOf() / 1000);
+
+  collection.find({
+    createdOn: {
+      $gt: start,
+      $lt: end
+    }
+  }).toArray(function(err, items) {
+    if (err) {
+      console.log('Error.', err);
+    }
+    items.forEach(function(it) {
+      bwsStats.TotalNewWalletForToday(it);
+    });
     cb();
   });
 };
 
 bwsStats.ProccesTxs = function(DB, cb) {
   var collection = DB.collection('txs');
+  var start = Math.floor(startDate.startOf('day').valueOf() / 1000);
+  var end = Math.floor(endDate.endOf('day').valueOf() / 1000);
 
-  collection.find({}).toArray(function(err, items) {
-    for (var i = 0; i < items.length; i++) {
-      bwsStats.TotalTxpForToday(items[i]);
-    };
-    cb();
-  });
+  collection.find({
+      createdOn: {
+        $gt: start,
+        $lt: end
+      }
+    },
+    function(err, items) {
+      if (err || !items) {
+        console.log("No items found.");
+      } else {
+        items.forEach(function(it) {
+          bwsStats.TotalTxpForToday(it);
+        });
+      }
+      cb();
+    });
 };
 
-bwsStats.getStats = function(cb) {
+bwsStats.getStats = function(opts, cb) {
+  if (opts) {
+    startDate = moment(opts.from);
+    endDate = moment(opts.to);
+  }
+  bwsStats.cleanUp();
+
   mongodb.MongoClient.connect(url, function(err, db) {
     if (err) {
       console.log('Unable to connect to the mongoDB server. Error:', err);
@@ -119,12 +144,12 @@ bwsStats.getStats = function(cb) {
     }
     console.log('Connection established to ', url);
     bwsStats.ProcessData(db, function(err) {
-      db.close();
       if (err) {
+        console.log('Error.', err);
         cb(err, null);
         return;
       }
-      cb(null, stats)
+      cb(null, stats);
     });
   });
 }
