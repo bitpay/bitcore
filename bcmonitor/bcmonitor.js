@@ -14,7 +14,4 @@ bcm.start(config, function(err) {
   if (err) throw err;
 
   console.log('Blockchain monitor started');
-  _.each(bcm.explorers, function(explorer) {
-    console.log('\t' + explorer.network.name + ': ' + explorer.url);
-  });
 });
