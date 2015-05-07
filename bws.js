@@ -37,8 +37,10 @@ var start = function(cb) {
         if (err) return cb(err);
         var server = config.https ? serverModule.createServer(serverOpts, app) :
           serverModule.Server(app);
-        WsApp.start(server, config);
-        return server;
+        var wsApp = new WsApp();
+        wsApp.start(server, config, function(err) {
+          return server;
+        });
       });
     });
     return cb(null, server);
@@ -47,14 +49,19 @@ var start = function(cb) {
       if (err) return cb(err);
       server = config.https ? serverModule.createServer(serverOpts, app) :
         serverModule.Server(app);
-      WsApp.start(server, config);
-      return cb(null, server);
+      var wsApp = new WsApp();
+      wsApp.start(server, config, function(err) {
+        return cb(err, server);
+      });
     });
   };
 };
 
 if (config.cluster && !config.lockOpts.lockerServer)
   throw 'When running in cluster mode, locker server need to be configured';
+
+if (config.cluster && !config.messageBrokerOpts.messageBrokerServer)
+  throw 'When running in cluster mode, message broker server need to be configured';
 
 start(function(err, server) {
   if (err) {

@@ -23,6 +23,12 @@ var config = {
     //   port: 3231,
     // },
   },
+  messageBrokerOpts: {
+    //  To use message broker server, uncomment this:
+    messageBrokerServer: {
+      url: 'http://localhost:3380',
+    },
+  },
   blockchainExplorerOpts: {
     livenet: {
       provider: 'insight',
