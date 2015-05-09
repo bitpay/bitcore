@@ -266,7 +266,7 @@ describe('Transaction', function() {
         .sign(privateKey);
       expect(function() {
         return transaction.serialize();
-      }).to.throw(errors.Transaction.Fee.TooSmallError);
+      }).to.throw(errors.Transaction.FeeError.TooSmall);
     });
     it('on second call to sign, change is not recalculated', function() {
       var transaction = new Transaction()
@@ -332,7 +332,7 @@ describe('Transaction', function() {
         .to(toAddress, 40000000);
       expect(function() {
         return transaction.serialize();
-      }).to.throw(errors.Transaction.Fee.TooLargeError);
+      }).to.throw(errors.Transaction.FeeError.TooLarge);
     });
     it('fails if a dust output is created', function() {
       var transaction = new Transaction()
@@ -372,7 +372,7 @@ describe('Transaction', function() {
         .sign(privateKey);
       expect(function() {
         return transaction.serialize();
-      }).to.throw(errors.Transaction.Fee.DifferentError);
+      }).to.throw(errors.Transaction.FeeError.Different);
     });
     describe('skipping checks', function() {
       var buildSkipTest = function(builder, check) {
