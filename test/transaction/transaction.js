@@ -364,6 +364,16 @@ describe('Transaction', function() {
         return transaction.serialize();
       }).to.not.throw(errors.Transaction.DustOutputs);
     });
+    it('fails when outputs and fee don\'t add to total input', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith1BTC)
+        .to(toAddress, 99900000)
+        .fee(99999)
+        .sign(privateKey);
+      expect(function() {
+        return transaction.serialize();
+      }).to.throw(errors.Transaction.FeeError);
+    });
     describe('skipping checks', function() {
       var buildSkipTest = function(builder, check) {
         return function() {
