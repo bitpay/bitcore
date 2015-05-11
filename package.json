@@ -24,6 +24,7 @@
     "bitcore-wallet-utils": "0.0.12",
     "body-parser": "^1.11.0",
     "coveralls": "^2.11.2",
+    "email-validator": "^1.0.1",
     "express": "^4.10.0",
     "inherits": "^2.0.1",
     "locker": "^0.1.0",
