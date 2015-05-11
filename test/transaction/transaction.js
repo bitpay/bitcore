@@ -161,14 +161,12 @@ describe('Transaction', function() {
           .sign(privateKey);
         transaction.isFullySigned().should.equal(true);
       });
-
       it('fails when Inputs are not subclassed and isFullySigned is called', function() {
         var tx = new Transaction(tx_1_hex);
         expect(function() {
           return tx.isFullySigned();
         }).to.throw(errors.Transaction.UnableToVerifySignature);
       });
-
       it('fails when Inputs are not subclassed and verifySignature is called', function() {
         var tx = new Transaction(tx_1_hex);
         expect(function() {
@@ -176,6 +174,15 @@ describe('Transaction', function() {
             inputIndex: 0
           });
         }).to.throw(errors.Transaction.UnableToVerifySignature);
+      });
+      it('passes result of input.isValidSignature', function() {
+        var tx = new Transaction(tx_1_hex);
+        tx.from(simpleUtxoWith1BTC);
+        tx.inputs[0].isValidSignature = sinon.stub().returns(true);
+        var sig = {
+          inputIndex: 0
+        };
+        tx.isValidSignature(sig).should.equal(true);
       });
     });
   });
@@ -417,18 +424,37 @@ describe('Transaction', function() {
         }, 'disableDustOutputs');
       });
       it('can skip the check that prevents unsigned outputs', function() {
-        buildSkipTest(function(transaction) {
-          return transaction
-            .to(toAddress, 10000)
-            .change(changeAddress);
-        }, 'disableIsFullySigned');
+        var transaction = new Transaction();
+        transaction.from(simpleUtxoWith1BTC);
+        transaction.to(toAddress, 10000);
+        transaction.change(changeAddress);
+        var options = {};
+        options.disableIsFullySigned = true;
+        expect(function() {
+          return transaction.serialize(options);
+        }).not.to.throw(errors.Transaction.MissingSignatures);
+        expect(function() {
+          return transaction.serialize();
+        }).to.throw(errors.Transaction.MissingSignatures);
       });
       it('can skip the check that avoids spending more bitcoins than the inputs for a transaction', function() {
-        buildSkipTest(function(transaction) {
-          return transaction
-            .to(toAddress, 10000000000)
-            .change(changeAddress);
-        }, 'disableMoreOutputThanInput');
+        var transaction = new Transaction();
+        transaction.from(simpleUtxoWith1BTC);
+        transaction.to(toAddress, 10000000000000);
+        transaction.change(changeAddress);
+        expect(function() {
+          return transaction.serialize({
+            disableSmallFees: true,
+            disableIsFullySigned: true,
+            disableMoreOutputThanInput: true
+          });
+        }).not.to.throw(errors.Transaction.InvalidOutputAmountSum);
+        expect(function() {
+          return transaction.serialize({
+            disableIsFullySigned: true,
+            disableSmallFees: true
+          });
+        }).to.throw(errors.Transaction.InvalidOutputAmountSum);
       });
     });
   });
@@ -565,6 +591,19 @@ describe('Transaction', function() {
           satoshis: 10000
         }, [], 1);
       }).to.throw('Number of required signatures must be greater than the number of public keys');
+    });
+    it('will add an empty script if not supplied', function() {
+      transaction = new Transaction();
+      var outputScriptString = 'OP_2 21 0x038282263212c609d9ea2a6e3e172de238d8c39' +
+        'cabd5ac1ca10646e23fd5f51508 21 0x038282263212c609d9ea2a6e3e172de23' +
+        '8d8c39cabd5ac1ca10646e23fd5f51508 OP_2 OP_CHECKMULTISIG OP_EQUAL';
+      transaction.addInput(new Transaction.Input({
+        prevTxId: '0000000000000000000000000000000000000000000000000000000000000000',
+        outputIndex: 0,
+        script: new Script()
+      }), outputScriptString, 10000);
+      transaction.inputs[0].output.script.should.be.instanceof(bitcore.Script);
+      transaction.inputs[0].output.script.toString().should.equal(outputScriptString);
     });
   });
 
