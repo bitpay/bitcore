@@ -40,7 +40,7 @@ var config = {
     },
   },
   // To use email notifications uncomment this:
-  email: {
+  emailOpts: {
     host: 'localhost',
     port: 25,
     ignoreTLS: true,

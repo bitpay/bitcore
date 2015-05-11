@@ -255,7 +255,7 @@ describe('Wallet service', function() {
         storage: storage,
         blockchainExplorer: blockchainExplorer,
         mailer: mailer,
-        email: {
+        emailOpts: {
           from: 'bws@dummy.net',
         }
       }, done);
@@ -779,6 +779,21 @@ describe('Wallet service', function() {
       });
     });
     it.skip('should save preferences only for requesting wallet', function(done) {});
+    it('should validate email address', function(done) {
+      server.savePreferences({
+        email: ' '
+      }, function(err) {
+        should.exist(err);
+        err.message.should.contain('email');
+        server.savePreferences({
+          email: 'dummy@' + _.repeat('domain', 50),
+        }, function(err) {
+          should.exist(err);
+          err.message.should.contain('email');
+          done();
+        });
+      });
+    });
   });
 
   describe('#getBalance', function() {
