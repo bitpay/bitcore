@@ -18,10 +18,10 @@ var config = {
   },
   lockOpts: {
     //  To use locker-server, uncomment this:
-    // lockerServer: {
-    //   host: 'localhost',
-    //   port: 3231,
-    // },
+    lockerServer: {
+      host: 'localhost',
+      port: 3231,
+    },
   },
   messageBrokerOpts: {
     //  To use message broker server, uncomment this:
