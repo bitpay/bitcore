@@ -15,15 +15,17 @@ An instance of a [PrivateKey](privatekey.md) that also contains information requ
 Sample usage:
 
 ```javascript
+var bitcore = require('bitcore');
+var HDPrivateKey = bitcore.HDPrivateKey;
+
 var hdPrivateKey = new HDPrivateKey();
 var retrieved = new HDPrivateKey('xpriv...');
-var derived = privateKey.derive("m/0'");
+var derived = hdPrivateKey.derive("m/0'");
 var derivedByNumber = hdPrivateKey.derive(1).derive(2, true);
 var derivedByArgument = hdPrivateKey.derive("m/1/2'");
 assert(derivedByNumber.xprivkey === derivedByArgument.xprivkey);
 
-var address = new Address(privateKey.publicKey, Networks.livenet);
-var redeem = new Transaction().from(output).to(target, 10000).sign(derived.privateKey);
+var address = derived.privateKey.toAddress();
 
 // obtain HDPublicKey
 var hdPublicKey = hdPrivateKey.hdPublicKey;
