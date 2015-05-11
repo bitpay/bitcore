@@ -9,7 +9,7 @@ description: A simple interface for handling private keys.
 Represents a bitcoin public key and is needed to be able to receive bitcoin, as is usually represented as a bitcoin [Address](address.md).
 See the official [Bitcoin Wiki](https://en.bitcoin.it/wiki/Technical_background_of_version_1_Bitcoin_addresses).
 
-A PublicKey in Bitcore is an immutable object and can be instantiated from a [Point](crypto.md), string, [PrivateKey](privatekey.md), Buffer and a [BN](crypto.md).
+A PublicKey in Bitcore is an immutable object and can be instantiated from a [Point](crypto.md), string, [PrivateKey](privatekey.md), Buffer or a [BN](crypto.md).
 
 ## Instantiate a Public Key
 
@@ -39,7 +39,7 @@ if (PublicKey.isValid('02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0
 
 ## Handling compressed and uncompressed public keys
 
-It's important to note that there are two possible ways to represent public key.
+It's important to note that there are two possible ways to represent a public key.
 The standard is *compressed* and includes the X value and parity (as represented above in the documentation).
 There is also a longer version that is *uncompressed* which includes both X and Y values. Using this encoding will generate a different bitcoin address, so be careful when selecting the encoding.
 Uncompressed public keys start with 0x04; compressed public keys begin with 0x03 or 0x02 depending on whether they're greater or less than the midpoint of the curve. These prefix bytes are all used in official secp256k1 documentation.
