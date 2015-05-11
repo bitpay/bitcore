@@ -266,7 +266,7 @@ describe('Transaction', function() {
         .sign(privateKey);
       expect(function() {
         return transaction.serialize();
-      }).to.throw(errors.Transaction.FeeError);
+      }).to.throw(errors.Transaction.FeeError.TooSmall);
     });
     it('on second call to sign, change is not recalculated', function() {
       var transaction = new Transaction()
@@ -332,7 +332,7 @@ describe('Transaction', function() {
         .to(toAddress, 40000000);
       expect(function() {
         return transaction.serialize();
-      }).to.throw(errors.Transaction.FeeError);
+      }).to.throw(errors.Transaction.FeeError.TooLarge);
     });
     it('fails if a dust output is created', function() {
       var transaction = new Transaction()
@@ -363,6 +363,16 @@ describe('Transaction', function() {
       expect(function() {
         return transaction.serialize();
       }).to.not.throw(errors.Transaction.DustOutputs);
+    });
+    it('fails when outputs and fee don\'t add to total input', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith1BTC)
+        .to(toAddress, 99900000)
+        .fee(99999)
+        .sign(privateKey);
+      expect(function() {
+        return transaction.serialize();
+      }).to.throw(errors.Transaction.FeeError.Different);
     });
     describe('skipping checks', function() {
       var buildSkipTest = function(builder, check) {
