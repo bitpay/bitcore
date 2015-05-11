@@ -194,6 +194,12 @@ describe('PublicKey', function() {
       }).to.throw();
     });
 
+    it('works for X starting with 0x00', function() {
+      var a = new PublicKey('030589ee559348bd6a7325994f9c8eff12bd5d73cc683142bd0dd1a17abc99b0dc');
+      var b = new PublicKey('03'+a.toObject().x);
+      b.toString().should.equal(a.toString());
+    });
+
   });
 
   describe('#fromPrivateKey', function() {
