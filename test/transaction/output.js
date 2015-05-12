@@ -132,4 +132,24 @@ describe('Output', function() {
     out.setScript.bind(out, 45).should.throw('Invalid argument type: script');
   });
 
+  it('sets script to null if it is an InvalidBuffer', function() {
+    var output = new Output({
+      satoshis: 1000
+    });
+    output._scriptBuffer = new Buffer('4c', 'hex');
+
+    var result = output.script;
+    should.equal(result, null);
+  });
+
+  it('should throw an error if Script throws an error that is not InvalidBuffer', function() {
+    var output = new Output({
+      satoshis: 1000
+    });
+    output._scriptBuffer = 'bad';
+
+    (function() {
+      var result = output.script;
+    }).should.throw('Invalid hex string');
+  });
 });
