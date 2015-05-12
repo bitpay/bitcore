@@ -93,7 +93,7 @@ Utils.getClient = function(args, opts, cb) {
   opts = opts || {};
 
   var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
-  var host = args.host || process.env['BWS_HOST'] || 'http://localhost:3001/';
+  var host = args.host || process.env['BWS_HOST'] || 'https://bws.bitpay.com/';
 
   var storage = new FileStorage({
     filename: filename,
