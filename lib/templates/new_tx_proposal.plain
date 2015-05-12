@@ -1,0 +1,2 @@
+<%= subjectPrefix %>New spend proposal
+A new spend proposal has been created in your wallet <%= walletName %> by <%= creatorName %>.

@@ -1,0 +1,2 @@
+<%= subjectPrefix %>Spend proposal rejected
+A spend proposal in your wallet <%= walletName %> has been rejected by <%= creatorName %>.

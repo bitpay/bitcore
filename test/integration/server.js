@@ -21,25 +21,21 @@ var Bitcore = WalletUtils.Bitcore;
 var Storage = require('../../lib/storage');
 
 var Model = require('../../lib/model');
-var Wallet = Model.Wallet;
-var TxProposal = Model.TxProposal;
-var Address = Model.Address;
-var Copayer = Model.Copayer;
 
 var WalletService = require('../../lib/server');
 var TestData = require('../testdata');
 
 var helpers = {};
 helpers.getAuthServer = function(copayerId, cb) {
-  var signatureStub = sinon.stub(WalletService.prototype, '_verifySignature');
-  signatureStub.returns(true);
+  var verifyStub = sinon.stub(WalletService.prototype, '_verifySignature');
+  verifyStub.returns(true);
   WalletService.getInstanceWithAuth({
     copayerId: copayerId,
     message: 'dummy',
     signature: 'dummy',
   }, function(err, server) {
+    verifyStub.restore();
     if (err || !server) throw new Error('Could not login as copayerId ' + copayerId);
-    signatureStub.restore();
     return cb(server);
   });
 };
@@ -136,7 +132,6 @@ helpers.toSatoshi = function(btc) {
   }
 };
 
-// Amounts in satoshis 
 helpers.stubUtxos = function(server, wallet, amounts, cb) {
   var amounts = [].concat(amounts);
 
@@ -215,16 +210,34 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
   });
 };
 
-var db, storage, blockchainExplorer;
+var storage, blockchainExplorer, mailer;
 
-function openDb(cb) {
-  db = new tingodb.Db('./db/test', {});
-  return cb();
+var useMongo = false;
+
+function initStorage(cb) {
+  function getDb(cb) {
+    if (useMongo) {
+      var mongodb = require('mongodb');
+      mongodb.MongoClient.connect('mongodb://localhost:27017/bws_test', function(err, db) {
+        if (err) throw err;
+        return cb(db);
+      });
+    } else {
+      var db = new tingodb.Db('./db/test', {});
+      return cb(db);
+    }
+  }
+  getDb(function(db) {
+    storage = new Storage({
+      db: db
+    });
+    return cb();
+  });
 };
 
-function resetDb(cb) {
-  if (!db) return cb();
-  db.dropDatabase(function(err) {
+function resetStorage(cb) {
+  if (!storage.db) return cb();
+  storage.db.dropDatabase(function(err) {
     return cb();
   });
 };
@@ -232,19 +245,19 @@ function resetDb(cb) {
 
 describe('Wallet service', function() {
   before(function(done) {
-    openDb(function() {
-      storage = new Storage({
-        db: db
-      });
-      done();
-    });
+    initStorage(done);
   });
   beforeEach(function(done) {
-    resetDb(function() {
+    resetStorage(function() {
       blockchainExplorer = sinon.stub();
+      mailer = sinon.stub();
       WalletService.initialize({
         storage: storage,
         blockchainExplorer: blockchainExplorer,
+        mailer: mailer,
+        emailOpts: {
+          from: 'bws@dummy.net',
+        }
       }, done);
     });
   });
@@ -673,7 +686,7 @@ describe('Wallet service', function() {
     it('should create address', function(done) {
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
-        address.should.exist;
+        should.exist(address);
         address.walletId.should.equal(wallet.id);
         address.network.should.equal('livenet');
         address.address.should.equal('3KxttbKQQPWmpsnXZ3rB4mgJTuLnVR7frg');
@@ -718,11 +731,66 @@ describe('Wallet service', function() {
           server.storage.storeAddressAndWallet.restore();
           server.createAddress({}, function(err, address) {
             should.not.exist(err);
-            address.should.exist;
+            should.exist(address);
             address.address.should.equal('3KxttbKQQPWmpsnXZ3rB4mgJTuLnVR7frg');
             address.path.should.equal('m/2147483647/0/0');
             done();
           });
+        });
+      });
+    });
+  });
+
+  describe('Preferences', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should save & retrieve preferences', function(done) {
+      server.savePreferences({
+        email: 'dummy@dummy.com'
+      }, function(err) {
+        should.not.exist(err);
+        server.getPreferences({}, function(err, preferences) {
+          should.not.exist(err);
+          should.exist(preferences);
+          preferences.email.should.equal('dummy@dummy.com');
+          done();
+        });
+      });
+    });
+    it('should save preferences only for requesting copayer', function(done) {
+      server.savePreferences({
+        email: 'dummy@dummy.com'
+      }, function(err) {
+        should.not.exist(err);
+        helpers.getAuthServer(wallet.copayers[1].id, function(server2) {
+          server2.getPreferences({}, function(err, preferences) {
+            should.not.exist(err);
+            should.not.exist(preferences.email);
+            done();
+          });
+        });
+      });
+    });
+    it.skip('should save preferences only for requesting wallet', function(done) {});
+    it('should validate email address', function(done) {
+      server.savePreferences({
+        email: ' '
+      }, function(err) {
+        should.exist(err);
+        err.message.should.contain('email');
+        server.savePreferences({
+          email: 'dummy@' + _.repeat('domain', 50),
+        }, function(err) {
+          should.exist(err);
+          err.message.should.contain('email');
+          done();
         });
       });
     });
@@ -1514,7 +1582,7 @@ describe('Wallet service', function() {
       });
     });
 
-    it('should brodcast a tx', function(done) {
+    it('should broadcast a tx', function(done) {
       var clock = sinon.useFakeTimers(1234000);
       helpers.stubBroadcast('999');
       server.broadcastTx({
@@ -3025,6 +3093,52 @@ describe('Wallet service', function() {
                 });
               });
             });
+          });
+        });
+      });
+    });
+  });
+  describe('Email notifications', function() {
+    var server, wallet, sendMailStub;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 3, function(s, w) {
+        server = s;
+        wallet = w;
+        sendMailStub = sinon.stub();
+        sendMailStub.yields();
+        server.emailService.mailer.sendMail = sendMailStub;
+
+        var i = 0;
+        async.eachSeries(w.copayers, function(copayer, next) {
+          helpers.getAuthServer(copayer.id, function(server) {
+            server.savePreferences({
+              email: 'copayer' + (i++) + '@domain.com',
+            }, next);
+          });
+        }, done);
+      });
+    });
+
+    it('should notify copayers a new tx proposal has been created', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 1], function() {
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, 'some message', TestData.copayers[0].privKey_1H_0);
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(err);
+          var calls = sendMailStub.getCalls();
+          calls.length.should.equal(2);
+          var emails = _.map(calls, function(c) {
+            return c.args[0];
+          });
+          _.difference(['copayer1@domain.com', 'copayer2@domain.com'], _.pluck(emails, 'to')).should.be.empty;
+          var one = emails[0];
+          one.from.should.equal('bws@dummy.net');
+          one.subject.should.contain('New spend proposal');
+          one.text.should.contain(wallet.name);
+          one.text.should.contain(wallet.copayers[0].name);
+          server.storage.fetchUnsentEmails(function(err, unsent) {
+            should.not.exist(err);
+            unsent.should.be.empty;
+            done();
           });
         });
       });

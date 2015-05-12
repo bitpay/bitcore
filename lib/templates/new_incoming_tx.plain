@@ -1,0 +1,2 @@
+<%= subjectPrefix %>New payment received
+A Payment has been received into your wallet <%= walletName %>.

@@ -18,10 +18,10 @@ var config = {
   },
   lockOpts: {
     //  To use locker-server, uncomment this:
-    // lockerServer: {
-    //   host: 'localhost',
-    //   port: 3231,
-    // },
+    lockerServer: {
+      host: 'localhost',
+      port: 3231,
+    },
   },
   messageBrokerOpts: {
     //  To use message broker server, uncomment this:
@@ -38,6 +38,14 @@ var config = {
       provider: 'insight',
       url: 'https://test-insight.bitpay.com:443',
     },
+  },
+  // To use email notifications uncomment this:
+  emailOpts: {
+    host: 'localhost',
+    port: 25,
+    ignoreTLS: true,
+    subjectPrefix: '[Wallet Service]',
+    from: 'wallet-service@bitcore.io',
   },
 };
 module.exports = config;
