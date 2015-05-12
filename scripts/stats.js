@@ -64,6 +64,7 @@ bwsStats.ProcessData = function(DB, cb) {
   bwsStats.ProccesWallets(DB, function() {
     bwsStats.ProccesNewWallets(DB, function() {
       bwsStats.ProccesTxs(DB, function() {
+        DB.close();
         cb();
       });
     });
