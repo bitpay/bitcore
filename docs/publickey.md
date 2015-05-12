@@ -37,7 +37,7 @@ if (PublicKey.isValid('02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0
 }
 ```
 
-## Handling compressed and uncompressed public keys
+## Compressed vs Uncompressed
 
 It's important to note that there are two possible ways to represent a public key.
 The standard is *compressed* and includes the X value and parity (as represented above in the documentation).
@@ -49,19 +49,23 @@ Example:
 > var bitcore = require('bitcore');
 
 // compressed public key starting with 0x03 (greater than midpoint of curve)
-> var compressedPK = bitcore.PublicKey('030589ee559348bd6a7325994f9c8eff12bd5d73cc683142bd0dd1a17abc99b0dc');
+> var compressedPK = bitcore.PublicKey('030589ee559348bd6a7325994f9c8eff12bd'+
+    '5d73cc683142bd0dd1a17abc99b0dc');
 > compressedPK.compressed;
 true
 > compressedPK.toAddress().toString();
 '1KbUJ4x8epz6QqxkmZbTc4f79JbWWz6g37'
 // compressed public key starting with 0x02 (smaller than midpoint of curve)
-> var compressedPK2 = new bitcore.PublicKey('02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc');
+> var compressedPK2 = new bitcore.PublicKey('02a1633cafcc01ebfb6d78e39f687a1f'+
+    '0995c62fc95f51ead10a02ee0be551b5dc');
 > compressedPK2.compressed;
 true
 > compressedPK.toAddress().toString();
 '1KbUJ4x8epz6QqxkmZbTc4f79JbWWz6g37'
 // uncompressed public key, starting with 0x04. Contains both X and Y encoded
-> var uncompressed = bitcore.PublicKey('0479BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8');
+> var uncompressed = bitcore.PublicKey('0479BE667EF9DCBBAC55A06295CE870B07029'+
+    'BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68'+
+    '554199C47D08FFB10D4B8');
 > uncompressed.compressed
 false
 > uncompressed.toAddress().toString()
