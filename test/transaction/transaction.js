@@ -32,6 +32,7 @@ describe('Transaction', function() {
   });
 
   var testScript = 'OP_DUP OP_HASH160 20 0x88d9931ea73d60eaf7e5671efc0552b912911f2a OP_EQUALVERIFY OP_CHECKSIG';
+  var testScriptHex = '76a91488d9931ea73d60eaf7e5671efc0552b912911f2a88ac';
   var testPrevTx = 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458';
   var testAmount = 1020000;
   var testTransaction = new Transaction()
@@ -45,7 +46,7 @@ describe('Transaction', function() {
   it('can serialize to a plain javascript object', function() {
     var object = testTransaction.toObject();
     object.inputs[0].output.satoshis.should.equal(testAmount);
-    object.inputs[0].output.script.toString().should.equal(testScript);
+    object.inputs[0].output.script.should.equal(testScriptHex);
     object.inputs[0].prevTxId.should.equal(testPrevTx);
     object.inputs[0].outputIndex.should.equal(0);
     object.outputs[0].satoshis.should.equal(testAmount - 10000);

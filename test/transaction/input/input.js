@@ -30,14 +30,26 @@ describe('Transaction.Input', function() {
     script: new Script(),
     satoshis: 1000000
   };
-  var coinbaseJSON = '{"prevTxId":"0000000000000000000000000000000000000000000000000000000000000000"' +
-    ',"outputIndex":4294967295,"script":""}';
-  var otherJSON = '{"txidbuf":"a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458"' +
-    ',"txoutnum":0,"seqnum":4294967295,"script":"71 0x3044022006553276ec5b885ddf5cc1d7' +
-    '9e1e3dadbb404b60ad4cc00318e215654f13242102200757c17b36e3d0492fb9cf597032e5afbea67a59274e64af' +
-    '5a05d12e5ea2303901 33 0x0223078d2942df62c45621d209fab84ea9a7a23346201b7727b9b45a29c4e76f5e",' +
-    '"output":{"satoshis":100000,"script":"OP_DUP OP_HASH160 20 0x88d9931ea73d60eaf7e5671efc0552b' +
-    '912911f2a OP_EQUALVERIFY OP_CHECKSIG"}}';
+
+  var coinbaseJSON = JSON.stringify({
+    prevTxId: '0000000000000000000000000000000000000000000000000000000000000000',
+    outputIndex: 4294967295,
+    script:''
+  });
+
+  var otherJSON = JSON.stringify({
+    txidbuf: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+    txoutnum: 0,
+    seqnum:4294967295,
+    script: '71 0x3044022006553276ec5b885ddf5cc1d79e1e3dadbb404b60ad4cc00318e21565' +
+      '4f13242102200757c17b36e3d0492fb9cf597032e5afbea67a59274e64af5a05d12e5ea2303901 ' +
+      '33 0x0223078d2942df62c45621d209fab84ea9a7a23346201b7727b9b45a29c4e76f5e',
+    output: {
+      'satoshis':100000,
+      'script':'OP_DUP OP_HASH160 20 0x88d9931ea73d60eaf7e5671efc0552b912911f2a ' +
+        'OP_EQUALVERIFY OP_CHECKSIG'
+    }
+  });
 
   it('has abstract methods: "getSignatures", "isFullySigned", "addSignature", "clearSignatures"', function() {
     var input = new Input(output);
