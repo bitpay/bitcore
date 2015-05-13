@@ -399,30 +399,27 @@ describe('Transaction', function() {
           }).to.throw();
         };
       };
-      it('can skip the check for too much fee', function() {
-        buildSkipTest(function(transaction) {
+      it('can skip the check for too much fee', buildSkipTest(
+        function(transaction) {
           return transaction
             .fee(50000000)
             .change(changeAddress)
             .sign(privateKey);
-        }, 'disableLargeFees');
-      });
-      it('can skip the check for a fee that is too small', function() {
-        buildSkipTest(function(transaction) {
+        }, 'disableLargeFees'));
+      it('can skip the check for a fee that is too small', buildSkipTest(
+        function(transaction) {
           return transaction
             .fee(1)
             .change(changeAddress)
             .sign(privateKey);
-        }, 'disableSmallFees');
-      });
-      it('can skip the check that prevents dust outputs', function() {
-        buildSkipTest(function(transaction) {
+        }, 'disableSmallFees'));
+      it('can skip the check that prevents dust outputs', buildSkipTest(
+        function(transaction) {
           return transaction
-            .to(toAddress, 1000)
+            .to(toAddress, 100)
             .change(changeAddress)
             .sign(privateKey);
-        }, 'disableDustOutputs');
-      });
+        }, 'disableDustOutputs'));
       it('can skip the check that prevents unsigned outputs', function() {
         var transaction = new Transaction();
         transaction.from(simpleUtxoWith1BTC);
