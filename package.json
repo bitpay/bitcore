@@ -31,6 +31,7 @@
     "locker-server": "^0.1.3",
     "lodash": "^3.3.1",
     "mocha-lcov-reporter": "0.0.1",
+    "moment": "^2.10.3",
     "mongodb": "^2.0.27",
     "morgan": "*",
     "nodemailer": "^1.3.4",
