@@ -478,7 +478,22 @@ describe('Wallet service', function() {
             var copayer = wallet.copayers[0];
             copayer.name.should.equal('me');
             copayer.id.should.equal(copayerId);
-            done();
+            server.getNotifications({}, function(err, notifications) {
+              should.not.exist(err);
+              var notif = _.find(notifications, {
+                type: 'NewCopayer'
+              });
+              should.exist(notif);
+              notif.data.walletId.should.equal(walletId);
+              notif.data.copayerId.should.equal(copayerId);
+              notif.data.copayerName.should.equal('me');
+
+              notif = _.find(notifications, {
+                type: 'WalletComplete'
+              });
+              should.not.exist(notif);
+              done();
+            });
           });
         });
       });
@@ -548,7 +563,7 @@ describe('Wallet service', function() {
       });
     });
 
-    it('should fail two wallets with same xPubKey', function(done) {
+    it('should fail to join two wallets with same xPubKey', function(done) {
       var copayerOpts = helpers.getSignedCopayerOpts({
         walletId: walletId,
         name: 'me',
@@ -630,6 +645,27 @@ describe('Wallet service', function() {
           should.not.exist(err);
           wallet.status.should.equal('complete');
           wallet.publicKeyRing.length.should.equal(3);
+          server.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            var notif = _.find(notifications, {
+              type: 'WalletComplete'
+            });
+            should.exist(notif);
+            notif.data.walletId.should.equal(wallet.id);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should not notify WalletComplete if 1-of-1', function(done) {
+      helpers.createAndJoinWallet(1, 1, function(server) {
+        server.getNotifications({}, function(err, notifications) {
+          should.not.exist(err);
+          var notif = _.find(notifications, {
+            type: 'WalletComplete'
+          });
+          should.not.exist(notif);
           done();
         });
       });
