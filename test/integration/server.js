@@ -902,6 +902,17 @@ describe('Wallet service', function() {
         });
       });
     });
+    it('should fail gracefully when blockchain is unreachable', function(done) {
+      blockchainExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, 'dummy error');
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+        server.getBalance({}, function(err, balance) {
+          should.exist(err);
+          err.code.should.equal('BLOCKCHAINERROR');
+          done();
+        });
+      });
+    });
   });
 
   describe('Wallet not complete tests', function() {
@@ -1028,6 +1039,19 @@ describe('Wallet service', function() {
               done();
             });
           });
+        });
+      });
+    });
+
+    it('should fail gracefully if unable to reach the blockchain', function(done) {
+      blockchainExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, 'dummy error');
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, 'some message', TestData.copayers[0].privKey_1H_0);
+        server.createTx(txOpts, function(err, tx) {
+          should.exist(err);
+          err.code.should.equal('BLOCKCHAINERROR');
+          done();
         });
       });
     });
@@ -1676,6 +1700,7 @@ describe('Wallet service', function() {
         txProposalId: txpid
       }, function(err) {
         should.exist(err);
+        err.code.should.equal('BLOCKCHAINERROR');
         server.getTx({
           txProposalId: txpid
         }, function(err, txp) {
@@ -2691,6 +2716,14 @@ describe('Wallet service', function() {
         });
       }, done);
     });
+    it('should fail gracefully if unable to reach the blockchain', function(done) {
+      blockchainExplorer.getTransactions = sinon.stub().callsArgWith(3, 'dummy error');
+      server.getTxHistory({}, function(err, txs) {
+        should.exist(err);
+        err.code.should.equal('BLOCKCHAINERROR');
+        done();
+      });
+    });
   });
 
   describe('#scan', function() {
@@ -2727,17 +2760,21 @@ describe('Wallet service', function() {
       ];
       server.scan({}, function(err) {
         should.not.exist(err);
-        server.storage.fetchAddresses(wallet.id, function(err, addresses) {
-          should.exist(addresses);
-          addresses.length.should.equal(expectedPaths.length);
-          var paths = _.pluck(addresses, 'path');
-          _.difference(paths, expectedPaths).length.should.equal(0);
-          server.createAddress({}, function(err, address) {
-            should.not.exist(err);
-            address.path.should.equal('m/2147483647/0/4');
-            done();
+        server.getWallet({}, function(err, wallet) {
+          should.not.exist(err);
+          wallet.scanStatus.should.equal('success');
+          server.storage.fetchAddresses(wallet.id, function(err, addresses) {
+            should.exist(addresses);
+            addresses.length.should.equal(expectedPaths.length);
+            var paths = _.pluck(addresses, 'path');
+            _.difference(paths, expectedPaths).length.should.equal(0);
+            server.createAddress({}, function(err, address) {
+              should.not.exist(err);
+              address.path.should.equal('m/2147483647/0/4');
+              done();
+            });
           });
-        })
+        });
       });
     });
     it('should scan main addresses & copayer addresses', function(done) {
@@ -2814,8 +2851,22 @@ describe('Wallet service', function() {
         done();
       });
     });
-    it.skip('should abort scan if there is an error checking address activity', function(done) {});
-
+    it('should abort scan if there is an error checking address activity', function(done) {
+      blockchainExplorer.getAddressActivity = sinon.stub().callsArgWith(1, 'dummy error');
+      server.scan({}, function(err) {
+        should.exist(err);
+        err.code.should.equal('BLOCKCHAINERROR');
+        server.getWallet({}, function(err, wallet) {
+          should.not.exist(err);
+          wallet.scanStatus.should.equal('error');
+          server.storage.fetchAddresses(wallet.id, function(err, addresses) {
+            should.not.exist(err);
+            addresses.should.be.empty;
+            done();
+          });
+        });
+      });
+    });
   });
 
   describe('#startScan', function() {
@@ -3134,6 +3185,7 @@ describe('Wallet service', function() {
       });
     });
   });
+
   describe('Email notifications', function() {
     var server, wallet, sendMailStub;
     beforeEach(function(done) {
