@@ -129,13 +129,15 @@ The following methods are used to manage signatures for a transaction:
 * `clearSignatures`: removes all signatures for this input
 * `isFullySigned`: returns true if the input is fully signed
 
-## Adding outputs
+## Handling Outputs
 
 Outputs can be added by:
 
 * The `addOutput(output)` method, which pushes an `Output` to the end of the `outputs` property and updates the `outputAmount` field. It also clears signatures (as the hash of the transaction may have changed) and updates the change output.
 * The `to(address, amount)` method, that adds an output with the script that corresponds to the given address. Builds an output and calls the `addOutput` method.
 * Specifying a [change address](#Fee_calculation)
+
+To remove all outputs, you can use `clearOutputs()`, which preserves change output configuration.
 
 ## Serialization
 

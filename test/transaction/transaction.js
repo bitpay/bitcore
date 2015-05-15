@@ -143,6 +143,9 @@ describe('Transaction', function() {
     script: Script.buildPublicKeyHashOut(fromAddress).toString(),
     satoshis: 1e8
   };
+  var tenth = 1e7;
+  var fourth = 25e6;
+  var half = 5e7;
 
   describe('adding inputs', function() {
 
@@ -499,7 +502,9 @@ describe('Transaction', function() {
           'satoshis': testAmount
         }).to('mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc', testAmount - 10000);
 
-      tx.toBuffer = sinon.stub().returns({length: 10000000});
+      tx.toBuffer = sinon.stub().returns({
+        length: 10000000
+      });
 
       var verify = tx.verify();
       verify.should.equal('transaction over the maximum block size');
@@ -738,9 +743,6 @@ describe('Transaction', function() {
 
   describe('output ordering', function() {
 
-    var tenth = 1e7;
-    var fourth = 25e6;
-    var half = 5e7;
     var transaction, out1, out2, out3, out4;
 
     beforeEach(function() {
@@ -789,6 +791,29 @@ describe('Transaction', function() {
       expect(function() {
         transaction.sortOutputs(sorting);
       }).to.throw(errors.Transaction.InvalidSorting);
+    });
+
+
+
+  });
+
+  describe('clearOutputs', function() {
+
+    it('removes all outputs and maintains the transaction in order', function() {
+      var tx = new Transaction()
+        .from(simpleUtxoWith1BTC)
+        .to(toAddress, tenth)
+        .to(toAddress, fourth)
+        .to(toAddress, half)
+        .change(changeAddress);
+      tx.clearOutputs();
+      tx.outputs.length.should.equal(1);
+      tx.to(toAddress, tenth);
+      tx.outputs.length.should.equal(2);
+      tx.outputs[0].satoshis.should.equal(10000000);
+      tx.outputs[0].script.toAddress().toString().should.equal(toAddress);
+      tx.outputs[1].satoshis.should.equal(89990000);
+      tx.outputs[1].script.toAddress().toString().should.equal(changeAddress);
     });
 
   });
