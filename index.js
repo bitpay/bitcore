@@ -1,28 +1,21 @@
+'use strict';
+
 var bitcore = module.exports;
 
 // module information
 bitcore.version = 'v' + require('./package.json').version;
-
-var inBrowser = typeof process === 'undefined' || typeof process.versions === 'undefined';
-if ((inBrowser && window._bitcore) || (!inBrowser && global._bitcore)) {
-  var versions = bitcore.version + ' and ' + (inBrowser ? window._bitcore : global._bitcore);
-  var message = 'More than one instance of bitcore found with different versions: ' + versions;
-  if (inBrowser) {
-    message += '. Make sure any scripts included don\'t contain their own bitcore bundle.';
-  } else {
-    message += '. Make sure there are no version conflicts between package.json files of your ' +
-      'dependencies. This could also happen when a package depends on a git repository.';
+bitcore.versionGuard = function(version) {
+  if (version !== undefined) {
+    var message = 'More than one instance of bitcore found with versions: ' + bitcore.version +
+      ' and ' + version + '. Please make sure to require bitcore and check that submodules do' +
+      ' not also include their own bitcore dependency.';
+    throw new Error(message);
   }
+};
+bitcore.versionGuard(global._bitcore);
+global._bitcore = bitcore.version;
 
-  throw new Error(message);
-}
-if (inBrowser) {
-  window._bitcore = bitcore.version;
-} else {
-  global._bitcore = bitcore.version;
-}
-
-// crypto 
+// crypto
 bitcore.crypto = {};
 bitcore.crypto.BN = require('./lib/crypto/bn');
 bitcore.crypto.ECDSA = require('./lib/crypto/ecdsa');
