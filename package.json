@@ -26,7 +26,6 @@
     "bitcore-wallet-utils": "0.0.12",
     "browser-request": "^0.3.3",
     "browserify": "^9.0.3",
-    "coveralls": "^2.11.2",
     "lodash": "^3.3.1",
     "preconditions": "^1.0.8",
     "request": "^2.53.0",
@@ -35,19 +34,18 @@
     "uglify": "^0.1.1"
   },
   "devDependencies": {
-    "bitcore-wallet-service": "0.0.28",
+    "bitcore-wallet-service": "0.0.29",
     "chai": "^1.9.1",
+    "coveralls": "^2.11.2",
     "grunt-jsdoc": "^0.5.8",
     "http": "0.0.0",
     "https": "^1.0.0",
     "istanbul": "*",
     "jsdoc": "^3.3.0-beta1",
-    "leveldown": "^0.10.0",
-    "levelup": "^0.19.0",
-    "memdown": "^1.0.0",
     "mocha": "^1.18.2",
     "sinon": "^1.10.3",
-    "supertest": "*"
+    "supertest": "*",
+    "tingodb": "^0.3.4"
   },
   "scripts": {
     "start": "node app.js",
