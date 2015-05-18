@@ -658,6 +658,15 @@ describe('Script', function() {
   });
 
   describe('getData returns associated data', function() {
+    it('works with this testnet transaction', function() {
+      // testnet block: 00000000a36400fc06440512354515964bc36ecb0020bd0b0fd48ae201965f54
+      // txhash: e362e21ff1d2ef78379d401d89b42ce3e0ce3e245f74b1f4cb624a8baa5d53ad (output 0);
+      var script = Script.fromBuffer(new Buffer('6a', 'hex'));
+      var dataout = script.isDataOut();
+      dataout.should.equal(true);
+      var data = script.getData();
+      data.should.deep.equal(new Buffer(0));
+    });
     it('for a P2PKH address', function() {
       var address = Address.fromString('1NaTVwXDDUJaXDQajoa9MqHhz4uTxtgK14');
       var script = Script.buildPublicKeyHashOut(address);
