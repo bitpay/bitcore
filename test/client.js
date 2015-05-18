@@ -162,25 +162,22 @@ describe('client API', function() {
     var storage = new Storage({
       db: helpers.newDb(),
     });
-    storage._drop(function(err) {
+    var expressApp = new ExpressApp();
+    expressApp.start({
+        storage: storage,
+        blockchainExplorer: blockchainExplorerMock,
+        disableLogs: true,
+      },
+      function() {
+        app = expressApp.app;
 
-      var expressApp = new ExpressApp();
-      expressApp.start({
-          storage: storage,
-          blockchainExplorer: blockchainExplorerMock,
-          disableLogs: true,
-        },
-        function() {
-          app = expressApp.app;
-
-          // Generates 5 clients
-          clients = _.map(_.range(5), function(i) {
-            return helpers.newClient(app);
-          });
-          blockchainExplorerMock.reset();
-          done();
+        // Generates 5 clients
+        clients = _.map(_.range(5), function(i) {
+          return helpers.newClient(app);
         });
-    });
+        blockchainExplorerMock.reset();
+        done();
+      });
   });
 
 
