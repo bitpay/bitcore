@@ -440,7 +440,7 @@ describe('Transaction', function() {
           return transaction
             .to(toAddress, 10000)
             .change(changeAddress);
-        }, 'disableIsFullySigned', errors.Transaction.UnableToVerifySignature));
+        }, 'disableIsFullySigned', errors.Transaction.MissingSignatures));
       it('can skip the check that avoids spending more bitcoins than the inputs for a transaction', buildSkipTest(
         function(transaction) {
           return transaction
