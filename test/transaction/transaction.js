@@ -420,38 +420,43 @@ describe('Transaction', function() {
             .fee(50000000)
             .change(changeAddress)
             .sign(privateKey);
-        }, 'disableLargeFees', errors.Transaction.FeeError.TooLarge));
+        }, 'disableLargeFees', errors.Transaction.FeeError.TooLarge
+      ));
       it('can skip the check for a fee that is too small', buildSkipTest(
         function(transaction) {
           return transaction
             .fee(1)
             .change(changeAddress)
             .sign(privateKey);
-        }, 'disableSmallFees', errors.Transaction.FeeError.TooSmall));
+        }, 'disableSmallFees', errors.Transaction.FeeError.TooSmall
+      ));
       it('can skip the check that prevents dust outputs', buildSkipTest(
         function(transaction) {
           return transaction
             .to(toAddress, 100)
             .change(changeAddress)
             .sign(privateKey);
-        }, 'disableDustOutputs', errors.Transaction.DustOutputs));
+        }, 'disableDustOutputs', errors.Transaction.DustOutputs
+      ));
       it('can skip the check that prevents unsigned outputs', buildSkipTest(
         function(transaction) {
           return transaction
             .to(toAddress, 10000)
             .change(changeAddress);
-        }, 'disableIsFullySigned', errors.Transaction.MissingSignatures));
+        }, 'disableIsFullySigned', errors.Transaction.MissingSignatures
+      ));
       it('can skip the check that avoids spending more bitcoins than the inputs for a transaction', buildSkipTest(
         function(transaction) {
           return transaction
             .to(toAddress, 10000000000000)
             .change(changeAddress);
-          }, 'disableMoreOutputThanInput',
-          errors.Transaction.InvalidOutputAmountSum,
-          {
-            'disableSmallFees': true,
-            'disableIsFullySigned': true
-          }));
+        }, 'disableMoreOutputThanInput',
+        errors.Transaction.InvalidOutputAmountSum,
+        {
+          'disableSmallFees': true,
+          'disableIsFullySigned': true
+        }
+      ));
     });
   });
 
