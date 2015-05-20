@@ -1,7 +1,7 @@
 'use strict';
 
-var bitcore = require('..');
-var BN = require('../lib/crypto/bn');
+var bitcore = require('../..');
+var BN = require('../../lib/crypto/bn');
 var BufferReader = bitcore.encoding.BufferReader;
 var BufferWriter = bitcore.encoding.BufferWriter;
 
@@ -13,7 +13,7 @@ var should = require('chai').should();
 var dataRawBlockBuffer = fs.readFileSync('test/data/blk86756-testnet.dat');
 var dataRawBlockBinary = fs.readFileSync('test/data/blk86756-testnet.dat', 'binary');
 var dataRawId = '000000000b99b16390660d79fcc138d2ad0c89a0d044c4201a02bdf1f61ffa11';
-var data = require('./data/blk86756-testnet');
+var data = require('../data/blk86756-testnet');
 
 describe('BlockHeader', function() {
 

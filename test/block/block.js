@@ -1,7 +1,7 @@
 'use strict';
 
-var bitcore = require('..');
-var BN = require('../lib/crypto/bn');
+var bitcore = require('../..');
+var BN = require('../../lib/crypto/bn');
 var BufferReader = bitcore.encoding.BufferReader;
 var BufferWriter = bitcore.encoding.BufferWriter;
 var BlockHeader = bitcore.BlockHeader;
@@ -15,8 +15,8 @@ var Transaction = bitcore.Transaction;
 var dataRawBlockBuffer = fs.readFileSync('test/data/blk86756-testnet.dat');
 var dataRawBlockBinary = fs.readFileSync('test/data/blk86756-testnet.dat', 'binary');
 var dataJson = fs.readFileSync('test/data/blk86756-testnet.json').toString();
-var data = require('./data/blk86756-testnet');
-var dataBlocks = require('./data/bitcoind/blocks');
+var data = require('../data/blk86756-testnet');
+var dataBlocks = require('../data/bitcoind/blocks');
 
 describe('Block', function() {
 
