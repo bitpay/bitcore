@@ -398,22 +398,20 @@ describe('Transaction', function() {
       }).to.throw(errors.Transaction.InvalidOutputAmountSum);
     });
     describe('skipping checks', function() {
-      var buildSkipTest = function(builder, check, expectedError, opts) {
+      var buildSkipTest = function(builder, check, expectedError) {
         return function() {
           var transaction = new Transaction();
           transaction.from(simpleUtxoWith1BTC);
           builder(transaction);
 
-          var options = opts || {};
+          var options = {};
           options[check] = true;
 
           expect(function() {
             return transaction.serialize(options);
           }).not.to.throw();
-
-          options[check] = false;
           expect(function() {
-            return transaction.serialize(options);
+            return transaction.serialize();
           }).to.throw(expectedError);
         };
       };
@@ -452,13 +450,9 @@ describe('Transaction', function() {
         function(transaction) {
           return transaction
             .to(toAddress, 10000000000000)
-            .change(changeAddress);
-        }, 'disableMoreOutputThanInput',
-        errors.Transaction.InvalidOutputAmountSum,
-        {
-          'disableSmallFees': true,
-          'disableIsFullySigned': true
-        }
+            .change(changeAddress)
+            .sign(privateKey);
+        }, 'disableMoreOutputThanInput', errors.Transaction.InvalidOutputAmountSum
       ));
     });
   });
