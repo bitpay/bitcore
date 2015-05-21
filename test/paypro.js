@@ -4,12 +4,12 @@ var _ = require('lodash');
 var chai = chai || require('chai');
 var sinon = sinon || require('sinon');
 var should = chai.should();
-var PayProReq = require('../lib/payprorequest');
+var PayPro = require('../lib/paypro');
 var TestData = require('./testdata');
 
 
-describe('payprorequest', function() {
-  var xhr, http;
+describe('paypro', function() {
+  var xhr, httpNode;
   before(function() {
     xhr = {};
     xhr.onCreate = function(req) {};
@@ -23,10 +23,10 @@ describe('payprorequest', function() {
       xhr.onload();
     };
 
-    http = {};
-    http.get = function(opts, cb) {
+    httpNode = {};
+    httpNode.get = function(opts, cb) {
       var res = {};
-      res.statusCode = http.error || 200;
+      res.statusCode = httpNode.error || 200;
       res.on = function(e, cb) {
         if (e == 'data')
           return cb(TestData.payProBuf);
@@ -38,7 +38,7 @@ describe('payprorequest', function() {
   });
 
   it('Make a PP request with browser', function(done) {
-    PayProReq.get({
+    PayPro.get({
       url: 'http://an.url.com/paypro',
       xhr: xhr,
       env: 'browser',
@@ -50,7 +50,7 @@ describe('payprorequest', function() {
   });
 
   it('Make a PP request with browser with headers', function(done) {
-    PayProReq.get({
+    PayPro.get({
       url: 'http://an.url.com/paypro',
       xhr: xhr,
       env: 'browser',
@@ -74,7 +74,7 @@ describe('payprorequest', function() {
     xhr.send = function() {
       xhr.onerror();
     };
-    PayProReq.get({
+    PayPro.get({
       url: 'http://an.url.com/paypro',
       xhr: xhr,
       env: 'browser',
@@ -89,7 +89,7 @@ describe('payprorequest', function() {
       xhr.onerror();
     };
     xhr.statusText = 'myerror';
-    PayProReq.get({
+    PayPro.get({
       url: 'http://an.url.com/paypro',
       xhr: xhr,
       env: 'browser',
@@ -101,9 +101,9 @@ describe('payprorequest', function() {
 
 
   it('Make a PP request with node', function(done) {
-    PayProReq.get({
+    PayPro.get({
       url: 'http://an.url.com/paypro',
-      http: http,
+      httpNode: httpNode,
       env: 'node',
     }, function(err, res) {
       should.not.exist(err);
@@ -113,10 +113,10 @@ describe('payprorequest', function() {
   });
 
   it('Make a PP request with node with HTTP error', function(done) {
-    http.error = 404;
-    PayProReq.get({
+    httpNode.error = 404;
+    PayPro.get({
       url: 'http://an.url.com/paypro',
-      http: http,
+      httpNode: httpNode,
       env: 'node',
     }, function(err, res) {
       err.should.contain('HTTP Request Error');

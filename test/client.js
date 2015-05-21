@@ -840,11 +840,11 @@ describe('client API', function() {
   });
 
   describe('Payment Protocol', function() {
-    var getter;
+    var http;
 
     beforeEach(function(done) {
-      getter = sinon.stub();
-      getter.yields(null, TestData.payProBuf);
+      http = sinon.stub();
+      http.yields(null, TestData.payProBuf);
       helpers.createAndJoinWallet(clients, 2, 2, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
@@ -854,7 +854,7 @@ describe('client API', function() {
           var opts = {
             payProUrl: 'dummy',
           };
-          clients[0].payProGetter = clients[1].payProGetter = getter;
+          clients[0].payProHttp = clients[1].payProHttp = http;
 
           clients[0].fetchPayPro(opts, function(err, paypro) {
             clients[0].sendTxProposal({
@@ -922,9 +922,9 @@ describe('client API', function() {
     });
 
     it('Should handle broken paypro data', function(done) {
-      getter = sinon.stub();
-      getter.yields(null, 'a broken data');
-      clients[0].payProGetter = getter;
+      http = sinon.stub();
+      http.yields(null, 'a broken data');
+      clients[0].payProHttp = http;
       var opts = {
         payProUrl: 'dummy',
       };
@@ -936,7 +936,7 @@ describe('client API', function() {
     });
 
     it('Should ignore PayPro at getTxProposals if instructed', function(done) {
-      getter.yields(null, 'kaka');
+      http.yields(null, 'kaka');
       clients[1].doNotVerifyPayPro = true;
       clients[1].getTxProposals({}, function(err, txps) {
         should.not.exist(err);
@@ -951,7 +951,7 @@ describe('client API', function() {
     });
 
     it('Should ignore PayPro at signTxProposal if instructed', function(done) {
-      getter.yields(null, 'kaka');
+      http.yields(null, 'kaka');
       clients[1].doNotVerifyPayPro = true;
       clients[1].getTxProposals({}, function(err, txps) {
         should.not.exist(err);
