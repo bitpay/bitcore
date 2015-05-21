@@ -394,6 +394,18 @@ describe('Transaction', function() {
         return transaction.serialize();
       }).to.throw(errors.Transaction.InvalidOutputAmountSum);
     });
+    it('will throw fee error with disableMoreOutputThanInput enabled (but not triggered)', function() {
+      var transaction = new Transaction();
+      transaction.from(simpleUtxoWith1BTC);
+      transaction
+        .to(toAddress, 90000000)
+        .change(changeAddress)
+        .fee(10000000);
+
+      expect(function() {
+        return transaction.serialize({disableMoreOutputThanInput: true});
+      }).to.throw(errors.Transaction.FeeError.TooLarge);
+    });
     describe('skipping checks', function() {
       var buildSkipTest = function(builder, check, expectedError) {
         return function() {
