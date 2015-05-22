@@ -6,6 +6,8 @@ var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
 var async = require('async');
+var Bitcore = require('bitcore');
+var BitcorePayPro = require('bitcore-payment-protocol');
 var request = require('supertest');
 var tingodb = require('tingodb')({
   memStore: true
@@ -971,7 +973,7 @@ describe('client API', function() {
             should.not.exist(err);
             yy.status.should.equal('accepted');
             http.onCall(5).yields(null, TestData.payProAckBuf);
-            
+
             clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
               should.not.exist(err);
               var args = http.lastCall.args[0];
@@ -984,6 +986,72 @@ describe('client API', function() {
         });
       });
     });
+
+
+    it('Should send correct refund address', function(done) {
+      clients[0].getTxProposals({}, function(err, txps) {
+        should.not.exist(err);
+        clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
+          should.not.exist(err);
+          clients[1].signTxProposal(xx, function(err, yy, paypro) {
+            should.not.exist(err);
+            yy.status.should.equal('accepted');
+            http.onCall(5).yields(null, TestData.payProAckBuf); 
+
+            clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
+              should.not.exist(err);
+              clients[1].getMainAddresses({}, function(err, walletAddresses) {
+              var args = http.lastCall.args[0];
+              var data = BitcorePayPro.Payment.decode(args.body);
+              var pay = new BitcorePayPro();
+              var p = pay.makePayment(data);
+              var refund_to = p.get('refund_to');
+              refund_to.length.should.equal(1);
+
+              refund_to = refund_to[0];
+
+              var amount = refund_to.get('amount')
+              amount.low.should.equal(404500);
+              amount.high.should.equal(0);
+              var s = refund_to.get('script');
+              s = new Bitcore.Script(s.buffer.slice(s.offset, s.limit));
+              var addr = new Bitcore.Address.fromScript(s, 'testnet');
+              addr.toString().should.equal(
+                walletAddresses[walletAddresses.length-1].address);
+              done();
+            });
+            });
+          });
+        });
+      });
+    });
+
+
+    it('Should fail if refund address is tampered', function(done) {
+      clients[0].getTxProposals({}, function(err, txps) {
+        should.not.exist(err);
+        clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
+          should.not.exist(err);
+          clients[1].signTxProposal(xx, function(err, yy, paypro) {
+            should.not.exist(err);
+            yy.status.should.equal('accepted');
+            http.onCall(5).yields(null, TestData.payProAckBuf);
+
+            helpers.tamperResponse(clients[1], 'post', '/v1/addresses/', {}, function(address) {
+              address.address = '2N86pNEpREGpwZyHVC5vrNUCbF9nM1Geh4K';
+            }, function() {
+              clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
+                err.code.should.contain('SERVERCOMPROMISED');
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
+
+
   });
 
   describe('Transactions Signatures and Rejection', function() {
