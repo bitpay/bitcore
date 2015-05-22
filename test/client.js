@@ -961,6 +961,29 @@ describe('client API', function() {
         });
       });
     });
+
+    it('Should send the "payment message" when last copayer sign', function(done) {
+      clients[0].getTxProposals({}, function(err, txps) {
+        should.not.exist(err);
+        clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
+          should.not.exist(err);
+          clients[1].signTxProposal(xx, function(err, yy, paypro) {
+            should.not.exist(err);
+            yy.status.should.equal('accepted');
+            http.onCall(5).yields(null, TestData.payProAckBuf);
+            
+            clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
+              should.not.exist(err);
+              var args = http.lastCall.args[0];
+              args.method.should.equal('POST');
+              args.body.length.should.equal(302);
+              memo.should.equal('Transaction received by BitPay. Invoice will be marked as paid if the transaction is confirmed.');
+              done();
+            });
+          });
+        });
+      });
+    });
   });
 
   describe('Transactions Signatures and Rejection', function() {
