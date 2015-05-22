@@ -89,6 +89,7 @@ var payProData = {
   network: 'testnet',
   domain: 'an.url.com',
   url: 'http://an.url.com/paypro',
+  merchant_data: '{"invoiceId":"CibEJJtG1t9H77KmM61E2t","merchantId":"DGfuCDeofUnWjDmU7ELcEh"}',
 };
 
 module.exports.history = history;
