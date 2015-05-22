@@ -35,6 +35,18 @@ describe('paypro', function() {
       };
       return cb(res);
     };
+    httpNode.post = function(opts, cb) {
+      var res = {};
+      res.statusCode = httpNode.error || 200;
+      res.on = function(e, cb) {
+        if (e == 'data')
+          return cb('id');
+        if (e == 'end')
+          return cb();
+      };
+ 
+      return cb(res);
+    };
   });
 
   it('Make a PP request with browser', function(done) {
@@ -101,6 +113,13 @@ describe('paypro', function() {
 
 
   it('Make a PP request with node', function(done) {
+    xhr.send = function() {
+      xhr.response = 'id';
+      xhr.onload();
+    };
+
+
+    xhr.statusText = null;
     PayPro.get({
       url: 'http://an.url.com/paypro',
       httpNode: httpNode,
@@ -124,6 +143,49 @@ describe('paypro', function() {
     });
   });
 
+  it('Create a PP payment', function() {
+    var data = TestData.payProData;
+    var payment = PayPro._createPayment(data.merchant_data, '12ab1234', 'mwRGmB4NE3bG4EbXJKTHf8uvodoUtMCRhZ', 100);
+    var s = '';
+    for (var i = 0; i < payment.length; i++) {
+      s += payment[i].toString(16);
+    }
+    s.should.equal('a4c7b22696e766f6963654964223a22436962454a4a74473174394837374b6d4d3631453274222c226d65726368616e744964223a22444766754344656f66556e576a446d5537454c634568227d12412ab12341a1b8641217a914ae6eeec7e05624db748f9c16cce6fb53696ab3987');
+  });
 
+  it('Send a PP payment (browser)', function(done) {
+    var data = TestData.payProData;
+    var opts = {
+      merchant_data: data.merchant_data,
+      rawTx: '12ab1234',
+      refundAddr: 'mwRGmB4NE3bG4EbXJKTHf8uvodoUtMCRhZ',
+      amountSat: 100,
+      url: 'http://an.url.com/paypro',
+      xhr: xhr,
+      env: 'browser',
+    };
+    var payment = PayPro.send(opts, function(err, data) {
+      should.not.exist(err);
+      done();
+    });
+  });
+
+  it('Send a PP payment (node)', function(done) {
+    httpNode.error = null;
+    var data = TestData.payProData;
+    var opts = {
+      merchant_data: data.merchant_data,
+      rawTx: '12ab1234',
+      refundAddr: 'mwRGmB4NE3bG4EbXJKTHf8uvodoUtMCRhZ',
+      amountSat: 100,
+      httpNode: httpNode,
+      url: 'http://an.url.com/paypro',
+      env: 'node',
+    };
+    var payment = PayPro.send(opts, function(err, data) {
+      should.not.exist(err);
+      done();
+    });
+  });
 
 });
