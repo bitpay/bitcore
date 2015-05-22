@@ -89,8 +89,12 @@ var payProData = {
   network: 'testnet',
   domain: 'an.url.com',
   url: 'http://an.url.com/paypro',
+  merchant_data: '{"invoiceId":"CibEJJtG1t9H77KmM61E2t","merchantId":"DGfuCDeofUnWjDmU7ELcEh"}',
 };
+
+var payAck = [10, 0, 18, 95, 84, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 32, 114, 101, 99, 101, 105, 118, 101, 100, 32, 98, 121, 32, 66, 105, 116, 80, 97, 121, 46, 32, 73, 110, 118, 111, 105, 99, 101, 32, 119, 105, 108, 108, 32, 98, 101, 32, 109, 97, 114, 107, 101, 100, 32, 97, 115, 32, 112, 97, 105, 100, 32, 105, 102, 32, 116, 104, 101, 32, 116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 32, 105, 115, 32, 99, 111, 110, 102, 105, 114, 109, 101, 100, 46];
 
 module.exports.history = history;
 module.exports.payProBuf = new Buffer(payproHex, 'hex');
+module.exports.payProAckBuf = new Buffer(payAck);
 module.exports.payProData = payProData;

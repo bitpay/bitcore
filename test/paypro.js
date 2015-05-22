@@ -4,12 +4,12 @@ var _ = require('lodash');
 var chai = chai || require('chai');
 var sinon = sinon || require('sinon');
 var should = chai.should();
-var PayProReq = require('../lib/payprorequest');
+var PayPro = require('../lib/paypro');
 var TestData = require('./testdata');
 
 
-describe('payprorequest', function() {
-  var xhr, http;
+describe('paypro', function() {
+  var xhr, httpNode;
   before(function() {
     xhr = {};
     xhr.onCreate = function(req) {};
@@ -23,10 +23,10 @@ describe('payprorequest', function() {
       xhr.onload();
     };
 
-    http = {};
-    http.get = function(opts, cb) {
+    httpNode = {};
+    httpNode.get = function(opts, cb) {
       var res = {};
-      res.statusCode = http.error || 200;
+      res.statusCode = httpNode.error || 200;
       res.on = function(e, cb) {
         if (e == 'data')
           return cb(TestData.payProBuf);
@@ -35,10 +35,22 @@ describe('payprorequest', function() {
       };
       return cb(res);
     };
+    httpNode.post = function(opts, cb) {
+      var res = {};
+      res.statusCode = httpNode.error || 200;
+      res.on = function(e, cb) {
+        if (e == 'data')
+          return cb('id');
+        if (e == 'end')
+          return cb();
+      };
+ 
+      return cb(res);
+    };
   });
 
   it('Make a PP request with browser', function(done) {
-    PayProReq.get({
+    PayPro.get({
       url: 'http://an.url.com/paypro',
       xhr: xhr,
       env: 'browser',
@@ -50,7 +62,7 @@ describe('payprorequest', function() {
   });
 
   it('Make a PP request with browser with headers', function(done) {
-    PayProReq.get({
+    PayPro.get({
       url: 'http://an.url.com/paypro',
       xhr: xhr,
       env: 'browser',
@@ -74,7 +86,7 @@ describe('payprorequest', function() {
     xhr.send = function() {
       xhr.onerror();
     };
-    PayProReq.get({
+    PayPro.get({
       url: 'http://an.url.com/paypro',
       xhr: xhr,
       env: 'browser',
@@ -89,7 +101,7 @@ describe('payprorequest', function() {
       xhr.onerror();
     };
     xhr.statusText = 'myerror';
-    PayProReq.get({
+    PayPro.get({
       url: 'http://an.url.com/paypro',
       xhr: xhr,
       env: 'browser',
@@ -101,9 +113,16 @@ describe('payprorequest', function() {
 
 
   it('Make a PP request with node', function(done) {
-    PayProReq.get({
+    xhr.send = function() {
+      xhr.response = 'id';
+      xhr.onload();
+    };
+
+
+    xhr.statusText = null;
+    PayPro.get({
       url: 'http://an.url.com/paypro',
-      http: http,
+      httpNode: httpNode,
       env: 'node',
     }, function(err, res) {
       should.not.exist(err);
@@ -113,10 +132,10 @@ describe('payprorequest', function() {
   });
 
   it('Make a PP request with node with HTTP error', function(done) {
-    http.error = 404;
-    PayProReq.get({
+    httpNode.error = 404;
+    PayPro.get({
       url: 'http://an.url.com/paypro',
-      http: http,
+      httpNode: httpNode,
       env: 'node',
     }, function(err, res) {
       err.should.contain('HTTP Request Error');
@@ -124,6 +143,49 @@ describe('payprorequest', function() {
     });
   });
 
+  it('Create a PP payment', function() {
+    var data = TestData.payProData;
+    var payment = PayPro._createPayment(data.merchant_data, '12ab1234', 'mwRGmB4NE3bG4EbXJKTHf8uvodoUtMCRhZ', 100);
+    var s = '';
+    for (var i = 0; i < payment.length; i++) {
+      s += payment[i].toString(16);
+    }
+    s.should.equal('a4c7b22696e766f6963654964223a22436962454a4a74473174394837374b6d4d3631453274222c226d65726368616e744964223a22444766754344656f66556e576a446d5537454c634568227d12412ab12341a1b8641217a914ae6eeec7e05624db748f9c16cce6fb53696ab3987');
+  });
 
+  it('Send a PP payment (browser)', function(done) {
+    var data = TestData.payProData;
+    var opts = {
+      merchant_data: data.merchant_data,
+      rawTx: '12ab1234',
+      refundAddr: 'mwRGmB4NE3bG4EbXJKTHf8uvodoUtMCRhZ',
+      amountSat: 100,
+      url: 'http://an.url.com/paypro',
+      xhr: xhr,
+      env: 'browser',
+    };
+    var payment = PayPro.send(opts, function(err, data) {
+      should.not.exist(err);
+      done();
+    });
+  });
+
+  it('Send a PP payment (node)', function(done) {
+    httpNode.error = null;
+    var data = TestData.payProData;
+    var opts = {
+      merchant_data: data.merchant_data,
+      rawTx: '12ab1234',
+      refundAddr: 'mwRGmB4NE3bG4EbXJKTHf8uvodoUtMCRhZ',
+      amountSat: 100,
+      httpNode: httpNode,
+      url: 'http://an.url.com/paypro',
+      env: 'node',
+    };
+    var payment = PayPro.send(opts, function(err, data) {
+      should.not.exist(err);
+      done();
+    });
+  });
 
 });

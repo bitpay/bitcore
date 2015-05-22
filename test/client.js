@@ -6,6 +6,8 @@ var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
 var async = require('async');
+var Bitcore = require('bitcore');
+var BitcorePayPro = require('bitcore-payment-protocol');
 var request = require('supertest');
 var tingodb = require('tingodb')({
   memStore: true
@@ -840,11 +842,11 @@ describe('client API', function() {
   });
 
   describe('Payment Protocol', function() {
-    var getter;
+    var http;
 
     beforeEach(function(done) {
-      getter = sinon.stub();
-      getter.yields(null, TestData.payProBuf);
+      http = sinon.stub();
+      http.yields(null, TestData.payProBuf);
       helpers.createAndJoinWallet(clients, 2, 2, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
@@ -854,7 +856,7 @@ describe('client API', function() {
           var opts = {
             payProUrl: 'dummy',
           };
-          clients[0].payProGetter = clients[1].payProGetter = getter;
+          clients[0].payProHttp = clients[1].payProHttp = http;
 
           clients[0].fetchPayPro(opts, function(err, paypro) {
             clients[0].sendTxProposal({
@@ -922,9 +924,9 @@ describe('client API', function() {
     });
 
     it('Should handle broken paypro data', function(done) {
-      getter = sinon.stub();
-      getter.yields(null, 'a broken data');
-      clients[0].payProGetter = getter;
+      http = sinon.stub();
+      http.yields(null, 'a broken data');
+      clients[0].payProHttp = http;
       var opts = {
         payProUrl: 'dummy',
       };
@@ -936,7 +938,7 @@ describe('client API', function() {
     });
 
     it('Should ignore PayPro at getTxProposals if instructed', function(done) {
-      getter.yields(null, 'kaka');
+      http.yields(null, 'kaka');
       clients[1].doNotVerifyPayPro = true;
       clients[1].getTxProposals({}, function(err, txps) {
         should.not.exist(err);
@@ -951,7 +953,7 @@ describe('client API', function() {
     });
 
     it('Should ignore PayPro at signTxProposal if instructed', function(done) {
-      getter.yields(null, 'kaka');
+      http.yields(null, 'kaka');
       clients[1].doNotVerifyPayPro = true;
       clients[1].getTxProposals({}, function(err, txps) {
         should.not.exist(err);
@@ -961,6 +963,95 @@ describe('client API', function() {
         });
       });
     });
+
+    it('Should send the "payment message" when last copayer sign', function(done) {
+      clients[0].getTxProposals({}, function(err, txps) {
+        should.not.exist(err);
+        clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
+          should.not.exist(err);
+          clients[1].signTxProposal(xx, function(err, yy, paypro) {
+            should.not.exist(err);
+            yy.status.should.equal('accepted');
+            http.onCall(5).yields(null, TestData.payProAckBuf);
+
+            clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
+              should.not.exist(err);
+              var args = http.lastCall.args[0];
+              args.method.should.equal('POST');
+              args.body.length.should.equal(302);
+              memo.should.equal('Transaction received by BitPay. Invoice will be marked as paid if the transaction is confirmed.');
+              done();
+            });
+          });
+        });
+      });
+    });
+
+
+    it('Should send correct refund address', function(done) {
+      clients[0].getTxProposals({}, function(err, txps) {
+        should.not.exist(err);
+        clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
+          should.not.exist(err);
+          clients[1].signTxProposal(xx, function(err, yy, paypro) {
+            should.not.exist(err);
+            yy.status.should.equal('accepted');
+            http.onCall(5).yields(null, TestData.payProAckBuf); 
+
+            clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
+              should.not.exist(err);
+              clients[1].getMainAddresses({}, function(err, walletAddresses) {
+              var args = http.lastCall.args[0];
+              var data = BitcorePayPro.Payment.decode(args.body);
+              var pay = new BitcorePayPro();
+              var p = pay.makePayment(data);
+              var refund_to = p.get('refund_to');
+              refund_to.length.should.equal(1);
+
+              refund_to = refund_to[0];
+
+              var amount = refund_to.get('amount')
+              amount.low.should.equal(404500);
+              amount.high.should.equal(0);
+              var s = refund_to.get('script');
+              s = new Bitcore.Script(s.buffer.slice(s.offset, s.limit));
+              var addr = new Bitcore.Address.fromScript(s, 'testnet');
+              addr.toString().should.equal(
+                walletAddresses[walletAddresses.length-1].address);
+              done();
+            });
+            });
+          });
+        });
+      });
+    });
+
+
+    it('Should fail if refund address is tampered', function(done) {
+      clients[0].getTxProposals({}, function(err, txps) {
+        should.not.exist(err);
+        clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
+          should.not.exist(err);
+          clients[1].signTxProposal(xx, function(err, yy, paypro) {
+            should.not.exist(err);
+            yy.status.should.equal('accepted');
+            http.onCall(5).yields(null, TestData.payProAckBuf);
+
+            helpers.tamperResponse(clients[1], 'post', '/v1/addresses/', {}, function(address) {
+              address.address = '2N86pNEpREGpwZyHVC5vrNUCbF9nM1Geh4K';
+            }, function() {
+              clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
+                err.code.should.contain('SERVERCOMPROMISED');
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
+
+
   });
 
   describe('Transactions Signatures and Rejection', function() {
