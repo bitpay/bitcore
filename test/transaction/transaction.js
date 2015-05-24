@@ -520,6 +520,23 @@ describe('Transaction', function() {
 
     });
 
+    it('not if has null input (and not coinbase)', function() {
+
+      var tx = new Transaction()
+        .from({
+          'txId': testPrevTx,
+          'outputIndex': 0,
+          'script': testScript,
+          'satoshis': testAmount
+        }).to('mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc', testAmount - 10000);
+
+      tx.isCoinbase = sinon.stub().returns(false);
+      tx.inputs[0].isNull = sinon.stub().returns(true);
+      var verify = tx.verify();
+      verify.should.equal('transaction input 0 has null input');
+
+    });
+
   });
 
   describe('to and from JSON', function() {
