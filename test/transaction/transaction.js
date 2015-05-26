@@ -385,8 +385,32 @@ describe('Transaction', function() {
         return transaction.serialize();
       }).to.throw(errors.Transaction.FeeError.Different);
     });
+    it('checks output amount before fee errors', function() {
+      var transaction = new Transaction();
+      transaction.from(simpleUtxoWith1BTC);
+      transaction
+        .to(toAddress, 10000000000000)
+        .change(changeAddress)
+        .fee(5);
+
+      expect(function() {
+        return transaction.serialize();
+      }).to.throw(errors.Transaction.InvalidOutputAmountSum);
+    });
+    it('will throw fee error with disableMoreOutputThanInput enabled (but not triggered)', function() {
+      var transaction = new Transaction();
+      transaction.from(simpleUtxoWith1BTC);
+      transaction
+        .to(toAddress, 90000000)
+        .change(changeAddress)
+        .fee(10000000);
+
+      expect(function() {
+        return transaction.serialize({disableMoreOutputThanInput: true});
+      }).to.throw(errors.Transaction.FeeError.TooLarge);
+    });
     describe('skipping checks', function() {
-      var buildSkipTest = function(builder, check) {
+      var buildSkipTest = function(builder, check, expectedError) {
         return function() {
           var transaction = new Transaction();
           transaction.from(simpleUtxoWith1BTC);
@@ -400,7 +424,7 @@ describe('Transaction', function() {
           }).not.to.throw();
           expect(function() {
             return transaction.serialize();
-          }).to.throw();
+          }).to.throw(expectedError);
         };
       };
       it('can skip the check for too much fee', buildSkipTest(
@@ -409,54 +433,39 @@ describe('Transaction', function() {
             .fee(50000000)
             .change(changeAddress)
             .sign(privateKey);
-        }, 'disableLargeFees'));
+        }, 'disableLargeFees', errors.Transaction.FeeError.TooLarge
+      ));
       it('can skip the check for a fee that is too small', buildSkipTest(
         function(transaction) {
           return transaction
             .fee(1)
             .change(changeAddress)
             .sign(privateKey);
-        }, 'disableSmallFees'));
+        }, 'disableSmallFees', errors.Transaction.FeeError.TooSmall
+      ));
       it('can skip the check that prevents dust outputs', buildSkipTest(
         function(transaction) {
           return transaction
             .to(toAddress, 100)
             .change(changeAddress)
             .sign(privateKey);
-        }, 'disableDustOutputs'));
-      it('can skip the check that prevents unsigned outputs', function() {
-        var transaction = new Transaction();
-        transaction.from(simpleUtxoWith1BTC);
-        transaction.to(toAddress, 10000);
-        transaction.change(changeAddress);
-        var options = {};
-        options.disableIsFullySigned = true;
-        expect(function() {
-          return transaction.serialize(options);
-        }).not.to.throw(errors.Transaction.MissingSignatures);
-        expect(function() {
-          return transaction.serialize();
-        }).to.throw(errors.Transaction.MissingSignatures);
-      });
-      it('can skip the check that avoids spending more bitcoins than the inputs for a transaction', function() {
-        var transaction = new Transaction();
-        transaction.from(simpleUtxoWith1BTC);
-        transaction.to(toAddress, 10000000000000);
-        transaction.change(changeAddress);
-        expect(function() {
-          return transaction.serialize({
-            disableSmallFees: true,
-            disableIsFullySigned: true,
-            disableMoreOutputThanInput: true
-          });
-        }).not.to.throw(errors.Transaction.InvalidOutputAmountSum);
-        expect(function() {
-          return transaction.serialize({
-            disableIsFullySigned: true,
-            disableSmallFees: true
-          });
-        }).to.throw(errors.Transaction.InvalidOutputAmountSum);
-      });
+        }, 'disableDustOutputs', errors.Transaction.DustOutputs
+      ));
+      it('can skip the check that prevents unsigned outputs', buildSkipTest(
+        function(transaction) {
+          return transaction
+            .to(toAddress, 10000)
+            .change(changeAddress);
+        }, 'disableIsFullySigned', errors.Transaction.MissingSignatures
+      ));
+      it('can skip the check that avoids spending more bitcoins than the inputs for a transaction', buildSkipTest(
+        function(transaction) {
+          return transaction
+            .to(toAddress, 10000000000000)
+            .change(changeAddress)
+            .sign(privateKey);
+        }, 'disableMoreOutputThanInput', errors.Transaction.InvalidOutputAmountSum
+      ));
     });
   });
 
@@ -508,6 +517,23 @@ describe('Transaction', function() {
 
       var verify = tx.verify();
       verify.should.equal('transaction over the maximum block size');
+
+    });
+
+    it('not if has null input (and not coinbase)', function() {
+
+      var tx = new Transaction()
+        .from({
+          'txId': testPrevTx,
+          'outputIndex': 0,
+          'script': testScript,
+          'satoshis': testAmount
+        }).to('mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc', testAmount - 10000);
+
+      tx.isCoinbase = sinon.stub().returns(false);
+      tx.inputs[0].isNull = sinon.stub().returns(true);
+      var verify = tx.verify();
+      verify.should.equal('transaction input 0 has null input');
 
     });
 
