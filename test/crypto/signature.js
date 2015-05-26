@@ -52,11 +52,13 @@ describe('Signature', function() {
     });
 
     it('should create a signature from an uncompressed signature', function() {
-      var uncompressed = '1c49f92a610fa934f45b3a01036055ebbe65a6b910e8c3cfbbb0b64f575' +
-        '196f2fe18dc5a236d7883434cf48c11d56c804493dfe31b5a09a1a3cab378b2aac8c934';
-      var sig = Signature.fromCompact(uncompressed);
-      sig.r.toString('hex').should.equal('38a5e6d9a9fda73a2a8275413be68f408a1859173f07ae557be54ce1fdd5f3b1');
-      sig.s.toString('hex').should.equal('21135fd5b20a73b09a7389910fe2b20f59b6fd0990c84169367db069cd6e3ea1');
+      var sigHexaStr = '1cd5e61ab5bfd0d1450997894cb1a53e917f89d82eb43f06fa96f32c96e061aec12fc1188e8b' +
+        '0dc553a2588be2b5b68dbbd7f092894aa3397786e9c769c5348dc6';
+      var sig = Signature.fromCompact(new Buffer(sigHexaStr, 'hex'));
+      var r = 'd5e61ab5bfd0d1450997894cb1a53e917f89d82eb43f06fa96f32c96e061aec1';
+      var s = '2fc1188e8b0dc553a2588be2b5b68dbbd7f092894aa3397786e9c769c5348dc6';
+      sig.r.toString('hex').should.equal(r);
+      sig.s.toString('hex').should.equal(s);
     });
 
   });
