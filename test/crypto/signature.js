@@ -49,6 +49,18 @@ describe('Signature', function() {
       var sig = Signature.fromCompact(compressed);
       sig.r.cmp(BN.Zero).should.equal(0);
       sig.s.cmp(BN.Zero).should.equal(0);
+      sig.compressed.should.equal(true);
+    });
+
+    it('should create a signature from an uncompressed signature', function() {
+      var sigHexaStr = '1cd5e61ab5bfd0d1450997894cb1a53e917f89d82eb43f06fa96f32c96e061aec12fc1188e8b' +
+        '0dc553a2588be2b5b68dbbd7f092894aa3397786e9c769c5348dc6';
+      var sig = Signature.fromCompact(new Buffer(sigHexaStr, 'hex'));
+      var r = 'd5e61ab5bfd0d1450997894cb1a53e917f89d82eb43f06fa96f32c96e061aec1';
+      var s = '2fc1188e8b0dc553a2588be2b5b68dbbd7f092894aa3397786e9c769c5348dc6';
+      sig.r.toString('hex').should.equal(r);
+      sig.s.toString('hex').should.equal(s);
+      sig.compressed.should.equal(false);
     });
 
   });
