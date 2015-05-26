@@ -33,9 +33,8 @@ simpleTx.sign(privateKey);
 
 The complete docs are hosted here: [bitcore documentation](http://bitcore.io/guide/). There's also a [bitcore API reference](http://bitcore.io/api/) available generated from the JSDocs of the project, where you'll find low-level details on each bitcore utility.
 
-[Read the Developer Guide](http://bitcore.io/guide/)
-
-[Read the API Reference](http://bitcore.io/api/)
+- [Read the Developer Guide](http://bitcore.io/guide/)
+- [Read the API Reference](http://bitcore.io/api/)
 
 To get community assistance and ask for help with implementation questions, please use our [community forums](http://bitpaylabs.com/c/bitcore).
 
@@ -85,13 +84,11 @@ gulp browser
 
 This will generate files named `bitcore.js` and `bitcore.min.js`.
 
-You can also use our pre-generated files, provided for each release along with a PGP signature by one of the project's main contributors. To get them, checkout a release commit (for example, https://github.com/bitpay/bitcore/commit/2670cd1ac5ec1742aae0599e1583c063415959ff for v0.10.4).
+You can also use our pre-generated files, provided for each release along with a PGP signature by one of the project's maintainers. To get them, checkout a release commit (for example, https://github.com/bitpay/bitcore/commit/e33b6e3ba6a1e5830a079e02d949fce69ea33546 for v0.12.6).
 
 To verify signatures, use the following PGP keys:
-- @maraoz: https://pgp.mit.edu/pks/lookup?op=get&search=0x64F3727BFE0B3196
-- @eordano: https://pgp.mit.edu/pks/lookup?op=get&search=0x00BD4BAF1DEEAC20
-- @yemel: https://pgp.mit.edu/pks/lookup?op=get&search=0xB4A468A6F14B6843
 - @braydonf: https://pgp.mit.edu/pks/lookup?op=get&search=0x9BBF07CAC07A276D
+- @pnagurny: https://pgp.mit.edu/pks/lookup?op=get&search=0x0909B33F0AA53013
 
 ## Tests
 
