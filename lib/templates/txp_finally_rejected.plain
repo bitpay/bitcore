@@ -1,2 +1,2 @@
-<%= subjectPrefix %>Spend proposal rejected
-A spend proposal in your wallet <%= walletName %> has been rejected by <%= creatorName %>.
+<%= subjectPrefix %>Payment proposal rejected
+A payment proposal in your wallet <%= walletName %> has been rejected by <%= creatorName %>.

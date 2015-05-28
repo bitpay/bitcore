@@ -3220,7 +3220,7 @@ describe('Wallet service', function() {
           _.difference(['copayer1@domain.com', 'copayer2@domain.com'], _.pluck(emails, 'to')).should.be.empty;
           var one = emails[0];
           one.from.should.equal('bws@dummy.net');
-          one.subject.should.contain('New spend proposal');
+          one.subject.should.contain('New payment proposal');
           one.text.should.contain(wallet.name);
           one.text.should.contain(wallet.copayers[0].name);
           server.storage.fetchUnsentEmails(function(err, unsent) {
