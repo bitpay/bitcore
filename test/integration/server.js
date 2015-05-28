@@ -1662,7 +1662,7 @@ describe('Wallet service', function() {
       });
     });
 
-    it('should fail to brodcast an already broadcasted tx', function(done) {
+    it('should fail to brodcast a tx already marked as broadcasted', function(done) {
       helpers.stubBroadcast('999');
       server.broadcastTx({
         txProposalId: txpid
@@ -1696,6 +1696,7 @@ describe('Wallet service', function() {
 
     it('should keep tx as accepted if unable to broadcast it', function(done) {
       helpers.stubBroadcastFail();
+      blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
       server.broadcastTx({
         txProposalId: txpid
       }, function(err) {
@@ -1709,6 +1710,28 @@ describe('Wallet service', function() {
           txp.isBroadcasted().should.be.false;
           should.not.exist(txp.broadcastedOn);
           txp.isAccepted().should.be.true;
+          done();
+        });
+      });
+    });
+
+    it('should mark tx as broadcasted if accepted but already in blockchain', function(done) {
+      helpers.stubBroadcastFail();
+      blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, {
+        txid: '999'
+      });
+      server.broadcastTx({
+        txProposalId: txpid
+      }, function(err) {
+        should.not.exist(err);
+        server.getTx({
+          txProposalId: txpid
+        }, function(err, txp) {
+          should.not.exist(err);
+          should.exist(txp.txid);
+          txp.txid.should.equal('999');
+          txp.isBroadcasted().should.be.true;
+          should.exist(txp.broadcastedOn);
           done();
         });
       });
