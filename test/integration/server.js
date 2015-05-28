@@ -1736,6 +1736,27 @@ describe('Wallet service', function() {
         });
       });
     });
+
+    it('should keep tx as accepted if broadcast fails and cannot check tx in blockchain', function(done) {
+      helpers.stubBroadcastFail();
+      blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, 'bc check error');
+      server.broadcastTx({
+        txProposalId: txpid
+      }, function(err) {
+        should.exist(err);
+        err.code.should.equal('BLOCKCHAINERROR');
+        server.getTx({
+          txProposalId: txpid
+        }, function(err, txp) {
+          should.not.exist(err);
+          should.not.exist(txp.txid);
+          txp.isBroadcasted().should.be.false;
+          should.not.exist(txp.broadcastedOn);
+          txp.isAccepted().should.be.true;
+          done();
+        });
+      });
+    });
   });
 
   describe('Tx proposal workflow', function() {
