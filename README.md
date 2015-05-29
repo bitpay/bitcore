@@ -98,7 +98,7 @@ INSIGHT_PUBLIC_PATH=insight/public  grunt
 
 at insight-api's home path (edit the path according your setup).
 
-**also** in the insight-api path. (So you will have to grunt process running, one for insight and one for insight-api).
+**also** in the insight-api path. (So you will have two grunt processes running, one for insight and one for insight-api).
 
 
 ## Multilanguage support
