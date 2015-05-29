@@ -328,8 +328,38 @@ describe('Wallet service', function() {
         });
       });
     });
-  });
 
+    it('should notify copayers of incoming txs', function(done) {
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+
+        // Simulate incoming tx notification
+        server._notify('NewIncomingTx', {
+          txid: '999',
+          address: address,
+          amount: 123,
+        }, function(err) {
+          setTimeout(function() {
+            var calls = mailerStub.sendMail.getCalls();
+            calls.length.should.equal(3);
+            var emails = _.map(calls, function(c) {
+              return c.args[0];
+            });
+            _.difference(['copayer0@domain.com', 'copayer1@domain.com', 'copayer2@domain.com'], _.pluck(emails, 'to')).should.be.empty;
+            var one = emails[0];
+            one.from.should.equal('bws@dummy.net');
+            one.subject.should.contain('New payment received');
+            one.text.should.contain(wallet.name);
+            server.storage.fetchUnsentEmails(function(err, unsent) {
+              should.not.exist(err);
+              unsent.should.be.empty;
+              done();
+            });
+          }, 100);
+        });
+      });
+    });
+  });
 
 
   describe('#getInstanceWithAuth', function() {
