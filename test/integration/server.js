@@ -210,7 +210,7 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
   });
 };
 
-var storage, blockchainExplorer, mailer;
+var storage, blockchainExplorer;
 
 var useMongo = false;
 
@@ -250,14 +250,9 @@ describe('Wallet service', function() {
   beforeEach(function(done) {
     resetStorage(function() {
       blockchainExplorer = sinon.stub();
-      mailer = sinon.stub();
       WalletService.initialize({
         storage: storage,
         blockchainExplorer: blockchainExplorer,
-        mailer: mailer,
-        emailOpts: {
-          from: 'bws@dummy.net',
-        }
       }, done);
     });
   });
