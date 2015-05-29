@@ -23,6 +23,8 @@ var Storage = require('../../lib/storage');
 var Model = require('../../lib/model');
 
 var WalletService = require('../../lib/server');
+var EmailService = require('../../lib/emailservice');
+
 var TestData = require('../testdata');
 
 var helpers = {};
@@ -259,6 +261,76 @@ describe('Wallet service', function() {
   after(function(done) {
     WalletService.shutDown(done);
   });
+
+  describe('Email notifications', function() {
+    var server, wallet, mailerStub, emailService;
+
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 3, function(s, w) {
+        server = s;
+        wallet = w;
+
+        var i = 0;
+        async.eachSeries(w.copayers, function(copayer, next) {
+          helpers.getAuthServer(copayer.id, function(server) {
+            server.savePreferences({
+              email: 'copayer' + (i++) + '@domain.com',
+            }, next);
+          });
+        }, function(err) {
+          should.not.exist(err);
+
+          mailerStub = sinon.stub();
+          mailerStub.sendMail = sinon.stub();
+          mailerStub.sendMail.yields();
+
+          emailService = new EmailService();
+          emailService.start({
+            lockOpts: {},
+            messageBroker: server.messageBroker,
+            storage: storage,
+            mailer: mailerStub,
+            emailOpts: {
+              from: 'bws@dummy.net',
+              subjectPrefix: '[test wallet]',
+            },
+          }, function(err) {
+            should.not.exist(err);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should notify copayers a new tx proposal has been created', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 1], function() {
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, 'some message', TestData.copayers[0].privKey_1H_0);
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(err);
+          setTimeout(function() {
+            var calls = mailerStub.sendMail.getCalls();
+            calls.length.should.equal(2);
+            var emails = _.map(calls, function(c) {
+              return c.args[0];
+            });
+            _.difference(['copayer1@domain.com', 'copayer2@domain.com'], _.pluck(emails, 'to')).should.be.empty;
+            var one = emails[0];
+            one.from.should.equal('bws@dummy.net');
+            one.subject.should.contain('New payment proposal');
+            one.text.should.contain(wallet.name);
+            one.text.should.contain(wallet.copayers[0].name);
+            server.storage.fetchUnsentEmails(function(err, unsent) {
+              should.not.exist(err);
+              unsent.should.be.empty;
+              done();
+            });
+          }, 100);
+        });
+      });
+    });
+  });
+
+
 
   describe('#getInstanceWithAuth', function() {
 
