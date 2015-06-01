@@ -79,6 +79,10 @@ describe('BN', function() {
     it('should make BN from a string', function() {
       BN.fromString('5').toString().should.equal('5');
     });
+    it('should work with hex string', function() {
+      BN.fromString('7fffff0000000000000000000000000000000000000000000000000000000000', 16)
+      .toString(16).should.equal('7fffff0000000000000000000000000000000000000000000000000000000000');
+    });
   });
 
   describe('#toString', function() {
