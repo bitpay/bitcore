@@ -329,7 +329,60 @@ describe('Wallet service', function() {
       });
     });
 
-    it.only('should notify copayers of incoming txs', function(done) {
+    it('should notify copayers a new outgoing tx has been created', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 1], function() {
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, 'some message', TestData.copayers[0].privKey_1H_0);
+
+        var txpId;
+        async.waterfall([
+
+          function(next) {
+            server.createTx(txOpts, next);
+          },
+          function(txp, next) {
+            txpId = txp.id;
+            async.eachSeries(_.range(2), function(i, next) {
+              var copayer = TestData.copayers[i];
+              helpers.getAuthServer(copayer.id, function(server) {
+                var signatures = helpers.clientSign(txp, copayer.xPrivKey);
+                server.signTx({
+                  txProposalId: txp.id,
+                  signatures: signatures,
+                }, next);
+              });
+            }, next);
+          },
+          function(next) {
+            helpers.stubBroadcast('999');
+            server.broadcastTx({
+              txProposalId: txpId,
+            }, next);
+          },
+        ], function(err) {
+          should.not.exist(err);
+
+          setTimeout(function() {
+            var calls = mailerStub.sendMail.getCalls();
+            var emails = _.map(_.takeRight(calls, 3), function(c) {
+              return c.args[0];
+            });
+            _.difference(['copayer0@domain.com', 'copayer1@domain.com', 'copayer2@domain.com'], _.pluck(emails, 'to')).should.be.empty;
+            var one = emails[0];
+            one.from.should.equal('bws@dummy.net');
+            one.subject.should.contain('Payment sent');
+            one.text.should.contain(wallet.name);
+            one.text.should.contain('800,000');
+            server.storage.fetchUnsentEmails(function(err, unsent) {
+              should.not.exist(err);
+              unsent.should.be.empty;
+              done();
+            });
+          }, 100);
+        });
+      });
+    });
+
+    it('should notify copayers of incoming txs', function(done) {
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
 
