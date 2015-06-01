@@ -329,7 +329,7 @@ describe('Wallet service', function() {
       });
     });
 
-    it('should notify copayers of incoming txs', function(done) {
+    it.only('should notify copayers of incoming txs', function(done) {
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
 
@@ -337,7 +337,7 @@ describe('Wallet service', function() {
         server._notify('NewIncomingTx', {
           txid: '999',
           address: address,
-          amount: 123,
+          amount: 12300000,
         }, function(err) {
           setTimeout(function() {
             var calls = mailerStub.sendMail.getCalls();
@@ -350,6 +350,7 @@ describe('Wallet service', function() {
             one.from.should.equal('bws@dummy.net');
             one.subject.should.contain('New payment received');
             one.text.should.contain(wallet.name);
+            one.text.should.contain('123,000');
             server.storage.fetchUnsentEmails(function(err, unsent) {
               should.not.exist(err);
               unsent.should.be.empty;
