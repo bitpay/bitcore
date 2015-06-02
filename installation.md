@@ -19,11 +19,11 @@ Example configuration for connecting to the MongoDB instance:
   }
 ```
 
-###Start Locker server
+###Start locker service
 ```bash
 node locker/locker.js
 ````
-Example configuration for connecting to locker server:
+Example configuration for connecting to locker service:
 ```javascript
   lockOpts: {
     lockerServer: {
@@ -33,11 +33,11 @@ Example configuration for connecting to locker server:
   }
 ```
 
-###Start message broker server
+###Start message broker service
 ```bash
 node messagebroker/messagebroker.js
 ````
-Example configuration for connecting to message broker server:
+Example configuration for connecting to message broker service:
 ```javascript
   messageBrokerOpts: {
     messageBrokerServer: {
