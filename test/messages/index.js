@@ -192,4 +192,25 @@ describe('Messages', function() {
 
   });
 
+  describe('#add', function() {
+    it('should add a custom message', function() {
+      var network = bitcore.Networks.defaultNetwork;
+      var messages = new Messages({
+        network: network,
+        Block: bitcore.Block,
+        Transaction: bitcore.Transaction
+      });
+
+      var CustomMessage = function(arg, options) {
+        this.arg = arg;
+      };
+
+      messages.add('custom', 'Custom', CustomMessage);
+      should.exist(messages.Custom);
+
+      var message = messages.Custom('hello');
+      message.arg.should.equal('hello');
+    });
+  });
+
 });

@@ -88,3 +88,15 @@ Same as `getheaders` and `headers`, but the response comes one block at the time
 ### Transaction
 
 Message that contains a transaction.
+
+## Custom Messages
+
+It is possible to extend the default peer to peer messages and add custom ones. First you will need to create a message which resembles the default messages in `lib/messages/commands`.
+
+Then to add the custom message:
+
+```javascript
+messages.add('custom', 'Custom', CustomMessage);
+
+var customMessage = messages.Custom('argument');
+```
