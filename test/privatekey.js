@@ -177,6 +177,17 @@ describe('PrivateKey', function() {
       PrivateKey.fromJSON(json).toJSON().should.deep.equal(json);
     });
 
+    it('input json should correctly initialize network field', function() {
+      ['livenet', 'testnet', 'mainnet'].forEach(function (net) {
+        var pk = PrivateKey.fromJSON(JSON.stringify({
+          bn: '96c132224121b509b7d0a16245e957d9192609c5637c6228311287b1be21627a',
+          compressed: false,
+          network: net
+        }));
+        pk.network.should.be.deep.equal(Networks.get(net));
+      });
+    });
+
     it('an object with private key info can be also used as argument for "fromJSON"', function() {
       expect(PrivateKey._isJSON({bn: true, network: true})).to.equal(true);
     });
