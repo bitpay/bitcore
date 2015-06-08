@@ -1,2 +1,2 @@
 {{subjectPrefix}}Payment proposal rejected
-A payment proposal in your wallet {{walletName}} has been rejected by {{creatorName}}.
+A payment proposal in your wallet {{walletName}} has been rejected by {{rejectorsNames}}.
