@@ -497,10 +497,10 @@ describe('Wallet service', function() {
       });
     });
 
-    it.only('should support multiple emailservice instances running concurrently', function(done) {
+    it('should support multiple emailservice instances running concurrently', function(done) {
       var emailService2 = new EmailService();
       emailService2.start({
-        lockOpts: {},
+        lock: emailService.lock, // Use same locker service
         messageBroker: server.messageBroker,
         storage: storage,
         mailer: mailerStub,
