@@ -44,6 +44,35 @@ describe('PrivateKey', function() {
     should.exist(a.bn);
   });
 
+  it('should create a private key from a custom network WIF string', function() {
+    var wifNamecoin = '74pxNKNpByQ2kMow4d9kF6Z77BYeKztQNLq3dSyU4ES1K5KLNiz';
+    var nmc = {
+      name: 'namecoin',
+      alias: 'namecoin',
+      pubkeyhash: 0x34,
+      privatekey: 0xB4,
+      // these below aren't the real NMC version numbers
+      scripthash: 0x08,
+      xpubkey: 0x0278b20e,
+      xprivkey: 0x0278ade4,
+      networkMagic: 0xf9beb4fe,
+      port: 20001,
+      dnsSeeds: [
+        'localhost',
+        'mynet.localhost'
+      ]
+    };
+    Networks.add(nmc);
+    var nmcNet = Networks.get('namecoin');
+    var a = new PrivateKey(
+      '74pxNKNpByQ2kMow4d9kF6Z77BYeKztQNLq3dSyU4ES1K5KLNiz',
+      nmcNet
+    );
+    should.exist(a);
+    should.exist(a.bn);
+    Networks.remove(nmcNet);
+  });
+
   it('should create a new random testnet private key with empty data', function() {
     var a = new PrivateKey(null, Networks.testnet);
     should.exist(a);
