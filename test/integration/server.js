@@ -274,7 +274,7 @@ describe('Wallet service', function() {
         async.eachSeries(w.copayers, function(copayer, next) {
           helpers.getAuthServer(copayer.id, function(server) {
             server.savePreferences({
-              email: 'copayer' + (i++) + '@domain.com',
+              email: 'copayer' + (++i) + '@domain.com',
             }, next);
           });
         }, function(err) {
@@ -313,7 +313,7 @@ describe('Wallet service', function() {
             var emails = _.map(calls, function(c) {
               return c.args[0];
             });
-            _.difference(['copayer1@domain.com', 'copayer2@domain.com'], _.pluck(emails, 'to')).should.be.empty;
+            _.difference(['copayer2@domain.com', 'copayer3@domain.com'], _.pluck(emails, 'to')).should.be.empty;
             var one = emails[0];
             one.from.should.equal('bws@dummy.net');
             one.subject.should.contain('New payment proposal');
@@ -366,12 +366,58 @@ describe('Wallet service', function() {
             var emails = _.map(_.takeRight(calls, 3), function(c) {
               return c.args[0];
             });
-            _.difference(['copayer0@domain.com', 'copayer1@domain.com', 'copayer2@domain.com'], _.pluck(emails, 'to')).should.be.empty;
+            _.difference(['copayer1@domain.com', 'copayer2@domain.com', 'copayer3@domain.com'], _.pluck(emails, 'to')).should.be.empty;
             var one = emails[0];
             one.from.should.equal('bws@dummy.net');
             one.subject.should.contain('Payment sent');
             one.text.should.contain(wallet.name);
             one.text.should.contain('800,000');
+            server.storage.fetchUnsentEmails(function(err, unsent) {
+              should.not.exist(err);
+              unsent.should.be.empty;
+              done();
+            });
+          }, 100);
+        });
+      });
+    });
+
+    it('should notify copayers a tx has been finally rejected', function(done) {
+      helpers.stubUtxos(server, wallet, 1, function() {
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, 'some message', TestData.copayers[0].privKey_1H_0);
+
+        var txpId;
+        async.waterfall([
+
+          function(next) {
+            server.createTx(txOpts, next);
+          },
+          function(txp, next) {
+            txpId = txp.id;
+            async.eachSeries(_.range(1, 3), function(i, next) {
+              var copayer = TestData.copayers[i];
+              helpers.getAuthServer(copayer.id, function(server) {
+                server.rejectTx({
+                  txProposalId: txp.id,
+                }, next);
+              });
+            }, next);
+          },
+        ], function(err) {
+          should.not.exist(err);
+
+          setTimeout(function() {
+            var calls = mailerStub.sendMail.getCalls();
+            var emails = _.map(_.takeRight(calls, 2), function(c) {
+              return c.args[0];
+            });
+            _.difference(['copayer1@domain.com', 'copayer2@domain.com'], _.pluck(emails, 'to')).should.be.empty;
+            var one = emails[0];
+            one.from.should.equal('bws@dummy.net');
+            one.subject.should.contain('Payment proposal rejected');
+            one.text.should.contain(wallet.name);
+            one.text.should.contain('copayer 2, copayer 3');
+            one.text.should.not.contain('copayer 1');
             server.storage.fetchUnsentEmails(function(err, unsent) {
               should.not.exist(err);
               unsent.should.be.empty;
@@ -398,7 +444,7 @@ describe('Wallet service', function() {
             var emails = _.map(calls, function(c) {
               return c.args[0];
             });
-            _.difference(['copayer0@domain.com', 'copayer1@domain.com', 'copayer2@domain.com'], _.pluck(emails, 'to')).should.be.empty;
+            _.difference(['copayer1@domain.com', 'copayer2@domain.com', 'copayer3@domain.com'], _.pluck(emails, 'to')).should.be.empty;
             var one = emails[0];
             one.from.should.equal('bws@dummy.net');
             one.subject.should.contain('New payment received');
