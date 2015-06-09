@@ -496,6 +496,36 @@ describe('Wallet service', function() {
         });
       });
     });
+
+    it.only('should support multiple emailservice instances running concurrently', function(done) {
+      var emailService2 = new EmailService();
+      emailService2.start({
+        lockOpts: {},
+        messageBroker: server.messageBroker,
+        storage: storage,
+        mailer: mailerStub,
+        emailOpts: {
+          from: 'bws2@dummy.net',
+          subjectPrefix: '[test wallet 2]',
+        },
+      }, function(err) {
+        helpers.stubUtxos(server, wallet, 1, function() {
+          var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, 'some message', TestData.copayers[0].privKey_1H_0);
+          server.createTx(txOpts, function(err, tx) {
+            should.not.exist(err);
+            setTimeout(function() {
+              var calls = mailerStub.sendMail.getCalls();
+              calls.length.should.equal(2);
+              server.storage.fetchUnsentEmails(function(err, unsent) {
+                should.not.exist(err);
+                unsent.should.be.empty;
+                done();
+              });
+            }, 100);
+          });
+        });
+      });
+    });
   });
 
 
