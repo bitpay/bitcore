@@ -459,6 +459,43 @@ describe('Wallet service', function() {
         });
       });
     });
+
+    it('should notify each email address only once', function(done) {
+      // Set same email address for copayer1 and copayer2
+      server.savePreferences({
+        email: 'copayer2@domain.com',
+      }, function(err) {
+        server.createAddress({}, function(err, address) {
+          should.not.exist(err);
+
+          // Simulate incoming tx notification
+          server._notify('NewIncomingTx', {
+            txid: '999',
+            address: address,
+            amount: 12300000,
+          }, function(err) {
+            setTimeout(function() {
+              var calls = mailerStub.sendMail.getCalls();
+              calls.length.should.equal(2);
+              var emails = _.map(calls, function(c) {
+                return c.args[0];
+              });
+              _.difference(['copayer2@domain.com', 'copayer3@domain.com'], _.pluck(emails, 'to')).should.be.empty;
+              var one = emails[0];
+              one.from.should.equal('bws@dummy.net');
+              one.subject.should.contain('New payment received');
+              one.text.should.contain(wallet.name);
+              one.text.should.contain('123,000');
+              server.storage.fetchUnsentEmails(function(err, unsent) {
+                should.not.exist(err);
+                unsent.should.be.empty;
+                done();
+              });
+            }, 100);
+          });
+        });
+      });
+    });
   });
 
 
