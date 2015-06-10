@@ -1407,13 +1407,25 @@ describe('Wallet service', function() {
       });
     });
 
-    it.only('should fail to create tx when insufficient funds for fee', function(done) {
-      helpers.stubUtxos(server, wallet, 0.04822200, function() {
-        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.04820000, null, TestData.copayers[0].privKey_1H_0);
+    it('should fail to create tx when insufficient funds for fee', function(done) {
+      helpers.stubUtxos(server, wallet, 0.048222, function() {
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.048200, null, TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.exist(err);
           err.code.should.equal('INSUFFICIENTFUNDS');
           err.message.should.equal('Insufficient funds for fee');
+          done();
+        });
+      });
+    });
+
+    it('should scale fees according to tx size', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 1, 1, 1], function() {
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 3.5, null, TestData.copayers[0].privKey_1H_0);
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(err);
+          tx.getBitcoreTx()._estimateSize().should.be.within(1001, 1999);
+          tx.fee.should.equal(20000);
           done();
         });
       });
@@ -2445,7 +2457,7 @@ describe('Wallet service', function() {
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
         wallet = w;
-        helpers.stubUtxos(server, wallet, helpers.toSatoshi(_.range(4)), function() {
+        helpers.stubUtxos(server, wallet, _.range(4), function() {
           var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.01, null, TestData.copayers[0].privKey_1H_0);
           async.eachSeries(_.range(3), function(i, next) {
             server.createTx(txOpts, function(err, tx) {
