@@ -27,6 +27,12 @@ var serverOpts = {};
 if (config.https) {
   serverOpts.key = fs.readFileSync(config.privateKeyFile || './ssl/privatekey.pem');
   serverOpts.cert = fs.readFileSync(config.certificateFile || './ssl/certificate.pem');
+  // This sets the intermediate CA certs only if they have all been designated in the config.js
+  if (config.CAinter1 && config.CAinter2 && config.CAroot) {
+    serverOpts.ca = [fs.readFileSync(config.CAinter1),
+                     fs.readFileSync(config.CAinter2),
+                     fs.readFileSync(config.CAroot)
+                    ];};
 }
 
 var start = function(cb) {
