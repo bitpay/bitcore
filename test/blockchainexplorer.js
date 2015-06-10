@@ -9,7 +9,7 @@ var BlockchainExplorer = require('../lib/blockchainexplorer');
 describe('Blockchain explorer', function() {
   describe('#constructor', function() {
     it('should return a blockchain explorer with basic methods', function() {
-      var exp = BlockchainExplorer({
+      var exp = new BlockchainExplorer({
         provider: 'insight',
         network: 'testnet',
       });
@@ -19,7 +19,7 @@ describe('Blockchain explorer', function() {
       exp.should.respondTo('getAddressActivity');
       exp.should.respondTo('getUnspentUtxos');
       exp.should.respondTo('initSocket');
-      var exp = BlockchainExplorer({
+      var exp = new BlockchainExplorer({
         provider: 'insight',
         network: 'livenet',
       });
@@ -27,7 +27,7 @@ describe('Blockchain explorer', function() {
     });
     it('should fail on unsupported provider', function() {
       (function() {
-        var exp = BlockchainExplorer({
+        var exp = new BlockchainExplorer({
           provider: 'dummy',
         });
       }).should.throw('not supported');
