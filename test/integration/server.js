@@ -214,7 +214,7 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
 
 var storage, blockchainExplorer;
 
-var useMongo = false;
+var useMongo = true;
 
 function initStorage(cb) {
   function getDb(cb) {
@@ -1322,7 +1322,6 @@ describe('Wallet service', function() {
       });
     });
 
-
     it('should fail to create tx with invalid proposal signature', function(done) {
       helpers.stubUtxos(server, wallet, [100, 200], function() {
         var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, null, 'dummy');
@@ -1408,9 +1407,9 @@ describe('Wallet service', function() {
       });
     });
 
-    it('should fail to create tx when insufficient funds for fee', function(done) {
-      helpers.stubUtxos(server, wallet, [100], function() {
-        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 100, null, TestData.copayers[0].privKey_1H_0);
+    it.only('should fail to create tx when insufficient funds for fee', function(done) {
+      helpers.stubUtxos(server, wallet, 0.04822200, function() {
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.04820000, null, TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.exist(err);
           err.code.should.equal('INSUFFICIENTFUNDS');
