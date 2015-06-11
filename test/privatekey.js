@@ -22,6 +22,7 @@ describe('PrivateKey', function() {
   var wifTestnetUncompressed = '92jJzK4tbURm1C7udQXxeCBvXHoHJstDXRxAMouPG1k1XUaXdsu';
   var wifLivenet = 'L2Gkw3kKJ6N24QcDuH4XDqt9cTqsKTVNDGz1CRZhk9cq4auDUbJy';
   var wifLivenetUncompressed = '5JxgQaFM1FMd38cd14e3mbdxsdSa9iM2BV6DHBYsvGzxkTNQ7Un';
+  var wifNamecoin = '74pxNKNpByQ2kMow4d9kF6Z77BYeKztQNLq3dSyU4ES1K5KLNiz';
 
   it('should create a new random private key', function() {
     var a = new PrivateKey();
@@ -45,7 +46,6 @@ describe('PrivateKey', function() {
   });
 
   it('should create a private key from a custom network WIF string', function() {
-    var wifNamecoin = '74pxNKNpByQ2kMow4d9kF6Z77BYeKztQNLq3dSyU4ES1K5KLNiz';
     var nmc = {
       name: 'namecoin',
       alias: 'namecoin',
@@ -64,10 +64,7 @@ describe('PrivateKey', function() {
     };
     Networks.add(nmc);
     var nmcNet = Networks.get('namecoin');
-    var a = new PrivateKey(
-      '74pxNKNpByQ2kMow4d9kF6Z77BYeKztQNLq3dSyU4ES1K5KLNiz',
-      nmcNet
-    );
+    var a = new PrivateKey( wifNamecoin, nmcNet);
     should.exist(a);
     should.exist(a.bn);
     Networks.remove(nmcNet);
@@ -140,6 +137,22 @@ describe('PrivateKey', function() {
         var buf = Base58Check.decode('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
         var buf2 = Buffer.concat([new Buffer('ff', 'hex'), buf.slice(1, 33)]);
         return new PrivateKey(buf2);
+      }).to.throw('Invalid network');
+    });
+
+    it('should not be able to instantiate private key WIF because of network mismatch', function() {
+      var invalidNet = {
+        name: 'invalidnet',
+        alias: 'invalidnet',
+        pubkeyhash: 0xFF,
+        privatekey: 0xFF,
+        scripthash: 0xFF,
+        xpubkey: 0xFFFFFFFF,
+        xprivkey: 0xFFFFFFFF,
+        networkMagic: 0xFFFFFFFF
+      };
+      expect(function(){
+        var a = new PrivateKey( wifNamecoin, invalidNet );
       }).to.throw('Invalid network');
     });
 
