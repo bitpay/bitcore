@@ -2774,6 +2774,25 @@ describe('Wallet service', function() {
       });
     });
 
+    it('should allow creator copayer to remove a TX rejected by other copayer, in less than 24hrs', function(done) {
+      helpers.getAuthServer(wallet.copayers[1].id, function(server2) {
+        var signatures = helpers.clientSign(txp, TestData.copayers[1].xPrivKey);
+        server2.rejectTx({
+          txProposalId: txp.id,
+          signatures: signatures,
+        }, function(err) {
+          should.not.exist(err);
+          server.removePendingTx({
+            txProposalId: txp.id
+          }, function(err) {
+            should.not.exist(err);
+            done();
+          });
+        });
+      });
+    });
+
+
 
     it('should allow creator copayer to remove a TX signed by other copayer, after 24hrs', function(done) {
       helpers.getAuthServer(wallet.copayers[1].id, function(server2) {
