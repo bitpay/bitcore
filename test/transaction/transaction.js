@@ -257,6 +257,22 @@ describe('Transaction', function() {
       transaction.outputs.length.should.equal(2);
       transaction.outputs[1].satoshis.should.equal(10000);
     });
+    it('fee per kb can be set up manually', function() {
+      var inputs = _.map(_.range(10), function(i) {
+        var utxo = _.clone(simpleUtxoWith100000Satoshis);
+        utxo.outputIndex = i;
+        return utxo;
+      });
+      var transaction = new Transaction()
+        .from(inputs)
+        .to(toAddress, 950000)
+        .feePerKb(8000)
+        .change(changeAddress)
+        .sign(privateKey);
+      transaction._estimateSize().should.be.within(1000, 1999);
+      transaction.outputs.length.should.equal(2);
+      transaction.outputs[1].satoshis.should.equal(34000);
+    });
     it('if satoshis are invalid', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith100000Satoshis)
@@ -406,7 +422,9 @@ describe('Transaction', function() {
         .fee(10000000);
 
       expect(function() {
-        return transaction.serialize({disableMoreOutputThanInput: true});
+        return transaction.serialize({
+          disableMoreOutputThanInput: true
+        });
       }).to.throw(errors.Transaction.FeeError.TooLarge);
     });
     describe('skipping checks', function() {
