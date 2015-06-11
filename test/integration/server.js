@@ -184,13 +184,15 @@ helpers.stubAddressActivity = function(activeAddresses) {
 
 helpers.clientSign = WalletUtils.signTxp;
 
-helpers.createProposalOpts = function(toAddress, amount, message, signingKey) {
+helpers.createProposalOpts = function(toAddress, amount, message, signingKey, feePerKb) {
   var opts = {
     toAddress: toAddress,
     amount: helpers.toSatoshi(amount),
     message: message,
     proposalSignature: null,
   };
+  if (feePerKb) opts.feePerKb = feePerKb;
+
   var hash = WalletUtils.getProposalHash(opts.toAddress, opts.amount, opts.message);
   try {
     opts.proposalSignature = WalletUtils.signMessage(hash, signingKey);
@@ -1431,6 +1433,30 @@ describe('Wallet service', function() {
       });
     });
 
+    it('should be possible to use a smaller fee', function(done) {
+      helpers.stubUtxos(server, wallet, 1, function() {
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, null, TestData.copayers[0].privKey_1H_0);
+        server.createTx(txOpts, function(err, tx) {
+          should.exist(err);
+          err.code.should.equal('INSUFFICIENTFUNDS');
+          var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, null, TestData.copayers[0].privKey_1H_0, 5000);
+          server.createTx(txOpts, function(err, tx) {
+            should.not.exist(err);
+            tx.fee.should.equal(5000);
+            var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+            // Sign it to make sure Bitcore doesn't complain about the fees
+            server.signTx({
+              txProposalId: tx.id,
+              signatures: signatures,
+            }, function(err) {
+              should.not.exist(err);
+              done();
+            });
+          });
+        });
+      });
+    });
+
     it('should fail to create tx for dust amount', function(done) {
       helpers.stubUtxos(server, wallet, [1], function() {
         var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.00000001, null, TestData.copayers[0].privKey_1H_0);
@@ -1445,7 +1471,7 @@ describe('Wallet service', function() {
 
     it('should fail to create tx that would return change for dust amount', function(done) {
       helpers.stubUtxos(server, wallet, [1], function() {
-        var fee = Bitcore.Transaction.FEE_PER_KB / 1e8;
+        var fee = 10000 / 1e8;
         var change = 0.00000001;
         var amount = 1 - fee - change;
 
