@@ -1269,6 +1269,8 @@ describe('Wallet service', function() {
           server.getPendingTxs({}, function(err, txs) {
             should.not.exist(err);
             txs.length.should.equal(1);
+            // creator
+            txs[0].deleteLockTime.should.equal(0);
             server.getBalance({}, function(err, balance) {
               should.not.exist(err);
               balance.totalAmount.should.equal(helpers.toSatoshi(300));
@@ -2656,7 +2658,7 @@ describe('Wallet service', function() {
         });
       });
     });
-      
+
 
     it('should allow creator to remove an unsigned TX', function(done) {
       server.removePendingTx({
@@ -2746,6 +2748,7 @@ describe('Wallet service', function() {
         server2.removePendingTx({
           txProposalId: txp.id
         }, function(err) {
+          should.exist(err);
           err.message.should.contain('creators');
           server2.getPendingTxs({}, function(err, txs) {
             txs.length.should.equal(1);
@@ -2766,8 +2769,8 @@ describe('Wallet service', function() {
           server.removePendingTx({
             txProposalId: txp.id
           }, function(err) {
-            err.code.should.equal('TXACTIONED');
-            err.message.should.contain('other copayers');
+            err.code.should.equal('TXCANNOTREMOVE');
+            err.message.should.contain('Cannot remove');
             done();
           });
         });
@@ -2803,13 +2806,18 @@ describe('Wallet service', function() {
         }, function(err) {
           should.not.exist(err);
 
-          var clock = sinon.useFakeTimers(Date.now()+1+24*3600*1000);
-          server.removePendingTx({
-            txProposalId: txp.id
-          }, function(err) {
+          server.getPendingTxs({}, function(err, txs) {
             should.not.exist(err);
-            clock.restore();
-            done();
+            txs[0].deleteLockTime.should.be.above(WalletService.deleteLockTime-10);
+
+            var clock = sinon.useFakeTimers(Date.now() + 1 + 24 * 3600 * 1000);
+            server.removePendingTx({
+              txProposalId: txp.id
+            }, function(err) {
+              should.not.exist(err);
+              clock.restore();
+              done();
+            });
           });
         });
       });
@@ -2825,7 +2833,7 @@ describe('Wallet service', function() {
         }, function(err) {
           should.not.exist(err);
 
-          var clock = sinon.useFakeTimers(Date.now()+1+24*3600*1000);
+          var clock = sinon.useFakeTimers(Date.now() + 1 + 24 * 3600 * 1000);
           server2.removePendingTx({
             txProposalId: txp.id
           }, function(err) {
