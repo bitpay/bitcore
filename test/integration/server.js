@@ -1269,6 +1269,8 @@ describe('Wallet service', function() {
           server.getPendingTxs({}, function(err, txs) {
             should.not.exist(err);
             txs.length.should.equal(1);
+            // creator
+            txs[0].deleteLockTime.should.equal(0);
             server.getBalance({}, function(err, balance) {
               should.not.exist(err);
               balance.totalAmount.should.equal(helpers.toSatoshi(300));
@@ -2657,6 +2659,7 @@ describe('Wallet service', function() {
       });
     });
 
+
     it('should allow creator to remove an unsigned TX', function(done) {
       server.removePendingTx({
         txProposalId: txp.id
@@ -2669,7 +2672,7 @@ describe('Wallet service', function() {
       });
     });
 
-    it('should allow creator to remove an signed TX by himself', function(done) {
+    it('should allow creator to remove a signed TX by himself', function(done) {
       var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey);
       server.signTx({
         txProposalId: txp.id,
@@ -2745,6 +2748,7 @@ describe('Wallet service', function() {
         server2.removePendingTx({
           txProposalId: txp.id
         }, function(err) {
+          should.exist(err);
           err.message.should.contain('creators');
           server2.getPendingTxs({}, function(err, txs) {
             txs.length.should.equal(1);
@@ -2754,7 +2758,7 @@ describe('Wallet service', function() {
       });
     });
 
-    it('should not allow creator copayer to remove an TX signed by other copayer', function(done) {
+    it('should not allow creator copayer to remove a TX signed by other copayer, in less than 24hrs', function(done) {
       helpers.getAuthServer(wallet.copayers[1].id, function(server2) {
         var signatures = helpers.clientSign(txp, TestData.copayers[1].xPrivKey);
         server2.signTx({
@@ -2765,13 +2769,83 @@ describe('Wallet service', function() {
           server.removePendingTx({
             txProposalId: txp.id
           }, function(err) {
-            err.code.should.equal('TXACTIONED');
-            err.message.should.contain('other copayers');
+            err.code.should.equal('TXCANNOTREMOVE');
+            err.message.should.contain('Cannot remove');
             done();
           });
         });
       });
     });
+
+    it('should allow creator copayer to remove a TX rejected by other copayer, in less than 24hrs', function(done) {
+      helpers.getAuthServer(wallet.copayers[1].id, function(server2) {
+        var signatures = helpers.clientSign(txp, TestData.copayers[1].xPrivKey);
+        server2.rejectTx({
+          txProposalId: txp.id,
+          signatures: signatures,
+        }, function(err) {
+          should.not.exist(err);
+          server.removePendingTx({
+            txProposalId: txp.id
+          }, function(err) {
+            should.not.exist(err);
+            done();
+          });
+        });
+      });
+    });
+
+
+
+    it('should allow creator copayer to remove a TX signed by other copayer, after 24hrs', function(done) {
+      helpers.getAuthServer(wallet.copayers[1].id, function(server2) {
+        var signatures = helpers.clientSign(txp, TestData.copayers[1].xPrivKey);
+        server2.signTx({
+          txProposalId: txp.id,
+          signatures: signatures,
+        }, function(err) {
+          should.not.exist(err);
+
+          server.getPendingTxs({}, function(err, txs) {
+            should.not.exist(err);
+            txs[0].deleteLockTime.should.be.above(WalletService.deleteLockTime-10);
+
+            var clock = sinon.useFakeTimers(Date.now() + 1 + 24 * 3600 * 1000);
+            server.removePendingTx({
+              txProposalId: txp.id
+            }, function(err) {
+              should.not.exist(err);
+              clock.restore();
+              done();
+            });
+          });
+        });
+      });
+    });
+
+
+    it('should allow other copayer to remove a TX signed, after 24hrs', function(done) {
+      helpers.getAuthServer(wallet.copayers[1].id, function(server2) {
+        var signatures = helpers.clientSign(txp, TestData.copayers[1].xPrivKey);
+        server2.signTx({
+          txProposalId: txp.id,
+          signatures: signatures,
+        }, function(err) {
+          should.not.exist(err);
+
+          var clock = sinon.useFakeTimers(Date.now() + 1 + 24 * 3600 * 1000);
+          server2.removePendingTx({
+            txProposalId: txp.id
+          }, function(err) {
+            should.not.exist(err);
+            clock.restore();
+            done();
+          });
+        });
+      });
+    });
+
+
   });
 
   describe('#getTxHistory', function() {
