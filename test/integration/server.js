@@ -1583,6 +1583,83 @@ describe('Wallet service', function() {
     });
   });
 
+  describe('#createTx backoff time', function(done) {
+    var server, wallet, txid;
+
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        helpers.stubUtxos(server, wallet, _.range(2, 6), function() {
+          done();
+        });
+      });
+    });
+
+    it('should follow backoff time after consecutive rejections', function(done) {
+      async.series([
+
+        function(next) {
+          async.each(_.range(3), function(i, next) {
+              var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, null, TestData.copayers[0].privKey_1H_0);
+              server.createTx(txOpts, function(err, tx) {
+                should.not.exist(err);
+                server.rejectTx({
+                  txProposalId: tx.id,
+                  reason: 'some reason',
+                }, next);
+              });
+            },
+            next);
+        },
+        function(next) {
+          // Allow a 4th tx
+          var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, null, TestData.copayers[0].privKey_1H_0);
+          server.createTx(txOpts, function(err, tx) {
+            server.rejectTx({
+              txProposalId: tx.id,
+              reason: 'some reason',
+            }, next);
+          });
+        },
+        function(next) {
+          // Do not allow before backoff time
+          var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, null, TestData.copayers[0].privKey_1H_0);
+          server.createTx(txOpts, function(err, tx) {
+            should.exist(err);
+            err.code.should.equal('NOTALLOWEDTOCREATETX');
+            next();
+          });
+        },
+        function(next) {
+          var clock = sinon.useFakeTimers(Date.now() + (WalletService.backoffTimeMinutes + 2) * 60 * 1000);
+          var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, null, TestData.copayers[0].privKey_1H_0);
+          server.createTx(txOpts, function(err, tx) {
+            clock.restore();
+            server.rejectTx({
+              txProposalId: tx.id,
+              reason: 'some reason',
+            }, next);
+          });
+        },
+        function(next) {
+          // Do not allow a 5th tx before backoff time
+          var clock = sinon.useFakeTimers(Date.now() + (WalletService.backoffTimeMinutes + 2) * 60 * 1000 + 1);
+          var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, null, TestData.copayers[0].privKey_1H_0);
+          server.createTx(txOpts, function(err, tx) {
+            clock.restore();
+            should.exist(err);
+            err.code.should.equal('NOTALLOWEDTOCREATETX');
+            next();
+          });
+        },
+      ], function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+  });
+
   describe('#rejectTx', function() {
     var server, wallet, txid;
 
@@ -1593,7 +1670,6 @@ describe('Wallet service', function() {
         helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
           var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
           server.createTx(txOpts, function(err, tx) {
-
             should.not.exist(err);
             should.exist(tx);
             txid = tx.id;
@@ -1673,169 +1749,6 @@ describe('Wallet service', function() {
       ]);
     });
   });
-
-  describe('#createTx backoff time', function() {
-    var server, wallet;
-
-    beforeEach(function(done) {
-      helpers.createAndJoinWallet(2, 2, function(s, w) {
-        server = s;
-        wallet = w;
-        done();
-      });
-    });
-
-    it('should allow to create inmediatly after a 3 rejections', function(done) {
-      async.series([
-
-        function(next) {
-          async.each([0, 1, 2], function(i, a_next) {
-            helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
-              var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
-              server.createTx(txOpts, function(err, tx) {
-                should.not.exist(err);
-                server.rejectTx({
-                  txProposalId: tx.id,
-                  reason: 'some reason',
-                }, function(err) {
-                  should.not.exist(err);
-                  a_next();
-                });
-              });
-            });
-          }, next);
-        },
-        function(next) {
-          helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
-            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
-            server.createTx(txOpts, function(err, tx) {
-              should.not.exist(err);
-              next();
-            });
-          });
-        }
-      ], done);
-    });
-
-    it('should NOT allow to create inmediatly after a 4 rejections', function(done) {
-      async.series([
-
-        function(next) {
-          async.each([0, 1, 2, 3], function(i, a_next) {
-            helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
-              var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
-              server.createTx(txOpts, function(err, tx) {
-                should.not.exist(err);
-                server.rejectTx({
-                  txProposalId: tx.id,
-                  reason: 'some reason',
-                }, function(err) {
-                  should.not.exist(err);
-                  a_next();
-                });
-              });
-            });
-          }, next);
-        },
-        function(next) {
-          helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
-            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
-            server.createTx(txOpts, function(err, tx) {
-              err.code.should.equal('NOTALLOWEDTOCREATETX');
-              next();
-            });
-          });
-        }
-      ], done);
-    });
-
-    it('should  allow to create inmediatly after a 4 rejections after backofftime', function(done) {
-      async.series([
-
-        function(next) {
-          async.each([0, 1, 2, 3], function(i, a_next) {
-            helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
-              var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
-              server.createTx(txOpts, function(err, tx) {
-                should.not.exist(err);
-                server.rejectTx({
-                  txProposalId: tx.id,
-                  reason: 'some reason',
-                }, function(err) {
-                  should.not.exist(err);
-                  a_next();
-                });
-              });
-            });
-          }, next);
-        },
-        function(next) {
-          helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
-            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
-            server.createTx(txOpts, function(err, tx) {
-              err.code.should.equal('NOTALLOWEDTOCREATETX');
-              next();
-            });
-          });
-        },
-        function(next) {
-          helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
-            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
-            var clock = sinon.useFakeTimers(Date.now() + WalletService.backoffTimeMinutes * 60 * 1000 + 2000);
-            server.createTx(txOpts, function(err, tx) {
-              clock.restore();
-              should.not.exist(err);
-              next();
-            });
-          });
-        },
-      ], done);
-    });
-
-
-    it('should NOT allow to create after a 5 rejections after backofftime', function(done) {
-      async.series([
-
-        function(next) {
-          async.each([0, 1, 2, 3, 4], function(i, a_next) {
-            helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
-              var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
-              server.createTx(txOpts, function(err, tx) {
-                should.not.exist(err);
-                server.rejectTx({
-                  txProposalId: tx.id,
-                  reason: 'some reason',
-                }, function(err) {
-                  should.not.exist(err);
-                  a_next();
-                });
-              });
-            });
-          }, next);
-        },
-        function(next) {
-          helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
-            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
-            server.createTx(txOpts, function(err, tx) {
-              next();
-            });
-          });
-        },
-        function(next) {
-          helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
-            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
-            var clock = sinon.useFakeTimers(Date.now() + WalletService.backoffTimeMinutes * 60 * 1000 + 2000);
-            server.createTx(txOpts, function(err, tx) {
-              clock.restore();
-              err.code.should.equal('NOTALLOWEDTOCREATETX');
-              next();
-            });
-          });
-        },
-      ], done);
-    });
-  });
-
 
   describe('#signTx', function() {
     var server, wallet, txid;
@@ -3008,8 +2921,6 @@ describe('Wallet service', function() {
         });
       });
     });
-
-
   });
 
   describe('#getTxHistory', function() {
