@@ -1674,6 +1674,169 @@ describe('Wallet service', function() {
     });
   });
 
+  describe('#createTx backoff time', function() {
+    var server, wallet;
+
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should allow to create inmediatly after a 3 rejections', function(done) {
+      async.series([
+
+        function(next) {
+          async.each([0, 1, 2], function(i, a_next) {
+            helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
+              var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
+              server.createTx(txOpts, function(err, tx) {
+                should.not.exist(err);
+                server.rejectTx({
+                  txProposalId: tx.id,
+                  reason: 'some reason',
+                }, function(err) {
+                  should.not.exist(err);
+                  a_next();
+                });
+              });
+            });
+          }, next);
+        },
+        function(next) {
+          helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
+            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
+            server.createTx(txOpts, function(err, tx) {
+              should.not.exist(err);
+              next();
+            });
+          });
+        }
+      ], done);
+    });
+
+    it('should NOT allow to create inmediatly after a 4 rejections', function(done) {
+      async.series([
+
+        function(next) {
+          async.each([0, 1, 2, 3], function(i, a_next) {
+            helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
+              var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
+              server.createTx(txOpts, function(err, tx) {
+                should.not.exist(err);
+                server.rejectTx({
+                  txProposalId: tx.id,
+                  reason: 'some reason',
+                }, function(err) {
+                  should.not.exist(err);
+                  a_next();
+                });
+              });
+            });
+          }, next);
+        },
+        function(next) {
+          helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
+            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
+            server.createTx(txOpts, function(err, tx) {
+              err.code.should.equal('NOTALLOWEDTOCREATETX');
+              next();
+            });
+          });
+        }
+      ], done);
+    });
+
+    it('should  allow to create inmediatly after a 4 rejections after backofftime', function(done) {
+      async.series([
+
+        function(next) {
+          async.each([0, 1, 2, 3], function(i, a_next) {
+            helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
+              var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
+              server.createTx(txOpts, function(err, tx) {
+                should.not.exist(err);
+                server.rejectTx({
+                  txProposalId: tx.id,
+                  reason: 'some reason',
+                }, function(err) {
+                  should.not.exist(err);
+                  a_next();
+                });
+              });
+            });
+          }, next);
+        },
+        function(next) {
+          helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
+            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
+            server.createTx(txOpts, function(err, tx) {
+              err.code.should.equal('NOTALLOWEDTOCREATETX');
+              next();
+            });
+          });
+        },
+        function(next) {
+          helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
+            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
+            var clock = sinon.useFakeTimers(Date.now() + WalletService.backoffTimeMinutes * 60 * 1000 + 2000);
+            server.createTx(txOpts, function(err, tx) {
+              clock.restore();
+              should.not.exist(err);
+              next();
+            });
+          });
+        },
+      ], done);
+    });
+
+
+    it('should NOT allow to create after a 5 rejections after backofftime', function(done) {
+      async.series([
+
+        function(next) {
+          async.each([0, 1, 2, 3, 4], function(i, a_next) {
+            helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
+              var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
+              server.createTx(txOpts, function(err, tx) {
+                should.not.exist(err);
+                server.rejectTx({
+                  txProposalId: tx.id,
+                  reason: 'some reason',
+                }, function(err) {
+                  should.not.exist(err);
+                  a_next();
+                });
+              });
+            });
+          }, next);
+        },
+        function(next) {
+          helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
+            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
+            server.createTx(txOpts, function(err, tx) {
+              next();
+            });
+          });
+        },
+        function(next) {
+          helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
+            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
+            var clock = sinon.useFakeTimers(Date.now() + WalletService.backoffTimeMinutes * 60 * 1000 + 2000);
+            server.createTx(txOpts, function(err, tx) {
+              clock.restore();
+              err.code.should.equal('NOTALLOWEDTOCREATETX');
+              next();
+            });
+          });
+        },
+      ], done);
+    });
+  });
+
+
   describe('#signTx', function() {
     var server, wallet, txid;
 
@@ -2294,6 +2457,7 @@ describe('Wallet service', function() {
               next();
             });
           }, function(err) {
+            clock.restore();
             return done(err);
           });
         });
@@ -2808,7 +2972,7 @@ describe('Wallet service', function() {
 
           server.getPendingTxs({}, function(err, txs) {
             should.not.exist(err);
-            txs[0].deleteLockTime.should.be.above(WalletService.deleteLockTime-10);
+            txs[0].deleteLockTime.should.be.above(WalletService.deleteLockTime - 10);
 
             var clock = sinon.useFakeTimers(Date.now() + 1 + 24 * 3600 * 1000);
             server.removePendingTx({
@@ -2833,7 +2997,7 @@ describe('Wallet service', function() {
         }, function(err) {
           should.not.exist(err);
 
-          var clock = sinon.useFakeTimers(Date.now() + 1 + 24 * 3600 * 1000);
+          var clock = sinon.useFakeTimers(Date.now() + 2000 + WalletService.deleteLockTime * 1000);
           server2.removePendingTx({
             txProposalId: txp.id
           }, function(err) {
