@@ -2913,7 +2913,7 @@ describe('Wallet service', function() {
           txProposalId: txp.id
         }, function(err) {
           should.exist(err);
-          err.message.should.contain('creators');
+          err.code.should.contain('TXCANNOTREMOVE');
           server2.getPendingTxs({}, function(err, txs) {
             txs.length.should.equal(1);
             done();
