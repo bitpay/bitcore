@@ -288,6 +288,13 @@ describe('client API', function() {
           });
       });
     });
+
+    it('should handle critical errors (Case4)', function(done) {
+      var body = { code: 999, message: 'unexpected body'};
+      var ret = Client._parseError(body);
+      ret.toString().indexOf('ClientError').should.not.equal(-1);
+      done();
+    });
   });
 
   describe('Wallet Creation', function() {
