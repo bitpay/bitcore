@@ -15,14 +15,19 @@ describe('TXProposal', function() {
       var txp = TXP.fromObj(aTXP());
       should.exist(txp);
     });
+    it('should create a multiple-outputs TXP', function() {
+      var txp = TXP.fromObj(aTXP('multiple-outputs'));
+      should.exist(txp);
+    });
   });
-  describe('#_getBitcoreTx', function() {
+
+  describe('#getBitcoreTx', function() {
     it('should create a valid bitcore TX', function() {
       var txp = TXP.fromObj(aTXP());
       var t = txp.getBitcoreTx();
       should.exist(t);
     });
-    it('should order ouputs as specified by outputOrder', function() {
+    it('should order outputs as specified by outputOrder', function() {
       var txp = TXP.fromObj(aTXP());
 
       txp.outputOrder = [0, 1];
@@ -32,6 +37,12 @@ describe('TXProposal', function() {
       txp.outputOrder = [1, 0];
       var t = txp.getBitcoreTx();
       t.getChangeOutput().should.deep.equal(t.outputs[0]);
+    });
+    it('should create a bitcore TX with multiple outputs', function() {
+      var txp = TXP.fromObj(aTXP('multiple-outputs'));
+      txp.outputOrder = [0, 1, 2];
+      var t = txp.getBitcoreTx();
+      t.getChangeOutput().should.deep.equal(t.outputs[2]);
     });
   });
 
@@ -86,8 +97,8 @@ var theXPriv = 'xprv9s21ZrQH143K2rMHbXTJmWTuFx6ssqn1vyRoZqPkCXYchBSkp5ey8kMJe84s
 var theXPub = 'xpub661MyMwAqRbcFLRkhYzK8eQdoywNHJVsJCMQNDoMks5bZymuMcyDgYfnVQYq2Q9npnVmdTAthYGc3N3uxm5sEdnTpSqBc4YYTAhNnoSxCm9';
 var theSignatures = ['3045022100896aeb8db75fec22fddb5facf791927a996eb3aee23ee6deaa15471ea46047de02204c0c33f42a9d3ff93d62738712a8c8a5ecd21b45393fdd144e7b01b5a186f1f9'];
 
-var aTXP = function() {
-  return {
+var aTXP = function(type) {
+  var txp = {
     "version": "1.0.0",
     "createdOn": 1423146231,
     "id": "75c34f49-1ed6-255f-e9fd-0c71ae75ed1e",
@@ -123,5 +134,24 @@ var aTXP = function() {
     "status": "pending",
     "actions": [],
     "outputOrder": [0, 1],
+  };
+  if (type == 'multiple-outputs') {
+    txp.type = type;
+    txp.outputs = [
+      {
+        toAddress: "18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7",
+        amount: 10000000,
+        message: "first message"
+      },
+      {
+        toAddress: "18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7",
+        amount: 20000000,
+        message: "second message"
+      },
+    ];
+    txp.outputOrder = [0, 1, 2];
+    delete txp.toAddress;
+    delete txp.amount;
   }
+  return txp;
 };
