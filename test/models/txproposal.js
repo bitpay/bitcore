@@ -6,6 +6,7 @@ var sinon = require('sinon');
 var should = chai.should();
 var TXP = require('../../lib/model/txproposal');
 var Bitcore = require('bitcore-wallet-utils').Bitcore;
+var multiple_outputs = TXP.TYPE_MULTIPLEOUTPUTS;
 
 
 describe('TXProposal', function() {
@@ -16,7 +17,7 @@ describe('TXProposal', function() {
       should.exist(txp);
     });
     it('should create a multiple-outputs TXP', function() {
-      var txp = TXP.fromObj(aTXP('multiple-outputs'));
+      var txp = TXP.fromObj(aTXP(multiple_outputs));
       should.exist(txp);
     });
   });
@@ -39,7 +40,7 @@ describe('TXProposal', function() {
       t.getChangeOutput().should.deep.equal(t.outputs[0]);
     });
     it('should create a bitcore TX with multiple outputs', function() {
-      var txp = TXP.fromObj(aTXP('multiple-outputs'));
+      var txp = TXP.fromObj(aTXP(multiple_outputs));
       txp.outputOrder = [0, 1, 2];
       var t = txp.getBitcoreTx();
       t.getChangeOutput().should.deep.equal(t.outputs[2]);
