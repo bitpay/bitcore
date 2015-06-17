@@ -2,7 +2,7 @@
   "name": "bitcore-wallet-service",
   "description": "A service for Mutisig HD Bitcoin Wallets",
   "author": "BitPay Inc",
-  "version": "0.0.33",
+  "version": "0.0.34",
   "keywords": [
     "bitcoin",
     "copay",
@@ -19,8 +19,9 @@
   },
   "dependencies": {
     "async": "^0.9.0",
-    "bitcore": "^0.11.6",
-    "bitcore-wallet-utils": "0.0.13",
+    "bitcore": "git://github.com/bitpay/bitcore.git#a4ac3f50d300b3f89fad02f9e38fc536ac90abdc",
+    "bitcore-explorers": "^0.10.3",
+    "bitcore-wallet-utils": "0.0.15",
     "body-parser": "^1.11.0",
     "coveralls": "^2.11.2",
     "email-validator": "^1.0.1",
@@ -61,14 +62,11 @@
     "test": "./node_modules/.bin/mocha",
     "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage"
   },
-  "contributors": [
-    {
-      "name": "Ivan Socolsky",
-      "email": "ivan@bitpay.com"
-    },
-    {
-      "name": "Matias Alejo Garcia",
-      "email": "ematiu@gmail.com"
-    }
-  ]
+  "contributors": [{
+    "name": "Ivan Socolsky",
+    "email": "ivan@bitpay.com"
+  }, {
+    "name": "Matias Alejo Garcia",
+    "email": "ematiu@gmail.com"
+  }]
 }
