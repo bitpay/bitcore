@@ -1,15 +1,42 @@
-The following document is a step-by-step guide to run BWS in cluster mode.
+The following document is a step-by-step guide to run BWS.
 
+### Prerequisites
+Ensure MongoDB (2.6+) is installed and running. This document assumes that mongod is running at the default port 27017.
+See the configuration section to configure a different host/port.
+
+### Install BWS from NPM
+Use the following steps to Install BWS from the npmjs repository and run it with defaults.
+```bash
+npm install bitcore-wallet-service
+cd bitcore-wallet-service
+```
+To change configuration before running, see the Configuration section.
+```bash
+npm start
+```
+
+### Install BWS from github source
+Use the following steps to Install BWS from github source and run it with defaults.
+```bash
+git clone https://github.com/bitpay/bitcore-wallet-service.git
+cd bitcore-wallet-service
+npm install
+```
+To change configuration before running, see the Configuration section.
+```bash
+npm start
+```
+### Configuration
 Configuration for all required modules can be specified in https://github.com/bitpay/bitcore-wallet-service/blob/master/config.js
 
+BWS is composed of 5 separate node services -
+Locker - locker/locker.js
+Message Broker - messagebroker/messagebroker.js
+Blockchain Monitor - bcmonitor/bcmonitor.js (This service talks to the Blockchain Explorer service configured under blockchainExplorerOpts - see Configure blockchain service below.)
+Email Service - emailservice/emailservice.js
+Bitcore Wallet Service - bws.js
 
-###Install BWS
-```bash
-npm install bws
-cd bws
-````
-
-###Start MongoDB
+#### Configure MongoDB
 Example configuration for connecting to the MongoDB instance:
 ```javascript
   storageOpts: {
@@ -18,11 +45,7 @@ Example configuration for connecting to the MongoDB instance:
     },
   }
 ```
-
-###Start locker service
-```bash
-node locker/locker.js
-````
+#### Configure Locker service
 Example configuration for connecting to locker service:
 ```javascript
   lockOpts: {
@@ -33,10 +56,7 @@ Example configuration for connecting to locker service:
   }
 ```
 
-###Start message broker service
-```bash
-node messagebroker/messagebroker.js
-````
+#### Configure Message Broker service
 Example configuration for connecting to message broker service:
 ```javascript
   messageBrokerOpts: {
@@ -46,7 +66,7 @@ Example configuration for connecting to message broker service:
   }
 ```
 
-###Configure blockchain service
+#### Configure blockchain service
 Note: this service will be used by blockchain monitor service as well as by BWS itself.
 An example of this configuration is:
 ```javascript
@@ -62,18 +82,7 @@ An example of this configuration is:
   }
 ```
 
-
-###Start blockchain monitor service
-The monitor service is used to notify instances of BWS of incoming txs. It will connect to all previous services so it is important that those are already running.
-```bash
-node bcmonitor/bcmonitor.js
-````
-
-
-###Start email service
-```bash
-node emailservice/emailservice.js
-````
+#### Configure Email service
 Example configuration for connecting to email service (using postfix):
 ```javascript
   emailOpts: {
@@ -85,7 +94,7 @@ Example configuration for connecting to email service (using postfix):
   }
 ```
 
-###Enable clustering
+#### Enable clustering
 Change `config.js` file to enable and configure clustering:
 ```javascript
 {
@@ -94,7 +103,3 @@ Change `config.js` file to enable and configure clustering:
 }
 ```
 
-###Start bws instances
-```bash
-npm start
-````
