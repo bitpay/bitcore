@@ -32,7 +32,7 @@ Configuration for all required modules can be specified in https://github.com/bi
 BWS is composed of 5 separate node services -
 Locker - locker/locker.js
 Message Broker - messagebroker/messagebroker.js
-Blockchain Monitor - bcmonitor/bcmonitor.js (This service talks to the Insight service hosted by Bitpay)
+Blockchain Monitor - bcmonitor/bcmonitor.js (This service talks to the Blockchain Explorer service configured under blockchainExplorerOpts - see Configure blockchain service below.)
 Email Service - emailservice/emailservice.js
 Bitcore Wallet Service - bws.js
 
