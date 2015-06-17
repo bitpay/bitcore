@@ -12,6 +12,7 @@ var request = require('supertest');
 var tingodb = require('tingodb')({
   memStore: true
 });
+var log = require('../lib/log');
 
 var WalletUtils = require('bitcore-wallet-utils');
 var Bitcore = WalletUtils.Bitcore;
@@ -158,7 +159,7 @@ blockchainExplorerMock.reset = function() {
 
 
 describe('client API', function() {
-  var clients, app;
+  var clients, app, sandbox;
   var i = 0;
   beforeEach(function(done) {
     var storage = new Storage({
@@ -178,8 +179,16 @@ describe('client API', function() {
           return helpers.newClient(app);
         });
         blockchainExplorerMock.reset();
+        sandbox = sinon.sandbox.create();
+        sandbox.stub(log, 'warn');
+        sandbox.stub(log, 'info');
+        sandbox.stub(log, 'error');
         done();
       });
+  });
+  afterEach(function(done) {
+    sandbox.restore();
+    done();
   });
 
 

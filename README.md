@@ -21,7 +21,7 @@ You can start using bitcore-wallet-client in any of these two ways:
 
 ## Example
 
-Start your own local [Bitcore wallet service](https://github.com/bitpay/bitcore-wallet-service) instance. In this example we assume you have `bitcore-wallet-service` running on your `localhost:3001`.
+Start your own local [Bitcore wallet service](https://github.com/bitpay/bitcore-wallet-service) instance. In this example we assume you have `bitcore-wallet-service` running on your `localhost:3232`.
 
 Then create two files `irene.js` and `thomas.js` with the content below:
 
@@ -30,7 +30,7 @@ Then create two files `irene.js` and `thomas.js` with the content below:
 ``` javascript
 var Client = require('bitcore-wallet-client');
 var fs = require('fs');
-var BWS_INSTANCE_URL = 'http://localhost:3001/copay/api'
+var BWS_INSTANCE_URL = 'http://localhost:3232/copay/api'
 
 var client = new Client({
   baseUrl: BWS_INSTANCE_URL,
@@ -49,7 +49,7 @@ client.createWallet("My Wallet", "Irene", 2, 2, {network: 'testnet'}, function(e
 ``` javascript
 var Client = require('bitcore-wallet-client');
 var fs = require('fs');
-var BWS_INSTANCE_URL = 'http://localhost:3001/copay/api'
+var BWS_INSTANCE_URL = 'http://localhost:3232/copay/api'
 var secret = process.argv[2];
 
 var client = new Client({
