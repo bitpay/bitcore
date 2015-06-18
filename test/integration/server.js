@@ -216,7 +216,7 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
 
 var storage, blockchainExplorer;
 
-var useMongo = true;
+var useMongo = false;
 
 function initStorage(cb) {
   function getDb(cb) {
