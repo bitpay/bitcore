@@ -18,7 +18,7 @@ describe('TXProposal', function() {
       should.not.exist(txp.outputs);
     });
     it('should create a multiple-outputs TXP', function() {
-      var txp = TXP.create(aTxpOpts(TXP.TYPE_MULTIPLEOUTPUTS));
+      var txp = TXP.create(aTxpOpts(TXP.Types.MULTIPLEOUTPUTS));
       should.exist(txp);
       should.not.exist(txp.toAddress);
       should.exist(txp.outputs);
@@ -41,9 +41,9 @@ describe('TXProposal', function() {
       txp.toAddress.should.equal(aTXP().toAddress);
     });
     it('should copy a multiple-outputs TXP', function() {
-      var txp = TXP.fromObj(aTXP(TXP.TYPE_MULTIPLEOUTPUTS));
+      var txp = TXP.fromObj(aTXP(TXP.Types.MULTIPLEOUTPUTS));
       should.exist(txp);
-      txp.outputs.should.deep.equal(aTXP(TXP.TYPE_MULTIPLEOUTPUTS).outputs);
+      txp.outputs.should.deep.equal(aTXP(TXP.Types.MULTIPLEOUTPUTS).outputs);
     });
     it('should fail to copy a TXP of unknown type', function() {
       var txp;
@@ -74,7 +74,7 @@ describe('TXProposal', function() {
       t.getChangeOutput().should.deep.equal(t.outputs[0]);
     });
     it('should create a bitcore TX with multiple outputs', function() {
-      var txp = TXP.fromObj(aTXP(TXP.TYPE_MULTIPLEOUTPUTS));
+      var txp = TXP.fromObj(aTXP(TXP.Types.MULTIPLEOUTPUTS));
       txp.outputOrder = [0, 1, 2];
       var t = txp.getBitcoreTx();
       t.getChangeOutput().should.deep.equal(t.outputs[2]);
@@ -139,7 +139,7 @@ var aTxpOpts = function(type) {
     amount: 50000000,
     message: 'some message'
   };
-  if (type == TXP.TYPE_MULTIPLEOUTPUTS) {
+  if (type == TXP.Types.MULTIPLEOUTPUTS) {
     opts.outputs = [
       {
         toAddress: "18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7",
@@ -197,7 +197,7 @@ var aTXP = function(type) {
     "actions": [],
     "outputOrder": [0, 1],
   };
-  if (type == TXP.TYPE_MULTIPLEOUTPUTS) {
+  if (type == TXP.Types.MULTIPLEOUTPUTS) {
     txp.outputs = [
       {
         toAddress: "18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7",

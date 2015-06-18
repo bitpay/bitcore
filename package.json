@@ -20,7 +20,7 @@
   "dependencies": {
     "async": "^0.9.0",
     "bitcore": "^0.12.9",
-    "bitcore-wallet-utils": "0.0.16",
+    "bitcore-wallet-utils": "0.0.17",
     "body-parser": "^1.11.0",
     "coveralls": "^2.11.2",
     "email-validator": "^1.0.1",
