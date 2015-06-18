@@ -2,7 +2,7 @@
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "0.0.37",
+  "version": "0.0.38",
   "keywords": [
     "bitcoin",
     "copay",
@@ -21,9 +21,9 @@
   },
   "dependencies": {
     "async": "^0.9.0",
-    "bitcore": "^0.11.6",
-    "bitcore-payment-protocol": "0.10.2",
-    "bitcore-wallet-utils": "0.0.13",
+    "bitcore": "git://github.com/bitpay/bitcore.git#a4ac3f50d300b3f89fad02f9e38fc536ac90abdc",
+    "bitcore-payment-protocol": "^0.10.2",
+    "bitcore-wallet-utils": "0.0.15",
     "browser-request": "^0.3.3",
     "browserify": "^9.0.3",
     "lodash": "^3.3.1",
@@ -34,7 +34,7 @@
     "uglify": "^0.1.1"
   },
   "devDependencies": {
-    "bitcore-wallet-service": "0.0.31",
+    "bitcore-wallet-service": "0.0.34",
     "chai": "^1.9.1",
     "coveralls": "^2.11.2",
     "grunt-jsdoc": "^0.5.8",
