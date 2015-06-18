@@ -532,7 +532,7 @@ describe('client API', function() {
           blockchainExplorerMock.setUtxo(x0, 1, 2);
           blockchainExplorerMock.setUtxo(x0, 1, 2);
           var opts = {
-            amount: 3000,
+            amount: 30000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hello',
           };
@@ -542,7 +542,8 @@ describe('client API', function() {
               should.not.exist(err);
               x2.creatorName.should.equal('creator');
               x2.message.should.equal('hello');
-              x2.amount.should.equal(3000);
+              x2.amount.should.equal(30000);
+              x2.fee.should.equal(10000);
               x2.toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
               done();
             });
@@ -579,7 +580,7 @@ describe('client API', function() {
           blockchainExplorerMock.setUtxo(x0, 1, 2);
           blockchainExplorerMock.setUtxo(x0, 1, 2);
           var opts = {
-            amount: 200000000,
+            amount: 2 * 1e8 - 2000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hello 1-1',
           };
@@ -587,7 +588,15 @@ describe('client API', function() {
             should.exist(err);
             err.code.should.contain('INSUFFICIENTFUNDS');
             err.message.should.contain('for fee');
-            done();
+            opts.feePerKb = 2000;
+            clients[0].sendTxProposal(opts, function(err, x) {
+              should.not.exist(err);
+              clients[0].getTx(x.id, function(err, x2) {
+                should.not.exist(err);
+                x2.fee.should.equal(2000);
+                done();
+              });
+            });
           });
         });
       });
@@ -996,30 +1005,30 @@ describe('client API', function() {
           clients[1].signTxProposal(xx, function(err, yy, paypro) {
             should.not.exist(err);
             yy.status.should.equal('accepted');
-            http.onCall(5).yields(null, TestData.payProAckBuf); 
+            http.onCall(5).yields(null, TestData.payProAckBuf);
 
             clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
               should.not.exist(err);
               clients[1].getMainAddresses({}, function(err, walletAddresses) {
-              var args = http.lastCall.args[0];
-              var data = BitcorePayPro.Payment.decode(args.body);
-              var pay = new BitcorePayPro();
-              var p = pay.makePayment(data);
-              var refund_to = p.get('refund_to');
-              refund_to.length.should.equal(1);
+                var args = http.lastCall.args[0];
+                var data = BitcorePayPro.Payment.decode(args.body);
+                var pay = new BitcorePayPro();
+                var p = pay.makePayment(data);
+                var refund_to = p.get('refund_to');
+                refund_to.length.should.equal(1);
 
-              refund_to = refund_to[0];
+                refund_to = refund_to[0];
 
-              var amount = refund_to.get('amount')
-              amount.low.should.equal(404500);
-              amount.high.should.equal(0);
-              var s = refund_to.get('script');
-              s = new Bitcore.Script(s.buffer.slice(s.offset, s.limit));
-              var addr = new Bitcore.Address.fromScript(s, 'testnet');
-              addr.toString().should.equal(
-                walletAddresses[walletAddresses.length-1].address);
-              done();
-            });
+                var amount = refund_to.get('amount')
+                amount.low.should.equal(404500);
+                amount.high.should.equal(0);
+                var s = refund_to.get('script');
+                s = new Bitcore.Script(s.buffer.slice(s.offset, s.limit));
+                var addr = new Bitcore.Address.fromScript(s, 'testnet');
+                addr.toString().should.equal(
+                  walletAddresses[walletAddresses.length - 1].address);
+                done();
+              });
             });
           });
         });
@@ -1049,9 +1058,6 @@ describe('client API', function() {
         });
       });
     });
-
-
-
   });
 
   describe('Transactions Signatures and Rejection', function() {
