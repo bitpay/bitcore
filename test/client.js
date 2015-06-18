@@ -523,7 +523,7 @@ describe('client API', function() {
     });
   });
 
-  describe.only('Transaction Proposals Creation and Locked funds', function() {
+  describe('Transaction Proposals Creation and Locked funds', function() {
     it('Should create proposal and get it', function(done) {
       helpers.createAndJoinWallet(clients, 2, 2, function(w) {
         clients[0].createAddress(function(err, x0) {
@@ -590,7 +590,6 @@ describe('client API', function() {
             err.message.should.contain('for fee');
             opts.feePerKb = 2000;
             clients[0].sendTxProposal(opts, function(err, x) {
-              should.not.exist(err);
               should.not.exist(err);
               clients[0].getTx(x.id, function(err, x2) {
                 should.not.exist(err);
