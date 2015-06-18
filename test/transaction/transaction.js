@@ -830,15 +830,20 @@ describe('Transaction', function() {
 
     it('fails if the provided function does not work as expected', function() {
       var sorting = function(array) {
-        return [];
+        return [array[0], array[1], array[2]];
       };
       expect(function() {
         transaction.sortOutputs(sorting);
       }).to.throw(errors.Transaction.InvalidSorting);
     });
 
-
-
+    it('shuffle without change', function() {
+      var tx = new Transaction(transaction.toObject()).to(toAddress, half);
+      expect(tx.getChangeOutput()).to.be.null;
+      expect(function() {
+        tx.shuffleOutputs();
+      }).to.not.throw(errors.Transaction.InvalidSorting);
+    })
   });
 
   describe('clearOutputs', function() {
