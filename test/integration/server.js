@@ -1115,6 +1115,7 @@ describe('Wallet service', function() {
           should.exist(balance);
           balance.totalAmount.should.equal(helpers.toSatoshi(6));
           balance.lockedAmount.should.equal(0);
+          balance.totalKbToSendMax.should.equal(1);
           should.exist(balance.byAddress);
           balance.byAddress.length.should.equal(2);
           balance.byAddress[0].amount.should.equal(helpers.toSatoshi(4));
@@ -1134,6 +1135,7 @@ describe('Wallet service', function() {
         should.exist(balance);
         balance.totalAmount.should.equal(0);
         balance.lockedAmount.should.equal(0);
+        balance.totalKbToSendMax.should.equal(0);
         should.exist(balance.byAddress);
         balance.byAddress.length.should.equal(0);
         done();
@@ -1148,6 +1150,7 @@ describe('Wallet service', function() {
           should.exist(balance);
           balance.totalAmount.should.equal(0);
           balance.lockedAmount.should.equal(0);
+          balance.totalKbToSendMax.should.equal(0);
           should.exist(balance.byAddress);
           balance.byAddress.length.should.equal(0);
           done();
@@ -1165,6 +1168,18 @@ describe('Wallet service', function() {
             balance.byAddress[0].address.should.equal(utxos[0].address);
             done();
           });
+        });
+      });
+    });
+    it('should return correct kb to send max', function(done) {
+      helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
+        server.getBalance({}, function(err, balance) {
+          should.not.exist(err);
+          should.exist(balance);
+          balance.totalAmount.should.equal(helpers.toSatoshi(9));
+          balance.lockedAmount.should.equal(0);
+          balance.totalKbToSendMax.should.equal(2);
+          done();
         });
       });
     });
@@ -1611,6 +1626,56 @@ describe('Wallet service', function() {
                 should.not.exist(err);
                 balance.totalAmount.should.equal(helpers.toSatoshi(N * 100));
                 balance.lockedAmount.should.equal(balance.totalAmount);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+    it('should be able to send max amount', function(done) {
+      helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
+        server.getBalance({}, function(err, balance) {
+          should.not.exist(err);
+          balance.totalAmount.should.equal(helpers.toSatoshi(9));
+          balance.lockedAmount.should.equal(0);
+          balance.totalKbToSendMax.should.equal(3);
+          var max = (balance.totalAmount - balance.lockedAmount) - (balance.totalKbToSendMax * 10000);
+          var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max / 1e8, null, TestData.copayers[0].privKey_1H_0);
+          server.createTx(txOpts, function(err, tx) {
+            should.not.exist(err);
+            should.exist(tx);
+            tx.amount.should.equal(max);
+            tx.fee.should.equal(3 * 10000);
+            server.getBalance({}, function(err, balance) {
+              should.not.exist(err);
+              balance.lockedAmount.should.equal(helpers.toSatoshi(9));
+              done();
+            });
+          });
+        });
+      });
+    });
+    it('should be able to send max non-locked amount', function(done) {
+      helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
+        var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 3.5, null, TestData.copayers[0].privKey_1H_0);
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(err);
+          server.getBalance({}, function(err, balance) {
+            should.not.exist(err);
+            balance.totalAmount.should.equal(helpers.toSatoshi(9));
+            balance.lockedAmount.should.equal(helpers.toSatoshi(4));
+            balance.totalKbToSendMax.should.equal(2);
+            var max = (balance.totalAmount - balance.lockedAmount) - (balance.totalKbToSendMax * 2000);
+            var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max / 1e8, null, TestData.copayers[0].privKey_1H_0, 2000);
+            server.createTx(txOpts, function(err, tx) {
+              should.not.exist(err);
+              should.exist(tx);
+              tx.amount.should.equal(max);
+              tx.fee.should.equal(2 * 2000);
+              server.getBalance({}, function(err, balance) {
+                should.not.exist(err);
+                balance.lockedAmount.should.equal(helpers.toSatoshi(9));
                 done();
               });
             });
