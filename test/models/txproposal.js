@@ -6,7 +6,7 @@ var sinon = require('sinon');
 var should = chai.should();
 var TXP = require('../../lib/model/txproposal');
 var Bitcore = require('bitcore-wallet-utils').Bitcore;
-
+var WalletUtils = require('bitcore-wallet-utils');
 
 describe('TXProposal', function() {
 
@@ -23,15 +23,6 @@ describe('TXProposal', function() {
       should.not.exist(txp.toAddress);
       should.exist(txp.outputs);
     });
-    it('should fail to create a TXP of unknown type', function() {
-      var txp;
-      try {
-        txp = TXP.create(aTxpOpts('bogus'));
-      } catch(e) {
-        should.exist(e);
-      }
-      should.not.exist(txp);
-    });
   });
 
   describe('#fromObj', function() {
@@ -44,15 +35,6 @@ describe('TXProposal', function() {
       var txp = TXP.fromObj(aTXP(TXP.Types.MULTIPLEOUTPUTS));
       should.exist(txp);
       txp.outputs.should.deep.equal(aTXP(TXP.Types.MULTIPLEOUTPUTS).outputs);
-    });
-    it('should fail to copy a TXP of unknown type', function() {
-      var txp;
-      try {
-        txp = TXP.fromObj(aTxpOpts('bogus'));
-      } catch(e) {
-        should.exist(e);
-      }
-      should.not.exist(txp);
     });
   });
 
@@ -81,6 +63,36 @@ describe('TXProposal', function() {
     });
   });
 
+  describe('#getHeader', function() {
+    it('should be compatible with simple proposal legacy header', function() {
+      var x = TXP.fromObj(aTXP());
+      var proposalHeader = x.getHeader();
+      var pH = WalletUtils.getProposalHash.apply(WalletUtils, proposalHeader);
+      var uH = WalletUtils.getProposalHash(x.toAddress, x.amount, x.message, x.payProUrl);
+      pH.should.equal(uH);
+    });
+    it('should handle multiple-outputs', function() {
+      var x = TXP.fromObj(aTXP(TXP.Types.MULTIPLEOUTPUTS));
+      var proposalHeader = x.getHeader();
+      should.exist(proposalHeader);
+      var pH = WalletUtils.getProposalHash.apply(WalletUtils, proposalHeader);
+      should.exist(pH);
+    });
+  });
+
+  describe('#getTotalAmount', function() {
+    it('should be compatible with simple proposal legacy amount', function() {
+      var x = TXP.fromObj(aTXP());
+      var total = x.getTotalAmount();
+      total.should.equal(x.amount);
+    });
+    it('should handle multiple-outputs', function() {
+      var x = TXP.fromObj(aTXP(TXP.Types.MULTIPLEOUTPUTS));
+      var totalOutput = 0;
+      _.each(x.outputs, function(o) { totalOutput += o.amount });
+      x.getTotalAmount().should.equal(totalOutput);
+    });
+  });
 
   describe('#sign', function() {
     it('should sign 2-2', function() {
