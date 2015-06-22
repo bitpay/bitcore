@@ -1099,13 +1099,17 @@ describe('Wallet service', function() {
 
     it('should save & retrieve preferences', function(done) {
       server.savePreferences({
-        email: 'dummy@dummy.com'
+        email: 'dummy@dummy.com',
+        language: 'es',
+        unit: 'bit',
       }, function(err) {
         should.not.exist(err);
         server.getPreferences({}, function(err, preferences) {
           should.not.exist(err);
           should.exist(preferences);
           preferences.email.should.equal('dummy@dummy.com');
+          preferences.language.should.equal('es');
+          preferences.unit.should.equal('bit');
           done();
         });
       });
@@ -1125,20 +1129,40 @@ describe('Wallet service', function() {
       });
     });
     it.skip('should save preferences only for requesting wallet', function(done) {});
-    it('should validate email address', function(done) {
-      server.savePreferences({
-        email: ' '
-      }, function(err) {
-        should.exist(err);
-        err.message.should.contain('email');
-        server.savePreferences({
+    it('should validate entries', function(done) {
+      var invalid = [{
+        preferences: {
+          email: ' ',
+        },
+        expected: 'email'
+      }, {
+        preferences: {
           email: 'dummy@' + _.repeat('domain', 50),
-        }, function(err) {
+        },
+        expected: 'email'
+      }, {
+        preferences: {
+          language: 'xxxxx',
+        },
+        expected: 'language'
+      }, {
+        preferences: {
+          language: 123,
+        },
+        expected: 'language'
+      }, {
+        preferences: {
+          unit: 'xxxxx',
+        },
+        expected: 'unit'
+      }, ];
+      async.each(invalid, function(item, next) {
+        server.savePreferences(item.preferences, function(err) {
           should.exist(err);
-          err.message.should.contain('email');
-          done();
+          err.message.should.contain(item.expected);
+          next();
         });
-      });
+      }, done);
     });
   });
 
