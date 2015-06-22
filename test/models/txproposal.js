@@ -17,7 +17,7 @@ describe('TXProposal', function() {
       should.exist(txp.toAddress);
       should.not.exist(txp.outputs);
     });
-    it('should create a multiple-outputs TXP', function() {
+    xit('should create a multiple-outputs TXP', function() {
       var txp = TXP.create(aTxpOpts(TXP.Types.MULTIPLEOUTPUTS));
       should.exist(txp);
       should.not.exist(txp.toAddress);
@@ -31,7 +31,7 @@ describe('TXProposal', function() {
       should.exist(txp);
       txp.toAddress.should.equal(aTXP().toAddress);
     });
-    it('should copy a multiple-outputs TXP', function() {
+    xit('should copy a multiple-outputs TXP', function() {
       var txp = TXP.fromObj(aTXP(TXP.Types.MULTIPLEOUTPUTS));
       should.exist(txp);
       txp.outputs.should.deep.equal(aTXP(TXP.Types.MULTIPLEOUTPUTS).outputs);
@@ -64,14 +64,14 @@ describe('TXProposal', function() {
   });
 
   describe('#getHeader', function() {
-    it('should be compatible with simple proposal legacy header', function() {
+    xit('should be compatible with simple proposal legacy header', function() {
       var x = TXP.fromObj(aTXP());
       var proposalHeader = x.getHeader();
       var pH = WalletUtils.getProposalHash.apply(WalletUtils, proposalHeader);
       var uH = WalletUtils.getProposalHash(x.toAddress, x.amount, x.message, x.payProUrl);
       pH.should.equal(uH);
     });
-    it('should handle multiple-outputs', function() {
+    xit('should handle multiple-outputs', function() {
       var x = TXP.fromObj(aTXP(TXP.Types.MULTIPLEOUTPUTS));
       var proposalHeader = x.getHeader();
       should.exist(proposalHeader);
@@ -81,12 +81,12 @@ describe('TXProposal', function() {
   });
 
   describe('#getTotalAmount', function() {
-    it('should be compatible with simple proposal legacy amount', function() {
+    xit('should be compatible with simple proposal legacy amount', function() {
       var x = TXP.fromObj(aTXP());
       var total = x.getTotalAmount();
       total.should.equal(x.amount);
     });
-    it('should handle multiple-outputs', function() {
+    xit('should handle multiple-outputs', function() {
       var x = TXP.fromObj(aTXP(TXP.Types.MULTIPLEOUTPUTS));
       var totalOutput = 0;
       _.each(x.outputs, function(o) { totalOutput += o.amount });
