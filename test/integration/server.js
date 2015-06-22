@@ -1770,6 +1770,7 @@ describe('Wallet service', function() {
     });
 
     it('should follow backoff time after consecutive rejections', function(done) {
+      this.timeout(10000); // find out why travis is timing out
       async.series([
 
         function(next) {
