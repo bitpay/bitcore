@@ -1756,7 +1756,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe.skip('#createTx backoff time', function(done) {
+  describe('#createTx backoff time', function(done) {
     var server, wallet, txid;
 
     beforeEach(function(done) {
