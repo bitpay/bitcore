@@ -6,23 +6,45 @@ var sinon = require('sinon');
 var should = chai.should();
 var TXP = require('../../lib/model/txproposal');
 var Bitcore = require('bitcore-wallet-utils').Bitcore;
-
+var WalletUtils = require('bitcore-wallet-utils');
 
 describe('TXProposal', function() {
 
-  describe('#fromObj', function() {
+  describe('#create', function() {
     it('should create a TXP', function() {
-      var txp = TXP.fromObj(aTXP());
+      var txp = TXP.create(aTxpOpts());
       should.exist(txp);
+      should.exist(txp.toAddress);
+      should.not.exist(txp.outputs);
+    });
+    it('should create a multiple-outputs TXP', function() {
+      var txp = TXP.create(aTxpOpts(TXP.Types.MULTIPLEOUTPUTS));
+      should.exist(txp);
+      should.not.exist(txp.toAddress);
+      should.exist(txp.outputs);
     });
   });
-  describe('#_getBitcoreTx', function() {
+
+  describe('#fromObj', function() {
+    it('should copy a TXP', function() {
+      var txp = TXP.fromObj(aTXP());
+      should.exist(txp);
+      txp.toAddress.should.equal(aTXP().toAddress);
+    });
+    it('should copy a multiple-outputs TXP', function() {
+      var txp = TXP.fromObj(aTXP(TXP.Types.MULTIPLEOUTPUTS));
+      should.exist(txp);
+      txp.outputs.should.deep.equal(aTXP(TXP.Types.MULTIPLEOUTPUTS).outputs);
+    });
+  });
+
+  describe('#getBitcoreTx', function() {
     it('should create a valid bitcore TX', function() {
       var txp = TXP.fromObj(aTXP());
       var t = txp.getBitcoreTx();
       should.exist(t);
     });
-    it('should order ouputs as specified by outputOrder', function() {
+    it('should order outputs as specified by outputOrder', function() {
       var txp = TXP.fromObj(aTXP());
 
       txp.outputOrder = [0, 1];
@@ -33,8 +55,44 @@ describe('TXProposal', function() {
       var t = txp.getBitcoreTx();
       t.getChangeOutput().should.deep.equal(t.outputs[0]);
     });
+    it('should create a bitcore TX with multiple outputs', function() {
+      var txp = TXP.fromObj(aTXP(TXP.Types.MULTIPLEOUTPUTS));
+      txp.outputOrder = [0, 1, 2];
+      var t = txp.getBitcoreTx();
+      t.getChangeOutput().should.deep.equal(t.outputs[2]);
+    });
   });
 
+  describe('#getHeader', function() {
+    it('should be compatible with simple proposal legacy header', function() {
+      var x = TXP.fromObj(aTXP());
+      var proposalHeader = x.getHeader();
+      var pH = WalletUtils.getProposalHash.apply(WalletUtils, proposalHeader);
+      var uH = WalletUtils.getProposalHash(x.toAddress, x.amount, x.message, x.payProUrl);
+      pH.should.equal(uH);
+    });
+    it('should handle multiple-outputs', function() {
+      var x = TXP.fromObj(aTXP(TXP.Types.MULTIPLEOUTPUTS));
+      var proposalHeader = x.getHeader();
+      should.exist(proposalHeader);
+      var pH = WalletUtils.getProposalHash.apply(WalletUtils, proposalHeader);
+      should.exist(pH);
+    });
+  });
+
+  describe('#getTotalAmount', function() {
+    it('should be compatible with simple proposal legacy amount', function() {
+      var x = TXP.fromObj(aTXP());
+      var total = x.getTotalAmount();
+      total.should.equal(x.amount);
+    });
+    it('should handle multiple-outputs', function() {
+      var x = TXP.fromObj(aTXP(TXP.Types.MULTIPLEOUTPUTS));
+      var totalOutput = 0;
+      _.each(x.outputs, function(o) { totalOutput += o.amount });
+      x.getTotalAmount().should.equal(totalOutput);
+    });
+  });
 
   describe('#sign', function() {
     it('should sign 2-2', function() {
@@ -86,9 +144,36 @@ var theXPriv = 'xprv9s21ZrQH143K2rMHbXTJmWTuFx6ssqn1vyRoZqPkCXYchBSkp5ey8kMJe84s
 var theXPub = 'xpub661MyMwAqRbcFLRkhYzK8eQdoywNHJVsJCMQNDoMks5bZymuMcyDgYfnVQYq2Q9npnVmdTAthYGc3N3uxm5sEdnTpSqBc4YYTAhNnoSxCm9';
 var theSignatures = ['3045022100896aeb8db75fec22fddb5facf791927a996eb3aee23ee6deaa15471ea46047de02204c0c33f42a9d3ff93d62738712a8c8a5ecd21b45393fdd144e7b01b5a186f1f9'];
 
-var aTXP = function() {
-  return {
+var aTxpOpts = function(type) {
+  var opts = {
+    type: type,
+    toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+    amount: 50000000,
+    message: 'some message'
+  };
+  if (type == TXP.Types.MULTIPLEOUTPUTS) {
+    opts.outputs = [
+      {
+        toAddress: "18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7",
+        amount: 10000000,
+        message: "first message"
+      },
+      {
+        toAddress: "18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7",
+        amount: 20000000,
+        message: "second message"
+      },
+    ];
+    delete opts.toAddress;
+    delete opts.amount;
+  }
+  return opts;
+};
+
+var aTXP = function(type) {
+  var txp = {
     "version": "1.0.0",
+    "type": type,
     "createdOn": 1423146231,
     "id": "75c34f49-1ed6-255f-e9fd-0c71ae75ed1e",
     "walletId": "1",
@@ -123,5 +208,23 @@ var aTXP = function() {
     "status": "pending",
     "actions": [],
     "outputOrder": [0, 1],
+  };
+  if (type == TXP.Types.MULTIPLEOUTPUTS) {
+    txp.outputs = [
+      {
+        toAddress: "18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7",
+        amount: 10000000,
+        message: "first message"
+      },
+      {
+        toAddress: "18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7",
+        amount: 20000000,
+        message: "second message"
+      },
+    ];
+    txp.outputOrder = [0, 1, 2];
+    delete txp.toAddress;
+    delete txp.amount;
   }
+  return txp;
 };
