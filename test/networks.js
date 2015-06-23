@@ -49,30 +49,6 @@ describe('Networks', function() {
     should.equal(net, undefined);
   });
 
-  it('can return custom networks', function() {
-    var custom = {
-      name: 'customnet',
-      alias: 'mynet',
-      pubkeyhash: 0x10,
-      privatekey: 0x90,
-      scripthash: 0x08,
-      xpubkey: 0x0278b20e,
-      xprivkey: 0x0278ade4,
-      networkMagic: 0xe7beb4d4,
-      port: 20001,
-      dnsSeeds: [
-        'localhost',
-        'mynet.localhost'
-      ]
-    };
-    networks.add(custom);
-    customnet = networks.get('customnet');
-    var allNetworks = networks.all();
-    var customInOutput = allNetworks.indexOf(customnet) > -1;
-    should.equal(customInOutput, true);
-    networks.remove(customnet);
-  });
-
   it('should not set a network map for an undefined value', function() {
     var custom = {
       name: 'somenet',
