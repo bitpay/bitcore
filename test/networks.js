@@ -48,7 +48,7 @@ describe('Networks', function() {
     var net = networks.get('customnet');
     should.equal(net, undefined);
   });
-  
+
   it('should not set a network map for an undefined value', function() {
     var custom = {
       name: 'somenet',

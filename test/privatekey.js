@@ -22,6 +22,7 @@ describe('PrivateKey', function() {
   var wifTestnetUncompressed = '92jJzK4tbURm1C7udQXxeCBvXHoHJstDXRxAMouPG1k1XUaXdsu';
   var wifLivenet = 'L2Gkw3kKJ6N24QcDuH4XDqt9cTqsKTVNDGz1CRZhk9cq4auDUbJy';
   var wifLivenetUncompressed = '5JxgQaFM1FMd38cd14e3mbdxsdSa9iM2BV6DHBYsvGzxkTNQ7Un';
+  var wifNamecoin = '74pxNKNpByQ2kMow4d9kF6Z77BYeKztQNLq3dSyU4ES1K5KLNiz';
 
   it('should create a new random private key', function() {
     var a = new PrivateKey();
@@ -42,6 +43,31 @@ describe('PrivateKey', function() {
     var a = new PrivateKey(Networks.testnet);
     should.exist(a);
     should.exist(a.bn);
+  });
+
+  it('should create a private key from a custom network WIF string', function() {
+    var nmc = {
+      name: 'namecoin',
+      alias: 'namecoin',
+      pubkeyhash: 0x34,
+      privatekey: 0xB4,
+      // these below aren't the real NMC version numbers
+      scripthash: 0x08,
+      xpubkey: 0x0278b20e,
+      xprivkey: 0x0278ade4,
+      networkMagic: 0xf9beb4fe,
+      port: 20001,
+      dnsSeeds: [
+        'localhost',
+        'mynet.localhost'
+      ]
+    };
+    Networks.add(nmc);
+    var nmcNet = Networks.get('namecoin');
+    var a = new PrivateKey(wifNamecoin, nmcNet);
+    should.exist(a);
+    should.exist(a.bn);
+    Networks.remove(nmcNet);
   });
 
   it('should create a new random testnet private key with empty data', function() {
@@ -111,6 +137,12 @@ describe('PrivateKey', function() {
         var buf = Base58Check.decode('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
         var buf2 = Buffer.concat([new Buffer('ff', 'hex'), buf.slice(1, 33)]);
         return new PrivateKey(buf2);
+      }).to.throw('Invalid network');
+    });
+
+    it('should not be able to instantiate private key WIF because of network mismatch', function() {
+      expect(function(){
+        var a = new PrivateKey(wifNamecoin, 'testnet');
       }).to.throw('Invalid network');
     });
 
