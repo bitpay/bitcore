@@ -64,7 +64,7 @@ describe('PrivateKey', function() {
     };
     Networks.add(nmc);
     var nmcNet = Networks.get('namecoin');
-    var a = new PrivateKey( wifNamecoin, nmcNet);
+    var a = new PrivateKey(wifNamecoin, nmcNet);
     should.exist(a);
     should.exist(a.bn);
     Networks.remove(nmcNet);
@@ -141,18 +141,8 @@ describe('PrivateKey', function() {
     });
 
     it('should not be able to instantiate private key WIF because of network mismatch', function() {
-      var invalidNet = {
-        name: 'invalidnet',
-        alias: 'invalidnet',
-        pubkeyhash: 0xFF,
-        privatekey: 0xFF,
-        scripthash: 0xFF,
-        xpubkey: 0xFFFFFFFF,
-        xprivkey: 0xFFFFFFFF,
-        networkMagic: 0xFFFFFFFF
-      };
       expect(function(){
-        var a = new PrivateKey( wifNamecoin, invalidNet );
+        var a = new PrivateKey(wifNamecoin, 'testnet');
       }).to.throw('Invalid network');
     });
 
