@@ -1200,7 +1200,7 @@ describe('Wallet service', function() {
         });
       });
     });
-    xit('should return correct kb to send max', function(done) {
+    it('should return correct kb to send max', function(done) {
       helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
         server.getBalance({}, function(err, balance) {
           should.not.exist(err);
@@ -1662,7 +1662,7 @@ describe('Wallet service', function() {
       });
     });
 
-    xit('should create tx for type multiple_outputs', function(done) {
+    it('should create tx for type multiple_outputs', function(done) {
       helpers.stubUtxos(server, wallet, [100, 200], function() {
         var outputs = [
           { toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', amount: 75, message: 'message #1' },
@@ -1677,7 +1677,7 @@ describe('Wallet service', function() {
       });
     });
 
-    xit('should fail to create tx for type multiple_outputs with invalid output argument', function(done) {
+    it('should fail to create tx for type multiple_outputs with invalid output argument', function(done) {
       helpers.stubUtxos(server, wallet, [100, 200], function() {
         var outputs = [
           { toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', amount: 80, message: 'message #1', foo: 'bar' },
@@ -1692,7 +1692,7 @@ describe('Wallet service', function() {
       });
     });
 
-    xit('should fail to create tx for unsupported proposal type', function(done) {
+    it('should fail to create tx for unsupported proposal type', function(done) {
       helpers.stubUtxos(server, wallet, [100, 200], function() {
         var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, 'some message', TestData.copayers[0].privKey_1H_0);
         txOpts.type = 'bogus';
@@ -1704,7 +1704,7 @@ describe('Wallet service', function() {
       });
     });
 
-    xit('should be able to send max amount', function(done) {
+    it('should be able to send max amount', function(done) {
       helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
         server.getBalance({}, function(err, balance) {
           should.not.exist(err);
@@ -1727,7 +1727,7 @@ describe('Wallet service', function() {
         });
       });
     });
-    xit('should be able to send max non-locked amount', function(done) {
+    it('should be able to send max non-locked amount', function(done) {
       helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
         var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 3.5, null, TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
@@ -1756,7 +1756,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('#createTx backoff time', function(done) {
+  describe.skip('#createTx backoff time', function(done) {
     var server, wallet, txid;
 
     beforeEach(function(done) {
