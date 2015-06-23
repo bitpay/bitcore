@@ -1734,7 +1734,7 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          var clock = sinon.useFakeTimers(Date.now() + (WalletService.backoffTimeMinutes + 2) * 60 * 1000);
+          var clock = sinon.useFakeTimers(Date.now() + (WalletService.backoffTimeMinutes + 2) * 60 * 1000, 'Date');
           var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, null, TestData.copayers[0].privKey_1H_0);
           server.createTx(txOpts, function(err, tx) {
             clock.restore();
@@ -1746,7 +1746,7 @@ describe('Wallet service', function() {
         },
         function(next) {
           // Do not allow a 5th tx before backoff time
-          var clock = sinon.useFakeTimers(Date.now() + (WalletService.backoffTimeMinutes + 2) * 60 * 1000 + 1);
+          var clock = sinon.useFakeTimers(Date.now() + (WalletService.backoffTimeMinutes + 2) * 60 * 1000 + 1, 'Date');
           var txOpts = helpers.createProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, null, TestData.copayers[0].privKey_1H_0);
           server.createTx(txOpts, function(err, tx) {
             clock.restore();
@@ -2087,7 +2087,7 @@ describe('Wallet service', function() {
     });
 
     it('should broadcast a tx', function(done) {
-      var clock = sinon.useFakeTimers(1234000);
+      var clock = sinon.useFakeTimers(1234000, 'Date');
       helpers.stubBroadcast('999');
       server.broadcastTx({
         txProposalId: txpid
@@ -2460,7 +2460,7 @@ describe('Wallet service', function() {
 
     beforeEach(function(done) {
       this.timeout(5000);
-      clock = sinon.useFakeTimers();
+      clock = sinon.useFakeTimers('Date');
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
         wallet = w;
@@ -2989,7 +2989,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             txs[0].deleteLockTime.should.be.above(WalletService.deleteLockTime - 10);
 
-            var clock = sinon.useFakeTimers(Date.now() + 1 + 24 * 3600 * 1000);
+            var clock = sinon.useFakeTimers(Date.now() + 1 + 24 * 3600 * 1000, 'Date');
             server.removePendingTx({
               txProposalId: txp.id
             }, function(err) {
@@ -3012,7 +3012,7 @@ describe('Wallet service', function() {
         }, function(err) {
           should.not.exist(err);
 
-          var clock = sinon.useFakeTimers(Date.now() + 2000 + WalletService.deleteLockTime * 1000);
+          var clock = sinon.useFakeTimers(Date.now() + 2000 + WalletService.deleteLockTime * 1000, 'Date');
           server2.removePendingTx({
             txProposalId: txp.id
           }, function(err) {
