@@ -775,5 +775,38 @@ describe('Script', function() {
     });
   });
 
+  describe('#getSignatureOperationsCount', function() {
+    // comes from bitcoind src/test/sigopcount_tests
+    // only test calls to function with boolean param, not signature ref param
+    it('should match bitcoind behavior', function() {
+      Script().getSignatureOperationsCount(false).should.equal(0);
+      Script().getSignatureOperationsCount(true).should.equal(0);
+      var s1 = 'OP_1 01 FF OP_2 OP_CHECKMULTISIG';
+      Script(s1).getSignatureOperationsCount(true).should.equal(2);
+      s1 += ' OP_IF OP_CHECKSIG OP_ENDIF';
+      Script(s1).getSignatureOperationsCount(true).should.equal(3);
+      Script(s1).getSignatureOperationsCount(false).should.equal(21);
 
+      // do not test BOOST_CHECK_EQUAL(p2sh.GetSigOpCount(scriptSig), 3U);
+
+      var pubkey_hexs = [
+        '022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da',
+        '03e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e9',
+        '021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc18',
+      ];
+      var sortkeys = pubkey_hexs.slice(0, 3).map(PublicKey);
+      var s2 = Script.buildMultisigOut(sortkeys, 1);
+      Script(s2).getSignatureOperationsCount(true).should.equal(3);
+      Script(s2).getSignatureOperationsCount(false).should.equal(20);
+
+      // create a bogus, well-formed signature
+      var signature = bitcore.crypto.Signature.fromString('30060201FF0201FF');
+      var signatures = [ signature.toBuffer() ];
+      var p2sh = Script.buildP2SHMultisigIn(pubkey_hexs, 1, signatures, {});
+      p2sh.getSignatureOperationsCount(true).should.equal(0);
+      p2sh.getSignatureOperationsCount(false).should.equal(0);
+
+      // do not test BOOST_CHECK_EQUAL(p2sh.GetSigOpCount(scriptSig2), 3U);
+    });
+  });
 });
