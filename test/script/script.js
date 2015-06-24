@@ -794,9 +794,6 @@ describe('Script', function() {
       Script(s1).getSignatureOperationsCount(true).should.equal(3);
       Script(s1).getSignatureOperationsCount(false).should.equal(21);
     });
-    it.skip('should handle script arg from p2sh object from string', function() {
-      // BOOST_CHECK_EQUAL(p2sh.GetSigOpCount(scriptSig), 3U);
-    });
     it('should handle multi-sig-out scripts from utility function', function() {
       var sortKeys = pubkey_hexs.slice(0, 3).map(PublicKey);
       var s2 = Script.buildMultisigOut(sortKeys, 1);
@@ -810,9 +807,6 @@ describe('Script', function() {
       var p2sh = Script.buildP2SHMultisigIn(pubkey_hexs, 1, signatures, {});
       p2sh.getSignatureOperationsCount(true).should.equal(0);
       p2sh.getSignatureOperationsCount(false).should.equal(0);
-    });
-    it.skip('should handle script arg from p2sh object from utility', function() {
-      // BOOST_CHECK_EQUAL(p2sh.GetSigOpCount(scriptSig2), 3U);
     });
     it('should default the one and only argument to true', function() {
       var s1 = 'OP_1 01 FF OP_2 OP_CHECKMULTISIG';
