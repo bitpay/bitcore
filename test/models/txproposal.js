@@ -63,16 +63,6 @@ describe('TXProposal', function() {
     });
   });
 
-  describe('#getHeader', function() {
-    it('should handle multiple-outputs', function() {
-      var x = TxProposal.fromObj(aTXP(TxProposal.Types.MULTIPLEOUTPUTS));
-      var proposalHeader = x.getHeader();
-      should.exist(proposalHeader);
-      var pH = WalletUtils.getProposalHash(proposalHeader);
-      should.exist(pH);
-    });
-  });
-
   describe('#getTotalAmount', function() {
     it('should be compatible with simple proposal legacy amount', function() {
       var x = TxProposal.fromObj(aTXP());
