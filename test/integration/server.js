@@ -193,7 +193,10 @@ helpers.createProposalOpts = function(toAddress, amount, message, signingKey, fe
   };
   if (feePerKb) opts.feePerKb = feePerKb;
 
-  var hash = WalletUtils.getProposalHash(opts.toAddress, opts.amount, opts.message);
+  var txp = Model.TxProposal.create(opts);
+  var proposalHeader = txp.getHeader();
+  var hash = WalletUtils.getProposalHash(proposalHeader);
+
   try {
     opts.proposalSignature = WalletUtils.signMessage(hash, signingKey);
   } catch (ex) {}
@@ -221,7 +224,7 @@ helpers.createProposalOptsByType = function(type, outputs, message, signingKey, 
 
   var txp = Model.TxProposal.create(opts);
   var proposalHeader = txp.getHeader();
-  var hash = WalletUtils.getProposalHash.apply(WalletUtils, proposalHeader);
+  var hash = WalletUtils.getProposalHash(proposalHeader);
 
   try {
     opts.proposalSignature = WalletUtils.signMessage(hash, signingKey);
@@ -1399,8 +1402,8 @@ describe('Wallet service', function() {
         var txOpts = helpers.createProposalOpts('invalid address', 80, null, TestData.copayers[0].privKey_1H_0);
 
         server.createTx(txOpts, function(err, tx) {
-          should.not.exist(tx);
           should.exist(err);
+          should.not.exist(tx);
           // may fail due to Non-base58 character, or Checksum mismatch, or other
           done();
         });
@@ -1664,10 +1667,15 @@ describe('Wallet service', function() {
 
     it('should create tx for type multiple_outputs', function(done) {
       helpers.stubUtxos(server, wallet, [100, 200], function() {
-        var outputs = [
-          { toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', amount: 75, message: 'message #1' },
-          { toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', amount: 75, message: 'message #2' }
-        ];
+        var outputs = [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 75,
+          message: 'message #1'
+        }, {
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 75,
+          message: 'message #2'
+        }];
         var txOpts = helpers.createProposalOptsByType(Model.TxProposal.Types.MULTIPLEOUTPUTS, outputs, 'some message', TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
@@ -1679,10 +1687,16 @@ describe('Wallet service', function() {
 
     it('should fail to create tx for type multiple_outputs with invalid output argument', function(done) {
       helpers.stubUtxos(server, wallet, [100, 200], function() {
-        var outputs = [
-          { toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', amount: 80, message: 'message #1', foo: 'bar' },
-          { toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', amount: 90, message: 'message #2' }
-        ];
+        var outputs = [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 80,
+          message: 'message #1',
+          foo: 'bar'
+        }, {
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 90,
+          message: 'message #2'
+        }];
         var txOpts = helpers.createProposalOptsByType(Model.TxProposal.Types.MULTIPLEOUTPUTS, outputs, 'some message', TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.exist(err);
