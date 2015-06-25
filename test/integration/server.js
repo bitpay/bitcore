@@ -137,7 +137,7 @@ helpers.toSatoshi = function(btc) {
 helpers.stubUtxos = function(server, wallet, amounts, cb) {
   var amounts = [].concat(amounts);
 
-  async.map(_.range(1, Math.ceil(amounts.length / 2) + 1), function(i, next) {
+  async.mapSeries(_.range(1, Math.ceil(amounts.length / 2) + 1), function(i, next) {
     server.createAddress({}, function(err, address) {
       next(err, address);
     });
@@ -248,7 +248,7 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
 
 var storage, blockchainExplorer;
 
-var useMongo = false;
+var useMongo = true;
 
 function initStorage(cb) {
   function getDb(cb) {
@@ -1685,13 +1685,11 @@ describe('Wallet service', function() {
       });
     });
 
-    it('should fail to create tx for type multiple_outputs with invalid output argument', function(done) {
+    it('should fail to create tx for type multiple_outputs with missing output argument', function(done) {
       helpers.stubUtxos(server, wallet, [100, 200], function() {
         var outputs = [{
-          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 80,
           message: 'message #1',
-          foo: 'bar'
         }, {
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 90,
@@ -1700,7 +1698,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createProposalOptsByType(Model.TxProposal.Types.MULTIPLEOUTPUTS, outputs, 'some message', TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.exist(err);
-          err.message.should.contain('Invalid outputs argument');
+          err.message.should.contain('outputs argument missing');
           done();
         });
       });

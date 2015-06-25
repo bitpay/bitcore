@@ -64,18 +64,11 @@ describe('TXProposal', function() {
   });
 
   describe('#getHeader', function() {
-    it('should be compatible with simple proposal legacy header', function() {
-      var x = TxProposal.fromObj(aTXP());
-      var proposalHeader = x.getHeader();
-      var pH = WalletUtils.getProposalHash.apply(WalletUtils, proposalHeader);
-      var uH = WalletUtils.getProposalHash(x.toAddress, x.amount, x.message, x.payProUrl);
-      pH.should.equal(uH);
-    });
     it('should handle multiple-outputs', function() {
       var x = TxProposal.fromObj(aTXP(TxProposal.Types.MULTIPLEOUTPUTS));
       var proposalHeader = x.getHeader();
       should.exist(proposalHeader);
-      var pH = WalletUtils.getProposalHash.apply(WalletUtils, proposalHeader);
+      var pH = WalletUtils.getProposalHash(proposalHeader);
       should.exist(pH);
     });
   });
