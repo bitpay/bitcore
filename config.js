@@ -54,6 +54,7 @@ var config = {
     from: 'wallet-service@bitcore.io',
     templatePath: './lib/templates',
     defaultLanguage: 'en',
+    defaultUnit: 'btc',
   },
 };
 module.exports = config;

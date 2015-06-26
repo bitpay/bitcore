@@ -321,6 +321,7 @@ describe('Wallet service', function() {
           helpers.getAuthServer(copayer.id, function(server) {
             server.savePreferences({
               email: 'copayer' + (++i) + '@domain.com',
+              unit: 'bit',
             }, next);
           });
         }, function(err) {
@@ -543,7 +544,7 @@ describe('Wallet service', function() {
       });
     });
 
-    it.only('should build each email using preferences of the copayers', function(done) {
+    it('should build each email using preferences of the copayers', function(done) {
       // Set same email address for copayer1 and copayer2
       server.savePreferences({
         email: 'copayer1@domain.com',
@@ -571,7 +572,7 @@ describe('Wallet service', function() {
               spanish.from.should.equal('bws@dummy.net');
               spanish.subject.should.contain('Nuevo pago recibido');
               spanish.text.should.contain(wallet.name);
-              spanish.text.should.contain('0.123000 btc');
+              spanish.text.should.contain('0.123 btc');
               var english = _.find(emails, {
                 to: 'copayer2@domain.com'
               });
