@@ -308,7 +308,7 @@ describe('Wallet service', function() {
     WalletService.shutDown(done);
   });
 
-  describe.only('Email notifications', function() {
+  describe('Email notifications', function() {
     var server, wallet, mailerStub, emailService;
 
     beforeEach(function(done) {
@@ -543,9 +543,10 @@ describe('Wallet service', function() {
       });
     });
 
-    it('should build each email using preferences of the copayers', function(done) {
+    it.only('should build each email using preferences of the copayers', function(done) {
       // Set same email address for copayer1 and copayer2
       server.savePreferences({
+        email: 'copayer1@domain.com',
         language: 'es',
         unit: 'btc',
       }, function(err) {
