@@ -308,7 +308,7 @@ describe('Wallet service', function() {
     WalletService.shutDown(done);
   });
 
-  describe('Email notifications', function() {
+  describe.only('Email notifications', function() {
     var server, wallet, mailerStub, emailService;
 
     beforeEach(function(done) {
@@ -537,6 +537,48 @@ describe('Wallet service', function() {
                 unsent.should.be.empty;
                 done();
               });
+            }, 100);
+          });
+        });
+      });
+    });
+
+    it('should build each email using preferences of the copayers', function(done) {
+      // Set same email address for copayer1 and copayer2
+      server.savePreferences({
+        language: 'es',
+        unit: 'btc',
+      }, function(err) {
+        server.createAddress({}, function(err, address) {
+          should.not.exist(err);
+
+          // Simulate incoming tx notification
+          server._notify('NewIncomingTx', {
+            txid: '999',
+            address: address,
+            amount: 12300000,
+          }, function(err) {
+            setTimeout(function() {
+              var calls = mailerStub.sendMail.getCalls();
+              calls.length.should.equal(3);
+              var emails = _.map(calls, function(c) {
+                return c.args[0];
+              });
+              var spanish = _.find(emails, {
+                to: 'copayer1@domain.com'
+              });
+              spanish.from.should.equal('bws@dummy.net');
+              spanish.subject.should.contain('Nuevo pago recibido');
+              spanish.text.should.contain(wallet.name);
+              spanish.text.should.contain('0.123000 btc');
+              var english = _.find(emails, {
+                to: 'copayer2@domain.com'
+              });
+              english.from.should.equal('bws@dummy.net');
+              english.subject.should.contain('New payment received');
+              english.text.should.contain(wallet.name);
+              english.text.should.contain('123,000 bit');
+              done();
             }, 100);
           });
         });
