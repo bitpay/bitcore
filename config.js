@@ -52,6 +52,9 @@ var config = {
     ignoreTLS: true,
     subjectPrefix: '[Wallet Service]',
     from: 'wallet-service@bitcore.io',
+    templatePath: './lib/templates',
+    defaultLanguage: 'en',
+    defaultUnit: 'btc',
   },
 };
 module.exports = config;

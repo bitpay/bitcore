@@ -321,6 +321,7 @@ describe('Wallet service', function() {
           helpers.getAuthServer(copayer.id, function(server) {
             server.savePreferences({
               email: 'copayer' + (++i) + '@domain.com',
+              unit: 'bit',
             }, next);
           });
         }, function(err) {
@@ -349,6 +350,14 @@ describe('Wallet service', function() {
     });
 
     it('should notify copayers a new tx proposal has been created', function(done) {
+      var _readTemplateFile_old = emailService._readTemplateFile;
+      emailService._readTemplateFile = function(language, filename, cb) {
+        if (_.endsWith(filename, '.html')) {
+          return cb(null, 'Subject\n<html><body>{{walletName}}</body></html>');
+        } else {
+          _readTemplateFile_old.call(emailService, language, filename, cb);
+        }
+      };
       helpers.stubUtxos(server, wallet, [1, 1], function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, 'some message', TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
@@ -365,9 +374,13 @@ describe('Wallet service', function() {
             one.subject.should.contain('New payment proposal');
             one.text.should.contain(wallet.name);
             one.text.should.contain(wallet.copayers[0].name);
+            should.exist(one.html);
+            one.html.should.contain('<body>');
+            one.html.should.contain(wallet.name);
             server.storage.fetchUnsentEmails(function(err, unsent) {
               should.not.exist(err);
               unsent.should.be.empty;
+              emailService._readTemplateFile = _readTemplateFile_old;
               done();
             });
           }, 100);
@@ -537,6 +550,49 @@ describe('Wallet service', function() {
                 unsent.should.be.empty;
                 done();
               });
+            }, 100);
+          });
+        });
+      });
+    });
+
+    it('should build each email using preferences of the copayers', function(done) {
+      // Set same email address for copayer1 and copayer2
+      server.savePreferences({
+        email: 'copayer1@domain.com',
+        language: 'es',
+        unit: 'btc',
+      }, function(err) {
+        server.createAddress({}, function(err, address) {
+          should.not.exist(err);
+
+          // Simulate incoming tx notification
+          server._notify('NewIncomingTx', {
+            txid: '999',
+            address: address,
+            amount: 12300000,
+          }, function(err) {
+            setTimeout(function() {
+              var calls = mailerStub.sendMail.getCalls();
+              calls.length.should.equal(3);
+              var emails = _.map(calls, function(c) {
+                return c.args[0];
+              });
+              var spanish = _.find(emails, {
+                to: 'copayer1@domain.com'
+              });
+              spanish.from.should.equal('bws@dummy.net');
+              spanish.subject.should.contain('Nuevo pago recibido');
+              spanish.text.should.contain(wallet.name);
+              spanish.text.should.contain('0.123 btc');
+              var english = _.find(emails, {
+                to: 'copayer2@domain.com'
+              });
+              english.from.should.equal('bws@dummy.net');
+              english.subject.should.contain('New payment received');
+              english.text.should.contain(wallet.name);
+              english.text.should.contain('123,000 bit');
+              done();
             }, 100);
           });
         });
@@ -1099,13 +1155,17 @@ describe('Wallet service', function() {
 
     it('should save & retrieve preferences', function(done) {
       server.savePreferences({
-        email: 'dummy@dummy.com'
+        email: 'dummy@dummy.com',
+        language: 'es',
+        unit: 'bit',
       }, function(err) {
         should.not.exist(err);
         server.getPreferences({}, function(err, preferences) {
           should.not.exist(err);
           should.exist(preferences);
           preferences.email.should.equal('dummy@dummy.com');
+          preferences.language.should.equal('es');
+          preferences.unit.should.equal('bit');
           done();
         });
       });
@@ -1125,20 +1185,40 @@ describe('Wallet service', function() {
       });
     });
     it.skip('should save preferences only for requesting wallet', function(done) {});
-    it('should validate email address', function(done) {
-      server.savePreferences({
-        email: ' '
-      }, function(err) {
-        should.exist(err);
-        err.message.should.contain('email');
-        server.savePreferences({
+    it('should validate entries', function(done) {
+      var invalid = [{
+        preferences: {
+          email: ' ',
+        },
+        expected: 'email'
+      }, {
+        preferences: {
           email: 'dummy@' + _.repeat('domain', 50),
-        }, function(err) {
+        },
+        expected: 'email'
+      }, {
+        preferences: {
+          language: 'xxxxx',
+        },
+        expected: 'language'
+      }, {
+        preferences: {
+          language: 123,
+        },
+        expected: 'language'
+      }, {
+        preferences: {
+          unit: 'xxxxx',
+        },
+        expected: 'unit'
+      }, ];
+      async.each(invalid, function(item, next) {
+        server.savePreferences(item.preferences, function(err) {
           should.exist(err);
-          err.message.should.contain('email');
-          done();
+          err.message.should.contain(item.expected);
+          next();
         });
-      });
+      }, done);
     });
   });
 
