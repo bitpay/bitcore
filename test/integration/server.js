@@ -1160,6 +1160,7 @@ describe('Wallet service', function() {
         email: 'dummy@dummy.com',
         language: 'es',
         unit: 'bit',
+        dummy: 'ignored',
       }, function(err) {
         should.not.exist(err);
         server.getPreferences({}, function(err, preferences) {
@@ -1168,6 +1169,7 @@ describe('Wallet service', function() {
           preferences.email.should.equal('dummy@dummy.com');
           preferences.language.should.equal('es');
           preferences.unit.should.equal('bit');
+          should.not.exist(preferences.dummy);
           done();
         });
       });
@@ -1184,6 +1186,58 @@ describe('Wallet service', function() {
             done();
           });
         });
+      });
+    });
+    it('should save preferences incrementally', function(done) {
+      async.series([
+
+        function(next) {
+          server.savePreferences({
+            email: 'dummy@dummy.com',
+          }, next);
+        },
+        function(next) {
+          server.getPreferences({}, function(err, preferences) {
+            should.not.exist(err);
+            should.exist(preferences);
+            preferences.email.should.equal('dummy@dummy.com');
+            should.not.exist(preferences.language);
+            next();
+          });
+        },
+        function(next) {
+          server.savePreferences({
+            language: 'es',
+          }, next);
+        },
+        function(next) {
+          server.getPreferences({}, function(err, preferences) {
+            should.not.exist(err);
+            should.exist(preferences);
+            preferences.language.should.equal('es');
+            preferences.email.should.equal('dummy@dummy.com');
+            next();
+          });
+        },
+        function(next) {
+          server.savePreferences({
+            language: null,
+            unit: 'bit',
+          }, next);
+        },
+        function(next) {
+          server.getPreferences({}, function(err, preferences) {
+            should.not.exist(err);
+            should.exist(preferences);
+            preferences.unit.should.equal('bit');
+            should.not.exist(preferences.language);
+            preferences.email.should.equal('dummy@dummy.com');
+            next();
+          });
+        },
+      ], function(err) {
+        should.not.exist(err);
+        done();
       });
     });
     it.skip('should save preferences only for requesting wallet', function(done) {});
