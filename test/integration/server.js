@@ -260,7 +260,7 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
 
 var storage, blockchainExplorer;
 
-var useMongo = true;
+var useMongo = false;
 
 function initStorage(cb) {
   function getDb(cb) {
@@ -1186,7 +1186,7 @@ describe('Wallet service', function() {
         });
       });
     });
-    it.only('should save preferences incrementally', function(done) {
+    it('should save preferences incrementally', function(done) {
       async.series([
 
         function(next) {
