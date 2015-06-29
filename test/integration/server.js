@@ -388,6 +388,29 @@ describe('Wallet service', function() {
       });
     });
 
+    it('should not send email if unable to apply template to notification', function(done) {
+      var _applyTemplate_old = emailService._applyTemplate;
+      emailService._applyTemplate = function(template, data, cb) {
+        _applyTemplate_old.call(emailService, template, undefined, cb);
+      };
+      helpers.stubUtxos(server, wallet, [1, 1], function() {
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, 'some message', TestData.copayers[0].privKey_1H_0);
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(err);
+          setTimeout(function() {
+            var calls = mailerStub.sendMail.getCalls();
+            calls.length.should.equal(0);
+            server.storage.fetchUnsentEmails(function(err, unsent) {
+              should.not.exist(err);
+              unsent.should.be.empty;
+              emailService._applyTemplate = _applyTemplate_old;
+              done();
+            });
+          }, 100);
+        });
+      });
+    });
+
     it('should notify copayers a new outgoing tx has been created', function(done) {
       helpers.stubUtxos(server, wallet, [1, 1], function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, 'some message', TestData.copayers[0].privKey_1H_0);
