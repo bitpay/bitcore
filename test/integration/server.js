@@ -576,7 +576,7 @@ describe('Wallet service', function() {
 
 
   describe('#getInstanceWithAuth', function() {
-    it.only('should get server instance for existing copayer', function(done) {
+    it('should get server instance for existing copayer', function(done) {
       helpers.createAndJoinWallet(1, 2, function(s, wallet) {
         var xpriv = TestData.copayers[0].xPrivKey;
         var priv = TestData.copayers[0].privKey_1H_0;
