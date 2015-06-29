@@ -1158,6 +1158,7 @@ describe('Wallet service', function() {
         email: 'dummy@dummy.com',
         language: 'es',
         unit: 'bit',
+        dummy: 'ignored',
       }, function(err) {
         should.not.exist(err);
         server.getPreferences({}, function(err, preferences) {
@@ -1166,6 +1167,7 @@ describe('Wallet service', function() {
           preferences.email.should.equal('dummy@dummy.com');
           preferences.language.should.equal('es');
           preferences.unit.should.equal('bit');
+          should.not.exist(preferences.dummy);
           done();
         });
       });
