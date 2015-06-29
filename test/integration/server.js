@@ -260,7 +260,7 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
 
 var storage, blockchainExplorer;
 
-var useMongo = false;
+var useMongo = true;
 
 function initStorage(cb) {
   function getDb(cb) {
@@ -1182,6 +1182,58 @@ describe('Wallet service', function() {
             done();
           });
         });
+      });
+    });
+    it.only('should save preferences incrementally', function(done) {
+      async.series([
+
+        function(next) {
+          server.savePreferences({
+            email: 'dummy@dummy.com',
+          }, next);
+        },
+        function(next) {
+          server.getPreferences({}, function(err, preferences) {
+            should.not.exist(err);
+            should.exist(preferences);
+            preferences.email.should.equal('dummy@dummy.com');
+            should.not.exist(preferences.language);
+            next();
+          });
+        },
+        function(next) {
+          server.savePreferences({
+            language: 'es',
+          }, next);
+        },
+        function(next) {
+          server.getPreferences({}, function(err, preferences) {
+            should.not.exist(err);
+            should.exist(preferences);
+            preferences.language.should.equal('es');
+            preferences.email.should.equal('dummy@dummy.com');
+            next();
+          });
+        },
+        function(next) {
+          server.savePreferences({
+            language: null,
+            unit: 'bit',
+          }, next);
+        },
+        function(next) {
+          server.getPreferences({}, function(err, preferences) {
+            should.not.exist(err);
+            should.exist(preferences);
+            preferences.unit.should.equal('bit');
+            should.not.exist(preferences.language);
+            preferences.email.should.equal('dummy@dummy.com');
+            next();
+          });
+        },
+      ], function(err) {
+        should.not.exist(err);
+        done();
       });
     });
     it.skip('should save preferences only for requesting wallet', function(done) {});
