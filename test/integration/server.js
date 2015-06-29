@@ -653,6 +653,14 @@ describe('Wallet service', function() {
     });
   });
 
+  describe('#getInstance', function() {
+    it('should get server instance', function() {
+      var server = WalletService.getInstance({
+        clientVersion: 'bwc-0.0.1',
+      });
+      server.clientVersion.should.equal('bwc-0.0.1');
+    });
+  });
 
   describe('#getInstanceWithAuth', function() {
     it('should get server instance for existing copayer', function(done) {
