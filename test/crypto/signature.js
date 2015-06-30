@@ -34,6 +34,17 @@ describe('Signature', function() {
       }));
     });
 
+    it('should set nhashtype', function() {
+      var sig = Signature().set({
+        nhashtype: Signature.SIGHASH_ALL
+      });
+      sig.nhashtype.should.equal(Signature.SIGHASH_ALL);
+      sig.set({
+        nhashtype: Signature.SIGHASH_ALL | Signature.SIGHASH_ANYONECANPAY
+      });
+      sig.nhashtype.should.equal(Signature.SIGHASH_ALL | Signature.SIGHASH_ANYONECANPAY);
+    });
+
   });
 
   describe('#fromCompact', function() {
@@ -97,6 +108,25 @@ describe('Signature', function() {
 
   });
 
+  describe('#toTxFormat', function() {
+
+    it('should parse this known signature and rebuild it with updated zero-padded sighash types', function() {
+      var original = '30450221008bab1f0a2ff2f9cb8992173d8ad73c229d31ea8e10b0f4d4ae1a0d8ed76021fa02200993a6ec81755b9111762fc2cf8e3ede73047515622792110867d12654275e7201';
+      var buf = new Buffer(original, 'hex');
+      var sig = Signature.fromTxFormat(buf);
+      sig.nhashtype.should.equal(Signature.SIGHASH_ALL);
+      sig.set({
+        nhashtype: Signature.SIGHASH_ALL | Signature.SIGHASH_ANYONECANPAY
+      });
+      sig.toTxFormat().toString('hex').should.equal(original.slice(0, -2) + '81');
+      sig.set({
+        nhashtype: Signature.SIGHASH_SINGLE
+      });
+      sig.toTxFormat().toString('hex').should.equal(original.slice(0, -2) + '03');
+    });
+
+  });
+
   describe('#fromTxFormat', function() {
 
     it('should convert from this known tx-format buffer', function() {
@@ -108,7 +138,7 @@ describe('Signature', function() {
     });
 
     it('should parse this known signature and rebuild it', function() {
-      var hex = "3044022007415aa37ce7eaa6146001ac8bdefca0ddcba0e37c5dc08c4ac99392124ebac802207d382307fd53f65778b07b9c63b6e196edeadf0be719130c5db21ff1e700d67501";
+      var hex = '3044022007415aa37ce7eaa6146001ac8bdefca0ddcba0e37c5dc08c4ac99392124ebac802207d382307fd53f65778b07b9c63b6e196edeadf0be719130c5db21ff1e700d67501';
       var buf = new Buffer(hex, 'hex');
       var sig = Signature.fromTxFormat(buf);
       sig.toTxFormat().toString('hex').should.equal(hex);
