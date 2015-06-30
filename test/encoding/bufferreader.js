@@ -190,12 +190,48 @@ describe('BufferReader', function() {
       br.readUInt64LEBN().toNumber().should.equal(1);
     });
 
+    it('should return 10BTC', function() {
+      var tenbtc = 10 * 1e8;
+      var tenbtcBuffer = new Buffer('00ca9a3b00000000', 'hex');
+      var br = new BufferReader(tenbtcBuffer);
+      br.readUInt64LEBN().toNumber().should.equal(tenbtc);
+    });
+
     it('should return 2^30', function() {
       var buf = new Buffer(8);
       buf.fill(0);
       buf.writeUInt32LE(Math.pow(2, 30), 0);
       var br = new BufferReader(buf);
       br.readUInt64LEBN().toNumber().should.equal(Math.pow(2, 30));
+    });
+
+    it('should return 2^32 + 1', function() {
+      var num = Math.pow(2, 32) + 1;
+      var numBuffer = new Buffer('0100000001000000', 'hex');
+      var br = new BufferReader(numBuffer);
+      br.readUInt64LEBN().toNumber().should.equal(num);
+    });
+
+    it('should return max number of satoshis', function() {
+      var maxSatoshis = 21000000 * 1e8;
+      var maxSatoshisBuffer = new Buffer('0040075af0750700', 'hex');
+      var br = new BufferReader(maxSatoshisBuffer);
+      br.readUInt64LEBN().toNumber().should.equal(maxSatoshis);
+    });
+
+    it('should return 2^53 - 1', function() {
+      var maxSafe = Math.pow(2, 53) - 1;
+      var maxSafeBuffer = new Buffer('ffffffffffff1f00', 'hex');
+      var br = new BufferReader(maxSafeBuffer);
+      br.readUInt64LEBN().toNumber().should.equal(maxSafe);
+    });
+
+    it('should return 2^53', function() {
+      var bn = new BN('20000000000000', 16);
+      var bnBuffer = new Buffer('0000000000002000', 'hex');
+      var br = new BufferReader(bnBuffer);
+      var readbn = br.readUInt64LEBN();
+      readbn.cmp(bn).should.equal(0);
     });
 
     it('should return 0', function() {
