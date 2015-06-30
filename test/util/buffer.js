@@ -152,10 +152,5 @@ describe('buffer utils', function() {
       original[1].should.equal(reversed[1]);
       original[2].should.equal(reversed[0]);
     });
-    it('checks the argument type', function() {
-      expect(function() {
-        BufferUtil.reverse('invalid');
-      }).to.throw(errors.InvalidArgumentType);
-    });
   });
 });
