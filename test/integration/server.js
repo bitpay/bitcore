@@ -607,14 +607,14 @@ describe('Wallet service', function() {
               spanish.from.should.equal('bws@dummy.net');
               spanish.subject.should.contain('Nuevo pago recibido');
               spanish.text.should.contain(wallet.name);
-              spanish.text.should.contain('0.123 btc');
+              spanish.text.should.contain('0.123 BTC');
               var english = _.find(emails, {
                 to: 'copayer2@domain.com'
               });
               english.from.should.equal('bws@dummy.net');
               english.subject.should.contain('New payment received');
               english.text.should.contain(wallet.name);
-              english.text.should.contain('123,000 bit');
+              english.text.should.contain('123,000 bits');
               done();
             }, 100);
           });
