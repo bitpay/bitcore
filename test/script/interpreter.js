@@ -182,6 +182,9 @@ describe('Interpreter', function() {
     if (flagstr.indexOf('DISCOURAGE_UPGRADABLE_NOPS') !== -1) {
       flags = flags | Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS;
     }
+    if (flagstr.indexOf('CHECKLOCKTIMEVERIFY') !== -1) {
+      flags = flags | Interpreter.SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY;
+    }
     return flags;
   };
 
