@@ -191,7 +191,6 @@ describe('client API', function() {
     done();
   });
 
-
   describe('Client Internals', function() {
     it('should expose bitcore', function() {
       should.exist(Client.Bitcore);
@@ -858,6 +857,81 @@ describe('client API', function() {
             }, function(err, addr) {
               should.not.exist(err);
               addr.length.should.equal(2);
+              done();
+            });
+          });
+        });
+      });
+    });
+    it('Should create multi-output proposal and get it', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          blockchainExplorerMock.setUtxo(x0, 1, 2);
+          blockchainExplorerMock.setUtxo(x0, 1, 2);
+          var opts = {
+            type: 'multiple_outputs',
+            message: 'hello',
+            outputs: [
+              {
+                amount: 10000,
+                toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+                message: 'world',
+              },
+              {
+                amount: 20000,
+                toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+                message: 'nakamotosan',
+              }
+            ]
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            clients[0].getTx(x.id, function(err, x2) {
+              should.not.exist(err);
+              x2.creatorName.should.equal('creator');
+              x2.message.should.equal('hello');
+              x2.fee.should.equal(10000);
+              x2.outputs[0].toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
+              x2.outputs[0].amount.should.equal(10000);
+              x2.outputs[0].message.should.equal('world');
+              done();
+            });
+          });
+        });
+      });
+    });
+    it('Should create multi-output proposal and get it among all txps', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          blockchainExplorerMock.setUtxo(x0, 1, 2);
+          blockchainExplorerMock.setUtxo(x0, 1, 2);
+          var opts = {
+            type: 'multiple_outputs',
+            message: 'hello',
+            outputs: [
+              {
+                amount: 10000,
+                toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+                message: 'world',
+              },
+              {
+                amount: 20000,
+                toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+                message: 'nakamotosan',
+              }
+            ]
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            clients[0].getTxProposals({}, function(err, txps) {
+              should.not.exist(err);
+              should.exist(txps);
+              txps.length.should.equal(1);
+              txps[0].id.should.equal(x.id);
               done();
             });
           });
