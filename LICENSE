@@ -1,5 +1,8 @@
 Copyright (c) 2013-2015 BitPay, Inc.
 
+Parts of this software are based on Bitcoin Core
+Copyright (c) 2009-2015 The Bitcoin Core developers
+
 Parts of this software are based on fullnode
 Copyright (c) 2014 Ryan X. Charles
 Copyright (c) 2014 reddit, Inc.
