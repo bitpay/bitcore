@@ -378,8 +378,8 @@ describe('Address', function() {
         }).should.throw('needs to be p2pkh in, p2pkh out, p2sh in, or p2sh out');
       });
       it('should make this address from a p2pkh output script', function() {
-        var s = new Script('OP_DUP OP_HASH160 20 ' +
-          '0xc8e11b0eb0d2ad5362d894f048908341fa61b6e1 OP_EQUALVERIFY OP_CHECKSIG');
+        var s = new Script('OP_DUP OP_HASH160 ' +
+          'c8e11b0eb0d2ad5362d894f048908341fa61b6e1 OP_EQUALVERIFY OP_CHECKSIG');
         var buf = s.toBuffer();
         var a = Address.fromScript(s, 'livenet');
         a.toString().should.equal('1KK9oz4bFH8c1t6LmighHaoSEGx3P3FEmc');
@@ -388,7 +388,7 @@ describe('Address', function() {
       });
 
       it('should make this address from a p2sh input script', function() {
-        var s = Script.fromString('OP_HASH160 20 0xa6ed4af315271e657ee307828f54a4365fa5d20f OP_EQUAL');
+        var s = Script.fromString('OP_HASH160 a6ed4af315271e657ee307828f54a4365fa5d20f OP_EQUAL');
         var a = Address.fromScript(s, 'livenet');
         a.toString().should.equal('3GueMn6ruWVfQTN4XKBGEbCbGLwRSUhfnS');
         var b = new Address(s, 'livenet');

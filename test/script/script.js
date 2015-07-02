@@ -162,10 +162,10 @@ describe('Script', function() {
   describe('#fromString', function() {
 
     it('should parse these known scripts', function() {
-      Script.fromString('OP_0 OP_PUSHDATA4 3 0x010203 OP_0').toString().should.equal('OP_0 OP_PUSHDATA4 3 0x010203 OP_0');
-      Script.fromString('OP_0 OP_PUSHDATA2 3 0x010203 OP_0').toString().should.equal('OP_0 OP_PUSHDATA2 3 0x010203 OP_0');
-      Script.fromString('OP_0 OP_PUSHDATA1 3 0x010203 OP_0').toString().should.equal('OP_0 OP_PUSHDATA1 3 0x010203 OP_0');
-      Script.fromString('OP_0 3 0x010203 OP_0').toString().should.equal('OP_0 3 0x010203 OP_0');
+      Script.fromString('OP_0 OP_PUSHDATA4 010203 OP_0').toString().should.equal('OP_0 OP_PUSHDATA4 010203 OP_0');
+      Script.fromString('OP_0 OP_PUSHDATA2 010203 OP_0').toString().should.equal('OP_0 OP_PUSHDATA2 010203 OP_0');
+      Script.fromString('OP_0 OP_PUSHDATA1 010203 OP_0').toString().should.equal('OP_0 OP_PUSHDATA1 010203 OP_0');
+      Script.fromString('OP_0 010203 OP_0').toString().should.equal('OP_0 010203 OP_0');
     });
 
   });
@@ -188,7 +188,7 @@ describe('Script', function() {
       script.chunks[0].opcodenum.should.equal(buf[0]);
       script.chunks[1].buf.toString('hex').should.equal('010203');
       script.chunks[2].opcodenum.should.equal(buf[buf.length - 1]);
-      script.toString().toString('hex').should.equal('OP_0 OP_PUSHDATA4 3 0x010203 OP_0');
+      script.toString().toString('hex').should.equal('OP_0 OP_PUSHDATA4 010203 OP_0');
     });
 
   });
@@ -210,47 +210,48 @@ describe('Script', function() {
     it('validates that this 40-byte OP_RETURN is standard', function() {
       var buf = new Buffer(40);
       buf.fill(0);
-      Script('OP_RETURN 40 0x' + buf.toString('hex')).isDataOut().should.equal(true);
+      Script('OP_RETURN ' + buf.toString('hex')).isDataOut().should.equal(true);
     });
+
     it('validates that this 80-byte OP_RETURN is standard', function() {
       var buf = new Buffer(80);
       buf.fill(0);
-      Script('OP_RETURN OP_PUSHDATA1 80 0x' + buf.toString('hex')).isDataOut().should.equal(true);
+      Script('OP_RETURN OP_PUSHDATA1 ' + buf.toString('hex')).isDataOut().should.equal(true);
     });
 
     it('validates that this 40-byte long OP_CHECKMULTISIG is not standard op_return', function() {
       var buf = new Buffer(40);
       buf.fill(0);
-      Script('OP_CHECKMULTISIG 40 0x' + buf.toString('hex')).isDataOut().should.equal(false);
+      Script('OP_CHECKMULTISIG ' + buf.toString('hex')).isDataOut().should.equal(false);
     });
 
     it('validates that this 81-byte OP_RETURN is not a valid standard OP_RETURN', function() {
       var buf = new Buffer(81);
       buf.fill(0);
-      Script('OP_RETURN OP_PUSHDATA1 81 0x' + buf.toString('hex')).isDataOut().should.equal(false);
+      Script('OP_RETURN OP_PUSHDATA1 ' + buf.toString('hex')).isDataOut().should.equal(false);
     });
   });
 
   describe('#isPublicKeyHashIn', function() {
 
     it('should identify this known pubkeyhashin', function() {
-      Script('73 0x3046022100bb3c194a30e460d81d34be0a230179c043a656f67e3c5c8bf47eceae7c4042ee0221008bf54ca11b2985285be0fd7a212873d243e6e73f5fad57e8eb14c4f39728b8c601 65 0x04e365859b3c78a8b7c202412b949ebca58e147dba297be29eee53cd3e1d300a6419bc780cc9aec0dc94ed194e91c8f6433f1b781ee00eac0ead2aae1e8e0712c6').isPublicKeyHashIn().should.equal(true);
+      Script('3046022100bb3c194a30e460d81d34be0a230179c043a656f67e3c5c8bf47eceae7c4042ee0221008bf54ca11b2985285be0fd7a212873d243e6e73f5fad57e8eb14c4f39728b8c601 04e365859b3c78a8b7c202412b949ebca58e147dba297be29eee53cd3e1d300a6419bc780cc9aec0dc94ed194e91c8f6433f1b781ee00eac0ead2aae1e8e0712c6').isPublicKeyHashIn().should.equal(true);
     });
 
     it('should identify this known pubkeyhashin starting with 0x02', function() {
-      Script('73 0x3046022100bb3c194a30e460d81d34be0a230179c043a656f67e3c5c8bf47eceae7c4042ee0221008bf54ca11b2985285be0fd7a212873d243e6e73f5fad57e8eb14c4f39728b8c601 21 0x02aec6b86621e7fef63747fbfd6a6e7d54c8e1052044ef2dd2c5e46656ef1194d4').isPublicKeyHashIn().should.equal(true);
+      Script('3046022100bb3c194a30e460d81d34be0a230179c043a656f67e3c5c8bf47eceae7c4042ee0221008bf54ca11b2985285be0fd7a212873d243e6e73f5fad57e8eb14c4f39728b8c601 02aec6b86621e7fef63747fbfd6a6e7d54c8e1052044ef2dd2c5e46656ef1194d4').isPublicKeyHashIn().should.equal(true);
     });
 
     it('should identify this known pubkeyhashin starting with 0x03', function() {
-      Script('73 0x3046022100bb3c194a30e460d81d34be0a230179c043a656f67e3c5c8bf47eceae7c4042ee0221008bf54ca11b2985285be0fd7a212873d243e6e73f5fad57e8eb14c4f39728b8c601 21 0x03e724d93c4fda5f1236c525de7ffac6c5f1f72b0f5cdd1fc4b4f5642b6d055fcc').isPublicKeyHashIn().should.equal(true);
+      Script('3046022100bb3c194a30e460d81d34be0a230179c043a656f67e3c5c8bf47eceae7c4042ee0221008bf54ca11b2985285be0fd7a212873d243e6e73f5fad57e8eb14c4f39728b8c601 03e724d93c4fda5f1236c525de7ffac6c5f1f72b0f5cdd1fc4b4f5642b6d055fcc').isPublicKeyHashIn().should.equal(true);
     });
 
     it('should identify this known non-pubkeyhashin', function() {
-      Script('73 0x3046022100bb3c194a30e460d81d34be0a230179c043a656f67e3c5c8bf47eceae7c4042ee0221008bf54ca11b2985285be0fd7a212873d243e6e73f5fad57e8eb14c4f39728b8c601 65 0x04e365859b3c78a8b7c202412b949ebca58e147dba297be29eee53cd3e1d300a6419bc780cc9aec0dc94ed194e91c8f6433f1b781ee00eac0ead2aae1e8e0712c6 OP_CHECKSIG').isPublicKeyHashIn().should.equal(false);
+      Script('3046022100bb3c194a30e460d81d34be0a230179c043a656f67e3c5c8bf47eceae7c4042ee0221008bf54ca11b2985285be0fd7a212873d243e6e73f5fad57e8eb14c4f39728b8c601 04e365859b3c78a8b7c202412b949ebca58e147dba297be29eee53cd3e1d300a6419bc780cc9aec0dc94ed194e91c8f6433f1b781ee00eac0ead2aae1e8e0712c6 OP_CHECKSIG').isPublicKeyHashIn().should.equal(false);
     });
 
     it('should identify this known pubkey', function() {
-      Script('70 0x3043021f336721e4343f67c835cbfd465477db09073dc38a936f9c445d573c1c8a7fdf022064b0e3cb6892a9ecf870030e3066bc259e1f24841c9471d97f9be08b73f6530701 33 0x0370b2e1dcaa8f51cb0ead1221dd8cb31721502b3b5b7d4b374d263dfec63a4369').isPublicKeyHashIn().should.equal(true);
+      Script('3043021f336721e4343f67c835cbfd465477db09073dc38a936f9c445d573c1c8a7fdf022064b0e3cb6892a9ecf870030e3066bc259e1f24841c9471d97f9be08b73f6530701 0370b2e1dcaa8f51cb0ead1221dd8cb31721502b3b5b7d4b374d263dfec63a4369').isPublicKeyHashIn().should.equal(true);
     });
 
   });
@@ -258,32 +259,32 @@ describe('Script', function() {
   describe('#isPublicKeyHashOut', function() {
 
     it('should identify this known pubkeyhashout as pubkeyhashout', function() {
-      Script('OP_DUP OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').isPublicKeyHashOut().should.equal(true);
+      Script('OP_DUP OP_HASH160 0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').isPublicKeyHashOut().should.equal(true);
     });
 
     it('should identify this known non-pubkeyhashout as not pubkeyhashout 1', function() {
-      Script('OP_DUP OP_HASH160 20 0x0000000000000000000000000000000000000000').isPublicKeyHashOut().should.equal(false);
+      Script('OP_DUP OP_HASH160 0000000000000000000000000000000000000000').isPublicKeyHashOut().should.equal(false);
     });
 
     it('should identify this known non-pubkeyhashout as not pubkeyhashout 2', function() {
-      Script('OP_DUP OP_HASH160 2 0x0000 OP_EQUALVERIFY OP_CHECKSIG').isPublicKeyHashOut().should.equal(false);
+      Script('OP_DUP OP_HASH160 0000 OP_EQUALVERIFY OP_CHECKSIG').isPublicKeyHashOut().should.equal(false);
     });
 
   });
 
   describe('#isMultisigOut', function() {
     it('should identify known multisig out 1', function() {
-      Script('OP_2 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 OP_2 OP_CHECKMULTISIG').isMultisigOut().should.equal(true);
+      Script('OP_2 038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 OP_2 OP_CHECKMULTISIG').isMultisigOut().should.equal(true);
     });
     it('should identify known multisig out 2', function() {
-      Script('OP_1 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 OP_2 OP_CHECKMULTISIG').isMultisigOut().should.equal(true);
+      Script('OP_1 038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 OP_2 OP_CHECKMULTISIG').isMultisigOut().should.equal(true);
     });
     it('should identify known multisig out 3', function() {
-      Script('OP_2 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 21 0x03363d90d447b00c9c99ceac05b6262ee053441c7e55552ffe526bad8f83ff4640 OP_3 OP_CHECKMULTISIG').isMultisigOut().should.equal(true);
+      Script('OP_2 038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 03363d90d447b00c9c99ceac05b6262ee053441c7e55552ffe526bad8f83ff4640 OP_3 OP_CHECKMULTISIG').isMultisigOut().should.equal(true);
     });
 
     it('should identify non-multisig out 1', function() {
-      Script('OP_2 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 OP_2 OP_CHECKMULTISIG OP_EQUAL').isMultisigOut().should.equal(false);
+      Script('OP_2 038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 OP_2 OP_CHECKMULTISIG OP_EQUAL').isMultisigOut().should.equal(false);
     });
     it('should identify non-multisig out 2', function() {
       Script('OP_2').isMultisigOut().should.equal(false);
@@ -292,22 +293,23 @@ describe('Script', function() {
 
   describe('#isMultisigIn', function() {
     it('should identify multisig in 1', function() {
-      Script('OP_0 0x47 0x3044022002a27769ee33db258bdf7a3792e7da4143ec4001b551f73e6a190b8d1bde449d02206742c56ccd94a7a2e16ca52fc1ae4a0aa122b0014a867a80de104f9cb18e472c01').isMultisigIn().should.equal(true);
+      Script('OP_0 3044022002a27769ee33db258bdf7a3792e7da4143ec4001b551f73e6a190b8d1bde449d02206742c56ccd94a7a2e16ca52fc1ae4a0aa122b0014a867a80de104f9cb18e472c01').isMultisigIn().should.equal(true);
     });
     it('should identify multisig in 2', function() {
-      Script('OP_0 0x47 0x3044022002a27769ee33db258bdf7a3792e7da4143ec4001b551f73e6a190b8d1bde449d02206742c56ccd94a7a2e16ca52fc1ae4a0aa122b0014a867a80de104f9cb18e472c01 0x47 30450220357011fd3b3ad2b8f2f2d01e05dc6108b51d2a245b4ef40c112d6004596f0475022100a8208c93a39e0c366b983f9a80bfaf89237fcd64ca543568badd2d18ee2e1d7501').isMultisigIn().should.equal(true);
+      var script = Script('OP_0 3044022002a27769ee33db258bdf7a3792e7da4143ec4001b551f73e6a190b8d1bde449d02206742c56ccd94a7a2e16ca52fc1ae4a0aa122b0014a867a80de104f9cb18e472c01 30450220357011fd3b3ad2b8f2f2d01e05dc6108b51d2a245b4ef40c112d6004596f0475022100a8208c93a39e0c366b983f9a80bfaf89237fcd64ca543568badd2d18ee2e1d7501');
+      script.isMultisigIn().should.equal(true);
     });
     it('should identify non-multisig in 1', function() {
-      Script('0x47 0x3044022002a27769ee33db258bdf7a3792e7da4143ec4001b551f73e6a190b8d1bde449d02206742c56ccd94a7a2e16ca52fc1ae4a0aa122b0014a867a80de104f9cb18e472c01').isMultisigIn().should.equal(false);
+      Script('3044022002a27769ee33db258bdf7a3792e7da4143ec4001b551f73e6a190b8d1bde449d02206742c56ccd94a7a2e16ca52fc1ae4a0aa122b0014a867a80de104f9cb18e472c01').isMultisigIn().should.equal(false);
     });
     it('should identify non-multisig in 2', function() {
-      Script('OP_0 0x47 0x3044022002a27769ee33db258bdf7a3792e7da4143ec4001b551f73e6a190b8d1bde449d02206742c56ccd94a7a2e16ca52fc1ae4a0aa122b0014a867a80de104f9cb18e472c01 OP_0').isMultisigIn().should.equal(false);
+      Script('OP_0 3044022002a27769ee33db258bdf7a3792e7da4143ec4001b551f73e6a190b8d1bde449d02206742c56ccd94a7a2e16ca52fc1ae4a0aa122b0014a867a80de104f9cb18e472c01 OP_0').isMultisigIn().should.equal(false);
     });
   });
 
   describe('#isScriptHashIn', function() {
     it('should identify this known scripthashin', function() {
-      var sstr = 'OP_0 73 0x30460221008ca148504190c10eea7f5f9c283c719a37be58c3ad617928011a1bb9570901d2022100ced371a23e86af6f55ff4ce705c57d2721a09c4d192ca39d82c4239825f75a9801 72 0x30450220357011fd3b3ad2b8f2f2d01e05dc6108b51d2a245b4ef40c112d6004596f0475022100a8208c93a39e0c366b983f9a80bfaf89237fcd64ca543568badd2d18ee2e1d7501 OP_PUSHDATA1 105 0x5221024c02dff2f0b8263a562a69ec875b2c95ffad860f428acf2f9e8c6492bd067d362103546324a1351a6b601c623b463e33b6103ca444707d5b278ece1692f1aa7724a42103b1ad3b328429450069cc3f9fa80d537ee66ba1120e93f3f185a5bf686fb51e0a53ae';
+      var sstr = 'OP_0 30460221008ca148504190c10eea7f5f9c283c719a37be58c3ad617928011a1bb9570901d2022100ced371a23e86af6f55ff4ce705c57d2721a09c4d192ca39d82c4239825f75a9801 30450220357011fd3b3ad2b8f2f2d01e05dc6108b51d2a245b4ef40c112d6004596f0475022100a8208c93a39e0c366b983f9a80bfaf89237fcd64ca543568badd2d18ee2e1d7501 OP_PUSHDATA1 5221024c02dff2f0b8263a562a69ec875b2c95ffad860f428acf2f9e8c6492bd067d362103546324a1351a6b601c623b463e33b6103ca444707d5b278ece1692f1aa7724a42103b1ad3b328429450069cc3f9fa80d537ee66ba1120e93f3f185a5bf686fb51e0a53ae';
       var s = Script(sstr);
       s.toString().should.equal(sstr);
       s.isScriptHashIn().should.equal(true);
@@ -318,16 +320,16 @@ describe('Script', function() {
     });
 
     it('should identify this problematic non-scripthashin scripts', function() {
-      var s = new Script('71 0x3044022017053dad84aa06213749df50a03330cfd24d6' +
+      var s = new Script('3044022017053dad84aa06213749df50a03330cfd24d6' +
         'b8e7ddbb6de66c03697b78a752a022053bc0faca8b4049fb3944a05fcf7c93b2861' +
-        '734d39a89b73108f605f70f5ed3401 33 0x0225386e988b84248dc9c30f784b06e' +
+        '734d39a89b73108f605f70f5ed3401 0225386e988b84248dc9c30f784b06e' +
         '02fdec57bbdbd443768eb5744a75ce44a4c');
-      var s2 = new Script('OP_RETURN 32 0x19fdb20634911b6459e6086658b3a6ad2dc6576bd6826c73ee86a5f9aec14ed9');
+      var s2 = new Script('OP_RETURN 19fdb20634911b6459e6086658b3a6ad2dc6576bd6826c73ee86a5f9aec14ed9');
       s.isScriptHashIn().should.equal(false);
       s2.isScriptHashIn().should.equal(false);
     });
     it('identifies this other problematic non-p2sh in', function() {
-      var s = Script.fromString('73 0x3046022100dc7a0a812de14acc479d98ae209402cc9b5e0692bc74b9fe0a2f083e2f9964b002210087caf04a711bebe5339fd7554c4f7940dc37be216a3ae082424a5e164faf549401');
+      var s = Script.fromString('3046022100dc7a0a812de14acc479d98ae209402cc9b5e0692bc74b9fe0a2f083e2f9964b002210087caf04a711bebe5339fd7554c4f7940dc37be216a3ae082424a5e164faf549401');
       s.isScriptHashIn().should.equal(false);
     });
   });
@@ -335,27 +337,27 @@ describe('Script', function() {
   describe('#isScripthashOut', function() {
 
     it('should identify this known p2shout as p2shout', function() {
-      Script('OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUAL').isScriptHashOut().should.equal(true);
+      Script('OP_HASH160 0000000000000000000000000000000000000000 OP_EQUAL').isScriptHashOut().should.equal(true);
     });
 
     it('should identify result of .isScriptHashOut() as p2sh', function() {
-      Script('OP_DUP OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG')
+      Script('OP_DUP OP_HASH160 0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG')
       .toScriptHashOut().isScriptHashOut().should.equal(true);
     });
 
     it('should identify these known non-p2shout as not p2shout', function() {
-      Script('OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUAL OP_EQUAL').isScriptHashOut().should.equal(false);
-      Script('OP_HASH160 21 0x000000000000000000000000000000000000000000 OP_EQUAL').isScriptHashOut().should.equal(false);
+      Script('OP_HASH160 0000000000000000000000000000000000000000 OP_EQUAL OP_EQUAL').isScriptHashOut().should.equal(false);
+      Script('OP_HASH160 000000000000000000000000000000000000000000 OP_EQUAL').isScriptHashOut().should.equal(false);
     });
 
   });
 
   describe('#isPushOnly', function() {
     it('should know these scripts are or aren\'t push only', function() {
-      Script('OP_NOP 1 0x01').isPushOnly().should.equal(false);
+      Script('OP_NOP 01').isPushOnly().should.equal(false);
       Script('OP_0').isPushOnly().should.equal(true);
       Script('OP_0 OP_RETURN').isPushOnly().should.equal(false);
-      Script('OP_PUSHDATA1 5 0x1010101010').isPushOnly().should.equal(true);
+      Script('OP_PUSHDATA1 1010101010').isPushOnly().should.equal(true);
       // like bitcoind, we regard OP_RESERVED as being "push only"
       Script('OP_RESERVED').isPushOnly().should.equal(true);
     });
@@ -363,31 +365,31 @@ describe('Script', function() {
 
   describe('#classify', function() {
     it('should classify public key hash out', function() {
-      Script('OP_DUP OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').classify().should.equal(Script.types.PUBKEYHASH_OUT);
+      Script('OP_DUP OP_HASH160 0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').classify().should.equal(Script.types.PUBKEYHASH_OUT);
     });
     it('should classify public key hash in', function() {
-      Script('47 0x3044022077a8d81e656c4a1c1721e68ce35fa0b27f13c342998e75854858c12396a15ffa02206378a8c6959283c008c87a14a9c0ada5cf3934ac5ee29f1fef9cac6969783e9801 21 0x03993c230da7dabb956292851ae755f971c50532efc095a16bee07f83ab9d262df').classify().should.equal(Script.types.PUBKEYHASH_IN);
+      Script('3044022077a8d81e656c4a1c1721e68ce35fa0b27f13c342998e75854858c12396a15ffa02206378a8c6959283c008c87a14a9c0ada5cf3934ac5ee29f1fef9cac6969783e9801 03993c230da7dabb956292851ae755f971c50532efc095a16bee07f83ab9d262df').classify().should.equal(Script.types.PUBKEYHASH_IN);
     });
     it('should classify script hash out', function() {
-      Script('OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUAL').classify().should.equal(Script.types.SCRIPTHASH_OUT);
+      Script('OP_HASH160 0000000000000000000000000000000000000000 OP_EQUAL').classify().should.equal(Script.types.SCRIPTHASH_OUT);
     });
     it('should classify script hash in', function() {
-      Script('OP_0 73 0x30460221008ca148504190c10eea7f5f9c283c719a37be58c3ad617928011a1bb9570901d2022100ced371a23e86af6f55ff4ce705c57d2721a09c4d192ca39d82c4239825f75a9801 72 0x30450220357011fd3b3ad2b8f2f2d01e05dc6108b51d2a245b4ef40c112d6004596f0475022100a8208c93a39e0c366b983f9a80bfaf89237fcd64ca543568badd2d18ee2e1d7501 OP_PUSHDATA1 105 0x5221024c02dff2f0b8263a562a69ec875b2c95ffad860f428acf2f9e8c6492bd067d362103546324a1351a6b601c623b463e33b6103ca444707d5b278ece1692f1aa7724a42103b1ad3b328429450069cc3f9fa80d537ee66ba1120e93f3f185a5bf686fb51e0a53ae').classify().should.equal(Script.types.SCRIPTHASH_IN);
+      Script('OP_0 30460221008ca148504190c10eea7f5f9c283c719a37be58c3ad617928011a1bb9570901d2022100ced371a23e86af6f55ff4ce705c57d2721a09c4d192ca39d82c4239825f75a9801 30450220357011fd3b3ad2b8f2f2d01e05dc6108b51d2a245b4ef40c112d6004596f0475022100a8208c93a39e0c366b983f9a80bfaf89237fcd64ca543568badd2d18ee2e1d7501 OP_PUSHDATA1 5221024c02dff2f0b8263a562a69ec875b2c95ffad860f428acf2f9e8c6492bd067d362103546324a1351a6b601c623b463e33b6103ca444707d5b278ece1692f1aa7724a42103b1ad3b328429450069cc3f9fa80d537ee66ba1120e93f3f185a5bf686fb51e0a53ae').classify().should.equal(Script.types.SCRIPTHASH_IN);
     });
     it('should classify MULTISIG out', function() {
-      Script('OP_2 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 OP_2 OP_CHECKMULTISIG').classify().should.equal(Script.types.MULTISIG_OUT);
+      Script('OP_2 038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 OP_2 OP_CHECKMULTISIG').classify().should.equal(Script.types.MULTISIG_OUT);
     });
     it('should classify MULTISIG in', function() {
-      Script('OP_0 0x47 0x3044022002a27769ee33db258bdf7a3792e7da4143ec4001b551f73e6a190b8d1bde449d02206742c56ccd94a7a2e16ca52fc1ae4a0aa122b0014a867a80de104f9cb18e472c01').classify().should.equal(Script.types.MULTISIG_IN);
+      Script('OP_0 3044022002a27769ee33db258bdf7a3792e7da4143ec4001b551f73e6a190b8d1bde449d02206742c56ccd94a7a2e16ca52fc1ae4a0aa122b0014a867a80de104f9cb18e472c01').classify().should.equal(Script.types.MULTISIG_IN);
     });
     it('should classify OP_RETURN data out', function() {
-      Script('OP_RETURN 1 0x01').classify().should.equal(Script.types.DATA_OUT);
+      Script('OP_RETURN 01').classify().should.equal(Script.types.DATA_OUT);
     });
     it('should classify public key out', function() {
-      Script('41 0x0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8 OP_CHECKSIG').classify().should.equal(Script.types.PUBKEY_OUT);
+      Script('0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8 OP_CHECKSIG').classify().should.equal(Script.types.PUBKEY_OUT);
     });
     it('should classify public key in', function() {
-      Script('47 0x3044022007415aa37ce7eaa6146001ac8bdefca0ddcba0e37c5dc08c4ac99392124ebac802207d382307fd53f65778b07b9c63b6e196edeadf0be719130c5db21ff1e700d67501').classify().should.equal(Script.types.PUBKEY_IN);
+      Script('3044022007415aa37ce7eaa6146001ac8bdefca0ddcba0e37c5dc08c4ac99392124ebac802207d382307fd53f65778b07b9c63b6e196edeadf0be719130c5db21ff1e700d67501').classify().should.equal(Script.types.PUBKEY_IN);
     });
     it('should classify unknown', function() {
       Script('OP_TRUE OP_FALSE').classify().should.equal(Script.types.UNKNOWN);
@@ -397,8 +399,8 @@ describe('Script', function() {
   describe('#add and #prepend', function() {
 
     it('should add these ops', function() {
-      Script().add(1).add(10).add(186).toString().should.equal('0x01 0x0a 0xba');
-      Script().add(1000).toString().should.equal('0x03e8');
+      Script().add(1).add(10).add(186).toString().should.equal('01 0a ba');
+      Script().add(1000).toString().should.equal('03e8');
       Script().add('OP_CHECKMULTISIG').toString().should.equal('OP_CHECKMULTISIG');
       Script().add('OP_1').add('OP_2').toString().should.equal('OP_1 OP_2');
       Script().add(Opcode.OP_CHECKMULTISIG).toString().should.equal('OP_CHECKMULTISIG');
@@ -418,16 +420,16 @@ describe('Script', function() {
     it('should add these push data', function() {
       var buf = new Buffer(1);
       buf.fill(0);
-      Script().add(buf).toString().should.equal('1 0x00');
+      Script().add(buf).toString().should.equal('00');
       buf = new Buffer(255);
       buf.fill(0);
-      Script().add(buf).toString().should.equal('OP_PUSHDATA1 255 0x' + buf.toString('hex'));
+      Script().add(buf).toString().should.equal('OP_PUSHDATA1 ' + buf.toString('hex'));
       buf = new Buffer(256);
       buf.fill(0);
-      Script().add(buf).toString().should.equal('OP_PUSHDATA2 256 0x' + buf.toString('hex'));
+      Script().add(buf).toString().should.equal('OP_PUSHDATA2 ' + buf.toString('hex'));
       buf = new Buffer(Math.pow(2, 16));
       buf.fill(0);
-      Script().add(buf).toString().should.equal('OP_PUSHDATA4 ' + Math.pow(2, 16) + ' 0x' + buf.toString('hex'));
+      Script().add(buf).toString().should.equal('OP_PUSHDATA4 ' + buf.toString('hex'));
     });
 
     it('should add both pushdata and non-pushdata chunks', function() {
@@ -435,11 +437,11 @@ describe('Script', function() {
       Script().add(Opcode.map.OP_CHECKMULTISIG).toString().should.equal('OP_CHECKMULTISIG');
       var buf = new Buffer(1);
       buf.fill(0);
-      Script().add(buf).toString().should.equal('1 0x00');
+      Script().add(buf).toString().should.equal('00');
     });
 
     it('should work for no data OP_RETURN', function() {
-      Script().add(Opcode.OP_RETURN).add(new Buffer('')).toString().should.equal('OP_RETURN 0');
+      Script().add(Opcode.OP_RETURN).add(new Buffer('')).toString().should.equal('OP_RETURN');
     });
     it('works with objects', function() {
       Script().add({
@@ -447,8 +449,8 @@ describe('Script', function() {
       }).toString().should.equal('OP_RETURN');
     });
     it('works with another script', function() {
-      var someScript = Script('OP_2 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 ' +
-        '21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 OP_2 OP_CHECKMULTISIG');
+      var someScript = Script('OP_2 038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 ' +
+        '038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 OP_2 OP_CHECKMULTISIG');
       var s = new Script().add(someScript);
       s.toString()
         .should.equal(someScript.toString());
@@ -463,7 +465,7 @@ describe('Script', function() {
 
   describe('#isStandard', function() {
     it('should classify correctly standard script', function() {
-      Script('OP_RETURN 1 0x00').isStandard().should.equal(true);
+      Script('OP_RETURN 00').isStandard().should.equal(true);
     });
     it('should classify correctly non standard script', function() {
       Script('OP_TRUE OP_FALSE').isStandard().should.equal(false);
@@ -482,7 +484,7 @@ describe('Script', function() {
     var sortkeys = pubKeyHexes.slice(0, 3).map(PublicKey);
     it('should create sorted script by default', function() {
       var s = Script.buildMultisigOut(sortkeys, 2);
-      s.toString().should.equal('OP_2 33 0x021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc18 33 0x022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da 33 0x03e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e9 OP_3 OP_CHECKMULTISIG');
+      s.toString().should.equal('OP_2 021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc18 022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da 03e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e9 OP_3 OP_CHECKMULTISIG');
       s.isMultisigOut().should.equal(true);
     });
     it('should fail when number of required signatures is greater than number of pubkeys', function() {
@@ -497,7 +499,7 @@ describe('Script', function() {
         noSorting: true
       });
       s.toString().should.not.equal(u.toString());
-      u.toString().should.equal('OP_2 33 0x022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da 33 0x03e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e9 33 0x021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc18 OP_3 OP_CHECKMULTISIG');
+      u.toString().should.equal('OP_2 022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da 03e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e9 021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc18 OP_3 OP_CHECKMULTISIG');
       s.isMultisigOut().should.equal(true);
     });
     var test_mn = function(m, n) {
@@ -516,7 +518,7 @@ describe('Script', function() {
       var address = Address.fromString('1NaTVwXDDUJaXDQajoa9MqHhz4uTxtgK14');
       var s = Script.buildPublicKeyHashOut(address);
       should.exist(s);
-      s.toString().should.equal('OP_DUP OP_HASH160 20 0xecae7d092947b7ee4998e254aa48900d26d2ce1d OP_EQUALVERIFY OP_CHECKSIG');
+      s.toString().should.equal('OP_DUP OP_HASH160 ecae7d092947b7ee4998e254aa48900d26d2ce1d OP_EQUALVERIFY OP_CHECKSIG');
       s.isPublicKeyHashOut().should.equal(true);
       s.toAddress().toString().should.equal('1NaTVwXDDUJaXDQajoa9MqHhz4uTxtgK14');
     });
@@ -524,7 +526,7 @@ describe('Script', function() {
       var address = Address.fromString('mxRN6AQJaDi5R6KmvMaEmZGe3n5ScV9u33');
       var s = Script.buildPublicKeyHashOut(address);
       should.exist(s);
-      s.toString().should.equal('OP_DUP OP_HASH160 20 0xb96b816f378babb1fe585b7be7a2cd16eb99b3e4 OP_EQUALVERIFY OP_CHECKSIG');
+      s.toString().should.equal('OP_DUP OP_HASH160 b96b816f378babb1fe585b7be7a2cd16eb99b3e4 OP_EQUALVERIFY OP_CHECKSIG');
       s.isPublicKeyHashOut().should.equal(true);
       s.toAddress().toString().should.equal('mxRN6AQJaDi5R6KmvMaEmZGe3n5ScV9u33');
     });
@@ -532,7 +534,7 @@ describe('Script', function() {
       var pubkey = new PublicKey('022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da');
       var s = Script.buildPublicKeyHashOut(pubkey);
       should.exist(s);
-      s.toString().should.equal('OP_DUP OP_HASH160 20 0x9674af7395592ec5d91573aa8d6557de55f60147 OP_EQUALVERIFY OP_CHECKSIG');
+      s.toString().should.equal('OP_DUP OP_HASH160 9674af7395592ec5d91573aa8d6557de55f60147 OP_EQUALVERIFY OP_CHECKSIG');
       s.isPublicKeyHashOut().should.equal(true);
       should.exist(s._network);
       s._network.should.equal(pubkey.network);
@@ -543,7 +545,7 @@ describe('Script', function() {
       var pubkey = new PublicKey('022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da');
       var s = Script.buildPublicKeyOut(pubkey);
       should.exist(s);
-      s.toString().should.equal('33 0x022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da OP_CHECKSIG');
+      s.toString().should.equal('022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da OP_CHECKSIG');
       s.isPublicKeyOut().should.equal(true);
     });
   });
@@ -558,30 +560,37 @@ describe('Script', function() {
       var data = new Buffer('');
       var s = Script.buildDataOut(data);
       should.exist(s);
-      s.toString().should.equal('OP_RETURN 0');
+      s.toString().should.equal('OP_RETURN');
       s.isDataOut().should.equal(true);
     });
     it('should create script from some data', function() {
       var data = new Buffer('bacacafe0102030405', 'hex');
       var s = Script.buildDataOut(data);
       should.exist(s);
-      s.toString().should.equal('OP_RETURN 9 0xbacacafe0102030405');
+      s.toString().should.equal('OP_RETURN bacacafe0102030405');
       s.isDataOut().should.equal(true);
     });
     it('should create script from string', function() {
       var data = 'hello world!!!';
       var s = Script.buildDataOut(data);
       should.exist(s);
-      s.toString().should.equal('OP_RETURN 14 0x68656c6c6f20776f726c64212121');
+      s.toString().should.equal('OP_RETURN 68656c6c6f20776f726c64212121');
+      s.isDataOut().should.equal(true);
+    });
+    it('should create script from a hex string', function() {
+      var hexString = 'abcdef0123456789';
+      var s = Script.buildDataOut(hexString, 'hex');
+      should.exist(s);
+      s.toString().should.equal('OP_RETURN abcdef0123456789');
       s.isDataOut().should.equal(true);
     });
   });
   describe('#buildScriptHashOut', function() {
     it('should create script from another script', function() {
-      var inner = new Script('OP_DUP OP_HASH160 20 0x06c06f6d931d7bfba2b5bd5ad0d19a8f257af3e3 OP_EQUALVERIFY OP_CHECKSIG');
+      var inner = new Script('OP_DUP OP_HASH160 06c06f6d931d7bfba2b5bd5ad0d19a8f257af3e3 OP_EQUALVERIFY OP_CHECKSIG');
       var s = Script.buildScriptHashOut(inner);
       should.exist(s);
-      s.toString().should.equal('OP_HASH160 20 0x45ea3f9133e7b1cef30ba606f8433f993e41e159 OP_EQUAL');
+      s.toString().should.equal('OP_HASH160 45ea3f9133e7b1cef30ba606f8433f993e41e159 OP_EQUAL');
       s.isScriptHashOut().should.equal(true);
     });
 
@@ -601,9 +610,9 @@ describe('Script', function() {
   });
   describe('#toScriptHashOut', function() {
     it('should create script from another script', function() {
-      var s = new Script('OP_DUP OP_HASH160 20 0x06c06f6d931d7bfba2b5bd5ad0d19a8f257af3e3 OP_EQUALVERIFY OP_CHECKSIG');
+      var s = new Script('OP_DUP OP_HASH160 06c06f6d931d7bfba2b5bd5ad0d19a8f257af3e3 OP_EQUALVERIFY OP_CHECKSIG');
       var sho = s.toScriptHashOut();
-      sho.toString().should.equal('OP_HASH160 20 0x45ea3f9133e7b1cef30ba606f8433f993e41e159 OP_EQUAL');
+      sho.toString().should.equal('OP_HASH160 45ea3f9133e7b1cef30ba606f8433f993e41e159 OP_EQUAL');
       sho.isScriptHashOut().should.equal(true);
     });
   });
@@ -617,16 +626,16 @@ describe('Script', function() {
 
   describe('#findAndDelete', function() {
     it('should find and delete this buffer', function() {
-      Script('OP_RETURN 2 0xf0f0')
-        .findAndDelete(Script('2 0xf0f0'))
+      Script('OP_RETURN f0f0')
+        .findAndDelete(Script('f0f0'))
         .toString()
         .should.equal('OP_RETURN');
     });
     it('should do nothing', function() {
-      Script('OP_RETURN 2 0xf0f0')
-        .findAndDelete(Script('2 0xffff'))
+      Script('OP_RETURN f0f0')
+        .findAndDelete(Script('ffff'))
         .toString()
-        .should.equal('OP_RETURN 2 0xf0f0');
+        .should.equal('OP_RETURN f0f0');
     });
   });
 
@@ -678,11 +687,11 @@ describe('Script', function() {
       expect(BufferUtil.equal(script.getData(), address.hashBuffer)).to.be.true();
     });
     it('for a standard opreturn output', function() {
-      expect(BufferUtil.equal(Script('OP_RETURN 1 0xFF').getData(), new Buffer([255]))).to.be.true();
+      expect(BufferUtil.equal(Script('OP_RETURN FF').getData(), new Buffer([255]))).to.be.true();
     });
     it('fails if content is not recognized', function() {
       expect(function() {
-        return Script('1 0xFF').getData();
+        return Script('FF').getData();
       }).to.throw();
     });
   });
@@ -704,8 +713,8 @@ describe('Script', function() {
       script.toAddress().toString().should.equal(testAddress.toString());
     });
     it('uses default network', function() {
-      var script = new Script('OP_DUP OP_HASH160 20 ' +
-        '0x06c06f6d931d7bfba2b5bd5ad0d19a8f257af3e3 OP_EQUALVERIFY OP_CHECKSIG');
+      var script = new Script('OP_DUP OP_HASH160 ' +
+        '06c06f6d931d7bfba2b5bd5ad0d19a8f257af3e3 OP_EQUALVERIFY OP_CHECKSIG');
       script.toAddress().network.should.equal(Networks.defaultNetwork);
     });
     it('for a P2PKH address', function() {
@@ -726,33 +735,33 @@ describe('Script', function() {
 
     it('works for p2pkh output', function() {
       // taken from tx 7e519caca256423320b92e3e17be5701f87afecbdb3f53af598032bfd8d164f5
-      var script = new Script('OP_DUP OP_HASH160 20 ' +
-        '0xc8e11b0eb0d2ad5362d894f048908341fa61b6e1 OP_EQUALVERIFY OP_CHECKSIG');
+      var script = new Script('OP_DUP OP_HASH160 ' +
+        'c8e11b0eb0d2ad5362d894f048908341fa61b6e1 OP_EQUALVERIFY OP_CHECKSIG');
       script.toAddress().toString().should.equal('1KK9oz4bFH8c1t6LmighHaoSEGx3P3FEmc');
     });
     it('works for p2pkh input', function() {
       // taken from tx 7e519caca256423320b92e3e17be5701f87afecbdb3f53af598032bfd8d164f5
-      var script = new Script('72 0x3045022100eff96230ca0f55b1e8c7a63e014f48611ff1af40875ecd33dee9062d7a6f5e2002206320405b5f6992c756e03e66b21a05a812b60996464ac6af815c2638b930dd7a01 65 0x04150defa035a2c7d826d7d5fc8ab2154bd1bb832f1a5c8ecb338f436362ad232e428b57db44677c5a8bd42c5ed9e2d7e04e742c59bee1b40080cfd57dec64b23a');
+      var script = new Script('3045022100eff96230ca0f55b1e8c7a63e014f48611ff1af40875ecd33dee9062d7a6f5e2002206320405b5f6992c756e03e66b21a05a812b60996464ac6af815c2638b930dd7a01 04150defa035a2c7d826d7d5fc8ab2154bd1bb832f1a5c8ecb338f436362ad232e428b57db44677c5a8bd42c5ed9e2d7e04e742c59bee1b40080cfd57dec64b23a');
       script.toAddress().toString().should.equal('1KK9oz4bFH8c1t6LmighHaoSEGx3P3FEmc');
       // taken from tx 7f8f95752a59d715dae9e0008a42e7968d2736741591bbfc6685f6e1649c21ed
-      var s2 = new Script('71 0x3044022017053dad84aa06213749df50a03330cfd24d6b8e7ddbb6de66c03697b78a752a022053bc0faca8b4049fb3944a05fcf7c93b2861734d39a89b73108f605f70f5ed3401 33 0x0225386e988b84248dc9c30f784b06e02fdec57bbdbd443768eb5744a75ce44a4c');
+      var s2 = new Script('3044022017053dad84aa06213749df50a03330cfd24d6b8e7ddbb6de66c03697b78a752a022053bc0faca8b4049fb3944a05fcf7c93b2861734d39a89b73108f605f70f5ed3401 0225386e988b84248dc9c30f784b06e02fdec57bbdbd443768eb5744a75ce44a4c');
       s2.toAddress().toString().should.equal('17VArX6GRE6i6MVscBUZoXwi6NhnHa68B7');
     });
 
     it('works for p2sh output', function() {
       // taken from tx fe1f764299dc7f3b5a8fae912050df2b633bf99554c68bf1c456edb9c2b63585
-      var script = new Script('OP_HASH160 20 0x99d29051af0c29adcb9040034752bba7dde33e35 OP_EQUAL');
+      var script = new Script('OP_HASH160 99d29051af0c29adcb9040034752bba7dde33e35 OP_EQUAL');
       script.toAddress().toString().should.equal('3FiMZ7stbfH2WG5JQ7CiuzrFo7CEnGUcAP');
     });
     it('works for p2sh input', function() {
       // taken from tx fe1f764299dc7f3b5a8fae912050df2b633bf99554c68bf1c456edb9c2b63585
-      var script = new Script('OP_FALSE 72 0x3045022100e824fbe979fac5834d0062dd5a4e82a898e00ac454bd254cd708ad28530816f202206251ff0fa4dd70c0524c690d4e4deb2bd167297e7bbdf6743b4a8050d681555001 37 0x512102ff3ae0aaa4679ea156d5581dbe6695cc0c311df0aa42af76670d0debbd8f672951ae');
+      var script = new Script('OP_FALSE 3045022100e824fbe979fac5834d0062dd5a4e82a898e00ac454bd254cd708ad28530816f202206251ff0fa4dd70c0524c690d4e4deb2bd167297e7bbdf6743b4a8050d681555001 512102ff3ae0aaa4679ea156d5581dbe6695cc0c311df0aa42af76670d0debbd8f672951ae');
       script.toAddress().toString().should.equal('3GYicPxCvsKvbJmZNBBeWkC3cLuGFhtrQi');
     });
 
     // no address scripts
     it('works for OP_RETURN script', function() {
-      var script = new Script('OP_RETURN 20 0x99d29051af0c29adcb9040034752bba7dde33e35');
+      var script = new Script('OP_RETURN 99d29051af0c29adcb9040034752bba7dde33e35');
       script.toAddress().should.equal(false);
     });
 

@@ -14,7 +14,7 @@ describe('UnspentOutput', function() {
     'address': 'mszYqVnqKoQx4jcTdJXxwKAissE3Jbrrc1',
     'txId': 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
     'outputIndex': 0,
-    'script': 'OP_DUP OP_HASH160 20 0x88d9931ea73d60eaf7e5671efc0552b912911f2a OP_EQUALVERIFY OP_CHECKSIG',
+    'script': 'OP_DUP OP_HASH160 88d9931ea73d60eaf7e5671efc0552b912911f2a OP_EQUALVERIFY OP_CHECKSIG',
     'satoshis': 1020000
   };
   var sampleData2 = {
@@ -57,12 +57,12 @@ describe('UnspentOutput', function() {
     var notDefined = {
       'txId': 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
       'outputIndex': 0,
-      'script': 'OP_DUP OP_HASH160 20 0x88d9931ea73d60eaf7e5671efc0552b912911f2a OP_EQUALVERIFY OP_CHECKSIG',
+      'script': 'OP_DUP OP_HASH160 88d9931ea73d60eaf7e5671efc0552b912911f2a OP_EQUALVERIFY OP_CHECKSIG',
     };
     var zero = {
       'txId': 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
       'outputIndex': 0,
-      'script': 'OP_DUP OP_HASH160 20 0x88d9931ea73d60eaf7e5671efc0552b912911f2a OP_EQUALVERIFY OP_CHECKSIG',
+      'script': 'OP_DUP OP_HASH160 88d9931ea73d60eaf7e5671efc0552b912911f2a OP_EQUALVERIFY OP_CHECKSIG',
       'amount': 0
     };
     it('fails when no amount is defined', function() {

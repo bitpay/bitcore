@@ -114,7 +114,7 @@ describe('Interpreter', function() {
       verified.should.equal(true);
       verified = Interpreter().verify(Script('OP_1 OP_2'), Script('OP_2 OP_EQUALVERIFY OP_1 OP_EQUAL'));
       verified.should.equal(true);
-      verified = Interpreter().verify(Script('9 0x000000000000000010'), Script(''));
+      verified = Interpreter().verify(Script('000000000000000010'), Script(''));
       verified.should.equal(true);
       verified = Interpreter().verify(Script('OP_1'), Script('OP_15 OP_ADD OP_16 OP_EQUAL'));
       verified.should.equal(true);
