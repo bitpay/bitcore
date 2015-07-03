@@ -260,7 +260,7 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
 
 var storage, blockchainExplorer;
 
-var useMongo = false;
+var useMongo = true;
 
 function initStorage(cb) {
   function getDb(cb) {
@@ -412,6 +412,14 @@ describe('Wallet service', function() {
     });
 
     it('should notify copayers a new outgoing tx has been created', function(done) {
+      var _readTemplateFile_old = emailService._readTemplateFile;
+      emailService._readTemplateFile = function(language, filename, cb) {
+        if (_.endsWith(filename, '.html')) {
+          return cb(null, '<html>{{&urlForTx}}<html>');
+        } else {
+          _readTemplateFile_old.call(emailService, language, filename, cb);
+        }
+      };
       helpers.stubUtxos(server, wallet, [1, 1], function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, 'some message', TestData.copayers[0].privKey_1H_0);
 
@@ -454,9 +462,12 @@ describe('Wallet service', function() {
             one.subject.should.contain('Payment sent');
             one.text.should.contain(wallet.name);
             one.text.should.contain('800,000');
+            should.exist(one.html);
+            one.html.should.contain('https://insight.bitpay.com:443/tx/999');
             server.storage.fetchUnsentEmails(function(err, unsent) {
               should.not.exist(err);
               unsent.should.be.empty;
+              emailService._readTemplateFile = _readTemplateFile_old;
               done();
             });
           }, 100);
