@@ -353,7 +353,7 @@ describe('Wallet service', function() {
       var _readTemplateFile_old = emailService._readTemplateFile;
       emailService._readTemplateFile = function(language, filename, cb) {
         if (_.endsWith(filename, '.html')) {
-          return cb(null, 'Subject\n<html><body>{{walletName}}</body></html>');
+          return cb(null, '<html><body>{{walletName}}</body></html>');
         } else {
           _readTemplateFile_old.call(emailService, language, filename, cb);
         }
@@ -375,7 +375,7 @@ describe('Wallet service', function() {
             one.text.should.contain(wallet.name);
             one.text.should.contain(wallet.copayers[0].name);
             should.exist(one.html);
-            one.html.should.contain('<body>');
+            one.html.indexOf('<html>').should.equal(0);
             one.html.should.contain(wallet.name);
             server.storage.fetchUnsentEmails(function(err, unsent) {
               should.not.exist(err);
@@ -412,6 +412,14 @@ describe('Wallet service', function() {
     });
 
     it('should notify copayers a new outgoing tx has been created', function(done) {
+      var _readTemplateFile_old = emailService._readTemplateFile;
+      emailService._readTemplateFile = function(language, filename, cb) {
+        if (_.endsWith(filename, '.html')) {
+          return cb(null, '<html>{{&urlForTx}}<html>');
+        } else {
+          _readTemplateFile_old.call(emailService, language, filename, cb);
+        }
+      };
       helpers.stubUtxos(server, wallet, [1, 1], function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, 'some message', TestData.copayers[0].privKey_1H_0);
 
@@ -454,9 +462,12 @@ describe('Wallet service', function() {
             one.subject.should.contain('Payment sent');
             one.text.should.contain(wallet.name);
             one.text.should.contain('800,000');
+            should.exist(one.html);
+            one.html.should.contain('https://insight.bitpay.com:443/tx/999');
             server.storage.fetchUnsentEmails(function(err, unsent) {
               should.not.exist(err);
               unsent.should.be.empty;
+              emailService._readTemplateFile = _readTemplateFile_old;
               done();
             });
           }, 100);
