@@ -111,15 +111,15 @@ describe('Output', function() {
 
   var output2 = new Output({
     satoshis: 1100000000,
-    script: new Script('OP_2 21 0x038282263212c609d9ea2a6e3e172de238d8c39' +
-      'cabd5ac1ca10646e23fd5f51508 21 0x038282263212c609d9ea2a6e3e172de23' +
-      '8d8c39cabd5ac1ca10646e23fd5f51508 OP_2 OP_CHECKMULTISIG OP_EQUAL')
+    script: new Script('OP_2 038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 ' +
+      '038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 ' +
+      'OP_2 OP_CHECKMULTISIG OP_EQUAL')
   });
 
   it('toBufferWriter', function() {
     output2.toBufferWriter().toBuffer().toString('hex')
-      .should.equal('00ab904100000000485215038282263212c609d9ea2a6e3e172de2' +
-        '38d8c39cabd5ac1ca10646e23fd5f5150815038282263212c609d9ea2a6e3e172d' +
+      .should.equal('00ab904100000000485221038282263212c609d9ea2a6e3e172de2' +
+        '38d8c39cabd5ac1ca10646e23fd5f5150821038282263212c609d9ea2a6e3e172d' +
         'e238d8c39cabd5ac1ca10646e23fd5f5150852ae87');
   });
 
