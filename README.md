@@ -90,7 +90,13 @@ To verify signatures, use the following PGP keys:
 - @braydonf: https://pgp.mit.edu/pks/lookup?op=get&search=0x9BBF07CAC07A276D
 - @pnagurny: https://pgp.mit.edu/pks/lookup?op=get&search=0x0909B33F0AA53013
 
-## Tests
+## Development & Tests
+
+```sh
+git clone https://github.com/bitpay/bitcore
+cd bitcore
+npm install
+```
 
 Run all the tests:
 
