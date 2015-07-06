@@ -79,4 +79,10 @@ describe('BloomFilter', function() {
    assert(filter.contains(ParseHex('b9300670b4c5366e95b2699e8b18bc75e5f729c5')));
  });
 
+ it('#toBuffer and #fromBuffer round trip, with a large filter', function() {
+   var filter = BloomFilter.create(10000, 0.001);
+   var buffer = filter.toBuffer();
+   new BloomFilter.fromBuffer(buffer).should.deep.equal(filter);
+ });
+
 });
