@@ -30,14 +30,6 @@ async.series([
       if (c >= scripts.length) {
         c = 0;
       }
-      scripts[c].isPublicKeyHashIn(true);
-      c++;
-    }
-
-    function isPublicKeyHashInAccurate() {
-      if (c >= scripts.length) {
-        c = 0;
-      }
       scripts[c].isPublicKeyHashIn();
       c++;
     }
@@ -60,7 +52,6 @@ async.series([
 
     var suite = new benchmark.Suite();
     suite.add('isPublicKeyHashIn', isPublicKeyHashIn, {maxTime: maxTime});
-    suite.add('isPublicKeyHashIn (accurate)', isPublicKeyHashInAccurate, {maxTime: maxTime});
     suite.add('toAddress', toAddress, {maxTime: maxTime});
     suite.add('getAddressInfo', getAddressInfo, {maxTime: maxTime});
     suite
