@@ -575,6 +575,13 @@ describe('Script', function() {
       s.toString().should.equal('OP_RETURN 14 0x68656c6c6f20776f726c64212121');
       s.isDataOut().should.equal(true);
     });
+    it('should create script from a hex string', function() {
+      var hexString = 'abcdef0123456789';
+      var s = Script.buildDataOut(hexString, 'hex');
+      should.exist(s);
+      s.toString().should.equal('OP_RETURN 8 0xabcdef0123456789');
+      s.isDataOut().should.equal(true);
+     });
   });
   describe('#buildScriptHashOut', function() {
     it('should create script from another script', function() {
