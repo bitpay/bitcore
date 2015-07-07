@@ -53,6 +53,10 @@
           <td class="text-muted text-right">{{tx.size}} (bytes)</td>
         </tr>
         <tr>
+          <td><strong translate>Fee Rate</strong></td>
+          <td class="text-muted text-right">{{$root.currency.getConvertion((tx.fees * 1000) / tx.size) + ' per kB' || ((tx.fees * 1000) / tx.size) + 'BTC per kB'}}</td>
+        </tr>
+        <tr>
           <td><strong translate>Received Time</strong></td>
           <td data-ng-show="tx.time" class="text-muted text-right">{{tx.time * 1000|date:'medium'}}</td>
           <td data-ng-show="!tx.time" class="text-muted text-right">N/A</td>
