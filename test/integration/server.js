@@ -221,22 +221,22 @@ helpers.createProposalOpts = function(type, outputs, message, signingKey, feePer
   };
   if (feePerKb) opts.feePerKb = feePerKb;
 
-  switch (type) {
-    case Model.TxProposal.Types.SIMPLE:
-      opts.toAddress = outputs[0].toAddress;
-      opts.amount = outputs[0].amount;
-      break;
-    case Model.TxProposal.Types.MULTIPLEOUTPUTS:
-      opts.outputs = outputs;
-      break;
+  var hash;
+  if (type == Model.TxProposal.Types.SIMPLE) {
+    opts.toAddress = outputs[0].toAddress;
+    opts.amount = outputs[0].amount;
+    hash = WalletUtils.getProposalHash(opts.toAddress, opts.amount,
+      opts.message, opts.payProUrl);
   }
-
-  var header = {
-    outputs: outputs,
-    message: opts.message,
-    payProUrl: opts.payProUrl
-  };
-  var hash = WalletUtils.getProposalHash(header);
+  else if (type == Model.TxProposal.Types.MULTIPLEOUTPUTS) {
+    opts.outputs = outputs;
+    var header = {
+      outputs: outputs,
+      message: opts.message,
+      payProUrl: opts.payProUrl
+    };
+    hash = WalletUtils.getProposalHash(header);
+  }
 
   try {
     opts.proposalSignature = WalletUtils.signMessage(hash, signingKey);
@@ -618,7 +618,7 @@ describe('Wallet service', function() {
               spanish.from.should.equal('bws@dummy.net');
               spanish.subject.should.contain('Nuevo pago recibido');
               spanish.text.should.contain(wallet.name);
-              spanish.text.should.contain('0.123 BTC');
+              spanish.text.should.contain('0.123');
               var english = _.find(emails, {
                 to: 'copayer2@domain.com'
               });
