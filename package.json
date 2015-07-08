@@ -1,6 +1,6 @@
 {
   "name": "bitcore-p2p",
-  "version": "0.14.1",
+  "version": "0.14.2",
   "description": "Interface to the bitcoin P2P network for bitcore",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
