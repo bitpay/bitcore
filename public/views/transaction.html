@@ -54,7 +54,7 @@
         </tr>
         <tr data-ng-show="tx.fees">
           <td><strong translate>Fee Rate</strong></td>
-          <td class="text-muted text-right">{{$root.currency.getConvertion((tx.fees * 1000) / tx.size) + ' per kB' || ((tx.fees * 1000) / tx.size) + 'BTC per kB'}}</td>
+          <td class="text-muted text-right">{{$root.currency.getConvertion((tx.fees * 1000) / tx.size) + ' per kB' || ((tx.fees * 1000) / tx.size).toFixed(8).replace(/([0-9]+(\.[0-9]+[1-9])?)(\.?0+$)/,'$1') + 'BTC per kB'}}</td>
         </tr>
         <tr>
           <td><strong translate>Received Time</strong></td>
