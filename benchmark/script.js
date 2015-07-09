@@ -15,8 +15,6 @@ async.series([
 
     var c = 0;
     var scripts = [];
-    var inputScripts = [];
-    var outputScripts = [];
     var block = bitcore.Block.fromString(blockData);
     for (var i = 0; i < block.transactions.length; i++) {
       var tx = block.transactions[i];
@@ -24,14 +22,12 @@ async.series([
         var input = tx.inputs[j];
         if (input.script) {
           scripts.push(input.script);
-          inputScripts.push(input.script);
         }
       }
       for (var k = 0; k < tx.outputs.length; k++) {
         var output = tx.outputs[k];
         if (output.script) {
           scripts.push(output.script);
-          outputScripts.push(output.script);
         }
       }
     }
@@ -52,22 +48,6 @@ async.series([
       c++;
     }
 
-    function toOutputAddress() {
-      if (c >= outputScripts.length) {
-        c = 0;
-      }
-      outputScripts[c].toOutputAddress();
-      c++;
-    }
-
-    function toInputAddress() {
-      if (c >= inputScripts.length) {
-        c = 0;
-      }
-      inputScripts[c].toInputAddress();
-      c++;
-    }
-
     function getAddressInfo() {
       if (c >= scripts.length) {
         c = 0;
@@ -79,8 +59,6 @@ async.series([
     var suite = new benchmark.Suite();
     suite.add('isPublicKeyHashIn', isPublicKeyHashIn, {maxTime: maxTime});
     suite.add('toAddress', toAddress, {maxTime: maxTime});
-    suite.add('toInputAddress', toInputAddress, {maxTime: maxTime});
-    suite.add('toOutputAddress', toOutputAddress, {maxTime: maxTime});
     suite.add('getAddressInfo', getAddressInfo, {maxTime: maxTime});
     suite
       .on('cycle', function(event) {
