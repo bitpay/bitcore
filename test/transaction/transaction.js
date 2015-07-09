@@ -202,7 +202,9 @@ describe('Transaction', function() {
       transaction.outputs[1].satoshis.should.equal(40000);
       transaction.outputs[1].script.toString()
         .should.equal(Script.fromAddress(changeAddress).toString());
-      transaction.getChangeOutput().script.should.deep.equal(Script.fromAddress(changeAddress));
+      var actual = transaction.getChangeOutput().script.toString();
+      var expected = Script.fromAddress(changeAddress).toString();
+      actual.should.equal(expected);
     });
     it('accepts a P2SH address for change', function() {
       var transaction = new Transaction()

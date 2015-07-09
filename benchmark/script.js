@@ -24,6 +24,12 @@ async.series([
           scripts.push(input.script);
         }
       }
+      for (var k = 0; k < tx.outputs.length; k++) {
+        var output = tx.outputs[k];
+        if (output.script) {
+          scripts.push(output.script);
+        }
+      }
     }
 
     function isPublicKeyHashIn() {
