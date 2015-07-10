@@ -34,7 +34,7 @@
     "uglify": "^0.1.1"
   },
   "devDependencies": {
-    "bitcore-wallet-service": "0.0.38",
+    "bitcore-wallet-service": "git+ssh://git@github.com:bitpay/bitcore-wallet-service.git#bc565f671ac5bdde15e19a78498154d3f8855c05",
     "chai": "^1.9.1",
     "coveralls": "^2.11.2",
     "grunt-jsdoc": "^0.5.8",
