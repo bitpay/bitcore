@@ -91,6 +91,7 @@
             </div> <!-- END OF PANEL BODY -->
           </div> <!-- END OF PANEL-DEFAULT -->
           <div class="small" style="margin-left:0.7em; word-wrap:break-word;" data-ng-class="{true: 'v_highlight', false: ''}[from_vin == true && v_index == vin.n]" >
+            <p><strong>Confirmations:</strong> {{vin.confirmations}}</p>
             <p><strong>scriptSig</strong></p>
               <div data-ng-repeat="item in vin.scriptSig.asm | split:' '" class="">
                 <p class="col-md-11 ellipsis text-muted">{{item}}</p>
