@@ -77,7 +77,7 @@ describe('Mnemonic', function() {
 
     it('spanish wordlist is complete', function() {
       Mnemonic.Words.SPANISH.length.should.equal(2048);
-      Mnemonic.Words.SPANISH[0].should.equal('ábaco');
+      Mnemonic.Words.SPANISH[0].should.equal('ábaco');
     });
 
     it('japanese wordlist is complete', function() {
