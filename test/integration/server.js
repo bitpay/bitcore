@@ -618,7 +618,7 @@ describe('Wallet service', function() {
               spanish.from.should.equal('bws@dummy.net');
               spanish.subject.should.contain('Nuevo pago recibido');
               spanish.text.should.contain(wallet.name);
-              spanish.text.should.contain('0.123');
+              spanish.text.should.contain('0.123 BTC');
               var english = _.find(emails, {
                 to: 'copayer2@domain.com'
               });
