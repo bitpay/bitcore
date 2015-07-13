@@ -32,6 +32,14 @@ async.series([
       }
     }
 
+    function isPublicKeyOut() {
+      if (c >= scripts.length) {
+        c = 0;
+      }
+      scripts[c].isPublicKeyOut();
+      c++;
+    }
+
     function isPublicKeyHashIn() {
       if (c >= scripts.length) {
         c = 0;
@@ -58,6 +66,7 @@ async.series([
 
     var suite = new benchmark.Suite();
     suite.add('isPublicKeyHashIn', isPublicKeyHashIn, {maxTime: maxTime});
+    suite.add('isPublicKeyOut', isPublicKeyOut, {maxTime: maxTime});
     suite.add('toAddress', toAddress, {maxTime: maxTime});
     suite.add('getAddressInfo', getAddressInfo, {maxTime: maxTime});
     suite
