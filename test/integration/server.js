@@ -173,7 +173,28 @@ helpers.stubBroadcastFail = function() {
 };
 
 helpers.stubHistory = function(txs) {
-  blockchainExplorer.getTransactions = sinon.stub().callsArgWith(3, null, txs);
+  blockchainExplorer.getTransactions = function(addresses, from, to, cb) {
+    var MAX_BATCH_SIZE = 100;
+    var nbTxs = txs.length;
+
+    if (_.isUndefined(from) && _.isUndefined(to)) {
+      from = 0;
+      to = MAX_BATCH_SIZE;
+    }
+    if (!_.isUndefined(from) && _.isUndefined(to))
+      to = from + MAX_BATCH_SIZE;
+
+    if (!_.isUndefined(from) && !_.isUndefined(to) && to - from > MAX_BATCH_SIZE)
+      to = from + MAX_BATCH_SIZE;
+
+    if (from < 0) from = 0;
+    if (to < 0) to = 0;
+    if (from > nbTxs) from = nbTxs;
+    if (to > nbTxs) to = nbTxs;
+
+    var page = txs.slice(from, to);
+    return cb(null, page);
+  };
 };
 
 helpers.stubAddressActivity = function(activeAddresses) {
@@ -227,8 +248,7 @@ helpers.createProposalOpts = function(type, outputs, message, signingKey, feePer
     opts.amount = outputs[0].amount;
     hash = WalletUtils.getProposalHash(opts.toAddress, opts.amount,
       opts.message, opts.payProUrl);
-  }
-  else if (type == Model.TxProposal.Types.MULTIPLEOUTPUTS) {
+  } else if (type == Model.TxProposal.Types.MULTIPLEOUTPUTS) {
     opts.outputs = outputs;
     var header = {
       outputs: outputs,
@@ -3536,7 +3556,7 @@ describe('Wallet service', function() {
       }];
 
       server._normalizeTxHistory = sinon.stub().returnsArg(0);
-      var timestamps = [10, 50, 30, 40, 20];
+      var timestamps = [50, 40, 30, 20, 10];
       var txs = _.map(timestamps, function(ts, idx) {
         return {
           txid: (idx + 1).toString(),
