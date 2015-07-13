@@ -340,6 +340,10 @@ describe('Wallet service', function() {
             emailOpts: {
               from: 'bws@dummy.net',
               subjectPrefix: '[test wallet]',
+              publicTxUrlTemplate: {
+                livenet: 'https://insight.bitpay.com/tx/{{txid}}',
+                testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
+              },
             },
           }, function(err) {
             should.not.exist(err);
@@ -463,7 +467,7 @@ describe('Wallet service', function() {
             one.text.should.contain(wallet.name);
             one.text.should.contain('800,000');
             should.exist(one.html);
-            one.html.should.contain('https://insight.bitpay.com:443/tx/999');
+            one.html.should.contain('https://insight.bitpay.com/tx/999');
             server.storage.fetchUnsentEmails(function(err, unsent) {
               should.not.exist(err);
               unsent.should.be.empty;

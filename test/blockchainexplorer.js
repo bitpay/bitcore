@@ -20,7 +20,6 @@ describe('Blockchain explorer', function() {
       exp.should.respondTo('getAddressActivity');
       exp.should.respondTo('getUnspentUtxos');
       exp.should.respondTo('initSocket');
-      exp.should.respondTo('getPublicUrlForTx');
       var exp = new BlockchainExplorer({
         provider: 'insight',
         network: 'livenet',

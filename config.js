@@ -55,6 +55,10 @@ var config = {
     templatePath: './lib/templates',
     defaultLanguage: 'en',
     defaultUnit: 'btc',
+    publicTxUrlTemplate: {
+      livenet: 'https://insight.bitpay.com/tx/{{txid}}',
+      testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
+    },
   },
 };
 module.exports = config;
