@@ -1123,6 +1123,9 @@ describe('client API', function() {
               x2.outputs[0].toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
               x2.outputs[0].amount.should.equal(10000);
               x2.outputs[0].message.should.equal('world');
+              x2.outputs[1].toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
+              x2.outputs[1].amount.should.equal(20000);
+              x2.outputs[1].message.should.equal('nakamotosan');
               clients[0].signTxProposal(x2, function(err, txp) {
                 should.not.exist(err);
                 txp.status.should.equal('accepted');
