@@ -46,19 +46,19 @@ var config = {
     },
   },
   // To use email notifications uncomment this:
-  emailOpts: {
-    host: 'localhost',
-    port: 25,
-    ignoreTLS: true,
-    subjectPrefix: '[Wallet Service]',
-    from: 'wallet-service@bitcore.io',
-    templatePath: './lib/templates',
-    defaultLanguage: 'en',
-    defaultUnit: 'btc',
-    publicTxUrlTemplate: {
-      livenet: 'https://insight.bitpay.com/tx/{{txid}}',
-      testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
-    },
-  },
+  // emailOpts: {
+  //  host: 'localhost',
+  //  port: 25,
+  //  ignoreTLS: true,
+  //  subjectPrefix: '[Wallet Service]',
+  //  from: 'wallet-service@bitcore.io',
+  //  templatePath: './lib/templates',
+  //  defaultLanguage: 'en',
+  //  defaultUnit: 'btc',
+  //  publicTxUrlTemplate: {
+  //    livenet: 'https://insight.bitpay.com/tx/{{txid}}',
+  //    testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
+  //  },
+  //},
 };
 module.exports = config;
