@@ -1150,6 +1150,73 @@ describe('client API', function() {
     });
   });
 
+  describe('Optional Proposal Fields', function() {
+    var opts;
+    beforeEach(function(done) {
+      opts = {
+        type: 'simple',
+        amount: 10000,
+        toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+        message: 'some message',
+        payProUrl: 'dummy'
+      };
+      done();
+    });
+    function doTest(opts, done) {
+      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          blockchainExplorerMock.setUtxo(x0, 1, 2);
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            clients[1].getTx(x.id, function(err, x2) {
+              should.not.exist(err);
+              should.exist(x2);
+              clients[0].removeTxProposal(x2, function(err) {
+                done();
+              });
+            });
+          });
+        });
+      });
+    };
+
+    it('should pass with complete simple header', function(done) {
+      doTest(opts, done);
+    });
+    it('should pass with null message', function(done) {
+      opts.message = null;
+      doTest(opts, done);
+    });
+    it('should pass with no message', function(done) {
+      delete opts.message;
+      doTest(opts, done);
+    });
+    it('should pass with null payProUrl', function(done) {
+      opts.payProUrl = '';
+      doTest(opts, done);
+    });
+    it('should pass with no payProUrl', function(done) {
+      delete opts.payProUrl;
+      doTest(opts, done);
+    });
+    it('should pass with complete multi-output header', function(done) {
+      opts.type = 'multiple_outputs';
+      opts.outputs = [{ toAddress: opts.toAddress, amount: opts.amount, message:opts.message}];
+      delete opts.toAddress;
+      delete opts.amount;
+      doTest(opts, done);
+    });
+    it('should pass with multi-output header and no message', function(done) {
+      opts.type = 'multiple_outputs';
+      opts.outputs = [{ toAddress: opts.toAddress, amount: opts.amount}];
+      delete opts.toAddress;
+      delete opts.amount;
+      doTest(opts, done);
+    });
+  });
+
   describe('Transactions Signatures and Rejection', function() {
     this.timeout(5000);
     it('Send and broadcast in 1-1 wallet', function(done) {
