@@ -3363,7 +3363,8 @@ describe('Wallet service', function() {
         txid: '1',
         confirmations: 1,
         fees: 100,
-        time: 1,
+        time: 20,
+        firstSeenTs: 2,
         inputs: [{
           address: 'external',
           amount: 500,
@@ -3382,6 +3383,7 @@ describe('Wallet service', function() {
         tx.action.should.equal('received');
         tx.amount.should.equal(200);
         tx.fees.should.equal(100);
+        tx.time.should.equal(2);
         done();
       });
     });
@@ -3410,6 +3412,7 @@ describe('Wallet service', function() {
         tx.action.should.equal('sent');
         tx.amount.should.equal(400);
         tx.fees.should.equal(100);
+        tx.time.should.equal(1);
         done();
       });
     });
@@ -3594,7 +3597,9 @@ describe('Wallet service', function() {
     });
     it('should handle invalid tx in  history ', function(done) {
       var h = _.clone(TestData.history);
-      h.push({txid:'xx'})
+      h.push({
+        txid: 'xx'
+      })
       helpers.stubHistory(h);
 
       server.getTxHistory({}, function(err, txs) {
