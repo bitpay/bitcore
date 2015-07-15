@@ -3592,6 +3592,19 @@ describe('Wallet service', function() {
         done();
       });
     });
+    it('should handle invalid tx in  history ', function(done) {
+      var h = _.clone(TestData.history);
+      h.push({txid:'xx'})
+      helpers.stubHistory(h);
+
+      server.getTxHistory({}, function(err, txs) {
+        should.not.exist(err);
+        should.exist(txs);
+        txs.length.should.equal(3);
+        txs[2].action.should.equal('invalid');
+        done();
+      });
+    });
   });
 
   describe('#scan', function() {

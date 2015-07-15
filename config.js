@@ -42,7 +42,7 @@ var config = {
     },
     testnet: {
       provider: 'insight',
-      url: 'https://test-insight.bitpay.com:443',
+      url: 'http://localhost:3001',
     },
   },
   // To use email notifications uncomment this:
