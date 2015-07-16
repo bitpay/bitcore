@@ -1469,6 +1469,9 @@ describe('Wallet service', function() {
       });
       server.getFeeLevels({}, function(err, fees) {
         should.not.exist(err);
+        fees = _.zipObject(_.map(fees, function(item) {
+          return [item.level, item.feePerKB];
+        }));
         fees.emergency.should.equal(60000);
         fees.priority.should.equal(40000);
         fees.normal.should.equal(20000);
@@ -1480,6 +1483,9 @@ describe('Wallet service', function() {
       blockchainExplorer.estimateFee = sinon.stub().yields('dummy error');
       server.getFeeLevels({}, function(err, fees) {
         should.not.exist(err);
+        fees = _.zipObject(_.map(fees, function(item) {
+          return [item.level, item.feePerKB];
+        }));
         fees.emergency.should.equal(50000);
         fees.priority.should.equal(20000);
         fees.normal.should.equal(10000);
@@ -1495,6 +1501,9 @@ describe('Wallet service', function() {
       });
       server.getFeeLevels({}, function(err, fees) {
         should.not.exist(err);
+        fees = _.zipObject(_.map(fees, function(item) {
+          return [item.level, item.feePerKB];
+        }));
         fees.emergency.should.equal(50000);
         fees.priority.should.equal(20000);
         fees.normal.should.equal(18000);
