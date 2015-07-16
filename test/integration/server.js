@@ -1464,15 +1464,15 @@ describe('Wallet service', function() {
     it('should get current fee levels', function(done) {
       helpers.stubFeeLevels({
         2: 40000,
-        4: 20000,
-        6: 18000,
+        6: 20000,
+        25: 18000,
       });
       server.getFeeLevels({}, function(err, fees) {
         should.not.exist(err);
         fees.emergency.should.equal(60000);
         fees.priority.should.equal(40000);
         fees.normal.should.equal(20000);
-        fees.economy.should.equal(10000);
+        fees.economy.should.equal(18000);
         done();
       });
     });
@@ -1490,14 +1490,15 @@ describe('Wallet service', function() {
     it('should get default fees if network cannot estimate (returns -1)', function(done) {
       helpers.stubFeeLevels({
         2: -1,
-        4: 18000,
+        6: 18000,
+        25: 0,
       });
       server.getFeeLevels({}, function(err, fees) {
         should.not.exist(err);
         fees.emergency.should.equal(50000);
         fees.priority.should.equal(20000);
         fees.normal.should.equal(18000);
-        fees.economy.should.equal(9000);
+        fees.economy.should.equal(5000);
         done();
       });
     });
