@@ -148,10 +148,11 @@ helpers.stubUtxos = function(server, wallet, amounts, cb) {
       var address = addresses[i % addresses.length];
       var obj = {
         txid: helpers.randomTXID(),
-        vout: Math.floor((Math.random() * 10) + 1),
+        vout: Math.floor(Math.random() * 10 + 1),
         satoshis: helpers.toSatoshi(amount).toString(),
         scriptPubKey: address.getScriptPubKey(wallet.m).toBuffer().toString('hex'),
         address: address.address,
+        confirmations: Math.floor(Math.random() * 100 + 1),
       };
       obj.toObject = function() {
         return obj;
@@ -1537,7 +1538,8 @@ describe('Wallet service', function() {
             server.getBalance({}, function(err, balance) {
               should.not.exist(err);
               balance.totalAmount.should.equal(helpers.toSatoshi(300));
-              balance.lockedAmount.should.equal(helpers.toSatoshi(100));
+              balance.lockedAmount.should.equal(tx.inputs[0].satoshis);
+              balance.lockedAmount.should.be.below(balance.totalAmount);
               server.storage.fetchAddresses(wallet.id, function(err, addresses) {
                 should.not.exist(err);
                 var change = _.filter(addresses, {
@@ -1563,22 +1565,54 @@ describe('Wallet service', function() {
       });
     });
 
-    it('should create a tx using the uxtos with minimum amount first', function(done) {
-      helpers.stubUtxos(server, wallet, [100, 200, 300], function() {
-        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 150, 'some message', TestData.copayers[0].privKey_1H_0);
+    it('should create a tx using confirmed utxos first', function(done) {
+      server.createAddress({}, function(err, address) {
+        var utxos = _.map([1.3, 0.5, 0.1, 1.2], function(amount, i) {
+          return {
+            txid: helpers.randomTXID(),
+            vout: Math.floor((Math.random() * 10) + 1),
+            satoshis: helpers.toSatoshi(amount).toString(),
+            scriptPubKey: address.getScriptPubKey(wallet.m).toBuffer().toString('hex'),
+            address: address.address,
+            confirmations: amount < 1 ? 0 : 1,
+          };
+        });
+        blockchainExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
+
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1.5, 'some message', TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
           should.exist(tx);
-          server.getPendingTxs({}, function(err, txs) {
-            should.not.exist(err);
-            txs.length.should.equal(1);
-            server.getBalance({}, function(err, balance) {
-              should.not.exist(err);
-              balance.totalAmount.should.equal(helpers.toSatoshi(600));
-              balance.lockedAmount.should.equal(helpers.toSatoshi(300));
-              done();
-            });
-          });
+          tx.inputs.length.should.equal(2);
+          _.difference(_.pluck(tx.inputs, 'txid'), [utxos[0].txid, utxos[3].txid]).length.should.equal(0);
+          done();
+        });
+      });
+    });
+
+    it('should use unconfirmed utxos only when no more confirmed utxos are available', function(done) {
+      server.createAddress({}, function(err, address) {
+        var utxos = _.map([1.3, 0.5, 0.1, 1.2], function(amount, i) {
+          return {
+            txid: helpers.randomTXID(),
+            vout: Math.floor((Math.random() * 10) + 1),
+            satoshis: helpers.toSatoshi(amount).toString(),
+            scriptPubKey: address.getScriptPubKey(wallet.m).toBuffer().toString('hex'),
+            address: address.address,
+            confirmations: amount < 1 ? 0 : 1,
+          };
+        });
+        blockchainExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
+
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 2.55, 'some message', TestData.copayers[0].privKey_1H_0);
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(err);
+          should.exist(tx);
+          tx.inputs.length.should.equal(3);
+          var txids = _.pluck(tx.inputs, 'txid');
+          txids.should.contain(utxos[0].txid);
+          txids.should.contain(utxos[3].txid);
+          done();
         });
       });
     });
@@ -1852,7 +1886,11 @@ describe('Wallet service', function() {
               server.getBalance({}, function(err, balance) {
                 should.not.exist(err);
                 balance.totalAmount.should.equal(helpers.toSatoshi(30.6));
-                balance.lockedAmount.should.equal(helpers.toSatoshi(20.3));
+                var amountInputs = _.reduce(_.pluck(txs[0].inputs, 'satoshis'), function(memo, satoshis) {
+                  return memo + satoshis;
+                }, 0);
+                balance.lockedAmount.should.equal(amountInputs);
+                balance.lockedAmount.should.be.below(balance.totalAmount);
                 done();
               });
             });
@@ -1867,7 +1905,7 @@ describe('Wallet service', function() {
         server.getBalance({}, function(err, balance) {
           should.not.exist(err);
           balance.totalAmount.should.equal(helpers.toSatoshi(N * 100));
-          balance.lockedAmount.should.equal(helpers.toSatoshi(0));
+          balance.lockedAmount.should.equal(0);
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, null, TestData.copayers[0].privKey_1H_0);
           async.map(_.range(N), function(i, cb) {
             server.createTx(txOpts, function(err, tx) {
@@ -2168,7 +2206,7 @@ describe('Wallet service', function() {
         server = s;
         wallet = w;
         helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
-          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, null, TestData.copayers[0].privKey_1H_0);
+          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 20, null, TestData.copayers[0].privKey_1H_0);
           server.createTx(txOpts, function(err, tx) {
             should.not.exist(err);
             should.exist(tx);
@@ -2262,7 +2300,7 @@ describe('Wallet service', function() {
         var tx = txs[0];
         tx.id.should.equal(txid);
 
-        var signatures = _.take(helpers.clientSign(tx, TestData.copayers[0].xPrivKey), 2);
+        var signatures = _.take(helpers.clientSign(tx, TestData.copayers[0].xPrivKey), tx.inputs.length - 1);
         server.signTx({
           txProposalId: txid,
           signatures: signatures,
