@@ -198,6 +198,14 @@ helpers.stubHistory = function(txs) {
   };
 };
 
+helpers.stubFeeLevels = function(levels) {
+  blockchainExplorer.estimateFee = function(nbBlocks, cb) {
+    return cb(null, {
+      feePerKB: levels[nbBlocks] / 1e8
+    });
+  };
+};
+
 helpers.stubAddressActivity = function(activeAddresses) {
   blockchainExplorer.getAddressActivity = function(addresses, cb) {
     return cb(null, _.intersection(activeAddresses, addresses).length > 0);
@@ -1439,6 +1447,68 @@ describe('Wallet service', function() {
           err.code.should.equal('BLOCKCHAINERROR');
           done();
         });
+      });
+    });
+  });
+
+  describe('#getFeeLevels', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 1, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should get current fee levels', function(done) {
+      helpers.stubFeeLevels({
+        1: 40000,
+        3: 20000,
+        10: 18000,
+      });
+      server.getFeeLevels({}, function(err, fees) {
+        should.not.exist(err);
+        fees = _.zipObject(_.map(fees, function(item) {
+          return [item.level, item.feePerKB];
+        }));
+        fees.emergency.should.equal(60000);
+        fees.priority.should.equal(40000);
+        fees.normal.should.equal(20000);
+        fees.economy.should.equal(18000);
+        done();
+      });
+    });
+    it('should get default fees if network cannot be accessed', function(done) {
+      blockchainExplorer.estimateFee = sinon.stub().yields('dummy error');
+      server.getFeeLevels({}, function(err, fees) {
+        should.not.exist(err);
+        fees = _.zipObject(_.map(fees, function(item) {
+          return [item.level, item.feePerKB];
+        }));
+        fees.emergency.should.equal(50000);
+        fees.priority.should.equal(20000);
+        fees.normal.should.equal(10000);
+        fees.economy.should.equal(5000);
+        done();
+      });
+    });
+    it('should get default fees if network cannot estimate (returns -1)', function(done) {
+      helpers.stubFeeLevels({
+        1: -1,
+        3: 18000,
+        10: 0,
+      });
+      server.getFeeLevels({}, function(err, fees) {
+        should.not.exist(err);
+        fees = _.zipObject(_.map(fees, function(item) {
+          return [item.level, item.feePerKB];
+        }));
+        fees.emergency.should.equal(50000);
+        fees.priority.should.equal(20000);
+        fees.normal.should.equal(18000);
+        fees.economy.should.equal(0);
+        done();
       });
     });
   });
