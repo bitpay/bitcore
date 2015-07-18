@@ -85,7 +85,7 @@ Returns:
 `/v1/addresses/`: Get Wallet's main addresses (does not include change addresses)
 
 Returns:
- * List of Addresses object: (https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/adddress.js)).  This call is mainly provided so the client check this addresses for incoming transactions (using a service like [Insight](https://insight.is)
+ * List of Addresses object: (https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/address.js)).  This call is mainly provided so the client check this addresses for incoming transactions (using a service like [Insight](https://insight.is)
 
 `/v1/balance/`:  Get Wallet's balance
 
