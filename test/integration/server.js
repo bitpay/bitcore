@@ -135,29 +135,28 @@ helpers.toSatoshi = function(btc) {
 };
 
 helpers.stubUtxos = function(server, wallet, amounts, cb) {
-  var amounts = [].concat(amounts);
-
-  async.mapSeries(_.range(1, Math.ceil(amounts.length / 2) + 1), function(i, next) {
-    server.createAddress({}, function(err, address) {
-      next(err, address);
-    });
+  async.mapSeries(_.range(0, amounts.length > 2 ? 2 : 1), function(i, next) {
+    server.createAddress({}, next);
   }, function(err, addresses) {
-    if (err) throw new Error('Could not generate addresses');
-
-    var utxos = _.map(amounts, function(amount, i) {
+    should.not.exist(err);
+    addresses.should.not.be.empty;
+    var utxos = _.map([].concat(amounts), function(amount, i) {
       var address = addresses[i % addresses.length];
-      var obj = {
+      var confirmations;
+      if (_.isString(amount) && _.startsWith(amount, 'u')) {
+        amount = parseFloat(amount.substring(1));
+        confirmations = 0;
+      } else {
+        confirmations = Math.floor(Math.random() * 100 + 1);
+      }
+      return {
         txid: helpers.randomTXID(),
         vout: Math.floor(Math.random() * 10 + 1),
         satoshis: helpers.toSatoshi(amount).toString(),
         scriptPubKey: address.getScriptPubKey(wallet.m).toBuffer().toString('hex'),
         address: address.address,
-        confirmations: Math.floor(Math.random() * 100 + 1),
+        confirmations: confirmations,
       };
-      obj.toObject = function() {
-        return obj;
-      };
-      return obj;
     });
     blockchainExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
 
@@ -1636,19 +1635,7 @@ describe('Wallet service', function() {
     });
 
     it('should create a tx using confirmed utxos first', function(done) {
-      server.createAddress({}, function(err, address) {
-        var utxos = _.map([1.3, 0.5, 0.1, 1.2], function(amount, i) {
-          return {
-            txid: helpers.randomTXID(),
-            vout: Math.floor((Math.random() * 10) + 1),
-            satoshis: helpers.toSatoshi(amount).toString(),
-            scriptPubKey: address.getScriptPubKey(wallet.m).toBuffer().toString('hex'),
-            address: address.address,
-            confirmations: amount < 1 ? 0 : 1,
-          };
-        });
-        blockchainExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
-
+      helpers.stubUtxos(server, wallet, [1.3, 'u0.5', 'u0.1', 1.2], function(utxos) {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1.5, 'some message', TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
@@ -1661,19 +1648,7 @@ describe('Wallet service', function() {
     });
 
     it('should use unconfirmed utxos only when no more confirmed utxos are available', function(done) {
-      server.createAddress({}, function(err, address) {
-        var utxos = _.map([1.3, 0.5, 0.1, 1.2], function(amount, i) {
-          return {
-            txid: helpers.randomTXID(),
-            vout: Math.floor((Math.random() * 10) + 1),
-            satoshis: helpers.toSatoshi(amount).toString(),
-            scriptPubKey: address.getScriptPubKey(wallet.m).toBuffer().toString('hex'),
-            address: address.address,
-            confirmations: amount < 1 ? 0 : 1,
-          };
-        });
-        blockchainExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
-
+      helpers.stubUtxos(server, wallet, [1.3, 'u0.5', 'u0.1', 1.2], function(utxos) {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 2.55, 'some message', TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
