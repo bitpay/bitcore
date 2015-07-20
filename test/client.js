@@ -151,9 +151,20 @@ blockchainExplorerMock.getAddressActivity = function(addresses, cb) {
   return cb(null, _.intersection(addr, addresses).length > 0);
 };
 
+blockchainExplorerMock.setFeeLevels = function(levels) {
+  blockchainExplorerMock.feeLevels = levels;
+};
+
+blockchainExplorerMock.estimateFee = function(nbBlocks, cb) {
+  return cb(null, {
+    feePerKB: blockchainExplorerMock.feeLevels[nbBlocks] / 1e8
+  });
+};
+
 blockchainExplorerMock.reset = function() {
   blockchainExplorerMock.utxos = [];
   blockchainExplorerMock.txHistory = [];
+  blockchainExplorerMock.feeLevels = [];
 };
 
 
@@ -289,7 +300,10 @@ describe('client API', function() {
     });
 
     it('should handle critical errors (Case4)', function(done) {
-      var body = { code: 999, message: 'unexpected body'};
+      var body = {
+        code: 999,
+        message: 'unexpected body'
+      };
       var ret = Client._parseError(body);
       ret.toString().indexOf('ClientError').should.not.equal(-1);
       done();
@@ -298,7 +312,9 @@ describe('client API', function() {
     it('should handle critical errors (Case5)', function(done) {
       var err = 'some error';
       var res, body; // leave them undefined to simulate no-response
-      var requestStub = function(args, cb) { cb(err, res, body); };
+      var requestStub = function(args, cb) {
+        cb(err, res, body);
+      };
       var request = sinon.stub(clients[0], 'request', requestStub);
       clients[0].createWallet('wallet name', 'creator', 1, 2, {
         network: 'testnet'
@@ -458,6 +474,23 @@ describe('client API', function() {
           status.wallet.secret.should.equal(secret);
           done();
         });
+      });
+    });
+  });
+
+  describe('Network fees', function() {
+    it('should get current fee levels', function(done) {
+      blockchainExplorerMock.setFeeLevels({
+        1: 40000,
+        3: 20000,
+        10: 18000,
+      });
+      clients[0].credentials = {};
+      clients[0].getFeeLevels('livenet', function(err, levels) {
+        should.not.exist(err);
+        should.exist(levels);
+        _.difference(['emergency', 'priority', 'normal', 'economy'], _.pluck(levels, 'level')).should.be.empty;
+        done();
       });
     });
   });
@@ -1100,22 +1133,18 @@ describe('client API', function() {
           var opts = {
             type: 'multiple_outputs',
             message: 'hello',
-            outputs: [
-              {
-                amount: 10000,
-                toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-                message: 'world',
-              },
-              {
-                amount: 20000,
-                toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-                message: null,
-              },
-             {
-                amount: 30000,
-                toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-              }
-            ]
+            outputs: [{
+              amount: 10000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: 'world',
+            }, {
+              amount: 20000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: null,
+            }, {
+              amount: 30000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            }]
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
@@ -1162,6 +1191,7 @@ describe('client API', function() {
       };
       done();
     });
+
     function doTest(opts, done) {
       helpers.createAndJoinWallet(clients, 2, 2, function(w) {
         clients[0].createAddress(function(err, x0) {
@@ -1203,14 +1233,21 @@ describe('client API', function() {
     });
     it('should pass with complete multi-output header', function(done) {
       opts.type = 'multiple_outputs';
-      opts.outputs = [{ toAddress: opts.toAddress, amount: opts.amount, message:opts.message}];
+      opts.outputs = [{
+        toAddress: opts.toAddress,
+        amount: opts.amount,
+        message: opts.message
+      }];
       delete opts.toAddress;
       delete opts.amount;
       doTest(opts, done);
     });
     it('should pass with multi-output header and no message', function(done) {
       opts.type = 'multiple_outputs';
-      opts.outputs = [{ toAddress: opts.toAddress, amount: opts.amount}];
+      opts.outputs = [{
+        toAddress: opts.toAddress,
+        amount: opts.amount
+      }];
       delete opts.toAddress;
       delete opts.amount;
       doTest(opts, done);
