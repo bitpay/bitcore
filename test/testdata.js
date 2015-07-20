@@ -147,7 +147,7 @@ var history = [{
     }
   }],
   confirmations: 2,
-  time: 1424471041,
+  firstSeenTs: 1424471041,
   blocktime: 1424471041,
   valueOut: 0.01345753,
   valueIn: 0.01371235,
