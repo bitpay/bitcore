@@ -142,8 +142,9 @@ blockchainExplorerMock.setHistory = function(txs) {
 };
 
 blockchainExplorerMock.getTransactions = function(addresses, from, to, cb) {
-  // TODO: add support for from/to params
-  return cb(null, blockchainExplorerMock.txHistory || []);
+  var list = [].concat(blockchainExplorerMock.txHistory);
+  list = _.slice(list, from, to);
+  return cb(null, list);
 };
 
 blockchainExplorerMock.getAddressActivity = function(addresses, cb) {
