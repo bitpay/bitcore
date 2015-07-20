@@ -33,7 +33,7 @@ var history = [{
     }
   }],
   confirmations: 2,
-  time: 10,
+  time: 20,
   blocktime: 1424471041,
   valueOut: 0.01345753,
   valueIn: 0.01371235,
@@ -66,7 +66,7 @@ var history = [{
     }
   }],
   confirmations: 1,
-  time: 20,
+  firstSeenTs: 10,
   blocktime: 1424472242,
   valueOut: 0.00031454,
   valueIn: 0.00045753,
