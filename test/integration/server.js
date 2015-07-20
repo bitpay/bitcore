@@ -288,11 +288,11 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
 
 var storage, blockchainExplorer;
 
-var useMongo = false;
+var useMongoDb = !!process.env.USE_MONGO_DB;
 
 function initStorage(cb) {
   function getDb(cb) {
-    if (useMongo) {
+    if (useMongoDb) {
       var mongodb = require('mongodb');
       mongodb.MongoClient.connect('mongodb://localhost:27017/bws_test', function(err, db) {
         if (err) throw err;
