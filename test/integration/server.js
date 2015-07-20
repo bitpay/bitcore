@@ -1363,13 +1363,19 @@ describe('Wallet service', function() {
     });
 
     it('should get balance', function(done) {
-      helpers.stubUtxos(server, wallet, [1, 2, 3], function() {
+      helpers.stubUtxos(server, wallet, [1, 'u2', 3], function() {
         server.getBalance({}, function(err, balance) {
           should.not.exist(err);
           should.exist(balance);
           balance.totalAmount.should.equal(helpers.toSatoshi(6));
           balance.lockedAmount.should.equal(0);
+          balance.availableAmount.should.equal(helpers.toSatoshi(6));
           balance.totalKbToSendMax.should.equal(1);
+
+          balance.totalConfirmedAmount.should.equal(helpers.toSatoshi(4));
+          balance.lockedConfirmedAmount.should.equal(0);
+          balance.availableConfirmedAmount.should.equal(helpers.toSatoshi(4));
+
           should.exist(balance.byAddress);
           balance.byAddress.length.should.equal(2);
           balance.byAddress[0].amount.should.equal(helpers.toSatoshi(4));
@@ -1389,6 +1395,7 @@ describe('Wallet service', function() {
         should.exist(balance);
         balance.totalAmount.should.equal(0);
         balance.lockedAmount.should.equal(0);
+        balance.availableAmount.should.equal(0);
         balance.totalKbToSendMax.should.equal(0);
         should.exist(balance.byAddress);
         balance.byAddress.length.should.equal(0);
@@ -1404,6 +1411,7 @@ describe('Wallet service', function() {
           should.exist(balance);
           balance.totalAmount.should.equal(0);
           balance.lockedAmount.should.equal(0);
+          balance.availableAmount.should.equal(0);
           balance.totalKbToSendMax.should.equal(0);
           should.exist(balance.byAddress);
           balance.byAddress.length.should.equal(0);
@@ -1609,6 +1617,7 @@ describe('Wallet service', function() {
               balance.totalAmount.should.equal(helpers.toSatoshi(300));
               balance.lockedAmount.should.equal(tx.inputs[0].satoshis);
               balance.lockedAmount.should.be.below(balance.totalAmount);
+              balance.availableAmount.should.equal(balance.totalAmount - balance.lockedAmount);
               server.storage.fetchAddresses(wallet.id, function(err, addresses) {
                 should.not.exist(err);
                 var change = _.filter(addresses, {
@@ -1931,11 +1940,10 @@ describe('Wallet service', function() {
               server.getBalance({}, function(err, balance) {
                 should.not.exist(err);
                 balance.totalAmount.should.equal(helpers.toSatoshi(30.6));
-                var amountInputs = _.reduce(_.pluck(txs[0].inputs, 'satoshis'), function(memo, satoshis) {
-                  return memo + satoshis;
-                }, 0);
+                var amountInputs = _.sum(txs[0].inputs, 'satoshis');
                 balance.lockedAmount.should.equal(amountInputs);
                 balance.lockedAmount.should.be.below(balance.totalAmount);
+                balance.availableAmount.should.equal(balance.totalAmount - balance.lockedAmount);
                 done();
               });
             });
@@ -2030,6 +2038,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           balance.totalAmount.should.equal(helpers.toSatoshi(9));
           balance.lockedAmount.should.equal(0);
+          balance.availableAmount.should.equal(helpers.toSatoshi(9));
           balance.totalKbToSendMax.should.equal(3);
           var max = (balance.totalAmount - balance.lockedAmount) - (balance.totalKbToSendMax * 10000);
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max / 1e8, null, TestData.copayers[0].privKey_1H_0);
@@ -2056,6 +2065,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             balance.totalAmount.should.equal(helpers.toSatoshi(9));
             balance.lockedAmount.should.equal(helpers.toSatoshi(4));
+            balance.availableAmount.should.equal(helpers.toSatoshi(5));
             balance.totalKbToSendMax.should.equal(2);
             var max = (balance.totalAmount - balance.lockedAmount) - (balance.totalKbToSendMax * 2000);
             var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max / 1e8, null, TestData.copayers[0].privKey_1H_0, 2000);
