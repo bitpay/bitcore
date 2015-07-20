@@ -3472,7 +3472,6 @@ describe('Wallet service', function() {
         confirmations: 1,
         fees: 100,
         time: 20,
-        firstSeenTs: 2,
         inputs: [{
           address: 'external',
           amount: 500,
@@ -3491,7 +3490,7 @@ describe('Wallet service', function() {
         tx.action.should.equal('received');
         tx.amount.should.equal(200);
         tx.fees.should.equal(100);
-        tx.time.should.equal(2);
+        tx.time.should.equal(20);
         done();
       });
     });
