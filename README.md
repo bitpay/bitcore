@@ -213,10 +213,20 @@ Send a transaction proposal
 
 **Params**
 
-- opts `Object`  
-  - toAddress `String`  
-  - amount `Number`  
-  - message `String`  
+For a proposal with one output:
+
+- opts `Object`
+  - toAddress `String`
+  - amount `Number`
+  - message `String`
+
+For a proposal with multiple outputs:
+
+- opts `Object`
+  - outputs `Array`
+    - toAddress `String`
+    - amount `Number`
+    - message `String`
 
 **Returns**: `Callback` - cb - Return error or the transaction proposal  
 <a name="API#createAddress"></a>
