@@ -1671,6 +1671,26 @@ describe('Wallet service', function() {
       });
     });
 
+    it('should use confirmed utxos only if specified', function(done) {
+      helpers.stubUtxos(server, wallet, [1.3, 'u2', 'u0.1', 1.2], function(utxos) {
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 3, 'some message', TestData.copayers[0].privKey_1H_0);
+        txOpts.excludeUnconfirmedUtxos = true;
+        server.createTx(txOpts, function(err, tx) {
+          should.exist(err);
+          err.code.should.equal('INSUFFICIENTFUNDS');
+          err.message.should.equal('Insufficient funds');
+          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 2.5, 'some message', TestData.copayers[0].privKey_1H_0);
+          txOpts.excludeUnconfirmedUtxos = true;
+          server.createTx(txOpts, function(err, tx) {
+            should.exist(err);
+            err.code.should.equal('INSUFFICIENTFUNDS');
+            err.message.should.equal('Insufficient funds for fee');
+            done();
+          });
+        });
+      });
+    });
+
     it('should fail gracefully if unable to reach the blockchain', function(done) {
       blockchainExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, 'dummy error');
       server.createAddress({}, function(err, address) {
