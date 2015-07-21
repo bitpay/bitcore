@@ -1671,7 +1671,7 @@ describe('Wallet service', function() {
       });
     });
 
-    it('should use confirmed utxos only if specified', function(done) {
+    it('should exclude unconfirmed utxos if specified', function(done) {
       helpers.stubUtxos(server, wallet, [1.3, 'u2', 'u0.1', 1.2], function(utxos) {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 3, 'some message', TestData.copayers[0].privKey_1H_0);
         txOpts.excludeUnconfirmedUtxos = true;
@@ -1686,6 +1686,30 @@ describe('Wallet service', function() {
             err.code.should.equal('INSUFFICIENTFUNDS');
             err.message.should.equal('Insufficient funds for fee');
             done();
+          });
+        });
+      });
+    });
+
+    it('should use non-locked confirmed utxos when specified', function(done) {
+      helpers.stubUtxos(server, wallet, [1.3, 'u2', 'u0.1', 1.2], function(utxos) {
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1.4, 'some message', TestData.copayers[0].privKey_1H_0);
+        txOpts.excludeUnconfirmedUtxos = true;
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(err);
+          should.exist(tx);
+          tx.inputs.length.should.equal(2);
+          server.getBalance({}, function(err, balance) {
+            should.not.exist(err);
+            balance.lockedConfirmedAmount.should.equal(helpers.toSatoshi(2.5));
+            balance.availableConfirmedAmount.should.equal(0);
+            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.01, 'some message', TestData.copayers[0].privKey_1H_0);
+            txOpts.excludeUnconfirmedUtxos = true;
+            server.createTx(txOpts, function(err, tx) {
+              should.exist(err);
+              err.code.should.equal('LOCKEDFUNDS');
+              done();
+            });
           });
         });
       });
