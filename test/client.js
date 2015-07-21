@@ -912,6 +912,24 @@ describe('client API', function() {
         });
       });
     });
+    it('Should return UTXOs', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
+        clients[0].getUtxos(function(err, utxos) {
+          should.not.exist(err);
+          utxos.length.should.equal(0)
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            should.exist(x0.address);
+            blockchainExplorerMock.setUtxo(x0, 1, 1);
+            clients[0].getUtxos(function(err, utxos) {
+              should.not.exist(err);
+              utxos.length.should.equal(1);
+              done();
+            });
+          });
+        });
+      });
+    });
   });
 
   describe('Payment Protocol', function() {
@@ -2109,7 +2127,7 @@ describe('client API', function() {
             c.credentials.walletId.should.equal('e2c2d72024979ded');
             c.credentials.walletPrivKey.should.equal('c3463113c6e1d0fc2f2bd520f7d9d62f8e1fdcdd96005254571c64902aeb1648');
             c.credentials.sharedEncryptingKey.should.equal('x3D/7QHa4PkKMbSXEvXwaw==');
-            // TODO? 
+            // TODO?
             // bal1.totalAmount.should.equal(18979980);
             done();
           });
