@@ -135,29 +135,28 @@ helpers.toSatoshi = function(btc) {
 };
 
 helpers.stubUtxos = function(server, wallet, amounts, cb) {
-  var amounts = [].concat(amounts);
-
-  async.mapSeries(_.range(1, Math.ceil(amounts.length / 2) + 1), function(i, next) {
-    server.createAddress({}, function(err, address) {
-      next(err, address);
-    });
+  async.mapSeries(_.range(0, amounts.length > 2 ? 2 : 1), function(i, next) {
+    server.createAddress({}, next);
   }, function(err, addresses) {
-    if (err) throw new Error('Could not generate addresses');
-
-    var utxos = _.map(amounts, function(amount, i) {
+    should.not.exist(err);
+    addresses.should.not.be.empty;
+    var utxos = _.map([].concat(amounts), function(amount, i) {
       var address = addresses[i % addresses.length];
-      var obj = {
+      var confirmations;
+      if (_.isString(amount) && _.startsWith(amount, 'u')) {
+        amount = parseFloat(amount.substring(1));
+        confirmations = 0;
+      } else {
+        confirmations = Math.floor(Math.random() * 100 + 1);
+      }
+      return {
         txid: helpers.randomTXID(),
         vout: Math.floor(Math.random() * 10 + 1),
         satoshis: helpers.toSatoshi(amount).toString(),
         scriptPubKey: address.getScriptPubKey(wallet.m).toBuffer().toString('hex'),
         address: address.address,
-        confirmations: Math.floor(Math.random() * 100 + 1),
+        confirmations: confirmations,
       };
-      obj.toObject = function() {
-        return obj;
-      };
-      return obj;
     });
     blockchainExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
 
@@ -289,11 +288,11 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
 
 var storage, blockchainExplorer;
 
-var useMongo = false;
+var useMongoDb = !!process.env.USE_MONGO_DB;
 
 function initStorage(cb) {
   function getDb(cb) {
-    if (useMongo) {
+    if (useMongoDb) {
       var mongodb = require('mongodb');
       mongodb.MongoClient.connect('mongodb://localhost:27017/bws_test', function(err, db) {
         if (err) throw err;
@@ -1364,13 +1363,19 @@ describe('Wallet service', function() {
     });
 
     it('should get balance', function(done) {
-      helpers.stubUtxos(server, wallet, [1, 2, 3], function() {
+      helpers.stubUtxos(server, wallet, [1, 'u2', 3], function() {
         server.getBalance({}, function(err, balance) {
           should.not.exist(err);
           should.exist(balance);
           balance.totalAmount.should.equal(helpers.toSatoshi(6));
           balance.lockedAmount.should.equal(0);
+          balance.availableAmount.should.equal(helpers.toSatoshi(6));
           balance.totalKbToSendMax.should.equal(1);
+
+          balance.totalConfirmedAmount.should.equal(helpers.toSatoshi(4));
+          balance.lockedConfirmedAmount.should.equal(0);
+          balance.availableConfirmedAmount.should.equal(helpers.toSatoshi(4));
+
           should.exist(balance.byAddress);
           balance.byAddress.length.should.equal(2);
           balance.byAddress[0].amount.should.equal(helpers.toSatoshi(4));
@@ -1390,6 +1395,7 @@ describe('Wallet service', function() {
         should.exist(balance);
         balance.totalAmount.should.equal(0);
         balance.lockedAmount.should.equal(0);
+        balance.availableAmount.should.equal(0);
         balance.totalKbToSendMax.should.equal(0);
         should.exist(balance.byAddress);
         balance.byAddress.length.should.equal(0);
@@ -1405,6 +1411,7 @@ describe('Wallet service', function() {
           should.exist(balance);
           balance.totalAmount.should.equal(0);
           balance.lockedAmount.should.equal(0);
+          balance.availableAmount.should.equal(0);
           balance.totalKbToSendMax.should.equal(0);
           should.exist(balance.byAddress);
           balance.byAddress.length.should.equal(0);
@@ -1610,6 +1617,7 @@ describe('Wallet service', function() {
               balance.totalAmount.should.equal(helpers.toSatoshi(300));
               balance.lockedAmount.should.equal(tx.inputs[0].satoshis);
               balance.lockedAmount.should.be.below(balance.totalAmount);
+              balance.availableAmount.should.equal(balance.totalAmount - balance.lockedAmount);
               server.storage.fetchAddresses(wallet.id, function(err, addresses) {
                 should.not.exist(err);
                 var change = _.filter(addresses, {
@@ -1636,19 +1644,7 @@ describe('Wallet service', function() {
     });
 
     it('should create a tx using confirmed utxos first', function(done) {
-      server.createAddress({}, function(err, address) {
-        var utxos = _.map([1.3, 0.5, 0.1, 1.2], function(amount, i) {
-          return {
-            txid: helpers.randomTXID(),
-            vout: Math.floor((Math.random() * 10) + 1),
-            satoshis: helpers.toSatoshi(amount).toString(),
-            scriptPubKey: address.getScriptPubKey(wallet.m).toBuffer().toString('hex'),
-            address: address.address,
-            confirmations: amount < 1 ? 0 : 1,
-          };
-        });
-        blockchainExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
-
+      helpers.stubUtxos(server, wallet, [1.3, 'u0.5', 'u0.1', 1.2], function(utxos) {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1.5, 'some message', TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
@@ -1661,19 +1657,7 @@ describe('Wallet service', function() {
     });
 
     it('should use unconfirmed utxos only when no more confirmed utxos are available', function(done) {
-      server.createAddress({}, function(err, address) {
-        var utxos = _.map([1.3, 0.5, 0.1, 1.2], function(amount, i) {
-          return {
-            txid: helpers.randomTXID(),
-            vout: Math.floor((Math.random() * 10) + 1),
-            satoshis: helpers.toSatoshi(amount).toString(),
-            scriptPubKey: address.getScriptPubKey(wallet.m).toBuffer().toString('hex'),
-            address: address.address,
-            confirmations: amount < 1 ? 0 : 1,
-          };
-        });
-        blockchainExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
-
+      helpers.stubUtxos(server, wallet, [1.3, 'u0.5', 'u0.1', 1.2], function(utxos) {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 2.55, 'some message', TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
@@ -1683,6 +1667,50 @@ describe('Wallet service', function() {
           txids.should.contain(utxos[0].txid);
           txids.should.contain(utxos[3].txid);
           done();
+        });
+      });
+    });
+
+    it('should exclude unconfirmed utxos if specified', function(done) {
+      helpers.stubUtxos(server, wallet, [1.3, 'u2', 'u0.1', 1.2], function(utxos) {
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 3, 'some message', TestData.copayers[0].privKey_1H_0);
+        txOpts.excludeUnconfirmedUtxos = true;
+        server.createTx(txOpts, function(err, tx) {
+          should.exist(err);
+          err.code.should.equal('INSUFFICIENTFUNDS');
+          err.message.should.equal('Insufficient funds');
+          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 2.5, 'some message', TestData.copayers[0].privKey_1H_0);
+          txOpts.excludeUnconfirmedUtxos = true;
+          server.createTx(txOpts, function(err, tx) {
+            should.exist(err);
+            err.code.should.equal('INSUFFICIENTFUNDS');
+            err.message.should.equal('Insufficient funds for fee');
+            done();
+          });
+        });
+      });
+    });
+
+    it('should use non-locked confirmed utxos when specified', function(done) {
+      helpers.stubUtxos(server, wallet, [1.3, 'u2', 'u0.1', 1.2], function(utxos) {
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1.4, 'some message', TestData.copayers[0].privKey_1H_0);
+        txOpts.excludeUnconfirmedUtxos = true;
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(err);
+          should.exist(tx);
+          tx.inputs.length.should.equal(2);
+          server.getBalance({}, function(err, balance) {
+            should.not.exist(err);
+            balance.lockedConfirmedAmount.should.equal(helpers.toSatoshi(2.5));
+            balance.availableConfirmedAmount.should.equal(0);
+            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.01, 'some message', TestData.copayers[0].privKey_1H_0);
+            txOpts.excludeUnconfirmedUtxos = true;
+            server.createTx(txOpts, function(err, tx) {
+              should.exist(err);
+              err.code.should.equal('LOCKEDFUNDS');
+              done();
+            });
+          });
         });
       });
     });
@@ -1956,11 +1984,10 @@ describe('Wallet service', function() {
               server.getBalance({}, function(err, balance) {
                 should.not.exist(err);
                 balance.totalAmount.should.equal(helpers.toSatoshi(30.6));
-                var amountInputs = _.reduce(_.pluck(txs[0].inputs, 'satoshis'), function(memo, satoshis) {
-                  return memo + satoshis;
-                }, 0);
+                var amountInputs = _.sum(txs[0].inputs, 'satoshis');
                 balance.lockedAmount.should.equal(amountInputs);
                 balance.lockedAmount.should.be.below(balance.totalAmount);
+                balance.availableAmount.should.equal(balance.totalAmount - balance.lockedAmount);
                 done();
               });
             });
@@ -2055,6 +2082,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           balance.totalAmount.should.equal(helpers.toSatoshi(9));
           balance.lockedAmount.should.equal(0);
+          balance.availableAmount.should.equal(helpers.toSatoshi(9));
           balance.totalKbToSendMax.should.equal(3);
           var max = (balance.totalAmount - balance.lockedAmount) - (balance.totalKbToSendMax * 10000);
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max / 1e8, null, TestData.copayers[0].privKey_1H_0);
@@ -2081,6 +2109,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             balance.totalAmount.should.equal(helpers.toSatoshi(9));
             balance.lockedAmount.should.equal(helpers.toSatoshi(4));
+            balance.availableAmount.should.equal(helpers.toSatoshi(5));
             balance.totalKbToSendMax.should.equal(2);
             var max = (balance.totalAmount - balance.lockedAmount) - (balance.totalKbToSendMax * 2000);
             var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max / 1e8, null, TestData.copayers[0].privKey_1H_0, 2000);

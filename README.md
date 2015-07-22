@@ -91,8 +91,13 @@ Returns:
 
 Returns:
  * totalAmount: Wallet's total balance
- * lockedAmount: Current balance of outstanding transaction proposals, that cannot be used on new transactions. 
+ * lockedAmount: Current balance of outstanding transaction proposals, that cannot be used on new transactions.
+ * availableAmount: Funds available for new proposals.
+ * totalConfirmedAmount: Same as totalAmount for confirmed UTXOs only.
+ * lockedConfirmedAmount: Same as lockedAmount for confirmed UTXOs only.
+ * availableConfirmedAmount: Same as availableAmount for confirmed UTXOs only.
  * byAddress array ['address', 'path', 'amount']: A list of addresses holding funds.
+ * totalKbToSendMax: An estimation of the number of KiB required to include all available UTXOs in a tx (including unconfirmed).
  
 ## POST Endpoints
 `/v1/wallets/`: Create a new Wallet
@@ -122,11 +127,14 @@ Returns:
 
 `/v1/txproposals/`: Add a new transaction proposal
 Required Arguments:
- * toAddress:  RCPT Bitcoin address 
+ * toAddress: RCPT Bitcoin address.
  * amount: amount (in satoshis) of the mount proposed to be transfered
  * proposalsSignature: Signature of the proposal by the creator peer, using prososalSigningKey.
- * (opt) message: Encrypted private message to peers
- 
+ * (opt) message: Encrypted private message to peers.
+ * (opt) payProUrl: Paypro URL for peers to verify TX
+ * (opt) feePerKb: Use an alternative fee per KB for this TX.
+ * (opt) excludeUnconfirmedUtxos: Do not use UTXOs of unconfirmed transactions as inputs for this TX.
+
 Returns:
  * TX Proposal object. (see [fields on the source code](https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/txproposal.js)). `.id` is probably needed in this case.
 
