@@ -1471,18 +1471,22 @@ describe('Wallet service', function() {
     it('should get current fee levels', function(done) {
       helpers.stubFeeLevels({
         1: 40000,
-        3: 20000,
-        10: 18000,
+        4: 20000,
+        12: 18000,
       });
       server.getFeeLevels({}, function(err, fees) {
         should.not.exist(err);
         fees = _.zipObject(_.map(fees, function(item) {
-          return [item.level, item.feePerKB];
+          return [item.level, item];
         }));
-        fees.emergency.should.equal(60000);
-        fees.priority.should.equal(40000);
-        fees.normal.should.equal(20000);
-        fees.economy.should.equal(18000);
+        fees.priority.feePerKB.should.equal(40000);
+        fees.priority.nbBlocks.should.equal(1);
+
+        fees.normal.feePerKB.should.equal(20000);
+        fees.normal.nbBlocks.should.equal(4);
+
+        fees.economy.feePerKB.should.equal(18000);
+        fees.economy.nbBlocks.should.equal(12);
         done();
       });
     });
@@ -1493,28 +1497,31 @@ describe('Wallet service', function() {
         fees = _.zipObject(_.map(fees, function(item) {
           return [item.level, item.feePerKB];
         }));
-        fees.emergency.should.equal(50000);
-        fees.priority.should.equal(20000);
-        fees.normal.should.equal(10000);
-        fees.economy.should.equal(5000);
+        fees.priority.should.equal(50000);
+        fees.normal.should.equal(20000);
+        fees.economy.should.equal(10000);
         done();
       });
     });
     it('should get default fees if network cannot estimate (returns -1)', function(done) {
       helpers.stubFeeLevels({
         1: -1,
-        3: 18000,
-        10: 0,
+        4: 18000,
+        12: 0,
       });
       server.getFeeLevels({}, function(err, fees) {
         should.not.exist(err);
         fees = _.zipObject(_.map(fees, function(item) {
-          return [item.level, item.feePerKB];
+          return [item.level, item];
         }));
-        fees.emergency.should.equal(50000);
-        fees.priority.should.equal(20000);
-        fees.normal.should.equal(18000);
-        fees.economy.should.equal(0);
+        fees.priority.feePerKB.should.equal(50000);
+        should.not.exist(fees.priority.nbBlocks);
+        
+        fees.normal.feePerKB.should.equal(18000);
+        fees.normal.nbBlocks.should.equal(4);
+        
+        fees.economy.feePerKB.should.equal(0);
+        fees.economy.nbBlocks.should.equal(12);
         done();
       });
     });
