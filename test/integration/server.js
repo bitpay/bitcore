@@ -1458,7 +1458,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe.only('#getFeeLevels', function() {
+  describe('#getFeeLevels', function() {
     var server, wallet;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(1, 1, function(s, w) {
@@ -1477,11 +1477,16 @@ describe('Wallet service', function() {
       server.getFeeLevels({}, function(err, fees) {
         should.not.exist(err);
         fees = _.zipObject(_.map(fees, function(item) {
-          return [item.level, item.feePerKB];
+          return [item.level, item];
         }));
-        fees.priority.should.equal(40000);
-        fees.normal.should.equal(20000);
-        fees.economy.should.equal(18000);
+        fees.priority.feePerKB.should.equal(40000);
+        fees.priority.nbBlocks.should.equal(1);
+
+        fees.normal.feePerKB.should.equal(20000);
+        fees.normal.nbBlocks.should.equal(4);
+
+        fees.economy.feePerKB.should.equal(18000);
+        fees.economy.nbBlocks.should.equal(12);
         done();
       });
     });
