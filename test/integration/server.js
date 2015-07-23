@@ -1458,7 +1458,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('#getFeeLevels', function() {
+  describe.only('#getFeeLevels', function() {
     var server, wallet;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(1, 1, function(s, w) {
@@ -1471,15 +1471,14 @@ describe('Wallet service', function() {
     it('should get current fee levels', function(done) {
       helpers.stubFeeLevels({
         1: 40000,
-        3: 20000,
-        10: 18000,
+        4: 20000,
+        12: 18000,
       });
       server.getFeeLevels({}, function(err, fees) {
         should.not.exist(err);
         fees = _.zipObject(_.map(fees, function(item) {
           return [item.level, item.feePerKB];
         }));
-        fees.emergency.should.equal(60000);
         fees.priority.should.equal(40000);
         fees.normal.should.equal(20000);
         fees.economy.should.equal(18000);
@@ -1493,26 +1492,24 @@ describe('Wallet service', function() {
         fees = _.zipObject(_.map(fees, function(item) {
           return [item.level, item.feePerKB];
         }));
-        fees.emergency.should.equal(50000);
-        fees.priority.should.equal(20000);
-        fees.normal.should.equal(10000);
-        fees.economy.should.equal(5000);
+        fees.priority.should.equal(50000);
+        fees.normal.should.equal(20000);
+        fees.economy.should.equal(10000);
         done();
       });
     });
     it('should get default fees if network cannot estimate (returns -1)', function(done) {
       helpers.stubFeeLevels({
         1: -1,
-        3: 18000,
-        10: 0,
+        4: 18000,
+        12: 0,
       });
       server.getFeeLevels({}, function(err, fees) {
         should.not.exist(err);
         fees = _.zipObject(_.map(fees, function(item) {
           return [item.level, item.feePerKB];
         }));
-        fees.emergency.should.equal(50000);
-        fees.priority.should.equal(20000);
+        fees.priority.should.equal(50000);
         fees.normal.should.equal(18000);
         fees.economy.should.equal(0);
         done();
