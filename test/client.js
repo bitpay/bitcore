@@ -477,6 +477,14 @@ describe('client API', function() {
         });
       });
     });
+    it('should prepare wallet with external xpubkey', function(done) {
+      var client = helpers.newClient(app);
+      client.seedFromExternalWalletPublicKey('xpub6D52jcEfKA4cGeGcVC9pwG37Ju8pUMQrhptw82QVHRSAGBELE5uCee7Qq8RJUqQVyxfJfwbJKYyqyFhc2Xg8cJyN11kRvnAaWcACXP6K0zv', 'ledger', 2);
+      client.isPrivKeyExternal().should.equal(true);
+      client.getPrivKeyExternalSourceName().should.equal('ledger');
+      client.getExternalIndex().should.equal(2);
+      done();
+    });
   });
 
   describe('Network fees', function() {
