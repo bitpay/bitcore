@@ -1516,10 +1516,10 @@ describe('Wallet service', function() {
         }));
         fees.priority.feePerKB.should.equal(50000);
         should.not.exist(fees.priority.nbBlocks);
-        
+
         fees.normal.feePerKB.should.equal(18000);
         fees.normal.nbBlocks.should.equal(4);
-        
+
         fees.economy.feePerKB.should.equal(0);
         fees.economy.nbBlocks.should.equal(12);
         done();
@@ -1613,7 +1613,8 @@ describe('Wallet service', function() {
           tx.isAccepted().should.equal.false;
           tx.isRejected().should.equal.false;
           tx.amount.should.equal(helpers.toSatoshi(80));
-          tx.fee.should.equal(Bitcore.Transaction.FEE_PER_KB);
+          var estimatedFee = WalletUtils.DEFAULT_FEE_PER_KB * 400 / 1000; // fully signed tx should have about 400 bytes
+          tx.fee.should.be.within(0.9 * estimatedFee, 1.1 * estimatedFee);
           server.getPendingTxs({}, function(err, txs) {
             should.not.exist(err);
             txs.length.should.equal(1);
@@ -1836,8 +1837,8 @@ describe('Wallet service', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 3.5, null, TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
-          tx.getBitcoreTx()._estimateSize().should.be.within(1001, 1999);
-          tx.fee.should.equal(20000);
+          var estimatedFee = WalletUtils.DEFAULT_FEE_PER_KB * 1300 / 1000; // fully signed tx should have about 1300 bytes
+          tx.fee.should.be.within(0.9 * estimatedFee, 1.1 * estimatedFee);
           done();
         });
       });
@@ -1845,16 +1846,18 @@ describe('Wallet service', function() {
 
     it('should be possible to use a smaller fee', function(done) {
       helpers.stubUtxos(server, wallet, 1, function() {
-        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, null, TestData.copayers[0].privKey_1H_0);
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, null, TestData.copayers[0].privKey_1H_0, 80000);
         server.createTx(txOpts, function(err, tx) {
           should.exist(err);
           err.code.should.equal('INSUFFICIENTFUNDS');
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, null, TestData.copayers[0].privKey_1H_0, 5000);
           server.createTx(txOpts, function(err, tx) {
             should.not.exist(err);
-            tx.fee.should.equal(5000);
-            var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+            var estimatedFee = 5000 * 400 / 1000; // fully signed tx should have about 400 bytes
+            tx.fee.should.be.within(0.9 * estimatedFee, 1.1 * estimatedFee);
+
             // Sign it to make sure Bitcore doesn't complain about the fees
+            var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
             server.signTx({
               txProposalId: tx.id,
               signatures: signatures,
@@ -1881,11 +1884,11 @@ describe('Wallet service', function() {
 
     it('should fail to create tx that would return change for dust amount', function(done) {
       helpers.stubUtxos(server, wallet, [1], function() {
-        var fee = 10000 / 1e8;
-        var change = 0.00000001;
+        var fee = 4095 / 1e8; // The exact fee of the resulting tx
+        var change = 100 / 1e8; // Below dust
         var amount = 1 - fee - change;
 
-        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', amount, null, TestData.copayers[0].privKey_1H_0);
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', amount, null, TestData.copayers[0].privKey_1H_0, 10000);
         server.createTx(txOpts, function(err, tx) {
           should.exist(err);
           err.code.should.equal('DUSTAMOUNT');
@@ -1918,7 +1921,7 @@ describe('Wallet service', function() {
 
     it('should create tx with 0 change output', function(done) {
       helpers.stubUtxos(server, wallet, [1], function() {
-        var fee = Bitcore.Transaction.FEE_PER_KB / 1e8;
+        var fee = 4100 / 1e8; // The exact fee of the resulting tx
         var amount = 1 - fee;
 
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', amount, null, TestData.copayers[0].privKey_1H_0);
@@ -2097,7 +2100,8 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(tx);
             tx.amount.should.equal(max);
-            tx.fee.should.equal(3 * 10000);
+            var estimatedFee = 2900 * 10000 / 1000; // estimated size = 2900 bytes
+            tx.fee.should.be.within(0.9 * estimatedFee, 1.1 * estimatedFee);
             server.getBalance({}, function(err, balance) {
               should.not.exist(err);
               balance.lockedAmount.should.equal(helpers.toSatoshi(9));
@@ -2124,7 +2128,8 @@ describe('Wallet service', function() {
               should.not.exist(err);
               should.exist(tx);
               tx.amount.should.equal(max);
-              tx.fee.should.equal(2 * 2000);
+              var estimatedFee = 1650 * 2000 / 1000; // estimated size = 1650 bytes
+              tx.fee.should.be.within(0.9 * estimatedFee, 1.1 * estimatedFee);
               server.getBalance({}, function(err, balance) {
                 should.not.exist(err);
                 balance.lockedAmount.should.equal(helpers.toSatoshi(9));
