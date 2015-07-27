@@ -1370,7 +1370,7 @@ describe('Wallet service', function() {
           balance.totalAmount.should.equal(helpers.toSatoshi(6));
           balance.lockedAmount.should.equal(0);
           balance.availableAmount.should.equal(helpers.toSatoshi(6));
-          balance.totalKbToSendMax.should.equal(1);
+          balance.totalBytesToSendMax.should.equal(578);
 
           balance.totalConfirmedAmount.should.equal(helpers.toSatoshi(4));
           balance.lockedConfirmedAmount.should.equal(0);
@@ -1396,7 +1396,7 @@ describe('Wallet service', function() {
         balance.totalAmount.should.equal(0);
         balance.lockedAmount.should.equal(0);
         balance.availableAmount.should.equal(0);
-        balance.totalKbToSendMax.should.equal(0);
+        balance.totalBytesToSendMax.should.equal(0);
         should.exist(balance.byAddress);
         balance.byAddress.length.should.equal(0);
         done();
@@ -1412,7 +1412,7 @@ describe('Wallet service', function() {
           balance.totalAmount.should.equal(0);
           balance.lockedAmount.should.equal(0);
           balance.availableAmount.should.equal(0);
-          balance.totalKbToSendMax.should.equal(0);
+          balance.totalBytesToSendMax.should.equal(0);
           should.exist(balance.byAddress);
           balance.byAddress.length.should.equal(0);
           done();
@@ -1440,7 +1440,7 @@ describe('Wallet service', function() {
           should.exist(balance);
           balance.totalAmount.should.equal(helpers.toSatoshi(9));
           balance.lockedAmount.should.equal(0);
-          balance.totalKbToSendMax.should.equal(2);
+          balance.totalBytesToSendMax.should.equal(1535);
           done();
         });
       });
@@ -2093,18 +2093,21 @@ describe('Wallet service', function() {
           balance.totalAmount.should.equal(helpers.toSatoshi(9));
           balance.lockedAmount.should.equal(0);
           balance.availableAmount.should.equal(helpers.toSatoshi(9));
-          balance.totalKbToSendMax.should.equal(3);
-          var max = (balance.totalAmount - balance.lockedAmount) - (balance.totalKbToSendMax * 10000);
+          balance.totalBytesToSendMax.should.equal(2896);
+          var sizeInKB = balance.totalBytesToSendMax / 1000;
+          var fee = parseInt((Math.ceil(sizeInKB * 10000 / 100) * 100).toFixed(0));
+          var max = balance.availableAmount - fee;
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max / 1e8, null, TestData.copayers[0].privKey_1H_0);
           server.createTx(txOpts, function(err, tx) {
             should.not.exist(err);
             should.exist(tx);
             tx.amount.should.equal(max);
-            var estimatedFee = 2900 * 10000 / 1000; // estimated size = 2900 bytes
+            var estimatedFee = 2896 * 10000 / 1000;
             tx.fee.should.be.within(0.9 * estimatedFee, 1.1 * estimatedFee);
             server.getBalance({}, function(err, balance) {
               should.not.exist(err);
               balance.lockedAmount.should.equal(helpers.toSatoshi(9));
+              balance.availableAmount.should.equal(0);
               done();
             });
           });
@@ -2121,14 +2124,16 @@ describe('Wallet service', function() {
             balance.totalAmount.should.equal(helpers.toSatoshi(9));
             balance.lockedAmount.should.equal(helpers.toSatoshi(4));
             balance.availableAmount.should.equal(helpers.toSatoshi(5));
-            balance.totalKbToSendMax.should.equal(2);
-            var max = (balance.totalAmount - balance.lockedAmount) - (balance.totalKbToSendMax * 2000);
+            balance.totalBytesToSendMax.should.equal(1653);
+            var sizeInKB = balance.totalBytesToSendMax / 1000;
+            var fee = parseInt((Math.ceil(sizeInKB * 2000 / 100) * 100).toFixed(0));
+            var max = balance.availableAmount - fee;
             var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max / 1e8, null, TestData.copayers[0].privKey_1H_0, 2000);
             server.createTx(txOpts, function(err, tx) {
               should.not.exist(err);
               should.exist(tx);
               tx.amount.should.equal(max);
-              var estimatedFee = 1650 * 2000 / 1000; // estimated size = 1650 bytes
+              var estimatedFee = 1653 * 2000 / 1000;
               tx.fee.should.be.within(0.9 * estimatedFee, 1.1 * estimatedFee);
               server.getBalance({}, function(err, balance) {
                 should.not.exist(err);
