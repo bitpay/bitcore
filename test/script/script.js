@@ -231,6 +231,16 @@ describe('Script', function() {
     });
   });
 
+  describe('#isPublicKeyIn', function() {
+    it('correctly identify scriptSig as a public key in', function() {
+      // from txid: 5c85ed63469aa9971b5d01063dbb8bcdafd412b2f51a3d24abf2e310c028bbf8
+      // and input index: 5
+      var scriptBuffer = new Buffer('483045022050eb59c79435c051f45003d9f82865c8e4df5699d7722e77113ef8cadbd92109022100d4ab233e070070eb8e0e62e3d2d2eb9474a5bf135c9eda32755acb0875a6c20601', 'hex');
+      var script = bitcore.Script.fromBuffer(scriptBuffer);
+      script.isPublicKeyIn().should.equal(true);
+    });
+  });
+
   describe('#isPublicKeyHashIn', function() {
 
     it('should identify this known pubkeyhashin (uncompressed pubkey version)', function() {
