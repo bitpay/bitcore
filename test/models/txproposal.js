@@ -197,9 +197,11 @@ var aTXP = function(type) {
     "inputPaths": ["m/2147483647/0/1"],
     "requiredSignatures": 2,
     "requiredRejections": 1,
+    "walletN": 2,
     "status": "pending",
     "actions": [],
     "outputOrder": [0, 1],
+    "fee": 10000,
   };
   if (type == TxProposal.Types.MULTIPLEOUTPUTS) {
     txp.outputs = [{
