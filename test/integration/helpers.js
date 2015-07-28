@@ -215,8 +215,7 @@ helpers.stubUtxos = function(server, wallet, amounts, cb) {
   }, function(err, addresses) {
     should.not.exist(err);
     addresses.should.not.be.empty;
-    var utxos = _.map([].concat(amounts), function(amount, i) {
-      var address = addresses[i % addresses.length];
+    var utxos = _.compact(_.map([].concat(amounts), function(amount, i) {
       var confirmations;
       if (_.isString(amount) && _.startsWith(amount, 'u')) {
         amount = parseFloat(amount.substring(1));
@@ -224,6 +223,9 @@ helpers.stubUtxos = function(server, wallet, amounts, cb) {
       } else {
         confirmations = Math.floor(Math.random() * 100 + 1);
       }
+      if (amount <= 0) return null;
+
+      var address = addresses[i % addresses.length];
 
       var scriptPubKey;
       switch (wallet.addressType) {
@@ -239,12 +241,12 @@ helpers.stubUtxos = function(server, wallet, amounts, cb) {
       return {
         txid: helpers.randomTXID(),
         vout: Math.floor(Math.random() * 10 + 1),
-        satoshis: helpers.toSatoshi(amount).toString(),
+        satoshis: helpers.toSatoshi(amount),
         scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
         address: address.address,
-        confirmations: confirmations,
+        confirmations: confirmations
       };
-    });
+    }));
     blockchainExplorer.getUnspentUtxos = function(addresses, cb) {
       var selected = _.filter(utxos, function(utxo) {
         return _.contains(addresses, utxo.address);
@@ -357,14 +359,27 @@ helpers.createSimpleProposalOpts = function(toAddress, amount, signingKey, opts)
   return helpers.createProposalOpts(Model.TxProposal.Types.SIMPLE, outputs, signingKey, opts);
 };
 
-helpers.createProposalOpts = function(type, outputs, signingKey, moreOpts) {
+helpers.createExternalProposalOpts = function(toAddress, amount, signingKey, moreOpts, inputs) {
+  var outputs = [{
+    toAddress: toAddress,
+    amount: amount,
+  }];
+  if (_.isArray(moreOpts)) {
+    inputs = moreOpts;
+    moreOpts = null;
+  }
+  return helpers.createProposalOpts(Model.TxProposal.Types.EXTERNAL, outputs, signingKey, moreOpts, inputs);
+};
+
+helpers.createProposalOpts = function(type, outputs, signingKey, moreOpts, inputs) {
   _.each(outputs, function(output) {
     output.amount = helpers.toSatoshi(output.amount);
   });
 
   var opts = {
     type: type,
-    proposalSignature: null
+    proposalSignature: null,
+    inputs: inputs || []
   };
 
   if (moreOpts) {
@@ -384,7 +399,7 @@ helpers.createProposalOpts = function(type, outputs, signingKey, moreOpts) {
     opts.amount = outputs[0].amount;
     hash = WalletService._getProposalHash(opts.toAddress, opts.amount,
       opts.message, opts.payProUrl);
-  } else if (type == Model.TxProposal.Types.MULTIPLEOUTPUTS) {
+  } else if (type == Model.TxProposal.Types.MULTIPLEOUTPUTS || type == Model.TxProposal.Types.EXTERNAL) {
     opts.outputs = outputs;
     var header = {
       outputs: outputs,
