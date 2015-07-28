@@ -25,10 +25,11 @@ More about BWS at http://blog.bitpay.com/2015/03/05/bitcore-wallet.html
  npm start
 ```
 
+This will launch the BWS service (with default settings) at `http://localhost:3232/bws/api`.
+
 BWS needs mongoDB. You can configure the connection at `config.js`
 
 BWS supports SSL and Clustering. For a detailed guide on installing BWS with extra features see [Installing BWS](https://github.com/bitpay/bitcore-wallet-service/blob/master/installation.md). 
-
 
 # Security Considerations
  * Private keys are never sent to BWS. Copayers store them locally.
