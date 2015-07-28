@@ -3657,9 +3657,12 @@ describe('Wallet service', function() {
                 tx.actions.length.should.equal(1);
                 tx.actions[0].type.should.equal('accept');
                 tx.actions[0].copayerName.should.equal('copayer 1');
+                tx.proposalType.should.equal(Model.TxProposal.Types.MULTIPLEOUTPUTS);
                 tx.outputs[0].address.should.equal(external);
                 tx.outputs[0].amount.should.equal(helpers.toSatoshi(50));
                 should.not.exist(tx.outputs[0].message);
+                should.not.exist(tx.outputs[0]['isMine']);
+                should.not.exist(tx.outputs[0]['isChange']);
                 tx.outputs[1].address.should.equal(external);
                 tx.outputs[1].amount.should.equal(helpers.toSatoshi(30));
                 should.exist(tx.outputs[1].message);
