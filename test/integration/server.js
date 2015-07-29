@@ -3597,14 +3597,26 @@ describe('Wallet service', function() {
         tx.action.should.equal('sent');
         tx.amount.should.equal(300);
         tx.fees.should.equal(100);
+        tx.outputs[0].address.should.equal('external');
+        tx.outputs[0].amount.should.equal(300);
         done();
       });
     });
     it('should get tx history with accepted proposal', function(done) {
       server._normalizeTxHistory = sinon.stub().returnsArg(0);
+      var external = '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7';
 
       helpers.stubUtxos(server, wallet, [100, 200], function(utxos) {
-        var txOpts = helpers.createSimpleProposalOpts(mainAddresses[0].address, 80, 'some message', TestData.copayers[0].privKey_1H_0);
+        var outputs = [{
+          toAddress: external,
+          amount: 50,
+          message: undefined // no message
+        }, {
+          toAddress: external,
+          amount: 30,
+          message: 'message #2'
+        }];
+        var txOpts = helpers.createProposalOpts(Model.TxProposal.Types.MULTIPLEOUTPUTS, outputs, 'some message', TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
           should.exist(tx);
@@ -3634,9 +3646,12 @@ describe('Wallet service', function() {
                   address: changeAddresses[0].address,
                   amount: helpers.toSatoshi(20) - 5460,
                 }, {
-                  address: 'external',
-                  amount: helpers.toSatoshi(80) - 5460,
-                }],
+                  address: external,
+                  amount: helpers.toSatoshi(50)
+                }, {
+                  address: external,
+                  amount: helpers.toSatoshi(30)
+                }]
               }];
               helpers.stubHistory(txs);
 
@@ -3648,10 +3663,20 @@ describe('Wallet service', function() {
                 tx.action.should.equal('sent');
                 tx.amount.should.equal(helpers.toSatoshi(80));
                 tx.message.should.equal('some message');
-                tx.addressTo.should.equal('external');
+                tx.addressTo.should.equal(external);
                 tx.actions.length.should.equal(1);
                 tx.actions[0].type.should.equal('accept');
                 tx.actions[0].copayerName.should.equal('copayer 1');
+                tx.proposalType.should.equal(Model.TxProposal.Types.MULTIPLEOUTPUTS);
+                tx.outputs[0].address.should.equal(external);
+                tx.outputs[0].amount.should.equal(helpers.toSatoshi(50));
+                should.not.exist(tx.outputs[0].message);
+                should.not.exist(tx.outputs[0]['isMine']);
+                should.not.exist(tx.outputs[0]['isChange']);
+                tx.outputs[1].address.should.equal(external);
+                tx.outputs[1].amount.should.equal(helpers.toSatoshi(30));
+                should.exist(tx.outputs[1].message);
+                tx.outputs[1].message.should.equal('message #2');
                 done();
               });
             });
