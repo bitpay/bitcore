@@ -153,18 +153,8 @@ var aTxpOpts = function(type) {
 };
 
 var aTXP = function(type) {
-  var version;
-  switch (type) {
-    case TxProposal.Types.MULTIPLEOUTPUTS:
-      version = '1.0.1';
-      break;
-    default:
-      version = '1.0.0';
-      break
-  }
-
   var txp = {
-    "version": version,
+    "version": '2.0.0',
     "type": type,
     "createdOn": 1423146231,
     "id": "75c34f49-1ed6-255f-e9fd-0c71ae75ed1e",
