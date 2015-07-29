@@ -4350,6 +4350,44 @@ describe('Wallet service', function() {
           });
         });
       });
+      it('should fail with insufficient fee when invoked from legacy (bwc-0.0.*) client', function(done) {
+        helpers.stubUtxos(server, wallet, 1, function() {
+          var verifyStub = sinon.stub(WalletService.prototype, '_verifySignature');
+          verifyStub.returns(true);
+          WalletService.getInstanceWithAuth({
+            copayerId: wallet.copayers[0].id,
+            message: 'dummy',
+            signature: 'dummy',
+            clientVersion: 'bwc-0.0.40',
+          }, function(err, server) {
+            should.not.exist(err);
+            should.exist(server);
+            verifyStub.restore();
+            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, null, TestData.copayers[0].privKey_1H_0);
+
+            server.createTx(txOpts, function(err, tx) {
+              should.exist(err);
+              err.code.should.equal('INSUFFICIENTFUNDS');
+              var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, null, TestData.copayers[0].privKey_1H_0, 5000);
+              server.createTx(txOpts, function(err, tx) {
+                should.not.exist(err);
+                tx.fee.should.equal(5000);
+
+                // Sign it to make sure Bitcore doesn't complain about the fees
+                var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+                server.signTx({
+                  txProposalId: tx.id,
+                  signatures: signatures,
+                }, function(err) {
+                  should.not.exist(err);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+
     });
   });
 });
