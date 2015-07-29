@@ -2,7 +2,7 @@
 
 ## Principles
 
-Bitcoin is a powerful new peer-to-peer platform for the next generation of financial technology. The decentralized nature of the Bitcoin network allows for highly resilient bitcoin infrastructure, and the developer community needs reliable, open-source tools to implement bitcoin apps and services. Bitcore provides a reliable API for javascript apps that need to interface with Bitcoin.
+Bitcoin is a powerful new peer-to-peer platform for the next generation of financial technology. The decentralized nature of the Bitcoin network allows for highly resilient bitcoin infrastructure, and the developer community needs reliable, open-source tools to implement bitcoin apps and services. Bitcore provides a reliable API for JavaScript apps that need to interface with Bitcoin.
 
 To get started, just `npm install bitcore` or `bower install bitcore`.
 
