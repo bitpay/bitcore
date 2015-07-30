@@ -332,8 +332,12 @@ describe('client API', function() {
   describe('Wallet Creation', function() {
     it('should check balance in a 1-1 ', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
-        clients[0].getBalance(function(err, x) {
+        clients[0].getBalance(function(err, balance) {
           should.not.exist(err);
+          balance.totalAmount.should.equal(0);
+          balance.availableAmount.should.equal(0);
+          balance.lockedAmount.should.equal(0);
+          balance.totalBytesToSendMax.should.equal(0);
           done();
         })
       });
@@ -558,6 +562,7 @@ describe('client API', function() {
             should.not.exist(err);
             bal0.totalAmount.should.equal(10 * 1e8);
             bal0.lockedAmount.should.equal(0);
+            bal0.totalBytesToSendMax.should.be.within(300, 400);
             clients[1].getBalance(function(err, bal1) {
               bal1.totalAmount.should.equal(10 * 1e8);
               bal1.lockedAmount.should.equal(0);
