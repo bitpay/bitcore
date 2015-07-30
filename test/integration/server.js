@@ -1692,7 +1692,7 @@ describe('Wallet service', function() {
           txOpts.excludeUnconfirmedUtxos = true;
           server.createTx(txOpts, function(err, tx) {
             should.exist(err);
-            err.code.should.equal('INSUFFICIENTFUNDS');
+            err.code.should.equal('INSUFFICIENTFUNDSFORFEE');
             err.message.should.equal('Insufficient funds for fee');
             done();
           });
@@ -1826,7 +1826,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.048200, null, TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.exist(err);
-          err.code.should.equal('INSUFFICIENTFUNDS');
+          err.code.should.equal('INSUFFICIENTFUNDSFORFEE');
           err.message.should.equal('Insufficient funds for fee');
           done();
         });
@@ -1850,7 +1850,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, null, TestData.copayers[0].privKey_1H_0, 80000);
         server.createTx(txOpts, function(err, tx) {
           should.exist(err);
-          err.code.should.equal('INSUFFICIENTFUNDS');
+          err.code.should.equal('INSUFFICIENTFUNDSFORFEE');
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, null, TestData.copayers[0].privKey_1H_0, 5000);
           server.createTx(txOpts, function(err, tx) {
             should.not.exist(err);
@@ -4367,7 +4367,7 @@ describe('Wallet service', function() {
 
             server.createTx(txOpts, function(err, tx) {
               should.exist(err);
-              err.code.should.equal('INSUFFICIENTFUNDS');
+              err.code.should.equal('INSUFFICIENTFUNDSFORFEE');
               var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, null, TestData.copayers[0].privKey_1H_0, 5000);
               server.createTx(txOpts, function(err, tx) {
                 should.not.exist(err);
