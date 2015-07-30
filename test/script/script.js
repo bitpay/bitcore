@@ -159,6 +159,19 @@ describe('Script', function() {
 
   });
 
+  describe('#fromASM', function() {
+    it('should parse this known script in ASM', function() {
+      var asm = 'OP_DUP OP_HASH160 f4c03610e60ad15100929cc23da2f3a799af1725 OP_EQUALVERIFY OP_CHECKSIG';
+      var script = Script.fromASM(asm);
+      script.chunks[0].opcodenum.should.equal(Opcode.OP_DUP);
+      script.chunks[1].opcodenum.should.equal(Opcode.OP_HASH160);
+      script.chunks[2].opcodenum.should.equal(20);
+      script.chunks[2].buf.toString('hex').should.equal('f4c03610e60ad15100929cc23da2f3a799af1725');
+      script.chunks[3].opcodenum.should.equal(Opcode.OP_EQUALVERIFY);
+      script.chunks[4].opcodenum.should.equal(Opcode.OP_CHECKSIG);
+    });
+  });
+
   describe('#fromString', function() {
 
     it('should parse these known scripts', function() {
@@ -189,6 +202,11 @@ describe('Script', function() {
       script.chunks[1].buf.toString('hex').should.equal('010203');
       script.chunks[2].opcodenum.should.equal(buf[buf.length - 1]);
       script.toString().toString('hex').should.equal('OP_0 OP_PUSHDATA4 3 0x010203 OP_0');
+    });
+
+    it('should output this known script as ASM', function() {
+      var script = Script.fromHex('76a914f4c03610e60ad15100929cc23da2f3a799af172588ac');
+      script.toASM().should.equal('OP_DUP OP_HASH160 f4c03610e60ad15100929cc23da2f3a799af1725 OP_EQUALVERIFY OP_CHECKSIG');
     });
 
   });
@@ -463,7 +481,7 @@ describe('Script', function() {
     });
 
     it('should work for no data OP_RETURN', function() {
-      Script().add(Opcode.OP_RETURN).add(new Buffer('')).toString().should.equal('OP_RETURN 0');
+      Script().add(Opcode.OP_RETURN).add(new Buffer('')).toString().should.equal('OP_RETURN');
     });
     it('works with objects', function() {
       Script().add({
@@ -582,7 +600,7 @@ describe('Script', function() {
       var data = new Buffer('');
       var s = Script.buildDataOut(data);
       should.exist(s);
-      s.toString().should.equal('OP_RETURN 0');
+      s.toString().should.equal('OP_RETURN');
       s.isDataOut().should.equal(true);
     });
     it('should create script from some data', function() {
