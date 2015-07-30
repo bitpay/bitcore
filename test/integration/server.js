@@ -4309,7 +4309,8 @@ describe('Wallet service', function() {
               server.getPendingTxs({}, function(err, txps) {
                 should.exist(err);
                 should.not.exist(txps);
-                err.toString().should.contain('created by a newer version');
+                err.code.should.equal('UPGRADENEEDED');
+                err.message.should.contain('newer version');
                 done();
               });
             });
