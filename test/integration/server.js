@@ -35,6 +35,7 @@ helpers.getAuthServer = function(copayerId, cb) {
     copayerId: copayerId,
     message: 'dummy',
     signature: 'dummy',
+    clientVersion: 'bwc-0.1.0',
   }, function(err, server) {
     verifyStub.restore();
     if (err || !server) throw new Error('Could not login as copayerId ' + copayerId);
@@ -4247,6 +4248,146 @@ describe('Wallet service', function() {
           });
         });
       });
+    });
+  });
+
+
+  describe('Legacy', function() {
+    describe('Fees', function() {
+      var server, wallet;
+      beforeEach(function(done) {
+        helpers.createAndJoinWallet(2, 3, function(s, w) {
+          server = s;
+          wallet = w;
+          done();
+        });
+      });
+
+      it('should create a tx from legacy (bwc-0.0.*) client', function(done) {
+        helpers.stubUtxos(server, wallet, [100, 200], function() {
+          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, 'some message', TestData.copayers[0].privKey_1H_0);
+
+          var verifyStub = sinon.stub(WalletService.prototype, '_verifySignature');
+          verifyStub.returns(true);
+          WalletService.getInstanceWithAuth({
+            copayerId: wallet.copayers[0].id,
+            message: 'dummy',
+            signature: 'dummy',
+            clientVersion: 'bwc-0.0.40',
+          }, function(err, server) {
+            should.not.exist(err);
+            should.exist(server);
+            verifyStub.restore();
+            server.createTx(txOpts, function(err, tx) {
+              should.not.exist(err);
+              should.exist(tx);
+              tx.amount.should.equal(helpers.toSatoshi(80));
+              tx.fee.should.equal(WalletUtils.DEFAULT_FEE_PER_KB);
+              done();
+            });
+          });
+        });
+      });
+      it('should return error when fetching new txps from legacy (bwc-0.0.*) client', function(done) {
+        helpers.stubUtxos(server, wallet, [100, 200], function() {
+          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, 'some message', TestData.copayers[0].privKey_1H_0);
+          server.createTx(txOpts, function(err, tx) {
+            should.not.exist(err);
+            should.exist(tx);
+
+            var verifyStub = sinon.stub(WalletService.prototype, '_verifySignature');
+            verifyStub.returns(true);
+            WalletService.getInstanceWithAuth({
+              copayerId: wallet.copayers[0].id,
+              message: 'dummy',
+              signature: 'dummy',
+              clientVersion: 'bwc-0.0.40',
+            }, function(err, server) {
+              should.not.exist(err);
+              should.exist(server);
+              verifyStub.restore();
+              server.getPendingTxs({}, function(err, txps) {
+                should.exist(err);
+                should.not.exist(txps);
+                err.toString().should.contain('created by a newer version');
+                done();
+              });
+            });
+          });
+        });
+      });
+      it('should create a tx from legacy (bwc-0.0.*) client and sign it from newer client', function(done) {
+        helpers.stubUtxos(server, wallet, [100, 200], function() {
+          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, 'some message', TestData.copayers[0].privKey_1H_0);
+
+          var verifyStub = sinon.stub(WalletService.prototype, '_verifySignature');
+          verifyStub.returns(true);
+          WalletService.getInstanceWithAuth({
+            copayerId: wallet.copayers[0].id,
+            message: 'dummy',
+            signature: 'dummy',
+            clientVersion: 'bwc-0.0.40',
+          }, function(err, server) {
+            should.not.exist(err);
+            should.exist(server);
+            verifyStub.restore();
+            server.createTx(txOpts, function(err, tx) {
+              should.not.exist(err);
+              should.exist(tx);
+              tx.amount.should.equal(helpers.toSatoshi(80));
+              tx.fee.should.equal(WalletUtils.DEFAULT_FEE_PER_KB);
+              helpers.getAuthServer(wallet.copayers[0].id, function(server) {
+                var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+                server.signTx({
+                  txProposalId: tx.id,
+                  signatures: signatures,
+                }, function(err) {
+                  should.not.exist(err);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+      it('should fail with insufficient fee when invoked from legacy (bwc-0.0.*) client', function(done) {
+        helpers.stubUtxos(server, wallet, 1, function() {
+          var verifyStub = sinon.stub(WalletService.prototype, '_verifySignature');
+          verifyStub.returns(true);
+          WalletService.getInstanceWithAuth({
+            copayerId: wallet.copayers[0].id,
+            message: 'dummy',
+            signature: 'dummy',
+            clientVersion: 'bwc-0.0.40',
+          }, function(err, server) {
+            should.not.exist(err);
+            should.exist(server);
+            verifyStub.restore();
+            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, null, TestData.copayers[0].privKey_1H_0);
+
+            server.createTx(txOpts, function(err, tx) {
+              should.exist(err);
+              err.code.should.equal('INSUFFICIENTFUNDS');
+              var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, null, TestData.copayers[0].privKey_1H_0, 5000);
+              server.createTx(txOpts, function(err, tx) {
+                should.not.exist(err);
+                tx.fee.should.equal(5000);
+
+                // Sign it to make sure Bitcore doesn't complain about the fees
+                var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+                server.signTx({
+                  txProposalId: tx.id,
+                  signatures: signatures,
+                }, function(err) {
+                  should.not.exist(err);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+
     });
   });
 });
