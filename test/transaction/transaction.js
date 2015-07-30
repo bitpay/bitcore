@@ -63,8 +63,10 @@ describe('Transaction', function() {
   });
 
   it('serialize to Object roundtrip', function() {
-    new Transaction(testTransaction.toObject()).uncheckedSerialize()
-      .should.equal(testTransaction.uncheckedSerialize());
+    var a = testTransaction.toObject();
+    var newTransaction = new Transaction(a);
+    var b = newTransaction.toObject();
+    a.should.deep.equal(b);
   });
 
   it('constructor returns a shallow copy of another transaction', function() {
