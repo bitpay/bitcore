@@ -169,10 +169,6 @@ helpers.stubBroadcast = function(txid) {
   blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, null, txid);
 };
 
-helpers.stubBroadcastFail = function() {
-  blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, 'broadcast error');
-};
-
 helpers.stubHistory = function(txs) {
   blockchainExplorer.getTransactions = function(addresses, from, to, cb) {
     var MAX_BATCH_SIZE = 100;
@@ -1452,7 +1448,7 @@ describe('Wallet service', function() {
         should.not.exist(err);
         server.getBalance({}, function(err, balance) {
           should.exist(err);
-          err.code.should.equal('BLOCKCHAINERROR');
+          err.toString().should.equal('dummy error');
           done();
         });
       });
@@ -1731,7 +1727,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, 'some message', TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.exist(err);
-          err.code.should.equal('BLOCKCHAINERROR');
+          err.toString().should.equal('dummy error');
           done();
         });
       });
@@ -2602,13 +2598,13 @@ describe('Wallet service', function() {
     });
 
     it('should keep tx as accepted if unable to broadcast it', function(done) {
-      helpers.stubBroadcastFail();
+      blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, 'broadcast error');
       blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
       server.broadcastTx({
         txProposalId: txpid
       }, function(err) {
         should.exist(err);
-        err.code.should.equal('BLOCKCHAINERROR');
+        err.toString().should.equal('broadcast error');
         server.getTx({
           txProposalId: txpid
         }, function(err, txp) {
@@ -2623,7 +2619,7 @@ describe('Wallet service', function() {
     });
 
     it('should mark tx as broadcasted if accepted but already in blockchain', function(done) {
-      helpers.stubBroadcastFail();
+      blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, 'broadcast error');
       blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, {
         txid: '999'
       });
@@ -2645,13 +2641,13 @@ describe('Wallet service', function() {
     });
 
     it('should keep tx as accepted if broadcast fails and cannot check tx in blockchain', function(done) {
-      helpers.stubBroadcastFail();
+      blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, 'broadcast error');
       blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, 'bc check error');
       server.broadcastTx({
         txProposalId: txpid
       }, function(err) {
         should.exist(err);
-        err.code.should.equal('BLOCKCHAINERROR');
+        err.toString().should.equal('bc check error');
         server.getTx({
           txProposalId: txpid
         }, function(err, txp) {
@@ -3085,7 +3081,7 @@ describe('Wallet service', function() {
 
     it('should notify sign and acceptance', function(done) {
       server.getPendingTxs({}, function(err, txs) {
-        helpers.stubBroadcastFail();
+        blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, 'broadcast error');
         var tx = txs[0];
         var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
         server.signTx({
@@ -3770,7 +3766,7 @@ describe('Wallet service', function() {
       blockchainExplorer.getTransactions = sinon.stub().callsArgWith(3, 'dummy error');
       server.getTxHistory({}, function(err, txs) {
         should.exist(err);
-        err.code.should.equal('BLOCKCHAINERROR');
+        err.toString().should.equal('dummy error');
         done();
       });
     });
@@ -3920,7 +3916,7 @@ describe('Wallet service', function() {
       blockchainExplorer.getAddressActivity = sinon.stub().callsArgWith(1, 'dummy error');
       server.scan({}, function(err) {
         should.exist(err);
-        err.code.should.equal('BLOCKCHAINERROR');
+        err.toString().should.equal('dummy error');
         server.getWallet({}, function(err, wallet) {
           should.not.exist(err);
           wallet.scanStatus.should.equal('error');
