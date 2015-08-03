@@ -731,7 +731,7 @@ describe('Wallet service', function() {
         message: TestData.message.text,
         signature: TestData.message.signature,
       }, function(err, server) {
-        err.code.should.equal('NOTAUTHORIZED');
+        err.code.should.equal('NOT_AUTHORIZED');
         err.message.should.contain('Copayer not found');
         done();
       });
@@ -744,7 +744,7 @@ describe('Wallet service', function() {
           message: 'dummy',
           signature: 'dummy',
         }, function(err, server) {
-          err.code.should.equal('NOTAUTHORIZED');
+          err.code.should.equal('NOT_AUTHORIZED');
           err.message.should.contain('Invalid signature');
           done();
         });
@@ -977,7 +977,7 @@ describe('Wallet service', function() {
         });
         server.joinWallet(copayerOpts, function(err) {
           should.exist(err);
-          err.code.should.equal('WFULL');
+          err.code.should.equal('WALLET_FULL');
           err.message.should.equal('Wallet full');
           done();
         });
@@ -995,7 +995,7 @@ describe('Wallet service', function() {
         should.not.exist(err);
         server.joinWallet(copayerOpts, function(err) {
           should.exist(err);
-          err.code.should.equal('CINWALLET');
+          err.code.should.equal('COPAYER_IN_WALLET');
           err.message.should.equal('Copayer already in wallet');
           done();
         });
@@ -1028,7 +1028,7 @@ describe('Wallet service', function() {
           });
           server.joinWallet(copayerOpts, function(err) {
             should.exist(err);
-            err.code.should.equal('CREGISTERED');
+            err.code.should.equal('COPAYER_REGISTERED');
             err.message.should.equal('Copayer ID already registered on server');
             done();
           });
@@ -1682,13 +1682,13 @@ describe('Wallet service', function() {
         txOpts.excludeUnconfirmedUtxos = true;
         server.createTx(txOpts, function(err, tx) {
           should.exist(err);
-          err.code.should.equal('INSUFFICIENTFUNDS');
+          err.code.should.equal('INSUFFICIENT_FUNDS');
           err.message.should.equal('Insufficient funds');
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 2.5, 'some message', TestData.copayers[0].privKey_1H_0);
           txOpts.excludeUnconfirmedUtxos = true;
           server.createTx(txOpts, function(err, tx) {
             should.exist(err);
-            err.code.should.equal('INSUFFICIENTFUNDSFORFEE');
+            err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
             err.message.should.equal('Insufficient funds for fee');
             done();
           });
@@ -1712,7 +1712,7 @@ describe('Wallet service', function() {
             txOpts.excludeUnconfirmedUtxos = true;
             server.createTx(txOpts, function(err, tx) {
               should.exist(err);
-              err.code.should.equal('LOCKEDFUNDS');
+              err.code.should.equal('LOCKED_FUNDS');
               done();
             });
           });
@@ -1779,7 +1779,7 @@ describe('Wallet service', function() {
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(tx);
           should.exist(err);
-          err.code.should.equal('INVALIDADDRESS');
+          err.code.should.equal('INVALID_ADDRESS');
           err.message.should.equal('Incorrect address network');
           done();
         });
@@ -1801,7 +1801,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 120, null, TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.exist(err);
-          err.code.should.equal('INSUFFICIENTFUNDS');
+          err.code.should.equal('INSUFFICIENT_FUNDS');
           err.message.should.equal('Insufficient funds');
           server.getPendingTxs({}, function(err, txs) {
             should.not.exist(err);
@@ -1822,7 +1822,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.048200, null, TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.exist(err);
-          err.code.should.equal('INSUFFICIENTFUNDSFORFEE');
+          err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
           err.message.should.equal('Insufficient funds for fee');
           done();
         });
@@ -1846,7 +1846,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, null, TestData.copayers[0].privKey_1H_0, 80000);
         server.createTx(txOpts, function(err, tx) {
           should.exist(err);
-          err.code.should.equal('INSUFFICIENTFUNDSFORFEE');
+          err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, null, TestData.copayers[0].privKey_1H_0, 5000);
           server.createTx(txOpts, function(err, tx) {
             should.not.exist(err);
@@ -1872,7 +1872,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.00000001, null, TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.exist(err);
-          err.code.should.equal('DUSTAMOUNT');
+          err.code.should.equal('DUST_AMOUNT');
           err.message.should.equal('Amount below dust threshold');
           done();
         });
@@ -1888,7 +1888,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', amount, null, TestData.copayers[0].privKey_1H_0, 10000);
         server.createTx(txOpts, function(err, tx) {
           should.exist(err);
-          err.code.should.equal('DUSTAMOUNT');
+          err.code.should.equal('DUST_AMOUNT');
           err.message.should.equal('Amount below dust threshold');
           done();
         });
@@ -1907,7 +1907,7 @@ describe('Wallet service', function() {
             txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 8, null, TestData.copayers[0].privKey_1H_0);
             server.createTx(txOpts, function(err, tx) {
               should.exist(err);
-              err.code.should.equal('LOCKEDFUNDS');
+              err.code.should.equal('LOCKED_FUNDS');
               err.message.should.equal('Funds are locked by pending transaction proposals');
               done();
             });
@@ -1983,7 +1983,7 @@ describe('Wallet service', function() {
           should.exist(tx);
           var txOpts2 = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 24, null, TestData.copayers[0].privKey_1H_0);
           server.createTx(txOpts2, function(err, tx) {
-            err.code.should.equal('LOCKEDFUNDS');
+            err.code.should.equal('LOCKED_FUNDS');
             should.not.exist(tx);
             server.getPendingTxs({}, function(err, txs) {
               should.not.exist(err);
@@ -2188,7 +2188,7 @@ describe('Wallet service', function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, null, TestData.copayers[0].privKey_1H_0);
           server.createTx(txOpts, function(err, tx) {
             should.exist(err);
-            err.code.should.equal('NOTALLOWEDTOCREATETX');
+            err.code.should.equal('TX_CANNOT_CREATE');
             next();
           });
         },
@@ -2210,7 +2210,7 @@ describe('Wallet service', function() {
           server.createTx(txOpts, function(err, tx) {
             clock.restore();
             should.exist(err);
-            err.code.should.equal('NOTALLOWEDTOCREATETX');
+            err.code.should.equal('TX_CANNOT_CREATE');
             next();
           });
         },
@@ -2302,7 +2302,7 @@ describe('Wallet service', function() {
               reason: 'some other reason',
             }, function(err) {
               should.exist(err);
-              err.code.should.equal('TXNOTPENDING');
+              err.code.should.equal('TX_NOT_PENDING');
               done();
             });
           });
@@ -2367,7 +2367,7 @@ describe('Wallet service', function() {
           txProposalId: txid,
           signatures: signatures,
         }, function(err) {
-          err.code.should.contain('BADSIG');
+          err.code.should.equal('BAD_SIGNATURES');
           done();
         });
       });
@@ -2438,7 +2438,7 @@ describe('Wallet service', function() {
           server.rejectTx({
             txProposalId: txid,
           }, function(err) {
-            err.code.should.contain('CVOTED');
+            err.code.should.contain('COPAYER_VOTED');
             done();
           });
         });
@@ -2458,7 +2458,7 @@ describe('Wallet service', function() {
             txProposalId: txid,
             signatures: signatures,
           }, function(err) {
-            err.code.should.contain('CVOTED');
+            err.code.should.contain('COPAYER_VOTED');
             done();
           });
         });
@@ -2507,7 +2507,7 @@ describe('Wallet service', function() {
                 signatures: signatures,
               }, function(err) {
                 should.exist(err);
-                err.code.should.equal('TXNOTPENDING');
+                err.code.should.equal('TX_NOT_PENDING');
                 done();
               });
             });
@@ -2575,7 +2575,7 @@ describe('Wallet service', function() {
           txProposalId: txpid
         }, function(err) {
           should.exist(err);
-          err.code.should.equal('TXALREADYBROADCASTED');
+          err.code.should.equal('TX_ALREADY_BROADCASTED');
           done();
         });
       });
@@ -2591,7 +2591,7 @@ describe('Wallet service', function() {
           txProposalId: txp.id
         }, function(err) {
           should.exist(err);
-          err.code.should.equal('TXNOTACCEPTED');
+          err.code.should.equal('TX_NOT_ACCEPTED');
           done();
         });
       });
@@ -3375,7 +3375,7 @@ describe('Wallet service', function() {
             txProposalId: txp.id
           }, function(err) {
             should.exist(err);
-            err.code.should.equal('TXNOTPENDING');
+            err.code.should.equal('TX_NOT_PENDING');
             done();
           });
         },
@@ -3388,7 +3388,7 @@ describe('Wallet service', function() {
           txProposalId: txp.id
         }, function(err) {
           should.exist(err);
-          err.code.should.contain('TXCANNOTREMOVE');
+          err.code.should.contain('TX_CANNOT_REMOVE');
           server2.getPendingTxs({}, function(err, txs) {
             txs.length.should.equal(1);
             done();
@@ -3408,7 +3408,7 @@ describe('Wallet service', function() {
           server.removePendingTx({
             txProposalId: txp.id
           }, function(err) {
-            err.code.should.equal('TXCANNOTREMOVE');
+            err.code.should.equal('TX_CANNOT_REMOVE');
             err.message.should.contain('Cannot remove');
             done();
           });
@@ -4113,7 +4113,7 @@ describe('Wallet service', function() {
             });
             copayerOpts.isTemporaryRequestKey = false;
             server.replaceTemporaryRequestKey(copayerOpts, function(err, wallet) {
-              err.code.should.equal('WNOTFULL');
+              err.code.should.equal('WALLET_NOT_COMPLETE');
               done();
             });
           });
@@ -4145,7 +4145,7 @@ describe('Wallet service', function() {
             });
             copayerOpts.isTemporaryRequestKey = false;
             server.replaceTemporaryRequestKey(copayerOpts, function(err, wallet) {
-              err.code.should.equal('CDATAMISMATCH');
+              err.code.should.equal('COPAYER_DATA_MISMATCH');
               done();
             });
           });
@@ -4188,7 +4188,7 @@ describe('Wallet service', function() {
               });
               copayerOpts.isTemporaryRequestKey = false;
               server.replaceTemporaryRequestKey(copayerOpts, function(err, wallet) {
-                err.code.should.equal('CDATAMISMATCH');
+                err.code.should.equal('COPAYER_DATA_MISMATCH');
                 done();
               });
             });
@@ -4305,7 +4305,7 @@ describe('Wallet service', function() {
               server.getPendingTxs({}, function(err, txps) {
                 should.exist(err);
                 should.not.exist(txps);
-                err.code.should.equal('UPGRADENEEDED');
+                err.code.should.equal('UPGRADE_NEEDED');
                 err.message.should.contain('newer version');
                 done();
               });
@@ -4364,7 +4364,7 @@ describe('Wallet service', function() {
 
             server.createTx(txOpts, function(err, tx) {
               should.exist(err);
-              err.code.should.equal('INSUFFICIENTFUNDSFORFEE');
+              err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
               var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, null, TestData.copayers[0].privKey_1H_0, 5000);
               server.createTx(txOpts, function(err, tx) {
                 should.not.exist(err);
