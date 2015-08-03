@@ -1168,44 +1168,52 @@ describe('client API', function() {
         toAddress: toAddress,
       }]
     };
-    function doit(opts, doNotVerifyPayPro, doBroadcast, done) {
+
+    beforeEach(function(done) {
+      var http = sinon.stub();
+      http.yields(null, TestData.payProBuf);
       helpers.createAndJoinWallet(clients, 1, 1, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
           blockchainExplorerMock.setUtxo(x0, 1, 1);
-          clients[0].sendTxProposal(opts, function(err, x) {
+          clients[0].payProHttp = clients[1].payProHttp = http;
+          done();
+        });
+      });
+    });
+
+    function doit(opts, doNotVerifyPayPro, doBroadcast, done) {
+      clients[0].sendTxProposal(opts, function(err, x) {
+        should.not.exist(err);
+        clients[0].getTx(x.id, function(err, x2) {
+          should.not.exist(err);
+          x2.creatorName.should.equal('creator');
+          x2.message.should.equal('hello');
+          x2.fee.should.equal(10000);
+          x2.outputs[0].toAddress.should.equal(toAddress);
+          x2.outputs[0].amount.should.equal(10000);
+          x2.outputs[0].message.should.equal('world');
+          x2.outputs[1].toAddress.should.equal(toAddress);
+          x2.outputs[1].amount.should.equal(20000);
+          should.not.exist(x2.outputs[1].message);
+          x2.outputs[2].toAddress.should.equal(toAddress);
+          x2.outputs[2].amount.should.equal(30000);
+          should.not.exist(x2.outputs[2].message);
+          clients[0].doNotVerifyPayPro = doNotVerifyPayPro;
+          clients[0].signTxProposal(x2, function(err, txp) {
             should.not.exist(err);
-            clients[0].getTx(x.id, function(err, x2) {
-              should.not.exist(err);
-              x2.creatorName.should.equal('creator');
-              x2.message.should.equal('hello');
-              x2.fee.should.equal(10000);
-              x2.outputs[0].toAddress.should.equal(toAddress);
-              x2.outputs[0].amount.should.equal(10000);
-              x2.outputs[0].message.should.equal('world');
-              x2.outputs[1].toAddress.should.equal(toAddress);
-              x2.outputs[1].amount.should.equal(20000);
-              should.not.exist(x2.outputs[1].message);
-              x2.outputs[2].toAddress.should.equal(toAddress);
-              x2.outputs[2].amount.should.equal(30000);
-              should.not.exist(x2.outputs[2].message);
-              clients[0].doNotVerifyPayPro = doNotVerifyPayPro;
-              clients[0].signTxProposal(x2, function(err, txp) {
+            txp.status.should.equal('accepted');
+            if (doBroadcast) {
+              clients[0].broadcastTxProposal(txp, function(err, txp) {
                 should.not.exist(err);
-                txp.status.should.equal('accepted');
-                if (doBroadcast) {
-                  clients[0].broadcastTxProposal(txp, function(err, txp) {
-                    should.not.exist(err);
-                    txp.status.should.equal('broadcasted');
-                    txp.txid.should.equal((new Bitcore.Transaction(blockchainExplorerMock.lastBroadcasted)).id);
-                    done();
-                  });
-                } else {
-                  done();
-                }
+                txp.status.should.equal('broadcasted');
+                txp.txid.should.equal((new Bitcore.Transaction(blockchainExplorerMock.lastBroadcasted)).id);
+                done();
               });
-            });
+            } else {
+              done();
+            }
           });
         });
       });
@@ -1217,6 +1225,14 @@ describe('client API', function() {
     it('should create, get, sign, and broadcast proposal with null payProUrl', function(done) {
       opts.payProUrl = null;
       doit(opts, false, true, done);
+    });
+    it('should create, get, sign, and broadcast proposal with empty string payProUrl', function(done) {
+      opts.payProUrl = '';
+      doit(opts, false, true, done);
+    });
+    it('should create, get, and sign proposal with mal-formed payProUrl', function(done) {
+      opts.payProUrl = 'dummy';
+      doit(opts, true, false, done);
     });
     it('should create, get, and sign proposal with well-formed payProUrl', function(done) {
       opts.payProUrl = 'https://merchant.com/pay.php?h%3D2a8628fc2fbe';
