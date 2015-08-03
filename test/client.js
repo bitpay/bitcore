@@ -1151,28 +1151,29 @@ describe('client API', function() {
   });
 
   describe('Multiple output proposals', function() {
-    it('should create, get, sign, and broadcast proposal', function(done) {
+    var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+    var opts = {
+      type: 'multiple_outputs',
+      message: 'hello',
+      outputs: [{
+        amount: 10000,
+        toAddress: toAddress,
+        message: 'world',
+      }, {
+        amount: 20000,
+        toAddress: toAddress,
+        message: null,
+      }, {
+        amount: 30000,
+        toAddress: toAddress,
+      }]
+    };
+    function doit(opts, doNotVerifyPayPro, doBroadcast, done) {
       helpers.createAndJoinWallet(clients, 1, 1, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
           blockchainExplorerMock.setUtxo(x0, 1, 1);
-          var opts = {
-            type: 'multiple_outputs',
-            message: 'hello',
-            outputs: [{
-              amount: 10000,
-              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-              message: 'world',
-            }, {
-              amount: 20000,
-              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-              message: null,
-            }, {
-              amount: 30000,
-              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            }]
-          };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
             clients[0].getTx(x.id, function(err, x2) {
@@ -1180,29 +1181,46 @@ describe('client API', function() {
               x2.creatorName.should.equal('creator');
               x2.message.should.equal('hello');
               x2.fee.should.equal(10000);
-              x2.outputs[0].toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
+              x2.outputs[0].toAddress.should.equal(toAddress);
               x2.outputs[0].amount.should.equal(10000);
               x2.outputs[0].message.should.equal('world');
-              x2.outputs[1].toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
+              x2.outputs[1].toAddress.should.equal(toAddress);
               x2.outputs[1].amount.should.equal(20000);
               should.not.exist(x2.outputs[1].message);
-              x2.outputs[2].toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
+              x2.outputs[2].toAddress.should.equal(toAddress);
               x2.outputs[2].amount.should.equal(30000);
               should.not.exist(x2.outputs[2].message);
+              clients[0].doNotVerifyPayPro = doNotVerifyPayPro;
               clients[0].signTxProposal(x2, function(err, txp) {
                 should.not.exist(err);
                 txp.status.should.equal('accepted');
-                clients[0].broadcastTxProposal(txp, function(err, txp) {
-                  should.not.exist(err);
-                  txp.status.should.equal('broadcasted');
-                  txp.txid.should.equal((new Bitcore.Transaction(blockchainExplorerMock.lastBroadcasted)).id);
+                if (doBroadcast) {
+                  clients[0].broadcastTxProposal(txp, function(err, txp) {
+                    should.not.exist(err);
+                    txp.status.should.equal('broadcasted');
+                    txp.txid.should.equal((new Bitcore.Transaction(blockchainExplorerMock.lastBroadcasted)).id);
+                    done();
+                  });
+                } else {
                   done();
-                });
+                }
               });
             });
           });
         });
       });
+    };
+    it('should create, get, sign, and broadcast proposal with no payProUrl', function(done) {
+      delete opts.payProUrl;
+      doit(opts, false, true, done);
+    });
+    it('should create, get, sign, and broadcast proposal with null payProUrl', function(done) {
+      opts.payProUrl = null;
+      doit(opts, false, true, done);
+    });
+    it('should create, get, and sign proposal with well-formed payProUrl', function(done) {
+      opts.payProUrl = 'https://merchant.com/pay.php?h%3D2a8628fc2fbe';
+      doit(opts, true, false, done);
     });
   });
 
