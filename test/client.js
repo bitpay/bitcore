@@ -295,7 +295,7 @@ describe('client API', function() {
           },
           function(err) {
             console.log('err ', err);
-            err.code.should.equal('NOTFOUND');
+            err.code.should.equal('NOT_FOUND');
             done();
           });
       });
@@ -322,7 +322,7 @@ describe('client API', function() {
         network: 'testnet'
       }, function(err, secret) {
         should.exist(err);
-        err.code.should.equal('CONNERROR');
+        err.code.should.equal('CONNECTION_ERROR');
         request.restore();
         done();
       });
@@ -387,7 +387,7 @@ describe('client API', function() {
       helpers.createAndJoinWallet(clients, 2, 2, function(w) {
         should.exist(w.secret);
         clients[4].joinWallet(w.secret, 'copayer', function(err, result) {
-          err.code.should.contain('WFULL');
+          err.code.should.contain('WALLET_FULL');
           done();
         });
       });
@@ -668,7 +668,7 @@ describe('client API', function() {
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.exist(err);
-            err.code.should.contain('INSUFFICIENTFUNDS');
+            err.code.should.contain('INSUFFICIENT_FUNDS');
             done();
           });
         });
@@ -688,7 +688,7 @@ describe('client API', function() {
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.exist(err);
-            err.code.should.contain('INSUFFICIENTFUNDS');
+            err.code.should.contain('INSUFFICIENT_FUNDS_FOR_FEE');
             err.message.should.contain('for fee');
             opts.feePerKb = 2000;
             clients[0].sendTxProposal(opts, function(err, x) {
@@ -719,7 +719,7 @@ describe('client API', function() {
             should.not.exist(err);
 
             clients[0].sendTxProposal(opts, function(err, y) {
-              err.code.should.contain('LOCKEDFUNDS');
+              err.code.should.contain('LOCKED_FUNDS');
 
               clients[0].rejectTxProposal(x, 'no', function(err, z) {
                 should.not.exist(err);
@@ -750,7 +750,7 @@ describe('client API', function() {
             should.not.exist(err);
 
             clients[0].sendTxProposal(opts, function(err, y) {
-              err.code.should.contain('LOCKEDFUNDS');
+              err.code.should.contain('LOCKED_FUNDS');
 
               clients[0].removeTxProposal(x, function(err) {
                 should.not.exist(err);
@@ -1509,12 +1509,12 @@ describe('client API', function() {
               txp.status.should.equal('pending');
               clients[0].signTxProposal(txp, function(err) {
                 should.exist(err);
-                err.code.should.contain('CVOTED');
+                err.code.should.contain('COPAYER_VOTED');
                 clients[1].rejectTxProposal(txp, 'xx', function(err, txp) {
                   should.not.exist(err);
                   clients[1].rejectTxProposal(txp, 'xx', function(err) {
                     should.exist(err);
-                    err.code.should.contain('CVOTED');
+                    err.code.should.contain('COPAYER_VOTED');
                     done();
                   });
                 });
@@ -1784,7 +1784,7 @@ describe('client API', function() {
 
                 recoveryClient.getStatus(function(err, status) {
                   should.exist(err);
-                  err.code.should.equal('NOTAUTHORIZED');
+                  err.code.should.equal('NOT_AUTHORIZED');
                   recoveryClient.recreateWallet(function(err) {
                     should.not.exist(err);
                     recoveryClient.getStatus(function(err, status) {
@@ -1836,7 +1836,7 @@ describe('client API', function() {
 
                 recoveryClient.getStatus(function(err, status) {
                   should.exist(err);
-                  err.code.should.equal('NOTAUTHORIZED');
+                  err.code.should.equal('NOT_AUTHORIZED');
                   recoveryClient.recreateWallet(function(err) {
                     should.not.exist(err);
                     recoveryClient.getStatus(function(err, status) {
@@ -1892,7 +1892,7 @@ describe('client API', function() {
 
                 recoveryClient.getStatus(function(err, status) {
                   should.exist(err);
-                  err.code.should.equal('NOTAUTHORIZED');
+                  err.code.should.equal('NOT_AUTHORIZED');
                   recoveryClient.recreateWallet(function(err) {
                     should.not.exist(err);
                     recoveryClient.recreateWallet(function(err) {
