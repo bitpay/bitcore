@@ -332,8 +332,12 @@ describe('client API', function() {
   describe('Wallet Creation', function() {
     it('should check balance in a 1-1 ', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
-        clients[0].getBalance(function(err, x) {
+        clients[0].getBalance(function(err, balance) {
           should.not.exist(err);
+          balance.totalAmount.should.equal(0);
+          balance.availableAmount.should.equal(0);
+          balance.lockedAmount.should.equal(0);
+          balance.totalBytesToSendMax.should.equal(0);
           done();
         })
       });
@@ -499,7 +503,7 @@ describe('client API', function() {
       clients[0].getFeeLevels('livenet', function(err, levels) {
         should.not.exist(err);
         should.exist(levels);
-        _.difference(['emergency', 'priority', 'normal', 'economy'], _.pluck(levels, 'level')).should.be.empty;
+        _.difference(['priority', 'normal', 'economy'], _.pluck(levels, 'level')).should.be.empty;
         done();
       });
     });
@@ -558,6 +562,7 @@ describe('client API', function() {
             should.not.exist(err);
             bal0.totalAmount.should.equal(10 * 1e8);
             bal0.lockedAmount.should.equal(0);
+            bal0.totalBytesToSendMax.should.be.within(300, 400);
             clients[1].getBalance(function(err, bal1) {
               bal1.totalAmount.should.equal(10 * 1e8);
               bal1.lockedAmount.should.equal(0);
@@ -616,7 +621,7 @@ describe('client API', function() {
               x2.creatorName.should.equal('creator');
               x2.message.should.equal('hello');
               x2.amount.should.equal(30000);
-              x2.fee.should.equal(10000);
+              x2.fee.should.equal(3800);
               x2.toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
               x2.hasUnconfirmedInputs.should.equal(false);
               done();
@@ -690,7 +695,7 @@ describe('client API', function() {
               should.not.exist(err);
               clients[0].getTx(x.id, function(err, x2) {
                 should.not.exist(err);
-                x2.fee.should.equal(2000);
+                x2.fee.should.equal(1300);
                 done();
               });
             });
@@ -1204,7 +1209,7 @@ describe('client API', function() {
               should.not.exist(err);
               x2.creatorName.should.equal('creator');
               x2.message.should.equal('hello');
-              x2.fee.should.equal(10000);
+              x2.fee.should.equal(3300);
               x2.outputs[0].toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
               x2.outputs[0].amount.should.equal(10000);
               x2.outputs[0].message.should.equal('world');
