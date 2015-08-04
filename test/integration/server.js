@@ -1779,7 +1779,7 @@ describe('Wallet service', function() {
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(tx);
           should.exist(err);
-          err.code.should.equal('INVALID_ADDRESS');
+          err.code.should.equal('INCORRECT_ADDRESS_NETWORK');
           err.message.should.equal('Incorrect address network');
           done();
         });
