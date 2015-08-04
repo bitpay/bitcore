@@ -122,13 +122,14 @@ blockchainExplorerMock.getUnspentUtxos = function(dummy, cb) {
   return cb(null, ret);
 };
 
-blockchainExplorerMock.setUtxo = function(address, amount, m) {
+blockchainExplorerMock.setUtxo = function(address, amount, m, confirmations) {
   blockchainExplorerMock.utxos.push({
     txid: Bitcore.crypto.Hash.sha256(new Buffer(Math.random() * 100000)).toString('hex'),
     vout: Math.floor((Math.random() * 10) + 1),
     amount: amount,
     address: address.address,
     scriptPubKey: address.publicKeys ? Bitcore.Script.buildMultisigOut(address.publicKeys, m).toScriptHashOut().toString() : '',
+    confirmations: _.isUndefined(confirmations) ? Math.floor((Math.random() * 100) + 1) : +confirmations,
   });
 };
 
@@ -617,6 +618,30 @@ describe('client API', function() {
               x2.amount.should.equal(30000);
               x2.fee.should.equal(10000);
               x2.toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
+              x2.hasUnconfirmedInputs.should.equal(false);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('Should create proposal with unconfirmed inputs', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          blockchainExplorerMock.setUtxo(x0, 1, 2, 0);
+          var opts = {
+            amount: 30000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hello',
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            clients[0].getTx(x.id, function(err, x2) {
+              should.not.exist(err);
+              x2.hasUnconfirmedInputs.should.equal(true);
               done();
             });
           });
