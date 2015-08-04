@@ -1404,6 +1404,32 @@ describe('Wallet service', function() {
     });
   });
 
+
+  describe.only('Multiple request Pub Keys', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+
+
+    it('#addCopayerRequestKey', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 'u2', 3], function() {
+        server.getBalance({}, function(err, balance) {
+          should.not.exist(err);
+          should.exist(balance);
+          balance.totalAmount.should.equal(helpers.toSatoshi(6));
+          done();
+        });
+      });
+    });
+  });
+
+
   describe('#getBalance', function() {
     var server, wallet;
     beforeEach(function(done) {
