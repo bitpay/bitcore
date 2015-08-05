@@ -2907,7 +2907,8 @@ describe('Wallet service', function() {
       }, function(err, txp) {
         should.exist(err);
         should.not.exist(txp);
-        err.message.should.contain('not found');
+        err.code.should.equal('TX_NOT_FOUND')
+        err.message.should.equal('Transaction proposal not found');
         done();
       });
     });
