@@ -2290,9 +2290,6 @@ describe('client API', function() {
           status.wallet.status.should.equal('complete');
           c.credentials.sharedEncryptingKey.should.equal('Ou2j4kq3z1w4yTr9YybVxg==');
 
-          var counts = _.countBy(status.wallet.publicKeyRing, 'isTemporaryRequestKey');
-          counts[false].should.equal(1);
-          counts[true].should.equal(1);
           var t2 = ImportData.copayers[1];
           var c2 = helpers.newClient(app);
           c2.createWalletFromOldCopay(t2.username, t2.password, t2.ls['wallet::4d32f0737a05f072'], function(err) {
@@ -2329,10 +2326,6 @@ describe('client API', function() {
           status.wallet.status.should.equal('complete');
           c.credentials.sharedEncryptingKey.should.equal(key);
 
-          var counts = _.countBy(status.wallet.publicKeyRing, 'isTemporaryRequestKey');
-          counts[false].should.equal(1);
-          counts[true].should.equal(2);
-          status.wallet.publicKeyRing[1].isTemporaryRequestKey.should.equal(true);
           var t2 = ImportData.copayers[1];
           var c2 = helpers.newClient(app);
           c2.createWalletFromOldCopay(t2.username, t2.password, t2.ls[w], function(err) {
