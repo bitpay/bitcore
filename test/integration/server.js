@@ -26,6 +26,7 @@ var WalletService = require('../../lib/server');
 var EmailService = require('../../lib/emailservice');
 
 var TestData = require('../testdata');
+var CLIENT_VERSION = 'bwc-0.1.1';
 
 var helpers = {};
 helpers.getAuthServer = function(copayerId, cb) {
@@ -1405,30 +1406,153 @@ describe('Wallet service', function() {
   });
 
 
-  describe.skip('Multiple request Pub Keys', function() {
+  describe('Multiple request Pub Keys', function() {
     var server, wallet;
-    beforeEach(function(done) {
-      helpers.createAndJoinWallet(2, 2, function(s, w) {
-        server = s;
-        wallet = w;
-        done();
+    var opts, reqPrivKey, ws;
+    var getAuthServer = function(copayerId, privKey, cb) {
+      var msg = 'dummy';
+      var sig = WalletUtils.signMessage(msg, privKey);
+      WalletService.getInstanceWithAuth({
+        copayerId: copayerId,
+        message: msg,
+        signature: sig,
+        clientVersion: CLIENT_VERSION,
+      }, function(err, server) {
+        return cb(err, server);
       });
+    };
+
+    beforeEach(function() {
+      reqPrivKey = new Bitcore.PrivateKey();
+      var requestPubKey = reqPrivKey.toPublicKey();
+
+      var xPrivKey = TestData.copayers[0].xPrivKey_45H;
+      var sig = WalletUtils.signRequestPubKey(requestPubKey, xPrivKey);
+
+      var copayerId = WalletUtils.xPubToCopayerId(TestData.copayers[0].xPubKey_45H);
+      opts = {
+        copayerId: copayerId,
+        requestPubKey: requestPubKey,
+        signature: sig,
+      };
+      ws = new WalletService();
     });
 
+    describe('#addAccess 1-1', function() {
+      beforeEach(function(done) {
+        helpers.createAndJoinWallet(1, 1, function(s, w) {
+          server = s;
+          wallet = w;
 
+          helpers.stubUtxos(server, wallet, 1, function() {
+            done();
+          });
+        });
+      });
 
-    it('#addCopayerRequestKey', function(done) {
-      helpers.stubUtxos(server, wallet, [1, 'u2', 3], function() {
-        server.getBalance({}, function(err, balance) {
+      it('should be able to re-gain access from  xPrivKey', function(done) {
+        ws.addAccess(opts, function(err, res) {
           should.not.exist(err);
-          should.exist(balance);
-          balance.totalAmount.should.equal(helpers.toSatoshi(6));
+          res.wallet.copayers[0].requestPubKeys.length.should.equal(2);
+          res.wallet.copayers[0].requestPubKeys[0].selfSigned.should.equal(true);
+
+          server.getBalance(res.wallet.walletId, function(err, bal) {
+            should.not.exist(err);
+            bal.totalAmount.should.equal(1e8);
+            getAuthServer(opts.copayerId, reqPrivKey, function(err, server2) {
+              server2.getBalance(res.wallet.walletId, function(err, bal2) {
+                should.not.exist(err);
+                bal2.totalAmount.should.equal(1e8);
+                done();
+              });
+            });
+          });
+        });
+      });
+
+      it('should fail to gain access with wrong xPrivKey', function(done) {
+        opts.signature = 'xx';
+        ws.addAccess(opts, function(err, res) {
+          err.code.should.equal('NOT_AUTHORIZED');
           done();
         });
       });
+
+      it('should fail to access with wrong privkey after gaining access', function(done) {
+        ws.addAccess(opts, function(err, res) {
+          should.not.exist(err);
+          server.getBalance(res.wallet.walletId, function(err, bal) {
+            should.not.exist(err);
+            var privKey = new Bitcore.PrivateKey();
+            (getAuthServer(opts.copayerId, privKey, function(err, server2) {
+              err.code.should.equal('NOT_AUTHORIZED');
+              done();
+            }));
+          });
+        });
+      });
+
+      it('should be able to create TXs after regaining access', function(done) {
+        ws.addAccess(opts, function(err, res) {
+          should.not.exist(err);
+          getAuthServer(opts.copayerId, reqPrivKey, function(err, server2) {
+            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, null, reqPrivKey);
+            server2.createTx(txOpts, function(err, tx) {
+              should.not.exist(err);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    describe('#addAccess 2-2', function() {
+      beforeEach(function(done) {
+        helpers.createAndJoinWallet(2, 2, function(s, w) {
+          server = s;
+          wallet = w;
+          helpers.stubUtxos(server, wallet, 1, function() {
+            done();
+          });
+        });
+      });
+
+      it('should be able to re-gain access from  xPrivKey', function(done) {
+        ws.addAccess(opts, function(err, res) {
+          should.not.exist(err);
+          server.getBalance(res.wallet.walletId, function(err, bal) { should.not.exist(err);
+            bal.totalAmount.should.equal(1e8);
+            getAuthServer(opts.copayerId, reqPrivKey, function(err, server2) {
+              server2.getBalance(res.wallet.walletId, function(err, bal2) {
+                should.not.exist(err);
+                bal2.totalAmount.should.equal(1e8);
+                done();
+              });
+            });
+          });
+        });
+      });
+
+      it('TX proposals should include info to be verified', function(done) {
+        ws.addAccess(opts, function(err, res) {
+          should.not.exist(err);
+          getAuthServer(opts.copayerId, reqPrivKey, function(err, server2) {
+            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, null, reqPrivKey);
+            server2.createTx(txOpts, function(err, tx) {
+              should.not.exist(err);
+              server2.getPendingTxs({}, function(err, txs) {
+                should.not.exist(err);
+                should.exist(txs[0].proposalSignaturePubKey);
+                should.exist(txs[0].proposalSignaturePubKeySig);
+                done();
+              });
+            });
+          });
+        });
+      });
+
     });
   });
-
 
   describe('#getBalance', function() {
     var server, wallet;
@@ -4141,7 +4265,7 @@ describe('Wallet service', function() {
       });
     });
   });
-  
+
   describe('Legacy', function() {
     describe('Fees', function() {
       var server, wallet;
@@ -4308,7 +4432,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
     });
   });
 });
