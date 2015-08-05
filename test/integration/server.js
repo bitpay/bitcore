@@ -1405,7 +1405,7 @@ describe('Wallet service', function() {
   });
 
 
-  describe.only('Multiple request Pub Keys', function() {
+  describe.skip('Multiple request Pub Keys', function() {
     var server, wallet;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(2, 2, function(s, w) {
