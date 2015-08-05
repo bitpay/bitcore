@@ -407,7 +407,7 @@ describe('client API', function() {
       // Unknown walletId
       var oldSecret = '3bJKRn1HkQTpwhVaJMaJ22KwsjN24ML9uKfkSrP7iDuq91vSsTEygfGMMpo6kWLp1pXG9wZSKcT';
       clients[0].joinWallet(oldSecret, 'copayer', function(err, result) {
-        err.code.should.contain('BADREQUEST');
+        err.code.should.equal('WALLET_NOT_FOUND');
         done();
       });
     });
