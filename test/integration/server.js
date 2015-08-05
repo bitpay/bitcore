@@ -1547,7 +1547,8 @@ describe('Wallet service', function() {
             server.createAddress({}, function(err, address) {
               should.not.exist(address);
               should.exist(err);
-              err.message.should.contain('not complete');
+              err.code.should.equal('WALLET_NOT_COMPLETE');
+              err.message.should.equal('Wallet is not complete');
               done();
             });
           });
@@ -1578,7 +1579,7 @@ describe('Wallet service', function() {
             server.createTx(txOpts, function(err, tx) {
               should.not.exist(tx);
               should.exist(err);
-              err.message.should.contain('not complete');
+              err.code.should.equal('WALLET_NOT_COMPLETE');
               done();
             });
           });
@@ -2906,7 +2907,8 @@ describe('Wallet service', function() {
       }, function(err, txp) {
         should.exist(err);
         should.not.exist(txp);
-        err.message.should.contain('not found');
+        err.code.should.equal('TX_NOT_FOUND')
+        err.message.should.equal('Transaction proposal not found');
         done();
       });
     });
@@ -3178,7 +3180,7 @@ describe('Wallet service', function() {
         should.not.exist(err);
         server.getWallet({}, function(err, w) {
           should.exist(err);
-          err.message.should.equal('Wallet not found');
+          err.code.should.equal('WALLET_NOT_FOUND');
           should.not.exist(w);
           async.parallel([
 
@@ -3237,7 +3239,7 @@ describe('Wallet service', function() {
         function(next) {
           server.getWallet({}, function(err, wallet) {
             should.exist(err);
-            err.message.should.contain('not found');
+            err.code.should.equal('WALLET_NOT_FOUND');
             next();
           });
         },
