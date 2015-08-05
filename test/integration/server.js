@@ -3178,7 +3178,7 @@ describe('Wallet service', function() {
         should.not.exist(err);
         server.getWallet({}, function(err, w) {
           should.exist(err);
-          err.message.should.equal('Wallet not found');
+          err.code.should.equal('WALLET_NOT_FOUND');
           should.not.exist(w);
           async.parallel([
 
@@ -3237,7 +3237,7 @@ describe('Wallet service', function() {
         function(next) {
           server.getWallet({}, function(err, wallet) {
             should.exist(err);
-            err.message.should.contain('not found');
+            err.code.should.equal('WALLET_NOT_FOUND');
             next();
           });
         },
