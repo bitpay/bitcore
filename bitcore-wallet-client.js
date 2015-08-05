@@ -355,19 +355,19 @@ API.prototype._doRequest = function(method, url, args, cb) {
     }));
     if (!res) {
       return cb({
-        code: 'CONNERROR',
+        code: 'CONNECTION_ERROR',
       });
     }
 
     if (res.statusCode != 200) {
       if (res.statusCode == 404)
         return cb({
-          code: 'NOTFOUND'
+          code: 'NOT_FOUND'
         });
 
       if (!res.statusCode)
         return cb({
-          code: 'CONNERROR',
+          code: 'CONNECTION_ERROR',
         });
 
       return cb(API._parseError(body));
@@ -758,7 +758,7 @@ API.prototype.recreateWallet = function(cb) {
   };
   self._doPostRequest('/v1/wallets/', args, function(err, body) {
     // Ignore error is wallet already exist
-    if (err && err.code != 'WEXISTS') return cb(err);
+    if (err && err.code != 'WALLET_ALREADY_EXISTS') return cb(err);
 
 
     var i = 1;
@@ -768,7 +768,7 @@ API.prototype.recreateWallet = function(cb) {
         isTemporaryRequestKey: item.isTemporaryRequestKey,
       }, function(err) {
         //Ignore error is copayer already in wallet
-        if (err && err.code == 'CINWALLET') return next();
+        if (err && err.code == 'COPAYER_IN_WALLET') return next();
         return next(err);
       });
     }, cb);
@@ -1397,7 +1397,7 @@ API.prototype.createWalletFromOldCopay = function(username, password, blob, cb) 
       id: walletId,
       walletPrivKey: walletPrivKey,
     }, function(err, secret) {
-      if (err && err.code == 'WEXISTS') {
+      if (err && err.code == 'WALLET_ALREADY_EXISTS') {
 
         self.credentials.addWalletInfo(walletId, walletName, m, n,
           walletPrivKey, copayerName);
@@ -106004,7 +106004,7 @@ module.exports={
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "keywords": [
     "bitcoin",
     "copay",
@@ -106036,7 +106036,7 @@ module.exports={
     "uglify": "^0.1.1"
   },
   "devDependencies": {
-    "bitcore-wallet-service": "0.1.0",
+    "bitcore-wallet-service": "0.1.1",
     "chai": "^1.9.1",
     "coveralls": "^2.11.2",
     "grunt-jsdoc": "^0.5.8",
