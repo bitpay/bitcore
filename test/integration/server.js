@@ -1547,7 +1547,8 @@ describe('Wallet service', function() {
             server.createAddress({}, function(err, address) {
               should.not.exist(address);
               should.exist(err);
-              err.message.should.contain('not complete');
+              err.code.should.equal('WALLET_NOT_COMPLETE');
+              err.message.should.equal('Wallet is not complete');
               done();
             });
           });
@@ -1578,7 +1579,7 @@ describe('Wallet service', function() {
             server.createTx(txOpts, function(err, tx) {
               should.not.exist(tx);
               should.exist(err);
-              err.message.should.contain('not complete');
+              err.code.should.equal('WALLET_NOT_COMPLETE');
               done();
             });
           });
