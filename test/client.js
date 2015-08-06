@@ -2574,4 +2574,138 @@ describe('client API', function() {
       });
     });
   });
+
+  describe('#addAccess', function() {
+    describe('1-1 wallets', function() {
+      var opts;
+
+      beforeEach(function(done) {
+        opts = {
+          amount: 10000,
+          toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          message: 'hello',
+        };
+
+        helpers.createAndJoinWallet(clients, 1, 1, function() {
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            blockchainExplorerMock.setUtxo(x0, 10, 1);
+            var c = clients[0].credentials;
+
+            // Ggenerate a new priv key, not registered
+            var k = new Bitcore.PrivateKey();
+            c.requestPrivKey = k.toString();
+            c.requestPubKey = k.toPublicKey().toString();
+            done();
+          });
+        });
+      });
+
+      it('should deny access before registering it ', function(done) {
+        clients[0].sendTxProposal(opts, function(err, x) {
+          err.code.should.contain('NOT_AUTHORIZED');
+          done();
+        });
+      });
+
+      it('should grant access with current keys', function(done) {
+        clients[0].addAccess({}, function(err, x) {
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            done();
+          });
+        });
+      });
+
+      it('should grant access with *new* keys then deny access with old keys', function(done) {
+        clients[0].addAccess({
+          generateNewKey: true
+        }, function(err, x) {
+          clients[0].sendTxProposal(opts, function(err, x) {
+            err.code.should.contain('NOT_AUTHORIZED');
+            done();
+          });
+        });
+      });
+
+      it('should grant access with new keys', function(done) {
+        clients[0].addAccess({
+          generateNewKey: true
+        }, function(err, x, key) {
+          var k = new Bitcore.PrivateKey(key);
+          var c = clients[0].credentials;
+          c.requestPrivKey = k.toString();
+          c.requestPubKey = k.toPublicKey().toString();
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            done();
+          });
+        });
+      });
+
+      it('should verify tx proposals of added access', function(done) {
+        clients[0].addAccess({}, function(err, x) {
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            clients[0].getTxProposals({}, function(err, txps) {
+              should.not.exist(err);
+              done();
+            });
+          });
+        });
+      });
+
+
+      it('should detect tampered tx proposals of added access (case 1)', function(done) {
+        clients[0].addAccess({}, function(err, x) {
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function(txps) {
+              txps[0].proposalSignature = '304402206e4a1db06e00068582d3be41cfc795dcf702451c132581e661e7241ef34ca19202203e17598b4764913309897d56446b51bc1dcd41a25d90fdb5f87a6b58fe3a6920';
+            }, function() {
+              clients[0].getTxProposals({}, function(err, txps) {
+                err.code.should.contain('SERVERCOMPROMISED');
+                done();
+              });
+            });
+          });
+        });
+      });
+
+      it('should detect tampered tx proposals of added access (case 2)', function(done) {
+        clients[0].addAccess({}, function(err, x) {
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function(txps) {
+              txps[0].proposalSignaturePubKey = '02d368d7f03a57b2ad3ad9c2766739da83b85ab9c3718fb02ad36574f9391d6bf6';
+            }, function() {
+              clients[0].getTxProposals({}, function(err, txps) {
+                err.code.should.contain('SERVERCOMPROMISED');
+                done();
+              });
+            });
+          });
+        });
+      });
+
+
+      it('should detect tampered tx proposals of added access (case 3)', function(done) {
+        clients[0].addAccess({}, function(err, x) {
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function(txps) {
+              txps[0].proposalSignaturePubKeySig = '304402201528748eafc5083fe67c84cbf0eb996eba9a65584a73d8c07ed6e0dc490c195802204f340488266c804cf1033f8b852efd1d4e05d862707c119002dc3fbe7a805c35';
+            }, function() {
+              clients[0].getTxProposals({}, function(err, txps) {
+                err.code.should.contain('SERVERCOMPROMISED');
+                done();
+              });
+            });
+          });
+        });
+      });
+
+
+    });
+  });
 });
