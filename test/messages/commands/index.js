@@ -1,6 +1,7 @@
 'use strict';
 
 var should = require('chai').should();
+var expect = require('chai').expect;
 var P2P = require('../../../');
 var Messages = P2P.Messages;
 var sinon = require('sinon');
@@ -260,6 +261,28 @@ describe('Command Messages', function() {
       (function() {
         var message = messages.MerkleBlock({merkleBlock: 'not a merkle block'});
       }).should.throw('An instance of MerkleBlock');
+    });
+  });
+
+  describe('Reject', function() {
+    it('should set properties from arg in constructor', function() {
+      var message = messages.Reject({
+        message: 'tx',
+        ccode: 0x01,
+        reason: 'transaction is malformed',
+        data: new Buffer('12345678901234567890123456789012', 'hex')
+      });
+      message.message.should.equal('tx');
+      message.ccode.should.equal(0x01);
+      message.reason.should.equal('transaction is malformed');
+      message.data.toString('hex').should.equal('12345678901234567890123456789012');
+    });
+    it('should let arg be optional in constructor', function() {
+      var message = messages.Reject();
+      expect(message.message).to.be.undefined;
+      expect(message.ccode).to.be.undefined;
+      expect(message.reason).to.be.undefined;
+      expect(message.data).to.be.undefined;
     });
   });
 
