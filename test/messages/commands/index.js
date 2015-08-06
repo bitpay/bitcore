@@ -284,6 +284,26 @@ describe('Command Messages', function() {
       expect(message.reason).to.be.undefined;
       expect(message.data).to.be.undefined;
     });
+    it('should write payload correctly', function() {
+      var message = messages.Reject({
+        message: 'tx',
+        ccode: 0x01,
+        reason: 'transaction is malformed',
+        data: new Buffer('12345678901234567890123456789012', 'hex')
+      });
+      var payload = message.getPayload();
+      message = messages.Reject();
+      message.setPayload(payload);
+      message.message.should.equal('tx');
+      message.ccode.should.equal(0x01);
+      message.reason.should.equal('transaction is malformed');
+      message.data.toString('hex').should.equal('12345678901234567890123456789012');
+      //var message = messages.Reject();
+      //expect(message.message).to.be.undefined;
+      //expect(message.ccode).to.be.undefined;
+      //expect(message.reason).to.be.undefined;
+      //expect(message.data).to.be.undefined;
+    });
   });
 
   describe('Version', function() {
