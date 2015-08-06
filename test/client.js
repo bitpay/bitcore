@@ -2704,8 +2704,6 @@ describe('client API', function() {
           });
         });
       });
-
-
     });
   });
 });
