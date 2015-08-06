@@ -85,6 +85,15 @@ describe('Transaction', function() {
     transaction.id.should.equal(tx_1_id);
   });
 
+  it('transaction hash is only computed once for the same data', function() {
+    var transaction = new Transaction(tx_1_hex);
+    var hash = transaction.hash;
+    hash.should.equal(transaction.hash);
+    transaction._getHash().should.equal(transaction._hashMemo.hash);
+    transaction.inputs.pop();
+    hash.should.not.equal(transaction.hash);
+  });
+
   it('serializes an empty transaction', function() {
     var transaction = new Transaction();
     transaction.uncheckedSerialize().should.equal(tx_empty_hex);
