@@ -2300,7 +2300,6 @@ describe('client API', function() {
             c2.getStatus(function(err, status) {
               should.not.exist(err);
               status.wallet.status.should.equal('complete');
-              c2.credentials.hasTemporaryRequestKeys().should.equal(false);
               c2.createAddress(function(err, x0) {
                 x0.address.should.be.equal('2Mv1DHpozzZ9fup2nZ1kmdRXoNnDJ8b1JF2');
                 c.createAddress(function(err, x0) {
@@ -2335,11 +2334,6 @@ describe('client API', function() {
             c2.getStatus(function(err, status) {
               should.not.exist(err);
               status.wallet.status.should.equal('complete');
-              c2.credentials.hasTemporaryRequestKeys().should.equal(true);
-
-              var counts = _.countBy(status.wallet.publicKeyRing, 'isTemporaryRequestKey');
-              counts[false].should.equal(2);
-              counts[true].should.equal(1);
 
               var t3 = ImportData.copayers[2];
               var c3 = helpers.newClient(app);
@@ -2351,10 +2345,6 @@ describe('client API', function() {
                 c3.getStatus(function(err, status) {
                   should.not.exist(err);
                   status.wallet.status.should.equal('complete');
-                  c3.credentials.hasTemporaryRequestKeys().should.equal(false);
-
-                  var counts = _.countBy(status.wallet.publicKeyRing, 'isTemporaryRequestKey');
-                  counts[false].should.equal(3);
                   done();
                 });
               });
