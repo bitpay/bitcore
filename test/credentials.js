@@ -7,7 +7,7 @@ var should = chai.should();
 var Credentials = require('../lib/credentials');
 var TestData = require('./testdata');
 
-describe.only('Credentials', function() {
+describe('Credentials', function() {
 
   it('Should create', function() {
     var c = Credentials.create();
@@ -66,4 +66,56 @@ describe.only('Credentials', function() {
     c.network.should.equal('livenet');
   });
 
+  it('Should create credentials with mnemonic', function() {
+    var c = Credentials.createWithMnemonics();
+    should.exist(c.mnemonics);
+    c.mnemonics.split(' ').length.should.equal(12);
+    c.network.should.equal('livenet');
+  });
+
+
+  it('Should create credentials with mnemonic (testnet)', function() {
+    var c = Credentials.createWithMnemonics('testnet');
+    should.exist(c.mnemonics);
+    c.mnemonics.split(' ').length.should.equal(12);
+    c.network.should.equal('testnet');
+  });
+
+  it('Should verify roundtrip create/from with ES/passphrase', function() {
+    var c = Credentials.createWithMnemonics('testnet', 'holamundo', 'es');
+    should.exist(c.mnemonics);
+    var words = c.mnemonics;
+    var xPriv = c.xPrivKey;
+  
+    var c2 = Credentials.fromMnemonic(words, 'holamundo', 'testnet');
+    should.not.exist(c2.mnemonics);
+    c2.xPrivKey.should.equal(c.xPrivKey);
+    c2.network.should.equal(c.network);
+  });
+
+
+  _.each(['en', 'es', 'jp', 'zh'], function(lang) {
+    it('Should verify roundtrip create/from with ' + lang + '/passphrase', function() {
+      var c = Credentials.createWithMnemonics('testnet', 'holamundo', 'es');
+      should.exist(c.mnemonics);
+      var words = c.mnemonics;
+      var xPriv = c.xPrivKey;
+
+      var c2 = Credentials.fromMnemonic(words, 'holamundo', 'testnet');
+      should.not.exist(c2.mnemonics);
+      c2.xPrivKey.should.equal(c.xPrivKey);
+      c2.network.should.equal(c.network);
+    });
+  });
+
+  it('Should fail roundtrip create/from with ES/passphrase with wrong passphrase', function() {
+    var c = Credentials.createWithMnemonics('testnet', 'holamundo', 'es');
+    should.exist(c.mnemonics);
+    var words = c.mnemonics;
+    var xPriv = c.xPrivKey;
+  
+    var c2 = Credentials.fromMnemonic(words, 'chaumundo', 'testnet');
+    c2.network.should.equal(c.network);
+    c2.xPrivKey.should.not.be.equal(c.xPrivKey);
+  });
 });
