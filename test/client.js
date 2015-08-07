@@ -487,7 +487,7 @@ describe('client API', function() {
       done();
     });
 
-    it.only('should create a 1-1 wallet with mnemonic', function(done) {
+    it('should create a 1-1 wallet with mnemonic', function(done) {
       clients[0].seedFromRandomWithMnemonic('livenet');
       clients[0].createWallet('wallet name', 'creator', 1, 1, {
           network: 'livenet'
@@ -2427,6 +2427,7 @@ describe('client API', function() {
 
     beforeEach(function(done) {
       c1 = clients[1];
+      clients[1].seedFromRandomWithMnemonic('testnet');
       clients[1].createWallet('wallet name', 'creator', 1, 1, {
         network: 'testnet',
       }, function() {
@@ -2487,9 +2488,10 @@ describe('client API', function() {
         proxy.setPrivateKeyEncryption('pepe');
       }).should.throw('No private key');
     });
-    it('should lock and unlock', function() {
+    it('should lock and delete unencrypted fields', function() {
       c1.unlock(password);
       var xpriv = c1.credentials.xPrivKey;
+      var mnemonic = c1.getMnemonic();
       c1.isPrivKeyEncrypted().should.equal(false);
       c1.hasPrivKeyEncrypted().should.equal(true);
       c1.lock();
@@ -2497,7 +2499,24 @@ describe('client API', function() {
       c1.hasPrivKeyEncrypted().should.equal(true);
       var str = JSON.stringify(c1);
       str.indexOf(xpriv).should.equal(-1);
+      str.indexOf(mnemonic).should.equal(-1);
     });
+    it('should unlock and restore encrypted fields', function() {
+      c1.unlock(password);
+      var xpriv = c1.credentials.xPrivKey;
+      var mnemonic = c1.getMnemonic();
+      c1.lock();
+      var str = JSON.stringify(c1);
+      str.indexOf(xpriv).should.equal(-1);
+      str.indexOf(mnemonic).should.equal(-1);
+      (function() {
+        c1.getMnemonic();
+      }).should.throw('encrypted');
+      c1.unlock(password);
+      c1.credentials.xPrivKey.should.equal(xpriv);
+      c1.getMnemonic().should.equal(mnemonic);
+    });
+
     it('should fail to unlock with wrong password', function() {
       (function() {
         c1.unlock('hola')

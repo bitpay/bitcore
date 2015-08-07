@@ -89,19 +89,6 @@ describe('Credentials', function() {
     should.not.exist(c.getMnemonic());
   });
 
-  it('Should verify roundtrip create/from with es/passphrase', function() {
-    var c = Credentials.createWithMnemonic('testnet', 'holamundo', 'es');
-    should.exist(c.mnemonic);
-    var words = c.mnemonic;
-    var xPriv = c.xPrivKey;
-  
-    var c2 = Credentials.fromMnemonic(words, 'holamundo', 'testnet');
-    should.not.exist(c2.mnemonic);
-    c2.xPrivKey.should.equal(c.xPrivKey);
-    c2.network.should.equal(c.network);
-  });
-
-
   _.each(['en', 'es', 'jp', 'zh'], function(lang) {
     it('Should verify roundtrip create/from with ' + lang + '/passphrase', function() {
       var c = Credentials.createWithMnemonic('testnet', 'holamundo', 'es');
