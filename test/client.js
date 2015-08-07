@@ -486,6 +486,22 @@ describe('client API', function() {
       client.getExternalIndex().should.equal(2);
       done();
     });
+
+    it.only('should create a 1-1 wallet with mnemonic', function(done) {
+      clients[0].seedFromRandomWithMnemonic('livenet');
+      clients[0].createWallet('wallet name', 'creator', 1, 1, {
+          network: 'livenet'
+        },
+        function(err) {
+          should.not.exist(err);
+          clients[0].openWallet(function(err) {
+            should.not.exist(err);
+            should.not.exist(err);
+            clients[0].getMnemonic().split(' ').length.should.equal(12);
+            done();
+          });
+        });
+    });
   });
 
   describe('Network fees', function() {

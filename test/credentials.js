@@ -67,28 +67,36 @@ describe('Credentials', function() {
   });
 
   it('Should create credentials with mnemonic', function() {
-    var c = Credentials.createWithMnemonics();
-    should.exist(c.mnemonics);
-    c.mnemonics.split(' ').length.should.equal(12);
+    var c = Credentials.createWithMnemonic();
+    should.exist(c.mnemonic);
+    c.mnemonic.split(' ').length.should.equal(12);
     c.network.should.equal('livenet');
   });
 
 
   it('Should create credentials with mnemonic (testnet)', function() {
-    var c = Credentials.createWithMnemonics('testnet');
-    should.exist(c.mnemonics);
-    c.mnemonics.split(' ').length.should.equal(12);
+    var c = Credentials.createWithMnemonic('testnet');
+    should.exist(c.mnemonic);
+    c.mnemonic.split(' ').length.should.equal(12);
     c.network.should.equal('testnet');
   });
 
-  it('Should verify roundtrip create/from with ES/passphrase', function() {
-    var c = Credentials.createWithMnemonics('testnet', 'holamundo', 'es');
-    should.exist(c.mnemonics);
-    var words = c.mnemonics;
+  it('Should return and clear mnemonic', function() {
+    var c = Credentials.createWithMnemonic('testnet');
+    should.exist(c.mnemonic);
+    c.getMnemonic().split(' ').length.should.equal(12);
+    c.clearMnemonic();
+    should.not.exist(c.getMnemonic());
+  });
+
+  it('Should verify roundtrip create/from with es/passphrase', function() {
+    var c = Credentials.createWithMnemonic('testnet', 'holamundo', 'es');
+    should.exist(c.mnemonic);
+    var words = c.mnemonic;
     var xPriv = c.xPrivKey;
   
     var c2 = Credentials.fromMnemonic(words, 'holamundo', 'testnet');
-    should.not.exist(c2.mnemonics);
+    should.not.exist(c2.mnemonic);
     c2.xPrivKey.should.equal(c.xPrivKey);
     c2.network.should.equal(c.network);
   });
@@ -96,22 +104,22 @@ describe('Credentials', function() {
 
   _.each(['en', 'es', 'jp', 'zh'], function(lang) {
     it('Should verify roundtrip create/from with ' + lang + '/passphrase', function() {
-      var c = Credentials.createWithMnemonics('testnet', 'holamundo', 'es');
-      should.exist(c.mnemonics);
-      var words = c.mnemonics;
+      var c = Credentials.createWithMnemonic('testnet', 'holamundo', 'es');
+      should.exist(c.mnemonic);
+      var words = c.mnemonic;
       var xPriv = c.xPrivKey;
 
       var c2 = Credentials.fromMnemonic(words, 'holamundo', 'testnet');
-      should.not.exist(c2.mnemonics);
+      should.not.exist(c2.mnemonic);
       c2.xPrivKey.should.equal(c.xPrivKey);
       c2.network.should.equal(c.network);
     });
   });
 
   it('Should fail roundtrip create/from with ES/passphrase with wrong passphrase', function() {
-    var c = Credentials.createWithMnemonics('testnet', 'holamundo', 'es');
-    should.exist(c.mnemonics);
-    var words = c.mnemonics;
+    var c = Credentials.createWithMnemonic('testnet', 'holamundo', 'es');
+    should.exist(c.mnemonic);
+    var words = c.mnemonic;
     var xPriv = c.xPrivKey;
   
     var c2 = Credentials.fromMnemonic(words, 'chaumundo', 'testnet');
