@@ -30,7 +30,7 @@ describe('Mnemonic', function() {
 
       it('should fail with unknown word list', function() {
         (function() {
-          return new Mnemonic('pilote foster august tomorrow kit daughter unknown awesome model town village master');
+          return new Mnemonic('pilots foster august tomorrow kit daughter unknown awesome model town village master');
         }).should.throw(errors.Mnemonic.UnknownWordlist);
       });
 
