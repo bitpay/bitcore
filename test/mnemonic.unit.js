@@ -90,6 +90,11 @@ describe('Mnemonic', function() {
       Mnemonic.Words.CHINESE[0].should.equal('的');
     });
 
+    it('french wordlist is complete', function() {
+      Mnemonic.Words.FRENCH.length.should.equal(2048);
+      Mnemonic.Words.FRENCH[0].should.equal('abaisser');
+    });
+
     it('allows use different phrase lengths', function() {
       var mnemonic;
 
