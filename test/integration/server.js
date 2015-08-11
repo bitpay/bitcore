@@ -4286,7 +4286,8 @@ describe('Wallet service', function() {
           });
         });
       });
-      it('should return error when fetching new txps from legacy (bwc-0.0.*) client', function(done) {
+
+      it('should not return error when fetching new txps from legacy (bwc-0.0.*) client', function(done) {
         helpers.stubUtxos(server, wallet, [100, 200], function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, 'some message', TestData.copayers[0].privKey_1H_0);
           server.createTx(txOpts, function(err, tx) {
@@ -4301,12 +4302,41 @@ describe('Wallet service', function() {
               signature: 'dummy',
               clientVersion: 'bwc-0.0.40',
             }, function(err, server) {
+              verifyStub.restore();
               should.not.exist(err);
               should.exist(server);
-              verifyStub.restore();
               server.getPendingTxs({}, function(err, txps) {
+                should.not.exist(err);
+                should.exist(txps);
+                done();
+              });
+            });
+          });
+        });
+      });
+      it('should fail to sign tx from legacy (bwc-0.0.*) client', function(done) {
+        helpers.stubUtxos(server, wallet, [100, 200], function() {
+          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, 'some message', TestData.copayers[0].privKey_1H_0);
+          server.createTx(txOpts, function(err, tx) {
+            should.not.exist(err);
+            should.exist(tx);
+            _.startsWith(tx.version, '1.').should.be.false;
+
+            var verifyStub = sinon.stub(WalletService.prototype, '_verifySignature');
+            verifyStub.returns(true);
+            WalletService.getInstanceWithAuth({
+              copayerId: wallet.copayers[0].id,
+              message: 'dummy',
+              signature: 'dummy',
+              clientVersion: 'bwc-0.0.40',
+            }, function(err, server) {
+              var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+              server.signTx({
+                txProposalId: tx.id,
+                signatures: signatures,
+              }, function(err) {
+                verifyStub.restore();
                 should.exist(err);
-                should.not.exist(txps);
                 err.code.should.equal('UPGRADE_NEEDED');
                 err.message.should.contain('newer version');
                 done();
