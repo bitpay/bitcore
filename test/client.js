@@ -621,7 +621,7 @@ describe('client API', function() {
               x2.creatorName.should.equal('creator');
               x2.message.should.equal('hello');
               x2.amount.should.equal(30000);
-              x2.fee.should.equal(3800);
+              x2.fee.should.equal(3720);
               x2.toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
               x2.hasUnconfirmedInputs.should.equal(false);
               done();
@@ -695,7 +695,7 @@ describe('client API', function() {
               should.not.exist(err);
               clients[0].getTx(x.id, function(err, x2) {
                 should.not.exist(err);
-                x2.fee.should.equal(1300);
+                x2.fee.should.equal(1290);
                 done();
               });
             });
