@@ -814,6 +814,13 @@ describe('Script', function() {
       var script = new Script('OP_RETURN 20 0x99d29051af0c29adcb9040034752bba7dde33e35');
       script.toAddress().should.equal(false);
     });
+    it('works for early pay-to-publickey outputs', function() {
+      // block #1: 00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048
+      // txid: 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098
+      // outputIndex: 0
+      var script = new Script('65 0x0496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858ee OP_CHECKSIG');
+      script.toAddress().toString().should.equal('12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX');
+    });
 
   });
   describe('equals', function() {

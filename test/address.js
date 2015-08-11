@@ -283,7 +283,7 @@ describe('Address', function() {
     it('should error because of incorrect type for pubkey transform', function() {
       (function() {
         return Address._transformPublicKey(new Buffer(20));
-      }).should.throw('Address must be an instance of PublicKey.');
+      }).should.throw('Invalid Argument: Address argument is expected to be an instance of PublicKey.');
     });
 
     it('should error because of incorrect type for script transform', function() {
