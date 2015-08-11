@@ -30,7 +30,7 @@ describe('Mnemonic', function() {
 
       it('should fail with unknown word list', function() {
         (function() {
-          return new Mnemonic('pilote foster august tomorrow kit daughter unknown awesome model town village master');
+          return new Mnemonic('pilots foster august tomorrow kit daughter unknown awesome model town village master');
         }).should.throw(errors.Mnemonic.UnknownWordlist);
       });
 
@@ -88,6 +88,11 @@ describe('Mnemonic', function() {
     it('chinese wordlist is complete', function() {
       Mnemonic.Words.CHINESE.length.should.equal(2048);
       Mnemonic.Words.CHINESE[0].should.equal('的');
+    });
+
+    it('french wordlist is complete', function() {
+      Mnemonic.Words.FRENCH.length.should.equal(2048);
+      Mnemonic.Words.FRENCH[0].should.equal('abaisser');
     });
 
     it('allows use different phrase lengths', function() {

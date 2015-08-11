@@ -36,7 +36,7 @@ code.toString(); // 'select scout crash enforce riot rival spring whale hollow r
 
 ## Multi-language support
 
-The `Mnemonic` class can use any list of 2048 unique words to generate the mnemonic code. For convenience the class provides default word lists for the following languages: English (default), Chinese, Japanese and Spanish. Those word list are published under `Mnemonic.Words.LANGUAGE`, take a look at the following example:
+The `Mnemonic` class can use any list of 2048 unique words to generate the mnemonic code. For convenience the class provides default word lists for the following languages: English (default), Chinese, French, Japanese and Spanish. Those word list are published under `Mnemonic.Words.LANGUAGE`, take a look at the following example:
 
 ```javascript
 var Mnemonic = require('bitcore-mnemonic');
