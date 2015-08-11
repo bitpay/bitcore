@@ -2092,8 +2092,7 @@ describe('Wallet service', function() {
           balance.lockedAmount.should.equal(0);
           balance.availableAmount.should.equal(helpers.toSatoshi(9));
           balance.totalBytesToSendMax.should.equal(2896);
-          var sizeInKB = balance.totalBytesToSendMax / 1000;
-          var fee = parseInt((Math.ceil(sizeInKB * 10000 / 100) * 100).toFixed(0));
+          var fee = parseInt((balance.totalBytesToSendMax * 10000 / 1000).toFixed(0));
           var max = balance.availableAmount - fee;
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max / 1e8, null, TestData.copayers[0].privKey_1H_0);
           server.createTx(txOpts, function(err, tx) {
@@ -2123,8 +2122,7 @@ describe('Wallet service', function() {
             balance.lockedAmount.should.equal(helpers.toSatoshi(4));
             balance.availableAmount.should.equal(helpers.toSatoshi(5));
             balance.totalBytesToSendMax.should.equal(1653);
-            var sizeInKB = balance.totalBytesToSendMax / 1000;
-            var fee = parseInt((Math.ceil(sizeInKB * 2000 / 100) * 100).toFixed(0));
+            var fee = parseInt((balance.totalBytesToSendMax * 2000 / 1000).toFixed(0));
             var max = balance.availableAmount - fee;
             var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max / 1e8, null, TestData.copayers[0].privKey_1H_0, 2000);
             server.createTx(txOpts, function(err, tx) {
