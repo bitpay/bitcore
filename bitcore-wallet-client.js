@@ -106036,7 +106036,7 @@ module.exports={
     "uglify": "^0.1.1"
   },
   "devDependencies": {
-    "bitcore-wallet-service": "0.1.2",
+    "bitcore-wallet-service": "0.1.3",
     "chai": "^1.9.1",
     "coveralls": "^2.11.2",
     "grunt-jsdoc": "^0.5.8",
