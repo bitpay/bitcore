@@ -335,7 +335,7 @@ API.prototype._doRequest = function(method, url, args, cb) {
     headers: {
       'x-identity': this.credentials.copayerId,
       'x-signature': reqSignature,
-      'x-client-version': 'bws-' + Package.version,
+      'x-client-version': 'bwc-' + Package.version,
     },
     method: method,
     url: absUrl,
@@ -106004,7 +106004,7 @@ module.exports={
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "keywords": [
     "bitcoin",
     "copay",
@@ -106036,7 +106036,7 @@ module.exports={
     "uglify": "^0.1.1"
   },
   "devDependencies": {
-    "bitcore-wallet-service": "0.1.1",
+    "bitcore-wallet-service": "0.1.3",
     "chai": "^1.9.1",
     "coveralls": "^2.11.2",
     "grunt-jsdoc": "^0.5.8",
