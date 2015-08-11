@@ -4338,7 +4338,7 @@ describe('Wallet service', function() {
                 verifyStub.restore();
                 should.exist(err);
                 err.code.should.equal('UPGRADE_NEEDED');
-                err.message.should.contain('newer version');
+                err.message.should.contain('sign this spend proposal');
                 done();
               });
             });
