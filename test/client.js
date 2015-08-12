@@ -122,13 +122,14 @@ blockchainExplorerMock.getUnspentUtxos = function(dummy, cb) {
   return cb(null, ret);
 };
 
-blockchainExplorerMock.setUtxo = function(address, amount, m) {
+blockchainExplorerMock.setUtxo = function(address, amount, m, confirmations) {
   blockchainExplorerMock.utxos.push({
     txid: Bitcore.crypto.Hash.sha256(new Buffer(Math.random() * 100000)).toString('hex'),
     vout: Math.floor((Math.random() * 10) + 1),
     amount: amount,
     address: address.address,
     scriptPubKey: address.publicKeys ? Bitcore.Script.buildMultisigOut(address.publicKeys, m).toScriptHashOut().toString() : '',
+    confirmations: _.isUndefined(confirmations) ? Math.floor((Math.random() * 100) + 1) : +confirmations,
   });
 };
 
@@ -294,7 +295,7 @@ describe('client API', function() {
           },
           function(err) {
             console.log('err ', err);
-            err.code.should.equal('NOTFOUND');
+            err.code.should.equal('NOT_FOUND');
             done();
           });
       });
@@ -321,7 +322,7 @@ describe('client API', function() {
         network: 'testnet'
       }, function(err, secret) {
         should.exist(err);
-        err.code.should.equal('CONNERROR');
+        err.code.should.equal('CONNECTION_ERROR');
         request.restore();
         done();
       });
@@ -331,8 +332,12 @@ describe('client API', function() {
   describe('Wallet Creation', function() {
     it('should check balance in a 1-1 ', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
-        clients[0].getBalance(function(err, x) {
+        clients[0].getBalance(function(err, balance) {
           should.not.exist(err);
+          balance.totalAmount.should.equal(0);
+          balance.availableAmount.should.equal(0);
+          balance.lockedAmount.should.equal(0);
+          balance.totalBytesToSendMax.should.equal(0);
           done();
         })
       });
@@ -382,7 +387,7 @@ describe('client API', function() {
       helpers.createAndJoinWallet(clients, 2, 2, function(w) {
         should.exist(w.secret);
         clients[4].joinWallet(w.secret, 'copayer', function(err, result) {
-          err.code.should.contain('WFULL');
+          err.code.should.contain('WALLET_FULL');
           done();
         });
       });
@@ -402,7 +407,7 @@ describe('client API', function() {
       // Unknown walletId
       var oldSecret = '3bJKRn1HkQTpwhVaJMaJ22KwsjN24ML9uKfkSrP7iDuq91vSsTEygfGMMpo6kWLp1pXG9wZSKcT';
       clients[0].joinWallet(oldSecret, 'copayer', function(err, result) {
-        err.code.should.contain('BADREQUEST');
+        err.code.should.equal('WALLET_NOT_FOUND');
         done();
       });
     });
@@ -498,7 +503,7 @@ describe('client API', function() {
       clients[0].getFeeLevels('livenet', function(err, levels) {
         should.not.exist(err);
         should.exist(levels);
-        _.difference(['emergency', 'priority', 'normal', 'economy'], _.pluck(levels, 'level')).should.be.empty;
+        _.difference(['priority', 'normal', 'economy'], _.pluck(levels, 'level')).should.be.empty;
         done();
       });
     });
@@ -557,6 +562,7 @@ describe('client API', function() {
             should.not.exist(err);
             bal0.totalAmount.should.equal(10 * 1e8);
             bal0.lockedAmount.should.equal(0);
+            bal0.totalBytesToSendMax.should.be.within(300, 400);
             clients[1].getBalance(function(err, bal1) {
               bal1.totalAmount.should.equal(10 * 1e8);
               bal1.lockedAmount.should.equal(0);
@@ -615,8 +621,32 @@ describe('client API', function() {
               x2.creatorName.should.equal('creator');
               x2.message.should.equal('hello');
               x2.amount.should.equal(30000);
-              x2.fee.should.equal(10000);
+              x2.fee.should.equal(3720);
               x2.toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
+              x2.hasUnconfirmedInputs.should.equal(false);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('Should create proposal with unconfirmed inputs', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          blockchainExplorerMock.setUtxo(x0, 1, 2, 0);
+          var opts = {
+            amount: 30000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hello',
+          };
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            clients[0].getTx(x.id, function(err, x2) {
+              should.not.exist(err);
+              x2.hasUnconfirmedInputs.should.equal(true);
               done();
             });
           });
@@ -638,7 +668,7 @@ describe('client API', function() {
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.exist(err);
-            err.code.should.contain('INSUFFICIENTFUNDS');
+            err.code.should.contain('INSUFFICIENT_FUNDS');
             done();
           });
         });
@@ -658,14 +688,14 @@ describe('client API', function() {
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.exist(err);
-            err.code.should.contain('INSUFFICIENTFUNDS');
+            err.code.should.contain('INSUFFICIENT_FUNDS_FOR_FEE');
             err.message.should.contain('for fee');
             opts.feePerKb = 2000;
             clients[0].sendTxProposal(opts, function(err, x) {
               should.not.exist(err);
               clients[0].getTx(x.id, function(err, x2) {
                 should.not.exist(err);
-                x2.fee.should.equal(2000);
+                x2.fee.should.equal(1290);
                 done();
               });
             });
@@ -689,7 +719,7 @@ describe('client API', function() {
             should.not.exist(err);
 
             clients[0].sendTxProposal(opts, function(err, y) {
-              err.code.should.contain('LOCKEDFUNDS');
+              err.code.should.contain('LOCKED_FUNDS');
 
               clients[0].rejectTxProposal(x, 'no', function(err, z) {
                 should.not.exist(err);
@@ -720,7 +750,7 @@ describe('client API', function() {
             should.not.exist(err);
 
             clients[0].sendTxProposal(opts, function(err, y) {
-              err.code.should.contain('LOCKEDFUNDS');
+              err.code.should.contain('LOCKED_FUNDS');
 
               clients[0].removeTxProposal(x, function(err) {
                 should.not.exist(err);
@@ -1190,7 +1220,7 @@ describe('client API', function() {
           should.not.exist(err);
           x2.creatorName.should.equal('creator');
           x2.message.should.equal('hello');
-          x2.fee.should.equal(10000);
+          x2.fee.should.equal(3300);
           x2.outputs[0].toAddress.should.equal(toAddress);
           x2.outputs[0].amount.should.equal(10000);
           x2.outputs[0].message.should.equal('world');
@@ -1513,12 +1543,12 @@ describe('client API', function() {
               txp.status.should.equal('pending');
               clients[0].signTxProposal(txp, function(err) {
                 should.exist(err);
-                err.code.should.contain('CVOTED');
+                err.code.should.contain('COPAYER_VOTED');
                 clients[1].rejectTxProposal(txp, 'xx', function(err, txp) {
                   should.not.exist(err);
                   clients[1].rejectTxProposal(txp, 'xx', function(err) {
                     should.exist(err);
-                    err.code.should.contain('CVOTED');
+                    err.code.should.contain('COPAYER_VOTED');
                     done();
                   });
                 });
@@ -1788,7 +1818,7 @@ describe('client API', function() {
 
                 recoveryClient.getStatus(function(err, status) {
                   should.exist(err);
-                  err.code.should.equal('NOTAUTHORIZED');
+                  err.code.should.equal('NOT_AUTHORIZED');
                   recoveryClient.recreateWallet(function(err) {
                     should.not.exist(err);
                     recoveryClient.getStatus(function(err, status) {
@@ -1840,7 +1870,7 @@ describe('client API', function() {
 
                 recoveryClient.getStatus(function(err, status) {
                   should.exist(err);
-                  err.code.should.equal('NOTAUTHORIZED');
+                  err.code.should.equal('NOT_AUTHORIZED');
                   recoveryClient.recreateWallet(function(err) {
                     should.not.exist(err);
                     recoveryClient.getStatus(function(err, status) {
@@ -1896,7 +1926,7 @@ describe('client API', function() {
 
                 recoveryClient.getStatus(function(err, status) {
                   should.exist(err);
-                  err.code.should.equal('NOTAUTHORIZED');
+                  err.code.should.equal('NOT_AUTHORIZED');
                   recoveryClient.recreateWallet(function(err) {
                     should.not.exist(err);
                     recoveryClient.recreateWallet(function(err) {
