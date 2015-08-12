@@ -84,16 +84,11 @@ describe('UnspentOutput', function() {
 
   it('to/from JSON roundtrip', function() {
     var utxo = new UnspentOutput(sampleData2);
-    expect(
-      JSON.parse(
-        UnspentOutput.fromJSON(
-          UnspentOutput.fromObject(
-            UnspentOutput.fromJSON(
-              utxo.toJSON()
-            ).toObject()
-          ).toJSON()
-        ).toJSON()
-      )
-    ).to.deep.equal(sampleData2);
+    var obj = UnspentOutput.fromObject(utxo.toJSON()).toObject();
+    expect(obj).to.deep.equal(sampleData2);
+    var str = JSON.stringify(UnspentOutput.fromObject(obj));
+    expect(JSON.parse(str)).to.deep.equal(sampleData2);
+    var str2 = JSON.stringify(new UnspentOutput(JSON.parse(str)));
+    expect(JSON.parse(str2)).to.deep.equal(sampleData2);
   });
 });

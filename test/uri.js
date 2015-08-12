@@ -183,7 +183,7 @@ describe('URI', function() {
       label: 'myLabel',
       other: 'xD'
     });
-    URI.fromJSON(json).toJSON().should.deep.equal(json);
+    JSON.stringify(URI.fromObject(JSON.parse(json))).should.equal(json);
   });
 
   it('should support numeric amounts', function() {

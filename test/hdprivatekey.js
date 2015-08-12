@@ -294,12 +294,12 @@ describe('HDPrivate key interface', function() {
         expect(BufferUtil.isBuffer(value)).to.equal(false);
       });
     });
-    it('roundtrips toJSON', function() {
-      expect(HDPrivateKey.fromJSON(new HDPrivateKey(xprivkey).toJSON()).xprivkey).to.equal(xprivkey);
+    it('roundtrips toObject', function() {
+      expect(HDPrivateKey.fromObject(new HDPrivateKey(xprivkey).toObject()).xprivkey).to.equal(xprivkey);
     });
     it('roundtrips to JSON and to Object', function() {
       var privkey = new HDPrivateKey(xprivkey);
-      expect(HDPrivateKey.fromJSON(privkey.toJSON()).xprivkey).to.equal(xprivkey);
+      expect(HDPrivateKey.fromObject(privkey.toJSON()).xprivkey).to.equal(xprivkey);
     });
     it('recovers state from JSON', function() {
       new HDPrivateKey(JSON.stringify(plainObject)).xprivkey.should.equal(xprivkey);

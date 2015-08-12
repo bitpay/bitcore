@@ -85,15 +85,27 @@ var bufferUtil = require('./util/buffer');
 #### G7 - Standard Methods
 
 When possible, bitcore objects should have standard methods on an instance prototype:
-* `toObject` - A plain JavaScript object that can be JSON stringified
-* `toJSON` - A JSON stringified object of the instance
+* `toObject/toJSON` - A plain JavaScript object that `JSON.stringify` can call
 * `toString` - A string representation of the instance
 * `toBuffer` - A hex Buffer
 
 These should have a matching static method that can be used for instantiation:
-* `fromJSON` - Should handle both JSON from `toJSON` and plain JavaScript object from `toObject`
+* `fromObject` - Should be able to instatiate with the output from `toObject/toJSON`
 * `fromString` - Should be able to instantiate with output from `toString`
 * `fromBuffer` - Should likewise be able to instantiate from output from `toBuffer`
+
+`JSON.stringify` and `JSON.parse` are expected to be handled outside of the scope of Bitcore methods. For example, calling `JSON.stringify` on an Bitcore object will behave as expected and call `transaction.toJSON()` and then stringify it:
+
+```javascript
+var transactionString = JSON.stringify(transaction);
+```
+
+Likewise to instantiate a transaction from that string:
+
+```javascript
+var data = JSON.parse(transactionString);
+var tx = new Transaction(data);
+```
 
 ### Errors
 

@@ -111,13 +111,14 @@ describe('TransactionSignature', function() {
     it('can roundtrip to/from json', function() {
       var signature = getSignatureFromTransaction();
       var serialized = signature.toObject();
-      var json = signature.toJSON();
-      expect(TransactionSignature(json).toObject()).to.deep.equal(serialized);
-      expect(TransactionSignature.fromJSON(json).toObject()).to.deep.equal(serialized);
+      var json = JSON.stringify(signature);
+      expect(TransactionSignature(JSON.parse(json)).toObject()).to.deep.equal(serialized);
+      expect(TransactionSignature.fromObject(JSON.parse(json)).toObject()).to.deep.equal(serialized);
     });
 
     it('can parse a previously known json string', function() {
-      expect(JSON.parse(TransactionSignature(testJSON).toJSON())).to.deep.equal(JSON.parse(testJSON));
+      var str = JSON.stringify(TransactionSignature(JSON.parse(testJSON)));
+      expect(JSON.parse(str)).to.deep.equal(JSON.parse(testJSON));
     });
 
     it('can deserialize a previously known object', function() {

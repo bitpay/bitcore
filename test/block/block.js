@@ -25,7 +25,7 @@ describe('Block', function() {
   var bh = BlockHeader.fromBuffer(new Buffer(data.blockheaderhex, 'hex'));
   var txs = [];
   JSON.parse(dataJson).transactions.forEach(function(tx) {
-    txs.push(new Transaction().fromJSON(tx));
+    txs.push(new Transaction().fromObject(tx));
   });
   var json = dataJson;
 
@@ -86,14 +86,13 @@ describe('Block', function() {
   describe('#fromJSON', function() {
 
     it('should set these known values', function() {
-      var block = Block.fromJSON(json);
+      var block = Block.fromObject(JSON.parse(json));
       should.exist(block.header);
       should.exist(block.transactions);
     });
 
     it('should set these known values', function() {
-
-      var block = Block(json);
+      var block = new Block(JSON.parse(json));
       should.exist(block.header);
       should.exist(block.transactions);
     });
@@ -103,8 +102,8 @@ describe('Block', function() {
   describe('#toJSON', function() {
 
     it('should recover these known values', function() {
-      var block = Block.fromJSON(json);
-      var b = JSON.parse(block.toJSON());
+      var block = Block.fromObject(JSON.parse(json));
+      var b = block.toJSON();
       should.exist(b.header);
       should.exist(b.transactions);
     });
