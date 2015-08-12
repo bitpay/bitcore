@@ -196,9 +196,10 @@ helpers.stubHistory = function(txs) {
 
 helpers.stubFeeLevels = function(levels) {
   blockchainExplorer.estimateFee = function(nbBlocks, cb) {
-    return cb(null, {
-      feePerKB: levels[nbBlocks] / 1e8
-    });
+    var result = _.zipObject(_.map(_.pick(levels, nbBlocks), function(fee, n) {
+      return [+n, fee > 0 ? fee / 1e8 : fee];
+    }));
+    return cb(null, result);
   };
 };
 
