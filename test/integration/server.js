@@ -2247,7 +2247,7 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          var clock = sinon.useFakeTimers(Date.now() + (WalletService.backoffTimeMinutes + 2) * 60 * 1000, 'Date');
+          var clock = sinon.useFakeTimers(Date.now() + (WalletService.BACKOFF_TIME + 2) * 60 * 1000, 'Date');
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, null, TestData.copayers[0].privKey_1H_0);
           server.createTx(txOpts, function(err, tx) {
             clock.restore();
@@ -2259,7 +2259,7 @@ describe('Wallet service', function() {
         },
         function(next) {
           // Do not allow a 5th tx before backoff time
-          var clock = sinon.useFakeTimers(Date.now() + (WalletService.backoffTimeMinutes + 2) * 60 * 1000 + 1, 'Date');
+          var clock = sinon.useFakeTimers(Date.now() + (WalletService.BACKOFF_TIME + 2) * 60 * 1000 + 1, 'Date');
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, null, TestData.copayers[0].privKey_1H_0);
           server.createTx(txOpts, function(err, tx) {
             clock.restore();
@@ -3502,7 +3502,7 @@ describe('Wallet service', function() {
 
           server.getPendingTxs({}, function(err, txs) {
             should.not.exist(err);
-            txs[0].deleteLockTime.should.be.above(WalletService.deleteLockTime - 10);
+            txs[0].deleteLockTime.should.be.above(WalletService.DELETE_LOCKTIME - 10);
 
             var clock = sinon.useFakeTimers(Date.now() + 1 + 24 * 3600 * 1000, 'Date');
             server.removePendingTx({
@@ -3527,7 +3527,7 @@ describe('Wallet service', function() {
         }, function(err) {
           should.not.exist(err);
 
-          var clock = sinon.useFakeTimers(Date.now() + 2000 + WalletService.deleteLockTime * 1000, 'Date');
+          var clock = sinon.useFakeTimers(Date.now() + 2000 + WalletService.DELETE_LOCKTIME * 1000, 'Date');
           server2.removePendingTx({
             txProposalId: txp.id
           }, function(err) {
@@ -3844,11 +3844,11 @@ describe('Wallet service', function() {
 
   describe('#scan', function() {
     var server, wallet;
-    var scanConfigOld = WalletService.scanConfig;
+    var scanConfigOld = WalletService.SCAN_CONFIG;
     beforeEach(function(done) {
       this.timeout(5000);
-      WalletService.scanConfig.SCAN_WINDOW = 2;
-      WalletService.scanConfig.DERIVATION_DELAY = 0;
+      WalletService.SCAN_CONFIG.scanWindow = 2;
+      WalletService.SCAN_CONFIG.derivationDelay = 0;
 
       helpers.createAndJoinWallet(1, 2, function(s, w) {
         server = s;
@@ -3857,7 +3857,7 @@ describe('Wallet service', function() {
       });
     });
     afterEach(function() {
-      WalletService.scanConfig = scanConfigOld;
+      WalletService.SCAN_CONFIG = scanConfigOld;
     });
 
     it('should scan main addresses', function(done) {
@@ -3987,11 +3987,11 @@ describe('Wallet service', function() {
 
   describe('#startScan', function() {
     var server, wallet;
-    var scanConfigOld = WalletService.scanConfig;
+    var scanConfigOld = WalletService.SCAN_CONFIG;
     beforeEach(function(done) {
       this.timeout(5000);
-      WalletService.scanConfig.SCAN_WINDOW = 2;
-      WalletService.scanConfig.DERIVATION_DELAY = 0;
+      WalletService.SCAN_CONFIG.scanWindow = 2;
+      WalletService.SCAN_CONFIG.derivationDelay = 0;
 
       helpers.createAndJoinWallet(1, 2, function(s, w) {
         server = s;
@@ -4000,7 +4000,7 @@ describe('Wallet service', function() {
       });
     });
     afterEach(function() {
-      WalletService.scanConfig = scanConfigOld;
+      WalletService.SCAN_CONFIG = scanConfigOld;
       server.messageBroker.removeAllListeners();
     });
 
@@ -4060,7 +4060,7 @@ describe('Wallet service', function() {
     });
     it('should start multiple asynchronous scans for different wallets', function(done) {
       helpers.stubAddressActivity(['3K2VWMXheGZ4qG35DyGjA2dLeKfaSr534A']);
-      WalletService.scanConfig.SCAN_WINDOW = 1;
+      WalletService.SCAN_CONFIG.scanWindow = 1;
 
       var scans = 0;
       server.messageBroker.onMessage(function(n) {
