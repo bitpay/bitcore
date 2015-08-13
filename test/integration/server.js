@@ -1523,8 +1523,8 @@ describe('Wallet service', function() {
     it('should get current fee levels', function(done) {
       helpers.stubFeeLevels({
         1: 40000,
-        4: 20000,
-        12: 18000,
+        2: 20000,
+        6: 18000,
       });
       server.getFeeLevels({}, function(err, fees) {
         should.not.exist(err);
@@ -1535,10 +1535,10 @@ describe('Wallet service', function() {
         fees.priority.nbBlocks.should.equal(1);
 
         fees.normal.feePerKB.should.equal(20000);
-        fees.normal.nbBlocks.should.equal(4);
+        fees.normal.nbBlocks.should.equal(2);
 
         fees.economy.feePerKB.should.equal(18000);
-        fees.economy.nbBlocks.should.equal(12);
+        fees.economy.nbBlocks.should.equal(6);
         done();
       });
     });
@@ -1558,8 +1558,8 @@ describe('Wallet service', function() {
     it('should get default fees if network cannot estimate (returns -1)', function(done) {
       helpers.stubFeeLevels({
         1: -1,
-        4: 18000,
-        12: 0,
+        2: 18000,
+        6: 0,
       });
       server.getFeeLevels({}, function(err, fees) {
         should.not.exist(err);
@@ -1570,10 +1570,10 @@ describe('Wallet service', function() {
         should.not.exist(fees.priority.nbBlocks);
 
         fees.normal.feePerKB.should.equal(18000);
-        fees.normal.nbBlocks.should.equal(4);
+        fees.normal.nbBlocks.should.equal(2);
 
         fees.economy.feePerKB.should.equal(0);
-        fees.economy.nbBlocks.should.equal(12);
+        fees.economy.nbBlocks.should.equal(6);
         done();
       });
     });
