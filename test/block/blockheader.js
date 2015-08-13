@@ -63,6 +63,20 @@ describe('BlockHeader', function() {
       should.exist(bh.nonce);
     });
 
+    it('will throw an error if the argument object hash property doesn\'t match', function() {
+      (function() {
+        var bh = new BlockHeader({
+          hash: '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f',
+          version: version,
+          prevHash: prevblockidbuf,
+          merkleRoot: merklerootbuf,
+          time: time,
+          bits: bits,
+          nonce: nonce
+        });
+      }).should.throw('Argument object hash property does not match block hash.');
+    });
+
   });
 
   describe('#fromJSON', function() {
