@@ -201,7 +201,7 @@ describe('Transaction', function() {
         .change(changeAddress)
         .sign(privateKey);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(40000);
+      transaction.outputs[1].satoshis.should.equal(47710);
       transaction.outputs[1].script.toString()
         .should.equal(Script.fromAddress(changeAddress).toString());
       var actual = transaction.getChangeOutput().script.toString();
@@ -251,6 +251,27 @@ describe('Transaction', function() {
         .sign(privateKey);
       transaction.outputs.length.should.equal(1);
     });
+    it('will not include change if dust', function() {
+      var expectedFeeWithChange = 2290;
+      var dustAmount = Transaction.DUST_AMOUNT;
+      var transaction = new Transaction()
+        .from(simpleUtxoWith100000Satoshis)
+        .to(toAddress, 100000 - expectedFeeWithChange - dustAmount + 10)
+        .change(changeAddress)
+        .sign(privateKey);
+      transaction.outputs.length.should.equal(1);
+    });
+    it('will include change if above dust threshold', function() {
+      var expectedFeeWithChange = 2290;
+      var dustAmount = Transaction.DUST_AMOUNT;
+      var transaction = new Transaction()
+        .from(simpleUtxoWith100000Satoshis)
+        .to(toAddress, 100000 - expectedFeeWithChange - dustAmount - 1)
+        .change(changeAddress)
+        .sign(privateKey);
+      transaction.outputs.length.should.equal(2);
+      transaction.outputs[1].satoshis.should.equal(dustAmount + 1);
+    });
     it('fee can be set up manually', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith100000Satoshis)
@@ -275,7 +296,7 @@ describe('Transaction', function() {
         .sign(privateKey);
       transaction._estimateSize().should.be.within(1000, 1999);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(34000);
+      transaction.outputs[1].satoshis.should.equal(40464);
     });
     it('if satoshis are invalid', function() {
       var transaction = new Transaction()
@@ -488,6 +509,85 @@ describe('Transaction', function() {
             .sign(privateKey);
         }, 'disableMoreOutputThanInput', errors.Transaction.InvalidOutputAmountSum
       ));
+    });
+  });
+
+  describe('#_estimateFee', function() {
+    describe('with change', function() {
+      it('size under 1KB and fee at 10000', function() {
+        var feePerKb = 10000;
+        var amountAvailable = 1 * 1e8;
+        var currentSize = 230; // with change 292
+        var fee = Transaction._estimateFee(currentSize, amountAvailable, feePerKb);
+        fee.should.equal(2920);
+      });
+      it('size under 1KB and fee at 26804', function() {
+        var feePerKb = 26804;
+        var amountAvailable = 1 * 1e8;
+        var currentSize = 230; // with change 292
+        var fee = Transaction._estimateFee(currentSize, amountAvailable, feePerKb);
+        fee.should.equal(7827);
+      });
+      it('size over 1KB and fee at 10000', function() {
+        var feePerKb = 10000;
+        var amountAvailable = 1 * 1e8;
+        var currentSize = 1560; // with change 1622
+        var fee = Transaction._estimateFee(currentSize, amountAvailable, feePerKb);
+        fee.should.equal(16220);
+      });
+      it('size over 1KB and fee at 83428', function() {
+        var feePerKb = 83428;
+        var amountAvailable = 1 * 1e8;
+        var currentSize = 1560; // with change 1622
+        var fee = Transaction._estimateFee(currentSize, amountAvailable, feePerKb);
+        fee.should.equal(135320);
+      });
+      it('size over 1KB and fee at 83428', function() {
+        var feePerKb = 83428;
+        var amountAvailable = 1 * 1e8;
+        var currentSize = 1560; // with change 1622
+        var fee = Transaction._estimateFee(currentSize, amountAvailable, feePerKb);
+        fee.should.equal(135320);
+      });
+    });
+    describe('without dust', function() {
+      it('will not include change output with size 1560 and fee 1000', function() {
+        var feePerKb = 10000;
+        var amountAvailable = 15700;
+        var currentSize = 1560; // with change 1622
+        var fee = Transaction._estimateFee(currentSize, amountAvailable, feePerKb);
+        fee.should.equal(15700);
+      });
+      it('will not include change output with size 167 and fee 10000', function() {
+        var feePerKb = 10000;
+        var amountAvailable = 100000;
+        var currentSize = 167; // with change 229
+        var fee = Transaction._estimateFee(currentSize, amountAvailable, feePerKb);
+        fee.should.equal(2290);
+      });
+    });
+    describe('without change', function() {
+      it('will not estimate with change output size', function() {
+        var feePerKb = 10000;
+        var amountAvailable = 15600;
+        var currentSize = 1560;
+        var fee = Transaction._estimateFee(currentSize, amountAvailable, feePerKb);
+        fee.should.equal(15600);
+      });
+      it('will not go below the minimum amount', function() {
+        var feePerKb = 10000;
+        var amountAvailable = 1;
+        var currentSize = 1560;
+        var fee = Transaction._estimateFee(currentSize, amountAvailable, feePerKb);
+        fee.should.equal(15600);
+      });
+      it('will handle negative amounts available', function() {
+        var feePerKb = 10000;
+        var amountAvailable = -900001;
+        var currentSize = 1560;
+        var fee = Transaction._estimateFee(currentSize, amountAvailable, feePerKb);
+        fee.should.equal(15600);
+      });
     });
   });
 
@@ -777,7 +877,7 @@ describe('Transaction', function() {
         .change(changeAddress)
         .to(toAddress, 1000);
       transaction.inputAmount.should.equal(100000000);
-      transaction.outputAmount.should.equal(99990000);
+      transaction.outputAmount.should.equal(99997710);
     });
     it('returns correct values for coinjoin transaction', function() {
       // see livenet tx c16467eea05f1f30d50ed6dbc06a38539d9bb15110e4b7dc6653046a3678a718
@@ -847,7 +947,7 @@ describe('Transaction', function() {
       expect(function() {
         tx.shuffleOutputs();
       }).to.not.throw(errors.Transaction.InvalidSorting);
-    })
+    });
   });
 
   describe('clearOutputs', function() {
@@ -865,7 +965,7 @@ describe('Transaction', function() {
       tx.outputs.length.should.equal(2);
       tx.outputs[0].satoshis.should.equal(10000000);
       tx.outputs[0].script.toAddress().toString().should.equal(toAddress);
-      tx.outputs[1].satoshis.should.equal(89990000);
+      tx.outputs[1].satoshis.should.equal(89997710);
       tx.outputs[1].script.toAddress().toString().should.equal(changeAddress);
     });
 

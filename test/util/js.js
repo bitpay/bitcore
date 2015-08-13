@@ -80,4 +80,47 @@ describe('js utils', function() {
 
   });
 
+  describe('isInteger', function() {
+    it('false for float', function() {
+      var a = JSUtil.isInteger(0.1);
+      a.should.equal(false);
+    });
+
+    it('false for string float', function() {
+      var a = JSUtil.isInteger('0.1');
+      a.should.equal(false);
+    });
+
+    it('false for string integer', function() {
+      var a = JSUtil.isInteger('1');
+      a.should.equal(false);
+    });
+
+    it('false for infinity', function() {
+      var a = JSUtil.isInteger(Infinity);
+      a.should.equal(false);
+    });
+
+    it('false for NaN', function() {
+      var a = JSUtil.isInteger(NaN);
+      a.should.equal(false);
+    });
+
+    it('true for zero', function() {
+      var a = JSUtil.isInteger(0);
+      a.should.equal(true);
+    });
+
+    it('true for positive integer', function() {
+      var a = JSUtil.isInteger(1000);
+      a.should.equal(true);
+    });
+
+    it('true for negative integer', function() {
+      var a = JSUtil.isInteger(-1000);
+      a.should.equal(true);
+    });
+
+  });
+
 });
