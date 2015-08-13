@@ -111,15 +111,11 @@ helpers.tamperResponse = function(clients, method, url, args, tamper, cb) {
 
 var blockchainExplorerMock = {};
 
-blockchainExplorerMock.getUnspentUtxos = function(dummy, cb) {
-  var ret = _.map(blockchainExplorerMock.utxos || [], function(x) {
-    var y = _.clone(x);
-    y.toObject = function() {
-      return this;
-    };
-    return y;
+blockchainExplorerMock.getUnspentUtxos = function(addresses, cb) {
+  var selected = _.filter(blockchainExplorerMock.utxos, function(utxo) {
+    return _.contains(addresses, utxo.address);
   });
-  return cb(null, ret);
+  return cb(null, selected);
 };
 
 blockchainExplorerMock.setUtxo = function(address, amount, m, confirmations) {
@@ -952,19 +948,42 @@ describe('client API', function() {
     });
     it('Should return UTXOs', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function(w) {
-        clients[0].getUtxos(function(err, utxos) {
+        clients[0].getUtxos({}, function(err, utxos) {
           should.not.exist(err);
-          utxos.length.should.equal(0)
+          utxos.length.should.equal(0);
           clients[0].createAddress(function(err, x0) {
             should.not.exist(err);
             should.exist(x0.address);
             blockchainExplorerMock.setUtxo(x0, 1, 1);
-            clients[0].getUtxos(function(err, utxos) {
+            clients[0].getUtxos({}, function(err, utxos) {
               should.not.exist(err);
               utxos.length.should.equal(1);
               done();
             });
           });
+        });
+      });
+    });
+    it('Should return UTXOs for specific addresses', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
+        async.map(_.range(3), function(i, next) {
+          clients[0].createAddress(function(err, x) {
+            should.not.exist(err);
+            should.exist(x.address);
+            blockchainExplorerMock.setUtxo(x, 1, 1);
+            next(null, x.address);
+          });
+        }, function(err, addresses) {
+          var opts = {
+            addresses: _.take(addresses, 2),
+          };
+          clients[0].getUtxos(opts, function(err, utxos) {
+            should.not.exist(err);
+            utxos.length.should.equal(2);
+            _.sum(utxos, 'satoshis').should.equal(2 * 1e8);
+            done();
+          });
+
         });
       });
     });
