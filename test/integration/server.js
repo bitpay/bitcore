@@ -159,7 +159,12 @@ helpers.stubUtxos = function(server, wallet, amounts, cb) {
         confirmations: confirmations,
       };
     });
-    blockchainExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, utxos);
+    blockchainExplorer.getUnspentUtxos = function(addresses, cb) {
+      var selected = _.filter(utxos, function(utxo) {
+        return _.contains(addresses, utxo.address);
+      });
+      return cb(null, selected);
+    };
 
     return cb(utxos);
   });
@@ -1347,6 +1352,55 @@ describe('Wallet service', function() {
           next();
         });
       }, done);
+    });
+  });
+
+  describe('#getUtxos', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 1, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should get UTXOs for wallet addresses', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 2], function() {
+        server.getUtxos({}, function(err, utxos) {
+          should.not.exist(err);
+          should.exist(utxos);
+          utxos.length.should.equal(2);
+          _.sum(utxos, 'satoshis').should.equal(3 * 1e8);
+          server.getMainAddresses({}, function(err, addresses) {
+            var utxo = utxos[0];
+            var address = _.find(addresses, {
+              address: utxo.address
+            });
+            should.exist(address);
+            utxo.path.should.equal(address.path);
+            utxo.publicKeys.should.deep.equal(address.publicKeys);
+            done();
+          });
+        });
+      });
+    });
+    it('should get UTXOs for specific addresses', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 2, 3], function(utxos) {
+        _.uniq(utxos, 'address').length.should.be.above(1);
+        var address = utxos[0].address;
+        var amount = _.sum(_.filter(utxos, {
+          address: address
+        }), 'satoshis');
+        server.getUtxos({
+          addresses: [address]
+        }, function(err, utxos) {
+          should.not.exist(err);
+          should.exist(utxos);
+          _.sum(utxos, 'satoshis').should.equal(amount);
+          done();
+        });
+      });
     });
   });
 
