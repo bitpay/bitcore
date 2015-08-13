@@ -1350,6 +1350,29 @@ describe('Wallet service', function() {
     });
   });
 
+  describe('#getUtxos', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 1, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should get UTXOs for wallet addresses', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 2], function() {
+        server.getUtxos({}, function(err, utxos) {
+          should.not.exist(err);
+          should.exist(utxos);
+          utxos.length.should.equal(2);
+          _.sum(utxos, 'satoshis').should.equal(3 * 1e8);
+          done();
+        });
+      });
+    });
+  });
+
   describe('#getBalance', function() {
     var server, wallet;
     beforeEach(function(done) {
