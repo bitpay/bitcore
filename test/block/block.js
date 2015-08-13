@@ -175,6 +175,7 @@ describe('Block', function() {
       block.id.should.equal(blockOneId);
       block.toObject().should.deep.equal({
         header: {
+          hash: '00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048',
           version: 1,
           prevHash: '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f',
           merkleRoot: '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098',
@@ -183,6 +184,7 @@ describe('Block', function() {
           nonce: 2573394689
         },
         transactions: [{
+          hash: '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098',
           version: 1,
           inputs: [{
             prevTxId: '0000000000000000000000000000000000000000000000000000000000000000',
