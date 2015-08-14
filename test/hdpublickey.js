@@ -103,12 +103,12 @@ describe('HDPublicKey interface', function() {
     });
 
     it('can be generated from a json', function() {
-      expect(new HDPublicKey(json).xpubkey).to.equal(xpubkey);
+      expect(new HDPublicKey(JSON.parse(json)).xpubkey).to.equal(xpubkey);
     });
 
     it('can generate a json that has a particular structure', function() {
       assert(_.isEqual(
-        new HDPublicKey(json).toJSON(),
+        new HDPublicKey(JSON.parse(json)).toJSON(),
         new HDPublicKey(xpubkey).toJSON()
       ));
     });
@@ -187,10 +187,7 @@ describe('HDPublicKey interface', function() {
     };
     it('roundtrips to JSON and to Object', function() {
       var pubkey = new HDPublicKey(xpubkey);
-      expect(HDPublicKey.fromJSON(pubkey.toJSON()).xpubkey).to.equal(xpubkey);
-    });
-    it('recovers state from JSON', function() {
-      new HDPublicKey(JSON.stringify(plainObject)).xpubkey.should.equal(xpubkey);
+      expect(HDPublicKey.fromObject(pubkey.toJSON()).xpubkey).to.equal(xpubkey);
     });
     it('recovers state from Object', function() {
       new HDPublicKey(plainObject).xpubkey.should.equal(xpubkey);

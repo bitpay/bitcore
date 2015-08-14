@@ -79,17 +79,17 @@ describe('BlockHeader', function() {
 
   });
 
-  describe('#fromJSON', function() {
+  describe('#fromObject', function() {
 
     it('should set all the variables', function() {
-      var bh = BlockHeader.fromJSON(JSON.stringify({
+      var bh = BlockHeader.fromObject({
         version: version,
         prevHash: prevblockidbuf.toString('hex'),
         merkleRoot: merklerootbuf.toString('hex'),
         time: time,
         bits: bits,
         nonce: nonce
-      }));
+      });
       should.exist(bh.version);
       should.exist(bh.prevHash);
       should.exist(bh.merkleRoot);
@@ -103,7 +103,7 @@ describe('BlockHeader', function() {
   describe('#toJSON', function() {
 
     it('should set all the variables', function() {
-      var json = JSON.parse(bh.toJSON());
+      var json = bh.toJSON();
       should.exist(json.version);
       should.exist(json.prevHash);
       should.exist(json.merkleRoot);
@@ -127,7 +127,7 @@ describe('BlockHeader', function() {
         nonce: nonce
       });
 
-      var json = new BlockHeader(jsonString);
+      var json = new BlockHeader(JSON.parse(jsonString));
       should.exist(json.version);
       should.exist(json.prevHash);
       should.exist(json.merkleRoot);
