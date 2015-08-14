@@ -113,7 +113,6 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
       });
     }, function(err) {
       if (err) return new Error('Could not generate wallet');
-
       helpers.getAuthServer(copayerIds[0], function(s) {
         s.getWallet({}, function(err, w) {
           cb(s, w);

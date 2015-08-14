@@ -132,6 +132,7 @@ describe('Storage', function() {
           name: 'copayer ' + i,
           xPubKey: 'xPubKey ' + i,
           requestPubKey: 'requestPubKey ' + i,
+          signature: 'signarture ' + i,
         });
         wallet.addCopayer(copayer);
       });
