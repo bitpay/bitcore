@@ -2571,7 +2571,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('#broadcastTx', function() {
+  describe('#broadcastTx & #braodcastRawTx', function() {
     var server, wallet, txpid;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(1, 1, function(s, w) {
@@ -2616,6 +2616,18 @@ describe('Wallet service', function() {
           clock.restore();
           done();
         });
+      });
+    });
+
+    it('should broadcast a raw tx', function(done) {
+      helpers.stubBroadcast('999');
+      server.broadcastRawTx({
+        network: 'testnet',
+        rawTx: 'raw tx',
+      }, function(err, txid) {
+        should.not.exist(err);
+        txid.should.equal('999');
+        done();
       });
     });
 
