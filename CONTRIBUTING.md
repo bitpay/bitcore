@@ -3,13 +3,20 @@ Contributing to Bitcore
 
 We're working hard to make *bitcore* the most powerful JavaScript library for working with bitcoin. Our goal is to have *bitcore* be a library that can be used by anyone interested in bitcoin, and to level expertise differences with great design and documentation.
 
+## Community
+
+If there are any questions, etc., please feel to ask in one of the community channels:
+
+- https://labs.bitpay.com/c/bitcore (Support Forum)
+- https://gitter.im/bitpay/bitcore (Development Chat)
+
 ## Quick Checklist
 
-Make sure:
+Ideally, please make sure to run:
 
+* `gulp test` passes all the tests (We run tests against Node.js v0.10, v0.12, io.js, and modern browsers)
+* `gulp coverage` covers 100% of the branches of your code (See `coverage/lcov-report/index.html` for details)
 * `gulp lint` doesn't complain about your changes
-* `gulp test` passes all the tests
-* `gulp coverage` covers 100% of the branches of your code
 
 ## Design Guidelines
 
