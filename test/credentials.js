@@ -46,14 +46,14 @@ describe('Credentials', function() {
   it('Should create credentials from mnemonic and passphrase', function() {
     var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
     var c = Credentials.fromMnemonic(words, 'húngaro');
-    c.xPrivKey.should.equal('xprv9s21ZrQH143K2MSHxwg5emTKPXS5ctxi2vyf4biurUnv6ZXxukvjrygxfwYTiPwboQq21EALpRrsGQmZBVkTjvR3ZasBhyfVtHgW4T6h5QH');
+    c.xPrivKey.should.equal('xprv9s21ZrQH143K2LkGEPHqW8w5vMJ3giizin94rFpSM5Ys5KhDaP7Hde3rEuzC7VpZDtNX643bJdvhHnkbhKMNmLx3Yi6H8WEsHBBox3qbpqq');
     c.network.should.equal('livenet');
   });
 
   it('Should create credentials from mnemonic and passphrase for testnet', function() {
     var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
     var c = Credentials.fromMnemonic(words, 'húngaro', 'testnet');
-    c.xPrivKey.should.equal('tprv8ZgxMBicQKsPdAfpdWXapR5JherHrQziNUtmw29NLTHPtAH3u8GVNj4Qb7i7imKvArMo1Kn6ynSfjGKJJi6QYyge6E5VNLPYoPRvWBk5CAg');
+    c.xPrivKey.should.equal('tprv8ZgxMBicQKsPd9yntx9LfnZ5EUiFvEm14L4BigEtq43LrvSJZkT39PRJA69r7sCsbKuJ69fMTzWVkeJLpXhKaQDe5MJanrxvCGwEPnNxN85');
     c.network.should.equal('testnet');
   });
 
@@ -62,7 +62,7 @@ describe('Credentials', function() {
     var words = 'afirmar diseño hielo fideo etapa ogro cambio fideo toalla pomelo número buscar';
     var c = Credentials.fromMnemonic(words);
 
-    c.xPrivKey.should.equal('xprv9s21ZrQH143K2gfNyfJ9DWySezxYZkMZjKXNELmahFmSWXgfkkRtBKY5k3UwqHmoHDSpPBYh5mvts9ymZwq9DQre2C5yQe4SZVf14Fakdet');
+    c.xPrivKey.should.equal('xprv9s21ZrQH143K4WLsaPQZ5kPMo2WqLPsxcNerMhd291niJmkEHqBRBXKrJpBqcftEMpJWpfXN97aXPqxYJrKjLTxbcDEwXH9mRJM9EvGqVdR');
     c.network.should.equal('livenet');
   });
 
@@ -89,9 +89,9 @@ describe('Credentials', function() {
     should.not.exist(c.getMnemonic());
   });
 
-  _.each(['en', 'es', 'jp', 'zh'], function(lang) {
+  _.each(['en', 'es', 'jp', 'zh', 'fr'], function(lang) {
     it('Should verify roundtrip create/from with ' + lang + '/passphrase', function() {
-      var c = Credentials.createWithMnemonic('testnet', 'holamundo', 'es');
+      var c = Credentials.createWithMnemonic('testnet', 'holamundo', lang);
       should.exist(c.mnemonic);
       var words = c.mnemonic;
       var xPriv = c.xPrivKey;
