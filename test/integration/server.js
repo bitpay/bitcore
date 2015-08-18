@@ -1140,6 +1140,34 @@ describe('Wallet service', function() {
         should.exist(status.preferences);
         should.exist(status.pendingTxps);
         status.pendingTxps.should.be.empty;
+
+        should.not.exist(status.wallet.publicKeyRing);
+        should.not.exist(status.wallet.pubKey);
+        should.not.exist(status.wallet.addressManager);
+        should.not.exist(status.wallet.copayers[0].xPubKey);
+        should.not.exist(status.wallet.copayers[0].requestPubKey);
+        should.not.exist(status.wallet.copayers[0].signature);
+        should.not.exist(status.wallet.copayers[0].requestPubKey);
+        should.not.exist(status.wallet.copayers[0].addressManager);
+
+        done();
+      });
+    });
+    it('should get status including extended info', function(done) {
+      server.getStatus({
+        includeExtendedInfo: true
+      }, function(err, status) {
+        should.not.exist(err);
+        should.exist(status);
+        should.exist(status.wallet.publicKeyRing);
+        should.exist(status.wallet.pubKey);
+        should.exist(status.wallet.addressManager);
+        should.exist(status.wallet.copayers[0].xPubKey);
+        should.exist(status.wallet.copayers[0].requestPubKey);
+        should.exist(status.wallet.copayers[0].signature);
+        should.exist(status.wallet.copayers[0].requestPubKey);
+        should.exist(status.wallet.copayers[0].addressManager);
+
         done();
       });
     });
