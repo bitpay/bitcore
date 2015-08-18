@@ -1117,6 +1117,25 @@ describe('Wallet service', function() {
     });
   });
 
+  describe.only('#getStatus', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 1, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should get status', function(done) {
+      server.getStatus({}, function(err, status) {
+        should.not.exist(err);
+        should.exist(status);
+        done();
+      });
+    });
+  });
+
   describe('#verifyMessageSignature', function() {
     var server, wallet;
     beforeEach(function(done) {
