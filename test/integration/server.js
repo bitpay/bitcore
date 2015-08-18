@@ -1131,7 +1131,34 @@ describe('Wallet service', function() {
       server.getStatus({}, function(err, status) {
         should.not.exist(err);
         should.exist(status);
+        should.exist(status.wallet);
+        status.wallet.name.should.equal(wallet.name);
+        should.exist(status.wallet.copayers);
+        status.wallet.copayers.length.should.equal(1);
+        should.exist(status.balance);
+        status.balance.totalAmount.should.equal(0);
+        should.exist(status.preferences);
+        should.exist(status.pendingTxps);
+        status.pendingTxps.should.be.empty;
         done();
+      });
+    });
+    it('should get status after tx creation', function(done) {
+      helpers.stubUtxos(server, wallet, [100, 200], function() {
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, 'some message', TestData.copayers[0].privKey_1H_0);
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(err);
+          should.exist(tx);
+          server.getStatus({}, function(err, status) {
+            should.not.exist(err);
+            status.pendingTxps.length.should.equal(1);
+            var balance = status.balance;
+            balance.totalAmount.should.equal(helpers.toSatoshi(300));
+            balance.lockedAmount.should.equal(tx.inputs[0].satoshis);
+            balance.availableAmount.should.equal(balance.totalAmount - balance.lockedAmount);
+            done();
+          });
+        });
       });
     });
   });
@@ -1853,8 +1880,8 @@ describe('Wallet service', function() {
                   isChange: true
                 });
                 change.length.should.equal(1);
+                done();
               });
-              done();
             });
           });
         });
