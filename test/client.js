@@ -1815,7 +1815,9 @@ describe('client API', function() {
           importedClient.import(exported);
           importedClient.canSign().should.be.false;
         });
+      });
 
+      describe('Export & Import', function() {
         it('should export & import from words', function(done) {
           var walletId = clients[0].credentials.walletId;
           var walletName = clients[0].credentials.walletName;
@@ -1835,7 +1837,6 @@ describe('client API', function() {
             done();
           });
         });
- 
       });
       describe('Fail', function() {
         it.skip('should fail to export compressed & import uncompressed', function() {});
