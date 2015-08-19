@@ -60,6 +60,7 @@ helpers.newDb = function() {
 };
 
 helpers.createAndJoinWallet = function(clients, m, n, cb) {
+  clients[0].seedFromRandomWithMnemonic('testnet');
   clients[0].createWallet('wallet name', 'creator', m, n, {
       network: 'testnet'
     },
@@ -74,6 +75,7 @@ helpers.createAndJoinWallet = function(clients, m, n, cb) {
 
           function(next) {
             async.each(_.range(1, n), function(i, cb) {
+              clients[i].seedFromRandomWithMnemonic('testnet');
               clients[i].joinWallet(secret, 'copayer ' + i, cb);
             }, next);
           },
@@ -189,9 +191,12 @@ describe('client API', function() {
         });
         blockchainExplorerMock.reset();
         sandbox = sinon.sandbox.create();
-        sandbox.stub(log, 'warn');
-        sandbox.stub(log, 'info');
-        sandbox.stub(log, 'error');
+
+        if (!process.env.BWC_SHOW_LOGS) {
+          sandbox.stub(log, 'warn');
+          sandbox.stub(log, 'info');
+          sandbox.stub(log, 'error');
+        }
         done();
       });
   });
@@ -1791,6 +1796,7 @@ describe('client API', function() {
           importedClient.import(exported, {
             compressed: true
           });
+
           importedClient.openWallet(function(err) {
             should.not.exist(err);
             importedClient.credentials.walletId.should.equal(walletId);
@@ -1809,6 +1815,27 @@ describe('client API', function() {
           importedClient.import(exported);
           importedClient.canSign().should.be.false;
         });
+
+        it('should export & import from words', function(done) {
+          var walletId = clients[0].credentials.walletId;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+          var network = clients[0].credentials.network;
+
+          var exported = clients[0].getMnemonic();
+
+          importedClient = helpers.newClient(app);
+          importedClient.importFromMnemonic(exported, {
+            network: network,
+          }, function(err) {
+            should.not.exist(err);
+            importedClient.credentials.walletId.should.equal(walletId);
+            importedClient.credentials.walletName.should.equal(walletName);
+            importedClient.credentials.copayerName.should.equal(copayerName);
+            done();
+          });
+        });
+ 
       });
       describe('Fail', function() {
         it.skip('should fail to export compressed & import uncompressed', function() {});
@@ -2186,34 +2213,34 @@ describe('client API', function() {
         delete airgapped.credentials.xPrivKey;
         (function() {
           airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
-        }).should.throw(Error, 'You do not have the required keys to sign transactions');
+        }).should.throw('Missing private keys');
         done();
       });
       it('should fail gracefully when PKR cannot be decrypted in airgapped client', function(done) {
         bundle.encryptedPkr = 'dummy';
         (function() {
           airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
-        }).should.throw(Error, 'Could not decrypt public key ring');
+        }).should.throw('Could not decrypt public key ring');
         done();
       });
       it('should be able to detect invalid or tampered PKR when signing on airgapped client', function(done) {
         (function() {
           airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, 2);
-        }).should.throw(Error, 'Invalid public key ring');
+        }).should.throw('Invalid public key ring');
         done();
       });
       it('should be able to detect tampered proposal when signing on airgapped client', function(done) {
         bundle.txps[0].encryptedMessage = 'tampered message';
         (function() {
           airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
-        }).should.throw(Error, 'Fake transaction proposal');
+        }).should.throw('Fake transaction proposal');
         done();
       });
       it('should be able to detect tampered change address when signing on airgapped client', function(done) {
         bundle.txps[0].changeAddress.address = 'mqNkvNuhzZKeXYNRZ1bdj55smmW3acr6K7';
         (function() {
           airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
-        }).should.throw(Error, 'Fake transaction proposal');
+        }).should.throw('Fake transaction proposal');
         done();
       });
     });
