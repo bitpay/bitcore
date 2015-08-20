@@ -224,6 +224,7 @@ For a proposal with one output:
 For a proposal with multiple outputs:
 
 - opts `Object`
+  - type `String` - 'multiple_outputs'
   - outputs `Array`
     - toAddress `String`
     - amount `Number`
