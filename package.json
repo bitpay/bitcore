@@ -51,7 +51,7 @@
     "jsdoc": "^3.3.0-beta1",
     "memdown": "^1.0.0",
     "mocha": "^1.18.2",
-    "sinon": "^1.10.3",
+    "sinon": "1.10.3",
     "supertest": "*",
     "tingodb": "^0.3.4"
   },
