@@ -1754,94 +1754,158 @@ describe('client API', function() {
 
   describe('Mobility, backup & restore', function() {
     describe('Export & Import', function() {
-      describe('Success', function() {
-        var address, importedClient;
-        beforeEach(function(done) {
-          importedClient = null;
-          helpers.createAndJoinWallet(clients, 1, 1, function() {
-            clients[0].createAddress(function(err, addr) {
-              should.not.exist(err);
-              should.exist(addr.address);
-              address = addr.address;
-              done();
-            });
-          });
-        });
-        afterEach(function(done) {
-          importedClient.getMainAddresses({}, function(err, list) {
+      var address, importedClient;
+      beforeEach(function(done) {
+        importedClient = null;
+        helpers.createAndJoinWallet(clients, 1, 1, function() {
+          clients[0].createAddress(function(err, addr) {
             should.not.exist(err);
-            should.exist(list);
-            list.length.should.equal(1);
-            list[0].address.should.equal(address);
-            done();
-          });
-        });
-
-        it('should export & import', function() {
-          var exported = clients[0].export();
-
-          importedClient = helpers.newClient(app);
-          importedClient.import(exported);
-        });
-        it('should export & import compressed', function(done) {
-          var walletId = clients[0].credentials.walletId;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
-
-          var exported = clients[0].export({
-            compressed: true
-          });
-
-          importedClient = helpers.newClient(app);
-          importedClient.import(exported, {
-            compressed: true
-          });
-
-          importedClient.openWallet(function(err) {
-            should.not.exist(err);
-            importedClient.credentials.walletId.should.equal(walletId);
-            importedClient.credentials.walletName.should.equal(walletName);
-            importedClient.credentials.copayerName.should.equal(copayerName);
-            done();
-          });
-        });
-        it('should export without signing rights', function() {
-          clients[0].canSign().should.be.true;
-          var exported = clients[0].export({
-            noSign: true,
-          });
-
-          importedClient = helpers.newClient(app);
-          importedClient.import(exported);
-          importedClient.canSign().should.be.false;
-        });
-      });
-
-      describe('Export & Import', function() {
-        it('should export & import from words', function(done) {
-          var walletId = clients[0].credentials.walletId;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
-          var network = clients[0].credentials.network;
-
-          var exported = clients[0].getMnemonic();
-
-          importedClient = helpers.newClient(app);
-          importedClient.importFromMnemonic(exported, {
-            network: network,
-          }, function(err) {
-            should.not.exist(err);
-            importedClient.credentials.walletId.should.equal(walletId);
-            importedClient.credentials.walletName.should.equal(walletName);
-            importedClient.credentials.copayerName.should.equal(copayerName);
+            should.exist(addr.address);
+            address = addr.address;
             done();
           });
         });
       });
-      describe('Fail', function() {
-        it.skip('should fail to export compressed & import uncompressed', function() {});
-        it.skip('should fail to export uncompressed & import compressed', function() {});
+      afterEach(function(done) {
+        importedClient.getMainAddresses({}, function(err, list) {
+          should.not.exist(err);
+          should.exist(list);
+          list.length.should.equal(1);
+          list[0].address.should.equal(address);
+          done();
+        });
       });
+
+      it('should export & import', function() {
+        var exported = clients[0].export();
+
+        importedClient = helpers.newClient(app);
+        importedClient.import(exported);
+      });
+      it('should export & import compressed', function(done) {
+        var walletId = clients[0].credentials.walletId;
+        var walletName = clients[0].credentials.walletName;
+        var copayerName = clients[0].credentials.copayerName;
+
+        var exported = clients[0].export({
+          compressed: true
+        });
+
+        importedClient = helpers.newClient(app);
+        importedClient.import(exported, {
+          compressed: true
+        });
+
+        importedClient.openWallet(function(err) {
+          should.not.exist(err);
+          importedClient.credentials.walletId.should.equal(walletId);
+          importedClient.credentials.walletName.should.equal(walletName);
+          importedClient.credentials.copayerName.should.equal(copayerName);
+          done();
+        });
+      });
+      it('should export without signing rights', function() {
+        clients[0].canSign().should.be.true;
+        var exported = clients[0].export({
+          noSign: true,
+        });
+
+        importedClient = helpers.newClient(app);
+        importedClient.import(exported);
+        importedClient.canSign().should.be.false;
+      });
+
+      it('should export & import with mnemonics + BWS', function(done) {
+        var c = clients[0].credentials;
+        var walletId = c.walletId;
+        var walletName = c.walletName;
+        var copayerName = c.copayerName;
+        var network = c.network;
+        var key = c.xPrivKey;
+
+        var exported = clients[0].getMnemonic();
+        importedClient = helpers.newClient(app);
+        importedClient.importFromMnemonic(exported, {
+          network: network,
+        }, function(err) {
+          var c2 = importedClient.credentials;
+          c2.xPrivKey.should.equal(key);
+          should.not.exist(err);
+          c2.walletId.should.equal(walletId);
+          c2.walletName.should.equal(walletName);
+          c2.copayerName.should.equal(copayerName);
+          done();
+        });
+      });
+
+
+      it('should export & import with xprivkey + BWS', function(done) {
+        var c = clients[0].credentials;
+        var walletId = c.walletId;
+        var walletName = c.walletName;
+        var copayerName = c.copayerName;
+        var network = c.network;
+        var key = c.xPrivKey;
+
+        var exported = clients[0].getMnemonic();
+        importedClient = helpers.newClient(app);
+        importedClient.importFromExtendedPrivateKey(key, {
+        }, function(err) {
+          var c2 = importedClient.credentials;
+          c2.xPrivKey.should.equal(key);
+          should.not.exist(err);
+          c2.walletId.should.equal(walletId);
+          c2.walletName.should.equal(walletName);
+          c2.copayerName.should.equal(copayerName);
+          done();
+        });
+      });
+ 
+    });
+
+    describe('Mnemonic related tests', function() {
+      var importedClient;
+      it('should fail to import from words if no recreate info', function(done) {
+        var exported = 'bounce tonight little spy earn void nominee ankle walk ten type update';
+        importedClient = helpers.newClient(app);
+        importedClient.importFromMnemonic(exported, {
+          network: 'testnet',
+        }, function(err) {
+          err.code.should.contain('MISSING_ARGS');
+          done();
+        });
+      });
+      it('should import from words with recreate info (1-1)', function(done) {
+        var exported = 'bounce tonight little spy earn void nominee ankle walk ten type update';
+        importedClient = helpers.newClient(app);
+        importedClient.importFromMnemonic(exported, {
+          network: 'testnet',
+          m: 1,
+          n: 1,
+        }, function(err) {
+          should.not.exist(err);
+          done();
+        });
+      });
+      it('should import from words with recreate info (2-2)', function(done) {
+        var exported = 'young ripple actor crack cross dry protect fold wild either casual dad';
+        importedClient = helpers.newClient(app);
+        importedClient.importFromMnemonic(exported, {
+          network: 'testnet',
+          m: 2,
+          n: 2,
+          publicKeyRing: [{
+            xPubKey: 'tpubDA1wV9jDCzgx1rxMoLjJL4ddtpqpbkpobPy15Sjmfa91BVer5iWsiz9VKEM7pKRkfsLwWwcogouooHcEGZRiCih8u3W9TsEuYT6kZvSKFJA',
+            requestPubKey: '02e05beb040d4de4640df4d3b537a0b924104a72706ebb8c7b06aa51da97542963'
+          }
+          ],
+        }, function(err) {
+          should.not.exist(err);
+          done();
+        });
+      });
+
+
     });
 
     describe('Recovery', function() {
