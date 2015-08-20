@@ -382,7 +382,7 @@ afterwards to remove the uncrypted private key.
 - password `string`  
 
 
-###api.unlock()
+###api.lock()
 
 Removes the unencrypted private key.
 
