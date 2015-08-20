@@ -1579,6 +1579,22 @@ describe('client API', function() {
     });
   });
 
+  describe('Broadcast raw transaction', function() {
+    it('should broadcast raw tx', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
+        var opts = {
+          network: 'testnet',
+          rawTx: '0100000001b1b1b1b0d9786e237ec6a4b80049df9e926563fee7bdbc1ac3c4efc3d0af9a1c010000006a47304402207c612d36d0132ed463526a4b2370de60b0aa08e76b6f370067e7915c2c74179b02206ae8e3c6c84cee0bca8521704eddb40afe4590f14fd5d6434da980787ba3d5110121031be732b984b0f1f404840f2479bcc81f90187298efecc67dd83e1f93d9b2860dfeffffff0200ab9041000000001976a91403383bd4cff200de3690db1ed17d0b1a228ea43f88ac25ad6ed6190000001976a9147ccbaf7bcc1e323548bd1d57d7db03f6e6daf76a88acaec70700',
+        };
+        clients[0].broadcastRawTx(opts, function(err, txid) {
+          should.not.exist(err);
+          txid.should.equal('d19871cf7c123d413ac71f9240ea234fac77bc95bcf41015d8bf5c03f221b92c');
+          done();
+        });
+      });
+    });
+  });
+
   describe('Transaction history', function() {
     it('should get transaction history', function(done) {
       blockchainExplorerMock.setHistory(TestData.history);
