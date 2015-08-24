@@ -748,6 +748,20 @@ describe('Transaction', function() {
         return new Transaction().lockUntilBlockHeight(-1);
       }).to.throw(errors.Transaction.NLockTimeOutOfRange);
     });
+    it('has a non-max sequenceNumber for effective locktime tx', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith1BTC)
+        .lockUntilDate(date);
+      expect(transaction.inputs[0].sequenceNumber.should.not.equal(Transaction.Input.DEFAULT_SEQNUMBER));
+    });
+    it('should serialize and deserialize correctly', function() {
+      var transaction= new Transaction()
+        .from(simpleUtxoWith1BTC)
+        .lockUntilDate(date);
+      var serialized_tx = transaction.uncheckedSerialize();
+      var copy = new Transaction(serialized_tx);
+      expect(serialized_tx.should.equal(copy.uncheckedSerialize()));
+    });
   });
 
   it('handles anyone-can-spend utxo', function() {
