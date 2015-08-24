@@ -90,6 +90,7 @@ describe('Storage', function() {
           name: 'copayer ' + i,
           xPubKey: 'xPubKey ' + i,
           requestPubKey: 'requestPubKey ' + i,
+          signature: 'xxx',
         });
         wallet.addCopayer(copayer);
       });
@@ -101,7 +102,8 @@ describe('Storage', function() {
           should.not.exist(err);
           should.exist(lookup);
           lookup.walletId.should.equal('123');
-          lookup.requestPubKey.should.equal('requestPubKey 1');
+          lookup.requestPubKeys[0].key.should.equal('requestPubKey 1');
+          lookup.requestPubKeys[0].signature.should.equal('xxx');
           done();
         })
       });
@@ -130,6 +132,7 @@ describe('Storage', function() {
           name: 'copayer ' + i,
           xPubKey: 'xPubKey ' + i,
           requestPubKey: 'requestPubKey ' + i,
+          signature: 'signarture ' + i,
         });
         wallet.addCopayer(copayer);
       });

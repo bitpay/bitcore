@@ -26,6 +26,7 @@ var WalletService = require('../../lib/server');
 var EmailService = require('../../lib/emailservice');
 
 var TestData = require('../testdata');
+var CLIENT_VERSION = 'bwc-0.1.1';
 
 var helpers = {};
 helpers.getAuthServer = function(copayerId, cb) {
@@ -112,7 +113,6 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
       });
     }, function(err) {
       if (err) return new Error('Could not generate wallet');
-
       helpers.getAuthServer(copayerIds[0], function(s) {
         s.getWallet({}, function(err, w) {
           cb(s, w);
@@ -1401,6 +1401,155 @@ describe('Wallet service', function() {
           done();
         });
       });
+    });
+  });
+
+
+  describe('Multiple request Pub Keys', function() {
+    var server, wallet;
+    var opts, reqPrivKey, ws;
+    var getAuthServer = function(copayerId, privKey, cb) {
+      var msg = 'dummy';
+      var sig = WalletUtils.signMessage(msg, privKey);
+      WalletService.getInstanceWithAuth({
+        copayerId: copayerId,
+        message: msg,
+        signature: sig,
+        clientVersion: CLIENT_VERSION,
+      }, function(err, server) {
+        return cb(err, server);
+      });
+    };
+
+    beforeEach(function() {
+      reqPrivKey = new Bitcore.PrivateKey();
+      var requestPubKey = reqPrivKey.toPublicKey();
+
+      var xPrivKey = TestData.copayers[0].xPrivKey_45H;
+      var sig = WalletUtils.signRequestPubKey(requestPubKey, xPrivKey);
+
+      var copayerId = WalletUtils.xPubToCopayerId(TestData.copayers[0].xPubKey_45H);
+      opts = {
+        copayerId: copayerId,
+        requestPubKey: requestPubKey,
+        signature: sig,
+      };
+      ws = new WalletService();
+    });
+
+    describe('#addAccess 1-1', function() {
+      beforeEach(function(done) {
+        helpers.createAndJoinWallet(1, 1, function(s, w) {
+          server = s;
+          wallet = w;
+
+          helpers.stubUtxos(server, wallet, 1, function() {
+            done();
+          });
+        });
+      });
+
+      it('should be able to re-gain access from  xPrivKey', function(done) {
+        ws.addAccess(opts, function(err, res) {
+          should.not.exist(err);
+          res.wallet.copayers[0].requestPubKeys.length.should.equal(2);
+          res.wallet.copayers[0].requestPubKeys[0].selfSigned.should.equal(true);
+
+          server.getBalance(res.wallet.walletId, function(err, bal) {
+            should.not.exist(err);
+            bal.totalAmount.should.equal(1e8);
+            getAuthServer(opts.copayerId, reqPrivKey, function(err, server2) {
+              server2.getBalance(res.wallet.walletId, function(err, bal2) {
+                should.not.exist(err);
+                bal2.totalAmount.should.equal(1e8);
+                done();
+              });
+            });
+          });
+        });
+      });
+
+      it('should fail to gain access with wrong xPrivKey', function(done) {
+        opts.signature = 'xx';
+        ws.addAccess(opts, function(err, res) {
+          err.code.should.equal('NOT_AUTHORIZED');
+          done();
+        });
+      });
+
+      it('should fail to access with wrong privkey after gaining access', function(done) {
+        ws.addAccess(opts, function(err, res) {
+          should.not.exist(err);
+          server.getBalance(res.wallet.walletId, function(err, bal) {
+            should.not.exist(err);
+            var privKey = new Bitcore.PrivateKey();
+            (getAuthServer(opts.copayerId, privKey, function(err, server2) {
+              err.code.should.equal('NOT_AUTHORIZED');
+              done();
+            }));
+          });
+        });
+      });
+
+      it('should be able to create TXs after regaining access', function(done) {
+        ws.addAccess(opts, function(err, res) {
+          should.not.exist(err);
+          getAuthServer(opts.copayerId, reqPrivKey, function(err, server2) {
+            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, null, reqPrivKey);
+            server2.createTx(txOpts, function(err, tx) {
+              should.not.exist(err);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    describe('#addAccess 2-2', function() {
+      beforeEach(function(done) {
+        helpers.createAndJoinWallet(2, 2, function(s, w) {
+          server = s;
+          wallet = w;
+          helpers.stubUtxos(server, wallet, 1, function() {
+            done();
+          });
+        });
+      });
+
+      it('should be able to re-gain access from  xPrivKey', function(done) {
+        ws.addAccess(opts, function(err, res) {
+          should.not.exist(err);
+          server.getBalance(res.wallet.walletId, function(err, bal) { should.not.exist(err);
+            bal.totalAmount.should.equal(1e8);
+            getAuthServer(opts.copayerId, reqPrivKey, function(err, server2) {
+              server2.getBalance(res.wallet.walletId, function(err, bal2) {
+                should.not.exist(err);
+                bal2.totalAmount.should.equal(1e8);
+                done();
+              });
+            });
+          });
+        });
+      });
+
+      it('TX proposals should include info to be verified', function(done) {
+        ws.addAccess(opts, function(err, res) {
+          should.not.exist(err);
+          getAuthServer(opts.copayerId, reqPrivKey, function(err, server2) {
+            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, null, reqPrivKey);
+            server2.createTx(txOpts, function(err, tx) {
+              should.not.exist(err);
+              server2.getPendingTxs({}, function(err, txs) {
+                should.not.exist(err);
+                should.exist(txs[0].proposalSignaturePubKey);
+                should.exist(txs[0].proposalSignaturePubKeySig);
+                done();
+              });
+            });
+          });
+        });
+      });
+
     });
   });
 
@@ -4116,205 +4265,6 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('#replaceTemporaryRequestKey', function() {
-    var server, walletId;
-    beforeEach(function(done) {
-      server = new WalletService();
-      var walletOpts = {
-        name: 'my wallet',
-        m: 2,
-        n: 2,
-        pubKey: TestData.keyPair.pub,
-      };
-      server.createWallet(walletOpts, function(err, wId) {
-        should.not.exist(err);
-        should.exist.walletId;
-        walletId = wId;
-        done();
-      });
-    });
-
-    it('should join existing wallet with temporaryRequestKey', function(done) {
-      var copayerOpts = helpers.getSignedCopayerOpts({
-        walletId: walletId,
-        name: 'me',
-        xPubKey: TestData.copayers[0].xPubKey_45H,
-        requestPubKey: TestData.copayers[0].pubKey_1H_0,
-      });
-      copayerOpts.isTemporaryRequestKey = true;
-
-      server.joinWallet(copayerOpts, function(err, result) {
-        should.not.exist(err);
-        var copayerId = result.copayerId;
-        helpers.getAuthServer(copayerId, function(server) {
-          server.getWallet({}, function(err, wallet) {
-            wallet.id.should.equal(walletId);
-            var copayer = wallet.copayers[0];
-            copayer.isTemporaryRequestKey.should.equal(true);
-            done();
-          });
-        });
-      });
-    });
-
-    it('should fail to replace a temporaryRequestKey on a not-complete wallet', function(done) {
-      var copayerOpts = helpers.getSignedCopayerOpts({
-        walletId: walletId,
-        name: 'me',
-        xPubKey: TestData.copayers[0].xPubKey_45H,
-        requestPubKey: TestData.copayers[0].pubKey_1_0,
-      });
-      copayerOpts.isTemporaryRequestKey = true;
-
-      server.joinWallet(copayerOpts, function(err, result) {
-        should.not.exist(err);
-        var copayerId = result.copayerId;
-        helpers.getAuthServer(copayerId, function(server) {
-          server.getWallet({}, function(err, wallet) {
-
-            var copayerOpts = helpers.getSignedCopayerOpts({
-              walletId: walletId,
-              name: 'me',
-              xPubKey: TestData.copayers[0].xPubKey_45H,
-              requestPubKey: TestData.copayers[0].pubKey_1H_0,
-            });
-            copayerOpts.isTemporaryRequestKey = false;
-            server.replaceTemporaryRequestKey(copayerOpts, function(err, wallet) {
-              err.code.should.equal('WALLET_NOT_COMPLETE');
-              done();
-            });
-          });
-        });
-      });
-    });
-
-
-    it('should fail to replace a temporaryRequestKey is Copayer is not in wallet', function(done) {
-      var copayerOpts = helpers.getSignedCopayerOpts({
-        walletId: walletId,
-        name: 'me',
-        xPubKey: TestData.copayers[0].xPubKey_45H,
-        requestPubKey: TestData.copayers[0].pubKey_1_0,
-      });
-      copayerOpts.isTemporaryRequestKey = true;
-
-      server.joinWallet(copayerOpts, function(err, result) {
-        should.not.exist(err);
-        var copayerId = result.copayerId;
-        helpers.getAuthServer(copayerId, function(server) {
-          server.getWallet({}, function(err, wallet) {
-
-            var copayerOpts = helpers.getSignedCopayerOpts({
-              walletId: walletId,
-              name: 'me',
-              xPubKey: TestData.copayers[1].xPubKey_45H,
-              requestPubKey: TestData.copayers[1].pubKey_1H_0,
-            });
-            copayerOpts.isTemporaryRequestKey = false;
-            server.replaceTemporaryRequestKey(copayerOpts, function(err, wallet) {
-              err.code.should.equal('COPAYER_DATA_MISMATCH');
-              done();
-            });
-          });
-        });
-      });
-    });
-
-    it('should fail replace a temporaryRequestKey with invalid copayer', function(done) {
-      var copayerOpts = helpers.getSignedCopayerOpts({
-        walletId: walletId,
-        name: 'me',
-        xPubKey: TestData.copayers[0].xPubKey_45H,
-        requestPubKey: TestData.copayers[0].pubKey_1_0,
-      });
-      copayerOpts.isTemporaryRequestKey = true;
-
-      server.joinWallet(copayerOpts, function(err, result) {
-        should.not.exist(err);
-
-        var copayerOpts2 = helpers.getSignedCopayerOpts({
-          walletId: walletId,
-          name: 'me',
-          xPubKey: TestData.copayers[1].xPubKey_45H,
-          requestPubKey: TestData.copayers[1].pubKey_1H_0,
-        });
-        copayerOpts2.isTemporaryRequestKey = false;
-
-        server.joinWallet(copayerOpts2, function(err, result) {
-          should.not.exist(err);
-
-          var copayerId = result.copayerId;
-          helpers.getAuthServer(copayerId, function(server) {
-            server.getWallet({}, function(err, wallet) {
-
-              var copayerOpts = helpers.getSignedCopayerOpts({
-                walletId: walletId,
-                name: 'me',
-                xPubKey: TestData.copayers[1].xPubKey_45H,
-                requestPubKey: TestData.copayers[1].pubKey_1H_0,
-              });
-              copayerOpts.isTemporaryRequestKey = false;
-              server.replaceTemporaryRequestKey(copayerOpts, function(err, wallet) {
-                err.code.should.equal('COPAYER_DATA_MISMATCH');
-                done();
-              });
-            });
-          });
-        });
-      });
-    });
-
-    it('should replace a temporaryRequestKey', function(done) {
-      var copayerOpts = helpers.getSignedCopayerOpts({
-        walletId: walletId,
-        name: 'me',
-        xPubKey: TestData.copayers[0].xPubKey_45H,
-        requestPubKey: TestData.copayers[0].pubKey_1_0,
-      });
-      copayerOpts.isTemporaryRequestKey = true;
-
-      server.joinWallet(copayerOpts, function(err, result) {
-        should.not.exist(err);
-        var copayerId = result.copayerId;
-
-        var copayerOpts2 = helpers.getSignedCopayerOpts({
-          walletId: walletId,
-          name: 'me',
-          xPubKey: TestData.copayers[1].xPubKey_45H,
-          requestPubKey: TestData.copayers[1].pubKey_1H_0,
-        });
-        copayerOpts2.isTemporaryRequestKey = false;
-
-        server.joinWallet(copayerOpts2, function(err, result) {
-          should.not.exist(err);
-          var copayerId2 = result.copayerId;
-
-          helpers.getAuthServer(copayerId, function(server) {
-            server.getWallet({}, function(err, wallet) {
-
-              var copayerOpts = helpers.getSignedCopayerOpts({
-                walletId: walletId,
-                name: 'me',
-                xPubKey: TestData.copayers[0].xPubKey_45H,
-                requestPubKey: TestData.copayers[0].pubKey_1H_0,
-              });
-              copayerOpts.isTemporaryRequestKey = false;
-              server.replaceTemporaryRequestKey(copayerOpts, function(err, wallet) {
-                should.not.exist(err);
-                server.getWallet({}, function(err, wallet) {
-                  wallet.copayers[0].isTemporaryRequestKey.should.equal(false);
-                  wallet.copayers[1].isTemporaryRequestKey.should.equal(false);
-                  done();
-                });
-              });
-            });
-          });
-        });
-      });
-    });
-  });
-
-
   describe('Legacy', function() {
     describe('Fees', function() {
       var server, wallet;
@@ -4481,7 +4431,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
     });
   });
 });
