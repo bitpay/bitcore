@@ -423,7 +423,7 @@ describe('client API', function() {
         }, function() {
           openWalletStub.restore();
           clients[1].openWallet(function(err, x) {
-            err.code.should.contain('SERVERCOMPROMISED');
+            err.code.should.contain('SERVER_COMPROMISED');
             done();
           });
         });
@@ -440,7 +440,7 @@ describe('client API', function() {
         }, function() {
           openWalletStub.restore();
           clients[1].openWallet(function(err, x) {
-            err.code.should.contain('SERVERCOMPROMISED');
+            err.code.should.contain('SERVER_COMPROMISED');
             done();
           });
         });
@@ -460,7 +460,7 @@ describe('client API', function() {
         }, function() {
           openWalletStub.restore();
           clients[1].openWallet(function(err, x) {
-            err.code.should.contain('SERVERCOMPROMISED');
+            err.code.should.contain('SERVER_COMPROMISED');
             done();
           });
         });
@@ -595,7 +595,7 @@ describe('client API', function() {
           address.address = '2N86pNEpREGpwZyHVC5vrNUCbF9nM1Geh4K';
         }, function() {
           clients[0].createAddress(function(err, x0) {
-            err.code.should.contain('SERVERCOMPROMISED');
+            err.code.should.contain('SERVER_COMPROMISED');
             done();
           });
         });
@@ -610,7 +610,7 @@ describe('client API', function() {
           ];
         }, function() {
           clients[0].createAddress(function(err, x0) {
-            err.code.should.contain('SERVERCOMPROMISED');
+            err.code.should.contain('SERVER_COMPROMISED');
             done();
           });
         });
@@ -868,7 +868,7 @@ describe('client API', function() {
             }, function() {
               clients[0].getTxProposals({}, function(err, txps) {
                 should.exist(err);
-                err.code.should.contain('SERVERCOMPROMISED');
+                err.code.should.contain('SERVER_COMPROMISED');
                 done();
               });
             });
@@ -895,7 +895,7 @@ describe('client API', function() {
             }, function() {
               clients[0].getTxProposals({}, function(err, txps) {
                 should.exist(err);
-                err.code.should.contain('SERVERCOMPROMISED');
+                err.code.should.contain('SERVER_COMPROMISED');
                 done();
               });
             });
@@ -921,7 +921,7 @@ describe('client API', function() {
             }, function() {
               clients[0].getTxProposals({}, function(err, txps) {
                 should.exist(err);
-                err.code.should.contain('SERVERCOMPROMISED');
+                err.code.should.contain('SERVER_COMPROMISED');
                 done();
               });
             });
@@ -1066,7 +1066,7 @@ describe('client API', function() {
         return txps;
       }, function() {
         clients[1].getTxProposals({}, function(err, txps) {
-          err.code.should.contain('SERVERCOMPROMISED');
+          err.code.should.contain('SERVER_COMPROMISED');
           done();
         });
       });
@@ -1085,7 +1085,7 @@ describe('client API', function() {
         }, function(err, txps) {
           should.not.exist(err);
           clients[1].signTxProposal(txps[0], function(err, txps) {
-            err.code.should.contain('SERVERCOMPROMISED');
+            err.code.should.contain('SERVER_COMPROMISED');
             done();
           });
         });
@@ -1210,7 +1210,7 @@ describe('client API', function() {
               address.address = '2N86pNEpREGpwZyHVC5vrNUCbF9nM1Geh4K';
             }, function() {
               clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
-                err.code.should.contain('SERVERCOMPROMISED');
+                err.code.should.contain('SERVER_COMPROMISED');
                 done();
               });
             });
@@ -2791,7 +2791,7 @@ describe('client API', function() {
               txps[0].proposalSignature = '304402206e4a1db06e00068582d3be41cfc795dcf702451c132581e661e7241ef34ca19202203e17598b4764913309897d56446b51bc1dcd41a25d90fdb5f87a6b58fe3a6920';
             }, function() {
               clients[0].getTxProposals({}, function(err, txps) {
-                err.code.should.contain('SERVERCOMPROMISED');
+                err.code.should.contain('SERVER_COMPROMISED');
                 done();
               });
             });
@@ -2807,7 +2807,7 @@ describe('client API', function() {
               txps[0].proposalSignaturePubKey = '02d368d7f03a57b2ad3ad9c2766739da83b85ab9c3718fb02ad36574f9391d6bf6';
             }, function() {
               clients[0].getTxProposals({}, function(err, txps) {
-                err.code.should.contain('SERVERCOMPROMISED');
+                err.code.should.contain('SERVER_COMPROMISED');
                 done();
               });
             });
@@ -2824,7 +2824,7 @@ describe('client API', function() {
               txps[0].proposalSignaturePubKeySig = '304402201528748eafc5083fe67c84cbf0eb996eba9a65584a73d8c07ed6e0dc490c195802204f340488266c804cf1033f8b852efd1d4e05d862707c119002dc3fbe7a805c35';
             }, function() {
               clients[0].getTxProposals({}, function(err, txps) {
-                err.code.should.contain('SERVERCOMPROMISED');
+                err.code.should.contain('SERVER_COMPROMISED');
                 done();
               });
             });
