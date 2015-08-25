@@ -104,6 +104,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
         name: 'copayer ' + (i + 1),
         xPubKey: TestData.copayers[i + offset].xPubKey_45H,
         requestPubKey: TestData.copayers[i + offset].pubKey_1H_0,
+        customData: 'custom data ' + (i + 1),
       });
 
       server.joinWallet(copayerOpts, function(err, result) {
@@ -912,6 +913,7 @@ describe('Wallet service', function() {
         name: 'me',
         xPubKey: TestData.copayers[0].xPubKey_45H,
         requestPubKey: TestData.copayers[0].pubKey_1H_0,
+        customData: 'dummy custom data',
       });
       server.joinWallet(copayerOpts, function(err, result) {
         should.not.exist(err);
@@ -923,6 +925,7 @@ describe('Wallet service', function() {
             var copayer = wallet.copayers[0];
             copayer.name.should.equal('me');
             copayer.id.should.equal(copayerId);
+            copayer.customData.should.equal('dummy custom data');
             server.getNotifications({}, function(err, notifications) {
               should.not.exist(err);
               var notif = _.find(notifications, {
@@ -1112,6 +1115,86 @@ describe('Wallet service', function() {
           });
           should.not.exist(notif);
           done();
+        });
+      });
+    });
+  });
+
+  describe('#getStatus', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 1, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should get status', function(done) {
+      server.getStatus({}, function(err, status) {
+        should.not.exist(err);
+        should.exist(status);
+        should.exist(status.wallet);
+        status.wallet.name.should.equal(wallet.name);
+        should.exist(status.wallet.copayers);
+        status.wallet.copayers.length.should.equal(1);
+        should.exist(status.balance);
+        status.balance.totalAmount.should.equal(0);
+        should.exist(status.preferences);
+        should.exist(status.pendingTxps);
+        status.pendingTxps.should.be.empty;
+
+        should.not.exist(status.wallet.publicKeyRing);
+        should.not.exist(status.wallet.pubKey);
+        should.not.exist(status.wallet.addressManager);
+        _.each(status.wallet.copayers, function(copayer) {
+          should.not.exist(copayer.xPubKey);
+          should.not.exist(copayer.requestPubKey);
+          should.not.exist(copayer.signature);
+          should.not.exist(copayer.requestPubKey);
+          should.not.exist(copayer.addressManager);
+          should.not.exist(copayer.customData);
+        });
+        done();
+      });
+    });
+    it('should get status including extended info', function(done) {
+      server.getStatus({
+        includeExtendedInfo: true
+      }, function(err, status) {
+        should.not.exist(err);
+        should.exist(status);
+        should.exist(status.wallet.publicKeyRing);
+        should.exist(status.wallet.pubKey);
+        should.exist(status.wallet.addressManager);
+        should.exist(status.wallet.copayers[0].xPubKey);
+        should.exist(status.wallet.copayers[0].requestPubKey);
+        should.exist(status.wallet.copayers[0].signature);
+        should.exist(status.wallet.copayers[0].requestPubKey);
+        should.exist(status.wallet.copayers[0].addressManager);
+        should.exist(status.wallet.copayers[0].customData);
+        // Do not return other copayer's custom data
+        _.each(_.rest(status.wallet.copayers), function(copayer) {
+          should.not.exist(copayer.customData);
+        });
+        done();
+      });
+    });
+    it('should get status after tx creation', function(done) {
+      helpers.stubUtxos(server, wallet, [100, 200], function() {
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, 'some message', TestData.copayers[0].privKey_1H_0);
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(err);
+          should.exist(tx);
+          server.getStatus({}, function(err, status) {
+            should.not.exist(err);
+            status.pendingTxps.length.should.equal(1);
+            var balance = status.balance;
+            balance.totalAmount.should.equal(helpers.toSatoshi(300));
+            balance.lockedAmount.should.equal(tx.inputs[0].satoshis);
+            balance.availableAmount.should.equal(balance.totalAmount - balance.lockedAmount);
+            done();
+          });
         });
       });
     });
@@ -1519,7 +1602,8 @@ describe('Wallet service', function() {
       it('should be able to re-gain access from  xPrivKey', function(done) {
         ws.addAccess(opts, function(err, res) {
           should.not.exist(err);
-          server.getBalance(res.wallet.walletId, function(err, bal) { should.not.exist(err);
+          server.getBalance(res.wallet.walletId, function(err, bal) {
+            should.not.exist(err);
             bal.totalAmount.should.equal(1e8);
             getAuthServer(opts.copayerId, reqPrivKey, function(err, server2) {
               server2.getBalance(res.wallet.walletId, function(err, bal2) {
@@ -1834,8 +1918,8 @@ describe('Wallet service', function() {
                   isChange: true
                 });
                 change.length.should.equal(1);
+                done();
               });
-              done();
             });
           });
         });
