@@ -126,6 +126,9 @@ describe('Mnemonic', function() {
 
       var invalid3 = Mnemonic.isValid('totally invalid phrase');
       invalid3.should.equal(false);
+
+      var valid2 = Mnemonic.isValid('caution opprimer époque belote devenir ficeler filleul caneton apologie nectar frapper fouiller');
+      valid2.should.equal(true);
     });
 
     it('has a toString method', function() {
