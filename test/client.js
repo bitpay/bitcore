@@ -483,6 +483,36 @@ describe('client API', function() {
         });
       });
     });
+    it('should return status using v2 version', function(done) {
+      clients[0].createWallet('wallet name', 'creator', 1, 1, {
+        network: 'testnet'
+      }, function(err, secret) {
+        should.not.exist(err);
+        clients[0].getStatus({}, function(err, status) {
+          should.not.exist(err);
+          should.not.exist(status.wallet.publicKeyRing);
+          status.wallet.status.should.equal('complete');
+          done();
+        });
+      });
+    });
+    it('should return extended status using v2 version', function(done) {
+      clients[0].createWallet('wallet name', 'creator', 1, 1, {
+        network: 'testnet'
+      }, function(err, secret) {
+        should.not.exist(err);
+        clients[0].getStatus({
+          includeExtendedInfo: true
+        }, function(err, status) {
+          should.not.exist(err);
+          status.wallet.publicKeyRing.length.should.equal(1);
+          status.wallet.status.should.equal('complete');
+          done();
+        });
+      });
+    });
+
+
     it('should prepare wallet with external xpubkey', function(done) {
       var client = helpers.newClient(app);
       client.seedFromExternalWalletPublicKey('xpub6D52jcEfKA4cGeGcVC9pwG37Ju8pUMQrhptw82QVHRSAGBELE5uCee7Qq8RJUqQVyxfJfwbJKYyqyFhc2Xg8cJyN11kRvnAaWcACXP6K0zv', 'ledger', 2);
@@ -1849,8 +1879,7 @@ describe('client API', function() {
 
         var exported = clients[0].getMnemonic();
         importedClient = helpers.newClient(app);
-        importedClient.importFromExtendedPrivateKey(key, {
-        }, function(err) {
+        importedClient.importFromExtendedPrivateKey(key, {}, function(err) {
           var c2 = importedClient.credentials;
           c2.xPrivKey.should.equal(key);
           should.not.exist(err);
@@ -1860,7 +1889,7 @@ describe('client API', function() {
           done();
         });
       });
- 
+
     });
 
     describe('Mnemonic related tests', function() {
@@ -1897,8 +1926,7 @@ describe('client API', function() {
           publicKeyRing: [{
             xPubKey: 'tpubDA1wV9jDCzgx1rxMoLjJL4ddtpqpbkpobPy15Sjmfa91BVer5iWsiz9VKEM7pKRkfsLwWwcogouooHcEGZRiCih8u3W9TsEuYT6kZvSKFJA',
             requestPubKey: '02e05beb040d4de4640df4d3b537a0b924104a72706ebb8c7b06aa51da97542963'
-          }
-          ],
+          }],
         }, function(err) {
           should.not.exist(err);
           done();
