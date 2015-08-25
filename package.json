@@ -24,7 +24,7 @@
     "bitcore": "0.13.0",
     "bitcore-mnemonic": "0.13.2",
     "bitcore-payment-protocol": "0.12.0",
-    "bitcore-wallet-utils": "0.1.1",
+    "bitcore-wallet-utils": "0.1.2",
     "browser-request": "^0.3.3",
     "browserify": "^9.0.3",
     "lodash": "^3.3.1",
