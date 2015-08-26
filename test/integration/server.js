@@ -2432,11 +2432,24 @@ describe('Wallet service', function() {
     it('should not use UTXO provided in utxosToExclude option', function(done) {
       helpers.stubUtxos(server, wallet, [1, 2, 3], function(utxos) {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 4.5, 'some message', TestData.copayers[0].privKey_1H_0);
-        txOpts.utxosToExclude = [ utxos[1].txid + ':' + utxos[1].vout ];
+        txOpts.utxosToExclude = [utxos[1].txid + ':' + utxos[1].vout];
         server.createTx(txOpts, function(err, tx) {
           should.exist(err);
           err.code.should.equal('INSUFFICIENT_FUNDS');
           err.message.should.equal('Insufficient funds');
+          done();
+        });
+      });
+    });
+    it('should use non-excluded UTXOs', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 2], function(utxos) {
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.5, 'some message', TestData.copayers[0].privKey_1H_0);
+        txOpts.utxosToExclude = [utxos[0].txid + ':' + utxos[0].vout];
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(err);
+          tx.inputs.length.should.equal(1);
+          tx.inputs[0].txid.should.equal(utxos[1].txid);
+          tx.inputs[0].vout.should.equal(utxos[1].vout);
           done();
         });
       });
