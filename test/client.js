@@ -1956,7 +1956,7 @@ describe('client API', function() {
     });
 
     describe('Recovery', function() {
-      it('should be able to regain access to a 1-1 wallet with just the xPriv', function(done) {
+      it('should be able to gain access to a 1-1 wallet with just the xPriv', function(done) {
         helpers.createAndJoinWallet(clients, 1, 1, function() {
           var xpriv = clients[0].credentials.xPrivKey;
           var walletName = clients[0].credentials.walletName;
@@ -1982,6 +1982,38 @@ describe('client API', function() {
           });
         });
       });
+
+      it('should be able to see txp messages after gaining access', function(done) {
+        helpers.createAndJoinWallet(clients, 1, 1, function() {
+          var xpriv = clients[0].credentials.xPrivKey;
+          var walletName = clients[0].credentials.walletName;
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            should.exist(x0.address);
+            blockchainExplorerMock.setUtxo(x0, 1, 1, 0);
+            var opts = {
+              amount: 30000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: 'hello',
+            };
+            clients[0].sendTxProposal(opts, function(err, x) {
+              should.not.exist(err);
+              var recoveryClient = helpers.newClient(app);
+              recoveryClient.seedFromExtendedPrivateKey(xpriv);
+              recoveryClient.openWallet(function(err) {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.getTx(x.id, function(err, x2) {
+                  should.not.exist(err);
+                  x2.message.should.equal(opts.message);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+ 
       it('should be able to recreate wallet', function(done) {
         helpers.createAndJoinWallet(clients, 2, 2, function() {
           clients[0].createAddress(function(err, addr) {
