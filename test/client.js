@@ -512,10 +512,29 @@ describe('client API', function() {
       });
     });
 
+    it('should store walletPrivKey', function(done) {
+      clients[0].createWallet('wallet name', 'creator', 1, 1, {
+        network: 'testnet'
+      }, function(err) {
+
+        var key = clients[0].credentials.walletPrivKey;
+        should.not.exist(err);
+        clients[0].getStatus({
+          includeExtendedInfo: true
+        }, function(err, status) {
+          should.not.exist(err);
+          status.wallet.publicKeyRing.length.should.equal(1);
+          status.wallet.status.should.equal('complete');
+          var key2 = status.customData.walletPrivKey;
+          key2.should.be.equal(key2);
+          done();
+        });
+      });
+    });
 
     it('should prepare wallet with external xpubkey', function(done) {
       var client = helpers.newClient(app);
-      client.seedFromExternalWalletPublicKey('xpub6D52jcEfKA4cGeGcVC9pwG37Ju8pUMQrhptw82QVHRSAGBELE5uCee7Qq8RJUqQVyxfJfwbJKYyqyFhc2Xg8cJyN11kRvnAaWcACXP6K0zv', 'ledger', 2);
+      client.seedFromExternalWalletPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', 2, '1a1f00');
       client.isPrivKeyExternal().should.equal(true);
       client.getPrivKeyExternalSourceName().should.equal('ledger');
       client.getExternalIndex().should.equal(2);
