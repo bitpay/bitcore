@@ -20,6 +20,8 @@ describe('Copayer', function() {
     it('create an address', function() {
       var w = Wallet.fromObj(testWallet);
       var c = Copayer.fromObj(testWallet.copayers[2]);
+      should.exist(c.requestPubKeys);
+      c.requestPubKeys.length.should.equal(1);
       var a1 = c.createAddress(w, true);
       a1.address.should.equal('3AXmDe2FkWY9g5LpRaTs1U7pXKtkNm3NBf');
       a1.path.should.equal('m/2/1/0');
