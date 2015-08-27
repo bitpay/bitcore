@@ -752,15 +752,15 @@ describe('Transaction', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith1BTC)
         .lockUntilDate(date);
-      expect(transaction.inputs[0].sequenceNumber
-        .should.not.equal(Transaction.Input.DEFAULT_SEQNUMBER));
+      transaction.inputs[0].sequenceNumber
+        .should.equal(Transaction.Input.DEFAULT_LOCKTIME_SEQNUMBER);
     });
     it('has a non-max sequenceNumber for effective blockheight locktime tx', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith1BTC)
         .lockUntilBlockHeight(blockHeight);
-      expect(transaction.inputs[0].sequenceNumber
-        .should.not.equal(Transaction.Input.DEFAULT_SEQNUMBER));
+      transaction.inputs[0].sequenceNumber
+        .should.equal(Transaction.Input.DEFAULT_LOCKTIME_SEQNUMBER);
     });
     it('should serialize correctly for date locktime ', function() {
       var transaction= new Transaction()
@@ -768,7 +768,7 @@ describe('Transaction', function() {
         .lockUntilDate(date);
       var serialized_tx = transaction.uncheckedSerialize();
       var copy = new Transaction(serialized_tx);
-      expect(serialized_tx.should.equal(copy.uncheckedSerialize()));
+      serialized_tx.should.equal(copy.uncheckedSerialize());
     });
     it('should serialize correctly for a block height locktime', function() {
       var transaction= new Transaction()
@@ -776,7 +776,7 @@ describe('Transaction', function() {
         .lockUntilBlockHeight(blockHeight);
       var serialized_tx = transaction.uncheckedSerialize();
       var copy = new Transaction(serialized_tx);
-      expect(serialized_tx.should.equal(copy.uncheckedSerialize()));
+      serialized_tx.should.equal(copy.uncheckedSerialize());
     });
   });
 
