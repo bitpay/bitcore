@@ -769,6 +769,8 @@ describe('Transaction', function() {
       var serialized_tx = transaction.uncheckedSerialize();
       var copy = new Transaction(serialized_tx);
       serialized_tx.should.equal(copy.uncheckedSerialize());
+      copy.inputs[0].sequenceNumber
+      .should.equal(Transaction.Input.DEFAULT_LOCKTIME_SEQNUMBER)
     });
     it('should serialize correctly for a block height locktime', function() {
       var transaction= new Transaction()
@@ -777,6 +779,8 @@ describe('Transaction', function() {
       var serialized_tx = transaction.uncheckedSerialize();
       var copy = new Transaction(serialized_tx);
       serialized_tx.should.equal(copy.uncheckedSerialize());
+      copy.inputs[0].sequenceNumber
+      .should.equal(Transaction.Input.DEFAULT_LOCKTIME_SEQNUMBER)
     });
   });
 
