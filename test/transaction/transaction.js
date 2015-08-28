@@ -748,6 +748,40 @@ describe('Transaction', function() {
         return new Transaction().lockUntilBlockHeight(-1);
       }).to.throw(errors.Transaction.NLockTimeOutOfRange);
     });
+    it('has a non-max sequenceNumber for effective date locktime tx', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith1BTC)
+        .lockUntilDate(date);
+      transaction.inputs[0].sequenceNumber
+        .should.equal(Transaction.Input.DEFAULT_LOCKTIME_SEQNUMBER);
+    });
+    it('has a non-max sequenceNumber for effective blockheight locktime tx', function() {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith1BTC)
+        .lockUntilBlockHeight(blockHeight);
+      transaction.inputs[0].sequenceNumber
+        .should.equal(Transaction.Input.DEFAULT_LOCKTIME_SEQNUMBER);
+    });
+    it('should serialize correctly for date locktime ', function() {
+      var transaction= new Transaction()
+        .from(simpleUtxoWith1BTC)
+        .lockUntilDate(date);
+      var serialized_tx = transaction.uncheckedSerialize();
+      var copy = new Transaction(serialized_tx);
+      serialized_tx.should.equal(copy.uncheckedSerialize());
+      copy.inputs[0].sequenceNumber
+      .should.equal(Transaction.Input.DEFAULT_LOCKTIME_SEQNUMBER)
+    });
+    it('should serialize correctly for a block height locktime', function() {
+      var transaction= new Transaction()
+        .from(simpleUtxoWith1BTC)
+        .lockUntilBlockHeight(blockHeight);
+      var serialized_tx = transaction.uncheckedSerialize();
+      var copy = new Transaction(serialized_tx);
+      serialized_tx.should.equal(copy.uncheckedSerialize());
+      copy.inputs[0].sequenceNumber
+      .should.equal(Transaction.Input.DEFAULT_LOCKTIME_SEQNUMBER)
+    });
   });
 
   it('handles anyone-can-spend utxo', function() {
