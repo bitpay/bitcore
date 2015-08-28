@@ -1958,7 +1958,7 @@ describe('client API', function() {
         importedClient.importFromMnemonic(exported, {
           network: 'testnet',
         }, function(err) {
-          err.code.should.contain('WALLET_DOES_NOT_EXISTS');
+          err.code.should.contain('WALLET_DOES_NOT_EXIST');
           done();
         });
       });
