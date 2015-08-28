@@ -541,7 +541,7 @@ describe('client API', function() {
       done();
     });
 
-    it('should create a 1-1 wallet with mnemonic', function(done) {
+    it('should create a 1-1 wallet with random mnemonic', function(done) {
       clients[0].seedFromRandomWithMnemonic('livenet');
       clients[0].createWallet('wallet name', 'creator', 1, 1, {
           network: 'livenet'
@@ -556,6 +556,45 @@ describe('client API', function() {
           });
         });
     });
+
+
+    it('should create a 1-1 wallet with given mnemonic', function(done) {
+      var words=  'forget announce travel fury farm alpha chaos choice talent sting eagle supreme';
+      clients[0].seedFromMnemonic(words);
+      clients[0].createWallet('wallet name', 'creator', 1, 1, {
+          network: 'livenet'
+        },
+        function(err) {
+          should.not.exist(err);
+          clients[0].openWallet(function(err) {
+            should.not.exist(err);
+            should.not.exist(clients[0].getMnemonic()); // mnemonics are *not* stored
+            clients[0].credentials.xPrivKey.should.equal('xprv9s21ZrQH143K4X2frJxRmGsmef9UfXhmfL4hdTGLm5ruSX46gekuSTspJX63d5nEi9q2wqUgg4KZ4yhSPy13CzVezAH6t6gCox1DN2hXV3L')
+            done();
+          });
+        });
+    });
+
+
+    it('should create a 2-3 wallet with given mnemonic', function(done) {
+      var words=  'forget announce travel fury farm alpha chaos choice talent sting eagle supreme';
+      clients[0].seedFromMnemonic(words);
+      clients[0].createWallet('wallet name', 'creator', 2, 3, {
+          network: 'livenet'
+        },
+        function(err, secret) {
+          should.not.exist(err);
+          should.exist(secret);
+          clients[0].openWallet(function(err) {
+            should.not.exist(err);
+            should.not.exist(clients[0].getMnemonic()); // mnemonics are *not* stored
+            clients[0].credentials.xPrivKey.should.equal('xprv9s21ZrQH143K4X2frJxRmGsmef9UfXhmfL4hdTGLm5ruSX46gekuSTspJX63d5nEi9q2wqUgg4KZ4yhSPy13CzVezAH6t6gCox1DN2hXV3L')
+            done();
+          });
+        });
+    });
+
+ 
   });
 
   describe('Network fees', function() {
@@ -1898,7 +1937,7 @@ describe('client API', function() {
 
         var exported = clients[0].getMnemonic();
         importedClient = helpers.newClient(app);
-        importedClient.importFromExtendedPrivateKey(key, {}, function(err) {
+        importedClient.importFromExtendedPrivateKey(key, function(err) {
           var c2 = importedClient.credentials;
           c2.xPrivKey.should.equal(key);
           should.not.exist(err);
@@ -1913,46 +1952,16 @@ describe('client API', function() {
 
     describe('Mnemonic related tests', function() {
       var importedClient;
-      it('should fail to import from words if no recreate info', function(done) {
+      it('should fail to import from words if not at BWS', function(done) {
         var exported = 'bounce tonight little spy earn void nominee ankle walk ten type update';
         importedClient = helpers.newClient(app);
         importedClient.importFromMnemonic(exported, {
           network: 'testnet',
         }, function(err) {
-          err.code.should.contain('MISSING_ARGS');
+          err.code.should.contain('WALLET_DOES_NOT_EXISTS');
           done();
         });
       });
-      it('should import from words with recreate info (1-1)', function(done) {
-        var exported = 'bounce tonight little spy earn void nominee ankle walk ten type update';
-        importedClient = helpers.newClient(app);
-        importedClient.importFromMnemonic(exported, {
-          network: 'testnet',
-          m: 1,
-          n: 1,
-        }, function(err) {
-          should.not.exist(err);
-          done();
-        });
-      });
-      it('should import from words with recreate info (2-2)', function(done) {
-        var exported = 'young ripple actor crack cross dry protect fold wild either casual dad';
-        importedClient = helpers.newClient(app);
-        importedClient.importFromMnemonic(exported, {
-          network: 'testnet',
-          m: 2,
-          n: 2,
-          publicKeyRing: [{
-            xPubKey: 'tpubDA1wV9jDCzgx1rxMoLjJL4ddtpqpbkpobPy15Sjmfa91BVer5iWsiz9VKEM7pKRkfsLwWwcogouooHcEGZRiCih8u3W9TsEuYT6kZvSKFJA',
-            requestPubKey: '02e05beb040d4de4640df4d3b537a0b924104a72706ebb8c7b06aa51da97542963'
-          }],
-        }, function(err) {
-          should.not.exist(err);
-          done();
-        });
-      });
-
-
     });
 
     describe('Recovery', function() {
@@ -2014,7 +2023,7 @@ describe('client API', function() {
         });
       });
  
-      it('should be able to recreate wallet', function(done) {
+      it('should be able to recreate wallet 2-2', function(done) {
         helpers.createAndJoinWallet(clients, 2, 2, function() {
           clients[0].createAddress(function(err, addr) {
             should.not.exist(err);
