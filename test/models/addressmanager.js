@@ -27,6 +27,12 @@ describe('AddressManager', function() {
       am.getCurrentAddressPath(false).should.equal('m/4/0/2');
     });
   });
+  describe('#supportsCopayerBranches', function() {
+    it('should return true for BIP45 & false for BIP44', function() {
+      AddressManager.supportsCopayerBranches('BIP45').should.be.true;
+      AddressManager.supportsCopayerBranches('BIP44').should.be.false;
+    });
+  });
   describe('BIP45', function() {
     describe('#getCurrentAddressPath', function() {
       it('should return a valid BIP32 path for given index', function() {
@@ -34,7 +40,6 @@ describe('AddressManager', function() {
           derivationStrategy: 'BIP45',
           copayerIndex: 4,
         });
-        am.supportsDerivation().should.be.true;
         am.getCurrentAddressPath(false).should.equal('m/4/0/0');
         am.getCurrentAddressPath(true).should.equal('m/4/1/0');
       });
@@ -43,7 +48,6 @@ describe('AddressManager', function() {
       var am = AddressManager.create({
         derivationStrategy: 'BIP45',
       });
-      am.supportsDerivation().should.be.true;
       am.getCurrentAddressPath(false).should.equal('m/2147483647/0/0');
       am.getCurrentAddressPath(true).should.equal('m/2147483647/1/0');
     });
@@ -94,7 +98,6 @@ describe('AddressManager', function() {
     describe('#getCurrentAddressPath', function() {
       it('should return first address path', function() {
         var am = AddressManager.create();
-        am.supportsDerivation().should.be.true;
         am.getCurrentAddressPath(false).should.equal('m/0/0');
         am.getCurrentAddressPath(true).should.equal('m/1/0');
       });
@@ -102,7 +105,6 @@ describe('AddressManager', function() {
         var am = AddressManager.create({
           copayerIndex: 4,
         });
-        am.supportsDerivation().should.be.false;
         am.getCurrentAddressPath(false).should.equal('m/0/0');
         am.getCurrentAddressPath(true).should.equal('m/1/0');
       });

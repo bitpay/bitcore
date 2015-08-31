@@ -1222,7 +1222,9 @@ describe('Wallet service', function() {
   describe('#getStatus', function() {
     var server, wallet;
     beforeEach(function(done) {
-      helpers.createAndJoinWallet(1, 1, function(s, w) {
+      helpers.createAndJoinWallet(1, 1, {
+        derivationStrategy: 'BIP45'
+      }, function(s, w) {
         server = s;
         wallet = w;
         done();
