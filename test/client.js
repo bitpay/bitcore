@@ -60,6 +60,7 @@ helpers.newDb = function() {
 };
 
 helpers.createAndJoinWallet = function(clients, m, n, cb) {
+  clients[0].seedFromRandomWithMnemonic('testnet');
   clients[0].createWallet('wallet name', 'creator', m, n, {
       network: 'testnet'
     },
@@ -74,6 +75,7 @@ helpers.createAndJoinWallet = function(clients, m, n, cb) {
 
           function(next) {
             async.each(_.range(1, n), function(i, cb) {
+              clients[i].seedFromRandomWithMnemonic('testnet');
               clients[i].joinWallet(secret, 'copayer ' + i, cb);
             }, next);
           },
@@ -189,9 +191,12 @@ describe('client API', function() {
         });
         blockchainExplorerMock.reset();
         sandbox = sinon.sandbox.create();
-        sandbox.stub(log, 'warn');
-        sandbox.stub(log, 'info');
-        sandbox.stub(log, 'error');
+
+        if (!process.env.BWC_SHOW_LOGS) {
+          sandbox.stub(log, 'warn');
+          sandbox.stub(log, 'info');
+          sandbox.stub(log, 'error');
+        }
         done();
       });
   });
@@ -418,7 +423,7 @@ describe('client API', function() {
         }, function() {
           openWalletStub.restore();
           clients[1].openWallet(function(err, x) {
-            err.code.should.contain('SERVERCOMPROMISED');
+            err.code.should.contain('SERVER_COMPROMISED');
             done();
           });
         });
@@ -435,7 +440,7 @@ describe('client API', function() {
         }, function() {
           openWalletStub.restore();
           clients[1].openWallet(function(err, x) {
-            err.code.should.contain('SERVERCOMPROMISED');
+            err.code.should.contain('SERVER_COMPROMISED');
             done();
           });
         });
@@ -455,7 +460,7 @@ describe('client API', function() {
         }, function() {
           openWalletStub.restore();
           clients[1].openWallet(function(err, x) {
-            err.code.should.contain('SERVERCOMPROMISED');
+            err.code.should.contain('SERVER_COMPROMISED');
             done();
           });
         });
@@ -478,14 +483,118 @@ describe('client API', function() {
         });
       });
     });
+    it('should return status using v2 version', function(done) {
+      clients[0].createWallet('wallet name', 'creator', 1, 1, {
+        network: 'testnet'
+      }, function(err, secret) {
+        should.not.exist(err);
+        clients[0].getStatus({}, function(err, status) {
+          should.not.exist(err);
+          should.not.exist(status.wallet.publicKeyRing);
+          status.wallet.status.should.equal('complete');
+          done();
+        });
+      });
+    });
+    it('should return extended status using v2 version', function(done) {
+      clients[0].createWallet('wallet name', 'creator', 1, 1, {
+        network: 'testnet'
+      }, function(err, secret) {
+        should.not.exist(err);
+        clients[0].getStatus({
+          includeExtendedInfo: true
+        }, function(err, status) {
+          should.not.exist(err);
+          status.wallet.publicKeyRing.length.should.equal(1);
+          status.wallet.status.should.equal('complete');
+          done();
+        });
+      });
+    });
+
+    it('should store walletPrivKey', function(done) {
+      clients[0].createWallet('wallet name', 'creator', 1, 1, {
+        network: 'testnet'
+      }, function(err) {
+
+        var key = clients[0].credentials.walletPrivKey;
+        should.not.exist(err);
+        clients[0].getStatus({
+          includeExtendedInfo: true
+        }, function(err, status) {
+          should.not.exist(err);
+          status.wallet.publicKeyRing.length.should.equal(1);
+          status.wallet.status.should.equal('complete');
+          var key2 = status.customData.walletPrivKey;
+          key2.should.be.equal(key2);
+          done();
+        });
+      });
+    });
+
     it('should prepare wallet with external xpubkey', function(done) {
       var client = helpers.newClient(app);
-      client.seedFromExternalWalletPublicKey('xpub6D52jcEfKA4cGeGcVC9pwG37Ju8pUMQrhptw82QVHRSAGBELE5uCee7Qq8RJUqQVyxfJfwbJKYyqyFhc2Xg8cJyN11kRvnAaWcACXP6K0zv', 'ledger', 2);
+      client.seedFromExternalWalletPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', 2, '1a1f00');
       client.isPrivKeyExternal().should.equal(true);
       client.getPrivKeyExternalSourceName().should.equal('ledger');
       client.getExternalIndex().should.equal(2);
       done();
     });
+
+    it('should create a 1-1 wallet with random mnemonic', function(done) {
+      clients[0].seedFromRandomWithMnemonic('livenet');
+      clients[0].createWallet('wallet name', 'creator', 1, 1, {
+          network: 'livenet'
+        },
+        function(err) {
+          should.not.exist(err);
+          clients[0].openWallet(function(err) {
+            should.not.exist(err);
+            should.not.exist(err);
+            clients[0].getMnemonic().split(' ').length.should.equal(12);
+            done();
+          });
+        });
+    });
+
+
+    it('should create a 1-1 wallet with given mnemonic', function(done) {
+      var words=  'forget announce travel fury farm alpha chaos choice talent sting eagle supreme';
+      clients[0].seedFromMnemonic(words);
+      clients[0].createWallet('wallet name', 'creator', 1, 1, {
+          network: 'livenet'
+        },
+        function(err) {
+          should.not.exist(err);
+          clients[0].openWallet(function(err) {
+            should.not.exist(err);
+            should.not.exist(clients[0].getMnemonic()); // mnemonics are *not* stored
+            clients[0].credentials.xPrivKey.should.equal('xprv9s21ZrQH143K4X2frJxRmGsmef9UfXhmfL4hdTGLm5ruSX46gekuSTspJX63d5nEi9q2wqUgg4KZ4yhSPy13CzVezAH6t6gCox1DN2hXV3L')
+            done();
+          });
+        });
+    });
+
+
+    it('should create a 2-3 wallet with given mnemonic', function(done) {
+      var words=  'forget announce travel fury farm alpha chaos choice talent sting eagle supreme';
+      clients[0].seedFromMnemonic(words);
+      clients[0].createWallet('wallet name', 'creator', 2, 3, {
+          network: 'livenet'
+        },
+        function(err, secret) {
+          should.not.exist(err);
+          should.exist(secret);
+          clients[0].openWallet(function(err) {
+            should.not.exist(err);
+            should.not.exist(clients[0].getMnemonic()); // mnemonics are *not* stored
+            clients[0].credentials.xPrivKey.should.equal('xprv9s21ZrQH143K4X2frJxRmGsmef9UfXhmfL4hdTGLm5ruSX46gekuSTspJX63d5nEi9q2wqUgg4KZ4yhSPy13CzVezAH6t6gCox1DN2hXV3L')
+            done();
+          });
+        });
+    });
+
+ 
   });
 
   describe('Network fees', function() {
@@ -574,7 +683,7 @@ describe('client API', function() {
           address.address = '2N86pNEpREGpwZyHVC5vrNUCbF9nM1Geh4K';
         }, function() {
           clients[0].createAddress(function(err, x0) {
-            err.code.should.contain('SERVERCOMPROMISED');
+            err.code.should.contain('SERVER_COMPROMISED');
             done();
           });
         });
@@ -589,7 +698,7 @@ describe('client API', function() {
           ];
         }, function() {
           clients[0].createAddress(function(err, x0) {
-            err.code.should.contain('SERVERCOMPROMISED');
+            err.code.should.contain('SERVER_COMPROMISED');
             done();
           });
         });
@@ -847,7 +956,7 @@ describe('client API', function() {
             }, function() {
               clients[0].getTxProposals({}, function(err, txps) {
                 should.exist(err);
-                err.code.should.contain('SERVERCOMPROMISED');
+                err.code.should.contain('SERVER_COMPROMISED');
                 done();
               });
             });
@@ -874,7 +983,7 @@ describe('client API', function() {
             }, function() {
               clients[0].getTxProposals({}, function(err, txps) {
                 should.exist(err);
-                err.code.should.contain('SERVERCOMPROMISED');
+                err.code.should.contain('SERVER_COMPROMISED');
                 done();
               });
             });
@@ -900,7 +1009,7 @@ describe('client API', function() {
             }, function() {
               clients[0].getTxProposals({}, function(err, txps) {
                 should.exist(err);
-                err.code.should.contain('SERVERCOMPROMISED');
+                err.code.should.contain('SERVER_COMPROMISED');
                 done();
               });
             });
@@ -1045,7 +1154,7 @@ describe('client API', function() {
         return txps;
       }, function() {
         clients[1].getTxProposals({}, function(err, txps) {
-          err.code.should.contain('SERVERCOMPROMISED');
+          err.code.should.contain('SERVER_COMPROMISED');
           done();
         });
       });
@@ -1064,7 +1173,7 @@ describe('client API', function() {
         }, function(err, txps) {
           should.not.exist(err);
           clients[1].signTxProposal(txps[0], function(err, txps) {
-            err.code.should.contain('SERVERCOMPROMISED');
+            err.code.should.contain('SERVER_COMPROMISED');
             done();
           });
         });
@@ -1189,7 +1298,7 @@ describe('client API', function() {
               address.address = '2N86pNEpREGpwZyHVC5vrNUCbF9nM1Geh4K';
             }, function() {
               clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
-                err.code.should.contain('SERVERCOMPROMISED');
+                err.code.should.contain('SERVER_COMPROMISED');
                 done();
               });
             });
@@ -1733,75 +1842,130 @@ describe('client API', function() {
 
   describe('Mobility, backup & restore', function() {
     describe('Export & Import', function() {
-      describe('Success', function() {
-        var address, importedClient;
-        beforeEach(function(done) {
-          importedClient = null;
-          helpers.createAndJoinWallet(clients, 1, 1, function() {
-            clients[0].createAddress(function(err, addr) {
-              should.not.exist(err);
-              should.exist(addr.address);
-              address = addr.address;
-              done();
-            });
-          });
-        });
-        afterEach(function(done) {
-          importedClient.getMainAddresses({}, function(err, list) {
+      var address, importedClient;
+      beforeEach(function(done) {
+        importedClient = null;
+        helpers.createAndJoinWallet(clients, 1, 1, function() {
+          clients[0].createAddress(function(err, addr) {
             should.not.exist(err);
-            should.exist(list);
-            list.length.should.equal(1);
-            list[0].address.should.equal(address);
+            should.exist(addr.address);
+            address = addr.address;
             done();
           });
-        });
-
-        it('should export & import', function() {
-          var exported = clients[0].export();
-
-          importedClient = helpers.newClient(app);
-          importedClient.import(exported);
-        });
-        it('should export & import compressed', function(done) {
-          var walletId = clients[0].credentials.walletId;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
-
-          var exported = clients[0].export({
-            compressed: true
-          });
-
-          importedClient = helpers.newClient(app);
-          importedClient.import(exported, {
-            compressed: true
-          });
-          importedClient.openWallet(function(err) {
-            should.not.exist(err);
-            importedClient.credentials.walletId.should.equal(walletId);
-            importedClient.credentials.walletName.should.equal(walletName);
-            importedClient.credentials.copayerName.should.equal(copayerName);
-            done();
-          });
-        });
-        it('should export without signing rights', function() {
-          clients[0].canSign().should.be.true;
-          var exported = clients[0].export({
-            noSign: true,
-          });
-
-          importedClient = helpers.newClient(app);
-          importedClient.import(exported);
-          importedClient.canSign().should.be.false;
         });
       });
-      describe('Fail', function() {
-        it.skip('should fail to export compressed & import uncompressed', function() {});
-        it.skip('should fail to export uncompressed & import compressed', function() {});
+      afterEach(function(done) {
+        importedClient.getMainAddresses({}, function(err, list) {
+          should.not.exist(err);
+          should.exist(list);
+          list.length.should.equal(1);
+          list[0].address.should.equal(address);
+          done();
+        });
+      });
+
+      it('should export & import', function() {
+        var exported = clients[0].export();
+
+        importedClient = helpers.newClient(app);
+        importedClient.import(exported);
+      });
+      it('should export & import compressed', function(done) {
+        var walletId = clients[0].credentials.walletId;
+        var walletName = clients[0].credentials.walletName;
+        var copayerName = clients[0].credentials.copayerName;
+
+        var exported = clients[0].export({
+          compressed: true
+        });
+
+        importedClient = helpers.newClient(app);
+        importedClient.import(exported, {
+          compressed: true
+        });
+
+        importedClient.openWallet(function(err) {
+          should.not.exist(err);
+          importedClient.credentials.walletId.should.equal(walletId);
+          importedClient.credentials.walletName.should.equal(walletName);
+          importedClient.credentials.copayerName.should.equal(copayerName);
+          done();
+        });
+      });
+      it('should export without signing rights', function() {
+        clients[0].canSign().should.be.true;
+        var exported = clients[0].export({
+          noSign: true,
+        });
+
+        importedClient = helpers.newClient(app);
+        importedClient.import(exported);
+        importedClient.canSign().should.be.false;
+      });
+
+      it('should export & import with mnemonics + BWS', function(done) {
+        var c = clients[0].credentials;
+        var walletId = c.walletId;
+        var walletName = c.walletName;
+        var copayerName = c.copayerName;
+        var network = c.network;
+        var key = c.xPrivKey;
+
+        var exported = clients[0].getMnemonic();
+        importedClient = helpers.newClient(app);
+        importedClient.importFromMnemonic(exported, {
+          network: network,
+        }, function(err) {
+          var c2 = importedClient.credentials;
+          c2.xPrivKey.should.equal(key);
+          should.not.exist(err);
+          c2.walletId.should.equal(walletId);
+          c2.walletName.should.equal(walletName);
+          c2.copayerName.should.equal(copayerName);
+          done();
+        });
+      });
+
+
+      it('should export & import with xprivkey + BWS', function(done) {
+        var c = clients[0].credentials;
+        var walletId = c.walletId;
+        var walletName = c.walletName;
+        var copayerName = c.copayerName;
+        var network = c.network;
+        var key = c.xPrivKey;
+
+        var exported = clients[0].getMnemonic();
+        importedClient = helpers.newClient(app);
+        importedClient.importFromExtendedPrivateKey(key, function(err) {
+          var c2 = importedClient.credentials;
+          c2.xPrivKey.should.equal(key);
+          should.not.exist(err);
+          c2.walletId.should.equal(walletId);
+          c2.walletName.should.equal(walletName);
+          c2.copayerName.should.equal(copayerName);
+          done();
+        });
+      });
+
+    });
+
+    describe('Mnemonic related tests', function() {
+      var importedClient;
+      it('should fail to import from words if not at BWS', function(done) {
+        var exported = 'bounce tonight little spy earn void nominee ankle walk ten type update';
+        importedClient = helpers.newClient(app);
+        importedClient.importFromMnemonic(exported, {
+          network: 'testnet',
+        }, function(err) {
+          err.code.should.contain('WALLET_DOES_NOT_EXIST');
+          done();
+        });
       });
     });
 
     describe('Recovery', function() {
-      it('should be able to regain access to a 1-1 wallet with just the xPriv', function(done) {
+      it('should be able to gain access to a 1-1 wallet with just the xPriv', function(done) {
         helpers.createAndJoinWallet(clients, 1, 1, function() {
           var xpriv = clients[0].credentials.xPrivKey;
           var walletName = clients[0].credentials.walletName;
@@ -1827,7 +1991,39 @@ describe('client API', function() {
           });
         });
       });
-      it('should be able to recreate wallet', function(done) {
+
+      it('should be able to see txp messages after gaining access', function(done) {
+        helpers.createAndJoinWallet(clients, 1, 1, function() {
+          var xpriv = clients[0].credentials.xPrivKey;
+          var walletName = clients[0].credentials.walletName;
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            should.exist(x0.address);
+            blockchainExplorerMock.setUtxo(x0, 1, 1, 0);
+            var opts = {
+              amount: 30000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: 'hello',
+            };
+            clients[0].sendTxProposal(opts, function(err, x) {
+              should.not.exist(err);
+              var recoveryClient = helpers.newClient(app);
+              recoveryClient.seedFromExtendedPrivateKey(xpriv);
+              recoveryClient.openWallet(function(err) {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.getTx(x.id, function(err, x2) {
+                  should.not.exist(err);
+                  x2.message.should.equal(opts.message);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+ 
+      it('should be able to recreate wallet 2-2', function(done) {
         helpers.createAndJoinWallet(clients, 2, 2, function() {
           clients[0].createAddress(function(err, addr) {
             should.not.exist(err);
@@ -2170,34 +2366,34 @@ describe('client API', function() {
         delete airgapped.credentials.xPrivKey;
         (function() {
           airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
-        }).should.throw(Error, 'You do not have the required keys to sign transactions');
+        }).should.throw('Missing private keys');
         done();
       });
       it('should fail gracefully when PKR cannot be decrypted in airgapped client', function(done) {
         bundle.encryptedPkr = 'dummy';
         (function() {
           airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
-        }).should.throw(Error, 'Could not decrypt public key ring');
+        }).should.throw('Could not decrypt public key ring');
         done();
       });
       it('should be able to detect invalid or tampered PKR when signing on airgapped client', function(done) {
         (function() {
           airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, 2);
-        }).should.throw(Error, 'Invalid public key ring');
+        }).should.throw('Invalid public key ring');
         done();
       });
       it('should be able to detect tampered proposal when signing on airgapped client', function(done) {
         bundle.txps[0].encryptedMessage = 'tampered message';
         (function() {
           airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
-        }).should.throw(Error, 'Fake transaction proposal');
+        }).should.throw('Fake transaction proposal');
         done();
       });
       it('should be able to detect tampered change address when signing on airgapped client', function(done) {
         bundle.txps[0].changeAddress.address = 'mqNkvNuhzZKeXYNRZ1bdj55smmW3acr6K7';
         (function() {
           airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
-        }).should.throw(Error, 'Fake transaction proposal');
+        }).should.throw('Fake transaction proposal');
         done();
       });
     });
@@ -2290,9 +2486,6 @@ describe('client API', function() {
           status.wallet.status.should.equal('complete');
           c.credentials.sharedEncryptingKey.should.equal('Ou2j4kq3z1w4yTr9YybVxg==');
 
-          var counts = _.countBy(status.wallet.publicKeyRing, 'isTemporaryRequestKey');
-          counts[false].should.equal(1);
-          counts[true].should.equal(1);
           var t2 = ImportData.copayers[1];
           var c2 = helpers.newClient(app);
           c2.createWalletFromOldCopay(t2.username, t2.password, t2.ls['wallet::4d32f0737a05f072'], function(err) {
@@ -2303,7 +2496,6 @@ describe('client API', function() {
             c2.getStatus(function(err, status) {
               should.not.exist(err);
               status.wallet.status.should.equal('complete');
-              c2.credentials.hasTemporaryRequestKeys().should.equal(false);
               c2.createAddress(function(err, x0) {
                 x0.address.should.be.equal('2Mv1DHpozzZ9fup2nZ1kmdRXoNnDJ8b1JF2');
                 c.createAddress(function(err, x0) {
@@ -2329,10 +2521,6 @@ describe('client API', function() {
           status.wallet.status.should.equal('complete');
           c.credentials.sharedEncryptingKey.should.equal(key);
 
-          var counts = _.countBy(status.wallet.publicKeyRing, 'isTemporaryRequestKey');
-          counts[false].should.equal(1);
-          counts[true].should.equal(2);
-          status.wallet.publicKeyRing[1].isTemporaryRequestKey.should.equal(true);
           var t2 = ImportData.copayers[1];
           var c2 = helpers.newClient(app);
           c2.createWalletFromOldCopay(t2.username, t2.password, t2.ls[w], function(err) {
@@ -2342,11 +2530,6 @@ describe('client API', function() {
             c2.getStatus(function(err, status) {
               should.not.exist(err);
               status.wallet.status.should.equal('complete');
-              c2.credentials.hasTemporaryRequestKeys().should.equal(true);
-
-              var counts = _.countBy(status.wallet.publicKeyRing, 'isTemporaryRequestKey');
-              counts[false].should.equal(2);
-              counts[true].should.equal(1);
 
               var t3 = ImportData.copayers[2];
               var c3 = helpers.newClient(app);
@@ -2358,10 +2541,6 @@ describe('client API', function() {
                 c3.getStatus(function(err, status) {
                   should.not.exist(err);
                   status.wallet.status.should.equal('complete');
-                  c3.credentials.hasTemporaryRequestKeys().should.equal(false);
-
-                  var counts = _.countBy(status.wallet.publicKeyRing, 'isTemporaryRequestKey');
-                  counts[false].should.equal(3);
                   done();
                 });
               });
@@ -2428,6 +2607,7 @@ describe('client API', function() {
 
     beforeEach(function(done) {
       c1 = clients[1];
+      clients[1].seedFromRandomWithMnemonic('testnet');
       clients[1].createWallet('wallet name', 'creator', 1, 1, {
         network: 'testnet',
       }, function() {
@@ -2488,9 +2668,10 @@ describe('client API', function() {
         proxy.setPrivateKeyEncryption('pepe');
       }).should.throw('No private key');
     });
-    it('should lock and unlock', function() {
+    it('should lock and delete unencrypted fields', function() {
       c1.unlock(password);
       var xpriv = c1.credentials.xPrivKey;
+      var mnemonic = c1.getMnemonic();
       c1.isPrivKeyEncrypted().should.equal(false);
       c1.hasPrivKeyEncrypted().should.equal(true);
       c1.lock();
@@ -2498,7 +2679,24 @@ describe('client API', function() {
       c1.hasPrivKeyEncrypted().should.equal(true);
       var str = JSON.stringify(c1);
       str.indexOf(xpriv).should.equal(-1);
+      str.indexOf(mnemonic).should.equal(-1);
     });
+    it('should unlock and restore encrypted fields', function() {
+      c1.unlock(password);
+      var xpriv = c1.credentials.xPrivKey;
+      var mnemonic = c1.getMnemonic();
+      c1.lock();
+      var str = JSON.stringify(c1);
+      str.indexOf(xpriv).should.equal(-1);
+      str.indexOf(mnemonic).should.equal(-1);
+      (function() {
+        c1.getMnemonic();
+      }).should.throw('encrypted');
+      c1.unlock(password);
+      c1.credentials.xPrivKey.should.equal(xpriv);
+      c1.getMnemonic().should.equal(mnemonic);
+    });
+
     it('should fail to unlock with wrong password', function() {
       (function() {
         c1.unlock('hola')
@@ -2586,6 +2784,138 @@ describe('client API', function() {
             c1.isPrivKeyEncrypted().should.equal(true);
             c1.hasPrivKeyEncrypted().should.equal(true);
             done();
+          });
+        });
+      });
+    });
+  });
+
+  describe('#addAccess', function() {
+    describe('1-1 wallets', function() {
+      var opts;
+
+      beforeEach(function(done) {
+        opts = {
+          amount: 10000,
+          toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          message: 'hello',
+        };
+
+        helpers.createAndJoinWallet(clients, 1, 1, function() {
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            blockchainExplorerMock.setUtxo(x0, 10, 1);
+            var c = clients[0].credentials;
+
+            // Ggenerate a new priv key, not registered
+            var k = new Bitcore.PrivateKey();
+            c.requestPrivKey = k.toString();
+            c.requestPubKey = k.toPublicKey().toString();
+            done();
+          });
+        });
+      });
+
+      it('should deny access before registering it ', function(done) {
+        clients[0].sendTxProposal(opts, function(err, x) {
+          err.code.should.contain('NOT_AUTHORIZED');
+          done();
+        });
+      });
+
+      it('should grant access with current keys', function(done) {
+        clients[0].addAccess({}, function(err, x) {
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            done();
+          });
+        });
+      });
+
+      it('should grant access with *new* keys then deny access with old keys', function(done) {
+        clients[0].addAccess({
+          generateNewKey: true
+        }, function(err, x) {
+          clients[0].sendTxProposal(opts, function(err, x) {
+            err.code.should.contain('NOT_AUTHORIZED');
+            done();
+          });
+        });
+      });
+
+      it('should grant access with new keys', function(done) {
+        clients[0].addAccess({
+          generateNewKey: true
+        }, function(err, x, key) {
+          var k = new Bitcore.PrivateKey(key);
+          var c = clients[0].credentials;
+          c.requestPrivKey = k.toString();
+          c.requestPubKey = k.toPublicKey().toString();
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            done();
+          });
+        });
+      });
+
+      it('should verify tx proposals of added access', function(done) {
+        clients[0].addAccess({}, function(err, x) {
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            clients[0].getTxProposals({}, function(err, txps) {
+              should.not.exist(err);
+              done();
+            });
+          });
+        });
+      });
+
+
+      it('should detect tampered tx proposals of added access (case 1)', function(done) {
+        clients[0].addAccess({}, function(err, x) {
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function(txps) {
+              txps[0].proposalSignature = '304402206e4a1db06e00068582d3be41cfc795dcf702451c132581e661e7241ef34ca19202203e17598b4764913309897d56446b51bc1dcd41a25d90fdb5f87a6b58fe3a6920';
+            }, function() {
+              clients[0].getTxProposals({}, function(err, txps) {
+                err.code.should.contain('SERVER_COMPROMISED');
+                done();
+              });
+            });
+          });
+        });
+      });
+
+      it('should detect tampered tx proposals of added access (case 2)', function(done) {
+        clients[0].addAccess({}, function(err, x) {
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function(txps) {
+              txps[0].proposalSignaturePubKey = '02d368d7f03a57b2ad3ad9c2766739da83b85ab9c3718fb02ad36574f9391d6bf6';
+            }, function() {
+              clients[0].getTxProposals({}, function(err, txps) {
+                err.code.should.contain('SERVER_COMPROMISED');
+                done();
+              });
+            });
+          });
+        });
+      });
+
+
+      it('should detect tampered tx proposals of added access (case 3)', function(done) {
+        clients[0].addAccess({}, function(err, x) {
+          clients[0].sendTxProposal(opts, function(err, x) {
+            should.not.exist(err);
+            helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function(txps) {
+              txps[0].proposalSignaturePubKeySig = '304402201528748eafc5083fe67c84cbf0eb996eba9a65584a73d8c07ed6e0dc490c195802204f340488266c804cf1033f8b852efd1d4e05d862707c119002dc3fbe7a805c35';
+            }, function() {
+              clients[0].getTxProposals({}, function(err, txps) {
+                err.code.should.contain('SERVER_COMPROMISED');
+                done();
+              });
+            });
           });
         });
       });

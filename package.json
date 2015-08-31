@@ -21,9 +21,10 @@
   },
   "dependencies": {
     "async": "^0.9.0",
-    "bitcore": "^0.12.9",
-    "bitcore-payment-protocol": "^0.11.0",
-    "bitcore-wallet-utils": "0.1.1",
+    "bitcore": "0.13.0",
+    "bitcore-mnemonic": "0.13.2",
+    "bitcore-payment-protocol": "0.12.0",
+    "bitcore-wallet-utils": "0.1.2",
     "browser-request": "^0.3.3",
     "browserify": "^9.0.3",
     "lodash": "^3.3.1",
@@ -34,7 +35,7 @@
     "uglify": "^0.1.1"
   },
   "devDependencies": {
-    "bitcore-wallet-service": "0.1.5",
+    "bitcore-wallet-service": "0.1.10",
     "chai": "^1.9.1",
     "coveralls": "^2.11.2",
     "grunt-jsdoc": "^0.5.8",
