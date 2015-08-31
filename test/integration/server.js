@@ -1132,6 +1132,93 @@ describe('Wallet service', function() {
     });
   });
 
+  describe('Address derivation strategy', function() {
+    var server;
+    beforeEach(function() {
+      server = WalletService.getInstance({
+        clientVersion: 'bwc-0.2.0',
+      });
+    });
+    it('should fail to join BIP45 wallet with BIP44 copayer opts', function(done) {
+      var walletOpts = {
+        name: 'my wallet',
+        m: 2,
+        n: 3,
+        pubKey: TestData.keyPair.pub,
+        derivationStrategy: 'BIP45',
+      };
+      server.createWallet(walletOpts, function(err, wid) {
+        should.not.exist(err);
+        var copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: wid,
+          name: 'me',
+          xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+          customData: 'dummy custom data',
+          derivationStrategy: 'BIP44',
+        });
+        server.joinWallet(copayerOpts, function(err, result) {
+          should.exist(err);
+          err.message.toLowerCase().should.contain('address derivation strategy');
+          done();
+        });
+      });
+    });
+    it('should fail to join BIP44 wallet with BIP45 copayer opts', function(done) {
+      var walletOpts = {
+        name: 'my wallet',
+        m: 2,
+        n: 3,
+        pubKey: TestData.keyPair.pub,
+        derivationStrategy: 'BIP44',
+      };
+      server.createWallet(walletOpts, function(err, wid) {
+        should.not.exist(err);
+        var copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: wid,
+          name: 'me',
+          xPubKey: TestData.copayers[0].xPubKey_45H,
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+          customData: 'dummy custom data',
+          derivationStrategy: 'BIP45',
+        });
+        server.joinWallet(copayerOpts, function(err, result) {
+          should.exist(err);
+          err.message.toLowerCase().should.contain('address derivation strategy');
+          done();
+        });
+      });
+    });
+    it('should require upgrade when joining BIP44 wallet with BIP45 copayer opts from old client app', function(done) {
+      var walletOpts = {
+        name: 'my wallet',
+        m: 2,
+        n: 3,
+        pubKey: TestData.keyPair.pub,
+        derivationStrategy: 'BIP44',
+      };
+      server.createWallet(walletOpts, function(err, wid) {
+        should.not.exist(err);
+        var copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: wid,
+          name: 'me',
+          xPubKey: TestData.copayers[0].xPubKey_45H,
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+          customData: 'dummy custom data',
+          derivationStrategy: 'BIP45',
+        });
+        server = WalletService.getInstance({
+          clientVersion: 'bwc-0.1.4',
+        });
+        server.joinWallet(copayerOpts, function(err, result) {
+          should.exist(err);
+          err.code.should.equal('UPGRADE_NEEDED');
+          done();
+        });
+      });
+    });
+  });
+
   describe('#getStatus', function() {
     var server, wallet;
     beforeEach(function(done) {
