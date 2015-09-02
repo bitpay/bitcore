@@ -2624,173 +2624,212 @@ describe('Wallet service', function() {
   });
 
   describe('#signTx', function() {
-    var server, wallet, txid;
+    describe('1-1', function() {
+      var server, wallet, txid;
 
-    beforeEach(function(done) {
-      helpers.createAndJoinWallet(2, 3, function(s, w) {
-        server = s;
-        wallet = w;
-        helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
-          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 20, null, TestData.copayers[0].privKey_1H_0);
-          server.createTx(txOpts, function(err, tx) {
-            should.not.exist(err);
-            should.exist(tx);
-            txid = tx.id;
-            done();
+      beforeEach(function(done) {
+        helpers.createAndJoinWallet(1, 1, function(s, w) {
+          server = s;
+          wallet = w;
+          helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
+            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 20, null, TestData.copayers[0].privKey_1H_0);
+            server.createTx(txOpts, function(err, tx) {
+              should.not.exist(err);
+              should.exist(tx);
+              txid = tx.id;
+              done();
+            });
           });
         });
       });
-    });
 
-    it('should sign a TX with multiple inputs, different paths', function(done) {
-      server.getPendingTxs({}, function(err, txs) {
-        var tx = txs[0];
-        tx.id.should.equal(txid);
-
-        var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
-        server.signTx({
-          txProposalId: txid,
-          signatures: signatures,
-        }, function(err) {
-          should.not.exist(err);
-          server.getPendingTxs({}, function(err, txs) {
-            should.not.exist(err);
-            var tx = txs[0];
-            tx.id.should.equal(txid);
-
-            var actors = tx.getActors();
-            actors.length.should.equal(1);
-            actors[0].should.equal(wallet.copayers[0].id);
-            tx.getActionBy(wallet.copayers[0].id).type.should.equal('accept');
-
-            done();
-          });
-        });
-      });
-    });
-
-
-    it('should fail to sign with a xpriv from other copayer', function(done) {
-      server.getPendingTxs({}, function(err, txs) {
-        var tx = txs[0];
-        tx.id.should.equal(txid);
-        var signatures = helpers.clientSign(tx, TestData.copayers[1].xPrivKey);
-        server.signTx({
-          txProposalId: txid,
-          signatures: signatures,
-        }, function(err) {
-          err.code.should.equal('BAD_SIGNATURES');
-          done();
-        });
-      });
-    });
-
-    it('should fail if one signature is broken', function(done) {
-      server.getPendingTxs({}, function(err, txs) {
-        var tx = txs[0];
-        tx.id.should.equal(txid);
-
-        var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
-        signatures[0] = 1;
-
-        server.signTx({
-          txProposalId: txid,
-          signatures: signatures,
-        }, function(err) {
-          err.message.should.contain('signatures');
-          done();
-        });
-      });
-    });
-
-    it('should fail on invalid signature', function(done) {
-      server.getPendingTxs({}, function(err, txs) {
-        var tx = txs[0];
-        tx.id.should.equal(txid);
-
-        var signatures = ['11', '22', '33', '44', '55'];
-        server.signTx({
-          txProposalId: txid,
-          signatures: signatures,
-        }, function(err) {
-          should.exist(err);
-          err.message.should.contain('Bad signatures');
-          done();
-        });
-      });
-    });
-
-    it('should fail on wrong number of invalid signatures', function(done) {
-      server.getPendingTxs({}, function(err, txs) {
-        var tx = txs[0];
-        tx.id.should.equal(txid);
-
-        var signatures = _.take(helpers.clientSign(tx, TestData.copayers[0].xPrivKey), tx.inputs.length - 1);
-        server.signTx({
-          txProposalId: txid,
-          signatures: signatures,
-        }, function(err) {
-          should.exist(err);
-          err.message.should.contain('Bad signatures');
-          done();
-        });
-      });
-    });
-
-    it('should fail when signing a TX previously rejected', function(done) {
-      server.getPendingTxs({}, function(err, txs) {
-        var tx = txs[0];
-        tx.id.should.equal(txid);
-
-        var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
-        server.signTx({
-          txProposalId: txid,
-          signatures: signatures,
-        }, function(err) {
-          server.rejectTx({
+      it('should sign a TX with multiple inputs, different paths, and return raw', function(done) {
+        server.getPendingTxs({}, function(err, txs) {
+          var tx = txs[0];
+          tx.id.should.equal(txid);
+          var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+          should.not.exist(tx.raw);
+          server.signTx({
             txProposalId: txid,
+            signatures: signatures,
+          }, function(err, txp) {
+            should.not.exist(err);
+            txp.status.should.equal('accepted');
+            // The raw Tx should contain the Signatures.
+            txp.raw.should.contain(signatures[0]);
+
+            // Get pending should also contains the raw TX
+            server.getPendingTxs({}, function(err, txs) {
+              var tx = txs[0];
+              should.not.exist(err);
+              tx.status.should.equal('accepted');
+              tx.raw.should.contain(signatures[0]);
+              done();
+            });
+          });
+        });
+      });
+
+
+    });
+    describe('Multisign 2-3', function() {
+      var server, wallet, txid;
+
+      beforeEach(function(done) {
+        helpers.createAndJoinWallet(2, 3, function(s, w) {
+          server = s;
+          wallet = w;
+          helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
+            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 20, null, TestData.copayers[0].privKey_1H_0);
+            server.createTx(txOpts, function(err, tx) {
+              should.not.exist(err);
+              should.exist(tx);
+              txid = tx.id;
+              done();
+            });
+          });
+        });
+      });
+
+      it('should sign a TX with multiple inputs, different paths', function(done) {
+        server.getPendingTxs({}, function(err, txs) {
+          var tx = txs[0];
+          tx.id.should.equal(txid);
+
+          var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+          server.signTx({
+            txProposalId: txid,
+            signatures: signatures,
+          }, function(err, txp) {
+            should.not.exist(err);
+            should.not.exist(tx.raw);
+            server.getPendingTxs({}, function(err, txs) {
+              should.not.exist(err);
+              var tx = txs[0];
+              tx.id.should.equal(txid);
+
+              var actors = tx.getActors();
+              actors.length.should.equal(1);
+              actors[0].should.equal(wallet.copayers[0].id);
+              tx.getActionBy(wallet.copayers[0].id).type.should.equal('accept');
+
+              done();
+            });
+          });
+        });
+      });
+
+      it('should fail to sign with a xpriv from other copayer', function(done) {
+        server.getPendingTxs({}, function(err, txs) {
+          var tx = txs[0];
+          tx.id.should.equal(txid);
+          var signatures = helpers.clientSign(tx, TestData.copayers[1].xPrivKey);
+          server.signTx({
+            txProposalId: txid,
+            signatures: signatures,
           }, function(err) {
-            err.code.should.contain('COPAYER_VOTED');
+            err.code.should.equal('BAD_SIGNATURES');
             done();
           });
         });
       });
-    });
 
-    it('should fail when rejected a previously signed TX', function(done) {
-      server.getPendingTxs({}, function(err, txs) {
-        var tx = txs[0];
-        tx.id.should.equal(txid);
+      it('should fail if one signature is broken', function(done) {
+        server.getPendingTxs({}, function(err, txs) {
+          var tx = txs[0];
+          tx.id.should.equal(txid);
 
-        server.rejectTx({
-          txProposalId: txid,
-        }, function(err) {
+          var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+          signatures[0] = 1;
+
+          server.signTx({
+            txProposalId: txid,
+            signatures: signatures,
+          }, function(err) {
+            err.message.should.contain('signatures');
+            done();
+          });
+        });
+      });
+
+      it('should fail on invalid signature', function(done) {
+        server.getPendingTxs({}, function(err, txs) {
+          var tx = txs[0];
+          tx.id.should.equal(txid);
+
+          var signatures = ['11', '22', '33', '44', '55'];
+          server.signTx({
+            txProposalId: txid,
+            signatures: signatures,
+          }, function(err) {
+            should.exist(err);
+            err.message.should.contain('Bad signatures');
+            done();
+          });
+        });
+      });
+
+      it('should fail on wrong number of invalid signatures', function(done) {
+        server.getPendingTxs({}, function(err, txs) {
+          var tx = txs[0];
+          tx.id.should.equal(txid);
+
+          var signatures = _.take(helpers.clientSign(tx, TestData.copayers[0].xPrivKey), tx.inputs.length - 1);
+          server.signTx({
+            txProposalId: txid,
+            signatures: signatures,
+          }, function(err) {
+            should.exist(err);
+            err.message.should.contain('Bad signatures');
+            done();
+          });
+        });
+      });
+
+      it('should fail when signing a TX previously rejected', function(done) {
+        server.getPendingTxs({}, function(err, txs) {
+          var tx = txs[0];
+          tx.id.should.equal(txid);
+
           var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
           server.signTx({
             txProposalId: txid,
             signatures: signatures,
           }, function(err) {
-            err.code.should.contain('COPAYER_VOTED');
-            done();
+            server.rejectTx({
+              txProposalId: txid,
+            }, function(err) {
+              err.code.should.contain('COPAYER_VOTED');
+              done();
+            });
           });
         });
       });
-    });
 
-    it('should fail to sign a non-pending TX', function(done) {
-      async.waterfall([
+      it('should fail when rejected a previously signed TX', function(done) {
+        server.getPendingTxs({}, function(err, txs) {
+          var tx = txs[0];
+          tx.id.should.equal(txid);
 
-        function(next) {
           server.rejectTx({
             txProposalId: txid,
-            reason: 'some reason',
           }, function(err) {
-            should.not.exist(err);
-            next();
+            var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+            server.signTx({
+              txProposalId: txid,
+              signatures: signatures,
+            }, function(err) {
+              err.code.should.contain('COPAYER_VOTED');
+              done();
+            });
           });
-        },
-        function(next) {
-          helpers.getAuthServer(wallet.copayers[1].id, function(server) {
+        });
+      });
+
+      it('should fail to sign a non-pending TX', function(done) {
+        async.waterfall([
+
+          function(next) {
             server.rejectTx({
               txProposalId: txid,
               reason: 'some reason',
@@ -2798,34 +2837,45 @@ describe('Wallet service', function() {
               should.not.exist(err);
               next();
             });
-          });
-        },
-        function(next) {
-          server.getPendingTxs({}, function(err, txs) {
-            should.not.exist(err);
-            txs.should.be.empty;
-            next();
-          });
-        },
-        function(next) {
-          helpers.getAuthServer(wallet.copayers[2].id, function(server) {
-            server.getTx({
-              txProposalId: txid
-            }, function(err, tx) {
-              should.not.exist(err);
-              var signatures = helpers.clientSign(tx, TestData.copayers[2].xPrivKey);
-              server.signTx({
+          },
+          function(next) {
+            helpers.getAuthServer(wallet.copayers[1].id, function(server) {
+              server.rejectTx({
                 txProposalId: txid,
-                signatures: signatures,
+                reason: 'some reason',
               }, function(err) {
-                should.exist(err);
-                err.code.should.equal('TX_NOT_PENDING');
-                done();
+                should.not.exist(err);
+                next();
               });
             });
-          });
-        },
-      ]);
+          },
+          function(next) {
+            server.getPendingTxs({}, function(err, txs) {
+              should.not.exist(err);
+              txs.should.be.empty;
+              next();
+            });
+          },
+          function(next) {
+            helpers.getAuthServer(wallet.copayers[2].id, function(server) {
+              server.getTx({
+                txProposalId: txid
+              }, function(err, tx) {
+                should.not.exist(err);
+                var signatures = helpers.clientSign(tx, TestData.copayers[2].xPrivKey);
+                server.signTx({
+                  txProposalId: txid,
+                  signatures: signatures,
+                }, function(err) {
+                  should.exist(err);
+                  err.code.should.equal('TX_NOT_PENDING');
+                  done();
+                });
+              });
+            });
+          },
+        ]);
+      });
     });
   });
 
@@ -2868,6 +2918,7 @@ describe('Wallet service', function() {
           txProposalId: txpid
         }, function(err, txp) {
           should.not.exist(err);
+          should.not.exist(txp.raw);
           txp.txid.should.equal('999');
           txp.isBroadcasted().should.be.true;
           txp.broadcastedOn.should.equal(1234);
