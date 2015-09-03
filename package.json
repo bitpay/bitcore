@@ -1,7 +1,7 @@
 {
   "name": "insight-ui",
   "description": "An open-source frontend for the Insight API. The Insight API provides you with a convenient, powerful and simple way to query and broadcast data on the bitcoin network and build your own services with it.",
-  "version": "0.2.7",
+  "version": "0.3.0",
   "repository": "git://github.com/bitpay/insight.git",
   "contributors": [
     {
