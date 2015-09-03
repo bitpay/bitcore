@@ -3038,7 +3038,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('#broadcastTx & #braodcastRawTx', function() {
+  describe('#broadcastTx & #broadcastRawTx', function() {
     var server, wallet, txpid;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(1, 1, function(s, w) {
