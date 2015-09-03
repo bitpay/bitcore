@@ -6,6 +6,9 @@ var fs = require('fs');
 var ExpressApp = require('./lib/expressapp');
 var WsApp = require('./lib/wsapp');
 var config = require('./config');
+if (process.argv[2]) {
+  config = JSON.parse(process.argv[2]);
+}
 var sticky = require('sticky-session');
 var log = require('npmlog');
 log.debug = log.verbose;
