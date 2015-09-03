@@ -532,6 +532,29 @@ describe('client API', function() {
       });
     });
 
+    it('should set  walletPrivKey from BWS', function(done) {
+      clients[0].createWallet('wallet name', 'creator', 1, 1, {
+        network: 'testnet'
+      }, function(err) {
+
+        var wkey = clients[0].credentials.walletPrivKey;
+        var skey = clients[0].credentials.sharedEncryptingKey;
+        delete  clients[0].credentials.walletPrivKey;
+        delete  clients[0].credentials.sharedEncryptingKey;
+        should.not.exist(err);
+        clients[0].getStatus({
+          includeExtendedInfo: true
+        }, function(err, status) {
+          should.not.exist(err);
+          clients[0].credentials.walletPrivKey.should.equal(wkey);
+          clients[0].credentials.sharedEncryptingKey.should.equal(skey);
+          done();
+        });
+      });
+    });
+
+
+
     it('should prepare wallet with external xpubkey', function(done) {
       var client = helpers.newClient(app);
       client.seedFromExternalWalletPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', 2, '1a1f00');
