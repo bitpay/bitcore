@@ -1952,6 +1952,7 @@ describe('client API', function() {
 
     describe('Mnemonic related tests', function() {
       var importedClient;
+      // Generated with https://dcpos.github.io/bip39/
       it('should fail to import from words if not at BWS', function(done) {
         var exported = 'bounce tonight little spy earn void nominee ankle walk ten type update';
         importedClient = helpers.newClient(app);
@@ -1959,9 +1960,25 @@ describe('client API', function() {
           network: 'testnet',
         }, function(err) {
           err.code.should.contain('WALLET_DOES_NOT_EXIST');
+          importedClient.mnemonicHasPassphrase().should.equal(false);
+          importedClient.credentials.xPrivKey.should.equal('tprv8ZgxMBicQKsPdTYGTn3cPvTJJuuKHCYbfH1fbu4ceZ5tzYrcjYMKY1JfZiEFDDpEXWquSpX6jRsEoVPoaSw82tQ1Wn1U3K1bQDZBj3UGuEG');
           done();
         });
       });
+      it('should fail to import from words if not at BWS, with passphrase', function(done) {
+        var exported = 'bounce tonight little spy earn void nominee ankle walk ten type update';
+        importedClient = helpers.newClient(app);
+        importedClient.importFromMnemonic(exported, {
+          network: 'testnet',
+          passphrase: 'hola',
+        }, function(err) {
+          err.code.should.contain('WALLET_DOES_NOT_EXIST');
+          importedClient.mnemonicHasPassphrase().should.equal(true);
+          importedClient.credentials.xPrivKey.should.equal('tprv8ZgxMBicQKsPdVijVxEu7gVDi86PUZqbCe7xTGLwVXwZpsG3HuxLDjXL3DXRSaaNymMD7gRpXimxnUDYa5N7pLTKLQymdSotrb4co7Nwrs7');
+          done();
+        });
+      });
+ 
     });
 
     describe('Recovery', function() {
