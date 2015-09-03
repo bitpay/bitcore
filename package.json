@@ -41,6 +41,7 @@
   "scripts": {
     "start": "INSIGHT_PUBLIC_PATH=public node node_modules/.bin/insight-bitcore-api"
   },
+  "bitcoreNode": "bitcore-node",
   "dependencies": {
     "insight-bitcore-api": ">=0.2.14"
   },

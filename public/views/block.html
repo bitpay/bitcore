@@ -1,10 +1,10 @@
-<div data-ng-include src="'/views/includes/connection.html'"></div>
+<div data-ng-include src="'views/includes/connection.html'"></div>
 <section data-ng-controller="BlocksController" data-ng-init="findOne()">
   <div class="secondary_navbar hidden-xs hidden-sm" scroll data-ng-class="{'hidden': !secondaryNavbar}" data-ng-show="block.hash" data-ng-init="hideSNavbar=0">
     <div class="container" data-ng-if="!hideSNavbar">
       <div class="row">
         <div class="col-md-1">
-          <a href="/block/{{block.previousblockhash}}"><span class="lead glyphicon glyphicon-chevron-left"></span></a>
+          <a href="block/{{block.previousblockhash}}"><span class="lead glyphicon glyphicon-chevron-left"></span></a>
         </div>
         <div class="col-md-10">
           <div class="row">
@@ -20,7 +20,7 @@
           </div>
         </div>
         <div class="col-md-1">
-          <a data-ng-show="block.nextblockhash" href="/block/{{block.nextblockhash}}"><span class="lead glyphicon glyphicon-chevron-right"></span></a>
+          <a data-ng-show="block.nextblockhash" href="block/{{block.nextblockhash}}"><span class="lead glyphicon glyphicon-chevron-right"></span></a>
         </div>
       </div>
     </div> <!-- END OF CONTAINER -->
@@ -82,7 +82,7 @@
           </tr>
           <tr data-ng-show="block.previousblockhash">
             <td><strong translate>Previous Block</strong></td>
-            <td class="text-right"><a href="/block/{{block.previousblockhash}}">{{block.height-1}}</a></td>
+            <td class="text-right"><a href="block/{{block.previousblockhash}}">{{block.height-1}}</a></td>
           </tr>
           </tbody>
         </table>
@@ -112,7 +112,7 @@
           </tr>
           <tr data-ng-show="block.nextblockhash">
             <td><strong translate>Next Block</strong></td>
-            <td class="text-right"><a href="/block/{{block.nextblockhash}}">{{block.height+1}}</a></td>
+            <td class="text-right"><a href="block/{{block.nextblockhash}}">{{block.height+1}}</a></td>
           </tr>
           </tbody>
         </table>
@@ -121,7 +121,7 @@
   </div>
   <div data-ng-if="block.hash" data-ng-controller="transactionsController" data-ng-init="load('block')">
     <h3 translate>Transactions</h3>
-    <div data-ng-include src="'/views/transaction/list.html'" when-scrolled="loadMore()"></div>
+    <div data-ng-include src="'views/transaction/list.html'" when-scrolled="loadMore()"></div>
   </div>
 
 </section>

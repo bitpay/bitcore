@@ -2,5 +2,5 @@
 
 angular.module('insight.currency').factory('Currency',
   function($resource) {
-    return $resource('/api/currency');
+    return $resource(window.apiPrefix + '/currency');
 });
