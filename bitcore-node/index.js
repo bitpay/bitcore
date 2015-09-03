@@ -17,6 +17,10 @@ InsightUI.prototype.start = function(callback) {
   setImmediate(callback);
 };
 
+InsightUI.prototype.getRoutePrefix = function() {
+  return 'insight';
+};
+
 InsightUI.prototype.setupRoutes = function(app, express) {
   var self = this;
 

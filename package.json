@@ -1,5 +1,5 @@
 {
-  "name": "insight-bitcore",
+  "name": "insight-ui",
   "description": "An open-source frontend for the Insight API. The Insight API provides you with a convenient, powerful and simple way to query and broadcast data on the bitcoin network and build your own services with it.",
   "version": "0.2.7",
   "repository": "git://github.com/bitpay/insight.git",
@@ -38,12 +38,8 @@
     "bitcore",
     "front-end"
   ],
-  "scripts": {
-    "start": "INSIGHT_PUBLIC_PATH=public node node_modules/.bin/insight-bitcore-api"
-  },
   "bitcoreNode": "bitcore-node",
   "dependencies": {
-    "insight-bitcore-api": ">=0.2.14"
   },
   "devDependencies": {
     "bower": "~1.2.8",
