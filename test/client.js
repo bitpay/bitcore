@@ -557,7 +557,7 @@ describe('client API', function() {
 
     it('should prepare wallet with external xpubkey', function(done) {
       var client = helpers.newClient(app);
-      client.seedFromExternalWalletPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', 2, '1a1f00');
+      client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', 2, '1a1f00');
       client.isPrivKeyExternal().should.equal(true);
       client.getPrivKeyExternalSourceName().should.equal('ledger');
       client.getExternalIndex().should.equal(2);
