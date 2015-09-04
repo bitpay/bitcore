@@ -557,10 +557,10 @@ describe('client API', function() {
 
     it('should prepare wallet with external xpubkey', function(done) {
       var client = helpers.newClient(app);
-      client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', 2, '1a1f00');
+      client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', 2, '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00');
       client.isPrivKeyExternal().should.equal(true);
-      client.credentials.requestPrivKey.should.equal('c60d7d4b702b4eb57c92a96b9b24a53a45ccb6f3ee4447b242105e581c00203a');
-      client.credentials.personalEncryptingKey.should.equal('/eZwjFYW/0//2pBMdk18aA==');
+      client.credentials.requestPrivKey.should.equal('36a4504f0c6651db30484c2c128304a7ea548ef5935f19ed6af99db8000c75a4');
+      client.credentials.personalEncryptingKey.should.equal('wYI1597BfOv06NI6Uye3tA==');
       client.getPrivKeyExternalSourceName().should.equal('ledger');
       client.getExternalIndex().should.equal(2);
       done();
