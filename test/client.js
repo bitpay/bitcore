@@ -2023,7 +2023,7 @@ describe('client API', function() {
           });
         });
       });
-      it('should failt to import with external priv key when not enough entropy', function() {
+      it('should fail to import with external priv key when not enought entropy', function() {
         var client = helpers.newClient(app);
         (function() {
         client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', 2, '1a1f00');
