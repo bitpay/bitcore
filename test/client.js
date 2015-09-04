@@ -559,6 +559,8 @@ describe('client API', function() {
       var client = helpers.newClient(app);
       client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', 2, '1a1f00');
       client.isPrivKeyExternal().should.equal(true);
+      client.credentials.requestPrivKey.should.equal('c60d7d4b702b4eb57c92a96b9b24a53a45ccb6f3ee4447b242105e581c00203a');
+      client.credentials.personalEncryptingKey.should.equal('/eZwjFYW/0//2pBMdk18aA==');
       client.getPrivKeyExternalSourceName().should.equal('ledger');
       client.getExternalIndex().should.equal(2);
       done();
