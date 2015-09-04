@@ -248,6 +248,42 @@ describe('BlockHeader', function() {
 
   });
 
+  describe('#getDifficulty', function() {
+    it('should get the correct difficulty for block 86756', function() {
+      var x = BlockHeader.fromRawBlock(dataRawBlockBuffer);
+      x.bits.should.equal(0x1c3fffc0);
+      x.getDifficulty().should.equal(4);
+    });
+
+    it('should get the correct difficulty for testnet block 552065', function() {
+      var x = new BlockHeader({
+        bits: 0x1b00c2a8
+      });
+      x.getDifficulty().should.equal(86187.62562209);
+    });
+
+    it('should get the correct difficulty for livenet block 373043', function() {
+      var x = new BlockHeader({
+        bits: 0x18134dc1
+      });
+      x.getDifficulty().should.equal(56957648455.01001);
+    });
+
+    it('should get the correct difficulty for livenet block 340000', function() {
+      var x = new BlockHeader({
+        bits: 0x1819012f
+      });
+      x.getDifficulty().should.equal(43971662056.08958);
+    });
+
+    it('should use exponent notation if difficulty is larger than Javascript number', function() {
+      var x = new BlockHeader({
+        bits: 0x0900c2a8
+      });
+      x.getDifficulty().should.equal(1.9220482782645836 * 1e48);
+    });
+  });
+
   it('coverage: caches the "_id" property', function() {
       var blockHeader = BlockHeader.fromRawBlock(dataRawBlockBuffer);
       blockHeader.id.should.equal(blockHeader.id);
