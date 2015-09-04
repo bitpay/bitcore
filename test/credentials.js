@@ -33,7 +33,7 @@ describe('Credentials', function() {
     c.xPrivKey.should.equal('xprv9s21ZrQH143K2TjT3rF4m5AJcMvCetfQbVjFEx1Rped8qzcMJwbqxv21k3ftL69z7n3gqvvHthkdzbW14gxEFDYQdrRQMub3XdkJyt3GGGc');
     c.copayerId.should.equal('e17289a6edd957b66958e4c36d5e76508c5a23a2c03a6d3f21c32cd4717340e7');
     c.network.should.equal('livenet');
-    c.personalEncryptingKey.should.equal('SeFqHR8zqu4gvyLWZLYQAg==');
+    c.personalEncryptingKey.should.equal('M4MTmfRZaTtX6izAAxTpJg==');
   });
 
   it('Should create credentials from mnemonic', function() {
