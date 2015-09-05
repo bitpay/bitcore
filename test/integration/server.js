@@ -101,21 +101,19 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
     m: m,
     n: n,
     pubKey: TestData.keyPair.pub,
-    derivationStrategy: opts.derivationStrategy || 'BIP44',
+    supportBIP44: !!opts.supportBIP44,
   };
   server.createWallet(walletOpts, function(err, walletId) {
     if (err) return cb(err);
 
     async.each(_.range(n), function(i, cb) {
       var copayerData = TestData.copayers[i + offset];
-      var bip = opts.derivationStrategy || 'BIP44';
       var copayerOpts = helpers.getSignedCopayerOpts({
         walletId: walletId,
         name: 'copayer ' + (i + 1),
-        xPubKey: bip == 'BIP44' ? copayerData.xPubKey_44H_0H_0H : copayerData.xPubKey_45H,
+        xPubKey: (n == 1 && !!opts.supportBIP44) ? copayerData.xPubKey_44H_0H_0H : copayerData.xPubKey_45H,
         requestPubKey: copayerData.pubKey_1H_0,
         customData: 'custom data ' + (i + 1),
-        derivationStrategy: bip,
       });
       server.joinWallet(copayerOpts, function(err, result) {
         should.not.exist(err);
