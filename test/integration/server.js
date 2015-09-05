@@ -163,11 +163,23 @@ helpers.stubUtxos = function(server, wallet, amounts, cb) {
       } else {
         confirmations = Math.floor(Math.random() * 100 + 1);
       }
+
+      var scriptPubKey;
+      switch (wallet.addressType) {
+        case WalletUtils.SCRIPT_TYPES.P2SH:
+          scriptPubKey = Bitcore.Script.buildMultisigOut(address.publicKeys, wallet.m).toScriptHashOut();
+          break;
+        case WalletUtils.SCRIPT_TYPES.P2PKH:
+          scriptPubKey = Bitcore.Script.buildPublicKeyHashOut(address.address);
+          break;
+      }
+      should.exist(scriptPubKey);
+
       return {
         txid: helpers.randomTXID(),
         vout: Math.floor(Math.random() * 10 + 1),
         satoshis: helpers.toSatoshi(amount).toString(),
-        scriptPubKey: address.getScriptPubKey(wallet.m).toBuffer().toString('hex'),
+        scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
         address: address.address,
         confirmations: confirmations,
       };
@@ -1158,24 +1170,26 @@ describe('Wallet service', function() {
     beforeEach(function() {
       server = WalletService.getInstance();
     });
-    it('should use BIP44 for 1-of-1 wallet if supported', function(done) {
+    it('should use BIP44 & P2PKH for 1-of-1 wallet if supported', function(done) {
       var walletOpts = {
         name: 'my wallet',
         m: 1,
         n: 1,
         pubKey: TestData.keyPair.pub,
         supportBIP44: true,
+        supportP2PKH: true,
       };
       server.createWallet(walletOpts, function(err, wid) {
         should.not.exist(err);
         server.storage.fetchWallet(wid, function(err, wallet) {
           should.not.exist(err);
           wallet.derivationStrategy.should.equal('BIP44');
+          wallet.addressType.should.equal('P2PKH');
           done();
         });
       });
     });
-    it('should use BIP45 for 1-of-1 wallet if BIP44 not supported', function(done) {
+    it('should use BIP45 & P2SH for 1-of-1 wallet if not supported', function(done) {
       var walletOpts = {
         name: 'my wallet',
         m: 1,
@@ -1187,22 +1201,26 @@ describe('Wallet service', function() {
         server.storage.fetchWallet(wid, function(err, wallet) {
           should.not.exist(err);
           wallet.derivationStrategy.should.equal('BIP45');
+          wallet.addressType.should.equal('P2SH');
           done();
         });
       });
     });
-    it('should always use BIP45 for shared wallets', function(done) {
+    it('should always use BIP45 & P2SH for shared wallets', function(done) {
       var walletOpts = {
         name: 'my wallet',
         m: 2,
         n: 3,
         pubKey: TestData.keyPair.pub,
+        supportBIP44: true,
+        supportP2PKH: true,
       };
       server.createWallet(walletOpts, function(err, wid) {
         should.not.exist(err);
         server.storage.fetchWallet(wid, function(err, wallet) {
           should.not.exist(err);
           wallet.derivationStrategy.should.equal('BIP45');
+          wallet.addressType.should.equal('P2SH');
           done();
         });
       });
@@ -1398,7 +1416,7 @@ describe('Wallet service', function() {
       });
     });
 
-    describe('1-of-1 (BIP44)', function() {
+    describe('1-of-1 (BIP44 & P2PKH)', function() {
       beforeEach(function(done) {
         helpers.createAndJoinWallet(1, 1, function(s, w) {
           server = s;
@@ -2799,18 +2817,20 @@ describe('Wallet service', function() {
   });
 
   describe('#signTx', function() {
-    describe('1-1', function() {
+    describe('1-of-1 (BIP44 & P2PKH)', function() {
       var server, wallet, txid;
 
       beforeEach(function(done) {
         helpers.createAndJoinWallet(1, 1, function(s, w) {
           server = s;
           wallet = w;
-          helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
-            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 20, TestData.copayers[0].privKey_1H_0);
+          helpers.stubUtxos(server, wallet, [1, 2], function() {
+            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 2.5, TestData.copayers[0].privKey_1H_0);
             server.createTx(txOpts, function(err, tx) {
               should.not.exist(err);
               should.exist(tx);
+              tx.derivationStrategy.should.equal('BIP44');
+              tx.addressType.should.equal('P2PKH');
               txid = tx.id;
               done();
             });
@@ -2844,10 +2864,9 @@ describe('Wallet service', function() {
           });
         });
       });
-
-
     });
-    describe('Multisign 2-3', function() {
+
+    describe('Multisig', function() {
       var server, wallet, txid;
 
       beforeEach(function(done) {
@@ -4360,7 +4379,7 @@ describe('Wallet service', function() {
     var server, wallet;
     var scanConfigOld = WalletService.SCAN_CONFIG;
 
-    describe('1-of-1 wallet (BIP44)', function() {
+    describe('1-of-1 wallet (BIP44 & P2PKH)', function() {
       beforeEach(function(done) {
         this.timeout(5000);
         WalletService.SCAN_CONFIG.scanWindow = 2;
