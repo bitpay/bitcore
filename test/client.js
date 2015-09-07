@@ -1895,28 +1895,6 @@ describe('client API', function() {
         importedClient = helpers.newClient(app);
         importedClient.import(exported);
       });
-      it('should export & import compressed', function(done) {
-        var walletId = clients[0].credentials.walletId;
-        var walletName = clients[0].credentials.walletName;
-        var copayerName = clients[0].credentials.copayerName;
-
-        var exported = clients[0].export({
-          compressed: true
-        });
-
-        importedClient = helpers.newClient(app);
-        importedClient.import(exported, {
-          compressed: true
-        });
-
-        importedClient.openWallet(function(err) {
-          should.not.exist(err);
-          importedClient.credentials.walletId.should.equal(walletId);
-          importedClient.credentials.walletName.should.equal(walletName);
-          importedClient.credentials.copayerName.should.equal(copayerName);
-          done();
-        });
-      });
       it('should export without signing rights', function() {
         clients[0].canSign().should.be.true;
         var exported = clients[0].export({
@@ -2026,7 +2004,7 @@ describe('client API', function() {
       it('should fail to import with external priv key when not enought entropy', function() {
         var client = helpers.newClient(app);
         (function() {
-        client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', 2, '1a1f00');
+          client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', 2, '1a1f00');
         }).should.throw('entropy');
       });
 
@@ -2773,7 +2751,7 @@ describe('client API', function() {
     });
 
 
-    it('should export & import uncompressed, locked', function(done) {
+    it('should export & import locked', function(done) {
       var walletId = c1.credentials.walletId;
       var walletName = c1.credentials.walletName;
       var copayerName = c1.credentials.copayerName;
@@ -2794,29 +2772,6 @@ describe('client API', function() {
       });
     });
 
-
-    it('should export & import compressed, locked', function(done) {
-      var walletId = c1.credentials.walletId;
-      var walletName = c1.credentials.walletName;
-      var copayerName = c1.credentials.copayerName;
-      var exported = c1.export({
-        compressed: true
-      });
-      importedClient = helpers.newClient(app);
-      importedClient.import(exported, {
-        compressed: true,
-        password: password,
-      });
-      importedClient.openWallet(function(err) {
-        should.not.exist(err);
-        importedClient.credentials.walletId.should.equal(walletId);
-        importedClient.credentials.walletName.should.equal(walletName);
-        importedClient.credentials.copayerName.should.equal(copayerName);
-        importedClient.isPrivKeyEncrypted().should.equal(true);
-        importedClient.hasPrivKeyEncrypted().should.equal(true);
-        done();
-      });
-    });
     it('should not sign when locked', function(done) {
       c1.createAddress(function(err, x0) {
         should.not.exist(err);
