@@ -121,12 +121,22 @@ blockchainExplorerMock.getUnspentUtxos = function(addresses, cb) {
 };
 
 blockchainExplorerMock.setUtxo = function(address, amount, m, confirmations) {
+  var scriptPubKey;
+  switch (address.type) {
+    case WalletUtils.SCRIPT_TYPES.P2SH:
+      scriptPubKey = address.publicKeys ? Bitcore.Script.buildMultisigOut(address.publicKeys, m).toScriptHashOut() : '';
+      break;
+    case WalletUtils.SCRIPT_TYPES.P2PKH:
+      scriptPubKey = Bitcore.Script.buildPublicKeyHashOut(address.address);
+      break;
+  }
+  should.exist(scriptPubKey);
   blockchainExplorerMock.utxos.push({
     txid: Bitcore.crypto.Hash.sha256(new Buffer(Math.random() * 100000)).toString('hex'),
     vout: Math.floor((Math.random() * 10) + 1),
     amount: amount,
     address: address.address,
-    scriptPubKey: address.publicKeys ? Bitcore.Script.buildMultisigOut(address.publicKeys, m).toScriptHashOut().toString() : '',
+    scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
     confirmations: _.isUndefined(confirmations) ? Math.floor((Math.random() * 100) + 1) : +confirmations,
   });
 };
@@ -662,18 +672,29 @@ describe('client API', function() {
   });
 
   describe('Address Creation', function() {
+    it('should be able to create address in 1-of-1 wallet', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
+        clients[0].createAddress(function(err, x) {
+          should.not.exist(err);
+          should.exist(x.address);
+          x.address.charAt(0).should.not.equal('2');
+          done();
+        });
+      });
+    });
     it('should be able to create address in all copayers in a 2-3 wallet', function(done) {
       this.timeout(5000);
       helpers.createAndJoinWallet(clients, 2, 3, function() {
-        clients[0].createAddress(function(err, x0) {
+        clients[0].createAddress(function(err, x) {
           should.not.exist(err);
-          should.exist(x0.address);
-          clients[1].createAddress(function(err, x1) {
+          should.exist(x.address);
+          x.address.charAt(0).should.equal('2');
+          clients[1].createAddress(function(err, x) {
             should.not.exist(err);
-            should.exist(x1.address);
-            clients[2].createAddress(function(err, x2) {
+            should.exist(x.address);
+            clients[2].createAddress(function(err, x) {
               should.not.exist(err);
-              should.exist(x2.address);
+              should.exist(x.address);
               done();
             });
           });
@@ -1509,14 +1530,14 @@ describe('client API', function() {
           var opts = {
             amount: 10000000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hello 1-1',
+            message: 'hello',
           };
           clients[0].sendTxProposal(opts, function(err, txp) {
             should.not.exist(err);
             txp.requiredRejections.should.equal(1);
             txp.requiredSignatures.should.equal(1);
             txp.status.should.equal('pending');
-            txp.changeAddress.path.should.equal('m/2147483647/1/0');
+            txp.changeAddress.path.should.equal('m/1/0');
             clients[0].signTxProposal(txp, function(err, txp) {
               should.not.exist(err);
               txp.status.should.equal('accepted');
@@ -1540,7 +1561,7 @@ describe('client API', function() {
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hello 1-1',
+            message: 'hello',
           };
           clients[0].sendTxProposal(opts, function(err, txp) {
             should.not.exist(err);
@@ -1556,8 +1577,6 @@ describe('client API', function() {
               var b = st.balance;
               b.totalAmount.should.equal(1000000000);
               b.lockedAmount.should.equal(1000000000);
-
-
               clients[0].signTxProposal(txp, function(err, txp) {
                 should.not.exist(err, err);
                 txp.status.should.equal('pending');
@@ -2446,7 +2465,7 @@ describe('client API', function() {
     });
   });
 
-  describe('Legacy Copay Import', function() {
+  describe.skip('Legacy Copay Import', function() {
     it('Should get wallets from profile', function(done) {
       var t = ImportData.copayers[0];
       var c = helpers.newClient(app);

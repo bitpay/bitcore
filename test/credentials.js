@@ -31,7 +31,8 @@ describe('Credentials', function() {
     var c = Credentials.fromExtendedPrivateKey(xPriv);
 
     c.xPrivKey.should.equal('xprv9s21ZrQH143K2TjT3rF4m5AJcMvCetfQbVjFEx1Rped8qzcMJwbqxv21k3ftL69z7n3gqvvHthkdzbW14gxEFDYQdrRQMub3XdkJyt3GGGc');
-    c.copayerId.should.equal('e17289a6edd957b66958e4c36d5e76508c5a23a2c03a6d3f21c32cd4717340e7');
+    c.xPubKey.should.equal('xpub6DUean44k773kxbUq8QpSmAPFaNCpk5AzrxbFRAMsNCZBGD15XQVnRJCgNd8GtJVmDyDZh89NPZz1XPQeX5w6bAdLGfSTUuPDEQwBgKxfh1');
+    c.copayerId.should.equal('bad66ef88ad8dec08e36d576c29b4f091d30197f04e166871e64bf969d08a958');
     c.network.should.equal('livenet');
     c.personalEncryptingKey.should.equal('M4MTmfRZaTtX6izAAxTpJg==');
   });
@@ -108,7 +109,7 @@ describe('Credentials', function() {
     should.exist(c.mnemonic);
     var words = c.mnemonic;
     var xPriv = c.xPrivKey;
-  
+
     var c2 = Credentials.fromMnemonic(words, 'chaumundo', 'testnet');
     c2.network.should.equal(c.network);
     c2.xPrivKey.should.not.be.equal(c.xPrivKey);
