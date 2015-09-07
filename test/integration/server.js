@@ -940,8 +940,8 @@ describe('Wallet service', function() {
       server = new WalletService();
       var walletOpts = {
         name: 'my wallet',
-        m: 2,
-        n: 3,
+        m: 1,
+        n: 2,
         pubKey: TestData.keyPair.pub,
       };
       server.createWallet(walletOpts, function(err, wId) {
@@ -1049,6 +1049,23 @@ describe('Wallet service', function() {
           should.exist(err);
           err.code.should.equal('WALLET_FULL');
           err.message.should.equal('Wallet full');
+          done();
+        });
+      });
+    });
+
+    it('should return copayer in wallet error before full wallet', function(done) {
+      helpers.createAndJoinWallet(1, 1, function(s, wallet) {
+        var copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: wallet.id,
+          name: 'me',
+          xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+          supportBIP44AndP2PKH: true,
+        });
+        server.joinWallet(copayerOpts, function(err) {
+          should.exist(err);
+          err.code.should.equal('COPAYER_IN_WALLET');
           done();
         });
       });
