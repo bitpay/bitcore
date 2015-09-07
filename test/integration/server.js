@@ -1403,6 +1403,7 @@ describe('Wallet service', function() {
           address.address.should.equal('3BVJZ4CYzeTtawDtgwHvWV5jbvnXtYe97i');
           address.isChange.should.be.false;
           address.path.should.equal('m/2147483647/0/0');
+          address.type.should.equal('P2SH');
           server.getNotifications({}, function(err, notifications) {
             should.not.exist(err);
             var notif = _.find(notifications, {
@@ -1449,6 +1450,7 @@ describe('Wallet service', function() {
           address.address.should.equal('36q2G5FMGvJbPgAVEaiyAsFGmpkhPKwk2r');
           address.isChange.should.be.false;
           address.path.should.equal('m/0/0');
+          address.type.should.equal('P2SH');
           server.getNotifications({}, function(err, notifications) {
             should.not.exist(err);
             var notif = _.find(notifications, {
@@ -1515,6 +1517,7 @@ describe('Wallet service', function() {
           address.address.should.equal('1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG');
           address.isChange.should.be.false;
           address.path.should.equal('m/0/0');
+          address.type.should.equal('P2PKH');
           server.getNotifications({}, function(err, notifications) {
             should.not.exist(err);
             var notif = _.find(notifications, {
