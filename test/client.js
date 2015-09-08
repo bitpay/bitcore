@@ -2465,7 +2465,7 @@ describe('client API', function() {
     });
   });
 
-  describe.skip('Legacy Copay Import', function() {
+  describe('Legacy Copay Import', function() {
     it('Should get wallets from profile', function(done) {
       var t = ImportData.copayers[0];
       var c = helpers.newClient(app);
