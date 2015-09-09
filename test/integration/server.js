@@ -1905,13 +1905,13 @@ describe('Wallet service', function() {
         fees = _.zipObject(_.map(fees, function(item) {
           return [item.level, item];
         }));
-        fees.priority.feePerKB.should.equal(40000);
+        fees.priority.feePerKb.should.equal(40000);
         fees.priority.nbBlocks.should.equal(1);
 
-        fees.normal.feePerKB.should.equal(20000);
+        fees.normal.feePerKb.should.equal(20000);
         fees.normal.nbBlocks.should.equal(2);
 
-        fees.economy.feePerKB.should.equal(18000);
+        fees.economy.feePerKb.should.equal(18000);
         fees.economy.nbBlocks.should.equal(6);
         done();
       });
@@ -1921,7 +1921,7 @@ describe('Wallet service', function() {
       server.getFeeLevels({}, function(err, fees) {
         should.not.exist(err);
         fees = _.zipObject(_.map(fees, function(item) {
-          return [item.level, item.feePerKB];
+          return [item.level, item.feePerKb];
         }));
         fees.priority.should.equal(50000);
         fees.normal.should.equal(20000);
@@ -1940,13 +1940,13 @@ describe('Wallet service', function() {
         fees = _.zipObject(_.map(fees, function(item) {
           return [item.level, item];
         }));
-        fees.priority.feePerKB.should.equal(50000);
+        fees.priority.feePerKb.should.equal(50000);
         should.not.exist(fees.priority.nbBlocks);
 
-        fees.normal.feePerKB.should.equal(18000);
+        fees.normal.feePerKb.should.equal(18000);
         fees.normal.nbBlocks.should.equal(2);
 
-        fees.economy.feePerKB.should.equal(0);
+        fees.economy.feePerKb.should.equal(0);
         fees.economy.nbBlocks.should.equal(6);
         done();
       });
