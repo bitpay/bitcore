@@ -2651,14 +2651,14 @@ describe('client API', function() {
             should.not.exist(err);
             recoveryClient.getStatus(function(err, status) {
               should.not.exist(err);
-              _.pluck(status.wallet.copayers, 'name').should.deep.equal(['123', '234', '345']);
+              _.pluck(status.wallet.copayers, 'name').sort().should.deep.equal(['123', '234', '345']);
               var t2 = ImportData.copayers[1];
               var c2p = helpers.newClient(newApp);
               c2p.createWalletFromOldCopay(t2.username, t2.password, t2.ls[w], function(err) {
                 should.not.exist(err);
                 c2p.getStatus(function(err, status) {
                   should.not.exist(err);
-                  _.pluck(status.wallet.copayers, 'name').should.deep.equal(['123', '234', '345']);
+                  _.pluck(status.wallet.copayers, 'name').sort().should.deep.equal(['123', '234', '345']);
                   done();
                 });
               });
