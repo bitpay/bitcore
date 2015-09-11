@@ -1476,6 +1476,22 @@ describe('Wallet service', function() {
         });
       });
 
+      it('should protect against storing same address multiple times', function(done) {
+        server.createAddress({}, function(err, address) {
+          should.not.exist(err);
+          should.exist(address);
+          delete address._id;
+          server.storage.storeAddressAndWallet(wallet, address, function(err) {
+            should.not.exist(err);
+            server.getMainAddresses({}, function(err, addresses) {
+              should.not.exist(err);
+              addresses.length.should.equal(1);
+              done();
+            });
+          });
+        });
+      });
+
       it('should create many addresses on simultaneous requests', function(done) {
         var N = 5;
         async.map(_.range(N), function(i, cb) {
