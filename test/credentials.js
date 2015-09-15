@@ -90,7 +90,7 @@ describe('Credentials', function() {
     should.not.exist(c.getMnemonic());
   });
 
-  _.each(['en', 'es', 'jp', 'zh', 'fr'], function(lang) {
+  _.each(['en', 'es', 'ja', 'zh', 'fr'], function(lang) {
     it('Should verify roundtrip create/from with ' + lang + '/passphrase', function() {
       var c = Credentials.createWithMnemonic('testnet', 'holamundo', lang);
       should.exist(c.mnemonic);
