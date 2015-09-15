@@ -2963,4 +2963,26 @@ describe('client API', function() {
       });
     });
   });
+
+  describe('Sweep paper wallet', function() {
+    it('should decrypt bip38 encrypted private key', function(done) {
+      this.timeout(60000);
+      clients[0].decryptBIP38PrivateKey('6PfRh9ZnWtiHrGoPPSzXe6iafTXc6FSXDhSBuDvvDmGd1kpX2Gvy1CfTcA', 'passphrase', {}, function(err, result) {
+        should.not.exist(err);
+        result.network.should.equal('livenet');
+        result.privateKey.should.equal('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp');
+        result.publicKey.should.equal('04c2f18d7f16e265a32178a75ea5fef9eb94df6d7dd7ed8475b5cf8ee8c3ba0965957937b688668c8f2c0ddcaf8d4b16d75951e7b4b7ca70e1539eb8dc8a1f403d');
+        result.address.should.equal('1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3');
+        done();
+      });
+    });
+    it('should fail to decrypt bip38 encrypted private key with incorrect passphrase', function(done) {
+      this.timeout(60000);
+      clients[0].decryptBIP38PrivateKey('6PfRh9ZnWtiHrGoPPSzXe6iafTXc6FSXDhSBuDvvDmGd1kpX2Gvy1CfTcA', 'incorrect passphrase', {}, function(err, result) {
+        should.exist(err);
+        err.message.should.contain('passphrase');
+        done();
+      });
+    });
+  });
 });
