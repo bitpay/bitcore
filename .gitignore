@@ -34,3 +34,16 @@ db/*
 
 docs
 
+# VIM ignore
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+*.un~
+Session.vim
+.netrwhist
+*~
+
+# OSX
+.DS_Store
+.AppleDouble
+.LSOverride
+
