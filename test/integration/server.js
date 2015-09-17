@@ -1078,6 +1078,32 @@ describe('Wallet service', function() {
       });
     });
 
+    it('should be able to get wallet info without actually joining', function(done) {
+      var copayerOpts = helpers.getSignedCopayerOpts({
+        walletId: walletId,
+        name: 'me',
+        xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+        requestPubKey: TestData.copayers[0].pubKey_1H_0,
+        customData: 'dummy custom data',
+        dryRun: true,
+      });
+      server.joinWallet(copayerOpts, function(err, result) {
+        should.not.exist(err);
+        should.exist(result);
+        should.not.exist(result.copayerId);
+        result.wallet.id.should.equal(walletId);
+        result.wallet.m.should.equal(1);
+        result.wallet.n.should.equal(2);
+        result.wallet.copayers.should.be.empty;
+        server.storage.fetchWallet(walletId, function(err, wallet) {
+          should.not.exist(err);
+          wallet.id.should.equal(walletId);
+          wallet.copayers.should.be.empty;
+          done();
+        });
+      });
+    });
+
     it('should fail to join two wallets with same xPubKey', function(done) {
       var copayerOpts = helpers.getSignedCopayerOpts({
         walletId: walletId,
