@@ -1078,7 +1078,7 @@ describe('Wallet service', function() {
       });
     });
 
-    it.only('should be able to get wallet info without actually joining', function(done) {
+    it('should be able to get wallet info without actually joining', function(done) {
       var copayerOpts = helpers.getSignedCopayerOpts({
         walletId: walletId,
         name: 'me',
