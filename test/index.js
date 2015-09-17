@@ -778,7 +778,7 @@ describe('PaymentProtocol', function() {
       should.equal(null, merchant_data);
     });
 
-    it('should verify a real PaymentRequest With not Root Cert', function() {
+    it('should verify a real PaymentRequest without Root Cert', function() {
       var data = PaymentProtocol.PaymentRequest.decode(SampleRequest.bitpay2);
       var pr = new PaymentProtocol();
       pr = pr.makePaymentRequest(data);
@@ -858,7 +858,7 @@ describe('PaymentProtocol', function() {
       should.equal('{"invoiceId":"PAQtNxX7KL8BtJBnfXyTaH","merchantId":"TxZ5RyChmZw2isKjJWGhBc"}', merchant_data.toString());
     });
 
-    it.skip('should verify a real PaymentRequest With not Root Cert (case 2: Coinbase)', function() {
+    it.skip('should verify a real PaymentRequest without Root Cert (case 2: Coinbase)', function() {
       var data = PaymentProtocol.PaymentRequest.decode(SampleRequest.coinbase);
       var pr = new PaymentProtocol();
       pr = pr.makePaymentRequest(data);
