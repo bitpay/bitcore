@@ -76,7 +76,7 @@ helpers.createAndJoinWallet = function(clients, m, n, cb) {
           function(next) {
             async.each(_.range(1, n), function(i, cb) {
               clients[i].seedFromRandomWithMnemonic('testnet');
-              clients[i].joinWallet(secret, 'copayer ' + i, cb);
+              clients[i].joinWallet(secret, 'copayer ' + i, {}, cb);
             }, next);
           },
           function(next) {
@@ -382,7 +382,7 @@ describe('client API', function() {
         should.not.exist(err);
         clients[0].isComplete().should.equal(false);
         clients[0].credentials.isComplete().should.equal(false);
-        clients[1].joinWallet(secret, 'guest', function(err) {
+        clients[1].joinWallet(secret, 'guest', {}, function(err) {
           should.not.exist(err);
           clients[0].openWallet(function(err, walletStatus) {
             should.not.exist(err);
@@ -397,7 +397,7 @@ describe('client API', function() {
     it('should not allow to join a full wallet ', function(done) {
       helpers.createAndJoinWallet(clients, 2, 2, function(w) {
         should.exist(w.secret);
-        clients[4].joinWallet(w.secret, 'copayer', function(err, result) {
+        clients[4].joinWallet(w.secret, 'copayer', {}, function(err, result) {
           err.code.should.contain('WALLET_FULL');
           done();
         });
@@ -405,10 +405,10 @@ describe('client API', function() {
     });
     it('should fail with an invalid secret', function(done) {
       // Invalid
-      clients[0].joinWallet('dummy', 'copayer', function(err, result) {
+      clients[0].joinWallet('dummy', 'copayer', {}, function(err, result) {
         err.message.should.contain('Invalid secret');
         // Right length, invalid char for base 58
-        clients[0].joinWallet('DsZbqNQQ9LrTKU8EknR7gFKyCQMPg2UUHNPZ1BzM5EbJwjRZaUNBfNtdWLluuFc0f7f7sTCkh7T', 'copayer', function(err, result) {
+        clients[0].joinWallet('DsZbqNQQ9LrTKU8EknR7gFKyCQMPg2UUHNPZ1BzM5EbJwjRZaUNBfNtdWLluuFc0f7f7sTCkh7T', 'copayer', {}, function(err, result) {
           err.message.should.contain('Invalid secret');
           done();
         });
@@ -417,7 +417,7 @@ describe('client API', function() {
     it('should fail with an unknown secret', function(done) {
       // Unknown walletId
       var oldSecret = '3bJKRn1HkQTpwhVaJMaJ22KwsjN24ML9uKfkSrP7iDuq91vSsTEygfGMMpo6kWLp1pXG9wZSKcT';
-      clients[0].joinWallet(oldSecret, 'copayer', function(err, result) {
+      clients[0].joinWallet(oldSecret, 'copayer', {}, function(err, result) {
         err.code.should.equal('WALLET_NOT_FOUND');
         done();
       });
@@ -476,6 +476,22 @@ describe('client API', function() {
         });
       });
     });
+    it('should perform a dry join without actually joining', function(done) {
+      clients[0].createWallet('wallet name', 'creator', 1, 2, {}, function(err, secret) {
+        should.not.exist(err);
+        should.exist(secret);
+        clients[1].joinWallet(secret, 'dummy', {
+          dryRun: true
+        }, function(err, wallet) {
+          should.not.exist(err);
+          should.exist(wallet);
+          wallet.status.should.equal('pending');
+          wallet.copayers.length.should.equal(1);
+          done();
+        });
+      });
+    });
+
     it('should return wallet status even if wallet is not yet complete', function(done) {
       clients[0].createWallet('wallet name', 'creator', 1, 2, {
         network: 'testnet'
@@ -542,7 +558,7 @@ describe('client API', function() {
       });
     });
 
-    it('should set  walletPrivKey from BWS', function(done) {
+    it('should set walletPrivKey from BWS', function(done) {
       clients[0].createWallet('wallet name', 'creator', 1, 1, {
         network: 'testnet'
       }, function(err) {
@@ -562,8 +578,6 @@ describe('client API', function() {
         });
       });
     });
-
-
 
     it('should prepare wallet with external xpubkey', function(done) {
       var client = helpers.newClient(app);
@@ -590,7 +604,6 @@ describe('client API', function() {
           });
         });
     });
-
 
     it('should create a 1-1 wallet with given mnemonic', function(done) {
       var words = 'forget announce travel fury farm alpha chaos choice talent sting eagle supreme';
@@ -627,8 +640,6 @@ describe('client API', function() {
           });
         });
     });
-
-
   });
 
   describe('Network fees', function() {
