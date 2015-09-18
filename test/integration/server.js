@@ -756,7 +756,7 @@ describe('Wallet service', function() {
         clientVersion: 'bwc-0.0.1',
       });
       server.clientVersion.should.equal('bwc-0.0.1');
-      server.serverVersion.indexOf('bws-').should.equal(0);
+      server.serviceVersion.indexOf('bws-').should.equal(0);
     });
   });
 
