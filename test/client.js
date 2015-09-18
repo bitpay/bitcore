@@ -659,6 +659,24 @@ describe('client API', function() {
     });
   });
 
+  describe('Version', function() {
+    it('should get version of bws', function(done) {
+      clients[0].credentials = {};
+      clients[0].getVersion(function(err, version) {
+        if (err) {
+          // if bws is older version without getVersion support
+          err.code.should.equal('NOT_FOUND');
+        } else {
+          // if bws is up-to-date
+          should.exist(version);
+          should.exist(version.serviceVersion);
+          version.serviceVersion.should.contain('bws-');
+        }
+        done();
+      });
+    });
+  });
+
   describe('Preferences', function() {
     it('should save and retrieve preferences', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
