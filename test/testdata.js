@@ -77,10 +77,9 @@ var payproHex = '0801120b783530392b7368613235361a89250aa40a3082052030820408a0030
 
 var payProData = {
   verified: true,
-  verifyData: {
-    caName: 'Go Daddy Class 2 CA',
-    selfSigned: 0
-  },
+  caName: 'Go Daddy Class 2 CA',
+  caTrusted: true,
+  selfSigned: 0,
   expires: 1427291383,
   memo: 'Payment request for BitPay invoice CibEJJtG1t9H77KmM61E2t for merchant testCopay',
   time: 1427290483,
