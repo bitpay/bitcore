@@ -14,6 +14,7 @@ var PrivateKey = bitcore.PrivateKey;
 var Script = bitcore.Script;
 var Address = bitcore.Address;
 var Networks = bitcore.Networks;
+var Opcode = bitcore.Opcode;
 var errors = bitcore.errors;
 
 var transactionVector = require('../data/tx_creation');
@@ -918,6 +919,64 @@ describe('Transaction', function() {
       tx.outputs[1].script.toAddress().toString().should.equal(changeAddress);
     });
 
+  });
+
+  describe('BIP69 Sorting', function() {
+
+    it('sorts inputs correctly', function() {
+      var from1 = {
+        txId: '0000000000000000000000000000000000000000000000000000000000000000',
+        outputIndex: 0,
+        script: Script.buildPublicKeyHashOut(fromAddress).toString(),
+        satoshis: 100000
+      };
+      var from2 = {
+        txId: '0000000000000000000000000000000000000000000000000000000000000001',
+        outputIndex: 0,
+        script: Script.buildPublicKeyHashOut(fromAddress).toString(),
+        satoshis: 100000
+      };
+      var from3 = {
+        txId: '0000000000000000000000000000000000000000000000000000000000000001',
+        outputIndex: 1,
+        script: Script.buildPublicKeyHashOut(fromAddress).toString(),
+        satoshis: 100000
+      };
+      var tx = new Transaction()
+        .from(from3)
+        .from(from2)
+        .from(from1);
+      tx.sort();
+      tx.inputs[0].prevTxId.toString('hex').should.equal(from1.txId);
+      tx.inputs[1].prevTxId.toString('hex').should.equal(from2.txId);
+      tx.inputs[2].prevTxId.toString('hex').should.equal(from3.txId);
+      tx.inputs[0].outputIndex.should.equal(from1.outputIndex);
+      tx.inputs[1].outputIndex.should.equal(from2.outputIndex);
+      tx.inputs[2].outputIndex.should.equal(from3.outputIndex);
+    });
+
+    it('sorts outputs correctly', function() {
+      var tx = new Transaction()
+        .addOutput(new Transaction.Output({
+          script: new Script().add(Opcode(0)),
+          satoshis: 2
+        }))
+        .addOutput(new Transaction.Output({
+          script: new Script().add(Opcode(1)),
+          satoshis: 2
+        }))
+        .addOutput(new Transaction.Output({
+          script: new Script().add(Opcode(0)),
+          satoshis: 1
+        }));
+      tx.sort();
+      tx.outputs[0].satoshis.should.equal(1);
+      tx.outputs[1].satoshis.should.equal(2);
+      tx.outputs[2].satoshis.should.equal(2);
+      tx.outputs[0].script.toString().should.equal('OP_0');
+      tx.outputs[1].script.toString().should.equal('OP_0');
+      tx.outputs[2].script.toString().should.equal('0x01');
+    });
   });
 });
 
