@@ -13,7 +13,7 @@
       <span translate>first seen at</span> 
       <time>{{tx.firstSeenTs * 1000 | date:'medium'}}</time>
     </div>
-    <div data-ng-show="tx.time && !tx.firstSeenTs">
+    <div data-ng-show="tx.blocktime && !tx.firstSeenTs">
       <span translate>mined</span> 
       <time>{{tx.time * 1000 | date:'medium'}}</time>
     </div>
