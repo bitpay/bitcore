@@ -177,26 +177,33 @@ describe('Mnemonic', function() {
       }).should.throw(errors.InvalidEntropy);
     });
 
-    var vectors = bip39_vectors.english;
-    var test_vector = function(v) {
+    var vectors = bip39_vectors;
+    var vector_wordlists = {
+      "english": Mnemonic.Words.ENGLISH,
+      "japanese": Mnemonic.Words.JAPANESE
+    };
+    var test_vector = function(v, lang) {
       it('should pass test vector ' + v, function() {
-        var wordlist = Mnemonic.Words.ENGLISH;
-        var vector = vectors[v];
-        var code = vector[0];
-        var mnemonic = vector[1];
-        var seed = vector[2];
+        var wordlist = vector_wordlists[lang];
+        var vector = vectors[lang][v];
+        var code = vector[1];
+        var mnemonic = vector[2];
+        var seed = vector[3];
         var mnemonic1 = Mnemonic.fromSeed(new Buffer(code, 'hex'), wordlist).phrase;
         mnemonic1.should.equal(mnemonic);
 
         var m = new Mnemonic(mnemonic);
-        var seed1 = m.toSeed('TREZOR');
+        var seed1 = m.toSeed(vector[0]);
         seed1.toString('hex').should.equal(seed);
 
         Mnemonic.isValid(mnemonic, wordlist).should.equal(true);
       });
     };
-    for (var v = 0; v < vectors.length; v++) {
-      test_vector(v);
+    for (var v = 0; v < vectors["english"].length; v++) {
+      test_vector(v, "english");
+    }
+    for (var v = 0; v < vectors["japanese"].length; v++) {
+      test_vector(v, "japanese");
     }
 
   });
