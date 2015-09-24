@@ -7,10 +7,6 @@ var log = require('npmlog');
 log.debug = log.verbose;
 
 var config = require('../config');
-if (process.argv[2]) {
-  config = JSON.parse(process.argv[2]);
-}
-
 var BlockchainMonitor = require('../lib/blockchainmonitor');
 
 var bcm = new BlockchainMonitor();

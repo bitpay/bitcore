@@ -7,9 +7,6 @@ var log = require('npmlog');
 log.debug = log.verbose;
 
 var config = require('../config');
-if (process.argv[2]) {
-  config = JSON.parse(process.argv[2]);
-}
 var EmailService = require('../lib/emailservice');
 
 var emailService = new EmailService();
