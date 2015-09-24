@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "async": "^0.9.0",
-    "bitcore": "0.13.0",
+    "bitcore": "^0.13.0",
     "bitcore-wallet-utils": "0.2.2",
     "body-parser": "^1.11.0",
     "coveralls": "^2.11.2",
