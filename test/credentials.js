@@ -82,6 +82,20 @@ describe('Credentials', function() {
     c.network.should.equal('testnet');
   });
 
+
+  it('Should lock before storing', function() {
+    var c = Credentials.createWithMnemonic('testnet');
+    c.setPrivateKeyEncryption('hola');
+    c.unlock('hola');
+    var o  = c.toObj();
+  
+    var c2 = Credentials.fromObj(o);
+    c2.isPrivKeyEncrypted().should.equal(true);
+    should.not.exist(c2.xPrivKey);
+  });
+
+
+
   it('Should return and clear mnemonic', function() {
     var c = Credentials.createWithMnemonic('testnet');
     should.exist(c.mnemonic);
