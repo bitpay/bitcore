@@ -63,33 +63,19 @@ describe('BlockHeader', function() {
       should.exist(bh.nonce);
     });
 
-    it('will throw an error if the argument object hash property doesn\'t match', function() {
-      (function() {
-        var bh = new BlockHeader({
-          hash: '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f',
-          version: version,
-          prevHash: prevblockidbuf,
-          merkleRoot: merklerootbuf,
-          time: time,
-          bits: bits,
-          nonce: nonce
-        });
-      }).should.throw('Argument object hash property does not match block hash.');
-    });
-
   });
 
-  describe('#fromObject', function() {
+  describe('#fromJSON', function() {
 
     it('should set all the variables', function() {
-      var bh = BlockHeader.fromObject({
+      var bh = BlockHeader.fromJSON(JSON.stringify({
         version: version,
         prevHash: prevblockidbuf.toString('hex'),
         merkleRoot: merklerootbuf.toString('hex'),
         time: time,
         bits: bits,
         nonce: nonce
-      });
+      }));
       should.exist(bh.version);
       should.exist(bh.prevHash);
       should.exist(bh.merkleRoot);
@@ -103,7 +89,7 @@ describe('BlockHeader', function() {
   describe('#toJSON', function() {
 
     it('should set all the variables', function() {
-      var json = bh.toJSON();
+      var json = JSON.parse(bh.toJSON());
       should.exist(json.version);
       should.exist(json.prevHash);
       should.exist(json.merkleRoot);
@@ -127,7 +113,7 @@ describe('BlockHeader', function() {
         nonce: nonce
       });
 
-      var json = new BlockHeader(JSON.parse(jsonString));
+      var json = new BlockHeader(jsonString);
       should.exist(json.version);
       should.exist(json.prevHash);
       should.exist(json.merkleRoot);
@@ -246,42 +232,6 @@ describe('BlockHeader', function() {
       x.nonce = nonce;
     });
 
-  });
-
-  describe('#getDifficulty', function() {
-    it('should get the correct difficulty for block 86756', function() {
-      var x = BlockHeader.fromRawBlock(dataRawBlockBuffer);
-      x.bits.should.equal(0x1c3fffc0);
-      x.getDifficulty().should.equal(4);
-    });
-
-    it('should get the correct difficulty for testnet block 552065', function() {
-      var x = new BlockHeader({
-        bits: 0x1b00c2a8
-      });
-      x.getDifficulty().should.equal(86187.62562209);
-    });
-
-    it('should get the correct difficulty for livenet block 373043', function() {
-      var x = new BlockHeader({
-        bits: 0x18134dc1
-      });
-      x.getDifficulty().should.equal(56957648455.01001);
-    });
-
-    it('should get the correct difficulty for livenet block 340000', function() {
-      var x = new BlockHeader({
-        bits: 0x1819012f
-      });
-      x.getDifficulty().should.equal(43971662056.08958);
-    });
-
-    it('should use exponent notation if difficulty is larger than Javascript number', function() {
-      var x = new BlockHeader({
-        bits: 0x0900c2a8
-      });
-      x.getDifficulty().should.equal(1.9220482782645836 * 1e48);
-    });
   });
 
   it('coverage: caches the "_id" property', function() {

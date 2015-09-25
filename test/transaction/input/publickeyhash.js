@@ -58,7 +58,8 @@ describe('PublicKeyHashInput', function() {
       .from(output)
       .to(address, 1000000);
     var input = transaction.inputs[0];
-    var signatures = input.getSignatures(transaction, new PrivateKey(), 0);
-    signatures.length.should.equal(0);
+
+    input.getSignatures(transaction, new PrivateKey(), 0);
+    input.isFullySigned().should.equal(false);
   });
 });

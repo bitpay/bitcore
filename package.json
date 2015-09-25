@@ -1,6 +1,6 @@
 {
   "name": "bitcore",
-  "version": "0.13.3",
+  "version": "0.12.14",
   "description": "A pure and powerful JavaScript Bitcoin library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -84,7 +84,7 @@
     "elliptic": "=3.0.3",
     "hash.js": "=1.0.2",
     "inherits": "=2.0.1",
-    "lodash": "=3.10.1",
+    "lodash": "=2.4.1",
     "sha512": "=0.0.1"
   },
   "devDependencies": {

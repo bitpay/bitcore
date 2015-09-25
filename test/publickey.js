@@ -169,7 +169,7 @@ describe('PublicKey', function() {
     });
   });
 
-  describe('#json/object', function() {
+  describe('#json', function() {
 
     it('should input/ouput json', function() {
       var json = JSON.stringify({
@@ -177,16 +177,15 @@ describe('PublicKey', function() {
         y: '7baad41d04514751e6851f5304fd243751703bed21b914f6be218c0fa354a341',
         compressed: false
       });
-      var pubkey = new PublicKey(JSON.parse(json));
-      JSON.stringify(pubkey).should.deep.equal(json);
+      PublicKey.fromJSON(json).toJSON().should.deep.equal(json);
     });
 
     it('fails if "y" is not provided', function() {
       expect(function() {
-        return new PublicKey({
-          x: '1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a'
-        });
+        return PublicKey.fromJSON('{"x": "1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a"}');
       }).to.throw();
+      // coverage
+      PublicKey._isJSON({x: '1ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a'}).should.equal(false);
     });
 
     it('fails if invalid JSON is provided', function() {

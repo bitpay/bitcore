@@ -27,12 +27,13 @@ describe('HDKeys building with static methods', function() {
       expect(clazz[staticMethod].bind(null, argument)).to.throw(message);
     };
     it(clazz.name + ' fromJSON checks that a valid JSON is provided', function() {
-      var errorMessage = 'Invalid Argument: No valid argument was provided';
-      var method = 'fromObject';
+      var errorMessage = 'No valid JSON string was provided';
+      var method = 'fromJSON';
       expectStaticMethodFail(method, undefined, errorMessage);
       expectStaticMethodFail(method, null, errorMessage);
       expectStaticMethodFail(method, 'invalid JSON', errorMessage);
       expectStaticMethodFail(method, '{\'singlequotes\': true}', errorMessage);
+      expectStaticMethodFail(method, {}, errorMessage);
     });
     it(clazz.name + ' fromString checks that a string is provided', function() {
       var errorMessage = 'No valid string was provided';
