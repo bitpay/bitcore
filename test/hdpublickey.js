@@ -24,31 +24,22 @@ var derived_0_1_200000 = 'xpub6BqyndF6rkBNTV6LXwiY8Pco8aqctqq7tGEUdA8fmGDTnDJphn
 describe('HDPublicKey interface', function() {
 
   var expectFail = function(func, errorType) {
-    var got = null;
-    var error = null;
-    try {
+    (function() {
       func();
-    } catch (e) {
-      error = e;
-      got = e instanceof errorType;
-    }
-    if (!error instanceof errorType) {
-      console.log('Error', typeof error);
-    }
-    // expect(got).to.equal(true);
+    }).should.throw(errorType);
   };
 
   var expectDerivationFail = function(argument, error) {
-    return expectFail(function() {
+    (function() {
       var pubkey = new HDPublicKey(xpubkey);
-      xpubkey.derive(argument);
-    }, error);
+      pubkey.derive(argument);
+    }).should.throw(error);
   };
 
   var expectFailBuilding = function(argument, error) {
-    return expectFail(function() {
+    (function() {
       return new HDPublicKey(argument);
-    }, error);
+    }).should.throw(error);
   };
 
   describe('creation formats', function() {
@@ -103,12 +94,12 @@ describe('HDPublicKey interface', function() {
     });
 
     it('can be generated from a json', function() {
-      expect(new HDPublicKey(json).xpubkey).to.equal(xpubkey);
+      expect(new HDPublicKey(JSON.parse(json)).xpubkey).to.equal(xpubkey);
     });
 
     it('can generate a json that has a particular structure', function() {
       assert(_.isEqual(
-        new HDPublicKey(json).toJSON(),
+        new HDPublicKey(JSON.parse(json)).toJSON(),
         new HDPublicKey(xpubkey).toJSON()
       ));
     });
@@ -187,10 +178,7 @@ describe('HDPublicKey interface', function() {
     };
     it('roundtrips to JSON and to Object', function() {
       var pubkey = new HDPublicKey(xpubkey);
-      expect(HDPublicKey.fromJSON(pubkey.toJSON()).xpubkey).to.equal(xpubkey);
-    });
-    it('recovers state from JSON', function() {
-      new HDPublicKey(JSON.stringify(plainObject)).xpubkey.should.equal(xpubkey);
+      expect(HDPublicKey.fromObject(pubkey.toJSON()).xpubkey).to.equal(xpubkey);
     });
     it('recovers state from Object', function() {
       new HDPublicKey(plainObject).xpubkey.should.equal(xpubkey);
@@ -228,55 +216,61 @@ describe('HDPublicKey interface', function() {
 
     it('doesn\'t allow other parameters like m\' or M\' or "s"', function() {
       /* jshint quotmark: double */
-      expectDerivationFail("m'", hdErrors.InvalidDerivationArgument);
-      expectDerivationFail("M'", hdErrors.InvalidDerivationArgument);
-      expectDerivationFail("1", hdErrors.InvalidDerivationArgument);
-      expectDerivationFail("S", hdErrors.InvalidDerivationArgument);
+      expectDerivationFail("m'", hdErrors.InvalidIndexCantDeriveHardened);
+      expectDerivationFail("M'", hdErrors.InvalidIndexCantDeriveHardened);
+      expectDerivationFail("1", hdErrors.InvalidPath);
+      expectDerivationFail("S", hdErrors.InvalidPath);
     });
 
     it('can\'t derive hardened keys', function() {
       expectFail(function() {
         return new HDPublicKey(xpubkey).derive(HDPublicKey.Hardened);
-      }, hdErrors.InvalidDerivationArgument);
+      }, hdErrors.InvalidIndexCantDeriveHardened);
     });
 
-  it('validates correct paths', function() {
-    var valid;
+    it('can\'t derive hardened keys via second argument', function() {
+      expectFail(function() {
+        return new HDPublicKey(xpubkey).derive(5, true);
+      }, hdErrors.InvalidIndexCantDeriveHardened);
+    });
 
-    valid = HDPublicKey.isValidPath('m/123/12');
-    valid.should.equal(true);
+    it('validates correct paths', function() {
+      var valid;
 
-    valid = HDPublicKey.isValidPath('m');
-    valid.should.equal(true);
+      valid = HDPublicKey.isValidPath('m/123/12');
+      valid.should.equal(true);
 
-    valid = HDPublicKey.isValidPath(123);
-    valid.should.equal(true);
-  });
+      valid = HDPublicKey.isValidPath('m');
+      valid.should.equal(true);
 
-  it('rejects illegal paths', function() {
-    var valid;
+      valid = HDPublicKey.isValidPath(123);
+      valid.should.equal(true);
+    });
 
-    valid = HDPublicKey.isValidPath('m/-1/12');
-    valid.should.equal(false);
+    it('rejects illegal paths', function() {
+      var valid;
 
-    valid = HDPublicKey.isValidPath("m/0'/12");
-    valid.should.equal(false);
+      valid = HDPublicKey.isValidPath('m/-1/12');
+      valid.should.equal(false);
 
-    valid = HDPublicKey.isValidPath("m/8000000000/12");
-    valid.should.equal(false);
+      valid = HDPublicKey.isValidPath("m/0'/12");
+      valid.should.equal(false);
 
-    valid = HDPublicKey.isValidPath('bad path');
-    valid.should.equal(false);
+      valid = HDPublicKey.isValidPath("m/8000000000/12");
+      valid.should.equal(false);
 
-    valid = HDPublicKey.isValidPath(-1);
-    valid.should.equal(false);
+      valid = HDPublicKey.isValidPath('bad path');
+      valid.should.equal(false);
 
-    valid = HDPublicKey.isValidPath(8000000000);
-    valid.should.equal(false);
+      valid = HDPublicKey.isValidPath(-1);
+      valid.should.equal(false);
 
-    valid = HDPublicKey.isValidPath(HDPublicKey.Hardened);
-    valid.should.equal(false);
-  });
+      valid = HDPublicKey.isValidPath(8000000000);
+      valid.should.equal(false);
+
+      valid = HDPublicKey.isValidPath(HDPublicKey.Hardened);
+      valid.should.equal(false);
+    });
 
     it('should use the cache', function() {
       var pubkey = new HDPublicKey(xpubkey);

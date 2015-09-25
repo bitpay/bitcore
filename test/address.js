@@ -445,18 +445,18 @@ describe('Address', function() {
 
   });
 
-  describe('#json', function() {
+  describe('#object', function() {
 
     it('roundtrip to-from-to', function() {
-      var json = new Address(str).toJSON();
-      var address = Address.fromJSON(json);
+      var obj = new Address(str).toObject();
+      var address = Address.fromObject(obj);
       address.toString().should.equal(str);
     });
 
-    it('checks that the string parameter is valid JSON', function() {
+    it('will fail with invalid state', function() {
       expect(function() {
-        return Address.fromJSON('¹');
-      }).to.throw();
+        return Address.fromObject('¹');
+      }).to.throw(bitcore.errors.InvalidState);
     });
   });
 

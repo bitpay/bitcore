@@ -198,7 +198,7 @@ describe('PrivateKey', function() {
 
   });
 
-  describe('#json', function() {
+  describe('#json/object', function() {
 
     it('should input/output json', function() {
       var json = JSON.stringify({
@@ -206,22 +206,19 @@ describe('PrivateKey', function() {
         compressed: false,
         network: 'livenet'
       });
-      PrivateKey.fromJSON(json).toJSON().should.deep.equal(json);
+      var key = PrivateKey.fromObject(JSON.parse(json));
+      JSON.stringify(key).should.equal(json);
     });
 
     it('input json should correctly initialize network field', function() {
       ['livenet', 'testnet', 'mainnet'].forEach(function (net) {
-        var pk = PrivateKey.fromJSON(JSON.stringify({
+        var pk = PrivateKey.fromObject({
           bn: '96c132224121b509b7d0a16245e957d9192609c5637c6228311287b1be21627a',
           compressed: false,
           network: net
-        }));
+        });
         pk.network.should.be.deep.equal(Networks.get(net));
       });
-    });
-
-    it('an object with private key info can be also used as argument for "fromJSON"', function() {
-      expect(PrivateKey._isJSON({bn: true, network: true})).to.equal(true);
     });
 
     it('fails on invalid argument', function() {
@@ -232,7 +229,7 @@ describe('PrivateKey', function() {
 
     it('also accepts an object as argument', function() {
       expect(function() {
-        return PrivateKey.fromJSON(new PrivateKey().toObject());
+        return PrivateKey.fromObject(new PrivateKey().toObject());
       }).to.not.throw();
     });
   });

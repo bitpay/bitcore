@@ -159,6 +159,19 @@ describe('Script', function() {
 
   });
 
+  describe('#fromASM', function() {
+    it('should parse this known script in ASM', function() {
+      var asm = 'OP_DUP OP_HASH160 f4c03610e60ad15100929cc23da2f3a799af1725 OP_EQUALVERIFY OP_CHECKSIG';
+      var script = Script.fromASM(asm);
+      script.chunks[0].opcodenum.should.equal(Opcode.OP_DUP);
+      script.chunks[1].opcodenum.should.equal(Opcode.OP_HASH160);
+      script.chunks[2].opcodenum.should.equal(20);
+      script.chunks[2].buf.toString('hex').should.equal('f4c03610e60ad15100929cc23da2f3a799af1725');
+      script.chunks[3].opcodenum.should.equal(Opcode.OP_EQUALVERIFY);
+      script.chunks[4].opcodenum.should.equal(Opcode.OP_CHECKSIG);
+    });
+  });
+
   describe('#fromString', function() {
 
     it('should parse these known scripts', function() {
@@ -189,6 +202,11 @@ describe('Script', function() {
       script.chunks[1].buf.toString('hex').should.equal('010203');
       script.chunks[2].opcodenum.should.equal(buf[buf.length - 1]);
       script.toString().toString('hex').should.equal('OP_0 OP_PUSHDATA4 3 0x010203 OP_0');
+    });
+
+    it('should output this known script as ASM', function() {
+      var script = Script.fromHex('76a914f4c03610e60ad15100929cc23da2f3a799af172588ac');
+      script.toASM().should.equal('OP_DUP OP_HASH160 f4c03610e60ad15100929cc23da2f3a799af1725 OP_EQUALVERIFY OP_CHECKSIG');
     });
 
   });
@@ -228,6 +246,16 @@ describe('Script', function() {
       var buf = new Buffer(81);
       buf.fill(0);
       Script('OP_RETURN OP_PUSHDATA1 81 0x' + buf.toString('hex')).isDataOut().should.equal(false);
+    });
+  });
+
+  describe('#isPublicKeyIn', function() {
+    it('correctly identify scriptSig as a public key in', function() {
+      // from txid: 5c85ed63469aa9971b5d01063dbb8bcdafd412b2f51a3d24abf2e310c028bbf8
+      // and input index: 5
+      var scriptBuffer = new Buffer('483045022050eb59c79435c051f45003d9f82865c8e4df5699d7722e77113ef8cadbd92109022100d4ab233e070070eb8e0e62e3d2d2eb9474a5bf135c9eda32755acb0875a6c20601', 'hex');
+      var script = bitcore.Script.fromBuffer(scriptBuffer);
+      script.isPublicKeyIn().should.equal(true);
     });
   });
 
@@ -463,7 +491,7 @@ describe('Script', function() {
     });
 
     it('should work for no data OP_RETURN', function() {
-      Script().add(Opcode.OP_RETURN).add(new Buffer('')).toString().should.equal('OP_RETURN 0');
+      Script().add(Opcode.OP_RETURN).add(new Buffer('')).toString().should.equal('OP_RETURN');
     });
     it('works with objects', function() {
       Script().add({
@@ -582,7 +610,7 @@ describe('Script', function() {
       var data = new Buffer('');
       var s = Script.buildDataOut(data);
       should.exist(s);
-      s.toString().should.equal('OP_RETURN 0');
+      s.toString().should.equal('OP_RETURN');
       s.isDataOut().should.equal(true);
     });
     it('should create script from some data', function() {
@@ -599,6 +627,13 @@ describe('Script', function() {
       s.toString().should.equal('OP_RETURN 14 0x68656c6c6f20776f726c64212121');
       s.isDataOut().should.equal(true);
     });
+    it('should create script from a hex string', function() {
+      var hexString = 'abcdef0123456789';
+      var s = Script.buildDataOut(hexString, 'hex');
+      should.exist(s);
+      s.toString().should.equal('OP_RETURN 8 0xabcdef0123456789');
+      s.isDataOut().should.equal(true);
+     });
   });
   describe('#buildScriptHashOut', function() {
     it('should create script from another script', function() {
