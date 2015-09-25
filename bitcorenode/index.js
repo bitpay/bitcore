@@ -9,7 +9,6 @@ var async = require('async');
 var path = require('path');
 var bitcore = require('bitcore');
 var Networks = bitcore.Networks;
-var mkdirp = require('mkdirp');
 var Locker = require('locker-server');
 var BlockchainMonitor = require('../lib/blockchainmonitor');
 var EmailService = require('../lib/emailservice');
@@ -20,6 +19,15 @@ var spawn = child_process.spawn;
 var EventEmitter = require('events').EventEmitter;
 var baseConfig = require('../config');
 
+/**
+ * A Bitcore Node Service module
+ * @param {Object} options
+ * @param {Node} options.node - A reference to the Bitcore Node instance
+-* @param {Boolean} options.https - Enable https for this module, defaults to node settings.
+ * @param {Number} options.bwsPort - Port for Bitcore Wallet Service API
+ * @param {Number} options.messageBrokerPort - Port for BWS message broker
+ * @param {Number} options.lockerPort - Port for BWS locker port
+ */
 var Service = function(options) {
   EventEmitter.call(this);
 
@@ -42,14 +50,15 @@ Service.dependencies = ['insight-api'];
 /**
  * This method will read `key` and `cert` files from disk based on `httpsOptions` and
  * return `serverOpts` with the read files.
+ * @returns {Object}
  */
-Service.prototype.readHttpsOptions = function() {
+Service.prototype._readHttpsOptions = function() {
   if(!this.httpsOptions || !this.httpsOptions.key || !this.httpsOptions.cert) {
     throw new Error('Missing https options');
   }
 
   var serverOpts = {};
-  serverOpts.key = fs.readFileSync(this.httpOptions.key);
+  serverOpts.key = fs.readFileSync(this.httpsOptions.key);
   serverOpts.cert = fs.readFileSync(this.httpsOptions.cert);
 
   // This sets the intermediate CA certs only if they have all been designated in the config.js
@@ -64,11 +73,13 @@ Service.prototype.readHttpsOptions = function() {
 };
 
 /**
- * Called by the node to start the service
+ * Will get the configuration with settings for the locally
+ * running Insight API.
+ * @returns {Object}
  */
-Service.prototype.start = function(done) {
-
+Service.prototype._getConfiguration = function() {
   var self = this;
+
   var providerOptions = {
     provider: 'insight',
     url: 'http://localhost:' + self.node.port,
@@ -87,61 +98,85 @@ Service.prototype.start = function(done) {
       testnet: providerOptions
     };
   } else {
-    return done(new Error('Unknown network'));
+    throw new Error('Unknown network');
   }
+
+  return baseConfig;
+
+};
+
+/**
+ * Will start the HTTP web server and socket.io for the wallet service.
+ */
+Service.prototype._startWalletService = function(config, next) {
+  var self = this;
+  var expressApp = new ExpressApp();
+  var wsApp = new WsApp();
+
+  if (self.https) {
+    var serverOpts = self._readHttpsOptions();
+    self.server = https.createServer(serverOpts, expressApp.app);
+  } else {
+    self.server = http.Server(expressApp.app);
+  }
+
+  async.parallel([
+    function(done) {
+      expressApp.start(config, done);
+    },
+    function(done) {
+      wsApp.start(self.server, config, done);
+    },
+  ], function(err) {
+    if (err) {
+      return next(err);
+    }
+    self.server.listen(self.bwsPort, next);
+  });
+};
+
+/**
+ * Called by the node to start the service
+ */
+Service.prototype.start = function(done) {
+
+  var self = this;
+  var config;
+  try {
+    config = self._getConfiguration();
+  } catch(err) {
+    return done(err);
+  }
+
+  // Locker Server
+  var locker = new Locker();
+  locker.listen(self.lockerPort);
+
+  // Message Broker
+  var messageServer = io(self.messageBrokerPort);
+  messageServer.on('connection', function(s) {
+    s.on('msg', function(d) {
+      messageServer.emit('msg', d);
+    });
+  });
 
   async.series([
     function(next) {
-      // Locker Server
-      var locker = new Locker();
-      locker.listen(self.lockerPort);
-
-      // Message Broker
-      var messageServer = io(self.messageBrokerPort);
-      messageServer.on('connection', function(s) {
-        s.on('msg', function(d) {
-          messageServer.emit('msg', d);
-        });
-      });
-
       // Blockchain Monitor
       var blockChainMonitor = new BlockchainMonitor();
-      blockChainMonitor.start(baseConfig, next);
+      blockChainMonitor.start(config, next);
     },
     function(next) {
-      if (baseConfig.emailOpts) {
+      // Email Service
+      if (config.emailOpts) {
         var emailService = new EmailService();
-        emailService.start(baseConfig, next);
+        emailService.start(config, next);
       } else {
         setImmediate(next);
       }
     },
     function(next) {
-
-      var expressApp = new ExpressApp();
-      var wsApp = new WsApp();
-
-      if (self.https) {
-        var serverOpts = self.readHttpsOptions();
-        self.server = https.createServer(serverOpts, expressApp.app);
-      } else {
-        self.server = http.Server(expressApp.app);
-      }
-
-      async.parallel([
-        function(done) {
-          expressApp.start(baseConfig, done);
-        },
-        function(done) {
-          wsApp.start(self.server, baseConfig, done);
-        },
-      ], function(err) {
-        if (err) {
-          return next(err);
-        }
-        self.server.listen(self.bwsPort, next);
-      });
-
+      self._startWalletService(config, next);
     }
   ], done);
 
