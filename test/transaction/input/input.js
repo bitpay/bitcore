@@ -76,15 +76,14 @@ describe('Transaction.Input', function() {
         input.toString();
       }).to.throw('Need a script to create an input');
     });
-    it('fromObject should work', function() {
-      var jsonData = JSON.parse(coinbaseJSON);
-      var input = Input.fromObject(jsonData);
+    it('fromJSON should work', function() {
+      var input = Input.fromJSON(coinbaseJSON);
+      var otherInput = Input.fromJSON(otherJSON);
       should.exist(input);
-      input.prevTxId.toString('hex').should.equal(jsonData.prevTxId);
-      input.outputIndex.should.equal(jsonData.outputIndex);
+      should.exist(otherInput);
     });
     it('fromObject should work', function() {
-      var input = Input.fromObject(JSON.parse(coinbaseJSON));
+      var input = Input.fromJSON(coinbaseJSON);
       var obj = input.toObject();
       Input.fromObject(obj).should.deep.equal(input);
       obj.script = 42;

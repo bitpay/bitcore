@@ -104,7 +104,7 @@ Run all the tests:
 gulp test
 ```
 
-You can also run just the Node.js tests with `gulp test:node`, just the browser tests with `gulp test:browser`
+You can also run just the NodeJS tests with `gulp test:node`, just the browser tests with `gulp test:browser`
 or create a test coverage report (you can open `coverage/lcov-report/index.html` to visualize it) with `gulp coverage`.
 
 ## License

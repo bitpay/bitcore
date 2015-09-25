@@ -157,8 +157,8 @@ describe('Unit', function() {
 
   it('can be imported and exported from/to JSON', function() {
     var json = JSON.stringify({amount:1.3, code:'BTC'});
-    var unit = Unit.fromObject(JSON.parse(json));
-    JSON.stringify(unit).should.deep.equal(json);
+    var unit = Unit.fromJSON(json);
+    unit.toJSON().should.deep.equal(json);
   });
 
   it('importing from invalid JSON fails quickly', function() {

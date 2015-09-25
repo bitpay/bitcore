@@ -63,10 +63,8 @@ describe('Transaction', function() {
   });
 
   it('serialize to Object roundtrip', function() {
-    var a = testTransaction.toObject();
-    var newTransaction = new Transaction(a);
-    var b = newTransaction.toObject();
-    a.should.deep.equal(b);
+    new Transaction(testTransaction.toObject()).uncheckedSerialize()
+      .should.equal(testTransaction.uncheckedSerialize());
   });
 
   it('constructor returns a shallow copy of another transaction', function() {
@@ -578,7 +576,7 @@ describe('Transaction', function() {
     it('serializes the `change` information', function() {
       var transaction = new Transaction();
       transaction.change(changeAddress);
-      expect(transaction.toJSON().changeScript).to.equal(Script.fromAddress(changeAddress).toString());
+      expect(JSON.parse(transaction.toJSON()).changeScript).to.equal(Script.fromAddress(changeAddress).toString());
       expect(new Transaction(transaction.toJSON()).uncheckedSerialize()).to.equal(transaction.uncheckedSerialize());
     });
     it('serializes correctly p2sh multisig signed tx', function() {
@@ -748,40 +746,6 @@ describe('Transaction', function() {
         return new Transaction().lockUntilBlockHeight(-1);
       }).to.throw(errors.Transaction.NLockTimeOutOfRange);
     });
-    it('has a non-max sequenceNumber for effective date locktime tx', function() {
-      var transaction = new Transaction()
-        .from(simpleUtxoWith1BTC)
-        .lockUntilDate(date);
-      transaction.inputs[0].sequenceNumber
-        .should.equal(Transaction.Input.DEFAULT_LOCKTIME_SEQNUMBER);
-    });
-    it('has a non-max sequenceNumber for effective blockheight locktime tx', function() {
-      var transaction = new Transaction()
-        .from(simpleUtxoWith1BTC)
-        .lockUntilBlockHeight(blockHeight);
-      transaction.inputs[0].sequenceNumber
-        .should.equal(Transaction.Input.DEFAULT_LOCKTIME_SEQNUMBER);
-    });
-    it('should serialize correctly for date locktime ', function() {
-      var transaction= new Transaction()
-        .from(simpleUtxoWith1BTC)
-        .lockUntilDate(date);
-      var serialized_tx = transaction.uncheckedSerialize();
-      var copy = new Transaction(serialized_tx);
-      serialized_tx.should.equal(copy.uncheckedSerialize());
-      copy.inputs[0].sequenceNumber
-      .should.equal(Transaction.Input.DEFAULT_LOCKTIME_SEQNUMBER)
-    });
-    it('should serialize correctly for a block height locktime', function() {
-      var transaction= new Transaction()
-        .from(simpleUtxoWith1BTC)
-        .lockUntilBlockHeight(blockHeight);
-      var serialized_tx = transaction.uncheckedSerialize();
-      var copy = new Transaction(serialized_tx);
-      serialized_tx.should.equal(copy.uncheckedSerialize());
-      copy.inputs[0].sequenceNumber
-      .should.equal(Transaction.Input.DEFAULT_LOCKTIME_SEQNUMBER)
-    });
   });
 
   it('handles anyone-can-spend utxo', function() {
@@ -793,17 +757,8 @@ describe('Transaction', function() {
 
   it('handles unsupported utxo in tx object', function() {
     var transaction = new Transaction();
-    transaction.fromObject.bind(transaction, JSON.parse(unsupportedTxObj))
+    transaction.fromJSON.bind(transaction, unsupportedTxObj)
       .should.throw('Unsupported input script type: OP_1 OP_ADD OP_2 OP_EQUAL');
-  });
-
-  it('will error if object hash does not match transaction hash', function() {
-    var tx = new Transaction(tx_1_hex);
-    var txObj = tx.toObject();
-    txObj.hash = 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458';
-    (function() {
-      var tx2 = new Transaction(txObj);
-    }).should.throw('Hash in object does not match transaction hash');
   });
 
   describe('inputAmount + outputAmount', function() {
