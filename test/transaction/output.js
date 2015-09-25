@@ -94,8 +94,8 @@ describe('Output', function() {
     expectEqualOutputs(output, deserialized);
   });
 
-  it('can instantiate from JSON', function() {
-    var out = new Output(JSON.stringify(output.toObject()));
+  it('can instantiate from an object', function() {
+    var out = new Output(output.toObject());
     should.exist(out);
   });
 
@@ -161,9 +161,9 @@ describe('Output', function() {
   });
 
   it('roundtrips to/from JSON', function() {
-    var json = output2.toJSON();
-    var o3 = new Output(json);
-    o3.toJSON().should.equal(json);
+    var json = JSON.stringify(output2);
+    var o3 = new Output(JSON.parse(json));
+    JSON.stringify(o3).should.equal(json);
   });
 
   it('setScript fails with invalid input', function() {
