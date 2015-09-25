@@ -25,7 +25,7 @@ describe('Block', function() {
   var bh = BlockHeader.fromBuffer(new Buffer(data.blockheaderhex, 'hex'));
   var txs = [];
   JSON.parse(dataJson).transactions.forEach(function(tx) {
-    txs.push(new Transaction().fromJSON(tx));
+    txs.push(new Transaction().fromObject(tx));
   });
   var json = dataJson;
 
@@ -86,14 +86,13 @@ describe('Block', function() {
   describe('#fromJSON', function() {
 
     it('should set these known values', function() {
-      var block = Block.fromJSON(json);
+      var block = Block.fromObject(JSON.parse(json));
       should.exist(block.header);
       should.exist(block.transactions);
     });
 
     it('should set these known values', function() {
-
-      var block = Block(json);
+      var block = new Block(JSON.parse(json));
       should.exist(block.header);
       should.exist(block.transactions);
     });
@@ -103,8 +102,8 @@ describe('Block', function() {
   describe('#toJSON', function() {
 
     it('should recover these known values', function() {
-      var block = Block.fromJSON(json);
-      var b = JSON.parse(block.toJSON());
+      var block = Block.fromObject(JSON.parse(json));
+      var b = block.toJSON();
       should.exist(b.header);
       should.exist(b.transactions);
     });
@@ -175,6 +174,7 @@ describe('Block', function() {
       block.id.should.equal(blockOneId);
       block.toObject().should.deep.equal({
         header: {
+          hash: '00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048',
           version: 1,
           prevHash: '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f',
           merkleRoot: '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098',
@@ -183,6 +183,7 @@ describe('Block', function() {
           nonce: 2573394689
         },
         transactions: [{
+          hash: '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098',
           version: 1,
           inputs: [{
             prevTxId: '0000000000000000000000000000000000000000000000000000000000000000',

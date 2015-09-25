@@ -3,13 +3,20 @@ Contributing to Bitcore
 
 We're working hard to make *bitcore* the most powerful JavaScript library for working with bitcoin. Our goal is to have *bitcore* be a library that can be used by anyone interested in bitcoin, and to level expertise differences with great design and documentation.
 
+## Community
+
+If there are any questions, etc., please feel to ask in one of the community channels:
+
+- https://labs.bitpay.com/c/bitcore (Support Forum)
+- https://gitter.im/bitpay/bitcore (Development Chat)
+
 ## Quick Checklist
 
-Make sure:
+Ideally, please make sure to run:
 
+* `gulp test` passes all the tests (We run tests against Node.js v0.10, v0.12, io.js, and modern browsers)
+* `gulp coverage` covers 100% of the branches of your code (See `coverage/lcov-report/index.html` for details)
 * `gulp lint` doesn't complain about your changes
-* `gulp test` passes all the tests
-* `gulp coverage` covers 100% of the branches of your code
 
 ## Design Guidelines
 
@@ -85,15 +92,27 @@ var bufferUtil = require('./util/buffer');
 #### G7 - Standard Methods
 
 When possible, bitcore objects should have standard methods on an instance prototype:
-* `toObject` - A plain JavaScript object that can be JSON stringified
-* `toJSON` - A JSON stringified object of the instance
+* `toObject/toJSON` - A plain JavaScript object that `JSON.stringify` can call
 * `toString` - A string representation of the instance
 * `toBuffer` - A hex Buffer
 
 These should have a matching static method that can be used for instantiation:
-* `fromJSON` - Should handle both JSON from `toJSON` and plain JavaScript object from `toObject`
+* `fromObject` - Should be able to instatiate with the output from `toObject/toJSON`
 * `fromString` - Should be able to instantiate with output from `toString`
 * `fromBuffer` - Should likewise be able to instantiate from output from `toBuffer`
+
+`JSON.stringify` and `JSON.parse` are expected to be handled outside of the scope of Bitcore methods. For example, calling `JSON.stringify` on an Bitcore object will behave as expected and call `transaction.toJSON()` and then stringify it:
+
+```javascript
+var transactionString = JSON.stringify(transaction);
+```
+
+Likewise to instantiate a transaction from that string:
+
+```javascript
+var data = JSON.parse(transactionString);
+var tx = new Transaction(data);
+```
 
 ### Errors
 

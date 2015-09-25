@@ -27,12 +27,13 @@ module.exports = {
   JSON: [
     { // Mainnet Block 100014
       header: {
+        hash: "000000000000b731f2eef9e8c63173adfb07e41bd53eb0ef0a6b720d6cb6dea4",
         version: 1,
         prevHash: "0000000000016780c81d42b7eff86974c36f5ae026e8662a4393a7f39c86bb82",
         merkleRoot: "8772d9d0fdf8c1303c7b1167e3c73b095fd970e33c799c6563d98b2e96c5167f",
         time: 1293629558,
         bits: 453281356,
-        nonce: 151839121
+        nonce: 696601429
       },
       numTransactions: 7,
       hashes: [
@@ -45,6 +46,7 @@ module.exports = {
     },
     { // Mainnet Block 12363
       header: {
+        hash: "00000000ae81d8be56fcad40f7b2ca03612a9ab681ca5bc6628ab3c2d914ef9a",
         version: 1,
         prevHash: "00000000acc3e6a055e05edc7cd0cfac6187cd73adc3c06d408d05c95edaaef8",
         merkleRoot: "67313e7a73b62faffe9380578a1a96727c1f0af62e61eb8aa050064007a008d0",
@@ -443,6 +445,7 @@ module.exports = {
         "036bf6944a47791471e9a2cb86615de837f3aa234a7d1cd024026b3e1daee79e"
       ],
       header : {
+        hash: "00000000000000018eaf634bf13b7e5e50860b99466b91140538223c75b75049",
         prevHash : "000000000000000124f6ce137a43bb288d63cc84f9847033cb84595ead05f9de",
         merkleRoot : "792f40129c95aec653d2838ef4b031bf541f11c764ca6c3ecc2e20b396ce83cb",
         time : 1389715824,

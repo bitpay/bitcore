@@ -1,6 +1,6 @@
 {
   "name": "bitcore",
-  "version": "0.12.14",
+  "version": "0.13.3",
   "dependencies": {
     "bn.js": {
       "version": "2.0.4",
@@ -35,9 +35,9 @@
       "resolved": "https://registry.npmjs.org/inherits/-/inherits-2.0.1.tgz"
     },
     "lodash": {
-      "version": "2.4.1",
-      "from": "lodash@=2.4.1",
-      "resolved": "https://registry.npmjs.org/lodash/-/lodash-2.4.1.tgz"
+      "version": "3.10.1",
+      "from": "lodash@=3.10.1",
+      "resolved": "https://registry.npmjs.org/lodash/-/lodash-3.10.1.tgz"
     },
     "sha512": {
       "version": "0.0.1",
