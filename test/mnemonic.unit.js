@@ -177,15 +177,21 @@ describe('Mnemonic', function() {
       }).should.throw(errors.InvalidEntropy);
     });
 
-    var vectors = bip39_vectors;
-    var vector_wordlists = {
-      "english": Mnemonic.Words.ENGLISH,
-      "japanese": Mnemonic.Words.JAPANESE
-    };
+    // To add new vectors for different languages:
+    // 1. Add and implement the wordlist so it appears in Mnemonic.Words
+    // 2. Add the vectors and make sure the key is lowercase of the key for Mnemonic.Words
+    var vector_wordlists = {};
+
+    for(var key in Mnemonic.Words) {
+      if (Mnemonic.Words.hasOwnProperty(key)) {
+        vector_wordlists[key.toLowerCase()] = Mnemonic.Words[key];
+      }
+    }
+
     var test_vector = function(v, lang) {
-      it('should pass test vector ' + v, function() {
+      it('should pass test vector for ' + lang + ' #' + v, function() {
         var wordlist = vector_wordlists[lang];
-        var vector = vectors[lang][v];
+        var vector = bip39_vectors[lang][v];
         var code = vector[1];
         var mnemonic = vector[2];
         var seed = vector[3];
@@ -199,11 +205,13 @@ describe('Mnemonic', function() {
         Mnemonic.isValid(mnemonic, wordlist).should.equal(true);
       });
     };
-    for (var v = 0; v < vectors["english"].length; v++) {
-      test_vector(v, "english");
-    }
-    for (var v = 0; v < vectors["japanese"].length; v++) {
-      test_vector(v, "japanese");
+
+    for(var key in bip39_vectors) {
+      if (bip39_vectors.hasOwnProperty(key)) {
+        for (var v = 0; v < bip39_vectors[key].length; v++) {
+          test_vector(v, key);
+        }
+      }
     }
 
   });
