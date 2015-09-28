@@ -10,7 +10,7 @@ program
 
 var args = program.args;
 utils.getClient(program, { mustExist: true }, function (client) {
-  client.getStatus(function(err, res) {
+  client.getStatus({}, function(err, res) {
     utils.die(err);
 
     var x = res.wallet;
