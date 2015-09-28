@@ -12,8 +12,7 @@ program
 
 var args = program.args;
 utils.getClient(program, { mustExist: true }, function (client) {
-  var client = utils.getClient(program);
-  client.recreateWallet(walletName, function(err) {
+  client.recreateWallet(function(err) {
     utils.die(err);
     console.log(' *  Wallet created.');
   });
