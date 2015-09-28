@@ -1123,6 +1123,8 @@ describe('client API', function() {
             }, function(err, addr) {
               should.not.exist(err);
               addr.length.should.equal(2);
+              addr[0].path.should.equal("m/44'/1'/0'/0/0");
+              addr[1].path.should.equal("m/44'/1'/0'/0/1");
               done();
             });
           });
