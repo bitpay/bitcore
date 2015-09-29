@@ -62,6 +62,12 @@ describe('Transaction', function() {
     testTransaction.getFee().should.equal(10000);
   });
 
+  it('will return zero as the fee for a coinbase', function() {
+    // block #2: 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098
+    var coinbaseTransaction = new Transaction('01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d0104ffffffff0100f2052a0100000043410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac00000000');
+    coinbaseTransaction.getFee().should.equal(0);
+  });
+
   it('serialize to Object roundtrip', function() {
     var a = testTransaction.toObject();
     var newTransaction = new Transaction(a);
