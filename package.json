@@ -68,6 +68,7 @@
     "bip21",
     "bip32",
     "bip37",
+    "bip39",
     "bip70",
     "multisig"
   ],

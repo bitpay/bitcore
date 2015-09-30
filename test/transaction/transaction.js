@@ -10,6 +10,8 @@ var sinon = require('sinon');
 var bitcore = require('../..');
 var BN = bitcore.crypto.BN;
 var Transaction = bitcore.Transaction;
+var Input = bitcore.Transaction.Input;
+var Output = bitcore.Transaction.Output;
 var PrivateKey = bitcore.PrivateKey;
 var Script = bitcore.Script;
 var Address = bitcore.Address;
@@ -977,8 +979,55 @@ describe('Transaction', function() {
       tx.outputs[1].script.toString().should.equal('OP_0');
       tx.outputs[2].script.toString().should.equal('0x01');
     });
+
+    describe('bitcoinjs fixtures', function() {
+
+      var fixture = require('../data/bip69.json');
+
+      // returns index-based order of sorted against original
+      var getIndexOrder = function(original, sorted) {
+        return sorted.map(function (value) {
+          return original.indexOf(value);
+        });
+      };
+
+      fixture.inputs.forEach(function(inputSet) {
+        it(inputSet.description, function() {
+          var tx = new Transaction();
+          inputSet.inputs = inputSet.inputs.map(function(input) {
+            var input = new Input({
+              prevTxId: input.txId,
+              outputIndex: input.vout,
+              script: new Script(),
+              output: new Output({ script: new Script(), satoshis: 0 })
+            });
+            input.clearSignatures = function () {};
+            return input;
+          });
+          tx.inputs = inputSet.inputs;
+          tx.sort();
+          getIndexOrder(inputSet.inputs, tx.inputs).should.deep.equal(inputSet.expected);
+        });
+      });
+      fixture.outputs.forEach(function(outputSet) {
+        it(outputSet.description, function() {
+          var tx = new Transaction();
+          outputSet.outputs = outputSet.outputs.map(function(output) {
+            return new Output({
+              script: new Script(output.script),
+              satoshis: output.value
+            });
+          });
+          tx.outputs = outputSet.outputs;
+          tx.sort();
+          getIndexOrder(outputSet.outputs, tx.outputs).should.deep.equal(outputSet.expected);
+        });
+      });
+
+    });
   });
 });
+
 
 var tx_empty_hex = '01000000000000000000';
 
