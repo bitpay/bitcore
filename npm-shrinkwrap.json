@@ -12,6 +12,11 @@
       "from": "bs58@=2.0.0",
       "resolved": "https://registry.npmjs.org/bs58/-/bs58-2.0.0.tgz"
     },
+    "buffer-compare": {
+      "version": "1.0.0",
+      "from": "buffer-compare@=1.0.0",
+      "resolved": "https://registry.npmjs.org/buffer-compare/-/buffer-compare-1.0.0.tgz"
+    },
     "elliptic": {
       "version": "3.0.3",
       "from": "elliptic@=3.0.3",
