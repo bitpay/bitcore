@@ -3043,7 +3043,7 @@ describe('client API', function() {
         });
       });
     });
-    it.only('should fail to build tx for single private key if insufficient funds', function(done) {
+    it('should fail to build tx for single private key if insufficient funds', function(done) {
       var address = {
         address: '1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3',
         type: 'P2PKH',
@@ -3054,7 +3054,7 @@ describe('client API', function() {
           fee: 500
         }, function(err, tx) {
           should.exist(err);
-          err.message.should.equal('Insufficient funds');
+          err.code.should.equal('INSUFFICIENT_FUNDS');
           done();
         });
       });
