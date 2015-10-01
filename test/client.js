@@ -3043,5 +3043,21 @@ describe('client API', function() {
         });
       });
     });
+    it.only('should fail to build tx for single private key if insufficient funds', function(done) {
+      var address = {
+        address: '1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3',
+        type: 'P2PKH',
+      };
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
+        blockchainExplorerMock.setUtxo(address, 123 / 1e8, 1);
+        clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', '1GG3JQikGC7wxstyavUBDoCJ66bWLLENZC', {
+          fee: 500
+        }, function(err, tx) {
+          should.exist(err);
+          err.message.should.equal('Insufficient funds');
+          done();
+        });
+      });
+    });
   });
 });
