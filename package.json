@@ -34,7 +34,8 @@
     "bitcore-build": "git://github.com/bitpay/bitcore-build.git",
     "brfs": "^1.2.0",
     "chai": "^1.10.0",
-    "gulp": "^3.8.10"
+    "gulp": "^3.8.10",
+    "mocha": "^2.2.5"
   },
   "dependencies": {
     "bitcore": "^0.13.0",
