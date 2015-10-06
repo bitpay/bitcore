@@ -26,9 +26,9 @@ describe('Bitcore Node Service', function() {
         key: 'key',
         cert: 'cert'
       });
-      service.bwsPort.should.equal(Service.BWS_PORT);
-      service.messageBrokerPort.should.equal(Service.MESSAGE_BROKER_PORT);
-      service.lockerPort.should.equal(Service.LOCKER_PORT);
+      service.bwsPort.should.equal(3232);
+      service.messageBrokerPort.should.equal(3380);
+      service.lockerPort.should.equal(3231);
     });
     it('direct https options', function() {
       var node = {};
@@ -46,9 +46,9 @@ describe('Bitcore Node Service', function() {
         key: 'key',
         cert: 'cert'
       });
-      service.bwsPort.should.equal(Service.BWS_PORT);
-      service.messageBrokerPort.should.equal(Service.MESSAGE_BROKER_PORT);
-      service.lockerPort.should.equal(Service.LOCKER_PORT);
+      service.bwsPort.should.equal(3232);
+      service.messageBrokerPort.should.equal(3380);
+      service.lockerPort.should.equal(3231);
     });
     it('can set custom ports', function() {
       var node = {};

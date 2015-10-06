@@ -34,16 +34,15 @@ var Service = function(options) {
   this.node = options.node;
   this.https = options.https || this.node.https;
   this.httpsOptions = options.httpsOptions || this.node.httpsOptions;
-  this.bwsPort = options.bwsPort || Service.BWS_PORT;
-  this.messageBrokerPort = options.messageBrokerPort || Service.MESSAGE_BROKER_PORT;
-  this.lockerPort = options.lockerPort || Service.LOCKER_PORT;
+  this.bwsPort = options.bwsPort || baseConfig.port;
+  this.messageBrokerPort = options.messageBrokerPort || 3380;
+  if (baseConfig.lockOpts) {
+    this.lockerPort = baseConfig.lockOpts.lockerServer.port;
+  }
+  this.lockerPort = options.lockerPort || this.lockerPort;
 };
 
 util.inherits(Service, EventEmitter);
-
-Service.BWS_PORT = 3232;
-Service.MESSAGE_BROKER_PORT = 3380;
-Service.LOCKER_PORT = 3231;
 
 Service.dependencies = ['insight-api'];
 
