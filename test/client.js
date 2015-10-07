@@ -60,7 +60,9 @@ helpers.newDb = function() {
 };
 
 helpers.createAndJoinWallet = function(clients, m, n, cb) {
-  clients[0].seedFromRandomWithMnemonic('testnet');
+  clients[0].seedFromRandomWithMnemonic({
+    network: 'testnet'
+  });
   clients[0].createWallet('wallet name', 'creator', m, n, {
       network: 'testnet'
     },
@@ -75,7 +77,9 @@ helpers.createAndJoinWallet = function(clients, m, n, cb) {
 
           function(next) {
             async.each(_.range(1, n), function(i, cb) {
-              clients[i].seedFromRandomWithMnemonic('testnet');
+              clients[i].seedFromRandomWithMnemonic({
+                network: 'testnet'
+              });
               clients[i].joinWallet(secret, 'copayer ' + i, {}, cb);
             }, next);
           },
@@ -637,7 +641,7 @@ describe('client API', function() {
     });
 
     it('should create a 1-1 wallet with random mnemonic', function(done) {
-      clients[0].seedFromRandomWithMnemonic('livenet');
+      clients[0].seedFromRandomWithMnemonic();
       clients[0].createWallet('wallet name', 'creator', 1, 1, {
           network: 'livenet'
         },
@@ -646,6 +650,7 @@ describe('client API', function() {
           clients[0].openWallet(function(err) {
             should.not.exist(err);
             should.not.exist(err);
+            clients[0].credentials.network.should.equal('livenet');
             clients[0].getMnemonic().split(' ').length.should.equal(12);
             done();
           });
@@ -2049,12 +2054,13 @@ describe('client API', function() {
         var walletId = c.walletId;
         var walletName = c.walletName;
         var copayerName = c.copayerName;
-        var network = c.network;
         var key = c.xPrivKey;
 
         var exported = clients[0].getMnemonic();
         importedClient = helpers.newClient(app);
-        importedClient.importFromMnemonic(exported, network, {}, function(err) {
+        importedClient.importFromMnemonic(exported, {
+          network: c.network,
+        }, function(err) {
           var c2 = importedClient.credentials;
           c2.xPrivKey.should.equal(key);
           should.not.exist(err);
@@ -2090,11 +2096,37 @@ describe('client API', function() {
 
     describe('Mnemonic related tests', function() {
       var importedClient;
+
+      it('should import with mnemonics livenet', function(done) {
+        var client = helpers.newClient(app);
+        client.seedFromRandomWithMnemonic();
+        var exported = client.getMnemonic();
+        client.createWallet('wallet name', 'creator', 1, 1, {
+          network: 'livenet'
+        }, function(err) {
+          should.not.exist(err);
+          var c = client.credentials;
+          importedClient = helpers.newClient(app);
+          importedClient.importFromMnemonic(exported, {}, function(err) {
+            should.not.exist(err);
+            var c2 = importedClient.credentials;
+            c2.network.should.equal('livenet');
+            c2.xPubKey.should.equal(client.credentials.xPubKey);
+            c2.personalEncryptingKey.should.equal(c.personalEncryptingKey);
+            c2.walletId.should.equal(c.walletId);
+            c2.walletName.should.equal(c.walletName);
+            c2.copayerName.should.equal(c.copayerName);
+            done();
+          });
+        });
+      });
       // Generated with https://dcpos.github.io/bip39/
       it('should fail to import from words if not at BWS', function(done) {
         var exported = 'bounce tonight little spy earn void nominee ankle walk ten type update';
         importedClient = helpers.newClient(app);
-        importedClient.importFromMnemonic(exported, 'testnet', {}, function(err) {
+        importedClient.importFromMnemonic(exported, {
+          network: 'testnet',
+        }, function(err) {
           err.code.should.contain('WALLET_DOES_NOT_EXIST');
           importedClient.mnemonicHasPassphrase().should.equal(false);
           importedClient.credentials.xPrivKey.should.equal('tprv8ZgxMBicQKsPdTYGTn3cPvTJJuuKHCYbfH1fbu4ceZ5tzYrcjYMKY1JfZiEFDDpEXWquSpX6jRsEoVPoaSw82tQ1Wn1U3K1bQDZBj3UGuEG');
@@ -2104,7 +2136,8 @@ describe('client API', function() {
       it('should fail to import from words if not at BWS, with passphrase', function(done) {
         var exported = 'bounce tonight little spy earn void nominee ankle walk ten type update';
         importedClient = helpers.newClient(app);
-        importedClient.importFromMnemonic(exported, 'testnet', {
+        importedClient.importFromMnemonic(exported, {
+          network: 'testnet',
           passphrase: 'hola',
         }, function(err) {
           err.code.should.contain('WALLET_DOES_NOT_EXIST');
@@ -2373,7 +2406,9 @@ describe('client API', function() {
   describe('Air gapped related flows', function() {
     it('should create wallet in proxy from airgapped', function(done) {
       var airgapped = new Client();
-      airgapped.seedFromRandom('testnet');
+      airgapped.seedFromRandom({
+        network: 'testnet'
+      });
       var exported = airgapped.export({
         noSign: true
       });
@@ -2397,7 +2432,9 @@ describe('client API', function() {
     });
     it('should fail to create wallet in proxy from airgapped when networks do not match', function(done) {
       var airgapped = new Client();
-      airgapped.seedFromRandom('testnet');
+      airgapped.seedFromRandom({
+        network: 'testnet'
+      });
       var exported = airgapped.export({
         noSign: true
       });
@@ -2418,7 +2455,9 @@ describe('client API', function() {
     });
     it('should be able to sign from airgapped client and broadcast from proxy', function(done) {
       var airgapped = new Client();
-      airgapped.seedFromRandom('testnet');
+      airgapped.seedFromRandom({
+        network: 'testnet'
+      });
       var exported = airgapped.export({
         noSign: true
       });
@@ -2497,7 +2536,9 @@ describe('client API', function() {
 
       beforeEach(function(done) {
         airgapped = new Client();
-        airgapped.seedFromRandom('testnet');
+        airgapped.seedFromRandom({
+          network: 'testnet'
+        });
         var exported = airgapped.export({
           noSign: true
         });
@@ -2787,7 +2828,9 @@ describe('client API', function() {
 
     beforeEach(function(done) {
       c1 = clients[1];
-      clients[1].seedFromRandomWithMnemonic('testnet');
+      clients[1].seedFromRandomWithMnemonic({
+        network: 'testnet'
+      });
       clients[1].createWallet('wallet name', 'creator', 1, 1, {
         network: 'testnet',
       }, function() {
@@ -2837,7 +2880,9 @@ describe('client API', function() {
 
     it('should prevent to encrypt airgapped\'s proxy credentials', function() {
       var airgapped = new Client();
-      airgapped.seedFromRandom('testnet');
+      airgapped.seedFromRandom({
+        network: 'testnet'
+      });
       var exported = airgapped.export({
         noSign: true
       });
