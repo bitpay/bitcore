@@ -81,7 +81,7 @@ Service.prototype._getConfiguration = function() {
 
   var providerOptions = {
     provider: 'insight',
-    url: 'http://localhost:' + self.node.port,
+    url: (self.node.https ? 'https://' : 'http://') + 'localhost:' + self.node.port,
     apiPrefix: '/insight-api'
   };
 
