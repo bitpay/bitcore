@@ -1963,9 +1963,7 @@ describe('client API', function() {
 
         var exported = clients[0].getMnemonic();
         importedClient = helpers.newClient(app);
-        importedClient.importFromMnemonic(exported, {
-          network: network,
-        }, function(err) {
+        importedClient.importFromMnemonic(exported, network, {}, function(err) {
           var c2 = importedClient.credentials;
           c2.xPrivKey.should.equal(key);
           should.not.exist(err);
@@ -2005,9 +2003,7 @@ describe('client API', function() {
       it('should fail to import from words if not at BWS', function(done) {
         var exported = 'bounce tonight little spy earn void nominee ankle walk ten type update';
         importedClient = helpers.newClient(app);
-        importedClient.importFromMnemonic(exported, {
-          network: 'testnet',
-        }, function(err) {
+        importedClient.importFromMnemonic(exported, 'testnet', {}, function(err) {
           err.code.should.contain('WALLET_DOES_NOT_EXIST');
           importedClient.mnemonicHasPassphrase().should.equal(false);
           importedClient.credentials.xPrivKey.should.equal('tprv8ZgxMBicQKsPdTYGTn3cPvTJJuuKHCYbfH1fbu4ceZ5tzYrcjYMKY1JfZiEFDDpEXWquSpX6jRsEoVPoaSw82tQ1Wn1U3K1bQDZBj3UGuEG');
@@ -2017,8 +2013,7 @@ describe('client API', function() {
       it('should fail to import from words if not at BWS, with passphrase', function(done) {
         var exported = 'bounce tonight little spy earn void nominee ankle walk ten type update';
         importedClient = helpers.newClient(app);
-        importedClient.importFromMnemonic(exported, {
-          network: 'testnet',
+        importedClient.importFromMnemonic(exported, 'testnet', {
           passphrase: 'hola',
         }, function(err) {
           err.code.should.contain('WALLET_DOES_NOT_EXIST');
