@@ -6,7 +6,6 @@ var fs = require('fs');
 
 var InsightUI = function(options) {
   BaseService.call(this, options);
-  this.routePrefix = options.routePrefix;
   if (typeof options.apiPrefix !== 'undefined') {
     this.apiPrefix = options.apiPrefix;
   } else {
