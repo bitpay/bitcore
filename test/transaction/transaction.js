@@ -10,10 +10,13 @@ var sinon = require('sinon');
 var bitcore = require('../..');
 var BN = bitcore.crypto.BN;
 var Transaction = bitcore.Transaction;
+var Input = bitcore.Transaction.Input;
+var Output = bitcore.Transaction.Output;
 var PrivateKey = bitcore.PrivateKey;
 var Script = bitcore.Script;
 var Address = bitcore.Address;
 var Networks = bitcore.Networks;
+var Opcode = bitcore.Opcode;
 var errors = bitcore.errors;
 
 var transactionVector = require('../data/tx_creation');
@@ -930,7 +933,112 @@ describe('Transaction', function() {
     });
 
   });
+
+  describe('BIP69 Sorting', function() {
+
+    it('sorts inputs correctly', function() {
+      var from1 = {
+        txId: '0000000000000000000000000000000000000000000000000000000000000000',
+        outputIndex: 0,
+        script: Script.buildPublicKeyHashOut(fromAddress).toString(),
+        satoshis: 100000
+      };
+      var from2 = {
+        txId: '0000000000000000000000000000000000000000000000000000000000000001',
+        outputIndex: 0,
+        script: Script.buildPublicKeyHashOut(fromAddress).toString(),
+        satoshis: 100000
+      };
+      var from3 = {
+        txId: '0000000000000000000000000000000000000000000000000000000000000001',
+        outputIndex: 1,
+        script: Script.buildPublicKeyHashOut(fromAddress).toString(),
+        satoshis: 100000
+      };
+      var tx = new Transaction()
+        .from(from3)
+        .from(from2)
+        .from(from1);
+      tx.sort();
+      tx.inputs[0].prevTxId.toString('hex').should.equal(from1.txId);
+      tx.inputs[1].prevTxId.toString('hex').should.equal(from2.txId);
+      tx.inputs[2].prevTxId.toString('hex').should.equal(from3.txId);
+      tx.inputs[0].outputIndex.should.equal(from1.outputIndex);
+      tx.inputs[1].outputIndex.should.equal(from2.outputIndex);
+      tx.inputs[2].outputIndex.should.equal(from3.outputIndex);
+    });
+
+    it('sorts outputs correctly', function() {
+      var tx = new Transaction()
+        .addOutput(new Transaction.Output({
+          script: new Script().add(Opcode(0)),
+          satoshis: 2
+        }))
+        .addOutput(new Transaction.Output({
+          script: new Script().add(Opcode(1)),
+          satoshis: 2
+        }))
+        .addOutput(new Transaction.Output({
+          script: new Script().add(Opcode(0)),
+          satoshis: 1
+        }));
+      tx.sort();
+      tx.outputs[0].satoshis.should.equal(1);
+      tx.outputs[1].satoshis.should.equal(2);
+      tx.outputs[2].satoshis.should.equal(2);
+      tx.outputs[0].script.toString().should.equal('OP_0');
+      tx.outputs[1].script.toString().should.equal('OP_0');
+      tx.outputs[2].script.toString().should.equal('0x01');
+    });
+
+    describe('bitcoinjs fixtures', function() {
+
+      var fixture = require('../data/bip69.json');
+
+      // returns index-based order of sorted against original
+      var getIndexOrder = function(original, sorted) {
+        return sorted.map(function (value) {
+          return original.indexOf(value);
+        });
+      };
+
+      fixture.inputs.forEach(function(inputSet) {
+        it(inputSet.description, function() {
+          var tx = new Transaction();
+          inputSet.inputs = inputSet.inputs.map(function(input) {
+            var input = new Input({
+              prevTxId: input.txId,
+              outputIndex: input.vout,
+              script: new Script(),
+              output: new Output({ script: new Script(), satoshis: 0 })
+            });
+            input.clearSignatures = function () {};
+            return input;
+          });
+          tx.inputs = inputSet.inputs;
+          tx.sort();
+          getIndexOrder(inputSet.inputs, tx.inputs).should.deep.equal(inputSet.expected);
+        });
+      });
+      fixture.outputs.forEach(function(outputSet) {
+        it(outputSet.description, function() {
+          var tx = new Transaction();
+          outputSet.outputs = outputSet.outputs.map(function(output) {
+            return new Output({
+              script: new Script(output.script),
+              satoshis: output.value
+            });
+          });
+          tx.outputs = outputSet.outputs;
+          tx.sort();
+          getIndexOrder(outputSet.outputs, tx.outputs).should.deep.equal(outputSet.expected);
+        });
+      });
+
+    });
+  });
 });
+
 
 var tx_empty_hex = '01000000000000000000';
 

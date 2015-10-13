@@ -68,6 +68,7 @@
     "bip21",
     "bip32",
     "bip37",
+    "bip69",
     "bip70",
     "multisig"
   ],
@@ -81,6 +82,7 @@
   "dependencies": {
     "bn.js": "=2.0.4",
     "bs58": "=2.0.0",
+    "buffer-compare": "=1.0.0",
     "elliptic": "=3.0.3",
     "hash.js": "=1.0.2",
     "inherits": "=2.0.1",
