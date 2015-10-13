@@ -6,6 +6,13 @@ var fs = require('fs');
 
 var InsightUI = function(options) {
   BaseService.call(this, options);
+  this.routePrefix = options.routePrefix;
+  if (typeof options.apiPrefix !== 'undefined') {
+    this.apiPrefix = options.apiPrefix;
+  } else {
+    this.apiPrefix = 'insight-api';
+  }
+
 };
 
 InsightUI.dependencies = ['insight-api'];
@@ -18,7 +25,11 @@ InsightUI.prototype.start = function(callback) {
 };
 
 InsightUI.prototype.getRoutePrefix = function() {
-  return 'insight';
+  if (typeof this.routePrefix !== 'undefined') {
+    return this.routePrefix;
+  } else {
+    return 'insight';
+  }
 };
 
 InsightUI.prototype.setupRoutes = function(app, express) {
@@ -38,8 +49,8 @@ InsightUI.prototype.setupRoutes = function(app, express) {
 
 InsightUI.prototype.filterIndexHTML = function(data) {
   var transformed = data
-    .replace(/<base href=\"\/\"/, '<base href="/insight/"')
-    .replace(/apiPrefix = '\/api'/, "apiPrefix = '/insight-api'");
+    .replace(/<base href=\"\/\"/, '<base href="/"')
+    .replace(/apiPrefix = '\/api'/, "apiPrefix = '/" + this.apiPrefix + "'");
   return transformed;
 };
 
