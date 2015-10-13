@@ -41,7 +41,8 @@ describe('Transaction', function() {
       'outputIndex': 0,
       'script': testScript,
       'satoshis': testAmount
-    }).to('mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc', testAmount - 10000);
+    })
+    .to('mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc', testAmount - 10000);
 
   it('can serialize to a plain javascript object', function() {
     var object = testTransaction.toObject();
@@ -168,7 +169,7 @@ describe('Transaction', function() {
       it('works for normal p2pkh', function() {
         var transaction = new Transaction()
           .from(simpleUtxoWith100000Satoshis)
-          .to(toAddress, 50000)
+          .to([{address: toAddress, satoshis: 50000}])
           .change(changeAddress)
           .sign(privateKey);
         transaction.isFullySigned().should.equal(true);
@@ -506,7 +507,8 @@ describe('Transaction', function() {
           'outputIndex': 0,
           'script': testScript,
           'satoshis': testAmount
-        }).to('mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc', testAmount - 10000);
+        })
+        .to('mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc', testAmount - 10000);
 
       tx.outputs[0]._satoshis = 100;
       tx.outputs[0]._satoshisBN = new BN('fffffffffffffff', 16);
@@ -521,7 +523,8 @@ describe('Transaction', function() {
           'outputIndex': 0,
           'script': testScript,
           'satoshis': testAmount
-        }).to('mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc', testAmount - 10000);
+        })
+        .to('mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc', testAmount - 10000);
 
       tx.outputs[0]._satoshis = -100;
       tx.outputs[0]._satoshisBN = new BN(-100, 10);
@@ -537,7 +540,8 @@ describe('Transaction', function() {
           'outputIndex': 0,
           'script': testScript,
           'satoshis': testAmount
-        }).to('mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc', testAmount - 10000);
+        })
+        .to('mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc', testAmount - 10000);
 
       tx.toBuffer = sinon.stub().returns({
         length: 10000000
@@ -556,7 +560,8 @@ describe('Transaction', function() {
           'outputIndex': 0,
           'script': testScript,
           'satoshis': testAmount
-        }).to('mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc', testAmount - 10000);
+        })
+        .to('mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc', testAmount - 10000);
 
       tx.isCoinbase = sinon.stub().returns(false);
       tx.inputs[0].isNull = sinon.stub().returns(true);
@@ -692,8 +697,10 @@ describe('Transaction', function() {
     });
     it('an output can be removed by index', function() {
       var transaction = new Transaction()
-        .to(toAddress, 40000000)
-        .to(toAddress, 40000000);
+        .to([
+          {address: toAddress, satoshis: 40000000},
+          {address: toAddress, satoshis: 40000000}
+        ])
       transaction.outputs.length.should.equal(2);
       transaction.outputAmount.should.equal(80000000);
       transaction.removeOutput(0);
@@ -845,8 +852,10 @@ describe('Transaction', function() {
     beforeEach(function() {
       transaction = new Transaction()
         .from(simpleUtxoWith1BTC)
-        .to(toAddress, tenth)
-        .to(toAddress, fourth)
+        .to([
+          {address: toAddress, satoshis: tenth},
+          {address: toAddress, satoshis: fourth}
+        ])
         .to(toAddress, half)
         .change(changeAddress);
       out1 = transaction.outputs[0];
@@ -905,8 +914,10 @@ describe('Transaction', function() {
       var tx = new Transaction()
         .from(simpleUtxoWith1BTC)
         .to(toAddress, tenth)
-        .to(toAddress, fourth)
-        .to(toAddress, half)
+        .to([
+          {address: toAddress, satoshis: fourth},
+          {address: toAddress, satoshis: half}
+        ])
         .change(changeAddress);
       tx.clearOutputs();
       tx.outputs.length.should.equal(1);
