@@ -1,6 +1,6 @@
 {
   "name": "bitcore",
-  "version": "0.13.4",
+  "version": "0.13.5",
   "dependencies": {
     "bn.js": {
       "version": "2.0.4",
