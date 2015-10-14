@@ -1,6 +1,6 @@
 {
   "name": "bitcore-mnemonic",
-  "version": "0.13.2",
+  "version": "0.14.0",
   "description": "BIP39 Mnemonics implemented for Bitcore.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
