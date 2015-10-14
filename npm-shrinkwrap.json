@@ -26,13 +26,13 @@
           "version": "1.0.5",
           "from": "brorand@^1.0.1",
           "resolved": "https://registry.npmjs.org/brorand/-/brorand-1.0.5.tgz"
+        },
+        "hash.js": {
+          "version": "1.0.3",
+          "from": "hash.js@=1.0.3",
+          "resolved": "https://registry.npmjs.org/hash.js/-/hash.js-1.0.3.tgz"
         }
       }
-    },
-    "hash.js": {
-      "version": "1.0.2",
-      "from": "hash.js@^1.0.0",
-      "resolved": "https://registry.npmjs.org/hash.js/-/hash.js-1.0.2.tgz"
     },
     "inherits": {
       "version": "2.0.1",
