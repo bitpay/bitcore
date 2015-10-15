@@ -2,4 +2,4 @@
 
 var bitcoreTasks = require('bitcore-build');
 
-bitcoreTasks();
+bitcoreTasks('lib');

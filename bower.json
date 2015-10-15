@@ -1,5 +1,5 @@
 {
-  "name": "bitcore",
+  "name": "bitcore-lib",
   "main": "./bitcore.min.js",
   "version": "0.13.5",
   "homepage": "http://bitcore.io",
