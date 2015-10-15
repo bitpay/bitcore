@@ -1041,9 +1041,7 @@ describe('Wallet service', function() {
             copayer.name.should.equal('me');
             copayer.id.should.equal(copayerId);
             copayer.customData.should.equal('dummy custom data');
-            server.getLatestNotifications({
-              minTs: 0
-            }, function(err, notifications) {
+            server.getNotifications({}, function(err, notifications) {
               should.not.exist(err);
               var notif = _.find(notifications, {
                 type: 'NewCopayer'
@@ -1252,9 +1250,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           wallet.status.should.equal('complete');
           wallet.publicKeyRing.length.should.equal(3);
-          server.getLatestNotifications({
-            minTs: 0
-          }, function(err, notifications) {
+          server.getNotifications({}, function(err, notifications) {
             should.not.exist(err);
             var notif = _.find(notifications, {
               type: 'WalletComplete'
@@ -1269,9 +1265,7 @@ describe('Wallet service', function() {
 
     it('should not notify WalletComplete if 1-of-1', function(done) {
       helpers.createAndJoinWallet(1, 1, function(server) {
-        server.getLatestNotifications({
-          minTs: 0
-        }, function(err, notifications) {
+        server.getNotifications({}, function(err, notifications) {
           should.not.exist(err);
           var notif = _.find(notifications, {
             type: 'WalletComplete'
@@ -1560,9 +1554,7 @@ describe('Wallet service', function() {
           address.isChange.should.be.false;
           address.path.should.equal('m/2147483647/0/0');
           address.type.should.equal('P2SH');
-          server.getLatestNotifications({
-            minTs: 0
-          }, function(err, notifications) {
+          server.getNotifications({}, function(err, notifications) {
             should.not.exist(err);
             var notif = _.find(notifications, {
               type: 'NewAddress'
@@ -1625,9 +1617,7 @@ describe('Wallet service', function() {
           address.isChange.should.be.false;
           address.path.should.equal('m/0/0');
           address.type.should.equal('P2SH');
-          server.getLatestNotifications({
-            minTs: 0
-          }, function(err, notifications) {
+          server.getNotifications({}, function(err, notifications) {
             should.not.exist(err);
             var notif = _.find(notifications, {
               type: 'NewAddress'
@@ -1694,9 +1684,7 @@ describe('Wallet service', function() {
           address.isChange.should.be.false;
           address.path.should.equal('m/0/0');
           address.type.should.equal('P2PKH');
-          server.getLatestNotifications({
-            minTs: 0
-          }, function(err, notifications) {
+          server.getNotifications({}, function(err, notifications) {
             should.not.exist(err);
             var notif = _.find(notifications, {
               type: 'NewAddress'
@@ -3617,9 +3605,7 @@ describe('Wallet service', function() {
             txp.actions.length.should.equal(1);
             var action = txp.getActionBy(wallet.copayers[0].id);
             action.type.should.equal('accept');
-            server.getLatestNotifications({
-              minTs: 0
-            }, function(err, notifications) {
+            server.getNotifications({}, function(err, notifications) {
               should.not.exist(err);
               var last = _.last(notifications);
               last.type.should.not.equal('TxProposalFinallyAccepted');
@@ -3649,9 +3635,7 @@ describe('Wallet service', function() {
             txp.isBroadcasted().should.be.false;
             should.exist(txp.txid);
             txp.actions.length.should.equal(2);
-            server.getLatestNotifications({
-              minTs: 0
-            }, function(err, notifications) {
+            server.getNotifications({}, function(err, notifications) {
               should.not.exist(err);
               var last = _.last(notifications);
               last.type.should.equal('TxProposalFinallyAccepted');
@@ -3920,9 +3904,7 @@ describe('Wallet service', function() {
     });
 
     it('should pull all notifications', function(done) {
-      server.getLatestNotifications({
-        minTs: 0
-      }, function(err, notifications) {
+      server.getNotifications({}, function(err, notifications) {
         should.not.exist(err);
         var types = _.pluck(notifications, 'type');
         types.should.deep.equal(['NewCopayer', 'NewAddress', 'NewAddress', 'NewTxProposal', 'NewTxProposal', 'NewTxProposal']);
@@ -3937,7 +3919,9 @@ describe('Wallet service', function() {
     });
 
     it('should pull notifications in the last 60 seconds', function(done) {
-      server.getLatestNotifications({}, function(err, notifications) {
+      server.getNotifications({
+        minTs: +Date.now() - (60 * 1000),
+      }, function(err, notifications) {
         should.not.exist(err);
         var types = _.pluck(notifications, 'type');
         types.should.deep.equal(['NewTxProposal', 'NewTxProposal']);
@@ -3946,13 +3930,12 @@ describe('Wallet service', function() {
     });
 
     it('should pull notifications after a given notification id', function(done) {
-      server.getLatestNotifications({
-        minTs: 0
-      }, function(err, notifications) {
+      server.getNotifications({}, function(err, notifications) {
         should.not.exist(err);
         var from = _.first(_.takeRight(notifications, 2)).id; // second to last
-        server.getLatestNotifications({
-          notificationId: from
+        server.getNotifications({
+          notificationId: from,
+          minTs: +Date.now() - (60 * 1000),
         }, function(err, res) {
           should.not.exist(err);
           res.length.should.equal(1);
@@ -3963,9 +3946,7 @@ describe('Wallet service', function() {
     });
 
     it('should contain walletId & creatorId on NewCopayer', function(done) {
-      server.getLatestNotifications({
-        minTs: 0,
-      }, function(err, notifications) {
+      server.getNotifications({}, function(err, notifications) {
         should.not.exist(err);
         var newCopayer = notifications[0];
         newCopayer.type.should.equal('NewCopayer');
@@ -3984,7 +3965,7 @@ describe('Wallet service', function() {
           txProposalId: tx.id,
           signatures: signatures,
         }, function(err) {
-          server.getLatestNotifications({
+          server.getNotifications({
             minTs: Date.now(),
           }, function(err, notifications) {
             should.not.exist(err);
@@ -4004,7 +3985,7 @@ describe('Wallet service', function() {
           txProposalId: tx.id,
         }, function(err) {
           should.not.exist(err);
-          server.getLatestNotifications({
+          server.getNotifications({
             minTs: Date.now(),
           }, function(err, notifications) {
             should.not.exist(err);
@@ -4032,7 +4013,7 @@ describe('Wallet service', function() {
             txProposalId: tx.id
           }, function(err, txp) {
             should.not.exist(err);
-            server.getLatestNotifications({
+            server.getNotifications({
               minTs: Date.now(),
             }, function(err, notifications) {
               should.not.exist(err);
@@ -4064,7 +4045,7 @@ describe('Wallet service', function() {
             txProposalId: tx.id
           }, function(err, txp) {
             should.not.exist(err);
-            server.getLatestNotifications({
+            server.getNotifications({
               minTs: Date.now(),
             }, function(err, notifications) {
               should.not.exist(err);
@@ -4123,7 +4104,7 @@ describe('Wallet service', function() {
               });
             },
             function(next) {
-              server.storage.fetchNotifications(wallet.id, {}, function(err, items) {
+              server.getNotifications({}, function(err, items) {
                 items.length.should.equal(0);
                 next();
               });
@@ -4196,9 +4177,7 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          server2.getLatestNotifications({
-            minTs: 0
-          }, function(err, notifications) {
+          server2.getNotifications({}, function(err, notifications) {
             should.not.exist(err);
             should.exist(notifications);
             notifications.length.should.above(0);
