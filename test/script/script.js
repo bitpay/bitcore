@@ -15,7 +15,35 @@ describe('Script', function() {
 
   it('should make a new script', function() {
     var script = new Script();
-    should.exist(script);
+    expect(script).to.be.instanceof(Script);
+    expect(script.chunks).to.deep.equal([]);
+  });
+
+  it('should make a new script when from is null', function() {
+    var script = new Script(null);
+    expect(script).to.be.instanceof(Script);
+    expect(script.chunks).to.deep.equal([]);
+  });
+
+  describe('#set', function() {
+    var script = new Script();
+
+    it('should be object', function() {
+      expect(function() {
+        script.set(null);
+      }).to.throw(/^Invalid Argument$/)
+    });
+
+    it('chunks should be array', function() {
+      expect(function() {
+        script.set({chunks: 1});
+      }).to.throw(/^Invalid Argument$/);
+    });
+
+    it('set chunks', function() {
+      script.set({chunks: [1]});
+      expect(script.chunks).to.deep.equal([1]);
+    });
   });
 
   describe('#fromBuffer', function() {
