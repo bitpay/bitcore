@@ -3875,7 +3875,7 @@ describe('Wallet service', function() {
       });
   });
 
-  describe('Notifications', function() {
+  describe('#getNotifications', function() {
     var clock;
     var server, wallet;
 
@@ -3942,6 +3942,31 @@ describe('Wallet service', function() {
           res[0].id.should.equal(_.first(_.takeRight(notifications)).id);
           done();
         });
+      });
+    });
+
+    it('should return empty if no notifications found after a given id', function(done) {
+      server.getNotifications({}, function(err, notifications) {
+        should.not.exist(err);
+        var from = _.first(_.takeRight(notifications)).id; // last one
+        server.getNotifications({
+          notificationId: from,
+        }, function(err, res) {
+          should.not.exist(err);
+          res.length.should.equal(0);
+          done();
+        });
+      });
+    });
+
+    it('should return empty if no notifications exist in the given timespan', function(done) {
+      clock.tick(100 * 1000);
+      server.getNotifications({
+        minTs: +Date.now() - (60 * 1000),
+      }, function(err, res) {
+        should.not.exist(err);
+        res.length.should.equal(0);
+        done();
       });
     });
 
