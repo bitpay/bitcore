@@ -4,7 +4,7 @@ var should = require('chai').should();
 var P2P = require('../../../');
 var Messages = P2P.Messages;
 var sinon = require('sinon');
-var bitcore = require('bitcore');
+var bitcore = require('bitcore-lib');
 
 describe('Command Messages', function() {
 
