@@ -780,6 +780,50 @@ describe('client API', function() {
     });
   });
 
+  describe('Notifications', function() {
+    var clock;
+    beforeEach(function(done) {
+      this.timeout(5000);
+      clock = sinon.useFakeTimers(1234000, 'Date');
+      helpers.createAndJoinWallet(clients, 2, 2, function() {
+        clock.tick(25 * 1000);
+        clients[0].createAddress(function(err, x) {
+          should.not.exist(err);
+          clock.tick(25 * 1000);
+          clients[1].createAddress(function(err, x) {
+            should.not.exist(err);
+            done();
+          });
+        });
+      });
+    });
+    afterEach(function() {
+      clock.restore();
+    });
+    it('should receive notifications', function(done) {
+      clients[0].getNotifications({}, function(err, notifications) {
+        should.not.exist(err);
+        notifications.length.should.equal(3);
+        _.pluck(notifications, 'type').should.deep.equal(['NewCopayer', 'WalletComplete', 'NewAddress']);
+        clients[0].getNotifications({
+          lastNotificationId: _.last(notifications).id
+        }, function(err, notifications) {
+          should.not.exist(err);
+          notifications.length.should.equal(0, 'should only return unread notifications');
+          done();
+        });
+      });
+    });
+    it('should not receive old notifications', function(done) {
+      clock.tick(61 * 1000); // more than 60 seconds
+      clients[0].getNotifications({}, function(err, notifications) {
+        should.not.exist(err);
+        notifications.length.should.equal(0);
+        done();
+      });
+    });
+  });
+
   describe('Transaction Proposals Creation and Locked funds', function() {
     it('Should create proposal and get it', function(done) {
       helpers.createAndJoinWallet(clients, 2, 2, function(w) {
