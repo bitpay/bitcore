@@ -25,7 +25,7 @@ Spin up a full node and join the network:
 
 ```bash
 npm install -g bitcore
-bitcore init mynode
+bitcore create mynode
 cd mynode
 bitcore start
 ```
@@ -47,16 +47,17 @@ transaction.sign(privateKey);
 - [Wallet Client](https://github.com/bitpay/bitcore-wallet-client) - A client for the wallet service
 - [CLI Wallet](https://github.com/bitpay/bitcore-wallet) - A command-line based wallet client
 - [Angular Wallet Client](https://github.com/bitpay/angular-bitcore-wallet-client) - An Angular based wallet client
-- [Copay](https://github.com/bitpay/copay) - An easy-to-use, multiplatform, multisignature, secure bitcoin wallet.
+- [Copay](https://github.com/bitpay/copay) - An easy-to-use, multiplatform, multisignature, secure bitcoin wallet
 
-## Extended Features
+## Libraries
 
-- [Payment Protocol](https://github.com/bitpay/bitcore-payment-protocol) - A protocol for merchant's and customer's wallet
-- [P2P](https://github.com/bitpay/bitcore-p2p) - Peer-to-Peer networking
-- [Mnemonic](https://github.com/bitpay/bitcore-mnemonic) - Implements Mnemonic code for generating deterministic keys.
-- [Channel](https://github.com/bitpay/bitcore-channel) - Micro-payment channels
+- [Lib](https://github.com/bitpay/bitcore-lib) - All of the core Bitcoin primatives including transactions, private key management and others
+- [Payment Protocol](https://github.com/bitpay/bitcore-payment-protocol) - A protocol for communication between a merchant and customer
+- [P2P](https://github.com/bitpay/bitcore-p2p) - The peer-to-peer networking protocot
+- [Mnemonic](https://github.com/bitpay/bitcore-mnemonic) - Implements mnemonic code for generating deterministic keys
+- [Channel](https://github.com/bitpay/bitcore-channel) - Micropayment channels for rapidly adjusting bitcoin transactions
 - [Message](https://github.com/bitpay/bitcore-message) - Bitcoin message verification and signing
-- [ECIES](https://github.com/bitpay/bitcore-ecies) - Elliptic Curve Integrated Encryption Scheme (ECIES)
+- [ECIES](https://github.com/bitpay/bitcore-ecies) - Uses ECIES symmetric key negotiation from public keys to encrypt arbitrarily long data streams.
 
 ## Documentation
 
