@@ -44,7 +44,7 @@
   "browser": "lib/browser.js",
   "dependencies": {
     "asn1.js": "=0.4.1",
-    "bitcore": "^0.13.0",
+    "bitcore-lib": "^0.13.7",
     "jsrsasign": "=0.0.3",
     "protobufjs": "=3.0.0"
   },
