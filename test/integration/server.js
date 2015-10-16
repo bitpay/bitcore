@@ -3875,75 +3875,103 @@ describe('Wallet service', function() {
       });
   });
 
-  describe('Notifications', function() {
+  describe('#getNotifications', function() {
+    var clock;
     var server, wallet;
 
     beforeEach(function(done) {
+      clock = sinon.useFakeTimers(10 * 1000, 'Date');
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
         wallet = w;
         helpers.stubUtxos(server, wallet, _.range(4), function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.01, TestData.copayers[0].privKey_1H_0);
           async.eachSeries(_.range(3), function(i, next) {
+            clock.tick(25 * 1000);
             server.createTx(txOpts, function(err, tx) {
               should.not.exist(err);
               next();
             });
           }, function(err) {
+            clock.tick(20 * 1000);
             return done(err);
           });
         });
       });
     });
+    afterEach(function() {
+      clock.restore();
+    });
 
-    it('should pull the last 4 notifications after 3 TXs', function(done) {
-      server.getNotifications({
-        limit: 4,
-        reverse: true,
-      }, function(err, notifications) {
+    it('should pull all notifications', function(done) {
+      server.getNotifications({}, function(err, notifications) {
         should.not.exist(err);
         var types = _.pluck(notifications, 'type');
-        types.should.deep.equal(['NewTxProposal', 'NewTxProposal', 'NewTxProposal', 'NewAddress']);
+        types.should.deep.equal(['NewCopayer', 'NewAddress', 'NewAddress', 'NewTxProposal', 'NewTxProposal', 'NewTxProposal']);
         var walletIds = _.uniq(_.pluck(notifications, 'walletId'));
         walletIds.length.should.equal(1);
         walletIds[0].should.equal(wallet.id);
-        var creators = _.uniq(_.pluck(notifications, 'creatorId'));
+        var creators = _.uniq(_.compact(_.pluck(notifications, 'creatorId')));
         creators.length.should.equal(1);
         creators[0].should.equal(wallet.copayers[0].id);
         done();
       });
     });
 
-    it('should pull the last 4 notifications, using now', function(done) {
+    it('should pull notifications in the last 60 seconds', function(done) {
       server.getNotifications({
-        limit: 4,
-        reverse: true,
-        maxTs: Date.now() / 1000,
-        minTs: Date.now() / 1000 - 1000,
+        minTs: +Date.now() - (60 * 1000),
       }, function(err, notifications) {
         should.not.exist(err);
         var types = _.pluck(notifications, 'type');
-        types.should.deep.equal(['NewTxProposal', 'NewTxProposal', 'NewTxProposal', 'NewAddress']);
+        types.should.deep.equal(['NewTxProposal', 'NewTxProposal']);
         done();
       });
     });
 
-    it('should pull all notifications after wallet creation', function(done) {
-      server.getNotifications({
-        minTs: 0,
-      }, function(err, notifications) {
+    it('should pull notifications after a given notification id', function(done) {
+      server.getNotifications({}, function(err, notifications) {
         should.not.exist(err);
-        var types = _.pluck(notifications, 'type');
-        types[0].should.equal('NewCopayer');
-        types[types.length - 1].should.equal('NewTxProposal');
+        var from = _.first(_.takeRight(notifications, 2)).id; // second to last
+        server.getNotifications({
+          notificationId: from,
+          minTs: +Date.now() - (60 * 1000),
+        }, function(err, res) {
+          should.not.exist(err);
+          res.length.should.equal(1);
+          res[0].id.should.equal(_.first(_.takeRight(notifications)).id);
+          done();
+        });
+      });
+    });
+
+    it('should return empty if no notifications found after a given id', function(done) {
+      server.getNotifications({}, function(err, notifications) {
+        should.not.exist(err);
+        var from = _.first(_.takeRight(notifications)).id; // last one
+        server.getNotifications({
+          notificationId: from,
+        }, function(err, res) {
+          should.not.exist(err);
+          res.length.should.equal(0);
+          done();
+        });
+      });
+    });
+
+    it('should return empty if no notifications exist in the given timespan', function(done) {
+      clock.tick(100 * 1000);
+      server.getNotifications({
+        minTs: +Date.now() - (60 * 1000),
+      }, function(err, res) {
+        should.not.exist(err);
+        res.length.should.equal(0);
         done();
       });
     });
 
     it('should contain walletId & creatorId on NewCopayer', function(done) {
-      server.getNotifications({
-        minTs: 0,
-      }, function(err, notifications) {
+      server.getNotifications({}, function(err, notifications) {
         should.not.exist(err);
         var newCopayer = notifications[0];
         newCopayer.type.should.equal('NewCopayer');
@@ -3963,12 +3991,12 @@ describe('Wallet service', function() {
           signatures: signatures,
         }, function(err) {
           server.getNotifications({
-            limit: 3,
-            reverse: true,
+            minTs: Date.now(),
           }, function(err, notifications) {
             should.not.exist(err);
+            notifications.length.should.equal(2);
             var types = _.pluck(notifications, 'type');
-            types.should.deep.equal(['TxProposalFinallyAccepted', 'TxProposalAcceptedBy', 'NewTxProposal']);
+            types.should.deep.equal(['TxProposalAcceptedBy', 'TxProposalFinallyAccepted']);
             done();
           });
         });
@@ -3983,12 +4011,12 @@ describe('Wallet service', function() {
         }, function(err) {
           should.not.exist(err);
           server.getNotifications({
-            limit: 2,
-            reverse: true,
+            minTs: Date.now(),
           }, function(err, notifications) {
             should.not.exist(err);
+            notifications.length.should.equal(2);
             var types = _.pluck(notifications, 'type');
-            types.should.deep.equal(['TxProposalFinallyRejected', 'TxProposalRejectedBy']);
+            types.should.deep.equal(['TxProposalRejectedBy', 'TxProposalFinallyRejected']);
             done();
           });
         });
@@ -4011,12 +4039,12 @@ describe('Wallet service', function() {
           }, function(err, txp) {
             should.not.exist(err);
             server.getNotifications({
-              limit: 3,
-              reverse: true,
+              minTs: Date.now(),
             }, function(err, notifications) {
               should.not.exist(err);
+              notifications.length.should.equal(3);
               var types = _.pluck(notifications, 'type');
-              types.should.deep.equal(['NewOutgoingTx', 'TxProposalFinallyAccepted', 'TxProposalAcceptedBy']);
+              types.should.deep.equal(['TxProposalAcceptedBy', 'TxProposalFinallyAccepted', 'NewOutgoingTx']);
               done();
             });
           });
@@ -4043,12 +4071,12 @@ describe('Wallet service', function() {
           }, function(err, txp) {
             should.not.exist(err);
             server.getNotifications({
-              limit: 3,
-              reverse: true,
+              minTs: Date.now(),
             }, function(err, notifications) {
               should.not.exist(err);
+              notifications.length.should.equal(3);
               var types = _.pluck(notifications, 'type');
-              types.should.deep.equal(['NewOutgoingTxByThirdParty', 'TxProposalFinallyAccepted', 'TxProposalAcceptedBy']);
+              types.should.deep.equal(['TxProposalAcceptedBy', 'TxProposalFinallyAccepted', 'NewOutgoingTxByThirdParty']);
               done();
             });
           });
@@ -4101,7 +4129,7 @@ describe('Wallet service', function() {
               });
             },
             function(next) {
-              server.storage.fetchNotifications(wallet.id, {}, function(err, items) {
+              server.getNotifications({}, function(err, items) {
                 items.length.should.equal(0);
                 next();
               });
