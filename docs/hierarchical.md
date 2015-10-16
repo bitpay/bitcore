@@ -1,15 +1,10 @@
----
-title: HDKeys
-description: Lets you create and derive extended public and private keys according to the BIP32 standard for Hierarchical Deterministic (HD) keys.
----
 # HDKeys
+Create and derive extended public and private keys according to the BIP32 standard for Hierarchical Deterministic (HD) keys.
 
 ## Hierarchically Derived Keys
-
 Bitcore provides full support for [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki), allowing for many key management schemas that benefit from this property. Please be sure to read and understand the basic concepts and the warnings on that BIP before using these classes.
 
 ## HDPrivateKey
-
 An instance of a [PrivateKey](privatekey.md) that also contains information required to derive child keys.
 
 Sample usage:
@@ -29,11 +24,9 @@ var address = derived.privateKey.toAddress();
 
 // obtain HDPublicKey
 var hdPublicKey = hdPrivateKey.hdPublicKey;
-
 ```
 
 ## HDPublicKey
-
 An instance of a PublicKey that can be derived to build extended public keys. Note that hardened paths are not available when deriving an HDPublicKey.
 
 ```javascript

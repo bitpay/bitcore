@@ -1,14 +1,8 @@
----
-title: Bitcoin URIs
-description: Utility to parse and create standard bitcoin URIs.
----
-# URI
-
-## Description
-
+# Bitcoin URIs
 Represents a bitcoin payment URI. Bitcoin URI strings became the most popular way to share payment request, sometimes as a bitcoin link and others using a QR code.
 
 URI Examples:
+
 ```
 bitcoin:12A1MyfXbW6RhdRAZEqofac5jCQQjwEPBu
 bitcoin:12A1MyfXbW6RhdRAZEqofac5jCQQjwEPBu?amount=1.2
@@ -16,10 +10,10 @@ bitcoin:12A1MyfXbW6RhdRAZEqofac5jCQQjwEPBu?amount=1.2&message=Payment&label=Sato
 ```
 
 ## URI Validation
-
 The main use that we expect you'll have for the `URI` class in bitcore is validating and parsing bitcoin URIs. A `URI` instance exposes the address as a bitcore `Address` object and the amount in Satoshis, if present.
 
 The code for validating URIs looks like this:
+
 ```javascript
 var uriString = 'bitcoin:12A1MyfXbW6RhdRAZEqofac5jCQQjwEPBu?amount=1.2';
 var valid = URI.isValid(uriString);
@@ -33,10 +27,10 @@ All standard parameters can be found as members of the `URI` instance. However a
 See [the official BIP21 spec](https://github.com/bitcoin/bips/blob/master/bip-0021.mediawiki) for more information.
 
 ## Create URI
-
 Another important use case for the `URI` class is creating a bitcoin URI for sharing a payment request. That can be accomplished by using a dictionary to create an instance of URI.
 
 The code for creating an URI from an Object looks like this:
+
 ```javascript
 var uriString = new URI({
   address: '12A1MyfXbW6RhdRAZEqofac5jCQQjwEPBu',

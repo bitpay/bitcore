@@ -1,14 +1,7 @@
----
-title: Browser Builds
-description: Guide to using and writing modules and optimizing browser bundles.
----
-
 # Browser Builds
-
 Bitcore and most official submodules work in the browser, thanks to [browserify](http://browserify.org/) (some modules are not fully compatible with web browsers).
 
-The easiest and recommended way to use them, is via [Bower](http://bower.io/), a browser package manager, and get the release bundles.
-For example, when building an app that uses `bitcore` and `bitcore-ecies`, you do:
+The easiest and recommended way to use them, is via [Bower](http://bower.io/), a browser package manager, and get the release bundles. For example, when building an app that uses `bitcore` and `bitcore-ecies`, you do:
 
 ```sh
 bower install bitcore
@@ -28,9 +21,11 @@ You can also use a `bower.json` file to store the dependencies of your project:
   }
 }
 ```
+
 and run `bower install` to install the dependencies.
 
 After this, you can include the bundled release versions in your HTML file:
+
 ```html
 <!DOCTYPE html>
 <html lang="en">
@@ -55,28 +50,26 @@ After this, you can include the bundled release versions in your HTML file:
 ```
 
 ## Building Custom Bundles
+If you want to use a specific version of a module, instead of a release version (not recommended), you must run browserify yourself.  You can get a minified browser bundle by running the following on the project root folder.
 
-If you want to use a specific version of a module, instead of a release version (not recommended), you must run browserify yourself. 
-You can get a minified browser bundle by running the following on the project root folder.
 ```sh
 browserify --require ./index.js:bitcore | uglifyjs > bitcore.min.js
 ```
+
 (for bitcore)
 
 ```sh
 browserify --require ./index.js:bitcore-ecies --external bitcore | uglifyjs > bitcore-ecies.min.js
 ```
+
 (for a bitcore module, `bitcore-ecies` in the example)
 
-
 ## Development of Modules
-
-*Note:* You probably don't want to use this method, but `bitcore-build`, as explained above. This is left here as documentation on what happens under the hood with `bitcore-build`.
+_Note:_ You probably don't want to use this method, but `bitcore-build`, as explained above. This is left here as documentation on what happens under the hood with `bitcore-build`.
 
 When developing a module that will depend on Bitcore, it's recommended to exclude Bitcore in the distributed browser bundle when using browserify and to use the `--external bitcore` parameter. It will produce a smaller browser bundle, as it will only include the JavaScript that is nessessary, and will depend on the Bitcore browser build which is better for distribution.
 
 ### Building the Bundle Manually
-
 **Step 1**: Require Bitcore
 
 Here we require Bitcore and define the namespace (`index.js`):
