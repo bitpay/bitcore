@@ -1,22 +1,14 @@
----
-title: Private Key
-description: A simple interface to generate, import and handle private keys.
----
 # Private Key
-
-## Description
-
 Represents a bitcoin private key and is needed to be able to spend bitcoin and sign transactions. See the official [Bitcoin Wiki](https://en.bitcoin.it/wiki/Private_key) for more information about private keys. A PrivateKey in Bitcore is an immutable object that has methods to import and export into a variety of formats including [Wallet Import Format](https://en.bitcoin.it/wiki/Wallet_import_format).
 
 ## Instantiate a Private Key
-
 Here is how to create a new private key. It will generate a new random number using `window.crypto` or the Node.js `crypto` library.
 
 ```javascript
 var privateKey = new PrivateKey();
 
 // Creates a private key from a hexa encoded number
-var privateKey2 = new PrivateKey('b221d9dbb083a7f33428d7c2a3c3198ae925614d70210e28716ccaa7cd4ddb79'); 
+var privateKey2 = new PrivateKey('b221d9dbb083a7f33428d7c2a3c3198ae925614d70210e28716ccaa7cd4ddb79');
 ```
 
 To export and import a private key, you can do the following:
@@ -39,7 +31,6 @@ var address = publicKey.toAddress(Networks.livenet);
 ```
 
 ## Validating a Private Key
-
 The code to do these validations looks like this:
 
 ```javascript
