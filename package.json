@@ -2,7 +2,8 @@
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "0.6.4",
+  "version": "1.0.0",
+  "license": "MIT",
   "keywords": [
     "bitcoin",
     "copay",
@@ -36,7 +37,7 @@
     "uglify": "^0.1.1"
   },
   "devDependencies": {
-    "bitcore-wallet-service": "0.2.3",
+    "bitcore-wallet-service": "~1.0.0",
     "chai": "^1.9.1",
     "coveralls": "^2.11.2",
     "grunt-jsdoc": "^0.5.8",

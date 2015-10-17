@@ -62,8 +62,7 @@ describe('Credentials', function() {
   it('Should create credentials from mnemonic (ES)', function() {
     var words = 'afirmar diseño hielo fideo etapa ogro cambio fideo toalla pomelo número buscar';
     var c = Credentials.fromMnemonic(words);
-
-    c.xPrivKey.should.equal('xprv9s21ZrQH143K4WLsaPQZ5kPMo2WqLPsxcNerMhd291niJmkEHqBRBXKrJpBqcftEMpJWpfXN97aXPqxYJrKjLTxbcDEwXH9mRJM9EvGqVdR');
+    c.xPrivKey.should.equal('xprv9s21ZrQH143K3H3WtXCn9nHtpi7Fz1ZE9VJErWErhrGL4hV1cApFVo3t4aANoPF7ufcLLWqN168izu3xGQdLaGxXG2qYZF8wWQGNWnuSSon');
     c.network.should.equal('livenet');
   });
 
@@ -87,8 +86,8 @@ describe('Credentials', function() {
     var c = Credentials.createWithMnemonic('testnet');
     c.setPrivateKeyEncryption('hola');
     c.unlock('hola');
-    var o  = c.toObj();
-  
+    var o = c.toObj();
+
     var c2 = Credentials.fromObj(o);
     c2.isPrivKeyEncrypted().should.equal(true);
     should.not.exist(c2.xPrivKey);
