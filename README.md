@@ -5,29 +5,59 @@ Bitcore
 [![Build Status](https://img.shields.io/travis/bitpay/bitcore.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore)
 [![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore)
 
+Infrastructure to build Bitcoin and blockchain-based applications for the next generation of financial technology.
 
-A pure and powerful JavaScript Bitcoin library.
+## Getting Started
 
-## Principles
+Install with Node.js
 
-Bitcoin is a powerful new peer-to-peer platform for the next generation of financial technology. The decentralized nature of the Bitcoin network allows for highly resilient bitcoin infrastructure, and the developer community needs reliable, open-source tools to implement bitcoin apps and services.
-
-## Get Started
-
-```
-npm install bitcore
+```bash
+npm install -g bitcore
 ```
 
-Using it in Node.js:
+Install for web browsers:
 
-```javascript
+```bash
+bower install bitcore
+```
+
+Spin up a full node and join the network:
+
+```bash
+npm install -g bitcore
+bitcore create mynode
+cd mynode
+bitcore start
+```
+
+Create a transaction:
+```js
 var bitcore = require('bitcore');
-
-assert(bitcore.Address.isValid('126vMmY1fyznpZiFTTnty3cm1Rw8wuheev'));
-var simpleTx = new bitcore.Transaction();
-var simpleTx.from(unspent).to(address, amount);
-simpleTx.sign(privateKey);
+var transaction = new bitcore.Transaction();
+var transaction.from(unspent).to(address, amount);
+transaction.sign(privateKey);
 ```
+
+## Applications
+
+- [Node](https://github.com/bitpay/bitcore-node) - A full node with extended capabilities using Bitcoin Core
+- [Insight API](https://github.com/bitpay/insight-api) - A blockchain explorer HTTP API
+- [Insight UI](https://github.com/bitpay/insight) - A blockchain explorer web user interface
+- [Wallet Service](https://github.com/bitpay/bitcore-wallet-service) - A multisig HD service for wallets
+- [Wallet Client](https://github.com/bitpay/bitcore-wallet-client) - A client for the wallet service
+- [CLI Wallet](https://github.com/bitpay/bitcore-wallet) - A command-line based wallet client
+- [Angular Wallet Client](https://github.com/bitpay/angular-bitcore-wallet-client) - An Angular based wallet client
+- [Copay](https://github.com/bitpay/copay) - An easy-to-use, multiplatform, multisignature, secure bitcoin wallet
+
+## Libraries
+
+- [Lib](https://github.com/bitpay/bitcore-lib) - All of the core Bitcoin primatives including transactions, private key management and others
+- [Payment Protocol](https://github.com/bitpay/bitcore-payment-protocol) - A protocol for communication between a merchant and customer
+- [P2P](https://github.com/bitpay/bitcore-p2p) - The peer-to-peer networking protocot
+- [Mnemonic](https://github.com/bitpay/bitcore-mnemonic) - Implements mnemonic code for generating deterministic keys
+- [Channel](https://github.com/bitpay/bitcore-channel) - Micropayment channels for rapidly adjusting bitcoin transactions
+- [Message](https://github.com/bitpay/bitcore-message) - Bitcoin message verification and signing
+- [ECIES](https://github.com/bitpay/bitcore-ecies) - Uses ECIES symmetric key negotiation from public keys to encrypt arbitrarily long data streams.
 
 ## Documentation
 
@@ -50,20 +80,6 @@ To get community assistance and ask for help with implementation questions, plea
 * [Create a 2-of-3 multisig P2SH address](https://github.com/bitpay/bitcore/blob/master/docs/examples.md#create-a-2-of-3-multisig-p2sh-address)
 * [Spend from a 2-of-2 multisig P2SH address](https://github.com/bitpay/bitcore/blob/master/docs/examples.md#spend-from-a-2-of-2-multisig-p2sh-address)
 
-
-## Modules
-This module provides bitcoin's core features. Other features and protocol extensions are built into separate modules. Here is a list of official bitcore modules:
-
-Module | Version | Building | Coverage
--------|---------|----------|---------
-<a href="http://github.com/bitpay/bitcore-payment-protocol"><img src="http://bitcore.io/css/images/bitcore-payment-protocol.svg" alt="bitcore-payment-protocol" height="28"></a> | [![NPM Package](https://img.shields.io/npm/v/bitcore-payment-protocol.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-payment-protocol) | [![Build Status](https://img.shields.io/travis/bitpay/bitcore-payment-protocol.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-payment-protocol) | [![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore-payment-protocol.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore-payment-protocol)
-<a href="http://github.com/bitpay/bitcore-p2p"><img src="http://bitcore.io/css/images/bitcore-p2p.svg" alt="bitcore-p2p" height="28"></a> | [![NPM Package](https://img.shields.io/npm/v/bitcore-p2p.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-p2p) | [![Build Status](https://img.shields.io/travis/bitpay/bitcore-p2p.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-p2p) | [![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore-p2p.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore-p2p?branch=master)
-<a href="http://github.com/bitpay/bitcore-mnemonic"><img src="http://bitcore.io/css/images/bitcore-mnemonic.svg" alt="bitcore-mnemonic" height="28"></a> | [![NPM Package](https://img.shields.io/npm/v/bitcore-mnemonic.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-mnemonic) |  [![Build Status](https://img.shields.io/travis/bitpay/bitcore-mnemonic.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-mnemonic) | [![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore-mnemonic.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore-mnemonic)
-<a href="http://github.com/bitpay/bitcore-ecies"><img src="http://bitcore.io/css/images/bitcore-ecies.svg" alt="bitcore-ecies" height="25"></a> | [![NPM Package](https://img.shields.io/npm/v/bitcore-ecies.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-ecies) | [![Build Status](https://img.shields.io/travis/bitpay/bitcore-ecies.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-ecies) | [![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore-ecies.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore-ecies)
-<a href="http://github.com/bitpay/bitcore-channel"><img src="http://bitcore.io/css/images/bitcore-channel.svg" alt="bitcore-channel" height="28"></a> | [![NPM Package](https://img.shields.io/npm/v/bitcore-channel.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-channel) | [![Build Status](https://img.shields.io/travis/bitpay/bitcore-channel.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-channel) | [![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore-channel.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore-channel)
-<a href="http://github.com/bitpay/bitcore-explorers"><img src="http://bitcore.io/css/images/bitcore-explorers.svg" alt="bitcore-explorers" height="28"></a> | [![NPM Package](https://img.shields.io/npm/v/bitcore-explorers.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-explorers) | [![Build Status](https://img.shields.io/travis/bitpay/bitcore-explorers.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-explorers) | [![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore-explorers.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore-explorers)
-<a href="http://github.com/bitpay/bitcore-message"><img src="http://bitcore.io/css/images/bitcore-message.svg" alt="bitcore-message" height="28"></a> | [![NPM Package](https://img.shields.io/npm/v/bitcore-message.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-message) | [![Build Status](https://img.shields.io/travis/bitpay/bitcore-message.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-message) | [![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore-message.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore-message)
-
 ## Security
 
 We're using Bitcore in production, as are [many others](http://bitcore.io#projects), but please use common sense when doing anything related to finances! We take no responsibility for your implementation decisions.
@@ -72,7 +88,7 @@ If you find a security issue, please email security@bitpay.com.
 
 ## Contributing
 
-Please send pull requests for bug fixes, code optimization, and ideas for improvement. For more information on how to contribute, please refer to our [CONTRIBUTING](https://github.com/bitpay/bitcore/blob/master/CONTRIBUTING.md) file. 
+Please send pull requests for bug fixes, code optimization, and ideas for improvement. For more information on how to contribute, please refer to our [CONTRIBUTING](https://github.com/bitpay/bitcore/blob/master/CONTRIBUTING.md) file.
 
 ## Building the Browser Bundle
 

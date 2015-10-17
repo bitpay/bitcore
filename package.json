@@ -1,7 +1,7 @@
 {
   "name": "bitcore",
   "version": "0.13.5",
-  "description": "A pure and powerful JavaScript Bitcoin library.",
+  "description": "A platform to build bitcoin and blockchain-based applications.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
@@ -9,6 +9,10 @@
     "test": "gulp test",
     "coverage": "gulp coverage",
     "build": "gulp"
+  },
+  "bin": {
+    "bitcore": "./bin/bitcore",
+    "bitcored": "./bin/bitcored"
   },
   "contributors": [
     {
@@ -80,14 +84,8 @@
     "request": "browser-request"
   },
   "dependencies": {
-    "bn.js": "=2.0.4",
-    "bs58": "=2.0.0",
-    "buffer-compare": "=1.0.0",
-    "elliptic": "=3.0.3",
-    "hash.js": "=1.0.2",
-    "inherits": "=2.0.1",
-    "lodash": "=3.10.1",
-    "sha512": "=0.0.1"
+    "bitcore-lib": "^0.13.7",
+    "bitcore-cli": "^0.1.0"
   },
   "devDependencies": {
     "bitcore-build": "bitpay/bitcore-build",
