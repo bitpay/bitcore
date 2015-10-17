@@ -3,6 +3,7 @@
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
   "version": "0.6.4",
+  "license": "MIT",
   "keywords": [
     "bitcoin",
     "copay",
