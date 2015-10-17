@@ -184,7 +184,7 @@ margin-left: 0;
 #search-form { color: #fff; }
 
 #search.loading {
-  background-image: url('/img/loading.gif');
+  background-image: url('../img/loading.gif');
   background-position: 5px center;
   background-repeat: no-repeat;
   padding-left: 25px;
@@ -548,7 +548,7 @@ margin-left: 0;
 }
 
 .btn-copy {
-  background: transparent url('/img/icons/copy.png') center center no-repeat;
+  background: transparent url('../img/icons/copy.png') center center no-repeat;
 }
 
 .btn-copy .tooltip {
@@ -614,22 +614,22 @@ margin-left: 0;
   height: 45px;
 }
 #powered a.bitcore {
-  background-image: url('/img/logo.svg');
+  background-image: url('../img/logo.svg');
   background-size: 80px;
   width: 30%;
 }
 #powered a.nodejs {
-  background-image: url('/img/nodejs.png');
+  background-image: url('../img/nodejs.png');
   background-size: 80px;
   width: 30%;
 }
 #powered a.angularjs {
-  background-image: url('/img/angularjs.png');
+  background-image: url('../img/angularjs.png');
   background-size: 50px;
   width: 20%;
 }
 #powered a.leveldb {
-  background-image: url('/img/leveldb.png');
+  background-image: url('../img/leveldb.png');
   background-size: 50px;
   width: 20%;
 }

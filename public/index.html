@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en" data-ng-app="insight" data-ng-csp>
 <head>
+  <base href="/" />
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 	<meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -8,9 +9,9 @@
 	<title data-ng-bind="$root.title + $root.titleDetail + ' | Insight'">Insight</title>
 	<meta name="keywords" content="bitcoins, transactions, blocks, address, block chain, best block, mining difficulty, hash serialized">
 	<meta name="description" content="Bitcoin Insight. View detailed information on all bitcoin transactions and block. {{ $root.title + $root.titleDetail }}">
-	<link rel="shortcut icon" href="/img/icons/favicon.ico" type="image/x-icon">
+	<link rel="shortcut icon" href="img/icons/favicon.ico" type="image/x-icon">
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700,400italic">
-	<link rel="stylesheet" href="/css/main.min.css">
+	<link rel="stylesheet" href="css/main.min.css">
 </head>
 <body ng-cloak class="ng-cloak">
   <div>
@@ -39,7 +40,7 @@
     </script>
   </div>
 	<div id="wrap">
-		<div class="navbar navbar-default navbar-fixed-top" data-ng-include="'/views/includes/header.html'" role='navigation'></div>
+		<div class="navbar navbar-default navbar-fixed-top" data-ng-include="'views/includes/header.html'" role='navigation'></div>
 		<section class="container" data-ng-view></section>
 	</div>
 	<div id="footer" role="navigation">
@@ -57,17 +58,18 @@
         </span>
         &nbsp;
         [
-        <a href="/messages/verify" translate>verify message</a>
+        <a href="messages/verify" translate>verify message</a>
         <span> &middot; </span>
-        <a href="/tx/send" translate>broadcast transaction</a>
+        <a href="tx/send" translate>broadcast transaction</a>
         ]
       </div>
       <a class="insight m10v pull-right" target="_blank" href="http://insight.is">insight <small>API v{{version}}</small></a>
     </div>
   </div>
+  <script language="javascript">window.apiPrefix = '/api';</script>
 	<script src="/socket.io/socket.io.js"></script>
-	<script src="/js/vendors.min.js"></script>
-	<script src="/js/angularjs-all.min.js"></script>
-	<script src="/js/main.min.js"></script>
+	<script src="js/vendors.min.js"></script>
+	<script src="js/angularjs-all.min.js"></script>
+	<script src="js/main.min.js"></script>
 </body>
 </html>

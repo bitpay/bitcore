@@ -7,15 +7,15 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="insight navbar-brand" href="/">insight</a>
+      <a class="insight navbar-brand" href=".">insight</a>
     </div>
     <div class="navbar-collapse collapse" collapse="$root.isCollapsed">
       <ul class="nav navbar-nav">
-        <li data-ng-repeat="item in menu" ui-route="/{{item.link}}" data-ng-class="{active: $uiRoute}">
-          <a href="/{{item.link}}">{{item.title|translate}}</a>
+        <li data-ng-repeat="item in menu" ui-route="{{item.link}}" data-ng-class="{active: $uiRoute}">
+          <a href="{{item.link}}">{{item.title|translate}}</a>
         </li>
       </ul>
-      <span class="hidden-xs navbar-form navbar-left" data-ng-include src="'/views/includes/search.html'"></span>
+      <span class="hidden-xs navbar-form navbar-left" data-ng-include src="'views/includes/search.html'"></span>
       <ul class="nav navbar-nav navbar-right">
         <li>
       <div class="status" data-ng-controller="StatusController">
@@ -38,10 +38,10 @@
       </div>
       </li>
       <li>
-        <a href="#" data-ng-click="openScannerModal()"><span class="glyphicon
+        <a data-ng-click="openScannerModal()"><span class="glyphicon
             glyphicon-qrcode"></span> Scan</a>
       </li>
-      <li class="dropdown" data-ng-controller="CurrencyController" data-ng-include="'/views/includes/currency.html'"></li>
+      <li class="dropdown" data-ng-controller="CurrencyController" data-ng-include="'views/includes/currency.html'"></li>
       </ul>
     </div>
   </div>
