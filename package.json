@@ -85,7 +85,9 @@
   },
   "dependencies": {
     "bitcore-lib": "^0.13.7",
-    "bitcore-cli": "^0.1.0"
+    "bitcore-node": "^0.2.0",
+    "insight-api": "^0.3.0",
+    "insight-ui": "^0.3.0"
   },
   "devDependencies": {
     "bitcore-build": "bitpay/bitcore-build",
