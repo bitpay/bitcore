@@ -1,5 +1,5 @@
 #!/usr/bin/env node
 // vi: ft=javascript -*- mode: JavaScript; -*-
 
-var cli = require('bitcore-cli');
-cli.bitcore();
+var node = require('bitcore-node');
+node.cli.bitcore();
