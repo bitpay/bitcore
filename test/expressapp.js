@@ -103,10 +103,10 @@ describe('ExpressApp', function() {
           clock.restore();
         });
 
-        it('should fetch notifications from a specific id', function(done) {
+        it('should fetch notifications from a specified id', function(done) {
           start(TestExpressApp, function() {
             var requestOptions = {
-              url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?notificationId=123&minTs=' + (Date.now() - 30000),
+              url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?notificationId=123',
               headers: {
                 'x-identity': 'identity',
                 'x-signature': 'signature'
@@ -118,6 +118,26 @@ describe('ExpressApp', function() {
               body.should.equal('{}');
               server.getNotifications.calledWith({
                 notificationId: '123',
+                minTs: +Date.now() - 60000,
+              }).should.be.true;
+              done();
+            });
+          });
+        });
+        it('should allow custom minTs within limits', function(done) {
+          start(TestExpressApp, function() {
+            var requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?minTs=' + (Date.now() - 30000),
+              headers: {
+                'x-identity': 'identity',
+                'x-signature': 'signature'
+              }
+            };
+            request(requestOptions, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              server.getNotifications.calledWith({
+                notificationId: undefined,
                 minTs: +Date.now() - 30000,
               }).should.be.true;
               done();
@@ -127,7 +147,7 @@ describe('ExpressApp', function() {
         it('should limit minTs to 60 seconds', function(done) {
           start(TestExpressApp, function() {
             var requestOptions = {
-              url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?minTs=1',
+              url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?minTs=' + (Date.now() - 90000),
               headers: {
                 'x-identity': 'identity',
                 'x-signature': 'signature'
