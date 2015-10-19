@@ -127,7 +127,7 @@ describe('ExpressApp', function() {
         it('should allow custom minTs within limits', function(done) {
           start(TestExpressApp, function() {
             var requestOptions = {
-              url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?minTs=' + (Date.now() - 30000),
+              url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?timeSpan=30',
               headers: {
                 'x-identity': 'identity',
                 'x-signature': 'signature'
@@ -147,7 +147,7 @@ describe('ExpressApp', function() {
         it('should limit minTs to 60 seconds', function(done) {
           start(TestExpressApp, function() {
             var requestOptions = {
-              url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?minTs=' + (Date.now() - 90000),
+              url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?timeSpan=90',
               headers: {
                 'x-identity': 'identity',
                 'x-signature': 'signature'
