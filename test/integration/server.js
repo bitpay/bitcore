@@ -813,13 +813,18 @@ describe('Wallet service', function() {
 
   });
 
+  describe('#getServiceVersion', function() {
+    it('should get version from package', function() {
+      WalletService.getServiceVersion().should.equal('bws-' + require('../../package').version);
+    });
+  });
+
   describe('#getInstance', function() {
     it('should get server instance', function() {
       var server = WalletService.getInstance({
         clientVersion: 'bwc-0.0.1',
       });
       server.clientVersion.should.equal('bwc-0.0.1');
-      server.serviceVersion.indexOf('bws-').should.equal(0);
     });
   });
 
