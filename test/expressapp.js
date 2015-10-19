@@ -57,7 +57,7 @@ describe('ExpressApp', function() {
 
       it('/v2/wallets', function(done) {
         var server = {
-          getStatus: sinon.stub().callsArgWith(1, null, {})
+          getStatus: sinon.stub().callsArgWith(1, null, {}),
         };
         var TestExpressApp = proxyquire('../lib/expressapp', {
           './server': {
@@ -73,9 +73,11 @@ describe('ExpressApp', function() {
               'x-signature': 'signature'
             }
           };
-          request(requestOptions, function(err, response, body) {
+          request(requestOptions, function(err, res, body) {
             should.not.exist(err);
-            response.statusCode.should.equal(200);
+            should.exist(res.headers['x-service-version']);
+            res.headers['x-service-version'].should.equal('bws-' + require('../package').version);
+            res.statusCode.should.equal(200);
             body.should.equal('{}');
             done();
           });
@@ -102,9 +104,9 @@ describe('ExpressApp', function() {
               'x-signature': 'signature'
             }
           };
-          request(requestOptions, function(err, response, body) {
+          request(requestOptions, function(err, res, body) {
             should.not.exist(err);
-            response.statusCode.should.equal(200);
+            res.statusCode.should.equal(200);
             body.should.equal('{}');
             server.getNotifications.calledWith({
               notificationId: '123',
