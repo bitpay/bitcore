@@ -340,6 +340,53 @@ describe('client API', function() {
     });
   });
 
+  describe('Notification polling', function() {
+    var clock, interval;
+    beforeEach(function() {
+      clock = sinon.useFakeTimers(1234000, 'Date');
+    });
+    afterEach(function() {
+      clock.restore();
+    });
+    it('should fetch notifications at intervals', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 2, function() {
+        clients[0].on('notification', function(data) {
+          notifications.push(data);
+        });
+
+        var notifications = [];
+        clients[0]._fetchLatestNotifications(5, function() {
+          _.pluck(notifications, 'type').should.deep.equal(['NewCopayer', 'WalletComplete']);
+          clock.tick(2000);
+          notifications = [];
+          clients[0]._fetchLatestNotifications(5, function() {
+            notifications.length.should.equal(0);
+            clock.tick(2000);
+            clients[1].createAddress(function(err, x) {
+              should.not.exist(err);
+              clients[0]._fetchLatestNotifications(5, function() {
+                _.pluck(notifications, 'type').should.deep.equal(['NewAddress']);
+                clock.tick(2000);
+                notifications = [];
+                clients[0]._fetchLatestNotifications(5, function() {
+                  notifications.length.should.equal(0);
+                  clients[1].createAddress(function(err, x) {
+                    should.not.exist(err);
+                    clock.tick(8000);
+                    clients[0]._fetchLatestNotifications(5, function() {
+                      notifications.length.should.equal(0);
+                      done();
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+
   describe('Wallet Creation', function() {
     it('should check balance in a 1-1 ', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
