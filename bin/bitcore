@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-// vi: ft=javascript -*- mode: JavaScript; -*-
 
-var node = require('bitcore-node');
-node.cli.bitcore();
+var bitcore = require('bitcore-node/lib/cli/bitcore');
+var path = require('path');
+var servicesPath = path.resolve(__dirname, '../');
+var additionalServices = ['insight-api', 'insight-ui'];
+bitcore(servicesPath, additionalServices);
