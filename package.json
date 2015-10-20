@@ -2,7 +2,7 @@
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "MIT",
   "keywords": [
     "bitcoin",
@@ -33,11 +33,10 @@
     "preconditions": "^1.0.8",
     "request": "^2.53.0",
     "sjcl": "^1.0.2",
-    "socket.io-client": "^1.3.5",
     "uglify": "^0.1.1"
   },
   "devDependencies": {
-    "bitcore-wallet-service": "~1.0.0",
+    "bitcore-wallet-service": "~1.1.0",
     "chai": "^1.9.1",
     "coveralls": "^2.11.2",
     "grunt-jsdoc": "^0.5.8",
