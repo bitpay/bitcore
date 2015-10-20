@@ -3923,6 +3923,38 @@ describe('Wallet service', function() {
       });
     });
 
+    it('should pull new block notifications along with wallet notifications in the last 60 seconds', function(done) {
+      // Simulate new block notification
+      server.walletId = 'livenet';
+      server._notify('NewBlock', {
+        hash: 'dummy hash',
+      }, {
+        isGlobal: true
+      }, function(err) {
+        should.not.exist(err);
+        server.walletId = 'testnet';
+        server._notify('NewBlock', {
+          hash: 'dummy hash',
+        }, {
+          isGlobal: true
+        }, function(err) {
+          should.not.exist(err);
+          server.walletId = wallet.id;
+          server.getNotifications({
+            minTs: +Date.now() - (60 * 1000),
+          }, function(err, notifications) {
+            should.not.exist(err);
+            var types = _.pluck(notifications, 'type');
+            types.should.deep.equal(['NewTxProposal', 'NewTxProposal', 'NewBlock']);
+            var walletIds = _.uniq(_.pluck(notifications, 'walletId'));
+            walletIds.length.should.equal(1);
+            walletIds[0].should.equal(wallet.id);
+            done();
+          });
+        });
+      });
+    });
+
     it('should pull notifications in the last 60 seconds', function(done) {
       server.getNotifications({
         minTs: +Date.now() - (60 * 1000),
@@ -4134,7 +4166,7 @@ describe('Wallet service', function() {
               });
             },
             function(next) {
-              server.getNotifications({}, function(err, items) {
+              server.storage.fetchNotifications(wallet.id, null, 0, function(err, items) {
                 items.length.should.equal(0);
                 next();
               });

@@ -84,37 +84,85 @@ describe('ExpressApp', function() {
         });
       });
 
-      it('/v1/notifications', function(done) {
-        var clock = sinon.useFakeTimers(1234000, 'Date');
+      describe('/v1/notifications', function(done) {
+        var server, TestExpressApp, clock;
+        beforeEach(function() {
+          clock = sinon.useFakeTimers(1234000, 'Date');
 
-        var server = {
-          getNotifications: sinon.stub().callsArgWith(1, null, {})
-        };
-        var TestExpressApp = proxyquire('../lib/expressapp', {
-          './server': {
-            initialize: sinon.stub().callsArg(1),
-            getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
-          }
-        });
-        start(TestExpressApp, function() {
-          var requestOptions = {
-            url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?notificationId=123&minTs=0',
-            headers: {
-              'x-identity': 'identity',
-              'x-signature': 'signature'
-            }
+          server = {
+            getNotifications: sinon.stub().callsArgWith(1, null, {})
           };
-          request(requestOptions, function(err, res, body) {
-            should.not.exist(err);
-            res.statusCode.should.equal(200);
-            body.should.equal('{}');
-            server.getNotifications.calledWith({
-              notificationId: '123',
-              minTs: 1234000 - 60000, // override minTs argument with a hardcoded 60 seconds span
-            }).should.be.true;
+          TestExpressApp = proxyquire('../lib/expressapp', {
+            './server': {
+              initialize: sinon.stub().callsArg(1),
+              getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+            }
+          });
+        });
+        afterEach(function() {
+          clock.restore();
+        });
 
-            clock.restore();
-            done();
+        it('should fetch notifications from a specified id', function(done) {
+          start(TestExpressApp, function() {
+            var requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?notificationId=123',
+              headers: {
+                'x-identity': 'identity',
+                'x-signature': 'signature'
+              }
+            };
+            request(requestOptions, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              body.should.equal('{}');
+              server.getNotifications.calledWith({
+                notificationId: '123',
+                minTs: +Date.now() - 60000,
+              }).should.be.true;
+              done();
+            });
+          });
+        });
+        it('should allow custom minTs within limits', function(done) {
+          start(TestExpressApp, function() {
+            var requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?timeSpan=30',
+              headers: {
+                'x-identity': 'identity',
+                'x-signature': 'signature'
+              }
+            };
+            request(requestOptions, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              server.getNotifications.calledWith({
+                notificationId: undefined,
+                minTs: +Date.now() - 30000,
+              }).should.be.true;
+              done();
+            });
+          });
+        });
+        it('should limit minTs to 60 seconds', function(done) {
+          start(TestExpressApp, function() {
+            var requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?timeSpan=90',
+              headers: {
+                'x-identity': 'identity',
+                'x-signature': 'signature'
+              }
+            };
+            request(requestOptions, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              body.should.equal('{}');
+              server.getNotifications.calledWith({
+                notificationId: undefined,
+                minTs: Date.now() - 60000, // override minTs argument with a hardcoded 60 seconds span
+              }).should.be.true;
+              done();
+            });
           });
         });
       });
