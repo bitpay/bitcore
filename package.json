@@ -90,7 +90,7 @@
     "insight-ui": "^0.3.0"
   },
   "devDependencies": {
-    "bitcore-build": "bitpay/bitcore-build",
+    "bitcore-build": "bitpay/bitcore-build#36e15f",
     "brfs": "^1.2.0",
     "chai": "^1.10.0",
     "gulp": "^3.8.10",
