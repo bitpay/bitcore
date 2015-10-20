@@ -372,7 +372,7 @@ describe('client API', function() {
                   notifications.length.should.equal(0);
                   clients[1].createAddress(function(err, x) {
                     should.not.exist(err);
-                    clock.tick(8000);
+                    clock.tick(60 * 1000);
                     clients[0]._fetchLatestNotifications(5, function() {
                       notifications.length.should.equal(0);
                       done();
