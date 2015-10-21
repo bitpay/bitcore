@@ -103,7 +103,7 @@ function startGulp(name, opts) {
     var browserifyCommand;
 
     if (isSubmodule) {
-      browserifyCommand = buildBinPath + 'browserify --require ./index.js:' + fullname + ' --external bitcore -o ' + fullname + '.js';
+      browserifyCommand = buildBinPath + 'browserify --require ./index.js:' + fullname + ' --external bitcore-lib -o ' + fullname + '.js';
     } else {
       browserifyCommand = buildBinPath + 'browserify --require ./index.js:bitcore -o bitcore.js';
     }
