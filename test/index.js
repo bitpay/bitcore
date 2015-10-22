@@ -7,7 +7,7 @@ var bitcore = require('bitcore-lib');
 var PrivateKey = bitcore.PrivateKey;
 var PublicKey = bitcore.PublicKey;
 
-var is_browser = typeof process === 'undefined' || typeof process.versions === 'undefined';
+var is_browser = process.browser;
 
 var PaymentProtocol = require('../');
 var SampleRequest  = require('./samplerequest');

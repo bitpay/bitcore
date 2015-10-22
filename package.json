@@ -49,7 +49,7 @@
     "protobufjs": "=3.0.0"
   },
   "devDependencies": {
-    "bitcore-build": "git://github.com/bitpay/bitcore-build.git#057c33",
+    "bitcore-build": "git://github.com/bitpay/bitcore-build.git#a93a9970e3a0b3f948309730d4e4af5100dddf5a",
     "brfs": "^1.2.0",
     "chai": "~1.10.0",
     "gulp": "^3.8.10"
