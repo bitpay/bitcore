@@ -131,7 +131,7 @@ There are a series of methods used for serialization:
 - `toJSON`: Will be called when using `JSON.stringify` to return JSON-encoded string using the output from `toObject`.
 - `toString` or `uncheckedSerialize`: Returns an hexadecimal serialization of the transaction, in the [serialization format for bitcoin](https://bitcoin.org/en/developer-reference#raw-transaction-format).
 - `serialize`: Does a series of checks before serializing the transaction
-- `inspect`: Returns a string with some information about the transaction (currently a string formated as `<Transaction 000...000>`, that only shows the serialized value of the transaction.
+- `inspect`: Returns a string with some information about the transaction (currently a string formatted as `<Transaction 000...000>`, that only shows the serialized value of the transaction.
 - `toBuffer`: Serializes the transaction for sending over the wire in the bitcoin network
 - `toBufferWriter`: Uses an already existing BufferWriter to copy over the serialized transaction
 
@@ -174,4 +174,4 @@ console.log(transaction.getLockTime());
 ```
 
 ## Upcoming changes
-We're debating an API for Merge Avoidance, CoinJoin, Smart contracts, CoinSwap, and Stealth Addresses. We're expecting to have all of them by some time in 2015. Payment channel creation is avaliable in the [bitcore-channel](https://github.com/bitpay/bitcore-channel) module.
+We're debating an API for Merge Avoidance, CoinJoin, Smart contracts, CoinSwap, and Stealth Addresses. We're expecting to have all of them by some time in 2015. Payment channel creation is available in the [bitcore-channel](https://github.com/bitpay/bitcore-channel) module.

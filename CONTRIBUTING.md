@@ -97,7 +97,7 @@ When possible, bitcore objects should have standard methods on an instance proto
 * `toBuffer` - A hex Buffer
 
 These should have a matching static method that can be used for instantiation:
-* `fromObject` - Should be able to instatiate with the output from `toObject/toJSON`
+* `fromObject` - Should be able to instantiate with the output from `toObject/toJSON`
 * `fromString` - Should be able to instantiate with output from `toString`
 * `fromBuffer` - Should likewise be able to instantiate from output from `toBuffer`
 
