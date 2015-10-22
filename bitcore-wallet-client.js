@@ -72,14 +72,15 @@ API.privateKeyEncryptionOpts = {
 
 API.prototype.initNotifications = function(cb) {
   log.warn('DEPRECATED: use initialize() instead.');
-  this.initialize(cb);
+  this.initialize({}, cb);
 };
 
-API.prototype.initialize = function(cb) {
+API.prototype.initialize = function(opts, cb) {
   $.checkState(this.credentials);
 
   var self = this;
-  self._initNotifications();
+
+  self._initNotifications(opts);
   return cb();
 };
 
@@ -136,6 +137,8 @@ API.prototype._initNotifications = function(opts) {
 };
 
 API.prototype._disposeNotifications = function() {
+  var self = this;
+
   if (self.notificationsIntervalId) {
     clearInterval(self.notificationsIntervalId);
     self.notificationsIntervalId = null;
@@ -5816,7 +5819,7 @@ module.exports={
   "homepage": "https://github.com/cryptocoinjs/bigi#readme",
   "_id": "bigi@1.4.1",
   "_shasum": "726e8ab08d1fe1dfb8aa6bb6309bffecf93a21b7",
-  "_from": "bigi@>=1.2.0 <2.0.0",
+  "_from": "bigi@^1.2.0",
   "_npmVersion": "2.10.1",
   "_nodeVersion": "2.1.0",
   "_npmUser": {
@@ -5846,7 +5849,8 @@ module.exports={
     "tarball": "http://registry.npmjs.org/bigi/-/bigi-1.4.1.tgz"
   },
   "directories": {},
-  "_resolved": "https://registry.npmjs.org/bigi/-/bigi-1.4.1.tgz"
+  "_resolved": "https://registry.npmjs.org/bigi/-/bigi-1.4.1.tgz",
+  "readme": "ERROR: No README data found!"
 }
 
 },{}],16:[function(require,module,exports){
@@ -26225,7 +26229,7 @@ module.exports={
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/indutny/elliptic.git"
+    "url": "git@github.com:indutny/elliptic"
   },
   "keywords": [
     "EC",
@@ -26259,8 +26263,8 @@ module.exports={
   "readmeFilename": "README.md",
   "_id": "elliptic@3.0.3",
   "_shasum": "865c9b420bfbe55006b9f969f97a0d2c44966595",
-  "_resolved": "https://registry.npmjs.org/elliptic/-/elliptic-3.0.3.tgz",
-  "_from": "https://registry.npmjs.org/elliptic/-/elliptic-3.0.3.tgz"
+  "_from": "https://registry.npmjs.org/elliptic/-/elliptic-3.0.3.tgz",
+  "_resolved": "https://registry.npmjs.org/elliptic/-/elliptic-3.0.3.tgz"
 }
 
 },{}],123:[function(require,module,exports){
@@ -28317,7 +28321,7 @@ module.exports={
   "homepage": "https://github.com/bitpay/bitcore-lib#readme",
   "_id": "bitcore-lib@0.13.7",
   "_shasum": "7de7dd2de96c339e23ec1847983c3d09932911e5",
-  "_from": "bitcore-lib@>=0.13.7 <0.14.0",
+  "_from": "bitcore-lib@^0.13.7",
   "_npmVersion": "2.11.3",
   "_nodeVersion": "0.12.7",
   "_npmUser": {
@@ -28335,7 +28339,8 @@ module.exports={
     "tarball": "http://registry.npmjs.org/bitcore-lib/-/bitcore-lib-0.13.7.tgz"
   },
   "directories": {},
-  "_resolved": "https://registry.npmjs.org/bitcore-lib/-/bitcore-lib-0.13.7.tgz"
+  "_resolved": "https://registry.npmjs.org/bitcore-lib/-/bitcore-lib-0.13.7.tgz",
+  "readme": "ERROR: No README data found!"
 }
 
 },{}],137:[function(require,module,exports){
@@ -54451,7 +54456,7 @@ module.exports={
   "gitHead": "d86cd2a8178f7e7cecbd6dd92eea084e2ab44c13",
   "_id": "elliptic@3.1.0",
   "_shasum": "c21682ef762769b56a74201609105da11d5f60cc",
-  "_from": "elliptic@>=3.0.0 <4.0.0",
+  "_from": "elliptic@^3.0.0",
   "_npmVersion": "2.11.0",
   "_nodeVersion": "2.2.1",
   "_npmUser": {
@@ -103662,7 +103667,7 @@ module.exports={
   "gitHead": "fb1456177c9b51445afa34656eb314c70c2adcd2",
   "_id": "tough-cookie@2.2.0",
   "_shasum": "d4ce661075e5fddb7f20341d3f9931a6fbbadde0",
-  "_from": "tough-cookie@>=2.2.0 <2.3.0",
+  "_from": "tough-cookie@~2.2.0",
   "_npmVersion": "2.11.2",
   "_nodeVersion": "0.12.5",
   "_npmUser": {
@@ -105436,7 +105441,7 @@ module.exports={
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "license": "MIT",
   "keywords": [
     "bitcoin",
