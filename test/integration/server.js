@@ -237,8 +237,8 @@ helpers.stubFeeLevels = function(levels) {
 };
 
 helpers.stubAddressActivity = function(activeAddresses) {
-  blockchainExplorer.getAddressActivity = function(addresses, cb) {
-    return cb(null, _.intersection(activeAddresses, addresses).length > 0);
+  blockchainExplorer.getAddressActivity = function(address, cb) {
+    return cb(null, _.contains(activeAddresses, address));
   };
 };
 
@@ -4771,7 +4771,7 @@ describe('Wallet service', function() {
     describe('1-of-1 wallet (BIP44 & P2PKH)', function() {
       beforeEach(function(done) {
         this.timeout(5000);
-        WalletService.SCAN_CONFIG.scanWindow = 2;
+        WalletService.SCAN_CONFIG.maxGap = 2;
         WalletService.SCAN_CONFIG.derivationDelay = 0;
 
         helpers.createAndJoinWallet(1, 1, function(s, w) {
@@ -4784,7 +4784,7 @@ describe('Wallet service', function() {
         WalletService.SCAN_CONFIG = scanConfigOld;
       });
 
-      it('should scan main addresses', function(done) {
+      it.only('should scan main addresses', function(done) {
         helpers.stubAddressActivity(
           ['1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG', // m/0/0
             '1GdXraZ1gtoVAvBh49D4hK9xLm6SKgesoE', // m/0/2
@@ -4794,9 +4794,7 @@ describe('Wallet service', function() {
           'm/0/0',
           'm/0/1',
           'm/0/2',
-          'm/0/3',
           'm/1/0',
-          'm/1/1',
         ];
         server.scan({}, function(err) {
           should.not.exist(err);
@@ -4810,7 +4808,7 @@ describe('Wallet service', function() {
               _.difference(paths, expectedPaths).length.should.equal(0);
               server.createAddress({}, function(err, address) {
                 should.not.exist(err);
-                address.path.should.equal('m/0/4');
+                address.path.should.equal('m/0/3');
                 done();
               });
             });
