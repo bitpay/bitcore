@@ -4772,7 +4772,6 @@ describe('Wallet service', function() {
       beforeEach(function(done) {
         this.timeout(5000);
         WalletService.SCAN_CONFIG.maxGap = 2;
-        WalletService.SCAN_CONFIG.derivationDelay = 0;
 
         helpers.createAndJoinWallet(1, 1, function(s, w) {
           server = s;
@@ -4784,7 +4783,7 @@ describe('Wallet service', function() {
         WalletService.SCAN_CONFIG = scanConfigOld;
       });
 
-      it.only('should scan main addresses', function(done) {
+      it('should scan main addresses', function(done) {
         helpers.stubAddressActivity(
           ['1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG', // m/0/0
             '1GdXraZ1gtoVAvBh49D4hK9xLm6SKgesoE', // m/0/2
@@ -4815,6 +4814,27 @@ describe('Wallet service', function() {
           });
         });
       });
+
+      it('should not affect indexes on new wallet', function(done) {
+        helpers.stubAddressActivity([]);
+        server.scan({}, function(err) {
+          should.not.exist(err);
+          server.getWallet({}, function(err, wallet) {
+            should.not.exist(err);
+            wallet.scanStatus.should.equal('success');
+            server.storage.fetchAddresses(wallet.id, function(err, addresses) {
+              should.not.exist(err);
+              addresses.length.should.equal(0);
+              server.createAddress({}, function(err, address) {
+                should.not.exist(err);
+                address.path.should.equal('m/0/0');
+                done();
+              });
+            });
+          });
+        });
+      });
+
       it('should restore wallet balance', function(done) {
         async.waterfall([
 
@@ -4856,6 +4876,7 @@ describe('Wallet service', function() {
           done();
         });
       });
+
       it('should abort scan if there is an error checking address activity', function(done) {
         blockchainExplorer.getAddressActivity = sinon.stub().callsArgWith(1, 'dummy error');
         server.scan({}, function(err) {
@@ -4880,8 +4901,7 @@ describe('Wallet service', function() {
 
       beforeEach(function(done) {
         this.timeout(5000);
-        WalletService.SCAN_CONFIG.scanWindow = 2;
-        WalletService.SCAN_CONFIG.derivationDelay = 0;
+        WalletService.SCAN_CONFIG.maxGap = 2;
 
         helpers.createAndJoinWallet(1, 2, {
           supportBIP44AndP2PKH: false
@@ -4905,9 +4925,7 @@ describe('Wallet service', function() {
           'm/2147483647/0/0',
           'm/2147483647/0/1',
           'm/2147483647/0/2',
-          'm/2147483647/0/3',
           'm/2147483647/1/0',
-          'm/2147483647/1/1',
         ];
         server.scan({}, function(err) {
           should.not.exist(err);
@@ -4921,7 +4939,7 @@ describe('Wallet service', function() {
               _.difference(paths, expectedPaths).length.should.equal(0);
               server.createAddress({}, function(err, address) {
                 should.not.exist(err);
-                address.path.should.equal('m/2147483647/0/4');
+                address.path.should.equal('m/2147483647/0/3');
                 done();
               });
             });
@@ -4938,15 +4956,11 @@ describe('Wallet service', function() {
           ]);
         var expectedPaths = [
           'm/2147483647/0/0',
-          'm/2147483647/0/1',
           'm/2147483647/1/0',
-          'm/2147483647/1/1',
           'm/0/0/0',
           'm/0/0/1',
           'm/1/0/0',
-          'm/1/0/1',
           'm/1/1/0',
-          'm/1/1/1',
         ];
         server.scan({
           includeCopayerBranches: true
@@ -4969,8 +4983,7 @@ describe('Wallet service', function() {
     var scanConfigOld = WalletService.SCAN_CONFIG;
     beforeEach(function(done) {
       this.timeout(5000);
-      WalletService.SCAN_CONFIG.scanWindow = 2;
-      WalletService.SCAN_CONFIG.derivationDelay = 0;
+      WalletService.SCAN_CONFIG.maxGap = 2;
 
       helpers.createAndJoinWallet(1, 1, {
         supportBIP44AndP2PKH: false
@@ -4995,9 +5008,7 @@ describe('Wallet service', function() {
         'm/2147483647/0/0',
         'm/2147483647/0/1',
         'm/2147483647/0/2',
-        'm/2147483647/0/3',
         'm/2147483647/1/0',
-        'm/2147483647/1/1',
       ];
       server.messageBroker.onMessage(function(n) {
         if (n.type == 'ScanFinished') {
@@ -5012,7 +5023,7 @@ describe('Wallet service', function() {
               _.difference(paths, expectedPaths).length.should.equal(0);
               server.createAddress({}, function(err, address) {
                 should.not.exist(err);
-                address.path.should.equal('m/2147483647/0/4');
+                address.path.should.equal('m/2147483647/0/3');
                 done();
               });
             })
