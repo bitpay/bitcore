@@ -4815,6 +4815,45 @@ describe('Wallet service', function() {
         });
       });
 
+      it('should not go beyond max gap', function(done) {
+        helpers.stubAddressActivity(
+          ['1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG', // m/0/0
+            '1GdXraZ1gtoVAvBh49D4hK9xLm6SKgesoE', // m/0/2
+            '1DY9exavapgnCUWDnSTJe1BPzXcpgwAQC4', // m/0/5
+            '1LD7Cr68LvBPTUeXrr6YXfGrogR7TVj3WQ', // m/1/3
+          ]);
+        var expectedPaths = [
+          'm/0/0',
+          'm/0/1',
+          'm/0/2',
+        ];
+        server.scan({}, function(err) {
+          should.not.exist(err);
+          server.getWallet({}, function(err, wallet) {
+            should.not.exist(err);
+            wallet.scanStatus.should.equal('success');
+            server.storage.fetchAddresses(wallet.id, function(err, addresses) {
+              should.exist(addresses);
+              addresses.length.should.equal(expectedPaths.length);
+              var paths = _.pluck(addresses, 'path');
+              _.difference(paths, expectedPaths).length.should.equal(0);
+              server.createAddress({}, function(err, address) {
+                should.not.exist(err);
+                address.path.should.equal('m/0/3');
+                // A rescan should see the m/0/5 address initially beyond the gap
+                server.scan({}, function(err) {
+                  server.createAddress({}, function(err, address) {
+                    should.not.exist(err);
+                    address.path.should.equal('m/0/6');
+                    done();
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+
       it('should not affect indexes on new wallet', function(done) {
         helpers.stubAddressActivity([]);
         server.scan({}, function(err) {
