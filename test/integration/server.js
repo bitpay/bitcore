@@ -1668,7 +1668,7 @@ describe('Wallet service', function() {
         });
       });
 
-      it.only('should fail to create more consecutive addresses with no activity than allowed', function(done) {
+      it('should fail to create more consecutive addresses with no activity than allowed', function(done) {
         var MAX_MAIN_ADDRESS_GAP_old = WalletService.MAX_MAIN_ADDRESS_GAP;
         var n = WalletService.MAX_MAIN_ADDRESS_GAP = 2;
         helpers.stubAddressActivity([]);
