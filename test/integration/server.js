@@ -237,8 +237,8 @@ helpers.stubFeeLevels = function(levels) {
 };
 
 helpers.stubAddressActivity = function(activeAddresses) {
-  blockchainExplorer.getAddressActivity = function(address, cb) {
-    return cb(null, _.contains(activeAddresses, address));
+  blockchainExplorer.getAddressActivity = function(addresses, cb) {
+    return cb(null, _.intersection(activeAddresses, [].concat(addresses)).length > 0);
   };
 };
 
@@ -1667,32 +1667,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
-      it('should fail to create more consecutive addresses with no activity than allowed', function(done) {
-        var MAX_MAIN_ADDRESS_GAP_old = WalletService.MAX_MAIN_ADDRESS_GAP;
-        var n = WalletService.MAX_MAIN_ADDRESS_GAP = 2;
-        helpers.stubAddressActivity([]);
-        async.map(_.range(n), function(i, next) {
-          server.createAddress({}, next);
-        }, function(err, addresses) {
-          addresses.length.should.equal(n);
-
-          server.createAddress({}, function(err, address) {
-            should.exist(err);
-            should.not.exist(address);
-            err.code.should.equal('MAIN_ADDRESS_GAP_REACHED');
-            server.createAddress({
-              ignoreMaxGap: true
-            }, function(err, address) {
-              should.not.exist(err);
-              should.exist(address);
-              address.path.should.equal('m/0/' + n);
-              WalletService.MAX_MAIN_ADDRESS_GAP = MAX_MAIN_ADDRESS_GAP_old;
-              done();
-            });
-          });
-        });
-      });
     });
 
     describe('1-of-1 (BIP44 & P2PKH)', function() {
@@ -1739,6 +1713,42 @@ describe('Wallet service', function() {
           // No two identical addresses
           _.uniq(_.pluck(addresses, 'address')).length.should.equal(N);
           done();
+        });
+      });
+
+      it('should fail to create more consecutive addresses with no activity than allowed', function(done) {
+        var MAX_MAIN_ADDRESS_GAP_old = WalletService.MAX_MAIN_ADDRESS_GAP;
+        WalletService.MAX_MAIN_ADDRESS_GAP = 2;
+        helpers.stubAddressActivity([]);
+        async.map(_.range(2), function(i, next) {
+          server.createAddress({}, next);
+        }, function(err, addresses) {
+          addresses.length.should.equal(2);
+
+          server.createAddress({}, function(err, address) {
+            should.exist(err);
+            should.not.exist(address);
+            err.code.should.equal('MAIN_ADDRESS_GAP_REACHED');
+            server.createAddress({
+              ignoreMaxGap: true
+            }, function(err, address) {
+              should.not.exist(err);
+              should.exist(address);
+              address.path.should.equal('m/0/2');
+
+              helpers.stubAddressActivity([
+                '1GdXraZ1gtoVAvBh49D4hK9xLm6SKgesoE', // m/0/2
+              ]);
+              server.createAddress({}, function(err, address) {
+                should.not.exist(err);
+                should.exist(address);
+                address.path.should.equal('m/0/3');
+
+                WalletService.MAX_MAIN_ADDRESS_GAP = MAX_MAIN_ADDRESS_GAP_old;
+                done();
+              });
+            });
+          });
         });
       });
     });
