@@ -48,7 +48,7 @@ transaction.sign(privateKey);
 
 - [Lib](https://github.com/bitpay/bitcore-lib) - All of the core Bitcoin primatives including transactions, private key management and others
 - [Payment Protocol](https://github.com/bitpay/bitcore-payment-protocol) - A protocol for communication between a merchant and customer
-- [P2P](https://github.com/bitpay/bitcore-p2p) - The peer-to-peer networking protocot
+- [P2P](https://github.com/bitpay/bitcore-p2p) - The peer-to-peer networking protocol
 - [Mnemonic](https://github.com/bitpay/bitcore-mnemonic) - Implements mnemonic code for generating deterministic keys
 - [Channel](https://github.com/bitpay/bitcore-channel) - Micropayment channels for rapidly adjusting bitcoin transactions
 - [Message](https://github.com/bitpay/bitcore-message) - Bitcoin message verification and signing
