@@ -4874,6 +4874,29 @@ describe('Wallet service', function() {
         });
       });
 
+      it('should not rewind already generated addresses on error', function(done) {
+        server.createAddress({}, function(err, address) {
+          should.not.exist(err);
+          address.path.should.equal('m/0/0');
+          blockchainExplorer.getAddressActivity = sinon.stub().callsArgWith(1, 'dummy error');
+          server.scan({}, function(err) {
+            should.exist(err);
+            err.toString().should.equal('dummy error');
+            server.getWallet({}, function(err, wallet) {
+              should.not.exist(err);
+              wallet.scanStatus.should.equal('error');
+              wallet.addressManager.receiveAddressIndex.should.equal(1);
+              wallet.addressManager.changeAddressIndex.should.equal(0);
+              server.createAddress({}, function(err, address) {
+                should.not.exist(err);
+                address.path.should.equal('m/0/1');
+                done();
+              });
+            });
+          });
+        });
+      });
+
       it('should restore wallet balance', function(done) {
         async.waterfall([
 
