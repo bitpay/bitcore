@@ -1900,7 +1900,6 @@ describe('Wallet service', function() {
     });
   });
 
-
   describe('Multiple request Pub Keys', function() {
     var server, wallet;
     var opts, reqPrivKey, ws;
@@ -2338,6 +2337,23 @@ describe('Wallet service', function() {
                 done();
               });
             });
+          });
+        });
+      });
+    });
+
+    it('should generate new change address for each created tx', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 2], function() {
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, TestData.copayers[0].privKey_1H_0);
+        server.createTx(txOpts, function(err, tx1) {
+          should.not.exist(err);
+          should.exist(tx1);
+          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, TestData.copayers[0].privKey_1H_0);
+          server.createTx(txOpts, function(err, tx2) {
+            should.not.exist(err);
+            should.exist(tx2);
+            tx1.changeAddress.address.should.not.equal(tx2.changeAddress.address);
+            done();
           });
         });
       });
