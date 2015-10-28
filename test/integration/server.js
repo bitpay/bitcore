@@ -1751,6 +1751,29 @@ describe('Wallet service', function() {
           });
         });
       });
+
+      it('should cache address activity', function(done) {
+        var MAX_MAIN_ADDRESS_GAP_old = WalletService.MAX_MAIN_ADDRESS_GAP;
+        WalletService.MAX_MAIN_ADDRESS_GAP = 2;
+        helpers.stubAddressActivity([]);
+        async.map(_.range(2), function(i, next) {
+          server.createAddress({}, next);
+        }, function(err, addresses) {
+          addresses.length.should.equal(2);
+
+          helpers.stubAddressActivity([addresses[1].address]);
+          var getAddressActivitySpy = sinon.spy(blockchainExplorer, 'getAddressActivity');
+          server.createAddress({}, function(err, address) {
+            should.not.exist(err);
+            server.createAddress({}, function(err, address) {
+              should.not.exist(err);
+              getAddressActivitySpy.callCount.should.equal(1);
+              WalletService.MAX_MAIN_ADDRESS_GAP = MAX_MAIN_ADDRESS_GAP_old;
+              done();
+            });
+          });
+        });
+      });
     });
   });
 
