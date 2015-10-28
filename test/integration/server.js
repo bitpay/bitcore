@@ -237,8 +237,8 @@ helpers.stubFeeLevels = function(levels) {
 };
 
 helpers.stubAddressActivity = function(activeAddresses) {
-  blockchainExplorer.getAddressActivity = function(addresses, cb) {
-    return cb(null, _.intersection(activeAddresses, [].concat(addresses)).length > 0);
+  blockchainExplorer.getAddressActivity = function(address, cb) {
+    return cb(null, _.contains(activeAddresses, address));
   };
 };
 
