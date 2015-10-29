@@ -1720,7 +1720,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe.only('#getMainAddresses', function() {
+  describe('#getMainAddresses', function() {
     var server, wallet;
 
     beforeEach(function(done) {
