@@ -1715,6 +1715,65 @@ describe('Wallet service', function() {
           done();
         });
       });
+
+      it('should fail to create more consecutive addresses with no activity than allowed', function(done) {
+        var MAX_MAIN_ADDRESS_GAP_old = WalletService.MAX_MAIN_ADDRESS_GAP;
+        WalletService.MAX_MAIN_ADDRESS_GAP = 2;
+        helpers.stubAddressActivity([]);
+        async.map(_.range(2), function(i, next) {
+          server.createAddress({}, next);
+        }, function(err, addresses) {
+          addresses.length.should.equal(2);
+
+          server.createAddress({}, function(err, address) {
+            should.exist(err);
+            should.not.exist(address);
+            err.code.should.equal('MAIN_ADDRESS_GAP_REACHED');
+            server.createAddress({
+              ignoreMaxGap: true
+            }, function(err, address) {
+              should.not.exist(err);
+              should.exist(address);
+              address.path.should.equal('m/0/2');
+
+              helpers.stubAddressActivity([
+                '1GdXraZ1gtoVAvBh49D4hK9xLm6SKgesoE', // m/0/2
+              ]);
+              server.createAddress({}, function(err, address) {
+                should.not.exist(err);
+                should.exist(address);
+                address.path.should.equal('m/0/3');
+
+                WalletService.MAX_MAIN_ADDRESS_GAP = MAX_MAIN_ADDRESS_GAP_old;
+                done();
+              });
+            });
+          });
+        });
+      });
+
+      it('should cache address activity', function(done) {
+        var MAX_MAIN_ADDRESS_GAP_old = WalletService.MAX_MAIN_ADDRESS_GAP;
+        WalletService.MAX_MAIN_ADDRESS_GAP = 2;
+        helpers.stubAddressActivity([]);
+        async.map(_.range(2), function(i, next) {
+          server.createAddress({}, next);
+        }, function(err, addresses) {
+          addresses.length.should.equal(2);
+
+          helpers.stubAddressActivity([addresses[1].address]);
+          var getAddressActivitySpy = sinon.spy(blockchainExplorer, 'getAddressActivity');
+          server.createAddress({}, function(err, address) {
+            should.not.exist(err);
+            server.createAddress({}, function(err, address) {
+              should.not.exist(err);
+              getAddressActivitySpy.callCount.should.equal(1);
+              WalletService.MAX_MAIN_ADDRESS_GAP = MAX_MAIN_ADDRESS_GAP_old;
+              done();
+            });
+          });
+        });
+      });
     });
   });
 
