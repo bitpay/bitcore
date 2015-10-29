@@ -4495,7 +4495,12 @@ describe('Wallet service', function() {
       server.getTxHistory({}, function(err, txs) {
         should.not.exist(err);
         should.exist(txs);
-        txs.length.should.equal(2);
+        txs.length.should.equal(TestData.history.length);
+        var i = 0;
+        _.each(txs, function(tx) {
+          var h = TestData.history[i++];
+          tx.time.should.equal(h.confirmations ? h.blocktime : h.firstSeenTs);
+        });
         done();
       });
     });
@@ -4769,12 +4774,13 @@ describe('Wallet service', function() {
         txid: 'xx'
       })
       helpers.stubHistory(h);
+      var l = TestData.history.length;
 
       server.getTxHistory({}, function(err, txs) {
         should.not.exist(err);
         should.exist(txs);
-        txs.length.should.equal(3);
-        txs[2].action.should.equal('invalid');
+        txs.length.should.equal(l + 1);
+        txs[l].action.should.equal('invalid');
         done();
       });
     });
