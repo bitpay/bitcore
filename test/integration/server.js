@@ -315,14 +315,16 @@ helpers.createProposalOpts = function(type, outputs, signingKey, moreOpts) {
 };
 
 helpers.createAddresses = function(server, wallet, main, change, cb) {
+  var clock = sinon.useFakeTimers(Date.now(), 'Date');
   async.map(_.range(main + change), function(i, next) {
+    clock.tick(1000);
     var address = wallet.createAddress(i >= main);
     server.storage.storeAddressAndWallet(wallet, address, function(err) {
-      if (err) return next(err);
-      next(null, address);
+      next(err, address);
     });
   }, function(err, addresses) {
     if (err) throw new Error('Could not generate addresses');
+    clock.restore();
     return cb(_.take(addresses, main), _.takeRight(addresses, change));
   });
 };
@@ -1776,6 +1778,54 @@ describe('Wallet service', function() {
       });
     });
   });
+
+  describe('#getMainAddresses', function() {
+    var server, wallet;
+
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 2, {}, function(s, w) {
+        server = s;
+        wallet = w;
+        helpers.createAddresses(server, wallet, 5, 0, function() {
+          done();
+        });
+      });
+    });
+
+    it('should get all addresses', function(done) {
+      server.getMainAddresses({}, function(err, addresses) {
+        should.not.exist(err);
+        addresses.length.should.equal(5);
+        addresses[0].path.should.equal('m/0/0');
+        addresses[4].path.should.equal('m/0/4');
+        done();
+      });
+    });
+    it('should get first N addresses', function(done) {
+      server.getMainAddresses({
+        limit: 3
+      }, function(err, addresses) {
+        should.not.exist(err);
+        addresses.length.should.equal(3);
+        addresses[0].path.should.equal('m/0/0');
+        addresses[2].path.should.equal('m/0/2');
+        done();
+      });
+    });
+    it('should get last N addresses in reverse order', function(done) {
+      server.getMainAddresses({
+        limit: 3,
+        reverse: true,
+      }, function(err, addresses) {
+        should.not.exist(err);
+        addresses.length.should.equal(3);
+        addresses[0].path.should.equal('m/0/4');
+        addresses[2].path.should.equal('m/0/2');
+        done();
+      });
+    });
+  });
+
 
   describe('Preferences', function() {
     var server, wallet;
