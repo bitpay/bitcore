@@ -315,14 +315,16 @@ helpers.createProposalOpts = function(type, outputs, signingKey, moreOpts) {
 };
 
 helpers.createAddresses = function(server, wallet, main, change, cb) {
+  var clock = sinon.useFakeTimers(Date.now(), 'Date');
   async.map(_.range(main + change), function(i, next) {
+    clock.tick(1000);
     var address = wallet.createAddress(i >= main);
     server.storage.storeAddressAndWallet(wallet, address, function(err) {
-      if (err) return next(err);
-      next(null, address);
+      next(err, address);
     });
   }, function(err, addresses) {
     if (err) throw new Error('Could not generate addresses');
+    clock.restore();
     return cb(_.take(addresses, main), _.takeRight(addresses, change));
   });
 };
