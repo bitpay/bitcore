@@ -15,9 +15,10 @@ var tingodb = require('tingodb')({
   memStore: true
 });
 
+var Bitcore = require('bitcore-lib');
+
+var Constants = require('../../lib/constants');
 var Utils = require('../../lib/utils');
-var WalletUtils = require('bitcore-wallet-utils');
-var Bitcore = WalletUtils.Bitcore;
 var Storage = require('../../lib/storage');
 
 var Model = require('../../lib/model');
@@ -29,6 +30,18 @@ var TestData = require('../testdata');
 var CLIENT_VERSION = 'bwc-0.1.1';
 
 var helpers = {};
+
+helpers.signMessage = function(text, privKey) {
+  var priv = new Bitcore.PrivateKey(privKey);
+  var hash = Utils.hashMessage(text);
+  return Bitcore.crypto.ECDSA.sign(hash, priv, 'little').toString();
+};
+
+helpers.signRequestPubKey = function(requestPubKey, xPrivKey) {
+  var priv = new Bitcore.HDPrivateKey(xPrivKey).derive(Constants.PATHS.REQUEST_KEY_AUTH).privateKey;
+  return helpers.signMessage(requestPubKey, priv);
+};
+
 helpers.getAuthServer = function(copayerId, cb) {
   var verifyStub = sinon.stub(WalletService.prototype, '_verifySignature');
   verifyStub.returns(true);
@@ -52,11 +65,11 @@ helpers._generateCopayersTestData = function(n) {
 
     var xpriv_45H = xpriv.derive(45, true);
     var xpub_45H = Bitcore.HDPublicKey(xpriv_45H);
-    var id45 = WalletUtils.xPubToCopayerId(xpub_45H.toString());
+    var id45 = Copayer._xPubToCopayerId(xpub_45H.toString());
 
     var xpriv_44H_0H_0H = xpriv.derive(44, true).derive(0, true).derive(0, true);
     var xpub_44H_0H_0H = Bitcore.HDPublicKey(xpriv_44H_0H_0H);
-    var id44 = WalletUtils.xPubToCopayerId(xpub_44H_0H_0H.toString());
+    var id44 = Copayer._xPubToCopayerId(xpub_44H_0H_0H.toString());
 
     var xpriv_1H = xpriv.derive(1, true);
     var xpub_1H = Bitcore.HDPublicKey(xpriv_1H);
@@ -80,8 +93,8 @@ helpers._generateCopayersTestData = function(n) {
 };
 
 helpers.getSignedCopayerOpts = function(opts) {
-  var hash = WalletUtils.getCopayerHash(opts.name, opts.xPubKey, opts.requestPubKey);
-  opts.copayerSignature = WalletUtils.signMessage(hash, TestData.keyPair.priv);
+  var hash = WalletService._getCopayerHash(opts.name, opts.xPubKey, opts.requestPubKey);
+  opts.copayerSignature = helpers.signMessage(hash, TestData.keyPair.priv);
   return opts;
 };
 
@@ -141,7 +154,6 @@ helpers.randomTXID = function() {
   return Bitcore.crypto.Hash.sha256(new Buffer(Math.random() * 100000)).toString('hex');;
 };
 
-
 helpers.toSatoshi = function(btc) {
   if (_.isArray(btc)) {
     return _.map(btc, helpers.toSatoshi);
@@ -168,10 +180,10 @@ helpers.stubUtxos = function(server, wallet, amounts, cb) {
 
       var scriptPubKey;
       switch (wallet.addressType) {
-        case WalletUtils.SCRIPT_TYPES.P2SH:
+        case Constants.SCRIPT_TYPES.P2SH:
           scriptPubKey = Bitcore.Script.buildMultisigOut(address.publicKeys, wallet.m).toScriptHashOut();
           break;
-        case WalletUtils.SCRIPT_TYPES.P2PKH:
+        case Constants.SCRIPT_TYPES.P2PKH:
           scriptPubKey = Bitcore.Script.buildPublicKeyHashOut(address.address);
           break;
       }
@@ -242,7 +254,46 @@ helpers.stubAddressActivity = function(activeAddresses) {
   };
 };
 
-helpers.clientSign = WalletUtils.signTxp;
+helpers.clientSign = function(txp, xPrivKey) {
+  var self = this;
+
+  function getBaseAddressDerivationPath(derivationStrategy, network, account) {
+    if (derivationStrategy == Constants.DERIVATION_STRATEGIES.BIP45) return "m/45'";
+    return "m/44'/" + (network == 'livenet' ? "0'" : "1'") + "/" + account + "'";
+  };
+
+  function deriveXPrivFromMaster(masterXPriv, derivationStrategy, network, account) {
+    var path = getBaseAddressDerivationPath(derivationStrategy, network, account || 0);
+    return new Bitcore.HDPrivateKey(masterXPriv, network).derive(path);
+  };
+
+  //Derive proper key to sign, for each input
+  var privs = [];
+  var derived = {};
+
+  var network = new Bitcore.Address(txp.changeAddress.address).network.name;
+  var xpriv = deriveXPrivFromMaster(xPrivKey, txp.derivationStrategy, network);
+
+  _.each(txp.inputs, function(i) {
+    if (!derived[i.path]) {
+      derived[i.path] = xpriv.derive(i.path).privateKey;
+      privs.push(derived[i.path]);
+    }
+  });
+
+  var t = Utils.buildTx(txp);
+
+  var signatures = _.map(privs, function(priv, i) {
+    return t.getSignatures(priv);
+  });
+
+  signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
+    return s.signature.toDER().toString('hex');
+  });
+
+  return signatures;
+};
+
 
 helpers.createProposalOptsLegacy = function(toAddress, amount, message, signingKey, feePerKb) {
   var opts = {
@@ -253,10 +304,10 @@ helpers.createProposalOptsLegacy = function(toAddress, amount, message, signingK
   };
   if (feePerKb) opts.feePerKb = feePerKb;
 
-  var hash = WalletUtils.getProposalHash(toAddress, opts.amount, message);
+  var hash = WalletService._getProposalHash(toAddress, opts.amount, message);
 
   try {
-    opts.proposalSignature = WalletUtils.signMessage(hash, signingKey);
+    opts.proposalSignature = helpers.signMessage(hash, signingKey);
   } catch (ex) {}
 
   return opts;
@@ -295,7 +346,7 @@ helpers.createProposalOpts = function(type, outputs, signingKey, moreOpts) {
   if (type == Model.TxProposal.Types.SIMPLE) {
     opts.toAddress = outputs[0].toAddress;
     opts.amount = outputs[0].amount;
-    hash = WalletUtils.getProposalHash(opts.toAddress, opts.amount,
+    hash = WalletService._getProposalHash(opts.toAddress, opts.amount,
       opts.message, opts.payProUrl);
   } else if (type == Model.TxProposal.Types.MULTIPLEOUTPUTS) {
     opts.outputs = outputs;
@@ -304,11 +355,11 @@ helpers.createProposalOpts = function(type, outputs, signingKey, moreOpts) {
       message: opts.message,
       payProUrl: opts.payProUrl
     };
-    hash = WalletUtils.getProposalHash(header);
+    hash = WalletService._getProposalHash(header);
   }
 
   try {
-    opts.proposalSignature = WalletUtils.signMessage(hash, signingKey);
+    opts.proposalSignature = helpers.signMessage(hash, signingKey);
   } catch (ex) {}
 
   return opts;
@@ -836,7 +887,7 @@ describe('Wallet service', function() {
         var xpriv = TestData.copayers[0].xPrivKey;
         var priv = TestData.copayers[0].privKey_1H_0;
 
-        var sig = WalletUtils.signMessage('hello world', priv);
+        var sig = helpers.signMessage('hello world', priv);
 
         WalletService.getInstanceWithAuth({
           copayerId: wallet.copayers[0].id,
@@ -858,7 +909,7 @@ describe('Wallet service', function() {
       var opts = {
         copayerId: 'dummy',
         message: message,
-        signature: WalletUtils.signMessage(message, TestData.copayers[0].privKey_1H_0),
+        signature: helpers.signMessage(message, TestData.copayers[0].privKey_1H_0),
       };
       WalletService.getInstanceWithAuth(opts, function(err, server) {
         err.code.should.equal('NOT_AUTHORIZED');
@@ -1512,7 +1563,7 @@ describe('Wallet service', function() {
       var message = 'hello world';
       var opts = {
         message: message,
-        signature: WalletUtils.signMessage(message, TestData.copayers[0].privKey_1H_0),
+        signature: helpers.signMessage(message, TestData.copayers[0].privKey_1H_0),
       };
       server.verifyMessageSignature(opts, function(err, isValid) {
         should.not.exist(err);
@@ -1525,7 +1576,7 @@ describe('Wallet service', function() {
       var message = 'hello world';
       var opts = {
         message: message,
-        signature: WalletUtils.signMessage(message, TestData.copayers[0].privKey_1H_0),
+        signature: helpers.signMessage(message, TestData.copayers[0].privKey_1H_0),
       };
       helpers.getAuthServer(wallet.copayers[1].id, function(server) {
         server.verifyMessageSignature(opts, function(err, isValid) {
@@ -1719,8 +1770,8 @@ describe('Wallet service', function() {
       });
 
       it('should fail to create more consecutive addresses with no activity than allowed', function(done) {
-        var MAX_MAIN_ADDRESS_GAP_old = WalletService.MAX_MAIN_ADDRESS_GAP;
-        WalletService.MAX_MAIN_ADDRESS_GAP = 2;
+        var MAX_MAIN_ADDRESS_GAP_old = Constants.MAX_MAIN_ADDRESS_GAP;
+        Constants.MAX_MAIN_ADDRESS_GAP = 2;
         helpers.stubAddressActivity([]);
         async.map(_.range(2), function(i, next) {
           server.createAddress({}, next);
@@ -1746,7 +1797,7 @@ describe('Wallet service', function() {
                 should.exist(address);
                 address.path.should.equal('m/0/3');
 
-                WalletService.MAX_MAIN_ADDRESS_GAP = MAX_MAIN_ADDRESS_GAP_old;
+                Constants.MAX_MAIN_ADDRESS_GAP = MAX_MAIN_ADDRESS_GAP_old;
                 done();
               });
             });
@@ -1755,8 +1806,8 @@ describe('Wallet service', function() {
       });
 
       it('should cache address activity', function(done) {
-        var MAX_MAIN_ADDRESS_GAP_old = WalletService.MAX_MAIN_ADDRESS_GAP;
-        WalletService.MAX_MAIN_ADDRESS_GAP = 2;
+        var MAX_MAIN_ADDRESS_GAP_old = Constants.MAX_MAIN_ADDRESS_GAP;
+        Constants.MAX_MAIN_ADDRESS_GAP = 2;
         helpers.stubAddressActivity([]);
         async.map(_.range(2), function(i, next) {
           server.createAddress({}, next);
@@ -1770,7 +1821,7 @@ describe('Wallet service', function() {
             server.createAddress({}, function(err, address) {
               should.not.exist(err);
               getAddressActivitySpy.callCount.should.equal(1);
-              WalletService.MAX_MAIN_ADDRESS_GAP = MAX_MAIN_ADDRESS_GAP_old;
+              Constants.MAX_MAIN_ADDRESS_GAP = MAX_MAIN_ADDRESS_GAP_old;
               done();
             });
           });
@@ -2014,7 +2065,7 @@ describe('Wallet service', function() {
     var opts, reqPrivKey, ws;
     var getAuthServer = function(copayerId, privKey, cb) {
       var msg = 'dummy';
-      var sig = WalletUtils.signMessage(msg, privKey);
+      var sig = helpers.signMessage(msg, privKey);
       WalletService.getInstanceWithAuth({
         copayerId: copayerId,
         message: msg,
@@ -2030,9 +2081,9 @@ describe('Wallet service', function() {
       var requestPubKey = reqPrivKey.toPublicKey();
 
       var xPrivKey = TestData.copayers[0].xPrivKey_44H_0H_0H;
-      var sig = WalletUtils.signRequestPubKey(requestPubKey, xPrivKey);
+      var sig = helpers.signRequestPubKey(requestPubKey, xPrivKey);
 
-      var copayerId = WalletUtils.xPubToCopayerId(TestData.copayers[0].xPubKey_44H_0H_0H);
+      var copayerId = Model.Copayer._xPubToCopayerId(TestData.copayers[0].xPubKey_44H_0H_0H);
       opts = {
         copayerId: copayerId,
         requestPubKey: requestPubKey,
@@ -2424,7 +2475,7 @@ describe('Wallet service', function() {
           tx.isAccepted().should.equal.false;
           tx.isRejected().should.equal.false;
           tx.amount.should.equal(helpers.toSatoshi(80));
-          var estimatedFee = WalletUtils.DEFAULT_FEE_PER_KB * 400 / 1000; // fully signed tx should have about 400 bytes
+          var estimatedFee = Constants.DEFAULT_FEE_PER_KB * 400 / 1000; // fully signed tx should have about 400 bytes
           tx.fee.should.be.within(0.9 * estimatedFee, 1.1 * estimatedFee);
           server.getPendingTxs({}, function(err, txs) {
             should.not.exist(err);
@@ -2679,7 +2730,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 3.5, TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
-          var estimatedFee = WalletUtils.DEFAULT_FEE_PER_KB * 1300 / 1000; // fully signed tx should have about 1300 bytes
+          var estimatedFee = Constants.DEFAULT_FEE_PER_KB * 1300 / 1000; // fully signed tx should have about 1300 bytes
           tx.fee.should.be.within(0.9 * estimatedFee, 1.1 * estimatedFee);
           done();
         });
@@ -3075,7 +3126,7 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          var clock = sinon.useFakeTimers(Date.now() + (WalletService.BACKOFF_TIME + 2) * 60 * 1000, 'Date');
+          var clock = sinon.useFakeTimers(Date.now() + (Constants.BACKOFF_TIME + 2) * 60 * 1000, 'Date');
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, TestData.copayers[0].privKey_1H_0);
           server.createTx(txOpts, function(err, tx) {
             clock.restore();
@@ -3087,7 +3138,7 @@ describe('Wallet service', function() {
         },
         function(next) {
           // Do not allow a 5th tx before backoff time
-          var clock = sinon.useFakeTimers(Date.now() + (WalletService.BACKOFF_TIME + 2) * 60 * 1000 + 1, 'Date');
+          var clock = sinon.useFakeTimers(Date.now() + (Constants.BACKOFF_TIME + 2) * 60 * 1000 + 1, 'Date');
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, TestData.copayers[0].privKey_1H_0);
           server.createTx(txOpts, function(err, tx) {
             clock.restore();
@@ -4547,7 +4598,7 @@ describe('Wallet service', function() {
 
           server.getPendingTxs({}, function(err, txs) {
             should.not.exist(err);
-            txs[0].deleteLockTime.should.be.above(WalletService.DELETE_LOCKTIME - 10);
+            txs[0].deleteLockTime.should.be.above(Constants.DELETE_LOCKTIME - 10);
 
             var clock = sinon.useFakeTimers(Date.now() + 1 + 24 * 3600 * 1000, 'Date');
             server.removePendingTx({
@@ -4572,7 +4623,7 @@ describe('Wallet service', function() {
         }, function(err) {
           should.not.exist(err);
 
-          var clock = sinon.useFakeTimers(Date.now() + 2000 + WalletService.DELETE_LOCKTIME * 1000, 'Date');
+          var clock = sinon.useFakeTimers(Date.now() + 2000 + Constants.DELETE_LOCKTIME * 1000, 'Date');
           server2.removePendingTx({
             txProposalId: txp.id
           }, function(err) {
@@ -4897,12 +4948,12 @@ describe('Wallet service', function() {
 
   describe('#scan', function() {
     var server, wallet;
-    var scanConfigOld = WalletService.SCAN_CONFIG;
+    var scanConfigOld = Constants.SCAN_CONFIG;
 
     describe('1-of-1 wallet (BIP44 & P2PKH)', function() {
       beforeEach(function(done) {
         this.timeout(5000);
-        WalletService.SCAN_CONFIG.maxGap = 2;
+        Constants.SCAN_CONFIG.maxGap = 2;
 
         helpers.createAndJoinWallet(1, 1, function(s, w) {
           server = s;
@@ -4911,7 +4962,7 @@ describe('Wallet service', function() {
         });
       });
       afterEach(function() {
-        WalletService.SCAN_CONFIG = scanConfigOld;
+        Constants.SCAN_CONFIG = scanConfigOld;
       });
 
       it('should scan main addresses', function(done) {
@@ -5094,7 +5145,7 @@ describe('Wallet service', function() {
 
       beforeEach(function(done) {
         this.timeout(5000);
-        WalletService.SCAN_CONFIG.maxGap = 2;
+        Constants.SCAN_CONFIG.maxGap = 2;
 
         helpers.createAndJoinWallet(1, 2, {
           supportBIP44AndP2PKH: false
@@ -5105,7 +5156,7 @@ describe('Wallet service', function() {
         });
       });
       afterEach(function() {
-        WalletService.SCAN_CONFIG = scanConfigOld;
+        Constants.SCAN_CONFIG = scanConfigOld;
       });
 
       it('should scan main addresses', function(done) {
@@ -5173,10 +5224,10 @@ describe('Wallet service', function() {
 
   describe('#startScan', function() {
     var server, wallet;
-    var scanConfigOld = WalletService.SCAN_CONFIG;
+    var scanConfigOld = Constants.SCAN_CONFIG;
     beforeEach(function(done) {
       this.timeout(5000);
-      WalletService.SCAN_CONFIG.maxGap = 2;
+      Constants.SCAN_CONFIG.maxGap = 2;
 
       helpers.createAndJoinWallet(1, 1, {
         supportBIP44AndP2PKH: false
@@ -5187,7 +5238,7 @@ describe('Wallet service', function() {
       });
     });
     afterEach(function() {
-      WalletService.SCAN_CONFIG = scanConfigOld;
+      Constants.SCAN_CONFIG = scanConfigOld;
       server.messageBroker.removeAllListeners();
     });
 
@@ -5245,7 +5296,7 @@ describe('Wallet service', function() {
     });
     it('should start multiple asynchronous scans for different wallets', function(done) {
       helpers.stubAddressActivity(['3K2VWMXheGZ4qG35DyGjA2dLeKfaSr534A']);
-      WalletService.SCAN_CONFIG.scanWindow = 1;
+      Constants.SCAN_CONFIG.scanWindow = 1;
 
       var scans = 0;
       server.messageBroker.onMessage(function(n) {
@@ -5321,7 +5372,7 @@ describe('Wallet service', function() {
               should.not.exist(err);
               should.exist(tx);
               tx.amount.should.equal(helpers.toSatoshi(80));
-              tx.fee.should.equal(WalletUtils.DEFAULT_FEE_PER_KB);
+              tx.fee.should.equal(Constants.DEFAULT_FEE_PER_KB);
               done();
             });
           });
@@ -5411,7 +5462,7 @@ describe('Wallet service', function() {
               should.not.exist(err);
               should.exist(tx);
               tx.amount.should.equal(helpers.toSatoshi(80));
-              tx.fee.should.equal(WalletUtils.DEFAULT_FEE_PER_KB);
+              tx.fee.should.equal(Constants.DEFAULT_FEE_PER_KB);
               helpers.getAuthServer(wallet.copayers[0].id, function(server) {
                 var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
                 server.signTx({
