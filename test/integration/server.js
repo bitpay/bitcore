@@ -4953,7 +4953,7 @@ describe('Wallet service', function() {
     describe('1-of-1 wallet (BIP44 & P2PKH)', function() {
       beforeEach(function(done) {
         this.timeout(5000);
-        Constants.SCAN_CONFIG.maxGap = 2;
+        Constants.SCAN_ADDRESS_GAP = 2;
 
         helpers.createAndJoinWallet(1, 1, function(s, w) {
           server = s;
@@ -5145,7 +5145,7 @@ describe('Wallet service', function() {
 
       beforeEach(function(done) {
         this.timeout(5000);
-        Constants.SCAN_CONFIG.maxGap = 2;
+        Constants.SCAN_ADDRESS_GAP = 2;
 
         helpers.createAndJoinWallet(1, 2, {
           supportBIP44AndP2PKH: false
@@ -5227,7 +5227,7 @@ describe('Wallet service', function() {
     var scanConfigOld = Constants.SCAN_CONFIG;
     beforeEach(function(done) {
       this.timeout(5000);
-      Constants.SCAN_CONFIG.maxGap = 2;
+      Constants.SCAN_ADDRESS_GAP = 2;
 
       helpers.createAndJoinWallet(1, 1, {
         supportBIP44AndP2PKH: false
@@ -5296,7 +5296,7 @@ describe('Wallet service', function() {
     });
     it('should start multiple asynchronous scans for different wallets', function(done) {
       helpers.stubAddressActivity(['3K2VWMXheGZ4qG35DyGjA2dLeKfaSr534A']);
-      Constants.SCAN_CONFIG.scanWindow = 1;
+      Constants.SCAN_ADDRESS_GAP = 1;
 
       var scans = 0;
       server.messageBroker.onMessage(function(n) {
