@@ -17,8 +17,11 @@ var tingodb = require('tingodb')({
 
 var Bitcore = require('bitcore-lib');
 
-var Constants = require('../../lib/constants');
-var Utils = require('../../lib/utils');
+var Common = require('../../lib/common');
+var Utils = Common.Utils;
+var Constants = Common.Constants;
+var Defaults = Common.Defaults;
+
 var Storage = require('../../lib/storage');
 
 var Model = require('../../lib/model');
@@ -1770,8 +1773,8 @@ describe('Wallet service', function() {
       });
 
       it('should fail to create more consecutive addresses with no activity than allowed', function(done) {
-        var MAX_MAIN_ADDRESS_GAP_old = Constants.MAX_MAIN_ADDRESS_GAP;
-        Constants.MAX_MAIN_ADDRESS_GAP = 2;
+        var MAX_MAIN_ADDRESS_GAP_old = Defaults.MAX_MAIN_ADDRESS_GAP;
+        Defaults.MAX_MAIN_ADDRESS_GAP = 2;
         helpers.stubAddressActivity([]);
         async.map(_.range(2), function(i, next) {
           server.createAddress({}, next);
@@ -1797,7 +1800,7 @@ describe('Wallet service', function() {
                 should.exist(address);
                 address.path.should.equal('m/0/3');
 
-                Constants.MAX_MAIN_ADDRESS_GAP = MAX_MAIN_ADDRESS_GAP_old;
+                Defaults.MAX_MAIN_ADDRESS_GAP = MAX_MAIN_ADDRESS_GAP_old;
                 done();
               });
             });
@@ -1806,8 +1809,8 @@ describe('Wallet service', function() {
       });
 
       it('should cache address activity', function(done) {
-        var MAX_MAIN_ADDRESS_GAP_old = Constants.MAX_MAIN_ADDRESS_GAP;
-        Constants.MAX_MAIN_ADDRESS_GAP = 2;
+        var MAX_MAIN_ADDRESS_GAP_old = Defaults.MAX_MAIN_ADDRESS_GAP;
+        Defaults.MAX_MAIN_ADDRESS_GAP = 2;
         helpers.stubAddressActivity([]);
         async.map(_.range(2), function(i, next) {
           server.createAddress({}, next);
@@ -1821,7 +1824,7 @@ describe('Wallet service', function() {
             server.createAddress({}, function(err, address) {
               should.not.exist(err);
               getAddressActivitySpy.callCount.should.equal(1);
-              Constants.MAX_MAIN_ADDRESS_GAP = MAX_MAIN_ADDRESS_GAP_old;
+              Defaults.MAX_MAIN_ADDRESS_GAP = MAX_MAIN_ADDRESS_GAP_old;
               done();
             });
           });
@@ -2475,7 +2478,7 @@ describe('Wallet service', function() {
           tx.isAccepted().should.equal.false;
           tx.isRejected().should.equal.false;
           tx.amount.should.equal(helpers.toSatoshi(80));
-          var estimatedFee = Constants.DEFAULT_FEE_PER_KB * 400 / 1000; // fully signed tx should have about 400 bytes
+          var estimatedFee = Defaults.DEFAULT_FEE_PER_KB * 400 / 1000; // fully signed tx should have about 400 bytes
           tx.fee.should.be.within(0.9 * estimatedFee, 1.1 * estimatedFee);
           server.getPendingTxs({}, function(err, txs) {
             should.not.exist(err);
@@ -2730,7 +2733,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 3.5, TestData.copayers[0].privKey_1H_0);
         server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
-          var estimatedFee = Constants.DEFAULT_FEE_PER_KB * 1300 / 1000; // fully signed tx should have about 1300 bytes
+          var estimatedFee = Defaults.DEFAULT_FEE_PER_KB * 1300 / 1000; // fully signed tx should have about 1300 bytes
           tx.fee.should.be.within(0.9 * estimatedFee, 1.1 * estimatedFee);
           done();
         });
@@ -3126,7 +3129,7 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          var clock = sinon.useFakeTimers(Date.now() + (Constants.BACKOFF_TIME + 2) * 60 * 1000, 'Date');
+          var clock = sinon.useFakeTimers(Date.now() + (Defaults.BACKOFF_TIME + 2) * 60 * 1000, 'Date');
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, TestData.copayers[0].privKey_1H_0);
           server.createTx(txOpts, function(err, tx) {
             clock.restore();
@@ -3138,7 +3141,7 @@ describe('Wallet service', function() {
         },
         function(next) {
           // Do not allow a 5th tx before backoff time
-          var clock = sinon.useFakeTimers(Date.now() + (Constants.BACKOFF_TIME + 2) * 60 * 1000 + 1, 'Date');
+          var clock = sinon.useFakeTimers(Date.now() + (Defaults.BACKOFF_TIME + 2) * 60 * 1000 + 1, 'Date');
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, TestData.copayers[0].privKey_1H_0);
           server.createTx(txOpts, function(err, tx) {
             clock.restore();
@@ -4598,7 +4601,7 @@ describe('Wallet service', function() {
 
           server.getPendingTxs({}, function(err, txs) {
             should.not.exist(err);
-            txs[0].deleteLockTime.should.be.above(Constants.DELETE_LOCKTIME - 10);
+            txs[0].deleteLockTime.should.be.above(Defaults.DELETE_LOCKTIME - 10);
 
             var clock = sinon.useFakeTimers(Date.now() + 1 + 24 * 3600 * 1000, 'Date');
             server.removePendingTx({
@@ -4623,7 +4626,7 @@ describe('Wallet service', function() {
         }, function(err) {
           should.not.exist(err);
 
-          var clock = sinon.useFakeTimers(Date.now() + 2000 + Constants.DELETE_LOCKTIME * 1000, 'Date');
+          var clock = sinon.useFakeTimers(Date.now() + 2000 + Defaults.DELETE_LOCKTIME * 1000, 'Date');
           server2.removePendingTx({
             txProposalId: txp.id
           }, function(err) {
@@ -4948,12 +4951,11 @@ describe('Wallet service', function() {
 
   describe('#scan', function() {
     var server, wallet;
-    var scanConfigOld = Constants.SCAN_CONFIG;
 
     describe('1-of-1 wallet (BIP44 & P2PKH)', function() {
       beforeEach(function(done) {
         this.timeout(5000);
-        Constants.SCAN_ADDRESS_GAP = 2;
+        Defaults.SCAN_ADDRESS_GAP = 2;
 
         helpers.createAndJoinWallet(1, 1, function(s, w) {
           server = s;
@@ -4961,9 +4963,7 @@ describe('Wallet service', function() {
           done();
         });
       });
-      afterEach(function() {
-        Constants.SCAN_CONFIG = scanConfigOld;
-      });
+      afterEach(function() {});
 
       it('should scan main addresses', function(done) {
         helpers.stubAddressActivity(
@@ -5145,7 +5145,7 @@ describe('Wallet service', function() {
 
       beforeEach(function(done) {
         this.timeout(5000);
-        Constants.SCAN_ADDRESS_GAP = 2;
+        Defaults.SCAN_ADDRESS_GAP = 2;
 
         helpers.createAndJoinWallet(1, 2, {
           supportBIP44AndP2PKH: false
@@ -5155,9 +5155,7 @@ describe('Wallet service', function() {
           done();
         });
       });
-      afterEach(function() {
-        Constants.SCAN_CONFIG = scanConfigOld;
-      });
+      afterEach(function() {});
 
       it('should scan main addresses', function(done) {
         helpers.stubAddressActivity(
@@ -5224,10 +5222,9 @@ describe('Wallet service', function() {
 
   describe('#startScan', function() {
     var server, wallet;
-    var scanConfigOld = Constants.SCAN_CONFIG;
     beforeEach(function(done) {
       this.timeout(5000);
-      Constants.SCAN_ADDRESS_GAP = 2;
+      Defaults.SCAN_ADDRESS_GAP = 2;
 
       helpers.createAndJoinWallet(1, 1, {
         supportBIP44AndP2PKH: false
@@ -5238,7 +5235,6 @@ describe('Wallet service', function() {
       });
     });
     afterEach(function() {
-      Constants.SCAN_CONFIG = scanConfigOld;
       server.messageBroker.removeAllListeners();
     });
 
@@ -5296,7 +5292,7 @@ describe('Wallet service', function() {
     });
     it('should start multiple asynchronous scans for different wallets', function(done) {
       helpers.stubAddressActivity(['3K2VWMXheGZ4qG35DyGjA2dLeKfaSr534A']);
-      Constants.SCAN_ADDRESS_GAP = 1;
+      Defaults.SCAN_ADDRESS_GAP = 1;
 
       var scans = 0;
       server.messageBroker.onMessage(function(n) {
@@ -5372,7 +5368,7 @@ describe('Wallet service', function() {
               should.not.exist(err);
               should.exist(tx);
               tx.amount.should.equal(helpers.toSatoshi(80));
-              tx.fee.should.equal(Constants.DEFAULT_FEE_PER_KB);
+              tx.fee.should.equal(Defaults.DEFAULT_FEE_PER_KB);
               done();
             });
           });
@@ -5462,7 +5458,7 @@ describe('Wallet service', function() {
               should.not.exist(err);
               should.exist(tx);
               tx.amount.should.equal(helpers.toSatoshi(80));
-              tx.fee.should.equal(Constants.DEFAULT_FEE_PER_KB);
+              tx.fee.should.equal(Defaults.DEFAULT_FEE_PER_KB);
               helpers.getAuthServer(wallet.copayers[0].id, function(server) {
                 var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
                 server.signTx({

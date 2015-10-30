@@ -4,7 +4,7 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var Utils = require('../lib/utils');
+var Utils = require('../lib/common/utils');
 
 describe('Utils', function() {
   describe('#checkRequired', function() {
