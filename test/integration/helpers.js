@@ -56,10 +56,13 @@ helpers.beforeEach = function(cb) {
   storage.db.dropDatabase(function(err) {
     if (err) return cb(err);
     blockchainExplorer = sinon.stub();
-    WalletService.initialize({
+    var opts = {
       storage: storage,
-      blockchainExplorer: blockchainExplorer,
-    }, cb);
+      blockchainExplorer: blockchainExplorer
+    };
+    WalletService.initialize(opts, function() {
+      return cb(opts);
+    });
   });
 };
 
