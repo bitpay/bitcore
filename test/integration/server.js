@@ -284,7 +284,7 @@ helpers.clientSign = function(txp, xPrivKey) {
     }
   });
 
-  var t = Utils.buildTx(txp);
+  var t = txp.getBitcoreTx();
 
   var signatures = _.map(privs, function(priv, i) {
     return t.getSignatures(priv);
