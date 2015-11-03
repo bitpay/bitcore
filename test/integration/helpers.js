@@ -8,6 +8,9 @@ var sinon = require('sinon');
 var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
+var tingodb = require('tingodb')({
+  memStore: true
+});
 
 var Bitcore = require('bitcore-lib');
 
@@ -16,16 +19,60 @@ var Utils = Common.Utils;
 var Constants = Common.Constants;
 var Defaults = Common.Defaults;
 
+var Storage = require('../../lib/storage');
 var Model = require('../../lib/model');
 var WalletService = require('../../lib/server');
 var TestData = require('../testdata');
 
-var blockchainExplorer;
+var storage, blockchainExplorer;
 
 var helpers = {};
 
-helpers.setBlockchainExplorer = function(bce) {
-  blockchainExplorer = bce;
+var useMongoDb = !!process.env.USE_MONGO_DB;
+
+helpers.before = function(cb) {
+  function getDb(cb) {
+    if (useMongoDb) {
+      var mongodb = require('mongodb');
+      mongodb.MongoClient.connect('mongodb://localhost:27017/bws_test', function(err, db) {
+        if (err) throw err;
+        return cb(db);
+      });
+    } else {
+      var db = new tingodb.Db('./db/test', {});
+      return cb(db);
+    }
+  }
+  getDb(function(db) {
+    storage = new Storage({
+      db: db
+    });
+    return cb();
+  });
+};
+
+helpers.beforeEach = function(cb) {
+  if (!storage.db) return cb();
+  storage.db.dropDatabase(function(err) {
+    if (err) return cb(err);
+    blockchainExplorer = sinon.stub();
+    WalletService.initialize({
+      storage: storage,
+      blockchainExplorer: blockchainExplorer,
+    }, cb);
+  });
+};
+
+helpers.after = function(cb) {
+  WalletService.shutDown(cb);
+};
+
+helpers.getBlockchainExplorer = function() {
+  return blockchainExplorer;
+};
+
+helpers.getStorage = function() {
+  return storage;
 };
 
 helpers.signMessage = function(text, privKey) {

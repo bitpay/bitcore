@@ -10,11 +10,6 @@ var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
 
-var fs = require('fs');
-var tingodb = require('tingodb')({
-  memStore: true
-});
-
 var Bitcore = require('bitcore-lib');
 
 var Common = require('../../lib/common');
@@ -22,67 +17,30 @@ var Utils = Common.Utils;
 var Constants = Common.Constants;
 var Defaults = Common.Defaults;
 
-var Storage = require('../../lib/storage');
 var Model = require('../../lib/model');
 
 var WalletService = require('../../lib/server');
 var EmailService = require('../../lib/emailservice');
 
 var TestData = require('../testdata');
-
 var helpers = require('./helpers');
+var storage, blockchainExplorer;
 
 var CLIENT_VERSION = 'bwc-0.1.1';
 
-var storage, blockchainExplorer;
-
-var useMongoDb = !!process.env.USE_MONGO_DB;
-
-function initStorage(cb) {
-  function getDb(cb) {
-    if (useMongoDb) {
-      var mongodb = require('mongodb');
-      mongodb.MongoClient.connect('mongodb://localhost:27017/bws_test', function(err, db) {
-        if (err) throw err;
-        return cb(db);
-      });
-    } else {
-      var db = new tingodb.Db('./db/test', {});
-      return cb(db);
-    }
-  }
-  getDb(function(db) {
-    storage = new Storage({
-      db: db
-    });
-    return cb();
-  });
-};
-
-function resetStorage(cb) {
-  if (!storage.db) return cb();
-  storage.db.dropDatabase(function(err) {
-    return cb();
-  });
-};
-
-
 describe('Wallet service', function() {
   before(function(done) {
-    initStorage(done);
+    helpers.before(done);
   });
   beforeEach(function(done) {
-    resetStorage(function() {
-      blockchainExplorer = sinon.stub();
-      helpers.setBlockchainExplorer(blockchainExplorer);
-      WalletService.initialize({
-        storage: storage,
-        blockchainExplorer: blockchainExplorer,
-      }, done);
+    helpers.beforeEach(function(err) {
+      storage = helpers.getStorage();
+      blockchainExplorer = helpers.getBlockchainExplorer();
+      done();
     });
   });
   after(function(done) {
-    WalletService.shutDown(done);
+    helpers.after(done);
   });
 
   describe('Email notifications', function() {
@@ -1530,7 +1488,6 @@ describe('Wallet service', function() {
       });
     });
   });
-
 
   describe('Preferences', function() {
     var server, wallet;
