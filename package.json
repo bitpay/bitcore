@@ -27,6 +27,8 @@
     "bitcore-mnemonic": "~1.0.0",
     "bitcore-payment-protocol": "~1.0.0",
     "browser-request": "^0.3.3",
+    "browserify": "^9.0.3",
+    "json-stable-stringify": "^1.0.0",
     "lodash": "^3.3.1",
     "preconditions": "^1.0.8",
     "request": "^2.53.0",
