@@ -49,6 +49,9 @@ describe('Unit', function() {
     unit = Unit.fromMilis('1.00001');
     unit.mBTC.should.equal(1.00001);
 
+    unit = Unit.fromMillis('1.00001');
+    unit.mBTC.should.equal(1.00001);
+
     unit = Unit.fromBits('100');
     unit.bits.should.equal(100);
 
@@ -136,6 +139,7 @@ describe('Unit', function() {
     var unit = new Unit(1.3, 'BTC');
     unit.toBTC().should.equal(unit.BTC);
     unit.toMilis().should.equal(unit.mBTC);
+    unit.toMillis().should.equal(unit.mBTC);
     unit.toBits().should.equal(unit.bits);
     unit.toSatoshis().should.equal(unit.satoshis);
   });
