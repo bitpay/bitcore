@@ -1,6 +1,6 @@
 {
   "name": "bitcore-lib",
-  "main": "./bitcore.min.js",
+  "main": "./bitcore-lib.min.js",
   "version": "0.13.7",
   "homepage": "http://bitcore.io",
   "authors": [
