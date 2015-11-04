@@ -1324,7 +1324,7 @@ API.prototype.createAddress = function(cb) {
 
   var self = this;
 
-  self._doPostRequest('/v1/addresses/', {}, function(err, address) {
+  self._doPostRequest('/v2/addresses/', {}, function(err, address) {
     if (err) return cb(err);
 
     if (!Verifier.checkAddress(self.credentials, address)) {
@@ -1340,6 +1340,8 @@ API.prototype.createAddress = function(cb) {
  *
  * @param {Object} opts
  * @param {Boolean} opts.doNotVerify
+ * @param {Numeric} opts.limit (optional) - Limit the resultset. Return all addresses by default.
+ * @param {Boolean} [opts.reverse=false] (optional) - Reverse the order of returned addresses.
  * @param {Callback} cb
  * @returns {Callback} cb - Return error or the array of addresses
  */
@@ -1348,7 +1350,18 @@ API.prototype.getMainAddresses = function(opts, cb) {
 
   var self = this;
 
-  self._doGetRequest('/v1/addresses/', function(err, addresses) {
+  opts = opts || {};
+
+  var args = [];
+  if (opts.limit) args.push('limit=' + opts.limit);
+  if (opts.reverse) args.push('reverse=1');
+  var qs = '';
+  if (args.length > 0) {
+    qs = '?' + args.join('&');
+  }
+  var url = '/v1/addresses/' + qs;
+
+  self._doGetRequest(url, function(err, addresses) {
     if (err) return cb(err);
 
     if (!opts.doNotVerify) {
@@ -105513,7 +105526,7 @@ module.exports={
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "license": "MIT",
   "keywords": [
     "bitcoin",
