@@ -41,48 +41,63 @@ describe('Credentials', function() {
   });
 
   describe('#fromMnemonic', function() {
-    it('Should create credentials from mnemonic', function() {
+    it('Should create credentials from mnemonic BIP44', function() {
       var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-      var c = Credentials.fromMnemonic('livenet', words, '', 0);
+      var c = Credentials.fromMnemonic('livenet', words, '', 0, 'BIP44');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
       c.network.should.equal('livenet');
       c.account.should.equal(0);
+      c.derivationStrategy.should.equal('BIP44');
       c.xPubKey.should.equal('xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj');
+      c.getBaseAddressDerivationPath().should.equal("m/44'/0'/0'");
+    });
+
+    it('Should create credentials from mnemonic BIP48', function() {
+      var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+      var c = Credentials.fromMnemonic('livenet', words, '', 0, 'BIP48');
+      c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
+      c.network.should.equal('livenet');
+      c.account.should.equal(0);
+      c.derivationStrategy.should.equal('BIP48');
+      c.xPubKey.should.equal('xpub6CKZtUaK1YHpQbg6CLaGRmsMKLQB1iKzsvmxtyHD6X7gzLqCB2VNZYd1XCxrccQnE8hhDxtYbR1Sakkvisy2J4CcTxWeeGjmkasCoNS9vZm');
+      c.getBaseAddressDerivationPath().should.equal("m/48'/0'/0'");
     });
 
     it('Should create credentials from mnemonic account 1', function() {
       var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-      var c = Credentials.fromMnemonic('livenet', words, '', 1);
+      var c = Credentials.fromMnemonic('livenet', words, '', 1, 'BIP44');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
       c.account.should.equal(1);
       c.xPubKey.should.equal('xpub6BosfCnifzxcJJ1wYuntGJfF2zPJkDeG9ELNHcKNjezuea4tumswN9sH1psMdSVqCMoJC21Bv8usSeqSP4Sp1tLzW7aY59fGn9GCYzx5UTo');
+      c.getBaseAddressDerivationPath().should.equal("m/44'/0'/1'");
     });
 
     it('Should create credentials from mnemonic with undefined/null passphrase', function() {
       var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-      var c = Credentials.fromMnemonic('livenet', words, undefined, 0);
+      var c = Credentials.fromMnemonic('livenet', words, undefined, 0, 'BIP44');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
-      c = Credentials.fromMnemonic('livenet', words, null, 0);
+      c = Credentials.fromMnemonic('livenet', words, null, 0, 'BIP44');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
     });
 
     it('Should create credentials from mnemonic and passphrase', function() {
       var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-      var c = Credentials.fromMnemonic('livenet', words, 'húngaro', 0);
+      var c = Credentials.fromMnemonic('livenet', words, 'húngaro', 0, 'BIP44');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K2LkGEPHqW8w5vMJ3giizin94rFpSM5Ys5KhDaP7Hde3rEuzC7VpZDtNX643bJdvhHnkbhKMNmLx3Yi6H8WEsHBBox3qbpqq');
     });
 
     it('Should create credentials from mnemonic and passphrase for testnet account 2', function() {
       var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-      var c = Credentials.fromMnemonic('testnet', words, 'húngaro', 2);
+      var c = Credentials.fromMnemonic('testnet', words, 'húngaro', 2, 'BIP44');
       c.xPrivKey.should.equal('tprv8ZgxMBicQKsPd9yntx9LfnZ5EUiFvEm14L4BigEtq43LrvSJZkT39PRJA69r7sCsbKuJ69fMTzWVkeJLpXhKaQDe5MJanrxvCGwEPnNxN85');
       c.network.should.equal('testnet');
       c.xPubKey.should.equal('tpubDCoAP4Ut9MXK5CakPFPudKAP4yCw6Xr7uzV2129v2LTa3eBoPoUGMqi2y3kmh83oRGX93m7EehB6LWan5GTSVD8yUnV5Jc7Kjzfa3Zsf8nE');
+      c.getBaseAddressDerivationPath().should.equal("m/44'/1'/2'");
     });
 
     it('Should create credentials from mnemonic (ES)', function() {
       var words = 'afirmar diseño hielo fideo etapa ogro cambio fideo toalla pomelo número buscar';
-      var c = Credentials.fromMnemonic('livenet', words, '', 0);
+      var c = Credentials.fromMnemonic('livenet', words, '', 0, 'BIP44');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K3H3WtXCn9nHtpi7Fz1ZE9VJErWErhrGL4hV1cApFVo3t4aANoPF7ufcLLWqN168izu3xGQdLaGxXG2qYZF8wWQGNWnuSSon');
       c.network.should.equal('livenet');
     });
@@ -131,11 +146,13 @@ describe('Credentials', function() {
         should.exist(c.mnemonic);
         var words = c.mnemonic;
         var xPriv = c.xPrivKey;
+        var path = c.getBaseAddressDerivationPath();
 
-        var c2 = Credentials.fromMnemonic('testnet', words, 'holamundo', 0);
+        var c2 = Credentials.fromMnemonic('testnet', words, 'holamundo', 0, 'BIP44');
         should.not.exist(c2.mnemonic);
         c2.xPrivKey.should.equal(c.xPrivKey);
         c2.network.should.equal(c.network);
+        c2.getBaseAddressDerivationPath().should.equal(path);
       });
     });
 
@@ -144,10 +161,12 @@ describe('Credentials', function() {
       should.exist(c.mnemonic);
       var words = c.mnemonic;
       var xPriv = c.xPrivKey;
+      var path = c.getBaseAddressDerivationPath();
 
-      var c2 = Credentials.fromMnemonic('testnet', words, 'chaumundo', 0);
+      var c2 = Credentials.fromMnemonic('testnet', words, 'chaumundo', 0, 'BIP44');
       c2.network.should.equal(c.network);
-      c2.xPrivKey.should.not.be.equal(c.xPrivKey);
+      c2.getBaseAddressDerivationPath().should.equal(path);
+      c2.xPrivKey.should.not.equal(c.xPrivKey);
     });
   });
 });
