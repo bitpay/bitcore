@@ -28,21 +28,22 @@
     "bitcore-payment-protocol": "~1.0.0",
     "bitcore-wallet-utils": "~1.0.0",
     "browser-request": "^0.3.3",
-    "browserify": "^9.0.3",
     "lodash": "^3.3.1",
     "preconditions": "^1.0.8",
     "request": "^2.53.0",
-    "sjcl": "^1.0.2",
-    "uglify": "^0.1.1"
+    "sjcl": "^1.0.2"
   },
   "devDependencies": {
     "bitcore-wallet-service": "~1.2.0",
+    "browserify": "^9.0.3",
     "chai": "^1.9.1",
     "coveralls": "^2.11.2",
+    "grunt": "~0.4.0",
     "grunt-jsdoc": "^0.5.8",
     "istanbul": "*",
     "jsdoc": "^3.3.0-beta1",
     "mocha": "^1.18.2",
+    "uglify": "^0.1.1",
     "sinon": "^1.10.3",
     "supertest": "*",
     "tingodb": "^0.3.4"
