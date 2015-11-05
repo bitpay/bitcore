@@ -160,9 +160,9 @@ blockchainExplorerMock.getTransactions = function(addresses, from, to, cb) {
   return cb(null, list);
 };
 
-blockchainExplorerMock.getAddressActivity = function(addresses, cb) {
-  var addr = _.pluck(blockchainExplorerMock.utxos || [], 'address');
-  return cb(null, _.intersection(addr, addresses).length > 0);
+blockchainExplorerMock.getAddressActivity = function(address, cb) {
+  var activeAddresses = _.pluck(blockchainExplorerMock.utxos || [], 'address');
+  return cb(null, _.contains(activeAddresses, address));
 };
 
 blockchainExplorerMock.setFeeLevels = function(levels) {
@@ -2253,42 +2253,41 @@ describe('client API', function() {
             var newApp;
             var expressApp = new ExpressApp();
             expressApp.start({
-                storage: storage,
-                blockchainExplorer: blockchainExplorerMock,
-                disableLogs: true,
-              },
-              function() {
-                newApp = expressApp.app;
+              storage: storage,
+              blockchainExplorer: blockchainExplorerMock,
+              disableLogs: true,
+            }, function() {
+              newApp = expressApp.app;
 
-                var oldPKR = _.clone(clients[0].credentials.publicKeyRing);
-                var recoveryClient = helpers.newClient(newApp);
-                recoveryClient.import(clients[0].export());
+              var oldPKR = _.clone(clients[0].credentials.publicKeyRing);
+              var recoveryClient = helpers.newClient(newApp);
+              recoveryClient.import(clients[0].export());
 
-                recoveryClient.getStatus(function(err, status) {
-                  should.exist(err);
-                  err.code.should.equal('NOT_AUTHORIZED');
-                  recoveryClient.recreateWallet(function(err) {
+              recoveryClient.getStatus(function(err, status) {
+                should.exist(err);
+                err.code.should.equal('NOT_AUTHORIZED');
+                recoveryClient.recreateWallet(function(err) {
+                  should.not.exist(err);
+                  recoveryClient.getStatus(function(err, status) {
                     should.not.exist(err);
-                    recoveryClient.getStatus(function(err, status) {
+                    _.difference(_.pluck(status.wallet.copayers, 'name'), ['creator', 'copayer 1']).length.should.equal(0);
+                    recoveryClient.createAddress(function(err, addr2) {
                       should.not.exist(err);
-                      _.difference(_.pluck(status.wallet.copayers, 'name'), ['creator', 'copayer 1']).length.should.equal(0);
-                      recoveryClient.createAddress(function(err, addr2) {
-                        should.not.exist(err);
-                        should.exist(addr2);
-                        addr2.address.should.equal(addr.address);
-                        addr2.path.should.equal(addr.path);
+                      should.exist(addr2);
+                      addr2.address.should.equal(addr.address);
+                      addr2.path.should.equal(addr.path);
 
-                        var recoveryClient2 = helpers.newClient(newApp);
-                        recoveryClient2.import(clients[1].export());
-                        recoveryClient2.getStatus(function(err, status) {
-                          should.not.exist(err);
-                          done();
-                        });
+                      var recoveryClient2 = helpers.newClient(newApp);
+                      recoveryClient2.import(clients[1].export());
+                      recoveryClient2.getStatus(function(err, status) {
+                        should.not.exist(err);
+                        done();
                       });
                     });
                   });
                 });
               });
+            });
           });
         });
       });
