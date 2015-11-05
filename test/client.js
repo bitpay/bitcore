@@ -35,8 +35,10 @@ helpers.getRequest = function(app) {
 
     if (args.headers) {
       _.each(args.headers, function(v, k) {
-        r.set(k, v);
-      })
+        if (k && v) {
+          r.set(k, v);
+        }
+      });
     }
     if (!_.isEmpty(args.body)) {
       r.send(args.body);
