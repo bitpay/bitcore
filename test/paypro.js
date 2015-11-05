@@ -40,7 +40,7 @@ describe('paypro', function() {
       res.statusCode = httpNode.error || 200;
       res.on = function(e, cb) {
         if (e == 'data')
-          return cb('id');
+          return cb(new Buffer('id'));
         if (e == 'end')
           return cb();
       };

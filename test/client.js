@@ -519,7 +519,10 @@ describe('client API', function() {
           // Replace caller's pubkey
           status.wallet.copayers[1].xPubKey = (new Bitcore.HDPrivateKey()).publicKey;
           // Add a correct signature
-          status.wallet.copayers[1].xPubKeySignature = WalletUtils.signMessage(status.wallet.copayers[1].xPubKey, clients[0].credentials.walletPrivKey);
+          status.wallet.copayers[1].xPubKeySignature = WalletUtils.signMessage(
+            status.wallet.copayers[1].xPubKey.toString(),
+            clients[0].credentials.walletPrivKey
+          );
         }, function() {
           openWalletStub.restore();
           clients[1].openWallet(function(err, x) {
