@@ -14,10 +14,12 @@ var tingodb = require('tingodb')({
 });
 var log = require('../lib/log');
 
-var WalletUtils = require('bitcore-wallet-utils');
-var Bitcore = WalletUtils.Bitcore;
+var Bitcore = require('bitcore-lib');
 var BWS = require('bitcore-wallet-service');
 
+var Common = require('../lib/common');
+var Constants = Common.Constants;
+var Utils = Common.Utils;
 var Client = require('../lib');
 var ExpressApp = BWS.ExpressApp;
 var Storage = BWS.Storage;
@@ -129,10 +131,10 @@ blockchainExplorerMock.getUnspentUtxos = function(addresses, cb) {
 blockchainExplorerMock.setUtxo = function(address, amount, m, confirmations) {
   var scriptPubKey;
   switch (address.type) {
-    case WalletUtils.SCRIPT_TYPES.P2SH:
+    case Constants.SCRIPT_TYPES.P2SH:
       scriptPubKey = address.publicKeys ? Bitcore.Script.buildMultisigOut(address.publicKeys, m).toScriptHashOut() : '';
       break;
-    case WalletUtils.SCRIPT_TYPES.P2PKH:
+    case Constants.SCRIPT_TYPES.P2PKH:
       scriptPubKey = Bitcore.Script.buildPublicKeyHashOut(address.address);
       break;
   }
@@ -519,7 +521,7 @@ describe('client API', function() {
           // Replace caller's pubkey
           status.wallet.copayers[1].xPubKey = (new Bitcore.HDPrivateKey()).publicKey;
           // Add a correct signature
-          status.wallet.copayers[1].xPubKeySignature = WalletUtils.signMessage(
+          status.wallet.copayers[1].xPubKeySignature = Utils.signMessage(
             status.wallet.copayers[1].xPubKey.toString(),
             clients[0].credentials.walletPrivKey
           );
