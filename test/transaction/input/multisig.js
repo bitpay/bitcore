@@ -101,7 +101,7 @@ describe('MultiSigInput', function() {
       .from(output, [public1, public2, public3], 2)
       .to(address, 1000000);
     var input = transaction.inputs[0];
-    input._estimateSize().should.equal(257);
+    input._estimateSize().should.equal(147);
   });
   it('uses SIGHASH_ALL by default', function() {
     var transaction = new Transaction()
