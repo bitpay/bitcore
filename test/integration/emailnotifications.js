@@ -161,7 +161,7 @@ describe('Email notifications', function() {
             async.eachSeries(_.range(2), function(i, next) {
               var copayer = TestData.copayers[i];
               helpers.getAuthServer(copayer.id44, function(server) {
-                var signatures = helpers.clientSign(txp, copayer.xPrivKey);
+                var signatures = helpers.clientSign(txp, copayer.xPrivKey_44H_0H_0H);
                 server.signTx({
                   txProposalId: txp.id,
                   signatures: signatures,

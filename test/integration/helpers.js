@@ -301,25 +301,14 @@ helpers.stubAddressActivity = function(activeAddresses) {
   };
 };
 
-helpers.clientSign = function(txp, xPrivKey) {
+helpers.clientSign = function(txp, derivedXPrivKey) {
   var self = this;
-
-  function getBaseAddressDerivationPath(derivationStrategy, network, account) {
-    if (derivationStrategy == Constants.DERIVATION_STRATEGIES.BIP45) return "m/45'";
-    return "m/44'/" + (network == 'livenet' ? "0'" : "1'") + "/" + account + "'";
-  };
-
-  function deriveXPrivFromMaster(masterXPriv, derivationStrategy, network, account) {
-    var path = getBaseAddressDerivationPath(derivationStrategy, network, account || 0);
-    return new Bitcore.HDPrivateKey(masterXPriv, network).derive(path);
-  };
 
   //Derive proper key to sign, for each input
   var privs = [];
   var derived = {};
 
-  var network = new Bitcore.Address(txp.changeAddress.address).network.name;
-  var xpriv = deriveXPrivFromMaster(xPrivKey, txp.derivationStrategy, network);
+  var xpriv = new Bitcore.HDPrivateKey(derivedXPrivKey, txp.network);
 
   _.each(txp.inputs, function(i) {
     if (!derived[i.path]) {

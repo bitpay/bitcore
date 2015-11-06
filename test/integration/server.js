@@ -1929,7 +1929,7 @@ describe('Wallet service', function() {
             tx.fee.should.be.within(0.9 * estimatedFee, 1.1 * estimatedFee);
 
             // Sign it to make sure Bitcore doesn't complain about the fees
-            var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+            var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
             server.signTx({
               txProposalId: tx.id,
               signatures: signatures,
@@ -2432,7 +2432,6 @@ describe('Wallet service', function() {
             server.createTx(txOpts, function(err, tx) {
               should.not.exist(err);
               should.exist(tx);
-              tx.derivationStrategy.should.equal('BIP44');
               tx.addressType.should.equal('P2PKH');
               txid = tx.id;
               done();
@@ -2446,7 +2445,7 @@ describe('Wallet service', function() {
         server.getPendingTxs({}, function(err, txs) {
           var tx = txs[0];
           tx.id.should.equal(txid);
-          var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+          var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
           should.not.exist(tx.raw);
           server.signTx({
             txProposalId: txid,
@@ -2494,7 +2493,7 @@ describe('Wallet service', function() {
           var tx = txs[0];
           tx.id.should.equal(txid);
 
-          var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+          var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
           server.signTx({
             txProposalId: txid,
             signatures: signatures,
@@ -2521,7 +2520,7 @@ describe('Wallet service', function() {
         server.getPendingTxs({}, function(err, txs) {
           var tx = txs[0];
           tx.id.should.equal(txid);
-          var signatures = helpers.clientSign(tx, TestData.copayers[1].xPrivKey);
+          var signatures = helpers.clientSign(tx, TestData.copayers[1].xPrivKey_44H_0H_0H);
           server.signTx({
             txProposalId: txid,
             signatures: signatures,
@@ -2537,7 +2536,7 @@ describe('Wallet service', function() {
           var tx = txs[0];
           tx.id.should.equal(txid);
 
-          var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+          var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
           signatures[0] = 1;
 
           server.signTx({
@@ -2572,7 +2571,7 @@ describe('Wallet service', function() {
           var tx = txs[0];
           tx.id.should.equal(txid);
 
-          var signatures = _.take(helpers.clientSign(tx, TestData.copayers[0].xPrivKey), tx.inputs.length - 1);
+          var signatures = _.take(helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H), tx.inputs.length - 1);
           server.signTx({
             txProposalId: txid,
             signatures: signatures,
@@ -2589,7 +2588,7 @@ describe('Wallet service', function() {
           var tx = txs[0];
           tx.id.should.equal(txid);
 
-          var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+          var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
           server.signTx({
             txProposalId: txid,
             signatures: signatures,
@@ -2612,7 +2611,7 @@ describe('Wallet service', function() {
           server.rejectTx({
             txProposalId: txid,
           }, function(err) {
-            var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+            var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
             server.signTx({
               txProposalId: txid,
               signatures: signatures,
@@ -2660,7 +2659,7 @@ describe('Wallet service', function() {
                 txProposalId: txid
               }, function(err, tx) {
                 should.not.exist(err);
-                var signatures = helpers.clientSign(tx, TestData.copayers[2].xPrivKey);
+                var signatures = helpers.clientSign(tx, TestData.copayers[2].xPrivKey_44H_0H_0H);
                 server.signTx({
                   txProposalId: txid,
                   signatures: signatures,
@@ -2690,7 +2689,7 @@ describe('Wallet service', function() {
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
-            var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey);
+            var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
             server.signTx({
               txProposalId: txp.id,
               signatures: signatures,
@@ -2940,7 +2939,7 @@ describe('Wallet service', function() {
           });
         },
         function(txp, next) {
-          var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey);
+          var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
           server.signTx({
             txProposalId: txpId,
             signatures: signatures,
@@ -2971,7 +2970,7 @@ describe('Wallet service', function() {
         },
         function(txp, next) {
           helpers.getAuthServer(wallet.copayers[1].id, function(server, wallet) {
-            var signatures = helpers.clientSign(txp, TestData.copayers[1].xPrivKey);
+            var signatures = helpers.clientSign(txp, TestData.copayers[1].xPrivKey_44H_0H_0H);
             server.signTx({
               txProposalId: txpId,
               signatures: signatures,
@@ -3373,7 +3372,7 @@ describe('Wallet service', function() {
       server.getPendingTxs({}, function(err, txs) {
         blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, 'broadcast error');
         var tx = txs[0];
-        var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+        var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
         server.signTx({
           txProposalId: tx.id,
           signatures: signatures,
@@ -3415,7 +3414,7 @@ describe('Wallet service', function() {
     it('should notify sign, acceptance, and broadcast, and emit', function(done) {
       server.getPendingTxs({}, function(err, txs) {
         var tx = txs[2];
-        var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+        var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
         server.signTx({
           txProposalId: tx.id,
           signatures: signatures,
@@ -3444,7 +3443,7 @@ describe('Wallet service', function() {
     it('should notify sign, acceptance, and broadcast, and emit (with 3rd party broadcast', function(done) {
       server.getPendingTxs({}, function(err, txs) {
         var tx = txs[2];
-        var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+        var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
         server.signTx({
           txProposalId: tx.id,
           signatures: signatures,
@@ -3638,7 +3637,7 @@ describe('Wallet service', function() {
     });
 
     it('should allow creator to remove a signed TX by himself', function(done) {
-      var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey);
+      var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
       server.signTx({
         txProposalId: txp.id,
         signatures: signatures,
@@ -3660,7 +3659,7 @@ describe('Wallet service', function() {
       async.waterfall([
 
         function(next) {
-          var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey);
+          var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
           server.signTx({
             txProposalId: txp.id,
             signatures: signatures,
@@ -3725,7 +3724,7 @@ describe('Wallet service', function() {
 
     it('should not allow creator copayer to remove a TX signed by other copayer, in less than 24hrs', function(done) {
       helpers.getAuthServer(wallet.copayers[1].id, function(server2) {
-        var signatures = helpers.clientSign(txp, TestData.copayers[1].xPrivKey);
+        var signatures = helpers.clientSign(txp, TestData.copayers[1].xPrivKey_44H_0H_0H);
         server2.signTx({
           txProposalId: txp.id,
           signatures: signatures,
@@ -3744,7 +3743,7 @@ describe('Wallet service', function() {
 
     it('should allow creator copayer to remove a TX rejected by other copayer, in less than 24hrs', function(done) {
       helpers.getAuthServer(wallet.copayers[1].id, function(server2) {
-        var signatures = helpers.clientSign(txp, TestData.copayers[1].xPrivKey);
+        var signatures = helpers.clientSign(txp, TestData.copayers[1].xPrivKey_44H_0H_0H);
         server2.rejectTx({
           txProposalId: txp.id,
           signatures: signatures,
@@ -3764,7 +3763,7 @@ describe('Wallet service', function() {
 
     it('should allow creator copayer to remove a TX signed by other copayer, after 24hrs', function(done) {
       helpers.getAuthServer(wallet.copayers[1].id, function(server2) {
-        var signatures = helpers.clientSign(txp, TestData.copayers[1].xPrivKey);
+        var signatures = helpers.clientSign(txp, TestData.copayers[1].xPrivKey_44H_0H_0H);
         server2.signTx({
           txProposalId: txp.id,
           signatures: signatures,
@@ -3791,7 +3790,7 @@ describe('Wallet service', function() {
 
     it('should allow other copayer to remove a TX signed, after 24hrs', function(done) {
       helpers.getAuthServer(wallet.copayers[1].id, function(server2) {
-        var signatures = helpers.clientSign(txp, TestData.copayers[1].xPrivKey);
+        var signatures = helpers.clientSign(txp, TestData.copayers[1].xPrivKey_44H_0H_0H);
         server2.signTx({
           txProposalId: txp.id,
           signatures: signatures,
@@ -3951,7 +3950,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           should.exist(tx);
 
-          var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+          var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
           server.signTx({
             txProposalId: tx.id,
             signatures: signatures,
@@ -4594,7 +4593,7 @@ describe('Wallet service', function() {
               signature: 'dummy',
               clientVersion: 'bwc-0.0.40',
             }, function(err, server) {
-              var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+              var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
               server.signTx({
                 txProposalId: tx.id,
                 signatures: signatures,
@@ -4632,7 +4631,7 @@ describe('Wallet service', function() {
               tx.amount.should.equal(helpers.toSatoshi(80));
               tx.fee.should.equal(Defaults.DEFAULT_FEE_PER_KB);
               helpers.getAuthServer(wallet.copayers[0].id, function(server) {
-                var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+                var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
                 server.signTx({
                   txProposalId: tx.id,
                   signatures: signatures,
@@ -4671,7 +4670,7 @@ describe('Wallet service', function() {
                 tx.fee.should.equal(5000);
 
                 // Sign it to make sure Bitcore doesn't complain about the fees
-                var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey);
+                var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
                 server.signTx({
                   txProposalId: tx.id,
                   signatures: signatures,
