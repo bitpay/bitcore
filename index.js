@@ -53,7 +53,6 @@ function startGulp(name, opts) {
 
   opts = opts || {};
   var browser = !opts.skipBrowser;
-  var isSubmodule = name ? true : false;
   var fullname = name ? 'bitcore-' + name : 'bitcore';
   var files = ['lib/**/*.js'];
   var tests = ['test/**/*.js'];
@@ -102,10 +101,10 @@ function startGulp(name, opts) {
 
     var browserifyCommand;
 
-    if (isSubmodule) {
+    if (name !== 'lib') {
       browserifyCommand = buildBinPath + 'browserify --require ./index.js:' + fullname + ' --external bitcore-lib -o ' + fullname + '.js';
     } else {
-      browserifyCommand = buildBinPath + 'browserify --require ./index.js:bitcore -o bitcore.js';
+      browserifyCommand = buildBinPath + 'browserify --require ./index.js:bitcore-lib -o bitcore-lib.js';
     }
 
     gulp.task('browser:uncompressed', shell.task([
