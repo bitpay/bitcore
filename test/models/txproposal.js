@@ -5,8 +5,7 @@ var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
 var TxProposal = require('../../lib/model/txproposal');
-var Bitcore = require('bitcore-wallet-utils').Bitcore;
-var WalletUtils = require('bitcore-wallet-utils');
+var Bitcore = require('bitcore-lib');
 
 describe('TXProposal', function() {
 
