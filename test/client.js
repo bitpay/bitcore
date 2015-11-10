@@ -640,10 +640,12 @@ describe('client API', function() {
     it('should prepare wallet with external xpubkey', function(done) {
       var client = helpers.newClient(app);
       client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00', {
-        account: 1
+        account: 1,
+        derivationStrategy: 'BIP48',
       });
       client.isPrivKeyExternal().should.equal(true);
       client.credentials.account.should.equal(1);
+      client.credentials.derivationStrategy.should.equal('BIP48');
       client.credentials.requestPrivKey.should.equal('36a4504f0c6651db30484c2c128304a7ea548ef5935f19ed6af99db8000c75a4');
       client.credentials.personalEncryptingKey.should.equal('wYI1597BfOv06NI6Uye3tA==');
       client.getPrivKeyExternalSourceName().should.equal('ledger');
@@ -671,7 +673,8 @@ describe('client API', function() {
       var words = 'forget announce travel fury farm alpha chaos choice talent sting eagle supreme';
       clients[0].seedFromMnemonic(words);
       clients[0].createWallet('wallet name', 'creator', 1, 1, {
-          network: 'livenet'
+          network: 'livenet',
+          derivationStrategy: 'BIP48',
         },
         function(err) {
           should.not.exist(err);
