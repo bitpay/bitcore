@@ -1999,6 +1999,19 @@ Constants.PATHS = {
 
 Constants.BIP45_SHARED_INDEX = 0x80000000 - 1;
 
+Constants.UNITS = {
+  btc: {
+    toSatoshis: 100000000,
+    maxDecimals: 6,
+    minDecimals: 2,
+  },
+  bit: {
+    toSatoshis: 100,
+    maxDecimals: 0,
+    minDecimals: 0,
+  },
+};
+
 module.exports = Constants;
 
 },{}],4:[function(require,module,exports){
@@ -2157,7 +2170,31 @@ Utils.verifyRequestPubKey = function(requestPubKey, signature, xPubKey) {
   return Utils.verifyMessage(requestPubKey, signature, pub.toString());
 };
 
+Utils.formatAmount = function(satoshis, unit, opts) {
+  $.shouldBeNumber(satoshis);
+  $.checkArgument(_.contains(_.keys(Constants.UNITS), unit));
 
+  function addSeparators(nStr, thousands, decimal, minDecimals) {
+    nStr = nStr.replace('.', decimal);
+    var x = nStr.split(decimal);
+    var x0 = x[0];
+    var x1 = x[1];
+
+    x1 = _.dropRightWhile(x1, function(n, i) {
+      return n == '0' && i >= minDecimals;
+    }).join('');
+    var x2 = x.length > 1 ? decimal + x1 : '';
+
+    x0 = x0.replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
+    return x0 + x2;
+  }
+
+  opts = opts || {};
+
+  var u = Constants.UNITS[unit];
+  var amount = (satoshis / u.toSatoshis).toFixed(u.maxDecimals);
+  return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', u.minDecimals);
+};
 
 module.exports = Utils;
 
@@ -105532,7 +105569,7 @@ module.exports={
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "license": "MIT",
   "keywords": [
     "bitcoin",
