@@ -68,40 +68,39 @@ helpers.createAndJoinWallet = function(clients, m, n, cb) {
     network: 'testnet'
   });
   clients[0].createWallet('wallet name', 'creator', m, n, {
-      network: 'testnet'
-    },
-    function(err, secret) {
-      should.not.exist(err);
+    network: 'testnet'
+  }, function(err, secret) {
+    should.not.exist(err);
 
-      if (n > 1) {
-        should.exist(secret);
-      }
+    if (n > 1) {
+      should.exist(secret);
+    }
 
-      async.series([
+    async.series([
 
-          function(next) {
-            async.each(_.range(1, n), function(i, cb) {
-              clients[i].seedFromRandomWithMnemonic({
-                network: 'testnet'
-              });
-              clients[i].joinWallet(secret, 'copayer ' + i, {}, cb);
-            }, next);
-          },
-          function(next) {
-            async.each(_.range(n), function(i, cb) {
-              clients[i].openWallet(cb);
-            }, next);
-          },
-        ],
-        function(err) {
-          should.not.exist(err);
-          return cb({
-            m: m,
-            n: n,
-            secret: secret,
-          });
+        function(next) {
+          async.each(_.range(1, n), function(i, cb) {
+            clients[i].seedFromRandomWithMnemonic({
+              network: 'testnet'
+            });
+            clients[i].joinWallet(secret, 'copayer ' + i, {}, cb);
+          }, next);
+        },
+        function(next) {
+          async.each(_.range(n), function(i, cb) {
+            clients[i].openWallet(cb);
+          }, next);
+        },
+      ],
+      function(err) {
+        should.not.exist(err);
+        return cb({
+          m: m,
+          n: n,
+          secret: secret,
         });
-    });
+      });
+  });
 };
 
 helpers.tamperResponse = function(clients, method, url, args, tamper, cb) {
@@ -686,7 +685,6 @@ describe('client API', function() {
           });
         });
     });
-
 
     it('should create a 2-3 wallet with given mnemonic', function(done) {
       var words = 'forget announce travel fury farm alpha chaos choice talent sting eagle supreme';
@@ -2301,6 +2299,7 @@ describe('client API', function() {
           });
         });
       });
+
       it('should be able to recover funds from recreated wallet', function(done) {
         this.timeout(10000);
         helpers.createAndJoinWallet(clients, 2, 2, function() {
@@ -2413,6 +2412,59 @@ describe('client API', function() {
         });
       });
 
+      it('should be able to recreate 1-of-1 wallet with external key (m/48) account 2', function(done) {
+        clients[0].seedFromExtendedPublicKey('tprv8ZgxMBicQKsPdeZR4tV14PAJmzrWGsmafRVaHXUVYezrSbtnFM1CnqdbQuXfmSLxwr71axKewd3LTRDcQmtttUnZe27TQoGmGMeddv1H9JQ', 'ledger', 'b0937662dddea83b0ce037ff3991dd', {
+          account: 2,
+          derivationStrategy: 'BIP48',
+        });
+        clients[0].createWallet('wallet name', 'creator', 1, 1, {
+          network: 'testnet'
+        }, function(err, secret) {
+          should.not.exist(err);
+
+          clients[0].createAddress(function(err, addr) {
+            should.not.exist(err);
+            should.exist(addr);
+
+            var storage = new Storage({
+              db: helpers.newDb(),
+            });
+
+            var newApp;
+            var expressApp = new ExpressApp();
+            expressApp.start({
+              storage: storage,
+              blockchainExplorer: blockchainExplorerMock,
+              disableLogs: true,
+            }, function() {
+              newApp = expressApp.app;
+
+              var oldPKR = _.clone(clients[0].credentials.publicKeyRing);
+              var recoveryClient = helpers.newClient(newApp);
+              recoveryClient.import(clients[0].export());
+              recoveryClient.credentials.derivationStrategy.should.equal('BIP48');
+              recoveryClient.credentials.account.should.equal(2);
+              recoveryClient.getStatus(function(err, status) {
+                should.exist(err);
+                err.code.should.equal('NOT_AUTHORIZED');
+                recoveryClient.recreateWallet(function(err) {
+                  should.not.exist(err);
+                  recoveryClient.getStatus(function(err, status) {
+                    should.not.exist(err);
+                    recoveryClient.createAddress(function(err, addr2) {
+                      should.not.exist(err);
+                      should.exist(addr2);
+                      addr2.address.should.equal(addr.address);
+                      addr2.path.should.equal(addr.path);
+                      done();
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
     });
   });
 
@@ -2671,6 +2723,7 @@ describe('client API', function() {
         });
       });
     });
+
     it('Should to import the same wallet twice with different clients', function(done) {
       var t = ImportData.copayers[0];
       var c = helpers.newClient(app);
@@ -2693,6 +2746,7 @@ describe('client API', function() {
         });
       });
     });
+
     it('Should not fail when importing the same wallet twice, same copayer', function(done) {
       var t = ImportData.copayers[0];
       var c = helpers.newClient(app);
