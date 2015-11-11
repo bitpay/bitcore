@@ -753,7 +753,7 @@ API._buildSecret = function(walletId, walletPrivKey, network) {
   return _.padRight(widBase58, 22, '0') + walletPrivKey.toWIF() + (network == 'testnet' ? 'T' : 'L');
 };
 
-API._parseSecret = function(secret) {
+API.parseSecret = function(secret) {
   $.checkArgument(secret);
 
   function split(str, indexes) {
@@ -786,7 +786,7 @@ API._parseSecret = function(secret) {
   }
 };
 
-API._buildTx = function(txp) {
+API.buildTx = function(txp) {
   var t = new Bitcore.Transaction();
 
   $.checkState(_.contains(_.values(Constants.SCRIPT_TYPES), txp.addressType));
@@ -868,7 +868,7 @@ API.prototype._signTxp = function(txp) {
     }
   });
 
-  var t = API._buildTx(txp);
+  var t = API.buildTx(txp);
 
   var signatures = _.map(privs, function(priv, i) {
     return t.getSignatures(priv);
@@ -1142,7 +1142,7 @@ API.prototype.joinWallet = function(secret, copayerName, opts, cb) {
   opts = opts || {};
 
   try {
-    var secretData = API._parseSecret(secret);
+    var secretData = API.parseSecret(secret);
   } catch (ex) {
     return cb(ex);
   }
@@ -1758,7 +1758,7 @@ API.prototype.broadcastTxProposal = function(txp, cb) {
 
     if (paypro) {
 
-      var t = API._buildTx(txp);
+      var t = API.buildTx(txp);
       self.createAddress(function(err, addr) {
         if (err) return cb(err);
 
@@ -105569,7 +105569,7 @@ module.exports={
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "1.1.5",
+  "version": "1.1.7",
   "license": "MIT",
   "keywords": [
     "bitcoin",
@@ -105594,7 +105594,6 @@ module.exports={
     "bitcore-mnemonic": "~1.0.0",
     "bitcore-payment-protocol": "~1.0.0",
     "browser-request": "^0.3.3",
-    "browserify": "^9.0.3",
     "json-stable-stringify": "^1.0.0",
     "lodash": "^3.3.1",
     "preconditions": "^1.0.8",
