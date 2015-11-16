@@ -2146,7 +2146,7 @@ describe('Wallet service', function() {
       });
     });
 
-    it.only('should support creating a multiple output tx with no change address', function(done) {
+    it('should support creating a multiple output tx with no change address', function(done) {
       helpers.stubUtxos(server, wallet, [1, 2], function() {
         var max = 3 - (7560 / 1e8); // Fees for this tx at 100bits/kB = 7560 sat
         var outputs = [{
