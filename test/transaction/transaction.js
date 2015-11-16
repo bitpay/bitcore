@@ -79,6 +79,33 @@ describe('Transaction', function() {
     a.should.deep.equal(b);
   });
 
+  it('serialize to Object with signatures roundtrip', function() {
+    var tx = new Transaction()
+      .from(simpleUtxoWith100000Satoshis)
+      .to([{address: toAddress, satoshis: 50000}])
+      .change(changeAddress)
+      .sign(privateKey);
+
+    var txData = JSON.stringify(tx);
+    var tx2 = new Transaction(JSON.parse(txData));
+    var txData2 = JSON.stringify(tx2);
+    txData.should.equal(txData2);
+  });
+
+  it('serialize to Object with p2sh signatures roundtrip', function() {
+    var tx = new Transaction()
+      .from(p2shUtxoWith1BTC, [p2shPublicKey1, p2shPublicKey2, p2shPublicKey3], 2)
+      .to([{address: toAddress, satoshis: 50000}])
+      .change(changeAddress)
+      .sign(p2shPrivateKey1)
+      .sign(p2shPrivateKey2);
+
+    var txData = JSON.stringify(tx);
+    var tx2 = new Transaction(JSON.parse(txData));
+    var tx2Data = JSON.stringify(tx2);
+    txData.should.equal(tx2Data);
+  });
+
   it('constructor returns a shallow copy of another transaction', function() {
     var transaction = new Transaction(tx_1_hex);
     var copy = new Transaction(transaction);
@@ -158,6 +185,26 @@ describe('Transaction', function() {
   var tenth = 1e7;
   var fourth = 25e6;
   var half = 5e7;
+
+  var p2shPrivateKey1 = PrivateKey.fromWIF('cNuW8LX2oeQXfKKCGxajGvqwhCgBtacwTQqiCGHzzKfmpHGY4TE9');
+  var p2shPublicKey1 = p2shPrivateKey1.toPublicKey();
+  var p2shPrivateKey2 = PrivateKey.fromWIF('cTtLHt4mv6zuJytSnM7Vd6NLxyNauYLMxD818sBC8PJ1UPiVTRSs');
+  var p2shPublicKey2 = p2shPrivateKey2.toPublicKey();
+  var p2shPrivateKey3 = PrivateKey.fromWIF('cQFMZ5gP9CJtUZPc9X3yFae89qaiQLspnftyxxLGvVNvM6tS6mYY');
+  var p2shPublicKey3 = p2shPrivateKey3.toPublicKey();
+
+  var p2shAddress = Address.createMultisig([
+    p2shPublicKey1,
+    p2shPublicKey2,
+    p2shPublicKey3
+  ], 2, 'testnet');
+  var p2shUtxoWith1BTC = {
+    address: p2shAddress.toString(),
+    txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+    outputIndex: 0,
+    script: Script(p2shAddress).toString(),
+    satoshis: 1e8
+  };
 
   describe('adding inputs', function() {
 
