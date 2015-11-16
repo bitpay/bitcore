@@ -1705,6 +1705,21 @@ describe('Wallet service', function() {
       });
     });
 
+    it('should support creating a tx with no change address', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 2], function() {
+        var max = 3 - (7200 / 1e8); // Fees for this tx at 100bits/kB = 7200 sat
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max, TestData.copayers[0].privKey_1H_0);
+        server.createTx(txOpts, function(err, txp) {
+          should.not.exist(err);
+          should.exist(txp);
+          var t = txp.getBitcoreTx().toObject();
+          t.outputs.length.should.equal(1);
+          t.outputs[0].satoshis.should.equal(max * 1e8);
+          done();
+        });
+      });
+    });
+
     it('should create a tx using confirmed utxos first', function(done) {
       helpers.stubUtxos(server, wallet, [1.3, 'u0.5', 'u0.1', 1.2], function(utxos) {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1.5, TestData.copayers[0].privKey_1H_0, {
