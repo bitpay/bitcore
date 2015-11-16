@@ -1996,6 +1996,21 @@ describe('client API', function() {
       });
     });
 
+    it('should support txs with no change address', function(done) {
+      var opts2 = _.cloneDeep(opts);
+      opts2.outputs.push({
+        amount: 1e8 - _.sum(opts.outputs, 'amount') - 3650, // Fee for this tx
+        toAddress: toAddress,
+      });
+      clients[0].sendTxProposal(opts2, function(err, txp) {
+        should.not.exist(err);
+        var t = Client.buildTx(txp);
+        t.toObject().outputs.length.should.equal(opts2.outputs.length);
+        should.not.exist(t.getChangeOutput());
+        done();
+      });
+    });
+
     function doit(opts, doNotVerifyPayPro, doBroadcast, done) {
       clients[0].sendTxProposal(opts, function(err, x) {
         should.not.exist(err);
@@ -3729,6 +3744,58 @@ describe('client API', function() {
           err.code.should.equal('INSUFFICIENT_FUNDS');
           done();
         });
+      });
+    });
+  });
+  describe('#formatAmount', function() {
+    it('should successfully format amount', function() {
+      var cases = [{
+        args: [1, 'bit'],
+        expected: '0',
+      }, {
+        args: [1, 'btc'],
+        expected: '0.00',
+      }, {
+        args: [0, 'bit'],
+        expected: '0',
+      }, {
+        args: [12345678, 'bit'],
+        expected: '123,457',
+      }, {
+        args: [12345678, 'btc'],
+        expected: '0.123457',
+      }, {
+        args: [12345611, 'btc'],
+        expected: '0.123456',
+      }, {
+        args: [1234, 'btc'],
+        expected: '0.000012',
+      }, {
+        args: [1299, 'btc'],
+        expected: '0.000013',
+      }, {
+        args: [1234567899999, 'btc'],
+        expected: '12,345.679',
+      }, {
+        args: [12345678, 'bit', {
+          thousandsSeparator: '.'
+        }],
+        expected: '123.457',
+      }, {
+        args: [12345678, 'btc', {
+          decimalSeparator: ','
+        }],
+        expected: '0,123457',
+      }, {
+        args: [1234567899999, 'btc', {
+          thousandsSeparator: ' ',
+          decimalSeparator: ','
+        }],
+        expected: '12 345,679',
+      }, ];
+
+      _.each(cases, function(testCase) {
+        Utils.formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
       });
     });
   });
