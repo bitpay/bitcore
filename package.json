@@ -46,7 +46,8 @@
     "uglify": "^0.1.1",
     "sinon": "^1.10.3",
     "supertest": "*",
-    "tingodb": "^0.3.4"
+    "tingodb": "^0.3.4",
+    "uuid": "^2.0.1"
   },
   "scripts": {
     "start": "node app.js",

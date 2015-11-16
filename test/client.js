@@ -3,18 +3,21 @@
 var _ = require('lodash');
 var $ = require('preconditions').singleton();
 var chai = require('chai');
+chai.config.includeStack = true;
 var sinon = require('sinon');
 var should = chai.should();
 var async = require('async');
-var Bitcore = require('bitcore-lib');
-var BitcorePayPro = require('bitcore-payment-protocol');
 var request = require('supertest');
+var Uuid = require('uuid');
 var tingodb = require('tingodb')({
   memStore: true
 });
+
 var log = require('../lib/log');
 
 var Bitcore = require('bitcore-lib');
+var BitcorePayPro = require('bitcore-payment-protocol');
+
 var BWS = require('bitcore-wallet-service');
 
 var Common = require('../lib/common');
@@ -27,7 +30,14 @@ var TestData = require('./testdata');
 var ImportData = require('./legacyImportData.js');
 
 var helpers = {};
-chai.config.includeStack = true;
+
+helpers.toSatoshi = function(btc) {
+  if (_.isArray(btc)) {
+    return _.map(btc, helpers.toSatoshi);
+  } else {
+    return parseFloat((btc * 1e8).toPrecision(12));
+  }
+};
 
 helpers.getRequest = function(app) {
   $.checkArgument(app);
@@ -61,6 +71,37 @@ helpers.newClient = function(app) {
 helpers.newDb = function() {
   this.dbCounter = (this.dbCounter || 0) + 1;
   return new tingodb.Db('./db/test' + this.dbCounter, {});
+};
+
+helpers.generateUtxos = function(scriptType, publicKeyRing, path, requiredSignatures, amounts) {
+  var amounts = [].concat(amounts);
+  var utxos = _.map(amounts, function(amount, i) {
+
+    var address = Utils.deriveAddress(scriptType, publicKeyRing, path, requiredSignatures, 'testnet');
+
+    var scriptPubKey;
+    switch (scriptType) {
+      case Constants.SCRIPT_TYPES.P2SH:
+        scriptPubKey = Bitcore.Script.buildMultisigOut(address.publicKeys, requiredSignatures).toScriptHashOut();
+        break;
+      case Constants.SCRIPT_TYPES.P2PKH:
+        scriptPubKey = Bitcore.Script.buildPublicKeyHashOut(address.address);
+        break;
+    }
+    should.exist(scriptPubKey);
+
+    var obj = {
+      txid: Bitcore.crypto.Hash.sha256(new Buffer(i)).toString('hex'),
+      vout: 100,
+      satoshis: helpers.toSatoshi(amount),
+      scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
+      address: address.address,
+      path: path,
+      publicKeys: address.publicKeys,
+    };
+    return obj;
+  });
+  return utxos;
 };
 
 helpers.createAndJoinWallet = function(clients, m, n, cb) {
@@ -344,6 +385,439 @@ describe('client API', function() {
         request.restore();
         done();
       });
+    });
+  });
+
+  describe('Build & sign txs', function() {
+    var masterPrivateKey = 'tprv8ZgxMBicQKsPdPLE72pfSo7CvzTsWddGHdwSuMNrcerr8yQZKdaPXiRtP9Ew8ueSe9M7jS6RJsp4DiAVS2xmyxcCC9kZV6X1FMsX7EQX2R5';
+    var derivedPrivateKey = {
+      'BIP44': new Bitcore.HDPrivateKey(masterPrivateKey).derive("m/44'/1'/0'").toString(),
+      'BIP45': new Bitcore.HDPrivateKey(masterPrivateKey).derive("m/45'").toString(),
+      'BIP48': new Bitcore.HDPrivateKey(masterPrivateKey).derive("m/48'/1'/0'").toString(),
+    };
+
+    describe('#buildTx', function() {
+      it('should build a tx correctly (BIP44)', function() {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
+        }];
+
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        var txp = {
+          version: '2.0.0',
+          inputs: utxos,
+          toAddress: toAddress,
+          amount: 1200,
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1],
+          fee: 10050,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+        };
+        var t = Client.buildTx(txp);
+        var bitcoreError = t.getSerializationError({
+          disableIsFullySigned: true,
+          disableSmallFees: true,
+          disableLargeFees: true,
+        });
+
+        should.not.exist(bitcoreError);
+        t.getFee().should.equal(10050);
+      });
+      it('should build a tx correctly (BIP48)', function() {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP48']),
+        }];
+
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        var txp = {
+          version: '2.0.0',
+          inputs: utxos,
+          toAddress: toAddress,
+          amount: 1200,
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1],
+          fee: 10050,
+          derivationStrategy: 'BIP48',
+          addressType: 'P2PKH',
+        };
+        var t = Client.buildTx(txp);
+        var bitcoreError = t.getSerializationError({
+          disableIsFullySigned: true,
+          disableSmallFees: true,
+          disableLargeFees: true,
+        });
+
+        should.not.exist(bitcoreError);
+        t.getFee().should.equal(10050);
+      });
+      it('should build a legacy (v1.*) tx correctly', function() {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP45']),
+        }];
+
+        var utxos = helpers.generateUtxos('P2SH', publicKeyRing, 'm/2147483647/0/0', 1, [1000, 2000]);
+        var txp = {
+          version: '1.0.1',
+          inputs: utxos,
+          toAddress: toAddress,
+          amount: 1200,
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1],
+          feePerKb: 40000,
+          fee: 10050,
+          derivationStrategy: 'BIP45',
+          addressType: 'P2SH',
+        };
+        var t = Client.buildTx(txp);
+        var bitcoreError = t.getSerializationError({
+          disableIsFullySigned: true,
+          disableSmallFees: true,
+          disableLargeFees: true,
+        });
+
+        should.not.exist(bitcoreError);
+        t.getFee().should.equal(40000);
+      });
+      it('should protect from creating excessive fee', function() {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
+        }];
+
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1, 2]);
+        var txp = {
+          inputs: utxos,
+          toAddress: toAddress,
+          amount: 1.5e8,
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1],
+          fee: 1.2e8,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+        };
+
+        var x = Utils.newBitcoreTransaction;
+
+        Utils.newBitcoreTransaction = function() {
+          return {
+            from: sinon.stub(),
+            to: sinon.stub(),
+            change: sinon.stub(),
+            outputs: [{
+              satoshis: 1000,
+            }],
+            fee: sinon.stub(),
+          }
+        };
+
+        (function() {
+          var t = Client.buildTx(txp);
+        }).should.throw('Illegal State');
+
+        Utils.newBitcoreTransaction = x;
+      });
+      it('should build a tx with multiple outputs', function() {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
+        }];
+
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        var txp = {
+          inputs: utxos,
+          type: 'multiple_outputs',
+          outputs: [{
+            toAddress: toAddress,
+            amount: 800,
+            message: 'first output'
+          }, {
+            toAddress: toAddress,
+            amount: 900,
+            message: 'second output'
+          }],
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1, 2],
+          fee: 10000,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+        };
+        var t = Client.buildTx(txp);
+        var bitcoreError = t.getSerializationError({
+          disableIsFullySigned: true,
+        });
+        should.not.exist(bitcoreError);
+      });
+
+      it('should build a tx with provided output scripts', function() {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
+        }];
+
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [0.001]);
+        var txp = {
+          inputs: utxos,
+          type: 'external',
+          outputs: [{
+            "amount": 700,
+            "script": "512103ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff210314a96cd6f5a20826070173fe5b7e9797f21fc8ca4a55bcb2d2bde99f55dd352352ae"
+          }, {
+            "amount": 600,
+            "script": "76a9144d5bd54809f846dc6b1a14cbdd0ac87a3c66f76688ac"
+          }, {
+            "amount": 0,
+            "script": "6a1e43430102fa9213bc243af03857d0f9165e971153586d3915201201201210"
+          }],
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1, 2, 3],
+          fee: 10000,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+        };
+        var t = Client.buildTx(txp);
+        var bitcoreError = t.getSerializationError({
+          disableIsFullySigned: true,
+        });
+        should.not.exist(bitcoreError);
+        t.outputs.length.should.equal(4);
+        t.outputs[0].script.toHex().should.equal(txp.outputs[0].script);
+        t.outputs[0].satoshis.should.equal(txp.outputs[0].amount);
+        t.outputs[1].script.toHex().should.equal(txp.outputs[1].script);
+        t.outputs[1].satoshis.should.equal(txp.outputs[1].amount);
+        t.outputs[2].script.toHex().should.equal(txp.outputs[2].script);
+        t.outputs[2].satoshis.should.equal(txp.outputs[2].amount);
+        var changeScript = Bitcore.Script.fromAddress(txp.changeAddress.address).toHex();
+        t.outputs[3].script.toHex().should.equal(changeScript);
+      });
+      it('should fail if provided output has both toAddress and script', function() {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
+        }];
+
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [0.001]);
+        var txp = {
+          inputs: utxos,
+          type: 'external',
+          outputs: [{
+            "toAddress": "18433T2TSgajt9jWhcTBw4GoNREA6LpX3E",
+            "amount": 700,
+            "script": "512103ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff210314a96cd6f5a20826070173fe5b7e9797f21fc8ca4a55bcb2d2bde99f55dd352352ae"
+          }, {
+            "amount": 600,
+            "script": "76a9144d5bd54809f846dc6b1a14cbdd0ac87a3c66f76688ac"
+          }, {
+            "amount": 0,
+            "script": "6a1e43430102fa9213bc243af03857d0f9165e971153586d3915201201201210"
+          }],
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1, 2, 3],
+          fee: 10000,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+        };
+        (function() {
+          var t = Client.buildTx(txp);
+        }).should.throw('Output should have either toAddress or script specified');
+
+        delete txp.outputs[0].toAddress;
+        var t = Client.buildTx(txp);
+        var bitcoreError = t.getSerializationError({
+          disableIsFullySigned: true,
+        });
+        should.not.exist(bitcoreError);
+      });
+    });
+
+    describe('#signTxp', function() {
+      it('should sign BIP45 P2SH correctly', function() {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP45']),
+        }];
+
+        var utxos = helpers.generateUtxos('P2SH', publicKeyRing, 'm/2147483647/0/0', 1, [1000, 2000]);
+        var txp = {
+          inputs: utxos,
+          toAddress: toAddress,
+          amount: 1200,
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1],
+          fee: 10000,
+          derivationStrategy: 'BIP45',
+          addressType: 'P2SH',
+        };
+        var signatures = Client.signTxp(txp, derivedPrivateKey['BIP45']);
+        signatures.length.should.be.equal(utxos.length);
+      });
+      it('should sign BIP44 P2PKH correctly', function() {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
+        }];
+
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        var txp = {
+          inputs: utxos,
+          toAddress: toAddress,
+          amount: 1200,
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1],
+          fee: 10000,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+        };
+        var signatures = Client.signTxp(txp, derivedPrivateKey['BIP44']);
+        signatures.length.should.be.equal(utxos.length);
+      });
+      it('should sign multiple-outputs proposal correctly', function() {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
+        }];
+
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        var txp = {
+          inputs: utxos,
+          type: 'multiple_outputs',
+          outputs: [{
+            toAddress: toAddress,
+            amount: 800,
+            message: 'first output'
+          }, {
+            toAddress: toAddress,
+            amount: 900,
+            message: 'second output'
+          }],
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1, 2],
+          fee: 10000,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+        };
+        var signatures = Client.signTxp(txp, derivedPrivateKey['BIP44']);
+        signatures.length.should.be.equal(utxos.length);
+      });
+      it('should sign proposal with provided output scripts correctly', function() {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
+        }];
+
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [0.001]);
+        var txp = {
+          inputs: utxos,
+          type: 'external',
+          outputs: [{
+            "amount": 700,
+            "script": "512103ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff210314a96cd6f5a20826070173fe5b7e9797f21fc8ca4a55bcb2d2bde99f55dd352352ae"
+          }, {
+            "amount": 600,
+            "script": "76a9144d5bd54809f846dc6b1a14cbdd0ac87a3c66f76688ac"
+          }, {
+            "amount": 0,
+            "script": "6a1e43430102fa9213bc243af03857d0f9165e971153586d3915201201201210"
+          }],
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1, 2, 3],
+          fee: 10000,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+        };
+        var signatures = Client.signTxp(txp, derivedPrivateKey['BIP44']);
+        signatures.length.should.be.equal(utxos.length);
+      });
+    });
+  });
+
+  describe('Wallet secret round trip', function() {
+    it('should create secret and parse secret', function() {
+      var i = 0;
+      while (i++ < 100) {
+        var walletId = Uuid.v4();
+        var walletPrivKey = new Bitcore.PrivateKey();
+        var network = i % 2 == 0 ? 'testnet' : 'livenet';
+        var secret = Client._buildSecret(walletId, walletPrivKey, network);
+        var result = Client.parseSecret(secret);
+        result.walletId.should.equal(walletId);
+        result.walletPrivKey.toString().should.equal(walletPrivKey.toString());
+        result.network.should.equal(network);
+      };
+    });
+    it('should fail on invalid secret', function() {
+      (function() {
+        Client.parseSecret('invalidSecret');
+      }).should.throw('Invalid secret');
+    });
+
+    it('should create secret and parse secret from string ', function() {
+      var walletId = Uuid.v4();
+      var walletPrivKey = new Bitcore.PrivateKey();
+      var network = 'testnet';
+      var secret = Client._buildSecret(walletId, walletPrivKey.toString(), network);
+      var result = Client.parseSecret(secret);
+      result.walletId.should.equal(walletId);
+      result.walletPrivKey.toString().should.equal(walletPrivKey.toString());
+      result.network.should.equal(network);
     });
   });
 
@@ -3255,58 +3729,6 @@ describe('client API', function() {
           err.code.should.equal('INSUFFICIENT_FUNDS');
           done();
         });
-      });
-    }); 
-  });
-  describe('#formatAmount', function() {
-    it('should successfully format amount', function() {
-      var cases = [{
-        args: [1, 'bit'],
-        expected: '0',
-      }, {
-        args: [1, 'btc'],
-        expected: '0.00',
-      }, {
-        args: [0, 'bit'],
-        expected: '0',
-      }, {
-        args: [12345678, 'bit'],
-        expected: '123,457',
-      }, {
-        args: [12345678, 'btc'],
-        expected: '0.123457',
-      }, {
-        args: [12345611, 'btc'],
-        expected: '0.123456',
-      }, {
-        args: [1234, 'btc'],
-        expected: '0.000012',
-      }, {
-        args: [1299, 'btc'],
-        expected: '0.000013',
-      }, {
-        args: [1234567899999, 'btc'],
-        expected: '12,345.679',
-      }, {
-        args: [12345678, 'bit', {
-          thousandsSeparator: '.'
-        }],
-        expected: '123.457',
-      }, {
-        args: [12345678, 'btc', {
-          decimalSeparator: ','
-        }],
-        expected: '0,123457',
-      }, {
-        args: [1234567899999, 'btc', {
-          thousandsSeparator: ' ',
-          decimalSeparator: ','
-        }],
-        expected: '12 345,679',
-      }, ];
-
-      _.each(cases, function(testCase) {
-        Utils.formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
       });
     });
   });
