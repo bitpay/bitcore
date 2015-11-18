@@ -928,6 +928,21 @@ describe('client API', function() {
       });
     });
 
+    it('should fill wallet info in a incomplete wallets', function(done) {
+      clients[0].seedFromRandomWithMnemonic();
+      clients[0].createWallet('XXX', 'creator', 2, 3, {}, function(err, secret) {
+        should.not.exist(err);
+        clients[1].seedFromMnemonic(clients[0].getMnemonic());
+        clients[1].openWallet(function(err) {
+          clients[1].credentials.walletName.should.equal('XXX');
+          clients[1].credentials.m.should.equal(2);
+          clients[1].credentials.n.should.equal(3);
+          should.not.exist(err);
+          done();
+        });
+      });
+    });
+
     it('should not allow to join a full wallet ', function(done) {
       helpers.createAndJoinWallet(clients, 2, 2, function(w) {
         should.exist(w.secret);
