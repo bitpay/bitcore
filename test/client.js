@@ -353,7 +353,6 @@ describe('client API', function() {
             network: 'testnet'
           },
           function(err) {
-            console.log('err ', err);
             err.code.should.equal('NOT_FOUND');
             done();
           });
@@ -589,21 +588,17 @@ describe('client API', function() {
         var txp = {
           inputs: utxos,
           type: 'external',
-          outputs: [
-            {
-              "toAddress":"18433T2TSgajt9jWhcTBw4GoNREA6LpX3E",
-              "amount":700,
-              "script":"512103ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff210314a96cd6f5a20826070173fe5b7e9797f21fc8ca4a55bcb2d2bde99f55dd352352ae"
-            },
-            {
-              "amount":600,
-              "script":"76a9144d5bd54809f846dc6b1a14cbdd0ac87a3c66f76688ac"
-            },
-            {
-              "amount":0,
-              "script":"6a1e43430102fa9213bc243af03857d0f9165e971153586d3915201201201210"
-            }
-          ],
+          outputs: [{
+            "toAddress": "18433T2TSgajt9jWhcTBw4GoNREA6LpX3E",
+            "amount": 700,
+            "script": "512103ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff210314a96cd6f5a20826070173fe5b7e9797f21fc8ca4a55bcb2d2bde99f55dd352352ae"
+          }, {
+            "amount": 600,
+            "script": "76a9144d5bd54809f846dc6b1a14cbdd0ac87a3c66f76688ac"
+          }, {
+            "amount": 0,
+            "script": "6a1e43430102fa9213bc243af03857d0f9165e971153586d3915201201201210"
+          }],
           changeAddress: {
             address: changeAddress
           },
@@ -668,7 +663,7 @@ describe('client API', function() {
           disableIsFullySigned: true,
         });
         should.not.exist(bitcoreError);
-        
+
         delete txp.outputs[0].toAddress;
         txp.outputs[0].script = "512103ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff210314a96cd6f5a20826070173fe5b7e9797f21fc8ca4a55bcb2d2bde99f55dd352352ae";
         t = Client.buildTx(txp);
@@ -2014,7 +2009,6 @@ describe('client API', function() {
         toAddress: toAddress,
       });
       clients[0].sendTxProposal(opts2, function(err, txp) {
-        console.log(err);
         should.not.exist(err);
         var t = Client.buildTx(txp);
         t.toObject().outputs.length.should.equal(opts2.outputs.length);
