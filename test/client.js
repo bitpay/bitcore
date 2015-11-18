@@ -589,16 +589,21 @@ describe('client API', function() {
         var txp = {
           inputs: utxos,
           type: 'external',
-          outputs: [{
-            "amount": 700,
-            "script": "512103ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff210314a96cd6f5a20826070173fe5b7e9797f21fc8ca4a55bcb2d2bde99f55dd352352ae"
-          }, {
-            "amount": 600,
-            "script": "76a9144d5bd54809f846dc6b1a14cbdd0ac87a3c66f76688ac"
-          }, {
-            "amount": 0,
-            "script": "6a1e43430102fa9213bc243af03857d0f9165e971153586d3915201201201210"
-          }],
+          outputs: [
+            {
+              "toAddress":"18433T2TSgajt9jWhcTBw4GoNREA6LpX3E",
+              "amount":700,
+              "script":"512103ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff210314a96cd6f5a20826070173fe5b7e9797f21fc8ca4a55bcb2d2bde99f55dd352352ae"
+            },
+            {
+              "amount":600,
+              "script":"76a9144d5bd54809f846dc6b1a14cbdd0ac87a3c66f76688ac"
+            },
+            {
+              "amount":0,
+              "script":"6a1e43430102fa9213bc243af03857d0f9165e971153586d3915201201201210"
+            }
+          ],
           changeAddress: {
             address: changeAddress
           },
@@ -623,7 +628,7 @@ describe('client API', function() {
         var changeScript = Bitcore.Script.fromAddress(txp.changeAddress.address).toHex();
         t.outputs[3].script.toHex().should.equal(changeScript);
       });
-      it('should fail if provided output has both toAddress and script', function() {
+      it('should fail if provided output has no either toAddress or script', function() {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -636,9 +641,7 @@ describe('client API', function() {
           inputs: utxos,
           type: 'external',
           outputs: [{
-            "toAddress": "18433T2TSgajt9jWhcTBw4GoNREA6LpX3E",
             "amount": 700,
-            "script": "512103ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff210314a96cd6f5a20826070173fe5b7e9797f21fc8ca4a55bcb2d2bde99f55dd352352ae"
           }, {
             "amount": 600,
             "script": "76a9144d5bd54809f846dc6b1a14cbdd0ac87a3c66f76688ac"
@@ -659,8 +662,16 @@ describe('client API', function() {
           var t = Client.buildTx(txp);
         }).should.throw('Output should have either toAddress or script specified');
 
-        delete txp.outputs[0].toAddress;
+        txp.outputs[0].toAddress = "18433T2TSgajt9jWhcTBw4GoNREA6LpX3E";
         var t = Client.buildTx(txp);
+        var bitcoreError = t.getSerializationError({
+          disableIsFullySigned: true,
+        });
+        should.not.exist(bitcoreError);
+        
+        delete txp.outputs[0].toAddress;
+        txp.outputs[0].script = "512103ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff210314a96cd6f5a20826070173fe5b7e9797f21fc8ca4a55bcb2d2bde99f55dd352352ae";
+        t = Client.buildTx(txp);
         var bitcoreError = t.getSerializationError({
           disableIsFullySigned: true,
         });
@@ -1993,6 +2004,22 @@ describe('client API', function() {
           clients[0].payProHttp = clients[1].payProHttp = http;
           done();
         });
+      });
+    });
+
+    it('should support txs with no change address', function(done) {
+      var opts2 = _.cloneDeep(opts);
+      opts2.outputs.push({
+        amount: 1e8 - _.sum(opts.outputs, 'amount') - 3650, // Fee for this tx
+        toAddress: toAddress,
+      });
+      clients[0].sendTxProposal(opts2, function(err, txp) {
+        console.log(err);
+        should.not.exist(err);
+        var t = Client.buildTx(txp);
+        t.toObject().outputs.length.should.equal(opts2.outputs.length);
+        should.not.exist(t.getChangeOutput());
+        done();
       });
     });
 
@@ -3729,6 +3756,58 @@ describe('client API', function() {
           err.code.should.equal('INSUFFICIENT_FUNDS');
           done();
         });
+      });
+    });
+  });
+  describe('#formatAmount', function() {
+    it('should successfully format amount', function() {
+      var cases = [{
+        args: [1, 'bit'],
+        expected: '0',
+      }, {
+        args: [1, 'btc'],
+        expected: '0.00',
+      }, {
+        args: [0, 'bit'],
+        expected: '0',
+      }, {
+        args: [12345678, 'bit'],
+        expected: '123,457',
+      }, {
+        args: [12345678, 'btc'],
+        expected: '0.123457',
+      }, {
+        args: [12345611, 'btc'],
+        expected: '0.123456',
+      }, {
+        args: [1234, 'btc'],
+        expected: '0.000012',
+      }, {
+        args: [1299, 'btc'],
+        expected: '0.000013',
+      }, {
+        args: [1234567899999, 'btc'],
+        expected: '12,345.679',
+      }, {
+        args: [12345678, 'bit', {
+          thousandsSeparator: '.'
+        }],
+        expected: '123.457',
+      }, {
+        args: [12345678, 'btc', {
+          decimalSeparator: ','
+        }],
+        expected: '0,123457',
+      }, {
+        args: [1234567899999, 'btc', {
+          thousandsSeparator: ' ',
+          decimalSeparator: ','
+        }],
+        expected: '12 345,679',
+      }, ];
+
+      _.each(cases, function(testCase) {
+        Utils.formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
       });
     });
   });
