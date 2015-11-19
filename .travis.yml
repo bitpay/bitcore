@@ -3,6 +3,6 @@ node_js:
   - '0.12'
   - '4'
 install:
-  - npm install
+  - npm install 
 after_success:
   - npm run coveralls
