@@ -22,6 +22,13 @@ describe('TXProposal', function() {
       should.not.exist(txp.toAddress);
       should.exist(txp.outputs);
     });
+    it('should create an external TxProposal', function() {
+      var txp = TxProposal.create(aTxpOpts(TxProposal.Types.EXTERNAL));
+      should.exist(txp);
+      should.not.exist(txp.toAddress);
+      should.exist(txp.outputs);
+      should.exist(txp.inputs);
+    });
   });
 
   describe('#fromObj', function() {
@@ -76,6 +83,15 @@ describe('TXProposal', function() {
       });
       x.getTotalAmount().should.equal(totalOutput);
     });
+    it('should handle external', function() {
+      var x = TxProposal.fromObj(aTXP(TxProposal.Types.EXTERNAL));
+      var totalOutput = 0;
+      _.each(x.outputs, function(o) {
+        totalOutput += o.amount
+      });
+      x.getTotalAmount().should.equal(totalOutput);
+    });
+
   });
 
   describe('#sign', function() {
@@ -135,7 +151,7 @@ var aTxpOpts = function(type) {
     amount: 50000000,
     message: 'some message'
   };
-  if (type == TxProposal.Types.MULTIPLEOUTPUTS) {
+  if (type == TxProposal.Types.MULTIPLEOUTPUTS || type == TxProposal.Types.EXTERNAL) {
     opts.outputs = [{
       toAddress: "18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7",
       amount: 10000000,
@@ -147,6 +163,17 @@ var aTxpOpts = function(type) {
     }, ];
     delete opts.toAddress;
     delete opts.amount;
+  }
+  if (type == TxProposal.Types.EXTERNAL) {
+    opts.inputs = [{
+      "txid": "6ee699846d2d6605f96d20c7cc8230382e5da43342adb11b499bbe73709f06ab",
+      "vout": 8,
+      "satoshis": 100000000,
+      "scriptPubKey": "a914a8a9648754fbda1b6c208ac9d4e252075447f36887",
+      "address": "3H4pNP6J4PW4NnvdrTg37VvZ7h2QWuAwtA",
+      "path": "m/2147483647/0/1",
+      "publicKeys": ["0319008ffe1b3e208f5ebed8f46495c056763f87b07930a7027a92ee477fb0cb0f", "03b5f035af8be40d0db5abb306b7754949ab39032cf99ad177691753b37d101301"]
+    }];
   }
   return opts;
 };
