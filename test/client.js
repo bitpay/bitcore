@@ -1336,7 +1336,7 @@ describe('client API', function() {
         });
       });
     });
-    it.only('should be able to derive 25 addresses', function(done) {
+    it('should be able to derive 25 addresses', function(done) {
       this.timeout(5000);
       var num = 25;
       helpers.createAndJoinWallet(clients, 1, 1, function() {
