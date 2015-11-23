@@ -1336,6 +1336,30 @@ describe('client API', function() {
         });
       });
     });
+    it.only('should be able to derive 25 addresses', function(done) {
+      this.timeout(5000);
+      var num = 25;
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
+        function create(callback) {
+          clients[0].createAddress({ignoreMaxGap: true}, function(err, x) {
+            should.not.exist(err);
+            should.exist(x.address);
+            callback(err, x);
+          });
+        }
+
+        var tasks = [];
+        for (var i = 0; i < num; i++) {
+          tasks.push(create);
+        }
+
+        async.parallel(tasks, function(err, results) {
+          should.not.exist(err);
+          results.length.should.equal(num);
+          done();
+        });
+      });
+    });
   });
 
   describe('Notifications', function() {
