@@ -7,7 +7,7 @@ var should = chai.should();
 var TxProposal = require('../../lib/model/txproposalv3');
 var Bitcore = require('bitcore-lib');
 
-describe('TxProposal v3', function() {
+describe.only('TxProposal v3', function() {
   describe('#create', function() {
     it('should create a TxProposal', function() {
       var txp = TxProposal.create(aTxpOpts());
@@ -58,6 +58,13 @@ describe('TxProposal v3', function() {
       var x = TxProposal.fromObj(aTXP());
       var total = x.getTotalAmount();
       total.should.equal(x.amount);
+    });
+  });
+
+  describe('#getEstimatedSize', function() {
+    it('should return estimated size in bytes', function() {
+      var x = TxProposal.fromObj(aTXP());
+      x.getEstimatedSize().should.equal(407);
     });
   });
 
