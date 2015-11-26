@@ -4,10 +4,10 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var TxProposal = require('../../lib/model/txproposalv3');
+var TxProposal = require('../../lib/model/txproposal');
 var Bitcore = require('bitcore-lib');
 
-describe('TxProposal v3', function() {
+describe('TxProposal', function() {
   describe('#create', function() {
     it('should create a TxProposal', function() {
       var txp = TxProposal.create(aTxpOpts());
