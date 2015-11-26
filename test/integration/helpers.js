@@ -397,13 +397,14 @@ helpers.createProposalOpts2 = function(outputs, moreOpts, inputs) {
 helpers.getProposalSignatureOpts = function(txp, signingKey) {
   var raw = txp.getRawTx();
   var proposalSignature = helpers.signMessage(raw, signingKey);
-  var x = new Bitcore.PrivateKey(signingKey).toPublicKey().toString();
+  var pubKey = new Bitcore.PrivateKey(signingKey).toPublicKey().toString();
+  var pubKeySig = helpers.signMessage(pubKey, signingKey);
 
   return {
     txProposalId: txp.id,
     proposalSignature: proposalSignature,
-    proposalSignaturePubKey: new Bitcore.PrivateKey(signingKey).toPublicKey().toString(),
-    proposalSignaturePubKeySig: 'dummy',
+    proposalSignaturePubKey: pubKey,
+    proposalSignaturePubKeySig: pubKeySig,
   }
 };
 

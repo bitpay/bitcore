@@ -2366,7 +2366,7 @@ describe('Wallet service', function() {
       });
     });
 
-    it.only('should be able to send a temporary tx proposal', function(done) {
+    it('should be able to send a temporary tx proposal', function(done) {
       helpers.stubUtxos(server, wallet, [1, 2], function() {
         var txOpts = helpers.createProposalOpts2([{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
@@ -2405,6 +2405,49 @@ describe('Wallet service', function() {
         });
       });
     });
+    it('should fail to send tx proposal with wrong signature', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 2], function() {
+        var txOpts = helpers.createProposalOpts2([{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 0.8
+        }], {
+          message: 'some message',
+          customData: 'some custom data',
+        });
+        server.createTx(txOpts, function(err, txp) {
+          should.not.exist(err);
+          should.exist(txp);
+          var sendOpts = helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0);
+          sendOpts.proposalSignature = 'dummy';
+          server.sendTx(sendOpts, function(err) {
+            should.exist(err);
+            err.message.should.contain('Invalid proposal signature');
+            done();
+          });
+        });
+      });
+    });
+    it('should fail to send tx proposal not signed by the creator', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 2], function() {
+        var txOpts = helpers.createProposalOpts2([{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 0.8
+        }], {
+          message: 'some message',
+          customData: 'some custom data',
+        });
+        server.createTx(txOpts, function(err, txp) {
+          should.not.exist(err);
+          should.exist(txp);
+          var sendOpts = helpers.getProposalSignatureOpts(txp, TestData.copayers[1].privKey_1H_0);
+          server.sendTx(sendOpts, function(err) {
+            should.exist(err);
+            err.message.should.contain('Invalid proposal signing key');
+            done();
+          });
+        });
+      });
+    });
     it('should fail to send a temporary tx proposal if utxos are unavailable', function(done) {
       var txp1, txp2;
       var txOpts = helpers.createProposalOpts2([{
@@ -2432,20 +2475,12 @@ describe('Wallet service', function() {
           txp2 = txp;
           should.exist(txp1);
           should.exist(txp2);
-          server.sendTx({
-            txProposalId: txp1.id,
-            proposalSignature: 'dummy',
-            proposalSignaturePubKey: 'dummy',
-            proposalSignaturePubKeySig: 'dummy',
-          }, next);
+          var sendOpts = helpers.getProposalSignatureOpts(txp1, TestData.copayers[0].privKey_1H_0);
+          server.sendTx(sendOpts, next);
         },
         function(next) {
-          server.sendTx({
-            txProposalId: txp2.id,
-            proposalSignature: 'dummy',
-            proposalSignaturePubKey: 'dummy',
-            proposalSignaturePubKeySig: 'dummy',
-          }, function(err) {
+          var sendOpts = helpers.getProposalSignatureOpts(txp2, TestData.copayers[0].privKey_1H_0);
+          server.sendTx(sendOpts, function(err) {
             should.exist(err);
             err.code.should.equal('UNAVAILABLE_UTXOS');
             next();
@@ -2464,12 +2499,8 @@ describe('Wallet service', function() {
         },
         function(txp3, next) {
           should.exist(txp3);
-          server.sendTx({
-            txProposalId: txp3.id,
-            proposalSignature: 'dummy',
-            proposalSignaturePubKey: 'dummy',
-            proposalSignaturePubKeySig: 'dummy',
-          }, next);
+          var sendOpts = helpers.getProposalSignatureOpts(txp3, TestData.copayers[0].privKey_1H_0);
+          server.sendTx(sendOpts, next);
         },
         function(next) {
           server.getPendingTxs({}, function(err, txs) {
@@ -2484,6 +2515,7 @@ describe('Wallet service', function() {
       });
     });
   });
+
   describe('#createTx backoff time', function(done) {
     var server, wallet, txid;
 
