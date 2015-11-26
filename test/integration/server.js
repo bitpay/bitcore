@@ -1638,7 +1638,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('#createTxLegacy', function() {
+  describe('createTxLegacy', function() {
     var server, wallet;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(2, 3, function(s, w) {
@@ -2390,12 +2390,11 @@ describe('Wallet service', function() {
         });
       });
     });
+
     it('should fail to send non-existent tx proposal', function(done) {
       server.sendTx({
         txProposalId: 'wrong-id',
         proposalSignature: 'dummy',
-        proposalSignaturePubKey: 'dummy',
-        proposalSignaturePubKeySig: 'dummy',
       }, function(err) {
         should.exist(err);
         server.getPendingTxs({}, function(err, txs) {
@@ -2405,6 +2404,7 @@ describe('Wallet service', function() {
         });
       });
     });
+
     it('should fail to send tx proposal with wrong signature', function(done) {
       helpers.stubUtxos(server, wallet, [1, 2], function() {
         var txOpts = helpers.createProposalOpts2([{
@@ -2412,14 +2412,14 @@ describe('Wallet service', function() {
           amount: 0.8
         }], {
           message: 'some message',
-          customData: 'some custom data',
         });
         server.createTx(txOpts, function(err, txp) {
           should.not.exist(err);
           should.exist(txp);
-          var sendOpts = helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0);
-          sendOpts.proposalSignature = 'dummy';
-          server.sendTx(sendOpts, function(err) {
+          server.sendTx({
+            txProposalId: txp.id,
+            proposalSignature: 'dummy'
+          }, function(err) {
             should.exist(err);
             err.message.should.contain('Invalid proposal signature');
             done();
@@ -2427,6 +2427,7 @@ describe('Wallet service', function() {
         });
       });
     });
+
     it('should fail to send tx proposal not signed by the creator', function(done) {
       helpers.stubUtxos(server, wallet, [1, 2], function() {
         var txOpts = helpers.createProposalOpts2([{
@@ -2434,12 +2435,23 @@ describe('Wallet service', function() {
           amount: 0.8
         }], {
           message: 'some message',
-          customData: 'some custom data',
         });
         server.createTx(txOpts, function(err, txp) {
           should.not.exist(err);
           should.exist(txp);
-          var sendOpts = helpers.getProposalSignatureOpts(txp, TestData.copayers[1].privKey_1H_0);
+
+          var raw = txp.getRawTx();
+          var proposalSignature = helpers.signMessage(raw, TestData.copayers[0].privKey_1H_0);
+          var pubKey = new Bitcore.PrivateKey(TestData.copayers[0].privKey_1H_0).toPublicKey().toString();
+          var pubKeySig = helpers.signMessage(pubKey, TestData.copayers[1].privKey_1H_0);
+
+          var sendOpts = {
+            txProposalId: txp.id,
+            proposalSignature: proposalSignature,
+            proposalSignaturePubKey: pubKey,
+            proposalSignaturePubKeySig: pubKeySig,
+          }
+
           server.sendTx(sendOpts, function(err) {
             should.exist(err);
             err.message.should.contain('Invalid proposal signing key');
@@ -2448,6 +2460,51 @@ describe('Wallet service', function() {
         });
       });
     });
+
+    it('should accept a tx proposal signed with a custom key', function(done) {
+      var reqPrivKey = new Bitcore.PrivateKey();
+      var reqPubKey = reqPrivKey.toPublicKey();
+
+      var xPrivKey = TestData.copayers[0].xPrivKey_44H_0H_0H;
+      var sig = helpers.signRequestPubKey(reqPubKey, xPrivKey);
+
+      var opts = {
+        copayerId: TestData.copayers[0].id44,
+        requestPubKey: reqPubKey,
+        signature: sig,
+      };
+
+      server.addAccess(opts, function(err) {
+        should.not.exist(err);
+
+        helpers.stubUtxos(server, wallet, [1, 2], function() {
+          var txOpts = helpers.createProposalOpts2([{
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 0.8
+          }], {
+            message: 'some message',
+          });
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+
+            var sendOpts = {
+              txProposalId: txp.id,
+              proposalSignature: helpers.signMessage(txp.getRawTx(), reqPrivKey),
+              proposalSignaturePubKey: reqPubKey,
+              proposalSignaturePubKeySig: sig,
+            }
+
+            server.sendTx(sendOpts, function(err) {
+              should.exist(err);
+              err.message.should.contain('Invalid proposal signing key');
+              done();
+            });
+          });
+        });
+      });
+    });
+
     it('should fail to send a temporary tx proposal if utxos are unavailable', function(done) {
       var txp1, txp2;
       var txOpts = helpers.createProposalOpts2([{
