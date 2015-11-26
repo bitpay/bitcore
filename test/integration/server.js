@@ -723,7 +723,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, TestData.copayers[0].privKey_1H_0, {
           message: 'some message'
         });
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(err);
           should.exist(tx);
           server.getStatus({}, function(err, status) {
@@ -1341,7 +1341,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           getAuthServer(opts.copayerId, reqPrivKey, function(err, server2) {
             var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, reqPrivKey);
-            server2.createTx(txOpts, function(err, tx) {
+            server2.createTxLegacy(txOpts, function(err, tx) {
               should.not.exist(err);
               done();
             });
@@ -1383,7 +1383,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           getAuthServer(opts.copayerId, reqPrivKey, function(err, server2) {
             var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, reqPrivKey);
-            server2.createTx(txOpts, function(err, tx) {
+            server2.createTxLegacy(txOpts, function(err, tx) {
               should.not.exist(err);
               server2.getPendingTxs({}, function(err, txs) {
                 should.not.exist(err);
@@ -1626,7 +1626,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           helpers.getAuthServer(result.copayerId, function(server, wallet) {
             var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, TestData.copayers[0].privKey);
-            server.createTx(txOpts, function(err, tx) {
+            server.createTxLegacy(txOpts, function(err, tx) {
               should.not.exist(tx);
               should.exist(err);
               err.code.should.equal('WALLET_NOT_COMPLETE');
@@ -1638,7 +1638,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('#createTx', function() {
+  describe('#createTxLegacy', function() {
     var server, wallet;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(2, 3, function(s, w) {
@@ -1654,7 +1654,7 @@ describe('Wallet service', function() {
           message: 'some message',
           customData: 'some custom data'
         });
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(err);
           should.exist(tx);
           tx.walletId.should.equal(wallet.id);
@@ -1695,11 +1695,11 @@ describe('Wallet service', function() {
     it('should generate new change address for each created tx', function(done) {
       helpers.stubUtxos(server, wallet, [1, 2], function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, TestData.copayers[0].privKey_1H_0);
-        server.createTx(txOpts, function(err, tx1) {
+        server.createTxLegacy(txOpts, function(err, tx1) {
           should.not.exist(err);
           should.exist(tx1);
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, TestData.copayers[0].privKey_1H_0);
-          server.createTx(txOpts, function(err, tx2) {
+          server.createTxLegacy(txOpts, function(err, tx2) {
             should.not.exist(err);
             should.exist(tx2);
             tx1.changeAddress.address.should.not.equal(tx2.changeAddress.address);
@@ -1712,7 +1712,7 @@ describe('Wallet service', function() {
     it('should create a tx with legacy signature', function(done) {
       helpers.stubUtxos(server, wallet, [100, 200], function() {
         var txOpts = helpers.createProposalOptsLegacy('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, 'some message', TestData.copayers[0].privKey_1H_0);
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(err);
           should.exist(tx);
           done();
@@ -1724,7 +1724,7 @@ describe('Wallet service', function() {
       helpers.stubUtxos(server, wallet, [1, 2], function() {
         var max = 3 - (7200 / 1e8); // Fees for this tx at 100bits/kB = 7200 sat
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max, TestData.copayers[0].privKey_1H_0);
-        server.createTx(txOpts, function(err, txp) {
+        server.createTxLegacy(txOpts, function(err, txp) {
           should.not.exist(err);
           should.exist(txp);
           var t = txp.getBitcoreTx().toObject();
@@ -1740,7 +1740,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1.5, TestData.copayers[0].privKey_1H_0, {
           message: 'some message'
         });
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(err);
           should.exist(tx);
           tx.inputs.length.should.equal(2);
@@ -1755,7 +1755,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 2.55, TestData.copayers[0].privKey_1H_0, {
           message: 'some message'
         });
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(err);
           should.exist(tx);
           tx.inputs.length.should.equal(3);
@@ -1773,7 +1773,7 @@ describe('Wallet service', function() {
           message: 'some message'
         });
         txOpts.excludeUnconfirmedUtxos = true;
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.exist(err);
           err.code.should.equal('INSUFFICIENT_FUNDS');
           err.message.should.equal('Insufficient funds');
@@ -1781,7 +1781,7 @@ describe('Wallet service', function() {
             message: 'some message'
           });
           txOpts.excludeUnconfirmedUtxos = true;
-          server.createTx(txOpts, function(err, tx) {
+          server.createTxLegacy(txOpts, function(err, tx) {
             should.exist(err);
             err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
             err.message.should.equal('Insufficient funds for fee');
@@ -1797,7 +1797,7 @@ describe('Wallet service', function() {
           message: 'some message'
         });
         txOpts.excludeUnconfirmedUtxos = true;
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(err);
           should.exist(tx);
           tx.inputs.length.should.equal(2);
@@ -1809,7 +1809,7 @@ describe('Wallet service', function() {
               message: 'some message'
             });
             txOpts.excludeUnconfirmedUtxos = true;
-            server.createTx(txOpts, function(err, tx) {
+            server.createTxLegacy(txOpts, function(err, tx) {
               should.exist(err);
               err.code.should.equal('LOCKED_FUNDS');
               done();
@@ -1826,7 +1826,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, TestData.copayers[0].privKey_1H_0, {
           message: 'some message'
         });
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.exist(err);
           err.toString().should.equal('dummy error');
           done();
@@ -1838,7 +1838,7 @@ describe('Wallet service', function() {
       helpers.stubUtxos(server, wallet, [100, 200], function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, 'dummy');
 
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(tx);
           should.exist(err);
           err.message.should.equal('Invalid proposal signature');
@@ -1851,7 +1851,7 @@ describe('Wallet service', function() {
       helpers.stubUtxos(server, wallet, [100, 200], function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, TestData.copayers[1].privKey_1H_0);
 
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(tx);
           should.exist(err);
           err.message.should.equal('Invalid proposal signature');
@@ -1864,7 +1864,7 @@ describe('Wallet service', function() {
       helpers.stubUtxos(server, wallet, [100, 200], function() {
         var txOpts = helpers.createSimpleProposalOpts('invalid address', 80, TestData.copayers[0].privKey_1H_0);
 
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.exist(err);
           should.not.exist(tx);
           // may fail due to Non-base58 character, or Checksum mismatch, or other
@@ -1877,7 +1877,7 @@ describe('Wallet service', function() {
       helpers.stubUtxos(server, wallet, [100, 200], function() {
         var txOpts = helpers.createSimpleProposalOpts('myE38JHdxmQcTJGP1ZiX4BiGhDxMJDvLJD', 80, TestData.copayers[0].privKey_1H_0);
 
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(tx);
           should.exist(err);
           err.code.should.equal('INCORRECT_ADDRESS_NETWORK');
@@ -1889,7 +1889,7 @@ describe('Wallet service', function() {
 
     it('should fail to create tx for invalid amount', function(done) {
       var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0, TestData.copayers[0].privKey_1H_0);
-      server.createTx(txOpts, function(err, tx) {
+      server.createTxLegacy(txOpts, function(err, tx) {
         should.not.exist(tx);
         should.exist(err);
         err.message.should.equal('Invalid amount');
@@ -1900,7 +1900,7 @@ describe('Wallet service', function() {
     it('should fail to create tx when insufficient funds', function(done) {
       helpers.stubUtxos(server, wallet, [100], function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 120, TestData.copayers[0].privKey_1H_0);
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.exist(err);
           err.code.should.equal('INSUFFICIENT_FUNDS');
           err.message.should.equal('Insufficient funds');
@@ -1921,7 +1921,7 @@ describe('Wallet service', function() {
     it('should fail to create tx when insufficient funds for fee', function(done) {
       helpers.stubUtxos(server, wallet, 0.048222, function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.048200, TestData.copayers[0].privKey_1H_0);
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.exist(err);
           err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
           err.message.should.equal('Insufficient funds for fee');
@@ -1933,7 +1933,7 @@ describe('Wallet service', function() {
     it('should scale fees according to tx size', function(done) {
       helpers.stubUtxos(server, wallet, [1, 1, 1, 1], function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 3.5, TestData.copayers[0].privKey_1H_0);
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(err);
           var estimatedFee = Defaults.DEFAULT_FEE_PER_KB * 1300 / 1000; // fully signed tx should have about 1300 bytes
           tx.fee.should.be.within(0.9 * estimatedFee, 1.1 * estimatedFee);
@@ -1947,13 +1947,13 @@ describe('Wallet service', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, TestData.copayers[0].privKey_1H_0, {
           feePerKb: 80000
         });
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.exist(err);
           err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, TestData.copayers[0].privKey_1H_0, {
             feePerKb: 5000
           });
-          server.createTx(txOpts, function(err, tx) {
+          server.createTxLegacy(txOpts, function(err, tx) {
             should.not.exist(err);
             var estimatedFee = 5000 * 400 / 1000; // fully signed tx should have about 400 bytes
             tx.fee.should.be.within(0.9 * estimatedFee, 1.1 * estimatedFee);
@@ -1975,7 +1975,7 @@ describe('Wallet service', function() {
     it('should fail to create tx for dust amount', function(done) {
       helpers.stubUtxos(server, wallet, [1], function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.00000001, TestData.copayers[0].privKey_1H_0);
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.exist(err);
           err.code.should.equal('DUST_AMOUNT');
           err.message.should.equal('Amount below dust threshold');
@@ -1993,7 +1993,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', amount, TestData.copayers[0].privKey_1H_0, {
           feePerKb: 10000
         });
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.exist(err);
           err.code.should.equal('DUST_AMOUNT');
           err.message.should.equal('Amount below dust threshold');
@@ -2005,14 +2005,14 @@ describe('Wallet service', function() {
     it('should fail with different error for insufficient funds and locked funds', function(done) {
       helpers.stubUtxos(server, wallet, [10, 10], function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 11, TestData.copayers[0].privKey_1H_0);
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(err);
           server.getBalance({}, function(err, balance) {
             should.not.exist(err);
             balance.totalAmount.should.equal(helpers.toSatoshi(20));
             balance.lockedAmount.should.equal(helpers.toSatoshi(20));
             txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 8, TestData.copayers[0].privKey_1H_0);
-            server.createTx(txOpts, function(err, tx) {
+            server.createTxLegacy(txOpts, function(err, tx) {
               should.exist(err);
               err.code.should.equal('LOCKED_FUNDS');
               err.message.should.equal('Funds are locked by pending transaction proposals');
@@ -2029,7 +2029,7 @@ describe('Wallet service', function() {
         var amount = 1 - fee;
 
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', amount, TestData.copayers[0].privKey_1H_0);
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(err);
           should.exist(tx);
           var bitcoreTx = tx.getBitcoreTx();
@@ -2048,7 +2048,7 @@ describe('Wallet service', function() {
           message: 'dummy exception'
         });
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 2, TestData.copayers[0].privKey_1H_0);
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.exist(err);
           err.message.should.equal('dummy exception');
           bitcoreStub.restore();
@@ -2060,11 +2060,11 @@ describe('Wallet service', function() {
     it('should create tx when there is a pending tx and enough UTXOs', function(done) {
       helpers.stubUtxos(server, wallet, [10.1, 10.2, 10.3], function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 12, TestData.copayers[0].privKey_1H_0);
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(err);
           should.exist(tx);
           var txOpts2 = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 8, TestData.copayers[0].privKey_1H_0);
-          server.createTx(txOpts2, function(err, tx) {
+          server.createTxLegacy(txOpts2, function(err, tx) {
             should.not.exist(err);
             should.exist(tx);
             server.getPendingTxs({}, function(err, txs) {
@@ -2085,11 +2085,11 @@ describe('Wallet service', function() {
     it('should fail to create tx when there is a pending tx and not enough UTXOs', function(done) {
       helpers.stubUtxos(server, wallet, [10.1, 10.2, 10.3], function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 12, TestData.copayers[0].privKey_1H_0);
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(err);
           should.exist(tx);
           var txOpts2 = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 24, TestData.copayers[0].privKey_1H_0);
-          server.createTx(txOpts2, function(err, tx) {
+          server.createTxLegacy(txOpts2, function(err, tx) {
             err.code.should.equal('LOCKED_FUNDS');
             should.not.exist(tx);
             server.getPendingTxs({}, function(err, txs) {
@@ -2119,7 +2119,7 @@ describe('Wallet service', function() {
           balance.lockedAmount.should.equal(0);
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, TestData.copayers[0].privKey_1H_0);
           async.map(_.range(N), function(i, cb) {
-            server.createTx(txOpts, function(err, tx) {
+            server.createTxLegacy(txOpts, function(err, tx) {
               cb(err, tx);
             });
           }, function(err) {
@@ -2153,7 +2153,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createProposalOpts(Model.TxProposalLegacy.Types.MULTIPLEOUTPUTS, outputs, TestData.copayers[0].privKey_1H_0, {
           message: 'some message'
         });
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(err);
           should.exist(tx);
           done();
@@ -2176,7 +2176,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createProposalOpts(Model.TxProposalLegacy.Types.MULTIPLEOUTPUTS, outputs, TestData.copayers[0].privKey_1H_0, {
           message: 'some message'
         });
-        server.createTx(txOpts, function(err, txp) {
+        server.createTxLegacy(txOpts, function(err, txp) {
           should.not.exist(err);
           should.exist(txp);
 
@@ -2202,7 +2202,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createProposalOpts(Model.TxProposalLegacy.Types.MULTIPLEOUTPUTS, outputs, TestData.copayers[0].privKey_1H_0, {
           message: 'some message'
         });
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.exist(err);
           err.message.should.contain('outputs argument missing');
           done();
@@ -2216,7 +2216,7 @@ describe('Wallet service', function() {
           message: 'some message'
         });
         txOpts.type = 'bogus';
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.exist(err);
           err.message.should.contain('Invalid proposal type');
           done();
@@ -2231,7 +2231,7 @@ describe('Wallet service', function() {
           var inputs = [utxos[0], utxos[2]];
           var txOpts = helpers.createExternalProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 2.5,
             TestData.copayers[0].privKey_1H_0, inputs);
-          server.createTx(txOpts, function(err, tx) {
+          server.createTxLegacy(txOpts, function(err, tx) {
             should.not.exist(err);
             should.exist(tx);
             tx.inputs.length.should.equal(2);
@@ -2255,7 +2255,7 @@ describe('Wallet service', function() {
           var fee = parseInt((balance.totalBytesToSendMax * 10000 / 1000).toFixed(0));
           var max = balance.availableAmount - fee;
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max / 1e8, TestData.copayers[0].privKey_1H_0);
-          server.createTx(txOpts, function(err, tx) {
+          server.createTxLegacy(txOpts, function(err, tx) {
             should.not.exist(err);
             should.exist(tx);
             tx.amount.should.equal(max);
@@ -2274,7 +2274,7 @@ describe('Wallet service', function() {
     it('should be able to send max non-locked amount', function(done) {
       helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 3.5, TestData.copayers[0].privKey_1H_0);
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(err);
           server.getBalance({}, function(err, balance) {
             should.not.exist(err);
@@ -2287,7 +2287,7 @@ describe('Wallet service', function() {
             var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max / 1e8, TestData.copayers[0].privKey_1H_0, {
               feePerKb: 2000
             });
-            server.createTx(txOpts, function(err, tx) {
+            server.createTxLegacy(txOpts, function(err, tx) {
               should.not.exist(err);
               should.exist(tx);
               tx.amount.should.equal(max);
@@ -2307,7 +2307,7 @@ describe('Wallet service', function() {
       helpers.stubUtxos(server, wallet, [1, 2, 3], function(utxos) {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 4.5, TestData.copayers[0].privKey_1H_0);
         txOpts.utxosToExclude = [utxos[1].txid + ':' + utxos[1].vout];
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.exist(err);
           err.code.should.equal('INSUFFICIENT_FUNDS');
           err.message.should.equal('Insufficient funds');
@@ -2319,7 +2319,7 @@ describe('Wallet service', function() {
       helpers.stubUtxos(server, wallet, [1, 2], function(utxos) {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.5, TestData.copayers[0].privKey_1H_0);
         txOpts.utxosToExclude = [utxos[0].txid + ':' + utxos[0].vout];
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(err);
           tx.inputs.length.should.equal(1);
           tx.inputs[0].txid.should.equal(utxos[1].txid);
@@ -2330,7 +2330,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('#createTx2', function() {
+  describe('#createTx', function() {
     var server, wallet;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(2, 3, function(s, w) {
@@ -2349,7 +2349,7 @@ describe('Wallet service', function() {
           message: 'some message',
           customData: 'some custom data',
         });
-        server.createTx2(txOpts, function(err, tx) {
+        server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
           should.exist(tx);
           tx.isAccepted().should.equal.false;
@@ -2375,7 +2375,7 @@ describe('Wallet service', function() {
           message: 'some message',
           customData: 'some custom data',
         });
-        server.createTx2(txOpts, function(err, tx) {
+        server.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
           should.exist(tx);
           server.sendTx({
@@ -2426,11 +2426,11 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          server.createTx2(txOpts, next);
+          server.createTx(txOpts, next);
         },
         function(txp, next) {
           txp1 = txp;
-          server.createTx2(txOpts, next);
+          server.createTx(txOpts, next);
         },
         function(txp, next) {
           txp2 = txp;
@@ -2464,7 +2464,7 @@ describe('Wallet service', function() {
         },
         function(next) {
           // A new tx proposal should use the next available UTXO
-          server.createTx2(txOpts, next);
+          server.createTx(txOpts, next);
         },
         function(txp3, next) {
           should.exist(txp3);
@@ -2507,7 +2507,7 @@ describe('Wallet service', function() {
         function(next) {
           async.each(_.range(3), function(i, next) {
               var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, TestData.copayers[0].privKey_1H_0);
-              server.createTx(txOpts, function(err, tx) {
+              server.createTxLegacy(txOpts, function(err, tx) {
                 should.not.exist(err);
                 server.rejectTx({
                   txProposalId: tx.id,
@@ -2520,7 +2520,7 @@ describe('Wallet service', function() {
         function(next) {
           // Allow a 4th tx
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, TestData.copayers[0].privKey_1H_0);
-          server.createTx(txOpts, function(err, tx) {
+          server.createTxLegacy(txOpts, function(err, tx) {
             server.rejectTx({
               txProposalId: tx.id,
               reason: 'some reason',
@@ -2530,7 +2530,7 @@ describe('Wallet service', function() {
         function(next) {
           // Do not allow before backoff time
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, TestData.copayers[0].privKey_1H_0);
-          server.createTx(txOpts, function(err, tx) {
+          server.createTxLegacy(txOpts, function(err, tx) {
             should.exist(err);
             err.code.should.equal('TX_CANNOT_CREATE');
             next();
@@ -2539,7 +2539,7 @@ describe('Wallet service', function() {
         function(next) {
           var clock = sinon.useFakeTimers(Date.now() + (Defaults.BACKOFF_TIME + 2) * 60 * 1000, 'Date');
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, TestData.copayers[0].privKey_1H_0);
-          server.createTx(txOpts, function(err, tx) {
+          server.createTxLegacy(txOpts, function(err, tx) {
             clock.restore();
             server.rejectTx({
               txProposalId: tx.id,
@@ -2551,7 +2551,7 @@ describe('Wallet service', function() {
           // Do not allow a 5th tx before backoff time
           var clock = sinon.useFakeTimers(Date.now() + (Defaults.BACKOFF_TIME + 2) * 60 * 1000 + 1, 'Date');
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, TestData.copayers[0].privKey_1H_0);
-          server.createTx(txOpts, function(err, tx) {
+          server.createTxLegacy(txOpts, function(err, tx) {
             clock.restore();
             should.exist(err);
             err.code.should.equal('TX_CANNOT_CREATE');
@@ -2574,7 +2574,7 @@ describe('Wallet service', function() {
         wallet = w;
         helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, TestData.copayers[0].privKey_1H_0);
-          server.createTx(txOpts, function(err, tx) {
+          server.createTxLegacy(txOpts, function(err, tx) {
             should.not.exist(err);
             should.exist(tx);
             txid = tx.id;
@@ -2665,7 +2665,7 @@ describe('Wallet service', function() {
           wallet = w;
           helpers.stubUtxos(server, wallet, [1, 2], function() {
             var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 2.5, TestData.copayers[0].privKey_1H_0);
-            server.createTx(txOpts, function(err, tx) {
+            server.createTxLegacy(txOpts, function(err, tx) {
               should.not.exist(err);
               should.exist(tx);
               tx.addressType.should.equal('P2PKH');
@@ -2714,7 +2714,7 @@ describe('Wallet service', function() {
           wallet = w;
           helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
             var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 20, TestData.copayers[0].privKey_1H_0);
-            server.createTx(txOpts, function(err, tx) {
+            server.createTxLegacy(txOpts, function(err, tx) {
               should.not.exist(err);
               should.exist(tx);
               txid = tx.id;
@@ -2922,7 +2922,7 @@ describe('Wallet service', function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, TestData.copayers[0].privKey_1H_0, {
             message: 'some message'
           });
-          server.createTx(txOpts, function(err, txp) {
+          server.createTxLegacy(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
             var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
@@ -3013,7 +3013,7 @@ describe('Wallet service', function() {
       var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, TestData.copayers[0].privKey_1H_0, {
         message: 'some message 2'
       });
-      server.createTx(txOpts, function(err, txp) {
+      server.createTxLegacy(txOpts, function(err, txp) {
         should.not.exist(err);
         server.getPendingTxs({}, function(err, txs) {
           should.not.exist(err);
@@ -3041,7 +3041,7 @@ describe('Wallet service', function() {
       var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, TestData.copayers[0].privKey_1H_0, {
         message: 'some message'
       });
-      server.createTx(txOpts, function(err, txp) {
+      server.createTxLegacy(txOpts, function(err, txp) {
         should.not.exist(err);
         should.exist(txp);
         server.broadcastTx({
@@ -3135,7 +3135,7 @@ describe('Wallet service', function() {
       var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, TestData.copayers[0].privKey_1H_0, {
         message: 'some message'
       });
-      server.createTx(txOpts, function(err, txp) {
+      server.createTxLegacy(txOpts, function(err, txp) {
         should.not.exist(err);
         should.exist(txp);
         helpers.getAuthServer(wallet.copayers[1].id, function(server2, wallet) {
@@ -3158,7 +3158,7 @@ describe('Wallet service', function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, TestData.copayers[0].privKey_1H_0, {
             message: 'some message'
           });
-          server.createTx(txOpts, function(err, txp) {
+          server.createTxLegacy(txOpts, function(err, txp) {
             txpId = txp.id;
             should.not.exist(err);
             should.exist(txp);
@@ -3248,7 +3248,7 @@ describe('Wallet service', function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 10, TestData.copayers[0].privKey_1H_0, {
             message: 'some message'
           });
-          server.createTx(txOpts, function(err, txp) {
+          server.createTxLegacy(txOpts, function(err, txp) {
             txpId = txp.id;
             should.not.exist(err);
             should.exist(txp);
@@ -3332,7 +3332,7 @@ describe('Wallet service', function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, TestData.copayers[0].privKey_1H_0, {
             message: 'some message'
           });
-          server.createTx(txOpts, function(err, txp) {
+          server.createTxLegacy(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
             txpid = txp.id;
@@ -3392,7 +3392,7 @@ describe('Wallet service', function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.1, TestData.copayers[0].privKey_1H_0);
           async.eachSeries(_.range(10), function(i, next) {
             clock.tick(10 * 1000);
-            server.createTx(txOpts, function(err, tx) {
+            server.createTxLegacy(txOpts, function(err, tx) {
               should.not.exist(err);
               next();
             });
@@ -3479,7 +3479,7 @@ describe('Wallet service', function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.01, TestData.copayers[0].privKey_1H_0);
           async.eachSeries(_.range(3), function(i, next) {
             clock.tick(25 * 1000);
-            server.createTx(txOpts, function(err, tx) {
+            server.createTxLegacy(txOpts, function(err, tx) {
               should.not.exist(err);
               next();
             });
@@ -3722,7 +3722,7 @@ describe('Wallet service', function() {
             amount: helpers.toSatoshi(0.1),
           };
           async.eachSeries(_.range(2), function(i, next) {
-            server.createTx(txOpts, function(err, tx) {
+            server.createTxLegacy(txOpts, function(err, tx) {
               next();
             });
           }, done);
@@ -3782,7 +3782,7 @@ describe('Wallet service', function() {
                 message: 'some message'
               });
               async.eachSeries(_.range(2), function(i, next) {
-                server2.createTx(txOpts, function(err, tx) {
+                server2.createTxLegacy(txOpts, function(err, tx) {
                   should.not.exist(err);
                   next(err);
                 });
@@ -3849,7 +3849,7 @@ describe('Wallet service', function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, TestData.copayers[0].privKey_1H_0, {
             message: 'some message'
           });
-          server.createTx(txOpts, function(err, tx) {
+          server.createTxLegacy(txOpts, function(err, tx) {
             server.getPendingTxs({}, function(err, txs) {
               txp = txs[0];
               done();
@@ -4182,7 +4182,7 @@ describe('Wallet service', function() {
         var txOpts = helpers.createProposalOpts(Model.TxProposalLegacy.Types.MULTIPLEOUTPUTS, outputs, TestData.copayers[0].privKey_1H_0, {
           message: 'some message'
         });
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(err);
           should.exist(tx);
 
@@ -4771,7 +4771,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(server);
             verifyStub.restore();
-            server.createTx(txOpts, function(err, tx) {
+            server.createTxLegacy(txOpts, function(err, tx) {
               should.not.exist(err);
               should.exist(tx);
               tx.amount.should.equal(helpers.toSatoshi(80));
@@ -4787,7 +4787,7 @@ describe('Wallet service', function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, TestData.copayers[0].privKey_1H_0, {
             message: 'some message'
           });
-          server.createTx(txOpts, function(err, tx) {
+          server.createTxLegacy(txOpts, function(err, tx) {
             should.not.exist(err);
             should.exist(tx);
 
@@ -4816,7 +4816,7 @@ describe('Wallet service', function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, TestData.copayers[0].privKey_1H_0, {
             message: 'some message'
           });
-          server.createTx(txOpts, function(err, tx) {
+          server.createTxLegacy(txOpts, function(err, tx) {
             should.not.exist(err);
             should.exist(tx);
             _.startsWith(tx.version, '1.').should.be.false;
@@ -4861,7 +4861,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(server);
             verifyStub.restore();
-            server.createTx(txOpts, function(err, tx) {
+            server.createTxLegacy(txOpts, function(err, tx) {
               should.not.exist(err);
               should.exist(tx);
               tx.amount.should.equal(helpers.toSatoshi(80));
@@ -4895,13 +4895,13 @@ describe('Wallet service', function() {
             verifyStub.restore();
             var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, TestData.copayers[0].privKey_1H_0);
 
-            server.createTx(txOpts, function(err, tx) {
+            server.createTxLegacy(txOpts, function(err, tx) {
               should.exist(err);
               err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
               var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, TestData.copayers[0].privKey_1H_0, {
                 feePerKb: 5000
               });
-              server.createTx(txOpts, function(err, tx) {
+              server.createTxLegacy(txOpts, function(err, tx) {
                 should.not.exist(err);
                 tx.fee.should.equal(5000);
 

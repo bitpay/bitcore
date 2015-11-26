@@ -83,7 +83,7 @@ describe('Email notifications', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, TestData.copayers[0].privKey_1H_0, {
           message: 'some message'
         });
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(err);
           setTimeout(function() {
             var calls = mailerStub.sendMail.getCalls();
@@ -120,7 +120,7 @@ describe('Email notifications', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, TestData.copayers[0].privKey_1H_0, {
           message: 'some message'
         });
-        server.createTx(txOpts, function(err, tx) {
+        server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(err);
           setTimeout(function() {
             var calls = mailerStub.sendMail.getCalls();
@@ -154,7 +154,7 @@ describe('Email notifications', function() {
         async.waterfall([
 
           function(next) {
-            server.createTx(txOpts, next);
+            server.createTxLegacy(txOpts, next);
           },
           function(t, next) {
             txp = t;
@@ -215,7 +215,7 @@ describe('Email notifications', function() {
         async.waterfall([
 
           function(next) {
-            server.createTx(txOpts, next);
+            server.createTxLegacy(txOpts, next);
           },
           function(txp, next) {
             txpId = txp.id;
@@ -381,7 +381,7 @@ describe('Email notifications', function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, TestData.copayers[0].privKey_1H_0, {
             message: 'some message'
           });
-          server.createTx(txOpts, function(err, tx) {
+          server.createTxLegacy(txOpts, function(err, tx) {
             should.not.exist(err);
             setTimeout(function() {
               var calls = mailerStub.sendMail.getCalls();
@@ -447,7 +447,7 @@ describe('Email notifications', function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, TestData.copayers[0].privKey_1H_0, {
             message: 'some message'
           });
-          server.createTx(txOpts, function(err, tx) {
+          server.createTxLegacy(txOpts, function(err, tx) {
             should.not.exist(err);
             setTimeout(function() {
               var calls = mailerStub.sendMail.getCalls();
