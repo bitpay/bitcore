@@ -372,13 +372,12 @@ helpers.createExternalProposalOpts = function(toAddress, amount, signingKey, mor
 };
 
 
-helpers.createStandardProposalOpts = function(outputs, moreOpts, inputs) {
+helpers.createProposalOpts2 = function(outputs, moreOpts, inputs) {
   _.each(outputs, function(output) {
     output.amount = helpers.toSatoshi(output.amount);
   });
 
   var opts = {
-    type: Model.TxProposal.Types.STANDARD,
     outputs: outputs,
     inputs: inputs || [],
   };

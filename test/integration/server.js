@@ -2342,7 +2342,7 @@ describe('Wallet service', function() {
 
     it('should create a tx', function(done) {
       helpers.stubUtxos(server, wallet, [1, 2], function() {
-        var txOpts = helpers.createStandardProposalOpts([{
+        var txOpts = helpers.createProposalOpts2([{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 0.8
         }], {

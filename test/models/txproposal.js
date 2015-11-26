@@ -16,14 +16,6 @@ describe('TxProposal', function() {
       txp.amount.should.equal(30000000);
       txp.network.should.equal('livenet');
     });
-    it('should create an external TxProposal', function() {
-      var txp = TxProposal.create(aTxpOpts(TxProposal.Types.EXTERNAL));
-      should.exist(txp);
-      txp.outputs.length.should.equal(2);
-      txp.amount.should.equal(30000000);
-      txp.network.should.equal('livenet');
-      should.exist(txp.inputs);
-    });
   });
 
   describe('#fromObj', function() {
@@ -118,7 +110,6 @@ var theRawTx = '0100000001ab069f7073be9b491bb1ad4233a45d2e383082ccc7206df905662d
 
 var aTxpOpts = function(type) {
   var opts = {
-    type: type || TxProposal.Types.STANDARD,
     message: 'some message'
   };
   opts.outputs = [{
@@ -131,24 +122,12 @@ var aTxpOpts = function(type) {
     message: "second message"
   }, ];
 
-  if (type == TxProposal.Types.EXTERNAL) {
-    opts.inputs = [{
-      "txid": "6ee699846d2d6605f96d20c7cc8230382e5da43342adb11b499bbe73709f06ab",
-      "vout": 8,
-      "satoshis": 100000000,
-      "scriptPubKey": "a914a8a9648754fbda1b6c208ac9d4e252075447f36887",
-      "address": "3H4pNP6J4PW4NnvdrTg37VvZ7h2QWuAwtA",
-      "path": "m/2147483647/0/1",
-      "publicKeys": ["0319008ffe1b3e208f5ebed8f46495c056763f87b07930a7027a92ee477fb0cb0f", "03b5f035af8be40d0db5abb306b7754949ab39032cf99ad177691753b37d101301"]
-    }];
-  }
   return opts;
 };
 
 var aTXP = function(type) {
   var txp = {
     "version": 3,
-    "type": type || TxProposal.Types.STANDARD,
     "createdOn": 1423146231,
     "id": "75c34f49-1ed6-255f-e9fd-0c71ae75ed1e",
     "walletId": "1",
