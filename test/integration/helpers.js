@@ -394,6 +394,20 @@ helpers.createProposalOpts2 = function(outputs, moreOpts, inputs) {
   return opts;
 };
 
+helpers.getProposalSignatureOpts = function(txp, signingKey) {
+  var raw = txp.getRawTx();
+  var proposalSignature = helpers.signMessage(raw, signingKey);
+  var x = new Bitcore.PrivateKey(signingKey).toPublicKey().toString();
+
+  return {
+    txProposalId: txp.id,
+    proposalSignature: proposalSignature,
+    proposalSignaturePubKey: new Bitcore.PrivateKey(signingKey).toPublicKey().toString(),
+    proposalSignaturePubKeySig: 'dummy',
+  }
+};
+
+
 helpers.createProposalOpts = function(type, outputs, signingKey, moreOpts, inputs) {
   _.each(outputs, function(output) {
     output.amount = helpers.toSatoshi(output.amount);

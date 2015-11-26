@@ -2366,7 +2366,7 @@ describe('Wallet service', function() {
       });
     });
 
-    it('should be able to send a temporary tx proposal', function(done) {
+    it.only('should be able to send a temporary tx proposal', function(done) {
       helpers.stubUtxos(server, wallet, [1, 2], function() {
         var txOpts = helpers.createProposalOpts2([{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
@@ -2375,15 +2375,11 @@ describe('Wallet service', function() {
           message: 'some message',
           customData: 'some custom data',
         });
-        server.createTx(txOpts, function(err, tx) {
+        server.createTx(txOpts, function(err, txp) {
           should.not.exist(err);
-          should.exist(tx);
-          server.sendTx({
-            txProposalId: tx.id,
-            proposalSignature: 'dummy',
-            proposalSignaturePubKey: 'dummy',
-            proposalSignaturePubKeySig: 'dummy',
-          }, function(err) {
+          should.exist(txp);
+          var sendOpts = helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0);
+          server.sendTx(sendOpts, function(err) {
             should.not.exist(err);
             server.getPendingTxs({}, function(err, txs) {
               should.not.exist(err);
