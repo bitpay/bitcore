@@ -1638,7 +1638,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe.only('#createTx', function() {
+  describe('#createTx', function() {
     describe('Legacy', function() {
 
       var server, wallet;
@@ -2356,6 +2356,10 @@ describe('Wallet service', function() {
           server.createTx(txOpts, function(err, tx) {
             should.not.exist(err);
             should.exist(tx);
+            tx.walletM.should.equal(2);
+            tx.walletN.should.equal(3);
+            tx.requiredRejections.should.equal(2);
+            tx.requiredSignatures.should.equal(2);
             tx.isAccepted().should.equal.false;
             tx.isRejected().should.equal.false;
             tx.isPending().should.equal.true;
