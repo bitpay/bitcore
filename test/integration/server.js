@@ -25,7 +25,6 @@ var TestData = require('../testdata');
 var helpers = require('./helpers');
 var storage, blockchainExplorer;
 
-var CLIENT_VERSION = 'bwc-0.1.1';
 
 describe('Wallet service', function() {
   before(function(done) {
@@ -1260,7 +1259,7 @@ describe('Wallet service', function() {
         copayerId: copayerId,
         message: msg,
         signature: sig,
-        clientVersion: CLIENT_VERSION,
+        clientVersion: helpers.CLIENT_VERSION,
       }, function(err, server) {
         return cb(err, server);
       });
@@ -2579,6 +2578,38 @@ describe('Wallet service', function() {
           done();
         });
       });
+
+      it('should fail to list pending proposals from legacy client', function(done) {
+        helpers.stubUtxos(server, wallet, [1, 2], function() {
+          var txOpts = helpers.createProposalOpts2([{
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 0.8
+          }], {
+            message: 'some message',
+            customData: 'some custom data',
+          });
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            var sendOpts = helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0);
+            server.sendTx(sendOpts, function(err) {
+              should.not.exist(err);
+              server.getPendingTxs({}, function(err, txs) {
+                should.not.exist(err);
+                txs.length.should.equal(1);
+
+                server._setClientVersion('bwc-1.1.8');
+                server.getPendingTxs({}, function(err, txs) {
+                  should.exist(err);
+                  err.code.should.equal('UPGRADE_NEEDED');
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+
     });
   });
 

@@ -26,9 +26,11 @@ var TestData = require('../testdata');
 
 var storage, blockchainExplorer;
 
+var useMongoDb = !!process.env.USE_MONGO_DB;
+
 var helpers = {};
 
-var useMongoDb = !!process.env.USE_MONGO_DB;
+helpers.CLIENT_VERSION = 'bwc-2.0.0';
 
 helpers.before = function(cb) {
   function getDb(cb) {
@@ -96,7 +98,7 @@ helpers.getAuthServer = function(copayerId, cb) {
     copayerId: copayerId,
     message: 'dummy',
     signature: 'dummy',
-    clientVersion: 'bwc-0.1.0',
+    clientVersion: helpers.CLIENT_VERSION,
   }, function(err, server) {
     verifyStub.restore();
     if (err || !server) throw new Error('Could not login as copayerId ' + copayerId);
