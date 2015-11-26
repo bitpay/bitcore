@@ -2409,6 +2409,84 @@ describe('Wallet service', function() {
         });
       });
     });
+    it('should fail to send a temporary tx proposal if utxos are unavailable', function(done) {
+      var txp1, txp2;
+      var txOpts = helpers.createProposalOpts2([{
+        toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+        amount: 0.8
+      }], {
+        message: 'some message',
+      });
+
+      async.waterfall([
+
+        function(next) {
+          helpers.stubUtxos(server, wallet, [1, 2], function() {
+            next();
+          });
+        },
+        function(next) {
+          server.createTx2(txOpts, next);
+        },
+        function(txp, next) {
+          txp1 = txp;
+          server.createTx2(txOpts, next);
+        },
+        function(txp, next) {
+          txp2 = txp;
+          should.exist(txp1);
+          should.exist(txp2);
+          server.sendTx({
+            txProposalId: txp1.id,
+            proposalSignature: 'dummy',
+            proposalSignaturePubKey: 'dummy',
+            proposalSignaturePubKeySig: 'dummy',
+          }, next);
+        },
+        function(next) {
+          server.sendTx({
+            txProposalId: txp2.id,
+            proposalSignature: 'dummy',
+            proposalSignaturePubKey: 'dummy',
+            proposalSignaturePubKeySig: 'dummy',
+          }, function(err) {
+            should.exist(err);
+            err.code.should.equal('UNAVAILABLE_UTXOS');
+            next();
+          });
+        },
+        function(next) {
+          server.getPendingTxs({}, function(err, txs) {
+            should.not.exist(err);
+            txs.length.should.equal(1);
+            next();
+          });
+        },
+        function(next) {
+          // A new tx proposal should use the next available UTXO
+          server.createTx2(txOpts, next);
+        },
+        function(txp3, next) {
+          should.exist(txp3);
+          server.sendTx({
+            txProposalId: txp3.id,
+            proposalSignature: 'dummy',
+            proposalSignaturePubKey: 'dummy',
+            proposalSignaturePubKeySig: 'dummy',
+          }, next);
+        },
+        function(next) {
+          server.getPendingTxs({}, function(err, txs) {
+            should.not.exist(err);
+            txs.length.should.equal(2);
+            next();
+          });
+        },
+      ], function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
   });
   describe('#createTx backoff time', function(done) {
     var server, wallet, txid;
