@@ -2330,6 +2330,42 @@ describe('Wallet service', function() {
     });
   });
 
+  describe('#createTx2', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 3, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should create a tx', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 2], function() {
+        var txOpts = helpers.createStandardProposalOpts([{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 0.8
+        }], {
+          message: 'some message',
+          customData: 'some custom data',
+        });
+        server.createTx2(txOpts, function(err, tx) {
+          should.not.exist(err);
+          should.exist(tx);
+          tx.isAccepted().should.equal.false;
+          tx.isRejected().should.equal.false;
+          tx.isPending().should.equal.true;
+          tx.isTemporary().should.equal.true;
+          tx.amount.should.equal(helpers.toSatoshi(0.8));
+          server.getPendingTxs({}, function(err, txs) {
+            should.not.exist(err);
+            txs.should.be.empty;
+            done();
+          });
+        });
+      });
+    });
+  });
   describe('#createTx backoff time', function(done) {
     var server, wallet, txid;
 
