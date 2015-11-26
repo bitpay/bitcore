@@ -356,7 +356,7 @@ helpers.createSimpleProposalOpts = function(toAddress, amount, signingKey, opts)
     toAddress: toAddress,
     amount: amount,
   }];
-  return helpers.createProposalOpts(Model.TxProposal.Types.SIMPLE, outputs, signingKey, opts);
+  return helpers.createProposalOpts(Model.TxProposalLegacy.Types.SIMPLE, outputs, signingKey, opts);
 };
 
 helpers.createExternalProposalOpts = function(toAddress, amount, signingKey, moreOpts, inputs) {
@@ -368,7 +368,7 @@ helpers.createExternalProposalOpts = function(toAddress, amount, signingKey, mor
     inputs = moreOpts;
     moreOpts = null;
   }
-  return helpers.createProposalOpts(Model.TxProposal.Types.EXTERNAL, outputs, signingKey, moreOpts, inputs);
+  return helpers.createProposalOpts(Model.TxProposalLegacy.Types.EXTERNAL, outputs, signingKey, moreOpts, inputs);
 };
 
 helpers.createProposalOpts = function(type, outputs, signingKey, moreOpts, inputs) {
@@ -394,12 +394,12 @@ helpers.createProposalOpts = function(type, outputs, signingKey, moreOpts, input
   });
 
   var hash;
-  if (type == Model.TxProposal.Types.SIMPLE) {
+  if (type == Model.TxProposalLegacy.Types.SIMPLE) {
     opts.toAddress = outputs[0].toAddress;
     opts.amount = outputs[0].amount;
     hash = WalletService._getProposalHash(opts.toAddress, opts.amount,
       opts.message, opts.payProUrl);
-  } else if (type == Model.TxProposal.Types.MULTIPLEOUTPUTS || type == Model.TxProposal.Types.EXTERNAL) {
+  } else if (type == Model.TxProposalLegacy.Types.MULTIPLEOUTPUTS || type == Model.TxProposalLegacy.Types.EXTERNAL) {
     opts.outputs = outputs;
     var header = {
       outputs: outputs,

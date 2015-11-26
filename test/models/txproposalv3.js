@@ -7,7 +7,7 @@ var should = chai.should();
 var TxProposal = require('../../lib/model/txproposalv3');
 var Bitcore = require('bitcore-lib');
 
-describe.only('TxProposal v3', function() {
+describe('TxProposal v3', function() {
   describe('#create', function() {
     it('should create a TxProposal', function() {
       var txp = TxProposal.create(aTxpOpts());

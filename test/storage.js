@@ -141,7 +141,7 @@ describe('Storage', function() {
         should.not.exist(err);
 
         proposals = _.map(_.range(4), function(i) {
-          var tx = Model.TxProposal.create({
+          var tx = Model.TxProposalLegacy.create({
             walletId: '123',
             toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
             creatorId: wallet.copayers[0].id,
@@ -182,7 +182,7 @@ describe('Storage', function() {
         done();
       });
     });
- 
+
     it('should fetch all pending txs', function(done) {
       storage.fetchPendingTxs('123', function(err, txs) {
         should.not.exist(err);

@@ -2150,7 +2150,7 @@ describe('Wallet service', function() {
           amount: 75,
           message: 'message #2'
         }];
-        var txOpts = helpers.createProposalOpts(Model.TxProposal.Types.MULTIPLEOUTPUTS, outputs, TestData.copayers[0].privKey_1H_0, {
+        var txOpts = helpers.createProposalOpts(Model.TxProposalLegacy.Types.MULTIPLEOUTPUTS, outputs, TestData.copayers[0].privKey_1H_0, {
           message: 'some message'
         });
         server.createTx(txOpts, function(err, tx) {
@@ -2173,7 +2173,7 @@ describe('Wallet service', function() {
           amount: max - 1,
           message: 'message #2'
         }];
-        var txOpts = helpers.createProposalOpts(Model.TxProposal.Types.MULTIPLEOUTPUTS, outputs, TestData.copayers[0].privKey_1H_0, {
+        var txOpts = helpers.createProposalOpts(Model.TxProposalLegacy.Types.MULTIPLEOUTPUTS, outputs, TestData.copayers[0].privKey_1H_0, {
           message: 'some message'
         });
         server.createTx(txOpts, function(err, txp) {
@@ -2199,7 +2199,7 @@ describe('Wallet service', function() {
           amount: 90,
           message: 'message #2'
         }];
-        var txOpts = helpers.createProposalOpts(Model.TxProposal.Types.MULTIPLEOUTPUTS, outputs, TestData.copayers[0].privKey_1H_0, {
+        var txOpts = helpers.createProposalOpts(Model.TxProposalLegacy.Types.MULTIPLEOUTPUTS, outputs, TestData.copayers[0].privKey_1H_0, {
           message: 'some message'
         });
         server.createTx(txOpts, function(err, tx) {
@@ -4021,7 +4021,7 @@ describe('Wallet service', function() {
           amount: 30,
           message: 'message #2'
         }];
-        var txOpts = helpers.createProposalOpts(Model.TxProposal.Types.MULTIPLEOUTPUTS, outputs, TestData.copayers[0].privKey_1H_0, {
+        var txOpts = helpers.createProposalOpts(Model.TxProposalLegacy.Types.MULTIPLEOUTPUTS, outputs, TestData.copayers[0].privKey_1H_0, {
           message: 'some message'
         });
         server.createTx(txOpts, function(err, tx) {
@@ -4074,7 +4074,7 @@ describe('Wallet service', function() {
                 tx.actions.length.should.equal(1);
                 tx.actions[0].type.should.equal('accept');
                 tx.actions[0].copayerName.should.equal('copayer 1');
-                tx.proposalType.should.equal(Model.TxProposal.Types.MULTIPLEOUTPUTS);
+                tx.proposalType.should.equal(Model.TxProposalLegacy.Types.MULTIPLEOUTPUTS);
                 tx.outputs[0].address.should.equal(external);
                 tx.outputs[0].amount.should.equal(helpers.toSatoshi(50));
                 should.not.exist(tx.outputs[0].message);
