@@ -2365,6 +2365,50 @@ describe('Wallet service', function() {
         });
       });
     });
+
+    it('should be able to send a temporary tx proposal', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 2], function() {
+        var txOpts = helpers.createProposalOpts2([{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 0.8
+        }], {
+          message: 'some message',
+          customData: 'some custom data',
+        });
+        server.createTx2(txOpts, function(err, tx) {
+          should.not.exist(err);
+          should.exist(tx);
+          server.sendTx({
+            txProposalId: tx.id,
+            proposalSignature: 'dummy',
+            proposalSignaturePubKey: 'dummy',
+            proposalSignaturePubKeySig: 'dummy',
+          }, function(err) {
+            should.not.exist(err);
+            server.getPendingTxs({}, function(err, txs) {
+              should.not.exist(err);
+              txs.length.should.equal(1);
+              done();
+            });
+          });
+        });
+      });
+    });
+    it('should fail to send non-existent tx proposal', function(done) {
+      server.sendTx({
+        txProposalId: 'wrong-id',
+        proposalSignature: 'dummy',
+        proposalSignaturePubKey: 'dummy',
+        proposalSignaturePubKeySig: 'dummy',
+      }, function(err) {
+        should.exist(err);
+        server.getPendingTxs({}, function(err, txs) {
+          should.not.exist(err);
+          txs.should.be.empty;
+          done();
+        });
+      });
+    });
   });
   describe('#createTx backoff time', function(done) {
     var server, wallet, txid;
