@@ -79,10 +79,11 @@ describe('Transaction', function() {
     a.should.deep.equal(b);
   });
 
-  it('serialize to Object with signatures roundtrip', function() {
+  it('toObject/fromObject with signatures and custom fee', function() {
     var tx = new Transaction()
       .from(simpleUtxoWith100000Satoshis)
       .to([{address: toAddress, satoshis: 50000}])
+      .fee(15000)
       .change(changeAddress)
       .sign(privateKey);
 
@@ -92,10 +93,11 @@ describe('Transaction', function() {
     txData.should.equal(txData2);
   });
 
-  it('serialize to Object with p2sh signatures roundtrip', function() {
+  it('toObject/fromObject with p2sh signatures and custom fee', function() {
     var tx = new Transaction()
       .from(p2shUtxoWith1BTC, [p2shPublicKey1, p2shPublicKey2, p2shPublicKey3], 2)
       .to([{address: toAddress, satoshis: 50000}])
+      .fee(15000)
       .change(changeAddress)
       .sign(p2shPrivateKey1)
       .sign(p2shPrivateKey2);
