@@ -450,6 +450,21 @@ describe('Wallet service', function() {
       });
     });
 
+    it('should fail to join with invalid xPubKey', function(done) {
+      var copayerOpts = helpers.getSignedCopayerOpts({
+        walletId: walletId,
+        name: 'copayer 1',
+        xPubKey: 'invalid',
+        requestPubKey: TestData.copayers[0].pubKey_1H_0,
+      });
+      server.joinWallet(copayerOpts, function(err, result) {
+        should.not.exist(result);
+        should.exist(err);
+        err.message.should.contain('extended public key');
+        done();
+      });
+    });
+
     it('should fail to join with null signature', function(done) {
       var copayerOpts = {
         walletId: walletId,
@@ -2215,7 +2230,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           var inputs = [utxos[0], utxos[2]];
           var txOpts = helpers.createExternalProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 2.5,
-              TestData.copayers[0].privKey_1H_0, inputs);
+            TestData.copayers[0].privKey_1H_0, inputs);
           server.createTx(txOpts, function(err, tx) {
             should.not.exist(err);
             should.exist(tx);
