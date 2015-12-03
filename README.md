@@ -21,7 +21,7 @@ More about BWS at http://blog.bitpay.com/2015/03/05/bitcore-wallet.html
 
 # Install
 ```
- npm install bws
+ npm install bitcore-wallet-service
  npm start
 ```
 
