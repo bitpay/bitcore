@@ -180,7 +180,7 @@ describe('Transaction', function() {
   var simpleUtxoWith1BTC = {
     address: fromAddress,
     txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
-    outputIndex: 0,
+    outputIndex: 1,
     script: Script.buildPublicKeyHashOut(fromAddress).toString(),
     satoshis: 1e8
   };
@@ -1084,6 +1084,106 @@ describe('Transaction', function() {
         });
       });
 
+    });
+  });
+  describe('Replace-by-fee', function() {
+    describe('#enableRBF', function() {
+      it('only enable inputs not already enabled (0xffffffff)', function() {
+        var tx = new Transaction()
+          .from(simpleUtxoWith1BTC)
+          .from(simpleUtxoWith100000Satoshis)
+          .to([{address: toAddress, satoshis: 50000}])
+          .fee(15000)
+          .change(changeAddress)
+          .sign(privateKey);
+        tx.inputs[0].sequenceNumber = 0x00000000;
+        tx.enableRBF();
+        tx.inputs[0].sequenceNumber.should.equal(0x00000000);
+        tx.inputs[1].sequenceNumber.should.equal(0xfffffffd);
+      });
+      it('enable for inputs with 0xffffffff and 0xfffffffe', function() {
+        var tx = new Transaction()
+          .from(simpleUtxoWith1BTC)
+          .from(simpleUtxoWith100000Satoshis)
+          .to([{address: toAddress, satoshis: 50000}])
+          .fee(15000)
+          .change(changeAddress)
+          .sign(privateKey);
+        tx.inputs[0].sequenceNumber = 0xffffffff;
+        tx.inputs[1].sequenceNumber = 0xfffffffe;
+        tx.enableRBF();
+        tx.inputs[0].sequenceNumber.should.equal(0xfffffffd);
+        tx.inputs[1].sequenceNumber.should.equal(0xfffffffd);
+      });
+    });
+    describe('#isRBF', function() {
+      it('enable and determine opt-in', function() {
+        var tx = new Transaction()
+          .from(simpleUtxoWith100000Satoshis)
+          .to([{address: toAddress, satoshis: 50000}])
+          .fee(15000)
+          .change(changeAddress)
+          .enableRBF()
+          .sign(privateKey);
+        tx.isRBF().should.equal(true);
+      });
+      it('determine opt-out with default sequence number', function() {
+        var tx = new Transaction()
+          .from(simpleUtxoWith100000Satoshis)
+          .to([{address: toAddress, satoshis: 50000}])
+          .fee(15000)
+          .change(changeAddress)
+          .sign(privateKey);
+        tx.isRBF().should.equal(false);
+      });
+      it('determine opt-out with 0xfffffffe', function() {
+        var tx = new Transaction()
+          .from(simpleUtxoWith1BTC)
+          .from(simpleUtxoWith100000Satoshis)
+          .to([{address: toAddress, satoshis: 50000 + 1e8}])
+          .fee(15000)
+          .change(changeAddress)
+          .sign(privateKey);
+        tx.inputs[0].sequenceNumber = 0xfffffffe;
+        tx.inputs[1].sequenceNumber = 0xfffffffe;
+        tx.isRBF().should.equal(false);
+      });
+      it('determine opt-out with 0xffffffff', function() {
+        var tx = new Transaction()
+          .from(simpleUtxoWith1BTC)
+          .from(simpleUtxoWith100000Satoshis)
+          .to([{address: toAddress, satoshis: 50000 + 1e8}])
+          .fee(15000)
+          .change(changeAddress)
+          .sign(privateKey);
+        tx.inputs[0].sequenceNumber = 0xffffffff;
+        tx.inputs[1].sequenceNumber = 0xffffffff;
+        tx.isRBF().should.equal(false);
+      });
+      it('determine opt-in with 0xfffffffd (first input)', function() {
+        var tx = new Transaction()
+          .from(simpleUtxoWith1BTC)
+          .from(simpleUtxoWith100000Satoshis)
+          .to([{address: toAddress, satoshis: 50000 + 1e8}])
+          .fee(15000)
+          .change(changeAddress)
+          .sign(privateKey);
+        tx.inputs[0].sequenceNumber = 0xfffffffd;
+        tx.inputs[1].sequenceNumber = 0xffffffff;
+        tx.isRBF().should.equal(true);
+      });
+      it('determine opt-in with 0xfffffffd (second input)', function() {
+        var tx = new Transaction()
+          .from(simpleUtxoWith1BTC)
+          .from(simpleUtxoWith100000Satoshis)
+          .to([{address: toAddress, satoshis: 50000 + 1e8}])
+          .fee(15000)
+          .change(changeAddress)
+          .sign(privateKey);
+        tx.inputs[0].sequenceNumber = 0xffffffff;
+        tx.inputs[1].sequenceNumber = 0xfffffffd;
+        tx.isRBF().should.equal(true);
+      });
     });
   });
 });
