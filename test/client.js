@@ -3780,6 +3780,30 @@ describe('client API', function() {
         });
       });
     });
+
+    it('should handle tx serialization error when building tx', function(done) {
+      var sandbox = sinon.sandbox.create();
+
+      var se = sandbox.stub(Bitcore.Transaction.prototype, 'serialize', function() {
+        throw new Error('this is an error');
+      });
+
+      var address = {
+        address: '1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3',
+        type: 'P2PKH',
+      };
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
+        blockchainExplorerMock.setUtxo(address, 123, 1);
+        clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', '1GG3JQikGC7wxstyavUBDoCJ66bWLLENZC', {}, function(err, tx) {
+          should.exist(err);
+          should.not.exist(tx);
+          err.should.be.an.instanceOf(Errors.COULD_NOT_BUILD_TRANSACTION);
+          sandbox.restore();
+          done();
+        });
+      });
+    });
+
     it('should fail to build tx for single private key if insufficient funds', function(done) {
       var address = {
         address: '1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3',
@@ -3849,4 +3873,155 @@ describe('client API', function() {
       });
     });
   });
+
+  describe('_initNotifications', function() {
+    it('should handle NOT_FOUND error from _fetLatestNotifications', function(done) {
+      var sandbox = sinon.sandbox.create();
+      var clock = sandbox.useFakeTimers();
+
+      var client = new Client();
+
+      var _f = sandbox.stub(client, '_fetchLatestNotifications', function(interval, callback) {
+        callback(new Errors.NOT_FOUND);
+      });
+
+      client._initNotifications({notificationIntervalSeconds: 1});
+      should.exist(client.notificationsIntervalId);
+      clock.tick(1000);
+      should.not.exist(client.notificationsIntervalId);
+      sandbox.restore();
+      done();
+    });
+
+    it('should handle NOT_AUTHORIZED error from _fetLatestNotifications', function(done) {
+      var sandbox = sinon.sandbox.create();
+      var clock = sandbox.useFakeTimers();
+
+      var client = new Client();
+
+      var _f = sandbox.stub(client, '_fetchLatestNotifications', function(interval, callback) {
+        callback(new Errors.NOT_AUTHORIZED);
+      });
+
+      client._initNotifications({notificationIntervalSeconds: 1});
+      should.exist(client.notificationsIntervalId);
+      clock.tick(1000);
+      should.not.exist(client.notificationsIntervalId);
+      sandbox.restore();
+      done();
+    });
+  });
+
+  describe('import', function(done) {
+    it('should handle import with invalid JSON', function(done) {
+      var importString = 'this is not valid JSON';
+      var client = new Client();
+      (function(){client.import(importString);}).should.throw(Errors.INVALID_BACKUP);
+      done();
+    });
+  });
+
+  describe('_import', function() {
+    it('should handle not being able to add access', function(done) {
+      var sandbox = sinon.sandbox.create();
+      var client = new Client();
+      client.credentials = {};
+
+      var ow = sandbox.stub(client, 'openWallet', function(callback) {
+        callback(new Error());
+      });
+
+      var ip = sandbox.stub(client, 'isPrivKeyExternal', function() {
+        return false;
+      });
+
+      var aa = sandbox.stub(client, 'addAccess', function(options, callback) {
+        callback(new Error());
+      });
+
+      client._import(function(err) {
+        should.exist(err);
+        err.should.be.an.instanceOf(Errors.WALLET_DOES_NOT_EXIST);
+        sandbox.restore();
+        done();
+      });
+    });
+  });
+
+  describe('importFromMnemonic', function() {
+    it('should handle importing an invalid mnemonic', function(done) {
+      var client = new Client();
+      var mnemonicWords = 'this is an invalid mnemonic';
+      client.importFromMnemonic(mnemonicWords, {}, function(err) {
+        should.exist(err);
+        err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+        done();
+      });
+    });
+  });
+
+  describe('importFromExtendedPrivateKey', function() {
+    it('should handle importing an invalid extended private key', function(done) {
+      var client = new Client();
+      var xPrivKey = 'this is an invalid key';
+      client.importFromExtendedPrivateKey(xPrivKey, function(err) {
+        should.exist(err);
+        err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+        done();
+      });
+    });
+  });
+
+  describe('importFromExtendedPublicKey', function() {
+    it('should handle importing an invalid extended private key', function(done) {
+      var client = new Client();
+      var xPubKey = 'this is an invalid key';
+      client.importFromExtendedPublicKey(xPubKey, {}, {}, {}, function(err) {
+        should.exist(err);
+        err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+        done();
+      });
+    });
+  });
+
+  describe('_doRequest', function() {
+    it('should handle connection error', function(done) {
+      var sandbox = sinon.sandbox.create();
+      var client = new Client();
+      client.credentials = {};
+
+      var re = sandbox.stub(client, 'request', function(args, callback) {
+        callback(null, {}, {});
+      });
+
+      client._doRequest('', '', {}, function(err, body, header) {
+        should.exist(err);
+        should.not.exist(body);
+        should.not.exist(header);
+        err.should.be.an.instanceOf(Errors.CONNECTION_ERROR);
+        sandbox.restore();
+        done();
+      });
+    });
+
+    it('should handle ECONNRESET error', function(done) {
+      var sandbox = sinon.sandbox.create();
+      var client = new Client();
+      client.credentials = {};
+
+      var re = sandbox.stub(client, 'request', function(args, callback) {
+        callback(null, {statusCode: 200}, '{"error":"read ECONNRESET"}');
+      });
+
+      client._doRequest('', '', {}, function(err, body, header) {
+        should.exist(err);
+        should.not.exist(body);
+        should.not.exist(header);
+        err.should.be.an.instanceOf(Errors.ECONNRESET_ERROR);
+        sandbox.restore();
+        done();
+      });
+    });
+  });
+
 });
