@@ -1341,7 +1341,9 @@ describe('client API', function() {
       var num = 25;
       helpers.createAndJoinWallet(clients, 1, 1, function() {
         function create(callback) {
-          clients[0].createAddress({ignoreMaxGap: true}, function(err, x) {
+          clients[0].createAddress({
+            ignoreMaxGap: true
+          }, function(err, x) {
             should.not.exist(err);
             should.exist(x.address);
             callback(err, x);
