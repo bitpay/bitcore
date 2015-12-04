@@ -3994,7 +3994,7 @@ describe('client API', function() {
         callback(null, {}, {});
       });
 
-      client._doRequest('', '', {}, function(err, body, header) {
+      client._doRequest('method', 'url', {}, function(err, body, header) {
         should.exist(err);
         should.not.exist(body);
         should.not.exist(header);
@@ -4013,7 +4013,7 @@ describe('client API', function() {
         callback(null, {statusCode: 200}, '{"error":"read ECONNRESET"}');
       });
 
-      client._doRequest('', '', {}, function(err, body, header) {
+      client._doRequest('method', 'url', {}, function(err, body, header) {
         should.exist(err);
         should.not.exist(body);
         should.not.exist(header);
