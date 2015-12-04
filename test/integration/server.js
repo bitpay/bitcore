@@ -1504,6 +1504,58 @@ describe('Wallet service', function() {
     });
   });
 
+  describe('#getBalance 2 steps', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 1, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should get balance', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 'u2', 3], function() {
+        server.getBalance2Steps({}, function(err, balance) {
+          should.not.exist(err);
+          should.exist(balance);
+          balance.totalAmount.should.equal(helpers.toSatoshi(6));
+          balance.lockedAmount.should.equal(0);
+          balance.availableAmount.should.equal(helpers.toSatoshi(6));
+          balance.totalBytesToSendMax.should.equal(578);
+
+          balance.totalConfirmedAmount.should.equal(helpers.toSatoshi(4));
+          balance.lockedConfirmedAmount.should.equal(0);
+          balance.availableConfirmedAmount.should.equal(helpers.toSatoshi(4));
+
+          should.exist(balance.byAddress);
+          balance.byAddress.length.should.equal(2);
+          balance.byAddress[0].amount.should.equal(helpers.toSatoshi(4));
+          balance.byAddress[1].amount.should.equal(helpers.toSatoshi(2));
+          done();
+        });
+      });
+    });
+    it.only('should trigger notification when balance of non-prioritary addresses is updated', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 2], function() {
+        server.getBalance2Steps({}, function(err, balance) {
+          should.not.exist(err);
+          should.exist(balance);
+          balance.totalAmount.should.equal(helpers.toSatoshi(3));
+
+          helpers.stubUtxos(server, wallet, [0.5, 0.6], function() {
+            server.getBalance2Steps({}, function(err, balance) {
+              should.not.exist(err);
+              should.exist(balance);
+              //balance.totalAmount.should.equal(helpers.toSatoshi(1.1));
+              //done();
+            });
+          });
+        });
+      });
+    });
+  });
+
   describe('#getFeeLevels', function() {
     var server, wallet;
     beforeEach(function(done) {
