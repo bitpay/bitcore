@@ -1,7 +1,7 @@
-# build bitcore from source
-FROM fedora:latest
+# setup a centos image with bitcore binary components
+FROM centos:latest
 MAINTAINER Chris Kleeschulte <chrisk@bitpay.com>
-RUN dnf -y install git-all curl which xz tar findutils
+RUN yum -y install git curl which xz tar findutils
 RUN groupadd bitcore
 RUN useradd bitcore -m -s /bin/bash -g bitcore
 ENV HOME /home/bitcore
