@@ -1925,7 +1925,6 @@ describe('client API', function() {
       clients[0].getTxProposals({}, function(err, txps) {
         should.not.exist(err);
         var changeAddress = txps[0].changeAddress.address;
-        console.log('[client.js.1927:changeAddress:]', changeAddress); //TODO
         clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
           should.not.exist(err);
           clients[1].signTxProposal(xx, function(err, yy, paypro) {
