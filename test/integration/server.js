@@ -2385,8 +2385,8 @@ describe('Wallet service', function() {
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
-            var sendOpts = helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0);
-            server.sendTx(sendOpts, function(err) {
+            var publishOpts = helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0);
+            server.publishTx(publishOpts, function(err) {
               should.not.exist(err);
               server.getPendingTxs({}, function(err, txs) {
                 should.not.exist(err);
@@ -2399,7 +2399,7 @@ describe('Wallet service', function() {
       });
 
       it('should fail to send non-existent tx proposal', function(done) {
-        server.sendTx({
+        server.publishTx({
           txProposalId: 'wrong-id',
           proposalSignature: 'dummy',
         }, function(err) {
@@ -2423,7 +2423,7 @@ describe('Wallet service', function() {
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
-            server.sendTx({
+            server.publishTx({
               txProposalId: txp.id,
               proposalSignature: 'dummy'
             }, function(err) {
@@ -2452,14 +2452,14 @@ describe('Wallet service', function() {
             var pubKey = new Bitcore.PrivateKey(TestData.copayers[0].privKey_1H_0).toPublicKey().toString();
             var pubKeySig = helpers.signMessage(pubKey, TestData.copayers[1].privKey_1H_0);
 
-            var sendOpts = {
+            var publishOpts = {
               txProposalId: txp.id,
               proposalSignature: proposalSignature,
               proposalSignaturePubKey: pubKey,
               proposalSignaturePubKeySig: pubKeySig,
             }
 
-            server.sendTx(sendOpts, function(err) {
+            server.publishTx(publishOpts, function(err) {
               should.exist(err);
               err.message.should.contain('Invalid proposal signing key');
               done();
@@ -2495,14 +2495,14 @@ describe('Wallet service', function() {
               should.not.exist(err);
               should.exist(txp);
 
-              var sendOpts = {
+              var publishOpts = {
                 txProposalId: txp.id,
                 proposalSignature: helpers.signMessage(txp.getRawTx(), reqPrivKey),
                 proposalSignaturePubKey: reqPubKey,
                 proposalSignaturePubKeySig: sig,
               }
 
-              server.sendTx(sendOpts, function(err) {
+              server.publishTx(publishOpts, function(err) {
                 should.exist(err);
                 err.message.should.contain('Invalid proposal signing key');
                 done();
@@ -2539,12 +2539,12 @@ describe('Wallet service', function() {
             txp2 = txp;
             should.exist(txp1);
             should.exist(txp2);
-            var sendOpts = helpers.getProposalSignatureOpts(txp1, TestData.copayers[0].privKey_1H_0);
-            server.sendTx(sendOpts, next);
+            var publishOpts = helpers.getProposalSignatureOpts(txp1, TestData.copayers[0].privKey_1H_0);
+            server.publishTx(publishOpts, next);
           },
           function(next) {
-            var sendOpts = helpers.getProposalSignatureOpts(txp2, TestData.copayers[0].privKey_1H_0);
-            server.sendTx(sendOpts, function(err) {
+            var publishOpts = helpers.getProposalSignatureOpts(txp2, TestData.copayers[0].privKey_1H_0);
+            server.publishTx(publishOpts, function(err) {
               should.exist(err);
               err.code.should.equal('UNAVAILABLE_UTXOS');
               next();
@@ -2563,8 +2563,8 @@ describe('Wallet service', function() {
           },
           function(txp3, next) {
             should.exist(txp3);
-            var sendOpts = helpers.getProposalSignatureOpts(txp3, TestData.copayers[0].privKey_1H_0);
-            server.sendTx(sendOpts, next);
+            var publishOpts = helpers.getProposalSignatureOpts(txp3, TestData.copayers[0].privKey_1H_0);
+            server.publishTx(publishOpts, next);
           },
           function(next) {
             server.getPendingTxs({}, function(err, txs) {
@@ -2591,8 +2591,8 @@ describe('Wallet service', function() {
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
-            var sendOpts = helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0);
-            server.sendTx(sendOpts, function(err) {
+            var publishOpts = helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0);
+            server.publishTx(publishOpts, function(err) {
               should.not.exist(err);
               server.getPendingTxs({}, function(err, txs) {
                 should.not.exist(err);
