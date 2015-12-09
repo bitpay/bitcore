@@ -1650,6 +1650,64 @@ describe('Wallet service', function() {
         done();
       });
     });
+
+    it('should resolve balance of new addresses immediately', function(done) {
+      var addresses;
+
+      async.series([
+
+        function(next) {
+          helpers.createAddresses(server, wallet, 4, 0, function(addrs) {
+            addresses = addrs;
+            helpers.stubUtxos(server, wallet, [1, 2], {
+              addresses: _.take(addresses, 2),
+            }, function() {
+              next();
+            });
+          });
+        },
+        function(next) {
+          server.getBalance2Steps({}, function(err, balance) {
+            should.not.exist(err);
+            should.exist(balance);
+            balance.totalAmount.should.equal(helpers.toSatoshi(3));
+            next();
+          });
+        },
+        function(next) {
+          server.createAddress({}, function(err, addr) {
+            helpers.stubUtxos(server, wallet, 0.5, {
+              addresses: addr,
+              keepUtxos: true,
+            }, function() {
+              next();
+            });
+          });
+        },
+        function(next) {
+          server.getBalance2Steps({}, function(err, balance) {
+            should.not.exist(err);
+            should.exist(balance);
+            balance.totalAmount.should.equal(helpers.toSatoshi(3.5));
+            next();
+          });
+        },
+        function(next) {
+          setTimeout(next, 100);
+        },
+        function(next) {
+          server.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            var last = _.last(notifications);
+            last.type.should.not.equal('BalanceUpdated');
+            next();
+          });
+        },
+      ], function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
   });
 
   describe('#getFeeLevels', function() {
