@@ -211,52 +211,77 @@ helpers.toSatoshi = function(btc) {
   }
 };
 
-helpers.stubUtxos = function(server, wallet, amounts, cb) {
-  async.mapSeries(_.range(0, amounts.length > 2 ? 2 : 1), function(i, next) {
-    server.createAddress({}, next);
-  }, function(err, addresses) {
-    should.not.exist(err);
-    addresses.should.not.be.empty;
-    var utxos = _.compact(_.map([].concat(amounts), function(amount, i) {
-      var confirmations;
-      if (_.isString(amount) && _.startsWith(amount, 'u')) {
-        amount = parseFloat(amount.substring(1));
-        confirmations = 0;
+helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
+  if (_.isFunction(opts)) {
+    cb = opts;
+    opts = {};
+  }
+  opts = opts || {};
+
+  if (!helpers._utxos) helpers._utxos = {};
+
+  async.waterfall([
+
+    function(next) {
+      if (opts.addresses) return next(null, [].concat(opts.addresses));
+      async.mapSeries(_.range(0, amounts.length > 2 ? 2 : 1), function(i, next) {
+        server.createAddress({}, next);
+      }, next);
+    },
+    function(addresses, next) {
+      addresses.should.not.be.empty;
+
+      var utxos = _.compact(_.map([].concat(amounts), function(amount, i) {
+        var confirmations;
+        if (_.isString(amount) && _.startsWith(amount, 'u')) {
+          amount = parseFloat(amount.substring(1));
+          confirmations = 0;
+        } else {
+          confirmations = Math.floor(Math.random() * 100 + 1);
+        }
+        if (amount <= 0) return null;
+
+        var address = addresses[i % addresses.length];
+
+        var scriptPubKey;
+        switch (wallet.addressType) {
+          case Constants.SCRIPT_TYPES.P2SH:
+            scriptPubKey = Bitcore.Script.buildMultisigOut(address.publicKeys, wallet.m).toScriptHashOut();
+            break;
+          case Constants.SCRIPT_TYPES.P2PKH:
+            scriptPubKey = Bitcore.Script.buildPublicKeyHashOut(address.address);
+            break;
+        }
+        should.exist(scriptPubKey);
+
+        return {
+          txid: helpers.randomTXID(),
+          vout: Math.floor(Math.random() * 10 + 1),
+          satoshis: helpers.toSatoshi(amount),
+          scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
+          address: address.address,
+          confirmations: confirmations
+        };
+      }));
+
+      if (opts.keepUtxos) {
+        helpers._utxos = helpers._utxos.concat(utxos);
       } else {
-        confirmations = Math.floor(Math.random() * 100 + 1);
+        helpers._utxos = utxos;
       }
-      if (amount <= 0) return null;
 
-      var address = addresses[i % addresses.length];
-
-      var scriptPubKey;
-      switch (wallet.addressType) {
-        case Constants.SCRIPT_TYPES.P2SH:
-          scriptPubKey = Bitcore.Script.buildMultisigOut(address.publicKeys, wallet.m).toScriptHashOut();
-          break;
-        case Constants.SCRIPT_TYPES.P2PKH:
-          scriptPubKey = Bitcore.Script.buildPublicKeyHashOut(address.address);
-          break;
-      }
-      should.exist(scriptPubKey);
-
-      return {
-        txid: helpers.randomTXID(),
-        vout: Math.floor(Math.random() * 10 + 1),
-        satoshis: helpers.toSatoshi(amount),
-        scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
-        address: address.address,
-        confirmations: confirmations
+      blockchainExplorer.getUnspentUtxos = function(addresses, cb) {
+        var selected = _.filter(helpers._utxos, function(utxo) {
+          return _.contains(addresses, utxo.address);
+        });
+        return cb(null, selected);
       };
-    }));
-    blockchainExplorer.getUnspentUtxos = function(addresses, cb) {
-      var selected = _.filter(utxos, function(utxo) {
-        return _.contains(addresses, utxo.address);
-      });
-      return cb(null, selected);
-    };
 
-    return cb(utxos);
+      return next();
+    },
+  ], function(err) {
+    should.not.exist(err);
+    return cb(helpers._utxos);
   });
 };
 
@@ -451,14 +476,14 @@ helpers.createProposalOpts = function(type, outputs, signingKey, moreOpts, input
 };
 helpers.createAddresses = function(server, wallet, main, change, cb) {
   var clock = sinon.useFakeTimers(Date.now(), 'Date');
-  async.map(_.range(main + change), function(i, next) {
+  async.mapSeries(_.range(main + change), function(i, next) {
     clock.tick(1000);
     var address = wallet.createAddress(i >= main);
     server.storage.storeAddressAndWallet(wallet, address, function(err) {
       next(err, address);
     });
   }, function(err, addresses) {
-    if (err) throw new Error('Could not generate addresses');
+    should.not.exist(err);
     clock.restore();
     return cb(_.take(addresses, main), _.takeRight(addresses, change));
   });

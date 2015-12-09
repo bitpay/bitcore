@@ -1504,7 +1504,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('#getBalance 2 steps', function() {
+  describe.only('#getBalance 2 steps', function() {
     var server, wallet;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(1, 1, function(s, w) {
@@ -1536,22 +1536,118 @@ describe('Wallet service', function() {
         });
       });
     });
-    it.only('should trigger notification when balance of non-prioritary addresses is updated', function(done) {
-      helpers.stubUtxos(server, wallet, [1, 2], function() {
-        server.getBalance2Steps({}, function(err, balance) {
-          should.not.exist(err);
-          should.exist(balance);
-          balance.totalAmount.should.equal(helpers.toSatoshi(3));
 
-          helpers.stubUtxos(server, wallet, [0.5, 0.6], function() {
-            server.getBalance2Steps({}, function(err, balance) {
-              should.not.exist(err);
-              should.exist(balance);
-              //balance.totalAmount.should.equal(helpers.toSatoshi(1.1));
-              //done();
+    it('should trigger notification when balance of non-prioritary addresses is updated', function(done) {
+      var addresses;
+
+      async.series([
+
+        function(next) {
+          helpers.createAddresses(server, wallet, 4, 0, function(addrs) {
+            addresses = addrs;
+            helpers.stubUtxos(server, wallet, [1, 2], {
+              addresses: _.take(addresses, 2),
+            }, function() {
+              next();
             });
           });
-        });
+        },
+        function(next) {
+          server.getBalance2Steps({}, function(err, balance) {
+            should.not.exist(err);
+            should.exist(balance);
+            balance.totalAmount.should.equal(helpers.toSatoshi(3));
+            next();
+          });
+        },
+        function(next) {
+          helpers.stubUtxos(server, wallet, 0.5, {
+            addresses: addresses[2],
+            keepUtxos: true,
+          }, function() {
+            next();
+          });
+        },
+        function(next) {
+          server.getBalance2Steps({}, function(err, balance) {
+            should.not.exist(err);
+            should.exist(balance);
+            balance.totalAmount.should.equal(helpers.toSatoshi(3));
+            next();
+          });
+        },
+        function(next) {
+          setTimeout(next, 100);
+        },
+        function(next) {
+          server.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            var last = _.last(notifications);
+            last.type.should.equal('BalanceUpdated');
+            var balance = last.data;
+            balance.totalAmount.should.equal(helpers.toSatoshi(3.5));
+            next();
+          });
+        },
+      ], function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+
+    it('should not trigger notification when only balance of prioritary addresses is updated', function(done) {
+      var addresses;
+
+      async.series([
+
+        function(next) {
+          helpers.createAddresses(server, wallet, 4, 0, function(addrs) {
+            addresses = addrs;
+            helpers.stubUtxos(server, wallet, [1, 2], {
+              addresses: _.take(addresses, 2),
+            }, function() {
+              next();
+            });
+          });
+        },
+        function(next) {
+          server.getBalance2Steps({}, function(err, balance) {
+            should.not.exist(err);
+            should.exist(balance);
+            balance.totalAmount.should.equal(helpers.toSatoshi(3));
+            next();
+          });
+        },
+        function(next) {
+          helpers.stubUtxos(server, wallet, 0.5, {
+            addresses: addresses[0],
+            keepUtxos: true,
+          }, function() {
+            next();
+          });
+        },
+        function(next) {
+          server.getBalance2Steps({}, function(err, balance) {
+            should.not.exist(err);
+            should.exist(balance);
+            balance.totalAmount.should.equal(helpers.toSatoshi(3.5));
+            next();
+          });
+        },
+        function(next) {
+          setTimeout(next, 100);
+        },
+        function(next) {
+          server.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            var last = _.last(notifications);
+            last.type.should.not.equal('BalanceUpdated');
+            next();
+          });
+        },
+      ], function(err) {
+        should.not.exist(err);
+        done();
       });
     });
   });
