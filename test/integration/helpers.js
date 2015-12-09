@@ -26,9 +26,11 @@ var TestData = require('../testdata');
 
 var storage, blockchainExplorer;
 
+var useMongoDb = !!process.env.USE_MONGO_DB;
+
 var helpers = {};
 
-var useMongoDb = !!process.env.USE_MONGO_DB;
+helpers.CLIENT_VERSION = 'bwc-2.0.0';
 
 helpers.before = function(cb) {
   function getDb(cb) {
@@ -96,7 +98,7 @@ helpers.getAuthServer = function(copayerId, cb) {
     copayerId: copayerId,
     message: 'dummy',
     signature: 'dummy',
-    clientVersion: 'bwc-0.1.0',
+    clientVersion: helpers.CLIENT_VERSION,
   }, function(err, server) {
     verifyStub.restore();
     if (err || !server) throw new Error('Could not login as copayerId ' + copayerId);
@@ -356,7 +358,7 @@ helpers.createSimpleProposalOpts = function(toAddress, amount, signingKey, opts)
     toAddress: toAddress,
     amount: amount,
   }];
-  return helpers.createProposalOpts(Model.TxProposal.Types.SIMPLE, outputs, signingKey, opts);
+  return helpers.createProposalOpts(Model.TxProposalLegacy.Types.SIMPLE, outputs, signingKey, opts);
 };
 
 helpers.createExternalProposalOpts = function(toAddress, amount, signingKey, moreOpts, inputs) {
@@ -368,8 +370,42 @@ helpers.createExternalProposalOpts = function(toAddress, amount, signingKey, mor
     inputs = moreOpts;
     moreOpts = null;
   }
-  return helpers.createProposalOpts(Model.TxProposal.Types.EXTERNAL, outputs, signingKey, moreOpts, inputs);
+  return helpers.createProposalOpts(Model.TxProposalLegacy.Types.EXTERNAL, outputs, signingKey, moreOpts, inputs);
 };
+
+
+helpers.createProposalOpts2 = function(outputs, moreOpts, inputs) {
+  _.each(outputs, function(output) {
+    output.amount = helpers.toSatoshi(output.amount);
+  });
+
+  var opts = {
+    outputs: outputs,
+    inputs: inputs || [],
+  };
+
+  if (moreOpts) {
+    moreOpts = _.pick(moreOpts, ['feePerKb', 'customData', 'message']);
+    opts = _.assign(opts, moreOpts);
+  }
+
+  opts = _.defaults(opts, {
+    message: null
+  });
+
+  return opts;
+};
+
+helpers.getProposalSignatureOpts = function(txp, signingKey) {
+  var raw = txp.getRawTx();
+  var proposalSignature = helpers.signMessage(raw, signingKey);
+
+  return {
+    txProposalId: txp.id,
+    proposalSignature: proposalSignature,
+  }
+};
+
 
 helpers.createProposalOpts = function(type, outputs, signingKey, moreOpts, inputs) {
   _.each(outputs, function(output) {
@@ -383,9 +419,7 @@ helpers.createProposalOpts = function(type, outputs, signingKey, moreOpts, input
   };
 
   if (moreOpts) {
-    moreOpts = _.chain(moreOpts)
-      .pick(['feePerKb', 'customData', 'message'])
-      .value();
+    moreOpts = _.pick(moreOpts, ['feePerKb', 'customData', 'message']);
     opts = _.assign(opts, moreOpts);
   }
 
@@ -394,12 +428,12 @@ helpers.createProposalOpts = function(type, outputs, signingKey, moreOpts, input
   });
 
   var hash;
-  if (type == Model.TxProposal.Types.SIMPLE) {
+  if (type == Model.TxProposalLegacy.Types.SIMPLE) {
     opts.toAddress = outputs[0].toAddress;
     opts.amount = outputs[0].amount;
     hash = WalletService._getProposalHash(opts.toAddress, opts.amount,
       opts.message, opts.payProUrl);
-  } else if (type == Model.TxProposal.Types.MULTIPLEOUTPUTS || type == Model.TxProposal.Types.EXTERNAL) {
+  } else if (type == Model.TxProposalLegacy.Types.MULTIPLEOUTPUTS || type == Model.TxProposalLegacy.Types.EXTERNAL) {
     opts.outputs = outputs;
     var header = {
       outputs: outputs,
@@ -415,7 +449,6 @@ helpers.createProposalOpts = function(type, outputs, signingKey, moreOpts, input
 
   return opts;
 };
-
 helpers.createAddresses = function(server, wallet, main, change, cb) {
   var clock = sinon.useFakeTimers(Date.now(), 'Date');
   async.map(_.range(main + change), function(i, next) {
