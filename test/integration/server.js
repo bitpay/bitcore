@@ -1504,10 +1504,12 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('#getBalance 2 steps', function() {
+  describe.only('#getBalance 2 steps', function() {
     var server, wallet, clock;
+    var _threshold = Defaults.TWO_STEP_BALANCE_THRESHOLD;
     beforeEach(function(done) {
       clock = sinon.useFakeTimers(Date.now(), 'Date');
+      Defaults.TWO_STEP_BALANCE_THRESHOLD = 0;
 
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
@@ -1517,6 +1519,7 @@ describe('Wallet service', function() {
     });
     afterEach(function() {
       clock.restore();
+      Defaults.TWO_STEP_BALANCE_THRESHOLD = _threshold;
     });
 
     it('should get balance', function(done) {
@@ -1722,6 +1725,54 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(balance);
             balance.totalAmount.should.equal(helpers.toSatoshi(3.5));
+            next();
+          });
+        },
+        function(next) {
+          setTimeout(next, 100);
+        },
+        function(next) {
+          server.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            var last = _.last(notifications);
+            last.type.should.not.equal('BalanceUpdated');
+            next();
+          });
+        },
+      ], function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+
+    it('should not perform 2 steps when nb of addresses below threshold', function(done) {
+      var oldAddrs, newAddrs;
+      Defaults.TWO_STEP_BALANCE_THRESHOLD = 5;
+
+      async.series([
+
+        function(next) {
+          helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
+            oldAddrs = addrs;
+            next();
+          });
+        },
+        function(next) {
+          clock.tick(7 * 24 * 3600 * 1000);
+          helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
+            newAddrs = addrs;
+            helpers.stubUtxos(server, wallet, [1, 2], {
+              addresses: [oldAddrs[0], newAddrs[0]],
+            }, function() {
+              next();
+            });
+          });
+        },
+        function(next) {
+          server.getBalance2Steps({}, function(err, balance) {
+            should.not.exist(err);
+            should.exist(balance);
+            balance.totalAmount.should.equal(helpers.toSatoshi(3));
             next();
           });
         },
