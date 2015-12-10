@@ -1504,14 +1504,19 @@ describe('Wallet service', function() {
     });
   });
 
-  describe.only('#getBalance 2 steps', function() {
-    var server, wallet;
+  describe('#getBalance 2 steps', function() {
+    var server, wallet, clock;
     beforeEach(function(done) {
+      clock = sinon.useFakeTimers(Date.now(), 'Date');
+
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
         wallet = w;
         done();
       });
+    });
+    afterEach(function() {
+      clock.restore();
     });
 
     it('should get balance', function(done) {
@@ -1532,21 +1537,28 @@ describe('Wallet service', function() {
           balance.byAddress.length.should.equal(2);
           balance.byAddress[0].amount.should.equal(helpers.toSatoshi(4));
           balance.byAddress[1].amount.should.equal(helpers.toSatoshi(2));
-          done();
+          setTimeout(done, 100);
         });
       });
     });
 
     it('should trigger notification when balance of non-prioritary addresses is updated', function(done) {
-      var addresses;
+      var oldAddrs, newAddrs;
 
       async.series([
 
         function(next) {
-          helpers.createAddresses(server, wallet, 4, 0, function(addrs) {
-            addresses = addrs;
+          helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
+            oldAddrs = addrs;
+            next();
+          });
+        },
+        function(next) {
+          clock.tick(7 * 24 * 3600 * 1000);
+          helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
+            newAddrs = addrs;
             helpers.stubUtxos(server, wallet, [1, 2], {
-              addresses: _.take(addresses, 2),
+              addresses: [oldAddrs[0], newAddrs[0]],
             }, function() {
               next();
             });
@@ -1556,13 +1568,24 @@ describe('Wallet service', function() {
           server.getBalance2Steps({}, function(err, balance) {
             should.not.exist(err);
             should.exist(balance);
-            balance.totalAmount.should.equal(helpers.toSatoshi(3));
+            balance.totalAmount.should.equal(helpers.toSatoshi(2));
+            next();
+          });
+        },
+        function(next) {
+          setTimeout(next, 100);
+        },
+        function(next) {
+          server._getActiveAddresses(function(err, active) {
+            should.not.exist(err);
+            should.exist(active);
+            active.length.should.equal(3);
             next();
           });
         },
         function(next) {
           helpers.stubUtxos(server, wallet, 0.5, {
-            addresses: addresses[2],
+            addresses: oldAddrs[1],
             keepUtxos: true,
           }, function() {
             next();
@@ -1596,15 +1619,22 @@ describe('Wallet service', function() {
     });
 
     it('should not trigger notification when only balance of prioritary addresses is updated', function(done) {
-      var addresses;
+      var oldAddrs, newAddrs;
 
       async.series([
 
         function(next) {
-          helpers.createAddresses(server, wallet, 4, 0, function(addrs) {
-            addresses = addrs;
+          helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
+            oldAddrs = addrs;
+            next();
+          });
+        },
+        function(next) {
+          clock.tick(7 * 24 * 3600 * 1000);
+          helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
+            newAddrs = addrs;
             helpers.stubUtxos(server, wallet, [1, 2], {
-              addresses: _.take(addresses, 2),
+              addresses: newAddrs,
             }, function() {
               next();
             });
@@ -1619,8 +1649,11 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
+          setTimeout(next, 100);
+        },
+        function(next) {
           helpers.stubUtxos(server, wallet, 0.5, {
-            addresses: addresses[0],
+            addresses: newAddrs[0],
             keepUtxos: true,
           }, function() {
             next();

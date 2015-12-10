@@ -475,16 +475,16 @@ helpers.createProposalOpts = function(type, outputs, signingKey, moreOpts, input
   return opts;
 };
 helpers.createAddresses = function(server, wallet, main, change, cb) {
-  var clock = sinon.useFakeTimers(Date.now(), 'Date');
+  // var clock = sinon.useFakeTimers('Date');
   async.mapSeries(_.range(main + change), function(i, next) {
-    clock.tick(1000);
+    // clock.tick(1000);
     var address = wallet.createAddress(i >= main);
     server.storage.storeAddressAndWallet(wallet, address, function(err) {
       next(err, address);
     });
   }, function(err, addresses) {
     should.not.exist(err);
-    clock.restore();
+    // clock.restore();
     return cb(_.take(addresses, main), _.takeRight(addresses, change));
   });
 };
