@@ -77,6 +77,7 @@ describe('Storage', function() {
       });
     });
   });
+
   describe('Copayer lookup', function() {
     it('should correctly store and fetch copayer lookup', function(done) {
       var wallet = Model.Wallet.create({
