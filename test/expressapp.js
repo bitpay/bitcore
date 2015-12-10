@@ -113,6 +113,45 @@ describe('ExpressApp', function() {
         });
       });
 
+      describe('Balance', function() {
+        it('should handle cache argument', function(done) {
+          var server = {
+            getBalance: sinon.stub().callsArgWith(1, null, {}),
+            getBalance2Steps: sinon.stub().callsArgWith(1, null, {}),
+          };
+          var TestExpressApp = proxyquire('../lib/expressapp', {
+            './server': {
+              initialize: sinon.stub().callsArg(1),
+              getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+            }
+          });
+          start(TestExpressApp, function() {
+            var reqOpts = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/balance',
+              headers: {
+                'x-identity': 'identity',
+                'x-signature': 'signature'
+              }
+            };
+            request(reqOpts, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              server.getBalance.calledOnce.should.be.true;
+              server.getBalance2Steps.calledOnce.should.be.false;
+
+              reqOpts.url += '?cache=1';
+              request(reqOpts, function(err, res, body) {
+                should.not.exist(err);
+                res.statusCode.should.equal(200);
+                server.getBalance.calledTwice.should.be.false;
+                server.getBalance2Steps.calledOnce.should.be.true;
+                done();
+              });
+            });
+          });
+        });
+      });
+
       describe('/v1/notifications', function(done) {
         var server, TestExpressApp, clock;
         beforeEach(function() {

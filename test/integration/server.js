@@ -1504,7 +1504,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe.only('#getBalance 2 steps', function() {
+  describe('#getBalance 2 steps', function() {
     var server, wallet, clock;
     var _threshold = Defaults.TWO_STEP_BALANCE_THRESHOLD;
     beforeEach(function(done) {
