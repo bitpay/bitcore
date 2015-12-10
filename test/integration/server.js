@@ -2516,7 +2516,7 @@ describe('Wallet service', function() {
 
       it('should be able to create tx with inputs argument', function(done) {
         helpers.stubUtxos(server, wallet, [1, 3, 2], function(utxos) {
-          server._getUtxosForCurrentWallet(function(err, utxos) {
+          server.getUtxos({}, function(err, utxos) {
             should.not.exist(err);
             var inputs = [utxos[0], utxos[2]];
             var txOpts = helpers.createExternalProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 2.5,
