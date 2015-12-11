@@ -1524,7 +1524,9 @@ describe('Wallet service', function() {
 
     it('should get balance', function(done) {
       helpers.stubUtxos(server, wallet, [1, 'u2', 3], function() {
-        server.getBalance2Steps({}, function(err, balance) {
+        server.getBalance({
+          twoStep: true
+        }, function(err, balance) {
           should.not.exist(err);
           should.exist(balance);
           balance.totalAmount.should.equal(helpers.toSatoshi(6));
@@ -1568,7 +1570,9 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          server.getBalance2Steps({}, function(err, balance) {
+          server.getBalance({
+            twoStep: true
+          }, function(err, balance) {
             should.not.exist(err);
             should.exist(balance);
             balance.totalAmount.should.equal(helpers.toSatoshi(2));
@@ -1595,7 +1599,9 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          server.getBalance2Steps({}, function(err, balance) {
+          server.getBalance({
+            twoStep: true
+          }, function(err, balance) {
             should.not.exist(err);
             should.exist(balance);
             balance.totalAmount.should.equal(helpers.toSatoshi(3));
@@ -1644,7 +1650,9 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          server.getBalance2Steps({}, function(err, balance) {
+          server.getBalance({
+            twoStep: true
+          }, function(err, balance) {
             should.not.exist(err);
             should.exist(balance);
             balance.totalAmount.should.equal(helpers.toSatoshi(3));
@@ -1663,7 +1671,9 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          server.getBalance2Steps({}, function(err, balance) {
+          server.getBalance({
+            twoStep: true
+          }, function(err, balance) {
             should.not.exist(err);
             should.exist(balance);
             balance.totalAmount.should.equal(helpers.toSatoshi(3.5));
@@ -1703,7 +1713,9 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          server.getBalance2Steps({}, function(err, balance) {
+          server.getBalance({
+            twoStep: true
+          }, function(err, balance) {
             should.not.exist(err);
             should.exist(balance);
             balance.totalAmount.should.equal(helpers.toSatoshi(3));
@@ -1721,7 +1733,9 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          server.getBalance2Steps({}, function(err, balance) {
+          server.getBalance({
+            twoStep: true
+          }, function(err, balance) {
             should.not.exist(err);
             should.exist(balance);
             balance.totalAmount.should.equal(helpers.toSatoshi(3.5));
@@ -1769,7 +1783,9 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          server.getBalance2Steps({}, function(err, balance) {
+          server.getBalance({
+            twoStep: true
+          }, function(err, balance) {
             should.not.exist(err);
             should.exist(balance);
             balance.totalAmount.should.equal(helpers.toSatoshi(3));

@@ -117,7 +117,6 @@ describe('ExpressApp', function() {
         it('should handle cache argument', function(done) {
           var server = {
             getBalance: sinon.stub().callsArgWith(1, null, {}),
-            getBalance2Steps: sinon.stub().callsArgWith(1, null, {}),
           };
           var TestExpressApp = proxyquire('../lib/expressapp', {
             './server': {
@@ -136,15 +135,15 @@ describe('ExpressApp', function() {
             request(reqOpts, function(err, res, body) {
               should.not.exist(err);
               res.statusCode.should.equal(200);
-              server.getBalance.calledOnce.should.be.true;
-              server.getBalance2Steps.calledOnce.should.be.false;
+              var args = server.getBalance.getCalls()[0].args[0];
+              should.not.exist(args.twoStep);
 
-              reqOpts.url += '?cache=1';
+              reqOpts.url += '?twoStep=1';
               request(reqOpts, function(err, res, body) {
                 should.not.exist(err);
                 res.statusCode.should.equal(200);
-                server.getBalance.calledTwice.should.be.false;
-                server.getBalance2Steps.calledOnce.should.be.true;
+                var args = server.getBalance.getCalls()[1].args[0];
+                args.twoStep.should.equal(true);
                 done();
               });
             });
