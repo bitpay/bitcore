@@ -4415,7 +4415,7 @@ describe('Wallet service', function() {
       }, {
         opts: {
           skip: 4,
-          limit: 20,
+          limit: 10,
         },
         expected: [10],
       }, {
@@ -4479,6 +4479,13 @@ describe('Wallet service', function() {
         done();
       });
     });
+    it('should handle exceeded limit', function(done) {
+      server.getTxHistory({limit:1000}, function(err, txs) {
+        err.code.should.equal('HISTORY_LIMIT_EXCEEDED');
+        done();
+      });
+    });
+ 
   });
 
   describe('#scan', function() {
