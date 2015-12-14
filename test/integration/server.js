@@ -1562,10 +1562,14 @@ describe('Wallet service', function() {
           clock.tick(7 * 24 * 3600 * 1000);
           helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
             newAddrs = addrs;
-            helpers.stubUtxos(server, wallet, [1, 2], {
-              addresses: [oldAddrs[0], newAddrs[0]],
-            }, function() {
-              next();
+            server._getActiveAddresses(function(err, active) {
+              should.not.exist(err);
+              should.not.exist(active);
+              helpers.stubUtxos(server, wallet, [1, 2], {
+                addresses: [oldAddrs[0], newAddrs[0]],
+              }, function() {
+                next();
+              });
             });
           });
         },
@@ -1575,7 +1579,7 @@ describe('Wallet service', function() {
           }, function(err, balance) {
             should.not.exist(err);
             should.exist(balance);
-            balance.totalAmount.should.equal(helpers.toSatoshi(2));
+            balance.totalAmount.should.equal(helpers.toSatoshi(3));
             next();
           });
         },
