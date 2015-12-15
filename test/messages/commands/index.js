@@ -298,11 +298,6 @@ describe('Command Messages', function() {
       message.ccode.should.equal(0x01);
       message.reason.should.equal('transaction is malformed');
       message.data.toString('hex').should.equal('12345678901234567890123456789012');
-      //var message = messages.Reject();
-      //expect(message.message).to.be.undefined;
-      //expect(message.ccode).to.be.undefined;
-      //expect(message.reason).to.be.undefined;
-      //expect(message.data).to.be.undefined;
     });
   });
 
