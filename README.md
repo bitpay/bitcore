@@ -17,7 +17,7 @@ See [Bitcore-wallet-client] (https://github.com/bitpay/bitcore-wallet-client) fo
 
 BWS have a extensive test suite but have not been tested on production environments yet and have been recently released, so it it is still should be considered  BETA software.  
 
-More about BWS at http://blog.bitpay.com/2015/03/05/bitcore-wallet.html
+More about BWS at https://blog.bitpay.com/announcing-the-bitcore-wallet-suite/
 
 # Install
 ```
