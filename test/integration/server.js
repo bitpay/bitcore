@@ -2467,6 +2467,7 @@ describe('Wallet service', function() {
           server.createTxLegacy(txOpts, function(err, tx) {
             should.not.exist(err);
             should.exist(tx);
+            tx.amount.should.equal(helpers.toSatoshi(150));
             done();
           });
         });
@@ -4790,12 +4791,14 @@ describe('Wallet service', function() {
       });
     });
     it('should handle exceeded limit', function(done) {
-      server.getTxHistory({limit:1000}, function(err, txs) {
+      server.getTxHistory({
+        limit: 1000
+      }, function(err, txs) {
         err.code.should.equal('HISTORY_LIMIT_EXCEEDED');
         done();
       });
     });
- 
+
   });
 
   describe('#scan', function() {
