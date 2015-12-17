@@ -881,7 +881,7 @@ describe('client API', function() {
   describe('Wallet Creation', function() {
     it('should check balance in a 1-1 ', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
-        clients[0].getBalance(function(err, balance) {
+        clients[0].getBalance({}, function(err, balance) {
           should.not.exist(err);
           balance.totalAmount.should.equal(0);
           balance.availableAmount.should.equal(0);
@@ -893,11 +893,11 @@ describe('client API', function() {
     });
     it('should be able to complete wallet in copayer that joined later', function(done) {
       helpers.createAndJoinWallet(clients, 2, 3, function() {
-        clients[0].getBalance(function(err, x) {
+        clients[0].getBalance({}, function(err, x) {
           should.not.exist(err);
-          clients[1].getBalance(function(err, x) {
+          clients[1].getBalance({}, function(err, x) {
             should.not.exist(err);
-            clients[2].getBalance(function(err, x) {
+            clients[2].getBalance({}, function(err, x) {
               should.not.exist(err);
               done();
             })
@@ -1055,7 +1055,7 @@ describe('client API', function() {
         should.not.exist(err);
         should.exist(secret);
 
-        clients[0].getStatus(function(err, status) {
+        clients[0].getStatus({}, function(err, status) {
           should.not.exist(err);
           should.exist(status);
           status.wallet.status.should.equal('pending');
@@ -1299,12 +1299,12 @@ describe('client API', function() {
           should.exist(x0.address);
 
           blockchainExplorerMock.setUtxo(x0, 10, w.m);
-          clients[0].getBalance(function(err, bal0) {
+          clients[0].getBalance({}, function(err, bal0) {
             should.not.exist(err);
             bal0.totalAmount.should.equal(10 * 1e8);
             bal0.lockedAmount.should.equal(0);
             bal0.totalBytesToSendMax.should.be.within(300, 400);
-            clients[1].getBalance(function(err, bal1) {
+            clients[1].getBalance({}, function(err, bal1) {
               bal1.totalAmount.should.equal(10 * 1e8);
               bal1.lockedAmount.should.equal(0);
               done();
@@ -1953,6 +1953,7 @@ describe('client API', function() {
     it('Should send correct refund address', function(done) {
       clients[0].getTxProposals({}, function(err, txps) {
         should.not.exist(err);
+        var changeAddress = txps[0].changeAddress.address;
         clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
           should.not.exist(err);
           clients[1].signTxProposal(xx, function(err, yy, paypro) {
@@ -1962,50 +1963,23 @@ describe('client API', function() {
 
             clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
               should.not.exist(err);
-              clients[1].getMainAddresses({}, function(err, walletAddresses) {
-                var args = http.lastCall.args[0];
-                var data = BitcorePayPro.Payment.decode(args.body);
-                var pay = new BitcorePayPro();
-                var p = pay.makePayment(data);
-                var refund_to = p.get('refund_to');
-                refund_to.length.should.equal(1);
+              var args = http.lastCall.args[0];
+              var data = BitcorePayPro.Payment.decode(args.body);
+              var pay = new BitcorePayPro();
+              var p = pay.makePayment(data);
+              var refund_to = p.get('refund_to');
+              refund_to.length.should.equal(1);
 
-                refund_to = refund_to[0];
+              refund_to = refund_to[0];
 
-                var amount = refund_to.get('amount')
-                amount.low.should.equal(404500);
-                amount.high.should.equal(0);
-                var s = refund_to.get('script');
-                s = new Bitcore.Script(s.buffer.slice(s.offset, s.limit));
-                var addr = new Bitcore.Address.fromScript(s, 'testnet');
-                addr.toString().should.equal(
-                  walletAddresses[walletAddresses.length - 1].address);
-                done();
-              });
-            });
-          });
-        });
-      });
-    });
-
-
-    it('Should fail if refund address is tampered', function(done) {
-      clients[0].getTxProposals({}, function(err, txps) {
-        should.not.exist(err);
-        clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
-          should.not.exist(err);
-          clients[1].signTxProposal(xx, function(err, yy, paypro) {
-            should.not.exist(err);
-            yy.status.should.equal('accepted');
-            http.onCall(5).yields(null, TestData.payProAckBuf);
-
-            helpers.tamperResponse(clients[1], 'post', '/v1/addresses/', {}, function(address) {
-              address.address = '2N86pNEpREGpwZyHVC5vrNUCbF9nM1Geh4K';
-            }, function() {
-              clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
-                err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
-                done();
-              });
+              var amount = refund_to.get('amount')
+              amount.low.should.equal(404500);
+              amount.high.should.equal(0);
+              var s = refund_to.get('script');
+              s = new Bitcore.Script(s.buffer.slice(s.offset, s.limit));
+              var addr = new Bitcore.Address.fromScript(s, 'testnet');
+              addr.toString().should.equal(changeAddress);
+              done();
             });
           });
         });
@@ -2239,7 +2213,7 @@ describe('client API', function() {
           };
           clients[0].sendTxProposal(opts, function(err, txp) {
             should.not.exist(err);
-            clients[0].getStatus(function(err, st) {
+            clients[0].getStatus({}, function(err, st) {
               should.not.exist(err);
               var txp = st.pendingTxps[0];
               txp.status.should.equal('pending');
@@ -2810,12 +2784,12 @@ describe('client API', function() {
               var recoveryClient = helpers.newClient(newApp);
               recoveryClient.import(clients[0].export());
 
-              recoveryClient.getStatus(function(err, status) {
+              recoveryClient.getStatus({}, function(err, status) {
                 should.exist(err);
                 err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
                 recoveryClient.recreateWallet(function(err) {
                   should.not.exist(err);
-                  recoveryClient.getStatus(function(err, status) {
+                  recoveryClient.getStatus({}, function(err, status) {
                     should.not.exist(err);
                     _.difference(_.pluck(status.wallet.copayers, 'name'), ['creator', 'copayer 1']).length.should.equal(0);
                     recoveryClient.createAddress(function(err, addr2) {
@@ -2826,7 +2800,7 @@ describe('client API', function() {
 
                       var recoveryClient2 = helpers.newClient(newApp);
                       recoveryClient2.import(clients[1].export());
-                      recoveryClient2.getStatus(function(err, status) {
+                      recoveryClient2.getStatus({}, function(err, status) {
                         should.not.exist(err);
                         done();
                       });
@@ -2863,12 +2837,12 @@ describe('client API', function() {
                 var recoveryClient = helpers.newClient(newApp);
                 recoveryClient.import(clients[0].export());
 
-                recoveryClient.getStatus(function(err, status) {
+                recoveryClient.getStatus({}, function(err, status) {
                   should.exist(err);
                   err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
                   recoveryClient.recreateWallet(function(err) {
                     should.not.exist(err);
-                    recoveryClient.getStatus(function(err, status) {
+                    recoveryClient.getStatus({}, function(err, status) {
                       should.not.exist(err);
                       recoveryClient.startScan({}, function(err) {
                         should.not.exist(err);
@@ -2877,7 +2851,7 @@ describe('client API', function() {
                           return balance == 0;
                         }, function(next) {
                           setTimeout(function() {
-                            recoveryClient.getBalance(function(err, b) {
+                            recoveryClient.getBalance({}, function(err, b) {
                               balance = b.totalAmount;
                               next(err);
                             });
@@ -2919,14 +2893,14 @@ describe('client API', function() {
                 var recoveryClient = helpers.newClient(newApp);
                 recoveryClient.import(clients[0].export());
 
-                recoveryClient.getStatus(function(err, status) {
+                recoveryClient.getStatus({}, function(err, status) {
                   should.exist(err);
                   err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
                   recoveryClient.recreateWallet(function(err) {
                     should.not.exist(err);
                     recoveryClient.recreateWallet(function(err) {
                       should.not.exist(err);
-                      recoveryClient.getStatus(function(err, status) {
+                      recoveryClient.getStatus({}, function(err, status) {
                         should.not.exist(err);
                         _.difference(_.pluck(status.wallet.copayers, 'name'), ['creator', 'copayer 1']).length.should.equal(0);
                         recoveryClient.createAddress(function(err, addr2) {
@@ -2937,7 +2911,7 @@ describe('client API', function() {
 
                           var recoveryClient2 = helpers.newClient(newApp);
                           recoveryClient2.import(clients[1].export());
-                          recoveryClient2.getStatus(function(err, status) {
+                          recoveryClient2.getStatus({}, function(err, status) {
                             should.not.exist(err);
                             done();
                           });
@@ -2983,12 +2957,12 @@ describe('client API', function() {
               recoveryClient.import(clients[0].export());
               recoveryClient.credentials.derivationStrategy.should.equal('BIP48');
               recoveryClient.credentials.account.should.equal(2);
-              recoveryClient.getStatus(function(err, status) {
+              recoveryClient.getStatus({}, function(err, status) {
                 should.exist(err);
                 err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
                 recoveryClient.recreateWallet(function(err) {
                   should.not.exist(err);
-                  recoveryClient.getStatus(function(err, status) {
+                  recoveryClient.getStatus({}, function(err, status) {
                     should.not.exist(err);
                     recoveryClient.createAddress(function(err, addr2) {
                       should.not.exist(err);
@@ -3027,7 +3001,7 @@ describe('client API', function() {
       }, function(err) {
         should.not.exist(err);
         seedSpy.called.should.be.false;
-        proxy.getStatus(function(err, status) {
+        proxy.getStatus({}, function(err, status) {
           should.not.exist(err);
           status.wallet.name.should.equal('wallet name');
           done();
@@ -3249,7 +3223,7 @@ describe('client API', function() {
           // This is the first 'shared' address, created automatically
           // by old copay
           x0.address.should.equal('2N3w8sJUyAXCQirqNsTayWr7pWADFNdncmf');
-          c.getStatus(function(err, status) {
+          c.getStatus({}, function(err, status) {
             should.not.exist(err);
             status.wallet.status.should.equal('complete');
             c.credentials.walletId.should.equal('e2c2d72024979ded');
@@ -3268,14 +3242,14 @@ describe('client API', function() {
       var c = helpers.newClient(app);
       c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
         should.not.exist(err);
-        c.getStatus(function(err, status) {
+        c.getStatus({}, function(err, status) {
           should.not.exist(err);
           status.wallet.status.should.equal('complete');
           c.credentials.walletId.should.equal('4d32f0737a05f072');
           var c2 = helpers.newClient(app);
           c2.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
             should.not.exist(err);
-            c2.getStatus(function(err, status) {
+            c2.getStatus({}, function(err, status) {
               should.not.exist(err);
               status.wallet.status.should.equal('complete');
               c2.credentials.walletId.should.equal('4d32f0737a05f072');
@@ -3291,7 +3265,7 @@ describe('client API', function() {
       var c = helpers.newClient(app);
       c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
         should.not.exist(err);
-        c.getStatus(function(err, status) {
+        c.getStatus({}, function(err, status) {
           should.not.exist(err);
           status.wallet.status.should.equal('complete');
           c.credentials.walletId.should.equal('4d32f0737a05f072');
@@ -3308,7 +3282,7 @@ describe('client API', function() {
       var c = helpers.newClient(app);
       c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
         should.not.exist(err);
-        c.getStatus(function(err, status) {
+        c.getStatus({}, function(err, status) {
           should.not.exist(err);
           status.wallet.status.should.equal('complete');
           c.credentials.sharedEncryptingKey.should.equal('Ou2j4kq3z1w4yTr9YybVxg==');
@@ -3320,7 +3294,7 @@ describe('client API', function() {
             c2.credentials.sharedEncryptingKey.should.equal('Ou2j4kq3z1w4yTr9YybVxg==');
 
             // This should pull the non-temporary keys
-            c2.getStatus(function(err, status) {
+            c2.getStatus({}, function(err, status) {
               should.not.exist(err);
               status.wallet.status.should.equal('complete');
               c2.createAddress(function(err, x0) {
@@ -3343,7 +3317,7 @@ describe('client API', function() {
       var c = helpers.newClient(app);
       c.createWalletFromOldCopay(t.username, t.password, t.ls[w], function(err) {
         should.not.exist(err);
-        c.getStatus(function(err, status) {
+        c.getStatus({}, function(err, status) {
           should.not.exist(err);
           status.wallet.status.should.equal('complete');
           c.credentials.sharedEncryptingKey.should.equal(key);
@@ -3354,7 +3328,7 @@ describe('client API', function() {
             should.not.exist(err);
             c2.credentials.sharedEncryptingKey.should.equal(key);
 
-            c2.getStatus(function(err, status) {
+            c2.getStatus({}, function(err, status) {
               should.not.exist(err);
               status.wallet.status.should.equal('complete');
 
@@ -3365,7 +3339,7 @@ describe('client API', function() {
                 c3.credentials.sharedEncryptingKey.should.equal(key);
 
                 // This should pull the non-temporary keys
-                c3.getStatus(function(err, status) {
+                c3.getStatus({}, function(err, status) {
                   should.not.exist(err);
                   status.wallet.status.should.equal('complete');
                   done();
@@ -3407,14 +3381,14 @@ describe('client API', function() {
           recoveryClient.import(c.export());
           recoveryClient.recreateWallet(function(err) {
             should.not.exist(err);
-            recoveryClient.getStatus(function(err, status) {
+            recoveryClient.getStatus({}, function(err, status) {
               should.not.exist(err);
               _.pluck(status.wallet.copayers, 'name').sort().should.deep.equal(['123', '234', '345']);
               var t2 = ImportData.copayers[1];
               var c2p = helpers.newClient(newApp);
               c2p.createWalletFromOldCopay(t2.username, t2.password, t2.ls[w], function(err) {
                 should.not.exist(err);
-                c2p.getStatus(function(err, status) {
+                c2p.getStatus({}, function(err, status) {
                   should.not.exist(err);
                   _.pluck(status.wallet.copayers, 'name').sort().should.deep.equal(['123', '234', '345']);
                   done();
