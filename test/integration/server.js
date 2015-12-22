@@ -1417,6 +1417,7 @@ describe('Wallet service', function() {
           balance.lockedAmount.should.equal(0);
           balance.availableAmount.should.equal(helpers.toSatoshi(6));
           balance.totalBytesToSendMax.should.equal(578);
+          balance.totalBytesToSendConfirmedMax.should.equal(418);
 
           balance.totalConfirmedAmount.should.equal(helpers.toSatoshi(4));
           balance.lockedConfirmedAmount.should.equal(0);
@@ -2555,7 +2556,7 @@ describe('Wallet service', function() {
         });
       });
 
-      it.only('should be able to send max amount', function(done) {
+      it('should be able to send max amount', function(done) {
         helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
           server.getBalance({}, function(err, balance) {
             should.not.exist(err);
@@ -2595,6 +2596,7 @@ describe('Wallet service', function() {
               balance.lockedAmount.should.equal(helpers.toSatoshi(4));
               balance.availableAmount.should.equal(helpers.toSatoshi(5));
               balance.totalBytesToSendMax.should.equal(1653);
+              balance.totalBytesToSendConfirmedMax.should.equal(1653);
               var fee = parseInt((balance.totalBytesToSendMax * 2000 / 1000).toFixed(0));
               var max = balance.availableAmount - fee;
               var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max / 1e8, TestData.copayers[0].privKey_1H_0, {
@@ -2611,6 +2613,38 @@ describe('Wallet service', function() {
                   balance.lockedAmount.should.equal(helpers.toSatoshi(9));
                   done();
                 });
+              });
+            });
+          });
+        });
+      });
+
+      it('should be able to send max confirmed', function(done) {
+        helpers.stubUtxos(server, wallet, [1, 1, 'u1', 'u1'], function() {
+          server.getBalance({}, function(err, balance) {
+            should.not.exist(err);
+            balance.totalAmount.should.equal(helpers.toSatoshi(4));
+            balance.totalConfirmedAmount.should.equal(helpers.toSatoshi(2));
+            balance.lockedAmount.should.equal(0);
+            balance.availableAmount.should.equal(helpers.toSatoshi(4));
+            balance.availableConfirmedAmount.should.equal(helpers.toSatoshi(2));
+            balance.totalBytesToSendMax.should.equal(1342);
+            balance.totalBytesToSendConfirmedMax.should.equal(720);
+            var fee = parseInt((balance.totalBytesToSendConfirmedMax * 10000 / 1000).toFixed(0));
+            var max = balance.availableConfirmedAmount - fee;
+            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max / 1e8, TestData.copayers[0].privKey_1H_0);
+            server.createTxLegacy(txOpts, function(err, tx) {
+              should.not.exist(err);
+              should.exist(tx);
+              tx.amount.should.equal(max);
+              var estimatedFee = 720 * 10000 / 1000;
+              tx.fee.should.be.within(0.9 * estimatedFee, 1.1 * estimatedFee);
+              server.getBalance({}, function(err, balance) {
+                should.not.exist(err);
+                balance.lockedAmount.should.equal(helpers.toSatoshi(2));
+                balance.availableConfirmedAmount.should.equal(0);
+                balance.availableAmount.should.equal(helpers.toSatoshi(2));
+                done();
               });
             });
           });
