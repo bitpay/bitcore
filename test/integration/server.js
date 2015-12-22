@@ -2555,7 +2555,7 @@ describe('Wallet service', function() {
         });
       });
 
-      it('should be able to send max amount', function(done) {
+      it.only('should be able to send max amount', function(done) {
         helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
           server.getBalance({}, function(err, balance) {
             should.not.exist(err);
@@ -2563,6 +2563,7 @@ describe('Wallet service', function() {
             balance.lockedAmount.should.equal(0);
             balance.availableAmount.should.equal(helpers.toSatoshi(9));
             balance.totalBytesToSendMax.should.equal(2896);
+            balance.totalBytesToSendConfirmedMax.should.equal(2896);
             var fee = parseInt((balance.totalBytesToSendMax * 10000 / 1000).toFixed(0));
             var max = balance.availableAmount - fee;
             var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max / 1e8, TestData.copayers[0].privKey_1H_0);
