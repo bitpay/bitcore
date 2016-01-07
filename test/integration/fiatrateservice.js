@@ -14,7 +14,7 @@ var helpers = require('./helpers');
 
 var FiatRateService = require('../../lib/fiatrateservice');
 
-describe('Fiat rate service', function() {
+describe.only('Fiat rate service', function() {
   var service, request;
 
   before(function(done) {
@@ -34,7 +34,7 @@ describe('Fiat rate service', function() {
       }, done);
     });
   });
-  describe.only('#getRate', function() {
+  describe('#getRate', function() {
     it('should get current rate', function(done) {
       service.storage.storeFiatRate('BitPay', [{
         code: 'USD',
@@ -43,7 +43,81 @@ describe('Fiat rate service', function() {
         should.not.exist(err);
         service.getRate('USD', {}, function(err, res) {
           should.not.exist(err);
-          res.rate.value.should.equal(123.45);
+          res.rate.should.equal(123.45);
+          done();
+        });
+      });
+    });
+    it('should get current for different currency', function(done) {
+      service.storage.storeFiatRate('BitPay', [{
+        code: 'USD',
+        value: 123.45,
+      }], function(err) {
+        should.not.exist(err);
+        service.storage.storeFiatRate('BitPay', [{
+          code: 'EUR',
+          value: 345.67,
+        }], function(err) {
+          should.not.exist(err);
+          service.getRate('EUR', {}, function(err, res) {
+            should.not.exist(err);
+            res.rate.should.equal(345.67);
+            done();
+          });
+        });
+      });
+    });
+    it('should get rate for specific ts', function(done) {
+      var clock = sinon.useFakeTimers(0, 'Date');
+      service.storage.storeFiatRate('BitPay', [{
+        code: 'USD',
+        value: 123.45,
+      }], function(err) {
+        should.not.exist(err);
+        clock.tick(100);
+        service.storage.storeFiatRate('BitPay', [{
+          code: 'USD',
+          value: 345.67,
+        }], function(err) {
+          should.not.exist(err);
+          service.getRate('USD', {
+            ts: 50,
+          }, function(err, res) {
+            should.not.exist(err);
+            res.rate.should.equal(123.45);
+            clock.restore();
+            done();
+          });
+        });
+      });
+    });
+
+    it('should get rates for a series of ts', function(done) {
+      var clock = sinon.useFakeTimers(0, 'Date');
+      async.each([1.00, 2.00, 3.00, 4.00], function(value, next) {
+        clock.tick(100);
+        service.storage.storeFiatRate('BitPay', [{
+          code: 'USD',
+          value: value,
+        }, {
+          code: 'EUR',
+          value: value,
+        }], next);
+      }, function(err) {
+        should.not.exist(err);
+        service.getRate('USD', {
+          ts: [50, 100, 500],
+        }, function(err, res) {
+          should.not.exist(err);
+          res.length.should.equal(3);
+
+          res[0].ts.should.equal(50);
+          should.not.exist(res[0].rate);
+          res[1].ts.should.equal(100);
+          res[1].rate.should.equal(1.00);
+          res[2].ts.should.equal(500);
+          res[2].rate.should.equal(4.00);
+          clock.restore();
           done();
         });
       });
