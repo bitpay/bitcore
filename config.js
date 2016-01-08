@@ -45,6 +45,17 @@ var config = {
       url: 'https://test-insight.bitpay.com:443',
     },
   },
+  pushNotificationsOpts: {
+    templatePath: './lib/templates',
+    defaultLanguage: 'en',
+    defaultUnit: 'btc',
+    subjectPrefix: '',
+    publicTxUrlTemplate: {
+      livenet: 'https://insight.bitpay.com/tx/{{txid}}',
+      testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
+    },
+    pushServerUrl: 'http://192.168.1.143:8000/send',
+  },
   // To use email notifications uncomment this:
   // emailOpts: {
   //  host: 'localhost',
@@ -60,5 +71,6 @@ var config = {
   //    testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
   //  },
   //},
+
 };
 module.exports = config;
