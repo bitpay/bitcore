@@ -209,5 +209,39 @@ describe('Fiat rate service', function() {
         });
       });
     });
+
+    it('should not stop when failing to fetch provider', function(done) {
+      var clock = sinon.useFakeTimers(100, 'Date');
+      var bitstamp = {
+        last: 120.00,
+      };
+      request.get.withArgs({
+        url: 'https://bitpay.com/api/rates/',
+        json: true
+      }).yields('dummy error', null, null);
+      request.get.withArgs({
+        url: 'https://www.bitstamp.net/api/ticker/',
+        json: true
+      }).yields(null, null, bitstamp);
+
+      service._fetch(function(err) {
+        should.not.exist(err);
+        service.getRate('USD', {}, function(err, res) {
+          should.not.exist(err);
+          res.ts.should.equal(100);
+          should.not.exist(res.rate)
+          should.not.exist(res.fetchedOn)
+          service.getRate('USD', {
+            provider: 'Bitstamp'
+          }, function(err, res) {
+            should.not.exist(err);
+            res.fetchedOn.should.equal(100);
+            res.rate.should.equal(120.00);
+            clock.restore();
+            done();
+          });
+        });
+      });
+    });
   });
 });
