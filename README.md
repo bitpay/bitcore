@@ -143,7 +143,7 @@ Returns:
 `/v1/addresses/`: Request a new main address from wallet
 
 Returns:
- * Address object: (https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/adddress.js)). Note that `path` is returned so client can derive the address independently and check server's response.
+ * Address object: (https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/address.js)). Note that `path` is returned so client can derive the address independently and check server's response.
 
 `/v1/txproposals/:id/signatures/`: Sign a transaction proposal
 
