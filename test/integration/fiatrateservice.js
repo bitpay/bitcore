@@ -14,7 +14,7 @@ var helpers = require('./helpers');
 
 var FiatRateService = require('../../lib/fiatrateservice');
 
-describe('Fiat rate service', function() {
+describe.only('Fiat rate service', function() {
   var service, request;
 
   before(function(done) {
@@ -28,10 +28,13 @@ describe('Fiat rate service', function() {
       service = new FiatRateService();
       request = sinon.stub();
       request.get = sinon.stub();
-      service.start({
+      service.init({
         storage: helpers.getStorage(),
         request: request,
-      }, done);
+      }, function(err) {
+        should.not.exist(err);
+        service.startCron({}, done);
+      });
     });
   });
   describe('#getRate', function() {
