@@ -67,6 +67,33 @@ describe.only('Fiat rate service', function() {
         });
       });
     });
+
+    it('should get current rate for different provider', function(done) {
+      service.storage.storeFiatRate('BitPay', [{
+        code: 'USD',
+        value: 100.00,
+      }], function(err) {
+        should.not.exist(err);
+        service.storage.storeFiatRate('Bitstamp', [{
+          code: 'USD',
+          value: 200.00,
+        }], function(err) {
+          should.not.exist(err);
+          service.getRate('USD', {}, function(err, res) {
+            should.not.exist(err);
+            res.rate.should.equal(100.00, 'Should use default provider');
+            service.getRate('USD', {
+              provider: 'Bitstamp'
+            }, function(err, res) {
+              should.not.exist(err);
+              res.rate.should.equal(200.00);
+              done();
+            });
+          });
+        });
+      });
+    });
+
     it('should get rate for specific ts', function(done) {
       var clock = sinon.useFakeTimers(0, 'Date');
       clock.tick(20);
