@@ -14,7 +14,7 @@ var helpers = require('./helpers');
 
 var FiatRateService = require('../../lib/fiatrateservice');
 
-describe.only('Fiat rate service', function() {
+describe('Fiat rate service', function() {
   var service, request;
 
   before(function(done) {
@@ -159,6 +159,53 @@ describe.only('Fiat rate service', function() {
 
           clock.restore();
           done();
+        });
+      });
+    });
+  });
+
+  describe('#fetch', function() {
+    it('should fetch rates from all providers', function(done) {
+      var clock = sinon.useFakeTimers(100, 'Date');
+      var bitpay = [{
+        code: 'USD',
+        rate: 123.45,
+      }, {
+        code: 'EUR',
+        rate: 234.56,
+      }];
+      var bitstamp = {
+        last: 120.00,
+      };
+      request.get.withArgs({
+        url: 'https://bitpay.com/api/rates/',
+        json: true
+      }).yields(null, null, bitpay);
+      request.get.withArgs({
+        url: 'https://www.bitstamp.net/api/ticker/',
+        json: true
+      }).yields(null, null, bitstamp);
+
+      service._fetch(function(err) {
+        should.not.exist(err);
+        service.getRate('USD', {}, function(err, res) {
+          should.not.exist(err);
+          res.fetchedOn.should.equal(100);
+          res.rate.should.equal(123.45);
+          service.getRate('USD', {
+            provider: 'Bitstamp'
+          }, function(err, res) {
+            should.not.exist(err);
+            res.fetchedOn.should.equal(100);
+            res.rate.should.equal(120.00);
+            service.getRate('EUR', {}, function(err, res) {
+              should.not.exist(err);
+              res.fetchedOn.should.equal(100);
+              res.rate.should.equal(234.56);
+              clock.restore();
+              done();
+            });
+          });
         });
       });
     });
