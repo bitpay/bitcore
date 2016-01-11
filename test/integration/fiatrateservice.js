@@ -14,7 +14,7 @@ var helpers = require('./helpers');
 
 var FiatRateService = require('../../lib/fiatrateservice');
 
-describe.only('Fiat rate service', function() {
+describe('Fiat rate service', function() {
   var service, request;
 
   before(function(done) {

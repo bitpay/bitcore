@@ -52,6 +52,10 @@ var config = {
     subjectPrefix: '',
     pushServerUrl: 'http://localhost:8000/send',
   },
+  fiatRateServiceOpts: {
+    defaultProvider: 'BitPay',
+    fetchInterval: 15, // in minutes
+  },
   // To use email notifications uncomment this:
   // emailOpts: {
   //  host: 'localhost',
