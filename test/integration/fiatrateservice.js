@@ -48,7 +48,7 @@ describe.only('Fiat rate service', function() {
         });
       });
     });
-    it('should get current for different currency', function(done) {
+    it('should get current rate for different currency', function(done) {
       service.storage.storeFiatRate('BitPay', [{
         code: 'USD',
         value: 123.45,
@@ -69,6 +69,7 @@ describe.only('Fiat rate service', function() {
     });
     it('should get rate for specific ts', function(done) {
       var clock = sinon.useFakeTimers(0, 'Date');
+      clock.tick(20);
       service.storage.storeFiatRate('BitPay', [{
         code: 'USD',
         value: 123.45,
@@ -84,7 +85,9 @@ describe.only('Fiat rate service', function() {
             ts: 50,
           }, function(err, res) {
             should.not.exist(err);
+            res.ts.should.equal(50);
             res.rate.should.equal(123.45);
+            res.fetchedOn.should.equal(20);
             clock.restore();
             done();
           });
@@ -106,17 +109,27 @@ describe.only('Fiat rate service', function() {
       }, function(err) {
         should.not.exist(err);
         service.getRate('USD', {
-          ts: [50, 100, 500],
+          ts: [50, 100, 199, 500],
         }, function(err, res) {
           should.not.exist(err);
-          res.length.should.equal(3);
+          res.length.should.equal(4);
 
           res[0].ts.should.equal(50);
           should.not.exist(res[0].rate);
+          should.not.exist(res[0].fetchedOn);
+
           res[1].ts.should.equal(100);
           res[1].rate.should.equal(1.00);
-          res[2].ts.should.equal(500);
-          res[2].rate.should.equal(4.00);
+          res[1].fetchedOn.should.equal(100);
+
+          res[2].ts.should.equal(199);
+          res[2].rate.should.equal(1.00);
+          res[2].fetchedOn.should.equal(100);
+
+          res[3].ts.should.equal(500);
+          res[3].rate.should.equal(4.00);
+          res[3].fetchedOn.should.equal(400);
+
           clock.restore();
           done();
         });
