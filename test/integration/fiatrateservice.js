@@ -250,7 +250,8 @@ describe('Fiat rate service', function() {
           res.ts.should.equal(100);
           should.not.exist(res.rate)
           should.not.exist(res.fetchedOn)
-          service.getRate('USD', {
+          service.getRate({
+            code: 'USD',
             provider: 'Bitstamp'
           }, function(err, res) {
             should.not.exist(err);
