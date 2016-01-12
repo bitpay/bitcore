@@ -54,7 +54,7 @@ describe('Push notifications', function() {
               storage: helpers.getStorage(),
               request: requestStub,
               pushNotificationsOpts: {
-                templatePath: '../lib/templates',
+                templatePath: './lib/templates',
                 defaultLanguage: 'en',
                 defaultUnit: 'btc',
                 subjectPrefix: '',
@@ -174,7 +174,7 @@ describe('Push notifications', function() {
               storage: helpers.getStorage(),
               request: requestStub,
               pushNotificationsOpts: {
-                templatePath: '../lib/templates',
+                templatePath: './lib/templates',
                 defaultLanguage: 'en',
                 defaultUnit: 'btc',
                 subjectPrefix: '',
