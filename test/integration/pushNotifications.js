@@ -11,7 +11,7 @@ log.debug = log.verbose;
 log.level = 'info';
 
 var WalletService = require('../../lib/server');
-var PushNotificationsService = require('../../lib/pushNotificationsService');
+var PushNotificationsService = require('../../lib/pushnotificationsservice');
 
 var TestData = require('../testdata');
 var helpers = require('./helpers');
