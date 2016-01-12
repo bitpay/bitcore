@@ -17,7 +17,7 @@ var TestData = require('../testdata');
 var helpers = require('./helpers');
 
 describe('Push notifications', function() {
-  var server, wallet, requestStub, pushNotificationsService;
+  var server, wallet, requestStub, pushNotificationsService, walletId;
 
   before(function(done) {
     helpers.before(done);
@@ -151,7 +151,6 @@ describe('Push notifications', function() {
         helpers.createAndJoinWallet(2, 3, function(s, w) {
           server = s;
           wallet = w;
-
           var i = 0;
           async.eachSeries(w.copayers, function(copayer, next) {
             helpers.getAuthServer(copayer.id, function(server) {
@@ -269,8 +268,6 @@ describe('Push notifications', function() {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, TestData.copayers[0].privKey_1H_0, {
           message: 'some message'
         });
-        // server.createTxLegacy(txOpts, function(err, tx) {
-        //   should.not.exist(err);
         server.createAddress({}, function(err, address) {
           should.not.exist(err);
           server._notify('NewTxProposal', {
@@ -289,7 +286,6 @@ describe('Push notifications', function() {
           });
         });
       });
-      // });
     });
 
     it('should notify copayers a tx has been finally rejected', function(done) {
@@ -332,71 +328,102 @@ describe('Push notifications', function() {
         });
       });
     });
+  });
 
-    it('should notify copayers when a new copayer just joined into your wallet ', function(done) {
-      helpers.stubUtxos(server, wallet, 1, function() {
-        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, TestData.copayers[0].privKey_1H_0, {
-          message: 'some message'
-        });
-
-        var txpId;
-        async.waterfall([
-
-          function(next) {
-            server.createTxLegacy(txOpts, next);
-          },
-          function(txp, next) {
-            txpId = txp.id;
-            async.eachSeries(_.range(1, 3), function(i, next) {
-              var copayer = TestData.copayers[i];
-              helpers.getAuthServer(copayer.id44, function(server) {
-                server.rejectTx({
-                  txProposalId: txp.id,
-                }, next);
-              });
-            }, next);
-          },
-        ], function(err) {
+  describe('joinWallet', function() {
+    beforeEach(function(done) {
+      helpers.beforeEach(function(res) {
+        server = new WalletService();
+        var walletOpts = {
+          name: 'my wallet',
+          m: 1,
+          n: 3,
+          pubKey: TestData.keyPair.pub,
+        };
+        server.createWallet(walletOpts, function(err, wId) {
           should.not.exist(err);
+          walletId = wId;
+          should.exist(walletId);
+          requestStub = sinon.stub();
+          requestStub.yields();
 
-          setTimeout(function() {
-            var calls = requestStub.getCalls();
-            var args = _.map(_.takeRight(calls, 2), function(c) {
-              return c.args[0];
-            });
-
-            args[0].body.android.data.title.should.contain('Payment proposal rejected');
-            args[0].body.android.data.message.should.contain('copayer 2, copayer 3');
-            args[0].body.android.data.message.should.not.contain('copayer 1');
+          pushNotificationsService = new PushNotificationsService();
+          pushNotificationsService.start({
+            lockOpts: {},
+            messageBroker: server.messageBroker,
+            storage: helpers.getStorage(),
+            request: requestStub,
+            pushNotificationsOpts: {
+              templatePath: './lib/templates',
+              defaultLanguage: 'en',
+              defaultUnit: 'btc',
+              subjectPrefix: '',
+              publicTxUrlTemplate: {
+                livenet: 'https://insight.bitpay.com/tx/{{txid}}',
+                testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
+              },
+              pushServerUrl: 'http://192.168.1.111:8000/send',
+            },
+          }, function(err) {
+            should.not.exist(err);
             done();
-          }, 100);
+          });
         });
       });
     });
 
+    it.only('should notify copayers when a new copayer just joined into your wallet except the one who joined', function(done) {
+      async.eachSeries(_.range(3), function(i, next) {
+        var copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: walletId,
+          name: 'copayer ' + (i + 1),
+          xPubKey: TestData.copayers[i].xPubKey_44H_0H_0H,
+          requestPubKey: TestData.copayers[i].pubKey_1H_0,
+          customData: 'custom data ' + (i + 1),
+        });
 
-    // it('should join existing wallet', function(done) {
-    //   var copayerOpts = helpers.getSignedCopayerOpts({
-    //     walletId: walletId,
-    //     name: 'me',
-    //     xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
-    //     requestPubKey: TestData.copayers[0].pubKey_1H_0,
-    //     customData: 'dummy custom data',
-    //   });
-    //   server.joinWallet(copayerOpts, function(err, result) {
-    //     should.not.exist(err);
-    //     setTimeout(function() {
-    //       var calls = requestStub.getCalls();
-    //       var args = _.map(_.takeRight(calls, 2), function(c) {
-    //         return c.args[0];
-    //       });
-    //       console.log(args);
+        server.joinWallet(copayerOpts, next);
+      }, function(err) {
+        should.not.exist(err);
+        setTimeout(function() {
+          var calls = requestStub.getCalls();
+          var args = _.map(calls, function(c) {
+            return c.args[0];
+          });
 
-    //       done();
-    //     }, 100);
-    //   });
-    // });
+          var argu = _.compact(_.map(args, function(a) {
+            if (a.body.android.data.title == 'New copayer')
+              return a;
+          }));
+
+          server.getWallet(null, function(err, w) {
+            /*
+              First call - copayer2 joined
+              copayer2 should notify to copayer1
+              copayer2 should NOT be notifyed
+            */
+            w.copayers[0].id.should.contain((argu[0].body.users[0]).split('$')[1]);
+            w.copayers[1].id.should.not.contain((argu[0].body.users[0]).split('$')[1]);
+
+            /*
+              Second call - copayer3 joined
+              copayer3 should notify to copayer1
+            */
+            w.copayers[0].id.should.contain((argu[1].body.users[0]).split('$')[1]);
+
+            /*
+              Third call - copayer3 joined
+              copayer3 should notify to copayer2
+            */
+            w.copayers[1].id.should.contain((argu[2].body.users[0]).split('$')[1]);
+
+            // copayer3 should NOT notify any other copayer
+            w.copayers[2].id.should.not.contain((argu[1].body.users[0]).split('$')[1]);
+            w.copayers[2].id.should.not.contain((argu[2].body.users[0]).split('$')[1]);
+            done();
+          });
+        }, 100);
+      });
+    });
   });
-
-
 });
