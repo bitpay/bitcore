@@ -38,6 +38,7 @@ describe('Push notifications', function() {
             helpers.getAuthServer(copayer.id, function(server) {
               server.savePreferences({
                 email: 'copayer' + (++i) + '@domain.com',
+                language: 'en',
                 unit: 'bit',
               }, next);
             });
@@ -74,33 +75,37 @@ describe('Push notifications', function() {
     });
 
     it('should build each notifications using preferences of the copayers', function(done) {
-      server.createAddress({}, function(err, address) {
-        should.not.exist(err);
+      server.savePreferences({
+        language: 'en',
+        unit: 'bit',
+      }, function(err) {
+        server.createAddress({}, function(err, address) {
+          should.not.exist(err);
 
-        // Simulate incoming tx notification
-        server._notify('NewIncomingTx', {
-          txid: '999',
-          address: address,
-          amount: 12300000,
-        }, {
-          isGlobal: true
-        }, function(err) {
-          setTimeout(function() {
-            var calls = requestStub.getCalls();
-            var args = _.map(calls, function(c) {
-              return c.args[0];
-            });
-
-            args[0].body.android.data.title.should.contain('New payment received');
-            args[0].body.android.data.message.should.contain('123,000');
-
-            done();
-          }, 100);
+          // Simulate incoming tx notification
+          server._notify('NewIncomingTx', {
+            txid: '999',
+            address: address,
+            amount: 12300000,
+          }, {
+            isGlobal: true
+          }, function(err) {
+            setTimeout(function() {
+              var calls = requestStub.getCalls();
+              var args = _.map(calls, function(c) {
+                return c.args[0];
+              });
+              calls.length.should.equal(1);
+              args[0].body.android.data.title.should.contain('New payment received');
+              args[0].body.android.data.message.should.contain('123,000');
+              done();
+            }, 100);
+          });
         });
       });
     });
 
-    it('number of calls should be 0', function(done) {
+    it('should not notify auto-payments to creator', function(done) {
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
 
@@ -115,14 +120,13 @@ describe('Push notifications', function() {
           setTimeout(function() {
             var calls = requestStub.getCalls();
             calls.length.should.equal(0);
-
             done();
           }, 100);
         });
       });
     });
 
-    it('number of calls should be 1', function(done) {
+    it('should notify copayers when payment is received', function(done) {
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
 
@@ -137,7 +141,6 @@ describe('Push notifications', function() {
           setTimeout(function() {
             var calls = requestStub.getCalls();
             calls.length.should.equal(1);
-
             done();
           }, 100);
         });
@@ -193,33 +196,46 @@ describe('Push notifications', function() {
     });
 
     it('should build each notifications using preferences of the copayers', function(done) {
-      server.createAddress({}, function(err, address) {
-        should.not.exist(err);
+      server.savePreferences({
+        email: 'copayer1@domain.com',
+        language: 'es',
+        unit: 'btc',
+      }, function(err) {
+        server.createAddress({}, function(err, address) {
+          should.not.exist(err);
 
-        // Simulate incoming tx notification
-        server._notify('NewIncomingTx', {
-          txid: '999',
-          address: address,
-          amount: 12300000,
-        }, {
-          isGlobal: true
-        }, function(err) {
-          setTimeout(function() {
-            var calls = requestStub.getCalls();
-            var args = _.map(calls, function(c) {
-              return c.args[0];
-            });
+          // Simulate incoming tx notification
+          server._notify('NewIncomingTx', {
+            txid: '999',
+            address: address,
+            amount: 12300000,
+          }, {
+            isGlobal: true
+          }, function(err) {
+            setTimeout(function() {
+              var calls = requestStub.getCalls();
+              var args = _.map(calls, function(c) {
+                return c.args[0];
+              });
 
-            args[0].body.android.data.title.should.contain('New payment received');
-            args[0].body.android.data.message.should.contain('123,000');
+              calls.length.should.equal(3);
 
-            done();
-          }, 100);
+              args[0].body.android.data.title.should.contain('Nuevo pago recibido');
+              args[0].body.android.data.message.should.contain('0.123');
+
+              args[1].body.android.data.title.should.contain('New payment received');
+              args[1].body.android.data.message.should.contain('123,000');
+
+              args[2].body.android.data.title.should.contain('New payment received');
+              args[2].body.android.data.message.should.contain('123,000');
+              done();
+            }, 100);
+          });
         });
       });
     });
 
-    it('number of calls should be 3', function(done) {
+    it('should notify copayers when payment is received', function(done) {
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
 
@@ -241,7 +257,7 @@ describe('Push notifications', function() {
       });
     });
 
-    it('number of calls should be 2', function(done) {
+    it('should not notify auto-payments to creator', function(done) {
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
 
@@ -328,6 +344,63 @@ describe('Push notifications', function() {
         });
       });
     });
+
+    it('should notify copayers a new outgoing tx has been created', function(done) {
+      helpers.stubUtxos(server, wallet, 1, function() {
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, TestData.copayers[0].privKey_1H_0, {
+          message: 'some message'
+        });
+
+        var txp;
+        async.waterfall([
+
+          function(next) {
+            server.createTxLegacy(txOpts, next);
+          },
+          function(t, next) {
+            txp = t;
+            async.eachSeries(_.range(1, 3), function(i, next) {
+              var copayer = TestData.copayers[i];
+              helpers.getAuthServer(copayer.id44, function(s) {
+                server = s;
+                var signatures = helpers.clientSign(txp, copayer.xPrivKey_44H_0H_0H);
+                server.signTx({
+                  txProposalId: txp.id,
+                  signatures: signatures,
+                }, function(err, t) {
+                  txp = t;
+                  next();
+                });
+              });
+            }, next);
+          },
+          function(next) {
+            helpers.stubBroadcast();
+            server.broadcastTx({
+              txProposalId: txp.id,
+            }, next);
+          },
+        ], function(err) {
+          should.not.exist(err);
+
+          setTimeout(function() {
+            var calls = requestStub.getCalls();
+            var args = _.map(_.takeRight(calls, 2), function(c) {
+              return c.args[0];
+            });
+
+            args[0].body.android.data.title.should.contain('Payment sent');
+            args[1].body.android.data.title.should.contain('Payment sent');
+
+            server.getWallet(null, function(err, w) {
+              server.copayerId.should.not.equal((args[0].body.users[0]).split('$')[1]);
+              server.copayerId.should.not.equal((args[1].body.users[0]).split('$')[1]);
+              done();
+            });
+          }, 100);
+        });
+      });
+    });
   });
 
   describe('joinWallet', function() {
@@ -372,7 +445,7 @@ describe('Push notifications', function() {
       });
     });
 
-    it.only('should notify copayers when a new copayer just joined into your wallet except the one who joined', function(done) {
+    it('should notify copayers when a new copayer just joined into your wallet except the one who joined', function(done) {
       async.eachSeries(_.range(3), function(i, next) {
         var copayerOpts = helpers.getSignedCopayerOpts({
           walletId: walletId,
