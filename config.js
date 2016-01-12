@@ -54,7 +54,7 @@ var config = {
   },
   fiatRateServiceOpts: {
     defaultProvider: 'BitPay',
-    fetchInterval: 15, // in minutes
+    fetchInterval: 10, // in minutes
   },
   // To use email notifications uncomment this:
   // emailOpts: {

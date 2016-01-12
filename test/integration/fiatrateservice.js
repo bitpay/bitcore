@@ -44,7 +44,9 @@ describe('Fiat rate service', function() {
         value: 123.45,
       }], function(err) {
         should.not.exist(err);
-        service.getRate('USD', {}, function(err, res) {
+        service.getRate({
+          code: 'USD'
+        }, function(err, res) {
           should.not.exist(err);
           res.rate.should.equal(123.45);
           done();
@@ -62,7 +64,9 @@ describe('Fiat rate service', function() {
           value: 345.67,
         }], function(err) {
           should.not.exist(err);
-          service.getRate('EUR', {}, function(err, res) {
+          service.getRate({
+            code: 'EUR'
+          }, function(err, res) {
             should.not.exist(err);
             res.rate.should.equal(345.67);
             done();
@@ -82,11 +86,14 @@ describe('Fiat rate service', function() {
           value: 200.00,
         }], function(err) {
           should.not.exist(err);
-          service.getRate('USD', {}, function(err, res) {
+          service.getRate({
+            code: 'USD'
+          }, function(err, res) {
             should.not.exist(err);
             res.rate.should.equal(100.00, 'Should use default provider');
-            service.getRate('USD', {
-              provider: 'Bitstamp'
+            service.getRate({
+              code: 'USD',
+              provider: 'Bitstamp',
             }, function(err, res) {
               should.not.exist(err);
               res.rate.should.equal(200.00);
@@ -111,7 +118,8 @@ describe('Fiat rate service', function() {
           value: 345.67,
         }], function(err) {
           should.not.exist(err);
-          service.getRate('USD', {
+          service.getRate({
+            code: 'USD',
             ts: 50,
           }, function(err, res) {
             should.not.exist(err);
@@ -138,7 +146,8 @@ describe('Fiat rate service', function() {
         }], next);
       }, function(err) {
         should.not.exist(err);
-        service.getRate('USD', {
+        service.getRate({
+          code: 'USD',
           ts: [50, 100, 199, 500],
         }, function(err, res) {
           should.not.exist(err);
@@ -191,17 +200,22 @@ describe('Fiat rate service', function() {
 
       service._fetch(function(err) {
         should.not.exist(err);
-        service.getRate('USD', {}, function(err, res) {
+        service.getRate({
+          code: 'USD'
+        }, function(err, res) {
           should.not.exist(err);
           res.fetchedOn.should.equal(100);
           res.rate.should.equal(123.45);
-          service.getRate('USD', {
-            provider: 'Bitstamp'
+          service.getRate({
+            code: 'USD',
+            provider: 'Bitstamp',
           }, function(err, res) {
             should.not.exist(err);
             res.fetchedOn.should.equal(100);
             res.rate.should.equal(120.00);
-            service.getRate('EUR', {}, function(err, res) {
+            service.getRate({
+              code: 'EUR'
+            }, function(err, res) {
               should.not.exist(err);
               res.fetchedOn.should.equal(100);
               res.rate.should.equal(234.56);
@@ -229,7 +243,9 @@ describe('Fiat rate service', function() {
 
       service._fetch(function(err) {
         should.not.exist(err);
-        service.getRate('USD', {}, function(err, res) {
+        service.getRate({
+          code: 'USD'
+        }, function(err, res) {
           should.not.exist(err);
           res.ts.should.equal(100);
           should.not.exist(res.rate)
