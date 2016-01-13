@@ -34,5 +34,6 @@ run_program messagebroker/messagebroker.js pids/messagebroker.pid logs/messagebr
 run_program bcmonitor/bcmonitor.js pids/bcmonitor.pid logs/bcmonitor.log
 run_program emailservice/emailservice.js pids/emailservice.pid logs/emailservice.log
 run_program pushnotificationsservice/pushnotificationsservice.js pids/pushnotificationsservice.pid logs/pushnotificationsservice.log
+run_program fiatrateservice/fiatrateservice.js pids/fiatrateservice.pid logs/fiatrateservice.log
 run_program bws.js pids/bws.pid logs/bws.log
 
