@@ -4651,7 +4651,8 @@ describe('Wallet service', function() {
           message: 'message #2'
         }];
         var txOpts = helpers.createProposalOpts(Model.TxProposalLegacy.Types.MULTIPLEOUTPUTS, outputs, TestData.copayers[0].privKey_1H_0, {
-          message: 'some message'
+          message: 'some message',
+          customData: { "test": true }
         });
         server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(err);
@@ -4713,6 +4714,8 @@ describe('Wallet service', function() {
                 tx.outputs[1].amount.should.equal(helpers.toSatoshi(30));
                 should.exist(tx.outputs[1].message);
                 tx.outputs[1].message.should.equal('message #2');
+                should.exist(tx.customData);
+                should.exist(tx.customData["test"]);
                 done();
               });
             });
