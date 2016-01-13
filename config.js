@@ -50,11 +50,7 @@ var config = {
     defaultLanguage: 'en',
     defaultUnit: 'btc',
     subjectPrefix: '',
-    publicTxUrlTemplate: {
-      livenet: 'https://insight.bitpay.com/tx/{{txid}}',
-      testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
-    },
-    pushServerUrl: 'http://192.168.1.111:8000/send',
+    pushServerUrl: 'http://localhost:8000/send',
   },
   // To use email notifications uncomment this:
   // emailOpts: {

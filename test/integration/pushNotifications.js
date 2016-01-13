@@ -59,11 +59,8 @@ describe('Push notifications', function() {
                 defaultLanguage: 'en',
                 defaultUnit: 'btc',
                 subjectPrefix: '',
-                publicTxUrlTemplate: {
-                  livenet: 'https://insight.bitpay.com/tx/{{txid}}',
-                  testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
-                },
-                pushServerUrl: 'http://192.168.1.111:8000/send',
+
+                pushServerUrl: 'http://localhost:8000/send',
               },
             }, function(err) {
               should.not.exist(err);
@@ -180,11 +177,8 @@ describe('Push notifications', function() {
                 defaultLanguage: 'en',
                 defaultUnit: 'btc',
                 subjectPrefix: '',
-                publicTxUrlTemplate: {
-                  livenet: 'https://insight.bitpay.com/tx/{{txid}}',
-                  testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
-                },
-                pushServerUrl: 'http://192.168.1.111:8000/send',
+
+                pushServerUrl: 'http://localhost:8000/send',
               },
             }, function(err) {
               should.not.exist(err);
@@ -392,11 +386,9 @@ describe('Push notifications', function() {
             args[0].body.android.data.title.should.contain('Payment sent');
             args[1].body.android.data.title.should.contain('Payment sent');
 
-            server.getWallet(null, function(err, w) {
-              server.copayerId.should.not.equal((args[0].body.users[0]).split('$')[1]);
-              server.copayerId.should.not.equal((args[1].body.users[0]).split('$')[1]);
-              done();
-            });
+            server.copayerId.should.not.equal((args[0].body.users[0]).split('$')[1]);
+            server.copayerId.should.not.equal((args[1].body.users[0]).split('$')[1]);
+            done();
           }, 100);
         });
       });
@@ -431,11 +423,7 @@ describe('Push notifications', function() {
               defaultLanguage: 'en',
               defaultUnit: 'btc',
               subjectPrefix: '',
-              publicTxUrlTemplate: {
-                livenet: 'https://insight.bitpay.com/tx/{{txid}}',
-                testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
-              },
-              pushServerUrl: 'http://192.168.1.111:8000/send',
+              pushServerUrl: 'http://localhost:8000/send',
             },
           }, function(err) {
             should.not.exist(err);
