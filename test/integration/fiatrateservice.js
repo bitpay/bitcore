@@ -174,6 +174,35 @@ describe('Fiat rate service', function() {
         });
       });
     });
+
+    it('should not get rate older than 2hs', function(done) {
+      var clock = sinon.useFakeTimers(0, 'Date');
+      service.storage.storeFiatRate('BitPay', [{
+        code: 'USD',
+        value: 123.45,
+      }], function(err) {
+        should.not.exist(err);
+        clock.tick((120 * 60 - 1) * 1000); // Almost 2 hours
+        service.getRate({
+          code: 'USD',
+        }, function(err, res) {
+          should.not.exist(err);
+          res.rate.should.equal(123.45);
+          res.fetchedOn.should.equal(0);
+          clock.restore();
+          clock.tick(2 * 1000); // 2 seconds later...
+          service.getRate({
+            code: 'USD',
+          }, function(err, res) {
+            should.not.exist(err);
+            should.not.exist(res.rate);
+            clock.restore();
+            done();
+          });
+        });
+      });
+    });
+
   });
 
   describe('#fetch', function() {
