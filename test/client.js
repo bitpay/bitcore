@@ -1257,6 +1257,24 @@ describe('client API', function() {
     });
   });
 
+  describe('Fiat rates', function() {
+    it('should get fiat exchange rate', function(done) {
+      var now = Date.now();
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
+        clients[0].getFiatRate({
+          code: 'USD',
+          ts: now,
+        }, function(err, res) {
+          should.not.exist(err);
+          should.exist(res);
+          res.ts.should.equal(now);
+          should.not.exist(res.rate);
+          done();
+        });
+      });
+    });
+  });
+
   describe('Address Creation', function() {
     it('should be able to create address in 1-of-1 wallet', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
