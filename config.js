@@ -50,7 +50,7 @@ var config = {
     defaultLanguage: 'en',
     defaultUnit: 'btc',
     subjectPrefix: '',
-    pushServerUrl: 'http://localhost:8000/send',
+    pushServerUrl: 'http://localhost:8000',
   },
   fiatRateServiceOpts: {
     defaultProvider: 'BitPay',

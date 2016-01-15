@@ -23,7 +23,7 @@ var WalletService = require('../../lib/server');
 
 var TestData = require('../testdata');
 var helpers = require('./helpers');
-var storage, blockchainExplorer;
+var storage, blockchainExplorer, request;
 
 
 describe('Wallet service', function() {
@@ -34,6 +34,7 @@ describe('Wallet service', function() {
     helpers.beforeEach(function(res) {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
+      request = res.request;
       done();
     });
   });
@@ -5451,4 +5452,50 @@ describe('Wallet service', function() {
       });
     });
   });
+
+  describe('Subscribe/unsubscribe', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 3, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should subscribe copayer to push notifications service', function(done) {
+      request.yields();
+      helpers.getAuthServer(wallet.copayers[0].id, function(server) {
+        should.exist(server);
+        server.pushNotificationsSubscribe({}, function(err, response) {
+          should.not.exist(err);
+          var calls = request.getCalls();
+          calls.length.should.equal(1);
+          var args = _.map(calls, function(c) {
+            return c.args[0];
+          });
+          args[0].body.user.should.contain(wallet.copayers[0].id);
+          done();
+        });
+      });
+    });
+
+    it('should unsubscribe copayer to push notifications service', function(done) {
+      request.yields();
+      helpers.getAuthServer(wallet.copayers[0].id, function(server) {
+        should.exist(server);
+        server.pushNotificationsUnsubscribe({}, function(err, response) {
+          should.not.exist(err);
+          var calls = request.getCalls();
+          calls.length.should.equal(1);
+          var args = _.map(calls, function(c) {
+            return c.args[0];
+          });
+          args[0].body.user.should.contain(wallet.copayers[0].id);
+          done();
+        });
+      });
+    });
+  });
+
 });
