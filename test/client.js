@@ -2001,6 +2001,35 @@ describe('client API', function() {
           });
         });
       });
+
+      it.only('Should send the signed tx in paypro', function(done) {
+        clients[0].getTxProposals({}, function(err, txps) {
+          should.not.exist(err);
+          var changeAddress = txps[0].changeAddress.address;
+          clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
+            should.not.exist(err);
+            clients[1].signTxProposal(xx, function(err, yy, paypro) {
+              should.not.exist(err);
+              yy.status.should.equal('accepted');
+              http.onCall(5).yields(null, TestData.payProAckBuf);
+
+              clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
+                should.not.exist(err);
+                var args = http.lastCall.args[0];
+                var data = BitcorePayPro.Payment.decode(args.body);
+                var pay = new BitcorePayPro();
+                var p = pay.makePayment(data);
+                var rawTx = p.get('transactions');
+console.log('[client.js.2022:rawTx:]',rawTx); //TODO
+
+                var tx = new Bitcore.Transaction(rawTx);
+console.log('[client.js.2023:tx:]',tx); //TODO
+                done();
+              });
+            });
+          });
+        });
+      });
     });
 
     describe('1-of-1 wallet', function() {
