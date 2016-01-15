@@ -1275,6 +1275,33 @@ describe('client API', function() {
     });
   });
 
+  describe('Push notifications', function() {
+    it('should do a post request', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
+        clients[0].pushNotificationsSubscribe({
+            type: 'DEVICE_TYPE',
+            token: 'DEVICE_TOKEN'
+          },
+          function(err, res) {
+            should.not.exist(err);
+            should.exist(res);
+            done();
+          });
+      });
+    });
+
+    it('should do a delete request', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
+        clients[0].pushNotificationsUnsubscribe(
+          'URL',
+          function(err, res) {
+            should.not.exist(err);
+            done();
+          });
+      });
+    });
+  });
+
   describe('Address Creation', function() {
     it('should be able to create address in 1-of-1 wallet', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
@@ -3958,4 +3985,5 @@ describe('client API', function() {
       });
     });
   });
+
 });
