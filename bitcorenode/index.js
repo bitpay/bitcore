@@ -52,13 +52,15 @@ Service.dependencies = ['insight-api'];
  * @returns {Object}
  */
 Service.prototype._readHttpsOptions = function() {
-  if(!this.httpsOptions || !this.httpsOptions.key || !this.httpsOptions.cert) {
+  if (!this.httpsOptions || !this.httpsOptions.key || !this.httpsOptions.cert) {
     throw new Error('Missing https options');
   }
 
   var serverOpts = {};
   serverOpts.key = fs.readFileSync(this.httpsOptions.key);
   serverOpts.cert = fs.readFileSync(this.httpsOptions.cert);
+  serverOpts.ciphers = 'ECDHE-RSA-AES256-SHA:AES256-SHA:RC4-SHA:RC4:HIGH:!MD5:!aNULL:!EDH:!AESGCM';
+  serverOpts.honorCipherOrder = true;
 
   // This sets the intermediate CA certs only if they have all been designated in the config.js
   if (this.httpsOptions.CAinter1 && this.httpsOptions.CAinter2 && this.httpsOptions.CAroot) {
@@ -120,6 +122,7 @@ Service.prototype._startWalletService = function(config, next) {
   }
 
   async.parallel([
+
     function(done) {
       expressApp.start(config, done);
     },
@@ -143,7 +146,7 @@ Service.prototype.start = function(done) {
   var config;
   try {
     config = self._getConfiguration();
-  } catch(err) {
+  } catch (err) {
     return done(err);
   }
 
@@ -160,6 +163,7 @@ Service.prototype.start = function(done) {
   });
 
   async.series([
+
     function(next) {
       // Blockchain Monitor
       var blockChainMonitor = new BlockchainMonitor();
