@@ -1966,7 +1966,6 @@ describe('client API', function() {
         });
       });
 
-
       it('Should send correct refund address', function(done) {
         clients[0].getTxProposals({}, function(err, txps) {
           should.not.exist(err);
@@ -2003,6 +2002,7 @@ describe('client API', function() {
         });
       });
     });
+
     describe('1-of-1 wallet', function() {
       beforeEach(function(done) {
         http = sinon.stub();
