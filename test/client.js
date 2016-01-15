@@ -1957,7 +1957,7 @@ describe('client API', function() {
                 should.not.exist(err);
                 var args = http.lastCall.args[0];
                 args.method.should.equal('POST');
-                args.body.length.should.equal(302);
+                args.body.length.should.equal(447);
                 memo.should.equal('Transaction received by BitPay. Invoice will be marked as paid if the transaction is confirmed.');
                 done();
               });
