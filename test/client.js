@@ -1957,7 +1957,7 @@ describe('client API', function() {
                 should.not.exist(err);
                 var args = http.lastCall.args[0];
                 args.method.should.equal('POST');
-                args.body.length.should.equal(302);
+                args.body.length.should.be.within(440, 460);
                 memo.should.equal('Transaction received by BitPay. Invoice will be marked as paid if the transaction is confirmed.');
                 done();
               });
@@ -1995,6 +1995,35 @@ describe('client API', function() {
                 s = new Bitcore.Script(s.buffer.slice(s.offset, s.limit));
                 var addr = new Bitcore.Address.fromScript(s, 'testnet');
                 addr.toString().should.equal(changeAddress);
+                done();
+              });
+            });
+          });
+        });
+      });
+
+      it('Should send the signed tx in paypro', function(done) {
+        clients[0].getTxProposals({}, function(err, txps) {
+          should.not.exist(err);
+          var changeAddress = txps[0].changeAddress.address;
+          clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
+            should.not.exist(err);
+            clients[1].signTxProposal(xx, function(err, yy, paypro) {
+              should.not.exist(err);
+              yy.status.should.equal('accepted');
+              http.onCall(5).yields(null, TestData.payProAckBuf);
+
+              clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
+
+                should.not.exist(err);
+                var args = http.lastCall.args[0];
+                var data = BitcorePayPro.Payment.decode(args.body);
+                var pay = new BitcorePayPro();
+                var p = pay.makePayment(data);
+                var rawTx = p.get('transactions')[0].toBuffer();
+                var tx = new Bitcore.Transaction(rawTx);
+                var script = tx.inputs[0].script;
+                script.isScriptHashIn().should.equal(true);
                 done();
               });
             });
@@ -2066,6 +2095,30 @@ describe('client API', function() {
         });
       });
 
+      it('Should send the signed tx in paypro', function(done) {
+        clients[0].getTxProposals({}, function(err, txps) {
+          should.not.exist(err);
+          var changeAddress = txps[0].changeAddress.address;
+          clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
+            should.not.exist(err);
+            xx.status.should.equal('accepted');
+            http.onCall(5).yields(null, TestData.payProAckBuf);
+
+            clients[0].broadcastTxProposal(xx, function(err, zz, memo) {
+              should.not.exist(err);
+              var args = http.lastCall.args[0];
+              var data = BitcorePayPro.Payment.decode(args.body);
+              var pay = new BitcorePayPro();
+              var p = pay.makePayment(data);
+              var rawTx = p.get('transactions')[0].toBuffer();
+              var tx = new Bitcore.Transaction(rawTx);
+              var script = tx.inputs[0].script;
+              script.isPublicKeyHashIn().should.equal(true);
+              done();
+            });
+          });
+        });
+      });
     });
   });
 
