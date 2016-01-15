@@ -1952,6 +1952,7 @@ describe('Wallet service', function() {
     describe('Legacy', function() {
 
       var server, wallet;
+
       beforeEach(function(done) {
         helpers.createAndJoinWallet(2, 3, function(s, w) {
           server = s;
@@ -1964,7 +1965,7 @@ describe('Wallet service', function() {
         helpers.stubUtxos(server, wallet, [100, 200], function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, TestData.copayers[0].privKey_1H_0, {
             message: 'some message',
-            customData: 'some custom data'
+            customData: 'some custom data',
           });
           server.createTxLegacy(txOpts, function(err, tx) {
             should.not.exist(err);
@@ -4652,7 +4653,9 @@ describe('Wallet service', function() {
         }];
         var txOpts = helpers.createProposalOpts(Model.TxProposalLegacy.Types.MULTIPLEOUTPUTS, outputs, TestData.copayers[0].privKey_1H_0, {
           message: 'some message',
-          customData: { "test": true }
+          customData: {
+            "test": true
+          }
         });
         server.createTxLegacy(txOpts, function(err, tx) {
           should.not.exist(err);
@@ -5400,6 +5403,50 @@ describe('Wallet service', function() {
               });
             });
           });
+        });
+      });
+    });
+  });
+
+  describe('PayPro', function() {
+    var server, wallet;
+
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 1, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should create a paypro tx', function(done) {
+      helpers.stubUtxos(server, wallet, [100, 200], function() {
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, TestData.copayers[0].privKey_1H_0, {
+          message: 'some message',
+          customData: 'some custom data',
+          payProUrl: 'http:/fakeurl.com',
+        });
+        server.createTxLegacy(txOpts, function(err, tx) {
+          should.not.exist(err);
+          should.exist(tx);
+          tx.payProUrl.should.equal('http:/fakeurl.com');
+          done();
+        });
+      });
+    });
+    it('should fail to create a paypro tx for a P2PKH wallet from an old client (bwc < 1.2.0)', function(done) {
+      helpers.stubUtxos(server, wallet, [100, 200], function() {
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, TestData.copayers[0].privKey_1H_0, {
+          message: 'some message',
+          customData: 'some custom data',
+          payProUrl: 'http:/fakeurl.com',
+        });
+        server._setClientVersion('bwc-1.1.99');
+        server.createTxLegacy(txOpts, function(err, tx) {
+          should.exist(err);
+          should.not.exist(tx);
+          err.code.should.equal('UPGRADE_NEEDED');
+          done();
         });
       });
     });
