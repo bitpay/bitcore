@@ -60,7 +60,8 @@ helpers.beforeEach = function(cb) {
     blockchainExplorer = sinon.stub();
     var opts = {
       storage: storage,
-      blockchainExplorer: blockchainExplorer
+      blockchainExplorer: blockchainExplorer,
+      request: sinon.stub()
     };
     WalletService.initialize(opts, function() {
       return cb(opts);
@@ -101,7 +102,7 @@ helpers.getAuthServer = function(copayerId, cb) {
     clientVersion: helpers.CLIENT_VERSION,
   }, function(err, server) {
     verifyStub.restore();
-    if (err || !server) throw new Error('Could not login as copayerId ' + copayerId);
+    if (err || !server) throw new Error('Could not login as copayerId ' + copayerId + ' err: ' + err);
     return cb(server);
   });
 };
