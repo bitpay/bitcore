@@ -5478,7 +5478,6 @@ describe('Wallet service', function() {
           });
           args[0].body.user.should.contain(wallet.copayers[0].id);
           args[0].body.user.should.contain(wallet.id);
-          args[0].body.user.should.contain('DEVICE_TOKEN');
           done();
         });
       });
@@ -5498,7 +5497,6 @@ describe('Wallet service', function() {
 
           args[0].body.user.should.contain(wallet.copayers[0].id);
           args[0].body.user.should.contain(wallet.id);
-          args[0].body.user.should.contain('DEVICE_TOKEN');
           done();
         });
       });
