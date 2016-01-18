@@ -5478,6 +5478,7 @@ describe('Wallet service', function() {
           });
           args[0].body.user.should.contain(wallet.copayers[0].id);
           args[0].body.user.should.contain(wallet.id);
+          args[0].body.token.should.contain('DEVICE_TOKEN');
           done();
         });
       });
@@ -5487,7 +5488,7 @@ describe('Wallet service', function() {
       request.yields();
       helpers.getAuthServer(wallet.copayers[0].id, function(server) {
         should.exist(server);
-        server.pushNotificationsUnsubscribe('DEVICE_TOKEN', function(err, response) {
+        server.pushNotificationsUnsubscribe(function(err, response) {
           should.not.exist(err);
           var calls = request.getCalls();
           calls.length.should.equal(1);
