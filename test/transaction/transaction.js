@@ -108,6 +108,40 @@ describe('Transaction', function() {
     txData.should.equal(tx2Data);
   });
 
+  it('fromObject with pay-to-public-key previous outputs', function() {
+    var tx = bitcore.Transaction({
+      hash: '132856bf03d6415562a556437d22ac63c37a4595fd986c796eb8e02dc031aa25',
+      version: 1,
+      inputs: [
+        {
+          prevTxId: 'e30ac3db24ef28500f023775d8eb06ad8a26241690080260308208a4020012a4',
+          outputIndex: 0,
+          sequenceNumber: 4294967294,
+          script: '473044022024dbcf41ccd4f3fe325bebb7a87d0bf359eefa03826482008e0fe7795586ad440220676f5f211ebbc311cfa631f14a8223a343cbadc6fa97d6d17f8d2531308b533201',
+          scriptString: '71 0x3044022024dbcf41ccd4f3fe325bebb7a87d0bf359eefa03826482008e0fe7795586ad440220676f5f211ebbc311cfa631f14a8223a343cbadc6fa97d6d17f8d2531308b533201',
+          output: {
+            satoshis: 5000000000,
+            script: '2103b1c65d65f1ff3fe145a4ede692460ae0606671d04e8449e99dd11c66ab55a7feac'
+          }
+        }
+      ],
+      outputs: [
+        {
+          satoshis: 3999999040,
+          script: '76a914fa1e0abfb8d26e494375f47e04b4883c44dd44d988ac'
+        },
+        {
+          satoshis: 1000000000,
+          script: '76a9140b2f0a0c31bfe0406b0ccc1381fdbe311946dadc88ac'
+        }
+      ],
+      nLockTime: 139
+    });
+    tx.inputs[0].should.be.instanceof(bitcore.Transaction.Input.PublicKey);
+    tx.inputs[0].output.satoshis.should.equal(5000000000);
+    tx.inputs[0].output.script.toHex().should.equal('2103b1c65d65f1ff3fe145a4ede692460ae0606671d04e8449e99dd11c66ab55a7feac');
+  });
+
   it('constructor returns a shallow copy of another transaction', function() {
     var transaction = new Transaction(tx_1_hex);
     var copy = new Transaction(transaction);
