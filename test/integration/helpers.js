@@ -444,7 +444,7 @@ helpers.createProposalOpts = function(type, outputs, signingKey, moreOpts, input
   };
 
   if (moreOpts) {
-    moreOpts = _.pick(moreOpts, ['feePerKb', 'customData', 'message']);
+    moreOpts = _.pick(moreOpts, ['feePerKb', 'customData', 'message', 'payProUrl']);
     opts = _.assign(opts, moreOpts);
   }
 
