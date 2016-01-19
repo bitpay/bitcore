@@ -1269,7 +1269,6 @@ describe('client API', function() {
           code: 'USD',
           ts: now,
         }, function(err, res) {
-          console.log(err);
           should.not.exist(err);
           should.exist(res);
           res.ts.should.equal(now);
