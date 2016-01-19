@@ -1278,21 +1278,22 @@ describe('client API', function() {
   describe('Push notifications', function() {
     it('should do a post request', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
-        clients[0].pushNotificationsSubscribe({
-            type: 'DEVICE_TYPE',
-            token: 'DEVICE_TOKEN'
-          },
-          function(err, res) {
-            should.not.exist(err);
-            should.exist(res);
-            done();
-          });
+        clients[0]._doRequest = sinon.stub().yields(null, {
+          statusCode: 200,
+        });
+        clients[0].pushNotificationsSubscribe(function(err, res) {
+          should.not.exist(err);
+          should.exist(res);
+          res.statusCode.should.be.equal(200);
+          done();
+        });
       });
     });
 
     it('should do a delete request', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
-        clients[0].pushNotificationsUnsubscribe(function(err, res) {
+        clients[0]._doRequest = sinon.stub().yields(null);
+        clients[0].pushNotificationsUnsubscribe(function(err) {
           should.not.exist(err);
           done();
         });
