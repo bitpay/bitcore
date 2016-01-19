@@ -8,7 +8,8 @@
     "copay",
     "multisig",
     "wallet",
-    "bitcore"
+    "bitcore",
+    "BWS"
   ],
   "repository": {
     "url": "git@github.com:bitpay/bitcore-wallet-service.git",
