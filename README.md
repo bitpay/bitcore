@@ -175,10 +175,26 @@ Returns:
  Returns:
  * TX Proposal object. (see [fields on the source code](https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/txproposal.js)). `.id` is probably needed in this case.
    
+# Push Notifications
+## Installation
+
+  In order to use push notifications service, you need install:
+  
+  * [node-pushserver](https://www.npmjs.com/package/node-pushserver)
+
+  Recomended to complete config.js file:
+  
+  * [GCM documentation to get your API key](https://developers.google.com/cloud-messaging/gcm)
+  * [Apple's Notification guide to know how to get your certificates for APN](https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/Chapters/Introduction.html)
 
 
+## POST Endpoints
+`/v1/pushnotifications/subscriptions/`: Adds subscriptions for push notifications service at database.
 
-`
+
+## DELETE Endopints
+`/v1/pushnotifications/subscriptions/`: Remove subscriptions for push notifications service from database.
+
  
 
 
