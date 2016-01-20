@@ -4816,7 +4816,7 @@ describe('Wallet service', function() {
         done();
       });
     });
-    it('should handle invalid tx in  history ', function(done) {
+    it('should handle filter out invalid txs in  history ', function(done) {
       var h = _.clone(TestData.history);
       h.push({
         txid: 'xx'
@@ -4827,8 +4827,7 @@ describe('Wallet service', function() {
       server.getTxHistory({}, function(err, txs) {
         should.not.exist(err);
         should.exist(txs);
-        txs.length.should.equal(l + 1);
-        txs[l].action.should.equal('invalid');
+        txs.length.should.equal(l);
         done();
       });
     });
