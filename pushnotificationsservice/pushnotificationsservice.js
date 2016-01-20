@@ -4,6 +4,7 @@
 
 var log = require('npmlog');
 log.debug = log.verbose;
+log.level = 'debug';
 
 var config = require('../config');
 var PushNotificationsService = require('../lib/pushnotificationsservice');
@@ -12,5 +13,5 @@ var pushNotificationsService = new PushNotificationsService();
 pushNotificationsService.start(config, function(err) {
   if (err) throw err;
 
-  console.log('Push Notification Service started');
+  log.debug('Push Notification Service started');
 });
