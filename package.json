@@ -10,7 +10,9 @@
     "multisig",
     "wallet",
     "client",
-    "bitcore"
+    "bitcore",
+    "BWS",
+    "BWC"
   ],
   "engine": "node >= 0.12.0",
   "main": "index.js",
