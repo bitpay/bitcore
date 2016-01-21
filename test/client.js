@@ -28,6 +28,7 @@ var ExpressApp = BWS.ExpressApp;
 var Storage = BWS.Storage;
 var TestData = require('./testdata');
 var ImportData = require('./legacyImportData.js');
+var Errors = require('../lib/errors');
 
 var helpers = {};
 
@@ -299,7 +300,8 @@ describe('client API', function() {
             network: 'testnet'
           },
           function(err) {
-            err.code.should.equal('ERROR');
+            err.should.be.an.instanceOf(Error);
+            err.message.should.equal('bigerror');
             done();
           });
       });
@@ -326,7 +328,8 @@ describe('client API', function() {
             network: 'testnet'
           },
           function(err) {
-            err.code.should.equal('ERROR');
+            err.should.be.an.instanceOf(Error);
+            err.message.should.equal('wow');
             done();
           });
       });
@@ -353,7 +356,7 @@ describe('client API', function() {
             network: 'testnet'
           },
           function(err) {
-            err.code.should.equal('NOT_FOUND');
+            err.should.be.an.instanceOf(Errors.NOT_FOUND);
             done();
           });
       });
@@ -365,7 +368,8 @@ describe('client API', function() {
         message: 'unexpected body'
       };
       var ret = Client._parseError(body);
-      ret.toString().indexOf('ClientError').should.not.equal(-1);
+      ret.should.be.an.instanceOf(Error);
+      ret.message.should.equal('999');
       done();
     });
 
@@ -380,7 +384,7 @@ describe('client API', function() {
         network: 'testnet'
       }, function(err, secret) {
         should.exist(err);
-        err.code.should.equal('CONNECTION_ERROR');
+        err.should.be.an.instanceOf(Errors.CONNECTION_ERROR);
         request.restore();
         done();
       });
@@ -947,7 +951,7 @@ describe('client API', function() {
       helpers.createAndJoinWallet(clients, 2, 2, function(w) {
         should.exist(w.secret);
         clients[4].joinWallet(w.secret, 'copayer', {}, function(err, result) {
-          err.code.should.contain('WALLET_FULL');
+          err.should.be.an.instanceOf(Errors.WALLET_FULL);
           done();
         });
       });
@@ -967,7 +971,7 @@ describe('client API', function() {
       // Unknown walletId
       var oldSecret = '3bJKRn1HkQTpwhVaJMaJ22KwsjN24ML9uKfkSrP7iDuq91vSsTEygfGMMpo6kWLp1pXG9wZSKcT';
       clients[0].joinWallet(oldSecret, 'copayer', {}, function(err, result) {
-        err.code.should.equal('WALLET_NOT_FOUND');
+        err.should.be.an.instanceOf(Errors.WALLET_NOT_FOUND);
         done();
       });
     });
@@ -982,7 +986,7 @@ describe('client API', function() {
         }, function() {
           openWalletStub.restore();
           clients[1].openWallet(function(err, x) {
-            err.code.should.contain('SERVER_COMPROMISED');
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             done();
           });
         });
@@ -999,7 +1003,7 @@ describe('client API', function() {
         }, function() {
           openWalletStub.restore();
           clients[1].openWallet(function(err, x) {
-            err.code.should.contain('SERVER_COMPROMISED');
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             done();
           });
         });
@@ -1022,7 +1026,7 @@ describe('client API', function() {
         }, function() {
           openWalletStub.restore();
           clients[1].openWallet(function(err, x) {
-            err.code.should.contain('SERVER_COMPROMISED');
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             done();
           });
         });
@@ -1359,7 +1363,7 @@ describe('client API', function() {
           address.address = '2N86pNEpREGpwZyHVC5vrNUCbF9nM1Geh4K';
         }, function() {
           clients[0].createAddress(function(err, x0) {
-            err.code.should.contain('SERVER_COMPROMISED');
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             done();
           });
         });
@@ -1374,7 +1378,7 @@ describe('client API', function() {
           ];
         }, function() {
           clients[0].createAddress(function(err, x0) {
-            err.code.should.contain('SERVER_COMPROMISED');
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             done();
           });
         });
@@ -1519,7 +1523,7 @@ describe('client API', function() {
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.exist(err);
-            err.code.should.contain('INSUFFICIENT_FUNDS');
+            err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS);
             done();
           });
         });
@@ -1539,8 +1543,7 @@ describe('client API', function() {
           };
           clients[0].sendTxProposal(opts, function(err, x) {
             should.exist(err);
-            err.code.should.contain('INSUFFICIENT_FUNDS_FOR_FEE');
-            err.message.should.contain('for fee');
+            err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS_FOR_FEE);
             opts.feePerKb = 2000;
             clients[0].sendTxProposal(opts, function(err, x) {
               should.not.exist(err);
@@ -1570,7 +1573,7 @@ describe('client API', function() {
             should.not.exist(err);
 
             clients[0].sendTxProposal(opts, function(err, y) {
-              err.code.should.contain('LOCKED_FUNDS');
+              err.should.be.an.instanceOf(Errors.LOCKED_FUNDS);
 
               clients[0].rejectTxProposal(x, 'no', function(err, z) {
                 should.not.exist(err);
@@ -1601,7 +1604,7 @@ describe('client API', function() {
             should.not.exist(err);
 
             clients[0].sendTxProposal(opts, function(err, y) {
-              err.code.should.contain('LOCKED_FUNDS');
+              err.should.be.an.instanceOf(Errors.LOCKED_FUNDS);
 
               clients[0].removeTxProposal(x, function(err) {
                 should.not.exist(err);
@@ -1702,7 +1705,7 @@ describe('client API', function() {
             }, function() {
               clients[0].getTxProposals({}, function(err, txps) {
                 should.exist(err);
-                err.code.should.contain('SERVER_COMPROMISED');
+                err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
                 done();
               });
             });
@@ -1729,7 +1732,7 @@ describe('client API', function() {
             }, function() {
               clients[0].getTxProposals({}, function(err, txps) {
                 should.exist(err);
-                err.code.should.contain('SERVER_COMPROMISED');
+                err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
                 done();
               });
             });
@@ -1755,7 +1758,7 @@ describe('client API', function() {
             }, function() {
               clients[0].getTxProposals({}, function(err, txps) {
                 should.exist(err);
-                err.code.should.contain('SERVER_COMPROMISED');
+                err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
                 done();
               });
             });
@@ -1902,7 +1905,7 @@ describe('client API', function() {
           return txps;
         }, function() {
           clients[1].getTxProposals({}, function(err, txps) {
-            err.code.should.contain('SERVER_COMPROMISED');
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             done();
           });
         });
@@ -1921,7 +1924,7 @@ describe('client API', function() {
           }, function(err, txps) {
             should.not.exist(err);
             clients[1].signTxProposal(txps[0], function(err, txps) {
-              err.code.should.contain('SERVER_COMPROMISED');
+              err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
               done();
             });
           });
@@ -1937,7 +1940,7 @@ describe('client API', function() {
         };
         clients[0].fetchPayPro(opts, function(err, paypro) {
           should.exist(err);
-          err.should.contain('parse');
+          err.message.should.contain('parse');
           done();
         });
       });
@@ -2524,12 +2527,12 @@ describe('client API', function() {
               txp.status.should.equal('pending');
               clients[0].signTxProposal(txp, function(err) {
                 should.exist(err);
-                err.code.should.contain('COPAYER_VOTED');
+                err.should.be.an.instanceOf(Errors.COPAYER_VOTED);
                 clients[1].rejectTxProposal(txp, 'xx', function(err, txp) {
                   should.not.exist(err);
                   clients[1].rejectTxProposal(txp, 'xx', function(err) {
                     should.exist(err);
-                    err.code.should.contain('COPAYER_VOTED');
+                    err.should.be.an.instanceOf(Errors.COPAYER_VOTED);
                     done();
                   });
                 });
@@ -2812,7 +2815,7 @@ describe('client API', function() {
         importedClient.importFromMnemonic(exported, {
           network: 'testnet',
         }, function(err) {
-          err.code.should.contain('WALLET_DOES_NOT_EXIST');
+          err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
           importedClient.mnemonicHasPassphrase().should.equal(false);
           importedClient.credentials.xPrivKey.should.equal('tprv8ZgxMBicQKsPdTYGTn3cPvTJJuuKHCYbfH1fbu4ceZ5tzYrcjYMKY1JfZiEFDDpEXWquSpX6jRsEoVPoaSw82tQ1Wn1U3K1bQDZBj3UGuEG');
           done();
@@ -2825,7 +2828,7 @@ describe('client API', function() {
           network: 'testnet',
           passphrase: 'hola',
         }, function(err) {
-          err.code.should.contain('WALLET_DOES_NOT_EXIST');
+          err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
           importedClient.mnemonicHasPassphrase().should.equal(true);
           importedClient.credentials.xPrivKey.should.equal('tprv8ZgxMBicQKsPdVijVxEu7gVDi86PUZqbCe7xTGLwVXwZpsG3HuxLDjXL3DXRSaaNymMD7gRpXimxnUDYa5N7pLTKLQymdSotrb4co7Nwrs7');
           done();
@@ -2947,7 +2950,7 @@ describe('client API', function() {
 
               recoveryClient.getStatus({}, function(err, status) {
                 should.exist(err);
-                err.code.should.equal('NOT_AUTHORIZED');
+                err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
                 recoveryClient.recreateWallet(function(err) {
                   should.not.exist(err);
                   recoveryClient.getStatus({}, function(err, status) {
@@ -3000,7 +3003,7 @@ describe('client API', function() {
 
                 recoveryClient.getStatus({}, function(err, status) {
                   should.exist(err);
-                  err.code.should.equal('NOT_AUTHORIZED');
+                  err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
                   recoveryClient.recreateWallet(function(err) {
                     should.not.exist(err);
                     recoveryClient.getStatus({}, function(err, status) {
@@ -3056,7 +3059,7 @@ describe('client API', function() {
 
                 recoveryClient.getStatus({}, function(err, status) {
                   should.exist(err);
-                  err.code.should.equal('NOT_AUTHORIZED');
+                  err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
                   recoveryClient.recreateWallet(function(err) {
                     should.not.exist(err);
                     recoveryClient.recreateWallet(function(err) {
@@ -3120,7 +3123,7 @@ describe('client API', function() {
               recoveryClient.credentials.account.should.equal(2);
               recoveryClient.getStatus({}, function(err, status) {
                 should.exist(err);
-                err.code.should.equal('NOT_AUTHORIZED');
+                err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
                 recoveryClient.recreateWallet(function(err) {
                   should.not.exist(err);
                   recoveryClient.getStatus({}, function(err, status) {
@@ -3761,7 +3764,7 @@ describe('client API', function() {
 
       it('should deny access before registering it ', function(done) {
         clients[0].sendTxProposal(opts, function(err, x) {
-          err.code.should.contain('NOT_AUTHORIZED');
+          err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
           done();
         });
       });
@@ -3780,7 +3783,7 @@ describe('client API', function() {
           generateNewKey: true
         }, function(err, x) {
           clients[0].sendTxProposal(opts, function(err, x) {
-            err.code.should.contain('NOT_AUTHORIZED');
+            err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
             done();
           });
         });
@@ -3822,7 +3825,7 @@ describe('client API', function() {
               txps[0].proposalSignature = '304402206e4a1db06e00068582d3be41cfc795dcf702451c132581e661e7241ef34ca19202203e17598b4764913309897d56446b51bc1dcd41a25d90fdb5f87a6b58fe3a6920';
             }, function() {
               clients[0].getTxProposals({}, function(err, txps) {
-                err.code.should.contain('SERVER_COMPROMISED');
+                err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
                 done();
               });
             });
@@ -3838,7 +3841,7 @@ describe('client API', function() {
               txps[0].proposalSignaturePubKey = '02d368d7f03a57b2ad3ad9c2766739da83b85ab9c3718fb02ad36574f9391d6bf6';
             }, function() {
               clients[0].getTxProposals({}, function(err, txps) {
-                err.code.should.contain('SERVER_COMPROMISED');
+                err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
                 done();
               });
             });
@@ -3855,7 +3858,7 @@ describe('client API', function() {
               txps[0].proposalSignaturePubKeySig = '304402201528748eafc5083fe67c84cbf0eb996eba9a65584a73d8c07ed6e0dc490c195802204f340488266c804cf1033f8b852efd1d4e05d862707c119002dc3fbe7a805c35';
             }, function() {
               clients[0].getTxProposals({}, function(err, txps) {
-                err.code.should.contain('SERVER_COMPROMISED');
+                err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
                 done();
               });
             });
@@ -3915,6 +3918,30 @@ describe('client API', function() {
         });
       });
     });
+
+    it('should handle tx serialization error when building tx', function(done) {
+      var sandbox = sinon.sandbox.create();
+
+      var se = sandbox.stub(Bitcore.Transaction.prototype, 'serialize', function() {
+        throw new Error('this is an error');
+      });
+
+      var address = {
+        address: '1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3',
+        type: 'P2PKH',
+      };
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
+        blockchainExplorerMock.setUtxo(address, 123, 1);
+        clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', '1GG3JQikGC7wxstyavUBDoCJ66bWLLENZC', {}, function(err, tx) {
+          should.exist(err);
+          should.not.exist(tx);
+          err.should.be.an.instanceOf(Errors.COULD_NOT_BUILD_TRANSACTION);
+          sandbox.restore();
+          done();
+        });
+      });
+    });
+
     it('should fail to build tx for single private key if insufficient funds', function(done) {
       var address = {
         address: '1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3',
@@ -3926,7 +3953,7 @@ describe('client API', function() {
           fee: 500
         }, function(err, tx) {
           should.exist(err);
-          err.code.should.equal('INSUFFICIENT_FUNDS');
+          err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS);
           done();
         });
       });
@@ -3981,6 +4008,156 @@ describe('client API', function() {
 
       _.each(cases, function(testCase) {
         Utils.formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
+      });
+    });
+  });
+
+  describe('_initNotifications', function() {
+    it('should handle NOT_FOUND error from _fetLatestNotifications', function(done) {
+      var sandbox = sinon.sandbox.create();
+      var clock = sandbox.useFakeTimers();
+
+      var client = new Client();
+
+      var _f = sandbox.stub(client, '_fetchLatestNotifications', function(interval, callback) {
+        callback(new Errors.NOT_FOUND);
+      });
+
+      client._initNotifications({notificationIntervalSeconds: 1});
+      should.exist(client.notificationsIntervalId);
+      clock.tick(1000);
+      should.not.exist(client.notificationsIntervalId);
+      sandbox.restore();
+      done();
+    });
+
+    it('should handle NOT_AUTHORIZED error from _fetLatestNotifications', function(done) {
+      var sandbox = sinon.sandbox.create();
+      var clock = sandbox.useFakeTimers();
+
+      var client = new Client();
+
+      var _f = sandbox.stub(client, '_fetchLatestNotifications', function(interval, callback) {
+        callback(new Errors.NOT_AUTHORIZED);
+      });
+
+      client._initNotifications({notificationIntervalSeconds: 1});
+      should.exist(client.notificationsIntervalId);
+      clock.tick(1000);
+      should.not.exist(client.notificationsIntervalId);
+      sandbox.restore();
+      done();
+    });
+  });
+
+  describe('import', function(done) {
+    it('should handle import with invalid JSON', function(done) {
+      var importString = 'this is not valid JSON';
+      var client = new Client();
+      (function(){client.import(importString);}).should.throw(Errors.INVALID_BACKUP);
+      done();
+    });
+  });
+
+  describe('_import', function() {
+    it('should handle not being able to add access', function(done) {
+      var sandbox = sinon.sandbox.create();
+      var client = new Client();
+      client.credentials = {};
+
+      var ow = sandbox.stub(client, 'openWallet', function(callback) {
+        callback(new Error());
+      });
+
+      var ip = sandbox.stub(client, 'isPrivKeyExternal', function() {
+        return false;
+      });
+
+      var aa = sandbox.stub(client, 'addAccess', function(options, callback) {
+        callback(new Error());
+      });
+
+      client._import(function(err) {
+        should.exist(err);
+        err.should.be.an.instanceOf(Errors.WALLET_DOES_NOT_EXIST);
+        sandbox.restore();
+        done();
+      });
+    });
+  });
+
+  describe('importFromMnemonic', function() {
+    it('should handle importing an invalid mnemonic', function(done) {
+      var client = new Client();
+      var mnemonicWords = 'this is an invalid mnemonic';
+      client.importFromMnemonic(mnemonicWords, {}, function(err) {
+        should.exist(err);
+        err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+        done();
+      });
+    });
+  });
+
+  describe('importFromExtendedPrivateKey', function() {
+    it('should handle importing an invalid extended private key', function(done) {
+      var client = new Client();
+      var xPrivKey = 'this is an invalid key';
+      client.importFromExtendedPrivateKey(xPrivKey, function(err) {
+        should.exist(err);
+        err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+        done();
+      });
+    });
+  });
+
+  describe('importFromExtendedPublicKey', function() {
+    it('should handle importing an invalid extended private key', function(done) {
+      var client = new Client();
+      var xPubKey = 'this is an invalid key';
+      client.importFromExtendedPublicKey(xPubKey, {}, {}, {}, function(err) {
+        should.exist(err);
+        err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+        done();
+      });
+    });
+  });
+
+  describe('_doRequest', function() {
+    it('should handle connection error', function(done) {
+      var sandbox = sinon.sandbox.create();
+      var client = new Client();
+      client.credentials = {};
+
+      var re = sandbox.stub(client, 'request', function(args, callback) {
+        callback(null, {}, {});
+      });
+
+      client._doRequest('method', 'url', {}, function(err, body, header) {
+        should.exist(err);
+        should.not.exist(body);
+        should.not.exist(header);
+        err.should.be.an.instanceOf(Errors.CONNECTION_ERROR);
+        sandbox.restore();
+        done();
+      });
+    });
+
+    it('should handle ECONNRESET error', function(done) {
+      var sandbox = sinon.sandbox.create();
+      var client = new Client();
+      client.credentials = {};
+
+      var re = sandbox.stub(client, 'request', function(args, callback) {
+        callback(null, {statusCode: 200}, '{"error":"read ECONNRESET"}');
+      });
+
+      client._doRequest('method', 'url', {}, function(err, body, header) {
+        should.exist(err);
+        should.not.exist(body);
+        should.not.exist(header);
+        err.should.be.an.instanceOf(Errors.ECONNRESET_ERROR);
+        sandbox.restore();
+        done();
       });
     });
   });

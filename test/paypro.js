@@ -91,7 +91,8 @@ describe('paypro', function() {
       xhr: xhr,
       env: 'browser',
     }, function(err, res) {
-      err.should.contain('HTTP Request Error');
+      err.should.be.an.instanceOf(Error);
+      err.message.should.equal('HTTP Request Error');
       done();
     });
   });
@@ -106,7 +107,8 @@ describe('paypro', function() {
       xhr: xhr,
       env: 'browser',
     }, function(err, res) {
-      err.should.contain('myerror');
+      err.should.be.an.instanceOf(Error);
+      err.message.should.equal('myerror');
       done();
     });
   });
@@ -138,7 +140,8 @@ describe('paypro', function() {
       httpNode: httpNode,
       env: 'node',
     }, function(err, res) {
-      err.should.contain('HTTP Request Error');
+      err.should.be.an.instanceOf(Error);
+      err.message.should.equal('HTTP Request Error');
       done();
     });
   });
