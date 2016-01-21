@@ -278,18 +278,30 @@ describe('Signature', function() {
   describe('#hasLowS', function() {
     it('should detect high and low S', function() {
       var r = new BN('63173831029936981022572627018246571655303050627048489594159321588908385378810');
-      var s = new BN('4331694221846364448463828256391194279133231453999942381442030409253074198130');
-      var s2 = new BN('7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B2000');
+
       var sig = new Signature({
         r: r,
-        s: s
-      });
+        s: new BN('7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A1', 'hex')
+      });            
+      sig.hasLowS().should.equal(false);
+
       var sig2 = new Signature({
         r: r,
-        s: s2
-      });
+        s: new BN('7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0', 'hex')
+      });      
       sig2.hasLowS().should.equal(true);
-      sig.hasLowS().should.equal(false);
+
+      var sig3 = new Signature({
+        r: r,
+        s: new BN(1)
+      });      
+      sig3.hasLowS().should.equal(true);
+
+      var sig4 = new Signature({        
+        r: r,
+        s: new BN(0)
+      });
+      sig4.hasLowS().should.equal(false);
 
     });
   });
