@@ -579,7 +579,6 @@ describe('client API', function() {
         });
         should.not.exist(bitcoreError);
       });
-
       it('should build a tx with provided output scripts', function() {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
@@ -671,6 +670,42 @@ describe('client API', function() {
         delete txp.outputs[0].toAddress;
         txp.outputs[0].script = "512103ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff210314a96cd6f5a20826070173fe5b7e9797f21fc8ca4a55bcb2d2bde99f55dd352352ae";
         t = Client.buildTx(txp);
+        var bitcoreError = t.getSerializationError({
+          disableIsFullySigned: true,
+        });
+        should.not.exist(bitcoreError);
+      });
+      it('should build a v3 tx proposal', function() {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
+        }];
+
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        var txp = {
+          version: 3,
+          inputs: utxos,
+          outputs: [{
+            toAddress: toAddress,
+            amount: 800,
+            message: 'first output'
+          }, {
+            toAddress: toAddress,
+            amount: 900,
+            message: 'second output'
+          }],
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1, 2],
+          fee: 10000,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+        };
+        var t = Client.buildTx(txp);
         var bitcoreError = t.getSerializationError({
           disableIsFullySigned: true,
         });
@@ -4023,7 +4058,9 @@ describe('client API', function() {
         callback(new Errors.NOT_FOUND);
       });
 
-      client._initNotifications({notificationIntervalSeconds: 1});
+      client._initNotifications({
+        notificationIntervalSeconds: 1
+      });
       should.exist(client.notificationsIntervalId);
       clock.tick(1000);
       should.not.exist(client.notificationsIntervalId);
@@ -4041,7 +4078,9 @@ describe('client API', function() {
         callback(new Errors.NOT_AUTHORIZED);
       });
 
-      client._initNotifications({notificationIntervalSeconds: 1});
+      client._initNotifications({
+        notificationIntervalSeconds: 1
+      });
       should.exist(client.notificationsIntervalId);
       clock.tick(1000);
       should.not.exist(client.notificationsIntervalId);
@@ -4054,7 +4093,9 @@ describe('client API', function() {
     it('should handle import with invalid JSON', function(done) {
       var importString = 'this is not valid JSON';
       var client = new Client();
-      (function(){client.import(importString);}).should.throw(Errors.INVALID_BACKUP);
+      (function() {
+        client.import(importString);
+      }).should.throw(Errors.INVALID_BACKUP);
       done();
     });
   });
@@ -4148,7 +4189,9 @@ describe('client API', function() {
       client.credentials = {};
 
       var re = sandbox.stub(client, 'request', function(args, callback) {
-        callback(null, {statusCode: 200}, '{"error":"read ECONNRESET"}');
+        callback(null, {
+          statusCode: 200
+        }, '{"error":"read ECONNRESET"}');
       });
 
       client._doRequest('method', 'url', {}, function(err, body, header) {
