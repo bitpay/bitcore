@@ -2739,6 +2739,7 @@ describe('Wallet service', function() {
               server.getPendingTxs({}, function(err, txs) {
                 should.not.exist(err);
                 txs.length.should.equal(1);
+                should.exist(txs[0].proposalSignature);
                 done();
               });
             });
@@ -2795,21 +2796,14 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(txp);
 
-            var raw = txp.getRawTx();
-            var proposalSignature = helpers.signMessage(raw, TestData.copayers[0].privKey_1H_0);
-            var pubKey = new Bitcore.PrivateKey(TestData.copayers[0].privKey_1H_0).toPublicKey().toString();
-            var pubKeySig = helpers.signMessage(pubKey, TestData.copayers[1].privKey_1H_0);
-
             var publishOpts = {
               txProposalId: txp.id,
-              proposalSignature: proposalSignature,
-              proposalSignaturePubKey: pubKey,
-              proposalSignaturePubKeySig: pubKeySig,
+              proposalSignature: helpers.signMessage(txp.getRawTx(), TestData.copayers[1].privKey_1H_0),
             }
 
             server.publishTx(publishOpts, function(err) {
               should.exist(err);
-              err.message.should.contain('Invalid proposal signing key');
+              err.message.should.contain('Invalid proposal signature');
               done();
             });
           });
@@ -2818,18 +2812,17 @@ describe('Wallet service', function() {
 
       it('should accept a tx proposal signed with a custom key', function(done) {
         var reqPrivKey = new Bitcore.PrivateKey();
-        var reqPubKey = reqPrivKey.toPublicKey();
+        var reqPubKey = reqPrivKey.toPublicKey().toString();
 
         var xPrivKey = TestData.copayers[0].xPrivKey_44H_0H_0H;
-        var sig = helpers.signRequestPubKey(reqPubKey, xPrivKey);
 
-        var opts = {
+        var accessOpts = {
           copayerId: TestData.copayers[0].id44,
           requestPubKey: reqPubKey,
-          signature: sig,
+          signature: helpers.signRequestPubKey(reqPubKey, xPrivKey),
         };
 
-        server.addAccess(opts, function(err) {
+        server.addAccess(accessOpts, function(err) {
           should.not.exist(err);
 
           helpers.stubUtxos(server, wallet, [1, 2], function() {
@@ -2846,14 +2839,19 @@ describe('Wallet service', function() {
               var publishOpts = {
                 txProposalId: txp.id,
                 proposalSignature: helpers.signMessage(txp.getRawTx(), reqPrivKey),
-                proposalSignaturePubKey: reqPubKey,
-                proposalSignaturePubKeySig: sig,
               }
 
               server.publishTx(publishOpts, function(err) {
-                should.exist(err);
-                err.message.should.contain('Invalid proposal signing key');
-                done();
+                should.not.exist(err);
+                server.getTx({
+                  txProposalId: txp.id
+                }, function(err, x) {
+                  should.not.exist(err);
+                  x.proposalSignature.should.equal(publishOpts.proposalSignature);
+                  x.proposalSignaturePubKey.should.equal(accessOpts.requestPubKey);
+                  x.proposalSignaturePubKeySig.should.equal(accessOpts.signature);
+                  done();
+                });
               });
             });
           });
