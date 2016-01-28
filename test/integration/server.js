@@ -2693,13 +2693,14 @@ describe('Wallet service', function() {
 
       it('should create a tx', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
-          var txOpts = helpers.createProposalOpts2([{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 0.8
-          }], {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8 * 1e8,
+            }],
             message: 'some message',
             customData: 'some custom data',
-          });
+          };
           server.createTx(txOpts, function(err, tx) {
             should.not.exist(err);
             should.exist(tx);
@@ -2723,12 +2724,13 @@ describe('Wallet service', function() {
 
       it('should be able to specify the final fee', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
-          var txOpts = helpers.createProposalOpts2([{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 0.8,
-          }], {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8 * 1e8,
+            }],
             fee: 123400,
-          });
+          };
           server.createTx(txOpts, function(err, tx) {
             should.not.exist(err);
             should.exist(tx);
@@ -2740,15 +2742,33 @@ describe('Wallet service', function() {
         });
       });
 
+      it('should check explicit fee to be below max', function(done) {
+        helpers.stubUtxos(server, wallet, [1, 2], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8 * 1e8,
+            }],
+            fee: 1e8,
+          };
+          server.createTx(txOpts, function(err, tx) {
+            should.exist(err);
+            err.message.should.contain('fee');
+            done();
+          });
+        });
+      });
+
       it('should be able to send a temporary tx proposal', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
-          var txOpts = helpers.createProposalOpts2([{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 0.8
-          }], {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8 * 1e8,
+            }],
             message: 'some message',
             customData: 'some custom data',
-          });
+          };
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -2782,12 +2802,13 @@ describe('Wallet service', function() {
 
       it('should fail to send tx proposal with wrong signature', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
-          var txOpts = helpers.createProposalOpts2([{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 0.8
-          }], {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8 * 1e8,
+            }],
             message: 'some message',
-          });
+          };
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -2805,12 +2826,13 @@ describe('Wallet service', function() {
 
       it('should fail to send tx proposal not signed by the creator', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
-          var txOpts = helpers.createProposalOpts2([{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 0.8
-          }], {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8 * 1e8,
+            }],
             message: 'some message',
-          });
+          };
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -2845,12 +2867,13 @@ describe('Wallet service', function() {
           should.not.exist(err);
 
           helpers.stubUtxos(server, wallet, [1, 2], function() {
-            var txOpts = helpers.createProposalOpts2([{
-              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-              amount: 0.8
-            }], {
+            var txOpts = {
+              outputs: [{
+                toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+                amount: 0.8 * 1e8,
+              }],
               message: 'some message',
-            });
+            };
             server.createTx(txOpts, function(err, txp) {
               should.not.exist(err);
               should.exist(txp);
@@ -2879,12 +2902,13 @@ describe('Wallet service', function() {
 
       it('should fail to send a temporary tx proposal if utxos are unavailable', function(done) {
         var txp1, txp2;
-        var txOpts = helpers.createProposalOpts2([{
-          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-          amount: 0.8
-        }], {
+        var txOpts = {
+          outputs: [{
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 0.8 * 1e8,
+          }],
           message: 'some message',
-        });
+        };
 
         async.waterfall([
 
@@ -2946,13 +2970,14 @@ describe('Wallet service', function() {
 
       it('should fail to list pending proposals from legacy client', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
-          var txOpts = helpers.createProposalOpts2([{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 0.8
-          }], {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8 * 1e8,
+            }],
             message: 'some message',
             customData: 'some custom data',
-          });
+          };
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
