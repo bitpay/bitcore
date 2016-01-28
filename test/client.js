@@ -1956,17 +1956,15 @@ describe('client API', function() {
           _.uniq(_.pluck(txp.outputs, 'toAddress'))[0].should.equal(toAddress);
           txp.hasUnconfirmedInputs.should.equal(false);
 
-          should.not.exist(txp.encryptedMessage);
-          _.each(txp.outputs, function(o) {
-            should.not.exist(o.encryptedMessage);
-          });
+          should.exist(txp.encryptedMessage);
+          should.exist(txp.outputs[0].encryptedMessage);
 
           clients[0].getTxProposals({}, function(err, txps) {
             should.not.exist(err);
             txps.should.be.empty;
 
             clients[0].publishTxProposal({
-              txpId: txp.id,
+              txp: txp,
             }, function(err) {
               should.not.exist(err);
               clients[0].getTxProposals({}, function(err, txps) {
