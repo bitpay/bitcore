@@ -411,7 +411,7 @@ helpers.createProposalOpts2 = function(outputs, moreOpts, inputs) {
   };
 
   if (moreOpts) {
-    moreOpts = _.pick(moreOpts, ['feePerKb', 'customData', 'message']);
+    moreOpts = _.pick(moreOpts, ['fee', 'feePerKb', 'customData', 'message']);
     opts = _.assign(opts, moreOpts);
   }
 

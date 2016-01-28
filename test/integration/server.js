@@ -2721,6 +2721,25 @@ describe('Wallet service', function() {
         });
       });
 
+      it('should be able to specify the final fee', function(done) {
+        helpers.stubUtxos(server, wallet, [1, 2], function() {
+          var txOpts = helpers.createProposalOpts2([{
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 0.8,
+          }], {
+            fee: 123400,
+          });
+          server.createTx(txOpts, function(err, tx) {
+            should.not.exist(err);
+            should.exist(tx);
+            tx.fee.should.equal(123400);
+            var t = tx.getBitcoreTx();
+            t.getFee().should.equal(123400);
+            done();
+          });
+        });
+      });
+
       it('should be able to send a temporary tx proposal', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
           var txOpts = helpers.createProposalOpts2([{
