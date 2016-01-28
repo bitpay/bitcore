@@ -2005,6 +2005,9 @@ describe('client API', function() {
         var tamperings = [
 
           function(txp) {
+            txp.fee = 45600;
+          },
+          function(txp) {
             txp.feePerKb = 45600;
           },
           function(txp) {
