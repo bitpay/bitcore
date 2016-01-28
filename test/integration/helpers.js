@@ -400,28 +400,6 @@ helpers.createExternalProposalOpts = function(toAddress, amount, signingKey, mor
 };
 
 
-helpers.createProposalOpts2 = function(outputs, moreOpts, inputs) {
-  _.each(outputs, function(output) {
-    output.amount = helpers.toSatoshi(output.amount);
-  });
-
-  var opts = {
-    outputs: outputs,
-    inputs: inputs || [],
-  };
-
-  if (moreOpts) {
-    moreOpts = _.pick(moreOpts, ['fee', 'feePerKb', 'customData', 'message']);
-    opts = _.assign(opts, moreOpts);
-  }
-
-  opts = _.defaults(opts, {
-    message: null
-  });
-
-  return opts;
-};
-
 helpers.getProposalSignatureOpts = function(txp, signingKey) {
   var raw = txp.getRawTx();
   var proposalSignature = helpers.signMessage(raw, signingKey);
