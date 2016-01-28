@@ -1923,8 +1923,8 @@ describe('client API', function() {
           clients[0].createAddress(function(err, address) {
             should.not.exist(err);
             should.exist(address.address);
-            blockchainExplorerMock.setUtxo(address, 1, 2);
-            blockchainExplorerMock.setUtxo(address, 1, 2);
+            blockchainExplorerMock.setUtxo(address, 2, 2);
+            blockchainExplorerMock.setUtxo(address, 2, 2);
             done();
           });
         });
@@ -1934,11 +1934,11 @@ describe('client API', function() {
         var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
         var opts = {
           outputs: [{
-            amount: 10000,
+            amount: 1e8,
             toAddress: toAddress,
             message: 'world',
           }, {
-            amount: 20000,
+            amount: 2e8,
             toAddress: toAddress,
           }],
           message: 'hello',
@@ -1950,11 +1950,12 @@ describe('client API', function() {
           txp.status.should.equal('temporary');
           txp.message.should.equal('hello');
           txp.outputs.length.should.equal(2);
-          _.sum(txp.outputs, 'amount').should.equal(30000);
+          _.sum(txp.outputs, 'amount').should.equal(3e8);
           txp.outputs[0].message.should.equal('world');
           _.uniq(txp.outputs, 'toAddress').length.should.equal(1);
           _.uniq(_.pluck(txp.outputs, 'toAddress'))[0].should.equal(toAddress);
           txp.hasUnconfirmedInputs.should.equal(false);
+          txp.feePerKb.should.equal(10000);
 
           should.exist(txp.encryptedMessage);
           should.exist(txp.outputs[0].encryptedMessage);
@@ -1975,10 +1976,75 @@ describe('client API', function() {
                 should.exist(x.proposalSignature);
                 should.not.exist(x.proposalSignaturePubKey);
                 should.not.exist(x.proposalSignaturePubKeySig);
-                done();
+                // Should be visible for other copayers as well
+                clients[1].getTxProposals({}, function(err, txps) {
+                  should.not.exist(err);
+                  txps.length.should.equal(1);
+                  txps[0].id.should.equal(txp.id);
+                  done();
+                });
               });
             });
           });
+        });
+      });
+
+      it('Should protect against tampering at proposal creation', function(done) {
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'world'
+          }, {
+            amount: 2e8,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          }],
+          feePerKb: 12300,
+          message: 'hello',
+        };
+
+        var tamperings = [
+
+          function(txp) {
+            txp.feePerKb = 45600;
+          },
+          function(txp) {
+            txp.message = 'dummy';
+          },
+          function(txp) {
+            txp.payProUrl = 'dummy';
+          },
+          function(txp) {
+            txp.customData = 'dummy';
+          },
+          function(txp) {
+            txp.outputs.push(txp.outputs[0]);
+          },
+          function(txp) {
+            txp.outputs[0].toAddress = 'mjfjcbuYwBUdEyq2m7AezjCAR4etUBqyiE';
+          },
+          function(txp) {
+            txp.outputs[0].amount = 2e8;
+          },
+          function(txp) {
+            txp.outputs[1].amount = 2e8;
+          },
+          function(txp) {
+            txp.outputs[0].message = 'dummy';
+          },
+        ];
+
+        async.each(tamperings, function(tamperFn, next) {
+          helpers.tamperResponse(clients[0], 'post', '/v2/txproposals/', opts, tamperFn, function() {
+            clients[0].createTxProposal(opts, function(err, txp) {
+              should.exist(err);
+              err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+              next();
+            });
+          });
+        }, function(err) {
+          should.not.exist(err);
+          done();
         });
       });
     });
