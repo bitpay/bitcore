@@ -1988,7 +1988,6 @@ describe('client API', function() {
           });
         });
       });
-
       it('Should protect against tampering at proposal creation', function(done) {
         var opts = {
           outputs: [{
@@ -2043,6 +2042,57 @@ describe('client API', function() {
             });
           });
         }, function(err) {
+          should.not.exist(err);
+          done();
+        });
+      });
+      it('Should fail to publish when not enough available UTXOs', function(done) {
+        var opts = {
+          outputs: [{
+            amount: 3e8,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          }],
+        };
+
+        var txp1, txp2;
+        async.series([
+
+          function(next) {
+            clients[0].createTxProposal(opts, function(err, txp) {
+              txp1 = txp;
+              next(err);
+            });
+          },
+          function(next) {
+            clients[0].createTxProposal(opts, function(err, txp) {
+              txp2 = txp;
+              next(err);
+            });
+
+          },
+          function(next) {
+            clients[0].publishTxProposal({
+              txp: txp1
+            }, next);
+          },
+          function(next) {
+            clients[0].publishTxProposal({
+              txp: txp2
+            }, function(err) {
+              should.exist(err);
+              err.should.be.an.instanceOf(Errors.UNAVAILABLE_UTXOS);
+              next();
+            });
+          },
+          function(next) {
+            clients[1].rejectTxProposal(txp1, 'Free locked UTXOs', next);
+          },
+          function(next) {
+            clients[0].publishTxProposal({
+              txp: txp2
+            }, next);
+          },
+        ], function(err) {
           should.not.exist(err);
           done();
         });
