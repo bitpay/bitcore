@@ -1966,8 +1966,10 @@ describe('client API', function() {
 
             clients[0].publishTxProposal({
               txp: txp,
-            }, function(err) {
+            }, function(err, publishedTxp) {
               should.not.exist(err);
+              should.exist(publishedTxp);
+              publishedTxp.status.should.equal('pending');
               clients[0].getTxProposals({}, function(err, txps) {
                 should.not.exist(err);
                 txps.length.should.equal(1);
