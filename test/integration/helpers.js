@@ -468,4 +468,15 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
   });
 };
 
+helpers.createAndPublishTx = function(server, txOpts, signingKey, cb) {
+  server.createTx(txOpts, function(err, txp) {
+    should.not.exist(err);
+    var publishOpts = helpers.getProposalSignatureOpts(txp, signingKey);
+    server.publishTx(publishOpts, function(err) {
+      should.not.exist(err);
+      return cb(txp);
+    });
+  });
+};
+
 module.exports = helpers;
