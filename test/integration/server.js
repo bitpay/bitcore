@@ -2693,13 +2693,14 @@ describe('Wallet service', function() {
 
       it('should create a tx', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
-          var txOpts = helpers.createProposalOpts2([{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 0.8
-          }], {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8 * 1e8,
+            }],
             message: 'some message',
             customData: 'some custom data',
-          });
+          };
           server.createTx(txOpts, function(err, tx) {
             should.not.exist(err);
             should.exist(tx);
@@ -2721,15 +2722,53 @@ describe('Wallet service', function() {
         });
       });
 
-      it('should be able to send a temporary tx proposal', function(done) {
+      it('should be able to specify the final fee', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
-          var txOpts = helpers.createProposalOpts2([{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 0.8
-          }], {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8 * 1e8,
+            }],
+            fee: 123400,
+          };
+          server.createTx(txOpts, function(err, tx) {
+            should.not.exist(err);
+            should.exist(tx);
+            tx.fee.should.equal(123400);
+            var t = tx.getBitcoreTx();
+            t.getFee().should.equal(123400);
+            done();
+          });
+        });
+      });
+
+      it('should check explicit fee to be below max', function(done) {
+        helpers.stubUtxos(server, wallet, [1, 2], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8 * 1e8,
+            }],
+            fee: 1e8,
+          };
+          server.createTx(txOpts, function(err, tx) {
+            should.exist(err);
+            err.message.should.contain('fee');
+            done();
+          });
+        });
+      });
+
+      it('should be able to publish a temporary tx proposal', function(done) {
+        helpers.stubUtxos(server, wallet, [1, 2], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8 * 1e8,
+            }],
             message: 'some message',
             customData: 'some custom data',
-          });
+          };
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -2739,6 +2778,7 @@ describe('Wallet service', function() {
               server.getPendingTxs({}, function(err, txs) {
                 should.not.exist(err);
                 txs.length.should.equal(1);
+                should.exist(txs[0].proposalSignature);
                 done();
               });
             });
@@ -2746,7 +2786,36 @@ describe('Wallet service', function() {
         });
       });
 
-      it('should fail to send non-existent tx proposal', function(done) {
+      it('should delay NewTxProposal notification until published', function(done) {
+        helpers.stubUtxos(server, wallet, [1, 2], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8 * 1e8,
+            }],
+            message: 'some message',
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            server.getNotifications({}, function(err, notifications) {
+              should.not.exist(err);
+              _.pluck(notifications, 'type').should.not.contain('NewTxProposal');
+              var publishOpts = helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0);
+              server.publishTx(publishOpts, function(err) {
+                should.not.exist(err);
+                server.getNotifications({}, function(err, notifications) {
+                  should.not.exist(err);
+                  _.pluck(notifications, 'type').should.contain('NewTxProposal');
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+
+      it('should fail to publish non-existent tx proposal', function(done) {
         server.publishTx({
           txProposalId: 'wrong-id',
           proposalSignature: 'dummy',
@@ -2760,14 +2829,15 @@ describe('Wallet service', function() {
         });
       });
 
-      it('should fail to send tx proposal with wrong signature', function(done) {
+      it('should fail to publish tx proposal with wrong signature', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
-          var txOpts = helpers.createProposalOpts2([{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 0.8
-          }], {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8 * 1e8,
+            }],
             message: 'some message',
-          });
+          };
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -2783,33 +2853,27 @@ describe('Wallet service', function() {
         });
       });
 
-      it('should fail to send tx proposal not signed by the creator', function(done) {
+      it('should fail to publish tx proposal not signed by the creator', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
-          var txOpts = helpers.createProposalOpts2([{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 0.8
-          }], {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8 * 1e8,
+            }],
             message: 'some message',
-          });
+          };
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
 
-            var raw = txp.getRawTx();
-            var proposalSignature = helpers.signMessage(raw, TestData.copayers[0].privKey_1H_0);
-            var pubKey = new Bitcore.PrivateKey(TestData.copayers[0].privKey_1H_0).toPublicKey().toString();
-            var pubKeySig = helpers.signMessage(pubKey, TestData.copayers[1].privKey_1H_0);
-
             var publishOpts = {
               txProposalId: txp.id,
-              proposalSignature: proposalSignature,
-              proposalSignaturePubKey: pubKey,
-              proposalSignaturePubKeySig: pubKeySig,
+              proposalSignature: helpers.signMessage(txp.getRawTx(), TestData.copayers[1].privKey_1H_0),
             }
 
             server.publishTx(publishOpts, function(err) {
               should.exist(err);
-              err.message.should.contain('Invalid proposal signing key');
+              err.message.should.contain('Invalid proposal signature');
               done();
             });
           });
@@ -2818,27 +2882,27 @@ describe('Wallet service', function() {
 
       it('should accept a tx proposal signed with a custom key', function(done) {
         var reqPrivKey = new Bitcore.PrivateKey();
-        var reqPubKey = reqPrivKey.toPublicKey();
+        var reqPubKey = reqPrivKey.toPublicKey().toString();
 
         var xPrivKey = TestData.copayers[0].xPrivKey_44H_0H_0H;
-        var sig = helpers.signRequestPubKey(reqPubKey, xPrivKey);
 
-        var opts = {
+        var accessOpts = {
           copayerId: TestData.copayers[0].id44,
           requestPubKey: reqPubKey,
-          signature: sig,
+          signature: helpers.signRequestPubKey(reqPubKey, xPrivKey),
         };
 
-        server.addAccess(opts, function(err) {
+        server.addAccess(accessOpts, function(err) {
           should.not.exist(err);
 
           helpers.stubUtxos(server, wallet, [1, 2], function() {
-            var txOpts = helpers.createProposalOpts2([{
-              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-              amount: 0.8
-            }], {
+            var txOpts = {
+              outputs: [{
+                toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+                amount: 0.8 * 1e8,
+              }],
               message: 'some message',
-            });
+            };
             server.createTx(txOpts, function(err, txp) {
               should.not.exist(err);
               should.exist(txp);
@@ -2846,28 +2910,34 @@ describe('Wallet service', function() {
               var publishOpts = {
                 txProposalId: txp.id,
                 proposalSignature: helpers.signMessage(txp.getRawTx(), reqPrivKey),
-                proposalSignaturePubKey: reqPubKey,
-                proposalSignaturePubKeySig: sig,
               }
 
               server.publishTx(publishOpts, function(err) {
-                should.exist(err);
-                err.message.should.contain('Invalid proposal signing key');
-                done();
+                should.not.exist(err);
+                server.getTx({
+                  txProposalId: txp.id
+                }, function(err, x) {
+                  should.not.exist(err);
+                  x.proposalSignature.should.equal(publishOpts.proposalSignature);
+                  x.proposalSignaturePubKey.should.equal(accessOpts.requestPubKey);
+                  x.proposalSignaturePubKeySig.should.equal(accessOpts.signature);
+                  done();
+                });
               });
             });
           });
         });
       });
 
-      it('should fail to send a temporary tx proposal if utxos are unavailable', function(done) {
+      it('should fail to publish a temporary tx proposal if utxos are unavailable', function(done) {
         var txp1, txp2;
-        var txOpts = helpers.createProposalOpts2([{
-          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-          amount: 0.8
-        }], {
+        var txOpts = {
+          outputs: [{
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 0.8 * 1e8,
+          }],
           message: 'some message',
-        });
+        };
 
         async.waterfall([
 
@@ -2890,7 +2960,7 @@ describe('Wallet service', function() {
             var publishOpts = helpers.getProposalSignatureOpts(txp1, TestData.copayers[0].privKey_1H_0);
             server.publishTx(publishOpts, next);
           },
-          function(next) {
+          function(txp, next) {
             var publishOpts = helpers.getProposalSignatureOpts(txp2, TestData.copayers[0].privKey_1H_0);
             server.publishTx(publishOpts, function(err) {
               should.exist(err);
@@ -2914,7 +2984,7 @@ describe('Wallet service', function() {
             var publishOpts = helpers.getProposalSignatureOpts(txp3, TestData.copayers[0].privKey_1H_0);
             server.publishTx(publishOpts, next);
           },
-          function(next) {
+          function(txp, next) {
             server.getPendingTxs({}, function(err, txs) {
               should.not.exist(err);
               txs.length.should.equal(2);
@@ -2929,13 +2999,14 @@ describe('Wallet service', function() {
 
       it('should fail to list pending proposals from legacy client', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
-          var txOpts = helpers.createProposalOpts2([{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 0.8
-          }], {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8 * 1e8,
+            }],
             message: 'some message',
             customData: 'some custom data',
-          });
+          };
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -3387,207 +3458,262 @@ describe('Wallet service', function() {
 
   describe('#broadcastTx & #broadcastRawTx', function() {
     var server, wallet, txpid, txid;
-    beforeEach(function(done) {
-      helpers.createAndJoinWallet(1, 1, function(s, w) {
-        server = s;
-        wallet = w;
-        helpers.stubUtxos(server, wallet, [10, 10], function() {
-          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, TestData.copayers[0].privKey_1H_0, {
-            message: 'some message'
-          });
-          server.createTxLegacy(txOpts, function(err, txp) {
-            should.not.exist(err);
-            should.exist(txp);
-            var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
-            server.signTx({
-              txProposalId: txp.id,
-              signatures: signatures,
-            }, function(err, txp) {
+    describe('Legacy', function() {
+
+      beforeEach(function(done) {
+        helpers.createAndJoinWallet(1, 1, function(s, w) {
+          server = s;
+          wallet = w;
+          helpers.stubUtxos(server, wallet, [10, 10], function() {
+            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, TestData.copayers[0].privKey_1H_0, {
+              message: 'some message'
+            });
+            server.createTxLegacy(txOpts, function(err, txp) {
               should.not.exist(err);
               should.exist(txp);
-              txp.isAccepted().should.be.true;
-              txp.isBroadcasted().should.be.false;
-              txid = txp.txid;
-              txpid = txp.id;
-              done();
+              var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+              server.signTx({
+                txProposalId: txp.id,
+                signatures: signatures,
+              }, function(err, txp) {
+                should.not.exist(err);
+                should.exist(txp);
+                txp.isAccepted().should.be.true;
+                txp.isBroadcasted().should.be.false;
+                txid = txp.txid;
+                txpid = txp.id;
+                done();
+              });
             });
           });
         });
       });
-    });
 
-    it('should broadcast a tx', function(done) {
-      var clock = sinon.useFakeTimers(1234000, 'Date');
-      helpers.stubBroadcast();
-      server.broadcastTx({
-        txProposalId: txpid
-      }, function(err) {
-        should.not.exist(err);
-        server.getTx({
-          txProposalId: txpid
-        }, function(err, txp) {
-          should.not.exist(err);
-          should.not.exist(txp.raw);
-          txp.txid.should.equal(txid);
-          txp.isBroadcasted().should.be.true;
-          txp.broadcastedOn.should.equal(1234);
-          clock.restore();
-          done();
-        });
-      });
-    });
-
-    it('should broadcast a raw tx', function(done) {
-      helpers.stubBroadcast();
-      server.broadcastRawTx({
-        network: 'testnet',
-        rawTx: 'raw tx',
-      }, function(err, txid) {
-        should.not.exist(err);
-        should.exist(txid);
-        done();
-      });
-    });
-
-    it('should fail to brodcast a tx already marked as broadcasted', function(done) {
-      helpers.stubBroadcast();
-      server.broadcastTx({
-        txProposalId: txpid
-      }, function(err) {
-        should.not.exist(err);
+      it('should broadcast a tx', function(done) {
+        var clock = sinon.useFakeTimers(1234000, 'Date');
+        helpers.stubBroadcast();
         server.broadcastTx({
           txProposalId: txpid
         }, function(err) {
-          should.exist(err);
-          err.code.should.equal('TX_ALREADY_BROADCASTED');
+          should.not.exist(err);
+          server.getTx({
+            txProposalId: txpid
+          }, function(err, txp) {
+            should.not.exist(err);
+            should.not.exist(txp.raw);
+            txp.txid.should.equal(txid);
+            txp.isBroadcasted().should.be.true;
+            txp.broadcastedOn.should.equal(1234);
+            clock.restore();
+            done();
+          });
+        });
+      });
+
+      it('should broadcast a raw tx', function(done) {
+        helpers.stubBroadcast();
+        server.broadcastRawTx({
+          network: 'testnet',
+          rawTx: 'raw tx',
+        }, function(err, txid) {
+          should.not.exist(err);
+          should.exist(txid);
           done();
         });
       });
-    });
 
-    it('should auto process already broadcasted txs', function(done) {
-      helpers.stubBroadcast();
-      server.getPendingTxs({}, function(err, txs) {
-        should.not.exist(err);
-        txs.length.should.equal(1);
-        blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, {
-          txid: 999
-        });
-        server.getPendingTxs({}, function(err, txs) {
+      it('should fail to brodcast a tx already marked as broadcasted', function(done) {
+        helpers.stubBroadcast();
+        server.broadcastTx({
+          txProposalId: txpid
+        }, function(err) {
           should.not.exist(err);
-          txs.length.should.equal(0);
-          done();
+          server.broadcastTx({
+            txProposalId: txpid
+          }, function(err) {
+            should.exist(err);
+            err.code.should.equal('TX_ALREADY_BROADCASTED');
+            done();
+          });
         });
       });
-    });
 
-    it('should process only broadcasted txs', function(done) {
-      helpers.stubBroadcast();
-      var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, TestData.copayers[0].privKey_1H_0, {
-        message: 'some message 2'
-      });
-      server.createTxLegacy(txOpts, function(err, txp) {
-        should.not.exist(err);
+      it('should auto process already broadcasted txs', function(done) {
+        helpers.stubBroadcast();
         server.getPendingTxs({}, function(err, txs) {
           should.not.exist(err);
-          txs.length.should.equal(2);
+          txs.length.should.equal(1);
           blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, {
             txid: 999
           });
           server.getPendingTxs({}, function(err, txs) {
             should.not.exist(err);
-            txs.length.should.equal(1);
-            txs[0].status.should.equal('pending');
-            should.not.exist(txs[0].txid);
+            txs.length.should.equal(0);
+            done();
+          });
+        });
+      });
+
+      it('should process only broadcasted txs', function(done) {
+        helpers.stubBroadcast();
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, TestData.copayers[0].privKey_1H_0, {
+          message: 'some message 2'
+        });
+        server.createTxLegacy(txOpts, function(err, txp) {
+          should.not.exist(err);
+          server.getPendingTxs({}, function(err, txs) {
+            should.not.exist(err);
+            txs.length.should.equal(2);
+            blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, {
+              txid: 999
+            });
+            server.getPendingTxs({}, function(err, txs) {
+              should.not.exist(err);
+              txs.length.should.equal(1);
+              txs[0].status.should.equal('pending');
+              should.not.exist(txs[0].txid);
+              done();
+            });
+          });
+        });
+      });
+
+      it('should fail to brodcast a not yet accepted tx', function(done) {
+        helpers.stubBroadcast();
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, TestData.copayers[0].privKey_1H_0, {
+          message: 'some message'
+        });
+        server.createTxLegacy(txOpts, function(err, txp) {
+          should.not.exist(err);
+          should.exist(txp);
+          server.broadcastTx({
+            txProposalId: txp.id
+          }, function(err) {
+            should.exist(err);
+            err.code.should.equal('TX_NOT_ACCEPTED');
+            done();
+          });
+        });
+      });
+
+      it('should keep tx as accepted if unable to broadcast it', function(done) {
+        blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, 'broadcast error');
+        blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
+        server.broadcastTx({
+          txProposalId: txpid
+        }, function(err) {
+          should.exist(err);
+          err.toString().should.equal('broadcast error');
+          server.getTx({
+            txProposalId: txpid
+          }, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp.txid);
+            txp.isBroadcasted().should.be.false;
+            should.not.exist(txp.broadcastedOn);
+            txp.isAccepted().should.be.true;
+            done();
+          });
+        });
+      });
+
+      it('should mark tx as broadcasted if accepted but already in blockchain', function(done) {
+        blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, 'broadcast error');
+        blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, {
+          txid: '999'
+        });
+        server.broadcastTx({
+          txProposalId: txpid
+        }, function(err) {
+          should.not.exist(err);
+          server.getTx({
+            txProposalId: txpid
+          }, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp.txid);
+            txp.isBroadcasted().should.be.true;
+            should.exist(txp.broadcastedOn);
+            done();
+          });
+        });
+      });
+
+      it('should keep tx as accepted if broadcast fails and cannot check tx in blockchain', function(done) {
+        blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, 'broadcast error');
+        blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, 'bc check error');
+        server.broadcastTx({
+          txProposalId: txpid
+        }, function(err) {
+          should.exist(err);
+          err.toString().should.equal('bc check error');
+          server.getTx({
+            txProposalId: txpid
+          }, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp.txid);
+            txp.isBroadcasted().should.be.false;
+            should.not.exist(txp.broadcastedOn);
+            txp.isAccepted().should.be.true;
             done();
           });
         });
       });
     });
 
-
-
-
-
-    it('should fail to brodcast a not yet accepted tx', function(done) {
-      helpers.stubBroadcast();
-      var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, TestData.copayers[0].privKey_1H_0, {
-        message: 'some message'
+    describe('New', function() {
+      beforeEach(function(done) {
+        helpers.createAndJoinWallet(1, 1, function(s, w) {
+          server = s;
+          wallet = w;
+          helpers.stubUtxos(server, wallet, [10, 10], function() {
+            var txOpts = {
+              outputs: [{
+                toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+                amount: 9e8,
+              }],
+              message: 'some message',
+            };
+            helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
+              should.exist(txp);
+              var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+              server.signTx({
+                txProposalId: txp.id,
+                signatures: signatures,
+              }, function(err, txp) {
+                should.not.exist(err);
+                should.exist(txp);
+                txp.isAccepted().should.be.true;
+                txp.isBroadcasted().should.be.false;
+                txid = txp.txid;
+                txpid = txp.id;
+                done();
+              });
+            });
+          });
+        });
       });
-      server.createTxLegacy(txOpts, function(err, txp) {
-        should.not.exist(err);
-        should.exist(txp);
+
+      it('should broadcast a tx', function(done) {
+        var clock = sinon.useFakeTimers(1234000, 'Date');
+        helpers.stubBroadcast();
         server.broadcastTx({
-          txProposalId: txp.id
+          txProposalId: txpid
         }, function(err) {
-          should.exist(err);
-          err.code.should.equal('TX_NOT_ACCEPTED');
-          done();
-        });
-      });
-    });
-
-    it('should keep tx as accepted if unable to broadcast it', function(done) {
-      blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, 'broadcast error');
-      blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
-      server.broadcastTx({
-        txProposalId: txpid
-      }, function(err) {
-        should.exist(err);
-        err.toString().should.equal('broadcast error');
-        server.getTx({
-          txProposalId: txpid
-        }, function(err, txp) {
           should.not.exist(err);
-          should.exist(txp.txid);
-          txp.isBroadcasted().should.be.false;
-          should.not.exist(txp.broadcastedOn);
-          txp.isAccepted().should.be.true;
-          done();
+          server.getTx({
+            txProposalId: txpid
+          }, function(err, txp) {
+            should.not.exist(err);
+            should.not.exist(txp.raw);
+            txp.txid.should.equal(txid);
+            txp.isBroadcasted().should.be.true;
+            txp.broadcastedOn.should.equal(1234);
+            clock.restore();
+            done();
+          });
         });
       });
-    });
 
-    it('should mark tx as broadcasted if accepted but already in blockchain', function(done) {
-      blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, 'broadcast error');
-      blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, {
-        txid: '999'
-      });
-      server.broadcastTx({
-        txProposalId: txpid
-      }, function(err) {
-        should.not.exist(err);
-        server.getTx({
-          txProposalId: txpid
-        }, function(err, txp) {
-          should.not.exist(err);
-          should.exist(txp.txid);
-          txp.isBroadcasted().should.be.true;
-          should.exist(txp.broadcastedOn);
-          done();
-        });
-      });
-    });
-
-    it('should keep tx as accepted if broadcast fails and cannot check tx in blockchain', function(done) {
-      blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, 'broadcast error');
-      blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, 'bc check error');
-      server.broadcastTx({
-        txProposalId: txpid
-      }, function(err) {
-        should.exist(err);
-        err.toString().should.equal('bc check error');
-        server.getTx({
-          txProposalId: txpid
-        }, function(err, txp) {
-          should.not.exist(err);
-          should.exist(txp.txid);
-          txp.isBroadcasted().should.be.false;
-          should.not.exist(txp.broadcastedOn);
-          txp.isAccepted().should.be.true;
-          done();
-        });
-      });
     });
   });
 

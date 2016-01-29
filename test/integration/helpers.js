@@ -400,28 +400,6 @@ helpers.createExternalProposalOpts = function(toAddress, amount, signingKey, mor
 };
 
 
-helpers.createProposalOpts2 = function(outputs, moreOpts, inputs) {
-  _.each(outputs, function(output) {
-    output.amount = helpers.toSatoshi(output.amount);
-  });
-
-  var opts = {
-    outputs: outputs,
-    inputs: inputs || [],
-  };
-
-  if (moreOpts) {
-    moreOpts = _.pick(moreOpts, ['feePerKb', 'customData', 'message']);
-    opts = _.assign(opts, moreOpts);
-  }
-
-  opts = _.defaults(opts, {
-    message: null
-  });
-
-  return opts;
-};
-
 helpers.getProposalSignatureOpts = function(txp, signingKey) {
   var raw = txp.getRawTx();
   var proposalSignature = helpers.signMessage(raw, signingKey);
@@ -487,6 +465,17 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
     should.not.exist(err);
     // clock.restore();
     return cb(_.take(addresses, main), _.takeRight(addresses, change));
+  });
+};
+
+helpers.createAndPublishTx = function(server, txOpts, signingKey, cb) {
+  server.createTx(txOpts, function(err, txp) {
+    should.not.exist(err);
+    var publishOpts = helpers.getProposalSignatureOpts(txp, signingKey);
+    server.publishTx(publishOpts, function(err) {
+      should.not.exist(err);
+      return cb(txp);
+    });
   });
 };
 
