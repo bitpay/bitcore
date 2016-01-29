@@ -2759,7 +2759,7 @@ describe('Wallet service', function() {
         });
       });
 
-      it('should be able to send a temporary tx proposal', function(done) {
+      it('should be able to publish a temporary tx proposal', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
           var txOpts = {
             outputs: [{
@@ -2786,7 +2786,36 @@ describe('Wallet service', function() {
         });
       });
 
-      it('should fail to send non-existent tx proposal', function(done) {
+      it('should delay NewTxProposal notification until published', function(done) {
+        helpers.stubUtxos(server, wallet, [1, 2], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8 * 1e8,
+            }],
+            message: 'some message',
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            server.getNotifications({}, function(err, notifications) {
+              should.not.exist(err);
+              _.pluck(notifications, 'type').should.not.contain('NewTxProposal');
+              var publishOpts = helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0);
+              server.publishTx(publishOpts, function(err) {
+                should.not.exist(err);
+                server.getNotifications({}, function(err, notifications) {
+                  should.not.exist(err);
+                  _.pluck(notifications, 'type').should.contain('NewTxProposal');
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+
+      it('should fail to publish non-existent tx proposal', function(done) {
         server.publishTx({
           txProposalId: 'wrong-id',
           proposalSignature: 'dummy',
@@ -2800,7 +2829,7 @@ describe('Wallet service', function() {
         });
       });
 
-      it('should fail to send tx proposal with wrong signature', function(done) {
+      it('should fail to publish tx proposal with wrong signature', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
           var txOpts = {
             outputs: [{
@@ -2824,7 +2853,7 @@ describe('Wallet service', function() {
         });
       });
 
-      it('should fail to send tx proposal not signed by the creator', function(done) {
+      it('should fail to publish tx proposal not signed by the creator', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
           var txOpts = {
             outputs: [{
@@ -2900,7 +2929,7 @@ describe('Wallet service', function() {
         });
       });
 
-      it('should fail to send a temporary tx proposal if utxos are unavailable', function(done) {
+      it('should fail to publish a temporary tx proposal if utxos are unavailable', function(done) {
         var txp1, txp2;
         var txOpts = {
           outputs: [{
@@ -2931,7 +2960,7 @@ describe('Wallet service', function() {
             var publishOpts = helpers.getProposalSignatureOpts(txp1, TestData.copayers[0].privKey_1H_0);
             server.publishTx(publishOpts, next);
           },
-          function(next) {
+          function(txp, next) {
             var publishOpts = helpers.getProposalSignatureOpts(txp2, TestData.copayers[0].privKey_1H_0);
             server.publishTx(publishOpts, function(err) {
               should.exist(err);
@@ -2955,7 +2984,7 @@ describe('Wallet service', function() {
             var publishOpts = helpers.getProposalSignatureOpts(txp3, TestData.copayers[0].privKey_1H_0);
             server.publishTx(publishOpts, next);
           },
-          function(next) {
+          function(txp, next) {
             server.getPendingTxs({}, function(err, txs) {
               should.not.exist(err);
               txs.length.should.equal(2);
