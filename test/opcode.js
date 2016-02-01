@@ -120,10 +120,23 @@ describe('Opcode', function() {
     var testSmallInt = function(n, op) {
       Opcode.smallInt(n).toString().should.equal(op.toString());
     };
+
     for (var i = 0; i < smallints.length; i++) {
       var op = smallints[i];
       it('should work for small int ' + op, testSmallInt.bind(null, i, op));
     }
+
+    it('with not number', function () {
+      Opcode.smallInt.bind(null, '2').should.throw('Invalid Argument');
+    });
+
+    it('with n equal -1', function () {
+      Opcode.smallInt.bind(null, -1).should.throw('Invalid Argument');
+    });
+
+    it('with n equal 17', function () {
+      Opcode.smallInt.bind(null, 17).should.throw('Invalid Argument');
+    });
   });
   describe('@isSmallIntOp', function() {
     var testIsSmallInt = function(op) {
