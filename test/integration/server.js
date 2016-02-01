@@ -2742,6 +2742,24 @@ describe('Wallet service', function() {
         });
       });
 
+      it('should not be able to specify both final fee & fee per kb', function(done) {
+        helpers.stubUtxos(server, wallet, [1, 2], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8 * 1e8,
+            }],
+            fee: 123400,
+            feePerKb: 123400,
+          };
+          server.createTx(txOpts, function(err, tx) {
+            should.exist(err);
+            err.message.should.contain('fee');
+            done();
+          });
+        });
+      });
+
       it('should check explicit fee to be below max', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
           var txOpts = {
