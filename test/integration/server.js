@@ -1271,12 +1271,13 @@ describe('Wallet service', function() {
       var requestPubKey = reqPrivKey.toPublicKey();
 
       var xPrivKey = TestData.copayers[0].xPrivKey_44H_0H_0H;
-      var sig = helpers.signRequestPubKey(requestPubKey, xPrivKey);
+      var requestPubKeyStr = requestPubKey.toString();
+      var sig = helpers.signRequestPubKey(requestPubKeyStr, xPrivKey);
 
       var copayerId = Model.Copayer._xPubToCopayerId(TestData.copayers[0].xPubKey_44H_0H_0H);
       opts = {
         copayerId: copayerId,
-        requestPubKey: requestPubKey,
+        requestPubKey: requestPubKeyStr,
         signature: sig,
       };
       ws = new WalletService();
