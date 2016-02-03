@@ -15,6 +15,29 @@ describe('Networks', function() {
     should.exist(networks.defaultNetwork);
   });
 
+  it('will enable/disable regtest Network', function() {
+    networks.enableRegtest();
+    networks.testnet.networkMagic.should.deep.equal(new Buffer('fabfb5da', 'hex'));
+    networks.testnet.port.should.equal(18444);
+    networks.testnet.dnsSeeds.should.deep.equal([]);
+    networks.testnet.regtestEnabled.should.equal(true);
+
+    networks.disableRegtest();
+    networks.testnet.networkMagic.should.deep.equal(new Buffer('0b110907', 'hex'));
+    networks.testnet.port.should.equal(18333);
+    networks.testnet.dnsSeeds.should.deep.equal([
+      'testnet-seed.bitcoin.petertodd.org',
+      'testnet-seed.bluematt.me',
+      'testnet-seed.alexykot.me',
+      'testnet-seed.bitcoin.schildbach.de'
+    ]);
+  });
+
+  it('will get network based on string "regtest" value', function() {
+    var network = networks.get('regtest');
+    network.should.equal(networks.testnet);
+  });
+
   it('should be able to define a custom Network', function() {
     var custom = {
       name: 'customnet',
