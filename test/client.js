@@ -423,7 +423,7 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH',
         };
-        var t = Client.buildTx(txp);
+        var t = Utils.buildTx(txp);
         var bitcoreError = t.getSerializationError({
           disableIsFullySigned: true,
           disableSmallFees: true,
@@ -456,7 +456,7 @@ describe('client API', function() {
           derivationStrategy: 'BIP48',
           addressType: 'P2PKH',
         };
-        var t = Client.buildTx(txp);
+        var t = Utils.buildTx(txp);
         var bitcoreError = t.getSerializationError({
           disableIsFullySigned: true,
           disableSmallFees: true,
@@ -490,7 +490,7 @@ describe('client API', function() {
           derivationStrategy: 'BIP45',
           addressType: 'P2SH',
         };
-        var t = Client.buildTx(txp);
+        var t = Utils.buildTx(txp);
         var bitcoreError = t.getSerializationError({
           disableIsFullySigned: true,
           disableSmallFees: true,
@@ -538,7 +538,7 @@ describe('client API', function() {
         };
 
         (function() {
-          var t = Client.buildTx(txp);
+          var t = Utils.buildTx(txp);
         }).should.throw('Illegal State');
 
         Utils.newBitcoreTransaction = x;
@@ -573,13 +573,12 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH',
         };
-        var t = Client.buildTx(txp);
+        var t = Utils.buildTx(txp);
         var bitcoreError = t.getSerializationError({
           disableIsFullySigned: true,
         });
         should.not.exist(bitcoreError);
       });
-
       it('should build a tx with provided output scripts', function() {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
@@ -612,7 +611,7 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH',
         };
-        var t = Client.buildTx(txp);
+        var t = Utils.buildTx(txp);
         var bitcoreError = t.getSerializationError({
           disableIsFullySigned: true,
         });
@@ -658,11 +657,11 @@ describe('client API', function() {
           addressType: 'P2PKH',
         };
         (function() {
-          var t = Client.buildTx(txp);
+          var t = Utils.buildTx(txp);
         }).should.throw('Output should have either toAddress or script specified');
 
         txp.outputs[0].toAddress = "18433T2TSgajt9jWhcTBw4GoNREA6LpX3E";
-        var t = Client.buildTx(txp);
+        var t = Utils.buildTx(txp);
         var bitcoreError = t.getSerializationError({
           disableIsFullySigned: true,
         });
@@ -670,7 +669,43 @@ describe('client API', function() {
 
         delete txp.outputs[0].toAddress;
         txp.outputs[0].script = "512103ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff210314a96cd6f5a20826070173fe5b7e9797f21fc8ca4a55bcb2d2bde99f55dd352352ae";
-        t = Client.buildTx(txp);
+        t = Utils.buildTx(txp);
+        var bitcoreError = t.getSerializationError({
+          disableIsFullySigned: true,
+        });
+        should.not.exist(bitcoreError);
+      });
+      it('should build a v3 tx proposal', function() {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
+        }];
+
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        var txp = {
+          version: 3,
+          inputs: utxos,
+          outputs: [{
+            toAddress: toAddress,
+            amount: 800,
+            message: 'first output'
+          }, {
+            toAddress: toAddress,
+            amount: 900,
+            message: 'second output'
+          }],
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1, 2],
+          fee: 10000,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+        };
+        var t = Utils.buildTx(txp);
         var bitcoreError = t.getSerializationError({
           disableIsFullySigned: true,
         });
@@ -796,6 +831,40 @@ describe('client API', function() {
         var signatures = Client.signTxp(txp, derivedPrivateKey['BIP44']);
         signatures.length.should.be.equal(utxos.length);
       });
+      it('should sign v3 proposal correctly', function() {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
+        }];
+
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        var txp = {
+          version: 3,
+          inputs: utxos,
+          outputs: [{
+            toAddress: toAddress,
+            amount: 800,
+            message: 'first output'
+          }, {
+            toAddress: toAddress,
+            amount: 900,
+            message: 'second output'
+          }],
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1, 2],
+          fee: 10000,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+        };
+        var signatures = Client.signTxp(txp, derivedPrivateKey['BIP44']);
+        signatures.length.should.be.equal(utxos.length);
+      });
+
     });
   });
 
@@ -1457,391 +1526,580 @@ describe('client API', function() {
   });
 
   describe('Transaction Proposals Creation and Locked funds', function() {
-    it('Should create proposal and get it', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          should.exist(x0.address);
-          blockchainExplorerMock.setUtxo(x0, 1, 2);
-          blockchainExplorerMock.setUtxo(x0, 1, 2);
-          var opts = {
-            amount: 30000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hello',
-          };
-          clients[0].sendTxProposal(opts, function(err, x) {
+    describe('Legacy flow (signing proposal header)', function() {
+      it('Should create proposal and get it', function(done) {
+        helpers.createAndJoinWallet(clients, 2, 2, function(w) {
+          clients[0].createAddress(function(err, x0) {
             should.not.exist(err);
-            clients[0].getTx(x.id, function(err, x2) {
-              should.not.exist(err);
-              x2.creatorName.should.equal('creator');
-              x2.message.should.equal('hello');
-              x2.amount.should.equal(30000);
-              x2.fee.should.equal(3720);
-              x2.toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
-              x2.hasUnconfirmedInputs.should.equal(false);
-              done();
-            });
-          });
-        });
-      });
-    });
-
-    it('Should create proposal with unconfirmed inputs', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          should.exist(x0.address);
-          blockchainExplorerMock.setUtxo(x0, 1, 2, 0);
-          var opts = {
-            amount: 30000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hello',
-          };
-          clients[0].sendTxProposal(opts, function(err, x) {
-            should.not.exist(err);
-            clients[0].getTx(x.id, function(err, x2) {
-              should.not.exist(err);
-              x2.hasUnconfirmedInputs.should.equal(true);
-              done();
-            });
-          });
-        });
-      });
-    });
-
-    it('Should fail to create proposal with insufficient funds', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          should.exist(x0.address);
-          blockchainExplorerMock.setUtxo(x0, 1, 2);
-          blockchainExplorerMock.setUtxo(x0, 1, 2);
-          var opts = {
-            amount: 300000000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hello 1-1',
-          };
-          clients[0].sendTxProposal(opts, function(err, x) {
-            should.exist(err);
-            err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS);
-            done();
-          });
-        });
-      });
-    });
-    it('Should fail to create proposal with insufficient funds for fee', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          should.exist(x0.address);
-          blockchainExplorerMock.setUtxo(x0, 1, 2);
-          blockchainExplorerMock.setUtxo(x0, 1, 2);
-          var opts = {
-            amount: 2 * 1e8 - 2000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hello 1-1',
-          };
-          clients[0].sendTxProposal(opts, function(err, x) {
-            should.exist(err);
-            err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS_FOR_FEE);
-            opts.feePerKb = 2000;
+            should.exist(x0.address);
+            blockchainExplorerMock.setUtxo(x0, 1, 2);
+            blockchainExplorerMock.setUtxo(x0, 1, 2);
+            var opts = {
+              amount: 30000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: 'hello',
+            };
             clients[0].sendTxProposal(opts, function(err, x) {
               should.not.exist(err);
               clients[0].getTx(x.id, function(err, x2) {
                 should.not.exist(err);
-                x2.fee.should.equal(1290);
+                x2.creatorName.should.equal('creator');
+                x2.message.should.equal('hello');
+                x2.amount.should.equal(30000);
+                x2.fee.should.equal(3720);
+                x2.toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
+                x2.hasUnconfirmedInputs.should.equal(false);
+                should.exist(x2.encryptedMessage);
                 done();
               });
             });
           });
         });
       });
-    });
-    it('Should lock and release funds through rejection', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          should.exist(x0.address);
-          blockchainExplorerMock.setUtxo(x0, 1, 2);
-          blockchainExplorerMock.setUtxo(x0, 1, 2);
-          var opts = {
-            amount: 120000000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hello 1-1',
-          };
-          clients[0].sendTxProposal(opts, function(err, x) {
-            should.not.exist(err);
 
-            clients[0].sendTxProposal(opts, function(err, y) {
-              err.should.be.an.instanceOf(Errors.LOCKED_FUNDS);
-
-              clients[0].rejectTxProposal(x, 'no', function(err, z) {
-                should.not.exist(err);
-                z.status.should.equal('rejected');
-                clients[0].sendTxProposal(opts, function(err, x) {
-                  should.not.exist(err);
-                  done();
-                });
-              });
-            });
-          });
-        });
-      });
-    });
-    it('Should lock and release funds through removal', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          should.exist(x0.address);
-          blockchainExplorerMock.setUtxo(x0, 1, 2);
-          blockchainExplorerMock.setUtxo(x0, 1, 2);
-          var opts = {
-            amount: 120000000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hello 1-1',
-          };
-          clients[0].sendTxProposal(opts, function(err, x) {
-            should.not.exist(err);
-
-            clients[0].sendTxProposal(opts, function(err, y) {
-              err.should.be.an.instanceOf(Errors.LOCKED_FUNDS);
-
-              clients[0].removeTxProposal(x, function(err) {
-                should.not.exist(err);
-
-                clients[0].sendTxProposal(opts, function(err, x) {
-                  should.not.exist(err);
-                  done();
-                });
-              });
-            });
-          });
-        });
-      });
-    });
-    it('Should keep message and refusal texts', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 3, function(w) {
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          blockchainExplorerMock.setUtxo(x0, 10, 2);
-          var opts = {
-            amount: 10000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'some message',
-          };
-          clients[0].sendTxProposal(opts, function(err, x) {
-            should.not.exist(err);
-            clients[1].rejectTxProposal(x, 'rejection comment', function(err, tx1) {
-              should.not.exist(err);
-
-              clients[2].getTxProposals({}, function(err, txs) {
-                should.not.exist(err);
-                txs[0].message.should.equal('some message');
-                txs[0].actions[0].comment.should.equal('rejection comment');
-                done();
-              });
-            });
-          });
-        });
-      });
-    });
-    it('Should encrypt proposal message', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 3, function(w) {
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          blockchainExplorerMock.setUtxo(x0, 10, 2);
-          var opts = {
-            amount: 10000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'some message',
-          };
-          var spy = sinon.spy(clients[0], '_doPostRequest');
-          clients[0].sendTxProposal(opts, function(err, x) {
-            should.not.exist(err);
-            spy.calledOnce.should.be.true;
-            JSON.stringify(spy.getCall(0).args).should.not.contain('some message');
-            done();
-          });
-        });
-      });
-    });
-    it('Should encrypt proposal refusal comment', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 3, function(w) {
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          blockchainExplorerMock.setUtxo(x0, 10, 2);
-          var opts = {
-            amount: 10000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-          };
-          clients[0].sendTxProposal(opts, function(err, x) {
-            should.not.exist(err);
-            var spy = sinon.spy(clients[1], '_doPostRequest');
-            clients[1].rejectTxProposal(x, 'rejection comment', function(err, tx1) {
-              should.not.exist(err);
-              spy.calledOnce.should.be.true;
-              JSON.stringify(spy.getCall(0).args).should.not.contain('rejection comment');
-              done();
-            });
-          });
-        });
-      });
-    });
-    it('should detect fake tx proposals (wrong signature)', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 1, function() {
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          blockchainExplorerMock.setUtxo(x0, 10, 1);
-          var opts = {
-            amount: 10000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hello',
-          };
-          clients[0].sendTxProposal(opts, function(err, x) {
-            should.not.exist(err);
-
-            helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function(txps) {
-              txps[0].proposalSignature = '304402206e4a1db06e00068582d3be41cfc795dcf702451c132581e661e7241ef34ca19202203e17598b4764913309897d56446b51bc1dcd41a25d90fdb5f87a6b58fe3a6920';
-            }, function() {
-              clients[0].getTxProposals({}, function(err, txps) {
-                should.exist(err);
-                err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
-                done();
-              });
-            });
-          });
-        });
-      });
-    });
-
-    it('should detect fake tx proposals (tampered amount)', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 1, function() {
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          blockchainExplorerMock.setUtxo(x0, 10, 1);
-          var opts = {
-            amount: 10000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hello',
-          };
-          clients[0].sendTxProposal(opts, function(err, x) {
-            should.not.exist(err);
-
-            helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function(txps) {
-              txps[0].amount = 100000;
-            }, function() {
-              clients[0].getTxProposals({}, function(err, txps) {
-                should.exist(err);
-                err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
-                done();
-              });
-            });
-          });
-        });
-      });
-    });
-    it('should detect fake tx proposals (change address not it wallet)', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 1, function() {
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          blockchainExplorerMock.setUtxo(x0, 10, 1);
-          var opts = {
-            amount: 10000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hello',
-          };
-          clients[0].sendTxProposal(opts, function(err, x) {
-            should.not.exist(err);
-
-            helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function(txps) {
-              txps[0].changeAddress.address = 'n2tbmpzpecgufct2ebyitj12tpzkhn2mn5';
-            }, function() {
-              clients[0].getTxProposals({}, function(err, txps) {
-                should.exist(err);
-                err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
-                done();
-              });
-            });
-          });
-        });
-      });
-    });
-    it('Should return only main addresses (case 1)', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          blockchainExplorerMock.setUtxo(x0, 1, 1);
-          var opts = {
-            amount: 10000000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hello 1-1',
-          };
-          clients[0].sendTxProposal(opts, function(err, x) {
-            should.not.exist(err);
-            clients[0].getMainAddresses({}, function(err, addr) {
-              should.not.exist(err);
-              addr.length.should.equal(1);
-              done();
-            });
-          });
-        });
-      });
-    });
-    it('Should return only main addresses (case 2)', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          clients[0].createAddress(function(err, x0) {
-            should.not.exist(err);
-            clients[0].getMainAddresses({
-              doNotVerify: true
-            }, function(err, addr) {
-              should.not.exist(err);
-              addr.length.should.equal(2);
-              done();
-            });
-          });
-        });
-      });
-    });
-    it('Should return UTXOs', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
-        clients[0].getUtxos({}, function(err, utxos) {
-          should.not.exist(err);
-          utxos.length.should.equal(0);
+      it('Should create proposal with unconfirmed inputs', function(done) {
+        helpers.createAndJoinWallet(clients, 2, 2, function(w) {
           clients[0].createAddress(function(err, x0) {
             should.not.exist(err);
             should.exist(x0.address);
-            blockchainExplorerMock.setUtxo(x0, 1, 1);
-            clients[0].getUtxos({}, function(err, utxos) {
+            blockchainExplorerMock.setUtxo(x0, 1, 2, 0);
+            var opts = {
+              amount: 30000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: 'hello',
+            };
+            clients[0].sendTxProposal(opts, function(err, x) {
               should.not.exist(err);
-              utxos.length.should.equal(1);
+              clients[0].getTx(x.id, function(err, x2) {
+                should.not.exist(err);
+                x2.hasUnconfirmedInputs.should.equal(true);
+                done();
+              });
+            });
+          });
+        });
+      });
+
+      it('Should fail to create proposal with insufficient funds', function(done) {
+        helpers.createAndJoinWallet(clients, 2, 2, function(w) {
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            should.exist(x0.address);
+            blockchainExplorerMock.setUtxo(x0, 1, 2);
+            blockchainExplorerMock.setUtxo(x0, 1, 2);
+            var opts = {
+              amount: 300000000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: 'hello 1-1',
+            };
+            clients[0].sendTxProposal(opts, function(err, x) {
+              should.exist(err);
+              err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS);
               done();
             });
           });
         });
       });
-    });
-    it('Should return UTXOs for specific addresses', function(done) {
-      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
-        async.map(_.range(3), function(i, next) {
-          clients[0].createAddress(function(err, x) {
+      it('Should fail to create proposal with insufficient funds for fee', function(done) {
+        helpers.createAndJoinWallet(clients, 2, 2, function(w) {
+          clients[0].createAddress(function(err, x0) {
             should.not.exist(err);
-            should.exist(x.address);
-            blockchainExplorerMock.setUtxo(x, 1, 1);
-            next(null, x.address);
+            should.exist(x0.address);
+            blockchainExplorerMock.setUtxo(x0, 1, 2);
+            blockchainExplorerMock.setUtxo(x0, 1, 2);
+            var opts = {
+              amount: 2 * 1e8 - 2000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: 'hello 1-1',
+            };
+            clients[0].sendTxProposal(opts, function(err, x) {
+              should.exist(err);
+              err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS_FOR_FEE);
+              opts.feePerKb = 2000;
+              clients[0].sendTxProposal(opts, function(err, x) {
+                should.not.exist(err);
+                clients[0].getTx(x.id, function(err, x2) {
+                  should.not.exist(err);
+                  x2.fee.should.equal(1290);
+                  done();
+                });
+              });
+            });
           });
-        }, function(err, addresses) {
-          var opts = {
-            addresses: _.take(addresses, 2),
-          };
-          clients[0].getUtxos(opts, function(err, utxos) {
+        });
+      });
+      it('Should lock and release funds through rejection', function(done) {
+        helpers.createAndJoinWallet(clients, 2, 2, function(w) {
+          clients[0].createAddress(function(err, x0) {
             should.not.exist(err);
-            utxos.length.should.equal(2);
-            _.sum(utxos, 'satoshis').should.equal(2 * 1e8);
+            should.exist(x0.address);
+            blockchainExplorerMock.setUtxo(x0, 1, 2);
+            blockchainExplorerMock.setUtxo(x0, 1, 2);
+            var opts = {
+              amount: 120000000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: 'hello 1-1',
+            };
+            clients[0].sendTxProposal(opts, function(err, x) {
+              should.not.exist(err);
+
+              clients[0].sendTxProposal(opts, function(err, y) {
+                err.should.be.an.instanceOf(Errors.LOCKED_FUNDS);
+
+                clients[0].rejectTxProposal(x, 'no', function(err, z) {
+                  should.not.exist(err);
+                  z.status.should.equal('rejected');
+                  clients[0].sendTxProposal(opts, function(err, x) {
+                    should.not.exist(err);
+                    done();
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+      it('Should lock and release funds through removal', function(done) {
+        helpers.createAndJoinWallet(clients, 2, 2, function(w) {
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            should.exist(x0.address);
+            blockchainExplorerMock.setUtxo(x0, 1, 2);
+            blockchainExplorerMock.setUtxo(x0, 1, 2);
+            var opts = {
+              amount: 120000000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: 'hello 1-1',
+            };
+            clients[0].sendTxProposal(opts, function(err, x) {
+              should.not.exist(err);
+
+              clients[0].sendTxProposal(opts, function(err, y) {
+                err.should.be.an.instanceOf(Errors.LOCKED_FUNDS);
+
+                clients[0].removeTxProposal(x, function(err) {
+                  should.not.exist(err);
+
+                  clients[0].sendTxProposal(opts, function(err, x) {
+                    should.not.exist(err);
+                    done();
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+      it('Should keep message and refusal texts', function(done) {
+        helpers.createAndJoinWallet(clients, 2, 3, function(w) {
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            blockchainExplorerMock.setUtxo(x0, 10, 2);
+            var opts = {
+              amount: 10000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: 'some message',
+            };
+            clients[0].sendTxProposal(opts, function(err, x) {
+              should.not.exist(err);
+              clients[1].rejectTxProposal(x, 'rejection comment', function(err, tx1) {
+                should.not.exist(err);
+
+                clients[2].getTxProposals({}, function(err, txs) {
+                  should.not.exist(err);
+                  txs[0].message.should.equal('some message');
+                  txs[0].actions[0].comment.should.equal('rejection comment');
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+      it('Should encrypt proposal message', function(done) {
+        helpers.createAndJoinWallet(clients, 2, 3, function(w) {
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            blockchainExplorerMock.setUtxo(x0, 10, 2);
+            var opts = {
+              amount: 10000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: 'some message',
+            };
+            var spy = sinon.spy(clients[0], '_doPostRequest');
+            clients[0].sendTxProposal(opts, function(err, x) {
+              should.not.exist(err);
+              spy.calledOnce.should.be.true;
+              JSON.stringify(spy.getCall(0).args).should.not.contain('some message');
+              done();
+            });
+          });
+        });
+      });
+      it('Should encrypt proposal refusal comment', function(done) {
+        helpers.createAndJoinWallet(clients, 2, 3, function(w) {
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            blockchainExplorerMock.setUtxo(x0, 10, 2);
+            var opts = {
+              amount: 10000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            };
+            clients[0].sendTxProposal(opts, function(err, x) {
+              should.not.exist(err);
+              var spy = sinon.spy(clients[1], '_doPostRequest');
+              clients[1].rejectTxProposal(x, 'rejection comment', function(err, tx1) {
+                should.not.exist(err);
+                spy.calledOnce.should.be.true;
+                JSON.stringify(spy.getCall(0).args).should.not.contain('rejection comment');
+                done();
+              });
+            });
+          });
+        });
+      });
+      it('should detect fake tx proposals (wrong signature)', function(done) {
+        helpers.createAndJoinWallet(clients, 1, 1, function() {
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            blockchainExplorerMock.setUtxo(x0, 10, 1);
+            var opts = {
+              amount: 10000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: 'hello',
+            };
+            clients[0].sendTxProposal(opts, function(err, x) {
+              should.not.exist(err);
+
+              helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function(txps) {
+                txps[0].proposalSignature = '304402206e4a1db06e00068582d3be41cfc795dcf702451c132581e661e7241ef34ca19202203e17598b4764913309897d56446b51bc1dcd41a25d90fdb5f87a6b58fe3a6920';
+              }, function() {
+                clients[0].getTxProposals({}, function(err, txps) {
+                  should.exist(err);
+                  err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+      it('should detect fake tx proposals (tampered amount)', function(done) {
+        helpers.createAndJoinWallet(clients, 1, 1, function() {
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            blockchainExplorerMock.setUtxo(x0, 10, 1);
+            var opts = {
+              amount: 10000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: 'hello',
+            };
+            clients[0].sendTxProposal(opts, function(err, x) {
+              should.not.exist(err);
+
+              helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function(txps) {
+                txps[0].amount = 100000;
+              }, function() {
+                clients[0].getTxProposals({}, function(err, txps) {
+                  should.exist(err);
+                  err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+      it('should detect fake tx proposals (change address not it wallet)', function(done) {
+        helpers.createAndJoinWallet(clients, 1, 1, function() {
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            blockchainExplorerMock.setUtxo(x0, 10, 1);
+            var opts = {
+              amount: 10000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: 'hello',
+            };
+            clients[0].sendTxProposal(opts, function(err, x) {
+              should.not.exist(err);
+
+              helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function(txps) {
+                txps[0].changeAddress.address = 'n2tbmpzpecgufct2ebyitj12tpzkhn2mn5';
+              }, function() {
+                clients[0].getTxProposals({}, function(err, txps) {
+                  should.exist(err);
+                  err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+      it('Should return only main addresses (case 1)', function(done) {
+        helpers.createAndJoinWallet(clients, 1, 1, function(w) {
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            blockchainExplorerMock.setUtxo(x0, 1, 1);
+            var opts = {
+              amount: 10000000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: 'hello 1-1',
+            };
+            clients[0].sendTxProposal(opts, function(err, x) {
+              should.not.exist(err);
+              clients[0].getMainAddresses({}, function(err, addr) {
+                should.not.exist(err);
+                addr.length.should.equal(1);
+                done();
+              });
+            });
+          });
+        });
+      });
+      it('Should return only main addresses (case 2)', function(done) {
+        helpers.createAndJoinWallet(clients, 1, 1, function(w) {
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            clients[0].createAddress(function(err, x0) {
+              should.not.exist(err);
+              clients[0].getMainAddresses({
+                doNotVerify: true
+              }, function(err, addr) {
+                should.not.exist(err);
+                addr.length.should.equal(2);
+                done();
+              });
+            });
+          });
+        });
+      });
+      it('Should return UTXOs', function(done) {
+        helpers.createAndJoinWallet(clients, 1, 1, function(w) {
+          clients[0].getUtxos({}, function(err, utxos) {
+            should.not.exist(err);
+            utxos.length.should.equal(0);
+            clients[0].createAddress(function(err, x0) {
+              should.not.exist(err);
+              should.exist(x0.address);
+              blockchainExplorerMock.setUtxo(x0, 1, 1);
+              clients[0].getUtxos({}, function(err, utxos) {
+                should.not.exist(err);
+                utxos.length.should.equal(1);
+                done();
+              });
+            });
+          });
+        });
+      });
+      it('Should return UTXOs for specific addresses', function(done) {
+        helpers.createAndJoinWallet(clients, 1, 1, function(w) {
+          async.map(_.range(3), function(i, next) {
+            clients[0].createAddress(function(err, x) {
+              should.not.exist(err);
+              should.exist(x.address);
+              blockchainExplorerMock.setUtxo(x, 1, 1);
+              next(null, x.address);
+            });
+          }, function(err, addresses) {
+            var opts = {
+              addresses: _.take(addresses, 2),
+            };
+            clients[0].getUtxos(opts, function(err, utxos) {
+              should.not.exist(err);
+              utxos.length.should.equal(2);
+              _.sum(utxos, 'satoshis').should.equal(2 * 1e8);
+              done();
+            });
+
+          });
+        });
+      });
+    });
+
+    describe('New flow (signing raw tx & publishing)', function() {
+      beforeEach(function(done) {
+        helpers.createAndJoinWallet(clients, 2, 2, function(w) {
+          clients[0].createAddress(function(err, address) {
+            should.not.exist(err);
+            should.exist(address.address);
+            blockchainExplorerMock.setUtxo(address, 2, 2);
+            blockchainExplorerMock.setUtxo(address, 2, 2);
             done();
           });
+        });
+      });
 
+      it('Should create & publish proposal', function(done) {
+        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+            message: 'world',
+          }, {
+            amount: 2e8,
+            toAddress: toAddress,
+          }],
+          message: 'hello',
+        };
+        clients[0].createTxProposal(opts, function(err, txp) {
+          should.not.exist(err);
+          should.exist(txp);
+
+          txp.status.should.equal('temporary');
+          txp.message.should.equal('hello');
+          txp.outputs.length.should.equal(2);
+          _.sum(txp.outputs, 'amount').should.equal(3e8);
+          txp.outputs[0].message.should.equal('world');
+          _.uniq(txp.outputs, 'toAddress').length.should.equal(1);
+          _.uniq(_.pluck(txp.outputs, 'toAddress'))[0].should.equal(toAddress);
+          txp.hasUnconfirmedInputs.should.equal(false);
+          txp.feePerKb.should.equal(10000);
+
+          should.exist(txp.encryptedMessage);
+          should.exist(txp.outputs[0].encryptedMessage);
+
+          clients[0].getTxProposals({}, function(err, txps) {
+            should.not.exist(err);
+            txps.should.be.empty;
+
+            clients[0].publishTxProposal({
+              txp: txp,
+            }, function(err, publishedTxp) {
+              should.not.exist(err);
+              should.exist(publishedTxp);
+              publishedTxp.status.should.equal('pending');
+              clients[0].getTxProposals({}, function(err, txps) {
+                should.not.exist(err);
+                txps.length.should.equal(1);
+                var x = txps[0];
+                x.id.should.equal(txp.id);
+                should.exist(x.proposalSignature);
+                should.not.exist(x.proposalSignaturePubKey);
+                should.not.exist(x.proposalSignaturePubKeySig);
+                // Should be visible for other copayers as well
+                clients[1].getTxProposals({}, function(err, txps) {
+                  should.not.exist(err);
+                  txps.length.should.equal(1);
+                  txps[0].id.should.equal(txp.id);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+      it('Should protect against tampering at proposal creation', function(done) {
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'world'
+          }, {
+            amount: 2e8,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          }],
+          feePerKb: 12300,
+          message: 'hello',
+        };
+
+        var tamperings = [
+
+          function(txp) {
+            txp.fee = 45600;
+          },
+          function(txp) {
+            txp.feePerKb = 45600;
+          },
+          function(txp) {
+            txp.message = 'dummy';
+          },
+          function(txp) {
+            txp.payProUrl = 'dummy';
+          },
+          function(txp) {
+            txp.customData = 'dummy';
+          },
+          function(txp) {
+            txp.outputs.push(txp.outputs[0]);
+          },
+          function(txp) {
+            txp.outputs[0].toAddress = 'mjfjcbuYwBUdEyq2m7AezjCAR4etUBqyiE';
+          },
+          function(txp) {
+            txp.outputs[0].amount = 2e8;
+          },
+          function(txp) {
+            txp.outputs[1].amount = 2e8;
+          },
+          function(txp) {
+            txp.outputs[0].message = 'dummy';
+          },
+        ];
+
+        async.each(tamperings, function(tamperFn, next) {
+          helpers.tamperResponse(clients[0], 'post', '/v2/txproposals/', opts, tamperFn, function() {
+            clients[0].createTxProposal(opts, function(err, txp) {
+              should.exist(err);
+              err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+              next();
+            });
+          });
+        }, function(err) {
+          should.not.exist(err);
+          done();
+        });
+      });
+      it('Should fail to publish when not enough available UTXOs', function(done) {
+        var opts = {
+          outputs: [{
+            amount: 3e8,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          }],
+        };
+
+        var txp1, txp2;
+        async.series([
+
+          function(next) {
+            clients[0].createTxProposal(opts, function(err, txp) {
+              txp1 = txp;
+              next(err);
+            });
+          },
+          function(next) {
+            clients[0].createTxProposal(opts, function(err, txp) {
+              txp2 = txp;
+              next(err);
+            });
+
+          },
+          function(next) {
+            clients[0].publishTxProposal({
+              txp: txp1
+            }, next);
+          },
+          function(next) {
+            clients[0].publishTxProposal({
+              txp: txp2
+            }, function(err) {
+              should.exist(err);
+              err.should.be.an.instanceOf(Errors.UNAVAILABLE_UTXOS);
+              next();
+            });
+          },
+          function(next) {
+            clients[1].rejectTxProposal(txp1, 'Free locked UTXOs', next);
+          },
+          function(next) {
+            clients[0].publishTxProposal({
+              txp: txp2
+            }, next);
+          },
+        ], function(err) {
+          should.not.exist(err);
+          done();
         });
       });
     });
@@ -2192,7 +2450,7 @@ describe('client API', function() {
       });
       clients[0].sendTxProposal(opts2, function(err, txp) {
         should.not.exist(err);
-        var t = Client.buildTx(txp);
+        var t = Utils.buildTx(txp);
         t.toObject().outputs.length.should.equal(opts2.outputs.length);
         should.not.exist(t.getChangeOutput());
         done();
@@ -2210,6 +2468,7 @@ describe('client API', function() {
           x2.outputs[0].toAddress.should.equal(toAddress);
           x2.outputs[0].amount.should.equal(10000);
           x2.outputs[0].message.should.equal('world');
+          should.exist(x2.outputs[0].encryptedMessage);
           x2.outputs[1].toAddress.should.equal(toAddress);
           x2.outputs[1].amount.should.equal(20000);
           should.not.exist(x2.outputs[1].message);
@@ -4023,7 +4282,9 @@ describe('client API', function() {
         callback(new Errors.NOT_FOUND);
       });
 
-      client._initNotifications({notificationIntervalSeconds: 1});
+      client._initNotifications({
+        notificationIntervalSeconds: 1
+      });
       should.exist(client.notificationsIntervalId);
       clock.tick(1000);
       should.not.exist(client.notificationsIntervalId);
@@ -4041,7 +4302,9 @@ describe('client API', function() {
         callback(new Errors.NOT_AUTHORIZED);
       });
 
-      client._initNotifications({notificationIntervalSeconds: 1});
+      client._initNotifications({
+        notificationIntervalSeconds: 1
+      });
       should.exist(client.notificationsIntervalId);
       clock.tick(1000);
       should.not.exist(client.notificationsIntervalId);
@@ -4054,7 +4317,9 @@ describe('client API', function() {
     it('should handle import with invalid JSON', function(done) {
       var importString = 'this is not valid JSON';
       var client = new Client();
-      (function(){client.import(importString);}).should.throw(Errors.INVALID_BACKUP);
+      (function() {
+        client.import(importString);
+      }).should.throw(Errors.INVALID_BACKUP);
       done();
     });
   });
@@ -4148,7 +4413,9 @@ describe('client API', function() {
       client.credentials = {};
 
       var re = sandbox.stub(client, 'request', function(args, callback) {
-        callback(null, {statusCode: 200}, '{"error":"read ECONNRESET"}');
+        callback(null, {
+          statusCode: 200
+        }, '{"error":"read ECONNRESET"}');
       });
 
       client._doRequest('method', 'url', {}, function(err, body, header) {
