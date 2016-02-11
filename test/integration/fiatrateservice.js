@@ -182,16 +182,16 @@ describe('Fiat rate service', function() {
         value: 123.45,
       }], function(err) {
         should.not.exist(err);
-        clock.tick((120 * 60 - 1) * 1000); // Almost 2 hours
+        clock.tick(24 * 3600 * 1000); // Some time in the future
         service.getRate({
+          ts: 2 * 3600 * 1000 - 1, // almost 2 hours
           code: 'USD',
         }, function(err, res) {
           should.not.exist(err);
           res.rate.should.equal(123.45);
           res.fetchedOn.should.equal(0);
-          clock.restore();
-          clock.tick(2 * 1000); // 2 seconds later...
           service.getRate({
+            ts: 2 * 3600 * 1000 + 1, // just past 2 hours
             code: 'USD',
           }, function(err, res) {
             should.not.exist(err);
