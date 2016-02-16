@@ -1452,7 +1452,7 @@ describe('Wallet service', function() {
       });
     });
     it('should get balance when there are no funds', function(done) {
-      blockchainExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, null, []);
+      blockchainExplorer.getUtxos = sinon.stub().callsArgWith(1, null, []);
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
         server.getBalance({}, function(err, balance) {
@@ -1495,7 +1495,7 @@ describe('Wallet service', function() {
       });
     });
     it('should fail gracefully when blockchain is unreachable', function(done) {
-      blockchainExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, 'dummy error');
+      blockchainExplorer.getUtxos = sinon.stub().callsArgWith(1, 'dummy error');
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
         server.getBalance({}, function(err, balance) {
@@ -2135,7 +2135,7 @@ describe('Wallet service', function() {
       });
 
       it('should fail gracefully if unable to reach the blockchain', function(done) {
-        blockchainExplorer.getUnspentUtxos = sinon.stub().callsArgWith(1, 'dummy error');
+        blockchainExplorer.getUtxos = sinon.stub().callsArgWith(1, 'dummy error');
         server.createAddress({}, function(err, address) {
           should.not.exist(err);
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, TestData.copayers[0].privKey_1H_0, {

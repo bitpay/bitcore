@@ -15,10 +15,9 @@ describe('Blockchain explorer', function() {
       });
       should.exist(exp);
       exp.should.respondTo('broadcast');
-      exp.should.respondTo('getUnspentUtxos');
+      exp.should.respondTo('getUtxos');
       exp.should.respondTo('getTransactions');
       exp.should.respondTo('getAddressActivity');
-      exp.should.respondTo('getUnspentUtxos');
       exp.should.respondTo('estimateFee');
       exp.should.respondTo('initSocket');
       var exp = new BlockchainExplorer({
