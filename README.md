@@ -2,14 +2,20 @@
 
 A Bitcoin blockchain explorer web application service for [Bitcore Node](https://github.com/bitpay/bitcore-node) using the [Insight API](https://github.com/bitpay/insight-api).
 
+## Quick Start
+
+Please see the guide at [https://bitcore.io/guides/full-node](https://bitcore.io/guides/full-node) for information about getting a block explorer running. This is only the front-end component of the block explorer, and is packaged together with all of the necessary components in [Bitcore](https://github.com/bitpay/bitcore).
+
 ## Getting Started
+
+To manually install all of the necessary components, you can run these commands:
 
 ```bash
 npm install -g bitcore-node
 bitcore-node create mynode
 cd mynode
-bitcore-node add insight-api
-bitcore-node add insight-ui
+bitcore-node install insight-api
+bitcore-node install insight-ui
 bitcore-node start
 ```
 
