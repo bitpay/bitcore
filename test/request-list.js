@@ -4,9 +4,9 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var prequest = require('../lib/blockchainexplorers/request-pull');
+var prequest = require('../lib/blockchainexplorers/request-list');
 
-describe('request-pull', function() {
+describe('request-list', function() {
   var request;
 
   beforeEach(function() {
