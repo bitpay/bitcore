@@ -2287,6 +2287,20 @@ describe('Wallet service', function() {
         });
       });
 
+      it('should fail to create a tx exceeding max size in kb', function(done) {
+        helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
+          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, TestData.copayers[0].privKey_1H_0);
+          var _oldDefault = Defaults.MAX_TX_SIZE_IN_KB;
+          Defaults.MAX_TX_SIZE_IN_KB = 1;
+          server.createTxLegacy(txOpts, function(err, tx) {
+            should.exist(err);
+            err.code.should.equal('TX_MAX_SIZE_EXCEEDED');
+            Defaults.MAX_TX_SIZE_IN_KB = _oldDefault;
+            done();
+          });
+        });
+      });
+
       it('should fail to create tx for dust amount', function(done) {
         helpers.stubUtxos(server, wallet, [1], function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.00000001, TestData.copayers[0].privKey_1H_0);
