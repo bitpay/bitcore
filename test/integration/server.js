@@ -3267,7 +3267,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should select smaller utxos if within fee constraints', function(done) {
         helpers.stubUtxos(server, wallet, [1, '800bit', '800bit', '800bit'], function() {
           var txOpts = {
@@ -3546,6 +3545,20 @@ describe('Wallet service', function() {
           });
         });
       });
+    });
+  });
+
+  describe('#createTx backoff time', function() {
+    var server, wallet, txid;
+
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        helpers.stubUtxos(server, wallet, _.range(2, 6), function() {
+          done();
+        });
+      });
       it('should ignore small utxos if fee is higher', function(done) {
         helpers.stubUtxos(server, wallet, [].concat(_.times(10, function() {
           return '30bit';
@@ -3582,6 +3595,116 @@ describe('Wallet service', function() {
       });
     });
   });
+
+  describe('#getSendMaxInfo', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 3, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should be able to get send max info on empty wallet', function(done) {
+      server.getSendMaxInfo({
+        feePerKb: 10000,
+        excludeUnconfirmedUtxos: false,
+      }, function(err, info) {
+        should.not.exist(err);
+        should.exist(info);
+        info.size.should.equal(0);
+        info.amount.should.equal(0);
+        info.fee.should.equal(0);
+        info.nbInputs.should.equal(0);
+        done();
+      });
+    });
+    it('should correctly get send max info', function(done) {
+      helpers.stubUtxos(server, wallet, [0.1, 0.2, 0.3, 0.4], function() {
+        server.getSendMaxInfo({
+          feePerKb: 10000,
+          excludeUnconfirmedUtxos: false,
+        }, function(err, info) {
+          should.not.exist(err);
+          should.exist(info);
+          info.nbInputs.should.equal(4);
+          info.size.should.equal(1342);
+          info.fee.should.equal(info.size * 10000 / 1000.);
+          info.amount.should.equal(1e8 - info.fee);
+          done();
+        });
+      });
+    });
+    it('should exclude unconfirmed inputs', function(done) {
+      helpers.stubUtxos(server, wallet, ['u0.1', 0.2, 0.3, 0.4], function() {
+        server.getSendMaxInfo({
+          feePerKb: 10000,
+          excludeUnconfirmedUtxos: true,
+        }, function(err, info) {
+          should.not.exist(err);
+          should.exist(info);
+          info.nbInputs.should.equal(3);
+          info.size.should.equal(1031);
+          info.fee.should.equal(info.size * 10000 / 1000.);
+          info.amount.should.equal(0.9e8 - info.fee);
+          done();
+        });
+      });
+    });
+    it('should exlude locked inputs', function(done) {
+      helpers.stubUtxos(server, wallet, ['u0.1', 0.1, 0.1, 0.1], function() {
+        var txOpts = {
+          outputs: [{
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 0.09e8,
+          }],
+        };
+        helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
+          should.exist(tx);
+          server.getSendMaxInfo({
+            feePerKb: 10000,
+            excludeUnconfirmedUtxos: true,
+          }, function(err, info) {
+            should.not.exist(err);
+            should.exist(info);
+            info.nbInputs.should.equal(2);
+            info.size.should.equal(720);
+            info.fee.should.equal(info.size * 10000 / 1000.);
+            info.amount.should.equal(0.2e8 - info.fee);
+            done();
+          });
+        });
+      });
+    });
+    it('should ignore utxos not contributing to total amount (below their cost in fee)', function(done) {
+      helpers.stubUtxos(server, wallet, ['u0.1', 0.2, 0.3, 0.4, 0.000001, 0.0002, 0.0003], function() {
+        server.getSendMaxInfo({
+          feePerKb: 0.001e8,
+          excludeUnconfirmedUtxos: false,
+        }, function(err, info) {
+          should.not.exist(err);
+          should.exist(info);
+          info.nbInputs.should.equal(4);
+          info.size.should.equal(1342);
+          info.fee.should.equal(info.size * 0.001e8 / 1000.);
+          info.amount.should.equal(1e8 - info.fee);
+          server.getSendMaxInfo({
+            feePerKb: 0.0001e8,
+            excludeUnconfirmedUtxos: false,
+          }, function(err, info) {
+            should.not.exist(err);
+            should.exist(info);
+            info.nbInputs.should.equal(6);
+            info.size.should.equal(1964);
+            info.fee.should.equal(info.size * 0.0001e8 / 1000.);
+            info.amount.should.equal(1.0005e8 - info.fee);
+            done();
+          });
+        });
+      });
+    });
+  })
 
   describe('#rejectTx', function() {
     var server, wallet, txid;
