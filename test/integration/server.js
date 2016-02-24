@@ -3613,10 +3613,9 @@ describe('Wallet service', function() {
           amount: info.amount,
           fee: info.fee,
         }],
+        inputs: info.inputs,
       };
       server.createTx(txOpts, function(err, tx) {
-        console.log('*** [server.js ln3150] err:', err); // TODO
-
         should.not.exist(err);
         should.exist(tx);
         tx.inputs.length.should.equal(info.nbInputs);
@@ -3722,7 +3721,7 @@ describe('Wallet service', function() {
         });
       });
     });
-    it.only('should not go beyond max tx size', function(done) {
+    it('should not go beyond max tx size', function(done) {
       var _oldDefault = Defaults.MAX_TX_SIZE_IN_KB;
       Defaults.MAX_TX_SIZE_IN_KB = 2;
       helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
