@@ -2407,6 +2407,59 @@ describe('client API', function() {
         });
       });
     });
+
+    describe('New proposal flow', function() {
+
+      beforeEach(function(done) {
+        http = sinon.stub();
+        http.yields(null, TestData.payProBuf);
+        helpers.createAndJoinWallet(clients, 2, 2, function(w) {
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            should.exist(x0.address);
+            blockchainExplorerMock.setUtxo(x0, 1, 2);
+            blockchainExplorerMock.setUtxo(x0, 1, 2);
+            var opts = {
+              payProUrl: 'dummy',
+            };
+            clients[0].payProHttp = clients[1].payProHttp = http;
+
+            clients[0].fetchPayPro(opts, function(err, paypro) {
+              clients[0].createTxProposal({
+                outputs: [{
+                  toAddress: paypro.toAddress,
+                  amount: paypro.amount,
+                }],
+                message: paypro.memo,
+                payProUrl: opts.payProUrl,
+              }, function(err, txp) {
+                should.not.exist(err);
+                clients[0].publishTxProposal({
+                  txp: txp
+                }, function(err) {
+                  should.not.exist(err);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+
+      it('Should Create and Verify a Tx from PayPro', function(done) {
+        clients[1].getTxProposals({}, function(err, txps) {
+          should.not.exist(err);
+          var tx = txps[0];
+          // From the hardcoded paypro request
+          tx.amount.should.equal(404500);
+          tx.outputs[0].toAddress.should.equal('mjfjcbuYwBUdEyq2m7AezjCAR4etUBqyiE');
+          tx.message.should.equal('Payment request for BitPay invoice CibEJJtG1t9H77KmM61E2t for merchant testCopay');
+          tx.payProUrl.should.equal('dummy');
+          done();
+        });
+      });
+    });
+
   });
 
   describe('Multiple output proposals', function() {
