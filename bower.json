@@ -1,7 +1,7 @@
 {
   "name": "bitcore-wallet-client",
   "main": "index.js",
-  "version": "1.1.10",
+  "version": "2.1.1",
   "homepage": "https://github.com/bitpay/bitcore-wallet-client",
   "authors": ["BitPay Inc"],
   "description": "Client for bitcore-wallet-service",
