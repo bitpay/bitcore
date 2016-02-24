@@ -3606,6 +3606,24 @@ describe('Wallet service', function() {
       });
     });
 
+    function sendTx(info, cb) {
+      var txOpts = {
+        outputs: [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: info.amount,
+          fee: info.fee,
+        }],
+      };
+      server.createTx(txOpts, function(err, tx) {
+        console.log('*** [server.js ln3150] err:', err); // TODO
+
+        should.not.exist(err);
+        should.exist(tx);
+        tx.inputs.length.should.equal(info.nbInputs);
+        return cb();
+      });
+    };
+
     it('should be able to get send max info on empty wallet', function(done) {
       server.getSendMaxInfo({
         feePerKb: 10000,
@@ -3632,7 +3650,7 @@ describe('Wallet service', function() {
           info.size.should.equal(1342);
           info.fee.should.equal(info.size * 10000 / 1000.);
           info.amount.should.equal(1e8 - info.fee);
-          done();
+          sendTx(info, done);
         });
       });
     });
@@ -3648,7 +3666,7 @@ describe('Wallet service', function() {
           info.size.should.equal(1031);
           info.fee.should.equal(info.size * 10000 / 1000.);
           info.amount.should.equal(0.9e8 - info.fee);
-          done();
+          sendTx(info, done);
         });
       });
     });
@@ -3672,7 +3690,7 @@ describe('Wallet service', function() {
             info.size.should.equal(720);
             info.fee.should.equal(info.size * 10000 / 1000.);
             info.amount.should.equal(0.2e8 - info.fee);
-            done();
+            sendTx(info, done);
           });
         });
       });
@@ -3699,8 +3717,25 @@ describe('Wallet service', function() {
             info.size.should.equal(1964);
             info.fee.should.equal(info.size * 0.0001e8 / 1000.);
             info.amount.should.equal(1.0005e8 - info.fee);
-            done();
+            sendTx(info, done);
           });
+        });
+      });
+    });
+    it.only('should not go beyond max tx size', function(done) {
+      var _oldDefault = Defaults.MAX_TX_SIZE_IN_KB;
+      Defaults.MAX_TX_SIZE_IN_KB = 2;
+      helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
+        server.getSendMaxInfo({
+          feePerKb: 10000,
+          excludeUnconfirmedUtxos: false,
+        }, function(err, info) {
+          should.not.exist(err);
+          should.exist(info);
+          info.size.should.be.below(2000);
+          info.nbInputs.should.be.below(9);
+          Defaults.MAX_TX_SIZE_IN_KB = _oldDefault;
+          sendTx(info, done);
         });
       });
     });
