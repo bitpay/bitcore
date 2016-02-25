@@ -3127,7 +3127,7 @@ describe('Wallet service', function() {
           server.createTx(txOpts, function(err, tx) {
             should.not.exist(err);
             should.exist(tx);
-            // should.not.exist(tx.changeAddress);
+            should.not.exist(tx.changeAddress);
             tx.amount.should.equal(3e8 - tx.fee);
 
             var t = tx.getBitcoreTx();
@@ -3645,7 +3645,7 @@ describe('Wallet service', function() {
       server.createTx(txOpts, function(err, tx) {
         should.not.exist(err);
         should.exist(tx);
-        tx.inputs.length.should.equal(info.nbInputs);
+        tx.inputs.length.should.equal(info.inputs.length);
         return cb();
       });
     };
@@ -3659,7 +3659,7 @@ describe('Wallet service', function() {
         info.size.should.equal(0);
         info.amount.should.equal(0);
         info.fee.should.equal(0);
-        info.nbInputs.should.equal(0);
+        info.inputs.should.be.empty;
         done();
       });
     });
@@ -3670,7 +3670,7 @@ describe('Wallet service', function() {
         }, function(err, info) {
           should.not.exist(err);
           should.exist(info);
-          info.nbInputs.should.equal(4);
+          info.inputs.length.should.equal(4);
           info.size.should.equal(1342);
           info.fee.should.equal(info.size * 10000 / 1000.);
           info.amount.should.equal(1e8 - info.fee);
@@ -3686,7 +3686,7 @@ describe('Wallet service', function() {
         }, function(err, info) {
           should.not.exist(err);
           should.exist(info);
-          info.nbInputs.should.equal(3);
+          info.inputs.length.should.equal(3);
           info.size.should.equal(1031);
           info.fee.should.equal(info.size * 10000 / 1000.);
           info.amount.should.equal(0.9e8 - info.fee);
@@ -3710,7 +3710,7 @@ describe('Wallet service', function() {
           }, function(err, info) {
             should.not.exist(err);
             should.exist(info);
-            info.nbInputs.should.equal(2);
+            info.inputs.length.should.equal(2);
             info.size.should.equal(720);
             info.fee.should.equal(info.size * 10000 / 1000.);
             info.amount.should.equal(0.2e8 - info.fee);
@@ -3726,7 +3726,7 @@ describe('Wallet service', function() {
         }, function(err, info) {
           should.not.exist(err);
           should.exist(info);
-          info.nbInputs.should.equal(4);
+          info.inputs.length.should.equal(4);
           info.size.should.equal(1342);
           info.fee.should.equal(info.size * 0.001e8 / 1000.);
           info.amount.should.equal(1e8 - info.fee);
@@ -3735,7 +3735,7 @@ describe('Wallet service', function() {
           }, function(err, info) {
             should.not.exist(err);
             should.exist(info);
-            info.nbInputs.should.equal(6);
+            info.inputs.length.should.equal(6);
             info.size.should.equal(1964);
             info.fee.should.equal(info.size * 0.0001e8 / 1000.);
             info.amount.should.equal(1.0005e8 - info.fee);
@@ -3754,7 +3754,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           should.exist(info);
           info.size.should.be.below(2000);
-          info.nbInputs.should.be.below(9);
+          info.inputs.length.should.be.below(9);
           Defaults.MAX_TX_SIZE_IN_KB = _oldDefault;
           sendTx(info, done);
         });
