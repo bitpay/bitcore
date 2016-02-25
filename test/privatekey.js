@@ -330,6 +330,13 @@ describe('PrivateKey', function() {
       var fromBuffer = PrivateKey.fromBuffer(toBuffer.toBuffer());
       fromBuffer.toString().should.equal(privkey.toString());
     });
+
+    it('should return buffer with length equal 32', function() {
+      var bn = BN.fromBuffer(buf.slice(0, 31));
+      var privkey = new PrivateKey(bn, 'livenet');
+      var expected = Buffer.concat([ new Buffer([0]), buf.slice(0, 31) ]);
+      privkey.toBuffer().toString('hex').should.equal(expected.toString('hex'));
+    });
   });
 
   describe('#toBigNumber', function() {
