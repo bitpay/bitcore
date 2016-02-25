@@ -2841,6 +2841,33 @@ describe('Wallet service', function() {
         });
       });
 
+      it('should not be able to publish a temporary tx proposal created in a dry run', function(done) {
+        helpers.stubUtxos(server, wallet, [1, 2], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8 * 1e8,
+            }],
+            message: 'some message',
+            customData: 'some custom data',
+            dryRun: true,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            var publishOpts = helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0);
+            server.publishTx(publishOpts, function(err) {
+              should.exist(err);
+              err.code.should.equal('TX_NOT_FOUND');
+              server.getPendingTxs({}, function(err, txs) {
+                should.not.exist(err);
+                txs.length.should.equal(0);
+                done();
+              });
+            });
+          });
+        });
+      });
       it('should delay NewTxProposal notification until published', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
           var txOpts = {
