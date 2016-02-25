@@ -3113,6 +3113,33 @@ describe('Wallet service', function() {
           });
         });
       });
+
+      it.only('should be able to send max funds', function(done) {
+        helpers.stubUtxos(server, wallet, [1, 2], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: null,
+            }],
+            feePerKb: 10000,
+            sendMax: true,
+          };
+          server.createTx(txOpts, function(err, tx) {
+            should.not.exist(err);
+            should.exist(tx);
+            // should.not.exist(tx.changeAddress);
+            tx.amount.should.equal(3e8 - tx.fee);
+
+            var t = tx.getBitcoreTx();
+            t.getFee().should.equal(tx.fee);
+            should.not.exist(t.getChangeOutput());
+            t.toObject().inputs.length.should.equal(tx.inputs.length);
+            t.toObject().outputs[0].satoshis.should.equal(tx.amount);
+            done();
+          });
+        });
+      });
+
     });
 
     describe('Backoff time', function(done) {
@@ -3626,7 +3653,6 @@ describe('Wallet service', function() {
     it('should be able to get send max info on empty wallet', function(done) {
       server.getSendMaxInfo({
         feePerKb: 10000,
-        excludeUnconfirmedUtxos: false,
       }, function(err, info) {
         should.not.exist(err);
         should.exist(info);
@@ -3641,7 +3667,6 @@ describe('Wallet service', function() {
       helpers.stubUtxos(server, wallet, [0.1, 0.2, 0.3, 0.4], function() {
         server.getSendMaxInfo({
           feePerKb: 10000,
-          excludeUnconfirmedUtxos: false,
         }, function(err, info) {
           should.not.exist(err);
           should.exist(info);
@@ -3698,7 +3723,6 @@ describe('Wallet service', function() {
       helpers.stubUtxos(server, wallet, ['u0.1', 0.2, 0.3, 0.4, 0.000001, 0.0002, 0.0003], function() {
         server.getSendMaxInfo({
           feePerKb: 0.001e8,
-          excludeUnconfirmedUtxos: false,
         }, function(err, info) {
           should.not.exist(err);
           should.exist(info);
@@ -3708,7 +3732,6 @@ describe('Wallet service', function() {
           info.amount.should.equal(1e8 - info.fee);
           server.getSendMaxInfo({
             feePerKb: 0.0001e8,
-            excludeUnconfirmedUtxos: false,
           }, function(err, info) {
             should.not.exist(err);
             should.exist(info);
@@ -3727,7 +3750,6 @@ describe('Wallet service', function() {
       helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
         server.getSendMaxInfo({
           feePerKb: 10000,
-          excludeUnconfirmedUtxos: false,
         }, function(err, info) {
           should.not.exist(err);
           should.exist(info);
