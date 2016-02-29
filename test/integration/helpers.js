@@ -233,12 +233,15 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
       addresses.should.not.be.empty;
 
       var utxos = _.compact(_.map([].concat(amounts), function(amount, i) {
-        var confirmations;
-        if (_.isString(amount) && _.startsWith(amount, 'u')) {
-          amount = parseFloat(amount.substring(1));
-          confirmations = 0;
-        } else {
-          confirmations = Math.floor(Math.random() * 100 + 1);
+        var confirmations = _.random(6, 100);
+        if (_.isString(amount)) {
+          if (_.startsWith(amount, 'u')) {
+            amount = parseFloat(amount.substring(1));
+            confirmations = 0;
+          } else if (_.startsWith(amount, '<6')) {
+            amount = parseFloat(amount.substring(2));
+            confirmations = _.random(1, 5);
+          }
         }
         if (amount <= 0) return null;
 
@@ -257,7 +260,7 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
 
         return {
           txid: helpers.randomTXID(),
-          vout: Math.floor(Math.random() * 10 + 1),
+          vout: _.random(0, 10),
           satoshis: helpers.toSatoshi(amount),
           scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
           address: address.address,

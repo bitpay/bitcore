@@ -5730,4 +5730,76 @@ describe('Wallet service', function() {
       });
     });
   });
+
+  describe('UTXO Selection', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 3, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it.skip('should select a single utxo if within thresholds relative to tx amount', function(done) {});
+
+    it('should select smaller utxos if within max fee constraints', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 0.0001, 0.0001, 0.0001], function() {
+        var txOpts = {
+          outputs: [{
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 20000,
+          }],
+          feePerKb: 1000,
+        };
+        server.createTx(txOpts, function(err, txp) {
+          should.not.exist(err);
+          should.exist(txp);
+          done();
+        });
+      });
+    });
+    it('should select smallest big utxo if small utxos are insufficient', function(done) {
+      helpers.stubUtxos(server, wallet, [3, 1, 2, 0.0001, 0.0001, 0.0001], function() {
+        var txOpts = {
+          outputs: [{
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 30000,
+          }],
+          feePerKb: 1000,
+        };
+        server.createTx(txOpts, function(err, txp) {
+          should.not.exist(err);
+          should.exist(txp);
+          txp.inputs.length.should.equal(1);
+          txp.inputs[0].satoshis.should.equal(1e8);
+          done();
+        });
+      });
+    });
+    it.skip('should select smallest big utxo if small utxos exceed maximum fee', function(done) {});
+    it.only('should ignore utxos not contributing enough to cover increase in fee', function(done) {
+      helpers.stubUtxos(server, wallet, [0.0001, 0.0001, 0.0001], function() {
+        var txOpts = {
+          outputs: [{
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 20000,
+          }],
+          feePerKb: 8000,
+        };
+        server.createTx(txOpts, function(err, txp) {
+          should.not.exist(err);
+          should.exist(txp);
+          txp.inputs.length.should.equal(3);
+          txOpts.feePerKb = 12000;
+          server.createTx(txOpts, function(err, txp) {
+            should.exist(err);
+            should.not.exist(txp);
+            done();
+          });
+        });
+      });
+    });
+  });
+
 });
