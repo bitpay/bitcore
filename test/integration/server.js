@@ -2355,7 +2355,7 @@ describe('Wallet service', function() {
 
       it('should fail to create a tx exceeding max size in kb', function(done) {
         helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
-          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 9, TestData.copayers[0].privKey_1H_0);
+          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 8, TestData.copayers[0].privKey_1H_0);
           var _oldDefault = Defaults.MAX_TX_SIZE_IN_KB;
           Defaults.MAX_TX_SIZE_IN_KB = 1;
           server.createTxLegacy(txOpts, function(err, tx) {
@@ -5778,6 +5778,7 @@ describe('Wallet service', function() {
       });
     });
     it.skip('should select smallest big utxo if small utxos exceed maximum fee', function(done) {});
+    it.skip('should not fail with tx exceeded max size if there is at least 1 big input', function(done) {});
     it('should ignore utxos not contributing enough to cover increase in fee', function(done) {
       helpers.stubUtxos(server, wallet, [0.0001, 0.0001, 0.0001], function() {
         var txOpts = {
