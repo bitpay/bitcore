@@ -8,7 +8,7 @@ program = utils.configureCommander(program);
 program
   .option('-t, --testnet', 'Create a Testnet Wallet')
   .option('-p, --password', 'Encrypt wallet. Will ask password interactively')
-  .usage('[options] <walletName> <m-n> [copayerName]')
+  .usage('[options] <walletName> <m-n> [copayerName] <passphrase>')
   .parse(process.argv);
 
 var args = program.args;
@@ -17,6 +17,7 @@ if (!args[0])
 
 var walletName = args[0];
 var copayerName = args[2] || process.env.USER;
+var passphrase = args[3];
 var network = program.testnet ? 'testnet' : 'livenet';
 
 var mn;
@@ -26,11 +27,20 @@ try {
   utils.die(ex);
 }
 
-utils.getClient(program, { doNotComplete: true }, function (client) {
-  client.createWallet(walletName, copayerName, mn[0], mn[1], {network: network}, function(err, secret) {
+utils.getClient(program, {
+  doNotComplete: true
+}, function(client) {
+  client.seedFromRandomWithMnemonic({
+    network: network,
+    passphrase: passphrase,
+    language: 'en',
+  });
+  client.createWallet(walletName, copayerName, mn[0], mn[1], {
+    network: network
+  }, function(err, secret) {
     utils.die(err);
     console.log(' * ' + _.capitalize(network) + ' Wallet Created.');
-    utils.saveClient(program, client, function () {
+    utils.saveClient(program, client, function() {
       if (secret) {
         console.log('   - Secret to share:\n\t' + secret);
       }
