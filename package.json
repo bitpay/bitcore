@@ -17,7 +17,7 @@
     "url": "https://github.com/bitpay/bitcore-wallet/issues"
   },
   "dependencies": {
-    "bitcore-wallet-client": "~1.0.0",
+    "bitcore-wallet-client": "^2.0.0",
     "commander": "^2.6.0",
     "lodash": "^3.3.1",
     "moment": "^2.9.0",
@@ -66,6 +66,7 @@
     "wallet-send": "./bin/wallet-send",
     "wallet-sign": "./bin/wallet-sign",
     "wallet-status": "./bin/wallet-status",
-    "wallet-txproposals": "./bin/wallet-txproposals"
+    "wallet-txproposals": "./bin/wallet-txproposals",
+    "wallet-mnemonic":"./bin/wallet-mnemonic"
   }
 }
