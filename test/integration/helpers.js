@@ -236,7 +236,7 @@ helpers._parseAmount = function(str) {
       result.amount = Utils.strip(match[2] * 1e8);
       break;
     case 'bit':
-      result.amount = Utils.strip(match[2] * 1e6);
+      result.amount = Utils.strip(match[2] * 1e2);
       break
     case 'sat':
       result.amount = Utils.strip(match[2]);
@@ -268,7 +268,7 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
 
       var utxos = _.compact(_.map([].concat(amounts), function(amount, i) {
         var parsed = helpers._parseAmount(amount);
-        console.log('*** [helpers.js ln270] amount, result:', amount, parsed); // TODO
+
         if (parsed.amount <= 0) return null;
 
         var address = addresses[i % addresses.length];
