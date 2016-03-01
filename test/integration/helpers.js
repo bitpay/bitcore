@@ -212,6 +212,40 @@ helpers.toSatoshi = function(btc) {
   }
 };
 
+helpers._parseAmount = function(str) {
+  var result = {
+    amount: +0,
+    confirmations: _.random(6, 100),
+  };
+
+  if (_.isNumber(str)) str = str.toString();
+
+  var re = /^((?:\d+c)|u)?\s*([\d\.]+)\s*(btc|bit|sat)?$/;
+  var match = str.match(re);
+
+  if (!match) throw new Error('Could not parse amount ' + str);
+
+  if (match[1]) {
+    if (match[1] == 'u') result.confirmations = 0;
+    if (_.endsWith(match[1], 'c')) result.confirmations = +match[1].slice(0, -1);
+  }
+
+  switch (match[3]) {
+    default:
+    case 'btc':
+      result.amount = Utils.strip(match[2] * 1e8);
+      break;
+    case 'bit':
+      result.amount = Utils.strip(match[2] * 1e6);
+      break
+    case 'sat':
+      result.amount = Utils.strip(match[2]);
+      break;
+  };
+
+  return result;
+};
+
 helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
   if (_.isFunction(opts)) {
     cb = opts;
@@ -233,17 +267,9 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
       addresses.should.not.be.empty;
 
       var utxos = _.compact(_.map([].concat(amounts), function(amount, i) {
-        var confirmations = _.random(6, 100);
-        if (_.isString(amount)) {
-          if (_.startsWith(amount, 'u')) {
-            amount = parseFloat(amount.substring(1));
-            confirmations = 0;
-          } else if (_.startsWith(amount, '<6')) {
-            amount = parseFloat(amount.substring(2));
-            confirmations = _.random(1, 5);
-          }
-        }
-        if (amount <= 0) return null;
+        var parsed = helpers._parseAmount(amount);
+        console.log('*** [helpers.js ln270] amount, result:', amount, parsed); // TODO
+        if (parsed.amount <= 0) return null;
 
         var address = addresses[i % addresses.length];
 
@@ -261,10 +287,10 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
         return {
           txid: helpers.randomTXID(),
           vout: _.random(0, 10),
-          satoshis: helpers.toSatoshi(amount),
+          satoshis: parsed.amount,
           scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
           address: address.address,
-          confirmations: confirmations
+          confirmations: parsed.confirmations,
         };
       }));
 

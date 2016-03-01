@@ -5778,7 +5778,7 @@ describe('Wallet service', function() {
       });
     });
     it.skip('should select smallest big utxo if small utxos exceed maximum fee', function(done) {});
-    it.only('should ignore utxos not contributing enough to cover increase in fee', function(done) {
+    it('should ignore utxos not contributing enough to cover increase in fee', function(done) {
       helpers.stubUtxos(server, wallet, [0.0001, 0.0001, 0.0001], function() {
         var txOpts = {
           outputs: [{
