@@ -5760,7 +5760,6 @@ describe('Wallet service', function() {
         });
       });
     });
-
     it('should select smaller utxos if within fee constraints', function(done) {
       helpers.stubUtxos(server, wallet, [1, '800bit', '800bit', '800bit'], function() {
         var txOpts = {
@@ -5795,6 +5794,30 @@ describe('Wallet service', function() {
           should.exist(txp);
           txp.inputs.length.should.equal(1);
           txp.inputs[0].satoshis.should.equal(1e8);
+          done();
+        });
+      });
+    });
+    it('should account for fee when selecting smallest big utxo', function(done) {
+      // log.level = 'debug';
+      var _old = Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR;
+      Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR = 2;
+      // The 605 bits input cannot be selected even if it is > 2 * tx amount
+      // because it cannot cover for fee on its own.
+      helpers.stubUtxos(server, wallet, [1, '605bit', '100bit', '100bit', '100bit'], function() {
+        var txOpts = {
+          outputs: [{
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 300e2,
+          }],
+          feePerKb: 1200e2,
+        };
+        server.createTx(txOpts, function(err, txp) {
+          should.not.exist(err);
+          should.exist(txp);
+          txp.inputs.length.should.equal(1);
+          txp.inputs[0].satoshis.should.equal(1e8);
+          Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR = _old;
           done();
         });
       });
@@ -5958,7 +5981,6 @@ describe('Wallet service', function() {
         });
       });
     });
-
   });
 
 });
