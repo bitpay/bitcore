@@ -2132,6 +2132,7 @@ describe('Wallet service', function() {
       });
 
       it('should use unconfirmed utxos only when no more confirmed utxos are available', function(done) {
+        // log.level = 'debug';
         helpers.stubUtxos(server, wallet, [1.3, 'u0.5', 'u0.1', 1.2], function(utxos) {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 2.55, TestData.copayers[0].privKey_1H_0, {
             message: 'some message'
@@ -2354,10 +2355,11 @@ describe('Wallet service', function() {
       });
 
       it('should fail to create a tx exceeding max size in kb', function(done) {
+        log.level = 'debug';
+        var _oldDefault = Defaults.MAX_TX_SIZE_IN_KB;
+        Defaults.MAX_TX_SIZE_IN_KB = 1;
         helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 8, TestData.copayers[0].privKey_1H_0);
-          var _oldDefault = Defaults.MAX_TX_SIZE_IN_KB;
-          Defaults.MAX_TX_SIZE_IN_KB = 1;
           server.createTxLegacy(txOpts, function(err, tx) {
             should.exist(err);
             err.code.should.equal('TX_MAX_SIZE_EXCEEDED');
