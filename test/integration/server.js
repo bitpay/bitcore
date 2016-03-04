@@ -2742,7 +2742,6 @@ describe('Wallet service', function() {
             message: 'some message',
             customData: 'some custom data',
             feePerKb: 123e2,
-            feeLevel: 'priority',
           };
           server.createTx(txOpts, function(err, tx) {
             should.not.exist(err);
