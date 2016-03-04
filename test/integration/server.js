@@ -2038,10 +2038,26 @@ describe('Wallet service', function() {
         });
       });
 
+      it('should assume default feePerKb for "normal" level when none is specified', function(done) {
+        helpers.stubUtxos(server, wallet, [100, 200], function() {
+          var txOpts = helpers.createProposalOptsLegacy('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, 'some message', TestData.copayers[0].privKey_1H_0);
+          server.createTxLegacy(txOpts, function(err, tx) {
+            should.not.exist(err);
+            should.exist(tx);
+            tx.feePerKb.should.equal(_.find(Defaults.FEE_LEVELS, {
+              name: 'normal'
+            }).defaultValue);
+            done();
+          });
+        });
+      });
+
       it('should support creating a tx with no change address', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
           var max = 3 - (7200 / 1e8); // Fees for this tx at 100bits/kB = 7200 sat
-          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max, TestData.copayers[0].privKey_1H_0);
+          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max, TestData.copayers[0].privKey_1H_0, {
+            feePerKb: 100e2
+          });
           server.createTxLegacy(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -2360,7 +2376,9 @@ describe('Wallet service', function() {
           var fee = 4100 / 1e8; // The exact fee of the resulting tx
           var amount = 1 - fee;
 
-          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', amount, TestData.copayers[0].privKey_1H_0);
+          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', amount, TestData.copayers[0].privKey_1H_0, {
+            feePerKb: 100e2
+          });
           server.createTxLegacy(txOpts, function(err, tx) {
             should.not.exist(err);
             should.exist(tx);
@@ -2507,7 +2525,8 @@ describe('Wallet service', function() {
             message: 'message #2'
           }];
           var txOpts = helpers.createProposalOpts(Model.TxProposalLegacy.Types.MULTIPLEOUTPUTS, outputs, TestData.copayers[0].privKey_1H_0, {
-            message: 'some message'
+            message: 'some message',
+            feePerKb: 100e2,
           });
           server.createTxLegacy(txOpts, function(err, txp) {
             should.not.exist(err);
@@ -2587,7 +2606,9 @@ describe('Wallet service', function() {
             balance.totalBytesToSendConfirmedMax.should.equal(2896);
             var fee = parseInt((balance.totalBytesToSendMax * 10000 / 1000).toFixed(0));
             var max = balance.availableAmount - fee;
-            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max / 1e8, TestData.copayers[0].privKey_1H_0);
+            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max / 1e8, TestData.copayers[0].privKey_1H_0, {
+              feePerKb: 100e2,
+            });
             server.createTxLegacy(txOpts, function(err, tx) {
               should.not.exist(err);
               should.exist(tx);
@@ -2652,7 +2673,9 @@ describe('Wallet service', function() {
             balance.totalBytesToSendConfirmedMax.should.equal(720);
             var fee = parseInt((balance.totalBytesToSendConfirmedMax * 10000 / 1000).toFixed(0));
             var max = balance.availableConfirmedAmount - fee;
-            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max / 1e8, TestData.copayers[0].privKey_1H_0);
+            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', max / 1e8, TestData.copayers[0].privKey_1H_0, {
+              feePerKb: 100e2,
+            });
             server.createTxLegacy(txOpts, function(err, tx) {
               should.not.exist(err);
               should.exist(tx);
@@ -2718,6 +2741,7 @@ describe('Wallet service', function() {
             }],
             message: 'some message',
             customData: 'some custom data',
+            feePerKb: 123e2,
           };
           server.createTx(txOpts, function(err, tx) {
             should.not.exist(err);
@@ -2731,66 +2755,12 @@ describe('Wallet service', function() {
             tx.isPending().should.equal.true;
             tx.isTemporary().should.equal.true;
             tx.amount.should.equal(helpers.toSatoshi(0.8));
+            tx.feePerKb.should.equal(123e2);
             server.getPendingTxs({}, function(err, txs) {
               should.not.exist(err);
               txs.should.be.empty;
               done();
             });
-          });
-        });
-      });
-
-      it('should be able to specify the final fee', function(done) {
-        helpers.stubUtxos(server, wallet, [1, 2], function() {
-          var txOpts = {
-            outputs: [{
-              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-              amount: 0.8 * 1e8,
-            }],
-            fee: 123400,
-          };
-          server.createTx(txOpts, function(err, tx) {
-            should.not.exist(err);
-            should.exist(tx);
-            tx.fee.should.equal(123400);
-            var t = tx.getBitcoreTx();
-            t.getFee().should.equal(123400);
-            done();
-          });
-        });
-      });
-
-      it('should not be able to specify both final fee & fee per kb', function(done) {
-        helpers.stubUtxos(server, wallet, [1, 2], function() {
-          var txOpts = {
-            outputs: [{
-              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-              amount: 0.8 * 1e8,
-            }],
-            fee: 123400,
-            feePerKb: 123400,
-          };
-          server.createTx(txOpts, function(err, tx) {
-            should.exist(err);
-            err.message.should.contain('fee');
-            done();
-          });
-        });
-      });
-
-      it('should check explicit fee to be below max', function(done) {
-        helpers.stubUtxos(server, wallet, [1, 2], function() {
-          var txOpts = {
-            outputs: [{
-              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-              amount: 0.8 * 1e8,
-            }],
-            fee: 1e8,
-          };
-          server.createTx(txOpts, function(err, tx) {
-            should.exist(err);
-            err.message.should.contain('fee');
-            done();
           });
         });
       });
@@ -2802,6 +2772,7 @@ describe('Wallet service', function() {
               toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
               amount: 0.8 * 1e8,
             }],
+            feePerKb: 100e2,
             message: 'some message',
             customData: 'some custom data',
           };
@@ -2829,6 +2800,7 @@ describe('Wallet service', function() {
               toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
               amount: 0.8 * 1e8,
             }],
+            feePerKb: 100e2,
             message: 'some message',
           };
           server.createTx(txOpts, function(err, txp) {
@@ -2872,6 +2844,7 @@ describe('Wallet service', function() {
               toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
               amount: 0.8 * 1e8,
             }],
+            feePerKb: 100e2,
             message: 'some message',
           };
           server.createTx(txOpts, function(err, txp) {
@@ -2896,6 +2869,7 @@ describe('Wallet service', function() {
               toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
               amount: 0.8 * 1e8,
             }],
+            feePerKb: 100e2,
             message: 'some message',
           };
           server.createTx(txOpts, function(err, txp) {
@@ -2938,6 +2912,7 @@ describe('Wallet service', function() {
                 amount: 0.8 * 1e8,
               }],
               message: 'some message',
+              feePerKb: 100e2,
             };
             server.createTx(txOpts, function(err, txp) {
               should.not.exist(err);
@@ -2973,6 +2948,7 @@ describe('Wallet service', function() {
             amount: 0.8 * 1e8,
           }],
           message: 'some message',
+          feePerKb: 100e2,
         };
 
         async.waterfall([
@@ -3042,6 +3018,7 @@ describe('Wallet service', function() {
             }],
             message: 'some message',
             customData: 'some custom data',
+            feePerKb: 100e2,
           };
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
@@ -3708,6 +3685,7 @@ describe('Wallet service', function() {
                 amount: 9e8,
               }],
               message: 'some message',
+              feePerKb: 100e2,
             };
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
               should.exist(txp);
