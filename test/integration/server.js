@@ -2718,6 +2718,7 @@ describe('Wallet service', function() {
             }],
             message: 'some message',
             customData: 'some custom data',
+            feeLevel: 'priority',
           };
           server.createTx(txOpts, function(err, tx) {
             should.not.exist(err);
@@ -2731,6 +2732,7 @@ describe('Wallet service', function() {
             tx.isPending().should.equal.true;
             tx.isTemporary().should.equal.true;
             tx.amount.should.equal(helpers.toSatoshi(0.8));
+            tx.feeLevel.should.equal('priority');
             server.getPendingTxs({}, function(err, txs) {
               should.not.exist(err);
               txs.should.be.empty;
