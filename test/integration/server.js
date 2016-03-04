@@ -1823,6 +1823,7 @@ describe('Wallet service', function() {
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
         wallet = w;
+        WalletService._feeLevelCache = {};
         done();
       });
     });
@@ -1885,6 +1886,48 @@ describe('Wallet service', function() {
         fees.economy.feePerKb.should.equal(0);
         fees.economy.nbBlocks.should.equal(6);
         done();
+      });
+    });
+    it('should get cached value if network cannot estimate but an estimation was retrieved previously', function(done) {
+      helpers.stubFeeLevels({
+        1: 40000,
+        2: 20000,
+        6: 18000,
+      });
+      server.getFeeLevels({}, function(err, fees) {
+        should.not.exist(err);
+        fees = _.zipObject(_.map(fees, function(item) {
+          return [item.level, item];
+        }));
+        fees.priority.feePerKb.should.equal(40000);
+        fees.priority.nbBlocks.should.equal(1);
+
+        fees.normal.feePerKb.should.equal(20000);
+        fees.normal.nbBlocks.should.equal(2);
+
+        fees.economy.feePerKb.should.equal(18000);
+        fees.economy.nbBlocks.should.equal(6);
+
+        helpers.stubFeeLevels({
+          1: -1,
+          2: 25000,
+          6: 10000,
+        });
+        server.getFeeLevels({}, function(err, fees) {
+          should.not.exist(err);
+          fees = _.zipObject(_.map(fees, function(item) {
+            return [item.level, item];
+          }));
+          fees.priority.feePerKb.should.equal(40000);
+          fees.priority.nbBlocks.should.equal(1);
+
+          fees.normal.feePerKb.should.equal(25000);
+          fees.normal.nbBlocks.should.equal(2);
+
+          fees.economy.feePerKb.should.equal(10000);
+          fees.economy.nbBlocks.should.equal(6);
+          done();
+        });
       });
     });
   });
