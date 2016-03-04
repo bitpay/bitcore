@@ -1856,9 +1856,12 @@ describe('Wallet service', function() {
         fees = _.zipObject(_.map(fees, function(item) {
           return [item.level, item.feePerKb];
         }));
-        fees.priority.should.equal(50000);
-        fees.normal.should.equal(20000);
-        fees.economy.should.equal(10000);
+        var defaults = _.zipObject(_.map(Defaults.FEE_LEVELS, function(item) {
+          return [item.name, item.defaultValue];
+        }));
+        fees.priority.should.equal(defaults.priority);
+        fees.normal.should.equal(defaults.normal);
+        fees.economy.should.equal(defaults.economy);
         done();
       });
     });
