@@ -2355,7 +2355,7 @@ describe('Wallet service', function() {
       });
 
       it('should fail to create a tx exceeding max size in kb', function(done) {
-        log.level = 'debug';
+        // log.level = 'debug';
         var _oldDefault = Defaults.MAX_TX_SIZE_IN_KB;
         Defaults.MAX_TX_SIZE_IN_KB = 1;
         helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
@@ -3186,8 +3186,7 @@ describe('Wallet service', function() {
               toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
               amount: 0.8 * 1e8,
             }],
-            message: 'some message',
-            customData: 'some custom data',
+            feePerKb: 100e2,
           };
           server.createTx(txOpts, function(err, tx) {
             should.not.exist(err);
