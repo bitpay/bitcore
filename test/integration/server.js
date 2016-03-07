@@ -3169,7 +3169,7 @@ describe('Wallet service', function() {
       });
     });
 
-    describe.skip('UTXO Selection', function() {
+    describe('UTXO Selection', function() {
       var server, wallet;
       beforeEach(function(done) {
         helpers.createAndJoinWallet(2, 3, function(s, w) {
