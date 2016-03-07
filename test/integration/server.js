@@ -3169,7 +3169,7 @@ describe('Wallet service', function() {
       });
     });
 
-    describe('UTXO selection', function() {
+    describe('UTXO Selection', function() {
       var server, wallet;
       beforeEach(function(done) {
         helpers.createAndJoinWallet(2, 3, function(s, w) {
@@ -3179,32 +3179,248 @@ describe('Wallet service', function() {
         });
       });
 
-      it('should create a tx', function(done) {
-        helpers.stubUtxos(server, wallet, [1, 2], function() {
+      it('should select a single utxo if within thresholds relative to tx amount', function(done) {
+        helpers.stubUtxos(server, wallet, [1, '350bit', '100bit', '100bit', '100bit'], function() {
           var txOpts = {
             outputs: [{
               toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-              amount: 0.8 * 1e8,
+              amount: 200e2,
+            }],
+            feePerKb: 10e2,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            console.log('*** [server.js ln3193] err:', err); // TODO
+
+            should.not.exist(err);
+            should.exist(txp);
+            txp.inputs.length.should.equal(1);
+            txp.inputs[0].satoshis.should.equal(35000);
+
+            done();
+          });
+        });
+      });
+      it('should select smaller utxos if within fee constraints', function(done) {
+        helpers.stubUtxos(server, wallet, [1, '800bit', '800bit', '800bit'], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 2000e2,
+            }],
+            feePerKb: 10e2,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            txp.inputs.length.should.equal(3);
+            _.all(txp.inputs, function(input) {
+              return input == 100e2;
+            });
+            done();
+          });
+        });
+      });
+      it('should select smallest big utxo if small utxos are insufficient', function(done) {
+        helpers.stubUtxos(server, wallet, [3, 1, 2, '100bit', '100bit', '100bit'], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 300e2,
+            }],
+            feePerKb: 10e2,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            txp.inputs.length.should.equal(1);
+            txp.inputs[0].satoshis.should.equal(1e8);
+            done();
+          });
+        });
+      });
+      it('should account for fee when selecting smallest big utxo', function(done) {
+        // log.level = 'debug';
+        var _old = Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR;
+        Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR = 2;
+        // The 605 bits input cannot be selected even if it is > 2 * tx amount
+        // because it cannot cover for fee on its own.
+        helpers.stubUtxos(server, wallet, [1, '605bit', '100bit', '100bit', '100bit'], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 300e2,
+            }],
+            feePerKb: 1200e2,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            txp.inputs.length.should.equal(1);
+            txp.inputs[0].satoshis.should.equal(1e8);
+            Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR = _old;
+            done();
+          });
+        });
+      });
+      it('should select smallest big utxo if small utxos exceed maximum fee', function(done) {
+        helpers.stubUtxos(server, wallet, [3, 1, 2].concat(_.times(20, function() {
+          return '1000bit';
+        })), function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 12000e2,
+            }],
+            feePerKb: 20e2,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            txp.inputs.length.should.equal(1);
+            txp.inputs[0].satoshis.should.equal(1e8);
+
+            done();
+          });
+        });
+      });
+      it('should select smallest big utxo if small utxos are below accepted ratio of txp amount', function(done) {
+        helpers.stubUtxos(server, wallet, [9, 1, 1, 0.5, 0.2, 0.2, 0.2], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 3e8,
+            }],
+            feePerKb: 10e2,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            txp.inputs.length.should.equal(1);
+            txp.inputs[0].satoshis.should.equal(9e8);
+            done();
+          });
+        });
+      });
+      it('should not fail with tx exceeded max size if there is at least 1 big input', function(done) {
+        var _old1 = Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR;
+        var _old2 = Defaults.MAX_TX_SIZE_IN_KB;
+        Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR = 0.0001;
+        Defaults.MAX_TX_SIZE_IN_KB = 3;
+
+        helpers.stubUtxos(server, wallet, [100].concat(_.range(1, 20, 0)), function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 15e8,
+            }],
+            feePerKb: 120e2,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            txp.inputs.length.should.equal(1);
+            txp.inputs[0].satoshis.should.equal(100e8);
+            Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR = _old1;
+            Defaults.MAX_TX_SIZE_IN_KB = _old2;
+            done();
+          });
+        });
+      });
+      it('should ignore utxos not contributing enough to cover increase in fee', function(done) {
+        helpers.stubUtxos(server, wallet, ['100bit', '100bit', '100bit'], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 200e2,
+            }],
+            feePerKb: 80e2,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            txp.inputs.length.should.equal(3);
+            txOpts.feePerKb = 120e2;
+            server.createTx(txOpts, function(err, txp) {
+              should.exist(err);
+              should.not.exist(txp);
+              done();
+            });
+          });
+        });
+      });
+      it('should fail to select utxos if not enough to cover tx amount', function(done) {
+        helpers.stubUtxos(server, wallet, ['100bit', '100bit', '100bit'], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 400e2,
+            }],
+            feePerKb: 10e2,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.exist(err);
+            should.not.exist(txp);
+            err.code.should.equal('INSUFFICIENT_FUNDS');
+            done();
+          });
+        });
+      });
+      it('should fail to select utxos if not enough to cover fees', function(done) {
+        helpers.stubUtxos(server, wallet, ['100bit', '100bit', '100bit'], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 299e2,
+            }],
+            feePerKb: 10e2,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.exist(err);
+            should.not.exist(txp);
+            err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
+            done();
+          });
+        });
+      });
+      it('should prefer a higher fee (breaking all limits) if inputs have 6+ confirmations', function(done) {
+        helpers.stubUtxos(server, wallet, ['2c 2000bit'].concat(_.times(20, function() {
+          return '100bit';
+        })), function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 1500e2,
+            }],
+            feePerKb: 10e2,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            _.all(txp.inputs, function(input) {
+              return input == 100e2;
+            });
+            done();
+          });
+        });
+      });
+      it('should select unconfirmed utxos if not enough confirmed utxos', function(done) {
+        // log.level = 'debug';
+        helpers.stubUtxos(server, wallet, ['u 1btc', '0.5btc'], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8e8,
             }],
             feePerKb: 100e2,
           };
-          server.createTx(txOpts, function(err, tx) {
+          server.createTx(txOpts, function(err, txp) {
+            console.log('*** [server.js ln3417] err:', err); // TODO
+
             should.not.exist(err);
-            should.exist(tx);
-            tx.walletM.should.equal(2);
-            tx.walletN.should.equal(3);
-            tx.requiredRejections.should.equal(2);
-            tx.requiredSignatures.should.equal(2);
-            tx.isAccepted().should.equal.false;
-            tx.isRejected().should.equal.false;
-            tx.isPending().should.equal.true;
-            tx.isTemporary().should.equal.true;
-            tx.amount.should.equal(helpers.toSatoshi(0.8));
-            server.getPendingTxs({}, function(err, txs) {
-              should.not.exist(err);
-              txs.should.be.empty;
-              done();
-            });
+            should.exist(txp);
+            txp.inputs.length.should.equal(1);
+            txp.inputs[0].satoshis.should.equal(1e8);
+            done();
           });
         });
       });
@@ -5731,257 +5947,4 @@ describe('Wallet service', function() {
       });
     });
   });
-
-  describe('UTXO Selection', function() {
-    var server, wallet;
-    beforeEach(function(done) {
-      helpers.createAndJoinWallet(2, 3, function(s, w) {
-        server = s;
-        wallet = w;
-        done();
-      });
-    });
-
-    it('should select a single utxo if within thresholds relative to tx amount', function(done) {
-      helpers.stubUtxos(server, wallet, [1, '350bit', '100bit', '100bit', '100bit'], function() {
-        var txOpts = {
-          outputs: [{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 200e2,
-          }],
-          feePerKb: 10e2,
-        };
-        server.createTx(txOpts, function(err, txp) {
-          should.not.exist(err);
-          should.exist(txp);
-          txp.inputs.length.should.equal(1);
-          txp.inputs[0].satoshis.should.equal(35000);
-
-          done();
-        });
-      });
-    });
-    it('should select smaller utxos if within fee constraints', function(done) {
-      helpers.stubUtxos(server, wallet, [1, '800bit', '800bit', '800bit'], function() {
-        var txOpts = {
-          outputs: [{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 2000e2,
-          }],
-          feePerKb: 10e2,
-        };
-        server.createTx(txOpts, function(err, txp) {
-          should.not.exist(err);
-          should.exist(txp);
-          txp.inputs.length.should.equal(3);
-          _.all(txp.inputs, function(input) {
-            return input == 100e2;
-          });
-          done();
-        });
-      });
-    });
-    it('should select smallest big utxo if small utxos are insufficient', function(done) {
-      helpers.stubUtxos(server, wallet, [3, 1, 2, '100bit', '100bit', '100bit'], function() {
-        var txOpts = {
-          outputs: [{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 300e2,
-          }],
-          feePerKb: 10e2,
-        };
-        server.createTx(txOpts, function(err, txp) {
-          should.not.exist(err);
-          should.exist(txp);
-          txp.inputs.length.should.equal(1);
-          txp.inputs[0].satoshis.should.equal(1e8);
-          done();
-        });
-      });
-    });
-    it('should account for fee when selecting smallest big utxo', function(done) {
-      // log.level = 'debug';
-      var _old = Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR;
-      Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR = 2;
-      // The 605 bits input cannot be selected even if it is > 2 * tx amount
-      // because it cannot cover for fee on its own.
-      helpers.stubUtxos(server, wallet, [1, '605bit', '100bit', '100bit', '100bit'], function() {
-        var txOpts = {
-          outputs: [{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 300e2,
-          }],
-          feePerKb: 1200e2,
-        };
-        server.createTx(txOpts, function(err, txp) {
-          should.not.exist(err);
-          should.exist(txp);
-          txp.inputs.length.should.equal(1);
-          txp.inputs[0].satoshis.should.equal(1e8);
-          Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR = _old;
-          done();
-        });
-      });
-    });
-    it('should select smallest big utxo if small utxos exceed maximum fee', function(done) {
-      helpers.stubUtxos(server, wallet, [3, 1, 2].concat(_.times(20, function() {
-        return '1000bit';
-      })), function() {
-        var txOpts = {
-          outputs: [{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 12000e2,
-          }],
-          feePerKb: 20e2,
-        };
-        server.createTx(txOpts, function(err, txp) {
-          should.not.exist(err);
-          should.exist(txp);
-          txp.inputs.length.should.equal(1);
-          txp.inputs[0].satoshis.should.equal(1e8);
-
-          done();
-        });
-      });
-    });
-    it('should select smallest big utxo if small utxos are below accepted ratio of txp amount', function(done) {
-      helpers.stubUtxos(server, wallet, [9, 1, 1, 0.5, 0.2, 0.2, 0.2], function() {
-        var txOpts = {
-          outputs: [{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 3e8,
-          }],
-          feePerKb: 10e2,
-        };
-        server.createTx(txOpts, function(err, txp) {
-          should.not.exist(err);
-          should.exist(txp);
-          txp.inputs.length.should.equal(1);
-          txp.inputs[0].satoshis.should.equal(9e8);
-          done();
-        });
-      });
-    });
-    it('should not fail with tx exceeded max size if there is at least 1 big input', function(done) {
-      var _old1 = Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR;
-      var _old2 = Defaults.MAX_TX_SIZE_IN_KB;
-      Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR = 0.0001;
-      Defaults.MAX_TX_SIZE_IN_KB = 3;
-
-      helpers.stubUtxos(server, wallet, [100].concat(_.range(1, 20, 0)), function() {
-        var txOpts = {
-          outputs: [{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 15e8,
-          }],
-          feePerKb: 120e2,
-        };
-        server.createTx(txOpts, function(err, txp) {
-          should.not.exist(err);
-          should.exist(txp);
-          txp.inputs.length.should.equal(1);
-          txp.inputs[0].satoshis.should.equal(100e8);
-          Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR = _old1;
-          Defaults.MAX_TX_SIZE_IN_KB = _old2;
-          done();
-        });
-      });
-    });
-    it('should ignore utxos not contributing enough to cover increase in fee', function(done) {
-      helpers.stubUtxos(server, wallet, ['100bit', '100bit', '100bit'], function() {
-        var txOpts = {
-          outputs: [{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 200e2,
-          }],
-          feePerKb: 80e2,
-        };
-        server.createTx(txOpts, function(err, txp) {
-          should.not.exist(err);
-          should.exist(txp);
-          txp.inputs.length.should.equal(3);
-          txOpts.feePerKb = 120e2;
-          server.createTx(txOpts, function(err, txp) {
-            should.exist(err);
-            should.not.exist(txp);
-            done();
-          });
-        });
-      });
-    });
-    it('should fail to select utxos if not enough to cover tx amount', function(done) {
-      helpers.stubUtxos(server, wallet, ['100bit', '100bit', '100bit'], function() {
-        var txOpts = {
-          outputs: [{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 400e2,
-          }],
-          feePerKb: 10e2,
-        };
-        server.createTx(txOpts, function(err, txp) {
-          should.exist(err);
-          should.not.exist(txp);
-          err.code.should.equal('INSUFFICIENT_FUNDS');
-          done();
-        });
-      });
-    });
-    it('should fail to select utxos if not enough to cover fees', function(done) {
-      helpers.stubUtxos(server, wallet, ['100bit', '100bit', '100bit'], function() {
-        var txOpts = {
-          outputs: [{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 299e2,
-          }],
-          feePerKb: 10e2,
-        };
-        server.createTx(txOpts, function(err, txp) {
-          should.exist(err);
-          should.not.exist(txp);
-          err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
-          done();
-        });
-      });
-    });
-    it('should prefer a higher fee (breaking all limits) if inputs have 6+ confirmations', function(done) {
-      helpers.stubUtxos(server, wallet, ['2c 2000bit'].concat(_.times(20, function() {
-        return '100bit';
-      })), function() {
-        var txOpts = {
-          outputs: [{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 1500e2,
-          }],
-          feePerKb: 10e2,
-        };
-        server.createTx(txOpts, function(err, txp) {
-          should.not.exist(err);
-          should.exist(txp);
-          _.all(txp.inputs, function(input) {
-            return input == 100e2;
-          });
-          done();
-        });
-      });
-    });
-    it('should select unconfirmed utxos if not enough confirmed utxos', function(done) {
-      helpers.stubUtxos(server, wallet, ['u 1btc', '0.5btc'], function() {
-        var txOpts = {
-          outputs: [{
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: 0.8e8,
-          }],
-          feePerKb: 100e2,
-        };
-        server.createTx(txOpts, function(err, txp) {
-          should.not.exist(err);
-          should.exist(txp);
-          txp.inputs.length.should.equal(1);
-          txp.inputs[0].satoshis.should.equal(1e8);
-          done();
-        });
-      });
-    });
-  });
-
 });
