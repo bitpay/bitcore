@@ -3169,7 +3169,7 @@ describe('Wallet service', function() {
       });
     });
 
-    describe('UTXO Selection', function() {
+    describe.skip('UTXO Selection', function() {
       var server, wallet;
       beforeEach(function(done) {
         helpers.createAndJoinWallet(2, 3, function(s, w) {
@@ -3189,8 +3189,6 @@ describe('Wallet service', function() {
             feePerKb: 10e2,
           };
           server.createTx(txOpts, function(err, txp) {
-            console.log('*** [server.js ln3193] err:', err); // TODO
-
             should.not.exist(err);
             should.exist(txp);
             txp.inputs.length.should.equal(1);
