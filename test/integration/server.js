@@ -3412,12 +3412,29 @@ describe('Wallet service', function() {
             feePerKb: 100e2,
           };
           server.createTx(txOpts, function(err, txp) {
-            console.log('*** [server.js ln3417] err:', err); // TODO
-
             should.not.exist(err);
             should.exist(txp);
             txp.inputs.length.should.equal(1);
             txp.inputs[0].satoshis.should.equal(1e8);
+            done();
+          });
+        });
+      });
+      it('should ignore utxos too small to pay for fee', function(done) {
+        helpers.stubUtxos(server, wallet, ['1c200bit', '200bit'].concat(_.times(20, function() {
+          return '1bit';
+        })), function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 200e2,
+            }],
+            feePerKb: 90e2,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            txp.inputs.length.should.equal(2);
             done();
           });
         });
