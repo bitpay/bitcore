@@ -3199,7 +3199,7 @@ describe('Wallet service', function() {
           });
         });
       });
-    it('should select a confirmed utxos if within thresholds relative to tx amount', function(done) {
+      it('should select a confirmed utxos if within thresholds relative to tx amount', function(done) {
         helpers.stubUtxos(server, wallet, [1, 'u 350bit', '100bit', '100bit', '100bit'], function() {
           var txOpts = {
             outputs: [{
@@ -3218,7 +3218,7 @@ describe('Wallet service', function() {
           });
         });
       });
-   
+
       it('should select smaller utxos if within fee constraints', function(done) {
         helpers.stubUtxos(server, wallet, [1, '800bit', '800bit', '800bit'], function() {
           var txOpts = {
@@ -3479,7 +3479,32 @@ describe('Wallet service', function() {
           });
         });
       });
-      it.only('should ignore small utxos if fee is higher', function(done) {
+      it('should keep adding utxos while change is below dust', function(done) {
+        helpers.stubUtxos(server, wallet, ['200bit', '500sat'], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 200e2,
+            }],
+            feePerKb: 400,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.exist(err);
+            err.code.should.equal('DUST_AMOUNT');
+            helpers.stubUtxos(server, wallet, ['200bit'].concat(_.times(10, function() {
+              return '500sat';
+            })), function() {
+              server.createTx(txOpts, function(err, txp) {
+                should.not.exist(err);
+                txp.inputs[0].satoshis.should.equal(200e2);
+                (_.sum(txp.inputs, 'satoshis') - txp.outputs[0].amount - txp.fee).should.be.above(Bitcore.Transaction.DUST_AMOUNT);
+                done();
+              });
+            });
+          });
+        });
+      });
+      it.skip('should ignore small utxos if fee is higher', function(done) {
         helpers.stubUtxos(server, wallet, [].concat(_.times(10, function() {
           return '30bit';
         })), function() {
