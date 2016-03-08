@@ -1226,6 +1226,23 @@ describe('Transaction', function() {
       });
     });
   });
+
+  describe('Segregated Witness', function() {
+    it('identify as segwit transaction', function() {
+      // https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki
+      var version = new Buffer('01000000', 'hex');
+      var marker = new Buffer('00', 'hex'); //always zero
+      var flag = new Buffer('01', 'hex'); //non zero
+      var inputCount = new Buffer('00', 'hex');
+      var outputCount = new Buffer('00', 'hex');
+      var witness = new Buffer('00', 'hex');
+      var locktime = new Buffer('00000000', 'hex');
+      var txBuffer = Buffer.concat([version, marker, flag, inputCount, outputCount, witness, locktime]);
+      var tx = bitcore.Transaction().fromBuffer(txBuffer);
+      tx._hasWitness.should.equal(true);
+    });
+  });
+
 });
 
 
