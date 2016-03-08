@@ -1241,6 +1241,12 @@ describe('Transaction', function() {
       var tx = bitcore.Transaction().fromBuffer(txBuffer);
       tx._hasWitness.should.equal(true);
     });
+    it('correctly calculate hash for segwit transaction', function() {
+      var txBuffer = new Buffer('01000000000101b0e5caa7e37d4b8530c3e1071a36dd5e05d1065cf7224ddff42c69e3387689870000000000ffffffff017b911100000000001600144ff831574da8bef07f8bc97244a1666147b071570247304402203fcbcfddbd6ca3a90252610dd63f1be50b2d926b8d87c912da0a3e42bb03fba002202a90c8aad75da22b0549c72618b754114583e934c0b0d2ccd6c13fcd859ba4ed01210363f3f47f4555779de405eab8d0dc8c2a4f3e09f4171a3fa47c7a77715795319800000000', 'hex');
+      var tx = bitcore.Transaction().fromBuffer(txBuffer);
+      tx.hash.should.equal('7f1a2d46746f1bfbb22ab797d5aad1fd9723477b417fa34dff73d8a7dbb14570');
+      tx.witnessHash.should.equal('3c26fc8b5cfe65f96d955cecfe4d11db2659d052171f9f31af043e9f5073e46b');
+    });
   });
 
 });
