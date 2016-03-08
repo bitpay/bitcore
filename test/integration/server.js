@@ -3172,6 +3172,7 @@ describe('Wallet service', function() {
     describe('UTXO Selection', function() {
       var server, wallet;
       beforeEach(function(done) {
+        log.level = 'debug';
         helpers.createAndJoinWallet(2, 3, function(s, w) {
           server = s;
           wallet = w;
@@ -3198,6 +3199,26 @@ describe('Wallet service', function() {
           });
         });
       });
+    it('should select a confirmed utxos if within thresholds relative to tx amount', function(done) {
+        helpers.stubUtxos(server, wallet, [1, 'u 350bit', '100bit', '100bit', '100bit'], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 200e2,
+            }],
+            feePerKb: 10e2,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            txp.inputs.length.should.equal(3);
+            txp.inputs[0].satoshis.should.equal(10000);
+
+            done();
+          });
+        });
+      });
+   
       it('should select smaller utxos if within fee constraints', function(done) {
         helpers.stubUtxos(server, wallet, [1, '800bit', '800bit', '800bit'], function() {
           var txOpts = {
@@ -3439,6 +3460,45 @@ describe('Wallet service', function() {
           });
         });
       });
+      it('should use small utxos if fee is low', function(done) {
+        helpers.stubUtxos(server, wallet, [].concat(_.times(10, function() {
+          return '30bit';
+        })), function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 200e2,
+            }],
+            feePerKb: 10e2,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            txp.inputs.length.should.equal(8);
+            done();
+          });
+        });
+      });
+      it.only('should ignore small utxos if fee is higher', function(done) {
+        helpers.stubUtxos(server, wallet, [].concat(_.times(10, function() {
+          return '30bit';
+        })), function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 200e2,
+            }],
+            feePerKb: 30e2,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
+            done();
+          });
+        });
+      });
+
+
+
     });
   });
 
