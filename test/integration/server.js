@@ -3168,7 +3168,7 @@ describe('Wallet service', function() {
       });
     });
 
-    describe.only('UTXO Selection', function() {
+    describe('UTXO Selection', function() {
       var server, wallet;
       beforeEach(function(done) {
         // log.level = 'debug';
@@ -3197,6 +3197,29 @@ describe('Wallet service', function() {
             txp.inputs.length.should.equal(1);
             txp.inputs[0].satoshis.should.equal(35000);
 
+            done();
+          });
+        });
+      });
+      it('should return inputs in random order', function(done) {
+        // NOTE: this test has a chance of failing of 1 in 1'073'741'824 :P
+        helpers.stubUtxos(server, wallet, _.range(1, 31), function(utxos) {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: _.sum(utxos, 'satoshis') - 0.5e8,
+            }],
+            feePerKb: 100e2,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            var amounts = _.pluck(txp.inputs, 'satoshis');
+            amounts.length.should.equal(30);
+            _.all(amounts, function(amount, i) {
+              if (i == 0) return true;
+              return amount < amounts[i - 1];
+            }).should.be.false;
             done();
           });
         });
@@ -3492,7 +3515,6 @@ describe('Wallet service', function() {
           };
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
-            txp.inputs[0].satoshis.should.equal(200e2);
             (_.sum(txp.inputs, 'satoshis') - txp.outputs[0].amount - txp.fee).should.equal(0);
             done();
           });
