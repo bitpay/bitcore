@@ -233,13 +233,13 @@ helpers._parseAmount = function(str) {
   switch (match[3]) {
     default:
     case 'btc':
-      result.amount = Utils.strip(match[2] * 1e8);
+      result.amount = Utils.strip(+match[2] * 1e8);
       break;
     case 'bit':
-      result.amount = Utils.strip(match[2] * 1e2);
+      result.amount = Utils.strip(+match[2] * 1e2);
       break
     case 'sat':
-      result.amount = Utils.strip(match[2]);
+      result.amount = Utils.strip(+match[2]);
       break;
   };
 

@@ -2381,19 +2381,18 @@ describe('Wallet service', function() {
         });
       });
 
-      it('should fail to create tx that would return change for dust amount', function(done) {
+      it('should modify fee if tx would return change for dust amount', function(done) {
         helpers.stubUtxos(server, wallet, [1], function() {
-          var fee = 4095 / 1e8; // The exact fee of the resulting tx
-          var change = 100 / 1e8; // Below dust
-          var amount = 1 - fee - change;
+          var fee = 4095; // The exact fee of the resulting tx (based exclusively on feePerKB && size)
+          var change = 100; // Below dust
+          var amount = (1e8 - fee - change) / 1e8;
 
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', amount, TestData.copayers[0].privKey_1H_0, {
             feePerKb: 10000
           });
           server.createTxLegacy(txOpts, function(err, tx) {
-            should.exist(err);
-            err.code.should.equal('DUST_AMOUNT');
-            err.message.should.equal('Amount below dust threshold');
+            should.not.exist(err);
+            tx.fee.should.equal(fee + change);
             done();
           });
         });
@@ -3169,15 +3168,18 @@ describe('Wallet service', function() {
       });
     });
 
-    describe('UTXO Selection', function() {
+    describe.only('UTXO Selection', function() {
       var server, wallet;
       beforeEach(function(done) {
-        log.level = 'debug';
+        // log.level = 'debug';
         helpers.createAndJoinWallet(2, 3, function(s, w) {
           server = s;
           wallet = w;
           done();
         });
+      });
+      afterEach(function() {
+        log.level = 'info';
       });
 
       it('should select a single utxo if within thresholds relative to tx amount', function(done) {
@@ -3479,7 +3481,7 @@ describe('Wallet service', function() {
           });
         });
       });
-      it('should keep adding utxos while change is below dust', function(done) {
+      it('should correct fee if resulting change would be below dust', function(done) {
         helpers.stubUtxos(server, wallet, ['200bit', '500sat'], function() {
           var txOpts = {
             outputs: [{
@@ -3489,22 +3491,14 @@ describe('Wallet service', function() {
             feePerKb: 400,
           };
           server.createTx(txOpts, function(err, txp) {
-            should.exist(err);
-            err.code.should.equal('DUST_AMOUNT');
-            helpers.stubUtxos(server, wallet, ['200bit'].concat(_.times(10, function() {
-              return '500sat';
-            })), function() {
-              server.createTx(txOpts, function(err, txp) {
-                should.not.exist(err);
-                txp.inputs[0].satoshis.should.equal(200e2);
-                (_.sum(txp.inputs, 'satoshis') - txp.outputs[0].amount - txp.fee).should.be.above(Bitcore.Transaction.DUST_AMOUNT);
-                done();
-              });
-            });
+            should.not.exist(err);
+            txp.inputs[0].satoshis.should.equal(200e2);
+            (_.sum(txp.inputs, 'satoshis') - txp.outputs[0].amount - txp.fee).should.equal(0);
+            done();
           });
         });
       });
-      it.skip('should ignore small utxos if fee is higher', function(done) {
+      it('should ignore small utxos if fee is higher', function(done) {
         helpers.stubUtxos(server, wallet, [].concat(_.times(10, function() {
           return '30bit';
         })), function() {
@@ -3513,9 +3507,10 @@ describe('Wallet service', function() {
               toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
               amount: 200e2,
             }],
-            feePerKb: 30e2,
+            feePerKb: 50e2,
           };
           server.createTx(txOpts, function(err, txp) {
+            should.exist(err);
             err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
             done();
           });
