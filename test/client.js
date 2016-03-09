@@ -3903,6 +3903,39 @@ describe('client API', function() {
         });
       });
 
+      it('should add access with copayer name', function(done) {
+        var spy = sinon.spy(clients[0], '_doPutRequest');
+        clients[0].addAccess({
+          name: 'pepe',
+        }, function(err, x, key) {
+          should.not.exist(err);
+          var url = spy.getCall(0).args[0];
+          var body = JSON.stringify(spy.getCall(0).args[1]);
+          url.should.contain('/copayers');
+          body.should.not.contain('pepe');
+
+          var k = new Bitcore.PrivateKey(key);
+          var c = clients[0].credentials;
+          c.requestPrivKey = k.toString();
+          c.requestPubKey = k.toPublicKey().toString();
+
+          clients[0].getStatus({}, function(err, status) {
+            should.not.exist(err);
+            var keys = status.wallet.copayers[0].requestPubKeys;
+            keys.length.should.equal(2);
+            _.filter(keys, {
+              name: 'pepe'
+            }).length.should.equal(1);
+
+            clients[0].sendTxProposal(opts, function(err, x) {
+              should.not.exist(err);
+              // TODO: verify tx's creator is 'pepe'
+              done();
+            });
+          });
+        });
+      });
+
       it('should grant access with *new* keys then deny access with old keys', function(done) {
         clients[0].addAccess({
           generateNewKey: true
