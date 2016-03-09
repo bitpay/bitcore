@@ -948,6 +948,22 @@ describe('client API', function() {
   });
 
   describe('Wallet Creation', function() {
+    it('should encrypt copayer name in wallet creation', function(done) {
+      var spy = sinon.spy(clients[0], '_doPostRequest');
+      clients[0].seedFromRandomWithMnemonic();
+      clients[0].createWallet('mywallet', 'pepe', 1, 1, {}, function(err, secret) {
+        should.not.exist(err);
+        var url = spy.getCall(1).args[0];
+        var body = JSON.stringify(spy.getCall(1).args[1]);
+        url.should.contain('/copayers');
+        body.should.not.contain('pepe');
+        clients[0].getStatus({}, function(err, status) {
+          should.not.exist(err);
+          status.wallet.copayers[0].name.should.equal('pepe');
+          done();
+        })
+      });
+    });
     it('should check balance in a 1-1 ', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
         clients[0].getBalance({}, function(err, balance) {
@@ -1001,7 +1017,7 @@ describe('client API', function() {
       });
     });
 
-    it('should fill wallet info in a incomplete wallets', function(done) {
+    it('should fill wallet info in an incomplete wallet', function(done) {
       clients[0].seedFromRandomWithMnemonic();
       clients[0].createWallet('XXX', 'creator', 2, 3, {}, function(err, secret) {
         should.not.exist(err);
@@ -3674,7 +3690,7 @@ describe('client API', function() {
     });
   });
 
-  describe('Legacy Copay Import', function() {
+  describe.skip('Legacy Copay Import', function() {
     it('Should get wallets from profile', function(done) {
       var t = ImportData.copayers[0];
       var c = helpers.newClient(app);
