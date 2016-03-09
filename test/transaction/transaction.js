@@ -1235,11 +1235,12 @@ describe('Transaction', function() {
       var flag = new Buffer('01', 'hex'); //non zero
       var inputCount = new Buffer('00', 'hex');
       var outputCount = new Buffer('00', 'hex');
-      var witness = new Buffer('00', 'hex');
+      var witness = new Buffer('01', 'hex');
+      var witnessItems = new Buffer('00', 'hex');
       var locktime = new Buffer('00000000', 'hex');
-      var txBuffer = Buffer.concat([version, marker, flag, inputCount, outputCount, witness, locktime]);
+      var txBuffer = Buffer.concat([version, marker, flag, inputCount, outputCount, witness, witnessItems, locktime]);
       var tx = bitcore.Transaction().fromBuffer(txBuffer);
-      tx._hasWitness.should.equal(true);
+      tx.hasWitness().should.equal(true);
     });
     it('correctly calculate hash for segwit transaction', function() {
       var txBuffer = new Buffer('01000000000101b0e5caa7e37d4b8530c3e1071a36dd5e05d1065cf7224ddff42c69e3387689870000000000ffffffff017b911100000000001600144ff831574da8bef07f8bc97244a1666147b071570247304402203fcbcfddbd6ca3a90252610dd63f1be50b2d926b8d87c912da0a3e42bb03fba002202a90c8aad75da22b0549c72618b754114583e934c0b0d2ccd6c13fcd859ba4ed01210363f3f47f4555779de405eab8d0dc8c2a4f3e09f4171a3fa47c7a77715795319800000000', 'hex');
