@@ -1233,20 +1233,51 @@ describe('Transaction', function() {
       var version = new Buffer('01000000', 'hex');
       var marker = new Buffer('00', 'hex'); //always zero
       var flag = new Buffer('01', 'hex'); //non zero
-      var inputCount = new Buffer('00', 'hex');
+      var inputCount = new Buffer('01', 'hex');
+      var inputDummy = new Buffer('2052cda8bc0c2cb743f154881fc85cb675527dcf2f7a5938241020c33341b3f70000000000ffffffff', 'hex');
       var outputCount = new Buffer('00', 'hex');
       var witness = new Buffer('01', 'hex');
       var witnessItems = new Buffer('00', 'hex');
       var locktime = new Buffer('00000000', 'hex');
-      var txBuffer = Buffer.concat([version, marker, flag, inputCount, outputCount, witness, witnessItems, locktime]);
+      var txBuffer = Buffer.concat([version, marker, flag, inputCount, inputDummy, outputCount, witness,
+                                    witnessItems, locktime]);
       var tx = bitcore.Transaction().fromBuffer(txBuffer);
-      tx.hasWitness().should.equal(true);
+      tx.hasWitnesses().should.equal(true);
     });
     it('correctly calculate hash for segwit transaction', function() {
       var txBuffer = new Buffer('01000000000101b0e5caa7e37d4b8530c3e1071a36dd5e05d1065cf7224ddff42c69e3387689870000000000ffffffff017b911100000000001600144ff831574da8bef07f8bc97244a1666147b071570247304402203fcbcfddbd6ca3a90252610dd63f1be50b2d926b8d87c912da0a3e42bb03fba002202a90c8aad75da22b0549c72618b754114583e934c0b0d2ccd6c13fcd859ba4ed01210363f3f47f4555779de405eab8d0dc8c2a4f3e09f4171a3fa47c7a77715795319800000000', 'hex');
       var tx = bitcore.Transaction().fromBuffer(txBuffer);
       tx.hash.should.equal('7f1a2d46746f1bfbb22ab797d5aad1fd9723477b417fa34dff73d8a7dbb14570');
       tx.witnessHash.should.equal('3c26fc8b5cfe65f96d955cecfe4d11db2659d052171f9f31af043e9f5073e46b');
+    });
+    describe('signing', function() {
+      var privateKey1 = PrivateKey.fromWIF('cNuW8LX2oeQXfKKCGxajGvqwhCgBtacwTQqiCGHzzKfmpHGY4TE9');
+      var publicKey1 = p2shPrivateKey1.toPublicKey();
+      var privateKey2 = PrivateKey.fromWIF('cTtLHt4mv6zuJytSnM7Vd6NLxyNauYLMxD818sBC8PJ1UPiVTRSs');
+      var publicKey2 = p2shPrivateKey2.toPublicKey();
+      var privateKey3 = PrivateKey.fromWIF('cQFMZ5gP9CJtUZPc9X3yFae89qaiQLspnftyxxLGvVNvM6tS6mYY');
+      var publicKey3 = p2shPrivateKey3.toPublicKey();
+      var address = Address.createMultisig([
+        publicKey1,
+        publicKey2,
+        publicKey3
+      ], 2, 'segnet', true);
+      var utxo = {
+        address: address.toString(),
+        txId: '72a0b3d6dcbba9d2ae74c11eec05cdfc2a03e1a01b3bbb09af0cc2dc8c3dbefa',
+        outputIndex: 0,
+        script: Script.buildScriptHashOut(address).toString(),
+        satoshis: 1e8
+      };
+      it('will sign with nested p2sh witness program', function() {
+        var tx = new Transaction()
+          .from(utxo, [publicKey1, publicKey2, publicKey3], 2, true)
+          .to([{address: 'DSy1mtq7NeVEWKjBoXb4wgujgLv7cLE9Vb', satoshis: 50000}])
+          .fee(150000)
+          .change('DF8MrzMiDkTvT4qpeCAdW6Y37WGgbo9Cmu')
+          .sign(privateKey1)
+          .sign(privateKey2);
+      });
     });
   });
 

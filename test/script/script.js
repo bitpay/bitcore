@@ -682,6 +682,18 @@ describe('Script', function() {
       }
     }
   });
+
+  describe('#buildWitnessMultisigOutFromScript', function() {
+    it('it will build nested witness scriptSig', function() {
+      var redeemScript = bitcore.Script();
+      var redeemHash = bitcore.crypto.Hash.sha256(redeemScript.toBuffer());
+      var s = Script.buildWitnessMultisigOutFromScript(redeemScript);
+      var buf = s.toBuffer();
+      buf[0].should.equal(0);
+      buf.slice(2, 34).toString('hex').should.equal(redeemHash.toString('hex'));
+    });
+  });
+
   describe('#buildPublicKeyHashOut', function() {
     it('should create script from livenet address', function() {
       var address = Address.fromString('1NaTVwXDDUJaXDQajoa9MqHhz4uTxtgK14');
