@@ -402,6 +402,31 @@ describe('Script', function() {
 
   });
 
+  describe('#isWitnessScriptHashOut', function() {
+    it('should recognize this script as p2wsh', function() {
+      Script('OP_0 32 0xa99d08fbec6958f4d4a3776c3728ec448934d25fe1142054b8b68bac866dfc3a')
+        .isWitnessScriptHashOut().should.equal(true);
+      Script('0020a99d08fbec6958f4d4a3776c3728ec448934d25fe1142054b8b68bac866dfc3a')
+        .isWitnessScriptHashOut().should.equal(true);
+    });
+    it('should NOT identify as p2wsh', function() {
+      Script('OP_0 20 0x799d283e7f92af1dd242bf4eea513c6efd117de2')
+        .isWitnessScriptHashOut().should.equal(false);
+    });
+  });
+
+  describe('#isWitnessPublicKeyHashOut', function() {
+    it('should identify as p2wpkh', function() {
+      Script('OP_0 20 0x799d283e7f92af1dd242bf4eea513c6efd117de2')
+        .isWitnessPublicKeyHashOut().should.equal(true);
+      Script('0014799d283e7f92af1dd242bf4eea513c6efd117de2').isWitnessPublicKeyHashOut().should.equal(true);
+    });
+    it('should NOT identify as p2wpkh', function() {
+      Script('OP_0 32 0xa99d08fbec6958f4d4a3776c3728ec448934d25fe1142054b8b68bac866dfc3a')
+        .isWitnessPublicKeyHashOut().should.equal(false);
+    });
+  });
+
   describe('#isPushOnly', function() {
     it('should know these scripts are or aren\'t push only', function() {
       Script('OP_NOP 1 0x01').isPushOnly().should.equal(false);
