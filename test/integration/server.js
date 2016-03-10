@@ -3089,6 +3089,30 @@ describe('Wallet service', function() {
           });
         });
       });
+
+      it('should be able to specify inputs & absolute fee', function(done) {
+        helpers.stubUtxos(server, wallet, [1, 2], function(utxos) {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8e8,
+            }],
+            inputs: utxos,
+            fee: 1000e2,
+          };
+          server.createTx(txOpts, function(err, tx) {
+            should.not.exist(err);
+            should.exist(tx);
+            tx.amount.should.equal(helpers.toSatoshi(0.8));
+            should.not.exist(tx.feePerKb);
+            tx.fee.should.equal(1000e2);
+            var t = tx.getBitcoreTx();
+            t.getFee().should.equal(1000e2);
+            t.getChangeOutput().satoshis.should.equal(3e8 - 0.8e8 - 1000e2);
+            done();
+          });
+        });
+      });
     });
 
     describe('Backoff time', function(done) {

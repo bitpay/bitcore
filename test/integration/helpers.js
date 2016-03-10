@@ -291,6 +291,7 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
           scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
           address: address.address,
           confirmations: parsed.confirmations,
+          publicKeys: address.publicKeys,
         };
       }));
 
