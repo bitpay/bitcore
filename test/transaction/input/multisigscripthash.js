@@ -111,4 +111,37 @@ describe('MultiSigScriptHashInput', function() {
     var roundtrip = new MultiSigScriptHashInput(input.toObject());
     roundtrip.toObject().should.deep.equal(input.toObject());
   });
+  it('will get the scriptCode for nested witness', function() {
+    var address = Address.createMultisig([public1, public2, public3], 2, 'testnet', true);
+    var utxo = {
+      address: address.toString(),
+      txId: '66e64ef8a3b384164b78453fa8c8194de9a473ba14f89485a0e433699daec140',
+      outputIndex: 0,
+      script: new Script(address),
+      satoshis: 1000000
+    };
+    var transaction = new Transaction()
+      .from(utxo, [public1, public2, public3], 2, true)
+      .to(address, 1000000);
+    var input = transaction.inputs[0];
+    var scriptCode = input.getScriptCode();
+    scriptCode.toString('hex').should.equal('2200206aac01b83b1537afe2aa96d13a339b8a109b05f6eaf37d5840fe5f227daedacc');
+  });
+  it('will get the satoshis buffer for nested witness', function() {
+    var address = Address.createMultisig([public1, public2, public3], 2, 'testnet', true);
+    var utxo = {
+      address: address.toString(),
+      txId: '66e64ef8a3b384164b78453fa8c8194de9a473ba14f89485a0e433699daec140',
+      outputIndex: 0,
+      script: new Script(address),
+      satoshis: 1000000
+    };
+    var transaction = new Transaction()
+      .from(utxo, [public1, public2, public3], 2, true)
+      .to(address, 1000000);
+    var input = transaction.inputs[0];
+    var satoshisBuffer = input.getSatoshisBuffer();
+    satoshisBuffer.toString('hex').should.equal('40420f0000000000');
+  });
+
 });

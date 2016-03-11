@@ -1266,7 +1266,7 @@ describe('Transaction', function() {
         address: address.toString(),
         txId: '72a0b3d6dcbba9d2ae74c11eec05cdfc2a03e1a01b3bbb09af0cc2dc8c3dbefa',
         outputIndex: 0,
-        script: Script.buildScriptHashOut(address).toString(),
+        script: Script.buildScriptHashOut(address).toHex(),
         satoshis: 1e8
       };
       it('will sign with nested p2sh witness program', function() {
@@ -1277,6 +1277,7 @@ describe('Transaction', function() {
           .change('DF8MrzMiDkTvT4qpeCAdW6Y37WGgbo9Cmu')
           .sign(privateKey1)
           .sign(privateKey2);
+        // TODO: check correct signature
       });
     });
   });
