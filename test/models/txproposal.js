@@ -56,7 +56,7 @@ describe('TxProposal', function() {
   describe('#getEstimatedSize', function() {
     it('should return estimated size in bytes', function() {
       var x = TxProposal.fromObj(aTXP());
-      x.getEstimatedSize().should.equal(407);
+      x.getEstimatedSize().should.equal(396);
     });
   });
 
