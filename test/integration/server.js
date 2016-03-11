@@ -3540,6 +3540,8 @@ describe('Wallet service', function() {
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             (_.sum(txp.inputs, 'satoshis') - txp.outputs[0].amount - txp.fee).should.equal(0);
+            var changeOutput = txp.getBitcoreTx().getChangeOutput();
+            should.not.exist(changeOutput);
             done();
           });
         });
