@@ -3562,9 +3562,22 @@ describe('Wallet service', function() {
           });
         });
       });
-
-
-
+      it('should always select inputs as long as there are sufficient funds', function(done) {
+        helpers.stubUtxos(server, wallet, [80, '50bit', '50bit', '50bit', '50bit', '50bit'], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 101e2,
+            }],
+            feePerKb: 100e2,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            done();
+          });
+        });
+      });
     });
   });
 
