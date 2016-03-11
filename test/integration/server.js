@@ -2848,8 +2848,7 @@ describe('Wallet service', function() {
               toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
               amount: 0.8 * 1e8,
             }],
-            message: 'some message',
-            customData: 'some custom data',
+            feePerKb: 100e2,
             dryRun: true,
           };
           server.createTx(txOpts, function(err, txp) {
@@ -3141,7 +3140,7 @@ describe('Wallet service', function() {
         });
       });
 
-      it.only('should be able to send max funds', function(done) {
+      it('should be able to send max funds', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
           var txOpts = {
             outputs: [{
@@ -3665,14 +3664,17 @@ describe('Wallet service', function() {
         outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: info.amount,
-          fee: info.fee,
         }],
         inputs: info.inputs,
+        fee: info.fee,
       };
       server.createTx(txOpts, function(err, tx) {
         should.not.exist(err);
         should.exist(tx);
-        tx.inputs.length.should.equal(info.inputs.length);
+        var t = tx.getBitcoreTx();
+        t.toObject().inputs.length.should.equal(info.inputs.length);
+        t.getFee().should.equal(info.fee);
+        should.not.exist(t.getChangeOutput());
         return cb();
       });
     };
@@ -3700,7 +3702,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           should.exist(info);
           info.inputs.length.should.equal(4);
-          info.size.should.equal(1342);
+          info.size.should.equal(1304);
           info.fee.should.equal(info.size * 10000 / 1000.);
           info.amount.should.equal(1e8 - info.fee);
           sendTx(info, done);
@@ -3717,20 +3719,21 @@ describe('Wallet service', function() {
           should.not.exist(err);
           should.exist(info);
           info.inputs.length.should.equal(3);
-          info.size.should.equal(1031);
+          info.size.should.equal(1002);
           info.fee.should.equal(info.size * 10000 / 1000.);
           info.amount.should.equal(0.9e8 - info.fee);
           sendTx(info, done);
         });
       });
     });
-    it('should exlude locked inputs', function(done) {
+    it('should exclude locked inputs', function(done) {
       helpers.stubUtxos(server, wallet, ['u0.1', 0.1, 0.1, 0.1], function() {
         var txOpts = {
           outputs: [{
             toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
             amount: 0.09e8,
           }],
+          feePerKb: 100e2,
         };
         helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
           should.exist(tx);
@@ -3742,7 +3745,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(info);
             info.inputs.length.should.equal(2);
-            info.size.should.equal(720);
+            info.size.should.equal(700);
             info.fee.should.equal(info.size * 10000 / 1000.);
             info.amount.should.equal(0.2e8 - info.fee);
             sendTx(info, done);
@@ -3759,7 +3762,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           should.exist(info);
           info.inputs.length.should.equal(4);
-          info.size.should.equal(1342);
+          info.size.should.equal(1304);
           info.fee.should.equal(info.size * 0.001e8 / 1000.);
           info.amount.should.equal(1e8 - info.fee);
           server.getSendMaxInfo({
@@ -3769,7 +3772,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(info);
             info.inputs.length.should.equal(6);
-            info.size.should.equal(1964);
+            info.size.should.equal(1907);
             info.fee.should.equal(info.size * 0.0001e8 / 1000.);
             info.amount.should.equal(1.0005e8 - info.fee);
             sendTx(info, done);
