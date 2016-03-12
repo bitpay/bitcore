@@ -1250,6 +1250,77 @@ describe('Transaction', function() {
       tx.hash.should.equal('7f1a2d46746f1bfbb22ab797d5aad1fd9723477b417fa34dff73d8a7dbb14570');
       tx.witnessHash.should.equal('3c26fc8b5cfe65f96d955cecfe4d11db2659d052171f9f31af043e9f5073e46b');
     });
+    it('round trip nested witness p2sh', function() {
+      var txBuffer = new Buffer('010000000001010894bb2bbfd5249b1c55f7bc64352bb64894938bc6439f43f28a58bfa7c73205000000002322002077b16b966ee6a4b8a0901351221d279afd31d3f90df52a3fc53436ea9abde5b0ffffffff01010000000000000000030047304402200fa23efa9a8d6ae285cfc82f81e6c2196d14167553b10da1845abd2c9fe38dc502207a40a58ee5b739e902b275018dfa1bee0d608736ff4317b028fbc29391f4554f01475221037b8dc5861a0ef7b0a97b41d2d1e27186f019d4834dbc99f24952b6f5080f5cce21027152378182102b68b5fce42f9f365ec272c48afda6b0816e735c1dc4b96dd45a52ae00000000', 'hex');
+      var tx = bitcore.Transaction().fromBuffer(txBuffer);
+      tx.toBuffer().toString('hex').should.equal(txBuffer.toString('hex'));
+    });
+    describe('verifying', function() {
+      it('will verify these signatures', function() {
+        var signedTxBuffer = new Buffer('0100000000010103752b9d2baadb95480e2571a4854a68ffd8264462168346461b7cdda76beac20000000023220020fde78ea47ae10cc93c6a850d8a86d8575ddacff38ee9b0bc6535dc016a197068ffffffff010100000000000000000400483045022100ea1508225a6d37c0545d22acaee88d29d1675696953f93d657a419613bcee9b802207b8d80ca8176586878f51e001cb9e92f7640b8c9dc530fabf9087142c752de89014830450221008c6f4a9ebdee89968ec00ecc12fda67442b589296e86bf3e9bde19f4ba923406022048c3409831a55bf61f2d5defffd3b91767643b6c5981cb32338dd7e9f02821b1014752210236c8204d62fd70e7ca206a36d39f9674fa832964d787c60d44250624242bada4210266cd5a3507d6df5346aa42bd23d4c44c079aef0d7a59534758a0dabb82345c2052ae00000000', 'hex');
+        var unsignedBuffer = new Buffer('0100000000010103752b9d2baadb95480e2571a4854a68ffd8264462168346461b7cdda76beac20000000023220020fde78ea47ae10cc93c6a850d8a86d8575ddacff38ee9b0bc6535dc016a197068ffffffff010100000000000000000300483045022100ea1508225a6d37c0545d22acaee88d29d1675696953f93d657a419613bcee9b802207b8d80ca8176586878f51e001cb9e92f7640b8c9dc530fabf9087142c752de89014752210236c8204d62fd70e7ca206a36d39f9674fa832964d787c60d44250624242bada4210266cd5a3507d6df5346aa42bd23d4c44c079aef0d7a59534758a0dabb82345c2052ae00000000', 'hex');
+        var signedTx = bitcore.Transaction().fromBuffer(signedTxBuffer);
+
+        var signatures = [
+          {
+            publicKey: '0236c8204d62fd70e7ca206a36d39f9674fa832964d787c60d44250624242bada4',
+            prevTxId: 'c2ea6ba7dd7c1b46468316624426d8ff684a85a471250e4895dbaa2b9d2b7503',
+            outputIndex: 0,
+            inputIndex: 0,
+            signature: '3045022100ea1508225a6d37c0545d22acaee88d29d1675696953f93d657a419613bcee9b802207b8d80ca8176586878f51e001cb9e92f7640b8c9dc530fabf9087142c752de89',
+            sigtype: bitcore.crypto.Signature.SIGHASH_ALL
+          },
+          {
+            publicKey: '0266cd5a3507d6df5346aa42bd23d4c44c079aef0d7a59534758a0dabb82345c20',
+            prevTxId: 'c2ea6ba7dd7c1b46468316624426d8ff684a85a471250e4895dbaa2b9d2b7503',
+            outputIndex: 0,
+            inputIndex: 0,
+            signature: '30450221008c6f4a9ebdee89968ec00ecc12fda67442b589296e86bf3e9bde19f4ba923406022048c3409831a55bf61f2d5defffd3b91767643b6c5981cb32338dd7e9f02821b1',
+            sigtype: bitcore.crypto.Signature.SIGHASH_ALL
+          }
+        ];
+
+        var pubkey1 = bitcore.PublicKey('0236c8204d62fd70e7ca206a36d39f9674fa832964d787c60d44250624242bada4');
+        var pubkey3 = bitcore.PublicKey('0266cd5a3507d6df5346aa42bd23d4c44c079aef0d7a59534758a0dabb82345c20');
+        var expectedDestScript = bitcore.Script('a914382ead50307554bcdda12e1238368e9f0e10b11787');
+        var expectedMultiSigString = '52210236c8204d62fd70e7ca206a36d39f9674fa832964d787c60d44250624242bada4210266cd5a3507d6df5346aa42bd23d4c44c079aef0d7a59534758a0dabb82345c2052ae';
+        var expectedMultiSig = bitcore.Script(expectedMultiSigString);
+        var multiSig = bitcore.Script.buildMultisigOut([pubkey1, pubkey3], 2, {
+          noSorting: true
+        });
+        multiSig.toBuffer().toString('hex').should.equal(expectedMultiSigString);
+        var wits = bitcore.Script.buildWitnessMultisigOutFromScript(multiSig);
+
+        var expectedWits = bitcore.Script('0020fde78ea47ae10cc93c6a850d8a86d8575ddacff38ee9b0bc6535dc016a197068');
+        wits.toBuffer().toString('hex').should.equal('0020fde78ea47ae10cc93c6a850d8a86d8575ddacff38ee9b0bc6535dc016a197068');
+
+        var address = Address.payingTo(wits);
+        address.hashBuffer.toString('hex').should.equal('382ead50307554bcdda12e1238368e9f0e10b117');
+
+        var destScript = Script.buildScriptHashOut(wits);
+        destScript.toBuffer().toString('hex').should.equal('a914382ead50307554bcdda12e1238368e9f0e10b11787');
+
+        var input = new Transaction.Input.MultiSigScriptHash({
+          output: new Output({
+            script: destScript,
+            satoshis: 1
+          }),
+          prevTxId: 'c2ea6ba7dd7c1b46468316624426d8ff684a85a471250e4895dbaa2b9d2b7503',
+          outputIndex: 0,
+          script: Script('220020fde78ea47ae10cc93c6a850d8a86d8575ddacff38ee9b0bc6535dc016a197068')
+        }, [pubkey1, pubkey3], 2, signatures, true);
+
+        signedTx.inputs[0] = input;
+        signedTx.inputs[0]._updateScript();
+        signedTx.toBuffer().toString('hex').should.equal(signedTxBuffer.toString('hex'));
+
+        var valid1 = signedTx.inputs[0].isValidSignature(signedTx, signedTx.inputs[0].signatures[1]);
+        valid1.should.equal(true);
+
+        var valid = signedTx.inputs[0].isValidSignature(signedTx, signedTx.inputs[0].signatures[0]);
+        valid.should.equal(true);
+      });
+    });
     describe('signing', function() {
       var privateKey1 = PrivateKey.fromWIF('cNuW8LX2oeQXfKKCGxajGvqwhCgBtacwTQqiCGHzzKfmpHGY4TE9');
       var publicKey1 = p2shPrivateKey1.toPublicKey();
@@ -1258,26 +1329,25 @@ describe('Transaction', function() {
       var privateKey3 = PrivateKey.fromWIF('cQFMZ5gP9CJtUZPc9X3yFae89qaiQLspnftyxxLGvVNvM6tS6mYY');
       var publicKey3 = p2shPrivateKey3.toPublicKey();
       var address = Address.createMultisig([
-        publicKey1,
-        publicKey2,
-        publicKey3
-      ], 2, 'segnet', true);
+        publicKey1
+      ], 1, 'segnet', true);
       var utxo = {
         address: address.toString(),
-        txId: '72a0b3d6dcbba9d2ae74c11eec05cdfc2a03e1a01b3bbb09af0cc2dc8c3dbefa',
-        outputIndex: 0,
+        txId: '1d732950d99f821b8a8d11972ea56000b0666e4d31fa71861ffd80a83797dc61',
+        outputIndex: 1,
         script: Script.buildScriptHashOut(address).toHex(),
         satoshis: 1e8
       };
       it('will sign with nested p2sh witness program', function() {
         var tx = new Transaction()
-          .from(utxo, [publicKey1, publicKey2, publicKey3], 2, true)
+          .from(utxo, [publicKey1], 1, true)
           .to([{address: 'DSy1mtq7NeVEWKjBoXb4wgujgLv7cLE9Vb', satoshis: 50000}])
           .fee(150000)
           .change('DF8MrzMiDkTvT4qpeCAdW6Y37WGgbo9Cmu')
           .sign(privateKey1)
-          .sign(privateKey2);
-        // TODO: check correct signature
+        var sighash = tx.inputs[0].getSighash(tx, privateKey1, 0, bitcore.crypto.Signature.SIGHASH_ALL);
+        sighash.toString('hex').should.equal('51b7c5271ae04071a6d3d4c4cde28003d8e9a09e51931ebae4003539767a4955');
+        tx.toBuffer().toString('hex').should.equal('0100000000010161dc9737a880fd1f8671fa314d6e66b00060a52e97118d8a1b829fd95029731d010000002322002028ba8620c84df12e3283de37d02cfa7bcae3894e118388d6b3ae50f9aeb38798ffffffff0250c30000000000001976a914ef6aa14d8f5ba65a12c327a9659681c44cd821b088acc0d3f205000000001976a9146d8da2015c6d2890896485edd5897b3b2ec9ebb188ac030047304402203fdbd6604939ed9b46bd07bea993b102336a6fbc0a0c987f05b8522a2079037f022064466db4b0c6cc6697a28e0ba9b28c9738ecba56033a60aab7f04d5da2a8241e0125512102feab7deafbdb39885ef92a285dfa0f4ada0feefce43685e6551c95e71496d98051ae00000000');
       });
     });
   });
