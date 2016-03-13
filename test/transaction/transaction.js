@@ -14,6 +14,7 @@ var Input = bitcore.Transaction.Input;
 var Output = bitcore.Transaction.Output;
 var PrivateKey = bitcore.PrivateKey;
 var Script = bitcore.Script;
+var Interpreter = bitcore.Script.Interpreter;
 var Address = bitcore.Address;
 var Networks = bitcore.Networks;
 var Opcode = bitcore.Opcode;
@@ -1300,10 +1301,11 @@ describe('Transaction', function() {
         var destScript = Script.buildScriptHashOut(wits);
         destScript.toBuffer().toString('hex').should.equal('a914382ead50307554bcdda12e1238368e9f0e10b11787');
 
+        var signedamount = 1;
         var input = new Transaction.Input.MultiSigScriptHash({
           output: new Output({
             script: destScript,
-            satoshis: 1
+            satoshis: signedamount
           }),
           prevTxId: 'c2ea6ba7dd7c1b46468316624426d8ff684a85a471250e4895dbaa2b9d2b7503',
           outputIndex: 0,
@@ -1313,6 +1315,15 @@ describe('Transaction', function() {
         signedTx.inputs[0] = input;
         signedTx.inputs[0]._updateScript();
         signedTx.toBuffer().toString('hex').should.equal(signedTxBuffer.toString('hex'));
+
+        var interpreter = new Interpreter();
+        var flags = Interpreter.SCRIPT_VERIFY_P2SH | Interpreter.SCRIPT_VERIFY_WITNESS;
+
+        var check = interpreter.verify(signedTx.inputs[0].script, destScript, signedTx, 0, flags, input.getWitnesses(), signedamount);
+        check.should.equal(true);
+
+        check = interpreter.verify(signedTx.inputs[0].script, destScript, signedTx, 0, flags, input.getWitnesses(), 1999199);
+        check.should.equal(false);
 
         var valid1 = signedTx.inputs[0].isValidSignature(signedTx, signedTx.inputs[0].signatures[1]);
         valid1.should.equal(true);
