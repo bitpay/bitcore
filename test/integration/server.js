@@ -3116,9 +3116,10 @@ describe('Wallet service', function() {
     });
 
     describe('Backoff time', function(done) {
-      var server, wallet, txid;
-
+      var server, wallet, txid, clock;
+      var _oldBackoffOffset = Defaults.BACKOFF_OFFSET;
       beforeEach(function(done) {
+        Defaults.BACKOFF_OFFSET = 3;
         helpers.createAndJoinWallet(2, 2, function(s, w) {
           server = s;
           wallet = w;
@@ -3127,8 +3128,14 @@ describe('Wallet service', function() {
           });
         });
       });
+      afterEach(function(done) {
+        Defaults.BACKOFF_OFFSET = _oldBackoffOffset;
+        clock.restore();
+        done();
+      });
 
       it('should follow backoff time after consecutive rejections', function(done) {
+        clock = sinon.useFakeTimers(Date.now(), 'Date');
         async.series([
 
           function(next) {
@@ -3164,10 +3171,10 @@ describe('Wallet service', function() {
             });
           },
           function(next) {
-            var clock = sinon.useFakeTimers(Date.now() + (Defaults.BACKOFF_TIME + 2) * 60 * 1000, 'Date');
+            clock.tick((Defaults.BACKOFF_TIME + 1) * 1000);
             var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, TestData.copayers[0].privKey_1H_0);
             server.createTxLegacy(txOpts, function(err, tx) {
-              clock.restore();
+              should.not.exist(err);
               server.rejectTx({
                 txProposalId: tx.id,
                 reason: 'some reason',
@@ -3176,13 +3183,23 @@ describe('Wallet service', function() {
           },
           function(next) {
             // Do not allow a 5th tx before backoff time
-            var clock = sinon.useFakeTimers(Date.now() + (Defaults.BACKOFF_TIME + 2) * 60 * 1000 + 1, 'Date');
+            clock.tick((Defaults.BACKOFF_TIME - 1) * 1000);
             var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, TestData.copayers[0].privKey_1H_0);
             server.createTxLegacy(txOpts, function(err, tx) {
-              clock.restore();
               should.exist(err);
               err.code.should.equal('TX_CANNOT_CREATE');
               next();
+            });
+          },
+          function(next) {
+            clock.tick(2000);
+            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, TestData.copayers[0].privKey_1H_0);
+            server.createTxLegacy(txOpts, function(err, tx) {
+              should.not.exist(err);
+              server.rejectTx({
+                txProposalId: tx.id,
+                reason: 'some reason',
+              }, next);
             });
           },
         ], function(err) {
