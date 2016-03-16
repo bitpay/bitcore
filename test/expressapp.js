@@ -113,6 +113,38 @@ describe('ExpressApp', function() {
         });
       });
 
+      it('/v1/sendmaxinfo', function(done) {
+        var server = {
+          getSendMaxInfo: sinon.stub().callsArgWith(1, null, {
+            amount: 123
+          }),
+        };
+        var TestExpressApp = proxyquire('../lib/expressapp', {
+          './server': {
+            initialize: sinon.stub().callsArg(1),
+            getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+          }
+        });
+        start(TestExpressApp, function() {
+          var requestOptions = {
+            url: testHost + ':' + testPort + config.basePath + '/v1/sendmaxinfo?feePerKb=10000&returnInputs=1',
+            headers: {
+              'x-identity': 'identity',
+              'x-signature': 'signature'
+            }
+          };
+          request(requestOptions, function(err, res, body) {
+            should.not.exist(err);
+            res.statusCode.should.equal(200);
+            var args = server.getSendMaxInfo.getCalls()[0].args[0];
+            args.feePerKb.should.equal(10000);
+            args.returnInputs.should.be.true;
+            JSON.parse(body).amount.should.equal(123);
+            done();
+          });
+        });
+      });
+
       describe('Balance', function() {
         it('should handle cache argument', function(done) {
           var server = {
