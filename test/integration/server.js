@@ -3709,6 +3709,26 @@ describe('Wallet service', function() {
         });
       });
     });
+    it('should return inputs in random order', function(done) {
+      // NOTE: this test has a chance of failing of 1 in 1'073'741'824 :P
+      helpers.stubUtxos(server, wallet, _.range(1, 31), function(utxos) {
+        server.getSendMaxInfo({
+          feePerKb: 100e2,
+          returnInputs: true
+        }, function(err, info) {
+          should.not.exist(err);
+          should.exist(info);
+          var amounts = _.pluck(info.inputs, 'satoshis');
+          amounts.length.should.equal(30);
+          _.all(amounts, function(amount, i) {
+            if (i == 0) return true;
+            return amount < amounts[i - 1];
+          }).should.be.false;
+          done();
+        });
+      });
+    });
+
     it('should exclude unconfirmed inputs', function(done) {
       helpers.stubUtxos(server, wallet, ['u0.1', 0.2, 0.3, 0.4], function() {
         server.getSendMaxInfo({
