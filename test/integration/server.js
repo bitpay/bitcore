@@ -3696,7 +3696,7 @@ describe('Wallet service', function() {
       });
     };
 
-    it('should be able to get send max info on empty wallet', function(done) {
+    it('should be able to get send max info on 0 utxo wallet', function(done) {
       server.getSendMaxInfo({
         feePerKb: 10000,
         returnInputs: true,
@@ -3707,6 +3707,10 @@ describe('Wallet service', function() {
         info.amount.should.equal(0);
         info.fee.should.equal(0);
         info.inputs.should.be.empty;
+        info.utxosBelowFee.should.equal(0);
+        info.amountBelowFee.should.equal(0);
+        info.utxosAboveMaxSize.should.equal(0);
+        info.amountAboveMaxSize.should.equal(0);
         done();
       });
     });
@@ -3722,6 +3726,10 @@ describe('Wallet service', function() {
           info.size.should.equal(1304);
           info.fee.should.equal(info.size * 10000 / 1000.);
           info.amount.should.equal(1e8 - info.fee);
+          info.utxosBelowFee.should.equal(0);
+          info.amountBelowFee.should.equal(0);
+          info.utxosAboveMaxSize.should.equal(0);
+          info.amountAboveMaxSize.should.equal(0);
           sendTx(info, done);
         });
       });
@@ -3790,7 +3798,7 @@ describe('Wallet service', function() {
       });
     });
     it('should ignore utxos not contributing to total amount (below their cost in fee)', function(done) {
-      helpers.stubUtxos(server, wallet, ['u0.1', 0.2, 0.3, 0.4, 0.000001, 0.0002, 0.0003], function() {
+      helpers.stubUtxos(server, wallet, ['u0.1', 0.2, 0.3, 0.4, '1bit', '100bit', '200bit'], function() {
         server.getSendMaxInfo({
           feePerKb: 0.001e8,
           returnInputs: true,
@@ -3801,6 +3809,8 @@ describe('Wallet service', function() {
           info.size.should.equal(1304);
           info.fee.should.equal(info.size * 0.001e8 / 1000.);
           info.amount.should.equal(1e8 - info.fee);
+          info.utxosBelowFee.should.equal(3);
+          info.amountBelowFee.should.equal(301e2);
           server.getSendMaxInfo({
             feePerKb: 0.0001e8,
             returnInputs: true,
@@ -3810,7 +3820,9 @@ describe('Wallet service', function() {
             info.inputs.length.should.equal(6);
             info.size.should.equal(1907);
             info.fee.should.equal(info.size * 0.0001e8 / 1000.);
-            info.amount.should.equal(1.0005e8 - info.fee);
+            info.amount.should.equal(1.0003e8 - info.fee);
+            info.utxosBelowFee.should.equal(1);
+            info.amountBelowFee.should.equal(1e2);
             sendTx(info, done);
           });
         });
@@ -3828,6 +3840,8 @@ describe('Wallet service', function() {
           info.size.should.equal(0);
           info.fee.should.equal(0);
           info.amount.should.equal(0);
+          info.utxosBelowFee.should.equal(3);
+          info.amountBelowFee.should.equal(40e2);
           done();
         });
       });
@@ -3844,6 +3858,8 @@ describe('Wallet service', function() {
           should.exist(info);
           info.size.should.be.below(2000);
           info.inputs.length.should.be.below(9);
+          info.utxosAboveMaxSize.should.equal(3);
+          info.amountAboveMaxSize.should.equal(3e8);
           Defaults.MAX_TX_SIZE_IN_KB = _oldDefault;
           sendTx(info, done);
         });
