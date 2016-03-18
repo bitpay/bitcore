@@ -980,6 +980,49 @@ describe('client API', function() {
         })
       });
     });
+    it('should be able to access wallet name in non-encrypted wallet (legacy)', function(done) {
+      clients[0].seedFromRandomWithMnemonic();
+      var wpk = new Bitcore.PrivateKey();
+      var args = {
+        name: 'mywallet',
+        m: 1,
+        n: 1,
+        pubKey: wpk.toPublicKey().toString(),
+        network: 'livenet',
+        id: '123',
+      };
+      clients[0]._doPostRequest('/v2/wallets/', args, function(err, wallet) {
+        should.not.exist(err);
+        var c = clients[0].credentials;
+
+        var args = {
+          walletId: '123',
+          name: 'pepe',
+          xPubKey: c.xPubKey,
+          requestPubKey: c.requestPubKey,
+          customData: Utils.encryptMessage(JSON.stringify({
+            walletPrivKey: wpk.toString(),
+          }), c.personalEncryptingKey),
+        };
+        var hash = Utils.getCopayerHash(args.name, args.xPubKey, args.requestPubKey);
+        args.copayerSignature = Utils.signMessage(hash, wpk);
+        clients[0]._doPostRequest('/v2/wallets/123/copayers', args, function(err, wallet) {
+          should.not.exist(err);
+          clients[0].openWallet(function(err) {
+            should.not.exist(err);
+            clients[0].getStatus({}, function(err, status) {
+              should.not.exist(err);
+              var wallet = status.wallet;
+              wallet.name.should.equal('mywallet');
+              should.not.exist(wallet.encryptedName);
+              wallet.copayers[0].name.should.equal('pepe');
+              should.not.exist(wallet.copayers[0].encryptedName);
+              done();
+            });
+          });
+        });
+      });
+    });
     it('should check balance in a 1-1 ', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
         clients[0].getBalance({}, function(err, balance) {
