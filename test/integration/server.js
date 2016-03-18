@@ -3745,7 +3745,6 @@ describe('Wallet service', function() {
         });
       });
     });
-
     it('should exclude unconfirmed inputs', function(done) {
       helpers.stubUtxos(server, wallet, ['u0.1', 0.2, 0.3, 0.4], function() {
         server.getSendMaxInfo({
@@ -3814,6 +3813,22 @@ describe('Wallet service', function() {
             info.amount.should.equal(1.0005e8 - info.fee);
             sendTx(info, done);
           });
+        });
+      });
+    });
+    it('should work when all inputs are below their cost in fee', function(done) {
+      helpers.stubUtxos(server, wallet, ['u 10bit', '10bit', '20bit'], function() {
+        server.getSendMaxInfo({
+          feePerKb: 500e2,
+          returnInputs: true,
+        }, function(err, info) {
+          should.not.exist(err);
+          should.exist(info);
+          info.inputs.should.be.empty;
+          info.size.should.equal(0);
+          info.fee.should.equal(0);
+          info.amount.should.equal(0);
+          done();
         });
       });
     });
