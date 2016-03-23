@@ -2326,18 +2326,18 @@ describe('Wallet service', function() {
 
       it('should be possible to use a smaller fee', function(done) {
         helpers.stubUtxos(server, wallet, 1, function() {
-          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, TestData.copayers[0].privKey_1H_0, {
+          var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.9999, TestData.copayers[0].privKey_1H_0, {
             feePerKb: 80000
           });
           server.createTxLegacy(txOpts, function(err, tx) {
             should.exist(err);
             err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
-            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.99995, TestData.copayers[0].privKey_1H_0, {
+            var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.9999, TestData.copayers[0].privKey_1H_0, {
               feePerKb: 5000
             });
             server.createTxLegacy(txOpts, function(err, tx) {
               should.not.exist(err);
-              var estimatedFee = 5000 * 400 / 1000; // fully signed tx should have about 400 bytes
+              var estimatedFee = 5000 * 410 / 1000; // fully signed tx should have about 410 bytes
               tx.fee.should.be.within(0.9 * estimatedFee, 1.1 * estimatedFee);
 
               // Sign it to make sure Bitcore doesn't complain about the fees
@@ -3597,17 +3597,18 @@ describe('Wallet service', function() {
           });
         });
       });
-      it('should correct fee if resulting change would be below dust', function(done) {
+      it('should correct fee if resulting change would be below threshold', function(done) {
         helpers.stubUtxos(server, wallet, ['200bit', '500sat'], function() {
           var txOpts = {
             outputs: [{
               toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-              amount: 200e2,
+              amount: 150e2,
             }],
-            feePerKb: 400,
+            feePerKb: 100e2,
           };
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
+            txp.inputs.length.should.equal(1);
             (_.sum(txp.inputs, 'satoshis') - txp.outputs[0].amount - txp.fee).should.equal(0);
             var changeOutput = txp.getBitcoreTx().getChangeOutput();
             should.not.exist(changeOutput);
