@@ -211,6 +211,15 @@ describe('ECDSA', function() {
       called.should.equal(1);
     });
 
+    it('should generate right K', function() {
+      var msg1 = new Buffer('52204d20fd0131ae1afd173fd80a3a746d2dcc0cddced8c9dc3d61cc7ab6e966', 'hex');
+      var msg2 = [].reverse.call(new Buffer(msg1))
+      var pk = new Buffer('16f243e962c59e71e54189e67e66cf2440a1334514c09c00ddcc21632bac9808', 'hex');
+      var signature1 = ECDSA.sign(msg1, Privkey.fromBuffer(pk)).toBuffer().toString('hex');
+      var signature2 = ECDSA.sign(msg2, Privkey.fromBuffer(pk), 'little').toBuffer().toString('hex');
+      signature1.should.equal(signature2);
+    });
+
   });
 
   describe('#toString', function() {
@@ -296,7 +305,7 @@ describe('ECDSA', function() {
           ecdsa.sigError().should.equal(obj.exception);
         });
       });
-      
+
       vectors.deterministicK.forEach(function(obj, i) {
         it('should validate deterministicK vector ' + i, function() {
           var hashbuf = Hash.sha256(new Buffer(obj.message));
