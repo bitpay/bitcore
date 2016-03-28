@@ -3,17 +3,28 @@ module.exports = function(grunt) {
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
-    jsdoc: {
-      dist: {
-        src: ['lib/*.js'],
+    jsdox: {
+      generate: {
         options: {
-          destination: 'docs'
-        }
-      }
+          contentsEnabled: true,
+          contentsTitle: 'Bitcore Wallet Client Documentation',
+          contentsFile: 'readme.md'
+        },
+        src: ['lib/*.js'],
+        dest: 'docs'
+      }, 
+      publish: {
+         enabled: true,
+         path: '.',
+         message: 'Markdown Auto-Generated for version <%= pkg.version %>',
+         remoteName: 'b',
+         remoteBranch: 'gh-pages'
+       }
     }
   });
 
-  grunt.loadNpmTasks('grunt-jsdoc');
+  grunt.loadNpmTasks('grunt-jsdox');
+
 
   // Default task(s).
   grunt.registerTask('default', []);
