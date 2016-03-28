@@ -18,7 +18,7 @@ module.exports = function(grunt) {
          path: '.',
          message: 'Markdown Auto-Generated for version <%= pkg.version %>',
          remoteName: 'b',
-         remoteBranch: 'gh-pages'
+         remoteBranch: 'gh-pages2'
        }
     }
   });
