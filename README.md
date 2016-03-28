@@ -23,14 +23,16 @@ You can start using bitcore-wallet-client in any of these two ways:
 
 Start your own local [Bitcore wallet service](https://github.com/bitpay/bitcore-wallet-service) instance. In this example we assume you have `bitcore-wallet-service` running on your `localhost:3232`.
 
-Then create two files `irene.js` and `thomas.js` with the content below:
+Then create two files `irene.js` and `tomas.js` with the content below:
 
 **irene.js**
 
 ``` javascript
 var Client = require('bitcore-wallet-client');
+
+
 var fs = require('fs');
-var BWS_INSTANCE_URL = 'http://localhost:3232/bws/api'
+var BWS_INSTANCE_URL = 'https://bws.bitpay.com/bws/api'
 
 var client = new Client({
   baseUrl: BWS_INSTANCE_URL,
@@ -38,29 +40,67 @@ var client = new Client({
 });
 
 client.createWallet("My Wallet", "Irene", 2, 2, {network: 'testnet'}, function(err, secret) {
+  if (err) {
+    console.log('error: ',err); 
+    return
+  };
   // Handle err
   console.log('Wallet Created. Share this secret with your copayers: ' + secret);
   fs.writeFileSync('irene.dat', client.export());
 });
 ```
 
-**thomas.js**
+**tomas.js**
 
 ``` javascript
+
 var Client = require('bitcore-wallet-client');
+
+
 var fs = require('fs');
-var BWS_INSTANCE_URL = 'http://localhost:3232/bws/api'
+var BWS_INSTANCE_URL = 'https://bws.bitpay.com/bws/api'
+
 var secret = process.argv[2];
+if (!secret) {
+  console.log('./tomas.js <Secret>')
+
+  process.exit(0);
+}
 
 var client = new Client({
   baseUrl: BWS_INSTANCE_URL,
   verbose: false,
 });
 
-client.joinWallet(secret,  "Thomas", function(err, wallet) {
-  // Handle err
+client.joinWallet(secret, "Tomas", {}, function(err, wallet) {
+  if (err) {
+    console.log('error: ', err);
+    return
+  };
+
   console.log('Joined ' + wallet.name + '!');
-  fs.writeFileSync('thomas.dat', client.export());
+  fs.writeFileSync('tomas.dat', client.export());
+
+
+  client.openWallet(function(err, ret) {
+    if (err) {
+      console.log('error: ', err);
+      return
+    };
+    console.log('\n\n** Wallet Info', ret); //TODO
+
+    console.log('\n\nCreating first address:', ret); //TODO
+    if (ret.wallet.status == 'complete') {
+      client.createAddress({}, function(err,addr){
+        if (err) {
+          console.log('error: ', err);
+          return;
+        };
+
+        console.log('\nReturn:', addr)
+      });
+    }
+  });
 });
 ```
 
@@ -81,311 +121,994 @@ info Generating new keys
 Join to this wallet with generated secret:
 
 ```
-$ node thomas.js JbTDjtUkvWS4c3mgAtJf4zKyRGzdQzZacfx2S7gRqPLcbeAWaSDEnazFJF6mKbzBvY1ZRwZCbvT
+$ node tomas.js JbTDjtUkvWS4c3mgAtJf4zKyRGzdQzZacfx2S7gRqPLcbeAWaSDEnazFJF6mKbzBvY1ZRwZCbvT
 Joined My Wallet!
 ```
 
-Note that the scripts created two files named `irene.dat` and `thomas.dat`. With these files you can get status, generate addresses, create proposals, sign transactions, etc.
+Note that the scripts created two files named `irene.dat` and `tomas.dat`. With these files you can get status, generate addresses, create proposals, sign transactions, etc.
 
-## API Client
 
-* [new API(opts)](#new_API)
-* [api.seedFromExtendedPrivateKey(xPrivKey)](#API#seedFromExtendedPrivateKey)
-* [api.seedFromRandom(xPrivKey)](#API#seedFromRandom)
-* [api.export(opts)](#API#export)
-* [api.import(opts)](#API#import)
-* [api.isComplete()](#API#isComplete)
-* [api.openWallet(cb)](#API#openWallet)
-* [api.createWallet(walletName, copayerName, m, n, opts, cb)](#API#createWallet)
-* [api.joinWallet(secret, copayerName, cb)](#API#joinWallet)
-* [api.getStatus(cb)](#API#getStatus)
-* [api.sendTxProposal(opts)](#API#sendTxProposal)
-* [api.getTx(id, cb)](#API#getTx)
-* [api.createAddress(cb)](#API#createAddress)
-* [api.getMainAddresses(opts, cb)](#API#getMainAddresses)
-* [api.getBalance(cb)](#API#getBalance)
-* [api.getTxProposals(opts)](#API#getTxProposals)
-* [api.signTxProposal(txp, cb)](#API#signTxProposal)
-* [api.rejectTxProposal(txp, reason, cb)](#API#rejectTxProposal)
-* [api.broadcastTxProposal(txp, cb)](#API#broadcastTxProposal)
-* [api.removeTxProposal(txp, cb)](#API#removeTxProposal)
-* [api.getTxHistory(opts, cb)](#API#getTxHistory)
-* [api.setPrivateKeyEncryption(password, opts)](#API#getTxHistory)
-* [api.unlock(password)](#API#unlock)
-* [api.lock()](#API#lock)
-* [api.getUtxos()](#API#getUtxos)
+# API
 
-<a name="new_API"></a>
-###new API(opts)
+
+
+
+
+* * *
+
+## Class: API
 ClientAPI constructor.
 
-**Params**
+### API.API.API#setNotificationsInterval(notificationIntervalSeconds) 
 
-- opts `Object`  
+Reset notification polling with new interval
 
-<a name="API#seedFromExtendedPrivateKey"></a>
-###API.seedFromExtendedPrivateKey(xPrivKey)
-Seed from extended private key
+**Parameters**
 
-**Params**
+**notificationIntervalSeconds**: `Numeric`, use 0 to pause notifications
 
-- xPrivKey `String`  
 
-<a name="API#seedFromRandom"></a>
-###API.seedFromRandom(xPrivKey)
+### API.API.seedFromRandom(opts, opts.network) 
+
 Seed from random
 
-**Params**
+**Parameters**
 
-- network `String`  
+**opts**: `Object`, Seed from random
 
-<a name="API#export"></a>
-###API.export(opts)
+**opts.network**: `String`, default 'livenet'
+
+
+### API.API.seedFromRandomWithMnemonic(opts, opts.network, opts.passphrase, opts.language, opts.account) 
+
+Seed from random with mnemonic
+
+**Parameters**
+
+**opts**: `Object`, Seed from random with mnemonic
+
+**opts.network**: `String`, default 'livenet'
+
+**opts.passphrase**: `String`, Seed from random with mnemonic
+
+**opts.language**: `Number`, default 'en'
+
+**opts.account**: `Number`, default 0
+
+
+### API.API.seedFromExtendedPrivateKey(xPrivKey) 
+
+Seed from extended private key
+
+**Parameters**
+
+**xPrivKey**: `String`, Seed from extended private key
+
+
+### API.API.seedFromMnemonic(BIP39, opts, opts.network, opts.passphrase, opts.account, opts.derivationStrategy) 
+
+Seed from Mnemonics (language autodetected)
+Can throw an error if mnemonic is invalid
+
+**Parameters**
+
+**BIP39**: `String`, words
+
+**opts**: `Object`, Seed from Mnemonics (language autodetected)
+Can throw an error if mnemonic is invalid
+
+**opts.network**: `String`, default 'livenet'
+
+**opts.passphrase**: `String`, Seed from Mnemonics (language autodetected)
+Can throw an error if mnemonic is invalid
+
+**opts.account**: `Number`, default 0
+
+**opts.derivationStrategy**: `String`, default 'BIP44'
+
+
+### API.API.seedFromExtendedPublicKey(xPubKey, source, entropySourceHex, opts, opts.account, opts.derivationStrategy) 
+
+Seed from external wallet public key
+
+**Parameters**
+
+**xPubKey**: `String`, Seed from external wallet public key
+
+**source**: `String`, A name identifying the source of the xPrivKey (e.g. ledger, TREZOR, ...)
+
+**entropySourceHex**: `String`, A HEX string containing pseudo-random data, that can be deterministically derived from the xPrivKey, and should not be derived from xPubKey.
+
+**opts**: `Object`, Seed from external wallet public key
+
+**opts.account**: `Number`, default 0
+
+**opts.derivationStrategy**: `String`, default 'BIP44'
+
+
+### API.API.export(opts, opts.noSign) 
+
 Export wallet
 
-**Params**
+**Parameters**
 
-- opts `Object`  
-  - compressed `Boolean`  
-  - noSign `Boolean`  
+**opts**: `Object`, Export wallet
 
-<a name="API#import"></a>
-###API.import(opts)
+**opts.noSign**: `Boolean`, Export wallet
+
+
+### API.API.import(str, opts, opts.password) 
+
 Import wallet
 
-**Params**
+**Parameters**
 
-- opts `Object`  
-  - compressed `Boolean`  
+**str**: `Object`, Import wallet
 
-<a name="API#isComplete"></a>
-###API.isComplete()
-Return if wallet is complete
+**opts**: `Object`, Import wallet
 
-<a name="API#openWallet"></a>
-###API.openWallet(cb)
+**opts.password**: `String`, If the source has the private key encrypted, the password
+will be needed for derive credentials fields.
+
+
+### API.API.importFromMnemonic(BIP39, opts, opts.network, opts.passphrase, opts.account, opts.derivationStrategy) 
+
+Import from Mnemonics (language autodetected)
+Can throw an error if mnemonic is invalid
+
+**Parameters**
+
+**BIP39**: `String`, words
+
+**opts**: `Object`, Import from Mnemonics (language autodetected)
+Can throw an error if mnemonic is invalid
+
+**opts.network**: `String`, default 'livenet'
+
+**opts.passphrase**: `String`, Import from Mnemonics (language autodetected)
+Can throw an error if mnemonic is invalid
+
+**opts.account**: `Number`, default 0
+
+**opts.derivationStrategy**: `String`, default 'BIP44'
+
+
+### API.API.importFromExtendedPublicKey(xPubKey, source, entropySourceHex, opts, opts.account, opts.derivationStrategy) 
+
+Import from Extended Public Key
+
+**Parameters**
+
+**xPubKey**: `String`, Import from Extended Public Key
+
+**source**: `String`, A name identifying the source of the xPrivKey
+
+**entropySourceHex**: `String`, A HEX string containing pseudo-random data, that can be deterministically derived from the xPrivKey, and should not be derived from xPubKey.
+
+**opts**: `Object`, Import from Extended Public Key
+
+**opts.account**: `Number`, default 0
+
+**opts.derivationStrategy**: `String`, default 'BIP44'
+
+
+### API.API.openWallet(cb) 
+
 Open a wallet and try to complete the public key ring.
 
-**Params**
+**Parameters**
 
-- cb `Callback`  
+**cb**: `Callback`, The callback that handles the response. It returns a flag indicating that the wallet is complete.
 
-**Returns**: `Callback` - cb - Returns an error and a flag indicating that the wallet has just been completed and needs to be persisted  
-<a name="API#createWallet"></a>
-###API.createWallet(walletName, copayerName, m, n, network, cb)
+**Fires**: API#event:walletCompleted
+
+
+### API.API.isComplete() 
+
+Return if wallet is complete
+
+
+### API.API.isPrivKeyEncrypted() 
+
+Is private key currently encrypted? (ie, locked)
+
+**Returns**: `Boolean`
+
+### API.API.hasPrivKeyEncrypted() 
+
+Is private key encryption setup?
+
+**Returns**: `Boolean`
+
+### API.API.isPrivKeyExternal() 
+
+Is private key external?
+
+**Returns**: `Boolean`
+
+### API.API.getPrivKeyExternalSourceName() 
+
+Get external wallet source name
+
+**Returns**: `String`
+
+### API.API.unlock(password) 
+
+unlocks the private key. `lock` need to be called explicity
+later to remove the unencrypted private key.
+
+**Parameters**
+
+**password**: , unlocks the private key. `lock` need to be called explicity
+later to remove the unencrypted private key.
+
+
+### API.API.canSign() 
+
+Can this credentials sign a transaction?
+(Only returns fail on a 'proxy' setup for airgapped operation)
+
+**Returns**: `undefined`
+
+### API.API.setPrivateKeyEncryption(password, opts) 
+
+sets up encryption for the extended private key
+
+**Parameters**
+
+**password**: `String`, Password used to encrypt
+
+**opts**: `Object`, optional: SJCL options to encrypt (.iter, .salt, etc).
+
+**Returns**: `undefined`
+
+### API.API.disablePrivateKeyEncryption() 
+
+disables encryption for private key.
+wallet must be unlocked
+
+
+### API.API.lock() 
+
+Locks private key (removes the unencrypted version and keep only the encrypted)
+
+**Returns**: `undefined`
+
+### API.API.getFeeLevels(network, cb) 
+
+Get current fee levels for the specified network
+
+**Parameters**
+
+**network**: `string`, 'livenet' (default) or 'testnet'
+
+**cb**: `Callback`, Get current fee levels for the specified network
+
+**Returns**: `Callback`, cb - Returns error or an object with status information
+
+### API.API.getVersion(cb) 
+
+Get service version
+
+**Parameters**
+
+**cb**: `Callback`, Get service version
+
+
+### API.API.createWallet(walletName, copayerName, m, n, opts, opts.network, opts.walletPrivKey, opts.id, opts.withMnemonics, cb) 
+
 Create a wallet.
 
-**Params**
+**Parameters**
 
-- walletName `String`  
-- copayerName `String`  
-- m `Number`  
-- n `Number`  
-- opts `Object`
-- opts.network `String` - 'livenet' or 'testnet'  
-- opts.walletPrivKey `String` - Optional: Shared private key for the wallet (used by copayers). Default: create a random one
-- opts.id `String` - Optional: ID for the wallet. Default: Create a random one
-- cb `Callback`  
+**walletName**: `String`, Create a wallet.
 
-**Returns**: `Callback` - cb - Returns the wallet  
-<a name="API#joinWallet"></a>
-###API.joinWallet(secret, copayerName, cb)
-Join to an existent wallet
+**copayerName**: `String`, Create a wallet.
 
-**Params**
+**m**: `Number`, Create a wallet.
 
-- secret `String`  
-- copayerName `String`  
-- cb `Callback`  
+**n**: `Number`, Create a wallet.
 
-**Returns**: `Callback` - cb - Returns the wallet  
-<a name="API#getStatus"></a>
-###API.getStatus(cb)
+**opts**: `object`, (optional: advanced options)
+
+**opts.network**: `string`, 'livenet' or 'testnet'
+
+**opts.walletPrivKey**: `String`, set a walletPrivKey (instead of random)
+
+**opts.id**: `String`, set a id for wallet (instead of server given)
+
+**opts.withMnemonics**: `String`, generate credentials
+
+**cb**: , Create a wallet.
+
+**Returns**: `undefined`
+
+### API.API.joinWallet(secret, copayerName, opts, opts.dryRun[, cb) 
+
+Join an existent wallet
+
+**Parameters**
+
+**secret**: `String`, Join an existent wallet
+
+**copayerName**: `String`, Join an existent wallet
+
+**opts**: `Object`, Join an existent wallet
+
+**opts.dryRun[**: `Boolean`, Simulate wallet join
+
+**cb**: `Callback`, Join an existent wallet
+
+**Returns**: `Callback`, cb - Returns the wallet
+
+### API.API.recreateWallet() 
+
+Recreates a wallet, given credentials (with wallet id)
+
+**Returns**: `Callback`, cb - Returns the wallet
+
+### API.API.getNotifications(opts, lastNotificationId, timeSpan) 
+
+Get latest notifications
+
+**Parameters**
+
+**opts**: `object`, Get latest notifications
+
+**lastNotificationId**: `String`, (optional) - The ID of the last received notification
+
+**timeSpan**: `String`, (optional) - A time window on which to look for notifications (in seconds)
+
+**Returns**: `Callback`, cb - Returns error or an array of notifications
+
+### API.API.getStatus(opts.twoStep[, opts.includeExtendedInfo) 
+
 Get status of the wallet
 
-**Params**
+**Parameters**
 
-- cb `Callback`  
+**opts.twoStep[**: `Boolean`, Optional: use 2-step balance computation for improved performance
 
-**Returns**: `Callback` - cb - Returns error or an object with status information  
-<a name="API#sendTxProposal"></a>
-###API.sendTxProposal(opts)
+**opts.includeExtendedInfo**: `Boolean`, (optional: query extended status)
+
+**Returns**: `Callback`, cb - Returns error or an object with status information
+
+### API.API.getPreferences(cb) 
+
+Get copayer preferences
+
+**Parameters**
+
+**cb**: `Callback`, Get copayer preferences
+
+**Returns**: `Callback`, cb - Return error or object
+
+### API.API.savePreferences(preferences, cb) 
+
+Save copayer preferences
+
+**Parameters**
+
+**preferences**: `Object`, Save copayer preferences
+
+**cb**: `Callback`, Save copayer preferences
+
+**Returns**: `Callback`, cb - Return error or object
+
+### API.API.fetchPayPro(opts.payProUrl) 
+
+fetchPayPro
+
+**Parameters**
+
+**opts.payProUrl**: , URL for paypro request
+
+**Returns**: `Callback`, cb - Return error or the parsed payment protocol request
+Returns (err,paypro)
+ paypro.amount
+ paypro.toAddress
+ paypro.memo
+
+### API.API.getUtxos(cb, opts, opts.addresses) 
+
+Gets list of utxos
+
+**Parameters**
+
+**cb**: `function`, Gets list of utxos
+
+**opts**: `Object`, Gets list of utxos
+
+**opts.addresses**: `Array`, (optional) - List of addresses from where to fetch UTXOs.
+
+**Returns**: `Callback`, cb - Return error or the list of utxos
+
+### API.API.sendTxProposal(opts, opts.toAddress, opts.amount, opts.message, opts.feePerKb, opts.payProUrl, opts.excludeUnconfirmedUtxos, opts.customData, opts.inputs, opts.outputs, opts.utxosToExclude) 
+
 Send a transaction proposal
 
-**Params**
+**Parameters**
 
-For a proposal with one output:
+**opts**: `Object`, Send a transaction proposal
 
-- opts `Object`
-  - toAddress `String`
-  - amount `Number`
-  - message `String`
+**opts.toAddress**: `String`, | opts.outputs[].toAddress
 
-For a proposal with multiple outputs:
+**opts.amount**: `Number`, | opts.outputs[].amount
 
-- opts `Object`
-  - type `String` - 'multiple_outputs'
-  - outputs `Array`
-    - toAddress `String`
-    - amount `Number`
-    - message `String`
+**opts.message**: `String`, | opts.outputs[].message
 
-**Returns**: `Callback` - cb - Return error or the transaction proposal  
-<a name="API#createAddress"></a>
+**opts.feePerKb**: `string`, Optional: Use an alternative fee per KB for this TX
 
-<a name="API#getTx"></a>
-###API.getTx(id, cb)
-Gets a transaction proposal
+**opts.payProUrl**: `String`, Optional: Tx is from a payment protocol URL
 
-**Params**
+**opts.excludeUnconfirmedUtxos**: `string`, Optional: Do not use UTXOs of unconfirmed transactions as inputs
 
-  - id `String`  
+**opts.customData**: `Object`, Optional: Arbitrary data to store along with proposal
 
-**Returns**: `Callback` - cb - Return error or the transaction proposal  
-<a name="API#createAddress"></a>
+**opts.inputs**: `Array`, Optional: Inputs to be used in proposal.
 
-###API.createAddress(cb)
+**opts.outputs**: `Array`, Optional: Outputs to be used in proposal.
+
+**opts.utxosToExclude**: `Array`, Optional: List of UTXOS (in form of txid:vout string)
+       to exclude from coin selection for this proposal
+
+**Returns**: `Callback`, cb - Return error or the transaction proposal
+
+### API.API.createTxProposal(opts, opts.outputs, opts.outputs[].toAddress, opts.outputs[].amount, opts.outputs[].message, opts.message, opts.fee, opts.feePerKb, opts.payProUrl, opts.excludeUnconfirmedUtxos, opts.customData, opts.inputs, opts.outputs, opts.utxosToExclude) 
+
+Create a transaction proposal
+
+**Parameters**
+
+**opts**: `Object`, Create a transaction proposal
+
+**opts.outputs**: `Array`, List of outputs.
+
+**opts.outputs[].toAddress**: `String`, / opts.outputs[].script
+
+**opts.outputs[].amount**: `Number`, Create a transaction proposal
+
+**opts.outputs[].message**: `String`, Create a transaction proposal
+
+**opts.message**: `string`, A message to attach to this transaction.
+
+**opts.fee**: `string`, Optional: Use an alternative fee for this TX (mutually exclusive with feePerKb)
+
+**opts.feePerKb**: `string`, Optional: Use an alternative fee per KB for this TX (mutually exclusive with fee)
+
+**opts.payProUrl**: `String`, Optional: Tx is from a payment protocol URL
+
+**opts.excludeUnconfirmedUtxos**: `string`, Optional: Do not use UTXOs of unconfirmed transactions as inputs
+
+**opts.customData**: `Object`, Optional: Arbitrary data to store along with proposal
+
+**opts.inputs**: `Array`, Optional: Inputs to be used in proposal.
+
+**opts.outputs**: `Array`, Optional: Outputs to be used in proposal.
+
+**opts.utxosToExclude**: `Array`, Optional: List of UTXOS (in form of txid:vout string)
+       to exclude from coin selection for this proposal
+
+**Returns**: `Callback`, cb - Return error or the transaction proposal
+
+### API.API.publishTxProposal(opts, opts.txp) 
+
+Publish a transaction proposal
+
+**Parameters**
+
+**opts**: `Object`, Publish a transaction proposal
+
+**opts.txp**: `Object`, The transaction proposal object returned by the API#createTxProposal method
+
+**Returns**: `Callback`, cb - Return error or null
+
+### API.API.createAddress(opts, opts.ignoreMaxGap[, cb) 
+
 Create a new address
 
-**Params**
+**Parameters**
 
-- cb `Callback`  
+**opts**: `Object`, Create a new address
 
-**Returns**: `Callback` - cb - Return error or the address  
-<a name="API#getMainAddresses"></a>
-###API.getMainAddresses(opts, cb)
+**opts.ignoreMaxGap[**: `Boolean`, Create a new address
+
+**cb**: `Callback`, Create a new address
+
+**Returns**: `Callback`, cb - Return error or the address
+
+### API.API.getMainAddresses(opts, opts.doNotVerify, opts.limit, opts.reverse, cb) 
+
 Get your main addresses
 
-**Params**
+**Parameters**
 
-- opts `Object`  
-  - doNotVerify `Boolean`  
-- cb `Callback`  
+**opts**: `Object`, Get your main addresses
 
-**Returns**: `Callback` - cb - Return error or the array of addresses  
-<a name="API#getBalance"></a>
-###API.getBalance(cb)
+**opts.doNotVerify**: `Boolean`, Get your main addresses
+
+**opts.limit**: `Numeric`, (optional) - Limit the resultset. Return all addresses by default.
+
+**opts.reverse**: `Boolean`, (optional) - Reverse the order of returned addresses.
+
+**cb**: `Callback`, Get your main addresses
+
+**Returns**: `Callback`, cb - Return error or the array of addresses
+
+### API.API.getBalance(opts.twoStep[, cb) 
+
 Update wallet balance
 
-**Params**
+**Parameters**
 
-- cb `Callback`  
+**opts.twoStep[**: `Boolean`, Optional: use 2-step balance computation for improved performance
 
-<a name="API#getTxProposals"></a>
-##API.getTxProposals(opts)
+**cb**: `Callback`, Update wallet balance
+
+
+### API.API.getTxProposals(opts, opts.doNotVerify, opts.forAirGapped) 
+
 Get list of transactions proposals
 
-**Params**
+**Parameters**
 
-- opts `Object`  
-  - doNotVerify `Boolean`  
-  - forAirGapped `Boolean`  
+**opts**: `Object`, Get list of transactions proposals
 
-**Returns**: `Callback` - cb - Return error or array of transactions proposals  
-<a name="API#signTxProposal"></a>
-###API.signTxProposal(txp, cb)
+**opts.doNotVerify**: `Boolean`, Get list of transactions proposals
+
+**opts.forAirGapped**: `Boolean`, Get list of transactions proposals
+
+**Returns**: `Callback`, cb - Return error or array of transactions proposals
+
+### API.API.signTxProposal(txp, cb) 
+
 Sign a transaction proposal
 
-**Params**
+**Parameters**
 
-- txp `Object`  
-- cb `Callback`  
+**txp**: `Object`, Sign a transaction proposal
 
-**Returns**: `Callback` - cb - Return error or object  
-<a name="API#signTxProposalFromAirgapped"></a>
-###API.signTxProposalFromAirGapped(txp, encryptedPkr, m, n)
-Sign a transaction proposal from an airgapped device
+**cb**: `Callback`, Sign a transaction proposal
 
-**Params**
+**Returns**: `Callback`, cb - Return error or object
 
-- txp `Object`  
-- encryptedPkr `String`
-- m `Number`
-- n `Number`
-- cb `Callback`  
+### API.API.signTxProposalFromAirGapped(txp, encryptedPkr, m, n) 
 
-**Returns**: `Callback` - cb - Return error or object  
-<a name="API#rejectTxProposal"></a>
-###API.rejectTxProposal(txp, reason, cb)
+Sign transaction proposal from AirGapped
+
+**Parameters**
+
+**txp**: `Object`, Sign transaction proposal from AirGapped
+
+**encryptedPkr**: `String`, Sign transaction proposal from AirGapped
+
+**m**: `Number`, Sign transaction proposal from AirGapped
+
+**n**: `Number`, Sign transaction proposal from AirGapped
+
+**Returns**: `Object`, txp - Return transaction
+
+### API.API.rejectTxProposal(txp, reason, cb) 
+
 Reject a transaction proposal
 
-**Params**
+**Parameters**
 
-- txp `Object`  
-- reason `String`  
-- cb `Callback`  
+**txp**: `Object`, Reject a transaction proposal
 
-**Returns**: `Callback` - cb - Return error or object  
-<a name="API#broadcastTxProposal"></a>
-###API.broadcastTxProposal(txp, cb)
+**reason**: `String`, Reject a transaction proposal
+
+**cb**: `Callback`, Reject a transaction proposal
+
+**Returns**: `Callback`, cb - Return error or object
+
+### API.API.broadcastRawTx(opts, opts.network, opts.rawTx, cb) 
+
+Broadcast raw transaction
+
+**Parameters**
+
+**opts**: `Object`, Broadcast raw transaction
+
+**opts.network**: `String`, Broadcast raw transaction
+
+**opts.rawTx**: `String`, Broadcast raw transaction
+
+**cb**: `Callback`, Broadcast raw transaction
+
+**Returns**: `Callback`, cb - Return error or txid
+
+### API.API.broadcastTxProposal(txp, cb) 
+
 Broadcast a transaction proposal
 
-**Params**
+**Parameters**
 
-- txp `Object`  
-- cb `Callback`  
+**txp**: `Object`, Broadcast a transaction proposal
 
-**Returns**: `Callback` - cb - Return error or object  
-<a name="API#removeTxProposal"></a>
-###API.removeTxProposal(txp, cb)
+**cb**: `Callback`, Broadcast a transaction proposal
+
+**Returns**: `Callback`, cb - Return error or object
+
+### API.API.removeTxProposal(txp, cb) 
+
 Remove a transaction proposal
 
-**Params**
+**Parameters**
 
-- txp `Object`  
-- cb `Callback`  
+**txp**: `Object`, Remove a transaction proposal
 
-**Returns**: `Callback` - cb - Return error or empty  
-<a name="API#getTxHistory"></a>
-###API.getTxHistory(opts, cb)
+**cb**: `Callback`, Remove a transaction proposal
+
+**Returns**: `Callback`, cb - Return error or empty
+
+### API.API.getTxHistory(opts, opts.skip, opts.limit, cb) 
+
 Get transaction history
 
-**Params**
+**Parameters**
 
-- opts `Object`  
-  - skip `Number`  
-  - limit `Number`  
-- cb `Callback`  
+**opts**: `Object`, Get transaction history
 
-**Returns**: `Callback` - cb - Return error or array of transactions
+**opts.skip**: `Number`, (defaults to 0)
 
-###API.setPrivateKeyEncryption(password, opts)
+**opts.limit**: `Number`, Get transaction history
 
-Sets up encryption for the extended private key
+**cb**: `Callback`, Get transaction history
 
-**params**
+**Returns**: `Callback`, cb - Return error or array of transactions
 
-- password `string`  
-- opts `Object`  Optional SJCL's encrypting options (like .iten and .salt) 
+### API.API.getTx(TransactionId) 
 
-Usage example:    
-``` javascript
-  api.setPrivateKeyEncryption('mypassword');
-  ...
-  api.getTxProposals({}, function(err, txps) {
-    api.unlock('mypassword');
-    api.signTxProposal(txps[0], function (err){
-      api.lock();
-    });
-  })
-```
+getTx
 
+**Parameters**
 
-###api.unlock(password)
+**TransactionId**: `String`, getTx
 
-Tries to unlock (decrypt) the extened private key with the provided password.
-(setprivatekeyencryption should be called first). `lock` must be called
-afterwards to remove the uncrypted private key.
+**Returns**: `Callback`, cb - Return error or transaction
 
-**params**
+### API.API.startScan(opts, opts.includeCopayerBranches, cb) 
 
-- password `string`  
+Start an address scanning process.
+When finished, the scanning process will send a notification 'ScanFinished' to all copayers.
+
+**Parameters**
+
+**opts**: `Object`, Start an address scanning process.
+When finished, the scanning process will send a notification 'ScanFinished' to all copayers.
+
+**opts.includeCopayerBranches**: `Boolean`, (defaults to false)
+
+**cb**: `Callback`, Start an address scanning process.
+When finished, the scanning process will send a notification 'ScanFinished' to all copayers.
 
 
-###api.lock()
+### API.API.createWalletFromOldCopay(username, password, blob, cb) 
 
-Removes the unencrypted private key.
+createWalletFromOldCopay
 
-###api.getUtxos()
-<a name="API#getUtxos"></a>
-Get list of wallet's Unspent Transaction Outputs.
+**Parameters**
+
+**username**: , createWalletFromOldCopay
+
+**password**: , createWalletFromOldCopay
+
+**blob**: , createWalletFromOldCopay
+
+**cb**: , createWalletFromOldCopay
+
+**Returns**: `undefined`
+
+### API.API.getFiatRate(opts, opts.code, opts.ts, opts.provider) 
+
+Returns exchange rate for the specified currency & timestamp.
+
+**Parameters**
+
+**opts**: `Object`, Returns exchange rate for the specified currency & timestamp.
+
+**opts.code**: `string`, Currency ISO code.
+
+**opts.ts**: `Date`, A timestamp to base the rate on (default Date.now()).
+
+**opts.provider**: `String`, A provider of exchange rates (default 'BitPay').
+
+**Returns**: `Object`, rates - The exchange rate.
+
+### API.API.pushNotificationsSubscribe(opts, opts.type, opts.token) 
+
+Returns subscription status.
+
+**Parameters**
+
+**opts**: `Object`, Returns subscription status.
+
+**opts.type**: `String`, Device type (ios or android).
+
+**opts.token**: `String`, Device token.
+
+**Returns**: `Object`, response - Status of subscription.
+
+### API.API.pushNotificationsUnsubscribe(token) 
+
+Returns unsubscription status.
+
+**Parameters**
+
+**token**: `String`, Device token
+
+**Returns**: `Callback`, cb - Return error if exists
+
+
+
+* * *
+
+
+
+
+
+
+
+
+
+
+* * *
+
+
+
+
+
+
+
+
+
+
+* * *
+
+
+
+
+
+
+
+
+
+
+* * *
+
+
+
+
+
+
+
+
+
+
+* * *
+
+
+
+
+
+
+
+
+
+
+# Global
+
+
+
+
+
+* * *
+
+## Class: Logger
+A simple logger that wraps the <tt>console.log</tt> methods when available.
+
+Usage:
+<pre>
+  log = new Logger('copay');
+  log.setLevel('info');
+  log.debug('Message!'); // won't show
+  log.setLevel('debug');
+  log.debug('Message!', 1); // will show '[debug] copay: Message!, 1'
+</pre>
+
+### Logger.setLevel(level) 
+
+Sets the level of a logger. A level can be any bewteen: 'debug', 'info', 'log',
+'warn', 'error', and 'fatal'. That order matters: if a logger's level is set to
+'warn', calling <tt>level.debug</tt> won't have any effect.
+
+**Parameters**
+
+**level**: `number`, the name of the logging level
+
+
+### Logger.debug(args) 
+
+Log messages at the debug level.
+
+**Parameters**
+
+**args**: `*`, the arguments to be logged.
+
+
+### Logger.info(args) 
+
+Log messages at the info level.
+
+**Parameters**
+
+**args**: `*`, the arguments to be logged.
+
+
+### Logger.log(args) 
+
+Log messages at an intermediary level called 'log'.
+
+**Parameters**
+
+**args**: `*`, the arguments to be logged.
+
+
+### Logger.warn(args) 
+
+Log messages at the warn level.
+
+**Parameters**
+
+**args**: `*`, the arguments to be logged.
+
+
+### Logger.error(args) 
+
+Log messages at the error level.
+
+**Parameters**
+
+**args**: `*`, the arguments to be logged.
+
+
+### Logger.fatal(args) 
+
+Log messages at the fatal level.
+
+**Parameters**
+
+**args**: `*`, the arguments to be logged.
+
+
+
+
+* * *
+
+
+
+
+
+
+
+
+
+
+* * *
+
+
+
+
+
+
+
+
+
+
+* * *
+
+
+
+
+
+
+
+
+
+
+* * *
+
+
+
+
+
+
+
+
+
+
+# Verifier
+
+
+
+
+
+* * *
+
+## Class: Verifier
+Verifier constructor. Checks data given by the server
+
+### Verifier.Verifier.checkAddress(credentials, address) 
+
+Check address
+
+**Parameters**
+
+**credentials**: `function`, Check address
+
+**address**: `String`, Check address
+
+**Returns**: `Boolean`, true or false
+
+### Verifier.Verifier.checkCopayers(credentials, copayers) 
+
+Check copayers
+
+**Parameters**
+
+**credentials**: `function`, Check copayers
+
+**copayers**: `Array`, Check copayers
+
+**Returns**: `Boolean`, true or false
+
+### Verifier.Verifier.checkTxProposal(credentials, txp, Optional:, isLegit) 
+
+Check transaction proposal
+
+**Parameters**
+
+**credentials**: `function`, Check transaction proposal
+
+**txp**: `Object`, Check transaction proposal
+
+**Optional:**: `Object`, paypro
+
+**isLegit**: `Boolean`, Check transaction proposal
+
+
+
+
+* * *
+
+
+
+
+
+
+
+
+
+
+The MIT License
+
+Copyright (c) 2015 BitPay
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
