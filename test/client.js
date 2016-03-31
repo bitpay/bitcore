@@ -162,7 +162,7 @@ helpers.tamperResponse = function(clients, method, url, args, tamper, cb) {
 
 var blockchainExplorerMock = {};
 
-blockchainExplorerMock.getUnspentUtxos = function(addresses, cb) {
+blockchainExplorerMock.getUtxos = function(addresses, cb) {
   var selected = _.filter(blockchainExplorerMock.utxos, function(utxo) {
     return _.contains(addresses, utxo.address);
   });
@@ -1610,9 +1610,10 @@ describe('client API', function() {
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             var opts = {
-              amount: 30000,
+              amount: 300e2,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello',
+              feePerKb: 100e2,
             };
             clients[0].sendTxProposal(opts, function(err, x) {
               should.not.exist(err);
@@ -1620,8 +1621,7 @@ describe('client API', function() {
                 should.not.exist(err);
                 x2.creatorName.should.equal('creator');
                 x2.message.should.equal('hello');
-                x2.amount.should.equal(30000);
-                x2.fee.should.equal(3720);
+                x2.amount.should.equal(300e2);
                 x2.toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
                 x2.hasUnconfirmedInputs.should.equal(false);
                 should.exist(x2.encryptedMessage);
@@ -1663,7 +1663,7 @@ describe('client API', function() {
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             var opts = {
-              amount: 300000000,
+              amount: 3e8,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello 1-1',
             };
@@ -1683,19 +1683,20 @@ describe('client API', function() {
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             var opts = {
-              amount: 2 * 1e8 - 2000,
+              amount: 2 * 1e8 - 200e2,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello 1-1',
+              feePerKb: 500e2,
             };
             clients[0].sendTxProposal(opts, function(err, x) {
               should.exist(err);
               err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS_FOR_FEE);
-              opts.feePerKb = 2000;
+              opts.feePerKb = 200e2;
               clients[0].sendTxProposal(opts, function(err, x) {
                 should.not.exist(err);
                 clients[0].getTx(x.id, function(err, x2) {
                   should.not.exist(err);
-                  x2.fee.should.equal(1290);
+                  should.exist(x2);
                   done();
                 });
               });
@@ -1711,7 +1712,7 @@ describe('client API', function() {
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             var opts = {
-              amount: 120000000,
+              amount: 1.2e8,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello 1-1',
             };
@@ -1742,7 +1743,7 @@ describe('client API', function() {
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             var opts = {
-              amount: 120000000,
+              amount: 1.2e8,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello 1-1',
             };
@@ -1771,7 +1772,7 @@ describe('client API', function() {
             should.not.exist(err);
             blockchainExplorerMock.setUtxo(x0, 10, 2);
             var opts = {
-              amount: 10000,
+              amount: 100e2,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'some message',
             };
@@ -1797,7 +1798,7 @@ describe('client API', function() {
             should.not.exist(err);
             blockchainExplorerMock.setUtxo(x0, 10, 2);
             var opts = {
-              amount: 10000,
+              amount: 100e2,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'some message',
             };
@@ -1817,7 +1818,7 @@ describe('client API', function() {
             should.not.exist(err);
             blockchainExplorerMock.setUtxo(x0, 10, 2);
             var opts = {
-              amount: 10000,
+              amount: 100e2,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             };
             clients[0].sendTxProposal(opts, function(err, x) {
@@ -1839,7 +1840,7 @@ describe('client API', function() {
             should.not.exist(err);
             blockchainExplorerMock.setUtxo(x0, 10, 1);
             var opts = {
-              amount: 10000,
+              amount: 100e2,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello',
             };
@@ -1865,7 +1866,7 @@ describe('client API', function() {
             should.not.exist(err);
             blockchainExplorerMock.setUtxo(x0, 10, 1);
             var opts = {
-              amount: 10000,
+              amount: 100e2,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello',
             };
@@ -1891,7 +1892,7 @@ describe('client API', function() {
             should.not.exist(err);
             blockchainExplorerMock.setUtxo(x0, 10, 1);
             var opts = {
-              amount: 10000,
+              amount: 100e2,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello',
             };
@@ -1917,7 +1918,7 @@ describe('client API', function() {
             should.not.exist(err);
             blockchainExplorerMock.setUtxo(x0, 1, 1);
             var opts = {
-              amount: 10000000,
+              amount: 0.1e8,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello 1-1',
             };
@@ -2017,6 +2018,7 @@ describe('client API', function() {
             toAddress: toAddress,
           }],
           message: 'hello',
+          feePerKb: 100e2,
         };
         clients[0].createTxProposal(opts, function(err, txp) {
           should.not.exist(err);
@@ -2030,7 +2032,7 @@ describe('client API', function() {
           _.uniq(txp.outputs, 'toAddress').length.should.equal(1);
           _.uniq(_.pluck(txp.outputs, 'toAddress'))[0].should.equal(toAddress);
           txp.hasUnconfirmedInputs.should.equal(false);
-          txp.feePerKb.should.equal(10000);
+          txp.feePerKb.should.equal(100e2);
 
           should.exist(txp.encryptedMessage);
           should.exist(txp.outputs[0].encryptedMessage);
@@ -2075,7 +2077,7 @@ describe('client API', function() {
             amount: 2e8,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
           }],
-          feePerKb: 12300,
+          feePerKb: 123e2,
           message: 'hello',
         };
 
@@ -2132,6 +2134,7 @@ describe('client API', function() {
             amount: 3e8,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
           }],
+          feePerKb: 100e2,
         };
 
         var txp1, txp2;
@@ -2507,6 +2510,7 @@ describe('client API', function() {
                 }],
                 message: paypro.memo,
                 payProUrl: opts.payProUrl,
+                feePerKb: 100e2,
               }, function(err, txp) {
                 should.not.exist(err);
                 clients[0].publishTxProposal({
@@ -2553,7 +2557,8 @@ describe('client API', function() {
       }, {
         amount: 30000,
         toAddress: toAddress,
-      }]
+      }],
+      feePerKb: 100e2,
     };
 
     beforeEach(function(done) {
@@ -2592,7 +2597,7 @@ describe('client API', function() {
           should.not.exist(err);
           x2.creatorName.should.equal('creator');
           x2.message.should.equal('hello');
-          x2.fee.should.equal(3300);
+          x2.fee.should.equal(3220);
           x2.outputs[0].toAddress.should.equal(toAddress);
           x2.outputs[0].amount.should.equal(10000);
           x2.outputs[0].message.should.equal('world');
@@ -3032,10 +3037,13 @@ describe('client API', function() {
             });
             should.exist(rejection);
             rejection.comment.should.equal('some reason');
-            done();
+            next();
           });
         }
-      ]);
+      ], function(err) {
+        should.not.exist(err);
+        done();
+      });
     });
     it('should get paginated transaction history', function(done) {
       var testCases = [{
