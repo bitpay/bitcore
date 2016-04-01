@@ -190,7 +190,8 @@ describe('Credentials', function() {
         var path = c.getBaseAddressDerivationPath();
 
         var c2 = Credentials.fromMnemonic('testnet', words, 'holamundo', 0, 'BIP44');
-        should.not.exist(c2.mnemonic);
+        should.exist(c2.mnemonic);
+        words.should.be.equal(c2.mnemonic);
         c2.xPrivKey.should.equal(c.xPrivKey);
         c2.network.should.equal(c.network);
         c2.getBaseAddressDerivationPath().should.equal(path);
