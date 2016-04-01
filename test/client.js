@@ -1450,6 +1450,7 @@ describe('client API', function() {
   });
 
   describe('Get send max information', function() {
+    var balance;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
         clients[0].createAddress(function(err, address) {
@@ -1457,92 +1458,85 @@ describe('client API', function() {
           should.exist(address.address);
           blockchainExplorerMock.setUtxo(address, 2, 1, 1);
           blockchainExplorerMock.setUtxo(address, 1, 1, 0);
-          done();
+          clients[0].getBalance({}, function(err, bl) {
+            should.not.exist(err);
+            balance = bl;
+            done();
+          });
         });
       });
     });
     it('should return send max info', function(done) {
-      clients[0].getBalance({}, function(err, balance) {
+      var opts = {
+        feePerKb: 200,
+        excludeUnconfirmedUtxos: false,
+        returnInputs: true
+      };
+      clients[0].getSendMaxInfo(opts, function(err, result) {
         should.not.exist(err);
-        var opts = {
-          feePerKb: 200,
-          excludeUnconfirmedUtxos: true,
-          returnInputs: true
-        };
-        clients[0].getSendMaxInfo(opts, function(err, result) {
-          should.not.exist(err);
-          should.exist(result);
-          result.utxosBelowFee.should.be.equal(0);
-          result.amountBelowFee.should.be.equal(0);
-          result.utxosAboveMaxSize.should.be.equal(0);
-          result.amountAboveMaxSize.should.be.equal(0);
-          done();
-        });
+        should.exist(result);
+        result.inputs.length.should.be.equal(2);
+        result.inputs[0].satoshis.should.be.equal(1 * 1e8);
+        result.inputs[1].satoshis.should.be.equal(2 * 1e8);
+        result.amount.should.be.equal(balance.totalAmount - result.fee);
+        result.utxosBelowFee.should.be.equal(0);
+        result.amountBelowFee.should.be.equal(0);
+        result.utxosAboveMaxSize.should.be.equal(0);
+        result.amountAboveMaxSize.should.be.equal(0);
+        done();
       });
     });
     it('should return data excluding unconfirmed UTXOs', function(done) {
-      clients[0].getBalance({}, function(err, balance) {
+      var opts = {
+        feePerKb: 200,
+        excludeUnconfirmedUtxos: true,
+        returnInputs: true
+      };
+      clients[0].getSendMaxInfo(opts, function(err, result) {
         should.not.exist(err);
-        var opts = {
-          feePerKb: 200,
-          excludeUnconfirmedUtxos: true,
-          returnInputs: true
-        };
-        clients[0].getSendMaxInfo(opts, function(err, result) {
-          should.not.exist(err);
-          result.amount.should.be.equal(balance.availableConfirmedAmount - result.fee);
-          done();
-        });
+        result.amount.should.be.equal(balance.availableConfirmedAmount - result.fee);
+        done();
       });
     });
     it('should return data including unconfirmed UTXOs', function(done) {
-      clients[0].getBalance({}, function(err, balance) {
+      var opts = {
+        feePerKb: 200,
+        excludeUnconfirmedUtxos: false,
+        returnInputs: true
+      };
+      clients[0].getSendMaxInfo(opts, function(err, result) {
         should.not.exist(err);
-        var opts = {
-          feePerKb: 200,
-          excludeUnconfirmedUtxos: false,
-          returnInputs: true
-        };
-        clients[0].getSendMaxInfo(opts, function(err, result) {
-          should.not.exist(err);
-          result.amount.should.be.equal(balance.totalAmount - result.fee);
-          done();
-        });
+        result.amount.should.be.equal(balance.totalAmount - result.fee);
+        done();
       });
     });
     it('should return data without inputs', function(done) {
-      clients[0].getBalance({}, function(err, balance) {
+      var opts = {
+        feePerKb: 200,
+        excludeUnconfirmedUtxos: true,
+        returnInputs: false
+      };
+      clients[0].getSendMaxInfo(opts, function(err, result) {
         should.not.exist(err);
-        var opts = {
-          feePerKb: 200,
-          excludeUnconfirmedUtxos: true,
-          returnInputs: false
-        };
-        clients[0].getSendMaxInfo(opts, function(err, result) {
-          should.not.exist(err);
-          result.inputs.length.should.be.equal(0);
-          done();
-        });
+        result.inputs.length.should.be.equal(0);
+        done();
       });
     });
     it('should return data with inputs', function(done) {
-      clients[0].getBalance({}, function(err, balance) {
+      var opts = {
+        feePerKb: 200,
+        excludeUnconfirmedUtxos: true,
+        returnInputs: true
+      };
+      clients[0].getSendMaxInfo(opts, function(err, result) {
         should.not.exist(err);
-        var opts = {
-          feePerKb: 200,
-          excludeUnconfirmedUtxos: true,
-          returnInputs: true
-        };
-        clients[0].getSendMaxInfo(opts, function(err, result) {
-          should.not.exist(err);
-          result.inputs.length.should.not.equal(0);
-          var totalSatoshis = 0;
-          _.each(result.inputs, function(i) {
-            totalSatoshis = totalSatoshis + i.satoshis;
-          });
-          result.amount.should.be.equal(totalSatoshis - result.fee);
-          done();
+        result.inputs.length.should.not.equal(0);
+        var totalSatoshis = 0;
+        _.each(result.inputs, function(i) {
+          totalSatoshis = totalSatoshis + i.satoshis;
         });
+        result.amount.should.be.equal(totalSatoshis - result.fee);
+        done();
       });
     });
   });
