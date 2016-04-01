@@ -109,7 +109,7 @@ helpers.createAndJoinWallet = function(clients, m, n, cb) {
   clients[0].seedFromRandomWithMnemonic({
     network: 'testnet'
   });
-  clients[0].createWallet('wallet name', 'creator', m, n, {
+  clients[0].createWallet('mywallet', 'creator', m, n, {
     network: 'testnet'
   }, function(err, secret) {
     should.not.exist(err);
@@ -162,7 +162,7 @@ helpers.tamperResponse = function(clients, method, url, args, tamper, cb) {
 
 var blockchainExplorerMock = {};
 
-blockchainExplorerMock.getUnspentUtxos = function(addresses, cb) {
+blockchainExplorerMock.getUtxos = function(addresses, cb) {
   var selected = _.filter(blockchainExplorerMock.utxos, function(utxo) {
     return _.contains(addresses, utxo.address);
   });
@@ -380,7 +380,7 @@ describe('client API', function() {
         cb(err, res, body);
       };
       var request = sinon.stub(clients[0], 'request', requestStub);
-      clients[0].createWallet('wallet name', 'creator', 1, 2, {
+      clients[0].createWallet('mywallet', 'creator', 1, 2, {
         network: 'testnet'
       }, function(err, secret) {
         should.exist(err);
@@ -948,6 +948,81 @@ describe('client API', function() {
   });
 
   describe('Wallet Creation', function() {
+    it('should encrypt wallet name', function(done) {
+      var spy = sinon.spy(clients[0], '_doPostRequest');
+      clients[0].seedFromRandomWithMnemonic();
+      clients[0].createWallet('mywallet', 'pepe', 1, 1, {}, function(err, secret) {
+        should.not.exist(err);
+        var url = spy.getCall(0).args[0];
+        var body = JSON.stringify(spy.getCall(0).args[1]);
+        url.should.contain('/wallets');
+        body.should.not.contain('mywallet');
+        clients[0].getStatus({}, function(err, status) {
+          should.not.exist(err);
+          status.wallet.name.should.equal('mywallet');
+          done();
+        })
+      });
+    });
+    it('should encrypt copayer name in wallet creation', function(done) {
+      var spy = sinon.spy(clients[0], '_doPostRequest');
+      clients[0].seedFromRandomWithMnemonic();
+      clients[0].createWallet('mywallet', 'pepe', 1, 1, {}, function(err, secret) {
+        should.not.exist(err);
+        var url = spy.getCall(1).args[0];
+        var body = JSON.stringify(spy.getCall(1).args[1]);
+        url.should.contain('/copayers');
+        body.should.not.contain('pepe');
+        clients[0].getStatus({}, function(err, status) {
+          should.not.exist(err);
+          status.wallet.copayers[0].name.should.equal('pepe');
+          done();
+        })
+      });
+    });
+    it('should be able to access wallet name in non-encrypted wallet (legacy)', function(done) {
+      clients[0].seedFromRandomWithMnemonic();
+      var wpk = new Bitcore.PrivateKey();
+      var args = {
+        name: 'mywallet',
+        m: 1,
+        n: 1,
+        pubKey: wpk.toPublicKey().toString(),
+        network: 'livenet',
+        id: '123',
+      };
+      clients[0]._doPostRequest('/v2/wallets/', args, function(err, wallet) {
+        should.not.exist(err);
+        var c = clients[0].credentials;
+
+        var args = {
+          walletId: '123',
+          name: 'pepe',
+          xPubKey: c.xPubKey,
+          requestPubKey: c.requestPubKey,
+          customData: Utils.encryptMessage(JSON.stringify({
+            walletPrivKey: wpk.toString(),
+          }), c.personalEncryptingKey),
+        };
+        var hash = Utils.getCopayerHash(args.name, args.xPubKey, args.requestPubKey);
+        args.copayerSignature = Utils.signMessage(hash, wpk);
+        clients[0]._doPostRequest('/v2/wallets/123/copayers', args, function(err, wallet) {
+          should.not.exist(err);
+          clients[0].openWallet(function(err) {
+            should.not.exist(err);
+            clients[0].getStatus({}, function(err, status) {
+              should.not.exist(err);
+              var wallet = status.wallet;
+              wallet.name.should.equal('mywallet');
+              should.not.exist(wallet.encryptedName);
+              wallet.copayers[0].name.should.equal('pepe');
+              should.not.exist(wallet.copayers[0].encryptedName);
+              done();
+            });
+          });
+        });
+      });
+    });
     it('should check balance in a 1-1 ', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
         clients[0].getBalance({}, function(err, balance) {
@@ -977,13 +1052,13 @@ describe('client API', function() {
     it('should fire event when wallet is complete', function(done) {
       var checks = 0;
       clients[0].on('walletCompleted', function(wallet) {
-        wallet.name.should.equal('wallet name');
+        wallet.name.should.equal('mywallet');
         wallet.status.should.equal('complete');
         clients[0].isComplete().should.equal(true);
         clients[0].credentials.isComplete().should.equal(true);
         if (++checks == 2) done();
       });
-      clients[0].createWallet('wallet name', 'creator', 2, 2, {
+      clients[0].createWallet('mywallet', 'creator', 2, 2, {
         network: 'testnet'
       }, function(err, secret) {
         should.not.exist(err);
@@ -1001,7 +1076,7 @@ describe('client API', function() {
       });
     });
 
-    it('should fill wallet info in a incomplete wallets', function(done) {
+    it('should fill wallet info in an incomplete wallet', function(done) {
       clients[0].seedFromRandomWithMnemonic();
       clients[0].createWallet('XXX', 'creator', 2, 3, {}, function(err, secret) {
         should.not.exist(err);
@@ -1102,7 +1177,7 @@ describe('client API', function() {
       });
     });
     it('should perform a dry join without actually joining', function(done) {
-      clients[0].createWallet('wallet name', 'creator', 1, 2, {}, function(err, secret) {
+      clients[0].createWallet('mywallet', 'creator', 1, 2, {}, function(err, secret) {
         should.not.exist(err);
         should.exist(secret);
         clients[1].joinWallet(secret, 'dummy', {
@@ -1118,7 +1193,7 @@ describe('client API', function() {
     });
 
     it('should return wallet status even if wallet is not yet complete', function(done) {
-      clients[0].createWallet('wallet name', 'creator', 1, 2, {
+      clients[0].createWallet('mywallet', 'creator', 1, 2, {
         network: 'testnet'
       }, function(err, secret) {
         should.not.exist(err);
@@ -1135,7 +1210,7 @@ describe('client API', function() {
       });
     });
     it('should return status using v2 version', function(done) {
-      clients[0].createWallet('wallet name', 'creator', 1, 1, {
+      clients[0].createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet'
       }, function(err, secret) {
         should.not.exist(err);
@@ -1148,7 +1223,7 @@ describe('client API', function() {
       });
     });
     it('should return extended status using v2 version', function(done) {
-      clients[0].createWallet('wallet name', 'creator', 1, 1, {
+      clients[0].createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet'
       }, function(err, secret) {
         should.not.exist(err);
@@ -1164,7 +1239,7 @@ describe('client API', function() {
     });
 
     it('should store walletPrivKey', function(done) {
-      clients[0].createWallet('wallet name', 'creator', 1, 1, {
+      clients[0].createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet'
       }, function(err) {
 
@@ -1184,7 +1259,7 @@ describe('client API', function() {
     });
 
     it('should set walletPrivKey from BWS', function(done) {
-      clients[0].createWallet('wallet name', 'creator', 1, 1, {
+      clients[0].createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet'
       }, function(err) {
 
@@ -1221,7 +1296,7 @@ describe('client API', function() {
 
     it('should create a 1-1 wallet with random mnemonic', function(done) {
       clients[0].seedFromRandomWithMnemonic();
-      clients[0].createWallet('wallet name', 'creator', 1, 1, {
+      clients[0].createWallet('mywallet', 'creator', 1, 1, {
           network: 'livenet'
         },
         function(err) {
@@ -1239,7 +1314,7 @@ describe('client API', function() {
     it('should create a 1-1 wallet with given mnemonic', function(done) {
       var words = 'forget announce travel fury farm alpha chaos choice talent sting eagle supreme';
       clients[0].seedFromMnemonic(words);
-      clients[0].createWallet('wallet name', 'creator', 1, 1, {
+      clients[0].createWallet('mywallet', 'creator', 1, 1, {
           network: 'livenet',
           derivationStrategy: 'BIP48',
         },
@@ -1257,7 +1332,7 @@ describe('client API', function() {
     it('should create a 2-3 wallet with given mnemonic', function(done) {
       var words = 'forget announce travel fury farm alpha chaos choice talent sting eagle supreme';
       clients[0].seedFromMnemonic(words);
-      clients[0].createWallet('wallet name', 'creator', 2, 3, {
+      clients[0].createWallet('mywallet', 'creator', 2, 3, {
           network: 'livenet'
         },
         function(err, secret) {
@@ -1535,9 +1610,10 @@ describe('client API', function() {
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             var opts = {
-              amount: 30000,
+              amount: 300e2,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello',
+              feePerKb: 100e2,
             };
             clients[0].sendTxProposal(opts, function(err, x) {
               should.not.exist(err);
@@ -1545,8 +1621,7 @@ describe('client API', function() {
                 should.not.exist(err);
                 x2.creatorName.should.equal('creator');
                 x2.message.should.equal('hello');
-                x2.amount.should.equal(30000);
-                x2.fee.should.equal(3720);
+                x2.amount.should.equal(300e2);
                 x2.toAddress.should.equal('n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5');
                 x2.hasUnconfirmedInputs.should.equal(false);
                 should.exist(x2.encryptedMessage);
@@ -1588,7 +1663,7 @@ describe('client API', function() {
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             var opts = {
-              amount: 300000000,
+              amount: 3e8,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello 1-1',
             };
@@ -1608,19 +1683,20 @@ describe('client API', function() {
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             var opts = {
-              amount: 2 * 1e8 - 2000,
+              amount: 2 * 1e8 - 200e2,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello 1-1',
+              feePerKb: 500e2,
             };
             clients[0].sendTxProposal(opts, function(err, x) {
               should.exist(err);
               err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS_FOR_FEE);
-              opts.feePerKb = 2000;
+              opts.feePerKb = 200e2;
               clients[0].sendTxProposal(opts, function(err, x) {
                 should.not.exist(err);
                 clients[0].getTx(x.id, function(err, x2) {
                   should.not.exist(err);
-                  x2.fee.should.equal(1290);
+                  should.exist(x2);
                   done();
                 });
               });
@@ -1636,7 +1712,7 @@ describe('client API', function() {
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             var opts = {
-              amount: 120000000,
+              amount: 1.2e8,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello 1-1',
             };
@@ -1667,7 +1743,7 @@ describe('client API', function() {
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             var opts = {
-              amount: 120000000,
+              amount: 1.2e8,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello 1-1',
             };
@@ -1696,7 +1772,7 @@ describe('client API', function() {
             should.not.exist(err);
             blockchainExplorerMock.setUtxo(x0, 10, 2);
             var opts = {
-              amount: 10000,
+              amount: 100e2,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'some message',
             };
@@ -1722,7 +1798,7 @@ describe('client API', function() {
             should.not.exist(err);
             blockchainExplorerMock.setUtxo(x0, 10, 2);
             var opts = {
-              amount: 10000,
+              amount: 100e2,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'some message',
             };
@@ -1742,7 +1818,7 @@ describe('client API', function() {
             should.not.exist(err);
             blockchainExplorerMock.setUtxo(x0, 10, 2);
             var opts = {
-              amount: 10000,
+              amount: 100e2,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             };
             clients[0].sendTxProposal(opts, function(err, x) {
@@ -1764,7 +1840,7 @@ describe('client API', function() {
             should.not.exist(err);
             blockchainExplorerMock.setUtxo(x0, 10, 1);
             var opts = {
-              amount: 10000,
+              amount: 100e2,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello',
             };
@@ -1790,7 +1866,7 @@ describe('client API', function() {
             should.not.exist(err);
             blockchainExplorerMock.setUtxo(x0, 10, 1);
             var opts = {
-              amount: 10000,
+              amount: 100e2,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello',
             };
@@ -1816,7 +1892,7 @@ describe('client API', function() {
             should.not.exist(err);
             blockchainExplorerMock.setUtxo(x0, 10, 1);
             var opts = {
-              amount: 10000,
+              amount: 100e2,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello',
             };
@@ -1842,7 +1918,7 @@ describe('client API', function() {
             should.not.exist(err);
             blockchainExplorerMock.setUtxo(x0, 1, 1);
             var opts = {
-              amount: 10000000,
+              amount: 0.1e8,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello 1-1',
             };
@@ -1942,6 +2018,7 @@ describe('client API', function() {
             toAddress: toAddress,
           }],
           message: 'hello',
+          feePerKb: 100e2,
         };
         clients[0].createTxProposal(opts, function(err, txp) {
           should.not.exist(err);
@@ -1955,7 +2032,7 @@ describe('client API', function() {
           _.uniq(txp.outputs, 'toAddress').length.should.equal(1);
           _.uniq(_.pluck(txp.outputs, 'toAddress'))[0].should.equal(toAddress);
           txp.hasUnconfirmedInputs.should.equal(false);
-          txp.feePerKb.should.equal(10000);
+          txp.feePerKb.should.equal(100e2);
 
           should.exist(txp.encryptedMessage);
           should.exist(txp.outputs[0].encryptedMessage);
@@ -2000,7 +2077,7 @@ describe('client API', function() {
             amount: 2e8,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
           }],
-          feePerKb: 12300,
+          feePerKb: 123e2,
           message: 'hello',
         };
 
@@ -2057,6 +2134,7 @@ describe('client API', function() {
             amount: 3e8,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
           }],
+          feePerKb: 100e2,
         };
 
         var txp1, txp2;
@@ -2432,6 +2510,7 @@ describe('client API', function() {
                 }],
                 message: paypro.memo,
                 payProUrl: opts.payProUrl,
+                feePerKb: 100e2,
               }, function(err, txp) {
                 should.not.exist(err);
                 clients[0].publishTxProposal({
@@ -2478,7 +2557,8 @@ describe('client API', function() {
       }, {
         amount: 30000,
         toAddress: toAddress,
-      }]
+      }],
+      feePerKb: 100e2,
     };
 
     beforeEach(function(done) {
@@ -2517,7 +2597,7 @@ describe('client API', function() {
           should.not.exist(err);
           x2.creatorName.should.equal('creator');
           x2.message.should.equal('hello');
-          x2.fee.should.equal(3300);
+          x2.fee.should.equal(3220);
           x2.outputs[0].toAddress.should.equal(toAddress);
           x2.outputs[0].amount.should.equal(10000);
           x2.outputs[0].message.should.equal('world');
@@ -2957,10 +3037,13 @@ describe('client API', function() {
             });
             should.exist(rejection);
             rejection.comment.should.equal('some reason');
-            done();
+            next();
           });
         }
-      ]);
+      ], function(err) {
+        should.not.exist(err);
+        done();
+      });
     });
     it('should get paginated transaction history', function(done) {
       var testCases = [{
@@ -3101,7 +3184,7 @@ describe('client API', function() {
         var client = helpers.newClient(app);
         client.seedFromRandomWithMnemonic();
         var exported = client.getMnemonic();
-        client.createWallet('wallet name', 'creator', 1, 1, {
+        client.createWallet('mywallet', 'creator', 1, 1, {
           network: 'livenet'
         }, function(err) {
           should.not.exist(err);
@@ -3149,7 +3232,7 @@ describe('client API', function() {
       it('should import with external priv key', function(done) {
         var client = helpers.newClient(app);
         client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00');
-        client.createWallet('wallet name', 'creator', 1, 1, {
+        client.createWallet('mywallet', 'creator', 1, 1, {
           network: 'livenet'
         }, function(err) {
           should.not.exist(err);
@@ -3263,10 +3346,24 @@ describe('client API', function() {
               recoveryClient.getStatus({}, function(err, status) {
                 should.exist(err);
                 err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
+                var spy = sinon.spy(recoveryClient, '_doPostRequest');
                 recoveryClient.recreateWallet(function(err) {
                   should.not.exist(err);
+
+                  // Do not send wallet name and copayer names in clear text
+                  var url = spy.getCall(0).args[0];
+                  var body = JSON.stringify(spy.getCall(0).args[1]);
+                  url.should.contain('/wallets');
+                  body.should.not.contain('mywallet');
+                  var url = spy.getCall(1).args[0];
+                  var body = JSON.stringify(spy.getCall(1).args[1]);
+                  url.should.contain('/copayers');
+                  body.should.not.contain('creator');
+                  body.should.not.contain('copayer 1');
+
                   recoveryClient.getStatus({}, function(err, status) {
                     should.not.exist(err);
+                    status.wallet.name.should.equal('mywallet');
                     _.difference(_.pluck(status.wallet.copayers, 'name'), ['creator', 'copayer 1']).length.should.equal(0);
                     recoveryClient.createAddress(function(err, addr2) {
                       should.not.exist(err);
@@ -3406,7 +3503,7 @@ describe('client API', function() {
           account: 2,
           derivationStrategy: 'BIP48',
         });
-        clients[0].createWallet('wallet name', 'creator', 1, 1, {
+        clients[0].createWallet('mywallet', 'creator', 1, 1, {
           network: 'testnet'
         }, function(err, secret) {
           should.not.exist(err);
@@ -3472,14 +3569,14 @@ describe('client API', function() {
       should.not.exist(proxy.credentials.xPrivKey);
 
       var seedSpy = sinon.spy(proxy, 'seedFromRandom');
-      proxy.createWallet('wallet name', 'creator', 1, 1, {
+      proxy.createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet'
       }, function(err) {
         should.not.exist(err);
         seedSpy.called.should.be.false;
         proxy.getStatus({}, function(err, status) {
           should.not.exist(err);
-          status.wallet.name.should.equal('wallet name');
+          status.wallet.name.should.equal('mywallet');
           done();
         });
       });
@@ -3499,7 +3596,7 @@ describe('client API', function() {
 
       var seedSpy = sinon.spy(proxy, 'seedFromRandom');
       should.not.exist(proxy.credentials.xPrivKey);
-      proxy.createWallet('wallet name', 'creator', 1, 1, {
+      proxy.createWallet('mywallet', 'creator', 1, 1, {
         network: 'livenet'
       }, function(err) {
         should.exist(err);
@@ -3523,7 +3620,7 @@ describe('client API', function() {
       async.waterfall([
 
           function(next) {
-            proxy.createWallet('wallet name', 'creator', 1, 1, {
+            proxy.createWallet('mywallet', 'creator', 1, 1, {
               network: 'testnet'
             }, function(err) {
               should.not.exist(err);
@@ -3604,7 +3701,7 @@ describe('client API', function() {
         async.waterfall([
 
             function(next) {
-              proxy.createWallet('wallet name', 'creator', 1, 1, {
+              proxy.createWallet('mywallet', 'creator', 1, 1, {
                 network: 'testnet'
               }, function(err) {
                 should.not.exist(err);
@@ -3674,209 +3771,6 @@ describe('client API', function() {
     });
   });
 
-  describe('Legacy Copay Import', function() {
-    it('Should get wallets from profile', function(done) {
-      var t = ImportData.copayers[0];
-      var c = helpers.newClient(app);
-      var ids = c.getWalletIdsFromOldCopay(t.username, t.password, t.ls['profile::4872dd8b2ceaa54f922e8e6ba6a8eaa77b488721']);
-      ids.should.deep.equal([
-        '8f197244e661f4d0',
-        '4d32f0737a05f072',
-        'e2c2d72024979ded',
-        '7065a73486c8cb5d'
-      ]);
-      done();
-    });
-    it('Should import a 1-1 wallet', function(done) {
-      var t = ImportData.copayers[0];
-      var c = helpers.newClient(app);
-      c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::e2c2d72024979ded'], function(err) {
-        should.not.exist(err);
-        c.credentials.m.should.equal(1);
-        c.credentials.n.should.equal(1);
-
-        c.createAddress(function(err, x0) {
-          // This is the first 'shared' address, created automatically
-          // by old copay
-          x0.address.should.equal('2N3w8sJUyAXCQirqNsTayWr7pWADFNdncmf');
-          c.getStatus({}, function(err, status) {
-            should.not.exist(err);
-            status.wallet.status.should.equal('complete');
-            c.credentials.walletId.should.equal('e2c2d72024979ded');
-            c.credentials.walletPrivKey.should.equal('c3463113c6e1d0fc2f2bd520f7d9d62f8e1fdcdd96005254571c64902aeb1648');
-            c.credentials.sharedEncryptingKey.should.equal('x3D/7QHa4PkKMbSXEvXwaw==');
-            // TODO?
-            // bal1.totalAmount.should.equal(18979980);
-            done();
-          });
-        });
-      });
-    });
-
-    it('Should to import the same wallet twice with different clients', function(done) {
-      var t = ImportData.copayers[0];
-      var c = helpers.newClient(app);
-      c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
-        should.not.exist(err);
-        c.getStatus({}, function(err, status) {
-          should.not.exist(err);
-          status.wallet.status.should.equal('complete');
-          c.credentials.walletId.should.equal('4d32f0737a05f072');
-          var c2 = helpers.newClient(app);
-          c2.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
-            should.not.exist(err);
-            c2.getStatus({}, function(err, status) {
-              should.not.exist(err);
-              status.wallet.status.should.equal('complete');
-              c2.credentials.walletId.should.equal('4d32f0737a05f072');
-              done();
-            });
-          });
-        });
-      });
-    });
-
-    it('Should not fail when importing the same wallet twice, same copayer', function(done) {
-      var t = ImportData.copayers[0];
-      var c = helpers.newClient(app);
-      c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
-        should.not.exist(err);
-        c.getStatus({}, function(err, status) {
-          should.not.exist(err);
-          status.wallet.status.should.equal('complete');
-          c.credentials.walletId.should.equal('4d32f0737a05f072');
-          c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
-            should.not.exist(err);
-            done();
-          });
-        });
-      });
-    });
-
-    it('Should import and complete 2-2 wallet from 2 copayers, and create addresses', function(done) {
-      var t = ImportData.copayers[0];
-      var c = helpers.newClient(app);
-      c.createWalletFromOldCopay(t.username, t.password, t.ls['wallet::4d32f0737a05f072'], function(err) {
-        should.not.exist(err);
-        c.getStatus({}, function(err, status) {
-          should.not.exist(err);
-          status.wallet.status.should.equal('complete');
-          c.credentials.sharedEncryptingKey.should.equal('Ou2j4kq3z1w4yTr9YybVxg==');
-
-          var t2 = ImportData.copayers[1];
-          var c2 = helpers.newClient(app);
-          c2.createWalletFromOldCopay(t2.username, t2.password, t2.ls['wallet::4d32f0737a05f072'], function(err) {
-            should.not.exist(err);
-            c2.credentials.sharedEncryptingKey.should.equal('Ou2j4kq3z1w4yTr9YybVxg==');
-
-            // This should pull the non-temporary keys
-            c2.getStatus({}, function(err, status) {
-              should.not.exist(err);
-              status.wallet.status.should.equal('complete');
-              c2.createAddress(function(err, x0) {
-                x0.address.should.be.equal('2Mv1DHpozzZ9fup2nZ1kmdRXoNnDJ8b1JF2');
-                c.createAddress(function(err, x0) {
-                  x0.address.should.be.equal('2N2dZ1HogpxHVKv3CD2R4WrhWRwqZtpDc2M');
-                  done();
-                });
-              });
-            });
-          });
-        });
-      });
-    });
-
-    it('Should import and complete 2-3 wallet from 2 copayers, and create addresses', function(done) {
-      var w = 'wallet::7065a73486c8cb5d';
-      var key = 'fS4HhoRd25KJY4VpNpO1jg==';
-      var t = ImportData.copayers[0];
-      var c = helpers.newClient(app);
-      c.createWalletFromOldCopay(t.username, t.password, t.ls[w], function(err) {
-        should.not.exist(err);
-        c.getStatus({}, function(err, status) {
-          should.not.exist(err);
-          status.wallet.status.should.equal('complete');
-          c.credentials.sharedEncryptingKey.should.equal(key);
-
-          var t2 = ImportData.copayers[1];
-          var c2 = helpers.newClient(app);
-          c2.createWalletFromOldCopay(t2.username, t2.password, t2.ls[w], function(err) {
-            should.not.exist(err);
-            c2.credentials.sharedEncryptingKey.should.equal(key);
-
-            c2.getStatus({}, function(err, status) {
-              should.not.exist(err);
-              status.wallet.status.should.equal('complete');
-
-              var t3 = ImportData.copayers[2];
-              var c3 = helpers.newClient(app);
-              c3.createWalletFromOldCopay(t3.username, t3.password, t3.ls[w], function(err) {
-                should.not.exist(err);
-                c3.credentials.sharedEncryptingKey.should.equal(key);
-
-                // This should pull the non-temporary keys
-                c3.getStatus({}, function(err, status) {
-                  should.not.exist(err);
-                  status.wallet.status.should.equal('complete');
-                  done();
-                });
-              });
-            });
-          });
-        });
-      });
-    });
-
-    it('Should import a 2-3 wallet from 2 copayers, and recreate it, and then on the recreated other copayers should be able to access', function(done) {
-      var w = 'wallet::7065a73486c8cb5d';
-      var key = 'fS4HhoRd25KJY4VpNpO1jg==';
-      var t = ImportData.copayers[0];
-      var c = helpers.newClient(app);
-      c.createWalletFromOldCopay(t.username, t.password, t.ls[w], function(err) {
-        should.not.exist(err);
-        var t2 = ImportData.copayers[1];
-        var c2 = helpers.newClient(app);
-        c2.createWalletFromOldCopay(t2.username, t2.password, t2.ls[w], function(err) {
-          should.not.exist(err);
-
-          // New BWS server...
-          var storage = new Storage({
-            db: helpers.newDb(),
-          });
-          var newApp;
-          var expressApp = new ExpressApp();
-          expressApp.start({
-              storage: storage,
-              blockchainExplorer: blockchainExplorerMock,
-              disableLogs: true,
-            },
-            function() {
-              newApp = expressApp.app;
-            });
-          var recoveryClient = helpers.newClient(newApp);
-          recoveryClient.import(c.export());
-          recoveryClient.recreateWallet(function(err) {
-            should.not.exist(err);
-            recoveryClient.getStatus({}, function(err, status) {
-              should.not.exist(err);
-              _.pluck(status.wallet.copayers, 'name').sort().should.deep.equal(['123', '234', '345']);
-              var t2 = ImportData.copayers[1];
-              var c2p = helpers.newClient(newApp);
-              c2p.createWalletFromOldCopay(t2.username, t2.password, t2.ls[w], function(err) {
-                should.not.exist(err);
-                c2p.getStatus({}, function(err, status) {
-                  should.not.exist(err);
-                  _.pluck(status.wallet.copayers, 'name').sort().should.deep.equal(['123', '234', '345']);
-                  done();
-                });
-              });
-            });
-          });
-        });
-      });
-    });
-  });
-
   describe('Private key encryption', function() {
     var password = 'jesuissatoshi';
     var c1, c2;
@@ -3887,7 +3781,7 @@ describe('client API', function() {
       clients[1].seedFromRandomWithMnemonic({
         network: 'testnet'
       });
-      clients[1].createWallet('wallet name', 'creator', 1, 1, {
+      clients[1].createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet',
       }, function() {
         clients[1].setPrivateKeyEncryption(password);
@@ -4086,6 +3980,39 @@ describe('client API', function() {
           clients[0].sendTxProposal(opts, function(err, x) {
             should.not.exist(err);
             done();
+          });
+        });
+      });
+
+      it('should add access with copayer name', function(done) {
+        var spy = sinon.spy(clients[0], '_doPutRequest');
+        clients[0].addAccess({
+          name: 'pepe',
+        }, function(err, x, key) {
+          should.not.exist(err);
+          var url = spy.getCall(0).args[0];
+          var body = JSON.stringify(spy.getCall(0).args[1]);
+          url.should.contain('/copayers');
+          body.should.not.contain('pepe');
+
+          var k = new Bitcore.PrivateKey(key);
+          var c = clients[0].credentials;
+          c.requestPrivKey = k.toString();
+          c.requestPubKey = k.toPublicKey().toString();
+
+          clients[0].getStatus({}, function(err, status) {
+            should.not.exist(err);
+            var keys = status.wallet.copayers[0].requestPubKeys;
+            keys.length.should.equal(2);
+            _.filter(keys, {
+              name: 'pepe'
+            }).length.should.equal(1);
+
+            clients[0].sendTxProposal(opts, function(err, x) {
+              should.not.exist(err);
+              // TODO: verify tx's creator is 'pepe'
+              done();
+            });
           });
         });
       });
