@@ -1322,7 +1322,8 @@ describe('client API', function() {
           should.not.exist(err);
           clients[0].openWallet(function(err) {
             should.not.exist(err);
-            should.not.exist(clients[0].getMnemonic()); // mnemonics are *not* stored
+            should.exist(clients[0].getMnemonic());
+            words.should.be.equal(clients[0].getMnemonic());
             clients[0].credentials.xPrivKey.should.equal('xprv9s21ZrQH143K4X2frJxRmGsmef9UfXhmfL4hdTGLm5ruSX46gekuSTspJX63d5nEi9q2wqUgg4KZ4yhSPy13CzVezAH6t6gCox1DN2hXV3L')
             done();
           });
@@ -1340,7 +1341,8 @@ describe('client API', function() {
           should.exist(secret);
           clients[0].openWallet(function(err) {
             should.not.exist(err);
-            should.not.exist(clients[0].getMnemonic()); // mnemonics are *not* stored
+            should.exist(clients[0].getMnemonic());
+            words.should.be.equal(clients[0].getMnemonic());
             clients[0].credentials.xPrivKey.should.equal('xprv9s21ZrQH143K4X2frJxRmGsmef9UfXhmfL4hdTGLm5ruSX46gekuSTspJX63d5nEi9q2wqUgg4KZ4yhSPy13CzVezAH6t6gCox1DN2hXV3L')
             done();
           });
