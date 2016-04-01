@@ -1449,6 +1449,96 @@ describe('client API', function() {
     });
   });
 
+  describe('Get send max information', function() {
+    var balance;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
+        clients[0].createAddress(function(err, address) {
+          should.not.exist(err);
+          should.exist(address.address);
+          blockchainExplorerMock.setUtxo(address, 2, 1, 1);
+          blockchainExplorerMock.setUtxo(address, 1, 1, 0);
+          clients[0].getBalance({}, function(err, bl) {
+            should.not.exist(err);
+            balance = bl;
+            done();
+          });
+        });
+      });
+    });
+    it('should return send max info', function(done) {
+      var opts = {
+        feePerKb: 200,
+        excludeUnconfirmedUtxos: false,
+        returnInputs: true
+      };
+      clients[0].getSendMaxInfo(opts, function(err, result) {
+        should.not.exist(err);
+        should.exist(result);
+        result.inputs.length.should.be.equal(2);
+        result.amount.should.be.equal(balance.totalAmount - result.fee);
+        result.utxosBelowFee.should.be.equal(0);
+        result.amountBelowFee.should.be.equal(0);
+        result.utxosAboveMaxSize.should.be.equal(0);
+        result.amountAboveMaxSize.should.be.equal(0);
+        done();
+      });
+    });
+    it('should return data excluding unconfirmed UTXOs', function(done) {
+      var opts = {
+        feePerKb: 200,
+        excludeUnconfirmedUtxos: true,
+        returnInputs: true
+      };
+      clients[0].getSendMaxInfo(opts, function(err, result) {
+        should.not.exist(err);
+        result.amount.should.be.equal(balance.availableConfirmedAmount - result.fee);
+        done();
+      });
+    });
+    it('should return data including unconfirmed UTXOs', function(done) {
+      var opts = {
+        feePerKb: 200,
+        excludeUnconfirmedUtxos: false,
+        returnInputs: true
+      };
+      clients[0].getSendMaxInfo(opts, function(err, result) {
+        should.not.exist(err);
+        result.amount.should.be.equal(balance.totalAmount - result.fee);
+        done();
+      });
+    });
+    it('should return data without inputs', function(done) {
+      var opts = {
+        feePerKb: 200,
+        excludeUnconfirmedUtxos: true,
+        returnInputs: false
+      };
+      clients[0].getSendMaxInfo(opts, function(err, result) {
+        should.not.exist(err);
+        result.inputs.length.should.be.equal(0);
+        done();
+      });
+    });
+    it('should return data with inputs', function(done) {
+      var opts = {
+        feePerKb: 200,
+        excludeUnconfirmedUtxos: true,
+        returnInputs: true
+      };
+      clients[0].getSendMaxInfo(opts, function(err, result) {
+        should.not.exist(err);
+        result.inputs.length.should.not.equal(0);
+        var totalSatoshis = 0;
+        _.each(result.inputs, function(i) {
+          totalSatoshis = totalSatoshis + i.satoshis;
+        });
+        result.amount.should.be.equal(totalSatoshis - result.fee);
+        done();
+      });
+    });
+  });
+
   describe('Address Creation', function() {
     it('should be able to create address in 1-of-1 wallet', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
