@@ -1476,8 +1476,6 @@ describe('client API', function() {
         should.not.exist(err);
         should.exist(result);
         result.inputs.length.should.be.equal(2);
-        result.inputs[0].satoshis.should.be.equal(1 * 1e8);
-        result.inputs[1].satoshis.should.be.equal(2 * 1e8);
         result.amount.should.be.equal(balance.totalAmount - result.fee);
         result.utxosBelowFee.should.be.equal(0);
         result.amountBelowFee.should.be.equal(0);
