@@ -1449,9 +1449,9 @@ describe('client API', function() {
     });
   });
 
-  describe.only('Get send max information', function() {
+  describe('Get send max information', function() {
     beforeEach(function(done) {
-      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
         clients[0].createAddress(function(err, address) {
           should.not.exist(err);
           should.exist(address.address);
@@ -1461,7 +1461,25 @@ describe('client API', function() {
         });
       });
     });
-
+    it('should return send max info', function(done) {
+      clients[0].getBalance({}, function(err, balance) {
+        should.not.exist(err);
+        var opts = {
+          feePerKb: 200,
+          excludeUnconfirmedUtxos: true,
+          returnInputs: true
+        };
+        clients[0].getSendMaxInfo(opts, function(err, result) {
+          should.not.exist(err);
+          should.exist(result);
+          result.utxosBelowFee.should.be.equal(0);
+          result.amountBelowFee.should.be.equal(0);
+          result.utxosAboveMaxSize.should.be.equal(0);
+          result.amountAboveMaxSize.should.be.equal(0);
+          done();
+        });
+      });
+    });
     it('should return data excluding unconfirmed UTXOs', function(done) {
       clients[0].getBalance({}, function(err, balance) {
         should.not.exist(err);
@@ -1473,10 +1491,6 @@ describe('client API', function() {
         clients[0].getSendMaxInfo(opts, function(err, result) {
           should.not.exist(err);
           result.amount.should.be.equal(balance.availableConfirmedAmount - result.fee);
-          result.utxosBelowFee.should.be.equal(0);
-          result.amountBelowFee.should.be.equal(0);
-          result.utxosAboveMaxSize.should.be.equal(0);
-          result.amountAboveMaxSize.should.be.equal(0);
           done();
         });
       });
@@ -1492,10 +1506,6 @@ describe('client API', function() {
         clients[0].getSendMaxInfo(opts, function(err, result) {
           should.not.exist(err);
           result.amount.should.be.equal(balance.totalAmount - result.fee);
-          result.utxosBelowFee.should.be.equal(0);
-          result.amountBelowFee.should.be.equal(0);
-          result.utxosAboveMaxSize.should.be.equal(0);
-          result.amountAboveMaxSize.should.be.equal(0);
           done();
         });
       });
@@ -1511,10 +1521,6 @@ describe('client API', function() {
         clients[0].getSendMaxInfo(opts, function(err, result) {
           should.not.exist(err);
           result.inputs.length.should.be.equal(0);
-          result.utxosBelowFee.should.be.equal(0);
-          result.amountBelowFee.should.be.equal(0);
-          result.utxosAboveMaxSize.should.be.equal(0);
-          result.amountAboveMaxSize.should.be.equal(0);
           done();
         });
       });
@@ -1535,10 +1541,6 @@ describe('client API', function() {
             totalSatoshis = totalSatoshis + i.satoshis;
           });
           result.amount.should.be.equal(totalSatoshis - result.fee);
-          result.utxosBelowFee.should.be.equal(0);
-          result.amountBelowFee.should.be.equal(0);
-          result.utxosAboveMaxSize.should.be.equal(0);
-          result.amountAboveMaxSize.should.be.equal(0);
           done();
         });
       });
