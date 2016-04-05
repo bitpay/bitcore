@@ -2892,7 +2892,7 @@ describe('client API', function() {
       });
     });
 
-    it.skip('Send, reject actions in 2-3 wallet much have correct copayerNames', function(done) {
+    it.skip('Send, reject actions in 2-3 wallet must have correct copayerNames', function(done) {
       helpers.createAndJoinWallet(clients, 2, 3, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
