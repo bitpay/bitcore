@@ -2111,6 +2111,7 @@ describe('client API', function() {
           }],
           message: 'hello',
           feePerKb: 100e2,
+          customData: {someObj: { x: 1 }, someStr: "str"}
         };
         clients[0].createTxProposal(opts, function(err, txp) {
           should.not.exist(err);
