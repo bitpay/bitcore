@@ -1064,8 +1064,9 @@ describe('client API', function() {
         should.not.exist(err);
         clients[0].isComplete().should.equal(false);
         clients[0].credentials.isComplete().should.equal(false);
-        clients[1].joinWallet(secret, 'guest', {}, function(err) {
+        clients[1].joinWallet(secret, 'guest', {}, function(err, wallet) {
           should.not.exist(err);
+          wallet.name.should.equal('mywallet');
           clients[0].openWallet(function(err, walletStatus) {
             should.not.exist(err);
             should.exist(walletStatus);
@@ -1086,6 +1087,21 @@ describe('client API', function() {
           clients[1].credentials.m.should.equal(2);
           clients[1].credentials.n.should.equal(3);
           should.not.exist(err);
+          done();
+        });
+      });
+    });
+
+    it('should return wallet on successful join', function(done) {
+      clients[0].createWallet('mywallet', 'creator', 2, 2, {
+        network: 'testnet'
+      }, function(err, secret) {
+        should.not.exist(err);
+        clients[1].joinWallet(secret, 'guest', {}, function(err, wallet) {
+          should.not.exist(err);
+          wallet.name.should.equal('mywallet');
+          wallet.copayers[0].name.should.equal('creator');
+          wallet.copayers[1].name.should.equal('guest');
           done();
         });
       });
