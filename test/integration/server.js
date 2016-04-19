@@ -2812,7 +2812,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should be able to publish a temporary tx proposal', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
           var txOpts = {
@@ -2840,7 +2839,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should not be able to publish a temporary tx proposal created in a dry run', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
           var txOpts = {
@@ -2896,7 +2894,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should fail to publish non-existent tx proposal', function(done) {
         server.publishTx({
           txProposalId: 'wrong-id',
@@ -2910,7 +2907,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should fail to publish tx proposal with wrong signature', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
           var txOpts = {
@@ -2935,7 +2931,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should fail to publish tx proposal not signed by the creator', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
           var txOpts = {
@@ -2963,7 +2958,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should accept a tx proposal signed with a custom key', function(done) {
         var reqPrivKey = new Bitcore.PrivateKey();
         var reqPubKey = reqPrivKey.toPublicKey().toString();
@@ -3013,7 +3007,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should fail to publish a temporary tx proposal if utxos are unavailable', function(done) {
         var txp1, txp2;
         var txOpts = {
@@ -3082,7 +3075,6 @@ describe('Wallet service', function() {
           done();
         });
       });
-
       it('should fail to list pending proposals from legacy client', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
           var txOpts = {
@@ -3115,7 +3107,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should be able to specify inputs & absolute fee', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function(utxos) {
           var txOpts = {
@@ -3139,7 +3130,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should be able to send max funds', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
           var txOpts = {
@@ -3165,7 +3155,40 @@ describe('Wallet service', function() {
           });
         });
       });
+      it('should shuffle outputs unless specified', function(done) {
+        helpers.stubUtxos(server, wallet, 1, function() {
+          var txOpts = {
+            outputs: _.times(30, function(i) {
+              return {
+                toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+                amount: (i + 1) * 100e2,
+              };
+            }),
+            feePerKb: 123e2,
+          };
+          server.createTx(txOpts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            var t = txp.getBitcoreTx();
+            var changeOutput = t.getChangeOutput().satoshis;
+            var outputs = _.without(_.pluck(t.outputs, 'satoshis'), changeOutput);
 
+            outputs.should.not.deep.equal(_.pluck(txOpts.outputs, 'amount'));
+            txOpts.noShuffleOutputs = true;
+            server.createTx(txOpts, function(err, txp) {
+              should.not.exist(err);
+              should.exist(txp);
+
+              t = txp.getBitcoreTx();
+              changeOutput = t.getChangeOutput().satoshis;
+              outputs = _.without(_.pluck(t.outputs, 'satoshis'), changeOutput);
+
+              outputs.should.deep.equal(_.pluck(txOpts.outputs, 'amount'));
+              done();
+            });
+          });
+        });
+      });
     });
 
     describe('Backoff time', function(done) {
