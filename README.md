@@ -74,7 +74,7 @@ For more details about the [Insight API](https://github.com/bitpay/insight-api) 
 
 ## Contribute
 
-Contributions and suggestions are welcomed at the [Insight UI GitHub repository](https://github.com/bitpay/insight).
+Contributions and suggestions are welcomed at the [Insight UI GitHub repository](https://github.com/bitpay/insight-ui).
 
 
 ## License
