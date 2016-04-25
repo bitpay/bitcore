@@ -5,7 +5,8 @@
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
-    "test": "./node_modules/.bin/mocha test/** --recursive"
+    "test": "./node_modules/.bin/mocha test/** --recursive",
+    "build-deb": "./scripts/build-deb"
   },
   "bin": {
     "bitcore": "./bin/bitcore",
