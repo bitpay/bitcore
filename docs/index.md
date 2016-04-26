@@ -45,7 +45,7 @@ var certificates = new PaymentProtocol().makeX509Certificates();
 certificates.set('certificate', [file_with_x509_der_cert]);
 
 // form the request
-var request = new PaymentRequest().makePaymentRequest();
+var request = new PaymentProtocol().makePaymentRequest();
 request.set('payment_details_version', 1);
 request.set('pki_type', 'x509+sha256');
 request.set('pki_data', certificates.serialize());
