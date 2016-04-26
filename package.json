@@ -43,7 +43,7 @@
   },
   "browser": "lib/browser.js",
   "dependencies": {
-    "asn1.js": "=4.4.0",
+    "asn1.js": "=4.5.2",
     "bitcore-lib": "^0.13.15",
     "jsrsasign": "=5.0.10",
     "protobufjs": "=5.0.1"
