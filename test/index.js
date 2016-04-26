@@ -1,6 +1,7 @@
 'use strict';
 
 var chai = require('chai');
+var sinon = require('sinon');
 var should = chai.should();
 var expect = chai.expect;
 var bitcore = require('bitcore-lib');
@@ -686,6 +687,10 @@ describe('PaymentProtocol', function() {
   });
 
   describe('#x509+sha256Verify ', function() {
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
+    });
     it('should verify a real PaymentRequest', function() {
       var data = PaymentProtocol.PaymentRequest.decode(SampleRequest.bitpay);
       var pr = new PaymentProtocol();
@@ -742,6 +747,9 @@ describe('PaymentProtocol', function() {
         verifier.verify(pem, sig).should.equal(true);
       }
 
+      // Stub time before cert expiration at Mar 27 2016
+      var clock = sandbox.useFakeTimers(1459105693843);
+
       // Verify Signature
       var verified = pr.x509Verify();
       verified.should.equal(true);
@@ -754,6 +762,11 @@ describe('PaymentProtocol', function() {
       trust.caTrusted.should.equal(true);
       trust.caName.should.equal('Go Daddy Class 2 CA');
       trust.chainVerified.should.equal(true);
+
+      // Verify that expiration will fail verification (cert expires in april 2016)
+      clock.restore();
+      var verified2 = pr.x509Verify();
+      verified2.should.equal(false);
 
       // PaymentDetails
       details = PaymentProtocol.PaymentDetails.decode(details);
