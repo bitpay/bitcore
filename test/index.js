@@ -747,6 +747,7 @@ describe('PaymentProtocol', function() {
         verifier.verify(pem, sig).should.equal(true);
       }
 
+      // Stub time before cert expiration at Mar 27 2016
       var clock = sandbox.useFakeTimers(1459105693843);
 
       // Verify Signature
@@ -762,7 +763,7 @@ describe('PaymentProtocol', function() {
       trust.caName.should.equal('Go Daddy Class 2 CA');
       trust.chainVerified.should.equal(true);
 
-      // Verify that expiration will fail verification
+      // Verify that expiration will fail verification (cert expires in april 2016)
       clock.restore();
       var verified2 = pr.x509Verify();
       verified2.should.equal(false);
