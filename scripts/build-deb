@@ -47,6 +47,7 @@ log_title "Setting up Debian package:"
 mkdir -vp "$deb_dir/DEBIAN" \
       "$deb_dir/etc/bitcore" \
       "$deb_dir/usr/opt/bitcore" \
+      "$deb_dir/usr/opt/bitcore/bin" \
       "$deb_dir/usr/bin"
 
 mkdir -vp "$deb_dir/etc/init"
@@ -54,15 +55,18 @@ mkdir -vp "$deb_dir/etc/systemd/system"
 replace_vars "${root_dir}/scripts/debian/control" "$deb_dir/DEBIAN/control"
 replace_vars "${root_dir}/scripts/debian/postinst" "$deb_dir/DEBIAN/postinst"
 replace_vars "${root_dir}/scripts/debian/prerm" "$deb_dir/DEBIAN/prerm"
-replace_vars "${root_dir}/scripts/debian/upstart.conf" "$deb_dir/etc/init/bitcore.conf"
-replace_vars "${root_dir}/scripts/debian/systemd.service" "$deb_dir/etc/systemd/system/bitcore.service"
+replace_vars "${root_dir}/scripts/debian/bitcore.conf" "$deb_dir/etc/init/bitcore.conf"
+replace_vars "${root_dir}/scripts/debian/bitcore.service" "$deb_dir/etc/systemd/system/bitcore.service"
+replace_vars "${root_dir}/scripts/debian/bitcore-bitcoind.conf" "$deb_dir/etc/init/bitcore-bitcoind.conf"
+replace_vars "${root_dir}/scripts/debian/bitcore-bitcoind.service" "$deb_dir/etc/systemd/system/bitcore-bitcoind.service"
 chmod -vR 0755 "$deb_dir/DEBIAN/"
 
 log_title "Copying Bitcore"
 
-app_dir="$deb_dir/usr/opt/bitcore/"
+app_dir="$deb_dir/usr/opt/bitcore"
 
-rsync -vr "${root_dir}/bin" "${app_dir}"
+cp -v "${root_dir}/bin/bitcored" "${app_dir}/bin/bitcored"
+cp -v "${root_dir}/bin/bitcore" "${app_dir}/bin/bitcore"
 chmod -vR 0755 "${app_dir}/bin/bitcore" "${app_dir}/bin/bitcored"
 cp -v "${root_dir}/package.json" "${app_dir}"
 cp -v "${root_dir}/README.md" "${app_dir}"
@@ -70,6 +74,7 @@ cp -v "${root_dir}/index.js" "${app_dir}"
 pushd "${deb_dir}/usr/bin"
 ln -vs "../opt/bitcore/bin/bitcore"
 ln -vs "../opt/bitcore/bin/bitcored"
+ln -vs "../opt/bitcore/node_modules/.bin/bitcoind" "bitcore-bitcoind"
 popd
 
 log_title "Installing Bitcore Modules"

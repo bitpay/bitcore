@@ -18,9 +18,9 @@ fi
 cd "/usr/opt/bitcore"
 SKIP_BITCOIN_DOWNLOAD=1 npm rebuild
 
-# setup log directory
-mkdir -p "/var/log/bitcore"
-chown -R bitcore:bitcore "/var/log/bitcore"
+# setup data directory
+mkdir -p "/home/bitcore/.bitcore/data"
+chown -R bitcore:bitcore "/home/bitcore/.bitcore"
 
 # start bitcore
 if hash service 2> /dev/null; then
