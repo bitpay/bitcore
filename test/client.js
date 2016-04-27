@@ -400,6 +400,39 @@ describe('client API', function() {
     };
 
     describe('#buildTx', function() {
+      it('Raw tx roundtrip', function() {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
+        }];
+
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        var txp = {
+          version: '2.0.0',
+          inputs: utxos,
+          toAddress: toAddress,
+          amount: 1200,
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1],
+          fee: 10050,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+        };
+        var t = Client.getRawTx(txp);
+        should.exist(t);
+        _.isString(t).should.be.true;
+        /^[\da-f]+$/.test(t).should.be.true;
+
+        var t2 = new Bitcore.Transaction(t);
+        t2.inputs.length.should.equal(2);
+        t2.outputs.length.should.equal(2);
+        t2.outputs[0].satoshis.should.equal(1200);
+      });
       it('should build a tx correctly (BIP44)', function() {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
