@@ -2903,6 +2903,36 @@ describe('client API', function() {
         });
       });
     });
+
+    it('should sign if signatures are empty', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          blockchainExplorerMock.setUtxo(x0, 1, 1);
+          var opts = {
+            amount: 10000000,
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            message: 'hello',
+          };
+          clients[0].sendTxProposal(opts, function(err, txp) {
+            should.not.exist(err);
+            txp.requiredRejections.should.equal(1);
+            txp.requiredSignatures.should.equal(1);
+            txp.status.should.equal('pending');
+            txp.changeAddress.path.should.equal('m/1/0');
+
+            txp.signatures=[];
+            clients[0].signTxProposal(txp, function(err, txp) {
+              should.not.exist(err);
+              txp.status.should.equal('accepted');
+              done();
+            });
+          });
+        });
+      });
+    });
+
     it('Send and broadcast in 2-3 wallet', function(done) {
       helpers.createAndJoinWallet(clients, 2, 3, function(w) {
         clients[0].createAddress(function(err, x0) {
