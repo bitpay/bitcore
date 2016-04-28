@@ -1925,6 +1925,7 @@ describe('client API', function() {
                 clients[2].getTxProposals({}, function(err, txs) {
                   should.not.exist(err);
                   txs[0].message.should.equal('some message');
+                  txs[0].actions[0].copayerName.should.equal('copayer 1');
                   txs[0].actions[0].comment.should.equal('rejection comment');
                   done();
                 });
@@ -2922,7 +2923,7 @@ describe('client API', function() {
             txp.status.should.equal('pending');
             txp.changeAddress.path.should.equal('m/1/0');
 
-            txp.signatures=[];
+            txp.signatures = [];
             clients[0].signTxProposal(txp, function(err, txp) {
               should.not.exist(err);
               txp.status.should.equal('accepted');
