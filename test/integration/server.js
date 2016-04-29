@@ -2132,7 +2132,6 @@ describe('Wallet service', function() {
       });
 
       it('should use unconfirmed utxos only when no more confirmed utxos are available', function(done) {
-        // log.level = 'debug';
         helpers.stubUtxos(server, wallet, [1.3, 'u0.5', 'u0.1', 1.2], function(utxos) {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 2.55, TestData.copayers[0].privKey_1H_0, {
             message: 'some message'
@@ -2355,7 +2354,6 @@ describe('Wallet service', function() {
       });
 
       it('should fail to create a tx exceeding max size in kb', function(done) {
-        // log.level = 'debug';
         var _oldDefault = Defaults.MAX_TX_SIZE_IN_KB;
         Defaults.MAX_TX_SIZE_IN_KB = 1;
         helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
@@ -3399,7 +3397,6 @@ describe('Wallet service', function() {
         });
       });
       it('should account for fee when selecting smallest big utxo', function(done) {
-        // log.level = 'debug';
         var _old = Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR;
         Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR = 2;
         // The 605 bits input cannot be selected even if it is > 2 * tx amount
@@ -3564,7 +3561,6 @@ describe('Wallet service', function() {
         });
       });
       it('should select unconfirmed utxos if not enough confirmed utxos', function(done) {
-        // log.level = 'debug';
         helpers.stubUtxos(server, wallet, ['u 1btc', '0.5btc'], function() {
           var txOpts = {
             outputs: [{
