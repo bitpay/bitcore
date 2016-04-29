@@ -199,6 +199,10 @@ blockchainExplorerMock.setHistory = function(txs) {
   blockchainExplorerMock.txHistory = txs;
 };
 
+blockchainExplorerMock.getTransaction = function(txid, cb) {
+  return cb();
+};
+
 blockchainExplorerMock.getTransactions = function(addresses, from, to, cb) {
   var list = [].concat(blockchainExplorerMock.txHistory);
   list = _.slice(list, from, to);
@@ -2386,6 +2390,49 @@ describe('client API', function() {
                 should.not.exist(err);
                 txp.status.should.equal('accepted');
                 done();
+              });
+            });
+          });
+        });
+      });
+      it('Should sign proposal created with send max settings', function(done) {
+        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        clients[0].getSendMaxInfo({
+          feePerKb: 100e2,
+          returnInputs: true
+        }, function(err, info) {
+          should.not.exist(err);
+          var opts = {
+            outputs: [{
+              amount: info.amount,
+              toAddress: toAddress,
+            }],
+            inputs: info.inputs,
+            fee: info.fee,
+            sendMax: true,
+          };
+          clients[0].createTxProposal(opts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            var t = Utils.buildTx(txp);
+            should.not.exist(t.getChangeOutput());
+            clients[0].publishTxProposal({
+              txp: txp,
+            }, function(err, publishedTxp) {
+              should.not.exist(err);
+              should.exist(publishedTxp);
+              publishedTxp.status.should.equal('pending');
+              clients[0].signTxProposal(publishedTxp, function(err, txp) {
+                should.not.exist(err);
+                clients[1].signTxProposal(publishedTxp, function(err, txp) {
+                  should.not.exist(err);
+                  txp.status.should.equal('accepted');
+                  clients[0].getBalance({}, function(err, balance) {
+                    should.not.exist(err);
+                    balance.lockedAmount.should.equal(4e8);
+                    done();
+                  });
+                });
               });
             });
           });
