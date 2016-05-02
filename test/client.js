@@ -1605,6 +1605,17 @@ describe('client API', function() {
         });
       });
     });
+    it('should fail if key derivation is not ok', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
+        clients[0].incorrectDerivation = true;
+        clients[0].createAddress(function(err, address) {
+          should.exist(err);
+          should.not.exist(address);
+          err.message.should.contain('new address');
+          done();
+        });
+      });
+    });
     it('should be able to create address in all copayers in a 2-3 wallet', function(done) {
       this.timeout(5000);
       helpers.createAndJoinWallet(clients, 2, 3, function() {
