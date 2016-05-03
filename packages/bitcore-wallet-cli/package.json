@@ -17,7 +17,7 @@
     "url": "https://github.com/bitpay/bitcore-wallet/issues"
   },
   "dependencies": {
-    "bitcore-wallet-client": "^2.0.0",
+    "bitcore-wallet-client": "git://github.com/bitpay/bitcore-wallet-client#41abd4fd6365db083cda9d305978121a03e86d6e",
     "commander": "^2.6.0",
     "lodash": "^3.3.1",
     "moment": "^2.9.0",
@@ -36,16 +36,13 @@
     "test": "./node_modules/.bin/mocha",
     "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage"
   },
-  "contributors": [
-    {
-      "name": "Ivan Socolsky",
-      "email": "ivan@gmail.com"
-    },
-    {
-      "name": "Matias Alejo Garcia",
-      "email": "ematiu@gmail.com"
-    }
-  ],
+  "contributors": [{
+    "name": "Ivan Socolsky",
+    "email": "ivan@gmail.com"
+  }, {
+    "name": "Matias Alejo Garcia",
+    "email": "ematiu@gmail.com"
+  }],
   "bin": {
     "wallet": "./bin/wallet",
     "wallet-address": "./bin/wallet-address",
@@ -67,6 +64,7 @@
     "wallet-sign": "./bin/wallet-sign",
     "wallet-status": "./bin/wallet-status",
     "wallet-txproposals": "./bin/wallet-txproposals",
-    "wallet-mnemonic":"./bin/wallet-mnemonic"
+    "wallet-mnemonic": "./bin/wallet-mnemonic",
+    "wallet-derive": "./bin/wallet-derive"
   }
 }
