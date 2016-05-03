@@ -985,6 +985,15 @@ describe('client API', function() {
   });
 
   describe('Wallet Creation', function() {
+    it('should fail to create wallet in bogus device', function(done) {
+      clients[0].seedFromRandomWithMnemonic();
+      clients[0].incorrectDerivation = true;
+      clients[0].createWallet('mywallet', 'pepe', 1, 1, {}, function(err, secret) {
+        should.exist(err);
+        should.not.exist(secret);
+        done();
+      });
+    });
     it('should encrypt wallet name', function(done) {
       var spy = sinon.spy(clients[0], '_doPostRequest');
       clients[0].seedFromRandomWithMnemonic();
@@ -1139,6 +1148,19 @@ describe('client API', function() {
           wallet.name.should.equal('mywallet');
           wallet.copayers[0].name.should.equal('creator');
           wallet.copayers[1].name.should.equal('guest');
+          done();
+        });
+      });
+    });
+
+    it('should not allow to join wallet on bogus device', function(done) {
+      clients[0].createWallet('mywallet', 'creator', 2, 2, {
+        network: 'testnet'
+      }, function(err, secret) {
+        should.not.exist(err);
+        clients[1].incorrectDerivation = true;
+        clients[1].joinWallet(secret, 'guest', {}, function(err, wallet) {
+          should.exist(err);
           done();
         });
       });
