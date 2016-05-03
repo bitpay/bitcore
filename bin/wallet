@@ -24,6 +24,7 @@ program
   .command('txproposals', 'list transactions proposals')
   .command('genkey', 'generates extended private key for later wallet usage')
   .command('airsign <file>', 'sign a list of transaction proposals from an air-gapped device')
+  .command('derive <path>', 'derive using the extended private key')
   .parse(process.argv);
 
 if (!program.args.length || !program.runningCommand)
