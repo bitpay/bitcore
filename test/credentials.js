@@ -66,6 +66,26 @@ describe('Credentials', function() {
       var xpk = c.getDerivedXPrivKey().toString();
       xpk.should.equal('xprv9yaGCLKPS2ovEGw987MZr4DCkfZHGh518ndVk3Jb6eiUdPwCQu7nYru59WoNkTEQvmhnv5sPbYxeuee5k8QASWRnGV2iFX4RmKXEQse8KnQ');
     });
+    it('should derive extended private key from master livenet (BIP45)', function() {
+      var c = Credentials.fromExtendedPrivateKey('xprv9s21ZrQH143K3zLpjtB4J4yrRfDTEfbrMa9vLZaTAv5BzASwBmA16mdBmZKpMLssw1AzTnm31HAD2pk2bsnZ9dccxaLD48mRdhtw82XoiBi', 'BIP45');
+      var xpk = c.getDerivedXPrivKey().toString();
+      xpk.should.equal('xprv9vDaAbbvT8LHKr8v5A2JeFJrnbQk6ZrMDGWuiv2vZgSyugeV4RE7Z9QjBNYsdafdhwEGb6Y48DRrXFVKvYRAub9ExzcmJHt6Js6ybJCSssm');
+    });
+    it('should set addressType & BIP45', function() {
+      var c = Credentials.fromExtendedPrivateKey('xprv9s21ZrQH143K3zLpjtB4J4yrRfDTEfbrMa9vLZaTAv5BzASwBmA16mdBmZKpMLssw1AzTnm31HAD2pk2bsnZ9dccxaLD48mRdhtw82XoiBi', 'BIP45', 'P2PKH');
+      c.addressType.should.equal('P2PKH');
+      c.addWalletInfo(1,'name', 1, 1, 'juan');
+
+      c.addressType.should.equal('P2PKH');
+    });
+     it('should set addressType', function() {
+      var c = Credentials.fromExtendedPrivateKey('xprv9s21ZrQH143K3zLpjtB4J4yrRfDTEfbrMa9vLZaTAv5BzASwBmA16mdBmZKpMLssw1AzTnm31HAD2pk2bsnZ9dccxaLD48mRdhtw82XoiBi', 'BIP45', 'P2PKH');
+      c.addressType.should.equal('P2PKH');
+      c.addWalletInfo(1,'name', 1, 1, 'juan');
+      c.addressType.should.equal('P2PKH');
+    });
+ 
+ 
   });
 
   describe('#fromExtendedPrivateKey', function() {
