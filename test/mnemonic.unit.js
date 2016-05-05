@@ -95,6 +95,11 @@ describe('Mnemonic', function() {
       Mnemonic.Words.FRENCH[0].should.equal('abaisser');
     });
 
+    it('italian wordlist is complete', function() {
+      Mnemonic.Words.ITALIAN.length.should.equal(2048);
+      Mnemonic.Words.ITALIAN[0].should.equal('abaco');
+    });
+
     it('allows use different phrase lengths', function() {
       var mnemonic;
 
@@ -182,7 +187,7 @@ describe('Mnemonic', function() {
     // 2. Add the vectors and make sure the key is lowercase of the key for Mnemonic.Words
     var vector_wordlists = {};
 
-    for(var key in Mnemonic.Words) {
+    for (var key in Mnemonic.Words) {
       if (Mnemonic.Words.hasOwnProperty(key)) {
         vector_wordlists[key.toLowerCase()] = Mnemonic.Words[key];
       }
@@ -206,7 +211,7 @@ describe('Mnemonic', function() {
       });
     };
 
-    for(var key in bip39_vectors) {
+    for (var key in bip39_vectors) {
       if (bip39_vectors.hasOwnProperty(key)) {
         for (var v = 0; v < bip39_vectors[key].length; v++) {
           test_vector(v, key);
