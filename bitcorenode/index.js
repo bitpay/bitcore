@@ -59,8 +59,6 @@ Service.prototype._readHttpsOptions = function() {
   var serverOpts = {};
   serverOpts.key = fs.readFileSync(this.httpsOptions.key);
   serverOpts.cert = fs.readFileSync(this.httpsOptions.cert);
-  serverOpts.ciphers = 'ECDHE-RSA-AES256-SHA:AES256-SHA:RC4-SHA:RC4:HIGH:!MD5:!aNULL:!EDH:!AESGCM';
-  serverOpts.honorCipherOrder = true;
 
   // This sets the intermediate CA certs only if they have all been designated in the config.js
   if (this.httpsOptions.CAinter1 && this.httpsOptions.CAinter2 && this.httpsOptions.CAroot) {
