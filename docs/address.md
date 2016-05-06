@@ -50,7 +50,7 @@ if (Address.isValid(input, Networks.testnet){
 }
 
 // validate that an input field is a valid livenet pubkeyhash
-if (Address.isValid(input, Networks.livenet, Address.Pay2PubKeyHash){
+if (Address.isValid(input, Networks.livenet, Address.PayToPublicKeyHash){
   ...
 }
 
