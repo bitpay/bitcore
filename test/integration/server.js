@@ -168,7 +168,6 @@ describe('Wallet service', function() {
       });
     });
 
-
     it('should fail to create wallet with no name', function(done) {
       var opts = {
         name: '',
@@ -184,37 +183,71 @@ describe('Wallet service', function() {
       });
     });
 
-    it('should fail to create wallet with invalid copayer pairs', function(done) {
-      var invalidPairs = [{
+    it('should check m-n combination', function(done) {
+      var pairs = [{
         m: 0,
-        n: 0
-      }, {
-        m: 0,
-        n: 2
-      }, {
-        m: 2,
-        n: 1
-      }, {
-        m: 0,
-        n: 10
+        n: 0,
+        valid: false,
       }, {
         m: 1,
-        n: 20
+        n: 1,
+        valid: true,
+      }, {
+        m: 2,
+        n: 3,
+        valid: true,
+      }, {
+        m: 0,
+        n: 2,
+        valid: false,
+      }, {
+        m: 2,
+        n: 1,
+        valid: false,
+      }, {
+        m: 0,
+        n: 10,
+        valid: false,
+      }, {
+        m: 1,
+        n: 20,
+        valid: false,
       }, {
         m: 10,
-        n: 10
+        n: 10,
+        valid: true,
+      }, {
+        m: 15,
+        n: 15,
+        valid: true,
+      }, {
+        m: 16,
+        n: 16,
+        valid: false,
+      }, {
+        m: 1,
+        n: 15,
+        valid: true,
+      }, {
+        m: -2,
+        n: -2,
+        valid: false,
       }, ];
       var opts = {
         id: '123',
         name: 'my wallet',
         pubKey: TestData.keyPair.pub,
       };
-      async.each(invalidPairs, function(pair, cb) {
+      async.each(pairs, function(pair, cb) {
         opts.m = pair.m;
         opts.n = pair.n;
         server.createWallet(opts, function(err) {
-          should.exist(err);
-          err.message.should.equal('Invalid combination of required copayers / total copayers');
+          if (!pair.valid) {
+            should.exist(err);
+            err.message.should.equal('Invalid combination of required copayers / total copayers');
+          } else {
+            should.not.exist(err);
+          }
           return cb();
         });
       }, function(err) {
