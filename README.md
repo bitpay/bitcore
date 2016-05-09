@@ -123,12 +123,19 @@ Join to this wallet with generated secret:
 ```
 $ node tomas.js JbTDjtUkvWS4c3mgAtJf4zKyRGzdQzZacfx2S7gRqPLcbeAWaSDEnazFJF6mKbzBvY1ZRwZCbvT
 Joined My Wallet!
+
+Wallet Info: [...]
+
+Creating first address:
+
+Return: [...]
+
 ```
 
 Note that the scripts created two files named `irene.dat` and `tomas.dat`. With these files you can get status, generate addresses, create proposals, sign transactions, etc.
 
 
-# API
+# Global
 
 
 
@@ -139,7 +146,7 @@ Note that the scripts created two files named `irene.dat` and `tomas.dat`. With 
 ## Class: API
 ClientAPI constructor.
 
-### API.API.API#setNotificationsInterval(notificationIntervalSeconds) 
+### API.API#setNotificationsInterval(notificationIntervalSeconds) 
 
 Reset notification polling with new interval
 
@@ -148,7 +155,7 @@ Reset notification polling with new interval
 **notificationIntervalSeconds**: `Numeric`, use 0 to pause notifications
 
 
-### API.API.seedFromRandom(opts, opts.network) 
+### API.seedFromRandom(opts, opts.network) 
 
 Seed from random
 
@@ -159,7 +166,7 @@ Seed from random
 **opts.network**: `String`, default 'livenet'
 
 
-### API.API.seedFromRandomWithMnemonic(opts, opts.network, opts.passphrase, opts.language, opts.account) 
+### API.seedFromRandomWithMnemonic(opts, opts.network, opts.passphrase, opts.language, opts.account) 
 
 Seed from random with mnemonic
 
@@ -176,7 +183,7 @@ Seed from random with mnemonic
 **opts.account**: `Number`, default 0
 
 
-### API.API.seedFromExtendedPrivateKey(xPrivKey) 
+### API.seedFromExtendedPrivateKey(xPrivKey, opts.account, opts.derivationStrategy) 
 
 Seed from extended private key
 
@@ -184,8 +191,12 @@ Seed from extended private key
 
 **xPrivKey**: `String`, Seed from extended private key
 
+**opts.account**: `Number`, default 0
 
-### API.API.seedFromMnemonic(BIP39, opts, opts.network, opts.passphrase, opts.account, opts.derivationStrategy) 
+**opts.derivationStrategy**: `String`, default 'BIP44'
+
+
+### API.seedFromMnemonic(BIP39, opts, opts.network, opts.passphrase, opts.account, opts.derivationStrategy) 
 
 Seed from Mnemonics (language autodetected)
 Can throw an error if mnemonic is invalid
@@ -207,7 +218,7 @@ Can throw an error if mnemonic is invalid
 **opts.derivationStrategy**: `String`, default 'BIP44'
 
 
-### API.API.seedFromExtendedPublicKey(xPubKey, source, entropySourceHex, opts, opts.account, opts.derivationStrategy) 
+### API.seedFromExtendedPublicKey(xPubKey, source, entropySourceHex, opts, opts.account, opts.derivationStrategy) 
 
 Seed from external wallet public key
 
@@ -226,7 +237,7 @@ Seed from external wallet public key
 **opts.derivationStrategy**: `String`, default 'BIP44'
 
 
-### API.API.export(opts, opts.noSign) 
+### API.export(opts, opts.noSign) 
 
 Export wallet
 
@@ -237,7 +248,7 @@ Export wallet
 **opts.noSign**: `Boolean`, Export wallet
 
 
-### API.API.import(str, opts, opts.password) 
+### API.import(str, opts, opts.password) 
 
 Import wallet
 
@@ -251,7 +262,7 @@ Import wallet
 will be needed for derive credentials fields.
 
 
-### API.API.importFromMnemonic(BIP39, opts, opts.network, opts.passphrase, opts.account, opts.derivationStrategy) 
+### API.importFromMnemonic(BIP39, opts, opts.network, opts.passphrase, opts.account, opts.derivationStrategy) 
 
 Import from Mnemonics (language autodetected)
 Can throw an error if mnemonic is invalid
@@ -273,7 +284,7 @@ Can throw an error if mnemonic is invalid
 **opts.derivationStrategy**: `String`, default 'BIP44'
 
 
-### API.API.importFromExtendedPublicKey(xPubKey, source, entropySourceHex, opts, opts.account, opts.derivationStrategy) 
+### API.importFromExtendedPublicKey(xPubKey, source, entropySourceHex, opts, opts.account, opts.derivationStrategy) 
 
 Import from Extended Public Key
 
@@ -292,7 +303,7 @@ Import from Extended Public Key
 **opts.derivationStrategy**: `String`, default 'BIP44'
 
 
-### API.API.openWallet(cb) 
+### API.openWallet(cb) 
 
 Open a wallet and try to complete the public key ring.
 
@@ -303,36 +314,36 @@ Open a wallet and try to complete the public key ring.
 **Fires**: API#event:walletCompleted
 
 
-### API.API.isComplete() 
+### API.isComplete() 
 
 Return if wallet is complete
 
 
-### API.API.isPrivKeyEncrypted() 
+### API.isPrivKeyEncrypted() 
 
 Is private key currently encrypted? (ie, locked)
 
 **Returns**: `Boolean`
 
-### API.API.hasPrivKeyEncrypted() 
+### API.hasPrivKeyEncrypted() 
 
 Is private key encryption setup?
 
 **Returns**: `Boolean`
 
-### API.API.isPrivKeyExternal() 
+### API.isPrivKeyExternal() 
 
 Is private key external?
 
 **Returns**: `Boolean`
 
-### API.API.getPrivKeyExternalSourceName() 
+### API.getPrivKeyExternalSourceName() 
 
 Get external wallet source name
 
 **Returns**: `String`
 
-### API.API.unlock(password) 
+### API.unlock(password) 
 
 unlocks the private key. `lock` need to be called explicity
 later to remove the unencrypted private key.
@@ -343,14 +354,14 @@ later to remove the unencrypted private key.
 later to remove the unencrypted private key.
 
 
-### API.API.canSign() 
+### API.canSign() 
 
 Can this credentials sign a transaction?
 (Only returns fail on a 'proxy' setup for airgapped operation)
 
 **Returns**: `undefined`
 
-### API.API.setPrivateKeyEncryption(password, opts) 
+### API.setPrivateKeyEncryption(password, opts) 
 
 sets up encryption for the extended private key
 
@@ -362,19 +373,19 @@ sets up encryption for the extended private key
 
 **Returns**: `undefined`
 
-### API.API.disablePrivateKeyEncryption() 
+### API.disablePrivateKeyEncryption() 
 
 disables encryption for private key.
 wallet must be unlocked
 
 
-### API.API.lock() 
+### API.lock() 
 
 Locks private key (removes the unencrypted version and keep only the encrypted)
 
 **Returns**: `undefined`
 
-### API.API.getFeeLevels(network, cb) 
+### API.getFeeLevels(network, cb) 
 
 Get current fee levels for the specified network
 
@@ -386,7 +397,7 @@ Get current fee levels for the specified network
 
 **Returns**: `Callback`, cb - Returns error or an object with status information
 
-### API.API.getVersion(cb) 
+### API.getVersion(cb) 
 
 Get service version
 
@@ -395,7 +406,7 @@ Get service version
 **cb**: `Callback`, Get service version
 
 
-### API.API.createWallet(walletName, copayerName, m, n, opts, opts.network, opts.walletPrivKey, opts.id, opts.withMnemonics, cb) 
+### API.createWallet(walletName, copayerName, m, n, opts, opts.network, opts.walletPrivKey, opts.id, opts.withMnemonics, cb) 
 
 Create a wallet.
 
@@ -423,7 +434,7 @@ Create a wallet.
 
 **Returns**: `undefined`
 
-### API.API.joinWallet(secret, copayerName, opts, opts.dryRun[, cb) 
+### API.joinWallet(secret, copayerName, opts, opts.dryRun[, cb) 
 
 Join an existent wallet
 
@@ -441,13 +452,13 @@ Join an existent wallet
 
 **Returns**: `Callback`, cb - Returns the wallet
 
-### API.API.recreateWallet() 
+### API.recreateWallet() 
 
 Recreates a wallet, given credentials (with wallet id)
 
 **Returns**: `Callback`, cb - Returns the wallet
 
-### API.API.getNotifications(opts, lastNotificationId, timeSpan) 
+### API.getNotifications(opts, lastNotificationId, timeSpan) 
 
 Get latest notifications
 
@@ -461,7 +472,7 @@ Get latest notifications
 
 **Returns**: `Callback`, cb - Returns error or an array of notifications
 
-### API.API.getStatus(opts.twoStep[, opts.includeExtendedInfo) 
+### API.getStatus(opts.twoStep[, opts.includeExtendedInfo) 
 
 Get status of the wallet
 
@@ -473,7 +484,7 @@ Get status of the wallet
 
 **Returns**: `Callback`, cb - Returns error or an object with status information
 
-### API.API.getPreferences(cb) 
+### API.getPreferences(cb) 
 
 Get copayer preferences
 
@@ -483,7 +494,7 @@ Get copayer preferences
 
 **Returns**: `Callback`, cb - Return error or object
 
-### API.API.savePreferences(preferences, cb) 
+### API.savePreferences(preferences, cb) 
 
 Save copayer preferences
 
@@ -495,7 +506,7 @@ Save copayer preferences
 
 **Returns**: `Callback`, cb - Return error or object
 
-### API.API.fetchPayPro(opts.payProUrl) 
+### API.fetchPayPro(opts.payProUrl) 
 
 fetchPayPro
 
@@ -509,7 +520,7 @@ Returns (err,paypro)
  paypro.toAddress
  paypro.memo
 
-### API.API.getUtxos(cb, opts, opts.addresses) 
+### API.getUtxos(cb, opts, opts.addresses) 
 
 Gets list of utxos
 
@@ -523,7 +534,7 @@ Gets list of utxos
 
 **Returns**: `Callback`, cb - Return error or the list of utxos
 
-### API.API.sendTxProposal(opts, opts.toAddress, opts.amount, opts.message, opts.feePerKb, opts.payProUrl, opts.excludeUnconfirmedUtxos, opts.customData, opts.inputs, opts.outputs, opts.utxosToExclude) 
+### API.sendTxProposal(opts, opts.toAddress, opts.amount, opts.message, opts.feePerKb, opts.payProUrl, opts.excludeUnconfirmedUtxos, opts.customData, opts.inputs, opts.outputs, opts.utxosToExclude) 
 
 Send a transaction proposal
 
@@ -554,7 +565,7 @@ Send a transaction proposal
 
 **Returns**: `Callback`, cb - Return error or the transaction proposal
 
-### API.API.createTxProposal(opts, opts.outputs, opts.outputs[].toAddress, opts.outputs[].amount, opts.outputs[].message, opts.message, opts.fee, opts.feePerKb, opts.payProUrl, opts.excludeUnconfirmedUtxos, opts.customData, opts.inputs, opts.outputs, opts.utxosToExclude) 
+### API.createTxProposal(opts, opts.outputs, opts.outputs[].toAddress, opts.outputs[].amount, opts.outputs[].message, opts.message, opts.fee, opts.feePerKb, opts.payProUrl, opts.excludeUnconfirmedUtxos, opts.customData, opts.inputs, opts.outputs, opts.utxosToExclude) 
 
 Create a transaction proposal
 
@@ -591,7 +602,7 @@ Create a transaction proposal
 
 **Returns**: `Callback`, cb - Return error or the transaction proposal
 
-### API.API.publishTxProposal(opts, opts.txp) 
+### API.publishTxProposal(opts, opts.txp) 
 
 Publish a transaction proposal
 
@@ -603,7 +614,7 @@ Publish a transaction proposal
 
 **Returns**: `Callback`, cb - Return error or null
 
-### API.API.createAddress(opts, opts.ignoreMaxGap[, cb) 
+### API.createAddress(opts, opts.ignoreMaxGap[, cb) 
 
 Create a new address
 
@@ -617,7 +628,7 @@ Create a new address
 
 **Returns**: `Callback`, cb - Return error or the address
 
-### API.API.getMainAddresses(opts, opts.doNotVerify, opts.limit, opts.reverse, cb) 
+### API.getMainAddresses(opts, opts.doNotVerify, opts.limit, opts.reverse, cb) 
 
 Get your main addresses
 
@@ -635,7 +646,7 @@ Get your main addresses
 
 **Returns**: `Callback`, cb - Return error or the array of addresses
 
-### API.API.getBalance(opts.twoStep[, cb) 
+### API.getBalance(opts.twoStep[, cb) 
 
 Update wallet balance
 
@@ -646,7 +657,7 @@ Update wallet balance
 **cb**: `Callback`, Update wallet balance
 
 
-### API.API.getTxProposals(opts, opts.doNotVerify, opts.forAirGapped) 
+### API.getTxProposals(opts, opts.doNotVerify, opts.forAirGapped) 
 
 Get list of transactions proposals
 
@@ -660,7 +671,7 @@ Get list of transactions proposals
 
 **Returns**: `Callback`, cb - Return error or array of transactions proposals
 
-### API.API.signTxProposal(txp, cb) 
+### API.signTxProposal(txp, cb) 
 
 Sign a transaction proposal
 
@@ -672,7 +683,7 @@ Sign a transaction proposal
 
 **Returns**: `Callback`, cb - Return error or object
 
-### API.API.signTxProposalFromAirGapped(txp, encryptedPkr, m, n) 
+### API.signTxProposalFromAirGapped(txp, encryptedPkr, m, n) 
 
 Sign transaction proposal from AirGapped
 
@@ -688,7 +699,7 @@ Sign transaction proposal from AirGapped
 
 **Returns**: `Object`, txp - Return transaction
 
-### API.API.rejectTxProposal(txp, reason, cb) 
+### API.rejectTxProposal(txp, reason, cb) 
 
 Reject a transaction proposal
 
@@ -702,7 +713,7 @@ Reject a transaction proposal
 
 **Returns**: `Callback`, cb - Return error or object
 
-### API.API.broadcastRawTx(opts, opts.network, opts.rawTx, cb) 
+### API.broadcastRawTx(opts, opts.network, opts.rawTx, cb) 
 
 Broadcast raw transaction
 
@@ -718,7 +729,7 @@ Broadcast raw transaction
 
 **Returns**: `Callback`, cb - Return error or txid
 
-### API.API.broadcastTxProposal(txp, cb) 
+### API.broadcastTxProposal(txp, cb) 
 
 Broadcast a transaction proposal
 
@@ -730,7 +741,7 @@ Broadcast a transaction proposal
 
 **Returns**: `Callback`, cb - Return error or object
 
-### API.API.removeTxProposal(txp, cb) 
+### API.removeTxProposal(txp, cb) 
 
 Remove a transaction proposal
 
@@ -742,7 +753,7 @@ Remove a transaction proposal
 
 **Returns**: `Callback`, cb - Return error or empty
 
-### API.API.getTxHistory(opts, opts.skip, opts.limit, cb) 
+### API.getTxHistory(opts, opts.skip, opts.limit, opts.includeExtendedInfo, cb) 
 
 Get transaction history
 
@@ -754,11 +765,13 @@ Get transaction history
 
 **opts.limit**: `Number`, Get transaction history
 
+**opts.includeExtendedInfo**: `Boolean`, Get transaction history
+
 **cb**: `Callback`, Get transaction history
 
 **Returns**: `Callback`, cb - Return error or array of transactions
 
-### API.API.getTx(TransactionId) 
+### API.getTx(TransactionId) 
 
 getTx
 
@@ -768,7 +781,7 @@ getTx
 
 **Returns**: `Callback`, cb - Return error or transaction
 
-### API.API.startScan(opts, opts.includeCopayerBranches, cb) 
+### API.startScan(opts, opts.includeCopayerBranches, cb) 
 
 Start an address scanning process.
 When finished, the scanning process will send a notification 'ScanFinished' to all copayers.
@@ -784,23 +797,7 @@ When finished, the scanning process will send a notification 'ScanFinished' to a
 When finished, the scanning process will send a notification 'ScanFinished' to all copayers.
 
 
-### API.API.createWalletFromOldCopay(username, password, blob, cb) 
-
-createWalletFromOldCopay
-
-**Parameters**
-
-**username**: , createWalletFromOldCopay
-
-**password**: , createWalletFromOldCopay
-
-**blob**: , createWalletFromOldCopay
-
-**cb**: , createWalletFromOldCopay
-
-**Returns**: `undefined`
-
-### API.API.getFiatRate(opts, opts.code, opts.ts, opts.provider) 
+### API.getFiatRate(opts, opts.code, opts.ts, opts.provider) 
 
 Returns exchange rate for the specified currency & timestamp.
 
@@ -816,7 +813,7 @@ Returns exchange rate for the specified currency & timestamp.
 
 **Returns**: `Object`, rates - The exchange rate.
 
-### API.API.pushNotificationsSubscribe(opts, opts.type, opts.token) 
+### API.pushNotificationsSubscribe(opts, opts.type, opts.token) 
 
 Returns subscription status.
 
@@ -830,7 +827,7 @@ Returns subscription status.
 
 **Returns**: `Object`, response - Status of subscription.
 
-### API.API.pushNotificationsUnsubscribe(token) 
+### API.pushNotificationsUnsubscribe(token) 
 
 Returns unsubscription status.
 
@@ -839,6 +836,38 @@ Returns unsubscription status.
 **token**: `String`, Device token
 
 **Returns**: `Callback`, cb - Return error if exists
+
+### API.getSendMaxInfo(opts, opts.feePerKb, opts.excludeUnconfirmedUtxos, opts.returnInputs) 
+
+Returns send max information.
+
+**Parameters**
+
+**opts**: `String`, Returns send max information.
+
+**opts.feePerKb**: `Number`, Fee value
+
+**opts.excludeUnconfirmedUtxos**: `Boolean`, Indicates it if should use (or not) the unconfirmed utxos
+
+**opts.returnInputs**: `Boolean`, Indicates it if should return (or not) the inputs
+
+**Returns**: `Callback`, cb - Return error (if exists) and object result
+
+### API.createWalletFromOldCopay(username, password, blob, cb) 
+
+createWalletFromOldCopay
+
+**Parameters**
+
+**username**: , createWalletFromOldCopay
+
+**password**: , createWalletFromOldCopay
+
+**blob**: , createWalletFromOldCopay
+
+**cb**: , createWalletFromOldCopay
+
+**Returns**: `undefined`
 
 
 
@@ -1028,7 +1057,7 @@ Log messages at the fatal level.
 
 
 
-# Verifier
+# Global
 
 
 
@@ -1039,7 +1068,7 @@ Log messages at the fatal level.
 ## Class: Verifier
 Verifier constructor. Checks data given by the server
 
-### Verifier.Verifier.checkAddress(credentials, address) 
+### Verifier.checkAddress(credentials, address) 
 
 Check address
 
@@ -1051,7 +1080,7 @@ Check address
 
 **Returns**: `Boolean`, true or false
 
-### Verifier.Verifier.checkCopayers(credentials, copayers) 
+### Verifier.checkCopayers(credentials, copayers) 
 
 Check copayers
 
@@ -1063,7 +1092,7 @@ Check copayers
 
 **Returns**: `Boolean`, true or false
 
-### Verifier.Verifier.checkTxProposal(credentials, txp, Optional:, isLegit) 
+### Verifier.checkTxProposal(credentials, txp, Optional:, isLegit) 
 
 Check transaction proposal
 
