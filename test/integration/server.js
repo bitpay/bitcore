@@ -3834,7 +3834,7 @@ describe('Wallet service', function() {
       });
     });
 
-    describe.only('#editTxNote', function(done) {
+    describe('#editTxNote', function(done) {
       var server, wallet;
       beforeEach(function(done) {
         helpers.createAndJoinWallet(1, 2, function(s, w) {
@@ -3943,8 +3943,60 @@ describe('Wallet service', function() {
           });
         });
       });
-      it.skip('should share notes between copayers', function(done) {});
-      it.skip('should be possible to remove a note', function(done) {});
+      it('should share notes between copayers', function(done) {
+        server.editTxNote({
+          txid: '123',
+          body: 'note body'
+        }, function(err) {
+          should.not.exist(err);
+          server.getTxNote({
+            txid: '123',
+          }, function(err, note) {
+            should.not.exist(err);
+            should.exist(note);
+            note.lastEditedBy.should.equal(server.copayerId);
+            var creator = note.lastEditedBy;
+            helpers.getAuthServer(wallet.copayers[1].id, function(server) {
+              server.getTxNote({
+                txid: '123',
+              }, function(err, note) {
+                should.not.exist(err);
+                should.exist(note);
+                note.body.should.equal('note body');
+                note.lastEditedBy.should.equal(creator);
+                done();
+              });
+            });
+          });
+        });
+      });
+      it('should be possible to remove a note', function(done) {
+        server.editTxNote({
+          txid: '123',
+          body: 'note body'
+        }, function(err) {
+          should.not.exist(err);
+          server.getTxNote({
+            txid: '123',
+          }, function(err, note) {
+            should.not.exist(err);
+            should.exist(note);
+            server.editTxNote({
+              txid: '123',
+              body: null,
+            }, function(err) {
+              should.not.exist(err);
+              server.getTxNote({
+                txid: '123',
+              }, function(err, note) {
+                should.not.exist(err);
+                should.not.exist(note);
+                done();
+              });
+            });
+          });
+        });
+      });
     });
   });
 
