@@ -3833,6 +3833,119 @@ describe('Wallet service', function() {
         });
       });
     });
+
+    describe.only('#editTxNote', function(done) {
+      var server, wallet;
+      beforeEach(function(done) {
+        helpers.createAndJoinWallet(1, 2, function(s, w) {
+          server = s;
+          wallet = w;
+          done();
+        });
+      });
+
+      it('should edit a note for an arbitrary txid', function(done) {
+        server.editTxNote({
+          txid: '123',
+          body: 'note body'
+        }, function(err) {
+          should.not.exist(err);
+          server.getTxNote({
+            txid: '123',
+          }, function(err, note) {
+            should.not.exist(err);
+            should.exist(note);
+            note.txid.should.equal('123');
+            note.walletId.should.equal(wallet.id);
+            note.body.should.equal('note body');
+            note.lastEditedBy.should.equal(server.copayerId);
+            note.createdOn.should.equal(note.lastEditedOn);
+            done();
+          });
+        });
+      });
+      it('should preserve last edit', function(done) {
+        var clock = sinon.useFakeTimers('Date');
+        server.editTxNote({
+          txid: '123',
+          body: 'note body'
+        }, function(err) {
+          should.not.exist(err);
+          server.getTxNote({
+            txid: '123',
+          }, function(err, note) {
+            should.not.exist(err);
+            should.exist(note);
+            note.lastEditedBy.should.equal(server.copayerId);
+            note.createdOn.should.equal(note.lastEditedOn);
+            var creator = note.lastEditedBy;
+            helpers.getAuthServer(wallet.copayers[1].id, function(server) {
+              clock.tick(60 * 1000);
+              server.editTxNote({
+                txid: '123',
+                body: 'edited text'
+              }, function(err) {
+                should.not.exist(err);
+                server.getTxNote({
+                  txid: '123',
+                }, function(err, note) {
+                  should.not.exist(err);
+                  should.exist(note);
+                  note.lastEditedBy.should.equal(server.copayerId);
+                  note.createdOn.should.be.below(note.lastEditedOn);
+                  creator.should.not.equal(note.lastEditedBy);
+                  clock.restore();
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+      it('should edit a note for an outgoing tx and retrieve it', function(done) {
+        helpers.stubUtxos(server, wallet, 2, function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 1e8,
+            }],
+            message: 'some message',
+            feePerKb: 100e2,
+          };
+          helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
+            should.exist(txp);
+            var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+            server.signTx({
+              txProposalId: txp.id,
+              signatures: signatures,
+            }, function(err, txp) {
+              should.not.exist(err);
+              should.exist(txp);
+              should.exist(txp.txid);
+              server.editTxNote({
+                txid: txp.txid,
+                body: 'note body'
+              }, function(err) {
+                should.not.exist(err);
+                server.getTx({
+                  txProposalId: txp.id,
+                }, function(err, txp) {
+                  should.not.exist(err);
+                  should.exist(txp.note);
+                  txp.note.txid.should.equal(txp.txid);
+                  txp.note.walletId.should.equal(wallet.id);
+                  txp.note.body.should.equal('note body');
+                  txp.note.lastEditedBy.should.equal(server.copayerId);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+      it.skip('should share notes between copayers', function(done) {});
+      it.skip('should be possible to remove a note', function(done) {});
+    });
   });
 
   describe('#getSendMaxInfo', function() {
