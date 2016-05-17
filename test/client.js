@@ -3311,7 +3311,7 @@ describe('client API', function() {
         });
       });
     });
-    it('should get transaction history decorated with proposal', function(done) {
+    it('should get transaction history decorated with proposal & notes', function(done) {
       async.waterfall([
 
         function(next) {
@@ -3350,6 +3350,14 @@ describe('client API', function() {
           });
         },
         function(txp, next) {
+          clients[1].editTxNote({
+            txid: txp.txid,
+            body: 'just a note'
+          }, function(err) {
+            return next(err, txp);
+          });
+        },
+        function(txp, next) {
           var history = _.cloneDeep(TestData.history);
           history[0].txid = txp.txid;
           blockchainExplorerMock.setHistory(history);
@@ -3369,6 +3377,11 @@ describe('client API', function() {
             });
             should.exist(rejection);
             rejection.comment.should.equal('some reason');
+
+            var note = decorated.note;
+            should.exist(note);
+            note.body.should.equal('just a note');
+            note.editedByName.should.equal('copayer 1');
             next();
           });
         }
@@ -4769,6 +4782,7 @@ describe('client API', function() {
       });
     });
   });
+
   describe('#formatAmount', function() {
     it('should successfully format amount', function() {
       var cases = [{
@@ -4864,76 +4878,79 @@ describe('client API', function() {
     });
   });
 
-  describe('import', function(done) {
-    it('should handle import with invalid JSON', function(done) {
-      var importString = 'this is not valid JSON';
-      var client = new Client();
-      (function() {
-        client.import(importString);
-      }).should.throw(Errors.INVALID_BACKUP);
-      done();
-    });
-  });
+  describe('Import', function() {
 
-  describe('_import', function() {
-    it('should handle not being able to add access', function(done) {
-      var sandbox = sinon.sandbox.create();
-      var client = new Client();
-      client.credentials = {};
-
-      var ow = sandbox.stub(client, 'openWallet', function(callback) {
-        callback(new Error());
-      });
-
-      var ip = sandbox.stub(client, 'isPrivKeyExternal', function() {
-        return false;
-      });
-
-      var aa = sandbox.stub(client, 'addAccess', function(options, callback) {
-        callback(new Error());
-      });
-
-      client._import(function(err) {
-        should.exist(err);
-        err.should.be.an.instanceOf(Errors.WALLET_DOES_NOT_EXIST);
-        sandbox.restore();
+    describe('#import', function(done) {
+      it('should handle import with invalid JSON', function(done) {
+        var importString = 'this is not valid JSON';
+        var client = new Client();
+        (function() {
+          client.import(importString);
+        }).should.throw(Errors.INVALID_BACKUP);
         done();
       });
     });
-  });
 
-  describe('importFromMnemonic', function() {
-    it('should handle importing an invalid mnemonic', function(done) {
-      var client = new Client();
-      var mnemonicWords = 'this is an invalid mnemonic';
-      client.importFromMnemonic(mnemonicWords, {}, function(err) {
-        should.exist(err);
-        err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
-        done();
+    describe('#_import', function() {
+      it('should handle not being able to add access', function(done) {
+        var sandbox = sinon.sandbox.create();
+        var client = new Client();
+        client.credentials = {};
+
+        var ow = sandbox.stub(client, 'openWallet', function(callback) {
+          callback(new Error());
+        });
+
+        var ip = sandbox.stub(client, 'isPrivKeyExternal', function() {
+          return false;
+        });
+
+        var aa = sandbox.stub(client, 'addAccess', function(options, callback) {
+          callback(new Error());
+        });
+
+        client._import(function(err) {
+          should.exist(err);
+          err.should.be.an.instanceOf(Errors.WALLET_DOES_NOT_EXIST);
+          sandbox.restore();
+          done();
+        });
       });
     });
-  });
 
-  describe('importFromExtendedPrivateKey', function() {
-    it('should handle importing an invalid extended private key', function(done) {
-      var client = new Client();
-      var xPrivKey = 'this is an invalid key';
-      client.importFromExtendedPrivateKey(xPrivKey, function(err) {
-        should.exist(err);
-        err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
-        done();
+    describe('#importFromMnemonic', function() {
+      it('should handle importing an invalid mnemonic', function(done) {
+        var client = new Client();
+        var mnemonicWords = 'this is an invalid mnemonic';
+        client.importFromMnemonic(mnemonicWords, {}, function(err) {
+          should.exist(err);
+          err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+          done();
+        });
       });
     });
-  });
 
-  describe('importFromExtendedPublicKey', function() {
-    it('should handle importing an invalid extended private key', function(done) {
-      var client = new Client();
-      var xPubKey = 'this is an invalid key';
-      client.importFromExtendedPublicKey(xPubKey, {}, {}, {}, function(err) {
-        should.exist(err);
-        err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
-        done();
+    describe('#importFromExtendedPrivateKey', function() {
+      it('should handle importing an invalid extended private key', function(done) {
+        var client = new Client();
+        var xPrivKey = 'this is an invalid key';
+        client.importFromExtendedPrivateKey(xPrivKey, function(err) {
+          should.exist(err);
+          err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+          done();
+        });
+      });
+    });
+
+    describe('#importFromExtendedPublicKey', function() {
+      it('should handle importing an invalid extended private key', function(done) {
+        var client = new Client();
+        var xPubKey = 'this is an invalid key';
+        client.importFromExtendedPublicKey(xPubKey, {}, {}, {}, function(err) {
+          should.exist(err);
+          err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+          done();
+        });
       });
     });
   });
