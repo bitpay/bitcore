@@ -3970,6 +3970,31 @@ describe('Wallet service', function() {
           });
         });
       });
+      it('should not leak notes between wallets', function(done) {
+        helpers.createAndJoinWallet(1, 1, {
+          offset: 2
+        }, function(server2, wallet2) {
+          server.editTxNote({
+            txid: '123',
+            body: 'note body'
+          }, function(err) {
+            should.not.exist(err);
+            server.getTxNote({
+              txid: '123',
+            }, function(err, note) {
+              should.not.exist(err);
+              should.exist(note);
+              server2.getTxNote({
+                txid: '123',
+              }, function(err, note) {
+                should.not.exist(err);
+                should.not.exist(note);
+                done();
+              });
+            });
+          });
+        });
+      });
       it('should be possible to remove a note', function(done) {
         server.editTxNote({
           txid: '123',
