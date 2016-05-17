@@ -3858,8 +3858,8 @@ describe('Wallet service', function() {
             note.txid.should.equal('123');
             note.walletId.should.equal(wallet.id);
             note.body.should.equal('note body');
-            note.lastEditedBy.should.equal(server.copayerId);
-            note.createdOn.should.equal(note.lastEditedOn);
+            note.editedBy.should.equal(server.copayerId);
+            note.createdOn.should.equal(note.editedOn);
             done();
           });
         });
@@ -3876,9 +3876,9 @@ describe('Wallet service', function() {
           }, function(err, note) {
             should.not.exist(err);
             should.exist(note);
-            note.lastEditedBy.should.equal(server.copayerId);
-            note.createdOn.should.equal(note.lastEditedOn);
-            var creator = note.lastEditedBy;
+            note.editedBy.should.equal(server.copayerId);
+            note.createdOn.should.equal(note.editedOn);
+            var creator = note.editedBy;
             helpers.getAuthServer(wallet.copayers[1].id, function(server) {
               clock.tick(60 * 1000);
               server.editTxNote({
@@ -3891,9 +3891,9 @@ describe('Wallet service', function() {
                 }, function(err, note) {
                   should.not.exist(err);
                   should.exist(note);
-                  note.lastEditedBy.should.equal(server.copayerId);
-                  note.createdOn.should.be.below(note.lastEditedOn);
-                  creator.should.not.equal(note.lastEditedBy);
+                  note.editedBy.should.equal(server.copayerId);
+                  note.createdOn.should.be.below(note.editedOn);
+                  creator.should.not.equal(note.editedBy);
                   clock.restore();
                   done();
                 });
@@ -3935,7 +3935,7 @@ describe('Wallet service', function() {
                   txp.note.txid.should.equal(txp.txid);
                   txp.note.walletId.should.equal(wallet.id);
                   txp.note.body.should.equal('note body');
-                  txp.note.lastEditedBy.should.equal(server.copayerId);
+                  txp.note.editedBy.should.equal(server.copayerId);
                   done();
                 });
               });
@@ -3954,8 +3954,8 @@ describe('Wallet service', function() {
           }, function(err, note) {
             should.not.exist(err);
             should.exist(note);
-            note.lastEditedBy.should.equal(server.copayerId);
-            var creator = note.lastEditedBy;
+            note.editedBy.should.equal(server.copayerId);
+            var creator = note.editedBy;
             helpers.getAuthServer(wallet.copayers[1].id, function(server) {
               server.getTxNote({
                 txid: '123',
@@ -3963,7 +3963,7 @@ describe('Wallet service', function() {
                 should.not.exist(err);
                 should.exist(note);
                 note.body.should.equal('note body');
-                note.lastEditedBy.should.equal(creator);
+                note.editedBy.should.equal(creator);
                 done();
               });
             });
@@ -3993,6 +3993,43 @@ describe('Wallet service', function() {
                 should.not.exist(note);
                 done();
               });
+            });
+          });
+        });
+      });
+      it('should include the note in tx history listing', function(done) {
+        helpers.createAddresses(server, wallet, 1, 1, function(mainAddresses, changeAddress) {
+          server._normalizeTxHistory = sinon.stub().returnsArg(0);
+          var txs = [{
+            txid: '123',
+            confirmations: 1,
+            fees: 100,
+            time: 20,
+            inputs: [{
+              address: 'external',
+              amount: 500,
+            }],
+            outputs: [{
+              address: mainAddresses[0].address,
+              amount: 200,
+            }],
+          }];
+          helpers.stubHistory(txs);
+          server.editTxNote({
+            txid: '123',
+            body: 'just some note'
+          }, function(err) {
+            should.not.exist(err);
+            server.getTxHistory({}, function(err, txs) {
+              should.not.exist(err);
+              should.exist(txs);
+              txs.length.should.equal(1);
+              var tx = txs[0];
+              should.exist(tx.note);
+              tx.note.body.should.equal('just some note');
+              tx.note.editedBy.should.equal(server.copayerId);
+              should.exist(tx.note.editedOn);
+              done();
             });
           });
         });
