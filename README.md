@@ -146,7 +146,7 @@ Note that the scripts created two files named `irene.dat` and `tomas.dat`. With 
 ## Class: API
 ClientAPI constructor.
 
-### API.API#setNotificationsInterval(notificationIntervalSeconds) 
+### API.setNotificationsInterval(notificationIntervalSeconds) 
 
 Reset notification polling with new interval
 
