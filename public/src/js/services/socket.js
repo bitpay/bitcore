@@ -39,8 +39,9 @@ ScopedSocket.prototype.on = function(event, callback) {
 ScopedSocket.prototype.emit = function(event, data, callback) {
   var socket = this.socket;
   var $rootScope = this.$rootScope;
+  var args = Array.prototype.slice.call(arguments);
 
-  socket.emit(event, data, function() {
+  args.push(function() {
     var args = arguments;
     $rootScope.$apply(function() {
       if (callback) {
@@ -48,6 +49,8 @@ ScopedSocket.prototype.emit = function(event, data, callback) {
       }
     });
   });
+
+  socket.emit.apply(socket, args);
 };
 
 angular.module('insight.socket').factory('getSocket',
