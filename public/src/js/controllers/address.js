@@ -10,7 +10,9 @@ angular.module('insight.address').controller('AddressController',
     var _startSocket = function () {
       socket.on('bitcoind/addresstxid', function(tx) {
         $rootScope.$broadcast('tx', tx);
-        var beep = new Audio('/sound/transaction.mp3');
+        var base = document.querySelector('base');
+        var baseUrl = base && base.href || '';
+        var beep = new Audio(baseUrl + '/sound/transaction.mp3');
         beep.play();
       });
       socket.emit('subscribe', 'bitcoind/addresstxid', [$routeParams.addrStr]);
