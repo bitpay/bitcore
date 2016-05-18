@@ -42,27 +42,30 @@
     "chai": "^1.9.1",
     "coveralls": "^2.11.2",
     "grunt": "~0.4.0",
-    "grunt-jsdoc": "^0.5.8",
+    "grunt-jsdox": "^0.1.7",
     "istanbul": "*",
-    "jsdoc": "^3.3.0-beta1",
     "mocha": "^1.18.2",
-    "uglify": "^0.1.1",
     "sinon": "^1.10.3",
     "supertest": "*",
     "tingodb": "^0.3.4",
+    "uglify": "^0.1.1",
     "uuid": "^2.0.1"
   },
   "scripts": {
     "start": "node app.js",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
     "test": "./node_modules/.bin/mocha",
-    "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage"
+    "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
+    "docs": "./node_modules/.bin/jsdox lib/* lib/common lib/errors -o docs && cat README.header.md  docs/*.md LICENSE > README.md"
   },
-  "contributors": [{
-    "name": "Ivan Socolsky",
-    "email": "ivan@bitpay.com"
-  }, {
-    "name": "Matias Alejo Garcia",
-    "email": "ematiu@gmail.com"
-  }]
+  "contributors": [
+    {
+      "name": "Ivan Socolsky",
+      "email": "ivan@bitpay.com"
+    },
+    {
+      "name": "Matias Alejo Garcia",
+      "email": "ematiu@gmail.com"
+    }
+  ]
 }
