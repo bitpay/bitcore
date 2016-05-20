@@ -3138,6 +3138,25 @@ describe('Wallet service', function() {
           });
         });
       });
+      it('should be able to specify change address', function(done) {
+        helpers.stubUtxos(server, wallet, [1, 2], function(utxos) {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8e8,
+            }],
+            feePerKb: 100e2,
+            changeAddress: utxos[0].address,
+          };
+          server.createTx(txOpts, function(err, tx) {
+            should.not.exist(err);
+            should.exist(tx);
+            var t = tx.getBitcoreTx();
+            t.getChangeOutput().script.toAddress().toString().should.equal(txOpts.changeAddress);
+            done();
+          });
+        });
+      });
       it('should be able to specify inputs & absolute fee', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function(utxos) {
           var txOpts = {
