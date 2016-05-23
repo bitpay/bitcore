@@ -269,6 +269,83 @@ describe('Wallet service', function() {
         done();
       });
     });
+
+    describe('Address derivation strategy', function() {
+      var server;
+      beforeEach(function() {
+        server = WalletService.getInstance();
+      });
+      it('should use BIP44 & P2PKH for 1-of-1 wallet if supported', function(done) {
+        var walletOpts = {
+          name: 'my wallet',
+          m: 1,
+          n: 1,
+          pubKey: TestData.keyPair.pub,
+        };
+        server.createWallet(walletOpts, function(err, wid) {
+          should.not.exist(err);
+          server.storage.fetchWallet(wid, function(err, wallet) {
+            should.not.exist(err);
+            wallet.derivationStrategy.should.equal('BIP44');
+            wallet.addressType.should.equal('P2PKH');
+            done();
+          });
+        });
+      });
+      it('should use BIP45 & P2SH for 1-of-1 wallet if not supported', function(done) {
+        var walletOpts = {
+          name: 'my wallet',
+          m: 1,
+          n: 1,
+          pubKey: TestData.keyPair.pub,
+          supportBIP44AndP2PKH: false,
+        };
+        server.createWallet(walletOpts, function(err, wid) {
+          should.not.exist(err);
+          server.storage.fetchWallet(wid, function(err, wallet) {
+            should.not.exist(err);
+            wallet.derivationStrategy.should.equal('BIP45');
+            wallet.addressType.should.equal('P2SH');
+            done();
+          });
+        });
+      });
+      it('should use BIP44 & P2SH for shared wallet if supported', function(done) {
+        var walletOpts = {
+          name: 'my wallet',
+          m: 2,
+          n: 3,
+          pubKey: TestData.keyPair.pub,
+        };
+        server.createWallet(walletOpts, function(err, wid) {
+          should.not.exist(err);
+          server.storage.fetchWallet(wid, function(err, wallet) {
+            should.not.exist(err);
+            wallet.derivationStrategy.should.equal('BIP44');
+            wallet.addressType.should.equal('P2SH');
+            done();
+          });
+        });
+      });
+      it('should use BIP45 & P2SH for shared wallet if supported', function(done) {
+        var walletOpts = {
+          name: 'my wallet',
+          m: 2,
+          n: 3,
+          pubKey: TestData.keyPair.pub,
+          supportBIP44AndP2PKH: false,
+        };
+        server.createWallet(walletOpts, function(err, wid) {
+          should.not.exist(err);
+          server.storage.fetchWallet(wid, function(err, wallet) {
+            should.not.exist(err);
+            wallet.derivationStrategy.should.equal('BIP45');
+            wallet.addressType.should.equal('P2SH');
+            done();
+          });
+        });
+      });
+    });
   });
 
   describe('#joinWallet', function() {
@@ -619,79 +696,133 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('Address derivation strategy', function() {
-    var server;
-    beforeEach(function() {
-      server = WalletService.getInstance();
-    });
-    it('should use BIP44 & P2PKH for 1-of-1 wallet if supported', function(done) {
-      var walletOpts = {
-        name: 'my wallet',
-        m: 1,
-        n: 1,
-        pubKey: TestData.keyPair.pub,
-      };
-      server.createWallet(walletOpts, function(err, wid) {
-        should.not.exist(err);
-        server.storage.fetchWallet(wid, function(err, wallet) {
-          should.not.exist(err);
-          wallet.derivationStrategy.should.equal('BIP44');
-          wallet.addressType.should.equal('P2PKH');
-          done();
+  describe('#removeWallet', function() {
+    var server, wallet, clock;
+
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 1, function(s, w) {
+        server = s;
+        wallet = w;
+
+        helpers.stubUtxos(server, wallet, _.range(2), function() {
+          var txOpts = {
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: helpers.toSatoshi(0.1),
+          };
+          async.eachSeries(_.range(2), function(i, next) {
+            server.createTxLegacy(txOpts, function(err, tx) {
+              next();
+            });
+          }, done);
         });
       });
     });
-    it('should use BIP45 & P2SH for 1-of-1 wallet if not supported', function(done) {
-      var walletOpts = {
-        name: 'my wallet',
-        m: 1,
-        n: 1,
-        pubKey: TestData.keyPair.pub,
-        supportBIP44AndP2PKH: false,
-      };
-      server.createWallet(walletOpts, function(err, wid) {
+
+    it('should delete a wallet', function(done) {
+      server.removeWallet({}, function(err) {
         should.not.exist(err);
-        server.storage.fetchWallet(wid, function(err, wallet) {
-          should.not.exist(err);
-          wallet.derivationStrategy.should.equal('BIP45');
-          wallet.addressType.should.equal('P2SH');
-          done();
+        server.getWallet({}, function(err, w) {
+          should.exist(err);
+          err.code.should.equal('WALLET_NOT_FOUND');
+          should.not.exist(w);
+          async.parallel([
+
+            function(next) {
+              server.storage.fetchAddresses(wallet.id, function(err, items) {
+                items.length.should.equal(0);
+                next();
+              });
+            },
+            function(next) {
+              server.storage.fetchTxs(wallet.id, {}, function(err, items) {
+                items.length.should.equal(0);
+                next();
+              });
+            },
+            function(next) {
+              server.storage.fetchNotifications(wallet.id, null, 0, function(err, items) {
+                items.length.should.equal(0);
+                next();
+              });
+            },
+          ], function(err) {
+            should.not.exist(err);
+            done();
+          });
         });
       });
     });
-    it('should use BIP44 & P2SH for shared wallet if supported', function(done) {
-      var walletOpts = {
-        name: 'my wallet',
-        m: 2,
-        n: 3,
-        pubKey: TestData.keyPair.pub,
-      };
-      server.createWallet(walletOpts, function(err, wid) {
+
+    // creates 2 wallet, and deletes only 1.
+    it('should delete a wallet, and only that wallet', function(done) {
+      var server2, wallet2;
+      async.series([
+
+        function(next) {
+          helpers.createAndJoinWallet(1, 1, {
+            offset: 1
+          }, function(s, w) {
+            server2 = s;
+            wallet2 = w;
+
+            helpers.stubUtxos(server2, wallet2, _.range(1, 3), function() {
+              var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.1, TestData.copayers[1].privKey_1H_0, {
+                message: 'some message'
+              });
+              async.eachSeries(_.range(2), function(i, next) {
+                server2.createTxLegacy(txOpts, function(err, tx) {
+                  should.not.exist(err);
+                  next(err);
+                });
+              }, next);
+            });
+          });
+        },
+        function(next) {
+          server.removeWallet({}, next);
+        },
+        function(next) {
+          server.getWallet({}, function(err, wallet) {
+            should.exist(err);
+            err.code.should.equal('WALLET_NOT_FOUND');
+            next();
+          });
+        },
+        function(next) {
+          server2.getWallet({}, function(err, wallet) {
+            should.not.exist(err);
+            should.exist(wallet);
+            wallet.id.should.equal(wallet2.id);
+            next();
+          });
+        },
+        function(next) {
+          server2.getMainAddresses({}, function(err, addresses) {
+            should.not.exist(err);
+            should.exist(addresses);
+            addresses.length.should.above(0);
+            next();
+          });
+        },
+        function(next) {
+          server2.getTxs({}, function(err, txs) {
+            should.not.exist(err);
+            should.exist(txs);
+            txs.length.should.equal(2);
+            next();
+          });
+        },
+        function(next) {
+          server2.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            should.exist(notifications);
+            notifications.length.should.above(0);
+            next();
+          });
+        },
+      ], function(err) {
         should.not.exist(err);
-        server.storage.fetchWallet(wid, function(err, wallet) {
-          should.not.exist(err);
-          wallet.derivationStrategy.should.equal('BIP44');
-          wallet.addressType.should.equal('P2SH');
-          done();
-        });
-      });
-    });
-    it('should use BIP45 & P2SH for shared wallet if supported', function(done) {
-      var walletOpts = {
-        name: 'my wallet',
-        m: 2,
-        n: 3,
-        pubKey: TestData.keyPair.pub,
-        supportBIP44AndP2PKH: false,
-      };
-      server.createWallet(walletOpts, function(err, wid) {
-        should.not.exist(err);
-        server.storage.fetchWallet(wid, function(err, wallet) {
-          should.not.exist(err);
-          wallet.derivationStrategy.should.equal('BIP45');
-          wallet.addressType.should.equal('P2SH');
-          done();
-        });
+        done();
       });
     });
   });
@@ -1433,7 +1564,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
     });
   });
 
@@ -3687,20 +3817,6 @@ describe('Wallet service', function() {
           });
         });
       });
-    });
-  });
-
-  describe('#createTx backoff time', function() {
-    var server, wallet, txid;
-
-    beforeEach(function(done) {
-      helpers.createAndJoinWallet(2, 2, function(s, w) {
-        server = s;
-        wallet = w;
-        helpers.stubUtxos(server, wallet, _.range(2, 6), function() {
-          done();
-        });
-      });
       it('should ignore small utxos if fee is higher', function(done) {
         helpers.stubUtxos(server, wallet, [].concat(_.times(10, function() {
           return '30bit';
@@ -3734,6 +3850,294 @@ describe('Wallet service', function() {
             done();
           });
         });
+      });
+    });
+
+  });
+
+  describe('Transaction notes', function(done) {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should edit a note for an arbitrary txid', function(done) {
+      server.editTxNote({
+        txid: '123',
+        body: 'note body'
+      }, function(err) {
+        should.not.exist(err);
+        server.getTxNote({
+          txid: '123',
+        }, function(err, note) {
+          should.not.exist(err);
+          should.exist(note);
+          note.txid.should.equal('123');
+          note.walletId.should.equal(wallet.id);
+          note.body.should.equal('note body');
+          note.editedBy.should.equal(server.copayerId);
+          note.createdOn.should.equal(note.editedOn);
+          done();
+        });
+      });
+    });
+    it('should preserve last edit', function(done) {
+      var clock = sinon.useFakeTimers('Date');
+      server.editTxNote({
+        txid: '123',
+        body: 'note body'
+      }, function(err) {
+        should.not.exist(err);
+        server.getTxNote({
+          txid: '123',
+        }, function(err, note) {
+          should.not.exist(err);
+          should.exist(note);
+          note.editedBy.should.equal(server.copayerId);
+          note.createdOn.should.equal(note.editedOn);
+          var creator = note.editedBy;
+          helpers.getAuthServer(wallet.copayers[1].id, function(server) {
+            clock.tick(60 * 1000);
+            server.editTxNote({
+              txid: '123',
+              body: 'edited text'
+            }, function(err) {
+              should.not.exist(err);
+              server.getTxNote({
+                txid: '123',
+              }, function(err, note) {
+                should.not.exist(err);
+                should.exist(note);
+                note.editedBy.should.equal(server.copayerId);
+                note.createdOn.should.be.below(note.editedOn);
+                creator.should.not.equal(note.editedBy);
+                clock.restore();
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+    it('should edit a note for an outgoing tx and retrieve it', function(done) {
+      helpers.stubUtxos(server, wallet, 2, function() {
+        var txOpts = {
+          outputs: [{
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 1e8,
+          }],
+          message: 'some message',
+          feePerKb: 100e2,
+        };
+        helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
+          should.exist(txp);
+          var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+          server.signTx({
+            txProposalId: txp.id,
+            signatures: signatures,
+          }, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            should.exist(txp.txid);
+            server.editTxNote({
+              txid: txp.txid,
+              body: 'note body'
+            }, function(err) {
+              should.not.exist(err);
+              server.getTx({
+                txProposalId: txp.id,
+              }, function(err, txp) {
+                should.not.exist(err);
+                should.exist(txp.note);
+                txp.note.txid.should.equal(txp.txid);
+                txp.note.walletId.should.equal(wallet.id);
+                txp.note.body.should.equal('note body');
+                txp.note.editedBy.should.equal(server.copayerId);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+    it('should share notes between copayers', function(done) {
+      server.editTxNote({
+        txid: '123',
+        body: 'note body'
+      }, function(err) {
+        should.not.exist(err);
+        server.getTxNote({
+          txid: '123',
+        }, function(err, note) {
+          should.not.exist(err);
+          should.exist(note);
+          note.editedBy.should.equal(server.copayerId);
+          var creator = note.editedBy;
+          helpers.getAuthServer(wallet.copayers[1].id, function(server) {
+            server.getTxNote({
+              txid: '123',
+            }, function(err, note) {
+              should.not.exist(err);
+              should.exist(note);
+              note.body.should.equal('note body');
+              note.editedBy.should.equal(creator);
+              done();
+            });
+          });
+        });
+      });
+    });
+    it('should be possible to remove a note', function(done) {
+      server.editTxNote({
+        txid: '123',
+        body: 'note body'
+      }, function(err) {
+        should.not.exist(err);
+        server.getTxNote({
+          txid: '123',
+        }, function(err, note) {
+          should.not.exist(err);
+          should.exist(note);
+          server.editTxNote({
+            txid: '123',
+            body: null,
+          }, function(err) {
+            should.not.exist(err);
+            server.getTxNote({
+              txid: '123',
+            }, function(err, note) {
+              should.not.exist(err);
+              should.not.exist(note);
+              done();
+            });
+          });
+        });
+      });
+    });
+    it('should include the note in tx history listing', function(done) {
+      helpers.createAddresses(server, wallet, 1, 1, function(mainAddresses, changeAddress) {
+        server._normalizeTxHistory = sinon.stub().returnsArg(0);
+        var txs = [{
+          txid: '123',
+          confirmations: 1,
+          fees: 100,
+          time: 20,
+          inputs: [{
+            address: 'external',
+            amount: 500,
+          }],
+          outputs: [{
+            address: mainAddresses[0].address,
+            amount: 200,
+          }],
+        }];
+        helpers.stubHistory(txs);
+        server.editTxNote({
+          txid: '123',
+          body: 'just some note'
+        }, function(err) {
+          should.not.exist(err);
+          server.getTxHistory({}, function(err, txs) {
+            should.not.exist(err);
+            should.exist(txs);
+            txs.length.should.equal(1);
+            var tx = txs[0];
+            should.exist(tx.note);
+            tx.note.body.should.equal('just some note');
+            tx.note.editedBy.should.equal(server.copayerId);
+            should.exist(tx.note.editedOn);
+            done();
+          });
+        });
+      });
+    });
+    it('should get all notes edited past a given date', function(done) {
+      var clock = sinon.useFakeTimers('Date');
+      async.series([
+
+        function(next) {
+          server.getTxNotes({}, function(err, notes) {
+            should.not.exist(err);
+            notes.should.be.empty;
+            next();
+          });
+        },
+        function(next) {
+          server.editTxNote({
+            txid: '123',
+            body: 'note body'
+          }, next);
+        },
+        function(next) {
+          server.getTxNotes({
+            minTs: 0,
+          }, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(1);
+            notes[0].txid.should.equal('123');
+            next();
+          });
+        },
+        function(next) {
+          clock.tick(60 * 1000);
+          server.editTxNote({
+            txid: '456',
+            body: 'another note'
+          }, next);
+        },
+        function(next) {
+          server.getTxNotes({
+            minTs: 0,
+          }, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(2);
+            _.difference(_.pluck(notes, 'txid'), ['123', '456']).should.be.empty;
+            next();
+          });
+        },
+        function(next) {
+          server.getTxNotes({
+            minTs: 50,
+          }, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(1);
+            notes[0].txid.should.equal('456');
+            next();
+          });
+        },
+        function(next) {
+          clock.tick(60 * 1000);
+          server.editTxNote({
+            txid: '123',
+            body: 'an edit'
+          }, next);
+        },
+        function(next) {
+          server.getTxNotes({
+            minTs: 100,
+          }, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(1);
+            notes[0].txid.should.equal('123');
+            notes[0].body.should.equal('an edit');
+            next();
+          });
+        },
+        function(next) {
+          server.getTxNotes({}, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(2);
+            next();
+          });
+        },
+      ], function(err) {
+        should.not.exist(err);
+        clock.restore();
+        done();
       });
     });
   });
@@ -5138,137 +5542,6 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('#removeWallet', function() {
-    var server, wallet, clock;
-
-    beforeEach(function(done) {
-      helpers.createAndJoinWallet(1, 1, function(s, w) {
-        server = s;
-        wallet = w;
-
-        helpers.stubUtxos(server, wallet, _.range(2), function() {
-          var txOpts = {
-            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-            amount: helpers.toSatoshi(0.1),
-          };
-          async.eachSeries(_.range(2), function(i, next) {
-            server.createTxLegacy(txOpts, function(err, tx) {
-              next();
-            });
-          }, done);
-        });
-      });
-    });
-
-    it('should delete a wallet', function(done) {
-      server.removeWallet({}, function(err) {
-        should.not.exist(err);
-        server.getWallet({}, function(err, w) {
-          should.exist(err);
-          err.code.should.equal('WALLET_NOT_FOUND');
-          should.not.exist(w);
-          async.parallel([
-
-            function(next) {
-              server.storage.fetchAddresses(wallet.id, function(err, items) {
-                items.length.should.equal(0);
-                next();
-              });
-            },
-            function(next) {
-              server.storage.fetchTxs(wallet.id, {}, function(err, items) {
-                items.length.should.equal(0);
-                next();
-              });
-            },
-            function(next) {
-              server.storage.fetchNotifications(wallet.id, null, 0, function(err, items) {
-                items.length.should.equal(0);
-                next();
-              });
-            },
-          ], function(err) {
-            should.not.exist(err);
-            done();
-          });
-        });
-      });
-    });
-
-    // creates 2 wallet, and deletes only 1.
-    it('should delete a wallet, and only that wallet', function(done) {
-      var server2, wallet2;
-      async.series([
-
-        function(next) {
-          helpers.createAndJoinWallet(1, 1, {
-            offset: 1
-          }, function(s, w) {
-            server2 = s;
-            wallet2 = w;
-
-            helpers.stubUtxos(server2, wallet2, _.range(1, 3), function() {
-              var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.1, TestData.copayers[1].privKey_1H_0, {
-                message: 'some message'
-              });
-              async.eachSeries(_.range(2), function(i, next) {
-                server2.createTxLegacy(txOpts, function(err, tx) {
-                  should.not.exist(err);
-                  next(err);
-                });
-              }, next);
-            });
-          });
-        },
-        function(next) {
-          server.removeWallet({}, next);
-        },
-        function(next) {
-          server.getWallet({}, function(err, wallet) {
-            should.exist(err);
-            err.code.should.equal('WALLET_NOT_FOUND');
-            next();
-          });
-        },
-        function(next) {
-          server2.getWallet({}, function(err, wallet) {
-            should.not.exist(err);
-            should.exist(wallet);
-            wallet.id.should.equal(wallet2.id);
-            next();
-          });
-        },
-        function(next) {
-          server2.getMainAddresses({}, function(err, addresses) {
-            should.not.exist(err);
-            should.exist(addresses);
-            addresses.length.should.above(0);
-            next();
-          });
-        },
-        function(next) {
-          server2.getTxs({}, function(err, txs) {
-            should.not.exist(err);
-            should.exist(txs);
-            txs.length.should.equal(2);
-            next();
-          });
-        },
-        function(next) {
-          server2.getNotifications({}, function(err, notifications) {
-            should.not.exist(err);
-            should.exist(notifications);
-            notifications.length.should.above(0);
-            next();
-          });
-        },
-      ], function(err) {
-        should.not.exist(err);
-        done();
-      });
-    });
-  });
-
   describe('#removePendingTx', function() {
     var server, wallet, txp;
     beforeEach(function(done) {
@@ -6409,7 +6682,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('Subscribe/unsubscribe', function() {
+  describe('Push notifications', function() {
     var server, wallet;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(2, 3, function(s, w) {
