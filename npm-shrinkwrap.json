@@ -43,11 +43,6 @@
       "version": "3.10.1",
       "from": "lodash@=3.10.1",
       "resolved": "https://registry.npmjs.org/lodash/-/lodash-3.10.1.tgz"
-    },
-    "sha512": {
-      "version": "0.0.1",
-      "from": "sha512@=0.0.1",
-      "resolved": "https://registry.npmjs.org/sha512/-/sha512-0.0.1.tgz"
     }
   }
 }
