@@ -7,7 +7,7 @@ var should = chai.should();
 var Utils = require('../lib/common/utils');
 
 describe('Utils', function() {
-  describe('#checkRequired', function() {
+  describe('#getMissingFields', function() {
     it('should check required fields', function() {
       var obj = {
         id: 'id',
@@ -16,36 +16,36 @@ describe('Utils', function() {
       };
       var fixtures = [{
         args: 'id',
-        check: true
+        check: [],
       }, {
         args: ['id'],
-        check: true
+        check: []
       }, {
         args: ['id, name'],
-        check: false
+        check: ['id, name'],
       }, {
         args: ['id', 'name'],
-        check: true
+        check: []
       }, {
         args: 'array',
-        check: true
+        check: []
       }, {
         args: 'dummy',
-        check: false
+        check: ['dummy']
       }, {
         args: ['dummy1', 'dummy2'],
-        check: false
+        check: ['dummy1', 'dummy2']
       }, {
         args: ['id', 'dummy'],
-        check: false
+        check: ['dummy']
       }, ];
       _.each(fixtures, function(f) {
-        Utils.checkRequired(obj, f.args).should.equal(f.check);
+        Utils.getMissingFields(obj, f.args).should.deep.equal(f.check);
       });
     });
     it('should fail to check required fields on non-object', function() {
       var obj = 'dummy';
-      Utils.checkRequired(obj, 'name').should.be.false;
+      Utils.getMissingFields(obj, 'name').should.deep.equal(['name']);
     });
   });
 

@@ -509,7 +509,7 @@ describe('Wallet service', function() {
         };
         server.joinWallet(copayerOpts, function(err) {
           should.exist(err);
-          err.message.should.contain('argument missing');
+          err.message.should.contain('argument copayerSignature missing');
           done();
         });
       });
