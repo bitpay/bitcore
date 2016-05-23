@@ -3834,230 +3834,291 @@ describe('Wallet service', function() {
       });
     });
 
-    describe('#editTxNote', function(done) {
-      var server, wallet;
-      beforeEach(function(done) {
-        helpers.createAndJoinWallet(1, 2, function(s, w) {
-          server = s;
-          wallet = w;
+  });
+
+  describe('Transaction notes', function(done) {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should edit a note for an arbitrary txid', function(done) {
+      server.editTxNote({
+        txid: '123',
+        body: 'note body'
+      }, function(err) {
+        should.not.exist(err);
+        server.getTxNote({
+          txid: '123',
+        }, function(err, note) {
+          should.not.exist(err);
+          should.exist(note);
+          note.txid.should.equal('123');
+          note.walletId.should.equal(wallet.id);
+          note.body.should.equal('note body');
+          note.editedBy.should.equal(server.copayerId);
+          note.createdOn.should.equal(note.editedOn);
           done();
         });
       });
-
-      it('should edit a note for an arbitrary txid', function(done) {
-        server.editTxNote({
+    });
+    it('should preserve last edit', function(done) {
+      var clock = sinon.useFakeTimers('Date');
+      server.editTxNote({
+        txid: '123',
+        body: 'note body'
+      }, function(err) {
+        should.not.exist(err);
+        server.getTxNote({
           txid: '123',
-          body: 'note body'
-        }, function(err) {
+        }, function(err, note) {
           should.not.exist(err);
-          server.getTxNote({
-            txid: '123',
-          }, function(err, note) {
-            should.not.exist(err);
-            should.exist(note);
-            note.txid.should.equal('123');
-            note.walletId.should.equal(wallet.id);
-            note.body.should.equal('note body');
-            note.editedBy.should.equal(server.copayerId);
-            note.createdOn.should.equal(note.editedOn);
-            done();
-          });
-        });
-      });
-      it('should preserve last edit', function(done) {
-        var clock = sinon.useFakeTimers('Date');
-        server.editTxNote({
-          txid: '123',
-          body: 'note body'
-        }, function(err) {
-          should.not.exist(err);
-          server.getTxNote({
-            txid: '123',
-          }, function(err, note) {
-            should.not.exist(err);
-            should.exist(note);
-            note.editedBy.should.equal(server.copayerId);
-            note.createdOn.should.equal(note.editedOn);
-            var creator = note.editedBy;
-            helpers.getAuthServer(wallet.copayers[1].id, function(server) {
-              clock.tick(60 * 1000);
-              server.editTxNote({
-                txid: '123',
-                body: 'edited text'
-              }, function(err) {
-                should.not.exist(err);
-                server.getTxNote({
-                  txid: '123',
-                }, function(err, note) {
-                  should.not.exist(err);
-                  should.exist(note);
-                  note.editedBy.should.equal(server.copayerId);
-                  note.createdOn.should.be.below(note.editedOn);
-                  creator.should.not.equal(note.editedBy);
-                  clock.restore();
-                  done();
-                });
-              });
-            });
-          });
-        });
-      });
-      it('should edit a note for an outgoing tx and retrieve it', function(done) {
-        helpers.stubUtxos(server, wallet, 2, function() {
-          var txOpts = {
-            outputs: [{
-              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-              amount: 1e8,
-            }],
-            message: 'some message',
-            feePerKb: 100e2,
-          };
-          helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
-            should.exist(txp);
-            var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
-            server.signTx({
-              txProposalId: txp.id,
-              signatures: signatures,
-            }, function(err, txp) {
-              should.not.exist(err);
-              should.exist(txp);
-              should.exist(txp.txid);
-              server.editTxNote({
-                txid: txp.txid,
-                body: 'note body'
-              }, function(err) {
-                should.not.exist(err);
-                server.getTx({
-                  txProposalId: txp.id,
-                }, function(err, txp) {
-                  should.not.exist(err);
-                  should.exist(txp.note);
-                  txp.note.txid.should.equal(txp.txid);
-                  txp.note.walletId.should.equal(wallet.id);
-                  txp.note.body.should.equal('note body');
-                  txp.note.editedBy.should.equal(server.copayerId);
-                  done();
-                });
-              });
-            });
-          });
-        });
-      });
-      it('should share notes between copayers', function(done) {
-        server.editTxNote({
-          txid: '123',
-          body: 'note body'
-        }, function(err) {
-          should.not.exist(err);
-          server.getTxNote({
-            txid: '123',
-          }, function(err, note) {
-            should.not.exist(err);
-            should.exist(note);
-            note.editedBy.should.equal(server.copayerId);
-            var creator = note.editedBy;
-            helpers.getAuthServer(wallet.copayers[1].id, function(server) {
-              server.getTxNote({
-                txid: '123',
-              }, function(err, note) {
-                should.not.exist(err);
-                should.exist(note);
-                note.body.should.equal('note body');
-                note.editedBy.should.equal(creator);
-                done();
-              });
-            });
-          });
-        });
-      });
-      it('should not leak notes between wallets', function(done) {
-        helpers.createAndJoinWallet(1, 1, {
-          offset: 2
-        }, function(server2, wallet2) {
-          server.editTxNote({
-            txid: '123',
-            body: 'note body'
-          }, function(err) {
-            should.not.exist(err);
-            server.getTxNote({
-              txid: '123',
-            }, function(err, note) {
-              should.not.exist(err);
-              should.exist(note);
-              server2.getTxNote({
-                txid: '123',
-              }, function(err, note) {
-                should.not.exist(err);
-                should.not.exist(note);
-                done();
-              });
-            });
-          });
-        });
-      });
-      it('should be possible to remove a note', function(done) {
-        server.editTxNote({
-          txid: '123',
-          body: 'note body'
-        }, function(err) {
-          should.not.exist(err);
-          server.getTxNote({
-            txid: '123',
-          }, function(err, note) {
-            should.not.exist(err);
-            should.exist(note);
+          should.exist(note);
+          note.editedBy.should.equal(server.copayerId);
+          note.createdOn.should.equal(note.editedOn);
+          var creator = note.editedBy;
+          helpers.getAuthServer(wallet.copayers[1].id, function(server) {
+            clock.tick(60 * 1000);
             server.editTxNote({
               txid: '123',
-              body: null,
+              body: 'edited text'
             }, function(err) {
               should.not.exist(err);
               server.getTxNote({
                 txid: '123',
               }, function(err, note) {
                 should.not.exist(err);
-                should.not.exist(note);
+                should.exist(note);
+                note.editedBy.should.equal(server.copayerId);
+                note.createdOn.should.be.below(note.editedOn);
+                creator.should.not.equal(note.editedBy);
+                clock.restore();
                 done();
               });
             });
           });
         });
       });
-      it('should include the note in tx history listing', function(done) {
-        helpers.createAddresses(server, wallet, 1, 1, function(mainAddresses, changeAddress) {
-          server._normalizeTxHistory = sinon.stub().returnsArg(0);
-          var txs = [{
-            txid: '123',
-            confirmations: 1,
-            fees: 100,
-            time: 20,
-            inputs: [{
-              address: 'external',
-              amount: 500,
-            }],
-            outputs: [{
-              address: mainAddresses[0].address,
-              amount: 200,
-            }],
-          }];
-          helpers.stubHistory(txs);
-          server.editTxNote({
-            txid: '123',
-            body: 'just some note'
-          }, function(err) {
+    });
+    it('should edit a note for an outgoing tx and retrieve it', function(done) {
+      helpers.stubUtxos(server, wallet, 2, function() {
+        var txOpts = {
+          outputs: [{
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 1e8,
+          }],
+          message: 'some message',
+          feePerKb: 100e2,
+        };
+        helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
+          should.exist(txp);
+          var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+          server.signTx({
+            txProposalId: txp.id,
+            signatures: signatures,
+          }, function(err, txp) {
             should.not.exist(err);
-            server.getTxHistory({}, function(err, txs) {
+            should.exist(txp);
+            should.exist(txp.txid);
+            server.editTxNote({
+              txid: txp.txid,
+              body: 'note body'
+            }, function(err) {
               should.not.exist(err);
-              should.exist(txs);
-              txs.length.should.equal(1);
-              var tx = txs[0];
-              should.exist(tx.note);
-              tx.note.body.should.equal('just some note');
-              tx.note.editedBy.should.equal(server.copayerId);
-              should.exist(tx.note.editedOn);
+              server.getTx({
+                txProposalId: txp.id,
+              }, function(err, txp) {
+                should.not.exist(err);
+                should.exist(txp.note);
+                txp.note.txid.should.equal(txp.txid);
+                txp.note.walletId.should.equal(wallet.id);
+                txp.note.body.should.equal('note body');
+                txp.note.editedBy.should.equal(server.copayerId);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+    it('should share notes between copayers', function(done) {
+      server.editTxNote({
+        txid: '123',
+        body: 'note body'
+      }, function(err) {
+        should.not.exist(err);
+        server.getTxNote({
+          txid: '123',
+        }, function(err, note) {
+          should.not.exist(err);
+          should.exist(note);
+          note.editedBy.should.equal(server.copayerId);
+          var creator = note.editedBy;
+          helpers.getAuthServer(wallet.copayers[1].id, function(server) {
+            server.getTxNote({
+              txid: '123',
+            }, function(err, note) {
+              should.not.exist(err);
+              should.exist(note);
+              note.body.should.equal('note body');
+              note.editedBy.should.equal(creator);
               done();
             });
           });
         });
+      });
+    });
+    it('should be possible to remove a note', function(done) {
+      server.editTxNote({
+        txid: '123',
+        body: 'note body'
+      }, function(err) {
+        should.not.exist(err);
+        server.getTxNote({
+          txid: '123',
+        }, function(err, note) {
+          should.not.exist(err);
+          should.exist(note);
+          server.editTxNote({
+            txid: '123',
+            body: null,
+          }, function(err) {
+            should.not.exist(err);
+            server.getTxNote({
+              txid: '123',
+            }, function(err, note) {
+              should.not.exist(err);
+              should.not.exist(note);
+              done();
+            });
+          });
+        });
+      });
+    });
+    it('should include the note in tx history listing', function(done) {
+      helpers.createAddresses(server, wallet, 1, 1, function(mainAddresses, changeAddress) {
+        server._normalizeTxHistory = sinon.stub().returnsArg(0);
+        var txs = [{
+          txid: '123',
+          confirmations: 1,
+          fees: 100,
+          time: 20,
+          inputs: [{
+            address: 'external',
+            amount: 500,
+          }],
+          outputs: [{
+            address: mainAddresses[0].address,
+            amount: 200,
+          }],
+        }];
+        helpers.stubHistory(txs);
+        server.editTxNote({
+          txid: '123',
+          body: 'just some note'
+        }, function(err) {
+          should.not.exist(err);
+          server.getTxHistory({}, function(err, txs) {
+            should.not.exist(err);
+            should.exist(txs);
+            txs.length.should.equal(1);
+            var tx = txs[0];
+            should.exist(tx.note);
+            tx.note.body.should.equal('just some note');
+            tx.note.editedBy.should.equal(server.copayerId);
+            should.exist(tx.note.editedOn);
+            done();
+          });
+        });
+      });
+    });
+    it('should get all notes edited past a given date', function(done) {
+      var clock = sinon.useFakeTimers('Date');
+      async.series([
+
+        function(next) {
+          server.getTxNotes({}, function(err, notes) {
+            should.not.exist(err);
+            notes.should.be.empty;
+            next();
+          });
+        },
+        function(next) {
+          server.editTxNote({
+            txid: '123',
+            body: 'note body'
+          }, next);
+        },
+        function(next) {
+          server.getTxNotes({
+            minTs: 0,
+          }, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(1);
+            notes[0].txid.should.equal('123');
+            next();
+          });
+        },
+        function(next) {
+          clock.tick(60 * 1000);
+          server.editTxNote({
+            txid: '456',
+            body: 'another note'
+          }, next);
+        },
+        function(next) {
+          server.getTxNotes({
+            minTs: 0,
+          }, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(2);
+            _.difference(_.pluck(notes, 'txid'), ['123', '456']).should.be.empty;
+            next();
+          });
+        },
+        function(next) {
+          server.getTxNotes({
+            minTs: 50,
+          }, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(1);
+            notes[0].txid.should.equal('456');
+            next();
+          });
+        },
+        function(next) {
+          clock.tick(60 * 1000);
+          server.editTxNote({
+            txid: '123',
+            body: 'an edit'
+          }, next);
+        },
+        function(next) {
+          server.getTxNotes({
+            minTs: 100,
+          }, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(1);
+            notes[0].txid.should.equal('123');
+            notes[0].body.should.equal('an edit');
+            next();
+          });
+        },
+        function(next) {
+          server.getTxNotes({}, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(2);
+            next();
+          });
+        },
+      ], function(err) {
+        should.not.exist(err);
+        clock.restore();
+        done();
       });
     });
   });
