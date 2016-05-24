@@ -2269,9 +2269,6 @@ describe('client API', function() {
         var tamperings = [
 
           function(txp) {
-            txp.fee = 45600;
-          },
-          function(txp) {
             txp.feePerKb = 45600;
           },
           function(txp) {
@@ -2293,15 +2290,20 @@ describe('client API', function() {
             txp.outputs[0].amount = 2e8;
           },
           function(txp) {
-            txp.outputs[1].amount = 2e8;
+            txp.outputs[1].amount = 3e8;
           },
           function(txp) {
             txp.outputs[0].message = 'dummy';
           },
         ];
 
+        var tmp = clients[0]._getCreateTxProposalArgs;
+        var args = clients[0]._getCreateTxProposalArgs(opts);
+        clients[0]._getCreateTxProposalArgs = function() {
+          return args;
+        };
         async.each(tamperings, function(tamperFn, next) {
-          helpers.tamperResponse(clients[0], 'post', '/v2/txproposals/', opts, tamperFn, function() {
+          helpers.tamperResponse(clients[0], 'post', '/v2/txproposals/', args, tamperFn, function() {
             clients[0].createTxProposal(opts, function(err, txp) {
               should.exist(err);
               err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
@@ -2310,6 +2312,7 @@ describe('client API', function() {
           });
         }, function(err) {
           should.not.exist(err);
+          clients[0]._getCreateTxProposalArgs = tmp;
           done();
         });
       });
