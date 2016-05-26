@@ -3469,7 +3469,7 @@ describe('Wallet service', function() {
       var server, wallet;
       beforeEach(function(done) {
         // log.level = 'debug';
-        helpers.createAndJoinWallet(2, 3, function(s, w) {
+        helpers.createAndJoinWallet(1, 2, function(s, w) {
           server = s;
           wallet = w;
           done();
@@ -3644,7 +3644,7 @@ describe('Wallet service', function() {
         var _old1 = Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR;
         var _old2 = Defaults.MAX_TX_SIZE_IN_KB;
         Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR = 0.0001;
-        Defaults.MAX_TX_SIZE_IN_KB = 3;
+        Defaults.MAX_TX_SIZE_IN_KB = 2;
 
         helpers.stubUtxos(server, wallet, [100].concat(_.range(1, 20, 0)), function() {
           var txOpts = {
@@ -3826,7 +3826,7 @@ describe('Wallet service', function() {
               toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
               amount: 200e2,
             }],
-            feePerKb: 50e2,
+            feePerKb: 80e2,
           };
           server.createTx(txOpts, function(err, txp) {
             should.exist(err);
@@ -3848,6 +3848,43 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(txp);
             done();
+          });
+        });
+      });
+      it('should not use UTXOs of recently broadcasted txs', function(done) {
+        helpers.stubUtxos(server, wallet, [1, 1], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 1.5e8,
+            }],
+            feePerKb: 100e2,
+          };
+          helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
+            should.exist(txp);
+            var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+            server.signTx({
+              txProposalId: txp.id,
+              signatures: signatures,
+            }, function(err, txp) {
+              should.not.exist(err);
+              should.exist(txp);
+
+              helpers.stubBroadcast();
+              server.broadcastTx({
+                txProposalId: txp.id
+              }, function(err, txp) {
+                should.not.exist(err);
+                should.exist(txp.txid);
+                txp.status.should.equal('broadcasted');
+                server.createTx(txOpts, function(err, txp) {
+                  should.exist(err);
+                  err.code.should.equal('INSUFFICIENT_FUNDS');
+                  should.not.exist(txp);
+                  done();
+                });
+              });
+            });
           });
         });
       });
