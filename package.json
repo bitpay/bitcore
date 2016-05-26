@@ -84,7 +84,7 @@
   "dependencies": {
     "bitcore-lib": "^0.13.14",
     "bitcore-node": "braydonf/bitcore-node#aa7f0d7c605212eb8415e1de10721df43ae179c0",
-    "insight-api": "braydonf/insight-api#2448ad1779da7ae8d4cf78a86260446f40d3f21c",
+    "insight-api": "braydonf/insight-api#667a38053b63694b76a85570241310590e8c074f",
     "insight-ui": "braydonf/insight-ui#d7c161d7b659b39d3929ea863b9bc388419ec57b"
   },
   "license": "MIT",
