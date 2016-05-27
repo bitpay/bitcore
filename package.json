@@ -1,11 +1,12 @@
 {
   "name": "bitcore",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "description": "A platform to build bitcoin and blockchain-based applications.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
-    "test": "./node_modules/.bin/mocha test/** --recursive"
+    "test": "./node_modules/.bin/mocha test/** --recursive",
+    "build-deb": "./scripts/build-deb"
   },
   "bin": {
     "bitcore": "./bin/bitcore",
@@ -81,10 +82,10 @@
     "request": "browser-request"
   },
   "dependencies": {
-    "bitcore-lib": "^0.13.12",
-    "bitcore-node": "^2.0.0",
-    "insight-api": "^0.3.2",
-    "insight-ui": "^0.3.0"
+    "bitcore-lib": "^0.13.14",
+    "bitcore-node": "~3.0.0",
+    "insight-api": "^0.4.0",
+    "insight-ui": "^0.4.0"
   },
   "license": "MIT",
   "devDependencies": {

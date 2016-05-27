@@ -10,7 +10,7 @@ Infrastructure to build Bitcoin and blockchain-based applications for the next g
 
 ## Getting Started
 
-Before you begin you'll need to have Node.js v0.12 installed. There are several options for installation. One method is to use [nvm](https://github.com/creationix/nvm) to easily switch between different versions, or download directly from [Node.js](https://nodejs.org/).
+Before you begin you'll need to have Node.js v4 or v0.12 installed. There are several options for installation. One method is to use [nvm](https://github.com/creationix/nvm) to easily switch between different versions, or download directly from [Node.js](https://nodejs.org/).
 
 ```bash
 npm install -g bitcore
@@ -79,6 +79,7 @@ You can also use our pre-generated files, provided for each release along with a
 
 To verify signatures, use the following PGP keys:
 - @braydonf: https://pgp.mit.edu/pks/lookup?op=get&search=0x9BBF07CAC07A276D
+- @kleetus: https://pgp.mit.edu/pks/lookup?op=get&search=0x33195D27EF6BDB7F
 - @pnagurny: https://pgp.mit.edu/pks/lookup?op=get&search=0x0909B33F0AA53013
 
 ## License
