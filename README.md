@@ -79,6 +79,7 @@ You can also use our pre-generated files, provided for each release along with a
 
 To verify signatures, use the following PGP keys:
 - @braydonf: https://pgp.mit.edu/pks/lookup?op=get&search=0x9BBF07CAC07A276D
+- @kleetus: https://pgp.mit.edu/pks/lookup?op=get&search=0x33195D27EF6BDB7F
 - @pnagurny: https://pgp.mit.edu/pks/lookup?op=get&search=0x0909B33F0AA53013
 
 ## License
