@@ -2000,6 +2000,7 @@ describe('Wallet service', function() {
         1: 40000,
         2: 20000,
         6: 18000,
+        24: 9000,
       });
       server.getFeeLevels({}, function(err, fees) {
         should.not.exist(err);
@@ -2014,6 +2015,9 @@ describe('Wallet service', function() {
 
         fees.economy.feePerKb.should.equal(18000);
         fees.economy.nbBlocks.should.equal(6);
+
+        fees.superEconomy.feePerKb.should.equal(9000);
+        fees.superEconomy.nbBlocks.should.equal(24);
         done();
       });
     });
@@ -2038,6 +2042,7 @@ describe('Wallet service', function() {
         1: -1,
         2: 18000,
         6: 0,
+        24: 9000,
       });
       server.getFeeLevels({}, function(err, fees) {
         should.not.exist(err);
@@ -2060,6 +2065,7 @@ describe('Wallet service', function() {
         1: 40000,
         2: 20000,
         6: 18000,
+        24: 9000,
       });
       server.getFeeLevels({}, function(err, fees) {
         should.not.exist(err);
@@ -2079,6 +2085,7 @@ describe('Wallet service', function() {
           1: -1,
           2: 25000,
           6: 10000,
+          24: 9000,
         });
         server.getFeeLevels({}, function(err, fees) {
           should.not.exist(err);
