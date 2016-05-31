@@ -4958,6 +4958,33 @@ describe('client API', function() {
         done();
       });
     });
+    it('should set noPrivacy property when seeding credentials', function() {
+      var initFunctions = [
+
+        function(client, noPrivacy) {
+          var opts = {};
+          if (noPrivacy) opts.noPrivacy = true;
+          client.seedFromRandomWithMnemonic(opts);
+        },
+        function(client, noPrivacy) {
+          var opts = {};
+          if (noPrivacy) opts.noPrivacy = true;
+          client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00', opts);
+        },
+        function(client, noPrivacy) {
+          var opts = {};
+          if (noPrivacy) opts.noPrivacy = true;
+          client.seedFromExtendedPrivateKey('xprv9s21ZrQH143K2KpXBsKoLSxrwvtcWkXm7rSTohmYTdiLKdVGZiYSmhVPCb9JiX9jtRSdkwzK6dXcjbeSe6idbvrTGrizW262LB3JoLLKpan', opts);
+        }
+      ];
+      _.each(initFunctions, function(fn) {
+        _.each([false, true], function(noPrivacy) {
+          var client = new Client();
+          fn(client, noPrivacy);
+          client.credentials.noPrivacy.should.be.noPrivacy;
+        });
+      });
+    });
     it('should always return same address', function(done) {
       clients[0].createAddress(function(err, x) {
         should.not.exist(err);
