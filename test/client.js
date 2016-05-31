@@ -4942,4 +4942,34 @@ describe('client API', function() {
     });
   });
 
+  describe.only('No Privacy', function() {
+    beforeEach(function(done) {
+      clients[0].seedFromRandomWithMnemonic({
+        noPrivacy: true,
+      });
+      clients[0].createWallet('auditable wallet', 'creator', 1, 1, {}, function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+    it('should always return same address', function(done) {
+      clients[0].createAddress(function(err, x) {
+        should.not.exist(err);
+        should.exist(x);
+        x.path.should.equal('m/0/0');
+        clients[0].createAddress(function(err, y) {
+          should.not.exist(err);
+          should.exist(y);
+          y.path.should.equal('m/0/0');
+          y.address.should.equal(x.address);
+          clients[0].getMainAddresses({}, function(err, addr) {
+            should.not.exist(err);
+            addr.length.should.equal(1);
+            done();
+          });
+        });
+      });
+    });
+  });
+
 });
