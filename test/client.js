@@ -3436,6 +3436,172 @@ describe('client API', function() {
     });
   });
 
+  describe('Transaction notes', function(done) {
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(clients, 1, 2, function(w) {
+        done();
+      });
+    });
+
+    it('should edit a note for an arbitrary txid', function(done) {
+      clients[0].editTxNote({
+        txid: '123',
+        body: 'note body'
+      }, function(err) {
+        should.not.exist(err);
+        clients[0].getTxNote({
+          txid: '123',
+        }, function(err, note) {
+          should.not.exist(err);
+          should.exist(note);
+          note.txid.should.equal('123');
+          note.walletId.should.equal(clients[0].credentials.walletId);
+          note.body.should.equal('note body');
+          note.editedBy.should.equal(clients[0].credentials.copayerId);
+          note.createdOn.should.equal(note.editedOn);
+          done();
+        });
+      });
+    });
+    it('should share notes between copayers', function(done) {
+      clients[0].editTxNote({
+        txid: '123',
+        body: 'note body'
+      }, function(err) {
+        should.not.exist(err);
+        clients[0].getTxNote({
+          txid: '123',
+        }, function(err, note) {
+          should.not.exist(err);
+          should.exist(note);
+          note.editedBy.should.equal(clients[0].credentials.copayerId);
+          var creator = note.editedBy;
+          clients[1].getTxNote({
+            txid: '123',
+          }, function(err, note) {
+            should.not.exist(err);
+            should.exist(note);
+            note.body.should.equal('note body');
+            note.editedBy.should.equal(creator);
+            done();
+          });
+        });
+      });
+    });
+    it('should be possible to remove a note', function(done) {
+      clients[0].editTxNote({
+        txid: '123',
+        body: 'note body'
+      }, function(err) {
+        should.not.exist(err);
+        clients[0].getTxNote({
+          txid: '123',
+        }, function(err, note) {
+          should.not.exist(err);
+          should.exist(note);
+          clients[0].editTxNote({
+            txid: '123',
+            body: null,
+          }, function(err) {
+            should.not.exist(err);
+            clients[0].getTxNote({
+              txid: '123',
+            }, function(err, note) {
+              should.not.exist(err);
+              note.should.equal('');
+              done();
+            });
+          });
+        });
+      });
+    });
+    it('should get all notes edited past a given date', function(done) {
+      var clock = sinon.useFakeTimers('Date');
+      async.series([
+
+        function(next) {
+          clients[0].getTxNotes({}, function(err, notes) {
+            should.not.exist(err);
+            notes.should.be.empty;
+            next();
+          });
+        },
+        function(next) {
+          clients[0].editTxNote({
+            txid: '123',
+            body: 'note body'
+          }, next);
+        },
+        function(next) {
+          clients[0].getTxNotes({
+            minTs: 0,
+          }, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(1);
+            notes[0].txid.should.equal('123');
+            next();
+          });
+        },
+        function(next) {
+          clock.tick(60 * 1000);
+          clients[0].editTxNote({
+            txid: '456',
+            body: 'another note'
+          }, next);
+        },
+        function(next) {
+          clients[0].getTxNotes({
+            minTs: 0,
+          }, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(2);
+            _.difference(_.pluck(notes, 'txid'), ['123', '456']).should.be.empty;
+            next();
+          });
+        },
+        function(next) {
+          clients[0].getTxNotes({
+            minTs: 50,
+          }, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(1);
+            notes[0].txid.should.equal('456');
+            next();
+          });
+        },
+        function(next) {
+          clock.tick(60 * 1000);
+          clients[0].editTxNote({
+            txid: '123',
+            body: 'an edit'
+          }, next);
+        },
+        function(next) {
+          clients[0].getTxNotes({
+            minTs: 100,
+          }, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(1);
+            notes[0].txid.should.equal('123');
+            notes[0].body.should.equal('an edit');
+            next();
+          });
+        },
+        function(next) {
+          clients[0].getTxNotes({}, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(2);
+            next();
+          });
+        },
+      ], function(err) {
+        should.not.exist(err);
+        clock.restore();
+        done();
+      });
+    });
+  });
+
   describe('Mobility, backup & restore', function() {
     describe('Export & Import', function() {
       var address, importedClient;
