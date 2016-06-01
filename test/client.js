@@ -3458,11 +3458,28 @@ describe('client API', function() {
           note.walletId.should.equal(clients[0].credentials.walletId);
           note.body.should.equal('note body');
           note.editedBy.should.equal(clients[0].credentials.copayerId);
+          note.editedByName.should.equal(clients[0].credentials.copayerName);
           note.createdOn.should.equal(note.editedOn);
           done();
         });
       });
     });
+    it('should not send note body in clear text', function(done) {
+      var spy = sinon.spy(clients[0], '_doPutRequest');
+      clients[0].editTxNote({
+        txid: '123',
+        body: 'a random note'
+      }, function(err) {
+        should.not.exist(err);
+        var url = spy.getCall(0).args[0];
+        var body = JSON.stringify(spy.getCall(0).args[1]);
+        url.should.contain('/txnotes');
+        body.should.contain('123');
+        body.should.not.contain('a random note');
+        done();
+      });
+    });
+
     it('should share notes between copayers', function(done) {
       clients[0].editTxNote({
         txid: '123',
