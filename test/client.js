@@ -3449,7 +3449,42 @@ describe('client API', function() {
 
         importedClient = helpers.newClient(app);
         importedClient.import(exported);
+        importedClient.incorrectDerivation.should.equal(false);
       });
+
+
+      it('should handle wrong derivation', function(done) {
+        var exported = JSON.parse(clients[0].export());
+
+        // Tamper export with a wrong xpub
+        exported.xPubKey = 'tpubD6NzVbkrYhZ4XJEQQWBgysPKJcBv8zLhHpfhcw4RyhakMxmffNRRRFDUe1Zh7fxvjt1FdNJcaxHgqxyKLL8XiZug7C8KJFLFtGfPVBcY6Nb';
+
+        importedClient = helpers.newClient(app);
+        should.not.exist(importedClient.incorrectDerivation);
+
+        importedClient.on('derivation-error', function() {
+          importedClient.incorrectDerivation.should.equal(true);
+          done();
+        });
+
+        importedClient.import(JSON.stringify(exported));
+      });
+
+
+      it('should skip derivation check if commanded', function() {
+        var exported = JSON.parse(clients[0].export());
+
+        // Tamper export with a wrong xpub
+        exported.xPubKey = 'tpubD6NzVbkrYhZ4XJEQQWBgysPKJcBv8zLhHpfhcw4RyhakMxmffNRRRFDUe1Zh7fxvjt1FdNJcaxHgqxyKLL8XiZug7C8KJFLFtGfPVBcY6Nb';
+
+        importedClient = helpers.newClient(app);
+        importedClient.import(JSON.stringify(exported), {
+          skipKeyValidation: true
+        });
+        should.not.exist(importedClient.incorrectDerivation);
+      });
+
+
       it('should export without signing rights', function() {
         clients[0].canSign().should.be.true;
         var exported = clients[0].export({
