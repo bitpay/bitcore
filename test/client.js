@@ -1681,7 +1681,7 @@ describe('client API', function() {
     });
     it('should detect fake addresses', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
-        helpers.tamperResponse(clients[0], 'post', '/v1/addresses/', {}, function(address) {
+        helpers.tamperResponse(clients[0], 'post', '/v3/addresses/', {}, function(address) {
           address.address = '2N86pNEpREGpwZyHVC5vrNUCbF9nM1Geh4K';
         }, function() {
           clients[0].createAddress(function(err, x0) {
@@ -1693,7 +1693,7 @@ describe('client API', function() {
     });
     it('should detect fake public keys', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
-        helpers.tamperResponse(clients[0], 'post', '/v1/addresses/', {}, function(address) {
+        helpers.tamperResponse(clients[0], 'post', '/v3/addresses/', {}, function(address) {
           address.publicKeys = [
             '0322defe0c3eb9fcd8bc01878e6dbca7a6846880908d214b50a752445040cc5c54',
             '02bf3aadc17131ca8144829fa1883c1ac0a8839067af4bca47a90ccae63d0d8037'
@@ -2304,22 +2304,25 @@ describe('client API', function() {
         ];
 
         var tmp = clients[0]._getCreateTxProposalArgs;
-        var args = clients[0]._getCreateTxProposalArgs(opts);
-        clients[0]._getCreateTxProposalArgs = function() {
-          return args;
-        };
-        async.each(tamperings, function(tamperFn, next) {
-          helpers.tamperResponse(clients[0], 'post', '/v2/txproposals/', args, tamperFn, function() {
-            clients[0].createTxProposal(opts, function(err, txp) {
-              should.exist(err, tamperFn);
-              err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
-              next();
-            });
-          });
-        }, function(err) {
+        clients[0]._getCreateTxProposalArgs(opts, function(err, args) {
           should.not.exist(err);
-          clients[0]._getCreateTxProposalArgs = tmp;
-          done();
+
+          clients[0]._getCreateTxProposalArgs = function(opts, cb) {
+            return cb(null, args);
+          };
+          async.each(tamperings, function(tamperFn, next) {
+            helpers.tamperResponse(clients[0], 'post', '/v2/txproposals/', args, tamperFn, function() {
+              clients[0].createTxProposal(opts, function(err, txp) {
+                should.exist(err, tamperFn);
+                err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+                next();
+              });
+            });
+          }, function(err) {
+            should.not.exist(err);
+            clients[0]._getCreateTxProposalArgs = tmp;
+            done();
+          });
         });
       });
       it('Should fail to publish when not enough available UTXOs', function(done) {
@@ -4977,4 +4980,87 @@ describe('client API', function() {
     });
   });
 
+  describe('No Privacy', function() {
+    beforeEach(function(done) {
+      clients[0].seedFromRandomWithMnemonic({
+        network: 'testnet',
+        noPrivacy: true,
+      });
+      clients[0].createWallet('auditable wallet', 'creator', 1, 1, {
+        network: 'testnet',
+      }, function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+    it('should set noPrivacy property when seeding credentials', function() {
+      var initFunctions = [
+
+        function(client, noPrivacy) {
+          var opts = {};
+          if (noPrivacy) opts.noPrivacy = true;
+          client.seedFromRandomWithMnemonic(opts);
+        },
+        function(client, noPrivacy) {
+          var opts = {};
+          if (noPrivacy) opts.noPrivacy = true;
+          client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00', opts);
+        },
+        function(client, noPrivacy) {
+          var opts = {};
+          if (noPrivacy) opts.noPrivacy = true;
+          client.seedFromExtendedPrivateKey('xprv9s21ZrQH143K2KpXBsKoLSxrwvtcWkXm7rSTohmYTdiLKdVGZiYSmhVPCb9JiX9jtRSdkwzK6dXcjbeSe6idbvrTGrizW262LB3JoLLKpan', opts);
+        }
+      ];
+      _.each(initFunctions, function(fn) {
+        _.each([false, true], function(noPrivacy) {
+          var client = new Client();
+          fn(client, noPrivacy);
+          client.credentials.noPrivacy.should.equal(noPrivacy);
+        });
+      });
+    });
+    it('should always return same address', function(done) {
+      clients[0].createAddress(function(err, x) {
+        should.not.exist(err);
+        should.exist(x);
+        x.path.should.equal('m/0/0');
+        clients[0].createAddress(function(err, y) {
+          should.not.exist(err);
+          should.exist(y);
+          y.path.should.equal('m/0/0');
+          y.address.should.equal(x.address);
+          clients[0].getMainAddresses({}, function(err, addr) {
+            should.not.exist(err);
+            addr.length.should.equal(1);
+            done();
+          });
+        });
+      });
+    });
+    it('should reuse address as change address on tx proposal creation', function(done) {
+      clients[0].createAddress(function(err, address) {
+        should.not.exist(err);
+        should.exist(address.address);
+        blockchainExplorerMock.setUtxo(address, 2, 2);
+
+        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+        };
+        clients[0].createTxProposal(opts, function(err, txp) {
+          should.not.exist(err);
+          should.exist(txp);
+          should.exist(txp.changeAddress);
+          txp.changeAddress.address.should.equal(address.address);
+          txp.changeAddress.path.should.equal(address.path);
+          done();
+        });
+      });
+    });
+  });
 });
