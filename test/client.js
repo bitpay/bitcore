@@ -3311,7 +3311,7 @@ describe('client API', function() {
         });
       });
     });
-    it('should get transaction history decorated with proposal', function(done) {
+    it('should get transaction history decorated with proposal & notes', function(done) {
       async.waterfall([
 
         function(next) {
@@ -3350,6 +3350,14 @@ describe('client API', function() {
           });
         },
         function(txp, next) {
+          clients[1].editTxNote({
+            txid: txp.txid,
+            body: 'just a note'
+          }, function(err) {
+            return next(err, txp);
+          });
+        },
+        function(txp, next) {
           var history = _.cloneDeep(TestData.history);
           history[0].txid = txp.txid;
           blockchainExplorerMock.setHistory(history);
@@ -3369,6 +3377,11 @@ describe('client API', function() {
             });
             should.exist(rejection);
             rejection.comment.should.equal('some reason');
+
+            var note = decorated.note;
+            should.exist(note);
+            note.body.should.equal('just a note');
+            note.editedByName.should.equal('copayer 1');
             next();
           });
         }
@@ -3419,6 +3432,189 @@ describe('client API', function() {
             });
           }, done);
         });
+      });
+    });
+  });
+
+  describe('Transaction notes', function(done) {
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(clients, 1, 2, function(w) {
+        done();
+      });
+    });
+
+    it('should edit a note for an arbitrary txid', function(done) {
+      clients[0].editTxNote({
+        txid: '123',
+        body: 'note body'
+      }, function(err) {
+        should.not.exist(err);
+        clients[0].getTxNote({
+          txid: '123',
+        }, function(err, note) {
+          should.not.exist(err);
+          should.exist(note);
+          note.txid.should.equal('123');
+          note.walletId.should.equal(clients[0].credentials.walletId);
+          note.body.should.equal('note body');
+          note.editedBy.should.equal(clients[0].credentials.copayerId);
+          note.editedByName.should.equal(clients[0].credentials.copayerName);
+          note.createdOn.should.equal(note.editedOn);
+          done();
+        });
+      });
+    });
+    it('should not send note body in clear text', function(done) {
+      var spy = sinon.spy(clients[0], '_doPutRequest');
+      clients[0].editTxNote({
+        txid: '123',
+        body: 'a random note'
+      }, function(err) {
+        should.not.exist(err);
+        var url = spy.getCall(0).args[0];
+        var body = JSON.stringify(spy.getCall(0).args[1]);
+        url.should.contain('/txnotes');
+        body.should.contain('123');
+        body.should.not.contain('a random note');
+        done();
+      });
+    });
+
+    it('should share notes between copayers', function(done) {
+      clients[0].editTxNote({
+        txid: '123',
+        body: 'note body'
+      }, function(err) {
+        should.not.exist(err);
+        clients[0].getTxNote({
+          txid: '123',
+        }, function(err, note) {
+          should.not.exist(err);
+          should.exist(note);
+          note.editedBy.should.equal(clients[0].credentials.copayerId);
+          var creator = note.editedBy;
+          clients[1].getTxNote({
+            txid: '123',
+          }, function(err, note) {
+            should.not.exist(err);
+            should.exist(note);
+            note.body.should.equal('note body');
+            note.editedBy.should.equal(creator);
+            done();
+          });
+        });
+      });
+    });
+    it('should be possible to remove a note', function(done) {
+      clients[0].editTxNote({
+        txid: '123',
+        body: 'note body'
+      }, function(err) {
+        should.not.exist(err);
+        clients[0].getTxNote({
+          txid: '123',
+        }, function(err, note) {
+          should.not.exist(err);
+          should.exist(note);
+          clients[0].editTxNote({
+            txid: '123',
+            body: null,
+          }, function(err) {
+            should.not.exist(err);
+            clients[0].getTxNote({
+              txid: '123',
+            }, function(err, note) {
+              should.not.exist(err);
+              note.should.equal('');
+              done();
+            });
+          });
+        });
+      });
+    });
+    it('should get all notes edited past a given date', function(done) {
+      var clock = sinon.useFakeTimers('Date');
+      async.series([
+
+        function(next) {
+          clients[0].getTxNotes({}, function(err, notes) {
+            should.not.exist(err);
+            notes.should.be.empty;
+            next();
+          });
+        },
+        function(next) {
+          clients[0].editTxNote({
+            txid: '123',
+            body: 'note body'
+          }, next);
+        },
+        function(next) {
+          clients[0].getTxNotes({
+            minTs: 0,
+          }, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(1);
+            notes[0].txid.should.equal('123');
+            next();
+          });
+        },
+        function(next) {
+          clock.tick(60 * 1000);
+          clients[0].editTxNote({
+            txid: '456',
+            body: 'another note'
+          }, next);
+        },
+        function(next) {
+          clients[0].getTxNotes({
+            minTs: 0,
+          }, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(2);
+            _.difference(_.pluck(notes, 'txid'), ['123', '456']).should.be.empty;
+            next();
+          });
+        },
+        function(next) {
+          clients[0].getTxNotes({
+            minTs: 50,
+          }, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(1);
+            notes[0].txid.should.equal('456');
+            next();
+          });
+        },
+        function(next) {
+          clock.tick(60 * 1000);
+          clients[0].editTxNote({
+            txid: '123',
+            body: 'an edit'
+          }, next);
+        },
+        function(next) {
+          clients[0].getTxNotes({
+            minTs: 100,
+          }, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(1);
+            notes[0].txid.should.equal('123');
+            notes[0].body.should.equal('an edit');
+            next();
+          });
+        },
+        function(next) {
+          clients[0].getTxNotes({}, function(err, notes) {
+            should.not.exist(err);
+            notes.length.should.equal(2);
+            next();
+          });
+        },
+      ], function(err) {
+        should.not.exist(err);
+        clock.restore();
+        done();
       });
     });
   });
@@ -4769,6 +4965,7 @@ describe('client API', function() {
       });
     });
   });
+
   describe('#formatAmount', function() {
     it('should successfully format amount', function() {
       var cases = [{
@@ -4864,76 +5061,79 @@ describe('client API', function() {
     });
   });
 
-  describe('import', function(done) {
-    it('should handle import with invalid JSON', function(done) {
-      var importString = 'this is not valid JSON';
-      var client = new Client();
-      (function() {
-        client.import(importString);
-      }).should.throw(Errors.INVALID_BACKUP);
-      done();
-    });
-  });
+  describe('Import', function() {
 
-  describe('_import', function() {
-    it('should handle not being able to add access', function(done) {
-      var sandbox = sinon.sandbox.create();
-      var client = new Client();
-      client.credentials = {};
-
-      var ow = sandbox.stub(client, 'openWallet', function(callback) {
-        callback(new Error());
-      });
-
-      var ip = sandbox.stub(client, 'isPrivKeyExternal', function() {
-        return false;
-      });
-
-      var aa = sandbox.stub(client, 'addAccess', function(options, callback) {
-        callback(new Error());
-      });
-
-      client._import(function(err) {
-        should.exist(err);
-        err.should.be.an.instanceOf(Errors.WALLET_DOES_NOT_EXIST);
-        sandbox.restore();
+    describe('#import', function(done) {
+      it('should handle import with invalid JSON', function(done) {
+        var importString = 'this is not valid JSON';
+        var client = new Client();
+        (function() {
+          client.import(importString);
+        }).should.throw(Errors.INVALID_BACKUP);
         done();
       });
     });
-  });
 
-  describe('importFromMnemonic', function() {
-    it('should handle importing an invalid mnemonic', function(done) {
-      var client = new Client();
-      var mnemonicWords = 'this is an invalid mnemonic';
-      client.importFromMnemonic(mnemonicWords, {}, function(err) {
-        should.exist(err);
-        err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
-        done();
+    describe('#_import', function() {
+      it('should handle not being able to add access', function(done) {
+        var sandbox = sinon.sandbox.create();
+        var client = new Client();
+        client.credentials = {};
+
+        var ow = sandbox.stub(client, 'openWallet', function(callback) {
+          callback(new Error());
+        });
+
+        var ip = sandbox.stub(client, 'isPrivKeyExternal', function() {
+          return false;
+        });
+
+        var aa = sandbox.stub(client, 'addAccess', function(options, callback) {
+          callback(new Error());
+        });
+
+        client._import(function(err) {
+          should.exist(err);
+          err.should.be.an.instanceOf(Errors.WALLET_DOES_NOT_EXIST);
+          sandbox.restore();
+          done();
+        });
       });
     });
-  });
 
-  describe('importFromExtendedPrivateKey', function() {
-    it('should handle importing an invalid extended private key', function(done) {
-      var client = new Client();
-      var xPrivKey = 'this is an invalid key';
-      client.importFromExtendedPrivateKey(xPrivKey, function(err) {
-        should.exist(err);
-        err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
-        done();
+    describe('#importFromMnemonic', function() {
+      it('should handle importing an invalid mnemonic', function(done) {
+        var client = new Client();
+        var mnemonicWords = 'this is an invalid mnemonic';
+        client.importFromMnemonic(mnemonicWords, {}, function(err) {
+          should.exist(err);
+          err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+          done();
+        });
       });
     });
-  });
 
-  describe('importFromExtendedPublicKey', function() {
-    it('should handle importing an invalid extended private key', function(done) {
-      var client = new Client();
-      var xPubKey = 'this is an invalid key';
-      client.importFromExtendedPublicKey(xPubKey, {}, {}, {}, function(err) {
-        should.exist(err);
-        err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
-        done();
+    describe('#importFromExtendedPrivateKey', function() {
+      it('should handle importing an invalid extended private key', function(done) {
+        var client = new Client();
+        var xPrivKey = 'this is an invalid key';
+        client.importFromExtendedPrivateKey(xPrivKey, function(err) {
+          should.exist(err);
+          err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+          done();
+        });
+      });
+    });
+
+    describe('#importFromExtendedPublicKey', function() {
+      it('should handle importing an invalid extended private key', function(done) {
+        var client = new Client();
+        var xPubKey = 'this is an invalid key';
+        client.importFromExtendedPublicKey(xPubKey, {}, {}, {}, function(err) {
+          should.exist(err);
+          err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+          done();
+        });
       });
     });
   });
