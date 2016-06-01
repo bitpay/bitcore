@@ -3924,6 +3924,7 @@ describe('Wallet service', function() {
           note.walletId.should.equal(wallet.id);
           note.body.should.equal('note body');
           note.editedBy.should.equal(server.copayerId);
+          note.editedByName.should.equal('copayer 1');
           note.createdOn.should.equal(note.editedOn);
           done();
         });
