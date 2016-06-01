@@ -4981,7 +4981,7 @@ describe('client API', function() {
         _.each([false, true], function(noPrivacy) {
           var client = new Client();
           fn(client, noPrivacy);
-          client.credentials.noPrivacy.should.be.noPrivacy;
+          client.credentials.noPrivacy.should.equal(noPrivacy);
         });
       });
     });
