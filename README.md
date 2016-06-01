@@ -248,18 +248,23 @@ Export wallet
 **opts.noSign**: `Boolean`, Export wallet
 
 
-### API.import(str, opts, opts.password) 
+### API.import(str, opts, opts.password, opts.skipKeyValidation) 
 
 Import wallet
+emits 'derivation-error' in case keys are not validated correctly.
 
 **Parameters**
 
 **str**: `Object`, Import wallet
+emits 'derivation-error' in case keys are not validated correctly.
 
 **opts**: `Object`, Import wallet
+emits 'derivation-error' in case keys are not validated correctly.
 
 **opts.password**: `String`, If the source has the private key encrypted, the password
 will be needed for derive credentials fields.
+
+**opts.skipKeyValidation**: `Boolean`, Skip extended key validation
 
 
 ### API.importFromMnemonic(BIP39, opts, opts.network, opts.passphrase, opts.account, opts.derivationStrategy) 
@@ -565,7 +570,7 @@ Send a transaction proposal
 
 **Returns**: `Callback`, cb - Return error or the transaction proposal
 
-### API.createTxProposal(opts, opts.outputs, opts.outputs[].toAddress, opts.outputs[].amount, opts.outputs[].message, opts.message, opts.fee, opts.feePerKb, opts.payProUrl, opts.excludeUnconfirmedUtxos, opts.customData, opts.inputs, opts.outputs, opts.utxosToExclude) 
+### API.createTxProposal(opts, opts.outputs, opts.outputs[].toAddress, opts.outputs[].amount, opts.outputs[].message, opts.message, opts.fee, opts.feePerKb, opts.changeAddress, opts.payProUrl, opts.excludeUnconfirmedUtxos, opts.customData, opts.inputs, opts.outputs, opts.utxosToExclude) 
 
 Create a transaction proposal
 
@@ -586,6 +591,8 @@ Create a transaction proposal
 **opts.fee**: `string`, Optional: Use an alternative fee for this TX (mutually exclusive with feePerKb)
 
 **opts.feePerKb**: `string`, Optional: Use an alternative fee per KB for this TX (mutually exclusive with fee)
+
+**opts.changeAddress**: `string`, Optional. Use this address as the change address for the tx. The address should belong to the wallet.
 
 **opts.payProUrl**: `String`, Optional: Tx is from a payment protocol URL
 
