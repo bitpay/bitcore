@@ -2312,25 +2312,23 @@ describe('client API', function() {
         ];
 
         var tmp = clients[0]._getCreateTxProposalArgs;
-        clients[0]._getCreateTxProposalArgs(opts, function(err, args) {
-          should.not.exist(err);
+        var args = clients[0]._getCreateTxProposalArgs(opts);
 
-          clients[0]._getCreateTxProposalArgs = function(opts, cb) {
-            return cb(null, args);
-          };
-          async.each(tamperings, function(tamperFn, next) {
-            helpers.tamperResponse(clients[0], 'post', '/v2/txproposals/', args, tamperFn, function() {
-              clients[0].createTxProposal(opts, function(err, txp) {
-                should.exist(err, tamperFn);
-                err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
-                next();
-              });
+        clients[0]._getCreateTxProposalArgs = function(opts) {
+          return args;
+        };
+        async.each(tamperings, function(tamperFn, next) {
+          helpers.tamperResponse(clients[0], 'post', '/v2/txproposals/', args, tamperFn, function() {
+            clients[0].createTxProposal(opts, function(err, txp) {
+              should.exist(err, tamperFn);
+              err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+              next();
             });
-          }, function(err) {
-            should.not.exist(err);
-            clients[0]._getCreateTxProposalArgs = tmp;
-            done();
           });
+        }, function(err) {
+          should.not.exist(err);
+          clients[0]._getCreateTxProposalArgs = tmp;
+          done();
         });
       });
       it('Should fail to publish when not enough available UTXOs', function(done) {
