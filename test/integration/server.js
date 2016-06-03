@@ -2771,7 +2771,7 @@ describe('Wallet service', function() {
           });
           server.createTxLegacy(txOpts, function(err, tx) {
             should.exist(err);
-            err.message.should.contain('outputs argument missing');
+            err.message.should.contain('Argument missing in output #1.');
             done();
           });
         });
@@ -3685,7 +3685,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(txp);
             txp.inputs.length.should.equal(3);
-            txOpts.feePerKb = 120e2;
+            txOpts.feePerKb = 160e2;
             server.createTx(txOpts, function(err, txp) {
               should.exist(err);
               should.not.exist(txp);
@@ -4201,6 +4201,13 @@ describe('Wallet service', function() {
           firstAddress = a;
           done();
         });
+      });
+    });
+    it('should include singleAddress property', function(done) {
+      server.getWallet({}, function(err, wallet) {
+        should.not.exist(err);
+        wallet.singleAddress.should.be.true;
+        done();
       });
     });
     it('should always return same address', function(done) {
