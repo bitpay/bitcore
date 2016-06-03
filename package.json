@@ -37,7 +37,7 @@
     "sjcl": "^1.0.2"
   },
   "devDependencies": {
-    "bitcore-wallet-service": "~1.8.2",
+    "bitcore-wallet-service": "~1.9.0",
     "browserify": "^9.0.3",
     "chai": "^1.9.1",
     "coveralls": "^2.11.2",
