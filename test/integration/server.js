@@ -4187,6 +4187,88 @@ describe('Wallet service', function() {
     });
   });
 
+  describe('Single-address wallet', function() {
+    var server, wallet, firstAddress;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 2, {
+        singleAddress: true,
+      }, function(s, w) {
+        server = s;
+        wallet = w;
+        server.createAddress({}, function(err, a) {
+          should.not.exist(err);
+          should.exist(a.address);
+          firstAddress = a;
+          done();
+        });
+      });
+    });
+    it('should always return same address', function(done) {
+      firstAddress.path.should.equal('m/0/0');
+      server.createAddress({}, function(err, x) {
+        should.not.exist(err);
+        should.exist(x);
+        x.path.should.equal('m/0/0');
+        x.address.should.equal(firstAddress.address);
+        server.getMainAddresses({}, function(err, addr) {
+          should.not.exist(err);
+          addr.length.should.equal(1);
+          done();
+        });
+      });
+    });
+    it('should reuse address as change address on tx proposal creation', function(done) {
+      helpers.stubUtxos(server, wallet, 2, function() {
+        var toAddress = '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+        };
+        server.createTx(opts, function(err, txp) {
+          should.not.exist(err);
+          should.exist(txp);
+          should.exist(txp.changeAddress);
+          txp.changeAddress.address.should.equal(firstAddress.address);
+          txp.changeAddress.path.should.equal(firstAddress.path);
+          done();
+        });
+      });
+    });
+    it('should not allow legacy txs', function(done) {
+      helpers.stubUtxos(server, wallet, 2, function() {
+        var toAddress = '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7';
+        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1, TestData.copayers[0].privKey_1H_0);
+        server.createTxLegacy(txOpts, function(err, tx) {
+          should.exist(err);
+          err.message.should.contain('single-address');
+          done();
+        });
+      });
+    });
+    it('should not be able to specify custom changeAddress', function(done) {
+      helpers.stubUtxos(server, wallet, 2, function() {
+        var toAddress = '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+          changeAddress: firstAddress.address,
+        };
+        server.createTx(opts, function(err, txp) {
+          should.exist(err);
+          err.message.should.contain('single-address');
+          done();
+        });
+      });
+    });
+  });
+
+
   describe('#getSendMaxInfo', function() {
     var server, wallet;
     beforeEach(function(done) {

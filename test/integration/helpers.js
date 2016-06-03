@@ -164,6 +164,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
     m: m,
     n: n,
     pubKey: TestData.keyPair.pub,
+    singleAddress: !!opts.singleAddress,
   };
   if (_.isBoolean(opts.supportBIP44AndP2PKH))
     walletOpts.supportBIP44AndP2PKH = opts.supportBIP44AndP2PKH;
