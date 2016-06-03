@@ -1416,6 +1416,28 @@ describe('Wallet service', function() {
         });
       });
     });
+    it('should not fail when getting UTXOs for wallet with 0 UTXOs and pending txps', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 1], function() {
+        var txOpts = {
+          outputs: [{
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 1e8,
+          }],
+          feePerKb: 100e2,
+        };
+        helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
+          blockchainExplorer.getUtxos = function(addresses, cb) {
+            return cb(null, []);
+          };
+
+          server.getUtxos({}, function(err, utxos) {
+            should.not.exist(err);
+            utxos.should.be.empty;
+            done();
+          });
+        });
+      });
+    });
   });
 
   describe('Multiple request Pub Keys', function() {
