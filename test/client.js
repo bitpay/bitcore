@@ -105,12 +105,20 @@ helpers.generateUtxos = function(scriptType, publicKeyRing, path, requiredSignat
   return utxos;
 };
 
-helpers.createAndJoinWallet = function(clients, m, n, cb) {
+helpers.createAndJoinWallet = function(clients, m, n, opts, cb) {
+  if (_.isFunction(opts)) {
+    cb = opts;
+    opts = null;
+  }
+
+  opts = opts || {};
+
   clients[0].seedFromRandomWithMnemonic({
     network: 'testnet'
   });
   clients[0].createWallet('mywallet', 'creator', m, n, {
-    network: 'testnet'
+    network: 'testnet',
+    singleAddress: !!opts.singleAddress,
   }, function(err, secret) {
     should.not.exist(err);
 
@@ -2304,25 +2312,23 @@ describe('client API', function() {
         ];
 
         var tmp = clients[0]._getCreateTxProposalArgs;
-        clients[0]._getCreateTxProposalArgs(opts, function(err, args) {
-          should.not.exist(err);
+        var args = clients[0]._getCreateTxProposalArgs(opts);
 
-          clients[0]._getCreateTxProposalArgs = function(opts, cb) {
-            return cb(null, args);
-          };
-          async.each(tamperings, function(tamperFn, next) {
-            helpers.tamperResponse(clients[0], 'post', '/v2/txproposals/', args, tamperFn, function() {
-              clients[0].createTxProposal(opts, function(err, txp) {
-                should.exist(err, tamperFn);
-                err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
-                next();
-              });
+        clients[0]._getCreateTxProposalArgs = function(opts) {
+          return args;
+        };
+        async.each(tamperings, function(tamperFn, next) {
+          helpers.tamperResponse(clients[0], 'post', '/v2/txproposals/', args, tamperFn, function() {
+            clients[0].createTxProposal(opts, function(err, txp) {
+              should.exist(err, tamperFn);
+              err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+              next();
             });
-          }, function(err) {
-            should.not.exist(err);
-            clients[0]._getCreateTxProposalArgs = tmp;
-            done();
           });
+        }, function(err) {
+          should.not.exist(err);
+          clients[0]._getCreateTxProposalArgs = tmp;
+          done();
         });
       });
       it('Should fail to publish when not enough available UTXOs', function(done) {
@@ -3501,33 +3507,6 @@ describe('client API', function() {
             note.body.should.equal('note body');
             note.editedBy.should.equal(creator);
             done();
-          });
-        });
-      });
-    });
-    it('should be possible to remove a note', function(done) {
-      clients[0].editTxNote({
-        txid: '123',
-        body: 'note body'
-      }, function(err) {
-        should.not.exist(err);
-        clients[0].getTxNote({
-          txid: '123',
-        }, function(err, note) {
-          should.not.exist(err);
-          should.exist(note);
-          clients[0].editTxNote({
-            txid: '123',
-            body: null,
-          }, function(err) {
-            should.not.exist(err);
-            clients[0].getTxNote({
-              txid: '123',
-            }, function(err, note) {
-              should.not.exist(err);
-              note.should.equal('');
-              done();
-            });
           });
         });
       });
@@ -5180,44 +5159,12 @@ describe('client API', function() {
     });
   });
 
-  describe('No Privacy', function() {
+  describe('Single-address wallets', function() {
     beforeEach(function(done) {
-      clients[0].seedFromRandomWithMnemonic({
-        network: 'testnet',
-        noPrivacy: true,
-      });
-      clients[0].createWallet('auditable wallet', 'creator', 1, 1, {
-        network: 'testnet',
-      }, function(err) {
-        should.not.exist(err);
+      helpers.createAndJoinWallet(clients, 1, 2, {
+        singleAddress: true
+      }, function(wallet) {
         done();
-      });
-    });
-    it('should set noPrivacy property when seeding credentials', function() {
-      var initFunctions = [
-
-        function(client, noPrivacy) {
-          var opts = {};
-          if (noPrivacy) opts.noPrivacy = true;
-          client.seedFromRandomWithMnemonic(opts);
-        },
-        function(client, noPrivacy) {
-          var opts = {};
-          if (noPrivacy) opts.noPrivacy = true;
-          client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00', opts);
-        },
-        function(client, noPrivacy) {
-          var opts = {};
-          if (noPrivacy) opts.noPrivacy = true;
-          client.seedFromExtendedPrivateKey('xprv9s21ZrQH143K2KpXBsKoLSxrwvtcWkXm7rSTohmYTdiLKdVGZiYSmhVPCb9JiX9jtRSdkwzK6dXcjbeSe6idbvrTGrizW262LB3JoLLKpan', opts);
-        }
-      ];
-      _.each(initFunctions, function(fn) {
-        _.each([false, true], function(noPrivacy) {
-          var client = new Client();
-          fn(client, noPrivacy);
-          client.credentials.noPrivacy.should.equal(noPrivacy);
-        });
       });
     });
     it('should always return same address', function(done) {
@@ -5230,10 +5177,16 @@ describe('client API', function() {
           should.exist(y);
           y.path.should.equal('m/0/0');
           y.address.should.equal(x.address);
-          clients[0].getMainAddresses({}, function(err, addr) {
+          clients[1].createAddress(function(err, z) {
             should.not.exist(err);
-            addr.length.should.equal(1);
-            done();
+            should.exist(z);
+            z.path.should.equal('m/0/0');
+            z.address.should.equal(x.address);
+            clients[0].getMainAddresses({}, function(err, addr) {
+              should.not.exist(err);
+              addr.length.should.equal(1);
+              done();
+            });
           });
         });
       });
@@ -5242,7 +5195,7 @@ describe('client API', function() {
       clients[0].createAddress(function(err, address) {
         should.not.exist(err);
         should.exist(address.address);
-        blockchainExplorerMock.setUtxo(address, 2, 2);
+        blockchainExplorerMock.setUtxo(address, 2, 1);
 
         var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
         var opts = {
