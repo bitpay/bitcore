@@ -1,4 +1,6 @@
-sudo: false
+sudo: required
+services:
+  - docker
 language: node_js
 env:
   - CXX=g++-4.8 CC=gcc-4.8
@@ -17,3 +19,4 @@ install:
   - npm install
 script:
   - npm run test
+  - docker build -t bitcore .
