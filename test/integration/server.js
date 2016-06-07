@@ -4058,7 +4058,7 @@ describe('Wallet service', function() {
         });
       });
     });
-    it('should be possible to remove a note', function(done) {
+    it('should be possible to set an empty note', function(done) {
       server.editTxNote({
         txid: '123',
         body: 'note body'
@@ -4078,8 +4078,18 @@ describe('Wallet service', function() {
               txid: '123',
             }, function(err, note) {
               should.not.exist(err);
-              should.not.exist(note);
-              done();
+              should.exist(note);
+              note.should.have.property('body');
+              should.equal(note.body, null);
+              server.getTxNotes({
+                minTs: 0
+              }, function(err, notes) {
+                should.not.exist(err);
+                should.exist(notes);
+                notes.length.should.equal(1);
+                should.equal(notes[0].body, null);
+                done();
+              });
             });
           });
         });
