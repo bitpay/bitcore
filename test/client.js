@@ -3511,33 +3511,6 @@ describe('client API', function() {
         });
       });
     });
-    it('should be possible to remove a note', function(done) {
-      clients[0].editTxNote({
-        txid: '123',
-        body: 'note body'
-      }, function(err) {
-        should.not.exist(err);
-        clients[0].getTxNote({
-          txid: '123',
-        }, function(err, note) {
-          should.not.exist(err);
-          should.exist(note);
-          clients[0].editTxNote({
-            txid: '123',
-            body: null,
-          }, function(err) {
-            should.not.exist(err);
-            clients[0].getTxNote({
-              txid: '123',
-            }, function(err, note) {
-              should.not.exist(err);
-              note.should.equal('');
-              done();
-            });
-          });
-        });
-      });
-    });
     it('should get all notes edited past a given date', function(done) {
       var clock = sinon.useFakeTimers('Date');
       async.series([
