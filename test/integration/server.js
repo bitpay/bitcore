@@ -2248,7 +2248,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should generate new change address for each created tx', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, TestData.copayers[0].privKey_1H_0);
@@ -2265,7 +2264,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should create a tx with legacy signature', function(done) {
         helpers.stubUtxos(server, wallet, [100, 200], function() {
           var txOpts = helpers.createProposalOptsLegacy('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, 'some message', TestData.copayers[0].privKey_1H_0);
@@ -2276,7 +2274,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should assume default feePerKb for "normal" level when none is specified', function(done) {
         helpers.stubUtxos(server, wallet, [100, 200], function() {
           var txOpts = helpers.createProposalOptsLegacy('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, 'some message', TestData.copayers[0].privKey_1H_0);
@@ -2290,7 +2287,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should support creating a tx with no change address', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
           var max = 3 - (7200 / 1e8); // Fees for this tx at 100bits/kB = 7200 sat
@@ -2307,7 +2303,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should create a tx using confirmed utxos first', function(done) {
         helpers.stubUtxos(server, wallet, [1.3, 'u0.5', 'u0.1', 1.2], function(utxos) {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1.5, TestData.copayers[0].privKey_1H_0, {
@@ -2322,7 +2317,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should use unconfirmed utxos only when no more confirmed utxos are available', function(done) {
         helpers.stubUtxos(server, wallet, [1.3, 'u0.5', 'u0.1', 1.2], function(utxos) {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 2.55, TestData.copayers[0].privKey_1H_0, {
@@ -2339,7 +2333,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should exclude unconfirmed utxos if specified', function(done) {
         helpers.stubUtxos(server, wallet, [1.3, 'u2', 'u0.1', 1.2], function(utxos) {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 3, TestData.copayers[0].privKey_1H_0, {
@@ -2363,7 +2356,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should use non-locked confirmed utxos when specified', function(done) {
         helpers.stubUtxos(server, wallet, [1.3, 'u2', 'u0.1', 1.2], function(utxos) {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 1.4, TestData.copayers[0].privKey_1H_0, {
@@ -2391,7 +2383,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should fail gracefully if unable to reach the blockchain', function(done) {
         blockchainExplorer.getUtxos = sinon.stub().callsArgWith(1, 'dummy error');
         server.createAddress({}, function(err, address) {
@@ -2406,7 +2397,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should fail to create tx with invalid proposal signature', function(done) {
         helpers.stubUtxos(server, wallet, [100, 200], function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, 'dummy');
@@ -2419,7 +2409,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should fail to create tx with proposal signed by another copayer', function(done) {
         helpers.stubUtxos(server, wallet, [100, 200], function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, TestData.copayers[1].privKey_1H_0);
@@ -2432,7 +2421,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should fail to create tx for invalid address', function(done) {
         helpers.stubUtxos(server, wallet, [100, 200], function() {
           var txOpts = helpers.createSimpleProposalOpts('invalid address', 80, TestData.copayers[0].privKey_1H_0);
@@ -2445,7 +2433,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should fail to create tx for address of different network', function(done) {
         helpers.stubUtxos(server, wallet, [100, 200], function() {
           var txOpts = helpers.createSimpleProposalOpts('myE38JHdxmQcTJGP1ZiX4BiGhDxMJDvLJD', 80, TestData.copayers[0].privKey_1H_0);
@@ -2459,7 +2446,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should fail to create tx for invalid amount', function(done) {
         var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0, TestData.copayers[0].privKey_1H_0);
         server.createTxLegacy(txOpts, function(err, tx) {
@@ -2469,7 +2455,6 @@ describe('Wallet service', function() {
           done();
         });
       });
-
       it('should fail to create tx when insufficient funds', function(done) {
         helpers.stubUtxos(server, wallet, [100], function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 120, TestData.copayers[0].privKey_1H_0);
@@ -2490,7 +2475,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should fail to create tx when insufficient funds for fee', function(done) {
         helpers.stubUtxos(server, wallet, 0.048222, function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.048200, TestData.copayers[0].privKey_1H_0);
@@ -2502,7 +2486,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should scale fees according to tx size', function(done) {
         helpers.stubUtxos(server, wallet, [1, 1, 1, 1], function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 3.5, TestData.copayers[0].privKey_1H_0);
@@ -2514,7 +2497,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should be possible to use a smaller fee', function(done) {
         helpers.stubUtxos(server, wallet, 1, function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.9999, TestData.copayers[0].privKey_1H_0, {
@@ -2544,7 +2526,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should fail to create a tx exceeding max size in kb', function(done) {
         var _oldDefault = Defaults.MAX_TX_SIZE_IN_KB;
         Defaults.MAX_TX_SIZE_IN_KB = 1;
@@ -2558,7 +2539,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should fail to create tx for dust amount', function(done) {
         helpers.stubUtxos(server, wallet, [1], function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.00000001, TestData.copayers[0].privKey_1H_0);
@@ -2570,7 +2550,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should modify fee if tx would return change for dust amount', function(done) {
         helpers.stubUtxos(server, wallet, [1], function() {
           var fee = 4095; // The exact fee of the resulting tx (based exclusively on feePerKB && size)
@@ -2587,7 +2566,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should fail with different error for insufficient funds and locked funds', function(done) {
         helpers.stubUtxos(server, wallet, [10, 10], function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 11, TestData.copayers[0].privKey_1H_0);
@@ -2608,7 +2586,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should create tx with 0 change output', function(done) {
         helpers.stubUtxos(server, wallet, [1], function() {
           var fee = 4100 / 1e8; // The exact fee of the resulting tx
@@ -2627,7 +2604,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should fail gracefully when bitcore throws exception on raw tx creation', function(done) {
         helpers.stubUtxos(server, wallet, [10], function() {
           var bitcoreStub = sinon.stub(Bitcore, 'Transaction');
@@ -2644,7 +2620,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should create tx when there is a pending tx and enough UTXOs', function(done) {
         helpers.stubUtxos(server, wallet, [10.1, 10.2, 10.3], function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 12, TestData.copayers[0].privKey_1H_0);
@@ -2669,7 +2644,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should fail to create tx when there is a pending tx and not enough UTXOs', function(done) {
         helpers.stubUtxos(server, wallet, [10.1, 10.2, 10.3], function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 12, TestData.copayers[0].privKey_1H_0);
@@ -2697,7 +2671,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should create tx using different UTXOs for simultaneous requests', function(done) {
         var N = 5;
         helpers.stubUtxos(server, wallet, _.range(100, 100 + N, 0), function(utxos) {
@@ -2726,7 +2699,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should create tx for type multiple_outputs', function(done) {
         helpers.stubUtxos(server, wallet, [100, 200], function() {
           var outputs = [{
@@ -2749,7 +2721,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should support creating a multiple output tx with no change address', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
           var max = 3 - (7560 / 1e8); // Fees for this tx at 100bits/kB = 7560 sat
@@ -2777,7 +2748,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should fail to create tx for type multiple_outputs with missing output argument', function(done) {
         helpers.stubUtxos(server, wallet, [100, 200], function() {
           var outputs = [{
@@ -2798,7 +2768,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should fail to create tx for unsupported proposal type', function(done) {
         helpers.stubUtxos(server, wallet, [100, 200], function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 80, TestData.copayers[0].privKey_1H_0, {
@@ -2812,7 +2781,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should be able to create tx with inputs argument', function(done) {
         helpers.stubUtxos(server, wallet, [1, 3, 2], function(utxos) {
           server.getUtxos({}, function(err, utxos) {
@@ -2832,7 +2800,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should be able to send max amount', function(done) {
         helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
           server.getBalance({}, function(err, balance) {
@@ -2863,7 +2830,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should be able to send max non-locked amount', function(done) {
         helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 3.5, TestData.copayers[0].privKey_1H_0);
@@ -2897,7 +2863,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should be able to send max confirmed', function(done) {
         helpers.stubUtxos(server, wallet, [1, 1, 'u1', 'u1'], function() {
           server.getBalance({}, function(err, balance) {
@@ -2931,7 +2896,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should not use UTXO provided in utxosToExclude option', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2, 3], function(utxos) {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 4.5, TestData.copayers[0].privKey_1H_0);
@@ -2944,7 +2908,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
       it('should use non-excluded UTXOs', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function(utxos) {
           var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.5, TestData.copayers[0].privKey_1H_0);
@@ -3398,6 +3361,24 @@ describe('Wallet service', function() {
           });
         });
       });
+      it('should fail to create tx for dust amount in outputs', function(done) {
+        helpers.stubUtxos(server, wallet, 1, function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 20e2,
+            }],
+            feePerKb: 100e2,
+          };
+          server.createTx(txOpts, function(err, tx) {
+            should.exist(err);
+            err.code.should.equal('DUST_AMOUNT');
+            err.message.should.equal('Amount below dust threshold');
+            done();
+          });
+        });
+      });
+
     });
 
     describe('Backoff time', function(done) {
@@ -3918,7 +3899,6 @@ describe('Wallet service', function() {
         });
       });
     });
-
   });
 
   describe('Transaction notes', function(done) {
