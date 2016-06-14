@@ -995,7 +995,7 @@ describe('client API', function() {
   describe('Wallet Creation', function() {
     it('should fail to create wallet in bogus device', function(done) {
       clients[0].seedFromRandomWithMnemonic();
-      clients[0].incorrectDerivation = true;
+      clients[0].keyDerivationOk = false;
       clients[0].createWallet('mywallet', 'pepe', 1, 1, {}, function(err, secret) {
         should.exist(err);
         should.not.exist(secret);
@@ -1166,7 +1166,7 @@ describe('client API', function() {
         network: 'testnet'
       }, function(err, secret) {
         should.not.exist(err);
-        clients[1].incorrectDerivation = true;
+        clients[1].keyDerivationOk = false;
         clients[1].joinWallet(secret, 'guest', {}, function(err, wallet) {
           should.exist(err);
           done();
@@ -1637,7 +1637,7 @@ describe('client API', function() {
     });
     it('should fail if key derivation is not ok', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
-        clients[0].incorrectDerivation = true;
+        clients[0].keyDerivationOk = false;
         clients[0].createAddress(function(err, address) {
           should.exist(err);
           should.not.exist(address);
@@ -3627,41 +3627,7 @@ describe('client API', function() {
 
         importedClient = helpers.newClient(app);
         importedClient.import(exported);
-        importedClient.incorrectDerivation.should.equal(false);
       });
-
-
-      it('should handle wrong derivation', function(done) {
-        var exported = JSON.parse(clients[0].export());
-
-        // Tamper export with a wrong xpub
-        exported.xPubKey = 'tpubD6NzVbkrYhZ4XJEQQWBgysPKJcBv8zLhHpfhcw4RyhakMxmffNRRRFDUe1Zh7fxvjt1FdNJcaxHgqxyKLL8XiZug7C8KJFLFtGfPVBcY6Nb';
-
-        importedClient = helpers.newClient(app);
-        should.not.exist(importedClient.incorrectDerivation);
-
-        importedClient.on('derivation-error', function() {
-          importedClient.incorrectDerivation.should.equal(true);
-          done();
-        });
-
-        importedClient.import(JSON.stringify(exported));
-      });
-
-
-      it('should skip derivation check if commanded', function() {
-        var exported = JSON.parse(clients[0].export());
-
-        // Tamper export with a wrong xpub
-        exported.xPubKey = 'tpubD6NzVbkrYhZ4XJEQQWBgysPKJcBv8zLhHpfhcw4RyhakMxmffNRRRFDUe1Zh7fxvjt1FdNJcaxHgqxyKLL8XiZug7C8KJFLFtGfPVBcY6Nb';
-
-        importedClient = helpers.newClient(app);
-        importedClient.import(JSON.stringify(exported), {
-          skipKeyValidation: true
-        });
-        should.not.exist(importedClient.incorrectDerivation);
-      });
-
 
       it('should export without signing rights', function() {
         clients[0].canSign().should.be.true;
@@ -3715,6 +3681,37 @@ describe('client API', function() {
           c2.walletName.should.equal(walletName);
           c2.copayerName.should.equal(copayerName);
           done();
+        });
+      });
+    });
+
+    describe('#validateKeyDerivation', function() {
+      beforeEach(function(done) {
+        helpers.createAndJoinWallet(clients, 1, 1, function() {
+          done();
+        });
+      });
+      it('should validate key derivation', function(done) {
+        clients[0].validateKeyDerivation({}, function(err, isValid) {
+          should.not.exist(err);
+          isValid.should.be.true;
+          clients[0].keyDerivationOk.should.be.true;
+
+          var exported = JSON.parse(clients[0].export());
+
+          // Tamper export with a wrong xpub
+          exported.xPubKey = 'tpubD6NzVbkrYhZ4XJEQQWBgysPKJcBv8zLhHpfhcw4RyhakMxmffNRRRFDUe1Zh7fxvjt1FdNJcaxHgqxyKLL8XiZug7C8KJFLFtGfPVBcY6Nb';
+
+          var importedClient = helpers.newClient(app);
+          should.not.exist(importedClient.keyDerivationOk);
+
+          importedClient.import(JSON.stringify(exported));
+          importedClient.validateKeyDerivation({}, function(err, isValid) {
+            should.not.exist(err);
+            isValid.should.be.false;
+            importedClient.keyDerivationOk.should.be.false;
+            done();
+          });
         });
       });
     });
