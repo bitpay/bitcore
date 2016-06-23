@@ -53,7 +53,7 @@ describe('Utils', function() {
   });
 
   describe('#formatAmount', function() {
-    it('should successfully format amount', function() {
+    it('should successfully format short amount', function() {
       var cases = [{
         args: [1, 'bit'],
         expected: '0',
@@ -65,10 +65,10 @@ describe('Utils', function() {
         expected: '0',
       }, {
         args: [12345678, 'bit'],
-        expected: '123,457',
+        expected: '123,456',
       }, {
         args: [12345678, 'btc'],
-        expected: '0.123457',
+        expected: '0.123456',
       }, {
         args: [12345611, 'btc'],
         expected: '0.123456',
@@ -77,29 +77,84 @@ describe('Utils', function() {
         expected: '0.000012',
       }, {
         args: [1299, 'btc'],
-        expected: '0.000013',
+        expected: '0.000012',
       }, {
         args: [1234567899999, 'btc'],
-        expected: '12,345.679',
+        expected: '12,345.678999',
       }, {
         args: [12345678, 'bit', {
           thousandsSeparator: '.'
         }],
-        expected: '123.457',
+        expected: '123.456',
       }, {
         args: [12345678, 'btc', {
           decimalSeparator: ','
         }],
-        expected: '0,123457',
+        expected: '0,123456',
       }, {
         args: [1234567899999, 'btc', {
           thousandsSeparator: ' ',
           decimalSeparator: ','
         }],
-        expected: '12 345,679',
+        expected: '12 345,678999',
       }, ];
 
       _.each(cases, function(testCase) {
+        Utils.formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
+      });
+    });
+    it('should successfully format full amount', function() {
+      var cases = [{
+        args: [1, 'bit'],
+        expected: '0.01',
+      }, {
+        args: [1, 'btc'],
+        expected: '0.00000001',
+      }, {
+        args: [0, 'bit'],
+        expected: '0.00',
+      }, {
+        args: [12345678, 'bit'],
+        expected: '123,456.78',
+      }, {
+        args: [12345678, 'btc'],
+        expected: '0.12345678',
+      }, {
+        args: [1234567, 'btc'],
+        expected: '0.01234567',
+      }, {
+        args: [12345611, 'btc'],
+        expected: '0.12345611',
+      }, {
+        args: [1234, 'btc'],
+        expected: '0.00001234',
+      }, {
+        args: [1299, 'btc'],
+        expected: '0.00001299',
+      }, {
+        args: [1234567899999, 'btc'],
+        expected: '12,345.67899999',
+      }, {
+        args: [12345678, 'bit', {
+          thousandsSeparator: "'"
+        }],
+        expected: "123'456.78",
+      }, {
+        args: [12345678, 'btc', {
+          decimalSeparator: ','
+        }],
+        expected: '0,12345678',
+      }, {
+        args: [1234567899999, 'btc', {
+          thousandsSeparator: ' ',
+          decimalSeparator: ','
+        }],
+        expected: '12 345,67899999',
+      }, ];
+
+      _.each(cases, function(testCase) {
+        testCase.args[2] = testCase.args[2] || {};
+        testCase.args[2].fullPrecision = true;
         Utils.formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
       });
     });
