@@ -413,6 +413,78 @@ describe('Script', function() {
     });
   });
 
+  describe('#classifyInput', function() {
+    it('shouldn\'t classify public key hash out', function() {
+      Script('OP_DUP OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').classifyInput().should.equal(Script.types.UNKNOWN);
+    });
+    it('should classify public key hash in', function() {
+      Script('47 0x3044022077a8d81e656c4a1c1721e68ce35fa0b27f13c342998e75854858c12396a15ffa02206378a8c6959283c008c87a14a9c0ada5cf3934ac5ee29f1fef9cac6969783e9801 21 0x03993c230da7dabb956292851ae755f971c50532efc095a16bee07f83ab9d262df').classifyInput().should.equal(Script.types.PUBKEYHASH_IN);
+    });
+    it('shouldn\'t classify script hash out', function() {
+      Script('OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUAL').classifyInput().should.equal(Script.types.UNKNOWN);
+    });
+    it('should classify script hash in', function() {
+      Script('OP_0 73 0x30460221008ca148504190c10eea7f5f9c283c719a37be58c3ad617928011a1bb9570901d2022100ced371a23e86af6f55ff4ce705c57d2721a09c4d192ca39d82c4239825f75a9801 72 0x30450220357011fd3b3ad2b8f2f2d01e05dc6108b51d2a245b4ef40c112d6004596f0475022100a8208c93a39e0c366b983f9a80bfaf89237fcd64ca543568badd2d18ee2e1d7501 OP_PUSHDATA1 105 0x5221024c02dff2f0b8263a562a69ec875b2c95ffad860f428acf2f9e8c6492bd067d362103546324a1351a6b601c623b463e33b6103ca444707d5b278ece1692f1aa7724a42103b1ad3b328429450069cc3f9fa80d537ee66ba1120e93f3f185a5bf686fb51e0a53ae').classifyInput().should.equal(Script.types.SCRIPTHASH_IN);
+    });
+    it('shouldn\'t classify MULTISIG out', function() {
+      Script('OP_2 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 OP_2 OP_CHECKMULTISIG').classifyInput().should.equal(Script.types.UNKNOWN);
+    });
+    it('should classify MULTISIG in', function() {
+      Script('OP_0 0x47 0x3044022002a27769ee33db258bdf7a3792e7da4143ec4001b551f73e6a190b8d1bde449d02206742c56ccd94a7a2e16ca52fc1ae4a0aa122b0014a867a80de104f9cb18e472c01').classifyInput().should.equal(Script.types.MULTISIG_IN);
+    });
+    it('shouldn\'t classify OP_RETURN data out', function() {
+      Script('OP_RETURN 1 0x01').classifyInput().should.equal(Script.types.UNKNOWN);
+    });
+    it('shouldn\'t classify public key out', function() {
+      Script('41 0x0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8 OP_CHECKSIG').classifyInput().should.equal(Script.types.UNKNOWN);
+    });
+    it('should classify public key in', function() {
+      Script('47 0x3044022007415aa37ce7eaa6146001ac8bdefca0ddcba0e37c5dc08c4ac99392124ebac802207d382307fd53f65778b07b9c63b6e196edeadf0be719130c5db21ff1e700d67501').classifyInput().should.equal(Script.types.PUBKEY_IN);
+    });
+    it('should classify unknown', function() {
+      Script('OP_TRUE OP_FALSE').classifyInput().should.equal(Script.types.UNKNOWN);
+    });
+    it('should classify scriptHashIn, eventhough it\'s opreturn', function() {
+      Script('6a1c3630fd3792f7e847ae5e27985dfb127542ef37ac2a5147c3b9cec7ba').classifyInput().should.equal(Script.types.SCRIPTHASH_IN);
+    });
+  });
+
+  describe('#classifyOutput', function() {
+    it('should classify public key hash out', function() {
+      Script('OP_DUP OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').classifyOutput().should.equal(Script.types.PUBKEYHASH_OUT);
+    });
+    it('shouldn\'t classify public key hash in', function() {
+      Script('47 0x3044022077a8d81e656c4a1c1721e68ce35fa0b27f13c342998e75854858c12396a15ffa02206378a8c6959283c008c87a14a9c0ada5cf3934ac5ee29f1fef9cac6969783e9801 21 0x03993c230da7dabb956292851ae755f971c50532efc095a16bee07f83ab9d262df').classifyOutput().should.equal(Script.types.UNKNOWN);
+    });
+    it('should classify script hash out', function() {
+      Script('OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUAL').classifyOutput().should.equal(Script.types.SCRIPTHASH_OUT);
+    });
+    it('shouldn\'t classify script hash in', function() {
+      Script('OP_0 73 0x30460221008ca148504190c10eea7f5f9c283c719a37be58c3ad617928011a1bb9570901d2022100ced371a23e86af6f55ff4ce705c57d2721a09c4d192ca39d82c4239825f75a9801 72 0x30450220357011fd3b3ad2b8f2f2d01e05dc6108b51d2a245b4ef40c112d6004596f0475022100a8208c93a39e0c366b983f9a80bfaf89237fcd64ca543568badd2d18ee2e1d7501 OP_PUSHDATA1 105 0x5221024c02dff2f0b8263a562a69ec875b2c95ffad860f428acf2f9e8c6492bd067d362103546324a1351a6b601c623b463e33b6103ca444707d5b278ece1692f1aa7724a42103b1ad3b328429450069cc3f9fa80d537ee66ba1120e93f3f185a5bf686fb51e0a53ae').classifyOutput().should.equal(Script.types.UNKNOWN);
+    });
+    it('should classify MULTISIG out', function() {
+      Script('OP_2 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 21 0x038282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508 OP_2 OP_CHECKMULTISIG').classifyOutput().should.equal(Script.types.MULTISIG_OUT);
+    });
+    it('shouldn\'t classify MULTISIG in', function() {
+      Script('OP_0 0x47 0x3044022002a27769ee33db258bdf7a3792e7da4143ec4001b551f73e6a190b8d1bde449d02206742c56ccd94a7a2e16ca52fc1ae4a0aa122b0014a867a80de104f9cb18e472c01').classifyOutput().should.equal(Script.types.UNKNOWN);
+    });
+    it('should classify OP_RETURN data out', function() {
+      Script('OP_RETURN 1 0x01').classifyOutput().should.equal(Script.types.DATA_OUT);
+    });
+    it('should classify public key out', function() {
+      Script('41 0x0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8 OP_CHECKSIG').classifyOutput().should.equal(Script.types.PUBKEY_OUT);
+    });
+    it('shouldn\'t classify public key in', function() {
+      Script('47 0x3044022007415aa37ce7eaa6146001ac8bdefca0ddcba0e37c5dc08c4ac99392124ebac802207d382307fd53f65778b07b9c63b6e196edeadf0be719130c5db21ff1e700d67501').classifyOutput().should.equal(Script.types.UNKNOWN);
+    });
+    it('should classify unknown', function() {
+      Script('OP_TRUE OP_FALSE').classifyOutput().should.equal(Script.types.UNKNOWN);
+    });
+    it('should classify opreturn eventhough it also looks like a scriptHashIn', function() {
+      Script('6a1c3630fd3792f7e847ae5e27985dfb127542ef37ac2a5147c3b9cec7ba').classifyOutput().should.equal(Script.types.DATA_OUT);
+    });
+  });
+
   describe('#classify', function() {
     it('should classify public key hash out', function() {
       Script('OP_DUP OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').classify().should.equal(Script.types.PUBKEYHASH_OUT);
@@ -443,6 +515,28 @@ describe('Script', function() {
     });
     it('should classify unknown', function() {
       Script('OP_TRUE OP_FALSE').classify().should.equal(Script.types.UNKNOWN);
+    });
+    it('should classify opreturn eventhough it also looks like a scriptHashIn', function() {
+      Script('6a1c3630fd3792f7e847ae5e27985dfb127542ef37ac2a5147c3b9cec7ba').classifyInput().should.equal(Script.types.SCRIPTHASH_IN);
+      Script('6a1c3630fd3792f7e847ae5e27985dfb127542ef37ac2a5147c3b9cec7ba').classify().should.equal(Script.types.DATA_OUT);
+    });
+    it('should classify scriptHashIn eventhough it is opreturn when script is marked is input', function() {
+      Script('6a1c3630fd3792f7e847ae5e27985dfb127542ef37ac2a5147c3b9cec7ba').classify().should.equal(Script.types.DATA_OUT);
+      var s = Script('6a1c3630fd3792f7e847ae5e27985dfb127542ef37ac2a5147c3b9cec7ba');
+      s._isInput = true; // this is normally set by when Script is initiated as part if Input or Output objects
+      s.classify().should.equal(Script.types.SCRIPTHASH_IN);
+    });
+    it('should classify unknown eventhough it is public key hash when marked as input', function() {
+      Script('OP_DUP OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG').classify().should.equal(Script.types.PUBKEYHASH_OUT);
+      var s = Script('OP_DUP OP_HASH160 20 0x0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG');
+      s._isInput = true; // this is normally set by when Script is initiated as part if Input or Output objects
+      s.classify().should.equal(Script.types.UNKNOWN);
+    });
+    it('should classify unknown eventhough it is public key hash in when marked as output', function() {
+      var s = Script('47 0x3044022077a8d81e656c4a1c1721e68ce35fa0b27f13c342998e75854858c12396a15ffa02206378a8c6959283c008c87a14a9c0ada5cf3934ac5ee29f1fef9cac6969783e9801 21 0x03993c230da7dabb956292851ae755f971c50532efc095a16bee07f83ab9d262df');
+      s.classify().should.equal(Script.types.PUBKEYHASH_IN);
+      s._isOutput = true; // this is normally set by when Script is initiated as part if Input or Output objects
+      s.classify().should.equal(Script.types.UNKNOWN);
     });
   });
 
