@@ -2059,11 +2059,12 @@ describe('Wallet service', function() {
         done();
       });
     });
-    it('should get default fees if network cannot estimate (returns -1)', function(done) {
+    it('should fallback to slower confirmation times if network cannot estimate (returns -1)', function(done) {
       helpers.stubFeeLevels({
         1: -1,
         2: 18000,
-        6: 0,
+        6: -1,
+        7: 11000,
         24: 9000,
       });
       server.getFeeLevels({}, function(err, fees) {
@@ -2071,22 +2072,27 @@ describe('Wallet service', function() {
         fees = _.zipObject(_.map(fees, function(item) {
           return [item.level, item];
         }));
-        fees.priority.feePerKb.should.equal(50000);
-        should.not.exist(fees.priority.nbBlocks);
+        fees.priority.feePerKb.should.equal(18000);
+        fees.priority.nbBlocks.should.equal(2);
 
         fees.normal.feePerKb.should.equal(18000);
         fees.normal.nbBlocks.should.equal(2);
 
-        fees.economy.feePerKb.should.equal(0);
-        fees.economy.nbBlocks.should.equal(6);
+        fees.economy.feePerKb.should.equal(11000);
+        fees.economy.nbBlocks.should.equal(7);
+
+        fees.superEconomy.feePerKb.should.equal(9000);
+        fees.superEconomy.nbBlocks.should.equal(24);
         done();
       });
     });
-    it('should get cached value if network cannot estimate but an estimation was retrieved previously', function(done) {
+    it('should get default fees if network cannot estimate (returns -1 including fallback)', function(done) {
       helpers.stubFeeLevels({
-        1: 40000,
-        2: 20000,
-        6: 18000,
+        1: 45000,
+        2: 36000,
+        6: -1,
+        7: -1,
+        8: -1,
         24: 9000,
       });
       server.getFeeLevels({}, function(err, fees) {
@@ -2094,36 +2100,48 @@ describe('Wallet service', function() {
         fees = _.zipObject(_.map(fees, function(item) {
           return [item.level, item];
         }));
-        fees.priority.feePerKb.should.equal(40000);
+
+        fees.priority.feePerKb.should.equal(45000);
         fees.priority.nbBlocks.should.equal(1);
 
-        fees.normal.feePerKb.should.equal(20000);
+        fees.normal.feePerKb.should.equal(36000);
+        fees.normal.nbBlocks.should.equal(2);
+
+        fees.economy.feePerKb.should.equal(25000);
+        should.not.exist(fees.economy.nbBlocks);
+        done();
+      });
+    });
+    it('should get monotonically decreasing fee values', function(done) {
+      _.find(Defaults.FEE_LEVELS, {
+        nbBlocks: 6
+      }).defaultValue.should.equal(25000);
+      helpers.stubFeeLevels({
+        1: 45000,
+        2: 18000,
+        6: -1,
+        7: -1,
+        8: -1,
+        24: 9000,
+      });
+      server.getFeeLevels({}, function(err, fees) {
+        should.not.exist(err);
+        fees = _.zipObject(_.map(fees, function(item) {
+          return [item.level, item];
+        }));
+
+        fees.priority.feePerKb.should.equal(45000);
+        fees.priority.nbBlocks.should.equal(1);
+
+        fees.normal.feePerKb.should.equal(18000);
         fees.normal.nbBlocks.should.equal(2);
 
         fees.economy.feePerKb.should.equal(18000);
-        fees.economy.nbBlocks.should.equal(6);
+        should.not.exist(fees.economy.nbBlocks);
 
-        helpers.stubFeeLevels({
-          1: -1,
-          2: 25000,
-          6: 10000,
-          24: 9000,
-        });
-        server.getFeeLevels({}, function(err, fees) {
-          should.not.exist(err);
-          fees = _.zipObject(_.map(fees, function(item) {
-            return [item.level, item];
-          }));
-          fees.priority.feePerKb.should.equal(40000);
-          fees.priority.nbBlocks.should.equal(1);
-
-          fees.normal.feePerKb.should.equal(25000);
-          fees.normal.nbBlocks.should.equal(2);
-
-          fees.economy.feePerKb.should.equal(10000);
-          fees.economy.nbBlocks.should.equal(6);
-          done();
-        });
+        fees.superEconomy.feePerKb.should.equal(9000);
+        fees.superEconomy.nbBlocks.should.equal(24);
+        done();
       });
     });
   });
