@@ -84,7 +84,7 @@ echo "Cleanup Node.js addon binaries before packaging:"
 find "${app_dir}" -type f -name '*.node' -print -delete
 find "${app_dir}" -type f -name '*.o' -print -delete
 echo "Cleanup intermediate files:"
-rm -v "${deb_dir}/usr/opt/bitcore/node_modules/bitcore-node/bin/bitcoin-0.12.0-linux64.tar.gz"
+rm -v "${deb_dir}/usr/opt/bitcore/node_modules/bitcore-node/bin/bitcoin-0.12.1-linux64.tar.gz"
 npm shrinkwrap --dev
 popd
 

@@ -1,6 +1,6 @@
 {
   "name": "bitcore",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "A platform to build bitcoin and blockchain-based applications.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -83,7 +83,7 @@
   },
   "dependencies": {
     "bitcore-lib": "^0.13.14",
-    "bitcore-node": "~3.0.0",
+    "bitcore-node": "~3.1.0",
     "insight-api": "^0.4.0",
     "insight-ui": "^0.4.0"
   },
