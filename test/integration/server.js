@@ -2012,7 +2012,6 @@ describe('Wallet service', function() {
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
         wallet = w;
-        WalletService._feeLevelCache = {};
         done();
       });
     });
