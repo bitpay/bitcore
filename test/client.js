@@ -3640,6 +3640,31 @@ describe('client API', function() {
         importedClient.canSign().should.be.false;
       });
 
+      it('should export & import encrypted locked', function() {
+        clients[0].setPrivateKeyEncryption('password');
+        clients[0].lock();
+
+        var exported = clients[0].export();
+
+        importedClient = helpers.newClient(app);
+        importedClient.import(exported);
+
+        importedClient.isPrivKeyEncrypted().should.be.true;
+      });
+
+      it('should export & import encrypted unlocked', function() {
+        clients[0].setPrivateKeyEncryption('password');
+        clients[0].lock();
+        clients[0].unlock('password');
+
+        var exported = clients[0].export();
+
+        importedClient = helpers.newClient(app);
+        importedClient.import(exported);
+
+        importedClient.isPrivKeyEncrypted().should.be.false;
+      });
+
       it('should export & import with mnemonics + BWS', function(done) {
         var c = clients[0].credentials;
         var walletId = c.walletId;
