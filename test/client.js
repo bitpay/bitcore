@@ -4221,6 +4221,76 @@ describe('client API', function() {
         }
       );
     });
+    it('should be able to sign from airgapped client with mnemonics (no xpubkey ring)', function(done) {
+      var client = helpers.newClient(app);
+      client.seedFromRandomWithMnemonic({
+        network: 'testnet',
+        passphrase: 'passphrase',
+      });
+
+      var mnemonic = client.getMnemonic();
+      client.setPrivateKeyEncryption('password');
+      client.lock();
+      client.isPrivKeyEncrypted().should.be.true;
+
+      async.waterfall([
+
+          function(next) {
+            client.createWallet('mywallet', 'creator', 1, 1, {
+              network: 'testnet'
+            }, function(err) {
+              should.not.exist(err);
+              client.createAddress(function(err, address) {
+                should.not.exist(err);
+                should.exist(address.address);
+                blockchainExplorerMock.setUtxo(address, 1, 1);
+                var opts = {
+                  amount: 1200000,
+                  toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+                  message: 'hello 1-1',
+                };
+                client.sendTxProposal(opts, next);
+              });
+            });
+          },
+          function(txp, next) {
+            should.exist(txp);
+            client.getTxProposals({
+              forAirGapped: true,
+              doNotEncryptPkr: true,
+            }, next);
+          },
+          function(bundle, next) {
+            var signatures = Client.signTxProposalFromAirGapped(mnemonic, bundle.txps[0], bundle.unencryptedPkr, bundle.m, bundle.n, 'testnet', 'passphrase', 0, 'BIP44');
+            next(null, signatures);
+          },
+          function(signatures, next) {
+            client.getTxProposals({}, function(err, txps) {
+              should.not.exist(err);
+              var txp = txps[0];
+              txp.signatures = signatures;
+              async.each(txps, function(txp, cb) {
+                client.signTxProposal(txp, function(err, txp) {
+                  should.not.exist(err);
+                  client.broadcastTxProposal(txp, function(err, txp) {
+                    should.not.exist(err);
+                    txp.status.should.equal('broadcasted');
+                    should.exist(txp.txid);
+                    cb();
+                  });
+                });
+              }, function(err) {
+                next(err);
+              });
+            });
+          },
+        ],
+        function(err) {
+          should.not.exist(err);
+          done();
+        }
+      );
+    });
     describe('Failure and tampering', function() {
       var airgapped, proxy, bundle;
 
