@@ -4221,7 +4221,7 @@ describe('client API', function() {
         }
       );
     });
-    it('should be able to sign from airgapped client with mnemonics (no xpubkey ring)', function(done) {
+    it('should be able to sign from airgapped client with mnemonics (with unencrypted xpubkey ring)', function(done) {
       var client = helpers.newClient(app);
       client.seedFromRandomWithMnemonic({
         network: 'testnet',
@@ -4261,7 +4261,7 @@ describe('client API', function() {
             }, next);
           },
           function(bundle, next) {
-            var signatures = Client.signTxProposalFromAirGapped(mnemonic, bundle.txps[0], bundle.unencryptedPkr, bundle.m, bundle.n, 'testnet', 'passphrase', 0, 'BIP44');
+            var signatures = Client.signTxProposalFromAirGapped(mnemonic, bundle.txps[0], bundle.unencryptedPkr, bundle.m, bundle.n, {passphrase: 'passphrase', account: 0, derivationStrategy: 'BIP44'});
             next(null, signatures);
           },
           function(signatures, next) {
