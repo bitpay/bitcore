@@ -2,7 +2,7 @@
   "name": "bitcore-wallet-service",
   "description": "A service for Mutisig HD Bitcoin Wallets",
   "author": "BitPay Inc",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "keywords": [
     "bitcoin",
     "copay",
