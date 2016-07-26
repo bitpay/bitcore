@@ -275,9 +275,6 @@ describe('Push notifications', function() {
 
     it('should notify copayers a new tx proposal has been created', function(done) {
       helpers.stubUtxos(server, wallet, [1, 1], function() {
-        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, TestData.copayers[0].privKey_1H_0, {
-          message: 'some message'
-        });
         server.createAddress({}, function(err, address) {
           should.not.exist(err);
           server._notify('NewTxProposal', {
@@ -300,15 +297,21 @@ describe('Push notifications', function() {
 
     it('should notify copayers a tx has been finally rejected', function(done) {
       helpers.stubUtxos(server, wallet, 1, function() {
-        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, TestData.copayers[0].privKey_1H_0, {
-          message: 'some message'
-        });
+        var txOpts = {
+          outputs: [{
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 0.8e8
+          }],
+          feePerKb: 100e2
+        };
 
         var txpId;
         async.waterfall([
 
           function(next) {
-            server.createTxLegacy(txOpts, next);
+            helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
+              next(null, tx);
+            });
           },
           function(txp, next) {
             txpId = txp.id;
@@ -341,15 +344,21 @@ describe('Push notifications', function() {
 
     it('should notify copayers a new outgoing tx has been created', function(done) {
       helpers.stubUtxos(server, wallet, 1, function() {
-        var txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.8, TestData.copayers[0].privKey_1H_0, {
-          message: 'some message'
-        });
+        var txOpts = {
+          outputs: [{
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 0.8e8
+          }],
+          feePerKb: 100e2
+        };
 
         var txp;
         async.waterfall([
 
           function(next) {
-            server.createTxLegacy(txOpts, next);
+            helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
+              next(null, tx);
+            });
           },
           function(t, next) {
             txp = t;

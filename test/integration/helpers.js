@@ -391,46 +391,6 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
   return signatures;
 };
 
-
-helpers.createProposalOptsLegacy = function(toAddress, amount, message, signingKey, feePerKb) {
-  var opts = {
-    toAddress: toAddress,
-    amount: helpers.toSatoshi(amount),
-    message: message,
-    proposalSignature: null,
-  };
-  if (feePerKb) opts.feePerKb = feePerKb;
-
-  var hash = WalletService._getProposalHash(toAddress, opts.amount, message);
-
-  try {
-    opts.proposalSignature = helpers.signMessage(hash, signingKey);
-  } catch (ex) {}
-
-  return opts;
-};
-
-helpers.createSimpleProposalOpts = function(toAddress, amount, signingKey, opts) {
-  var outputs = [{
-    toAddress: toAddress,
-    amount: amount,
-  }];
-  return helpers.createProposalOpts(Model.TxProposalLegacy.Types.SIMPLE, outputs, signingKey, opts);
-};
-
-helpers.createExternalProposalOpts = function(toAddress, amount, signingKey, moreOpts, inputs) {
-  var outputs = [{
-    toAddress: toAddress,
-    amount: amount,
-  }];
-  if (_.isArray(moreOpts)) {
-    inputs = moreOpts;
-    moreOpts = null;
-  }
-  return helpers.createProposalOpts(Model.TxProposalLegacy.Types.EXTERNAL, outputs, signingKey, moreOpts, inputs);
-};
-
-
 helpers.getProposalSignatureOpts = function(txp, signingKey) {
   var raw = txp.getRawTx();
   var proposalSignature = helpers.signMessage(raw, signingKey);
@@ -442,48 +402,6 @@ helpers.getProposalSignatureOpts = function(txp, signingKey) {
 };
 
 
-helpers.createProposalOpts = function(type, outputs, signingKey, moreOpts, inputs) {
-  _.each(outputs, function(output) {
-    output.amount = helpers.toSatoshi(output.amount);
-  });
-
-  var opts = {
-    type: type,
-    proposalSignature: null,
-    inputs: inputs || []
-  };
-
-  if (moreOpts) {
-    moreOpts = _.pick(moreOpts, ['feePerKb', 'customData', 'message', 'payProUrl']);
-    opts = _.assign(opts, moreOpts);
-  }
-
-  opts = _.defaults(opts, {
-    message: null
-  });
-
-  var hash;
-  if (type == Model.TxProposalLegacy.Types.SIMPLE) {
-    opts.toAddress = outputs[0].toAddress;
-    opts.amount = outputs[0].amount;
-    hash = WalletService._getProposalHash(opts.toAddress, opts.amount,
-      opts.message, opts.payProUrl);
-  } else if (type == Model.TxProposalLegacy.Types.MULTIPLEOUTPUTS || type == Model.TxProposalLegacy.Types.EXTERNAL) {
-    opts.outputs = outputs;
-    var header = {
-      outputs: outputs,
-      message: opts.message,
-      payProUrl: opts.payProUrl
-    };
-    hash = WalletService._getProposalHash(header);
-  }
-
-  try {
-    opts.proposalSignature = helpers.signMessage(hash, signingKey);
-  } catch (ex) {}
-
-  return opts;
-};
 helpers.createAddresses = function(server, wallet, main, change, cb) {
   // var clock = sinon.useFakeTimers('Date');
   async.mapSeries(_.range(main + change), function(i, next) {
