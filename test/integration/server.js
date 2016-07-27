@@ -5895,7 +5895,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe.only('#getTxHistory', function() {
+  describe('#getTxHistory', function() {
     var server, wallet, mainAddresses, changeAddresses;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(1, 1, function(s, w) {
@@ -5923,97 +5923,6 @@ describe('Wallet service', function() {
         done();
       });
     });
-
-    it('should store partial cache tx history from insight', function(done) {
-      var  h = helpers.historyCacheTest(200);
-      helpers.stubHistory(h);
-      var spy = sinon.spy(server.storage, 'storeTxHistoryCache');
-      var toCache = _.filter(h, function(i) {
-        return i.confirmations >= server.confirmationsToStartCaching;
-      });
-      var skip  = 95;
-      var limit = 10;
-
-      server.getTxHistory({
-        skip: skip,
-        limit: limit, 
-      }, function(err, txs) {
-
-        // FROM the END, we are getting items
-        // End-1, end-2, end-3.
-
-        should.not.exist(err);
-        should.exist(txs);
-        txs.length.should.equal(limit);
-        var calls = spy.getCalls();
-        calls.length.should.equal(1);
-
-        calls[0].args[1].should.equal(200); // total
-        calls[0].args[2].should.equal(200 - skip - limit);  // position
-        calls[0].args[3].length.should.equal(5); // 5 txs have confirmations>= 100
-
-        // should be reversed!
-        calls[0].args[3][0].confirmations.should.equal(104);
-        calls[0].args[3][0].txid.should.equal(h[104].txid);
-        server.storage.storeTxHistoryCache.restore();
-        done();
-      });
-    });
-
-
-    it('should not cache tx history from insight', function(done) {
-      var  h = helpers.historyCacheTest(200);
-      helpers.stubHistory(h);
-      var spy = sinon.spy(server.storage, 'storeTxHistoryCache');
-      server.getTxHistory({
-        skip:0,
-        limit: 10,
-      }, function(err, txs) {
-        should.not.exist(err);
-        should.exist(txs);
-        var calls = spy.getCalls();
-        calls.length.should.equal(1);
-        calls[0].args[3].length.should.equal(0);
-        server.storage.storeTxHistoryCache.restore();
-        done();
-      });
-    });
-
-
-    it('should store cache all tx history from insight', function(done) {
-      var  h = helpers.historyCacheTest(200);
-      helpers.stubHistory(h);
-      var spy = sinon.spy(server.storage, 'storeTxHistoryCache');
-      var toCache = _.filter(h, function(i) {
-        return i.confirmations >= server.confirmationsToStartCaching;
-      });
-      var skip  = 195;
-      var limit = 5;
-
-      server.getTxHistory({
-        skip: skip,
-        limit: limit, 
-      }, function(err, txs) {
-
-        should.not.exist(err);
-        should.exist(txs);
-        txs.length.should.equal(limit);
-        var calls = spy.getCalls();
-        calls.length.should.equal(1);
-
-        calls[0].args[1].should.equal(200); // total
-        calls[0].args[2].should.equal(200 - skip - limit);  // position
-        calls[0].args[3].length.should.equal(5); 
-
-        // should be reversed!
-        calls[0].args[3][0].confirmations.should.equal(199);
-        calls[0].args[3][0].txid.should.equal(h[199].txid);
-        server.storage.storeTxHistoryCache.restore();
-        done();
-      });
-    });
-
-
 
     it('should get tx history for incoming txs', function(done) {
       server._normalizeTxHistory = sinon.stub().returnsArg(0);
@@ -6305,6 +6214,115 @@ describe('Wallet service', function() {
         limit: 1000
       }, function(err, txs) {
         err.code.should.equal('HISTORY_LIMIT_EXCEEDED');
+        done();
+      });
+    });
+  });
+
+  describe('#getTxHistory cache', function() {
+    var server, wallet, mainAddresses, changeAddresses;
+    var _threshold = Defaults.HISTORY_CACHE_ADDRESS_THRESOLD;
+    beforeEach(function(done) {
+      Defaults.HISTORY_CACHE_ADDRESS_THRESOLD = 1;
+      helpers.createAndJoinWallet(1, 1, function(s, w) {
+        server = s;
+        wallet = w;
+        helpers.createAddresses(server, wallet, 1, 1, function(main, change) {
+          mainAddresses = main;
+          changeAddresses = change;
+          done();
+        });
+      });
+    });
+    afterEach(function() {
+      Defaults.HISTORY_CACHE_ADDRESS_THRESOLD = _threshold;
+    });
+
+    it('should store partial cache tx history from insight', function(done) {
+      var h = helpers.historyCacheTest(200);
+      helpers.stubHistory(h);
+      var spy = sinon.spy(server.storage, 'storeTxHistoryCache');
+      var toCache = _.filter(h, function(i) {
+        return i.confirmations >= server.confirmationsToStartCaching;
+      });
+      var skip = 95;
+      var limit = 10;
+
+      server.getTxHistory({
+        skip: skip,
+        limit: limit,
+      }, function(err, txs) {
+
+        // FROM the END, we are getting items
+        // End-1, end-2, end-3.
+
+        should.not.exist(err);
+        should.exist(txs);
+        txs.length.should.equal(limit);
+        var calls = spy.getCalls();
+        calls.length.should.equal(1);
+
+        calls[0].args[1].should.equal(200); // total
+        calls[0].args[2].should.equal(200 - skip - limit); // position
+        calls[0].args[3].length.should.equal(5); // 5 txs have confirmations>= 100
+
+        // should be reversed!
+        calls[0].args[3][0].confirmations.should.equal(104);
+        calls[0].args[3][0].txid.should.equal(h[104].txid);
+        server.storage.storeTxHistoryCache.restore();
+        done();
+      });
+    });
+
+
+    it('should not cache tx history from insight', function(done) {
+      var h = helpers.historyCacheTest(200);
+      helpers.stubHistory(h);
+      var spy = sinon.spy(server.storage, 'storeTxHistoryCache');
+      server.getTxHistory({
+        skip: 0,
+        limit: 10,
+      }, function(err, txs) {
+        should.not.exist(err);
+        should.exist(txs);
+        var calls = spy.getCalls();
+        calls.length.should.equal(1);
+        calls[0].args[3].length.should.equal(0);
+        server.storage.storeTxHistoryCache.restore();
+        done();
+      });
+    });
+
+
+    it('should store cache all tx history from insight', function(done) {
+      var h = helpers.historyCacheTest(200);
+      helpers.stubHistory(h);
+      var spy = sinon.spy(server.storage, 'storeTxHistoryCache');
+      var toCache = _.filter(h, function(i) {
+        return i.confirmations >= server.confirmationsToStartCaching;
+      });
+      var skip = 195;
+      var limit = 5;
+
+      server.getTxHistory({
+        skip: skip,
+        limit: limit,
+      }, function(err, txs) {
+
+        should.not.exist(err);
+        should.exist(txs);
+        txs.length.should.equal(limit);
+        var calls = spy.getCalls();
+        calls.length.should.equal(1);
+
+        calls[0].args[1].should.equal(200); // total
+        calls[0].args[2].should.equal(200 - skip - limit); // position
+        calls[0].args[3].length.should.equal(5);
+
+        // should be reversed!
+        calls[0].args[3][0].confirmations.should.equal(199);
+        calls[0].args[3][0].txid.should.equal(h[199].txid);
+        server.storage.storeTxHistoryCache.restore();
         done();
       });
     });
