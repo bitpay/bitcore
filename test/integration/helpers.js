@@ -322,7 +322,8 @@ helpers.stubBroadcast = function(thirdPartyBroadcast) {
   blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
 };
 
-helpers.stubHistory = function(txs) {
+helpers.stubHistory = function(txs, totalItems) {
+  totalItems = totalItems || 100;
   blockchainExplorer.getTransactions = function(addresses, from, to, cb) {
     var MAX_BATCH_SIZE = 100;
     var nbTxs = txs.length;
@@ -343,7 +344,7 @@ helpers.stubHistory = function(txs) {
     if (to > nbTxs) to = nbTxs;
 
     var page = txs.slice(from, to);
-    return cb(null, page);
+    return cb(null, page, totalItems);
   };
 };
 

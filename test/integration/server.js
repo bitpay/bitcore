@@ -4092,7 +4092,7 @@ describe('Wallet service', function() {
             amount: 200,
           }],
         }];
-        helpers.stubHistory(txs);
+        helpers.stubHistory(txs, 100);
         server.editTxNote({
           txid: '123',
           body: 'just some note'
@@ -5923,6 +5923,59 @@ describe('Wallet service', function() {
         done();
       });
     });
+
+    it('should cache tx history from insight', function(done) {
+      helpers.stubHistory(TestData.historyToCache);
+      var spy = sinon.spy(server.storage, 'storeTxHistoryCache');
+      var toCache = _.filter(TestData.historyToCache, function(i) {
+        return i.confirmations >= server.confirmationsToStartCaching;
+      });
+      var skip  = 1;
+
+      server.getTxHistory({
+        skip: skip,
+      }, function(err, txs) {
+
+        // FROM the END, we are getting items
+        // End-1, end-2, end-3.
+
+        should.not.exist(err);
+        should.exist(txs);
+        txs.length.should.equal(TestData.historyToCache.length - skip);
+        var calls = spy.getCalls();
+        calls.length.should.equal(1);
+        calls[0].args[1].should.equal(100); // total
+        calls[0].args[2].should.equal(100 - skip);  // position
+        calls[0].args[3].length.should.equal(toCache.length - skip);
+
+        // should be reversed!
+        calls[0].args[3][0].txid.should.equal(toCache[toCache.length-1].txid);
+        server.storage.storeTxHistoryCache.restore();
+        done();
+      });
+    });
+
+
+    it('should not cache tx history from insight', function(done) {
+      helpers.stubHistory(TestData.history);
+      var spy = sinon.spy(server.storage, 'storeTxHistoryCache');
+      var total = _.filter(TestData.history, function(i) {
+        return i.confirmations >= server.confirmationsToStartCaching;
+      });
+      server.getTxHistory({}, function(err, txs) {
+        should.not.exist(err);
+        should.exist(txs);
+        txs.length.should.equal(TestData.history.length);
+        var calls = spy.getCalls();
+        calls.length.should.equal(1);
+        calls[0].args[1].should.equal(100);
+        calls[0].args[2].should.equal(100);
+        calls[0].args[3].length.should.deep.equal(total.length);
+        server.storage.storeTxHistoryCache.restore();
+        done();
+      });
+    });
+
     it('should get tx history for incoming txs', function(done) {
       server._normalizeTxHistory = sinon.stub().returnsArg(0);
       var txs = [{

@@ -81,6 +81,6 @@ var config = {
   //  api_user: xxx,
   //  api_key: xxx,
   // });
-
+  confirmationsToStartCaching: 100,
 };
 module.exports = config;
