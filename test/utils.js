@@ -61,6 +61,18 @@ describe('Utils', function() {
         args: [1, 'btc'],
         expected: '0.00',
       }, {
+        args: [400050000, 'btc'],
+        expected: '4.0005',
+      }, {
+        args: [400000000, 'btc'],
+        expected: '4.00',
+      }, {
+        args: [49999, 'btc'],
+        expected: '0.000499',
+      }, {
+        args: [100000000, 'btc'],
+        expected: '1.00',
+      }, {
         args: [0, 'bit'],
         expected: '0',
       }, {
