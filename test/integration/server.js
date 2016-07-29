@@ -6284,8 +6284,7 @@ describe('Wallet service', function() {
         should.not.exist(err);
         should.exist(txs);
         var calls = storeTxHistoryCacheSpy.getCalls();
-        calls.length.should.equal(1);
-        calls[0].args[3].length.should.equal(0);
+        calls.length.should.equal(0);
         server.storage.storeTxHistoryCache.restore();
         done();
       });
@@ -6322,7 +6321,7 @@ describe('Wallet service', function() {
       });
     });
 
-    describe.only('Downloading history', function() {
+    describe('Downloading history', function() {
       var h;
       beforeEach(function() {
         h = helpers.historyCacheTest(200);
@@ -6331,7 +6330,6 @@ describe('Wallet service', function() {
 
       it('from 0 to 200, two times, in order', function(done) {
         async.eachSeries(_.range(0, 200, 5), function(i, next) {
-          console.log('FIRST ', i); //TODO
           server.getTxHistory({
             skip: i,
             limit: 5,
@@ -6346,7 +6344,6 @@ describe('Wallet service', function() {
           });
         }, function() {
           async.eachSeries(_.range(0, 200, 5), function(i, next) {
-            console.log('SECOND ', i); //TODO
             server.getTxHistory({
               skip: i,
               limit: 5,
@@ -6366,7 +6363,6 @@ describe('Wallet service', function() {
       it('from 0 to 200, two times, random', function(done) {
         var indexes = _.range(0, 200, 5);
         async.eachSeries(_.shuffle(indexes), function(i, next) {
-          console.log('FIRST ', i); //TODO
           server.getTxHistory({
             skip: i,
             limit: 5,
@@ -6381,7 +6377,6 @@ describe('Wallet service', function() {
           });
         }, function() {
           async.eachSeries(_.range(0, 200, 5), function(i, next) {
-            console.log('SECOND ', i); //TODO
             server.getTxHistory({
               skip: i,
               limit: 5,
@@ -6402,7 +6397,6 @@ describe('Wallet service', function() {
       it('from 0 to 200, two times, random, with resets', function(done) {
         var indexes = _.range(0, 200, 5);
         async.eachSeries(_.shuffle(indexes), function(i, next) {
-          console.log('FIRST ', i); //TODO
           server.getTxHistory({
             skip: i,
             limit: 5,
@@ -6417,11 +6411,9 @@ describe('Wallet service', function() {
           });
         }, function() {
           async.eachSeries(_.range(0, 200, 5), function(i, next) {
-            console.log('SECOND ', i); //TODO
 
             function resetCache(cb) {
               if (!(i%25)) {
-console.log('[server.js.6424] RESET CACHE!!!!!!!!!!!!!!!!'); //TODO
                 storage.softResetTxHistoryCache(server.walletId, function() {
                   return cb(true);
                 });
@@ -6443,8 +6435,8 @@ console.log('[server.js.6424] RESET CACHE!!!!!!!!!!!!!!!!'); //TODO
                 fromCache.should.equal(i >= 100 && !reset);
                 next();
               });
-            }, done);
-          });
+            });
+          }, done);
         });
       });
 
