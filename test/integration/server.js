@@ -6334,6 +6334,7 @@ describe('Wallet service', function() {
             skip: i,
             limit: 5,
           }, function(err, txs, fromCache) {
+
             should.not.exist(err);
             should.exist(txs);
             txs.length.should.equal(5);
@@ -6344,14 +6345,14 @@ describe('Wallet service', function() {
           });
         }, function() {
           // Ask more that cached.
-          async.eachSeries(_.range(0, 210, 5), function(i, next) {
+          async.eachSeries(_.range(0, 210, 7), function(i, next) {
             server.getTxHistory({
               skip: i,
-              limit: 5,
+              limit: 7,
             }, function(err, txs, fromCache) {
               should.not.exist(err);
               should.exist(txs);
-              var s = h.slice(i, i + 5);
+              var s = h.slice(i, i + 7);
               _.pluck(txs, 'txid').should.deep.equal(_.pluck(s, 'txid'));
               fromCache.should.equal(i >= Defaults.CONFIRMATIONS_TO_START_CACHING && i < 200);
               next();
