@@ -6241,10 +6241,8 @@ describe('Wallet service', function() {
     it('should store partial cache tx history from insight', function(done) {
       var h = helpers.historyCacheTest(200);
       helpers.stubHistory(h);
-      var spy = sinon.spy(server.storage, 'storeTxHistoryCache');
-      var toCache = _.filter(h, function(i) {
-        return i.confirmations >= server.confirmationsToStartCaching;
-      });
+      var storeTxHistoryCacheSpy = sinon.spy(server.storage, 'storeTxHistoryCache');
+
       var skip = 95;
       var limit = 10;
 
@@ -6259,7 +6257,7 @@ describe('Wallet service', function() {
         should.not.exist(err);
         should.exist(txs);
         txs.length.should.equal(limit);
-        var calls = spy.getCalls();
+        var calls = storeTxHistoryCacheSpy.getCalls();
         calls.length.should.equal(1);
 
         calls[0].args[1].should.equal(200); // total
@@ -6278,14 +6276,14 @@ describe('Wallet service', function() {
     it('should not cache tx history from insight', function(done) {
       var h = helpers.historyCacheTest(200);
       helpers.stubHistory(h);
-      var spy = sinon.spy(server.storage, 'storeTxHistoryCache');
+      var storeTxHistoryCacheSpy = sinon.spy(server.storage, 'storeTxHistoryCache');
       server.getTxHistory({
         skip: 0,
         limit: 10,
       }, function(err, txs) {
         should.not.exist(err);
         should.exist(txs);
-        var calls = spy.getCalls();
+        var calls = storeTxHistoryCacheSpy.getCalls();
         calls.length.should.equal(1);
         calls[0].args[3].length.should.equal(0);
         server.storage.storeTxHistoryCache.restore();
@@ -6297,10 +6295,7 @@ describe('Wallet service', function() {
     it('should store cache all tx history from insight', function(done) {
       var h = helpers.historyCacheTest(200);
       helpers.stubHistory(h);
-      var spy = sinon.spy(server.storage, 'storeTxHistoryCache');
-      var toCache = _.filter(h, function(i) {
-        return i.confirmations >= server.confirmationsToStartCaching;
-      });
+      var storeTxHistoryCacheSpy = sinon.spy(server.storage, 'storeTxHistoryCache');
       var skip = 195;
       var limit = 5;
 
@@ -6312,7 +6307,7 @@ describe('Wallet service', function() {
         should.not.exist(err);
         should.exist(txs);
         txs.length.should.equal(limit);
-        var calls = spy.getCalls();
+        var calls = storeTxHistoryCacheSpy.getCalls();
         calls.length.should.equal(1);
 
         calls[0].args[1].should.equal(200); // total
@@ -6325,6 +6320,135 @@ describe('Wallet service', function() {
         server.storage.storeTxHistoryCache.restore();
         done();
       });
+    });
+
+    describe.only('Downloading history', function() {
+      var h;
+      beforeEach(function() {
+        h = helpers.historyCacheTest(200);
+        helpers.stubHistory(h);
+      });
+
+      it('from 0 to 200, two times, in order', function(done) {
+        async.eachSeries(_.range(0, 200, 5), function(i, next) {
+          console.log('FIRST ', i); //TODO
+          server.getTxHistory({
+            skip: i,
+            limit: 5,
+          }, function(err, txs, fromCache) {
+            should.not.exist(err);
+            should.exist(txs);
+            txs.length.should.equal(5);
+            var s = h.slice(i, i + 5);
+            _.pluck(txs, 'txid').should.deep.equal(_.pluck(s, 'txid'));
+            fromCache.should.equal(false);
+            next();
+          });
+        }, function() {
+          async.eachSeries(_.range(0, 200, 5), function(i, next) {
+            console.log('SECOND ', i); //TODO
+            server.getTxHistory({
+              skip: i,
+              limit: 5,
+            }, function(err, txs, fromCache) {
+              should.not.exist(err);
+              should.exist(txs);
+              txs.length.should.equal(5);
+              var s = h.slice(i, i + 5);
+              _.pluck(txs, 'txid').should.deep.equal(_.pluck(s, 'txid'));
+              fromCache.should.equal(i >= 100);
+              next();
+            });
+          }, done);
+        });
+      });
+
+      it('from 0 to 200, two times, random', function(done) {
+        var indexes = _.range(0, 200, 5);
+        async.eachSeries(_.shuffle(indexes), function(i, next) {
+          console.log('FIRST ', i); //TODO
+          server.getTxHistory({
+            skip: i,
+            limit: 5,
+          }, function(err, txs, fromCache) {
+            should.not.exist(err);
+            should.exist(txs);
+            txs.length.should.equal(5);
+            var s = h.slice(i, i + 5);
+            _.pluck(txs, 'txid').should.deep.equal(_.pluck(s, 'txid'));
+            fromCache.should.equal(false);
+            next();
+          });
+        }, function() {
+          async.eachSeries(_.range(0, 200, 5), function(i, next) {
+            console.log('SECOND ', i); //TODO
+            server.getTxHistory({
+              skip: i,
+              limit: 5,
+            }, function(err, txs, fromCache) {
+              should.not.exist(err);
+              should.exist(txs);
+              txs.length.should.equal(5);
+              var s = h.slice(i, i + 5);
+              _.pluck(txs, 'txid').should.deep.equal(_.pluck(s, 'txid'));
+              fromCache.should.equal(i >= 100);
+              next();
+            });
+          }, done);
+        });
+      });
+
+
+      it('from 0 to 200, two times, random, with resets', function(done) {
+        var indexes = _.range(0, 200, 5);
+        async.eachSeries(_.shuffle(indexes), function(i, next) {
+          console.log('FIRST ', i); //TODO
+          server.getTxHistory({
+            skip: i,
+            limit: 5,
+          }, function(err, txs, fromCache) {
+            should.not.exist(err);
+            should.exist(txs);
+            txs.length.should.equal(5);
+            var s = h.slice(i, i + 5);
+            _.pluck(txs, 'txid').should.deep.equal(_.pluck(s, 'txid'));
+            fromCache.should.equal(false);
+            next();
+          });
+        }, function() {
+          async.eachSeries(_.range(0, 200, 5), function(i, next) {
+            console.log('SECOND ', i); //TODO
+
+            function resetCache(cb) {
+              if (!(i%25)) {
+console.log('[server.js.6424] RESET CACHE!!!!!!!!!!!!!!!!'); //TODO
+                storage.softResetTxHistoryCache(server.walletId, function() {
+                  return cb(true);
+                });
+              } else {
+                return cb(false);
+              }
+            }
+
+            resetCache(function(reset) {
+              server.getTxHistory({
+                skip: i,
+                limit: 5,
+              }, function(err, txs, fromCache) {
+                should.not.exist(err);
+                should.exist(txs);
+                txs.length.should.equal(5);
+                var s = h.slice(i, i + 5);
+                _.pluck(txs, 'txid').should.deep.equal(_.pluck(s, 'txid'));
+                fromCache.should.equal(i >= 100 && !reset);
+                next();
+              });
+            }, done);
+          });
+        });
+      });
+
+
     });
   });
 
