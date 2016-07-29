@@ -6243,7 +6243,7 @@ describe('Wallet service', function() {
       helpers.stubHistory(h);
       var storeTxHistoryCacheSpy = sinon.spy(server.storage, 'storeTxHistoryCache');
 
-      var skip = 95;
+      var skip = 31;
       var limit = 10;
 
       server.getTxHistory({
@@ -6265,8 +6265,8 @@ describe('Wallet service', function() {
         calls[0].args[3].length.should.equal(5); // 5 txs have confirmations>= 100
 
         // should be reversed!
-        calls[0].args[3][0].confirmations.should.equal(104);
-        calls[0].args[3][0].txid.should.equal(h[104].txid);
+        calls[0].args[3][0].confirmations.should.equal(skip + limit - 1);
+        calls[0].args[3][0].txid.should.equal(h[skip + limit - 1].txid);
         server.storage.storeTxHistoryCache.restore();
         done();
       });
@@ -6343,17 +6343,17 @@ describe('Wallet service', function() {
             next();
           });
         }, function() {
-          async.eachSeries(_.range(0, 200, 5), function(i, next) {
+          // Ask more that cached.
+          async.eachSeries(_.range(0, 210, 5), function(i, next) {
             server.getTxHistory({
               skip: i,
               limit: 5,
             }, function(err, txs, fromCache) {
               should.not.exist(err);
               should.exist(txs);
-              txs.length.should.equal(5);
               var s = h.slice(i, i + 5);
               _.pluck(txs, 'txid').should.deep.equal(_.pluck(s, 'txid'));
-              fromCache.should.equal(i >= 100);
+              fromCache.should.equal(i >= Defaults.CONFIRMATIONS_TO_START_CACHING && i < 200);
               next();
             });
           }, done);
@@ -6386,7 +6386,7 @@ describe('Wallet service', function() {
               txs.length.should.equal(5);
               var s = h.slice(i, i + 5);
               _.pluck(txs, 'txid').should.deep.equal(_.pluck(s, 'txid'));
-              fromCache.should.equal(i >= 100);
+              fromCache.should.equal(i >= Defaults.CONFIRMATIONS_TO_START_CACHING);
               next();
             });
           }, done);
@@ -6413,7 +6413,7 @@ describe('Wallet service', function() {
           async.eachSeries(_.range(0, 200, 5), function(i, next) {
 
             function resetCache(cb) {
-              if (!(i%25)) {
+              if (!(i % 25)) {
                 storage.softResetTxHistoryCache(server.walletId, function() {
                   return cb(true);
                 });
@@ -6432,7 +6432,7 @@ describe('Wallet service', function() {
                 txs.length.should.equal(5);
                 var s = h.slice(i, i + 5);
                 _.pluck(txs, 'txid').should.deep.equal(_.pluck(s, 'txid'));
-                fromCache.should.equal(i >= 100 && !reset);
+                fromCache.should.equal(i >= Defaults.CONFIRMATIONS_TO_START_CACHING && !reset);
                 next();
               });
             });
