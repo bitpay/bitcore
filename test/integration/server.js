@@ -6219,7 +6219,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('#getTxHistory cache', function() {
+  describe.only('#getTxHistory cache', function() {
     var server, wallet, mainAddresses, changeAddresses;
     var _threshold = Defaults.HISTORY_CACHE_ADDRESS_THRESOLD;
     beforeEach(function(done) {
@@ -6259,9 +6259,6 @@ describe('Wallet service', function() {
         txs.length.should.equal(limit);
         var calls = storeTxHistoryCacheSpy.getCalls();
         calls.length.should.equal(1);
-
-        calls[0].args[1].should.equal(200); // total
-        calls[0].args[2].should.equal(200 - skip - limit); // position
         calls[0].args[3].length.should.equal(5); // 5 txs have confirmations>= 100
 
         // should be reversed!
@@ -6309,8 +6306,6 @@ describe('Wallet service', function() {
         var calls = storeTxHistoryCacheSpy.getCalls();
         calls.length.should.equal(1);
 
-        calls[0].args[1].should.equal(200); // total
-        calls[0].args[2].should.equal(200 - skip - limit); // position
         calls[0].args[3].length.should.equal(5);
 
         // should be reversed!
@@ -6323,9 +6318,12 @@ describe('Wallet service', function() {
 
     describe('Downloading history', function() {
       var h;
-      beforeEach(function() {
+      beforeEach(function(done) {
         h = helpers.historyCacheTest(200);
         helpers.stubHistory(h);
+        server.storage.clearTxHistoryCache(server.walletId, function() {
+          done();
+        });
       });
 
       it('from 0 to 200, two times, in order', function(done) {
@@ -6377,15 +6375,15 @@ describe('Wallet service', function() {
             next();
           });
         }, function() {
-          async.eachSeries(_.range(0, 200, 5), function(i, next) {
+          async.eachSeries(_.range(0, 190, 7), function(i, next) {
             server.getTxHistory({
               skip: i,
-              limit: 5,
+              limit: 7,
             }, function(err, txs, fromCache) {
               should.not.exist(err);
               should.exist(txs);
-              txs.length.should.equal(5);
-              var s = h.slice(i, i + 5);
+              txs.length.should.equal(7);
+              var s = h.slice(i, i + 7);
               _.pluck(txs, 'txid').should.deep.equal(_.pluck(s, 'txid'));
               fromCache.should.equal(i >= Defaults.CONFIRMATIONS_TO_START_CACHING);
               next();
