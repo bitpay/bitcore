@@ -2708,7 +2708,48 @@ describe('client API', function() {
     });
   });
 
-  describe('PayPro', function() {
+  describe('Proposals with explicit ID', function() {
+    it('Should create and publish a proposal', function(done) {
+     helpers.createAndJoinWallet(clients, 1, 1, function(w) {
+       var id = 'anId';
+        clients[0].createAddress(function(err, x0) {
+          should.not.exist(err);
+          should.exist(x0.address);
+          blockchainExplorerMock.setUtxo(x0, 1, 2);
+          var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+          var opts = {
+            outputs: [{
+              amount: 40000,
+              toAddress: toAddress,
+            }],
+            feePerKb: 100e2,
+            txProposalId: id,
+          };
+          clients[0].createTxProposal(opts, function(err, txp) {
+            should.not.exist(err);
+            should.exist(txp);
+            clients[0].publishTxProposal({
+              txp: txp,
+            }, function(err, publishedTxp) {
+              should.not.exist(err);
+              publishedTxp.id.should.equal(id);
+              clients[0].removeTxProposal(publishedTxp, function(err) {
+                opts.txProposalId = null;
+                clients[0].createTxProposal(opts, function(err, txp) {
+                  should.not.exist(err);
+                  should.exist(txp);
+                  txp.id.should.not.equal(id);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+
+  describe('Multiple output proposals', function() {
     var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
     var opts = {
       message: 'hello',
