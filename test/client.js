@@ -1084,7 +1084,6 @@ describe('client API', function() {
           balance.totalAmount.should.equal(0);
           balance.availableAmount.should.equal(0);
           balance.lockedAmount.should.equal(0);
-          balance.totalBytesToSendMax.should.equal(0);
           done();
         })
       });
@@ -1677,7 +1676,6 @@ describe('client API', function() {
             should.not.exist(err);
             bal0.totalAmount.should.equal(10 * 1e8);
             bal0.lockedAmount.should.equal(0);
-            bal0.totalBytesToSendMax.should.be.within(300, 400);
             clients[1].getBalance({}, function(err, bal1) {
               bal1.totalAmount.should.equal(10 * 1e8);
               bal1.lockedAmount.should.equal(0);
@@ -4286,7 +4284,11 @@ describe('client API', function() {
             }, next);
           },
           function(bundle, next) {
-            var signatures = Client.signTxProposalFromAirGapped(mnemonic, bundle.txps[0], bundle.unencryptedPkr, bundle.m, bundle.n, {passphrase: 'passphrase', account: 0, derivationStrategy: 'BIP44'});
+            var signatures = Client.signTxProposalFromAirGapped(mnemonic, bundle.txps[0], bundle.unencryptedPkr, bundle.m, bundle.n, {
+              passphrase: 'passphrase',
+              account: 0,
+              derivationStrategy: 'BIP44'
+            });
             next(null, signatures);
           },
           function(signatures, next) {
