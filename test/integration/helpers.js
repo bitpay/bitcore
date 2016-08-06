@@ -233,9 +233,9 @@ helpers._parseAmount = function(str) {
 
   switch (match[3]) {
     default:
-      case 'btc':
+    case 'btc':
       result.amount = Utils.strip(+match[2] * 1e8);
-    break;
+      break;
     case 'bit':
       result.amount = Utils.strip(+match[2] * 1e2);
       break
@@ -541,6 +541,7 @@ helpers.historyCacheTest = function(items) {
       }
     }],
     confirmations: 1,
+    blockheight: 423499,
     time: 1424472242,
     blocktime: 1424472242,
     valueOut: 0.00031454,
@@ -553,6 +554,7 @@ helpers.historyCacheTest = function(items) {
     var t = _.clone(template);
     t.txid = 'txid:' + i;
     t.confirmations = items - i - 1;
+    t.blockheight = i;
     t.time = t.blocktime = i;
     ret.unshift(t);
   });
