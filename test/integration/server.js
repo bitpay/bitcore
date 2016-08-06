@@ -6271,7 +6271,7 @@ describe('Wallet service', function() {
         calls[0].args[3].length.should.equal(5); // 5 txs have confirmations>= 100
 
         // should be reversed!
-        calls[0].args[3][0].confirmations.should.equal(currentHeight - (totalItems - (skip + limit)));
+        calls[0].args[3][0].confirmations.should.equal(currentHeight - (totalItems - (skip + limit)) + 1);
         calls[0].args[3][0].txid.should.equal(h[skip + limit - 1].txid);
         server.storage.storeTxHistoryCache.restore();
         done();
@@ -6325,7 +6325,7 @@ describe('Wallet service', function() {
         calls[0].args[3].length.should.equal(5);
 
         // should be reversed!
-        calls[0].args[3][0].confirmations.should.equal(currentHeight);
+        calls[0].args[3][0].confirmations.should.equal(currentHeight + 1);
         calls[0].args[3][0].txid.should.equal(h[totalItems - 1].txid);
         server.storage.storeTxHistoryCache.restore();
         done();
@@ -6354,8 +6354,8 @@ describe('Wallet service', function() {
         var calls = storeTxHistoryCacheSpy.getCalls();
         calls.length.should.equal(1);
 
-        _.first(txs).confirmations.should.equal(81);
-        _.last(txs).confirmations.should.equal(100);
+        _.first(txs).confirmations.should.equal(82);
+        _.last(txs).confirmations.should.equal(101);
 
         server.storage.storeTxHistoryCache.restore();
         Defaults.CONFIRMATIONS_TO_START_CACHING = _confirmations;
