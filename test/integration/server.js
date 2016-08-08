@@ -6337,29 +6337,47 @@ describe('Wallet service', function() {
       Defaults.CONFIRMATIONS_TO_START_CACHING = 6;
 
       var h = helpers.historyCacheTest(20);
+      _.each(h, function(x, i) {
+        x.blockheight = 100 - i;
+      });
       helpers.stubHistory(h);
       var storeTxHistoryCacheSpy = sinon.spy(server.storage, 'storeTxHistoryCache');
-      var skip = 0;
-      var limit = 20;
 
       blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 100);
 
+      // Cache txs
       server.getTxHistory({
-        skip: skip,
-        limit: limit,
+        skip: 0,
+        limit: 30,
       }, function(err, txs) {
         should.not.exist(err);
         should.exist(txs);
-        txs.length.should.equal(limit);
         var calls = storeTxHistoryCacheSpy.getCalls();
         calls.length.should.equal(1);
 
-        _.first(txs).confirmations.should.equal(82);
-        _.last(txs).confirmations.should.equal(101);
+        server.getTxHistory({
+          skip: 0,
+          limit: 30,
+        }, function(err, txs) {
+          should.not.exist(err);
+          txs.length.should.equal(20);
+          _.first(txs).confirmations.should.equal(1);
+          _.last(txs).confirmations.should.equal(20);
 
-        server.storage.storeTxHistoryCache.restore();
-        Defaults.CONFIRMATIONS_TO_START_CACHING = _confirmations;
-        done();
+          blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 200);
+          server.getTxHistory({
+            skip: 0,
+            limit: 30,
+          }, function(err, txs) {
+            should.not.exist(err);
+            _.first(txs).confirmations.should.equal(101);
+            _.last(txs).confirmations.should.equal(120);
+
+            server.storage.storeTxHistoryCache.restore();
+            Defaults.CONFIRMATIONS_TO_START_CACHING = _confirmations;
+            done();
+          });
+        });
       });
     });
 
@@ -6370,29 +6388,35 @@ describe('Wallet service', function() {
       var h = helpers.historyCacheTest(20);
       helpers.stubHistory(h);
       var storeTxHistoryCacheSpy = sinon.spy(server.storage, 'storeTxHistoryCache');
-      var skip = 0;
-      var limit = 20;
 
       var _getLastKnownBlockchainHeight = server._getLastKnownBlockchainHeight;
       server._getLastKnownBlockchainHeight = sinon.stub().callsArgWith(1, null, null);
 
+      // Cache txs
       server.getTxHistory({
-        skip: skip,
-        limit: limit,
+        skip: 0,
+        limit: 30,
       }, function(err, txs) {
         should.not.exist(err);
         should.exist(txs);
-        txs.length.should.equal(limit);
+        txs.length.should.equal(20);
         var calls = storeTxHistoryCacheSpy.getCalls();
         calls.length.should.equal(1);
 
-        _.first(txs).confirmations.should.equal(0);
-        _.last(txs).confirmations.should.equal(19);
+        server.getTxHistory({
+          skip: 0,
+          limit: 30,
+        }, function(err, txs) {
+          should.not.exist(err);
+          txs.length.should.equal(20);
+          _.first(txs).confirmations.should.equal(0);
+          _.last(txs).confirmations.should.equal(19);
 
-        server.storage.storeTxHistoryCache.restore();
-        Defaults.CONFIRMATIONS_TO_START_CACHING = _confirmations;
-        server._getLastKnownBlockchainHeight = _getLastKnownBlockchainHeight;
-        done();
+          server.storage.storeTxHistoryCache.restore();
+          Defaults.CONFIRMATIONS_TO_START_CACHING = _confirmations;
+          server._getLastKnownBlockchainHeight = _getLastKnownBlockchainHeight;
+          done();
+        });
       });
     });
 
