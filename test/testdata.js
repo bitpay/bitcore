@@ -251,6 +251,7 @@ var history = [
   fees: 0.00014299
 }];
 
+
 module.exports.keyPair = keyPair;
 module.exports.copayers = copayers;
 module.exports.history = history;

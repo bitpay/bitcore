@@ -323,6 +323,7 @@ helpers.stubBroadcast = function(thirdPartyBroadcast) {
 };
 
 helpers.stubHistory = function(txs) {
+  var totalItems = txs.length;
   blockchainExplorer.getTransactions = function(addresses, from, to, cb) {
     var MAX_BATCH_SIZE = 100;
     var nbTxs = txs.length;
@@ -343,7 +344,7 @@ helpers.stubHistory = function(txs) {
     if (to > nbTxs) to = nbTxs;
 
     var page = txs.slice(from, to);
-    return cb(null, page);
+    return cb(null, page, totalItems);
   };
 };
 
@@ -426,6 +427,57 @@ helpers.createAndPublishTx = function(server, txOpts, signingKey, cb) {
       return cb(txp);
     });
   });
+};
+
+
+helpers.historyCacheTest = function(items) {
+  var template = {
+    txid: "fad88682ccd2ff34cac6f7355fe9ecd8addd9ef167e3788455972010e0d9d0de",
+    vin: [{
+      txid: "0279ef7b21630f859deb723e28beac9e7011660bd1346c2da40321d2f7e34f04",
+      vout: 0,
+      n: 0,
+      addr: "2NAVFnsHqy5JvqDJydbHPx393LFqFFBQ89V",
+      valueSat: 45753,
+      value: 0.00045753,
+    }],
+    vout: [{
+      value: "0.00011454",
+      n: 0,
+      scriptPubKey: {
+        addresses: [
+          "2N7GT7XaN637eBFMmeczton2aZz5rfRdZso"
+        ]
+      }
+    }, {
+      value: "0.00020000",
+      n: 1,
+      scriptPubKey: {
+        addresses: [
+          "mq4D3Va5mYHohMEHrgHNGzCjKhBKvuEhPE"
+        ]
+      }
+    }],
+    confirmations: 1,
+    blockheight: 423499,
+    time: 1424472242,
+    blocktime: 1424472242,
+    valueOut: 0.00031454,
+    valueIn: 0.00045753,
+    fees: 0.00014299
+  };
+
+  var ret = [];
+  _.each(_.range(0, items), function(i) {
+    var t = _.clone(template);
+    t.txid = 'txid:' + i;
+    t.confirmations = items - i - 1;
+    t.blockheight = i;
+    t.time = t.blocktime = i;
+    ret.unshift(t);
+  });
+
+  return ret;
 };
 
 module.exports = helpers;

@@ -81,6 +81,5 @@ var config = {
   //  api_user: xxx,
   //  api_key: xxx,
   // });
-
 };
 module.exports = config;
