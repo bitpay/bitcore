@@ -6335,6 +6335,7 @@ describe('Wallet service', function() {
     it('should get real # of confirmations based on current block height', function(done) {
       var _confirmations = Defaults.CONFIRMATIONS_TO_START_CACHING;
       Defaults.CONFIRMATIONS_TO_START_CACHING = 6;
+      WalletService._cachedBlockheight = null;
 
       var h = helpers.historyCacheTest(20);
       _.each(h, function(x, i) {
@@ -6365,17 +6366,26 @@ describe('Wallet service', function() {
           _.last(txs).confirmations.should.equal(20);
 
           blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 200);
-          server.getTxHistory({
-            skip: 0,
-            limit: 30,
-          }, function(err, txs) {
+          server._notify('NewBlock', {
+            hash: 'dummy hash',
+          }, {
+            isGlobal: true
+          }, function(err) {
             should.not.exist(err);
-            _.first(txs).confirmations.should.equal(101);
-            _.last(txs).confirmations.should.equal(120);
+            setTimeout(function() {
+              server.getTxHistory({
+                skip: 0,
+                limit: 30,
+              }, function(err, txs) {
+                should.not.exist(err);
+                _.first(txs).confirmations.should.equal(101);
+                _.last(txs).confirmations.should.equal(120);
 
-            server.storage.storeTxHistoryCache.restore();
-            Defaults.CONFIRMATIONS_TO_START_CACHING = _confirmations;
-            done();
+                server.storage.storeTxHistoryCache.restore();
+                Defaults.CONFIRMATIONS_TO_START_CACHING = _confirmations;
+                done();
+              });
+            }, 100);
           });
         });
       });
@@ -6384,13 +6394,13 @@ describe('Wallet service', function() {
     it('should get cached # of confirmations if current height unknown', function(done) {
       var _confirmations = Defaults.CONFIRMATIONS_TO_START_CACHING;
       Defaults.CONFIRMATIONS_TO_START_CACHING = 6;
+      WalletService._cachedBlockheight = null;
 
       var h = helpers.historyCacheTest(20);
       helpers.stubHistory(h);
       var storeTxHistoryCacheSpy = sinon.spy(server.storage, 'storeTxHistoryCache');
 
-      var _getLastKnownBlockchainHeight = server._getLastKnownBlockchainHeight;
-      server._getLastKnownBlockchainHeight = sinon.stub().callsArgWith(1, null, null);
+      blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, null);
 
       // Cache txs
       server.getTxHistory({
@@ -6414,7 +6424,6 @@ describe('Wallet service', function() {
 
           server.storage.storeTxHistoryCache.restore();
           Defaults.CONFIRMATIONS_TO_START_CACHING = _confirmations;
-          server._getLastKnownBlockchainHeight = _getLastKnownBlockchainHeight;
           done();
         });
       });
