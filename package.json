@@ -38,7 +38,7 @@
   "homepage": "https://github.com/bitpay/bitcore-build",
   "dependencies": {
     "brfs": "^1.2.0",
-    "browserify": "~11.2.0",
+    "browserify": "~13.1.0",
     "chai": "~1.10.0",
     "gulp": "^3.8.10",
     "gulp-bump": "^0.1.11",
