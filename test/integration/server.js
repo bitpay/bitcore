@@ -5930,7 +5930,7 @@ describe('Wallet service', function() {
     it('should get real # of confirmations based on current block height', function(done) {
       var _confirmations = Defaults.CONFIRMATIONS_TO_START_CACHING;
       Defaults.CONFIRMATIONS_TO_START_CACHING = 6;
-      WalletService._cachedBlockheight = {};
+      WalletService._cachedBlockheight = null;
 
       var h = helpers.historyCacheTest(20);
       _.each(h, function(x, i) {
@@ -5962,6 +5962,7 @@ describe('Wallet service', function() {
 
           blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 200);
           server._notify('NewBlock', {
+            network: 'livenet',
             hash: 'dummy hash',
           }, {
             isGlobal: true
@@ -5989,7 +5990,7 @@ describe('Wallet service', function() {
     it('should get cached # of confirmations if current height unknown', function(done) {
       var _confirmations = Defaults.CONFIRMATIONS_TO_START_CACHING;
       Defaults.CONFIRMATIONS_TO_START_CACHING = 6;
-      WalletService._cachedBlockheight = {};
+      WalletService._cachedBlockheight = null;
 
       var h = helpers.historyCacheTest(20);
       helpers.stubHistory(h);
