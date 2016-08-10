@@ -539,37 +539,6 @@ Gets list of utxos
 
 **Returns**: `Callback`, cb - Return error or the list of utxos
 
-### API.sendTxProposal(opts, opts.toAddress, opts.amount, opts.message, opts.feePerKb, opts.payProUrl, opts.excludeUnconfirmedUtxos, opts.customData, opts.inputs, opts.outputs, opts.utxosToExclude) 
-
-Send a transaction proposal
-
-**Parameters**
-
-**opts**: `Object`, Send a transaction proposal
-
-**opts.toAddress**: `String`, | opts.outputs[].toAddress
-
-**opts.amount**: `Number`, | opts.outputs[].amount
-
-**opts.message**: `String`, | opts.outputs[].message
-
-**opts.feePerKb**: `string`, Optional: Use an alternative fee per KB for this TX
-
-**opts.payProUrl**: `String`, Optional: Tx is from a payment protocol URL
-
-**opts.excludeUnconfirmedUtxos**: `string`, Optional: Do not use UTXOs of unconfirmed transactions as inputs
-
-**opts.customData**: `Object`, Optional: Arbitrary data to store along with proposal
-
-**opts.inputs**: `Array`, Optional: Inputs to be used in proposal.
-
-**opts.outputs**: `Array`, Optional: Outputs to be used in proposal.
-
-**opts.utxosToExclude**: `Array`, Optional: List of UTXOS (in form of txid:vout string)
-       to exclude from coin selection for this proposal
-
-**Returns**: `Callback`, cb - Return error or the transaction proposal
-
 ### API.createTxProposal(opts, opts.outputs, opts.outputs[].toAddress, opts.outputs[].amount, opts.outputs[].message, opts.message, opts.fee, opts.feePerKb, opts.changeAddress, opts.payProUrl, opts.excludeUnconfirmedUtxos, opts.customData, opts.inputs, opts.outputs, opts.utxosToExclude) 
 
 Create a transaction proposal
