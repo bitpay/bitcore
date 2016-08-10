@@ -2,7 +2,7 @@
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "2.11.0",
+  "version": "3.0.0",
   "license": "MIT",
   "keywords": [
     "bitcoin",
@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "bitcore-wallet-service": "~1.9.1",
-    "browserify": "^9.0.3",
+    "browserify": "^13.1.0",
     "chai": "^1.9.1",
     "coveralls": "^2.11.2",
     "grunt": "~0.4.0",
