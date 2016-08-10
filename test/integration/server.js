@@ -5839,11 +5839,10 @@ describe('Wallet service', function() {
       var skip = 31;
       var limit = 10;
       var totalItems = 200;
-      var currentHeight = 1000;
 
       var h = helpers.historyCacheTest(totalItems);
       helpers.stubHistory(h);
-      blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, currentHeight);
+      blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 200);
       var storeTxHistoryCacheSpy = sinon.spy(server.storage, 'storeTxHistoryCache');
 
 
@@ -5863,10 +5862,10 @@ describe('Wallet service', function() {
 
         calls[0].args[1].should.equal(totalItems); // total
         calls[0].args[2].should.equal(totalItems - skip - limit); // position
-        calls[0].args[3].length.should.equal(5); // 5 txs have confirmations>= 100
+        calls[0].args[3].length.should.equal(5); // 5 txs have confirmations>= 36
 
         // should be reversed!
-        calls[0].args[3][0].confirmations.should.equal(currentHeight - (totalItems - (skip + limit)) + 1);
+        calls[0].args[3][0].confirmations.should.equal(skip + limit - 1);
         calls[0].args[3][0].txid.should.equal(h[skip + limit - 1].txid);
         server.storage.storeTxHistoryCache.restore();
         done();
@@ -5897,11 +5896,10 @@ describe('Wallet service', function() {
       var skip = 195;
       var limit = 5;
       var totalItems = 200;
-      var currentHeight = 1000;
 
       var h = helpers.historyCacheTest(totalItems);
       helpers.stubHistory(h);
-      blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, currentHeight);
+      blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 200);
       var storeTxHistoryCacheSpy = sinon.spy(server.storage, 'storeTxHistoryCache');
 
       server.getTxHistory({
@@ -5920,7 +5918,7 @@ describe('Wallet service', function() {
         calls[0].args[3].length.should.equal(5);
 
         // should be reversed!
-        calls[0].args[3][0].confirmations.should.equal(currentHeight + 1);
+        calls[0].args[3][0].confirmations.should.equal(totalItems - 1);
         calls[0].args[3][0].txid.should.equal(h[totalItems - 1].txid);
         server.storage.storeTxHistoryCache.restore();
         done();
@@ -5934,12 +5932,13 @@ describe('Wallet service', function() {
 
       var h = helpers.historyCacheTest(20);
       _.each(h, function(x, i) {
-        x.blockheight = 100 - i;
+        x.confirmations = 500 + i;
+        x.blockheight = 1000 - i;
       });
       helpers.stubHistory(h);
       var storeTxHistoryCacheSpy = sinon.spy(server.storage, 'storeTxHistoryCache');
 
-      blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 100);
+      blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1500);
 
       // Cache txs
       server.getTxHistory({
@@ -5957,10 +5956,10 @@ describe('Wallet service', function() {
         }, function(err, txs) {
           should.not.exist(err);
           txs.length.should.equal(20);
-          _.first(txs).confirmations.should.equal(1);
-          _.last(txs).confirmations.should.equal(20);
+          _.first(txs).confirmations.should.equal(501);
+          _.last(txs).confirmations.should.equal(520);
 
-          blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 200);
+          blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 2000);
           server._notify('NewBlock', {
             network: 'livenet',
             hash: 'dummy hash',
@@ -5974,8 +5973,8 @@ describe('Wallet service', function() {
                 limit: 30,
               }, function(err, txs) {
                 should.not.exist(err);
-                _.first(txs).confirmations.should.equal(101);
-                _.last(txs).confirmations.should.equal(120);
+                _.first(txs).confirmations.should.equal(1001);
+                _.last(txs).confirmations.should.equal(1020);
 
                 server.storage.storeTxHistoryCache.restore();
                 Defaults.CONFIRMATIONS_TO_START_CACHING = _confirmations;
@@ -5993,10 +5992,52 @@ describe('Wallet service', function() {
       WalletService._cachedBlockheight = null;
 
       var h = helpers.historyCacheTest(20);
+      _.each(h, function(x, i) {
+        x.confirmations = 500 + i;
+        x.blockheight = 1000 - i;
+      });
       helpers.stubHistory(h);
       var storeTxHistoryCacheSpy = sinon.spy(server.storage, 'storeTxHistoryCache');
 
       blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, null);
+
+      // Cache txs
+      server.getTxHistory({
+        skip: 0,
+        limit: 30,
+      }, function(err, txs) {
+        should.not.exist(err);
+        should.exist(txs);
+        txs.length.should.equal(20);
+        var calls = storeTxHistoryCacheSpy.getCalls();
+        calls.length.should.equal(1);
+
+        server.getTxHistory({
+          skip: 0,
+          limit: 30,
+        }, function(err, txs) {
+          should.not.exist(err);
+          txs.length.should.equal(20);
+          _.first(txs).confirmations.should.equal(500);
+          _.last(txs).confirmations.should.equal(519);
+
+          server.storage.storeTxHistoryCache.restore();
+          Defaults.CONFIRMATIONS_TO_START_CACHING = _confirmations;
+          done();
+        });
+      });
+    });
+
+    it('should get returned # of confirmations for non cached txs', function(done) {
+      var _confirmations = Defaults.CONFIRMATIONS_TO_START_CACHING;
+      Defaults.CONFIRMATIONS_TO_START_CACHING = 6;
+      WalletService._cachedBlockheight = null;
+
+      var h = helpers.historyCacheTest(20);
+      helpers.stubHistory(h);
+      var storeTxHistoryCacheSpy = sinon.spy(server.storage, 'storeTxHistoryCache');
+
+      blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 500);
 
       // Cache txs
       server.getTxHistory({
