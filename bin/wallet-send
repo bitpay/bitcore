@@ -2,13 +2,16 @@
 
 var program = require('commander');
 var utils = require('./cli-utils');
+var _ = require('lodash');
+
 program = utils.configureCommander(program);
 
 program
+  .option('--fee <fee-per-kb>', 'Fee per kB to use. Default 100bits.')
   .usage('[options] <address> <amount> [note]')
   .description('Create a proposal for sending bitcoins to a destination address.\n  The amount can be specified in bit, btc or sat (the default).');
 
-program.on('--help', function(){
+program.on('--help', function() {
   console.log('  Examples:');
   console.log('');
   console.log('    $ bit-send n2HRFgtoihgAhx1qAEXcdBMjoMvAx7AcDc 500bit');
@@ -22,22 +25,33 @@ if (!args[0] || !args[1])
   program.help();
 
 var address = args[0];
-var amount;
+var amount, feePerKb;
 try {
   amount = utils.parseAmount(args[1]);
+  feePerKb = !_.isUndefined(program.fee) ? utils.parseAmount(program.fee) : 100e2;
 } catch (ex) {
   utils.die(ex);
 }
 var note = args[2];
 
-utils.getClient(program, { mustExist: true }, function (client) {
-  client.sendTxProposal({
-    toAddress: address,
-    amount: amount,
-    message: note
-  }, function(err, x) {
+utils.getClient(program, {
+  mustExist: true
+}, function(client) {
+  client.createTxProposal({
+    outputs: [{
+      toAddress: address,
+      amount: amount,
+    }],
+    message: note,
+    feePerKb: feePerKb,
+  }, function(err, txp) {
     utils.die(err);
-    console.log(' * Tx created: ID %s [%s] RequiredSignatures:',
-      utils.shortID(x.id), x.status, x.requiredSignatures);
+    client.publishTxProposal({
+      txp: txp
+    }, function(err) {
+      utils.die(err);
+      console.log(' * Tx created: ID %s [%s] RequiredSignatures:',
+        utils.shortID(txp.id), txp.status, txp.requiredSignatures);
+    });
   });
 });
