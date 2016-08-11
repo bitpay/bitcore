@@ -1,6 +1,20 @@
 language: node_js
+sudo: false
+compiler:
+  - gcc
+  - clang
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-4.8
+    - g++-4.8
+    - clang
 node_js:
   - '4'
+before_install:
+  - export CXX="g++-4.8" CC="gcc-4.8"
 install:
   - npm install
 after_success:
