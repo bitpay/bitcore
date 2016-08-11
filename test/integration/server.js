@@ -2294,6 +2294,21 @@ describe('Wallet service', function() {
           });
         });
       });
+      it('should fail to create a tx without outputs param', function(done) {
+        helpers.stubUtxos(server, wallet, [1, 2], function() {
+          var txOpts = {
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 0.8 * 1e8,
+            message: 'some message',
+            feePerKb: 123e2,
+          };
+          server.createTx(txOpts, function(err, tx) {
+            should.exist(err);
+            should.not.exist(tx);
+            done();
+          });
+        });
+      });
       it('should be able to publish a temporary tx proposal', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
           var txOpts = {
