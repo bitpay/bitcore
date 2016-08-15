@@ -45,7 +45,7 @@ var start = function(cb) {
     var server = config.https ? serverModule.createServer(serverOpts, expressApp.app) : serverModule.Server(expressApp.app);
 
     server.on('connection', function(socket) {
-      socket.setTimeout(30 * 1000);
+      socket.setTimeout(300 * 1000);
     })
 
     async.parallel([
