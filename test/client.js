@@ -1953,6 +1953,59 @@ describe('client API', function() {
         });
       });
     });
+
+    it('Should create, publish, recreate, republish proposal', function(done) {
+      var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+      var opts = {
+        txProposalId: '1234',
+        outputs: [{
+          amount: 1e8,
+          toAddress: toAddress,
+          message: 'world',
+        }, {
+          amount: 2e8,
+          toAddress: toAddress,
+        }],
+        message: 'hello',
+        feePerKb: 100e2,
+        customData: {
+          someObj: {
+            x: 1
+          },
+          someStr: "str"
+        }
+      };
+      clients[0].createTxProposal(opts, function(err, txp) {
+        should.not.exist(err);
+        should.exist(txp);
+        txp.status.should.equal('temporary');
+        clients[0].publishTxProposal({
+          txp: txp,
+        }, function(err, publishedTxp) {
+          should.not.exist(err);
+          should.exist(publishedTxp);
+          publishedTxp.status.should.equal('pending');
+          clients[0].getTxProposals({}, function(err, txps) {
+            should.not.exist(err);
+            txps.length.should.equal(1);
+            // Try to republish from copayer 1
+            clients[1].createTxProposal(opts, function(err, txp) {
+              should.not.exist(err);
+              should.exist(txp);
+              txp.status.should.equal('pending');
+              clients[1].publishTxProposal({
+                txp: txp
+              }, function(err, publishedTxp) {
+                should.not.exist(err);
+                should.exist(publishedTxp);
+                publishedTxp.status.should.equal('pending');
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
     it('Should protect against tampering at proposal creation', function(done) {
       var opts = {
         outputs: [{
