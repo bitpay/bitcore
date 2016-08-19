@@ -2308,6 +2308,84 @@ describe('Wallet service', function() {
           });
         });
       });
+      it('should create a tx with foreign ID', function(done) {
+        helpers.stubUtxos(server, wallet, 2, function() {
+          var txOpts = {
+            txProposalId: '123',
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 1e8,
+            }],
+            feePerKb: 100e2,
+          };
+          server.createTx(txOpts, function(err, tx) {
+            should.not.exist(err);
+            should.exist(tx);
+            tx.id.should.equal('123');
+            done();
+          });
+        });
+      });
+      it('should return already created tx if same foreign ID is specified and tx still unpublished', function(done) {
+        helpers.stubUtxos(server, wallet, 2, function() {
+          var txOpts = {
+            txProposalId: '123',
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 1e8,
+            }],
+            feePerKb: 100e2,
+          };
+          server.createTx(txOpts, function(err, tx) {
+            should.not.exist(err);
+            should.exist(tx);
+            tx.id.should.equal('123');
+            server.createTx(txOpts, function(err, tx) {
+              should.not.exist(err);
+              should.exist(tx);
+              tx.id.should.equal('123');
+              server.storage.fetchTxs(wallet.id, {}, function(err, txs) {
+                should.not.exist(err);
+                should.exist(txs);
+                txs.length.should.equal(1);
+                done();
+              });
+            });
+          });
+        });
+      });
+      it('should return already published tx if same foreign ID is specified and tx already published', function(done) {
+        helpers.stubUtxos(server, wallet, [2, 2, 2], function() {
+          var txOpts = {
+            txProposalId: '123',
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 1e8,
+            }],
+            feePerKb: 100e2,
+          };
+          server.createTx(txOpts, function(err, tx) {
+            should.not.exist(err);
+            should.exist(tx);
+            tx.id.should.equal('123');
+            var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
+            server.publishTx(publishOpts, function(err) {
+              should.not.exist(err);
+              server.createTx(txOpts, function(err, tx) {
+                should.not.exist(err);
+                should.exist(tx);
+                tx.id.should.equal('123');
+                tx.status.should.equal('pending');
+                server.storage.fetchTxs(wallet.id, {}, function(err, txs) {
+                  should.not.exist(err);
+                  txs.length.should.equal(1);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
       it('should be able to publish a temporary tx proposal', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
           var txOpts = {
