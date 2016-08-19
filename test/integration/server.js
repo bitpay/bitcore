@@ -2354,7 +2354,7 @@ describe('Wallet service', function() {
           });
         });
       });
-      it('should fail to create tx if same foreign ID is specified and tx already published', function(done) {
+      it('should return already published tx if same foreign ID is specified and tx already published', function(done) {
         helpers.stubUtxos(server, wallet, [2, 2, 2], function() {
           var txOpts = {
             txProposalId: '123',
@@ -2372,24 +2372,14 @@ describe('Wallet service', function() {
             server.publishTx(publishOpts, function(err) {
               should.not.exist(err);
               server.createTx(txOpts, function(err, tx) {
-                should.exist(err);
-                should.not.exist(tx);
-                err.code.should.equal('TX_ALREADY_EXISTS');
+                should.not.exist(err);
+                should.exist(tx);
+                tx.id.should.equal('123');
+                tx.status.should.equal('pending');
                 server.storage.fetchTxs(wallet.id, {}, function(err, txs) {
                   should.not.exist(err);
-                  should.exist(txs);
                   txs.length.should.equal(1);
-                  txOpts.txProposalId = null;
-                  server.createTx(txOpts, function(err, tx) {
-                    should.not.exist(err);
-                    should.exist(tx);
-                    tx.id.should.not.equal('123');
-                    server.storage.fetchTxs(wallet.id, {}, function(err, txs) {
-                      should.not.exist(err);
-                      txs.length.should.equal(2);
-                      done();
-                    });
-                  });
+                  done();
                 });
               });
             });
