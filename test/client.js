@@ -2063,6 +2063,7 @@ describe('client API', function() {
           toAddress: toAddress,
         }],
         feePerKb: 100e2,
+        message: 'just some message',
       };
       clients[0].createTxProposal(opts, function(err, txp) {
         should.not.exist(err);
@@ -2392,7 +2393,6 @@ describe('client API', function() {
     var http;
 
     describe('Shared wallet', function() {
-
       beforeEach(function(done) {
         http = sinon.stub();
         http.yields(null, TestData.payProBuf);
@@ -2492,6 +2492,7 @@ describe('client API', function() {
                 args.method.should.equal('POST');
                 args.body.length.should.be.within(440, 460);
                 memo.should.equal('Transaction received by BitPay. Invoice will be marked as paid if the transaction is confirmed.');
+                zz.message.should.equal('Payment request for BitPay invoice CibEJJtG1t9H77KmM61E2t for merchant testCopay');
                 done();
               });
             });
@@ -2710,8 +2711,8 @@ describe('client API', function() {
 
   describe('Proposals with explicit ID', function() {
     it('Should create and publish a proposal', function(done) {
-     helpers.createAndJoinWallet(clients, 1, 1, function(w) {
-       var id = 'anId';
+      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
+        var id = 'anId';
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           should.exist(x0.address);
@@ -2834,9 +2835,13 @@ describe('client API', function() {
           should.exist(x0.address);
           blockchainExplorerMock.setUtxo(x0, 1, 1);
           var opts = {
-            amount: 10000000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            outputs: [{
+              amount: 10000000,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: 'output 0',
+            }],
             message: 'hello',
+            feePerKb: 100e2,
           };
           helpers.createAndPublishTxProposal(clients[0], opts, function(err, txp) {
             should.not.exist(err);
@@ -2844,13 +2849,19 @@ describe('client API', function() {
             txp.requiredSignatures.should.equal(1);
             txp.status.should.equal('pending');
             txp.changeAddress.path.should.equal('m/1/0');
+            txp.outputs[0].message.should.equal('output 0');
+            txp.message.should.equal('hello');
             clients[0].signTxProposal(txp, function(err, txp) {
               should.not.exist(err);
               txp.status.should.equal('accepted');
+              txp.outputs[0].message.should.equal('output 0');
+              txp.message.should.equal('hello');
               clients[0].broadcastTxProposal(txp, function(err, txp) {
                 should.not.exist(err);
                 txp.status.should.equal('broadcasted');
                 txp.txid.should.equal((new Bitcore.Transaction(blockchainExplorerMock.lastBroadcasted)).id);
+                txp.outputs[0].message.should.equal('output 0');
+                txp.message.should.equal('hello');
                 done();
               });
             });
