@@ -2369,8 +2369,9 @@ describe('Wallet service', function() {
             should.exist(tx);
             tx.id.should.equal('123');
             var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
-            server.publishTx(publishOpts, function(err) {
+            server.publishTx(publishOpts, function(err, tx) {
               should.not.exist(err);
+              should.exist(tx);
               server.createTx(txOpts, function(err, tx) {
                 should.not.exist(err);
                 should.exist(tx);
