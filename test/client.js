@@ -396,7 +396,7 @@ describe('client API', function() {
       };
       var ret = Client._parseError(body);
       ret.should.be.an.instanceOf(Error);
-      ret.message.should.equal('999');
+      ret.message.should.equal('999: unexpected body');
       done();
     });
 
@@ -415,6 +415,31 @@ describe('client API', function() {
         request.restore();
         done();
       });
+    });
+    it('should correctly use remote message', function(done) {
+      var body = {
+        code: 'INSUFFICIENT_FUNDS',
+      };
+      var ret = Client._parseError(body);
+      ret.should.be.an.instanceOf(Error);
+      ret.message.should.equal('Insufficient funds');
+
+      var body = {
+        code: 'INSUFFICIENT_FUNDS',
+        message: 'remote message',
+      };
+      var ret = Client._parseError(body);
+      ret.should.be.an.instanceOf(Error);
+      ret.message.should.equal('remote message');
+
+      var body = {
+        code: 'MADE_UP_ERROR',
+        message: 'remote message',
+      };
+      var ret = Client._parseError(body);
+      ret.should.be.an.instanceOf(Error);
+      ret.message.should.equal('MADE_UP_ERROR: remote message');
+      done();
     });
   });
 
@@ -1517,7 +1542,7 @@ describe('client API', function() {
       clients[0].getVersion(function(err, version) {
         if (err) {
           // if bws is older version without getVersion support
-          err.code.should.equal('NOT_FOUND');
+          err.should.be.an.instanceOf(Errors.NOT_FOUND);
         } else {
           // if bws is up-to-date
           should.exist(version);
