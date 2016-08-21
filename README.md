@@ -1,12 +1,12 @@
-Bitcore
+Bitcore-Dash
 =======
 
-[![NPM Package](https://img.shields.io/npm/v/bitcore.svg?style=flat-square)](https://www.npmjs.org/package/bitcore)
-[![Build Status](https://img.shields.io/travis/bitpay/bitcore.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore)
+[![NPM Package](https://img.shields.io/npm/v/bitcore.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-dash)
+[![Build Status](https://img.shields.io/travis/bitpay/bitcore.svg?branch=master&style=flat-square)](https://travis-ci.org/dashpay/bitcore-dash)
 
-Infrastructure to build Bitcoin and blockchain-based applications for the next generation of financial technology.
+Infrastructure to build Dash and blockchain-based applications for the next generation of financial technology.
 
-**Note:** If you're looking for the Bitcore Library please see: https://github.com/bitpay/bitcore-lib
+**Note:** If you're looking for the Bitcore Library please see: https://github.com/dashpay/bitcore-lib-dash
 
 ## Getting Started
 
@@ -35,24 +35,24 @@ transaction.sign(privateKey);
 
 ## Applications
 
-- [Node](https://github.com/bitpay/bitcore-node) - A full node with extended capabilities using Bitcoin Core
-- [Insight API](https://github.com/bitpay/insight-api) - A blockchain explorer HTTP API
-- [Insight UI](https://github.com/bitpay/insight) - A blockchain explorer web user interface
-- [Wallet Service](https://github.com/bitpay/bitcore-wallet-service) - A multisig HD service for wallets
-- [Wallet Client](https://github.com/bitpay/bitcore-wallet-client) - A client for the wallet service
-- [CLI Wallet](https://github.com/bitpay/bitcore-wallet) - A command-line based wallet client
-- [Angular Wallet Client](https://github.com/bitpay/angular-bitcore-wallet-client) - An Angular based wallet client
-- [Copay](https://github.com/bitpay/copay) - An easy-to-use, multiplatform, multisignature, secure bitcoin wallet
+- [Node-Dash](https://github.com/dashpay/bitcore-node-dash) - A full node with extended capabilities using Bitcoin Core
+- [Insight API-Dash](https://github.com/dashpay/insight-api-dash) - A blockchain explorer HTTP API
+- [Insight UI-Dash](https://github.com/dashpay/insight-ui-dash) - A blockchain explorer web user interface
+- Wallet Service - A multisig HD service for wallets
+- Wallet Client - A client for the wallet service
+- CLI Wallet - A command-line based wallet client
+- Angular Wallet Client - An Angular based wallet client
+- Copay - An easy-to-use, multiplatform, multisignature, secure bitcoin wallet
 
 ## Libraries
 
-- [Lib](https://github.com/bitpay/bitcore-lib) - All of the core Bitcoin primatives including transactions, private key management and others
-- [Payment Protocol](https://github.com/bitpay/bitcore-payment-protocol) - A protocol for communication between a merchant and customer
-- [P2P](https://github.com/bitpay/bitcore-p2p) - The peer-to-peer networking protocol
-- [Mnemonic](https://github.com/bitpay/bitcore-mnemonic) - Implements mnemonic code for generating deterministic keys
-- [Channel](https://github.com/bitpay/bitcore-channel) - Micropayment channels for rapidly adjusting bitcoin transactions
-- [Message](https://github.com/bitpay/bitcore-message) - Bitcoin message verification and signing
-- [ECIES](https://github.com/bitpay/bitcore-ecies) - Uses ECIES symmetric key negotiation from public keys to encrypt arbitrarily long data streams.
+- [Lib-Dash](https://github.com/dashpay/bitcore-lib-dash) - All of the core Bitcoin primatives including transactions, private key management and others
+- Payment Protocol - A protocol for communication between a merchant and customer
+- [P2P-Dash](https://github.com/dashpay/bitcore-p2p-dash) - The peer-to-peer networking protocol
+- [Mnemonic-Dash](https://github.com/dashpay/bitcore-mnemonic-dash) - Implements mnemonic code for generating deterministic keys
+- Channel - Micropayment channels for rapidly adjusting bitcoin transactions
+- [Message-Dash](https://github.com/dashpay/bitcore-message-dash) - Bitcoin message verification and signing
+- [ECIES-Dash](https://github.com/dashpay/bitcore-ecies-dash) - Uses ECIES symmetric key negotiation from public keys to encrypt arbitrarily long data streams.
 
 ## Documentation
 
