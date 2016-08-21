@@ -1,7 +1,7 @@
 {
-  "name": "bitcore",
+  "name": "bitcore-dash",
   "version": "4.1.0",
-  "description": "A platform to build bitcoin and blockchain-based applications.",
+  "description": "A platform to build dash and blockchain-based applications.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
@@ -59,7 +59,7 @@
     }
   ],
   "keywords": [
-    "bitcoin",
+    "dash",
     "transaction",
     "address",
     "p2p",
@@ -82,10 +82,10 @@
     "request": "browser-request"
   },
   "dependencies": {
-    "bitcore-lib": "^0.13.14",
-    "bitcore-node": "~3.1.0",
-    "insight-api": "^0.4.0",
-    "insight-ui": "^0.4.0"
+    "bitcore-lib-dash": "^0.13.18",
+    "bitcore-node-dash": "~3.0.1",
+    "insight-api-dash": "^0.4.1",
+    "insight-ui-dash": "^0.4.0"
   },
   "license": "MIT",
   "devDependencies": {
