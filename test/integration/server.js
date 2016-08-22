@@ -2360,8 +2360,23 @@ describe('Wallet service', function() {
             done();
           });
         });
-        it.skip('should fail to specify both feeLevel & feePerKb', function(done) {
-
+        it('should fail to specify both feeLevel & feePerKb', function(done) {
+          helpers.stubUtxos(server, wallet, 2, function() {
+            var txOpts = {
+              outputs: [{
+                toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+                amount: 1e8,
+              }],
+              feeLevel: 'normal',
+              feePerKb: 123e2,
+            };
+            server.createTx(txOpts, function(err, txp) {
+              should.exist(err);
+              should.not.exist(txp);
+              err.toString().should.contain('Only one of feeLevel/feePerKb');
+              done();
+            });
+          });
         });
         it('should be able to create tx with inputs argument', function(done) {
           helpers.stubUtxos(server, wallet, [1, 3, 2], function(utxos) {
@@ -2731,33 +2746,69 @@ describe('Wallet service', function() {
         });
       });
 
-      describe.only('Fee levels', function() {
+      describe('Fee levels', function() {
         it('should create a tx specifying feeLevel', function(done) {
           helpers.stubFeeLevels({
-            1: 40000,
-            2: 20000,
-            6: 18000,
-            24: 9000,
+            1: 400e2,
+            2: 200e2,
+            6: 180e2,
+            24: 90e2,
           });
-          helpers.stubUtxos(server, wallet, [1, 2], function() {
+          helpers.stubUtxos(server, wallet, 2, function() {
             var txOpts = {
               outputs: [{
                 toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-                amount: 0.8 * 1e8,
+                amount: 1e8,
               }],
               feeLevel: 'economy',
             };
             server.createTx(txOpts, function(err, txp) {
               should.not.exist(err);
               should.exist(txp);
-              txp.amount.should.equal(helpers.toSatoshi(0.8));
               txp.feePerKb.should.equal(180e2);
               done();
             });
           });
         });
-        it.skip('should fail if the specified fee level does not exist', function(done) {});
-        it.skip('should assume "normal" fee level if no feeLevel and no feePerKb/fee is specified', function(done) {});
+        it('should fail if the specified fee level does not exist', function(done) {
+          helpers.stubUtxos(server, wallet, 2, function() {
+            var txOpts = {
+              outputs: [{
+                toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+                amount: 1e8,
+              }],
+              feeLevel: 'madeUpLevel',
+            };
+            server.createTx(txOpts, function(err, txp) {
+              should.exist(err);
+              should.not.exist(txp);
+              err.toString().should.contain('Invalid fee level');
+              done();
+            });
+          });
+        });
+        it('should assume "normal" fee level if no feeLevel and no feePerKb/fee is specified', function(done) {
+          helpers.stubFeeLevels({
+            1: 400e2,
+            2: 200e2,
+            6: 180e2,
+            24: 90e2,
+          });
+          helpers.stubUtxos(server, wallet, 2, function() {
+            var txOpts = {
+              outputs: [{
+                toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+                amount: 1e8,
+              }],
+            };
+            server.createTx(txOpts, function(err, txp) {
+              should.not.exist(err);
+              should.exist(txp);
+              txp.feePerKb.should.equal(200e2);
+              done();
+            });
+          });
+        });
       });
       it('should generate new change address for each created tx', function(done) {
         helpers.stubUtxos(server, wallet, [1, 2], function() {
