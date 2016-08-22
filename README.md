@@ -13,13 +13,13 @@ Infrastructure to build Dash and blockchain-based applications for the next gene
 Before you begin you'll need to have Node.js v4 or v0.12 installed. There are several options for installation. One method is to use [nvm](https://github.com/creationix/nvm) to easily switch between different versions, or download directly from [Node.js](https://nodejs.org/).
 
 ```bash
-npm install -g bitcore
+npm install -g bitcore-dash
 ```
 
 Spin up a full node and join the network:
 
 ```bash
-npm install -g bitcore
+npm install -g bitcore-dash
 bitcored
 ```
 
@@ -27,7 +27,7 @@ You can then view the Insight block explorer at the default location: `http://lo
 
 Create a transaction:
 ```js
-var bitcore = require('bitcore');
+var bitcore = require('bitcore-dash');
 var transaction = new bitcore.Transaction();
 var transaction.from(unspent).to(address, amount);
 transaction.sign(privateKey);
