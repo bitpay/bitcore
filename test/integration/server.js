@@ -2286,6 +2286,7 @@ describe('Wallet service', function() {
             tx.isTemporary().should.equal.true;
             tx.amount.should.equal(helpers.toSatoshi(0.8));
             tx.feePerKb.should.equal(123e2);
+            should.not.exist(tx.feeLevel);
             server.getPendingTxs({}, function(err, txs) {
               should.not.exist(err);
               txs.should.be.empty;
@@ -2766,6 +2767,7 @@ describe('Wallet service', function() {
               should.not.exist(err);
               should.exist(txp);
               txp.feePerKb.should.equal(180e2);
+              txp.feeLevel.should.equal('economy');
               done();
             });
           });
@@ -2805,6 +2807,7 @@ describe('Wallet service', function() {
               should.not.exist(err);
               should.exist(txp);
               txp.feePerKb.should.equal(200e2);
+              txp.feeLevel.should.equal('normal');
               done();
             });
           });
