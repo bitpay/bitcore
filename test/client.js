@@ -174,7 +174,6 @@ helpers.createAndPublishTxProposal = function(client, opts, cb) {
       amount: opts.amount,
     }];
   }
-  opts.feePerKb = opts.feePerKb || 100e2;
   client.createTxProposal(opts, function(err, txp) {
     if (err) return cb(err);
     client.publishTxProposal({
@@ -242,9 +241,13 @@ blockchainExplorerMock.setFeeLevels = function(levels) {
 };
 
 blockchainExplorerMock.estimateFee = function(nbBlocks, cb) {
-  return cb(null, {
-    feePerKB: blockchainExplorerMock.feeLevels[nbBlocks] / 1e8
+  var levels = {};
+  _.each(nbBlocks, function(nb) {
+    var feePerKb = blockchainExplorerMock.feeLevels[nb];
+    levels[nb] = _.isNumber(feePerKb) ? feePerKb / 1e8 : -1;
   });
+
+  return cb(null, levels);
 };
 
 blockchainExplorerMock.reset = function() {
@@ -1638,8 +1641,11 @@ describe('client API', function() {
       });
     });
     it('should return send max info', function(done) {
+      blockchainExplorerMock.setFeeLevels({
+        1: 200e2,
+      });
       var opts = {
-        feePerKb: 200,
+        feeLevel: 'priority',
         excludeUnconfirmedUtxos: false,
         returnInputs: true
       };
@@ -1887,6 +1893,9 @@ describe('client API', function() {
     });
 
     it('Should create & publish proposal', function(done) {
+      blockchainExplorerMock.setFeeLevels({
+        2: 123e2,
+      });
       var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
       var opts = {
         outputs: [{
@@ -1898,7 +1907,6 @@ describe('client API', function() {
           toAddress: toAddress,
         }],
         message: 'hello',
-        feePerKb: 100e2,
         customData: {
           someObj: {
             x: 1
@@ -1918,7 +1926,8 @@ describe('client API', function() {
         _.uniq(txp.outputs, 'toAddress').length.should.equal(1);
         _.uniq(_.pluck(txp.outputs, 'toAddress'))[0].should.equal(toAddress);
         txp.hasUnconfirmedInputs.should.equal(false);
-        txp.feePerKb.should.equal(100e2);
+        txp.feeLevel.should.equal('normal');
+        txp.feePerKb.should.equal(123e2);
 
         should.exist(txp.encryptedMessage);
         should.exist(txp.outputs[0].encryptedMessage);
@@ -1955,6 +1964,10 @@ describe('client API', function() {
     });
 
     it('Should create, publish, recreate, republish proposal', function(done) {
+      blockchainExplorerMock.setFeeLevels({
+        1: 456e2,
+        6: 123e2,
+      });
       var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
       var opts = {
         txProposalId: '1234',
@@ -1967,7 +1980,7 @@ describe('client API', function() {
           toAddress: toAddress,
         }],
         message: 'hello',
-        feePerKb: 100e2,
+        feeLevel: 'economy',
         customData: {
           someObj: {
             x: 1
@@ -1979,6 +1992,8 @@ describe('client API', function() {
         should.not.exist(err);
         should.exist(txp);
         txp.status.should.equal('temporary');
+        txp.feeLevel.should.equal('economy');
+        txp.feePerKb.should.equal(123e2);
         clients[0].publishTxProposal({
           txp: txp,
         }, function(err, publishedTxp) {
