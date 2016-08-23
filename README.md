@@ -1,12 +1,12 @@
 Bitcore-Dash
 =======
 
-[![NPM Package](https://img.shields.io/npm/v/bitcore.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-dash)
-[![Build Status](https://img.shields.io/travis/bitpay/bitcore.svg?branch=master&style=flat-square)](https://travis-ci.org/dashpay/bitcore-dash)
+[![NPM Package](https://img.shields.io/npm/v/bitcore-dash.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-dash)
+[![Build Status](https://img.shields.io/travis/dashpay/bitcore-dash.svg?branch=master&style=flat-square)](https://travis-ci.org/dashpay/bitcore-dash)
 
 Infrastructure to build Dash and blockchain-based applications for the next generation of financial technology.
 
-**Note:** If you're looking for the Bitcore Library please see: https://github.com/dashpay/bitcore-lib-dash
+**Note:** If you're looking for the Bitcore-Dash Library please see: https://github.com/dashpay/bitcore-lib-dash
 
 ## Getting Started
 
