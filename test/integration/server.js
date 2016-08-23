@@ -4184,6 +4184,57 @@ describe('Wallet service', function() {
         });
       });
     });
+    describe('Fee level', function() {
+      it('should correctly get send max info using feeLevel', function(done) {
+        helpers.stubFeeLevels({
+          1: 400e2,
+          2: 200e2,
+          6: 180e2,
+          24: 90e2,
+        });
+        helpers.stubUtxos(server, wallet, [0.1, 0.2, 0.3, 0.4], function() {
+          server.getSendMaxInfo({
+            feeLevel: 'economy',
+            returnInputs: true,
+          }, function(err, info) {
+            should.not.exist(err);
+            should.exist(info);
+            info.feePerKb.should.equal(180e2);
+            info.fee.should.equal(info.size * 180e2 / 1000.);
+            sendTx(info, done);
+          });
+        });
+      });
+      it('should assume "normal" fee level if not specified', function(done) {
+        helpers.stubFeeLevels({
+          1: 400e2,
+          2: 200e2,
+          6: 180e2,
+          24: 90e2,
+        });
+        helpers.stubUtxos(server, wallet, [0.1, 0.2, 0.3, 0.4], function() {
+          server.getSendMaxInfo({}, function(err, info) {
+            should.not.exist(err);
+            should.exist(info);
+            info.feePerKb.should.equal(200e2);
+            info.fee.should.equal(info.size * 200e2 / 1000.);
+            done();
+          });
+        });
+      });
+      it('should fail on invalid fee level', function(done) {
+        helpers.stubUtxos(server, wallet, [0.1, 0.2, 0.3, 0.4], function() {
+          server.getSendMaxInfo({
+            feeLevel: 'madeUpLevel',
+          }, function(err, info) {
+            should.exist(err);
+            should.not.exist(info);
+            err.toString().should.contain('Invalid fee level');
+            done();
+          });
+        });
+      });
+    });
     it('should return inputs in random order', function(done) {
       // NOTE: this test has a chance of failing of 1 in 1'073'741'824 :P
       helpers.stubUtxos(server, wallet, _.range(1, 31), function(utxos) {
