@@ -2605,7 +2605,12 @@ describe('Wallet service', function() {
                   should.not.exist(err);
                   server.getNotifications({}, function(err, notifications) {
                     should.not.exist(err);
-                    _.pluck(notifications, 'type').should.contain('NewTxProposal');
+
+                    var n = _.find(notifications, {'type': 'NewTxProposal'});
+                    should.exist(n);
+                    should.exist(n.data.txProposalId);
+                    should.exist(n.data.message);
+
                     done();
                   });
                 });
