@@ -8,6 +8,11 @@ var should = chai.should();
 var proxyquire = require('proxyquire');
 var config = require('../config.js');
 
+var Common = require('../lib/common');
+var Defaults = Common.Defaults;
+
+
+
 describe('ExpressApp', function() {
   describe('#constructor', function() {
     it('will set an express app', function() {
@@ -186,7 +191,7 @@ describe('ExpressApp', function() {
       describe('/v1/notifications', function(done) {
         var server, TestExpressApp, clock;
         beforeEach(function() {
-          clock = sinon.useFakeTimers(1234000, 'Date');
+          clock = sinon.useFakeTimers(2000000000, 'Date');
 
           server = {
             getNotifications: sinon.stub().callsArgWith(1, null, {})
@@ -217,7 +222,7 @@ describe('ExpressApp', function() {
               body.should.equal('{}');
               server.getNotifications.calledWith({
                 notificationId: '123',
-                minTs: +Date.now() - 60000,
+                minTs: +Date.now() - Defaults.NOTIFICATIONS_TIMESPAN * 1000,
               }).should.be.true;
               done();
             });
@@ -243,10 +248,11 @@ describe('ExpressApp', function() {
             });
           });
         });
-        it('should limit minTs to 60 seconds', function(done) {
+        it('should limit minTs to Defaults.MAX_NOTIFICATIONS_TIMESPAN', function(done) {
           start(TestExpressApp, function() {
+            var overLimit  = Defaults.MAX_NOTIFICATIONS_TIMESPAN * 2;
             var requestOptions = {
-              url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?timeSpan=90',
+              url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?timeSpan=' + overLimit ,
               headers: {
                 'x-identity': 'identity',
                 'x-signature': 'signature'
@@ -256,9 +262,10 @@ describe('ExpressApp', function() {
               should.not.exist(err);
               res.statusCode.should.equal(200);
               body.should.equal('{}');
+
               server.getNotifications.calledWith({
                 notificationId: undefined,
-                minTs: Date.now() - 60000, // override minTs argument with a hardcoded 60 seconds span
+                minTs: Date.now() - Defaults.MAX_NOTIFICATIONS_TIMESPAN * 1000, // override minTs argument
               }).should.be.true;
               done();
             });
