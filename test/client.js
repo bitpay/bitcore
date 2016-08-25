@@ -2451,7 +2451,6 @@ describe('client API', function() {
           }],
           inputs: info.inputs,
           fee: info.fee,
-          sendMax: true,
         };
         clients[0].createTxProposal(opts, function(err, txp) {
           should.not.exist(err);
