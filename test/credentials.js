@@ -210,4 +210,69 @@ describe('Credentials', function() {
       c2.xPrivKey.should.not.equal(c.xPrivKey);
     });
   });
+
+  describe.only('Private key encryption', function() {
+    describe('#encryptPrivateKey', function() {
+      it('should encrypt private key and remove cleartext', function() {
+        var c = Credentials.createWithMnemonic('livenet', '', 'en', 0);
+        c.encryptPrivateKey('password');
+        c.isPrivKeyEncrypted().should.be.true;
+        should.exist(c.xPrivKeyEncrypted);
+        should.exist(c.mnemonicEncrypted);
+        should.not.exist(c.xPrivKey);
+        should.not.exist(c.mnemonic);
+      });
+      it('should fail to encrypt private key if already encrypted', function() {
+        var c = Credentials.create('livenet');
+        c.encryptPrivateKey('password');
+        var err;
+        try {
+          c.encryptPrivateKey('password');
+        } catch (ex) {
+          err = ex;
+        }
+        should.exist(err);
+      });
+    });
+    describe('#decryptPrivateKey', function() {
+      it('should decrypt private key', function() {
+        var c = Credentials.createWithMnemonic('livenet', '', 'en', 0);
+        c.encryptPrivateKey('password');
+        c.isPrivKeyEncrypted().should.be.true;
+        c.decryptPrivateKey('password');
+        c.isPrivKeyEncrypted().should.be.false;
+        should.exist(c.xPrivKey);
+        should.exist(c.mnemonic);
+        should.not.exist(c.xPrivKeyEncrypted);
+        should.not.exist(c.mnemonicEncrypted);
+      });
+      it('should fail to decrypt private key with wrong password', function() {
+        var c = Credentials.createWithMnemonic('livenet', '', 'en', 0);
+        c.encryptPrivateKey('password');
+
+        var err;
+        try {
+          c.decryptPrivateKey('wrong');
+        } catch (ex) {
+          err = ex;
+        }
+        should.exist(err);
+        c.isPrivKeyEncrypted().should.be.true;
+        should.exist(c.mnemonicEncrypted);
+        should.not.exist(c.mnemonic);
+      });
+      it('should fail to decrypt private key when not encrypted', function() {
+        var c = Credentials.create('livenet');
+
+        var err;
+        try {
+          c.decryptPrivateKey('password');
+        } catch (ex) {
+          err = ex;
+        }
+        should.exist(err);
+        c.isPrivKeyEncrypted().should.be.false;
+      });
+    });
+  });
 });
