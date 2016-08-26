@@ -211,7 +211,7 @@ describe('Credentials', function() {
     });
   });
 
-  describe.only('Private key encryption', function() {
+  describe('Private key encryption', function() {
     describe('#encryptPrivateKey', function() {
       it('should encrypt private key and remove cleartext', function() {
         var c = Credentials.createWithMnemonic('livenet', '', 'en', 0);
@@ -272,6 +272,46 @@ describe('Credentials', function() {
         }
         should.exist(err);
         c.isPrivKeyEncrypted().should.be.false;
+      });
+    });
+    describe.only('#getKeys', function() {
+      it('should get keys regardless of encryption', function() {
+        var c = Credentials.createWithMnemonic('livenet', '', 'en', 0);
+        var keys = c.getKeys();
+        should.exist(keys);
+        should.exist(keys.xPrivKey);
+        should.exist(keys.mnemonic);
+        keys.xPrivKey.should.equal(c.xPrivKey);
+        keys.mnemonic.should.equal(c.mnemonic);
+
+        c.encryptPrivateKey('password');
+        c.isPrivKeyEncrypted().should.be.true;
+        var keys2 = c.getKeys('password');
+        should.exist(keys2);
+        keys2.should.deep.equal(keys);
+
+        c.decryptPrivateKey('password');
+        c.isPrivKeyEncrypted().should.be.false;
+        var keys3 = c.getKeys();
+        should.exist(keys3);
+        keys3.should.deep.equal(keys);
+      });
+      it('should get derived keys regardless of encryption', function() {
+        var c = Credentials.createWithMnemonic('livenet', '', 'en', 0);
+        var xPrivKey = c.getDerivedXPrivKey();
+        should.exist(xPrivKey);
+
+        c.encryptPrivateKey('password');
+        c.isPrivKeyEncrypted().should.be.true;
+        var xPrivKey2 = c.getDerivedXPrivKey('password');
+        should.exist(xPrivKey2);
+        xPrivKey2.should.equal(xPrivKey);
+
+        c.decryptPrivateKey('password');
+        c.isPrivKeyEncrypted().should.be.false;
+        var xPrivKey3 = c.getDerivedXPrivKey();
+        should.exist(xPrivKey3);
+        xPrivKey3.should.equal(xPrivKey);
       });
     });
   });
