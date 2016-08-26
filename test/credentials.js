@@ -274,7 +274,7 @@ describe('Credentials', function() {
         c.isPrivKeyEncrypted().should.be.false;
       });
     });
-    describe.only('#getKeys', function() {
+    describe('#getKeys', function() {
       it('should get keys regardless of encryption', function() {
         var c = Credentials.createWithMnemonic('livenet', '', 'en', 0);
         var keys = c.getKeys();
