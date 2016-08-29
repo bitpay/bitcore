@@ -916,7 +916,6 @@ describe('client API', function() {
         var signatures = Client.signTxp(txp, derivedPrivateKey['BIP44']);
         signatures.length.should.be.equal(utxos.length);
       });
-
     });
   });
 
@@ -3537,9 +3536,8 @@ describe('client API', function() {
         importedClient.canSign().should.be.false;
       });
 
-      it('should export & import encrypted locked', function() {
-        clients[0].setPrivateKeyEncryption('password');
-        clients[0].lock();
+      it('should export & import encrypted', function() {
+        clients[0].encryptPrivateKey('password');
 
         var exported = clients[0].export();
 
@@ -3547,19 +3545,6 @@ describe('client API', function() {
         importedClient.import(exported);
 
         importedClient.isPrivKeyEncrypted().should.be.true;
-      });
-
-      it('should export & import encrypted unlocked', function() {
-        clients[0].setPrivateKeyEncryption('password');
-        clients[0].lock();
-        clients[0].unlock('password');
-
-        var exported = clients[0].export();
-
-        importedClient = helpers.newClient(app);
-        importedClient.import(exported);
-
-        importedClient.isPrivKeyEncrypted().should.be.false;
       });
 
       it('should export & import with mnemonics + BWS', function(done) {
@@ -4103,7 +4088,7 @@ describe('client API', function() {
             proxy.signTxProposal(txp, function(err, txp) {
               should.exist(err);
               should.not.exist(txp);
-              err.message.should.equal('You do not have the required keys to sign transactions');
+              err.message.should.equal('Missing private keys to sign');
               next(null, txp);
             });
           },
@@ -4151,8 +4136,7 @@ describe('client API', function() {
       });
 
       var mnemonic = client.getMnemonic();
-      client.setPrivateKeyEncryption('password');
-      client.lock();
+      client.encryptPrivateKey('password');
       client.isPrivKeyEncrypted().should.be.true;
 
       async.waterfall([
@@ -4523,50 +4507,36 @@ describe('client API', function() {
       clients[1].createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet',
       }, function() {
-        clients[1].setPrivateKeyEncryption(password);
-        clients[1].lock();
+        clients[1].encryptPrivateKey(password);
         done();
       });
     });
-    it('should not lock if not encrypted', function(done) {
+    it('should fail to decrypt if not encrypted', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
         (function() {
-          clients[0].lock();
+          clients[0].decryptPrivateKey('wrong');
         }).should.throw('encrypted');
         done();
       });
     });
-
     it('should return priv key is not encrypted', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
-        clients[0].isPrivKeyEncrypted().should.equal(false);
-        clients[0].hasPrivKeyEncrypted().should.equal(false);
+        clients[0].isPrivKeyEncrypted().should.be.false;
         done();
       });
     });
     it('should return priv key is encrypted', function() {
-      c1.isPrivKeyEncrypted().should.equal(true);
-      c1.hasPrivKeyEncrypted().should.equal(true);
+      c1.isPrivKeyEncrypted().should.be.true;
     });
     it('should prevent to reencrypt the priv key', function() {
       (function() {
-        c1.setPrivateKeyEncryption('pepe');
-      }).should.throw('Already');
+        c1.encryptPrivateKey('pepe');
+      }).should.throw('Private key already encrypted');
     });
-    it('should prevent to disable priv key encryption when locked', function() {
-      (function() {
-        c1.disablePrivateKeyEncryption();
-      }).should.throw('locked');
-      c1.isPrivKeyEncrypted().should.equal(true);
-      c1.hasPrivKeyEncrypted().should.equal(true);
+    it('should allow to decrypt', function() {
+      c1.decryptPrivateKey(password);
+      c1.isPrivKeyEncrypted().should.be.false;
     });
-    it('should allow to disable priv key encryption when unlocked', function() {
-      c1.unlock(password);
-      c1.disablePrivateKeyEncryption();
-      c1.isPrivKeyEncrypted().should.equal(false);
-      c1.hasPrivKeyEncrypted().should.equal(false);
-    });
-
     it('should prevent to encrypt airgapped\'s proxy credentials', function() {
       var airgapped = new Client();
       airgapped.seedFromRandom({
@@ -4579,46 +4549,31 @@ describe('client API', function() {
       proxy.import(exported);
       should.not.exist(proxy.credentials.xPrivKey);
       (function() {
-        proxy.setPrivateKeyEncryption('pepe');
+        proxy.encryptPrivateKey('pepe');
       }).should.throw('No private key');
     });
-    it('should lock and delete unencrypted fields', function() {
-      c1.unlock(password);
-      var xpriv = c1.credentials.xPrivKey;
-      var mnemonic = c1.getMnemonic();
-      c1.isPrivKeyEncrypted().should.equal(false);
-      c1.hasPrivKeyEncrypted().should.equal(true);
-      c1.lock();
-      c1.isPrivKeyEncrypted().should.equal(true);
-      c1.hasPrivKeyEncrypted().should.equal(true);
+    it('should not contain unencrypted fields when encrypted', function() {
+      var keys = c1.getKeys(password);
+      c1.isPrivKeyEncrypted().should.be.true;
       var str = JSON.stringify(c1);
-      str.indexOf(xpriv).should.equal(-1);
-      str.indexOf(mnemonic).should.equal(-1);
+      str.indexOf(keys.xPrivKey).should.equal(-1);
+      str.indexOf(keys.mnemonic).should.equal(-1);
     });
-    it('should unlock and restore encrypted fields', function() {
-      c1.unlock(password);
-      var xpriv = c1.credentials.xPrivKey;
-      var mnemonic = c1.getMnemonic();
-      c1.lock();
-      var str = JSON.stringify(c1);
-      str.indexOf(xpriv).should.equal(-1);
-      str.indexOf(mnemonic).should.equal(-1);
+    it('should restore cleartext fields when decrypting', function() {
+      var keys = c1.getKeys(password);
       (function() {
         c1.getMnemonic();
       }).should.throw('encrypted');
-      c1.unlock(password);
-      c1.credentials.xPrivKey.should.equal(xpriv);
-      c1.getMnemonic().should.equal(mnemonic);
+      c1.decryptPrivateKey(password);
+      c1.credentials.xPrivKey.should.equal(keys.xPrivKey);
+      c1.getMnemonic().should.equal(keys.mnemonic);
     });
-
-    it('should fail to unlock with wrong password', function() {
+    it('should fail to decrypt with wrong password', function() {
       (function() {
-        c1.unlock('hola')
-      }).should.throw('Could not unlock');
+        c1.decryptPrivateKey('wrong')
+      }).should.throw('Could not decrypt');
     });
-
-
-    it('should export & import locked', function(done) {
+    it('should export & import encrypted', function(done) {
       var walletId = c1.credentials.walletId;
       var walletName = c1.credentials.walletName;
       var copayerName = c1.credentials.copayerName;
@@ -4631,15 +4586,12 @@ describe('client API', function() {
         importedClient.credentials.walletName.should.equal(walletName);
         importedClient.credentials.copayerName.should.equal(copayerName);
         importedClient.isPrivKeyEncrypted().should.equal(true);
-        importedClient.hasPrivKeyEncrypted().should.equal(true);
-        importedClient.unlock(password);
+        importedClient.decryptPrivateKey(password);
         importedClient.isPrivKeyEncrypted().should.equal(false);
-        importedClient.hasPrivKeyEncrypted().should.equal(true);
         done();
       });
     });
-
-    it('should not sign when locked', function(done) {
+    it('should fail to sign when encrypted and no password is provided', function(done) {
       c1.createAddress(function(err, x0) {
         should.not.exist(err);
         blockchainExplorerMock.setUtxo(x0, 1, 1);
@@ -4657,7 +4609,7 @@ describe('client API', function() {
         });
       });
     });
-    it('should sign when unlocked', function(done) {
+    it('should sign when encrypted and password provided', function(done) {
       c1.createAddress(function(err, x0) {
         should.not.exist(err);
         blockchainExplorerMock.setUtxo(x0, 1, 1);
@@ -4668,12 +4620,27 @@ describe('client API', function() {
         };
         helpers.createAndPublishTxProposal(c1, opts, function(err, txp) {
           should.not.exist(err);
-          c1.unlock(password);
-          c1.signTxProposal(txp, function(err) {
+          c1.signTxProposal(txp, password, function(err) {
             should.not.exist(err);
-            c1.lock();
-            c1.isPrivKeyEncrypted().should.equal(true);
-            c1.hasPrivKeyEncrypted().should.equal(true);
+            c1.isPrivKeyEncrypted().should.be.true;
+            done();
+          });
+        });
+      });
+    });
+    it('should fail to sign when encrypted and incorrect password', function(done) {
+      c1.createAddress(function(err, x0) {
+        should.not.exist(err);
+        blockchainExplorerMock.setUtxo(x0, 1, 1);
+        var opts = {
+          amount: 10000000,
+          toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          message: 'hello 1-1',
+        };
+        helpers.createAndPublishTxProposal(c1, opts, function(err, txp) {
+          should.not.exist(err);
+          c1.signTxProposal(txp, 'wrong', function(err) {
+            err.message.should.contain('not decrypt');
             done();
           });
         });
