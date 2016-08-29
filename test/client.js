@@ -1874,6 +1874,21 @@ describe('client API', function() {
         done();
       });
     });
+    it('should not receive notifications for self generated events unless specified', function(done) {
+      clients[0].getNotifications({}, function(err, notifications) {
+        should.not.exist(err);
+        notifications.length.should.equal(3);
+        _.pluck(notifications, 'type').should.deep.equal(['NewCopayer', 'WalletComplete', 'NewAddress']);
+        clients[0].getNotifications({
+          includeOwn: true,
+        }, function(err, notifications) {
+          should.not.exist(err);
+          notifications.length.should.equal(5);
+          _.pluck(notifications, 'type').should.deep.equal(['NewCopayer', 'NewCopayer', 'WalletComplete', 'NewAddress', 'NewAddress']);
+          done();
+        });
+      });
+    });
   });
 
   describe('Transaction Proposals Creation and Locked funds', function() {
@@ -4938,14 +4953,14 @@ describe('client API', function() {
   });
 
   describe('_initNotifications', function() {
-    it('should handle NOT_FOUND error from _fetLatestNotifications', function(done) {
+    it('should handle NOT_FOUND error from _fetchLatestNotifications', function(done) {
       var sandbox = sinon.sandbox.create();
       var clock = sandbox.useFakeTimers();
 
       var client = new Client();
 
-      var _f = sandbox.stub(client, '_fetchLatestNotifications', function(interval, callback) {
-        callback(new Errors.NOT_FOUND);
+      var _f = sandbox.stub(client, '_fetchLatestNotifications', function(interval, cb) {
+        cb(new Errors.NOT_FOUND);
       });
 
       client._initNotifications({
@@ -4964,8 +4979,8 @@ describe('client API', function() {
 
       var client = new Client();
 
-      var _f = sandbox.stub(client, '_fetchLatestNotifications', function(interval, callback) {
-        callback(new Errors.NOT_AUTHORIZED);
+      var _f = sandbox.stub(client, '_fetchLatestNotifications', function(interval, cb) {
+        cb(new Errors.NOT_AUTHORIZED);
       });
 
       client._initNotifications({
