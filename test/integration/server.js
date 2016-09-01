@@ -2606,11 +2606,14 @@ describe('Wallet service', function() {
                   server.getNotifications({}, function(err, notifications) {
                     should.not.exist(err);
 
-                    var n = _.find(notifications, {'type': 'NewTxProposal'});
+                    var n = _.find(notifications, {
+                      'type': 'NewTxProposal'
+                    });
                     should.exist(n);
                     should.exist(n.data.txProposalId);
                     should.exist(n.data.message);
-
+                    should.exist(n.data.creatorId);
+                    n.data.creatorId.should.equal(server.copayerId);
                     done();
                   });
                 });
