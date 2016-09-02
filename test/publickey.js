@@ -58,14 +58,14 @@ describe('PublicKey', function() {
 
       var knownKeys = [
         {
-          wif: 'KzsjKq2FVqVuQv2ueHVFuB65A9uEZ6S1L6F8NuokCrE3V3kE3Ack',
+          wif: 'T6hzmaKRuDUWBkfnBvS87XdT71YYdBSu9J9PEiSHmpQCzwJ4y8aP',
           priv: '6d1229a6b24c2e775c062870ad26bc261051e0198c67203167273c7c62538846',
           pub: '03d6106302d2698d6a41e9c9a114269e7be7c6a0081317de444bb2980bf9265a01',
           pubx: 'd6106302d2698d6a41e9c9a114269e7be7c6a0081317de444bb2980bf9265a01',
           puby: 'e05fb262e64b108991a29979809fcef9d3e70cafceb3248c922c17d83d66bc9d'
         },
         {
-          wif: 'L5MgSwNB2R76xBGorofRSTuQFd1bm3hQMFVf3u2CneFom8u1Yt7G',
+          wif: 'TBBwtgfMRo5hj1ugQScHepSnCUeuq8iJATPuuhekMcRyH2QDs3mk',
           priv: 'f2cc9d2b008927db94b89e04e2f6e70c180e547b3e5e564b06b8215d1c264b53',
           pub: '03e275faa35bd1e88f5df6e8f9f6edb93bdf1d65f4915efc79fd7a726ec0c21700',
           pubx: 'e275faa35bd1e88f5df6e8f9f6edb93bdf1d65f4915efc79fd7a726ec0c21700',
@@ -337,7 +337,7 @@ describe('PublicKey', function() {
     it('should output this known mainnet address correctly', function() {
       var pk = new PublicKey('03c87bd0e162f26969da8509cafcb7b8c8d202af30b928c582e263dd13ee9a9781');
       var address = pk.toAddress('livenet');
-      address.toString().should.equal('1A6ut1tWnUq1SEQLMr4ttDh24wcbJ5o9TT');
+      address.toString().should.equal('LUKs9ECLs954h36VXz4CAEknH9ysUnPFeK');
     });
 
     it('should output this known testnet address correctly', function() {
@@ -351,12 +351,12 @@ describe('PublicKey', function() {
   describe('hashes', function() {
 
     // wif private key, address
-    // see: https://github.com/bitcoin/bitcoin/blob/master/src/test/key_tests.cpp#L20
+    // see: https://github.com/litecoin-project/litecoin/blob/master-0.10/src/test/key_tests.cpp#L20
     var data = [
-      ['5HxWvvfubhXpYYpS3tJkw6fq9jE9j18THftkZjHHfmFiWtmAbrj', '1QFqqMUD55ZV3PJEJZtaKCsQmjLT6JkjvJ'],
-      ['5KC4ejrDjv152FGwP386VD1i2NYc5KkfSMyv1nGy1VGDxGHqVY3', '1F5y5E5FMc5YzdJtB9hLaUe43GDxEKXENJ'],
-      ['Kwr371tjA9u2rFSMZjTNun2PXXP3WPZu2afRHTcta6KxEUdm1vEw', '1NoJrossxPBKfCHuJXT4HadJrXRE9Fxiqs'],
-      ['L3Hq7a8FEQwJkW1M2GNKDW28546Vp5miewcCzSqUD9kCAXrJdS3g', '1CRj2HyM1CXWzHAXLQtiGLyggNT9WQqsDs']
+      ['6uGFQ4DSW7zh1viHZi6iiVT17CncvoaV4MHvGvJKPDaLCdymj87', 'LiUo6Zn39joYJBzPUhssbDwAywhjFcoHE3'],
+      ['6vVo7sPkeLTwVdAntrv4Gbnsyr75H8ChD3P5iyHziwaqe8mCYR5', 'LZJvLSP5SGKcFS13MHgdrVhpFUbEMB5XVC'],
+      ['T3gJYmBuZXsdd65E7NQF88ZmUP2MaUanqnZg9GFS94W7kND4Ebjq', 'Lh2G82Bi33RNuzz4UfSMZbh54jnWHVnmw8'],
+      ['T986ZKRRdnuuXLeDZuKBRrZW1ujotAncU9WTrFU1n7vMgRW75ZtF', 'LWegHWHB5rmaF5rgWYt1YN3StapRdnGJfU']
     ];
     
     data.forEach(function(d){
@@ -389,7 +389,7 @@ describe('PublicKey', function() {
     });
 
     it('should output known compressed pubkey with network for console', function() {
-      var privkey = PrivateKey.fromWIF('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
+      var privkey = PrivateKey.fromWIF('T9HHJkkinXnaU8TQEPvD1enejZszq13CWuuHzRjxbwUJkwuFo1wS');
       var pubkey = new PublicKey(privkey);
       pubkey.inspect().should.equal('<PublicKey: 03c87bd0e162f26969da8509cafcb7b8c8d202af30b928c582e263dd13ee9a9781>');
     });

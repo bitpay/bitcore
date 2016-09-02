@@ -659,12 +659,12 @@ describe('Script', function() {
   });
   describe('#buildPublicKeyHashOut', function() {
     it('should create script from livenet address', function() {
-      var address = Address.fromString('1NaTVwXDDUJaXDQajoa9MqHhz4uTxtgK14');
+      var address = Address.fromString('LgoQm9q3J8Ydn26juwZSdrMUCHGk3xsfKW');
       var s = Script.buildPublicKeyHashOut(address);
       should.exist(s);
       s.toString().should.equal('OP_DUP OP_HASH160 20 0xecae7d092947b7ee4998e254aa48900d26d2ce1d OP_EQUALVERIFY OP_CHECKSIG');
       s.isPublicKeyHashOut().should.equal(true);
-      s.toAddress().toString().should.equal('1NaTVwXDDUJaXDQajoa9MqHhz4uTxtgK14');
+      s.toAddress().toString().should.equal('LgoQm9q3J8Ydn26juwZSdrMUCHGk3xsfKW');
     });
     it('should create script from testnet address', function() {
       var address = Address.fromString('mxRN6AQJaDi5R6KmvMaEmZGe3n5ScV9u33');
@@ -739,7 +739,7 @@ describe('Script', function() {
     });
 
     it('inherits network property from other script', function() {
-      var s1 = new Script.fromAddress(new Address('1FSMWkjVPAxzUNjbxT52p3mVKC971rfW3S'));
+      var s1 = new Script.fromAddress(new Address('LZfJmy3KTqD3jBRm8b4L64qFXQWP9VqorV'));
       var s2 = Script.buildScriptHashOut(s1);
       should.exist(s1._network);
       s1._network.should.equal(s2._network);
@@ -821,7 +821,7 @@ describe('Script', function() {
       data.should.deep.equal(new Buffer(0));
     });
     it('for a P2PKH address', function() {
-      var address = Address.fromString('1NaTVwXDDUJaXDQajoa9MqHhz4uTxtgK14');
+      var address = Address.fromString('LgoQm9q3J8Ydn26juwZSdrMUCHGk3xsfKW');
       var script = Script.buildPublicKeyHashOut(address);
       expect(BufferUtil.equal(script.getData(), address.hashBuffer)).to.be.true();
     });
@@ -862,7 +862,7 @@ describe('Script', function() {
       script.toAddress().network.should.equal(Networks.defaultNetwork);
     });
     it('for a P2PKH address', function() {
-      var stringAddress = '1NaTVwXDDUJaXDQajoa9MqHhz4uTxtgK14';
+      var stringAddress = 'LgoQm9q3J8Ydn26juwZSdrMUCHGk3xsfKW';
       var address = new Address(stringAddress);
       var script = new Script(address);
       script.toAddress().toString().should.equal(stringAddress);
@@ -881,15 +881,15 @@ describe('Script', function() {
       // taken from tx 7e519caca256423320b92e3e17be5701f87afecbdb3f53af598032bfd8d164f5
       var script = new Script('OP_DUP OP_HASH160 20 ' +
         '0xc8e11b0eb0d2ad5362d894f048908341fa61b6e1 OP_EQUALVERIFY OP_CHECKSIG');
-      script.toAddress().toString().should.equal('1KK9oz4bFH8c1t6LmighHaoSEGx3P3FEmc');
+      script.toAddress().toString().should.equal('LdY75CNRKwNfGgnVwrfzZbsCSVKKTLTvNT');
     });
     it('works for p2pkh input', function() {
       // taken from tx 7e519caca256423320b92e3e17be5701f87afecbdb3f53af598032bfd8d164f5
       var script = new Script('72 0x3045022100eff96230ca0f55b1e8c7a63e014f48611ff1af40875ecd33dee9062d7a6f5e2002206320405b5f6992c756e03e66b21a05a812b60996464ac6af815c2638b930dd7a01 65 0x04150defa035a2c7d826d7d5fc8ab2154bd1bb832f1a5c8ecb338f436362ad232e428b57db44677c5a8bd42c5ed9e2d7e04e742c59bee1b40080cfd57dec64b23a');
-      script.toAddress().toString().should.equal('1KK9oz4bFH8c1t6LmighHaoSEGx3P3FEmc');
+      script.toAddress().toString().should.equal('LdY75CNRKwNfGgnVwrfzZbsCSVKKTLTvNT');
       // taken from tx 7f8f95752a59d715dae9e0008a42e7968d2736741591bbfc6685f6e1649c21ed
       var s2 = new Script('71 0x3044022017053dad84aa06213749df50a03330cfd24d6b8e7ddbb6de66c03697b78a752a022053bc0faca8b4049fb3944a05fcf7c93b2861734d39a89b73108f605f70f5ed3401 33 0x0225386e988b84248dc9c30f784b06e02fdec57bbdbd443768eb5744a75ce44a4c');
-      s2.toAddress().toString().should.equal('17VArX6GRE6i6MVscBUZoXwi6NhnHa68B7');
+      s2.toAddress().toString().should.equal('LRi87jQ6VtLmMAC2nKTs5Z1UJb54RTZu5z');
     });
 
     it('works for p2sh output', function() {

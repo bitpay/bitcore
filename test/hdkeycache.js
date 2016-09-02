@@ -5,7 +5,7 @@ var expect = require('chai').expect;
 var bitcore = require('..');
 var HDPrivateKey = bitcore.HDPrivateKey;
 
-var xprivkey = 'xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi';
+var xprivkey = 'Ltpv71G8qDifUiNetP6nmxPA5STrUVmv2J9YSmXajv8VsYBUyuPhvN9xCaQrfX2wo5xxJNtEazYCFRUu5FmokYMM79pcqz8pcdo4rNXAFPgyB4k';
 
 describe('HDKey cache', function() {
   this.timeout(10000);
