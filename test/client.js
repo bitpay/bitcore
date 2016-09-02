@@ -4606,6 +4606,15 @@ describe('client API', function() {
         done();
       });
     });
+    it('should check right password', function() {
+      var valid = c1.checkPassword(password);
+      valid.should.equal(true);
+    });
+    it('should failt to check wrong password', function() {
+      var valid = c1.checkPassword('x');
+      valid.should.equal(false);
+    });
+ 
     it('should fail to sign when encrypted and no password is provided', function(done) {
       c1.createAddress(function(err, x0) {
         should.not.exist(err);
