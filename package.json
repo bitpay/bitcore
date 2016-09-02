@@ -1,7 +1,7 @@
 {
-  "name": "bitcore-lib",
-  "version": "0.13.19",
-  "description": "A pure and powerful JavaScript Bitcoin library.",
+  "name": "litecore-lib",
+  "version": "0.1.0",
+  "description": "A pure and powerful JavaScript Litecoin library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
@@ -11,6 +11,10 @@
     "build": "gulp"
   },
   "contributors": [
+    {
+      "name": "Charlie Lee",
+      "email": "coblee@litecoin.org"
+    },
     {
       "name": "Daniel Cousens",
       "email": "bitcoin@dcousens.com"
@@ -57,6 +61,7 @@
     }
   ],
   "keywords": [
+    "litecoin",
     "bitcoin",
     "transaction",
     "address",
@@ -74,7 +79,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitpay/bitcore-lib.git"
+    "url": "https://github.com/litecoin-project/litecore-lib.git"
   },
   "browser": {
     "request": "browser-request"
@@ -88,7 +93,7 @@
     "lodash": "=3.10.1"
   },
   "devDependencies": {
-    "bitcore-build": "bitpay/bitcore-build",
+    "litecore-build": "litecoin-project/litecore-build",
     "brfs": "^1.2.0",
     "chai": "^1.10.0",
     "gulp": "^3.8.10",
