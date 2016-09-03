@@ -453,6 +453,34 @@ module.exports = {
         nonce : 322045839,
         bits : 419587686,
       }
+    },
+    { // Mainnet FilteredBlock 399775 with filter: 6f64fd5aa9dd01f74c03656d376625cf80328d83d9afebe60cc68b8f0e245bd9
+      "header": {
+      "hash": "0000000000000000011b04bc9f4f3856e299b53a335eb1c42be906237c860bb8",
+      "version": 4,
+      "prevHash": "0000000000000000015373947aa93c7cb16a308fb0a59644d4123072ad24ce5b",
+      "merkleRoot": "ac1841eb3b7d380ee114270e3b1c7df349f1e27e2f0f7891138199bc07e006f8",
+      "time": 1456274787,
+      "bits": 403093919,
+      "nonce": 736568686
+      },
+      "numTransactions": 3309,
+      "hashes": [
+        "adaf1e41a5349a7e2b27e6f2b5fc1186d576d21b47531a410a654439f49bd5a9",
+        "0f64562b6d361757bfdc5926d28cafb7c45e4822b4ad5a14e65530d0c9d44cd2",
+        "c34dec8d5954d8c151c3a594a5a6d1f3a1ec8a1a6c470b27aea879b7757328fb",
+        "c044e5d998fe29cdbe88f87c97c3547f142f5b491cb909d9b0a8e9d3ab7fc984",
+        "51ecd2d2b02b0ca1a3b439eae3adf87ab37dd87f7be0c5b3437cd22350079101",
+        "684ebe37c6eaae2879249ff20b3769d5f2f7ad853a5363a4baee68c0c85777a5",
+        "e561fbeb0faff42f95f2dc8d57d432d4d1a9f84483597a0602e1edc3390f1e33",
+        "02c070afc743c885a6c8d94d15d6e9c3b991c636b4284258dd37686c8792fe44",
+        "6f64fd5aa9dd01f74c03656d376625cf80328d83d9afebe60cc68b8f0e245bd9",
+        "a296fef97b3da0825bac00c794ea234913421b7c1cbb8571978d8d5ba3b16de2",
+        "691c6855c5da434a06cb39a7e47d9337da0e39112ad975cc70cecc882233920a",
+        "6a9e7f8e6d1d8c326a774ff691bdf424252cee710f8e5d9da2c094e999c15efc",
+        "0723ffc695fef989e86784fa2b47097d55f6aac244631536d8d901f5cd9bf170"
+        ],
+      "flags": [171,86,23,0]
     }
   ]
 };
