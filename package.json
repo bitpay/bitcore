@@ -1,5 +1,5 @@
 {
-  "name": "bitcore",
+  "name": "litecore",
   "version": "4.1.0",
   "description": "A platform to build bitcoin and blockchain-based applications.",
   "author": "BitPay <dev@bitpay.com>",
@@ -9,10 +9,14 @@
     "build-deb": "./scripts/build-deb"
   },
   "bin": {
-    "bitcore": "./bin/bitcore",
-    "bitcored": "./bin/bitcored"
+    "litecore": "./bin/litecore",
+    "litecored": "./bin/litecored"
   },
   "contributors": [
+    {
+      "name": "Charlie Lee",
+      "email": "coblee@litecoin.org"
+    },
     {
       "name": "Daniel Cousens",
       "email": "bitcoin@dcousens.com"
@@ -59,7 +63,7 @@
     }
   ],
   "keywords": [
-    "bitcoin",
+    "litecoin",
     "transaction",
     "address",
     "p2p",
@@ -76,14 +80,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitpay/bitcore.git"
+    "url": "https://github.com/litecoin-project/litecore.git"
   },
   "browser": {
     "request": "browser-request"
   },
   "dependencies": {
-    "bitcore-lib": "^0.13.14",
-    "bitcore-node": "~3.1.0",
+    "litecore-lib": "^0.13.19",
+    "litecore-node": "^3.1.4",
     "insight-api": "^0.4.0",
     "insight-ui": "^0.4.0"
   },

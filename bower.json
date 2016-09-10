@@ -1,19 +1,19 @@
 {
-  "name": "bitcore",
-  "main": "./bitcore.min.js",
+  "name": "litecore",
+  "main": "./litecore.min.js",
   "version": "0.13.5",
-  "homepage": "http://bitcore.io",
+  "homepage": "http://litecore.io",
   "authors": [
     "BitPay, Inc."
   ],
-  "description": "A pure, powerful core for your bitcoin project.",
+  "description": "A pure, powerful core for your litecoin project.",
   "moduleType": [
     "globals"
   ],
   "keywords": [
-    "bitcoin",
-    "bitcore",
-    "btc",
+    "litecoin",
+    "litecore",
+    "ltc",
     "satoshi"
   ],
   "license": "MIT",

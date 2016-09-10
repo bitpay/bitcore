@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
-var bitcore = require('bitcore-node/lib/cli/bitcore');
+'use strict';
+
 var path = require('path');
+var litecored = require('litecore-node/lib/cli/bitcored');
 var servicesPath = path.resolve(__dirname, '../');
 var additionalServices = ['insight-api', 'insight-ui'];
-bitcore(servicesPath, additionalServices);
+litecored(servicesPath, additionalServices);

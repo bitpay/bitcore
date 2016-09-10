@@ -1,5 +1,5 @@
 'use strict';
 
-var bitcore = require('bitcore-lib');
+var litecore = require('litecore-lib');
 
-module.exports = bitcore;
+module.exports = litecore;
