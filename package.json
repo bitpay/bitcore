@@ -82,7 +82,7 @@
     "request": "browser-request"
   },
   "dependencies": {
-    "bitcore-lib-dash": "^0.13.18",
+    "bitcore-lib-dash": "^0.13.19",
     "bitcore-node-dash": "~3.0.1",
     "insight-api-dash": "^0.4.1",
     "insight-ui-dash": "^0.4.0"
