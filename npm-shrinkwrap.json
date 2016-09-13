@@ -1,6 +1,6 @@
 {
   "name": "litecore",
-  "version": "0.13.19",
+  "version": "0.13.20",
   "dependencies": {
     "bn.js": {
       "version": "2.0.4",
