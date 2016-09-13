@@ -1,5 +1,5 @@
 {
-  "name": "bitcore",
+  "name": "litecore",
   "version": "0.13.19",
   "dependencies": {
     "bn.js": {

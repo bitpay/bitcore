@@ -200,6 +200,13 @@ describe('Transaction', function() {
     script: Script.buildPublicKeyHashOut(fromAddress).toString(),
     satoshis: 100000
   };
+  var simpleUtxoWith1000000Satoshis = {
+    address: fromAddress,
+    txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+    outputIndex: 0,
+    script: Script.buildPublicKeyHashOut(fromAddress).toString(),
+    satoshis: 1000000
+  };
   var anyoneCanSpendUTXO = JSON.parse(JSON.stringify(simpleUtxoWith100000Satoshis));
   anyoneCanSpendUTXO.script = new Script().add('OP_TRUE');
   var toAddress = 'mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc';
@@ -289,12 +296,12 @@ describe('Transaction', function() {
   describe('change address', function() {
     it('can calculate simply the output amount', function() {
       var transaction = new Transaction()
-        .from(simpleUtxoWith100000Satoshis)
-        .to(toAddress, 50000)
+        .from(simpleUtxoWith1000000Satoshis)
+        .to(toAddress, 500000)
         .change(changeAddress)
         .sign(privateKey);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(40000);
+      transaction.outputs[1].satoshis.should.equal(400000);
       transaction.outputs[1].script.toString()
         .should.equal(Script.fromAddress(changeAddress).toString());
       var actual = transaction.getChangeOutput().script.toString();
@@ -303,8 +310,8 @@ describe('Transaction', function() {
     });
     it('accepts a P2SH address for change', function() {
       var transaction = new Transaction()
-        .from(simpleUtxoWith100000Satoshis)
-        .to(toAddress, 50000)
+        .from(simpleUtxoWith1000000Satoshis)
+        .to(toAddress, 500000)
         .change(changeAddressP2SH)
         .sign(privateKey);
       transaction.outputs.length.should.equal(2);
@@ -919,7 +926,7 @@ describe('Transaction', function() {
         .change(changeAddress)
         .to(toAddress, 1000);
       transaction.inputAmount.should.equal(100000000);
-      transaction.outputAmount.should.equal(99990000);
+      transaction.outputAmount.should.equal(99900000);
     });
     it('returns correct values for coinjoin transaction', function() {
       // see livenet tx c16467eea05f1f30d50ed6dbc06a38539d9bb15110e4b7dc6653046a3678a718
@@ -1011,7 +1018,7 @@ describe('Transaction', function() {
       tx.outputs.length.should.equal(2);
       tx.outputs[0].satoshis.should.equal(10000000);
       tx.outputs[0].script.toAddress().toString().should.equal(toAddress);
-      tx.outputs[1].satoshis.should.equal(89990000);
+      tx.outputs[1].satoshis.should.equal(89900000);
       tx.outputs[1].script.toAddress().toString().should.equal(changeAddress);
     });
 
