@@ -23,12 +23,12 @@ bower install litecore-lib
 
 ## Documentation
 
-The complete docs are hosted here: [litecore documentation](http://bitcore.io/guide/). There's also a [litecore API reference](http://bitcore.io/api/) available generated from the JSDocs of the project, where you'll find low-level details on each litecore utility.
+The complete docs are hosted here: [litecore documentation](http://litecore.io/guide/). There's also a [litecore API reference](http://litecore.io/api/) available generated from the JSDocs of the project, where you'll find low-level details on each litecore utility.
 
-- [Read the Developer Guide](http://bitcore.io/guide/)
-- [Read the API Reference](http://bitcore.io/api/)
+- [Read the Developer Guide](http://litecore.io/guide/)
+- [Read the API Reference](http://litecore.io/api/)
 
-To get community assistance and ask for help with implementation questions, please use our [community forums](https://forum.bitcore.io/).
+To get community assistance and ask for help with implementation questions, please use our [community forums](https://forum.litecore.io/).
 
 ## Examples
 
@@ -45,7 +45,7 @@ To get community assistance and ask for help with implementation questions, plea
 
 ## Security
 
-We're using Litecore in production, as are [many others](http://bitcore.io#projects), but please use common sense when doing anything related to finances! We take no responsibility for your implementation decisions.
+We're using Litecore in production, as are [many others](http://litecore.io#projects), but please use common sense when doing anything related to finances! We take no responsibility for your implementation decisions.
 
 If you find a security issue, please email security@bitpay.com.
 

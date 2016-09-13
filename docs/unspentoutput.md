@@ -1,5 +1,5 @@
 # UnspentOutput
-`bitcore.Transaction.UnspentOutput` is a class with stateless instances that provides information about an unspent output:
+`litecore.Transaction.UnspentOutput` is a class with stateless instances that provides information about an unspent output:
 - Transaction ID and output index
 - The "scriptPubKey", the script included in the output
 - Amount of satoshis associated
