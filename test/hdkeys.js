@@ -288,6 +288,27 @@ describe('BIP32 compliance', function() {
       derived.privateKey.toString().should.equal('b15bce3608d607ee3a49069197732c656bca942ee59f3e29b4d56914c1de6825');
       bitcore.PrivateKey.isValid.callCount.should.equal(2);
     });
+    it('will handle edge case that a derive public key is invalid', function() {
+      var publicKeyBuffer = new Buffer('029e58b241790284ef56502667b15157b3fc58c567f044ddc35653860f9455d099', 'hex');
+      var chainCodeBuffer = new Buffer('39816057bba9d952fe87fe998b7fd4d690a1bb58c2ff69141469e4d1dffb4b91', 'hex');
+      var key = new HDPublicKey({
+        network: 'testnet',
+        depth: 0,
+        parentFingerPrint: 0,
+        childIndex: 0,
+        chainCode: chainCodeBuffer,
+        publicKey: publicKeyBuffer
+      });
+      var unstubbed = bitcore.PublicKey.fromPoint;
+      bitcore.PublicKey.fromPoint = function() {
+        bitcore.PublicKey.fromPoint = unstubbed;
+        throw new Error('Point cannot be equal to Infinity');
+      };
+      sandbox.spy(key, '_deriveWithNumber');
+      var derived = key.derive("m/44");
+      key._deriveWithNumber.callCount.should.equal(2);
+      key.publicKey.toString().should.equal('029e58b241790284ef56502667b15157b3fc58c567f044ddc35653860f9455d099');
+    });
   });
 
   describe('seed', function() {
