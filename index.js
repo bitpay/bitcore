@@ -63,6 +63,7 @@ litecore.deps.bnjs = require('bn.js');
 litecore.deps.bs58 = require('bs58');
 litecore.deps.Buffer = Buffer;
 litecore.deps.elliptic = require('elliptic');
+litecore.deps.scryptsy = require('scryptsy');
 litecore.deps._ = require('lodash');
 
 // Internal usage, exposed for testing/advanced tweaking
