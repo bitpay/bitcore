@@ -250,6 +250,12 @@ describe('Address', function() {
       Address.fromString(str, Networks.livenet).toString().should.equal(str);
     });
 
+    it('should throw with bad network param', function() {
+      (function(){
+        Address.fromString(str, 'somenet');
+      }).should.throw('Unknown network');
+    });
+
     it('should error because of unrecognized data format', function() {
       (function() {
         return new Address(new Error());
