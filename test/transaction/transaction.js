@@ -1331,6 +1331,28 @@ describe('Transaction', function() {
         var valid = signedTx.inputs[0].isValidSignature(signedTx, signedTx.inputs[0].signatures[0]);
         valid.should.equal(true);
       });
+      describe('Bitcoin Core tests', function() {
+        // from bitcoin core tests at src/test/transaction_tests.cpp
+        it('will verify pay-to-compressed publickey (v0)', function() {
+          var check;
+          var flags;
+          var interpreter = new Interpreter();
+          var output1 = bitcore.Transaction('01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff01010000000000000016001457d5e8f4701ae218576e4fdbcf702e4716808f5f00000000');
+          var input1 = bitcore.Transaction('01000000000101da3ca8fe74ee2f6cc6ed02927a5fc8e9832f4ff6ad10521598f7985dcd5d17740000000000ffffffff010100000000000000000247304402202eee148a880846e3ebf9b61b5875a0c5121428d272a8336d10bae745ec401042022063b65baea1adc0e7a15801922242ab89d103143071680cfd4ba6072f8685a76c0121031fa0febd51842888a36c43873d1520c5b186894c5ac04520b096f8a3b49f8a5b00000000');
+          var scriptPubkey = output1.outputs[0].script;
+          var scriptSig = input1.inputs[0].script;
+          var witnesses = input1.inputs[0].getWitnesses();
+          var satoshis = 1;
+
+          flags = Interpreter.SCRIPT_VERIFY_P2SH;
+          check = interpreter.verify(scriptSig, scriptPubkey, input1, 0, flags, witnesses, satoshis);
+          check.should.equal(true);
+
+          flags = Interpreter.SCRIPT_VERIFY_P2SH | Interpreter.SCRIPT_VERIFY_WITNESS;
+          check = interpreter.verify(scriptSig, scriptPubkey, input1, 0, flags, witnesses, satoshis);
+          check.should.equal(true);
+        });
+      });
     });
     describe('signing', function() {
       var privateKey1 = PrivateKey.fromWIF('cNuW8LX2oeQXfKKCGxajGvqwhCgBtacwTQqiCGHzzKfmpHGY4TE9');
