@@ -1341,7 +1341,7 @@ describe('Transaction', function() {
       var publicKey3 = p2shPrivateKey3.toPublicKey();
       var address = Address.createMultisig([
         publicKey1
-      ], 1, 'segnet', true);
+      ], 1, 'testnet', true);
       var utxo = {
         address: address.toString(),
         txId: '1d732950d99f821b8a8d11972ea56000b0666e4d31fa71861ffd80a83797dc61',
@@ -1352,10 +1352,10 @@ describe('Transaction', function() {
       it('will sign with nested p2sh witness program', function() {
         var tx = new Transaction()
           .from(utxo, [publicKey1], 1, true)
-          .to([{address: 'DSy1mtq7NeVEWKjBoXb4wgujgLv7cLE9Vb', satoshis: 50000}])
+          .to([{address: 'n3LsXgyStG2CkS2CnWZtDqxTfCnXB8PvD9', satoshis: 50000}])
           .fee(150000)
-          .change('DF8MrzMiDkTvT4qpeCAdW6Y37WGgbo9Cmu')
-          .sign(privateKey1)
+          .change('mqWDcnW3jMzthB8qdB9SnFam6N96GDqM4W')
+          .sign(privateKey1);
         var sighash = tx.inputs[0].getSighash(tx, privateKey1, 0, bitcore.crypto.Signature.SIGHASH_ALL);
         sighash.toString('hex').should.equal('51b7c5271ae04071a6d3d4c4cde28003d8e9a09e51931ebae4003539767a4955');
         tx.toBuffer().toString('hex').should.equal('0100000000010161dc9737a880fd1f8671fa314d6e66b00060a52e97118d8a1b829fd95029731d010000002322002028ba8620c84df12e3283de37d02cfa7bcae3894e118388d6b3ae50f9aeb38798ffffffff0250c30000000000001976a914ef6aa14d8f5ba65a12c327a9659681c44cd821b088acc0d3f205000000001976a9146d8da2015c6d2890896485edd5897b3b2ec9ebb188ac030047304402203fdbd6604939ed9b46bd07bea993b102336a6fbc0a0c987f05b8522a2079037f022064466db4b0c6cc6697a28e0ba9b28c9738ecba56033a60aab7f04d5da2a8241e0125512102feab7deafbdb39885ef92a285dfa0f4ada0feefce43685e6551c95e71496d98051ae00000000');
