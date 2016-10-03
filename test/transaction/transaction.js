@@ -1333,10 +1333,10 @@ describe('Transaction', function() {
       });
       describe('Bitcoin Core tests', function() {
         // from bitcoin core tests at src/test/transaction_tests.cpp
-        it('will verify pay-to-compressed publickey (v0)', function() {
+        it('will verify pay-to-compressed publickey (v0) part 1', function() {
           var check;
           var flags;
-          var interpreter = new Interpreter();
+          var interpreter;
           var output1 = bitcore.Transaction('01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff01010000000000000016001457d5e8f4701ae218576e4fdbcf702e4716808f5f00000000');
           var input1 = bitcore.Transaction('01000000000101da3ca8fe74ee2f6cc6ed02927a5fc8e9832f4ff6ad10521598f7985dcd5d17740000000000ffffffff010100000000000000000247304402202eee148a880846e3ebf9b61b5875a0c5121428d272a8336d10bae745ec401042022063b65baea1adc0e7a15801922242ab89d103143071680cfd4ba6072f8685a76c0121031fa0febd51842888a36c43873d1520c5b186894c5ac04520b096f8a3b49f8a5b00000000');
           var scriptPubkey = output1.outputs[0].script;
@@ -1344,10 +1344,191 @@ describe('Transaction', function() {
           var witnesses = input1.inputs[0].getWitnesses();
           var satoshis = 1;
 
+          interpreter = new Interpreter();
           flags = Interpreter.SCRIPT_VERIFY_P2SH;
           check = interpreter.verify(scriptSig, scriptPubkey, input1, 0, flags, witnesses, satoshis);
           check.should.equal(true);
 
+          interpreter = new Interpreter();
+          flags = Interpreter.SCRIPT_VERIFY_P2SH | Interpreter.SCRIPT_VERIFY_WITNESS;
+          check = interpreter.verify(scriptSig, scriptPubkey, input1, 0, flags, witnesses, satoshis);
+          check.should.equal(true);
+        });
+        it('will verify pay-to-compressed publickey (v0) part 2', function() {
+          var flags;
+          var check;
+          var interpreter;
+          var output1 = bitcore.Transaction('01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff01010000000000000016001457d5e8f4701ae218576e4fdbcf702e4716808f5f00000000');
+          var input2 = bitcore.Transaction('01000000000101cdc27b7132dc20e463d20458aa9d5c38e664ff114ddab8277af4ed859f2b90e20000000000ffffffff0101000000000000000002483045022100db56d1a70244f478a345478be51891b38b9a46140402cddf85b3024ca1652b4b02202c00aaa41ac941ce426ae358aa8372b63aeba945372002c47dc3725d9dca8343012103585c9f7105e09a0abbc60dc72d9d0a456030d0f10f7c47c0616e71c325085cbd00000000');
+          var scriptPubkey = output1.outputs[0].script;
+          var scriptSig = input2.inputs[0].script;
+          var witnesses = input2.inputs[0].getWitnesses();
+          var satoshis = 1;
+
+          interpreter = new Interpreter();
+          flags = Interpreter.SCRIPT_VERIFY_P2SH;
+          check = interpreter.verify(scriptSig, scriptPubkey, input2, 0, flags, witnesses, satoshis);
+          check.should.equal(true);
+
+          interpreter = new Interpreter();
+          flags = Interpreter.SCRIPT_VERIFY_P2SH | Interpreter.SCRIPT_VERIFY_WITNESS;
+          check = interpreter.verify(scriptSig, scriptPubkey, input2, 0, flags, witnesses, satoshis);
+          check.should.equal(false);
+        });
+        it('will verify p2sh witness pay-to-compressed pubkey (v0) part 1', function() {
+          var flags;
+          var check;
+          var interpreter;
+          var output1 = bitcore.Transaction('01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff01010000000000000017a914ca8abcc57aff5ba3fb36f76fe8e260ce6a08e0bf8700000000');
+          var input1 = bitcore.Transaction('01000000000101b85d4c861b00d31ac95ae0b2cad8635d8310fb7ca86b44fefcbe2b98c4e905bd000000001716001469f84dbc7f9ae8626aa2d4aee6c73ef726b53ac2ffffffff0101000000000000000002483045022100c0237a5743c684642b26347cf82df0f3b3e91c76aff171f7d065cea305f059a502205c168682630ea4e6bd42627c237207be3d43aeba5c1b8078f3043455bdb6a2270121036240793eedd7e6e53a7c236d069e4d8558f4c6e5950114d7e3d5e1579c93fdf100000000');
+          var scriptPubkey = output1.outputs[0].script;
+          var scriptSig = input1.inputs[0].script;
+          var witnesses = input1.inputs[0].getWitnesses();
+          var satoshis = 1;
+
+          interpreter = new Interpreter();
+          flags = Interpreter.SCRIPT_VERIFY_P2SH;
+          check = interpreter.verify(scriptSig, scriptPubkey, input1, 0, flags, witnesses, satoshis);
+          check.should.equal(true);
+
+          interpreter = new Interpreter();
+          flags = Interpreter.SCRIPT_VERIFY_P2SH | Interpreter.SCRIPT_VERIFY_WITNESS;
+          check = interpreter.verify(scriptSig, scriptPubkey, input1, 0, flags, witnesses, satoshis);
+          check.should.equal(true);
+        });
+        it('will verify p2sh witness pay-to-compressed pubkey (v0) part 2', function() {
+          var flags;
+          var check;
+          var interpreter;
+          var output1 = bitcore.Transaction('01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff01010000000000000017a9145675f64cbe03b43fb6d9d42debd207e4be3337db8700000000');
+          var input2 = bitcore.Transaction('0100000000010104410fc0d228780b20ff790212aef558df008421a110d56d9c9a9b6e5eeb1a680000000017160014b9c556bc9c34cf70d4c253ff86a9eac64e355a25ffffffff0101000000000000000002483045022100dd41426f5eb82ef2b72a0b4e5112022c80045ae4919b2fdef7f438f7ed3c59ee022043494b6f9a9f28d7e5a5c221f92d5325d941722c0ffd00f8be335592015a44d2012103587155d2618b140244799f7a408a85836403f447d51778bdb832088c4a9dd1e300000000');
+          var scriptPubkey = output1.outputs[0].script;
+          var scriptSig = input2.inputs[0].script;
+          var witnesses = input2.inputs[0].getWitnesses();
+          var satoshis = 1;
+
+          interpreter = new Interpreter();
+          flags = Interpreter.SCRIPT_VERIFY_P2SH;
+          check = interpreter.verify(scriptSig, scriptPubkey, input2, 0, flags, witnesses, satoshis);
+          check.should.equal(true);
+
+          interpreter = new Interpreter();
+          flags = Interpreter.SCRIPT_VERIFY_P2SH | Interpreter.SCRIPT_VERIFY_WITNESS;
+          check = interpreter.verify(scriptSig, scriptPubkey, input2, 0, flags, witnesses, satoshis);
+          check.should.equal(false);
+        });
+        it('will verify witness 2-of-2 multisig (part 1)', function() {
+          var flags;
+          var check;
+          var interpreter;
+          var output1 = bitcore.Transaction('01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff0101000000000000002200204cd0c4dc1a95d8909396d0c1648793fa673518849e1b25259c581ede30e61b7900000000');
+          var input1 = bitcore.Transaction('010000000001010d81757bb9f141a2d002138e86e54e8cb92b72201b38480a50377913e918612f0000000000ffffffff010100000000000000000300483045022100aa92d26d830b7529d906f7e72c1015b96b067664b68abae2d960a501e76f07780220694f4850e0003cb7e0d08bd4c67ee5fcb604c42684eb805540db5723c4383f780147522102f30bb0258f12a3bbf4fe0b5ada99974d6dbdd06876cb2687a59fa2ea7c7268aa2103d74fd4c6f08e3a4d32dde8e1404d00b2a3d323f94f5c43b4edda962b1f4cb55852ae00000000');
+          var scriptPubkey = output1.outputs[0].script;
+          var scriptSig = input1.inputs[0].script;
+          var witnesses = input1.inputs[0].getWitnesses();
+          var satoshis = 1;
+
+          interpreter = new Interpreter();
+          flags = 0;
+          check = interpreter.verify(scriptSig, scriptPubkey, input1, 0, flags, witnesses, satoshis);
+          check.should.equal(true);
+
+          interpreter = new Interpreter();
+          flags = Interpreter.SCRIPT_VERIFY_P2SH | Interpreter.SCRIPT_VERIFY_WITNESS;
+          check = interpreter.verify(scriptSig, scriptPubkey, input1, 0, flags, witnesses, satoshis);
+          check.should.equal(false);
+        });
+        it('will verify witness 2-of-2 multisig (part 2)', function() {
+          var flags;
+          var check;
+          var interpreter;
+          var output2 = bitcore.Transaction('01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff01010000000000000022002067b786a598572a1a0fad2f8f48e90c3f2cc89ef110f029f35323b15ba6e9b2f900000000');
+          var input2 = bitcore.Transaction('01000000000101812d39aa60f01c994c43bc160c87420b6b93bf8db2fe658df45f152250fae9100000000000ffffffff010100000000000000000300483045022100ae56c6d646656366601835e6bc2d151a9974cb1b7cbdeba27cc51ef8c59d2e3f022041e95e80d3e068eb278e31b07f984800869115111c647e2ca32718d26d8e8cd401475221032ac79a7160a0af81d59ffeb914537b1d126a3629271ac1393090c6c9a94bc81e2103eb8129ad88864e7702604ae5b36bad74dbb0f5abfd8ee9ee5def3869756b6c4152ae00000000');
+          var scriptPubkey = output2.outputs[0].script;
+          var scriptSig = input2.inputs[0].script;
+          var witnesses = input2.inputs[0].getWitnesses();
+          var satoshis = 1;
+
+          interpreter = new Interpreter();
+          flags = 0;
+          check = interpreter.verify(scriptSig, scriptPubkey, input2, 0, flags, witnesses, satoshis);
+          check.should.equal(true);
+
+          interpreter = new Interpreter();
+          flags = Interpreter.SCRIPT_VERIFY_P2SH | Interpreter.SCRIPT_VERIFY_WITNESS;
+          check = interpreter.verify(scriptSig, scriptPubkey, input2, 0, flags, witnesses, satoshis);
+          check.should.equal(false);
+        });
+        it('will verify witness 2-of-2 multisig (part 3)', function() {
+          var flags;
+          var check;
+          var interpreter;
+          var output1 = bitcore.Transaction('01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff0101000000000000002200207780f1145ef7ba4e703388c155d94bc399e24345e11c4559e683d5070feeb27400000000');
+          var input1 = bitcore.Transaction('01000000000101791890e3effa9d4061a984812a90675418d0eb141655c106cce9b4bbbf9a3be00000000000ffffffff010100000000000000000400483045022100db977a31834033466eb103131b1ef9c57d6cea17f9a7eb3f3bafde1d7c1ddff502205ad84c9ca9c4139dce6e8e7850cc09a49ad57197b266814e79a78527ab4a9f950147304402205bd26da7dab9e379019ffd5e76fa77e161090bf577ed875e8e969f06cd66ba0a0220082cf7315ff7dc7aa8f6cebf7e70af1ffa45e63581c08e6fbc4e964035e6326b0147522102f86e3dc39cf9cd6c0eeb5fe25e3abe34273b8e79cc888dd5512001c7dac31b9921032e16a3c764fb6485345d91b39fb6da52c7026b8819e1e7d2f838a0df1445851a52ae00000000');
+          var scriptPubkey = output1.outputs[0].script;
+          var scriptSig = input1.inputs[0].script;
+          var witnesses = input1.inputs[0].getWitnesses();
+          var satoshis = 1;
+
+          interpreter = new Interpreter();
+          flags = Interpreter.SCRIPT_VERIFY_P2SH | Interpreter.SCRIPT_VERIFY_WITNESS;
+          check = interpreter.verify(scriptSig, scriptPubkey, input1, 0, flags, witnesses, satoshis);
+          check.should.equal(true);
+        });
+        it('will verify p2sh witness 2-of-2 multisig (part 1)', function() {
+          var flags;
+          var check;
+          var interpreter;
+          var output1 = bitcore.Transaction('01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff01010000000000000017a914d0e24dc9fac5cfc616b364797de40f100086e9d58700000000');
+          var input1 = bitcore.Transaction('010000000001015865ee582f91c2ac646114493c3c39a3b2b08607cd96ba573f4525a01d1f85da000000002322002055423059d7eb9252d1abd6e85a4710c0bb8fabcd48cf9ddd811377557a77fc0dffffffff010100000000000000000300473044022031f9630a8ed776d6cef9ecab58cc9ee384338f4304152d93ac19482ac1ccbc030220616f194c7228484af208433b734b59ec82e21530408ed7a61e896cfefb5c4d6b014752210361424173f5b273fc134ce02a5009b07422b3f4ee63edc82cfd5bba7f72e530732102014ba09ca8cc68720bdf565f55a28b7b845be8ef6a17188b0fddcd55c16d450652ae00000000');
+          var scriptPubkey = output1.outputs[0].script;
+          var scriptSig = input1.inputs[0].script;
+          var witnesses = input1.inputs[0].getWitnesses();
+          var satoshis = 1;
+
+          interpreter = new Interpreter();
+          flags = 0;
+          check = interpreter.verify(scriptSig, scriptPubkey, input1, 0, flags, witnesses, satoshis);
+          check.should.equal(true);
+
+          interpreter = new Interpreter();
+          flags = Interpreter.SCRIPT_VERIFY_P2SH | Interpreter.SCRIPT_VERIFY_WITNESS;
+          check = interpreter.verify(scriptSig, scriptPubkey, input1, 0, flags, witnesses, satoshis);
+          check.should.equal(false);
+        });
+        it('will verify p2sh witness 2-of-2 multisig (part 2)', function() {
+          var flags;
+          var check;
+          var interpreter;
+          var output2 = bitcore.Transaction('01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff01010000000000000017a914294b319a1c23951902e25e0147527c8eac3009c68700000000');
+          var input2 = bitcore.Transaction('01000000000101d93fa44db148929eada630dd419142935c75a72d3678291327ab35d0983b37500000000023220020786e2abd1a684f8337c637f54f6ba3da75b5d75ef96cc7e7369cc69d8ca80417ffffffff010100000000000000000300483045022100b36be4297f2e1d115aba5a5fbb19f6882c61016ba9d6fa01ebb517d14109ec6602207de237433c7534d766ec36d9bddf839b961805e336e42fae574e209b1dc8e30701475221029569b67a4c695502aa31c8a7992b975aa591f2d7de61a4def63771213792288c2103ad3b7eeedf4cba17836ff9a29044a782889cd74ca8f426e83112fa199611676652ae00000000');
+          var scriptPubkey = output2.outputs[0].script;
+          var scriptSig = input2.inputs[0].script;
+          var witnesses = input2.inputs[0].getWitnesses();
+          var satoshis = 1;
+
+          interpreter = new Interpreter();
+          flags = 0;
+          check = interpreter.verify(scriptSig, scriptPubkey, input2, 0, flags, witnesses, satoshis);
+          check.should.equal(true);
+
+          interpreter = new Interpreter();
+          flags = Interpreter.SCRIPT_VERIFY_P2SH | Interpreter.SCRIPT_VERIFY_WITNESS;
+          check = interpreter.verify(scriptSig, scriptPubkey, input2, 0, flags, witnesses, satoshis);
+          check.should.equal(false);
+        });
+        it('will verify p2sh witness 2-of-2 multisig (part 3)', function() {
+          var flags;
+          var check;
+          var interpreter;
+          var output1 = bitcore.Transaction('01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff01010000000000000017a9143f588990832299c654d8032bc6c5d181427a321e8700000000');
+          var input1 = bitcore.Transaction('01000000000101ef6f782539d100d563d736339c4a57485b562f9705b28680b08b3efe9dd815870000000023220020a51db581b721c64132415f985ac3086bcf7817f1bbf45be984718b41f4189b39ffffffff01010000000000000000040047304402203202c4c3b40c091a051707421def9adb0d101076672ab220db36a3f87bbecad402205f976ff87af9149e83c87c94ec3b308c1abe4b8c5b3f43c842ebffc22885fc530147304402203c0a50f199774f6393e42ee29d3540cf868441b47efccb11139a357ecd45c5b702205e8442ff34f6f836cd9ad96c158504469db178d63a309d813ba68b86c7293f66014752210334f22ecf25636ba18f8c89e90d38f05036094fe0be48187fb9842374a237b1062102993d85ece51cec8c4d841fce02faa6130f57c811078c5f2a48c204caf12853b552ae00000000');
+          var scriptPubkey = output1.outputs[0].script;
+          var scriptSig = input1.inputs[0].script;
+          var witnesses = input1.inputs[0].getWitnesses();
+          var satoshis = 1;
+
+          interpreter = new Interpreter();
           flags = Interpreter.SCRIPT_VERIFY_P2SH | Interpreter.SCRIPT_VERIFY_WITNESS;
           check = interpreter.verify(scriptSig, scriptPubkey, input1, 0, flags, witnesses, satoshis);
           check.should.equal(true);
