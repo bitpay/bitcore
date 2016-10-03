@@ -427,6 +427,35 @@ describe('Script', function() {
     });
   });
 
+  describe('#isWitnessProgram', function() {
+    it('will default values to empty object', function() {
+      Script('OP_0 20 0x799d283e7f92af1dd242bf4eea513c6efd117de2')
+        .isWitnessProgram().should.equal(true);
+    });
+    it('will return false if script is data push longer than 40 bytes', function() {
+      Script('OP_0 42 0xd06863c385592423903682926825c495b6cf88fd7cd6159ffd72f778ca475d3046e7b87835d3b457cd')
+        .isWitnessProgram().should.equal(false);
+    });
+    it('will return false if first byte op_code is greater than OP_16', function() {
+      Script('OP_NOP 20 0x799d283e7f92af1dd242bf4eea513c6efd117de2')
+        .isWitnessProgram().should.equal(false);
+    });
+    it('will return true with datapush of 20', function() {
+      var values = {};
+      Script('OP_0 20 0x799d283e7f92af1dd242bf4eea513c6efd117de2')
+        .isWitnessProgram(values).should.equal(true);
+      values.version.should.equal(0);
+      values.program.toString('hex').should.equal('799d283e7f92af1dd242bf4eea513c6efd117de2');
+    });
+    it('will return true with datapush of 32', function() {
+      var values = {};
+      Script('OP_0 32 0xc756f6d660d4aaad55534cac599a0d9bf5c7e8f70363d22926291811a168c620')
+        .isWitnessProgram(values).should.equal(true);
+      values.version.should.equal(0);
+      values.program.toString('hex').should.equal('c756f6d660d4aaad55534cac599a0d9bf5c7e8f70363d22926291811a168c620');
+    });
+  });
+
   describe('#isPushOnly', function() {
     it('should know these scripts are or aren\'t push only', function() {
       Script('OP_NOP 1 0x01').isPushOnly().should.equal(false);
