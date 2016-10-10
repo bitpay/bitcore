@@ -3761,19 +3761,21 @@ describe('Wallet service', function() {
       server.editTxNote({
         txid: '123',
         body: 'note body'
-      }, function(err) {
+      }, function(err, note) {
         should.not.exist(err);
+        note.txid.should.equal('123');
+        note.walletId.should.equal(wallet.id);
+        note.body.should.equal('note body');
+        note.editedBy.should.equal(server.copayerId);
+        note.editedByName.should.equal('copayer 1');
+        note.createdOn.should.equal(note.editedOn);
         server.getTxNote({
           txid: '123',
         }, function(err, note) {
           should.not.exist(err);
           should.exist(note);
-          note.txid.should.equal('123');
-          note.walletId.should.equal(wallet.id);
           note.body.should.equal('note body');
           note.editedBy.should.equal(server.copayerId);
-          note.editedByName.should.equal('copayer 1');
-          note.createdOn.should.equal(note.editedOn);
           done();
         });
       });
