@@ -5925,6 +5925,7 @@ describe('Wallet service', function() {
                 should.exist(txs);
                 txs.length.should.equal(1);
                 var tx = txs[0];
+                tx.createdOn.should.equal(txp.createdOn);
                 tx.action.should.equal('sent');
                 tx.amount.should.equal(0.8e8);
                 tx.message.should.equal('some message');
