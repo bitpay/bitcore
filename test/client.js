@@ -3364,8 +3364,10 @@ describe('client API', function() {
       clients[0].editTxNote({
         txid: '123',
         body: 'note body'
-      }, function(err) {
+      }, function(err, note) {
         should.not.exist(err);
+        should.exist(note);
+        note.body.should.equal('note body');
         clients[0].getTxNote({
           txid: '123',
         }, function(err, note) {
@@ -4614,7 +4616,7 @@ describe('client API', function() {
       var valid = c1.checkPassword('x');
       valid.should.equal(false);
     });
- 
+
     it('should fail to sign when encrypted and no password is provided', function(done) {
       c1.createAddress(function(err, x0) {
         should.not.exist(err);
