@@ -28,6 +28,12 @@ describe('Transaction', function() {
     transaction.uncheckedSerialize().should.equal(tx_1_hex);
   });
 
+  it('should parse the version as a signed integer', function () {
+    var transaction = Transaction('ffffffff0000ffffffff')
+    transaction.version.should.equal(-1);
+    transaction.nLockTime.should.equal(0xffffffff);
+  });
+
   it('fails if an invalid parameter is passed to constructor', function() {
     expect(function() {
       return new Transaction(1);
