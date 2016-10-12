@@ -3564,6 +3564,32 @@ describe('client API', function() {
         importedClient.isPrivKeyEncrypted().should.be.true;
       });
 
+      it('should export & import decrypted when password is supplied', function() {
+        clients[0].encryptPrivateKey('password');
+
+        var exported = clients[0].export({
+          password: 'password'
+        });
+
+        var err;
+        try {
+          var exported = clients[0].export({
+            password: 'wrong'
+          });
+        } catch (ex) {
+          err = ex;
+        }
+        should.exist(err);
+
+        importedClient = helpers.newClient(app);
+        importedClient.import(exported);
+
+        importedClient.isPrivKeyEncrypted().should.be.false;
+        clients[0].isPrivKeyEncrypted().should.be.true;
+        should.not.exist(clients[0].xPrivKey);
+        should.not.exist(clients[0].mnemonic);
+      });
+
       it('should export & import with mnemonics + BWS', function(done) {
         var c = clients[0].credentials;
         var walletId = c.walletId;
