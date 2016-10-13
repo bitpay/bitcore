@@ -81,6 +81,7 @@
   "browser": {
     "request": "browser-request"
   },
+  "browser": "bundle.js",
   "dependencies": {
     "bitcore-lib": "^0.13.14",
     "bitcore-node": "~3.1.0",
