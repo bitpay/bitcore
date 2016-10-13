@@ -3526,6 +3526,7 @@ describe('client API', function() {
         });
       });
       afterEach(function(done) {
+        if (!importedClient) return done();
         importedClient.getMainAddresses({}, function(err, list) {
           should.not.exist(err);
           should.exist(list);
@@ -3571,6 +3572,22 @@ describe('client API', function() {
           password: 'password'
         });
 
+        importedClient = helpers.newClient(app);
+        importedClient.import(exported);
+
+        importedClient.isPrivKeyEncrypted().should.be.false;
+        clients[0].isPrivKeyEncrypted().should.be.true;
+        should.not.exist(clients[0].xPrivKey);
+        should.not.exist(clients[0].mnemonic);
+      });
+
+      it('should fail if wrong password provided', function() {
+        clients[0].encryptPrivateKey('password');
+
+        var exported = clients[0].export({
+          password: 'password'
+        });
+
         var err;
         try {
           var exported = clients[0].export({
@@ -3580,14 +3597,6 @@ describe('client API', function() {
           err = ex;
         }
         should.exist(err);
-
-        importedClient = helpers.newClient(app);
-        importedClient.import(exported);
-
-        importedClient.isPrivKeyEncrypted().should.be.false;
-        clients[0].isPrivKeyEncrypted().should.be.true;
-        should.not.exist(clients[0].xPrivKey);
-        should.not.exist(clients[0].mnemonic);
       });
 
       it('should export & import with mnemonics + BWS', function(done) {
