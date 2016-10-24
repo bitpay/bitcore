@@ -56,5 +56,24 @@ describe('log utils', function() {
     log.getLevels().fatal.should.equal(5);
   });
 
+  it('should log nothing if logLevel is set to silent', function() {
+    var sandbox = sinon.sandbox.create();
+    var cl = sandbox.stub(console, 'log');
+
+    log.setLevel('silent');
+    log.debug('foo');
+    log.info('foo');
+    log.log('foo');
+    log.warn('foo');
+    log.error('foo');
+    log.fatal('foo');
+
+    cl.callCount.should.equal(0);
+    sandbox.restore();
+  });
+
+  it('should not create a log.silent() method', function() {
+    should.not.exist(log.silent);
+  });
 
 });

@@ -294,6 +294,34 @@ describe('client API', function() {
     done();
   });
 
+  describe('constructor', function() {
+    it('should set the log level based on the logLevel option', function() {
+      var originalLogLevel = log.level;
+
+      var client = new Client({logLevel: 'info'});
+      client.logLevel.should.equal('info');
+      log.level.should.equal('info');
+
+      var client = new Client({logLevel: 'debug'});
+      client.logLevel.should.equal('debug');
+      log.level.should.equal('debug');
+
+      log.level = originalLogLevel; //restore since log is a singleton
+    });
+
+    it('should use silent for the log level if no logLevel is specified', function() {
+      var originalLogLevel = log.level;
+
+      log.level = 'foo;'
+
+      var client = new Client();
+      client.logLevel.should.equal('silent');
+      log.level.should.equal('silent');
+
+      log.level = originalLogLevel; //restore since log is a singleton
+    });
+  });
+
   describe('Client Internals', function() {
     it('should expose bitcore', function() {
       should.exist(Client.Bitcore);
