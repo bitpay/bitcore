@@ -72,5 +72,8 @@ describe('log utils', function() {
     sandbox.restore();
   });
 
+  it('should not create a log.silent() method', function() {
+    should.not.exist(log.silent);
+  });
 
 });
