@@ -2043,7 +2043,30 @@ describe('Wallet service', function() {
   });
 
   describe('#getFeeLevels', function() {
-    var server, wallet;
+    var server, wallet, levels;
+    before(function() {
+      levels = Defaults.FEE_LEVELS;
+      Defaults.FEE_LEVELS = [{
+        name: 'priority',
+        nbBlocks: 1,
+        defaultValue: 50000
+      }, {
+        name: 'normal',
+        nbBlocks: 2,
+        defaultValue: 40000
+      }, {
+        name: 'economy',
+        nbBlocks: 6,
+        defaultValue: 25000
+      }, {
+        name: 'superEconomy',
+        nbBlocks: 24,
+        defaultValue: 10000
+      }];
+    });
+    after(function() {
+      Defaults.FEE_LEVELS = levels;
+    });
     beforeEach(function(done) {
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
