@@ -142,6 +142,105 @@ describe('Wallet service', function() {
     });
   });
 
+  describe('Session management (#login, #logout, #authenticate)', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should get a new session & authenticate', function(done) {
+      WalletService.getInstanceWithAuth({
+        copayerId: server.copayerId,
+        session: 'dummy',
+      }, function(err, server2) {
+        should.exist(err);
+        err.code.should.equal('NOT_AUTHORIZED');
+        err.message.toLowerCase().should.contain('session');
+        should.not.exist(server2);
+        server.login({}, function(err, token) {
+          should.not.exist(err);
+          should.exist(token);
+          WalletService.getInstanceWithAuth({
+            copayerId: server.copayerId,
+            session: token,
+          }, function(err, server2) {
+            should.not.exist(err);
+            should.exist(server2);
+            server2.copayerId.should.equal(server.copayerId);
+            server2.walletId.should.equal(server.walletId);
+            done();
+          });
+        });
+      });
+    });
+    it('should get the same session token for two requests in a row', function(done) {
+      server.login({}, function(err, token) {
+        should.not.exist(err);
+        should.exist(token);
+        server.login({}, function(err, token2) {
+          should.not.exist(err);
+          token2.should.equal(token);
+          done();
+        });
+      });
+    });
+    it('should create a new session if the previous one has expired', function(done) {
+      var timer = sinon.useFakeTimers('Date');
+      var token;
+      async.series([
+
+        function(next) {
+          server.login({}, function(err, t) {
+            should.not.exist(err);
+            should.exist(t);
+            token = t;
+            next();
+          });
+        },
+        function(next) {
+          WalletService.getInstanceWithAuth({
+            copayerId: server.copayerId,
+            session: token,
+          }, function(err, server2) {
+            should.not.exist(err);
+            should.exist(server2);
+            next();
+          });
+        },
+        function(next) {
+          timer.tick((Defaults.SESSION_EXPIRATION + 1) * 1000);
+          next();
+        },
+        function(next) {
+          server.login({}, function(err, t) {
+            should.not.exist(err);
+            t.should.not.equal(token);
+            next();
+          });
+        },
+        function(next) {
+          WalletService.getInstanceWithAuth({
+            copayerId: server.copayerId,
+            session: token,
+          }, function(err, server2) {
+            should.exist(err);
+            err.code.should.equal('NOT_AUTHORIZED');
+            err.message.should.contain('expired');
+            next();
+          });
+        },
+      ], function(err) {
+        should.not.exist(err);
+        timer.restore();
+        done();
+      });
+    });
+  });
+
   describe('#createWallet', function() {
     var server;
     beforeEach(function() {
