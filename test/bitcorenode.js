@@ -138,77 +138,11 @@ describe('Bitcore Node Service', function() {
     });
   });
   describe('#_startWalletService', function() {
-    it('will start express and web socket servers', function(done) {
-      function TestExpressApp() {}
-      TestExpressApp.prototype.start = sinon.stub().callsArg(1);
-      function TestWSApp() {}
-      TestWSApp.prototype.start = sinon.stub().callsArg(2);
-      var listen = sinon.stub().callsArg(1);
-      var TestService = proxyquire('../bitcorenode', {
-        '../lib/expressapp': TestExpressApp,
-        '../lib/wsapp': TestWSApp,
-        'http': {
-          Server: sinon.stub().returns({
-            listen: listen
-          })
-        }
-      });
-      var options = {
-        node: {
-          bwsPort: 3232
-        }
-      };
-      var service = new TestService(options);
-      var config = {};
-      service._startWalletService(config, function(err) {
-        if (err) {
-          throw err;
-        }
-        TestExpressApp.prototype.start.callCount.should.equal(1);
-        TestExpressApp.prototype.start.args[0][0].should.equal(config);
-        TestExpressApp.prototype.start.args[0][1].should.be.a('function');
-        TestWSApp.prototype.start.callCount.should.equal(1);
-        TestWSApp.prototype.start.args[0][0].should.equal(service.server);
-        TestWSApp.prototype.start.args[0][1].should.equal(config);
-        TestWSApp.prototype.start.args[0][2].should.be.a('function');
-        listen.callCount.should.equal(1);
-        listen.args[0][0].should.equal(3232);
-        listen.args[0][1].should.be.a('function');
-        done();
-      });
-    });
     it('error from express', function(done) {
       function TestExpressApp() {}
       TestExpressApp.prototype.start = sinon.stub().callsArgWith(1, new Error('test'));
       function TestWSApp() {}
       TestWSApp.prototype.start = sinon.stub().callsArg(2);
-      var listen = sinon.stub().callsArg(1);
-      var TestService = proxyquire('../bitcorenode', {
-        '../lib/expressapp': TestExpressApp,
-        '../lib/wsapp': TestWSApp,
-        'http': {
-          Server: sinon.stub().returns({
-            listen: listen
-          })
-        }
-      });
-      var options = {
-        node: {
-          bwsPort: 3232
-        }
-      };
-      var service = new TestService(options);
-      var config = {};
-      service._startWalletService(config, function(err) {
-        err.message.should.equal('test');
-        done();
-      });
-    });
-    it('error from web socket', function(done) {
-      function TestExpressApp() {}
-      TestExpressApp.prototype.start = sinon.stub().callsArg(1);
-      function TestWSApp() {}
-      TestWSApp.prototype.start = sinon.stub().callsArgWith(2, new Error('test'));
       var listen = sinon.stub().callsArg(1);
       var TestService = proxyquire('../bitcorenode', {
         '../lib/expressapp': TestExpressApp,

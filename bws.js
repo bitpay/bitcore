@@ -4,9 +4,7 @@ var async = require('async');
 var fs = require('fs');
 
 var ExpressApp = require('./lib/expressapp');
-var WsApp = require('./lib/wsapp');
 var config = require('./config');
-var sticky = require('sticky-session');
 var log = require('npmlog');
 log.debug = log.verbose;
 log.disableColor();
@@ -41,60 +39,71 @@ if (config.https) {
   };
 }
 
-var start = function(cb) {
-  var expressApp = new ExpressApp();
-  var wsApp = new WsApp();
-
-  function doStart(cb) {
-    var server = config.https ? serverModule.createServer(serverOpts, expressApp.app) : serverModule.Server(expressApp.app);
-
-    server.on('connection', function(socket) {
-      socket.setTimeout(300 * 1000);
-    })
-
-    async.parallel([
-
-      function(done) {
-        expressApp.start(config, done);
-      },
-      function(done) {
-        wsApp.start(server, config, done);
-      },
-    ], function(err) {
-      if (err) {
-        log.error('Could not start BWS instance', err);
-      }
-      if (cb) return cb(err);
-    });
-
-    return server;
-  };
-
-  if (config.cluster) {
-    var server = sticky(clusterInstances, function() {
-      return doStart();
-    });
-    return cb(null, server);
-  } else {
-    var server = doStart(function(err) {
-      return cb(err, server);
-    });
-  }
-};
-
 if (config.cluster && !config.lockOpts.lockerServer)
   throw 'When running in cluster mode, locker server need to be configured';
 
 if (config.cluster && !config.messageBrokerOpts.messageBrokerServer)
   throw 'When running in cluster mode, message broker server need to be configured';
 
-start(function(err, server) {
-  if (err) {
-    console.log('Could not start BWS:', err);
-    process.exit(0);
-  }
-  server.listen(port, function(err) {
-    if (err) console.log('ERROR: ', err);
-    log.info('Bitcore Wallet Service running on port ' + port);
+var expressApp = new ExpressApp();
+
+function startInstance(cb) {
+  var server = config.https ? serverModule.createServer(serverOpts, expressApp.app) : serverModule.Server(expressApp.app);
+
+  server.on('connection', function(socket) {
+    socket.setTimeout(300 * 1000);
+  })
+
+  expressApp.start(config, function(err) {
+    if (err) {
+      log.error('Could not start BWS instance', err);
+      return cb(err);
+    }
+
+    server.listen(port);
+    return cb();
   });
-});
+};
+
+
+var logStart = function(err) {
+  if (err) {
+    log.error('Error:' + err);
+    return;
+  }
+
+  if (cluster.worker)
+    log.info('BWS Instance ' + cluster.worker.id + ' running');
+  else
+    log.info('BWS running');
+};
+
+
+if (config.cluster) {
+
+  if (cluster.isMaster) {
+
+    // Count the machine's CPUs
+    var instances = config.clusterInstances || require('os').cpus().length;
+
+    log.info('Starting ' + instances + ' instances on port:' + port);
+
+    // Create a worker for each CPU
+    for (var i = 0; i < instances; i += 1) {
+      cluster.fork();
+
+      // Listen for dying workers
+      cluster.on('exit', function(worker) {
+        // Replace the dead worker,
+        log.error('Worker ' + worker.id + ' died :(');
+        cluster.fork();
+      });
+    }
+    // Code to run if we're in a worker process
+  } else {
+    startInstance(logStart);
+  }
+} else {
+  log.info('Starting on port: ' + port);
+  startInstance(logStart);
+};
