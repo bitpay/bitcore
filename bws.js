@@ -91,14 +91,14 @@ if (config.cluster) {
     // Create a worker for each CPU
     for (var i = 0; i < instances; i += 1) {
       cluster.fork();
-
-      // Listen for dying workers
-      cluster.on('exit', function(worker) {
-        // Replace the dead worker,
-        log.error('Worker ' + worker.id + ' died :(');
-        cluster.fork();
-      });
     }
+
+    // Listen for dying workers
+    cluster.on('exit', function(worker) {
+      // Replace the dead worker,
+      log.error('Worker ' + worker.id + ' died :(');
+      cluster.fork();
+    });
     // Code to run if we're in a worker process
   } else {
     startInstance(logStart);
