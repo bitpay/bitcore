@@ -57,53 +57,37 @@ function startInstance(cb) {
   expressApp.start(config, function(err) {
     if (err) {
       log.error('Could not start BWS instance', err);
-      return cb(err);
+      return;
     }
 
     server.listen(port);
-    return cb();
+
+    var instanceInfo = cluster.worker ? ' [Instance:' + cluster.worker.id + ']' : '';
+    log.info('BWS running ' + instanceInfo);
+    return;
   });
 };
 
+if (config.cluster && cluster.isMaster) {
 
-var logStart = function(err) {
-  if (err) {
-    log.error('Error:' + err);
-    return;
+  // Count the machine's CPUs
+  var instances = config.clusterInstances || require('os').cpus().length;
+
+  log.info('Starting ' + instances + ' instances');
+
+  // Create a worker for each CPU
+  for (var i = 0; i < instances; i += 1) {
+    cluster.fork();
   }
 
-  if (cluster.worker)
-    log.info('BWS Instance ' + cluster.worker.id + ' running');
-  else
-    log.info('BWS running');
-};
-
-
-if (config.cluster) {
-
-  if (cluster.isMaster) {
-
-    // Count the machine's CPUs
-    var instances = config.clusterInstances || require('os').cpus().length;
-
-    log.info('Starting ' + instances + ' instances on port:' + port);
-
-    // Create a worker for each CPU
-    for (var i = 0; i < instances; i += 1) {
-      cluster.fork();
-    }
-
-    // Listen for dying workers
-    cluster.on('exit', function(worker) {
-      // Replace the dead worker,
-      log.error('Worker ' + worker.id + ' died :(');
-      cluster.fork();
-    });
-    // Code to run if we're in a worker process
-  } else {
-    startInstance(logStart);
-  }
+  // Listen for dying workers
+  cluster.on('exit', function(worker) {
+    // Replace the dead worker,
+    log.error('Worker ' + worker.id + ' died :(');
+    cluster.fork();
+  });
+  // Code to run if we're in a worker process
 } else {
-  log.info('Starting on port: ' + port);
-  startInstance(logStart);
+  log.info('Listening on port: ' + port);
+  startInstance();
 };

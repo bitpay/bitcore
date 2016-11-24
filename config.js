@@ -3,8 +3,8 @@ var config = {
   disableLogs: false,
   port: 3232,
 
-  // comment this to use a single process
-  cluster: true,
+  // Uncomment to make BWS a forking server
+  // cluster: true,
 
   // Uncomment to set the number or process (will use the nr of availalbe CPUs by default)
   // clusterInstances: 4,
