@@ -31,6 +31,8 @@ BWS needs mongoDB. You can configure the connection at `config.js`
 
 BWS supports SSL and Clustering. For a detailed guide on installing BWS with extra features see [Installing BWS](https://github.com/bitpay/bitcore-wallet-service/blob/master/installation.md). 
 
+BWS uses by default a Request Rate Limitation to CreateWallet endpoint. If you need to modify it, check defaults.js' `Defaults.RateLimit`
+
 # Security Considerations
  * Private keys are never sent to BWS. Copayers store them locally.
  * Extended public keys are stored on BWS. This allows BWS to easily check wallet balance, send offline notifications to copayers, etc.
