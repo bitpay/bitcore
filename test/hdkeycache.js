@@ -24,29 +24,29 @@ describe('HDKey cache', function() {
   });
 
   it('saves a derived key', function() {
-    var child = master.derive(0);
+    var child = master.deriveChild(0);
     expect(cache._cache['0' + master.xprivkey + '/0/false'].xprivkey).to.equal(child.xprivkey);
   });
   it('starts erasing unused keys', function() {
-    var child1 = master.derive(0);
-    var child2 = child1.derive(0);
-    var child3 = child2.derive(0);
+    var child1 = master.deriveChild(0);
+    var child2 = child1.deriveChild(0);
+    var child3 = child2.deriveChild(0);
     expect(cache._cache['0' + master.xprivkey + '/0/false'].xprivkey).to.equal(child1.xprivkey);
-    var child4 = child3.derive(0);
+    var child4 = child3.deriveChild(0);
     expect(cache._cache['0' + master.xprivkey + '/0/false']).to.equal(undefined);
   });
   it('avoids erasing keys that get cache hits ("hot keys")', function() {
-    var child1 = master.derive(0);
-    var child2 = master.derive(0).derive(0);
+    var child1 = master.deriveChild(0);
+    var child2 = master.deriveChild(0).deriveChild(0);
     expect(cache._cache['0' + master.xprivkey + '/0/false'].xprivkey).to.equal(child1.xprivkey);
-    var child1_copy = master.derive(0);
+    var child1_copy = master.deriveChild(0);
     expect(cache._cache['0' + master.xprivkey + '/0/false'].xprivkey).to.equal(child1.xprivkey);
   });
   it('keeps the size of the cache small', function() {
-    var child1 = master.derive(0);
-    var child2 = child1.derive(0);
-    var child3 = child2.derive(0);
-    var child4 = child3.derive(0);
+    var child1 = master.deriveChild(0);
+    var child2 = child1.deriveChild(0);
+    var child3 = child2.deriveChild(0);
+    var child4 = child3.deriveChild(0);
     expect(_.size(cache._cache)).to.equal(3);
   });
 });
