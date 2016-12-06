@@ -32,7 +32,7 @@ describe('HDPublicKey interface', function() {
   var expectDerivationFail = function(argument, error) {
     (function() {
       var pubkey = new HDPublicKey(xpubkey);
-      pubkey.deriveChild(argument);
+      pubkey.derive(argument);
     }).should.throw(error);
   };
 
@@ -188,15 +188,15 @@ describe('HDPublicKey interface', function() {
   describe('derivation', function() {
     it('derivation is the same whether deriving with number or string', function() {
       var pubkey = new HDPublicKey(xpubkey);
-      var derived1 = pubkey.deriveChild(0).deriveChild(1).deriveChild(200000);
-      var derived2 = pubkey.deriveChild('m/0/1/200000');
+      var derived1 = pubkey.derive(0).derive(1).derive(200000);
+      var derived2 = pubkey.derive('m/0/1/200000');
       derived1.xpubkey.should.equal(derived_0_1_200000);
       derived2.xpubkey.should.equal(derived_0_1_200000);
     });
 
     it('allows special parameters m, M', function() {
       var expectDerivationSuccess = function(argument) {
-        new HDPublicKey(xpubkey).deriveChild(argument).xpubkey.should.equal(xpubkey);
+        new HDPublicKey(xpubkey).derive(argument).xpubkey.should.equal(xpubkey);
       };
       expectDerivationSuccess('m');
       expectDerivationSuccess('M');
@@ -204,13 +204,13 @@ describe('HDPublicKey interface', function() {
 
     it('doesn\'t allow object arguments for derivation', function() {
       expectFail(function() {
-        return new HDPublicKey(xpubkey).deriveChild({});
+        return new HDPublicKey(xpubkey).derive({});
       }, hdErrors.InvalidDerivationArgument);
     });
 
     it('needs first argument for derivation', function() {
       expectFail(function() {
-        return new HDPublicKey(xpubkey).deriveChild('s');
+        return new HDPublicKey(xpubkey).derive('s');
       }, hdErrors.InvalidPath);
     });
 
@@ -224,13 +224,13 @@ describe('HDPublicKey interface', function() {
 
     it('can\'t derive hardened keys', function() {
       expectFail(function() {
-        return new HDPublicKey(xpubkey).deriveChild(HDPublicKey.Hardened);
+        return new HDPublicKey(xpubkey).derive(HDPublicKey.Hardened);
       }, hdErrors.InvalidIndexCantDeriveHardened);
     });
 
     it('can\'t derive hardened keys via second argument', function() {
       expectFail(function() {
-        return new HDPublicKey(xpubkey).deriveChild(5, true);
+        return new HDPublicKey(xpubkey).derive(5, true);
       }, hdErrors.InvalidIndexCantDeriveHardened);
     });
 

@@ -30,7 +30,7 @@ describe('HDPrivate key interface', function() {
   var expectDerivationFail = function(argument, error) {
     return expectFail(function() {
       var privateKey = new HDPrivateKey(xprivkey);
-      privateKey.deriveChild(argument);
+      privateKey.derive(argument);
     }, error);
   };
 
@@ -123,14 +123,14 @@ describe('HDPrivate key interface', function() {
 
   it('allows derivation of hardened keys by passing a very big number', function() {
     var privateKey = new HDPrivateKey(xprivkey);
-    var derivedByNumber = privateKey.deriveChild(0x80000000);
-    var derivedByArgument = privateKey.deriveChild(0, true);
+    var derivedByNumber = privateKey.derive(0x80000000);
+    var derivedByArgument = privateKey.derive(0, true);
     derivedByNumber.xprivkey.should.equal(derivedByArgument.xprivkey);
   });
 
   it('returns itself with \'m\' parameter', function() {
     var privateKey = new HDPrivateKey(xprivkey);
-    privateKey.should.equal(privateKey.deriveChild('m'));
+    privateKey.should.equal(privateKey.derive('m'));
   });
 
   it('returns InvalidArgument if invalid data is given to getSerializedError', function() {
@@ -203,8 +203,8 @@ describe('HDPrivate key interface', function() {
 
   it('shouldn\'t matter if derivations are made with strings or numbers', function() {
     var privateKey = new HDPrivateKey(xprivkey);
-    var derivedByString = privateKey.deriveChild('m/0\'/1/2\'');
-    var derivedByNumber = privateKey.deriveChild(0, true).deriveChild(1).deriveChild(2, true);
+    var derivedByString = privateKey.derive('m/0\'/1/2\'');
+    var derivedByNumber = privateKey.derive(0, true).derive(1).derive(2, true);
     derivedByNumber.xprivkey.should.equal(derivedByString.xprivkey);
   });
 
