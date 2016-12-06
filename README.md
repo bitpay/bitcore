@@ -1,5 +1,3 @@
-**Note**: This is a development/staging branch for 1.0.0
-
 Bitcore Library
 =======
 
