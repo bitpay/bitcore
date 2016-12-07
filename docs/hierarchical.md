@@ -15,9 +15,9 @@ var HDPrivateKey = bitcore.HDPrivateKey;
 
 var hdPrivateKey = new HDPrivateKey();
 var retrieved = new HDPrivateKey('xpriv...');
-var derived = hdPrivateKey.deriveChild("m/0'");
-var derivedByNumber = hdPrivateKey.deriveChild(1).deriveChild(2, true);
-var derivedByArgument = hdPrivateKey.deriveChild("m/1/2'");
+var derived = hdPrivateKey.derive("m/0'"); // see deprecation warning for derive
+var derivedByNumber = hdPrivateKey.derive(1).derive(2, true);
+var derivedByArgument = hdPrivateKey.derive("m/1/2'");
 assert(derivedByNumber.xprivkey === derivedByArgument.xprivkey);
 
 var address = derived.privateKey.toAddress();
@@ -39,11 +39,14 @@ try {
 }
 
 var address = new Address(hdPublicKey.publicKey, Networks.livenet);
-var derivedAddress = new Address(hdPublicKey.deriveChild(100).publicKey, Networks.testnet);
+var derivedAddress = new Address(hdPublicKey.derive(100).publicKey, Networks.testnet); // see deprecation warning for derive
 ```
 
-## Upgrading from v0.13.x and previous to v1.0.0
+## Deprecation Warning for `HDPublicKey.derive()` and `HDPrivateKey.derive()`
 
-There was a bug that was discovered with derivation that would incorrectly calculate the child key against the [BIP32 specification](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki). The method `derive` has been deprecated and replaced with `deriveChild` and `deriveNonCompliantChild`. As the names indicate `deriveNonCompliantChild` will derive using the non-BIP32 derivation and is the equivalent of `derive` in v0.13 and previous versions. The `deriveNonCompliantChild` method should not be used unless you're upgrading and need to maintain compatibility with the old derivation.
 
+There was a bug that was discovered with derivation that would incorrectly calculate the child key against the [BIP32 specification](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki).
 The bug only affected hardened derivations using an extended private key, and did not affect public key derivation. It also did not affect every derivation and would happen 1 in 256 times where where the private key for the extended private key had a leading zero *(e.g. any private key less than or equal to '0fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')*. The leading zero was not included in serialization before hashing to derive a child key, as it should have been.
+
+As a result, `HDPublicKey.derive()` and `HDPrivateKey.derive()` are now deprecated. These methods will throw an error in the next major release.
+`HDPublicKey.deriveChild()`, `HDPrivateKey.deriveChild()`, and `HDPrivateKey.deriveNonCompliantChild()` have been implemented as alternatives. Note that these new methods will not be officially supported until v1.0.0.  `deriveNonCompliantChild` will derive using the non-BIP32 derivation and is equivalent to the buggy version, `derive`. The `deriveNonCompliantChild` method should not be used unless you're upgrading and need to maintain compatibility with the old derivation.
