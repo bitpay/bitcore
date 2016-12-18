@@ -453,7 +453,7 @@ describe('client API', function() {
       };
       var ret = Client._parseError(body);
       ret.should.be.an.instanceOf(Error);
-      ret.message.should.equal('Insufficient funds');
+      ret.message.should.equal('Insufficient funds.');
 
       var body = {
         code: 'INSUFFICIENT_FUNDS',
@@ -4168,7 +4168,7 @@ describe('client API', function() {
             proxy.signTxProposal(txp, function(err, txp) {
               should.exist(err);
               should.not.exist(txp);
-              err.message.should.equal('Missing private keys to sign');
+              err.message.should.equal('Missing private keys to sign.');
               next(null, txp);
             });
           },
