@@ -5619,7 +5619,7 @@ describe('Wallet service', function() {
         txid: '1',
         confirmations: 1,
         fees: 100,
-        time: 1,
+        time: 12345,
         inputs: [{
           address: mainAddresses[0].address,
           amount: 500,
@@ -5638,7 +5638,7 @@ describe('Wallet service', function() {
         tx.action.should.equal('sent');
         tx.amount.should.equal(400);
         tx.fees.should.equal(100);
-        tx.time.should.equal(1);
+        tx.time.should.equal(12345);
         done();
       });
     });
@@ -5648,7 +5648,7 @@ describe('Wallet service', function() {
         txid: '1',
         confirmations: 1,
         fees: 100,
-        time: 1,
+        time: Date.now() / 1000,
         inputs: [{
           address: mainAddresses[0].address,
           amount: 500,
@@ -5715,7 +5715,7 @@ describe('Wallet service', function() {
                 txid: txp.txid,
                 confirmations: 1,
                 fees: 5460,
-                time: 1,
+                time: Date.now() / 1000,
                 inputs: [{
                   address: tx.inputs[0].address,
                   amount: utxos[0].satoshis,
