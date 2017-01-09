@@ -83,8 +83,8 @@
   },
   "dependencies": {
     "bitcore-lib-dash": "^0.13.19",
-    "bitcore-node-dash": "~3.0.1",
-    "insight-api-dash": "^0.4.3",
+    "bitcore-node-dash": "~3.0.2",
+    "insight-api-dash": "^0.4.4",
     "insight-ui-dash": "^0.4.0"
   },
   "license": "MIT",
