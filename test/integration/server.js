@@ -4245,6 +4245,41 @@ describe('Wallet service', function() {
         });
       });
     });
+    it.only('should correctly handle change in tx history', function(done) {
+      server._normalizeTxHistory = sinon.stub().returnsArg(0);
+      var txs = [{
+        txid: '1',
+        confirmations: 1,
+        fees: 150,
+        time: Date.now() / 1000,
+        inputs: [{
+          address: firstAddress,
+          amount: 550,
+        }],
+        outputs: [{
+          address: firstAddress,
+          amount: 100,
+        }, {
+          address: 'external',
+          amount: 300,
+        }],
+      }];
+      helpers.stubHistory(txs);
+      server.getTxHistory({}, function(err, txs) {
+        should.not.exist(err);
+        should.exist(txs);
+        txs.length.should.equal(1);
+        var tx = txs[0];
+        tx.action.should.equal('sent');
+        tx.amount.should.equal(300);
+        tx.fees.should.equal(150);
+        tx.outputs.length.should.equal(1);
+        tx.outputs[0].address.should.equal('external');
+        tx.outputs[0].amount.should.equal(300);
+        done();
+      });
+    });
+
   });
 
 
