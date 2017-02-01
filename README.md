@@ -35,23 +35,23 @@ transaction.sign(privateKey);
 
 ## Applications
 
-- [Node-Dash](https://github.com/dashpay/bitcore-node-dash) - A full node with extended capabilities using Bitcoin Core
+- [Node-Dash](https://github.com/dashpay/bitcore-node-dash) - A full node with extended capabilities using Dash Core
 - [Insight API-Dash](https://github.com/dashpay/insight-api-dash) - A blockchain explorer HTTP API
 - [Insight UI-Dash](https://github.com/dashpay/insight-ui-dash) - A blockchain explorer web user interface
-- Wallet Service - A multisig HD service for wallets
-- Wallet Client - A client for the wallet service
+- [Wallet Service](https://github.com/dashpay/bitcore-wallet-service-dash) - A multisig HD service for wallets
+- [Wallet Client](https://github.com/dashpay/bitcore-wallet-client-dash) - A client for the wallet service
 - CLI Wallet - A command-line based wallet client
 - Angular Wallet Client - An Angular based wallet client
-- Copay - An easy-to-use, multiplatform, multisignature, secure bitcoin wallet
+- Copay - An easy-to-use, multiplatform, multisignature, secure Dash wallet
 
 ## Libraries
 
-- [Lib-Dash](https://github.com/dashpay/bitcore-lib-dash) - All of the core Bitcoin primatives including transactions, private key management and others
+- [Lib-Dash](https://github.com/dashpay/bitcore-lib-dash) - All of the core Dash primatives including transactions, private key management and others
 - Payment Protocol - A protocol for communication between a merchant and customer
 - [P2P-Dash](https://github.com/dashpay/bitcore-p2p-dash) - The peer-to-peer networking protocol
 - [Mnemonic-Dash](https://github.com/dashpay/bitcore-mnemonic-dash) - Implements mnemonic code for generating deterministic keys
-- Channel - Micropayment channels for rapidly adjusting bitcoin transactions
-- [Message-Dash](https://github.com/dashpay/bitcore-message-dash) - Bitcoin message verification and signing
+- Channel - Micropayment channels for rapidly adjusting Dash transactions
+- [Message-Dash](https://github.com/dashpay/bitcore-message-dash) - Dash message verification and signing
 - [ECIES-Dash](https://github.com/dashpay/bitcore-ecies-dash) - Uses ECIES symmetric key negotiation from public keys to encrypt arbitrarily long data streams.
 
 ## Documentation
