@@ -1,7 +1,7 @@
 {
   "name": "bitcore-dash",
   "version": "4.1.1",
-  "description": "A platform to build dash and blockchain-based applications.",
+  "description": "A platform to build Dash and blockchain-based applications.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
@@ -82,10 +82,10 @@
     "request": "browser-request"
   },
   "dependencies": {
-    "bitcore-lib-dash": "^0.13.19",
-    "bitcore-node-dash": "~3.0.2",
-    "insight-api-dash": "^0.4.4",
-    "insight-ui-dash": "^0.4.0"
+    "bitcore-lib-dash": "^0.13.20",
+    "bitcore-node-dash": "~3.0.3",
+    "insight-api-dash": "^0.4.5",
+    "insight-ui-dash": "^0.4.1"
   },
   "license": "MIT",
   "devDependencies": {
