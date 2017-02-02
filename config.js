@@ -56,6 +56,7 @@ var config = {
     defaultUnit: 'btc',
     subjectPrefix: '',
     pushServerUrl: 'http://localhost:8000',
+    authorizationKey: '',
   },
   fiatRateServiceOpts: {
     defaultProvider: 'BitPay',
