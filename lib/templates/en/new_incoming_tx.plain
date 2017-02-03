@@ -1,2 +1,2 @@
 {{subjectPrefix}}New payment received
-A payment of {{amount}} has been received into your wallet {{walletName}}.
+A payment of {{amount}} has been received into your wallet.
