@@ -1642,7 +1642,7 @@ describe('client API', function() {
     it('should do a delete request', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
         clients[0]._doRequest = sinon.stub().yields(null);
-        clients[0].pushNotificationsUnsubscribe(function(err) {
+        clients[0].pushNotificationsUnsubscribe('123', function(err) {
           should.not.exist(err);
           done();
         });
