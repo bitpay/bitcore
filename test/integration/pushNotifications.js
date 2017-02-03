@@ -362,8 +362,6 @@ describe('Push notifications', function() {
             });
 
             args[0].body.notification.title.should.contain('Payment proposal rejected');
-            args[0].body.notification.body.should.contain('copayer 2, copayer 3');
-            args[0].body.notification.body.should.not.contain('copayer 1');
             done();
           }, 100);
         });
