@@ -40,34 +40,33 @@ helpers.toSatoshi = function(btc) {
   }
 };
 
-helpers.getRequest = function(app) {
-  $.checkArgument(app);
-  return function(args, cb) {
-    var req = request(app);
-    var r = req[args.method](args.relUrl);
-
-    if (args.headers) {
-      _.each(args.headers, function(v, k) {
-        if (k && v) {
-          r.set(k, v);
-        }
-      });
-    }
-    if (!_.isEmpty(args.body)) {
-      r.send(args.body);
-    };
-    r.end(function(err, res) {
-      return cb(err, res, res.body);
-    });
-  };
-};
-
 helpers.newClient = function(app) {
   $.checkArgument(app);
   return new Client({
-    request: helpers.getRequest(app),
+    baseUrl: '/bws/api',
+    request: request(app),
   });
 };
+
+helpers.stubRequest = function(err, res) {
+  var request = {
+    accept: sinon.stub(),
+    set: sinon.stub(),
+    query: sinon.stub(),
+    send: sinon.stub(),
+    timeout: sinon.stub(),
+    end: sinon.stub().yields(err, res),
+  };
+  var reqFactory = _.reduce(['get', 'post', 'put', 'delete'], function(mem, verb) {
+    mem[verb] = function(url) {
+      return request;
+    };
+    return mem;
+  }, {});
+
+  return reqFactory;
+};
+
 
 helpers.newDb = function() {
   this.dbCounter = (this.dbCounter || 0) + 1;
@@ -298,11 +297,15 @@ describe('client API', function() {
     it('should set the log level based on the logLevel option', function() {
       var originalLogLevel = log.level;
 
-      var client = new Client({logLevel: 'info'});
+      var client = new Client({
+        logLevel: 'info'
+      });
       client.logLevel.should.equal('info');
       log.level.should.equal('info');
 
-      var client = new Client({logLevel: 'debug'});
+      var client = new Client({
+        logLevel: 'debug'
+      });
       client.logLevel.should.equal('debug');
       log.level.should.equal('debug');
 
@@ -432,18 +435,12 @@ describe('client API', function() {
     });
 
     it('should handle critical errors (Case5)', function(done) {
-      var err = 'some error';
-      var res, body; // leave them undefined to simulate no-response
-      var requestStub = function(args, cb) {
-        cb(err, res, body);
-      };
-      var request = sinon.stub(clients[0], 'request', requestStub);
+      clients[0].request = helpers.stubRequest('some error');
       clients[0].createWallet('mywallet', 'creator', 1, 2, {
         network: 'testnet'
       }, function(err, secret) {
         should.exist(err);
         err.should.be.an.instanceOf(Errors.CONNECTION_ERROR);
-        request.restore();
         done();
       });
     });
@@ -5147,41 +5144,30 @@ describe('client API', function() {
 
   describe('_doRequest', function() {
     it('should handle connection error', function(done) {
-      var sandbox = sinon.sandbox.create();
       var client = new Client();
       client.credentials = {};
-
-      var re = sandbox.stub(client, 'request', function(args, callback) {
-        callback(null, {}, {});
-      });
-
-      client._doRequest('method', 'url', {}, function(err, body, header) {
+      client.request = helpers.stubRequest(null, {});
+      client._doRequest('get', 'url', {}, function(err, body, header) {
         should.exist(err);
         should.not.exist(body);
         should.not.exist(header);
         err.should.be.an.instanceOf(Errors.CONNECTION_ERROR);
-        sandbox.restore();
         done();
       });
     });
 
     it('should handle ECONNRESET error', function(done) {
-      var sandbox = sinon.sandbox.create();
       var client = new Client();
       client.credentials = {};
-
-      var re = sandbox.stub(client, 'request', function(args, callback) {
-        callback(null, {
-          statusCode: 200
-        }, '{"error":"read ECONNRESET"}');
+      client.request = helpers.stubRequest(null, {
+        status: 200,
+        body: '{"error":"read ECONNRESET"}',
       });
-
-      client._doRequest('method', 'url', {}, function(err, body, header) {
+      client._doRequest('get', 'url', {}, function(err, body, header) {
         should.exist(err);
         should.not.exist(body);
         should.not.exist(header);
         err.should.be.an.instanceOf(Errors.ECONNRESET_ERROR);
-        sandbox.restore();
         done();
       });
     });
