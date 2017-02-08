@@ -155,7 +155,7 @@ helpers.createAndJoinWallet = function(clients, m, n, opts, cb) {
 helpers.tamperResponse = function(clients, method, url, args, tamper, cb) {
   clients = [].concat(clients);
   // Use first client to get a clean response from server
-  clients[0]._doRequest(method, url, args, function(err, result) {
+  clients[0]._doRequest(method, url, args, false, function(err, result) {
     should.not.exist(err);
     tamper(result);
     // Return tampered data for every client in the list
@@ -335,7 +335,7 @@ describe('client API', function() {
   describe('Server internals', function() {
     it('should allow cors', function(done) {
       clients[0].credentials = {};
-      clients[0]._doRequest('options', '/', {}, function(err, x, headers) {
+      clients[0]._doRequest('options', '/', {}, false, function(err, x, headers) {
         headers['access-control-allow-origin'].should.equal('*');
         should.exist(headers['access-control-allow-methods']);
         should.exist(headers['access-control-allow-headers']);
@@ -5147,7 +5147,7 @@ describe('client API', function() {
       var client = new Client();
       client.credentials = {};
       client.request = helpers.stubRequest(null, {});
-      client._doRequest('get', 'url', {}, function(err, body, header) {
+      client._doRequest('get', 'url', {}, false, function(err, body, header) {
         should.exist(err);
         should.not.exist(body);
         should.not.exist(header);
@@ -5163,7 +5163,7 @@ describe('client API', function() {
         status: 200,
         body: '{"error":"read ECONNRESET"}',
       });
-      client._doRequest('get', 'url', {}, function(err, body, header) {
+      client._doRequest('get', 'url', {}, false, function(err, body, header) {
         should.exist(err);
         should.not.exist(body);
         should.not.exist(header);
