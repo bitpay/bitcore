@@ -79,6 +79,16 @@ describe('BlockHeader', function() {
 
   });
 
+  describe('version', function() {
+    it('is interpreted as an int32le', function() {
+      var hex = 'ffffffff00000000000000000000000000000000000000000000000000000000000000004141414141414141414141414141414141414141414141414141414141414141010000000200000003000000';
+      var header = BlockHeader.fromBuffer(new Buffer(hex, 'hex'));
+      header.version.should.equal(-1);
+      header.timestamp.should.equal(1);
+    });
+  });
+
+
   describe('#fromObject', function() {
 
     it('should set all the variables', function() {
