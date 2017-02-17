@@ -85,7 +85,7 @@
     "bitcore-lib-dash": "^0.13.20",
     "bitcore-node-dash": "~3.0.4",
     "insight-api-dash": "^0.4.5",
-    "insight-ui-dash": "^0.4.1"
+    "insight-ui-dash": "^0.4.2"
   },
   "license": "MIT",
   "devDependencies": {
