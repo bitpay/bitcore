@@ -330,6 +330,29 @@ describe('PrivateKey', function() {
       var fromBuffer = PrivateKey.fromBuffer(toBuffer.toBuffer());
       fromBuffer.toString().should.equal(privkey.toString());
     });
+
+    it('will output a 31 byte buffer', function() {
+      var bn = BN.fromBuffer(new Buffer('9b5a0e8fee1835e21170ce1431f9b6f19b487e67748ed70d8a4462bc031915', 'hex'));
+      var privkey = new PrivateKey(bn);
+      var buffer = privkey.toBufferNoPadding();
+      buffer.length.should.equal(31);
+    });
+
+    // TODO: enable for v1.0.0 when toBuffer is changed to always be 32 bytes long
+    // it('will output a 32 byte buffer', function() {
+    //   var bn = BN.fromBuffer(new Buffer('9b5a0e8fee1835e21170ce1431f9b6f19b487e67748ed70d8a4462bc031915', 'hex'));
+    //   var privkey = new PrivateKey(bn);
+    //   var buffer = privkey.toBuffer();
+    //   buffer.length.should.equal(32);
+    // });
+
+    // TODO: enable for v1.0.0 when toBuffer is changed to always be 32 bytes long
+    // it('should return buffer with length equal 32', function() {
+    //   var bn = BN.fromBuffer(buf.slice(0, 31));
+    //   var privkey = new PrivateKey(bn, 'livenet');
+    //   var expected = Buffer.concat([ new Buffer([0]), buf.slice(0, 31) ]);
+    //   privkey.toBuffer().toString('hex').should.equal(expected.toString('hex'));
+    // });
   });
 
   describe('#toBigNumber', function() {
