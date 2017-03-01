@@ -271,12 +271,5 @@ describe('HDPublicKey interface', function() {
       valid = HDPublicKey.isValidPath(HDPublicKey.Hardened);
       valid.should.equal(false);
     });
-
-    it('should use the cache', function() {
-      var pubkey = new HDPublicKey(xpubkey);
-      var derived1 = pubkey.derive(0);
-      var derived2 = pubkey.derive(0);
-      derived1.should.equal(derived2);
-    });
   });
 });
