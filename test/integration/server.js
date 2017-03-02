@@ -2146,6 +2146,11 @@ describe('Wallet service', function() {
     before(function() {
       levels = Defaults.FEE_LEVELS;
       Defaults.FEE_LEVELS = [{
+        name: 'urgent',
+        nbBlocks: 1,
+        multiplier: 1.5,
+        defaultValue: 50000,
+      }, {
         name: 'priority',
         nbBlocks: 1,
         defaultValue: 50000
@@ -2186,6 +2191,9 @@ describe('Wallet service', function() {
         fees = _.zipObject(_.map(fees, function(item) {
           return [item.level, item];
         }));
+        fees.urgent.feePerKb.should.equal(60000);
+        fees.urgent.nbBlocks.should.equal(1);
+
         fees.priority.feePerKb.should.equal(40000);
         fees.priority.nbBlocks.should.equal(1);
 
