@@ -185,7 +185,7 @@ var blockchainExplorerMock = {};
 
 blockchainExplorerMock.getUtxos = function(addresses, cb) {
   var selected = _.filter(blockchainExplorerMock.utxos, function(utxo) {
-    return _.contains(addresses, utxo.address);
+    return _.includes(addresses, utxo.address);
   });
   return cb(null, selected);
 };
@@ -232,7 +232,7 @@ blockchainExplorerMock.getTransactions = function(addresses, from, to, cb) {
 
 blockchainExplorerMock.getAddressActivity = function(address, cb) {
   var activeAddresses = _.pluck(blockchainExplorerMock.utxos || [], 'address');
-  return cb(null, _.contains(activeAddresses, address));
+  return cb(null, _.includes(activeAddresses, address));
 };
 
 blockchainExplorerMock.setFeeLevels = function(levels) {
