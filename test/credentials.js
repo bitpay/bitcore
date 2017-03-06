@@ -305,13 +305,14 @@ describe('Credentials', function() {
         c.isPrivKeyEncrypted().should.be.true;
         var xPrivKey2 = c.getDerivedXPrivKey('password');
         should.exist(xPrivKey2);
-        xPrivKey2.should.equal(xPrivKey);
+
+        xPrivKey2.toString('hex').should.equal(xPrivKey.toString('hex'));
 
         c.decryptPrivateKey('password');
         c.isPrivKeyEncrypted().should.be.false;
         var xPrivKey3 = c.getDerivedXPrivKey();
         should.exist(xPrivKey3);
-        xPrivKey3.should.equal(xPrivKey);
+        xPrivKey3.toString('hex').should.equal(xPrivKey.toString('hex'));
       });
     });
   });
