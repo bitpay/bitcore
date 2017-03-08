@@ -76,6 +76,11 @@ describe('Credentials', function() {
       c.addWalletInfo(1, 'name', 1, 1, 'juan');
       c.account.should.equal(8);
     });
+    it('should derive compliant child', function() {
+      var c = Credentials.fromExtendedPrivateKey('xprv9s21ZrQH143K3wHkyND28feCyhybiBKCA1ZNMV54z7CU2WKmLoKVnvaY7BuorYUETUKgwnRVF8BRYXvUefqwpt1hr41tH7b6UzAMjyLQeF7', 0, 'BIP44');
+      var xpk = c.getDerivedXPrivKey().toString();
+      xpk.should.equal('xprv9ympSbtqgPPGLgNd1Q5o2TFwZeQUNL2vn7KyR46AcEethVqiHwUzw9TmQg5d8Tvh1awBKu5qmhudD4eGpxqQQVpRDcZdAE4zHXnjv7LKZLN');
+    });
   });
 
   describe('#fromExtendedPrivateKey', function() {
@@ -151,6 +156,22 @@ describe('Credentials', function() {
       var c = Credentials.fromMnemonic('livenet', words, '', 0, 'BIP44');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K3H3WtXCn9nHtpi7Fz1ZE9VJErWErhrGL4hV1cApFVo3t4aANoPF7ufcLLWqN168izu3xGQdLaGxXG2qYZF8wWQGNWnuSSon');
       c.network.should.equal('livenet');
+    });
+
+    describe('Compliant derivation', function() {
+      it('Should create compliant base address derivation key from mnemonic', function() {
+        var words = "shoulder sphere pull seven top much black copy labor dress depth unit";
+        var c = Credentials.fromMnemonic('livenet', words, '', 0, 'BIP44');
+        c.xPrivKey.should.equal('xprv9s21ZrQH143K3WoNK8dVjQJpcXhqfwyuBTpuZdc1ZVa9yWW2i7TmM4TLyfPrSKXctQuLgbg3U1WJmodK9yWM26JWeuh2vhT6bmsPPie688n');
+        c.xPubKey.should.equal('xpub6DVMaW3r1CcZcsUazSHspjRfZZJzZG3N7GRL4DciY54Z8M4KmRSDrq2hd75VzxKZDXPu4EKiAwCGwiXMxec2pq6oVgtZYxQHSrgtxksWehx');
+      });
+
+      it('Should create compliant request key from mnemonic', function() {
+        var words = "pool stomach bridge series powder mammal betray slogan pass roast neglect reunion";
+        var c = Credentials.fromMnemonic('livenet', words, '', 0, 'BIP44');
+        c.xPrivKey.should.equal('xprv9s21ZrQH143K3ZMudFRXpEwftifDuJkjLKnCtk26pXhxQuK8bCnytJuUTGkfvaibnCxPQQ9xToUtDAZkJqjm3W62GBXXr7JwhiAz1XWgTUJ');
+        c.requestPrivKey.should.equal('7582efa9b71aefa831823592d753704cba9648b810b14b77ee078dfe8b730157');
+      });
     });
   });
 
