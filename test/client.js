@@ -3646,7 +3646,6 @@ describe('client API', function() {
         });
       });
 
-
       it('should export & import with xprivkey + BWS', function(done) {
         var c = clients[0].credentials;
         var walletId = c.walletId;
@@ -3752,36 +3751,6 @@ describe('client API', function() {
           done();
         });
       });
-      it('should import with external priv key', function(done) {
-        var client = helpers.newClient(app);
-        client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00');
-        client.createWallet('mywallet', 'creator', 1, 1, {
-          network: 'livenet'
-        }, function(err) {
-          should.not.exist(err);
-          var c = client.credentials;
-          importedClient = helpers.newClient(app);
-          importedClient.importFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00', {}, function(err) {
-            should.not.exist(err);
-            var c2 = importedClient.credentials;
-            c2.account.should.equal(0);
-            c2.xPubKey.should.equal(client.credentials.xPubKey);
-            c2.personalEncryptingKey.should.equal(c.personalEncryptingKey);
-            c2.walletId.should.equal(c.walletId);
-            c2.walletName.should.equal(c.walletName);
-            c2.copayerName.should.equal(c.copayerName);
-            done();
-          });
-        });
-      });
-      it('should fail to import with external priv key when not enought entropy', function() {
-        var client = helpers.newClient(app);
-        (function() {
-          client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f00');
-        }).should.throw('entropy');
-      });
-
-
     });
 
     describe('Recovery', function() {
@@ -5140,6 +5109,36 @@ describe('client API', function() {
         });
       });
     });
+
+    it('should import with external priv key', function(done) {
+      var client = helpers.newClient(app);
+      client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00');
+      client.createWallet('mywallet', 'creator', 1, 1, {
+        network: 'livenet'
+      }, function(err) {
+        should.not.exist(err);
+        var c = client.credentials;
+        var importedClient = helpers.newClient(app);
+        importedClient.importFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00', {}, function(err) {
+          should.not.exist(err);
+          var c2 = importedClient.credentials;
+          c2.account.should.equal(0);
+          c2.xPubKey.should.equal(client.credentials.xPubKey);
+          c2.personalEncryptingKey.should.equal(c.personalEncryptingKey);
+          c2.walletId.should.equal(c.walletId);
+          c2.walletName.should.equal(c.walletName);
+          c2.copayerName.should.equal(c.copayerName);
+          done();
+        });
+      });
+    });
+    it('should fail to import with external priv key when not enought entropy', function() {
+      var client = helpers.newClient(app);
+      (function() {
+        client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f00');
+      }).should.throw('entropy');
+    });
+
   });
 
   describe('_doRequest', function() {
