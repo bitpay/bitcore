@@ -94,6 +94,19 @@ describe('Credentials', function() {
       c.network.should.equal('livenet');
       c.personalEncryptingKey.should.equal('M4MTmfRZaTtX6izAAxTpJg==');
     });
+    describe('Compliant derivation', function() {
+      it('Should create compliant base address derivation key', function() {
+        var xPriv = 'xprv9s21ZrQH143K4HHBKb6APEoa5i58fxeFWP1x5AGMfr6zXB3A6Hjt7f9LrPXp9P7CiTCA3Hk66cS4g8enUHWpYHpNhtufxSrSpcbaQyVX163';
+        var c = Credentials.fromExtendedPrivateKey(xPriv, 0, 'BIP44');
+        c.xPubKey.should.equal('xpub6CUtFEwZKBEyX6xF4ECdJdfRBBo69ufVgmRpy7oqzWJBSadSZ3vaqvCPNFsarga4UWcgTuoDQL7ZnpgWkUVUAX3oc7ej8qfLEuhMALGvFwX');
+      });
+
+      it('Should create compliant request key', function() {
+        var xPriv = 'xprv9s21ZrQH143K3xMCR1BNaUrTuh1XJnsj8KjEL5VpQty3NY8ufgbR8SjZS8B4offHq6Jj5WhgFpM2dcYxeqLLCuj1wgMnSfmZuPUtGk8rWT7';
+        var c = Credentials.fromExtendedPrivateKey(xPriv, 0, 'BIP44');
+        c.requestPrivKey.should.equal('559371263eb0b2fd9cd2aa773ca5fea69ed1f9d9bdb8a094db321f02e9d53cec');
+      });
+    });
   });
 
   describe('#fromMnemonic', function() {
