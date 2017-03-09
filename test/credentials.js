@@ -76,6 +76,11 @@ describe('Credentials', function() {
       c.addWalletInfo(1, 'name', 1, 1, 'juan');
       c.account.should.equal(8);
     });
+    it('should derive compliant child', function() {
+      var c = Credentials.fromExtendedPrivateKey('xprv9s21ZrQH143K3wHkyND28feCyhybiBKCA1ZNMV54z7CU2WKmLoKVnvaY7BuorYUETUKgwnRVF8BRYXvUefqwpt1hr41tH7b6UzAMjyLQeF7', 0, 'BIP44');
+      var xpk = c.getDerivedXPrivKey().toString();
+      xpk.should.equal('xprv9ympSbtqgPPGLgNd1Q5o2TFwZeQUNL2vn7KyR46AcEethVqiHwUzw9TmQg5d8Tvh1awBKu5qmhudD4eGpxqQQVpRDcZdAE4zHXnjv7LKZLN');
+    });
   });
 
   describe('#fromExtendedPrivateKey', function() {
@@ -88,6 +93,19 @@ describe('Credentials', function() {
       c.copayerId.should.equal('bad66ef88ad8dec08e36d576c29b4f091d30197f04e166871e64bf969d08a958');
       c.network.should.equal('livenet');
       c.personalEncryptingKey.should.equal('M4MTmfRZaTtX6izAAxTpJg==');
+    });
+    describe('Compliant derivation', function() {
+      it('Should create compliant base address derivation key', function() {
+        var xPriv = 'xprv9s21ZrQH143K4HHBKb6APEoa5i58fxeFWP1x5AGMfr6zXB3A6Hjt7f9LrPXp9P7CiTCA3Hk66cS4g8enUHWpYHpNhtufxSrSpcbaQyVX163';
+        var c = Credentials.fromExtendedPrivateKey(xPriv, 0, 'BIP44');
+        c.xPubKey.should.equal('xpub6CUtFEwZKBEyX6xF4ECdJdfRBBo69ufVgmRpy7oqzWJBSadSZ3vaqvCPNFsarga4UWcgTuoDQL7ZnpgWkUVUAX3oc7ej8qfLEuhMALGvFwX');
+      });
+
+      it('Should create compliant request key', function() {
+        var xPriv = 'xprv9s21ZrQH143K3xMCR1BNaUrTuh1XJnsj8KjEL5VpQty3NY8ufgbR8SjZS8B4offHq6Jj5WhgFpM2dcYxeqLLCuj1wgMnSfmZuPUtGk8rWT7';
+        var c = Credentials.fromExtendedPrivateKey(xPriv, 0, 'BIP44');
+        c.requestPrivKey.should.equal('559371263eb0b2fd9cd2aa773ca5fea69ed1f9d9bdb8a094db321f02e9d53cec');
+      });
     });
   });
 
@@ -151,6 +169,22 @@ describe('Credentials', function() {
       var c = Credentials.fromMnemonic('livenet', words, '', 0, 'BIP44');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K3H3WtXCn9nHtpi7Fz1ZE9VJErWErhrGL4hV1cApFVo3t4aANoPF7ufcLLWqN168izu3xGQdLaGxXG2qYZF8wWQGNWnuSSon');
       c.network.should.equal('livenet');
+    });
+
+    describe('Compliant derivation', function() {
+      it('Should create compliant base address derivation key from mnemonic', function() {
+        var words = "shoulder sphere pull seven top much black copy labor dress depth unit";
+        var c = Credentials.fromMnemonic('livenet', words, '', 0, 'BIP44');
+        c.xPrivKey.should.equal('xprv9s21ZrQH143K3WoNK8dVjQJpcXhqfwyuBTpuZdc1ZVa9yWW2i7TmM4TLyfPrSKXctQuLgbg3U1WJmodK9yWM26JWeuh2vhT6bmsPPie688n');
+        c.xPubKey.should.equal('xpub6DVMaW3r1CcZcsUazSHspjRfZZJzZG3N7GRL4DciY54Z8M4KmRSDrq2hd75VzxKZDXPu4EKiAwCGwiXMxec2pq6oVgtZYxQHSrgtxksWehx');
+      });
+
+      it('Should create compliant request key from mnemonic', function() {
+        var words = "pool stomach bridge series powder mammal betray slogan pass roast neglect reunion";
+        var c = Credentials.fromMnemonic('livenet', words, '', 0, 'BIP44');
+        c.xPrivKey.should.equal('xprv9s21ZrQH143K3ZMudFRXpEwftifDuJkjLKnCtk26pXhxQuK8bCnytJuUTGkfvaibnCxPQQ9xToUtDAZkJqjm3W62GBXXr7JwhiAz1XWgTUJ');
+        c.requestPrivKey.should.equal('7582efa9b71aefa831823592d753704cba9648b810b14b77ee078dfe8b730157');
+      });
     });
   });
 
@@ -305,13 +339,14 @@ describe('Credentials', function() {
         c.isPrivKeyEncrypted().should.be.true;
         var xPrivKey2 = c.getDerivedXPrivKey('password');
         should.exist(xPrivKey2);
-        xPrivKey2.should.equal(xPrivKey);
+
+        xPrivKey2.toString('hex').should.equal(xPrivKey.toString('hex'));
 
         c.decryptPrivateKey('password');
         c.isPrivKeyEncrypted().should.be.false;
         var xPrivKey3 = c.getDerivedXPrivKey();
         should.exist(xPrivKey3);
-        xPrivKey3.should.equal(xPrivKey);
+        xPrivKey3.toString('hex').should.equal(xPrivKey.toString('hex'));
       });
     });
   });
