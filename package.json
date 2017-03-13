@@ -2,7 +2,7 @@
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "license": "MIT",
   "keywords": [
     "bitcoin",
@@ -26,7 +26,7 @@
   "dependencies": {
     "async": "^0.9.0",
     "bip38": "^1.3.0",
-    "bitcore-lib": "https://github.com/bitpay/bitcore-lib#421f8c97574feca502a067fdd6cd53d8e2d6c0eb",
+    "bitcore-lib": "^0.14.0",
     "bitcore-mnemonic": "^1.1.1",
     "bitcore-payment-protocol": "^1.1.0",
     "json-stable-stringify": "^1.0.0",
