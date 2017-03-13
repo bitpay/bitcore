@@ -1,4 +1,4 @@
-# Bitcore v0.13
+# Bitcore v0.14
 
 ## Principles
 
@@ -44,7 +44,7 @@ Some functionality is implemented as a module that can be installed separately:
 * [Blockchain Explorers](https://github.com/bitpay/bitcore-explorers)
 * [Signed Messages](https://github.com/bitpay/bitcore-message)
 
-# Examples 
+# Examples
 
 ## Create and Save a Private Key
 
