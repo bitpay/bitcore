@@ -5,6 +5,8 @@ var chai = chai || require('chai');
 var sinon = sinon || require('sinon');
 var should = chai.should();
 
+var Bitcore = require('bitcore-lib');
+
 var Constants = require('../lib/common/constants');
 var Credentials = require('../lib/credentials');
 var TestData = require('./testdata');
@@ -114,6 +116,16 @@ describe('Credentials', function() {
         var c = Credentials.fromExtendedPrivateKey(xPriv, 0, 'BIP44');
         c.requestPrivKey.should.equal('559371263eb0b2fd9cd2aa773ca5fea69ed1f9d9bdb8a094db321f02e9d53cec');
       });
+
+      it('should accept non-compliant derivation as a parameter when importing', function() {
+        var c = Credentials.fromExtendedPrivateKey('tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k', 0, 'BIP44', {
+          nonCompliantDerivation: true
+        });
+        c.xPrivKey.should.equal('tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k');
+        c.compliantDerivation.should.be.false;
+        c.xPubKey.should.equal('tpubDD919WKKqmh2CqKnSsfUAJWB9bnLbcry6r61tBuY8YEaTBBpvXSpwdXXBGAB1n4JRFDC7ebo7if3psUAMpvQJUBe3LcjuMNA6Y4nP8U9SNg');
+        c.getDerivedXPrivKey().toString().should.equal("tprv8gSy16H5hQ1MKNHzZDzsktr4aaGQSHg4XYVEbfsEiGSBcgw4J8dEm8uf19FH4L9h6W47VBKtc3bbYyjb6HAm6QdyRLpB6fsA7bW19RZnby2");
+      });
     });
   });
 
@@ -193,6 +205,15 @@ describe('Credentials', function() {
         c.xPrivKey.should.equal('xprv9s21ZrQH143K3ZMudFRXpEwftifDuJkjLKnCtk26pXhxQuK8bCnytJuUTGkfvaibnCxPQQ9xToUtDAZkJqjm3W62GBXXr7JwhiAz1XWgTUJ');
         c.requestPrivKey.should.equal('7582efa9b71aefa831823592d753704cba9648b810b14b77ee078dfe8b730157');
       });
+      it('should accept non-compliant derivation as a parameter when importing', function() {
+        var c = Credentials.fromMnemonic('testnet', 'level unusual burger hole call main basic flee drama diary argue legal', '', 0, 'BIP44', {
+          nonCompliantDerivation: true
+        });
+        c.xPrivKey.should.equal('tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k');
+        c.compliantDerivation.should.be.false;
+        c.xPubKey.should.equal('tpubDD919WKKqmh2CqKnSsfUAJWB9bnLbcry6r61tBuY8YEaTBBpvXSpwdXXBGAB1n4JRFDC7ebo7if3psUAMpvQJUBe3LcjuMNA6Y4nP8U9SNg');
+        c.getDerivedXPrivKey().toString().should.equal("tprv8gSy16H5hQ1MKNHzZDzsktr4aaGQSHg4XYVEbfsEiGSBcgw4J8dEm8uf19FH4L9h6W47VBKtc3bbYyjb6HAm6QdyRLpB6fsA7bW19RZnby2");
+      });
     });
   });
 
@@ -203,6 +224,13 @@ describe('Credentials', function() {
       c.mnemonic.split(' ').length.should.equal(12);
       c.network.should.equal('livenet');
       c.account.should.equal(0);
+    });
+
+    it('should assume derivation compliance on new credentials', function() {
+      var c = Credentials.createWithMnemonic('livenet', '', 'en', 0);
+      c.compliantDerivation.should.be.true;
+      var xPrivKey = c.getDerivedXPrivKey();
+      should.exist(xPrivKey);
     });
 
     it('Should create credentials with mnemonic (testnet)', function() {

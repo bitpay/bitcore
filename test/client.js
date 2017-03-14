@@ -472,7 +472,7 @@ describe('client API', function() {
   });
 
   describe('Build & sign txs', function() {
-    var masterPrivateKey = 'tprv8ZgxMBicQKsPdPLE72pfSo7CvzTsWddGHdwSuMNrcerr8yQZKdaPXiRtP9Ew8ueSe9M7jS6RJsp4DiAVS2xmyxcCC9kZV6X1FMsX7EQX2R5';
+    var masterPrivateKey = 'tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k';
     var derivedPrivateKey = {
       'BIP44': new Bitcore.HDPrivateKey(masterPrivateKey).deriveChild("m/44'/1'/0'").toString(),
       'BIP45': new Bitcore.HDPrivateKey(masterPrivateKey).deriveChild("m/45'").toString(),
@@ -940,33 +940,6 @@ describe('client API', function() {
         };
         var signatures = Client.signTxp(txp, derivedPrivateKey['BIP44']);
         signatures.length.should.be.equal(utxos.length);
-      });
-      describe('Non-compliant derivation', function() {
-        it.skip('should sign BIP44 P2PKH correctly when funds are stored in non-compliant derived addresses', function() {
-          var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-          var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-
-          var publicKeyRing = [{
-            xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
-          }];
-
-          var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
-          var txp = {
-            inputs: utxos,
-            toAddress: toAddress,
-            amount: 1200,
-            changeAddress: {
-              address: changeAddress
-            },
-            requiredSignatures: 1,
-            outputOrder: [0, 1],
-            fee: 10000,
-            derivationStrategy: 'BIP44',
-            addressType: 'P2PKH',
-          };
-          var signatures = Client.signTxp(txp, derivedPrivateKey['BIP44']);
-          signatures.length.should.be.equal(utxos.length);
-        });
       });
     });
   });
