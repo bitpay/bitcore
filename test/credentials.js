@@ -5,8 +5,6 @@ var chai = chai || require('chai');
 var sinon = sinon || require('sinon');
 var should = chai.should();
 
-var Bitcore = require('bitcore-lib');
-
 var Constants = require('../lib/common/constants');
 var Credentials = require('../lib/credentials');
 var TestData = require('./testdata');
