@@ -61,8 +61,7 @@ describe('Credentials', function() {
       xpk.should.equal('tprv8gBu8N7JbHZs7MsW4kgE8LAYMhGJES9JP6DHsj2gw9Tc5PrF5Grr9ynAZkH1LyWsxjaAyCuEMFKTKhzdSaykpqzUnmEhpLsxfujWHA66N93');
     });
     it('should derive extended private key from master BIP48 livenet', function() {
-      var c = Credentials.fromExtendedPrivateKey('xprv9s21ZrQH143K3zLpjtB4J4yrRfDTEfbrMa9vLZaTAv5BzASwBmA16mdBmZKpMLssw1AzTnm31HAD2pk2bsnZ9dccxaLD48mRdhtw82XoiBi', 0, 'BIP44');
-      c.derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP48;
+      var c = Credentials.fromExtendedPrivateKey('xprv9s21ZrQH143K3zLpjtB4J4yrRfDTEfbrMa9vLZaTAv5BzASwBmA16mdBmZKpMLssw1AzTnm31HAD2pk2bsnZ9dccxaLD48mRdhtw82XoiBi', 0, 'BIP48');
       var xpk = c.getDerivedXPrivKey().toString();
       xpk.should.equal('xprv9yaGCLKPS2ovEGw987MZr4DCkfZHGh518ndVk3Jb6eiUdPwCQu7nYru59WoNkTEQvmhnv5sPbYxeuee5k8QASWRnGV2iFX4RmKXEQse8KnQ');
     });
@@ -77,9 +76,18 @@ describe('Credentials', function() {
       c.account.should.equal(8);
     });
     it('should derive compliant child', function() {
-      var c = Credentials.fromExtendedPrivateKey('xprv9s21ZrQH143K3wHkyND28feCyhybiBKCA1ZNMV54z7CU2WKmLoKVnvaY7BuorYUETUKgwnRVF8BRYXvUefqwpt1hr41tH7b6UzAMjyLQeF7', 0, 'BIP44');
+      var c = Credentials.fromExtendedPrivateKey('tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k', 0, 'BIP44');
+      c.compliantDerivation.should.be.true;
       var xpk = c.getDerivedXPrivKey().toString();
-      xpk.should.equal('xprv9ympSbtqgPPGLgNd1Q5o2TFwZeQUNL2vn7KyR46AcEethVqiHwUzw9TmQg5d8Tvh1awBKu5qmhudD4eGpxqQQVpRDcZdAE4zHXnjv7LKZLN');
+      xpk.should.equal('tprv8gXvQvjGt7oYCTRD3d4oeQr9B7JLuC2B6S854F4XWCQ4pr9NcjokH9kouWMAp1MJKy4Y8QLBgbmPtk3i7RegVzaWhWsnVPi4ZmykJXt4HeV');
+    });
+    it('should derive non-compliant child', function() {
+      var c = Credentials.fromExtendedPrivateKey('tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k', 0, 'BIP44', {
+        nonCompliantDerivation: true
+      });
+      c.compliantDerivation.should.be.false;
+      var xpk = c.getDerivedXPrivKey().toString();
+      xpk.should.equal('tprv8gSy16H5hQ1MKNHzZDzsktr4aaGQSHg4XYVEbfsEiGSBcgw4J8dEm8uf19FH4L9h6W47VBKtc3bbYyjb6HAm6QdyRLpB6fsA7bW19RZnby2');
     });
   });
 
@@ -105,6 +113,16 @@ describe('Credentials', function() {
         var xPriv = 'xprv9s21ZrQH143K3xMCR1BNaUrTuh1XJnsj8KjEL5VpQty3NY8ufgbR8SjZS8B4offHq6Jj5WhgFpM2dcYxeqLLCuj1wgMnSfmZuPUtGk8rWT7';
         var c = Credentials.fromExtendedPrivateKey(xPriv, 0, 'BIP44');
         c.requestPrivKey.should.equal('559371263eb0b2fd9cd2aa773ca5fea69ed1f9d9bdb8a094db321f02e9d53cec');
+      });
+
+      it('should accept non-compliant derivation as a parameter when importing', function() {
+        var c = Credentials.fromExtendedPrivateKey('tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k', 0, 'BIP44', {
+          nonCompliantDerivation: true
+        });
+        c.xPrivKey.should.equal('tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k');
+        c.compliantDerivation.should.be.false;
+        c.xPubKey.should.equal('tpubDD919WKKqmh2CqKnSsfUAJWB9bnLbcry6r61tBuY8YEaTBBpvXSpwdXXBGAB1n4JRFDC7ebo7if3psUAMpvQJUBe3LcjuMNA6Y4nP8U9SNg');
+        c.getDerivedXPrivKey().toString().should.equal("tprv8gSy16H5hQ1MKNHzZDzsktr4aaGQSHg4XYVEbfsEiGSBcgw4J8dEm8uf19FH4L9h6W47VBKtc3bbYyjb6HAm6QdyRLpB6fsA7bW19RZnby2");
       });
     });
   });
@@ -185,6 +203,15 @@ describe('Credentials', function() {
         c.xPrivKey.should.equal('xprv9s21ZrQH143K3ZMudFRXpEwftifDuJkjLKnCtk26pXhxQuK8bCnytJuUTGkfvaibnCxPQQ9xToUtDAZkJqjm3W62GBXXr7JwhiAz1XWgTUJ');
         c.requestPrivKey.should.equal('7582efa9b71aefa831823592d753704cba9648b810b14b77ee078dfe8b730157');
       });
+      it('should accept non-compliant derivation as a parameter when importing', function() {
+        var c = Credentials.fromMnemonic('testnet', 'level unusual burger hole call main basic flee drama diary argue legal', '', 0, 'BIP44', {
+          nonCompliantDerivation: true
+        });
+        c.xPrivKey.should.equal('tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k');
+        c.compliantDerivation.should.be.false;
+        c.xPubKey.should.equal('tpubDD919WKKqmh2CqKnSsfUAJWB9bnLbcry6r61tBuY8YEaTBBpvXSpwdXXBGAB1n4JRFDC7ebo7if3psUAMpvQJUBe3LcjuMNA6Y4nP8U9SNg');
+        c.getDerivedXPrivKey().toString().should.equal("tprv8gSy16H5hQ1MKNHzZDzsktr4aaGQSHg4XYVEbfsEiGSBcgw4J8dEm8uf19FH4L9h6W47VBKtc3bbYyjb6HAm6QdyRLpB6fsA7bW19RZnby2");
+      });
     });
   });
 
@@ -195,6 +222,13 @@ describe('Credentials', function() {
       c.mnemonic.split(' ').length.should.equal(12);
       c.network.should.equal('livenet');
       c.account.should.equal(0);
+    });
+
+    it('should assume derivation compliance on new credentials', function() {
+      var c = Credentials.createWithMnemonic('livenet', '', 'en', 0);
+      c.compliantDerivation.should.be.true;
+      var xPrivKey = c.getDerivedXPrivKey();
+      should.exist(xPrivKey);
     });
 
     it('Should create credentials with mnemonic (testnet)', function() {

@@ -266,6 +266,7 @@ describe('client API', function() {
     });
     var expressApp = new ExpressApp();
     expressApp.start({
+        ignoreRateLimiter: true,
         storage: storage,
         blockchainExplorer: blockchainExplorerMock,
         disableLogs: true,
@@ -472,11 +473,11 @@ describe('client API', function() {
   });
 
   describe('Build & sign txs', function() {
-    var masterPrivateKey = 'tprv8ZgxMBicQKsPdPLE72pfSo7CvzTsWddGHdwSuMNrcerr8yQZKdaPXiRtP9Ew8ueSe9M7jS6RJsp4DiAVS2xmyxcCC9kZV6X1FMsX7EQX2R5';
+    var masterPrivateKey = 'tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k';
     var derivedPrivateKey = {
-      'BIP44': new Bitcore.HDPrivateKey(masterPrivateKey).derive("m/44'/1'/0'").toString(),
-      'BIP45': new Bitcore.HDPrivateKey(masterPrivateKey).derive("m/45'").toString(),
-      'BIP48': new Bitcore.HDPrivateKey(masterPrivateKey).derive("m/48'/1'/0'").toString(),
+      'BIP44': new Bitcore.HDPrivateKey(masterPrivateKey).deriveChild("m/44'/1'/0'").toString(),
+      'BIP45': new Bitcore.HDPrivateKey(masterPrivateKey).deriveChild("m/45'").toString(),
+      'BIP48': new Bitcore.HDPrivateKey(masterPrivateKey).deriveChild("m/48'/1'/0'").toString(),
     };
 
     describe('#buildTx', function() {
@@ -3302,6 +3303,9 @@ describe('client API', function() {
         function(txp, next) {
           var history = _.cloneDeep(TestData.history);
           history[0].txid = txp.txid;
+          _.each(history, function(h) {
+            h.blocktime = Math.floor(Date.now() / 1000);
+          });
           blockchainExplorerMock.setHistory(history);
           clients[0].getTxHistory({}, function(err, txs) {
             should.not.exist(err);
