@@ -7040,40 +7040,105 @@ describe('Wallet service', function() {
     });
 
     it('should subscribe copayer to push notifications service', function(done) {
-      request.yields();
       helpers.getAuthServer(wallet.copayers[0].id, function(server) {
         should.exist(server);
         server.pushNotificationsSubscribe({
-          token: 'DEVICE_TOKEN'
-        }, function(err, response) {
+          token: 'DEVICE_TOKEN',
+          packageName: 'com.wallet',
+          platform: 'Android',
+        }, function(err) {
           should.not.exist(err);
-          var calls = request.getCalls();
-          calls.length.should.equal(1);
-          var args = _.map(calls, function(c) {
-            return c.args[0];
+          server.storage.fetchPushNotificationSubs(wallet.copayers[0].id, function(err, subs) {
+            should.not.exist(err);
+            should.exist(subs);
+            subs.length.should.equal(1);
+            var s = subs[0];
+            s.token.should.equal('DEVICE_TOKEN');
+            s.packageName.should.equal('com.wallet');
+            s.platform.should.equal('Android')
+            done();
           });
-          args[0].body.user.should.contain(wallet.copayers[0].id);
-          args[0].body.user.should.contain(wallet.id);
-          args[0].body.token.should.contain('DEVICE_TOKEN');
-          done();
+        });
+      });
+    });
+    it('should allow multiple subscriptions for the same copayer', function(done) {
+      helpers.getAuthServer(wallet.copayers[0].id, function(server) {
+        should.exist(server);
+        server.pushNotificationsSubscribe({
+          token: 'DEVICE_TOKEN',
+          packageName: 'com.wallet',
+          platform: 'Android',
+        }, function(err) {
+          server.pushNotificationsSubscribe({
+            token: 'DEVICE_TOKEN2',
+            packageName: 'com.my-other-wallet',
+            platform: 'iOS',
+          }, function(err) {
+            should.not.exist(err);
+            server.storage.fetchPushNotificationSubs(wallet.copayers[0].id, function(err, subs) {
+              should.not.exist(err);
+              should.exist(subs);
+              subs.length.should.equal(2);
+              done();
+            });
+          });
         });
       });
     });
 
     it('should unsubscribe copayer to push notifications service', function(done) {
-      request.yields();
       helpers.getAuthServer(wallet.copayers[0].id, function(server) {
         should.exist(server);
-        server.pushNotificationsUnsubscribe(function(err, response) {
-          should.not.exist(err);
-          var calls = request.getCalls();
-          calls.length.should.equal(1);
-          var args = _.map(calls, function(c) {
-            return c.args[0];
-          });
+        async.series([
 
-          args[0].body.user.should.contain(wallet.copayers[0].id);
-          args[0].body.user.should.contain(wallet.id);
+          function(next) {
+            server.pushNotificationsSubscribe({
+              token: 'DEVICE_TOKEN',
+              packageName: 'com.wallet',
+              platform: 'Android',
+            }, next);
+          },
+          function(next) {
+            server.pushNotificationsSubscribe({
+              token: 'DEVICE_TOKEN2',
+              packageName: 'com.my-other-wallet',
+              platform: 'iOS',
+            }, next);
+          },
+          function(next) {
+            server.pushNotificationsUnsubscribe({
+              token: 'DEVICE_TOKEN2'
+            }, next);
+          },
+          function(next) {
+            server.storage.fetchPushNotificationSubs(wallet.copayers[0].id, function(err, subs) {
+              should.not.exist(err);
+              should.exist(subs);
+              subs.length.should.equal(1);
+              var s = subs[0];
+              s.token.should.equal('DEVICE_TOKEN');
+              next();
+            });
+          },
+          function(next) {
+            helpers.getAuthServer(wallet.copayers[1].id, function(server) {
+              server.pushNotificationsUnsubscribe({
+                token: 'DEVICE_TOKEN'
+              }, next);
+            });
+          },
+          function(next) {
+            server.storage.fetchPushNotificationSubs(wallet.copayers[0].id, function(err, subs) {
+              should.not.exist(err);
+              should.exist(subs);
+              subs.length.should.equal(1);
+              var s = subs[0];
+              s.token.should.equal('DEVICE_TOKEN');
+              next();
+            });
+          },
+        ], function(err) {
+          should.not.exist(err);
           done();
         });
       });

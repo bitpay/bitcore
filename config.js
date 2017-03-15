@@ -55,7 +55,8 @@ var config = {
     defaultLanguage: 'en',
     defaultUnit: 'btc',
     subjectPrefix: '',
-    pushServerUrl: 'http://localhost:8000',
+    pushServerUrl: 'https://fcm.googleapis.com/fcm',
+    authorizationKey: '',
   },
   fiatRateServiceOpts: {
     defaultProvider: 'BitPay',
