@@ -1142,9 +1142,10 @@ describe('Wallet service', function() {
 
       it('should create many addresses on simultaneous requests', function(done) {
         var N = 5;
-        async.map(_.range(N), function(i, cb) {
+        async.mapSeries(_.range(N), function(i, cb) {
           server.createAddress({}, cb);
         }, function(err, addresses) {
+          var x = _.pluck(addresses, 'path');
           addresses.length.should.equal(N);
           _.each(_.range(N), function(i) {
             addresses[i].path.should.equal('m/2147483647/0/' + i);
@@ -1189,7 +1190,7 @@ describe('Wallet service', function() {
 
       it('should create many addresses on simultaneous requests', function(done) {
         var N = 5;
-        async.map(_.range(N), function(i, cb) {
+        async.mapSeries(_.range(N), function(i, cb) {
           server.createAddress({}, cb);
         }, function(err, addresses) {
           addresses.length.should.equal(N);
