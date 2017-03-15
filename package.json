@@ -2,7 +2,7 @@
   "name": "bitcore-wallet-service",
   "description": "A service for Mutisig HD Bitcoin Wallets",
   "author": "BitPay Inc",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "licence": "MIT",
   "keywords": [
     "bitcoin",
@@ -70,18 +70,14 @@
     "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage"
   },
   "bitcoreNode": "./bitcorenode",
-  "contributors": [
-    {
-      "name": "Braydon Fuller",
-      "email": "braydon@bitpay.com"
-    },
-    {
-      "name": "Ivan Socolsky",
-      "email": "ivan@bitpay.com"
-    },
-    {
-      "name": "Matias Alejo Garcia",
-      "email": "ematiu@gmail.com"
-    }
-  ]
+  "contributors": [{
+    "name": "Braydon Fuller",
+    "email": "braydon@bitpay.com"
+  }, {
+    "name": "Ivan Socolsky",
+    "email": "ivan@bitpay.com"
+  }, {
+    "name": "Matias Alejo Garcia",
+    "email": "ematiu@gmail.com"
+  }]
 }

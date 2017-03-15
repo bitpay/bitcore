@@ -88,7 +88,7 @@ helpers.signMessage = function(text, privKey) {
 };
 
 helpers.signRequestPubKey = function(requestPubKey, xPrivKey) {
-  var priv = new Bitcore.HDPrivateKey(xPrivKey).derive(Constants.PATHS.REQUEST_KEY_AUTH).privateKey;
+  var priv = new Bitcore.HDPrivateKey(xPrivKey).deriveChild(Constants.PATHS.REQUEST_KEY_AUTH).privateKey;
   return helpers.signMessage(requestPubKey, priv);
 };
 
@@ -113,18 +113,18 @@ helpers._generateCopayersTestData = function(n) {
     var xpriv = new Bitcore.HDPrivateKey();
     var xpub = Bitcore.HDPublicKey(xpriv);
 
-    var xpriv_45H = xpriv.derive(45, true);
+    var xpriv_45H = xpriv.deriveChild(45, true);
     var xpub_45H = Bitcore.HDPublicKey(xpriv_45H);
     var id45 = Copayer._xPubToCopayerId(xpub_45H.toString());
 
-    var xpriv_44H_0H_0H = xpriv.derive(44, true).derive(0, true).derive(0, true);
+    var xpriv_44H_0H_0H = xpriv.deriveChild(44, true).deriveChild(0, true).deriveChild(0, true);
     var xpub_44H_0H_0H = Bitcore.HDPublicKey(xpriv_44H_0H_0H);
     var id44 = Copayer._xPubToCopayerId(xpub_44H_0H_0H.toString());
 
-    var xpriv_1H = xpriv.derive(1, true);
+    var xpriv_1H = xpriv.deriveChild(1, true);
     var xpub_1H = Bitcore.HDPublicKey(xpriv_1H);
-    var priv = xpriv_1H.derive(0).privateKey;
-    var pub = xpub_1H.derive(0).publicKey;
+    var priv = xpriv_1H.deriveChild(0).privateKey;
+    var pub = xpub_1H.deriveChild(0).publicKey;
 
     console.log('{id44: ', "'" + id44 + "',");
     console.log('id45: ', "'" + id45 + "',");
@@ -374,7 +374,7 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
 
   _.each(txp.inputs, function(i) {
     if (!derived[i.path]) {
-      derived[i.path] = xpriv.derive(i.path).privateKey;
+      derived[i.path] = xpriv.deriveChild(i.path).privateKey;
       privs.push(derived[i.path]);
     }
   });
