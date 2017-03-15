@@ -42,6 +42,7 @@ var shell = require('gulp-shell');
 var uglify = require('gulp-uglify');
 var bump = require('gulp-bump');
 var git = require('gulp-git');
+var fs = require('fs');
 
 function ignoreerror() {
   /* jshint ignore:start */ // using `this` in this context is weird 
@@ -61,18 +62,25 @@ function startGulp(name, opts) {
   var buildPath = './node_modules/bitcore-build/';
   var buildModulesPath = buildPath + 'node_modules/';
   var buildBinPath = buildPath + 'node_modules/.bin/';
+  var karmaPath = buildModulesPath + 'karma/bin/karma';
+
+  // newer version of node? binaries are in lower level of node_module path
+  if (!fs.existsSync(buildBinPath + 'browserify')) {
+    buildBinPath = './node_modules/.bin/';
+    karmaPath = buildBinPath + 'karma';
+  }
 
   /**
    * testing
    */
   var testmocha = function() {
-    return gulp.src(tests).pipe(new mocha({
+    return gulp.src(tests).pipe(mocha({
       reporter: 'spec'
     }));
   };
 
   var testkarma = shell.task([
-    buildModulesPath + 'karma/bin/karma start ' + buildPath + 'karma.conf.js'
+    karmaPath + ' start ' + buildPath + 'karma.conf.js'
   ]);
 
   gulp.task('test:node', testmocha);
@@ -91,8 +99,7 @@ function startGulp(name, opts) {
     gulp.task('test', ['test:node']);
   }
 
-  gulp.task('noop', function() {
-  });
+  gulp.task('noop', function() {});
 
   /**
    * file generation
