@@ -2,7 +2,7 @@
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "5.1.1",
+  "version": "5.1.2",
   "license": "MIT",
   "keywords": [
     "bitcoin",
@@ -27,8 +27,8 @@
     "async": "^0.9.0",
     "bip38": "^1.3.0",
     "bitcore-lib": "^0.14.0",
-    "bitcore-mnemonic": "^1.1.1",
-    "bitcore-payment-protocol": "^1.1.0",
+    "bitcore-mnemonic": "^1.2.2",
+    "bitcore-payment-protocol": "^1.2.2",
     "json-stable-stringify": "^1.0.0",
     "lodash": "^3.3.1",
     "preconditions": "^1.0.8",
@@ -36,7 +36,7 @@
     "superagent": "^3.4.1"
   },
   "devDependencies": {
-    "bitcore-wallet-service": "^1.13.0",
+    "bitcore-wallet-service": "~1.15.0",
     "browserify": "^13.1.0",
     "chai": "^1.9.1",
     "coveralls": "^2.11.2",
