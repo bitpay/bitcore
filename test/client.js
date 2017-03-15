@@ -266,6 +266,7 @@ describe('client API', function() {
     });
     var expressApp = new ExpressApp();
     expressApp.start({
+        ignoreRateLimiter: true,
         storage: storage,
         blockchainExplorer: blockchainExplorerMock,
         disableLogs: true,
@@ -3302,6 +3303,9 @@ describe('client API', function() {
         function(txp, next) {
           var history = _.cloneDeep(TestData.history);
           history[0].txid = txp.txid;
+          _.each(history, function(h) {
+            h.blocktime = Math.floor(Date.now() / 1000);
+          });
           blockchainExplorerMock.setHistory(history);
           clients[0].getTxHistory({}, function(err, txs) {
             should.not.exist(err);
