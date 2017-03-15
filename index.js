@@ -62,12 +62,32 @@ function startGulp(name, opts) {
   var buildPath = './node_modules/bitcore-build/';
   var buildModulesPath = buildPath + 'node_modules/';
   var buildBinPath = buildPath + 'node_modules/.bin/';
-  var karmaPath = buildModulesPath + 'karma/bin/karma';
+
+  var browserifyPath = buildBinPath + 'browserify';
+  var karmaPath = buildBinPath + 'karma/bin/karma';
+  var platoPath = buildBinPath + 'plato';
+  var istanbulPath = buildBinPath + 'istanbul';
+  var mochaPath = buildBinPath + '_mocha';
 
   // newer version of node? binaries are in lower level of node_module path
-  if (!fs.existsSync(buildBinPath + 'browserify')) {
-    buildBinPath = './node_modules/.bin/';
-    karmaPath = buildBinPath + 'karma';
+  if (!fs.existsSync(browserifyPath)) {
+    browserifyPath = './node_modules/.bin/browserify';
+  }
+
+  if (!fs.existsSync(karmaPath)) {
+    karmaPath = './node_modules/.bin/karma';
+  }
+
+  if (!fs.existsSync(istanbulPath)) {
+    istanbulPath = './node_modules/.bin/istanbul';
+  }
+
+  if (!fs.existsSync(platoPath)) {
+    platoPath = './node_modules/.bin/plato';
+  }
+
+  if (!fs.existsSync(mochaPath)) {
+    mochaPath = './node_modules/.bin/_mocha';
   }
 
   /**
@@ -109,9 +129,9 @@ function startGulp(name, opts) {
     var browserifyCommand;
 
     if (name !== 'lib') {
-      browserifyCommand = buildBinPath + 'browserify --require ./index.js:' + fullname + ' --external bitcore-lib -o ' + fullname + '.js';
+      browserifyCommand = browserifyPath + ' --require ./index.js:' + fullname + ' --external bitcore-lib -o ' + fullname + '.js';
     } else {
-      browserifyCommand = buildBinPath + 'browserify --require ./index.js:bitcore-lib -o bitcore-lib.js';
+      browserifyCommand = browserifyPath + ' --require ./index.js:bitcore-lib -o bitcore-lib.js';
     }
 
     gulp.task('browser:uncompressed', shell.task([
@@ -130,7 +150,7 @@ function startGulp(name, opts) {
     });
 
     gulp.task('browser:maketests', shell.task([
-      'find test/ -type f -name "*.js" | xargs ' + buildBinPath + 'browserify -t brfs -o tests.js'
+      'find test/ -type f -name "*.js" | xargs ' + browserifyPath + ' -t brfs -o tests.js'
     ]));
 
     gulp.task('browser', function(callback) {
@@ -148,9 +168,9 @@ function startGulp(name, opts) {
       .pipe(jshint.reporter('default'));
   });
 
-  gulp.task('plato', shell.task([buildBinPath + 'plato -d report -r -l .jshintrc -t ' + fullname + ' lib']));
+  gulp.task('plato', shell.task([platoPath + ' -d report -r -l .jshintrc -t ' + fullname + ' lib']));
 
-  gulp.task('coverage', shell.task([buildBinPath + './istanbul cover ' + buildBinPath + '_mocha -- --recursive']));
+  gulp.task('coverage', shell.task([istanbulPath + ' cover ' + mochaPath + ' -- --recursive']));
 
   gulp.task('coveralls', ['coverage'], function() {
     gulp.src('coverage/lcov.info').pipe(coveralls());
