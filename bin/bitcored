@@ -3,7 +3,7 @@
 'use strict';
 
 var path = require('path');
-var bitcored = require('bitcore-node/lib/cli/bitcored');
+var bitcored = require('bitcore-node-dash/lib/cli/bitcored');
 var servicesPath = path.resolve(__dirname, '../');
-var additionalServices = ['insight-api', 'insight-ui'];
+var additionalServices = ['insight-api-dash', 'insight-ui-dash'];
 bitcored(servicesPath, additionalServices);
