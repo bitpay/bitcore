@@ -64,7 +64,7 @@ function startGulp(name, opts) {
   var buildBinPath = buildPath + 'node_modules/.bin/';
 
   var browserifyPath = buildBinPath + 'browserify';
-  var karmaPath = buildBinPath + 'karma/bin/karma';
+  var karmaPath = buildBinPath + 'karma';
   var platoPath = buildBinPath + 'plato';
   var istanbulPath = buildBinPath + 'istanbul';
   var mochaPath = buildBinPath + '_mocha';
@@ -72,7 +72,7 @@ function startGulp(name, opts) {
   // newer version of node? binaries are in lower level of node_module path
   if (!fs.existsSync(browserifyPath)) {
     browserifyPath = './node_modules/.bin/browserify';
-  }
+  } 
 
   if (!fs.existsSync(karmaPath)) {
     karmaPath = './node_modules/.bin/karma';
