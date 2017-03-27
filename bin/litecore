@@ -3,5 +3,5 @@
 var litecore = require('litecore-node/lib/cli/bitcore');
 var path = require('path');
 var servicesPath = path.resolve(__dirname, '../');
-var additionalServices = ['insight-api', 'insight-ui'];
+var additionalServices = ['insight-lite-api', 'insight-lite-ui'];
 litecore(servicesPath, additionalServices);
