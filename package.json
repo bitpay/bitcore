@@ -1,6 +1,6 @@
 {
   "name": "litecore",
-  "version": "4.1.1",
+  "version": "4.1.2",
   "description": "A platform to build bitcoin and blockchain-based applications.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -86,10 +86,10 @@
     "request": "browser-request"
   },
   "dependencies": {
-    "litecore-lib": "^0.13.19",
-    "litecore-node": "^3.1.4",
-    "insight-api": "^0.4.0",
-    "insight-ui": "^0.4.0"
+    "litecore-lib": "^0.13.21",
+    "litecore-node": "^3.1.6",
+    "insight-lite-api": "^0.4.0",
+    "insight-lite-ui": "^0.4.0"
   },
   "license": "MIT",
   "devDependencies": {
