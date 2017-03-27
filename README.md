@@ -36,8 +36,8 @@ transaction.sign(privateKey);
 ## Applications
 
 - [Node](https://github.com/litecoin-project/litecore-node) - A full node with extended capabilities using Litecoin Core
-- [Insight API](https://github.com/bitpay/insight-api) - A blockchain explorer HTTP API
-- [Insight UI](https://github.com/bitpay/insight) - A blockchain explorer web user interface
+- [Insight Lite API](https://github.com/litecoin-project/insight-lite-api) - A blockchain explorer HTTP API
+- [Insight Lite UI](https://github.com/litecoin-project/insight-lite-ui) - A blockchain explorer web user interface
 - [Wallet Service](https://github.com/bitpay/bitcore-wallet-service) - A multisig HD service for wallets
 - [Wallet Client](https://github.com/bitpay/bitcore-wallet-client) - A client for the wallet service
 - [CLI Wallet](https://github.com/bitpay/bitcore-wallet) - A command-line based wallet client
