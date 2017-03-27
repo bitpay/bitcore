@@ -1,6 +1,6 @@
 {
   "name": "litecore",
-  "version": "4.1.3",
+  "version": "4.1.4",
   "description": "A platform to build bitcoin and blockchain-based applications.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -60,6 +60,10 @@
     {
       "name": "Wei Lu",
       "email": "luwei.here@gmail.com"
+    },
+    {
+      "name": "Loshan T",
+      "email": "loshan1212@gmail.com"
     }
   ],
   "keywords": [

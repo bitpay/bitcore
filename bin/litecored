@@ -5,5 +5,5 @@
 var path = require('path');
 var litecored = require('litecore-node/lib/cli/bitcored');
 var servicesPath = path.resolve(__dirname, '../');
-var additionalServices = ['insight-api', 'insight-ui'];
+var additionalServices = ['insight-lite-api', 'insight-lite-ui'];
 litecored(servicesPath, additionalServices);
