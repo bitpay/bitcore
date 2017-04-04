@@ -23,8 +23,20 @@ InsightUI.dependencies = ['insight-api'];
 inherits(InsightUI, BaseService);
 
 InsightUI.prototype.start = function(callback) {
-  this.indexFile = this.filterIndexHTML(fs.readFileSync(__dirname + '/../public/index.html', {encoding: 'utf8'}));
-  setImmediate(callback);
+
+  var self = this;
+
+  var indexFile = __dirname + '/../public/index.html';
+
+  fs.readFile(indexFile, { encoding: 'utf8' }, function(err, data) {
+
+    if(err) {
+      return callback(err);
+    }
+
+    self.indexFile = self.filterIndexHTML(data);
+    callback();
+  });
 };
 
 InsightUI.prototype.getRoutePrefix = function() {
@@ -35,14 +47,13 @@ InsightUI.prototype.setupRoutes = function(app, express) {
   var self = this;
 
   app.use('/', function(req, res, next){
-    if (req.headers.accept && req.headers.accept.indexOf('text/html') !== -1 &&
-      req.headers["X-Requested-With"] !== 'XMLHttpRequest'
-    ) {
-      res.setHeader('Content-Type', 'text/html');
+
+    if (req.url === '/') {
       res.send(self.indexFile);
     } else {
       express.static(__dirname + '/../public')(req, res, next);
     }
+
   });
 };
 
