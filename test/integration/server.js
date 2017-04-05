@@ -1257,9 +1257,10 @@ describe('Wallet service', function() {
 
       it('should create many addresses on simultaneous requests', function(done) {
         var N = 5;
-        async.map(_.range(N), function(i, cb) {
+        async.mapSeries(_.range(N), function(i, cb) {
           server.createAddress({}, cb);
         }, function(err, addresses) {
+          addresses = _.sortBy(addresses, 'path');
           addresses.length.should.equal(N);
           _.each(_.range(N), function(i) {
             addresses[i].path.should.equal('m/0/' + i);
@@ -2386,7 +2387,7 @@ describe('Wallet service', function() {
     describe('Tx proposal creation & publishing', function() {
       var server, wallet;
       beforeEach(function(done) {
-        helpers.createAndJoinWallet(2, 3, function(s, w) {
+        helpers.createAndJoinWallet(1, 1, function(s, w) {
           server = s;
           wallet = w;
           done();
@@ -2407,10 +2408,10 @@ describe('Wallet service', function() {
           server.createTx(txOpts, function(err, tx) {
             should.not.exist(err);
             should.exist(tx);
-            tx.walletM.should.equal(2);
-            tx.walletN.should.equal(3);
-            tx.requiredRejections.should.equal(2);
-            tx.requiredSignatures.should.equal(2);
+            tx.walletM.should.equal(1);
+            tx.walletN.should.equal(1);
+            tx.requiredRejections.should.equal(1);
+            tx.requiredSignatures.should.equal(1);
             tx.isAccepted().should.equal.false;
             tx.isRejected().should.equal.false;
             tx.isPending().should.equal.true;
@@ -2816,7 +2817,7 @@ describe('Wallet service', function() {
             });
           });
         });
-        it('should fail to publish a temporary tx proposal if utxos are unavailable', function(done) {
+        it('should fail to publish a temporary tx proposal if utxos are locked by other pending proposals', function(done) {
           var txp1, txp2;
           var txOpts = {
             outputs: [{
@@ -2876,6 +2877,71 @@ describe('Wallet service', function() {
               server.getPendingTxs({}, function(err, txs) {
                 should.not.exist(err);
                 txs.length.should.equal(2);
+                next();
+              });
+            },
+          ], function(err) {
+            should.not.exist(err);
+            done();
+          });
+        });
+        it('should fail to publish a temporary tx proposal if utxos are already spent', function(done) {
+          var txp1, txp2;
+          var txOpts = {
+            outputs: [{
+              toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+              amount: 0.8 * 1e8,
+            }],
+            message: 'some message',
+            feePerKb: 100e2,
+          };
+
+          async.waterfall([
+
+            function(next) {
+              helpers.stubUtxos(server, wallet, [1, 2], function() {
+                next();
+              });
+            },
+            function(next) {
+              server.createTx(txOpts, next);
+            },
+            function(txp, next) {
+              txp1 = txp;
+              server.createTx(txOpts, next);
+            },
+            function(txp, next) {
+              txp2 = txp;
+              should.exist(txp1);
+              should.exist(txp2);
+              var publishOpts = helpers.getProposalSignatureOpts(txp1, TestData.copayers[0].privKey_1H_0);
+              server.publishTx(publishOpts, next);
+            },
+            function(txp, next) {
+              // Sign & Broadcast txp1
+              var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+              server.signTx({
+                txProposalId: txp.id,
+                signatures: signatures,
+              }, function(err, txp) {
+                should.not.exist(err);
+
+                helpers.stubBroadcast();
+                server.broadcastTx({
+                  txProposalId: txp.id
+                }, function(err, txp) {
+                  should.not.exist(err);
+                  should.exist(txp.txid);
+                  txp.status.should.equal('broadcasted');
+                  next();
+                });
+              });
+            },
+            function(next) {
+              var publishOpts = helpers.getProposalSignatureOpts(txp2, TestData.copayers[0].privKey_1H_0);
+              server.publishTx(publishOpts, function(err) {
+                should.exist(err);
+                err.code.should.equal('UNAVAILABLE_UTXOS');
                 next();
               });
             },
