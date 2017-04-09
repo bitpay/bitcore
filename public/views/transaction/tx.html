@@ -1,10 +1,10 @@
 <div class="line-bot row" data-ng-hide="!tx">
   <div class="col-xs-7 col-md-8">
     <div class="ellipsis">
-      <a class="btn-expand" href="#" title="Show/Hide items details" data-ng-click="itemsExpanded = !itemsExpanded">
+      <a class="btn-expand" title="Show/Hide items details" data-ng-click="itemsExpanded = !itemsExpanded">
         <span class="glyphicon glyphicon-plus-sign" data-ng-class="{'glyphicon-minus-sign': itemsExpanded}"></span>
       </a>
-      <a href="/tx/{{tx.txid}}">{{tx.txid}}</a>
+      <a href="tx/{{tx.txid}}">{{tx.txid}}</a>
       <span class="btn-copy" clip-copy="tx.txid"></span>
     </div>
   </div>
@@ -13,7 +13,7 @@
       <span translate>first seen at</span> 
       <time>{{tx.firstSeenTs * 1000 | date:'medium'}}</time>
     </div>
-    <div data-ng-show="tx.time && !tx.firstSeenTs">
+    <div data-ng-show="tx.blocktime && !tx.firstSeenTs">
       <span translate>mined</span> 
       <time>{{tx.time * 1000 | date:'medium'}}</time>
     </div>
@@ -40,7 +40,7 @@
             <div class="ellipsis">
               <span data-ng-show="vin.notAddr">{{vin.addr}}</span>
               <span class="text-muted" title="Current Bitcoin Address" data-ng-show="vin.addr == $root.currentAddr">{{vin.addr}}</span>
-              <a href="/address/{{vin.addr}}" data-ng-show="!vin.notAddr && vin.addr != $root.currentAddr">{{vin.addr}}</a>
+              <a href="address/{{vin.addr}}" data-ng-show="!vin.notAddr && vin.addr != $root.currentAddr">{{vin.addr}}</a>
             </div>
             <div data-ng-show="vin.unconfirmedInput" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> (Input unconfirmed)</div>
             <div data-ng-show="vin.dbError" class="text-danger">
@@ -50,7 +50,7 @@
             <div data-ng-show="vin.doubleSpentTxID" class="text-danger"> 
               <span class="glyphicon glyphicon-warning-sign"></span> 
               <span translate>Double spent attempt detected. From tx:</span> 
-              <a href="/tx/{{vin.doubleSpentTxID}}">{{vin.doubleSpentTxID}},{{vin.doubleSpentIndex}}</a>
+              <a href="tx/{{vin.doubleSpentTxID}}">{{vin.doubleSpentTxID}},{{vin.doubleSpentIndex}}</a>
             </div>
           </div>
         </div>
@@ -71,9 +71,9 @@
                 {{$root.currency.getConvertion(vin.value) || vin.value + ' BTC'}}
               </div>
               <div class="ellipsis">
-                <a class="glyphicon glyphicon-chevron-right" href="/tx/{{vin.txid}}/>/{{vin.vout}}" title="Outpoint: {{vin.txid}},{{vin.vout}}"></a>
+                <a class="glyphicon glyphicon-chevron-right" href="tx/{{vin.txid}}/>/{{vin.vout}}" title="Outpoint: {{vin.txid}},{{vin.vout}}"></a>
                 <span data-ng-show="vin.notAddr">{{vin.addr}}</span>
-                <a href="/address/{{vin.addr}}" data-ng-show="!vin.notAddr">{{vin.addr}}</a>
+                <a href="address/{{vin.addr}}" data-ng-show="!vin.notAddr">{{vin.addr}}</a>
               </div>
               <div data-ng-show="vin.unconfirmedInput" class="text-danger"> 
                 <span class="glyphicon glyphicon-warning-sign"></span> 
@@ -86,11 +86,12 @@
               <div data-ng-show="vin.doubleSpentTxID" class="text-danger"> 
                 <span class="glyphicon glyphicon-warning-sign"></span> 
                 <span translate>Double spent attempt detected. From tx:</span> 
-                <a href="/tx/{{<vin class=""></vin>doubleSpentTxID}}">{{vin.doubleSpentTxID}},{{vin.doubleSpentIndex}}</a>
+                <a href="tx/{{<vin class=""></vin>doubleSpentTxID}}">{{vin.doubleSpentTxID}},{{vin.doubleSpentIndex}}</a>
               </div>
             </div> <!-- END OF PANEL BODY -->
           </div> <!-- END OF PANEL-DEFAULT -->
           <div class="small" style="margin-left:0.7em; word-wrap:break-word;" data-ng-class="{true: 'v_highlight', false: ''}[from_vin == true && v_index == vin.n]" >
+            <p><strong>Confirmations:</strong> {{vin.confirmations}}</p>
             <p><strong>scriptSig</strong></p>
               <div data-ng-repeat="item in vin.scriptSig.asm | split:' '" class="">
                 <p class="col-md-11 ellipsis text-muted">{{item}}</p>
@@ -137,7 +138,7 @@
               <div class="ellipsis">
                 <span data-ng-show="vout.notAddr">{{vout.addr}}</span>
                 <span class="text-muted" title="Current Bitcoin Address" data-ng-show="address == $root.currentAddr" data-ng-repeat="address in vout.addr.split(',')">{{vout.addr}}</span>
-                <a href="/address/{{address}}"  data-ng-show="!vout.notAddr && address != $root.currentAddr" data-ng-repeat="address in vout.addr.split(',')">{{address}}</a>
+                <a href="address/{{address}}"  data-ng-show="!vout.notAddr && address != $root.currentAddr" data-ng-repeat="address in vout.addr.split(',')">{{address}}</a>
               </div>
             </div>
           </div>
@@ -158,11 +159,11 @@
               <div class="pull-right btc-value">
                 <span>{{$root.currency.getConvertion(vout.value) || vout.value + ' BTC'}}
                   <span class="text-success" data-ng-show="!vout.spentTxId" tooltip="Output is unspent" tooltip-placement="left">(U)</span>
-                  <a class="glyphicon glyphicon-chevron-right" data-ng-show="vout.spentTxId" href="/tx/{{vout.spentTxId}}/</{{vout.spentIndex}}" title="Spent at: {{vout.spentTxId}},{{vout.spentIndex}}"></a>
+                  <a class="glyphicon glyphicon-chevron-right" data-ng-show="vout.spentTxId" href="tx/{{vout.spentTxId}}/</{{vout.spentIndex}}" title="Spent at: {{vout.spentTxId}},{{vout.spentIndex}}"></a>
                 </span>
               </div>
               <div class="ellipsis">
-                <a href="/address/{{address}}" data-ng-repeat="address in vout.scriptPubKey.addresses">{{address}}</a>
+                <a href="address/{{address}}" data-ng-repeat="address in vout.scriptPubKey.addresses">{{address}}</a>
               </div>
             </div>
           </div>
@@ -192,7 +193,7 @@
 </div>
 
 <div class="well well-sm bgwhite ellipsis" data-ng-if="itemsExpanded && !block.hash && tx.blockhash">
-  <strong translate>Included in Block</strong> <a class="text-muted" href="/block/{{tx.blockhash}}">{{tx.blockhash}}</a>
+  <strong translate>Included in Block</strong> <a class="text-muted" href="block/{{tx.blockhash}}">{{tx.blockhash}}</a>
   <span class="btn-copy" clip-copy="tx.blockhash"></span>
 </div>
 

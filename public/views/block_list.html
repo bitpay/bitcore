@@ -1,4 +1,4 @@
-<div data-ng-include src="'/views/includes/connection.html'"></div>
+<div data-ng-include src="'views/includes/connection.html'"></div>
 <section data-ng-controller="BlocksController" data-ng-init="list()">
   <div class="row">
     <div class="col-xs-12 col-gray col-gray-fixed">
@@ -22,8 +22,8 @@
         <p class="text-center m20v"  data-ng-show="!pagination.isToday && !loading">{{humanSince(pagination.currentTs)}}
         <p class="text-center m20v"  data-ng-show="loading">&nbsp;</p>
         <div class="m50v text-center">
-          <a class="btn btn-primary" href="/blocks-date/{{pagination.prev}}"><small>&larr; {{pagination.prev}}</small></a>
-          <a class="btn btn-primary" href="/blocks-date/{{pagination.next}}" data-ng-show="!pagination.isToday"><small>{{pagination.next}} &rarr;</small></a>
+          <a class="btn btn-primary" href="blocks-date/{{pagination.prev}}"><small>&larr; {{pagination.prev}}</small></a>
+          <a class="btn btn-primary" href="blocks-date/{{pagination.next}}" data-ng-show="!pagination.isToday"><small>{{pagination.next}} &rarr;</small></a>
         </div>
       </div>
     </div>
@@ -49,7 +49,7 @@
           <td colspan="5"><span translate>Waiting for blocks...</span> <span class="loader-gif"></span></td>
         </tr>
         <tr class="fader" data-ng-repeat='b in blocks'>
-          <td><a href="/block/{{b.hash}}">{{b.height}}</a></td>
+          <td><a href="block/{{b.hash}}">{{b.height}}</a></td>
           <td>{{b.time * 1000 | date:'medium'}}</td>
           <td class="text-right">{{b.txlength}}</td>
           <td class="text-right hidden-xs"><a href="{{b.poolInfo.url}}" title="{{b.poolInfo.poolName}}" target="_blank" data-ng-show="b.poolInfo">{{b.poolInfo.poolName}}</a></td>
@@ -58,8 +58,8 @@
         </tbody>
       </table>
       <div data-ng-if="pagination.more">
-        <a class="btn btn-primary" href="/blocks-date/{{pagination.current}}" data-ng-show="{{before}}">Lastest block from date</a>
-        <a class="btn btn-primary" href="/blocks-date/{{pagination.current}}/{{pagination.moreTs}}">Older blocks from this date</a>
+        <a class="btn btn-primary" href="blocks-date/{{pagination.current}}" data-ng-show="{{before}}">Lastest block from date</a>
+        <a class="btn btn-primary" href="blocks-date/{{pagination.current}}/{{pagination.moreTs}}">Older blocks from this date</a>
       </div>
     </div>
   </div>

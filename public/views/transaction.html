@@ -1,4 +1,4 @@
-<div data-ng-include src="'/views/includes/connection.html'"></div>
+<div data-ng-include src="'views/includes/connection.html'"></div>
 <section data-ng-controller="transactionsController" data-ng-init="findThis()">
   <div class="secondary_navbar hidden-xs hidden-sm" scroll data-ng-class="{'hidden': !secondaryNavbar}" data-ng-show="tx.txid" data-ng-init="hideSNavbar=0">
     <div class="container" data-ng-if="!hideSNavbar">
@@ -52,6 +52,10 @@
           <td><strong translate>Size</strong></td>
           <td class="text-muted text-right">{{tx.size}} (bytes)</td>
         </tr>
+        <tr data-ng-show="tx.fees">
+          <td><strong translate>Fee Rate</strong></td>
+          <td class="text-muted text-right">{{$root.currency.getConvertion((tx.fees * 1000) / tx.size) + ' per kB' || ((tx.fees * 1000) / tx.size) + 'BTC per kB'}}</td>
+        </tr>
         <tr>
           <td><strong translate>Received Time</strong></td>
           <td data-ng-show="tx.time" class="text-muted text-right">{{tx.time * 1000|date:'medium'}}</td>
@@ -59,14 +63,14 @@
         </tr>
         <tr>
           <td><strong translate>Mined Time</strong></td>
-          <td data-ng-show="tx.time" class="text-muted text-right">{{tx.blocktime * 1000|date:'medium'}}</td>
-          <td data-ng-show="!tx.time" class="text-muted text-right">N/A</td>
+          <td data-ng-show="tx.blocktime" class="text-muted text-right">{{tx.blocktime * 1000|date:'medium'}}</td>
+          <td data-ng-show="!tx.blocktime" class="text-muted text-right">N/A</td>
         </tr>
         <tr>
           <td><strong translate>Included in Block</strong></td>
           <td data-ng-show="tx.blockhash" class="text-muted text-right"> 
             <div class="ellipsis">
-              <a href="/block/{{tx.blockhash}}">{{tx.blockhash}}</a>
+              <a href="block/{{tx.blockhash}}">{{tx.blockhash}}</a>
             </div>
           <td data-ng-show="!tx.blockhash" class="text-muted text-right">Unconfirmed</td>
         </tr>
@@ -88,8 +92,7 @@
     </div>
     <h2 translate>Details</h2>
     <div class="block-tx" data-ng-if="tx.txid">
-      <div data-ng-include src="'/views/transaction/tx.html'"></div>
+      <div data-ng-include src="'views/transaction/tx.html'"></div>
     </div>
   </div>
 </section>
-

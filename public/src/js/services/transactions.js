@@ -3,7 +3,7 @@
 angular.module('insight.transactions')
   .factory('Transaction',
     function($resource) {
-    return $resource('/api/tx/:txId', {
+    return $resource(window.apiPrefix + '/tx/:txId', {
       txId: '@txId'
     }, {
       get: {
@@ -23,17 +23,17 @@ angular.module('insight.transactions')
   })
   .factory('TransactionsByBlock',
     function($resource) {
-    return $resource('/api/txs', {
+    return $resource(window.apiPrefix + '/txs', {
       block: '@block'
     });
   })
   .factory('TransactionsByAddress',
     function($resource) {
-    return $resource('/api/txs', {
+    return $resource(window.apiPrefix + '/txs', {
       address: '@address'
     });
   })
   .factory('Transactions',
     function($resource) {
-      return $resource('/api/txs');
+      return $resource(window.apiPrefix + '/txs');
   });

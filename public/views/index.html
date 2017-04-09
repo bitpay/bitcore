@@ -1,13 +1,13 @@
 <div class="alert alert-danger" data-ng-show="flashMessage">
   {{$root.flashMessage}}
 </div>
-<div data-ng-include src="'/views/includes/connection.html'"></div>
+<div data-ng-include src="'views/includes/connection.html'"></div>
 <section data-ng-controller="IndexController" data-ng-init="index()">
   <div class="container">
     <div id="home" class="row">
       <div class="col-xs-12 col-md-8">
 
-        <div id="search-form-mobile" class="visible-xs" data-ng-include src="'/views/includes/search.html'"></div>
+        <div id="search-form-mobile" class="visible-xs" data-ng-include src="'views/includes/search.html'"></div>
 
         <h1 translate>Latest Blocks</h1>
         <table class="table table-hover table-striped" style="table-layout: fixed">
@@ -24,7 +24,7 @@
           <tr data-ng-show="!blocks.length"><td colspan="4" translate>Waiting for blocks...</td></tr>
           <tr class="fader" data-ng-repeat='b in blocks'>
             <td>
-              <a href="/block/{{b.hash}}">{{b.height}}</a>
+              <a href="block/{{b.hash}}">{{b.height}}</a>
             </td>
             <td><span class="ellipsis">{{humanSince(b.time)}}</span></td>
             <td class="text-right">{{b.txlength}}</td>
@@ -34,7 +34,7 @@
           </tbody>
         </table>
         <div class="btn-more">
-          <a href="/blocks" class="btn btn-default" translate>See all blocks</a>
+          <a href="blocks" class="btn btn-default" translate>See all blocks</a>
         </div>
 
         <h2 translate>Latest Transactions</h2>
@@ -50,7 +50,7 @@
           <tr data-ng-show="!txs.length"><td colspan="3" translate>Waiting for transactions...</td></tr>
           <tr class="fader" data-ng-repeat='tx in txs'>
             <td>
-              <a class="ellipsis" href="/tx/{{tx.txid}}">{{tx.txid}}</a>
+              <a class="ellipsis" href="tx/{{tx.txid}}">{{tx.txid}}</a>
             </td>
             <td class="text-right"><span class="ellipsis">{{$root.currency.getConvertion(tx.valueOut) || tx.valueOut + ' BTC'}}</span></td>
           </tr>
@@ -61,9 +61,9 @@
 
       <div class="col-xs-12 col-md-4 col-gray">
         <h2 translate>About</h2>
-        <p translate><strong>insight</strong>  is an <a href="http://live.insight.is/"
-          target="_blank">open-source Bitcoin blockchain explorer</a> with complete REST and websocket APIs that can be used for writing web wallets and other apps  that need more advanced blockchain queries than provided by bitcoind RPC.  Check out the <a href="http://github.com/bitpay/insight" target="_blank">source code</a>.</p>
-        <p translate><strong>insight</strong> is still in development, so be sure to report any bugs and provide feedback for improvement at our <a href="https://github.com/bitpay/insight/issues" target="_blank">github issue tracker</a>.</p>
+        <p translate><strong>insight</strong>  is an <a href="https://insight.is/"
+          target="_blank">open-source Bitcoin blockchain explorer</a> with complete REST and websocket APIs that can be used for writing web wallets and other apps  that need more advanced blockchain queries than provided by bitcoind RPC.  Check out the <a href="https://github.com/bitpay/insight-ui" target="_blank">source code</a>.</p>
+        <p translate><strong>insight</strong> is still in development, so be sure to report any bugs and provide feedback for improvement at our <a href="https://github.com/bitpay/insight-ui/issues" target="_blank">github issue tracker</a>.</p>
         <div id="powered" class="row">
           <div class="powered-text">
             <small class="text-muted" translate>Powered by</small>

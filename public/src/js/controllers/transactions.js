@@ -56,11 +56,14 @@ function($scope, $rootScope, $routeParams, $location, Global, Transaction, Trans
 
       tmp[addr].doubleSpentTxID = tmp[addr].doubleSpentTxID   || items[i].doubleSpentTxID;
       tmp[addr].doubleSpentIndex = tmp[addr].doubleSpentIndex || items[i].doubleSpentIndex;
-      tmp[addr].unconfirmedInput += items[i].unconfirmedInput;
       tmp[addr].dbError = tmp[addr].dbError || items[i].dbError;
       tmp[addr].valueSat += Math.round(items[i].value * COIN);
       tmp[addr].items.push(items[i]);
       tmp[addr].notAddr = notAddr;
+
+      if (items[i].unconfirmedInput)
+        tmp[addr].unconfirmedInput = true;
+
       tmp[addr].count++;
     }
 
@@ -186,7 +189,7 @@ angular.module('insight.transactions').controller('SendRawTransactionController'
       rawtx: $scope.transaction
     };
     $scope.status = 'loading';
-    $http.post('/api/tx/send', postData)
+    $http.post(window.apiPrefix + '/tx/send', postData)
       .success(function(data, status, headers, config) {
         if(typeof(data.txid) != 'string') {
           // API returned 200 but the format is not known
