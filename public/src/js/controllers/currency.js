@@ -26,9 +26,9 @@ angular.module('insight.currency').controller('CurrencyController',
         } else if (this.symbol === 'bits') {
           this.factor = 1000000;
           response = _roundFloat((value * this.factor), 2);
-        } else {
+        } else { // assumes symbol is BTC
           this.factor = 1;
-          response = value;
+          response = _roundFloat((value * this.factor), 8);
         }
         // prevent sci notation
         if (response < 1e-7) response=response.toFixed(8);
