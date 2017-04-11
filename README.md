@@ -117,6 +117,7 @@ Returns:
 
 
 `/v1/wallets/:id/copayers/`: Join a Wallet in creation
+
 Required Arguments:
  * walletId: Id of the wallet to join
  * name: Copayer Name
@@ -129,6 +130,7 @@ Returns:
  * wallet: Object with wallet's information
 
 `/v1/txproposals/`: Add a new transaction proposal
+
 Required Arguments:
  * toAddress: RCPT Bitcoin address.
  * amount: amount (in satoshis) of the mount proposed to be transfered
