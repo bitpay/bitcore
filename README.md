@@ -19,10 +19,10 @@ BWS is been used in production enviroments for [Copay Wallet](https://copay.io),
 
 More about BWS at https://blog.bitpay.com/announcing-the-bitcore-wallet-suite/
 
-# Install
+# Getting Started
 ```
- npm install bitcore-wallet-service
- npm start
+ git clone https://github.com/bitpay/bitcore-wallet-service.git
+ cd bitcore-wallet-service && npm start
 ```
 
 This will launch the BWS service (with default settings) at `http://localhost:3232/bws/api`.
@@ -117,6 +117,7 @@ Returns:
 
 
 `/v1/wallets/:id/copayers/`: Join a Wallet in creation
+
 Required Arguments:
  * walletId: Id of the wallet to join
  * name: Copayer Name
@@ -129,6 +130,7 @@ Returns:
  * wallet: Object with wallet's information
 
 `/v1/txproposals/`: Add a new transaction proposal
+
 Required Arguments:
  * toAddress: RCPT Bitcoin address.
  * amount: amount (in satoshis) of the mount proposed to be transfered
