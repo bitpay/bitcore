@@ -4139,6 +4139,9 @@ describe('Wallet service', function() {
           }],
         }];
         helpers.stubHistory(txs);
+        helpers.stubFeeLevels({
+          24: 10000,
+        });
         server.editTxNote({
           txid: '123',
           body: 'just some note'
@@ -4341,6 +4344,9 @@ describe('Wallet service', function() {
           }],
         }];
         helpers.stubHistory(txs);
+        helpers.stubFeeLevels({
+          24: 10000,
+        });
         server.getTxHistory({}, function(err, txs) {
           should.not.exist(err);
           should.exist(txs);
@@ -5984,6 +5990,9 @@ describe('Wallet service', function() {
         helpers.createAddresses(server, wallet, 1, 1, function(main, change) {
           mainAddresses = main;
           changeAddresses = change;
+          helpers.stubFeeLevels({
+            24: 10000,
+          });
           done();
         });
       });
@@ -6003,7 +6012,6 @@ describe('Wallet service', function() {
         done();
       });
     });
-
     it('should get tx history for incoming txs', function(done) {
       server._normalizeTxHistory = sinon.stub().returnsArg(0);
       var txs = [{
@@ -6297,6 +6305,79 @@ describe('Wallet service', function() {
         done();
       });
     });
+    it('should set lowFees atribute for sub-superEconomy level fees', function(done) {
+      helpers.stubFeeLevels({
+        24: 10000,
+      });
+      server._normalizeTxHistory = sinon.stub().returnsArg(0);
+      var txs = [{
+        txid: '1',
+        confirmations: 1,
+        fees: 100,
+        time: 20,
+        inputs: [{
+          address: 'external',
+          amount: 500,
+        }],
+        outputs: [{
+          address: mainAddresses[0].address,
+          amount: 200,
+        }],
+        size: 500,
+      }, {
+        txid: '2',
+        confirmations: 1,
+        fees: 6000,
+        time: 20,
+        inputs: [{
+          address: 'external',
+          amount: 500,
+        }],
+        outputs: [{
+          address: mainAddresses[0].address,
+          amount: 200,
+        }],
+        size: 500,
+      }];
+      helpers.stubHistory(txs);
+      server.getTxHistory({}, function(err, txs) {
+        should.not.exist(err);
+        var tx = txs[0];
+        tx.feePerKb.should.equal(200);
+        tx.lowFees.should.be.true;
+        var tx = txs[1];
+        tx.feePerKb.should.equal(12000);
+        tx.lowFees.should.be.false;
+        done();
+      });
+    });
+    it('should get tx history even if fee levels are unavailable', function(done) {
+      blockchainExplorer.estimateFee = sinon.stub().yields('dummy error');
+      server._normalizeTxHistory = sinon.stub().returnsArg(0);
+      var txs = [{
+        txid: '1',
+        confirmations: 1,
+        fees: 100,
+        time: 20,
+        inputs: [{
+          address: 'external',
+          amount: 500,
+        }],
+        outputs: [{
+          address: mainAddresses[0].address,
+          amount: 200,
+        }],
+        size: 500,
+      }];
+      helpers.stubHistory(txs);
+      server.getTxHistory({}, function(err, txs) {
+        should.not.exist(err);
+        var tx = txs[0];
+        tx.feePerKb.should.equal(200);
+        should.not.exist(tx.lowFees);
+        done();
+      });
+    });
   });
 
   describe('#getTxHistory cache', function() {
@@ -6310,6 +6391,9 @@ describe('Wallet service', function() {
         helpers.createAddresses(server, wallet, 1, 1, function(main, change) {
           mainAddresses = main;
           changeAddresses = change;
+          helpers.stubFeeLevels({
+            24: 10000,
+          });
           done();
         });
       });
