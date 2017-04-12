@@ -4139,6 +4139,9 @@ describe('Wallet service', function() {
           }],
         }];
         helpers.stubHistory(txs);
+        helpers.stubFeeLevels({
+          24: 10000,
+        });
         server.editTxNote({
           txid: '123',
           body: 'just some note'
@@ -4341,6 +4344,9 @@ describe('Wallet service', function() {
           }],
         }];
         helpers.stubHistory(txs);
+        helpers.stubFeeLevels({
+          24: 10000,
+        });
         server.getTxHistory({}, function(err, txs) {
           should.not.exist(err);
           should.exist(txs);
@@ -5984,6 +5990,9 @@ describe('Wallet service', function() {
         helpers.createAddresses(server, wallet, 1, 1, function(main, change) {
           mainAddresses = main;
           changeAddresses = change;
+          helpers.stubFeeLevels({
+            24: 10000,
+          });
           done();
         });
       });
@@ -6003,7 +6012,6 @@ describe('Wallet service', function() {
         done();
       });
     });
-
     it('should get tx history for incoming txs', function(done) {
       server._normalizeTxHistory = sinon.stub().returnsArg(0);
       var txs = [{
@@ -6019,6 +6027,7 @@ describe('Wallet service', function() {
           address: mainAddresses[0].address,
           amount: 200,
         }],
+        size: 500,
       }];
       helpers.stubHistory(txs);
       server.getTxHistory({}, function(err, txs) {
@@ -6030,6 +6039,7 @@ describe('Wallet service', function() {
         tx.amount.should.equal(200);
         tx.fees.should.equal(100);
         tx.time.should.equal(20);
+        tx.lowFees.should.be.true;
         done();
       });
     });
@@ -6310,6 +6320,9 @@ describe('Wallet service', function() {
         helpers.createAddresses(server, wallet, 1, 1, function(main, change) {
           mainAddresses = main;
           changeAddresses = change;
+          helpers.stubFeeLevels({
+            24: 10000,
+          });
           done();
         });
       });
