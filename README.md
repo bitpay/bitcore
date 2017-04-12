@@ -19,7 +19,7 @@ BWS is been used in production enviroments for [Copay Wallet](https://copay.io),
 
 More about BWS at https://blog.bitpay.com/announcing-the-bitcore-wallet-suite/
 
-# Get Started
+# Getting Started
 ```
  git clone https://github.com/bitpay/bitcore-wallet-service.git
  cd bitcore-wallet-service && npm start
