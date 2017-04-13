@@ -6305,14 +6305,14 @@ describe('Wallet service', function() {
         done();
       });
     });
-    it('should set lowFees atribute for sub-superEconomy level fees', function(done) {
+    it('should set lowFees atribute for sub-superEconomy level fees on unconfirmed txs', function(done) {
       helpers.stubFeeLevels({
         24: 10000,
       });
       server._normalizeTxHistory = sinon.stub().returnsArg(0);
       var txs = [{
         txid: '1',
-        confirmations: 1,
+        confirmations: 0,
         fees: 100,
         time: 20,
         inputs: [{
@@ -6326,8 +6326,22 @@ describe('Wallet service', function() {
         size: 500,
       }, {
         txid: '2',
-        confirmations: 1,
+        confirmations: 0,
         fees: 6000,
+        time: 20,
+        inputs: [{
+          address: 'external',
+          amount: 500,
+        }],
+        outputs: [{
+          address: mainAddresses[0].address,
+          amount: 200,
+        }],
+        size: 500,
+      }, {
+        txid: '3',
+        confirmations: 6,
+        fees: 100,
         time: 20,
         inputs: [{
           address: 'external',
@@ -6345,9 +6359,12 @@ describe('Wallet service', function() {
         var tx = txs[0];
         tx.feePerKb.should.equal(200);
         tx.lowFees.should.be.true;
-        var tx = txs[1];
+        tx = txs[1];
         tx.feePerKb.should.equal(12000);
         tx.lowFees.should.be.false;
+        tx = txs[2];
+        tx.feePerKb.should.equal(200);
+        should.not.exist(tx.lowFees);
         done();
       });
     });
