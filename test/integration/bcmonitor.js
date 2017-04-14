@@ -87,4 +87,31 @@ describe('Blockchain monitor', function() {
       }, 100);
     });
   });
+
+  it('should not notify copayers of incoming txs more than once', function(done) {
+    server.createAddress({}, function(err, address) {
+      should.not.exist(err);
+
+      var incoming = {
+        txid: '123',
+        vout: [{}],
+      };
+      incoming.vout[0][address.address] = 1500;
+      socket.handlers['tx'](incoming);
+      setTimeout(function() {
+        socket.handlers['tx'](incoming);
+
+        setTimeout(function() {
+          server.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            var notification = _.filter(notifications, {
+              type: 'NewIncomingTx'
+            });
+            notification.length.should.equal(1);
+            done();
+          });
+        }, 100);
+      }, 50);
+    });
+  });
 });
