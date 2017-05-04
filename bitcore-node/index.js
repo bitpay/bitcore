@@ -3,19 +3,15 @@
 var BaseService = require('./service');
 var inherits = require('util').inherits;
 var fs = require('fs');
+var pkg = require('../package');
 
 var InsightUI = function(options) {
   BaseService.call(this, options);
-  if (typeof options.apiPrefix !== 'undefined') {
-    this.apiPrefix = options.apiPrefix;
-  } else {
-    this.apiPrefix = 'insight-api';
-  }
-  if (typeof options.routePrefix !== 'undefined') {
-    this.routePrefix = options.routePrefix;
-  } else {
-    this.routePrefix = 'insight';
-  }
+  // we don't use the options object for routePrefix and apiPrefix, since the
+  // client must be rebuilt with the proper options. A future version of 
+  // Bitcore should allow for a service "build" step to make this better.
+  this.apiPrefix = pkg.insightConfig.apiPrefix;
+  this.routePrefix = pkg.insightConfig.routePrefix;
 };
 
 InsightUI.dependencies = ['insight-api'];
@@ -23,20 +19,8 @@ InsightUI.dependencies = ['insight-api'];
 inherits(InsightUI, BaseService);
 
 InsightUI.prototype.start = function(callback) {
-
-  var self = this;
-
-  var indexFile = __dirname + '/../public/index.html';
-
-  fs.readFile(indexFile, { encoding: 'utf8' }, function(err, data) {
-
-    if(err) {
-      return callback(err);
-    }
-
-    self.indexFile = self.filterIndexHTML(data);
-    callback();
-  });
+  this.indexFile = this.filterIndexHTML(fs.readFileSync(__dirname + '/../public/index-template.html', {encoding: 'utf8'}));
+  setImmediate(callback);
 };
 
 InsightUI.prototype.getRoutePrefix = function() {
@@ -45,26 +29,19 @@ InsightUI.prototype.getRoutePrefix = function() {
 
 InsightUI.prototype.setupRoutes = function(app, express) {
   var self = this;
-
-  app.use('/', function(req, res, next){
-
-    if (req.url === '/') {
-      res.send(self.indexFile);
-    } else {
-      express.static(__dirname + '/../public')(req, res, next);
-    }
-
+  app.use(express.static(__dirname + '/../public'));
+  // if not in found, fall back to indexFile (404 is handled client-side)
+  app.use(function(req, res, next) {
+    res.setHeader('Content-Type', 'text/html');
+    res.send(self.indexFile);
   });
 };
 
 InsightUI.prototype.filterIndexHTML = function(data) {
-  var transformed = data
-    .replace(/apiPrefix = '\/api'/, "apiPrefix = '/" + this.apiPrefix + "'");
-
-  if (this.routePrefix) {
-    transformed = transformed.replace(/<base href=\"\/\"/, '<base href="/' + this.routePrefix + '/"');
+  var transformed = data;
+  if (this.routePrefix !== '') {
+    transformed = transformed.replace('<base href="/"', '<base href="/' + this.routePrefix + '/"');
   }
-
   return transformed;
 };
 

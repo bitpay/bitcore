@@ -2,8 +2,8 @@
 
 angular.module('insight.blocks')
   .factory('Block',
-    function($resource) {
-    return $resource(window.apiPrefix + '/block/:blockHash', {
+    function($resource, Api) {
+    return $resource(Api.apiPrefix + '/block/:blockHash', {
       blockHash: '@blockHash'
     }, {
       get: {
@@ -22,10 +22,10 @@ angular.module('insight.blocks')
     });
   })
   .factory('Blocks',
-    function($resource) {
-      return $resource(window.apiPrefix + '/blocks');
+    function($resource, Api) {
+      return $resource(Api.apiPrefix + '/blocks');
   })
   .factory('BlockByHeight',
-    function($resource) {
-      return $resource(window.apiPrefix + '/block-index/:blockHeight');
+    function($resource, Api) {
+      return $resource(Api.apiPrefix + '/block-index/:blockHeight');
   });

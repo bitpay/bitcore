@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('insight.messages').controller('VerifyMessageController',
-  function($scope, $http) {
+  function($scope, $http, Api) {
   $scope.message = {
     address: '',
     signature: '',
@@ -22,7 +22,7 @@ angular.module('insight.messages').controller('VerifyMessageController',
   $scope.verify = function() {
     $scope.verification.status = 'loading';
     $scope.verification.address = $scope.message.address;
-    $http.post(window.apiPrefix + '/messages/verify', $scope.message)
+    $http.post(Api.apiPrefix + '/messages/verify', $scope.message)
       .success(function(data, status, headers, config) {
         if(typeof(data.result) != 'boolean') {
           // API returned 200 but result was not true or false

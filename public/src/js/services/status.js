@@ -2,16 +2,16 @@
 
 angular.module('insight.status')
   .factory('Status',
-    function($resource) {
-      return $resource(window.apiPrefix + '/status', {
+    function($resource, Api) {
+      return $resource(Api.apiPrefix + '/status', {
         q: '@q'
       });
     })
   .factory('Sync',
-    function($resource) {
-      return $resource(window.apiPrefix + '/sync');
+    function($resource, Api) {
+      return $resource(Api.apiPrefix + '/sync');
     })
   .factory('PeerSync',
-    function($resource) {
-      return $resource(window.apiPrefix + '/peer');
+    function($resource, Api) {
+      return $resource(Api.apiPrefix + '/peer');
     });
