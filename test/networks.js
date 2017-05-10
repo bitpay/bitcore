@@ -23,12 +23,11 @@ describe('Networks', function() {
     networks.testnet.regtestEnabled.should.equal(true);
 
     networks.disableRegtest();
-    networks.testnet.networkMagic.should.deep.equal(new Buffer('fcc1b7dc', 'hex'));
-    networks.testnet.port.should.equal(19333);
+    networks.testnet.networkMagic.should.deep.equal(new Buffer('fdd2c8f1', 'hex'));
+    networks.testnet.port.should.equal(19335);
     networks.testnet.dnsSeeds.should.deep.equal([
       'testnet-seed.litecointools.com',
-      'testnet-seed.ltc.xurious.com',
-      'testnet-seed.weminemnc.com'
+      'seed-b.litecoin.loshan.co.uk'
     ]);
   });
 

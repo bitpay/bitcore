@@ -77,19 +77,19 @@ describe('Address', function() {
 
   // livenet p2sh
   var P2SHLivenet = [
-    '342ftSRCvFHfCeFFBuz4xwbeqnDw6BGUey',
-    '33vt8ViH5jsr115AGkW6cEmEz9MpvJSwDk',
-    '37Sp6Rv3y4kVd1nQ1JV5pfqXccHNyZm1x3',
-    '3QjYXhTkvuj8qPaXHTTWb5wjXhdsLAAWVy',
-    '\t \n3QjYXhTkvuj8qPaXHTTWb5wjXhdsLAAWVy \r'
+    'MAEpCKqAsN9619X9HnyQnar4AUpP4cDRLk',
+    'MA92SP8F2rjGoWM4NdVSRt1eJqxGzML8LA',
+    'MDexQKL1vBbvRX4J7BUReK5vwJspyKC14q',
+    'MWwgqasit2aZdtrRPLSrQjC8rQEKMrGPit',
+    '\t \nMWwgqasit2aZdtrRPLSrQjC8rQEKMrGPit \r'
   ];
 
   // testnet p2sh
   var P2SHTestnet = [
-    '2N7FuwuUuoTBrDFdrAZ9KxBmtqMLxce9i1C',
-    '2NEWDzHWwY5ZZp8CQWbB7ouNMLqCia6YRda',
-    '2MxgPqX1iThW3oZVk9KoFcE5M4JpiETssVN',
-    '2NB72XtkjpnATMggui83aEtPawyyKvnbX2o'
+    'Qacg4vM9pZEwMSPtnfBM2tDKyjnnXXYc77',
+    'Qhrz7JPBZBcexJxT8hD8tbonVDeYUnGspZ',
+    'QS39xXsxUoZ8wkFnmRqGgvWnChGYCmqoPJ',
+    'QeTneucyqtDYVsSxLE5bKaq26NR9uWbqPL'
   ];
 
   //livenet bad checksums
@@ -119,17 +119,17 @@ describe('Address', function() {
   describe('validation', function() {
 
     it('getValidationError detects network mismatchs', function() {
-      var error = Address.getValidationError('37BahqRsFrAd3qLiNNwLNV3AWMRD7itxTo', 'testnet');
+      var error = Address.getValidationError('MDPj1iqqCy23rLccUFvgC8HZq41fB8EH4y', 'testnet');
       should.exist(error);
     });
 
     it('isValid returns true on a valid address', function() {
-      var valid = Address.isValid('37BahqRsFrAd3qLiNNwLNV3AWMRD7itxTo', 'livenet');
+      var valid = Address.isValid('MDPj1iqqCy23rLccUFvgC8HZq41fB8EH4y', 'livenet');
       valid.should.equal(true);
     });
 
     it('isValid returns false on network mismatch', function() {
-      var valid = Address.isValid('37BahqRsFrAd3qLiNNwLNV3AWMRD7itxTo', 'testnet');
+      var valid = Address.isValid('MDPj1iqqCy23rLccUFvgC8HZq41fB8EH4y', 'testnet');
       valid.should.equal(false);
     });
 
@@ -390,9 +390,9 @@ describe('Address', function() {
       it('should make this address from a p2sh input script', function() {
         var s = Script.fromString('OP_HASH160 20 0xa6ed4af315271e657ee307828f54a4365fa5d20f OP_EQUAL');
         var a = Address.fromScript(s, 'livenet');
-        a.toString().should.equal('3GueMn6ruWVfQTN4XKBGEbCbGLwRSUhfnS');
+        a.toString().should.equal('MP7nffWprdM6CxdxdCAc4ESzb3XsQQPZMp');
         var b = new Address(s, 'livenet');
-        b.toString().should.equal('3GueMn6ruWVfQTN4XKBGEbCbGLwRSUhfnS');
+        b.toString().should.equal('MP7nffWprdM6CxdxdCAc4ESzb3XsQQPZMp');
       });
 
       it('returns the same address if the script is a pay to public key hash out', function() {
@@ -401,7 +401,7 @@ describe('Address', function() {
         Address(script, Networks.livenet).toString().should.equal(address);
       });
       it('returns the same address if the script is a pay to script hash out', function() {
-        var address = '3BYmEwgV2vANrmfRymr1mFnHXgLjD6gAWm';
+        var address = 'MHkuYq6Sz31ofGwL5eqMau2grNwBCLJo11';
         var script = Script.buildScriptHashOut(new Address(address));
         Address(script, Networks.livenet).toString().should.equal(address);
       });
@@ -535,14 +535,14 @@ describe('Address', function() {
 
     it('can create an address from a set of public keys', function() {
       var address = Address.createMultisig(publics, 2, Networks.livenet);
-      address.toString().should.equal('3FtqPRirhPvrf7mVUSkygyZ5UuoAYrTW3y');
+      address.toString().should.equal('MN6yhK8peWnHTd3PaKkKWcoUocPcWD9Cmx');
       address = new Address(publics, 2, Networks.livenet);
-      address.toString().should.equal('3FtqPRirhPvrf7mVUSkygyZ5UuoAYrTW3y');
+      address.toString().should.equal('MN6yhK8peWnHTd3PaKkKWcoUocPcWD9Cmx');
     });
 
     it('works on testnet also', function() {
       var address = Address.createMultisig(publics, 2, Networks.testnet);
-      address.toString().should.equal('2N7T3TAetJrSCruQ39aNrJvYLhG1LJosujf');
+      address.toString().should.equal('QaooaBX8KxVJ16A5mgQsPcymqeTAFqTmhh');
     });
 
     it('can also be created by Address.createMultisig', function() {
