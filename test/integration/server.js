@@ -7341,4 +7341,115 @@ describe('Wallet service', function() {
       });
     });
   });
+
+  describe('Tx confirmation notifications', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 3, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should subscribe copayer to a tx confirmation', function(done) {
+      helpers.getAuthServer(wallet.copayers[0].id, function(server) {
+        should.exist(server);
+        server.txConfirmationSubscribe({
+          txid: '123',
+        }, function(err) {
+          should.not.exist(err);
+          server.storage.fetchActiveTxConfirmationSubs(wallet.copayers[0].id, function(err, subs) {
+            should.not.exist(err);
+            should.exist(subs);
+            subs.length.should.equal(1);
+            var s = subs[0];
+            s.txid.should.equal('123');
+            s.nbConfirmations.should.equal(1);
+            s.isActive.should.be.true;
+            done();
+          });
+        });
+      });
+    });
+    it('should overwrite last subscription', function(done) {
+      helpers.getAuthServer(wallet.copayers[0].id, function(server) {
+        should.exist(server);
+        server.txConfirmationSubscribe({
+          txid: '123',
+        }, function(err) {
+          server.txConfirmationSubscribe({
+            txid: '123',
+            nbConfirmations: 6,
+          }, function(err) {
+            should.not.exist(err);
+            server.storage.fetchActiveTxConfirmationSubs(wallet.copayers[0].id, function(err, subs) {
+              should.not.exist(err);
+              should.exist(subs);
+              subs.length.should.equal(1);
+              var s = subs[0];
+              s.txid.should.equal('123');
+              s.nbConfirmations.should.equal(6);
+              s.isActive.should.be.true;
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('should unsubscribe copayer to the specified tx', function(done) {
+      helpers.getAuthServer(wallet.copayers[0].id, function(server) {
+        should.exist(server);
+        async.series([
+
+          function(next) {
+            server.txConfirmationSubscribe({
+              txid: '123',
+            }, next);
+          },
+          function(next) {
+            server.txConfirmationSubscribe({
+              txid: '456',
+            }, next);
+          },
+          function(next) {
+            server.txConfirmationUnsubscribe({
+              txid: '123',
+            }, next);
+          },
+          function(next) {
+            server.storage.fetchActiveTxConfirmationSubs(wallet.copayers[0].id, function(err, subs) {
+              should.not.exist(err);
+              should.exist(subs);
+              subs.length.should.equal(1);
+              var s = subs[0];
+              s.txid.should.equal('456');
+              next();
+            });
+          },
+          function(next) {
+            helpers.getAuthServer(wallet.copayers[1].id, function(server) {
+              server.txConfirmationUnsubscribe({
+                txid: '456'
+              }, next);
+            });
+          },
+          function(next) {
+            server.storage.fetchActiveTxConfirmationSubs(wallet.copayers[0].id, function(err, subs) {
+              should.not.exist(err);
+              should.exist(subs);
+              subs.length.should.equal(1);
+              var s = subs[0];
+              s.txid.should.equal('456');
+              next();
+            });
+          },
+        ], function(err) {
+          should.not.exist(err);
+          done();
+        });
+      });
+    });
+  });
 });
