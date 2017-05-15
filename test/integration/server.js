@@ -1311,7 +1311,7 @@ describe('Wallet service', function() {
         var MAX_MAIN_ADDRESS_GAP_old = Defaults.MAX_MAIN_ADDRESS_GAP;
         Defaults.MAX_MAIN_ADDRESS_GAP = 2;
         helpers.stubAddressActivity([]);
-        async.map(_.range(2), function(i, next) {
+        async.mapSeries(_.range(2), function(i, next) {
           server.createAddress({}, next);
         }, function(err, addresses) {
           addresses.length.should.equal(2);
