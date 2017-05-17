@@ -7365,7 +7365,6 @@ describe('Wallet service', function() {
             subs.length.should.equal(1);
             var s = subs[0];
             s.txid.should.equal('123');
-            s.nbConfirmations.should.equal(1);
             s.isActive.should.be.true;
             done();
           });
@@ -7380,17 +7379,12 @@ describe('Wallet service', function() {
         }, function(err) {
           server.txConfirmationSubscribe({
             txid: '123',
-            nbConfirmations: 6,
           }, function(err) {
             should.not.exist(err);
             server.storage.fetchActiveTxConfirmationSubs(wallet.copayers[0].id, function(err, subs) {
               should.not.exist(err);
               should.exist(subs);
               subs.length.should.equal(1);
-              var s = subs[0];
-              s.txid.should.equal('123');
-              s.nbConfirmations.should.equal(6);
-              s.isActive.should.be.true;
               done();
             });
           });

@@ -114,4 +114,45 @@ describe('Blockchain monitor', function() {
       }, 50);
     });
   });
+
+  it('should notify copayers of tx confirmation', function(done) {
+    server.createAddress({}, function(err, address) {
+      should.not.exist(err);
+
+      var incoming = {
+        txid: '123',
+        vout: [{}],
+      };
+      incoming.vout[0][address.address] = 1500;
+
+      server.txConfirmationSubscribe({
+        txid: '123'
+      }, function(err) {
+        should.not.exist(err);
+
+        blockchainExplorer.getTxidsInBlock = sinon.stub().callsArgWith(1, null, ['123', '456']);
+        socket.handlers['block']('block1');
+
+        setTimeout(function() {
+          blockchainExplorer.getTxidsInBlock = sinon.stub().callsArgWith(1, null, ['123', '456']);
+          socket.handlers['block']('block2');
+
+          setTimeout(function() {
+            server.getNotifications({}, function(err, notifications) {
+              should.not.exist(err);
+              var notifications = _.filter(notifications, {
+                type: 'TxConfirmation'
+              });
+              notifications.length.should.equal(1);
+              var n = notifications[0];
+              n.walletId.should.equal(wallet.id);
+              n.creatorId.should.equal(server.copayerId);
+              n.data.txid.should.equal('123');
+              done();
+            });
+          }, 50);
+        }, 50);
+      });
+    });
+  });
 });
