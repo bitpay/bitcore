@@ -295,6 +295,38 @@ describe('Email notifications', function() {
       });
     });
 
+    it('should notify copayers when tx is confirmed if they are subscribed', function(done) {
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+
+        server.txConfirmationSubscribe({
+          txid: '123'
+        }, function(err) {
+          should.not.exist(err);
+
+          // Simulate tx confirmation notification
+          server._notify('TxConfirmation', {
+            txid: '123',
+          }, function(err) {
+            setTimeout(function() {
+              var calls = mailerStub.sendMail.getCalls();
+              calls.length.should.equal(1);
+              var email = calls[0].args[0];
+              email.to.should.equal('copayer1@domain.com');
+              email.from.should.equal('bws@dummy.net');
+              email.subject.should.contain('Transaction confirmed');
+              server.storage.fetchUnsentEmails(function(err, unsent) {
+                should.not.exist(err);
+                unsent.should.be.empty;
+                done();
+              });
+            }, 100);
+          });
+        });
+      });
+    });
+
+
     it('should notify each email address only once', function(done) {
       // Set same email address for copayer1 and copayer2
       server.savePreferences({
