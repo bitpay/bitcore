@@ -8,6 +8,14 @@ Infrastructure to build Bitcoin and blockchain-based applications for the next g
 
 **Note:** If you're looking for the Bitcore Library please see: https://github.com/bitpay/bitcore-lib
 
+## Prerequisites
+
+- GNU/Linux x86_32/x86_64, or OSX 64bit *(for bitcoind distributed binaries)*
+- Node.js v0.10, v0.12 or v4
+- ZeroMQ *(libzmq3-dev for Ubuntu/Debian or [zeromq on OSX](http://brewformulas.org/Zeromq))*
+- ~200GB of disk storage
+- ~8GB of RAM
+
 ## Getting Started
 
 Before you begin you'll need to have Node.js v4 or v0.12 installed. There are several options for installation. One method is to use [nvm](https://github.com/creationix/nvm) to easily switch between different versions, or download directly from [Node.js](https://nodejs.org/).
