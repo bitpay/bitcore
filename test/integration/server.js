@@ -4433,6 +4433,35 @@ describe('Wallet service', function() {
         });
       });
     });
+    it('should correctly get send max info when resulting amount is below dust', function(done) {
+      helpers.stubUtxos(server, wallet, [300e-6, 300e-6], function() {
+        server.getSendMaxInfo({
+          feePerKb: 500e2,
+          returnInputs: true,
+        }, function(err, info) {
+          should.not.exist(err);
+          should.exist(info);
+          info.size.should.equal(700);
+          info.fee.should.equal(350e2);
+          info.amount.should.equal(250e2);
+
+          var _min_output_amount = Defaults.MIN_OUTPUT_AMOUNT;
+          Defaults.MIN_OUTPUT_AMOUNT = 300e2;
+          server.getSendMaxInfo({
+            feePerKb: 500e2,
+            returnInputs: true,
+          }, function(err, info) {
+            should.not.exist(err);
+            should.exist(info);
+            info.size.should.equal(0);
+            info.amount.should.equal(0);
+            Defaults.MIN_OUTPUT_AMOUNT = _min_output_amount;
+            done();
+          });
+        });
+      });
+    });
+
     describe('Fee level', function() {
       it('should correctly get send max info using feeLevel', function(done) {
         helpers.stubFeeLevels({
