@@ -158,6 +158,29 @@ describe('Push notifications', function() {
         });
       });
     });
+
+    it('should notify copayers when tx is confirmed if they are subscribed', function(done) {
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+
+        server.txConfirmationSubscribe({
+          txid: '123'
+        }, function(err) {
+          should.not.exist(err);
+
+          // Simulate tx confirmation notification
+          server._notify('TxConfirmation', {
+            txid: '123',
+          }, function(err) {
+            setTimeout(function() {
+              var calls = requestStub.getCalls();
+              calls.length.should.equal(1);
+              done();
+            }, 100);
+          });
+        });
+      });
+    });
   });
 
   describe('Shared wallet', function() {

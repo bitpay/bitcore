@@ -1311,7 +1311,7 @@ describe('Wallet service', function() {
         var MAX_MAIN_ADDRESS_GAP_old = Defaults.MAX_MAIN_ADDRESS_GAP;
         Defaults.MAX_MAIN_ADDRESS_GAP = 2;
         helpers.stubAddressActivity([]);
-        async.map(_.range(2), function(i, next) {
+        async.mapSeries(_.range(2), function(i, next) {
           server.createAddress({}, next);
         }, function(err, addresses) {
           addresses.length.should.equal(2);
@@ -7331,6 +7331,111 @@ describe('Wallet service', function() {
               subs.length.should.equal(1);
               var s = subs[0];
               s.token.should.equal('DEVICE_TOKEN');
+              next();
+            });
+          },
+        ], function(err) {
+          should.not.exist(err);
+          done();
+        });
+      });
+    });
+  });
+
+  describe('Tx confirmation notifications', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 3, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should subscribe copayer to a tx confirmation', function(done) {
+      helpers.getAuthServer(wallet.copayers[0].id, function(server) {
+        should.exist(server);
+        server.txConfirmationSubscribe({
+          txid: '123',
+        }, function(err) {
+          should.not.exist(err);
+          server.storage.fetchActiveTxConfirmationSubs(wallet.copayers[0].id, function(err, subs) {
+            should.not.exist(err);
+            should.exist(subs);
+            subs.length.should.equal(1);
+            var s = subs[0];
+            s.txid.should.equal('123');
+            s.isActive.should.be.true;
+            done();
+          });
+        });
+      });
+    });
+    it('should overwrite last subscription', function(done) {
+      helpers.getAuthServer(wallet.copayers[0].id, function(server) {
+        should.exist(server);
+        server.txConfirmationSubscribe({
+          txid: '123',
+        }, function(err) {
+          server.txConfirmationSubscribe({
+            txid: '123',
+          }, function(err) {
+            should.not.exist(err);
+            server.storage.fetchActiveTxConfirmationSubs(wallet.copayers[0].id, function(err, subs) {
+              should.not.exist(err);
+              should.exist(subs);
+              subs.length.should.equal(1);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('should unsubscribe copayer to the specified tx', function(done) {
+      helpers.getAuthServer(wallet.copayers[0].id, function(server) {
+        should.exist(server);
+        async.series([
+
+          function(next) {
+            server.txConfirmationSubscribe({
+              txid: '123',
+            }, next);
+          },
+          function(next) {
+            server.txConfirmationSubscribe({
+              txid: '456',
+            }, next);
+          },
+          function(next) {
+            server.txConfirmationUnsubscribe({
+              txid: '123',
+            }, next);
+          },
+          function(next) {
+            server.storage.fetchActiveTxConfirmationSubs(wallet.copayers[0].id, function(err, subs) {
+              should.not.exist(err);
+              should.exist(subs);
+              subs.length.should.equal(1);
+              var s = subs[0];
+              s.txid.should.equal('456');
+              next();
+            });
+          },
+          function(next) {
+            helpers.getAuthServer(wallet.copayers[1].id, function(server) {
+              server.txConfirmationUnsubscribe({
+                txid: '456'
+              }, next);
+            });
+          },
+          function(next) {
+            server.storage.fetchActiveTxConfirmationSubs(wallet.copayers[0].id, function(err, subs) {
+              should.not.exist(err);
+              should.exist(subs);
+              subs.length.should.equal(1);
+              var s = subs[0];
+              s.txid.should.equal('456');
               next();
             });
           },
