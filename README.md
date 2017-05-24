@@ -101,6 +101,18 @@ Returns:
  * availableConfirmedAmount: Same as availableAmount for confirmed UTXOs only.
  * byAddress array ['address', 'path', 'amount']: A list of addresses holding funds.
  * totalKbToSendMax: An estimation of the number of KiB required to include all available UTXOs in a tx (including unconfirmed).
+
+`/v1/txnotes/:txid`:  Get user notes associated to the specified transaction.
+Returns:
+ * The note associated to the `txid` as a string.
+
+`/v1/fiatrates/:code`:  Get the fiat rate for the specified ISO 4217 code.
+Optional Arguments:
+ * provider: An identifier representing the source of the rates.
+ * ts: The timestamp for the fiat rate (defaults to now).
+
+Returns:
+ * The fiat exchange rate.
  
 ## POST Endpoints
 `/v1/wallets/`: Create a new Wallet
@@ -172,20 +184,24 @@ Returns:
  Optional Arguments:
  * includeCopayerBranches: Scan all copayer branches following BIP45 recommendation (defaults to false). 
 
-  
+`/v1/txconfirmations/`: Subscribe to receive push notifications when the specified transaction gets confirmed.
+Required Arguments:
+ * txid:  The transaction to subscribe to.
+
+## PUT Endpoints
+`/v1/txnotes/:txid/`: Modify a note for a tx.
+
+
 ## DELETE Endpoints
 `/v1/txproposals/:id/`: Deletes a transaction proposal. Only the creator can delete a TX Proposal, and only if it has no other signatures or rejections
 
  Returns:
  * TX Proposal object. (see [fields on the source code](https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/txproposal.js)). `.id` is probably needed in this case.
+
+`/v1/txconfirmations/:txid`: Unsubscribe from transaction `txid` and no longer listen to its confirmation.
+
    
 # Push Notifications
-## Installation
-
-  In order to use push notifications service, you need install:
-  
-  * [node-pushserver](https://www.npmjs.com/package/node-pushserver)
-
   Recomended to complete config.js file:
   
   * [GCM documentation to get your API key](https://developers.google.com/cloud-messaging/gcm)
@@ -197,7 +213,7 @@ Returns:
 
 
 ## DELETE Endopints
-`/v1/pushnotifications/subscriptions/`: Remove subscriptions for push notifications service from database.
+`/v2/pushnotifications/subscriptions/`: Remove subscriptions for push notifications service from database.
 
  
 
