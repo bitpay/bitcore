@@ -1648,6 +1648,34 @@ describe('client API', function() {
     });
   });
 
+  describe('Tx confirmations', function() {
+    it('should do a post request', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
+        clients[0]._doRequest = sinon.stub().yields(null, {
+          statusCode: 200,
+        });
+        clients[0].txConfirmationSubscribe({
+          txid: '123'
+        }, function(err, res) {
+          should.not.exist(err);
+          should.exist(res);
+          res.statusCode.should.be.equal(200);
+          done();
+        });
+      });
+    });
+
+    it('should do a delete request', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, function() {
+        clients[0]._doRequest = sinon.stub().yields(null);
+        clients[0].txConfirmationUnsubscribe('123', function(err) {
+          should.not.exist(err);
+          done();
+        });
+      });
+    });
+  });
+
   describe('Get send max information', function() {
     var balance;
     beforeEach(function(done) {
