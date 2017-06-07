@@ -26,5 +26,8 @@ FileStorage.prototype.load = function(cb) {
   });
 };
 
+FileStorage.prototype.exists = function(cb) {
+  fs.exists(this.filename, cb);
+};
 
 module.exports = FileStorage;
