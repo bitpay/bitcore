@@ -173,15 +173,32 @@ Utils.saveEncrypted = function(client, filename, cb) {
   });
 };
 
-Utils.saveClient = function(args, client, cb) {
+Utils.saveClient = function(args, client, opts, cb) {
+  if (_.isFunction(opts)) {
+    cb = opts;
+    opts = {};
+  }
+
   var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
+
+  var storage = new FileStorage({
+    filename: filename,
+  });
+
   console.log(' * Saving file', filename);
 
-  if (args.password) {
-    Utils.saveEncrypted(client, filename, cb);
-  } else {
-    Utils.doSave(client, filename, null, cb);
-  };
+  storage.exists(function(exists) {
+    if (exists && opts.doNotOverwrite) {
+      console.log(' * File already exists! Please specify a new filename using the -f option.');
+      return cb();
+    }
+
+    if (args.password) {
+      Utils.saveEncrypted(client, filename, cb);
+    } else {
+      Utils.doSave(client, filename, null, cb);
+    };
+  });
 };
 
 Utils.findOneTxProposal = function(txps, id) {

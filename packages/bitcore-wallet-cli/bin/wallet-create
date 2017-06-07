@@ -40,7 +40,9 @@ utils.getClient(program, {
   }, function(err, secret) {
     utils.die(err);
     console.log(' * ' + _.capitalize(network) + ' Wallet Created.');
-    utils.saveClient(program, client, function() {
+    utils.saveClient(program, client, {
+      doNotOverwrite: true
+    }, function() {
       if (secret) {
         console.log('   - Secret to share:\n\t' + secret);
       }
