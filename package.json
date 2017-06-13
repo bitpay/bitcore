@@ -2,7 +2,7 @@
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "5.2.1",
+  "version": "5.3.0",
   "license": "MIT",
   "keywords": [
     "bitcoin",
