@@ -1,0 +1,18 @@
+<ion-header>
+  <ion-navbar>
+    <button ion-button menuToggle>
+      <ion-icon name="menu"></ion-icon>
+    </button>
+    <ion-title>{{title}}</ion-title>
+  </ion-navbar>
+</ion-header>
+
+<ion-content padding>
+  <clicker-form></clicker-form>
+  <ion-row *ngFor="let clicker of clickerService.getClickers()" class="clickerList">
+    <ion-col width-80><clicker-button [clicker]="clicker"></clicker-button></ion-col>
+    <ion-col>
+      <button ion-button block color="danger" outline (click)="clickerService.removeClicker(clicker.id)"><ion-icon name="trash"></ion-icon></button>
+    </ion-col>
+  </ion-row>
+</ion-content>

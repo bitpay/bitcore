@@ -1,0 +1,13 @@
+<ion-header>
+  <ion-navbar>
+    <button ion-button menuToggle>
+      <ion-icon name="menu"></ion-icon>
+    </button>
+    <ion-title>{{title}}</ion-title>
+  </ion-navbar>
+</ion-header>
+
+<ion-content padding class="message bye-ionic">
+  <button ion-button (click)="showSimpleAlert()">Show Simple Alert</button>
+  <button ion-button (click)="showMoreAdvancedAlert()">Show More Advanced Alert</button>
+</ion-content>
