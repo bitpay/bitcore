@@ -1,7 +1,6 @@
 {
-  "name": "Clicker",
-  "author": "Stephen Hazleton",
-  "homepage": "https://github.com/lathonez/clicker",
+  "name": "insight-ui",
+  "version": "0.5.0",
   "private": true,
   "scripts": {
     "clean": "ionic-app-scripts clean",
@@ -9,13 +8,12 @@
     "ionic:build": "ionic-app-scripts build",
     "ionic:serve": "ionic-app-scripts serve",
     "e2e": "ionic-app-scripts build && protractor",
-    "postinstall": "mkdirp www && cordova prepare && webdriver-manager update",
+    "postinstall": "mkdirp www && webdriver-manager update",
     "start": "ionic serve",
     "test": "ng test",
     "test-coverage": "ng test --code-coverage",
-    "test-ci": "ng test --watch=false --code-coverage"
+    "test-ci": "ng test --watch=false --code-coverage && npm run e2e"
   },
-  "version": "2.15.0",
   "dependencies": {
     "@angular/common": "4.1.2",
     "@angular/compiler": "4.1.2",
@@ -58,19 +56,5 @@
     "tslint-eslint-rules": "3.2.3",
     "typescript": "2.3.3"
   },
-  "cordovaPlugins": [
-    "cordova-plugin-whitelist",
-    "cordova-plugin-console",
-    "cordova-plugin-statusbar",
-    "cordova-plugin-device",
-    "cordova-plugin-splashscreen",
-    "ionic-plugin-keyboard"
-  ],
-  "cordovaPlatforms": [],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/lathonez/clicker.git"
-  },
-  "license": "MIT",
-  "description": "Clicker: An Ionic project"
+  "license": "MIT"
 }
