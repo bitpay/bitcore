@@ -103,6 +103,7 @@ describe('Wallet service', function() {
           message: 'hello world',
           signature: sig,
           clientVersion: 'bwc-2.0.0',
+          walletId: '123',
         }, function(err, server) {
           should.not.exist(err);
           server.walletId.should.equal(wallet.id);
@@ -136,6 +137,36 @@ describe('Wallet service', function() {
         }, function(err, server) {
           err.code.should.equal('NOT_AUTHORIZED');
           err.message.should.contain('Invalid signature');
+          done();
+        });
+      });
+    });
+
+    it('should get server instance for support staff', function(done) {
+      helpers.createAndJoinWallet(1, 1, function(s, wallet) {
+        var collections = require('../../lib/storage').collections;
+        s.storage.db.collection(collections.COPAYERS_LOOKUP).update({
+          copayerId: wallet.copayers[0].id
+        }, {
+          $set: {
+            isSupportStaff: true
+          }
+        });
+
+        var xpriv = TestData.copayers[0].xPrivKey;
+        var priv = TestData.copayers[0].privKey_1H_0;
+
+        var sig = helpers.signMessage('hello world', priv);
+
+        WalletService.getInstanceWithAuth({
+          copayerId: wallet.copayers[0].id,
+          message: 'hello world',
+          signature: sig,
+          walletId: '123',
+        }, function(err, server) {
+          should.not.exist(err);
+          server.walletId.should.equal('123');
+          server.copayerId.should.equal(wallet.copayers[0].id);
           done();
         });
       });
