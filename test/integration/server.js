@@ -4395,7 +4395,6 @@ describe('Wallet service', function() {
     });
   });
 
-
   describe('#getSendMaxInfo', function() {
     var server, wallet;
     beforeEach(function(done) {
@@ -5240,7 +5239,6 @@ describe('Wallet service', function() {
         });
       });
     });
-
   });
 
   describe('Tx proposal workflow', function() {
@@ -7474,6 +7472,109 @@ describe('Wallet service', function() {
           should.not.exist(err);
           done();
         });
+      });
+    });
+  });
+
+  describe('#getWalletFromIdentifier', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 1, {}, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should get wallet from id', function(done) {
+      server.getWalletFromIdentifier({
+        identifier: wallet.id
+      }, function(err, w) {
+        should.not.exist(err);
+        should.exist(w);
+        w.id.should.equal(wallet.id);
+        done();
+      });
+    });
+    it('should get wallet from address', function(done) {
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+        should.exist(address);
+        server.getWalletFromIdentifier({
+          identifier: address.address
+        }, function(err, w) {
+          should.not.exist(err);
+          should.exist(w);
+          w.id.should.equal(wallet.id);
+          done();
+        });
+      });
+    });
+    it('should get wallet from tx proposal', function(done) {
+      helpers.stubUtxos(server, wallet, '1 btc', function() {
+        helpers.stubBroadcast();
+        var txOpts = {
+          outputs: [{
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 1000e2
+          }],
+          feePerKb: 100e2,
+          message: 'some message',
+        };
+        helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
+          should.exist(txp);
+          var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+          server.signTx({
+            txProposalId: txp.id,
+            signatures: signatures,
+          }, function(err) {
+            should.not.exist(err);
+            server.getPendingTxs({}, function(err, txps) {
+              should.not.exist(err);
+              txp = txps[0];
+              server.getWalletFromIdentifier({
+                identifier: txp.txid
+              }, function(err, w) {
+                should.not.exist(err);
+                should.exist(w);
+                w.id.should.equal(wallet.id);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+    it('should get wallet from incoming txid', function(done) {
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+        should.exist(address);
+        blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, {
+          txid: '999',
+          vout: [{
+            scriptPubKey: {
+              addresses: [address.address]
+            }
+          }],
+        });
+        server.getWalletFromIdentifier({
+          identifier: '999'
+        }, function(err, w) {
+          should.not.exist(err);
+          should.exist(w);
+          w.id.should.equal(wallet.id);
+          done();
+        });
+      });
+    });
+    it('should return nothing if identifier not associated with a wallet', function(done) {
+      blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
+      server.getWalletFromIdentifier({
+        identifier: 'dummy'
+      }, function(err, w) {
+        should.not.exist(err);
+        should.not.exist(w);
+        done();
       });
     });
   });
