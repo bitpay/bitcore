@@ -258,18 +258,20 @@ Utils.configureCommander = function(program) {
 
 Utils.UNITS = {
   btc: {
+    name: 'btc',
     toSatoshis: 100000000,
     maxDecimals: 8,
     minDecimals: 8,
   },
   bit: {
+    name: 'bit',
     toSatoshis: 100,
     maxDecimals: 2,
     minDecimals: 2,
   },
 };
 
-Utils.formatAmount = function(satoshis, unit, opts) {
+Utils.renderAmount = function(satoshis, unit, opts) {
   function clipDecimals(number, decimals) {
     var x = number.toString().split('.');
     var d = (x[1] || '0').substring(0, decimals);
@@ -293,9 +295,9 @@ Utils.formatAmount = function(satoshis, unit, opts) {
 
   opts = opts || {};
 
-  var u = Utils.UNITS[unit];
+  var u = Utils.UNITS[unit || 'bit'];
   var amount = clipDecimals((satoshis / u.toSatoshis), u.maxDecimals).toFixed(u.maxDecimals);
-  return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', u.minDecimals);
+  return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', u.minDecimals) + ' ' + u.name;
 };
 
 Utils.renderTxProposals = function(txps) {

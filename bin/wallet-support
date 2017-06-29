@@ -19,7 +19,7 @@ if (!args[0])
 var identifier = args[0];
 var network = program.testnet ? 'testnet' : 'livenet';
 var format = (amount) => {
-  return utils.formatAmount(amount, 'btc');
+  return utils.renderAmount(amount, 'btc');
 };
 
 utils.getClient(program, {
