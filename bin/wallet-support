@@ -1,0 +1,159 @@
+#!/usr/bin/env node
+
+var _ = require('lodash');
+var program = require('commander');
+var utils = require('./cli-utils');
+var moment = require('moment');
+var async = require('async');
+program = utils.configureCommander(program);
+
+program
+  .option('-t, --testnet', 'Query testnet wallet')
+  .option('-h, --history', 'Include full tx history')
+  .usage('<identifier>')
+  .parse(process.argv);
+
+var args = program.args;
+if (!args[0])
+  program.help();
+
+var identifier = args[0];
+var network = program.testnet ? 'testnet' : 'livenet';
+var format = (amount) => {
+  return utils.renderAmount(amount, 'btc');
+};
+
+utils.getClient(program, {
+  mustExist: true
+}, (client) => {
+  client.getStatusByIdentifier({
+    identifier: identifier
+  }, (err, status) => {
+    utils.die(err);
+    if (!status) {
+      console.log('Could not find wallet associated to ' + identifier);
+      process.exit(0);
+    }
+
+    console.log('Found wallet associated to ' + identifier + '. Querying wallet info...');
+
+    utils.getClient(program, {
+      mustExist: true,
+      walletId: status.wallet.id,
+    }, (client) => {
+
+      async.parallel([
+        (done) => {
+          client.getSendMaxInfo({
+            returnInputs: true
+          }, done);
+        }, (done) => {
+          client.getMainAddresses({
+            doNotVerify: true
+          }, done);
+        }, (done) => {
+          client.getTxHistory({}, done);
+        },
+      ], (err, res) => {
+        utils.die(err);
+        displayStatus(status);
+        displaySendMaxInfo(res[0]);
+        displayAddresses(res[1]);
+        displayHistory(res[2]);
+      });
+    });
+  });
+});
+
+
+
+function displayStatus(status) {
+  var x = status.wallet;
+  console.log('\n* Wallet info');
+  console.log('  ID: %s', x.id);
+  console.log('  %s %d-of-%d%s [%s %s] wallet (status: %s)', x.network.toUpperCase(), x.m, x.n, x.singleAddress ? ' single-address' : '', x.derivationStrategy, x.addressType, x.status);
+
+  if (x.status != 'complete') {
+    console.log('  Missing ' + (x.n - x.copayers.length) + ' copayers');
+  }
+
+  x = status.balance;
+  console.log('\n* Balance')
+  console.log('  Total: %s (%s locked)', format(x.totalAmount), format(x.lockedAmount));
+  console.log('  Confirmed: %s (%s locked)', format(x.totalConfirmedAmount), format(x.lockedConfirmedAmount));
+  console.log('  Available: %s (%s confirmed / %s unconfirmed)', format(x.availableAmount), format(x.availableConfirmedAmount), format(x.availableAmount - x.availableConfirmedAmount));
+  if (!_.isEmpty(x.byAddress)) {
+    console.log('  By address:');
+  }
+  _.each(x.byAddress, function(item) {
+    console.log('    %s (%s): %s', item.address, item.path, format(item.amount));
+  });
+
+  if (!_.isEmpty(status.pendingTxps)) {
+    console.log("\n* Pending tx proposals");
+    _.each(status.pendingTxps, function(x) {
+      var missingSignatures = x.requiredSignatures - _.filter(_.values(x.actions), function(a) {
+        return a.type == 'accept';
+      }).length;
+      console.log("  [%s] %s (fee/kb %s) => %s (status: %s)", new moment(x.createdOn * 1000), format(x.amount), format(x.feePerKb), x.outputs[0].toAddress, missingSignatures > 0 ? 'missing ' + missingSignatures + ' signatures' : 'ready to broadcast');
+    });
+  } else {
+    console.log('\n* No pending tx proposals.');
+  }
+};
+
+function displaySendMaxInfo(info) {
+  if (info.amount == 0) return;
+  console.log('\n* Send max');
+  console.log('  Maximum spendable amount at "normal" fee level (%s per kb): %s', format(info.feePerKb), format(info.amount));
+  if (info.utxosBelowFee > 0) {
+    console.log('  %s UTXOs for a total amount of %s are currently below fee required to spend them', info.utxosBelowFee, info.amountBelowFee);
+  }
+  if (info.utxosAboveMaxSize > 0) {
+    console.log('  %s UTXOs for a total amount of %s exceed the max allowed tx size', info.utxosAboveMaxSize, info.amountAboveMaxSize);
+  }
+
+  if (!_.isEmpty(info.inputs)) {
+    console.log('  Available UTXOs:');
+  }
+  _.each(info.inputs, function(utxo) {
+    console.log('    %s%s %s', format(utxo.satoshis), utxo.locked ? ' (locked)' : '', utxo.confirmations > 0 ? utxo.confirmations + ' confirmations' : 'unconfirmed');
+  });
+};
+
+function displayAddresses(addresses) {
+  if (_.isEmpty(addresses)) {
+    console.log('\n* No addresses.');
+    return;
+  }
+  console.log('\n* Main addresses (not including change addresses)');
+  _.each(addresses, function(a) {
+    console.log('  %s (%s)', a.address, a.path);
+  });
+};
+
+function displayHistory(history) {
+  if (_.isEmpty(history)) {
+    console.log('\n* No tx history.');
+    return;
+  }
+
+  console.log("\n* Tx history")
+  _.each(history, function(tx) {
+    var time = moment(tx.time * 1000);
+    var amount = format(tx.amount);
+    var confirmations = tx.confirmations || 0;
+    switch (tx.action) {
+      case 'received':
+        direction = '<=';
+        break;
+      case 'moved':
+        direction = '==';
+        break;
+      case 'sent':
+        direction = '=>';
+        break;
+    }
+    console.log("  [%s] %s %s %s %s (fee/kb %s) (%s confirmations)", time, tx.txid, direction, tx.action, amount, format(tx.feePerKb), confirmations);
+  });
+};

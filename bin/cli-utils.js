@@ -102,6 +102,7 @@ Utils.getClient = function(args, opts, cb) {
   var client = new Client({
     baseUrl: url.resolve(host, '/bws/api'),
     verbose: args.verbose,
+    supportStaffWalletId: opts.walletId,
   });
 
   storage.load(function(err, walletData) {
@@ -256,17 +257,48 @@ Utils.configureCommander = function(program) {
   return program;
 };
 
-Utils.renderAmount = function(amount) {
-  var unit = process.env.BIT_UNIT || 'bit';
-  if (unit === 'SAT') {
-    // Do nothing
-  } else if (process.env.BIT_UNIT === 'btc') {
-    amount = amount / 1e8;
-  } else {
-    amount = amount / 100;
-  }
-  amount = (parseFloat(amount.toPrecision(12)));
-  return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + ' ' + unit;
+Utils.UNITS = {
+  btc: {
+    name: 'btc',
+    toSatoshis: 100000000,
+    maxDecimals: 8,
+    minDecimals: 8,
+  },
+  bit: {
+    name: 'bit',
+    toSatoshis: 100,
+    maxDecimals: 2,
+    minDecimals: 2,
+  },
+};
+
+Utils.renderAmount = function(satoshis, unit, opts) {
+  function clipDecimals(number, decimals) {
+    var x = number.toString().split('.');
+    var d = (x[1] || '0').substring(0, decimals);
+    return parseFloat(x[0] + '.' + d);
+  };
+
+  function addSeparators(nStr, thousands, decimal, minDecimals) {
+    nStr = nStr.replace('.', decimal);
+    var x = nStr.split(decimal);
+    var x0 = x[0];
+    var x1 = x[1];
+
+    x1 = _.dropRightWhile(x1, function(n, i) {
+      return n == '0' && i >= minDecimals;
+    }).join('');
+    var x2 = x.length > 1 ? decimal + x1 : '';
+
+    x0 = x0.replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
+    return x0 + x2;
+  };
+
+  opts = opts || {};
+
+  var u = Utils.UNITS[unit || 'bit'];
+  var amount = clipDecimals((satoshis / u.toSatoshis), u.maxDecimals).toFixed(u.maxDecimals);
+  return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', u.minDecimals) + ' ' + u.name;
 };
 
 Utils.renderTxProposals = function(txps) {
