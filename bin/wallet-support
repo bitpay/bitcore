@@ -4,6 +4,7 @@ var _ = require('lodash');
 var program = require('commander');
 var utils = require('./cli-utils');
 var moment = require('moment');
+var async = require('async');
 program = utils.configureCommander(program);
 
 program
@@ -24,31 +25,42 @@ var format = (amount) => {
 
 utils.getClient(program, {
   mustExist: true
-}, function(client) {
+}, (client) => {
   client.getStatusByIdentifier({
     identifier: identifier
-  }, function(err, status) {
+  }, (err, status) => {
     utils.die(err);
     if (!status) {
       console.log('Could not find wallet associated to ' + identifier);
       process.exit(0);
     }
 
-    displayStatus(status);
+    console.log('Found wallet associated to ' + identifier + '. Querying wallet info...');
 
-    client.supportStaffWalletId = status.wallet.id;
+    utils.getClient(program, {
+      mustExist: true,
+      walletId: status.wallet.id,
+    }, (client) => {
 
-    client.getMainAddresses({
-      doNotVerify: true
-    }, function(err, addresses) {
-      utils.die(err);
-      displayAddresses(addresses);
-
-      client.getTxHistory({}, function(err, history) {
+      async.parallel([
+        (done) => {
+          client.getSendMaxInfo({
+            returnInputs: true
+          }, done);
+        }, (done) => {
+          client.getMainAddresses({
+            doNotVerify: true
+          }, done);
+        }, (done) => {
+          client.getTxHistory({}, done);
+        },
+      ], (err, res) => {
         utils.die(err);
-        displayHistory(history);
+        displayStatus(status);
+        displaySendMaxInfo(res[0]);
+        displayAddresses(res[1]);
+        displayHistory(res[2]);
       });
-
     });
   });
 });
@@ -88,6 +100,25 @@ function displayStatus(status) {
   } else {
     console.log('\n* No pending tx proposals.');
   }
+};
+
+function displaySendMaxInfo(info) {
+  if (info.amount == 0) return;
+  console.log('\n* Send max');
+  console.log('  Maximum spendable amount at "normal" fee level (%s per kb): %s', format(info.feePerKb), format(info.amount));
+  if (info.utxosBelowFee > 0) {
+    console.log('  %s UTXOs for a total amount of %s are currently below fee required to spend them', info.utxosBelowFee, info.amountBelowFee);
+  }
+  if (info.utxosAboveMaxSize > 0) {
+    console.log('  %s UTXOs for a total amount of %s exceed the max allowed tx size', info.utxosAboveMaxSize, info.amountAboveMaxSize);
+  }
+
+  if (!_.isEmpty(info.inputs)) {
+    console.log('  Available UTXOs:');
+  }
+  _.each(info.inputs, function(utxo) {
+    console.log('    %s%s %s', format(utxo.satoshis), utxo.locked ? ' (locked)' : '', utxo.confirmations > 0 ? utxo.confirmations + ' confirmations' : 'unconfirmed');
+  });
 };
 
 function displayAddresses(addresses) {

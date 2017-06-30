@@ -102,6 +102,7 @@ Utils.getClient = function(args, opts, cb) {
   var client = new Client({
     baseUrl: url.resolve(host, '/bws/api'),
     verbose: args.verbose,
+    supportStaffWalletId: opts.walletId,
   });
 
   storage.load(function(err, walletData) {
