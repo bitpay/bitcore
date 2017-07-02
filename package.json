@@ -1,0 +1,14 @@
+{
+  "name": "full-node-plus",
+  "description": "Full node and then some",
+  "version": "0.0.1",
+  "author": "Justin Langston <nitsujlangston@gmail.com>",
+  "main": "server.js",
+  "dependencies": {
+    "async": "^2.5.0",
+    "mongoose": "^4.11.0",
+    "request": "^2.81.0",
+    "underscore": "^1.8.3"
+  },
+  "devDependencies": {}
+}
