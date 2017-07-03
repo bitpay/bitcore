@@ -8,7 +8,7 @@ var async = require('async');
 var _ = require('underscore');
 
 function getBlockTransactions(block, callback){
-  async.mapLimit(block.tx, 32, function (tx, cb) {
+  async.mapLimit(block.tx, 64, function (tx, cb) {
     rpc.getTransaction(tx, function (err, transaction) {
       if (block.height === 0) {
         return cb(null, {
@@ -28,7 +28,8 @@ function getBlockTransactions(block, callback){
 }
 
 function processBlockTransactions(blockHeight, blockHash, transactions, callback){
-  async.each(transactions, function(transaction, txCb){
+  var resultTransactions = [];
+  async.eachLimit(transactions, 32, function(transaction, txCb){
     Transaction.count({txid: transaction.hash, blockHeight: blockHeight, blockHash: blockHash}, function(err, hasTx){
       if (err){
         return txCb(err);
@@ -49,7 +50,7 @@ function processBlockTransactions(blockHeight, blockHash, transactions, callback
         });
       });
 
-      async.eachLimit(transaction.vin, 16, function (input, inputCb) {
+      async.eachLimit(transaction.vin, 1, function (input, inputCb) {
         if (input.coinbase) {
           newTx.coinbase = true;
           newTx.inputs.push({
@@ -97,13 +98,28 @@ function processBlockTransactions(blockHeight, blockHash, transactions, callback
         var totalInputs = _.reduce(newTx.inputs, function (total, input) { return total + input.amount; }, 0);
         var totalOutputs = _.reduce(newTx.outputs, function (total, output) { return total + output.amount; }, 0);
         newTx.fee = totalInputs - totalOutputs;
-        newTx.save(txCb);
+        resultTransactions.push(newTx);
+        txCb();
       });
     });
 
   }, function(err){
-    callback(err);
+    callback(err, resultTransactions);
   });
+}
+
+function insertTransactions(transactions, callback){
+  if (!transactions.length){
+    return callback();
+  }
+  transactions = transactions.map(function(transaction){
+    return {
+      insertOne:{
+        document: transaction
+      }
+    };
+  });
+  Transaction.bulkWrite(transactions, callback);
 }
 
 rpc.getChainTip(function(err, chainTip){
@@ -120,16 +136,19 @@ rpc.getChainTip(function(err, chainTip){
           if (err){
             return blockCb(err);
           }
-          processBlockTransactions(block.height, block.hash, transactions, function(err){
-            var end = Date.now();
-            blockTimes.push(end - start);
-            blockTimes.shift();
-            var avgBlockTime = _.reduce(blockTimes, function (total, time) { return total + time; }, 0) / 72;
-            if(!Number.isNaN(avgBlockTime)) {
-              console.log('Estimated hours left: ' + (chainTip.height - blockN) * avgBlockTime / 1000 / 60 / 60);
-            }
-            console.log('added block: ' + blockN + ' time ' + new Date(block.time * 1000));
-            blockCb(err);
+          processBlockTransactions(block.height, block.hash, transactions, function(err, transactions){
+            insertTransactions(transactions, function(err){
+              var end = Date.now();
+              console.log('block per tx ms: ' + (end-start)/transactions.length);
+              blockTimes.push(end - start);
+              blockTimes.shift();
+              var avgBlockTime = _.reduce(blockTimes, function (total, time) { return total + time; }, 0) / 72;
+              if (!Number.isNaN(avgBlockTime)) {
+                console.log('Estimated hours left: ' + (chainTip.height - blockN) * avgBlockTime / 1000 / 60 / 60);
+              }
+              console.log('added block: ' + blockN);
+              blockCb(err);
+            });
           });
         });
       });
