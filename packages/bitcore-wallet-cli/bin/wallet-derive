@@ -2,7 +2,7 @@
 
 var program = require('commander');
 var utils = require('./cli-utils');
-var Bitcore = require('bitcore-wallet-client').getBitcore();
+var Bitcore = require('bitcore-wallet-client').Bitcore;
 
 program = utils.configureCommander(program);
 
@@ -13,8 +13,8 @@ program
 program.on('--help', function() {
   console.log('  Examples:');
   console.log('');
-  console.log('    $ bit-derive "m/44\'/0\'/0\'"');
-  console.log('    $ bit-derive "m/1/1"');
+  console.log('    $ wallet-derive "m/44\'/0\'/0\'"');
+  console.log('    $ wallet-derive "m/1/1"');
   console.log('');
 });
 program.parse(process.argv);
