@@ -6,6 +6,7 @@ var utils  = require('./cli-utils');
 program = utils.configureCommander(program);
 
 program
+  .option('-v, --verbose', 'Show wallet raw data')
   .parse(process.argv);
 
 var args = program.args;
@@ -21,6 +22,11 @@ utils.getClient(program, { mustExist: true }, function (client) {
       console.log('  Wallet secret:', x.secret);
     }
     console.log('* Copayers:', _.pluck(x.copayers,'name').join(', '));
+
+
+    if (program.verbose) {
+        console.log('* Wallet Raw Data:', x);
+    }
 
     var x = res.balance;
     console.log('* Balance %s (Locked: %s)', utils.renderAmount(x.totalAmount), utils.renderAmount(x.lockedAmount));
