@@ -7,30 +7,10 @@ var rpc = require('./lib/rpc');
 var async = require('async');
 var _ = require('underscore');
 
-function getBlockTransactions(block, callback){
-  async.mapLimit(block.tx, 64, function (tx, cb) {
-    rpc.getTransaction(tx, function (err, transaction) {
-      if (block.height === 0) {
-        return cb(null, {
-          hash: tx,
-          vout: [],
-          vin: []
-        });
-      }
-      if (err){
-        return cb(err);
-      }
-      cb(err, transaction);
-    });
-  }, function (err, transactions) {
-    callback(err, transactions);
-  });
-}
-
-function processBlockTransactions(blockHeight, blockHash, transactions, callback){
+function processBlockTransactions(transactions, callback){
   var resultTransactions = [];
   async.eachLimit(transactions, 32, function(transaction, txCb){
-    Transaction.count({txid: transaction.hash, blockHeight: blockHeight, blockHash: blockHash}, function(err, hasTx){
+    Transaction.count({txid: transaction.hash, blockHeight: transaction.blockHeight, blockHash: transaction.blockHash}, function(err, hasTx){
       if (err){
         return txCb(err);
       }
@@ -39,8 +19,8 @@ function processBlockTransactions(blockHeight, blockHash, transactions, callback
       }
       var newTx = new Transaction();
       newTx.txid = transaction.hash;
-      newTx.blockHeight = blockHeight;
-      newTx.blockHash = blockHash;
+      newTx.blockHeight = transaction.blockHeight;
+      newTx.blockHash = transaction.blockHash;
 
       transaction.vout.forEach(function (vout) {
         newTx.outputs.push({
@@ -128,27 +108,19 @@ rpc.getChainTip(function(err, chainTip){
     var blockTimes = new Array(72);
     async.eachSeries(_.range(localTip, chainTip.height), function (blockN, blockCb) {
       var start = Date.now();
-      rpc.getBlockByHeight(blockN, function(err, block){
-        if (err) {
-          return blockCb(err);
-        }
-        getBlockTransactions(block, function (err, transactions) {
-          if (err){
-            return blockCb(err);
-          }
-          processBlockTransactions(block.height, block.hash, transactions, function(err, transactions){
-            insertTransactions(transactions, function(err){
-              var end = Date.now();
-              console.log('block per tx ms: ' + (end-start)/transactions.length);
-              blockTimes.push(end - start);
-              blockTimes.shift();
-              var avgBlockTime = _.reduce(blockTimes, function (total, time) { return total + time; }, 0) / 72;
-              if (!Number.isNaN(avgBlockTime)) {
-                console.log('Estimated hours left: ' + (chainTip.height - blockN) * avgBlockTime / 1000 / 60 / 60);
-              }
-              console.log('added block: ' + blockN);
-              blockCb(err);
-            });
+      rpc.getBlockTransactionsByHeight(blockN, function(err, transactions){
+        processBlockTransactions(transactions, function (err, transactions) {
+          insertTransactions(transactions, function (err) {
+            var end = Date.now();
+            console.log('block per tx ms: ' + (end - start) / transactions.length);
+            blockTimes.push(end - start);
+            blockTimes.shift();
+            var avgBlockTime = _.reduce(blockTimes, function (total, time) { return total + time; }, 0) / 72;
+            if (!Number.isNaN(avgBlockTime)) {
+              console.log('Estimated hours left: ' + (chainTip.height - blockN) * avgBlockTime / 1000 / 60 / 60);
+            }
+            console.log('added block: ' + blockN);
+            blockCb(err);
           });
         });
       });
