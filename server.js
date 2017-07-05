@@ -9,8 +9,8 @@ var _ = require('underscore');
 
 function processBlockTransactions(transactions, callback){
   var resultTransactions = [];
-  async.eachLimit(transactions, 32, function(transaction, txCb){
-    Transaction.count({txid: transaction.hash, blockHeight: transaction.blockHeight, blockHash: transaction.blockHash}, function(err, hasTx){
+  async.eachLimit(transactions, 16, function(transaction, txCb){
+    Transaction.count({txid: transaction.hash}, function(err, hasTx){
       if (err){
         return txCb(err);
       }
@@ -77,7 +77,7 @@ function processBlockTransactions(transactions, callback){
       }, function () {
         var totalInputs = _.reduce(newTx.inputs, function (total, input) { return total + input.amount; }, 0);
         var totalOutputs = _.reduce(newTx.outputs, function (total, output) { return total + output.amount; }, 0);
-        newTx.fee = totalInputs - totalOutputs;
+        newTx.fee = (totalInputs - totalOutputs).toFixed(8);
         resultTransactions.push(newTx);
         txCb();
       });
