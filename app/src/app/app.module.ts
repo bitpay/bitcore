@@ -3,24 +3,32 @@ import { BrowserModule }                            from '@angular/platform-brow
 import { IonicApp, IonicModule, IonicErrorHandler } from 'ionic-angular';
 import { StatusBar }                                from '@ionic-native/status-bar';
 import { SplashScreen }                             from '@ionic-native/splash-screen';
-import { ClickerApp }                               from './app.component';
-import { ClickerList, PagesModule, Page2 }          from '../pages';
+import { InsightApp }                               from './app.component';
+import {
+  PagesModule,
+  BlocksPage,
+  BroadcastTxPage,
+  NodeStatusPage,
+  VerifyMessagePage,
+} from '../pages';
 import { ClickersService, StorageService }          from '../services';
 
 @NgModule({
   declarations: [
-    ClickerApp,
+    InsightApp,
   ],
   imports: [
     BrowserModule,
     PagesModule,
-    IonicModule.forRoot(ClickerApp),
+    IonicModule.forRoot(InsightApp),
   ],
   bootstrap: [IonicApp],
   entryComponents: [
-    ClickerApp,
-    ClickerList,
-    Page2,
+    InsightApp,
+    BlocksPage,
+    BroadcastTxPage,
+    NodeStatusPage,
+    VerifyMessagePage,
   ],
   providers: [
     StatusBar,

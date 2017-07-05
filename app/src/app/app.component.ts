@@ -2,12 +2,17 @@ import { Component, ViewChild }          from '@angular/core';
 import { Platform, MenuController, Nav } from 'ionic-angular';
 import { StatusBar }                     from '@ionic-native/status-bar';
 import { SplashScreen }                  from '@ionic-native/splash-screen';
-import { ClickerList, Page2 }            from '../pages';
+import {
+  BlocksPage,
+  BroadcastTxPage,
+  NodeStatusPage,
+  VerifyMessagePage,
+} from '../pages';
 
 @Component({
   templateUrl: './app.html',
 })
-export class ClickerApp {
+export class InsightApp {
 
   @ViewChild(Nav) public nav: Nav;
 
@@ -26,15 +31,15 @@ export class ClickerApp {
     this.splash = splash;
     this.status = status;
 
-    this.rootPage = ClickerList;
+    this.rootPage = BlocksPage;
     this.initializeApp();
 
     // set our app's pages
     this.pages = [
-      { title: 'Blocks', component: ClickerList },
-      { title: 'Broadcast Transaction', component: Page2 },
-      { title: 'Verify Message', component: Page2 },
-      { title: 'Node Status', component: Page2 },
+      { title: 'Blocks', component: BlocksPage },
+      { title: 'Broadcast Transaction', component: BroadcastTxPage },
+      { title: 'Verify Message', component: VerifyMessagePage },
+      { title: 'Node Status', component: NodeStatusPage },
     ];
   }
 
@@ -52,5 +57,5 @@ export class ClickerApp {
     this.menu.close();
     // navigate to the new page if it is not the current page
     this.nav.setRoot(page.component);
-  };
+  }
 }

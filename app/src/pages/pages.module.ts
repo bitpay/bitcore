@@ -1,18 +1,23 @@
 import { NgModule }         from '@angular/core';
 import { IonicModule }      from 'ionic-angular';
 import { ComponentsModule } from '../components';
-import { ClickerList }      from './clickerList/clickerList';
-import { Page2 }            from './page2/page2';
+import {
+  BlocksPage,
+  BroadcastTxPage,
+  NodeStatusPage,
+  VerifyMessagePage,
+} from './index';
 
 @NgModule({
   declarations: [
-    ClickerList,
-    Page2,
+    BlocksPage,
+    BroadcastTxPage,
+    NodeStatusPage,
+    VerifyMessagePage,
   ],
   imports: [ IonicModule, ComponentsModule ],
   exports: [
-    ClickerList,
-    // Page2,
+    // CustomComponent,
   ],
   entryComponents: [],
   providers: [ ],

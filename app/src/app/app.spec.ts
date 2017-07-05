@@ -1,21 +1,21 @@
-import { ClickerApp }                      from './app.component';
+import { InsightApp } from './app.component';
 import { MenuMock, NavMock, PlatformMock, SplashMock, StatusMock } from '../mocks';
-import { Page2 }                           from '../pages';
+import { BroadcastTxPage } from '../pages';
 
-let instance: ClickerApp = null;
+let instance: InsightApp = null;
 
-describe('ClickerApp', () => {
+describe('InsightApp', () => {
 
   beforeEach(() => {
-    instance = new ClickerApp((<any> new PlatformMock), (<any> new MenuMock), (<any>new SplashMock()), (<any>new StatusMock()));
+    instance = new InsightApp((<any> new PlatformMock), (<any> new MenuMock), (<any>new SplashMock()), (<any>new StatusMock()));
     instance['nav'] = (<any>new NavMock());
   });
 
-  it('initialises with two possible pages', () => {
-    expect(instance['pages'].length).toEqual(2);
+  it('initializes with four possible pages', () => {
+    expect(instance['pages'].length).toEqual(4);
   });
 
-  it('initialises with a root page', () => {
+  it('initializes with a root page', () => {
     expect(instance['rootPage']).not.toBe(null);
   });
 
@@ -24,6 +24,6 @@ describe('ClickerApp', () => {
     spyOn(instance['nav'], 'setRoot');
     instance.openPage(instance['pages'][1]);
     expect(instance['menu']['close']).toHaveBeenCalled();
-    expect(instance['nav'].setRoot).toHaveBeenCalledWith(Page2);
+    expect(instance['nav'].setRoot).toHaveBeenCalledWith(BroadcastTxPage);
   });
 });

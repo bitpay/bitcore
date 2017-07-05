@@ -1,6 +1,6 @@
 import { browser, element, by } from 'protractor';
 
-describe('ClickerApp', () => {
+describe('InsightApp', () => {
 
   beforeEach(() => {
     browser.get('');

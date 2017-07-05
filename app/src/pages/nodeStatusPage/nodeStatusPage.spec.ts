@@ -1,14 +1,13 @@
 import { ComponentFixture, async }    from '@angular/core/testing';
 import { TestUtils }                  from '../../test';
-import { ClickerList }                from './clickerList';
-import { ClickerButton, ClickerForm } from '../../components';
+import { NodeStatusPage }                from './nodeStatusPage';
 
-let fixture: ComponentFixture<ClickerList> = null;
+let fixture: ComponentFixture<NodeStatusPage> = null;
 let instance: any = null;
 
-describe('ClickerList', () => {
+describe('NodeStatusPage', () => {
 
-  beforeEach(async(() => TestUtils.beforeEachCompiler([ClickerList, ClickerForm, ClickerButton]).then(compiled => {
+  beforeEach(async(() => TestUtils.beforeEachCompiler([NodeStatusPage]).then(compiled => {
     fixture = compiled.fixture;
     instance = compiled.instance;
     fixture.detectChanges();
@@ -18,7 +17,7 @@ describe('ClickerList', () => {
     fixture.destroy();
   });
 
-  it('initialises', () => {
+  it('initializes', () => {
     expect(instance).toBeTruthy();
   });
 });

@@ -1,3 +1,5 @@
-export * from './clickerList/clickerList';
-export * from './page2/page2';
+export * from './blocksPage/blocksPage';
+export * from './broadcastTxPage/broadcastTxPage';
+export * from './nodeStatusPage/nodeStatusPage';
+export * from './verifyMessagePage/verifyMessagePage';
 export * from './pages.module';
