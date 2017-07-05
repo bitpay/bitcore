@@ -9,7 +9,7 @@ var _ = require('underscore');
 
 function processBlockTransactions(transactions, callback){
   var resultTransactions = [];
-  async.eachLimit(transactions, 16, function(transaction, txCb){
+  async.eachLimit(transactions, 32, function(transaction, txCb){
     Transaction.count({txid: transaction.hash}, function(err, hasTx){
       if (err){
         return txCb(err);
@@ -112,7 +112,7 @@ rpc.getChainTip(function(err, chainTip){
         processBlockTransactions(transactions, function (err, transactions) {
           insertTransactions(transactions, function (err) {
             var end = Date.now();
-            console.log('block per tx ms: ' + (end - start) / transactions.length);
+            console.log('tx per second: ' + (transactions.length / ((end - start)/1000)).toFixed(2));
             blockTimes.push(end - start);
             blockTimes.shift();
             var avgBlockTime = _.reduce(blockTimes, function (total, time) { return total + time; }, 0) / 72;
