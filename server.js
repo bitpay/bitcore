@@ -117,9 +117,10 @@ rpc.getChainTip(function(err, chainTip){
             blockTimes.shift();
             var avgBlockTime = _.reduce(blockTimes, function (total, time) { return total + time; }, 0) / 72;
             if (!Number.isNaN(avgBlockTime)) {
-              console.log('Estimated hours left: ' + (chainTip.height - blockN) * avgBlockTime / 1000 / 60 / 60);
+              console.log('Estimated hours left: ' + ((chainTip.height - blockN) * avgBlockTime / 1000 / 60 / 60).toFixed(2));
             }
             console.log('added block: ' + blockN);
+            console.log('=========================================');
             blockCb(err);
           });
         });
