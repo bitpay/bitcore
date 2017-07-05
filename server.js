@@ -112,14 +112,14 @@ rpc.getChainTip(function(err, chainTip){
         processBlockTransactions(transactions, function (err, transactions) {
           insertTransactions(transactions, function (err) {
             var end = Date.now();
-            console.log('tx per second: ' + (transactions.length / ((end - start)/1000)).toFixed(2));
+            console.log('tx per second:\t\t' + (transactions.length / ((end - start)/1000)).toFixed(2));
             blockTimes.push(end - start);
             blockTimes.shift();
             var avgBlockTime = _.reduce(blockTimes, function (total, time) { return total + time; }, 0) / 72;
             if (!Number.isNaN(avgBlockTime)) {
-              console.log('Estimated hours left: ' + ((chainTip.height - blockN) * avgBlockTime / 1000 / 60 / 60).toFixed(2));
+              console.log('est hours left:\t\t' + ((chainTip.height - blockN) * avgBlockTime / 1000 / 60 / 60).toFixed(2));
             }
-            console.log('added block: ' + blockN);
+            console.log('added block:\t\t' + blockN);
             console.log('=========================================');
             blockCb(err);
           });
