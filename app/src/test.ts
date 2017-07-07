@@ -10,10 +10,12 @@ import 'zone.js/dist/fake-async-test';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { getTestBed, TestBed } from '@angular/core/testing';
 import { BrowserDynamicTestingModule, platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
+import { HttpModule } from '@angular/http';
+import { MockBackend } from '@angular/http/testing';
 import { App, Config, Form, IonicModule, Keyboard, DomController, MenuController, NavController, Platform, GestureController } from 'ionic-angular';
 import { ConfigMock, PlatformMock } from './mocks';
-import { ClickersServiceMock } from './services/clickers.mock';
-import { ClickersService } from './services';
+import { BlocksServiceMock } from './services/mocks';
+import { BlocksService } from './services';
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
 declare var __karma__: any;
@@ -44,7 +46,7 @@ export class TestUtils {
         let fixture: any = TestBed.createComponent(components[0]);
         return {
           fixture: fixture,
-          instance: fixture.debugElement.componentInstance,
+          instance: fixture.debugElement.componentInstance
         };
       });
   }
@@ -52,19 +54,20 @@ export class TestUtils {
   public static configureIonicTestingModule(components: Array<any>): typeof TestBed {
     return TestBed.configureTestingModule({
       declarations: [
-        ...components,
+        ...components
       ],
       providers: [
         App, Form, Keyboard, DomController, MenuController, NavController, GestureController,
         {provide: Platform, useClass: PlatformMock},
         {provide: Config, useClass: ConfigMock},
-        {provide: ClickersService, useClass: ClickersServiceMock},
+        {provide: BlocksService, useClass: BlocksServiceMock}
       ],
       imports: [
         FormsModule,
         IonicModule,
         ReactiveFormsModule,
-      ],
+        HttpModule
+      ]
     });
   }
 

@@ -1,2 +1,2 @@
-export * from './clickers.mock';
-export * from './storage.mock';
+export * from './blocksService.mock';
+export * from './storageService.mock';

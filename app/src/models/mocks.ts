@@ -1,1 +1,1 @@
-export * from './clicker.mock';
+// export * from './X.mock';

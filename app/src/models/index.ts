@@ -1,2 +1,1 @@
-export * from './click';
-export * from './clicker';
+export * from './block';

@@ -1,2 +1,2 @@
-export * from './clickers';
-export * from './storage';
+export * from './blocksService';
+export * from './storageService';

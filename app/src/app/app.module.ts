@@ -1,26 +1,22 @@
-import { NgModule, ErrorHandler }                   from '@angular/core';
-import { BrowserModule }                            from '@angular/platform-browser';
+import { HttpModule } from '@angular/http';
+import { NgModule, ErrorHandler } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
 import { IonicApp, IonicModule, IonicErrorHandler } from 'ionic-angular';
-import { StatusBar }                                from '@ionic-native/status-bar';
-import { SplashScreen }                             from '@ionic-native/splash-screen';
-import { InsightApp }                               from './app.component';
-import {
-  PagesModule,
-  BlocksPage,
-  BroadcastTxPage,
-  NodeStatusPage,
-  VerifyMessagePage,
-} from '../pages';
-import { ClickersService, StorageService }          from '../services';
+import { StatusBar } from '@ionic-native/status-bar';
+import { SplashScreen } from '@ionic-native/splash-screen';
+import { InsightApp } from './app.component';
+import { PagesModule, BlocksPage, BroadcastTxPage, NodeStatusPage, VerifyMessagePage } from '../pages';
+import { BlocksService, StorageService } from '../services';
 
 @NgModule({
   declarations: [
-    InsightApp,
+    InsightApp
   ],
   imports: [
     BrowserModule,
+    HttpModule,
     PagesModule,
-    IonicModule.forRoot(InsightApp),
+    IonicModule.forRoot(InsightApp)
   ],
   bootstrap: [IonicApp],
   entryComponents: [
@@ -28,14 +24,14 @@ import { ClickersService, StorageService }          from '../services';
     BlocksPage,
     BroadcastTxPage,
     NodeStatusPage,
-    VerifyMessagePage,
+    VerifyMessagePage
   ],
   providers: [
     StatusBar,
     SplashScreen,
-    ClickersService,
     StorageService,
-    {provide: ErrorHandler, useClass: IonicErrorHandler},
+    BlocksService,
+    {provide: ErrorHandler, useClass: IonicErrorHandler}
   ],
 })
 

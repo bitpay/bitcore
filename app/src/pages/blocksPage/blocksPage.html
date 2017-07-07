@@ -14,16 +14,16 @@
 
 <ion-content padding>
   <ion-list>
-    <ion-item *ngFor="let block of blocks">
+    <ion-item *ngFor="let block of blocks | async">
       <ion-row>
         <ion-col>
           #{{block.height}}
         </ion-col>
         <ion-col>
-          {{block.txlength}} transactions
+          {{block.transactionCount}} transactions
         </ion-col>
         <ion-col>
-          <a *ngIf="block.poolInfo.poolName" href="{{block.poolInfo.url}}">{{block.poolInfo.poolName}}</a>
+          <a *ngIf="block.poolName" href="{{block.url}}">{{block.poolName}}</a>
         </ion-col>
       </ion-row>
     </ion-item>
