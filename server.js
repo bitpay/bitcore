@@ -9,7 +9,7 @@ var _ = require('underscore');
 
 function processBlockTransactions(transactions, callback){
   var resultTransactions = [];
-  async.eachLimit(transactions, 32, function(transaction, txCb){
+  async.eachLimit(transactions, 16, function(transaction, txCb){
     Transaction.count({txid: transaction.hash}, function(err, hasTx){
       if (err){
         return txCb(err);
@@ -30,7 +30,7 @@ function processBlockTransactions(transactions, callback){
         });
       });
 
-      async.eachLimit(transaction.vin, 1, function (input, inputCb) {
+      async.eachLimit(transaction.vin, 2, function (input, inputCb) {
         if (input.coinbase) {
           newTx.coinbase = true;
           newTx.inputs.push({
