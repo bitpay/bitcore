@@ -123,7 +123,7 @@ function insertTransactions(transactions, callback){
       }
     };
   });
-  Transaction.bulkWrite(transactions, callback);
+  Transaction.bulkWrite(transactions, {ordered:false}, callback);
 }
 
 rpc.getChainTip(function(err, chainTip){
@@ -229,11 +229,11 @@ app.post('/wallet/:walletId', function (req, res) {
         }
       };
     });
-    WalletAddress.bulkWrite(walletUpdates, function (err) {
+    WalletAddress.bulkWrite(walletUpdates, { ordered: false }, function (err) {
       if (err) {
         return res.status(500).send(err);
       }
-      Transaction.bulkWrite(transactionUpdates, function (err) {
+      Transaction.bulkWrite(transactionUpdates, {ordered:false}, function (err) {
         if (err) {
           return res.status(500).send(err);
         }
