@@ -14,6 +14,13 @@
 
 <ion-content padding>
   <ion-list>
+    <ion-item>
+      <ion-row>
+        <ion-col>Height</ion-col>
+        <ion-col>Transactions</ion-col>
+        <ion-col>Mined By</ion-col>
+      </ion-row>
+    </ion-item>
     <ion-item *ngFor="let block of blocks | async">
       <ion-row>
         <ion-col>
