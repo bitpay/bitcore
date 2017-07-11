@@ -6,11 +6,11 @@ import {
   BlocksPage,
   BroadcastTxPage,
   NodeStatusPage,
-  VerifyMessagePage,
+  VerifyMessagePage
 } from '../pages';
 
 @Component({
-  templateUrl: './app.html',
+  templateUrl: './app.html'
 })
 export class InsightApp {
 
@@ -39,7 +39,7 @@ export class InsightApp {
       { title: 'Blocks', component: BlocksPage },
       { title: 'Broadcast Transaction', component: BroadcastTxPage },
       { title: 'Verify Message', component: VerifyMessagePage },
-      { title: 'Node Status', component: NodeStatusPage },
+      { title: 'Node Status', component: NodeStatusPage }
     ];
   }
 

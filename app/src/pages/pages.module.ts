@@ -5,7 +5,7 @@ import {
   BlocksPage,
   BroadcastTxPage,
   NodeStatusPage,
-  VerifyMessagePage,
+  VerifyMessagePage
 } from './index';
 
 @NgModule({
@@ -13,14 +13,14 @@ import {
     BlocksPage,
     BroadcastTxPage,
     NodeStatusPage,
-    VerifyMessagePage,
+    VerifyMessagePage
   ],
   imports: [ IonicModule, ComponentsModule ],
   exports: [
     // CustomComponent,
   ],
   entryComponents: [],
-  providers: [ ],
+  providers: []
 })
 
 export class PagesModule {}

@@ -8,12 +8,12 @@ import { IonicModule }                      from 'ionic-angular';
   imports: [
     FormsModule,
     IonicModule,
-    ReactiveFormsModule,
+    ReactiveFormsModule
   ],
   exports: [
   ],
   entryComponents: [],
-  providers: [ ],
+  providers: []
 })
 
 export class ComponentsModule {}

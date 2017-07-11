@@ -2,7 +2,7 @@ import { Component }       from '@angular/core';
 import { NavController }   from 'ionic-angular';
 
 @Component({
-  templateUrl: './nodeStatusPage.html',
+  templateUrl: './nodeStatusPage.html'
 })
 
 export class NodeStatusPage {

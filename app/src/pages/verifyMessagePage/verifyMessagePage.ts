@@ -2,7 +2,7 @@ import { Component }       from '@angular/core';
 import { NavController }   from 'ionic-angular';
 
 @Component({
-  templateUrl: './verifyMessagePage.html',
+  templateUrl: './verifyMessagePage.html'
 })
 
 export class VerifyMessagePage {

@@ -32,7 +32,7 @@ import { BlocksService, StorageService } from '../services';
     StorageService,
     BlocksService,
     {provide: ErrorHandler, useClass: IonicErrorHandler}
-  ],
+  ]
 })
 
 export class AppModule {}
