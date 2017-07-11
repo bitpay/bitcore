@@ -10,8 +10,8 @@
     "e2e": "ionic-app-scripts build && protractor",
     "postinstall": "webdriver-manager update",
     "start": "ionic serve",
-    "test": "ng test",
-    "test-coverage": "ng test --code-coverage",
+    "test": "ng test --code-coverage",
+    "cov": "opn coverage/index.html",
     "test-ci": "ng test --watch=false --code-coverage && npm run e2e"
   },
   "dependencies": {
@@ -50,6 +50,7 @@
     "karma-coverage-istanbul-reporter": "1.2.1",
     "karma-jasmine": "1.1.0",
     "karma-jasmine-html-reporter": "0.2.2",
+    "opn-cli": "^3.1.0",
     "protractor": "5.1.2",
     "serve-static": "1.12.3",
     "ts-node": "3.0.4",
