@@ -15,17 +15,15 @@ app.use(bodyParser.raw({limit: 100000000}));
 
 function processBlockTransactions(transactions, callback){
   var resultTransactions = [];
-  var processTxTimes = [];
-  async.eachLimit(transactions, 2, function(transaction, txCb){
-    var start = Date.now();
-    Transaction.count({txid: transaction.hash}, function(err, hasTx){
+  async.eachLimit(transactions, 8, function(transaction, txCb){
+    Transaction.findOne({txid: transaction.hash}, function(err, hasTx){
       if (err){
         return txCb(err);
       }
       if (hasTx){
         return txCb();
       }
-      var newTx = new Transaction();
+      var newTx = {inputs:[], outputs:[], wallets:[]};
       newTx.txid = transaction.hash;
       newTx.blockHeight = transaction.blockHeight;
       newTx.blockHash = transaction.blockHash;
@@ -38,7 +36,7 @@ function processBlockTransactions(transactions, callback){
         });
       });
 
-      async.eachLimit(transaction.vin, 4, function (input, inputCb) {
+      async.eachLimit(transaction.vin, 2, function (input, inputCb) {
         if (input.coinbase) {
           newTx.coinbase = true;
           newTx.inputs.push({
@@ -68,11 +66,11 @@ function processBlockTransactions(transactions, callback){
             }
           }
           if (err || !inputTx) {
-            return inputCb();
+            return inputCb(new Error('Could not find input transaction'));
           }
           var utxo = _.findWhere(inputTx.outputs, { vout: input.vout });
           if (!utxo) {
-            return inputCb();
+            return inputCb(new Error('Could not find utxo'));
           }
           newTx.inputs.push({
             txid: input.txid,
@@ -82,7 +80,10 @@ function processBlockTransactions(transactions, callback){
           });
           inputCb();
         });
-      }, function () {
+      }, function (err) {
+        if (err){
+          return txCb(err);
+        }
         var totalInputs = _.reduce(newTx.inputs, function (total, input) { return total + input.amount; }, 0);
         var totalOutputs = _.reduce(newTx.outputs, function (total, output) { return total + output.amount; }, 0);
         newTx.fee = (totalInputs - totalOutputs).toFixed(8);
@@ -93,12 +94,10 @@ function processBlockTransactions(transactions, callback){
           }
           if (wallets.length){
             wallets.forEach(function (wallet) {
-              newTx.wallets.addToSet(wallet.wallet);
+              newTx.wallets.push(wallet.wallet);
             });
           }
           resultTransactions.push(newTx);
-          var end = Date.now();
-          processTxTimes.push(end - start);
           txCb();
         });
 
@@ -106,8 +105,6 @@ function processBlockTransactions(transactions, callback){
     });
 
   }, function(err){
-    var avgProcessTxTime = _.reduce(processTxTimes, function (total, time) { return total + time; }, 0) / processTxTimes.length;
-    console.log('tx processing avg:\t' + avgProcessTxTime.toFixed(2));
     callback(err, resultTransactions);
   });
 }
@@ -133,8 +130,17 @@ rpc.getChainTip(function(err, chainTip){
     async.eachSeries(_.range(localTip, chainTip.height), function (blockN, blockCb) {
       var start = Date.now();
       rpc.getBlockTransactionsByHeight(blockN, function(err, transactions){
+        if (err){
+          return blockCb(err);
+        }
         processBlockTransactions(transactions, function (err, transactions) {
+          if (err) {
+            return blockCb(err);
+          }
           insertTransactions(transactions, function (err) {
+            if (err) {
+              return blockCb(err);
+            }
             var end = Date.now();
             console.log('tx per second:\t\t' + (transactions.length / ((end - start) / 1000)).toFixed(2));
             blockTimes.push(end - start);
