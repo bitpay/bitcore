@@ -12,6 +12,6 @@ export class VerifyMessagePage {
 
   constructor(nav: NavController) {
     this.nav = nav;
-    this.title = 'Verify Message';
+    this.title = 'Verify Signed Message';
   }
 }
