@@ -38,7 +38,7 @@ export class InsightApp {
     this.pages = [
       { title: 'Blocks', component: BlocksPage },
       { title: 'Broadcast Transaction', component: BroadcastTxPage },
-      { title: 'Verify Message', component: VerifyMessagePage },
+      { title: 'Verify Signed Message', component: VerifyMessagePage },
       { title: 'Node Status', component: NodeStatusPage }
     ];
   }
