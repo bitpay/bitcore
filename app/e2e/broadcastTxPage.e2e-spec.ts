@@ -1,20 +1,20 @@
 import { browser, element, by, ElementFinder } from 'protractor';
 
-let heading: ElementFinder = element(by.css('h1'));
-
 describe('BroadcastTxPage', () => {
 
   beforeEach(() => {
     browser.get('');
   });
 
-  it('should have the temporary heading', () => {
+  it('should have an input field', () => {
     element(by.css('.bar-button-menutoggle')).click().then(() => {
       browser.driver.sleep(2000); // wait for the animation
       element.all(by.className('input-wrapper')).then((items) => {
         items[1].click();
         browser.driver.sleep(2000); // wait for the animation
-        expect(heading.getText()).toEqual('Broadcast Transaction');
+        let theElem = element.all(by.css('ion-label')).first;
+        console.log(theElem);
+        expect(element.all(by.css('ion-input')).first().isPresent()).toEqual(true);
         return items[1];
       });
     });
