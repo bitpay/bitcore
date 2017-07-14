@@ -9,13 +9,15 @@ var _ = require('underscore');
 var JSONStream = require('JSONStream');
 var express = require('express');
 var bodyParser = require('body-parser');
+var bitcore = require('bitcore-lib');
 var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.raw({limit: 100000000}));
 
-function processBlockTransactions(transactions, callback){
+function processBlock(block, height, callback){
+  block = new bitcore.Block.fromString(block);
   var resultTransactions = [];
-  async.eachLimit(transactions, 8, function(transaction, txCb){
+  async.eachLimit(block.transactions, 4, function(transaction, txCb){
     Transaction.findOne({txid: transaction.hash}, function(err, hasTx){
       if (err){
         return txCb(err);
@@ -25,19 +27,19 @@ function processBlockTransactions(transactions, callback){
       }
       var newTx = {inputs:[], outputs:[], wallets:[]};
       newTx.txid = transaction.hash;
-      newTx.blockHeight = transaction.blockHeight;
-      newTx.blockHash = transaction.blockHash;
+      newTx.blockHeight = height;
+      newTx.blockHash = block.hash;
 
-      transaction.vout.forEach(function (vout) {
+      transaction.outputs.forEach(function (output, index) {
         newTx.outputs.push({
-          vout: vout.n,
-          amount: vout.value,
-          address: vout.scriptPubKey.addresses && vout.scriptPubKey.addresses[0]
+          vout: index,
+          amount: parseFloat((output.satoshis*1e-8).toFixed(8)),
+          address: output.script.toAddress('livenet').toString()
         });
       });
 
-      async.eachLimit(transaction.vin, 2, function (input, inputCb) {
-        if (input.coinbase) {
+      async.eachLimit(transaction.inputs, 4, function (input, inputCb) {
+        if (transaction.isCoinbase()) {
           newTx.coinbase = true;
           newTx.inputs.push({
             amount: newTx.outputs[0].amount
@@ -45,20 +47,22 @@ function processBlockTransactions(transactions, callback){
           return inputCb();
         }
 
-        Transaction.findOne({ txid: input.txid }, function (err, inputTx) {
+        var prevTxId = input.prevTxId.toString('hex');
+
+        Transaction.findOne({ txid: prevTxId }, function (err, inputTx) {
           if (err) {
             console.error(err);
             return inputCb(err);
           }
           if (!inputTx) {
-            inputTx = _.findWhere(transactions, { txid: input.txid });
+            inputTx = _.findWhere(block.transactions, { hash: prevTxId });
             if (inputTx) {
               inputTx = {
-                outputs: inputTx.vout.map(function (vout) {
+                outputs: inputTx.outputs.map(function (output, index) {
                   return {
-                    vout: vout.n,
-                    amount: vout.value,
-                    address: vout.scriptPubKey.addresses && vout.scriptPubKey.addresses[0]
+                    vout: index,
+                    amount: parseFloat((output.satoshis * 1e-8).toFixed(8)),
+                    address: output.script.toAddress('livenet').toString()
                   };
                 }
                 )
@@ -68,13 +72,13 @@ function processBlockTransactions(transactions, callback){
           if (err || !inputTx) {
             return inputCb(new Error('Could not find input transaction'));
           }
-          var utxo = _.findWhere(inputTx.outputs, { vout: input.vout });
+          var utxo = _.findWhere(inputTx.outputs, { vout: input.outputIndex });
           if (!utxo) {
             return inputCb(new Error('Could not find utxo'));
           }
           newTx.inputs.push({
-            txid: input.txid,
-            vout: input.vout,
+            txid: prevTxId,
+            vout: input.outputIndex,
             address: utxo.address,
             amount: utxo.amount
           });
@@ -86,7 +90,7 @@ function processBlockTransactions(transactions, callback){
         }
         var totalInputs = _.reduce(newTx.inputs, function (total, input) { return total + input.amount; }, 0);
         var totalOutputs = _.reduce(newTx.outputs, function (total, output) { return total + output.amount; }, 0);
-        newTx.fee = (totalInputs - totalOutputs).toFixed(8);
+        newTx.fee = parseFloat((totalInputs - totalOutputs).toFixed(8));
         var addresses = _.uniq(_.union(_.pluck(newTx.inputs, 'address'), _.pluck(newTx.outputs, 'address')));
         WalletAddress.find({address: {$in: addresses}}, function(err, wallets){
           if (err){
@@ -129,11 +133,11 @@ rpc.getChainTip(function(err, chainTip){
     var blockTimes = new Array(72);
     async.eachSeries(_.range(localTip, chainTip.height), function (blockN, blockCb) {
       var start = Date.now();
-      rpc.getBlockTransactionsByHeight(blockN, function(err, transactions){
+      rpc.getBlockByHeight(blockN, function(err, block){
         if (err){
           return blockCb(err);
         }
-        processBlockTransactions(transactions, function (err, transactions) {
+        processBlock(block, blockN, function (err, transactions) {
           if (err) {
             return blockCb(err);
           }
