@@ -22,4 +22,8 @@ export class BlocksPage {
     // });
     blocksService.getLatestBlocks();
   }
+
+  public search(event) {
+    console.log(event.target.value);
+  }
 }

@@ -14,6 +14,9 @@
 
 <ion-content padding>
   <ion-list>
+    <ion-row>
+      <ion-searchbar (ionInput)="search($event)" placeholder="{{ 'Search for block, transaction or address' }}"></ion-searchbar>
+    </ion-row>
     <ion-item>
       <ion-row>
         <ion-col>Height</ion-col>
