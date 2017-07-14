@@ -21,8 +21,8 @@ export class BroadcastTxPage {
     });
   }
 
-  send() {
-    let postData = {
+  public send(): void {
+    let postData: any = {
       rawtx: this.transaction
     };
 
