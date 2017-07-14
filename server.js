@@ -124,7 +124,7 @@ function insertTransactions(transactions, callback){
       }
     };
   });
-  Transaction.bulkWrite(transactions, {ordered:false}, callback);
+  Transaction.bulkWrite(transactions, {ordered:false, safe:{w:1}}, callback);
 }
 
 rpc.getChainTip(function(err, chainTip){
