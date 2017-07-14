@@ -20,4 +20,10 @@ describe('BroadcastTxPage', () => {
   it('initializes', () => {
     expect(instance).toBeTruthy();
   });
+
+  it('has a send method', () => {
+    spyOn(instance, 'send');
+    instance.send();
+    expect(instance.send).toHaveBeenCalled();
+  });
 });
