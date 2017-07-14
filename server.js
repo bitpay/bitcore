@@ -17,7 +17,7 @@ app.use(bodyParser.raw({limit: 100000000}));
 function processBlock(block, height, callback){
   block = new bitcore.Block.fromString(block);
   var resultTransactions = [];
-  async.eachLimit(block.transactions, 4, function(transaction, txCb){
+  async.eachLimit(block.transactions, 32, function(transaction, txCb){
     Transaction.findOne({txid: transaction.hash}, function(err, hasTx){
       if (err){
         return txCb(err);
@@ -38,7 +38,7 @@ function processBlock(block, height, callback){
         });
       });
 
-      async.eachLimit(transaction.inputs, 4, function (input, inputCb) {
+      async.eachLimit(transaction.inputs, 2, function (input, inputCb) {
         if (transaction.isCoinbase()) {
           newTx.coinbase = true;
           newTx.inputs.push({
@@ -51,21 +51,19 @@ function processBlock(block, height, callback){
 
         Transaction.findOne({ txid: prevTxId }, function (err, inputTx) {
           if (err) {
-            console.error(err);
             return inputCb(err);
           }
           if (!inputTx) {
             inputTx = _.findWhere(block.transactions, { hash: prevTxId });
             if (inputTx) {
               inputTx = {
-                outputs: inputTx.outputs.map(function (output, index) {
-                  return {
-                    vout: index,
-                    amount: parseFloat((output.satoshis * 1e-8).toFixed(8)),
-                    address: output.script.toAddress('livenet').toString()
-                  };
-                }
-                )
+                outputs: [
+                  {
+                    vout: input.outputIndex,
+                    amount: parseFloat((inputTx.outputs[input.outputIndex].satoshis * 1e-8).toFixed(8)),
+                    address: inputTx.outputs[input.outputIndex].script.toAddress('livenet').toString()
+                  }
+                ]
               };
             }
           }
@@ -91,7 +89,7 @@ function processBlock(block, height, callback){
         var totalInputs = _.reduce(newTx.inputs, function (total, input) { return total + input.amount; }, 0);
         var totalOutputs = _.reduce(newTx.outputs, function (total, output) { return total + output.amount; }, 0);
         newTx.fee = parseFloat((totalInputs - totalOutputs).toFixed(8));
-        var addresses = _.uniq(_.union(_.pluck(newTx.inputs, 'address'), _.pluck(newTx.outputs, 'address')));
+        var addresses = _.compact(_.uniq(_.union(_.pluck(newTx.inputs, 'address'), _.pluck(newTx.outputs, 'address'))));
         WalletAddress.find({address: {$in: addresses}}, function(err, wallets){
           if (err){
             return txCb(err);
@@ -130,7 +128,7 @@ function insertTransactions(transactions, callback){
 rpc.getChainTip(function(err, chainTip){
   Transaction.find({}).limit(1).sort({ blockHeight: -1 }).exec(function (err, localTip) {
     localTip = (localTip[0] && localTip[0].blockHeight) || 0;
-    var blockTimes = new Array(72);
+    var blockTimes = new Array(144);
     async.eachSeries(_.range(localTip, chainTip.height), function (blockN, blockCb) {
       var start = Date.now();
       rpc.getBlockByHeight(blockN, function(err, block){
@@ -146,10 +144,11 @@ rpc.getChainTip(function(err, chainTip){
               return blockCb(err);
             }
             var end = Date.now();
+            console.log('tx total:\t\t' + transactions.length);
             console.log('tx per second:\t\t' + (transactions.length / ((end - start) / 1000)).toFixed(2));
             blockTimes.push(end - start);
             blockTimes.shift();
-            var avgBlockTime = _.reduce(blockTimes, function (total, time) { return total + time; }, 0) / 72;
+            var avgBlockTime = _.reduce(_.compact(blockTimes), function (total, time) { return total + time; }, 0) / _.compact(blockTimes).length;
             if (!Number.isNaN(avgBlockTime)) {
               console.log('est hours left:\t\t' + ((chainTip.height - blockN) * avgBlockTime / 1000 / 60 / 60).toFixed(2));
             }
