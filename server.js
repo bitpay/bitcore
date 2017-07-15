@@ -1,6 +1,6 @@
 'use strict';
 var cluster = require('cluster');
-var numCPUs = require('os').cpus().length;
+var numWorkers = require('os').cpus().length - 1;
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/fullNodePlus');
 var Transaction = require('./lib/models/Transaction');
@@ -32,7 +32,7 @@ function syncTransactionAndOutputs(data, callback){
     newTx.blockHash = data.blockHash;
     newTx.txid = transaction.hash;
 
-    async.eachOfLimit(transaction.outputs, 4, function(output, index, outputCb){
+    async.eachOfLimit(transaction.outputs, 2, function(output, index, outputCb){
       var address = output.script.toAddress('livenet').toString();
       if (address === 'false' && output.script.classify() === 'Pay to public key'){
         var hash = bitcore.crypto.Hash.sha256ripemd160(output.script.chunks[0].buf);
@@ -79,13 +79,19 @@ function syncTransactionAndOutputs(data, callback){
 
 function syncTransactionInputs(txid, callback){
   Transaction.findOne({txid: txid}, function(err, transaction){
-    async.eachLimit(transaction.inputs, 4, function(input, inputCb){
+    if (err){
+      return callback(err);
+    }
+    async.eachLimit(transaction.inputs, 2, function(input, inputCb){
       if (transaction.inputsProcessed) {
         return inputCb();
       }
       Transaction.findOne({txid: input.utxo}, function(err, utxo){
+        if (err) {
+          return inputCb(err);
+        }
         if (!utxo){
-          console.log(input);
+          return callback(new Error('Couldnt find utxo'));
         }
         input.address = utxo.outputs[input.vout].address;
         input.amount = utxo.outputs[input.vout].amount;
@@ -113,7 +119,7 @@ function syncTransactionInputs(txid, callback){
 var workers = [];
 if (cluster.isMaster){
   console.log(`Master ${process.pid} is running`);
-  _.times(numCPUs, function(){
+  _.times(numWorkers, function(){
     workers.push({ worker: cluster.fork(), active: false });
   });
   cluster.on('exit', function(worker) {
@@ -142,7 +148,7 @@ function processBlock(block, height, callback){
   var start = Date.now();
   async.series([
     function(cb){
-      async.eachLimit(block.transactions, numCPUs, function (transaction, txCb) {
+      async.eachLimit(block.transactions, numWorkers, function (transaction, txCb) {
         var worker = _.findWhere(workers, { active: false });
         worker.worker.once('message', function (result) {
           worker.active = false;
@@ -153,7 +159,7 @@ function processBlock(block, height, callback){
       }, cb);
     },
     function (cb) {
-      async.eachLimit(block.transactions, numCPUs, function (transaction, txCb) {
+      async.eachLimit(block.transactions, numWorkers, function (transaction, txCb) {
         var worker = _.findWhere(workers, { active: false });
         worker.worker.once('message', function (result) {
           worker.active = false;
@@ -174,9 +180,12 @@ function processBlock(block, height, callback){
   });
 }
 
-var sync = function(){
+var sync = function(done){
   rpc.getChainTip(function (err, chainTip) {
     Transaction.find({}).limit(1).sort({ blockHeight: -1 }).exec(function (err, localTip) {
+      if (err) {
+        return done(err);
+      }
       localTip = (localTip[0] && localTip[0].blockHeight) || 0;
       async.eachSeries(_.range(localTip, chainTip.height), function (blockN, blockCb) {
         rpc.getBlockByHeight(blockN, function (err, block) {
@@ -192,7 +201,7 @@ var sync = function(){
               console.log('est hours left:\t\t' + ((chainTip.height - blockN) * avgBlockTime / 1000 / 60 / 60).toFixed(2));
             }
             console.log('added block:\t\t' + blockN);
-            console.log('=========================================');
+            console.log('===============================================================');
 
             blockCb(err);
           });
@@ -200,15 +209,22 @@ var sync = function(){
       }, function (err) {
         if (err) {
           console.error(err);
+          return done(err);
         }
         console.log('done');
+        done();
       });
     });
   });
 };
 
 if (cluster.isMaster) {
-  sync();
+  sync(function(err){
+    if (err){
+      console.error('Syncing failed: ' + err);
+    }
+    console.log('Syncing finished successfully');
+  });
 }
 
 var Wallet = require('./lib/models/wallet');
