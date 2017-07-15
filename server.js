@@ -32,7 +32,7 @@ function syncTransactionAndOutputs(data, callback){
     newTx.blockHash = data.blockHash;
     newTx.txid = transaction.hash;
 
-    async.eachOfSeries(transaction.outputs, function(output, index, outputCb){
+    async.eachOfLimit(transaction.outputs, 4, function(output, index, outputCb){
       var address = output.script.toAddress('livenet').toString();
       if (address === 'false' && output.script.classify() === 'Pay to public key'){
         var hash = bitcore.crypto.Hash.sha256ripemd160(output.script.chunks[0].buf);
@@ -79,7 +79,7 @@ function syncTransactionAndOutputs(data, callback){
 
 function syncTransactionInputs(txid, callback){
   Transaction.findOne({txid: txid}, function(err, transaction){
-    async.eachSeries(transaction.inputs, function(input, inputCb){
+    async.eachLimit(transaction.inputs, 4, function(input, inputCb){
       if (transaction.inputsProcessed) {
         return inputCb();
       }
