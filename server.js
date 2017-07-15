@@ -1,5 +1,6 @@
 'use strict';
-
+var cluster = require('cluster');
+var numCPUs = require('os').cpus().length;
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/fullNodePlus');
 var Transaction = require('./lib/models/Transaction');
@@ -14,158 +15,201 @@ var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.raw({limit: 100000000}));
 
-function processBlock(block, height, callback){
-  block = new bitcore.Block.fromString(block);
-  var resultTransactions = [];
-  async.eachLimit(block.transactions, 32, function(transaction, txCb){
-    Transaction.findOne({txid: transaction.hash}, function(err, hasTx){
-      if (err){
-        return txCb(err);
-      }
-      if (hasTx){
-        return txCb();
-      }
-      var newTx = {inputs:[], outputs:[], wallets:[]};
-      newTx.txid = transaction.hash;
-      newTx.blockHeight = height;
-      newTx.blockHash = block.hash;
+var blockTimes = new Array(144);
 
-      transaction.outputs.forEach(function (output, index) {
+function syncTransactionAndOutputs(data, callback){
+  var transaction = new bitcore.Transaction(data.transaction);
+  Transaction.findOne({txid: transaction.hash}, function(err, hasTx){
+    if (err){
+      return callback(err);
+    }
+    if (hasTx){
+      return callback();
+    }
+
+    var newTx = { inputs: [], outputs: [], wallets: [] };
+    newTx.blockHeight = data.blockHeight;
+    newTx.blockHash = data.blockHash;
+    newTx.txid = transaction.hash;
+
+    async.eachOfSeries(transaction.outputs, function(output, index, outputCb){
+      var address = output.script.toAddress('livenet').toString();
+      if (address === 'false' && output.script.classify() === 'Pay to public key'){
+        var hash = bitcore.crypto.Hash.sha256ripemd160(output.script.chunks[0].buf);
+        address = bitcore.Address(hash, bitcore.Networks.livenet).toString();
+      }
+      WalletAddress.find({ address: address }, function (err, wallets) {
+        if (err) {
+          return outputCb(err);
+        }
+
         newTx.outputs.push({
           vout: index,
-          amount: parseFloat((output.satoshis*1e-8).toFixed(8)),
-          address: output.script.toAddress('livenet').toString()
+          amount: parseFloat((output.satoshis * 1e-8).toFixed(8)),
+          address: address,
+          wallets: _.pluck(wallets, 'wallet')
         });
+        outputCb();
       });
-
-      async.eachLimit(transaction.inputs, 2, function (input, inputCb) {
-        if (transaction.isCoinbase()) {
-          newTx.coinbase = true;
+    }, function(err){
+      if (err){
+        return callback(err);
+      }
+      if (transaction.isCoinbase()) {
+        newTx.coinbase = true;
+        newTx.inputs.push({
+          amount: newTx.outputs[0].amount
+        });
+        newTx.inputsProcessed = true;
+      }
+      if (!transaction.isCoinbase()) {
+        transaction.inputs.forEach(function (input) {
+          var prevTxId = input.prevTxId.toString('hex');
           newTx.inputs.push({
-            amount: newTx.outputs[0].amount
+            utxo: prevTxId,
+            vout: input.outputIndex
           });
-          return inputCb();
+        });
+        newTx.inputsProcessed = false;
+      }
+      Transaction.create(newTx, callback);
+    });
+  });
+}
+
+function syncTransactionInputs(txid, callback){
+  Transaction.findOne({txid: txid}, function(err, transaction){
+    async.eachSeries(transaction.inputs, function(input, inputCb){
+      if (transaction.inputsProcessed) {
+        return inputCb();
+      }
+      Transaction.findOne({txid: input.utxo}, function(err, utxo){
+        if (!utxo){
+          console.log(input);
         }
-
-        var prevTxId = input.prevTxId.toString('hex');
-
-        Transaction.findOne({ txid: prevTxId }, function (err, inputTx) {
-          if (err) {
+        input.address = utxo.outputs[input.vout].address;
+        input.amount = utxo.outputs[input.vout].amount;
+        WalletAddress.find({address: input.address}, function(err, wallets){
+          if (err){
             return inputCb(err);
           }
-          if (!inputTx) {
-            inputTx = _.findWhere(block.transactions, { hash: prevTxId });
-            if (inputTx) {
-              inputTx = {
-                outputs: [
-                  {
-                    vout: input.outputIndex,
-                    amount: parseFloat((inputTx.outputs[input.outputIndex].satoshis * 1e-8).toFixed(8)),
-                    address: inputTx.outputs[input.outputIndex].script.toAddress('livenet').toString()
-                  }
-                ]
-              };
-            }
-          }
-          if (err || !inputTx) {
-            return inputCb(new Error('Could not find input transaction'));
-          }
-          var utxo = _.findWhere(inputTx.outputs, { vout: input.outputIndex });
-          if (!utxo) {
-            return inputCb(new Error('Could not find utxo'));
-          }
-          newTx.inputs.push({
-            txid: prevTxId,
-            vout: input.outputIndex,
-            address: utxo.address,
-            amount: utxo.amount
-          });
+          input.wallets = _.pluck(wallets, 'wallet');
           inputCb();
         });
-      }, function (err) {
-        if (err){
-          return txCb(err);
-        }
-        var totalInputs = _.reduce(newTx.inputs, function (total, input) { return total + input.amount; }, 0);
-        var totalOutputs = _.reduce(newTx.outputs, function (total, output) { return total + output.amount; }, 0);
-        newTx.fee = parseFloat((totalInputs - totalOutputs).toFixed(8));
-        var addresses = _.compact(_.uniq(_.union(_.pluck(newTx.inputs, 'address'), _.pluck(newTx.outputs, 'address'))));
-        WalletAddress.find({address: {$in: addresses}}, function(err, wallets){
-          if (err){
-            return txCb(err);
-          }
-          if (wallets.length){
-            wallets.forEach(function (wallet) {
-              newTx.wallets.push(wallet.wallet);
-            });
-          }
-          resultTransactions.push(newTx);
-          txCb();
-        });
-
       });
-    });
-
-  }, function(err){
-    callback(err, resultTransactions);
-  });
-}
-
-function insertTransactions(transactions, callback){
-  if (!transactions.length){
-    return callback();
-  }
-  transactions = transactions.map(function(transaction){
-    return {
-      insertOne:{
-        document: transaction
+    }, function(err){
+      if (err){
+        return callback(err);
       }
-    };
+      var totalInputs = _.reduce(transaction.inputs, function (total, input) { return total + input.amount; }, 0);
+      var totalOutputs = _.reduce(transaction.outputs, function (total, output) { return total + output.amount; }, 0);
+      transaction.fee = parseFloat((totalInputs - totalOutputs).toFixed(8));
+      transaction.inputsProcessed = true;
+      transaction.save(callback);
+    });
   });
-  Transaction.bulkWrite(transactions, {ordered:false, safe:{w:1}}, callback);
 }
 
-rpc.getChainTip(function(err, chainTip){
-  Transaction.find({}).limit(1).sort({ blockHeight: -1 }).exec(function (err, localTip) {
-    localTip = (localTip[0] && localTip[0].blockHeight) || 0;
-    var blockTimes = new Array(144);
-    async.eachSeries(_.range(localTip, chainTip.height), function (blockN, blockCb) {
-      var start = Date.now();
-      rpc.getBlockByHeight(blockN, function(err, block){
-        if (err){
-          return blockCb(err);
-        }
-        processBlock(block, blockN, function (err, transactions) {
+var workers = [];
+if (cluster.isMaster){
+  console.log(`Master ${process.pid} is running`);
+  _.times(numCPUs, function(){
+    workers.push({ worker: cluster.fork(), active: false });
+  });
+  cluster.on('exit', function(worker) {
+    console.log(`worker ${worker.process.pid} died`);
+  });
+}
+if (cluster.isWorker) {
+  console.log(`Worker ${process.pid} started`);
+  process.on('message', function(payload){
+    if (payload.task === 'syncTransactionAndOutputs') {
+      syncTransactionAndOutputs(payload.argument, function (err) {
+        process.send({error:err});
+      });
+    }
+    if (payload.task === 'syncTransactionInputs') {
+      syncTransactionInputs(payload.argument, function (err) {
+        process.send({error:err});
+      });
+    }
+  });
+}
+
+
+function processBlock(block, height, callback){
+  block = new bitcore.Block.fromString(block);
+  var start = Date.now();
+  async.series([
+    function(cb){
+      async.eachLimit(block.transactions, numCPUs, function (transaction, txCb) {
+        var worker = _.findWhere(workers, { active: false });
+        worker.worker.once('message', function (result) {
+          worker.active = false;
+          txCb(result.error);
+        });
+        worker.active = true;
+        worker.worker.send({ task: 'syncTransactionAndOutputs', argument: {transaction: transaction.toString(), blockHeight:height, blockHash:block.hash} });
+      }, cb);
+    },
+    function (cb) {
+      async.eachLimit(block.transactions, numCPUs, function (transaction, txCb) {
+        var worker = _.findWhere(workers, { active: false });
+        worker.worker.once('message', function (result) {
+          worker.active = false;
+          txCb(result.error);
+        });
+        worker.active = true;
+        worker.worker.send({ task: 'syncTransactionInputs', argument: transaction.hash });
+      }, cb);
+    }
+  ] , function(err){
+    var end = Date.now();
+    blockTimes.push(end - start);
+    blockTimes.shift();
+    console.log('Block Time:\t\t' + new Date(block.header.timestamp * 1000));
+    console.log('tx count:\t\t' + block.transactions.length);
+    console.log('tx/s :\t\t\t' + (block.transactions.length / (end - start) * 1000).toFixed(2));
+    callback(err);
+  });
+}
+
+var sync = function(){
+  rpc.getChainTip(function (err, chainTip) {
+    Transaction.find({}).limit(1).sort({ blockHeight: -1 }).exec(function (err, localTip) {
+      localTip = (localTip[0] && localTip[0].blockHeight) || 0;
+      async.eachSeries(_.range(localTip, chainTip.height), function (blockN, blockCb) {
+        rpc.getBlockByHeight(blockN, function (err, block) {
           if (err) {
             return blockCb(err);
           }
-          insertTransactions(transactions, function (err) {
+          processBlock(block, blockN, function (err) {
             if (err) {
               return blockCb(err);
             }
-            var end = Date.now();
-            console.log('tx total:\t\t' + transactions.length);
-            console.log('tx per second:\t\t' + (transactions.length / ((end - start) / 1000)).toFixed(2));
-            blockTimes.push(end - start);
-            blockTimes.shift();
             var avgBlockTime = _.reduce(_.compact(blockTimes), function (total, time) { return total + time; }, 0) / _.compact(blockTimes).length;
             if (!Number.isNaN(avgBlockTime)) {
               console.log('est hours left:\t\t' + ((chainTip.height - blockN) * avgBlockTime / 1000 / 60 / 60).toFixed(2));
             }
             console.log('added block:\t\t' + blockN);
             console.log('=========================================');
+
             blockCb(err);
           });
         });
+      }, function (err) {
+        if (err) {
+          console.error(err);
+        }
+        console.log('done');
       });
-    }, function (err) {
-      if (err){
-        console.error(err);
-      }
-      console.log('done');
     });
   });
-});
+};
+
+if (cluster.isMaster) {
+  sync();
+}
 
 var Wallet = require('./lib/models/wallet');
 var WalletAddress = require('./lib/models/walletAddress');
@@ -230,24 +274,45 @@ app.post('/wallet/:walletId', function (req, res) {
         }
       };
     });
-    var transactionUpdates = walletFile.addresses.map(function (address) {
+    var transactionInputUpdates = walletFile.addresses.map(function (address) {
       return {
         updateMany: {
-          filter: { $or: [{ 'inputs.address': address.address }, { 'outputs.address': address.address }] },
-          update: { $addToSet: { wallets: wallet._id } }
+          filter: { 'inputs.address': address.address },
+          update: {
+            $addToSet: { 'inputs.$.wallets': wallet._id }
+          }
         }
       };
     });
+    var transactionOutputUpdates = walletFile.addresses.map(function (address) {
+      return {
+        updateMany: {
+          filter: { 'outputs.address': address.address },
+          update: {
+            $addToSet: { 'outputs.$.wallets': wallet._id }
+          }
+        }
+      };
+    });
+
     WalletAddress.bulkWrite(walletUpdates, { ordered: false }, function (err) {
       if (err) {
         return res.status(500).send(err);
       }
-      Transaction.bulkWrite(transactionUpdates, {ordered:false}, function (err) {
+      Transaction.bulkWrite(transactionInputUpdates, {ordered:false}, function (err, result) {
         if (err) {
-          return res.status(500).send(err);
+          console.error(err);
         }
-        res.send({ success: true });
+        console.log('Imported ' + result.nModified + ' input wallet txs');
+        Transaction.bulkWrite(transactionOutputUpdates, { ordered: false }, function (err, result) {
+          if (err){
+            console.error(err);
+          }
+          console.log('Imported ' + result.nModified + ' output wallet txs');
+        });
+
       });
+      res.send({ success: true });
     });
   });
 });
@@ -265,9 +330,12 @@ app.get('/wallet/:walletId/transactions', function (req, res) {
   });
 });
 
-app.listen(3000, function () {
-  console.log('api server listening on port 3000!');
-});
+if (cluster.isWorker){
+  app.listen(3000, function () {
+    console.log('api server listening on port 3000!');
+  });
+}
+
 
 
 
