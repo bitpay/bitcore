@@ -4,6 +4,8 @@ var numWorkers = require('os').cpus().length - 1;
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/fullNodePlus');
 var Transaction = require('./lib/models/Transaction');
+var Wallet = require('./lib/models/wallet');
+var WalletAddress = require('./lib/models/walletAddress');
 var rpc = require('./lib/rpc');
 var async = require('async');
 var _ = require('underscore');
@@ -155,7 +157,13 @@ function processBlock(block, height, callback){
           txCb(result.error);
         });
         worker.active = true;
-        worker.worker.send({ task: 'syncTransactionAndOutputs', argument: {transaction: transaction.toString(), blockHeight:height, blockHash:block.hash} });
+        worker.worker.send({
+          task: 'syncTransactionAndOutputs',
+          argument: {
+            transaction: transaction.toString(),
+            blockHeight:height, blockHash:block.hash
+          }
+        });
       }, cb);
     },
     function (cb) {
@@ -196,9 +204,12 @@ var sync = function(done){
             if (err) {
               return blockCb(err);
             }
-            var avgBlockTime = _.reduce(_.compact(blockTimes), function (total, time) { return total + time; }, 0) / _.compact(blockTimes).length;
+            var avgBlockTime = _.reduce(_.compact(blockTimes), function (total, time) {
+              return total + time;
+            }, 0) / _.compact(blockTimes).length;
             if (!Number.isNaN(avgBlockTime)) {
-              console.log('est hours left:\t\t' + ((chainTip.height - blockN) * avgBlockTime / 1000 / 60 / 60).toFixed(2));
+              console.log('est hours left:\t\t' +
+                ((chainTip.height - blockN) * avgBlockTime / 1000 / 60 / 60).toFixed(2));
             }
             console.log('added block:\t\t' + blockN);
             console.log('===============================================================');
@@ -226,9 +237,6 @@ if (cluster.isMaster) {
     console.log('Syncing finished successfully');
   });
 }
-
-var Wallet = require('./lib/models/wallet');
-var WalletAddress = require('./lib/models/walletAddress');
 
 app.post('/wallet', function (req, res) {
   Wallet.create({ name: req.body.name }, function (err, result) {
