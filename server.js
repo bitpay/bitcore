@@ -188,7 +188,7 @@ function processBlock(block, height, callback){
   });
 }
 
-var sync = function(done){
+function sync(done){
   rpc.getChainTip(function (err, chainTip) {
     Transaction.find({}).limit(1).sort({ blockHeight: -1 }).exec(function (err, localTip) {
       if (err) {
