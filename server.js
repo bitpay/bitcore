@@ -62,7 +62,7 @@ function syncTransactionAndOutputs(data, callback){
       if (transaction.inputs[0].prevTxId.toString('hex') === '0000000000000000000000000000000000000000000000000000000000000000') {
         newTx.coinbase = true;
         newTx.inputs.push({
-          amount: newTx.outputs[0].amount
+          amount: _.reduce(newTx.outputs, function (total, output) { return total + output.amount; }, 0)
         });
         newTx.inputsProcessed = true;
       } else {
@@ -96,8 +96,12 @@ function syncTransactionInputs(txid, callback){
         if (!utxo){
           return callback(new Error('Couldnt find utxo'));
         }
-        input.address = utxo.outputs[input.vout].address;
-        input.amount = parseFloat(utxo.outputs[input.vout].amount.toFixed(8));
+        utxo = _.findWhere(utxo.outputs, {vout:input.vout});
+        input.address = utxo.address;
+        input.amount = parseFloat(utxo.amount.toFixed(8));
+        if (!input.address){
+          inputCb();
+        }
         WalletAddress.find({address: input.address}, function(err, wallets){
           if (err){
             return inputCb(err);
@@ -113,6 +117,9 @@ function syncTransactionInputs(txid, callback){
       var totalInputs = _.reduce(transaction.inputs, function (total, input) { return total + input.amount; }, 0);
       var totalOutputs = _.reduce(transaction.outputs, function (total, output) { return total + output.amount; }, 0);
       transaction.fee = parseFloat((totalInputs - totalOutputs).toFixed(8));
+      if (transaction.fee < 0){
+        return callback('Fee is negative, something is really wrong');
+      }
       transaction.inputsProcessed = true;
       transaction.save(callback);
     });
@@ -120,30 +127,30 @@ function syncTransactionInputs(txid, callback){
 }
 
 var workers = [];
-if (cluster.isMaster){
-  console.log(`Master ${process.pid} is running`);
-  _.times(numWorkers, function(){
-    workers.push({ worker: cluster.fork(), active: false });
-  });
-  cluster.on('exit', function(worker) {
-    console.log(`worker ${worker.process.pid} died`);
-  });
-}
-if (cluster.isWorker) {
-  console.log(`Worker ${process.pid} started`);
-  process.on('message', function(payload){
-    if (payload.task === 'syncTransactionAndOutputs') {
-      syncTransactionAndOutputs(payload.argument, function (err) {
-        process.send({error:err});
-      });
-    }
-    if (payload.task === 'syncTransactionInputs') {
-      syncTransactionInputs(payload.argument, function (err) {
-        process.send({error:err});
-      });
-    }
-  });
-}
+// if (cluster.isMaster){
+//   console.log(`Master ${process.pid} is running`);
+//   _.times(numWorkers, function(){
+//     workers.push({ worker: cluster.fork(), active: false });
+//   });
+//   cluster.on('exit', function(worker) {
+//     console.log(`worker ${worker.process.pid} died`);
+//   });
+// }
+// if (cluster.isWorker) {
+//   console.log(`Worker ${process.pid} started`);
+//   process.on('message', function(payload){
+//     if (payload.task === 'syncTransactionAndOutputs') {
+//       syncTransactionAndOutputs(payload.argument, function (err) {
+//         process.send({error:err});
+//       });
+//     }
+//     if (payload.task === 'syncTransactionInputs') {
+//       syncTransactionInputs(payload.argument, function (err) {
+//         process.send({error:err});
+//       });
+//     }
+//   });
+// }
 
 
 function processBlock(block, height, callback){
