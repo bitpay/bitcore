@@ -35,12 +35,19 @@ function syncTransactionAndOutputs(data, callback){
     newTx.txid = transaction.hash;
 
     async.eachOfLimit(transaction.outputs, 4, function(output, index, outputCb){
-      var script = new bitcore.Script(output.script);
-      var address = script.toAddress('livenet').toString();
-      if (address === 'false' && script.classify() === 'Pay to public key'){
-        var hash = bitcore.crypto.Hash.sha256ripemd160(script.chunks[0].buf);
-        address = bitcore.Address(hash, bitcore.Networks.livenet).toString();
+      var script;
+      var address;
+      try {
+        script = new bitcore.Script(output.script);
+        address = script.toAddress('livenet').toString();
+        if (address === 'false' && script.classify() === 'Pay to public key') {
+          var hash = bitcore.crypto.Hash.sha256ripemd160(script.chunks[0].buf);
+          address = bitcore.Address(hash, bitcore.Networks.livenet).toString();
+        }
+      } catch (e){
+        address = 'noAddress';
       }
+
       WalletAddress.find({ address: address }, function (err, wallets) {
         if (err) {
           return outputCb(err);
