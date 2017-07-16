@@ -127,30 +127,30 @@ function syncTransactionInputs(txid, callback){
 }
 
 var workers = [];
-// if (cluster.isMaster){
-//   console.log(`Master ${process.pid} is running`);
-//   _.times(numWorkers, function(){
-//     workers.push({ worker: cluster.fork(), active: false });
-//   });
-//   cluster.on('exit', function(worker) {
-//     console.log(`worker ${worker.process.pid} died`);
-//   });
-// }
-// if (cluster.isWorker) {
-//   console.log(`Worker ${process.pid} started`);
-//   process.on('message', function(payload){
-//     if (payload.task === 'syncTransactionAndOutputs') {
-//       syncTransactionAndOutputs(payload.argument, function (err) {
-//         process.send({error:err});
-//       });
-//     }
-//     if (payload.task === 'syncTransactionInputs') {
-//       syncTransactionInputs(payload.argument, function (err) {
-//         process.send({error:err});
-//       });
-//     }
-//   });
-// }
+if (cluster.isMaster){
+  console.log(`Master ${process.pid} is running`);
+  _.times(numWorkers, function(){
+    workers.push({ worker: cluster.fork(), active: false });
+  });
+  cluster.on('exit', function(worker) {
+    console.log(`worker ${worker.process.pid} died`);
+  });
+}
+if (cluster.isWorker) {
+  console.log(`Worker ${process.pid} started`);
+  process.on('message', function(payload){
+    if (payload.task === 'syncTransactionAndOutputs') {
+      syncTransactionAndOutputs(payload.argument, function (err) {
+        process.send({error:err});
+      });
+    }
+    if (payload.task === 'syncTransactionInputs') {
+      syncTransactionInputs(payload.argument, function (err) {
+        process.send({error:err});
+      });
+    }
+  });
+}
 
 
 function processBlock(block, height, callback){
