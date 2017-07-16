@@ -2,7 +2,7 @@
 var cluster = require('cluster');
 var numWorkers = require('os').cpus().length - 1;
 var mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/fullNodePlus');
+mongoose.connect('mongodb://localhost/fullNodePlus', { server: { socketOptions: { keepAlive: 120 }, poolSize:10}});
 var Transaction = require('./lib/models/Transaction');
 var Wallet = require('./lib/models/wallet');
 var WalletAddress = require('./lib/models/walletAddress');
@@ -34,7 +34,7 @@ function syncTransactionAndOutputs(data, callback){
     newTx.blockHash = data.blockHash;
     newTx.txid = transaction.hash;
 
-    async.eachOfLimit(transaction.outputs, 4, function(output, index, outputCb){
+    async.eachOfLimit(transaction.outputs, 8, function(output, index, outputCb){
       var script;
       var address;
       try {
@@ -92,7 +92,7 @@ function syncTransactionInputs(txid, callback){
     if (err){
       return callback(err);
     }
-    async.eachLimit(transaction.inputs, 1, function(input, inputCb){
+    async.eachLimit(transaction.inputs, 8, function(input, inputCb){
       if (transaction.inputsProcessed) {
         return inputCb();
       }
