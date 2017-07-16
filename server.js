@@ -20,7 +20,7 @@ app.use(bodyParser.raw({limit: 100000000}));
 var blockTimes = new Array(144);
 
 function syncTransactionAndOutputs(data, callback){
-  var transaction = new bitcore.Transaction(data.transaction);
+  var transaction = data.transaction;
   Transaction.findOne({txid: transaction.hash}, function(err, hasTx){
     if (err){
       return callback(err);
@@ -34,10 +34,11 @@ function syncTransactionAndOutputs(data, callback){
     newTx.blockHash = data.blockHash;
     newTx.txid = transaction.hash;
 
-    async.eachOfLimit(transaction.outputs, 2, function(output, index, outputCb){
-      var address = output.script.toAddress('livenet').toString();
-      if (address === 'false' && output.script.classify() === 'Pay to public key'){
-        var hash = bitcore.crypto.Hash.sha256ripemd160(output.script.chunks[0].buf);
+    async.eachOf(transaction.outputs, function(output, index, outputCb){
+      var script = new bitcore.Script(output.script);
+      var address = script.toAddress('livenet').toString();
+      if (address === 'false' && script.classify() === 'Pay to public key'){
+        var hash = bitcore.crypto.Hash.sha256ripemd160(script.chunks[0].buf);
         address = bitcore.Address(hash, bitcore.Networks.livenet).toString();
       }
       WalletAddress.find({ address: address }, function (err, wallets) {
@@ -57,14 +58,14 @@ function syncTransactionAndOutputs(data, callback){
       if (err){
         return callback(err);
       }
-      if (transaction.isCoinbase()) {
+      // Coinbase
+      if (transaction.inputs[0].prevTxId.toString('hex') === '0000000000000000000000000000000000000000000000000000000000000000') {
         newTx.coinbase = true;
         newTx.inputs.push({
           amount: newTx.outputs[0].amount
         });
         newTx.inputsProcessed = true;
-      }
-      if (!transaction.isCoinbase()) {
+      } else {
         transaction.inputs.forEach(function (input) {
           var prevTxId = input.prevTxId.toString('hex');
           newTx.inputs.push({
@@ -96,7 +97,7 @@ function syncTransactionInputs(txid, callback){
           return callback(new Error('Couldnt find utxo'));
         }
         input.address = utxo.outputs[input.vout].address;
-        input.amount = utxo.outputs[input.vout].amount;
+        input.amount = parseFloat(utxo.outputs[input.vout].amount.toFixed(8));
         WalletAddress.find({address: input.address}, function(err, wallets){
           if (err){
             return inputCb(err);
@@ -151,30 +152,39 @@ function processBlock(block, height, callback){
   async.series([
     function(cb){
       async.eachLimit(block.transactions, numWorkers, function (transaction, txCb) {
-        var worker = _.findWhere(workers, { active: false });
-        worker.worker.once('message', function (result) {
-          worker.active = false;
-          txCb(result.error);
-        });
-        worker.active = true;
-        worker.worker.send({
-          task: 'syncTransactionAndOutputs',
-          argument: {
-            transaction: transaction.toString(),
-            blockHeight:height, blockHash:block.hash
-          }
-        });
+        if (workers.length){
+          var worker = _.findWhere(workers, { active: false });
+          worker.worker.once('message', function (result) {
+            worker.active = false;
+            txCb(result.error);
+          });
+          worker.active = true;
+          worker.worker.send({
+            task: 'syncTransactionAndOutputs',
+            argument: {
+              transaction: transaction,
+              blockHeight: height, blockHash: block.hash
+            }
+          });
+        } else {
+          syncTransactionAndOutputs({transaction:transaction, blockHeight:height, blockHash:block.hash}, txCb);
+        }
       }, cb);
     },
     function (cb) {
       async.eachLimit(block.transactions, numWorkers, function (transaction, txCb) {
-        var worker = _.findWhere(workers, { active: false });
-        worker.worker.once('message', function (result) {
-          worker.active = false;
-          txCb(result.error);
-        });
-        worker.active = true;
-        worker.worker.send({ task: 'syncTransactionInputs', argument: transaction.hash });
+        if (workers.length){
+          var worker = _.findWhere(workers, { active: false });
+          worker.worker.once('message', function (result) {
+            worker.active = false;
+            txCb(result.error);
+          });
+          worker.active = true;
+          worker.worker.send({ task: 'syncTransactionInputs', argument: transaction.hash });
+        } else {
+          syncTransactionInputs(transaction.hash,txCb);
+        }
+
       }, cb);
     }
   ] , function(err){
