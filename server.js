@@ -107,7 +107,7 @@ function syncTransactionInputs(txid, callback){
         input.address = utxo.address;
         input.amount = parseFloat(utxo.amount.toFixed(8));
         if (!input.address){
-          inputCb();
+          return inputCb();
         }
         WalletAddress.find({address: input.address}, function(err, wallets){
           if (err){
