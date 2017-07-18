@@ -34,7 +34,7 @@ function syncTransactionAndOutputs(data, callback){
     newTx.blockHash = data.blockHash;
     newTx.txid = transaction.hash;
 
-    async.eachOfLimit(transaction.outputs, 4, function(output, index, outputCb){
+    async.eachOfLimit(transaction.outputs, 8, function(output, index, outputCb){
       var script;
       var address;
       try {
@@ -95,7 +95,7 @@ function syncTransactionInputs(txid, callback){
     if (transaction.inputsProcessed) {
       return callback();
     }
-    async.eachLimit(transaction.inputs, 4, function(input, inputCb){
+    async.eachLimit(transaction.inputs, 8, function(input, inputCb){
       Transaction.findOne({txid: input.utxo}).lean().exec(function(err, utxo){
         if (err) {
           return inputCb(err);
