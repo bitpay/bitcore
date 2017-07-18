@@ -21,7 +21,7 @@ var blockTimes = new Array(144);
 
 function syncTransactionAndOutputs(data, callback){
   var transaction = data.transaction;
-  Transaction.findOne({txid: transaction.hash}, function(err, hasTx){
+  Transaction.findOne({txid: transaction.hash}).lean().exec(function(err, hasTx){
     if (err){
       return callback(err);
     }
@@ -48,7 +48,7 @@ function syncTransactionAndOutputs(data, callback){
         address = 'noAddress';
       }
 
-      WalletAddress.find({ address: address }, function (err, wallets) {
+      WalletAddress.find({ address: address }).lean().exec(function (err, wallets) {
         if (err) {
           return outputCb(err);
         }
@@ -96,10 +96,7 @@ function syncTransactionInputs(txid, callback){
       return callback();
     }
     async.eachLimit(transaction.inputs, 4, function(input, inputCb){
-      if (transaction.inputsProcessed) {
-        return inputCb();
-      }
-      Transaction.findOne({txid: input.utxo}, function(err, utxo){
+      Transaction.findOne({txid: input.utxo}).lean().exec(function(err, utxo){
         if (err) {
           return inputCb(err);
         }
@@ -112,7 +109,7 @@ function syncTransactionInputs(txid, callback){
         if (!input.address){
           return inputCb();
         }
-        WalletAddress.find({address: input.address}, function(err, wallets){
+        WalletAddress.find({address: input.address}).lean().exec(function(err, wallets){
           if (err){
             return inputCb(err);
           }
@@ -254,7 +251,7 @@ function sync(done){
       });
     });
   });
-};
+}
 
 if (cluster.isMaster) {
   sync(function(err){
