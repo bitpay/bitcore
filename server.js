@@ -2,7 +2,7 @@
 var cluster = require('cluster');
 var numWorkers = require('os').cpus().length-1;
 var mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/fullNodePlus', { server: { socketOptions: { keepAlive: 120 }, poolSize:10}});
+mongoose.connect('mongodb://localhost/fullNodePlus', { server: { socketOptions: { keepAlive: 120, socketTimeoutMS: 0, connectionTimeout: 0 }, poolSize:10}});
 var Transaction = require('./lib/models/Transaction');
 var Wallet = require('./lib/models/wallet');
 var WalletAddress = require('./lib/models/walletAddress');
