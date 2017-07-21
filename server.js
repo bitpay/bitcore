@@ -95,8 +95,8 @@ function syncTransactionInputs(txid, callback){
     if (transaction.inputsProcessed) {
       return callback();
     }
-    async.eachLimit(transaction.inputs, 4, function(input, inputCb){
-      Transaction.findOne({txid: input.utxo}).lean().exec(function(err, utxo){
+    async.eachLimit(transaction.inputs, 10, function(input, inputCb){
+      Transaction.findOne({txid: input.utxo}).select('outputs').lean().exec(function(err, utxo){
         if (err) {
           return inputCb(err);
         }
