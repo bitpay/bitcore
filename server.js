@@ -409,8 +409,8 @@ ListTransactionsStream.prototype._transform = function(transaction, enc, done){
     });
   });
   if (totalSent > totalReceived){
-    self.push(JSON.stringify({ txid: transaction.txid, type: 'send', amount: totalSent }));
-    self.push(JSON.stringify({ txid: transaction.txid, type: 'fee', amount: transaction.fee }));
+    self.push(JSON.stringify({ txid: transaction.txid, type: 'send', amount: -totalSent }));
+    self.push(JSON.stringify({ txid: transaction.txid, type: 'fee', amount: -transaction.fee }));
     return done();
   }
   self.push(JSON.stringify({ txid: transaction.txid, type: 'receive', amount: totalReceived }));
