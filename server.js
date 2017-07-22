@@ -13,6 +13,8 @@ var JSONStream = require('JSONStream');
 var express = require('express');
 var bodyParser = require('body-parser');
 var bitcore = require('bitcore-lib');
+var util = require('util');
+var Transform = require('stream').Transform;
 var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.raw({limit: 100000000}));
@@ -365,6 +367,41 @@ app.post('/wallet/:walletId', function (req, res) {
   });
 });
 
+function ListTransactionsStream(walletId) {
+  this.walletId = walletId;
+  Transform.call(this, { objectMode: true });
+}
+
+util.inherits(ListTransactionsStream, Transform);
+
+ListTransactionsStream.prototype._transform = function(transaction, enc, done){
+  var self = this;
+  var totalSent = 0;
+  var totalReceived = 0;
+  _.each(transaction.inputs, function(input){
+    _.each(input.wallets, function (wallet) {
+      if (wallet.toString() === self.walletId.toString()) {
+        totalSent += input.amount;
+      }
+    });
+  });
+  totalSent -= transaction.fee;
+  _.each(transaction.outputs, function (output) {
+    _.each(output.wallets, function (wallet) {
+      if (wallet.toString() === self.walletId.toString()) {
+        totalReceived += output.amount;
+      }
+    });
+  });
+  if (totalSent > totalReceived){
+    self.push(JSON.stringify({ txid: transaction.txid, type: 'send', amount: totalSent }));
+    self.push(JSON.stringify({ txid: transaction.txid, type: 'fee', amount: transaction.fee }));
+    return done();
+  }
+  self.push(JSON.stringify({ txid: transaction.txid, type: 'receive', amount: totalReceived }));
+  done();
+};
+
 app.get('/wallet/:walletId/transactions', function (req, res) {
   Wallet.findOne({ _id: req.params.walletId }, function (err, wallet) {
     if (err) {
@@ -373,12 +410,13 @@ app.get('/wallet/:walletId/transactions', function (req, res) {
     if (!wallet) {
       return res.status(404).send(new Error('Wallet not found'));
     }
-    var transactionStream = Transaction.find({ wallets: wallet._id }, {txid:true}).cursor();
-    transactionStream.pipe(JSONStream.stringify()).pipe(res);
+    var transactionStream = Transaction.find({ $or: [{ 'inputs.wallets': wallet._id }, { 'outputs.wallets': wallet._id }] }).cursor();
+    var listTransactionsStream = new ListTransactionsStream(wallet._id);
+    transactionStream.pipe(listTransactionsStream).pipe(res);
   });
 });
 
-if (cluster.isWorker){
+if (cluster.isMaster){ // this should later be cluster.isWorker
   app.listen(3000, function () {
     console.log('api server listening on port 3000!');
   });
