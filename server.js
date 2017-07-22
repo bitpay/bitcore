@@ -1,6 +1,6 @@
 'use strict';
 var cluster = require('cluster');
-var numWorkers = require('os').cpus().length-1;
+var numWorkers = require('os').cpus().length;
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/fullNodePlus', { server: { socketOptions: { keepAlive: 120, socketTimeoutMS: 0, connectionTimeout: 0 }, poolSize:10}});
 var Transaction = require('./lib/models/Transaction');
@@ -31,7 +31,7 @@ function syncTransactionAndOutputs(data, callback){
       return callback();
     }
 
-    var newTx = { inputs: [], outputs: [], wallets: [] };
+    var newTx = new Transaction();
     newTx.blockHeight = data.blockHeight;
     newTx.blockHash = data.blockHash;
     newTx.txid = transaction.hash;
@@ -54,6 +54,10 @@ function syncTransactionAndOutputs(data, callback){
         if (err) {
           return outputCb(err);
         }
+
+        _.each(wallets, function(wallet){
+          newTx.wallets.addToSet(wallet.wallet);
+        });
 
         newTx.outputs.push({
           vout: index,
@@ -84,7 +88,7 @@ function syncTransactionAndOutputs(data, callback){
         });
         newTx.inputsProcessed = false;
       }
-      Transaction.create(newTx, callback);
+      newTx.save(callback);
     });
   });
 }
@@ -115,6 +119,9 @@ function syncTransactionInputs(txid, callback){
           if (err){
             return inputCb(err);
           }
+          _.each(wallets, function (wallet) {
+            transaction.wallets.addToSet(wallet.wallet);
+          });
           input.wallets = _.pluck(wallets, 'wallet');
           inputCb();
         });
@@ -359,6 +366,14 @@ app.post('/wallet/:walletId', function (req, res) {
             console.error(err);
           }
           console.log('Imported ' + result.nModified + ' output wallet txs');
+          Transaction.update({
+            $or: [
+              {'inputs.wallets': wallet._id},
+              { 'outputs.wallets': wallet._id}
+            ]
+          }, {$addToSet: {wallets: wallet._id}, }, {multi:true}, function(err, result){
+            console.log('Imported ' + result.nModified + ' top level wallet txs');
+          });
         });
 
       });
@@ -410,7 +425,7 @@ app.get('/wallet/:walletId/transactions', function (req, res) {
     if (!wallet) {
       return res.status(404).send(new Error('Wallet not found'));
     }
-    var transactionStream = Transaction.find({ $or: [{ 'inputs.wallets': wallet._id }, { 'outputs.wallets': wallet._id }] }).cursor();
+    var transactionStream = Transaction.find({ wallets: wallet._id }).cursor();
     var listTransactionsStream = new ListTransactionsStream(wallet._id);
     transactionStream.pipe(listTransactionsStream).pipe(res);
   });
