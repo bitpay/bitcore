@@ -433,14 +433,14 @@ ListTransactionsStream.prototype._transform = function(transaction, enc, done){
       category: 'send',
       satoshis: -totalSent,
       height: transaction.blockHeight
-    }));
+    }) + '\n');
     if (fee > 0){
       self.push(JSON.stringify({
         txid: transaction.txid,
         category: 'fee',
         satoshis: -fee,
         height: transaction.blockHeight
-      }));
+      }) + '\n');
     }
     return done();
   }
@@ -450,7 +450,7 @@ ListTransactionsStream.prototype._transform = function(transaction, enc, done){
     category: 'receive',
     satoshis: totalReceived,
     height: transaction.blockHeight
-  }));
+  }) + '\n');
   done();
 };
 
