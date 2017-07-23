@@ -1,6 +1,7 @@
 'use strict';
 var cluster = require('cluster');
 var numWorkers = require('os').cpus().length;
+var maxPoolSize = 64;
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/fullNodePlus', {
   server: {
@@ -10,7 +11,7 @@ mongoose.connect('mongodb://localhost/fullNodePlus', {
       connectionTimeout: 0,
       noDelay: true
     },
-    poolSize:8
+    poolSize:maxPoolSize
   }
 });
 var Transaction = require('./lib/models/Transaction');
@@ -46,7 +47,7 @@ function syncTransactionAndOutputs(data, callback){
     newTx.blockHash = data.blockHash;
     newTx.txid = transaction.hash;
 
-    async.eachOfLimit(transaction.outputs, 8, function(output, index, outputCb){
+    async.eachOfLimit(transaction.outputs, maxPoolSize, function(output, index, outputCb){
       var script;
       var address;
       try {
@@ -111,7 +112,7 @@ function syncTransactionInputs(txid, callback){
     if (transaction.inputsProcessed) {
       return callback();
     }
-    async.eachLimit(transaction.inputs, 8, function(input, inputCb){
+    async.eachLimit(transaction.inputs, maxPoolSize, function(input, inputCb){
       Transaction.findOne({txid: input.utxo}).select('outputs').lean().exec(function(err, utxo){
         if (err) {
           return inputCb(err);
