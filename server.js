@@ -239,7 +239,7 @@ function sync(done){
         return done(err);
       }
       localTip = (localTip[0] && localTip[0].blockHeight) || 0;
-      async.eachSeries(_.range(localTip, chainTip.height), function (blockN, blockCb) {
+      async.eachSeries(_.range(localTip, chainTip.height - 6), function (blockN, blockCb) {
         rpc.getBlockByHeight(blockN, function (err, block) {
           if (err) {
             return blockCb(err);
