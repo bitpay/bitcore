@@ -1,7 +1,7 @@
 'use strict';
 var cluster = require('cluster');
 var numWorkers = require('os').cpus().length;
-var maxPoolSize = 64;
+var maxPoolSize = 10;
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/fullNodePlus', {
   server: {
