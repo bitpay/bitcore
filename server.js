@@ -422,9 +422,9 @@ ListTransactionsStream.prototype._transform = function(transaction, enc, done){
   });
 
 
-  totalSent = parseFloat((totalSent * 1e8).toFixed(8));
-  totalReceived = parseFloat((totalReceived * 1e8).toFixed(8));
-  var fee = parseFloat((transaction.fee * 1e8).toFixed(8));
+  totalSent = Math.round(totalSent * 1e8);
+  totalReceived = Math.round(totalReceived * 1e8);
+  var fee = Math.round(transaction.fee * 1e8);
   if (totalSent > totalReceived){
     totalSent -= totalReceived;
     totalSent = parseFloat(totalSent.toFixed(8));
