@@ -411,6 +411,7 @@ ListTransactionsStream.prototype._transform = function(transaction, enc, done){
     });
   });
   totalSent -= transaction.fee;
+  totalSent -= totalReceived;
   _.each(transaction.outputs, function (output) {
     _.each(output.wallets, function (wallet) {
       if (wallet.toString() === self.walletId.toString()) {
@@ -418,15 +419,35 @@ ListTransactionsStream.prototype._transform = function(transaction, enc, done){
       }
     });
   });
+
+
+  totalSent = parseFloat((totalSent * 1e8).toFixed(8));
+  totalReceived = parseFloat((totalReceived * 1e8).toFixed(8));
+  var fee = parseFloat((transaction.fee * 1e8).toFixed(8));
   if (totalSent > totalReceived){
     totalSent -= totalReceived;
     totalSent = parseFloat(totalSent.toFixed(8));
-    self.push(JSON.stringify({ txid: transaction.txid, type: 'send', amount: -totalSent }));
-    self.push(JSON.stringify({ txid: transaction.txid, type: 'fee', amount: -transaction.fee }));
+    self.push(JSON.stringify({
+      txid: transaction.txid,
+      category: 'send',
+      satoshis: -totalSent,
+      height: transaction.blockHeight
+    }));
+    self.push(JSON.stringify({
+      txid: transaction.txid,
+      category: 'fee',
+      satoshis: -fee,
+      height: transaction.blockHeight
+    }));
     return done();
   }
-  totalReceived = parseFloat(totalReceived.toFixed(8));
-  self.push(JSON.stringify({ txid: transaction.txid, type: 'receive', amount: totalReceived }));
+
+  self.push(JSON.stringify({
+    txid: transaction.txid,
+    category: 'receive',
+    satoshis: totalReceived,
+    height: transaction.blockHeight
+  }));
   done();
 };
 
