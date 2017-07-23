@@ -10,7 +10,7 @@ mongoose.connect('mongodb://localhost/fullNodePlus', {
       connectionTimeout: 0,
       noDelay: true
     },
-    poolSize:10
+    poolSize:8
   }
 });
 var Transaction = require('./lib/models/Transaction');
@@ -46,7 +46,7 @@ function syncTransactionAndOutputs(data, callback){
     newTx.blockHash = data.blockHash;
     newTx.txid = transaction.hash;
 
-    async.eachOfLimit(transaction.outputs, 10, function(output, index, outputCb){
+    async.eachOfLimit(transaction.outputs, 8, function(output, index, outputCb){
       var script;
       var address;
       try {
@@ -98,7 +98,7 @@ function syncTransactionAndOutputs(data, callback){
         });
         newTx.inputsProcessed = false;
       }
-      newTx.save(callback);
+      newTx.save({ ordered: false }, callback);
     });
   });
 }
@@ -111,7 +111,7 @@ function syncTransactionInputs(txid, callback){
     if (transaction.inputsProcessed) {
       return callback();
     }
-    async.eachLimit(transaction.inputs, 10, function(input, inputCb){
+    async.eachLimit(transaction.inputs, 8, function(input, inputCb){
       Transaction.findOne({txid: input.utxo}).select('outputs').lean().exec(function(err, utxo){
         if (err) {
           return inputCb(err);
@@ -147,7 +147,7 @@ function syncTransactionInputs(txid, callback){
         return callback('Fee is negative, something is really wrong');
       }
       transaction.inputsProcessed = true;
-      transaction.save(callback);
+      transaction.save({ordered: false}, callback);
     });
   });
 }
@@ -419,10 +419,13 @@ ListTransactionsStream.prototype._transform = function(transaction, enc, done){
     });
   });
   if (totalSent > totalReceived){
+    totalSent -= totalReceived;
+    totalSent = parseFloat(totalSent.toFixed(8));
     self.push(JSON.stringify({ txid: transaction.txid, type: 'send', amount: -totalSent }));
     self.push(JSON.stringify({ txid: transaction.txid, type: 'fee', amount: -transaction.fee }));
     return done();
   }
+  totalReceived = parseFloat(totalReceived.toFixed(8));
   self.push(JSON.stringify({ txid: transaction.txid, type: 'receive', amount: totalReceived }));
   done();
 };
