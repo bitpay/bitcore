@@ -462,7 +462,15 @@ app.get('/wallet/:walletId/transactions', function (req, res) {
     if (!wallet) {
       return res.status(404).send(new Error('Wallet not found'));
     }
-    var transactionStream = Transaction.find({ wallets: wallet._id }).cursor();
+    var query = { wallets: wallet._id};
+    if (req.query.startBlock){
+      query.blockHeight = { $gte: req.query.startBlock};
+    }
+    if (req.query.endBlock){
+      query.blockHeight = query.blockHeight || {};
+      query.blockHeight.$lte = req.query.endBlock;
+    }
+    var transactionStream = Transaction.find(query).cursor();
     var listTransactionsStream = new ListTransactionsStream(wallet._id);
     transactionStream.pipe(listTransactionsStream).pipe(res);
   });
