@@ -433,12 +433,14 @@ ListTransactionsStream.prototype._transform = function(transaction, enc, done){
       satoshis: -totalSent,
       height: transaction.blockHeight
     }));
-    self.push(JSON.stringify({
-      txid: transaction.txid,
-      category: 'fee',
-      satoshis: -fee,
-      height: transaction.blockHeight
-    }));
+    if (fee > 0){
+      self.push(JSON.stringify({
+        txid: transaction.txid,
+        category: 'fee',
+        satoshis: -fee,
+        height: transaction.blockHeight
+      }));
+    }
     return done();
   }
 
