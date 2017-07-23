@@ -421,7 +421,6 @@ ListTransactionsStream.prototype._transform = function(transaction, enc, done){
     });
   });
 
-
   totalSent = Math.round(totalSent * 1e8);
   totalReceived = Math.round(totalReceived * 1e8);
   var fee = Math.round(transaction.fee * 1e8);
