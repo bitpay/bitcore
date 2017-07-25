@@ -15,6 +15,7 @@ mongoose.connect('mongodb://localhost/fullNodePlus', {
   }
 });
 var Transaction = require('./lib/models/Transaction');
+var Block = require('./lib/models/Block');
 var Wallet = require('./lib/models/wallet');
 var WalletAddress = require('./lib/models/walletAddress');
 var rpc = require('./lib/rpc');
@@ -45,6 +46,8 @@ function syncTransactionAndOutputs(data, callback){
     var newTx = new Transaction();
     newTx.blockHeight = data.blockHeight;
     newTx.blockHash = data.blockHash;
+    newTx.blockTime = new Date(data.blockTime);
+    newTx.blockTimeNormalized = new Date(data.blockTimeNormalized);
     newTx.txid = transaction.hash;
 
     async.eachOfLimit(transaction.outputs, maxPoolSize, function(output, index, outputCb){
@@ -182,8 +185,37 @@ if (cluster.isWorker) {
 
 function processBlock(block, height, callback){
   block = new bitcore.Block.fromString(block);
+  var blockTime = block.header.time * 1000;
+  var blockTimeNormalized;
   var start = Date.now();
   async.series([
+    function(cb){
+      Block.findOne({hash: block.header.prevHash}, function(err, previousBlock){
+        if (err){
+          return cb(err);
+        }
+        blockTimeNormalized = blockTime;
+        if (previousBlock && blockTime <= previousBlock.timeNormalized.getTime()){
+          blockTimeNormalized = previousBlock.blockTimeNormalized.getTime() + 1;
+        }
+        Block.update({ hash: block.hash }, {
+          mainChain: true,
+          height: height,
+          version: block.header.version,
+          previousBlockHash: block.header.prevHash,
+          merkleRoot: block.header.merkleRoot,
+          time: new Date(blockTime),
+          timeNormalized: new Date(blockTimeNormalized),
+          bits: block.header.bits,
+          nonce: block.header.nonce,
+          transactionCount: block.transactions.length
+        }, { upsert: true }, function(){
+          Transaction.update({blockHash: block.hash},{
+            $set: { blockTime: new Date(blockTime), blockTimeNormalized: new Date(blockTimeNormalized)}
+          }, {multi:true}, cb);
+        });
+      });
+    },
     function(cb){
       async.eachLimit(block.transactions, numWorkers, function (transaction, txCb) {
         if (workers.length){
@@ -197,11 +229,20 @@ function processBlock(block, height, callback){
             task: 'syncTransactionAndOutputs',
             argument: {
               transaction: transaction,
-              blockHeight: height, blockHash: block.hash
+              blockHeight: height,
+              blockHash: block.hash,
+              blockTime: blockTime,
+              blockTimeNormalized: blockTimeNormalized
             }
           });
         } else {
-          syncTransactionAndOutputs({transaction:transaction, blockHeight:height, blockHash:block.hash}, txCb);
+          syncTransactionAndOutputs({
+            transaction:transaction,
+            blockHeight:height,
+            blockHash:block.hash,
+            blockTime: blockTime,
+            blockTimeNormalized: blockTimeNormalized
+          }, txCb);
         }
       }, cb);
     },
@@ -234,11 +275,11 @@ function processBlock(block, height, callback){
 
 function sync(done){
   rpc.getChainTip(function (err, chainTip) {
-    Transaction.find({}).limit(1).sort({ blockHeight: -1 }).exec(function (err, localTip) {
+    Block.find({}).limit(1).sort({ height: -1 }).exec(function (err, localTip) {
       if (err) {
         return done(err);
       }
-      localTip = (localTip[0] && localTip[0].blockHeight) || 0;
+      localTip = (localTip[0] && localTip[0].height) || 0;
       if (localTip >= chainTip.height - 6){
         return done();
       }
@@ -432,7 +473,8 @@ ListTransactionsStream.prototype._transform = function(transaction, enc, done){
           satoshis: -Math.round(output.amount*1e8),
           height: transaction.blockHeight,
           address: output.address,
-          outputIndex: output.vout
+          outputIndex: output.vout,
+          blockTime: transaction.blockTimeNormalized
         }) + '\n');
       }
     });
@@ -441,7 +483,8 @@ ListTransactionsStream.prototype._transform = function(transaction, enc, done){
         txid: transaction.txid,
         category: 'fee',
         satoshis: -fee,
-        height: transaction.blockHeight
+        height: transaction.blockHeight,
+        blockTime: transaction.blockTimeNormalized
       }) + '\n');
     }
     return done();
@@ -461,7 +504,8 @@ ListTransactionsStream.prototype._transform = function(transaction, enc, done){
         satoshis: Math.round(output.amount * 1e8),
         height: transaction.blockHeight,
         address: output.address,
-        outputIndex: output.vout
+        outputIndex: output.vout,
+        blockTime: transaction.blockTimeNormalized
       }) + '\n');
     }
   });
