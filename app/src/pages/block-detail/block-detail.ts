@@ -16,7 +16,11 @@ import { IonicPage, NavController, NavParams } from 'ionic-angular';
 })
 export class BlockDetailPage {
 
+  blockHash: string;
+
   constructor(public navCtrl: NavController, public navParams: NavParams) {
+    this.blockHash = navParams.get('blockHash');
+    console.log('blockHash is', this.blockHash);
   }
 
   ionViewDidLoad() {

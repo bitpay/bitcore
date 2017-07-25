@@ -50,7 +50,11 @@ export class BlocksPage {
                   function (data) {
                     this.resetSearch();
                     console.log('block-index', data);
-                    this.navCtrl.push('block-detail');
+                    let parsedData = JSON.parse(data._body);
+                    console.log('parsedData', parsedData);
+                    this.navCtrl.push('block-detail', {
+                      blockHash: parsedData.blockHash
+                    });
                   }.bind(this),
                   function (err) {
                     this.loading = false;
