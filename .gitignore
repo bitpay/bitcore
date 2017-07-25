@@ -15,6 +15,7 @@ results
 build
 
 node_modules
+package-lock.json
 
 # extras
 *.swp

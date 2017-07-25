@@ -15,7 +15,7 @@
 <ion-content padding>
   <ion-list>
     <ion-row>
-      <ion-searchbar (ionInput)="search($event)" placeholder="{{ 'Search for block, transaction or address' }}"></ion-searchbar>
+      <ion-searchbar (ionInput)="search($event)" placeholder="{{ 'Search for block, transaction or address' }}" [(ngModel)]="q"></ion-searchbar>
     </ion-row>
     <ion-item>
       <ion-row>
