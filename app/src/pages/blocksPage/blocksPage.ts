@@ -28,63 +28,41 @@ export class BlocksPage {
 
   public search(event) {
     console.log('q is', this.q);
-    let apiPrefix = 'http://insight.bitpay.com/api/';
+    let apiPrefix = 'http://localhost:3001/insight-api/';
     this.http.get(apiPrefix + 'block/' + this.q).subscribe(
       (data) => {
         this.resetSearch();
         console.log('block', data);
-        //this.router.navigate(['./block/' + q]);
       },
-      () => {
+      (err) => {
         this.http.get(apiPrefix + 'tx/' + this.q).subscribe(
           (data) => {
             this.resetSearch();
             console.log('tx', data);
-            //this.router.navigate(['./tx/' + q]);
           },
-          function (err) { this.reportBadQuery() }.bind(this)
+          (err) => {
+            this.http.get(apiPrefix + 'addr/' + this.q).subscribe(
+              (data) => {
+                this.resetSearch();
+                console.log('addr', data);
+              },
+              (err) => {
+                this.http.get(apiPrefix + 'block-index/' + this.q).subscribe(
+                  (data) => {
+                    this.resetSearch();
+                    console.log('block-index', data);
+                  },
+                  function (err) {
+                    this.loading = false;
+                    this.reportBadQuery();
+                  }.bind(this)
+                );
+              }
+            );
+          }
         );
       }
     );
-
-    /*
-    Block.get({
-      blockHash: q
-    }, function() {
-      _resetSearch();
-      $location.path('block/' + q);
-    }, function() { //block not found, search on TX
-      Transaction.get({
-        txId: q
-      }, function() {
-        _resetSearch();
-        $location.path('tx/' + q);
-      }, function() { //tx not found, search on Address
-        Address.get({
-          addrStr: q
-        }, function() {
-          _resetSearch();
-          $location.path('address/' + q);
-        }, function() { // block by height not found
-          if (isFinite(q)) { // ensure that q is a finite number. A logical height value.
-            BlockByHeight.get({
-              blockHeight: q
-            }, function(hash) {
-              _resetSearch();
-              $location.path('/block/' + hash.blockHash);
-            }, function() { //not found, fail :(
-              $scope.loading = false;
-              _badQuery();
-            });
-          }
-          else {
-            $scope.loading = false;
-            _badQuery();
-          }
-        });
-      });
-    });
-     */
   }
 
   resetSearch = function() {
