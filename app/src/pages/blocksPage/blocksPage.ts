@@ -16,8 +16,7 @@ export class BlocksPage {
   public q: string;
   public badQuery: boolean = false;
 
-  constructor(private nav: NavController, private http: Http, private blocksService: BlocksService) {
-    this.nav = nav;
+  constructor(public navCtrl: NavController, private http: Http, private blocksService: BlocksService) {
     this.title = 'Blocks';
     this.blocks = blocksService.latestBlocks;
     // this.blocks.subscribe((blocks) => {
@@ -48,10 +47,11 @@ export class BlocksPage {
               },
               (err) => {
                 this.http.get(apiPrefix + 'block-index/' + this.q).subscribe(
-                  (data) => {
+                  function (data) {
                     this.resetSearch();
                     console.log('block-index', data);
-                  },
+                    this.navCtrl.push('block-detail');
+                  }.bind(this),
                   function (err) {
                     this.loading = false;
                     this.reportBadQuery();
