@@ -239,6 +239,9 @@ function sync(done){
         return done(err);
       }
       localTip = (localTip[0] && localTip[0].blockHeight) || 0;
+      if (localTip >= chainTip.height - 6){
+        return done();
+      }
       async.eachSeries(_.range(localTip, chainTip.height - 6), function (blockN, blockCb) {
         rpc.getBlockByHeight(blockN, function (err, block) {
           if (err) {
@@ -402,38 +405,38 @@ util.inherits(ListTransactionsStream, Transform);
 
 ListTransactionsStream.prototype._transform = function(transaction, enc, done){
   var self = this;
-  var totalSent = 0;
-  var totalReceived = 0;
-  _.each(transaction.inputs, function(input){
-    _.each(input.wallets, function (wallet) {
-      if (wallet.toString() === self.walletId.toString()) {
-        totalSent += input.amount;
+  var wallet = this.walletId.toString();
+  var fee = Math.round(transaction.fee * 1e8);
+  var sending = _.some(transaction.inputs, function(input){
+    var contains = false;
+    _.each(input.wallets, function(inputWallet){
+      if (inputWallet.equals(wallet)){
+        contains = true;
       }
     });
-  });
-  totalSent -= transaction.fee;
-  totalSent -= totalReceived;
-  _.each(transaction.outputs, function (output) {
-    _.each(output.wallets, function (wallet) {
-      if (wallet.toString() === self.walletId.toString()) {
-        totalReceived += output.amount;
-      }
-    });
+    return contains;
   });
 
-  totalSent = Math.round(totalSent * 1e8);
-  totalReceived = Math.round(totalReceived * 1e8);
-  var fee = Math.round(transaction.fee * 1e8);
-  if (totalSent > totalReceived){
-    totalSent -= totalReceived;
-    totalSent = parseFloat(totalSent.toFixed(8));
-    self.push(JSON.stringify({
-      txid: transaction.txid,
-      category: 'send',
-      satoshis: -totalSent,
-      height: transaction.blockHeight
-    }) + '\n');
-    if (fee > 0){
+  if (sending){
+    _.each(transaction.outputs, function(output){
+      var contains = false;
+      _.each(output.wallets, function (outputWallet) {
+        if (outputWallet.equals(wallet)) {
+          contains = true;
+        }
+      });
+      if (!contains){
+        self.push(JSON.stringify({
+          txid: transaction.txid,
+          category: 'send',
+          satoshis: -Math.round(output.amount*1e8),
+          height: transaction.blockHeight,
+          address: output.address,
+          outputIndex: output.vout
+        }) + '\n');
+      }
+    });
+    if (fee > 0) {
       self.push(JSON.stringify({
         txid: transaction.txid,
         category: 'fee',
@@ -444,12 +447,25 @@ ListTransactionsStream.prototype._transform = function(transaction, enc, done){
     return done();
   }
 
-  self.push(JSON.stringify({
-    txid: transaction.txid,
-    category: 'receive',
-    satoshis: totalReceived,
-    height: transaction.blockHeight
-  }) + '\n');
+  _.each(transaction.outputs, function (output) {
+    var contains = false;
+    _.each(output.wallets, function (outputWallet) {
+      if (outputWallet.equals(wallet)) {
+        contains = true;
+      }
+    });
+    if (contains) {
+      self.push(JSON.stringify({
+        txid: transaction.txid,
+        category: 'receive',
+        satoshis: Math.round(output.amount * 1e8),
+        height: transaction.blockHeight,
+        address: output.address,
+        outputIndex: output.vout
+      }) + '\n');
+    }
+  });
+
   done();
 };
 
