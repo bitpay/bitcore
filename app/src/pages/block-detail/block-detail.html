@@ -14,20 +14,20 @@
 
 
 <ion-content padding>
-  <p>Block # {{ block.height }}</p>
+  <h1>Block # {{ block.height }}</h1>
   <p>BlockHash {{ block.hash }}</p>
-  <p>Summary</p>
+  <h2>Summary</h2>
   <p>Number of Transactions {{ block.tx.length }}</p>
-  <p>Height</p>
+  <p>Height {{ block.height }}</p>
   <p>Block Reward {{ block.reward }}</p>
-  <p>Timestamp </p>
+  <p>Timestamp {{ block.time }}</p>
   <p>Mined by</p>
-  <p>Merkle Root</p>
-  <p>Previous Block</p>
-  <p>Difficulty</p>
-  <p>Bits</p>
-  <p>Size (bytes)</p>
-  <p>Version</p>
-  <p>Nonce</p>
-  <p>Next Block</p>
+  <p>Merkle Root {{ block.merkleroot }}</p>
+  <p>Previous Block {{ block.previousblockhash }}</p>
+  <p>Difficulty {{ block.difficulty }}</p>
+  <p>Bits {{ block.bits }}</p>
+  <p>Size (bytes) {{ block.size }}</p>
+  <p>Version {{ block.version }}</p>
+  <p>Nonce {{ block.nonce }}</p>
+  <p>Next Block {{ block.nextblockhash }}</p>
 </ion-content>
