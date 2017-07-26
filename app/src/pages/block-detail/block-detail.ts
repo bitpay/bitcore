@@ -18,6 +18,7 @@ import { Http } from '@angular/http';
 })
 export class BlockDetailPage {
 
+  public loading: boolean = true;
   private blockHash: string;
   public block: any = {
     tx: []
@@ -25,7 +26,6 @@ export class BlockDetailPage {
 
   constructor(public navCtrl: NavController, private http: Http, public navParams: NavParams) {
     this.blockHash = navParams.get('blockHash');
-    console.log('blockHash is', this.blockHash);
 
     let apiPrefix: string = 'http://localhost:3001/insight-api/';
 
@@ -37,6 +37,9 @@ export class BlockDetailPage {
       },
       (err) => {
         console.log('err is', err);
+      },
+      () => {
+        this.loading = false;
       }
     );
   }
@@ -45,13 +48,17 @@ export class BlockDetailPage {
     console.log('ionViewDidLoad BlockDetailPage');
   }
 
-  public goToPreviousBlock() {
+  public ionViewWillLeave(): void {
+    this.loading = true;
+  }
+
+  public goToPreviousBlock(): void {
     this.navCtrl.push('block-detail', {
       'blockHash': this.block.previousblockhash
     });
   }
 
-  public goToNextBlock() {
+  public goToNextBlock(): void {
     this.navCtrl.push('block-detail', {
       'blockHash': this.block.nextblockhash
     });

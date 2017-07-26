@@ -17,17 +17,22 @@
   <h1>Block # {{ block.height }}</h1>
   <p>BlockHash {{ block.hash }}</p>
   <h2>Summary</h2>
-  <p>Number of Transactions {{ block.tx.length }}</p>
-  <p>Height {{ block.height }}</p>
-  <p>Block Reward {{ block.reward }}</p>
-  <p>Timestamp {{ block.time }}</p>
-  <p>Mined by</p>
-  <p>Merkle Root {{ block.merkleroot }}</p>
-  <p>Previous Block <a (click)="goToPreviousBlock()">{{ block.height - 1 }}</a></p>
-  <p>Difficulty {{ block.difficulty }}</p>
-  <p>Bits {{ block.bits }}</p>
-  <p>Size (bytes) {{ block.size }}</p>
-  <p>Version {{ block.version }}</p>
-  <p>Nonce {{ block.nonce }}</p>
-  <p>Next Block <a (click)="goToNextBlock()">{{ block.height + 1 }}</a></p>
+  <div *ngIf="!loading">
+    <p>Number of Transactions {{ block.tx.length }}</p>
+    <p>Height {{ block.height }}</p>
+    <p>Block Reward {{ block.reward }}</p>
+    <p>Timestamp {{ block.time }}</p>
+    <p>Mined by</p>
+    <p>Merkle Root {{ block.merkleroot }}</p>
+    <p>Previous Block <a (click)="goToPreviousBlock()">{{ block.height - 1 }}</a></p>
+    <p>Difficulty {{ block.difficulty }}</p>
+    <p>Bits {{ block.bits }}</p>
+    <p>Size (bytes) {{ block.size }}</p>
+    <p>Version {{ block.version }}</p>
+    <p>Nonce {{ block.nonce }}</p>
+    <p>Next Block <a (click)="goToNextBlock()">{{ block.height + 1 }}</a></p>
+  </div>
+  <div *ngIf="loading">
+    <p>Loading...</p>
+  </div>
 </ion-content>
