@@ -209,11 +209,7 @@ function processBlock(block, height, callback){
           bits: block.header.bits,
           nonce: block.header.nonce,
           transactionCount: block.transactions.length
-        }, { upsert: true }, function(){
-          Transaction.update({blockHash: block.hash},{
-            $set: { blockTime: new Date(blockTime), blockTimeNormalized: new Date(blockTimeNormalized)}
-          }, {multi:true}, cb);
-        });
+        }, { upsert: true }, cb);
       });
     },
     function(cb){
