@@ -306,7 +306,10 @@ function sync(done){
           console.error(err);
           return done(err);
         }
-        console.log('done');
+        console.log('Sync completed');
+        setTimeout(function(){
+          sync(function(){});
+        }, 60000);
         done();
       });
     });
