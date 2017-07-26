@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
+import { Http } from '@angular/http';
 
 /**
  * Generated class for the BlockDetailPage page.
@@ -8,22 +9,39 @@ import { IonicPage, NavController, NavParams } from 'ionic-angular';
  * on Ionic pages and navigation.
  */
 @IonicPage({
-  name: 'block-detail'
+  name: 'block-detail',
+  segment: 'block/:blockHash'
 })
 @Component({
   selector: 'page-block-detail',
-  templateUrl: 'block-detail.html',
+  templateUrl: 'block-detail.html'
 })
 export class BlockDetailPage {
 
-  blockHash: string;
+  private blockHash: string;
+  public block: any = {
+    tx: []
+  };
 
-  constructor(public navCtrl: NavController, public navParams: NavParams) {
+  constructor(public navCtrl: NavController, private http: Http, public navParams: NavParams) {
     this.blockHash = navParams.get('blockHash');
     console.log('blockHash is', this.blockHash);
+
+    let apiPrefix: string = 'http://localhost:3001/insight-api/';
+
+    this.http.get(apiPrefix + 'block/' + this.blockHash).subscribe(
+      (data) => {
+        console.log('block is', data);
+        this.block = JSON.parse(data['_body']);
+        console.log('this.block is', this.block);
+      },
+      (err) => {
+        console.log('err is', err);
+      }
+    );
   }
 
-  ionViewDidLoad() {
+  public ionViewDidLoad(): void {
     console.log('ionViewDidLoad BlockDetailPage');
   }
 

@@ -27,7 +27,7 @@ export class BlocksPage {
 
   public search(event) {
     console.log('q is', this.q);
-    let apiPrefix = 'http://localhost:3001/insight-api/';
+    let apiPrefix: string = 'http://localhost:3001/insight-api/';
     this.http.get(apiPrefix + 'block/' + this.q).subscribe(
       (data) => {
         this.resetSearch();
@@ -53,7 +53,7 @@ export class BlocksPage {
                     let parsedData = JSON.parse(data._body);
                     console.log('parsedData', parsedData);
                     this.navCtrl.push('block-detail', {
-                      blockHash: parsedData.blockHash
+                      'blockHash': parsedData.blockHash
                     });
                   }.bind(this),
                   function (err) {

@@ -14,13 +14,13 @@
 
 
 <ion-content padding>
-  <p>Block #</p>
-  <p>BlockHash {{ blockHash }}</p>
+  <p>Block # {{ block.height }}</p>
+  <p>BlockHash {{ block.hash }}</p>
   <p>Summary</p>
-  <p>Number of Transactions</p>
+  <p>Number of Transactions {{ block.tx.length }}</p>
   <p>Height</p>
-  <p>Block Reward</p>
-  <p>Timestamp</p>
+  <p>Block Reward {{ block.reward }}</p>
+  <p>Timestamp </p>
   <p>Mined by</p>
   <p>Merkle Root</p>
   <p>Previous Block</p>
