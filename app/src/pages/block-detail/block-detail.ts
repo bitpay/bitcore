@@ -31,9 +31,7 @@ export class BlockDetailPage {
 
     this.http.get(apiPrefix + 'block/' + this.blockHash).subscribe(
       (data) => {
-        console.log('block is', data);
         this.block = JSON.parse(data['_body']);
-        console.log('this.block is', this.block);
       },
       (err) => {
         console.log('err is', err);
@@ -42,10 +40,6 @@ export class BlockDetailPage {
         this.loading = false;
       }
     );
-  }
-
-  public ionViewDidLoad(): void {
-    console.log('ionViewDidLoad BlockDetailPage');
   }
 
   public ionViewWillLeave(): void {

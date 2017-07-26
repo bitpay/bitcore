@@ -17,7 +17,7 @@ export class BlocksPage {
   public q: string;
   public badQuery: boolean = false;
 
-  constructor(public navCtrl: NavController, private http: Http, private blocksService: BlocksService) {
+  constructor(private navCtrl: NavController, private http: Http, private blocksService: BlocksService) {
     this.title = 'Blocks';
     this.blocks = blocksService.latestBlocks;
     // this.blocks.subscribe((blocks) => {
