@@ -11,7 +11,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { getTestBed, TestBed } from '@angular/core/testing';
 import { BrowserDynamicTestingModule, platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
 import { HttpModule } from '@angular/http';
-import { MockBackend } from '@angular/http/testing';
+// import { MockBackend } from '@angular/http/testing';
 import { App, Config, Form, IonicModule, Keyboard, DomController, MenuController, NavController, Platform, GestureController } from 'ionic-angular';
 import { ConfigMock, PlatformMock } from './mocks';
 import { BlocksServiceMock } from './services/mocks';

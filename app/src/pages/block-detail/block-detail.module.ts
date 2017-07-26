@@ -4,10 +4,10 @@ import { BlockDetailPage } from './block-detail';
 
 @NgModule({
   declarations: [
-    BlockDetailPage,
+    BlockDetailPage
   ],
   imports: [
-    IonicPageModule.forChild(BlockDetailPage),
+    IonicPageModule.forChild(BlockDetailPage)
   ],
   exports: [
     BlockDetailPage

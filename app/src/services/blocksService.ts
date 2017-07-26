@@ -1,6 +1,6 @@
 import { Http, Response } from '@angular/http';
 import { Injectable } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 import { Block, InsightBlockObject } from '../models';
 
 @Injectable()

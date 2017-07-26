@@ -11,6 +11,7 @@ import { Http } from '@angular/http';
 
 export class BlocksPage {
 
+  public loading: boolean;
   public title: string;
   public blocks: Observable<Block[]>;
   public q: string;
@@ -25,7 +26,7 @@ export class BlocksPage {
     blocksService.getLatestBlocks();
   }
 
-  public search(event) {
+  public search(): void {
     console.log('q is', this.q);
     let apiPrefix: string = 'http://localhost:3001/insight-api/';
     this.http.get(apiPrefix + 'block/' + this.q).subscribe(
@@ -33,30 +34,28 @@ export class BlocksPage {
         this.resetSearch();
         console.log('block', data);
       },
-      (err) => {
+      () => {
         this.http.get(apiPrefix + 'tx/' + this.q).subscribe(
-          (data) => {
+          (data: any) => {
             this.resetSearch();
             console.log('tx', data);
           },
-          (err) => {
+          () => {
             this.http.get(apiPrefix + 'addr/' + this.q).subscribe(
-              (data) => {
+              (data: any) => {
                 this.resetSearch();
                 console.log('addr', data);
               },
-              (err) => {
+              () => {
                 this.http.get(apiPrefix + 'block-index/' + this.q).subscribe(
-                  function (data) {
+                  function (data: any): void {
                     this.resetSearch();
-                    console.log('block-index', data);
-                    let parsedData = JSON.parse(data._body);
-                    console.log('parsedData', parsedData);
+                    let parsedData: any = JSON.parse(data._body);
                     this.navCtrl.push('block-detail', {
                       'blockHash': parsedData.blockHash
                     });
                   }.bind(this),
-                  function (err) {
+                  function (): void {
                     this.loading = false;
                     this.reportBadQuery();
                   }.bind(this)
@@ -69,18 +68,24 @@ export class BlocksPage {
     );
   }
 
-  resetSearch = function() {
+  private resetSearch(): void {
     this.q = '';
     this.loading = false;
-  };
+  }
 
-  reportBadQuery() {
+  /* tslint:disable:no-unused-variable */
+  private reportBadQuery(): void {
     this.badQuery = true;
     console.log('badQuery', this.badQuery);
 
-    setTimeout(function() {
-      this.badQuery = false;
-      console.log('badQuery', this.badQuery);
-    }.bind(this), 2000);
+    setTimeout(
+      function (): void {
+        this.badQuery = false;
+        console.log('badQuery', this.badQuery);
+      }.bind(this),
+      2000
+    );
   };
+  /* tslint:enable:no-unused-variable */
+
 }
