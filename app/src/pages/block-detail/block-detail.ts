@@ -45,4 +45,16 @@ export class BlockDetailPage {
     console.log('ionViewDidLoad BlockDetailPage');
   }
 
+  public goToPreviousBlock() {
+    this.navCtrl.push('block-detail', {
+      'blockHash': this.block.previousblockhash
+    });
+  }
+
+  public goToNextBlock() {
+    this.navCtrl.push('block-detail', {
+      'blockHash': this.block.nextblockhash
+    });
+  }
+
 }
