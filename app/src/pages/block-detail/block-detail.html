@@ -33,6 +33,7 @@
     <p>Next Block <a (click)="goToNextBlock()">{{ block.height + 1 }}</a></p>
 
     <h3>Transactions</h3>
+    <transactions blockHash="block.hash"></transactions>
   </div>
   <div *ngIf="loading">
     <p>Loading...</p>
