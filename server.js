@@ -528,6 +528,14 @@ app.get('/wallet/:walletId/transactions', function (req, res) {
       query.blockHeight = query.blockHeight || {};
       query.blockHeight.$lte = req.query.endBlock;
     }
+    if (req.query.startDate){
+      query.blockTimeNormalized = {$gte: new Date(req.query.startDate)};
+    }
+    if (req.query.endDate){
+      query.blockTimeNormalized = query.blockTimeNormalized || {};
+      query.blockTimeNormalized.$lt = new Date(req.query.endDate);
+    }
+
     var transactionStream = Transaction.find(query).cursor();
     var listTransactionsStream = new ListTransactionsStream(wallet._id);
     transactionStream.pipe(listTransactionsStream).pipe(res);
