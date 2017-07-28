@@ -1,3 +1,48 @@
 <div>
-  Put Transactions here
+  <div *ngFor="let tx of transactions.txs" style="border: 1px solid purple">
+    <p>{{ tx.txid }}</p>
+    <div [hidden]="!tx.firstSeenTs">
+      <span translate>first seen at</span>
+      <time>{{tx.firstSeenTs * 1000 | date:'medium'}}</time>
+    </div>
+    <div [hidden]="!tx.blocktime && tx.firstSeenTs">
+      <span translate>mined</span>
+      <time>{{tx.time * 1000 | date:'medium'}}</time>
+    </div>
+
+    <div [hidden]="!tx.isCoinBase">
+      <div *ngFor="let vin of tx.vin">
+        <div>
+          <span translate>No Inputs (Newly Generated Coins)</span>
+        </div>
+      </div>
+
+      <div>
+        &gt;
+      </div>
+
+      <div *ngFor="let vout of tx.vout">
+        <div>
+          <p>{{ getAddress(vout) }} {{ vout.value + ' BTC' }} <span [hidden]="!vout.spentTxId">(S)</span><span [hidden]="vout.spentTxId">(U)</span></p>
+        </div>
+      </div>
+    </div>
+
+    <div [hidden]="tx.isCoinBase">
+      <div *ngFor="let vin of tx.vin">
+        <div>{{ vin.addr }}</div>
+        <p>{{ vin.value + ' BTC' }}</p>
+      </div>
+
+      <div>
+        &gt;
+      </div>
+
+      <div *ngFor="let vout of tx.vout">
+        <div>
+          <p>{{ getAddress(vout) }} {{ vout.value + ' BTC' }} <span [hidden]="!vout.spentTxId">(S)</span><span [hidden]="vout.spentTxId">(U)</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

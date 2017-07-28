@@ -32,11 +32,10 @@ export class BlockDetailPage {
     this.http.get(apiPrefix + 'block/' + this.blockHash).subscribe(
       (data) => {
         this.block = JSON.parse(data['_body']);
+        this.loading = false;
       },
       (err) => {
         console.log('err is', err);
-      },
-      () => {
         this.loading = false;
       }
     );
