@@ -279,7 +279,8 @@ function sync(done){
       if (localTip >= chainTip.height - 6){
         return done();
       }
-      async.eachSeries(_.range(localTip, chainTip.height - 6), function (blockN, blockCb) {
+      var targetHeight = chainTip.height - 6;
+      async.eachSeries(_.range(localTip, targetHeight), function (blockN, blockCb) {
         rpc.getBlockByHeight(blockN, function (err, block) {
           if (err) {
             return blockCb(err);
@@ -293,7 +294,7 @@ function sync(done){
             }, 0) / _.compact(blockTimes).length;
             if (!Number.isNaN(avgBlockTime)) {
               console.log('est hours left:\t\t' +
-                ((chainTip.height - blockN) * avgBlockTime / 1000 / 60 / 60).toFixed(2));
+                ((targetHeight - blockN) * avgBlockTime / 1000 / 60 / 60).toFixed(2));
             }
             console.log('added block:\t\t' + blockN);
             console.log('===============================================================');
@@ -303,13 +304,10 @@ function sync(done){
         });
       }, function (err) {
         if (err) {
-          console.error(err);
+          console.error('Syncing failed: ' + err);
           return done(err);
         }
         console.log('Sync completed');
-        setTimeout(function(){
-          sync(function(){});
-        }, 60000);
         done();
       });
     });
@@ -317,11 +315,10 @@ function sync(done){
 }
 
 if (cluster.isMaster) {
-  sync(function(err){
-    if (err){
-      console.error('Syncing failed: ' + err);
-    }
-    console.log('Syncing finished successfully');
+  sync(function(){
+    setTimeout(function() {
+      sync(function() {});
+    }, 60000);
   });
 }
 
