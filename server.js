@@ -16,17 +16,13 @@ mongoose.connect('mongodb://localhost/fullNodePlus', {
 });
 var Transaction = require('./lib/models/Transaction');
 var Block = require('./lib/models/Block');
-var Wallet = require('./lib/models/wallet');
 var WalletAddress = require('./lib/models/walletAddress');
 var rpc = require('./lib/rpc');
 var async = require('async');
 var _ = require('underscore');
-var JSONStream = require('JSONStream');
 var express = require('express');
 var bodyParser = require('body-parser');
 var bitcore = require('bitcore-lib');
-var util = require('util');
-var Transform = require('stream').Transform;
 var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.raw({limit: 100000000}));
@@ -322,229 +318,10 @@ if(cluster.isMaster) {
   });
 }
 
-app.post('/wallet', function(req, res) {
-  Wallet.create({name: req.body.name}, function(err, result) {
-    if(err) {
-      res.status(500).send(err);
-    }
-    res.send(result);
-  });
-});
-
-app.get('/wallet/:walletId', function(req, res) {
-  Wallet.findOne({_id: req.params.walletId}, function(err, wallet) {
-    if(err) {
-      return res.status(500).send(err);
-    }
-    if(!wallet) {
-      return res.status(404).send(new Error('Wallet not found'));
-    }
-    res.send(wallet);
-  });
-});
-
-app.get('/wallet/:walletId/addresses', function(req, res) {
-  Wallet.findOne({_id: req.params.walletId}, function(err, wallet) {
-    if(err) {
-      return res.status(500).send(err);
-    }
-    if(!wallet) {
-      return res.status(404).send(new Error('Wallet not found'));
-    }
-    var addressStream = WalletAddress.find({wallet: wallet._id}, {address: true, _id: false}).cursor();
-    addressStream.pipe(JSONStream.stringify()).pipe(res);
-  });
-});
-
-app.post('/wallet/:walletId', function(req, res) {
-  Wallet.findOne({_id: req.params.walletId}, function(err, wallet) {
-    if(err) {
-      return res.status(500).send(err);
-    }
-    if(!wallet) {
-      return res.status(404).send(new Error('Wallet not found'));
-    }
-
-    var walletFile;
-    try {
-      walletFile = JSON.parse(req.body.toString());
-    } catch(e) {
-      return res.status(500).send(err);
-    }
-
-
-    var walletUpdates = walletFile.addresses.map(function(address) {
-      return {
-        updateOne: {
-          filter: {wallet: wallet._id, address: address.address},
-          update: {wallet: wallet._id, address: address.address},
-          upsert: true
-        }
-      };
-    });
-    var transactionInputUpdates = walletFile.addresses.map(function(address) {
-      return {
-        updateMany: {
-          filter: {'inputs.address': address.address},
-          update: {
-            $addToSet: {'inputs.$.wallets': wallet._id}
-          }
-        }
-      };
-    });
-    var transactionOutputUpdates = walletFile.addresses.map(function(address) {
-      return {
-        updateMany: {
-          filter: {'outputs.address': address.address},
-          update: {
-            $addToSet: {'outputs.$.wallets': wallet._id}
-          }
-        }
-      };
-    });
-
-    WalletAddress.bulkWrite(walletUpdates, {ordered: false}, function(err) {
-      if(err) {
-        return res.status(500).send(err);
-      }
-      Transaction.bulkWrite(transactionInputUpdates, {ordered: false}, function(err, result) {
-        if(err) {
-          console.error(err);
-        }
-        console.log('Imported ' + result.nModified + ' input wallet txs');
-        Transaction.bulkWrite(transactionOutputUpdates, {ordered: false}, function(err, result) {
-          if(err) {
-            console.error(err);
-          }
-          console.log('Imported ' + result.nModified + ' output wallet txs');
-          Transaction.update({
-            $or: [
-              {'inputs.wallets': wallet._id},
-              {'outputs.wallets': wallet._id}
-            ]
-          }, {$addToSet: {wallets: wallet._id}, }, {multi: true}, function(err, result) {
-            console.log('Imported ' + result.nModified + ' top level wallet txs');
-          });
-        });
-
-      });
-      res.send({success: true});
-    });
-  });
-});
-
-function ListTransactionsStream(walletId) {
-  this.walletId = walletId;
-  Transform.call(this, {objectMode: true});
-}
-
-util.inherits(ListTransactionsStream, Transform);
-
-ListTransactionsStream.prototype._transform = function(transaction, enc, done) {
-  var self = this;
-  var wallet = this.walletId.toString();
-  var fee = Math.round(transaction.fee * 1e8);
-  var sending = _.some(transaction.inputs, function(input) {
-    var contains = false;
-    _.each(input.wallets, function(inputWallet) {
-      if(inputWallet.equals(wallet)) {
-        contains = true;
-      }
-    });
-    return contains;
-  });
-
-  if(sending) {
-    _.each(transaction.outputs, function(output) {
-      var contains = false;
-      _.each(output.wallets, function(outputWallet) {
-        if(outputWallet.equals(wallet)) {
-          contains = true;
-        }
-      });
-      if(!contains) {
-        self.push(JSON.stringify({
-          txid: transaction.txid,
-          category: 'send',
-          satoshis: -Math.round(output.amount * 1e8),
-          height: transaction.blockHeight,
-          address: output.address,
-          outputIndex: output.vout,
-          blockTime: transaction.blockTimeNormalized
-        }) + '\n');
-      }
-    });
-    if(fee > 0) {
-      self.push(JSON.stringify({
-        txid: transaction.txid,
-        category: 'fee',
-        satoshis: -fee,
-        height: transaction.blockHeight,
-        blockTime: transaction.blockTimeNormalized
-      }) + '\n');
-    }
-    return done();
-  }
-
-  _.each(transaction.outputs, function(output) {
-    var contains = false;
-    _.each(output.wallets, function(outputWallet) {
-      if(outputWallet.equals(wallet)) {
-        contains = true;
-      }
-    });
-    if(contains) {
-      self.push(JSON.stringify({
-        txid: transaction.txid,
-        category: 'receive',
-        satoshis: Math.round(output.amount * 1e8),
-        height: transaction.blockHeight,
-        address: output.address,
-        outputIndex: output.vout,
-        blockTime: transaction.blockTimeNormalized
-      }) + '\n');
-    }
-  });
-
-  done();
-};
-
-app.get('/wallet/:walletId/transactions', function(req, res) {
-  Wallet.findOne({_id: req.params.walletId}, function(err, wallet) {
-    if(err) {
-      return res.status(500).send(err);
-    }
-    if(!wallet) {
-      return res.status(404).send(new Error('Wallet not found'));
-    }
-    var query = {wallets: wallet._id};
-    if(req.query.startBlock) {
-      query.blockHeight = {$gte: req.query.startBlock};
-    }
-    if(req.query.endBlock) {
-      query.blockHeight = query.blockHeight || {};
-      query.blockHeight.$lte = req.query.endBlock;
-    }
-    if(req.query.startDate) {
-      query.blockTimeNormalized = {$gte: new Date(req.query.startDate)};
-    }
-    if(req.query.endDate) {
-      query.blockTimeNormalized = query.blockTimeNormalized || {};
-      query.blockTimeNormalized.$lt = new Date(req.query.endDate);
-    }
-
-    var transactionStream = Transaction.find(query).cursor();
-    var listTransactionsStream = new ListTransactionsStream(wallet._id);
-    transactionStream.pipe(listTransactionsStream).pipe(res);
-  });
-});
-
 if(cluster.isMaster) { // this should later be cluster.isWorker
+  var router = require('./lib/routes');
+  app.use(router);
   app.listen(3000, function() {
     console.log('api server listening on port 3000!');
   });
 }
-
-
-
-
