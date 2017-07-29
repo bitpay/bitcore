@@ -15,6 +15,7 @@ results
 build
 
 node_modules
+package-lock.json
 
 # extras
 *.swp
@@ -47,3 +48,5 @@ public/css/main.css
 README.html
 po/*
 !po/*.po
+
+mynode/

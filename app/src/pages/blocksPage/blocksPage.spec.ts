@@ -20,4 +20,10 @@ describe('Blocks', () => {
   it('initializes', () => {
     expect(instance).toBeTruthy();
   });
+
+  it('has a search method', () => {
+    spyOn(instance, 'search');
+    instance.search();
+    expect(instance.search).toHaveBeenCalled();
+  });
 });
