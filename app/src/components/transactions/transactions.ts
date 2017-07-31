@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { Input } from '@angular/core';
+import { NavController } from 'ionic-angular';
 import { Http } from '@angular/http';
 
 /**
@@ -18,7 +19,7 @@ export class TransactionsComponent {
   @Input() public blockHash: string;
   public transactions: any = [];
 
-  constructor(private http: Http) {
+  constructor(private navCtrl: NavController, private http: Http) {
   }
 
   private ngOnInit(): void {
@@ -46,5 +47,21 @@ export class TransactionsComponent {
     } else {
       return 'Unparsed address';
     }
+  }
+
+  public goToTx(txId: string): void {
+    console.log('tx', txId);
+    /*
+    this.navCtrl.push('tx', {
+      'tx': txId 
+    });
+     */
+  }
+
+  public goToAddress(address: string): void {
+    console.log('address', address);
+    this.navCtrl.push('address', {
+      'address': address
+    });
   }
 }

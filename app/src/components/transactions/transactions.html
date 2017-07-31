@@ -1,6 +1,6 @@
 <div>
   <div *ngFor="let tx of transactions.txs" style="border: 1px solid purple">
-    <p>{{ tx.txid }}</p>
+    <p><a (click)="goToTx(tx.txid)">{{ tx.txid }}</a></p>
     <div [hidden]="!tx.firstSeenTs">
       <span translate>first seen at</span>
       <time>{{tx.firstSeenTs * 1000 | date:'medium'}}</time>
@@ -23,14 +23,14 @@
 
       <div *ngFor="let vout of tx.vout">
         <div>
-          <p>{{ getAddress(vout) }} {{ vout.value + ' BTC' }} <span [hidden]="!vout.spentTxId">(S)</span><span [hidden]="vout.spentTxId">(U)</span></p>
+          <p><a (click)="goToAddress(getAddress(vout))">{{ getAddress(vout) }}</a> {{ vout.value + ' BTC' }} <span [hidden]="!vout.spentTxId">(S)</span><span [hidden]="vout.spentTxId">(U)</span></p>
         </div>
       </div>
     </div>
 
     <div [hidden]="tx.isCoinBase">
       <div *ngFor="let vin of tx.vin">
-        <div>{{ vin.addr }}</div>
+        <div><a (click)="goToAddress(vin.addr)">{{ vin.addr }}</a></div>
         <p>{{ vin.value + ' BTC' }}</p>
       </div>
 
@@ -40,7 +40,7 @@
 
       <div *ngFor="let vout of tx.vout">
         <div>
-          <p>{{ getAddress(vout) }} {{ vout.value + ' BTC' }} <span [hidden]="!vout.spentTxId">(S)</span><span [hidden]="vout.spentTxId">(U)</span></p>
+          <p><a (click)="goToAddress(getAddress(vout))">{{ getAddress(vout) }}</a> {{ vout.value + ' BTC' }} <span [hidden]="!vout.spentTxId">(S)</span><span [hidden]="vout.spentTxId">(U)</span></p>
         </div>
       </div>
     </div>
