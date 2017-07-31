@@ -1,10 +1,12 @@
 import { NgModule } from '@angular/core';
 import { IonicPageModule } from 'ionic-angular';
 import { AddressPage } from './address';
+import { TransactionsComponent } from '../../components/transactions/transactions';
 
 @NgModule({
   declarations: [
-    AddressPage
+    AddressPage,
+    TransactionsComponent
   ],
   imports: [
     IonicPageModule.forChild(AddressPage)

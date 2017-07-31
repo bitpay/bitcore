@@ -17,7 +17,11 @@ import { IonicPage, NavController, NavParams } from 'ionic-angular';
 })
 export class AddressPage {
 
+  public loading: boolean = true;
+  private address: string;
+
   constructor(public navCtrl: NavController, public navParams: NavParams) {
+    this.address = navParams.get('address');
   }
 
   public ionViewDidLoad(): void {

@@ -19,7 +19,7 @@
       <ion-col col-12>
         <h1>Address</h1>
         <p>0 BTC</p>
-        <p>address</p>
+        <p>{{ address }}</p>
       </ion-col>
     </ion-row>
     <ion-row>
@@ -48,4 +48,6 @@
       <ion-col col-12><h2>Transactions</h2></ion-col>
     </ion-row>
   </ion-grid>
+
+    <transactions [address]="address"></transactions>
 </ion-content>

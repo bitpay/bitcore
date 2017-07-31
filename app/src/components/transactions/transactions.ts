@@ -17,6 +17,7 @@ export class TransactionsComponent {
 
   public loading: boolean = true;
   @Input() public blockHash: string;
+  @Input() public address: string;
   public transactions: any = [];
 
   constructor(private navCtrl: NavController, private http: Http) {
@@ -24,8 +25,21 @@ export class TransactionsComponent {
 
   private ngOnInit(): void {
     let apiPrefix: string = 'http://localhost:3001/insight-api/';
+    let lookupType: string, lookupValue: string;
 
-    this.http.get(apiPrefix + 'txs?block=' + this.blockHash).subscribe(
+    if (this.blockHash) {
+      lookupType = 'blocks';
+      lookupValue = this.blockHash;
+    }
+    if (this.address) {
+      lookupType = 'address';
+      lookupValue = this.address;
+    }
+
+    console.log('blockHash', this.blockHash);
+    console.log('address', this.address);
+
+    this.http.get(apiPrefix + 'txs?' + lookupType + '=' + lookupValue).subscribe(
       (data) => {
         this.transactions = JSON.parse(data['_body']);
         this.loading = false;
