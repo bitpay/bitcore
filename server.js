@@ -17,7 +17,7 @@ async.series([
   workerService.start.bind(workerService),
   syncService.start.bind(syncService)
 ], function(){
-  if(cluster.isWorker) {
+  if(cluster.isMaster) {
     var router = require('./lib/routes');
     app.use(router);
     app.listen(3000, function() {
