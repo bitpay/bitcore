@@ -2,7 +2,7 @@ const FullNode = require('bcoin/lib/node/fullnode');
 const config = require(`${__dirname}/config/config.js`);
 const logger = require('./lib/logger');
 const Block = require('./models/block');
-const Server = require('./lib/server');
+const Api = require('./lib/api');
 const db = require('./lib/db');
 const util = require('./lib/util');
 const node = new FullNode(config.bcoin);
@@ -13,6 +13,7 @@ logger.log('debug',
 (async () => {
   logger.log('debug',
     'Starting Full Node');
+
   await node.open();
   await node.connect();
 
@@ -22,7 +23,8 @@ logger.log('debug',
   });
 
   node.on('tx', (tx) => {
-    console.log('%s added to mempool.', tx.txid());
+    logger.log('debug',
+      '%s added to mempool.', tx.txid());
   });
 
   node.startSync();
@@ -61,6 +63,7 @@ function processBlock(block) {
   });
 }
 
-Server.listen(3000, () => {
-  console.log('listening on port 3000');
+Api.listen(3000, () => {
+  logger.log('debug',
+    'listening on port 3000');
 });

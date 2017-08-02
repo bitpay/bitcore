@@ -8,7 +8,7 @@ const BlockSchema = new Schema({
   version: Number,
   merkleRoot: String,
   tx: Array,
-  time: Date,
+  time: Number,
   nonce: Number,
   bits: Number,
   difficulty: Number,
