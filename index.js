@@ -4,11 +4,8 @@ const config = require('./config/config.js');
 const logger = require('./lib/logger');
 const Block = require('./models/block');
 const Server = require('./lib/server');
-//const BcoinNode = require('./lib/bcoin');
 
-mongoose.connect(config.mongodb, {
-  useMongoClient: true
-});
+mongoose.connect(config.mongodb.uri, config.mongodb.options);
 
 logger.log('debug',
   'Debug mode started');
@@ -35,6 +32,7 @@ function processBlock(block) {
   block.hash = revHex(block.hash().toString('hex'));
   logger.log('debug',
     `New Block Height: ${block.height}, Hash: ${block.hash}`);
+
   let b = new Block({
     mainChain: true,
     height: block.height,
