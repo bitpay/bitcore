@@ -20,9 +20,10 @@ async.series([
   if(cluster.isMaster) {
     var router = require('./lib/routes');
     app.use(router);
-    app.listen(3000, function() {
+    var server = app.listen(3000, function() {
       console.log('api server listening on port 3000!');
     });
+    server.timeout = 600000;
   }
 });
 
