@@ -53,12 +53,9 @@ export class TransactionsComponent {
   }
 
   public goToTx(txId: string): void {
-    console.log('tx', txId);
-    /*
-    this.navCtrl.push('tx', {
-      'tx': txId 
+    this.navCtrl.push('transaction', {
+      'txId': txId 
     });
-     */
   }
 
   public goToAddress(addrStr: string): void {

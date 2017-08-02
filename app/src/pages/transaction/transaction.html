@@ -1,0 +1,49 @@
+<!--
+  Generated template for the TransactionPage page.
+
+  See http://ionicframework.com/docs/components/#navigation for more info on
+  Ionic pages and navigation.
+-->
+<ion-header>
+
+  <ion-navbar>
+    <ion-title>Transaction</ion-title>
+  </ion-navbar>
+
+</ion-header>
+
+
+<ion-content padding>
+  <ion-grid>
+    <ion-row>
+      <ion-col col-12>
+        <h1>Transaction</h1>
+        <p>{{ transaction.txid }}</p>
+      </ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col col-12><h2>Summary</h2></ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col col-6>Size</ion-col>
+      <ion-col col-6 text-right>{{ transaction.size }} (bytes)</ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col col-6>Received Time</ion-col>
+      <ion-col col-6 text-right>{{ transaction.receivedTime }}</ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col col-6>Mined Time</ion-col>
+      <ion-col col-6 text-right>{{ transaction.minedTime }}</ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col col-6>Included in Block</ion-col>
+      <ion-col col-6 text-right>{{ transaction.blockhash }}</ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col col-12><h2>Details</h2></ion-col>
+    </ion-row>
+  </ion-grid>
+
+    <transactions [queryType]="'tx'" [queryValue]="txId"></transactions>
+</ion-content>
