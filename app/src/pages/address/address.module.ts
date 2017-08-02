@@ -1,15 +1,15 @@
 import { NgModule } from '@angular/core';
 import { IonicPageModule } from 'ionic-angular';
 import { AddressPage } from './address';
-import { TransactionsComponent } from '../../components/transactions/transactions';
+import { TransactionsComponentModule } from '../../components/transactions/transactions.module';
 
 @NgModule({
   declarations: [
-    AddressPage,
-    TransactionsComponent
+    AddressPage
   ],
   imports: [
-    IonicPageModule.forChild(AddressPage)
+    IonicPageModule.forChild(AddressPage),
+    TransactionsComponentModule
   ],
   exports: [
     AddressPage

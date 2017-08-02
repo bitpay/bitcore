@@ -16,8 +16,8 @@ import { Http } from '@angular/http';
 export class TransactionsComponent {
 
   public loading: boolean = true;
-  @Input() public blockHash: string;
-  @Input() public address: string;
+  @Input() public queryType: string;
+  @Input() public queryValue: string;
   public transactions: any = [];
 
   constructor(private navCtrl: NavController, private http: Http) {
@@ -25,21 +25,10 @@ export class TransactionsComponent {
 
   private ngOnInit(): void {
     let apiPrefix: string = 'http://localhost:3001/insight-api/';
-    let lookupType: string, lookupValue: string;
 
-    if (this.blockHash) {
-      lookupType = 'blocks';
-      lookupValue = this.blockHash;
-    }
-    if (this.address) {
-      lookupType = 'address';
-      lookupValue = this.address;
-    }
+    let url: string = apiPrefix + 'txs?' + this.queryType + '=' + this.queryValue;
 
-    console.log('blockHash', this.blockHash);
-    console.log('address', this.address);
-
-    this.http.get(apiPrefix + 'txs?' + lookupType + '=' + lookupValue).subscribe(
+    this.http.get(url).subscribe(
       (data) => {
         this.transactions = JSON.parse(data['_body']);
         this.loading = false;

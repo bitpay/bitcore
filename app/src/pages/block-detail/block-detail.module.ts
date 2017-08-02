@@ -1,15 +1,15 @@
 import { NgModule } from '@angular/core';
 import { IonicPageModule } from 'ionic-angular';
 import { BlockDetailPage } from './block-detail';
-import { TransactionsComponent } from '../../components/transactions/transactions';
+import { TransactionsComponentModule } from '../../components/transactions/transactions.module';
 
 @NgModule({
   declarations: [
-    BlockDetailPage,
-    TransactionsComponent
+    BlockDetailPage
   ],
   imports: [
-    IonicPageModule.forChild(BlockDetailPage)
+    IonicPageModule.forChild(BlockDetailPage),
+    TransactionsComponentModule
   ],
   exports: [
     BlockDetailPage
