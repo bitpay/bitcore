@@ -4,6 +4,7 @@ const config = require('./config/config.js');
 const logger = require('./lib/logger');
 const Block = require('./models/block');
 const Server = require('./lib/server');
+//const BcoinNode = require('./lib/bcoin');
 
 mongoose.connect(config.mongodb, {
   useMongoClient: true
@@ -12,13 +13,7 @@ mongoose.connect(config.mongodb, {
 logger.log('debug',
   'Debug mode started');
 
-const node = new FullNode({
-  network: 'main',
-  db: 'leveldb',
-  checkpoints: true,
-  workers: true,
-  //logLevel: 'info',
-});
+const node = new FullNode(config.bcoin);
 
 (async () => {
   await node.open();
