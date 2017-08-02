@@ -61,10 +61,9 @@ export class TransactionsComponent {
      */
   }
 
-  public goToAddress(address: string): void {
-    console.log('address', address);
+  public goToAddress(addrStr: string): void {
     this.navCtrl.push('address', {
-      'address': address
+      'addrStr': addrStr
     });
   }
 }

@@ -18,8 +18,8 @@
     <ion-row>
       <ion-col col-12>
         <h1>Address</h1>
-        <p>0 BTC</p>
-        <p>{{ address }}</p>
+        <p>{{ address.addrStr }}</p>
+        <p>{{ address.balance }} BTC</p>
       </ion-col>
     </ion-row>
     <ion-row>
@@ -27,19 +27,19 @@
     </ion-row>
     <ion-row>
       <ion-col col-6>Total Received:</ion-col>
-      <ion-col col-6 text-right>0.00000000 BTC</ion-col>
+      <ion-col col-6 text-right>{{ address.totalReceived }} BTC</ion-col>
     </ion-row>
     <ion-row>
       <ion-col col-6>Total Sent:</ion-col>
-      <ion-col col-6 text-right>0.00000000 BTC</ion-col>
+      <ion-col col-6 text-right>{{ address.totalSent }} BTC</ion-col>
     </ion-row>
     <ion-row>
       <ion-col col-6>Final Balance:</ion-col>
-      <ion-col col-6 text-right>0.00000000 BTC</ion-col>
+      <ion-col col-6 text-right>{{ address.balance }} BTC</ion-col>
     </ion-row>
     <ion-row>
       <ion-col col-6>No. Transactions:</ion-col>
-      <ion-col col-6 text-right>0</ion-col>
+      <ion-col col-6 text-right>{{ address.txApperances }}</ion-col>
     </ion-row>
     <ion-row>
       <ion-col col-12 text-center>QR CODE</ion-col>
@@ -49,5 +49,5 @@
     </ion-row>
   </ion-grid>
 
-    <transactions [queryType]="'address'" [queryValue]="address"></transactions>
+    <transactions [queryType]="'address'" [queryValue]="addrStr"></transactions>
 </ion-content>

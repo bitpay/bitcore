@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
+import { Http } from '@angular/http';
 
 /**
  * Generated class for the AddressPage page.
@@ -9,7 +10,7 @@ import { IonicPage, NavController, NavParams } from 'ionic-angular';
  */
 @IonicPage({
   name: 'address',
-  segment: 'address/:address'
+  segment: 'address/:addrStr'
 })
 @Component({
   selector: 'page-address',
@@ -18,14 +19,26 @@ import { IonicPage, NavController, NavParams } from 'ionic-angular';
 export class AddressPage {
 
   public loading: boolean = true;
-  private address: string;
+  private addrStr: string;
+  public address: any = {};
 
-  constructor(public navCtrl: NavController, public navParams: NavParams) {
-    this.address = navParams.get('address');
+  constructor(public navCtrl: NavController, public navParams: NavParams, private http: Http) {
+    this.addrStr = navParams.get('addrStr');
   }
 
   public ionViewDidLoad(): void {
-    console.log('ionViewDidLoad AddressPage');
+    let apiPrefix: string = 'http://localhost:3001/insight-api/';
+
+    this.http.get(apiPrefix + 'addr/' + this.addrStr + '/?noTxList=1').subscribe(
+      (data) => {
+        this.address = JSON.parse(data['_body']);
+        this.loading = false;
+      },
+      (err) => {
+        console.log('err is', err);
+        this.loading = false;
+      }
+    );
   }
 
 }
