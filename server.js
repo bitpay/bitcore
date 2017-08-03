@@ -17,6 +17,7 @@ async.series([
   workerService.start.bind(workerService),
   syncService.start.bind(syncService)
 ], function(){
+  // TODO should be cluster.isWorker, or better yet a subset of workers
   if(cluster.isMaster) {
     var router = require('./lib/routes');
     app.use(router);
