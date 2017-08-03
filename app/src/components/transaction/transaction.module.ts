@@ -4,10 +4,10 @@ import { TransactionComponent } from './transaction';
 
 @NgModule({
   declarations: [
-    TransactionComponent,
+    TransactionComponent
   ],
   imports: [
-    IonicModule,
+    IonicModule
   ],
   exports: [
     TransactionComponent

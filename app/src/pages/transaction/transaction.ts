@@ -14,7 +14,7 @@ import { Http } from '@angular/http';
 })
 @Component({
   selector: 'page-transaction',
-  templateUrl: 'transaction.html',
+  templateUrl: 'transaction.html'
 })
 export class TransactionPage {
 
@@ -26,7 +26,7 @@ export class TransactionPage {
     this.txId = navParams.get('txId');
   }
 
-  ionViewDidLoad() {
+  public ionViewDidLoad(): void {
     let apiPrefix: string = 'http://localhost:3001/insight-api/';
 
     this.http.get(apiPrefix + 'tx/' + this.txId).subscribe(
