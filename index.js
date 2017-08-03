@@ -1,5 +1,5 @@
 const node = require('./lib/node');
-const config = require('./config/config.js');
+const config = require('./config/config');
 const logger = require('./lib/logger');
 const Api = require('./lib/api');
 
