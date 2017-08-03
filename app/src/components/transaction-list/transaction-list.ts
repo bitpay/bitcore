@@ -4,16 +4,16 @@ import { NavController } from 'ionic-angular';
 import { Http } from '@angular/http';
 
 /**
- * Generated class for the TransactionsComponent component.
+ * Generated class for the TransactionListComponent component.
  *
  * See https://angular.io/docs/ts/latest/api/core/index/ComponentMetadata-class.html
  * for more info on Angular Components.
  */
 @Component({
-  selector: 'transactions',
-  templateUrl: 'transactions.html'
+  selector: 'transaction-list',
+  templateUrl: 'transaction-list.html'
 })
-export class TransactionsComponent {
+export class TransactionListComponent {
 
   public loading: boolean = true;
   @Input() public queryType: string;
@@ -54,7 +54,7 @@ export class TransactionsComponent {
 
   public goToTx(txId: string): void {
     this.navCtrl.push('transaction', {
-      'txId': txId 
+      'txId': txId
     });
   }
 

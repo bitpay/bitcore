@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { IonicPageModule } from 'ionic-angular';
 import { AddressPage } from './address';
-import { TransactionsComponentModule } from '../../components/transactions/transactions.module';
+import { TransactionListComponentModule } from '../../components/transaction-list/transaction-list.module';
 
 @NgModule({
   declarations: [
@@ -9,7 +9,7 @@ import { TransactionsComponentModule } from '../../components/transactions/trans
   ],
   imports: [
     IonicPageModule.forChild(AddressPage),
-    TransactionsComponentModule
+    TransactionListComponentModule
   ],
   exports: [
     AddressPage
