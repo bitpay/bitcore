@@ -10,30 +10,35 @@ const node = new FullNode(config.bcoin);
 logger.log('debug',
   'Debug mode started');
 
-(async () => {
-  logger.log('debug',
-    'Starting Full Node');
+node.open()
+  .then()
 
-  await node.open();
-  await node.connect();
-
-  node.on('connect', (entry, block) => {
-    block.height = entry.height;
-    processBlock(block);
+node.open()
+.then(() => {
+  node.connect().then(() => {
+    node.startSync();
   });
+});
 
-  node.on('tx', (tx) => {
-    logger.log('debug',
-      '%s added to mempool.', tx.txid());
-  });
+node.chain.on('connect', (entry, block) => {
+  console.log(entry.height);
+  processBlock(entry, block);
+});
 
-  node.startSync();
-})();
+node.mempool.on('tx', (tx) => {
+  console.log(tx);
+});
 
-function processBlock(block) {
+node.chain.on('full', () => {
+  node.mempool.getHistory().then(console.log);
+});
+
+function processBlock(entry, block) {
   block.hash = util.revHex(block.hash().toString('hex'));
   logger.log('debug',
     `New Block Height: ${block.height}, Hash: ${block.hash}`);
+
+    console.log(entry);
 
   const b = new Block({
     hash: block.hash,
@@ -46,7 +51,7 @@ function processBlock(block) {
     nonce: block.nonce,
     bits: block.bits,
     difficulty: block.bits,
-    chainwork: 0,
+    chainwork: entry.chainwork,
     confirmations: 0,
     previousBlockHash: block.previousBlockHash,
     nextBlockHash: 0,
