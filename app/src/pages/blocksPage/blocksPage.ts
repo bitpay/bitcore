@@ -31,10 +31,14 @@ export class BlocksPage {
     let apiPrefix: string = this.api.apiPrefix;
 
     this.http.get(apiPrefix + 'block/' + this.q).subscribe(
-      (data) => {
+      function (data: any) {
         this.resetSearch();
         console.log('block', data);
-      },
+        let parsedData: any = JSON.parse(data._body);
+        this.navCtrl.push('block-detail', {
+          'blockHash': parsedData.hash
+        });
+      }.bind(this),
       () => {
         this.http.get(apiPrefix + 'tx/' + this.q).subscribe(
           function (data: any) {
