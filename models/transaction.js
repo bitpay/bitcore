@@ -6,14 +6,12 @@ const InputSchema = new Schema({
   vout: Number,
   address: String,
   amount: Number,
-  wallets: { type: [Schema.Types.ObjectId] },
 });
 
 const OutputSchema = new Schema({
   address: String,
   amount: Number,
   vout: Number,
-  wallets: { type: [Schema.Types.ObjectId] },
 });
 
 const TransactionSchema = new Schema({

@@ -1,0 +1,17 @@
+{ type: 'pubkeyhash',
+  subtype: undefined,
+  address: <Address: type=pubkeyhash version=-1 str=1G6p7BydsiUyQd9vB1LR4N3uER9XcPiFaV>,
+  script: <Script: 0x48 0x304502210093275988acbf1e540e5860af460517ba65f77c0855c28165ddc01a4933ac94d20220748590fe44ab5d97abc98510d6268d7a3ccbbc4a7a2c60dd7d9b6be530dc7e2e01 0x41 0x0432cfefc384c53965332c503e0815a8134322721c60d62ec46a070a114d80a0bd33e7645bdf78eba6cd23824b233cd78159a22896d79f8ef371cf632b7556657c>,
+  witness: <Witness: >,
+  redeem: undefined,
+  sequence: 4294967295,
+  prevout: <Outpoint: 9b56e70e5f2bf46358d0d5931a3ee9a7af6e1dd9bc6f3ef5730759e89cf8f603/0>,
+  coin: null }
+{ prevout:
+   { hash: '9b56e70e5f2bf46358d0d5931a3ee9a7af6e1dd9bc6f3ef5730759e89cf8f603',
+     index: 0 },
+  script: '48304502210093275988acbf1e540e5860af460517ba65f77c0855c28165ddc01a4933ac94d20220748590fe44ab5d97abc98510d6268d7a3ccbbc4a7a2c60dd7d9b6be530dc7e2e01410432cfefc384c53965332c503e0815a8134322721c60d62ec46a070a114d80a0bd33e7645bdf78eba6cd23824b233cd78159a22896d79f8ef371cf632b7556657c',
+  witness: '00',
+  sequence: 4294967295,
+  address: '1G6p7BydsiUyQd9vB1LR4N3uER9XcPiFaV',
+  coin: undefined }
