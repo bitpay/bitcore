@@ -18,6 +18,7 @@ const OutputSchema = new Schema({
 
 const TransactionSchema = new Schema({
   txid: String,
+  version: Number,
   chain: String,
   blockHeight: Number,
   blockHash: String,
@@ -28,6 +29,7 @@ const TransactionSchema = new Schema({
   coinbase: Boolean,
   fee: Number,
   inputsProcessed: Boolean,
+  lockTime: Number,
   wallets: { type: [Schema.Types.ObjectId] },
 });
 

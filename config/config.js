@@ -5,6 +5,7 @@ const config = {
     checkpoints: true,
     workers: true,
     logLevel: 'info',
+    'max-inbound': 100,
   },
   mongodb: {
     uri: 'mongodb://localhost/bitcore',
