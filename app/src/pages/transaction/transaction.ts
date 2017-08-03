@@ -20,7 +20,7 @@ export class TransactionPage {
 
   public loading: boolean = true;
   private txId: string;
-  public transaction: any = {};
+  public tx: any = {};
 
   constructor(public navCtrl: NavController, public navParams: NavParams, private http: Http) {
     this.txId = navParams.get('txId');
@@ -31,8 +31,8 @@ export class TransactionPage {
 
     this.http.get(apiPrefix + 'tx/' + this.txId).subscribe(
       (data) => {
-        this.transaction = JSON.parse(data['_body']);
-        console.log('transaction', this.transaction);
+        this.tx = JSON.parse(data['_body']);
+        console.log('tx', this.tx);
         this.loading = false;
       },
       (err) => {
