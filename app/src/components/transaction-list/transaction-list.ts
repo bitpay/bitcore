@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import { Input } from '@angular/core';
-import { NavController } from 'ionic-angular';
 import { Http } from '@angular/http';
 
 /**
@@ -20,7 +19,7 @@ export class TransactionListComponent {
   @Input() public queryValue: string;
   public transactions: any = [];
 
-  constructor(private navCtrl: NavController, private http: Http) {
+  constructor(private http: Http) {
   }
 
   private ngOnInit(): void {
@@ -42,25 +41,5 @@ export class TransactionListComponent {
         this.loading = false;
       }
     );
-  }
-
-  public getAddress(vout: any): string {
-    if (vout.scriptPubKey && vout.scriptPubKey.addresses) {
-      return vout.scriptPubKey.addresses[0];
-    } else {
-      return 'Unparsed address';
-    }
-  }
-
-  public goToTx(txId: string): void {
-    this.navCtrl.push('transaction', {
-      'txId': txId
-    });
-  }
-
-  public goToAddress(addrStr: string): void {
-    this.navCtrl.push('address', {
-      'addrStr': addrStr
-    });
   }
 }

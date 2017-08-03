@@ -7,12 +7,10 @@ import { SplashScreen } from '@ionic-native/splash-screen';
 import { InsightApp } from './app.component';
 import { PagesModule, BlocksPage, BroadcastTxPage, NodeStatusPage, VerifyMessagePage } from '../pages';
 import { BlocksService, StorageService } from '../services';
-import { TransactionComponent } from '../components/transaction/transaction';
 
 @NgModule({
   declarations: [
-    InsightApp,
-    TransactionComponent
+    InsightApp
   ],
   imports: [
     BrowserModule,
