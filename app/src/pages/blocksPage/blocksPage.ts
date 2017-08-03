@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { Block } from '../../models';
 import { BlocksService } from '../../services';
 import { Http } from '@angular/http';
+import { ApiProvider } from '../../providers/api/api';
 
 @Component({
   templateUrl: './blocksPage.html'
@@ -17,7 +18,7 @@ export class BlocksPage {
   public q: string;
   public badQuery: boolean = false;
 
-  constructor(private navCtrl: NavController, private http: Http, private blocksService: BlocksService) {
+  constructor(private navCtrl: NavController, private http: Http, private blocksService: BlocksService, private api: ApiProvider) {
     this.title = 'Blocks';
     this.blocks = blocksService.latestBlocks;
     // this.blocks.subscribe((blocks) => {
@@ -27,8 +28,8 @@ export class BlocksPage {
   }
 
   public search(): void {
-    console.log('q is', this.q);
-    let apiPrefix: string = 'http://localhost:3001/insight-api/';
+    let apiPrefix: string = this.api.apiPrefix;
+
     this.http.get(apiPrefix + 'block/' + this.q).subscribe(
       (data) => {
         this.resetSearch();

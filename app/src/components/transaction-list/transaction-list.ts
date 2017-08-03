@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Input } from '@angular/core';
 import { Http } from '@angular/http';
+import { ApiProvider } from '../../providers/api/api';
 
 /**
  * Generated class for the TransactionListComponent component.
@@ -19,13 +20,11 @@ export class TransactionListComponent {
   @Input() public queryValue: string;
   public transactions: any = [];
 
-  constructor(private http: Http) {
+  constructor(private http: Http, private api: ApiProvider) {
   }
 
   private ngOnInit(): void {
-    let apiPrefix: string = 'http://localhost:3001/insight-api/';
-
-    let url: string = apiPrefix + 'txs?' + this.queryType + '=' + this.queryValue;
+    let url: string = this.api.apiPrefix + 'txs?' + this.queryType + '=' + this.queryValue;
 
     this.http.get(url).subscribe(
       (data) => {

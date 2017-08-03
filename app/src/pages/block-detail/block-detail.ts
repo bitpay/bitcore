@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { Http } from '@angular/http';
+import { ApiProvider } from '../../providers/api/api';
 
 /**
  * Generated class for the BlockDetailPage page.
@@ -24,12 +25,10 @@ export class BlockDetailPage {
     tx: []
   };
 
-  constructor(public navCtrl: NavController, private http: Http, public navParams: NavParams) {
+  constructor(public navCtrl: NavController, private http: Http, public navParams: NavParams, private api: ApiProvider) {
     this.blockHash = navParams.get('blockHash');
 
-    let apiPrefix: string = 'http://localhost:3001/insight-api/';
-
-    this.http.get(apiPrefix + 'block/' + this.blockHash).subscribe(
+    this.http.get(this.api.apiPrefix + 'block/' + this.blockHash).subscribe(
       (data) => {
         this.block = JSON.parse(data['_body']);
         this.loading = false;

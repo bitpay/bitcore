@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { Http } from '@angular/http';
+import { ApiProvider } from '../../providers/api/api';
 
 /**
  * Generated class for the TransactionPage page.
@@ -22,14 +23,12 @@ export class TransactionPage {
   private txId: string;
   public tx: any = {};
 
-  constructor(public navCtrl: NavController, public navParams: NavParams, private http: Http) {
+  constructor(public navCtrl: NavController, public navParams: NavParams, private http: Http, private api: ApiProvider) {
     this.txId = navParams.get('txId');
   }
 
   public ionViewDidLoad(): void {
-    let apiPrefix: string = 'http://localhost:3001/insight-api/';
-
-    this.http.get(apiPrefix + 'tx/' + this.txId).subscribe(
+    this.http.get(this.api.apiPrefix + 'tx/' + this.txId).subscribe(
       (data) => {
         this.tx = JSON.parse(data['_body']);
         console.log('tx', this.tx);

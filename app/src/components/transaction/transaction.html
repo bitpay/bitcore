@@ -1,46 +1,57 @@
-<div>
-  <p><a (click)="goToTx(tx.txid)">{{ tx.txid }}</a></p>
-  <div [hidden]="!tx.firstSeenTs">
-    <span translate>first seen at</span>
-    <time>{{tx.firstSeenTs * 1000 | date:'medium'}}</time>
-  </div>
-  <div [hidden]="!tx.blocktime && tx.firstSeenTs">
-    <span translate>mined</span>
-    <time>{{tx.time * 1000 | date:'medium'}}</time>
-  </div>
-
-  <div [hidden]="!tx.isCoinBase">
-    <div *ngFor="let vin of tx.vin">
-      <div>
-        <span translate>No Inputs (Newly Generated Coins)</span>
+<ion-grid>
+  <ion-row>
+    <ion-col col-8>
+      <span><a (click)="goToTx(tx.txid)">{{ tx.txid }}</a></span>
+    </ion-col>
+    <ion-col col-4 text-right>
+      <div [hidden]="!tx.firstSeenTs">
+        <span translate>first seen at</span>
+        <time>{{tx.firstSeenTs * 1000 | date:'medium'}}</time>
       </div>
-    </div>
-
-    <div>
-      &gt;
-    </div>
-
-    <div *ngFor="let vout of tx.vout">
-      <div>
-        <p><a (click)="goToAddress(getAddress(vout))">{{ getAddress(vout) }}</a> {{ vout.value + ' BTC' }} <span [hidden]="!vout.spentTxId">(S)</span><span [hidden]="vout.spentTxId">(U)</span></p>
+      <div [hidden]="!tx.blocktime && tx.firstSeenTs">
+        <span translate>mined</span>
+        <time>{{tx.time * 1000 | date:'medium'}}</time>
       </div>
-    </div>
-  </div>
+    </ion-col>
+  </ion-row>
 
-  <div [hidden]="tx.isCoinBase">
-    <div *ngFor="let vin of tx.vin">
-      <div><a (click)="goToAddress(vin.addr)">{{ vin.addr }}</a></div>
-      <p>{{ vin.value + ' BTC' }}</p>
-    </div>
-
-    <div>
-      &gt;
-    </div>
-
-    <div *ngFor="let vout of tx.vout">
-      <div>
-        <p><a (click)="goToAddress(getAddress(vout))">{{ getAddress(vout) }}</a> {{ vout.value + ' BTC' }} <span [hidden]="!vout.spentTxId">(S)</span><span [hidden]="vout.spentTxId">(U)</span></p>
+  <ion-row>
+    <ion-col col-5>
+      <div [hidden]="!tx.isCoinBase">
+        <div *ngFor="let vin of tx.vin">
+          <div>
+            <span translate>No Inputs (Newly Generated Coins)</span>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</div>
+
+      <div [hidden]="tx.isCoinBase">
+        <div *ngFor="let vin of tx.vin">
+          <div><a (click)="goToAddress(vin.addr)">{{ vin.addr }}</a></div>
+          <p>{{ vin.value + ' BTC' }}</p>
+        </div>
+      </div>
+    </ion-col>
+    <ion-col col-2>
+      <div>
+        &gt;
+      </div>
+    </ion-col>
+    <ion-col col-5>
+      <div *ngFor="let vout of tx.vout">
+        <div>
+          <p><a (click)="goToAddress(getAddress(vout))">{{ getAddress(vout) }}</a> {{ vout.value + ' BTC' }} <span [hidden]="!vout.spentTxId">(S)</span><span [hidden]="vout.spentTxId">(U)</span></p>
+        </div>
+      </div>
+    </ion-col>
+  </ion-row>
+
+  <ion-row>
+    <ion-col col-6>
+      Fee
+    </ion-col>
+    <ion-col col-6>
+      Confirmations
+    </ion-col>
+  </ion-row>
+</ion-grid>
