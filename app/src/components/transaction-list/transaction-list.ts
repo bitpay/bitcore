@@ -30,10 +30,6 @@ export class TransactionListComponent {
       (data) => {
         this.transactions = JSON.parse(data['_body']);
         this.loading = false;
-
-        this.transactions.txs.forEach((tx) => {
-          console.log('tx is', tx);
-        });
       },
       (err) => {
         console.log('err is', err);

@@ -37,16 +37,24 @@ export class BlocksPage {
       },
       () => {
         this.http.get(apiPrefix + 'tx/' + this.q).subscribe(
-          (data: any) => {
+          function (data: any) {
             this.resetSearch();
             console.log('tx', data);
-          },
+            let parsedData: any = JSON.parse(data._body);
+            this.navCtrl.push('transaction', {
+              'txId': parsedData.txid
+            });
+          }.bind(this),
           () => {
             this.http.get(apiPrefix + 'addr/' + this.q).subscribe(
-              (data: any) => {
+              function (data: any) {
                 this.resetSearch();
                 console.log('addr', data);
-              },
+                let parsedData: any = JSON.parse(data._body);
+                this.navCtrl.push('address', {
+                  'addrStr': parsedData.addrStr
+                });
+              }.bind(this),
               () => {
                 this.http.get(apiPrefix + 'block-index/' + this.q).subscribe(
                   function (data: any): void {
