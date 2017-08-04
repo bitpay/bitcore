@@ -39,20 +39,20 @@ The API is configured to run on port 3000 by default. Use the standard Nginx rev
 ### Priorities
 1. Required Insight-UI
 
-/addr/:addrStr/?noTxList=1
-/block/:blockhash
-/blocks
-/block-index/:blockHeight
-/currency
-/version
-/status
-/sync
-/peer
-/tx/:txId
-/txs
-/txs
+* /addr/:addrStr/?noTxList=1
+* /block/:blockhash
+* /blocks
+* /block-index/:blockHeight
+* /currency
+* /version
+* /status
+* /sync
+* /peer
+* /tx/:txId
+* /txs
+* /txs
 
-sockets
+* sockets
 
 2. Mongo Models
 
