@@ -17,41 +17,45 @@
 
   <ion-row>
     <ion-col col-5>
-      <div [hidden]="!tx.isCoinBase">
-        <div *ngFor="let vin of tx.vin">
-          <div>
-            <span translate>No Inputs (Newly Generated Coins)</span>
-          </div>
-        </div>
-      </div>
 
-      <div [hidden]="tx.isCoinBase">
-        <div *ngFor="let vin of tx.vin">
-          <div><a (click)="goToAddress(vin.addr)">{{ vin.addr }}</a></div>
-          <p>{{ vin.value + ' BTC' }}</p>
-        </div>
-      </div>
+      <ion-list [hidden]="!tx.isCoinBase">
+        <ion-item>
+          No Inputs (Newly Generated Coins)
+        </ion-item>
+      </ion-list>
+
+      <ion-list [hidden]="tx.isCoinBase">
+        <ion-item *ngFor="let vin of tx.vin">
+          <a (click)="goToAddress(vin.addr)">{{ vin.addr }}</a>
+          <span item-end>{{ vin.value + ' BTC' }}</span>
+        </ion-item>
+      </ion-list>
+
     </ion-col>
-    <ion-col col-2>
+    <ion-col col-2 text-center>
       <div>
         &gt;
       </div>
     </ion-col>
     <ion-col col-5>
-      <div *ngFor="let vout of tx.vout">
-        <div>
-          <p><a (click)="goToAddress(getAddress(vout))">{{ getAddress(vout) }}</a> {{ vout.value + ' BTC' }} <span [hidden]="!vout.spentTxId">(S)</span><span [hidden]="vout.spentTxId">(U)</span></p>
-        </div>
-      </div>
+      <ion-list>
+        <ion-item *ngFor="let vout of tx.vout">
+            <a (click)="goToAddress(getAddress(vout))">{{ getAddress(vout) }}</a>
+            <div item-end>
+              {{ vout.value + ' BTC' }} <span [hidden]="!vout.spentTxId">(S)</span><span [hidden]="vout.spentTxId">(U)</span>
+            </div>
+        </ion-item>
+      </ion-list>
     </ion-col>
   </ion-row>
 
   <ion-row>
     <ion-col col-6>
-      Fee
+      <span [hidden]="tx.isCoinBase">Fee {{ tx.fees + 'BTC' }}</span>
     </ion-col>
-    <ion-col col-6>
-      Confirmations
+    <ion-col col-6 text-right>
+      {{ tx.confirmations }} Confirmations
+      <span class="">{{ tx.valueOut + ' BTC' }}</span>
     </ion-col>
   </ion-row>
 </ion-grid>

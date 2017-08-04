@@ -31,7 +31,6 @@ export class TransactionPage {
     this.http.get(this.api.apiPrefix + 'tx/' + this.txId).subscribe(
       (data) => {
         this.tx = JSON.parse(data['_body']);
-        console.log('tx', this.tx);
         this.loading = false;
       },
       (err) => {
