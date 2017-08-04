@@ -16,6 +16,7 @@ const config = {
   },
   api: {
     port: 3000,
+    json_spaces: 2,
   },
 };
 
