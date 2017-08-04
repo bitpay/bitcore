@@ -12,6 +12,8 @@ const config = {
     uri: 'mongodb://localhost/bitcore',
     options: {
       useMongoClient: true,
+      socketTimeoutMS: 0,
+      connectTimeoutMS: 0
     },
   },
   api: {
