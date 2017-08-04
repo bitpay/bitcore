@@ -21,6 +21,7 @@ const BlockSchema = new Schema({
   isMainChain: Boolean,
   poolInfo: Object,
   transactionCount: Number,
+  rawBlock: String,
 });
 
 BlockSchema.index({ hash: 1 }, { unique: true });

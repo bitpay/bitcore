@@ -55,6 +55,9 @@ The API is configured to run on port 3000 by default. Use the standard Nginx rev
 * sockets
 
 # ToDo
-Mongo Models : Bcoin primitives. A Bcoin block does not present all of bitcore's data.
-Reorg testing - Bcoin will handle this but we need to account for this in our mongo indexes.
-JSDoc & Unit tests
+* Mongo Models : Bcoin primitives. A Bcoin block does not present all of bitcore's data.
+* Reorg testing - Bcoin will handle this but we need to account for this in our mongo indexes.
+* JSDoc & Unit tests
+* Rate Limiting
+* Helmet
+* Rate Limiting
