@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { IonicPageModule } from 'ionic-angular';
 import { BlockDetailPage } from './block-detail';
 import { TransactionListComponentModule } from '../../components/transaction-list/transaction-list.module';
+import { HeadNavComponentModule } from '../../components/head-nav/head-nav.module';
 
 @NgModule({
   declarations: [
@@ -9,7 +10,8 @@ import { TransactionListComponentModule } from '../../components/transaction-lis
   ],
   imports: [
     IonicPageModule.forChild(BlockDetailPage),
-    TransactionListComponentModule
+    TransactionListComponentModule,
+    HeadNavComponentModule
   ],
   exports: [
     BlockDetailPage

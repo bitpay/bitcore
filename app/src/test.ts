@@ -17,6 +17,7 @@ import { ConfigMock, PlatformMock } from './mocks';
 import { BlocksServiceMock } from './services/mocks';
 import { BlocksService } from './services';
 import { ApiProvider } from './providers/api/api';
+import { HeadNavComponentModule } from './components/head-nav/head-nav.module';
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
 declare var __karma__: any;
@@ -68,7 +69,8 @@ export class TestUtils {
         FormsModule,
         IonicModule,
         ReactiveFormsModule,
-        HttpModule
+        HttpModule,
+        HeadNavComponentModule
       ]
     });
   }
