@@ -54,10 +54,7 @@ The API is configured to run on port 3000 by default. Use the standard Nginx rev
 
 * sockets
 
-2. Mongo Models
-
-Some data is stubbed. This is due to Bcoin primitives being different from Bitcore. It's unclear whether Mongo models or multiple queries at the api layer will better serve us. Obviously multiple queries are easier but I would prefer a clear cut data model because that leads to fewer problems in the future and gives us greater flexibility in our API and the other microservices we implement in the future.
-
 # ToDo
+Mongo Models : Bcoin primitives. A Bcoin block does not present all of bitcore's data.
 Reorg testing - Bcoin will handle this but we need to account for this in our mongo indexes.
 JSDoc & Unit tests

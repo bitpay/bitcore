@@ -1,4 +1,4 @@
-const node = require('./lib/node');
+const Bcoin = require('./lib/node');
 const config = require('./config');
 const logger = require('./lib/logger');
 const Api = require('./lib/api');
@@ -15,5 +15,5 @@ Api.listen(config.api.port, () => {
 });
 
 db.connection.once('open', function() {
-  node.start();
+  Bcoin.start();
 });

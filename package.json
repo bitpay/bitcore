@@ -1,14 +1,17 @@
 {
   "name": "bitcore-bcoin-insight",
   "version": "1.0.0",
-  "description": "",
+  "description": "Full node with extended capabilities using Bitcore and Bcoin",
+  "engines": {
+    "node": ">=7.6.0"
+  },
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js"
   },
   "author": "",
-  "license": "",
+  "license": "MIT",
   "dependencies": {
     "bcoin": "^1.0.0-beta.14",
     "express": "^4.15.3",
