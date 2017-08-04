@@ -3,56 +3,93 @@
 </ion-header>
 
 <ion-content padding>
-  <ion-grid>
-    <ion-row>
-      <ion-col col-12>
-        <h1>Block # {{ block.height }}</h1>
-        <p>BlockHash {{ block.hash }}</p>
-      </ion-col>
-    </ion-row>
-    <ion-row>
-      <ion-col col-12>
-        <h2>Summary</h2>
-      </ion-col>
-    </ion-row>
-    <ion-row>
-      <ion-col>
+  <h1>Block #{{ block.height }}</h1>
+  <p>BlockHash {{ block.hash }}</p>
+
+  <h2>Summary</h2>
+
+  <ion-list *ngIf="!loading">
+    <ion-item>
         Number of Transactions
-      </ion-col>
-      <ion-col text-right>
+      <span item-end>
         {{ block.tx.length }}
-      </ion-col>
-    </ion-row>
-    <ion-row>
-      <ion-col>
-        Height
-      </ion-col>
-      <ion-col text-right>
+      </span>
+    </ion-item>
+    <ion-item>
+      Height
+      <span item-end>
         {{ block.height }} <span [hidden]="!block.isMainChain">(Mainchain)</span>
-      </ion-col>
-    </ion-row>
-    <ion-row>
-      <ion-col>
-        Block Reward
-      </ion-col>
-      <ion-col text-right>
+      </span>
+    </ion-item>
+    <ion-item>
+      Block Reward
+      <span item-end>
         {{ block.reward + ' BTC' }}
-      </ion-col>
-    </ion-row>
-  </ion-grid>
+      </span>
+    </ion-item>
+    <ion-item>
+      Timestamp
+      <span item-end>
+        {{ block.time * 1000 | date:'medium' }}
+      </span>
+    </ion-item>
+    <ion-item>
+      Mined by
+      <span item-end>
+        <a href="{{ block.poolInfo.url }}">{{ block.poolInfo.poolName }}</a>
+      </span>
+    </ion-item>
+    <ion-item>
+      Merkle Root
+      <span item-end>
+        {{ block.merkleroot }}
+      </span>
+    </ion-item>
+    <ion-item>
+      Previous Block
+      <span item-end>
+        <a (click)="goToPreviousBlock()">{{ block.height - 1 }}</a>
+      </span>
+    </ion-item>
+    <ion-item>
+      Difficulty 
+      <span item-end>
+        {{ block.difficulty }}
+      </span>
+    </ion-item>
+    <ion-item>
+      Bits
+      <span item-end>
+        {{ block.bits }}
+      </span>
+    </ion-item>
+    <ion-item>
+      Size (bytes)
+      <span item-end>
+        {{ block.size }}
+      </span>
+    </ion-item>
+    <ion-item>
+      Version
+      <span item-end>
+        {{ block.version }}
+      </span>
+    </ion-item>
+    <ion-item>
+      Nonce
+      <span item-end>
+        {{ block.nonce }}
+      </span>
+    </ion-item>
+    <ion-item>
+      Next Block
+      <span item-end>
+        <a (click)="goToNextBlock()">{{ block.height + 1 }}</a>
+      </span>
+    </ion-item>
+  </ion-list>
 
   <div *ngIf="!loading">
-    <p>Timestamp {{ block.time * 1000 | date:'medium' }}</p>
-    <p>Mined by <a href="{{ block.poolInfo.url }}">{{ block.poolInfo.poolName }}</a></p>
-    <p>Merkle Root {{ block.merkleroot }}</p>
-    <p>Previous Block <a (click)="goToPreviousBlock()">{{ block.height - 1 }}</a></p>
-    <p>Difficulty {{ block.difficulty }}</p>
-    <p>Bits {{ block.bits }}</p>
-    <p>Size (bytes) {{ block.size }}</p>
-    <p>Version {{ block.version }}</p>
-    <p>Nonce {{ block.nonce }}</p>
-    <p>Next Block <a (click)="goToNextBlock()">{{ block.height + 1 }}</a></p>
-
     <h3>Transactions</h3>
     <transaction-list [queryType]="'block'" [queryValue]="block.hash"></transaction-list>
   </div>
