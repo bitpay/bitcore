@@ -21,9 +21,9 @@ export class BlocksPage {
   constructor(private navCtrl: NavController, private http: Http, private blocksService: BlocksService, private api: ApiProvider) {
     this.title = 'Blocks';
     this.blocks = blocksService.latestBlocks;
-    // this.blocks.subscribe((blocks) => {
-    //   console.log(blocks);
-    // });
+    this.blocks.subscribe((blocks) => {
+      console.log('blocks', blocks);
+    });
     blocksService.getLatestBlocks();
   }
 
@@ -100,5 +100,11 @@ export class BlocksPage {
     );
   };
   /* tslint:enable:no-unused-variable */
+
+  public goToBlock(blockHash: string): void {
+    this.navCtrl.push('block-detail', {
+      'blockHash': blockHash
+    });
+  }
 
 }
