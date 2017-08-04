@@ -1,4 +1,5 @@
 const config = {
+  logging: 'debug',
   bcoin: {
     network: 'main',
     db: 'leveldb',

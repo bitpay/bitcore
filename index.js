@@ -1,5 +1,5 @@
 const node = require('./lib/node');
-const config = require('./config/config');
+const config = require('./config');
 const logger = require('./lib/logger');
 const Api = require('./lib/api');
 const db = require('./lib/db');
@@ -14,4 +14,4 @@ Api.listen(config.api.port, () => {
     'listening on port 3000');
 });
 
-node.start();
+//node.start();

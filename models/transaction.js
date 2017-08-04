@@ -52,5 +52,5 @@ const Output = mongoose.model('Output', OutputSchema);
 module.exports = {
   Transaction,
   Input,
-  Output
+  Output,
 };
