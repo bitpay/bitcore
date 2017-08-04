@@ -3,13 +3,45 @@
 </ion-header>
 
 <ion-content padding>
-  <h1>Block # {{ block.height }}</h1>
-  <p>BlockHash {{ block.hash }}</p>
-  <h2>Summary</h2>
+  <ion-grid>
+    <ion-row>
+      <ion-col col-12>
+        <h1>Block # {{ block.height }}</h1>
+        <p>BlockHash {{ block.hash }}</p>
+      </ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col col-12>
+        <h2>Summary</h2>
+      </ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col>
+        Number of Transactions
+      </ion-col>
+      <ion-col text-right>
+        {{ block.tx.length }}
+      </ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col>
+        Height
+      </ion-col>
+      <ion-col text-right>
+        {{ block.height }} <span [hidden]="!block.isMainChain">(Mainchain)</span>
+      </ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col>
+        Block Reward
+      </ion-col>
+      <ion-col text-right>
+        {{ block.reward + ' BTC' }}
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
   <div *ngIf="!loading">
-    <p>Number of Transactions {{ block.tx.length }}</p>
-    <p>Height {{ block.height }} <span [hidden]="!block.isMainChain">(Mainchain)</span></p>
-    <p>Block Reward {{ block.reward + ' BTC' }}</p>
     <p>Timestamp {{ block.time * 1000 | date:'medium' }}</p>
     <p>Mined by <a href="{{ block.poolInfo.url }}">{{ block.poolInfo.poolName }}</a></p>
     <p>Merkle Root {{ block.merkleroot }}</p>
