@@ -61,3 +61,4 @@ The API is configured to run on port 3000 by default. Use the standard Nginx rev
 * Rate Limiting
 * Helmet
 * Rate Limiting
+* Sanitize user input - mongo and api params. Just make a quick middleware
