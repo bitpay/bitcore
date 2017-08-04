@@ -90,10 +90,9 @@
   </ion-list>
 
   <div *ngIf="!loading">
-    <h3>Transactions</h3>
+    <h2>Transactions</h2>
+
     <transaction-list [queryType]="'block'" [queryValue]="block.hash"></transaction-list>
   </div>
-  <div *ngIf="loading">
-    <p>Loading...</p>
-  </div>
+
 </ion-content>

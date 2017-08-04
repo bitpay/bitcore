@@ -3,40 +3,43 @@
 </ion-header>
 
 <ion-content padding>
-  <ion-grid>
-    <ion-row>
-      <ion-col col-12>
-        <h1>Address</h1>
-        <p>{{ address.addrStr }}</p>
-        <p>{{ address.balance }} BTC</p>
-      </ion-col>
-    </ion-row>
-    <ion-row>
-      <ion-col col-12><h2>Summary</h2></ion-col>
-    </ion-row>
-    <ion-row>
-      <ion-col col-6>Total Received:</ion-col>
-      <ion-col col-6 text-right>{{ address.totalReceived }} BTC</ion-col>
-    </ion-row>
-    <ion-row>
-      <ion-col col-6>Total Sent:</ion-col>
-      <ion-col col-6 text-right>{{ address.totalSent }} BTC</ion-col>
-    </ion-row>
-    <ion-row>
-      <ion-col col-6>Final Balance:</ion-col>
-      <ion-col col-6 text-right>{{ address.balance }} BTC</ion-col>
-    </ion-row>
-    <ion-row>
-      <ion-col col-6>No. Transactions:</ion-col>
-      <ion-col col-6 text-right>{{ address.txApperances }}</ion-col>
-    </ion-row>
-    <ion-row>
-      <ion-col col-12 text-center>QR CODE</ion-col>
-    </ion-row>
-    <ion-row>
-      <ion-col col-12><h2>Transactions</h2></ion-col>
-    </ion-row>
-  </ion-grid>
+  <h1>Address</h1>
+  <p>{{ address.addrStr }}</p>
+  <p>{{ address.balance }} BTC</p>
+
+  <h2>Summary</h2>
+
+  <ion-list>
+    <ion-item>
+      Total Received
+      <span item-end>
+        {{ address.totalReceived }} BTC
+      </span>
+    </ion-item>
+    <ion-item>
+      Total Sent
+      <span item-end>
+        {{ address.totalSent }} BTC
+      </span>
+    </ion-item>
+    <ion-item>
+      Final Balance
+      <span item-end>
+        {{ address.balance }} BTC
+      </span>
+    </ion-item>
+    <ion-item>
+      No. Transactions
+      <span item-end>
+        {{ address.txApperances }}
+      </span>
+    </ion-item>
+  </ion-list>
+
+  <p text-center>QR CODE<p>
+
+  <h2>Transactions</h2>
 
   <transaction-list [queryType]="'address'" [queryValue]="addrStr"></transaction-list>
+
 </ion-content>

@@ -3,36 +3,40 @@
 </ion-header>
 
 <ion-content padding>
-  <ion-grid>
-    <ion-row>
-      <ion-col col-12>
-        <h1>Transaction</h1>
-        <p>{{ tx.txid }}</p>
-      </ion-col>
-    </ion-row>
-    <ion-row>
-      <ion-col col-12><h2>Summary</h2></ion-col>
-    </ion-row>
-    <ion-row>
-      <ion-col col-6>Size</ion-col>
-      <ion-col col-6 text-right>{{ tx.size }} (bytes)</ion-col>
-    </ion-row>
-    <ion-row>
-      <ion-col col-6>Received Time</ion-col>
-      <ion-col col-6 text-right>{{ tx.time * 1000 | date:'medium' }}</ion-col>
-    </ion-row>
-    <ion-row>
-      <ion-col col-6>Mined Time</ion-col>
-      <ion-col col-6 text-right>{{ tx.blocktime * 1000 | date:'medium' }}</ion-col>
-    </ion-row>
-    <ion-row>
-      <ion-col col-6>Included in Block</ion-col>
-      <ion-col col-6 text-right>{{ tx.blockhash }}</ion-col>
-    </ion-row>
-    <ion-row>
-      <ion-col col-12><h2>Details</h2></ion-col>
-    </ion-row>
-  </ion-grid>
+  <h1>Transaction</h1>
+  <p>{{ tx.txid }}</p>
 
-    <transaction [tx]="tx"></transaction>
+  <h2>Summary</h2>
+
+  <ion-list>
+    <ion-item>
+      Size
+      <span item-end>
+        {{ tx.size }} (bytes)
+      </span>
+    </ion-item>
+    <ion-item>
+      Received Time
+      <span item-end>
+        {{ tx.time * 1000 | date:'medium' }}
+      </span>
+    </ion-item>
+    <ion-item>
+      Mined Time
+      <span item-end>
+        {{ tx.blocktime * 1000 | date:'medium' }}
+      </span>
+    </ion-item>
+    <ion-item>
+      Included in Block
+      <span item-end>
+        <a (click)="goToBlock(tx.blockhash)">{{ tx.blockhash }}</a>
+      </span>
+    </ion-item>
+  </ion-list>
+
+  <h2>Details</h2>
+
+  <transaction [tx]="tx"></transaction>
+
 </ion-content>

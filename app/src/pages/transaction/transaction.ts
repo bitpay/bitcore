@@ -40,4 +40,10 @@ export class TransactionPage {
       }
     );
   }
+
+  public goToBlock(blockHash: string): void {
+    this.navCtrl.push('block-detail', {
+      'blockHash': blockHash
+    });
+  }
 }
