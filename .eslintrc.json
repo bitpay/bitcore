@@ -3,5 +3,10 @@
   "env": {
     "node": true,
     "es6": true
+  },
+  "rules": {
+    "no-multi-spaces": {
+      "exceptions": { "ImportDeclaration": true }
+    }
   }
 }
