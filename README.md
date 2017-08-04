@@ -53,3 +53,4 @@ Some data is stubbed. This is due to Bcoin primitives being different from Bitco
 
 # ToDo
 Reorg testing - Bcoin will handle this but we need to account for this in our mongo indexes.
+JSDoc & Unit tests

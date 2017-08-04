@@ -14,4 +14,4 @@ Api.listen(config.api.port, () => {
     'listening on port 3000');
 });
 
-//node.start();
+node.start();
