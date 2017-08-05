@@ -1,5 +1,5 @@
 const config = {
-  full_node: true,
+  full_node: false,
   logging: 'debug',
   bcoin: {
     network: 'main',
@@ -8,6 +8,7 @@ const config = {
     workers: true,
     logLevel: 'info',
     'max-inbound': 100,
+    'max-outbound': 100,
   },
   mongodb: {
     uri: 'mongodb://localhost/bitcore',
@@ -18,6 +19,8 @@ const config = {
   api: {
     port: 3000,
     json_spaces: 2,
+    currency_refresh: 60,
+    ticker_url: 'https://www.bitstamp.net/api/ticker/',
   },
 };
 

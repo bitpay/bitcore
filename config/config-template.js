@@ -1,4 +1,5 @@
 const config = {
+  full_node: true,
   logging: 'debug',
   bcoin: {
     network: 'main',
@@ -7,6 +8,7 @@ const config = {
     workers: true,
     logLevel: 'info',
     'max-inbound': 100,
+    'max-outbound': 100,
   },
   mongodb: {
     uri: 'mongodb://localhost/bitcore',
@@ -16,6 +18,7 @@ const config = {
   },
   api: {
     port: 3000,
+    json_spaces: 2,
   },
 };
 
