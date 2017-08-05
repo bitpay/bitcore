@@ -1,43 +1,42 @@
 const mongoose = require('mongoose');
+
 const Schema   = mongoose.Schema;
 
 const InputSchema = new Schema({
-  utxo: String,
-  vout: Number,
-  address: String,
-  amount: Number,
+  prevout:  Object,
+  script:   String,
+  witness:  String,
+  sequence: Number,
+  address:  String,
 });
 
 const OutputSchema = new Schema({
   address: String,
-  amount: Number,
-  vout: Number,
+  script:  String,
+  value:   Number,
 });
 
 const TransactionSchema = new Schema({
-  txid: String,
-  version: Number,
-  lockTime: Number,
-  vin: [InputSchema],
-  vout: [OutputSchema],
-  blockHash: String,
-  blockHeight: Number,
-  confirmations: Number,
-  time: Date,
-  blockTime: Date,
-  blockTimeNormalized: Date,
-  valueOut: Number,
-  size: Number,
-  valueIn: Number,
-  fees: Number,
-  chain: String,
+  hash:        String,
+  witnessHash: String,
+  fee:         Number,
+  rate:        Number,
+  ps:          Number,
+  height:      Number,
+  block:       String,
+  index:       Number,
+  version:     Number,
+  flag:        Number,
+  lockTime:    Number,
+  inputs:      [InputSchema],
+  outputs:     [OutputSchema],
+  size:        Number,
+  network:     String,
 });
 
-TransactionSchema.index({ txid: 1 }, { unique: true });
-
 const Transaction = mongoose.model('Transaction', TransactionSchema);
-const Input = mongoose.model('Input', InputSchema);
-const Output = mongoose.model('Output', OutputSchema);
+const Input       = mongoose.model('Input', InputSchema);
+const Output      = mongoose.model('Output', OutputSchema);
 
 module.exports = {
   Transaction,
