@@ -34,16 +34,6 @@ const TransactionSchema = new Schema({
 });
 
 TransactionSchema.index({ txid: 1 }, { unique: true });
-TransactionSchema.index({ blockHeight: 1, wallets: 1 });
-TransactionSchema.index({ blockHash: 1 });
-TransactionSchema.index({ blockTime: 1 });
-TransactionSchema.index({ blockTimeNormalized: 1, wallets: 1 });
-
-TransactionSchema.index({ 'outputs.address': 1 });
-TransactionSchema.index({ 'inputs.address': 1 });
-TransactionSchema.index({ wallets: 1 }, { sparse: true });
-TransactionSchema.index({ 'inputs.wallets': 1 }, { sparse: true });
-TransactionSchema.index({ 'outputs.wallets': 1 }, { sparse: true });
 
 const Transaction = mongoose.model('Transaction', TransactionSchema);
 const Input = mongoose.model('Input', InputSchema);

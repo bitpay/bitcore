@@ -10,10 +10,10 @@ logger.log('debug',
 db.connect(config.mongodb.uri, config.mongodb.options);
 
 db.connection.once('open', () => {
-  Bcoin.start();
-});
+  if (config.full_node) Bcoin.start();
 
-Api.listen(config.api.port, () => {
-  logger.log('debug',
-    'listening on port 3000');
+  Api.listen(config.api.port, () => {
+    logger.log('debug',
+      'listening on port 3000');
+  });
 });

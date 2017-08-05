@@ -6,6 +6,7 @@
   },
   "rules": {
     "no-multi-spaces": 0,
-    "no-use-before-define": 1
+    "no-use-before-define": 1,
+    "object-shorthand": 1
   }
 }

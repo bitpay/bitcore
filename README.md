@@ -4,11 +4,10 @@ Rebuilt Bitcore with Bcoin engine and Insight API sitting on top of Mongo.
 ### Requirements
 Mongodo running on your system.
 
-A [PR has been submitted](https://github.com/bcoin-org/bcoin/pull/264) to Bcoin repo to fix a bug in their script library that is causing our sync process to crash when one of their checks to a tx script assesses if this is a pay to pubkey input. This is Bcoin-specific and should not affect syncing via DC Pool.
+node >=7.6.0 - This requirement comes from Bcoin. Developed under 8.2.0.
 
 ### Usage
 ```
-git clone
 npm install
 npm start
 ```
@@ -40,9 +39,9 @@ The API is configured to run on port 3000 by default. Use the standard Nginx rev
 1. Required Insight-UI
 
 * /addr/:addrStr/?noTxList=1
-* /block/:blockhash
-* /blocks
-* /block-index/:blockHeight
+* X /block/:blockhash
+* X /blocks
+* X /block-index/:blockHeight
 * /currency
 * /version
 * /status

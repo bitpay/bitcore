@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+
 const Schema   = mongoose.Schema;
 
 const BlockSchema = new Schema({
@@ -25,9 +26,6 @@ const BlockSchema = new Schema({
 });
 
 BlockSchema.index({ hash: 1 }, { unique: true });
-BlockSchema.index({ height: 1 });
-BlockSchema.index({ time: 1 });
-BlockSchema.index({ timeNormalized: 1 });
 
 const Block = mongoose.model('Block', BlockSchema);
 
