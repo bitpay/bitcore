@@ -42,12 +42,12 @@ The API is configured to run on port 3000 by default. Use the standard Nginx rev
 * X /block/:blockhash
 * X /blocks
 * X /block-index/:blockHeight
-* /currency
-* /version
+* X /currency
+* X /version
 * /status
 * /sync
-* /peer
-* /tx/:txId
+* X /peer
+* X /tx/:txId
 * /txs
 * /txs
 

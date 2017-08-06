@@ -5,8 +5,8 @@ const Schema = mongoose.Schema;
 const BlockSchema = new Schema({
   hash:       String,
   height:     Number,
-  version:    Number,
   size:       Number,
+  version:    Number,
   prevBlock:  String,
   merkleRoot: String,
   ts:         Number,
@@ -18,6 +18,11 @@ const BlockSchema = new Schema({
   network:    String,
   poolInfo:   Object,
   rawBlock:   String,
+}, {
+  toJSON: {
+    virtuals: true,
+  },
+  id: false,
 });
 
 const Block = mongoose.model('Block', BlockSchema);

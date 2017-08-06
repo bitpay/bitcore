@@ -29,30 +29,3 @@
        script: <Script: 0x41 0x042200490195c16c77e0d5b28079e218ddf23c0cf23e770b5e1ad0589d03a803cc188a1c79601dd181a67dc121a2bf2c5b2313c89f2b2be758caca6c7ab56959ac OP_CHECKSIG>,
        address: <Address: type=pubkeyhash version=-1 str=15WLVXrj2owbChece54ibqqukk2PcA4TLt> } ],
   locktime: 0 }
-
-toJSON():
-
-{ hash: '0fa53ce8b5aa3eb9e46a9dde25c26df02f4b0cf11eb0920be2780a8c7b9a6e33',
-  witnessHash: '0fa53ce8b5aa3eb9e46a9dde25c26df02f4b0cf11eb0920be2780a8c7b9a6e33',
-  fee: undefined,
-  rate: undefined,
-  ps: 1501788263,
-  height: undefined,
-  block: undefined,
-  ts: undefined,
-  date: undefined,
-  index: undefined,
-  version: 1,
-  flag: 1,
-  inputs:
-   [ { prevout: [Object],
-       script: '04ffff001d02de00',
-       witness: '00',
-       sequence: 4294967295,
-       address: undefined,
-       coin: undefined } ],
-  outputs:
-   [ { value: 5000000000,
-       script: '41042200490195c16c77e0d5b28079e218ddf23c0cf23e770b5e1ad0589d03a803cc188a1c79601dd181a67dc121a2bf2c5b2313c89f2b2be758caca6c7ab56959acac',
-       address: '15WLVXrj2owbChece54ibqqukk2PcA4TLt' } ],
-  locktime: 0 }

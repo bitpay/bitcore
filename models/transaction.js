@@ -14,6 +14,7 @@ const OutputSchema = new Schema({
   address: String,
   script:  String,
   value:   Number,
+  type:    String,
 });
 
 const TransactionSchema = new Schema({
