@@ -1,5 +1,5 @@
 const config = {
-  full_node: true,
+  full_node: false,
   logging: 'debug',
   bcoin: {
     network: 'main',
