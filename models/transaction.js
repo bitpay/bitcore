@@ -1,21 +1,8 @@
 const mongoose = require('mongoose');
+const Input = require('./input');
+const Output = require('./output');
 
 const Schema   = mongoose.Schema;
-
-const InputSchema = new Schema({
-  prevout:  Object,
-  script:   String,
-  witness:  String,
-  sequence: Number,
-  address:  String,
-});
-
-const OutputSchema = new Schema({
-  address: String,
-  script:  String,
-  value:   Number,
-  type:    String,
-});
 
 const TransactionSchema = new Schema({
   hash:        String,
@@ -29,18 +16,14 @@ const TransactionSchema = new Schema({
   version:     Number,
   flag:        Number,
   lockTime:    Number,
-  inputs:      [InputSchema],
-  outputs:     [OutputSchema],
+  inputs:      [Input.schema],
+  outputs:     [Output.schema],
   size:        Number,
   network:     String,
 });
 
 const Transaction = mongoose.model('Transaction', TransactionSchema);
-const Input       = mongoose.model('Input', InputSchema);
-const Output      = mongoose.model('Output', OutputSchema);
 
 module.exports = {
   Transaction,
-  Input,
-  Output,
 };
