@@ -7,8 +7,8 @@ const config = {
     checkpoints: true,
     workers: true,
     logLevel: 'info',
-    'max-inbound': 100,
-    'max-outbound': 100,
+    'max-inbound': 10,
+    'max-outbound': 10,
   },
   mongodb: {
     uri: 'mongodb://localhost/bitcore',

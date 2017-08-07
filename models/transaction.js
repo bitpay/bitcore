@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
-const Input = require('./input');
-const Output = require('./output');
+const Input    = require('./input');
+const Output   = require('./output');
 
 const Schema   = mongoose.Schema;
 
@@ -24,6 +24,4 @@ const TransactionSchema = new Schema({
 
 const Transaction = mongoose.model('Transaction', TransactionSchema);
 
-module.exports = {
-  Transaction,
-};
+module.exports = Transaction;
