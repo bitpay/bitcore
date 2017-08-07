@@ -82,8 +82,8 @@
     "request": "browser-request"
   },
   "dependencies": {
-    "bitcore-lib": "^0.14",
-    "bitcore-node": "~3.1.0",
+    "bitcore-lib": "bitpay/bitcore-lib#transitional",
+    "bitcore-node": "bitpay/bitcore-node#blocks",
     "insight-api": "^0.4.0",
     "insight-ui": "^0.4.0"
   },
