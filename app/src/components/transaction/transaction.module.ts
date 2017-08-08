@@ -1,10 +1,12 @@
 import { NgModule } from '@angular/core';
 import { IonicModule } from 'ionic-angular';
 import { TransactionComponent } from './transaction';
+import { SplitPipe } from '../../pipes/split/split';
 
 @NgModule({
   declarations: [
-    TransactionComponent
+    TransactionComponent,
+    SplitPipe
   ],
   imports: [
     IonicModule

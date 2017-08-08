@@ -31,13 +31,11 @@
             <div [hidden]="!expanded">
               <p><b>Confirmations</b> {{vin.confirmations}}</p>
               <p><b>scriptSig</b></p>
-              <!--
               <div *ngIf="vin.scriptSig">
-                <div *ngFor="let item of vin.scriptSig.asm" class="">
+                <div *ngFor="let item of vin.scriptSig.asm | split:' '" class="">
                   <p class="ellipsis text-muted">{{item}}</p>
                 </div>
               </div>
-              -->
             </div>
           </div>
         </ion-item>
