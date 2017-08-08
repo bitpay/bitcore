@@ -26,8 +26,20 @@
 
       <ion-list [hidden]="tx.isCoinBase">
         <ion-item *ngFor="let vin of tx.vin">
-          <a (click)="goToAddress(vin.addr)">{{ vin.addr }}</a>
-          <span item-end>{{ vin.value + ' BTC' }}</span>
+          <div>
+            <p><a (click)="goToAddress(vin.addr)">{{ vin.addr }}</a> <span item-end>{{ vin.value + ' BTC' }}</span></p>
+            <div [hidden]="!expanded">
+              <p><b>Confirmations</b> {{vin.confirmations}}</p>
+              <p><b>scriptSig</b></p>
+              <!--
+              <div *ngIf="vin.scriptSig">
+                <div *ngFor="let item of vin.scriptSig.asm" class="">
+                  <p class="ellipsis text-muted">{{item}}</p>
+                </div>
+              </div>
+              -->
+            </div>
+          </div>
         </ion-item>
       </ion-list>
 
