@@ -1,4 +1,5 @@
-const mongoose = require('mongoose');
+const mongoose    = require('mongoose');
+const Transaction = require('./transaction');
 
 const Schema = mongoose.Schema;
 
@@ -12,7 +13,7 @@ const BlockSchema = new Schema({
   ts:         Number,
   bits:       Number,
   nonce:      Number,
-  txs:        Array,
+  txs:        [Transaction.schema],
   chainwork:  Number,
   reward:     Number,
   network:    String,

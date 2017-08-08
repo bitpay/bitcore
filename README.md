@@ -52,6 +52,7 @@ https://docs.google.com/a/bit-pay.com/spreadsheets/d/1hDlf16F6zAxBrOC3ZdnvfRrSB9
 * Mongo Models : Bcoin primitives. A Bcoin block primitive does not represent all of bitcore's data.
 1. scriptpubkey asm
 2. peer's best block height is learned on peer connect but not retained by the app. Block height is the current sync height
+3. Multiple Outputs were overlooked in the mongo model
 
 # ToDo but not Required for a release
 * Reorg testing - Bcoin will handle this but we need to account for this in our mongo indexes.
