@@ -14,6 +14,7 @@ import { NavController } from 'ionic-angular';
 })
 export class TransactionComponent {
 
+  public expanded: boolean = false;
   @Input() public tx: any = {};
 
   constructor(private navCtrl: NavController) {
@@ -37,5 +38,9 @@ export class TransactionComponent {
     this.navCtrl.push('address', {
       'addrStr': addrStr
     });
+  }
+
+  public toggleExpanded(): void {
+    this.expanded = !this.expanded;
   }
 }

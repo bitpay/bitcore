@@ -1,3 +1,18 @@
 transaction {
+  ion-grid {
+    background-color: #F4F4F4;
+    border: 1px solid #eee;
+    border-radius: 2px;
 
+    ion-row {
+      border: 1px solid #eee;
+    }
+  }
+
+  .ellipsis {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
