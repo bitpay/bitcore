@@ -24,9 +24,9 @@ Mongo will create the bitcore db and a blocks/transactions collection automatica
 
 Bcoin offers a few database types. The most ideal for our purpose is the in memory database. Unfortunately, Bcoin will not record blockchain sync checkpoints in this mode. Every restart of the client would result in Bcoin sync'ing from the Genesis block. Long term, we should consider sending them a friendly PR.
 
-Alternatively, I've explored putting mongo into Bcoin. The db interface seems simple enough. Bcoin mostly get/puts but it is surprisingly complicated under the hood.
+Alternatively, I've explored putting mongo into Bcoin. The db interface seems simple enough. Bcoin mostly get/puts but it is surprisingly complicated under the hood. So Bcoin creates its own leveldb.
 
-So Bcoin creates its own leveldb.
+Refresh does not work unless you setup to run as root on port 80 and set an /etc/hosts override.
 
 ### Resetting Application State
 ```
@@ -45,21 +45,7 @@ rm -rf ~/.bcoin/chain.ldb
 The API is configured to run on port 3000 by default. Use the standard Nginx reverse proxy on ports 80/443 to flip http to https and handle ssl certs.
 
 ### Priorities
-1. Required for Insight-UI
-
-* /addr/:addrStr/?noTxList=1
-* X /block/:blockhash
-* X /blocks
-* X /block-index/:blockHeight
-* X /currency
-* X /version
-* X /status - Stubbed. Prior status was for bitcoind
-* /sync - Tricky. Bcoin gets the bestHeight from peers but does not save that information. Will show best height - currently Mocked
-* X /peer
-* X /tx/:txId
-* /txs - Done(ish - no pagination) for most recent txs. Needs block (hash) and address
-
-* sockets
+https://docs.google.com/a/bit-pay.com/spreadsheets/d/1hDlf16F6zAxBrOC3ZdnvfRrSB9bvdgohf1GxAIM9_Fk/edit?usp=sharing
 
 # ToDo but required for a release
 * API Endpoints

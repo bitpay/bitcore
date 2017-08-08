@@ -1,0 +1,124 @@
+<div data-ng-include src="'views/includes/connection.html'"></div>
+<section>
+  <div class="page-header">
+    <h1 translate>Application Status</h1>
+  </div>
+  <div id="status" class="row">
+
+    <div class="col-xs-12 col-md-8">
+      <h2 translate>Sync Status</h2>
+      <table class="table" data-ng-controller="StatusController" data-ng-init="getSync()">
+        <tbody>
+          <tr>
+            <td translate>Sync Progress</td>
+            <td>
+              <div class="progress">
+                <div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: {{ sync.syncPercentage}}%">
+                  <span data-ng-show="sync.syncPercentage>0">{{sync.syncPercentage}}%
+                    <span translate>Complete</span>
+                  </span>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td translate>Current Sync Status</td>
+            <td class="text-right"> 
+            <span  data-ng-show="!sync.error">{{sync.status}}</span>
+            <span class="text-danger" data-ng-show="sync.error">
+              <span  class="glyphicon glyphicon-warning-sign"></span>
+              {{sync.error}}
+            </span>
+          </td>
+          </tr>
+          <tr>
+            <td translate>Start Date</td>
+            <td class="text-right"><time title="{{sync.startTs | date:'medium'}}">{{humanSince(sync.startTs)}}</time></td>
+          </tr>
+          <tr data-ng-show="sync.endTs">
+            <td translate>Finish Date</td>
+            <td class="text-right"><time title="{{sync.startTs | date:'medium'}}" >{{humanSince(sync.endTs)}}</time></td>
+          </tr>
+          <tr>
+            <td translate>Initial Block Chain Height</td>
+            <td class="text-right">{{sync.blockChainHeight}}</td>
+          </tr>
+          <tr>
+            <td translate>Synced Blocks</td>
+            <td class="text-right">{{sync.syncedBlocks}}</td>
+          </tr>
+          <tr>
+            <td translate>Skipped Blocks (previously synced)</td>
+            <td class="text-right">{{sync.skippedBlocks}}</td>
+          </tr>
+          <tr>
+            <td translate>Sync Type</td>
+            <td class="text-right">{{sync.type}}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 translate>Last Block</h2>
+      <table class="table" style="table-layout: fixed" data-ng-controller="StatusController" data-ng-init="getStatus('LastBlockHash')">
+        <thead data-ng-include src="'views/includes/infoStatus.html'"></thead>
+        <tbody>
+          <tr>
+            <td translate>Last Block Hash (Bitcoind)</td>
+            <td class="text-right ellipsis"><a href="block/{{lastblockhash}}">{{lastblockhash}}</a></td>
+          </tr>
+          <tr>
+            <td translate>Current Blockchain Tip (insight)</td>
+            <td class="text-right ellipsis"><a href="block/{{syncTipHash}}">{{syncTipHash}}</a></td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div> <!-- END OF COL-8 -->
+
+    <div class="col-xs-12 col-md-4 col-gray">
+      <h2 translate>Bitcoin node information</h2>
+      <table class="table" data-ng-controller="StatusController" data-ng-init="getStatus('Info')">
+        <thead  data-ng-include src="'views/includes/infoStatus.html'"></thead>
+        <tbody>
+          <tr>
+            <td translate>Version</td>
+            <td class="text-right">{{info.version}}</td>
+          </tr>
+          <tr>
+            <td translate>Protocol version</td>
+            <td class="text-right">{{info.protocolversion}}</td>
+          </tr>
+          <tr>
+            <td translate>Blocks</td>
+            <td class="text-right"><a href="block-index/{{info.blocks}}">{{info.blocks}}</a></td>
+          </tr>
+          <tr>
+            <td translate>Time Offset</td>
+            <td class="text-right">{{info.timeoffset}}</td>
+          </tr>
+          <tr>
+            <td translate>Connections to other nodes</td>
+            <td class="text-right">{{info.connections}}</td>
+          </tr>
+          <tr>
+           <td translate>Mining Difficulty</td>
+            <td class="text-right">{{info.difficulty}}</td>
+          </tr>
+          <tr>
+            <td translate>Network</td>
+            <td class="text-right">{{info.network}}</td>
+          </tr>
+          <tr>
+            <td translate>Proxy setting</td>
+            <td class="text-right">{{info.proxy}}</td>
+          </tr>
+          <tr>
+            <td translate>Info Errors</td>
+            <td class="text-right">{{info.infoErrors}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div> <!-- END OF COL-GRAY -->
+  </div>
+</section>
+

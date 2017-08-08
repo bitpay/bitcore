@@ -1,5 +1,5 @@
 const config = {
-  start_node: true,
+  start_node: false,
   logging: 'debug',
   bcoin: {
     network: 'main',
@@ -17,7 +17,7 @@ const config = {
     },
   },
   api: {
-    port: 3000,
+    port: 80,
     json_spaces: 2,
     currency_refresh: 60,
     ticker_url: 'https://www.bitstamp.net/api/ticker/',
