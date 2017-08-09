@@ -24,9 +24,9 @@ Mongo will create the bitcore db and a blocks/transactions collection automatica
 
 Bcoin offers a few database types. The most ideal for our purpose is the in memory database. Unfortunately, Bcoin will not record blockchain sync checkpoints in this mode. Every restart of the client would result in Bcoin sync'ing from the Genesis block. Long term, we should consider sending them a friendly PR.
 
-Alternatively, I've explored putting mongo into Bcoin. The db interface seems simple enough. Bcoin mostly get/puts but it is surprisingly complicated under the hood. So Bcoin creates its own leveldb.
+Alternatively, I've explored putting mongo into Bcoin. The db interface seems simple enough. Bcoin mostly get/puts but it is surprisingly complicated under the hood. So Bcoin creates its own leveldb for now.
 
-Refresh does not work unless you setup to run as root on port 80 and set an /etc/hosts override.
+Refresh does not work unless you setup to run as root on port 80 and set an /etc/hosts override. Web server is absolutely minimal right now
 
 ### Resetting Application State
 ```
@@ -53,6 +53,8 @@ https://docs.google.com/a/bit-pay.com/spreadsheets/d/1hDlf16F6zAxBrOC3ZdnvfRrSB9
 1. scriptpubkey asm
 2. peer's best block height is learned on peer connect but not retained by the app. Block height is the current sync height
 3. Multiple Outputs were overlooked in the mongo model
+* Post-sync listeners are not wired up yet (sockets).
+* Parameters for some routes are missing. Spreadsheet is not 100% complete. Need a test run / qa round.
 
 # ToDo but not Required for a release
 * Reorg testing - Bcoin will handle this but we need to account for this in our mongo indexes.
