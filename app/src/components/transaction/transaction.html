@@ -34,8 +34,8 @@
               <p><b>Confirmations</b> {{vin.confirmations}}</p>
               <p><b>scriptSig</b></p>
               <div *ngIf="vin.scriptSig">
-                <div *ngFor="let item of vin.scriptSig.asm | split:' '" class="">
-                  <p class="ellipsis text-muted">{{item}}</p>
+                <div *ngFor="let item of vin.scriptSig.asm | split:' '" class="ellipsis">
+                  <p>{{item}}</p>
                 </div>
               </div>
             </div>
@@ -54,7 +54,10 @@
             <p><a (click)="goToAddress(getAddress(vout))">{{ getAddress(vout) }}</a></p>
             <div [hidden]="!expanded">
               <p><b>Type</b> {{vout.scriptPubKey.type}}</p>
-              <p><b>scriptPubKey</b><br><span class="ellipsis">{{vout.scriptPubKey.asm}}</span></p>
+              <p><b>scriptPubKey</b></p>
+              <div class="ellipsis">
+                <span>{{vout.scriptPubKey.asm}}</span>
+              </div>
             </div>
           </div>
 
