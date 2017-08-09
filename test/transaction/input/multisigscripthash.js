@@ -86,13 +86,13 @@ describe('MultiSigScriptHashInput', function() {
     var input = transaction.inputs[0];
     input._estimateSize().should.equal(257);
   });
-  it('uses SIGHASH_ALL by default', function() {
+  it('uses SIGHASH_ALL|FORKID by default', function() {
     var transaction = new Transaction()
       .from(output, [public1, public2, public3], 2)
       .to(address, 1000000);
     var input = transaction.inputs[0];
     var sigs = input.getSignatures(transaction, privateKey1, 0);
-    sigs[0].sigtype.should.equal(Signature.SIGHASH_ALL);
+    sigs[0].sigtype.should.equal(Signature.SIGHASH_ALL|Signature.SIGHASH_FORKID);
   });
   it('roundtrips to/from object', function() {
     var transaction = new Transaction()

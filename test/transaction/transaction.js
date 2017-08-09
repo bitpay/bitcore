@@ -28,7 +28,7 @@ describe('Transaction', function() {
     transaction.uncheckedSerialize().should.equal(tx_1_hex);
   });
 
-  it('should parse the version as a signed integer', function () {
+  it('should parse the version as a signed integer', function() {
     var transaction = Transaction('ffffffff0000ffffffff')
     transaction.version.should.equal(-1);
     transaction.nLockTime.should.equal(0xffffffff);
@@ -88,7 +88,10 @@ describe('Transaction', function() {
   it('toObject/fromObject with signatures and custom fee', function() {
     var tx = new Transaction()
       .from(simpleUtxoWith100000Satoshis)
-      .to([{address: toAddress, satoshis: 50000}])
+      .to([{
+        address: toAddress,
+        satoshis: 50000
+      }])
       .fee(15000)
       .change(changeAddress)
       .sign(privateKey);
@@ -102,12 +105,16 @@ describe('Transaction', function() {
   it('toObject/fromObject with p2sh signatures and custom fee', function() {
     var tx = new Transaction()
       .from(p2shUtxoWith1BTC, [p2shPublicKey1, p2shPublicKey2, p2shPublicKey3], 2)
-      .to([{address: toAddress, satoshis: 50000}])
+      .to([{
+        address: toAddress,
+        satoshis: 50000
+      }])
       .fee(15000)
       .change(changeAddress)
       .sign(p2shPrivateKey1)
       .sign(p2shPrivateKey2);
 
+console.log('[transaction.js.116]'); //TODO
     var txData = JSON.stringify(tx);
     var tx2 = new Transaction(JSON.parse(txData));
     var tx2Data = JSON.stringify(tx2);
@@ -118,29 +125,24 @@ describe('Transaction', function() {
     var tx = bitcore.Transaction({
       hash: '132856bf03d6415562a556437d22ac63c37a4595fd986c796eb8e02dc031aa25',
       version: 1,
-      inputs: [
-        {
-          prevTxId: 'e30ac3db24ef28500f023775d8eb06ad8a26241690080260308208a4020012a4',
-          outputIndex: 0,
-          sequenceNumber: 4294967294,
-          script: '473044022024dbcf41ccd4f3fe325bebb7a87d0bf359eefa03826482008e0fe7795586ad440220676f5f211ebbc311cfa631f14a8223a343cbadc6fa97d6d17f8d2531308b533201',
-          scriptString: '71 0x3044022024dbcf41ccd4f3fe325bebb7a87d0bf359eefa03826482008e0fe7795586ad440220676f5f211ebbc311cfa631f14a8223a343cbadc6fa97d6d17f8d2531308b533201',
-          output: {
-            satoshis: 5000000000,
-            script: '2103b1c65d65f1ff3fe145a4ede692460ae0606671d04e8449e99dd11c66ab55a7feac'
-          }
+      inputs: [{
+        prevTxId: 'e30ac3db24ef28500f023775d8eb06ad8a26241690080260308208a4020012a4',
+        outputIndex: 0,
+        sequenceNumber: 4294967294,
+        script: '473044022024dbcf41ccd4f3fe325bebb7a87d0bf359eefa03826482008e0fe7795586ad440220676f5f211ebbc311cfa631f14a8223a343cbadc6fa97d6d17f8d2531308b533201',
+        scriptString: '71 0x3044022024dbcf41ccd4f3fe325bebb7a87d0bf359eefa03826482008e0fe7795586ad440220676f5f211ebbc311cfa631f14a8223a343cbadc6fa97d6d17f8d2531308b533201',
+        output: {
+          satoshis: 5000000000,
+          script: '2103b1c65d65f1ff3fe145a4ede692460ae0606671d04e8449e99dd11c66ab55a7feac'
         }
-      ],
-      outputs: [
-        {
-          satoshis: 3999999040,
-          script: '76a914fa1e0abfb8d26e494375f47e04b4883c44dd44d988ac'
-        },
-        {
-          satoshis: 1000000000,
-          script: '76a9140b2f0a0c31bfe0406b0ccc1381fdbe311946dadc88ac'
-        }
-      ],
+      }],
+      outputs: [{
+        satoshis: 3999999040,
+        script: '76a914fa1e0abfb8d26e494375f47e04b4883c44dd44d988ac'
+      }, {
+        satoshis: 1000000000,
+        script: '76a9140b2f0a0c31bfe0406b0ccc1381fdbe311946dadc88ac'
+      }],
       nLockTime: 139
     });
     tx.inputs[0].should.be.instanceof(bitcore.Transaction.Input.PublicKey);
@@ -270,7 +272,10 @@ describe('Transaction', function() {
       it('works for normal p2pkh', function() {
         var transaction = new Transaction()
           .from(simpleUtxoWith100000Satoshis)
-          .to([{address: toAddress, satoshis: 50000}])
+          .to([{
+            address: toAddress,
+            satoshis: 50000
+          }])
           .change(changeAddress)
           .sign(privateKey);
         transaction.isFullySigned().should.equal(true);
@@ -308,6 +313,7 @@ describe('Transaction', function() {
         .to(toAddress, 500000)
         .change(changeAddress)
         .sign(privateKey);
+
       transaction.outputs.length.should.equal(2);
       transaction.outputs[1].satoshis.should.equal(400000);
       transaction.outputs[1].script.toString()
@@ -798,10 +804,13 @@ describe('Transaction', function() {
     });
     it('an output can be removed by index', function() {
       var transaction = new Transaction()
-        .to([
-          {address: toAddress, satoshis: 40000000},
-          {address: toAddress, satoshis: 40000000}
-        ])
+        .to([{
+          address: toAddress,
+          satoshis: 40000000
+        }, {
+          address: toAddress,
+          satoshis: 40000000
+        }])
       transaction.outputs.length.should.equal(2);
       transaction.outputAmount.should.equal(80000000);
       transaction.removeOutput(0);
@@ -877,24 +886,24 @@ describe('Transaction', function() {
         .should.equal(Transaction.Input.DEFAULT_LOCKTIME_SEQNUMBER);
     });
     it('should serialize correctly for date locktime ', function() {
-      var transaction= new Transaction()
+      var transaction = new Transaction()
         .from(simpleUtxoWith1BTC)
         .lockUntilDate(date);
       var serialized_tx = transaction.uncheckedSerialize();
       var copy = new Transaction(serialized_tx);
       serialized_tx.should.equal(copy.uncheckedSerialize());
       copy.inputs[0].sequenceNumber
-      .should.equal(Transaction.Input.DEFAULT_LOCKTIME_SEQNUMBER)
+        .should.equal(Transaction.Input.DEFAULT_LOCKTIME_SEQNUMBER)
     });
     it('should serialize correctly for a block height locktime', function() {
-      var transaction= new Transaction()
+      var transaction = new Transaction()
         .from(simpleUtxoWith1BTC)
         .lockUntilBlockHeight(blockHeight);
       var serialized_tx = transaction.uncheckedSerialize();
       var copy = new Transaction(serialized_tx);
       serialized_tx.should.equal(copy.uncheckedSerialize());
       copy.inputs[0].sequenceNumber
-      .should.equal(Transaction.Input.DEFAULT_LOCKTIME_SEQNUMBER)
+        .should.equal(Transaction.Input.DEFAULT_LOCKTIME_SEQNUMBER)
     });
   });
 
@@ -953,10 +962,13 @@ describe('Transaction', function() {
     beforeEach(function() {
       transaction = new Transaction()
         .from(simpleUtxoWith1BTC)
-        .to([
-          {address: toAddress, satoshis: tenth},
-          {address: toAddress, satoshis: fourth}
-        ])
+        .to([{
+          address: toAddress,
+          satoshis: tenth
+        }, {
+          address: toAddress,
+          satoshis: fourth
+        }])
         .to(toAddress, half)
         .change(changeAddress);
       out1 = transaction.outputs[0];
@@ -1015,10 +1027,13 @@ describe('Transaction', function() {
       var tx = new Transaction()
         .from(simpleUtxoWith1BTC)
         .to(toAddress, tenth)
-        .to([
-          {address: toAddress, satoshis: fourth},
-          {address: toAddress, satoshis: half}
-        ])
+        .to([{
+          address: toAddress,
+          satoshis: fourth
+        }, {
+          address: toAddress,
+          satoshis: half
+        }])
         .change(changeAddress);
       tx.clearOutputs();
       tx.outputs.length.should.equal(1);
@@ -1095,7 +1110,7 @@ describe('Transaction', function() {
 
       // returns index-based order of sorted against original
       var getIndexOrder = function(original, sorted) {
-        return sorted.map(function (value) {
+        return sorted.map(function(value) {
           return original.indexOf(value);
         });
       };
@@ -1108,9 +1123,12 @@ describe('Transaction', function() {
               prevTxId: input.txId,
               outputIndex: input.vout,
               script: new Script(),
-              output: new Output({ script: new Script(), satoshis: 0 })
+              output: new Output({
+                script: new Script(),
+                satoshis: 0
+              })
             });
-            input.clearSignatures = function () {};
+            input.clearSignatures = function() {};
             return input;
           });
           tx.inputs = inputSet.inputs;
@@ -1141,7 +1159,10 @@ describe('Transaction', function() {
         var tx = new Transaction()
           .from(simpleUtxoWith1BTC)
           .from(simpleUtxoWith100000Satoshis)
-          .to([{address: toAddress, satoshis: 50000}])
+          .to([{
+            address: toAddress,
+            satoshis: 50000
+          }])
           .fee(15000)
           .change(changeAddress)
           .sign(privateKey);
@@ -1154,7 +1175,10 @@ describe('Transaction', function() {
         var tx = new Transaction()
           .from(simpleUtxoWith1BTC)
           .from(simpleUtxoWith100000Satoshis)
-          .to([{address: toAddress, satoshis: 50000}])
+          .to([{
+            address: toAddress,
+            satoshis: 50000
+          }])
           .fee(15000)
           .change(changeAddress)
           .sign(privateKey);
@@ -1169,7 +1193,10 @@ describe('Transaction', function() {
       it('enable and determine opt-in', function() {
         var tx = new Transaction()
           .from(simpleUtxoWith100000Satoshis)
-          .to([{address: toAddress, satoshis: 50000}])
+          .to([{
+            address: toAddress,
+            satoshis: 50000
+          }])
           .fee(15000)
           .change(changeAddress)
           .enableRBF()
@@ -1179,7 +1206,10 @@ describe('Transaction', function() {
       it('determine opt-out with default sequence number', function() {
         var tx = new Transaction()
           .from(simpleUtxoWith100000Satoshis)
-          .to([{address: toAddress, satoshis: 50000}])
+          .to([{
+            address: toAddress,
+            satoshis: 50000
+          }])
           .fee(15000)
           .change(changeAddress)
           .sign(privateKey);
@@ -1189,7 +1219,10 @@ describe('Transaction', function() {
         var tx = new Transaction()
           .from(simpleUtxoWith1BTC)
           .from(simpleUtxoWith100000Satoshis)
-          .to([{address: toAddress, satoshis: 50000 + 1e8}])
+          .to([{
+            address: toAddress,
+            satoshis: 50000 + 1e8
+          }])
           .fee(15000)
           .change(changeAddress)
           .sign(privateKey);
@@ -1201,7 +1234,10 @@ describe('Transaction', function() {
         var tx = new Transaction()
           .from(simpleUtxoWith1BTC)
           .from(simpleUtxoWith100000Satoshis)
-          .to([{address: toAddress, satoshis: 50000 + 1e8}])
+          .to([{
+            address: toAddress,
+            satoshis: 50000 + 1e8
+          }])
           .fee(15000)
           .change(changeAddress)
           .sign(privateKey);
@@ -1213,7 +1249,10 @@ describe('Transaction', function() {
         var tx = new Transaction()
           .from(simpleUtxoWith1BTC)
           .from(simpleUtxoWith100000Satoshis)
-          .to([{address: toAddress, satoshis: 50000 + 1e8}])
+          .to([{
+            address: toAddress,
+            satoshis: 50000 + 1e8
+          }])
           .fee(15000)
           .change(changeAddress)
           .sign(privateKey);
@@ -1225,7 +1264,10 @@ describe('Transaction', function() {
         var tx = new Transaction()
           .from(simpleUtxoWith1BTC)
           .from(simpleUtxoWith100000Satoshis)
-          .to([{address: toAddress, satoshis: 50000 + 1e8}])
+          .to([{
+            address: toAddress,
+            satoshis: 50000 + 1e8
+          }])
           .fee(15000)
           .change(changeAddress)
           .sign(privateKey);

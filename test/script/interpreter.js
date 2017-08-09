@@ -139,11 +139,11 @@ describe('Interpreter', function() {
       var tx = new Transaction()
         .from(utxo)
         .to(toAddress, 100000)
-        .sign(privateKey);
+        .sign(privateKey, 1);
 
       // we then extract the signature from the first input
       var inputIndex = 0;
-      var signature = tx.getSignatures(privateKey)[inputIndex].signature;
+      var signature = tx.getSignatures(privateKey, 1)[inputIndex].signature;
 
       var scriptSig = Script.buildPublicKeyHashIn(publicKey, signature);
       var flags = Interpreter.SCRIPT_VERIFY_P2SH | Interpreter.SCRIPT_VERIFY_STRICTENC;

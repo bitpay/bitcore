@@ -53,9 +53,7 @@ console.log('[sighash.js.36:vectors_sighash:]',vectors_sighash.length); //TODO
       tx.uncheckedSerialize().should.equal(txbuf.toString('hex'));
 
       //sighash ought to be correct
-      sighash.sighash(tx, nhashtype, nin, subscript, {
-        satoshisBN: zeroBN
-      }).toString('hex').should.equal(sighashbuf.toString('hex'));
+      sighash.sighash(tx, nhashtype, nin, subscript, zeroBN).toString('hex').should.equal(sighashbuf.toString('hex'));
     });
   });
 });
