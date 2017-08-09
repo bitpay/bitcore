@@ -3,6 +3,7 @@ import { IonicPageModule } from 'ionic-angular';
 import { AddressPage } from './address';
 import { TransactionListComponentModule } from '../../components/transaction-list/transaction-list.module';
 import { HeadNavComponentModule } from '../../components/head-nav/head-nav.module';
+import { QRCodeModule } from 'angular2-qrcode';
 
 @NgModule({
   declarations: [
@@ -11,7 +12,8 @@ import { HeadNavComponentModule } from '../../components/head-nav/head-nav.modul
   imports: [
     IonicPageModule.forChild(AddressPage),
     TransactionListComponentModule,
-    HeadNavComponentModule
+    HeadNavComponentModule,
+    QRCodeModule
   ],
   exports: [
     AddressPage

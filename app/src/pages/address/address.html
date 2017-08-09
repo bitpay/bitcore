@@ -36,7 +36,9 @@
     </ion-item>
   </ion-list>
 
-  <p text-center>QR CODE<p>
+  <p text-center>
+    <qr-code [value]="address.addrStr" [size]="160"></qr-code>
+    <p>
 
   <h2>Transactions</h2>
 
