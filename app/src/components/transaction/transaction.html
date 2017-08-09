@@ -1,7 +1,9 @@
 <ion-grid>
   <ion-row>
     <ion-col col-8>
-      <ion-icon name="add-circle" [hidden]="expanded" (click)="toggleExpanded()"></ion-icon><ion-icon name="remove-circle" [hidden]="!expanded" (click)="toggleExpanded()"></ion-icon> <span class="ellipsis"><a (click)="goToTx(tx.txid)">{{ tx.txid }}</a></span>
+      <div class="ellipsis">
+        <ion-icon name="add-circle" [hidden]="expanded" (click)="toggleExpanded()"></ion-icon><ion-icon name="remove-circle" [hidden]="!expanded" (click)="toggleExpanded()"></ion-icon> <span><a (click)="goToTx(tx.txid)">{{ tx.txid }}</a></span>
+      </div>
     </ion-col>
     <ion-col col-4 text-right>
       <div [hidden]="!tx.firstSeenTs">
