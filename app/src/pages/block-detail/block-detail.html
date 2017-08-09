@@ -4,7 +4,7 @@
 
 <ion-content padding>
   <h1>Block #{{ block.height }}</h1>
-  <p>BlockHash {{ block.hash }}</p>
+  <p><b>BlockHash</b> <span class="ellipsis">{{ block.hash }}</span></p>
 
   <h2>Summary</h2>
 
@@ -41,7 +41,7 @@
     </ion-item>
     <ion-item>
       Merkle Root
-      <span item-end>
+      <span item-end class="ellipsis">
         {{ block.merkleroot }}
       </span>
     </ion-item>

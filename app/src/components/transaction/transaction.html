@@ -57,7 +57,9 @@
           </div>
 
           <div item-end>
-            {{ vout.value + ' BTC' }} <span [hidden]="!vout.spentTxId">(S)</span><span [hidden]="vout.spentTxId">(U)</span>
+            {{ vout.value + ' BTC' }}
+            <span [hidden]="!vout.spentTxId">(S)</span>
+            <span [hidden]="vout.spentTxId">(U)</span>
           </div>
         </ion-item>
       </ion-list>
