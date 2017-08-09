@@ -12,21 +12,23 @@ npm install
 npm start
 ```
 
-A Full Bcoin node will start. As blocks come in they will be stored in Mongo.
+http://localhost:3000
+
+A Full Bcoin node will start in console. As blocks come in they will be stored in Mongo. You can refresh the page to see the blocks sync. When the socket portion is complete you can watch live but it may be too fast (watch console).
 
 ### Configuration
 
-A configuration object exists in /config/index.js that accepts a config for Bcoin, Mongo and the new insight-api. During dev this is included. As a best practice this should be part of the gitignore to prevent anyone from saving credentials to Github. However, credentials should be ENV VARS anyway.
+A configuration object exists in /config/index.js
+
+Bcoin accepts a config object per Bcoin docs. Same for Mongo/Mongoose
 
 ### Misc Gotchas / Needs Docs & clarity
 
-Mongo will create the bitcore db and a blocks/transactions collection automatically. These collectionss have indexes. Bcoin also syncs to the prefix set in config. To reset/start over you need to drop both collections and delete the bcoin datadir.
+To reset/start over you need to drop both mongo and delete the bcoin datadir.
 
-Bcoin offers a few database types. The most ideal for our purpose is the in memory database. Unfortunately, Bcoin will not record blockchain sync checkpoints in this mode. Every restart of the client would result in Bcoin sync'ing from the Genesis block. Long term, we should consider sending them a friendly PR.
+Bcoin offers a few database types. The most ideal for our purpose is the in memory database. Unfortunately, Bcoin will not record blockchain sync checkpoints in this mode. Every restart of the client would result in Bcoin sync'ing from the Genesis block. Long term, we should consider sending them a friendly PR that includes some sort of flat file last height persistence.
 
 Alternatively, I've explored putting mongo into Bcoin. The db interface seems simple enough. Bcoin mostly get/puts but it is surprisingly complicated under the hood. So Bcoin creates its own leveldb for now.
-
-Refresh does not work unless you setup to run as root on port 80 and set an /etc/hosts override. Web server is absolutely minimal right now
 
 ### Resetting Application State
 ```
@@ -48,7 +50,7 @@ The API is configured to run on port 3000 by default. Use the standard Nginx rev
 https://docs.google.com/a/bit-pay.com/spreadsheets/d/1hDlf16F6zAxBrOC3ZdnvfRrSB9bvdgohf1GxAIM9_Fk/edit?usp=sharing
 
 # ToDo but required for a release
-* API Endpoints
+* Finish API Endpoints (3-ish remain);
 * Mongo Models : Bcoin primitives. A Bcoin block primitive does not represent all of bitcore's data.
 1. scriptpubkey asm
 2. peer's best block height is learned on peer connect but not retained by the app. Block height is the current sync height
