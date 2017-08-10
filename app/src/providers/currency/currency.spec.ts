@@ -4,7 +4,7 @@ import { HttpModule } from '@angular/http';
 import { CurrencyProvider } from './currency';
 
 describe('CurrencyProvider', () => {
-  let currency;
+  let currency: CurrencyProvider;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -47,7 +47,7 @@ describe('CurrencyProvider', () => {
   });
 
   it('rounds float using specified number of decimal places', () => {
-    let aFloat = 4.32943;
+    let aFloat: number = 4.32943;
 
     expect(currency.roundFloat(aFloat, 2)).toBe(4.33);
     expect(currency.roundFloat(aFloat, 3)).toBe(4.329);
@@ -66,7 +66,7 @@ describe('CurrencyProvider', () => {
   });
 
   it('gets proper conversion after changing currency', () => {
-    let aFloat = 12345.09876543;
+    let aFloat: number = 12345.09876543;
     expect(currency.getConversion(aFloat)).toBe('12345.09876543 BTC');
 
     currency.setCurrency('mBTC');
