@@ -1,0 +1,47 @@
+<ion-header>
+  <head-nav [title]="'Address'"></head-nav>
+</ion-header>
+
+<ion-content padding>
+  <h1>Address</h1>
+  <p class="ellipsis"><b>Address</b> {{ address.addrStr }}</p>
+  <p>{{ address.balance }} BTC</p>
+
+  <h2>Summary</h2>
+
+  <ion-list>
+    <ion-item>
+      Total Received
+      <span item-end>
+        {{ address.totalReceived }} BTC
+      </span>
+    </ion-item>
+    <ion-item>
+      Total Sent
+      <span item-end>
+        {{ address.totalSent }} BTC
+      </span>
+    </ion-item>
+    <ion-item>
+      Final Balance
+      <span item-end>
+        {{ address.balance }} BTC
+      </span>
+    </ion-item>
+    <ion-item>
+      No. Transactions
+      <span item-end>
+        {{ address.txApperances }}
+      </span>
+    </ion-item>
+  </ion-list>
+
+  <p text-center>
+    <qr-code [value]="address.addrStr" [size]="160"></qr-code>
+    <p>
+
+  <h2>Transactions</h2>
+
+  <transaction-list [queryType]="'address'" [queryValue]="addrStr"></transaction-list>
+
+</ion-content>

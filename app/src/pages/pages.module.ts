@@ -1,6 +1,7 @@
 import { NgModule }         from '@angular/core';
 import { IonicModule }      from 'ionic-angular';
 import { ComponentsModule } from '../components';
+import { HeadNavComponentModule } from '../components/head-nav/head-nav.module';
 import {
   BlocksPage,
   BroadcastTxPage,
@@ -15,7 +16,7 @@ import {
     NodeStatusPage,
     VerifyMessagePage
   ],
-  imports: [ IonicModule, ComponentsModule ],
+  imports: [ IonicModule, ComponentsModule, HeadNavComponentModule ],
   exports: [
     // CustomComponent,
   ],

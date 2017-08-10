@@ -7,6 +7,7 @@ import { SplashScreen } from '@ionic-native/splash-screen';
 import { InsightApp } from './app.component';
 import { PagesModule, BlocksPage, BroadcastTxPage, NodeStatusPage, VerifyMessagePage } from '../pages';
 import { BlocksService, StorageService } from '../services';
+import { ApiProvider } from '../providers/api/api';
 
 @NgModule({
   declarations: [
@@ -31,7 +32,8 @@ import { BlocksService, StorageService } from '../services';
     SplashScreen,
     StorageService,
     BlocksService,
-    {provide: ErrorHandler, useClass: IonicErrorHandler}
+    {provide: ErrorHandler, useClass: IonicErrorHandler},
+    ApiProvider
   ]
 })
 

@@ -1,20 +1,22 @@
 import { NgModule } from '@angular/core';
 import { IonicPageModule } from 'ionic-angular';
-import { BlockDetailPage } from './block-detail';
+import { AddressPage } from './address';
 import { TransactionListComponentModule } from '../../components/transaction-list/transaction-list.module';
 import { HeadNavComponentModule } from '../../components/head-nav/head-nav.module';
+import { QRCodeModule } from 'angular2-qrcode';
 
 @NgModule({
   declarations: [
-    BlockDetailPage
+    AddressPage
   ],
   imports: [
-    IonicPageModule.forChild(BlockDetailPage),
+    IonicPageModule.forChild(AddressPage),
     TransactionListComponentModule,
-    HeadNavComponentModule
+    HeadNavComponentModule,
+    QRCodeModule
   ],
   exports: [
-    BlockDetailPage
+    AddressPage
   ]
 })
-export class BlockDetailPageModule {}
+export class AddressPageModule {}

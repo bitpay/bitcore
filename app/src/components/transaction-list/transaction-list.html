@@ -1,0 +1,7 @@
+<ion-grid>
+  <ion-row *ngFor="let tx of transactions.txs">
+    <ion-col col-12>
+      <transaction [tx]="tx"></transaction>
+    </ion-col>
+  </ion-row>
+</ion-grid>
