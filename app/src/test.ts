@@ -17,7 +17,9 @@ import { ConfigMock, PlatformMock } from './mocks';
 import { BlocksServiceMock } from './services/mocks';
 import { BlocksService } from './services';
 import { ApiProvider } from './providers/api/api';
+import { CurrencyProvider } from './providers/currency/currency';
 import { HeadNavComponentModule } from './components/head-nav/head-nav.module';
+import { ActionSheetController } from 'ionic-angular';
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
 declare var __karma__: any;
@@ -63,7 +65,9 @@ export class TestUtils {
         {provide: Platform, useClass: PlatformMock},
         {provide: Config, useClass: ConfigMock},
         {provide: BlocksService, useClass: BlocksServiceMock},
-        ApiProvider
+        ApiProvider,
+        CurrencyProvider,
+        ActionSheetController
       ],
       imports: [
         FormsModule,
