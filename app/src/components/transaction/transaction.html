@@ -29,7 +29,7 @@
       <ion-list [hidden]="tx.isCoinBase">
         <ion-item *ngFor="let vin of tx.vin">
           <div>
-            <p><a (click)="goToAddress(vin.addr)">{{ vin.addr }}</a> <span item-end>{{ vin.value + ' BTC' }}</span></p>
+            <p><a (click)="goToAddress(vin.addr)">{{ vin.addr }}</a> <span item-end>{{ currency.getConversion(vin.value) }}</span></p>
             <div [hidden]="!expanded">
               <p *ngIf="vin.confirmations"><b>Confirmations</b> {{vin.confirmations}}</p>
               <p><b>scriptSig</b></p>
@@ -62,7 +62,7 @@
           </div>
 
           <div item-end>
-            {{ vout.value + ' BTC' }}
+            {{ currency.getConversion(vout.value) }}
             <span [hidden]="!vout.spentTxId">(S)</span>
             <span [hidden]="vout.spentTxId">(U)</span>
           </div>
@@ -73,11 +73,11 @@
 
   <ion-row>
     <ion-col col-6>
-      <span [hidden]="tx.isCoinBase">Fee {{ tx.fees + ' BTC' }}</span>
+      <span [hidden]="tx.isCoinBase">Fee {{ currency.getConversion(tx.fees) }}</span>
     </ion-col>
     <ion-col col-6 text-right>
       {{ tx.confirmations }} Confirmations
-      <span class="">{{ tx.valueOut + ' BTC' }}</span>
+      <span class="">{{ currency.getConversion(tx.valueOut) }}</span>
     </ion-col>
   </ion-row>
 </ion-grid>

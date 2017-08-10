@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Input } from '@angular/core';
 import { NavController } from 'ionic-angular';
+import { CurrencyProvider } from '../../providers/currency/currency';
 
 /**
  * Generated class for the TransactionComponent component.
@@ -17,7 +18,7 @@ export class TransactionComponent {
   public expanded: boolean = false;
   @Input() public tx: any = {};
 
-  constructor(private navCtrl: NavController) {
+  constructor(private navCtrl: NavController, public currency: CurrencyProvider) {
   }
 
   public getAddress(vout: any): string {
