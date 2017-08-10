@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { Http } from '@angular/http';
 import { ApiProvider } from '../../providers/api/api';
+import { CurrencyProvider } from '../../providers/currency/currency';
 
 /**
  * Generated class for the BlockDetailPage page.
@@ -25,7 +26,7 @@ export class BlockDetailPage {
     tx: []
   };
 
-  constructor(public navCtrl: NavController, private http: Http, public navParams: NavParams, private api: ApiProvider) {
+  constructor(public navCtrl: NavController, private http: Http, public navParams: NavParams, private api: ApiProvider, public currency: CurrencyProvider) {
     this.blockHash = navParams.get('blockHash');
 
     this.http.get(this.api.apiPrefix + 'block/' + this.blockHash).subscribe(

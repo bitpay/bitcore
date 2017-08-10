@@ -8,6 +8,7 @@ import { InsightApp } from './app.component';
 import { PagesModule, BlocksPage, BroadcastTxPage, NodeStatusPage, VerifyMessagePage } from '../pages';
 import { BlocksService, StorageService } from '../services';
 import { ApiProvider } from '../providers/api/api';
+import { CurrencyProvider } from '../providers/currency/currency';
 
 @NgModule({
   declarations: [
@@ -33,7 +34,8 @@ import { ApiProvider } from '../providers/api/api';
     StorageService,
     BlocksService,
     {provide: ErrorHandler, useClass: IonicErrorHandler},
-    ApiProvider
+    ApiProvider,
+    CurrencyProvider
   ]
 })
 

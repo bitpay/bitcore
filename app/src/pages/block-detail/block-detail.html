@@ -24,7 +24,7 @@
     <ion-item>
       Block Reward
       <span item-end>
-        {{ block.reward + ' BTC' }}
+        {{ currency.getConversion(block.reward) }}
       </span>
     </ion-item>
     <ion-item>

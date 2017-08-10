@@ -3,6 +3,8 @@ import { Input } from '@angular/core';
 import { NavController } from 'ionic-angular';
 import { Http } from '@angular/http';
 import { ApiProvider } from '../../providers/api/api';
+import { CurrencyProvider } from '../../providers/currency/currency';
+import { ActionSheetController } from 'ionic-angular';
 
 /**
  * Generated class for the HeadNavComponent component.
@@ -21,7 +23,7 @@ export class HeadNavComponent {
   public q: string;
   public badQuery: boolean = false;
 
-  constructor(private navCtrl: NavController, private http: Http, private api: ApiProvider) {
+  constructor(private navCtrl: NavController, private http: Http, private api: ApiProvider, public currency: CurrencyProvider, public actionSheetCtrl: ActionSheetController) {
   }
 
   private resetSearch(): void {
@@ -98,4 +100,48 @@ export class HeadNavComponent {
   };
   /* tslint:enable:no-unused-variable */
 
+  public changeCurrency() {
+    console.log('changeCurrency');
+    this.presentActionSheet();
+  }
+
+  presentActionSheet() {
+    let actionSheet = this.actionSheetCtrl.create({
+      title: 'Change Currency',
+      buttons: [
+        {
+          text: 'USD',
+          handler: () => {
+            this.currency.setCurrency('USD');
+          }
+        },
+        {
+          text: 'BTC',
+          handler: () => {
+            this.currency.setCurrency('BTC');
+          }
+        },
+        {
+          text: 'mBTC',
+          handler: () => {
+            this.currency.setCurrency('mBTC');
+          }
+        },
+        {
+          text: 'bits',
+          handler: () => {
+            this.currency.setCurrency('bits');
+          }
+        },
+        {
+          text: 'Cancel',
+          role: 'cancel',
+          handler: () => {
+            console.log('Cancel clicked');
+          }
+        }
+      ]
+    });
+    actionSheet.present();
+  }
 }
