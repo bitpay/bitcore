@@ -26,16 +26,11 @@ export class HeadNavComponent {
   constructor(private navCtrl: NavController, private http: Http, private api: ApiProvider, public currency: CurrencyProvider, public actionSheetCtrl: ActionSheetController) {
   }
 
-  private resetSearch(): void {
-    this.q = '';
-    this.loading = false;
-  }
-
   public search(): void {
     let apiPrefix: string = this.api.apiPrefix;
 
     this.http.get(apiPrefix + 'block/' + this.q).subscribe(
-      function (data: any) {
+      function (data: any): void {
         this.resetSearch();
         console.log('block', data);
         let parsedData: any = JSON.parse(data._body);
@@ -45,7 +40,7 @@ export class HeadNavComponent {
       }.bind(this),
       () => {
         this.http.get(apiPrefix + 'tx/' + this.q).subscribe(
-          function (data: any) {
+          function (data: any): void {
             this.resetSearch();
             console.log('tx', data);
             let parsedData: any = JSON.parse(data._body);
@@ -55,7 +50,7 @@ export class HeadNavComponent {
           }.bind(this),
           () => {
             this.http.get(apiPrefix + 'addr/' + this.q).subscribe(
-              function (data: any) {
+              function (data: any): void {
                 this.resetSearch();
                 console.log('addr', data);
                 let parsedData: any = JSON.parse(data._body);
@@ -98,16 +93,16 @@ export class HeadNavComponent {
       2000
     );
   };
+
+  private resetSearch(): void {
+    this.q = '';
+    this.loading = false;
+  }
   /* tslint:enable:no-unused-variable */
 
-  public changeCurrency() {
-    console.log('changeCurrency');
-    this.presentActionSheet();
-  }
-
-  presentActionSheet() {
-    let actionSheet = this.actionSheetCtrl.create({
-      title: 'Change Currency',
+  public changeCurrency(): void {
+    let actionSheet: any = this.actionSheetCtrl.create({
+      title: 'Change Denomination',
       buttons: [
         {
           text: 'USD',
@@ -135,10 +130,7 @@ export class HeadNavComponent {
         },
         {
           text: 'Cancel',
-          role: 'cancel',
-          handler: () => {
-            console.log('Cancel clicked');
-          }
+          role: 'cancel'
         }
       ]
     });
