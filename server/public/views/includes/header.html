@@ -1,0 +1,48 @@
+<div class="container">
+  <div data-ng-controller="HeaderController">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse" data-ng-click="$root.isCollapsed = !$root.isCollapsed">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="insight navbar-brand" href=".">insight</a>
+    </div>
+    <div class="navbar-collapse collapse" collapse="$root.isCollapsed">
+      <ul class="nav navbar-nav">
+        <li data-ng-repeat="item in menu" ui-route="{{item.link}}" data-ng-class="{active: $uiRoute}">
+          <a href="{{item.link}}">{{item.title|translate}}</a>
+        </li>
+      </ul>
+      <span class="hidden-xs navbar-form navbar-left" data-ng-include src="'views/includes/search.html'"></span>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+      <div class="status" data-ng-controller="StatusController">
+        <div data-ng-init="getSync()" class="pull-left">
+          <span class="t text-danger"  data-ng-show="sync.error" tooltip="{{sync.error}}" tooltip-placement="bottom"> 
+              <span  class="glyphicon glyphicon-warning-sign"></span>
+              ERROR 
+          </span>
+          <span class="t" tooltip="{{sync.syncedBlocks}} / {{sync.blockChainHeight}} synced. {{sync.skippedBlocks || 0}} skipped" tooltip-placement="bottom" data-ng-show="sync.status==='syncing'"> 
+            <span  class="glyphicon glyphicon-refresh icon-rotate"></span>
+            {{sync.syncPercentage}}%
+          </span>
+          <span class="glyphicon glyphicon-ok" tooltip="Historic sync finished" tooltip-placement="bottom" data-ng-show="sync.status==='finished'"> </span>
+        </div>
+        &nbsp; &middot;
+        <span data-ng-init="getStatus('Info')">
+          <strong>{{'Conn'|translate}}</strong> {{info.connections}}
+        </span> &middot;
+        <strong>{{'Height'|translate}}</strong> {{totalBlocks || info.blocks}}
+      </div>
+      </li>
+      <li>
+        <a data-ng-click="openScannerModal()"><span class="glyphicon
+            glyphicon-qrcode"></span> Scan</a>
+      </li>
+      <li class="dropdown" data-ng-controller="CurrencyController" data-ng-include="'views/includes/currency.html'"></li>
+      </ul>
+    </div>
+  </div>
+</div>

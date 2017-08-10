@@ -1,0 +1,128 @@
+<div data-ng-include src="'views/includes/connection.html'"></div>
+<section data-ng-controller="BlocksController" data-ng-init="findOne()">
+  <div class="secondary_navbar hidden-xs hidden-sm" scroll data-ng-class="{'hidden': !secondaryNavbar}" data-ng-show="block.hash" data-ng-init="hideSNavbar=0">
+    <div class="container" data-ng-if="!hideSNavbar">
+      <div class="row">
+        <div class="col-md-1">
+          <a href="block/{{block.previousblockhash}}"><span class="lead glyphicon glyphicon-chevron-left"></span></a>
+        </div>
+        <div class="col-md-10">
+          <div class="row">
+            <div class="col-md-5">
+              <h3 class="text-left"><span translate>Block</span> #{{block.height}}</h3>
+            </div>
+            <p class="col-md-6 ellipsis text-left">
+                <strong>Hash</strong> {{block.hash}}
+            </p>
+            <div class="col-md-1 text-left">
+                <span class="btn-copy" clip-copy="block.hash"></span>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-1">
+          <a data-ng-show="block.nextblockhash" href="block/{{block.nextblockhash}}"><span class="lead glyphicon glyphicon-chevron-right"></span></a>
+        </div>
+      </div>
+    </div> <!-- END OF CONTAINER -->
+    <div class="hide_snavbar">
+      <a href="#" data-ng-click="hideSNavbar=!hideSNavbar">
+        <span data-ng-show="hideSNavbar"><span class="text-muted glyphicon glyphicon-chevron-down"></span></span>
+        <span data-ng-show="!hideSNavbar"><span class="text-muted glyphicon glyphicon-chevron-up"></span></span>
+      </a>
+    </div>
+  </div>
+  <h1>Block #{{block.height}}</h1>
+  <div class="text-muted" data-ng-if="!block.hash">
+    <span translate>Loading Block Information</span>  <span class="loader-gif"></span>
+  </div>
+  <div data-ng-if="block.hash">
+    <div class="well well-sm ellipsis">
+      <strong>BlockHash</strong> 
+      <span class="txid text-muted">{{block.hash}}</span>
+      <span class="btn-copy" clip-copy="block.hash"></span>
+    </div>
+    <h2 translate>Summary</h2>
+    <div class="row">
+      <div class="col-md-6">
+        <table class="table" style="table-layout: fixed">
+          <tbody>
+          <tr>
+            <td><strong translate>Number Of Transactions</strong></td>
+            <td class="text-right text-muted">{{block.tx.length}}</td>
+          </tr>
+          <tr>
+            <td><strong translate>Height</strong></td>
+            <td class="text-right text-muted">{{block.height}}
+              <span data-ng-show="block.isMainChain" class="text-success">(Mainchain)</span>
+              <span data-ng-show="!block.isMainChain" class="text-danger"> <span class="glyphicon glyphicon-warning-sign"></span> (Orphaned)</span>
+            </td>
+          </tr>
+          <tr>
+            <td><strong translate>Block Reward</strong></td>
+            <td class="text-right text-muted">{{$root.currency.getConvertion(block.reward) || block.reward + ' BTC'}}</td>
+          </tr> 
+          <tr>
+            <td><strong translate>Timestamp</strong></td>
+            <td class="text-right text-muted">{{block.time * 1000 | date:'medium'}}</td>
+          </tr>
+          <tr data-ng-show="block.poolInfo">
+            <td><strong translate>Mined by</strong></td>
+            <td class="text-right text-muted">
+              <a href="{{block.poolInfo.url}}" target="_blank" title="{{block.poolInfo.poolName}}">{{block.poolInfo.poolName}}</a>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Merkle Root</strong></td>
+            <td class="text-right text-muted">
+              <div class="ellipsis">
+                <span class="btn-copy" clip-copy="block.merkleroot"></span>
+                <span>{{block.merkleroot}}</span>
+              </div>
+            </td>
+          </tr>
+          <tr data-ng-show="block.previousblockhash">
+            <td><strong translate>Previous Block</strong></td>
+            <td class="text-right"><a href="block/{{block.previousblockhash}}">{{block.height-1}}</a></td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col-md-6">
+        <table class="table">
+          <tbody>
+          <tr>
+            <td> <strong translate>Difficulty</strong></td>
+            <td class="text-right text-muted">{{block.difficulty}}</td>
+          </tr>
+          <tr>
+            <td> <strong>Bits</strong></td>
+            <td class="text-right text-muted">{{block.bits}}</td>
+          </tr>
+          <tr>
+            <td> <strong translate>Size (bytes)</strong></td>
+            <td class="text-right text-muted">{{block.size}}</td>
+          </tr>
+          <tr>
+            <td> <strong translate>Version</strong></td>
+            <td class="text-right text-muted">{{block.version}}</td>
+          </tr>
+          <tr>
+            <td> <strong>Nonce</strong></td>
+            <td class="text-right text-muted">{{block.nonce}}</td>
+          </tr>
+          <tr data-ng-show="block.nextblockhash">
+            <td><strong translate>Next Block</strong></td>
+            <td class="text-right"><a href="block/{{block.nextblockhash}}">{{block.height+1}}</a></td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div data-ng-if="block.hash" data-ng-controller="transactionsController" data-ng-init="load('block')">
+    <h3 translate>Transactions</h3>
+    <div data-ng-include src="'views/transaction/list.html'" when-scrolled="loadMore()"></div>
+  </div>
+
+</section>
+

@@ -1,0 +1,22 @@
+<div class="connection-status container" data-ng-controller="ConnectionController">
+
+  <div class="alert alert-danger" 
+    data-ng-show="!serverOnline || !clienteOnline || !apiOnline"
+    data-ng-init="getConnStatus()">
+
+    <strong translate>Error!</strong>
+
+    <p data-ng-show="!apiOnline" translate>
+      Can't connect to bitcoind to get live updates from the p2p network. (Tried connecting to bitcoind at {{host}}:{{port}} and failed.)
+    </p>
+
+    <p data-ng-show="!serverOnline" translate>
+      Can't connect to insight server. Attempting to reconnect... 
+    </p>
+
+    <p data-ng-show="!clienteOnline" translate>
+      Can't connect to internet. Please, check your connection.
+    </p>
+
+  </div>
+</div>

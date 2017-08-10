@@ -1,0 +1,28 @@
+{
+  "name": "bitcore-bcoin-insight",
+  "version": "1.0.0",
+  "description": "Full node with extended capabilities using Bitcore and Bcoin",
+  "engines": {
+    "node": ">=7.6.0"
+  },
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bcoin": "^1.0.0-beta.14",
+    "express": "^4.15.3",
+    "mongoose": "^4.11.5",
+    "request": "^2.81.0",
+    "socket.io": "^2.0.3",
+    "winston": "^2.3.1"
+  },
+  "devDependencies": {
+    "eslint": "^4.4.1",
+    "eslint-config-airbnb-base": "^11.3.1",
+    "eslint-plugin-import": "^2.7.0"
+  }
+}
