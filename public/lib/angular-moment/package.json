@@ -1,0 +1,31 @@
+{
+  "name": "angular-moment",
+  "version": "0.8.3",
+  "main": "angular-moment.js",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/urish/angular-moment.git"
+  },
+  "dependencies": {
+    "moment": ">=2.0.0 <2.9.0"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "load-grunt-tasks": "0.6.0",
+    "grunt-contrib-uglify": "0.5.1",
+    "grunt-contrib-jshint": "~0.10.0",
+    "grunt-karma": "~0.8.2",
+    "karma": "~0.12.0",
+    "karma-coverage": "~0.2.0",
+    "karma-jasmine": "~0.2.1",
+    "karma-phantomjs-launcher": "~0.1.1",
+    "coveralls": "~2.11.0",
+    "grunt-ngdocs": "^0.2.1"
+  },
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "scripts": {
+    "test": "grunt test"
+  }
+}

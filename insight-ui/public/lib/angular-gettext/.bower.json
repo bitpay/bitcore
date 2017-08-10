@@ -1,0 +1,31 @@
+{
+  "name": "angular-gettext",
+  "version": "1.1.4",
+  "main": "dist/angular-gettext.js",
+  "ignore": [
+    "**/.*",
+    "src",
+    "node_modules",
+    "bower_components",
+    "test",
+    "genplurals.py",
+    "Gruntfile.js"
+  ],
+  "dependencies": {
+    "angular": ">=1.2.0"
+  },
+  "devDependencies": {
+    "jquery": ">=1.8.0",
+    "angular-mocks": ">=1.2.0"
+  },
+  "homepage": "https://github.com/rubenv/angular-gettext",
+  "_release": "1.1.4",
+  "_resolution": {
+    "type": "version",
+    "tag": "v1.1.4",
+    "commit": "8bc3a498bc94a19b7106e6e25faab0cc9ce4cea3"
+  },
+  "_source": "https://github.com/rubenv/angular-gettext.git",
+  "_target": "~1.1.0",
+  "_originalSource": "angular-gettext"
+}
