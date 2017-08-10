@@ -1,4 +1,5 @@
 ## Default gitignore below this line
+chain.ldb
 
 # Logs
 logs/*.log

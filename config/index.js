@@ -4,6 +4,7 @@ const config = {
   bcoin: {
     network: 'main',
     db: 'leveldb',
+    prefix: '.',
     checkpoints: true,
     workers: true,
     logLevel: 'info',
