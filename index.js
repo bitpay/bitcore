@@ -10,6 +10,7 @@ logger.log('debug',
 db.connect(config.mongodb.uri, config.mongodb.options);
 
 db.connection.once('open', () => {
+
   if (config.start_node) Bcoin.start();
 
   Api.listen(config.api.port, () => {

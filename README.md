@@ -39,7 +39,7 @@ db.transactions.drop()
 
 Ctrl+D out of mongo
 
-rm -rf ~/.bcoin/chain.ldb
+rm -rf ${bcoin-prefix-in-config}/chain.ldb
 ```
 
 ### Nginx
