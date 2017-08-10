@@ -31,7 +31,7 @@
           <div>
             <p><a (click)="goToAddress(vin.addr)">{{ vin.addr }}</a> <span item-end>{{ vin.value + ' BTC' }}</span></p>
             <div [hidden]="!expanded">
-              <p><b>Confirmations</b> {{vin.confirmations}}</p>
+              <p *ngIf="vin.confirmations"><b>Confirmations</b> {{vin.confirmations}}</p>
               <p><b>scriptSig</b></p>
               <div *ngIf="vin.scriptSig">
                 <div *ngFor="let item of vin.scriptSig.asm | split:' '" class="ellipsis">
@@ -44,10 +44,10 @@
       </ion-list>
 
     </ion-col>
-    <ion-col col-2 text-center>
+    <ion-col col-1 text-center>
       <ion-icon name="arrow-forward"></ion-icon>
     </ion-col>
-    <ion-col col-5>
+    <ion-col col-6>
       <ion-list>
         <ion-item *ngFor="let vout of tx.vout">
           <div>
