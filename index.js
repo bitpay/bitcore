@@ -18,6 +18,3 @@ db.connection.once('open', () => {
       'listening on port 3000');
   });
 });
-
-
-
