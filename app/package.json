@@ -1,6 +1,5 @@
 {
   "name": "insight-ui",
-  "version": "0.5.0",
   "private": true,
   "scripts": {
     "clean": "ionic-app-scripts clean",
