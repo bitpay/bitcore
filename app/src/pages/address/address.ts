@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { Http } from '@angular/http';
 import { ApiProvider } from '../../providers/api/api';
+import { CurrencyProvider } from '../../providers/currency/currency';
 
 /**
  * Generated class for the AddressPage page.
@@ -23,7 +24,7 @@ export class AddressPage {
   private addrStr: string;
   public address: any = {};
 
-  constructor(public navCtrl: NavController, public navParams: NavParams, private http: Http, private api: ApiProvider) {
+  constructor(public navCtrl: NavController, public navParams: NavParams, private http: Http, private api: ApiProvider, public currency: CurrencyProvider) {
     this.addrStr = navParams.get('addrStr');
   }
 
