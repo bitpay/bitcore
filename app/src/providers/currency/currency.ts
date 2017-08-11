@@ -12,9 +12,9 @@ import 'rxjs/add/operator/map';
 @Injectable()
 export class CurrencyProvider {
 
-  private defaultCurrency: string;
-  private currencySymbol: string;
-  private factor: number = 1;
+  public defaultCurrency: string;
+  public currencySymbol: string;
+  public factor: number = 1;
   private bitstamp: number;
   private loading: boolean;
 
@@ -23,7 +23,7 @@ export class CurrencyProvider {
     this.currencySymbol = this.defaultCurrency;
   }
 
-  private roundFloat(aFloat: number, decimalPlaces: number): number {
+  public roundFloat(aFloat: number, decimalPlaces: number): number {
     return Math.round(aFloat * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces);
   }
 
@@ -55,7 +55,7 @@ export class CurrencyProvider {
     if (currency === 'USD') {
       this.http.get(this.api.apiPrefix + 'currency').subscribe(
         (data) => {
-          let currencyParsed = JSON.parse(data['_body']);
+          let currencyParsed: any = JSON.parse(data['_body']);
           this.factor = this.bitstamp = currencyParsed.data.bitstamp;
           this.loading = false;
         },

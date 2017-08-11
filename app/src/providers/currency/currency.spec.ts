@@ -2,6 +2,7 @@
 import { TestBed, ComponentFixture, inject } from '@angular/core/testing';
 import { HttpModule } from '@angular/http';
 import { CurrencyProvider } from './currency';
+import { ApiProvider } from '../api/api';
 
 describe('CurrencyProvider', () => {
   let currency: CurrencyProvider;
@@ -12,6 +13,7 @@ describe('CurrencyProvider', () => {
         HttpModule
       ],
       providers: [
+        ApiProvider,
         CurrencyProvider
       ]
     });
