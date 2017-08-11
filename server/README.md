@@ -33,3 +33,9 @@ Ctrl+D out of mongo
 
 rm -rf ${bcoin-prefix-in-config.js}/chain.ldb
 ```
+
+### Contributing
+
+1. Fork
+2. Branch
+3. Send a PR

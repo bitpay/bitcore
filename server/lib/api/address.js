@@ -1,4 +1,9 @@
-module.exports = function addressrouter(router) {
+const Block = require('../../models/block.js');
+const logger = require('../logger');
+
+const MAX_BLOCKS = 200;
+
+module.exports = function AddressAPI(router) {
   router.get('/addr/:addr', (req, res) => {
     res.send(req.params.addr);
   });

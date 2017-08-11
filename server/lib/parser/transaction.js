@@ -24,8 +24,6 @@ function parse(entry, txs) {
 
           const valB = (tx.value || tx.valueOut.value || 0) / 1e8;
 
-          console.log(valB)
-
           return sum + valB;
         }, 0),
       });
