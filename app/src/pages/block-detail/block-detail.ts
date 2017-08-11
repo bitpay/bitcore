@@ -28,7 +28,9 @@ export class BlockDetailPage {
 
   constructor(public navCtrl: NavController, private http: Http, public navParams: NavParams, private api: ApiProvider, public currency: CurrencyProvider) {
     this.blockHash = navParams.get('blockHash');
+  }
 
+  public ionViewDidLoad(): void {
     this.http.get(this.api.apiPrefix + 'block/' + this.blockHash).subscribe(
       (data) => {
         this.block = JSON.parse(data['_body']);
@@ -39,10 +41,6 @@ export class BlockDetailPage {
         this.loading = false;
       }
     );
-  }
-
-  public ionViewWillLeave(): void {
-    this.loading = true;
   }
 
   public goToPreviousBlock(): void {

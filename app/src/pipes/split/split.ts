@@ -15,7 +15,6 @@ export class SplitPipe implements PipeTransform {
    */
   public transform(value: string, delimiter: string): Array<string> {
     let array: Array<string> = value.split(delimiter);
-    console.log('split is', array);
     return array;
   }
 }
