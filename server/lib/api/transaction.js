@@ -111,6 +111,7 @@ module.exports = function transactionAPI(router) {
                   coinbase: input.script,
                   sequence: input.sequence,
                   n: 0,
+                  addr: input.address,
                 })),
                 vout: tx.outputs.map(output => ({
                   value: output.value / 1e8,

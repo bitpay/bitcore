@@ -39,7 +39,7 @@ function start() {
   });
 
   node.pool.on('peer', (peer) => {
-    // console.log(peer);
+
   });
 
   node.on('error', (err) => {
@@ -48,7 +48,7 @@ function start() {
   });
 
   node.mempool.on('tx', (tx) => {
-    console.log(tx)
+
   });
 }
 

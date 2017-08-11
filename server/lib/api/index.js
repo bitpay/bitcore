@@ -3,6 +3,9 @@ const config  = require('../../config');
 
 const app = express();
 const api = express.Router();
+const cors = require('./cors');
+
+app.use(cors);
 
 // Serve insight ui front end from root dir public folder
 app.use('/', express.static('./public'));
