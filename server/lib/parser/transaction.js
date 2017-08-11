@@ -16,18 +16,19 @@ function parse(entry, txs) {
     counter++;
 
     if (counter % socketThrottle === 0) {
+
       io.sockets.emit('tx', {
         txid: txJSON.hash,
-        valueOut: tx.outputs.reduce((a, b) => {
-          a = a.toJSON();
-          b = b.toJSON();
+        valueOut: tx.outputs.reduce((sum, tx) => {
+          tx = tx.toJSON();
 
-          const valA = (a.value || a.valueOut.value || 0) / 1e8;
-          const valB = (b.value || b.valueOut.value || 0) / 1e8;
+          const valB = (tx.value || tx.valueOut.value || 0) / 1e8;
 
-          return valA + valB;
-        }),
-      }, 0);
+          console.log(valB)
+
+          return sum + valB;
+        }, 0),
+      });
     }
 
     const t = new TxModel({
