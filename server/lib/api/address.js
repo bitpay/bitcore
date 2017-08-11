@@ -7,9 +7,11 @@ const MAX_BLOCKS = 200;
 function getBlock(params, options, limit, cb) {
   const defaultOptions = { _id: 0 };
 
-  Object.assign(defaultOptions, options);
+  if (!Number.isInteger(limit)) {
+    limit = MAX_BLOCKS;
+  }
 
-  console.log
+  Object.assign(defaultOptions, options);
 
   Block.find(
     params,
@@ -21,11 +23,55 @@ function getBlock(params, options, limit, cb) {
 
 module.exports = function AddressAPI(router) {
   router.get('/addr/:addr', (req, res) => {
+    res.json({
+      addrStr:                 req.params.addr,
+      balance:                 0,
+      balanceSat:              0,
+      totalReceived:           0,
+      totalReceivedSat:        0,
+      totalSent:               0,
+      totalSentSat:            0,
+      unconfirmedBalance:      0,
+      unconfirmedBalanceSat:   0,
+      unconfirmedTxApperances: 0,
+      txApperances:            5,
+    });
+  });
+
+  router.get('/addr/:addr/utxo', (req, res) => {
+    res.send('1');
+  });
+
+  router.get('/addr/:addr/balance', (req, res) => {
+    res.send('2');
+  });
+
+  router.get('/addr/:addr/totalReceived', (req, res) => {
+    res.send('3');
+  });
+
+  router.get('/addr/:addr/totalSent', (req, res) => {
+    res.send('4');
+  });
+
+  router.get('/addr/:addr/unconfirmedBalance', (req, res) => {
+    res.send('5');
+  });
+
+  router.get('/addrs/:addrs/utxo', (req, res) => {
+    res.send('6');
+  });
+
+  router.post('/addrs/utxo', (req, res) => {
+    res.send('7');
+  });
+
+  router.get('/addrs/:addrs/txs', (req, res) => {
     getBlock(
       {
         $or:
         [
-          { 'txs.outputs.address':     req.params.addr },
+          { 'txs.outputs.address': req.params.addr },
           { 'txs.inputs.prevout.hash': req.params.addr },
         ],
       },
@@ -70,38 +116,6 @@ module.exports = function AddressAPI(router) {
           res.send();
         }
       });
-  });
-
-  router.get('/addr/:addr/utxo', (req, res) => {
-    res.send("1");
-  });
-
-  router.get('/addr/:addr/balance', (req, res) => {
-    res.send("2");
-  });
-
-  router.get('/addr/:addr/totalReceived', (req, res) => {
-    res.send("3");
-  });
-
-  router.get('/addr/:addr/totalSent', (req, res) => {
-    res.send("4");
-  });
-
-  router.get('/addr/:addr/unconfirmedBalance', (req, res) => {
-    res.send("5");
-  });
-
-  router.get('/addrs/:addrs/utxo', (req, res) => {
-    res.send("6");
-  });
-
-  router.post('/addrs/utxo', (req, res) => {
-    res.send("7");
-  });
-
-  router.get('/addrs/:addrs/txs', (req, res) => {
-    res.send("8");
   });
 
   router.post('/addrs/txs', (req, res) => {
