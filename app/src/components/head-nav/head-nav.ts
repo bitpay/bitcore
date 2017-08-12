@@ -3,6 +3,8 @@ import { Input } from '@angular/core';
 import { NavController } from 'ionic-angular';
 import { Http } from '@angular/http';
 import { ApiProvider } from '../../providers/api/api';
+import { CurrencyProvider } from '../../providers/currency/currency';
+import { ActionSheetController } from 'ionic-angular';
 
 /**
  * Generated class for the HeadNavComponent component.
@@ -21,19 +23,14 @@ export class HeadNavComponent {
   public q: string;
   public badQuery: boolean = false;
 
-  constructor(private navCtrl: NavController, private http: Http, private api: ApiProvider) {
-  }
-
-  private resetSearch(): void {
-    this.q = '';
-    this.loading = false;
+  constructor(private navCtrl: NavController, private http: Http, private api: ApiProvider, public currency: CurrencyProvider, public actionSheetCtrl: ActionSheetController) {
   }
 
   public search(): void {
     let apiPrefix: string = this.api.apiPrefix;
 
     this.http.get(apiPrefix + 'block/' + this.q).subscribe(
-      function (data: any) {
+      function (data: any): void {
         this.resetSearch();
         console.log('block', data);
         let parsedData: any = JSON.parse(data._body);
@@ -43,7 +40,7 @@ export class HeadNavComponent {
       }.bind(this),
       () => {
         this.http.get(apiPrefix + 'tx/' + this.q).subscribe(
-          function (data: any) {
+          function (data: any): void {
             this.resetSearch();
             console.log('tx', data);
             let parsedData: any = JSON.parse(data._body);
@@ -53,7 +50,7 @@ export class HeadNavComponent {
           }.bind(this),
           () => {
             this.http.get(apiPrefix + 'addr/' + this.q).subscribe(
-              function (data: any) {
+              function (data: any): void {
                 this.resetSearch();
                 console.log('addr', data);
                 let parsedData: any = JSON.parse(data._body);
@@ -96,6 +93,47 @@ export class HeadNavComponent {
       2000
     );
   };
+
+  private resetSearch(): void {
+    this.q = '';
+    this.loading = false;
+  }
   /* tslint:enable:no-unused-variable */
 
+  public changeCurrency(): void {
+    let actionSheet: any = this.actionSheetCtrl.create({
+      title: 'Change Denomination',
+      buttons: [
+        {
+          text: 'USD',
+          handler: () => {
+            this.currency.setCurrency('USD');
+          }
+        },
+        {
+          text: 'BTC',
+          handler: () => {
+            this.currency.setCurrency('BTC');
+          }
+        },
+        {
+          text: 'mBTC',
+          handler: () => {
+            this.currency.setCurrency('mBTC');
+          }
+        },
+        {
+          text: 'bits',
+          handler: () => {
+            this.currency.setCurrency('bits');
+          }
+        },
+        {
+          text: 'Cancel',
+          role: 'cancel'
+        }
+      ]
+    });
+    actionSheet.present();
+  }
 }

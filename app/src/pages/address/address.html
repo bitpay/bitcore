@@ -5,27 +5,27 @@
 <ion-content padding>
   <h1>Address</h1>
   <p class="ellipsis"><b>Address</b> {{ address.addrStr }}</p>
-  <p>{{ address.balance }} BTC</p>
+  <p>{{ currency.getConversion(address.balance) }}</p>
 
   <h2>Summary</h2>
 
-  <ion-list>
+  <ion-list class="summary">
     <ion-item>
       Total Received
       <span item-end>
-        {{ address.totalReceived }} BTC
+        {{ currency.getConversion(address.totalReceived) }}
       </span>
     </ion-item>
     <ion-item>
       Total Sent
       <span item-end>
-        {{ address.totalSent }} BTC
+        {{ currency.getConversion(address.totalSent) }}
       </span>
     </ion-item>
     <ion-item>
       Final Balance
       <span item-end>
-        {{ address.balance }} BTC
+        {{ currency.getConversion(address.balance) }}
       </span>
     </ion-item>
     <ion-item>

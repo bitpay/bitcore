@@ -8,9 +8,9 @@
 
   <h2>Summary</h2>
 
-  <ion-list *ngIf="!loading">
+  <ion-list *ngIf="!loading" class="summary">
     <ion-item>
-        Number of Transactions
+      Number of Transactions
       <span item-end>
         {{ block.tx.length }}
       </span>
@@ -24,7 +24,7 @@
     <ion-item>
       Block Reward
       <span item-end>
-        {{ block.reward + ' BTC' }}
+        {{ currency.getConversion(block.reward) }}
       </span>
     </ion-item>
     <ion-item>

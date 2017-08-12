@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
+import { ApiProvider } from '../../providers/api/api';
 import 'rxjs/add/operator/map';
 
 /*
@@ -11,16 +12,18 @@ import 'rxjs/add/operator/map';
 @Injectable()
 export class CurrencyProvider {
 
-  private defaultCurrency: string;
-  private currencySymbol: string;
-  private factor: number = 1;
+  public defaultCurrency: string;
+  public currencySymbol: string;
+  public factor: number = 1;
+  private bitstamp: number;
+  private loading: boolean;
 
-  constructor(public http: Http) {
+  constructor(public http: Http, private api: ApiProvider) {
     this.defaultCurrency = 'BTC';
     this.currencySymbol = this.defaultCurrency;
   }
 
-  private roundFloat(aFloat: number, decimalPlaces: number): number {
+  public roundFloat(aFloat: number, decimalPlaces: number): number {
     return Math.round(aFloat * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces);
   }
 
@@ -50,12 +53,17 @@ export class CurrencyProvider {
     localStorage.setItem('insight-currency', currency);
 
     if (currency === 'USD') {
-      // TODO Replace this with call
-      /*
-      Currency.get({}, function(res) {
-        $rootScope.currency.factor = $rootScope.currency.bitstamp = res.data.bitstamp;
-      });
-       */
+      this.http.get(this.api.apiPrefix + 'currency').subscribe(
+        (data) => {
+          let currencyParsed: any = JSON.parse(data['_body']);
+          this.factor = this.bitstamp = currencyParsed.data.bitstamp;
+          this.loading = false;
+        },
+        (err) => {
+          console.log('err is', err);
+          this.loading = false;
+        }
+      );
     } else if (currency === 'mBTC') {
       this.factor = 1000;
     } else if (currency === 'bits') {
