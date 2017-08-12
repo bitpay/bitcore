@@ -8,6 +8,7 @@ var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.raw({limit: 100000000}));
 
+var config = require('./lib/config');
 var storageService = require('./lib/services/storage');
 var workerService = require('./lib/services/worker');
 var p2pService = require('./lib/services/p2p');
@@ -22,7 +23,7 @@ async.series([
   if(cluster.isWorker) {
     var router = require('./lib/routes');
     app.use(router);
-    var server = app.listen(3000, function() {
+    var server = app.listen(config.port, function() {
       console.log('api server listening on port 3000!');
     });
     server.timeout = 600000;
