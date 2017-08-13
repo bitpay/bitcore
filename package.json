@@ -13,6 +13,7 @@
     "express": "~4.15.3",
     "mongoose": "^4.11.5",
     "multer": "~1.3.0",
+    "progress": "^2.0.0",
     "request": "^2.81.0",
     "underscore": "^1.8.3"
   },
