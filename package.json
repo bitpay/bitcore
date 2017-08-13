@@ -9,7 +9,6 @@
     "async": "^2.5.0",
     "bcoin": "^1.0.0-beta.14",
     "bitcore-lib": "~0.14.0",
-    "bluebird": "^3.5.0",
     "body-parser": "~1.17.2",
     "express": "~4.15.3",
     "mongoose": "^4.11.5",
