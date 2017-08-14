@@ -6,8 +6,12 @@ const MAX_TXS = 20;
 const MAX_BLOCKS = 1;
 
 // Shoe horned in. Not dry, also in blocks. Make db api later
-function getBlock(params, options, cb) {
+function getBlock(params, options, limit, cb) {
   const defaultOptions = { _id: 0 };
+
+  if (!Number.isInteger(limit)) {
+    limit = MAX_BLOCKS;
+  }
 
   Object.assign(defaultOptions, options);
 
@@ -16,7 +20,7 @@ function getBlock(params, options, cb) {
     defaultOptions,
     cb)
     .sort({ height: -1 })
-    .limit(MAX_BLOCKS);
+    .limit(limit);
 }
 
 
@@ -85,15 +89,11 @@ module.exports = function transactionAPI(router) {
   });
 
   router.get('/txs', (req, res) => {
-/*
-    const txsBy = req.query.blocks ||
-                  req.query.address;
-*/
-
     if (req.query.block) {
       getBlock(
         { hash: req.query.block },
         { rawBlock: 0 },
+        MAX_BLOCKS,
         (err, block) => {
           if (err) {
             res.status(501).send();
@@ -133,7 +133,52 @@ module.exports = function transactionAPI(router) {
           }
         });
     } else if (req.query.address) {
-
+      getBlock(
+        { $or:
+          [
+            { 'txs.outputs.address':     req.query.address },
+            { 'txs.inputs.prevout.hash': req.query.address },
+          ],
+        },
+        { rawBlock: 0 },
+        MAX_BLOCKS,
+        (err, block) => {
+          if (err) {
+            res.status(501).send();
+            logger.log('err', err);
+          } else if (block[0]) {
+            const b = block[0];
+            res.json({
+              pagesTotal: 1,
+              txs: b.txs.map(tx => ({
+                txid: tx.hash,
+                version: tx.version,
+                locktime: tx.locktime,
+                vin: tx.inputs.map(input => ({
+                  coinbase: input.script,
+                  sequence: input.sequence,
+                  n: 0,
+                  addr: input.address,
+                })),
+                vout: tx.outputs.map(output => ({
+                  value: output.value / 1e8,
+                  n: 0,
+                  scriptPubKey: {
+                    hex: '',
+                    asm: '',
+                    addresses: [output.address],
+                    type: output.type,
+                  },
+                  spentTxid: '',
+                  spentIndex: 0,
+                  spentHeight: 0,
+                })),
+              })),
+            });
+          } else {
+            res.send();
+          }
+        });
     } else {
       getTransactions(
         {},
