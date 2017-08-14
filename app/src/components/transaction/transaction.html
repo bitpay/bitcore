@@ -27,18 +27,22 @@
       </ion-list>
 
       <ion-list [hidden]="tx.isCoinBase">
-        <ion-item *ngFor="let vin of tx.vin">
+        <ion-item *ngFor="let vin of aggregateItems(tx.vin)">
           <div>
-            <p><a (click)="goToAddress(vin.addr)">{{ vin.addr }}</a> <span item-end>{{ currency.getConversion(vin.value) }}</span></p>
+            <p><a (click)="goToAddress(vin.addr)">{{ vin.addr }}</a></p>
             <div [hidden]="!expanded">
               <p *ngIf="vin.confirmations"><b>Confirmations</b> {{vin.confirmations}}</p>
-              <p><b>scriptSig</b></p>
-              <div *ngIf="vin.scriptSig">
-                <div *ngFor="let item of vin.scriptSig.asm | split:' '" class="ellipsis">
+              <div *ngIf="vin.scriptSig" class="ellipsis">
+                <p><b>scriptSig</b></p>
+                <div *ngFor="let item of vin.scriptSig.asm | split:' '">
                   <p>{{item}}</p>
                 </div>
               </div>
             </div>
+          </div>
+
+          <div item-end>
+            {{ currency.getConversion(vin.value) }}
           </div>
         </ion-item>
       </ion-list>
