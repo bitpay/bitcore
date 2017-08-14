@@ -7,30 +7,13 @@ const logger      = require('../logger');
 
 function parse(entry, txs) {
   txs.forEach((tx) => {
-    //const txJSON = tx.toJSON();
 
     tx.outputs.forEach((output) => {
       const outputJSON = output.toJSON();
-
-      /*
-      return new OutputModel({
-        address: outputJSON.address,
-        script:  outputJSON.script,
-        value:   outputJSON.value,
-      });*/
     });
 
     tx.inputs.forEach((input) => {
       const inputJSON = input.toJSON();
-
-/*        return new InputModel({
-          prevout:  inputJSON.prevout,
-          script:   inputJSON.script,
-          witness:  inputJSON.witness,
-          sequence: inputJSON.sequence,
-          address:  inputJSON.address,
-        });
-      })*/
     });
   });
 }

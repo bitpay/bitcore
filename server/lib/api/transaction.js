@@ -146,9 +146,7 @@ module.exports = function transactionAPI(router) {
           if (err) {
             res.status(501).send();
             logger.log('err', err);
-          }
-
-          if (block[0]) {
+          } else if (block[0]) {
             const b = block[0];
             res.json({
               pagesTotal: 1,
