@@ -39,17 +39,22 @@ function getTransactions(params, options, cb) {
 
 module.exports = function transactionAPI(router) {
   router.get('/tx/:txid', (req, res) => {
-    getTransactions(
-      { hash: req.params.txid },
+    getBlock(
+      { 'txs.hash': req.params.txid },
       {  },
-      (err, tx) => {
+      MAX_BLOCKS,
+      (err, blocks) => {
         if (err) {
           res.status(501).send();
           logger.log('err', err);
         }
-        if (tx[0]) {
-          const t = tx[0];
 
+        if (blocks[0] && blocks[0].txs) {
+          let t = blocks[0].txs.filter(tx => tx.hash === req.params.txid);
+          t = t[0];
+          console.log(t);
+          console.log(t.inputs);
+          console.log(t.inputs);
           // Map bcoin model to insight-api
           res.json({
             txid: t.hash,
