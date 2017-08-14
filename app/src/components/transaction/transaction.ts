@@ -48,7 +48,6 @@ export class TransactionComponent {
   }
 
   public aggregateItems(items: Array<any>): Array<any> {
-    console.log('aggregateItems called');
     if (!items) return [];
 
     let l: number = items.length;
@@ -105,11 +104,8 @@ export class TransactionComponent {
       tmp[addr].count++;
     }
 
-    console.log('tmp is', tmp);
-
     for (let v in tmp) {
       let obj: any = tmp[v];
-      console.log('obj isb', obj);
       obj.value = obj.value || parseInt(obj.valueSat) / this.COIN;
       ret.push(obj);
     }
