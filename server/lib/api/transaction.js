@@ -62,6 +62,14 @@ module.exports = function transactionAPI(router) {
             } catch (e) {
               logger.log('error',
                 `${err}`);
+              res.status(501).send();
+              return;
+            }
+            if (!body || !body.hash) {
+              logger.log('error',
+                'No results found');
+              res.status(501).send();
+              return;
             }
             res.send({
               txid: body.hash,
