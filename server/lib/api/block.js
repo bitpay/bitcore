@@ -116,7 +116,6 @@ module.exports = function BlockAPI(router) {
           res.status(501).send();
           logger.log('err', err);
         }
-
         if (block[0]) {
           res.json({
             blockHash: block[0].hash,

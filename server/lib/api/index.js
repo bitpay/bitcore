@@ -10,10 +10,12 @@ app.use(cors);
 // Serve insight ui front end from root dir public folder
 app.use('/', express.static('./public'));
 app.use('/blocks', express.static('./public'));
+app.use('/block-index', express.static('./public'));
 app.use('/blocks-date/:date', express.static('./public'));
 app.use('/block/:blockhash', express.static('./public'));
 app.use('/tx/:txid', express.static('./public'));
 app.use('/address/:addr', express.static('./public'));
+app.use('/status', express.static('./public'));
 
 app.set('json spaces', config.api.json_spaces);
 
