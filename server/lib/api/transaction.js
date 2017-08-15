@@ -4,7 +4,7 @@ const logger = require('../logger');
 const request = require('request');
 const config = require('../../config');
 
-const MAX_TXS = 20;
+const MAX_TXS = 10;
 const MAX_BLOCKS = 1;
 
 // Shoe horned in. Not dry, also in blocks. Make db api later
@@ -100,6 +100,10 @@ module.exports = function transactionAPI(router) {
 
   // That callback hell
   router.get('/txs', (req, res) => {
+    const pageNum    = parseInt(req.query.pageNum)  || 0;
+    const rangeStart = pageNum * MAX_TXS;
+    const rangeEnd   = rangeStart + MAX_TXS;
+
     if (req.query.block) {
       getBlock(
         {},
@@ -111,6 +115,7 @@ module.exports = function transactionAPI(router) {
             logger.log('err', err);
           }
           if (block[0]) {
+
             const height = block[0].height;
             request(`http://${config.bcoin_http}:${config.bcoin['http-port']}/block/${req.query.block}`, (err, localRes, body) => {
               if (err) {
@@ -122,9 +127,18 @@ module.exports = function transactionAPI(router) {
               } catch (e) {
                 logger.log('error',
                   `${err}`);
+                res.status(501).send();
               }
+              if (!body.txs.length) {
+                logger.log('error',
+                  `${'No tx results'}`);
+                res.status(501).send();
+              }
+              const totalPages = Math.ceil(body.txs.length / MAX_TXS);
+              body.txs = body.txs.slice(rangeStart, rangeEnd);
+
               res.send({
-                pagesTotal: 1,
+                pagesTotal: totalPages,
                 txs: body.txs.map(tx => ({
                   txid: tx.hash,
                   fees: tx.fee / 1e8,

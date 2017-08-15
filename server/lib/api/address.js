@@ -47,25 +47,26 @@ module.exports = function AddressAPI(router) {
               logger.log('error',
                 `${err}`);
             }
+
             const totalReceived = body.reduce((sum, tx) => sum + tx.outputs.reduce((sum, output) => {
               if (output.address === req.params.addr) {
                 return sum + output.value;
               }
               return sum;
-            }, 0), 0);
+            }, 0), 0) || 0;
 
             const totalSpent = body.reduce((sum, tx) => sum + tx.inputs.reduce((sum, input) => {
               if (input.coin && input.coin.address === req.params.addr) {
                 return sum + input.coin.value;
               }
               return sum;
-            }, 0), 0);
+            }, 0), 0) || 0;
 
 
 
             res.json({
               addrStr: req.params.addr,
-              balance: totalReceived - totalSpent,
+              balance: (totalReceived - totalSpent) / 1e8,
               balanceSat: totalReceived - totalSpent,
               totalReceived: totalReceived / 1e8,
               totalReceivedSat: totalReceived,
