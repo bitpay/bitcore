@@ -60,7 +60,6 @@ module.exports = function BlockAPI(router) {
 
   router.get('/blocks', (req, res) => {
     const limit = parseInt(req.query.limit) || MAX_BLOCKS;
-
     getBlock(
       {},
       { height: 1,
@@ -75,6 +74,7 @@ module.exports = function BlockAPI(router) {
         if (err) {
           res.status(501).send();
           logger.log('err', err);
+          return;
         }
 
         res.json({

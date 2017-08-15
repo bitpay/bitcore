@@ -47,14 +47,14 @@ module.exports = function AddressAPI(router) {
               logger.log('error',
                 `${err}`);
             }
-            const totalSpent = body.reduce((sum, tx) => sum + tx.outputs.reduce((sum, output) => {
+            const totalReceived = body.reduce((sum, tx) => sum + tx.outputs.reduce((sum, output) => {
               if (output.address === req.params.addr) {
                 return sum + output.value;
               }
               return sum;
             }, 0), 0);
 
-            const totalReceived = body.reduce((sum, tx) => sum + tx.inputs.reduce((sum, input) => {
+            const totalSpent = body.reduce((sum, tx) => sum + tx.inputs.reduce((sum, input) => {
               if (input.coin && input.coin.address === req.params.addr) {
                 return sum + input.coin.value;
               }
