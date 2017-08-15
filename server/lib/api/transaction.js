@@ -52,6 +52,7 @@ module.exports = function transactionAPI(router) {
         }
         if (block[0]) {
           const height = block[0].height;
+
           request(`http://${config.bcoin_http}:${config.bcoin['http-port']}/tx/${req.params.txid}`, (err, localRes, body) => {
             if (err) {
               logger.log('error',
@@ -68,7 +69,7 @@ module.exports = function transactionAPI(router) {
             if (!body || !body.hash) {
               logger.log('error',
                 'No results found');
-              res.status(501).send();
+              res.status(404).send();
               return;
             }
             res.send({
@@ -115,7 +116,6 @@ module.exports = function transactionAPI(router) {
             logger.log('err', err);
           }
           if (block[0]) {
-
             const height = block[0].height;
             request(`http://${config.bcoin_http}:${config.bcoin['http-port']}/block/${req.query.block}`, (err, localRes, body) => {
               if (err) {
@@ -250,6 +250,21 @@ module.exports = function transactionAPI(router) {
   });
 
   router.post('/tx/send', (req, res) => {
-    res.send('tx send stub');
+    const rawtx = req.body.rawtx || '';
+    console.log(rawtx);
+    request.post({
+      url: `http://${config.bcoin_http}:${config.bcoin['http-port']}/broadcast`,
+      body: {"tx": rawtx },
+      json: true,
+    }, (err, localRes, body) => {
+      if (err) {
+        logger.log('error',
+          `${err}`);
+        res.status(400).send(err);
+        return;
+      }
+
+      res.json(true);
+    });
   });
 };

@@ -1,11 +1,16 @@
-const express = require('express');
-const config  = require('../../config');
+const express    = require('express');
+const config     = require('../../config');
+const bodyParser = require('body-parser');
 
 const app = express();
 const api = express.Router();
 const cors = require('./cors');
 
 app.use(cors);
+
+app.use(bodyParser.urlencoded({ extended: false }))
+
+app.use(bodyParser.json())
 
 // Serve insight ui front end from root dir public folder
 app.use('/', express.static('./public'));

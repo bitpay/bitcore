@@ -53,7 +53,7 @@ module.exports = function BlockAPI(router) {
             poolInfo: {},
           });
         } else {
-          res.send();
+          res.status(404).send('Not Found');
         }
       });
   });
@@ -107,8 +107,10 @@ module.exports = function BlockAPI(router) {
   });
 
   router.get('/block-index/:height', (req, res) => {
+    let blockHeight = parseInt(req.params.height) || 1;
+
     getBlock(
-      { height: req.params.height },
+      { height: blockHeight },
       { hash: 1 },
       MAX_BLOCKS,
       (err, block) => {
@@ -121,7 +123,7 @@ module.exports = function BlockAPI(router) {
             blockHash: block[0].hash,
           });
         } else {
-          res.send();
+          res.status(404).send('Not Found');
         }
       });
   });
