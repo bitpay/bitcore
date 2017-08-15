@@ -59,7 +59,7 @@ module.exports = function transactionAPI(router) {
         blocktime: body.ps,
         locktime: body.locktime,
         blockhash: body.block,
-        fees: body.fee,
+        fees: body.fee / 1e8,
         valueOut: body.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
         vin: body.inputs.map(input => ({
           addr: input.coin ? input.coin.address : '',
@@ -93,7 +93,7 @@ module.exports = function transactionAPI(router) {
           pagesTotal: 1,
           txs: body.txs.map(tx => ({
             txid: tx.hash,
-            fees: tx.fee,
+            fees: tx.fee / 1e8,
             valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
             vin: tx.inputs.map(input => ({
               addr: input.coin ? input.coin.address : '',
@@ -125,7 +125,7 @@ module.exports = function transactionAPI(router) {
           pagesTotal: 1,
           txs: body.map(tx => ({
             txid: tx.hash,
-            fees: tx.fee,
+            fees: tx.fee / 1e8,
             valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
             vin: tx.inputs.map(input => ({
               addr: input.coin ? input.coin.address : '',
