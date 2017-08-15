@@ -1,7 +1,7 @@
 const Block  = require('../../models/block.js');
 const logger = require('../logger');
 
-const MAX_BLOCKS = 200;
+const MAX_BLOCKS = 100;
 
 function getBlock(params, options, limit, cb) {
   const defaultOptions = { _id: 0 };
@@ -76,6 +76,7 @@ module.exports = function BlockAPI(router) {
           res.status(501).send();
           logger.log('err', err);
         }
+
         res.json({
           blocks: blocks.map(block => ({
             hash: block.hash,

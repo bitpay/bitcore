@@ -1,15 +1,17 @@
 const config = {
-  start_node: false,
+  start_node: true,
   logging: 'debug',
   bcoin: {
     network: 'main',
     db: 'leveldb',
     prefix: '.',
     checkpoints: true,
-    workers: true,
+    workers: false,
     logLevel: 'info',
     'max-inbound': 10,
     'max-outbound': 10,
+    'index-tx': true,
+    'index-address': true,
   },
   mongodb: {
     uri: 'mongodb://localhost/bitcore',

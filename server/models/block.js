@@ -26,6 +26,9 @@ const BlockSchema = new Schema({
   id: false,
 });
 
+BlockSchema.index({ hash: 1 });
+BlockSchema.index({ height: 1 });
+
 const Block = mongoose.model('Block', BlockSchema);
 
 module.exports = Block;
