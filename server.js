@@ -12,13 +12,13 @@ var config = require('./lib/config');
 var storageService = require('./lib/services/storage');
 var workerService = require('./lib/services/worker');
 var p2pService = require('./lib/services/p2p');
-var syncService = require('./lib/services/sync');
+var embeddedNodeService = require('./lib/services/embeddedNode');
 
 async.series([
   storageService.start.bind(storageService),
   workerService.start.bind(workerService),
   p2pService.start.bind(p2pService),
-  syncService.start.bind(syncService)
+  embeddedNodeService.start.bind(embeddedNodeService)
 ], function(){
   if(cluster.isWorker) {
     var router = require('./lib/routes');
