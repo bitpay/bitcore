@@ -35,7 +35,7 @@
     </ion-item>
     <ion-item>
       Mined by
-      <span item-end>
+      <span item-end *ngIf="block.poolInfo">
         <a href="{{ block.poolInfo.url }}">{{ block.poolInfo.poolName }}</a>
       </span>
     </ion-item>

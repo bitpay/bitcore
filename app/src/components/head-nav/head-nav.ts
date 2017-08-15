@@ -18,6 +18,7 @@ import { ActionSheetController } from 'ionic-angular';
 })
 export class HeadNavComponent {
 
+  public showSearch: boolean = false;
   public loading: boolean;
   @Input() public title: string;
   public q: string;
@@ -27,6 +28,7 @@ export class HeadNavComponent {
   }
 
   public search(): void {
+    this.showSearch = false;
     let apiPrefix: string = this.api.apiPrefix;
 
     this.http.get(apiPrefix + 'block/' + this.q).subscribe(
@@ -135,5 +137,9 @@ export class HeadNavComponent {
       ]
     });
     actionSheet.present();
+  }
+
+  public toggleSearch() {
+    this.showSearch = !this.showSearch;
   }
 }
