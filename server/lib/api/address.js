@@ -1,5 +1,7 @@
 const Block = require('../../models/block.js');
 const logger = require('../logger');
+const request = require('request');
+const config = require('../../config');
 
 const MAX_BLOCKS = 200;
 
@@ -23,19 +25,60 @@ function getBlock(params, options, limit, cb) {
 
 module.exports = function AddressAPI(router) {
   router.get('/addr/:addr', (req, res) => {
-    res.json({
-      addrStr:                 req.params.addr,
-      balance:                 0,
-      balanceSat:              0,
-      totalReceived:           0,
-      totalReceivedSat:        0,
-      totalSent:               0,
-      totalSentSat:            0,
-      unconfirmedBalance:      0,
-      unconfirmedBalanceSat:   0,
-      unconfirmedTxApperances: 0,
-      txApperances:            5,
-    });
+    getBlock(
+      {},
+      { height: 1 },
+      1,
+      (err, block) => {
+        if (err) {
+          res.status(501).send();
+          logger.log('err', err);
+        }
+        if (block[0]) {
+          const height = block[0].height;
+          request(`http://${config.bcoin_http}:${config.bcoin['http-port']}/tx/address/${req.params.addr}`, (err, localRes, body) => {
+            if (err) {
+              logger.log('error',
+                `${err}`);
+            }
+            try {
+              body = JSON.parse(body);
+            } catch (e) {
+              logger.log('error',
+                `${err}`);
+            }
+            const totalSpent = body.reduce((sum, tx) => sum + tx.outputs.reduce((sum, output) => {
+              if (output.address === req.params.addr) {
+                return sum + output.value;
+              }
+              return sum;
+            }, 0), 0);
+
+            const totalReceived = body.reduce((sum, tx) => sum + tx.inputs.reduce((sum, input) => {
+              if (input.coin && input.coin.address === req.params.addr) {
+                return sum + input.coin.value;
+              }
+              return sum;
+            }, 0), 0);
+
+
+
+            res.json({
+              addrStr: req.params.addr,
+              balance: totalReceived - totalSpent,
+              balanceSat: totalReceived - totalSpent,
+              totalReceived: totalReceived / 1e8,
+              totalReceivedSat: totalReceived,
+              totalSent: totalSpent / 1e8,
+              totalSentSat: totalSpent,
+              unconfirmedBalance: 0,
+              unconfirmedBalanceSat: 0,
+              unconfirmedTxApperances: 0,
+              txApperances: body.length,
+            });
+          });
+        }
+      });
   });
 
   router.get('/addr/:addr/utxo', (req, res) => {
