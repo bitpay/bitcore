@@ -71,7 +71,7 @@ module.exports = function transactionAPI(router) {
               locktime: body.locktime,
               blockhash: body.block,
               fees: body.fee / 1e8,
-              confirmations: height - body.height,
+              confirmations: height - body.height + 1,
               valueOut: body.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
               vin: body.inputs.map(input => ({
                 addr: input.coin ? input.coin.address : '',
@@ -120,7 +120,7 @@ module.exports = function transactionAPI(router) {
                 txs: body.txs.map(tx => ({
                   txid: tx.hash,
                   fees: tx.fee / 1e8,
-                  confirmations: height - body.height,
+                  confirmations: height - body.height + 1,
                   valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
                   vin: tx.inputs.map(input => ({
                     addr: input.coin ? input.coin.address : '',
@@ -166,7 +166,7 @@ module.exports = function transactionAPI(router) {
                 txs: body.map(tx => ({
                   txid: tx.hash,
                   fees: tx.fee / 1e8,
-                  confirmations: height - tx.height,
+                  confirmations: height - tx.height +  1,
                   valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
                   vin: tx.inputs.map(input => ({
                     addr: input.coin ? input.coin.address : '',
