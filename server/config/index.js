@@ -1,6 +1,7 @@
 const config = {
   start_node: true,
   logging: 'debug',
+  bcoin_http: 'localhost',
   bcoin: {
     network: 'main',
     db: 'leveldb',
@@ -12,6 +13,7 @@ const config = {
     'max-outbound': 10,
     'index-tx': true,
     'index-address': true,
+    'http-port': 8332,
   },
   mongodb: {
     uri: 'mongodb://localhost/bitcore',

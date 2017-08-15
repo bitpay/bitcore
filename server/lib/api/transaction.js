@@ -2,6 +2,7 @@ const Block  = require('../../models/block.js');
 const Transaction = require('../../models/transaction');
 const logger = require('../logger');
 const request = require('request');
+const config = require('../../config');
 
 const MAX_TXS = 20;
 const MAX_BLOCKS = 1;
@@ -40,7 +41,7 @@ function getTransactions(params, options, cb) {
 
 module.exports = function transactionAPI(router) {
   router.get('/tx/:txid', (req, res) => {
-    request(`http://localhost:8332/tx/${req.params.txid}`, (err, localRes, body) => {
+    request(`http://${config.bcoin_http}:${config.bcoin['http-port']}/tx/${req.params.txid}`, (err, localRes, body) => {
       if (err) {
         logger.log('error',
           `${err}`);
@@ -77,7 +78,7 @@ module.exports = function transactionAPI(router) {
 
   router.get('/txs', (req, res) => {
     if (req.query.block) {
-      request(`http://localhost:8332/block/${req.query.block}`, (err, localRes, body) => {
+      request(`http://${config.bcoin_http}:${config.bcoin['http-port']}/block/${req.query.block}`, (err, localRes, body) => {
         if (err) {
           logger.log('error',
             `${err}`);
@@ -109,7 +110,7 @@ module.exports = function transactionAPI(router) {
         });
       });
     } else if (req.query.address) {
-      request(`http://localhost:8332/tx/address/${req.query.address}`, (err, localRes, body) => {
+      request(`http://${config.bcoin_http}:${config.bcoin['http-port']}/tx/address/${req.query.address}`, (err, localRes, body) => {
         if (err) {
           logger.log('error',
             `${err}`);
@@ -120,7 +121,6 @@ module.exports = function transactionAPI(router) {
           logger.log('error',
             `${err}`);
         }
-          console.log(body);
         res.send({
           pagesTotal: 1,
           txs: body.map(tx => ({
