@@ -3,45 +3,51 @@
 </ion-header>
 
 <ion-content padding>
-  <h1>Address</h1>
-  <p class="ellipsis"><b>Address</b> {{ address.addrStr }}</p>
-  <p>{{ currency.getConversion(address.balance) }}</p>
+  <div *ngIf="loading">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
 
-  <h2>Summary</h2>
+  <div *ngIf="!loading">
+    <h1>Address</h1>
+    <p class="ellipsis"><b>Address</b> {{ address.addrStr }}</p>
+    <p>{{ currency.getConversion(address.balance) }}</p>
 
-  <ion-list class="summary">
-    <ion-item>
-      Total Received
-      <span item-end>
-        {{ currency.getConversion(address.totalReceived) }}
-      </span>
-    </ion-item>
-    <ion-item>
-      Total Sent
-      <span item-end>
-        {{ currency.getConversion(address.totalSent) }}
-      </span>
-    </ion-item>
-    <ion-item>
-      Final Balance
-      <span item-end>
-        {{ currency.getConversion(address.balance) }}
-      </span>
-    </ion-item>
-    <ion-item>
-      No. Transactions
-      <span item-end>
-        {{ address.txApperances }}
-      </span>
-    </ion-item>
-  </ion-list>
+    <h2>Summary</h2>
 
-  <p text-center>
-    <qr-code [value]="address.addrStr" [size]="160"></qr-code>
-    <p>
+    <ion-list class="summary">
+      <ion-item>
+        Total Received
+        <span item-end>
+          {{ currency.getConversion(address.totalReceived) }}
+        </span>
+      </ion-item>
+      <ion-item>
+        Total Sent
+        <span item-end>
+          {{ currency.getConversion(address.totalSent) }}
+        </span>
+      </ion-item>
+      <ion-item>
+        Final Balance
+        <span item-end>
+          {{ currency.getConversion(address.balance) }}
+        </span>
+      </ion-item>
+      <ion-item>
+        No. Transactions
+        <span item-end>
+          {{ address.txApperances }}
+        </span>
+      </ion-item>
+    </ion-list>
 
-  <h2>Transactions</h2>
+    <p text-center>
+      <qr-code [value]="address.addrStr" [size]="160"></qr-code>
+      <p>
 
-  <transaction-list [queryType]="'address'" [queryValue]="addrStr"></transaction-list>
+        <h2>Transactions</h2>
+
+        <transaction-list [queryType]="'address'" [queryValue]="addrStr"></transaction-list>
+  </div>
 
 </ion-content>

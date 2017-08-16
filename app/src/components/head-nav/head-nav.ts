@@ -139,7 +139,7 @@ export class HeadNavComponent {
     actionSheet.present();
   }
 
-  public toggleSearch() {
+  public toggleSearch(): void {
     this.showSearch = !this.showSearch;
   }
 }
