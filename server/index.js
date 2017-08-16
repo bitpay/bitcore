@@ -1,7 +1,7 @@
 const Bcoin = require('./lib/node');
 const config = require('./config');
 const logger = require('./lib/logger');
-const Api = require('./lib/api').server;
+const Api = require('./lib/api');
 const db = require('./lib/db');
 
 logger.log('debug',
