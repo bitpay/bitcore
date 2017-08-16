@@ -123,7 +123,7 @@ module.exports = function transactionAPI(router) {
                   },
                   value: output.value / 1e8,
                 })),
-                output: tx.outputs,
+                isCoinBase: tx.inputs[0].prevout.hash === '0000000000000000000000000000000000000000000000000000000000000000',
               })),
             });
           });
@@ -172,7 +172,7 @@ module.exports = function transactionAPI(router) {
                   },
                   value: output.value / 1e8,
                 })),
-                output: tx.outputs,
+                isCoinBase: tx.inputs[0].prevout.hash === '0000000000000000000000000000000000000000000000000000000000000000',
               })),
             });
           });
