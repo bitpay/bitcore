@@ -3,96 +3,102 @@
 </ion-header>
 
 <ion-content padding>
-  <h1>Block #{{ block.height }}</h1>
-  <p class="ellipsis"><b>BlockHash</b> {{ block.hash }}</p>
-
-  <h2>Summary</h2>
-
-  <ion-list *ngIf="!loading" class="summary">
-    <ion-item>
-      Number of Transactions
-      <span item-end>
-        {{ block.tx.length }}
-      </span>
-    </ion-item>
-    <ion-item>
-      Height
-      <span item-end>
-        {{ block.height }} <span [hidden]="!block.isMainChain">(Mainchain)</span>
-      </span>
-    </ion-item>
-    <ion-item>
-      Block Reward
-      <span item-end>
-        {{ currency.getConversion(block.reward) }}
-      </span>
-    </ion-item>
-    <ion-item>
-      Timestamp
-      <span item-end>
-        {{ block.time * 1000 | date:'medium' }}
-      </span>
-    </ion-item>
-    <ion-item>
-      Mined by
-      <span item-end>
-        <a href="{{ block.poolInfo.url }}">{{ block.poolInfo.poolName }}</a>
-      </span>
-    </ion-item>
-    <ion-item>
-      Merkle Root
-      <span item-end class="ellipsis">
-        {{ block.merkleroot }}
-      </span>
-    </ion-item>
-    <ion-item>
-      Previous Block
-      <span item-end>
-        <a (click)="goToPreviousBlock()">{{ block.height - 1 }}</a>
-      </span>
-    </ion-item>
-    <ion-item>
-      Difficulty 
-      <span item-end>
-        {{ block.difficulty }}
-      </span>
-    </ion-item>
-    <ion-item>
-      Bits
-      <span item-end>
-        {{ block.bits }}
-      </span>
-    </ion-item>
-    <ion-item>
-      Size (bytes)
-      <span item-end>
-        {{ block.size }}
-      </span>
-    </ion-item>
-    <ion-item>
-      Version
-      <span item-end>
-        {{ block.version }}
-      </span>
-    </ion-item>
-    <ion-item>
-      Nonce
-      <span item-end>
-        {{ block.nonce }}
-      </span>
-    </ion-item>
-    <ion-item>
-      Next Block
-      <span item-end>
-        <a (click)="goToNextBlock()">{{ block.height + 1 }}</a>
-      </span>
-    </ion-item>
-  </ion-list>
+  <div *ngIf="loading">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
 
   <div *ngIf="!loading">
-    <h2>Transactions</h2>
+    <h1>Block #{{ block.height }}</h1>
+    <p class="ellipsis"><b>BlockHash</b> {{ block.hash }}</p>
 
-    <transaction-list [queryType]="'block'" [queryValue]="block.hash"></transaction-list>
+    <h2>Summary</h2>
+
+    <ion-list *ngIf="!loading" class="summary">
+      <ion-item>
+        Number of Transactions
+        <span item-end>
+          {{ block.tx.length }}
+        </span>
+      </ion-item>
+      <ion-item>
+        Height
+        <span item-end>
+          {{ block.height }} <span [hidden]="!block.isMainChain">(Mainchain)</span>
+        </span>
+      </ion-item>
+      <ion-item>
+        Block Reward
+        <span item-end>
+          {{ currency.getConversion(block.reward) }}
+        </span>
+      </ion-item>
+      <ion-item>
+        Timestamp
+        <span item-end>
+          {{ block.time * 1000 | date:'medium' }}
+        </span>
+      </ion-item>
+      <ion-item>
+        Mined by
+        <span item-end *ngIf="block.poolInfo">
+          <a href="{{ block.poolInfo.url }}">{{ block.poolInfo.poolName }}</a>
+        </span>
+      </ion-item>
+      <ion-item>
+        Merkle Root
+        <span item-end class="ellipsis">
+          {{ block.merkleroot }}
+        </span>
+      </ion-item>
+      <ion-item>
+        Previous Block
+        <span item-end>
+          <a (click)="goToPreviousBlock()">{{ block.height - 1 }}</a>
+        </span>
+      </ion-item>
+      <ion-item>
+        Difficulty
+        <span item-end>
+          {{ block.difficulty }}
+        </span>
+      </ion-item>
+      <ion-item>
+        Bits
+        <span item-end>
+          {{ block.bits }}
+        </span>
+      </ion-item>
+      <ion-item>
+        Size (bytes)
+        <span item-end>
+          {{ block.size }}
+        </span>
+      </ion-item>
+      <ion-item>
+        Version
+        <span item-end>
+          {{ block.version }}
+        </span>
+      </ion-item>
+      <ion-item>
+        Nonce
+        <span item-end>
+          {{ block.nonce }}
+        </span>
+      </ion-item>
+      <ion-item>
+        Next Block
+        <span item-end>
+          <a (click)="goToNextBlock()">{{ block.height + 1 }}</a>
+        </span>
+      </ion-item>
+    </ion-list>
+
+    <div *ngIf="!loading">
+      <h2>Transactions</h2>
+
+      <transaction-list [queryType]="'block'" [queryValue]="block.hash"></transaction-list>
+    </div>
   </div>
 
 </ion-content>
