@@ -7,6 +7,7 @@ const db = require('../db');
 
 const API_URL = `http://${config.bcoin_http}:${config.bcoin['http-port']}/`;
 
+// Retrieve Bcoin status
 function getStatus(cb) {
   request(`${API_URL}`, (err, localRes, status) => {
     if (err) {
@@ -26,6 +27,7 @@ function getStatus(cb) {
 }
 // UI assigns Multiple Responsibilities depending on params
 module.exports = function statusAPI(router) {
+  // Get last block hash or node status
   router.get('/status', (req, res) => {
     if (req.query.q === 'getLastBlockHash') {
       db.blocks.getBlock(
@@ -73,7 +75,7 @@ module.exports = function statusAPI(router) {
       });
     }
   });
-
+  // Get Bcoin sync status
   router.get('/sync', (req, res) => {
     getStatus((err, status) => {
       if (err) {
@@ -87,16 +89,16 @@ module.exports = function statusAPI(router) {
         return res.status(404).send();
       }
       res.json({
-        status: status.chain.progress === 100 ? 'synced' : 'syncing',
+        status:           status.chain.progress === 100 ? 'synced': 'syncing',
         blockChainHeight: status.chain.height,
-        syncPercentage: Math.round(status.chain.progress * 100),
-        height: status.chain.height,
-        error: null,
-        type: 'bcoin node',
+        syncPercentage:   Math.round(status.chain.progress * 100),
+        height:           status.chain.height,
+        error:            null,
+        type:             'bcoin node',
       });
     });
   });
-
+  // Copied from previous source
   router.get('/peer', (req, res) => {
     res.json({
       connected: true,

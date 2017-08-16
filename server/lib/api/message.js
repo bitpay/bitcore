@@ -1,5 +1,6 @@
 const Message = require('bitcore-message');
 
+// Copied from previous source
 function verifyMessage(req, res) {
   const address   = req.body.address || req.query.address;
   const signature = req.body.signature || req.query.signature;

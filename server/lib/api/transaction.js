@@ -7,7 +7,9 @@ const API_URL = `http://${config.bcoin_http}:${config.bcoin['http-port']}`;
 const MAX_TXS = config.api.max_txs;
 
 module.exports = function transactionAPI(router) {
+  // Txs by txid
   router.get('/tx/:txid', (req, res) => {
+    // Get max block height for calculating confirmations
     db.blocks.getBlock(
       {},
       { height: 1 },
@@ -19,57 +21,57 @@ module.exports = function transactionAPI(router) {
         }
 
         const height = block.height;
-
-        request(`${API_URL}/tx/${req.params.txid}`, (error, localRes, body) => {
+        // Bcoin transaction data
+        request(`${API_URL}/tx/${req.params.txid}`, (error, localRes, tx) => {
           if (error) {
             logger.log('error',
               `${error}`);
             return res.status(404).send();
           }
           try {
-            body = JSON.parse(body);
+            tx = JSON.parse(tx);
           } catch (e) {
             logger.log('error',
               `${e}`);
             return res.status(404).send();
           }
-          if (!body || !body.hash) {
+          if (!tx || !tx.hash) {
             logger.log('error',
               'No results found');
             return res.status(404).send();
           }
           return res.send({
-            txid: body.hash,
-            version: body.version,
-            time: body.ps,
-            blocktime: body.ps,
-            locktime: body.locktime,
-            blockhash: body.block,
-            fees: body.fee / 1e8,
-            confirmations: height - body.height + 1,
-            valueOut: body.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
-            vin: body.inputs.map(input => ({
+            txid: tx.hash,
+            version: tx.version,
+            time: tx.ps,
+            blocktime: tx.ps,
+            locktime: tx.locktime,
+            blockhash: tx.block,
+            fees: tx.fee / 1e8,
+            confirmations: height - tx.height + 1,
+            valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
+            vin: tx.inputs.map(input => ({
               addr: input.coin ? input.coin.address : '',
               value: input.coin ? input.coin.value / 1e8 : 0,
             })),
-            vout: body.outputs.map(output => ({
+            vout: tx.outputs.map(output => ({
               scriptPubKey: {
                 addresses: [output.address],
               },
               value: output.value / 1e8,
             })),
-            isCoinbase: body.inputs[0].prevout.hash === '0000000000000000000000000000000000000000000000000000000000000000',
+            isCoinbase: tx.inputs[0].prevout.hash === '0000000000000000000000000000000000000000000000000000000000000000',
           });
         });
       });
   });
 
-  // That callback hell
+  // /txs is overloaded. Next ver separate concerns
   router.get('/txs', (req, res) => {
     const pageNum    = parseInt(req.query.pageNum)  || 0;
     const rangeStart = pageNum * MAX_TXS;
     const rangeEnd   = rangeStart + MAX_TXS;
-
+    // get txs for blockhash
     if (req.query.block) {
       db.blocks.getBlock(
         {},
@@ -81,6 +83,7 @@ module.exports = function transactionAPI(router) {
             return res.status(404).send();
           }
           const height = block.height;
+          // Get Bcoin data
           request(`${API_URL}/block/${req.query.block}`, (error, localRes, block) => {
             if (error) {
               logger.log('error',
@@ -124,7 +127,8 @@ module.exports = function transactionAPI(router) {
           });
         });
     } else if (req.query.address) {
-      db.blocks.getBlock(
+      // Get txs by address
+      db.blocks.getBestHeight(
         {},
         { height: 1 },
         1,
@@ -173,10 +177,11 @@ module.exports = function transactionAPI(router) {
           });
         });
     } else {
+      // Get last n txs
       db.txs.getTransactions(
         {},
         {},
-        50,
+        MAX_TXS,
         (err, txs) => {
           if (err) {
             logger.log('err',
@@ -221,7 +226,7 @@ module.exports = function transactionAPI(router) {
   router.post('/tx/send', (req, res) => {
     const rawtx = req.body.rawtx || '';
     request.post({
-      url: `http://${config.bcoin_http}:${config.bcoin['http-port']}/broadcast`,
+      url: `${API_URL}/broadcast`,
       body: { tx: rawtx },
       json: true,
     }, (err, localRes, body) => {

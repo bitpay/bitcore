@@ -54,7 +54,19 @@ function getBlock(params, options, limit, cb) {
   });
 }
 
+function getBestHeight(cb) {
+  getBlock({}, {}, 1, (err, block) => {
+    if (err) {
+      logger.log('error',
+        `getBlock: ${err.err}`);
+      return cb(err);
+    }
+    return cb(null, block.height);
+  });
+}
+
 module.exports = {
   getBlock,
   getBlocks,
+  getBestHeight,
 };
