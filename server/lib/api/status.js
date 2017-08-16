@@ -53,11 +53,11 @@ module.exports = function statusAPI(router) {
           return res.status(404).send(err);
         }
         if (!status) {
-          logger.log('err'
-            `/status getStatus: no Status`);
+          logger.log('err',
+            '/status getStatus: no Status');
           return  res.status(404).send();
         }
-        res.json({
+        return res.json({
           info: {
             version:         status.version,
             protocolversion: netCfg.PROTOCOL_VERSION,
@@ -88,8 +88,8 @@ module.exports = function statusAPI(router) {
           '/sync: no status');
         return res.status(404).send();
       }
-      res.json({
-        status:           status.chain.progress === 100 ? 'synced': 'syncing',
+      return res.json({
+        status:           status.chain.progress === 100 ? 'synced' : 'syncing',
         blockChainHeight: status.chain.height,
         syncPercentage:   Math.round(status.chain.progress * 100),
         height:           status.chain.height,

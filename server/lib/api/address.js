@@ -9,14 +9,15 @@ module.exports = function AddressAPI(router) {
     const addr = req.params.addr || '';
     // Get Bcoin data
     return request(`${API_URL}/tx/address/${addr}`,
-      (error, bcoinRes, txs) => {
+      (error, bcoinRes, bcoinTxs) => {
         if (error) {
           logger.log('error',
             `${error}`);
           return res.status(404).send({});
         }
+        let txs = {};
         try {
-          txs = JSON.parse(txs);
+          txs = JSON.parse(bcoinTxs);
         } catch (e) {
           logger.log('error',
             `${e}`);
@@ -24,7 +25,7 @@ module.exports = function AddressAPI(router) {
         }
 
         // Sum the matching outputs for every tx
-        const totalReceived = txs.reduce((sum, tx) => sum + tx.outputs.reduce((sum, output) => {
+        const totalReceived = txs.reduce((total, tx) => total + tx.outputs.reduce((sum, output) => {
           if (output.address === req.params.addr) {
             return sum + output.value;
           }
@@ -32,7 +33,7 @@ module.exports = function AddressAPI(router) {
         }, 0), 0) || 0;
 
         // Sum the matching inputs for every tx
-        const totalSpent = txs.reduce((sum, tx) => sum + tx.inputs.reduce((sum, input) => {
+        const totalSpent = txs.reduce((total, tx) => total + tx.inputs.reduce((sum, input) => {
           if (input.coin && input.coin.address === req.params.addr) {
             return sum + input.coin.value;
           }

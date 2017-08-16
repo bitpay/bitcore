@@ -47,7 +47,7 @@ module.exports = function transactionAPI(router) {
             locktime: tx.locktime,
             blockhash: tx.block,
             fees: tx.fee / 1e8,
-            confirmations: height - tx.height + 1,
+            confirmations: (height - tx.height) + 1,
             valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
             vin: tx.inputs.map(input => ({
               addr: input.coin ? input.coin.address : '',
@@ -70,12 +70,11 @@ module.exports = function transactionAPI(router) {
   // query by address
   // last n txs
   router.get('/txs', (req, res) => {
-    const pageNum    = parseInt(req.query.pageNum)  || 0;
+    const pageNum    = parseInt(req.query.pageNum, 10)  || 0;
     const rangeStart = pageNum * MAX_TXS;
     const rangeEnd   = rangeStart + MAX_TXS;
     // get txs for blockhash, start with best height to calc confirmations
     if (req.query.block) {
-
       db.blocks.getBestHeight(
         (err, blockHeight) => {
           if (err) {
@@ -111,7 +110,7 @@ module.exports = function transactionAPI(router) {
               txs: block.txs.map(tx => ({
                 txid: tx.hash,
                 fees: tx.fee / 1e8,
-                confirmations: height - block.height + 1,
+                confirmations: (height - block.height) + 1,
                 valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
                 vin: tx.inputs.map(input => ({
                   addr: input.coin ? input.coin.address : '',
@@ -160,7 +159,7 @@ module.exports = function transactionAPI(router) {
               txs: txs.map(tx => ({
                 txid: tx.hash,
                 fees: tx.fee / 1e8,
-                confirmations: height - tx.height +  1,
+                confirmations: (height - tx.height) +  1,
                 valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
                 vin: tx.inputs.map(input => ({
                   addr: input.coin ? input.coin.address : '',

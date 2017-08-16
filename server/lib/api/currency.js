@@ -10,11 +10,15 @@ const refreshInterval = config.api.currency_refresh >= 1 ?
                         60 * 1000;
 let lastRate          = 0;
 
-getRate();
+init();
 
-setInterval(() => {
+function init() {
   getRate();
-}, refreshInterval);
+
+  setInterval(() => {
+    getRate();
+  }, refreshInterval);
+}
 
 // Make the request to the remote API
 function getRate() {
@@ -38,7 +42,7 @@ function getRate() {
 module.exports = function currencyAPI(app) {
   // Return the ticker price
   app.get('/currency', (req, res) => {
-    const data = {}
+    const data = {};
     data[config.api.ticker_prop] = lastRate;
 
     res.json({

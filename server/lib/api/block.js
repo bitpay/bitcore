@@ -37,7 +37,7 @@ module.exports = function BlockAPI(router) {
   });
 
   router.get('/blocks', (req, res) => {
-    const limit = parseInt(req.query.limit) || 100;
+    const limit = parseInt(req.query.limit, 10) || 100;
     // Pass Mongo params, fields and limit to db api.
     db.blocks.getBlocks(
       {},
@@ -89,7 +89,7 @@ module.exports = function BlockAPI(router) {
   });
 
   router.get('/block-index/:height', (req, res) => {
-    const blockHeight = parseInt(req.params.height) || 1;
+    const blockHeight = parseInt(req.params.height, 10) || 1;
     // Pass Mongo params, fields and limit to db api.
     db.blocks.getBlock(
       { height: blockHeight },

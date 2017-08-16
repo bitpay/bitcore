@@ -50,10 +50,10 @@ function emitTx(transaction) {
   const txJSON = transaction.toJSON();
   io.sockets.emit('tx', {
     txid: txJSON.hash,
-    valueOut: transaction.outputs.reduce((sum, tx) => {
-      tx = tx.toJSON();
+    valueOut: transaction.outputs.reduce((sum, output) => {
+      output = output.toJSON();
 
-      const valB = (tx.value || tx.valueOut.value || 0) / 1e8;
+      const valB = (output.value || output.valueOut.value || 0) / 1e8;
 
       return sum + valB;
     }, 0),
