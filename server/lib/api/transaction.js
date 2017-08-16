@@ -47,7 +47,7 @@ module.exports = function transactionAPI(router) {
       1,
       (err, block) => {
         if (err) {
-          res.status(501).send();
+          res.status(404).send();
           logger.log('err', err);
         }
         if (block[0]) {
@@ -63,7 +63,7 @@ module.exports = function transactionAPI(router) {
             } catch (e) {
               logger.log('error',
                 `${err}`);
-              res.status(501).send();
+              res.status(404).send();
               return;
             }
             if (!body || !body.hash) {
@@ -112,7 +112,7 @@ module.exports = function transactionAPI(router) {
         1,
         (err, block) => {
           if (err) {
-            res.status(501).send();
+            res.status(404).send();
             logger.log('err', err);
           }
           if (block[0]) {
@@ -127,12 +127,12 @@ module.exports = function transactionAPI(router) {
               } catch (e) {
                 logger.log('error',
                   `${err}`);
-                res.status(501).send();
+                res.status(404).send();
               }
               if (!body.txs.length) {
                 logger.log('error',
                   `${'No tx results'}`);
-                res.status(501).send();
+                res.status(404).send();
               }
               const totalPages = Math.ceil(body.txs.length / MAX_TXS);
               body.txs = body.txs.slice(rangeStart, rangeEnd);
@@ -167,7 +167,7 @@ module.exports = function transactionAPI(router) {
         1,
         (err, block) => {
           if (err) {
-            res.status(501).send();
+            res.status(404).send();
             logger.log('err', err);
           }
           if (block[0]) {
@@ -212,7 +212,7 @@ module.exports = function transactionAPI(router) {
         {},
         (err, txs) => {
           if (err) {
-            res.status(501).send();
+            res.status(404).send();
           }
           res.json({
             pagesTotal: 1,

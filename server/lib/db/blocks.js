@@ -3,7 +3,7 @@ const logger = require('../logger');
 const config = require('../../config');
 
 // move to config
-const MAX_BLOCKS = 200;
+const MAX_BLOCKS = 50;
 const blockTemplate = new Block();
 
 function getBlocks(params, options, limit, cb) {
@@ -12,11 +12,15 @@ function getBlocks(params, options, limit, cb) {
   Object.assign(defaultOptions, options);
 
   if (!Number.isInteger(limit)) {
-    limit = MAX_BLOCKS;
+    limit = 1;
   }
 
   if (limit > MAX_BLOCKS) {
     limit = MAX_BLOCKS;
+  }
+
+  if (limit < 1) {
+    limit = 1;
   }
 
   Block.find(
@@ -28,10 +32,10 @@ function getBlocks(params, options, limit, cb) {
           `getBlocks: ${err}`);
         return cb(err);
       }
-      if (blocks.length > 0) {
-        return cb(null, blocks);
+      if (!blocks.length > 0) {
+        return cb({err: 'Block not found'});
       }
-      return cb(null, [blockTemplate]);
+      return cb(null, blocks);
     })
     .sort({ height: -1 })
     .limit(limit);

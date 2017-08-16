@@ -1,87 +1,99 @@
 const request = require('request');
-const Block = require('../../models/block');
 const pkg = require('../../package.json');
 const config = require('../../config');
 const netCfg = require('bcoin/lib/net/common');
 const logger = require('../logger');
+const db = require('../db');
 
-// Here comes the ugly. Moo who haha
+const API_URL = `http://${config.bcoin_http}:${config.bcoin['http-port']}/`;
+
 function getStatus(cb) {
-  request(`http://${config.bcoin_http}:${config.bcoin['http-port']}/`, (err, localRes, body) => {
+  request(`${API_URL}`, (err, localRes, status) => {
     if (err) {
       logger.log('error',
-        `${err}`);
+        `getStatus ${err}`);
+      return cb(err);
     }
     try {
-      body = JSON.parse(body);
+      status = JSON.parse(status);
     } catch (e) {
       logger.log('error',
-        `${err}`);
-      cb(e);
+        `getStatus JSON.parse: ${e}`);
+      return cb(e);
     }
-    cb(null, body);
+    return cb(null, status);
   });
 }
-
+// UI assigns Multiple Responsibilities depending on params
 module.exports = function statusAPI(router) {
   router.get('/status', (req, res) => {
     if (req.query.q === 'getLastBlockHash') {
-      Block.findOne({}, { 'hash': 1 }, { sort: { 'height': -1 } }, (err, block) => {
-        if (err) {
-          logger.log('error',
-            `${err}`);
-          res.status(501).send(err);
-        } else {
-          res.send({
+      db.blocks.getBlock(
+        {},
+        { hash: 1 },
+        1,
+        (err, block) => {
+          if (err) {
+            logger.log('error',
+              `${err}`);
+            return res.status(404).send(err);
+          }
+          return res.send({
             syncTipHash: block.hash,
             lastblockhash: block.hash,
           });
-        }
-      });
+        });
     } else {
       getStatus((err, status) => {
         if (err) {
-          res.status(501).send(err);
-        } else if (status) {
-          res.json({
-            info: {
-              version: status.version,
-              protocolversion: netCfg.PROTOCOL_VERSION,
-              blocks: status.chain.height,
-              timeoffset: status.time.offset,
-              connections: status.pool.outbound,
-              proxy: '',
-              difficulty: 0,
-              testnet: status.network !== 'main',
-              relayfee: 0,
-              errors: '',
-              network: status.network,
-            },
-          });
-        } else {
-          res.send();
+          logger.log('err'
+            `/status getStatus: ${err}`);
+          return res.status(404).send(err);
         }
+        if (!status) {
+          logger.log('err'
+            `/status getStatus: no Status`);
+          return  res.status(404).send();
+        }
+        res.json({
+          info: {
+            version:         status.version,
+            protocolversion: netCfg.PROTOCOL_VERSION,
+            blocks:          status.chain.height,
+            timeoffset:      status.time.offset,
+            connections:     status.pool.outbound,
+            proxy:           '',
+            difficulty:      0,
+            testnet:         status.network !== 'main',
+            relayfee:        0,
+            errors:          '',
+            network:         status.network,
+          },
+        });
       });
     }
-
   });
 
   router.get('/sync', (req, res) => {
     getStatus((err, status) => {
       if (err) {
-        res.status(501).send(err);
-      } else if (status) {
-        res.json({
-          status:           'syncing',
-          blockChainHeight: status.chain.height,
-          syncPercentage:   Math.round(status.chain.progress * 100),
-          height:           status.chain.height,
-          error:            null,
-          type:             'bcoin node',
-        });
-      } else {
-        res.send();
+        logger.log('err',
+          `/sync: ${err}`);
+        return res.status(404).send(err);
       }
+      if (!status) {
+        logger.log('err',
+          '/sync: no status');
+        return res.status(404).send();
+      }
+      res.json({
+        status: status.chain.progress === 100 ? 'synced' : 'syncing',
+        blockChainHeight: status.chain.height,
+        syncPercentage: Math.round(status.chain.progress * 100),
+        height: status.chain.height,
+        error: null,
+        type: 'bcoin node',
+      });
     });
   });
 
