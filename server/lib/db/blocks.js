@@ -3,8 +3,7 @@ const logger = require('../logger');
 const config = require('../../config');
 
 // move to config
-const MAX_BLOCKS = 50;
-const blockTemplate = new Block();
+const MAX_BLOCKS = 72; // ~ 12 hours
 
 function getBlocks(params, options, limit, cb) {
   const defaultOptions = { _id: 0 };
@@ -33,7 +32,7 @@ function getBlocks(params, options, limit, cb) {
         return cb(err);
       }
       if (!blocks.length > 0) {
-        return cb({err: 'Block not found'});
+        return cb({ err: 'Block not found' });
       }
       return cb(null, blocks);
     })
@@ -49,7 +48,7 @@ function getBlock(params, options, limit, cb) {
       return cb(err);
     }
     if (!blocks.length > 0) {
-      return cb(null, blockTemplate);
+      return cb({ err: 'Block not found' });
     }
     return cb(null, blocks[0]);
   });

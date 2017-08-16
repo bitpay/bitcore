@@ -1,24 +1,10 @@
-const Transaction = require('../../models/transaction');
 const logger = require('../logger');
 const request = require('request');
 const config = require('../../config');
 const db = require('../db');
 
-const MAX_TXS = 10;
 const API_URL = `http://${config.bcoin_http}:${config.bcoin['http-port']}`;
-
-function getTransactions(params, options, cb) {
-  const defaultOptions = { _id: 0 };
-
-  Object.assign(defaultOptions, options);
-
-  Transaction.find(
-    params,
-    defaultOptions,
-    cb)
-    .sort({ height: 1 })
-    .limit(MAX_TXS);
-}
+const MAX_TXS = 50;
 
 module.exports = function transactionAPI(router) {
   router.get('/tx/:txid', (req, res) => {
@@ -38,22 +24,21 @@ module.exports = function transactionAPI(router) {
           if (error) {
             logger.log('error',
               `${error}`);
+            return res.status(404).send();
           }
           try {
             body = JSON.parse(body);
           } catch (e) {
             logger.log('error',
               `${e}`);
-            res.status(404).send();
-            return;
+            return res.status(404).send();
           }
           if (!body || !body.hash) {
             logger.log('error',
               'No results found');
-            res.status(404).send();
-            return;
+            return res.status(404).send();
           }
-          res.send({
+          return res.send({
             txid: body.hash,
             version: body.version,
             time: body.ps,
@@ -188,14 +173,17 @@ module.exports = function transactionAPI(router) {
           });
         });
     } else {
-      getTransactions(
+      db.txs.getTransactions(
         {},
         {},
+        50,
         (err, txs) => {
           if (err) {
+            logger.log('err',
+              `getTransactions: ${err}`);
             res.status(404).send();
           }
-          res.json({
+          return res.json({
             pagesTotal: 1,
             txs: txs.map(tx => ({
               txid: tx.hash,
