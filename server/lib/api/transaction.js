@@ -24,6 +24,7 @@ module.exports = function transactionAPI(router) {
               `${error}`);
             return res.status(404).send();
           }
+          // Catch JSON errors
           try {
             tx = JSON.parse(tx);
           } catch (e) {
@@ -36,6 +37,8 @@ module.exports = function transactionAPI(router) {
               'No results found');
             return res.status(404).send();
           }
+
+          // Return UI JSON
           return res.send({
             txid: tx.hash,
             version: tx.version,
@@ -56,13 +59,16 @@ module.exports = function transactionAPI(router) {
               },
               value: output.value / 1e8,
             })),
-            isCoinbase: tx.inputs[0].prevout.hash === '0000000000000000000000000000000000000000000000000000000000000000',
+            isCoinBase: tx.inputs[0].prevout.hash === '0000000000000000000000000000000000000000000000000000000000000000',
           });
         });
       });
   });
 
   // /txs is overloaded. Next ver separate concerns
+  // query by block
+  // query by address
+  // last n txs
   router.get('/txs', (req, res) => {
     const pageNum    = parseInt(req.query.pageNum)  || 0;
     const rangeStart = pageNum * MAX_TXS;
@@ -83,6 +89,7 @@ module.exports = function transactionAPI(router) {
               logger.log('error',
                 `${error}`);
             }
+            // Catch JSON errors
             try {
               block = JSON.parse(block);
             } catch (e) {
@@ -95,6 +102,7 @@ module.exports = function transactionAPI(router) {
                 `${'No tx results'}`);
               res.status(404).send();
             }
+            //  Setup UI JSON
             const totalPages = Math.ceil(block.txs.length / MAX_TXS);
             block.txs = block.txs.slice(rangeStart, rangeEnd);
 
@@ -132,12 +140,13 @@ module.exports = function transactionAPI(router) {
           const height = blockHeight;
           const addr = req.query.address || '';
 
-          return request(`${API_URL}/tx/address/${req.query.address}`, (error, localRes, txs) => {
+          return request(`${API_URL}/tx/address/${addr}`, (error, localRes, txs) => {
             if (error) {
               logger.log('error',
                 `${error}`);
               return res.status(404).send();
             }
+            // Catch JSON errors
             try {
               txs = JSON.parse(txs);
             } catch (e) {
@@ -145,6 +154,7 @@ module.exports = function transactionAPI(router) {
                 `${e}`);
               return res.status(404).send();
             }
+            // Setup UI JSON
             return res.send({
               pagesTotal: 1,
               txs: txs.map(tx => ({
