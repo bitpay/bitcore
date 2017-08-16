@@ -11,5 +11,5 @@ mongoose.connection.on('error', (err) => {
 module.exports = {
   connect:    mongoose.connect,
   connection: mongoose.connection,
-  Blocks,
+  blocks:     Blocks,
 };
