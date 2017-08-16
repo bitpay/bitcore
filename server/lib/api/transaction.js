@@ -251,7 +251,6 @@ module.exports = function transactionAPI(router) {
 
   router.post('/tx/send', (req, res) => {
     const rawtx = req.body.rawtx || '';
-    console.log(rawtx);
     request.post({
       url: `http://${config.bcoin_http}:${config.bcoin['http-port']}/broadcast`,
       body: {"tx": rawtx },
