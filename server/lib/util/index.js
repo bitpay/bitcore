@@ -21,8 +21,19 @@ function calcBlockReward(height) {
   return reward;
 }
 
+function is64HexString(value) {
+  return /^[0-9a-f]{64}$/i.test(value);
+}
+
+function isBitcoinAddress(value) {
+  return /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(value);
+}
+
 module.exports = {
   revHex,
   calcBlockReward,
+  isBlockHash: is64HexString,
+  isTxid: is64HexString,
+  isBitcoinAddress,
 };
 
