@@ -68,7 +68,7 @@ module.exports = function transactionAPI(router) {
     const pageNum    = parseInt(req.query.pageNum)  || 0;
     const rangeStart = pageNum * MAX_TXS;
     const rangeEnd   = rangeStart + MAX_TXS;
-    // get txs for blockhash
+    // get txs for blockhash, start with best height to calc confirmations
     if (req.query.block) {
       db.blocks.getBestHeight(
         (err, block) => {
@@ -121,7 +121,7 @@ module.exports = function transactionAPI(router) {
           });
         });
     } else if (req.query.address) {
-      // Get txs by address
+      // Get txs by address, start with best height to calc confirmations
       db.blocks.getBestHeight(
         (err, block) => {
           if (err) {
