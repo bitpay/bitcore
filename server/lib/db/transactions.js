@@ -26,6 +26,7 @@ function getTransactions(params, options, limit, cb) {
     params,
     defaultOptions,
     (err, txs) => {
+      console.log(txs)
       if (err) {
         logger.log('error',
           `getTransactions: ${err}`);

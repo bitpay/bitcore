@@ -21,6 +21,7 @@ function getBlocks(params, options, limit, cb) {
   if (limit < 1) {
     limit = 1;
   }
+
   // Query mongo
   Block.find(
     params,
@@ -59,7 +60,7 @@ function getBestHeight(cb) {
     if (err) {
       logger.log('error',
         `getBlock: ${err.err}`);
-      return cb(err);
+      return cb(err, null);
     }
     return cb(null, block.height);
   });

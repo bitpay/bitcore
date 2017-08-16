@@ -3,12 +3,14 @@ const request = require('request');
 const config  = require('../../config');
 
 const API_URL = `http://${config.bcoin_http}:${config.bcoin['http-port']}`;
+const TTL = config.api.request_ttl;
 
 module.exports = function AddressAPI(router) {
   router.get('/addr/:addr', (req, res) => {
     const addr = req.params.addr || '';
     // Get Bcoin data
     return request(`${API_URL}/tx/address/${addr}`,
+      { timeout: TTL },
       (error, bcoinRes, bcoinTxs) => {
         if (error) {
           logger.log('error',
