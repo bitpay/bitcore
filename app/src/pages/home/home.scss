@@ -1,3 +1,43 @@
 page-home {
+  #powered .powered-text {
+    border-top: 1px solid #ddd;
+    margin: 30px auto 0;
+    text-align: center;
+    width: 90%;
+  }
+  #powered .powered-text small {
+    background-color: #f4f4f4;
+    padding: 4px;
+    position: relative;
+    top: -12px;
+  }
+
+  #powered a {
+    background-repeat: no-repeat;
+    background-position: center center;
+    display: inline-block;
+    float: left;
+    height: 45px;
+  }
+  #powered a.bitcore {
+    background-image: url('../../assets/img/bitcore.svg');
+    background-size: 80px;
+    width: 30%;
+  }
+  #powered a.nodejs {
+    background-image: url('../../assets/img/nodejs.png');
+    background-size: 80px;
+    width: 30%;
+  }
+  #powered a.angularjs {
+    background-image: url('../../assets/img/angularjs.png');
+    background-size: 50px;
+    width: 20%;
+  }
+  #powered a.leveldb {
+    background-image: url('../../assets/img/leveldb.png');
+    background-size: 50px;
+    width: 20%;
+  }
 
 }
