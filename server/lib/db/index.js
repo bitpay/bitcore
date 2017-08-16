@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const logger   = require('../logger');
+const Blocks   = require('./blocks');
 
 mongoose.connection.on('error', (err) => {
   logger.log('error',
@@ -7,4 +8,8 @@ mongoose.connection.on('error', (err) => {
     ${err}`);
 });
 
-module.exports = mongoose;
+module.exports = {
+  connect:    mongoose.connect,
+  connection: mongoose.connection,
+  Blocks,
+};

@@ -1,7 +1,10 @@
-const Block = require('../../models/block.js');
-const logger = require('../logger');
+const Block   = require('../../models/block.js');
+const logger  = require('../logger');
 const request = require('request');
-const config = require('../../config');
+const config  = require('../../config');
+const db      = require('../db');
+
+console.log(db);
 
 const MAX_BLOCKS = 200;
 
