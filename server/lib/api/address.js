@@ -7,18 +7,20 @@ const API_URL = `http://${config.bcoin_http}:${config.bcoin['http-port']}`;
 module.exports = function AddressAPI(router) {
   router.get('/addr/:addr', (req, res) => {
     const addr = req.params.addr || '';
-
+    // Get Bcoin data
     request(`${API_URL}/tx/address/${addr}`,
       (error, bcoinRes, txs) => {
         if (error) {
           logger.log('error',
             `${error}`);
+          return res.status(404).send({});
         }
         try {
           txs = JSON.parse(txs);
         } catch (e) {
           logger.log('error',
             `${e}`);
+          return res.status(404).send({});
         }
 
         // Sum the matching outputs for every tx
@@ -38,7 +40,7 @@ module.exports = function AddressAPI(router) {
         }, 0), 0) || 0;
 
         // Match Insight API
-        res.json({
+        return res.json({
           addrStr: req.params.addr,
           balance: (totalReceived - totalSpent) / 1e8,
           balanceSat: totalReceived - totalSpent,

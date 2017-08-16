@@ -45,13 +45,13 @@ function getBlock(params, options, limit, cb) {
   getBlocks(params, options, limit, (err, blocks) => {
     if (err) {
       logger.log('error',
-        `getBlock: ${err}`);
+        `getBlock: ${err.err}`);
       return cb(err);
     }
-    if (blocks.length > 0) {
-      return cb(null, blocks[0]);
+    if (!blocks.length > 0) {
+      return cb(null, blockTemplate);
     }
-    return cb(null, blockTemplate);
+    return cb(null, blocks[0]);
   });
 }
 

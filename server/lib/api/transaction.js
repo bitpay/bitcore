@@ -1,30 +1,11 @@
-const Block  = require('../../models/block.js');
 const Transaction = require('../../models/transaction');
 const logger = require('../logger');
 const request = require('request');
 const config = require('../../config');
+const db = require('../db');
 
 const MAX_TXS = 10;
-const MAX_BLOCKS = 1;
-
-// Shoe horned in. Not dry, also in blocks. Make db api later
-function getBlock(params, options, limit, cb) {
-  const defaultOptions = { _id: 0 };
-
-  if (!Number.isInteger(limit)) {
-    limit = MAX_BLOCKS;
-  }
-
-  Object.assign(defaultOptions, options);
-
-  Block.find(
-    params,
-    defaultOptions,
-    cb)
-    .sort({ height: -1 })
-    .limit(limit);
-}
-
+const API_URL = `http://${config.bcoin_http}:${config.bcoin['http-port']}`;
 
 function getTransactions(params, options, cb) {
   const defaultOptions = { _id: 0 };
@@ -41,61 +22,60 @@ function getTransactions(params, options, cb) {
 
 module.exports = function transactionAPI(router) {
   router.get('/tx/:txid', (req, res) => {
-    getBlock(
+    db.blocks.getBlock(
       {},
       { height: 1 },
       1,
       (err, block) => {
         if (err) {
-          res.status(404).send();
           logger.log('err', err);
+          return res.status(404).send();
         }
-        if (block[0]) {
-          const height = block[0].height;
 
-          request(`http://${config.bcoin_http}:${config.bcoin['http-port']}/tx/${req.params.txid}`, (err, localRes, body) => {
-            if (err) {
-              logger.log('error',
-                `${err}`);
-            }
-            try {
-              body = JSON.parse(body);
-            } catch (e) {
-              logger.log('error',
-                `${err}`);
-              res.status(404).send();
-              return;
-            }
-            if (!body || !body.hash) {
-              logger.log('error',
-                'No results found');
-              res.status(404).send();
-              return;
-            }
-            res.send({
-              txid: body.hash,
-              version: body.version,
-              time: body.ps,
-              blocktime: body.ps,
-              locktime: body.locktime,
-              blockhash: body.block,
-              fees: body.fee / 1e8,
-              confirmations: height - body.height + 1,
-              valueOut: body.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
-              vin: body.inputs.map(input => ({
-                addr: input.coin ? input.coin.address : '',
-                value: input.coin ? input.coin.value / 1e8 : 0,
-              })),
-              vout: body.outputs.map(output => ({
-                scriptPubKey: {
-                  addresses: [output.address],
-                },
-                value: output.value / 1e8,
-              })),
-              isCoinbase: body.inputs[0].prevout.hash === '0000000000000000000000000000000000000000000000000000000000000000',
-            });
+        const height = block.height;
+
+        request(`${API_URL}/tx/${req.params.txid}`, (error, localRes, body) => {
+          if (error) {
+            logger.log('error',
+              `${error}`);
+          }
+          try {
+            body = JSON.parse(body);
+          } catch (e) {
+            logger.log('error',
+              `${e}`);
+            res.status(404).send();
+            return;
+          }
+          if (!body || !body.hash) {
+            logger.log('error',
+              'No results found');
+            res.status(404).send();
+            return;
+          }
+          res.send({
+            txid: body.hash,
+            version: body.version,
+            time: body.ps,
+            blocktime: body.ps,
+            locktime: body.locktime,
+            blockhash: body.block,
+            fees: body.fee / 1e8,
+            confirmations: height - body.height + 1,
+            valueOut: body.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
+            vin: body.inputs.map(input => ({
+              addr: input.coin ? input.coin.address : '',
+              value: input.coin ? input.coin.value / 1e8 : 0,
+            })),
+            vout: body.outputs.map(output => ({
+              scriptPubKey: {
+                addresses: [output.address],
+              },
+              value: output.value / 1e8,
+            })),
+            isCoinbase: body.inputs[0].prevout.hash === '0000000000000000000000000000000000000000000000000000000000000000',
           });
-        }
+        });
       });
   });
 
@@ -106,105 +86,106 @@ module.exports = function transactionAPI(router) {
     const rangeEnd   = rangeStart + MAX_TXS;
 
     if (req.query.block) {
-      getBlock(
+      db.blocks.getBlock(
         {},
         { height: 1 },
         1,
         (err, block) => {
           if (err) {
-            res.status(404).send();
             logger.log('err', err);
+            return res.status(404).send();
           }
-          if (block[0]) {
-            const height = block[0].height;
-            request(`http://${config.bcoin_http}:${config.bcoin['http-port']}/block/${req.query.block}`, (err, localRes, body) => {
-              if (err) {
-                logger.log('error',
-                  `${err}`);
-              }
-              try {
-                body = JSON.parse(body);
-              } catch (e) {
-                logger.log('error',
-                  `${err}`);
-                res.status(404).send();
-              }
-              if (!body.txs.length) {
-                logger.log('error',
-                  `${'No tx results'}`);
-                res.status(404).send();
-              }
-              const totalPages = Math.ceil(body.txs.length / MAX_TXS);
-              body.txs = body.txs.slice(rangeStart, rangeEnd);
+          const height = block.height;
+          request(`${API_URL}/block/${req.query.block}`, (error, localRes, block) => {
+            if (error) {
+              logger.log('error',
+                `${error}`);
+            }
+            try {
+              block = JSON.parse(block);
+            } catch (e) {
+              logger.log('error',
+                `${e}`);
+              return res.status(404).send();
+            }
+            if (!block.txs.length) {
+              logger.log('error',
+                `${'No tx results'}`);
+              res.status(404).send();
+            }
+            const totalPages = Math.ceil(block.txs.length / MAX_TXS);
+            block.txs = block.txs.slice(rangeStart, rangeEnd);
 
-              res.send({
-                pagesTotal: totalPages,
-                txs: body.txs.map(tx => ({
-                  txid: tx.hash,
-                  fees: tx.fee / 1e8,
-                  confirmations: height - body.height + 1,
-                  valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
-                  vin: tx.inputs.map(input => ({
-                    addr: input.coin ? input.coin.address : '',
-                    value: input.coin ? input.coin.value / 1e8 : 0,
-                  })),
-                  vout: tx.outputs.map(output => ({
-                    scriptPubKey: {
-                      addresses: [output.address],
-                    },
-                    value: output.value / 1e8,
-                  })),
-                  output: tx.outputs,
+            return res.send({
+              pagesTotal: totalPages,
+              txs: block.txs.map(tx => ({
+                txid: tx.hash,
+                fees: tx.fee / 1e8,
+                confirmations: height - block.height + 1,
+                valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
+                vin: tx.inputs.map(input => ({
+                  addr: input.coin ? input.coin.address : '',
+                  value: input.coin ? input.coin.value / 1e8 : 0,
                 })),
-              });
+                vout: tx.outputs.map(output => ({
+                  scriptPubKey: {
+                    addresses: [output.address],
+                  },
+                  value: output.value / 1e8,
+                })),
+                output: tx.outputs,
+              })),
             });
-          }
+          });
         });
     } else if (req.query.address) {
-      getBlock(
+      db.blocks.getBlock(
         {},
         { height: 1 },
         1,
         (err, block) => {
           if (err) {
-            res.status(404).send();
             logger.log('err', err);
+            return res.status(404).send();
           }
-          if (block[0]) {
-            const height = block[0].height;
-            request(`http://${config.bcoin_http}:${config.bcoin['http-port']}/tx/address/${req.query.address}`, (err, localRes, body) => {
-              if (err) {
-                logger.log('error',
-                  `${err}`);
-              }
-              try {
-                body = JSON.parse(body);
-              } catch (e) {
-                logger.log('error',
-                  `${err}`);
-              }
-              res.send({
-                pagesTotal: 1,
-                txs: body.map(tx => ({
-                  txid: tx.hash,
-                  fees: tx.fee / 1e8,
-                  confirmations: height - tx.height +  1,
-                  valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
-                  vin: tx.inputs.map(input => ({
-                    addr: input.coin ? input.coin.address : '',
-                    value: input.coin ? input.coin.value / 1e8 : 0,
-                  })),
-                  vout: tx.outputs.map(output => ({
-                    scriptPubKey: {
-                      addresses: [output.address],
-                    },
-                    value: output.value / 1e8,
-                  })),
-                  output: tx.outputs,
+
+          const height = block.height;
+          const addr = req.query.address || '';
+
+          request(`${API_URL}/tx/address/${req.query.address}`, (error, localRes, txs) => {
+            if (error) {
+              logger.log('error',
+                `${error}`);
+              return res.status(404).send();
+            }
+            try {
+              txs = JSON.parse(txs);
+            } catch (e) {
+              logger.log('error',
+                `${e}`);
+              return res.status(404).send();
+            }
+            return res.send({
+              pagesTotal: 1,
+              txs: txs.map(tx => ({
+                txid: tx.hash,
+                fees: tx.fee / 1e8,
+                confirmations: height - tx.height +  1,
+                valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
+                vin: tx.inputs.map(input => ({
+                  addr: input.coin ? input.coin.address : '',
+                  value: input.coin ? input.coin.value / 1e8 : 0,
                 })),
-              });
+                vout: tx.outputs.map(output => ({
+                  scriptPubKey: {
+                    addresses: [output.address],
+                  },
+                  value: output.value / 1e8,
+                })),
+                output: tx.outputs,
+              })),
             });
-          }
+          });
         });
     } else {
       getTransactions(
@@ -253,7 +234,7 @@ module.exports = function transactionAPI(router) {
     const rawtx = req.body.rawtx || '';
     request.post({
       url: `http://${config.bcoin_http}:${config.bcoin['http-port']}/broadcast`,
-      body: {"tx": rawtx },
+      body: { tx: rawtx },
       json: true,
     }, (err, localRes, body) => {
       if (err) {

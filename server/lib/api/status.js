@@ -46,7 +46,7 @@ module.exports = function statusAPI(router) {
     } else {
       getStatus((err, status) => {
         if (err) {
-          logger.log('err'
+          logger.log('err',
             `/status getStatus: ${err}`);
           return res.status(404).send(err);
         }
