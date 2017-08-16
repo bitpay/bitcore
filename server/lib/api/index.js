@@ -7,9 +7,7 @@ const api = express.Router();
 const cors = require('./cors');
 
 app.use(cors);
-
-app.use(bodyParser.urlencoded({ extended: false }))
-
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // Serve insight ui front end from root dir public folder
@@ -47,6 +45,7 @@ app.use((req, res) => {
   });
 });
 
+// Socket server
 const server  = require('http').Server(app);
 const io = require('socket.io')(server);
 

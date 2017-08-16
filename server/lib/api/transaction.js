@@ -10,10 +10,7 @@ module.exports = function transactionAPI(router) {
   // Txs by txid
   router.get('/tx/:txid', (req, res) => {
     // Get max block height for calculating confirmations
-    db.blocks.getBlock(
-      {},
-      { height: 1 },
-      1,
+    db.blocks.getBestHeight(
       (err, block) => {
         if (err) {
           logger.log('err', err);
@@ -22,7 +19,7 @@ module.exports = function transactionAPI(router) {
 
         const height = block.height;
         // Bcoin transaction data
-        request(`${API_URL}/tx/${req.params.txid}`, (error, localRes, tx) => {
+        return request(`${API_URL}/tx/${req.params.txid}`, (error, localRes, tx) => {
           if (error) {
             logger.log('error',
               `${error}`);
@@ -73,10 +70,7 @@ module.exports = function transactionAPI(router) {
     const rangeEnd   = rangeStart + MAX_TXS;
     // get txs for blockhash
     if (req.query.block) {
-      db.blocks.getBlock(
-        {},
-        { height: 1 },
-        1,
+      db.blocks.getBestHeight(
         (err, block) => {
           if (err) {
             logger.log('err', err);
@@ -84,7 +78,7 @@ module.exports = function transactionAPI(router) {
           }
           const height = block.height;
           // Get Bcoin data
-          request(`${API_URL}/block/${req.query.block}`, (error, localRes, block) => {
+          return request(`${API_URL}/block/${req.query.block}`, (error, localRes, block) => {
             if (error) {
               logger.log('error',
                 `${error}`);
@@ -129,9 +123,6 @@ module.exports = function transactionAPI(router) {
     } else if (req.query.address) {
       // Get txs by address
       db.blocks.getBestHeight(
-        {},
-        { height: 1 },
-        1,
         (err, block) => {
           if (err) {
             logger.log('err', err);
@@ -141,7 +132,7 @@ module.exports = function transactionAPI(router) {
           const height = block.height;
           const addr = req.query.address || '';
 
-          request(`${API_URL}/tx/address/${req.query.address}`, (error, localRes, txs) => {
+          return request(`${API_URL}/tx/address/${req.query.address}`, (error, localRes, txs) => {
             if (error) {
               logger.log('error',
                 `${error}`);

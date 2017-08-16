@@ -8,7 +8,7 @@ module.exports = function AddressAPI(router) {
   router.get('/addr/:addr', (req, res) => {
     const addr = req.params.addr || '';
     // Get Bcoin data
-    request(`${API_URL}/tx/address/${addr}`,
+    return request(`${API_URL}/tx/address/${addr}`,
       (error, bcoinRes, txs) => {
         if (error) {
           logger.log('error',
@@ -41,17 +41,17 @@ module.exports = function AddressAPI(router) {
 
         // Match Insight API
         return res.json({
-          addrStr: req.params.addr,
-          balance: (totalReceived - totalSpent) / 1e8,
-          balanceSat: totalReceived - totalSpent,
-          totalReceived: totalReceived / 1e8,
-          totalReceivedSat: totalReceived,
-          totalSent: totalSpent / 1e8,
-          totalSentSat: totalSpent,
-          unconfirmedBalance: 0,
-          unconfirmedBalanceSat: 0,
+          addrStr:                 req.params.addr,
+          balance:                 (totalReceived - totalSpent) / 1e8,
+          balanceSat:              totalReceived - totalSpent,
+          totalReceived:           totalReceived / 1e8,
+          totalReceivedSat:        totalReceived,
+          totalSent:               totalSpent / 1e8,
+          totalSentSat:            totalSpent,
+          unconfirmedBalance:      0,
+          unconfirmedBalanceSat:   0,
           unconfirmedTxApperances: 0,
-          txApperances: txs.length,
+          txApperances:            txs.length,
         });
       });
   });

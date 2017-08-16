@@ -16,6 +16,7 @@ setInterval(() => {
   getRate();
 }, refreshInterval);
 
+// Make the request to the remote API
 function getRate() {
   request(config.api.ticker_url, (err, res, body) => {
     if (err) {

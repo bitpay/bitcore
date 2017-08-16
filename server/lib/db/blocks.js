@@ -53,7 +53,7 @@ function getBlock(params, options, limit, cb) {
     return cb(null, blocks[0]);
   });
 }
-
+// Highest known height
 function getBestHeight(cb) {
   getBlock({}, {}, 1, (err, block) => {
     if (err) {
