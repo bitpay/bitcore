@@ -11,13 +11,12 @@ module.exports = function transactionAPI(router) {
   router.get('/tx/:txid', (req, res) => {
     // Get max block height for calculating confirmations
     db.blocks.getBestHeight(
-      (err, block) => {
+      (err, blockHeight) => {
         if (err) {
           logger.log('err', err);
           return res.status(404).send();
         }
-
-        const height = block.height;
+        const height = blockHeight;
         // Bcoin transaction data
         return request(`${API_URL}/tx/${req.params.txid}`, (error, localRes, tx) => {
           if (error) {
@@ -70,13 +69,14 @@ module.exports = function transactionAPI(router) {
     const rangeEnd   = rangeStart + MAX_TXS;
     // get txs for blockhash, start with best height to calc confirmations
     if (req.query.block) {
+
       db.blocks.getBestHeight(
-        (err, block) => {
+        (err, blockHeight) => {
           if (err) {
             logger.log('err', err);
             return res.status(404).send();
           }
-          const height = block.height;
+          const height = blockHeight;
           // Get Bcoin data
           return request(`${API_URL}/block/${req.query.block}`, (error, localRes, block) => {
             if (error) {
@@ -123,13 +123,13 @@ module.exports = function transactionAPI(router) {
     } else if (req.query.address) {
       // Get txs by address, start with best height to calc confirmations
       db.blocks.getBestHeight(
-        (err, block) => {
+        (err, blockHeight) => {
           if (err) {
             logger.log('err', err);
             return res.status(404).send();
           }
 
-          const height = block.height;
+          const height = blockHeight;
           const addr = req.query.address || '';
 
           return request(`${API_URL}/tx/address/${req.query.address}`, (error, localRes, txs) => {
