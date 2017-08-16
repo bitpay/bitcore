@@ -26,6 +26,9 @@ const config = {
     json_spaces: 2,
     currency_refresh: 60,
     ticker_url: 'https://www.bitstamp.net/api/ticker/',
+    ticker_prop: 'bitstamp',
+    max_blocks: 72,
+    max_txs: 10,
   },
 };
 

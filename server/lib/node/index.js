@@ -6,6 +6,8 @@ const addrParser  = require('../parser').Address;
 const config      = require('../../config');
 const io          = require('../api').io;
 
+// Reverse how sockets are working
+
 const node = new FullNode(config.bcoin);
 
 // Hacky move this to config

@@ -2,14 +2,14 @@ const Transactions = require('../../models/transaction.js');
 const logger       = require('../logger');
 const config       = require('../../config');
 
-// move to config
-const MAX_TXS = 50;
+const MAX_TXS = config.api.max_txs;
 
 function getTransactions(params, options, limit, cb) {
+  // Do not return mongo ids
   const defaultOptions = { _id: 0 };
-
+  // Copy over mongo options
   Object.assign(defaultOptions, options);
-
+  // Simple sanitizing
   if (!Number.isInteger(limit)) {
     limit = 1;
   }
@@ -21,7 +21,7 @@ function getTransactions(params, options, limit, cb) {
   if (limit < 1) {
     limit = 1;
   }
-
+  // Query mongo
   Transactions.find(
     params,
     defaultOptions,
@@ -44,7 +44,7 @@ function getTransaction(params, options, limit, cb) {
   getTransactions(params, options, limit, (err, tx) => {
     if (err) {
       logger.log('error',
-        `getBlock: ${err.err}`);
+        `getTransaction: ${err.err}`);
       return cb(err);
     }
     if (!tx.length > 0) {

@@ -3,6 +3,7 @@ const db = require('../db');
 
 module.exports = function BlockAPI(router) {
   router.get('/block/:blockHash', (req, res) => {
+    // Pass Mongo params, fields and limit to db api.
     db.blocks.getBlock(
       { hash: req.params.blockHash },
       { rawBlock: 0 },
@@ -12,7 +13,7 @@ module.exports = function BlockAPI(router) {
           logger.log('err', err);
           return res.status(404).send();
         }
-
+        // Format the request for insight ui
         return res.json({
           hash:              block.hash,
           size:              block.size,
@@ -37,7 +38,7 @@ module.exports = function BlockAPI(router) {
 
   router.get('/blocks', (req, res) => {
     const limit = parseInt(req.query.limit) || 100;
-
+    // Pass Mongo params, fields and limit to db api.
     db.blocks.getBlocks(
       {},
       { height: 1,
@@ -54,7 +55,7 @@ module.exports = function BlockAPI(router) {
             `/blocks: ${err}`);
           return res.status(404).send();
         }
-
+        // Format the request for insight ui
         return res.json({
           blocks: blocks.map(block => ({
             hash:     block.hash,
@@ -72,7 +73,7 @@ module.exports = function BlockAPI(router) {
 
   router.get('/rawblock/:blockHash', (req, res) => {
     const blockHash = req.params.blockHash || '';
-
+    // Pass Mongo params, fields and limit to db api.
     db.blocks.getBlock(
       { hash: blockHash },
       { rawBlock: 1 },
@@ -89,7 +90,7 @@ module.exports = function BlockAPI(router) {
 
   router.get('/block-index/:height', (req, res) => {
     const blockHeight = parseInt(req.params.height) || 1;
-
+    // Pass Mongo params, fields and limit to db api.
     db.blocks.getBlock(
       { height: blockHeight },
       { hash: 1 },

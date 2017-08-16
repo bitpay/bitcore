@@ -4,7 +4,7 @@ const config = require('../../config');
 const db = require('../db');
 
 const API_URL = `http://${config.bcoin_http}:${config.bcoin['http-port']}`;
-const MAX_TXS = 50;
+const MAX_TXS = config.api.max_txs;
 
 module.exports = function transactionAPI(router) {
   router.get('/tx/:txid', (req, res) => {

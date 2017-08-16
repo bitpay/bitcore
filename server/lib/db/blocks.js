@@ -2,14 +2,14 @@ const Block = require('../../models/block.js');
 const logger = require('../logger');
 const config = require('../../config');
 
-// move to config
-const MAX_BLOCKS = 72; // ~ 12 hours
+const MAX_BLOCKS = config.api.max_blocks; // ~ 12 hours
 
 function getBlocks(params, options, limit, cb) {
+  // Do not return mongo ids
   const defaultOptions = { _id: 0 };
-
+  // Copy over mongo options
   Object.assign(defaultOptions, options);
-
+  // Simple sanitizing
   if (!Number.isInteger(limit)) {
     limit = 1;
   }
@@ -21,7 +21,7 @@ function getBlocks(params, options, limit, cb) {
   if (limit < 1) {
     limit = 1;
   }
-
+  // Query mongo
   Block.find(
     params,
     defaultOptions,
@@ -39,7 +39,7 @@ function getBlocks(params, options, limit, cb) {
     .sort({ height: -1 })
     .limit(limit);
 }
-
+// Retrieve a single block. For convenience mostly
 function getBlock(params, options, limit, cb) {
   getBlocks(params, options, limit, (err, blocks) => {
     if (err) {
