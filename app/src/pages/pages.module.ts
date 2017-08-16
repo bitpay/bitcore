@@ -3,6 +3,7 @@ import { IonicModule }      from 'ionic-angular';
 import { ComponentsModule } from '../components';
 import { HeadNavComponentModule } from '../components/head-nav/head-nav.module';
 import {
+  HomePage,
   BlocksPage,
   BroadcastTxPage,
   NodeStatusPage,
@@ -11,6 +12,7 @@ import {
 
 @NgModule({
   declarations: [
+    HomePage,
     BlocksPage,
     BroadcastTxPage,
     NodeStatusPage,
