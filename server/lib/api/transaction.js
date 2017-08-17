@@ -2,6 +2,7 @@ const logger = require('../logger');
 const request = require('request');
 const config = require('../../config');
 const db = require('../db');
+const util = require('../util');
 
 const API_URL = `http://${config.bcoin_http}:${config.bcoin['http-port']}`;
 const MAX_TXS = config.api.max_txs;
@@ -10,6 +11,12 @@ const TTL     = config.api.request_ttl;
 module.exports = function transactionAPI(router) {
   // Txs by txid
   router.get('/tx/:txid', (req, res) => {
+    if (!util.isTxid(req.params.txid)) {
+      return res.status(400).send({
+        error: 'Invalid transaction id',
+      });
+    }
+
     // Get max block height for calculating confirmations
     const height = db.blocks.bestHeight();
     // Bcoin transaction data
@@ -75,6 +82,11 @@ module.exports = function transactionAPI(router) {
     const rangeEnd   = rangeStart + MAX_TXS;
     // get txs for blockhash, start with best height to calc confirmations
     if (req.query.block) {
+      if (!util.isBlockHash(req.query.block)) {
+        return res.status(400).send({
+          error: 'Invalid block hash',
+        });
+      }      
       const height = db.blocks.bestHeight();
       // Get Bcoin data
       return request(`${API_URL}/block/${req.query.block}`,
@@ -129,6 +141,12 @@ module.exports = function transactionAPI(router) {
           });
         });
     } else if (req.query.address) {
+      if (!util.isBitcoinAddress(req.query.address)) {
+        return res.status(400).send({
+          error: 'Invalid bitcoin address',
+        });
+      }
+
       // Get txs by address, start with best height to calc confirmations
       const height = db.blocks.bestHeight();
       const addr = req.query.address || '';
