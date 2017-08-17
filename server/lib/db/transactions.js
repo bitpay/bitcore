@@ -2,6 +2,9 @@ const Transactions = require('../../models/transaction.js');
 const logger       = require('../logger');
 const config       = require('../../config');
 
+// For now, blocks handles these calls.
+// These will be replaced with more advanced mongo
+
 const MAX_TXS = config.api.max_txs;
 
 function getTransactions(params, options, limit, cb) {
@@ -26,7 +29,6 @@ function getTransactions(params, options, limit, cb) {
     params,
     defaultOptions,
     (err, txs) => {
-      console.log(txs)
       if (err) {
         logger.log('error',
           `getTransactions: ${err}`);
