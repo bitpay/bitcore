@@ -2,9 +2,6 @@ const Transactions = require('../../models/transaction.js');
 const logger       = require('../logger');
 const config       = require('../../config');
 
-// For now, blocks handles these calls.
-// These will be replaced with more advanced mongo
-
 const MAX_TXS = config.api.max_txs;
 
 function getTransactions(params, options, limit, cb) {
@@ -57,7 +54,25 @@ function getTransaction(params, options, limit, cb) {
   });
 }
 
+
+function getTxById(txid, cb) {
+  getTransaction(
+    { hash: txid },
+    {},
+    1,
+    (err, transaction) => {
+      if (err) {
+        logger.log('err',
+          `/rawblock/:blockHash: ${err}`);
+        return cb(err);
+      }
+      console.log(transaction);
+      return cb(null, transaction);
+    });
+}
+
 module.exports = {
   getTransaction,
   getTransactions,
+  getTxById,
 };

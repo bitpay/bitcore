@@ -15,12 +15,13 @@ module.exports = function transactionAPI(router) {
     // Bcoin transaction data
     const txid = req.params.txid || '';
 
-    db.blocks.getTxById(txid, (err, transaction) => {
+    db.txs.getTxById(txid, (err, transaction) => {
       if (err) {
         logger.log('err',
           `getTxById: ${err}`);
-        return err;
+        return res.status(400).send();
       }
+
       const tx = transaction;
       return res.send({
         txid: tx.hash,

@@ -81,25 +81,8 @@ function bestHeight(height) {
   return bestBlockHeight;
 }
 
-function getTxById(txid, cb) {
-  getBlock(
-    { 'txs.hash': txid },
-    {},
-    1,
-    (err, block) => {
-      if (err) {
-        logger.log('err',
-          `/rawblock/:blockHash: ${err}`);
-        return cb(err);
-      }
-      const transaction = block.txs.filter(tx => tx.hash === txid).reduce(a => a[0]);
-      return cb(null, transaction);
-    });
-}
-
 module.exports = {
   getBlock,
   getBlocks,
   bestHeight,
-  getTxById,
 };
