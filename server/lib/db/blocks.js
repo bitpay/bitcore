@@ -6,6 +6,8 @@ const MAX_BLOCKS = config.api.max_blocks; // ~ 12 hours
 
 let bestBlockHeight = 0;
 
+// This naive querying will be replaced by more advanced mongo
+
 function getBlocks(params, options, limit, cb) {
   // Do not return mongo ids
   const defaultOptions = { _id: 0 };
@@ -56,7 +58,7 @@ function getBlock(params, options, limit, cb) {
     return cb(null, blocks[0]);
   });
 }
-// Highest known height in mongo
+// Highest known height in mongo - Not Used
 function getBestHeight() {
   getBlock({}, {}, 1, (err, block) => {
     if (err) {
@@ -79,8 +81,25 @@ function bestHeight(height) {
   return bestBlockHeight;
 }
 
+function getTxById(txid, cb) {
+  getBlock(
+    { 'txs.hash': txid },
+    {},
+    1,
+    (err, block) => {
+      if (err) {
+        logger.log('err',
+          `/rawblock/:blockHash: ${err}`);
+        return cb(err);
+      }
+      const transaction = block.txs.filter(tx => tx.hash === txid).reduce(a => a[0]);
+      return cb(null, transaction);
+    });
+}
+
 module.exports = {
   getBlock,
   getBlocks,
   bestHeight,
+  getTxById,
 };

@@ -13,65 +13,50 @@ module.exports = function transactionAPI(router) {
     // Get max block height for calculating confirmations
     const height = db.blocks.bestHeight();
     // Bcoin transaction data
-    return request(`${API_URL}/tx/${req.params.txid}`,
-      { timeout: TTL },
-      (error, localRes, tx) => {
-        if (error) {
-          logger.log('error',
-            `${error}`);
-          return res.status(404).send();
-        }
-        // Catch JSON errors
-        try {
-          tx = JSON.parse(tx);
-        } catch (e) {
-          logger.log('error',
-            `${e}`);
-          return res.status(404).send();
-        }
-        if (!tx || !tx.hash) {
-          logger.log('error',
-            'No results found');
-          return res.status(404).send();
-        }
+    const txid = req.params.txid || '';
 
-        // Return UI JSON
-        return res.send({
-          txid: tx.hash,
-          version: tx.version,
-          time: tx.ps,
-          blocktime: tx.ps,
-          locktime: tx.locktime,
-          blockhash: tx.block,
-          fees: tx.fee / 1e8,
-          confirmations: (height - tx.height) + 1,
-          valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
-          vin: tx.inputs.map(input => ({
-            addr: input.coin ? input.coin.address : '',
-            value: input.coin ? input.coin.value / 1e8 : 0,
-          })),
-          vout: tx.outputs.map(output => ({
-            scriptPubKey: {
-              addresses: [output.address],
-            },
-            value: output.value / 1e8,
-          })),
-          isCoinBase: tx.inputs[0].prevout.hash === '0000000000000000000000000000000000000000000000000000000000000000',
-        });
+    db.blocks.getTxById(txid, (err, transaction) => {
+      if (err) {
+        logger.log('err',
+          `getTxById: ${err}`);
+        return err;
+      }
+      const tx = transaction;
+      return res.send({
+        txid: tx.hash,
+        version: tx.version,
+        time: tx.ps,
+        blocktime: tx.ps,
+        locktime: tx.locktime,
+        blockhash: tx.block,
+        fees: tx.fee / 1e8,
+        confirmations: (height - tx.height) + 1,
+        valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
+        vin: tx.inputs.map(input => ({
+          addr: input.coin ? input.coin.address : '',
+          value: input.coin ? input.coin.value / 1e8 : 0,
+        })),
+        vout: tx.outputs.map(output => ({
+          scriptPubKey: {
+            addresses: [output.address],
+          },
+          value: output.value / 1e8,
+        })),
+        isCoinBase: tx.inputs[0].prevout.hash === '0000000000000000000000000000000000000000000000000000000000000000',
       });
+    });
   });
 
   // /txs is overloaded. Next ver separate concerns
   // query by block
   // query by address
-  // last n txs
+  // last n txs - haha jk YOU 404
   router.get('/txs', (req, res) => {
     const pageNum    = parseInt(req.query.pageNum, 10)  || 0;
     const rangeStart = pageNum * MAX_TXS;
     const rangeEnd   = rangeStart + MAX_TXS;
     // get txs for blockhash, start with best height to calc confirmations
     if (req.query.block) {
-
       const height = db.blocks.bestHeight();
       // Get Bcoin data
       return request(`${API_URL}/block/${req.query.block}`,

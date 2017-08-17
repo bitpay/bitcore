@@ -23,11 +23,13 @@ function parse(entry, block) {
     nonce:      blockJSON.nonce,
     txs:        block.txs.map((tx) => {
       const txJSON = tx.toJSON();
+      const txRAW  = tx.toRaw();
       return {
         hash:        txJSON.hash,
         witnessHash: txJSON.witnessHash,
         fee:         txJSON.fee,
         rate:        txJSON.rate,
+        size:        txRAW.length,
         ps:          txJSON.ps,
         height:      entry.height,
         block:       util.revHex(entry.hash),
@@ -70,6 +72,13 @@ function parse(entry, block) {
       logger.log('error', err.message);
     }
   });
+}
+// Fill in behind blocks and update tx inputs
+function updateInputs(txid, address) {
+  // Use txid and output address to get value
+  // Get addr / value from prev out
+  // update input
+
 }
 
 module.exports = {
