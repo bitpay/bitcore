@@ -1,6 +1,7 @@
 const logger  = require('../logger');
 const request = require('request');
 const config  = require('../../config');
+const util    = require('../util');
 
 const API_URL = `http://${config.bcoin_http}:${config.bcoin['http-port']}`;
 const TTL = config.api.request_ttl;
@@ -8,6 +9,13 @@ const TTL = config.api.request_ttl;
 module.exports = function AddressAPI(router) {
   router.get('/addr/:addr', (req, res) => {
     const addr = req.params.addr || '';
+
+    if (!util.isBitcoinAddress(addr)) {
+      return res.status(400).send({
+        error: 'Invalid bitcoin address',
+      });
+    }
+
     logger.log('debug',
       'Warning: Requesting data from Bcoin by address, may take some time');
     // Get Bcoin data

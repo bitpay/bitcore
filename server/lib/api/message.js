@@ -1,10 +1,17 @@
 const Message = require('bitcore-message');
-
+const util    = require('../util');
 // Copied from previous source
 function verifyMessage(req, res) {
   const address   = req.body.address || req.query.address;
   const signature = req.body.signature || req.query.signature;
   const message   = req.body.message || req.query.message;
+
+  if (!util.isBitcoinAddress(address)) {
+    return res.status(400).send({
+      error: 'Invalid bitcoin address',
+    });
+  }
+
   if (!address || !signature || !message) {
     res.json({
       message: 'Missing parameters (expected "address", "signature" and "message")',

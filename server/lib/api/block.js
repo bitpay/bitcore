@@ -1,11 +1,20 @@
 const logger = require('../logger');
-const db = require('../db');
+const db     = require('../db');
+const util   = require('../util');
 
 module.exports = function BlockAPI(router) {
   router.get('/block/:blockHash', (req, res) => {
+    const blockHash = req.params.blockHash;
+
+    if (!util.isBlockHash(blockHash)) {
+      return res.status(400).send({
+        error: 'Invalid bitcoin address',
+      });
+    }
+
     // Pass Mongo params, fields and limit to db api.
     db.blocks.getBlock(
-      { hash: req.params.blockHash },
+      { hash: blockHash },
       { rawBlock: 0 },
       1,
       (err, block) => {
@@ -73,6 +82,13 @@ module.exports = function BlockAPI(router) {
 
   router.get('/rawblock/:blockHash', (req, res) => {
     const blockHash = req.params.blockHash || '';
+
+    if (!util.isBlockHash(blockHash)) {
+      return res.status(400).send({
+        error: 'Invalid bitcoin address',
+      });
+    }
+
     // Pass Mongo params, fields and limit to db api.
     db.blocks.getBlock(
       { hash: blockHash },
