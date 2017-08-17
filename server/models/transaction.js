@@ -22,6 +22,8 @@ const TransactionSchema = new Schema({
   network:     { type: String, default: '' },
 });
 
+TransactionSchema.index({ hash: 1 });
+
 const Transaction = mongoose.model('Transaction', TransactionSchema);
 
 module.exports = Transaction;

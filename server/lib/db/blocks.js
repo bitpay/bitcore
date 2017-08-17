@@ -4,6 +4,8 @@ const config = require('../../config');
 
 const MAX_BLOCKS = config.api.max_blocks; // ~ 12 hours
 
+let bestBlockHeight = 0;
+
 function getBlocks(params, options, limit, cb) {
   // Do not return mongo ids
   const defaultOptions = { _id: 0 };
@@ -21,6 +23,7 @@ function getBlocks(params, options, limit, cb) {
   if (limit < 1) {
     limit = 1;
   }
+
   // Query mongo
   Block.find(
     params,
@@ -53,20 +56,31 @@ function getBlock(params, options, limit, cb) {
     return cb(null, blocks[0]);
   });
 }
-// Highest known height
-function getBestHeight(cb) {
+// Highest known height in mongo
+function getBestHeight() {
   getBlock({}, {}, 1, (err, block) => {
     if (err) {
       logger.log('error',
-        `getBlock: ${err.err}`);
-      return cb(err);
+        `getBestHeight: ${err.err}`);
+      return;
     }
-    return cb(null, block.height);
+    bestBlockHeight = block.height;
   });
+}
+// 1e9 limit = ~2M years from now
+// Mostly for sync to set height
+function bestHeight(height) {
+  if (Number.isInteger(height) &&
+    height > 0 &&
+    height < 1 * 1e9) {
+    bestBlockHeight = height;
+    return bestBlockHeight;
+  }
+  return bestBlockHeight;
 }
 
 module.exports = {
   getBlock,
   getBlocks,
-  getBestHeight,
+  bestHeight,
 };
