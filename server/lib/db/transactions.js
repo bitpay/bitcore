@@ -6,7 +6,7 @@ const config       = require('../../config');
 // These will be replaced with more advanced mongo
 // No optimization yet.
 
-const MAX_TXS = config.api.max_page_txs;
+const MAX_TXS = config.api.max_txs;
 const MAX_PAGE_TXS = config.api.max_page_txs;
 
 // For Paging

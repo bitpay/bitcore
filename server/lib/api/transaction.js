@@ -204,17 +204,15 @@ module.exports = function transactionAPI(router) {
         });
     }
     // Get last n txs
-    console.log('GETTING N TXS');
     db.txs.getTopTransactions((err, txs) => {
       if (err) {
         logger.log('err',
           `/txs getTopTransactions ${err}`);
         return res.status(404).send(err);
       }
+      console.log(txs.length);
       return res.json(txs);
     });
-
-    // return res.status(404).send({ error: 'Block hash or address expected' });
   });
 
   router.get('/rawtx/:txid', (req, res) => {
