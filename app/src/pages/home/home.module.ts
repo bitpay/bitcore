@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { IonicPageModule } from 'ionic-angular';
 import { HomePage } from './home';
 import { HeadNavComponentModule } from '../../components/head-nav/head-nav.module';
+import { LatestTransactionsComponentModule } from '../../components/latest-transactions/latest-transactions.module';
 
 @NgModule({
   declarations: [
@@ -9,7 +10,8 @@ import { HeadNavComponentModule } from '../../components/head-nav/head-nav.modul
   ],
   imports: [
     IonicPageModule.forChild(HomePage),
-    HeadNavComponentModule
+    HeadNavComponentModule,
+    LatestTransactionsComponentModule
   ],
   exports: [
     HomePage

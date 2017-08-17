@@ -14,6 +14,8 @@ export class BlocksPage {
   public blocks: Observable<Block[]>;
 
   constructor(private navCtrl: NavController, private blocksService: BlocksService) {
+    // TODO Put loading spinner on page
+
     this.title = 'Blocks';
     this.blocks = blocksService.latestBlocks;
     this.blocks.subscribe((blocks) => {
