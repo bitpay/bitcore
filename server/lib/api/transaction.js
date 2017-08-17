@@ -35,8 +35,6 @@ module.exports = function transactionAPI(router) {
           return res.status(404).send();
         }
 
-        console.log(tx);
-
         // Return UI JSON
         return res.send({
           txid: tx.hash,
