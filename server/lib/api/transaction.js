@@ -19,9 +19,9 @@ module.exports = function transactionAPI(router) {
       if (err) {
         logger.log('err',
           `getTxById: ${err}`);
-        return res.status(400).send();
+        return res.status(404).send();
       }
-      console.log(transaction);
+
       const tx = transaction;
       return res.send({
         txid: tx.hash,
@@ -31,6 +31,7 @@ module.exports = function transactionAPI(router) {
         locktime: tx.locktime,
         blockhash: tx.block,
         fees: tx.fee / 1e8,
+        size: tx.size,
         confirmations: (height - tx.height) + 1,
         valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
         vin: tx.inputs.map(input => ({
@@ -59,43 +60,32 @@ module.exports = function transactionAPI(router) {
     // get txs for blockhash, start with best height to calc confirmations
     if (req.query.block) {
       const height = db.blocks.bestHeight();
-      // Get Bcoin data
-      return request(`${API_URL}/block/${req.query.block}`,
-        { timeout: TTL },
-        (error, localRes, block) => {
+
+      db.txs.getTxCountByBlock(req.query.block, (err, count) => {
+        if (err) {
+          logger.log('err',
+            `getTxByBlock ${err}`);
+          return res.status(404).send();
+        }
+        const totalPages = Math.ceil(count / MAX_TXS);
+
+        return db.txs.getTxByBlock(req.query.block, pageNum, MAX_TXS, (error, txs) => {
           if (error) {
-            logger.log('error',
-              `${error}`);
+            logger.log('err',
+              `getTxByBlock ${error}`);
             return res.status(404).send();
           }
-          // Catch JSON errors
-          try {
-            block = JSON.parse(block);
-          } catch (e) {
-            logger.log('error',
-              `${e}`);
-            return res.status(404).send();
-          }
-
-          if (block.error) {
-            logger.log('error',
-              `${'No tx results'}`);
-            return res.status(404).send();
-          }
-          //  Setup UI JSON
-          const totalPages = Math.ceil(block.txs.length / MAX_TXS);
-          block.txs = block.txs.slice(rangeStart, rangeEnd);
-
           return res.send({
             pagesTotal: totalPages,
-            txs: block.txs.map(tx => ({
+            txs: txs.map(tx => ({
               txid: tx.hash,
               fees: tx.fee / 1e8,
-              confirmations: (height - block.height) + 1,
+              size: tx.size,
+              confirmations: (height - tx.height) + 1,
               valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
               vin: tx.inputs.map(input => ({
-                addr: input.coin ? input.coin.address : '',
-                value: input.coin ? input.coin.value / 1e8 : 0,
+                addr: input.address,
+                value: input.value / 1e8,
               })),
               vout: tx.outputs.map(output => ({
                 scriptPubKey: {
@@ -107,47 +97,37 @@ module.exports = function transactionAPI(router) {
             })),
           });
         });
+      });
     } else if (req.query.address) {
       // Get txs by address, start with best height to calc confirmations
       const height = db.blocks.bestHeight();
       const addr = req.query.address || '';
 
-      logger.log('debug',
-        'Warning: Requesting data from Bcoin by address, may take some time');
+      db.txs.getTxCountByAddress(req.query.address, (err, count) => {
+        if (err) {
+          logger.log('err',
+            `getTxByBlock ${err}`);
+          return res.status(404).send();
+        }
+        const totalPages = Math.ceil(count / MAX_TXS);
 
-      return request(`${API_URL}/tx/address/${addr}`,
-        { timeout: TTL },
-        (error, localRes, txs) => {
+        return db.txs.getTxByAddress(req.query.address, pageNum, MAX_TXS, (error, txs) => {
           if (error) {
-            logger.log('error',
-              `${error}`);
+            logger.log('err',
+              `getTxByBlock ${error}`);
             return res.status(404).send();
           }
-          // Catch JSON errors
-          try {
-            txs = JSON.parse(txs);
-          } catch (e) {
-            logger.log('error',
-              `${e}`);
-            return res.status(404).send();
-          }
-          // Bcoin returns error as part of data object
-          if (txs.error) {
-            logger.log('error',
-              `${'No tx results'}`);
-            return res.status(404).send();
-          }
-          // Setup UI JSON
           return res.send({
-            pagesTotal: 1,
+            pagesTotal: totalPages,
             txs: txs.map(tx => ({
               txid: tx.hash,
               fees: tx.fee / 1e8,
-              confirmations: (height - tx.height) +  1,
+              size: tx.size,
+              confirmations: (height - tx.height) + 1,
               valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
               vin: tx.inputs.map(input => ({
-                addr: input.coin ? input.coin.address : '',
-                value: input.coin ? input.coin.value / 1e8 : 0,
+                addr: input.address,
+                value: input.value / 1e8,
               })),
               vout: tx.outputs.map(output => ({
                 scriptPubKey: {
@@ -159,9 +139,11 @@ module.exports = function transactionAPI(router) {
             })),
           });
         });
+      });
+    } else {
+      // Get last n txs
+      return res.status(404).send({ error: 'Block hash or address expected' });
     }
-    // Get last n txs
-    return res.status(404).send({ error: 'Block hash or address expected' });
   });
 
   router.get('/rawtx/:txid', (req, res) => {
@@ -178,7 +160,7 @@ module.exports = function transactionAPI(router) {
       if (err) {
         logger.log('error',
           `${err}`);
-        res.status(400).send(err);
+        res.status(404).send(err);
         return;
       }
 

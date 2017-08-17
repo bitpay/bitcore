@@ -24,6 +24,10 @@ function start() {
     db.blocks.bestHeight(entry.height);
   });
 
+  node.chain.on('full', (block) => {
+
+  });
+
   node.on('error', (err) => {
     logger.log('error',
       `${err}`);

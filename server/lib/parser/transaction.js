@@ -6,6 +6,12 @@ const util        = require('../../lib/util');
 const logger      = require('../logger');
 const db          = require('../db');
 
+// Bleh, Bcoin pulls in blocks 20 at a time
+// Crappy delay for now otherwise async saves
+// could miss a tx if an input refs a block within
+// the last 20 that hasn't saved.
+// Aggregate stuff will replace all of this.
+
 function parse(entry, txs) {
   txs.forEach((tx) => {
     const txJSON = tx.toJSON();
@@ -52,23 +58,6 @@ function parse(entry, txs) {
       if (err) {
         logger.log('error', err.message);
       }
-
-      t.inputs.forEach((input) => {
-        const txid = input.prevout.hash;
-        const idx = input.prevout.index;
-        const addr = input.address;
-        if (txid !== '0000000000000000000000000000000000000000000000000000000000000000') {
-          db.txs.getTxById(txid, (err, tx) => {
-            if (err) {
-              logger.log('err',
-                `Tx Parser inputs.ForEach: ${err}`);
-              return;
-            }
-
-            db.txs.updateInput(t._id, input._id, tx.outputs[idx].value, tx.outputs[idx].address);
-          });
-        }
-      });
     });
   });
 }

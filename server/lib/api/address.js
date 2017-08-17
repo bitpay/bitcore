@@ -1,6 +1,7 @@
 const logger  = require('../logger');
 const request = require('request');
 const config  = require('../../config');
+const db      = require('../db');
 
 const API_URL = `http://${config.bcoin_http}:${config.bcoin['http-port']}`;
 const TTL = config.api.request_ttl;
@@ -8,8 +9,18 @@ const TTL = config.api.request_ttl;
 module.exports = function AddressAPI(router) {
   router.get('/addr/:addr', (req, res) => {
     const addr = req.params.addr || '';
-    logger.log('debug',
-      'Warning: Requesting data from Bcoin by address, may take some time');
+    /*
+    db.txs.getTxByAddress(addr, 0, 999999999, (error, txs) => {
+      if (error) {
+        logger.log('err',
+          `getTxByBlock ${error}`);
+        return res.status(404).send();
+      }
+
+      console.log(txs.count());
+
+    });
+*/
     // Get Bcoin data
     return request(`${API_URL}/tx/address/${addr}`,
       { timeout: TTL },

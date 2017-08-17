@@ -2,9 +2,11 @@ const Transactions = require('../../models/transaction.js');
 const logger       = require('../logger');
 const config       = require('../../config');
 
+// Will be replaced with a more sophisticated api soon
+
 const MAX_TXS = config.api.max_txs;
 
-function getTransactions(params, options, limit, cb) {
+function getTransactions(params, options, limit, skip, cb) {
   // Do not return mongo ids
   const defaultOptions = { _id: 0 };
   // Copy over mongo options
@@ -36,12 +38,13 @@ function getTransactions(params, options, limit, cb) {
       }
       return cb(null, txs);
     })
-    .sort({ height: -1 })
+    .sort({ height: 1 })
+    .skip()
     .limit(limit);
 }
 
-function getTransaction(params, options, limit, cb) {
-  getTransactions(params, options, limit, (err, tx) => {
+function getTransaction(params, options, limit, skip, cb) {
+  getTransactions(params, options, limit, skip, (err, tx) => {
     if (err) {
       logger.log('error',
         `getTransaction: ${err.err}`);
@@ -59,6 +62,7 @@ function getTxById(txid, cb) {
     { hash: txid },
     {},
     1,
+    0,
     (err, transaction) => {
       if (err) {
         logger.log('err',
@@ -68,6 +72,78 @@ function getTxById(txid, cb) {
       return cb(null, transaction);
     });
 }
+
+function getTxByBlock(blockHash, page, limit, cb) {
+  getTransactions(
+    { block: blockHash },
+    {},
+    limit,
+    page * limit,
+    (err, tx) => {
+      if (err) {
+        logger.log('error',
+          `getTxByBlock: ${err.err}`);
+        return cb(err);
+      }
+      if (!tx.length > 0) {
+        return cb({ err: 'Tx not found' });
+      }
+      return cb(null, tx);
+    });
+}
+
+function getTxByAddress(address, page, limit, cb) {
+  getTransactions(
+    {
+      $or: [
+        { 'inputs.address': address },
+        { 'outputs.address': address }],
+    },
+    {},
+    limit,
+    page * limit,
+    (err, tx) => {
+      if (err) {
+        logger.log('error',
+          `getTxByAddress: ${err.err}`);
+        return cb(err);
+      }
+      if (!tx.length > 0) {
+        return cb({ err: 'Tx not found' });
+      }
+      return cb(null, tx);
+    });
+}
+
+function getTxCountByBlock(blockHash, cb) {
+  Transactions.count(
+    { block: blockHash },
+    (err, count) => {
+      if (err) {
+        logger.log('err',
+          `getTxCountByBlock ${err}`);
+        return cb(err);
+      }
+      return cb(null, count);
+    });
+}
+
+function getTxCountByAddress(address, cb) {
+  Transactions.count(
+    { $or: [
+      { 'inputs.address': address },
+      { 'outputs.address': address }],
+    },
+    (err, count) => {
+      if (err) {
+        logger.log('err',
+          `getTxCountByAddress ${err}`);
+        return cb(err);
+      }
+      return cb(null, count);
+    });
+}
+
 
 function updateInput(txid, inputid, value, address) {
   Transactions.findOneAndUpdate(
@@ -91,5 +167,9 @@ module.exports = {
   getTransaction,
   getTransactions,
   getTxById,
+  getTxByBlock,
+  getTxCountByBlock,
+  getTxByAddress,
+  getTxCountByAddress,
   updateInput,
 };
