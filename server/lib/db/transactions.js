@@ -4,9 +4,12 @@ const config       = require('../../config');
 
 // For now, blocks handles these calls.
 // These will be replaced with more advanced mongo
+// No optimization yet.
 
-const MAX_TXS = config.api.max_txs;
+const MAX_TXS = config.api.max_page_txs;
+const MAX_PAGE_TXS = config.api.max_page_txs;
 
+// For Paging
 function getTransactions(params, options, limit, cb) {
   // Do not return mongo ids
   const defaultOptions = { _id: 0 };
@@ -17,8 +20,8 @@ function getTransactions(params, options, limit, cb) {
     limit = 1;
   }
 
-  if (limit > MAX_TXS) {
-    limit = MAX_TXS;
+  if (limit > MAX_PAGE_TXS) {
+    limit = MAX_PAGE_TXS;
   }
 
   if (limit < 1) {
@@ -57,7 +60,30 @@ function getTransaction(params, options, limit, cb) {
   });
 }
 
+// Req Change, refactor above
+function getTopTransactions(cb) {
+  // Do not return mongo ids
+  const defaultOptions = { _id: 0 };
+  // Query mongo
+  Transactions.find(
+    {},
+    (err, txs) => {
+      if (err) {
+        logger.log('error',
+          `getTransactions: ${err}`);
+        return cb(err);
+      }
+      if (!txs.length > 0) {
+        return cb({ err: 'Tx not found' });
+      }
+      return cb(null, txs);
+    })
+    .sort({ height: -1 })
+    .limit(MAX_TXS);
+}
+
 module.exports = {
   getTransaction,
   getTransactions,
+  getTopTransactions,
 };

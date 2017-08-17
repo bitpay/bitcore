@@ -86,7 +86,7 @@ module.exports = function transactionAPI(router) {
         return res.status(400).send({
           error: 'Invalid block hash',
         });
-      }      
+      }
       const height = db.blocks.bestHeight();
       // Get Bcoin data
       return request(`${API_URL}/block/${req.query.block}`,
@@ -204,7 +204,17 @@ module.exports = function transactionAPI(router) {
         });
     }
     // Get last n txs
-    return res.status(404).send({ error: 'Block hash or address expected' });
+    console.log('GETTING N TXS');
+    db.txs.getTopTransactions((err, txs) => {
+      if (err) {
+        logger.log('err',
+          `/txs getTopTransactions ${err}`);
+        return res.status(404).send(err);
+      }
+      return res.json(txs);
+    });
+
+    // return res.status(404).send({ error: 'Block hash or address expected' });
   });
 
   router.get('/rawtx/:txid', (req, res) => {
