@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { BlocksProvider } from '../../providers/blocks/blocks';
+import { NavController } from 'ionic-angular';
 
 /**
  * Generated class for the LatestBlocksComponent component.
@@ -13,25 +14,26 @@ import { BlocksProvider } from '../../providers/blocks/blocks';
 })
 export class LatestBlocksComponent {
 
-  private text: string;
+  public loading: boolean = true;
   public blocks: Array<any> = [];
 
-  constructor(private blocksProvider: BlocksProvider) {
-    this.text = 'Hello Latest Blocks';
-
+  constructor(private blocksProvider: BlocksProvider, private navCtrl: NavController) {
     blocksProvider.getBlocks().subscribe(
       (data) => {
         this.blocks = JSON.parse(data['_body']).blocks;
-        console.log('blocks', this.blocks);
+        this.loading = false;
       },
       (err) => {
         console.log('err', err);
+        this.loading = false;
       }
     );
   }
 
-  public goToBlock(hash: string): void {
-    console.log('go to', hash);
+  public goToBlock(blockHash: string): void {
+    this.navCtrl.push('block-detail', {
+      'blockHash': blockHash
+    });
   }
 
   public getBlocks(num: number = 10): Array<any> {

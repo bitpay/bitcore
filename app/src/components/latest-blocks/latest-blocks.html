@@ -1,27 +1,32 @@
 <!-- Generated template for the LatestBlocksComponent component -->
 <div>
-  {{text}}
-  <ion-grid>
+  <div *ngIf="loading">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
 
-    <ion-row>
-      <ion-col><b>Height</b></ion-col>
-      <ion-col><b>Age</b></ion-col>
-      <ion-col text-right><b>Transactions</b></ion-col>
-      <ion-col text-right><b>Size</b></ion-col>
-    </ion-row>
-    <ion-row *ngFor="let block of getBlocks(8)">
-      <ion-col>
-        <a (click)="goToBlock(block.hash)">{{block.height}}</a>
-      </ion-col>
-      <ion-col>
-        {{ block.time | amFromUnix | amTimeAgo }}
-      </ion-col>
-      <ion-col text-right>
-        {{block.txlength}}
-      </ion-col>
-      <ion-col text-right>
-        {{ block.size }}
-      </ion-col>
-    </ion-row>
-  </ion-grid>
+  <div *ngIf="!loading">
+    <ion-grid>
+
+      <ion-row>
+        <ion-col><b>Height</b></ion-col>
+        <ion-col><b>Age</b></ion-col>
+        <ion-col text-right><b>Transactions</b></ion-col>
+        <ion-col text-right><b>Size</b></ion-col>
+      </ion-row>
+      <ion-row *ngFor="let block of getBlocks(6)">
+        <ion-col>
+          <a (click)="goToBlock(block.hash)">{{block.height}}</a>
+        </ion-col>
+        <ion-col>
+          {{ block.time | amFromUnix | amTimeAgo }}
+        </ion-col>
+        <ion-col text-right>
+          {{block.txlength}}
+        </ion-col>
+        <ion-col text-right>
+          {{ block.size }}
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </div>
 </div>
