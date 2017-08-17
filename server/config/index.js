@@ -4,7 +4,7 @@ const config = {
   bcoin_http: 'localhost',
   bcoin: {
     network: 'main',
-    db: 'mem',
+    db: 'leveldb',
     prefix: '.',
     checkpoints: true,
     workers: false,

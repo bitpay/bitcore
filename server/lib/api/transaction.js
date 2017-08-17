@@ -35,6 +35,8 @@ module.exports = function transactionAPI(router) {
           return res.status(404).send();
         }
 
+        console.log(tx);
+
         // Return UI JSON
         return res.send({
           txid: tx.hash,
@@ -49,9 +51,13 @@ module.exports = function transactionAPI(router) {
           vin: tx.inputs.map(input => ({
             addr: input.coin ? input.coin.address : '',
             value: input.coin ? input.coin.value / 1e8 : 0,
+            scriptSig: {
+              asm: input.script,
+            },
           })),
           vout: tx.outputs.map(output => ({
             scriptPubKey: {
+              asm: output.script,
               addresses: [output.address],
             },
             value: output.value / 1e8,
@@ -71,7 +77,6 @@ module.exports = function transactionAPI(router) {
     const rangeEnd   = rangeStart + MAX_TXS;
     // get txs for blockhash, start with best height to calc confirmations
     if (req.query.block) {
-
       const height = db.blocks.bestHeight();
       // Get Bcoin data
       return request(`${API_URL}/block/${req.query.block}`,
@@ -110,9 +115,13 @@ module.exports = function transactionAPI(router) {
               vin: tx.inputs.map(input => ({
                 addr: input.coin ? input.coin.address : '',
                 value: input.coin ? input.coin.value / 1e8 : 0,
+                scriptSig: {
+                  asm: input.script,
+                },
               })),
               vout: tx.outputs.map(output => ({
                 scriptPubKey: {
+                  asm: output.script,
                   addresses: [output.address],
                 },
                 value: output.value / 1e8,
@@ -162,9 +171,13 @@ module.exports = function transactionAPI(router) {
               vin: tx.inputs.map(input => ({
                 addr: input.coin ? input.coin.address : '',
                 value: input.coin ? input.coin.value / 1e8 : 0,
+                scriptSig: {
+                  asm: input.script,
+                },
               })),
               vout: tx.outputs.map(output => ({
                 scriptPubKey: {
+                  asm: output.script,
                   addresses: [output.address],
                 },
                 value: output.value / 1e8,
