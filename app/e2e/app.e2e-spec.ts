@@ -26,11 +26,11 @@ describe('InsightApp', () => {
       });
   });
 
-  it('the left menu has a link with title Blocks', () => {
+  it('the left menu has a link with title Home', () => {
     element(by.css('.bar-button-menutoggle')).click()
       .then(() => {
         browser.driver.sleep(2000); // wait for the animation
-        expect(element.all(by.css('ion-label')).first().getText()).toEqual('Blocks');
+        expect(element.all(by.css('ion-label')).first().getText()).toEqual('Home');
       });
   });
 });
