@@ -147,7 +147,7 @@ module.exports = function transactionAPI(router) {
           const addr = req.query.address || '';
 
           logger.log('debug',
-            'Warning: Requesting data from Bcoin, may take some time');
+            'Warning: Requesting data from Bcoin by address, may take some time');
 
           return request(`${API_URL}/tx/address/${addr}`,
             { timeout: TTL },

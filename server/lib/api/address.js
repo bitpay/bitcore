@@ -8,6 +8,8 @@ const TTL = config.api.request_ttl;
 module.exports = function AddressAPI(router) {
   router.get('/addr/:addr', (req, res) => {
     const addr = req.params.addr || '';
+    logger.log('debug',
+      'Warning: Requesting data from Bcoin by address, may take some time');
     // Get Bcoin data
     return request(`${API_URL}/tx/address/${addr}`,
       { timeout: TTL },
