@@ -23,42 +23,7 @@ function parse(entry, block) {
     nonce:      blockJSON.nonce,
     txs:        block.txs.map((tx) => {
       const txJSON = tx.toJSON();
-      const txRAW  = tx.toRaw();
-      return {
-        hash:        txJSON.hash,
-        witnessHash: txJSON.witnessHash,
-        fee:         txJSON.fee,
-        rate:        txJSON.rate,
-        size:        txRAW.length,
-        ps:          txJSON.ps,
-        height:      entry.height,
-        block:       util.revHex(entry.hash),
-        ts:          entry.ts,
-        date:        txJSON.date,
-        index:       txJSON.index,
-        version:     txJSON.version,
-        flag:        txJSON.flag,
-        inputs:      tx.inputs.map((input) => {
-          const inputJSON = input.toJSON();
-          return new InputModel({
-            prevout:  inputJSON.prevout,
-            script:   inputJSON.script,
-            witness:  inputJSON.witness,
-            sequence: inputJSON.sequence,
-            address:  inputJSON.address,
-          });
-        }),
-        outputs: tx.outputs.map((output) => {
-          const outputJSON = output.toJSON();
-          return new OutputModel({
-            address: outputJSON.address,
-            script:  outputJSON.script,
-            value:   outputJSON.value,
-          });
-        }),
-        lockTime: txJSON.locktime,
-        chain: config.bcoin.network,
-      };
+      return txJSON.hash;
     }),
     chainwork:  entry.chainwork,
     reward,

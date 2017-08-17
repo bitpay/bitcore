@@ -13,7 +13,7 @@ const BlockSchema = new Schema({
   ts:         { type: Number, default: 0 },
   bits:       { type: Number, default: 0 },
   nonce:      { type: Number, default: 0 },
-  txs:        [Transaction.schema],
+  txs:        [{ type: String, default: '' }],
   chainwork:  { type: Number, default: 0 },
   reward:     { type: Number, default: 0 },
   network:    { type: String, default: '' },
