@@ -32,7 +32,7 @@ export class InsightApp {
     this.splash = splash;
     this.status = status;
 
-    this.rootPage = BlocksPage;
+    this.rootPage = HomePage;
     this.initializeApp();
 
     // set our app's pages
