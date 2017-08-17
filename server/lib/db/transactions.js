@@ -54,7 +54,6 @@ function getTransaction(params, options, limit, cb) {
   });
 }
 
-
 function getTxById(txid, cb) {
   getTransaction(
     { hash: txid },
@@ -66,13 +65,31 @@ function getTxById(txid, cb) {
           `/rawblock/:blockHash: ${err}`);
         return cb(err);
       }
-      console.log(transaction);
       return cb(null, transaction);
     });
+}
+
+function updateInput(txid, inputid, value, address) {
+  Transactions.findOneAndUpdate(
+    { _id: txid, 'inputs._id': inputid },
+    {
+      $set: {
+        'inputs.$.value': value,
+        'inputs.$.address': address,
+      },
+    },
+    (err, tx) => {
+      if (err) {
+        logger.log('err',
+          `updateInput: ${err}`);
+      }
+    },
+  );
 }
 
 module.exports = {
   getTransaction,
   getTransactions,
   getTxById,
+  updateInput,
 };

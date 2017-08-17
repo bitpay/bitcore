@@ -4,6 +4,7 @@ const OutputModel = require('../../models/output');
 const config      = require('../../config');
 const util        = require('../../lib/util');
 const logger      = require('../logger');
+const db          = require('../db');
 
 function parse(entry, txs) {
   txs.forEach((tx) => {
@@ -46,10 +47,28 @@ function parse(entry, txs) {
       chain: config.bcoin.network,
     });
 
+
     t.save((err) => {
       if (err) {
         logger.log('error', err.message);
       }
+
+      t.inputs.forEach((input) => {
+        const txid = input.prevout.hash;
+        const idx = input.prevout.index;
+        const addr = input.address;
+        if (txid !== '0000000000000000000000000000000000000000000000000000000000000000') {
+          db.txs.getTxById(txid, (err, tx) => {
+            if (err) {
+              logger.log('err',
+                `Tx Parser inputs.ForEach: ${err}`);
+              return;
+            }
+
+            db.txs.updateInput(t._id, input._id, tx.outputs[idx].value, tx.outputs[idx].address);
+          });
+        }
+      });
     });
   });
 }

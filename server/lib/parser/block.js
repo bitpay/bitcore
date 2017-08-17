@@ -73,13 +73,6 @@ function parse(entry, block) {
     }
   });
 }
-// Fill in behind blocks and update tx inputs
-function updateInputs(txid, address) {
-  // Use txid and output address to get value
-  // Get addr / value from prev out
-  // update input
-
-}
 
 module.exports = {
   parse,

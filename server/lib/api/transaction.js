@@ -21,7 +21,7 @@ module.exports = function transactionAPI(router) {
           `getTxById: ${err}`);
         return res.status(400).send();
       }
-
+      console.log(transaction);
       const tx = transaction;
       return res.send({
         txid: tx.hash,
@@ -34,8 +34,8 @@ module.exports = function transactionAPI(router) {
         confirmations: (height - tx.height) + 1,
         valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
         vin: tx.inputs.map(input => ({
-          addr: input.coin ? input.coin.address : '',
-          value: input.coin ? input.coin.value / 1e8 : 0,
+          addr: input.address,
+          value: input.value / 1e8,
         })),
         vout: tx.outputs.map(output => ({
           scriptPubKey: {
