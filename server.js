@@ -7,6 +7,7 @@ var bodyParser = require('body-parser');
 var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.raw({limit: 100000000}));
+// app.use('/', express.static('./node_modules/insight-ui/public'));
 
 var config = require('./lib/config');
 var storageService = require('./lib/services/storage');
@@ -22,7 +23,7 @@ async.series([
 ], function(){
   if(cluster.isWorker) {
     var router = require('./lib/routes');
-    app.use(router);
+    app.use('/api', router);
     var server = app.listen(config.port, function() {
       console.log('api server listening on port 3000!');
     });
