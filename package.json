@@ -1,8 +1,7 @@
 {
   "name": "bitcore-p2p",
-  "version": "1.1.2",
+  "version": "5.0.0-beta.1",
   "description": "Interface to the bitcoin P2P network for bitcore",
-  "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
     "lint": "gulp lint",
@@ -10,43 +9,6 @@
     "coverage": "gulp coverage",
     "build": "gulp"
   },
-  "contributors": [
-    {
-      "name": "Yemel Jardi",
-      "email": "yemel@bitpay.com"
-    },
-    {
-      "name": "Braydon Fuller",
-      "email": "braydon@bitpay.com"
-    },
-    {
-      "name": "Ryan X. Charles",
-      "email": "ryan@bitpay.com"
-    },
-    {
-      "name": "Eric Martindale",
-      "email": "eric@bitpay.com"
-    },
-    {
-      "name": "Philip Hutchins",
-      "email": "philip@bitpay.com"
-    },
-    {
-      "name": "Manuel Araoz",
-      "email": "maraoz@bitpay.com"
-    },
-    {
-      "name": "Esteban Ordano",
-      "email": "eordano@gmail.com"
-    },
-    {
-      "name": "Elichai Turkel"
-    },
-    {
-      "name": "Chris Kleeschulte",
-      "email": "chrisk@bitpay.com"
-    }
-  ],
   "keywords": [
     "bitcoin",
     "bitcore"
@@ -56,7 +18,7 @@
     "url": "https://github.com/bitpay/bitcore-p2p.git"
   },
   "dependencies": {
-    "bitcore-lib": "bitpay/bitcore-lib#transitional",
+    "bitcore-lib": "5.0.0-beta.1",
     "bcoin": "1.0.0-beta.12",
     "bloom-filter": "^0.2.0",
     "buffers": "bitpay/node-buffers#v0.1.2-bitpay",
