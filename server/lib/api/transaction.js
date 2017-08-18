@@ -1,176 +1,217 @@
-const Block  = require('../../models/block.js');
-const Transaction = require('../../models/transaction');
 const logger = require('../logger');
+const request = require('request');
+const config = require('../../config');
+const db = require('../db');
+const util = require('../util');
 
-const MAX_TXS = 20;
-const MAX_BLOCKS = 1;
-
-// Shoe horned in. Not dry, also in blocks. Make db api later
-function getBlock(params, options, cb) {
-  const defaultOptions = { _id: 0 };
-
-  Object.assign(defaultOptions, options);
-
-  Block.find(
-    params,
-    defaultOptions,
-    cb)
-    .sort({ height: -1 })
-    .limit(MAX_BLOCKS);
-}
-
-
-function getTransactions(params, options, cb) {
-  const defaultOptions = { _id: 0 };
-
-  Object.assign(defaultOptions, options);
-
-  Transaction.find(
-    params,
-    defaultOptions,
-    cb)
-    .sort({ height: 1 })
-    .limit(MAX_TXS);
-}
+const API_URL = `http://${config.bcoin_http}:${config.bcoin['http-port']}`;
+const MAX_TXS = config.api.max_txs;
+const TTL     = config.api.request_ttl;
 
 module.exports = function transactionAPI(router) {
+  // Txs by txid
   router.get('/tx/:txid', (req, res) => {
-    getTransactions(
-      { hash: req.params.txid },
-      {  },
-      (err, tx) => {
-        if (err) {
-          res.status(501).send();
-          logger.log('err', err);
-        }
-        if (tx[0]) {
-          const t = tx[0];
+    if (!util.isTxid(req.params.txid)) {
+      return res.status(400).send({
+        error: 'Invalid transaction id',
+      });
+    }
 
-          // Map bcoin model to insight-api
-          res.json({
-            txid: t.hash,
-            version: t.version,
-            locktime: t.lockTime,
-            vin: t.inputs.map(input => ({
-              coinbase: input.script,
-              sequence: input.sequence,
-              n: 0,
-            })),
-            vout: t.outputs.map(output => ({
-              value: output.value / 1e8,
-              n: 0,
-              scriptPubKey: {
-                hex: output.script,
-                asm: '',
-                addresses: [output.address],
-                type: null,
-              },
-              spentTxId: null,
-              spentIndex: null,
-              spentHeight: null,
-            })),
-            blockhash: t.block,
-            blockheight: t.height,
-            confirmations: 0,
-            time: 0,
-            blocktime: 0,
-            isCoinBase: false,
-            valueOut: t.outputs.reduce((a, b) => a.value + b.value).value / 1e8,
-            size: 0,
-          });
-        } else {
-          res.send();
+    // Get max block height for calculating confirmations
+    const height = db.blocks.bestHeight();
+    // Bcoin transaction data
+    return request(`${API_URL}/tx/${req.params.txid}`,
+      { timeout: TTL },
+      (error, localRes, tx) => {
+        if (error) {
+          logger.log('error',
+            `${error}`);
+          return res.status(404).send();
         }
+        // Catch JSON errors
+        try {
+          tx = JSON.parse(tx);
+        } catch (e) {
+          logger.log('error',
+            `${e}`);
+          return res.status(404).send();
+        }
+        if (!tx || !tx.hash) {
+          logger.log('error',
+            'No results found');
+          return res.status(404).send();
+        }
+
+        // Return UI JSON
+        return res.send({
+          txid: tx.hash,
+          version: tx.version,
+          time: tx.ps,
+          blocktime: tx.ps,
+          locktime: tx.locktime,
+          blockhash: tx.block,
+          fees: tx.fee / 1e8,
+          confirmations: (height - tx.height) + 1,
+          valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
+          vin: tx.inputs.map(input => ({
+            addr: input.coin ? input.coin.address : '',
+            value: input.coin ? input.coin.value / 1e8 : 0,
+            scriptSig: {
+              asm: input.script,
+            },
+          })),
+          vout: tx.outputs.map(output => ({
+            scriptPubKey: {
+              asm: output.script,
+              addresses: [output.address],
+            },
+            value: output.value / 1e8,
+          })),
+          isCoinBase: tx.inputs[0].prevout.hash === '0000000000000000000000000000000000000000000000000000000000000000',
+        });
       });
   });
 
+  // /txs is overloaded. Next ver separate concerns
+  // query by block
+  // query by address
+  // last n txs
   router.get('/txs', (req, res) => {
-/*
-    const txsBy = req.query.blocks ||
-                  req.query.address;
-*/
-
+    const pageNum    = parseInt(req.query.pageNum, 10)  || 0;
+    const rangeStart = pageNum * MAX_TXS;
+    const rangeEnd   = rangeStart + MAX_TXS;
+    // get txs for blockhash, start with best height to calc confirmations
     if (req.query.block) {
-      getBlock(
-        { hash: req.query.block },
-        { rawBlock: 0 },
-        (err, block) => {
-          if (err) {
-            res.status(501).send();
-            logger.log('err', err);
+      if (!util.isBlockHash(req.query.block)) {
+        return res.status(400).send({
+          error: 'Invalid block hash',
+        });
+      }
+      const height = db.blocks.bestHeight();
+      // Get Bcoin data
+      return request(`${API_URL}/block/${req.query.block}`,
+        { timeout: TTL },
+        (error, localRes, block) => {
+          if (error) {
+            logger.log('error',
+              `${error}`);
+            return res.status(404).send();
           }
-          if (block[0]) {
-            const b = block[0];
-            res.json({
-              pagesTotal: 1,
-              txs: b.txs.map(tx => ({
-                txid: tx.hash,
-                version: tx.version,
-                locktime: tx.locktime,
-                vin: tx.inputs.map(input => ({
-                  coinbase: input.script,
-                  sequence: input.sequence,
-                  n: 0,
-                  addr: input.address,
-                })),
-                vout: tx.outputs.map(output => ({
-                  value: output.value / 1e8,
-                  n: 0,
-                  scriptPubKey: {
-                    hex: '',
-                    asm: '',
-                    addresses: [output.address],
-                    type: output.type,
-                  },
-                  spentTxid: '',
-                  spentIndex: 0,
-                  spentHeight: 0,
-                })),
+          // Catch JSON errors
+          try {
+            block = JSON.parse(block);
+          } catch (e) {
+            logger.log('error',
+              `${e}`);
+            return res.status(404).send();
+          }
+
+          if (block.error) {
+            logger.log('error',
+              `${'No tx results'}`);
+            return res.status(404).send();
+          }
+          //  Setup UI JSON
+          const totalPages = Math.ceil(block.txs.length / MAX_TXS);
+          block.txs = block.txs.slice(rangeStart, rangeEnd);
+
+          return res.send({
+            pagesTotal: totalPages,
+            txs: block.txs.map(tx => ({
+              txid: tx.hash,
+              fees: tx.fee / 1e8,
+              confirmations: (height - block.height) + 1,
+              valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
+              vin: tx.inputs.map(input => ({
+                addr: input.coin ? input.coin.address : '',
+                value: input.coin ? input.coin.value / 1e8 : 0,
+                scriptSig: {
+                  asm: input.script,
+                },
               })),
-            });
-          } else {
-            res.send();
-          }
+              vout: tx.outputs.map(output => ({
+                scriptPubKey: {
+                  asm: output.script,
+                  addresses: [output.address],
+                },
+                value: output.value / 1e8,
+              })),
+              isCoinBase: tx.inputs[0].prevout.hash === '0000000000000000000000000000000000000000000000000000000000000000',
+            })),
+          });
         });
     } else if (req.query.address) {
+      if (!util.isBitcoinAddress(req.query.address)) {
+        return res.status(400).send({
+          error: 'Invalid bitcoin address',
+        });
+      }
 
-    } else {
-      getTransactions(
-        {},
-        {},
-        (err, txs) => {
-          if (err) {
-            res.status(501).send();
+      // Get txs by address, start with best height to calc confirmations
+      const height = db.blocks.bestHeight();
+      const addr = req.query.address || '';
+
+      logger.log('debug',
+        'Warning: Requesting data from Bcoin by address, may take some time');
+
+      return request(`${API_URL}/tx/address/${addr}`,
+        { timeout: TTL },
+        (error, localRes, txs) => {
+          if (error) {
+            logger.log('error',
+              `${error}`);
+            return res.status(404).send();
           }
-          res.json({
+          // Catch JSON errors
+          try {
+            txs = JSON.parse(txs);
+          } catch (e) {
+            logger.log('error',
+              `${e}`);
+            return res.status(404).send();
+          }
+          // Bcoin returns error as part of data object
+          if (txs.error) {
+            logger.log('error',
+              `${'No tx results'}`);
+            return res.status(404).send();
+          }
+          // Setup UI JSON
+          return res.send({
             pagesTotal: 1,
             txs: txs.map(tx => ({
               txid: tx.hash,
-              version: tx.version,
-              locktime: tx.locktime,
+              fees: tx.fee / 1e8,
+              confirmations: (height - tx.height) +  1,
+              valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
               vin: tx.inputs.map(input => ({
-                coinbase: input.script,
-                sequence: input.sequence,
-                n: 0,
+                addr: input.coin ? input.coin.address : '',
+                value: input.coin ? input.coin.value / 1e8 : 0,
+                scriptSig: {
+                  asm: input.script,
+                },
               })),
               vout: tx.outputs.map(output => ({
-                value: output.value,
-                n: 0,
                 scriptPubKey: {
-                  hex: '',
-                  asm: '',
+                  asm: output.script,
                   addresses: [output.address],
-                  type: output.type,
                 },
-                spentTxid: '',
-                spentIndex: 0,
-                spentHeight: 0,
+                value: output.value / 1e8,
               })),
+              isCoinBase: tx.inputs[0].prevout.hash === '0000000000000000000000000000000000000000000000000000000000000000',
             })),
           });
-        },
-      );
+        });
     }
+    // Get last n txs
+    db.txs.getTopTransactions((err, txs) => {
+      if (err) {
+        logger.log('err',
+          `/txs getTopTransactions ${err}`);
+        return res.status(404).send(err);
+      }
+      return res.json(txs);
+    });
   });
 
   router.get('/rawtx/:txid', (req, res) => {
@@ -178,6 +219,19 @@ module.exports = function transactionAPI(router) {
   });
 
   router.post('/tx/send', (req, res) => {
-    res.send('tx send stub');
+    const rawtx = req.body.rawtx || '';
+    request.post({
+      url: `${API_URL}/broadcast`,
+      body: { tx: rawtx },
+      json: true,
+    }, (err, localRes, body) => {
+      if (err) {
+        logger.log('error',
+          `${err}`);
+        return res.status(400).send(err);
+      }
+
+      res.json(true);
+    });
   });
 };

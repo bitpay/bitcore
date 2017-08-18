@@ -1,5 +1,5 @@
 module.exports = function (req, res, next) {
-  let allowed = {
+  const allowed = {
 
     origins: [
       '*',

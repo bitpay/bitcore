@@ -1123,7 +1123,6 @@ ScopedSocket.prototype.emit = function(event, data, callback) {
 
 angular.module('insight.socket').factory('getSocket',
   function($rootScope) {
-    console.log('init my socket');
     var socket = io.connect(null, {
       'reconnect': true,
       'reconnection delay': 500,
