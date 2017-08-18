@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, NgZone } from '@angular/core';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { NavController } from 'ionic-angular';
 
@@ -17,16 +17,18 @@ export class LatestBlocksComponent {
   public loading: boolean = true;
   public blocks: Array<any> = [];
 
-  constructor(private blocksProvider: BlocksProvider, private navCtrl: NavController) {
+  constructor(private blocksProvider: BlocksProvider, private navCtrl: NavController, ngZone: NgZone) {
     this.loadBlocks();
-    /*
-    setInterval(
-      function (): void {
-        this.loadBlocks.call(this);
-      }.bind(this),
-      1000 * 30
-    );
-     */
+    ngZone.runOutsideAngular(() => {
+      setInterval(
+        function (): void {
+          ngZone.run(function (): void {
+            this.loadBlocks.call(this);
+          }.bind(this));
+        }.bind(this),
+        1000 * 30
+      );
+    });
   }
 
   private loadBlocks(): void {
