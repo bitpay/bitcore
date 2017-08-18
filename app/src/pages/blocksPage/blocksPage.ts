@@ -4,10 +4,12 @@ import { Observable } from 'rxjs';
 import { Block } from '../../models';
 import { BlocksService } from '../../services';
 
+/**
+ * @deprecated Use BlocksPage from ../blocks/blocks
+ */
 @Component({
   templateUrl: './blocksPage.html'
 })
-
 export class BlocksPage {
 
   public title: string;

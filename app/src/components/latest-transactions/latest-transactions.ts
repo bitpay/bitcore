@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
-import { Http } from '@angular/http';
-import { ApiProvider } from '../../providers/api/api';
+// import { Http } from '@angular/http';
+// import { ApiProvider } from '../../providers/api/api';
 
 /**
  * Generated class for the LatestTransactionsComponent component.
@@ -16,7 +16,7 @@ export class LatestTransactionsComponent {
 
   private text: string;
 
-  constructor(private http: Http, private api: ApiProvider) {
+  constructor(/*private http: Http, private api: ApiProvider*/) {
     console.log('Hello LatestTransactionsComponent Component');
     this.text = 'Hello Latest Transactions';
 

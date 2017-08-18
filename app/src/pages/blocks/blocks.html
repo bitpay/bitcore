@@ -1,37 +1,39 @@
-<!-- Generated template for the LatestBlocksComponent component -->
-<div>
+<ion-header>
+  <head-nav [title]="'Blocks'"></head-nav>
+</ion-header>
+
+<ion-content padding>
   <div *ngIf="loading">
     <ion-spinner name="crescent"></ion-spinner>
   </div>
 
   <div *ngIf="!loading">
+    <h1>Blocks</h1>
     <ion-grid>
-
       <ion-row>
         <ion-col><b>Height</b></ion-col>
-        <ion-col><b>Age</b></ion-col>
+        <ion-col><b>Timestamp</b></ion-col>
         <ion-col text-right><b>Transactions</b></ion-col>
+        <ion-col><b>Mined By</b></ion-col>
         <ion-col text-right><b>Size</b></ion-col>
       </ion-row>
-      <ion-row *ngFor="let block of getBlocks(6)">
+      <ion-row *ngFor="let block of blocks">
         <ion-col>
           <a (click)="goToBlock(block.hash)">{{block.height}}</a>
         </ion-col>
         <ion-col>
-          {{ block.time | amFromUnix | amTimeAgo }}
+          {{ block.time * 1000 | date:'medium' }}
         </ion-col>
         <ion-col text-right>
-          {{block.txlength}}
+          {{ block.txlength }}
+        </ion-col>
+        <ion-col>
+          <a *ngIf="block.poolInfo.poolName" href="{{block.poolInfo.url}}">{{block.poolInfo.poolName}}</a>
         </ion-col>
         <ion-col text-right>
           {{ block.size }}
         </ion-col>
       </ion-row>
-      <ion-row>
-        <ion-col text-center>
-          <button ion-button (click)="goToBlocks()">See all blocks</button>
-        </ion-col>
-      </ion-row>
     </ion-grid>
   </div>
-</div>
+</ion-content>

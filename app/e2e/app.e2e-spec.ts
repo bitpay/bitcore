@@ -7,15 +7,11 @@ describe('InsightApp', () => {
   });
 
   it('should have a title', () => {
-    expect(browser.getTitle()).toEqual('Blocks');
+    expect(browser.getTitle()).toEqual('Home');
   });
 
   it('should have {nav}', () => {
     expect(element(by.css('ion-navbar')).isPresent()).toEqual(true);
-  });
-
-  it('should have correct nav text for Home', () => {
-    expect(element(by.css('ion-navbar:first-child')).getText()).toContain('Blocks');
   });
 
   it('has a menu button that displays the left menu', () => {

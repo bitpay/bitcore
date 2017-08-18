@@ -19,12 +19,14 @@ export class LatestBlocksComponent {
 
   constructor(private blocksProvider: BlocksProvider, private navCtrl: NavController) {
     this.loadBlocks();
+    /*
     setInterval(
       function (): void {
         this.loadBlocks.call(this);
       }.bind(this),
       1000 * 30
     );
+     */
   }
 
   private loadBlocks(): void {
@@ -50,5 +52,9 @@ export class LatestBlocksComponent {
     /* tslint:disable:no-unused-variable */
     return this.blocks.filter((block, index) => index < num);
     /* tslint:enable:no-unused-variable */
+  }
+
+  public goToBlocks(): void {
+    this.navCtrl.push('blocks');
   }
 }
