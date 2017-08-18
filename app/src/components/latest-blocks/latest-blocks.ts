@@ -1,4 +1,4 @@
-import { Component, NgZone } from '@angular/core';
+import { Component, NgZone, Input } from '@angular/core';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { NavController } from 'ionic-angular';
 
@@ -16,6 +16,9 @@ export class LatestBlocksComponent {
 
   public loading: boolean = true;
   public blocks: Array<any> = [];
+  @Input() public numBlocks: number;
+  @Input() public showAllBlocksButton: boolean;
+  @Input() public showTimeAs: string;
 
   constructor(private blocksProvider: BlocksProvider, private navCtrl: NavController, ngZone: NgZone) {
     this.loadBlocks();
@@ -50,9 +53,9 @@ export class LatestBlocksComponent {
     });
   }
 
-  public getBlocks(num: number = 10): Array<any> {
+  public getBlocks(): Array<any> {
     /* tslint:disable:no-unused-variable */
-    return this.blocks.filter((block, index) => index < num);
+    return this.blocks.filter((block, index) => index < this.numBlocks);
     /* tslint:enable:no-unused-variable */
   }
 

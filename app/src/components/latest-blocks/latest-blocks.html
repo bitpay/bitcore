@@ -9,25 +9,33 @@
 
       <ion-row>
         <ion-col><b>Height</b></ion-col>
-        <ion-col><b>Age</b></ion-col>
+        <ion-col *ngIf="showTimeAs === 'age'"><b>Age</b></ion-col>
+        <ion-col *ngIf="showTimeAs === 'timestamp'"><b>Timestamp</b></ion-col>
         <ion-col text-right><b>Transactions</b></ion-col>
+        <ion-col><b>Mined By</b></ion-col>
         <ion-col text-right><b>Size</b></ion-col>
       </ion-row>
-      <ion-row *ngFor="let block of getBlocks(6)">
+      <ion-row *ngFor="let block of getBlocks()">
         <ion-col>
           <a (click)="goToBlock(block.hash)">{{block.height}}</a>
         </ion-col>
-        <ion-col>
+        <ion-col *ngIf="showTimeAs === 'age'">
           {{ block.time | amFromUnix | amTimeAgo }}
+        </ion-col>
+        <ion-col *ngIf="showTimeAs === 'timestamp'">
+          {{ block.time * 1000 | date:'medium' }}
         </ion-col>
         <ion-col text-right>
           {{block.txlength}}
+        </ion-col>
+        <ion-col>
+          <a *ngIf="block.poolInfo.poolName" href="{{block.poolInfo.url}}">{{block.poolInfo.poolName}}</a>
         </ion-col>
         <ion-col text-right>
           {{ block.size }}
         </ion-col>
       </ion-row>
-      <ion-row>
+      <ion-row *ngIf="showAllBlocksButton">
         <ion-col text-center>
           <button ion-button (click)="goToBlocks()">See all blocks</button>
         </ion-col>
