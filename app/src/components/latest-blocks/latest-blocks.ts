@@ -18,7 +18,17 @@ export class LatestBlocksComponent {
   public blocks: Array<any> = [];
 
   constructor(private blocksProvider: BlocksProvider, private navCtrl: NavController) {
-    blocksProvider.getBlocks().subscribe(
+    this.loadBlocks();
+    setInterval(
+      function (): void {
+        this.loadBlocks.call(this);
+      }.bind(this),
+      1000 * 30
+    );
+  }
+
+  private loadBlocks(): void {
+    this.blocksProvider.getBlocks().subscribe(
       (data) => {
         this.blocks = JSON.parse(data['_body']).blocks;
         this.loading = false;
