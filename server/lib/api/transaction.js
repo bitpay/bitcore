@@ -210,7 +210,6 @@ module.exports = function transactionAPI(router) {
           `/txs getTopTransactions ${err}`);
         return res.status(404).send(err);
       }
-      console.log(txs.length);
       return res.json(txs);
     });
   });
@@ -229,8 +228,7 @@ module.exports = function transactionAPI(router) {
       if (err) {
         logger.log('error',
           `${err}`);
-        res.status(400).send(err);
-        return;
+        return res.status(400).send(err);
       }
 
       res.json(true);
