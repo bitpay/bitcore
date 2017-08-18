@@ -13,21 +13,19 @@ function verifyMessage(req, res) {
   }
 
   if (!address || !signature || !message) {
-    res.json({
+    return res.json({
       message: 'Missing parameters (expected "address", "signature" and "message")',
       code: 1,
     });
-    return;
   }
   let valid;
   try {
     valid = new Message(message).verify(address, signature);
   } catch (err) {
-    res.json({
+    return res.json({
       message: `Unexpected error: ${err.message}`,
       code: 1,
     });
-    return;
   }
   res.json({ result: valid });
 }

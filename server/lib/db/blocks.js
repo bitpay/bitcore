@@ -60,9 +60,8 @@ function getBlock(params, options, limit, cb) {
 function getBestHeight() {
   getBlock({}, {}, 1, (err, block) => {
     if (err) {
-      logger.log('error',
+      return logger.log('error',
         `getBestHeight: ${err.err}`);
-      return;
     }
     bestBlockHeight = block.height;
   });
