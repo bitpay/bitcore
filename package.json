@@ -1,6 +1,6 @@
 {
   "name": "bitcore",
-  "version": "4.1.1",
+  "version": "5.0.0-beta.1",
   "description": "A platform to build bitcoin and blockchain-based applications.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -12,52 +12,6 @@
     "bitcore": "./bin/bitcore",
     "bitcored": "./bin/bitcored"
   },
-  "contributors": [
-    {
-      "name": "Daniel Cousens",
-      "email": "bitcoin@dcousens.com"
-    },
-    {
-      "name": "Esteban Ordano",
-      "email": "eordano@gmail.com"
-    },
-    {
-      "name": "Gordon Hall",
-      "email": "gordon@bitpay.com"
-    },
-    {
-      "name": "Jeff Garzik",
-      "email": "jgarzik@bitpay.com"
-    },
-    {
-      "name": "Kyle Drake",
-      "email": "kyle@kyledrake.net"
-    },
-    {
-      "name": "Manuel Araoz",
-      "email": "manuelaraoz@gmail.com"
-    },
-    {
-      "name": "Matias Alejo Garcia",
-      "email": "ematiu@gmail.com"
-    },
-    {
-      "name": "Ryan X. Charles",
-      "email": "ryanxcharles@gmail.com"
-    },
-    {
-      "name": "Stefan Thomas",
-      "email": "moon@justmoon.net"
-    },
-    {
-      "name": "Stephen Pair",
-      "email": "stephen@bitpay.com"
-    },
-    {
-      "name": "Wei Lu",
-      "email": "luwei.here@gmail.com"
-    }
-  ],
   "keywords": [
     "bitcoin",
     "transaction",
@@ -78,14 +32,11 @@
     "type": "git",
     "url": "https://github.com/bitpay/bitcore.git"
   },
-  "browser": {
-    "request": "browser-request"
-  },
   "dependencies": {
-    "bitcore-lib": "bitpay/bitcore-lib#transitional",
-    "bitcore-node": "bitpay/bitcore-node#blocks",
-    "insight-api": "^0.4.0",
-    "insight-ui": "^0.4.0"
+    "bitcore-lib": "5.0.0-beta.1",
+    "bitcore-node": "5.0.0-beta.2",
+    "insight-api": "5.0.0-beta.1",
+    "insight-ui": "5.0.0-beta.1"
   },
   "license": "MIT",
   "devDependencies": {
