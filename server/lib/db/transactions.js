@@ -8,7 +8,7 @@ const MAX_TXS = config.api.max_txs;
 
 function getTransactions(params, options, limit, skip, cb) {
   // Do not return mongo ids
-  const defaultOptions = { _id: 0 };
+  const defaultOptions = {  };
   // Copy over mongo options
   Object.assign(defaultOptions, options);
   // Simple sanitizing
@@ -60,13 +60,13 @@ function getTransaction(params, options, limit, skip, cb) {
 function getTxById(txid, cb) {
   getTransaction(
     { hash: txid },
-    {},
+    {  },
     1,
     0,
     (err, transaction) => {
       if (err) {
-        logger.log('err',
-          `/rawblock/:blockHash: ${err}`);
+        logger.log('error',
+          `getTxById: ${txid} ${err.err}`);
         return cb(err);
       }
       return cb(null, transaction);
@@ -120,7 +120,7 @@ function getTxCountByBlock(blockHash, cb) {
     { block: blockHash },
     (err, count) => {
       if (err) {
-        logger.log('err',
+        logger.log('error',
           `getTxCountByBlock ${err}`);
         return cb(err);
       }
@@ -136,7 +136,7 @@ function getTxCountByAddress(address, cb) {
     },
     (err, count) => {
       if (err) {
-        logger.log('err',
+        logger.log('error',
           `getTxCountByAddress ${err}`);
         return cb(err);
       }
@@ -156,7 +156,7 @@ function updateInput(txid, inputid, value, address) {
     },
     (err, tx) => {
       if (err) {
-        logger.log('err',
+        logger.log('error',
           `updateInput: ${err}`);
       }
     },

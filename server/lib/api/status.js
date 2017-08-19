@@ -48,12 +48,12 @@ module.exports = function statusAPI(router) {
     } else {
       getStatus((err, status) => {
         if (err) {
-          logger.log('err',
+          logger.log('error',
             `/status getStatus: ${err}`);
           return res.status(404).send(err);
         }
         if (!status) {
-          logger.log('err',
+          logger.log('error',
             '/status getStatus: no Status');
           return  res.status(404).send();
         }
@@ -79,12 +79,12 @@ module.exports = function statusAPI(router) {
   router.get('/sync', (req, res) => {
     getStatus((err, status) => {
       if (err) {
-        logger.log('err',
+        logger.log('error',
           `/sync: ${err}`);
         return res.status(404).send(err);
       }
       if (!status) {
-        logger.log('err',
+        logger.log('error',
           '/sync: no status');
         return res.status(404).send();
       }

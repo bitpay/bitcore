@@ -12,7 +12,10 @@ const db          = require('../db');
 // the last 20 that hasn't saved.
 // Aggregate stuff will replace all of this.
 
+let counter = 0;
+
 function parse(entry, txs) {
+  counter++;
   txs.forEach((tx) => {
     const txJSON = tx.toJSON();
     const txRAW = tx.toRaw();
@@ -58,8 +61,46 @@ function parse(entry, txs) {
       if (err) {
         logger.log('error', err.message);
       }
+      // As long as this modulo is divisible by 20 we should be OK for now.
+      // Closer to 20 = chattier at start but ideal later on
+      if (counter % 20 === 0) {
+        findEmptyInputs();
+        counter = 0;
+      }
     });
   });
+}
+
+function findEmptyInputs() {
+  db.txs.getTransactions(
+    {
+      'inputs.prevout.hash': { $ne: '0000000000000000000000000000000000000000000000000000000000000000' },
+      'inputs.address': '',
+    },
+    {},
+    100,
+    0,
+    (err, txs) => {
+      if (err) {
+        return logger.log('error',
+          `No Empty Inputs found: ${err.err}`);
+      }
+      // For each tx with unmarked inputs
+      return txs.forEach((inputTx) => {
+        inputTx.inputs.forEach((input) => {
+          const txHash = input.prevout.hash;
+          const outIdx = input.prevout.index;
+
+          return db.txs.getTxById(txHash, (err, tx) => {
+            if (err) {
+              return logger.log('error',
+                `No Tx found: ${txHash} ${err.err}`);
+            }
+            return db.txs.updateInput(inputTx._id, input._id, tx.outputs[outIdx].value, tx.outputs[outIdx].address);
+          });
+        });
+      });
+    });
 }
 
 module.exports = {

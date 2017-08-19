@@ -17,8 +17,8 @@ module.exports = function transactionAPI(router) {
 
     db.txs.getTxById(txid, (err, transaction) => {
       if (err) {
-        logger.log('err',
-          `getTxById: ${err}`);
+        logger.log('error',
+          `/tx/:tid getTxById: ${err.err}`);
         return res.status(404).send();
       }
 
@@ -63,7 +63,7 @@ module.exports = function transactionAPI(router) {
 
       db.txs.getTxCountByBlock(req.query.block, (err, count) => {
         if (err) {
-          logger.log('err',
+          logger.log('error',
             `getTxByBlock ${err}`);
           return res.status(404).send();
         }
@@ -71,7 +71,7 @@ module.exports = function transactionAPI(router) {
 
         return db.txs.getTxByBlock(req.query.block, pageNum, MAX_TXS, (error, txs) => {
           if (error) {
-            logger.log('err',
+            logger.log('error',
               `getTxByBlock ${error}`);
             return res.status(404).send();
           }
@@ -105,7 +105,7 @@ module.exports = function transactionAPI(router) {
 
       db.txs.getTxCountByAddress(req.query.address, (err, count) => {
         if (err) {
-          logger.log('err',
+          logger.log('error',
             `getTxByBlock ${err}`);
           return res.status(404).send();
         }
@@ -113,7 +113,7 @@ module.exports = function transactionAPI(router) {
 
         return db.txs.getTxByAddress(req.query.address, pageNum, MAX_TXS, (error, txs) => {
           if (error) {
-            logger.log('err',
+            logger.log('error',
               `getTxByBlock ${error}`);
             return res.status(404).send();
           }

@@ -28,7 +28,7 @@ const config = {
     ticker_url: 'https://www.bitstamp.net/api/ticker/',
     ticker_prop: 'bitstamp',
     max_blocks: 72,
-    max_txs: 10,
+    max_txs: 100,
     request_ttl: 100000,
   },
 };
