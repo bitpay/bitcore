@@ -9,67 +9,45 @@ const TTL = config.api.request_ttl;
 module.exports = function AddressAPI(router) {
   router.get('/addr/:addr', (req, res) => {
     const addr = req.params.addr || '';
-    /*
+
     db.txs.getTxByAddress(addr, 0, 999999999, (error, txs) => {
       if (error) {
-        logger.log('err',
+        logger.log('error',
           `getTxByBlock ${error}`);
         return res.status(404).send();
       }
 
-      console.log(txs.count());
-
-    });
-*/
-    // Get Bcoin data
-    return request(`${API_URL}/tx/address/${addr}`,
-      { timeout: TTL },
-      (error, bcoinRes, bcoinTxs) => {
-        if (error) {
-          logger.log('error',
-            `${error}`);
-          return res.status(404).send({});
+      // Sum the matching outputs for every tx
+      const totalReceived = txs.reduce((total, tx) => total + tx.outputs.reduce((sum, output) => {
+        if (output.address === req.params.addr) {
+          return sum + output.value;
         }
-        let txs = {};
-        try {
-          txs = JSON.parse(bcoinTxs);
-        } catch (e) {
-          logger.log('error',
-            `${e}`);
-          return res.status(404).send({});
+        return sum;
+      }, 0), 0) || 0;
+
+      // Sum the matching inputs for every tx
+      const totalSpent = txs.reduce((total, tx) => total + tx.inputs.reduce((sum, input) => {
+        if (input.coin && input.coin.address === req.params.addr) {
+          return sum + input.coin.value;
         }
+        return sum;
+      }, 0), 0) || 0;
 
-        // Sum the matching outputs for every tx
-        const totalReceived = txs.reduce((total, tx) => total + tx.outputs.reduce((sum, output) => {
-          if (output.address === req.params.addr) {
-            return sum + output.value;
-          }
-          return sum;
-        }, 0), 0) || 0;
-
-        // Sum the matching inputs for every tx
-        const totalSpent = txs.reduce((total, tx) => total + tx.inputs.reduce((sum, input) => {
-          if (input.coin && input.coin.address === req.params.addr) {
-            return sum + input.coin.value;
-          }
-          return sum;
-        }, 0), 0) || 0;
-
-        // Match Insight API
-        return res.json({
-          addrStr:                 req.params.addr,
-          balance:                 (totalReceived - totalSpent) / 1e8,
-          balanceSat:              totalReceived - totalSpent,
-          totalReceived:           totalReceived / 1e8,
-          totalReceivedSat:        totalReceived,
-          totalSent:               totalSpent / 1e8,
-          totalSentSat:            totalSpent,
-          unconfirmedBalance:      0,
-          unconfirmedBalanceSat:   0,
-          unconfirmedTxApperances: 0,
-          txApperances:            txs.length,
-        });
+      // Match Insight API
+      return res.json({
+        addrStr: req.params.addr,
+        balance: (totalReceived - totalSpent) / 1e8,
+        balanceSat: totalReceived - totalSpent,
+        totalReceived: totalReceived / 1e8,
+        totalReceivedSat: totalReceived,
+        totalSent: totalSpent / 1e8,
+        totalSentSat: totalSpent,
+        unconfirmedBalance: 0,
+        unconfirmedBalanceSat: 0,
+        unconfirmedTxApperances: 0,
+        txApperances: txs.length,
       });
+    });
   });
 
   // Stubbed by # to help with tasking
