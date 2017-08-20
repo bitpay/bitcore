@@ -1,5 +1,5 @@
 const config = {
-  start_node: false,
+  start_node: true,
   logging: 'debug',
   bcoin_http: 'localhost',
   bcoin: {
