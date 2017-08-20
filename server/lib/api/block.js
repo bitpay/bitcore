@@ -60,7 +60,7 @@ module.exports = function BlockAPI(router) {
       limit,
       (err, blocks) => {
         if (err) {
-          logger.log('err',
+          logger.log('error',
             `/blocks: ${err}`);
           return res.status(404).send();
         }
@@ -96,7 +96,7 @@ module.exports = function BlockAPI(router) {
       1,
       (err, block) => {
         if (err) {
-          logger.log('err',
+          logger.log('error',
             `/rawblock/:blockHash: ${err}`);
           return res.status(404).send();
         }
@@ -113,7 +113,7 @@ module.exports = function BlockAPI(router) {
       1,
       (err, block) => {
         if (err) {
-          logger.log('err',
+          logger.log('error',
             `/block-index/:height: ${err}`);
           return res.status(404).send();
         }

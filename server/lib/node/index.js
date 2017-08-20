@@ -1,7 +1,7 @@
 const FullNode    = require('bcoin/lib/node/fullnode');
 const logger      = require('../../lib/logger');
 const BlockParser = require('../parser').Block;
-const TxParser = require('../parser').Transaction;
+const TxParser    = require('../parser').Transaction;
 const config      = require('../../config');
 const socket      = require('../../lib/api/socket');
 const db          = require('../../lib/db');
@@ -22,6 +22,10 @@ function start() {
     TxParser.parse(entry, block.txs);
     socket.processBlock(entry, block);
     db.blocks.bestHeight(entry.height);
+  });
+
+  node.chain.on('full', (block) => {
+
   });
 
   node.on('error', (err) => {

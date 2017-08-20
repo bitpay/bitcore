@@ -37,13 +37,11 @@ const MessageAPI     = require('./message')(api);
 app.use('/insight-api', api);
 
 // 404
-app.use((req, res) => {
-  res.status(404).send({
+app.use((req, res) => res.status(404).send({
     status: 404,
     url: req.originalUrl,
     error: 'Not found',
-  });
-});
+  }));
 
 // Socket server
 const server  = require('http').Server(app);
