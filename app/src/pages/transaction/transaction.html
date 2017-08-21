@@ -3,40 +3,46 @@
 </ion-header>
 
 <ion-content padding>
-  <h1>Transaction</h1>
-  <p class="ellipsis"><b>Transaction</b> {{ tx.txid }}</p>
+  <div *ngIf="loading">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
 
-  <h2>Summary</h2>
+  <div *ngIf="!loading">
+    <h1>Transaction</h1>
+    <p class="ellipsis"><b>Transaction</b> {{ tx.txid }}</p>
 
-  <ion-list>
-    <ion-item>
-      Size
-      <span item-end>
-        {{ tx.size }} (bytes)
-      </span>
-    </ion-item>
-    <ion-item>
-      Received Time
-      <span item-end>
-        {{ tx.time * 1000 | date:'medium' }}
-      </span>
-    </ion-item>
-    <ion-item>
-      Mined Time
-      <span item-end>
-        {{ tx.blocktime * 1000 | date:'medium' }}
-      </span>
-    </ion-item>
-    <ion-item>
-      Included in Block
-      <span item-end>
-        <a (click)="goToBlock(tx.blockhash)">{{ tx.blockhash }}</a>
-      </span>
-    </ion-item>
-  </ion-list>
+    <h2>Summary</h2>
 
-  <h2>Details</h2>
+    <ion-list class="summary">
+      <ion-item>
+        Size
+        <span item-end>
+          {{ tx.size }} (bytes)
+        </span>
+      </ion-item>
+      <ion-item>
+        Received Time
+        <span item-end>
+          {{ tx.time * 1000 | date:'medium' }}
+        </span>
+      </ion-item>
+      <ion-item>
+        Mined Time
+        <span item-end>
+          {{ tx.blocktime * 1000 | date:'medium' }}
+        </span>
+      </ion-item>
+      <ion-item>
+        Included in Block
+        <span item-end>
+          <a (click)="goToBlock(tx.blockhash)">{{ tx.blockhash }}</a>
+        </span>
+      </ion-item>
+    </ion-list>
 
-  <transaction [tx]="tx"></transaction>
+    <h2>Details</h2>
+
+    <transaction [tx]="tx"></transaction>
+  </div>
 
 </ion-content>

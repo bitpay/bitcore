@@ -4,10 +4,10 @@ import { HeadNavComponent } from './head-nav';
 
 @NgModule({
   declarations: [
-    HeadNavComponent,
+    HeadNavComponent
   ],
   imports: [
-    IonicModule,
+    IonicModule
   ],
   exports: [
     HeadNavComponent

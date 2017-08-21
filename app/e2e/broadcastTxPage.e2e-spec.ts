@@ -10,7 +10,7 @@ describe('BroadcastTxPage', () => {
     element(by.css('.bar-button-menutoggle')).click().then(() => {
       browser.driver.sleep(2000); // wait for the animation
       element.all(by.className('input-wrapper')).then((items) => {
-        items[1].click();
+        items[2].click();
         browser.driver.sleep(2000); // wait for the animation
         let theElem = element.all(by.css('ion-label')).first;
         console.log(theElem);

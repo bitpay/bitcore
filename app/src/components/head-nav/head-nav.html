@@ -4,9 +4,12 @@
   </button>
   <ion-title>{{title}}</ion-title>
   <ion-buttons end>
-    <button ion-button icon-only>
+    <button ion-button (click)="changeCurrency()">
+      <ion-icon name="logo-bitcoin" *ngIf="currency.currencySymbol !== 'USD'"></ion-icon><ion-icon name="logo-usd" *ngIf="currency.currencySymbol === 'USD'"></ion-icon>&nbsp;{{ currency.currencySymbol }}
+    </button>
+    <button ion-button icon-only (click)="toggleSearch()">
       <ion-icon name="search"></ion-icon>
     </button>
   </ion-buttons>
 </ion-navbar>
-<ion-searchbar (ionInput)="search($event)" placeholder="{{ 'Search for block, transaction or address' }}" [(ngModel)]="q" [debounce]="1000"></ion-searchbar>
+<ion-searchbar [hidden]="!showSearch" (ionInput)="search($event)" placeholder="{{ 'Search for block, transaction or address' }}" [(ngModel)]="q" [debounce]="1500"></ion-searchbar>

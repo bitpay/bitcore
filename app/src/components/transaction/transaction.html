@@ -18,7 +18,7 @@
   </ion-row>
 
   <ion-row>
-    <ion-col col-5>
+    <ion-col col-12 col-md-5>
 
       <ion-list [hidden]="!tx.isCoinBase">
         <ion-item>
@@ -27,42 +27,56 @@
       </ion-list>
 
       <ion-list [hidden]="tx.isCoinBase">
-        <ion-item *ngFor="let vin of tx.vin">
+        <ion-item *ngFor="let vin of aggregateItems(tx.vin)">
           <div>
-            <p><a (click)="goToAddress(vin.addr)">{{ vin.addr }}</a> <span item-end>{{ vin.value + ' BTC' }}</span></p>
-            <div [hidden]="!expanded">
-              <p><b>Confirmations</b> {{vin.confirmations}}</p>
-              <p><b>scriptSig</b></p>
-              <div *ngIf="vin.scriptSig">
-                <div *ngFor="let item of vin.scriptSig.asm | split:' '" class="ellipsis">
-                  <p>{{item}}</p>
-                </div>
-              </div>
+            <div class="ellipsis">
+              <p><a (click)="goToAddress(vin.addr)">{{ vin.addr }}</a></p>
             </div>
-          </div>
-        </ion-item>
-      </ion-list>
-
-    </ion-col>
-    <ion-col col-2 text-center>
-      <ion-icon name="arrow-forward"></ion-icon>
-    </ion-col>
-    <ion-col col-5>
-      <ion-list>
-        <ion-item *ngFor="let vout of tx.vout">
-          <div>
-            <p><a (click)="goToAddress(getAddress(vout))">{{ getAddress(vout) }}</a></p>
             <div [hidden]="!expanded">
-              <p><b>Type</b> {{vout.scriptPubKey.type}}</p>
-              <p><b>scriptPubKey</b></p>
-              <div class="ellipsis">
-                <span>{{vout.scriptPubKey.asm}}</span>
+              <p *ngIf="vin.confirmations"><b>Confirmations</b> {{vin.confirmations}}</p>
+              <p><b>scriptSig</b></p>
+              <div *ngFor="let item of vin.items">
+                <div *ngIf="item.scriptSig">
+                  <div *ngFor="let scriptSig of item.scriptSig.asm | split:' '">
+                    <div class="ellipsis">
+                      <p>{{ scriptSig }}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           <div item-end>
-            {{ vout.value + ' BTC' }}
+            {{ currency.getConversion(vin.value) }}
+          </div>
+        </ion-item>
+      </ion-list>
+
+    </ion-col>
+
+    <ion-col col-12 col-md-1 text-center>
+      <ion-icon name="arrow-forward"></ion-icon>
+    </ion-col>
+
+    <ion-col col-12 col-md-6>
+      <ion-list>
+        <ion-item *ngFor="let vout of tx.vout">
+          <div>
+            <div class="ellipsis">
+              <p><a (click)="goToAddress(getAddress(vout))">{{ getAddress(vout) }}</a></p>
+            </div>
+            <div [hidden]="!expanded">
+              <p><b>Type</b> {{vout.scriptPubKey.type}}</p>
+              <p><b>scriptPubKey</b></p>
+              <div class="ellipsis">
+                <p>{{vout.scriptPubKey.asm}}</p>
+              </div>
+            </div>
+          </div>
+
+          <div item-end>
+            {{ currency.getConversion(vout.value) }}
             <span [hidden]="!vout.spentTxId">(S)</span>
             <span [hidden]="vout.spentTxId">(U)</span>
           </div>
@@ -72,12 +86,14 @@
   </ion-row>
 
   <ion-row>
-    <ion-col col-6>
-      <span [hidden]="tx.isCoinBase">Fee {{ tx.fees + ' BTC' }}</span>
+    <ion-col col-3>
+      <span [hidden]="tx.isCoinBase">Fee {{ currency.getConversion(tx.fees) }}</span>
     </ion-col>
-    <ion-col col-6 text-right>
+    <ion-col col-6 text-center>
       {{ tx.confirmations }} Confirmations
-      <span class="">{{ tx.valueOut + ' BTC' }}</span>
+    </ion-col>
+    <ion-col col-3 text-right>
+      <span class="">{{ currency.getConversion(tx.valueOut) }}</span>
     </ion-col>
   </ion-row>
 </ion-grid>

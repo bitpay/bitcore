@@ -1,4 +1,7 @@
 transaction {
+  // TODO Customize the grid to have 13 columns so that we have 6-col inputs, 6-col outputs, 1 col arrow
+  // See http://ionicframework.com/docs/api/components/grid/Grid/#customizing-the-grid
+
   ion-grid {
     background-color: #F4F4F4;
     border: 1px solid #eee;
