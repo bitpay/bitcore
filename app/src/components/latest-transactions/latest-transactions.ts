@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 // import { Http } from '@angular/http';
 // import { ApiProvider } from '../../providers/api/api';
+import { CurrencyProvider } from '../../providers/currency/currency';
 
 /**
  * Generated class for the LatestTransactionsComponent component.
@@ -14,15 +15,23 @@ import { Component } from '@angular/core';
 })
 export class LatestTransactionsComponent {
 
-  private text: string;
+  // private loading: boolean = true;
+  private transactions: Array<any> = [
+    {
+      hash: '12345',
+      out: 0.001
+    },
+    {
+      hash: '22345',
+      out: 0.002
+    }
+  ];
 
-  constructor(/*private http: Http, private api: ApiProvider*/) {
-    console.log('Hello LatestTransactionsComponent Component');
-    this.text = 'Hello Latest Transactions';
+  constructor(/*private http: Http, private api: ApiProvider*/ public currency: CurrencyProvider) {
+
+    // let url: string = this.api.apiPrefix + 'txs';
 
     /*
-    let url: string = this.api.apiPrefix + 'txs?' + this.queryType + '=' + this.queryValue;
-
     this.http.get(url).subscribe(
       (data) => {
         this.transactions = JSON.parse(data['_body']);
@@ -47,6 +56,10 @@ export class LatestTransactionsComponent {
       }
     );
      */
+  }
+
+  public getTransactions(): Array<any> {
+    return this.transactions;
   }
 
 }
