@@ -11,7 +11,7 @@ import 'rxjs/add/operator/map';
 @Injectable()
 export class ApiProvider {
 
-  public apiPrefix: string = 'https://insight.bitpay.com/api/';
+  public apiPrefix: string = '/api/';
 
   constructor(public http: Http) {
   }
