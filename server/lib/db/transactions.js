@@ -1,89 +1,51 @@
 const Transactions = require('../../models/transaction.js');
-const logger       = require('../logger');
 const config       = require('../../config');
 
-// For now, blocks handles these calls.
-// These will be replaced with more advanced mongo
-// No optimization yet.
-
-const MAX_TXS = config.api.max_txs;
+const Txs = new Transactions();
 const MAX_PAGE_TXS = config.api.max_page_txs;
 
-// For Paging
-function getTransactions(params, options, limit, cb) {
-  // Do not return mongo ids
-  const defaultOptions = { _id: 0 };
-  // Copy over mongo options
-  Object.assign(defaultOptions, options);
-  // Simple sanitizing
-  if (!Number.isInteger(limit)) {
-    limit = 1;
-  }
-
-  if (limit > MAX_PAGE_TXS) {
-    limit = MAX_PAGE_TXS;
-  }
-
-  if (limit < 1) {
-    limit = 1;
-  }
-  // Query mongo
-  Transactions.find(
-    params,
-    defaultOptions,
-    (err, txs) => {
-      if (err) {
-        logger.log('error',
-          `getTransactions: ${err}`);
-        return cb(err);
-      }
-      if (!txs.length > 0) {
-        return cb({ err: 'Tx not found' });
-      }
-      return cb(null, txs);
-    })
-    .sort({ height: -1 })
-    .limit(limit);
+function getEmptyInputs(cb) {
+  return Txs.getEmptyInputs(cb);
 }
 
-function getTransaction(params, options, limit, cb) {
-  getTransactions(params, options, limit, (err, tx) => {
-    if (err) {
-      logger.log('error',
-        `getTransaction: ${err.err}`);
-      return cb(err);
-    }
-    if (!tx.length > 0) {
-      return cb({ err: 'Tx not found' });
-    }
-    return cb(null, tx[0]);
-  });
-}
-
-// Req Change, refactor above
 function getTopTransactions(cb) {
-  // Do not return mongo ids
-  const defaultOptions = { _id: 0 };
-  // Query mongo
-  Transactions.find(
-    {},
-    (err, txs) => {
-      if (err) {
-        logger.log('error',
-          `getTransactions: ${err}`);
-        return cb(err);
-      }
-      if (!txs.length > 0) {
-        return cb({ err: 'Tx not found' });
-      }
-      return cb(null, txs);
-    })
-    .sort({ height: -1 })
-    .limit(MAX_TXS);
+  return Txs.last(cb);
+}
+
+function getTxById(txid, cb) {
+  return Txs.byId(txid, cb);
+}
+
+function getTxByBlock(blockHash, page, limit, cb) {
+  return Txs.byBlockHash(blockHash, cb)
+    .skip(limit * page);
+}
+
+function getTxByAddress(address, page, limit, cb) {
+  return Txs.byAddress(address, cb)
+    .limit(limit)
+    .skip(limit * page);
+}
+
+function getTxCountByBlock(blockHash, cb) {
+  return Txs.countByBlock(blockHash, cb);
+}
+
+function getTxCountByAddress(address, cb) {
+  return Txs.countByAddress(address, cb);
+}
+
+function updateInput(txid, inputid, value, address) {
+  return Txs.updateInput(txid, inputid, value, address);
 }
 
 module.exports = {
-  getTransaction,
-  getTransactions,
+  getEmptyInputs,
   getTopTransactions,
+  getTxById,
+  getTxByBlock,
+  getTxCountByBlock,
+  getTxByAddress,
+  getTxCountByAddress,
+  updateInput,
 };

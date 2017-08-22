@@ -1,28 +1,21 @@
 const express    = require('express');
 const config     = require('../../config');
 const bodyParser = require('body-parser');
+const helmet     = require('helmet');
 
 const app = express();
 const api = express.Router();
 const cors = require('./cors');
 
 app.use(cors);
+app.use(helmet());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // Serve insight ui front end from root dir public folder
-app.use(express.static('./public'));
-app.use('/:stuff', express.static('./public'));
-app.use('/blocks', express.static('./public'));
-app.use('/blocks/:blockhash', express.static('./public'));
-app.use('/block-index', express.static('./public'));
-app.use('/block-index/:height', express.static('./public'));
-app.use('/blocks-date/:date', express.static('./public'));
-app.use('/block/:blockhash', express.static('./public'));
-app.use('/tx/:txid', express.static('./public'));
-app.use('/address/:addr', express.static('./public'));
-app.use('/status', express.static('./public'));
-app.use('/status/:stuff', express.static('./public'));
+app.use(express.static('../app/www', { maxage: '1w' }));
+// Legacy UI - useful for 1:1 compares
+// app.use(express.static('./public', { maxage: '1w' }));
 
 app.set('json spaces', config.api.json_spaces);
 
@@ -34,18 +27,19 @@ const StatusAPI      = require('./status')(api);
 const TransactionAPI = require('./transaction')(api);
 const MessageAPI     = require('./message')(api);
 
-app.use('/insight-api', api);
+app.use('/api', api);
 
 // 404
-app.use((req, res) => {
-  res.status(404).send({
-    status: 404,
-    url: req.originalUrl,
-    error: 'Not found',
-  });
-});
+app.use((req, res) => res.status(404).send({
+  status: 404,
+  url: req.originalUrl,
+  error: 'Not found',
+}));
 
 // Socket server
 const server  = require('http').Server(app);
 
-module.exports = server;
+module.exports = {
+  server,
+  api,
+};

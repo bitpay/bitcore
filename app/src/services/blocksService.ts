@@ -11,7 +11,7 @@ export class BlocksService {
   constructor(private http: Http) {}
 
   public getLatestBlocks(): void {
-    this.http.request('https://insight.bitpay.com/api/blocks').subscribe((res: Response) => {
+    this.http.request('/api/blocks').subscribe((res: Response) => {
       const data: {
         blocks: InsightBlockObject[],
         length: number,

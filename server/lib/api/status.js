@@ -30,10 +30,7 @@ module.exports = function statusAPI(router) {
   // Get last block hash or node status
   router.get('/status', (req, res) => {
     if (req.query.q === 'getLastBlockHash') {
-      db.blocks.getBlock(
-        {},
-        { hash: 1 },
-        1,
+      db.blocks.getLastBlock(
         (err, block) => {
           if (err) {
             logger.log('error',
@@ -48,12 +45,12 @@ module.exports = function statusAPI(router) {
     } else {
       getStatus((err, status) => {
         if (err) {
-          logger.log('err',
+          logger.log('error',
             `/status getStatus: ${err}`);
           return res.status(404).send(err);
         }
         if (!status) {
-          logger.log('err',
+          logger.log('error',
             '/status getStatus: no Status');
           return  res.status(404).send();
         }
@@ -79,12 +76,12 @@ module.exports = function statusAPI(router) {
   router.get('/sync', (req, res) => {
     getStatus((err, status) => {
       if (err) {
-        logger.log('err',
+        logger.log('error',
           `/sync: ${err}`);
         return res.status(404).send(err);
       }
       if (!status) {
-        logger.log('err',
+        logger.log('error',
           '/sync: no status');
         return res.status(404).send();
       }
@@ -99,17 +96,13 @@ module.exports = function statusAPI(router) {
     });
   });
   // Copied from previous source
-  router.get('/peer', (req, res) => {
-    res.json({
-      connected: true,
-      host: '127.0.0.1',
-      port: null,
-    });
-  });
+  router.get('/peer', (req, res) => res.json({
+    connected: true,
+    host: '127.0.0.1',
+    port: null,
+  }));
 
-  router.get('/version', (req, res) => {
-    res.json({
-      version: pkg.version,
-    });
-  });
+  router.get('/version', (req, res) => res.json({
+    version: pkg.version,
+  }));
 };
