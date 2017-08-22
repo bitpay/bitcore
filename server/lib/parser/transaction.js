@@ -6,16 +6,7 @@ const util        = require('../../lib/util');
 const logger      = require('../logger');
 const db          = require('../db');
 
-// Bleh, Bcoin pulls in blocks 20 at a time
-// Crappy delay for now otherwise async saves
-// could miss a tx if an input refs a block within
-// the last 20 that hasn't saved.
-// Aggregate stuff will replace all of this.
-
-let counter = 0;
-
 function parse(entry, txs) {
-  counter++;
   txs.forEach((tx) => {
     const txJSON = tx.toJSON();
     const txRAW = tx.toRaw();
@@ -61,12 +52,8 @@ function parse(entry, txs) {
       if (err) {
         logger.log('error', err.message);
       }
-      // As long as this modulo is divisible by 20 we should be OK for now.
-      // Closer to 20 = chattier at start and less ideal later on
-      if (counter % 20 === 0) {
-        findEmptyInputs();
-        counter = 0;
-      }
+
+      findEmptyInputs();
     });
   });
 }
@@ -84,10 +71,10 @@ function findEmptyInputs() {
           const txHash = input.prevout.hash;
           const outIdx = input.prevout.index;
 
-          return db.txs.getTxById(txHash, (err, tx) => {
-            if (err) {
+          return db.txs.getTxById(txHash, (error, tx) => {
+            if (error || !tx) {
               return logger.log('error',
-                `No Tx found: ${txHash} ${err.err}`);
+                `No Tx found: ${txHash} ${error}`);
             }
             return db.txs.updateInput(inputTx._id, input._id, tx.outputs[outIdx].value, tx.outputs[outIdx].address);
           });

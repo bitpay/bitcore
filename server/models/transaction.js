@@ -83,7 +83,7 @@ TransactionSchema.methods.last = function lastTx(cb) {
     .sort({ height: -1 });
 };
 
-TransactionSchema.methods.getEmptyInputs = function findEmptyInputs(cb) {
+TransactionSchema.methods.getEmptyInputs = function getEmptyInputs(cb) {
   return this.model('Transaction').find({
     'inputs.prevout.hash': { $ne: '0000000000000000000000000000000000000000000000000000000000000000' },
     'inputs.address': '',

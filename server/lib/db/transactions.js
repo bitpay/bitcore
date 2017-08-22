@@ -1,5 +1,4 @@
 const Transactions = require('../../models/transaction.js');
-const logger       = require('../logger');
 const config       = require('../../config');
 
 const Txs = new Transactions();

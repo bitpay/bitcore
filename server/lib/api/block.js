@@ -15,7 +15,7 @@ module.exports = function BlockAPI(router) {
     // Pass Mongo params, fields and limit to db api.
     return db.blocks.getByHash(blockHash,
       (err, block) => {
-        if (err) {
+        if (err || !block) {
           logger.log('err', err);
           return res.status(404).send();
         }
@@ -43,7 +43,6 @@ module.exports = function BlockAPI(router) {
   });
 
   router.get('/blocks', (req, res) => {
-    const limit = parseInt(req.query.limit, 10) || 100;
     // Pass Mongo params, fields and limit to db api.
     db.blocks.getTopBlocks(
       (err, blocks) => {
@@ -80,7 +79,7 @@ module.exports = function BlockAPI(router) {
     // Pass Mongo params, fields and limit to db api.
     return db.blocks.getRawBlock(blockHash,
       (err, block) => {
-        if (err) {
+        if (err || !block) {
           logger.log('error',
             `/rawblock/:blockHash: ${err}`);
           return res.status(404).send();
@@ -94,7 +93,7 @@ module.exports = function BlockAPI(router) {
     // Pass Mongo params, fields and limit to db api.
     return db.blocks.byHeight(height,
       (err, block) => {
-        if (err) {
+        if (err || !block) {
           logger.log('error',
             `/block-index/:height: ${err}`);
           return res.status(404).send();
