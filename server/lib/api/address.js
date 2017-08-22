@@ -11,7 +11,13 @@ module.exports = function AddressAPI(router) {
   router.get('/addr/:addr', (req, res) => {
     const addr = req.params.addr || '';
 
-    db.txs.getTxByAddress(addr, 0, 999999999, (error, txs) => {
+    if (!util.isBitcoinAddress(addr)) {
+      return res.status(404).send({
+        error: 'Invalid bitcoin address',
+      });
+    }
+
+    return db.txs.getTxByAddress(addr, 0, 999999999, (error, txs) => {
       if (error) {
         logger.log('error',
           `getTxByBlock ${error}`);

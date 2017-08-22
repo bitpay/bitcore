@@ -7,7 +7,7 @@ module.exports = function BlockAPI(router) {
     const blockHash = req.params.blockHash;
 
     if (!util.isBlockHash(blockHash)) {
-      return res.status(400).send({
+      return res.status(404).send({
         error: 'Invalid bitcoin address',
       });
     }
