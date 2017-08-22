@@ -14,6 +14,8 @@ app.use(bodyParser.json());
 
 // Serve insight ui front end from root dir public folder
 app.use(express.static('../app/www', { maxage: '1w' }));
+// Legacy UI - useful for 1:1 compares
+// app.use(express.static('./public', { maxage: '1w' }));
 
 app.set('json spaces', config.api.json_spaces);
 
@@ -37,4 +39,7 @@ app.use((req, res) => res.status(404).send({
 // Socket server
 const server  = require('http').Server(app);
 
-module.exports = server;
+module.exports = {
+  server,
+  api,
+};

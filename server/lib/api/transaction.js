@@ -59,7 +59,6 @@ module.exports = function transactionAPI(router) {
   // /txs is overloaded. Next ver separate concerns
   // query by block
   // query by address
-  // last n txs - haha jk YOU 404
   router.get('/txs', (req, res) => {
     const pageNum    = parseInt(req.query.pageNum, 10)  || 0;
     const rangeStart = pageNum * MAX_TXS;
@@ -174,30 +173,29 @@ module.exports = function transactionAPI(router) {
             `/txs getTopTransactions ${err}`);
           return res.status(404).send(err);
         }
-        return res.json({
-          txs: txs.map(tx => ({
-            txid: tx.hash,
-            fees: tx.fee / 1e8,
-            size: tx.size,
-            confirmations: (height - tx.height) + 1,
-            valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
-            vin: tx.inputs.map(input => ({
-              scriptSig: {
-                asm: input.script,
-              },
-              addr: input.address,
-              value: input.value / 1e8,
-            })),
-            vout: tx.outputs.map(output => ({
-              scriptPubKey: {
-                asm: output.script,
-                addresses: [output.address],
-              },
-              value: output.value / 1e8,
-            })),
-            isCoinBase: tx.inputs[0].prevout.hash === '0000000000000000000000000000000000000000000000000000000000000000',
+        return res.send(txs.map(tx => ({
+          txid: tx.hash,
+          fees: tx.fee / 1e8,
+          size: tx.size,
+          confirmations: (height - tx.height) + 1,
+          valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
+          vin: tx.inputs.map(input => ({
+            scriptSig: {
+              asm: input.script,
+            },
+            addr: input.address,
+            value: input.value / 1e8,
           })),
-        });
+          vout: tx.outputs.map(output => ({
+            scriptPubKey: {
+              asm: output.script,
+              addresses: [output.address],
+            },
+            value: output.value / 1e8,
+          })),
+          isCoinBase: tx.inputs[0].prevout.hash === '0000000000000000000000000000000000000000000000000000000000000000',
+        })),
+        );
       });
     }
   });
