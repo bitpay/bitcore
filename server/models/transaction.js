@@ -46,7 +46,7 @@ TransactionSchema.methods.byBlockHash = function txByBlockHash(hash, cb) {
   return this.model('Transaction').find(
     { block: hash },
     cb)
-    .limit(MAX_PAGE_TXS);
+    .limit(MAX_TXS);
 };
 
 TransactionSchema.methods.byAddress = function txByAddress(address, cb) {
@@ -56,7 +56,8 @@ TransactionSchema.methods.byAddress = function txByAddress(address, cb) {
         { 'inputs.address': address },
         { 'outputs.address': address }],
     },
-    cb);
+    cb)
+    .limit(MAX_TXS);
 };
 
 TransactionSchema.methods.countByBlock = function txByAddress(hash, cb) {
@@ -88,7 +89,8 @@ TransactionSchema.methods.getEmptyInputs = function getEmptyInputs(cb) {
     'inputs.prevout.hash': { $ne: '0000000000000000000000000000000000000000000000000000000000000000' },
     'inputs.address': '',
   },
-  cb);
+  cb)
+    .limit(MAX_TXS);
 };
 
 TransactionSchema.methods.updateInput = function updateInput(txid, inputid, value, address) {
