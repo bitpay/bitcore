@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
-// import { Http } from '@angular/http';
-// import { ApiProvider } from '../../providers/api/api';
+import { Http } from '@angular/http';
+import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 
 /**
@@ -15,26 +15,17 @@ import { CurrencyProvider } from '../../providers/currency/currency';
 })
 export class LatestTransactionsComponent {
 
-  // private loading: boolean = true;
-  private transactions: Array<any> = [
-    {
-      hash: '12345',
-      out: 0.001
-    },
-    {
-      hash: '22345',
-      out: 0.002
-    }
-  ];
+  private loading: boolean = true;
+  private transactions: Array<any> = [];
 
-  constructor(/*private http: Http, private api: ApiProvider*/ public currency: CurrencyProvider) {
+  constructor(private http: Http, private api: ApiProvider, public currency: CurrencyProvider) {
 
-    // let url: string = this.api.apiPrefix + 'txs';
+    let url: string = this.api.apiPrefix + 'txs';
 
-    /*
     this.http.get(url).subscribe(
       (data) => {
         this.transactions = JSON.parse(data['_body']);
+        console.log('this.transactions', this.transactions);
         this.loading = false;
       },
       (err) => {
@@ -42,20 +33,6 @@ export class LatestTransactionsComponent {
         this.loading = false;
       }
     );
-     */
-
-    /*
-    this.http.get(this.api.apiPrefix + 'tx/' + this.txId).subscribe(
-      (data) => {
-        this.tx = JSON.parse(data['_body']);
-        this.loading = false;
-      },
-      (err) => {
-        console.log('err is', err);
-        this.loading = false;
-      }
-    );
-     */
   }
 
   public getTransactions(): Array<any> {
