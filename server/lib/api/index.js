@@ -1,29 +1,19 @@
 const express    = require('express');
 const config     = require('../../config');
 const bodyParser = require('body-parser');
+const helmet     = require('helmet');
 
 const app = express();
 const api = express.Router();
 const cors = require('./cors');
 
 app.use(cors);
+app.use(helmet());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // Serve insight ui front end from root dir public folder
-app.use(express.static('../app/www'));
-app.use('/:stuff', express.static('../app/www'));
-app.use('/blocks', express.static('../app/www'));
-app.use('/blocks/:blockhash', express.static('../app/www'));
-app.use('/block-index', express.static('../app/www'));
-app.use('/block-index/:height', express.static('../app/www'));
-app.use('/blocks-date/:date', express.static('../app/www'));
-app.use('/block/:blockhash', express.static('../app/www'));
-app.use('/tx/:txid', express.static('../app/www'));
-app.use('/address/:addr', express.static('../app/www'));
-app.use('/status', express.static('../app/www'));
-app.use('/status/:stuff', express.static('../app/www'));
-app.use('/status/:stuff', express.static('../app/www'));
+app.use(express.static('../app/www', { maxage: '1w' }));
 
 app.set('json spaces', config.api.json_spaces);
 

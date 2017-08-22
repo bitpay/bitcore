@@ -17,6 +17,7 @@
     "bitcore-message": "^1.0.4",
     "body-parser": "^1.17.2",
     "express": "^4.15.3",
+    "helmet": "^3.8.1",
     "mongoose": "^4.11.5",
     "request": "^2.81.0",
     "socket.io": "^2.0.3",
