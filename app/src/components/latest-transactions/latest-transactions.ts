@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { Http } from '@angular/http';
+import { NavController } from 'ionic-angular';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 
@@ -18,7 +19,7 @@ export class LatestTransactionsComponent {
   private loading: boolean = true;
   private transactions: Array<any> = [];
 
-  constructor(private http: Http, private api: ApiProvider, public currency: CurrencyProvider) {
+  constructor(private http: Http, private navCtrl: NavController, private api: ApiProvider, public currency: CurrencyProvider) {
 
     let url: string = this.api.apiPrefix + 'txs';
 
@@ -35,8 +36,9 @@ export class LatestTransactionsComponent {
     );
   }
 
-  public getTransactions(): Array<any> {
-    return this.transactions;
+  public goToTx(txId: string): void {
+    this.navCtrl.push('transaction', {
+      'txId': txId
+    });
   }
-
 }
