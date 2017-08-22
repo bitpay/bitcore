@@ -64,6 +64,7 @@ module.exports = function transactionAPI(router) {
     const pageNum    = parseInt(req.query.pageNum, 10)  || 0;
     const rangeStart = pageNum * MAX_TXS;
     const rangeEnd   = rangeStart + MAX_TXS;
+    const height     = db.blocks.bestHeight();
     // get txs for blockhash, start with best height to calc confirmations
     if (req.query.block) {
       if (!util.isBlockHash(req.query.block)) {
@@ -71,7 +72,6 @@ module.exports = function transactionAPI(router) {
           error: 'Invalid block hash',
         });
       }
-      const height = db.blocks.bestHeight();
 
       return db.txs.getTxCountByBlock(req.query.block, (err, count) => {
         if (err) {
@@ -87,6 +87,7 @@ module.exports = function transactionAPI(router) {
               `getTxByBlock ${error}`);
             return res.status(404).send();
           }
+
           return res.send({
             pagesTotal: totalPages,
             txs: txs.map(tx => ({
@@ -122,7 +123,6 @@ module.exports = function transactionAPI(router) {
       }
 
       // Get txs by address, start with best height to calc confirmations
-      const height = db.blocks.bestHeight();
       const addr = req.query.address || '';
 
       db.txs.getTxCountByAddress(req.query.address, (err, count) => {
@@ -174,7 +174,30 @@ module.exports = function transactionAPI(router) {
             `/txs getTopTransactions ${err}`);
           return res.status(404).send(err);
         }
-        return res.json(txs);
+        return res.json({
+          txs: txs.map(tx => ({
+            txid: tx.hash,
+            fees: tx.fee / 1e8,
+            size: tx.size,
+            confirmations: (height - tx.height) + 1,
+            valueOut: tx.outputs.reduce((sum, output) => sum + output.value, 0) / 1e8,
+            vin: tx.inputs.map(input => ({
+              scriptSig: {
+                asm: input.script,
+              },
+              addr: input.address,
+              value: input.value / 1e8,
+            })),
+            vout: tx.outputs.map(output => ({
+              scriptPubKey: {
+                asm: output.script,
+                addresses: [output.address],
+              },
+              value: output.value / 1e8,
+            })),
+            isCoinBase: tx.inputs[0].prevout.hash === '0000000000000000000000000000000000000000000000000000000000000000',
+          })),
+        });
       });
     }
   });
