@@ -97,12 +97,12 @@ module.exports = function statusAPI(router) {
   });
   // Copied from previous source
   router.get('/peer', (req, res) => res.json({
-      connected: true,
-      host: '127.0.0.1',
-      port: null,
-    }));
+    connected: true,
+    host: '127.0.0.1',
+    port: null,
+  }));
 
   router.get('/version', (req, res) => res.json({
-      version: pkg.version,
-    }));
+    version: pkg.version,
+  }));
 };

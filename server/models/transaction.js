@@ -5,6 +5,7 @@ const logger = require('../lib/logger');
 const config = require('../config');
 
 const Schema = mongoose.Schema;
+// These limits can be overriden higher up the stack
 const MAX_TXS = config.api.max_txs;
 const MAX_PAGE_TXS = config.api.max_page_txs;
 
@@ -27,6 +28,9 @@ const TransactionSchema = new Schema({
 });
 
 TransactionSchema.index({ hash: 1 });
+TransactionSchema.index({ 'outputs.address': 1 });
+TransactionSchema.index({ 'inputs.address': 1 });
+
 
 TransactionSchema.methods.byId = function txById(txid, cb) {
   return this.model('Transaction').findOne(

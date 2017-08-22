@@ -9,8 +9,6 @@ const OutputSchema = new Schema({
   type:    { type: String, default: '' },
 });
 
-OutputSchema.index({ address: 1 });
-
 const Output = mongoose.model('Output', OutputSchema);
 
 module.exports = Output;

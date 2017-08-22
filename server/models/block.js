@@ -2,7 +2,8 @@ const mongoose = require('mongoose');
 const config = require('../config');
 
 const Schema = mongoose.Schema;
-const MAX_BLOCKS = config.api.max_blocks; // ~ 12 hours
+// These limits can be overriden higher up the stack
+const MAX_BLOCKS = config.api.max_blocks;
 
 const BlockSchema = new Schema({
   hash:       { type: String, default: '' },

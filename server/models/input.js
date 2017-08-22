@@ -11,8 +11,6 @@ const InputSchema = new Schema({
   address:  { type: String, default: '' },
 });
 
-InputSchema.index({ address: 1 });
-
 const Input = mongoose.model('Input', InputSchema);
 
 module.exports = Input;
