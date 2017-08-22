@@ -30,10 +30,7 @@ module.exports = function statusAPI(router) {
   // Get last block hash or node status
   router.get('/status', (req, res) => {
     if (req.query.q === 'getLastBlockHash') {
-      db.blocks.getBlock(
-        {},
-        { hash: 1 },
-        1,
+      db.blocks.getLastBlock(
         (err, block) => {
           if (err) {
             logger.log('error',
@@ -99,17 +96,13 @@ module.exports = function statusAPI(router) {
     });
   });
   // Copied from previous source
-  router.get('/peer', (req, res) => {
-    return res.json({
+  router.get('/peer', (req, res) => res.json({
       connected: true,
       host: '127.0.0.1',
       port: null,
-    });
-  });
+    }));
 
-  router.get('/version', (req, res) => {
-    return res.json({
+  router.get('/version', (req, res) => res.json({
       version: pkg.version,
-    });
-  });
+    }));
 };

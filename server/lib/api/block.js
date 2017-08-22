@@ -13,10 +13,7 @@ module.exports = function BlockAPI(router) {
     }
 
     // Pass Mongo params, fields and limit to db api.
-    db.blocks.getBlock(
-      { hash: blockHash },
-      { rawBlock: 0 },
-      1,
+    return db.blocks.getByHash(blockHash,
       (err, block) => {
         if (err) {
           logger.log('err', err);
@@ -48,16 +45,7 @@ module.exports = function BlockAPI(router) {
   router.get('/blocks', (req, res) => {
     const limit = parseInt(req.query.limit, 10) || 100;
     // Pass Mongo params, fields and limit to db api.
-    db.blocks.getBlocks(
-      {},
-      { height: 1,
-        size: 1,
-        hash: 1,
-        ts: 1,
-        txs: 1,
-        poolInfo: 1,
-      },
-      limit,
+    db.blocks.getTopBlocks(
       (err, blocks) => {
         if (err) {
           logger.log('error',
@@ -90,10 +78,7 @@ module.exports = function BlockAPI(router) {
     }
 
     // Pass Mongo params, fields and limit to db api.
-    db.blocks.getBlock(
-      { hash: blockHash },
-      { rawBlock: 1 },
-      1,
+    return db.blocks.getRawBlock(blockHash,
       (err, block) => {
         if (err) {
           logger.log('error',
@@ -105,12 +90,9 @@ module.exports = function BlockAPI(router) {
   });
 
   router.get('/block-index/:height', (req, res) => {
-    const blockHeight = parseInt(req.params.height, 10) || 1;
+    const height = parseInt(req.params.height, 10) || 1;
     // Pass Mongo params, fields and limit to db api.
-    db.blocks.getBlock(
-      { height: blockHeight },
-      { hash: 1 },
-      1,
+    return db.blocks.byHeight(height,
       (err, block) => {
         if (err) {
           logger.log('error',

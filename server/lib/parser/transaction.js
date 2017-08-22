@@ -62,7 +62,7 @@ function parse(entry, txs) {
         logger.log('error', err.message);
       }
       // As long as this modulo is divisible by 20 we should be OK for now.
-      // Closer to 20 = chattier at start but ideal later on
+      // Closer to 20 = chattier at start and less ideal later on
       if (counter % 20 === 0) {
         findEmptyInputs();
         counter = 0;
