@@ -27,7 +27,7 @@ function verifyMessage(req, res) {
       code: 1,
     });
   }
-  res.json({ result: valid });
+  return res.json({ result: valid });
 }
 
 module.exports = function messageAPI(router) {
@@ -39,7 +39,5 @@ module.exports = function messageAPI(router) {
     verifyMessage(req, res);
   });
 
-  router.get('/utils/estimatefee', (req, res) => {
-    res.send('estimate fees');
-  });
+  router.get('/utils/estimatefee', (req, res) => res.send('estimate fees'));
 };

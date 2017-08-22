@@ -1,5 +1,5 @@
 const Block       = require('./block');
-const Transaction       = require('./transaction');
+const Transaction = require('./transaction');
 
 module.exports = {
   Block,
