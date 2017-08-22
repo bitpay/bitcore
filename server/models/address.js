@@ -5,9 +5,9 @@ const Output   = require('./output');
 const Schema   = mongoose.Schema;
 
 const AddressSchema = new Schema({
-  address:  String,
-  inputs:   [Input.schema],
-  outputs:  [Output.schema],
+  address: { type: String, default: '' },
+  inputs:  [Input.schema],
+  outputs: [Output.schema],
 });
 
 const Address = mongoose.model('Address', AddressSchema);

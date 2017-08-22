@@ -8,6 +8,9 @@
     "no-multi-spaces": 0,
     "no-use-before-define": 1,
     "object-shorthand": 1,
-    "key-spacing": 0
+    "key-spacing": 0,
+    "no-plusplus": 0,
+    "no-unused-vars": 1,
+    "no-param-reassign": 1
   }
 }

@@ -1,67 +1,54 @@
-const Block  = require('../../models/block.js');
 const logger = require('../logger');
-
-const MAX_BLOCKS = 200;
-
-function getBlock(params, options, limit, cb) {
-  const defaultOptions = { _id: 0 };
-
-  if (!Number.isInteger(limit)) {
-    limit = MAX_BLOCKS;
-  }
-
-  Object.assign(defaultOptions, options);
-
-  Block.find(
-    params,
-    defaultOptions,
-    cb)
-    .sort({ height: -1 })
-    .limit(limit);
-}
+const db     = require('../db');
+const util   = require('../util');
 
 module.exports = function BlockAPI(router) {
   router.get('/block/:blockHash', (req, res) => {
-    getBlock(
-      { hash: req.params.blockHash },
+    const blockHash = req.params.blockHash;
+
+    if (!util.isBlockHash(blockHash)) {
+      return res.status(400).send({
+        error: 'Invalid bitcoin address',
+      });
+    }
+
+    // Pass Mongo params, fields and limit to db api.
+    db.blocks.getBlock(
+      { hash: blockHash },
       { rawBlock: 0 },
-      MAX_BLOCKS,
+      1,
       (err, block) => {
         if (err) {
-          res.status(501).send();
           logger.log('err', err);
+          return res.status(404).send();
         }
-        if (block[0]) {
-          const b = block[0];
-          res.json({
-            hash: b.hash,
-            size: b.size,
-            height: b.height,
-            version: b.version,
-            merkleroot: b.merkleRoot,
-            tx: b.txs,
-            time: b.ts,
-            nonce: b.nonce,
-            bits: b.bits.toString(16),
-            difficulty: 1,
-            chainwork: b.chainwork.toString(16),
-            confirmations: 0,
-            previousblockhash: b.prevBlock,
-            nextblockhash: 0,
-            reward: b.reward / 1e8,
-            isMainChain: true,
-            poolInfo: {},
-          });
-        } else {
-          res.send();
-        }
+        // Format the request for insight ui
+        return res.json({
+          hash:              block.hash,
+          size:              block.size,
+          height:            block.height,
+          version:           block.version,
+          merkleroot:        block.merkleRoot,
+          tx:                block.txs,
+          time:              block.ts,
+          nonce:             block.nonce,
+          bits:              block.bits.toString(16),
+          difficulty:        1,
+          chainwork:         block.chainwork.toString(16),
+          confirmations:     0,
+          previousblockhash: block.prevBlock,
+          nextblockhash:     0,
+          reward:            block.reward / 1e8,
+          isMainChain:       true,
+          poolInfo:          {},
+        });
       });
   });
 
   router.get('/blocks', (req, res) => {
-    const limit = parseInt(req.query.limit) || MAX_BLOCKS;
-
-    getBlock(
+    const limit = parseInt(req.query.limit, 10) || 100;
+    // Pass Mongo params, fields and limit to db api.
+    db.blocks.getBlocks(
       {},
       { height: 1,
         size: 1,
@@ -73,56 +60,66 @@ module.exports = function BlockAPI(router) {
       limit,
       (err, blocks) => {
         if (err) {
-          res.status(501).send();
-          logger.log('err', err);
+          logger.log('err',
+            `/blocks: ${err}`);
+          return res.status(404).send();
         }
-        res.json({
+        // Format the request for insight ui
+        return res.json({
           blocks: blocks.map(block => ({
-            hash: block.hash,
-            height: block.height,
-            size: block.size,
-            time: block.ts,
+            hash:     block.hash,
+            height:   block.height,
+            size:     block.size,
+            time:     block.ts,
             txlength: block.txs.length,
             poolInfo: {},
           })),
-          length: blocks.length,
+          length:     blocks.length,
           pagination: {},
         });
       });
   });
 
   router.get('/rawblock/:blockHash', (req, res) => {
-    getBlock(
-      { hash: req.params.blockHash },
+    const blockHash = req.params.blockHash || '';
+
+    if (!util.isBlockHash(blockHash)) {
+      return res.status(400).send({
+        error: 'Invalid bitcoin address',
+      });
+    }
+
+    // Pass Mongo params, fields and limit to db api.
+    db.blocks.getBlock(
+      { hash: blockHash },
       { rawBlock: 1 },
-      MAX_BLOCKS,
+      1,
       (err, block) => {
         if (err) {
-          res.status(501).send();
-          logger.log('err', err);
+          logger.log('err',
+            `/rawblock/:blockHash: ${err}`);
+          return res.status(404).send();
         }
-        res.json(block[0]);
+        return res.json(block);
       });
   });
 
   router.get('/block-index/:height', (req, res) => {
-    getBlock(
-      { height: req.params.height },
+    const blockHeight = parseInt(req.params.height, 10) || 1;
+    // Pass Mongo params, fields and limit to db api.
+    db.blocks.getBlock(
+      { height: blockHeight },
       { hash: 1 },
-      MAX_BLOCKS,
+      1,
       (err, block) => {
         if (err) {
-          res.status(501).send();
-          logger.log('err', err);
+          logger.log('err',
+            `/block-index/:height: ${err}`);
+          return res.status(404).send();
         }
-
-        if (block[0]) {
-          res.json({
-            blockHash: block[0].hash,
-          });
-        } else {
-          res.send();
-        }
+        return res.json({
+          blockHash: block.hash,
+        });
       });
   });
 };

@@ -1,7 +1,7 @@
 const Bcoin = require('./lib/node');
 const config = require('./config');
 const logger = require('./lib/logger');
-const Api = require('./lib/api').server;
+const Api = require('./lib/api');
 const db = require('./lib/db');
 
 logger.log('debug',
@@ -10,7 +10,6 @@ logger.log('debug',
 db.connect(config.mongodb.uri, config.mongodb.options);
 
 db.connection.once('open', () => {
-
   if (config.start_node) Bcoin.start();
 
   Api.listen(config.api.port, () => {

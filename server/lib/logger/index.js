@@ -1,7 +1,7 @@
 const winston = require('winston');
 const config  = require('../../config');
 
-const logfile = new Date().toISOString();
+const logfile = new Date().toISOString().split('T')[0];
 
 const logger = new (winston.Logger)({
   transports: [

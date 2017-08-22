@@ -2,17 +2,25 @@ const config = require('../../config');
 const logger = require('../logger');
 const request = require('request');
 
+// Retrieve the configured endpoint's ticker rate at a
+// set interval
+
 const refreshInterval = config.api.currency_refresh >= 1 ?
                         config.api.currency_refresh * 1000 :
                         60 * 1000;
 let lastRate          = 0;
 
-getRate();
+init();
 
-setInterval(() => {
+function init() {
   getRate();
-}, refreshInterval);
 
+  setInterval(() => {
+    getRate();
+  }, refreshInterval);
+}
+
+// Make the request to the remote API
 function getRate() {
   request(config.api.ticker_url, (err, res, body) => {
     if (err) {
@@ -32,11 +40,13 @@ function getRate() {
 }
 
 module.exports = function currencyAPI(app) {
+  // Return the ticker price
   app.get('/currency', (req, res) => {
+    const data = {};
+    data[config.api.ticker_prop] = lastRate;
+
     res.json({
-      data: {
-        bitstamp: lastRate,
-      },
+      data,
     });
   });
 };

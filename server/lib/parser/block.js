@@ -1,67 +1,32 @@
 const BlockModel = require('../../models/block');
-const InputModel  = require('../../models/input');
-const OutputModel = require('../../models/output');
-const config     = require('../../config');
-const util       = require('../../lib/util');
-const logger     = require('../logger');
+const config = require('../../config');
+const util = require('../../lib/util');
+const logger = require('../logger');
 
 function parse(entry, block) {
-  const rawBlock  = block.toRaw().toString('hex');
+  const rawBlock = block.toRaw().toString('hex');
   const blockJSON = block.toJSON();
-  const reward    = util.calcBlockReward(entry.height);
+  const reward = util.calcBlockReward(entry.height);
 
   // Can probably use destructuring to build something nicer
   const newBlock = new BlockModel({
-    hash:       blockJSON.hash,
-    height:     entry.height,
-    size:       block.getSize(),
-    version:    blockJSON.version,
-    prevBlock:  blockJSON.prevBlock,
+    hash: blockJSON.hash,
+    height: entry.height,
+    size: block.getSize(),
+    version: blockJSON.version,
+    prevBlock: blockJSON.prevBlock,
     merkleRoot: blockJSON.merkleRoot,
-    ts:         blockJSON.ts,
-    bits:       blockJSON.bits,
-    nonce:      blockJSON.nonce,
-    txs:        block.txs.map((tx) => {
+    ts: blockJSON.ts,
+    bits: blockJSON.bits,
+    nonce: blockJSON.nonce,
+    txs: block.txs.map((tx) => {
       const txJSON = tx.toJSON();
-      return {
-        hash:        txJSON.hash,
-        witnessHash: txJSON.witnessHash,
-        fee:         txJSON.fee,
-        rate:        txJSON.rate,
-        ps:          txJSON.ps,
-        height:      entry.height,
-        block:       util.revHex(entry.hash),
-        ts:          entry.ts,
-        date:        txJSON.date,
-        index:       txJSON.index,
-        version:     txJSON.version,
-        flag:        txJSON.flag,
-        inputs:      tx.inputs.map((input) => {
-          const inputJSON = input.toJSON();
-          return new InputModel({
-            prevout:  inputJSON.prevout,
-            script:   inputJSON.script,
-            witness:  inputJSON.witness,
-            sequence: inputJSON.sequence,
-            address:  inputJSON.address,
-          });
-        }),
-        outputs: tx.outputs.map((output) => {
-          const outputJSON = output.toJSON();
-          return new OutputModel({
-            address: outputJSON.address,
-            script:  outputJSON.script,
-            value:   outputJSON.value,
-          });
-        }),
-        lockTime: txJSON.locktime,
-        chain: config.bcoin.network,
-      };
+      return txJSON.hash;
     }),
-    chainwork:  entry.chainwork,
+    chainwork: entry.chainwork,
     reward,
-    network:    config.bcoin.network,
-    poolInfo:   {},
+    network: config.bcoin.network,
+    poolInfo: {},
     rawBlock,
   });
 
