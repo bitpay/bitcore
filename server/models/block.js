@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
-const Transaction = require('./transaction');
+const config = require('../config');
 
 const Schema = mongoose.Schema;
+const MAX_BLOCKS = config.api.max_blocks; // ~ 12 hours
 
 const BlockSchema = new Schema({
   hash:       { type: String, default: '' },
@@ -48,10 +49,11 @@ BlockSchema.methods.getRawBlock = function getRawBlock(hash, cb) {
     cb);
 };
 
-BlockSchema.methods.last = function lastTx(cb) {
+BlockSchema.methods.last = function lastBlocks(cb) {
   return this.model('Block').find(
     {},
     cb)
+    .limit(MAX_BLOCKS)
     .sort({ height: -1 });
 };
 

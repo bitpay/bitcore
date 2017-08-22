@@ -3,11 +3,6 @@ const logger       = require('../logger');
 const config       = require('../../config');
 
 const Txs = new Transactions();
-
-// No optimization yet.
-// Will be replaced with a more sophisticated api soon
-
-const MAX_TXS = config.api.max_txs;
 const MAX_PAGE_TXS = config.api.max_page_txs;
 
 function getEmptyInputs(cb) {
@@ -15,8 +10,7 @@ function getEmptyInputs(cb) {
 }
 
 function getTopTransactions(cb) {
-  return Txs.last(cb)
-    .limit(MAX_TXS);
+  return Txs.last(cb);
 }
 
 function getTxById(txid, cb) {
@@ -25,14 +19,13 @@ function getTxById(txid, cb) {
 
 function getTxByBlock(blockHash, page, limit, cb) {
   return Txs.byBlockHash(blockHash, cb)
-    .limit(MAX_PAGE_TXS)
-    .skip(MAX_PAGE_TXS * page);
+    .skip(limit * page);
 }
 
 function getTxByAddress(address, page, limit, cb) {
   return Txs.byAddress(address, cb)
-    .limit(MAX_PAGE_TXS)
-    .skip(MAX_PAGE_TXS * page);
+    .limit(limit)
+    .skip(limit * page);
 }
 
 function getTxCountByBlock(blockHash, cb) {

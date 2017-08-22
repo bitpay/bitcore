@@ -4,8 +4,6 @@ const config = require('../../config');
 
 const block = new Block();
 
-const MAX_BLOCKS = config.api.max_blocks; // ~ 12 hours
-
 let bestBlockHeight = 0;
 
 // 1e9 limit = ~2M years from now
@@ -29,8 +27,7 @@ function byHeight(height, cb) {
 }
 
 function getTopBlocks(cb) {
-  return block.last(cb)
-    .limit(MAX_BLOCKS);
+  return block.last(cb);
 }
 
 function getByHash(hash, cb) {

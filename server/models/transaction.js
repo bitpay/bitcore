@@ -2,8 +2,11 @@ const mongoose = require('mongoose');
 const Input = require('./input');
 const Output = require('./output');
 const logger = require('../lib/logger');
+const config = require('../config');
 
 const Schema = mongoose.Schema;
+const MAX_TXS = config.api.max_txs;
+const MAX_PAGE_TXS = config.api.max_page_txs;
 
 const TransactionSchema = new Schema({
   hash:        { type: String, default: '' },
@@ -38,8 +41,8 @@ TransactionSchema.methods.byHash = function txByHash(hash, cb) {
 TransactionSchema.methods.byBlockHash = function txByBlockHash(hash, cb) {
   return this.model('Transaction').find(
     { block: hash },
-    cb,
-  );
+    cb)
+    .limit(MAX_PAGE_TXS);
 };
 
 TransactionSchema.methods.byAddress = function txByAddress(address, cb) {
@@ -49,15 +52,13 @@ TransactionSchema.methods.byAddress = function txByAddress(address, cb) {
         { 'inputs.address': address },
         { 'outputs.address': address }],
     },
-    cb,
-  );
+    cb);
 };
 
 TransactionSchema.methods.countByBlock = function txByAddress(hash, cb) {
   return this.model('Transaction').count(
     { block: hash },
-    cb,
-  );
+    cb);
 };
 
 TransactionSchema.methods.countByAddress = function txByAddress(address, cb) {
@@ -67,15 +68,14 @@ TransactionSchema.methods.countByAddress = function txByAddress(address, cb) {
         { 'inputs.address': address },
         { 'outputs.address': address }],
     },
-    cb,
-  );
+    cb);
 };
 
 TransactionSchema.methods.last = function lastTx(cb) {
   return this.model('Transaction').find(
     {},
-    cb,
-  )
+    cb)
+    .limit(MAX_TXS)
     .sort({ height: -1 });
 };
 
