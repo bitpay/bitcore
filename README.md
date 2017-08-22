@@ -1,7 +1,7 @@
 Bitcore Library
 =======
 
-** Bitcoin CASH support version, please use with caution, this is will BETA **
+** Bitcoin CASH support version, please use with caution, this is still BETA **
 
 [![NPM Package](https://img.shields.io/npm/v/bitcore-lib.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-lib)
 [![Build Status](https://img.shields.io/travis/bitpay/bitcore-lib.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-lib)
@@ -29,6 +29,15 @@ npm install bitcore-lib
 
 ```
 bower install bitcore-lib
+```
+
+Adding Bitcore Cash to your app's `package.json`:
+
+``` json
+  "dependencies": {
+         "bitcore-lib-cash": "git@github.com:bitpay/bitcore-lib.git#cash",
+          ...
+          }
 ```
 
 ## Documentation
