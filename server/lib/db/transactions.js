@@ -2,10 +2,8 @@ const Transactions = require('../../models/transaction.js');
 const logger       = require('../logger');
 const config       = require('../../config');
 
-const txs = new Transactions();
+const Txs = new Transactions();
 
-// For now, blocks handles these calls.
-// These will be replaced with more advanced mongo
 // No optimization yet.
 // Will be replaced with a more sophisticated api soon
 
@@ -49,147 +47,44 @@ function getTransactions(params, options, limit, skip, cb) {
     .limit(limit);
 }
 
-function getTransaction(params, options, limit, skip, cb) {
-  getTransactions(params, options, limit, skip, (err, tx) => {
-    if (err) {
-      logger.log('error',
-        `getTransaction: ${err.err}`);
-      return cb(err);
-    }
-    if (!tx.length > 0) {
-      return cb({ err: 'Tx not found' });
-    }
-    return cb(null, tx[0]);
-  });
+function getEmptyInputs(cb) {
+  return Txs.getEmptyInputs(cb);
 }
 
-// Req Change, refactor above
 function getTopTransactions(cb) {
-  // Do not return mongo ids
-  const defaultOptions = { _id: 0 };
-  // Query mongo
-  Transactions.find(
-    {},
-    (err, txs) => {
-      if (err) {
-        logger.log('error',
-          `getTransactions: ${err}`);
-        return cb(err);
-      }
-      if (!txs.length > 0) {
-        return cb({ err: 'Tx not found' });
-      }
-      return cb(null, txs);
-    })
-    .sort({ height: -1 })
+  return Txs.last(cb)
     .limit(MAX_TXS);
 }
 
 function getTxById(txid, cb) {
-  txs.byId(txid,
-    (err, transaction) => {
-      if (err) {
-        logger.log('error',
-          `getTxById: ${txid} ${err.err}`);
-        return cb(err);
-      }
-      return cb(null, transaction);
-    });
+  return Txs.byId(txid, cb);
 }
 
 function getTxByBlock(blockHash, page, limit, cb) {
-  getTransactions(
-    { block: blockHash },
-    {},
-    limit,
-    page * limit,
-    (err, tx) => {
-      if (err) {
-        logger.log('error',
-          `getTxByBlock: ${err.err}`);
-        return cb(err);
-      }
-      if (!tx.length > 0) {
-        return cb({ err: 'Tx not found' });
-      }
-      return cb(null, tx);
-    });
+  return Txs.byBlockHash(blockHash, cb)
+    .limit(MAX_TXS);
 }
 
 function getTxByAddress(address, page, limit, cb) {
-  getTransactions(
-    {
-      $or: [
-        { 'inputs.address': address },
-        { 'outputs.address': address }],
-    },
-    {},
-    limit,
-    page * limit,
-    (err, tx) => {
-      if (err) {
-        logger.log('error',
-          `getTxByAddress: ${err.err}`);
-        return cb(err);
-      }
-      if (!tx.length > 0) {
-        return cb({ err: 'Tx not found' });
-      }
-      return cb(null, tx);
-    });
+  return Txs.byAddress(address, cb)
+    .limit(MAX_TXS);
 }
 
 function getTxCountByBlock(blockHash, cb) {
-  Transactions.count(
-    { block: blockHash },
-    (err, count) => {
-      if (err) {
-        logger.log('error',
-          `getTxCountByBlock ${err}`);
-        return cb(err);
-      }
-      return cb(null, count);
-    });
+  return Txs.countByBlock(blockHash, cb);
 }
 
 function getTxCountByAddress(address, cb) {
-  Transactions.count(
-    { $or: [
-      { 'inputs.address': address },
-      { 'outputs.address': address }],
-    },
-    (err, count) => {
-      if (err) {
-        logger.log('error',
-          `getTxCountByAddress ${err}`);
-        return cb(err);
-      }
-      return cb(null, count);
-    });
+  return Txs.countByAddress(address, cb);
 }
 
-
 function updateInput(txid, inputid, value, address) {
-  Transactions.findOneAndUpdate(
-    { _id: txid, 'inputs._id': inputid },
-    {
-      $set: {
-        'inputs.$.value': value,
-        'inputs.$.address': address,
-      },
-    },
-    (err, tx) => {
-      if (err) {
-        logger.log('error',
-          `updateInput: ${err}`);
-      }
-    },
-  );
+  return Txs.updateInput(txid, inputid, value, address);
 }
 
 module.exports = {
-  getTransaction,
   getTransactions,
+  getEmptyInputs,
   getTopTransactions,
   getTxById,
   getTxByBlock,

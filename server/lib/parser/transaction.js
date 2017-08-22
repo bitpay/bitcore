@@ -72,14 +72,7 @@ function parse(entry, txs) {
 }
 
 function findEmptyInputs() {
-  db.txs.getTransactions(
-    {
-      'inputs.prevout.hash': { $ne: '0000000000000000000000000000000000000000000000000000000000000000' },
-      'inputs.address': '',
-    },
-    {},
-    100,
-    0,
+  db.txs.getEmptyInputs(
     (err, txs) => {
       if (err) {
         return logger.log('error',
