@@ -22,6 +22,7 @@
   "dependencies": {
     "async": "^0.9.2",
     "bitcore-lib": "^0.14.0",
+    "bitcore-lib-cash": "git@github.com:bitpay/bitcore-lib.git#cash",
     "body-parser": "^1.11.0",
     "compression": "^1.6.2",
     "coveralls": "^2.11.2",
@@ -70,14 +71,18 @@
     "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage"
   },
   "bitcoreNode": "./bitcorenode",
-  "contributors": [{
-    "name": "Braydon Fuller",
-    "email": "braydon@bitpay.com"
-  }, {
-    "name": "Ivan Socolsky",
-    "email": "ivan@bitpay.com"
-  }, {
-    "name": "Matias Alejo Garcia",
-    "email": "ematiu@gmail.com"
-  }]
+  "contributors": [
+    {
+      "name": "Braydon Fuller",
+      "email": "braydon@bitpay.com"
+    },
+    {
+      "name": "Ivan Socolsky",
+      "email": "ivan@bitpay.com"
+    },
+    {
+      "name": "Matias Alejo Garcia",
+      "email": "ematiu@gmail.com"
+    }
+  ]
 }
