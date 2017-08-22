@@ -2,6 +2,8 @@ const Transactions = require('../../models/transaction.js');
 const logger       = require('../logger');
 const config       = require('../../config');
 
+const txs = new Transactions();
+
 // For now, blocks handles these calls.
 // These will be replaced with more advanced mongo
 // No optimization yet.
@@ -84,11 +86,7 @@ function getTopTransactions(cb) {
 }
 
 function getTxById(txid, cb) {
-  getTransaction(
-    { hash: txid },
-    {  },
-    1,
-    0,
+  txs.byId(txid,
     (err, transaction) => {
       if (err) {
         logger.log('error',

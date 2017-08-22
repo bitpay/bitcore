@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Input = require('./input');
 const Output = require('./output');
+const logger = require('../lib/logger');
 
 const Schema = mongoose.Schema;
 
@@ -24,6 +25,18 @@ const TransactionSchema = new Schema({
 
 TransactionSchema.index({ hash: 1 });
 
-const Transaction = mongoose.model('Transaction', TransactionSchema);
+TransactionSchema.methods.byId = function txById(txid, cb) {
+  return this.model('Transaction').findOne(
+    { hash: txid },
+    (err, tx) => {
+      if (err) {
+        logger.log('error',
+          `TransactionSchema.methods.byId: ${err}`);
+        return cb(err);
+      }
+      return cb(null, tx);
+    });
+};
 
-module.exports = Transaction;
+
+module.exports = mongoose.model('Transaction', TransactionSchema);
