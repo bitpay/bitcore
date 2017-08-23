@@ -18,6 +18,7 @@ export class LatestTransactionsComponent {
 
   private loading: boolean = true;
   private transactions: Array<any> = [];
+  private seconds: number = 10;
 
   constructor(private http: Http, private navCtrl: NavController, private api: ApiProvider, public currency: CurrencyProvider, ngZone: NgZone) {
     this.loadTransactions();
@@ -28,7 +29,7 @@ export class LatestTransactionsComponent {
             this.loadTransactions.call(this);
           }.bind(this));
         }.bind(this),
-        1000 * 10
+        1000 * this.seconds
       );
     });
   }

@@ -13,7 +13,6 @@ import { ApiProvider } from '../../providers/api/api';
 export class BlocksProvider {
 
   constructor(public http: Http, private api: ApiProvider) {
-    console.log('Hello BlocksProvider Provider');
   }
 
   public getBlocks(): any {
