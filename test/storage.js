@@ -54,6 +54,8 @@ describe('Storage', function() {
         name: 'my wallet',
         m: 2,
         n: 3,
+        coin: 'btc',
+        network: 'livenet',
       });
       should.exist(wallet);
       storage.storeWallet(wallet, function(err) {
@@ -85,6 +87,8 @@ describe('Storage', function() {
         name: 'my wallet',
         m: 2,
         n: 3,
+        coin: 'btc',
+        network: 'livenet',
       });
       _.each(_.range(3), function(i) {
         var copayer = Model.Copayer.create({
@@ -127,6 +131,8 @@ describe('Storage', function() {
         name: 'my wallet',
         m: 2,
         n: 3,
+        coin: 'btc',
+        network: 'livenet',
       });
       _.each(_.range(3), function(i) {
         var copayer = Model.Copayer.create({

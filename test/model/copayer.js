@@ -17,7 +17,7 @@ describe('Copayer', function() {
     });
   });
   describe('#createAddress', function() {
-    it('create an address', function() {
+    it('should create an address', function() {
       var w = Wallet.fromObj(testWallet);
       var c = Copayer.fromObj(testWallet.copayers[2]);
       should.exist(c.requestPubKeys);
@@ -42,6 +42,7 @@ var testWallet = {
   createdOn: 1422904188,
   id: '123',
   name: '123 wallet',
+  network: 'livenet',
   m: 2,
   n: 3,
   status: 'complete',

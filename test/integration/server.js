@@ -433,6 +433,24 @@ describe('Wallet service', function() {
       });
     });
 
+    it('should create wallet for another coin', function(done) {
+      var opts = {
+        coin: 'bch',
+        name: 'my wallet',
+        m: 2,
+        n: 3,
+        pubKey: TestData.keyPair.pub,
+      };
+      server.createWallet(opts, function(err, walletId) {
+        should.not.exist(err);
+        server.storage.fetchWallet(walletId, function(err, wallet) {
+          should.not.exist(err);
+          wallet.coin.should.equal('bch');
+          done();
+        });
+      });
+    });
+
     describe('Address derivation strategy', function() {
       var server;
       beforeEach(function() {
