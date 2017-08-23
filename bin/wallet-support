@@ -72,6 +72,7 @@ function displayStatus(status) {
   console.log('\n* Wallet info');
   console.log('  ID: %s', x.id);
   console.log('  %s %d-of-%d%s [%s %s] wallet (status: %s)', x.network.toUpperCase(), x.m, x.n, x.singleAddress ? ' single-address' : '', x.derivationStrategy, x.addressType, x.status);
+  console.log('  Created on: %s', moment(x.createdOn * 1000));
 
   if (x.status != 'complete') {
     console.log('  Missing ' + (x.n - x.copayers.length) + ' copayers');
@@ -128,7 +129,7 @@ function displayAddresses(addresses) {
   }
   console.log('\n* Main addresses (not including change addresses)');
   _.each(addresses, function(a) {
-    console.log('  %s (%s)', a.address, a.path);
+    console.log('  [%s] %s (%s)', moment(a.createdOn * 1000), a.address, a.path);
   });
 };
 
