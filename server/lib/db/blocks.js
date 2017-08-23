@@ -9,6 +9,7 @@ let bestBlockHeight = 0;
 // 1e9 limit = ~2M years from now
 // Mostly for sync to set height
 function bestHeight(height) {
+  height = parseInt(height, 10) || 0;
   if (Number.isInteger(height) &&
     height > 0 &&
     height < 1 * 1e9) {
