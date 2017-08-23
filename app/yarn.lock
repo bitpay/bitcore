@@ -159,50 +159,9 @@
     ws "1.1.1"
     xml2js "^0.4.17"
 
-"@ionic/cli-plugin-cordova@1.6.2":
-  version "1.6.2"
-  resolved "https://registry.yarnpkg.com/@ionic/cli-plugin-cordova/-/cli-plugin-cordova-1.6.2.tgz#f71d10641df8b522f54f8274e0d5bc4dbb8b5208"
-  dependencies:
-    "@ionic/cli-utils" "1.7.0"
-    chalk "^2.0.0"
-    elementtree "^0.1.7"
-    tslib "^1.7.1"
-
-"@ionic/cli-plugin-ionic-angular@1.4.1":
-  version "1.4.1"
-  resolved "https://registry.yarnpkg.com/@ionic/cli-plugin-ionic-angular/-/cli-plugin-ionic-angular-1.4.1.tgz#bb94b7ad61c2f79757b2dff041c0b7e2151777ec"
-  dependencies:
-    "@ionic/cli-utils" "1.7.0"
-    chalk "^2.0.0"
-    tslib "^1.7.1"
-
-"@ionic/cli-utils@1.7.0":
-  version "1.7.0"
-  resolved "https://registry.yarnpkg.com/@ionic/cli-utils/-/cli-utils-1.7.0.tgz#05bdbf3e7533eeeee27d58f3adbfe26bf2bf0d1d"
-  dependencies:
-    archiver "^2.0.0"
-    chalk "^2.0.0"
-    ci-info "^1.0.0"
-    cross-spawn "^5.1.0"
-    dargs "^5.1.0"
-    dev-null "^0.1.1"
-    inquirer "^3.2.1"
-    leek "0.0.24"
-    lodash "^4.17.4"
-    minimist "^1.2.0"
-    ncp "^2.0.0"
-    semver "^5.4.1"
-    slice-ansi "^1.0.0"
-    string-width "^2.1.1"
-    strip-ansi "^4.0.0"
-    superagent "^3.5.2"
-    tslib "^1.7.1"
-    uuid "^3.0.1"
-    wrap-ansi "^3.0.1"
-
-"@ionic/cli-utils@1.9.1":
-  version "1.9.1"
-  resolved "https://registry.yarnpkg.com/@ionic/cli-utils/-/cli-utils-1.9.1.tgz#a0118819cb8de1f3bc4bc5b401e5b61d7f41d5b5"
+"@ionic/cli-utils@1.9.2":
+  version "1.9.2"
+  resolved "https://registry.yarnpkg.com/@ionic/cli-utils/-/cli-utils-1.9.2.tgz#9916d8bb6ec696b948b6be1c05fbec46c87ddc0b"
   dependencies:
     "@types/gulp" "^3.8.33"
     archiver "^2.0.0"
@@ -1973,10 +1932,6 @@ detect-node@^2.0.3:
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/detect-node/-/detect-node-2.0.3.tgz#a2033c09cc8e158d37748fbde7507832bd6ce127"
 
-dev-null@^0.1.1:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/dev-null/-/dev-null-0.1.1.tgz#5a205ce3c2b2ef77b6238d6ba179eb74c6a0e818"
-
 di@^0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/di/-/di-0.0.1.tgz#806649326ceaa7caa3306d75d985ea2748ba913c"
@@ -3223,11 +3178,11 @@ ionic-angular@3.4.2:
   version "3.4.2"
   resolved "https://registry.yarnpkg.com/ionic-angular/-/ionic-angular-3.4.2.tgz#762631f1af78a5ae1c0aa0f4d23b31435142abe1"
 
-ionic@3.9.1:
-  version "3.9.1"
-  resolved "https://registry.yarnpkg.com/ionic/-/ionic-3.9.1.tgz#be50eea2f55bad40574772ecaeaf5a460fd16330"
+ionic@3.9.2:
+  version "3.9.2"
+  resolved "https://registry.yarnpkg.com/ionic/-/ionic-3.9.2.tgz#d958069ce29d9dbb8b9c1638b59995ce005ce845"
   dependencies:
-    "@ionic/cli-utils" "1.9.1"
+    "@ionic/cli-utils" "1.9.2"
     chalk "^2.0.0"
     opn "^5.1.0"
     os-name "^2.0.1"

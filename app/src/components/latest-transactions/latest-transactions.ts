@@ -1,4 +1,4 @@
-import { Component, NgZone } from '@angular/core';
+import { Component, NgZone, Input } from '@angular/core';
 import { Http } from '@angular/http';
 import { NavController } from 'ionic-angular';
 import { ApiProvider } from '../../providers/api/api';
@@ -18,18 +18,26 @@ export class LatestTransactionsComponent {
 
   private loading: boolean = true;
   private transactions: Array<any> = [];
-  private seconds: number = 10;
+  @Input() public refreshSeconds: number = 10;
+  private timer: number;
 
-  constructor(private http: Http, private navCtrl: NavController, private api: ApiProvider, public currency: CurrencyProvider, ngZone: NgZone) {
+  constructor(private http: Http, private navCtrl: NavController, private api: ApiProvider, public currency: CurrencyProvider, private ngZone: NgZone) {
     this.loadTransactions();
-    ngZone.runOutsideAngular(() => {
-      setInterval(
+  }
+
+  public ngOnChanges(): void {
+    if (this.timer) {
+      clearInterval(this.timer);
+    }
+
+    this.ngZone.runOutsideAngular(() => {
+      this.timer = setInterval(
         function (): void {
-          ngZone.run(function (): void {
+          this.ngZone.run(function (): void {
             this.loadTransactions.call(this);
           }.bind(this));
         }.bind(this),
-        1000 * this.seconds
+        1000 * this.refreshSeconds
       );
     });
   }
