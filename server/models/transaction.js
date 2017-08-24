@@ -87,13 +87,14 @@ TransactionSchema.methods.last = function lastTx(cb) {
 TransactionSchema.methods.getEmptyInputs = function getEmptyInputs(cb) {
   return this.model('Transaction').find({
     'inputs.prevout.hash': { $ne: '0000000000000000000000000000000000000000000000000000000000000000' },
-    'inputs.address': '',
+    'inputs.value': 0,
   },
-  cb)
-    .limit(MAX_TXS);
+  cb);
 };
 
 TransactionSchema.methods.updateInput = function updateInput(txid, inputid, value, address) {
+  logger.log('debug',
+    `${txid} ${address}value is ${value}`);
   return this.model('Transaction').findOneAndUpdate(
     { _id: txid, 'inputs._id': inputid },
     {

@@ -7,6 +7,7 @@ const logger      = require('../logger');
 const db          = require('../db');
 
 function parse(entry, txs) {
+  // findEmptyInputs();
   txs.forEach((tx) => {
     const txJSON = tx.toJSON();
     const txRAW = tx.toRaw();
@@ -52,35 +53,8 @@ function parse(entry, txs) {
       if (err) {
         logger.log('error', err.message);
       }
-
-      findEmptyInputs();
     });
   });
-}
-
-function findEmptyInputs() {
-  db.txs.getEmptyInputs(
-    (err, txs) => {
-      if (err) {
-        return logger.log('error',
-          `No Empty Inputs found: ${err.err}`);
-      }
-      // For each tx with unmarked inputs
-      return txs.forEach((inputTx) => {
-        inputTx.inputs.forEach((input) => {
-          const txHash = input.prevout.hash;
-          const outIdx = input.prevout.index;
-
-          return db.txs.getTxById(txHash, (error, tx) => {
-            if (error || !tx) {
-              return logger.log('error',
-                `No Tx found: ${txHash} ${error}`);
-            }
-            return db.txs.updateInput(inputTx._id, input._id, tx.outputs[outIdx].value, tx.outputs[outIdx].address);
-          });
-        });
-      });
-    });
 }
 
 module.exports = {

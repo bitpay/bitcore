@@ -7,6 +7,7 @@ const socket      = require('../../lib/api/socket');
 const db          = require('../../lib/db');
 
 const node = new FullNode(config.bcoin);
+let doneSyncing = false;
 
 function start() {
   node.open()
@@ -22,6 +23,13 @@ function start() {
     TxParser.parse(entry, block.txs);
     socket.processBlock(entry, block);
     db.blocks.bestHeight(entry.height);
+    if (entry.height % 20 === 0 || doneSyncing) {
+      db.txs.auditInputs();
+    }
+  });
+
+  node.chain.on('full', () => {
+    doneSyncing = true;
   });
 
   node.on('error', (err) => {
