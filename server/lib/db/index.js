@@ -9,6 +9,15 @@ mongoose.connection.on('error', (err) => {
     ${err}`);
 });
 
+process.on('SIGINT', gracefulExit).on('SIGTERM', gracefulExit);
+
+function gracefulExit() {
+  mongoose.connection.close(() => {
+    console.log('Mongoose connection with DB disconnected through app termination');
+    process.exit(0);
+  });
+}
+
 module.exports = {
   connect:    mongoose.connect,
   connection: mongoose.connection,
