@@ -12,9 +12,12 @@ db.connect(config.mongodb.uri, config.mongodb.options);
 
 db.connection.once('open', () => {
   // DB Audit returns best height to node
-  db.blocks.findMissingBlocks((err, lastBestHeight) => {
+  db.blocks.findMissingBlocks((err, bestBlockHeight) => {
     // Pass height to node to start Sync
-    if (config.start_node) Bcoin.start(lastBestHeight);
+    logger.log('debug',
+      `Starting Bcoin from best height: ${bestBlockHeight}`);
+
+    if (config.start_node) Bcoin.start(bestBlockHeight);
 
     Api.listen(config.api.port, () => {
       logger.log('debug',

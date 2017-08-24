@@ -50,12 +50,11 @@ function findMissingBlocks(cb) {
     // Blocks are in ascending order
     let lastGoodHeight = 0;
     blocks.forEach((block) => {
-      if (lastGoodHeight !== block.height - 1) {
-        return lastGoodHeight;
+      if (lastGoodHeight === block.height - 1) {
+        lastGoodHeight = block.height;
       }
-      lastGoodHeight = block.height;
     });
-    return lastGoodHeight;
+    return cb(null, lastGoodHeight);
   });
 }
 

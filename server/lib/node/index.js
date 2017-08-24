@@ -14,7 +14,7 @@ function start(bestBlockHeight) {
     .then(() => {
       node.connect()
         .then(() => {
-          node.reset(bestBlockHeight);
+          node.chain.reset(bestBlockHeight);
           node.startSync();
         });
     });
