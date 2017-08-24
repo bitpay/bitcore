@@ -31,31 +31,39 @@ const BlockSchema = new Schema({
 BlockSchema.index({ hash: 1 });
 BlockSchema.index({ height: 1 });
 
-BlockSchema.methods.byHeight = function blockByHeight(height, cb) {
+BlockSchema.statics.byHeight = function blockByHeight(height, cb) {
   return this.model('Block').findOne(
     { height },
     cb);
 };
 
-BlockSchema.methods.byHash = function byHash(hash, cb) {
+BlockSchema.statics.byHash = function byHash(hash, cb) {
   return this.model('Block').findOne(
     { hash },
     cb);
 };
 
-BlockSchema.methods.getRawBlock = function getRawBlock(hash, cb) {
+BlockSchema.statics.getRawBlock = function getRawBlock(hash, cb) {
   return this.model('Block').findOne(
     { hash },
     { rawBlock: 1 },
     cb);
 };
 
-BlockSchema.methods.last = function lastBlocks(cb) {
+BlockSchema.statics.last = function lastBlocks(cb) {
   return this.model('Block').find(
     {},
     cb)
     .limit(MAX_BLOCKS)
     .sort({ height: -1 });
+};
+
+BlockSchema.statics.getHeights = function findMissing(cb) {
+  return this.model('Block').find(
+    {},
+    { height: 1 },
+    cb)
+    .sort({ height: 1 });
 };
 
 module.exports = mongoose.model('Block', BlockSchema);

@@ -2,7 +2,6 @@ const Block = require('../../models/block.js');
 const logger = require('../logger');
 const config = require('../../config');
 
-const block = new Block();
 
 let bestBlockHeight = 0;
 
@@ -20,27 +19,48 @@ function bestHeight(height) {
 }
 
 function getRawBlock(hash, cb) {
-  return block.getRawBlock(hash, cb);
+  return Block.getRawBlock(hash, cb);
 }
 
 function byHeight(height, cb) {
-  return block.byHeight(height, cb);
+  return Block.byHeight(height, cb);
 }
 
 function getTopBlocks(cb) {
-  return block.last(cb);
+  return Block.last(cb);
 }
 
 function getByHash(hash, cb) {
-  return block.byHash(hash, cb);
+  return Block.byHash(hash, cb);
 }
 
 function getLastBlock(cb) {
-  return block.last(cb)
+  return Block.last(cb)
     .limit(1);
 }
 
+// Returns the missing block if it exists. Otherwise, return tip.
+function findMissingBlocks(cb) {
+  logger.log('debug',
+    'Verifying Mongo Blockchain');
+  return Block.getHeights((err, blocks) => {
+    if (err) {
+      return cb(err);
+    }
+    // Blocks are in ascending order
+    let lastGoodHeight = 0;
+    blocks.forEach((block) => {
+      if (lastGoodHeight !== block.height - 1) {
+        return lastGoodHeight;
+      }
+      lastGoodHeight = block.height;
+    });
+    return lastGoodHeight;
+  });
+}
+
 module.exports = {
+  findMissingBlocks,
   getRawBlock,
   getTopBlocks,
   getLastBlock,

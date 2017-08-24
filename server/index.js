@@ -9,11 +9,16 @@ logger.log('debug',
 
 db.connect(config.mongodb.uri, config.mongodb.options);
 
-db.connection.once('open', () => {
-  if (config.start_node) Bcoin.start();
 
-  Api.listen(config.api.port, () => {
-    logger.log('debug',
-      'listening on port 3000');
+db.connection.once('open', () => {
+  // DB Audit returns best height to node
+  db.blocks.findMissingBlocks((err, lastBestHeight) => {
+    // Pass height to node to start Sync
+    if (config.start_node) Bcoin.start(lastBestHeight);
+
+    Api.listen(config.api.port, () => {
+      logger.log('debug',
+        'listening on port 3000');
+    });
   });
 });

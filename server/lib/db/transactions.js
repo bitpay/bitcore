@@ -2,44 +2,45 @@ const Transactions = require('../../models/transaction.js');
 const config       = require('../../config');
 const logger       = require('../logger');
 
-const Txs = new Transactions();
+
 const MAX_PAGE_TXS = config.api.max_page_txs;
 
 function getEmptyInputs(cb) {
-  return Txs.getEmptyInputs(cb);
+  return Transactions.getEmptyInputs(cb);
 }
 
 function getTopTransactions(cb) {
-  return Txs.last(cb);
+  return Transactions.last(cb);
 }
 
 function getTxById(txid, cb) {
-  return Txs.byId(txid, cb);
+  return Transactions.byId(txid, cb);
 }
 
 function getTxByBlock(blockHash, page, limit, cb) {
-  return Txs.byBlockHash(blockHash, cb)
+  return Transactions.byBlockHash(blockHash, cb)
     .skip(limit * page);
 }
 
 function getTxByAddress(address, page, limit, cb) {
-  return Txs.byAddress(address, cb)
+  return Transactions.byAddress(address, cb)
     .limit(limit)
     .skip(limit * page);
 }
 
 function getTxCountByBlock(blockHash, cb) {
-  return Txs.countByBlock(blockHash, cb);
+  return Transactions.countByBlock(blockHash, cb);
 }
 
 function getTxCountByAddress(address, cb) {
-  return Txs.countByAddress(address, cb);
+  return Transactions.countByAddress(address, cb);
 }
 
 function updateInput(txid, inputid, value, address) {
-  return Txs.updateInput(txid, inputid, value, address);
+  return Transactions.updateInput(txid, inputid, value, address);
 }
 
+// Updates empty inputs with prevout addr & value
 function auditInputs() {
   getEmptyInputs(
     (err, txs) => {
@@ -48,9 +49,6 @@ function auditInputs() {
           `No Empty Inputs found: ${err.err}`);
       }
       // For each tx with unmarked inputs
-      logger.log('debug',
-        `Found ${txs.length} txs with inputs to update`);
-
       return txs.forEach((inputTx) => {
         inputTx.inputs.forEach((input) => {
           const txHash = input.prevout.hash;

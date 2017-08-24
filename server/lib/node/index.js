@@ -9,11 +9,12 @@ const db          = require('../../lib/db');
 const node = new FullNode(config.bcoin);
 let doneSyncing = false;
 
-function start() {
+function start(bestBlockHeight) {
   node.open()
     .then(() => {
       node.connect()
         .then(() => {
+          node.reset(bestBlockHeight);
           node.startSync();
         });
     });

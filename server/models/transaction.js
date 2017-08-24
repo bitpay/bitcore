@@ -32,24 +32,24 @@ TransactionSchema.index({ 'outputs.address': 1 });
 TransactionSchema.index({ 'inputs.address': 1 });
 
 
-TransactionSchema.methods.byId = function txById(txid, cb) {
+TransactionSchema.statics.byId = function txById(txid, cb) {
   return this.model('Transaction').findOne(
     { hash: txid },
     cb);
 };
 
-TransactionSchema.methods.byHash = function txByHash(hash, cb) {
+TransactionSchema.statics.byHash = function txByHash(hash, cb) {
   return this.byId(hash, cb);
 };
 
-TransactionSchema.methods.byBlockHash = function txByBlockHash(hash, cb) {
+TransactionSchema.statics.byBlockHash = function txByBlockHash(hash, cb) {
   return this.model('Transaction').find(
     { block: hash },
     cb)
     .limit(MAX_TXS);
 };
 
-TransactionSchema.methods.byAddress = function txByAddress(address, cb) {
+TransactionSchema.statics.byAddress = function txByAddress(address, cb) {
   return this.model('Transaction').find(
     {
       $or: [
@@ -60,13 +60,13 @@ TransactionSchema.methods.byAddress = function txByAddress(address, cb) {
     .limit(MAX_TXS);
 };
 
-TransactionSchema.methods.countByBlock = function txByAddress(hash, cb) {
+TransactionSchema.statics.countByBlock = function txByAddress(hash, cb) {
   return this.model('Transaction').count(
     { block: hash },
     cb);
 };
 
-TransactionSchema.methods.countByAddress = function txByAddress(address, cb) {
+TransactionSchema.statics.countByAddress = function txByAddress(address, cb) {
   return this.model('Transaction').count(
     {
       $or: [
@@ -76,7 +76,7 @@ TransactionSchema.methods.countByAddress = function txByAddress(address, cb) {
     cb);
 };
 
-TransactionSchema.methods.last = function lastTx(cb) {
+TransactionSchema.statics.last = function lastTx(cb) {
   return this.model('Transaction').find(
     {},
     cb)
@@ -84,7 +84,7 @@ TransactionSchema.methods.last = function lastTx(cb) {
     .sort({ height: -1 });
 };
 
-TransactionSchema.methods.getEmptyInputs = function getEmptyInputs(cb) {
+TransactionSchema.statics.getEmptyInputs = function getEmptyInputs(cb) {
   return this.model('Transaction').find({
     'inputs.prevout.hash': { $ne: '0000000000000000000000000000000000000000000000000000000000000000' },
     'inputs.value': 0,
@@ -92,9 +92,7 @@ TransactionSchema.methods.getEmptyInputs = function getEmptyInputs(cb) {
   cb);
 };
 
-TransactionSchema.methods.updateInput = function updateInput(txid, inputid, value, address) {
-  logger.log('debug',
-    `${txid} ${address}value is ${value}`);
+TransactionSchema.statics.updateInput = function updateInput(txid, inputid, value, address) {
   return this.model('Transaction').findOneAndUpdate(
     { _id: txid, 'inputs._id': inputid },
     {
