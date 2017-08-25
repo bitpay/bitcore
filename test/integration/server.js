@@ -635,6 +635,21 @@ describe('Wallet service', function() {
         });
       });
 
+      it('should fail to join wallet for different coin', function(done) {
+        var copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: walletId,
+          name: 'me',
+          xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+          coin: 'bch',
+        });
+        server.joinWallet(copayerOpts, function(err) {
+          should.exist(err);
+          err.message.should.contain('different coin');
+          done();
+        });
+      });
+
       it('should return copayer in wallet error before full wallet', function(done) {
         helpers.createAndJoinWallet(1, 1, function(s, wallet) {
           var copayerOpts = helpers.getSignedCopayerOpts({
