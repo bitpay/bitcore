@@ -6636,6 +6636,7 @@ describe('Wallet service', function() {
 
           blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 2000);
           server._notify('NewBlock', {
+            coin: 'btc',
             network: 'livenet',
             hash: 'dummy hash',
           }, {

@@ -150,6 +150,8 @@ describe('Storage', function() {
         proposals = _.map(_.range(4), function(i) {
           var tx = Model.TxProposal.create({
             walletId: '123',
+            coin: 'btc',
+            network: 'livenet',
             outputs: [{
               toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
               amount: i + 100,
