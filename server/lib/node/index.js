@@ -7,8 +7,6 @@ const socket      = require('../../lib/api/socket');
 const db          = require('../../lib/db');
 
 const node      = new FullNode(config.bcoin);
-let doneSyncing = false;
-
 
 function start(bestBlockHeight) {
   node.open()
@@ -21,20 +19,18 @@ function start(bestBlockHeight) {
     });
 
   node.chain.on('connect', (entry, block) => {
-    // Saved block acts like a journal
-    BlockParser.parse(entry, block);
-    TxParser.parse(entry, block.txs);
-    socket.processBlock(entry, block);
     db.blocks.bestHeight(entry.height);
 
     node.chain.db.getBlockView(block)
       .then((view) => {
-        console.log(view);
+        const fullBlock = block.getJSON(node.network, view, entry.height);
+        BlockParser.parse(entry, block);
+        TxParser.parse(entry, fullBlock.txs);
       });
   });
 
   node.chain.on('full', () => {
-    doneSyncing = true;
+
   });
 
   node.on('error', (err) => {

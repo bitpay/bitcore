@@ -7,44 +7,35 @@ const logger      = require('../logger');
 const db          = require('../db');
 
 function parse(entry, txs) {
-  // findEmptyInputs();
   txs.forEach((tx) => {
-    const txJSON = tx.toJSON();
-    const txRAW = tx.toRaw();
-
     const t = new TxModel({
-      hash: txJSON.hash,
-      witnessHash: txJSON.witnessHash,
-      fee: txJSON.fee,
-      rate: txJSON.rate,
-      size: txRAW.length,
-      ps: txJSON.ps,
+      hash: tx.hash,
+      witnessHash: tx.witnessHash,
+      fee: tx.fee,
+      rate: tx.rate,
+      size: tx.size,
+      ps: tx.ps,
       height: entry.height,
       block: util.revHex(entry.hash),
       ts: entry.ts,
-      date: txJSON.date,
-      index: txJSON.index,
-      version: txJSON.version,
-      flag: txJSON.flag,
-      inputs: tx.inputs.map((input) => {
-        const inputJSON = input.toJSON();
-        return new InputModel({
-          prevout: inputJSON.prevout,
-          script: inputJSON.script,
-          witness: inputJSON.witness,
-          sequence: inputJSON.sequence,
-          address: inputJSON.address,
-        });
-      }),
-      outputs: tx.outputs.map((output) => {
-        const outputJSON = output.toJSON();
-        return new OutputModel({
-          address: outputJSON.address,
-          script: outputJSON.script,
-          value: outputJSON.value,
-        });
-      }),
-      lockTime: txJSON.locktime,
+      date: entry.tx,
+      index: tx.index,
+      version: tx.version,
+      flag: tx.flag,
+      inputs: tx.inputs.map(input => new InputModel({
+        value: input.coin ? input.coin.value : 0,
+        prevout: input.prevout,
+        script: input.script,
+        witness: input.witness,
+        sequence: input.sequence,
+        address: input.coin ? input.coin.address : '',
+      })),
+      outputs: tx.outputs.map(output => new OutputModel({
+        address: output.address,
+        script: output.script,
+        value: output.value,
+      })),
+      lockTime: tx.locktime,
       chain: config.bcoin.network,
     });
 
