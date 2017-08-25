@@ -6,8 +6,9 @@ const config      = require('../../config');
 const socket      = require('../../lib/api/socket');
 const db          = require('../../lib/db');
 
-const node = new FullNode(config.bcoin);
+const node      = new FullNode(config.bcoin);
 let doneSyncing = false;
+
 
 function start(bestBlockHeight) {
   node.open()
@@ -20,13 +21,16 @@ function start(bestBlockHeight) {
     });
 
   node.chain.on('connect', (entry, block) => {
+    // Saved block acts like a journal
     BlockParser.parse(entry, block);
     TxParser.parse(entry, block.txs);
     socket.processBlock(entry, block);
     db.blocks.bestHeight(entry.height);
-    if (entry.height % 20 === 0 || doneSyncing) {
-      db.txs.auditInputs();
-    }
+
+    node.chain.db.getBlockView(block)
+      .then((view) => {
+        console.log(view);
+      });
   });
 
   node.chain.on('full', () => {

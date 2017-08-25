@@ -45,7 +45,7 @@ function auditInputs() {
   getEmptyInputs(
     (err, txs) => {
       if (err) {
-        return logger.log('error',
+        return logger.log('warn',
           `No Empty Inputs found: ${err.err}`);
       }
       // For each tx with unmarked inputs
@@ -56,7 +56,8 @@ function auditInputs() {
 
           return getTxById(txHash, (error, tx) => {
             if (error || !tx) {
-              return logger.log('error',
+              // Mongo save is async. Bcoin is kinda sync... Does not mean the tx will not be found
+              return logger.log('warn',
                 `No Tx found: ${txHash} ${error}`);
             }
             return updateInput(inputTx._id, input._id, tx.outputs[outIdx].value, tx.outputs[outIdx].address);

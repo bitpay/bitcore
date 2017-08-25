@@ -23,7 +23,7 @@ module.exports = function transactionAPI(router) {
     const txid = req.params.txid || '';
 
     db.txs.getTxById(txid, (err, transaction) => {
-      if (err) {
+      if (err || !transaction) {
         logger.log('error',
           `/tx/:tid getTxById: ${err.err}`);
         return res.status(404).send();
