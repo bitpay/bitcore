@@ -13,6 +13,10 @@ var tingodb = require('tingodb')({
 });
 
 var Bitcore = require('bitcore-lib');
+var Bitcore_ = {
+  btc: Bitcore,
+  bch: require('bitcore-lib-cash')
+};
 
 var Common = require('../../lib/common');
 var Utils = Common.Utils;
