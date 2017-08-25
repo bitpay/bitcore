@@ -169,6 +169,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
     n: n,
     pubKey: TestData.keyPair.pub,
     singleAddress: !!opts.singleAddress,
+    coin: opts.coin || 'btc',
   };
   if (_.isBoolean(opts.supportBIP44AndP2PKH))
     walletOpts.supportBIP44AndP2PKH = opts.supportBIP44AndP2PKH;
@@ -180,6 +181,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
       var copayerData = TestData.copayers[i + offset];
       var copayerOpts = helpers.getSignedCopayerOpts({
         walletId: walletId,
+        coin: opts.coin,
         name: 'copayer ' + (i + 1),
         xPubKey: (_.isBoolean(opts.supportBIP44AndP2PKH) && !opts.supportBIP44AndP2PKH) ? copayerData.xPubKey_45H : copayerData.xPubKey_44H_0H_0H,
         requestPubKey: copayerData.pubKey_1H_0,

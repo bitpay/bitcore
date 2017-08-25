@@ -92,6 +92,7 @@ describe('Storage', function() {
       });
       _.each(_.range(3), function(i) {
         var copayer = Model.Copayer.create({
+          coin: 'btc',
           name: 'copayer ' + i,
           xPubKey: 'xPubKey ' + i,
           requestPubKey: 'requestPubKey ' + i,
@@ -136,6 +137,7 @@ describe('Storage', function() {
       });
       _.each(_.range(3), function(i) {
         var copayer = Model.Copayer.create({
+          coin: 'btc',
           name: 'copayer ' + i,
           xPubKey: 'xPubKey ' + i,
           requestPubKey: 'requestPubKey ' + i,
