@@ -1109,6 +1109,22 @@ describe('client API', function() {
         });
       });
     });
+    it('should create Bitcoin Cash wallet', function(done) {
+      clients[0].seedFromRandomWithMnemonic({
+        coin: 'bch'
+      });
+      clients[0].createWallet('mycashwallet', 'pepe', 1, 1, {
+        coin: 'bch'
+      }, function(err, secret) {
+        should.not.exist(err);
+        clients[0].getStatus({}, function(err, status) {
+          should.not.exist(err);
+          status.wallet.coin.should.equal('bch');
+          done();
+        })
+      });
+    });
+
     it('should check balance in a 1-1 ', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
         clients[0].getBalance({}, function(err, balance) {

@@ -233,7 +233,7 @@ describe('Utils', function() {
       var values = [
         null,
         123,
-        '123',
+        'x123',
       ];
       _.each(values, function(value) {
         var valid = true;
