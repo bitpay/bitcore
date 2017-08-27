@@ -1571,7 +1571,7 @@ describe('client API', function() {
         10: 18000,
       });
       clients[0].credentials = {};
-      clients[0].getFeeLevels('livenet', function(err, levels) {
+      clients[0].getFeeLevels('btc', 'livenet', function(err, levels) {
         should.not.exist(err);
         should.exist(levels);
         _.difference(['priority', 'normal', 'economy'], _.pluck(levels, 'level')).should.be.empty;
