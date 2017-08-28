@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
-// import { Http } from '@angular/http';
-// import { ApiProvider } from '../../providers/api/api';
+import { Component, NgZone, Input } from '@angular/core';
+import { Http } from '@angular/http';
+import { NavController } from 'ionic-angular';
+import { ApiProvider } from '../../providers/api/api';
+import { CurrencyProvider } from '../../providers/currency/currency';
 
 /**
  * Generated class for the LatestTransactionsComponent component.
@@ -14,14 +16,34 @@ import { Component } from '@angular/core';
 })
 export class LatestTransactionsComponent {
 
-  private text: string;
+  private loading: boolean = true;
+  private transactions: Array<any> = [];
+  @Input() public refreshSeconds: number = 10;
+  private timer: number;
 
-  constructor(/*private http: Http, private api: ApiProvider*/) {
-    console.log('Hello LatestTransactionsComponent Component');
-    this.text = 'Hello Latest Transactions';
+  constructor(private http: Http, private navCtrl: NavController, private api: ApiProvider, public currency: CurrencyProvider, private ngZone: NgZone) {
+    this.loadTransactions();
+  }
 
-    /*
-    let url: string = this.api.apiPrefix + 'txs?' + this.queryType + '=' + this.queryValue;
+  public ngOnChanges(): void {
+    if (this.timer) {
+      clearInterval(this.timer);
+    }
+
+    this.ngZone.runOutsideAngular(() => {
+      this.timer = setInterval(
+        function (): void {
+          this.ngZone.run(function (): void {
+            this.loadTransactions.call(this);
+          }.bind(this));
+        }.bind(this),
+        1000 * this.refreshSeconds
+      );
+    });
+  }
+
+  private loadTransactions(): void {
+    let url: string = this.api.apiPrefix + 'txs';
 
     this.http.get(url).subscribe(
       (data) => {
@@ -33,20 +55,11 @@ export class LatestTransactionsComponent {
         this.loading = false;
       }
     );
-     */
-
-    /*
-    this.http.get(this.api.apiPrefix + 'tx/' + this.txId).subscribe(
-      (data) => {
-        this.tx = JSON.parse(data['_body']);
-        this.loading = false;
-      },
-      (err) => {
-        console.log('err is', err);
-        this.loading = false;
-      }
-    );
-     */
   }
 
+  public goToTx(txId: string): void {
+    this.navCtrl.push('transaction', {
+      'txId': txId
+    });
+  }
 }
