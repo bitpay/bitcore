@@ -35,7 +35,6 @@ app.use((req, res) => res.status(404).send({
   error: 'Not found',
 }));
 
-// Socket server
 const server  = require('http').Server(app);
 
 module.exports = {
