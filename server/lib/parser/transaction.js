@@ -13,7 +13,6 @@ function parse(entry, txs) {
       witnessHash: tx.witnessHash,
       fee: tx.fee,
       rate: tx.rate,
-      size: tx.size,
       ps: tx.ps,
       height: entry.height,
       block: util.revHex(entry.hash),
