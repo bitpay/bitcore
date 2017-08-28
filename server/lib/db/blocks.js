@@ -39,6 +39,10 @@ function getLastBlock(cb) {
     .limit(1);
 }
 
+function saveBcoinBlock(entry, block, cb) {
+  return Block.saveBcoinBlock(entry, block, cb);
+}
+
 // Returns highest consecutive block height
 function getBestBlockHeight(cb) {
   logger.log('debug',
@@ -66,4 +70,5 @@ module.exports = {
   getByHash,
   byHeight,
   bestHeight,
+  saveBcoinBlock,
 };

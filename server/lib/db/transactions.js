@@ -2,12 +2,7 @@ const Transactions = require('../../models/transaction.js');
 const config       = require('../../config');
 const logger       = require('../logger');
 
-
 const MAX_PAGE_TXS = config.api.max_page_txs;
-
-function getEmptyInputs(cb) {
-  return Transactions.getEmptyInputs(cb);
-}
 
 function getTopTransactions(cb) {
   return Transactions.last(cb);
@@ -36,13 +31,17 @@ function getTxCountByAddress(address, cb) {
   return Transactions.countByAddress(address, cb);
 }
 
+function saveBcoinTransactions(entry, txs, cb) {
+  return Transactions.saveBcoinTransactions(entry, txs, cb);
+}
+
 
 module.exports = {
-  getEmptyInputs,
   getTopTransactions,
   getTxById,
   getTxByBlock,
   getTxCountByBlock,
   getTxByAddress,
   getTxCountByAddress,
+  saveBcoinTransactions,
 };

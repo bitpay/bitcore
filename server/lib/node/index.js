@@ -1,9 +1,6 @@
 const FullNode    = require('bcoin/lib/node/fullnode');
 const logger      = require('../../lib/logger');
-const BlockParser = require('../parser').Block;
-const TxParser    = require('../parser').Transaction;
 const config      = require('../../config');
-const socket      = require('../../lib/api/socket');
 const db          = require('../../lib/db');
 
 const node      = new FullNode(config.bcoin);
@@ -20,12 +17,24 @@ function start(bestBlockHeight) {
 
   node.chain.on('connect', (entry, block) => {
     db.blocks.bestHeight(entry.height);
-
+    // Assemble Bcoin block data
     node.chain.db.getBlockView(block)
       .then((view) => {
         const fullBlock = block.getJSON(node.network, view, entry.height);
-        BlockParser.parse(entry, block);
-        TxParser.parse(entry, fullBlock.txs);
+        // Save the block
+        db.blocks.saveBcoinBlock(entry, block, (err) => {
+          if (err) {
+            logger.log('error',
+              `Error saving block ${err}`);
+          }
+        });
+        // Save the Txs
+        db.txs.saveBcoinTransactions(entry, fullBlock.txs, (err) => {
+          if (err) {
+            logger.log('error',
+              `Error saving txs ${err}`);
+          }
+        });
       });
   });
 

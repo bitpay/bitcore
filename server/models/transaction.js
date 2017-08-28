@@ -3,6 +3,7 @@ const Input = require('./input');
 const Output = require('./output');
 const logger = require('../lib/logger');
 const config = require('../config');
+const util = require('../lib/util');
 
 const Schema = mongoose.Schema;
 // These limits can be overriden higher up the stack
@@ -83,30 +84,44 @@ TransactionSchema.statics.last = function lastTx(cb) {
     .sort({ height: -1 });
 };
 
-TransactionSchema.statics.getEmptyInputs = function getEmptyInputs(cb) {
-  return this.model('Transaction').find({
-    'inputs.prevout.hash': { $ne: '0000000000000000000000000000000000000000000000000000000000000000' },
-    'inputs.value': 0,
-  },
-  cb);
+TransactionSchema.statics.saveBcoinTransactions = function saveBcoinTransactions(entry, txs, cb) {
+  txs.forEach((tx) => {
+    this.saveBcoinTransaction(entry, tx, cb);
+  });
 };
 
-TransactionSchema.statics.updateInput = function updateInput(txid, inputid, value, address) {
-  return this.model('Transaction').findOneAndUpdate(
-    { _id: txid, 'inputs._id': inputid },
-    {
-      $set: {
-        'inputs.$.value': value,
-        'inputs.$.address': address,
-      },
-    },
-    (err, tx) => {
-      if (err) {
-        logger.log('error',
-          `updateInput: ${err}`);
-      }
-    },
-  );
+TransactionSchema.statics.saveBcoinTransaction = function saveBcoinTransaction(entry, tx, cb) {
+  const Transaction = this.model('Transaction');
+  return new Transaction({
+    hash: tx.hash,
+    witnessHash: tx.witnessHash,
+    fee: tx.fee,
+    rate: tx.rate,
+    ps: tx.ps,
+    height: entry.height,
+    block: util.revHex(entry.hash),
+    ts: entry.ts,
+    date: entry.tx,
+    index: tx.index,
+    version: tx.version,
+    flag: tx.flag,
+    inputs: tx.inputs.map(input => new Input({
+      value: input.coin ? input.coin.value : 0,
+      prevout: input.prevout,
+      script: input.script,
+      witness: input.witness,
+      sequence: input.sequence,
+      address: input.coin ? input.coin.address : '',
+    })),
+    outputs: tx.outputs.map(output => new Output({
+      address: output.address,
+      script: output.script,
+      value: output.value,
+    })),
+    lockTime: tx.locktime,
+    chain: config.bcoin.network,
+  })
+    .save(cb);
 };
 
 module.exports = mongoose.model('Transaction', TransactionSchema);
