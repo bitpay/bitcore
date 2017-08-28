@@ -6,7 +6,7 @@ const sanitizer  = require('./middleware/sanitizer');
 
 const app = express();
 const api = express.Router();
-const cors = require('./cors');
+const cors = require('./middleware/cors');
 
 app.use(cors);
 app.use(helmet());
