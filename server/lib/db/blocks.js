@@ -39,8 +39,8 @@ function getLastBlock(cb) {
     .limit(1);
 }
 
-// Returns the missing block if it exists. Otherwise, return tip.
-function findMissingBlocks(cb) {
+// Returns highest consecutive block height
+function getBestBlockHeight(cb) {
   logger.log('debug',
     'Verifying Mongo Blockchain');
   return Block.getHeights((err, blocks) => {
@@ -59,7 +59,7 @@ function findMissingBlocks(cb) {
 }
 
 module.exports = {
-  findMissingBlocks,
+  getBestBlockHeight,
   getRawBlock,
   getTopBlocks,
   getLastBlock,

@@ -36,39 +36,8 @@ function getTxCountByAddress(address, cb) {
   return Transactions.countByAddress(address, cb);
 }
 
-function updateInput(txid, inputid, value, address) {
-  return Transactions.updateInput(txid, inputid, value, address);
-}
-
-// Updates empty inputs with prevout addr & value
-function auditInputs() {
-  getEmptyInputs(
-    (err, txs) => {
-      if (err) {
-        return logger.log('warn',
-          `No Empty Inputs found: ${err.err}`);
-      }
-      // For each tx with unmarked inputs
-      return txs.forEach((inputTx) => {
-        inputTx.inputs.forEach((input) => {
-          const txHash = input.prevout.hash;
-          const outIdx = input.prevout.index;
-
-          return getTxById(txHash, (error, tx) => {
-            if (error || !tx) {
-              // Mongo save is async. Bcoin is kinda sync... Does not mean the tx will not be found
-              return logger.log('warn',
-                `No Tx found: ${txHash} ${error}`);
-            }
-            return updateInput(inputTx._id, input._id, tx.outputs[outIdx].value, tx.outputs[outIdx].address);
-          });
-        });
-      });
-    });
-}
 
 module.exports = {
-  auditInputs,
   getEmptyInputs,
   getTopTransactions,
   getTxById,
@@ -76,5 +45,4 @@ module.exports = {
   getTxCountByBlock,
   getTxByAddress,
   getTxCountByAddress,
-  updateInput,
 };
