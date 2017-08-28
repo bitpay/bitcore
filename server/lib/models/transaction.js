@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 const Input = require('./input');
 const Output = require('./output');
-const logger = require('../lib/logger');
-const config = require('../config');
-const util = require('../lib/util');
+const logger = require('../logger');
+const config = require('../../config');
+const util = require('../util');
 
 const Schema = mongoose.Schema;
 // These limits can be overriden higher up the stack

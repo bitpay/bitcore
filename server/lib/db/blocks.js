@@ -1,4 +1,4 @@
-const Block = require('../../models/block.js');
+const Block = require('../models/block.js');
 const logger = require('../logger');
 const config = require('../../config');
 
