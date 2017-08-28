@@ -952,10 +952,12 @@ describe('client API', function() {
         var walletId = Uuid.v4();
         var walletPrivKey = new Bitcore.PrivateKey();
         var network = i % 2 == 0 ? 'testnet' : 'livenet';
-        var secret = Client._buildSecret(walletId, walletPrivKey, network);
+        var coin = i % 3 == 0 ? 'bch' : 'btc';
+        var secret = Client._buildSecret(walletId, walletPrivKey, coin, network);
         var result = Client.parseSecret(secret);
         result.walletId.should.equal(walletId);
         result.walletPrivKey.toString().should.equal(walletPrivKey.toString());
+        result.coin.should.equal(coin);
         result.network.should.equal(network);
       };
     });
@@ -965,15 +967,21 @@ describe('client API', function() {
       }).should.throw('Invalid secret');
     });
 
-    it('should create secret and parse secret from string ', function() {
+    it('should create secret and parse secret from string', function() {
       var walletId = Uuid.v4();
       var walletPrivKey = new Bitcore.PrivateKey();
+      var coin = 'btc';
       var network = 'testnet';
-      var secret = Client._buildSecret(walletId, walletPrivKey.toString(), network);
+      var secret = Client._buildSecret(walletId, walletPrivKey.toString(), coin, network);
       var result = Client.parseSecret(secret);
       result.walletId.should.equal(walletId);
       result.walletPrivKey.toString().should.equal(walletPrivKey.toString());
+      result.coin.should.equal(coin);
       result.network.should.equal(network);
+    });
+    it('should default to btc for secrets not specifying coin', function() {
+      var result = Client.parseSecret('5ZN64RxKWCJXcy1pZwgrAzL1NnN5FQic5M2tLJVG5bEHaGXNRQs2uzJjMa9pMAbP5rz9Vu2xSaT');
+      result.coin.should.equal('btc');
     });
   });
 
