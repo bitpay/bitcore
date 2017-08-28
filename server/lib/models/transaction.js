@@ -28,6 +28,7 @@ const TransactionSchema = new Schema({
 });
 
 TransactionSchema.index({ hash: 1 });
+TransactionSchema.index({ block: 1 });
 TransactionSchema.index({ 'outputs.address': 1 });
 TransactionSchema.index({ 'inputs.address': 1 });
 
