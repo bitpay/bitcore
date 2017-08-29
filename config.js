@@ -54,7 +54,7 @@ var config = {
     bch: {
       livenet: {
         provider: 'insight',
-        url: 'https://cashexplorer.bitcoin.com/api/',
+        url: 'https://cashexplorer.bitcoin.com',
       },
       testnet: {
         provider: 'insight',
