@@ -1618,7 +1618,7 @@ describe('client API', function() {
   });
 
   describe('Network fees', function() {
-    it('should get current fee levels', function(done) {
+    it('should get current fee levels for BTC', function(done) {
       blockchainExplorerMock.setFeeLevels({
         1: 40000,
         3: 20000,
@@ -1629,6 +1629,17 @@ describe('client API', function() {
         should.not.exist(err);
         should.exist(levels);
         _.difference(['priority', 'normal', 'economy'], _.pluck(levels, 'level')).should.be.empty;
+        done();
+      });
+    });
+    it('should get default fee levels for BCH', function(done) {
+      blockchainExplorerMock.setFeeLevels({});
+      clients[0].credentials = {};
+      clients[0].getFeeLevels('bch', 'livenet', function(err, levels) {
+        should.not.exist(err);
+        should.exist(levels);
+        levels[0].level.should.equal('normal');
+        levels[0].feePerKb.should.equal(2000);
         done();
       });
     });
@@ -2018,9 +2029,7 @@ describe('client API', function() {
   describe('Transaction Proposals Creation and Locked funds', function() {
     var myAddress;
     beforeEach(function(done) {
-      helpers.createAndJoinWallet(clients, 2, 3, {
-        coin: 'bch'
-      }, function(w) {
+      helpers.createAndJoinWallet(clients, 2, 3, {}, function(w) {
         clients[0].createAddress(function(err, address) {
           should.not.exist(err);
           myAddress = address;
@@ -2649,7 +2658,7 @@ describe('client API', function() {
         setup(1, 1, 'bch', 'livenet', done);
       });
 
-      it.only('Should sign proposal', function(done) {
+      it('Should sign proposal', function(done) {
         var toAddress = '1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3';
         var opts = {
           outputs: [{
