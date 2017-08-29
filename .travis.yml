@@ -11,8 +11,7 @@ addons:
       - gcc-4.8
       - libzmq3-dev
 node_js:
-  - '0.12'
-  - '4'
+  - '8'
 install:
   - npm install
 script:
