@@ -1,6 +1,6 @@
 {
   "name": "bitcore",
-  "version": "5.0.0-beta.1",
+  "version": "5.0.0-beta.2",
   "description": "A platform to build bitcoin and blockchain-based applications.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -34,8 +34,8 @@
   },
   "dependencies": {
     "bitcore-lib": "5.0.0-beta.1",
-    "bitcore-node": "5.0.0-beta.2",
-    "insight-api": "5.0.0-beta.1",
+    "bitcore-node": "5.0.0-beta.3",
+    "insight-api": "5.0.0-beta.2",
     "insight-ui": "5.0.0-beta.1"
   },
   "license": "MIT",
