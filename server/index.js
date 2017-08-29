@@ -10,10 +10,16 @@ logger.log('debug',
 db.connect(config.mongodb.uri, config.mongodb.options);
 
 db.connection.once('open', () => {
-  if (config.start_node) Bcoin.start();
-
-  Api.listen(config.api.port, () => {
+  db.blocks.getBestBlockHeight((err, bestBlockHeight) => {
+    // Pass height to node to start Sync
     logger.log('debug',
-      'listening on port 3000');
+      `Starting Bcoin from best height: ${bestBlockHeight}`);
+
+    if (config.start_node) Bcoin.start(bestBlockHeight);
+
+    Api.listen(config.api.port, () => {
+      logger.log('debug',
+        'listening on port 3000');
+    });
   });
 });

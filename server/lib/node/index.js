@@ -1,27 +1,45 @@
 const FullNode    = require('bcoin/lib/node/fullnode');
 const logger      = require('../../lib/logger');
-const BlockParser = require('../parser').Block;
-const TxParser    = require('../parser').Transaction;
 const config      = require('../../config');
-const socket      = require('../../lib/api/socket');
 const db          = require('../../lib/db');
 
-const node = new FullNode(config.bcoin);
+const node      = new FullNode(config.bcoin);
 
-function start() {
+function start(bestBlockHeight) {
   node.open()
     .then(() => {
       node.connect()
         .then(() => {
+          node.chain.reset(bestBlockHeight);
           node.startSync();
         });
     });
 
   node.chain.on('connect', (entry, block) => {
-    BlockParser.parse(entry, block);
-    TxParser.parse(entry, block.txs);
-    socket.processBlock(entry, block);
     db.blocks.bestHeight(entry.height);
+    // Assemble Bcoin block data
+    node.chain.db.getBlockView(block)
+      .then((view) => {
+        const fullBlock = block.getJSON(node.network, view, entry.height);
+        // Save the block
+        db.blocks.saveBcoinBlock(entry, block, (err) => {
+          if (err) {
+            logger.log('error',
+              `Error saving block ${err}`);
+          }
+        });
+        // Save the Txs
+        db.txs.saveBcoinTransactions(entry, fullBlock.txs, (err) => {
+          if (err) {
+            logger.log('error',
+              `Error saving txs ${err}`);
+          }
+        });
+      });
+  });
+
+  node.chain.on('full', () => {
+
   });
 
   node.on('error', (err) => {

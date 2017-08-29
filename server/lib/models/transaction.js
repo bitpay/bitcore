@@ -1,13 +1,13 @@
 const mongoose = require('mongoose');
 const Input = require('./input');
 const Output = require('./output');
-const logger = require('../lib/logger');
-const config = require('../config');
+const logger = require('../logger');
+const config = require('../../config');
+const util = require('../util');
 
 const Schema = mongoose.Schema;
 // These limits can be overriden higher up the stack
 const MAX_TXS = config.api.max_txs;
-const MAX_PAGE_TXS = config.api.max_page_txs;
 
 const TransactionSchema = new Schema({
   hash:        { type: String, default: '' },
@@ -28,28 +28,29 @@ const TransactionSchema = new Schema({
 });
 
 TransactionSchema.index({ hash: 1 });
+TransactionSchema.index({ block: 1 });
 TransactionSchema.index({ 'outputs.address': 1 });
 TransactionSchema.index({ 'inputs.address': 1 });
 
 
-TransactionSchema.methods.byId = function txById(txid, cb) {
+TransactionSchema.statics.byId = function txById(txid, cb) {
   return this.model('Transaction').findOne(
     { hash: txid },
     cb);
 };
 
-TransactionSchema.methods.byHash = function txByHash(hash, cb) {
+TransactionSchema.statics.byHash = function txByHash(hash, cb) {
   return this.byId(hash, cb);
 };
 
-TransactionSchema.methods.byBlockHash = function txByBlockHash(hash, cb) {
+TransactionSchema.statics.byBlockHash = function txByBlockHash(hash, cb) {
   return this.model('Transaction').find(
     { block: hash },
     cb)
     .limit(MAX_TXS);
 };
 
-TransactionSchema.methods.byAddress = function txByAddress(address, cb) {
+TransactionSchema.statics.byAddress = function txByAddress(address, cb) {
   return this.model('Transaction').find(
     {
       $or: [
@@ -60,13 +61,13 @@ TransactionSchema.methods.byAddress = function txByAddress(address, cb) {
     .limit(MAX_TXS);
 };
 
-TransactionSchema.methods.countByBlock = function txByAddress(hash, cb) {
+TransactionSchema.statics.countByBlock = function txByAddress(hash, cb) {
   return this.model('Transaction').count(
     { block: hash },
     cb);
 };
 
-TransactionSchema.methods.countByAddress = function txByAddress(address, cb) {
+TransactionSchema.statics.countByAddress = function txByAddress(address, cb) {
   return this.model('Transaction').count(
     {
       $or: [
@@ -76,7 +77,7 @@ TransactionSchema.methods.countByAddress = function txByAddress(address, cb) {
     cb);
 };
 
-TransactionSchema.methods.last = function lastTx(cb) {
+TransactionSchema.statics.last = function lastTx(cb) {
   return this.model('Transaction').find(
     {},
     cb)
@@ -84,31 +85,44 @@ TransactionSchema.methods.last = function lastTx(cb) {
     .sort({ height: -1 });
 };
 
-TransactionSchema.methods.getEmptyInputs = function getEmptyInputs(cb) {
-  return this.model('Transaction').find({
-    'inputs.prevout.hash': { $ne: '0000000000000000000000000000000000000000000000000000000000000000' },
-    'inputs.address': '',
-  },
-  cb)
-    .limit(MAX_TXS);
+TransactionSchema.statics.saveBcoinTransactions = function saveBcoinTransactions(entry, txs, cb) {
+  txs.forEach((tx) => {
+    this.saveBcoinTransaction(entry, tx, cb);
+  });
 };
 
-TransactionSchema.methods.updateInput = function updateInput(txid, inputid, value, address) {
-  return this.model('Transaction').findOneAndUpdate(
-    { _id: txid, 'inputs._id': inputid },
-    {
-      $set: {
-        'inputs.$.value': value,
-        'inputs.$.address': address,
-      },
-    },
-    (err, tx) => {
-      if (err) {
-        logger.log('error',
-          `updateInput: ${err}`);
-      }
-    },
-  );
+TransactionSchema.statics.saveBcoinTransaction = function saveBcoinTransaction(entry, tx, cb) {
+  const Transaction = this.model('Transaction');
+  return new Transaction({
+    hash: tx.hash,
+    witnessHash: tx.witnessHash,
+    fee: tx.fee,
+    rate: tx.rate,
+    ps: tx.ps,
+    height: entry.height,
+    block: util.revHex(entry.hash),
+    ts: entry.ts,
+    date: entry.tx,
+    index: tx.index,
+    version: tx.version,
+    flag: tx.flag,
+    inputs: tx.inputs.map(input => new Input({
+      value: input.coin ? input.coin.value : 0,
+      prevout: input.prevout,
+      script: input.script,
+      witness: input.witness,
+      sequence: input.sequence,
+      address: input.coin ? input.coin.address : '',
+    })),
+    outputs: tx.outputs.map(output => new Output({
+      address: output.address,
+      script: output.script,
+      value: output.value,
+    })),
+    lockTime: tx.locktime,
+    chain: config.bcoin.network,
+  })
+    .save(cb);
 };
 
 module.exports = mongoose.model('Transaction', TransactionSchema);

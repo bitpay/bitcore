@@ -2,20 +2,19 @@ const express    = require('express');
 const config     = require('../../config');
 const bodyParser = require('body-parser');
 const helmet     = require('helmet');
+const sanitizer  = require('./middleware/sanitizer');
 
 const app = express();
 const api = express.Router();
-const cors = require('./cors');
+const cors = require('./middleware/cors');
 
 app.use(cors);
 app.use(helmet());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-
+app.use(sanitizer);
 // Serve insight ui front end from root dir public folder
 app.use(express.static('../app/www', { maxage: '1w' }));
-// Legacy UI - useful for 1:1 compares
-// app.use(express.static('./public', { maxage: '1w' }));
 
 app.set('json spaces', config.api.json_spaces);
 
@@ -36,7 +35,6 @@ app.use((req, res) => res.status(404).send({
   error: 'Not found',
 }));
 
-// Socket server
 const server  = require('http').Server(app);
 
 module.exports = {

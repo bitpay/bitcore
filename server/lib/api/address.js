@@ -1,21 +1,14 @@
 const logger  = require('../logger');
-const util    = require('../util');
 const db      = require('../db');
 
 module.exports = function AddressAPI(router) {
   router.get('/addr/:addr', (req, res) => {
     const addr = req.params.addr || '';
 
-    if (!util.isBitcoinAddress(addr)) {
-      return res.status(404).send({
-        error: 'Invalid bitcoin address',
-      });
-    }
-
-    return db.txs.getTxByAddress(addr, 0, 999999999, (error, txs) => {
-      if (error) {
+    return db.txs.getTxByAddress(addr, 0, 999999999, (err, txs) => {
+      if (err || txs.length === 0) {
         logger.log('error',
-          `getTxByBlock ${error}`);
+          `getTxByBlock ${err}`);
         return res.status(404).send();
       }
 
