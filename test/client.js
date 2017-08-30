@@ -2658,7 +2658,7 @@ describe('client API', function() {
         setup(1, 1, 'bch', 'livenet', done);
       });
 
-      it.only('Should sign proposal', function(done) {
+      it('Should sign proposal', function(done) {
         var toAddress = '1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3';
         var opts = {
           outputs: [{
