@@ -2,6 +2,9 @@
   "name": "bitcore",
   "version": "5.0.0-beta.4",
   "description": "A platform to build bitcoin and blockchain-based applications.",
+  "engines": {
+    "node": ">=8.0.0"
+  },
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {

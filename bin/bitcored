@@ -2,6 +2,10 @@
 
 'use strict';
 
+if (parseInt(process.version.split('.')[0].slice(1)) < 8) {
+  throw new Error('Bitcore requires Node version 8 or higher.');
+}
+
 var path = require('path');
 var bitcored = require('bitcore-node/lib/cli/bitcored');
 var servicesPath = path.resolve(__dirname, '../');
