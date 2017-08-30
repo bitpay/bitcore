@@ -1,6 +1,6 @@
 {
   "name": "bitcore",
-  "version": "5.0.0-beta.4",
+  "version": "5.0.0-beta.5",
   "description": "A platform to build bitcoin and blockchain-based applications.",
   "engines": {
     "node": ">=8.0.0"
