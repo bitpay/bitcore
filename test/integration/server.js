@@ -2211,28 +2211,30 @@ describe('Wallet service', function() {
     var server, wallet, levels;
     before(function() {
       levels = Defaults.FEE_LEVELS;
-      Defaults.FEE_LEVELS = [{
-        name: 'urgent',
-        nbBlocks: 1,
-        multiplier: 1.5,
-        defaultValue: 50000,
-      }, {
-        name: 'priority',
-        nbBlocks: 1,
-        defaultValue: 50000
-      }, {
-        name: 'normal',
-        nbBlocks: 2,
-        defaultValue: 40000
-      }, {
-        name: 'economy',
-        nbBlocks: 6,
-        defaultValue: 25000
-      }, {
-        name: 'superEconomy',
-        nbBlocks: 24,
-        defaultValue: 10000
-      }];
+      Defaults.FEE_LEVELS = {
+        btc: [{
+          name: 'urgent',
+          nbBlocks: 1,
+          multiplier: 1.5,
+          defaultValue: 50000,
+        }, {
+          name: 'priority',
+          nbBlocks: 1,
+          defaultValue: 50000
+        }, {
+          name: 'normal',
+          nbBlocks: 2,
+          defaultValue: 40000
+        }, {
+          name: 'economy',
+          nbBlocks: 6,
+          defaultValue: 25000
+        }, {
+          name: 'superEconomy',
+          nbBlocks: 24,
+          defaultValue: 10000
+        }]
+      };
     });
     after(function() {
       Defaults.FEE_LEVELS = levels;
@@ -2281,7 +2283,7 @@ describe('Wallet service', function() {
         fees = _.zipObject(_.map(fees, function(item) {
           return [item.level, item.feePerKb];
         }));
-        var defaults = _.zipObject(_.map(Defaults.FEE_LEVELS, function(item) {
+        var defaults = _.zipObject(_.map(Defaults.FEE_LEVELS['btc'], function(item) {
           return [item.name, item.defaultValue];
         }));
         fees.priority.should.equal(defaults.priority);
@@ -2344,7 +2346,7 @@ describe('Wallet service', function() {
       });
     });
     it('should get monotonically decreasing fee values', function(done) {
-      _.find(Defaults.FEE_LEVELS, {
+      _.find(Defaults.FEE_LEVELS['btc'], {
         nbBlocks: 6
       }).defaultValue.should.equal(25000);
       helpers.stubFeeLevels({
