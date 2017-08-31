@@ -11,4 +11,12 @@ transaction {
       border: 1px solid #eee;
     }
   }
+
+  .item, .item p {
+    font-size: 1.4rem;
+  }
+
+  .list {
+    margin-bottom: 5px
+  }
 }
