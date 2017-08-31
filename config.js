@@ -56,10 +56,6 @@ var config = {
         provider: 'insight',
         url: 'https://cashexplorer.bitcoin.com',
       },
-      testnet: {
-        provider: 'insight',
-        url: '',
-      },
     },
   },
   pushNotificationsOpts: {
