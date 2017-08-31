@@ -1188,22 +1188,6 @@ describe('Wallet service', function() {
         });
       });
 
-      it('should protect against storing same address multiple times', function(done) {
-        server.createAddress({}, function(err, address) {
-          should.not.exist(err);
-          should.exist(address);
-          delete address._id;
-          server.storage.storeAddressAndWallet(wallet, address, function(err) {
-            should.not.exist(err);
-            server.getMainAddresses({}, function(err, addresses) {
-              should.not.exist(err);
-              addresses.length.should.equal(1);
-              done();
-            });
-          });
-        });
-      });
-
       it('should create many addresses on simultaneous requests', function(done) {
         var N = 5;
         async.mapSeries(_.range(N), function(i, cb) {
@@ -7615,42 +7599,57 @@ describe('Wallet service', function() {
     });
   });
 
-  describe.skip('BTC & BCH wallets with same seed', function() {
-    var server, wBtc, wBch;
+  describe('BTC & BCH wallets with same seed', function() {
+    var server = {},
+      wallet = {};
     beforeEach(function(done) {
       helpers.createAndJoinWallet(1, 1, function(s, w) {
-        server = s;
-        wBtc = w;
+        server.btc = s;
+        wallet.btc = w;
         w.copayers[0].id.should.equal(TestData.copayers[0].id44btc);
-        helpers.createAndJoinWallet(1, 1, function(s, w) {
-          wBch = w;
-          w.copayers[0].id.should.equal(TestData.copayers[0].id44btc);
+        helpers.createAndJoinWallet(1, 1, {
+          coin: 'bch'
+        }, function(s, w) {
+          server.bch = s;
+          wallet.bch = w;
+          w.copayers[0].id.should.equal(TestData.copayers[0].id44bch);
           done();
         });
       });
     });
 
     it('should create address', function(done) {
-      server.createAddress({}, function(err, address) {
+      server.btc.createAddress({}, function(err, address) {
         should.not.exist(err);
         should.exist(address);
-        address.walletId.should.equal(wallet.id);
+        address.walletId.should.equal(wallet.btc.id);
+        address.coin.should.equal('btc');
         address.network.should.equal('livenet');
         address.address.should.equal('1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG');
-        address.isChange.should.be.false;
-        address.path.should.equal('m/0/0');
-        address.type.should.equal('P2PKH');
-        server.getNotifications({}, function(err, notifications) {
+        server.bch.createAddress({}, function(err, address) {
           should.not.exist(err);
-          var notif = _.find(notifications, {
-            type: 'NewAddress'
+          should.exist(address);
+          address.walletId.should.equal(wallet.bch.id);
+          address.coin.should.equal('bch');
+          address.network.should.equal('livenet');
+          address.address.should.equal('1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG');
+          server.btc.getMainAddresses({}, function(err, addresses) {
+            should.not.exist(err);
+            addresses.length.should.equal(1);
+            addresses[0].coin.should.equal('btc');
+            addresses[0].walletId.should.equal(wallet.btc.id);
+            addresses[0].address.should.equal('1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG');
+            server.bch.getMainAddresses({}, function(err, addresses) {
+              should.not.exist(err);
+              addresses.length.should.equal(1);
+              addresses[0].coin.should.equal('bch');
+              addresses[0].walletId.should.equal(wallet.bch.id);
+              addresses[0].address.should.equal('1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG');
+              done();
+            });
           });
-          should.exist(notif);
-          notif.data.address.should.equal(address.address);
-          done();
         });
       });
     });
-
   });
 });
