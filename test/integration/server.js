@@ -1292,7 +1292,7 @@ describe('Wallet service', function() {
         helpers.createAndJoinWallet(1, 1, function(s, w) {
           server = s;
           wallet = w;
-          w.copayers[0].id.should.equal(TestData.copayers[0].id44);
+          w.copayers[0].id.should.equal(TestData.copayers[0].id44btc);
           done();
         });
       });
@@ -3315,7 +3315,7 @@ describe('Wallet service', function() {
         var xPrivKey = TestData.copayers[0].xPrivKey_44H_0H_0H;
 
         var accessOpts = {
-          copayerId: TestData.copayers[0].id44,
+          copayerId: TestData.copayers[0].id44btc,
           requestPubKey: reqPubKey,
           signature: helpers.signRequestPubKey(reqPubKey, xPrivKey),
         };
@@ -7613,5 +7613,44 @@ describe('Wallet service', function() {
         done();
       });
     });
+  });
+
+  describe.skip('BTC & BCH wallets with same seed', function() {
+    var server, wBtc, wBch;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 1, function(s, w) {
+        server = s;
+        wBtc = w;
+        w.copayers[0].id.should.equal(TestData.copayers[0].id44btc);
+        helpers.createAndJoinWallet(1, 1, function(s, w) {
+          wBch = w;
+          w.copayers[0].id.should.equal(TestData.copayers[0].id44btc);
+          done();
+        });
+      });
+    });
+
+    it('should create address', function(done) {
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+        should.exist(address);
+        address.walletId.should.equal(wallet.id);
+        address.network.should.equal('livenet');
+        address.address.should.equal('1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG');
+        address.isChange.should.be.false;
+        address.path.should.equal('m/0/0');
+        address.type.should.equal('P2PKH');
+        server.getNotifications({}, function(err, notifications) {
+          should.not.exist(err);
+          var notif = _.find(notifications, {
+            type: 'NewAddress'
+          });
+          should.exist(notif);
+          notif.data.address.should.equal(address.address);
+          done();
+        });
+      });
+    });
+
   });
 });

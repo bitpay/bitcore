@@ -4,7 +4,8 @@ var keyPair = {
 };
 
 var copayers = [{
-  id44: '626452e5e0e35df4d9ae4d3e60653c9ae9a814f00c84dc40f5887069b18e2110',
+  id44btc: '626452e5e0e35df4d9ae4d3e60653c9ae9a814f00c84dc40f5887069b18e2110',
+  id44bch: '671fee02a6c1c4de2e2609f9f9a6180dc03acfff6b759fe0b13a616ed4880065',
   id45: 'e7467366d5754be2b7d386c9737ab87214c26314bdc3489702e09c719be1bdb7',
   xPrivKey: 'xprv9s21ZrQH143K2n4rV4AtAJFptEmd1tNMKCcSyQBCSuN5eq1dCUhcv6KQJS49joRxu8NNdFxy8yuwTtzCPNYUZvVGC7EPRm2st2cvE7oyTbB',
   xPubKey: 'xpub661MyMwAqRbcFG9Kb5htXSCZSGc7RM6CgRY3mnap1Eu4XdLmk21sTtdt9iWAiL64KazU3QWrYEYSRAKgLvkMRe8JMxffDvt4AhCDzyMsnsT',
@@ -17,7 +18,8 @@ var copayers = [{
   privKey_1H_0: 'a710be25950738a7d13637e2e09affd7f579a3479fd7cc024bd9459f8fba6659',
   pubKey_1H_0: '026e3020913420a5b9425952627f0a074c9235e7a329869b322061f786e997ae0d'
 }, {
-  id44: '842c048066e7d10ae1bbf67edccf69f2e5ff9a754d0c2b5524f0d01a87d6acbb',
+  id44btc: '842c048066e7d10ae1bbf67edccf69f2e5ff9a754d0c2b5524f0d01a87d6acbb',
+  id44bch: '0d8f0c0ebfb11ad589002fd4539075c6fb625fb1725406ca442726c6bc6746b1',
   id45: 'ee75154b646277c8d0d256fc1a0aa0470e4c3435497f208092c865737040b55b',
   xPrivKey: 'xprv9s21ZrQH143K3BwkLceWNLUsgES15JoZuv8BZfnmDRcCGtDooUAPhY8KovhCWcRLXUun5AYL5vVtUNRrmPEibtfk9ongxAGLXZzEHifpvwZ',
   xPubKey: 'xpub661MyMwAqRbcFg2DSeBWjURcEGGVUmXRH93nN4CNmm9B9gYxM1UeFLSofD6gtMnRYeucgPjfrWNxaAEhiT4di6HLty8Un6aheCKev4REvhZ',
@@ -30,7 +32,8 @@ var copayers = [{
   privKey_1H_0: 'ee062ce6dc5ece50e8110646b5e858c98dba9315cdfdd19da85ab0d33dcac74a',
   pubKey_1H_0: '02c679bf169233a273dec87fae5a1830481866c4e96a350d56346ac267808c905d'
 }, {
-  id44: '719f4ee61c691fbf0ebefa34e2151a1a3dbe39cf2fa4a498cb6af53600d30d1a',
+  id44btc: '719f4ee61c691fbf0ebefa34e2151a1a3dbe39cf2fa4a498cb6af53600d30d1a',
+  id44bch: '56ed2c8d04c4aa29e9d6408724197c27d1fa0b71e2c2a6b91a4cf9710f09eb0a',
   id45: 'acd666d7c677d9f2c85b55a5fad1610fe272eac46ef7a577c7aeeab0b1474e43',
   xPrivKey: 'xprv9s21ZrQH143K3xgLzxd6SuWqG5Zp1iUmyGgSsJVhdQNeTzAqBFvXXLZqZzFZqocTx4HD9vUVYU27At5i8q46LmBXXL97fo4H9C3tHm4BnjY',
   xPubKey: 'xpub661MyMwAqRbcGSkp6zA6p3TZp7QJRBCdLVc3fguKBjudLnVyioEn58tKRFPmGMkdGJWMX69mgZWHKrKmpQ3fwBXeFjLc5Sd2rnxcQthSW42',
@@ -43,7 +46,8 @@ var copayers = [{
   privKey_1H_0: '5009c8488e9a364fc24a999d99a81ae955271de1d06d46c2f2f09e20c6281b04',
   pubKey_1H_0: '03338a3b7c08e9d9832e1baff0758e08f9cc691497dd6e91d4c191cd960fb2f043'
 }, {
-  id44: 'e225a29864060823df67b98432b070a40aad1bf9af517005b0b5fe09c96e29c9',
+  id44btc: 'e225a29864060823df67b98432b070a40aad1bf9af517005b0b5fe09c96e29c9',
+  id44bch: '2baf290be693407fd9c32597608b6fd90ba60f65b2b81b58e9fe9c960938de11',
   id45: 'c65a89f64794cb7e1886c7010a32dd6fa362d3e81710bac32e97e325b9109fd8',
   xPrivKey: 'xprv9s21ZrQH143K48nfuK14gKJtML7eQzV2dAH1RaqAMj8v2zs79uaavA9UTWMxpBdgbMH2mhJLeKGq8AFA6GDnFyWP4rLmknqZAfgFFV718vo',
   xPubKey: 'xpub661MyMwAqRbcGcs91LY53TFcuMx8pTCszPCcDyEmv4ftuoCFhStqTxTxJoy35yjp2H3qQtxDYGe1gtkZu4T7mR7ARK1MLYte2fptZVt6hkD',
@@ -56,7 +60,8 @@ var copayers = [{
   privKey_1H_0: '460ee692f05de66b5d8e2fa1d005a8b6bdb1442e2ce6b3facfcee2f9012c9474',
   pubKey_1H_0: '03d0e0c526619b158aac9a8de8082f439df43d389ec50cb54386c3d87cfde4c99b'
 }, {
-  id44: '120416cd4c427a7e4d94213cebe242f56a06bc6dd5c5c6cae27dc920a0ddf1fb',
+  id44btc: '120416cd4c427a7e4d94213cebe242f56a06bc6dd5c5c6cae27dc920a0ddf1fb',
+  id44bch: '4abc36e7731c08e0a93483691c3cb451013463ccee1b676e4a20d98cd1de8af3',
   id45: '65ae087eb9efdc7e0ada3a7ef954285e9e5ba4b8c7ab2d36747ddd286f7a334f',
   xPrivKey: 'xprv9s21ZrQH143K44Bb9G3EVNmLfAUKjTBAA2YtKxF4zc8SLV1o15JBoddhGHE9PGLXePMbEsSjCCvTvP3fUv6yMXZrnHigBboRBn2DmNoJkJg',
   xPubKey: 'xpub661MyMwAqRbcGYG4FHaErWi5DCJp8uu1XFUV8LegYwfRDHLwYccSMRxB7Z3L1NgKychKdXQvbVEyDhSwNnNnnNKh9mBEAdQ5tv2guK8ywKU',
@@ -69,7 +74,8 @@ var copayers = [{
   privKey_1H_0: '7a5158b92d9ed4cb9644ddbd472b43428832a5f3bb91a481532a081908e62b2e',
   pubKey_1H_0: '02b47d5c977c93c883f369165ebc2b564d14a52712ec6892f7097fa99e0d36ca20'
 }, {
-  id44: '85de9f025ee190fab7cb1bd9b6772c64df26188ce705d4f258c5adaf7bc610f9',
+  id44btc: '85de9f025ee190fab7cb1bd9b6772c64df26188ce705d4f258c5adaf7bc610f9',
+  id44bch: '0845739e508fb8f7b28e10bed9d827968a12d2dbd6ecbac3303305fcaf535bfe',
   id45: 'dacc5c350cef4449a3ca12939711c7449d0d6189e5e7f33cff60095a7a29b0f9',
   xPrivKey: 'xprv9s21ZrQH143K48PpVxrh71KdViTFhAaiDSVtNFkmbWNYjwwwPbTrcqoVXsgBfue3Gq9b71hQeEbk67JgtTBcpYgKLF8pTwVnGz56f1BaCYt',
   xPubKey: 'xpub661MyMwAqRbcGcUHbzPhU9GN3kHk6dJZafRVAeAP9quXckH5w8n7Ae7yP8e2Zh6SPPKFn2K6oE3GBpcz9QzfJTNRWXbY7w1L3nGLE5beZL1',
@@ -82,7 +88,8 @@ var copayers = [{
   privKey_1H_0: '3c49816d4e83d8758f89e8e104e3566a8a61426a9b7d4945b34212fbbb8e8290',
   pubKey_1H_0: '0307ab8c0d8eea1fe3c3781050a69e71f9e7c8cc8476a77103e08a461506a0e780'
 }, {
-  id44: '4d0c1eaab0aafc08aea7328f9ed1d3fc2812791ad2ebb9cbc1a8537b51b18afa',
+  id44btc: '4d0c1eaab0aafc08aea7328f9ed1d3fc2812791ad2ebb9cbc1a8537b51b18afa',
+  id44bch: '63ed91d8b7c4f06028d4a795cbb30d91772d93c99e7cc612d9f0b33a4fa215de',
   id45: '9129a0454adcf659f4f9d65a9b4dc4f9793bd1f59664268b56a7ef73f29f1b8a',
   xPrivKey: 'xprv9s21ZrQH143K3pgRcRBRnmcxNkNNLmJrpneMkEXY6o5TWBuJLMfdRpAWdb2cG3yxbL4DxfpUnQpjfQUmwPdVrRGoDJmtAf5u8cyqKCoDV97',
   xPubKey: 'xpub661MyMwAqRbcGJktiSiS9uZgvnCrkE2iC1ZxYcw9f8cSNzESstysycUzUsDCU6KnnjR29VZ1eRAXDgEXfYxGw1B9E7VLSAcHa9UuifSozmy',
@@ -95,7 +102,8 @@ var copayers = [{
   privKey_1H_0: '87f8a2b92dd04d2782c3d40a34f09f2ab42076bd02b81fbe4a4a72f87ad2e6df',
   pubKey_1H_0: '02a0370d6f1213ab3390ac666585614ad71146f3f28ec326e2e779f999c1a497eb'
 }, {
-  id44: '5ae7b75deb3b4d7e251f1fc5613904c9ef8548af7601d93ef668299be4f75ddd',
+  id44btc: '5ae7b75deb3b4d7e251f1fc5613904c9ef8548af7601d93ef668299be4f75ddd',
+  id44bch: '375a87b5614473ad359fee0385e9ffcb01d78c7880b34987e59da06eeac8029a',
   id45: '37b81e2544b43ce7f37a132a748426e1566ecbb758564d4d7d07b716fbe1b368',
   xPrivKey: 'xprv9s21ZrQH143K3nvcmdjDDDZbDJHpfWZCUiunwraZdcamYcafHvUnZfV51fivH9FPyfo12NyKH5JDxGLsQePyWKtTiJx3pkEaiwxsMLkVapp',
   xPubKey: 'xpub661MyMwAqRbcGH15sfGDaMWKmL8K4yH3qwqPkEzBBx7kRQuoqTo37ToYrvLJh7JpV5FQSverERMcdF4HcP1UCiie2ayeMXRq67zr75PzMKs',
@@ -108,7 +116,8 @@ var copayers = [{
   privKey_1H_0: '66230b6b8b65725162ea43313fcc233f4f0dd135cea00d04b73a84d3f681ef25',
   pubKey_1H_0: '03f148bde0784c80051acd159b28a30022e685aca56418f8f50100d9f8a0192c37'
 }, {
-  id44: '98e78a9cb2ab340a245c5082897eadb28c367319f97b93e7b51b4d5ca5cdc68e',
+  id44btc: '98e78a9cb2ab340a245c5082897eadb28c367319f97b93e7b51b4d5ca5cdc68e',
+  id44bch: 'f390e03140593c0c724e0d3a2a9cf39d63319edc833024a149a72efacb368737',
   id45: 'e1557d3421a8884fe007674f3f0b6f0feafa76289a0edcc5ec736161b4d02257',
   xPrivKey: 'xprv9s21ZrQH143K2uYgqtYtphEQkFAgiWSqahFUWjgCdKykJagiNDz6Lf7xRVQdtZ7MvkhX9V3pEcK3xTAWZ6Y6ecJqrXnCpzrH9GSHn8wyrT5',
   xPubKey: 'xpub661MyMwAqRbcFPd9wv5uBqB9JH1B7yAgwvB5K85pBfWjBP1rumJLtTSSGnCdsJSXfwmTyexsRjbUhzB4J6LWfL8mC2Ka117JrnXetyCzk3r',
@@ -121,7 +130,8 @@ var copayers = [{
   privKey_1H_0: '9e215580c8e5876215ad101ded325bcacc5ab9d97b26e8fdfab89ef5bb6e0ab7',
   pubKey_1H_0: '0265d33caaa128a77cc38ab8751c7d730e0274a212f1f65b73f637eddb3a3fb151'
 }, {
-  id44: 'f716dbeec58e44c698b34c2d81bae4699ed5a5a522281733ec50aa03caf76a19',
+  id44btc: 'f716dbeec58e44c698b34c2d81bae4699ed5a5a522281733ec50aa03caf76a19',
+  id44bch: 'da39b3d560d2d99d9557a5a70ca3dc4561c3930e2850748fa80bdcecb650a9bf',
   id45: '8a6d840580549a34422c9b150dbd1e96e369c5db69ee736caab95616f8abb22b',
   xPrivKey: 'xprv9s21ZrQH143K2wcRMP75tAEL5JnUx4xU2AbUBQzVVUDP7DHZJkjF3kaRE7tcnPLLLL9PGjYTWTJmCQPaQ4GGzgWEUFJ6snwJG9YnQHBFRNR',
   xPubKey: 'xpub661MyMwAqRbcFRgtTQe6FJB4dLcyMXgKPPX4yoQ73okMz1chrJ3VbYtu5PRTxMBGuXt6eyqwAuG2BEBzQPLc1x8gnSQiATS3GRzKi1BuQAR',
@@ -135,8 +145,8 @@ var copayers = [{
   pubKey_1H_0: '0266cdb57b8a4d7c1b5b20ddeea43705420c6e3aef2c2979a3768b7b585839a0d3'
 }, ];
 
-var history = [
-  {
+
+var history = [{
   txid: "0279ef7b21630f859deb723e28beac9e7011660bd1346c2da40321d2f7e34f04",
   vin: [{
     txid: "c8e221141e8bb60977896561b77fa59d6dacfcc10db82bf6f5f923048b11c70d",
@@ -175,8 +185,7 @@ var history = [
   valueOut: 0.01345753,
   valueIn: 0.01371235,
   fees: 0.00025482
-},
-  {
+}, {
   txid: "0279ef7b21630f859deb723e28beac9e7011660bd1346c2da40321d2f7e34f04",
   vin: [{
     txid: "c8e221141e8bb60977896561b77fa59d6dacfcc10db82bf6f5f923048b11c70d",
