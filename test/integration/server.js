@@ -433,6 +433,24 @@ describe('Wallet service', function() {
       });
     });
 
+    it('should create wallet for another coin', function(done) {
+      var opts = {
+        coin: 'bch',
+        name: 'my wallet',
+        m: 2,
+        n: 3,
+        pubKey: TestData.keyPair.pub,
+      };
+      server.createWallet(opts, function(err, walletId) {
+        should.not.exist(err);
+        server.storage.fetchWallet(walletId, function(err, wallet) {
+          should.not.exist(err);
+          wallet.coin.should.equal('bch');
+          done();
+        });
+      });
+    });
+
     describe('Address derivation strategy', function() {
       var server;
       beforeEach(function() {
@@ -614,6 +632,21 @@ describe('Wallet service', function() {
             err.message.should.equal('Wallet full');
             done();
           });
+        });
+      });
+
+      it('should fail to join wallet for different coin', function(done) {
+        var copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: walletId,
+          name: 'me',
+          xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+          coin: 'bch',
+        });
+        server.joinWallet(copayerOpts, function(err) {
+          should.exist(err);
+          err.message.should.contain('different coin');
+          done();
         });
       });
 
@@ -1155,22 +1188,6 @@ describe('Wallet service', function() {
         });
       });
 
-      it('should protect against storing same address multiple times', function(done) {
-        server.createAddress({}, function(err, address) {
-          should.not.exist(err);
-          should.exist(address);
-          delete address._id;
-          server.storage.storeAddressAndWallet(wallet, address, function(err) {
-            should.not.exist(err);
-            server.getMainAddresses({}, function(err, addresses) {
-              should.not.exist(err);
-              addresses.length.should.equal(1);
-              done();
-            });
-          });
-        });
-      });
-
       it('should create many addresses on simultaneous requests', function(done) {
         var N = 5;
         async.mapSeries(_.range(N), function(i, cb) {
@@ -1259,7 +1276,7 @@ describe('Wallet service', function() {
         helpers.createAndJoinWallet(1, 1, function(s, w) {
           server = s;
           wallet = w;
-          w.copayers[0].id.should.equal(TestData.copayers[0].id44);
+          w.copayers[0].id.should.equal(TestData.copayers[0].id44btc);
           done();
         });
       });
@@ -1638,7 +1655,7 @@ describe('Wallet service', function() {
       var requestPubKeyStr = requestPubKey.toString();
       var sig = helpers.signRequestPubKey(requestPubKeyStr, xPrivKey);
 
-      var copayerId = Model.Copayer._xPubToCopayerId(TestData.copayers[0].xPubKey_44H_0H_0H);
+      var copayerId = Model.Copayer._xPubToCopayerId('btc', TestData.copayers[0].xPubKey_44H_0H_0H);
       opts = {
         copayerId: copayerId,
         requestPubKey: requestPubKeyStr,
@@ -2178,28 +2195,30 @@ describe('Wallet service', function() {
     var server, wallet, levels;
     before(function() {
       levels = Defaults.FEE_LEVELS;
-      Defaults.FEE_LEVELS = [{
-        name: 'urgent',
-        nbBlocks: 1,
-        multiplier: 1.5,
-        defaultValue: 50000,
-      }, {
-        name: 'priority',
-        nbBlocks: 1,
-        defaultValue: 50000
-      }, {
-        name: 'normal',
-        nbBlocks: 2,
-        defaultValue: 40000
-      }, {
-        name: 'economy',
-        nbBlocks: 6,
-        defaultValue: 25000
-      }, {
-        name: 'superEconomy',
-        nbBlocks: 24,
-        defaultValue: 10000
-      }];
+      Defaults.FEE_LEVELS = {
+        btc: [{
+          name: 'urgent',
+          nbBlocks: 1,
+          multiplier: 1.5,
+          defaultValue: 50000,
+        }, {
+          name: 'priority',
+          nbBlocks: 1,
+          defaultValue: 50000
+        }, {
+          name: 'normal',
+          nbBlocks: 2,
+          defaultValue: 40000
+        }, {
+          name: 'economy',
+          nbBlocks: 6,
+          defaultValue: 25000
+        }, {
+          name: 'superEconomy',
+          nbBlocks: 24,
+          defaultValue: 10000
+        }]
+      };
     });
     after(function() {
       Defaults.FEE_LEVELS = levels;
@@ -2248,7 +2267,7 @@ describe('Wallet service', function() {
         fees = _.zipObject(_.map(fees, function(item) {
           return [item.level, item.feePerKb];
         }));
-        var defaults = _.zipObject(_.map(Defaults.FEE_LEVELS, function(item) {
+        var defaults = _.zipObject(_.map(Defaults.FEE_LEVELS['btc'], function(item) {
           return [item.name, item.defaultValue];
         }));
         fees.priority.should.equal(defaults.priority);
@@ -2311,7 +2330,7 @@ describe('Wallet service', function() {
       });
     });
     it('should get monotonically decreasing fee values', function(done) {
-      _.find(Defaults.FEE_LEVELS, {
+      _.find(Defaults.FEE_LEVELS['btc'], {
         nbBlocks: 6
       }).defaultValue.should.equal(25000);
       helpers.stubFeeLevels({
@@ -3280,7 +3299,7 @@ describe('Wallet service', function() {
         var xPrivKey = TestData.copayers[0].xPrivKey_44H_0H_0H;
 
         var accessOpts = {
-          copayerId: TestData.copayers[0].id44,
+          copayerId: TestData.copayers[0].id44btc,
           requestPubKey: reqPubKey,
           signature: helpers.signRequestPubKey(reqPubKey, xPrivKey),
         };
@@ -6603,6 +6622,7 @@ describe('Wallet service', function() {
 
           blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 2000);
           server._notify('NewBlock', {
+            coin: 'btc',
             network: 'livenet',
             hash: 'dummy hash',
           }, {
@@ -7575,6 +7595,60 @@ describe('Wallet service', function() {
         should.not.exist(err);
         should.not.exist(w);
         done();
+      });
+    });
+  });
+
+  describe('BTC & BCH wallets with same seed', function() {
+    var server = {},
+      wallet = {};
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 1, function(s, w) {
+        server.btc = s;
+        wallet.btc = w;
+        w.copayers[0].id.should.equal(TestData.copayers[0].id44btc);
+        helpers.createAndJoinWallet(1, 1, {
+          coin: 'bch'
+        }, function(s, w) {
+          server.bch = s;
+          wallet.bch = w;
+          w.copayers[0].id.should.equal(TestData.copayers[0].id44bch);
+          done();
+        });
+      });
+    });
+
+    it('should create address', function(done) {
+      server.btc.createAddress({}, function(err, address) {
+        should.not.exist(err);
+        should.exist(address);
+        address.walletId.should.equal(wallet.btc.id);
+        address.coin.should.equal('btc');
+        address.network.should.equal('livenet');
+        address.address.should.equal('1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG');
+        server.bch.createAddress({}, function(err, address) {
+          should.not.exist(err);
+          should.exist(address);
+          address.walletId.should.equal(wallet.bch.id);
+          address.coin.should.equal('bch');
+          address.network.should.equal('livenet');
+          address.address.should.equal('1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG');
+          server.btc.getMainAddresses({}, function(err, addresses) {
+            should.not.exist(err);
+            addresses.length.should.equal(1);
+            addresses[0].coin.should.equal('btc');
+            addresses[0].walletId.should.equal(wallet.btc.id);
+            addresses[0].address.should.equal('1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG');
+            server.bch.getMainAddresses({}, function(err, addresses) {
+              should.not.exist(err);
+              addresses.length.should.equal(1);
+              addresses[0].coin.should.equal('bch');
+              addresses[0].walletId.should.equal(wallet.bch.id);
+              addresses[0].address.should.equal('1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG');
+              done();
+            });
+          });
+        });
       });
     });
   });

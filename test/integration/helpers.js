@@ -13,6 +13,10 @@ var tingodb = require('tingodb')({
 });
 
 var Bitcore = require('bitcore-lib');
+var Bitcore_ = {
+  btc: Bitcore,
+  bch: require('bitcore-lib-cash')
+};
 
 var Common = require('../../lib/common');
 var Utils = Common.Utils;
@@ -95,6 +99,7 @@ helpers.signRequestPubKey = function(requestPubKey, xPrivKey) {
 helpers.getAuthServer = function(copayerId, cb) {
   var verifyStub = sinon.stub(WalletService.prototype, '_verifySignature');
   verifyStub.returns(true);
+
   WalletService.getInstanceWithAuth({
     copayerId: copayerId,
     message: 'dummy',
@@ -107,26 +112,40 @@ helpers.getAuthServer = function(copayerId, cb) {
   });
 };
 
-helpers._generateCopayersTestData = function(n) {
+helpers._generateCopayersTestData = function() {
+  var xPrivKeys = ['xprv9s21ZrQH143K2n4rV4AtAJFptEmd1tNMKCcSyQBCSuN5eq1dCUhcv6KQJS49joRxu8NNdFxy8yuwTtzCPNYUZvVGC7EPRm2st2cvE7oyTbB',
+    'xprv9s21ZrQH143K3BwkLceWNLUsgES15JoZuv8BZfnmDRcCGtDooUAPhY8KovhCWcRLXUun5AYL5vVtUNRrmPEibtfk9ongxAGLXZzEHifpvwZ',
+    'xprv9s21ZrQH143K3xgLzxd6SuWqG5Zp1iUmyGgSsJVhdQNeTzAqBFvXXLZqZzFZqocTx4HD9vUVYU27At5i8q46LmBXXL97fo4H9C3tHm4BnjY',
+    'xprv9s21ZrQH143K48nfuK14gKJtML7eQzV2dAH1RaqAMj8v2zs79uaavA9UTWMxpBdgbMH2mhJLeKGq8AFA6GDnFyWP4rLmknqZAfgFFV718vo',
+    'xprv9s21ZrQH143K44Bb9G3EVNmLfAUKjTBAA2YtKxF4zc8SLV1o15JBoddhGHE9PGLXePMbEsSjCCvTvP3fUv6yMXZrnHigBboRBn2DmNoJkJg',
+    'xprv9s21ZrQH143K48PpVxrh71KdViTFhAaiDSVtNFkmbWNYjwwwPbTrcqoVXsgBfue3Gq9b71hQeEbk67JgtTBcpYgKLF8pTwVnGz56f1BaCYt',
+    'xprv9s21ZrQH143K3pgRcRBRnmcxNkNNLmJrpneMkEXY6o5TWBuJLMfdRpAWdb2cG3yxbL4DxfpUnQpjfQUmwPdVrRGoDJmtAf5u8cyqKCoDV97',
+    'xprv9s21ZrQH143K3nvcmdjDDDZbDJHpfWZCUiunwraZdcamYcafHvUnZfV51fivH9FPyfo12NyKH5JDxGLsQePyWKtTiJx3pkEaiwxsMLkVapp',
+    'xprv9s21ZrQH143K2uYgqtYtphEQkFAgiWSqahFUWjgCdKykJagiNDz6Lf7xRVQdtZ7MvkhX9V3pEcK3xTAWZ6Y6ecJqrXnCpzrH9GSHn8wyrT5',
+    'xprv9s21ZrQH143K2wcRMP75tAEL5JnUx4xU2AbUBQzVVUDP7DHZJkjF3kaRE7tcnPLLLL9PGjYTWTJmCQPaQ4GGzgWEUFJ6snwJG9YnQHBFRNR'
+  ];
+
   console.log('var copayers = [');
-  _.each(_.range(n), function(c) {
-    var xpriv = new Bitcore.HDPrivateKey();
+  _.each(xPrivKeys, function(xPrivKeyStr, c) {
+    var xpriv = Bitcore.HDPrivateKey(xPrivKeyStr);
     var xpub = Bitcore.HDPublicKey(xpriv);
 
     var xpriv_45H = xpriv.deriveChild(45, true);
     var xpub_45H = Bitcore.HDPublicKey(xpriv_45H);
-    var id45 = Copayer._xPubToCopayerId(xpub_45H.toString());
+    var id45 = Model.Copayer._xPubToCopayerId('btc', xpub_45H.toString());
 
     var xpriv_44H_0H_0H = xpriv.deriveChild(44, true).deriveChild(0, true).deriveChild(0, true);
     var xpub_44H_0H_0H = Bitcore.HDPublicKey(xpriv_44H_0H_0H);
-    var id44 = Copayer._xPubToCopayerId(xpub_44H_0H_0H.toString());
+    var id44btc = Model.Copayer._xPubToCopayerId('btc', xpub_44H_0H_0H.toString());
+    var id44bch = Model.Copayer._xPubToCopayerId('bch', xpub_44H_0H_0H.toString());
 
     var xpriv_1H = xpriv.deriveChild(1, true);
     var xpub_1H = Bitcore.HDPublicKey(xpriv_1H);
     var priv = xpriv_1H.deriveChild(0).privateKey;
     var pub = xpub_1H.deriveChild(0).publicKey;
 
-    console.log('{id44: ', "'" + id44 + "',");
+    console.log('{id44btc: ', "'" + id44btc + "',");
+    console.log('id44bch: ', "'" + id44bch + "',");
     console.log('id45: ', "'" + id45 + "',");
     console.log('xPrivKey: ', "'" + xpriv.toString() + "',");
     console.log('xPubKey: ', "'" + xpub.toString() + "',");
@@ -165,6 +184,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
     n: n,
     pubKey: TestData.keyPair.pub,
     singleAddress: !!opts.singleAddress,
+    coin: opts.coin || 'btc',
   };
   if (_.isBoolean(opts.supportBIP44AndP2PKH))
     walletOpts.supportBIP44AndP2PKH = opts.supportBIP44AndP2PKH;
@@ -176,6 +196,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
       var copayerData = TestData.copayers[i + offset];
       var copayerOpts = helpers.getSignedCopayerOpts({
         walletId: walletId,
+        coin: opts.coin,
         name: 'copayer ' + (i + 1),
         xPubKey: (_.isBoolean(opts.supportBIP44AndP2PKH) && !opts.supportBIP44AndP2PKH) ? copayerData.xPubKey_45H : copayerData.xPubKey_44H_0H_0H,
         requestPubKey: copayerData.pubKey_1H_0,

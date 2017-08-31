@@ -49,8 +49,10 @@ describe('Blockchain monitor', function() {
           messageBroker: server.messageBroker,
           storage: storage,
           blockchainExplorers: {
-            'testnet': blockchainExplorer,
-            'livenet': blockchainExplorer
+            'btc': {
+              'testnet': blockchainExplorer,
+              'livenet': blockchainExplorer
+            }
           },
         }, function(err) {
           should.not.exist(err);
