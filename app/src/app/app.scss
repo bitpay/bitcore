@@ -8,6 +8,10 @@
 // Additionally, this file can be also used as an entry point
 // to import other Sass files to be included in the output CSS.
 
+body {
+  user-select: text;
+}
+
 .ellipsis {
   display: block;
   overflow: hidden;
@@ -15,24 +19,22 @@
   white-space: nowrap;
 }
 
-.summary ion-label {
-  color: #333;
-  font-weight: bold;
-}
+.list--summary {
+  ion-label {
+    color: #333;
+    font-weight: bold;
+  }
 
-.summary ion-item {
-  color: #999;
-  font-size: 1.4rem;
-}
-
-body {
-  user-select: text;
+  ion-item {
+    color: #999;
+    font-size: 1.4rem;
+  }
 }
 
 .grid--table {
   margin: 10px 0 20px;
 
-  .grid--table__row {
+  ion-row {
     border-top: 1px solid #ccc;
 
     &:first-child {
