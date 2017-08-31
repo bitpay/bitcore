@@ -4,14 +4,14 @@
   </div>
 
   <div *ngIf="!loading">
-    <ion-grid>
+    <ion-grid class="grid--table">
 
-      <ion-row>
+      <ion-row class="grid--table__row">
         <ion-col><b>Hash</b></ion-col>
         <ion-col text-right><b>Value Out</b></ion-col>
       </ion-row>
 
-      <ion-row *ngFor="let tx of transactions">
+      <ion-row *ngFor="let tx of transactions" class="grid--table__row">
         <ion-col col-9>
           <div class="ellipsis">
             <a (click)="goToTx(tx.txid)">{{ tx.txid }}</a>
