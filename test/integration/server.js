@@ -1880,6 +1880,20 @@ describe('Wallet service', function() {
         });
       });
     });
+    it('should get balance for a different coin', function(done) {
+      helpers.stubUtxos(server, wallet, 1, function() {
+        var spy = sinon.spy(server, '_getBlockchainExplorer');
+        server.getBalance({
+          coin: 'bch'
+        }, function(err, balance) {
+          should.not.exist(err);
+          should.exist(balance);
+          var args = spy.getCalls()[0].args;
+          args[0].should.equal('bch');
+          done();
+        });
+      });
+    });
   });
 
   describe('#getBalance 2 steps', function() {
