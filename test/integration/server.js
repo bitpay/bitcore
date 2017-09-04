@@ -4369,6 +4369,32 @@ describe('Wallet service', function() {
         });
       });
     });
+
+    it('should not duplicate address on storage after TX creation', function(done) {
+      helpers.stubUtxos(server, wallet, 2, function() {
+        var toAddress = '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+        };
+        server.createTx(opts, function(err, txp) {
+          should.not.exist(err);
+          server.storage.fetchAddresses(wallet.id, function(err, addresses) {
+            should.not.exist(err);
+            addresses.length.should.equal(1);
+            done();
+          });
+        });
+      });
+    });
+
+
+
+
+
     it('should not be able to specify custom changeAddress', function(done) {
       helpers.stubUtxos(server, wallet, 2, function() {
         var toAddress = '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7';
