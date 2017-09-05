@@ -85,15 +85,15 @@
     </ion-col>
   </ion-row>
 
-  <ion-row>
-    <ion-col col-3>
-      <span [hidden]="tx.isCoinBase">Fee {{ currency.getConversion(tx.fees) }}</span>
+  <ion-row align-items-center text-uppercase class="small">
+    <ion-col col-6>
+      <div [hidden]="tx.isCoinBase">
+        Fee <span text-nowrap>{{ currency.getConversion(tx.fees) }}</span>
+      </div>
     </ion-col>
-    <ion-col col-6 text-center>
-      {{ tx.confirmations }} Confirmations
-    </ion-col>
-    <ion-col col-3 text-right>
-      <span class="">{{ currency.getConversion(tx.valueOut) }}</span>
+    <ion-col col-6 text-right>
+      <span text-nowrap>{{ tx.confirmations }} Confirmation<span *ngIf="tx.confirmations !== 1">s</span></span>
+      <span text-nowrap>{{ currency.getConversion(tx.valueOut) }}</span>
     </ion-col>
   </ion-row>
 </ion-grid>

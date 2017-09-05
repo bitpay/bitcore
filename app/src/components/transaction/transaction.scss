@@ -9,6 +9,10 @@ transaction {
 
     ion-row {
       border: 1px solid #eee;
+
+      &.small {
+        font-size: 1.1rem;
+      }
     }
   }
 
