@@ -110,6 +110,7 @@ describe('Push notifications', function() {
               calls.length.should.equal(1);
               args[0].body.notification.title.should.contain('New payment received');
               args[0].body.notification.body.should.contain('123,000');
+              args[0].body.notification.body.should.contain('bits');
               done();
             }, 100);
           });
