@@ -2523,6 +2523,7 @@ describe('client API', function() {
   });
 
   describe('Transaction Proposal signing', function() {
+    this.timeout(5000);
     function setup(m, n, coin, network, cb) {
       helpers.createAndJoinWallet(clients, m, n, {
         coin: coin,
@@ -3427,6 +3428,7 @@ describe('client API', function() {
       });
     });
     it('should get transaction history decorated with proposal & notes', function(done) {
+      this.timeout(5000);
       async.waterfall([
 
         function(next) {

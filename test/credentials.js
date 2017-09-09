@@ -101,7 +101,22 @@ describe('Credentials', function() {
       c.copayerId.should.equal('bad66ef88ad8dec08e36d576c29b4f091d30197f04e166871e64bf969d08a958');
       c.network.should.equal('livenet');
       c.personalEncryptingKey.should.equal('M4MTmfRZaTtX6izAAxTpJg==');
+      should.not.exist(c.walletPrivKey);
     });
+
+    it('Should create credentials from seed and walletPrivateKey', function() {
+      var xPriv = 'xprv9s21ZrQH143K2TjT3rF4m5AJcMvCetfQbVjFEx1Rped8qzcMJwbqxv21k3ftL69z7n3gqvvHthkdzbW14gxEFDYQdrRQMub3XdkJyt3GGGc';
+
+      var wKey = 'a28840e18650b1de8cb83bcd2213672a728be38a63e70680b0c2be9c452e2d4d';
+      var c = Credentials.fromExtendedPrivateKey('btc', xPriv, 0, 'BIP44', { walletPrivKey: 'a28840e18650b1de8cb83bcd2213672a728be38a63e70680b0c2be9c452e2d4d'});
+
+      c.xPrivKey.should.equal('xprv9s21ZrQH143K2TjT3rF4m5AJcMvCetfQbVjFEx1Rped8qzcMJwbqxv21k3ftL69z7n3gqvvHthkdzbW14gxEFDYQdrRQMub3XdkJyt3GGGc');
+      c.walletPrivKey.should.equal(wKey);
+    });
+
+
+
+
     describe('Compliant derivation', function() {
       it('Should create compliant base address derivation key', function() {
         var xPriv = 'xprv9s21ZrQH143K4HHBKb6APEoa5i58fxeFWP1x5AGMfr6zXB3A6Hjt7f9LrPXp9P7CiTCA3Hk66cS4g8enUHWpYHpNhtufxSrSpcbaQyVX163';
