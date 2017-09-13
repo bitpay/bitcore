@@ -309,18 +309,6 @@ describe('Address', function() {
       new Address(hash, 'livenet').toString().should.equal(str);
     });
 
-
-    it('should translate an address to other network', function() {
-      var hash = pubkeyhash; //use the same hash
-      var a = Address.fromPublicKeyHash(hash, 'livenet');
-      a.toString().should.equal('CMxTMLHVazpmroYhw2bfXNJFyxLuX4srpv');
-      a.toObject().network.should.equal('livenet');
-
-      var a2 = Address.translate(a,"bitcoincore");
-      a2.toString().should.equal('16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r');
-      a2.toObject().network.should.equal('bitcoincore');
-    });
-
     it('should make an address using the default network', function() {
       var hash = pubkeyhash; //use the same hash
       var network = Networks.defaultNetwork;
