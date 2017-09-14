@@ -5160,93 +5160,111 @@ describe('client API', function() {
     });
   });
 
-  describe('Sweep paper wallet', function() {
-    it.skip('should decrypt bip38 encrypted private key', function(done) {
-      this.timeout(60000);
-      clients[0].decryptBIP38PrivateKey('6PfRh9ZnWtiHrGoPPSzXe6iafTXc6FSXDhSBuDvvDmGd1kpX2Gvy1CfTcA', 'passphrase', {}, function(err, result) {
-        should.not.exist(err);
-        result.should.equal('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp');
-        done();
-      });
-    });
-    it.skip('should fail to decrypt bip38 encrypted private key with incorrect passphrase', function(done) {
-      this.timeout(60000);
-      clients[0].decryptBIP38PrivateKey('6PfRh9ZnWtiHrGoPPSzXe6iafTXc6FSXDhSBuDvvDmGd1kpX2Gvy1CfTcA', 'incorrect passphrase', {}, function(err, result) {
-        should.exist(err);
-        err.message.should.contain('passphrase');
-        done();
-      });
-    });
-    it('should get balance from single private key', function(done) {
-      var address = {
-        address: '1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3',
-        type: 'P2PKH',
-      };
-      helpers.createAndJoinWallet(clients, 1, 1, function() {
-        blockchainExplorerMock.setUtxo(address, 123, 1);
-        clients[0].getBalanceFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', function(err, balance) {
+  var addrMap = {
+    btc: ['1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3','1GG3JQikGC7wxstyavUBDoCJ66bWLLENZC'],
+    bch: ['CfNCvxmKYzZsS78pDKKfrDd2doZt3w4jUs','CXivsT4p9F6Us1oQGfo6oJpKiDovJjRVUE']
+  };
+  _.each(['bch', 'btc'], function(coin) {
+    var addr= addrMap[coin];
+
+    describe('Sweep paper wallet ' + coin, function() {
+      var B = Bitcore_[coin];
+      it.skip('should decrypt bip38 encrypted private key', function(done) {
+        this.timeout(60000);
+        clients[0].decryptBIP38PrivateKey('6PfRh9ZnWtiHrGoPPSzXe6iafTXc6FSXDhSBuDvvDmGd1kpX2Gvy1CfTcA', 'passphrase', {}, function(err, result) {
           should.not.exist(err);
-          balance.should.equal(123 * 1e8);
+          result.should.equal('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp');
           done();
         });
       });
-    });
-    it('should build tx for single private key', function(done) {
-      var address = {
-        address: '1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3',
-        type: 'P2PKH',
-      };
-      helpers.createAndJoinWallet(clients, 1, 1, function() {
-        blockchainExplorerMock.setUtxo(address, 123, 1);
-        clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', '1GG3JQikGC7wxstyavUBDoCJ66bWLLENZC', {}, function(err, tx) {
-          should.not.exist(err);
-          should.exist(tx);
-          tx.outputs.length.should.equal(1);
-          var output = tx.outputs[0];
-          output.satoshis.should.equal(123 * 1e8 - 10000);
-          var script = new Bitcore.Script.buildPublicKeyHashOut(Bitcore.Address.fromString('1GG3JQikGC7wxstyavUBDoCJ66bWLLENZC'));
-          output.script.toString('hex').should.equal(script.toString('hex'));
-          done();
-        });
-      });
-    });
-
-    it('should handle tx serialization error when building tx', function(done) {
-      var sandbox = sinon.sandbox.create();
-
-      var se = sandbox.stub(Bitcore.Transaction.prototype, 'serialize', function() {
-        throw new Error('this is an error');
-      });
-
-      var address = {
-        address: '1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3',
-        type: 'P2PKH',
-      };
-      helpers.createAndJoinWallet(clients, 1, 1, function() {
-        blockchainExplorerMock.setUtxo(address, 123, 1);
-        clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', '1GG3JQikGC7wxstyavUBDoCJ66bWLLENZC', {}, function(err, tx) {
+      it.skip('should fail to decrypt bip38 encrypted private key with incorrect passphrase', function(done) {
+        this.timeout(60000);
+        clients[0].decryptBIP38PrivateKey('6PfRh9ZnWtiHrGoPPSzXe6iafTXc6FSXDhSBuDvvDmGd1kpX2Gvy1CfTcA', 'incorrect passphrase', {}, function(err, result) {
           should.exist(err);
-          should.not.exist(tx);
-          err.should.be.an.instanceOf(Errors.COULD_NOT_BUILD_TRANSACTION);
-          sandbox.restore();
+          err.message.should.contain('passphrase');
           done();
         });
       });
-    });
+      it('should get balance from single private key', function(done) {
+        var address = {
+          address: addr[0],
+          type: 'P2PKH',
+          coin: coin,
+        };
+        helpers.createAndJoinWallet(clients, 1, 1, function() {
+          blockchainExplorerMock.setUtxo(address, 123, 1);
+          clients[0].getBalanceFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', coin, function(err, balance) {
+            should.not.exist(err);
+            balance.should.equal(123 * 1e8);
+            done();
+          });
+        });
+      });
+      it('should build tx for single private key', function(done) {
+        var address = {
+          address: addr[0],
+          type: 'P2PKH',
+          coin: coin,
+        };
+        helpers.createAndJoinWallet(clients, 1, 1, function() {
+          blockchainExplorerMock.setUtxo(address, 123, 1);
+          clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', addr[1], { 
+            coin: coin
+          }, function(err, tx) {
+            should.not.exist(err);
+            should.exist(tx);
+            tx.outputs.length.should.equal(1);
+            var output = tx.outputs[0];
+            output.satoshis.should.equal(123 * 1e8 - 10000);
+            var script = B.Script.buildPublicKeyHashOut(B.Address.fromString(addr[1]));
+            output.script.toString('hex').should.equal(script.toString('hex'));
+            done();
+          });
+        });
+      });
 
-    it('should fail to build tx for single private key if insufficient funds', function(done) {
-      var address = {
-        address: '1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3',
-        type: 'P2PKH',
-      };
-      helpers.createAndJoinWallet(clients, 1, 1, function() {
-        blockchainExplorerMock.setUtxo(address, 123 / 1e8, 1);
-        clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', '1GG3JQikGC7wxstyavUBDoCJ66bWLLENZC', {
-          fee: 500
-        }, function(err, tx) {
-          should.exist(err);
-          err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS);
-          done();
+      it('should handle tx serialization error when building tx', function(done) {
+        var sandbox = sinon.sandbox.create();
+
+        var se = sandbox.stub(B.Transaction.prototype, 'serialize', function() {
+          throw new Error('this is an error');
+        });
+
+        var address = {
+          address: addr[0],
+          type: 'P2PKH',
+          coin: coin,
+        };
+        helpers.createAndJoinWallet(clients, 1, 1, function() {
+          blockchainExplorerMock.setUtxo(address, 123, 1);
+          clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', addr[1],  {
+            coin: coin,
+          }, function(err, tx) {
+            should.exist(err);
+            should.not.exist(tx);
+            err.should.be.an.instanceOf(Errors.COULD_NOT_BUILD_TRANSACTION);
+            sandbox.restore();
+            done();
+          });
+        });
+      });
+
+      it('should fail to build tx for single private key if insufficient funds', function(done) {
+        var address = {
+          address: addr[0],
+          type: 'P2PKH',
+          coin: coin,
+        };
+        helpers.createAndJoinWallet(clients, 1, 1, function() {
+          blockchainExplorerMock.setUtxo(address, 123 / 1e8, 1);
+          clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', addr[1], {
+            fee: 500,
+            coin: coin,
+          }, function(err, tx) {
+            should.exist(err);
+            err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS);
+            done();
+          });
         });
       });
     });
