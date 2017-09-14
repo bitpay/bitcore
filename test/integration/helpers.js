@@ -277,6 +277,8 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
 
   if (!helpers._utxos) helpers._utxos = {};
 
+  var S = Bitcore_[wallet.coin].Script;
+
   async.waterfall([
 
     function(next) {
@@ -298,10 +300,10 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
         var scriptPubKey;
         switch (wallet.addressType) {
           case Constants.SCRIPT_TYPES.P2SH:
-            scriptPubKey = Bitcore.Script.buildMultisigOut(address.publicKeys, wallet.m).toScriptHashOut();
+            scriptPubKey = S.buildMultisigOut(address.publicKeys, wallet.m).toScriptHashOut();
             break;
           case Constants.SCRIPT_TYPES.P2PKH:
-            scriptPubKey = Bitcore.Script.buildPublicKeyHashOut(address.address);
+            scriptPubKey = S.buildPublicKeyHashOut(address.address);
             break;
         }
         should.exist(scriptPubKey);
