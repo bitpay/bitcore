@@ -16,6 +16,12 @@ var tingodb = require('tingodb')({
 var log = require('../lib/log');
 
 var Bitcore = require('bitcore-lib');
+var Bitcore_ = {
+  btc: Bitcore,
+  bch: require('bitcore-lib-cash'),
+};
+
+
 var BitcorePayPro = require('bitcore-payment-protocol');
 
 var BWS = require('bitcore-wallet-service');
@@ -199,13 +205,14 @@ blockchainExplorerMock.getUtxos = function(addresses, cb) {
 };
 
 blockchainExplorerMock.setUtxo = function(address, amount, m, confirmations) {
+  var B = Bitcore_[address.coin];
   var scriptPubKey;
   switch (address.type) {
     case Constants.SCRIPT_TYPES.P2SH:
-      scriptPubKey = address.publicKeys ? Bitcore.Script.buildMultisigOut(address.publicKeys, m).toScriptHashOut() : '';
+      scriptPubKey = address.publicKeys ? B.Script.buildMultisigOut(address.publicKeys, m).toScriptHashOut() : '';
       break;
     case Constants.SCRIPT_TYPES.P2PKH:
-      scriptPubKey = Bitcore.Script.buildPublicKeyHashOut(address.address);
+      scriptPubKey = B.Script.buildPublicKeyHashOut(address.address);
       break;
   }
   should.exist(scriptPubKey);
@@ -1178,6 +1185,29 @@ describe('client API', function() {
         })
       });
     });
+
+    it('should create a BCH  address correctly', function(done) {
+      var xPriv = 'xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu';
+      clients[0].seedFromExtendedPrivateKey(xPriv, {
+        'coin': 'bch',
+      });
+      clients[0].createWallet('mycashwallet', 'pepe', 1, 1, {
+        coin: 'bch'
+      }, function(err, secret) {
+        should.not.exist(err);
+
+        clients[0].createAddress(function(err, x) {
+          should.not.exist(err);
+          should.not.exist(err);
+          x.coin.should.equal('bch');
+          x.network.should.equal('livenet');
+          x.address.should.equal('CcJ4qUfyQ8x5NwhAeCQkrBSWVeXxXghcNz');
+          done();
+        })
+      });
+    });
+
+ 
 
     it('should check balance in a 1-1 ', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
@@ -2660,7 +2690,7 @@ describe('client API', function() {
       });
 
       it('Should sign proposal', function(done) {
-        var toAddress = '1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3';
+        var toAddress = 'CfNCvxmKYzZsS78pDKKfrDd2doZt3w4jUs';
         var opts = {
           outputs: [{
             amount: 1e8,
