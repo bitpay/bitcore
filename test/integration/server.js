@@ -2529,12 +2529,18 @@ describe('Wallet service', function() {
     bch: 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X',
   }
 
+  var idKeyMap = {
+      btc: 'id44btc',
+      bch: 'id44bch',
+  };
+
   _.each(['bch', 'btc'], function(coin) {
   
     describe('#createTx ' + coin, function() {
-      var addressStr;
+      var addressStr, idKey;
       before(function() {
         addressStr = addrMap[coin];
+        idKey = idKeyMap[coin];
       });
 
 
@@ -3112,6 +3118,9 @@ describe('Wallet service', function() {
 
         describe('Fee levels', function() {
           it('should create a tx specifying feeLevel', function(done) {
+            //ToDo
+            var level = wallet.coin == 'btc' ? 'economy' : 'normal';
+            var expected = wallet.coin == 'btc' ? 180e2 : 200e2;
             helpers.stubFeeLevels({
               1: 400e2,
               2: 200e2,
@@ -3124,13 +3133,14 @@ describe('Wallet service', function() {
                   toAddress: addressStr,
                   amount: 1e8,
                 }],
-                feeLevel: 'economy',
+                // ToDo
+                feeLevel: level,
               };
               server.createTx(txOpts, function(err, txp) {
                 should.not.exist(err);
                 should.exist(txp);
-                txp.feePerKb.should.equal(180e2);
-                txp.feeLevel.should.equal('economy');
+                txp.feePerKb.should.equal(expected);
+                txp.feeLevel.should.equal(level);
                 done();
               });
             });
@@ -3407,7 +3417,7 @@ describe('Wallet service', function() {
           var xPrivKey = TestData.copayers[0].xPrivKey_44H_0H_0H;
 
           var accessOpts = {
-            copayerId: TestData.copayers[0].id44btc,
+            copayerId: TestData.copayers[0][idKey],
             requestPubKey: reqPubKey,
             signature: helpers.signRequestPubKey(reqPubKey, xPrivKey),
           };
