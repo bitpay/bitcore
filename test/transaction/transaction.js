@@ -114,7 +114,6 @@ describe('Transaction', function() {
       .sign(p2shPrivateKey1)
       .sign(p2shPrivateKey2);
 
-console.log('[transaction.js.116]'); //TODO
     var txData = JSON.stringify(tx);
     var tx2 = new Transaction(JSON.parse(txData));
     var tx2Data = JSON.stringify(tx2);

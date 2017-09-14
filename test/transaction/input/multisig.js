@@ -21,7 +21,7 @@ describe('MultiSigInput', function() {
   var public1 = privateKey1.publicKey;
   var public2 = privateKey2.publicKey;
   var public3 = privateKey3.publicKey;
-  var address = new Address('33zbk2aSZYdNbRsMPPt6jgy6Kq1kQreqeb');
+  var address = new Address('H8piCq1XQrr3DbkPF5YFi5VdMV2mCQEnKW');
 
   var output = {
     txId: '66e64ef8a3b384164b78453fa8c8194de9a473ba14f89485a0e433699daec140',
@@ -71,14 +71,14 @@ describe('MultiSigInput', function() {
       .to(address, 1000000);
     var input = transaction.inputs[0];
 
-    _.all(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
+    _.every(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
       var serialized = publicKeyMissing.toString();
       return serialized === public1.toString() ||
               serialized === public2.toString() ||
               serialized === public3.toString();
     }).should.equal(true);
     transaction.sign(privateKey1);
-    _.all(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
+    _.every(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
       var serialized = publicKeyMissing.toString();
       return serialized === public2.toString() ||
               serialized === public3.toString();
