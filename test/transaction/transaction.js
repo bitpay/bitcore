@@ -402,16 +402,6 @@ describe('Transaction', function() {
         return transaction.serialize();
       }).to.throw(errors.Transaction.InvalidSatoshis);
     });
-    it('if fee is too small, fail serialization', function() {
-      var transaction = new Transaction()
-        .from(simpleUtxoWith100000Satoshis)
-        .to(toAddress, 99999)
-        .change(changeAddress)
-        .sign(privateKey);
-      expect(function() {
-        return transaction.serialize();
-      }).to.throw(errors.Transaction.FeeError.TooSmall);
-    });
     it('on second call to sign, change is not recalculated', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith100000Satoshis)
@@ -569,14 +559,6 @@ describe('Transaction', function() {
             .change(changeAddress)
             .sign(privateKey);
         }, 'disableLargeFees', errors.Transaction.FeeError.TooLarge
-      ));
-      it('can skip the check for a fee that is too small', buildSkipTest(
-        function(transaction) {
-          return transaction
-            .fee(1)
-            .change(changeAddress)
-            .sign(privateKey);
-        }, 'disableSmallFees', errors.Transaction.FeeError.TooSmall
       ));
       it('can skip the check that prevents dust outputs', buildSkipTest(
         function(transaction) {
