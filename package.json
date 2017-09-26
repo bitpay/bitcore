@@ -1,5 +1,5 @@
 {
-  "name": "bitcore-p2p",
+  "name": "bitcore-p2p-cash",
   "version": "1.1.2",
   "description": "Interface to the bitcoin P2P network for bitcore",
   "author": "BitPay <dev@bitpay.com>",
