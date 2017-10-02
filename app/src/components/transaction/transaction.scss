@@ -13,6 +13,12 @@ transaction {
       &.small {
         font-size: 1.1rem;
       }
+
+      ion-col {
+        ion-note {
+          font-size: 1.2rem;
+        }
+      }
     }
   }
 

@@ -1,19 +1,19 @@
 <ion-grid>
   <ion-row>
-    <ion-col col-8>
+    <ion-col col-7>
       <div class="ellipsis">
         <ion-icon name="add-circle" [hidden]="expanded" (click)="toggleExpanded()"></ion-icon><ion-icon name="remove-circle" [hidden]="!expanded" (click)="toggleExpanded()"></ion-icon> <span><a (click)="goToTx(tx.txid)">{{ tx.txid }}</a></span>
       </div>
     </ion-col>
-    <ion-col col-4 text-right>
-      <div [hidden]="!tx.firstSeenTs">
+    <ion-col col-5 text-right>
+      <ion-note [hidden]="!tx.firstSeenTs">
         <span translate>first seen at</span>
         <time>{{tx.firstSeenTs * 1000 | date:'medium'}}</time>
-      </div>
-      <div [hidden]="!tx.blocktime && tx.firstSeenTs">
+      </ion-note>
+      <ion-note [hidden]="!tx.blocktime && tx.firstSeenTs">
         <span translate>mined</span>
-        <time>{{tx.time * 1000 | date:'medium'}}</time>
-      </div>
+        <time>{{tx.time * 1000 | date:'MMM d, y'}}</time> <time>{{tx.time * 1000 | date:'hh:mm:ss a'}}</time>
+      </ion-note>
     </ion-col>
   </ion-row>
 
