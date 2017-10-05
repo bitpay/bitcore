@@ -4,7 +4,7 @@ Litecore
 [![NPM Package](https://img.shields.io/npm/v/litecore.svg?style=flat-square)](https://www.npmjs.org/package/litecore)
 [![Build Status](https://img.shields.io/travis/litecoin-project/litecore.svg?branch=master&style=flat-square)](https://travis-ci.org/litecoin-project/litecore)
 
-Infrastructure to build Bitcoin and blockchain-based applications for the next generation of financial technology.
+Infrastructure to build Litecoin and blockchain-based applications for the next generation of financial technology.
 
 **Note:** If you're looking for the Litecore Library please see: https://github.com/litecoin-project/litecore-lib
 
