@@ -1,6 +1,15 @@
 #!/bin/bash
 set -e
 
+######### Adjust these variables as needed ################
+
+insightApiDir="${HOME}/source/insight-api"
+insightUIDir="${HOME}/source/insight-ui"
+bitcoreDir="${HOME}/source/bitcore"
+bitcoreNodeDir="${HOME}/source/zzbitcore_node"
+
+###########################################################
+
 # given a string tag, make signed commits, push to relevant repos, create signed tags and publish to npm
 
 bump_version () {
@@ -34,7 +43,7 @@ echo "Assuming projects at ${HOME}/source..."
 echo ""
 echo "Starting with bitcore-node..."
 sleep 2
-pushd ~/source/zzbitcore_node
+pushd "${bitcoreNodeDir}"
 
 bump_version
 npm install
@@ -82,7 +91,7 @@ popd
 echo ""
 echo "Releasing insight-api..."
 sleep 2
-pushd ~/source/insight-api
+pushd "${insightApiDir}"
 
 bump_version
 npm install
@@ -130,7 +139,7 @@ popd
 echo ""
 echo "Releasing insight-ui..."
 sleep 2
-pushd ~/source/insight-ui
+pushd "${insightUIDir}"
 
 bump_version
 npm install
@@ -178,7 +187,7 @@ popd
 echo ""
 echo "Releasing bitcore..."
 sleep 2
-pushd ~/source/bitcore
+pushd "${bitcoreDir}"
 
 bump_version
 set_deps
