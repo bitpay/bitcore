@@ -31,203 +31,218 @@ if [ -z "${tag}" ]; then
   exit 1
 fi
 
-echo ""
-echo "Tagging with ${tag}..."
-
-echo "Assuming projects at ${HOME}/source..."
 
 #############################################
 # bitcore-node
 #############################################
+function bitcoreNode() {
+  echo ""
+  echo "Starting with bitcore-node..."
+  sleep 2
+  pushd "${bitcoreNodeDir}"
 
-echo ""
-echo "Starting with bitcore-node..."
-sleep 2
-pushd "${bitcoreNodeDir}"
+  bump_version
+  npm install
 
-bump_version
-npm install
+  git add .
+  git diff --staged
+  echo ""
+  echo -n 'Resume?: (Y/n): '
 
-git add .
-git diff --staged
-echo ""
-echo -n 'Resume?: (Y/n): '
+  read ans
 
-read ans
+  if [ "${ans}" == 'n' ]; then
+    echo "Exiting as requested."
+    exit 0
+  fi
 
-if [ "${ans}" == 'n' ]; then
-  echo "Exiting as requested."
-  exit 0
-fi
+  echo ""
+  echo "Committing changes for bitcore-node..."
+  sleep 2
+  git commit -S
 
-echo ""
-echo "Committing changes for bitcore-node..."
-sleep 2
-git commit -S
+  echo ""
+  echo "Pushing changes to Github..."
+  git push origin master && git push upstream master
 
-echo ""
-echo "Pushing changes to Github..."
-git push origin master && git push upstream master
-
-echo ""
-echo "Signing a tag"
-git tag -s "${tag}" -m"${tag}"
+  echo ""
+  echo "Signing a tag"
+  git tag -s "${tag}" -m"${tag}"
 
 
-echo ""
-echo "Pushing the tag to upstream..."
-git push upstream "${tag}"
+  echo ""
+  echo "Pushing the tag to upstream..."
+  git push upstream "${tag}"
 
-echo ""
-echo "Publishing to npm..."
-npm publish --tag beta
+  echo ""
+  echo "Publishing to npm..."
+  npm publish --tag beta
 
-popd
+  popd
+}
 
 #############################################
 # insight-api
 #############################################
+function insightApi() {
+  echo ""
+  echo "Releasing insight-api..."
+  sleep 2
+  pushd "${insightApiDir}"
 
-echo ""
-echo "Releasing insight-api..."
-sleep 2
-pushd "${insightApiDir}"
+  bump_version
+  npm install
 
-bump_version
-npm install
+  git add .
+  git diff --staged
+  echo ""
+  echo -n 'Resume?: (Y/n): '
 
-git add .
-git diff --staged
-echo ""
-echo -n 'Resume?: (Y/n): '
+  read ans
 
-read ans
+  if [ "${ans}" == 'n' ]; then
+    echo "Exiting as requested."
+    exit 0
+  fi
 
-if [ "${ans}" == 'n' ]; then
-  echo "Exiting as requested."
-  exit 0
-fi
+  echo ""
+  echo "Committing changes for insight-api..."
+  sleep 2
+  git commit -S
 
-echo ""
-echo "Committing changes for insight-api..."
-sleep 2
-git commit -S
+  echo ""
+  echo "Pushing changes to Github..."
+  git push origin master && git push upstream master
 
-echo ""
-echo "Pushing changes to Github..."
-git push origin master && git push upstream master
-
-echo ""
-echo "Signing a tag"
-git tag -s "${tag}" -m"${tag}"
+  echo ""
+  echo "Signing a tag"
+  git tag -s "${tag}" -m"${tag}"
 
 
-echo ""
-echo "Pushing the tag to upstream..."
-git push upstream "${tag}"
+  echo ""
+  echo "Pushing the tag to upstream..."
+  git push upstream "${tag}"
 
-echo ""
-echo "Publishing to npm..."
-npm publish --tag beta
+  echo ""
+  echo "Publishing to npm..."
+  npm publish --tag beta
 
-popd
+  popd
+}
 
 #############################################
 # insight-ui
 #############################################
+function insightUi() {
+  echo ""
+  echo "Releasing insight-ui..."
+  sleep 2
+  pushd "${insightUIDir}"
 
-echo ""
-echo "Releasing insight-ui..."
-sleep 2
-pushd "${insightUIDir}"
+  bump_version
+  npm install
 
-bump_version
-npm install
+  git add .
+  git diff --staged
+  echo ""
+  echo -n 'Resume?: (Y/n): '
 
-git add .
-git diff --staged
-echo ""
-echo -n 'Resume?: (Y/n): '
+  read ans
 
-read ans
+  if [ "${ans}" == 'n' ]; then
+    echo "Exiting as requested."
+    exit 0
+  fi
 
-if [ "${ans}" == 'n' ]; then
-  echo "Exiting as requested."
-  exit 0
-fi
+  echo ""
+  echo "Committing changes for insight-ui..."
+  sleep 2
+  git commit -S
 
-echo ""
-echo "Committing changes for insight-ui..."
-sleep 2
-git commit -S
+  echo ""
+  echo "Pushing changes to Github..."
+  git push origin master && git push upstream master
 
-echo ""
-echo "Pushing changes to Github..."
-git push origin master && git push upstream master
-
-echo ""
-echo "Signing a tag"
-git tag -s "${tag}" -m"${tag}"
+  echo ""
+  echo "Signing a tag"
+  git tag -s "${tag}" -m"${tag}"
 
 
-echo ""
-echo "Pushing the tag to upstream..."
-git push upstream "${tag}"
+  echo ""
+  echo "Pushing the tag to upstream..."
+  git push upstream "${tag}"
 
-echo ""
-echo "Publishing to npm..."
-npm publish --tag beta
+  echo ""
+  echo "Publishing to npm..."
+  npm publish --tag beta
 
-popd
+  popd
+}
 
 #############################################
 # bitcore
 #############################################
+function bitcore() {
+  echo ""
+  echo "Releasing bitcore..."
+  sleep 2
+  pushd "${bitcoreDir}"
 
-echo ""
-echo "Releasing bitcore..."
-sleep 2
-pushd "${bitcoreDir}"
+  bump_version
+  set_deps
 
-bump_version
-set_deps
+  npm install
 
-npm install
+  git add .
+  git diff --staged
+  echo ""
+  echo -n 'Resume?: (Y/n): '
 
-git add .
-git diff --staged
-echo ""
-echo -n 'Resume?: (Y/n): '
+  read ans
 
-read ans
+  if [ "${ans}" == 'n' ]; then
+    echo "Exiting as requested."
+    exit 0
+  fi
 
-if [ "${ans}" == 'n' ]; then
-  echo "Exiting as requested."
-  exit 0
+  echo ""
+  echo "Committing changes for bitcore..."
+  sleep 2
+  git commit -S
+
+  echo ""
+  echo "Pushing changes to Github..."
+  git push origin master && git push upstream master
+
+  echo ""
+  echo "Signing a tag"
+  git tag -s "${tag}" -m"${tag}"
+
+
+  echo ""
+  echo "Pushing the tag to upstream..."
+  git push upstream "${tag}"
+
+  echo ""
+  echo "Publishing to npm..."
+  npm publish --tag beta
+
+  popd
+
+  echo "Completed releasing tag: ${tag}"
+}
+
+reloases="${2}"
+if [ -z "${releases}" ]; then
+  bitcoreNode
+  insightApi
+  insightUi
+  bitcore
+else
+  eval "${releases}"
 fi
 
 echo ""
-echo "Committing changes for bitcore..."
-sleep 2
-git commit -S
+echo "Tagging with ${tag}..."
 
-echo ""
-echo "Pushing changes to Github..."
-git push origin master && git push upstream master
-
-echo ""
-echo "Signing a tag"
-git tag -s "${tag}" -m"${tag}"
-
-
-echo ""
-echo "Pushing the tag to upstream..."
-git push upstream "${tag}"
-
-echo ""
-echo "Publishing to npm..."
-npm publish --tag beta
-
-popd
-
-echo "Completed releasing tag: ${tag}"
+echo "Assuming projects at ${HOME}/source..."
