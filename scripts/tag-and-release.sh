@@ -19,7 +19,7 @@ bump_version () {
 set_deps () {
   sed -i '' -e "s/\"bitcore-node\"\: .*$/\"bitcore-node\"\: \"${shortTag}\",/g" package.json
   sed -i '' -e "s/\"insight-api\"\: .*$/\"insight-api\"\: \"${shortTag}\",/g" package.json
-  sed -i '' -e "s/\"insight-ui\"\: .*$/\"insight-ui\"\: \"${shortTag}\"/g" package.json
+  sed -i '' -e "s/\"insight-ui\"\: .*$/\"insight-ui\"\: \"bitpay\/insight\#${tag}\"/g" package.json
 }
 
 tag="${1}"
@@ -232,7 +232,12 @@ function bitcore() {
   echo "Completed releasing tag: ${tag}"
 }
 
-reloases="${2}"
+echo ""
+echo "Tagging with ${tag}..."
+
+echo "Assuming projects at ${HOME}/source..."
+
+releases="${2}"
 if [ -z "${releases}" ]; then
   bitcoreNode
   insightApi
@@ -242,7 +247,3 @@ else
   eval "${releases}"
 fi
 
-echo ""
-echo "Tagging with ${tag}..."
-
-echo "Assuming projects at ${HOME}/source..."
