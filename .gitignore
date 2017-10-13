@@ -18,3 +18,5 @@ report
 build
 
 tests.js
+
+scripts/servers.*
