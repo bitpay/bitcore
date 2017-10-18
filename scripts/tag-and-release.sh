@@ -239,7 +239,7 @@ echo "Assuming projects at ${HOME}/source..."
 
 releases="${2}"
 if [ -z "${releases}" ]; then
-  bitcoreNode
+  #bitcoreNode
   insightApi
   insightUi
   bitcore
