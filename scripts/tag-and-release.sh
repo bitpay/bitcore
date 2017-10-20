@@ -41,6 +41,7 @@ function bitcoreNode() {
   sleep 2
   pushd "${bitcoreNodeDir}"
 
+  sudo rm -fr node_modules
   bump_version
   npm install
 
@@ -90,6 +91,7 @@ function insightApi() {
   sleep 2
   pushd "${insightApiDir}"
 
+  sudo rm -fr node_modules
   bump_version
   npm install
 
@@ -139,6 +141,7 @@ function insightUi() {
   sleep 2
   pushd "${insightUIDir}"
 
+  sudo rm -fr node_modules
   bump_version
   npm install
 
@@ -188,6 +191,7 @@ function bitcore() {
   sleep 2
   pushd "${bitcoreDir}"
 
+  sudo rm -fr node_modules
   bump_version
   set_deps
 
@@ -239,7 +243,7 @@ echo "Assuming projects at ${HOME}/source..."
 
 releases="${2}"
 if [ -z "${releases}" ]; then
-  #bitcoreNode
+  bitcoreNode
   insightApi
   insightUi
   bitcore
