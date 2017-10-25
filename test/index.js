@@ -791,7 +791,7 @@ describe('PaymentProtocol', function() {
     });
 
     it('should verify a real PaymentRequest without Root Cert', function() {
-      var data = PaymentProtocol.PaymentRequest.decode(SampleRequest.bitpay2);
+      var data = PaymentProtocol.PaymentRequest.decode(SampleRequest.bitpay3);
       var pr = new PaymentProtocol();
       pr = pr.makePaymentRequest(data);
 
@@ -831,8 +831,13 @@ describe('PaymentProtocol', function() {
         var buf = pr.serializeForSig();
         var verifier = crypto.createVerify('RSA-' + type);
         verifier.update(buf);
-        verifier.verify(pem, sig).should.equal(true);
+
+        var verified = verifier.verify(pem, sig);
+          
+        verified.should.equal(true);
       }
+
+      var trust = pr.x509Verify(true);
 
       // Verify Signature
       var verified = pr.x509Verify();
@@ -862,12 +867,12 @@ describe('PaymentProtocol', function() {
       outputs.length.should.equal(1);
       outputs[0].amount.should.not.equal(undefined);
       outputs[0].script.should.not.equal(undefined);
-      time.should.equal(1442409238);
-      expires.should.equal(1442410138);
-      memo.should.equal('Payment request for BitPay invoice PAQtNxX7KL8BtJBnfXyTaH for merchant BitGive Foundation');
-      payment_url.should.equal('https://bitpay.com/i/PAQtNxX7KL8BtJBnfXyTaH');
+      time.should.equal(1508936331);
+      expires.should.equal(1508937231);
+      memo.should.equal('Payment request for BitPay invoice 4aKTwZemfhdmsBZATUkcaQ for merchant BitGive');
+      payment_url.should.equal('https://bitpay.com/i/4aKTwZemfhdmsBZATUkcaQ');
       var merchant_data = pd.get('merchant_data');
-      should.equal('{"invoiceId":"PAQtNxX7KL8BtJBnfXyTaH","merchantId":"TxZ5RyChmZw2isKjJWGhBc"}', merchant_data.toString());
+      should.equal('{"invoiceId":"4aKTwZemfhdmsBZATUkcaQ","merchantId":"TxZ5RyChmZw2isKjJWGhBc"}', merchant_data.toString());
     });
 
     it.skip('should verify a real PaymentRequest without Root Cert (case 2: Coinbase)', function() {
