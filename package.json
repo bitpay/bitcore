@@ -39,7 +39,9 @@
   ],
   "keywords": [
     "bitcoin",
-    "bitcore"
+    "bitcore",
+    "payment protocol",
+    "BIP70"
   ],
   "repository": {
     "type": "git",
@@ -56,7 +58,7 @@
     "protobufjs": "=5.0.1"
   },
   "devDependencies": {
-    "bitcore-build": "git://github.com/bitpay/bitcore-build.git#a93a9970e3a0b3f948309730d4e4af5100dddf5a",
+    "bitcore-build": "https://github.com/matiu/bitcore-build.git#ref/phantom2",
     "brfs": "^1.2.0",
     "chai": "~1.10.0",
     "gulp": "^3.8.10",

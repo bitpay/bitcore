@@ -7,6 +7,7 @@ var expect = chai.expect;
 var bitcore = require('bitcore-lib');
 var PrivateKey = bitcore.PrivateKey;
 var PublicKey = bitcore.PublicKey;
+var KJUR = require('jsrsasign');
 
 var is_browser = process.browser;
 
@@ -733,7 +734,7 @@ describe('PaymentProtocol', function() {
         var der = signedCert.toString('hex');
         // var pem = PaymentProtocol.DERtoPEM(der, 'CERTIFICATE');
         var pem = KJUR.asn1.ASN1Util.getPEMStringFromHex(der, 'CERTIFICATE');
-        jsrsaSig.initVerifyByCertificatePEM(pem);
+        jsrsaSig.init(pem);
         jsrsaSig.updateHex(buf.toString('hex'));
         jsrsaSig.verify(sig.toString('hex')).should.equal(true);
       } else {
@@ -821,7 +822,7 @@ describe('PaymentProtocol', function() {
         var der = signedCert.toString('hex');
         // var pem = PaymentProtocol.DERtoPEM(der, 'CERTIFICATE');
         var pem = KJUR.asn1.ASN1Util.getPEMStringFromHex(der, 'CERTIFICATE');
-        jsrsaSig.initVerifyByCertificatePEM(pem);
+        jsrsaSig.init(pem);
         jsrsaSig.updateHex(buf.toString('hex'));
         jsrsaSig.verify(sig.toString('hex')).should.equal(true);
       } else {
@@ -908,7 +909,7 @@ describe('PaymentProtocol', function() {
         var der = signedCert.toString('hex');
         // var pem = PaymentProtocol.DERtoPEM(der, 'CERTIFICATE');
         var pem = KJUR.asn1.ASN1Util.getPEMStringFromHex(der, 'CERTIFICATE');
-        jsrsaSig.initVerifyByCertificatePEM(pem);
+        jsrsaSig.init(pem);
         jsrsaSig.updateHex(buf.toString('hex'));
         jsrsaSig.verify(sig.toString('hex')).should.equal(true);
       } else {
