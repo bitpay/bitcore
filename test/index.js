@@ -556,8 +556,9 @@ describe('PaymentProtocol', function() {
 
   });
 
-  describe('#x509+sha256Sign', function() {
-    it('should sign assuming pki_type is x509+sha256', function() {
+  describe('#x509+sha256Sign and #x509+sha256Verify ', function() {
+
+    it('should sign and verify assuming pki_type is x509+sha256', function() {
       var pd = new PaymentProtocol.PaymentDetails();
       pd.set('time', 0);
 
@@ -581,11 +582,9 @@ describe('PaymentProtocol', function() {
 
       x509.sig2 = paypro.get('signature');
       x509.sig2.length.should.be.greaterThan(0);
-    });
-  });
 
-  describe('#x509+sha256Verify', function() {
-    it('should verify assuming pki_type is x509+sha256', function() {
+      // Verify
+      //
       var pd = new PaymentProtocol.PaymentDetails();
       pd.set('time', 0);
 

@@ -31,6 +31,10 @@
     {
       "name": "Esteban Ordano",
       "email": "eordano@gmail.com"
+    },
+    {
+      "name": "Matias Alejo Garcia",
+      "email": "ematiu@gmail.com"
     }
   ],
   "keywords": [
@@ -43,9 +47,12 @@
   },
   "browser": "lib/browser.js",
   "dependencies": {
-    "asn1.js": "=4.5.2",
+    "asn1.js": "=4.9.1",
+    "asn1.js-rfc3280": "=4.0.0",
+    "asn1.js-rfc5280": "=2.0.0",
     "bitcore-lib": "^0.14.0",
-    "jsrsasign": "=5.0.10",
+    "bs58": "^4.0.1",
+    "jsrsasign": "=8.0.4",
     "protobufjs": "=5.0.1"
   },
   "devDependencies": {
