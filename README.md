@@ -1,4 +1,4 @@
-BIP70 Payment Protocol support for bitcore
+Bitcore Payment Protocol
 =======
 
 [![NPM Package](https://img.shields.io/npm/v/bitcore-payment-protocol.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-payment-protocol)
@@ -12,11 +12,16 @@ A module for [bitcore](https://github.com/bitpay/bitcore) that implements [Payme
 This library is distributed in both the npm and bower packaging systems.
 
 ```sh
+npm install bitcore-lib
 npm install bitcore-payment-protocol
+```
+
+```sh
+bower install bitcore-lib
 bower install bitcore-payment-protocol
 ```
 
-There are many examples of how to use it on the developer guide [section for payment protocol](http://bitcore.io/guide/paymentprotocol.html). For example, the following code would verify a payment request:
+There are many examples of how to use it on the developer guide [section for payment protocol](https://bitcore.io/api/paypro). For example, the following code would verify a payment request:
 
 ```javascript
 var PaymentProtocol = require('bitcore-payment-protocol');
@@ -36,7 +41,7 @@ var verified = request.verify();
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/bitpay/bitcore) on the main bitcore repo for information about how to contribute.
+See [CONTRIBUTING.md](https://github.com/bitpay/bitcore/blob/master/CONTRIBUTING.md) on the main bitcore repo for information about how to contribute.
 
 ## License
 
