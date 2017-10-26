@@ -89,7 +89,10 @@ describe('Networks', function() {
     networks.add(custom);
     var network = networks.get(undefined);
     should.not.exist(network);
-    networks.remove(custom);
+    var somenet = networks.get('somenet');
+    should.exist(somenet);
+    somenet.name.should.equal('somenet');
+    networks.remove(somenet);
   });
 
   var constants = ['name', 'alias', 'pubkeyhash', 'scripthash', 'xpubkey', 'xprivkey'];
