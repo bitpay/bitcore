@@ -287,6 +287,7 @@ describe('ECDSA', function() {
           var ecdsa2 = ECDSA(ecdsa);
           ecdsa2.k = undefined;
           ecdsa2.sign();
+          ecdsa2.calci();
           ecdsa2.k.toString().should.equal(ecdsa.k.toString());
           ecdsa2.sig.toString().should.equal(ecdsa.sig.toString());
           ecdsa2.sig.i.should.equal(ecdsa.sig.i);
