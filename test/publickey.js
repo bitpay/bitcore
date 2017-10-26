@@ -28,13 +28,13 @@ describe('PublicKey', function() {
     it('errors if an invalid point is provided', function() {
       (function() {
         return new PublicKey(invalidPoint);
-      }).should.throw('Invalid x,y value for curve, cannot equal 0.');
+      }).should.throw('Point does not lie on the curve');
     });
 
     it('errors if a point not on the secp256k1 curve is provided', function() {
       (function() {
         return new PublicKey(new Point(1000, 1000));
-      }).should.throw('Invalid y value for curve.');
+      }).should.throw('Point does not lie on the curve');
     });
 
     it('errors if the argument is of an unrecognized type', function() {
@@ -132,7 +132,7 @@ describe('PublicKey', function() {
     it('should recieve an invalid point error', function() {
       var error = PublicKey.getValidationError(invalidPoint);
       should.exist(error);
-      error.message.should.equal('Invalid x,y value for curve, cannot equal 0.');
+      error.message.should.equal('Point does not lie on the curve');
     });
 
     it('should recieve a boolean as false', function() {
@@ -409,7 +409,7 @@ describe('PublicKey', function() {
       var hex = '041ff0fe0f7b15ffaa85ff9f4744d539139c252a49710fb053bb9f2b933173ff9a0000000000000000000000000000000000000000000000000000000000000000';
       (function() {
         return PublicKey.fromString(hex);
-      }).should.throw('Invalid x,y value for curve, cannot equal 0.');
+      }).should.throw('Invalid y value for curve.');
     });
 
     it('should throw an error if pubkey is invalid', function() {
