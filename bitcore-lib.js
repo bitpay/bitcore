@@ -197,10 +197,14 @@ Address._transformBuffer = function(buffer, network, type) {
     throw new TypeError('Address buffers must be exactly 21 bytes.');
   }
 
-  network = Networks.get(network);
+  var networkObj = Networks.get(network);
   var bufferVersion = Address._classifyFromVersion(buffer);
 
-  if (!bufferVersion.network || (network && network !== bufferVersion.network)) {
+  if (network && !networkObj) {
+    throw new TypeError('Unknown network');
+  }
+
+  if (!bufferVersion.network || (networkObj && networkObj !== bufferVersion.network)) {
     throw new TypeError('Address has mismatched network type.');
   }
 
@@ -1103,6 +1107,7 @@ var BufferWriter = require('../encoding/bufferwriter');
 var Hash = require('../crypto/hash');
 var JSUtil = require('../util/js');
 var Transaction = require('../transaction');
+var errors = require('../errors');
 var $ = require('../util/preconditions');
 
 /**
@@ -1158,6 +1163,7 @@ function MerkleBlock(arg) {
   _.extend(this,info);
   this._flagBitsUsed = 0;
   this._hashesUsed = 0;
+
   return this;
 }
 
@@ -1245,18 +1251,52 @@ MerkleBlock.prototype.validMerkleTree = function validMerkleTree() {
 };
 
 /**
+ * Return a list of all the txs hash that match the filter
+ * @returns {Array} - txs hash that match the filter
+ */
+MerkleBlock.prototype.filterdTxsHash = function filterdTxsHash() {
+  $.checkState(_.isArray(this.flags), 'MerkleBlock flags is not an array');
+  $.checkState(_.isArray(this.hashes), 'MerkleBlock hashes is not an array');
+
+  // Can't have more hashes than numTransactions
+  if(this.hashes.length > this.numTransactions) {
+    throw new errors.MerkleBlock.InvalidMerkleTree();
+  }
+
+  // Can't have more flag bits than num hashes
+  if(this.flags.length * 8 < this.hashes.length) {
+    throw new errors.MerkleBlock.InvalidMerkleTree();
+  }
+
+  // If there is only one hash the filter do not match any txs in the block
+  if(this.hashes.length === 1) {
+    return [];
+  };
+
+  var height = this._calcTreeHeight();
+  var opts = { hashesUsed: 0, flagBitsUsed: 0 };
+  var txs = this._traverseMerkleTree(height, 0, opts, true);
+  if(opts.hashesUsed !== this.hashes.length) {
+    throw new errors.MerkleBlock.InvalidMerkleTree();
+  }
+  return txs;
+};
+
+/**
  * Traverse a the tree in this MerkleBlock, validating it along the way
  * Modeled after Bitcoin Core merkleblock.cpp TraverseAndExtract()
  * @param {Number} - depth - Current height
  * @param {Number} - pos - Current position in the tree
  * @param {Object} - opts - Object with values that need to be mutated throughout the traversal
+ * @param {Boolean} - checkForTxs - if true return opts.txs else return the Merkle Hash
  * @param {Number} - opts.flagBitsUsed - Number of flag bits used, should start at 0
  * @param {Number} - opts.hashesUsed - Number of hashes used, should start at 0
- * @param {Array} - opts.txs - Will finish populated by transactions found during traversal
+ * @param {Array} - opts.txs - Will finish populated by transactions found during traversal that match the filter
  * @returns {Buffer|null} - Buffer containing the Merkle Hash for that height
+ * @returns {Array} - transactions found during traversal that match the filter
  * @private
  */
-MerkleBlock.prototype._traverseMerkleTree = function traverseMerkleTree(depth, pos, opts) {
+MerkleBlock.prototype._traverseMerkleTree = function traverseMerkleTree(depth, pos, opts, checkForTxs) {
   /* jshint maxcomplexity:  12*/
   /* jshint maxstatements: 20 */
 
@@ -1264,6 +1304,7 @@ MerkleBlock.prototype._traverseMerkleTree = function traverseMerkleTree(depth, p
   opts.txs = opts.txs || [];
   opts.flagBitsUsed = opts.flagBitsUsed || 0;
   opts.hashesUsed = opts.hashesUsed || 0;
+  var checkForTxs = checkForTxs || false;
 
   if(opts.flagBitsUsed > this.flags.length * 8) {
     return null;
@@ -1284,7 +1325,11 @@ MerkleBlock.prototype._traverseMerkleTree = function traverseMerkleTree(depth, p
     if(pos*2+1 < this._calcTreeWidth(depth-1)) {
       right = this._traverseMerkleTree(depth-1, pos*2+1, opts);
     }
-    return Hash.sha256sha256(new Buffer.concat([left, right]));
+    if (checkForTxs){
+      return opts.txs;
+    } else {
+      return Hash.sha256sha256(new Buffer.concat([left, right]));
+    };
   }
 };
 
@@ -1367,7 +1412,7 @@ MerkleBlock.fromObject = function fromObject(obj) {
 module.exports = MerkleBlock;
 
 }).call(this,require("buffer").Buffer)
-},{"../crypto/hash":8,"../encoding/bufferreader":14,"../encoding/bufferwriter":15,"../transaction":28,"../util/buffer":42,"../util/js":43,"../util/preconditions":44,"./blockheader":3,"buffer":47,"lodash":319}],6:[function(require,module,exports){
+},{"../crypto/hash":8,"../encoding/bufferreader":14,"../encoding/bufferwriter":15,"../errors":17,"../transaction":28,"../util/buffer":42,"../util/js":43,"../util/preconditions":44,"./blockheader":3,"buffer":47,"lodash":319}],6:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -3209,6 +3254,13 @@ module.exports = [{
   }, {
     'name': 'InvalidRate',
     'message': 'Invalid exchange rate: {0}'
+  }]
+}, {
+  name: 'MerkleBlock',
+  message: 'Internal Error on MerkleBlock {0}',
+  errors: [{
+    'name': 'InvalidMerkleTree',
+    'message': 'This MerkleBlock contain an invalid Merkle Tree'
   }]
 }, {
   name: 'Transaction',
@@ -7130,15 +7182,17 @@ var Script = function Script(from) {
     return Script.fromAddress(from);
   } else if (from instanceof Script) {
     return Script.fromBuffer(from.toBuffer());
-  } else if (typeof from === 'string') {
+  } else if (_.isString(from)) {
     return Script.fromString(from);
-  } else if (typeof from !== 'undefined') {
+  } else if (_.isObject(from) && _.isArray(from.chunks)) {
     this.set(from);
   }
 };
 
 Script.prototype.set = function(obj) {
-  this.chunks = obj.chunks || this.chunks;
+  $.checkArgument(_.isObject(obj));
+  $.checkArgument(_.isArray(obj.chunks));
+  this.chunks = obj.chunks;
   return this;
 };
 
@@ -7322,7 +7376,21 @@ Script.prototype._chunkToString = function(chunk, type) {
   if (!chunk.buf) {
     // no data chunk
     if (typeof Opcode.reverseMap[opcodenum] !== 'undefined') {
-      str = str + ' ' + Opcode(opcodenum).toString();
+      if (asm) {
+        // A few cases where the opcode name differs from reverseMap
+        // aside from 1 to 16 data pushes.
+        if (opcodenum === 0) {
+          // OP_0 -> 0
+          str = str + ' 0';
+        } else if(opcodenum === 79) {
+          // OP_1NEGATE -> 1
+          str = str + ' -1';
+        } else {
+          str = str + ' ' + Opcode(opcodenum).toString();
+        }
+      } else {
+        str = str + ' ' + Opcode(opcodenum).toString();
+      }
     } else {
       var numstr = opcodenum.toString(16);
       if (numstr.length % 2 !== 0) {
@@ -7336,7 +7404,7 @@ Script.prototype._chunkToString = function(chunk, type) {
     }
   } else {
     // data chunk
-    if (opcodenum === Opcode.OP_PUSHDATA1 ||
+    if (!asm && opcodenum === Opcode.OP_PUSHDATA1 ||
       opcodenum === Opcode.OP_PUSHDATA2 ||
       opcodenum === Opcode.OP_PUSHDATA4) {
       str = str + ' ' + Opcode(opcodenum).toString();
@@ -9762,13 +9830,13 @@ Transaction.prototype.fromObject = function fromObject(arg) {
 
 Transaction.prototype._checkConsistency = function(arg) {
   if (!_.isUndefined(this._changeIndex)) {
-    $.checkState(this._changeScript);
-    $.checkState(this.outputs[this._changeIndex]);
+    $.checkState(this._changeScript, 'Change script is expected.');
+    $.checkState(this.outputs[this._changeIndex], 'Change index points to undefined output.');
     $.checkState(this.outputs[this._changeIndex].script.toString() ===
-      this._changeScript.toString());
+      this._changeScript.toString(), 'Change output has an unexpected script.');
   }
   if (arg && arg.hash) {
-    $.checkState(arg.hash === this.hash, 'Hash in object does not match transaction hash');
+    $.checkState(arg.hash === this.hash, 'Hash in object does not match transaction hash.');
   }
 };
 
@@ -10419,7 +10487,7 @@ Transaction.prototype.removeInput = function(txId, outputIndex) {
  * @return {Transaction} this, for chaining
  */
 Transaction.prototype.sign = function(privateKey, sigtype) {
-  $.checkState(this.hasAllUtxoInfo());
+  $.checkState(this.hasAllUtxoInfo(), 'Not all utxo information is available to sign the transaction.');
   var self = this;
   if (_.isArray(privateKey)) {
     _.each(privateKey, function(privateKey) {
@@ -53953,7 +54021,7 @@ arguments[4][262][0].apply(exports,arguments)
 },{}],320:[function(require,module,exports){
 module.exports={
   "name": "bitcore-lib",
-  "version": "5.0.0-beta.1",
+  "version": "0.15.0",
   "description": "A pure and powerful JavaScript Bitcoin library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -53988,6 +54056,7 @@ module.exports={
   },
   "dependencies": {
     "bn.js": "=4.11.8",
+    "bs58": "=4.0.1",
     "buffer-compare": "=1.1.1",
     "elliptic": "=6.4.0",
     "inherits": "=2.0.1",
@@ -54004,13 +54073,23 @@ module.exports={
 }
 
 },{}],"bitcore-lib":[function(require,module,exports){
-(function (Buffer){
+(function (global,Buffer){
 'use strict';
 
 var bitcore = module.exports;
 
 // module information
 bitcore.version = 'v' + require('./package.json').version;
+bitcore.versionGuard = function(version) {
+  if (version !== undefined) {
+    var message = 'More than one instance of bitcore-lib found. ' +
+      'Please make sure to require bitcore-lib and check that submodules do' +
+      ' not also include their own bitcore-lib dependency.';
+    throw new Error(message);
+  }
+};
+bitcore.versionGuard(global._bitcore);
+global._bitcore = bitcore.version;
 
 // crypto
 bitcore.crypto = {};
@@ -54065,5 +54144,5 @@ bitcore.deps._ = require('lodash');
 // Internal usage, exposed for testing/advanced tweaking
 bitcore.Transaction.sighash = require('./lib/transaction/sighash');
 
-}).call(this,require("buffer").Buffer)
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 },{"./lib/address":1,"./lib/block":4,"./lib/block/blockheader":3,"./lib/block/merkleblock":5,"./lib/crypto/bn":6,"./lib/crypto/ecdsa":7,"./lib/crypto/hash":8,"./lib/crypto/point":9,"./lib/crypto/random":10,"./lib/crypto/signature":11,"./lib/encoding/base58":12,"./lib/encoding/base58check":13,"./lib/encoding/bufferreader":14,"./lib/encoding/bufferwriter":15,"./lib/encoding/varint":16,"./lib/errors":17,"./lib/hdprivatekey.js":19,"./lib/hdpublickey.js":20,"./lib/networks":21,"./lib/opcode":22,"./lib/privatekey":23,"./lib/publickey":24,"./lib/script":25,"./lib/transaction":28,"./lib/transaction/sighash":36,"./lib/unit":40,"./lib/uri":41,"./lib/util/buffer":42,"./lib/util/js":43,"./lib/util/preconditions":44,"./package.json":320,"bn.js":280,"bs58":281,"buffer":47,"elliptic":285,"lodash":319}]},{},[]);
