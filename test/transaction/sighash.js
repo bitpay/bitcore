@@ -33,7 +33,6 @@ describe('sighash', function() {
   });
 
   var zeroBN = BN.Zero;
-console.log('[sighash.js.36:vectors_sighash:]',vectors_sighash.length); //TODO
   vectors_sighash.forEach(function(vector, i) {
     if (i === 0 || !vector[4]) {
       // First element is just a row describing the next ones
