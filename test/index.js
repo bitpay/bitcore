@@ -1,6 +1,5 @@
 "use strict";
 
-<<<<<<< HEAD
 var should = require('chai').should();
 var bitcore = require('../');
 
