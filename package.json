@@ -21,8 +21,8 @@
   },
   "dependencies": {
     "async": "^0.9.2",
-    "bitcore-lib": "=0.14.0",
-    "bitcore-lib-cash": "https://github.com/bitpay/bitcore-lib.git#243565eaa15ad2b855665ea38a94a5081adb29cc",
+    "bitcore-lib": "=0.15.0",
+    "bitcore-lib-cash": "0.15.0",
     "body-parser": "^1.11.0",
     "compression": "^1.6.2",
     "coveralls": "^2.11.2",
