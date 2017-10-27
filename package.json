@@ -21,8 +21,8 @@
   },
   "dependencies": {
     "async": "^0.9.2",
-    "bitcore-lib": "=0.15.0",
-    "bitcore-lib-cash": "0.15.0",
+    "bitcore-lib": "^0.15.0",
+    "bitcore-lib-cash": "^0.15.1",
     "body-parser": "^1.11.0",
     "compression": "^1.6.2",
     "coveralls": "^2.11.2",
