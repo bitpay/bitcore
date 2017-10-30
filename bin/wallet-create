@@ -8,6 +8,7 @@ program = utils.configureCommander(program);
 program
   .option('-t, --testnet', 'Create a Testnet Wallet')
   .option('-p, --password', 'Encrypt wallet. Will ask password interactively')
+  .option('-c, --coin <coin>', 'coin (btc/bch)')
   .usage('[options] <walletName> <m-n> [copayerName] <passphrase>')
   .parse(process.argv);
 
@@ -19,6 +20,7 @@ var walletName = args[0];
 var copayerName = args[2] || process.env.USER;
 var passphrase = args[3];
 var network = program.testnet ? 'testnet' : 'livenet';
+var coin  = program.coin ? program.coin : 'btc';
 
 var mn;
 try {
@@ -34,6 +36,7 @@ utils.getClient(program, {
     network: network,
     passphrase: passphrase,
     language: 'en',
+    coin: coin,
   });
   client.createWallet(walletName, copayerName, mn[0], mn[1], {
     network: network
