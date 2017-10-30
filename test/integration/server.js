@@ -1973,7 +1973,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('#getBalance 2 steps', function() {
+  describe.only('#getBalance 2 steps', function() {
     var server, wallet, clock;
     var _threshold = Defaults.TWO_STEP_BALANCE_THRESHOLD;
     beforeEach(function(done) {
@@ -2027,7 +2027,7 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          clock.tick(7 * 24 * 3600 * 1000);
+          clock.tick(7 * Defaults.TWO_STEP_CREATION_HOURS * 3600 * 1000);
           helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
             newAddrs = addrs;
             server._getActiveAddresses(function(err, active) {
@@ -2111,7 +2111,7 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          clock.tick(7 * 24 * 3600 * 1000);
+          clock.tick(7 * Defaults.TWO_STEP_CREATION_HOURS * 3600 * 1000);
           helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
             newAddrs = addrs;
             helpers.stubUtxos(server, wallet, [1, 2], {
@@ -2244,7 +2244,7 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          clock.tick(7 * 24 * 3600 * 1000);
+          clock.tick(7 * Defaults.TWO_STEP_CREATION_HOURS * 3600 * 1000);
           helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
             newAddrs = addrs;
             helpers.stubUtxos(server, wallet, [1, 2], {
