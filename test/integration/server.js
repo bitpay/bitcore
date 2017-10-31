@@ -1973,7 +1973,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe.only('#getBalance 2 steps', function() {
+  describe('#getBalance 2 steps', function() {
     var server, wallet, clock;
     var _threshold = Defaults.TWO_STEP_BALANCE_THRESHOLD;
     beforeEach(function(done) {
@@ -2032,7 +2032,8 @@ describe('Wallet service', function() {
             newAddrs = addrs;
             server._getActiveAddresses(function(err, active) {
               should.not.exist(err);
-              should.not.exist(active);
+              active.length.should.equal(2);
+
               helpers.stubUtxos(server, wallet, [1, 2], {
                 addresses: [oldAddrs[0], newAddrs[0]],
               }, function() {
@@ -2045,9 +2046,12 @@ describe('Wallet service', function() {
           server.getBalance({
             twoStep: true
           }, function(err, balance) {
+console.log('[server.js.2048:err:]',err); //TODO
             should.not.exist(err);
             should.exist(balance);
-            balance.totalAmount.should.equal(helpers.toSatoshi(3));
+
+            // Only should see newAddr[0]
+            balance.totalAmount.should.equal(helpers.toSatoshi(2));
             next();
           });
         },
@@ -2058,6 +2062,7 @@ describe('Wallet service', function() {
           server._getActiveAddresses(function(err, active) {
             should.not.exist(err);
             should.exist(active);
+            // 1 old (with balance) + 2 news
             active.length.should.equal(3);
             next();
           });
@@ -2099,6 +2104,76 @@ describe('Wallet service', function() {
       });
     });
 
+    it('should not count addresses if wallet have already passed the threshold', function(done) {
+      var oldAddrs, newAddrs, spy;
+      async.series([
+
+        function(next) {
+          spy = sinon.spy(server.storage, 'countAddresses');
+          helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
+            oldAddrs = addrs;
+            next();
+          });
+        },
+        function(next) {
+          clock.tick(7 * Defaults.TWO_STEP_CREATION_HOURS * 3600 * 1000);
+          helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
+            newAddrs = addrs;
+            server._getActiveAddresses(function(err, active) {
+              should.not.exist(err);
+              // the new 2
+              active.length.should.equal(2);
+              helpers.stubUtxos(server, wallet, [1, 2], {
+                addresses: [oldAddrs[0], newAddrs[0]],
+              }, function() {
+                next();
+              });
+            });
+          });
+        },
+        function(next) {
+          server.getBalance({
+            twoStep: true
+          }, function(err, balance) {
+            should.not.exist(err);
+            should.exist(balance);
+            balance.totalAmount.should.equal(helpers.toSatoshi(2));
+            next();
+          });
+        },
+        function(next) {
+          setTimeout(next, 100);
+        },
+        function(next) {
+          spy.calledOnce.should.equal(true);
+          next();
+        },
+        function(next) {
+          server.getBalance({
+            twoStep: true
+          }, function(err, balance) {
+            should.not.exist(err);
+            should.exist(balance);
+            balance.totalAmount.should.equal(helpers.toSatoshi(3));
+            next();
+          });
+        },
+        function(next) {
+          setTimeout(next, 100);
+        },
+        // should NOT count addresses again! (still only one call)
+        function(next) {
+          spy.calledOnce.should.equal(true);
+          next();
+        },
+ 
+      ], function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+
+
     it('should not trigger notification when only balance of prioritary addresses is updated', function(done) {
       var oldAddrs, newAddrs;
 
@@ -2119,6 +2194,17 @@ describe('Wallet service', function() {
             }, function() {
               next();
             });
+          });
+        },
+        function(next) {
+          setTimeout(next, 100);
+        },
+        function(next) {
+          server.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            var last = _.last(notifications);
+            last.type.should.not.equal('BalanceUpdated');
+            next();
           });
         },
         function(next) {
@@ -2168,6 +2254,179 @@ describe('Wallet service', function() {
         done();
       });
     });
+
+    it('should not do 2 steps if called 2 times given the first one there found no funds on non-active addresses', function(done) {
+      var oldAddrs, newAddrs, spy;
+
+      async.series([
+        function(next) {
+          spy = sinon.spy(server, '_getBalanceOneStep');
+          helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
+            oldAddrs = addrs;
+            next();
+          });
+        },
+        function(next) {
+          clock.tick(7 * Defaults.TWO_STEP_CREATION_HOURS * 3600 * 1000);
+          helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
+            newAddrs = addrs;
+            helpers.stubUtxos(server, wallet, [1, 2], {
+              addresses: newAddrs,
+            }, function() {
+              next();
+            });
+          });
+        },
+        function(next) {
+          server.getBalance({
+            twoStep: true
+          }, function(err, balance) {
+            should.not.exist(err);
+            should.exist(balance);
+            balance.totalAmount.should.equal(helpers.toSatoshi(3));
+            next();
+          });
+        },
+        function(next) {
+          setTimeout(next, 100);
+        },
+        // Should _oneStep should be called once
+        function(next) {
+          spy.calledOnce.should.equal(true);
+          next();
+        },
+        function(next) {
+          helpers.stubUtxos(server, wallet, 0.5, {
+            addresses: newAddrs[0],
+            keepUtxos: true,
+          }, function() {
+            next();
+          });
+        },
+        function(next) {
+          server.getBalance({
+            twoStep: true
+          }, function(err, balance) {
+            should.not.exist(err);
+            should.exist(balance);
+            balance.totalAmount.should.equal(helpers.toSatoshi(3.5));
+            next();
+          });
+        },
+        function(next) {
+          setTimeout(next, 100);
+        },
+        // Should _oneStep should be called once
+        function(next) {
+          spy.calledOnce.should.equal(true);
+          next();
+        },
+        // Should not trigger notification either
+        function(next) {
+          server.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            var last = _.last(notifications);
+            last.type.should.not.equal('BalanceUpdated');
+            next();
+          });
+        },
+      ], function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+
+  it('should do 2 steps if called 2 times given the first one there found funds on non-active addresses', function(done) {
+      var oldAddrs, newAddrs, spy, notificationCount;
+
+      async.series([
+        function(next) {
+          spy = sinon.spy(server, '_getBalanceOneStep');
+          helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
+            oldAddrs = addrs;
+            next();
+          });
+        },
+        function(next) {
+          clock.tick(7 * Defaults.TWO_STEP_CREATION_HOURS * 3600 * 1000);
+          helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
+            newAddrs = addrs;
+            helpers.stubUtxos(server, wallet, [1, 2], {
+              addresses: [ oldAddrs[0], newAddrs[0] ],
+            }, function() {
+              next();
+            });
+          });
+        },
+        function(next) {
+          server.getBalance({
+            twoStep: true
+          }, function(err, balance) {
+            should.not.exist(err);
+            should.exist(balance);
+            balance.totalAmount.should.equal(helpers.toSatoshi(2));
+            next();
+          });
+        },
+        function(next) {
+          setTimeout(next, 100);
+        },
+        // Should not trigger notification either
+        function(next) {
+          server.getNotifications({}, function(err, notifications) {
+            notificationCount = notifications.length;
+
+            should.not.exist(err);
+            var last = _.last(notifications);
+            last.type.should.equal('BalanceUpdated');
+            next();
+          });
+        },
+        // Should _oneStep should be called once
+        function(next) {
+          spy.calledOnce.should.equal(true);
+          next();
+        },
+        function(next) {
+          helpers.stubUtxos(server, wallet, 0.5, {
+            addresses: newAddrs[0],
+            keepUtxos: true,
+          }, function() {
+            next();
+          });
+        },
+        function(next) {
+          server.getBalance({
+            twoStep: true
+          }, function(err, balance) {
+            should.not.exist(err);
+            should.exist(balance);
+            balance.totalAmount.should.equal(helpers.toSatoshi(3.5));
+            next();
+          });
+        },
+        function(next) {
+          setTimeout(next, 100);
+        },
+        // Should _oneStep should be called TWICE
+        function(next) {
+          spy.calledTwice.should.equal(true);
+          next();
+        },
+        // Should not trigger notification either
+        function(next) {
+          server.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            notifications.length.should.equal(notificationCount);
+            next();
+          });
+        },
+      ], function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+
 
     it('should resolve balance of new addresses immediately', function(done) {
       var addresses;
@@ -2281,56 +2540,6 @@ describe('Wallet service', function() {
       });
     });
 
-
-    it.only('should not perform 2 steps after 2 steps was just triggered', function(done) {
-      var oldAddrs, newAddrs;
-      Defaults.TWO_STEP_BALANCE_THRESHOLD = 5;
-
-      async.series([
-
-        function(next) {
-          helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
-            oldAddrs = addrs;
-            next();
-          });
-        },
-        function(next) {
-          clock.tick(7 * Defaults.TWO_STEP_CREATION_HOURS * 3600 * 1000);
-          helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
-            newAddrs = addrs;
-            helpers.stubUtxos(server, wallet, [1, 2], {
-              addresses: [oldAddrs[0], newAddrs[0]],
-            }, function() {
-              next();
-            });
-          });
-        },
-        function(next) {
-          server.getBalance({
-            twoStep: true
-          }, function(err, balance) {
-            should.not.exist(err);
-            should.exist(balance);
-            balance.totalAmount.should.equal(helpers.toSatoshi(3));
-            next();
-          });
-        },
-        function(next) {
-          setTimeout(next, 100);
-        },
-        function(next) {
-          server.getNotifications({}, function(err, notifications) {
-            should.not.exist(err);
-            var last = _.last(notifications);
-            last.type.should.not.equal('BalanceUpdated');
-            next();
-          });
-        },
-      ], function(err) {
-        should.not.exist(err);
-        done();
-      });
-    });
 
   });
 
