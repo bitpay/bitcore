@@ -2335,6 +2335,78 @@ describe('Wallet service', function() {
       });
     });
 
+  it('should do 2 steps if called 2 times given the first one there found no funds on non-active addresses, but times passes', function(done) {
+      var oldAddrs, newAddrs, spy;
+
+      async.series([
+        function(next) {
+          spy = sinon.spy(server, '_getBalanceOneStep');
+          helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
+            oldAddrs = addrs;
+            next();
+          });
+        },
+        function(next) {
+          clock.tick(7 * Defaults.TWO_STEP_CREATION_HOURS * 3600 * 1000);
+          helpers.createAddresses(server, wallet, 2, 0, function(addrs) {
+            newAddrs = addrs;
+            helpers.stubUtxos(server, wallet, [1, 2], {
+              addresses: newAddrs,
+            }, function() {
+              next();
+            });
+          });
+        },
+        function(next) {
+          server.getBalance({
+            twoStep: true
+          }, function(err, balance) {
+            should.not.exist(err);
+            should.exist(balance);
+            balance.totalAmount.should.equal(helpers.toSatoshi(3));
+            next();
+          });
+        },
+        function(next) {
+          setTimeout(next, 100);
+        },
+        // Should _oneStep should be called once
+        function(next) {
+          spy.calledOnce.should.equal(true);
+          next();
+        },
+        function(next) {
+          helpers.stubUtxos(server, wallet, 0.5, {
+            addresses: newAddrs[0],
+            keepUtxos: true,
+          }, function() {
+            clock.tick(2 * Defaults.TWO_STEP_INACTIVE_CLEAN_DURATION_MIN * 60 * 1000);
+            next();
+          });
+        },
+        function(next) {
+          server.getBalance({
+            twoStep: true
+          }, function(err, balance) {
+            should.not.exist(err);
+            should.exist(balance);
+            balance.totalAmount.should.equal(helpers.toSatoshi(3.5));
+            next();
+          });
+        },
+        function(next) {
+          setTimeout(next, 100);
+        },
+        function(next) {
+          spy.calledTwice.should.equal(true);
+          next();
+        },
+      ], function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+
   it('should do 2 steps if called 2 times given the first one there found funds on non-active addresses', function(done) {
       var oldAddrs, newAddrs, spy, notificationCount;
 
