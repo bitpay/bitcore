@@ -2046,7 +2046,6 @@ describe('Wallet service', function() {
           server.getBalance({
             twoStep: true
           }, function(err, balance) {
-console.log('[server.js.2048:err:]',err); //TODO
             should.not.exist(err);
             should.exist(balance);
 
@@ -2451,7 +2450,10 @@ console.log('[server.js.2048:err:]',err); //TODO
             should.exist(balance);
             balance.totalAmount.should.equal(helpers.toSatoshi(3));
             next();
-          });
+          }, 1);
+        },
+        function(next) {
+          setTimeout(next, 100);
         },
         function(next) {
           server.createAddress({}, function(err, addr) {
@@ -2471,7 +2473,7 @@ console.log('[server.js.2048:err:]',err); //TODO
             should.exist(balance);
             balance.totalAmount.should.equal(helpers.toSatoshi(3.5));
             next();
-          });
+          }, 2);
         },
         function(next) {
           setTimeout(next, 100);
