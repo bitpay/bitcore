@@ -2677,14 +2677,14 @@ describe('Wallet service', function() {
     });
 
 
-    it('should not get balance from cache, after 11secs', function(done) {
+    it('should not get balance from cache, after X secs, on a direct hit', function(done) {
       helpers.stubUtxos(server, wallet, [1, 'u2', 3], function() {
         server.getBalance({
           twoStep: false 
         }, function(err, balance, cacheUsed) {
           should.not.exist(err);
           should.not.exist(cacheUsed);
-          clock.tick((10+1) * 1000);
+          clock.tick(( Defaults.BALANCE_CACHE_DIRECT_DURATION +1) * 1000);
           server.getBalance({
             twoStep: false 
           }, function(err, balance, cacheUsed) {
@@ -2698,6 +2698,25 @@ describe('Wallet service', function() {
     });
 
 
+    it('should not get balance from cache, after X secs, on a twostep hit', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 'u2', 3], function() {
+        server.getBalance({
+          twoStep: false 
+        }, function(err, balance, cacheUsed) {
+          should.not.exist(err);
+          should.not.exist(cacheUsed);
+          clock.tick(( Defaults.BALANCE_CACHE_DIRECT_DURATION - 1) * 1000);
+          server.getBalance({
+            twoStep: true 
+          }, function(err, balance, cacheUsed) {
+            should.not.exist(err);
+            should.not.exist(cacheUsed);
+            checkBalance(balance);
+            done();
+          });
+        });
+      });
+    });
   });
 
 
@@ -7579,7 +7598,7 @@ describe('Wallet service', function() {
           function(server, wallet, next) {
             server.scan({}, function(err) {
               should.not.exist(err);
-              server.getBalance(wallet.id, function(err, balance) {
+              server.getBalance({}, function(err, balance) {
                 balance.totalAmount.should.equal(helpers.toSatoshi(6));
                 next();
               })
