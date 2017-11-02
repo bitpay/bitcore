@@ -16,6 +16,7 @@
   "maxlen": 120,
   "maxparams": 4,
   "maxstatements": 15,
+  "no-extra-semi": 0,
   "mocha": true,
   "newcap": true,
   "noarg": true,

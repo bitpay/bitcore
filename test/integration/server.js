@@ -2617,6 +2617,90 @@ describe('Wallet service', function() {
 
   });
 
+
+  describe('#getBalance fast cache', function() {
+    var server, wallet, clock;
+    var _old = Defaults.BALANCE_CACHE_ADDRESS_THRESOLD;
+    beforeEach(function(done) {
+      clock = sinon.useFakeTimers(Date.now(), 'Date');
+      Defaults.BALANCE_CACHE_ADDRESS_THRESOLD = 0;
+
+      helpers.createAndJoinWallet(1, 1, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+    afterEach(function() {
+      clock.restore();
+      Defaults.BALANCE_CACHE_ADDRESS_THRESOLD = _old;
+    });
+
+    function checkBalance(balance) {
+      should.exist(balance);
+      balance.totalAmount.should.equal(helpers.toSatoshi(6));
+      should.exist(balance.byAddress);
+      balance.byAddress.length.should.equal(2);
+      balance.byAddress[1].amount.should.equal(helpers.toSatoshi(2));
+    };
+
+    it('should get balance from insight and store cache', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 'u2', 3], function() {
+        server.getBalance({
+          twoStep: false 
+        }, function(err, balance, cacheUsed) {
+          should.not.exist(err);
+          should.not.exist(cacheUsed);
+          checkBalance(balance);
+          done();
+        });
+      });
+    });
+
+    it('should get balance from cache', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 'u2', 3], function() {
+        server.getBalance({
+          twoStep: false 
+        }, function(err, balance, cacheUsed) {
+          should.not.exist(err);
+          should.not.exist(cacheUsed);
+          server.getBalance({
+            twoStep: false 
+          }, function(err, balance, cacheUsed) {
+            should.not.exist(err);
+            cacheUsed.should.equal(true);
+            checkBalance(balance);
+            done();
+          });
+        });
+      });
+    });
+
+
+    it('should not get balance from cache, after 11secs', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 'u2', 3], function() {
+        server.getBalance({
+          twoStep: false 
+        }, function(err, balance, cacheUsed) {
+          should.not.exist(err);
+          should.not.exist(cacheUsed);
+          clock.tick((10+1) * 1000);
+          server.getBalance({
+            twoStep: false 
+          }, function(err, balance, cacheUsed) {
+            should.not.exist(err);
+            should.not.exist(cacheUsed);
+            checkBalance(balance);
+            done();
+          });
+        });
+      });
+    });
+
+
+  });
+
+
   describe('#getFeeLevels', function() {
     var server, wallet, levels;
     before(function() {
