@@ -33,6 +33,14 @@ BWS supports SSL and Clustering. For a detailed guide on installing BWS with ext
 
 BWS uses by default a Request Rate Limitation to CreateWallet endpoint. If you need to modify it, check defaults.js' `Defaults.RateLimit`
 
+# Using BWS with PM2
+
+BWS can be used with PM2 with the provided `app.js` script: 
+ 
+```
+  pm2 start app.js --name "bitcoin-wallet-service"
+```
+
 # Security Considerations
  * Private keys are never sent to BWS. Copayers store them locally.
  * Extended public keys are stored on BWS. This allows BWS to easily check wallet balance, send offline notifications to copayers, etc.
