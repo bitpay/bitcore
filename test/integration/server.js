@@ -1763,6 +1763,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             bal.totalAmount.should.equal(1e8);
             getAuthServer(opts.copayerId, reqPrivKey, function(err, server2) {
+
               server2.getBalance(res.wallet.walletId, function(err, bal2) {
                 should.not.exist(err);
                 bal2.totalAmount.should.equal(1e8);
@@ -2752,13 +2753,20 @@ describe('Wallet service', function() {
     after(function() {
       Defaults.FEE_LEVELS = levels;
     });
+    var clock;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
         wallet = w;
         done();
       });
+      clock = sinon.useFakeTimers(Date.now(), 'Date');
     });
+
+    afterEach(function() {
+      clock.restore();
+    });
+ 
 
     it('should get current fee levels', function(done) {
       helpers.stubFeeLevels({
@@ -2890,6 +2898,83 @@ describe('Wallet service', function() {
         done();
       });
     });
+
+    it('should get current fee levels FROM CACHE', function(done) {
+      helpers.stubFeeLevels({
+        1: 40000,
+        2: 20000,
+      });
+      server.getFeeLevels({}, function(err, fees, fromCache) {
+        should.not.exist(err);
+        fees = _.zipObject(_.map(fees, function(item) {
+          return [item.level, item];
+        }));
+        fees.urgent.feePerKb.should.equal(60000);
+        fees.priority.feePerKb.should.equal(40000);
+        should.not.exist(fromCache);
+        server.getFeeLevels({}, function(err, fees, fromCache) {
+          should.not.exist(err);
+          fees = _.zipObject(_.map(fees, function(item) {
+            return [item.level, item];
+          }));
+          fees.urgent.feePerKb.should.equal(60000);
+          fees.priority.feePerKb.should.equal(40000);
+          fromCache.should.equal(true);
+          done();
+        });
+      });
+    });
+
+
+    it('should expire CACHE', function(done) {
+      helpers.stubFeeLevels({
+        1: 40000,
+        2: 20000,
+      });
+      server.getFeeLevels({}, function(err, fees, fromCache) {
+        should.not.exist(err);
+        fees = _.zipObject(_.map(fees, function(item) {
+          return [item.level, item];
+        }));
+        fees.urgent.feePerKb.should.equal(60000);
+        fees.priority.feePerKb.should.equal(40000);
+        should.not.exist(fromCache);
+        clock.tick(6*60*1000);
+        server.getFeeLevels({}, function(err, fees, fromCache) {
+          should.not.exist(err);
+          fees = _.zipObject(_.map(fees, function(item) {
+            return [item.level, item];
+          }));
+          fees.urgent.feePerKb.should.equal(60000);
+          fees.priority.feePerKb.should.equal(40000);
+          should.not.exist(fromCache);
+          done();
+        });
+      });
+    });
+
+
+    it('should not use cache on different opts', function(done) {
+      helpers.stubFeeLevels({
+        1: 40000,
+        2: 20000,
+      });
+      server.getFeeLevels({}, function(err, fees, fromCache) {
+        should.not.exist(err);
+        should.not.exist(fromCache);
+        server.getFeeLevels({coin:'bch'}, function(err, fees, fromCache) {
+          should.not.exist(err);
+          should.not.exist(fromCache);
+          server.getFeeLevels({coin:'bch', network:'testnet'}, function(err, fees, fromCache) {
+            should.not.exist(err);
+            should.not.exist(fromCache);
+            done();
+          });
+        });
+      });
+    });
+
+
   });
 
   describe('Wallet not complete tests', function() {
