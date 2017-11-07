@@ -220,7 +220,7 @@ Required Arguments:
 `/v1/pushnotifications/subscriptions/`: Adds subscriptions for push notifications service at database.
 
 
-## DELETE Endopints
+## DELETE Endpoints
 `/v2/pushnotifications/subscriptions/`: Remove subscriptions for push notifications service from database.
 
  
