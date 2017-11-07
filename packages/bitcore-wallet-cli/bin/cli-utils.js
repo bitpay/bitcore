@@ -218,7 +218,7 @@ Utils.findOneTxProposal = function(txps, id) {
   return matches[0];
 };
 
-Utils.UNITS = {
+Utils.UNITS2 = {
   'btc': 100000000,
   'bit': 100,
   'sat': 1,
@@ -228,7 +228,7 @@ Utils.parseAmount = function(text) {
   if (!_.isString(text))
     text = text.toString();
 
-  var regex = '^(\\d*(\\.\\d{0,8})?)\\s*(' + _.keys(Utils.UNITS).join('|') + ')?$';
+  var regex = '^(\\d*(\\.\\d{0,8})?)\\s*(' + _.keys(Utils.UNITS2).join('|') + ')?$';
   var match = new RegExp(regex, 'i').exec(text.trim());
 
   if (!match || match.length === 0) throw new Error('Invalid amount');
@@ -237,7 +237,7 @@ Utils.parseAmount = function(text) {
   if (!_.isNumber(amount) || _.isNaN(amount)) throw new Error('Invalid amount');
 
   var unit = (match[3] || 'sat').toLowerCase();
-  var rate = Utils.UNITS[unit];
+  var rate = Utils.UNITS2[unit];
   if (!rate) throw new Error('Invalid unit')
 
   var amountSat = parseFloat((amount * rate).toPrecision(12));
