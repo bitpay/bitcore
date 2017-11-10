@@ -13,13 +13,13 @@ bitcoreNodeDir="${HOME}/source/bitcore-node"
 # given a string tag, make signed commits, push to relevant repos, create signed tags and publish to npm
 
 bump_version () {
-  sed -i '' -e "s/\"version\"\: .*$/\"version\"\: \"${shortTag}\",/g" package.json
+  sed -i'' -e "s/\"version\"\: .*$/\"version\"\: \"${shortTag}\",/g" package.json
 }
 
 set_deps () {
-  sed -i '' -e "s/\"bitcore-node\"\: .*$/\"bitcore-node\"\: \"${shortTag}\",/g" package.json
-  sed -i '' -e "s/\"insight-api\"\: .*$/\"insight-api\"\: \"${shortTag}\",/g" package.json
-  sed -i '' -e "s/\"insight-ui\"\: .*$/\"insight-ui\"\: \"bitpay\/insight\#${tag}\"/g" package.json
+  sed -i'' -e "s/\"bitcore-node\"\: .*$/\"bitcore-node\"\: \"${shortTag}\",/g" package.json
+  sed -i'' -e "s/\"insight-api\"\: .*$/\"insight-api\"\: \"${shortTag}\",/g" package.json
+  sed -i'' -e "s/\"insight-ui\"\: .*$/\"insight-ui\"\: \"bitpay\/insight\#${tag}\"/g" package.json
 }
 
 tag="${1}"
