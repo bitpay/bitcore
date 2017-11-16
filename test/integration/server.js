@@ -27,6 +27,7 @@ var Model = require('../../lib/model');
 
 var WalletService = require('../../lib/server');
 
+var HugeTxs = require('./hugetx');
 var TestData = require('../testdata');
 var helpers = require('./helpers');
 var storage, blockchainExplorer, request;
@@ -6809,7 +6810,7 @@ describe('Wallet service', function() {
         txs.length.should.equal(1);
         var tx = txs[0];
         tx.action.should.equal('sent');
-        tx.amount.should.equal(400);
+        tx.amount.should.equal(500);  // it is 500 because there is no change Address
         tx.fees.should.equal(100);
         tx.time.should.equal(12345);
         done();
@@ -6914,6 +6915,8 @@ describe('Wallet service', function() {
                 tx.createdOn.should.equal(txp.createdOn);
                 tx.action.should.equal('sent');
                 tx.amount.should.equal(0.8e8);
+
+
                 tx.message.should.equal('some message');
                 tx.addressTo.should.equal(external);
                 tx.actions.length.should.equal(1);
@@ -7136,7 +7139,52 @@ describe('Wallet service', function() {
         should.not.exist(err);
         var tx = txs[0];
         tx.feePerKb.should.equal(200);
+        should.not.exist(tx.foreignCrafted);
         should.not.exist(tx.lowFees);
+        done();
+      });
+    });
+
+    it('should handle outgoing txs where fee > amount', function(done) {
+      var x = _.cloneDeep([HugeTxs[0]]);
+      x[0].vin[118].addr = mainAddresses[0].address;
+      helpers.stubHistory(x);
+
+
+//console.log('[server.js.7149]',HugeTxs[1].vin); //TODO
+
+
+
+      server.getTxHistory({}, function(err, txs) {
+        should.not.exist(err);
+        should.exist(txs);
+        txs.length.should.equal(1);
+        var tx = txs[0];
+        tx.action.should.equal('sent');
+        tx.amount.should.equal(3002982);
+        tx.fees.should.equal(10000000);
+        tx.outputs[0].address.should.equal('1DVhaBdbp5mx5Y8zR1qR9NBiQtrgL9ZNQs');
+        tx.outputs[0].amount.should.equal(500000000);
+        tx.foreignCrafted.should.equal(true);
+        done();
+      });
+    });
+
+
+    it('should handle incoming txs with fee > incoming', function(done) {
+      var x = _.cloneDeep([HugeTxs[1]]);
+
+      x[0].vout[43].scriptPubKey.addresses = [mainAddresses[0].address];
+      helpers.stubHistory(x);
+
+      server.getTxHistory({}, function(err, txs) {
+        should.not.exist(err);
+        should.exist(txs);
+        txs.length.should.equal(1);
+        var tx = txs[0];
+        tx.action.should.equal('received');
+        tx.amount.should.equal(3002982);
+        tx.fees.should.equal(130700);
         done();
       });
     });
