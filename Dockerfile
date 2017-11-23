@@ -1,7 +1,8 @@
 # setup a centos image with bitcore binary components
 FROM centos:latest
 MAINTAINER Chris Kleeschulte <chrisk@bitpay.com>
-RUN yum -y install git curl which xz tar findutils
+RUN yum-config-manager --add-repo http://download.opensuse.org/repositories/home:/fengshuo:/zeromq/CentOS_CentOS-6/home:fengshuo:zeromq.repo
+RUN yum -y install git curl which xz tar findutils make automake gcc gcc-c++ zeromq zeromq-devel
 RUN groupadd bitcore
 RUN useradd bitcore -m -s /bin/bash -g bitcore
 ENV HOME /home/bitcore
