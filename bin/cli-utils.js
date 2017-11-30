@@ -258,6 +258,12 @@ Utils.configureCommander = function(program) {
 };
 
 Utils.UNITS = {
+  bch: {
+    name: 'bch',
+    toSatoshis: 100000000,
+    maxDecimals: 8,
+    minDecimals: 8,
+  },
   btc: {
     name: 'btc',
     toSatoshis: 100000000,

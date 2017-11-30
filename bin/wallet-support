@@ -19,8 +19,8 @@ if (!args[0])
 
 var identifier = args[0];
 var network = program.testnet ? 'testnet' : 'livenet';
-var format = (amount) => {
-  return utils.renderAmount(amount, 'btc');
+var format = (amount, coin) => {
+  return utils.renderAmount(amount, coin);
 };
 
 utils.getClient(program, {
@@ -57,9 +57,9 @@ utils.getClient(program, {
       ], (err, res) => {
         utils.die(err);
         displayStatus(status);
-        displaySendMaxInfo(res[0]);
+        displaySendMaxInfo(res[0], status.wallet.coin);
         displayAddresses(res[1]);
-        displayHistory(res[2]);
+        displayHistory(res[2], status.wallet.coin);
       });
     });
   });
@@ -68,45 +68,45 @@ utils.getClient(program, {
 
 
 function displayStatus(status) {
-  var x = status.wallet;
+  var w = status.wallet;
   console.log('\n* Wallet info');
-  console.log('  ID: %s', x.id);
-  console.log('  %s %d-of-%d%s [%s %s] wallet (status: %s)', x.network.toUpperCase(), x.m, x.n, x.singleAddress ? ' single-address' : '', x.derivationStrategy, x.addressType, x.status);
-  console.log('  Created on: %s', moment(x.createdOn * 1000));
+  console.log('  ID: %s', w.id);
+  console.log('  %s %d-of-%d%s [%s %s] wallet (status: %s)', w.network.toUpperCase(), w.m, w.n, w.singleAddress ? ' single-address' : '', w.derivationStrategy, w.addressType, w.status);
+  console.log('  Created on: %s', moment(w.createdOn * 1000));
 
-  if (x.status != 'complete') {
-    console.log('  Missing ' + (x.n - x.copayers.length) + ' copayers');
+  if (w.status != 'complete') {
+    console.log('  Missing ' + (w.n - w.copayers.length) + ' copayers');
   }
 
-  x = status.balance;
+  b = status.balance;
   console.log('\n* Balance')
-  console.log('  Total: %s (%s locked)', format(x.totalAmount), format(x.lockedAmount));
-  console.log('  Confirmed: %s (%s locked)', format(x.totalConfirmedAmount), format(x.lockedConfirmedAmount));
-  console.log('  Available: %s (%s confirmed / %s unconfirmed)', format(x.availableAmount), format(x.availableConfirmedAmount), format(x.availableAmount - x.availableConfirmedAmount));
-  if (!_.isEmpty(x.byAddress)) {
+  console.log('  Total: %s (%s locked)', format(b.totalAmount, w.coin), format(b.lockedAmount, w.coin));
+  console.log('  Confirmed: %s (%s locked)', format(b.totalConfirmedAmount, w.coin), format(b.lockedConfirmedAmount, w.coin));
+  console.log('  Available: %s (%s confirmed / %s unconfirmed)', format(b.availableAmount, w.coin), format(b.availableConfirmedAmount, w.coin), format(b.availableAmount - b.availableConfirmedAmount, w.coin));
+  if (!_.isEmpty(b.byAddress)) {
     console.log('  By address:');
   }
-  _.each(x.byAddress, function(item) {
-    console.log('    %s (%s): %s', item.address, item.path, format(item.amount));
+  _.each(b.byAddress, function(item) {
+    console.log('    %s (%s): %s', item.address, item.path, format(item.amount, w.coin));
   });
 
   if (!_.isEmpty(status.pendingTxps)) {
     console.log("\n* Pending tx proposals");
     _.each(status.pendingTxps, function(x) {
-      var missingSignatures = x.requiredSignatures - _.filter(_.values(x.actions), function(a) {
+      var missingSignatures = b.requiredSignatures - _.filter(_.values(b.actions), function(a) {
         return a.type == 'accept';
       }).length;
-      console.log("  [%s] %s (fee/kb %s) => %s (status: %s)", new moment(x.createdOn * 1000), format(x.amount), format(x.feePerKb), x.outputs[0].toAddress, missingSignatures > 0 ? 'missing ' + missingSignatures + ' signatures' : 'ready to broadcast');
+      console.log("  [%s] %s (fee/kb %s) => %s (status: %s)", new moment(b.createdOn * 1000), format(b.amount, w.coin), format(b.feePerKb, w.coin), b.outputs[0].toAddress, missingSignatures > 0 ? 'missing ' + missingSignatures + ' signatures' : 'ready to broadcast');
     });
   } else {
     console.log('\n* No pending tx proposals.');
   }
 };
 
-function displaySendMaxInfo(info) {
+function displaySendMaxInfo(info, coin) {
   if (info.amount == 0) return;
   console.log('\n* Send max');
-  console.log('  Maximum spendable amount at "normal" fee level (%s per kb): %s', format(info.feePerKb), format(info.amount));
+  console.log('  Maximum spendable amount at "normal" fee level (%s per kb): %s', format(info.feePerKb, coin), format(info.amount, coin));
   if (info.utxosBelowFee > 0) {
     console.log('  %s UTXOs for a total amount of %s are currently below fee required to spend them', info.utxosBelowFee, info.amountBelowFee);
   }
@@ -118,7 +118,7 @@ function displaySendMaxInfo(info) {
     console.log('  Available UTXOs:');
   }
   _.each(info.inputs, function(utxo) {
-    console.log('    %s%s %s', format(utxo.satoshis), utxo.locked ? ' (locked)' : '', utxo.confirmations > 0 ? utxo.confirmations + ' confirmations' : 'unconfirmed');
+    console.log('    %s%s %s', format(utxo.satoshis, coin), utxo.locked ? ' (locked)' : '', utxo.confirmations > 0 ? utxo.confirmations + ' confirmations' : 'unconfirmed');
   });
 };
 
@@ -133,7 +133,7 @@ function displayAddresses(addresses) {
   });
 };
 
-function displayHistory(history) {
+function displayHistory(history, coin) {
   if (_.isEmpty(history)) {
     console.log('\n* No tx history.');
     return;
@@ -142,7 +142,7 @@ function displayHistory(history) {
   console.log("\n* Tx history")
   _.each(history, function(tx) {
     var time = moment(tx.time * 1000);
-    var amount = format(tx.amount);
+    var amount = format(tx.amount, coin);
     var confirmations = tx.confirmations || 0;
     switch (tx.action) {
       case 'received':
@@ -155,6 +155,6 @@ function displayHistory(history) {
         direction = '=>';
         break;
     }
-    console.log("  [%s] %s %s %s %s (fee/kb %s) (%s confirmations)", time, tx.txid, direction, tx.action, amount, format(tx.feePerKb), confirmations);
+    console.log("  [%s] %s %s %s %s (fee/kb %s) (%s confirmations)", time, tx.txid, direction, tx.action, amount, format(tx.feePerKb, coin), confirmations);
   });
 };
