@@ -71,8 +71,9 @@ function displayStatus(status) {
   var w = status.wallet;
   console.log('\n* Wallet info');
   console.log('  ID: %s', w.id);
-  console.log('  %s %d-of-%d%s [%s %s] wallet (status: %s)', w.network.toUpperCase(), w.m, w.n, w.singleAddress ? ' single-address' : '', w.derivationStrategy, w.addressType, w.status);
+  console.log('  %s %d-of-%d%s [%s %s] Wallet (status: %s)', w.network.toUpperCase(), w.m, w.n, w.singleAddress ? ' single-address' : '', w.derivationStrategy, w.addressType, w.status);
   console.log('  Created on: %s', moment(w.createdOn * 1000));
+  console.log('  COIN: %s', w.coin.toUpperCase());
 
   if (w.status != 'complete') {
     console.log('  Missing ' + (w.n - w.copayers.length) + ' copayers');
