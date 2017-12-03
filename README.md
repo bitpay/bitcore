@@ -4,6 +4,8 @@
 
 A simple Command Line Interface Wallet using [Bitcore Wallet Service] (https://github.com/bitpay/bitcore-wallet-service) and its *official* client lib, bitcore-wallet-client] (https://github.com/bitpay/bitcore-wallet-client)
 
+This can be used to operate Bitcoin and Bitcoin Cash wallets.
+
 
 # Quick Guide
 
