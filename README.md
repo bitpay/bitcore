@@ -51,6 +51,9 @@ BWS can be used with PM2 with the provided `app.js` script:
   * TX Proposals templates are signed by copayers and verified by others, so the BWS cannot create or tamper with them.
 
 # REST API
+
+Note: all currency amounts are in units of satoshis (1/100,000,000 of a bitcoin).
+
 ## Authentication
 
   In order to access a wallet, clients are required to send the headers:
