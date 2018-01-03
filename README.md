@@ -15,7 +15,9 @@ Connect to any mainnet trusted node:
 {
   "network": "main",
   "chainSource": "p2p",
-  "p2pHost": "127.0.0.1"
+  "trustedPeers": [
+    {"host": "127.0.0.1", "port": 8333}
+  ]
 }
 ```
 
