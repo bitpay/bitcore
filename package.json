@@ -12,7 +12,7 @@
     "body-parser": "~1.17.2",
     "express": "~4.15.3",
     "mkdirp": "^0.5.1",
-    "mongoose": "^4.11.9",
+    "mongoose": "^4.13.8",
     "progress": "^2.0.0",
     "request": "^2.81.0",
     "underscore": "^1.8.3"
