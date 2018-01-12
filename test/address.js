@@ -66,6 +66,33 @@ describe('Address', function() {
     });
   });
 
+  describe('Cashaddr', function(){
+
+    //from https://github.com/Bitcoin-UAHF/spec/blob/master/cashaddr.md#examples-of-address-translation
+    //
+    //
+    var t = [
+      ['CTH8H8Zj6DSnXFBKQeDG28ogAS92iS16Bp','bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a'],
+      ['Cazk5ZxnJGY1iYqqTefvo7ZtwLYx3YzjgY','bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'],
+      ['CGZpaFRaJYHqohPJ8BKYvKmxffV2dcmmN9','bitcoincash:qqq3728yw0y47sqn6l2na30mcw6zm78dzqre909m2r'],
+      ['HHLN6S9BcP1JLSrMhgD5qe57iVEMFMLCBT','bitcoincash:ppm2qsznhks23z7629mms6s4cwef74vcwvn0h829pq'],
+      ['HR3ytsYEpS6XXkWskgfkccqLVPeGdXQ1S8','bitcoincash:pr95sy3j9xwd2ap32xkykttr4cvcu7as4yc93ky28e'],
+      ['H6d4PZ12phrMcu4LRDKNjq3QDiaMDz3fUd','bitcoincash:pqq3728yw0y47sqn6l2na30mcw6zm78dzq5ucqzc37'],
+    ];
+ 
+    for(var i in t) {
+
+      var legacyaddr = t[i][0];
+      var cashaddr = t[i][1];
+      it('should convert ' + legacyaddr, function() { 
+        var a = new Address(legacyaddr);
+        a.toCashAddress().should.equal(cashaddr);
+      });
+
+    };   
+  });
+ 
+
   // livenet valid
   var PKHLivenet = [
     'CMPeBN1BZDzaqU5DF66X5QykLcS1voucT9',
