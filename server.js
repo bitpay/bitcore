@@ -1,4 +1,3 @@
-'use strict';
 var async = require('async');
 var cluster = require('cluster');
 
@@ -20,11 +19,11 @@ async.series([
   workerService.start.bind(workerService),
   p2pService.start.bind(p2pService),
   embeddedNodeService.start.bind(embeddedNodeService)
-], function(){
-  if(cluster.isWorker) {
+], function () {
+  if (cluster.isWorker) {
     var router = require('./lib/routes');
     app.use('/api', router);
-    var server = app.listen(config.port, function() {
+    var server = app.listen(config.port, function () {
       console.log('api server listening on port 3000!');
     });
     server.timeout = 600000;
