@@ -5,6 +5,7 @@
 var chai = require('chai');
 var should = chai.should();
 var expect = chai.expect;
+var _ = require('lodash');
 
 var bitcore = require('..');
 var PublicKey = bitcore.PublicKey;
@@ -66,7 +67,7 @@ describe('Address', function() {
     });
   });
 
-  describe('Cashaddr', function(){
+  describe.only('Cashaddr', function(){
 
     //from https://github.com/Bitcoin-UAHF/spec/blob/master/cashaddr.md#examples-of-address-translation
     //
@@ -80,16 +81,52 @@ describe('Address', function() {
       ['H6d4PZ12phrMcu4LRDKNjq3QDiaMDz3fUd','bitcoincash:pqq3728yw0y47sqn6l2na30mcw6zm78dzq5ucqzc37'],
     ];
  
-    for(var i in t) {
-
+    for(let i in t) {
       var legacyaddr = t[i][0];
       var cashaddr = t[i][1];
       it('should convert ' + legacyaddr, function() { 
         var a = new Address(legacyaddr);
         a.toCashAddress().should.equal(cashaddr);
       });
+    }   
 
-    };   
+ 
+    for(let i in t) {
+      let legacyaddr = t[i][0];
+      let cashaddr = t[i][1];
+      it('should convert ' + cashaddr, function() { 
+        var a = new Address(cashaddr);
+        a.toString().should.equal(legacyaddr);
+      });
+    }
+
+    for(let i in t) {
+      let legacyaddr = t[i][0];
+      let cashaddr = t[i][1].toUpperCase();
+      it('should convert UPPERCASE addresses ' + cashaddr, function() { 
+        var a = new Address(cashaddr);
+        a.toString().should.equal(legacyaddr);
+     });
+    } 
+
+
+    for(let i in t) {
+      let legacyaddr = t[i][0];
+      let cashaddr = t[i][1].split(':')[1];
+      it('should convert no prefix addresses ' + cashaddr, function() { 
+        var a = new Address(cashaddr);
+        a.toObject().network.should.equal('livenet');
+        a.toString().should.equal(legacyaddr);
+     });
+    } 
+
+
+    it('should fail convert no prefix addresses bad checksum ', function() { 
+      (function() {
+      var a = new Address('qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx7');
+      }).should.throw('Invalid checksum');
+    });
+
   });
  
 
@@ -413,7 +450,6 @@ describe('Address', function() {
       it('should make this address from a p2pkh output script', function() {
         var s = new Script('OP_DUP OP_HASH160 20 ' +
           '0xc8e11b0eb0d2ad5362d894f048908341fa61b6e1 OP_EQUALVERIFY OP_CHECKSIG');
-        var buf = s.toBuffer();
         var a = Address.fromScript(s, 'livenet');
         a.toString().should.equal('Can3P2Qf8L78v1zmTU1cs6RTrQATGLYZY4');
         var b = new Address(s, 'livenet');
@@ -590,5 +626,4 @@ describe('Address', function() {
       }).to.throw('Number of required signatures must be less than or equal to the number of public keys');
     });
   });
-
 });
