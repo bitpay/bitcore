@@ -2,7 +2,7 @@
   "name": "bitcore-wallet-service",
   "description": "A service for Mutisig HD Bitcoin Wallets",
   "author": "BitPay Inc",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "licence": "MIT",
   "keywords": [
     "bitcoin",
@@ -22,7 +22,7 @@
   "dependencies": {
     "async": "^0.9.2",
     "bitcore-lib": "^0.15.0",
-    "bitcore-lib-cash": "^0.15.1",
+    "bitcore-lib-cash": "^0.16.1",
     "body-parser": "^1.11.0",
     "compression": "^1.6.2",
     "coveralls": "^2.11.2",
@@ -55,7 +55,7 @@
   "devDependencies": {
     "chai": "^1.9.1",
     "istanbul": "*",
-    "jsdoc": "^3.3.0-beta1",
+    "jsdoc": "^3.5.5",
     "memdown": "^1.0.0",
     "mocha": "^1.18.2",
     "proxyquire": "^1.7.2",
