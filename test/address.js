@@ -423,7 +423,6 @@ describe('Address', function() {
     it('should classify from a custom network', function() {
       var custom = {
         name: 'customnetwork',
-        prefix: 'customnetworkprefix',
         pubkeyhash: 10,
         privatekey: 0x1e,
         scripthash: 15,
