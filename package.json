@@ -28,7 +28,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitpay/bitcore-lib.git"
+    "url": "https://github.com/bitpay/bitcore-lib/tree/cash"
   },
   "browser": {
     "request": "browser-request"
