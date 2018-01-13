@@ -5,6 +5,7 @@
 var chai = require('chai');
 var should = chai.should();
 var expect = chai.expect;
+var _ = require('lodash');
 
 var bitcore = require('..');
 var PublicKey = bitcore.PublicKey;
@@ -65,6 +66,75 @@ describe('Address', function() {
       });
     });
   });
+
+  describe('Cashaddr', function(){
+
+    //from https://github.com/Bitcoin-UAHF/spec/blob/master/cashaddr.md#examples-of-address-translation
+    //
+    //
+    var t = [
+      ['CTH8H8Zj6DSnXFBKQeDG28ogAS92iS16Bp','bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a'],
+      ['Cazk5ZxnJGY1iYqqTefvo7ZtwLYx3YzjgY','bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'],
+      ['CGZpaFRaJYHqohPJ8BKYvKmxffV2dcmmN9','bitcoincash:qqq3728yw0y47sqn6l2na30mcw6zm78dzqre909m2r'],
+      ['HHLN6S9BcP1JLSrMhgD5qe57iVEMFMLCBT','bitcoincash:ppm2qsznhks23z7629mms6s4cwef74vcwvn0h829pq'],
+      ['HR3ytsYEpS6XXkWskgfkccqLVPeGdXQ1S8','bitcoincash:pr95sy3j9xwd2ap32xkykttr4cvcu7as4yc93ky28e'],
+      ['H6d4PZ12phrMcu4LRDKNjq3QDiaMDz3fUd','bitcoincash:pqq3728yw0y47sqn6l2na30mcw6zm78dzq5ucqzc37'],
+    ];
+    var i;
+ 
+    for(i=0; i<t.length; i++) {
+      var legacyaddr = t[i][0];
+      var cashaddr = t[i][1];
+      it('should convert ' + legacyaddr, function() { 
+        var a = new Address(legacyaddr);
+        a.toCashAddress().should.equal(cashaddr);
+      });
+    }   
+
+ 
+    for(i=0; i<t.length; i++) {
+      var legacyaddr = t[i][0];
+      var cashaddr = t[i][1];
+      it('should convert ' + cashaddr, function() { 
+        var a = new Address(cashaddr);
+        a.toString().should.equal(legacyaddr);
+      });
+    }
+
+    for(i=0; i<t.length; i++) {
+      var legacyaddr2 = t[i][0];
+      var cashaddr2 = t[i][1].toUpperCase();
+      it('should convert UPPERCASE addresses ' + cashaddr2, function() { 
+        var a = new Address(cashaddr2);
+        a.toString().should.equal(legacyaddr2);
+     });
+    } 
+
+
+    for(i=0; i<t.length; i++) {
+      var legacyaddr3 = t[i][0];
+      var cashaddr3 = t[i][1].split(':')[1];
+      it('should convert no prefix addresses ' + cashaddr3, function() { 
+        var a = new Address(cashaddr3);
+        a.toObject().network.should.equal('livenet');
+        a.toString().should.equal(legacyaddr3);
+     });
+    } 
+
+
+    it('should fail convert no prefix addresses bad checksum ', function() { 
+      (function() {
+      var a = new Address('qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx7');
+      }).should.throw('Invalid checksum');
+    });
+
+    it('should fail convert a mixed case addresses ', function() { 
+      (function() {
+      var a = new Address('qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6A');
+      }).should.throw('Invalid Argument: Mixed case');
+    });
+  });
+ 
 
   // livenet valid
   var PKHLivenet = [
@@ -172,7 +242,7 @@ describe('Address', function() {
       for (var i = 0; i < badChecksums.length; i++) {
         var error = Address.getValidationError(badChecksums[i], 'livenet', 'pubkeyhash');
         should.exist(error);
-        error.message.should.equal('Checksum mismatch');
+        error.message.should.match(/Invalid/);
       }
     });
 
@@ -202,7 +272,7 @@ describe('Address', function() {
       for (var i = 0; i < nonBase58.length; i++) {
         var error = Address.getValidationError(nonBase58[i], 'livenet', 'pubkeyhash');
         should.exist(error);
-        error.message.should.equal('Non-base58 character');
+        error.message.should.match(/Invalid/);
       }
     });
 
@@ -386,7 +456,6 @@ describe('Address', function() {
       it('should make this address from a p2pkh output script', function() {
         var s = new Script('OP_DUP OP_HASH160 20 ' +
           '0xc8e11b0eb0d2ad5362d894f048908341fa61b6e1 OP_EQUALVERIFY OP_CHECKSIG');
-        var buf = s.toBuffer();
         var a = Address.fromScript(s, 'livenet');
         a.toString().should.equal('Can3P2Qf8L78v1zmTU1cs6RTrQATGLYZY4');
         var b = new Address(s, 'livenet');
@@ -563,5 +632,4 @@ describe('Address', function() {
       }).to.throw('Number of required signatures must be less than or equal to the number of public keys');
     });
   });
-
 });
