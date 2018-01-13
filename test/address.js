@@ -67,7 +67,7 @@ describe('Address', function() {
     });
   });
 
-  describe.only('Cashaddr', function(){
+  describe('Cashaddr', function(){
 
     //from https://github.com/Bitcoin-UAHF/spec/blob/master/cashaddr.md#examples-of-address-translation
     //
@@ -236,7 +236,7 @@ describe('Address', function() {
       for (var i = 0; i < badChecksums.length; i++) {
         var error = Address.getValidationError(badChecksums[i], 'livenet', 'pubkeyhash');
         should.exist(error);
-        error.message.should.equal('Checksum mismatch');
+        error.message.should.match(/Invalid/);
       }
     });
 
@@ -266,7 +266,7 @@ describe('Address', function() {
       for (var i = 0; i < nonBase58.length; i++) {
         var error = Address.getValidationError(nonBase58[i], 'livenet', 'pubkeyhash');
         should.exist(error);
-        error.message.should.equal('Non-base58 character');
+        error.message.should.match(/Invalid/);
       }
     });
 
@@ -423,6 +423,7 @@ describe('Address', function() {
     it('should classify from a custom network', function() {
       var custom = {
         name: 'customnetwork',
+        prefix: 'customnetworkprefix',
         pubkeyhash: 10,
         privatekey: 0x1e,
         scripthash: 15,
