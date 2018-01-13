@@ -80,8 +80,9 @@ describe('Address', function() {
       ['HR3ytsYEpS6XXkWskgfkccqLVPeGdXQ1S8','bitcoincash:pr95sy3j9xwd2ap32xkykttr4cvcu7as4yc93ky28e'],
       ['H6d4PZ12phrMcu4LRDKNjq3QDiaMDz3fUd','bitcoincash:pqq3728yw0y47sqn6l2na30mcw6zm78dzq5ucqzc37'],
     ];
+    var i;
  
-    for(let i in t) {
+    for(i=0; i<t.length; i++) {
       var legacyaddr = t[i][0];
       var cashaddr = t[i][1];
       it('should convert ' + legacyaddr, function() { 
@@ -91,7 +92,7 @@ describe('Address', function() {
     }   
 
  
-    for(let i in t) {
+    for(i=0; i<t.length; i++) {
       let legacyaddr = t[i][0];
       let cashaddr = t[i][1];
       it('should convert ' + cashaddr, function() { 
@@ -100,7 +101,7 @@ describe('Address', function() {
       });
     }
 
-    for(let i in t) {
+    for(i=0; i<t.length; i++) {
       let legacyaddr = t[i][0];
       let cashaddr = t[i][1].toUpperCase();
       it('should convert UPPERCASE addresses ' + cashaddr, function() { 
@@ -110,7 +111,7 @@ describe('Address', function() {
     } 
 
 
-    for(let i in t) {
+    for(i=0; i<t.length; i++) {
       let legacyaddr = t[i][0];
       let cashaddr = t[i][1].split(':')[1];
       it('should convert no prefix addresses ' + cashaddr, function() { 
@@ -127,6 +128,11 @@ describe('Address', function() {
       }).should.throw('Invalid checksum');
     });
 
+    it('should fail convert a mixed case addresses ', function() { 
+      (function() {
+      var a = new Address('qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6A');
+      }).should.throw('Invalid Argument: Mixed case');
+    });
   });
  
 
