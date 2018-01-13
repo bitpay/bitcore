@@ -39,6 +39,40 @@ describe('URI', function() {
     uri['req-extra'].should.equal('param');
   });
 
+  describe('cashaddr', function() {
+    URI.parse.bind(URI, 'badURI').should.throw(TypeError);
+
+    // cashaddr
+    it('address only', function() {
+      var uri;
+      uri = URI.parse('bitcoincash:qryan2ur3ff2x4arg4zaemevmncgewwl6swgk4az9g');
+      uri.address.should.equal('qryan2ur3ff2x4arg4zaemevmncgewwl6swgk4az9g');
+      expect(uri.amount).to.be.undefined();
+      expect(uri.otherParam).to.be.undefined();
+    });
+
+    it('address +amount', function() {
+      var uri;
+      uri = URI.parse('bitcoincash:qryan2ur3ff2x4arg4zaemevmncgewwl6swgk4az9g?amount=123.22');
+      uri.address.should.equal('qryan2ur3ff2x4arg4zaemevmncgewwl6swgk4az9g');
+      uri.amount.should.equal('123.22');
+      expect(uri.otherParam).to.be.undefined();
+    });
+
+
+    it('address +amount + opts', function() {
+      var uri;
+      uri = URI.parse('bitcoincash:qryan2ur3ff2x4arg4zaemevmncgewwl6swgk4az9g?amount=123.22' + 
+                    '&other-param=something&req-extra=param');
+      uri.address.should.equal('qryan2ur3ff2x4arg4zaemevmncgewwl6swgk4az9g');
+      uri.amount.should.equal('123.22');
+      uri['other-param'].should.equal('something');
+      uri['req-extra'].should.equal('param');
+    });
+  });
+
+
+
   // TODO: Split this and explain tests
   it('URIs can be validated statically (test vector)', function() {
     URI.isValid('bitcoincash:CUqyiihRoVt5bjhPZTP9sjswHbP16vKQWk').should.equal(true);
