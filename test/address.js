@@ -93,8 +93,8 @@ describe('Address', function() {
 
  
     for(i=0; i<t.length; i++) {
-      let legacyaddr = t[i][0];
-      let cashaddr = t[i][1];
+      var legacyaddr = t[i][0];
+      var cashaddr = t[i][1];
       it('should convert ' + cashaddr, function() { 
         var a = new Address(cashaddr);
         a.toString().should.equal(legacyaddr);
@@ -102,22 +102,22 @@ describe('Address', function() {
     }
 
     for(i=0; i<t.length; i++) {
-      let legacyaddr = t[i][0];
-      let cashaddr = t[i][1].toUpperCase();
-      it('should convert UPPERCASE addresses ' + cashaddr, function() { 
-        var a = new Address(cashaddr);
-        a.toString().should.equal(legacyaddr);
+      var legacyaddr2 = t[i][0];
+      var cashaddr2 = t[i][1].toUpperCase();
+      it('should convert UPPERCASE addresses ' + cashaddr2, function() { 
+        var a = new Address(cashaddr2);
+        a.toString().should.equal(legacyaddr2);
      });
     } 
 
 
     for(i=0; i<t.length; i++) {
-      let legacyaddr = t[i][0];
-      let cashaddr = t[i][1].split(':')[1];
-      it('should convert no prefix addresses ' + cashaddr, function() { 
-        var a = new Address(cashaddr);
+      var legacyaddr3 = t[i][0];
+      var cashaddr3 = t[i][1].split(':')[1];
+      it('should convert no prefix addresses ' + cashaddr3, function() { 
+        var a = new Address(cashaddr3);
         a.toObject().network.should.equal('livenet');
-        a.toString().should.equal(legacyaddr);
+        a.toString().should.equal(legacyaddr3);
      });
     } 
 
