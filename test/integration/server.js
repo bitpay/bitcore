@@ -596,6 +596,34 @@ describe('Wallet service', function() {
         });
       });
 
+      it('should fail join existing wallet with bad xpub', function(done) {
+        var copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: walletId,
+          name: 'me',
+          xPubKey: 'Ttub4pHUfyVU2mpjaM6YDGDJXWP6j5SL5AJzbViBuTaJEsybcrWZZoGkW7RSUSH9VRQKJtjqY2LfC2bF3FM4UqC1Ba9EP5M64SdTsv9575VAUwh',
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+          customData: 'dummy custom data',
+        });
+        server.joinWallet(copayerOpts, function(err, result) {
+          err.message.should.match(/Invalid extended public key/);
+          done();
+        });
+      });
+
+      it('should fail join existing wallet with wrong network xpub', function(done) {
+        var copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: walletId,
+          name: 'me',
+          xPubKey: 'tpubD6NzVbkrYhZ4Wbwwqah5kj1RGPK9BYeGbowB1jegxMoAkKbNhYUAcRTZ5fyxDcpjNXxziiy2ZkUQ3kR1ycPNycTD7Q2Dr6UfLcNTYHrzS3U',
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+          customData: 'dummy custom data',
+        });
+        server.joinWallet(copayerOpts, function(err, result) {
+          err.message.should.match(/different network/);
+          done();
+        });
+      });
+
       it('should fail to join with no name', function(done) {
         var copayerOpts = helpers.getSignedCopayerOpts({
           walletId: walletId,
