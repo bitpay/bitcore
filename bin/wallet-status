@@ -15,7 +15,7 @@ utils.getClient(program, { mustExist: true }, function (client) {
     utils.die(err);
 
     var x = res.wallet;
-    console.log('* Wallet %s [%s]: %d-of-%d %s ', x.name, x.network, x.m, x.n, x.status);
+    console.log('* Wallet %s [%s]: %d-of-%d %s Coin:%s ', x.name, x.network, x.m, x.n, x.status, x.coin);
 
     if (x.status != 'complete') {
       console.log('  Missing copayers:', x.n - x.copayers.length);
