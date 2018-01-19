@@ -74,7 +74,6 @@ utils.getClient(program, {
             res[2] = res[2].splice(0,N);
         };
 
-console.log('[wallet-support.77]'); //TODO
         displaySendMaxInfo(res[0], status.wallet);
         displayAddresses(res[1], status.wallet);
         displayHistory(res[2], status.wallet);
@@ -101,7 +100,6 @@ function displayStatus(status) {
 
   console.log('  Total: %s (%s locked)', format(x.totalAmount, w.coin), format(x.lockedAmount, w.coin));
 
-console.log('[wallet-support.105]'); //TODO
   console.log('  Confirmed: %s (%s locked)', format(x.totalConfirmedAmount, w.coin), format(x.lockedConfirmedAmount, w.coin));
   console.log('  Available: %s (%s confirmed / %s unconfirmed)', format(x.availableAmount, w.coin), format(x.availableConfirmedAmount, w.coin), format(x.availableAmount - x.availableConfirmedAmount, w.coin));
   if (!_.isEmpty(x.byAddress)) {
