@@ -92,6 +92,10 @@ describe('Networks', function() {
     expect(networks.get(0x6f, ['privatekey', 'port'])).to.equal(undefined);
   });
 
+  it('should have regtest network', function() {
+    expect(networks.get('regtest').name).to.equal('testnet');
+  });
+
   it('converts to string using the "name" property', function() {
     networks.livenet.toString().should.equal('livenet');
   });
