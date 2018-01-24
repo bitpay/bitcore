@@ -31,7 +31,7 @@ describe('Address', function() {
   it('should throw an error because of bad network param', function() {
     (function() {
       return new Address(PKHLivenet[0], 'main', 'pubkeyhash');
-    }).should.throw('Second argument must be "livenet" or "testnet".');
+    }).should.throw('Second argument must be "livenet", "testnet", or "regtest".');
   });
 
   it('should throw an error because of bad type param', function() {
@@ -202,7 +202,7 @@ describe('Address', function() {
       var valid = Address.isValid('HC1hAdrx7APHg1DkE4bVLsZhY1SE5Dik1r', 'testnet');
       valid.should.equal(false);
     });
-
+    
     it('validates correctly the P2PKH test vector', function() {
       for (var i = 0; i < PKHLivenet.length; i++) {
         var error = Address.getValidationError(PKHLivenet[i]);
