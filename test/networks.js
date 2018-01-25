@@ -35,7 +35,6 @@ describe('Networks', function() {
     customnet = networks.get('customnet');
     for (var key in custom) {
       if (key !== 'networkMagic') {
-        console.log('KEY LOGGED', key);
         customnet[key].should.equal(custom[key]);
       } else {
         var expected = new Buffer('e7beb4d4', 'hex');
