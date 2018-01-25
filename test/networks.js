@@ -35,6 +35,7 @@ describe('Networks', function() {
     customnet = networks.get('customnet');
     for (var key in custom) {
       if (key !== 'networkMagic') {
+        console.log('KEY LOGGED', key);
         customnet[key].should.equal(custom[key]);
       } else {
         var expected = new Buffer('e7beb4d4', 'hex');
@@ -93,8 +94,37 @@ describe('Networks', function() {
   });
 
   it('should have regtest network', function() {
-    expect(networks.get('regtest').name).to.equal('testnet');
+    expect(networks.get('regtest').name).to.equal('regtest');
   });
+
+  it('should have testnet network', function() {
+    expect(networks.get('testnet').name).to.equal('testnet');
+  });
+
+  it('should have livenet network', function() {
+    expect(networks.get('livenet').name).to.equal('livenet');
+  });
+
+  it('should have bchtest prefix', function() {
+    expect(networks.get('testnet').prefix).to.equal('bchtest');
+  });
+
+  it('should have bchreg prefix', function() {
+    expect(networks.get('regtest').prefix).to.equal('bchreg');
+  });
+
+  it('should have bchreg prefix after enableRegtest is called', function() {
+    var network = networks.get('testnet');
+    networks.enableRegtest();
+    expect(network.prefix).to.equal('bchreg');
+  });
+
+  it('should have bchtest prefix after disableRegtest is called', function() {
+    var network = networks.get('testnet');
+    networks.disableRegtest();
+    expect(network.prefix).to.equal('bchtest');
+  });
+
 
   it('converts to string using the "name" property', function() {
     networks.livenet.toString().should.equal('livenet');
