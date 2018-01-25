@@ -113,15 +113,15 @@ export class HeadNavComponent {
           }
         },
         {
-          text: 'BTC',
+          text: this.currency.defaultCurrency,
           handler: () => {
-            this.currency.setCurrency('BTC');
+            this.currency.setCurrency(this.currency.defaultCurrency);
           }
         },
         {
-          text: 'mBTC',
+          text: 'm' + this.currency.defaultCurrency,
           handler: () => {
-            this.currency.setCurrency('mBTC');
+            this.currency.setCurrency('m' + this.currency.defaultCurrency);
           }
         },
         {
