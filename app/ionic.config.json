@@ -7,6 +7,6 @@
   },
   "proxies": [{
     "path": "/api",
-    "proxyUrl": "https://bch-insight.bitpay.com/api"
+    "proxyUrl": "http://localhost:3000/api"
   }]
 }
