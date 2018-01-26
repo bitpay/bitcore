@@ -3,13 +3,6 @@
 ## Config Examples
 ./config.json
 
-default:
-```
-{
-  "network": "testnet",
-  "chainSource": "bcoin"
-}
-```
 Connect to any mainnet trusted node:
 ```
 {
@@ -23,7 +16,7 @@ Connect to any mainnet trusted node:
 
 ## Add Wallet:
 
-POST `/wallet`
+POST `/api/wallet`
 
 BODY:
 ```
@@ -34,11 +27,11 @@ BODY:
 
 ## Get Wallet:
 
-GET `/wallet/:walletId`
+GET `/api/wallet/:walletId`
 
 ## Import Addresses:
 
-POST `/wallet/:walletId`
+POST `/api/wallet/:walletId`
 
 BODY: raw jsonl wallet file of the form
 {"address": "bItCoInAddReSSHeRe"}
@@ -46,8 +39,8 @@ BODY: raw jsonl wallet file of the form
 
 ## Get Wallet Transactions:
 
-GET `/wallet/:walletId/transactions`
+GET `/api/wallet/:walletId/transactions`
 
 ## Get Balance:
 
-GET `/wallet/:walletId/balance`
+GET `/api/wallet/:walletId/balance`
