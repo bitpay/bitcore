@@ -17,7 +17,7 @@ async.series([
   workerService.start.bind(workerService),
   p2pService.start.bind(p2pService)
 ], function () {
-  if (cluster.isWorker) {
+  if (!cluster.isWorker) {
     const router = require('./lib/routes');
     app.use('/api', router);
     const server = app.listen(config.port, function () {

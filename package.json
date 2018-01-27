@@ -7,7 +7,7 @@
   "dependencies": {
     "JSONStream": "~1.3.1",
     "async": "^2.5.0",
-    "bcoin": "1.0.0-beta.12",
+    "bitcore-lib": "git@github.com:bitpay/bitcore-lib.git#segwit-test",
     "bitcore-p2p": "^5.0.0-beta.2",
     "body-parser": "~1.17.2",
     "express": "~4.15.3",
