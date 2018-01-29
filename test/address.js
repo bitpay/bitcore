@@ -202,7 +202,17 @@ describe('Address', function() {
       var valid = Address.isValid('HC1hAdrx7APHg1DkE4bVLsZhY1SE5Dik1r', 'testnet');
       valid.should.equal(false);
     });
+
+    it('isValid returns false on network mismatch on cashaddr', function() {
+      var valid = Address.isValid('bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a', 'regtest');
+      valid.should.equal(false);
+    });
     
+    it('isValid returns true on network match on cashaddr', function() {
+      var valid = Address.isValid('bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a', 'mainnet');
+      valid.should.equal(true);
+    });
+
     it('validates correctly the P2PKH test vector', function() {
       for (var i = 0; i < PKHLivenet.length; i++) {
         var error = Address.getValidationError(PKHLivenet[i]);
