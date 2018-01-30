@@ -319,7 +319,7 @@ function decodeCashAddress(address) {
     $.checkArgument(validChecksum(prefix, payload), 'Invalid checksum:'+ address);
   } else {
 
-    var netNames = ['livenet','testnet'];
+    var netNames = ['livenet','testnet','regtest'];
     var i;
 
     while(!prefix && (i = netNames.shift())){
@@ -388,7 +388,7 @@ Address._transformString = function(data, network, type) {
     addressBuffer = Base58Check.decode(data);
   } catch (e) {
     info = decodeCashAddress(data);
-    if (!info.network || (networkObj && networkObj !== info.network)) {
+    if (!info.network || (networkObj && networkObj.prefix !== info.network.prefix)) {
       throw new TypeError('Address has mismatched network type.');
     }
     return info;
@@ -5108,6 +5108,18 @@ Object.defineProperty(testnet, 'prefix', {
       return REGTEST.PREFIX;
     } else {
       return TESTNET.PREFIX;
+    }
+  }
+});
+
+Object.defineProperty(testnet, 'prefixArray', {
+  enumerable: true,
+  configurable: false,
+  get: function() {
+    if (this.regtestEnabled) {
+      return prefixToArray(REGTEST.PREFIX);
+    } else {
+      return prefixToArray(TESTNET.PREFIX);
     }
   }
 });
@@ -54425,7 +54437,7 @@ exports.createContext = Script.createContext = function (context) {
 },{"indexof":152}],217:[function(require,module,exports){
 module.exports={
   "name": "bitcore-lib-cash",
-  "version": "0.16.2",
+  "version": "0.16.3",
   "description": "A pure and powerful JavaScript Bitcoin Cash library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
