@@ -1,11 +1,7 @@
 import { Component } from '@angular/core';
+import { CurrencyProvider } from '../../providers/currency/currency';
+import { ViewController } from 'ionic-angular';
 
-/**
- * Generated class for the DenominationComponent component.
- *
- * See https://angular.io/docs/ts/latest/api/core/index/ComponentMetadata-class.html
- * for more info on Angular Components.
- */
 @Component({
   selector: 'denomination',
   templateUrl: 'denomination.html'
@@ -13,10 +9,24 @@ import { Component } from '@angular/core';
 export class DenominationComponent {
 
   public text: string;
+  public units: any = [];
 
-  constructor() {
-    console.log('Hello DenominationComponent Component');
+  constructor(
+    public currency: CurrencyProvider,
+    public viewCtrl: ViewController
+  ) {
     this.text = 'Hello World';
+    this.units = [
+      'USD',
+      this.currency.defaultCurrency,
+      'm' + this.currency.defaultCurrency,
+      'bits'
+    ];
+  }
+
+  public close(): void {
+    console.log('hey, closing');
+    this.viewCtrl.dismiss();
   }
 
 }
