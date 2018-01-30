@@ -29,7 +29,7 @@
       <ion-item>
         Block Reward
         <ion-note item-end>
-          {{ currency.getConversion(block.reward) }}
+          {{ currency.getConvertedNumber(block.reward) | number:'1.0-8' }} {{ currency.currencySymbol }}
         </ion-note>
       </ion-item>
       <ion-item>

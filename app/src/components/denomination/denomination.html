@@ -1,4 +1,4 @@
-<ion-list radio-group [(ngModel)]="currency.currencySymbol">
+<ion-list radio-group [(ngModel)]="currency.currencySymbol" (ionChange)="currency.setCurrency(currency.currencySymbol)">
   <ion-list-header>
     Units
   </ion-list-header>
