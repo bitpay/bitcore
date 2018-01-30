@@ -10,7 +10,7 @@
   <div *ngIf="!loading">
     <h1>Address</h1>
     <p class="ellipsis"><b>Address</b> {{ address.addrStr }}</p>
-    <p>{{ currency.getConversion(address.balance) }}</p>
+    <p>{{ currency.getConvertedNumber(address.balance) | number:'1.0-8' }} {{ currency.currencySymbol }}</p>
 
     <h2>Summary</h2>
 
@@ -18,19 +18,19 @@
       <ion-item>
         Total Received
         <ion-note item-end>
-          {{ currency.getConversion(address.totalReceived) }}
+          {{ currency.getConvertedNumber(address.totalReceived) | number:'1.0-8' }} {{ currency.currencySymbol }}
         </ion-note>
       </ion-item>
       <ion-item>
         Total Sent
         <ion-note item-end>
-          {{ currency.getConversion(address.totalSent) }}
+          {{ currency.getConvertedNumber(address.totalSent) | number:'1.0-8' }} {{ currency.currencySymbol }}
         </ion-note>
       </ion-item>
       <ion-item>
         Final Balance
         <ion-note item-end>
-          {{ currency.getConversion(address.balance) }}
+          {{ currency.getConvertedNumber(address.balance) | number:'1.0-8' }} {{ currency.currencySymbol }}
         </ion-note>
       </ion-item>
       <ion-item>
