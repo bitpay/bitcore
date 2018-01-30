@@ -25,7 +25,6 @@ export class DenominationComponent {
   }
 
   public close(): void {
-    console.log('hey, closing');
     this.viewCtrl.dismiss();
   }
 
