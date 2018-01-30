@@ -121,6 +121,10 @@ describe('Address', function() {
       });
     }
 
+    it('should be able to convert a testnet address to a cashaddr', function() {
+      var a = new Address('mysKEM9kN86Nkcqwb4gw7RqtDyc552LQoq');
+      a.toCashAddress().should.equal('bchtest:qry5cr6h2qe25pzwwfrz8m653fh2tf6nusj9dl0ujc');
+    });
 
     it('should fail convert no prefix addresses bad checksum ', function() {
       (function() {
@@ -221,6 +225,23 @@ describe('Address', function() {
     it('isValid returns true on network match on cashaddr testnet', function() {
       var valid = Address.isValid('bchtest:qrzm24wqva0gnvgcsyc0h8tdpgw462mgmc9lef83vw', 'testnet');
       valid.should.equal(true);
+    });
+
+    it('isValid returns true on regtest address', function() {
+      var valid = Address.isValid('qqww7zk6w7e6eu6299cwcu45ymwx7rmt3ckhj4xs0d', 'regtest');
+      valid.should.equal(true);
+    });
+
+    it('isValid returns true on regtest address when enableRegtest() is called on testnet', function() {
+      Networks.enableRegtest();
+      var valid = Address.isValid('qqww7zk6w7e6eu6299cwcu45ymwx7rmt3ckhj4xs0d', 'testnet');
+      valid.should.equal(true);
+    });
+
+    it('isValid returns false on regtest address when disableRegtest() is called on testnet', function() {
+      Networks.disableRegtest();
+      var valid = Address.isValid('qqww7zk6w7e6eu6299cwcu45ymwx7rmt3ckhj4xs0d', 'testnet');
+      valid.should.equal(false);
     });
 
     it('validates correctly the P2PKH test vector', function() {
