@@ -31,7 +31,7 @@ describe('Address', function() {
   it('should throw an error because of bad network param', function() {
     (function() {
       return new Address(PKHLivenet[0], 'main', 'pubkeyhash');
-    }).should.throw('Second argument must be "livenet" or "testnet".');
+    }).should.throw('Second argument must be "livenet", "testnet", or "regtest".');
   });
 
   it('should throw an error because of bad type param', function() {
@@ -67,74 +67,74 @@ describe('Address', function() {
     });
   });
 
-  describe('Cashaddr', function(){
+  describe('Cashaddr', function() {
 
     //from https://github.com/Bitcoin-UAHF/spec/blob/master/cashaddr.md#examples-of-address-translation
     //
     //
     var t = [
-      ['CTH8H8Zj6DSnXFBKQeDG28ogAS92iS16Bp','bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a'],
-      ['Cazk5ZxnJGY1iYqqTefvo7ZtwLYx3YzjgY','bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'],
-      ['CGZpaFRaJYHqohPJ8BKYvKmxffV2dcmmN9','bitcoincash:qqq3728yw0y47sqn6l2na30mcw6zm78dzqre909m2r'],
-      ['HHLN6S9BcP1JLSrMhgD5qe57iVEMFMLCBT','bitcoincash:ppm2qsznhks23z7629mms6s4cwef74vcwvn0h829pq'],
-      ['HR3ytsYEpS6XXkWskgfkccqLVPeGdXQ1S8','bitcoincash:pr95sy3j9xwd2ap32xkykttr4cvcu7as4yc93ky28e'],
-      ['H6d4PZ12phrMcu4LRDKNjq3QDiaMDz3fUd','bitcoincash:pqq3728yw0y47sqn6l2na30mcw6zm78dzq5ucqzc37'],
+      ['CTH8H8Zj6DSnXFBKQeDG28ogAS92iS16Bp', 'bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a'],
+      ['Cazk5ZxnJGY1iYqqTefvo7ZtwLYx3YzjgY', 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'],
+      ['CGZpaFRaJYHqohPJ8BKYvKmxffV2dcmmN9', 'bitcoincash:qqq3728yw0y47sqn6l2na30mcw6zm78dzqre909m2r'],
+      ['HHLN6S9BcP1JLSrMhgD5qe57iVEMFMLCBT', 'bitcoincash:ppm2qsznhks23z7629mms6s4cwef74vcwvn0h829pq'],
+      ['HR3ytsYEpS6XXkWskgfkccqLVPeGdXQ1S8', 'bitcoincash:pr95sy3j9xwd2ap32xkykttr4cvcu7as4yc93ky28e'],
+      ['H6d4PZ12phrMcu4LRDKNjq3QDiaMDz3fUd', 'bitcoincash:pqq3728yw0y47sqn6l2na30mcw6zm78dzq5ucqzc37'],
     ];
     var i;
- 
-    for(i=0; i<t.length; i++) {
+
+    for (i = 0; i < t.length; i++) {
       var legacyaddr = t[i][0];
       var cashaddr = t[i][1];
-      it('should convert ' + legacyaddr, function() { 
+      it('should convert ' + legacyaddr, function() {
         var a = new Address(legacyaddr);
         a.toCashAddress().should.equal(cashaddr);
       });
-    }   
+    }
 
- 
-    for(i=0; i<t.length; i++) {
+
+    for (i = 0; i < t.length; i++) {
       var legacyaddr = t[i][0];
       var cashaddr = t[i][1];
-      it('should convert ' + cashaddr, function() { 
+      it('should convert ' + cashaddr, function() {
         var a = new Address(cashaddr);
         a.toString().should.equal(legacyaddr);
       });
     }
 
-    for(i=0; i<t.length; i++) {
+    for (i = 0; i < t.length; i++) {
       var legacyaddr2 = t[i][0];
       var cashaddr2 = t[i][1].toUpperCase();
-      it('should convert UPPERCASE addresses ' + cashaddr2, function() { 
+      it('should convert UPPERCASE addresses ' + cashaddr2, function() {
         var a = new Address(cashaddr2);
         a.toString().should.equal(legacyaddr2);
-     });
-    } 
+      });
+    }
 
 
-    for(i=0; i<t.length; i++) {
+    for (i = 0; i < t.length; i++) {
       var legacyaddr3 = t[i][0];
       var cashaddr3 = t[i][1].split(':')[1];
-      it('should convert no prefix addresses ' + cashaddr3, function() { 
+      it('should convert no prefix addresses ' + cashaddr3, function() {
         var a = new Address(cashaddr3);
         a.toObject().network.should.equal('livenet');
         a.toString().should.equal(legacyaddr3);
-     });
-    } 
+      });
+    }
 
 
-    it('should fail convert no prefix addresses bad checksum ', function() { 
+    it('should fail convert no prefix addresses bad checksum ', function() {
       (function() {
-      var a = new Address('qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx7');
+        var a = new Address('qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx7');
       }).should.throw('Invalid checksum');
     });
 
-    it('should fail convert a mixed case addresses ', function() { 
+    it('should fail convert a mixed case addresses ', function() {
       (function() {
-      var a = new Address('qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6A');
+        var a = new Address('qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6A');
       }).should.throw('Invalid Argument: Mixed case');
     });
   });
- 
+
 
   // livenet valid
   var PKHLivenet = [
@@ -203,6 +203,26 @@ describe('Address', function() {
       valid.should.equal(false);
     });
 
+    it('isValid returns false on network mismatch on cashaddr', function() {
+      var valid = Address.isValid('bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a', 'regtest');
+      valid.should.equal(false);
+    });
+
+    it('isValid returns true on network match on cashaddr', function() {
+      var valid = Address.isValid('bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a', 'mainnet');
+      valid.should.equal(true);
+    });
+
+    it('isValid returns true on network match on cashaddr regtest', function() {
+      var valid = Address.isValid('bchreg:qrjf2q4j0vx7xwqlnzcuy56vk9j9an0z458k0lrw3m', 'regtest');
+      valid.should.equal(true);
+    });
+
+    it('isValid returns true on network match on cashaddr testnet', function() {
+      var valid = Address.isValid('bchtest:qrzm24wqva0gnvgcsyc0h8tdpgw462mgmc9lef83vw', 'testnet');
+      valid.should.equal(true);
+    });
+
     it('validates correctly the P2PKH test vector', function() {
       for (var i = 0; i < PKHLivenet.length; i++) {
         var error = Address.getValidationError(PKHLivenet[i]);
@@ -247,7 +267,8 @@ describe('Address', function() {
     });
 
     it('should not validate on a network mismatch', function() {
-      var error, i;
+      var error,
+        i;
       for (i = 0; i < PKHLivenet.length; i++) {
         error = Address.getValidationError(PKHLivenet[i], 'testnet', 'pubkeyhash');
         should.exist(error);
@@ -321,7 +342,7 @@ describe('Address', function() {
     });
 
     it('should throw with bad network param', function() {
-      (function(){
+      (function() {
         Address.fromString(str, 'somenet');
       }).should.throw('Unknown network');
     });
