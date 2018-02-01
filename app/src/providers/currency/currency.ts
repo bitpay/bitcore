@@ -16,10 +16,11 @@ export class CurrencyProvider {
   public currencySymbol: string;
   public factor: number = 1;
   private bitstamp: number;
+  private kraken: number;
   private loading: boolean;
 
   constructor(public http: Http, private api: ApiProvider) {
-    this.defaultCurrency = 'BTC';
+    this.defaultCurrency = 'BCH';
     this.currencySymbol = this.defaultCurrency;
   }
 
@@ -27,6 +28,30 @@ export class CurrencyProvider {
     return Math.round(aFloat * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces);
   }
 
+  public getConvertedNumber(value: number): number {
+    if (value === 0.00000000) return 0;
+
+    let response: number;
+
+    if (this.currencySymbol === 'USD') {
+      response = this.roundFloat((value * this.factor), 2);
+    } else if (this.currencySymbol === 'm' + this.defaultCurrency) {
+      this.factor = 1000;
+      response = this.roundFloat((value * this.factor), 5);
+    } else if (this.currencySymbol === 'bits') {
+      this.factor = 1000000;
+      response = this.roundFloat((value * this.factor), 2);
+    } else {
+      this.factor = 1;
+      response = this.roundFloat((value * this.factor), 8);
+    }
+
+    return response;
+  }
+
+  /**
+   * @deprecated use getConvertedNumber
+   */
   public getConversion(value: number): string {
     if (value === 0.00000000) return '0 ' + this.currencySymbol; // fix value to show
 
@@ -34,13 +59,13 @@ export class CurrencyProvider {
 
     if (this.currencySymbol === 'USD') {
       response = this.roundFloat((value * this.factor), 2);
-    } else if (this.currencySymbol === 'mBTC') {
+    } else if (this.currencySymbol === 'm' + this.defaultCurrency) {
       this.factor = 1000;
       response = this.roundFloat((value * this.factor), 5);
     } else if (this.currencySymbol === 'bits') {
       this.factor = 1000000;
       response = this.roundFloat((value * this.factor), 2);
-    } else { // assumes currencySymbol is BTC
+    } else {
       this.factor = 1;
       response = this.roundFloat((value * this.factor), 8);
     }
@@ -56,7 +81,11 @@ export class CurrencyProvider {
       this.http.get(this.api.apiPrefix + 'currency').subscribe(
         (data) => {
           let currencyParsed: any = JSON.parse(data['_body']);
-          this.factor = this.bitstamp = currencyParsed.data.bitstamp;
+          if (currencyParsed.data.bitstamp) {
+            this.factor = this.bitstamp = currencyParsed.data.bitstamp;
+          } else if (currencyParsed.data.kraken) {
+            this.factor = this.kraken = currencyParsed.data.kraken;
+          }
           this.loading = false;
         },
         (err) => {
@@ -64,7 +93,7 @@ export class CurrencyProvider {
           this.loading = false;
         }
       );
-    } else if (currency === 'mBTC') {
+    } else if (currency === 'm' + this.defaultCurrency) {
       this.factor = 1000;
     } else if (currency === 'bits') {
       this.factor = 1000000;

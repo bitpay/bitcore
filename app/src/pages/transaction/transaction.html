@@ -13,30 +13,30 @@
 
     <h2>Summary</h2>
 
-    <ion-list class="summary">
+    <ion-list class="list--summary">
       <ion-item>
         Size
-        <span item-end>
+        <ion-note item-end>
           {{ tx.size }} (bytes)
-        </span>
+        </ion-note>
       </ion-item>
       <ion-item>
         Received Time
-        <span item-end>
+        <ion-note item-end>
           {{ tx.time * 1000 | date:'medium' }}
-        </span>
+        </ion-note>
       </ion-item>
       <ion-item>
         Mined Time
-        <span item-end>
+        <ion-note item-end>
           {{ tx.blocktime * 1000 | date:'medium' }}
-        </span>
+        </ion-note>
       </ion-item>
       <ion-item>
         Included in Block
-        <span item-end>
+        <ion-note item-end>
           <a (click)="goToBlock(tx.blockhash)">{{ tx.blockhash }}</a>
-        </span>
+        </ion-note>
       </ion-item>
     </ion-list>
 

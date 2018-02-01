@@ -1,19 +1,19 @@
 <ion-grid>
   <ion-row>
-    <ion-col col-8>
+    <ion-col col-7>
       <div class="ellipsis">
         <ion-icon name="add-circle" [hidden]="expanded" (click)="toggleExpanded()"></ion-icon><ion-icon name="remove-circle" [hidden]="!expanded" (click)="toggleExpanded()"></ion-icon> <span><a (click)="goToTx(tx.txid)">{{ tx.txid }}</a></span>
       </div>
     </ion-col>
-    <ion-col col-4 text-right>
-      <div [hidden]="!tx.firstSeenTs">
+    <ion-col col-5 text-right>
+      <ion-note [hidden]="!tx.firstSeenTs">
         <span translate>first seen at</span>
         <time>{{tx.firstSeenTs * 1000 | date:'medium'}}</time>
-      </div>
-      <div [hidden]="!tx.blocktime && tx.firstSeenTs">
+      </ion-note>
+      <ion-note [hidden]="!tx.blocktime && tx.firstSeenTs">
         <span translate>mined</span>
-        <time>{{tx.time * 1000 | date:'medium'}}</time>
-      </div>
+        <time>{{tx.time * 1000 | date:'MMM d, y'}}</time> <time>{{tx.time * 1000 | date:'hh:mm:ss a'}}</time>
+      </ion-note>
     </ion-col>
   </ion-row>
 
@@ -48,7 +48,7 @@
           </div>
 
           <div item-end>
-            {{ currency.getConversion(vin.value) }}
+            {{ currency.getConvertedNumber(vin.value) | number:'1.0-8' }} {{ currency.currencySymbol }}
           </div>
         </ion-item>
       </ion-list>
@@ -76,7 +76,7 @@
           </div>
 
           <div item-end>
-            {{ currency.getConversion(vout.value) }}
+            {{ currency.getConvertedNumber(vout.value) | number:'1.0-8' }} {{ currency.currencySymbol }}
             <span [hidden]="!vout.spentTxId">(S)</span>
             <span [hidden]="vout.spentTxId">(U)</span>
           </div>
@@ -85,15 +85,15 @@
     </ion-col>
   </ion-row>
 
-  <ion-row>
-    <ion-col col-3>
-      <span [hidden]="tx.isCoinBase">Fee {{ currency.getConversion(tx.fees) }}</span>
+  <ion-row align-items-center text-uppercase class="small">
+    <ion-col col-6>
+      <div [hidden]="tx.isCoinBase">
+        Fee <span text-nowrap>{{ currency.getConvertedNumber(tx.fees) | number:'1.0-8' }} {{ currency.currencySymbol }}</span>
+      </div>
     </ion-col>
-    <ion-col col-6 text-center>
-      {{ tx.confirmations }} Confirmations
-    </ion-col>
-    <ion-col col-3 text-right>
-      <span class="">{{ currency.getConversion(tx.valueOut) }}</span>
+    <ion-col col-6 text-right>
+      <span text-nowrap>{{ tx.confirmations }} Confirmation<span *ngIf="tx.confirmations !== 1">s</span></span>
+      <span text-nowrap>{{ currency.getConvertedNumber(tx.valueOut) | number:'1.0-8' }} {{ currency.currencySymbol }}</span>
     </ion-col>
   </ion-row>
 </ion-grid>

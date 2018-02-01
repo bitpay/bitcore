@@ -5,6 +5,8 @@ import { Http } from '@angular/http';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { ActionSheetController } from 'ionic-angular';
+import { PopoverController } from 'ionic-angular';
+import { DenominationComponent } from '../denomination/denomination';
 
 /**
  * Generated class for the HeadNavComponent component.
@@ -24,7 +26,14 @@ export class HeadNavComponent {
   public q: string;
   public badQuery: boolean = false;
 
-  constructor(private navCtrl: NavController, private http: Http, private api: ApiProvider, public currency: CurrencyProvider, public actionSheetCtrl: ActionSheetController) {
+  constructor(
+    private navCtrl: NavController,
+    private http: Http,
+    private api: ApiProvider,
+    public currency: CurrencyProvider,
+    public actionSheetCtrl: ActionSheetController,
+    public popoverCtrl: PopoverController
+  ) {
   }
 
   public search(): void {
@@ -102,7 +111,8 @@ export class HeadNavComponent {
   }
   /* tslint:enable:no-unused-variable */
 
-  public changeCurrency(): void {
+  public changeCurrency(myEvent: any): void {
+    /*
     let actionSheet: any = this.actionSheetCtrl.create({
       title: 'Change Denomination',
       buttons: [
@@ -113,15 +123,15 @@ export class HeadNavComponent {
           }
         },
         {
-          text: 'BTC',
+          text: this.currency.defaultCurrency,
           handler: () => {
-            this.currency.setCurrency('BTC');
+            this.currency.setCurrency(this.currency.defaultCurrency);
           }
         },
         {
-          text: 'mBTC',
+          text: 'm' + this.currency.defaultCurrency,
           handler: () => {
-            this.currency.setCurrency('mBTC');
+            this.currency.setCurrency('m' + this.currency.defaultCurrency);
           }
         },
         {
@@ -137,6 +147,12 @@ export class HeadNavComponent {
       ]
     });
     actionSheet.present();
+     */
+
+    let popover: any = this.popoverCtrl.create(DenominationComponent);
+    popover.present({
+      ev: myEvent
+    });
   }
 
   public toggleSearch(): void {

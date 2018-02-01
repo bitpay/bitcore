@@ -9,6 +9,24 @@ transaction {
 
     ion-row {
       border: 1px solid #eee;
+
+      &.small {
+        font-size: 1.1rem;
+      }
+
+      ion-col {
+        ion-note {
+          font-size: 1.2rem;
+        }
+      }
     }
+  }
+
+  .item, .item p {
+    font-size: 1.4rem;
+  }
+
+  .list {
+    margin-bottom: 5px
   }
 }

@@ -5,7 +5,7 @@
   </div>
 
   <div *ngIf="!loading">
-    <ion-grid>
+    <ion-grid class="grid--table">
 
       <ion-row>
         <ion-col><b>Height</b></ion-col>
@@ -15,6 +15,7 @@
         <ion-col hideWhen="portrait"><b>Mined By</b></ion-col>
         <ion-col text-right><b>Size</b></ion-col>
       </ion-row>
+
       <ion-row *ngFor="let block of getBlocks()">
         <ion-col>
           <a (click)="goToBlock(block.hash)">{{block.height}}</a>
@@ -35,6 +36,7 @@
           {{ block.size }}
         </ion-col>
       </ion-row>
+
       <ion-row *ngIf="showAllBlocksButton">
         <ion-col text-center>
           <button ion-button (click)="goToBlocks()">See all blocks</button>

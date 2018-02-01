@@ -13,84 +13,84 @@
 
     <h2>Summary</h2>
 
-    <ion-list *ngIf="!loading" class="summary">
+    <ion-list *ngIf="!loading" class="list--summary">
       <ion-item>
         Number of Transactions
-        <span item-end>
+        <ion-note item-end>
           {{ block.tx.length }}
-        </span>
+        </ion-note>
       </ion-item>
       <ion-item>
         Height
-        <span item-end>
+        <ion-note item-end>
           {{ block.height }} <span [hidden]="!block.isMainChain">(Mainchain)</span>
-        </span>
+        </ion-note>
       </ion-item>
       <ion-item>
         Block Reward
-        <span item-end>
-          {{ currency.getConversion(block.reward) }}
-        </span>
+        <ion-note item-end>
+          {{ currency.getConvertedNumber(block.reward) | number:'1.0-8' }} {{ currency.currencySymbol }}
+        </ion-note>
       </ion-item>
       <ion-item>
         Timestamp
-        <span item-end>
+        <ion-note item-end>
           {{ block.time * 1000 | date:'medium' }}
-        </span>
+        </ion-note>
       </ion-item>
       <ion-item>
         Mined by
-        <span item-end *ngIf="block.poolInfo">
+        <ion-note item-end *ngIf="block.poolInfo">
           <a href="{{ block.poolInfo.url }}">{{ block.poolInfo.poolName }}</a>
-        </span>
+        </ion-note>
       </ion-item>
       <ion-item>
         Merkle Root
-        <span item-end class="ellipsis">
+        <ion-note item-end>
           {{ block.merkleroot }}
-        </span>
+        </ion-note>
       </ion-item>
       <ion-item>
         Previous Block
-        <span item-end>
+        <ion-note item-end>
           <a (click)="goToPreviousBlock()">{{ block.height - 1 }}</a>
-        </span>
+        </ion-note>
       </ion-item>
       <ion-item>
         Difficulty
-        <span item-end>
+        <ion-note item-end>
           {{ block.difficulty }}
-        </span>
+        </ion-note>
       </ion-item>
       <ion-item>
         Bits
-        <span item-end>
+        <ion-note item-end>
           {{ block.bits }}
-        </span>
+        </ion-note>
       </ion-item>
       <ion-item>
         Size (bytes)
-        <span item-end>
+        <ion-note item-end>
           {{ block.size }}
-        </span>
+        </ion-note>
       </ion-item>
       <ion-item>
         Version
-        <span item-end>
+        <ion-note item-end>
           {{ block.version }}
-        </span>
+        </ion-note>
       </ion-item>
       <ion-item>
         Nonce
-        <span item-end>
+        <ion-note item-end>
           {{ block.nonce }}
-        </span>
+        </ion-note>
       </ion-item>
       <ion-item>
         Next Block
-        <span item-end>
+        <ion-note item-end>
           <a (click)="goToNextBlock()">{{ block.height + 1 }}</a>
-        </span>
+        </ion-note>
       </ion-item>
     </ion-list>
 

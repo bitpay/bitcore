@@ -8,6 +8,10 @@
 // Additionally, this file can be also used as an entry point
 // to import other Sass files to be included in the output CSS.
 
+body {
+  user-select: text;
+}
+
 .ellipsis {
   display: block;
   overflow: hidden;
@@ -15,19 +19,47 @@
   white-space: nowrap;
 }
 
-.summary ion-label {
-  color: #333;
-  font-weight: bold;
+.list--summary {
+  ion-label {
+    color: #333;
+    font-weight: bold;
+  }
+
+  ion-item {
+    color: #999;
+    font-size: 1.125rem;
+  }
+
+  ion-note {
+    color: #999;
+    max-width: 50%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
-.summary ion-item {
-  color: #999;
-  font-size: 1.4rem;
+.grid--table {
+  margin: 10px 0 20px;
+
+  ion-row {
+    border-top: 1px solid #ccc;
+
+    &:first-child {
+      background-color: white;
+      border-top: none;
+    }
+
+    &:nth-child(even) {
+      background-color: #f4f4f4;
+    }
+
+    &:last-child {
+      background-color: white;
+    }
+  }
 }
 
-body {
-  user-select: text;
-}
 
 // Shared Sass variables, which can be used to adjust Ionic's
 // default Sass variables, belong in "theme/variables.scss".
