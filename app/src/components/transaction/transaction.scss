@@ -29,4 +29,12 @@ transaction {
   .list {
     margin-bottom: 5px
   }
+
+  .chip {
+    //background-color: red;
+
+    &.chip-md-primary {
+      //background-color: blue;
+    }
+  }
 }
