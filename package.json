@@ -17,11 +17,9 @@
     "API"
   ],
   "scripts": {
-    "postinstall": "run-p install-server install-app",
-    "install-server": "cd server && npm install",
+    "postinstall": "run-s install-app",
     "install-app": "cd app && npm install",
-    "start": "run-p start-server watch-app",
-    "start-server": "cd server && npm start",
+    "start": "run-s watch-app",
     "watch-app": "cd app && npm start"
   },
   "dependencies": {},
