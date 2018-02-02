@@ -129,12 +129,12 @@ describe('Address', function() {
 
     it('should be able to convert a testnet address to a cashaddr without prefix', function() {
       var a = new Address('mysKEM9kN86Nkcqwb4gw7RqtDyc552LQoq');
-      a.toCashAddress(false).should.equal('qry5cr6h2qe25pzwwfrz8m653fh2tf6nusj9dl0ujc');
+      a.toCashAddress(false).should.equal('bchtest:qry5cr6h2qe25pzwwfrz8m653fh2tf6nusj9dl0ujc');
     });
 
     it('should be able to convert a testnet address to a cashaddr with prefix', function() {
       var a = new Address('mysKEM9kN86Nkcqwb4gw7RqtDyc552LQoq');
-      a.toCashAddress(true).should.equal('bchtest:qry5cr6h2qe25pzwwfrz8m653fh2tf6nusj9dl0ujc');
+      a.toCashAddress(true).should.equal('qry5cr6h2qe25pzwwfrz8m653fh2tf6nusj9dl0ujc');
     });
 
     it('should fail convert no prefix addresses bad checksum ', function() {
