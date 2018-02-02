@@ -61,6 +61,6 @@ export class LatestBlocksComponent {
   }
 
   public goToBlocks(): void {
-    this.navCtrl.setRoot(BlocksPage);
+    this.navCtrl.push(BlocksPage);
   }
 }
