@@ -1,6 +1,7 @@
 import { Component, NgZone, Input } from '@angular/core';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { NavController } from 'ionic-angular';
+import { BlocksPage } from '../../pages';
 
 /**
  * Generated class for the LatestBlocksComponent component.
@@ -60,6 +61,6 @@ export class LatestBlocksComponent {
   }
 
   public goToBlocks(): void {
-    this.navCtrl.push('blocks');
+    this.navCtrl.setRoot(BlocksPage);
   }
 }
