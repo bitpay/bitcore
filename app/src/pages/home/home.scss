@@ -1,6 +1,17 @@
 page-home {
+  @media screen and (min-width: 768px) {
+    .latest-blocks {
+      width: 68%;
+      display: inline-block;
+    }
+    .about {
+      width: 30%;
+      float: right;
+    }
+  }
+
   .about {
-    background-color: #F4F4F4;
+    background-color: #f4f4f4;
     border: 1px solid #eee;
     border-radius: 5px;
     padding: 14px;
@@ -36,7 +47,7 @@ page-home {
     background-size: 80px;
     width: 30%;
   }
-  #powered a.angularjs {
+  #powered a.angular {
     background-image: url('../../assets/img/angularjs.png');
     background-size: 50px;
     width: 20%;
@@ -46,5 +57,4 @@ page-home {
     background-size: 50px;
     width: 20%;
   }
-
 }

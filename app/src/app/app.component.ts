@@ -1,20 +1,19 @@
-import { Component, ViewChild }          from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { Platform, MenuController, Nav } from 'ionic-angular';
-import { StatusBar }                     from '@ionic-native/status-bar';
-import { SplashScreen }                  from '@ionic-native/splash-screen';
+import { StatusBar } from '@ionic-native/status-bar';
+import { SplashScreen } from '@ionic-native/splash-screen';
 import {
   HomePage,
   BlocksPage,
-  BroadcastTxPage,
-  NodeStatusPage,
-  VerifyMessagePage
+  BroadcastTxPage
+  // NodeStatusPage,
+  // VerifyMessagePage
 } from '../pages';
 
 @Component({
   templateUrl: './app.html'
 })
 export class InsightApp {
-
   @ViewChild(Nav) public nav: Nav;
 
   private menu: MenuController;
@@ -23,10 +22,14 @@ export class InsightApp {
   private status: StatusBar;
 
   public rootPage: any;
-  public pages: Array<{ title: string, component: any }>;
+  public pages: Array<{ title: string; component: any }>;
 
-  constructor(platform: Platform, menu: MenuController, splash: SplashScreen, status: StatusBar) {
-
+  constructor(
+    platform: Platform,
+    menu: MenuController,
+    splash: SplashScreen,
+    status: StatusBar
+  ) {
     this.menu = menu;
     this.platform = platform;
     this.splash = splash;
@@ -39,9 +42,9 @@ export class InsightApp {
     this.pages = [
       { title: 'Home', component: HomePage },
       { title: 'Blocks', component: BlocksPage },
-      { title: 'Broadcast Transaction', component: BroadcastTxPage },
-      { title: 'Verify Signed Message', component: VerifyMessagePage },
-      { title: 'Node Status', component: NodeStatusPage }
+      { title: 'Broadcast Transaction', component: BroadcastTxPage }
+      // { title: 'Verify Signed Message', component: VerifyMessagePage },
+      // { title: 'Node Status', component: NodeStatusPage }
     ];
   }
 
