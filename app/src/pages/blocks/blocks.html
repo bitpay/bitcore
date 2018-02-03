@@ -7,7 +7,7 @@
     <ion-spinner name="crescent"></ion-spinner>
   </div>
 
-  <div *ngIf="!loading">
+  <div *ngIf="!loading" class="page-content">
     <h1>Blocks</h1>
     <latest-blocks [numBlocks]="100" [showTimeAs]="'timestamp'" [showAllBlocksButton]="false"></latest-blocks>
   </div>

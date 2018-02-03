@@ -1,5 +1,5 @@
 <ion-header>
-  <ion-navbar color="primary">
+  <ion-navbar color="brand">
     <button ion-button menuToggle>
       <ion-icon name="menu"></ion-icon>
     </button>
@@ -8,31 +8,33 @@
 </ion-header>
 
 <ion-content padding>
-  <ion-list>
-    <ion-item>
-      <p>Bitcoin comes with a way of signing arbitrary messages.</p>
+  <div class="page-content">
 
-      <p>This form can be used to verify that a message comes from a specific Bitcoin address.</p>
-    </ion-item>
+    <ion-list>
+      <ion-item>
+        <p>Bitcoin comes with a way of signing arbitrary messages.</p>
 
-    <ion-item>
-      <ion-label floating>Address</ion-label>
-      <ion-input type="text"></ion-input>
-    </ion-item>
+        <p>This form can be used to verify that a message comes from a specific Bitcoin address.</p>
+      </ion-item>
 
-    <ion-item>
-      <ion-label floating>Signature</ion-label>
-      <ion-input type="text"></ion-input>
-    </ion-item>
+      <ion-item>
+        <ion-label floating>Address</ion-label>
+        <ion-input type="text"></ion-input>
+      </ion-item>
 
-    <ion-item>
-      <ion-label floating>Message</ion-label>
-      <ion-input type="text"></ion-input>
-    </ion-item>
+      <ion-item>
+        <ion-label floating>Signature</ion-label>
+        <ion-input type="text"></ion-input>
+      </ion-item>
 
-    <ion-item>
-      <button ion-button outline>Verify</button>
-    </ion-item>
-  </ion-list>
+      <ion-item>
+        <ion-label floating>Message</ion-label>
+        <ion-input type="text"></ion-input>
+      </ion-item>
 
+      <ion-item>
+        <button ion-button outline>Verify</button>
+      </ion-item>
+    </ion-list>
+  </div>
 </ion-content>
