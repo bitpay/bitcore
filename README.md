@@ -2,7 +2,7 @@
 _Requirements_:
 - Trusted P2P Peer
 - MongoDB Server >= v3.4
-## Config Examples
+## Config Example
 ./config.json
 
 Connect to any mainnet trusted node:
@@ -18,6 +18,8 @@ Connect to any mainnet trusted node:
   ]
 }
 ```
+
+# Wallet
 
 ## Add Wallet:
 
@@ -58,6 +60,8 @@ GET `/api/wallet/:walletId/balance`
 
 GET `/api/wallet/:walletId/utxos`
 
+# Transactions
+
 ## Get Transactions by block
 
 GET `/api/tx/?blockHeight=123456`
@@ -68,6 +72,8 @@ GET `/api/tx/?blockHash=0000000000002917ed80650c6174aac8dfc46f5fe36480aaef682ff6
 
 GET `/api/tx/5c8a63e695caf95c28a0155beaa22b84a7adb18b8693ba90f04d94891d122afe`
 
+# Address
+
 ## Get Transaction Outputs by Address
 
 GET `/api/address/mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4/?unspent=true`
@@ -75,6 +81,8 @@ GET `/api/address/mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4/?unspent=true`
 ## Get Balance for an Address
 
 GET `/api/address/mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4/balance`
+
+# Block
 
 ## Get Block
 
