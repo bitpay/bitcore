@@ -8,10 +8,13 @@ _Requirements_:
 Connect to any mainnet trusted node:
 ```
 {
-  "network": "main",
+  "network": "mainnet",
   "chainSource": "p2p",
   "trustedPeers": [
-    {"host": "127.0.0.1", "port": 8333}
+    {
+      "host": "127.0.0.1",
+      "port": 8333
+    }
   ]
 }
 ```
@@ -39,6 +42,10 @@ BODY: raw jsonl wallet file of the form
 {"address": "bItCoInAddReSSHeRe"}
 ...
 
+## Get Wallet Addresses
+
+GET `/api/wallet/:walletId/addresses
+
 ## Get Wallet Transactions:
 
 GET `/api/wallet/:walletId/transactions`
@@ -46,3 +53,31 @@ GET `/api/wallet/:walletId/transactions`
 ## Get Balance:
 
 GET `/api/wallet/:walletId/balance`
+
+## Get Wallet UTXOS
+
+GET `/api/wallet/:walletId/utxos`
+
+## Get Transactions by block
+
+GET `/api/tx/?blockHeight=123456`
+
+GET `/api/tx/?blockHash=0000000000002917ed80650c6174aac8dfc46f5fe36480aaef682ff6cd83c3ca`
+
+## Get Transaction by txid
+
+GET `/api/tx/5c8a63e695caf95c28a0155beaa22b84a7adb18b8693ba90f04d94891d122afe`
+
+## Get Transaction Outputs by Address
+
+GET `/api/address/mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4/?unspent=true`
+
+## Get Balance for an Address
+
+GET `/api/address/mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4/balance`
+
+## Get Block
+
+GET `/api/block/0000000000002917ed80650c6174aac8dfc46f5fe36480aaef682ff6cd83c3ca`
+
+GET `/api/block/123456`
