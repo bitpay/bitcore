@@ -1,5 +1,7 @@
 # fullNodePlus
-
+_Requirements_:
+- Trusted P2P Peer
+- MongoDB Server >= v3.4
 ## Config Examples
 ./config.json
 
