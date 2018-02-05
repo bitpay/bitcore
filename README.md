@@ -41,12 +41,13 @@ GET `/api/wallet/:walletId`
 POST `/api/wallet/:walletId`
 
 BODY: raw jsonl wallet file of the form
+```
 {"address": "bItCoInAddReSSHeRe"}
-...
+```
 
 ## Get Wallet Addresses
 
-GET `/api/wallet/:walletId/addresses
+GET `/api/wallet/:walletId/addresses`
 
 ## Get Wallet Transactions:
 
