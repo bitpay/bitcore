@@ -22,6 +22,12 @@
         </ion-note>
       </ion-item>
       <ion-item>
+        Fee Rate
+        <ion-note item-end>
+          {{ (tx.fees / tx.size) * 1E8 | number:'1.0-8' }} sats/byte
+        </ion-note>
+      </ion-item>
+      <ion-item>
         Received Time
         <ion-note item-end>
           {{ tx.time * 1000 | date:'medium' }}
