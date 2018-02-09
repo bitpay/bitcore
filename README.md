@@ -25,6 +25,7 @@ More about BWS at https://blog.bitpay.com/announcing-the-bitcore-wallet-suite/
  cd bitcore-wallet-service && npm start
 ```
 
+
 This will launch the BWS service (with default settings) at `http://localhost:3232/bws/api`.
 
 BWS needs mongoDB. You can configure the connection at `config.js`
@@ -167,7 +168,7 @@ Returns:
  * TX Proposal object. (see [fields on the source code](https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/txproposal.js)). `.id` is probably needed in this case.
 
 
-`/v1/addresses/`: Request a new main address from wallet
+`/v3/addresses/`: Request a new main address from wallet . (creates an address on normal conditions)
 
 Returns:
  * Address object: (https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/address.js)). Note that `path` is returned so client can derive the address independently and check server's response.
