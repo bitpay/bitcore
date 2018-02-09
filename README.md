@@ -51,6 +51,25 @@ BWS can be used with PM2 with the provided `app.js` script:
   * Addresses and change addresses are derived independently and locally by the copayers from their local data.
   * TX Proposals templates are signed by copayers and verified by others, so the BWS cannot create or tamper with them.
 
+# Using SSL
+
+  You can add your certificates at the config.js using:
+
+``` json
+   https: true,
+   privateKeyFile: 'private.pem',
+   certificateFile: 'cert.pem',
+  ////// The following is only for certs which are not
+  ////// trusted by nodejs 'https' by default
+  ////// CAs like Verisign do not require this
+  // CAinter1: '', // ex. 'COMODORSADomainValidationSecureServerCA.crt'
+  // CAinter2: '', // ex. 'COMODORSAAddTrustCA.crt'
+  // CAroot: '', // ex. 'AddTrustExternalCARoot.crt'
+```
+
+@dabura667 made a report about how to use letsencrypt with BWS: https://github.com/bitpay/bitcore-wallet-service/issues/423
+  
+
 # REST API
 
 Note: all currency amounts are in units of satoshis (1/100,000,000 of a bitcoin).
