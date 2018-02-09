@@ -7647,6 +7647,7 @@ describe('Wallet service', function() {
         });
       });
 
+
       it('should not go beyond max gap', function(done) {
         helpers.stubAddressActivity(
           ['1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG', // m/0/0
@@ -7720,8 +7721,8 @@ describe('Wallet service', function() {
               wallet.addressManager.receiveAddressIndex.should.equal(1);
               wallet.addressManager.changeAddressIndex.should.equal(0);
               server.createAddress({}, function(err, address) {
-                should.not.exist(err);
-                address.path.should.equal('m/0/1');
+                should.exist(err);
+                err.code.should.equal('WALLET_NEED_SCAN');
                 done();
               });
             });
@@ -7784,11 +7785,104 @@ describe('Wallet service', function() {
             server.storage.fetchAddresses(wallet.id, function(err, addresses) {
               should.not.exist(err);
               addresses.should.be.empty;
-              done();
+              server.getStatus({}, function(err, status) {
+                should.exist(err);
+                err.code.should.equal('WALLET_NEED_SCAN');
+                done();
+              });
             });
           });
         });
       });
+
+      it('index cache: should use cache, if previous scan failed', function(done) {
+        helpers.stubAddressActivity(
+          ['1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG', // m/0/0
+            '1GdXraZ1gtoVAvBh49D4hK9xLm6SKgesoE', // m/0/2
+            '1FUzgKcyPJsYwDLUEVJYeE2N3KVaoxTjGS', // m/1/0
+          ], 4);
+
+        // First without activity
+        var addr = '1KbTiFvjbN6B5reCVS4tTT49vPQkvsqnE2'; // m/0/3
+
+        server.scan({}, function(err) {
+          should.exist('failed on request');
+
+          server.getWallet({}, function(err, wallet) {
+            should.not.exist(err);
+
+            // Because it failed
+            wallet.addressManager.receiveAddressIndex.should.equal(0);
+            wallet.addressManager.changeAddressIndex.should.equal(0);
+
+            helpers.stubAddressActivity(
+              ['1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG', // m/0/0
+                '1GdXraZ1gtoVAvBh49D4hK9xLm6SKgesoE', // m/0/2
+                '1FUzgKcyPJsYwDLUEVJYeE2N3KVaoxTjGS', // m/1/0
+              ], -1);
+            var getAddressActivitySpy = sinon.spy(blockchainExplorer, 'getAddressActivity');
+
+            server.scan({}, function(err) {
+              should.not.exist(err);
+
+              // should prederive 3 address, so 
+              // First call should be m/0/3
+              var calls = getAddressActivitySpy.getCalls();
+              calls[0].args[0].should.equal(addr);
+
+              server.storage.fetchAddresses(wallet.id, function(err, addresses) {
+                should.exist(addresses);
+                server.createAddress({}, function(err, address) {
+                  should.not.exist(err);
+                  address.path.should.equal('m/0/3');
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+
+      it('index cache: should not use cache, if scan worked ok', function(done) {
+        helpers.stubAddressActivity(
+          ['1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG', // m/0/0
+            '1GdXraZ1gtoVAvBh49D4hK9xLm6SKgesoE', // m/0/2
+            '1FUzgKcyPJsYwDLUEVJYeE2N3KVaoxTjGS', // m/1/0
+          ]);
+
+        // First without activity
+        var addr = '1KbTiFvjbN6B5reCVS4tTT49vPQkvsqnE2'; // m/0/3
+
+        server.scan({}, function(err) {
+          should.not.exist(err);
+
+          server.getWallet({}, function(err, wallet) {
+            should.not.exist(err);
+            wallet.addressManager.receiveAddressIndex.should.equal(3);
+            wallet.addressManager.changeAddressIndex.should.equal(1);
+
+            var getAddressActivitySpy = sinon.spy(blockchainExplorer, 'getAddressActivity');
+
+            server.scan({}, function(err) {
+              should.not.exist(err);
+
+              var calls = getAddressActivitySpy.getCalls();
+              calls[0].args[0].should.equal(addr);
+              server.storage.fetchAddresses(wallet.id, function(err, addresses) {
+                should.exist(addresses);
+                server.createAddress({}, function(err, address) {
+                  should.not.exist(err);
+                  address.path.should.equal('m/0/3');
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+
+
+
     });
 
     describe('shared wallet (BIP45)', function() {

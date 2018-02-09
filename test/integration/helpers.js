@@ -380,8 +380,21 @@ helpers.stubFeeLevels = function(levels) {
   };
 };
 
-helpers.stubAddressActivity = function(activeAddresses) {
+
+var stubAddressActivityFailsOn = null;
+var stubAddressActivityFailsOnCount=1;
+helpers.stubAddressActivity = function(activeAddresses, failsOn) {
+
+  if (failsOn) {
+    stubAddressActivityFailsOn = failsOn;
+  }
+
   blockchainExplorer.getAddressActivity = function(address, cb) {
+    if (stubAddressActivityFailsOnCount == stubAddressActivityFailsOn) 
+      return cb('failed on request');
+
+    stubAddressActivityFailsOnCount++;
+
     return cb(null, _.contains(activeAddresses, address));
   };
 };
