@@ -9,6 +9,7 @@ var should = chai.should();
 var async = require('async');
 var request = require('supertest');
 var Uuid = require('uuid');
+var sjcl = require('sjcl');
 var tingodb = require('tingodb')({
   memStore: true
 });
@@ -4810,6 +4811,24 @@ describe('client API', function() {
             });
           var recoveryClient = helpers.newClient(newApp);
           recoveryClient.import(c.export());
+
+          /*
+           * This is to export 2 old BIP45 wallets
+           var b= c.export();
+
+           var e = sjcl.encrypt('hola', b, {
+           iter: 10000
+           });
+           console.log("[client.js.4813] C EXPORT\n", e); //TODO
+
+           b= c2.export();
+           e= sjcl.encrypt('hola', b, {
+           iter: 10000
+           });
+
+           console.log("[client.js.4813] C2 EXPORT\n", e); //TODO
+           */
+
           recoveryClient.recreateWallet(function(err) {
             should.not.exist(err);
             recoveryClient.getStatus({}, function(err, status) {
