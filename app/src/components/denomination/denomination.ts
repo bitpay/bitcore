@@ -10,7 +10,6 @@ export class DenominationComponent {
 
   public text: string;
   public switcherOn: boolean;
-  public currencies: any = [];
   public units: any = [];
 
   constructor(
@@ -19,18 +18,6 @@ export class DenominationComponent {
   ) {
     this.text = 'Hello World';
     this.switcherOn = true;
-    this.currencies = [
-      {
-        name: 'Bitcoin',
-        ticker: 'BTC',
-        url: 'https://insight.bitpay.com'
-      },
-      {
-        name: 'Bitcoin Cash',
-        ticker: 'BCH',
-        url: 'https://bch-insight.bitpay.com'
-      }
-    ];
 
     this.units = [
       'USD',
@@ -44,11 +31,9 @@ export class DenominationComponent {
     this.viewCtrl.dismiss();
   }
 
-  public changeCurrency(currency: any): void {
-    console.log('selected currency is', currency.name, currency.ticker);
+  public changeExplorer(explorer: any): void {
     this.close();
-    let theUrl: string = currency.url;
-    console.log('theUrl is', theUrl);
+    let theUrl: string = explorer.url;
     window.location.href = theUrl;
   }
 }

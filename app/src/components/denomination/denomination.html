@@ -4,9 +4,9 @@
   </ion-list-header>
 
   <ion-row *ngIf="switcherOn">
-    <ion-col *ngFor="let currency of currencies">
-      <button (click)="changeCurrency(currency)" ion-item detail-none class="text-button" text-center>
-        <img src="assets/img/currency_logos/{{ currency.ticker.toLowerCase() }}.svg" class="logo"/></button>
+    <ion-col *ngFor="let explorer of currencyProvider.explorers">
+      <button (click)="changeExplorer(explorer)" ion-item detail-none class="text-button" text-center>
+        <img src="assets/img/currency_logos/{{ explorer.ticker.toLowerCase() }}.svg" class="logo"/></button>
     </ion-col>
   </ion-row>
 

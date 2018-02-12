@@ -18,10 +18,22 @@ export class CurrencyProvider {
   private bitstamp: number;
   private kraken: number;
   private loading: boolean;
+  private explorers: any = [];
 
   constructor(public http: Http, private api: ApiProvider) {
     this.defaultCurrency = 'BCH';
     this.currencySymbol = this.defaultCurrency;
+
+    this.http.get(this.api.apiPrefix + 'explorers').subscribe(
+      (data) => {
+        this.explorers = JSON.parse(data['_body']);
+        this.loading = false;
+      },
+      (err) => {
+        console.log('err is', err);
+        this.loading = false;
+      }
+    );
   }
 
   public roundFloat(aFloat: number, decimalPlaces: number): number {
