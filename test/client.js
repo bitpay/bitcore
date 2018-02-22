@@ -3013,7 +3013,7 @@ describe('client API', function() {
             clients[0].payProHttp = clients[1].payProHttp = http;
 
             clients[0].fetchPayPro(opts, function(err, paypro) {
-              paypro.toAddress.should.equal('bitcoincash:qq7hkvrntz48v9mdlyp8d2dqhxe43z7t6q766yskus');
+              paypro.toAddress.should.equal('CN4yN5kfov99EjS1amKYQnSfaehpyRGzv2');
               http.getCall(0).args[0].coin.should.equal('bch');
               helpers.createAndPublishTxProposal(clients[0], {
                 toAddress: paypro.toAddress,

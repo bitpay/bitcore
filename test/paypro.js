@@ -8,7 +8,9 @@ var PayPro = require('../lib/paypro');
 var TestData = require('./testdata');
 
 var TestDataBCH = _.clone(TestData.payProData);
-TestDataBCH.toAddress = 'bchtest:qqkcn2tjp59v4xl24ercn99qdvdtz7qcvuvmw9knqf';
+
+//paypro is using C/H address for now
+//TestDataBCH.toAddress = 'bchtest:qqkcn2tjp59v4xl24ercn99qdvdtz7qcvuvmw9knqf';
 
 
 describe('paypro', function() {
