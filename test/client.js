@@ -3000,8 +3000,8 @@ describe('client API', function() {
       // note this is using BCH with BTC format testnet address
       beforeEach(function(done) {
         http = sinon.stub();
-        http.yields(null, TestData.payProBuf);
-        helpers.createAndJoinWallet(clients, 1, 1, {coin:'bch', network:'testnet'}, function(w) {
+        http.yields(null, TestData.payProDataBchBuf);
+        helpers.createAndJoinWallet(clients, 1, 1, {coin:'bch', network:'livenet'}, function(w) {
           clients[0].createAddress(function(err, x0) {
             should.not.exist(err);
             should.exist(x0.address);
@@ -3013,6 +3013,7 @@ describe('client API', function() {
             clients[0].payProHttp = clients[1].payProHttp = http;
 
             clients[0].fetchPayPro(opts, function(err, paypro) {
+              paypro.toAddress.should.equal('bitcoincash:qq7hkvrntz48v9mdlyp8d2dqhxe43z7t6q766yskus');
               http.getCall(0).args[0].coin.should.equal('bch');
               helpers.createAndPublishTxProposal(clients[0], {
                 toAddress: paypro.toAddress,
@@ -3050,11 +3051,11 @@ describe('client API', function() {
               refund_to = refund_to[0];
 
               var amount = refund_to.get('amount')
-              amount.low.should.equal(404500);
+              amount.low.should.equal(830600);
               amount.high.should.equal(0);
               var s = refund_to.get('script');
-              s = new Bitcore.Script(s.buffer.slice(s.offset, s.limit));
-              var addr = new Bitcore.Address.fromScript(s, 'testnet');
+              s = new Bitcore_['bch'].Script(s.buffer.slice(s.offset, s.limit));
+              var addr = new Bitcore_['bch'].Address.fromScript(s);
               addr.toString().should.equal(changeAddress);
               done();
             });
@@ -3078,7 +3079,7 @@ describe('client API', function() {
               var pay = new BitcorePayPro();
               var p = pay.makePayment(data);
               var rawTx = p.get('transactions')[0].toBuffer();
-              var tx = new Bitcore.Transaction(rawTx);
+              var tx = new  Bitcore_['bch'].Transaction(rawTx);
               var script = tx.inputs[0].script;
               script.isPublicKeyHashIn().should.equal(true);
               done();

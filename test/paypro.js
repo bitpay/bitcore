@@ -7,6 +7,9 @@ var should = chai.should();
 var PayPro = require('../lib/paypro');
 var TestData = require('./testdata');
 
+var TestDataBCH = _.clone(TestData.payProData);
+TestDataBCH.toAddress = 'bchtest:qqkcn2tjp59v4xl24ercn99qdvdtz7qcvuvmw9knqf';
+
 
 describe('paypro', function() {
   var xhr, httpNode, clock, headers;
@@ -83,7 +86,7 @@ describe('paypro', function() {
     }, function(err, res) {
       should.not.exist(err);
       headers['Accept'].should.equal('application/bitcoincash-paymentrequest');
-      res.should.deep.equal(TestData.payProData);
+      res.should.deep.equal(TestDataBCH);
       done();
     });
   });
@@ -176,7 +179,7 @@ describe('paypro', function() {
 
   it('Create a PP payment', function() {
     var data = TestData.payProData;
-    var payment = PayPro._createPayment(data.merchant_data, '12ab1234', 'mwRGmB4NE3bG4EbXJKTHf8uvodoUtMCRhZ', 100);
+    var payment = PayPro._createPayment(data.merchant_data, '12ab1234', 'mwRGmB4NE3bG4EbXJKTHf8uvodoUtMCRhZ', 100, 'btc');
     var s = '';
     for (var i = 0; i < payment.length; i++) {
       s += payment[i].toString(16);
