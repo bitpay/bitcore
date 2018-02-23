@@ -41,7 +41,6 @@
     "browserify": "^13.1.0",
     "chai": "^1.9.1",
     "coveralls": "^2.11.2",
-    "grunt": "~0.4.0",
     "istanbul": "*",
     "mocha": "^1.18.2",
     "sinon": "^1.10.3",
