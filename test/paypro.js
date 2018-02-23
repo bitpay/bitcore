@@ -40,6 +40,8 @@ describe('paypro', function() {
     httpNode.get = function(opts, cb) {
       var res = {};
       res.statusCode = httpNode.error || 200;
+      if (httpNode.error == 404) 
+        res.statusMessage = 'Not Found';
       res.on = function(e, cb) {
         if (e == 'data')
           return cb(TestData.payProBuf);
@@ -66,6 +68,7 @@ describe('paypro', function() {
   });
 
   it('Make a PP request with browser', function(done) {
+    xhr.status=200;
     PayPro.get({
       url: 'http://an.url.com/paypro',
       xhr: xhr,
@@ -79,7 +82,23 @@ describe('paypro', function() {
   });
 
 
+  it('Should handle a failed request from the browser', function(done) {
+    xhr.status=404;
+    PayPro.get({
+      url: 'http://an.url.com/paypro',
+      xhr: xhr,
+      env: 'browser',
+    }, function(err, res) {
+      headers['Accept'].should.equal('application/bitcoin-paymentrequest');
+      should.exist(err);
+      done();
+    });
+  });
+
+
+
   it('Make a PP request with browser BCH', function(done) {
+    xhr.status=200;
     PayPro.get({
       url: 'http://an.url.com/paypro',
       xhr: xhr,
@@ -174,7 +193,7 @@ describe('paypro', function() {
       env: 'node',
     }, function(err, res) {
       err.should.be.an.instanceOf(Error);
-      err.message.should.equal('HTTP Request Error');
+      err.message.should.equal('HTTP Request Error: 404 Not Found ');
       done();
     });
   });
