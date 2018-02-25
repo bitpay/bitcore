@@ -15,9 +15,9 @@ var Utils = function() {};
 var die = Utils.die = function(err) {
   if (err) {
     if (err.code && err.code == 'ECONNREFUSED') {
-      console.error('Could not connect to Bicore Wallet Service');
+      console.error('!! Could not connect to Bicore Wallet Service');
     } else {
-      console.error(err);
+      console.log('!! ' + err.toString());
     }
     process.exit(1);
   }

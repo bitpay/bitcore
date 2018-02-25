@@ -53,6 +53,15 @@ wallet send 1xxxxx 1000bit "1000 bits to mother"
 
 # You can use 1000bit or 0.0001btc or 100000sat. (Set BIT_UNIT to btc/sat/bit to select output unit).
 
+It is also possible to use Payment Protocol or BIP21. Examples:
+
+
+wallet send 'bitcoin:?r=https://bitpay.com/i/8rR7ydnLfQGqnRW1mqvXxJ'
+wallet send 'bitcoin:1N4zjmp1ojRborDiAu62MyCpaz9wjhPLM?amount=1'
+
+
+
+
 # List pending TX Proposals
 wallet txproposals
   * TX Proposals:

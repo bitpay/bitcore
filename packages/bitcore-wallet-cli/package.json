@@ -2,7 +2,7 @@
   "name": "bitcore-wallet",
   "description": "A CLI Mutisig HD Bitcoin Wallet, demo for Bitcore Wallet Service",
   "author": "BitPay Inc",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "keywords": [
     "bitcoin",
     "copay",
@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "async": "^2.5.0",
-    "bitcore-wallet-client": "6.4.0",
+    "bitcore-wallet-client": "^6.6.3",
     "commander": "^2.6.0",
     "lodash": "^3.3.1",
     "moment": "^2.9.0",
