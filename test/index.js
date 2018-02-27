@@ -154,6 +154,18 @@ describe('PaymentProtocol', function() {
       hex.length.should.be.greaterThan(0);
     });
 
+
+    it('should serialize with requiredFee', function() {
+      var obj = {};
+      var pd = new PaymentProtocol.PaymentDetails();
+      pd.set('time', 0);
+      pd.set('requiredFeeRate', 110);
+      pd.set('memo', 'test memo');
+      var hex = pd.toHex();
+      hex.length.should.be.greaterThan(0);
+    });
+
+
   });
 
   describe('#PaymentRequest', function() {
