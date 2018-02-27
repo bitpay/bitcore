@@ -2976,6 +2976,22 @@ describe('client API', function() {
           });
         });
       });
+
+
+      it('Should fail if requiredFeeRate is not meet', function(done) {
+        clients[0].getTxProposals({}, function(err, txps) {
+          should.not.exist(err);
+          clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
+            should.not.exist(err);
+            xx.feePerKb/=2;
+            clients[1].signTxProposal(xx, function(err, yy, paypro) {
+              err.message.should.equal('Server response could not be verified.');
+              done()
+            });
+          });
+        });
+      });
+
     });
 
 
