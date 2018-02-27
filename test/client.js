@@ -2943,9 +2943,9 @@ describe('client API', function() {
           should.not.exist(err);
           var tx = txps[0];
           // From the hardcoded paypro request
-          tx.outputs[0].amount.should.equal(9500);
-          tx.outputs[0].toAddress.should.equal('mqUwqJpHM8C9J6htJiP5SB534wPdE5kEHN');
-          tx.message.should.equal('Payment request for BitPay invoice 5q5GuCSCj97wLLVG5AJAQx for merchant GusPay');
+          tx.outputs[0].amount.should.equal(9400);
+          tx.outputs[0].toAddress.should.equal('mrobN6UstsVWLHqxfRDFz3WYxnKwxEHCEv');
+          tx.message.should.equal('Payment request for BitPay invoice 4QZqHsP42WWzkec74jTHc4 for merchant GusPay');
           tx.payProUrl.should.equal('dummy');
           tx.feePerKb.should.equal(1024);
           done();
@@ -2968,7 +2968,7 @@ describe('client API', function() {
                 args.method.should.equal('POST');
                 args.body.length.should.be.within(440, 460);
                 memo.should.equal('Transaction received by BitPay. Invoice will be marked as paid if the transaction is confirmed.');
-                zz.message.should.equal('Payment request for BitPay invoice 5q5GuCSCj97wLLVG5AJAQx for merchant GusPay');
+                zz.message.should.equal('Payment request for BitPay invoice 4QZqHsP42WWzkec74jTHc4 for merchant GusPay');
                 zz.feePerKb.should.equal(1024);
                 done();
               });
