@@ -112,7 +112,6 @@ describe('paypro', function() {
     });
   });
 
-
   it('Make a PP request with browser with headers', function(done) {
     PayPro.get({
       url: 'http://an.url.com/paypro',
@@ -165,7 +164,6 @@ describe('paypro', function() {
     });
   });
 
-
   it('Make a PP request with node', function(done) {
     xhr.send = function() {
       xhr.response = 'id';
@@ -184,6 +182,7 @@ describe('paypro', function() {
       done();
     });
   });
+
 
   it('Make a PP request with node with HTTP error', function(done) {
     httpNode.error = 404;
