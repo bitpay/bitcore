@@ -155,11 +155,11 @@ describe('PaymentProtocol', function() {
     });
 
 
-    it('should serialize with requiredFee', function() {
+    it('should serialize with required_fee_rate', function() {
       var obj = {};
       var pd = new PaymentProtocol.PaymentDetails();
       pd.set('time', 0);
-      pd.set('requiredFeeRate', 110);
+      pd.set('required_fee_rate', 110);
       pd.set('memo', 'test memo');
       var hex = pd.toHex();
       hex.length.should.be.greaterThan(0);
