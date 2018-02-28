@@ -2904,6 +2904,98 @@ describe('client API', function() {
       });
     });
 
+
+    describe('Shared wallet / requiredFeeRate', function() {
+      beforeEach(function(done) {
+        http = sinon.stub();
+        http.yields(null, TestData.payProRequestedFeeBuf);
+        helpers.createAndJoinWallet(clients, 2, 2, function(w) {
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            should.exist(x0.address);
+            blockchainExplorerMock.setUtxo(x0, 1, 2);
+            blockchainExplorerMock.setUtxo(x0, 1, 2);
+            var opts = {
+              payProUrl: 'dummy',
+            };
+            clients[0].payProHttp = clients[1].payProHttp = http;
+
+            clients[0].fetchPayPro(opts, function(err, paypro) {
+              http.getCall(0).args[0].coin.should.equal('btc');
+              paypro.requiredFeeRate.should.equal(1);
+              helpers.createAndPublishTxProposal(clients[0], {
+                toAddress: paypro.toAddress,
+                amount: paypro.amount,
+                message: paypro.memo,
+                payProUrl: opts.payProUrl,
+                feePerKb: paypro.requiredFeeRate*1024,
+              }, function(err, x) {
+                should.not.exist(err);
+                done();
+              });
+            });
+          });
+        });
+      });
+
+      it('Should Create and Verify a Tx from PayPro', function(done) {
+        clients[1].getTxProposals({}, function(err, txps) {
+          should.not.exist(err);
+          var tx = txps[0];
+          // From the hardcoded paypro request
+          tx.outputs[0].amount.should.equal(9400);
+          tx.outputs[0].toAddress.should.equal('mrobN6UstsVWLHqxfRDFz3WYxnKwxEHCEv');
+          tx.message.should.equal('Payment request for BitPay invoice 4QZqHsP42WWzkec74jTHc4 for merchant GusPay');
+          tx.payProUrl.should.equal('dummy');
+          tx.feePerKb.should.equal(1024);
+          done();
+        });
+      });
+
+      it('Should send the "payment message" when last copayer sign', function(done) {
+        clients[0].getTxProposals({}, function(err, txps) {
+          should.not.exist(err);
+          clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
+            should.not.exist(err);
+            clients[1].signTxProposal(xx, function(err, yy, paypro) {
+              should.not.exist(err);
+              yy.status.should.equal('accepted');
+              http.onCall(5).yields(null, TestData.payProAckBuf);
+
+              clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
+                should.not.exist(err);
+                var args = http.lastCall.args[0];
+                args.method.should.equal('POST');
+                args.body.length.should.be.within(440, 460);
+                memo.should.equal('Transaction received by BitPay. Invoice will be marked as paid if the transaction is confirmed.');
+                zz.message.should.equal('Payment request for BitPay invoice 4QZqHsP42WWzkec74jTHc4 for merchant GusPay');
+                zz.feePerKb.should.equal(1024);
+                done();
+              });
+            });
+          });
+        });
+      });
+
+
+      it('Should fail if requiredFeeRate is not meet', function(done) {
+        clients[0].getTxProposals({}, function(err, txps) {
+          should.not.exist(err);
+          clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
+            should.not.exist(err);
+            xx.feePerKb/=2;
+            clients[1].signTxProposal(xx, function(err, yy, paypro) {
+              err.message.should.equal('Server response could not be verified.');
+              done()
+            });
+          });
+        });
+      });
+
+    });
+
+
+
     describe('1-of-1 wallet', function() {
       beforeEach(function(done) {
         http = sinon.stub();
