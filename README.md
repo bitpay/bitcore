@@ -5,17 +5,30 @@ _Requirements_:
 ## Config Example
 ./config.json
 
-Connect to any mainnet trusted node:
 ```
 {
-  "network": "mainnet",
-  "chainSource": "p2p",
-  "trustedPeers": [
-    {
-      "host": "127.0.0.1",
-      "port": 8333
+  "chains": {
+    "BTC": {
+      "mainnet": {
+        "trustedPeers": [
+          {
+            "host": "127.0.0.1",
+            "port": 8333
+          }
+        ]
+      }
+    },
+    "BCH": {
+      "mainnet": {
+        "trustedPeers": [
+          {
+            "host": "127.0.0.1",
+            "port": 9333
+          }
+        ]
+      }
     }
-  ]
+  }
 }
 ```
 
