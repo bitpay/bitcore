@@ -7,6 +7,7 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.raw({limit: 100000000}));
 
+const logger = require('./lib/logger');
 const config = require('./lib/config');
 const storageService = require('./lib/services/storage');
 const workerService = require('./lib/services/worker');
@@ -30,7 +31,7 @@ async.series([
     const router = require('./lib/routes');
     app.use('/api', router);
     const server = app.listen(config.port, function () {
-      console.log('api server listening on port 3000!');
+      logger.info(`API server started on port ${config.port}`);
     });
     server.timeout = 600000;
   }

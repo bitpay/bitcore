@@ -18,7 +18,8 @@
     "progress": "^2.0.0",
     "request": "^2.81.0",
     "snappy": "^6.0.1",
-    "underscore": "^1.8.3"
+    "underscore": "^1.8.3",
+    "winston": "^3.0.0-rc1"
   },
   "devDependencies": {
     "eslint-config-airbnb-base": "^12.1.0",
