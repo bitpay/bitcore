@@ -152,7 +152,7 @@ Address._transformObject = function(data) {
   $.checkArgument(data.hash || data.hashBuffer, 'Must provide a `hash` or `hashBuffer` property');
   $.checkArgument(data.type, 'Must provide a `type` property');
   return {
-    hashBuffer: data.hash ? Buffer.from(data.hash, 'hex') : data.hashBuffer,
+    hashBuffer: data.hash ? new Buffer(data.hash, 'hex') : data.hashBuffer,
     network: Networks.get(data.network) || Networks.defaultNetwork,
     type: data.type
   };
@@ -305,7 +305,7 @@ function decodeCashAddress(address) {
 
   var prefix, encodedPayload;
 
-  if (pieces.length === 2) {
+  if (pieces.length == 2) {
     prefix = pieces[0];
     encodedPayload = pieces[1];
   } else {
@@ -362,7 +362,8 @@ function decodeCashAddress(address) {
   info.network = network;
   info.type = type;
   return info;
-}
+};
+
 
 
 /**
@@ -378,30 +379,24 @@ Address._transformString = function(data, network, type) {
   if (typeof(data) !== 'string') {
     throw new TypeError('data parameter supplied is not a string.');
   }
-  if (data.length < 34){
-    throw new Error('Invalid Address string provided');
-  }
   data = data.trim();
+  var addressBuffer;
   var networkObj = Networks.get(network);
+  var info;
 
-  if (network && !networkObj) {
-    throw new TypeError('Unknown network');
-  }
-
-  if (data.length > 35){
-    var info = decodeCashAddress(data);
+  try {
+    addressBuffer = Base58Check.decode(data);
+  } catch (e) {
+    info = decodeCashAddress(data);
     if (!info.network || (networkObj && networkObj.prefix !== info.network.prefix)) {
       throw new TypeError('Address has mismatched network type.');
     }
-    if (!info.type || (type && type !== info.type)) {
-      throw new TypeError('Address has mismatched type.');
-    }
     return info;
-  } else {
-    var addressBuffer = Base58Check.decode(data);
-    // Legacy addr
-    return Address._transformBuffer(addressBuffer, network, type);
   }
+
+  // Legacy addr
+  info = Address._transformBuffer(addressBuffer, network, type);
+  return info;
 };
 
 
@@ -515,7 +510,7 @@ Address.fromObject = function fromObject(obj) {
     JSUtil.isHexa(obj.hash),
     'Unexpected hash property, "' + obj.hash + '", expected to be hex.'
   );
-  var hashBuffer = Buffer.from(obj.hash, 'hex');
+  var hashBuffer = new Buffer(obj.hash, 'hex');
   return new Address(hashBuffer, obj.network, obj.type);
 };
 
@@ -600,6 +595,16 @@ Address.prototype.toObject = Address.prototype.toJSON = function toObject() {
 };
 
 /**
+ * Will return a the base58 (legacy) string representation of the address
+ *
+ * @returns {string} Bitcoin address
+ */
+Address.prototype.toString = function() {
+  //console.log('Warning: Using deprecated bitcoin cash address type. Replace to .toCashAddress');
+  return Base58Check.encode(this.toBuffer());
+};
+
+/**
  * Will return a string formatted for the console
  *
  * @returns {string} Bitcoin address
@@ -622,14 +627,7 @@ Address.prototype.toCashBuffer = function() {
   return buf;
 };
 
-/**
- * Will return a the base58 (legacy) string representation of the address
- *
- * @returns {string} Bitcoin address
- */
-Address.prototype.toLegacyAddress = function () {
-  return Base58Check.encode(this.toBuffer());
-};
+
 
 /**
  * Will return a cashaddr representation of the address. Always return lower case
@@ -639,7 +637,7 @@ Address.prototype.toLegacyAddress = function () {
  */
 
 
-Address.prototype.toCashAddress = function(stripPrefix) {
+Address.prototype.toCashAddress = function() {
   function getTypeBits(type) {
     switch (type) {
       case 'pubkeyhash':
@@ -681,25 +679,15 @@ Address.prototype.toCashAddress = function(stripPrefix) {
   var payloadData = convertBits([versionByte].concat(arr), 8, 5);
   var checksumData = prefixData.concat(payloadData).concat(eight0);
   var payload = payloadData.concat(checksumToArray(polymod(checksumData)));
-  if(stripPrefix === true) {
-    return base32.encode(payload);
-  } else {
-    return this.network.prefix+ ':' + base32.encode(payload);
-  }
+  return this.network.prefix+ ':' + base32.encode(payload);
 };
 
-/**
- * Will return a string representation of the address (defaults to CashAddr format)
- *
- * @returns {string} address
- */
-Address.prototype.toString = Address.prototype.toCashAddress;
 
 /***
  * Retrieves the the length in bits of the encoded hash from its bit
  * representation within the version byte.
  *
- * @param {number} versionByte
+ * @param {number} versionByte 
  */
 function getHashSize(versionByte) {
   switch (versionByte & 7) {
@@ -746,7 +734,7 @@ function checksumToArray(checksum) {
  * @param {Array} data Array of 5-bit integers over which the checksum is to be computed.
  */
  var GENERATOR = _.map(
-  [0x98f2bc8e61, 0x79b76d99e2, 0xf33e5fb3c4, 0xae2eabe2a8, 0x1e4f43e470], function(x){
+  [0x98f2bc8e61, 0x79b76d99e2, 0xf33e5fb3c4, 0xae2eabe2a8, 0x1e4f43e470], function(x){ 
     return new BN(x);
   }
 );
@@ -899,7 +887,7 @@ Block.fromBuffer = function fromBuffer(buf) {
  * @returns {Block} - A hex encoded string of the block
  */
 Block.fromString = function fromString(str) {
-  var buf = Buffer.from(str, 'hex');
+  var buf = new Buffer(str, 'hex');
   return Block.fromBuffer(buf);
 };
 
@@ -909,7 +897,7 @@ Block.fromString = function fromString(str) {
  */
 Block.fromRawBlock = function fromRawBlock(data) {
   if (!BufferUtil.isBuffer(data)) {
-    data = Buffer.from(data, 'binary');
+    data = new Buffer(data, 'binary');
   }
   var br = BufferReader(data);
   br.pos = Block.Values.START_OF_BLOCK;
@@ -1057,7 +1045,7 @@ Block.prototype.inspect = function inspect() {
 
 Block.Values = {
   START_OF_BLOCK: 8, // Start of block in raw block data
-  NULL_HASH: Buffer.from('0000000000000000000000000000000000000000000000000000000000000000', 'hex')
+  NULL_HASH: new Buffer('0000000000000000000000000000000000000000000000000000000000000000', 'hex')
 };
 
 module.exports = Block;
@@ -1137,10 +1125,10 @@ BlockHeader._fromObject = function _fromObject(data) {
   var prevHash = data.prevHash;
   var merkleRoot = data.merkleRoot;
   if (_.isString(data.prevHash)) {
-    prevHash = BufferUtil.reverse(Buffer.from(data.prevHash, 'hex'));
+    prevHash = BufferUtil.reverse(new Buffer(data.prevHash, 'hex'));
   }
   if (_.isString(data.merkleRoot)) {
-    merkleRoot = BufferUtil.reverse(Buffer.from(data.merkleRoot, 'hex'));
+    merkleRoot = BufferUtil.reverse(new Buffer(data.merkleRoot, 'hex'));
   }
   var info = {
     hash: data.hash,
@@ -1170,7 +1158,7 @@ BlockHeader.fromObject = function fromObject(obj) {
  */
 BlockHeader.fromRawBlock = function fromRawBlock(data) {
   if (!BufferUtil.isBuffer(data)) {
-    data = Buffer.from(data, 'binary');
+    data = new Buffer(data, 'binary');
   }
   var br = BufferReader(data);
   br.pos = BlockHeader.Constants.START_OF_HEADER;
@@ -1192,7 +1180,7 @@ BlockHeader.fromBuffer = function fromBuffer(buf) {
  * @returns {BlockHeader} - An instance of block header
  */
 BlockHeader.fromString = function fromString(str) {
-  var buf = Buffer.from(str, 'hex');
+  var buf = new Buffer(str, 'hex');
   return BlockHeader.fromBuffer(buf);
 };
 
@@ -1476,7 +1464,7 @@ MerkleBlock.prototype.toBufferWriter = function toBufferWriter(bw) {
   bw.writeUInt32LE(this.numTransactions);
   bw.writeVarintNum(this.hashes.length);
   for (var i = 0; i < this.hashes.length; i++) {
-    bw.write(Buffer.from(this.hashes[i], 'hex'));
+    bw.write(new Buffer(this.hashes[i], 'hex'));
   }
   bw.writeVarintNum(this.flags.length);
   for (i = 0; i < this.flags.length; i++) {
@@ -1592,7 +1580,7 @@ MerkleBlock.prototype._traverseMerkleTree = function traverseMerkleTree(depth, p
     if(depth === 0 && isParentOfMatch) {
       opts.txs.push(hash);
     }
-    return Buffer.from(hash, 'hex');
+    return new Buffer(hash, 'hex');
   } else {
     var left = this._traverseMerkleTree(depth-1, pos*2, opts);
     var right = left;
@@ -1643,7 +1631,7 @@ MerkleBlock.prototype.hasTransaction = function hasTransaction(tx) {
   var hash = tx;
   if(tx instanceof Transaction) {
     // We need to reverse the id hash for the lookup
-    hash = BufferUtil.reverse(Buffer.from(tx.id, 'hex')).toString('hex');
+    hash = BufferUtil.reverse(new Buffer(tx.id, 'hex')).toString('hex');
   }
 
   var txs = [];
@@ -1695,7 +1683,7 @@ var $ = require('../util/preconditions');
 var _ = require('lodash');
 
 var reversebuf = function(buf) {
-  var buf2 = Buffer.alloc(buf.length);
+  var buf2 = new Buffer(buf.length);
   for (var i = 0; i < buf.length; i++) {
     buf2[i] = buf[buf.length - 1 - i];
   }
@@ -1732,7 +1720,7 @@ BN.fromBuffer = function(buf, opts) {
 BN.fromSM = function(buf, opts) {
   var ret;
   if (buf.length === 0) {
-    return BN.fromBuffer(Buffer.from([0]));
+    return BN.fromBuffer(new Buffer([0]));
   }
 
   var endian = 'big';
@@ -1763,7 +1751,7 @@ BN.prototype.toBuffer = function(opts) {
   if (opts && opts.size) {
     hex = this.toString(16, 2);
     var natlen = hex.length / 2;
-    buf = Buffer.from(hex, 'hex');
+    buf = new Buffer(hex, 'hex');
 
     if (natlen === opts.size) {
       buf = buf;
@@ -1774,7 +1762,7 @@ BN.prototype.toBuffer = function(opts) {
     }
   } else {
     hex = this.toString(16, 2);
-    buf = Buffer.from(hex, 'hex');
+    buf = new Buffer(hex, 'hex');
   }
 
   if (typeof opts !== 'undefined' && opts.endian === 'little') {
@@ -1789,19 +1777,19 @@ BN.prototype.toSMBigEndian = function() {
   if (this.cmp(BN.Zero) === -1) {
     buf = this.neg().toBuffer();
     if (buf[0] & 0x80) {
-      buf = Buffer.concat([Buffer.from([0x80]), buf]);
+      buf = Buffer.concat([new Buffer([0x80]), buf]);
     } else {
       buf[0] = buf[0] | 0x80;
     }
   } else {
     buf = this.toBuffer();
     if (buf[0] & 0x80) {
-      buf = Buffer.concat([Buffer.from([0x00]), buf]);
+      buf = Buffer.concat([new Buffer([0x00]), buf]);
     }
   }
 
   if (buf.length === 1 & buf[0] === 0) {
-    buf = Buffer.from([]);
+    buf = new Buffer([]);
   }
   return buf;
 };
@@ -1879,7 +1867,7 @@ BN.trim = function(buf, natlen) {
 };
 
 BN.pad = function(buf, natlen, size) {
-  var rbuf = Buffer.alloc(size);
+  var rbuf = new Buffer(size);
   for (var i = 0; i < buf.length; i++) {
     rbuf[rbuf.length - 1 - i] = buf[buf.length - 1 - i];
   }
@@ -1977,17 +1965,17 @@ ECDSA.prototype.deterministicK = function(badrs) {
   if (_.isUndefined(badrs)) {
     badrs = 0;
   }
-  var v = Buffer.alloc(32);
+  var v = new Buffer(32);
   v.fill(0x01);
-  var k = Buffer.alloc(32);
+  var k = new Buffer(32);
   k.fill(0x00);
   var x = this.privkey.bn.toBuffer({
     size: 32
   });
   var hashbuf = this.endian === 'little' ? BufferUtil.reverse(this.hashbuf) : this.hashbuf
-  k = Hash.sha256hmac(Buffer.concat([v, Buffer.from([0x00]), x, hashbuf]), k);
+  k = Hash.sha256hmac(Buffer.concat([v, new Buffer([0x00]), x, hashbuf]), k);
   v = Hash.sha256hmac(v, k);
-  k = Hash.sha256hmac(Buffer.concat([v, Buffer.from([0x01]), x, hashbuf]), k);
+  k = Hash.sha256hmac(Buffer.concat([v, new Buffer([0x01]), x, hashbuf]), k);
   v = Hash.sha256hmac(v, k);
   v = Hash.sha256hmac(v, k);
   var T = BN.fromBuffer(v);
@@ -1995,7 +1983,7 @@ ECDSA.prototype.deterministicK = function(badrs) {
 
   // also explained in 3.2, we must ensure T is in the proper range (0, N)
   for (var i = 0; i < badrs || !(T.lt(N) && T.gt(BN.Zero)); i++) {
-    k = Hash.sha256hmac(Buffer.concat([v, Buffer.from([0x00])]), k);
+    k = Hash.sha256hmac(Buffer.concat([v, new Buffer([0x00])]), k);
     v = Hash.sha256hmac(v, k);
     v = Hash.sha256hmac(v, k);
     T = BN.fromBuffer(v);
@@ -2088,7 +2076,7 @@ ECDSA.prototype.sigError = function() {
 ECDSA.toLowS = function(s) {
   //enforce low s
   //see BIP 62, "low S values in signatures"
-  if (s.gt(BN.fromBuffer(Buffer.from('7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0', 'hex')))) {
+  if (s.gt(BN.fromBuffer(new Buffer('7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0', 'hex')))) {
     s = Point.getN().sub(s);
   }
   return s;
@@ -2250,20 +2238,20 @@ Hash.hmac = function(hashf, data, key) {
   if (key.length > blocksize) {
     key = hashf(key);
   } else if (key < blocksize) {
-    var fill = Buffer.alloc(blocksize);
+    var fill = new Buffer(blocksize);
     fill.fill(0);
     key.copy(fill);
     key = fill;
   }
 
-  var o_key = Buffer.alloc(blocksize);
+  var o_key = new Buffer(blocksize);
   o_key.fill(0x5c);
 
-  var i_key = Buffer.alloc(blocksize);
+  var i_key = new Buffer(blocksize);
   i_key.fill(0x36);
 
-  var o_key_pad = Buffer.alloc(blocksize);
-  var i_key_pad = Buffer.alloc(blocksize);
+  var o_key_pad = new Buffer(blocksize);
+  var i_key_pad = new Buffer(blocksize);
   for (var i = 0; i < blocksize; i++) {
     o_key_pad[i] = o_key[i] ^ key[i];
     i_key_pad[i] = i_key[i] ^ key[i];
@@ -2427,9 +2415,9 @@ Point.pointToCompressed = function pointToCompressed(point) {
   var prefix;
   var odd = ybuf[ybuf.length - 1] % 2;
   if (odd) {
-    prefix = Buffer.from([0x03]);
+    prefix = new Buffer([0x03]);
   } else {
-    prefix = Buffer.from([0x02]);
+    prefix = new Buffer([0x02]);
   }
   return BufferUtil.concat([prefix, xbuf]);
 };
@@ -2470,7 +2458,7 @@ Random.getRandomBufferBrowser = function(size) {
 
   var bbuf = new Uint8Array(size);
   crypto.getRandomValues(bbuf);
-  var buf = Buffer.from(bbuf);
+  var buf = new Buffer(bbuf);
 
   return buf;
 };
@@ -2478,7 +2466,7 @@ Random.getRandomBufferBrowser = function(size) {
 /* insecure random bytes, but it never fails */
 Random.getPseudoRandomBuffer = function(size) {
   var b32 = 0x100000000;
-  var b = Buffer.alloc(size);
+  var b = new Buffer(size);
   var r;
 
   for (var i = 0; i <= size; i++) {
@@ -2582,7 +2570,7 @@ Signature.fromTxFormat = function(buf) {
 };
 
 Signature.fromString = function(str) {
-  var buf = Buffer.from(str, 'hex');
+  var buf = new Buffer(str, 'hex');
   return Signature.fromDER(buf);
 };
 
@@ -2657,7 +2645,7 @@ Signature.prototype.toCompact = function(i, compressed) {
   if (compressed === false) {
     val = val - 4;
   }
-  var b1 = Buffer.from([val]);
+  var b1 = new Buffer([val]);
   var b2 = this.r.toBuffer({
     size: 32
   });
@@ -2674,8 +2662,8 @@ Signature.prototype.toBuffer = Signature.prototype.toDER = function() {
   var rneg = rnbuf[0] & 0x80 ? true : false;
   var sneg = snbuf[0] & 0x80 ? true : false;
 
-  var rbuf = rneg ? Buffer.concat([Buffer.from([0x00]), rnbuf]) : rnbuf;
-  var sbuf = sneg ? Buffer.concat([Buffer.from([0x00]), snbuf]) : snbuf;
+  var rbuf = rneg ? Buffer.concat([new Buffer([0x00]), rnbuf]) : rnbuf;
+  var sbuf = sneg ? Buffer.concat([new Buffer([0x00]), snbuf]) : snbuf;
 
   var rlength = rbuf.length;
   var slength = sbuf.length;
@@ -2684,7 +2672,7 @@ Signature.prototype.toBuffer = Signature.prototype.toDER = function() {
   var sheader = 0x02;
   var header = 0x30;
 
-  var der = Buffer.concat([Buffer.from([header, length, rheader, rlength]), rbuf, Buffer.from([sheader, slength]), sbuf]);
+  var der = Buffer.concat([new Buffer([header, length, rheader, rlength]), rbuf, new Buffer([sheader, slength]), sbuf]);
   return der;
 };
 
@@ -2802,7 +2790,7 @@ Signature.prototype.hasDefinedHashtype = function() {
 
 Signature.prototype.toTxFormat = function() {
   var derbuf = this.toDER();
-  var buf = Buffer.alloc(1);
+  var buf = new Buffer(1);
   buf.writeUInt8(this.nhashtype, 0);
   return Buffer.concat([derbuf, buf]);
 };
@@ -2865,7 +2853,7 @@ Base58.decode = function(str) {
   if (typeof str !== 'string') {
     throw new Error('Input should be a string');
   }
-  return Buffer.from(bs58.decode(str));
+  return new Buffer(bs58.decode(str));
 };
 
 Base58.prototype.fromBuffer = function(buf) {
@@ -2936,7 +2924,7 @@ Base58Check.decode = function(s) {
   if (typeof s !== 'string')
     throw new Error('Input must be a string');
 
-  var buf = Buffer.from(Base58.decode(s));
+  var buf = new Buffer(Base58.decode(s));
 
   if (buf.length < 4)
     throw new Error("Input string too short");
@@ -2960,7 +2948,7 @@ Base58Check.checksum = function(buffer) {
 Base58Check.encode = function(buf) {
   if (!Buffer.isBuffer(buf))
     throw new Error('Input must be a buffer');
-  var checkedBuf = Buffer.alloc(buf.length + 4);
+  var checkedBuf = new Buffer(buf.length + 4);
   var hash = Base58Check.checksum(buf);
   buf.copy(checkedBuf);
   hash.copy(checkedBuf, buf.length);
@@ -3010,12 +2998,12 @@ var BufferReader = function BufferReader(buf) {
       buf: buf
     });
   } else if (_.isString(buf)) {
-    var b = Buffer.from(buf, 'hex');
+    var b = new Buffer(buf, 'hex');
     if (b.length * 2 != buf.length) 
       throw new TypeError('Invalid hex string');
 
     this.set({
-      buf: b
+      buf: b,
     });
   } else if (_.isObject(buf)) {
     var obj = buf;
@@ -3175,7 +3163,7 @@ BufferReader.prototype.readVarintBN = function() {
 };
 
 BufferReader.prototype.reverse = function() {
-  var buf = Buffer.alloc(this.buf.length);
+  var buf = new Buffer(this.buf.length);
   for (var i = 0; i < buf.length; i++) {
     buf[i] = this.buf[this.buf.length - 1 - i];
   }
@@ -3205,7 +3193,6 @@ var assert = require('assert');
 var BufferWriter = function BufferWriter(obj) {
   if (!(this instanceof BufferWriter))
     return new BufferWriter(obj);
-  this.bufLen = 0;
   if (obj)
     this.set(obj);
   else
@@ -3214,7 +3201,6 @@ var BufferWriter = function BufferWriter(obj) {
 
 BufferWriter.prototype.set = function(obj) {
   this.bufs = obj.bufs || this.bufs || [];
-  this.bufLen = this.bufs.reduce(function(prev, buf){ return prev + buf.length; }, 0);
   return this;
 };
 
@@ -3223,60 +3209,58 @@ BufferWriter.prototype.toBuffer = function() {
 };
 
 BufferWriter.prototype.concat = function() {
-  return Buffer.concat(this.bufs, this.bufLen);
+  return Buffer.concat(this.bufs);
 };
 
 BufferWriter.prototype.write = function(buf) {
   assert(bufferUtil.isBuffer(buf));
   this.bufs.push(buf);
-  this.bufLen += buf.length;
   return this;
 };
 
 BufferWriter.prototype.writeReverse = function(buf) {
   assert(bufferUtil.isBuffer(buf));
   this.bufs.push(bufferUtil.reverse(buf));
-  this.bufLen += buf.length;
   return this;
 };
 
 BufferWriter.prototype.writeUInt8 = function(n) {
-  var buf = Buffer.alloc(1);
+  var buf = new Buffer(1);
   buf.writeUInt8(n, 0);
   this.write(buf);
   return this;
 };
 
 BufferWriter.prototype.writeUInt16BE = function(n) {
-  var buf = Buffer.alloc(2);
+  var buf = new Buffer(2);
   buf.writeUInt16BE(n, 0);
   this.write(buf);
   return this;
 };
 
 BufferWriter.prototype.writeUInt16LE = function(n) {
-  var buf = Buffer.alloc(2);
+  var buf = new Buffer(2);
   buf.writeUInt16LE(n, 0);
   this.write(buf);
   return this;
 };
 
 BufferWriter.prototype.writeUInt32BE = function(n) {
-  var buf = Buffer.alloc(4);
+  var buf = new Buffer(4);
   buf.writeUInt32BE(n, 0);
   this.write(buf);
   return this;
 };
 
 BufferWriter.prototype.writeInt32LE = function(n) {
-  var buf = Buffer.alloc(4);
+  var buf = new Buffer(4);
   buf.writeInt32LE(n, 0);
   this.write(buf);
   return this;
 };
 
 BufferWriter.prototype.writeUInt32LE = function(n) {
-  var buf = Buffer.alloc(4);
+  var buf = new Buffer(4);
   buf.writeUInt32LE(n, 0);
   this.write(buf);
   return this;
@@ -3309,18 +3293,18 @@ BufferWriter.prototype.writeVarintBN = function(bn) {
 BufferWriter.varintBufNum = function(n) {
   var buf = undefined;
   if (n < 253) {
-    buf = Buffer.alloc(1);
+    buf = new Buffer(1);
     buf.writeUInt8(n, 0);
   } else if (n < 0x10000) {
-    buf = Buffer.alloc(1 + 2);
+    buf = new Buffer(1 + 2);
     buf.writeUInt8(253, 0);
     buf.writeUInt16LE(n, 1);
   } else if (n < 0x100000000) {
-    buf = Buffer.alloc(1 + 4);
+    buf = new Buffer(1 + 4);
     buf.writeUInt8(254, 0);
     buf.writeUInt32LE(n, 1);
   } else {
-    buf = Buffer.alloc(1 + 8);
+    buf = new Buffer(1 + 8);
     buf.writeUInt8(255, 0);
     buf.writeInt32LE(n & -1, 1);
     buf.writeUInt32LE(Math.floor(n / 0x100000000), 5);
@@ -3332,14 +3316,14 @@ BufferWriter.varintBufBN = function(bn) {
   var buf = undefined;
   var n = bn.toNumber();
   if (n < 253) {
-    buf = Buffer.alloc(1);
+    buf = new Buffer(1);
     buf.writeUInt8(n, 0);
   } else if (n < 0x10000) {
-    buf = Buffer.alloc(1 + 2);
+    buf = new Buffer(1 + 2);
     buf.writeUInt8(253, 0);
     buf.writeUInt16LE(n, 1);
   } else if (n < 0x100000000) {
-    buf = Buffer.alloc(1 + 4);
+    buf = new Buffer(1 + 4);
     buf.writeUInt8(254, 0);
     buf.writeUInt32LE(n, 1);
   } else {
@@ -3386,7 +3370,7 @@ Varint.prototype.set = function(obj) {
 
 Varint.prototype.fromString = function(str) {
   this.set({
-    buf: Buffer.from(str, 'hex')
+    buf: new Buffer(str, 'hex')
   });
   return this;
 };
@@ -4163,7 +4147,7 @@ HDPrivateKey.prototype._buildFromBuffers = function(arg) {
   var network = Network.get(BufferUtil.integerFromBuffer(arg.version));
   var xprivkey;
   xprivkey = Base58Check.encode(buffer.Buffer.concat(sequence));
-  arg.xprivkey = Buffer.from(xprivkey);
+  arg.xprivkey = new Buffer(xprivkey);
 
   var privateKey = new PrivateKey(BN.fromBuffer(arg.privateKey), network);
   var publicKey = privateKey.toPublicKey();
@@ -4681,7 +4665,7 @@ HDPublicKey.prototype._buildFromBuffers = function(arg) {
 
   var xpubkey;
   xpubkey = Base58Check.encode(BufferUtil.concat(sequence));
-  arg.xpubkey = Buffer.from(xpubkey);
+  arg.xpubkey = new Buffer(xpubkey);
 
   var publicKey = new PublicKey(arg.publicKey, {network: network});
   var size = HDPublicKey.ParentFingerPrintSize;
@@ -5096,9 +5080,9 @@ Object.defineProperty(testnet, 'networkMagic', {
   configurable: false,
   get: function() {
     if (this.regtestEnabled) {
-      return BufferUtil.integerAsBuffer(REGTEST.NETWORK_MAGIC);
+      return REGTEST.NETWORK_MAGIC;
     } else {
-      return BufferUtil.integerAsBuffer(TESTNET.NETWORK_MAGIC);
+      return TESTNET.NETWORK_MAGIC;
     }
   }
 });
@@ -5229,7 +5213,7 @@ Opcode.prototype.toHex = function() {
 };
 
 Opcode.prototype.toBuffer = function() {
-  return Buffer.from(this.toHex(), 'hex');
+  return new Buffer(this.toHex(), 'hex');
 };
 
 Opcode.prototype.toNumber = function() {
@@ -5533,7 +5517,7 @@ PrivateKey.prototype._classifyArguments = function(data, network) {
     info.network = Networks.get(data);
   } else if (typeof(data) === 'string'){
     if (JSUtil.isHexa(data)) {
-      info.bn = new BN(Buffer.from(data, 'hex'));
+      info.bn = new BN(new Buffer(data, 'hex'));
     } else {
       info = PrivateKey._transformWIF(data, network);
     }
@@ -5740,11 +5724,11 @@ PrivateKey.prototype.toWIF = function() {
 
   var buf;
   if (compressed) {
-    buf = Buffer.concat([Buffer.from([network.privatekey]),
+    buf = Buffer.concat([new Buffer([network.privatekey]),
                          this.bn.toBuffer({size: 32}),
-                         Buffer.from([0x01])]);
+                         new Buffer([0x01])]);
   } else {
-    buf = Buffer.concat([Buffer.from([network.privatekey]),
+    buf = Buffer.concat([new Buffer([network.privatekey]),
                          this.bn.toBuffer({size: 32})]);
   }
 
@@ -5912,7 +5896,7 @@ PublicKey.prototype._classifyArgs = function(data, extra) {
   } else if (data.x && data.y) {
     info = PublicKey._transformObject(data);
   } else if (typeof(data) === 'string') {
-    info = PublicKey._transformDER(Buffer.from(data, 'hex'));
+    info = PublicKey._transformDER(new Buffer(data, 'hex'));
   } else if (PublicKey._isBuffer(data)) {
     info = PublicKey._transformDER(data);
   } else if (PublicKey._isPrivateKey(data)) {
@@ -6094,7 +6078,7 @@ PublicKey.fromPoint = function(point, compressed) {
  * @returns {PublicKey} A new valid instance of PublicKey
  */
 PublicKey.fromString = function(str, encoding) {
-  var buf = Buffer.from(str, encoding || 'hex');
+  var buf = new Buffer(str, encoding || 'hex');
   var info = PublicKey._transformDER(buf);
   return new PublicKey(info.point, {
     compressed: info.compressed
@@ -6171,14 +6155,14 @@ PublicKey.prototype.toBuffer = PublicKey.prototype.toDER = function() {
 
   var prefix;
   if (!this.compressed) {
-    prefix = Buffer.from([0x04]);
+    prefix = new Buffer([0x04]);
     return Buffer.concat([prefix, xbuf, ybuf]);
   } else {
     var odd = ybuf[ybuf.length - 1] % 2;
     if (odd) {
-      prefix = Buffer.from([0x03]);
+      prefix = new Buffer([0x03]);
     } else {
-      prefix = Buffer.from([0x02]);
+      prefix = new Buffer([0x02]);
     }
     return Buffer.concat([prefix, xbuf]);
   }
@@ -6415,8 +6399,8 @@ Interpreter.prototype.set = function(obj) {
   this.flags = typeof obj.flags !== 'undefined' ? obj.flags : this.flags;
 };
 
-Interpreter.true = Buffer.from([1]);
-Interpreter.false = Buffer.from([]);
+Interpreter.true = new Buffer([1]);
+Interpreter.false = new Buffer([]);
 
 Interpreter.MAX_SCRIPT_ELEMENT_SIZE = 520;
 
@@ -7650,7 +7634,7 @@ Script.fromASM = function(str) {
     var opcodenum = opcode.toNumber();
 
     if (_.isUndefined(opcodenum)) {
-      var buf = Buffer.from(tokens[i], 'hex');
+      var buf = new Buffer(tokens[i], 'hex');
       script.chunks.push({
         buf: buf,
         len: buf.length,
@@ -7661,7 +7645,7 @@ Script.fromASM = function(str) {
       opcodenum === Opcode.OP_PUSHDATA2 ||
       opcodenum === Opcode.OP_PUSHDATA4) {
       script.chunks.push({
-        buf: Buffer.from(tokens[i + 2], 'hex'),
+        buf: new Buffer(tokens[i + 2], 'hex'),
         len: parseInt(tokens[i + 1]),
         opcodenum: opcodenum
       });
@@ -7698,7 +7682,7 @@ Script.fromString = function(str) {
       opcodenum = parseInt(token);
       if (opcodenum > 0 && opcodenum < Opcode.OP_PUSHDATA1) {
         script.chunks.push({
-          buf: Buffer.from(tokens[i + 1].slice(2), 'hex'),
+          buf: new Buffer(tokens[i + 1].slice(2), 'hex'),
           len: opcodenum,
           opcodenum: opcodenum
         });
@@ -7713,7 +7697,7 @@ Script.fromString = function(str) {
         throw new Error('Pushdata data must start with 0x');
       }
       script.chunks.push({
-        buf: Buffer.from(tokens[i + 2].slice(2), 'hex'),
+        buf: new Buffer(tokens[i + 2].slice(2), 'hex'),
         len: parseInt(tokens[i + 1]),
         opcodenum: opcodenum
       });
@@ -7985,13 +7969,13 @@ Script.prototype.isDataOut = function() {
 Script.prototype.getData = function() {
   if (this.isDataOut() || this.isScriptHashOut()) {
     if (_.isUndefined(this.chunks[1])) {
-      return Buffer.alloc(0);
+      return new Buffer(0);
     } else {
-      return Buffer.from(this.chunks[1].buf);
+      return new Buffer(this.chunks[1].buf);
     }
   }
   if (this.isPublicKeyHashOut()) {
-    return Buffer.from(this.chunks[2].buf);
+    return new Buffer(this.chunks[2].buf);
   }
   throw new Error('Unrecognized script type to get data from');
 };
@@ -8336,7 +8320,7 @@ Script.buildPublicKeyOut = function(pubkey) {
 Script.buildDataOut = function(data, encoding) {
   $.checkArgument(_.isUndefined(data) || _.isString(data) || BufferUtil.isBuffer(data));
   if (_.isString(data)) {
-    data = Buffer.from(data, encoding);
+    data = new Buffer(data, encoding);
   }
   var s = new Script();
   s.add(Opcode.OP_RETURN);
@@ -9787,7 +9771,7 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript,
     // The SIGHASH_SINGLE bug.
     // https://bitcointalk.org/index.php?topic=260595.0
     if (inputNumber >= txcopy.outputs.length) {
-      return Buffer.from(SIGHASH_SINGLE_BUG, 'hex');
+      return new Buffer(SIGHASH_SINGLE_BUG, 'hex');
     }
 
     txcopy.outputs.length = inputNumber + 1;
@@ -9900,7 +9884,7 @@ inherits(TransactionSignature, Signature);
 TransactionSignature.prototype._fromObject = function(arg) {
   this._checkObjectArgs(arg);
   this.publicKey = new PublicKey(arg.publicKey);
-  this.prevTxId = BufferUtil.isBuffer(arg.prevTxId) ? arg.prevTxId : Buffer.from(arg.prevTxId, 'hex');
+  this.prevTxId = BufferUtil.isBuffer(arg.prevTxId) ? arg.prevTxId : new Buffer(arg.prevTxId, 'hex');
   this.outputIndex = arg.outputIndex;
   this.inputIndex = arg.inputIndex;
   this.signature = (arg.signature instanceof Signature) ? arg.signature :
@@ -10061,8 +10045,7 @@ var hashProperty = {
   configurable: false,
   enumerable: true,
   get: function() {
-    this._hash = new BufferReader(this._getHash()).readReverse().toString('hex');
-    return this._hash;
+    return new BufferReader(this._getHash()).readReverse().toString('hex');
   }
 };
 Object.defineProperty(Transaction.prototype, 'hash', hashProperty);
@@ -11732,7 +11715,7 @@ URI.prototype.toString = function() {
 
   return URL.format({
     protocol: 'bitcoincash:',
-    host: this.address.toString(true),
+    host: this.address,
     query: query
   });
 };
@@ -11861,7 +11844,7 @@ module.exports = {
    * @return {Buffer}
    */
   copy: function(original) {
-    var buffer = Buffer.alloc(original.length);
+    var buffer = new Buffer(original.length);
     original.copy(buffer);
     return buffer;
   },
@@ -11926,7 +11909,7 @@ module.exports = {
     bytes.push((integer >> 16) & 0xff);
     bytes.push((integer >> 8) & 0xff);
     bytes.push(integer & 0xff);
-    return Buffer.from(bytes);
+    return new Buffer(bytes);
   },
 
   /**
@@ -11990,8 +11973,8 @@ module.exports = {
   }
 };
 
-module.exports.NULL_HASH = module.exports.fill(Buffer.alloc(32), 0);
-module.exports.EMPTY_BUFFER = Buffer.alloc(0);
+module.exports.NULL_HASH = module.exports.fill(new Buffer(32), 0);
+module.exports.EMPTY_BUFFER = new Buffer(0);
 
 }).call(this,require("buffer").Buffer)
 },{"./js":45,"./preconditions":46,"assert":61,"buffer":98}],44:[function(require,module,exports){
@@ -27686,13 +27669,7 @@ utils.intFromLE = intFromLE;
 
 },{"bn.js":64,"minimalistic-assert":160,"minimalistic-crypto-utils":161}],133:[function(require,module,exports){
 module.exports={
-  "_args": [
-    [
-      "elliptic@6.4.0",
-      "/Users/justinlangston/repos/bitcore-lib"
-    ]
-  ],
-  "_from": "elliptic@6.4.0",
+  "_from": "elliptic@=6.4.0",
   "_id": "elliptic@6.4.0",
   "_inBundle": false,
   "_integrity": "sha1-ysmvh2LIWDYYcAPI3+GT5eLq5d8=",
@@ -27701,12 +27678,12 @@ module.exports={
   "_requested": {
     "type": "version",
     "registry": true,
-    "raw": "elliptic@6.4.0",
+    "raw": "elliptic@=6.4.0",
     "name": "elliptic",
     "escapedName": "elliptic",
-    "rawSpec": "6.4.0",
+    "rawSpec": "=6.4.0",
     "saveSpec": null,
-    "fetchSpec": "6.4.0"
+    "fetchSpec": "=6.4.0"
   },
   "_requiredBy": [
     "/",
@@ -27714,8 +27691,9 @@ module.exports={
     "/create-ecdh"
   ],
   "_resolved": "https://registry.npmjs.org/elliptic/-/elliptic-6.4.0.tgz",
-  "_spec": "6.4.0",
-  "_where": "/Users/justinlangston/repos/bitcore-lib",
+  "_shasum": "cac9af8762c85836187003c8dfe193e5e2eae5df",
+  "_spec": "elliptic@=6.4.0",
+  "_where": "/Users/ematiu/dev/cash-blib",
   "author": {
     "name": "Fedor Indutny",
     "email": "fedor@indutny.com"
@@ -27723,6 +27701,7 @@ module.exports={
   "bugs": {
     "url": "https://github.com/indutny/elliptic/issues"
   },
+  "bundleDependencies": false,
   "dependencies": {
     "bn.js": "^4.4.0",
     "brorand": "^1.0.1",
@@ -27732,6 +27711,7 @@ module.exports={
     "minimalistic-assert": "^1.0.0",
     "minimalistic-crypto-utils": "^1.0.0"
   },
+  "deprecated": false,
   "description": "EC cryptography",
   "devDependencies": {
     "brfs": "^1.4.3",
