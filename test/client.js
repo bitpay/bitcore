@@ -2978,7 +2978,7 @@ describe('client API', function() {
       });
 
 
-      it('Should fail if requiredFeeRate is not meet', function(done) {
+      it.skip('Should fail if requiredFeeRate is not meet', function(done) {
         clients[0].getTxProposals({}, function(err, txps) {
           should.not.exist(err);
           clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
