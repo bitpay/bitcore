@@ -7,6 +7,7 @@ _Requirements_:
 
 ```
 {
+  "pruneSpentScripts": true,
   "chains": {
     "BTC": {
       "mainnet": {
@@ -32,6 +33,7 @@ _Requirements_:
     }
   }
 }
+
 ```
 
 # Wallet
