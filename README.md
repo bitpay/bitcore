@@ -20,6 +20,8 @@ _Requirements_:
     },
     "BCH": {
       "mainnet": {
+        "parentChain": "BTC",
+        "forkHeight": 478558,
         "trustedPeers": [
           {
             "host": "127.0.0.1",
