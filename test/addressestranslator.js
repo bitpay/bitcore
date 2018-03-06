@@ -10,7 +10,7 @@ var AddressTranslator = require('../lib/addresstranslator');
 describe('#AddressTranslator', function() {
   it('should translate address from btc to bch', function() {
     var res = AddressTranslator.translate('1LqBGSKuX5yYUonjxT5qGfpUsXKYYWeabA', 'bch');
-    assert( res == 'CcJ4qUfyQ8x5NwhAeCQkrBSWVeXxXghcNz');
+    assert( res == 'qrvcdmgpk73zyfd8pmdl9wnuld36zh9n4gms8s0u59');
   });
   it('should translate address from bch to btc', function() {
     var res = AddressTranslator.translateInput('HBf8isgS8EXG1r3X6GP89FmooUmiJ42wHS');
@@ -19,7 +19,7 @@ describe('#AddressTranslator', function() {
 
   it('should keep the address if there is nothing to do (bch)', function() {
     var res = AddressTranslator.translate('CcJ4qUfyQ8x5NwhAeCQkrBSWVeXxXghcNz', 'bch');
-    assert(res=='CcJ4qUfyQ8x5NwhAeCQkrBSWVeXxXghcNz');
+    assert(res=='qrvcdmgpk73zyfd8pmdl9wnuld36zh9n4gms8s0u59');
   });
   it('should keep the address if there is nothing to do (btc)', function() {
     var res = AddressTranslator.translate('1LqBGSKuX5yYUonjxT5qGfpUsXKYYWeabA', 'btc');
@@ -42,9 +42,9 @@ describe('#AddressTranslator', function() {
 
   it('should work with arrays also', function() {
     var res = AddressTranslator.translateOutput(['1LqBGSKuX5yYUonjxT5qGfpUsXKYYWeabA', '37YHiaQnMjy73GS1UpiE8p2Ju6MyrrDw3J', '1DuPdCpGzVX73kBYaAbu5XDNDgE2Lza5Ed']);
-    assert(res[0] == 'CcJ4qUfyQ8x5NwhAeCQkrBSWVeXxXghcNz');
-    assert(res[1] == 'HCNQBNqsD4BmfSK3LWNP7CYqvkNznSrXS3');
-    assert(res[2] == 'CVNHCFALsYVdwt5yFuvpf2qPqoSSGtvY7t');
+    assert(res[0] == 'qrvcdmgpk73zyfd8pmdl9wnuld36zh9n4gms8s0u59');
+    assert(res[1] == 'ppqz5v08kssnuupe0ckqtw4ss3qt460fcqugqzq2me');
+    assert(res[2] == 'qzxc5pnsfs8pmgfprhzc4l4vzf3zxz8p85nc6kfh8l');
   });
  
 
