@@ -458,6 +458,7 @@ describe('Wallet service', function() {
       });
     });
 
+
     describe('Address derivation strategy', function() {
       var server;
       beforeEach(function() {
@@ -1249,7 +1250,7 @@ describe('Wallet service', function() {
         });
       });
 
-      it('should create address', function(done) {
+      it('should create address ', function(done) {
         server.createAddress({}, function(err, address) {
           should.not.exist(err);
           should.exist(address);
@@ -1376,6 +1377,113 @@ describe('Wallet service', function() {
         });
       });
     });
+
+    describe('shared wallets (BIP44/BCH)', function() {
+      beforeEach(function(done) {
+        helpers.createAndJoinWallet(2, 2, {
+          coin: 'bch'
+        }, function(s, w) {
+          server = s;
+          wallet = w;
+          done();
+        });
+      });
+
+      it('should create address', function(done) {
+        server.createAddress({}, function(err, address) {
+          should.not.exist(err);
+          should.exist(address);
+          address.walletId.should.equal(wallet.id);
+          address.network.should.equal('livenet');
+          address.address.should.equal('HBf8isgS8EXG1r3X6GP89FmooUmiJ42wHS');
+          address.isChange.should.be.false;
+          address.path.should.equal('m/0/0');
+          address.type.should.equal('P2SH');
+          address.coin.should.equal('bch');
+          server.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            var notif = _.find(notifications, {
+              type: 'NewAddress'
+            });
+            should.exist(notif);
+            notif.data.address.should.equal(address.address);
+            done();
+          });
+        });
+      });
+
+      it('should create many addresses on simultaneous requests', function(done) {
+        var N = 5;
+        async.mapSeries(_.range(N), function(i, cb) {
+          server.createAddress({}, cb);
+        }, function(err, addresses) {
+          addresses.length.should.equal(N);
+          _.each(_.range(N), function(i) {
+            addresses[i].path.should.equal('m/0/' + i);
+          });
+          // No two identical addresses
+          _.uniq(_.pluck(addresses, 'address')).length.should.equal(N);
+          done();
+        });
+      });
+
+      it('should not create address if unable to store it', function(done) {
+        sinon.stub(server.storage, 'storeAddressAndWallet').yields('dummy error');
+        server.createAddress({}, function(err, address) {
+          should.exist(err);
+          should.not.exist(address);
+
+          server.getMainAddresses({}, function(err, addresses) {
+            addresses.length.should.equal(0);
+
+            server.storage.storeAddressAndWallet.restore();
+            server.createAddress({}, function(err, address) {
+              should.not.exist(err);
+              should.exist(address);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+
+    describe('1-1 wallet (BIP44/BCH/Testnet)', function() {
+      beforeEach(function(done) {
+        helpers.createAndJoinWallet(1, 1, {
+          coin: 'bch',
+          network: 'testnet',
+        }, function(s, w) {
+          server = s;
+          wallet = w;
+          done();
+        });
+      });
+
+      it('should create address', function(done) {
+        server.createAddress({}, function(err, address) {
+          should.not.exist(err);
+          should.exist(address);
+          address.walletId.should.equal(wallet.id);
+          address.network.should.equal('testnet');
+          address.address.should.equal('mrM5kMkqZccK5MxZYSsM3SjqdMaNKLJgrJ');
+          address.isChange.should.be.false;
+          address.path.should.equal('m/0/0');
+          address.type.should.equal('P2PKH');
+          address.coin.should.equal('bch');
+          server.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            var notif = _.find(notifications, {
+              type: 'NewAddress'
+            });
+            should.exist(notif);
+            notif.data.address.should.equal(address.address);
+            done();
+          });
+        });
+      });
+    });
+
 
     describe('1-of-1 (BIP44 & P2PKH)', function() {
       beforeEach(function(done) {

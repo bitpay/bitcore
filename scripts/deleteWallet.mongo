@@ -1,5 +1,6 @@
 
-a='bd0e9eed-4712-42e5-bb21-193cde4c9e21';
+// json support
+a='f42c8c47-0f7e-4cb0-9056-6c50bb821d7d';
 b= {'walletId':a};
 
 db.addresses.remove(b);
