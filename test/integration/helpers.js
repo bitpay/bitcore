@@ -185,6 +185,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
     pubKey: TestData.keyPair.pub,
     singleAddress: !!opts.singleAddress,
     coin: opts.coin || 'btc',
+    network: opts.network || 'livenet',
   };
   if (_.isBoolean(opts.supportBIP44AndP2PKH))
     walletOpts.supportBIP44AndP2PKH = opts.supportBIP44AndP2PKH;
@@ -194,11 +195,18 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
 
     async.each(_.range(n), function(i, cb) {
       var copayerData = TestData.copayers[i + offset];
+
+
+    var pub = (_.isBoolean(opts.supportBIP44AndP2PKH) && !opts.supportBIP44AndP2PKH) ? copayerData.xPubKey_45H : copayerData.xPubKey_44H_0H_0H;
+
+    if (opts.network == 'testnet') 
+      pub = copayerData.xPubKey_44H_0H_0Ht;
+
       var copayerOpts = helpers.getSignedCopayerOpts({
         walletId: walletId,
         coin: opts.coin,
         name: 'copayer ' + (i + 1),
-        xPubKey: (_.isBoolean(opts.supportBIP44AndP2PKH) && !opts.supportBIP44AndP2PKH) ? copayerData.xPubKey_45H : copayerData.xPubKey_44H_0H_0H,
+        xPubKey: pub,
         requestPubKey: copayerData.pubKey_1H_0,
         customData: 'custom data ' + (i + 1),
       });
@@ -206,6 +214,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
         copayerOpts.supportBIP44AndP2PKH = opts.supportBIP44AndP2PKH;
 
       server.joinWallet(copayerOpts, function(err, result) {
+        if (err) console.log(err);
         should.not.exist(err);
         copayerIds.push(result.copayerId);
         return cb(err);

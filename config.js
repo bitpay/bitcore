@@ -46,7 +46,6 @@ var config = {
       testnet: {
         provider: 'insight',
         url: 'https://test-insight.bitpay.com:443',
-        // url: 'http://localhost:3001',
         // Multiple servers (in priority order)
         // url: ['http://a.b.c', 'https://test-insight.bitpay.com:443'],
       },
@@ -54,7 +53,9 @@ var config = {
     bch: {
       livenet: {
         provider: 'insight',
-        url: 'https://cashexplorer.bitcoin.com',
+        //url: 'https://cashexplorer.bitcoin.com',
+        url: 'http://localhost:2001',
+        translateAddresses: false,
       },
     },
   },
