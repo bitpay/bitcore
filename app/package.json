@@ -1,6 +1,11 @@
 {
   "name": "insight-ui",
   "private": true,
+  "bitcoreNode": "bitcore-node",
+  "insightConfig": {
+    "apiPrefix": "api",
+    "routePrefix": ""
+  },
   "scripts": {
     "clean": "ionic-app-scripts clean",
     "build": "ionic-app-scripts build",
