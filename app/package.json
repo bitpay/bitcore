@@ -1,7 +1,6 @@
 {
   "name": "insight-ui",
   "private": true,
-  "bitcoreNode": "bitcore-node",
   "insightConfig": {
     "apiPrefix": "api",
     "routePrefix": ""
