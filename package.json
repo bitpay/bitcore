@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "async": "^2.5.0",
-    "bitcore-wallet-client": "^6.6.3",
+    "bitcore-wallet-client": "git@github.com:micahriggan/bitcore-wallet-client.git#4938b022d0484e1329e1006a5314aad885dc5b2e",
     "commander": "^2.6.0",
     "lodash": "^3.3.1",
     "moment": "^2.9.0",
