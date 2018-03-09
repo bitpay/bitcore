@@ -16,6 +16,7 @@
     "bitcore",
     "API"
   ],
+  "bitcoreNode": "bitcore-node",
   "scripts": {
     "postinstall": "run-s install-app",
     "install-app": "cd app && npm install",
