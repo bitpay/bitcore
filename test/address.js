@@ -551,6 +551,11 @@ describe('Address', function() {
       address.toString().should.equal('2N7T3TAetJrSCruQ39aNrJvYLhG1LJosujf');
     });
 
+    it('can create an address from a set of public keys with a nested witness program', function() {
+      var address = Address.createMultisig(publics, 2, Networks.livenet, true);
+      address.toString().should.equal('3PpK1bBqUmPK3Q6QPSUK7BQSZ1DMWL6aes');
+    });
+
     it('can also be created by Address.createMultisig', function() {
       var address = Address.createMultisig(publics, 2);
       var address2 = Address.createMultisig(publics, 2);
