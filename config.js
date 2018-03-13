@@ -54,9 +54,15 @@ var config = {
       livenet: {
         provider: 'insight',
         //url: 'https://cashexplorer.bitcoin.com',
-        url: 'http://localhost:2001',
-        translateAddresses: false,
+        url: 'https://bch-insight.bitpay.com:443',
+        translateAddresses: true,
       },
+      testnet: {
+        provider: 'insight',
+        url: 'https://test-bch-insight.bitpay.com:443',
+        translateAddresses: true,
+      },
+ 
     },
   },
   pushNotificationsOpts: {
