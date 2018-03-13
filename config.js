@@ -55,12 +55,12 @@ var config = {
         provider: 'insight',
         //url: 'https://cashexplorer.bitcoin.com',
         url: 'https://bch-insight.bitpay.com:443',
-        translateAddresses: true,
+        addressFormat: 'cashaddr',  // copay, cashaddr, or legacy
       },
       testnet: {
         provider: 'insight',
         url: 'https://test-bch-insight.bitpay.com:443',
-        translateAddresses: true,
+        addressFormat: 'cashaddr',  // copay, cashaddr, or legacy
       },
  
     },
