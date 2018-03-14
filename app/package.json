@@ -14,7 +14,8 @@
     "postinstall": "webdriver-manager update --gecko false",
     "start": "ionic serve",
     "test": "ng test --code-coverage",
-    "test:ci": "ng test --watch=false --code-coverage && npm run e2e",
+    "test:unit-e2e": "ng test --watch=false --code-coverage --browsers ChromeHeadless && npm run e2e --browsers ChromeHeadless",
+    "test:ci": "ng test --watch=false --code-coverage --browsers ChromeHeadless",
     "cov": "opn coverage/index.html"
   },
   "dependencies": {
