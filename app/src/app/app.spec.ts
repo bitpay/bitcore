@@ -1,8 +1,7 @@
 import { InsightApp } from './app.component';
-import { TestBed, getTestBed, inject, async } from '@angular/core/testing';
+import { TestBed, getTestBed } from '@angular/core/testing';
 import { Platform } from 'ionic-angular';
 import { NavMock } from '../mocks';
-import { BroadcastTxPage } from '../pages';
 import { PopoverController, MenuController } from 'ionic-angular';
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
