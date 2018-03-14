@@ -14,7 +14,7 @@
     "postinstall": "webdriver-manager update --gecko false",
     "start": "ionic serve",
     "test": "ng test --code-coverage",
-    "test:ci": "ng test --watch=false && npm run e2e",
+    "test:ci": "ng test --watch=false",
     "cov": "opn coverage/index.html"
   },
   "dependencies": {
