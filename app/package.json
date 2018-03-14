@@ -1,5 +1,5 @@
 {
-  "name": "insight-ui",
+  "name": "insight-app",
   "private": true,
   "insightConfig": {
     "apiPrefix": "api",

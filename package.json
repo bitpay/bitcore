@@ -23,7 +23,7 @@
     "start": "run-s watch-app",
     "watch-app": "cd app && npm start",
     "test": "cd app && ng test --code-coverage",
-    "test:ci": "cd app && npm run test:ci"
+    "test:ci": "npm run test:ci"
   },
   "dependencies": {},
   "devDependencies": {
