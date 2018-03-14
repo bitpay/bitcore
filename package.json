@@ -27,6 +27,7 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "@angular/cli": "^1.7.3",
     "npm-run-all": "^4.0.2"
   }
 }
