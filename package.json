@@ -22,7 +22,8 @@
     "install-app": "cd app && npm install",
     "start": "run-s watch-app",
     "watch-app": "cd app && npm start",
-    "test": "cd app && ng test --code-coverage"
+    "test": "cd app && ng test --code-coverage",
+    "test:ci": "cd app && ng test --watch=false --code-coverage && npm run e2e"
   },
   "dependencies": {},
   "devDependencies": {
