@@ -5,23 +5,22 @@ jobs:
   build-and-test:
     docker:
       - image: circleci/node:9-browsers
-    working_directory: ~/insight/app
+    working_directory: ~/insight
     steps:
       - checkout
+
       # Download and cache dependencies
       - restore_cache:
           keys:
           - dependency-cache-{{ checksum "package.json" }}
       - run: npm install
-      - run: npm run test:ci
       - save_cache:
           paths:
             - node_modules
           key: dependency-cache-{{ checksum "package.json" }}
-      - store_artifacts:
-          path: ./test
-      - store_test_results:
-          path: ./test
+
+      # run tests
+      - run: npm run test:ci
 
 workflows:
   version: 2
