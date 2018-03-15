@@ -20,7 +20,7 @@ export class CurrencyProvider {
   private loading: boolean;
 
   constructor(public http: Http, private api: ApiProvider) {
-    this.defaultCurrency = 'BCH';
+    this.defaultCurrency = 'BTC';
     this.currencySymbol = this.defaultCurrency;
   }
 
