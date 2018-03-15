@@ -4,7 +4,7 @@ version: 2
 jobs:
   build-and-test:
     docker:
-      - image: circleci/node:9-browsers
+      - image: circleci/node:8.10-browsers
     working_directory: ~/insight
     steps:
       - checkout
