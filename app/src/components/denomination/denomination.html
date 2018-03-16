@@ -16,6 +16,6 @@
 
   <ion-item *ngFor="let unit of units">
     <ion-label color="dark">{{ unit }}</ion-label>
-    <ion-radio value="{{ unit }}"></ion-radio>
+    <ion-radio value="{{ unit }}" (click)="close()"></ion-radio>
   </ion-item>
 </ion-list>
