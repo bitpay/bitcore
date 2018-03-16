@@ -7,7 +7,7 @@ describe('InsightApp', () => {
   });
 
   it('should have a title', () => {
-    expect(browser.getTitle()).toEqual('Home');
+    expect(browser.getTitle()).toEqual('Insight');
   });
 
   it('should have {nav}', () => {

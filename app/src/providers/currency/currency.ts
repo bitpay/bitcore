@@ -21,7 +21,7 @@ export class CurrencyProvider {
   private explorers: any = [];
 
   constructor(public http: Http, private api: ApiProvider) {
-    this.defaultCurrency = 'BCH';
+    this.defaultCurrency = 'BTC';
     this.currencySymbol = this.defaultCurrency;
 
     this.http.get(this.api.apiPrefix + 'explorers').subscribe(

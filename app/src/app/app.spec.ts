@@ -1,29 +1,44 @@
 import { InsightApp } from './app.component';
-import { MenuMock, NavMock, PlatformMock, SplashMock, StatusMock } from '../mocks';
-import { BroadcastTxPage } from '../pages';
-
-let instance: InsightApp = null;
+import { TestBed, getTestBed } from '@angular/core/testing';
+import { Platform } from 'ionic-angular';
+import { NavMock } from '../mocks';
+import { PopoverController, MenuController } from 'ionic-angular';
+import { StatusBar } from '@ionic-native/status-bar';
+import { SplashScreen } from '@ionic-native/splash-screen';
 
 describe('InsightApp', () => {
+  let injector: TestBed;
+  let app: InsightApp;
 
   beforeEach(() => {
-    instance = new InsightApp((<any> new PlatformMock), (<any> new MenuMock), (<any>new SplashMock()), (<any>new StatusMock()));
-    instance['nav'] = (<any>new NavMock());
+    TestBed.configureTestingModule({
+      providers: [
+        PopoverController,
+        InsightApp,
+        Platform,
+        MenuController,
+        SplashScreen,
+        StatusBar
+      ]
+    });
+    injector = getTestBed();
+    app = injector.get(InsightApp);
+
+    app['nav'] = (<any>new NavMock());
   });
 
-  it('initializes with four possible pages', () => {
-    expect(instance['pages'].length).toEqual(4);
+  it('initializes with three possible pages', () => {
+    expect(app['pages'].length).toEqual(3);
   });
 
   it('initializes with a root page', () => {
-    expect(instance['rootPage']).not.toBe(null);
+    expect(app['rootPage']).not.toBe(null);
   });
 
   it('opens a page', () => {
-    spyOn(instance['menu'], 'close');
-    spyOn(instance['nav'], 'setRoot');
-    instance.openPage(instance['pages'][1]);
-    expect(instance['menu']['close']).toHaveBeenCalled();
-    expect(instance['nav'].setRoot).toHaveBeenCalledWith(BroadcastTxPage);
+    spyOn(app['menu'], 'close');
+    spyOn(app['nav'], 'setRoot');
+    app.openPage(app['pages'][1]);
+    expect(app['menu']['close']).toHaveBeenCalled();
   });
 });
