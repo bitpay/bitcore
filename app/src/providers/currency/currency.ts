@@ -17,23 +17,12 @@ export class CurrencyProvider {
   public factor: number = 1;
   private bitstamp: number;
   private kraken: number;
-  private loading: boolean;
-  private explorers: any = [];
 
   constructor(public http: Http, private api: ApiProvider) {
+    // TODO Make this an API call
     this.defaultCurrency = 'BTC';
     this.currencySymbol = this.defaultCurrency;
 
-    this.http.get(this.api.apiPrefix + 'explorers').subscribe(
-      (data) => {
-        this.explorers = JSON.parse(data['_body']);
-        this.loading = false;
-      },
-      (err) => {
-        console.log('err is', err);
-        this.loading = false;
-      }
-    );
   }
 
   public roundFloat(aFloat: number, decimalPlaces: number): number {
@@ -98,11 +87,9 @@ export class CurrencyProvider {
           } else if (currencyParsed.data.kraken) {
             this.factor = this.kraken = currencyParsed.data.kraken;
           }
-          this.loading = false;
         },
         (err) => {
           console.log('err is', err);
-          this.loading = false;
         }
       );
     } else if (currency === 'm' + this.defaultCurrency) {

@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { ViewController } from 'ionic-angular';
+import { Http } from '@angular/http';
+import { ApiProvider } from '../../providers/api/api';
 
 @Component({
   selector: 'denomination',
@@ -8,16 +10,28 @@ import { ViewController } from 'ionic-angular';
 })
 export class DenominationComponent {
 
-  public text: string;
   public switcherOn: boolean;
+  private explorers: any = [];
   public units: any = [];
 
   constructor(
     public currencyProvider: CurrencyProvider,
-    public viewCtrl: ViewController
+    public viewCtrl: ViewController,
+    public http: Http,
+    public api: ApiProvider
   ) {
-    this.text = 'Hello World';
-    this.switcherOn = true;
+
+    let url: string = this.api.apiPrefix + 'explorers';
+    this.http.get(url).subscribe(
+      (data) => {
+        this.explorers = JSON.parse(data['_body']);
+        this.switcherOn = true;
+      },
+      (err) => {
+        this.switcherOn = false;
+        console.error('err', err);
+      }
+    );
 
     this.units = [
       'USD',
