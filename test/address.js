@@ -208,51 +208,42 @@ describe('Address', function() {
       should.exist(error);
     });
 
-    it('isValid returns true on a valid address', function() {
-      var valid = Address.isValid('HC1hAdrx7APHg1DkE4bVLsZhY1SE5Dik1r', 'livenet');
-      valid.should.equal(true);
+    it('isValid returns true on a valid livenet address', function() {
+      Address.isValid('HC1hAdrx7APHg1DkE4bVLsZhY1SE5Dik1r', 'livenet').should.equal(true);
     });
 
     it('isValid returns false on network mismatch', function() {
-      var valid = Address.isValid('HC1hAdrx7APHg1DkE4bVLsZhY1SE5Dik1r', 'testnet');
-      valid.should.equal(false);
-    });
-
-    it('isValid returns false on network mismatch on cashaddr', function() {
-      var valid = Address.isValid('bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a', 'regtest');
-      valid.should.equal(false);
+      Address.isValid('HC1hAdrx7APHg1DkE4bVLsZhY1SE5Dik1r', 'testnet').should.equal(false);
+      Address.isValid('HC1hAdrx7APHg1DkE4bVLsZhY1SE5Dik1r', 'regtest').should.equal(false);
     });
 
     it('isValid returns true on network match on cashaddr', function() {
-      var valid = Address.isValid('bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a', 'mainnet');
-      valid.should.equal(true);
+      Address.isValid('bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a', 'mainnet').should.equal(true);
+      Address.isValid('bchreg:qrjf2q4j0vx7xwqlnzcuy56vk9j9an0z458k0lrw3m', 'regtest').should.equal(true);
+      Address.isValid('bchtest:qrzm24wqva0gnvgcsyc0h8tdpgw462mgmc9lef83vw', 'testnet').should.equal(true);
     });
 
-    it('isValid returns true on network match on cashaddr regtest', function() {
-      var valid = Address.isValid('bchreg:qrjf2q4j0vx7xwqlnzcuy56vk9j9an0z458k0lrw3m', 'regtest');
-      valid.should.equal(true);
-    });
-
-    it('isValid returns true on network match on cashaddr testnet', function() {
-      var valid = Address.isValid('bchtest:qrzm24wqva0gnvgcsyc0h8tdpgw462mgmc9lef83vw', 'testnet');
-      valid.should.equal(true);
+    it('isValid returns false on network mismatch on cashaddr', function() {
+      Address.isValid('bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a', 'testnet').should.equal(false);
+      Address.isValid('bchreg:qrjf2q4j0vx7xwqlnzcuy56vk9j9an0z458k0lrw3m', 'testnet').should.equal(false);
+      Address.isValid('bchtest:qrzm24wqva0gnvgcsyc0h8tdpgw462mgmc9lef83vw', 'mainnet').should.equal(false);
     });
 
     it('isValid returns true on regtest address', function() {
-      var valid = Address.isValid('qqww7zk6w7e6eu6299cwcu45ymwx7rmt3ckhj4xs0d', 'regtest');
-      valid.should.equal(true);
+      Address.isValid('qqww7zk6w7e6eu6299cwcu45ymwx7rmt3ckhj4xs0d', 'regtest').should.equal(true);
+      Address.isValid('qqww7zk6w7e6eu6299cwcu45ymwx7rmt3ckhj4xs0d', 'testnet').should.equal(false);
+      Address.isValid('qqww7zk6w7e6eu6299cwcu45ymwx7rmt3ckhj4xs0d', 'mainnet').should.equal(false);
     });
 
-    it('isValid returns true on regtest address when enableRegtest() is called on testnet', function() {
+    it('isValid works as expected even after enableRegtest() is called', function() {
       Networks.enableRegtest();
-      var valid = Address.isValid('qqww7zk6w7e6eu6299cwcu45ymwx7rmt3ckhj4xs0d', 'testnet');
-      valid.should.equal(true);
-    });
-
-    it('isValid returns false on regtest address when disableRegtest() is called on testnet', function() {
+      Address.isValid('bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a', 'mainnet').should.equal(true);
+      Address.isValid('bchreg:qrjf2q4j0vx7xwqlnzcuy56vk9j9an0z458k0lrw3m', 'regtest').should.equal(true);
+      Address.isValid('bchtest:qrzm24wqva0gnvgcsyc0h8tdpgw462mgmc9lef83vw', 'testnet').should.equal(true);
+      Address.isValid('bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a', 'testnet').should.equal(false);
+      Address.isValid('bchreg:qrjf2q4j0vx7xwqlnzcuy56vk9j9an0z458k0lrw3m', 'testnet').should.equal(false);
+      Address.isValid('bchtest:qrzm24wqva0gnvgcsyc0h8tdpgw462mgmc9lef83vw', 'mainnet').should.equal(false);
       Networks.disableRegtest();
-      var valid = Address.isValid('qqww7zk6w7e6eu6299cwcu45ymwx7rmt3ckhj4xs0d', 'testnet');
-      valid.should.equal(false);
     });
 
     it('validates correctly the P2PKH test vector', function() {
