@@ -15,7 +15,7 @@ export class ApiProvider {
 
   constructor(public http: Http) {
     // TODO Make this an API call
-    this.apiPrefix = '/insight-api/';
+    this.apiPrefix = '/api/';
   }
 
 }

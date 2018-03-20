@@ -11,7 +11,6 @@ import { ApiProvider } from '../../providers/api/api';
 export class DenominationComponent {
 
   public switcherOn: boolean;
-  private explorers: any = [];
   public units: any = [];
 
   constructor(
@@ -20,25 +19,14 @@ export class DenominationComponent {
     public http: Http,
     public api: ApiProvider
   ) {
-
-    let url: string = this.api.apiPrefix + 'explorers';
-    this.http.get(url).subscribe(
-      (data) => {
-        this.explorers = JSON.parse(data['_body']);
-        this.switcherOn = true;
-      },
-      (err) => {
-        this.switcherOn = false;
-        console.error('err', err);
-      }
-    );
-
     this.units = [
       'USD',
       this.currencyProvider.defaultCurrency,
       'm' + this.currencyProvider.defaultCurrency,
       'bits'
     ];
+
+    this.switcherOn = currencyProvider.explorers.length > 1;
   }
 
   public close(): void {
