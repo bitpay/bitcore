@@ -24,7 +24,6 @@ utils.getClient(program, {
   mustExist: true
 }, function(client) {
   client.getUtxos(opts, function(err, utxos) {
-    console.log(err, utxos);
     utils.die(err);
     console.log(utxos);
   });
