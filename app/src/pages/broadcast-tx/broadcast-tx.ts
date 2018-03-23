@@ -38,16 +38,18 @@ export class BroadcastTxPage {
     this.http.post(this.api.apiPrefix + 'tx/send', postData)
     .subscribe(
       response => {
-        this.presentToast(response);
+        this.presentToast(true, response);
       },
-      err => console.log('err', err)
+      err => {
+        this.presentToast(false, err);
+      }
     );
   }
 
-  private presentToast(response: any): void {
-    let body: any = JSON.parse(response._body);
+  private presentToast(success: boolean, response: any): void {
+    let message: string = (success) ? 'Transaction successfully broadcast. Trasaction id: ' + JSON.parse(response._body).txid : 'An error occurred: ' + response._body;
     let toast: any = this.toastCtrl.create({
-      message: 'Transaction successfully broadcast. Trasaction id: ' + body.txid,
+      message: message,
       position: 'middle',
       showCloseButton: true,
       dismissOnPageChange: true
