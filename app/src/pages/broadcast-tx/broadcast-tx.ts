@@ -16,6 +16,7 @@ export class BroadcastTxPage {
   public transaction: string;
   public txForm: FormGroup;
   private status: string;
+  private toast: any;
 
   constructor(
     private toastCtrl: ToastController,
@@ -48,12 +49,16 @@ export class BroadcastTxPage {
 
   private presentToast(success: boolean, response: any): void {
     let message: string = (success) ? 'Transaction successfully broadcast. Trasaction id: ' + JSON.parse(response._body).txid : 'An error occurred: ' + response._body;
-    let toast: any = this.toastCtrl.create({
+    if (this.toast) {
+      this.toast.dismiss();
+    }
+
+    this.toast = this.toastCtrl.create({
       message: message,
       position: 'middle',
       showCloseButton: true,
       dismissOnPageChange: true
     });
-    toast.present();
+    this.toast.present();
   }
 }
