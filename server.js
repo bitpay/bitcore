@@ -22,8 +22,7 @@ async.series([
   }
 ], function () {
   if (cluster.isWorker) {
-    const router = require('./lib/routes')(app);
-    app.use('/api', router);
+    const app = require('./lib/routes');
     const server = app.listen(config.port, function () {
       logger.info(`API server started on port ${config.port}`);
     });
