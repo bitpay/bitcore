@@ -1,12 +1,6 @@
 const async = require('async');
 const cluster = require('cluster');
 
-const express = require('express');
-const bodyParser = require('body-parser');
-const app = express();
-app.use(bodyParser.json());
-app.use(bodyParser.raw({limit: 100000000}));
-
 const logger = require('./lib/logger');
 const config = require('./lib/config');
 const storageService = require('./lib/services/storage');
@@ -28,12 +22,10 @@ async.series([
   }
 ], function () {
   if (cluster.isWorker) {
-    const router = require('./lib/routes')(app);
-    app.use('/api/:chain/:network', router);
+    const app = require('./lib/routes');
     const server = app.listen(config.port, function () {
       logger.info(`API server started on port ${config.port}`);
     });
     server.timeout = 600000;
   }
 });
-
