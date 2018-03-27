@@ -11,9 +11,11 @@ import 'rxjs/add/operator/map';
 @Injectable()
 export class ApiProvider {
 
-  public apiPrefix: string = '/insight-api/';
+  public apiPrefix: string;
 
   constructor(public http: Http) {
+    // TODO Make this an API call
+    this.apiPrefix = '/api/';
   }
 
 }

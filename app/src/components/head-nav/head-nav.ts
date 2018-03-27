@@ -112,43 +112,6 @@ export class HeadNavComponent {
   /* tslint:enable:no-unused-variable */
 
   public changeCurrency(myEvent: any): void {
-    /*
-    let actionSheet: any = this.actionSheetCtrl.create({
-      title: 'Change Denomination',
-      buttons: [
-        {
-          text: 'USD',
-          handler: () => {
-            this.currency.setCurrency('USD');
-          }
-        },
-        {
-          text: this.currency.defaultCurrency,
-          handler: () => {
-            this.currency.setCurrency(this.currency.defaultCurrency);
-          }
-        },
-        {
-          text: 'm' + this.currency.defaultCurrency,
-          handler: () => {
-            this.currency.setCurrency('m' + this.currency.defaultCurrency);
-          }
-        },
-        {
-          text: 'bits',
-          handler: () => {
-            this.currency.setCurrency('bits');
-          }
-        },
-        {
-          text: 'Cancel',
-          role: 'cancel'
-        }
-      ]
-    });
-    actionSheet.present();
-     */
-
     let popover: any = this.popoverCtrl.create(DenominationComponent);
     popover.present({
       ev: myEvent

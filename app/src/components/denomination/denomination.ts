@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { ViewController } from 'ionic-angular';
+import { Http } from '@angular/http';
+import { ApiProvider } from '../../providers/api/api';
 
 @Component({
   selector: 'denomination',
@@ -8,24 +10,32 @@ import { ViewController } from 'ionic-angular';
 })
 export class DenominationComponent {
 
-  public text: string;
+  public switcherOn: boolean;
   public units: any = [];
 
   constructor(
-    public currency: CurrencyProvider,
-    public viewCtrl: ViewController
+    public currencyProvider: CurrencyProvider,
+    public viewCtrl: ViewController,
+    public http: Http,
+    public api: ApiProvider
   ) {
-    this.text = 'Hello World';
     this.units = [
       'USD',
-      this.currency.defaultCurrency,
-      'm' + this.currency.defaultCurrency,
+      this.currencyProvider.defaultCurrency,
+      'm' + this.currencyProvider.defaultCurrency,
       'bits'
     ];
+
+    this.switcherOn = currencyProvider.explorers.length > 1;
   }
 
   public close(): void {
     this.viewCtrl.dismiss();
   }
 
+  public changeExplorer(explorer: any): void {
+    this.close();
+    let theUrl: string = explorer.url;
+    window.location.href = theUrl;
+  }
 }

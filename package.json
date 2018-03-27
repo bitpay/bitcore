@@ -1,5 +1,5 @@
 {
-  "name": "insight",
+  "name": "insight-ui",
   "description": "A bitcoin block explorer and API.",
   "version": "1.0.0",
   "repository": "git://github.com/bitpay/insight.git",
@@ -10,6 +10,7 @@
   "license": "MIT",
   "keywords": [
     "insight",
+    "insight-ui",
     "blockchain",
     "block explorer",
     "bitcoin",
