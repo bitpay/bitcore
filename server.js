@@ -14,7 +14,9 @@ async.series([
     let p2pServices = [];
     for (let chain of Object.keys(config.chains)){
       for (let network of Object.keys(config.chains[chain])){
-        if(!config.chains[chain].nosync) {
+        const chainConfig = config.chains[chain][network];
+        const hasChainSource = chainConfig.chainSource !== undefined;
+        if(!hasChainSource || (hasChainSource && chainConfig.chainSource === 'p2p')) {
           let p2pServiceConfig = Object.assign(config.chains[chain][network], {chain,network});
           p2pServices.push(new p2pService(p2pServiceConfig));
         }
