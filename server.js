@@ -14,8 +14,10 @@ async.series([
     let p2pServices = [];
     for (let chain of Object.keys(config.chains)){
       for (let network of Object.keys(config.chains[chain])){
-        let p2pServiceConfig = Object.assign(config.chains[chain][network], {chain,network});
-        p2pServices.push(new p2pService(p2pServiceConfig));
+        if(!config.chains[chain].nosync) {
+          let p2pServiceConfig = Object.assign(config.chains[chain][network], {chain,network});
+          p2pServices.push(new p2pService(p2pServiceConfig));
+        }
       }
     }
     await Promise.all(p2pServices.map(p2pService => p2pService.start()));
