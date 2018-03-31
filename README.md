@@ -1,4 +1,5 @@
-# fullNodePlus
+Bitcore Node
+============
 _Requirements_:
 - Trusted P2P Peer
 - MongoDB Server >= v3.4
@@ -82,28 +83,28 @@ GET `/api/wallet/:walletId/utxos`
 
 ## Get Transactions by block
 
-GET `/api/tx/?blockHeight=123456`
+GET `/api/BTC/mainnet/tx/?blockHeight=123456`
 
-GET `/api/tx/?blockHash=0000000000002917ed80650c6174aac8dfc46f5fe36480aaef682ff6cd83c3ca`
+GET `/api/BTC/mainnet/tx/?blockHash=0000000000002917ed80650c6174aac8dfc46f5fe36480aaef682ff6cd83c3ca`
 
 ## Get Transaction by txid
 
-GET `/api/tx/5c8a63e695caf95c28a0155beaa22b84a7adb18b8693ba90f04d94891d122afe`
+GET `/api/BTC/mainnet/tx/5c8a63e695caf95c28a0155beaa22b84a7adb18b8693ba90f04d94891d122afe`
 
 # Address
 
 ## Get Transaction Outputs by Address
 
-GET `/api/address/mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4/?unspent=true`
+GET `/api/BTC/mainnet/address/mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4/?unspent=true`
 
 ## Get Balance for an Address
 
-GET `/api/address/mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4/balance`
+GET `/api/BTC/mainnet/address/mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4/balance`
 
 # Block
 
 ## Get Block
 
-GET `/api/block/0000000000002917ed80650c6174aac8dfc46f5fe36480aaef682ff6cd83c3ca`
+GET `/api/BTC/mainnet/block/0000000000002917ed80650c6174aac8dfc46f5fe36480aaef682ff6cd83c3ca`
 
-GET `/api/block/123456`
+GET `/api/BTC/mainnet/block/123456`
