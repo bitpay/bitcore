@@ -1,7 +1,10 @@
 {
-  "name": "full-node-plus",
-  "description": "Full node and then some",
-  "version": "0.0.1",
+  "name": "bitcore-node",
+  "description": "Full node with extended capabilities using Bitcore",
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "version": "6.0.0",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "main": "server.js",
   "scripts" : {
