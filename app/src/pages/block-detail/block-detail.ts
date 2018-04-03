@@ -1,10 +1,7 @@
 import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
-import { Http } from '@angular/http';
-import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { BlocksProvider } from '../../providers/blocks/blocks';
-import { TxsProvider } from '../../providers/transactions/transactions';
 
 /**
  * Generated class for the BlockDetailPage page.
@@ -28,9 +25,8 @@ export class BlockDetailPage {
         tx: []
     };
 
-    constructor(public navCtrl: NavController, private txProvider: TxsProvider,
-                public navParams: NavParams, private blockProvider: BlocksProvider,
-                public currency: CurrencyProvider) {
+    constructor(public navCtrl: NavController, public navParams: NavParams,
+                private blockProvider: BlocksProvider, public currency: CurrencyProvider) {
         this.blockHash = navParams.get('blockHash');
     }
 

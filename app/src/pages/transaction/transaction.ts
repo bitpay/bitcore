@@ -1,7 +1,5 @@
 import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
-import { Http } from '@angular/http';
-import { ApiProvider } from '../../providers/api/api';
 import { TxsProvider } from '../../providers/transactions/transactions';
 
 /**
@@ -24,7 +22,7 @@ export class TransactionPage {
   private txId: string;
   public tx: any = {};
 
-  constructor(public navCtrl: NavController, public navParams: NavParams, private txProvider: TxsProvider, private api: ApiProvider) {
+  constructor(public navCtrl: NavController, public navParams: NavParams, private txProvider: TxsProvider) {
     this.txId = navParams.get('txId');
   }
 

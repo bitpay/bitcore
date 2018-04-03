@@ -1,7 +1,5 @@
 import { Component } from '@angular/core';
 import { Input } from '@angular/core';
-import { Http } from '@angular/http';
-import { ApiProvider } from '../../providers/api/api';
 import { TxsProvider } from '../../providers/transactions/transactions';
 
 /**
@@ -21,7 +19,7 @@ export class TransactionListComponent {
   @Input() public queryValue: string;
   public transactions: any = [];
 
-  constructor(private txProvider: TxsProvider, private api: ApiProvider) {
+  constructor(private txProvider: TxsProvider) {
   }
 
   private ngOnInit(): void {
