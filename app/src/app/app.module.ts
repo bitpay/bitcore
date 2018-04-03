@@ -10,6 +10,7 @@ import { BlocksService, StorageService } from '../services';
 import { ApiProvider } from '../providers/api/api';
 import { CurrencyProvider } from '../providers/currency/currency';
 import { BlocksProvider } from '../providers/blocks/blocks';
+import { TxsProvider } from '../providers/transactions/transactions';
 
 @NgModule({
   declarations: [
@@ -37,7 +38,8 @@ import { BlocksProvider } from '../providers/blocks/blocks';
     {provide: ErrorHandler, useClass: IonicErrorHandler},
     ApiProvider,
     CurrencyProvider,
-    BlocksProvider
+    BlocksProvider,
+    TxsProvider
   ]
 })
 

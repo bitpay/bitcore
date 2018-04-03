@@ -37,8 +37,8 @@ export class LatestBlocksComponent {
 
   private loadBlocks(): void {
     this.blocksProvider.getBlocks().subscribe(
-      (data) => {
-        this.blocks = JSON.parse(data['_body']).blocks;
+      ({blocks}) => {
+        this.blocks = blocks;
         this.loading = false;
       },
       (err) => {

@@ -5,7 +5,7 @@
 
 <div *ngIf="!loading">
   <ion-grid>
-    <ion-row *ngFor="let tx of transactions.txs">
+    <ion-row *ngFor="let tx of transactions">
       <ion-col col-12>
         <transaction [tx]="tx"></transaction>
       </ion-col>

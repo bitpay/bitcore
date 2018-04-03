@@ -23,8 +23,8 @@ export class BlocksPage {
 
   constructor(public navCtrl: NavController, public navParams: NavParams, private blocksProvider: BlocksProvider) {
     this.blocksProvider.getBlocks().subscribe(
-      (data) => {
-        this.blocks = JSON.parse(data['_body']).blocks;
+      ({blocks}) => {
+        this.blocks = blocks;
         console.log('this.blocks', this.blocks);
         this.loading = false;
       },

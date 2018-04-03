@@ -1,10 +1,6 @@
 {
   "name": "insight-app",
   "private": true,
-  "insightConfig": {
-    "apiPrefix": "api",
-    "routePrefix": ""
-  },
   "scripts": {
     "clean": "ionic-app-scripts clean",
     "build": "ionic-app-scripts build",
