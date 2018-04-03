@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "main": "server.js",
-  "scripts" : {
+  "scripts": {
     "test": "mocha ./test/unit"
   },
   "dependencies": {
