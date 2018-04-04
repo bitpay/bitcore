@@ -12,10 +12,7 @@ program
 var args = program.args;
 
 
-var opts = {
-  coin: 'btc',
-  network: 'main'
-};
+var opts = {};
 if (program.coin) { 
     opts.coin = program.coin;
 }
