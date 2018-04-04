@@ -7,7 +7,10 @@
   "version": "6.0.0",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "main": "server.js",
-  "scripts" : {
+  "prettier": {
+    "singleQuote": true
+  },
+  "scripts": {
     "test": "mocha ./test/unit"
   },
   "dependencies": {
