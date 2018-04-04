@@ -12,46 +12,78 @@ import { Observable } from 'rxjs/Observable';
 */
 
 export type ApiTx = {
-    address: string;
-    chain: string;
-    network: string;
-    txid: string;
-    blockHeight: number;
-    blockHash: number;
-    blockTime: Date;
-    blockTimeNormalized: Date;
-    coinbase: boolean;
-    size: number;
-    locktime: number;
-    inputs: Array<ApiTx>;
-    outputs: Array<ApiTx>;
-    mintTxid: string;
-    mintHeight: number;
-    spentTxid: string;
-    spentHeight: number;
-    value: number;
+    address: string,
+    chain: string,
+    network: string,
+    txid: string,
+    blockHeight: number,
+    blockHash: string,
+    blockTime: Date,
+    blockTimeNormalized: Date,
+    coinbase: boolean,
+    size: number,
+    locktime: number,
+    inputs: Array<ApiTx>,
+    outputs: Array<ApiTx>,
+    mintTxid: string,
+    mintHeight: number,
+    spentTxid: string,
+    spentHeight: number,
+    value: number,
+    version: number
+};
+
+export type AppInput = {
+    coinbase: string,
+    sequence: number,
+    n: number,
+    txid: string,
+    vout: number,
+    scriptSig: {
+        hex: string,
+        asm: string,
+        addresses: Array<string>,
+        type: string
+
+    },
+    addr: string,
+    valueSat: number,
+    value: number,
+    doubleSpentTxID: string,
+    isConfirmed: boolean,
+    confirmations: number,
+    unconfirmedInput: string
+};
+
+export type AppOutput = {
+    value: number,
+    n: number,
+    scriptPubKey: {
+        hex: string,
+        asm: string,
+        addresses: Array<string>,
+        type: string
+    },
+    spentTxId: null,
+    spentIndex: null,
+    spentHeight: null
 };
 
 export type AppTx = {
-    address: string;
-    chain: string;
-    network: string;
-    txid: string;
-    blockHeight: number;
-    blockhash: number;
-    blockTime: Date;
-    blockTimeNormalized: Date;
-    coinbase: boolean;
-    size: number;
-    locktime: number;
-    inputs: Array<ApiTx>;
-    outputs: Array<ApiTx>;
-    mintTxid: string;
-    mintHeight: number;
-    spentTxid: string;
-    spentHeight: number;
-    value: number;
-    fees: number;
+    txid: string,
+    blockhash: string,
+    version: number,
+    locktime: number,
+    isCoinBase: boolean,
+    vin: Array<any>,
+    vout: Array<any>,
+    confirmations: number,
+    time: number,
+    valueOut: number,
+    size: number,
+    fees: number,
+    blockheight: number,
+    blocktime: number
 };
 
 @Injectable()
@@ -68,25 +100,20 @@ export class TxsProvider {
         console.log(inputs, outputs, tx.outputs);
 
         return {
-            address: tx.address,
-            chain: tx.chain,
-            network: tx.network,
             txid: tx.txid,
             fees: fee / (10 ** 8),
-            blockHeight: tx.blockHeight,
+            blockheight: tx.blockHeight,
+            confirmations: 0,
             blockhash: tx.blockHash,
-            blockTime: tx.blockTime,
-            blockTimeNormalized: tx.blockTimeNormalized,
-            coinbase: tx.coinbase,
+            blocktime: new Date(tx.blockTime).getTime() / 1000,
+            time: new Date(tx.blockTime).getTime() / 1000,
+            isCoinBase: tx.coinbase,
             size: tx.size,
             locktime: tx.locktime,
-            inputs: tx.inputs,
-            outputs: tx.outputs,
-            mintTxid: tx.mintTxid,
-            mintHeight: tx.mintHeight,
-            spentTxid: tx.spentTxid,
-            spentHeight: tx.spentHeight,
-            value: tx.value
+            vin: [],
+            vout: [],
+            valueOut: tx.value,
+            version: tx.version
         };
     }
 
