@@ -1,7 +1,7 @@
 {
   "name": "insight-ui",
   "description": "A bitcoin block explorer and API.",
-  "version": "1.0.0",
+  "version": "8.0.0",
   "repository": "git://github.com/bitpay/insight.git",
   "bugs": {
     "url": "https://github.com/bitpay/insight/issues"

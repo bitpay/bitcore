@@ -1,6 +1,6 @@
 {
   "name": "bitcore-p2p-cash",
-  "version": "1.2.1",
+  "version": "8.0.0",
   "description": "Interface to the bitcoin P2P network for bitcore",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
