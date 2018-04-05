@@ -1,0 +1,131 @@
+<ion-grid>
+  <ion-row>
+    <ion-col col-7>
+      <div class="ellipsis">
+        <ion-icon name="add-circle" [hidden]="expanded" (click)="toggleExpanded()"></ion-icon>
+        <ion-icon name="remove-circle" [hidden]="!expanded" (click)="toggleExpanded()"></ion-icon>
+        <span>
+          <a (click)="goToTx(tx.txid)">{{ tx.txid }}</a>
+        </span>
+      </div>
+    </ion-col>
+    <ion-col col-5 text-right>
+      <ion-note [hidden]="!tx.firstSeenTs">
+        <span translate>first seen at</span>
+        <time>{{tx.firstSeenTs * 1000 | date:'medium'}}</time>
+      </ion-note>
+      <ion-note [hidden]="!tx.blocktime && tx.firstSeenTs">
+        <span translate>mined</span>
+        <time>{{tx.time * 1000 | date:'MMM d, y'}}</time>
+        <time>{{tx.time * 1000 | date:'hh:mm:ss a'}}</time>
+      </ion-note>
+    </ion-col>
+  </ion-row>
+
+  <ion-row>
+    <ion-col col-12 col-md-5>
+
+      <ion-list [hidden]="!tx.isCoinBase">
+        <ion-item>
+          No Inputs (Newly Generated Coins)
+        </ion-item>
+      </ion-list>
+
+      <ion-list [hidden]="tx.isCoinBase">
+        <ion-item *ngFor="let vin of aggregateItems(tx.vin)">
+          <div>
+            <div class="ellipsis">
+              <p>
+                <a (click)="goToAddress(vin.addr)">{{ vin.addr }}</a>
+              </p>
+            </div>
+            <div [hidden]="!expanded">
+              <p *ngIf="vin.confirmations">
+                <b>Confirmations</b> {{vin.confirmations}}</p>
+              <p>
+                <b>Unlocking Script</b>
+              </p>
+              <div *ngFor="let item of vin.items">
+                <div *ngIf="item.scriptSig">
+                  <div *ngFor="let scriptSig of item.scriptSig.asm | split:' '">
+                    <div class="unlocking-script">
+                      <p>{{ scriptSig }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div item-end>
+            {{ currency.getConvertedNumber(vin.value) | number:'1.0-8' }} {{ currency.currencySymbol }}
+          </div>
+        </ion-item>
+      </ion-list>
+
+    </ion-col>
+
+    <ion-col col-12 col-md-1 text-center>
+      <ion-icon name="arrow-forward"></ion-icon>
+    </ion-col>
+
+    <ion-col col-12 col-md-6>
+      <ion-list>
+        <ion-item *ngFor="let vout of tx.vout">
+          <div>
+            <div class="ellipsis">
+              <p>
+                <a (click)="goToAddress(getAddress(vout))">{{ getAddress(vout) }}</a>
+              </p>
+            </div>
+            <div [hidden]="!expanded">
+              <p>
+                <b>Script Template</b>
+                <i>{{vout.scriptPubKey.type}}</i>
+              </p>
+              <p>
+                <b>Locking Script</b>
+              </p>
+              <div class="locking-script">
+                <p>{{vout.scriptPubKey.asm}}</p>
+              </div>
+            </div>
+          </div>
+
+          <div item-end>
+            {{ currency.getConvertedNumber(vout.value) | number:'1.0-8' }} {{ currency.currencySymbol }}
+            <span [hidden]="!vout.spentTxId">(S)</span>
+            <span [hidden]="vout.spentTxId">(U)</span>
+          </div>
+        </ion-item>
+      </ion-list>
+    </ion-col>
+  </ion-row>
+
+  <ion-row align-items-center text-uppercase class="small">
+    <ion-col col-6>
+      <div [hidden]="tx.isCoinBase">
+        <ion-chip>
+          <ion-label>Fee
+            <span text-nowrap>{{ currency.getConvertedNumber(tx.fees) | number:'1.0-8' }} {{ currency.currencySymbol }}</span>
+          </ion-label>
+        </ion-chip>
+      </div>
+    </ion-col>
+    <ion-col col-6 text-right>
+      <ion-chip color="danger" *ngIf="tx.confirmations === 0">
+        <ion-label>Unconfirmed</ion-label>
+      </ion-chip>
+      <ion-chip color="warning" *ngIf="tx.confirmations === 1">
+        <ion-label>1 Confirmation</ion-label>
+      </ion-chip>
+      <ion-chip color="primary" *ngIf="tx.confirmations > 1">
+        <ion-label>{{ tx.confirmations | number }} Confirmations
+        </ion-label>
+      </ion-chip>
+      <ion-chip color="brand">
+        <ion-label>{{ currency.getConvertedNumber(tx.valueOut) | number:'1.0-8' }} {{ currency.currencySymbol }}</ion-label>
+      </ion-chip>
+    </ion-col>
+  </ion-row>
+</ion-grid>

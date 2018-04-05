@@ -1,0 +1,53 @@
+<ion-header>
+  <head-nav [title]="'Address'"></head-nav>
+</ion-header>
+
+<ion-content padding>
+  <div *ngIf="loading">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <div *ngIf="!loading">
+    <h1>Address</h1>
+    <p class="ellipsis"><b>Address</b> {{ address.addrStr }}</p>
+    <p>{{ currency.getConvertedNumber(address.balance) | number:'1.0-8' }} {{ currency.currencySymbol }}</p>
+
+    <h2>Summary</h2>
+
+    <ion-list class="list--summary">
+      <ion-item>
+        Total Received
+        <ion-note item-end>
+          {{ currency.getConvertedNumber(address.totalReceived) | number:'1.0-8' }} {{ currency.currencySymbol }}
+        </ion-note>
+      </ion-item>
+      <ion-item>
+        Total Sent
+        <ion-note item-end>
+          {{ currency.getConvertedNumber(address.totalSent) | number:'1.0-8' }} {{ currency.currencySymbol }}
+        </ion-note>
+      </ion-item>
+      <ion-item>
+        Final Balance
+        <ion-note item-end>
+          {{ currency.getConvertedNumber(address.balance) | number:'1.0-8' }} {{ currency.currencySymbol }}
+        </ion-note>
+      </ion-item>
+      <ion-item>
+        No. Transactions
+        <ion-note item-end>
+          {{ address.txApperances }}
+        </ion-note>
+      </ion-item>
+    </ion-list>
+
+    <p text-center>
+      <qr-code [value]="address.addrStr" [size]="160"></qr-code>
+      <p>
+
+        <h2>Transactions</h2>
+
+        <transaction-list [queryType]="'address'" [queryValue]="addrStr"></transaction-list>
+  </div>
+
+</ion-content>

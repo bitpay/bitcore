@@ -1,0 +1,55 @@
+<ion-header>
+  <head-nav [title]="'Transaction'"></head-nav>
+</ion-header>
+
+<ion-content padding>
+  <div *ngIf="loading">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <div *ngIf="!loading" class="page-content">
+    <h1>Transaction</h1>
+    <p class="item-hash">
+      <b>Transaction Hash</b> {{ tx.txid }}</p>
+
+    <h2>Summary</h2>
+
+    <ion-list class="list--summary">
+      <ion-item>
+        Size
+        <ion-note item-end>
+          {{ tx.size }} (bytes)
+        </ion-note>
+      </ion-item>
+      <ion-item>
+        Fee Rate
+        <ion-note item-end>
+          {{ (tx.fees / tx.size) * 1E8 | number:'1.0-8' }} sats/byte
+        </ion-note>
+      </ion-item>
+      <ion-item>
+        Received Time
+        <ion-note item-end>
+          {{ tx.time * 1000 | date:'medium' }}
+        </ion-note>
+      </ion-item>
+      <ion-item>
+        Mined Time
+        <ion-note item-end>
+          {{ tx.blocktime * 1000 | date:'medium' }}
+        </ion-note>
+      </ion-item>
+      <ion-item>
+        Included in Block
+        <ion-note item-end>
+          <a (click)="goToBlock(tx.blockhash)">{{ tx.blockhash }}</a>
+        </ion-note>
+      </ion-item>
+    </ion-list>
+
+    <h2>Details</h2>
+
+    <transaction [tx]="tx"></transaction>
+  </div>
+
+</ion-content>

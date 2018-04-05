@@ -1,0 +1,21 @@
+<ion-list radio-group [(ngModel)]="currencyProvider.currencySymbol" (ionChange)="currencyProvider.setCurrency(currencyProvider.currencySymbol)">
+  <ion-list-header *ngIf="switcherOn">
+    Blockchain
+  </ion-list-header>
+
+  <ion-row *ngIf="switcherOn">
+    <ion-col *ngFor="let explorer of currencyProvider.explorers">
+      <button (click)="changeExplorer(explorer)" ion-item detail-none class="text-button" text-center>
+        <img src="assets/img/currency_logos/{{ explorer.ticker.toLowerCase() }}.svg" class="logo"/></button>
+    </ion-col>
+  </ion-row>
+
+  <ion-list-header>
+    Units
+  </ion-list-header>
+
+  <ion-item *ngFor="let unit of units">
+    <ion-label color="dark">{{ unit }}</ion-label>
+    <ion-radio value="{{ unit }}" (click)="close()"></ion-radio>
+  </ion-item>
+</ion-list>
