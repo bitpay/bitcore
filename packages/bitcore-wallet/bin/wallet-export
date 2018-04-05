@@ -1,0 +1,50 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+var qr = require('qr-image');
+var fs = require('fs');
+var _ = require('lodash');
+
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+
+program
+  .option('-n, --nosign', 'export wallet credentials without transaction signing keys (extended private key)')
+  .option('-q, --qr', 'export a QR code')
+  .option('-e, --exportpassword <password>', 'a password to encrypt the exported data')
+  .option('-o, --output <filename>', 'output file');
+
+program
+  .parse(process.argv);
+
+var args = program.args;
+
+utils.getClient(program, { doNotComplete: true, mustExist: true }, function (client) {
+  var x;
+  try {
+    x = client.export({
+      compressed: !!program.qr,
+      noSign: !!program.nosign,
+      password: program.exportpassword,
+    });
+  } catch (ex) {
+    utils.die(ex);
+  }
+
+  var access = !!program.nosign ? 'without signing capability' : 'with signing capability';
+  if (program.qr) {
+    var filename = program.file + '.svg';
+    var qr_svg = qr.image(x, {
+      type: 'svg'
+    });
+    qr_svg.pipe(fs.createWriteStream(filename));
+    console.log('Wallet data: exported to %s %s.', filename, access);
+  } else {
+    if (program.output) {
+      fs.writeFileSync(program.output, x, { encoding: 'utf8' });
+      console.log('Wallet data saved at %s %s.', program.output, access);
+    } else {
+      console.log('Wallet data (%s).\n%s', access, x);
+    }
+  }
+});

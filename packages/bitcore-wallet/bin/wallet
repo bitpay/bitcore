@@ -1,0 +1,31 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+
+program
+  .version('0.0.7')
+  .command('create <walletName> <m-n> [username]', 'creates a wallet')
+  .command('join <secret> [username]', 'join a wallet')
+  .command('mnemonic', 'show mnemonics from my wallet')
+  .command('status', 'get wallet status')
+  .command('address', 'create a new address from server')
+  .command('addresses', 'list addresses')
+  .command('balance', 'wallet balance')
+  .command('send <address> <amount> [note]', 'send bitcoins')
+  .command('sign <txpId>', 'sign a transaction proposal')
+  .command('reject <txpId> [reason]', 'reject a transaction proposal')
+  .command('broadcast <txpId>', 'broadcast a transaction proposal to the Bitcoin network')
+  .command('rm <txpId>', 'remove a transaction proposal')
+  .command('history', 'list of past incoming and outgoing transactions')
+  .command('export', 'export wallet critical data')
+  .command('import <backup> <passphrase>', 'import wallet critical data')
+  .command('confirm', 'show copayer\'s data for confirmation')
+  .command('recreate', 'recreate a wallet on a remove server given local infomation')
+  .command('txproposals', 'list transactions proposals')
+  .command('genkey', 'generates extended private key for later wallet usage')
+  .command('airsign <file>', 'sign a list of transaction proposals from an air-gapped device')
+  .command('derive <path>', 'derive using the extended private key')
+  .parse(process.argv);
+
+if (!program.args.length || !program.runningCommand)
+  program.help();

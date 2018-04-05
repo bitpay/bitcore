@@ -1,0 +1,61 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+var fs = require('fs');
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+
+program
+  .option('-t, --testnet', 'testnet network')
+  .option('-f, --file', 'import from file')
+  .option('-q, --qr', 'import from a QR code')
+  .option('-e, --exportpassword <password>', 'a password to decrypt the data being imported')
+  .option('-p, --password', 'Encrypt wallet. Will ask password interactively')
+  .usage('[options] <backup> <passphrase>')
+  .parse(process.argv);
+
+var args = program.args;
+
+if (!args[0])
+  program.help();
+
+utils.getClient(program, {
+  mustBeNew: true
+}, function(client) {
+  if (program.file) {
+    var file = args[0];
+    var str = fs.readFileSync(file, {
+      encoding: 'utf8'
+    });
+
+    try {
+      client.import(str, {
+        compressed: !!program.qr,
+        password: program.exportpassword,
+      });
+    } catch (ex) {
+      utils.die('Could not import. Check input file and password');
+    }
+
+    utils.saveClient(program, client, function() {
+      var access = client.canSign() ? 'with signing capability' : 'without signing capability';
+      console.log('Wallet Imported ' + access + '.');
+    });
+  } else {
+    var mnemonics = args[0];
+    var passphrase = args[1];
+    var network = program.testnet ? 'testnet' : 'livenet';
+    client.importFromMnemonic(mnemonics, {
+      network: network,
+      passphrase: passphrase,
+    }, function(err) {
+      if (err)
+        utils.die('Could not import' + err);
+
+      utils.saveClient(program, client, function() {
+        var access = client.canSign() ? 'with signing capability' : 'without signing capability';
+        console.log('Wallet Imported ' + access + '.');
+      });
+    });
+  }
+});

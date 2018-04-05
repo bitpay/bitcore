@@ -1,0 +1,59 @@
+#!/usr/bin/env node
+
+var _ = require('lodash');
+var fs = require('fs');
+var program = require('commander');
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+
+program
+  .usage('[options] <txpid>')
+  .option('-i, --input [filename]', 'use signatures from file')
+  .parse(process.argv);
+
+var args = program.args;
+var txpid = args[0] || '';
+
+function processBatch(client, signatures) {
+  client.getTxProposals({}, function(err, txps) {
+    utils.die(err);
+
+    var selected = [];
+    if (txpid) {
+      txp = utils.findOneTxProposal(txps, txpid);
+      selected.push(txp);
+    } else {
+      if (txps.length == 0) {
+        utils.die('There are no pending transaction proposals.');
+      }
+      selected = txps;
+    }
+
+    _.each(selected, function (txp) {
+      var sigs = _.find(signatures, { txpId: txp.id });
+      if (sigs) {
+        txp.signatures = sigs.signatures;
+        client.signTxProposal(txp, function(err, tx) {
+          utils.die(err);
+          console.log('Transaction %s signed by you.', txp.id);
+        });
+      }
+    });
+  });
+};
+
+utils.getClient(program, { mustExist: true }, function (client) {
+  if (program.input) {
+    var inFile = JSON.parse(fs.readFileSync(program.input));
+    processBatch(client, inFile);
+  } else {
+    client.getTxProposals({}, function(err, txps) {
+      utils.die(err);
+      var txp = utils.findOneTxProposal(txps, txpid);
+      client.signTxProposal(txp, function(err, tx) {
+        utils.die(err);
+        console.log('Transaction signed by you.');
+      });
+    });
+  }
+});

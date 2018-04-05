@@ -1,0 +1,1 @@
+for i in wallet*; do echo \"$i\": \"./bin/$i\",;done

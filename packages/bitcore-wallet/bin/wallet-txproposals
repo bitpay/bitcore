@@ -1,0 +1,26 @@
+#!/usr/bin/env node
+
+var _ = require('lodash');
+var fs = require('fs');
+var program = require('commander');
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+
+program
+  .option('-o, --output [filename]', 'write tx to output file for air-gapped signing')
+  .parse(process.argv);
+
+var args = program.args;
+
+utils.getClient(program, { mustExist: true }, function (client) {
+  client.getTxProposals({forAirGapped: !!program.output}, function (err, res) {
+    utils.die(err);
+    
+    if (program.output) {
+      fs.writeFileSync(program.output, JSON.stringify(res));
+      console.log(' * Tx proposals saved to: %s\n', program.output);
+    } else {
+      utils.renderTxProposals(res);
+    }
+  });
+});
