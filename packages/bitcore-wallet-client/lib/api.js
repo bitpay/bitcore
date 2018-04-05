@@ -1704,8 +1704,12 @@ API.prototype.getUtxos = function(opts, cb) {
 
   opts = opts || {};
   let {coin, network} = opts;
-  coin = coin || 'btc';
-  network = network || 'main';
+  if(!coin) {
+    return cb(new Error("Coin is a required paramter"), null);
+  }
+  if(!network) {
+    return cb(new Error("Network is a required paramter"), null);
+  }
   coin = coin.toUpperCase();
   var url = `api/${coin}/${network}/wallet/${opts.wallet}/utxos/`;
   if (opts.addresses) {
