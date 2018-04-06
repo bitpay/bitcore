@@ -13,6 +13,8 @@ bitcore-node:
     - 3000:3000
   environment:
     - DB_HOST=database
+    - TRUSTED_PEER='host.docker.internal'
+    - TRUSTED_PEER_PORT=${TRUSTED_PEER_PORT}
 #insight:
   #image: insight
   #links:

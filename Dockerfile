@@ -19,6 +19,5 @@ RUN ./node_modules/.bin/lerna bootstrap
 COPY . . 
 EXPOSE 3000
 EXPOSE 8100
-EXPOSE 20000
-EXPOSE 8545
+ENV TRUSTED_PEER_PORT=8333
 CMD ["./node_modules/.bin/lerna", "run", "start"]
