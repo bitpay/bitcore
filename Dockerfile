@@ -19,5 +19,6 @@ RUN ./node_modules/.bin/lerna bootstrap
 COPY . . 
 EXPOSE 3000
 EXPOSE 8100
-ENV TRUSTED_PEER_PORT=8333
 CMD ["./node_modules/.bin/lerna", "run", "start"]
+#CMD ["npm", "--prefix=./packages/bitcore-node", "start"]
+#CMD ["npm", "--prefix=./packages/insight", "start"]

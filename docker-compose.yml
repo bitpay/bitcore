@@ -1,20 +1,25 @@
-database:
-  image: mongo:3.4-jessie
-  ports: 
-  - 27017:27017
-  volumes: 
-  - /data/db:/data/db
-bitcore-node:
-  image: bitcore-node
-  links:
-    - database
-  ports:
-    - 8100:8100
-    - 3000:3000
-  environment:
-    - DB_HOST=database
-    - TRUSTED_PEER='host.docker.internal'
-    - TRUSTED_PEER_PORT=${TRUSTED_PEER_PORT}
+version: '3'
+services:
+  database:
+    image: mongo:3.4-jessie
+    ports: 
+    - 27017:27017
+    volumes: 
+    - /data/db:/data/db
+  bitcore-node:
+    build: .
+    image: bitcore-node
+    links:
+      - database
+    ports:
+      - 8100:8100
+      - 3000:3000
+    environment:
+      - DB_HOST=database
+      - TRUSTED_BTC_PEER=host.docker.internal
+      - TRUSTED_BTC_PEER_PORT=${TRUSTED_BTC_PEER_PORT}
+    env_file: .env
+
 #insight:
   #image: insight
   #links:
