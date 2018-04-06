@@ -1,5 +1,9 @@
 database:
   image: mongo:3.4-jessie
+  ports: 
+  - 27017:27017
+  volumes: 
+  - /data/db:/data/db
 bitcore-node:
   image: bitcore-node
   links:
@@ -9,3 +13,9 @@ bitcore-node:
     - 3000:3000
   environment:
     - DB_HOST=database
+#insight:
+  #image: insight
+  #links:
+    #- bitcore-node
+  #environment:
+    #- API_URL=bitcore-node
