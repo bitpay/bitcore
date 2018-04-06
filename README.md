@@ -14,6 +14,7 @@ To run bitcore-node you'll need
 Alternatively, if you have docker
 
 ```
+npm run build
 docker-compose up
 ```
 

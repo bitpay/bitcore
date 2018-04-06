@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const config = require('../config');
+const logger = require('../logger.js');
 require('../models');
 
 const StorageService = function() {};
@@ -22,7 +23,7 @@ StorageService.prototype.start = function(ready, args) {
       clearInterval(attemptConnectId);
       ready(null, data);
     } catch(err) {
-      console.error(err);
+      logger.error(err);
       attempted++;
       if(attempted > 5) {
         clearInterval(attemptConnectId);
