@@ -1,5 +1,8 @@
 {
   "version": "8.0.0",
+  "scripts": {
+    "build": "docker build -t bitcore-node ."
+   },
   "devDependencies": {
     "lerna": "^2.9.1"
   }
