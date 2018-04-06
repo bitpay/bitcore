@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "async": "^2.5.0",
+    "bitcore-lib": "^8.0.0",
     "bitcore-wallet-client": "^8.0.0",
     "commander": "^2.6.0",
     "lodash": "^3.3.1",
@@ -32,7 +33,6 @@
     "sinon": "^1.17.1"
   },
   "scripts": {
-    "start": "node app.js",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
     "test": "./node_modules/.bin/mocha",
     "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage"

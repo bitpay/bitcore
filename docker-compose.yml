@@ -1,0 +1,11 @@
+database:
+  image: mongo:3.4-jessie
+bitcore-node:
+  image: bitcore-node
+  links:
+    - database
+  ports:
+    - 8100:8100
+    - 3000:3000
+  environment:
+    - DB_HOST=database
