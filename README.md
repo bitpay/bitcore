@@ -24,3 +24,15 @@ docker-compose up
 * insight
   * port 8100
 
+
+# Bitcore Wallet
+
+Create a wallet
+```
+./bin/wallet-create "testing wallet creation" 1-1 --coin btc --network testnet -f ~/newtestwallet.dat
+```
+
+Register a wallet
+```
+./bin/wallet-import 
+```

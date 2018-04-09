@@ -8,7 +8,8 @@ const ChainStateProvider = require('../providers/chain-state');
 
 // create wallet
 router.post('/', async function(req, res) {
-  let {chain, network, name, pubKey, path} = req.body;
+  let {chain, network} = req.params;
+  let {name, pubKey, path} = req.body;
   try {
     let result = await ChainStateProvider.createWallet(chain, network, name, pubKey, {path});
     res.send(result);

@@ -1306,11 +1306,11 @@ API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
   if (opts) $.shouldBeObject(opts);
   opts = opts || {};
 
-  var coin = opts.coin || 'btc';
-  if (!config.chains[coin]) return cb(new Error('Invalid coin'));
-
-  var network = opts.network || 'livenet';
-  if (!config.chains[coin][network]) return cb(new Error('Invalid network'));
+  let {coin, network} = opts;
+  $.checkArgument(coin, "Coin is a required paramter");
+  $.checkArgument(network, "Network is a required paramter");
+  $.shouldBeObject(config.chains[coin], 'Invalid coin');
+  $.shouldBeObject(config.chains[coin][network], 'Invalid network');
 
   if (!self.credentials) {
     log.info('Generating new keys');
@@ -1349,7 +1349,7 @@ API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
     id: opts.id,
   };
 
-  network = network || 'main';
+  network = network;
   coin = coin.toUpperCase();
   var url = `api/${coin}/${network}/wallet/`;
   self._doPostRequest(url, args, function(err, res) {
@@ -1698,20 +1698,15 @@ API.prototype.fetchPayPro = function(opts, cb) {
  */
 API.prototype.getUtxos = function(opts, cb) {
   $.checkState(this.credentials && this.credentials.isComplete());
-  if(!opts.wallet){
-    return cb(new Error("Wallet id is required"), null);
-  }
-
   opts = opts || {};
-  let {coin, network} = opts;
-  if(!coin) {
-    return cb(new Error("Coin is a required paramter"), null);
-  }
-  if(!network) {
-    return cb(new Error("Network is a required paramter"), null);
-  }
+  let {coin, network, wallet} = opts;
+
+  $.checkArgument(wallet, "Wallet id is required");
+  $.checkArgument(coin, "Coin is a required paramter");
+  $.checkArgument(network, "Network is a required paramter");
+
   coin = coin.toUpperCase();
-  var url = `api/${coin}/${network}/wallet/${opts.wallet}/utxos/`;
+  var url = `api/${coin}/${network}/wallet/${wallet}/utxos/`;
   if (opts.addresses) {
     url += '?' + querystring.stringify({
       addresses: [].concat(opts.addresses).join(',')
@@ -1913,20 +1908,13 @@ API.prototype.getBalance = function(opts, cb) {
     qs = '?' + args.join('&');
   }
 
-  if(!opts.wallet) {
-    return cb(new Error("Wallet is a required paramter"), null);
-  }
-
-  let {coin, network} = opts;
-  if(!coin) {
-    return cb(new Error("Coin is a required paramter"), null);
-  }
-  if(!network) {
-    return cb(new Error("Network is a required paramter"), null);
-  }
+  let {coin, network, wallet} = opts;
+  $.checkArgument(coin, "Coin is a required paramter");
+  $.checkArgument(network, "Network is a required paramter");
+  $.checkArgument(wallet, "Wallet is a required paramter");
 
   coin = coin.toUpperCase();
-  var url = `api/${coin}/${network}/wallet/${opts.wallet}/balance`;
+  var url = `api/${coin}/${network}/wallet/${wallet}/balance`;
   this._doGetRequest(url, (err, resp) => {
     if(err) {
       return cb(err, null);
