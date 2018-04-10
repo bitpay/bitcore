@@ -3,8 +3,8 @@ const util = require('util');
 const _ = require('underscore');
 const logger = require('../../../logger');
 
-function ListTransactionsStream(walletId) {
-  this.walletId = walletId;
+function ListTransactionsStream(wallet) {
+  this.wallet = wallet;
   Transform.call(this, {objectMode: true});
 }
 
@@ -12,7 +12,7 @@ util.inherits(ListTransactionsStream, Transform);
 
 ListTransactionsStream.prototype._transform = function(transaction, enc, done) {
   var self = this;
-  var wallet = this.walletId.toString();
+  var wallet = this.wallet._id.toString();
   var totalInputs = transaction.inputs.reduce((total, input) => { return total + input.value; }, 0);
   var totalOutputs = transaction.outputs.reduce((total, output) => { return total + output.value; }, 0);
   var fee = totalInputs - totalOutputs;
