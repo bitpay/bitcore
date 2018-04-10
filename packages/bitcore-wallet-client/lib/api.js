@@ -1707,9 +1707,10 @@ API.prototype.getUtxos = function(opts, cb) {
 
   coin = coin.toUpperCase();
   var url = `api/${coin}/${network}/wallet/${wallet}/utxos/`;
-  if (opts.addresses) {
+  if (opts.addresses || opts.spent) {
     url += '?' + querystring.stringify({
-      addresses: [].concat(opts.addresses).join(',')
+      addresses: [].concat(opts.addresses).join(','),
+      spent: opts.spent
     });
   }
   this._doGetRequest(url, cb);

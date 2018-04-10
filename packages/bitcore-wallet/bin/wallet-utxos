@@ -7,6 +7,7 @@ program
   .option('-c, --coin <coin>', 'coin (btc/bch)')
   .option('-n, --network <network>', 'the network for the given chain')
   .option('-w, --wallet <walletId>', 'wallet id')
+  .option('-s, --spent', 'show spent transactions')
   .parse(process.argv);
 
 var args = program.args;
@@ -23,6 +24,10 @@ if (program.network) {
 
 if(program.wallet) {
   opts.wallet = program.wallet;
+}
+
+if(program.spent) {
+  opts.spent = program.spent;
 }
 
 utils.getClient(program, {
