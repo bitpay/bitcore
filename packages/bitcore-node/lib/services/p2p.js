@@ -262,7 +262,8 @@ P2pService.prototype.processTransaction = async function(tx) {
 };
 
 P2pService.prototype.sendTransaction = async function(rawTx) {
- return this.pool.sendMessage(this.messages.Transaction(rawTx));
+  this.pool.sendMessage(this.messages.Transaction(rawTx));
+  return rawTx.txid;
 };
 
 
