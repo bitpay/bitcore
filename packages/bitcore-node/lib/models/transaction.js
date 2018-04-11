@@ -219,7 +219,7 @@ TransactionSchema.statics.mintCoins = async function(params) {
     try {
       let wallets = await WalletAddress.collection
         .find(
-          { chain, network, address: { $in: mintOpsAddresses } },
+          { address: { $in: mintOpsAddresses } },
           { batchSize: 100 }
         )
         .toArray();
