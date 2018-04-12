@@ -1310,7 +1310,7 @@ API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
   $.checkArgument(coin, "Coin is a required paramter");
   $.checkArgument(network, "Network is a required paramter");
   $.shouldBeObject(config.chains[coin], 'Invalid coin');
-  $.shouldBeObject(config.chains[coin][network], 'Invalid network');
+  $.checkState(config.chains[coin][network], 'Network not enabled in config');
 
   if (!self.credentials) {
     log.info('Generating new keys');
@@ -1707,9 +1707,10 @@ API.prototype.getUtxos = function(opts, cb) {
 
   coin = coin.toUpperCase();
   var url = `api/${coin}/${network}/wallet/${wallet}/utxos/`;
-  if (opts.addresses) {
+  if (opts.addresses || opts.spent) {
     url += '?' + querystring.stringify({
-      addresses: [].concat(opts.addresses).join(',')
+      addresses: [].concat(opts.addresses).join(','),
+      spent: opts.spent
     });
   }
   this._doGetRequest(url, cb);

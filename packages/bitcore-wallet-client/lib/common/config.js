@@ -2,7 +2,8 @@ module.exports = {
   chains : {
     btc: {
       livenet: true,
-      testnet: true
+      testnet: true,
+      regtest: true
     },
     bch: {
       livenet: true,

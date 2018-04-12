@@ -219,7 +219,7 @@ TransactionSchema.statics.mintCoins = async function(params) {
     try {
       let wallets = await WalletAddress.collection
         .find(
-          { chain, network, address: { $in: mintOpsAddresses } },
+          { address: { $in: mintOpsAddresses }, chain, network },
           { batchSize: 100 }
         )
         .toArray();
@@ -253,7 +253,7 @@ TransactionSchema.statics.spendCoins = function(params) {
     let txid = tx._hash;
     for (let input of tx.inputs) {
       input = input.toObject();
-      spendOps.push({
+      const updateQuery = {
         updateOne: {
           filter: {
             mintTxid: input.prevTxId,
@@ -263,16 +263,17 @@ TransactionSchema.statics.spendCoins = function(params) {
             network
           },
           update: {
-            ...(config.pruneSpentScripts && height > 0
-              ? { $unset: { script: null } }
-              : {}),
             $set: {
               spentTxid: txid,
               spentHeight: height
             }
           }
         }
-      });
+      };
+      if (config.pruneSpentScripts && height > 0) {
+        updateQuery.updateOne.update.$unset = { script: null };
+      }
+      spendOps.push(updateQuery);
     }
   }
   return spendOps;
