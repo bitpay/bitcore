@@ -189,6 +189,30 @@ describe('Utils', function() {
     });
   });
 
+
+  describe('#decryptMessage should throw', function() {
+    it('should encrypt and decrypt', function() {
+      var pwd = "ezDRS2NRchMJLf1IWtjL5A==";
+      var ct = Utils.encryptMessage('hello world', pwd);
+      (function(){
+        Utils.decryptMessage(ct, 'test')
+      }).should.throw('invalid aes key size');
+    });
+  });
+
+  describe('#decryptMessageNoThrow should not throw', function() {
+    it('should encrypt and decrypt', function() {
+      var pwd = "ezDRS2NRchMJLf1IWtjL5A==";
+      var ct = Utils.encryptMessage('hello world', pwd);
+      var msg = Utils.decryptMessageNoThrow(ct, 'test');
+      // returns encrypted json
+      should.exist(JSON.parse(msg).iv);
+      should.exist(JSON.parse(msg).ct);
+    });
+  });
+
+
+
   describe('#getProposalHash', function() {
     it('should compute hash for old style proposals', function() {
       var hash = Utils.getProposalHash('msj42CCGruhRsFrGATiUuh25dtxYtnpbTx', 1234, 'the message');
