@@ -1171,6 +1171,7 @@ describe('client API', function() {
         });
       });
     });
+
     it('should create Bitcoin Cash wallet', function(done) {
       clients[0].seedFromRandomWithMnemonic({
         coin: 'bch'
@@ -1453,7 +1454,7 @@ describe('client API', function() {
       });
     });
 
-    it('should store walletPrivKey', function(done) {
+    it.only('should store walletPrivKey', function(done) {
       clients[0].createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet'
       }, function(err) {
@@ -1467,7 +1468,7 @@ describe('client API', function() {
           status.wallet.publicKeyRing.length.should.equal(1);
           status.wallet.status.should.equal('complete');
           var key2 = status.customData.walletPrivKey;
-          key2.should.be.equal(key2);
+          clients[0].credentials.walletPrivKey.should.be.equal(key2);
           done();
         });
       });
