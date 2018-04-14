@@ -1,3 +1,4 @@
+const config = require('../../../config');
 const JSONStream = require('JSONStream');
 const ListTransactionsStream = require('./transforms');
 const Storage = require('../../../services/storage');
@@ -13,6 +14,11 @@ function BTCStateProvider(chain) {
   this.chain = chain || 'BTC';
   this.chain = this.chain.toUpperCase();
 }
+
+BTCStateProvider.prototype.getRPC = function(network) {
+  const RPC_PEER = config.chains[this.chain][network].rpc;
+  return new RPC(RPC_PEER.host, RPC_PEER.port);
+};
 
 BTCStateProvider.prototype.streamAddressUtxos = function(
   network,
@@ -164,10 +170,7 @@ BTCStateProvider.prototype.updateWallet = async function(
   wallet,
   addresses
 ) {
-  return WalletAddress.updateCoins(
-    wallet,
-    addresses
-  );
+  return WalletAddress.updateCoins(wallet, addresses);
 };
 
 BTCStateProvider.prototype.streamWalletTransactions = async function(
@@ -229,7 +232,7 @@ BTCStateProvider.prototype.broadcastTransaction = async function(
   rawTx
 ) {
   let txPromise = new Promise((resolve, reject) => {
-    RPC.sendTransaction(rawTx, (err, result) => {
+    this.getRPC(network).sendTransaction(rawTx, (err, result) => {
       if (err) {
         reject(err);
       } else {

@@ -1,13 +1,14 @@
 var request = require('request');
 
-var Rpc = function() {
-
+var Rpc = function(host, port) {
+  this.host = host;
+  this.port = port;
 };
 
 Rpc.prototype.callMethod = function(method, params, callback) {
   request({
     method: 'POST',
-    url: 'http://bitcoin:bitcoin@127.0.0.1:8332',
+    url: `http://bitcoin:bitcoin@${this.host}:30001`,
     body: {
       jsonrpc: '1.0',
       id: Date.now(),
@@ -90,4 +91,4 @@ Rpc.prototype.getWalletAddresses = function(account, callback) {
   this.callMethod('getaddressesbyaccount', [account], callback);
 };
 
-module.exports = new Rpc();
+module.exports = Rpc;
