@@ -17,7 +17,8 @@ function BTCStateProvider(chain) {
 
 BTCStateProvider.prototype.getRPC = function(network) {
   const RPC_PEER = config.chains[this.chain][network].rpc;
-  return new RPC(RPC_PEER.host, RPC_PEER.port);
+  const {username, password, host, port} = RPC_PEER;
+  return new RPC(username, password, host, port);
 };
 
 BTCStateProvider.prototype.streamAddressUtxos = function(
