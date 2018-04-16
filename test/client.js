@@ -1171,6 +1171,7 @@ describe('client API', function() {
         });
       });
     });
+
     it('should create Bitcoin Cash wallet', function(done) {
       clients[0].seedFromRandomWithMnemonic({
         coin: 'bch'
@@ -1467,7 +1468,8 @@ describe('client API', function() {
           status.wallet.publicKeyRing.length.should.equal(1);
           status.wallet.status.should.equal('complete');
           var key2 = status.customData.walletPrivKey;
-          key2.should.be.equal(key2);
+
+          clients[0].credentials.walletPrivKey.should.be.equal(key2);
           done();
         });
       });
@@ -2359,7 +2361,7 @@ describe('client API', function() {
         });
       });
     });
-    it('Should fail to create proposal with insufficient funds for fee', function(done) {
+   it('Should fail to create proposal with insufficient funds for fee', function(done) {
       var opts = {
         amount: 5e8 - 200e2,
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
@@ -2449,6 +2451,30 @@ describe('client API', function() {
         });
       });
     });
+    it('Should hide message and refusal texts if not key is present', function(done) {
+      var opts = {
+        amount: 1e8,
+        toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+        message: 'some message',
+      };
+      helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
+        should.not.exist(err);
+        clients[1].rejectTxProposal(x, 'rejection comment', function(err, tx1) {
+          should.not.exist(err);
+
+          clients[2].credentials.sharedEncryptingKey=null;
+
+          clients[2].getTxProposals({}, function(err, txs) {
+            should.not.exist(err);
+            txs[0].message.should.equal('<ECANNOTDECRYPT>');
+            txs[0].actions[0].copayerName.should.equal('<ECANNOTDECRYPT>');
+            txs[0].actions[0].comment.should.equal('<ECANNOTDECRYPT>');
+            done();
+          });
+        });
+      });
+    });
+ 
     it('Should encrypt proposal message', function(done) {
       var opts = {
         outputs: [{
