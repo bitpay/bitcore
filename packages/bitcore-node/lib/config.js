@@ -23,7 +23,7 @@ const Config = function() {
   const configFileName = 'bitcore.config';
   let bitcoreConfigPaths = [
     `${os.homedir()}/${configFileName}`,
-    `../../${configFileName}`,
+    `../../../${configFileName}`,
     `../${configFileName}`
   ];
   const overrideConfig = envConfigPath || argConfigPath;
