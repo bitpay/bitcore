@@ -14,7 +14,9 @@ const main = async () => {
   try {
     wallet = await Wallet.loadWallet({ path });
     utxos = await wallet.getUtxos();
-    console.log(`utxos: ${JSON.stringify(utxos, null, 2)}`);
+    for (const utxo of utxos){
+      console.log(`${JSON.stringify(utxo)}`);
+    }
   } catch (e) {
     console.error(e);
   }
