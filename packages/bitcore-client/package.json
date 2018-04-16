@@ -1,6 +1,6 @@
 {
     "name": "bitcore-client",
-    "description": "Javascript client for Bitcore node",
+    "description": "Wallet client for Bitcore node",
     "engines": {
         "node": ">=8.0.0"
     },

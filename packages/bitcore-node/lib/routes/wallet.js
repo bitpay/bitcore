@@ -10,9 +10,9 @@ const bitcoreLib = require('bitcore-lib');
 
 const verifyRequestSignature = (params) => {
   const { message, pubKey, signature} = params;
-  const pub = (new bitcoreLib.HDPublicKey(pubKey)).deriveChild('m/2').publicKey.toString('hex');
-  const messageHash = bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message)).toString('hex');
-  return secp256k1.verify(Buffer.from(messageHash, 'hex'), Buffer.from(signature, 'hex'), Buffer.from(pub, 'hex'));
+  const pub = (new bitcoreLib.HDPublicKey(pubKey)).deriveChild('m/2').publicKey.toBuffer();
+  const messageHash = bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message));
+  return secp256k1.verify(messageHash, Buffer.from(signature, 'hex'), pub);
 };
 
 const authenticate = async (req, res, next) => {

@@ -11,9 +11,9 @@ Client.prototype.sign = function(params) {
   const {method, url, payload={}} = params;
   const parsedUrl = new URL(url);
   const message = [method,parsedUrl.pathname + parsedUrl.search, JSON.stringify(payload)].join('|');
-  const privateKey = new bitcoreLib.PrivateKey(this.authKey).toString('hex');
-  const messageHash = bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message)).toString('hex');
-  return secp256k1.sign(Buffer.from(messageHash, 'hex'), Buffer.from(privateKey, 'hex')).signature.toString('hex');
+  const privateKey = new bitcoreLib.PrivateKey(this.authKey).toBuffer();
+  const messageHash = bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message));
+  return secp256k1.sign(messageHash, privateKey).signature.toString('hex');
 };
 
 Client.prototype.register = async function(params) {
