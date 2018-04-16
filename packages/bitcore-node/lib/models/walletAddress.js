@@ -21,7 +21,8 @@ WalletAddressSchema.statics._apiTransform = function (walletAddress, options) {
   return JSON.stringify(transform);
 };
 
-WalletAddressSchema.statics.updateCoins = async function (wallet, addresses) {
+WalletAddressSchema.statics.updateCoins = async function (params) {
+  const {wallet, addresses} = params;
   const { chain, network } = wallet;
   let partition = (array, n) => {
     return array.length ? [array.splice(0, n)].concat(partition(array, n)) : [];
