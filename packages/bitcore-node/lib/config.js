@@ -1,26 +1,51 @@
+const os = require('os');
+const fs = require('fs');
+const program = require('commander');
+
+program
+  .version('8.0.0')
+  .option('-c, --config', 'The path to bitcore config')
+  .parse(process.argv);
+
 const Config = function() {
   let config = {
     maxPoolSize: 20,
     port: 3000,
-    dbHost: process.env.DB_HOST || "127.0.0.1",
-    dbName: process.env.DB_NAME || "bitcore",
-    numWorkers: require("os").cpus().length,
+    dbHost: process.env.DB_HOST || '127.0.0.1',
+    dbName: process.env.DB_NAME || 'bitcore',
+    numWorkers: os.cpus().length,
     chains: {}
   };
 
   let options;
-  try {
-    options = require("../config.json");
-  } catch (e) {
-    options = {};
+  const envConfigPath = process.env.BITCORE_CONFIG_PATH;
+  const argConfigPath = program.config;
+  const configFileName = 'bitcore.config';
+  let bitcoreConfigPaths = [
+    `${os.homedir()}/${configFileName}`,
+    `../../${configFileName}`,
+    `../${configFileName}`
+  ];
+  const overrideConfig = envConfigPath || argConfigPath;
+  if (overrideConfig) {
+    bitcoreConfigPaths.unshift(overrideConfig);
   }
-
-  Object.assign(config, options);
+  // No config specified. Search home, bitcore and cur directory
+  for (let path of bitcoreConfigPaths) {
+    if (!options) {
+      try {
+        options = require(path).bitcoreNode;
+      } catch (e) {
+        options = undefined;
+      }
+    }
+  }
+  Object.assign(config, options, {});
   if (!Object.keys(config.chains).length) {
     config.chains.BTC = {
       mainnet: {
-        chainSource: "p2p",
-        trustedPeers: [{ host: "127.0.0.1", port: 8333 }]
+        chainSource: 'p2p',
+        trustedPeers: [{ host: '127.0.0.1', port: 8333 }]
       }
     };
   }
