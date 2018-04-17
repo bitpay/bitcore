@@ -194,6 +194,9 @@ describe('Interpreter', function() {
     if (flagstr.indexOf('CLEANSTACK') !== -1) {
       flags = flags | Interpreter.SCRIPT_VERIFY_CLEANSTACK;
     }
+    if (flagstr.indexOf('WITNESS') !== -1) {
+      flags = flags | Interpreter.SCRIPT_VERIFY_WITNESS;
+    }
 
     return flags;
   };
@@ -242,23 +245,31 @@ describe('Interpreter', function() {
   };
   describe('bitcoind script evaluation fixtures', function() {
     var testAllFixtures = function(set) {
-      var c = 0;
+      var c = 0; var l = set.length;
       set.forEach(function(vector) {
         if (vector.length === 1) {
           return;
         }
         c++;
 
+        if (_.isArray (vector[0])) {
+          var witness= vector.shift();
+        }
+
         var fullScriptString = vector[0] + ' ' + vector[1];
         var expected = vector[3] == 'OK';
         var descstr = vector[4];
-
         var comment = descstr ? (' (' + descstr + ')') : '';
-        it('should ' + vector[3] + ' script_tests ' +
-          'vector #' + c + ': ' + fullScriptString + comment,
-          function() {
-            testFixture(vector, expected);
-          });
+        var txt = 'should ' + vector[3] + ' script_tests ' +
+            'vector #' + c + '/ ' + l + ': ' + fullScriptString + comment;
+
+        // Skip WITNESS tests
+        if (vector[2] && vector[2].indexOf('WITNESS')!=-1) {
+          it.skip(txt, function() { } );
+        } else {
+          it(txt, function() { testFixture(vector, expected); });
+        }
+
       });
     };
     testAllFixtures(script_tests);
