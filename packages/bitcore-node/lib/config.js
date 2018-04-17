@@ -1,12 +1,56 @@
 const os = require('os');
-const fs = require('fs');
 const program = require('commander');
 
 program
   .version('8.0.0')
-  .option('-c, --config', 'The path to bitcore config')
+  .option('-c, --config <path>', 'The path to bitcore config')
   .parse(process.argv);
 
+function findConfig() {
+  let foundConfig;
+  const envConfigPath = process.env.BITCORE_CONFIG_PATH;
+  const argConfigPath = program.config;
+  const configFileName = 'bitcore.config.json';
+  let bitcoreConfigPaths = [
+    `${os.homedir()}/${configFileName}`,
+    `../../../${configFileName}`,
+    `../${configFileName}`
+  ];
+  const overrideConfig = argConfigPath || envConfigPath;
+  if (overrideConfig) {
+    bitcoreConfigPaths.unshift(overrideConfig);
+  }
+  // No config specified. Search home, bitcore and cur directory
+  for (let path of bitcoreConfigPaths) {
+    if (!foundConfig) {
+      try {
+        const bitcoreConfig = require(path);
+        foundConfig = bitcoreConfig.bitcoreNode;
+      } catch (e) {
+        foundConfig = undefined;
+      }
+    }
+  }
+  return foundConfig;
+}
+
+function setTrustedPeers(config) {
+  for (let [chain, chainObj] of Object.entries(config.chains)) {
+    for (let network of Object.keys(chainObj)) {
+      let env = process.env;
+      const envString = `TRUSTED_${chain.toUpperCase()}_${network.toUpperCase()}_PEER`;
+      if (env[envString]) {
+        let peers = config.chains[chain][network].trustedPeers || [];
+        peers.push({
+          host: env[envString],
+          port: env[`${envString}_PORT`]
+        });
+        config.chains[chain][network].trustedPeers = peers;
+      }
+    }
+  }
+  return config;
+}
 const Config = function() {
   let config = {
     maxPoolSize: 20,
@@ -17,30 +61,8 @@ const Config = function() {
     chains: {}
   };
 
-  let options;
-  const envConfigPath = process.env.BITCORE_CONFIG_PATH;
-  const argConfigPath = program.config;
-  const configFileName = 'bitcore.config';
-  let bitcoreConfigPaths = [
-    `${os.homedir()}/${configFileName}`,
-    `../../../${configFileName}`,
-    `../${configFileName}`
-  ];
-  const overrideConfig = envConfigPath || argConfigPath;
-  if (overrideConfig) {
-    bitcoreConfigPaths.unshift(overrideConfig);
-  }
-  // No config specified. Search home, bitcore and cur directory
-  for (let path of bitcoreConfigPaths) {
-    if (!options) {
-      try {
-        options = require(path).bitcoreNode;
-      } catch (e) {
-        options = undefined;
-      }
-    }
-  }
-  Object.assign(config, options, {});
+  let foundConfig = findConfig();
+  Object.assign(config, foundConfig, {});
   if (!Object.keys(config.chains).length) {
     config.chains.BTC = {
       mainnet: {
@@ -49,19 +71,7 @@ const Config = function() {
       }
     };
   }
-  for (let [chain, chainObj] of Object.entries(config.chains)) {
-    for (let network of Object.keys(chainObj)) {
-      let env = process.env;
-      if (env[`TRUSTED_${chain}_PEER`]) {
-        let peers = config.chains[chain][network].trustedPeers || [];
-        peers.push({
-          host: env[`TRUSTED_${chain}_PEER`],
-          port: env[`TRUSTED_${chain}_PEER_PORT`]
-        });
-        config.chains[chain][network].trustedPeers = peers;
-      }
-    }
-  }
+  config = setTrustedPeers(config);
   return config;
 };
 
