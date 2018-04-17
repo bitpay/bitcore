@@ -184,6 +184,17 @@ describe('Interpreter', function() {
     if (flagstr.indexOf('CHECKLOCKTIMEVERIFY') !== -1) {
       flags = flags | Interpreter.SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY;
     }
+    if (flagstr.indexOf('CHECKSEQUENCEVERIFY') !== -1) {
+      flags = flags | Interpreter.SCRIPT_VERIFY_CHECKSEQUENCEVERIFY;
+    }
+    if (flagstr.indexOf('NULLFAIL') !== -1) {
+      flags = flags | Interpreter.SCRIPT_VERIFY_NULLFAIL;
+    }
+
+    if (flagstr.indexOf('CLEANSTACK') !== -1) {
+      flags = flags | Interpreter.SCRIPT_VERIFY_CLEANSTACK;
+    }
+
     return flags;
   };
 
