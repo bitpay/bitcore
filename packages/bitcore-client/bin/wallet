@@ -10,6 +10,7 @@ program
   .command('register', 'register a wallet with bitcore-node').alias('r')
   .command('balance', 'check wallet balance').alias('b')
   .command('utxos', 'get wallet utxos').alias('u')
+  .command('broadcast', 'get wallet utxos').alias('b')
   .parse(process.argv);
 
 

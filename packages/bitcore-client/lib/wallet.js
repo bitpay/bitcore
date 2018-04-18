@@ -71,6 +71,15 @@ class Wallet {
     return this.client.getCoins({ pubKey: this.masterKey.xpubkey, includeSpent: false });
   }
 
+  static async broadcast(params){
+    const payload = {
+      network: this.network,
+      chain: this.chain,
+      rawTx: params.rawTx
+    }
+    return this.client.broadcast({payload});
+  }
+
   async importKeys(params){
     const {keys} = params;
     for (const key of keys) {
