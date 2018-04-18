@@ -18,7 +18,7 @@
         "async": "^2.5.0",
         "bitcore-lib": "^8.0.0",
         "bitcore-lib-cash": "^8.0.0",
-        "bitcore-mnemonic": "^1.5.0",
+        "bitcore-mnemonic": "^8.0.0",
         "commander": "^2.15.1",
         "leveldown": "^3.0.0",
         "levelup": "^2.0.2",
