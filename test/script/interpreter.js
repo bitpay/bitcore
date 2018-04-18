@@ -266,6 +266,8 @@ describe('Interpreter', function() {
         // Skip WITNESS tests
         if (vector[2] && vector[2].indexOf('WITNESS')!=-1) {
           it.skip(txt, function() { } );
+        } else if (vector[2] && vector[2].indexOf('MONOLITH')!=-1) {
+          it.skip(txt, function() { } );
         } else {
           it(txt, function() { testFixture(vector, expected); });
         }
