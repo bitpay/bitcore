@@ -1,0 +1,10 @@
+language: node_js
+node_js:
+- '8'
+before_install:
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+install:
+  - npm install
+after_script:
+  - gulp coveralls
