@@ -126,12 +126,8 @@ BTCStateProvider.prototype.streamTransaction = function(network, txId, stream) {
     .pipe(stream);
 };
 
-BTCStateProvider.prototype.createWallet = async function(
-  network,
-  name,
-  pubKey,
-  args
-) {
+BTCStateProvider.prototype.createWallet = async function(params) {
+  const {network, name, pubKey, path} = params;
   if (typeof name !== 'string' || !network) {
     throw 'Missing required param';
   }
@@ -140,12 +136,13 @@ BTCStateProvider.prototype.createWallet = async function(
     network,
     name,
     pubKey,
-    path: args.path
+    path
   });
 };
 
-BTCStateProvider.prototype.getWallet = async function(network, walletId) {
-  let wallet = await Wallet.findOne({ _id: walletId }).exec();
+BTCStateProvider.prototype.getWallet = async function(params) {
+  const {pubKey} = params;
+  let wallet = await Wallet.findOne({ pubKey }).exec();
   return wallet;
 };
 
@@ -158,15 +155,9 @@ BTCStateProvider.prototype.streamWalletAddresses = function(
   Storage.apiStreamingFind(WalletAddress, query, stream);
 };
 
-BTCStateProvider.prototype.updateWallet = async function(
-  network,
-  wallet,
-  addresses
-) {
-  return WalletAddress.updateCoins(
-    wallet,
-    addresses
-  );
+BTCStateProvider.prototype.updateWallet = async function(params) {
+  const {wallet, addresses} = params;
+  return WalletAddress.updateCoins({wallet,addresses});
 };
 
 BTCStateProvider.prototype.streamWalletTransactions = async function(
@@ -201,24 +192,16 @@ BTCStateProvider.prototype.streamWalletTransactions = async function(
   transactionStream.pipe(listTransactionsStream).pipe(stream);
 };
 
-BTCStateProvider.prototype.getWalletBalance = async function(
-  network,
-  walletId
-) {
-  let query = { wallets: mongoose.Types.ObjectId(walletId) };
+BTCStateProvider.prototype.getWalletBalance = async function(params) {
+  let query = { wallets: params.wallet._id };
   return Coin.getBalance({ query }).exec();
 };
 
-BTCStateProvider.prototype.streamWalletUtxos = function(
-  network,
-  walletId,
-  stream,
-  args
-) {
-  let query = { wallets: walletId, spentHeight: { $lt: 0 } };
-  args = args || {};
-  if (args.spent) {
-    query.spentHeight = { $gt: 0 };
+BTCStateProvider.prototype.streamWalletUtxos = function(params) {
+  const {wallet, args={}, stream} = params;
+  let query = { wallets: wallet._id };
+  if (args.includeSpent !== 'true') {
+    query.spentHeight = { $lt: 0 };
   }
   Storage.apiStreamingFind(Coin, query, stream);
 };
