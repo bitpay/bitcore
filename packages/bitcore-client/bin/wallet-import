@@ -1,0 +1,26 @@
+#!/usr/bin/env node
+
+const program = require('commander');
+const Wallet = require('../lib/wallet');
+
+program
+  .version(require('../package.json').version)
+  .option('--path <path>', 'REQUIRED - Where wallet is stored')
+  .parse(process.argv);
+
+const main = async () => {
+  const {path} = program;
+  let wallet;
+  try {
+    wallet = await Wallet.loadWallet({ path });
+    const keyInput = [
+      { address: 'mhse1Lz4otzATQWXGo7bGp2apbQGubvnjE', privKey: 'cNZPB2AgNpNjcLQQ9zjuCGgPBGP2ZNyNav6JLVHPUvHBByKruHT9' },
+      { address: 'mpGHdKbm6YKh9vu9cz2cFbQfTXYUU9Pkbr', privKey: 'cSzFN59ZYmwr5MGj9U3b166CCATWhJv6pJTaLhv2Jbj6VHGr1dom' }
+    ];
+    await wallet.importKeys({ keys: keyInput });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+main();
