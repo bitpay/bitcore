@@ -198,6 +198,21 @@ describe('Interpreter', function() {
       flags = flags | Interpreter.SCRIPT_VERIFY_WITNESS;
     }
 
+    if (flagstr.indexOf('FORKID') !== -1) {
+      flags = flags | Interpreter.SCRIPT_ENABLE_SIGHASH_FORKID;
+    }
+
+    if (flagstr.indexOf('REPLAY_PROTECTION') !== -1) {
+      flags = flags | Interpreter.SCRIPT_ENABLE_REPLAY_PROTECTION;
+    }
+
+    if (flagstr.indexOf('MONOLITH') !== -1) {
+      flags = flags | Interpreter.SCRIPT_ENABLE_MONOLITH_OPCODES;
+    }
+
+    if (flagstr.indexOf('MINIMALIF') !== -1) {
+      flags = flags | Interpreter.SCRIPT_VERIFY_MINIMALIF;
+    }
     return flags;
   };
 
@@ -207,10 +222,14 @@ describe('Interpreter', function() {
     Script.fromString(s).toString().should.equal(s);
   };
 
-  var testFixture = function(vector, expected) {
+  var testFixture = function(vector, expected, extraData) {
     var scriptSig = Script.fromBitcoindString(vector[0]);
     var scriptPubkey = Script.fromBitcoindString(vector[1]);
     var flags = getFlags(vector[2]);
+    var inputAmount = 0;
+    if (extraData) {
+      inputAmount = extraData[0] * 1e8;
+    }
 
     var hashbuf = new Buffer(32);
     hashbuf.fill(0);
@@ -223,7 +242,7 @@ describe('Interpreter', function() {
     }));
     credtx.addOutput(new Transaction.Output({
       script: scriptPubkey,
-      satoshis: 0
+      satoshis: inputAmount, 
     }));
     var idbuf = credtx.id;
 
@@ -236,11 +255,11 @@ describe('Interpreter', function() {
     }));
     spendtx.addOutput(new Transaction.Output({
       script: new Script(),
-      satoshis: 0
+      satoshis: inputAmount,
     }));
 
     var interp = new Interpreter();
-    var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0, flags);
+    var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0, flags, new BN(inputAmount));
     verified.should.equal(expected);
   };
   describe('bitcoind script evaluation fixtures', function() {
@@ -252,8 +271,9 @@ describe('Interpreter', function() {
         }
         c++;
 
+        var extraData;
         if (_.isArray (vector[0])) {
-          var witness= vector.shift();
+          extraData = vector.shift();
         }
 
         var fullScriptString = vector[0] + ' ' + vector[1];
@@ -266,8 +286,10 @@ describe('Interpreter', function() {
         // Skip WITNESS tests
         if (vector[2] && vector[2].indexOf('WITNESS')!=-1) {
           it.skip(txt, function() { } );
+        } else if (vector[2] && vector[2].indexOf('MONOLITH')!=-1) {
+          it.skip(txt, function() { } );
         } else {
-          it(txt, function() { testFixture(vector, expected); });
+          it(txt, function() { testFixture(vector, expected, extraData); });
         }
 
       });
