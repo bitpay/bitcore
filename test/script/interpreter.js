@@ -285,7 +285,7 @@ describe('Interpreter', function() {
 
         // Temporary, until all reenable opcodes are implemented  
         // 
-        var pendingToImplement = ['NUM2BIN', 'BIN2NUM', 'CAT','SPLIT', 'DIV', 'MOD'];
+        var pendingToImplement = ['NUM2BIN', 'CAT','SPLIT', 'DIV', 'MOD'];
         function isPendingToImplement(str) {
           for(var i in pendingToImplement) {
             if (fullScriptString.indexOf(pendingToImplement[i])!=-1) {
