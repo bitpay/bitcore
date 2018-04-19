@@ -1,13 +1,16 @@
 var request = require('request');
 
-var Rpc = function() {
-
+var Rpc = function(username, password, host, port) {
+  this.username = username;
+  this.password = password;
+  this.host = host;
+  this.port = port;
 };
 
 Rpc.prototype.callMethod = function(method, params, callback) {
   request({
     method: 'POST',
-    url: 'http://bitcoin:bitcoin@127.0.0.1:8332',
+    url: `http://${this.username}:${this.password}@${this.host}:${this.port}`,
     body: {
       jsonrpc: '1.0',
       id: Date.now(),
@@ -71,6 +74,12 @@ Rpc.prototype.getTransaction = function(txid, callback) {
   });
 };
 
+Rpc.prototype.sendTransaction = function(rawTx, callback) {
+  var self = this;
+  self.callMethod('sendrawtransaction', [rawTx], callback);
+};
+
+
 Rpc.prototype.decodeScript = function(hex, callback) {
   this.callMethod('decodescript', [hex], callback);
 };
@@ -79,4 +88,4 @@ Rpc.prototype.getWalletAddresses = function(account, callback) {
   this.callMethod('getaddressesbyaccount', [account], callback);
 };
 
-module.exports = new Rpc();
+module.exports = Rpc;
