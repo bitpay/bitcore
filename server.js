@@ -25,7 +25,7 @@ async.series([
     await Promise.all(p2pServices.map(p2pService => p2pService.start()));
   }
 ], function () {
-  if (!cluster.isWorker) {
+  if (cluster.isWorker) {
     const app = require('./lib/routes');
     const server = app.listen(config.port, function () {
       logger.info(`API server started on port ${config.port}`);
