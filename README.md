@@ -48,7 +48,7 @@ Bitcore-Node can access a bitcore.config.json file from
   * --config some/path/to/config
 * ~/bitcore.config.json
 * ${BITCORE_DIR}/bitcore.config.json
-* ${BITCORE_SERVICE}/bitcore.config.json
+* ${BITCORE_DIR}/packages/bitcore-node/bitcore.config.json
 
 ### Example Config
 ```
