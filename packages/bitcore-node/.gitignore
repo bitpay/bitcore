@@ -2,3 +2,4 @@ node_modules
 config.json
 *bitcore.config.*
 .bcoin
+*.vscode

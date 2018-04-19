@@ -67,7 +67,13 @@ const Config = function() {
     config.chains.BTC = {
       mainnet: {
         chainSource: 'p2p',
-        trustedPeers: [{ host: '127.0.0.1', port: 8333 }]
+        trustedPeers: [{ host: '127.0.0.1', port: 8333 }],
+        rpc: {
+          host: '127.0.0.1',
+          port: 8332,
+          username: 'bitcoin',
+          password: 'bitcoin'
+        }
       }
     };
   }

@@ -261,5 +261,10 @@ P2pService.prototype.processTransaction = async function(tx) {
   });
 };
 
+P2pService.prototype.sendTransaction = async function(rawTx) {
+  this.pool.sendMessage(this.messages.Transaction(rawTx));
+  return rawTx.txid;
+};
+
 
 module.exports = P2pService;

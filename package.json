@@ -1,5 +1,8 @@
 {
   "version": "8.0.0",
+  "prettier": {
+    "singleQuote": true
+  },
   "scripts": {
     "build": "docker build -t bitcore-node .",
     "postinstall": "./node_modules/.bin/lerna bootstrap"

@@ -69,10 +69,8 @@ ChainStateProvider.prototype.streamWalletUtxos = function (chain, network, walle
   return this.get(chain).streamWalletUtxos(network, walletId, stream, args);
 };
 
-/*
- *ChainStateProvider.prototype.broadcastTransaction = async function (chain, network , tx) {
- *  return this.get(chain).broadcastTransaction(tx);
- *};
- */
+ChainStateProvider.prototype.broadcastTransaction = async function (chain, network, rawTx) {
+  return this.get(chain).broadcastTransaction(network, rawTx);
+};
 
 module.exports = new ChainStateProvider();
