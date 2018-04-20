@@ -10,7 +10,6 @@ program
   .parse(process.argv);
 
 const main = async () => {
-  console.log(program.tx, program.path);
   const {tx, path} = program;
   let wallet;
   try {
