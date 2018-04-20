@@ -71,7 +71,7 @@ class Wallet {
     return this.client.getCoins({ pubKey: this.masterKey.xpubkey, includeSpent: false });
   }
 
-  static async broadcast(params){
+  async broadcast(params){
     const payload = {
       network: this.network,
       chain: this.chain,

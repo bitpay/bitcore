@@ -1,22 +1,31 @@
 #!/usr/bin/env node
 
+const fs = require('fs');
 const program = require('commander');
 const Wallet = require('../lib/wallet');
 
 program
   .version(require('../package.json').version)
   .option('--path <path>', 'REQUIRED - Where wallet is stored')
+  .option('--load [load]', 'OPTIONAL - A jsonl file with {"address": "mXy1234"} in it')
   .parse(process.argv);
 
 const main = async () => {
-  const {path} = program;
+  const {path, load} = program;
   let wallet;
   try {
     wallet = await Wallet.loadWallet({ path });
-    const keyInput = [
+    let keyInput = [
       { address: 'mhse1Lz4otzATQWXGo7bGp2apbQGubvnjE', privKey: 'cNZPB2AgNpNjcLQQ9zjuCGgPBGP2ZNyNav6JLVHPUvHBByKruHT9' },
       { address: 'mpGHdKbm6YKh9vu9cz2cFbQfTXYUU9Pkbr', privKey: 'cSzFN59ZYmwr5MGj9U3b166CCATWhJv6pJTaLhv2Jbj6VHGr1dom' }
     ];
+    if(load) {
+      let contents = fs.readFileSync(load).toString();
+      let fileKeys = contents.split('\n')
+        .filter((line) => line !== '')
+        .map((line) => JSON.parse(line));
+      keyInput = fileKeys;
+    }
     await wallet.importKeys({ keys: keyInput });
   } catch (e) {
     console.error(e);
