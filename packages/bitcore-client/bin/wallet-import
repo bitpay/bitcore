@@ -15,10 +15,7 @@ const main = async () => {
   let wallet;
   try {
     wallet = await Wallet.loadWallet({ path });
-    let keyInput = [
-      { address: 'mhse1Lz4otzATQWXGo7bGp2apbQGubvnjE', privKey: 'cNZPB2AgNpNjcLQQ9zjuCGgPBGP2ZNyNav6JLVHPUvHBByKruHT9' },
-      { address: 'mpGHdKbm6YKh9vu9cz2cFbQfTXYUU9Pkbr', privKey: 'cSzFN59ZYmwr5MGj9U3b166CCATWhJv6pJTaLhv2Jbj6VHGr1dom' }
-    ];
+    let keyInput = [];
     if(load) {
       let contents = fs.readFileSync(load).toString();
       let fileKeys = contents.split('\n')
