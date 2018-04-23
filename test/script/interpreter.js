@@ -359,12 +359,10 @@ console.log('[interpreter.js.377:witness:]wit:',witness); //TODO
 
     var interp = new Interpreter();
     var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0, flags, witness, amount);
-console.log('[interpreter.js.353:verified:]',verified); //TODO
     verified.should.equal(expected);
   };
   describe.only('bitcoind script evaluation fixtures', function() {
 
-console.log('[interpreter.js.351]'); //TODO
     var testAllFixtures = function(set) {
       var c = 0;
       set.forEach(function(vector) {
