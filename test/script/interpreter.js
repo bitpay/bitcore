@@ -309,6 +309,15 @@ describe('Interpreter', function() {
       flags = flags | Interpreter.SCRIPT_VERIFY_CLEANSTACK;
     }
 
+console.log('[interpreter.js.311]', flagstr); //TODO
+    if (flagstr.indexOf('WITNESS_PUBKEYTYPE') !== -1) {
+
+console.log('[interpreter.js.314] IN!'); //TODO
+      flags = flags | Interpreter.SCRIPT_VERIFY_WITNESS_PUBKEYTYPE;
+    }
+
+console.log('ANTES XXX ', flags & Interpreter.SCRIPT_VERIFY_WITNESS_PUBKEYTYPE); //TODO
+console.log('[interpreter.js.320:flags:]',flags); //TODO
     return flags;
   };
 
@@ -357,6 +366,7 @@ console.log('[interpreter.js.377:witness:]wit:',witness); //TODO
       satoshis: amount,
     }));
 
+console.log('[interpreter.js.370:flags:]',flags); //TODO
     var interp = new Interpreter();
     var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0, flags, witness, amount);
     verified.should.equal(expected);
