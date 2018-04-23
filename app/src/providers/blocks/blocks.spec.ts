@@ -30,7 +30,7 @@ describe('Blocks Provider', () => {
     });
   }));
 
-  it('should ', inject([BlocksProvider, MockBackend], (blocksProvider, mockBackend) => {
+  it('should get blocks', inject([BlocksProvider, MockBackend], (blocksProvider, mockBackend) => {
     const mockResponse: string = `{"blocks":[
       {"height":1563,"size":228,"virtualSize":228,"hash":"489e6480e453d763f58535d0ee01caf12aaaa14950af795b497b227fdbfbc502","time":1522354162,"txlength":1,"poolInfo":{}},
       {"height":1562,"size":228,"virtualSize":228,"hash":"48d7d1881936792f70ace3cdd1a7c4c1fd23271012f91158e3dcd5e41bcbcc8b","time":1522354162,"txlength":1,"poolInfo":{}},
