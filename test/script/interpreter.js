@@ -297,6 +297,14 @@ describe('Interpreter', function() {
       flags = flags | Interpreter.SCRIPT_VERIFY_NULLFAIL;
     }
 
+    if (flagstr.indexOf('WITNESS') !== -1) {
+      flags = flags | Interpreter.SCRIPT_VERIFY_WITNESS;
+    }
+
+    if (flagstr.indexOf('DISCOURAGE_UPGRADABLE_WITNESS') !== -1) {
+      flags = flags | Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM;
+    }
+
     if (flagstr.indexOf('CLEANSTACK') !== -1) {
       flags = flags | Interpreter.SCRIPT_VERIFY_CLEANSTACK;
     }
@@ -310,10 +318,17 @@ describe('Interpreter', function() {
     Script.fromString(s).toString().should.equal(s);
   };
 
-  var testFixture = function(vector, expected) {
+  var testFixture = function(vector, expected, witness, amount) {
+    var amount = amount || 0;
     var scriptSig = Script.fromBitcoindString(vector[0]);
     var scriptPubkey = Script.fromBitcoindString(vector[1]);
     var flags = getFlags(vector[2]);
+
+
+console.log('[interpreter.js.353:vector:]vector:',scriptSig); //TODO
+console.log('[interpreter.js.353:vector:]vector:',scriptPubkey); //TODO
+console.log('[interpreter.js.361:amount:]amount:',amount); //TODO
+console.log('[interpreter.js.377:witness:]wit:',witness); //TODO
 
     var hashbuf = new Buffer(32);
     hashbuf.fill(0);
@@ -326,7 +341,7 @@ describe('Interpreter', function() {
     }));
     credtx.addOutput(new Transaction.Output({
       script: scriptPubkey,
-      satoshis: 0
+      satoshis: amount,
     }));
     var idbuf = credtx.id;
 
@@ -339,14 +354,17 @@ describe('Interpreter', function() {
     }));
     spendtx.addOutput(new Transaction.Output({
       script: new Script(),
-      satoshis: 0
+      satoshis: amount,
     }));
 
     var interp = new Interpreter();
-    var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0, flags);
+    var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0, flags, witness, amount);
+console.log('[interpreter.js.353:verified:]',verified); //TODO
     verified.should.equal(expected);
   };
-  describe('bitcoind script evaluation fixtures', function() {
+  describe.only('bitcoind script evaluation fixtures', function() {
+
+console.log('[interpreter.js.351]'); //TODO
     var testAllFixtures = function(set) {
       var c = 0;
       set.forEach(function(vector) {
@@ -354,6 +372,20 @@ describe('Interpreter', function() {
           return;
         }
         c++;
+
+        var witness, amount;
+        if (_.isArray(vector[0])) {
+          var extra = vector.shift();
+          amount = extra.pop()  * 1e8;
+          witness = extra.map(function(x) { 
+            return Buffer.from(x,'hex');
+          });
+console.log('[interpreter.js.379:descstr:]',vector[4]); //TODO
+console.log('[interpreter.js.373:witness:]',witness); //TODO
+console.log('[interpreter.js.368:amount:]',amount); //TODO
+        } else {
+          return;
+        }
 
         var fullScriptString = vector[0] + ' ' + vector[1];
         var expected = vector[3] == 'OK';
@@ -363,7 +395,10 @@ describe('Interpreter', function() {
         it('should ' + vector[3] + ' script_tests ' +
           'vector #' + c + ': ' + fullScriptString + comment,
           function() {
-            testFixture(vector, expected);
+console.log('[interpreter.js.381:vector:]',vector); //TODO
+console.log('[interpreter.js.373:witness:]',witness); //TODO
+
+            testFixture(vector, expected, witness, amount);
           });
       });
     };
