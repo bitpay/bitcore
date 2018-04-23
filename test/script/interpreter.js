@@ -309,15 +309,13 @@ describe('Interpreter', function() {
       flags = flags | Interpreter.SCRIPT_VERIFY_CLEANSTACK;
     }
 
-console.log('[interpreter.js.311]', flagstr); //TODO
     if (flagstr.indexOf('WITNESS_PUBKEYTYPE') !== -1) {
-
-console.log('[interpreter.js.314] IN!'); //TODO
       flags = flags | Interpreter.SCRIPT_VERIFY_WITNESS_PUBKEYTYPE;
     }
+    if (flagstr.indexOf('MINIMALIF') !== -1) {
+      flags = flags | Interpreter.SCRIPT_VERIFY_MINIMALIF;
+    }
 
-console.log('ANTES XXX ', flags & Interpreter.SCRIPT_VERIFY_WITNESS_PUBKEYTYPE); //TODO
-console.log('[interpreter.js.320:flags:]',flags); //TODO
     return flags;
   };
 
