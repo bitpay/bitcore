@@ -2,23 +2,34 @@
 
 const program = require('commander');
 const Wallet = require('../lib/wallet');
-const TxProvider = require('../lib/tx-provider');
 
 program
   .version(require('../package.json').version)
   .option('--path <path>', 'REQUIRED - Where wallet is stored')
+  .option(
+    '--addresses <addresses>',
+    'REQUIRED - Address of receiver, or json array [{address: satoshis}]'
+  )
+  .option('--amount <amount>', 'REQUIRED - Value to transfer')
+  .option(
+    '--utxos <utxos>',
+    'REQUIRED - Unspent transactions that can be spent'
+  )
+  .option('--change <change>', 'REQUIRED - Change addresses')
   .parse(process.argv);
 
 const main = async () => {
-  const {path} = program;
+  const { path } = program;
   let wallet;
   try {
     wallet = await Wallet.loadWallet({ path });
-    const balance = await wallet.getBalance();
-    console.log(Object.assign(balance, {currency: wallet.chain, network: wallet.network}));
+    let params = ({ addresses, amount, utxos, change } = program);
+    params.utxos = params.utxos ? JSON.parse(params.utxos) : [];
+    const tx = await wallet.newTx(params);
+    console.log(tx.uncheckedSerialize());
   } catch (e) {
     console.error(e);
   }
-}
+};
 
 main();

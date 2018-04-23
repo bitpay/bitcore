@@ -1,6 +1,6 @@
 const bitcoreLib = require('bitcore-lib-cash');
 
-export default class BCHTxProvder {
+class BCHTxProvder {
   create({addresses, amount, utxos, change}) {
     let tx = new bitcoreLib.Transaction()
       .from(utxos)
@@ -9,3 +9,4 @@ export default class BCHTxProvder {
     return tx;
   }
 }
+module.exports = BCHTxProvder;

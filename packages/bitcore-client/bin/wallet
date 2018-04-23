@@ -11,6 +11,7 @@ program
   .command('balance', 'check wallet balance').alias('b')
   .command('utxos', 'get wallet utxos').alias('u')
   .command('broadcast', 'broadcast transaction')
+  .command('tx', 'create transaction').alias('t')
   .parse(process.argv);
 
 

@@ -1,7 +1,6 @@
 const providers = {
   BTC: require('./btc'),
-  BCH: require('./bch'),
-  ETH: require('./eth')
+  BCH: require('./bch')
 };
 
 class TxProvider {
@@ -18,4 +17,4 @@ class TxProvider {
   }
 }
 
-export default new TxProvider();
+module.exports =  new TxProvider();
