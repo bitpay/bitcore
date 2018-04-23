@@ -1,9 +1,8 @@
-const EthereumTx = const Web3 = require('web3-eth');
+const EthereumTx = require('ethereumjs-tx');
+const Web3 = require('web3-eth');
 const config = require('bitcore-node/lib/config');
-require('ethereumjs-tx');
 
 export default class ETHTxProvder {
-
   constructor(chain) {
     this.chain = chain || 'ETH';
     this.chain = this.chain.toUpperCase();
@@ -15,7 +14,7 @@ export default class ETHTxProvder {
     const portString = provider.port ? `:${provider.port}` : '';
     const connUrl = `${provider.protocool}://${provider.host}${portString}`;
     let ProviderType;
-    switch(provider.protocool) {
+    switch (provider.protocool) {
       case 'wss':
         ProviderType = Web3.providers.WebsocketProvider;
         break;
@@ -24,11 +23,12 @@ export default class ETHTxProvder {
         break;
     }
     return new Web3(new ProviderType(connUrl));
-    //return new Web3(connUrl);
-  };
+  }
 
   async create({ network, addresses, amount }) {
-    var nonce = await this.web3For(network).eth.getTransactionCountAsync(addresses);
+    var nonce = await this.web3For(network).eth.getTransactionCountAsync(
+      addresses
+    );
     var tx = new Transaction({
       to: addresses,
       value: amount,
