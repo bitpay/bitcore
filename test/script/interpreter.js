@@ -285,7 +285,7 @@ describe('Interpreter', function() {
 
         // Temporary, until all reenable opcodes are implemented  
         // 
-        var pendingToImplement = ['CAT','SPLIT', 'DIV', 'MOD'];
+        var pendingToImplement = ['SPLIT', 'DIV', 'MOD'];
         function isPendingToImplement(str) {
           for(var i in pendingToImplement) {
             if (fullScriptString.indexOf(pendingToImplement[i])!=-1) {
