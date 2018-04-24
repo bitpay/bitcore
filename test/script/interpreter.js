@@ -194,9 +194,6 @@ describe('Interpreter', function() {
     if (flagstr.indexOf('CLEANSTACK') !== -1) {
       flags = flags | Interpreter.SCRIPT_VERIFY_CLEANSTACK;
     }
-    if (flagstr.indexOf('WITNESS') !== -1) {
-      flags = flags | Interpreter.SCRIPT_VERIFY_WITNESS;
-    }
 
     if (flagstr.indexOf('FORKID') !== -1) {
       flags = flags | Interpreter.SCRIPT_ENABLE_SIGHASH_FORKID;
@@ -283,27 +280,7 @@ describe('Interpreter', function() {
         var txt = 'should ' + vector[3] + ' script_tests ' +
             'vector #' + c + '/ ' + l + ': ' + fullScriptString + comment;
 
-        // Temporary, until all reenable opcodes are implemented  
-        // 
-        var pendingToImplement = ['DIV', 'MOD'];
-        function isPendingToImplement(str) {
-          for(var i in pendingToImplement) {
-            if (fullScriptString.indexOf(pendingToImplement[i])!=-1) {
-              return true;
-            }
-          };
-          return false;
-        };
-        // =========
-
-        // Skip WITNESS tests
-        if (vector[2] && vector[2].indexOf('WITNESS')!=-1) {
-          it.skip(txt, function() { } );
-        } else if (vector[2] && vector[2].indexOf('MONOLITH')!=-1 && isPendingToImplement(fullScriptString)) {
-          it.skip(txt, function() { } );
-        } else {
-          it(txt, function() { testFixture(vector, expected, extraData); });
-        }
+        it(txt, function() { testFixture(vector, expected, extraData); });
 
       });
     };
