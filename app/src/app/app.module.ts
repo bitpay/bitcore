@@ -19,7 +19,9 @@ import { BlocksProvider } from '../providers/blocks/blocks';
     BrowserModule,
     HttpModule,
     PagesModule,
-    IonicModule.forRoot(InsightApp)
+    IonicModule.forRoot(InsightApp, {
+      locationStrategy: 'path'
+    })
   ],
   bootstrap: [IonicApp],
   entryComponents: [
