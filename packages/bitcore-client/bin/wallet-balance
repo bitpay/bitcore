@@ -14,7 +14,7 @@ const main = async () => {
   try {
     wallet = await Wallet.loadWallet({ path });
     const balance = await wallet.getBalance();
-    console.log(Object.assign(balance, {currency: wallet.chain}));
+    console.log(Object.assign(balance, {currency: wallet.chain, network: wallet.network}));
   } catch (e) {
     console.error(e);
   }

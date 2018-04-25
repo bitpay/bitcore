@@ -2,6 +2,7 @@ const Mnemonic = require('bitcore-mnemonic');
 const bitcoreLib = require('bitcore-lib');
 const Client = require('./client');
 const Storage = require('./storage');
+const txProvider = require('../lib/providers/tx-provider');
 
 class Wallet {
   constructor(params) {
@@ -71,11 +72,23 @@ class Wallet {
     return this.client.getCoins({ pubKey: this.masterKey.xpubkey, includeSpent: false });
   }
 
-  static async broadcast(params){
+  async newTx(params){
     const payload = {
       network: this.network,
       chain: this.chain,
-      rawTx: params.rawTx
+      addresses: params.addresses,
+      amount: params.amount,
+      utxos: params.utxos || await this.getUtxos(params),
+      change: params.change
+    }
+    return txProvider.create(payload);
+  }
+
+  async broadcast(params){
+    const payload = {
+      network: this.network,
+      chain: this.chain,
+      rawTx: params.tx
     }
     return this.client.broadcast({payload});
   }

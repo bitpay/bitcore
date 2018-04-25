@@ -44,6 +44,10 @@ Client.prototype.importAddresses = async function(params){
   return request.post(url, { headers: { 'x-signature': signature }, body: payload, json: true });
 }
 
+Client.prototype.signForAddress = async function(params) {
+
+}
+
 Client.prototype.broadcast = async function(params) {
   const {payload} = params;
   const url = `${this.baseUrl}/tx/send`;
