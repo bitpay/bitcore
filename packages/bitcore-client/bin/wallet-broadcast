@@ -1,0 +1,24 @@
+#!/usr/bin/env node
+
+const program = require('commander');
+const Wallet = require('../lib/wallet');
+
+program
+  .version(require('../package.json').version)
+  .option('--tx <tx>', 'REQUIRED - Signed transaction to broadcast')
+  .option('--path <path>', 'REQUIRED - Where wallet is stored')
+  .parse(process.argv);
+
+const main = async () => {
+  const {tx, path} = program;
+  let wallet;
+  try {
+    wallet = await Wallet.loadWallet({ path });
+    await wallet.broadcast({ tx });
+    console.log('Transaction broadcasted');
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+main();

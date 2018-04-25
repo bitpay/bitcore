@@ -1,0 +1,28 @@
+#!/usr/bin/env node
+
+const program = require('commander');
+const Wallet = require('../lib/wallet');
+
+program
+  .version(require('../package.json').version)
+  .option('--name <name>', 'REQUIRED - Wallet Name')
+  .option('--chain <chain>', 'REQUIRED - Chain (BTC/BCH/ETH, etc)')
+  .option('--network <network>', 'REQUIRED - Network (livenet/testnet/regtest, etc)')
+  .option('--path <path>', 'REQUIRED - Where wallet should be stored')
+  .option('--mnemonic <phrase>', 'optional - Seed using existing backup phrase')
+  .option('--password <password>', 'optional - Backup password for seed')
+  .parse(process.argv);
+
+const main = async () => {
+  const {name, chain, network, path, phrase, password} = program;
+  let wallet;
+  try {
+    wallet = await Wallet.create({ name, chain, network, path, phrase, password });
+    console.log(wallet.mnemonic);
+    console.log('Wallet created!');
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+main();

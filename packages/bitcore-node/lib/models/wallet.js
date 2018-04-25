@@ -10,6 +10,8 @@ const WalletSchema = new Schema({
   path: String
 });
 
+WalletSchema.index({ pubKey: 1 });
+
 WalletSchema.statics._apiTransform = function (wallet, options) {
   let transform = {
     name: wallet.name,
@@ -24,7 +26,7 @@ WalletSchema.statics._apiTransform = function (wallet, options) {
 WalletSchema.statics.updateCoins = async function (wallet) {
   const WalletAddress = mongoose.model('WalletAddress');
   let addresses = await WalletAddress.find({wallet: wallet._id});
-  return WalletAddress.updateCoins(wallet, addresses);
+  return WalletAddress.updateCoins({wallet, addresses});
 };
 
 module.exports = mongoose.model('Wallet', WalletSchema);
