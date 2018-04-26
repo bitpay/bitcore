@@ -22,9 +22,7 @@ const main = async () => {
   try {
     wallet = await Wallet.loadWallet({ path });
     let params = ({ addresses, amount, utxos, change, fee } = program);
-    params.addresses = params.addresses.includes('[')
-      ? JSON.parse(params.addresses)
-      : params.addresses;
+    params.addresses = params.addresses.includes('[') ? JSON.parse(params.addresses) : params.addresses;
     params.utxos = params.utxos ? JSON.parse(params.utxos) : [];
     const tx = await wallet.newTx(params);
     console.log(tx.uncheckedSerialize());

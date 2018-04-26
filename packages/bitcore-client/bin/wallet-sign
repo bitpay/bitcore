@@ -14,7 +14,7 @@ const main = async () => {
   let wallet;
   try {
     wallet = await Wallet.loadWallet({ path });
-    let params = { tx } = program;
+    let params = ({ tx } = program);
     let signedTx = await wallet.signTx(params);
     console.log(signedTx.uncheckedSerialize());
   } catch (e) {

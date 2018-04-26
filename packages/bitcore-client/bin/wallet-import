@@ -7,14 +7,8 @@ const Wallet = require('../lib/wallet');
 program
   .version(require('../package.json').version)
   .option('--path <path>', 'REQUIRED - Where wallet is stored')
-  .option(
-    '--parse <parse>',
-    'OPTIONAL - A json string to parse in the form {"address": "mXy1234", privKey: "xxxxxxx"}'
-  )
-  .option(
-    '--load [load]',
-    'OPTIONAL - A jsonl file with {"address": "mXy1234", privKey: "xxxxxxx"} in it'
-  )
+  .option('--parse <parse>', 'OPTIONAL - A json string to parse in the form {"address": "mXy1234", privKey: "xxxxxxx"}')
+  .option('--load [load]', 'OPTIONAL - A jsonl file with {"address": "mXy1234", privKey: "xxxxxxx"} in it')
   .parse(process.argv);
 
 const getFileKeys = path => {

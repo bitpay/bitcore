@@ -10,11 +10,7 @@ const Client = function(params) {
 Client.prototype.sign = function(params) {
   const { method, url, payload = {} } = params;
   const parsedUrl = new URL(url);
-  const message = [
-    method,
-    parsedUrl.pathname + parsedUrl.search,
-    JSON.stringify(payload)
-  ].join('|');
+  const message = [method, parsedUrl.pathname + parsedUrl.search, JSON.stringify(payload)].join('|');
   const privateKey = new bitcoreLib.PrivateKey(this.authKey).toBuffer();
   const messageHash = bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message));
   return secp256k1.sign(messageHash, privateKey).signature.toString('hex');
@@ -44,9 +40,7 @@ Client.prototype.getBalance = async function(params) {
 
 Client.prototype.getCoins = async function(params) {
   const { payload, pubKey, includeSpent } = params;
-  const url = `${
-    this.baseUrl
-  }/wallet/${pubKey}/utxos?includeSpent=${includeSpent}`;
+  const url = `${this.baseUrl}/wallet/${pubKey}/utxos?includeSpent=${includeSpent}`;
   const signature = this.sign({ method: 'GET', url, payload });
   return request.get(url, {
     headers: { 'x-signature': signature },
