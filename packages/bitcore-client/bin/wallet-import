@@ -7,12 +7,12 @@ const Wallet = require('../lib/wallet');
 program
   .version(require('../package.json').version)
   .option('--path <path>', 'REQUIRED - Where wallet is stored')
-  .option('--parse <parse>', 'OPTIONAL - A json string to parse in the form {"address": "mXy1234", privKey: "xxxxxxx"}')
-  .option('--load [load]', 'OPTIONAL - A jsonl file with {"address": "mXy1234", privKey: "xxxxxxx"} in it')
+  .option('--parse [parse]', 'OPTIONAL - A json string to parse in the form {"address": "mXy1234", privKey: "xxxxxxx"}')
+  .option('--file [file]', 'OPTIONAL - A jsonl file with {"address": "mXy1234", privKey: "xxxxxxx"} in it')
   .parse(process.argv);
 
-const getFileKeys = path => {
-  let contents = fs.readFileSync(load).toString();
+const getFileKeys = file => {
+  let contents = fs.readFileSync(file).toString();
   let fileKeys = contents
     .split('\n')
     .filter(line => line !== '')
@@ -30,13 +30,13 @@ const parseKeys = keys => {
 };
 
 const main = async () => {
-  const { path, load, parse } = program;
+  const { path, file, parse } = program;
   let wallet;
   try {
     wallet = await Wallet.loadWallet({ path });
     let keyInput = [];
-    if (load) {
-      keyInput = getFileKeys(path);
+    if (file) {
+      keyInput = getFileKeys(file);
     } else if (parse) {
       keyInput = parseKeys(parse);
     }
