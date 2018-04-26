@@ -20,17 +20,19 @@ export class LatestBlocksComponent {
   @Input() public numBlocks: number;
   @Input() public showAllBlocksButton: boolean;
   @Input() public showTimeAs: string;
+  private reloadInterval: any;
 
   constructor(private blocksProvider: BlocksProvider, private navCtrl: NavController, ngZone: NgZone) {
     this.loadBlocks();
+    const seconds: number = 15;
     ngZone.runOutsideAngular(() => {
-      setInterval(
+      this.reloadInterval = setInterval(
         function (): void {
           ngZone.run(function (): void {
             this.loadBlocks.call(this);
           }.bind(this));
         }.bind(this),
-        1000 * 30
+        1000 * seconds
       );
     });
   }
@@ -62,5 +64,9 @@ export class LatestBlocksComponent {
 
   public goToBlocks(): void {
     this.navCtrl.push(BlocksPage);
+  }
+
+  private ngOnDestroy(): void {
+    clearInterval(this.reloadInterval);
   }
 }
