@@ -2,7 +2,7 @@
   "version": "8.0.0",
   "prettier": {
     "singleQuote": true,
-    "printWidth": 100
+    "printWidth": 120
   },
   "scripts": {
     "build": "docker build -t bitcore-node .",
