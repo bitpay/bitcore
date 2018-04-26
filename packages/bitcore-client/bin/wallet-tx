@@ -8,13 +8,11 @@ program
   .option('--path <path>', 'REQUIRED - Where wallet is stored')
   .option(
     '--addresses <addresses>',
-    'REQUIRED - Address of receiver, or json array [{address: satoshis}]'
+    'REQUIRED - Address of receiver, or json array [{address: abc1234, satoshis: xxxxx}]'
   )
   .option('--amount <amount>', 'REQUIRED - Value to transfer')
-  .option(
-    '--utxos <utxos>',
-    'REQUIRED - Unspent transactions that can be spent'
-  )
+  .option('--fee <fee>', 'REQUIRED - The transaction fee to pay')
+  .option('--utxos <utxos>', 'REQUIRED - Unspent transactions that can be spent')
   .option('--change <change>', 'REQUIRED - Change addresses')
   .parse(process.argv);
 
@@ -23,7 +21,10 @@ const main = async () => {
   let wallet;
   try {
     wallet = await Wallet.loadWallet({ path });
-    let params = ({ addresses, amount, utxos, change } = program);
+    let params = ({ addresses, amount, utxos, change, fee } = program);
+    params.addresses = params.addresses.includes('[')
+      ? JSON.parse(params.addresses)
+      : params.addresses;
     params.utxos = params.utxos ? JSON.parse(params.utxos) : [];
     const tx = await wallet.newTx(params);
     console.log(tx.uncheckedSerialize());

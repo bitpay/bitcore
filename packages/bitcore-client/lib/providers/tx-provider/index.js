@@ -13,8 +13,12 @@ class TxProvider {
   }
 
   sign(params) {
-    return this.get(params).sign(params); 
+    return this.get(params).sign(params);
+  }
+
+  getSigningAddresses(params) {
+    return this.get(params).getSigningAddresses(params);
   }
 }
 
-module.exports =  new TxProvider();
+module.exports = new TxProvider();
