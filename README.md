@@ -74,7 +74,7 @@ GET `/api/BTC/mainnet/block/123456`
 
 ### Add Wallet:
 
-POST `/api/wallet`
+POST `/api/BTC/mainnet/wallet`
 
 BODY:
 ```
@@ -89,11 +89,11 @@ BODY:
 
 ### Get Wallet:
 
-GET `/api/wallet/:walletId`
+GET `/api/BTC/mainnet/wallet/:walletId`
 
 ### Import Addresses:
 
-POST `/api/wallet/:walletId`
+POST `/api/BTC/mainnet/wallet/:walletId`
 
 BODY: raw jsonl wallet file of the form
 ```
@@ -102,17 +102,17 @@ BODY: raw jsonl wallet file of the form
 
 ### Get Wallet Addresses
 
-GET `/api/wallet/:walletId/addresses`
+GET `/api/BTC/mainnet/wallet/:walletId/addresses`
 
 ### Get Wallet Transactions:
 
-GET `/api/wallet/:walletId/transactions`
+GET `/api/BTC/mainnet/wallet/:walletId/transactions`
 
 ### Get Balance:
 
-GET `/api/wallet/:walletId/balance`
+GET `/api/BTC/mainnet/wallet/:walletId/balance`
 
 ### Get Wallet UTXOS
 
-GET `/api/wallet/:walletId/utxos`
+GET `/api/BTC/mainnet/wallet/:walletId/utxos`
 
