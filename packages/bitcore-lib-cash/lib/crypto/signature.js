@@ -291,7 +291,7 @@ Signature.prototype.hasDefinedHashtype = function() {
     return false;
   }
   // accept with or without Signature.SIGHASH_ANYONECANPAY by ignoring the bit
-  var temp = this.nhashtype & ~Signature.SIGHASH_ANYONECANPAY;
+  var temp = this.nhashtype & 0x1F
   if (temp < Signature.SIGHASH_ALL || temp > Signature.SIGHASH_SINGLE) {
     return false;
   }

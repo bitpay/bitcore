@@ -137,9 +137,9 @@ Opcode.map = {
 
   // splice ops
   OP_CAT: 126,
-  OP_SUBSTR: 127,
-  OP_LEFT: 128,
-  OP_RIGHT: 129,
+  OP_SPLIT: 127,
+  OP_NUM2BIN: 128,
+  OP_BIN2NUM: 129,
   OP_SIZE: 130,
 
   // bit logic
@@ -197,6 +197,7 @@ Opcode.map = {
   OP_CHECKMULTISIGVERIFY: 175,
 
   OP_CHECKLOCKTIMEVERIFY: 177,
+  OP_CHECKSEQUENCEVERIFY: 178,
 
   // expansion
   OP_NOP1: 176,

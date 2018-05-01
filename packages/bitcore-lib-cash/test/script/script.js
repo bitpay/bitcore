@@ -276,16 +276,22 @@ describe('Script', function() {
       Script('OP_RETURN OP_PUSHDATA1 80 0x' + buf.toString('hex')).isDataOut().should.equal(true);
     });
 
+    it('validates that this 220-byte OP_RETURN is standard', function() {
+      var buf = new Buffer(220);
+      buf.fill(0);
+      Script('OP_RETURN OP_PUSHDATA1 220 0x' + buf.toString('hex')).isDataOut().should.equal(true);
+    });
+
     it('validates that this 40-byte long OP_CHECKMULTISIG is not standard op_return', function() {
       var buf = new Buffer(40);
       buf.fill(0);
       Script('OP_CHECKMULTISIG 40 0x' + buf.toString('hex')).isDataOut().should.equal(false);
     });
 
-    it('validates that this 81-byte OP_RETURN is not a valid standard OP_RETURN', function() {
-      var buf = new Buffer(81);
+    it('validates that this 221-byte OP_RETURN is not a valid standard OP_RETURN', function() {
+      var buf = new Buffer(221);
       buf.fill(0);
-      Script('OP_RETURN OP_PUSHDATA1 81 0x' + buf.toString('hex')).isDataOut().should.equal(false);
+      Script('OP_RETURN OP_PUSHDATA1 221 0x' + buf.toString('hex')).isDataOut().should.equal(false);
     });
   });
 

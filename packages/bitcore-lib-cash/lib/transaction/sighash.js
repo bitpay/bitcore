@@ -12,13 +12,14 @@ var Hash = require('../crypto/hash');
 var ECDSA = require('../crypto/ecdsa');
 var $ = require('../util/preconditions');
 var BufferUtil = require('../util/buffer');
+var Interpreter = require('../script/interpreter');
 var _ = require('lodash');
 
 var SIGHASH_SINGLE_BUG = '0000000000000000000000000000000000000000000000000000000000000001';
 var BITS_64_ON = 'ffffffffffffffff';
 
-
-var ENABLE_SIGHASH_FORKID = true;
+// By default, we sign with sighash_forkid
+var DEFAULT_SIGN_FLAGS = Interpreter.SCRIPT_ENABLE_SIGHASH_FORKID;
 
 
 var sighashForForkId = function(transaction, sighashType, inputNumber, subscript, satoshisBN) {
@@ -27,8 +28,6 @@ var sighashForForkId = function(transaction, sighashType, inputNumber, subscript
     satoshisBN instanceof BN, 
     'For ForkId=0 signatures, satoshis or complete input must be provided'
   );
-
-  
 
   function GetForkId() {
     return 0; // In the UAHF, a fork id of 0 is used (see [4] REQ-6-2 NOTE 4)
@@ -154,12 +153,16 @@ function getHash (w) {
  * @param {number} sighashType the type of the hash
  * @param {number} inputNumber the input index for the signature
  * @param {Script} subscript the script that will be signed
- * @param {satoshisBN} sed in ForkId signatures. If not provided, outputs's amount is used.
+ * @param {satoshisBN} input's amount (for  ForkId signatures)
  *
  */
-var sighash = function sighash(transaction, sighashType, inputNumber, subscript, satoshisBN) {
+var sighash = function sighash(transaction, sighashType, inputNumber, subscript, satoshisBN, flags) {
   var Transaction = require('./transaction');
   var Input = require('./input');
+
+  if (_.isUndefined(flags)){
+    flags = DEFAULT_SIGN_FLAGS;
+  }
 
   // Copy transaction
   var txcopy = Transaction.shallowCopy(transaction);
@@ -167,8 +170,16 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript,
   // Copy script
   subscript = new Script(subscript);
 
+  if (flags & Interpreter.SCRIPT_ENABLE_REPLAY_PROTECTION) {
+    // Legacy chain's value for fork id must be of the form 0xffxxxx.
+    // By xoring with 0xdead, we ensure that the value will be different
+    // from the original one, even if it already starts with 0xff.
+    var forkValue = sighashType >> 8;
+    var newForkValue =  0xff0000 | ( forkValue ^ 0xdead);
+    sighashType =  (newForkValue << 8) | (sighashType & 0xff)
+  }
 
-  if ( ( sighashType & Signature.SIGHASH_FORKID) && ENABLE_SIGHASH_FORKID) {
+  if ( ( sighashType & Signature.SIGHASH_FORKID)  && (flags & Interpreter.SCRIPT_ENABLE_SIGHASH_FORKID) ) {
     return sighashForForkId(txcopy, sighashType, inputNumber, subscript, satoshisBN);
   }
 
@@ -240,8 +251,11 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript,
  * @param {satoshisBN} input's amount
  * @return {Signature}
  */
-function sign(transaction, privateKey, sighashType, inputIndex, subscript, satoshisBN) {
-  var hashbuf = sighash(transaction, sighashType, inputIndex, subscript, satoshisBN);
+function sign(transaction, privateKey, sighashType, inputIndex, subscript, satoshisBN, flags) {
+  var hashbuf = sighash(transaction, sighashType, inputIndex, subscript, satoshisBN, flags);
+
+
+
   var sig = ECDSA.sign(hashbuf, privateKey, 'little').set({
     nhashtype: sighashType
   });
@@ -258,12 +272,13 @@ function sign(transaction, privateKey, sighashType, inputIndex, subscript, satos
  * @param {number} inputIndex
  * @param {Script} subscript
  * @param {satoshisBN} input's amount
+ * @param {flags} verification flags
  * @return {boolean}
  */
-function verify(transaction, signature, publicKey, inputIndex, subscript, satoshisBN) {
+function verify(transaction, signature, publicKey, inputIndex, subscript, satoshisBN, flags) {
   $.checkArgument(!_.isUndefined(transaction));
   $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype));
-  var hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript, satoshisBN);
+  var hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript, satoshisBN, flags);
   return ECDSA.verify(hashbuf, signature, publicKey, 'little');
 }
 
