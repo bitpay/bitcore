@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=8.0.0"
   },
-  "version": "8.0.0",
+  "version": "8.0.1",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "main": "server.js",
   "bin": "bin/start",
