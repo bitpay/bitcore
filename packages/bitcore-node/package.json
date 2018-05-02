@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=8.0.0"
   },
-  "version": "8.0.0",
+  "version": "8.0.1",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "main": "server.js",
   "bin": "bin/start",
@@ -23,7 +23,6 @@
     "bitcore-p2p": "^8.0.0",
     "bitcore-p2p-cash": "^8.0.0",
     "body-parser": "~1.17.2",
-    "commander": "^2.15.1",
     "express": "~4.15.3",
     "mkdirp": "^0.5.1",
     "mongoose": "^5.0.3",

@@ -1,9 +1,9 @@
 const BTCStateProvider = require('../btc/btc');
-const util = require('util');
 
-function BCHStateProvider() {
-  BTCStateProvider.call(this, 'BCH');
+class BCHStateProvider extends BTCStateProvider {
+  constructor() {
+    super('BCH');
+  }
 }
-util.inherits(BCHStateProvider, BTCStateProvider);
 
 module.exports = BCHStateProvider;

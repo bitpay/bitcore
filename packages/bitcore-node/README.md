@@ -8,32 +8,41 @@ _Requirements_:
 
 ```
 {
-  "pruneSpentScripts": true,
-  "chains": {
-    "BTC": {
-      "mainnet": {
-        "trustedPeers": [
-        {
-          "host": "127.0.0.1",
-          "port": 8333
+  "bitcoreNode": {
+    "pruneSpentScripts": true,
+    "chains": {
+      "BTC": {
+        "regtest": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "127.0.0.1",
+              "port": 30000
+            }
+          ],
+          "rpc": {
+            "host": "127.0.0.1",
+            "port": 30001,
+            "username": "bitpaytest",
+            "password": "local321"
+          }
+        },
+        "testnet": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "127.0.0.1",
+              "port": 20000
+            }
+          ],
+          "rpc": {
+            "host": "127.0.0.1",
+            "port": 30001
+          }
         }
-        ]
-      }
-    },
-    "BCH": {
-      "mainnet": {
-        "parentChain": "BTC",
-        "forkHeight": 478558,
-        "trustedPeers": [
-        {
-          "host": "127.0.0.1",
-          "port": 9333
-        }
-        ]
       }
     }
   }
-}
 
 ```
 
@@ -89,11 +98,11 @@ BODY:
 
 ### Get Wallet:
 
-GET `/api/BTC/mainnet/wallet/:walletId`
+GET `/api/BTC/mainnet/wallet/:pubKey`
 
 ### Import Addresses:
 
-POST `/api/BTC/mainnet/wallet/:walletId`
+POST `/api/BTC/mainnet/wallet/:pubKey`
 
 BODY: raw jsonl wallet file of the form
 ```
@@ -102,17 +111,17 @@ BODY: raw jsonl wallet file of the form
 
 ### Get Wallet Addresses
 
-GET `/api/BTC/mainnet/wallet/:walletId/addresses`
+GET `/api/BTC/mainnet/wallet/:pubKey/addresses`
 
 ### Get Wallet Transactions:
 
-GET `/api/BTC/mainnet/wallet/:walletId/transactions`
+GET `/api/BTC/mainnet/wallet/:pubKey/transactions`
 
 ### Get Balance:
 
-GET `/api/BTC/mainnet/wallet/:walletId/balance`
+GET `/api/BTC/mainnet/wallet/:pubKey/balance`
 
 ### Get Wallet UTXOS
 
-GET `/api/BTC/mainnet/wallet/:walletId/utxos`
+GET `/api/BTC/mainnet/wallet/:pubKey/utxos`
 

@@ -1,10 +1,6 @@
 const os = require('os');
-const program = require('commander');
-
-program
-  .version('8.0.0')
-  .option('-c, --config <path>', 'The path to bitcore config')
-  .parse(process.argv);
+const parseArgv = require('./utils/parseArgv');
+let program = parseArgv([], ['config']);
 
 function findConfig() {
   let foundConfig;
