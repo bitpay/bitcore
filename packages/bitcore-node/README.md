@@ -8,32 +8,41 @@ _Requirements_:
 
 ```
 {
-  "pruneSpentScripts": true,
-  "chains": {
-    "BTC": {
-      "mainnet": {
-        "trustedPeers": [
-        {
-          "host": "127.0.0.1",
-          "port": 8333
+  "bitcoreNode": {
+    "pruneSpentScripts": true,
+    "chains": {
+      "BTC": {
+        "regtest": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "127.0.0.1",
+              "port": 30000
+            }
+          ],
+          "rpc": {
+            "host": "127.0.0.1",
+            "port": 30001,
+            "username": "bitpaytest",
+            "password": "local321"
+          }
+        },
+        "testnet": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "127.0.0.1",
+              "port": 20000
+            }
+          ],
+          "rpc": {
+            "host": "127.0.0.1",
+            "port": 30001
+          }
         }
-        ]
-      }
-    },
-    "BCH": {
-      "mainnet": {
-        "parentChain": "BTC",
-        "forkHeight": 478558,
-        "trustedPeers": [
-        {
-          "host": "127.0.0.1",
-          "port": 9333
-        }
-        ]
       }
     }
   }
-}
 
 ```
 
