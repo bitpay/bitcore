@@ -23,18 +23,15 @@ An usage example of bitcore-lib-cash can be seen at https://github.com/bitpay/co
 ## Get Started
 
 ```
-npm install bitcore-lib
+npm install bitcore-lib-cash
 ```
 
-```
-bower install bitcore-lib
-```
 
 Adding Bitcore Cash to your app's `package.json`:
 
 ``` json
   "dependencies": {
-         "bitcore-lib-cash": "git@github.com:bitpay/bitcore-lib.git#cash",
+         "bitcore-lib-cash": "=0.18.0",
           ...
           }
 ```
