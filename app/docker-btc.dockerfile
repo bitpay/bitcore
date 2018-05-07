@@ -1,4 +1,4 @@
-FROM node
+FROM node:8.11.1
 MAINTAINER SonicWizard
 COPY . /var/www
 WORKDIR /var/www
@@ -14,8 +14,8 @@ RUN npm rebuild node-sass
 RUN npm install -g replace
 RUN replace '%DEFAULT_CURRENCY%' ${DEFAULT_CURRENCY} ./src/providers/currency/currency.ts
 RUN replace '%API_PREFIX%' ${API_PREFIX} ./src/providers/api/api.ts
-RUN replace 'IONIC_PATH' ${IONIC_PATH} ./ionic.config.json
-RUN replace 'IONIC_PROXY_URL' ${IONIC_PROXY_URL} ./ionic.config.json
+RUN replace '%IONIC_PATH%' ${IONIC_PATH} ./ionic.config.json
+RUN replace '%IONIC_PROXY_URL%' ${IONIC_PROXY_URL} ./ionic.config.json
 
 EXPOSE 8100
 ENTRYPOINT ["npm", "start"]

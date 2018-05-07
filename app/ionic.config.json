@@ -7,8 +7,8 @@
   },
   "proxies": [
     {
-      "path": "IONIC_PATH",
-      "proxyUrl": "IONIC_PROXY_URL"
+      "path": "%IONIC_PATH%",
+      "proxyUrl": "%IONIC_PROXY_URL%"
     }
   ]
 }
