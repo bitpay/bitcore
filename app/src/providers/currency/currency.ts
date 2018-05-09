@@ -21,7 +21,6 @@ export class CurrencyProvider {
   public explorers: any = [];
 
   constructor(public http: Http, private api: ApiProvider) {
-    // TODO Make this an API call
     this.defaultCurrency = '%DEFAULT_CURRENCY%';
     this.currencySymbol = this.defaultCurrency;
 

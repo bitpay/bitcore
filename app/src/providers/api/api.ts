@@ -14,7 +14,6 @@ export class ApiProvider {
   public apiPrefix: string;
 
   constructor(public http: Http) {
-    // TODO Make this an API call
     this.apiPrefix = '%API_PREFIX%/';
   }
 
