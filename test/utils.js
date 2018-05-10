@@ -204,11 +204,47 @@ describe('Utils', function() {
     it('should encrypt and decrypt', function() {
       var pwd = "ezDRS2NRchMJLf1IWtjL5A==";
       var ct = Utils.encryptMessage('hello world', pwd);
-      var msg = Utils.decryptMessageNoThrow(ct, 'test');
-      // returns encrypted json
-      should.exist(JSON.parse(msg).iv);
-      should.exist(JSON.parse(msg).ct);
+      var msg = Utils.decryptMessageNoThrow(ct, pwd);
+
+      msg.should.equal('hello world');
     });
+
+    it('should encrypt and  fail to decrypt', function() {
+      var pwd = "ezDRS2NRchMJLf1IWtjL5A==";
+      var ct = Utils.encryptMessage('hello world', pwd);
+      var msg = Utils.decryptMessageNoThrow(ct, 'hola');
+
+      msg.should.equal('<ECANNOTDECRYPT>');
+    });
+
+
+    it('should failover to decrypt a non-encrypted msg' , function() {
+      var pwd = "ezDRS2NRchMJLf1IWtjL5A==";
+      var msg = Utils.decryptMessageNoThrow('hola mundo', 'hola');
+
+      msg.should.equal('hola mundo');
+    });
+ 
+    it('should failover to decrypt a non-encrypted msg (case 2)' , function() {
+      var pwd = "ezDRS2NRchMJLf1IWtjL5A==";
+      var msg = Utils.decryptMessageNoThrow('{"pepe":1}', 'hola');
+
+      msg.should.equal('{"pepe":1}');
+    });
+
+
+    it('should no try to decrypt empty', function() {
+      var msg = Utils.decryptMessageNoThrow('', 'hola');
+      msg.should.equal('');
+    });
+
+
+    it('should no try to decrypt null', function() {
+      var msg = Utils.decryptMessageNoThrow(null, 'hola');
+      msg.should.equal('');
+    });
+
+ 
   });
 
 
