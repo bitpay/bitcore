@@ -50,7 +50,7 @@ function Credentials() {
 };
 
 function _checkCoin(coin) {
-  if (!config.chains[coin]) Error('Invalid coin');
+  if (!config.chains[coin]) throw new Error('Invalid coin');
 };
 
 function _checkNetwork(coin, network) {
