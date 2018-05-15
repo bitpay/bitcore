@@ -1,3 +1,5 @@
+const Bcrypt = require('bcrypt');
+const Encrypter = require('./encryption');
 const Mnemonic = require('bitcore-mnemonic');
 const bitcoreLib = require('bitcore-lib');
 const Client = require('./client');
@@ -29,14 +31,18 @@ class Wallet {
     const mnemonic = new Mnemonic(phrase);
     const privateKey = mnemonic.toHDPrivateKey(password);
     const masterKey = Object.assign(privateKey.toObject(), privateKey.hdPublicKey.toObject());
+    const encMasterKey = Encrypter.encrypt(masterKey.toString(), password);
+    const encMnemonic = Encrypter.encrypt(mnemonic.toString(), password);
     const storage = new Storage({
       path,
       errorIfExists: true,
       createIfMissing: true
     });
     const wallet = Object.assign(params, {
-      masterKey,
-      mnemonic: mnemonic.toString()
+      masterKey: encMasterKey.toString(),
+      mnemonic: encMnemonic.toString(),
+      password: await Bcrypt.hash(password, 10),
+      xPubKey: masterKey.xpubkey
     });
     await storage.saveWallet({ wallet });
     const loadedWallet = await this.loadWallet({ path, storage });
@@ -46,10 +52,25 @@ class Wallet {
 
   static async loadWallet(params) {
     const { path } = params;
-    const storage =
-      params.storage || new Storage({ path, errorIfExists: false, createIfMissing: false });
+    const storage = params.storage || new Storage({ path, errorIfExists: false, createIfMissing: false });
     const loadedWallet = await storage.loadWallet();
     return new Wallet(Object.assign(loadedWallet, { storage }));
+  }
+
+  async unlock(password, unlockTime) {
+    const encKey = this.masterKey;
+    let validPass = await Bcrypt
+      .compare(password, this.password)
+      .catch(() => false);
+    if (!validPass) {
+      throw new Error('Incorrect Password');
+    }
+    this.masterKey = Encrypter.decrypt(this.masterKey, password);
+    if (unlockTime) {
+      setTimeout(() => {
+        this.masterKey = encKey;
+      }, unlockTime);
+    }
   }
 
   async register(params = {}) {

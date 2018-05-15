@@ -4,9 +4,9 @@ const levelup = require('levelup');
 const leveldown = require('leveldown');
 
 class Storage {
-  constructor(params){
+  constructor(params) {
     const { path, createIfMissing, errorIfExists } = params;
-    this.db = levelup(leveldown(path), {createIfMissing, errorIfExists});
+    this.db = levelup(leveldown(path), { createIfMissing, errorIfExists });
   }
   async loadWallet(params) {
     return new Promise(async (resolve, reject) => {
@@ -21,15 +21,15 @@ class Storage {
       }
     });
   }
-  async saveWallet(params){
+  async saveWallet(params) {
     const { wallet } = params;
     return this.db.put('wallet', JSON.stringify(wallet));
   }
-  async getKey(params){
+  async getKey(params) {
     const { address } = params;
     return this.db.get(`address|${address}`);
   }
-  async addKey(params){
+  async addKey(params) {
     const { key } = params;
     return this.db.put(`address|${key.address}`, key.privKey);
   }
