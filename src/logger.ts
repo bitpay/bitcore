@@ -1,13 +1,14 @@
-const winston = require('winston');
-
-const logger = winston.createLogger({
-  format: winston.format.combine(
-    winston.format.colorize({ all: true }),
-    winston.format.simple()
-  ),
+import * as winston from 'winston';
+import parseArgv from './utils/parseArgv';
+let args = parseArgv([], ['DEBUG']);
+const logLevel = args.DEBUG ? 'debug' : 'info';
+const logger = new winston.Logger({
   transports: [
-    new winston.transports.Console()
+    new winston.transports.Console({
+      colorize: true,
+      level: logLevel
+    })
   ]
 });
 
-module.exports = logger;
+export default logger;

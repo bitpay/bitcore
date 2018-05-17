@@ -1,12 +1,19 @@
-const router = require('express').Router({ mergeParams: true });
-const ChainStateProvider = require('../providers/chain-state');
+import { Request, Response, Router } from "express";
+import { ChainStateProvider } from "../providers/chain-state";
+const router = require("express").Router({ mergeParams: true });
 
-router.get('/', async function(req, res) {
-  let { chain, network, blockId } = req.params;
+router.get("/", async function(req: Request, res: Response) {
+  let { chain, network, sinceBlock, limit } = req.params;
   try {
-    let block = await ChainStateProvider.getBlocks(chain, network, blockId);
+    let payload = {
+      chain,
+      network,
+      sinceBlock,
+      args: { limit }
+    };
+    let block = await ChainStateProvider.getBlocks(payload);
     if (!block) {
-      return res.status(404).send('block not found');
+      return res.status(404).send("block not found");
     }
     res.json(block);
   } catch (err) {
@@ -14,12 +21,12 @@ router.get('/', async function(req, res) {
   }
 });
 
-router.get('/:blockId', async function(req, res) {
+router.get("/:blockId", async function(req: Request, res: Response) {
   let { blockId, chain, network } = req.params;
   try {
-    let block = await ChainStateProvider.getBlock(chain, network, blockId);
+    let block = await ChainStateProvider.getBlock({chain, network, blockId});
     if (!block) {
-      return res.status(404).send('block not found');
+      return res.status(404).send("block not found");
     }
     res.json(block);
   } catch (err) {
@@ -29,5 +36,5 @@ router.get('/:blockId', async function(req, res) {
 
 module.exports = {
   router: router,
-  path: '/block'
+  path: "/block"
 };

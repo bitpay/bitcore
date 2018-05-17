@@ -1,5 +1,25 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+import { Schema, Query, Document, Model, model, DocumentQuery } from "mongoose";
+import { TransformOptions } from "../types/TransformOptions";
+import { WalletAddressModel } from "../models/walletAddress";
+import { ChainNetwork } from "../types/ChainNetwork";
+import { LoggifyObject } from "../decorators/Loggify";
+import { TransformableModel } from "../types/TransformableModel";
+
+export interface IWallet extends ChainNetwork {
+  name: string;
+  singleAddress: boolean;
+  pubKey: string;
+  path: string;
+}
+export type WalletQuery = { [key in keyof IWallet]?: any } &
+  DocumentQuery<IWallet, Document>;
+
+export type IWalletDoc = IWallet & Document;
+export type IWalletModelDoc = IWallet & TransformableModel<IWalletDoc>;
+export interface IWalletModel extends IWalletModelDoc {
+  _id: Schema.Types.ObjectId
+  updateCoins: (wallet: IWalletModelDoc) => any;
+}
 
 const WalletSchema = new Schema({
   name: String,
@@ -12,7 +32,10 @@ const WalletSchema = new Schema({
 
 WalletSchema.index({ pubKey: 1 });
 
-WalletSchema.statics._apiTransform = function (wallet, options) {
+WalletSchema.statics._apiTransform = function(
+  wallet: IWalletModelDoc,
+  options: TransformOptions
+) {
   let transform = {
     name: wallet.name,
     pubKey: wallet.pubKey
@@ -23,10 +46,14 @@ WalletSchema.statics._apiTransform = function (wallet, options) {
   return JSON.stringify(transform);
 };
 
-WalletSchema.statics.updateCoins = async function (wallet) {
-  const WalletAddress = mongoose.model('WalletAddress');
-  let addresses = await WalletAddress.find({wallet: wallet._id});
-  return WalletAddress.updateCoins({wallet, addresses});
+WalletSchema.statics.updateCoins = async function(wallet: IWalletModel) {
+  let addressModels = await WalletAddressModel.find({ wallet: wallet._id });
+  let addresses = addressModels.map((model) => model.address);
+  return WalletAddressModel.updateCoins({ wallet, addresses });
 };
 
-module.exports = mongoose.model('Wallet', WalletSchema);
+LoggifyObject(WalletSchema.statics, 'WalletSchema');
+export let WalletModel: IWalletModel = model<IWalletDoc, IWalletModel>(
+  "Wallet",
+  WalletSchema
+);

@@ -1,76 +1,89 @@
-const BTCStateProvider = require('./btc/btc');
-const BCHStateProvider = require('./bch/bch');
+import { BTCStateProvider } from './btc/btc';
+import { BCHStateProvider } from './bch/bch';
+import { ETHStateProvider } from './eth/eth';
+import { BATStateProvider } from "./erc20/tokens/bat";
+import { CSP } from '../../types/namespaces/ChainStateProvider';
+import { Chain } from '../../types/ChainNetwork';
+import logger from '../../logger';
 
-const providers = {
+const services: CSP.ChainStateServices = {
   BTC: new BTCStateProvider(),
-  BCH: new BCHStateProvider()
+  BCH: new BCHStateProvider(),
+  ETH: new ETHStateProvider(),
+  BAT: new BATStateProvider()
 };
 
+class ChainStateProxy implements CSP.ChainStateProvider {
+  get({ chain }: Chain) {
+    if(services[chain] == undefined) {
+      throw new Error(`Chain ${chain} doesn't have a ChainStateProvider registered`);
+    }
+    return services[chain];
+  }
 
-function ChainStateProvider() { }
+  streamAddressUtxos(params: CSP.StreamAddressUtxosParams) {
+    return this.get(params).streamAddressUtxos(params);
+  }
 
-ChainStateProvider.prototype.get = function (chain) {
-  return providers[chain];
-};
+  async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
+    return this.get(params).getBalanceForAddress(params);
+  }
 
-ChainStateProvider.prototype.streamAddressUtxos = function (chain, network, address, stream, args){
-  return this.get(chain).streamAddressUtxos(network, address, stream, args);
-};
+  async getBalanceForWallet(params: CSP.GetBalanceForWalletParams) {
+    return this.get(params).getBalanceForWallet(params);
+  }
 
-ChainStateProvider.prototype.getBalanceForAddress = async function (chain, network, address){
-  return this.get(chain).getBalanceForAddress(network, address);
-};
+  async getBlock(params: CSP.GetBlockParams) {
+    return this.get(params).getBlock(params);
+  }
 
-ChainStateProvider.prototype.getBalanceForWallet = async function (chain, network, wallet) {
-  return this.get(chain).getBalanceForWallet(wallet);
-};
+  async getBlocks(params: CSP.GetBlocksParams) {
+    return this.get(params).getBlocks(params);
+  }
 
-ChainStateProvider.prototype.getBlock = async function (chain, network, blockId) {
-  return this.get(chain).getBlock(network, blockId);
-};
+  streamTransactions(params: CSP.StreamTransactionsParams) {
+    return this.get(params).streamTransactions(params);
+  }
 
-ChainStateProvider.prototype.getBlocks = async function (chain, network, sinceBlock) {
-  return this.get(chain).getBlocks(network, sinceBlock);
-};
+  streamTransaction(params: CSP.StreamTransactionParams) {
+    return this.get(params).streamTransaction(params);
+  }
 
-ChainStateProvider.prototype.streamTransactions = function (chain, network, stream, params) {
-  return this.get(chain).streamTransactions(network, stream, params);
-};
+  async createWallet(params: CSP.CreateWalletParams) {
+    return this.get(params).createWallet(params);
+  }
 
-ChainStateProvider.prototype.streamTransaction = function (chain, network, txId, stream) {
-  return this.get(chain).streamTransaction(network, txId, stream);
-};
+  async getWallet(params: CSP.GetWalletParams) {
+    logger.debug('Calling getWallet with ', params);
+    return this.get(params).getWallet(params);
+  }
 
-ChainStateProvider.prototype.createWallet = async function (params) {
-  return this.get(params.chain).createWallet(params);
-};
+  streamWalletAddresses(params: CSP.StreamWalletAddressesParams) {
+    return this.get(params).streamWalletAddresses(params);
+  }
 
-ChainStateProvider.prototype.getWallet = async function (params) {
-  return this.get(params.chain).getWallet(params);
-};
+  async updateWallet(params: CSP.UpdateWalletParams) {
+    return this.get(params).updateWallet(params);
+  }
 
-ChainStateProvider.prototype.streamWalletAddresses = function (chain, network, walletId, stream) {
-  return this.get(chain).streamWalletAddresses(network, walletId, stream);
-};
+  streamWalletTransactions(params: CSP.StreamWalletTransactionsParams) {
+    return this.get(params).streamWalletTransactions(params);
+  }
 
-ChainStateProvider.prototype.updateWallet = async function (params) {
-  return this.get(params.chain).updateWallet(params);
-};
+  async getWalletBalance(params: CSP.GetWalletBalanceParams) {
+    return this.get(params).getWalletBalance(params);
+  }
 
-ChainStateProvider.prototype.streamWalletTransactions = function (chain, network, wallet, stream, args) {
-  return this.get(chain).streamWalletTransactions(network, wallet, stream, args);
-};
+  streamWalletUtxos(params: CSP.StreamWalletUtxosParams) {
+    return this.get(params).streamWalletUtxos(params);
+  }
 
-ChainStateProvider.prototype.getWalletBalance = async function (params) {
-  return this.get(params.chain).getWalletBalance(params);
-};
+  async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
+    return this.get(params).broadcastTransaction(params);
+  }
 
-ChainStateProvider.prototype.streamWalletUtxos = function (params) {
-  return this.get(params.chain).streamWalletUtxos(params);
-};
-
-ChainStateProvider.prototype.broadcastTransaction = async function (chain, network, rawTx) {
-  return this.get(chain).broadcastTransaction(network, rawTx);
-};
-
-module.exports = new ChainStateProvider();
+  registerService(currency: string, service: CSP.IChainStateService){
+    services[currency] = service;
+  };
+}
+export let ChainStateProvider = new ChainStateProxy();

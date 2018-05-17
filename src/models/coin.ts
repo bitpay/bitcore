@@ -1,7 +1,30 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+import { Schema, Query, Document, Model, model, DocumentQuery } from "mongoose";
+import { TransformableModel } from "../types/TransformableModel";
+import { LoggifyObject } from "../decorators/Loggify";
 
-const Coin = new Schema({
+export interface ICoin {
+  network: string;
+  chain: string;
+  mintTxid: string;
+  mintIndex: number;
+  mintHeight: number;
+  coinbase: boolean;
+  value: number;
+  address: string;
+  script: Buffer;
+  wallets: Schema.Types.ObjectId;
+  spentTxid: string;
+  spentHeight: number;
+}
+export type CoinQuery = {[key in keyof ICoin]?: any}  &
+  Partial<DocumentQuery<ICoin, Document>>;
+
+type ICoinDoc = ICoin & Document;
+type ICoinModelDoc = ICoinDoc & TransformableModel<ICoinDoc>;
+export interface ICoinModel extends ICoinModelDoc {
+  getBalance: (params: { query: CoinQuery }) => Promise<{balance: number}[]>;
+}
+const CoinSchema = new Schema({
   network: String,
   chain: String,
   mintTxid: String,
@@ -16,40 +39,43 @@ const Coin = new Schema({
   spentHeight: Number
 });
 
-Coin.index({ mintTxid: 1 });
-Coin.index(
+CoinSchema.index({ mintTxid: 1 });
+CoinSchema.index(
   { mintTxid: 1, mintIndex: 1 },
   { partialFilterExpression: { spentHeight: { $lt: 0 } } }
 );
-Coin.index({ address: 1 });
-Coin.index({ mintHeight: 1, chain: 1, network: 1 });
-Coin.index({ spentTxid: 1 }, { sparse: true });
-Coin.index({ spentHeight: 1, chain: 1, network: 1 });
-Coin.index({ wallets: 1, spentHeight: 1 }, { sparse: true });
+CoinSchema.index({ address: 1 });
+CoinSchema.index({ mintHeight: 1, chain: 1, network: 1 });
+CoinSchema.index({ spentTxid: 1 }, { sparse: true });
+CoinSchema.index({ spentHeight: 1, chain: 1, network: 1 });
+CoinSchema.index({ wallets: 1, spentHeight: 1 }, { sparse: true });
 
-Coin.statics.getBalance = function(params) {
+CoinSchema.statics.getBalance = function(params: { query: CoinQuery }) {
   let { query } = params;
   query = Object.assign(query, { spentHeight: { $lt: 0 } });
-  return this.aggregate([
+  return CoinModel.aggregate([
     { $match: query },
     {
       $group: {
         _id: null,
-        balance: { $sum: '$value' }
+        balance: { $sum: "$value" }
       }
     },
     { $project: { _id: false } }
-  ]);
+  ]).exec();
 };
 
-Coin.statics._apiTransform = function(coin, options) {
-  let script = coin.script || '';
+CoinSchema.statics._apiTransform = function(
+  coin: ICoin,
+  options: { object: boolean }
+) {
+  let script = coin.script || "";
   let transform = {
     txid: coin.mintTxid,
     vout: coin.mintIndex,
     spentTxid: coin.spentTxid,
     address: coin.address,
-    script: script.toString('hex'),
+    script: script.toString("hex"),
     value: coin.value
   };
   if (options && options.object) {
@@ -58,4 +84,5 @@ Coin.statics._apiTransform = function(coin, options) {
   return JSON.stringify(transform);
 };
 
-module.exports = mongoose.model('Coin', Coin);
+LoggifyObject(CoinSchema.statics, 'CoinSchema');
+export let CoinModel: ICoinModel = model<ICoinDoc, ICoinModel>("Coin", CoinSchema);
