@@ -22,3 +22,6 @@ src/vendor
 src/dist
 build/
 build-test/
+config.json
+*bitcore.config.*
+.bcoin
