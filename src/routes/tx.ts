@@ -1,4 +1,4 @@
-import { Request, Response, Router } from 'express';
+import { Router } from 'express';
 import { CSP } from '../types/namespaces/ChainStateProvider';
 import { ChainStateProvider } from '../providers/chain-state';
 import logger from '../logger';
@@ -23,7 +23,7 @@ router.get('/', function(req, res) {
   if (req.query.blockHash) {
     payload.args.blockHash = req.query.blockHash;
   }
-  ChainStateProvider.streamTransactions(payload);
+  return ChainStateProvider.streamTransactions(payload);
 });
 
 router.get('/:txId', function(req, res) {
@@ -33,7 +33,7 @@ router.get('/:txId', function(req, res) {
   }
   chain = chain.toUpperCase();
   network = network.toLowerCase();
-  ChainStateProvider.streamTransaction({ chain, network, txId, stream: res });
+  return ChainStateProvider.streamTransaction({ chain, network, txId, stream: res });
 });
 
 router.post('/send', async function(req, res) {
@@ -47,7 +47,7 @@ router.post('/send', async function(req, res) {
       network,
       rawTx
     });
-    res.send({ txid });
+    return res.send({ txid });
   } catch (err) {
     logger.error(err);
     return res.status(500).send(err);

@@ -23,7 +23,7 @@ router.get('/:address/balance', async function(req, res) {
       network,
       address
     });
-    res.send((result && result[0]) || { balance: 0 });
+    return res.send((result && result[0]) || { balance: 0 });
   } catch (err) {
     return res.status(500).send(err);
   }

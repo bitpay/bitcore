@@ -1,4 +1,4 @@
-import { Schema, Query, Document, Model, model, DocumentQuery } from "mongoose";
+import { Schema, Document, model, DocumentQuery } from "mongoose";
 import { TransformableModel } from "../types/TransformableModel";
 import { LoggifyObject } from "../decorators/Loggify";
 

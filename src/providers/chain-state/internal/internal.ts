@@ -1,14 +1,13 @@
 import { Response } from 'express';
 import { CoinModel, CoinQuery } from '../../../models/coin';
 import { BlockModel, BlockQuery } from '../../../models/block';
-import { IWallet, IWalletModel } from '../../../models/wallet';
+import { IWalletModel } from '../../../models/wallet';
 import { WalletModel } from '../../../models/wallet';
 import { WalletAddressModel } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { Storage } from '../../../services/storage';
 import { RPC } from '../../../rpc';
 import { LoggifyClass } from '../../../decorators/Loggify';
-import logger from '../../../logger';
 import config from '../../../config';
 
 import {
@@ -19,24 +18,12 @@ import {
 const JSONStream = require('JSONStream');
 const ListTransactionsStream = require('./transforms');
 
-type StreamWalletTransactionsArgs = {
-  startBlock: number;
-  endBlock: number;
-  startDate: Date;
-  endDate: Date;
-};
-
-type StreamAddressUtxosArgs = {
-  unspent: boolean;
-};
-
 type StreamWalletUtxoArgs = { includeSpent: 'true' | undefined };
 type StreamWalletUtxoParams = {
   wallet: IWalletModel;
   args: Partial<StreamWalletUtxoArgs>;
   stream: Response;
 };
-type GetBlockArgs = { limit: null | number };
 
 @LoggifyClass
 export class InternalStateProvider implements CSP.IChainStateService {
@@ -191,7 +178,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   streamWalletAddresses(params: CSP.StreamWalletAddressesParams) {
-    let { network, walletId, stream } = params;
+    let { walletId, stream } = params;
     let query = { wallet: walletId };
     Storage.apiStreamingFind(WalletAddressModel, query, stream);
   }

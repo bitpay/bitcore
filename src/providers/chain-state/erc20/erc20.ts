@@ -1,10 +1,4 @@
 const abi = require('./erc20abi');
-const Web3 = require('web3-eth');
-const config = require('../../../config');
-const mongoose = require('mongoose');
-const Wallet = mongoose.model('Wallet');
-const Storage = require('../../../services/storage');
-const WalletAddress = mongoose.model('WalletAddress');
 
 import { CSP } from "../../../types/namespaces/ChainStateProvider";
 import { ETHStateProvider } from "../eth/eth";

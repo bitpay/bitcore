@@ -54,7 +54,7 @@ app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
         `This node is not configured for the network ${network} on chain ${chain}`
       );
   }
-  next();
+  return next();
 });
 
 app.use('/api/:chain/:network', bootstrap());

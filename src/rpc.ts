@@ -27,7 +27,8 @@ export class RPC {
         },
         json: true
       },
-      function(err, res, body) {
+      function(err, res) {
+        const {body} = res;
         if (err) {
           return callback(err);
         }
