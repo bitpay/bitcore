@@ -1,7 +1,6 @@
 import { P2pService } from './services/p2p';
 import { Storage } from './services/storage';
 import { Worker } from './services/worker';
-import { CallbackType } from './types/Callback';
 import logger from './logger';
 import config from './config';
 

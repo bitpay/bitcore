@@ -1,5 +1,4 @@
 import { Request, Response, Router } from 'express';
-import { CSP } from '../types/namespaces/ChainStateProvider';
 import { ChainNetwork } from '../types/ChainNetwork';
 import { IWalletModel } from '../models/wallet';
 import { RequestHandler } from 'express-serve-static-core';
@@ -61,7 +60,7 @@ const authenticate: RequestHandler = async (
     if (!validRequestSignature) {
       return res.status(401).send(new Error('Authentication failed'));
     }
-    next();
+    return next();
   } catch (e) {
     return res.status(401).send(new Error('Authentication failed'));
   }
@@ -88,9 +87,9 @@ router.post('/', async function(req, res) {
       pubKey,
       path
     });
-    res.send(result);
+    return res.send(result);
   } catch (err) {
-    res.status(500).send(err);
+    return res.status(500).send(err);
   }
 });
 
@@ -100,7 +99,7 @@ router.get('/:pubKey', authenticate, async function(
 ) {
   try {
     let wallet = req.wallet;
-    res.send(wallet);
+    return res.send(wallet);
   } catch (err) {
     return res.status(500).send(err);
   }
@@ -115,7 +114,7 @@ router.get('/:pubKey/addresses', authenticate, async function(req, res) {
       walletId: pubKey,
       stream: res
     };
-    ChainStateProvider.streamWalletAddresses(payload);
+    return ChainStateProvider.streamWalletAddresses(payload);
   } catch (err) {
     return res.status(500).send(err);
   }
@@ -149,7 +148,7 @@ router.get(
   async (req: AuthenticatedRequest, res) => {
     let { chain, network } = req.params;
     try {
-      await ChainStateProvider.streamWalletTransactions({
+      return await ChainStateProvider.streamWalletTransactions({
         chain,
         network,
         wallet: req.wallet!,
@@ -173,7 +172,7 @@ router.get(
         network,
         wallet: req.wallet!
       });
-      res.send((result && result[0]) || { balance: 0 });
+      return res.send((result && result[0]) || { balance: 0 });
     } catch (err) {
       return res.status(500).json(err);
     }
@@ -186,7 +185,7 @@ router.get(
   async (req: AuthenticatedRequest, res) => {
     let { chain, network } = req.params;
     try {
-      ChainStateProvider.streamWalletUtxos({
+      return ChainStateProvider.streamWalletUtxos({
         chain,
         network,
         wallet: req.wallet!,

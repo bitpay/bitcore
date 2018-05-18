@@ -22,11 +22,8 @@ export function LoggifyClass<T extends { new (...args: any[]): {} }>(
 
 export function LoggifyMethod(className: string) {
   return function(
-    target: any,
-    propertyKey: string,
     descriptor: TypedPropertyDescriptor<Function>
   ) {
-    let prop = propertyKey;
     if (descriptor.value != undefined) {
       descriptor.value = LoggifyFunction(descriptor.value, className);
     }
