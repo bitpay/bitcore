@@ -1,4 +1,4 @@
-import { Request, Response, Router } from "express";
+import { Request, Response } from "express";
 import { ChainStateProvider } from "../providers/chain-state";
 const router = require("express").Router({ mergeParams: true });
 
@@ -15,7 +15,7 @@ router.get("/", async function(req: Request, res: Response) {
     if (!block) {
       return res.status(404).send("block not found");
     }
-    res.json(block);
+    return res.json(block);
   } catch (err) {
     return res.status(500).send(err);
   }
@@ -28,7 +28,7 @@ router.get("/:blockId", async function(req: Request, res: Response) {
     if (!block) {
       return res.status(404).send("block not found");
     }
-    res.json(block);
+    return res.json(block);
   } catch (err) {
     return res.status(500).send(err);
   }

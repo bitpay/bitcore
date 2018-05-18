@@ -1,4 +1,4 @@
-import { Schema, Query, Document, Model, model, DocumentQuery } from "mongoose";
+import { Schema, Document, model, DocumentQuery } from "mongoose";
 import { CoinModel, ICoinModel } from "./coin";
 import { TransformOptions } from "../types/TransformOptions";
 import { partition } from "../utils/partition";

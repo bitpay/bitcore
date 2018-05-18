@@ -107,6 +107,12 @@ export class P2pService extends EventEmitter {
       });
 
       this.pool.on('peertx', (peer, message) => {
+        logger.debug('peer tx received', {
+          peer,
+          chain: this.chain,
+          network: this.network,
+          message
+        });
         if (
           !this.invCache[this.bitcoreP2p.Inventory.TYPE.TX].includes(
             message.transaction.hash
@@ -123,6 +129,12 @@ export class P2pService extends EventEmitter {
       });
 
       this.pool.on('peerblock', (peer, message) => {
+        logger.debug('peer block received', {
+          peer,
+          chain: this.chain,
+          network: this.network,
+          message
+        });
         if (
           !this.invCache[this.bitcoreP2p.Inventory.TYPE.BLOCK].includes(
             message.block.hash
@@ -142,6 +154,12 @@ export class P2pService extends EventEmitter {
       });
 
       this.pool.on('peerheaders', (peer, message) => {
+        logger.debug('peerheaders message received', {
+          peer,
+          chain: this.chain,
+          network: this.network,
+          message
+        });
         this.emit('headers', message.headers);
       });
 
@@ -232,17 +250,19 @@ export class P2pService extends EventEmitter {
       },
       function(cb: CallbackType) {
         let lastLog = 0;
-        async.eachOfSeries(
+        async.eachSeries(
           self.headersQueue,
           function(
             header: BlockHeaderObj,
-            headerIndex: number,
             cb: CallbackType
           ) {
             self.getBlock(header.hash, function(
               err: any,
               block: BitcoinBlockType
             ) {
+              if (err) {
+                return cb(err);
+              }
               logger.debug('Block received', block.hash);
               self.processBlock(block, function(err: any) {
                 blockCounter++;
