@@ -31,7 +31,7 @@ class Wallet {
     const mnemonic = new Mnemonic(phrase);
     const privateKey = mnemonic.toHDPrivateKey(password);
     const masterKey = Object.assign(privateKey.toObject(), privateKey.hdPublicKey.toObject());
-    const encMasterKey = Encrypter.encrypt(masterKey.toString(), password);
+    const encMasterKey = Encrypter.encrypt(JSON.stringify(masterKey), password);
     const encMnemonic = Encrypter.encrypt(mnemonic.toString(), password);
     const storage = new Storage({
       path,
@@ -39,8 +39,8 @@ class Wallet {
       createIfMissing: true
     });
     const wallet = Object.assign(params, {
-      masterKey: encMasterKey.toString(),
-      mnemonic: encMnemonic.toString(),
+      masterKey: encMasterKey,
+      mnemonic: encMnemonic,
       password: await Bcrypt.hash(password, 10),
       xPubKey: masterKey.xpubkey
     });
@@ -65,7 +65,7 @@ class Wallet {
     if (!validPass) {
       throw new Error('Incorrect Password');
     }
-    this.masterKey = Encrypter.decrypt(this.masterKey, password);
+    this.masterKey = await Encrypter.decrypt(this.masterKey, password);
     if (unlockTime) {
       setTimeout(() => {
         this.masterKey = encKey;

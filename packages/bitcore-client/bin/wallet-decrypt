@@ -13,7 +13,7 @@ const main = async () => {
   const { path, password } = program;
   try {
     let wallet = await Wallet.loadWallet({ path })
-    wallet.unlock(password);
+    await wallet.unlock(password);
     console.log(wallet);
   } catch (e) {
     console.error('Unable to decrypt wallet');
