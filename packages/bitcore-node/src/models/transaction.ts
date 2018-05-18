@@ -32,7 +32,7 @@ export type TransactionQuery = {[key in keyof ITransaction]?: any}&
 type ITransactionDoc = ITransaction & Document;
 type ITransactionModelDoc = ITransactionDoc & TransformableModel<ITransactionDoc>;
 
-type BatchImportMethodParams = {
+export type BatchImportMethodParams = {
   txs: Array<Bitcoin.Transaction>;
   height: number;
   blockTime?: Date;
