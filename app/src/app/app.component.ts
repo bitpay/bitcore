@@ -3,11 +3,7 @@ import { Platform, MenuController, Nav } from 'ionic-angular';
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
 import {
-  HomePage,
-  BlocksPage
-  // BroadcastTxPage
-  // NodeStatusPage,
-  // VerifyMessagePage
+  HomePage
 } from '../pages';
 
 @Component({
@@ -41,7 +37,7 @@ export class InsightApp {
     // set our app's pages
     this.pages = [
       { title: 'Home', component: HomePage },
-      { title: 'Blocks', component: BlocksPage },
+      { title: 'Blocks', component: 'blocks' },
       { title: 'Broadcast Transaction', component: 'BroadcastTxPage' }
       // { title: 'Verify Signed Message', component: VerifyMessagePage },
       // { title: 'Node Status', component: NodeStatusPage }
