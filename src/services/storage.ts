@@ -10,34 +10,36 @@ import "../models"
 
 @LoggifyClass
 export class StorageService {
-  start(ready: CallbackType, args: any) {
-    let options = Object.assign({}, config, args);
-    let { dbName, dbHost } = options;
-    const connectUrl = `mongodb://${dbHost}/${dbName}?socketTimeoutMS=3600000&noDelay=true`;
-    let attemptConnect = async () => {
-      return mongoose.connect(connectUrl, {
-        keepAlive: 1,
-        poolSize: config.maxPoolSize,
-        /*
-         *nativeParser: true
-         */
-      });
-    };
-    let attempted = 0;
-    let attemptConnectId = setInterval(async () => {
-      try {
-        let data = await attemptConnect();
-        clearInterval(attemptConnectId);
-        ready(null, data);
-      } catch (err) {
-        logger.error(err);
-        attempted++;
-        if (attempted > 5) {
+  start(args: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      let options = Object.assign({}, config, args);
+      let { dbName, dbHost } = options;
+      const connectUrl = `mongodb://${dbHost}/${dbName}?socketTimeoutMS=3600000&noDelay=true`;
+      let attemptConnect = async () => {
+        return mongoose.connect(connectUrl, {
+          keepAlive: 1,
+          poolSize: config.maxPoolSize,
+          /*
+           *nativeParser: true
+           */
+        });
+      };
+      let attempted = 0;
+      let attemptConnectId = setInterval(async () => {
+        try {
+          let data = await attemptConnect();
           clearInterval(attemptConnectId);
-          ready(err);
+          resolve(data);
+        } catch (err) {
+          logger.error(err);
+          attempted++;
+          if (attempted > 5) {
+            clearInterval(attemptConnectId);
+            reject(err);
+          }
         }
-      }
-    }, 5000);
+      }, 5000);
+    });
   }
 
   stop() {}

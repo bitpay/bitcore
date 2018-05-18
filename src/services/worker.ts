@@ -5,38 +5,36 @@ import config from '../config';
 import { LoggifyClass } from "../decorators/Loggify";
 const cluster = require('cluster');
 const { EventEmitter } = require('events');
-const async = require('async');
 
 @LoggifyClass
 export class WorkerService extends EventEmitter {
-  workers = new Array<{ worker: WorkerType; active: boolean }>();
+  workers = new Array<{ worker: WorkerType; active: boolean, started: Promise<any> }>();
 
-  start(ready: CallbackType) {
-    var self = this;
-    if (cluster.isMaster) {
-      logger.verbose(`Master ${process.pid} is running`);
-      cluster.on('exit', function(worker: WorkerType) {
-        logger.error(`worker ${worker.process.pid} died`);
-      });
-      async.times(
-        config.numWorkers,
-        function(n: any, cb: CallbackType) {
-          var newWorker = cluster.fork();
-          newWorker.on('message', function(msg: any) {
-            self.emit(msg.id, msg);
+  async start() {
+    return new Promise(async resolve => {
+      if (cluster.isMaster) {
+        logger.verbose(`Master ${process.pid} is running`);
+        cluster.on('exit', (worker: WorkerType) => {
+          logger.error(`worker ${worker.process.pid} died`);
+        });
+        for (let worker = 0; worker < config.numWorkers; worker++) {
+          let newWorker = cluster.fork();
+          newWorker.on('message', (msg: any) => {
+            this.emit(msg.id, msg);
           });
-          self.workers.push({ worker: newWorker, active: false });
-          setTimeout(cb, 3000);
-        },
-        function() {
-          ready();
+          let started = new Promise(resolve => {
+            newWorker.on('listening', resolve);
+          });
+          this.workers.push({ worker: newWorker, active: false, started });
         }
-      );
-    }
-    if (cluster.isWorker) {
-      logger.verbose(`Worker ${process.pid} started`);
-      setImmediate(ready);
-    }
+        await Promise.all(this.workers.map(worker => worker.started));
+        resolve();
+      }
+      if (cluster.isWorker) {
+        logger.verbose(`Worker ${process.pid} started`);
+        resolve();
+      }
+    });
   }
 
   stop() {}
