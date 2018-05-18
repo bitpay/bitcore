@@ -1,8 +1,5 @@
-import ConfigType from '../../../types/Config';
 import Config from '../../../config';
 import { WalletAddressModel } from '../../../models/walletAddress';
-import { WalletModel } from '../../../models/wallet';
-import { Storage } from '../../../services/storage';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { InternalStateProvider } from '../internal/internal';
 import { Schema } from 'mongoose';
@@ -53,14 +50,14 @@ export class ETHStateProvider extends InternalStateProvider
     stream.send(JSON.stringify(transactions));
   }
 
-  async getWalletAddresses(network: string, walletId: Schema.Types.ObjectId) {
+  async getWalletAddresses(walletId: Schema.Types.ObjectId) {
     let query = { wallet: walletId };
     return WalletAddressModel.find(query);
   }
 
   async getWalletBalance(params: CSP.GetWalletBalanceParams) {
     const { network } = params;
-    let addresses = await this.getWalletAddresses(network, params.wallet._id);
+    let addresses = await this.getWalletAddresses(params.wallet._id);
     let addressBalancePromises = addresses.map(({ address }) =>
       this.getBalanceForAddress({ chain: this.chain, network, address })
     );

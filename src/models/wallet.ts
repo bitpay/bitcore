@@ -1,4 +1,4 @@
-import { Schema, Query, Document, Model, model, DocumentQuery } from "mongoose";
+import { Schema, Document, model, DocumentQuery } from "mongoose";
 import { TransformOptions } from "../types/TransformOptions";
 import { WalletAddressModel } from "../models/walletAddress";
 import { ChainNetwork } from "../types/ChainNetwork";

@@ -1,7 +1,5 @@
 import mongoose = require("mongoose");
-import { CallbackType } from "../types/Callback";
 import { Response } from "express";
-import { Model, Query, Document } from "mongoose";
 import { TransformableModel } from "../types/TransformableModel";
 import logger from '../logger';
 import config from '../config';
@@ -44,7 +42,7 @@ export class StorageService {
 
   stop() {}
 
-  apiStreamingFind<T extends Document>(
+  apiStreamingFind(
     model: TransformableModel<any>,
     query: any,
     res: Response

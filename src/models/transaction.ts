@@ -1,10 +1,8 @@
-import { Schema, Query, Document, Model, model, DocumentQuery } from "mongoose";
+import { Schema, Document, model, DocumentQuery } from "mongoose";
 import { CoinModel, CoinQuery, ICoinModel } from "./coin";
 import { WalletAddressModel } from "./walletAddress";
-import { AddBlockParams } from "./block";
 import { BitcoinTransactionType } from "../types/Transaction";
 import { partition } from "../utils/partition";
-import { WalletModel, IWalletModel, WalletQuery } from "./wallet";
 import { ObjectID } from "bson";
 import { TransformOptions } from "../types/TransformOptions";
 import { ChainNetwork } from "../types/ChainNetwork";

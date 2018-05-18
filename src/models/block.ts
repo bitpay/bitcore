@@ -1,4 +1,4 @@
-import { Schema, Query, Document, Model, model, DocumentQuery } from 'mongoose';
+import { Schema, Document, model, DocumentQuery } from 'mongoose';
 import { CoinModel } from './coin';
 import { TransactionModel } from './transaction';
 import { CallbackType } from '../types/Callback';
@@ -171,7 +171,7 @@ BlockSchema.statics.addBlock = function(
 BlockSchema.statics.getPoolInfo = function(coinbase: string) {
   //TODO need to make this actually parse the coinbase input and map to miner strings
   // also should go somewhere else
-  return 'miningPool';
+  return coinbase;
 };
 
 BlockSchema.statics.getLocalTip = function(params: ChainNetwork) {
