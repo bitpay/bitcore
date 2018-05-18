@@ -96,7 +96,7 @@
 					<div class="tsd-signature tsd-kind-icon">Loggified<wbr>Classes<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/aef0bfa3/packages/bitcore-node/src/decorators/Loggify.ts#L4">decorators/Loggify.ts:4</a></li>
+							<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/141f9632/packages/bitcore-node/src/decorators/Loggify.ts#L4">decorators/Loggify.ts:4</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
@@ -121,9 +121,19 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/aef0bfa3/packages/bitcore-node/src/decorators/Loggify.ts#L5">decorators/Loggify.ts:5</a></li>
+									<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/141f9632/packages/bitcore-node/src/decorators/Loggify.ts#L19">decorators/Loggify.ts:19</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Wraps each method on a class with a function that logs out the
+									class name, method name, and arguments passed to the method</p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>export</dt>
+									<dd></dd>
+								</dl>
+							</div>
 							<h4 class="tsd-type-parameters-title">Type parameters</h4>
 							<ul class="tsd-type-parameters">
 								<li>
@@ -140,6 +150,11 @@
 								<span class="tsd-signature-symbol"> &amp; </span>
 								<span class="tsd-signature-type">T</span>
 							</h4>
+							<p>a new class where each method is wrapped</p>
+							<h2 id="example">Example</h2>
+							<pre><code>  <span class="hljs-meta">@LoggifyClass</span>
+  export <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">P2pService</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">EventEmitter</span> </span>{
+</code></pre>
 						</li>
 					</ul>
 				</section>
@@ -153,13 +168,25 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/aef0bfa3/packages/bitcore-node/src/decorators/Loggify.ts#L33">decorators/Loggify.ts:33</a></li>
+									<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/141f9632/packages/bitcore-node/src/decorators/Loggify.ts#L62">decorators/Loggify.ts:62</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Wraps a function and logs out a message and the function params</p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>export</dt>
+									<dd></dd>
+								</dl>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>fn: <span class="tsd-signature-type">Function</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>the function to wrap</p>
+									</div>
 								</li>
 								<li>
 									<h5><span class="tsd-flag ts-flagOptional">Optional</span> logPrefix: <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></h5>
@@ -169,6 +196,7 @@
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">(Anonymous function)</span></h4>
+							<p>a new wrapped function</p>
 						</li>
 					</ul>
 				</section>
@@ -182,9 +210,19 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/aef0bfa3/packages/bitcore-node/src/decorators/Loggify.ts#L23">decorators/Loggify.ts:23</a></li>
+									<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/141f9632/packages/bitcore-node/src/decorators/Loggify.ts#L44">decorators/Loggify.ts:44</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Wraps a method on a class with a function that logs out the
+									method name, and arguments passed to the method</p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>export</dt>
+									<dd></dd>
+								</dl>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
@@ -205,13 +243,26 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/aef0bfa3/packages/bitcore-node/src/decorators/Loggify.ts#L58">decorators/Loggify.ts:58</a></li>
+									<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/141f9632/packages/bitcore-node/src/decorators/Loggify.ts#L96">decorators/Loggify.ts:96</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Wraps each method on an object with a function that logs out the
+									method name, and arguments passed to the method</p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>export</dt>
+									<dd></dd>
+								</dl>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>obj: <span class="tsd-signature-type">any</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The object to wrap</p>
+									</div>
 								</li>
 								<li>
 									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> logPrefix: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;&quot;&quot;</span></h5>
@@ -221,6 +272,7 @@
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4>
+							<p>an object where each method is wrapped</p>
 						</li>
 					</ul>
 				</section>

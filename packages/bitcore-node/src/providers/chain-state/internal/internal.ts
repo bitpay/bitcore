@@ -32,14 +32,25 @@ export class InternalStateProvider implements CSP.IChainStateService {
     this.chain = chain;
     this.chain = this.chain.toUpperCase();
   }
-
-  getRPC(network: string) {
+/**
+ * Returns an RPC client that
+ *
+ * @param {string} network
+ * @returns {RPC}
+ * @memberof InternalStateProvider
+*/
+getRPC(network: string): RPC {
     const RPC_PEER = config.chains[this.chain][network].rpc;
     const { username, password, host, port } = RPC_PEER;
     return new RPC(username, password, host, port);
   }
-
-  streamAddressUtxos(params: CSP.StreamAddressUtxosParams) {
+/**
+ * Writes all UTXOs for an address to a stream
+ *
+ * @param {CSP.StreamAddressUtxosParams} params
+ * @memberof InternalStateProvider
+ */
+streamAddressUtxos(params: CSP.StreamAddressUtxosParams) {
     const { network, address, stream, args } = params;
     if (typeof address !== 'string' || !this.chain || !network) {
       throw 'Missing required param';
@@ -56,18 +67,39 @@ export class InternalStateProvider implements CSP.IChainStateService {
     Storage.apiStreamingFind(CoinModel, query, stream);
   }
 
+  /**
+   * Gets a promise of an array of balances
+   *
+   * @param {CSP.GetBalanceForAddressParams} params
+   * @returns A promise for an array of {balance: number }
+   * @memberof InternalStateProvider
+   */
   getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
     const { network, address } = params;
     let query = { chain: this.chain, network, address };
     return CoinModel.getBalance({ query });
   }
-
-  async getBalanceForWallet(params: CSP.GetBalanceForWalletParams) {
+/**
+ * Gets a promise of an array of balances for a wallet
+ *
+ * @param {CSP.GetBalanceForWalletParams} params
+ * @returns A promise for an array of {balance: number}
+ * @memberof InternalStateProvider
+ */
+async getBalanceForWallet(params: CSP.GetBalanceForWalletParams) {
     const { walletId } = params;
     let query = { wallets: walletId };
     return CoinModel.getBalance({ query });
   }
 
+
+  /**
+   * Returns an array of blocks in descending order by height
+   * Allows you to pass in sinceBlock and limit to adjust how many blocks to return
+   * @param {CSP.GetBlocksParams} params
+   * @returns
+   * @memberof InternalStateProvider
+   */
   async getBlocks(params: CSP.GetBlocksParams) {
     const { network, sinceBlock, args } = params;
     let { limit = undefined } = args || {};
@@ -99,6 +131,14 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return transformedBlocks;
   }
 
+
+  /**
+   * Returns a single block by blockId
+   *
+   * @param {CSP.GetBlockParams} params
+   * @returns
+   * @memberof InternalStateProvider
+   */
   async getBlock(params: CSP.GetBlockParams) {
     const { network, blockId } = params;
     if (typeof blockId !== 'string' || !this.chain || !network) {
@@ -125,6 +165,12 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return BlockModel._apiTransform(block, { object: true });
   }
 
+  /**
+   * Write transactions to a stream. Takes in arguments for blockHeight and blockHash
+   * 
+   * @param {CSP.StreamTransactionsParams} params 
+   * @memberof InternalStateProvider
+   */
   streamTransactions(params: CSP.StreamTransactionsParams) {
     const { network, stream, args } = params;
     if (!this.chain || !network) {
@@ -145,6 +191,12 @@ export class InternalStateProvider implements CSP.IChainStateService {
       .pipe(stream);
   }
 
+  /**
+   *  Write a single transaction to a stream
+   * 
+   * @param {CSP.StreamTransactionParams} params 
+   * @memberof InternalStateProvider
+   */
   streamTransaction(params: CSP.StreamTransactionParams) {
     let { network, txId, stream } = params;
     if (typeof txId !== 'string' || !this.chain || !network || !stream) {
@@ -157,6 +209,13 @@ export class InternalStateProvider implements CSP.IChainStateService {
       .pipe(stream);
   }
 
+  /**
+   * Create a wallet given a wallet name, path, pubKey, chain and network
+   * 
+   * @param {CSP.CreateWalletParams} params 
+   * @returns 
+   * @memberof InternalStateProvider
+   */
   async createWallet(params: CSP.CreateWalletParams) {
     const { network, name, pubKey, path } = params;
     if (typeof name !== 'string' || !network) {
@@ -171,23 +230,51 @@ export class InternalStateProvider implements CSP.IChainStateService {
     });
   }
 
+  /**
+   * Get a wallet by it's pubKey
+   * 
+   * @param {CSP.GetWalletParams} params 
+   * @returns 
+   * @memberof InternalStateProvider
+   */
   async getWallet(params: CSP.GetWalletParams) {
     const { pubKey } = params;
     let wallet = await WalletModel.findOne({ pubKey });
     return wallet;
   }
 
+  /**
+   * Write all of a wallet's addresses to a stream
+   * 
+   * @param {CSP.StreamWalletAddressesParams} params 
+   * @memberof InternalStateProvider
+   */
   streamWalletAddresses(params: CSP.StreamWalletAddressesParams) {
     let { walletId, stream } = params;
     let query = { wallet: walletId };
     Storage.apiStreamingFind(WalletAddressModel, query, stream);
   }
 
+  /**
+   * Add a set of addresses to the wallet 
+   * 
+   * @param {CSP.UpdateWalletParams} params 
+   * @returns 
+   * @memberof InternalStateProvider
+   */
   async updateWallet(params: CSP.UpdateWalletParams) {
     const { wallet, addresses } = params;
     return WalletAddressModel.updateCoins({ wallet, addresses });
   }
 
+  /**
+   * Write a wallet's transactions to a stream. 
+   * Takes parameters for startBlock, endBlock, 
+   * startDate, endDate
+   * 
+   * @param {CSP.StreamWalletTransactionsParams} params 
+   * @memberof InternalStateProvider
+   */
   async streamWalletTransactions(params: CSP.StreamWalletTransactionsParams) {
     let { network, wallet, stream, args } = params;
     let query: TransactionQuery = {
@@ -216,11 +303,24 @@ export class InternalStateProvider implements CSP.IChainStateService {
     transactionStream.pipe(listTransactionsStream).pipe(stream);
   }
 
+  /**
+   *  Get the balance of a wallet 
+   * 
+   * @param {{ wallet: IWalletModel }} params 
+   * @returns 
+   * @memberof InternalStateProvider
+   */
   async getWalletBalance(params: { wallet: IWalletModel }) {
     let query = { wallets: params.wallet._id };
     return CoinModel.getBalance({ query });
   }
 
+  /**
+   *  Get all of a wallet's utxos and write them to a stream 
+   * 
+   * @param {StreamWalletUtxoParams} params 
+   * @memberof InternalStateProvider
+   */
   streamWalletUtxos(params: StreamWalletUtxoParams) {
     const { wallet, args = {}, stream } = params;
     let query: CoinQuery = { wallets: wallet._id };
@@ -230,6 +330,14 @@ export class InternalStateProvider implements CSP.IChainStateService {
     Storage.apiStreamingFind(CoinModel, query, stream);
   }
 
+
+  /**
+   * Broadcast a transaction over rpc
+   * 
+   * @param {CSP.BroadcastTransactionParams} params 
+   * @returns 
+   * @memberof InternalStateProvider
+   */
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
     let { network, rawTx } = params;
     let txPromise = new Promise((resolve, reject) => {
