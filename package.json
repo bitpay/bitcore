@@ -20,7 +20,9 @@
     "debug": "npm run tsc && node --inspect build/server.js --DEBUG true",
     "tsc": "./node_modules/.bin/tsc",
     "tsc:test": "./node_modules/.bin/tsc -p ./tsconfig.test.json",
-    "test": "npm run tsc:test && ./node_modules/.bin/mocha ./build-test/test"
+    "test": "npm run tsc:test && node ./build-test/test/runners/unit.js && node ./build-test/test/runners/integration.js",
+    "test:unit": "npm run tsc:test && node ./build-test/test/runners/unit.js",
+    "test:integration": "npm run tsc:test && node ./build-test/test/runners/integration.js"
   },
   "keywords": [
     "bitcore-node",
@@ -44,6 +46,7 @@
     "chai": "^4.1.2",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
+    "glob": "^7.1.2",
     "mocha": "^5.0.5",
     "sinon": "^4.4.8",
     "supertest": "^3.0.0",
