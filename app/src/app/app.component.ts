@@ -4,8 +4,8 @@ import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
 import {
   HomePage,
-  BlocksPage,
-  BroadcastTxPage
+  BlocksPage
+  // BroadcastTxPage
   // NodeStatusPage,
   // VerifyMessagePage
 } from '../pages';
@@ -42,7 +42,7 @@ export class InsightApp {
     this.pages = [
       { title: 'Home', component: HomePage },
       { title: 'Blocks', component: BlocksPage },
-      { title: 'Broadcast Transaction', component: BroadcastTxPage }
+      { title: 'Broadcast Transaction', component: 'BroadcastTxPage' }
       // { title: 'Verify Signed Message', component: VerifyMessagePage },
       // { title: 'Node Status', component: NodeStatusPage }
     ];
