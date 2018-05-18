@@ -39,7 +39,7 @@ export type AddBlockParams = {
   Partial<IBlock>;
 
 type IBlockModelDoc = IBlockDoc & TransformableModel<IBlockDoc>;
-type BlockMethodParams = { header?: Bitcoin.Block.HeaderObj } & ChainNetwork;
+export type BlockMethodParams = { header?: Bitcoin.Block.HeaderObj } & ChainNetwork;
 export interface IBlockModel extends IBlockModelDoc {
   addBlock: (params: AddBlockParams) => Promise<IBlockModel>;
   handleReorg: (params: BlockMethodParams) => Promise<void>;

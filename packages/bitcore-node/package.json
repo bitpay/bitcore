@@ -74,6 +74,7 @@
     "request": "^2.86.0",
     "secp256k1": "^3.5.0",
     "snappy": "^6.0.1",
+    "strongly-typed-events": "^1.4.5",
     "underscore": "^1.8.3",
     "web3": "^1.0.0-beta.34",
     "web3-eth": "^1.0.0-beta.34",

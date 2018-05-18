@@ -1,20 +1,23 @@
-import logger from '../logger';
-import { ConnectionConfig } from '../types/BitcoinConfig';
-import { ChainNetwork } from '../types/ChainNetwork';
+import logger from '../../logger';
+import { ChainNetwork, Chain } from '../../types/ChainNetwork';
+import { HostPort } from '../../types/HostPort';
+import { Peer, BitcoreP2pPool } from '../../types/Bitcore-P2P-Pool';
+import { Bitcoin } from "../../types/namespaces/Bitcoin";
+import { LoggifyClass } from '../../decorators/Loggify';
+import { P2pService, IP2pState, BlockEvent, TransactionEvent } from '.';
+
 import { EventEmitter } from 'events';
-import { HostPort } from '../types/HostPort';
-import { Peer, BitcoreP2pPool } from '../types/Bitcore-P2P-Pool';
-import { BlockModel } from '../models/block';
-import { TransactionModel } from '../models/transaction';
-import { LoggifyClass } from '../decorators/Loggify';
-import { Bitcoin } from '../types/namespaces/Bitcoin';
-import { sleep } from '../utils/async';
+import { BlockModel } from '../../models/block';
+import { sleep } from '../../utils/async';
+import { SimpleEventDispatcher, ISimpleEvent } from 'ste-simple-events';
+import { ConnectionConfig } from '../../types/BitcoinConfig';
+
 const cluster = require('cluster');
-const Chain = require('../chain');
+const Chain = require('../../chain');
 const async = require('async');
 
 @LoggifyClass
-export class P2pService extends EventEmitter {
+export class BtcP2pService extends EventEmitter implements P2pService {
   chain: string;
   network: string;
   parentChain: string;
@@ -29,11 +32,19 @@ export class P2pService extends EventEmitter {
   blockQueue: any[];
   messages: any;
   pool: undefined | BitcoreP2pPool;
+  state: IP2pState;
+  blocksDispatch: SimpleEventDispatcher<BlockEvent>;
+  transactionsDispatch: SimpleEventDispatcher<TransactionEvent>;
+
 
   stayConnected: undefined | NodeJS.Timer;
 
-  constructor(params: ChainNetwork & ConnectionConfig) {
+  constructor(state: IP2pState, config: any) {
     super();
+
+    // TODO: manually check if this is true
+    const params: ConnectionConfig & ChainNetwork = config;
+
     this.chain = params.chain;
     this.parentChain = params.parentChain;
     this.forkHeight = params.forkHeight;
@@ -48,6 +59,9 @@ export class P2pService extends EventEmitter {
     this.blockRates = [];
     this.transactionQueue = async.queue(this.processTransaction.bind(this), 1);
     this.blockQueue = async.queue(this.processBlock.bind(this), 1);
+    this.state = state;
+    this.blocksDispatch = new SimpleEventDispatcher();
+    this.transactionsDispatch = new SimpleEventDispatcher();
 
     if (!this.bitcoreLib.Networks.get(this.network)) {
       throw new Error('Unknown network specified in config');
@@ -88,7 +102,9 @@ export class P2pService extends EventEmitter {
           chain: this.chain,
           network: this.network
         });
-        this.emit('ready');
+
+        this.state.handleReorg({ chain: this.chain, network: this.network })
+          .then(() => this.sync());
       });
 
       this.pool.on('peerdisconnect', peer => {
@@ -338,12 +354,14 @@ export class P2pService extends EventEmitter {
   }
 
   async processBlock(block: Bitcoin.Block) {
-    await BlockModel.addBlock({
-      chain: this.chain,
-      network: this.network,
-      parentChain: this.parentChain,
-      forkHeight: this.forkHeight,
-      block
+    this.blocksDispatch.dispatch({
+      block: {
+        chain: this.chain,
+        network: this.network,
+        parentChain: this.parentChain,
+        forkHeight: this.forkHeight,
+        block
+      }
     });
     logger.info(`Added block ${block.hash}`, {
       chain: this.chain,
@@ -352,13 +370,15 @@ export class P2pService extends EventEmitter {
   }
 
   processTransaction(tx: Bitcoin.Transaction) {
-    return TransactionModel.batchImport({
-      txs: [tx],
-      height: -1,
-      network: this.network,
-      chain: this.chain,
-      blockTime: new Date(),
-      blockTimeNormalized: new Date()
+    this.transactionsDispatch.dispatch({
+      transaction: {
+        txs: [tx],
+        height: -1,
+        network: this.network,
+        chain: this.chain,
+        blockTime: new Date(),
+        blockTimeNormalized: new Date()
+      }
     });
   }
 
@@ -369,5 +389,13 @@ export class P2pService extends EventEmitter {
     } else {
       throw new Error('Cannot broadcast over P2P, not connected to peer pool');
     }
+  }
+
+  blocks(): ISimpleEvent<BlockEvent> {
+    return this.blocksDispatch.asEvent()
+  }
+
+  transactions(): ISimpleEvent<TransactionEvent> {
+    return this.transactionsDispatch.asEvent()
   }
 }
