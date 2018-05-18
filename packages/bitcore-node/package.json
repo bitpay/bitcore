@@ -19,7 +19,7 @@
     "start": "npm run tsc && node build/server.js",
     "debug": "npm run tsc && node --inspect build/server.js --DEBUG true",
     "tsc": "$(npm bin)/tsc",
-    "doc": "$(npm bin)/typedoc",
+    "doc": "$(npm bin)/typedoc --out docs",
     "doc:open": "open docs/index.html || xdg-open docs/index.html",
     "tsc:test": "./node_modules/.bin/tsc -p ./tsconfig.test.json",
     "test": "npm run tsc:test && node ./build-test/test/runners/unit.js && node ./build-test/test/runners/integration.js",
