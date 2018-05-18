@@ -1,0 +1,13 @@
+FROM node:8
+
+ADD . /bitcore
+
+WORKDIR /bitcore
+
+RUN npm install
+
+RUN npm run build
+
+ADD test/docker/bitcore/bitcore-test.config.json /bitcore/
+
+CMD npm run start
