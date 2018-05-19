@@ -7,17 +7,23 @@ describe('Adapters', () => {
   it('should convert a bitcoin block to an internal block', () => {
     const block: Bitcoin.Block = {
       hash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
-      transactions: [{
-        hash: '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08',
-        _hash: '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08',
-        isCoinbase: () => true,
-        outputAmount: 0.09765625,
-        inputs: [],
-        outputs: [],
-        nLockTime: 0,
-        toBuffer: () => Buffer.from('')
-      }],
-      toBuffer: () => Buffer.from(''),
+      transactions: [
+        {
+          hash:
+            '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08',
+          _hash:
+            '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08',
+          isCoinbase: () => true,
+          outputAmount: 0.09765625,
+          inputs: [],
+          outputs: [],
+          nLockTime: 0,
+          toBuffer: () => Buffer.from('')
+        }
+      ],
+      toBuffer: () => {
+        return { length: 264 } as Buffer;
+      },
       header: {
         toObject: () => {
           return {
@@ -57,6 +63,13 @@ describe('Adapters', () => {
     };
     const convertedBlock = AdapterProxy.convertBlock(params);
     console.log(convertedBlock);
-    expect(1).equals(1);
+    expect(convertedBlock.hash).equals(block.hash);
+    expect(convertedBlock.bits).equals(545259519);
+    expect(convertedBlock.chain).equals('BTC');
+    expect(convertedBlock.height).equals(1355);
+    expect(convertedBlock.size).equals(264);
+    expect(convertedBlock.merkleRoot).equals(
+      '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08'
+    );
   });
 });
