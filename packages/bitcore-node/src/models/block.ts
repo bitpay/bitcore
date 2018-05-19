@@ -3,11 +3,11 @@ import { CoinModel } from './coin';
 import { TransactionModel } from './transaction';
 import { CallbackType } from '../types/Callback';
 import { TransformOptions } from '../types/TransformOptions';
-import { BitcoinBlockType, BlockHeaderObj } from '../types/Block';
 import { ChainNetwork } from '../types/ChainNetwork';
 import { TransformableModel } from '../types/TransformableModel';
 import logger from '../logger';
 import { LoggifyObject } from '../decorators/Loggify';
+import { Bitcoin } from "../types/namespaces/Bitcoin";
 const async = require('async');
 
 export interface IBlock {
@@ -34,14 +34,14 @@ export type BlockQuery = { [key in keyof IBlock]?: any } &
 type IBlockDoc = IBlock & Document;
 
 export type AddBlockParams = {
-  block: BitcoinBlockType;
+  block: Bitcoin.Block;
   parentChain: string;
   forkHeight: number;
 } & ChainNetwork &
   Partial<IBlock>;
 
 type IBlockModelDoc = IBlockDoc & TransformableModel<IBlockDoc>;
-type BlockMethodParams = { header?: BlockHeaderObj } & ChainNetwork;
+type BlockMethodParams = { header?: Bitcoin.Block.HeaderObj } & ChainNetwork;
 interface IBlockModel extends IBlockModelDoc {
   addBlock: (params: AddBlockParams, callback: CallbackType) => any;
   handleReorg: (params: BlockMethodParams, cb: CallbackType) => any;
