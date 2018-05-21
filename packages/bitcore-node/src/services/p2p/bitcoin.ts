@@ -7,12 +7,9 @@ import { LoggifyClass } from '../../decorators/Loggify';
 import { P2pService } from '.';
 
 import { EventEmitter } from 'events';
-// import { BlockModel } from '../../models/block';
-// import { sleep } from '../../utils/async';
 import { Subject } from 'rxjs';
 import { ConnectionConfig } from '../../types/BitcoinConfig';
 
-// const cluster = require('cluster');
 const Chain = require('../../chain');
 
 @LoggifyClass
@@ -30,7 +27,10 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
   private invCache: { [key: string]: any[] };
   private stayConnected?: NodeJS.Timer;
   private stream: {
-    blocks: Subject<Bitcoin.Block>;
+    blocks: Subject<{
+      block: Bitcoin.Block,
+      transactions: Bitcoin.Transaction[]
+    }>;
     transactions: Subject<Bitcoin.Transaction>;
   };
 
@@ -84,13 +84,6 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
   }
 
   public async start() {
-    // TODO: what are the semantics of a cluster?
-    // if (!cluster.isWorker) {
-    await this.connect();
-    // }
-  }
-
-  private async connect() {
     this.pool.on('peerready', peer => {
       logger.info(`Connected to peer ${peer.host}`, {
         chain: this.chain,
@@ -105,9 +98,9 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       });
     });
 
-    this.pool.on('peertx', (peer, message) => {
+    this.pool.on('peertx', (_peer, message) => {
       logger.debug('peer tx received', {
-        peer,
+        // peer,
         chain: this.chain,
         network: this.network,
         message
@@ -123,12 +116,12 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       }
     });
 
-    this.pool.on('peerblock', (peer, message) => {
+    this.pool.on('peerblock', (_peer, message) => {
       logger.debug('peer block received', {
-        peer,
+        // peer,
         chain: this.chain,
         network: this.network,
-        message
+        // message
       });
       // TODO: This cache seems slow, maybe it's significant
       const hash = message.block.hash;
@@ -137,26 +130,26 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
         if (this.invCache[this.bitcoreP2p.Inventory.TYPE.BLOCK].length > 1000) {
           this.invCache[this.bitcoreP2p.Inventory.TYPE.BLOCK].shift();
         }
-        this.stream.blocks.next(message.block);
-        // this.emit(message.block.hash, message.block);
-        // if (!this.syncing) {
-        //   this.emit('block', message.block);
-        //   this.blockQueue.push(message.block);
-        // }
+        this.emit(message.block.hash, message.block);
+        if (!this.syncing) {
+          this.stream.blocks.next({
+            block: message.block,
+            transactions: message.block.transactions
+          });
+        }
       }
     });
 
-    this.pool.on('peerheaders', (peer, message) => {
+    this.pool.on('peerheaders', (_peer, message) => {
       logger.debug('peerheaders message received', {
-        peer,
+        // peer,
         chain: this.chain,
         network: this.network,
-        message
+        // message
       });
       this.emit('headers', message.headers);
     });
 
-    // TODO: whats this?
     this.pool.on('peerinv', (peer, message) => {
       if (!this.syncing) {
         const filtered = message.inventory.filter((inv: any) => {
@@ -172,13 +165,13 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       }
     });
 
-    // this.once('ready', async () => {
-    //   await BlockModel.handleReorg({ chain: this.chain, network: this.network });
-    //   await this.sync();
-    // });
-
     this.stayConnected = setInterval(this.pool.connect.bind(this.pool), 5000);
     this.pool.connect();
+
+    // connect to peers before using this service
+    return new Promise<void>(resolve => {
+      this.pool.once('peerready', () => resolve())
+    });
   }
 
   public async stop() {
@@ -194,41 +187,6 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
     }
     this.syncing = true;
 
-    // // check if already synced
-    // const bestBlock = await BlockModel.getLocalTip({
-    //   chain: this.chain,
-    //   network: this.network
-    // });
-    // if (bestBlock.height === this.getPoolHeight()) {
-    //   logger.verbose('Already synced', {
-    //     chain: this.chain,
-    //     network: this.network,
-    //     height: bestBlock.height
-    //   });
-    //   this.syncing = false;
-    //   return;
-    // }
-
-    // // if this is forked and origin is not synced,
-    // // wait 5 seconds for sync and then try again.
-    // while (this.parentChain && bestBlock.height < this.forkHeight) {
-    //   const parentBestBlock = await BlockModel.getLocalTip({
-    //     chain: this.parentChain,
-    //     network: this.network
-    //   });
-    //   if (parentBestBlock.height < this.forkHeight) {
-    //     await sleep(5000);
-    //   }
-    // }
-
-    // logger.info(
-    //   `Syncing from ${bestBlock.height} to ${this.getPoolHeight()} for chain ${
-    //     this.chain
-    // }`);
-
-    // let blockCounter = 0;
-    // let lastLog = 0;
-
     while (true) {
       const headers = await this.getHeaders(locatorHashes);
       if (headers.length === 0) {
@@ -238,19 +196,10 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       for (const header of headers) {
         const block = await this.getBlock(header.hash);
         logger.debug('Block received', block.hash);
-        // await this.processBlock(block);
-        // blockCounter++;
-
-        // if (Date.now() - lastLog > 100) {
-        //   logger.info(`Sync progress ${(
-        //     (bestBlock.height + blockCounter) / this.getPoolHeight() * 100
-        //   ).toFixed(3)}%`, {
-        //     chain: this.chain,
-        //     network: this.network,
-        //     height: bestBlock.height + blockCounter
-        //   });
-        //   lastLog = Date.now();
-        // }
+        this.stream.blocks.next({
+          block,
+          transactions: block.transactions
+        });
       }
     }
 
@@ -280,84 +229,42 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
   }
 
   private async getHeaders(candidateHashes: string[]): Promise<Bitcoin.Block.HeaderObj[]> {
-    const getHeaders = () => {
-      if (this.pool) {
-        this.pool.sendMessage(
-          this.messages.GetHeaders({
+    return new Promise(resolve => {
+      const getHeaders = () => {
+        if (this.pool) {
+          this.pool.sendMessage(this.messages.GetHeaders({
             starts: candidateHashes
-          })
-        );
-      }
-    };
-
-    getHeaders();
-    const headersRetry = setInterval(getHeaders, 5000);
-
-    return new Promise(resolve =>
+          }));
+        }
+      };
       this.once('headers', headers => {
         clearInterval(headersRetry);
-        resolve(headers);
-      })
-    ) as Promise<Bitcoin.Block.HeaderObj[]>;
+        resolve(headers)
+      });
+
+      getHeaders();
+      const headersRetry = setInterval(getHeaders, 5000);
+    }) as Promise<Bitcoin.Block.HeaderObj[]>;
   }
 
   private async getBlock(hash: string): Promise<Bitcoin.Block> {
-    logger.debug('Getting block, hash:', hash);
-    const _getBlock = () => {
-      if (this.pool) {
-        this.pool.sendMessage(this.messages.GetData.forBlock(hash));
-      }
-    };
-
-    _getBlock();
-    const getBlockRetry = setInterval(_getBlock, 1000);
-
-    return new Promise(resolve =>
+    return new Promise(resolve => {
+      logger.debug('Getting block, hash:', hash);
+      const _getBlock = () => {
+        if (this.pool) {
+          this.pool.sendMessage(this.messages.GetData.forBlock(hash));
+        }
+      };
       this.once(hash, block => {
         logger.debug('Received block, hash:', hash);
         clearInterval(getBlockRetry);
-        resolve(block);
-      })
-    ) as Promise<Bitcoin.Block>;
+        resolve(block)
+      });
+
+      _getBlock();
+      const getBlockRetry = setInterval(_getBlock, 1000);
+    }) as Promise<Bitcoin.Block>;
   }
-
-  // async processBlock(block: BitcoinBlockType) {
-  //   this.blocksDispatch.dispatch({
-  //     block: {
-  //       chain: this.chain,
-  //       network: this.network,
-  //       parentChain: this.parentChain,
-  //       forkHeight: this.forkHeight,
-  //       block
-  //     }
-  //   });
-  //   logger.info(`Added block ${block.hash}`, {
-  //     chain: this.chain,
-  //     network: this.network
-  //   });
-  // }
-
-  // processTransaction(tx: BitcoinTransactionType) {
-  //   this.transactionsDispatch.dispatch({
-  //     transaction: {
-  //       txs: [tx],
-  //       height: -1,
-  //       network: this.network,
-  //       chain: this.chain,
-  //       blockTime: new Date(),
-  //       blockTimeNormalized: new Date()
-  //     }
-  //   });
-  // }
-
-  // sendTransaction(rawTx: { txid: string }) {
-  //   if (this.pool) {
-  //     this.pool.sendMessage(this.messages.Transaction(rawTx));
-  //     return rawTx.txid;
-  //   } else {
-  //     throw new Error('Cannot broadcast over P2P, not connected to peer pool');
-  //   }
-  // }
 
   blocks() {
     return this.stream.blocks;

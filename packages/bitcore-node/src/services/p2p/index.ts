@@ -2,15 +2,20 @@ import logger from '../../logger';
 import { Observable } from 'rxjs';
 import { map as rxmap } from 'rxjs/operators';
 import { ChainNetwork } from '../../types/ChainNetwork';
-import { IBlockModel, IBlock } from '../../models/block';
+import { IBlockModel } from '../../models/block';
 import { sleep } from '../../utils/async';
-import { ITransaction, ITransactionModel } from '../../models/transaction';
+import { ITransactionModel } from '../../models/transaction';
 import { SupportedChain, SupportedChainSet } from '../../types/SupportedChain';
+import { BtcP2pService } from './bitcoin';
+import { Bitcoin } from '../../types/namespaces/Bitcoin';
 
 
 export interface P2pService<Block, Transaction> {
   // a stream of incoming blocks
-  blocks(): Observable<Block>;
+  blocks(): Observable<{
+    block: Block,
+    transactions: Transaction[]
+  }>;
 
   // a stream of incoming transactions
   transactions(): Observable<Transaction>;
@@ -33,7 +38,7 @@ export interface P2pService<Block, Transaction> {
 }
 
 
-export type StandardP2p = P2pService<IBlock, ITransaction>;
+export type StandardP2p = P2pService<Bitcoin.Block, Bitcoin.Transaction>;
 
 
 export function map<B1, T1, B2, T2>(
@@ -42,7 +47,12 @@ export function map<B1, T1, B2, T2>(
   mapTrans: (T1) => T2
 ): P2pService<B2, T2> {
   return {
-    blocks: () => service.blocks().pipe(rxmap(mapBlocks)),
+    blocks: () => service.blocks().pipe(rxmap(b => {
+      return {
+        block: mapBlocks(b.block),
+        transactions: b.transactions.map(mapTrans),
+      };
+    })),
     transactions: () => service.blocks().pipe(rxmap(mapTrans)),
     start: service.start.bind(service),
     sync: service.sync.bind(service),
@@ -59,24 +69,36 @@ export async function init(
   transactions: ITransactionModel,
   service: StandardP2p
 ) {
-  service.blocks().subscribe(block => {
-    blocks.addBlock(block);
-  }, err => {
-    // TODO: better error logs
-    logger.error(err);
-  });
+  logger.debug(`Started worker for chain ${chainnet.chain}`);
+  const parent = service.parent();
+
+  // TODO: queue up messages
+  service.blocks().subscribe(async pair => {
+    await blocks.addBlock({
+      chain: chainnet.chain,
+      network: chainnet.network,
+      forkHeight: parent? parent.height : 0,
+      parentChain: parent? parent.chain : chainnet.chain,
+      block: pair.block
+    });
+    logger.debug(`Added block ${pair.block.hash}`, chainnet);
+  }, logger.error.bind(logger));
 
   service.transactions().subscribe(transaction => {
-    transactions.batchImport(transaction)
-  }, err => {
-    // TODO: better error logs
-    logger.error(err);
-  });
+    transactions.batchImport({
+      txs: [transaction],
+      height: -1,
+      network: chainnet.network,
+      chain: chainnet.chain,
+      blockTime: new Date(),
+      blockTimeNormalized: new Date(),
+    });
+  }, logger.error.bind(logger));
 
+  // wait for it to get connected
   await service.start();
 
   // check if already synced
-  const parent = service.parent();
   let bestBlock = await blocks.getLocalTip({
       chain: chainnet.chain,
       network: chainnet.network
@@ -84,6 +106,7 @@ export async function init(
 
   // wait for the parent fork to sync first
   if (parent && bestBlock.height < parent.height) {
+    logger.info(`Waiting until ${parent.chain} syncs before ${chainnet.chain}`);
     do {
       await sleep(5000);
       bestBlock = await blocks.getLocalTip({
@@ -106,6 +129,9 @@ export async function init(
 
     await service.sync(locators);
   }
+  else {
+    logger.info(`${chainnet.chain} up to date, not syncing.`);
+  }
 }
 
 export function build(
@@ -118,6 +144,7 @@ export function build(
         BCH: () => new BtcP2pService(config),
         BTC: () => new BtcP2pService(config),
     };
+    logger.debug(`Building p2p service for ${chain}.`)
     return namesToChains[chain]();
 }
 

@@ -40,7 +40,7 @@ const startServices = async () => {
   }
   // TODO: this waits until all p2p services are synced,
   // this is probably not right.
-  await Promise.all(p2pServices.map(Function.apply));
+  await Promise.all(p2pServices.map(w => w()));
 };
 
 const startAPI = async () => {
