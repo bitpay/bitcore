@@ -18,7 +18,7 @@ function shaHash(password) {
 }
 
 function decrypt(data, password, algo = 'aes-256-cbc') {
-  const password_hash = Buffer.form(shaHash(password));
+  const password_hash = Buffer.from(shaHash(password));
   const [iv, encData] = data.split(':');
   const ivBuffer = Buffer.from(iv, 'hex');
   const decipher = crypto.createDecipheriv(algo, password_hash, ivBuffer);
