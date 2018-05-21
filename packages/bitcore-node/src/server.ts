@@ -1,4 +1,4 @@
-import { P2pService, build } from './services/p2p';
+import { build as buildP2p, init as initP2p } from './services/p2p';
 import { Storage } from './services/storage';
 import { Worker } from './services/worker';
 import logger from './logger';
@@ -7,8 +7,8 @@ import cluster = require('cluster');
 import app from './routes';
 import parseArgv from './utils/parseArgv';
 import { isChainSupported } from './types/SupportedChain';
-import { promisify } from 'util';
 import { BlockModel } from './models/block';
+import { TransactionModel } from './models/transaction';
 let args = parseArgv([], ['DEBUG']);
 
 const startServices = async () => {
@@ -16,7 +16,7 @@ const startServices = async () => {
   await Worker.start();
 
   // TODO this needs to move to a static p2pService method
-  let p2pServices = [] as Array<P2pService>;
+  const p2pServices: (() => Promise<void>)[] = [];
   for (let chain of Object.keys(config.chains)) {
     for (let network of Object.keys(config.chains[chain])) {
       const chainConfig = config.chains[chain][network];
@@ -30,20 +30,17 @@ const startServices = async () => {
         );
 
         // build the correct service for the chain
-        const service = build(chain, {
-          getLocalTip: promisify(BlockModel.getLocalTip.bind(BlockModel)),
-          getLocatorHashes: promisify(BlockModel.getLocatorHashes.bind(BlockModel)),
-          handleReorg: promisify(BlockModel.handleReorg.bind(BlockModel)),
-        }, p2pServiceConfig);
+        const service = buildP2p(chain, p2pServiceConfig);
 
-        // attach it to the database
-        // TODO
-
-        p2pServices.push(service);
+        // get ready to start the service
+        p2pServices.push(() => initP2p(
+          { chain, network }, BlockModel, TransactionModel, service));
       }
     }
   }
-  await Promise.all(p2pServices.map(p2pService => p2pService.start()));
+  // TODO: this waits until all p2p services are synced,
+  // this is probably not right.
+  await Promise.all(p2pServices.map(Function.apply));
 };
 
 const startAPI = async () => {
