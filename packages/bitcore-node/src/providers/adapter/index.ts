@@ -11,10 +11,15 @@ const adapters: ChainAdapters = {
   BCH: new BCHAdapter()
 };
 export class AdapterProxy {
-  static get({ chain }: Chain) {
+  get({ chain }: Chain) {
     return adapters[chain];
   }
-  static convertBlock<T>(params: Adapter.ConvertBlockParams<T>) {
-    return AdapterProxy.get(params).convertBlock(params);
+  convertBlock<B>(params: Adapter.ConvertBlockParams<B>) {
+    return this.get(params).convertBlock(params);
+  }
+  convertTx<T, B>(params: Adapter.ConvertTxParams<T, B>) {
+    return this.get(params).convertTx(params);
   }
 }
+
+export let AdapterProvider = new AdapterProxy();
