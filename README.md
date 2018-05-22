@@ -4,7 +4,7 @@ Bitcore Library
 
 [![NPM Package](https://img.shields.io/npm/v/bitcore-lib-cash.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-lib-cash)
 [![Build Status](https://img.shields.io/travis/bitpay/bitcore-lib-cash.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-lib-cash)
-[![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore-lib-cash.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore-lib-cash)
+[![Coverage Status](https://coveralls.io/repos/github/bitpay/bitcore-lib-cash/badge.svg)](https://coveralls.io/github/bitpay/bitcore-lib-cash)
 
 A pure and powerful JavaScript Bitcoin *Cash* library.
 
