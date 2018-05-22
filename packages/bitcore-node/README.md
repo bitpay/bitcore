@@ -8,76 +8,44 @@ _Requirements_:
 
 ```
 {
-  "pruneSpentScripts": true,
-  "chains": {
-    "BTC": {
-      "mainnet": {
-        "trustedPeers": [
-          {
+  "bitcoreNode": {
+    "pruneSpentScripts": true,
+    "chains": {
+      "BTC": {
+        "regtest": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "127.0.0.1",
+              "port": 30000
+            }
+          ],
+          "rpc": {
             "host": "127.0.0.1",
-            "port": 8333
+            "port": 30001,
+            "username": "bitpaytest",
+            "password": "local321"
           }
-        ]
-      }
-    },
-    "BCH": {
-      "mainnet": {
-        "parentChain": "BTC",
-        "forkHeight": 478558,
-        "trustedPeers": [
-          {
+        },
+        "testnet": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "127.0.0.1",
+              "port": 20000
+            }
+          ],
+          "rpc": {
             "host": "127.0.0.1",
-            "port": 9333
+            "port": 30001
           }
-        ]
+        }
       }
     }
   }
-}
 
 ```
 
-# Wallet
-
-## Add Wallet:
-
-POST `/api/wallet`
-
-BODY:
-```
-{
-	"name": "WalletName"
-}
-```
-
-## Get Wallet:
-
-GET `/api/wallet/:walletId`
-
-## Import Addresses:
-
-POST `/api/wallet/:walletId`
-
-BODY: raw jsonl wallet file of the form
-```
-{"address": "bItCoInAddReSSHeRe"}
-```
-
-## Get Wallet Addresses
-
-GET `/api/wallet/:walletId/addresses`
-
-## Get Wallet Transactions:
-
-GET `/api/wallet/:walletId/transactions`
-
-## Get Balance:
-
-GET `/api/wallet/:walletId/balance`
-
-## Get Wallet UTXOS
-
-GET `/api/wallet/:walletId/utxos`
 
 # Transactions
 
@@ -108,3 +76,52 @@ GET `/api/BTC/mainnet/address/mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4/balance`
 GET `/api/BTC/mainnet/block/0000000000002917ed80650c6174aac8dfc46f5fe36480aaef682ff6cd83c3ca`
 
 GET `/api/BTC/mainnet/block/123456`
+
+
+# Authenticated Methods
+## Wallet
+
+### Add Wallet:
+
+POST `/api/BTC/mainnet/wallet`
+
+BODY:
+```
+{
+  "name": "WalletName",
+  "chain": "BTC",
+  "network": "mainnet",
+  "pubKey": "03bdb94afdc7e5c4811bf9b160ac475b82156ea42c8659c8358b68c828df9a1c3d",
+  "path": "m/44'/0'/0'"
+}
+```
+
+### Get Wallet:
+
+GET `/api/BTC/mainnet/wallet/:pubKey`
+
+### Import Addresses:
+
+POST `/api/BTC/mainnet/wallet/:pubKey`
+
+BODY: raw jsonl wallet file of the form
+```
+{"address": "bItCoInAddReSSHeRe"}
+```
+
+### Get Wallet Addresses
+
+GET `/api/BTC/mainnet/wallet/:pubKey/addresses`
+
+### Get Wallet Transactions:
+
+GET `/api/BTC/mainnet/wallet/:pubKey/transactions`
+
+### Get Balance:
+
+GET `/api/BTC/mainnet/wallet/:pubKey/balance`
+
+### Get Wallet UTXOS
+
+GET `/api/BTC/mainnet/wallet/:pubKey/utxos`
+

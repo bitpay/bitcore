@@ -1,0 +1,25 @@
+#!/usr/bin/env node
+
+const program = require('commander');
+const Wallet = require('../lib/wallet');
+
+program
+  .version(require('../package.json').version)
+  .option('--path <path>', 'REQUIRED - Where wallet is stored')
+  .parse(process.argv);
+
+const main = async () => {
+  const {path} = program;
+  let wallet;
+  try {
+    wallet = await Wallet.loadWallet({ path });
+    utxos = await wallet.getUtxos();
+    for (const utxo of utxos){
+      console.log(`${JSON.stringify(utxo)}`);
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+main();

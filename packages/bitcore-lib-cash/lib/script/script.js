@@ -514,7 +514,7 @@ Script.types.MULTISIG_OUT = 'Pay to multisig';
 Script.types.MULTISIG_IN = 'Spend from multisig';
 Script.types.DATA_OUT = 'Data push';
 
-Script.OP_RETURN_STANDARD_SIZE = 80;
+Script.OP_RETURN_STANDARD_SIZE = 220;
 
 /**
  * @returns {object} The Script type if it is a known form,
@@ -688,6 +688,7 @@ Script.prototype._addBuffer = function(buf, prepend) {
   }, prepend);
   return this;
 };
+
 
 Script.prototype.removeCodeseparators = function() {
   var chunks = [];

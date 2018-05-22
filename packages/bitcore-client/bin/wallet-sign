@@ -1,0 +1,25 @@
+#!/usr/bin/env node
+
+const program = require('commander');
+const Wallet = require('../lib/wallet');
+
+program
+  .version(require('../package.json').version)
+  .option('--path <path>', 'REQUIRED - Where wallet is stored')
+  .option('--tx <tx>', 'REQUIRED - The transaction to sign')
+  .parse(process.argv);
+
+const main = async () => {
+  const { path } = program;
+  let wallet;
+  try {
+    wallet = await Wallet.loadWallet({ path });
+    let params = ({ tx } = program);
+    let signedTx = await wallet.signTx(params);
+    console.log(signedTx.uncheckedSerialize());
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+main();

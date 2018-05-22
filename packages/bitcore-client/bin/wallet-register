@@ -1,0 +1,24 @@
+#!/usr/bin/env node
+
+const program = require('commander');
+const Wallet = require('../lib/wallet');
+
+program
+  .version(require('../package.json').version)
+  .option('--path <path>', 'REQUIRED - Where wallet is stored')
+  .option('--baseUrl <url>', 'optional - Change configured wallet baseUrl')
+  .parse(process.argv);
+
+const main = async () => {
+  const {path, baseUrl} = program;
+  let wallet;
+  try {
+    wallet = await Wallet.loadWallet({ path });
+    await wallet.register({baseUrl});
+    console.log('Wallet registered!');
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+main();

@@ -16,8 +16,6 @@ services:
       - 3000:3000
     environment:
       - DB_HOST=database
-      - TRUSTED_BTC_PEER=host.docker.internal
-      - TRUSTED_BTC_PEER_PORT=${TRUSTED_BTC_PEER_PORT}
     env_file: .env
 
 #insight:

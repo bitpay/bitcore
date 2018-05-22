@@ -1,0 +1,23 @@
+#!/usr/bin/env node
+
+const program = require('commander');
+const Wallet = require('../lib/wallet');
+
+program
+  .version(require('../package.json').version)
+  .option('--path <path>', 'REQUIRED - Where wallet is stored')
+  .parse(process.argv);
+
+const main = async () => {
+  const {path} = program;
+  let wallet;
+  try {
+    wallet = await Wallet.loadWallet({ path });
+    const balance = await wallet.getBalance();
+    console.log(Object.assign(balance, {currency: wallet.chain, network: wallet.network}));
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+main();

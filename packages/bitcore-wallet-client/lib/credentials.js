@@ -50,7 +50,7 @@ function Credentials() {
 };
 
 function _checkCoin(coin) {
-  if (!config.chains[coin]) Error('Invalid coin');
+  if (!config.chains[coin]) throw new Error('Invalid coin');
 };
 
 function _checkNetwork(coin, network) {
@@ -212,7 +212,7 @@ Credentials.prototype._expand = function() {
   var network = Credentials._getNetworkFromExtendedKey(this.xPrivKey || this.xPubKey);
   if (this.network) {
     // the default network of livenet should be okay
-    $.checkState(this.network == network || network === 'livenet');
+    $.checkState(this.network.name === network.name || network === 'livenet');
   } else {
     this.network = network;
   }
