@@ -5,6 +5,7 @@ const bitcoreLib = require('bitcore-lib');
 const Client = require('./client');
 const Storage = require('./storage');
 const txProvider = require('../lib/providers/tx-provider');
+const { Address } = bitcoreLib;
 
 class Wallet {
   constructor(params) {
@@ -26,23 +27,26 @@ class Wallet {
   static async create(params) {
     const { chain, network, name, phrase, password, path } = params;
     if (!chain || !network || !name || !path) {
-      throw new Error('Missing required parameter');
+      throw new Error('Missing required parameter')
     }
     const mnemonic = new Mnemonic(phrase);
     const privateKey = mnemonic.toHDPrivateKey(password);
-    const masterKey = Object.assign(privateKey.toObject(), privateKey.hdPublicKey.toObject());
-    const encMasterKey = Encrypter.encrypt(JSON.stringify(masterKey), password);
-    const encMnemonic = Encrypter.encrypt(mnemonic.toString(), password);
+    const pubKey = privateKey.hdPublicKey.publicKey.toString();
+    const masterKey = Encrypter.generateEncryptionKey();
+    const keyObj = Object.assign(privateKey.toObject(), privateKey.hdPublicKey.toObject());
+    const encryptionKey = Encrypter.encryptEncryptionKey(masterKey, password);
+    const encPrivateKey = Encrypter.encryptPrivateKey(JSON.stringify(keyObj), pubKey, masterKey);
     const storage = new Storage({
       path,
       errorIfExists: true,
       createIfMissing: true
     });
     const wallet = Object.assign(params, {
-      masterKey: encMasterKey,
-      mnemonic: encMnemonic,
+      encryptionKey,
+      masterKey: encPrivateKey,
       password: await Bcrypt.hash(password, 10),
-      xPubKey: masterKey.xpubkey
+      xPubKey: keyObj.xpubkey,
+      pubKey
     });
     await storage.saveWallet({ wallet });
     const loadedWallet = await this.loadWallet({ path, storage });
@@ -58,17 +62,16 @@ class Wallet {
   }
 
   async unlock(password, unlockTime) {
-    const encKey = this.masterKey;
-    let validPass = await Bcrypt
-      .compare(password, this.password)
-      .catch(() => false);
+    const encMasterKey = this.masterKey;
+    let validPass = await Bcrypt.compare(password, this.password).catch(() => false);
     if (!validPass) {
       throw new Error('Incorrect Password');
     }
-    this.masterKey = await Encrypter.decrypt(this.masterKey, password);
+    const decryptionKey = await Encrypter.decryptEncryptionKey(this.encryptionKey, password);
+    this.masterKey = await Encrypter.decryptPrivateKey(encMasterKey, this.pubKey, decryptionKey);
     if (unlockTime) {
       setTimeout(() => {
-        this.masterKey = encKey;
+        this.masterKey = encMasterKey;
       }, unlockTime);
     }
   }
