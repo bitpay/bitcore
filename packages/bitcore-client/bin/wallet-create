@@ -18,7 +18,6 @@ const main = async () => {
   let wallet;
   try {
     wallet = await Wallet.create({ name, chain, network, path, phrase, password });
-    console.log(wallet.mnemonic);
     console.log('Wallet created!');
   } catch (e) {
     console.error(e);
