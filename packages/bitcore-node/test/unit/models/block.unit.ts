@@ -104,58 +104,50 @@ describe('Block Model', function () {
     });
 
     it('should return if localTip hash equals the previous hash', async () => {
-      sandbox.stub(BlockModel, 'remove').resolves();
-      sandbox.stub(TransactionModel, 'remove').resolves();
-      sandbox.stub(CoinModel, 'remove').resolves();
-      sandbox.stub(CoinModel, 'update').resolves();
-      sandbox.stub(BlockModel, 'findOne').returns({
+      let blockModelRemoveSpy = sandbox.stub(BlockModel, 'remove').resolves();
+      let transactionModelRemoveSpy = sandbox.stub(TransactionModel, 'remove').resolves();
+      let coinModelRemoveSpy = sandbox.stub(CoinModel, 'remove').resolves();
+      let coinModelUpdateSpy = sandbox.stub(CoinModel, 'update').resolves();
+      let blockModelFindOneSpy = sandbox.stub(BlockModel, 'findOne').returns({
         sort: sandbox.stub().resolves(null)
       });
 
-      const params = {
-        header: {
-          prevHash: 'prev123',
-          hash: 'hash123',
-          time: 0,
-          version: 'test123',
-          merkleRoot: 'fooBar',
-          bits: 'bits123',
-          nonce: 'random123'
-        },
-        chain: 'BTC',
-        network: 'regtest'
-      };
+      // const params = {
+      //   header: {
+      //     prevHash: 'prev123',
+      //     hash: 'hash123',
+      //     time: 0,
+      //     version: 'test123',
+      //     merkleRoot: 'fooBar',
+      //     bits: 'bits123',
+      //     nonce: 'random123'
+      //   },
+      //   chain: 'BTC',
+      //   network: 'regtest'
+      // };
 
-      const localTip = await BlockModel.getLocalTip(params);
-      expect(localTip.hash).to.not.equal(params.header.prevHash);
+      expect(blockModelRemoveSpy.notCalled);
+      expect(transactionModelRemoveSpy.notCalled);
+      expect(coinModelRemoveSpy.notCalled);
+      expect(coinModelUpdateSpy.notCalled);
+      expect(blockModelFindOneSpy.notCalled);
 
     });
 
     it('should return if localTip height is zero', async () => {
-      sandbox.stub(BlockModel, 'remove').resolves();
-      sandbox.stub(TransactionModel, 'remove').resolves();
-      sandbox.stub(CoinModel, 'remove').resolves();
-      sandbox.stub(CoinModel, 'update').resolves();
-      sandbox.stub(BlockModel, 'findOne').returns({
-        sort: sandbox.stub().resolves(null)
+      let blockModelRemoveSpy = sandbox.stub(BlockModel, 'remove').resolves();
+      let transactionModelRemoveSpy = sandbox.stub(TransactionModel, 'remove').resolves();
+      let coinModelRemoveSpy = sandbox.stub(CoinModel, 'remove').resolves();
+      let coinModelUpdateSpy = sandbox.stub(CoinModel, 'update').resolves();
+      let blockModelFindOneSpy = sandbox.stub(BlockModel, 'findOne').returns({
+        sort: sandbox.stub().resolves({ height: 0 })
       });
 
-      const params = {
-        header: {
-          prevHash: 'prev123',
-          hash: 'hash123',
-          time: 0,
-          version: 'test123',
-          merkleRoot: 'fooBar',
-          bits: 'bits123',
-          nonce: 'random123'
-        },
-        chain: 'BTC',
-        network: 'regtest'
-      };
-
-      const localTip = await BlockModel.getLocalTip(params);
-      expect(localTip.height).to.equal(0);
+      expect(blockModelRemoveSpy.notCalled);
+      expect(transactionModelRemoveSpy.notCalled);
+      expect(coinModelRemoveSpy.notCalled);
+      expect(coinModelUpdateSpy.notCalled);
+      expect(blockModelFindOneSpy.notCalled);
 
     });
 
