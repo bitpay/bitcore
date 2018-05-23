@@ -17,7 +17,8 @@
       "args": ["--DEBUG", "true"],
       "sourceMaps": true,
       "outFiles": ["${workspaceFolder}/build/**/*.js"],
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "preLaunchTask": "npm: tsc"
     },
     {
       "type": "node",

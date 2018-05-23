@@ -1,15 +1,14 @@
 import logger from '../logger';
-import { BitcoinConnectionConfig } from '../types/BitcoinConfig';
+import { ConnectionConfig } from '../types/BitcoinConfig';
 import { ChainNetwork } from '../types/ChainNetwork';
 import { EventEmitter } from 'events';
 import { HostPort } from '../types/HostPort';
 import { Peer, BitcoreP2pPool } from '../types/Bitcore-P2P-Pool';
-import { CallbackType } from '../types/Callback';
-import { BitcoinBlockType, BlockHeader, BlockHeaderObj } from '../types/Block';
-import { BitcoinTransactionType } from '../types/Transaction';
 import { BlockModel } from '../models/block';
 import { TransactionModel } from '../models/transaction';
 import { LoggifyClass } from '../decorators/Loggify';
+import { Bitcoin } from "../types/namespaces/Bitcoin";
+import { sleep } from '../utils/async';
 const cluster = require('cluster');
 const Chain = require('../chain');
 const async = require('async');
@@ -24,7 +23,6 @@ export class P2pService extends EventEmitter {
   bitcoreP2p: any;
   trustedPeers: Array<HostPort>;
   invCache: { [key: string]: any[] };
-  headersQueue: any[];
   syncing: boolean;
   blockRates: any[];
   transactionQueue: any[];
@@ -34,7 +32,7 @@ export class P2pService extends EventEmitter {
 
   stayConnected: undefined | NodeJS.Timer;
 
-  constructor(params: ChainNetwork & BitcoinConnectionConfig) {
+  constructor(params: ChainNetwork & ConnectionConfig) {
     super();
     this.chain = params.chain;
     this.parentChain = params.parentChain;
@@ -46,7 +44,6 @@ export class P2pService extends EventEmitter {
     this.invCache = {};
     this.invCache[this.bitcoreP2p.Inventory.TYPE.BLOCK] = [];
     this.invCache[this.bitcoreP2p.Inventory.TYPE.TX] = [];
-    this.headersQueue = [];
     this.syncing = false;
     this.blockRates = [];
     this.transactionQueue = async.queue(this.processTransaction.bind(this), 1);
@@ -57,18 +54,13 @@ export class P2pService extends EventEmitter {
     }
   }
 
-  start() {
-    return new Promise(resolve => {
-      if (cluster.isWorker) {
-        return resolve();
-      }
-
-      this.connect();
-      resolve();
-    });
+  async start() {
+    if (!cluster.isWorker) {
+      await this.connect();
+    }
   }
 
-  connect() {
+  async connect() {
     if (this.network === 'regtest') {
       this.bitcoreLib.Networks.enableRegtest();
     }
@@ -165,8 +157,8 @@ export class P2pService extends EventEmitter {
 
       this.pool.on('peerinv', (peer, message) => {
         if (!this.syncing) {
-          let filtered = message.inventory.filter((inv: any) => {
-            let hash = this.bitcoreLib.encoding
+          const filtered = message.inventory.filter((inv: any) => {
+            const hash = this.bitcoreLib.encoding
               .BufferReader(inv.hash)
               .readReverse()
               .toString('hex');
@@ -178,13 +170,9 @@ export class P2pService extends EventEmitter {
         }
       });
 
-      this.once('ready', () => {
-        BlockModel.handleReorg(
-          { chain: this.chain, network: this.network },
-          () => {
-            this.sync();
-          }
-        );
+      this.once('ready', async () => {
+        await BlockModel.handleReorg({ chain: this.chain, network: this.network });
+        await this.sync();
       });
 
       this.stayConnected = setInterval(() => {
@@ -203,14 +191,15 @@ export class P2pService extends EventEmitter {
     }
   }
 
-  async sync(done?: CallbackType) {
-    var self = this;
-    done = done || function() {};
+  async sync() {
+    // debounce
     if (this.syncing) {
-      return done();
+      return;
     }
     this.syncing = true;
-    let bestBlock = await BlockModel.getLocalTip({
+
+    // check if already synced
+    const bestBlock = await BlockModel.getLocalTip({
       chain: this.chain,
       network: this.network
     });
@@ -220,185 +209,135 @@ export class P2pService extends EventEmitter {
         network: this.network,
         height: bestBlock.height
       });
-      self.syncing = false;
-      return done();
+      this.syncing = false;
+      return;
     }
-    if (this.parentChain && bestBlock.height < this.forkHeight) {
-      let parentBestBlock = await BlockModel.getLocalTip({
+
+    // if this is forked and origin is not synced,
+    // wait 5 seconds for sync and then try again.
+    while (this.parentChain && bestBlock.height < this.forkHeight) {
+      const parentBestBlock = await BlockModel.getLocalTip({
         chain: this.parentChain,
         network: this.network
       });
       if (parentBestBlock.height < this.forkHeight) {
-        return setTimeout(this.sync.bind(this), 5000);
+        await sleep(5000);
       }
     }
+
     logger.info(
-      `Syncing from ${bestBlock.height} to ${self.getPoolHeight()} for chain ${
-        self.chain
-      }`
-    );
+      `Syncing from ${bestBlock.height} to ${this.getPoolHeight()} for chain ${
+        this.chain
+    }`);
+
     let blockCounter = 0;
-    async.during(
-      function(cb: CallbackType) {
-        self.getHeaders(function(err: any, headers: any[]) {
-          if (err) {
-            logger.error(err);
-          }
-          self.headersQueue = headers;
-          cb(err, headers.length > 0);
-        });
-      },
-      function(cb: CallbackType) {
-        let lastLog = 0;
-        async.eachSeries(
-          self.headersQueue,
-          function(
-            header: BlockHeaderObj,
-            cb: CallbackType
-          ) {
-            self.getBlock(header.hash, function(
-              err: any,
-              block: BitcoinBlockType
-            ) {
-              if (err) {
-                return cb(err);
-              }
-              logger.debug('Block received', block.hash);
-              self.processBlock(block, function(err: any) {
-                blockCounter++;
-                if (Date.now() - lastLog > 100) {
-                  logger.info(
-                    `Sync progress ${(
-                      (bestBlock.height + blockCounter) /
-                      self.getPoolHeight() *
-                      100
-                    ).toFixed(3)}%`,
-                    {
-                      chain: self.chain,
-                      network: self.network,
-                      height: bestBlock.height + blockCounter
-                    }
-                  );
-                  lastLog = Date.now();
-                }
-                cb(err);
-              });
-            });
-          },
-          function(err: any) {
-            cb(err);
-          }
-        );
-      },
-      function(err: any) {
-        if (err) {
-          logger.warn(err);
-          self.sync();
-        } else {
-          logger.info('Sync completed!!', {
-            chain: self.chain,
-            network: self.network
+    let lastLog = 0;
+
+    while (true) {
+      const headers = await this.getHeaders();
+      if (headers.length === 0) {
+        break;
+      }
+
+      for (const header of headers) {
+        const block = await this.getBlock(header.hash);
+        logger.debug('Block received', block.hash);
+        await this.processBlock(block);
+        blockCounter++;
+
+        if (Date.now() - lastLog > 100) {
+          logger.info(`Sync progress ${(
+            (bestBlock.height + blockCounter) / this.getPoolHeight() * 100
+          ).toFixed(3)}%`, {
+            chain: this.chain,
+            network: this.network,
+            height: bestBlock.height + blockCounter
           });
-          self.syncing = false;
+          lastLog = Date.now();
         }
       }
-    );
+    }
+
+    logger.info('Sync completed!!', {
+      chain: this.chain,
+      network: this.network
+    });
+    this.syncing = false;
   }
 
   getPoolHeight(): number {
-    if (this.pool != undefined) {
+    if (this.pool) {
       return Object.values(this.pool._connectedPeers).reduce(
-        (best, peer: Peer) => {
-          return Math.max(best, peer.bestHeight);
-        },
+        (best, peer: Peer) => Math.max(best, peer.bestHeight),
         0
       );
     }
     throw 'Pool cannot be undefined';
   }
 
-  _getHeaders(candidateHashes: string[], callback: CallbackType) {
-    let getHeaders = () => {
-      if (this.pool != undefined) {
-        this.pool.sendMessage(
-          this.messages.GetHeaders({ starts: candidateHashes })
-        );
+  async _getHeaders(candidateHashes: string[]): Promise<Bitcoin.Block.HeaderObj[]> {
+    const getHeaders = () => {
+      if (this.pool) {
+        this.pool.sendMessage(this.messages.GetHeaders({
+          starts: candidateHashes
+        }));
       }
     };
-    let headersRetry = setInterval(() => {
-      getHeaders();
-    }, 5000);
-    this.once('headers', headers => {
-      clearInterval(headersRetry);
-      callback(null, headers);
-    });
+
     getHeaders();
+    const headersRetry = setInterval(getHeaders, 5000);
+
+    return new Promise(resolve => this.once('headers', headers => {
+      clearInterval(headersRetry);
+      resolve(headers)
+    })) as Promise<Bitcoin.Block.HeaderObj[]>;
   }
 
-  getHeaders(callback: CallbackType) {
-    BlockModel.getLocatorHashes(
-      { chain: this.chain, network: this.network },
-      (err: any, locatorHashes: string[]) => {
-        if (err) {
-          logger.error(err);
-          return callback(err);
-        }
-        logger.debug(
-          `Getting headers with ${locatorHashes.length} locatorHashes`
-        );
-        this._getHeaders(locatorHashes, (err, headers: BlockHeader[]) => {
-          logger.debug(`Received ${headers.length} headers`);
-          if (err) {
-            return callback(err);
-          }
-          callback(null, headers);
-        });
-      }
-    );
+  async getHeaders(): Promise<Bitcoin.Block.HeaderObj[]> {
+    const locatorHashes = await BlockModel.getLocatorHashes({
+      chain: this.chain,
+      network: this.network
+    });
+    logger.debug(`Getting headers with ${locatorHashes.length} locatorHashes`);
+
+    const headers = await this._getHeaders(locatorHashes);
+    logger.debug(`Received ${headers.length} headers`);
+    return headers;
   }
 
-  getBlock(hash: string, callback: CallbackType) {
+  async getBlock(hash: string): Promise<Bitcoin.Block> {
     logger.debug('Getting block, hash:', hash);
-    let getBlock = () => {
-      if (this.pool !== undefined) {
+    const _getBlock = () => {
+      if (this.pool) {
         this.pool.sendMessage(this.messages.GetData.forBlock(hash));
       }
     };
-    let getBlockRetry = setInterval(() => {
-      getBlock();
-    }, 1000);
-    this.once(hash, block => {
+
+    _getBlock();
+    const getBlockRetry = setInterval(_getBlock, 1000);
+
+    return new Promise(resolve => this.once(hash, block => {
       logger.debug('Received block, hash:', hash);
       clearInterval(getBlockRetry);
-      callback && callback(null, block);
+      resolve(block)
+    })) as Promise<Bitcoin.Block>;
+  }
+
+  async processBlock(block: Bitcoin.Block) {
+    await BlockModel.addBlock({
+      chain: this.chain,
+      network: this.network,
+      parentChain: this.parentChain,
+      forkHeight: this.forkHeight,
+      block
     });
-    getBlock();
+    logger.info(`Added block ${block.hash}`, {
+      chain: this.chain,
+      network: this.network
+    });
   }
 
-  processBlock(block: BitcoinBlockType, callback: CallbackType) {
-    BlockModel.addBlock(
-      {
-        chain: this.chain,
-        network: this.network,
-        parentChain: this.parentChain,
-        forkHeight: this.forkHeight,
-        block
-      },
-      (err: any) => {
-        if (err) {
-          logger.error(err);
-        } else {
-          logger.info(`Added block ${block.hash}`, {
-            chain: this.chain,
-            network: this.network
-          });
-        }
-        callback(err);
-      }
-    );
-  }
-
-  processTransaction(tx: BitcoinTransactionType) {
+  processTransaction(tx: Bitcoin.Transaction) {
     return TransactionModel.batchImport({
       txs: [tx],
       height: -1,
@@ -410,10 +349,11 @@ export class P2pService extends EventEmitter {
   }
 
   sendTransaction(rawTx: { txid: string }) {
-    if (this.pool != undefined) {
+    if (this.pool) {
       this.pool.sendMessage(this.messages.Transaction(rawTx));
       return rawTx.txid;
-    } else
+    } else {
       throw new Error('Cannot broadcast over P2P, not connected to peer pool');
+    }
   }
 }

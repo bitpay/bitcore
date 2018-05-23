@@ -12,7 +12,7 @@ export function LoggifyClass<T extends { new (...args: any[]): {} }>(
       if (!LoggifiedClasses[aClass.name]) {
         LoggifiedClasses[aClass.name] = true;
         logger.debug(
-          `Loggifying ${aClass.name} with args:: ${JSON.stringify(args)}`
+          `Loggifying ${aClass.name} with args:: ${util.inspect(args)}`
         );
         LoggifyObject(aClass, aClass.name, self);
       }
