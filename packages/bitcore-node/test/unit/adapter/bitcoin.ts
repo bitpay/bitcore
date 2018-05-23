@@ -25,7 +25,7 @@ describe('Adapters', () => {
       toObject: () => {
         return {
           hash:
-            '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
+          '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
           confirmations: 1,
           strippedsize: 228,
           size: 264,
@@ -34,7 +34,7 @@ describe('Adapters', () => {
           version: '536870912',
           versionHex: '20000000',
           merkleRoot:
-            '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08',
+          '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08',
           tx: [
             '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08'
           ],
@@ -44,9 +44,9 @@ describe('Adapters', () => {
           bits: parseInt('207fffff', 16).toString(),
           difficulty: 4.656542373906925e-10,
           chainwork:
-            '0000000000000000000000000000000000000000000000000000000000000a98',
+          '0000000000000000000000000000000000000000000000000000000000000a98',
           prevHash:
-            '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
+          '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
         };
       }
     }
@@ -73,18 +73,17 @@ describe('Adapters', () => {
   });
 
   it('should convert a bitcoin transaction to an internal transaction', () => {
-    const tx: Bitcoin.Transaction = TEST_TX;
 
     const params: Adapter.ConvertTxParams<
       Bitcoin.Transaction,
       Bitcoin.Block
-    > = {
-      chain: 'BTC',
-      network: 'regtest',
-      tx: TEST_TX,
-      block: TEST_BLOCK,
-      height: 1355
-    };
+      > = {
+        chain: 'BTC',
+        network: 'regtest',
+        tx: TEST_TX,
+        block: TEST_BLOCK,
+        height: 1355
+      };
     const convertTx = AdapterProvider.convertTx(params);
     expect(convertTx.blockHash).equals(TEST_BLOCK.hash);
     expect(convertTx.blockHeight).equals(1355);
