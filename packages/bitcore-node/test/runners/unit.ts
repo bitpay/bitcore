@@ -8,11 +8,6 @@ import { StorageService } from '../../src/services/storage';
 const TIMEOUT = 5000;
 const TEST_DIR = path.join(__dirname, '../unit');
 
-const storageArgs = {
-    dbHost: 'localhost:27017',
-    dbName: 'bitcore-unit'
-};
-
 function handleError(err){
     console.error(err);
     console.log(err.stack);
@@ -24,7 +19,7 @@ function runTests(){
         const testRunner = new Mocha();
         testRunner.timeout(TIMEOUT);
         testRunner.reporter('spec');
-        
+
         const files = glob.sync(`${TEST_DIR}/**/**.js`);
         files.forEach(function(file){
             testRunner.addFile(file);
