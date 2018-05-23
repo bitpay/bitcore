@@ -1,15 +1,14 @@
 import logger from '../logger';
-import { BitcoinConnectionConfig } from '../types/BitcoinConfig';
+import { ConnectionConfig } from '../types/BitcoinConfig';
 import { ChainNetwork } from '../types/ChainNetwork';
 import { EventEmitter } from 'events';
 import { HostPort } from '../types/HostPort';
 import { Peer, BitcoreP2pPool } from '../types/Bitcore-P2P-Pool';
 import { CallbackType } from '../types/Callback';
-import { BitcoinBlockType, BlockHeader, BlockHeaderObj } from '../types/Block';
-import { BitcoinTransactionType } from '../types/Transaction';
 import { BlockModel } from '../models/block';
 import { TransactionModel } from '../models/transaction';
 import { LoggifyClass } from '../decorators/Loggify';
+import { Bitcoin } from "../types/namespaces/Bitcoin";
 const cluster = require('cluster');
 const Chain = require('../chain');
 const async = require('async');
@@ -34,7 +33,7 @@ export class P2pService extends EventEmitter {
 
   stayConnected: undefined | NodeJS.Timer;
 
-  constructor(params: ChainNetwork & BitcoinConnectionConfig) {
+  constructor(params: ChainNetwork & ConnectionConfig) {
     super();
     this.chain = params.chain;
     this.parentChain = params.parentChain;
@@ -248,10 +247,13 @@ export class P2pService extends EventEmitter {
         let lastLog = 0;
         async.eachSeries(
           self.headersQueue,
-          function(header: BlockHeaderObj, cb: CallbackType) {
+          function(
+            header: Bitcoin.Block.HeaderObj,
+            cb: CallbackType
+          ) {
             self.getBlock(header.hash, function(
               err: any,
-              block: BitcoinBlockType
+              block: Bitcoin.Block
             ) {
               if (err) {
                 return cb(err);
@@ -339,7 +341,7 @@ export class P2pService extends EventEmitter {
         logger.debug(
           `Getting headers with ${locatorHashes.length} locatorHashes`
         );
-        this._getHeaders(locatorHashes, (err, headers: BlockHeader[]) => {
+        this._getHeaders(locatorHashes, (err, headers: Bitcoin.Block.Header[]) => {
           logger.debug(`Received ${headers.length} headers`);
           if (err) {
             return callback(err);
@@ -368,7 +370,7 @@ export class P2pService extends EventEmitter {
     getBlock();
   }
 
-  processBlock(block: BitcoinBlockType, callback: CallbackType) {
+  processBlock(block: Bitcoin.Block, callback: CallbackType) {
     BlockModel.addBlock(
       {
         chain: this.chain,
@@ -391,7 +393,7 @@ export class P2pService extends EventEmitter {
     );
   }
 
-  processTransaction(tx: BitcoinTransactionType) {
+  processTransaction(tx: Bitcoin.Transaction) {
     return TransactionModel.batchImport({
       txs: [tx],
       height: -1,

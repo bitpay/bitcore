@@ -18,8 +18,9 @@
   "scripts": {
     "start": "npm run tsc && node build/server.js",
     "debug": "npm run tsc && node --inspect build/server.js --DEBUG true",
-    "tsc": "./node_modules/.bin/tsc",
-    "tsc:test": "./node_modules/.bin/tsc -p ./tsconfig.test.json",
+    "clean": "rm -rf build && rm -rf build-test",
+    "tsc": "npm run clean && ./node_modules/.bin/tsc",
+    "tsc:test": "npm run clean && ./node_modules/.bin/tsc -p ./tsconfig.test.json",
     "test": "npm run tsc:test && node ./build-test/test/runners/unit.js && node ./build-test/test/runners/integration.js",
     "test:unit": "npm run tsc:test && node ./build-test/test/runners/unit.js",
     "test:integration": "npm run tsc:test && node ./build-test/test/runners/integration.js"
