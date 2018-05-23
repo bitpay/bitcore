@@ -6,7 +6,7 @@ import { ChainNetwork } from '../types/ChainNetwork';
 import { TransformableModel } from '../types/TransformableModel';
 import logger from '../logger';
 import { LoggifyObject } from '../decorators/Loggify';
-import { Bitcoin } from "../types/namespaces/Bitcoin";
+import { Bitcoin } from '../types/namespaces/Bitcoin';
 
 export interface IBlock {
   chain: string;
@@ -40,8 +40,8 @@ export type AddBlockParams = {
 
 type IBlockModelDoc = IBlockDoc & TransformableModel<IBlockDoc>;
 type BlockMethodParams = { header?: Bitcoin.Block.HeaderObj } & ChainNetwork;
-interface IBlockModel extends IBlockModelDoc {
-  addBlock: (params: AddBlockParams) => Promise<void>;
+export interface IBlockModel extends IBlockModelDoc {
+  addBlock: (params: AddBlockParams) => Promise<IBlockModel>;
   handleReorg: (params: BlockMethodParams) => Promise<void>;
   getLocalTip: (params: BlockMethodParams) => Promise<IBlockModel>;
   getPoolInfo: (coinbase: string) => string;
@@ -79,13 +79,16 @@ BlockSchema.statics.addBlock = async (params: AddBlockParams) => {
 
   await BlockModel.handleReorg({ header, chain, network });
 
-  const previousBlock = await BlockModel.findOne({ hash: header.prevHash, chain, network });
+  const previousBlock = await BlockModel.findOne({
+    hash: header.prevHash,
+    chain,
+    network
+  });
 
   const blockTimeNormalized = (() => {
     if (previousBlock && blockTime <= previousBlock.timeNormalized.getTime()) {
       return previousBlock.timeNormalized.getTime() + 1;
-    }
-    else {
+    } else {
       return blockTime;
     }
   })();
@@ -93,25 +96,31 @@ BlockSchema.statics.addBlock = async (params: AddBlockParams) => {
   const height = (previousBlock && previousBlock.height + 1) || 1;
   logger.debug('Setting blockheight', height);
 
-  await BlockModel.update({
-    hash: header.hash, chain, network
-  }, {
-    chain,
-    network,
-    height,
-    version: header.version,
-    previousBlockHash: header.prevHash,
-    merkleRoot: header.merkleRoot,
-    time: new Date(blockTime),
-    timeNormalized: new Date(blockTimeNormalized),
-    bits: header.bits,
-    nonce: header.nonce,
-    transactionCount: block.transactions.length,
-    size: block.toBuffer().length,
-    reward: block.transactions[0].outputAmount
-  }, {
-    upsert: true
-  });
+  await BlockModel.update(
+    {
+      hash: header.hash,
+      chain,
+      network
+    },
+    {
+      chain,
+      network,
+      height,
+      version: header.version,
+      previousBlockHash: header.prevHash,
+      merkleRoot: header.merkleRoot,
+      time: new Date(blockTime),
+      timeNormalized: new Date(blockTimeNormalized),
+      bits: header.bits,
+      nonce: header.nonce,
+      transactionCount: block.transactions.length,
+      size: block.toBuffer().length,
+      reward: block.transactions[0].outputAmount
+    },
+    {
+      upsert: true
+    }
+  );
 
   if (previousBlock) {
     previousBlock.nextBlockHash = header.hash;
@@ -131,9 +140,9 @@ BlockSchema.statics.addBlock = async (params: AddBlockParams) => {
     forkHeight
   });
 
-  await BlockModel.update(
+  return BlockModel.update(
     { hash: header.hash, chain, network },
-    { $set: { processed: true } },
+    { $set: { processed: true } }
   );
 };
 
@@ -149,18 +158,20 @@ BlockSchema.statics.getLocalTip = async (params: ChainNetwork) => {
     processed: true,
     chain,
     network
-  })
-  .sort({ height: -1 });
+  }).sort({ height: -1 });
   return bestBlock || { height: 0 };
 };
 
 BlockSchema.statics.getLocatorHashes = async (params: ChainNetwork) => {
   const { chain, network } = params;
   const locatorBlocks = await BlockModel.find({
-    processed: true, chain, network
+    processed: true,
+    chain,
+    network
   })
-  .sort({ height: -1 })
-  .limit(30);
+    .sort({ height: -1 })
+    .limit(30)
+    .exec();
 
   if (locatorBlocks.length < 2) {
     return [Array(65).join('0')];
@@ -182,22 +193,42 @@ BlockSchema.statics.handleReorg = async (params: BlockMethodParams) => {
     network
   });
 
-  await BlockModel.remove({chain, network, height: {
-    $gte: localTip.height
-  }});
-  await TransactionModel.remove({chain, network, blockHeight: {
-    $gte: localTip.height
-  }});
-  await CoinModel.remove({chain, network, mintHeight: {
-    $gte: localTip.height
-  }});
-  await CoinModel.update({ chain, network, spentHeight: {
-    $gte: localTip.height
-  }}, {
-    $set: { spentTxid: null, spentHeight: -1 }
-  }, {
-    multi: true
+  await BlockModel.remove({
+    chain,
+    network,
+    height: {
+      $gte: localTip.height
+    }
   });
+  await TransactionModel.remove({
+    chain,
+    network,
+    blockHeight: {
+      $gte: localTip.height
+    }
+  });
+  await CoinModel.remove({
+    chain,
+    network,
+    mintHeight: {
+      $gte: localTip.height
+    }
+  });
+  await CoinModel.update(
+    {
+      chain,
+      network,
+      spentHeight: {
+        $gte: localTip.height
+      }
+    },
+    {
+      $set: { spentTxid: null, spentHeight: -1 }
+    },
+    {
+      multi: true
+    }
+  );
 
   logger.debug('Removed data from above blockHeight: ', localTip.height);
 };
