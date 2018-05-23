@@ -2,7 +2,10 @@ FROM node:8
 
 ADD . /bitcore
 
+ADD ./packages/bitcore-node/test/ci/bitcore-node/bitcore-test.config.json /bitcore
+
 WORKDIR /bitcore
+
 
 RUN npm install -D
 
