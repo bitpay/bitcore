@@ -35,8 +35,8 @@ type IBlockDoc = IBlock & Document;
 
 export type AddBlockParams = {
   block: Bitcoin.Block;
-  parentChain: string;
-  forkHeight: number;
+  parentChain?: string;
+  forkHeight?: number;
 } & ChainNetwork &
   Partial<IBlock>;
 

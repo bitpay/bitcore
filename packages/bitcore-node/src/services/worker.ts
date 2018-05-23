@@ -1,40 +1,48 @@
 import { CallbackType } from '../types/Callback';
 import { WorkerType } from '../types/Worker';
+import { LoggifyClass } from '../decorators/Loggify';
 import logger from '../logger';
 import config from '../config';
-import { LoggifyClass } from "../decorators/Loggify";
+import parseArgv from '../utils/parseArgv';
+
 const cluster = require('cluster');
 const { EventEmitter } = require('events');
+let args = parseArgv([], ['DEBUG']);
 
 @LoggifyClass
 export class WorkerService extends EventEmitter {
-  workers = new Array<{ worker: WorkerType; active: boolean, started: Promise<any> }>();
+  workers = new Array<{
+    worker: WorkerType;
+    active: boolean;
+    started: Promise<any>;
+  }>();
 
   async start() {
-    return new Promise(async resolve => {
-      if (cluster.isMaster) {
-        logger.verbose(`Master ${process.pid} is running`);
-        cluster.on('exit', (worker: WorkerType) => {
-          logger.error(`worker ${worker.process.pid} died`);
-        });
+    if (cluster.isMaster) {
+      logger.verbose(`Master ${process.pid} is running`);
+      cluster.on('exit', (worker: WorkerType) => {
+        logger.error(`worker ${worker.process.pid} died`);
+      });
+      if (!args.DEBUG) {
         for (let worker = 0; worker < config.numWorkers; worker++) {
           let newWorker = cluster.fork();
           newWorker.on('message', (msg: any) => {
             this.emit(msg.id, msg);
           });
           let started = new Promise(resolve => {
-            newWorker.on('listening', resolve);
+            newWorker.on('listening', () => {
+              resolve();
+            });
           });
           this.workers.push({ worker: newWorker, active: false, started });
         }
-        await Promise.all(this.workers.map(worker => worker.started));
-        resolve();
       }
-      if (cluster.isWorker) {
-        logger.verbose(`Worker ${process.pid} started`);
-        resolve();
-      }
-    });
+      const startedPromises = this.workers.map(worker => worker.started);
+      return Promise.all(startedPromises);
+    } else {
+      logger.verbose(`Worker ${process.pid} started`);
+      return;
+    }
   }
 
   stop() {}

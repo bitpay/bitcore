@@ -56,15 +56,11 @@ export class P2pService extends EventEmitter {
     }
   }
 
-  start() {
-    return new Promise(resolve => {
-      if (cluster.isWorker) {
-        return resolve();
-      }
-
-      this.connect();
-      resolve();
-    });
+  async start() {
+    if (cluster.isWorker) {
+      return;
+    }
+    this.connect();
   }
 
   connect() {
