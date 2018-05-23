@@ -57,15 +57,11 @@ export class P2pService extends EventEmitter {
     }
   }
 
-  start() {
-    return new Promise(resolve => {
-      if (cluster.isWorker) {
-        return resolve();
-      }
-
-      this.connect();
-      resolve();
-    });
+  async start() {
+    if (cluster.isWorker) {
+      return;
+    }
+    this.connect();
   }
 
   connect() {
@@ -252,10 +248,7 @@ export class P2pService extends EventEmitter {
         let lastLog = 0;
         async.eachSeries(
           self.headersQueue,
-          function(
-            header: BlockHeaderObj,
-            cb: CallbackType
-          ) {
+          function(header: BlockHeaderObj, cb: CallbackType) {
             self.getBlock(header.hash, function(
               err: any,
               block: BitcoinBlockType
