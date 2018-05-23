@@ -1,0 +1,24 @@
+{
+  "bitcoreNode": {
+    "pruneSpentScripts": true,
+    "chains": {
+      "BTC": {
+        "regtest": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "bitcoin",
+              "port": 20008
+            }
+          ],
+          "rpc": {
+            "host": "bitcoin",
+            "port": 20009,
+            "username": "bitpaytest",
+            "password": "local321"
+          }
+        }
+      }
+    }
+  }
+}
