@@ -18,12 +18,12 @@
   "scripts": {
     "start": "npm run tsc && node build/src/server.js",
     "debug": "npm run tsc && node --inspect build/src/server.js --DEBUG true",
-    "clean": "rm -rf build && rm -rf build-test",
+    "clean": "rm -rf build",
     "tsc": "npm run clean && ./node_modules/.bin/tsc",
-    "tsc:test": "npm run clean && ./node_modules/.bin/tsc -p ./tsconfig.test.json",
-    "test": "npm run tsc:test && node ./build-test/test/runners/unit.js && node ./build-test/test/runners/integration.js",
-    "test:unit": "npm run tsc:test && node ./build-test/test/runners/unit.js",
-    "test:integration": "npm run tsc:test && node ./build-test/test/runners/integration.js"
+    "tsc:test": "npm run clean && ./node_modules/.bin/tsc",
+    "test": "npm run tsc:test && node ./build/test/runners/unit.js && node ./build/test/runners/integration.js",
+    "test:unit": "npm run tsc:test && node ./build/test/runners/unit.js",
+    "test:integration": "npm run tsc:test && node ./build/test/runners/integration.js"
   },
   "keywords": [
     "bitcore-node",
