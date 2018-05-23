@@ -3,14 +3,15 @@ import path from 'path';
 import glob from 'glob';
 import Mocha from 'mocha';
 
+import config from '../../src/config';
 import { StorageService } from '../../src/services/storage';
 
 const TIMEOUT = 5000;
-const TEST_DIR = path.join(__dirname, '../integration')
+const TEST_DIR = path.join(__dirname, '../integration');
 
 const storageArgs = {
-    dbHost: 'localhost:27017',
-    dbName: 'bitcore-unit'
+    dbHost: config.dbHost,
+    dbName: config.dbName
 };
 
 function handleError(err){
