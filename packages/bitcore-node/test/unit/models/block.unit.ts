@@ -8,12 +8,11 @@ import { AdapterProvider } from '../../../src/providers/adapter';
 import { Adapter } from '../../../src/types/namespaces/ChainAdapter';
 import { Bitcoin } from '../../../src/types/namespaces/Bitcoin';
 
-describe('Block Model', function() {
-  it('should have a test which runs', function() {
+describe('Block Model', function () {
+  it('should have a test which runs', function () {
     expect(true).to.equal(true);
   });
 
-  // TODO: addBlock
   describe('addBlock', () => {
     let addBlockParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
       chain: 'BTC',
@@ -68,7 +67,7 @@ describe('Block Model', function() {
   });
 
   describe('getPoolInfo', () => {
-    it('UNIMPLEMENTED: should return pool info given a coinbase string', () => {
+    xit('UNIMPLEMENTED: should return pool info given a coinbase string', () => {
       expect(() => {
         BlockModel.getPoolInfo('');
       }).to.not.throw(TypeError);
@@ -95,7 +94,6 @@ describe('Block Model', function() {
     });
   });
 
-  //TODO: handleReorg
   describe('handleReorg', () => {
     let sandbox;
     beforeEach(() => {
@@ -104,7 +102,8 @@ describe('Block Model', function() {
     afterEach(() => {
       sandbox.restore();
     });
-    it('should be able to reset head to a previous block', async () => {
+
+    it('should return if localTip hash equals the previous hash', async () => {
       sandbox.stub(BlockModel, 'remove').resolves();
       sandbox.stub(TransactionModel, 'remove').resolves();
       sandbox.stub(CoinModel, 'remove').resolves();
@@ -126,9 +125,145 @@ describe('Block Model', function() {
         chain: 'BTC',
         network: 'regtest'
       };
+
       const localTip = await BlockModel.getLocalTip(params);
       expect(localTip.hash).to.not.equal(params.header.prevHash);
+
+    });
+
+    it('should return if localTip height is zero', async () => {
+      sandbox.stub(BlockModel, 'remove').resolves();
+      sandbox.stub(TransactionModel, 'remove').resolves();
+      sandbox.stub(CoinModel, 'remove').resolves();
+      sandbox.stub(CoinModel, 'update').resolves();
+      sandbox.stub(BlockModel, 'findOne').returns({
+        sort: sandbox.stub().resolves(null)
+      });
+
+      const params = {
+        header: {
+          prevHash: 'prev123',
+          hash: 'hash123',
+          time: 0,
+          version: 'test123',
+          merkleRoot: 'fooBar',
+          bits: 'bits123',
+          nonce: 'random123'
+        },
+        chain: 'BTC',
+        network: 'regtest'
+      };
+
+      const localTip = await BlockModel.getLocalTip(params);
       expect(localTip.height).to.equal(0);
+
+    });
+
+    // const result = await BlockModel.handleReorg(params);
+
+    // expect(result.h).to.not.equal(params.header.prevHash);
+    // expect(localTip.height).to.equal(0);
+
+    it('should call blockModel remove', async () => {
+      let blockModelRemoveSpy = sandbox.stub(BlockModel, 'remove').resolves();
+      sandbox.stub(TransactionModel, 'remove').resolves();
+      sandbox.stub(CoinModel, 'remove').resolves();
+      sandbox.stub(CoinModel, 'update').resolves();
+      sandbox.stub(BlockModel, 'findOne').returns({
+        sort: sandbox.stub().resolves({ height: 1 })
+      });
+      const params = {
+        header: {
+          prevHash: 'prev123',
+          hash: 'hash123',
+          time: 0,
+          version: 'test123',
+          merkleRoot: 'fooBar',
+          bits: 'bits123',
+          nonce: 'random123'
+        },
+        chain: 'BTC',
+        network: 'regtest'
+      };
+      expect(blockModelRemoveSpy.calledOnce);
+    });
+
+    it('should call transactionModel remove', async () => {
+      sandbox.stub(BlockModel, 'remove').resolves();
+      let transactionModelRemoveSpy = sandbox.stub(TransactionModel, 'remove').resolves();
+      sandbox.stub(CoinModel, 'remove').resolves();
+      sandbox.stub(CoinModel, 'update').resolves();
+      sandbox.stub(BlockModel, 'findOne').returns({
+        sort: sandbox.stub().resolves(null)
+      });
+      const params = {
+        header: {
+          prevHash: 'prev123',
+          hash: 'hash123',
+          time: 0,
+          version: 'test123',
+          merkleRoot: 'fooBar',
+          bits: 'bits123',
+          nonce: 'random123'
+        },
+        chain: 'BTC',
+        network: 'regtest'
+      };
+      const result = await BlockModel.handleReorg(params);
+      expect(transactionModelRemoveSpy.calledOnce).to.be.true;
+      expect(result).to.exist;
+    });
+
+    it('should call coinModel remove', async () => {
+      sandbox.stub(BlockModel, 'remove').resolves();
+      sandbox.stub(TransactionModel, 'remove').resolves();
+      let coinModelRemoveSpy = sandbox.stub(CoinModel, 'remove').resolves();
+      sandbox.stub(CoinModel, 'update').resolves();
+      sandbox.stub(BlockModel, 'findOne').returns({
+        sort: sandbox.stub().resolves(null)
+      });
+      const params = {
+        header: {
+          prevHash: 'prev123',
+          hash: 'hash123',
+          time: 0,
+          version: 'test123',
+          merkleRoot: 'fooBar',
+          bits: 'bits123',
+          nonce: 'random123'
+        },
+        chain: 'BTC',
+        network: 'regtest'
+      };
+      const result = await BlockModel.handleReorg(params);
+      expect(coinModelRemoveSpy.calledOnce).to.be.true;
+      expect(result).to.exist;
+    });
+
+    it('should call coinModel update', async () => {
+      sandbox.stub(BlockModel, 'remove').resolves();
+      sandbox.stub(TransactionModel, 'remove').resolves();
+      sandbox.stub(CoinModel, 'remove').resolves();
+      let coinModelUpdateSpy = sandbox.stub(CoinModel, 'update').resolves();
+      sandbox.stub(BlockModel, 'findOne').returns({
+        sort: sandbox.stub().resolves(null)
+      });
+      const params = {
+        header: {
+          prevHash: 'prev123',
+          hash: 'hash123',
+          time: 0,
+          version: 'test123',
+          merkleRoot: 'fooBar',
+          bits: 'bits123',
+          nonce: 'random123'
+        },
+        chain: 'BTC',
+        network: 'regtest'
+      };
+      const result = await BlockModel.handleReorg(params);
+      expect(coinModelUpdateSpy.calledOnce).to.be.true;
+      expect(result).to.exist;
     });
   });
 
