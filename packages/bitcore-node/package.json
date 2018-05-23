@@ -10,14 +10,14 @@
     "Justin Langston <nitsujlangston@gmail.com>",
     "Micah Riggan <micahriggan@gmail.com>"
   ],
-  "main": "build/server.js",
+  "main": "build/src/server.js",
   "bin": "bin/start",
   "prettier": {
     "singleQuote": true
   },
   "scripts": {
-    "start": "npm run tsc && node build/server.js",
-    "debug": "npm run tsc && node --inspect build/server.js --DEBUG true",
+    "start": "npm run tsc && node build/src/server.js",
+    "debug": "npm run tsc && node --inspect build/src/server.js --DEBUG true",
     "clean": "rm -rf build && rm -rf build-test",
     "tsc": "npm run clean && ./node_modules/.bin/tsc",
     "tsc:test": "npm run clean && ./node_modules/.bin/tsc -p ./tsconfig.test.json",
