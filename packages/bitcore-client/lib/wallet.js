@@ -8,6 +8,7 @@ const txProvider = require('../lib/providers/tx-provider');
 const { Address } = bitcoreLib;
 
 class Wallet {
+
   constructor(params) {
     Object.assign(this, params);
     if (!this.masterKey) {
@@ -50,7 +51,8 @@ class Wallet {
     });
     await storage.saveWallet({ wallet });
     const loadedWallet = await this.loadWallet({ path, storage });
-    loadedWallet.register();
+    await loadedWallet.unlock(password)
+    await loadedWallet.register();
     return loadedWallet;
   }
 
@@ -67,13 +69,17 @@ class Wallet {
     if (!validPass) {
       throw new Error('Incorrect Password');
     }
-    const decryptionKey = await Encrypter.decryptEncryptionKey(this.encryptionKey, password);
-    this.masterKey = await Encrypter.decryptPrivateKey(encMasterKey, this.pubKey, decryptionKey);
+    this.encryptionKey = await Encrypter.decryptEncryptionKey(this.encryptionKey, password);
+    const masterKeyStr = await Encrypter.decryptPrivateKey(encMasterKey, this.pubKey, this.encryptionKey);
+    this.masterKey = JSON.parse(masterKeyStr);
+
+    this.unlocked = true;
     if (unlockTime) {
       setTimeout(() => {
         this.masterKey = encMasterKey;
       }, unlockTime);
     }
+    return this;
   }
 
   async register(params = {}) {
@@ -130,16 +136,21 @@ class Wallet {
   }
 
   async importKeys(params) {
-    const { keys } = params;
-    for (const key of keys) {
-      await this.storage.addKey({ key });
+    const { keys, password } = params;
+    if (password) {
+      this.unlock(password);
     }
-    const payload = keys.map(key => {
+    const encryptionKey = this.unlocked ? this.encryptionKey : null;
+    for (const key of keys) {
+      let keyToSave = { key, encryptionKey };
+      await this.storage.addKey(keyToSave);
+    }
+    const addedAddresses = keys.map(key => {
       return { address: key.address };
     });
     await this.client.importAddresses({
-      pubKey: this.masterKey.xpubkey,
-      payload
+      pubKey: this.xPubKey,
+      payload: addedAddresses
     });
   }
 

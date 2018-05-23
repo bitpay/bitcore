@@ -9,6 +9,7 @@ program
   .option('--path <path>', 'REQUIRED - Where wallet is stored')
   .option('--parse [parse]', 'OPTIONAL - A json string to parse in the form {"address": "mXy1234", privKey: "xxxxxxx"}')
   .option('--file [file]', 'OPTIONAL - A jsonl file with {"address": "mXy1234", privKey: "xxxxxxx"} in it')
+  .option('--password [password]', 'OPTIONAL - password to unlock the wallet so the private keys can be encrypted')
   .parse(process.argv);
 
 const getFileKeys = file => {
