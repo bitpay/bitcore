@@ -1,6 +1,6 @@
 import logger from '../../logger';
 import { Observable } from 'rxjs';
-import { map as rxmap } from 'rxjs/operators';
+import { concatMap } from 'rxjs/operators';
 import { ChainNetwork } from '../../types/ChainNetwork';
 import { IBlockModel } from '../../models/block';
 import { sleep } from '../../utils/async';
@@ -24,7 +24,8 @@ export interface P2pService<Block, Transaction> {
   start(): Promise<void>;
 
   // sync data from previous history according to these hashes
-  sync(locatorHashes: string[]): Promise<void>;
+  // returns the hash of the last block synced
+  sync(locatorHashes: string[]): Promise<string | undefined>;
 
   // get the max height of every peer in the pool
   height(): number;
@@ -35,31 +36,70 @@ export interface P2pService<Block, Transaction> {
   // disconnects from peer and stops all pending tasks,
   // afterwards `start()` can be called again.
   stop(): Promise<void>;
+
+  // when `true` only emit blocks that result from the syncing process
+  syncing: boolean;
 }
 
 
 export type StandardP2p = P2pService<Bitcoin.Block, Bitcoin.Transaction>;
 
 
-export function map<B1, T1, B2, T2>(
-  service: P2pService<B1, T1>,
-  mapBlocks: (B1) => B2,
-  mapTrans: (T1) => T2
-): P2pService<B2, T2> {
+export async function setupSync(
+  chainnet: ChainNetwork,
+  blocks: IBlockModel,
+  service: StandardP2p
+) {
+  service.syncing = true;
+  const parent = service.parent();
+  const tip = () => blocks.getLocalTip({
+    chain: chainnet.chain,
+    network: chainnet.network
+  });
+
   return {
-    blocks: () => service.blocks().pipe(rxmap(b => {
-      return {
-        block: mapBlocks(b.block),
-        transactions: b.transactions.map(mapTrans),
-      };
-    })),
-    transactions: () => service.blocks().pipe(rxmap(mapTrans)),
-    start: service.start.bind(service),
-    sync: service.sync.bind(service),
-    height: service.height.bind(service),
-    parent: service.parent.bind(service),
-    stop: service.stop.bind(service),
-  };
+    // sync the main chain
+    async start(): Promise<void> {
+      // get best block we currently have to see if we're synced
+      let bestBlock = await tip();
+
+      // wait for the parent fork to sync first
+      if (parent && bestBlock.height < parent.height) {
+        logger.info(`Waiting until ${parent.chain} syncs before ${chainnet.chain}`);
+        do {
+          await sleep(5000);
+          bestBlock = await tip();
+        }
+        while (bestBlock.height < parent.height);
+      }
+
+      if (bestBlock.height !== service.height()) {
+        logger.info(
+          `Syncing from ${bestBlock.height} to ${service.height()} for chain ${
+            chainnet.chain
+        }`);
+
+        const locators = await blocks.getLocatorHashes(chainnet);
+        logger.debug(`Received ${locators.length} headers`);
+
+        // TODO: what if this happens after add(this.end)?
+        this.end = await service.sync(locators);
+      }
+      else {
+        logger.info(`${chainnet.chain} up to date.`);
+        service.syncing = false;
+        this.end = undefined;
+      }
+    },
+    // notify syncing service that a hash has been added to the db
+    add(hash: string): undefined | Promise<void> {
+      if (hash && hash === this.end) {
+        return this.start();
+      }
+      return undefined;
+    },
+    end: undefined as (undefined | string),
+  }
 }
 
 
@@ -71,9 +111,9 @@ export async function init(
 ) {
   logger.debug(`Started worker for chain ${chainnet.chain}`);
   const parent = service.parent();
+  const sync = await setupSync(chainnet, blocks, service);
 
-  // TODO: queue up messages
-  service.blocks().subscribe(async pair => {
+  service.blocks().pipe(concatMap(async pair => {
     await blocks.addBlock({
       chain: chainnet.chain,
       network: chainnet.network,
@@ -82,10 +122,12 @@ export async function init(
       block: pair.block
     });
     logger.debug(`Added block ${pair.block.hash}`, chainnet);
-  }, logger.error.bind(logger));
+    sync.add(pair.block.hash);
+  }))
+  .subscribe(() => {}, logger.error.bind(logger));
 
-  service.transactions().subscribe(transaction => {
-    transactions.batchImport({
+  service.transactions().pipe(concatMap(async transaction => {
+    await transactions.batchImport({
       txs: [transaction],
       height: -1,
       network: chainnet.network,
@@ -93,46 +135,15 @@ export async function init(
       blockTime: new Date(),
       blockTimeNormalized: new Date(),
     });
-  }, logger.error.bind(logger));
+    logger.debug(`Added transaction ${transaction.hash}`, chainnet);
+  }))
+  .subscribe(() => {}, logger.error.bind(logger));
 
   // wait for it to get connected
   await service.start();
-
-  // check if already synced
-  let bestBlock = await blocks.getLocalTip({
-      chain: chainnet.chain,
-      network: chainnet.network
-  });
-
-  // wait for the parent fork to sync first
-  if (parent && bestBlock.height < parent.height) {
-    logger.info(`Waiting until ${parent.chain} syncs before ${chainnet.chain}`);
-    do {
-      await sleep(5000);
-      bestBlock = await blocks.getLocalTip({
-        chain: chainnet.chain,
-        network: chainnet.network
-      });
-    }
-    while (bestBlock.height < parent.height);
-  }
-
-  // sync the main chain
-  if (bestBlock.height !== service.height()) {
-    logger.info(
-      `Syncing from ${bestBlock.height} to ${service.height()} for chain ${
-        chainnet.chain
-    }`);
-
-    const locators = await blocks.getLocatorHashes(chainnet);
-    logger.debug(`Received ${locators.length} headers`);
-
-    await service.sync(locators);
-  }
-  else {
-    logger.info(`${chainnet.chain} up to date, not syncing.`);
-  }
+  sync.start();
 }
+
 
 export function build(
     chain: SupportedChain,
