@@ -4,7 +4,6 @@ import { ChainNetwork } from '../types/ChainNetwork';
 import { EventEmitter } from 'events';
 import { HostPort } from '../types/HostPort';
 import { Peer, BitcoreP2pPool } from '../types/Bitcore-P2P-Pool';
-import { BitcoinBlockType, BlockHeaderObj } from '../types/Block';
 import { BlockModel } from '../models/block';
 import { TransactionModel } from '../models/transaction';
 import { LoggifyClass } from '../decorators/Loggify';
@@ -276,7 +275,7 @@ export class P2pService extends EventEmitter {
     throw 'Pool cannot be undefined';
   }
 
-  async _getHeaders(candidateHashes: string[]): Promise<BlockHeaderObj[]> {
+  async _getHeaders(candidateHashes: string[]): Promise<Bitcoin.Block.HeaderObj[]> {
     const getHeaders = () => {
       if (this.pool) {
         this.pool.sendMessage(this.messages.GetHeaders({
@@ -291,10 +290,10 @@ export class P2pService extends EventEmitter {
     return new Promise(resolve => this.once('headers', headers => {
       clearInterval(headersRetry);
       resolve(headers)
-    })) as Promise<BlockHeaderObj[]>;
+    })) as Promise<Bitcoin.Block.HeaderObj[]>;
   }
 
-  async getHeaders(): Promise<BlockHeaderObj[]> {
+  async getHeaders(): Promise<Bitcoin.Block.HeaderObj[]> {
     const locatorHashes = await BlockModel.getLocatorHashes({
       chain: this.chain,
       network: this.network
@@ -306,7 +305,7 @@ export class P2pService extends EventEmitter {
     return headers;
   }
 
-  async getBlock(hash: string): Promise<BitcoinBlockType> {
+  async getBlock(hash: string): Promise<Bitcoin.Block> {
     logger.debug('Getting block, hash:', hash);
     const _getBlock = () => {
       if (this.pool) {
@@ -321,7 +320,7 @@ export class P2pService extends EventEmitter {
       logger.debug('Received block, hash:', hash);
       clearInterval(getBlockRetry);
       resolve(block)
-    })) as Promise<BitcoinBlockType>;
+    })) as Promise<Bitcoin.Block>;
   }
 
   async processBlock(block: Bitcoin.Block) {
