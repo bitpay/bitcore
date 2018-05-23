@@ -3,6 +3,9 @@ import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 import { Block, InsightBlockObject } from '../models';
 
+/**
+ * @deprecated use BlocksProvider
+ */
 @Injectable()
 export class BlocksService {
 
