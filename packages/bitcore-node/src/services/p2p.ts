@@ -1,14 +1,14 @@
 import logger from '../logger';
-import { BitcoinConnectionConfig } from '../types/BitcoinConfig';
+import { ConnectionConfig } from '../types/BitcoinConfig';
 import { ChainNetwork } from '../types/ChainNetwork';
 import { EventEmitter } from 'events';
 import { HostPort } from '../types/HostPort';
 import { Peer, BitcoreP2pPool } from '../types/Bitcore-P2P-Pool';
 import { BitcoinBlockType, BlockHeaderObj } from '../types/Block';
-import { BitcoinTransactionType } from '../types/Transaction';
 import { BlockModel } from '../models/block';
 import { TransactionModel } from '../models/transaction';
 import { LoggifyClass } from '../decorators/Loggify';
+import { Bitcoin } from "../types/namespaces/Bitcoin";
 import { sleep } from '../utils/async';
 const cluster = require('cluster');
 const Chain = require('../chain');
@@ -33,7 +33,7 @@ export class P2pService extends EventEmitter {
 
   stayConnected: undefined | NodeJS.Timer;
 
-  constructor(params: ChainNetwork & BitcoinConnectionConfig) {
+  constructor(params: ChainNetwork & ConnectionConfig) {
     super();
     this.chain = params.chain;
     this.parentChain = params.parentChain;
@@ -324,7 +324,7 @@ export class P2pService extends EventEmitter {
     })) as Promise<BitcoinBlockType>;
   }
 
-  async processBlock(block: BitcoinBlockType) {
+  async processBlock(block: Bitcoin.Block) {
     await BlockModel.addBlock({
       chain: this.chain,
       network: this.network,
@@ -338,7 +338,7 @@ export class P2pService extends EventEmitter {
     });
   }
 
-  processTransaction(tx: BitcoinTransactionType) {
+  processTransaction(tx: Bitcoin.Transaction) {
     return TransactionModel.batchImport({
       txs: [tx],
       height: -1,

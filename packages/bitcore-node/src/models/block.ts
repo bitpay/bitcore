@@ -2,11 +2,11 @@ import { Schema, Document, model, DocumentQuery } from 'mongoose';
 import { CoinModel } from './coin';
 import { TransactionModel } from './transaction';
 import { TransformOptions } from '../types/TransformOptions';
-import { BitcoinBlockType, BlockHeaderObj } from '../types/Block';
 import { ChainNetwork } from '../types/ChainNetwork';
 import { TransformableModel } from '../types/TransformableModel';
 import logger from '../logger';
 import { LoggifyObject } from '../decorators/Loggify';
+import { Bitcoin } from "../types/namespaces/Bitcoin";
 
 export interface IBlock {
   chain: string;
@@ -32,14 +32,14 @@ export type BlockQuery = { [key in keyof IBlock]?: any } &
 type IBlockDoc = IBlock & Document;
 
 export type AddBlockParams = {
-  block: BitcoinBlockType;
-  parentChain: string;
-  forkHeight: number;
+  block: Bitcoin.Block;
+  parentChain?: string;
+  forkHeight?: number;
 } & ChainNetwork &
   Partial<IBlock>;
 
 type IBlockModelDoc = IBlockDoc & TransformableModel<IBlockDoc>;
-type BlockMethodParams = { header?: BlockHeaderObj } & ChainNetwork;
+type BlockMethodParams = { header?: Bitcoin.Block.HeaderObj } & ChainNetwork;
 interface IBlockModel extends IBlockModelDoc {
   addBlock: (params: AddBlockParams) => Promise<void>;
   handleReorg: (params: BlockMethodParams) => Promise<void>;
