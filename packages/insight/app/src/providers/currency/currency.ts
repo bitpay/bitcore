@@ -26,10 +26,8 @@ export class CurrencyProvider {
     this.currencySymbol = this.defaultCurrency;
 
     let url: string = this.api.apiPrefix + 'explorers';
-    console.log('exploers url is', url);
     this.http.get(url).subscribe(
       (data) => {
-        console.log('', data);
         this.explorers = JSON.parse(data['_body']);
       },
       (err) => {
