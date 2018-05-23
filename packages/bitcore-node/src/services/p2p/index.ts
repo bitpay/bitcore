@@ -8,6 +8,7 @@ import { ITransactionModel } from '../../models/transaction';
 import { SupportedChain, SupportedChainSet } from '../../types/SupportedChain';
 import { BtcP2pService } from './bitcoin';
 import { Bitcoin } from '../../types/namespaces/Bitcoin';
+import { setImmediate } from 'timers';
 
 
 export interface P2pService<Block, Transaction> {
@@ -56,6 +57,12 @@ export async function setupSync(
     chain: chainnet.chain,
     network: chainnet.network
   });
+  let finished = false;
+  let finalHash;
+  let recentHash;
+  let goalHeight;
+  let counter = 0;
+  let lastLog = 0;
 
   return {
     // sync the main chain
@@ -73,7 +80,9 @@ export async function setupSync(
         while (bestBlock.height < parent.height);
       }
 
-      if (bestBlock.height !== service.height()) {
+      counter = bestBlock.height;
+      goalHeight = service.height();
+      if (bestBlock.height !== goalHeight) {
         logger.info(
           `Syncing from ${bestBlock.height} to ${service.height()} for chain ${
             chainnet.chain
@@ -82,23 +91,39 @@ export async function setupSync(
         const locators = await blocks.getLocatorHashes(chainnet);
         logger.debug(`Received ${locators.length} headers`);
 
-        // TODO: what if this happens after add(this.end)?
-        this.end = await service.sync(locators);
+        finalHash = await service.sync(locators);
+        if (recentHash === finalHash) {
+          setImmediate(() => this.start());
+        }
       }
       else {
         logger.info(`${chainnet.chain} up to date.`);
         service.syncing = false;
-        this.end = undefined;
+        finished = true;
       }
     },
     // notify syncing service that a hash has been added to the db
-    add(hash: string): undefined | Promise<void> {
-      if (hash && hash === this.end) {
-        return this.start();
+    add(hash: string) {
+      if (finished) {
+        return;
       }
-      return undefined;
-    },
-    end: undefined as (undefined | string),
+      logger.debug(`Syncing block ${hash}`, chainnet);
+      counter += 1;
+      if (Date.now() - lastLog > 100) {
+        logger.info(`Sync progress ${(counter * 100 / goalHeight).toFixed(3)}%`, {
+          chain: chainnet.chain,
+          network: chainnet.network,
+          height: counter
+        });
+        lastLog = Date.now();
+      }
+      if (hash === finalHash) {
+        this.start();
+      }
+      else {
+        recentHash = hash;
+      }
+    }
   }
 }
 
@@ -121,8 +146,12 @@ export async function init(
       parentChain: parent? parent.chain : chainnet.chain,
       block: pair.block
     });
-    logger.debug(`Added block ${pair.block.hash}`, chainnet);
-    sync.add(pair.block.hash);
+    if (service.syncing) {
+      sync.add(pair.block.hash);
+    }
+    else {
+      logger.info(`Added block ${pair.block.hash}`, chainnet);
+    }
   }))
   .subscribe(() => {}, logger.error.bind(logger));
 
