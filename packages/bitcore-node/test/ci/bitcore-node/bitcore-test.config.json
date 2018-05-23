@@ -14,7 +14,7 @@
           "rpc": {
             "host": "bitcoin",
             "port": 20009,
-            "username": "bitpaytest",
+            "username": "bitcorenodetest",
             "password": "local321"
           }
         }

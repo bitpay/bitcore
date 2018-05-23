@@ -2,4 +2,4 @@ language: node_js
 node_js:
   - "lts/*"
 script:
-  - "cd ./packages/bitcore-node && npm run test:unit"
+  - "cd ./packages/bitcore-node && npm run test:ci"
