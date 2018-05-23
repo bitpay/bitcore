@@ -37,8 +37,8 @@ function runTests() {
     try {
       testRunner.run(function(failures) {
         process.exit(failures);
+        resolve();
       });
-      resolve();
     } catch (err) {
       return reject(err);
     }
