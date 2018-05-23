@@ -1,5 +1,7 @@
 language: node_js
 node_js:
   - "lts/*"
+services:
+  - docker
 script:
   - "cd ./packages/bitcore-node && npm run test:ci"
