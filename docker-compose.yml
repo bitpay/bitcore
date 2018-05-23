@@ -6,6 +6,7 @@ services:
     - 27017:27017
     volumes: 
     - /data/db:/data/db
+    
   bitcore-node:
     build: .
     image: bitcore-node

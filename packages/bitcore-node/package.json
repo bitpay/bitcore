@@ -23,7 +23,10 @@
     "tsc:test": "npm run clean && ./node_modules/.bin/tsc -p ./tsconfig.test.json",
     "test": "npm run tsc:test && node ./build-test/test/runners/unit.js && node ./build-test/test/runners/integration.js",
     "test:unit": "npm run tsc:test && node ./build-test/test/runners/unit.js",
-    "test:integration": "npm run tsc:test && node ./build-test/test/runners/integration.js"
+    "test:integration": "npm run tsc:test && node ./build-test/test/runners/integration.js",
+    "test:ci": "npm run test:ci:unit && npm run test:ci:integration",
+    "test:ci:unit": "cd ../.. && docker-compose -f docker-compose.test.yml run --entrypoint 'npm run test:unit' test_runner",
+    "test:ci:integration": "cd ../.. && docker-compose -f docker-compose.test.yml run --entrypoint 'npm run test:integration' test_runner"
   },
   "keywords": [
     "bitcore-node",

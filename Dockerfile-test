@@ -1,0 +1,16 @@
+FROM node:8
+
+ADD . /bitcore
+
+ADD ./packages/bitcore-node/test/ci/bitcore-node/bitcore-test.config.json /bitcore
+
+WORKDIR /bitcore
+
+RUN npm install -D
+
+# postinstall for lerna doesn't run properly so run explictly
+RUN ./node_modules/.bin/lerna bootstrap
+
+WORKDIR /bitcore/packages/bitcore-node
+
+CMD npm run start
