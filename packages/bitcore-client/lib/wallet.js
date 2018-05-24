@@ -15,10 +15,6 @@ class Wallet {
       return new Wallet(this.create(params));
     }
     this.baseUrl = this.baseUrl || `http://127.0.0.1:3000/api/${this.chain}/${this.network}`;
-    this.client = new Client({
-      baseUrl: this.baseUrl,
-      authKey: this.getAuthSigningKey()
-    });
   }
 
   saveWallet() {
@@ -63,22 +59,7 @@ class Wallet {
     return new Wallet(Object.assign(loadedWallet, { storage }));
   }
 
-  async unlock(password, unlockTime) {
-    const encMasterKey = this.masterKey;
-    let validPass = await Bcrypt.compare(password, this.password).catch(() => false);
-    if (!validPass) {
-      throw new Error('Incorrect Password');
-    }
-    const decryptionKey = await Encrypter.decryptEncryptionKey(this.encryptionKey, password);
-    this.masterKey = await Encrypter.decryptPrivateKey(encMasterKey, this.pubKey, decryptionKey);
-    if (unlockTime) {
-      setTimeout(() => {
-        this.masterKey = encMasterKey;
-      }, unlockTime);
-    }
-  }
-
-  async unlock(password, unlockTime) {
+  async unlock(password) {
     const encMasterKey = this.masterKey;
     let validPass = await Bcrypt.compare(password, this.password).catch(() => false);
     if (!validPass) {
@@ -87,13 +68,12 @@ class Wallet {
     this.encryptionKey = await Encrypter.decryptEncryptionKey(this.encryptionKey, password);
     const masterKeyStr = await Encrypter.decryptPrivateKey(encMasterKey, this.pubKey, this.encryptionKey);
     this.masterKey = JSON.parse(masterKeyStr);
-
     this.unlocked = true;
-    if (unlockTime) {
-      setTimeout(() => {
-        this.masterKey = encMasterKey;
-      }, unlockTime);
-    }
+    this.client = new Client({
+      baseUrl: this.baseUrl,
+      authKey: this.getAuthSigningKey()
+    });
+
     return this;
   }
 
@@ -153,7 +133,7 @@ class Wallet {
   async importKeys(params) {
     const { keys, password } = params;
     if (password) {
-      this.unlock(password);
+      await this.unlock(password);
     }
     const encryptionKey = this.unlocked ? this.encryptionKey : null;
     for (const key of keys) {
@@ -163,10 +143,12 @@ class Wallet {
     const addedAddresses = keys.map(key => {
       return { address: key.address };
     });
-    await this.client.importAddresses({
-      pubKey: this.xPubKey,
-      payload: addedAddresses
-    });
+    if (password && this.unlocked) {
+      return this.client.importAddresses({
+        pubKey: this.xPubKey,
+        payload: addedAddresses
+      });
+    }
   }
 
   async signTx(params) {
