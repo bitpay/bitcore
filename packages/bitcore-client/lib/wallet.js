@@ -5,7 +5,6 @@ const bitcoreLib = require('bitcore-lib');
 const Client = require('./client');
 const Storage = require('./storage');
 const txProvider = require('../lib/providers/tx-provider');
-const { Address } = bitcoreLib;
 
 class Wallet {
 
