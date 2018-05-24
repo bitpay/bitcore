@@ -9,9 +9,6 @@ import { Adapter } from '../../../src/types/namespaces/ChainAdapter';
 import { Bitcoin } from '../../../src/types/namespaces/Bitcoin';
 
 describe('Block Model', function () {
-  it('should have a test which runs', function () {
-    expect(true).to.equal(true);
-  });
 
   describe('addBlock', () => {
     let addBlockParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
@@ -128,8 +125,7 @@ describe('Block Model', function () {
         network: 'regtest'
       };
 
-      const result = await BlockModel.handleReorg(params);
-      expect(result).to.be.undefined;
+      await BlockModel.handleReorg(params);
       expect(blockModelRemoveSpy.notCalled).to.be.true;
       expect(transactionModelRemoveSpy.notCalled).to.be.true;
       expect(coinModelRemoveSpy.notCalled).to.be.true;
@@ -159,8 +155,7 @@ describe('Block Model', function () {
         internalBlock
       );
 
-      const result = await BlockModel.handleReorg(params);
-      expect(result).to.be.undefined;
+      await BlockModel.handleReorg(params);
       expect(blockModelRemoveSpy.notCalled).to.be.true;
       expect(transactionModelRemoveSpy.notCalled).to.be.true;
       expect(coinModelRemoveSpy.notCalled).to.be.true;
@@ -193,8 +188,7 @@ describe('Block Model', function () {
         internalBlock
       );
 
-      const result = await BlockModel.handleReorg(params);
-      expect(result).to.be.undefined;
+      await BlockModel.handleReorg(params);
       expect(blockModelRemoveSpy.calledOnce).to.be.true;
 
     });
@@ -223,8 +217,7 @@ describe('Block Model', function () {
         internalBlock
       );
 
-      const result = await BlockModel.handleReorg(params);
-      expect(result).to.be.undefined;
+      await BlockModel.handleReorg(params);
       expect(transactionModelRemoveSpy.calledOnce).to.be.true;
 
     });
@@ -253,8 +246,7 @@ describe('Block Model', function () {
         internalBlock
       );
 
-      const result = await BlockModel.handleReorg(params);
-      expect(result).to.be.undefined;
+      await BlockModel.handleReorg(params);
       expect(coinModelRemoveSpy.calledOnce).to.be.true;
 
     });
@@ -283,8 +275,7 @@ describe('Block Model', function () {
         internalBlock
       );
 
-      const result = await BlockModel.handleReorg(params);
-      expect(result).to.be.undefined;
+      await BlockModel.handleReorg(params);
       expect(coinModelUpdateSpy.calledOnce).to.be.true;
 
     });
