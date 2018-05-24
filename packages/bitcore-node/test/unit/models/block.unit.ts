@@ -101,10 +101,8 @@ describe('Block Model', function () {
       let transactionModelRemoveSpy = sandbox.stub(TransactionModel, 'remove').resolves();
       let coinModelRemoveSpy = sandbox.stub(CoinModel, 'remove').resolves();
       let coinModelUpdateSpy = sandbox.stub(CoinModel, 'update').resolves();
-      let blockModelFindOneSpy = sandbox.stub(BlockModel, 'findOne').returns({
-        sort: sandbox.stub().resolves({
-          hash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
-        })
+      let blockModelFindOneSpy = sandbox.stub(BlockModel, 'getLocalTip').returns({
+        hash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
       const params = {
@@ -135,8 +133,8 @@ describe('Block Model', function () {
       let transactionModelRemoveSpy = sandbox.stub(TransactionModel, 'remove').resolves();
       let coinModelRemoveSpy = sandbox.stub(CoinModel, 'remove').resolves();
       let coinModelUpdateSpy = sandbox.stub(CoinModel, 'update').resolves();
-      let blockModelFindOneSpy = sandbox.stub(BlockModel, 'findOne').returns({
-        sort: sandbox.stub().resolves({ height: 0 })
+      let blockModelFindOneSpy = sandbox.stub(BlockModel, 'getLocalTip').returns({
+        height: 0
       });
 
       let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
@@ -165,11 +163,9 @@ describe('Block Model', function () {
       sandbox.stub(TransactionModel, 'remove').resolves();
       sandbox.stub(CoinModel, 'remove').resolves();
       sandbox.stub(CoinModel, 'update').resolves();
-      sandbox.stub(BlockModel, 'findOne').returns({
-        sort: sandbox.stub().resolves({
-          height: 1,
-          previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
-        })
+      sandbox.stub(BlockModel, 'getLocalTip').returns({
+        height: 1,
+        previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
       let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
@@ -194,11 +190,9 @@ describe('Block Model', function () {
       let transactionModelRemoveSpy = sandbox.stub(TransactionModel, 'remove').resolves();
       sandbox.stub(CoinModel, 'remove').resolves();
       sandbox.stub(CoinModel, 'update').resolves();
-      sandbox.stub(BlockModel, 'findOne').returns({
-        sort: sandbox.stub().resolves({
-          height: 1,
-          previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
-        })
+      sandbox.stub(BlockModel, 'getLocalTip').returns({
+        height: 1,
+        previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
       let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
@@ -223,11 +217,9 @@ describe('Block Model', function () {
       sandbox.stub(TransactionModel, 'remove').resolves();
       let coinModelRemoveSpy = sandbox.stub(CoinModel, 'remove').resolves();
       sandbox.stub(CoinModel, 'update').resolves();
-      sandbox.stub(BlockModel, 'findOne').returns({
-        sort: sandbox.stub().resolves({
-          height: 1,
-          previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
-        })
+      sandbox.stub(BlockModel, 'getLocalTip').returns({
+        height: 1,
+        previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
       let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
@@ -252,11 +244,9 @@ describe('Block Model', function () {
       sandbox.stub(TransactionModel, 'remove').resolves();
       sandbox.stub(CoinModel, 'remove').resolves();
       let coinModelUpdateSpy = sandbox.stub(CoinModel, 'update').resolves();
-      sandbox.stub(BlockModel, 'findOne').returns({
-        sort: sandbox.stub().resolves({
-          height: 1,
-          previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
-        })
+      sandbox.stub(BlockModel, 'getLocalTip').returns({
+        height: 1,
+        previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
       let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
