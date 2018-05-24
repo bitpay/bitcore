@@ -64,11 +64,7 @@ describe('Block Model', function () {
   });
 
   describe('getPoolInfo', () => {
-    xit('UNIMPLEMENTED: should return pool info given a coinbase string', () => {
-      expect(() => {
-        BlockModel.getPoolInfo('');
-      }).to.not.throw(TypeError);
-    });
+    xit('should return pool info given a coinbase string');
   });
 
   describe('getLocatorHashes', () => {
