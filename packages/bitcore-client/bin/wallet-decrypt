@@ -1,4 +1,4 @@
-#!/usr/bin/env node --inspect-brk
+#!/usr/bin/env node
 
 const program = require('commander');
 const Wallet = require('../lib/wallet');
