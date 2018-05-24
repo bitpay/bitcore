@@ -7,7 +7,7 @@ import { Peer, BitcoreP2pPool } from '../types/Bitcore-P2P-Pool';
 import { BlockModel } from '../models/block';
 import { TransactionModel } from '../models/transaction';
 import { LoggifyClass } from '../decorators/Loggify';
-import { Bitcoin } from "../types/namespaces/Bitcoin";
+import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { sleep } from '../utils/async';
 const cluster = require('cluster');
 const Chain = require('../chain');
@@ -102,8 +102,7 @@ export class P2pService extends EventEmitter {
         logger.debug('peer tx received', {
           peer,
           chain: this.chain,
-          network: this.network,
-          message
+          network: this.network
         });
         if (
           !this.invCache[this.bitcoreP2p.Inventory.TYPE.TX].includes(
@@ -124,8 +123,7 @@ export class P2pService extends EventEmitter {
         logger.debug('peer block received', {
           peer,
           chain: this.chain,
-          network: this.network,
-          message
+          network: this.network
         });
         if (
           !this.invCache[this.bitcoreP2p.Inventory.TYPE.BLOCK].includes(
@@ -145,12 +143,11 @@ export class P2pService extends EventEmitter {
         }
       });
 
-      this.pool.on('peerheaders', (peer, message) => {
+      this.pool.on('peerheaders', (_, message) => {
         logger.debug('peerheaders message received', {
-          peer,
           chain: this.chain,
           network: this.network,
-          message
+          headers: message.headers.length
         });
         this.emit('headers', message.headers);
       });
@@ -171,7 +168,10 @@ export class P2pService extends EventEmitter {
       });
 
       this.once('ready', async () => {
-        await BlockModel.handleReorg({ chain: this.chain, network: this.network });
+        await BlockModel.handleReorg({
+          chain: this.chain,
+          network: this.network
+        });
         await this.sync();
       });
 
@@ -228,7 +228,8 @@ export class P2pService extends EventEmitter {
     logger.info(
       `Syncing from ${bestBlock.height} to ${this.getPoolHeight()} for chain ${
         this.chain
-    }`);
+      }`
+    );
 
     let blockCounter = 0;
     let lastLog = 0;
@@ -246,13 +247,18 @@ export class P2pService extends EventEmitter {
         blockCounter++;
 
         if (Date.now() - lastLog > 100) {
-          logger.info(`Sync progress ${(
-            (bestBlock.height + blockCounter) / this.getPoolHeight() * 100
-          ).toFixed(3)}%`, {
-            chain: this.chain,
-            network: this.network,
-            height: bestBlock.height + blockCounter
-          });
+          logger.info(
+            `Sync progress ${(
+              (bestBlock.height + blockCounter) /
+              this.getPoolHeight() *
+              100
+            ).toFixed(3)}%`,
+            {
+              chain: this.chain,
+              network: this.network,
+              height: bestBlock.height + blockCounter
+            }
+          );
           lastLog = Date.now();
         }
       }
@@ -275,22 +281,28 @@ export class P2pService extends EventEmitter {
     throw 'Pool cannot be undefined';
   }
 
-  async _getHeaders(candidateHashes: string[]): Promise<Bitcoin.Block.HeaderObj[]> {
+  async _getHeaders(
+    candidateHashes: string[]
+  ): Promise<Bitcoin.Block.HeaderObj[]> {
     const getHeaders = () => {
       if (this.pool) {
-        this.pool.sendMessage(this.messages.GetHeaders({
-          starts: candidateHashes
-        }));
+        this.pool.sendMessage(
+          this.messages.GetHeaders({
+            starts: candidateHashes
+          })
+        );
       }
     };
 
     getHeaders();
     const headersRetry = setInterval(getHeaders, 5000);
 
-    return new Promise(resolve => this.once('headers', headers => {
-      clearInterval(headersRetry);
-      resolve(headers)
-    })) as Promise<Bitcoin.Block.HeaderObj[]>;
+    return new Promise(resolve =>
+      this.once('headers', headers => {
+        clearInterval(headersRetry);
+        resolve(headers);
+      })
+    ) as Promise<Bitcoin.Block.HeaderObj[]>;
   }
 
   async getHeaders(): Promise<Bitcoin.Block.HeaderObj[]> {
@@ -316,11 +328,13 @@ export class P2pService extends EventEmitter {
     _getBlock();
     const getBlockRetry = setInterval(_getBlock, 1000);
 
-    return new Promise(resolve => this.once(hash, block => {
-      logger.debug('Received block, hash:', hash);
-      clearInterval(getBlockRetry);
-      resolve(block)
-    })) as Promise<Bitcoin.Block>;
+    return new Promise(resolve =>
+      this.once(hash, block => {
+        logger.debug('Received block, hash:', hash);
+        clearInterval(getBlockRetry);
+        resolve(block);
+      })
+    ) as Promise<Bitcoin.Block>;
   }
 
   async processBlock(block: Bitcoin.Block) {
