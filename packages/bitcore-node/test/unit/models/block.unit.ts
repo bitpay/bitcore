@@ -104,7 +104,6 @@ describe('Block Model', function () {
     });
 
     it('should return if localTip hash equals the previous hash', async () => {
-
       let blockModelRemoveSpy = sandbox.stub(BlockModel, 'remove').resolves();
       let transactionModelRemoveSpy = sandbox.stub(TransactionModel, 'remove').resolves();
       let coinModelRemoveSpy = sandbox.stub(CoinModel, 'remove').resolves();
@@ -171,7 +170,6 @@ describe('Block Model', function () {
     });
 
     it('should call blockModel remove', async () => {
-
       let blockModelRemoveSpy = sandbox.stub(BlockModel, 'remove').resolves();
       sandbox.stub(TransactionModel, 'remove').resolves();
       sandbox.stub(CoinModel, 'remove').resolves();
