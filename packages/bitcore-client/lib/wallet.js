@@ -69,6 +69,21 @@ class Wallet {
     if (!validPass) {
       throw new Error('Incorrect Password');
     }
+    const decryptionKey = await Encrypter.decryptEncryptionKey(this.encryptionKey, password);
+    this.masterKey = await Encrypter.decryptPrivateKey(encMasterKey, this.pubKey, decryptionKey);
+    if (unlockTime) {
+      setTimeout(() => {
+        this.masterKey = encMasterKey;
+      }, unlockTime);
+    }
+  }
+
+  async unlock(password, unlockTime) {
+    const encMasterKey = this.masterKey;
+    let validPass = await Bcrypt.compare(password, this.password).catch(() => false);
+    if (!validPass) {
+      throw new Error('Incorrect Password');
+    }
     this.encryptionKey = await Encrypter.decryptEncryptionKey(this.encryptionKey, password);
     const masterKeyStr = await Encrypter.decryptPrivateKey(encMasterKey, this.pubKey, this.encryptionKey);
     this.masterKey = JSON.parse(masterKeyStr);
