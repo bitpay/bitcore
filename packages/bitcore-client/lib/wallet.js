@@ -7,13 +7,13 @@ const Storage = require('./storage');
 const txProvider = require('../lib/providers/tx-provider');
 
 class Wallet {
-
   constructor(params) {
     Object.assign(this, params);
     if (!this.masterKey) {
       return new Wallet(this.create(params));
     }
-    this.baseUrl = this.baseUrl || `http://127.0.0.1:3000/api/${this.chain}/${this.network}`;
+    this.baseUrl =
+      this.baseUrl || `http://127.0.0.1:3000/api/${this.chain}/${this.network}`;
   }
 
   saveWallet() {
@@ -23,15 +23,22 @@ class Wallet {
   static async create(params) {
     const { chain, network, name, phrase, password, path } = params;
     if (!chain || !network || !name || !path) {
-      throw new Error('Missing required parameter')
+      throw new Error('Missing required parameter');
     }
     const mnemonic = new Mnemonic(phrase);
     const privateKey = mnemonic.toHDPrivateKey(password);
     const pubKey = privateKey.hdPublicKey.publicKey.toString();
     const masterKey = Encrypter.generateEncryptionKey();
-    const keyObj = Object.assign(privateKey.toObject(), privateKey.hdPublicKey.toObject());
+    const keyObj = Object.assign(
+      privateKey.toObject(),
+      privateKey.hdPublicKey.toObject()
+    );
     const encryptionKey = Encrypter.encryptEncryptionKey(masterKey, password);
-    const encPrivateKey = Encrypter.encryptPrivateKey(JSON.stringify(keyObj), pubKey, masterKey);
+    const encPrivateKey = Encrypter.encryptPrivateKey(
+      JSON.stringify(keyObj),
+      pubKey,
+      masterKey
+    );
     const storage = new Storage({
       path,
       errorIfExists: true,
@@ -46,26 +53,37 @@ class Wallet {
     });
     await storage.saveWallet({ wallet });
     const loadedWallet = await this.loadWallet({ path, storage });
-    await loadedWallet.unlock(password)
+    await loadedWallet.unlock(password);
     await loadedWallet.register();
     return loadedWallet;
   }
 
   static async loadWallet(params) {
     const { path } = params;
-    const storage = params.storage || new Storage({ path, errorIfExists: false, createIfMissing: false });
+    const storage =
+      params.storage ||
+      new Storage({ path, errorIfExists: false, createIfMissing: false });
     const loadedWallet = await storage.loadWallet();
     return new Wallet(Object.assign(loadedWallet, { storage }));
   }
 
   async unlock(password) {
     const encMasterKey = this.masterKey;
-    let validPass = await Bcrypt.compare(password, this.password).catch(() => false);
+    let validPass = await Bcrypt.compare(password, this.password).catch(
+      () => false
+    );
     if (!validPass) {
       throw new Error('Incorrect Password');
     }
-    this.encryptionKey = await Encrypter.decryptEncryptionKey(this.encryptionKey, password);
-    const masterKeyStr = await Encrypter.decryptPrivateKey(encMasterKey, this.pubKey, this.encryptionKey);
+    this.encryptionKey = await Encrypter.decryptEncryptionKey(
+      this.encryptionKey,
+      password
+    );
+    const masterKeyStr = await Encrypter.decryptPrivateKey(
+      encMasterKey,
+      this.pubKey,
+      this.encryptionKey
+    );
     this.masterKey = JSON.parse(masterKeyStr);
     this.unlocked = true;
     this.client = new Client({
@@ -93,7 +111,9 @@ class Wallet {
   }
 
   getAuthSigningKey() {
-    return new bitcoreLib.HDPrivateKey(this.masterKey.xprivkey).deriveChild('m/2').privateKey;
+    return new bitcoreLib.HDPrivateKey(this.masterKey.xprivkey).deriveChild(
+      'm/2'
+    ).privateKey;
   }
 
   getBalance(params) {
@@ -142,7 +162,7 @@ class Wallet {
     const addedAddresses = keys.map(key => {
       return { address: key.address };
     });
-    if (password && this.unlocked) {
+    if (this.unlocked) {
       return this.client.importAddresses({
         pubKey: this.xPubKey,
         payload: addedAddresses

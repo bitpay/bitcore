@@ -12,10 +12,11 @@ program
 const main = async () => {
   const { path, password } = program;
   try {
-    let wallet = await Wallet.loadWallet({ path })
+    let wallet = await Wallet.loadWallet({ path });
     await wallet.unlock(password);
     console.log(wallet);
   } catch (e) {
+    console.log(e);
     console.error('Unable to decrypt wallet');
   }
 };

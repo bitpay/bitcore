@@ -27,16 +27,17 @@ class Storage {
   async getKey(params) {
     const { address, encryptionKey } = params;
     const payload = await this.db.get(`address|${address}`);
-    if (encryptionKey) {
-      const { encKey, pubKey } = payload;
+    const json = JSON.parse(payload) || payload;
+    const { encKey, pubKey } = json;
+    if (encryptionKey && pubKey) {
       const decrypted = Encrypter.decryptPrivateKey(
         encKey,
-        pubKey,
-        encryptionKey
+        Buffer.from(pubKey, 'hex'),
+        Buffer.from(encryptionKey, 'hex')
       );
-      return decrypted;
+      return JSON.parse(decrypted);
     } else {
-      return payload;
+      json;
     }
   }
   async addKey(params) {
@@ -46,12 +47,12 @@ class Storage {
     if (pubKey && key.privKey && encryptionKey) {
       const encKey = Encrypter.encryptPrivateKey(
         JSON.stringify(key),
-        pubKey,
-        encryptionKey
+        Buffer.from(pubKey, 'hex'),
+        Buffer.from(encryptionKey, 'hex')
       );
       payload = { encKey, pubKey };
     }
-    return this.db.put(`address|${key.address}`, payload);
+    return this.db.put(`address|${key.address}`, JSON.stringify(payload));
   }
 }
 
