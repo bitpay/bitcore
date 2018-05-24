@@ -9,8 +9,11 @@
     "postinstall": "./node_modules/.bin/lerna bootstrap"
   },
   "devDependencies": {
-    "lerna": "^2.9.1",
+    "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^12.1.0",
-    "eslint-plugin-import": "^2.8.0"
+    "eslint-plugin-import": "^2.8.0",
+    "lerna": "^2.9.1",
+    "typescript": "^2.8.3",
+    "typescript-eslint-parser": "^15.0.0"
   }
 }

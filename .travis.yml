@@ -1,0 +1,10 @@
+language: node_js
+node_js:
+  - "lts/*"
+sudo:
+  required
+services:
+  - docker
+install: true
+script:
+  - "cd ./packages/bitcore-node && npm run test:ci"
