@@ -1,4 +1,8 @@
 import logger from '../../logger';
+import config from '../../config';
+import { isChainSupported } from '../../types/SupportedChain';
+import { BlockModel } from '../../models/block';
+import { TransactionModel } from '../../models/transaction';
 import { Observable } from 'rxjs';
 import { concatMap } from 'rxjs/operators';
 import { ChainNetwork } from '../../types/ChainNetwork';
@@ -189,3 +193,28 @@ export function build(
 }
 
 
+export async function start() {
+  const p2pServices: (() => Promise<void>)[] = [];
+  for (let chain of Object.keys(config.chains)) {
+    for (let network of Object.keys(config.chains[chain])) {
+      const chainConfig = config.chains[chain][network];
+      const hasChainSource = chainConfig.chainSource !== undefined;
+      const isP2p = chainConfig.chainSource === 'p2p';
+
+      if (isChainSupported(chain) && (!hasChainSource || isP2p)) {
+        let p2pServiceConfig = Object.assign(
+          config.chains[chain][network],
+          { chain, network }
+        );
+
+        // build the correct service for the chain
+        const service = build(chain, p2pServiceConfig);
+
+        // get ready to start the service
+        p2pServices.push(() => init(
+          { chain, network }, BlockModel, TransactionModel, service));
+      }
+    }
+  }
+  await Promise.all(p2pServices.map(w => w()));
+}
