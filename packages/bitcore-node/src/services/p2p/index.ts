@@ -50,7 +50,7 @@ export interface P2pService<Block, Transaction> {
 export type StandardP2p = P2pService<Bitcoin.Block, Bitcoin.Transaction>;
 
 
-export async function setupSync(
+export async function startSync(
   chainnet: ChainNetwork,
   blocks: IBlockModel,
   service: StandardP2p
@@ -68,67 +68,67 @@ export async function setupSync(
   let counter = 0;
   let lastLog = 0;
 
-  return {
-    // sync the main chain
-    async start(): Promise<void> {
-      // get best block we currently have to see if we're synced
-      let bestBlock = await tip();
+  // sync the main chain
+  const start = async () => {
+    // get best block we currently have to see if we're synced
+    let bestBlock = await tip();
 
-      // wait for the parent fork to sync first
-      if (parent && bestBlock.height < parent.height) {
-        logger.info(`Waiting until ${parent.chain} syncs before ${chainnet.chain}`);
-        do {
-          await sleep(5000);
-          bestBlock = await tip();
-        }
-        while (bestBlock.height < parent.height);
+    // wait for the parent fork to sync first
+    if (parent && bestBlock.height < parent.height) {
+      logger.info(`Waiting until ${parent.chain} syncs before ${chainnet.chain}`);
+      do {
+        await sleep(5000);
+        bestBlock = await tip();
       }
+      while (bestBlock.height < parent.height);
+    }
 
-      counter = bestBlock.height;
-      goalHeight = service.height();
-      if (bestBlock.height !== goalHeight) {
-        logger.info(
-          `Syncing from ${bestBlock.height} to ${service.height()} for chain ${
-            chainnet.chain
-        }`);
+    counter = bestBlock.height;
+    goalHeight = service.height();
+    if (bestBlock.height !== goalHeight) {
+      logger.info(
+        `Syncing from ${bestBlock.height} to ${service.height()} for chain ${
+        chainnet.chain
+      }`);
 
-        const locators = await blocks.getLocatorHashes(chainnet);
-        logger.debug(`Received ${locators.length} headers`);
+      const locators = await blocks.getLocatorHashes(chainnet);
+      logger.debug(`Received ${locators.length} headers`);
 
-        finalHash = await service.sync(locators);
-        if (recentHash === finalHash) {
-          setImmediate(() => this.start());
-        }
-      }
-      else {
-        logger.info(`${chainnet.chain} up to date.`);
-        service.syncing = false;
-        finished = true;
-      }
-    },
-    // notify syncing service that a hash has been added to the db
-    add(hash: string) {
-      if (finished) {
-        return;
-      }
-      logger.debug(`Syncing block ${hash}`, chainnet);
-      counter += 1;
-      if (Date.now() - lastLog > 100) {
-        logger.info(`Sync progress ${(counter * 100 / goalHeight).toFixed(3)}%`, {
-          chain: chainnet.chain,
-          network: chainnet.network,
-          height: counter
-        });
-        lastLog = Date.now();
-      }
-      if (hash === finalHash) {
-        this.start();
-      }
-      else {
-        recentHash = hash;
+      finalHash = await service.sync(locators);
+      if (finalHash && recentHash === finalHash) {
+        setImmediate(() => start());
       }
     }
-  }
+    else {
+      logger.info(`${chainnet.chain} up to date.`);
+      service.syncing = false;
+      finished = true;
+    }
+  };
+  start();
+
+  // notify syncing service that a hash has been added to the db
+  return (hash: string) => {
+    if (finished) {
+      return;
+    }
+    logger.debug(`Syncing block ${hash}`, chainnet);
+    counter += 1;
+    if (Date.now() - lastLog > 100) {
+      logger.info(`Sync progress ${(counter * 100 / goalHeight).toFixed(3)}%`, {
+        chain: chainnet.chain,
+        network: chainnet.network,
+        height: counter
+      });
+      lastLog = Date.now();
+    }
+    if (hash === finalHash) {
+      start();
+    }
+    else {
+      recentHash = hash;
+    }
+  };
 }
 
 
@@ -140,7 +140,7 @@ export async function init(
 ) {
   logger.debug(`Started worker for chain ${chainnet.chain}`);
   const parent = service.parent();
-  const sync = await setupSync(chainnet, blocks, service);
+  const notifySync = await startSync(chainnet, blocks, service);
 
   service.blocks().pipe(concatMap(async pair => {
     await blocks.addBlock({
@@ -151,7 +151,7 @@ export async function init(
       block: pair.block
     });
     if (service.syncing) {
-      sync.add(pair.block.hash);
+      notifySync(pair.block.hash);
     }
     else {
       logger.info(`Added block ${pair.block.hash}`, chainnet);
@@ -174,7 +174,6 @@ export async function init(
 
   // wait for it to get connected
   await service.start();
-  sync.start();
 }
 
 
