@@ -2,14 +2,20 @@
 
 const fs = require('fs');
 const program = require('commander');
+const promptly = require('promptly');
 const Wallet = require('../lib/wallet');
 
 program
   .version(require('../package.json').version)
   .option('--path <path>', 'REQUIRED - Where wallet is stored')
-  .option('--password <password>', 'REQUIRED - password to unlock the wallet so the private keys can be encrypted')
-  .option('--parse [parse]', 'OPTIONAL - A json string to parse in the form {"address": "mXy1234", privKey: "xxxxxxx"}')
-  .option('--file [file]', 'OPTIONAL - A jsonl file with {"address": "mXy1234", privKey: "xxxxxxx"} in it')
+  .option(
+    '--parse [parse]',
+    'OPTIONAL - A json string to parse in the form {"address": "mXy1234", privKey: "xxxxxxx"}'
+  )
+  .option(
+    '--file [file]',
+    'OPTIONAL - A jsonl file with {"address": "mXy1234", privKey: "xxxxxxx"} in it'
+  )
   .parse(process.argv);
 
 const getFileKeys = file => {
@@ -31,7 +37,7 @@ const parseKeys = keys => {
 };
 
 const main = async () => {
-  const { path, file, parse, password } = program;
+  const { path, file, parse } = program;
   let wallet;
   try {
     wallet = await Wallet.loadWallet({ path });
@@ -41,8 +47,11 @@ const main = async () => {
     } else if (parse) {
       keyInput = parseKeys(parse);
     }
-    if(!password) {
-      throw new Error('No password provided. Keys can\'t be imported without unlocking the wallet');
+    const password = await promptly.password('Wallet Password:');
+    if (!password) {
+      throw new Error(
+        'No password provided. Keys can\'t be imported without unlocking the wallet'
+      );
     }
     await wallet.importKeys({ keys: keyInput, password });
     console.log(`${keyInput.length} Key(s) Imported`);

@@ -2,17 +2,18 @@
 
 const program = require('commander');
 const Wallet = require('../lib/wallet');
+const promptly = require('promptly');
 
 program
   .version(require('../package.json').version)
   .option('--path <path>', 'REQUIRED - Wallet Path')
-  .option('--password <password>', 'Unlocking password')
   .parse(process.argv);
 
 const main = async () => {
-  const { path, password } = program;
+  const { path } = program;
   try {
     let wallet = await Wallet.loadWallet({ path });
+    const password = await promptly.password('Wallet Password:');
     await wallet.unlock(password);
     console.log(wallet);
   } catch (e) {
