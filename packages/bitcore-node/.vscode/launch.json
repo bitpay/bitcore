@@ -13,7 +13,7 @@
       "type": "node",
       "request": "launch",
       "name": "Launch Program",
-      "program": "${workspaceFolder}/build/server.js",
+      "program": "${workspaceFolder}/build/src/server.js",
       "args": ["--DEBUG", "true"],
       "sourceMaps": true,
       "outFiles": ["${workspaceFolder}/build/**/*.js"],
