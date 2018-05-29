@@ -68,6 +68,16 @@ describe('URI', function() {
     uri['req-extra'].should.equal('param');
   });
 
+  it('Should return error if try to use an invalid bitcoin URI', function() {
+    var uri;
+
+    try {
+      uri = URI.parse('badprefix:qqkj609un9sl896yezxj0j5hxagk7h7pnyyzaz887x');
+    } catch (e) {
+        expect(e.message).to.equal('Invalid bitcoin URI');
+    }
+  });
+
   describe('cashaddr', function() {
     URI.parse.bind(URI, 'badURI').should.throw(TypeError);
 
