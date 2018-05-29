@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { WalletModel, IWalletModel } from '../../../src/models/wallet';
-import { BlockModel } from '../../../src/models/block';
 import { WalletAddressModel } from '../../../src/models/walletAddress';
 
 describe('Wallet Model', function () {
@@ -35,7 +34,7 @@ describe('Wallet Model', function () {
       sandbox.restore();
     });
     it('should return wallet address model update coins', async () => {
-      sandbox.stub(WalletAddressModel, 'find').returns(['test', 'run']);
+      sandbox.stub(WalletAddressModel, 'find').returns([]);
       let walletAddressModelSpy = sandbox.stub(WalletAddressModel, 'updateCoins').returns({
         wallet: sandbox.stub().returnsThis(),
         addresses: sandbox.stub().returnsThis()
