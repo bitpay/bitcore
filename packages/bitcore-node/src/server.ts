@@ -10,9 +10,7 @@ import parseArgv from './utils/parseArgv';
 let args = parseArgv([], ['DEBUG']);
 
 const startServices = async () => {
-  await Storage.start({});
   await Worker.start();
-
   // TODO this needs to move to a static p2pService method
   let p2pServices = [] as Array<P2pService>;
   for (let chain of Object.keys(config.chains)) {
@@ -32,6 +30,7 @@ const startServices = async () => {
 };
 
 const startAPI = async () => {
+  await Storage.start({});
   const server = app.listen(config.port, function() {
     logger.info(`API server started on port ${config.port}`);
   });
