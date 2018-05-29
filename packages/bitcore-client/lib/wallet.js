@@ -1,3 +1,5 @@
+const Bcrypt = require('bcrypt');
+const Encrypter = require('./encryption');
 const Mnemonic = require('bitcore-mnemonic');
 const bitcoreLib = require('bitcore-lib');
 const Client = require('./client');
@@ -10,11 +12,8 @@ class Wallet {
     if (!this.masterKey) {
       return new Wallet(this.create(params));
     }
-    this.baseUrl = this.baseUrl || `http://127.0.0.1:3000/api/${this.chain}/${this.network}`;
-    this.client = new Client({
-      baseUrl: this.baseUrl,
-      authKey: this.getAuthSigningKey()
-    });
+    this.baseUrl =
+      this.baseUrl || `http://127.0.0.1:3000/api/${this.chain}/${this.network}`;
   }
 
   saveWallet() {
@@ -28,28 +27,71 @@ class Wallet {
     }
     const mnemonic = new Mnemonic(phrase);
     const privateKey = mnemonic.toHDPrivateKey(password);
-    const masterKey = Object.assign(privateKey.toObject(), privateKey.hdPublicKey.toObject());
+    const pubKey = privateKey.hdPublicKey.publicKey.toString();
+    const masterKey = Encrypter.generateEncryptionKey();
+    const keyObj = Object.assign(
+      privateKey.toObject(),
+      privateKey.hdPublicKey.toObject()
+    );
+    const encryptionKey = Encrypter.encryptEncryptionKey(masterKey, password);
+    const encPrivateKey = Encrypter.encryptPrivateKey(
+      JSON.stringify(keyObj),
+      pubKey,
+      masterKey
+    );
     const storage = new Storage({
       path,
       errorIfExists: true,
       createIfMissing: true
     });
     const wallet = Object.assign(params, {
-      masterKey,
-      mnemonic: mnemonic.toString()
+      encryptionKey,
+      masterKey: encPrivateKey,
+      password: await Bcrypt.hash(password, 10),
+      xPubKey: keyObj.xpubkey,
+      pubKey
     });
     await storage.saveWallet({ wallet });
     const loadedWallet = await this.loadWallet({ path, storage });
-    loadedWallet.register();
+    await loadedWallet.unlock(password);
+    await loadedWallet.register();
     return loadedWallet;
   }
 
   static async loadWallet(params) {
     const { path } = params;
     const storage =
-      params.storage || new Storage({ path, errorIfExists: false, createIfMissing: false });
+      params.storage ||
+      new Storage({ path, errorIfExists: false, createIfMissing: false });
     const loadedWallet = await storage.loadWallet();
     return new Wallet(Object.assign(loadedWallet, { storage }));
+  }
+
+  async unlock(password) {
+    const encMasterKey = this.masterKey;
+    let validPass = await Bcrypt.compare(password, this.password).catch(
+      () => false
+    );
+    if (!validPass) {
+      throw new Error('Incorrect Password');
+    }
+    this.encryptionKey = await Encrypter.decryptEncryptionKey(
+      this.encryptionKey,
+      password
+    );
+    const masterKeyStr = await Encrypter.decryptPrivateKey(
+      encMasterKey,
+      this.pubKey,
+      this.encryptionKey
+    );
+    this.masterKey = JSON.parse(masterKeyStr);
+    this.unlocked = true;
+    this.client = new Client({
+      baseUrl: this.baseUrl,
+      authKey: this.getAuthSigningKey()
+    });
+
+    return this;
   }
 
   async register(params = {}) {
@@ -69,7 +111,9 @@ class Wallet {
   }
 
   getAuthSigningKey() {
-    return new bitcoreLib.HDPrivateKey(this.masterKey.xprivkey).deriveChild('m/2').privateKey;
+    return new bitcoreLib.HDPrivateKey(this.masterKey.xprivkey).deriveChild(
+      'm/2'
+    ).privateKey;
   }
 
   getBalance(params) {
@@ -106,17 +150,24 @@ class Wallet {
   }
 
   async importKeys(params) {
-    const { keys } = params;
-    for (const key of keys) {
-      await this.storage.addKey({ key });
+    const { keys, password } = params;
+    if (password) {
+      await this.unlock(password);
     }
-    const payload = keys.map(key => {
+    const encryptionKey = this.unlocked ? this.encryptionKey : null;
+    for (const key of keys) {
+      let keyToSave = { key, encryptionKey };
+      await this.storage.addKey(keyToSave);
+    }
+    const addedAddresses = keys.map(key => {
       return { address: key.address };
     });
-    await this.client.importAddresses({
-      pubKey: this.masterKey.xpubkey,
-      payload
-    });
+    if (this.unlocked) {
+      return this.client.importAddresses({
+        pubKey: this.xPubKey,
+        payload: addedAddresses
+      });
+    }
   }
 
   async signTx(params) {

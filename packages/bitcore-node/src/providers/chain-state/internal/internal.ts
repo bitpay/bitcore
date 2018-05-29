@@ -173,8 +173,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async getWallet(params: CSP.GetWalletParams) {
     const { pubKey } = params;
-    let wallet = await WalletModel.findOne({ pubKey });
-    return wallet;
+    return WalletModel.findOne({ pubKey }).exec();
   }
 
   streamWalletAddresses(params: CSP.StreamWalletAddressesParams) {

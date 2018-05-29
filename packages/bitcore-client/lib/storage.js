@@ -1,14 +1,13 @@
-const fs = require('fs');
-const EventEmitter = require('events');
 const levelup = require('levelup');
 const leveldown = require('leveldown');
+const Encrypter = require('./encryption');
 
 class Storage {
-  constructor(params){
+  constructor(params) {
     const { path, createIfMissing, errorIfExists } = params;
-    this.db = levelup(leveldown(path), {createIfMissing, errorIfExists});
+    this.db = levelup(leveldown(path), { createIfMissing, errorIfExists });
   }
-  async loadWallet(params) {
+  async loadWallet() {
     return new Promise(async (resolve, reject) => {
       try {
         const wallet = await this.db.get('wallet');
@@ -21,17 +20,39 @@ class Storage {
       }
     });
   }
-  async saveWallet(params){
+  async saveWallet(params) {
     const { wallet } = params;
     return this.db.put('wallet', JSON.stringify(wallet));
   }
-  async getKey(params){
-    const { address } = params;
-    return this.db.get(`address|${address}`);
+  async getKey(params) {
+    const { address, encryptionKey } = params;
+    const payload = await this.db.get(`address|${address}`);
+    const json = JSON.parse(payload) || payload;
+    const { encKey, pubKey } = json;
+    if (encryptionKey && pubKey) {
+      const decrypted = Encrypter.decryptPrivateKey(
+        encKey,
+        Buffer.from(pubKey, 'hex'),
+        Buffer.from(encryptionKey, 'hex')
+      );
+      return JSON.parse(decrypted);
+    } else {
+      json;
+    }
   }
-  async addKey(params){
-    const { key } = params;
-    return this.db.put(`address|${key.address}`, key.privKey);
+  async addKey(params) {
+    const { key, encryptionKey } = params;
+    const { pubKey } = key;
+    let payload = {};
+    if (pubKey && key.privKey && encryptionKey) {
+      const encKey = Encrypter.encryptPrivateKey(
+        JSON.stringify(key),
+        Buffer.from(pubKey, 'hex'),
+        Buffer.from(encryptionKey, 'hex')
+      );
+      payload = { encKey, pubKey };
+    }
+    return this.db.put(`address|${key.address}`, JSON.stringify(payload));
   }
 }
 

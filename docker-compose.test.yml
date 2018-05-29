@@ -1,0 +1,28 @@
+version: "3"
+
+services:
+
+  test_runner:
+    build:
+      context: .
+      dockerfile: Dockerfile-test
+    ports:
+      - "8100:8100"
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+      - DB_NAME=bitcore-test
+    depends_on:
+      - db
+      - bitcoin
+
+  db:
+    image: mongo
+    ports:
+      - 27017:27017
+    
+  bitcoin:
+    build:
+      context: packages/bitcore-node/test/ci/bitcoin
+      args:
+        VERSION: 0.15
