@@ -10,8 +10,8 @@ function findConfig(): ConfigType | undefined {
   const configFileName = "bitcore.config.json";
   let bitcoreConfigPaths = [
     `${os.homedir()}/${configFileName}`,
-    `../../../${configFileName}`,
-    `../${configFileName}`
+    `../../../../${configFileName}`,
+    `../../${configFileName}`
   ];
   const overrideConfig = argConfigPath || envConfigPath;
   if (overrideConfig) {
