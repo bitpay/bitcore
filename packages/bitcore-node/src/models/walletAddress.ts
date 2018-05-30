@@ -87,32 +87,12 @@ WalletAddressSchema.statics.getUpdateCoinsObj = function (
 }
 
 WalletAddressSchema.statics.updateCoins = async function (
-  params: { walletUpdates: any, coinUpdates: any }, test: UpdateCoinParams
+  params: { walletUpdates: any, coinUpdates: any } & UpdateCoinsParams
 ) {
-  const { walletUpdates, coinUpdates } = params;
+  const { walletUpdates, coinUpdates, wallet } = params;
   const { chain, network } = wallet;
 
-  // let walletUpdates = addresses.map((address: string) => {
-  //   return {
-  //     updateOne: {
-  //       filter: { wallet: wallet._id, address: address },
-  //       update: { wallet: wallet._id, address: address, chain, network },
-  //       upsert: true
-  //     }
-  //   };
-  // });
-
   let walletUpdateBatches = partition(walletUpdates, 500);
-  // let coinUpdates = addresses.map((address: string) => {
-  //   return {
-  //     updateMany: {
-  //       filter: { chain, network, address },
-  //       update: {
-  //         $addToSet: { wallets: wallet._id }
-  //       }
-  //     }
-  //   };
-  // });
   let coinUpdateBatches = partition(coinUpdates, 500);
 
   return new Promise(async resolve => {
@@ -159,3 +139,4 @@ WalletAddressSchema.statics.updateCoins = async function (
 
 LoggifyObject(WalletAddressSchema.statics, 'WalletAddressSchema');
 export let WalletAddressModel: IWalletAddressModel = model<IWalletAddressDoc, IWalletAddressModel>("WalletAddress", WalletAddressSchema);
+
