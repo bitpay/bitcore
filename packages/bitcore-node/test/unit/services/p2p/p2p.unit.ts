@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import { init, StandardP2p } from '../../../../src/services/p2p';
 import { Subject } from 'rxjs';
 import { Bitcoin } from '../../../../src/types/namespaces/Bitcoin';
 import { ITransactionModel } from '../../../../src/models/transaction';
@@ -8,6 +7,7 @@ import { IBlockModel } from '../../../../src/models/block';
 import { TEST_TX } from '../../../data/test-tx';
 import { sleep } from '../../../../src/utils/async';
 import { EventEmitter } from 'events';
+import { P2pRunner, StandardP2p } from '../../../../src/services/p2p';
 
 describe('P2P Service', () => {
   it('should write blocks from p2p', done => {
@@ -30,10 +30,7 @@ describe('P2P Service', () => {
       }
     });
 
-    init({
-      chain: 'GOB',
-      network: 'p-hound',
-    }, BlockModel, TransactionModel, Fakeblock);
+    new P2pRunner('GOB', 'p-hound', BlockModel, TransactionModel, Fakeblock).start();
   });
 
   it('should write transactions from p2p', done => {
@@ -53,10 +50,7 @@ describe('P2P Service', () => {
       },
     });
 
-    init({
-      chain: 'GOB',
-      network: 'p-hound',
-    }, BlockModel, TransactionModel, Fakeblock);
+    new P2pRunner('GOB', 'p-hound', BlockModel, TransactionModel, Fakeblock).start();
   });
 
   it('should sync blocks in order', done => {
@@ -96,10 +90,7 @@ describe('P2P Service', () => {
       },
     });
 
-    init({
-      chain: 'GOB',
-      network: 'p-hound',
-    }, BlockModel, TransactionModel, Fakeblock);
+    new P2pRunner('GOB', 'p-hound', BlockModel, TransactionModel, Fakeblock).start();
   });
 
   it('should restart sync if new blocks have arrived', done => {
@@ -145,10 +136,7 @@ describe('P2P Service', () => {
       },
     });
 
-    init({
-      chain: 'GOB',
-      network: 'p-hound',
-    }, BlockModel, TransactionModel, Fakeblock);
+    new P2pRunner('GOB', 'p-hound', BlockModel, TransactionModel, Fakeblock).start();
   });
 
   it('should recognize the end of a slow call to sync', done => {
@@ -193,10 +181,7 @@ describe('P2P Service', () => {
       }),
     }));
 
-    init({
-      chain: 'GOB',
-      network: 'p-hound',
-    }, BlockModel, TransactionModel, Fakeblock);
+    new P2pRunner('GOB', 'p-hound', BlockModel, TransactionModel, Fakeblock).start();
   });
 });
 
