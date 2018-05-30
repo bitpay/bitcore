@@ -13,6 +13,7 @@ import { SupportedChain, SupportedChainSet } from '../../types/SupportedChain';
 import { BtcP2pService } from './bitcoin';
 import { Bitcoin } from '../../types/namespaces/Bitcoin';
 import { setImmediate } from 'timers';
+import { EventEmitter } from 'events';
 
 
 export interface P2pService<Block, Transaction> {
@@ -50,145 +51,181 @@ export interface P2pService<Block, Transaction> {
 export type StandardP2p = P2pService<Bitcoin.Block, Bitcoin.Transaction>;
 
 
-export async function startSync(
-  chainnet: ChainNetwork,
-  blocks: IBlockModel,
-  service: StandardP2p
-) {
-  service.syncing = true;
-  const parent = service.parent();
-  const tip = () => blocks.getLocalTip({
-    chain: chainnet.chain,
-    network: chainnet.network
-  });
-  let finished = false;
-  let finalHash;
-  let recentHash;
-  let goalHeight;
-  let counter = 0;
-  let lastLog = 0;
-
-  // sync the main chain
-  const start = async () => {
-    // get best block we currently have to see if we're synced
-    let bestBlock = await tip();
-
-    // wait for the parent fork to sync first
-    if (parent && bestBlock.height < parent.height) {
-      logger.info(`Waiting until ${parent.chain} syncs before ${chainnet.chain}`);
-      do {
-        await sleep(5000);
-        bestBlock = await tip();
-      }
-      while (bestBlock.height < parent.height);
-    }
-
-    counter = bestBlock.height;
-    goalHeight = service.height();
-    if (bestBlock.height !== goalHeight) {
-      logger.info(
-        `Syncing from ${bestBlock.height} to ${service.height()} for chain ${
-        chainnet.chain
-      }`);
-
-      const locators = await blocks.getLocatorHashes(chainnet);
-      logger.debug(`Received ${locators.length} headers`);
-
-      finalHash = await service.sync(locators);
-      if (finalHash && recentHash === finalHash) {
-        setImmediate(() => start());
-      }
-    }
-    else {
-      logger.info(`${chainnet.chain} up to date.`);
-      service.syncing = false;
-      finished = true;
-    }
-  };
-  start();
-
-  // notify syncing service that a hash has been added to the db
-  return (hash: string) => {
-    if (finished) {
-      return;
-    }
-    logger.debug(`Syncing block ${hash}`, chainnet);
-    counter += 1;
-    if (Date.now() - lastLog > 100) {
-      logger.info(`Sync progress ${(counter * 100 / goalHeight).toFixed(3)}%`, {
-        chain: chainnet.chain,
-        network: chainnet.network,
-        height: counter
-      });
-      lastLog = Date.now();
-    }
-    if (hash === finalHash) {
-      start();
-    }
-    else {
-      recentHash = hash;
-    }
-  };
+export enum P2pEvents {
+  SYNC_COMPLETE = 'SYNC_COMPLETE',
 }
 
 
-export async function init(
-  chainnet: ChainNetwork,
-  blocks: IBlockModel,
-  transactions: ITransactionModel,
-  service: StandardP2p
-) {
-  logger.debug(`Started worker for chain ${chainnet.chain}`);
-  const parent = service.parent();
-  const notifySync = await startSync(chainnet, blocks, service);
+export class P2pRunner {
+  private service: StandardP2p;
+  private chain: string;
+  private network: string;
+  private blocks: IBlockModel;
+  private transactions: ITransactionModel;
 
-  service.blocks().pipe(concatMap(async pair => {
-    await blocks.addBlock({
-      chain: chainnet.chain,
-      network: chainnet.network,
-      forkHeight: parent? parent.height : 0,
-      parentChain: parent? parent.chain : chainnet.chain,
-      block: pair.block
+  public events: EventEmitter;
+
+  constructor(
+    chain: string,
+    network: string,
+    blocks: IBlockModel,
+    transactions: ITransactionModel,
+    service: StandardP2p
+  ) {
+    this.service = service;
+    this.chain = chain;
+    this.network = network;
+    this.blocks = blocks;
+    this.transactions = transactions;
+    this.events = new EventEmitter();
+  }
+
+  async start() {
+    logger.debug(`Started worker for chain ${this.chain}`);
+    const parent = this.service.parent();
+    const syncer = await this.sync();
+
+    this.service.blocks().pipe(concatMap(async pair => {
+      await this.blocks.addBlock({
+        chain: this.chain,
+        network: this.network,
+        forkHeight: parent? parent.height : 0,
+        parentChain: parent? parent.chain : this.chain,
+        block: pair.block
+      });
+      if (this.service.syncing) {
+        syncer.add(pair.block.hash);
+      }
+      else {
+        logger.info(`Added block ${pair.block.hash}`, {
+          chain: this.chain,
+          network: this.network,
+        });
+      }
+    }))
+    .subscribe(() => {}, logger.error.bind(logger));
+
+    this.service.transactions().pipe(concatMap(async transaction => {
+      await this.transactions.batchImport({
+        txs: [transaction],
+        height: -1,
+        network: this.network,
+        chain: this.chain,
+        blockTime: new Date(),
+        blockTimeNormalized: new Date(),
+      });
+      logger.debug(`Added transaction ${transaction.hash}`, {
+        chain: this.chain,
+        network: this.network,
+      });
+    }))
+    .subscribe(() => {}, logger.error.bind(logger));
+
+    // wait for it to get connected
+    await this.service.start();
+    syncer.start();
+  }
+
+  async sync() {
+    this.service.syncing = true;
+    const parent = this.service.parent();
+    const tip = () => this.blocks.getLocalTip({
+      chain: this.chain,
+      network: this.network
     });
-    if (service.syncing) {
-      notifySync(pair.block.hash);
-    }
-    else {
-      logger.info(`Added block ${pair.block.hash}`, chainnet);
-    }
-  }))
-  .subscribe(() => {}, logger.error.bind(logger));
+    let finished = false;
+    let finalHash;
+    let recentHash;
+    let goalHeight;
+    let counter = 0;
+    let lastLog = 0;
 
-  service.transactions().pipe(concatMap(async transaction => {
-    await transactions.batchImport({
-      txs: [transaction],
-      height: -1,
-      network: chainnet.network,
-      chain: chainnet.chain,
-      blockTime: new Date(),
-      blockTimeNormalized: new Date(),
-    });
-    logger.debug(`Added transaction ${transaction.hash}`, chainnet);
-  }))
-  .subscribe(() => {}, logger.error.bind(logger));
+    // sync the main chain
+    const start = async () => {
+      // get best block we currently have to see if we're synced
+      let bestBlock = await tip();
 
-  // wait for it to get connected
-  await service.start();
+      // wait for the parent fork to sync first
+      if (parent && bestBlock.height < parent.height) {
+        logger.info(`Waiting until ${parent.chain} syncs before ${this.chain}`);
+        do {
+          await sleep(5000);
+          bestBlock = await tip();
+        }
+        while (bestBlock.height < parent.height);
+      }
+
+      counter = bestBlock.height;
+      goalHeight = this.service.height();
+      if (bestBlock.height !== goalHeight) {
+        logger.info(
+          `Syncing from ${bestBlock.height} to ${this.service.height()} for chain ${
+          this.chain
+        }`);
+
+        const locators = await this.blocks.getLocatorHashes({
+          chain: this.chain,
+          network: this.network
+        });
+        logger.debug(`Received ${locators.length} headers`);
+
+        finalHash = await this.service.sync(locators);
+        if (finalHash && recentHash === finalHash) {
+          setImmediate(() => start());
+        }
+      }
+      else {
+        logger.info(`${this.chain} up to date.`);
+        this.service.syncing = false;
+        finished = true;
+        this.events.emit(P2pEvents.SYNC_COMPLETE, true);
+      }
+    };
+
+    // notify syncing service that a hash has been added to the db
+    return {
+      add: (hash: string) => {
+        if (finished || !goalHeight) {
+          return;
+        }
+        logger.debug(`Syncing block ${hash}`, {
+          chain: this.chain,
+          network: this.network
+        });
+        counter += 1;
+        if (Date.now() - lastLog > 100) {
+          logger.info(`Sync progress ${(counter * 100 / goalHeight).toFixed(3)}%`, {
+            chain: this.chain,
+            network: this.network,
+            height: counter
+          });
+          lastLog = Date.now();
+        }
+        if (hash === finalHash) {
+          start();
+        }
+        else {
+          recentHash = hash;
+        }
+      },
+      start,
+    };
+  }
 }
 
 
 export function build(
-    chain: SupportedChain,
-    config: any
+  chain: SupportedChain,
+  config: any
 ): StandardP2p {
-    const namesToChains: {
-        [key in keyof typeof SupportedChainSet]: () => StandardP2p
-    } = {
-        BCH: () => new BtcP2pService(config),
-        BTC: () => new BtcP2pService(config),
-    };
-    logger.debug(`Building p2p service for ${chain}.`)
-    return namesToChains[chain]();
+  const namesToChains: {
+    [key in keyof typeof SupportedChainSet]: () => StandardP2p
+  } = {
+    BCH: () => new BtcP2pService(config),
+    BTC: () => new BtcP2pService(config),
+  };
+  logger.debug(`Building p2p service for ${chain}.`)
+  return namesToChains[chain]();
 }
 
 
@@ -207,11 +244,11 @@ export async function start() {
         );
 
         // build the correct service for the chain
-        const service = build(chain, p2pServiceConfig);
+        const built = build(chain, p2pServiceConfig);
+        const service = new P2pRunner(chain, network, BlockModel, TransactionModel, built);
 
         // get ready to start the service
-        p2pServices.push(() => init(
-          { chain, network }, BlockModel, TransactionModel, service));
+        p2pServices.push(() => service.start());
       }
     }
   }
