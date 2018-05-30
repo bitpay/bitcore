@@ -11725,36 +11725,6 @@ Transaction.prototype.isCoinbase = function() {
   return (this.inputs.length === 1 && this.inputs[0].isNull());
 };
 
-/**
- * Determines if this transaction can be replaced in the mempool with another
- * transaction that provides a sufficiently higher fee (RBF).
- */
-Transaction.prototype.isRBF = function() {
-  for (var i = 0; i < this.inputs.length; i++) {
-    var input = this.inputs[i];
-    if (input.sequenceNumber < Input.MAXINT - 1) {
-      return true;
-    }
-  }
-  return false;
-};
-
-/**
- * Enable this transaction to be replaced in the mempool (RBF) if a transaction
- * includes a sufficiently higher fee. It will set the sequenceNumber to
- * DEFAULT_RBF_SEQNUMBER for all inputs if the sequence number does not
- * already enable RBF.
- */
-Transaction.prototype.enableRBF = function() {
-  for (var i = 0; i < this.inputs.length; i++) {
-    var input = this.inputs[i];
-    if (input.sequenceNumber >= Input.MAXINT - 1) {
-      input.sequenceNumber = Input.DEFAULT_RBF_SEQNUMBER;
-    }
-  }
-  return this;
-};
-
 module.exports = Transaction;
 
 }).call(this,require("buffer").Buffer)
@@ -12107,6 +12077,7 @@ var _ = require('lodash');
 var URL = require('url');
 
 var Address = require('./address');
+var Networks = require('./networks');
 var Unit = require('./unit');
 
 /**
@@ -12212,16 +12183,15 @@ URI.isValid = function(arg, knownParams) {
  */
 URI.parse = function(uri) {
   var info = URL.parse(uri, true);
+  if (Networks.get( info.protocol.replace(':', '') ,'prefix')) {
+    // workaround to host insensitiveness
+    var group = /[^:]*:\/?\/?([^?]*)/.exec(uri);
+    info.query.address = group && group[1] || undefined;
 
-  if (info.protocol !== 'bitcoincash:') {
-    throw new TypeError('Invalid bitcoin URI');
+    return info.query;
+} else {
+  throw new TypeError('Invalid bitcoin URI');
   }
-
-  // workaround to host insensitiveness
-  var group = /[^:]*:\/?\/?([^?]*)/.exec(uri);
-  info.query.address = group && group[1] || undefined;
-
-  return info.query;
 };
 
 URI.Members = ['address', 'amount', 'message', 'label', 'r'];
@@ -12308,7 +12278,7 @@ URI.prototype.toString = function() {
   _.extend(query, this.extras);
 
   return URL.format({
-    protocol: 'bitcoincash:',
+    protocol: Networks.get(this.network ,'name').prefix + ':',
     host: this.address.toString(true),
     query: query
   });
@@ -12325,7 +12295,7 @@ URI.prototype.inspect = function() {
 
 module.exports = URI;
 
-},{"./address":1,"./unit":40,"lodash":156,"url":211}],42:[function(require,module,exports){
+},{"./address":1,"./networks":21,"./unit":40,"lodash":156,"url":211}],42:[function(require,module,exports){
 'use strict';
 /***
  * https://github.com/bitcoincashjs/cashaddr
@@ -55034,7 +55004,7 @@ exports.createContext = Script.createContext = function (context) {
 },{"indexof":152}],217:[function(require,module,exports){
 module.exports={
   "name": "bitcore-lib-cash",
-  "version": "0.18.0",
+  "version": "0.18.1",
   "description": "A pure and powerful JavaScript Bitcoin Cash library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
