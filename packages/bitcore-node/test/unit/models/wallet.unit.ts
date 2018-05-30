@@ -13,14 +13,25 @@ describe('Wallet Model', function () {
         pubKey: 'xpub661MyMwAqRbcFa63vSTa3vmRiVWbpLWhgUsyvjfMFP7ePR5osC1rtPUkgJrB94V1YEQathfWLm9U5zaZttYPDPWhASwJGUvYvPGtofqnTGN',
         path: 'm/44\'/0\'/0\''
       }
-
-      const result = WalletModel._apiTransform(new WalletModel(wallet), {
-        object: false
-      });
+      const result = WalletModel._apiTransform(new WalletModel(wallet), { object: false });
       const parseResult = JSON.parse(result);
 
       expect(parseResult.name).to.be.equal(wallet.name);
       expect(parseResult.pubKey).to.be.equal(wallet.pubKey);
+
+    });
+    it('should return the raw transform object if options field exist and set to true', () => {
+      let wallet = {
+        name: 'Wallet1',
+        singleAddress: true,
+        pubKey: 'xpub661MyMwAqRbcFa63vSTa3vmRiVWbpLWhgUsyvjfMFP7ePR5osC1rtPUkgJrB94V1YEQathfWLm9U5zaZttYPDPWhASwJGUvYvPGtofqnTGN',
+        path: 'm/44\'/0\'/0\''
+      }
+      const result = WalletModel._apiTransform(new WalletModel(wallet), { object: true });
+      expect(result).to.deep.equal({
+        name: wallet.name,
+        pubKey: wallet.pubKey
+      });
 
     });
   });
@@ -33,7 +44,7 @@ describe('Wallet Model', function () {
     afterEach(() => {
       sandbox.restore();
     });
-    it('should return wallet address model update coins', async () => {
+    it('should call wallet address model update coins', async () => {
       sandbox.stub(WalletAddressModel, 'find').returns([]);
       let walletAddressModelSpy = sandbox.stub(WalletAddressModel, 'updateCoins').returns({
         wallet: sandbox.stub().returnsThis(),
