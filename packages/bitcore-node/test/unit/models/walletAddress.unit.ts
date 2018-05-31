@@ -58,10 +58,12 @@ describe('WalletAddress Model', function () {
       expect(result.walletUpdates[0]).to.deep.equal({
         updateOne: {
           filter: {
+            // TODO:
             wallet: undefined,
             address: '1'
           },
           update: {
+            // TODO:
             wallet: undefined,
             address: '1',
             chain: 'BTC',
@@ -77,10 +79,12 @@ describe('WalletAddress Model', function () {
       expect(result.walletUpdates[1]).to.deep.equal({
         updateOne: {
           filter: {
+            // TODO:
             wallet: undefined,
             address: '2'
           },
           update: {
+            // TODO:
             wallet: undefined,
             address: '2',
             chain: 'BTC',
@@ -104,6 +108,7 @@ describe('WalletAddress Model', function () {
           },
           update: {
             $addToSet: {
+              // TODO:
               wallets: undefined,
             }
           }
@@ -124,6 +129,7 @@ describe('WalletAddress Model', function () {
           },
           update: {
             $addToSet: {
+              // TODO:
               wallets: undefined,
             }
           }
