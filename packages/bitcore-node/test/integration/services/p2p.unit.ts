@@ -25,7 +25,7 @@ describe('P2P Service', () => {
 
     // start and connect the service
     const runner = new P2pRunner(chain, network, BlockModel, TransactionModel, service);
-    await runner.start();
+    const stream = await runner.start();
 
     // wait for it to stop syncing
     await new Promise(r => runner.events.once(P2pEvents.SYNC_COMPLETE, r));
@@ -39,8 +39,22 @@ describe('P2P Service', () => {
       await sleep(100);
     }
 
+    // wait for all the new blocks to hit the database
+    let recent;
+    const stored = new Promise(r => stream.blocks.subscribe(pair => {
+      if (pair.block.hash === recent) {
+        r();
+      }
+      recent = pair.block.hash;
+    }));
+    const added = (await btcrpc('generate', [1]))[0];
+    if (added !== recent) {
+      recent = added;
+      await stored;
+    }
+
     // check that blocks got updated when not explicitly syncing
-    await verify(15);
+    await verify(16);
   });
 });
 
