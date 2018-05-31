@@ -16,11 +16,13 @@ describe('Wallet Model', function () {
       const result = WalletModel._apiTransform(new WalletModel(wallet), { object: false });
       const parseResult = JSON.parse(result);
 
-      expect(parseResult.name).to.be.equal(wallet.name);
-      expect(parseResult.pubKey).to.be.equal(wallet.pubKey);
+      expect(parseResult).to.deep.equal({
+        name: 'Wallet1',
+        pubKey: 'xpub661MyMwAqRbcFa63vSTa3vmRiVWbpLWhgUsyvjfMFP7ePR5osC1rtPUkgJrB94V1YEQathfWLm9U5zaZttYPDPWhASwJGUvYvPGtofqnTGN'
+      });
 
     });
-    it('should return the raw transform object if options field exist and set to true', () => {
+    it('should return the raw transform object if options field exists and set to true', () => {
       let wallet = {
         name: 'Wallet1',
         singleAddress: true,
@@ -29,8 +31,8 @@ describe('Wallet Model', function () {
       }
       const result = WalletModel._apiTransform(new WalletModel(wallet), { object: true });
       expect(result).to.deep.equal({
-        name: wallet.name,
-        pubKey: wallet.pubKey
+        name: 'Wallet1',
+        pubKey: 'xpub661MyMwAqRbcFa63vSTa3vmRiVWbpLWhgUsyvjfMFP7ePR5osC1rtPUkgJrB94V1YEQathfWLm9U5zaZttYPDPWhASwJGUvYvPGtofqnTGN'
       });
 
     });
