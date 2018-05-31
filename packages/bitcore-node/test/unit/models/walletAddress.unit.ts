@@ -3,9 +3,6 @@ import { WalletAddressModel } from '../../../src/models/walletAddress';
 import { IWalletModel } from '../../../src/models/wallet';
 
 describe('WalletAddress Model', function () {
-  it('should have a test which runs', function () {
-    expect(true).to.equal(true);
-  });
 
   describe('_apiTransform', () => {
     it('should return transform object with wallet addresses', () => {
