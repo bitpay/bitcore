@@ -19,7 +19,18 @@ describe('WalletAddress Model', function () {
 
       const parseResult = JSON.parse(result);
 
-      expect(parseResult.address).to.be.equal(walletAddress.address);
+      expect(parseResult).to.deep.equal({ address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf' });
+
+    });
+    it('should return the raw transform object if options field exist and set to true', () => {
+      let walletAddress = {
+        address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf'
+      };
+
+      const result = WalletAddressModel._apiTransform(new WalletAddressModel(walletAddress), {
+        object: true
+      });
+      expect(result).to.deep.equal({ address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf' });
     });
   });
 
@@ -121,9 +132,6 @@ describe('WalletAddress Model', function () {
           }
         }
       });
-
     });
-
   });
-
 });
