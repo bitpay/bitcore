@@ -4,7 +4,7 @@ import { isChainSupported } from '../../types/SupportedChain';
 import { BlockModel } from '../../models/block';
 import { TransactionModel } from '../../models/transaction';
 import { Observable } from 'rxjs';
-import { concatMap } from 'rxjs/operators';
+import { concatMap, share } from 'rxjs/operators';
 import { ChainNetwork } from '../../types/ChainNetwork';
 import { IBlockModel } from '../../models/block';
 import { sleep } from '../../utils/async';
@@ -18,10 +18,7 @@ import { EventEmitter } from 'events';
 
 export interface P2pService<Block, Transaction> {
   // a stream of incoming blocks
-  blocks(): Observable<{
-    block: Block,
-    transactions: Transaction[]
-  }>;
+  blocks(): Observable<CompleteBlock<Block, Transaction>>;
 
   // a stream of incoming transactions
   transactions(): Observable<Transaction>;
@@ -49,6 +46,12 @@ export interface P2pService<Block, Transaction> {
 
 
 export type StandardP2p = P2pService<Bitcoin.Block, Bitcoin.Transaction>;
+
+
+export type CompleteBlock<B, T> = {
+  block: B,
+  transactions: T[],
+};
 
 
 export enum P2pEvents {
@@ -80,12 +83,15 @@ export class P2pRunner {
     this.events = new EventEmitter();
   }
 
-  async start() {
+  async start(): Promise<{
+    blocks: Observable<CompleteBlock<Bitcoin.Block, Bitcoin.Transaction>>,
+    transactions: Observable<Bitcoin.Transaction>,
+  }> {
     logger.debug(`Started worker for chain ${this.chain}`);
     const parent = this.service.parent();
     const syncer = await this.sync();
 
-    this.service.blocks().pipe(concatMap(async pair => {
+    const blocks = this.service.blocks().pipe(concatMap(async pair => {
       await this.blocks.addBlock({
         chain: this.chain,
         network: this.network,
@@ -102,10 +108,11 @@ export class P2pRunner {
           network: this.network,
         });
       }
-    }))
-    .subscribe(() => {}, logger.error.bind(logger));
+      return pair;
+    })).pipe(share());
+    blocks.subscribe(() => {}, logger.error.bind(logger));
 
-    this.service.transactions().pipe(concatMap(async transaction => {
+    const txs = this.service.transactions().pipe(concatMap(async transaction => {
       await this.transactions.batchImport({
         txs: [transaction],
         height: -1,
@@ -118,12 +125,17 @@ export class P2pRunner {
         chain: this.chain,
         network: this.network,
       });
-    }))
-    .subscribe(() => {}, logger.error.bind(logger));
+      return transaction;
+    })).pipe(share());
+    txs.subscribe(() => {}, logger.error.bind(logger));
 
     // wait for it to get connected
     await this.service.start();
     syncer.start();
+    return {
+      blocks,
+      transactions: txs,
+    };
   }
 
   async sync() {
@@ -230,7 +242,7 @@ export function build(
 
 
 export async function start() {
-  const p2pServices: (() => Promise<void>)[] = [];
+  const p2pServices: (() => Promise<any>)[] = [];
   for (let chain of Object.keys(config.chains)) {
     for (let network of Object.keys(config.chains[chain])) {
       const chainConfig = config.chains[chain][network];
