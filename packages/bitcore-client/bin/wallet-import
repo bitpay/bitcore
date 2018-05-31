@@ -2,8 +2,8 @@
 
 const fs = require('fs');
 const program = require('commander');
-const promptly = require('promptly');
 const Wallet = require('../lib/wallet');
+const promptly = require('promptly');
 
 program
   .version(require('../package.json').version)
@@ -40,20 +40,21 @@ const main = async () => {
   const { path, file, parse } = program;
   let wallet;
   try {
-    wallet = await Wallet.loadWallet({ path });
-    let keyInput = [];
-    if (file) {
-      keyInput = getFileKeys(file);
-    } else if (parse) {
-      keyInput = parseKeys(parse);
-    }
     const password = await promptly.password('Wallet Password:');
     if (!password) {
       throw new Error(
         'No password provided. Keys can\'t be imported without unlocking the wallet'
       );
     }
-    await wallet.importKeys({ keys: keyInput, password });
+    wallet = await Wallet.loadWallet({ path });
+    wallet = await wallet.unlock({ password });
+    let keyInput = [];
+    if (file) {
+      keyInput = getFileKeys(file);
+    } else if (parse) {
+      keyInput = parseKeys(parse);
+    }
+    await wallet.importKeys({ keys: keyInput });
     console.log(`${keyInput.length} Key(s) Imported`);
   } catch (e) {
     console.error(e);
