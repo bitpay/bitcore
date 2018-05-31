@@ -18,6 +18,8 @@ describe('P2P Service', () => {
     const service = build(chain, Object.assign(config.chains.BTC.regtest, {
       chain,
       network,
+      parentChain: chain,
+      forkHeight: 0,
     }));
 
     // add some blocks to sync on startup

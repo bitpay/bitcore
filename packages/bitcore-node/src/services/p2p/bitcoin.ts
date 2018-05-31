@@ -1,5 +1,4 @@
 import logger from '../../logger';
-import { ChainNetwork, Chain } from '../../types/ChainNetwork';
 import { HostPort } from '../../types/HostPort';
 import { Peer, BitcoreP2pPool } from '../../types/Bitcore-P2P-Pool';
 import { Bitcoin } from "../../types/namespaces/Bitcoin";
@@ -8,7 +7,6 @@ import { P2pService } from '.';
 
 import { EventEmitter } from 'events';
 import { Subject } from 'rxjs';
-import { ConnectionConfig } from '../../types/BitcoinConfig';
 import { Cache } from '../../utils/cache';
 
 const Chain = require('../../chain');
@@ -19,8 +17,10 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
 
   private chain: string;
   private network: string;
-  private parentChain: string;
-  private forkHeight: number;
+  private forked?: {
+    chain: string;
+    height: number;
+  };
   private trustedPeers: HostPort[];
   private pool: BitcoreP2pPool;
   private bitcoreLib: any;
@@ -40,16 +40,67 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
   constructor(config: any) {
     super();
 
-    // TODO: manually check if this is true
-    const params: ConnectionConfig & ChainNetwork = config;
+    // Chain
+    if (typeof config.chain === 'string') {
+      this.chain = config.chain;
+    }
+    else {
+      throw new Error(`BtcP2pService: chain must be a string, got ${config.chain}`);
+    }
 
-    this.chain = params.chain;
-    this.parentChain = params.parentChain;
-    this.forkHeight = params.forkHeight;
+    // Network
+    if (typeof config.network === 'string') {
+      this.network = config.network;
+    }
+    else {
+      throw new Error(`BtcP2pService: network must be a string, got ${config.network}`);
+    }
+
+    // Parent Chain
+    if (config.parentChain) {
+      let chain;
+      if (typeof config.parentChain === 'string') {
+        chain = config.parentChain;
+      }
+      else {
+        throw new Error(`BtcP2pService: parentChain must be a string, got ${config.parentChain}`);
+      }
+
+      // Fork Height
+      let height;
+      if (typeof config.forkHeight === 'number') {
+        height = config.forkHeight;
+      }
+      else {
+        throw new Error(`BtcP2pService: forkHeight must be a number, got ${config.forkHeight}`);
+      }
+      this.forked = {
+        chain,
+        height,
+      };
+    }
+    else if (config.forkHeight) {
+      throw new Error(`BtcP2pService: must provide forkHeight if providing parentChain`);
+    }
+
+    // Peers
+    this.trustedPeers = [];
+    if (config.trustedPeers instanceof Array && config.trustedPeers.length > 0) {
+      for (const peer of config.trustedPeers) {
+        if (typeof peer.host === 'string' && typeof peer.port === 'number') {
+          this.trustedPeers.push(peer);
+        }
+        else {
+          throw new Error(`BtcP2pService: peer must be { host: string, port: number }, got ${peer}`);
+        }
+      }
+    }
+    else {
+      throw new Error(`BtcP2pService: trustedPeers must be a non-empty list, got ${config.trustedPeers}`);
+    }
+
     this.bitcoreLib = Chain[this.chain].lib;
     this.bitcoreP2p = Chain[this.chain].p2p;
-    this.network = params.network;
-    this.trustedPeers = params.trustedPeers;
     this.invCache = {
       [this.bitcoreP2p.Inventory.TYPE.BLOCK]: new Cache(1000),
       [this.bitcoreP2p.Inventory.TYPE.TX]: new Cache(1000),
@@ -197,12 +248,16 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
     );
   }
 
-  public parent(): ChainNetwork & { height: number } | undefined {
-    if (this.parentChain !== this.chain) {
+  public parent(): {
+    chain: string,
+    network: string,
+    height: number,
+  } | undefined {
+    if (this.forked && this.forked.chain !== this.chain) {
       return {
-        chain: this.parentChain,
+        chain: this.forked.chain,
         network: this.network,
-        height: this.forkHeight,
+        height: this.forked.height,
       };
     }
     return undefined;
