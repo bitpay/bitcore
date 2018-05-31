@@ -9,6 +9,7 @@ import { P2pService } from '.';
 import { EventEmitter } from 'events';
 import { Subject } from 'rxjs';
 import { ConnectionConfig } from '../../types/BitcoinConfig';
+import { Cache } from '../../utils/cache';
 
 const Chain = require('../../chain');
 
@@ -25,7 +26,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
   private bitcoreLib: any;
   private bitcoreP2p: any;
   private messages: any;
-  private invCache: { [key: string]: any[] };
+  private invCache: { [key: string]: Cache };
   private stayConnected?: NodeJS.Timer;
   private stream: {
     blocks: Subject<{
@@ -49,9 +50,10 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
     this.bitcoreP2p = Chain[this.chain].p2p;
     this.network = params.network;
     this.trustedPeers = params.trustedPeers;
-    this.invCache = {};
-    this.invCache[this.bitcoreP2p.Inventory.TYPE.BLOCK] = [];
-    this.invCache[this.bitcoreP2p.Inventory.TYPE.TX] = [];
+    this.invCache = {
+      [this.bitcoreP2p.Inventory.TYPE.BLOCK]: new Cache(1000),
+      [this.bitcoreP2p.Inventory.TYPE.TX]: new Cache(1000),
+    };
     this.syncing = false;
     this.stream = {
       blocks: new Subject(),
@@ -106,13 +108,8 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
         network: this.network,
         transaction: message.transaction.hash,
       });
-      // TODO: This cache seems slow, maybe it's significant
       const hash = message.transaction.hash;
-      if (!this.invCache[this.bitcoreP2p.Inventory.TYPE.TX].includes(hash)) {
-        this.invCache[this.bitcoreP2p.Inventory.TYPE.TX].push(hash);
-        if (this.invCache[this.bitcoreP2p.Inventory.TYPE.TX].length > 1000) {
-          this.invCache[this.bitcoreP2p.Inventory.TYPE.TX].shift();
-        }
+      if (!this.invCache[this.bitcoreP2p.Inventory.TYPE.TX].use(hash)) {
         this.stream.transactions.next(message.transaction);
       }
     });
@@ -126,13 +123,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       });
       const hash = message.block.hash;
 
-      // TODO: This cache seems slow, maybe it's significant
-      // check if recently seen (to debounce duplicates)
-      if (!this.invCache[this.bitcoreP2p.Inventory.TYPE.BLOCK].includes(hash)) {
-        this.invCache[this.bitcoreP2p.Inventory.TYPE.BLOCK].push(hash);
-        if (this.invCache[this.bitcoreP2p.Inventory.TYPE.BLOCK].length > 1000) {
-          this.invCache[this.bitcoreP2p.Inventory.TYPE.BLOCK].shift();
-        }
+      if (!this.invCache[this.bitcoreP2p.Inventory.TYPE.BLOCK].use(hash)) {
         this.emit(hash, message.block);
         if (!this.syncing) {
           this.stream.blocks.next({
@@ -160,7 +151,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
             .BufferReader(inv.hash)
             .readReverse()
             .toString('hex');
-          return !this.invCache[inv.type].includes(hash);
+          return !this.invCache[inv.type].peek(hash);
         });
         if (filtered.length) {
           peer.sendMessage(this.messages.GetData(filtered));
