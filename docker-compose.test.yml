@@ -7,8 +7,8 @@ services:
       context: .
       dockerfile: Dockerfile-test
     ports:
-      - "8100:8100"
-      - "3000:3000"
+      - 8100:8100
+      - 3000:3000
     environment:
       - DB_HOST=db
       - DB_NAME=bitcore-test
@@ -20,9 +20,24 @@ services:
     image: mongo
     ports:
       - 27017:27017
-    
+
   bitcoin:
-    build:
-      context: packages/bitcore-node/test/ci/bitcoin
-      args:
-        VERSION: 0.15
+    ports:
+      - 8332:8332
+      - 8333:8333
+    image: ruimarinho/bitcoin-core:0.16.0-alpine
+    command:
+      -printtoconsole
+      -regtest=1
+      -txindex=1
+      -listen=1
+      -server=1
+      -irc=0
+      -dnsseed=1
+      -upnp=0
+      -port=8332
+      -rpcport=8333
+      -rpcallowip=172.0.0.0/8
+      -rpcbind=0.0.0.0
+      -rpcuser=bitcorenodetest
+      -rpcpassword=local321
