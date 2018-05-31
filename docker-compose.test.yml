@@ -10,7 +10,7 @@ services:
       - 8100:8100
       - 3000:3000
     environment:
-      - DB_HOST=db
+      - DB_HOST=db:27017
       - DB_NAME=bitcore-test
       - BITCORE_CONFIG_PATH=/bitcore/bitcore-test.config.json
     depends_on:
@@ -20,7 +20,7 @@ services:
   db:
     image: mongo
     ports:
-      - 27017:27017
+      - 27018:27017
 
   bitcoin:
     ports:
@@ -42,3 +42,11 @@ services:
       -rpcbind=0.0.0.0
       -rpcuser=bitcorenodetest
       -rpcpassword=local321
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
