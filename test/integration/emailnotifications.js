@@ -57,8 +57,14 @@ describe('Email notifications', function() {
                 from: 'bws@dummy.net',
                 subjectPrefix: '[test wallet]',
                 publicTxUrlTemplate: {
-                  livenet: 'https://insight.bitpay.com/tx/{{txid}}',
-                  testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
+                  btc: {
+                    livenet: 'https://insight.bitpay.com/tx/{{txid}}',
+                    testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
+                  },
+                  bch: {
+                    livenet: 'https://bch-insight.bitpay.com/tx/{{txid}}',
+                    testnet: 'https://test-bch-insight.bitpay.com/tx/{{txid}}',
+                  }
                 },
               },
             }, function(err) {
@@ -472,8 +478,14 @@ describe('Email notifications', function() {
                 from: 'bws@dummy.net',
                 subjectPrefix: '[test wallet]',
                 publicTxUrlTemplate: {
-                  livenet: 'https://insight.bitpay.com/tx/{{txid}}',
-                  testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
+                  btc: {
+                    livenet: 'https://insight.bitpay.com/tx/{{txid}}',
+                    testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
+                  },
+                  bch: {
+                    livenet: 'https://bch-insight.bitpay.com/tx/{{txid}}',
+                    testnet: 'https://test-bch-insight.bitpay.com/tx/{{txid}}',
+                  }
                 },
               },
             }, function(err) {

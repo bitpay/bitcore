@@ -62,7 +62,7 @@ var config = {
         url: 'https://test-bch-insight.bitpay.com:443',
         addressFormat: 'cashaddr',  // copay, cashaddr, or legacy
       },
- 
+
     },
   },
   pushNotificationsOpts: {
@@ -88,11 +88,16 @@ var config = {
   //  defaultLanguage: 'en',
   //  defaultUnit: 'btc',
   //  publicTxUrlTemplate: {
-  //    livenet: 'https://insight.bitpay.com/tx/{{txid}}',
-  //    testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
+  //    btc: {
+  //      livenet: 'https://insight.bitpay.com/tx/{{txid}}',
+  //      testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
+  //    },
+  //    bch: {
+  //      livenet: 'https://bch-insight.bitpay.com/tx/{{txid}}',
+  //      testnet: 'https://test-bch-insight.bitpay.com/tx/{{txid}}',
+  //    }
   //  },
-  //},
-  //
+  // },
   // To use sendgrid:
   // var sgTransport = require('nodemail-sendgrid-transport');
   // mailer:sgTransport({
