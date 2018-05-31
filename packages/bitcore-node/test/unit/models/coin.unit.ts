@@ -2,85 +2,61 @@ import { expect } from 'chai';
 import { CoinModel } from '../../../src/models/coin';
 
 describe('Coin Model', function () {
-  it('should have a test which runs', function () {
-    expect(true).to.equal(true);
-  });
 
   describe('_apiTransform', () => {
     it('should return the transform object with coin info', () => {
       let coin = {
         network: 'regtest',
         chain: 'BTC',
-        mintTxid: '',
-        mindIndex: 1,
+        mintTxid: '81f24ac62a6ffb634b74e6278997f0788f3c64e844453f8831d2a526dc3ecb13',
+        mintIndex: 0,
         mintHeight: 1,
-        coinBase: '',
-        value: '',
-        address: '',
+        coinBase: true,
+        value: 5000000000.0,
+        address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
         script: '',
-        wallets: '',
+        wallets: [],
         spentTxid: '',
-        spentHeight: ''
+        spentHeight: -2
       };
 
       const result = CoinModel._apiTransform(new CoinModel(coin), { object: false });
 
       const parseResult = JSON.parse(result);
       expect(parseResult).to.deep.equal({
-        txid: coin.mintTxid,
-        vout: coin.mindIndex,
-        spentTxid: coin.spentTxid,
-        address: coin.address,
-        script: coin.script,
-        value: coin.value
+        txid: '81f24ac62a6ffb634b74e6278997f0788f3c64e844453f8831d2a526dc3ecb13',
+        vout: 0,
+        spentTxid: '',
+        address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
+        script: '',
+        value: 5000000000.0
       });
     });
-    it('should return the raw transform object if options field exist and set to true', () => {
+    it('should return the raw transform object if options field exists and set to true', () => {
       let coin = {
         network: 'regtest',
         chain: 'BTC',
-        mintTxid: '',
-        mindIndex: 1,
+        mintTxid: '81f24ac62a6ffb634b74e6278997f0788f3c64e844453f8831d2a526dc3ecb13',
+        mintIndex: 0,
         mintHeight: 1,
-        coinBase: '',
-        value: '',
-        address: '',
+        coinBase: true,
+        value: 5000000000.0,
+        address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
         script: '',
-        wallets: '',
+        wallets: [],
         spentTxid: '',
-        spentHeight: ''
+        spentHeight: -2
       };
 
       const result = CoinModel._apiTransform(new CoinModel(coin), { object: true });
       expect(result).to.deep.equal({
-        txid: coin.mintTxid,
-        vout: coin.mindIndex,
-        spentTxid: coin.spentTxid,
-        address: coin.address,
-        script: coin.script,
-        value: coin.value
+        txid: '81f24ac62a6ffb634b74e6278997f0788f3c64e844453f8831d2a526dc3ecb13',
+        vout: 0,
+        spentTxid: '',
+        address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
+        script: '',
+        value: 5000000000.0
       });
     });
   });
-
-  describe('getBalance', () => {
-    it('should return the balance of the coin', () => {
-      let coin = {
-        network: 'regtest',
-        chain: 'BTC',
-        mintTxid: '',
-        mindIndex: 1,
-        mintHeight: 1,
-        coinBase: '',
-        value: '',
-        address: '',
-        script: '',
-        wallets: '',
-        spentTxid: '',
-        spentHeight: ''
-      };
-
-    });
-  });
-
 });
