@@ -22,7 +22,7 @@ describe('WalletAddress Model', function () {
       expect(parseResult).to.deep.equal({ address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf' });
 
     });
-    it('should return the raw transform object if options field exist and set to true', () => {
+    it('should return the raw transform object if options field exists and set to true', () => {
       let walletAddress = {
         address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf'
       };
