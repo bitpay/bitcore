@@ -83,7 +83,7 @@ async function verify(tail: number) {
   const poolTip = await btcrpc('getbestblockhash');
 
   // check that we're at the right tip
-  expect(myTip.hash).to.equal(poolTip);
+  expect(myTip.hash, 'local tip').to.equal(poolTip);
 
   let hash = poolTip;
 
@@ -94,19 +94,19 @@ async function verify(tail: number) {
     // check block is correct
     const truth = await btcrpc('getblock', [ hash ]);
     const ours = await BlockModel.find({ hash });
-    expect(ours.length).to.equal(1);
-    expect(ours[0].previousBlockHash).to.equal(truth.previousblockhash);
-    expect(ours[0].nextBlockHash).to.equal(truth.nextblockhash);
-    expect(ours[0].merkleRoot).to.equal(truth.merkleroot);
-    expect(ours[0].height).to.equal(truth.height);
+    expect(ours.length, 'number of blocks').to.equal(1);
+    expect(ours[0].previousBlockHash, 'previous block hash').to.equal(truth.previousblockhash);
+    expect(ours[0].nextBlockHash, 'next block hash').to.equal(truth.nextblockhash);
+    expect(ours[0].merkleRoot, 'merkle root').to.equal(truth.merkleroot);
+    expect(ours[0].height, 'block height').to.equal(truth.height);
 
     // check that we got all transactions
     for (const txid of truth.tx) {
       logger.info(` - transaction ${txid}`);
       const tx = await TransactionModel.find({ txid });
-      expect(tx.length).to.equal(1);
-      expect(tx[0].blockHash).to.equal(hash);
-      expect(tx[0].blockHeight).to.equal(truth.height);
+      expect(tx.length, 'number of transactions').to.equal(1);
+      expect(tx[0].blockHash, 'block hash of transaction').to.equal(hash);
+      expect(tx[0].blockHeight, 'block height of transaction').to.equal(truth.height);
     }
 
     // check we have no extra transactions
@@ -116,7 +116,7 @@ async function verify(tail: number) {
         $nin: truth.tx
       },
     });
-    expect(extra.length).to.equal(0);
+    expect(extra.length, 'number of extra transactions').to.equal(0);
 
     // move on to the next hash
     hash = ours[0].previousBlockHash;
