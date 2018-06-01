@@ -1,22 +1,15 @@
 import { IBlock } from '../../../models/block';
 import { ITransaction } from '../../../models/transaction';
-import { Adapter } from '../../../types/namespaces/ChainAdapter';
+import { IChainAdapter } from '../../../types/namespaces/ChainAdapter';
 import { Bitcoin } from "../../../types/namespaces/Bitcoin";
+import { ChainNetwork } from '../../../types/ChainNetwork';
 
-type BitcoinConvertBlockParams = Adapter.ConvertBlockParams<Bitcoin.Block>;
-type BitcoinConvertTxParams = Adapter.ConvertTxParams<
-  Bitcoin.Transaction,
-  Bitcoin.Block
->;
-
-export class BTCAdapter
-  implements Adapter.IChainAdapter<Bitcoin.Block, Bitcoin.Transaction> {
-  convertBlock(params: BitcoinConvertBlockParams): IBlock {
-    const { chain, network, height, block } = params;
+export class BTCAdapter implements IChainAdapter<Bitcoin.Block, Bitcoin.Transaction> {
+  convertBlock(chainnet: ChainNetwork, block: Bitcoin.Block): IBlock {
     let header = block.header.toObject();
     const converted: IBlock = {
-      chain,
-      network,
+      chain: chainnet.chain,
+      network: chainnet.network,
       height,
       hash: block.hash,
       previousBlockHash: header.prevHash,
@@ -35,23 +28,24 @@ export class BTCAdapter
     return converted;
   }
 
-  convertTx(params: BitcoinConvertTxParams) {
-    const convertedBlock = this.convertBlock(params);
-    const { chain, network, tx } = params;
-    const { time, height, hash, timeNormalized } = convertedBlock;
+  convertTx(chainnet: ChainNetwork, transaction: Bitcoin.Transaction, block?: Bitcoin.Block) {
+    let convertedBlock;
+    if (block) {
+      convertedBlock = this.convertBlock(block);
+    }
     const converted: ITransaction = {
-      chain,
-      network,
-      txid: tx.hash,
-      coinbase: tx.isCoinbase(),
+      chain: chainnet.chain,
+      network: chainnet.network,
+      txid: transaction.hash,
+      coinbase: transaction.isCoinbase(),
       fee: 0,
-      size: tx.toBuffer().length,
-      locktime: tx.nLockTime,
+      size: transaction.toBuffer().length,
+      locktime: transaction.nLockTime,
       wallets: [],
-      blockHash: hash,
-      blockTime: time,
-      blockHeight: height,
-      blockTimeNormalized: timeNormalized
+      blockHash: convertedBlock? convertedBlock.hash : undefined,
+      blockTime: convertedBlock? convertedBlock.blockTime : Date.now(),
+      blockHeight: convertedBlock? convertedBlock.height : -1,
+      blockTimeNormalized: convertedBlock? convertedBlock.blockTimeNormalized : Date.now(),
     };
     return converted;
   }
