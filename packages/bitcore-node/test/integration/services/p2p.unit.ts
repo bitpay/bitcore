@@ -1,7 +1,7 @@
 import logger from '../../../src/logger';
 import config from '../../../src/config';
 import { expect } from 'chai';
-import { build, P2pRunner, P2pEvents } from '../../../src/services/p2p';
+import { P2pProvider, P2pEvents } from '../../../src/services/p2p';
 import { BlockModel } from '../../../src/models/block';
 import { TransactionModel } from '../../../src/models/transaction';
 import { Storage } from '../../../src/services/storage';
@@ -17,18 +17,23 @@ describe('P2P Service', () => {
     const rpc = new RPC(creds.username, creds.password, creds.host, creds.port);
     const chain = 'BTC';
     const network = 'regtest';
-    const service = build(chain, Object.assign(config.chains.BTC.regtest, {
-      chain,
-      network,
-      parentChain: chain,
-      forkHeight: 0,
-    }));
 
     // add some blocks to sync on startup
     await rpc.generate(10);
 
     // start and connect the service
-    const runner = new P2pRunner(chain, network, BlockModel, TransactionModel, service);
+    const runner = P2pProvider.build({
+      chain,
+      network,
+      blocks: BlockModel,
+      transactions: TransactionModel,
+      config: Object.assign(config.chains.BTC.regtest, {
+        chain,
+        network,
+        parentChain: chain,
+        forkHeight: 0,
+      }),
+    });
     const stream = await runner.start();
 
     // wait for it to stop syncing

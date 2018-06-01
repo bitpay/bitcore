@@ -5,13 +5,14 @@ import { BlockModel } from '../../models/block';
 import { TransactionModel } from '../../models/transaction';
 import { Observable } from 'rxjs';
 import { concatMap, share } from 'rxjs/operators';
-import { ChainNetwork } from '../../types/ChainNetwork';
+import { ChainNetwork, Chain } from '../../types/ChainNetwork';
 import { IBlockModel } from '../../models/block';
 import { sleep } from '../../utils/async';
 import { ITransactionModel } from '../../models/transaction';
 import { SupportedChain, SupportedChainSet } from '../../types/SupportedChain';
 import { BtcP2pService } from './bitcoin';
 import { Bitcoin } from '../../types/namespaces/Bitcoin';
+import { CSP } from '../../types/namespaces/ChainStateProvider';
 import { setImmediate } from 'timers';
 import { EventEmitter } from 'events';
 
@@ -226,43 +227,81 @@ export class P2pRunner {
 }
 
 
-export function build(
-  chain: SupportedChain,
-  config: any
-): StandardP2p {
-  const namesToChains: {
-    [key in keyof typeof SupportedChainSet]: () => StandardP2p
-  } = {
-    BCH: () => new BtcP2pService(config),
-    BTC: () => new BtcP2pService(config),
-  };
-  logger.debug(`Building p2p service for ${chain}.`)
-  return namesToChains[chain]();
-}
+export class P2pProxy implements CSP.Provider<P2pRunner> {
+  private services: { [key: string]: P2pRunner };
 
+  constructor() {
+    this.services = {};
+  }
 
-export async function start() {
-  const p2pServices: (() => Promise<any>)[] = [];
-  for (let chain of Object.keys(config.chains)) {
-    for (let network of Object.keys(config.chains[chain])) {
-      const chainConfig = config.chains[chain][network];
-      const hasChainSource = chainConfig.chainSource !== undefined;
-      const isP2p = chainConfig.chainSource === 'p2p';
+  get({ chain }: Chain): P2pRunner {
+    if (this.services[chain]) {
+      return this.services[chain];
+    }
+    throw new Error(`Chain ${chain} doesn't have a P2P Worker registered`);
+  }
 
-      if (isChainSupported(chain) && (!hasChainSource || isP2p)) {
-        let p2pServiceConfig = Object.assign(
-          config.chains[chain][network],
-          { chain, network }
-        );
+  register(chain: string, service: P2pRunner) {
+    this.services[chain] = service;
+  }
 
-        // build the correct service for the chain
-        const built = build(chain, p2pServiceConfig);
-        const service = new P2pRunner(chain, network, BlockModel, TransactionModel, built);
+  build(params: {
+    chain: SupportedChain,
+    network: string,
+    blocks: IBlockModel,
+    transactions: ITransactionModel,
+    config: any,
+  }): P2pRunner {
+    const namesToChains: {
+      [key in keyof typeof SupportedChainSet]: () => StandardP2p
+    } = {
+      BCH: () => new BtcP2pService(params.config),
+      BTC: () => new BtcP2pService(params.config),
+    };
+    logger.debug(`Building p2p service for ${params.chain}.`)
+    const service = namesToChains[params.chain]();
+    const runner = new P2pRunner(
+      params.chain,
+      params.network,
+      params.blocks,
+      params.transactions,
+      service
+    );
+    return runner;
+  }
 
-        // get ready to start the service
-        p2pServices.push(() => service.start());
+  async startConfiguredChains() {
+    const p2pServices: (() => Promise<any>)[] = [];
+    for (let chain of Object.keys(config.chains)) {
+      for (let network of Object.keys(config.chains[chain])) {
+        const chainConfig = config.chains[chain][network];
+        const hasChainSource = chainConfig.chainSource !== undefined;
+        const isP2p = chainConfig.chainSource === 'p2p';
+
+        if (isChainSupported(chain) && (!hasChainSource || isP2p)) {
+          let p2pServiceConfig = Object.assign(
+            config.chains[chain][network],
+            { chain, network }
+          );
+
+          // build the correct service for the chain
+          const runner = this.build({
+            chain,
+            network,
+            blocks: BlockModel,
+            transactions: TransactionModel,
+            config: p2pServiceConfig,
+          });
+          this.register(chain, runner);
+
+          // get ready to start the service
+          p2pServices.push(() => runner.start());
+        }
       }
     }
+    await Promise.all(p2pServices.map(w => w()));
   }
-  await Promise.all(p2pServices.map(w => w()));
 }
+
+
+export const P2pProvider = new P2pProxy();
