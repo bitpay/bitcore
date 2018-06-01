@@ -36,7 +36,7 @@
     "url": "https://github.com/bitpay/bitcore.git"
   },
   "dependencies": {
-    "bitcore-lib": "5.0.0-beta.1",
+    "bitcore-lib": "0.15.0",
     "bitcore-node": "5.0.0-beta.44",
     "insight-api": "5.0.0-beta.44",
     "insight-ui": "bitpay/insight#v5.0.0-beta.44"
