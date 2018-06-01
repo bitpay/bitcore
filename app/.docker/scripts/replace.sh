@@ -1,6 +1,10 @@
 #!/bin/bash 
 
-cd /var/www
+echo "current directory is $PWD"
+echo "run directory is ${RUN_DIR}"
+echo "running in..."
+cd ${RUN_DIR}
+pwd
 npm install
 npm rebuild node-sass
 npm install -g replace

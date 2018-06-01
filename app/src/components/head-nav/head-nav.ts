@@ -73,6 +73,7 @@ export class HeadNavComponent {
                 this.http.get(apiPrefix + 'block-index/' + this.q).subscribe(
                   function (data: any): void {
                     this.resetSearch();
+                    console.log('height', data);
                     let parsedData: any = JSON.parse(data._body);
                     this.navCtrl.push('block-detail', {
                       'blockHash': parsedData.blockHash
