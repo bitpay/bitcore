@@ -1,12 +1,11 @@
+import logger from '../logger';
 import { Schema, Document, model, DocumentQuery } from 'mongoose';
 import { CoinModel } from './coin';
 import { TransactionModel } from './transaction';
 import { TransformOptions } from '../types/TransformOptions';
 import { ChainNetwork } from '../types/ChainNetwork';
 import { TransformableModel } from '../types/TransformableModel';
-import logger from '../logger';
 import { LoggifyObject } from '../decorators/Loggify';
-import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { CoreBlock } from '../types/namespaces/ChainAdapter';
 
 export interface IBlock {
@@ -32,16 +31,9 @@ export type BlockQuery = { [key in keyof IBlock]?: any } &
   Partial<DocumentQuery<IBlock, Document>>;
 type IBlockDoc = IBlock & Document;
 
-export type AddBlockParams = {
-  block: Bitcoin.Block;
-  parentChain?: string;
-  forkHeight?: number;
-} & ChainNetwork &
-  Partial<IBlock>;
-
 type IBlockModelDoc = IBlockDoc & TransformableModel<IBlockDoc>;
 export interface IBlockModel extends IBlockModelDoc {
-  addBlock: (params: AddBlockParams) => Promise<IBlockModel>;
+  addBlock: (block: CoreBlock) => Promise<IBlockModel>;
   handleReorg: (prevHash: string, chainnet: ChainNetwork) => Promise<void>;
   getLocalTip: (chainnet: ChainNetwork) => Promise<IBlockModel>;
   getPoolInfo: (coinbase: string) => string;
@@ -129,8 +121,8 @@ BlockSchema.statics.addBlock = async (block: CoreBlock) => {
 
   await TransactionModel.batchImport(block.transactions, {
     blockHash: header.hash,
-    blockTime: new Date(blockTime),
-    blockTimeNormalized: new Date(blockTimeNormalized),
+    blockTime: blockTime,
+    blockTimeNormalized: blockTimeNormalized,
     height,
   });
 

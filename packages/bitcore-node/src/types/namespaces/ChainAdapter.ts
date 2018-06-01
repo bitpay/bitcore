@@ -29,6 +29,7 @@ export type CoreBlock = ChainInfo & {
 
 export type CoreTransaction = ChainInfo & {
   hash: string;
+  size: number;
   coinbase: boolean;
   nLockTime: number;
   inputs: {
@@ -37,6 +38,7 @@ export type CoreTransaction = ChainInfo & {
   }[];
   outputs: {
     script: Buffer;
-    satoshis: number;
+    address: string;
+    value: number;
   }[];
 };
