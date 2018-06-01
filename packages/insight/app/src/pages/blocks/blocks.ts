@@ -10,7 +10,7 @@ import { BlocksProvider } from '../../providers/blocks/blocks';
  */
 @IonicPage({
   name: 'blocks',
-  segment: 'blocks/'
+  segment: 'blocks'
 })
 @Component({
   selector: 'page-blocks',

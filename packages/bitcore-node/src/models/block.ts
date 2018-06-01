@@ -1,14 +1,12 @@
 import { Schema, Document, model, DocumentQuery } from 'mongoose';
 import { CoinModel } from './coin';
 import { TransactionModel } from './transaction';
-import { CallbackType } from '../types/Callback';
 import { TransformOptions } from '../types/TransformOptions';
-import { BitcoinBlockType, BlockHeaderObj } from '../types/Block';
 import { ChainNetwork } from '../types/ChainNetwork';
 import { TransformableModel } from '../types/TransformableModel';
 import logger from '../logger';
 import { LoggifyObject } from '../decorators/Loggify';
-const async = require('async');
+import { Bitcoin } from '../types/namespaces/Bitcoin';
 
 export interface IBlock {
   chain: string;
@@ -34,20 +32,20 @@ export type BlockQuery = { [key in keyof IBlock]?: any } &
 type IBlockDoc = IBlock & Document;
 
 export type AddBlockParams = {
-  block: BitcoinBlockType;
-  parentChain: string;
-  forkHeight: number;
+  block: Bitcoin.Block;
+  parentChain?: string;
+  forkHeight?: number;
 } & ChainNetwork &
   Partial<IBlock>;
 
 type IBlockModelDoc = IBlockDoc & TransformableModel<IBlockDoc>;
-type BlockMethodParams = { header?: BlockHeaderObj } & ChainNetwork;
-interface IBlockModel extends IBlockModelDoc {
-  addBlock: (params: AddBlockParams, callback: CallbackType) => any;
-  handleReorg: (params: BlockMethodParams, cb: CallbackType) => any;
-  getLocalTip: (params: BlockMethodParams) => IBlockModel;
+type BlockMethodParams = { header?: Bitcoin.Block.HeaderObj } & ChainNetwork;
+export interface IBlockModel extends IBlockModelDoc {
+  addBlock: (params: AddBlockParams) => Promise<IBlockModel>;
+  handleReorg: (params: BlockMethodParams) => Promise<void>;
+  getLocalTip: (params: BlockMethodParams) => Promise<IBlockModel>;
   getPoolInfo: (coinbase: string) => string;
-  getLocatorHashes: (params: ChainNetwork, callback: CallbackType) => any;
+  getLocatorHashes: (params: ChainNetwork) => Promise<string[]>;
 }
 
 const BlockSchema = new Schema({
@@ -74,97 +72,77 @@ BlockSchema.index({ chain: 1, network: 1, processed: 1, height: -1 });
 BlockSchema.index({ chain: 1, network: 1, timeNormalized: 1 });
 BlockSchema.index({ previousBlockHash: 1 });
 
-BlockSchema.statics.addBlock = function(
-  params: AddBlockParams,
-  callback: CallbackType
-) {
-  let { block, chain, network, parentChain, forkHeight } = params;
-  let header = block.header.toObject();
-  let blockTime = header.time * 1000;
-  let blockTimeNormalized: number;
-  let height: number;
-  async.series(
-    [
-      function(cb: CallbackType) {
-        BlockModel.handleReorg({ header, chain, network }, cb);
-      },
-      function(cb: CallbackType) {
-        BlockModel.findOne({ hash: header.prevHash, chain, network }, function(
-          err: any,
-          previousBlock: IBlockDoc
-        ) {
-          if (err) {
-            logger.error(err);
-            return cb(err);
-          }
-          blockTimeNormalized = blockTime;
-          if (
-            previousBlock &&
-            blockTime <= previousBlock.timeNormalized.getTime()
-          ) {
-            blockTimeNormalized = previousBlock.timeNormalized.getTime() + 1;
-          }
-          height = (previousBlock && previousBlock.height + 1) || 1;
-          logger.debug('Setting blockheight', height);
-          BlockModel.update(
-            { hash: header.hash, chain, network },
-            {
-              chain,
-              network,
-              height,
-              version: header.version,
-              previousBlockHash: header.prevHash,
-              merkleRoot: header.merkleRoot,
-              time: new Date(blockTime),
-              timeNormalized: new Date(blockTimeNormalized),
-              bits: header.bits,
-              nonce: header.nonce,
-              transactionCount: block.transactions.length,
-              size: block.toBuffer().length,
-              reward: block.transactions[0].outputAmount
-            },
-            { upsert: true },
-            function(err: any) {
-              if (err) {
-                return cb(err);
-              }
-              if (!previousBlock) {
-                return cb();
-              }
-              previousBlock.nextBlockHash = header.hash;
-              logger.debug(
-                'Updating previous block.nextBlockHash ',
-                header.hash
-              );
-              previousBlock.save(cb);
-            }
-          );
-        });
-      },
-      function(cb: CallbackType) {
-        TransactionModel.batchImport({
-          txs: block.transactions,
-          blockHash: header.hash,
-          blockTime: new Date(blockTime),
-          blockTimeNormalized: new Date(blockTimeNormalized),
-          height: height,
-          chain,
-          network,
-          parentChain,
-          forkHeight
-        }).then(cb);
-      }
-    ],
-    function(err: any) {
-      if (err) {
-        return callback(err);
-      }
-      BlockModel.update(
-        { hash: header.hash, chain, network },
-        { $set: { processed: true } },
-        callback
-      );
+BlockSchema.statics.addBlock = async (params: AddBlockParams) => {
+  const { block, chain, network, parentChain, forkHeight } = params;
+  const header = block.header.toObject();
+  const blockTime = header.time * 1000;
+
+  await BlockModel.handleReorg({ header, chain, network });
+
+  const previousBlock = await BlockModel.findOne({
+    hash: header.prevHash,
+    chain,
+    network
+  });
+
+  const blockTimeNormalized = (() => {
+    if (previousBlock && blockTime <= previousBlock.timeNormalized.getTime()) {
+      return previousBlock.timeNormalized.getTime() + 1;
+    } else {
+      return blockTime;
     }
+  })();
+
+  const height = (previousBlock && previousBlock.height + 1) || 1;
+  logger.debug('Setting blockheight', height);
+
+  await BlockModel.update(
+    {
+      hash: header.hash,
+      chain,
+      network
+    },
+    {
+      chain,
+      network,
+      height,
+      version: header.version,
+      previousBlockHash: header.prevHash,
+      merkleRoot: header.merkleRoot,
+      time: new Date(blockTime),
+      timeNormalized: new Date(blockTimeNormalized),
+      bits: header.bits,
+      nonce: header.nonce,
+      transactionCount: block.transactions.length,
+      size: block.toBuffer().length,
+      reward: block.transactions[0].outputAmount
+    },
+    {
+      upsert: true
+    }
+  );
+
+  if (previousBlock) {
+    previousBlock.nextBlockHash = header.hash;
+    logger.debug('Updating previous block.nextBlockHash ', header.hash);
+    await previousBlock.save();
+  }
+
+  await TransactionModel.batchImport({
+    txs: block.transactions,
+    blockHash: header.hash,
+    blockTime: new Date(blockTime),
+    blockTimeNormalized: new Date(blockTimeNormalized),
+    height: height,
+    chain,
+    network,
+    parentChain,
+    forkHeight
+  });
+
+  return BlockModel.update(
+    { hash: header.hash, chain, network },
+    { $set: { processed: true } }
   );
 };
 
@@ -174,98 +152,85 @@ BlockSchema.statics.getPoolInfo = function(coinbase: string) {
   return coinbase;
 };
 
-BlockSchema.statics.getLocalTip = function(params: ChainNetwork) {
-  return new Promise(async (resolve, reject) => {
-    const { chain, network } = params;
-    try {
-      let bestBlock = await BlockModel.findOne({
-        processed: true,
-        chain,
-        network
-      })
-        .sort({ height: -1 })
-        .exec();
-      let foundBlock = bestBlock || { height: 0 };
-      resolve(foundBlock);
-    } catch (e) {
-      reject(e);
-    }
-  });
+BlockSchema.statics.getLocalTip = async (params: ChainNetwork) => {
+  const { chain, network } = params;
+  const bestBlock = await BlockModel.findOne({
+    processed: true,
+    chain,
+    network
+  }).sort({ height: -1 });
+  return bestBlock || { height: 0 };
 };
 
-BlockSchema.statics.getLocatorHashes = function(
-  params: ChainNetwork,
-  callback: CallbackType
-) {
+BlockSchema.statics.getLocatorHashes = async (params: ChainNetwork) => {
   const { chain, network } = params;
-  BlockModel.find({ processed: true, chain, network })
+  const locatorBlocks = await BlockModel.find({
+    processed: true,
+    chain,
+    network
+  })
     .sort({ height: -1 })
     .limit(30)
-    .exec(function(err, locatorBlocks) {
-      if (err) {
-        return callback(err);
-      }
-      if (locatorBlocks.length < 2) {
-        return callback(null, [Array(65).join('0')]);
-      }
-      let hashArr = locatorBlocks.map(block => block.hash);
-      callback(null, hashArr);
-    });
+    .exec();
+
+  if (locatorBlocks.length < 2) {
+    return [Array(65).join('0')];
+  }
+  return locatorBlocks.map(block => block.hash);
 };
 
-BlockSchema.statics.handleReorg = async function(
-  params: BlockMethodParams,
-  callback: CallbackType
-) {
+BlockSchema.statics.handleReorg = async (params: BlockMethodParams) => {
   const { header, chain, network } = params;
-  let localTip = await BlockModel.getLocalTip(params);
+  const localTip = await BlockModel.getLocalTip(params);
   if (header && localTip.hash === header.prevHash) {
-    return callback();
+    return;
   }
   if (localTip.height === 0) {
-    return callback();
+    return;
   }
   logger.info(`Resetting tip to ${localTip.previousBlockHash}`, {
     chain,
     network
   });
-  async.series(
-    [
-      function(cb: CallbackType) {
-        BlockModel.remove(
-          { chain, network, height: { $gte: localTip.height } },
-          cb
-        );
-      },
-      function(cb: CallbackType) {
-        TransactionModel.remove(
-          { chain, network, blockHeight: { $gte: localTip.height } },
-          cb
-        );
-      },
-      function(cb: CallbackType) {
-        CoinModel.remove(
-          { chain, network, mintHeight: { $gte: localTip.height } },
-          cb
-        );
-      },
-      function(cb: CallbackType) {
-        CoinModel.update(
-          { chain, network, spentHeight: { $gte: localTip.height } },
-          {
-            $set: { spentTxid: null, spentHeight: -1 }
-          },
-          { multi: true },
-          cb
-        );
-      },
-      function(cb: CallbackType) {
-        logger.debug('Removed data from above blockHeight: ', localTip.height);
-        cb();
+
+  await BlockModel.remove({
+    chain,
+    network,
+    height: {
+      $gte: localTip.height
+    }
+  });
+  await TransactionModel.remove({
+    chain,
+    network,
+    blockHeight: {
+      $gte: localTip.height
+    }
+  });
+  await CoinModel.remove({
+    chain,
+    network,
+    mintHeight: {
+      $gte: localTip.height
+    }
+  });
+  await CoinModel.update(
+    {
+      chain,
+      network,
+      spentHeight: {
+        $gte: localTip.height
       }
-    ],
-    callback
+    },
+    {
+      $set: { spentTxid: null, spentHeight: -1 }
+    },
+    {
+      multi: true
+    }
   );
+
+  logger.debug('Removed data from above blockHeight: ', localTip.height);
 };
 
 BlockSchema.statics._apiTransform = function(

@@ -10,19 +10,23 @@
     "Justin Langston <nitsujlangston@gmail.com>",
     "Micah Riggan <micahriggan@gmail.com>"
   ],
-  "main": "build/server.js",
+  "main": "build/src/server.js",
   "bin": "bin/start",
   "prettier": {
     "singleQuote": true
   },
   "scripts": {
-    "start": "npm run tsc && node build/server.js",
-    "debug": "npm run tsc && node --inspect build/server.js --DEBUG true",
-    "tsc": "./node_modules/.bin/tsc",
-    "tsc:test": "./node_modules/.bin/tsc -p ./tsconfig.test.json",
-    "test": "npm run tsc:test && node ./build-test/test/runners/unit.js && node ./build-test/test/runners/integration.js",
-    "test:unit": "npm run tsc:test && node ./build-test/test/runners/unit.js",
-    "test:integration": "npm run tsc:test && node ./build-test/test/runners/integration.js"
+    "start": "npm run tsc && node build/src/server.js",
+    "debug": "npm run tsc && node --inspect build/src/server.js --DEBUG true",
+    "clean": "rm -rf build",
+    "tsc": "npm run clean && ./node_modules/.bin/tsc",
+    "tsc:test": "npm run clean && ./node_modules/.bin/tsc",
+    "test": "npm run tsc:test && node ./build/test/runners/unit.js && node ./build/test/runners/integration.js",
+    "test:unit": "npm run tsc:test && node ./build/test/runners/unit.js",
+    "test:integration": "npm run tsc:test && node ./build/test/runners/integration.js",
+    "test:ci": "npm run test:ci:unit && npm run test:ci:integration",
+    "test:ci:unit": "cd ../.. && docker-compose -f docker-compose.test.yml run --entrypoint 'npm run test:unit' test_runner",
+    "test:ci:integration": "cd ../.. && docker-compose -f docker-compose.test.yml run --entrypoint 'npm run test:integration' test_runner"
   },
   "keywords": [
     "bitcore-node",
@@ -44,13 +48,15 @@
     "@types/sinon": "^4.3.3",
     "@types/winston": "^2.3.9",
     "chai": "^4.1.2",
+    "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
     "glob": "^7.1.2",
     "mocha": "^5.0.5",
     "sinon": "^4.4.8",
     "supertest": "^3.0.0",
-    "typescript": "^2.8.3"
+    "typescript": "^2.8.3",
+    "typescript-eslint-parser": "^15.0.0"
   },
   "dependencies": {
     "JSONStream": "~1.3.1",

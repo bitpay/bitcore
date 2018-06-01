@@ -1,7 +1,6 @@
 import { Schema, Document, model, DocumentQuery } from "mongoose";
 import { CoinModel, CoinQuery, ICoinModel } from "./coin";
 import { WalletAddressModel } from "./walletAddress";
-import { BitcoinTransactionType } from "../types/Transaction";
 import { partition } from "../utils/partition";
 import { ObjectID } from "bson";
 import { TransformOptions } from "../types/TransformOptions";
@@ -9,6 +8,7 @@ import { ChainNetwork } from "../types/ChainNetwork";
 import { TransformableModel } from "../types/TransformableModel";
 import logger from "../logger";
 import { LoggifyObject } from "../decorators/Loggify";
+import { Bitcoin } from "../types/namespaces/Bitcoin";
 const config = require("../config");
 const Chain = require("../chain");
 
@@ -33,7 +33,7 @@ type ITransactionDoc = ITransaction & Document;
 type ITransactionModelDoc = ITransactionDoc & TransformableModel<ITransactionDoc>;
 
 type BatchImportMethodParams = {
-  txs: Array<BitcoinTransactionType>;
+  txs: Array<Bitcoin.Transaction>;
   height: number;
   blockTime?: Date;
   blockHash?: string;

@@ -4,7 +4,6 @@ import { ETHStateProvider } from './eth/eth';
 import { BATStateProvider } from "./erc20/tokens/bat";
 import { CSP } from '../../types/namespaces/ChainStateProvider';
 import { Chain } from '../../types/ChainNetwork';
-import logger from '../../logger';
 
 const services: CSP.ChainStateServices = {
   BTC: new BTCStateProvider(),
@@ -54,7 +53,6 @@ class ChainStateProxy implements CSP.ChainStateProvider {
   }
 
   async getWallet(params: CSP.GetWalletParams) {
-    logger.debug('Calling getWallet with ', params);
     return this.get(params).getWallet(params);
   }
 
