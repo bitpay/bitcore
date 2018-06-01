@@ -17,7 +17,6 @@ export class ApiService {
 
     this.port = port || 3000;
     this.timeout = timeout || 600000;
-
   }
 
   async start(){
@@ -25,10 +24,10 @@ export class ApiService {
       logger.info(`API server started on port ${this.port}`);
     });
     server.timeout = 600000
-
   }
 
   stop(){}
+
 }
 
 export const Api = new ApiService({
