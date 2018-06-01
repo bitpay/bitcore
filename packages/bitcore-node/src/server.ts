@@ -1,17 +1,11 @@
 import { P2pService } from './services/p2p';
 import { Storage } from './services/storage';
-import { Worker } from './services/worker';
 import logger from './logger';
 import config from './config';
-import cluster = require('cluster');
 import app from './routes';
-import parseArgv from './utils/parseArgv';
-
-let args = parseArgv([], ['DEBUG']);
 
 const startServices = async () => {
   await Storage.start({});
-  await Worker.start();
 
   // TODO this needs to move to a static p2pService method
   let p2pServices = [] as Array<P2pService>;
@@ -39,13 +33,5 @@ const startAPI = async () => {
   server.timeout = 600000;
 };
 
-if (cluster.isMaster) {
-  startServices();
-  if (args.DEBUG) {
-    startAPI();
-  }
-} else {
-  if (!args.DEBUG) {
-    startAPI();
-  }
-}
+startServices();
+startAPI();
