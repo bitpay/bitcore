@@ -1,7 +1,7 @@
 import { P2pService } from './services/p2p';
 import { Storage } from './services/storage';
 import { Worker } from './services/worker';
-import { Api } from './services/API';
+import { Api } from './services/api';
 import config from './config';
 import cluster = require('cluster');
 import parseArgv from './utils/parseArgv';
