@@ -1,19 +1,8 @@
-import { ChainNetwork } from "../ChainNetwork";
 import { IBlock } from "../../models/block";
 import { ITransaction } from "../../models/transaction";
-export declare namespace Adapter {
-  type ConvertBlockParams<T> = ChainNetwork & {
-    block: T;
-    height: number;
-  };
+import { ChainNetwork } from "../ChainNetwork";
 
-  type ConvertTxParams<T, B> = ChainNetwork &
-    ConvertBlockParams<B> & {
-      tx: T;
-    };
-
-  interface IChainAdapter<B, T> {
-    convertBlock(params: ConvertBlockParams<B>): IBlock;
-    convertTx(params: ConvertTxParams<T, B>): ITransaction;
-  }
+export interface IChainAdapter<B, T> {
+  convertBlock(chainnet: ChainNetwork, block: B): IBlock;
+  convertTx(chainnet: ChainNetwork, transaction: T, block?: B): ITransaction;
 }
