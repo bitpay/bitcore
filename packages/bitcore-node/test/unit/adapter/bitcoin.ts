@@ -1,6 +1,4 @@
 import { AdapterProvider } from '../../../src/providers/adapter';
-import { Adapter } from '../../../src/types/namespaces/ChainAdapter';
-import { Bitcoin } from '../../../src/types/namespaces/Bitcoin';
 import { expect } from 'chai';
 
 describe('Adapters', () => {
@@ -53,41 +51,25 @@ describe('Adapters', () => {
   };
 
   it('should convert a bitcoin block to an internal block', () => {
-    const block: Bitcoin.Block = TEST_BLOCK;
-
-    const params: Adapter.ConvertBlockParams<Bitcoin.Block> = {
+    const convertedBlock = AdapterProvider.get({ chain: 'BTC' }).convertBlock({
       chain: 'BTC',
       network: 'regtest',
-      block,
-      height: 1355
-    };
-    const convertedBlock = AdapterProvider.convertBlock(params);
-    expect(convertedBlock.hash).equals(block.hash);
-    expect(convertedBlock.bits).equals(545259519);
+    }, TEST_BLOCK);
+    expect(convertedBlock.header.hash).equals(TEST_BLOCK.hash);
+    expect(convertedBlock.header.bits).equals("545259519");
     expect(convertedBlock.chain).equals('BTC');
-    expect(convertedBlock.height).equals(1355);
     expect(convertedBlock.size).equals(264);
-    expect(convertedBlock.merkleRoot).equals(
+    expect(convertedBlock.header.merkleRoot).equals(
       '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08'
     );
   });
 
   it('should convert a bitcoin transaction to an internal transaction', () => {
-
-    const params: Adapter.ConvertTxParams<
-      Bitcoin.Transaction,
-      Bitcoin.Block
-      > = {
-        chain: 'BTC',
-        network: 'regtest',
-        tx: TEST_TX,
-        block: TEST_BLOCK,
-        height: 1355
-      };
-    const convertTx = AdapterProvider.convertTx(params);
-    expect(convertTx.blockHash).equals(TEST_BLOCK.hash);
-    expect(convertTx.blockHeight).equals(1355);
+    const convertTx = AdapterProvider.get({chain: 'BTC'}).convertTx({
+      chain: 'BTC',
+      network: 'regtest',
+    }, TEST_TX, TEST_BLOCK);
     expect(convertTx.chain).equals('BTC');
-    expect(convertTx.txid).equals(TEST_TX.hash);
+    expect(convertTx.hash).equals(TEST_TX.hash);
   });
 });
