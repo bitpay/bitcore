@@ -5,17 +5,23 @@ import {
   ChainInfo,
   CoreTransaction,
 } from '../../../types/namespaces/ChainAdapter';
-const Chain = require("../chain");
+const Chain = require("../../../chain");
 
 export class BTCAdapter implements IChainAdapter<Bitcoin.Block, Bitcoin.Transaction> {
   convertBlock(info: ChainInfo, block: Bitcoin.Block): CoreBlock {
     const header = block.header.toObject();
-    return Object.assign(info, {
+    return {
+      chain: info.chain,
+      network: info.network,
+      parent: info.parent? {
+        chain: info.parent.chain,
+        height: info.parent.height,
+      } : undefined,
       header,
       size: block.toBuffer().length,
       reward: block.transactions[0].outputAmount,
       transactions: block.transactions.map(tx => this.convertTx(info, tx)),
-    });
+    };
   }
 
   convertTx(info: ChainInfo, transaction: Bitcoin.Transaction): CoreTransaction {
