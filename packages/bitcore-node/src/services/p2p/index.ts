@@ -4,19 +4,20 @@ import { isChainSupported } from '../../types/SupportedChain';
 import { BlockModel } from '../../models/block';
 import { TransactionModel } from '../../models/transaction';
 import { Observable } from 'rxjs';
-import { concatMap, share } from 'rxjs/operators';
+import { concatMap, map, share } from 'rxjs/operators';
 import { ChainNetwork, Chain } from '../../types/ChainNetwork';
 import { IBlockModel } from '../../models/block';
 import { sleep } from '../../utils/async';
 import { ITransactionModel } from '../../models/transaction';
 import { BtcP2pService } from './bitcoin';
-import { Bitcoin } from '../../types/namespaces/Bitcoin';
 import { CSP } from '../../types/namespaces/ChainStateProvider';
 import { setImmediate } from 'timers';
 import { EventEmitter } from 'events';
+import { CoreBlock, CoreTransaction, IChainAdapter, ChainInfo } from '../../types/namespaces/ChainAdapter';
+import { AdapterProvider } from '../../providers/adapter';
 
 const P2PClasses: {
-  [key: string]: Class<StandardP2p>;
+  [key: string]: Class<P2pService<{}, {}>>;
 } = {
   BCH: BtcP2pService,
   BTC: BtcP2pService
@@ -24,7 +25,7 @@ const P2PClasses: {
 
 export interface P2pService<Block, Transaction> {
   // a stream of incoming blocks
-  blocks(): Observable<CompleteBlock<Block, Transaction>>;
+  blocks(): Observable<Block>;
 
   // a stream of incoming transactions
   transactions(): Observable<Transaction>;
@@ -50,16 +51,12 @@ export interface P2pService<Block, Transaction> {
   syncing: boolean;
 }
 
-export type StandardP2p = P2pService<Bitcoin.Block, Bitcoin.Transaction>;
 type ChainSyncer = {
   add: (string) => void;
-  start: () => Promise<any>;
+  start: () => Promise<void>;
 };
 
-export type CompleteBlock<B, T> = {
-  block: B;
-  transactions: T[];
-};
+export type StandardP2p = P2pService<CoreBlock, CoreTransaction>;
 
 export enum P2pEvents {
   SYNC_COMPLETE = 'SYNC_COMPLETE'
@@ -89,30 +86,21 @@ export class P2pRunner {
     this.events = new EventEmitter();
   }
 
-  private async wireupBlockStream(
-    syncer: ChainSyncer,
-    parent?: { height: number; chain: string }
-  ){
+  private async wireupBlockStream(syncer: ChainSyncer) {
     return this.service
       .blocks()
       .pipe(
-        concatMap(async pair => {
-          await this.blocks.addBlock({
-            chain: this.chain,
-            network: this.network,
-            forkHeight: parent ? parent.height : 0,
-            parentChain: parent ? parent.chain : this.chain,
-            block: pair.block
-          });
+        concatMap(async block => {
+          await this.blocks.addBlock(block);
           if (this.service.syncing) {
-            syncer.add(pair.block.hash);
+            syncer.add(block.header.hash);
           } else {
-            logger.info(`Added block ${pair.block.hash}`, {
+            logger.info(`Added block ${block.header.hash}`, {
               chain: this.chain,
               network: this.network
             });
           }
-          return pair;
+          return block;
         })
       )
       .pipe(share());
@@ -123,14 +111,7 @@ export class P2pRunner {
       .transactions()
       .pipe(
         concatMap(async transaction => {
-          await this.transactions.batchImport({
-            txs: [transaction],
-            height: -1,
-            network: this.network,
-            chain: this.chain,
-            blockTime: new Date(),
-            blockTimeNormalized: new Date()
-          });
+          await this.transactions.batchImport([transaction]);
           logger.debug(`Added transaction ${transaction.hash}`, {
             chain: this.chain,
             network: this.network
@@ -142,14 +123,13 @@ export class P2pRunner {
   }
 
   async start(): Promise<{
-    blocks: Observable<CompleteBlock<Bitcoin.Block, Bitcoin.Transaction>>;
-    transactions: Observable<Bitcoin.Transaction>;
+    blocks: Observable<CoreBlock>,
+    transactions: Observable<CoreTransaction>,
   }> {
     logger.debug(`Started worker for chain ${this.chain}`);
-    const parent = this.service.parent();
     const syncer = await this.sync();
 
-    const blocks = await this.wireupBlockStream(syncer, parent);
+    const blocks = await this.wireupBlockStream(syncer);
     blocks.subscribe(() => {}, logger.error.bind(logger));
 
     const txs = await this.wireupTxStream();
@@ -253,8 +233,8 @@ export class P2pRunner {
   }
 }
 
-export class P2pProxy implements CSP.Provider<Class<StandardP2p>> {
-  get({ chain }: Chain): Class<StandardP2p> {
+export class P2pProxy implements CSP.Provider<Class<P2pService<{}, {}>>> {
+  get({ chain }: Chain): Class<P2pService<{}, {}>> {
     if (P2PClasses[chain]) {
       return P2PClasses[chain];
     }
@@ -267,22 +247,25 @@ export class P2pProxy implements CSP.Provider<Class<StandardP2p>> {
 
   build(params: {
     chain: string;
-    network: string;
+    info: ChainInfo;
     blocks: IBlockModel;
     transactions: ITransactionModel;
     config: any;
   }): P2pRunner {
     logger.debug(`Building p2p service for ${params.chain}.`);
     const P2PClass = this.get(params);
-    const chainP2PConnection = new P2PClass(params.config);
-    const runner = new P2pRunner(
+    const chainP2PConnection = standardize(
+      params.info,
+      new P2PClass(params.config),
+      AdapterProvider.get(params),
+    );
+    return new P2pRunner(
       params.chain,
-      params.network,
+      params.info.network,
       params.blocks,
       params.transactions,
       chainP2PConnection
     );
-    return runner;
   }
 
   async startConfiguredChains() {
@@ -302,7 +285,15 @@ export class P2pProxy implements CSP.Provider<Class<StandardP2p>> {
           // build the correct service for the chain
           const runner = this.build({
             chain,
-            network,
+            info: {
+              chain,
+              network,
+              // TODO: what's the right way to do this?
+              parent: chain === 'BCH'? {
+                chain: 'BTC',
+                height: 478558,
+              } : undefined,
+            },
             blocks: BlockModel,
             transactions: TransactionModel,
             config: p2pServiceConfig
@@ -318,3 +309,30 @@ export class P2pProxy implements CSP.Provider<Class<StandardP2p>> {
 }
 
 export const P2pProvider = new P2pProxy();
+
+
+function standardize<B, T>(
+  info: ChainInfo,
+  service: P2pService<B, T>,
+  adapter: IChainAdapter<B, T>
+): StandardP2p {
+  return {
+    blocks: () => service.blocks().pipe(map(block => {
+      return adapter.convertBlock(info, block);
+    })),
+    transactions: () => service.transactions().pipe(map(tx => {
+      return adapter.convertTx(info, tx);
+    })),
+    start: () => service.start(),
+    sync: hashes => service.sync(hashes),
+    height: () => service.height(),
+    parent: () => service.parent(),
+    stop: () => service.stop(),
+    get syncing() {
+      return service.syncing;
+    },
+    set syncing(v: boolean) {
+      service.syncing = v;
+    },
+  };
+}
