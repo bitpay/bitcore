@@ -23,13 +23,14 @@ export class ApiService {
     const server = app.listen(this.port, () => {
       logger.info(`API server started on port ${this.port}`);
     });
-    server.timeout = 600000
+    server.timeout = this.timeout;
   }
 
   stop(){}
 
 }
 
+// TOOO: choose a place in the config for the API timeout and include it here
 export const Api = new ApiService({
   port: config.port
 });
