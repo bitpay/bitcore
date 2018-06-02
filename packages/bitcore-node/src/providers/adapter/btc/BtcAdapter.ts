@@ -25,7 +25,13 @@ export class BTCAdapter implements IChainAdapter<Bitcoin.Block, Bitcoin.Transact
   }
 
   convertTx(info: ChainInfo, transaction: Bitcoin.Transaction): CoreTransaction {
-    return Object.assign(info, {
+    return {
+      chain: info.chain,
+      network: info.network,
+      parent: info.parent? {
+        chain: info.parent.chain,
+        height: info.parent.height,
+      } : undefined,
       hash: transaction.hash,
       size: transaction.toBuffer().length,
       coinbase: transaction.isCoinbase(),
@@ -48,6 +54,6 @@ export class BTCAdapter implements IChainAdapter<Bitcoin.Block, Bitcoin.Transact
           script: out.script.toBuffer(),
         };
       }),
-    });
+    };
   }
 }

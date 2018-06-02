@@ -71,6 +71,8 @@ describe('P2P Service', () => {
 
     // check that blocks got updated when not explicitly syncing
     await verify(rpc, 16);
+
+    // TODO: Add tests for lone non-block transactions.
   });
 });
 
