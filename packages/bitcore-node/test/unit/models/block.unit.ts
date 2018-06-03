@@ -27,11 +27,10 @@ describe('Block Model', function () {
       sandbox.stub(newBlock, 'save').resolves();
       sandbox.stub(TransactionModel, 'batchImport').resolves();
 
-      const result = await BlockModel.addBlock(TEST_CORE_BLOCK);
+      const result = await BlockModel.addBlocks([TEST_CORE_BLOCK]);
       // TODO: if `update` is stubbed out to return `newBlock`, then
       // this test just tests if `addBlock` calls returns the result from update
-      expect(TEST_BLOCK.hash).to.be.equal(result.hash);
-      expect('BTC').to.be.equal(result.chain);
+      expect(TEST_BLOCK.hash).to.be.equal(result[0]);
     });
   });
 
