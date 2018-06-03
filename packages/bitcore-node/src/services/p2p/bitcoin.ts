@@ -29,7 +29,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
   private invCache: { [key: string]: Cache };
   private stayConnected?: NodeJS.Timer;
   private stream: {
-    blocks: Subject<Bitcoin.Block>;
+    blocks: Subject<Bitcoin.Block[]>;
     transactions: Subject<Bitcoin.Transaction>;
   };
 
@@ -176,7 +176,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       if (!this.invCache[this.bitcoreP2p.Inventory.TYPE.BLOCK].use(hash)) {
         this.emit(hash, message.block);
         if (!this.syncing) {
-          this.stream.blocks.next(message.block);
+          this.stream.blocks.next([message.block]);
         }
       }
     });
@@ -224,11 +224,8 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
   public async sync(locatorHashes: string[]): Promise<string | undefined> {
     const headers = await this.getHeaders(locatorHashes);
     const blocks = await Promise.all(headers.map(h => this.getBlock(h.hash)));
-
-    for (const block of blocks) {
-      this.stream.blocks.next(block);
-    }
-
+    // TODO: need to find a good batching value
+    this.stream.blocks.next(blocks);
     return blocks.length > 0? blocks[blocks.length - 1].hash : undefined;
   }
 

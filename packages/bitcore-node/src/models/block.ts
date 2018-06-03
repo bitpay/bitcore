@@ -33,7 +33,7 @@ type IBlockDoc = IBlock & Document;
 
 type IBlockModelDoc = IBlockDoc & TransformableModel<IBlockDoc>;
 export interface IBlockModel extends IBlockModelDoc {
-  addBlock: (block: CoreBlock) => Promise<IBlockModel>;
+  addBlocks: (blocks: CoreBlock[]) => Promise<IBlockModel>;
   handleReorg: (prevHash: string, chainnet: ChainNetwork) => Promise<void>;
   getLocalTip: (chainnet: ChainNetwork) => Promise<IBlockModel>;
   getPoolInfo: (coinbase: string) => string;
@@ -64,72 +64,78 @@ BlockSchema.index({ chain: 1, network: 1, processed: 1, height: -1 });
 BlockSchema.index({ chain: 1, network: 1, timeNormalized: 1 });
 BlockSchema.index({ previousBlockHash: 1 });
 
-BlockSchema.statics.addBlock = async (block: CoreBlock) => {
-  const { chain, network, header } = block;
-  const blockTime = block.header.time * 1000;
+BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
+  const first = blocks[0];
+  if (!first) {
+    return;
+  }
+  const { chain, network } = first;
 
-  await BlockModel.handleReorg(header.prevHash, { chain, network });
+  await BlockModel.handleReorg(first.header.prevHash, { chain, network });
 
-  const previousBlock = await BlockModel.findOne({
-    hash: header.prevHash,
+  const startBlock = await BlockModel.findOne({
+    hash: first.header.prevHash,
     chain,
     network
   });
 
-  const blockTimeNormalized = (() => {
-    if (previousBlock && blockTime <= previousBlock.timeNormalized.getTime()) {
-      return previousBlock.timeNormalized.getTime() + 1;
-    } else {
-      return blockTime;
+  // Calculate all the normalized times for every block (needs to be sequential)
+  const normalizedTimes: number[] = blocks.reduce((times, block, i) => {
+    if (block.header.time <= times[i]) {
+      return times.concat(times[i] + 1);
     }
-  })();
+    return times.concat(block.header.time);
+  }, [startBlock? startBlock.timeNormalized.getTime() : 0]).slice(1);
 
-  const height = (previousBlock && previousBlock.height + 1) || 1;
-  logger.debug('Setting blockheight', height);
+  await Promise.all(blocks.map(async (block, i) => {
+    const height = ((startBlock && startBlock.height + 1) || 1) + i;
 
-  await BlockModel.update(
-    {
-      hash: header.hash,
+    await BlockModel.update({
+      hash: block.header.hash,
       chain,
       network
-    },
-    {
+    }, {
       chain,
       network,
       height,
-      version: header.version,
-      previousBlockHash: header.prevHash,
-      merkleRoot: header.merkleRoot,
-      time: new Date(blockTime),
-      timeNormalized: new Date(blockTimeNormalized),
-      bits: header.bits,
-      nonce: header.nonce,
+      version: block.header.version,
+      previousBlockHash: block.header.prevHash,
+      merkleRoot: block.header.merkleRoot,
+      time: new Date(block.header.time),
+      timeNormalized: new Date(normalizedTimes[i]),
+      bits: block.header.bits,
+      nonce: block.header.nonce,
       transactionCount: block.transactions.length,
       size: block.size,
       reward: block.reward,
-    },
-    {
+      nextBlockHash: blocks[i + 1] && blocks[i + 1].header.hash,
+    }, {
       upsert: true
-    }
-  );
+    });
 
-  if (previousBlock) {
-    previousBlock.nextBlockHash = header.hash;
-    logger.debug('Updating previous block.nextBlockHash ', header.hash);
-    await previousBlock.save();
+    await TransactionModel.batchImport(block.transactions, {
+      blockHash: block.header.hash,
+      blockTime: block.header.time,
+      blockTimeNormalized: normalizedTimes[i],
+      height,
+    });
+
+    await BlockModel.update({
+      hash: block.header.hash,
+      chain,
+      network
+    }, {
+      $set: {
+        processed: true
+      }
+    });
+  }));
+
+  if (startBlock) {
+    startBlock.nextBlockHash = first.header.hash;
+    logger.debug('Updating previous block.nextBlockHash ', first.header.hash);
+    await startBlock.save();
   }
-
-  await TransactionModel.batchImport(block.transactions, {
-    blockHash: header.hash,
-    blockTime: blockTime,
-    blockTimeNormalized: blockTimeNormalized,
-    height,
-  });
-
-  return BlockModel.update(
-    { hash: header.hash, chain, network },
-    { $set: { processed: true } }
-  );
 };
 
 BlockSchema.statics.getPoolInfo = function(coinbase: string) {
