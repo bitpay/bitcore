@@ -48,16 +48,17 @@ describe('P2P Service', () => {
     // slowly add some blocks
     for (let i = 0; i < 5; i += 1) {
       await rpc.generate(1);
+      // TODO: this test is flaky around here, is it our fault or p2p lib?
       await sleep(100);
     }
 
     // wait for all the new blocks to hit the database
     let recent;
-    const stored = new Promise(r => stream.blocks.subscribe(block => {
-      if (block.header.hash === recent) {
+    const stored = new Promise(r => stream.blocks.subscribe(blocks => {
+      if (blocks.find(b => b.header.hash === recent)) {
         r();
       }
-      recent = block.header.hash;
+      recent = blocks.slice(-1)[0].header.hash;
     }));
     const added = (await rpc.generate(1))[0];
     if (added !== recent) {
@@ -92,8 +93,8 @@ async function verify(rpc: RPC, tail: number) {
     const truth = await rpc.blockAsync(hash);
     const ours = await BlockModel.find({ hash });
     expect(ours.length, 'number of blocks').to.equal(1);
-    expect(ours[0].previousBlockHash, 'previous block hash').to.equal(truth.previousblockhash);
-    expect(ours[0].nextBlockHash, 'next block hash').to.equal(truth.nextblockhash);
+    expect(ours[0].previousBlockHash, 'previous block hash').to.equal(truth.previousblockhash || null);
+    expect(ours[0].nextBlockHash, 'next block hash').to.equal(truth.nextblockhash || null);
     expect(ours[0].merkleRoot, 'merkle root').to.equal(truth.merkleroot);
     expect(ours[0].height, 'block height').to.equal(truth.height);
 

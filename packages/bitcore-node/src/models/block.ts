@@ -33,7 +33,7 @@ type IBlockDoc = IBlock & Document;
 
 type IBlockModelDoc = IBlockDoc & TransformableModel<IBlockDoc>;
 export interface IBlockModel extends IBlockModelDoc {
-  addBlocks: (blocks: CoreBlock[]) => Promise<IBlockModel>;
+  addBlocks: (blocks: CoreBlock[]) => Promise<string[]>;
   handleReorg: (prevHash: string, chainnet: ChainNetwork) => Promise<void>;
   getLocalTip: (chainnet: ChainNetwork) => Promise<IBlockModel>;
   getPoolInfo: (coinbase: string) => string;
@@ -78,6 +78,11 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
     chain,
     network
   });
+  if (startBlock) {
+    startBlock.nextBlockHash = first.header.hash;
+    logger.debug('Updating previous block.nextBlockHash ', first.header.hash);
+    await startBlock.save();
+  }
 
   // Calculate all the normalized times for every block (needs to be sequential)
   const normalizedTimes: number[] = blocks.reduce((times, block, i) => {
@@ -87,7 +92,7 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
     return times.concat(block.header.time);
   }, [startBlock? startBlock.timeNormalized.getTime() : 0]).slice(1);
 
-  await Promise.all(blocks.map(async (block, i) => {
+  return await Promise.all(blocks.map(async (block, i) => {
     const height = ((startBlock && startBlock.height + 1) || 1) + i;
 
     await BlockModel.update({
@@ -129,13 +134,9 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
         processed: true
       }
     });
-  }));
 
-  if (startBlock) {
-    startBlock.nextBlockHash = first.header.hash;
-    logger.debug('Updating previous block.nextBlockHash ', first.header.hash);
-    await startBlock.save();
-  }
+    return block.header.hash;
+  }));
 };
 
 BlockSchema.statics.getPoolInfo = function(coinbase: string) {
