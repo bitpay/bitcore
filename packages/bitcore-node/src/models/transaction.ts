@@ -275,7 +275,6 @@ TransactionSchema.statics.getMintOps = async (
       });
     });
   }
-  // TODO: correct?
   return [];
 }
 
