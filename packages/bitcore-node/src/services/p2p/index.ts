@@ -20,7 +20,7 @@ import { AdapterProvider } from '../../providers/adapter';
 
 export interface P2pService<Block, Transaction> {
   // a stream of incoming blocks
-  blocks(): Observable<Block>;
+  blocks(): Observable<Block[]>;
 
   // a stream of incoming transactions
   transactions(): Observable<Transaction>;
@@ -80,24 +80,26 @@ export class P2pRunner {
   }
 
   async start(): Promise<{
-    blocks: Observable<CoreBlock>,
+    blocks: Observable<CoreBlock[]>,
     transactions: Observable<CoreTransaction>,
   }> {
     logger.debug(`Started worker for chain ${this.chain}`);
     const syncer = await this.sync();
 
-    const blocks = this.service.blocks().pipe(concatMap(async block => {
-      await this.blocks.addBlock(block);
+    const blocks = this.service.blocks().pipe(concatMap(async blocks => {
+      await this.blocks.addBlocks(blocks);
       if (this.service.syncing) {
-        syncer.add(block.header.hash);
+        for (const block of blocks) {
+          syncer.add(block.header.hash);
+        }
       }
       else {
-        logger.info(`Added block ${block.header.hash}`, {
+        logger.info(`Added blocks ${blocks.map(b => b.header.hash)}`, {
           chain: this.chain,
           network: this.network,
         });
       }
-      return block;
+      return blocks;
     })).pipe(share());
     blocks.subscribe(() => {}, logger.error.bind(logger));
 
@@ -300,8 +302,8 @@ function standardize<B, T>(
   adapter: IChainAdapter<B, T>
 ): StandardP2p {
   return {
-    blocks: () => service.blocks().pipe(map(block => {
-      return adapter.convertBlock(info, block);
+    blocks: () => service.blocks().pipe(map(blocks => {
+      return blocks.map(block => adapter.convertBlock(info, block));
     })),
     transactions: () => service.transactions().pipe(map(tx => {
       return adapter.convertTx(info, tx);
