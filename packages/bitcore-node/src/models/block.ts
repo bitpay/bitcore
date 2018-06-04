@@ -7,6 +7,7 @@ import { ChainNetwork } from '../types/ChainNetwork';
 import { TransformableModel } from '../types/TransformableModel';
 import { LoggifyObject } from '../decorators/Loggify';
 import { CoreBlock } from '../types/namespaces/ChainAdapter';
+import { partition } from '../utils/partition';
 
 export interface IBlock {
   chain: string;
@@ -64,6 +65,8 @@ BlockSchema.index({ chain: 1, network: 1, processed: 1, height: -1 });
 BlockSchema.index({ chain: 1, network: 1, timeNormalized: 1 });
 BlockSchema.index({ previousBlockHash: 1 });
 
+const batch = (items, n, f) => Promise.all(partition(items, n).map(f));
+
 BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
   const first = blocks[0];
   if (!first) {
@@ -92,51 +95,82 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
     return times.concat(block.header.time);
   }, [startBlock? startBlock.timeNormalized.getTime() : 0]).slice(1);
 
-  return await Promise.all(blocks.map(async (block, i) => {
-    const height = ((startBlock && startBlock.height + 1) || 1) + i;
+  // Calculate block heights
+  const height = i => ((startBlock && startBlock.height + 1) || 1) + i;
 
-    await BlockModel.update({
-      hash: block.header.hash,
-      chain,
-      network
-    }, {
-      chain,
-      network,
-      height,
-      version: block.header.version,
-      previousBlockHash: block.header.prevHash,
-      merkleRoot: block.header.merkleRoot,
-      time: new Date(block.header.time),
-      timeNormalized: new Date(normalizedTimes[i]),
-      bits: block.header.bits,
-      nonce: block.header.nonce,
-      transactionCount: block.transactions.length,
-      size: block.size,
-      reward: block.reward,
-      nextBlockHash: blocks[i + 1] && blocks[i + 1].header.hash,
-    }, {
-      upsert: true
-    });
-
-    await TransactionModel.batchImport(block.transactions, {
-      blockHash: block.header.hash,
-      blockTime: block.header.time,
-      blockTimeNormalized: normalizedTimes[i],
-      height,
-    });
-
-    await BlockModel.update({
-      hash: block.header.hash,
-      chain,
-      network
-    }, {
-      $set: {
-        processed: true
-      }
-    });
+  const hashes = await Promise.all(blocks.map(async (block, i) => {
+    await Promise.all([
+      // Add the block
+      BlockModel.update({
+        hash: block.header.hash,
+        chain,
+        network
+      }, {
+        chain,
+        network,
+        height: height(i),
+        version: block.header.version,
+        previousBlockHash: block.header.prevHash,
+        merkleRoot: block.header.merkleRoot,
+        time: new Date(block.header.time),
+        timeNormalized: new Date(normalizedTimes[i]),
+        bits: block.header.bits,
+        nonce: block.header.nonce,
+        transactionCount: block.transactions.length,
+        size: block.size,
+        reward: block.reward,
+        nextBlockHash: blocks[i + 1] && blocks[i + 1].header.hash,
+      }, {
+        upsert: true
+      }),
+      // Get the minted coins from the block
+      (async () => {
+        const mintOps = await TransactionModel.getMintOps(block.transactions, height(i));
+        logger.debug('Minting Coins', mintOps.length);
+        await batch(mintOps, 100, b => CoinModel.collection.bulkWrite(b, {
+          ordered: false
+        }));
+      })(),
+    ]);
 
     return block.header.hash;
   }));
+
+  // Calculate Spending (unfortunately this must be done in order)
+  for (const [i, block] of blocks.entries()) {
+    const spendOps = TransactionModel.getSpendOps(block.transactions, height(i));
+    logger.debug('Spending Coins', spendOps.length);
+    await batch(spendOps, 100, b => CoinModel.collection.bulkWrite(b, {
+      ordered: false
+    }));
+  }
+
+  // Add transactions
+  await Promise.all(blocks.map(async (block, i) => {
+    const txOps = await TransactionModel.addTransactions(block.transactions, {
+      blockHash: block.header.hash,
+      blockTime: block.header.time,
+      blockTimeNormalized: normalizedTimes[i],
+      height: height(i),
+    });
+    logger.debug('Writing Transactions', txOps.length);
+    await batch(txOps, 100, b => TransactionModel.collection.bulkWrite(b, {
+      ordered: false
+    }));
+  }));
+
+  // Mark these blocks as 'processed'
+  await Promise.all(blocks.map(block => BlockModel.update({
+    hash: block.header.hash,
+    chain,
+    network
+  }, {
+    $set: {
+      processed: true
+    }
+  })));
+
+  return hashes;
 };
 
 BlockSchema.statics.getPoolInfo = function(coinbase: string) {
