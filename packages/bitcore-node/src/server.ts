@@ -39,13 +39,28 @@ const startAPI = async () => {
   server.timeout = 600000;
 };
 
-if (cluster.isMaster) {
-  startServices();
-  if (args.DEBUG) {
+const runMaster = async() => {
+  await startServices();
+  // start the API on master if we are in debug
+  if(args.DEBUG){
     startAPI();
   }
-} else {
-  if (!args.DEBUG) {
+};
+
+const runWorker = async() => {
+  // don't run any workers when in debug mode
+  if(!args.DEBUG){
+    await startServices();
     startAPI();
   }
 }
+
+const start = async() => {
+  if(cluster.isMaster){
+    await runMaster();
+  } else{
+    await runWorker();
+  }
+}
+
+start();
