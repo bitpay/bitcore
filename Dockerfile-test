@@ -1,16 +1,32 @@
 FROM node:8
 
-ADD . /bitcore
-
-ADD ./packages/bitcore-node/test/ci/bitcore-node/bitcore-test.config.json /bitcore
-
 WORKDIR /bitcore
 
-RUN npm install -D
+# Install all deps in all packages
+COPY ./packages/bitcore-lib/package.json ./packages/bitcore-lib/package.json
+COPY ./packages/bitcore-lib-cash/package.json ./packages/bitcore-lib-cash/package.json
+COPY ./packages/bitcore-p2p/package.json ./packages/bitcore-p2p/package.json
+COPY ./packages/bitcore-p2p-cash/package.json ./packages/bitcore-p2p-cash/package.json
+COPY ./packages/bitcore-wallet-client/package.json ./packages/bitcore-wallet-client/package.json
+COPY ./packages/bitcore-wallet/package.json ./packages/bitcore-wallet/package.json
+COPY ./packages/bitcore-node/package.json ./packages/bitcore-node/package.json
+COPY ./packages/insight/package.json ./packages/insight/package.json
+COPY ./packages/insight/app/package.json ./packages/insight/app/package.json
+COPY ./packages/bitcore-mnemonic/package.json ./packages/bitcore-mnemonic/package.json
+COPY ./package.json package.json
+COPY ./package-lock.json package-lock.json
+RUN npm install
 
-# postinstall for lerna doesn't run properly so run explictly
+# Run Lerna
+COPY ./lerna.json lerna.json
 RUN ./node_modules/.bin/lerna bootstrap
 
-WORKDIR /bitcore/packages/bitcore-node
+# Add source
+ADD . /bitcore
 
-CMD npm run start
+# Add config file
+ADD ./packages/bitcore-node/test/ci/bitcore-node/bitcore-test.config.json /bitcore
+
+# Run test script
+WORKDIR /bitcore/packages/bitcore-node
+CMD npm run test
