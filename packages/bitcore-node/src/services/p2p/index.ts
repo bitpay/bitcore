@@ -87,11 +87,10 @@ export class P2pRunner {
     const syncer = await this.sync();
 
     const blocks = this.service.blocks().pipe(concatMap(async blocks => {
+      const hashes = blocks.map(b => b.header.hash);
       await this.blocks.addBlocks(blocks);
-      if (this.service.syncing) {
-        for (const block of blocks) {
-          syncer.add(block.header.hash);
-        }
+      if (this.service.syncing && blocks.length > 0) {
+        syncer.add(hashes);
       }
       else {
         logger.info(`Added blocks ${blocks.map(b => b.header.hash)}`, {
@@ -180,15 +179,15 @@ export class P2pRunner {
 
     // notify syncing service that a hash has been added to the db
     return {
-      add: (hash: string) => {
+      add: (hashes: string[]) => {
         if (finished || !goalHeight) {
           return;
         }
-        logger.debug(`Syncing block ${hash}`, {
+        logger.debug(`Syncing blocks ${hashes}`, {
           chain: this.chain,
           network: this.network
         });
-        counter += 1;
+        counter += hashes.length;
         if (Date.now() - lastLog > 100) {
           logger.info(`Sync progress ${(counter * 100 / goalHeight).toFixed(3)}%`, {
             chain: this.chain,
@@ -197,11 +196,11 @@ export class P2pRunner {
           });
           lastLog = Date.now();
         }
-        if (hash === finalHash) {
+        if (hashes.slice(-1)[0] === finalHash) {
           start();
         }
         else {
-          recentHash = hash;
+          recentHash = hashes.slice(-1)[0];
         }
       },
       start,

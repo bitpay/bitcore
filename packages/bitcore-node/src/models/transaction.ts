@@ -264,18 +264,13 @@ TransactionSchema.statics.getMintOps = async (
 
   if (wallets.length > 0) {
     return mintOps.map(mintOp => {
-      const transformedWallets = wallets
-        .filter(
-          wallet => wallet.address === mintOp.updateOne.update.$set.address
-        )
-        .map(wallet => wallet.wallet);
-
-      return Object.assign(mintOp, {
-        updateOne: { update: { $set: { wallets: transformedWallets } } }
-      });
+      const matchingAddrs= wallets
+        .filter(w => w.address === mintOp.updateOne.update.$set.address);
+      mintOp.updateOne.update.$set.wallets = matchingAddrs.map(w => w.wallet);
+      return mintOp;
     });
   }
-  return [];
+  return mintOps;
 }
 
 TransactionSchema.statics.getSpendOps = (
@@ -292,7 +287,7 @@ TransactionSchema.statics.getSpendOps = (
     // TODO: what is this?
     // let txid = tx._hash;
     for (const input of tx.inputs) {
-      const updateQuery = {
+      const updateQuery: any = {
         updateOne: {
           filter: {
             mintTxid: input.prevTxId,
@@ -310,9 +305,9 @@ TransactionSchema.statics.getSpendOps = (
         }
       };
       if (config.pruneSpentScripts && height > 0) {
-        Object.assign(updateQuery, {
-          updateOne: { update: { $unset: { script: null } } }
-        });
+        updateQuery.updateOne.update.$unset = {
+          script: null,
+        };
       }
       spendOps.push(updateQuery);
     }
