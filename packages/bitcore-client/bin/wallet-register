@@ -16,7 +16,7 @@ const main = async () => {
   try {
     const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.loadWallet({ path });
-    wallet = await wallet.unlock({ password });
+    wallet = await wallet.unlock(password);
     await wallet.register({ baseUrl });
     console.log('Wallet registered!');
   } catch (e) {

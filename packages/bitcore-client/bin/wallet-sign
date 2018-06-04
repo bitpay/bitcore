@@ -16,7 +16,7 @@ const main = async () => {
   try {
     const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.loadWallet({ path });
-    wallet = wallet.unlock({ password });
+    wallet = wallet.unlock(password);
     let signedTx = await wallet.signTx({ tx });
     console.log(signedTx.uncheckedSerialize());
   } catch (e) {

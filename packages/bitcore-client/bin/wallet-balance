@@ -15,7 +15,7 @@ const main = async () => {
   try {
     const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.loadWallet({ path });
-    wallet = await wallet.unlock({ password });
+    wallet = await wallet.unlock(password);
     const balance = await wallet.getBalance();
     console.log(
       Object.assign(balance, {

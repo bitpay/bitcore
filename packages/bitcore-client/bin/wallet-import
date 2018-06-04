@@ -47,7 +47,7 @@ const main = async () => {
       );
     }
     wallet = await Wallet.loadWallet({ path });
-    wallet = await wallet.unlock({ password });
+    wallet = await wallet.unlock(password);
     let keyInput = [];
     if (file) {
       keyInput = getFileKeys(file);
