@@ -40,6 +40,17 @@ export class RPC {
     );
   }
 
+  async asyncCall(method: string, params: any[]) {
+    return new Promise((resolve, reject) => {
+      this.callMethod(method, params, (err, data) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve(data);
+      });
+    });
+  }
+
   getChainTip(callback: CallbackType) {
     this.callMethod('getchaintips', [], function(err, result) {
       if (err) {
@@ -96,5 +107,17 @@ export class RPC {
 
   getWalletAddresses(account: string, callback: CallbackType) {
     this.callMethod('getaddressesbyaccount', [account], callback);
+  }
+
+  async generate(n: number): Promise<string[]> {
+    return await this.asyncCall('generate', [n]) as string[];
+  }
+
+  async bestBlockHashAsync(): Promise<string> {
+    return await this.asyncCall('getbestblockhash', []) as string;
+  }
+
+  async blockAsync(hash: string): Promise<any> {
+    return await this.asyncCall('getblock', [hash]);
   }
 }

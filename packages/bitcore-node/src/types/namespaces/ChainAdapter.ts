@@ -1,19 +1,44 @@
-import { ChainNetwork } from "../ChainNetwork";
-import { IBlock } from "../../models/block";
-import { ITransaction } from "../../models/transaction";
-export declare namespace Adapter {
-  type ConvertBlockParams<T> = ChainNetwork & {
-    block: T;
+export interface IChainAdapter<B, T> {
+  convertBlock(info: ChainInfo, block: B): CoreBlock;
+  convertTx(info: ChainInfo, transaction: T, block?: B): CoreTransaction;
+}
+
+export type ChainInfo = {
+  chain: string;
+  network: string;
+  parent?: {
+    chain: string;
     height: number;
   };
-
-  type ConvertTxParams<T, B> = ChainNetwork &
-    ConvertBlockParams<B> & {
-      tx: T;
-    };
-
-  interface IChainAdapter<B, T> {
-    convertBlock(params: ConvertBlockParams<B>): IBlock;
-    convertTx(params: ConvertTxParams<T, B>): ITransaction;
-  }
 }
+
+export type CoreBlock = ChainInfo & {
+  size: number;
+  reward: number;
+  header: {
+    hash: string;
+    prevHash: string;
+    version: string;
+    time: number;
+    merkleRoot: string;
+    bits: string;
+    nonce: string;
+  };
+  transactions: CoreTransaction[];
+}
+
+export type CoreTransaction = ChainInfo & {
+  hash: string;
+  size: number;
+  coinbase: boolean;
+  nLockTime: number;
+  inputs: {
+    prevTxId: string;
+    outputIndex: number;
+  }[];
+  outputs: {
+    script: Buffer;
+    address: string;
+    value: number;
+  }[];
+};

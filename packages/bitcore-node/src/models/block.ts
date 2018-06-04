@@ -1,12 +1,13 @@
+import logger from '../logger';
 import { Schema, Document, model, DocumentQuery } from 'mongoose';
 import { CoinModel } from './coin';
 import { TransactionModel } from './transaction';
 import { TransformOptions } from '../types/TransformOptions';
 import { ChainNetwork } from '../types/ChainNetwork';
 import { TransformableModel } from '../types/TransformableModel';
-import logger from '../logger';
 import { LoggifyObject } from '../decorators/Loggify';
-import { Bitcoin } from '../types/namespaces/Bitcoin';
+import { CoreBlock } from '../types/namespaces/ChainAdapter';
+import { partition } from '../utils/partition';
 
 export interface IBlock {
   chain: string;
@@ -31,19 +32,11 @@ export type BlockQuery = { [key in keyof IBlock]?: any } &
   Partial<DocumentQuery<IBlock, Document>>;
 type IBlockDoc = IBlock & Document;
 
-export type AddBlockParams = {
-  block: Bitcoin.Block;
-  parentChain?: string;
-  forkHeight?: number;
-} & ChainNetwork &
-  Partial<IBlock>;
-
 type IBlockModelDoc = IBlockDoc & TransformableModel<IBlockDoc>;
-type BlockMethodParams = { header?: Bitcoin.Block.HeaderObj } & ChainNetwork;
 export interface IBlockModel extends IBlockModelDoc {
-  addBlock: (params: AddBlockParams) => Promise<IBlockModel>;
-  handleReorg: (params: BlockMethodParams) => Promise<void>;
-  getLocalTip: (params: BlockMethodParams) => Promise<IBlockModel>;
+  addBlocks: (blocks: CoreBlock[]) => Promise<string[]>;
+  handleReorg: (prevHash: string, chainnet: ChainNetwork) => Promise<void>;
+  getLocalTip: (chainnet: ChainNetwork) => Promise<IBlockModel>;
   getPoolInfo: (coinbase: string) => string;
   getLocatorHashes: (params: ChainNetwork) => Promise<string[]>;
 }
@@ -72,78 +65,112 @@ BlockSchema.index({ chain: 1, network: 1, processed: 1, height: -1 });
 BlockSchema.index({ chain: 1, network: 1, timeNormalized: 1 });
 BlockSchema.index({ previousBlockHash: 1 });
 
-BlockSchema.statics.addBlock = async (params: AddBlockParams) => {
-  const { block, chain, network, parentChain, forkHeight } = params;
-  const header = block.header.toObject();
-  const blockTime = header.time * 1000;
+const batch = (items, n, f) => Promise.all(partition(items, n).map(f));
 
-  await BlockModel.handleReorg({ header, chain, network });
+BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
+  const first = blocks[0];
+  if (!first) {
+    return;
+  }
+  const { chain, network } = first;
 
-  const previousBlock = await BlockModel.findOne({
-    hash: header.prevHash,
+  await BlockModel.handleReorg(first.header.prevHash, { chain, network });
+
+  const startBlock = await BlockModel.findOne({
+    hash: first.header.prevHash,
     chain,
     network
   });
-
-  const blockTimeNormalized = (() => {
-    if (previousBlock && blockTime <= previousBlock.timeNormalized.getTime()) {
-      return previousBlock.timeNormalized.getTime() + 1;
-    } else {
-      return blockTime;
-    }
-  })();
-
-  const height = (previousBlock && previousBlock.height + 1) || 1;
-  logger.debug('Setting blockheight', height);
-
-  await BlockModel.update(
-    {
-      hash: header.hash,
-      chain,
-      network
-    },
-    {
-      chain,
-      network,
-      height,
-      version: header.version,
-      previousBlockHash: header.prevHash,
-      merkleRoot: header.merkleRoot,
-      time: new Date(blockTime),
-      timeNormalized: new Date(blockTimeNormalized),
-      bits: header.bits,
-      nonce: header.nonce,
-      transactionCount: block.transactions.length,
-      size: block.toBuffer().length,
-      reward: block.transactions[0].outputAmount
-    },
-    {
-      upsert: true
-    }
-  );
-
-  if (previousBlock) {
-    previousBlock.nextBlockHash = header.hash;
-    logger.debug('Updating previous block.nextBlockHash ', header.hash);
-    await previousBlock.save();
+  if (startBlock) {
+    startBlock.nextBlockHash = first.header.hash;
+    logger.debug('Updating previous block.nextBlockHash ', first.header.hash);
+    await startBlock.save();
   }
 
-  await TransactionModel.batchImport({
-    txs: block.transactions,
-    blockHash: header.hash,
-    blockTime: new Date(blockTime),
-    blockTimeNormalized: new Date(blockTimeNormalized),
-    height: height,
-    chain,
-    network,
-    parentChain,
-    forkHeight
-  });
+  // Calculate all the normalized times for every block (needs to be sequential)
+  const normalizedTimes: number[] = blocks.reduce((times, block, i) => {
+    if (block.header.time <= times[i]) {
+      return times.concat(times[i] + 1);
+    }
+    return times.concat(block.header.time);
+  }, [startBlock? startBlock.timeNormalized.getTime() : 0]).slice(1);
 
-  return BlockModel.update(
-    { hash: header.hash, chain, network },
-    { $set: { processed: true } }
-  );
+  // Calculate block heights
+  const height = i => ((startBlock && startBlock.height + 1) || 1) + i;
+
+  const hashes = await Promise.all(blocks.map(async (block, i) => {
+    await Promise.all([
+      // Add the block
+      BlockModel.update({
+        hash: block.header.hash,
+        chain,
+        network
+      }, {
+        chain,
+        network,
+        height: height(i),
+        version: block.header.version,
+        previousBlockHash: block.header.prevHash,
+        merkleRoot: block.header.merkleRoot,
+        time: new Date(block.header.time),
+        timeNormalized: new Date(normalizedTimes[i]),
+        bits: block.header.bits,
+        nonce: block.header.nonce,
+        transactionCount: block.transactions.length,
+        size: block.size,
+        reward: block.reward,
+        nextBlockHash: blocks[i + 1] && blocks[i + 1].header.hash,
+      }, {
+        upsert: true
+      }),
+      // Get the minted coins from the block
+      (async () => {
+        const mintOps = await TransactionModel.getMintOps(block.transactions, height(i));
+        logger.debug('Minting Coins', mintOps.length);
+        await batch(mintOps, 100, b => CoinModel.collection.bulkWrite(b, {
+          ordered: false
+        }));
+      })(),
+    ]);
+
+    return block.header.hash;
+  }));
+
+  // Calculate Spending (unfortunately this must be done in order)
+  for (const [i, block] of blocks.entries()) {
+    const spendOps = TransactionModel.getSpendOps(block.transactions, height(i));
+    logger.debug('Spending Coins', spendOps.length);
+    await batch(spendOps, 100, b => CoinModel.collection.bulkWrite(b, {
+      ordered: false
+    }));
+  }
+
+  // Add transactions
+  await Promise.all(blocks.map(async (block, i) => {
+    const txOps = await TransactionModel.addTransactions(block.transactions, {
+      blockHash: block.header.hash,
+      blockTime: block.header.time,
+      blockTimeNormalized: normalizedTimes[i],
+      height: height(i),
+    });
+    logger.debug('Writing Transactions', txOps.length);
+    await batch(txOps, 100, b => TransactionModel.collection.bulkWrite(b, {
+      ordered: false
+    }));
+  }));
+
+  // Mark these blocks as 'processed'
+  await Promise.all(blocks.map(block => BlockModel.update({
+    hash: block.header.hash,
+    chain,
+    network
+  }, {
+    $set: {
+      processed: true
+    }
+  })));
+
+  return hashes;
 };
 
 BlockSchema.statics.getPoolInfo = function(coinbase: string) {
@@ -152,8 +179,7 @@ BlockSchema.statics.getPoolInfo = function(coinbase: string) {
   return coinbase;
 };
 
-BlockSchema.statics.getLocalTip = async (params: ChainNetwork) => {
-  const { chain, network } = params;
+BlockSchema.statics.getLocalTip = async ({ chain, network }: ChainNetwork) => {
   const bestBlock = await BlockModel.findOne({
     processed: true,
     chain,
@@ -179,10 +205,9 @@ BlockSchema.statics.getLocatorHashes = async (params: ChainNetwork) => {
   return locatorBlocks.map(block => block.hash);
 };
 
-BlockSchema.statics.handleReorg = async (params: BlockMethodParams) => {
-  const { header, chain, network } = params;
-  const localTip = await BlockModel.getLocalTip(params);
-  if (header && localTip.hash === header.prevHash) {
+BlockSchema.statics.handleReorg = async (prevHash: string, { chain, network }: ChainNetwork) => {
+  const localTip = await BlockModel.getLocalTip({ chain, network });
+  if (localTip.hash === prevHash) {
     return;
   }
   if (localTip.height === 0) {
