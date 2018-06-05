@@ -41,7 +41,7 @@ const runMaster = async() => {
 const runWorker = async() => {
   // don't run any workers when in debug mode
   if(!args.DEBUG){
-    await startServices();
+    // Api will automatically start storage if it isn't already running
     Api.start();
   }
 }

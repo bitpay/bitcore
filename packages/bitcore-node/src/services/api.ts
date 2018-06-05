@@ -1,7 +1,9 @@
+import mongoose from 'mongoose';
 import app from '../routes';
 import logger from '../logger';
 import config from '../config';
-import { LoggifyClass } from "../decorators/Loggify";
+import { LoggifyClass } from '../decorators/Loggify';
+import { Storage } from './storage';
 
 @LoggifyClass
 export class ApiService {
@@ -20,6 +22,9 @@ export class ApiService {
   }
 
   async start(){
+    if(mongoose.connection.readyState !== 1){
+      await Storage.start({});
+    }
     const server = app.listen(this.port, () => {
       logger.info(`API server started on port ${this.port}`);
     });
