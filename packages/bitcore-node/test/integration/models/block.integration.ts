@@ -389,7 +389,98 @@ describe('Block Model', function () {
   });
 
   describe.only('addBlock', () => {
-    it('should be able to add a block', async () => {
+    it('should be able to add a block accordingly when a previousBlock exists', async () => {
+      // setting up blocks in the database
+      await BlockModel.create({
+        chain: 'BTC',
+        network: 'regtest',
+        height: 5,
+        hash: '528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7',
+        version: '536870912',
+        merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
+        time: 1526326784,
+        nonce: '3',
+        previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
+        size: 264,
+        bits: parseInt('207fffff', 16).toString(),
+        processed: true
+      });
+      await BlockModel.create({
+        chain: 'BTC',
+        network: 'regtest',
+        height: 6,
+        hash: '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
+        version: '536870912',
+        merkleRoot: '8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826',
+        time: 1526326785,
+        nonce: '0',
+        previousBlockHash: '528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7',
+        size: 264,
+        bits: parseInt('207fffff', 16).toString(),
+        processed: true
+      });
+      await BlockModel.create({
+        chain: 'BTC',
+        network: 'regtest',
+        height: 7,
+        hash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
+        version: '536870912',
+        merkleRoot: '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
+        time: 1526326785,
+        nonce: '3',
+        previousBlockHash: '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
+        size: 264,
+        bits: parseInt('207fffff', 16).toString(),
+        processed: true,
+      });
+      await BlockModel.create({
+        chain: 'BTC',
+        network: 'regtest',
+        height: 8,
+        hash: '6cc50922e8c1376ce0e4182c60dded5ca301789782693b40c93db00bc4827ca8',
+        version: '536870912',
+        merkleRoot: 'be9a7cc27cceef8dee3cfff0754df46590b6934987fdf24bd9528ce8718978f0',
+        time: 1526326786,
+        nonce: '2',
+        previousBlockHash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
+        size: 264,
+        bits: parseInt('207fffff', 16).toString(),
+        processed: true,
+      });
+
+      // should have 3 blocks inside the db, added 4 one- this should act as localTip best block now
+
+      const result = await BlockModel.handleReorg({
+        header: {
+        prevHash: '6cc50922e8c1376ce0e4182c60dded5ca301789782693b40c93db00bc4827ca8',
+        hash: '63b61a1650d89db4c93f2e661280437ade826969cd429d0fb05d39e47458bac1',
+        time: 1526326786,
+        version: '536870912',
+        merkleRoot: '636c76d8434e67f919d38cb60617ae60d30b8090c613b573fd39c1c838488880',
+        bits: parseInt('207fffff', 16).toString(),
+        nonce: '0'
+        },
+        chain: 'BTC',
+        network: 'regtest'
+      });
+
+      console.log(result);
+      // handle reorg dealt with here
+
+      const previousBlock = await BlockModel.findOne({
+        hash: '6cc50922e8c1376ce0e4182c60dded5ca301789782693b40c93db00bc4827ca8',
+        chain: 'BTC',
+        network: 'regtest'
+      });
+      console.log('Handles the previous block (returns it) ',previousBlock);
+
+      // Conditional checking of blockTimeNormalized and height
+
+
+
+    });
+
+    xit('should be able to add a block', async () => {
 
       // setting up blocks in the database
       await BlockModel.create({
@@ -480,7 +571,7 @@ describe('Block Model', function () {
       */
 
 
-
+      // 2 Scenarios one where previous block exist and one where it doesn't
 
 
 
