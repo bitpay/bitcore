@@ -12,8 +12,8 @@ program
 const main = async () => {
   const { path } = program;
   try {
-    let wallet = await Wallet.loadWallet({ path });
     const password = await promptly.password('Wallet Password:');
+    let wallet = await Wallet.loadWallet({ path });
     await wallet.unlock(password);
     console.log(wallet);
   } catch (e) {
