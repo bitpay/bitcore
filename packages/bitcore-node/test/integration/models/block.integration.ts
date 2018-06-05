@@ -3,6 +3,10 @@ import { resetModel } from '../../helpers/index';
 import { BlockModel } from '../../../src/models/block';
 import { TransactionModel } from '../../../src/models/transaction';
 import { CoinModel } from '../../../src/models/coin';
+import { TEST_BLOCK } from '../../data/test-block';
+// import { AdapterProvider } from '../../../src/providers/adapter';
+// import { Adapter } from '../../../src/types/namespaces/ChainAdapter';
+// import { Bitcoin } from '../../../src/types/namespaces/Bitcoin';
 // import * as sinon from 'sinon';
 
 
@@ -11,11 +15,7 @@ describe('Block Model', function () {
   beforeEach(async () => {
     return resetModel(BlockModel);
   });
-  describe('addBlock', () => {
-    it('should add a block', async () => {
 
-    });
-  });
   describe('getLocalTip', () => {
     it('should get the highest processed block for a particular chain and network', async () => {
 
@@ -45,6 +45,7 @@ describe('Block Model', function () {
 
     });
   });
+
   describe('getLocatorHashes', () => {
     it('should return the highest processed block hash for the last thirty blocks for a particular chain and network', async () => {
 
@@ -73,7 +74,8 @@ describe('Block Model', function () {
 
     });
   });
-  describe.only('handleReorg', () => {
+
+  describe('handleReorg', () => {
     xit('should be able to properly handle a reorg condition if incoming block already exists', async () => {
 
       await BlockModel.create({
@@ -120,7 +122,7 @@ describe('Block Model', function () {
       });
 
 
-      const result_1 = await BlockModel.getLocalTip({chain: 'BTC', network: 'regtest'});
+      const result_1 = await BlockModel.getLocalTip({ chain: 'BTC', network: 'regtest' });
       console.log('getLocalTip', result_1.hash);
 
       const result = await BlockModel.handleReorg({
@@ -249,8 +251,19 @@ describe('Block Model', function () {
         processed: true,
       });
 
-      const result1 = await BlockModel.getLocalTip({ chain: 'BTC', network: 'regtest'});
-      console.log(result1);
+      const localTip = await BlockModel.getLocalTip({ chain: 'BTC', network: 'regtest' });
+      expect(localTip).to.exist;
+      expect(localTip.chain).to.equal('BTC');
+      expect(localTip.height).to.equal(7);
+      expect(localTip.network).to.equal('regtest');
+      expect(localTip.version).to.equal(536870912);
+      expect(localTip.hash).to.equal('3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312');
+      expect(localTip.merkleRoot).to.equal('8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f');
+      expect(localTip.previousBlockHash).to.equal('2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86');
+      expect(localTip.nonce).to.equal(3);
+      expect(localTip.size).to.equal(264);
+      expect(localTip.bits).to.equal(545259519);
+      expect(localTip.processed).to.equal(true);
 
       /*
         BlockModel remove everything besides height 7 block
@@ -345,7 +358,7 @@ describe('Block Model', function () {
 
       /* should retain the document with mintHeight 5 with the spentTxid changed to null and spentHeight to -1 */
 
-      const result = await BlockModel.handleReorg({
+      await BlockModel.handleReorg({
         header: {
           prevHash: '12c719927ce18f9a61d7c5a7af08d3110cacfa43671aa700956c3c05ed38bdaa',
           hash: '4c6872bf45ecab2fb8b38c8b8f50fc4a8309c6171d28d479b8226afcb1a99920',
@@ -359,7 +372,131 @@ describe('Block Model', function () {
         network: 'regtest'
       });
 
-      console.log(result);
+      const blockModel = BlockModel.find({
+        chain: 'BTC',
+        network: 'regtest',
+        height: {
+          $gte: 5
+        }
+      }).sort({ height: - 1 });
+
+      console.log(blockModel);
+
+      //TODO: need to compare that correct localTip.height exist, correct no of documents in respective models
+
+
+    });
+  });
+
+  describe.only('addBlock', () => {
+    it('should be able to add a block', async () => {
+
+      // setting up blocks in the database
+      await BlockModel.create({
+        chain: 'BTC',
+        network: 'regtest',
+        height: 5,
+        hash: '528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7',
+        version: '536870912',
+        merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
+        time: 1526326784,
+        nonce: '3',
+        previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
+        size: 264,
+        bits: parseInt('207fffff', 16).toString(),
+        processed: true
+      });
+      await BlockModel.create({
+        chain: 'BTC',
+        network: 'regtest',
+        height: 6,
+        hash: '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
+        version: '536870912',
+        merkleRoot: '8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826',
+        time: 1526326785,
+        nonce: '0',
+        previousBlockHash: '528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7',
+        size: 264,
+        bits: parseInt('207fffff', 16).toString(),
+        processed: true
+      });
+      await BlockModel.create({
+        chain: 'BTC',
+        network: 'regtest',
+        height: 7,
+        hash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
+        version: '536870912',
+        merkleRoot: '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
+        time: 1526326785,
+        nonce: '3',
+        previousBlockHash: '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
+        size: 264,
+        bits: parseInt('207fffff', 16).toString(),
+        processed: true,
+      });
+
+      // should have 3 blocks inside the db
+
+      /*
+
+      ** handleReorg and findOne are more or so safety checks before adding the actual block
+
+      -- handle Reorg:
+
+      * remove above block
+      * remove the tx, coinmodel and, update coinmodel
+
+      -- findOne:
+
+      * findOne with header.prevHash: prevHash in TEST_BLOCK
+      * findOne should return null
+
+      -- checks:
+
+      1st check won't trigger, just return *header.time = blockTime*
+
+      -- height:
+
+      Will return *height: 1* as previousBlock was not found in this case
+
+      -- update:
+
+      happens when it doesn't match the query
+
+      -- checks:
+
+      if there was a previousBlock now it the hash of the current block
+      save it
+
+      -- batchImport:
+
+      //
+
+      -- set processed true:
+
+      final step
+
+
+      */
+
+
+
+
+
+
+      const localTip = await BlockModel.getLocalTip({ chain: 'BTC', network: 'regtest' });
+      console.log('LocalTip:', localTip);
+
+      const findOne = await BlockModel.findOne({
+        hash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9',
+        chain: 'BTC',
+        network: 'regtest'
+      });
+      console.log(findOne);
+
+
+      await BlockModel.addBlock({ block: TEST_BLOCK, chain: 'BTC', network: 'regtest'});
+
 
 
     });
