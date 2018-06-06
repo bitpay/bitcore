@@ -4,6 +4,7 @@ import { BlockModel } from '../../../src/models/block';
 import { TransactionModel } from '../../../src/models/transaction';
 import { CoinModel } from '../../../src/models/coin';
 import { TEST_BLOCK } from '../../data/test-block';
+import logger from '../../../src/logger';
 // import { AdapterProvider } from '../../../src/providers/adapter';
 // import { Adapter } from '../../../src/types/namespaces/ChainAdapter';
 // import { Bitcoin } from '../../../src/types/namespaces/Bitcoin';
@@ -448,35 +449,77 @@ describe('Block Model', function () {
         processed: true,
       });
 
-      // should have 3 blocks inside the db, added 4 one- this should act as localTip best block now
+      // should have 4 blocks inside the db, 4th one should be localTip best block with height=8
 
-      const result = await BlockModel.handleReorg({
-        header: {
-        prevHash: '6cc50922e8c1376ce0e4182c60dded5ca301789782693b40c93db00bc4827ca8',
-        hash: '63b61a1650d89db4c93f2e661280437ade826969cd429d0fb05d39e47458bac1',
-        time: 1526326786,
-        version: '536870912',
-        merkleRoot: '636c76d8434e67f919d38cb60617ae60d30b8090c613b573fd39c1c838488880',
-        bits: parseInt('207fffff', 16).toString(),
-        nonce: '0'
-        },
-        chain: 'BTC',
-        network: 'regtest'
-      });
+      //check for localtip before executing addBlock function
+      const BlocalTip = await BlockModel.getLocalTip({ chain: 'BTC', network: 'regtest' });
+      // console.log('Before:', BlocalTip);
+      logger.info('localTip currently in the db with the blockheight', BlocalTip.height);
 
+
+
+      const result = await BlockModel.addBlock({ block: TEST_BLOCK, chain: 'BTC', network: 'regtest' });
       console.log(result);
-      // handle reorg dealt with here
 
-      const previousBlock = await BlockModel.findOne({
-        hash: '6cc50922e8c1376ce0e4182c60dded5ca301789782693b40c93db00bc4827ca8',
+
+      // removes the one with height 8 and the TEST_BLOCK- Handle reorg as there is conflict
+
+      logger.info('asserting localtip after addBlock')
+      const localTip = await BlockModel.getLocalTip({ chain: 'BTC', network: 'regtest' });
+      // TODO: add assertion for time
+      expect(localTip.chain).to.equal('BTC');
+      expect(localTip.network).to.equal('regtest');
+      expect(localTip.height).to.equal(7);
+      expect(localTip.hash).to.equal('3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312');
+      expect(localTip.version).to.equal(536870912);
+      expect(localTip.merkleRoot).to.equal('8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f');
+      expect(localTip.nonce).to.equal(3);
+      expect(localTip.previousBlockHash).to.equal('2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86');
+      expect(localTip.size).to.equal(264);
+      expect(localTip.bits).to.equal(545259519);
+      expect(localTip.processed).to.equal(true);
+
+      // these assertion are for the case previousBlock doesn't exists
+      const blocks = await BlockModel.find({chain: 'BTC', network: 'regtest'}).exec();
+      expect(blocks.length).to.equal(4);
+      // console.log(blocks);
+      const ownBlock = blocks[3];
+      expect(ownBlock.chain).to.equal('BTC');
+      expect(ownBlock.hash).to.equal('64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929');
+      expect(ownBlock.network).to.equal('regtest');
+      expect(ownBlock.bits).to.equal(545259519);
+      expect(ownBlock.height).to.equal(1);
+      expect(ownBlock.merkleRoot).to.equal('08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08');
+      expect(ownBlock.nonce).to.equal(2);
+      expect(ownBlock.previousBlockHash).to.equal('3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9');
+      expect(ownBlock.reward).to.equal(0.09765625);
+      expect(ownBlock.size).to.equal(264);
+      expect(ownBlock.version).to.equal(536870912);
+      // TODO: assertion for block times
+      expect(ownBlock.transactionCount).to.equal(1);
+
+      logger.info('new block was successfully added with hash', ownBlock.hash);
+      logger.info('Moving onto Transaction Model');
+
+      const transaction = await TransactionModel.find({
         chain: 'BTC',
-        network: 'regtest'
-      });
-      console.log('Handles the previous block (returns it) ',previousBlock);
+        network: 'regtest',
+        blockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929'
+      }).exec();
+      expect(transaction.length).to.equal(1);
+      // console.log(transaction);
+      expect(transaction[0].chain).to.equal('BTC');
+      expect(transaction[0].network).to.equal('regtest');
+      expect(transaction[0].txid).to.equal('08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08');
+      expect(transaction[0].blockHash).to.equal('64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929');
+      expect(transaction[0].blockHeight).to.equal(1);
+      expect(transaction[0].coinbase).to.equal(true);
+      expect(transaction[0].locktime).to.equal(0);
+      expect(transaction[0].size).to.equal(0);
+      // TODO: assertion for block times
+      expect(transaction[0].wallets).to.be.an('array').that.is.empty;
 
-      // Conditional checking of blockTimeNormalized and height
-
-
+      logger.info('Txs were successfully stored in the TX model');
 
     });
 
@@ -586,7 +629,7 @@ describe('Block Model', function () {
       console.log(findOne);
 
 
-      await BlockModel.addBlock({ block: TEST_BLOCK, chain: 'BTC', network: 'regtest'});
+      await BlockModel.addBlock({ block: TEST_BLOCK, chain: 'BTC', network: 'regtest' });
 
 
 
