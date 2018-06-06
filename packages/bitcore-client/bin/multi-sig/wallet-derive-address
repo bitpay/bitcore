@@ -1,0 +1,115 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const bitcoreLib = require('bitcore-lib');
+const program = require('commander');
+const Wallet = require('../../lib/wallet');
+const promptly = require('promptly');
+
+program
+  .version(require('../../package.json').version)
+  .option('--path <path>', 'REQUIRED - Where wallet is stored')
+  .option('--m <m>', 'REQUIRED - How many signers are required')
+  .option('--depth <depth>', 'REQUIRED - How many addresses to derive (will derive that many change addresses too)')
+  .option('--network <network>', 'REQUIRED - Network to derive for')
+  .option('--input [input]', 'OPTIONAL - A json string to parse in the form {"xpubkey": "mXy1234"}')
+  .option('--file [file]', 'OPTIONAL - A jsonl file with {"xpubkey": "mXy1234"} in it')
+  .option('--prompt', 'OPTIONAL - Ask for the xpubkeys to derive from')
+  .option('--importToWallet [importToWallet]', 'OPTIONAL flag - import the derived addresses. Requires path')
+  .option('--exportToFile [export]', 'OPTIONAL flag - File path to save derived addresses to')
+  .parse(process.argv);
+
+const getFileKeys = file => {
+  let contents = fs.readFileSync(file).toString();
+  let fileKeys = contents
+    .split('\n')
+    .filter(line => line !== '')
+    .map(line => JSON.parse(line));
+  return fileKeys;
+};
+
+const parseKeys = keys => {
+  let parsed = JSON.parse(keys);
+  if (typeof parsed === 'object') {
+    return [parsed];
+  } else {
+    return parsed;
+  }
+};
+
+function getAddress(publicKeyRing, addressIndex, isChange, m, network) {
+  const publicKeys = publicKeyRing.map(function(key) {
+    const xpub = new bitcoreLib.HDPublicKey(key);
+    // TODO: 44 or 45?
+    const changeNum = isChange ? 1 : 0;
+    // const path = `m/44'/${i}/${changePath}/${addressIndex}`;
+    // const path = `m/44/${i}/${changePath}/${addressIndex}`;
+    // const path = `m/45/0/0/${addressIndex}`;
+    // const path = derivationFunction(addressIndex);
+    // console.log('path', path);
+    // const path = `m/44/2147483647/${addressIndex}`;
+    const path = `m/${changeNum}/${addressIndex}`;
+    return xpub.derive(path).publicKey;
+  });
+  return bitcoreLib.Address.createMultisig(publicKeys, m, network);
+}
+
+function getAllAddresses(publicKeyRing, numberOfAddresses, isChange, m, network) {
+  let addresses = [];
+  for (let i = 0; i < numberOfAddresses; i++) {
+    const address = getAddress(publicKeyRing, i, isChange, m, network);
+    addresses.push({ address: address.toString() });
+    console.log('address', address.toString(), i);
+  }
+  return addresses;
+}
+
+const main = async () => {
+  const { path, file, input, prompt, importToWallet, m, network, exportToFile, depth } = program;
+  let wallet;
+  let keyInput = [];
+  try {
+    if (file) {
+      keyInput = getFileKeys(file);
+    } else if (input) {
+      keyInput = parseKeys(input);
+    } else if (prompt) {
+      let counter = 1;
+      let xpubkey = await promptly.prompt(`Enter xpubkey ${counter} `);
+      while (xpubkey != '') {
+        keyInput.push(xpubkey);
+        counter++;
+        xpubkey = await promptly.prompt(`Enter xpubkey ${counter} `, { default: '' });
+      }
+    }
+    const mOfN = Number(m);
+    let results = getAllAddresses(keyInput, depth, false, mOfN, network);
+    let changeResult = getAllAddresses(keyInput, depth, true, mOfN, network);
+    const allAddresses = [].concat(results, changeResult);
+    if (keyInput.length < m) {
+      throw new Error(`You must enter at least ${m} xpubkeys`);
+    }
+
+    if (exportToFile) {
+      allAddresses.forEach(function(result) {
+        fs.appendFileSync(exportToFile, `${JSON.stringify(result)}\n`, 'utf8');
+      });
+      console.log(`Exported Addresses to ${exportToFile}`);
+    }
+
+    if (path && importToWallet) {
+      const password = await promptly.password('Wallet Password:');
+      if (!password) {
+        throw new Error('No password provided. Keys can\'t be imported without unlocking the wallet');
+      }
+      wallet = await Wallet.loadWallet({ path });
+      wallet = await wallet.unlock(password);
+      await wallet.importKeys({ keys: allAddresses });
+      console.log(`${allAddresses.length} Adresses Imported`);
+    }
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+main();
