@@ -23,7 +23,7 @@ export const TEST_BLOCK: Bitcoin.Block = {
         tx: [
           '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08'
         ],
-        time: 15267,
+        time: 1526756523,
         mediantime: 1526066375,
         nonce: '2',
         bits: parseInt('207fffff', 16).toString(),
