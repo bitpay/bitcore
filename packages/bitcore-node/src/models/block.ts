@@ -98,43 +98,51 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
   // Calculate block heights
   const height = i => ((startBlock && startBlock.height + 1) || 1) + i;
 
-  const hashes = await Promise.all(blocks.map(async (block, i) => {
-    await Promise.all([
-      // Add the block
-      BlockModel.update({
-        hash: block.header.hash,
-        chain,
-        network
-      }, {
-        chain,
-        network,
-        height: height(i),
-        version: block.header.version,
-        previousBlockHash: block.header.prevHash,
-        merkleRoot: block.header.merkleRoot,
-        time: new Date(block.header.time),
-        timeNormalized: new Date(normalizedTimes[i]),
-        bits: block.header.bits,
-        nonce: block.header.nonce,
-        transactionCount: block.transactions.length,
-        size: block.size,
-        reward: block.reward,
-        nextBlockHash: blocks[i + 1] && blocks[i + 1].header.hash,
-      }, {
-        upsert: true
-      }),
-      // Get the minted coins from the block
-      (async () => {
-        const mintOps = await TransactionModel.getMintOps(block.transactions, height(i));
-        logger.debug('Minting Coins', mintOps.length);
-        await batch(mintOps, 100, b => CoinModel.collection.bulkWrite(b, {
-          ordered: false
-        }));
-      })(),
-    ]);
+  const mine = BlockModel.collection.bulkWrite(blocks.map((block, i) => {
+    // Add the block
+    return {
+      updateOne: {
+        filter: {
+          hash: block.header.hash,
+          chain,
+          network
+        },
+        update: {
+          $set: {
+            chain,
+            network,
+            height: height(i),
+            version: block.header.version,
+            previousBlockHash: block.header.prevHash,
+            merkleRoot: block.header.merkleRoot,
+            time: new Date(block.header.time),
+            timeNormalized: new Date(normalizedTimes[i]),
+            bits: block.header.bits,
+            nonce: block.header.nonce,
+            transactionCount: block.transactions.length,
+            size: block.size,
+            reward: block.reward,
+            nextBlockHash: blocks[i + 1] && blocks[i + 1].header.hash,
+          }
+        },
+        upsert: true,
+        forceServerObjectId: true
+      },
+    };
+  }), {
+    ordered: false,
+  }).then(_ => {});
 
-    return block.header.hash;
-  }));
+  const mint = blocks.map(async (block, i) => {
+    const mintOps = await TransactionModel.getMintOps(block.transactions, height(i));
+    logger.debug('Minting Coins', mintOps.length);
+    await batch(mintOps, 100, b => CoinModel.collection.bulkWrite(b, {
+      ordered: false,
+    }));
+  });
+
+  await Promise.all(mint.concat([mine]));
+
 
   // Calculate Spending (unfortunately this must be done in order)
   for (const [i, block] of blocks.entries()) {
@@ -170,7 +178,7 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
     }
   })));
 
-  return hashes;
+  return blocks.map(b => b.header.hash);
 };
 
 BlockSchema.statics.getPoolInfo = function(coinbase: string) {
