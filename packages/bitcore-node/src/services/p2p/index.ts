@@ -270,10 +270,9 @@ export class P2pProxy implements CSP.Provider<P2pRunner> {
             info: {
               chain,
               network,
-              // TODO: what's the right way to do this?
-              parent: chain === 'BCH'? {
-                chain: 'BTC',
-                height: 478558,
+              parent: p2pServiceConfig.parentChain !== chain? {
+                chain: p2pServiceConfig.parentChain,
+                height: p2pServiceConfig.forkHeight,
               } : undefined,
             },
             blocks: BlockModel,

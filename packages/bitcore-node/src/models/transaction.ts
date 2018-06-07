@@ -90,11 +90,7 @@ TransactionSchema.statics.batchImport = async (txs: CoreTransaction[], blockInfo
   height: number;
 }) => {
   const batch = (items, n, f) => Promise.all(partition(items, n).map(f));
-  // TODO: is it right to assign -1 to height when there is none?
-  let height = blockInfo && blockInfo.height;
-  if (!height) {
-    height = -1;
-  }
+  const height = (blockInfo && blockInfo.height) || -1;
 
   const mintOps = await TransactionModel.getMintOps(txs, height);
   logger.debug('Minting Coins', mintOps.length);
@@ -124,8 +120,6 @@ TransactionSchema.statics.addTransactions = async (
     height: number;
   }
 ): Promise<any[]> => {
-  // TODO: ???
-  // let txids = txs.map(tx => tx._hash);
   const { chain, network } = txs[0];
   const txids = txs.map(tx => tx.hash);
 
@@ -175,7 +169,6 @@ TransactionSchema.statics.addTransactions = async (
           $set: {
             chain,
             network,
-            // TODO: is this correct?
             blockHeight: blockInfo? blockInfo.height : -1,
             blockHash: blockInfo? blockInfo.blockHash : undefined,
             blockTime: blockInfo? blockInfo.blockTime : new Date(),
@@ -211,9 +204,6 @@ TransactionSchema.statics.getMintOps = async (
   }
 
   for (const tx of txs) {
-    // TODO: what is this?
-    // tx._hash = tx.hash;
-    // let txid = tx._hash;
     for (const [index, output] of tx.outputs.entries()) {
       if (parentChainCoins.find((parentChainCoin: ICoinModel) =>
                                 parentChainCoin.mintTxid === tx.hash &&
@@ -289,8 +279,6 @@ TransactionSchema.statics.getSpendOps = (
 
   const spendOps: any[] = [];
   for (const tx of txs.filter(tx => !tx.coinbase)) {
-    // TODO: what is this?
-    // let txid = tx._hash;
     for (const input of tx.inputs) {
       const updateQuery = {
         updateOne: {
