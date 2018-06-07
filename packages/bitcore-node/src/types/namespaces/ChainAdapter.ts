@@ -37,7 +37,7 @@ export type CoreTransaction = ChainInfo & {
     outputIndex: number;
   }[];
   outputs: {
-    script: Buffer;
+    script?: Buffer;
     address: string;
     value: number;
   }[];

@@ -62,7 +62,7 @@ export class BTCAdapter implements IChainAdapter<Bitcoin.Block, Bitcoin.Transact
         return {
           address,
           value: out.satoshis,
-          script: out.script.toBuffer(),
+          script: out.script && out.script.toBuffer(),
         };
       }),
     };
