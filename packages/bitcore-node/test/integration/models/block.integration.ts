@@ -176,9 +176,9 @@ describe('Block Model', function () {
 
       await BlockModel.addBlock({ block: TEST_BLOCK, chain: 'BTC', network: 'regtest' });
 
-      const blocks = await BlockModel.find({chain: 'BTC', network: 'regtest'}).exec();
+      const blocks = await BlockModel.find({chain: 'BTC', network: 'regtest'}).sort({ height: 1 }).exec();
       expect(blocks.length).to.equal(5);
-      const ownBlock = blocks[0];
+      const ownBlock = blocks[4];
       expect(ownBlock.chain).to.equal('BTC');
       expect(ownBlock.hash).to.equal('64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929');
       expect(ownBlock.network).to.equal('regtest');
