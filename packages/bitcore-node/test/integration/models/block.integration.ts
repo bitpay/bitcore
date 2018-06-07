@@ -9,9 +9,9 @@ import logger from '../../../src/logger';
 describe('Block Model', function () {
 
   beforeEach(async () => {
-    resetModel(BlockModel);
-    resetModel(TransactionModel);
-    resetModel(CoinModel);
+    await resetModel(BlockModel);
+    await resetModel(TransactionModel);
+    await resetModel(CoinModel);
   });
 
   describe('addBlock', () => {
