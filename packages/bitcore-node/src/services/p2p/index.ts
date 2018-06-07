@@ -16,6 +16,13 @@ import { CSP } from '../../types/namespaces/ChainStateProvider';
 import { setImmediate } from 'timers';
 import { EventEmitter } from 'events';
 
+let P2PClasses: {
+  [key in keyof typeof SupportedChainSet]: Class<StandardP2p>
+} = {
+  BCH: BtcP2pService,
+  BTC: BtcP2pService
+};
+
 export interface P2pService<Block, Transaction> {
   // a stream of incoming blocks
   blocks(): Observable<CompleteBlock<Block, Transaction>>;
@@ -240,22 +247,16 @@ export class P2pRunner {
   }
 }
 
-export class P2pProxy implements CSP.Provider<P2pRunner> {
-  private services: { [key: string]: P2pRunner };
-
-  constructor() {
-    this.services = {};
-  }
-
-  get({ chain }: Chain): P2pRunner {
-    if (this.services[chain]) {
-      return this.services[chain];
+export class P2pProxy implements CSP.Provider<Class<StandardP2p>> {
+  get({ chain }: Chain): Class<StandardP2p> {
+    if (P2PClasses[chain]) {
+      return P2PClasses[chain];
     }
     throw new Error(`Chain ${chain} doesn't have a P2P Worker registered`);
   }
 
-  register(chain: string, service: P2pRunner) {
-    this.services[chain] = service;
+  register(chain: string, service: Class<StandardP2p>) {
+    P2PClasses[chain] = service;
   }
 
   build(params: {
@@ -265,26 +266,21 @@ export class P2pProxy implements CSP.Provider<P2pRunner> {
     transactions: ITransactionModel;
     config: any;
   }): P2pRunner {
-    const namesToChains: {
-      [key in keyof typeof SupportedChainSet]: () => StandardP2p
-    } = {
-      BCH: () => new BtcP2pService(params.config),
-      BTC: () => new BtcP2pService(params.config)
-    };
     logger.debug(`Building p2p service for ${params.chain}.`);
-    const service = namesToChains[params.chain]();
+    const P2PClass = this.get(params);
+    const chainP2PConnection = new P2PClass(params.config);
     const runner = new P2pRunner(
       params.chain,
       params.network,
       params.blocks,
       params.transactions,
-      service
+      chainP2PConnection
     );
     return runner;
   }
 
   async startConfiguredChains() {
-    const p2pServices: (() => Promise<any>)[] = [];
+    const p2pServices: Promise<any>[] = [];
     for (let chain of Object.keys(config.chains)) {
       for (let network of Object.keys(config.chains[chain])) {
         const chainConfig = config.chains[chain][network];
@@ -305,14 +301,13 @@ export class P2pProxy implements CSP.Provider<P2pRunner> {
             transactions: TransactionModel,
             config: p2pServiceConfig
           });
-          this.register(chain, runner);
 
           // get ready to start the service
-          p2pServices.push(() => runner.start());
+          p2pServices.push(runner.start());
         }
       }
     }
-    await Promise.all(p2pServices.map(w => w()));
+    await Promise.all(p2pServices);
   }
 }
 

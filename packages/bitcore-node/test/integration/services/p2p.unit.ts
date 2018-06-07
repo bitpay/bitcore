@@ -13,6 +13,10 @@ describe('P2P Service', () => {
     this.timeout(15000);
     await Storage.start({});
 
+    expect(config.chains.BTC).to.not.be.undefined;;
+    expect(config.chains.BTC.regtest).to.not.be.undefined;;
+    expect(config.chains.BTC.regtest.rpc).to.not.be.undefined;;
+
     const creds = config.chains.BTC.regtest.rpc;
     const rpc = new RPC(creds.username, creds.password, creds.host, creds.port);
     const chain = 'BTC';
