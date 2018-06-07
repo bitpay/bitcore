@@ -64,9 +64,31 @@ function getAllAddresses(publicKeyRing, numberOfAddresses, isChange, m, network)
   return addresses;
 }
 
+async function readFromPrompt() {
+  let counter = 1;
+  let xpubkey = await promptly.prompt(`Enter xpubkey ${counter} `);
+  let promptResults = [];
+  while (xpubkey != '') {
+    promptResults.push(xpubkey);
+    counter++;
+    xpubkey = await promptly.prompt(`Enter xpubkey ${counter} `, { default: '' });
+  }
+  return promptResults;
+}
+
+async function importAddressesToWallet(path, addresses) {
+  const password = await promptly.password('Wallet Password:');
+  if (!password) {
+    throw new Error('No password provided. Keys can\'t be imported without unlocking the wallet');
+  }
+  let wallet = await Wallet.loadWallet({ path });
+  wallet = await wallet.unlock(password);
+  await wallet.importKeys({ keys: addresses });
+  console.log(`${addresses.length} Adresses Imported`);
+}
+
 const main = async () => {
   const { path, file, input, prompt, importToWallet, m, network, exportToFile, depth } = program;
-  let wallet;
   let keyInput = [];
   try {
     if (file) {
@@ -74,13 +96,7 @@ const main = async () => {
     } else if (input) {
       keyInput = parseKeys(input);
     } else if (prompt) {
-      let counter = 1;
-      let xpubkey = await promptly.prompt(`Enter xpubkey ${counter} `);
-      while (xpubkey != '') {
-        keyInput.push(xpubkey);
-        counter++;
-        xpubkey = await promptly.prompt(`Enter xpubkey ${counter} `, { default: '' });
-      }
+      keyInput = await readFromPrompt();
     }
     const mOfN = Number(m);
     let results = getAllAddresses(keyInput, depth, false, mOfN, network);
@@ -98,14 +114,7 @@ const main = async () => {
     }
 
     if (path && importToWallet) {
-      const password = await promptly.password('Wallet Password:');
-      if (!password) {
-        throw new Error('No password provided. Keys can\'t be imported without unlocking the wallet');
-      }
-      wallet = await Wallet.loadWallet({ path });
-      wallet = await wallet.unlock(password);
-      await wallet.importKeys({ keys: allAddresses });
-      console.log(`${allAddresses.length} Adresses Imported`);
+      await importAddressesToWallet(path, allAddresses);
     }
   } catch (e) {
     console.error(e);
