@@ -16,7 +16,6 @@ import { CSP } from '../../types/namespaces/ChainStateProvider';
 import { setImmediate } from 'timers';
 import { EventEmitter } from 'events';
 
-
 export interface P2pService<Block, Transaction> {
   // a stream of incoming blocks
   blocks(): Observable<CompleteBlock<Block, Transaction>>;
@@ -45,20 +44,16 @@ export interface P2pService<Block, Transaction> {
   syncing: boolean;
 }
 
-
 export type StandardP2p = P2pService<Bitcoin.Block, Bitcoin.Transaction>;
 
-
 export type CompleteBlock<B, T> = {
-  block: B,
-  transactions: T[],
+  block: B;
+  transactions: T[];
 };
 
-
 export enum P2pEvents {
-  SYNC_COMPLETE = 'SYNC_COMPLETE',
+  SYNC_COMPLETE = 'SYNC_COMPLETE'
 }
-
 
 export class P2pRunner {
   private service: StandardP2p;
@@ -84,50 +79,67 @@ export class P2pRunner {
     this.events = new EventEmitter();
   }
 
+  async wireupBlockStream(syncer, parent?) {
+    return this.service
+      .blocks()
+      .pipe(
+        concatMap(async pair => {
+          await this.blocks.addBlock({
+            chain: this.chain,
+            network: this.network,
+            forkHeight: parent ? parent.height : 0,
+            parentChain: parent ? parent.chain : this.chain,
+            block: pair.block
+          });
+          if (this.service.syncing) {
+            syncer.add(pair.block.hash);
+          } else {
+            logger.info(`Added block ${pair.block.hash}`, {
+              chain: this.chain,
+              network: this.network
+            });
+          }
+          return pair;
+        })
+      )
+      .pipe(share());
+  }
+
+  async wireupTxStream() {
+    return this.service
+      .transactions()
+      .pipe(
+        concatMap(async transaction => {
+          await this.transactions.batchImport({
+            txs: [transaction],
+            height: -1,
+            network: this.network,
+            chain: this.chain,
+            blockTime: new Date(),
+            blockTimeNormalized: new Date()
+          });
+          logger.debug(`Added transaction ${transaction.hash}`, {
+            chain: this.chain,
+            network: this.network
+          });
+          return transaction;
+        })
+      )
+      .pipe(share());
+  }
+
   async start(): Promise<{
-    blocks: Observable<CompleteBlock<Bitcoin.Block, Bitcoin.Transaction>>,
-    transactions: Observable<Bitcoin.Transaction>,
+    blocks: Observable<CompleteBlock<Bitcoin.Block, Bitcoin.Transaction>>;
+    transactions: Observable<Bitcoin.Transaction>;
   }> {
     logger.debug(`Started worker for chain ${this.chain}`);
     const parent = this.service.parent();
     const syncer = await this.sync();
 
-    const blocks = this.service.blocks().pipe(concatMap(async pair => {
-      await this.blocks.addBlock({
-        chain: this.chain,
-        network: this.network,
-        forkHeight: parent? parent.height : 0,
-        parentChain: parent? parent.chain : this.chain,
-        block: pair.block
-      });
-      if (this.service.syncing) {
-        syncer.add(pair.block.hash);
-      }
-      else {
-        logger.info(`Added block ${pair.block.hash}`, {
-          chain: this.chain,
-          network: this.network,
-        });
-      }
-      return pair;
-    })).pipe(share());
+    const blocks = await this.wireupBlockStream(syncer, parent);
     blocks.subscribe(() => {}, logger.error.bind(logger));
 
-    const txs = this.service.transactions().pipe(concatMap(async transaction => {
-      await this.transactions.batchImport({
-        txs: [transaction],
-        height: -1,
-        network: this.network,
-        chain: this.chain,
-        blockTime: new Date(),
-        blockTimeNormalized: new Date(),
-      });
-      logger.debug(`Added transaction ${transaction.hash}`, {
-        chain: this.chain,
-        network: this.network,
-      });
-      return transaction;
-    })).pipe(share());
+    const txs = await this.wireupTxStream();
     txs.subscribe(() => {}, logger.error.bind(logger));
 
     // wait for it to get connected
@@ -135,17 +147,18 @@ export class P2pRunner {
     syncer.start();
     return {
       blocks,
-      transactions: txs,
+      transactions: txs
     };
   }
 
   async sync() {
     this.service.syncing = true;
     const parent = this.service.parent();
-    const tip = () => this.blocks.getLocalTip({
-      chain: this.chain,
-      network: this.network
-    });
+    const tip = () =>
+      this.blocks.getLocalTip({
+        chain: this.chain,
+        network: this.network
+      });
     let finished = false;
     let finalHash;
     let recentHash;
@@ -164,17 +177,17 @@ export class P2pRunner {
         do {
           await sleep(5000);
           bestBlock = await tip();
-        }
-        while (bestBlock.height < parent.height);
+        } while (bestBlock.height < parent.height);
       }
 
       counter = bestBlock.height;
       goalHeight = this.service.height();
       if (bestBlock.height !== goalHeight) {
         logger.info(
-          `Syncing from ${bestBlock.height} to ${this.service.height()} for chain ${
-          this.chain
-        }`);
+          `Syncing from ${
+            bestBlock.height
+          } to ${this.service.height()} for chain ${this.chain}`
+        );
 
         const locators = await this.blocks.getLocatorHashes({
           chain: this.chain,
@@ -186,8 +199,7 @@ export class P2pRunner {
         if (finalHash && recentHash === finalHash) {
           setImmediate(() => start());
         }
-      }
-      else {
+      } else {
         logger.info(`${this.chain} up to date.`);
         this.service.syncing = false;
         finished = true;
@@ -207,25 +219,26 @@ export class P2pRunner {
         });
         counter += 1;
         if (Date.now() - lastLog > 100) {
-          logger.info(`Sync progress ${(counter * 100 / goalHeight).toFixed(3)}%`, {
-            chain: this.chain,
-            network: this.network,
-            height: counter
-          });
+          logger.info(
+            `Sync progress ${(counter * 100 / goalHeight).toFixed(3)}%`,
+            {
+              chain: this.chain,
+              network: this.network,
+              height: counter
+            }
+          );
           lastLog = Date.now();
         }
         if (hash === finalHash) {
           start();
-        }
-        else {
+        } else {
           recentHash = hash;
         }
       },
-      start,
+      start
     };
   }
 }
-
 
 export class P2pProxy implements CSP.Provider<P2pRunner> {
   private services: { [key: string]: P2pRunner };
@@ -246,19 +259,19 @@ export class P2pProxy implements CSP.Provider<P2pRunner> {
   }
 
   build(params: {
-    chain: SupportedChain,
-    network: string,
-    blocks: IBlockModel,
-    transactions: ITransactionModel,
-    config: any,
+    chain: SupportedChain;
+    network: string;
+    blocks: IBlockModel;
+    transactions: ITransactionModel;
+    config: any;
   }): P2pRunner {
     const namesToChains: {
       [key in keyof typeof SupportedChainSet]: () => StandardP2p
     } = {
       BCH: () => new BtcP2pService(params.config),
-      BTC: () => new BtcP2pService(params.config),
+      BTC: () => new BtcP2pService(params.config)
     };
-    logger.debug(`Building p2p service for ${params.chain}.`)
+    logger.debug(`Building p2p service for ${params.chain}.`);
     const service = namesToChains[params.chain]();
     const runner = new P2pRunner(
       params.chain,
@@ -279,10 +292,10 @@ export class P2pProxy implements CSP.Provider<P2pRunner> {
         const isP2p = chainConfig.chainSource === 'p2p';
 
         if (isChainSupported(chain) && (!hasChainSource || isP2p)) {
-          let p2pServiceConfig = Object.assign(
-            config.chains[chain][network],
-            { chain, network }
-          );
+          let p2pServiceConfig = Object.assign(config.chains[chain][network], {
+            chain,
+            network
+          });
 
           // build the correct service for the chain
           const runner = this.build({
@@ -290,7 +303,7 @@ export class P2pProxy implements CSP.Provider<P2pRunner> {
             network,
             blocks: BlockModel,
             transactions: TransactionModel,
-            config: p2pServiceConfig,
+            config: p2pServiceConfig
           });
           this.register(chain, runner);
 
@@ -302,6 +315,5 @@ export class P2pProxy implements CSP.Provider<P2pRunner> {
     await Promise.all(p2pServices.map(w => w()));
   }
 }
-
 
 export const P2pProvider = new P2pProxy();
