@@ -47,13 +47,16 @@ export class BTCAdapter implements IChainAdapter<Bitcoin.Block, Bitcoin.Transact
       inputs: transaction.inputs.map(input => input.toObject()),
       outputs: transaction.outputs.map(out => {
         // TODO: is there always an address?
-        let address = out.script.toAddress(info.network).toString();
-        if (address === "false" &&
-            out.script.classify() === "Pay to public key"
-        ) {
-          const hash = Chain[info.chain].lib.crypto.Hash.sha256ripemd160(
-            out.script.chunks[0].buf);
-          address = Chain[info.chain].lib.Address(hash, info.network).toString();
+        let address = "";
+        if (out.script && out.script.toBuffer()) {
+          address = out.script.toAddress(info.network).toString();
+          if (address === "false" &&
+              out.script.classify() === "Pay to public key"
+             ) {
+            const hash = Chain[info.chain].lib.crypto.Hash.sha256ripemd160(
+              out.script.chunks[0].buf);
+            address = Chain[info.chain].lib.Address(hash, info.network).toString();
+          }
         }
 
         return {

@@ -149,7 +149,6 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       });
     });
 
-    // TODO: should `sync` also sync the newest transactions not in a block?
     this.pool.on('peertx', (peer, message) => {
       logger.debug('peer tx received', {
         peer: `${peer.host}:${peer.port}`,
@@ -159,7 +158,6 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       });
       const hash = message.transaction.hash;
       if (!this.invCache[this.bitcoreP2p.Inventory.TYPE.TX].use(hash)) {
-        // TODO: what to do when a transaction is received during sync?
         this.stream.transactions.next(message.transaction);
       }
     });
