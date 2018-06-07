@@ -6,8 +6,10 @@ import { LoggifyClass } from '../../decorators/Loggify';
 import { P2pService } from '.';
 
 import { EventEmitter } from 'events';
-import { Subject } from 'rxjs';
+import { Subject, queueScheduler } from 'rxjs';
 import { Cache } from '../../utils/cache';
+import { partition } from '../../utils/partition';
+import { observeOn, share } from 'rxjs/operators';
 
 const Chain = require('../../chain');
 
@@ -171,8 +173,8 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       });
       const hash = message.block.hash;
 
+      this.emit(hash, message.block);
       if (!this.invCache[this.bitcoreP2p.Inventory.TYPE.BLOCK].use(hash)) {
-        this.emit(hash, message.block);
         if (!this.syncing) {
           this.stream.blocks.next([message.block]);
         }
@@ -220,11 +222,50 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
   }
 
   public async sync(locatorHashes: string[]): Promise<string | undefined> {
+    // TODO: configurable limit?
+    const limit = 35000000;
     const headers = await this.getHeaders(locatorHashes);
-    const blocks = await Promise.all(headers.map(h => this.getBlock(h.hash)));
-    // TODO: need to find a good batching value
+    if (headers.length === 0) {
+      return undefined;
+    }
+
+    const blocks = await partition(headers, 100).reduce(async (prev, batch) => {
+      const { accum, total, done } = await prev;
+      if (done) {
+        return { accum, total, done };
+      }
+      const blocks = await Promise.all(batch.map(h => this.getBlock(h.hash)));
+      const sizes = blocks.map(b => b.toBuffer().length);
+      const size = sizes.reduce((a, b) => a + b);
+
+      if (total + size > limit) {
+        const subset = sizes
+          .reduce((prev, curr) => {
+            return prev.concat((prev.slice(-1)[0] || 0) + curr);
+          }, [] as number[])
+          .findIndex(s => s > limit) - 1;
+        const i = accum.length > 0 ? subset : Math.max(subset, 1);
+        return {
+          accum: accum.concat(blocks.slice(0, i)),
+          total,
+          done: true
+        };
+      }
+      return {
+        accum: accum.concat(blocks),
+        total: total + size,
+        done: false,
+      };
+    }, Promise.resolve({
+      accum: [] as Bitcoin.Block[],
+      total: 0,
+      done: false,
+    })).then(d => d.accum);
+
+    logger.info(`Syncing ${blocks.length} blocks...`);
     this.stream.blocks.next(blocks);
-    return blocks.length > 0? blocks[blocks.length - 1].hash : undefined;
+
+    return blocks.slice(-1)[0].hash;
   }
 
   public height(): number {
@@ -284,7 +325,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
   }
 
   blocks() {
-    return this.stream.blocks;
+    return this.stream.blocks.pipe(share()).pipe(observeOn(queueScheduler));
   }
 
   transactions() {
