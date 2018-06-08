@@ -1,4 +1,4 @@
-import { TEST_TX, TEST_TX_1, TEST_TX_3 } from './test-tx';
+import { TEST_TX, TEST_TX_1, TEST_TX_2, TEST_TX_3 } from './test-tx';
 import { Bitcoin } from '../../src/types/namespaces/Bitcoin';
 export const TEST_BLOCK: Bitcoin.Block = {
   hash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
@@ -74,7 +74,7 @@ export const TEST_BLOCK_1: Bitcoin.Block = {
 };
 export const TEST_BLOCK_2: Bitcoin.Block = {
   hash: '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
-  transactions: [TEST_TX_3],
+  transactions: [TEST_TX_2],
   toBuffer: () => {
     return { length: 264 } as Buffer;
   },
