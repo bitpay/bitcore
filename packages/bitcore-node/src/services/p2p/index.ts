@@ -15,7 +15,7 @@ import { CSP } from '../../types/namespaces/ChainStateProvider';
 import { setImmediate } from 'timers';
 import { EventEmitter } from 'events';
 
-let P2PClasses: {
+const P2PClasses: {
   [key: string]: Class<StandardP2p>;
 } = {
   BCH: BtcP2pService,
