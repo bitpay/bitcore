@@ -3,7 +3,7 @@ import { resetDatabase } from '../../helpers/index';
 import { BlockModel } from '../../../src/models/block';
 import { TransactionModel } from '../../../src/models/transaction';
 import { CoinModel } from '../../../src/models/coin';
-import { TEST_BLOCK } from '../../data/test-block';
+import { TEST_CORE_BLOCK } from '../../data/test-block';
 import logger from '../../../src/logger';
 
 describe('Block Model', function () {
@@ -70,7 +70,7 @@ describe('Block Model', function () {
         processed: true,
       });
 
-      await BlockModel.addBlock({ block: TEST_BLOCK, chain: 'BTC', network: 'regtest' });
+      await BlockModel.addBlock(TEST_CORE_BLOCK);
 
       const blocks = await BlockModel.find({ chain: 'BTC', network: 'regtest' }).exec();
       expect(blocks.length).to.equal(4);
@@ -171,7 +171,7 @@ describe('Block Model', function () {
         processed: true,
       });
 
-      await BlockModel.addBlock({ block: TEST_BLOCK, chain: 'BTC', network: 'regtest' });
+      await BlockModel.addBlock(TEST_CORE_BLOCK);
 
       const blocks = await BlockModel.find({ chain: 'BTC', network: 'regtest' }).sort({ height: 1 }).exec();
       expect(blocks.length).to.equal(5);
@@ -320,19 +320,13 @@ describe('Block Model', function () {
         processed: true,
       });
 
-      await BlockModel.handleReorg({
-        header: {
-          prevHash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
-          hash: '12c719927ce18f9a61d7c5a7af08d3110cacfa43671aa700956c3c05ed38bdaa',
-          time: 1526326785,
-          version: '536870912',
-          merkleRoot: '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
-          bits: parseInt('207fffff', 16).toString(),
-          nonce: '3'
-        },
-        chain: 'BTC',
-        network: 'regtest'
-      });
+      await BlockModel.handleReorg(
+        '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
+        {
+          chain: 'BTC',
+          network: 'regtest'
+        }
+      );
 
       const result = await BlockModel.find({ chain: 'BTC', network: 'regtest' }).exec();
       expect(result.length).to.equal(3);
@@ -340,19 +334,13 @@ describe('Block Model', function () {
     });
     it('should not reorg if localTip height is zero', async () => {
 
-      await BlockModel.handleReorg({
-        header: {
-          prevHash: '12c719927ce18f9a61d7c5a7af08d3110cacfa43671aa700956c3c05ed38bdaa',
-          hash: '4c6872bf45ecab2fb8b38c8b8f50fc4a8309c6171d28d479b8226afcb1a99920',
-          time: 1526326785,
-          version: '536870912',
-          merkleRoot: '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
-          bits: parseInt('207fffff', 16).toString(),
-          nonce: '3'
-        },
-        chain: 'BTC',
-        network: 'regtest'
-      });
+      await BlockModel.handleReorg(
+        '12c719927ce18f9a61d7c5a7af08d3110cacfa43671aa700956c3c05ed38bdaa',
+        {
+          chain: 'BTC',
+          network: 'regtest'
+        }
+      );
 
       const result = await BlockModel.find({ chain: 'BTC', network: 'regtest' }).exec();
       expect(result.length).to.equal(0);
@@ -472,19 +460,13 @@ describe('Block Model', function () {
         spentHeight: 9
       });
 
-      await BlockModel.handleReorg({
-        header: {
-          prevHash: '12c719927ce18f9a61d7c5a7af08d3110cacfa43671aa700956c3c05ed38bdaa',
-          hash: '4c6872bf45ecab2fb8b38c8b8f50fc4a8309c6171d28d479b8226afcb1a99920',
-          time: 1526326785,
-          version: '536870912',
-          merkleRoot: '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
-          bits: parseInt('207fffff', 16).toString(),
-          nonce: '3'
-        },
-        chain: 'BTC',
-        network: 'regtest'
-      });
+      await BlockModel.handleReorg(
+        '12c719927ce18f9a61d7c5a7af08d3110cacfa43671aa700956c3c05ed38bdaa',
+        {
+          chain: 'BTC',
+          network: 'regtest'
+        }
+      );
 
       // check for removed block after Reorg in db
       const blocks = await BlockModel.find({
