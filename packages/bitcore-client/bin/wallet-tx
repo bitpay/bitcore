@@ -21,10 +21,12 @@ const main = async () => {
   const { path } = program;
   let wallet;
   try {
-    const password = await promptly.password('Wallet Password:');
-    wallet = await Wallet.loadWallet({ path });
-    wallet = await wallet.unlock(password);
     const { addresses, amount, utxos, change, fee } = program;
+    wallet = await Wallet.loadWallet({ path });
+    if (utxos) {
+      const password = await promptly.password('Wallet Password:');
+      wallet = await wallet.unlock(password);
+    }
     let params = { addresses, amount, utxos, change, fee };
     params.addresses = addresses.includes('[') ? JSON.parse(addresses) : addresses;
     params.utxos = params.utxos ? JSON.parse(params.utxos) : [];

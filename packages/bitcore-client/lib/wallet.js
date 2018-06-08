@@ -12,8 +12,7 @@ class Wallet {
     if (!this.masterKey) {
       return new Wallet(this.create(params));
     }
-    this.baseUrl =
-      this.baseUrl || `http://127.0.0.1:3000/api/${this.chain}/${this.network}`;
+    this.baseUrl = this.baseUrl || `http://127.0.0.1:3000/api/${this.chain}/${this.network}`;
   }
 
   saveWallet() {
@@ -29,19 +28,9 @@ class Wallet {
     const privateKey = mnemonic.toHDPrivateKey(password);
     const pubKey = privateKey.hdPublicKey.publicKey.toString();
     const walletEncryptionKey = Encrypter.generateEncryptionKey();
-    const keyObj = Object.assign(
-      privateKey.toObject(),
-      privateKey.hdPublicKey.toObject()
-    );
-    const encryptionKey = Encrypter.encryptEncryptionKey(
-      walletEncryptionKey,
-      password
-    );
-    const encPrivateKey = Encrypter.encryptPrivateKey(
-      JSON.stringify(keyObj),
-      pubKey,
-      walletEncryptionKey
-    );
+    const keyObj = Object.assign(privateKey.toObject(), privateKey.hdPublicKey.toObject());
+    const encryptionKey = Encrypter.encryptEncryptionKey(walletEncryptionKey, password);
+    const encPrivateKey = Encrypter.encryptPrivateKey(JSON.stringify(keyObj), pubKey, walletEncryptionKey);
     const storage = new Storage({
       path,
       errorIfExists: true,
@@ -63,9 +52,7 @@ class Wallet {
 
   static async loadWallet(params) {
     const { path } = params;
-    const storage =
-      params.storage ||
-      new Storage({ path, errorIfExists: false, createIfMissing: false });
+    const storage = params.storage || new Storage({ path, errorIfExists: false, createIfMissing: false });
     const loadedWallet = await storage.loadWallet();
     return new Wallet(Object.assign(loadedWallet, { storage }));
   }
@@ -76,21 +63,12 @@ class Wallet {
 
   async unlock(password) {
     const encMasterKey = this.masterKey;
-    let validPass = await Bcrypt.compare(password, this.password).catch(
-      () => false
-    );
+    let validPass = await Bcrypt.compare(password, this.password).catch(() => false);
     if (!validPass) {
       throw new Error('Incorrect Password');
     }
-    const encryptionKey = await Encrypter.decryptEncryptionKey(
-      this.encryptionKey,
-      password
-    );
-    const masterKeyStr = await Encrypter.decryptPrivateKey(
-      encMasterKey,
-      this.pubKey,
-      encryptionKey
-    );
+    const encryptionKey = await Encrypter.decryptEncryptionKey(this.encryptionKey, password);
+    const masterKeyStr = await Encrypter.decryptPrivateKey(encMasterKey, this.pubKey, encryptionKey);
     const masterKey = JSON.parse(masterKeyStr);
     this.unlocked = {
       encryptionKey,
@@ -121,9 +99,7 @@ class Wallet {
   }
 
   getAuthSigningKey() {
-    return new bitcoreLib.HDPrivateKey(
-      this.unlocked.masterKey.xprivkey
-    ).deriveChild('m/2').privateKey;
+    return new bitcoreLib.HDPrivateKey(this.unlocked.masterKey.xprivkey).deriveChild('m/2').privateKey;
   }
 
   getBalance() {
