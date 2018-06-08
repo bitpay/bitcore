@@ -9,7 +9,6 @@ import { ChainNetwork, Chain } from '../../types/ChainNetwork';
 import { IBlockModel } from '../../models/block';
 import { sleep } from '../../utils/async';
 import { ITransactionModel } from '../../models/transaction';
-import { SupportedChain, SupportedChainSet } from '../../types/SupportedChain';
 import { BtcP2pService } from './bitcoin';
 import { Bitcoin } from '../../types/namespaces/Bitcoin';
 import { CSP } from '../../types/namespaces/ChainStateProvider';
@@ -17,7 +16,7 @@ import { setImmediate } from 'timers';
 import { EventEmitter } from 'events';
 
 let P2PClasses: {
-  [key in keyof typeof SupportedChainSet]: Class<StandardP2p>
+  [key: string]: Class<StandardP2p>;
 } = {
   BCH: BtcP2pService,
   BTC: BtcP2pService
@@ -52,6 +51,10 @@ export interface P2pService<Block, Transaction> {
 }
 
 export type StandardP2p = P2pService<Bitcoin.Block, Bitcoin.Transaction>;
+type ChainSyncer = {
+  add: (string) => void;
+  start: () => Promise<any>;
+};
 
 export type CompleteBlock<B, T> = {
   block: B;
@@ -86,7 +89,10 @@ export class P2pRunner {
     this.events = new EventEmitter();
   }
 
-  async wireupBlockStream(syncer, parent?) {
+  private async wireupBlockStream(
+    syncer: ChainSyncer,
+    parent?: { height: number; chain: string }
+  ){
     return this.service
       .blocks()
       .pipe(
@@ -112,7 +118,7 @@ export class P2pRunner {
       .pipe(share());
   }
 
-  async wireupTxStream() {
+  private async wireupTxStream() {
     return this.service
       .transactions()
       .pipe(
@@ -158,14 +164,14 @@ export class P2pRunner {
     };
   }
 
-  async sync() {
+  async sync(): Promise<ChainSyncer> {
     this.service.syncing = true;
     const parent = this.service.parent();
     const tip = () =>
-      this.blocks.getLocalTip({
-        chain: this.chain,
-        network: this.network
-      });
+    this.blocks.getLocalTip({
+      chain: this.chain,
+      network: this.network
+    });
     let finished = false;
     let finalHash;
     let recentHash;
@@ -260,7 +266,7 @@ export class P2pProxy implements CSP.Provider<Class<StandardP2p>> {
   }
 
   build(params: {
-    chain: SupportedChain;
+    chain: string;
     network: string;
     blocks: IBlockModel;
     transactions: ITransactionModel;
