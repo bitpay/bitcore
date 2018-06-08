@@ -8,9 +8,9 @@ const promptly = require('promptly');
 
 program
   .version(require('../../package.json').version)
-  .option('--path <path>', 'REQUIRED - Where wallet is stored')
-  .option('--m <m>', 'REQUIRED - How many signers are required')
-  .option('--depth <depth>', 'REQUIRED - How many addresses to derive (will derive that many change addresses too)')
+  .option('--path <path>', 'REQUIRED - Filepath where wallet is stored')
+  .option('--m <m>', 'REQUIRED - Number of signers required')
+  .option('--depth <depth>', 'REQUIRED - Number of addresses to derive (will derive that many change addresses too)')
   .option('--network <network>', 'REQUIRED - Network to derive for')
   .option('--input [input]', 'OPTIONAL - A json string to parse in the form {"xpubkey": "mXy1234"}')
   .option('--file [file]', 'OPTIONAL - A jsonl file with {"xpubkey": "mXy1234"} in it')
@@ -40,14 +40,7 @@ const parseKeys = keys => {
 function getAddress(publicKeyRing, addressIndex, isChange, m, network) {
   const publicKeys = publicKeyRing.map(function(key) {
     const xpub = new bitcoreLib.HDPublicKey(key);
-    // TODO: 44 or 45?
     const changeNum = isChange ? 1 : 0;
-    // const path = `m/44'/${i}/${changePath}/${addressIndex}`;
-    // const path = `m/44/${i}/${changePath}/${addressIndex}`;
-    // const path = `m/45/0/0/${addressIndex}`;
-    // const path = derivationFunction(addressIndex);
-    // console.log('path', path);
-    // const path = `m/44/2147483647/${addressIndex}`;
     const path = `m/${changeNum}/${addressIndex}`;
     return xpub.derive(path).publicKey;
   });
@@ -68,7 +61,7 @@ async function readFromPrompt() {
   let counter = 1;
   let xpubkey = await promptly.prompt(`Enter xpubkey ${counter} `);
   let promptResults = [];
-  while (xpubkey != '') {
+  while (xpubkey.trim() != '') {
     promptResults.push(xpubkey);
     counter++;
     xpubkey = await promptly.prompt(`Enter xpubkey ${counter} `, { default: '' });
@@ -102,7 +95,7 @@ const main = async () => {
     let results = getAllAddresses(keyInput, depth, false, mOfN, network);
     let changeResult = getAllAddresses(keyInput, depth, true, mOfN, network);
     const allAddresses = [].concat(results, changeResult);
-    if (keyInput.length < m) {
+    if (keyInput.length < mOfN) {
       throw new Error(`You must enter at least ${m} xpubkeys`);
     }
 
