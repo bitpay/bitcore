@@ -282,9 +282,7 @@ TransactionSchema.statics.getMintOps = async function(
             )
             .map(wallet => wallet.wallet);
 
-          Object.assign(mintOp, {
-            updateOne: { update: { $set: { wallets: transformedWallets } } }
-          });
+          mintOp.updateOne.update.$set.wallets = transformedWallets;
           return mintOp;
         });
       }
@@ -328,9 +326,7 @@ TransactionSchema.statics.getSpendOps = function(
         }
       };
       if (config.pruneSpentScripts && height > 0) {
-        Object.assign(updateQuery, {
-          updateOne: { update: { $unset: { script: null } } }
-        });
+        Object.assign(updateQuery.updateOne.update, {$unset: {script: null}});
       }
       spendOps.push(updateQuery);
     }
