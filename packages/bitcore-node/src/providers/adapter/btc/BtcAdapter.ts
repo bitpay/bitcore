@@ -1,58 +1,70 @@
-import { IBlock } from '../../../models/block';
-import { ITransaction } from '../../../models/transaction';
-import { Adapter } from '../../../types/namespaces/ChainAdapter';
 import { Bitcoin } from "../../../types/namespaces/Bitcoin";
+import {
+  IChainAdapter,
+  CoreBlock,
+  ChainInfo,
+  CoreTransaction,
+} from '../../../types/namespaces/ChainAdapter';
+const Chain = require("../../../chain");
 
-type BitcoinConvertBlockParams = Adapter.ConvertBlockParams<Bitcoin.Block>;
-type BitcoinConvertTxParams = Adapter.ConvertTxParams<
-  Bitcoin.Transaction,
-  Bitcoin.Block
->;
-
-export class BTCAdapter
-  implements Adapter.IChainAdapter<Bitcoin.Block, Bitcoin.Transaction> {
-  convertBlock(params: BitcoinConvertBlockParams): IBlock {
-    const { chain, network, height, block } = params;
-    let header = block.header.toObject();
-    const converted: IBlock = {
-      chain,
-      network,
-      height,
-      hash: block.hash,
-      previousBlockHash: header.prevHash,
-      merkleRoot: header.merkleRoot,
-      version: Number(header.version),
-      bits: Number(header.bits),
-      nonce: Number(header.nonce),
-      time: new Date(header.time * 1000),
-      timeNormalized: new Date(header.time * 1000),
-      transactionCount: block.transactions.length,
+export class BTCAdapter implements IChainAdapter<Bitcoin.Block, Bitcoin.Transaction> {
+  convertBlock(info: ChainInfo, block: Bitcoin.Block): CoreBlock {
+    const header = block.header.toObject();
+    return {
+      chain: info.chain,
+      network: info.network,
+      parent: info.parent? {
+        chain: info.parent.chain,
+        height: info.parent.height,
+      } : undefined,
+      header: {
+        hash: header.hash,
+        prevHash: header.prevHash,
+        version: header.version,
+        time: header.time,
+        merkleRoot: header.merkleRoot,
+        bits: header.bits,
+        nonce: header.nonce,
+      },
       size: block.toBuffer().length,
       reward: block.transactions[0].outputAmount,
-      nextBlockHash: '',
-      processed: false
+      transactions: block.transactions.map(tx => this.convertTx(info, tx)),
     };
-    return converted;
   }
 
-  convertTx(params: BitcoinConvertTxParams) {
-    const convertedBlock = this.convertBlock(params);
-    const { chain, network, tx } = params;
-    const { time, height, hash, timeNormalized } = convertedBlock;
-    const converted: ITransaction = {
-      chain,
-      network,
-      txid: tx.hash,
-      coinbase: tx.isCoinbase(),
-      fee: 0,
-      size: tx.toBuffer().length,
-      locktime: tx.nLockTime,
-      wallets: [],
-      blockHash: hash,
-      blockTime: time,
-      blockHeight: height,
-      blockTimeNormalized: timeNormalized
+  convertTx(info: ChainInfo, transaction: Bitcoin.Transaction): CoreTransaction {
+    return {
+      chain: info.chain,
+      network: info.network,
+      parent: info.parent? {
+        chain: info.parent.chain,
+        height: info.parent.height,
+      } : undefined,
+      hash: transaction.hash,
+      size: transaction.toBuffer().length,
+      coinbase: transaction.isCoinbase(),
+      nLockTime: transaction.nLockTime,
+      inputs: transaction.inputs.map(input => input.toObject()),
+      outputs: transaction.outputs.map(out => {
+        // TODO: is there always an address?
+        let address = "";
+        if (out.script && out.script.toBuffer()) {
+          address = out.script.toAddress(info.network).toString();
+          if (address === "false" &&
+              out.script.classify() === "Pay to public key"
+             ) {
+            const hash = Chain[info.chain].lib.crypto.Hash.sha256ripemd160(
+              out.script.chunks[0].buf);
+            address = Chain[info.chain].lib.Address(hash, info.network).toString();
+          }
+        }
+
+        return {
+          address,
+          value: out.satoshis,
+          script: out.script.toBuffer(),
+        };
+      }),
     };
-    return converted;
   }
 }

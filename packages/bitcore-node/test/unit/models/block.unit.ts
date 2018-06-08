@@ -3,21 +3,11 @@ import { BlockModel } from '../../../src/models/block';
 import { TransactionModel } from '../../../src/models/transaction';
 import { CoinModel } from '../../../src/models/coin';
 import * as sinon from 'sinon';
-import { TEST_BLOCK } from '../../data/test-block';
-import { AdapterProvider } from '../../../src/providers/adapter';
-import { Adapter } from '../../../src/types/namespaces/ChainAdapter';
-import { Bitcoin } from '../../../src/types/namespaces/Bitcoin';
+import { TEST_BLOCK, TEST_CORE_BLOCK, TEST_MONGO_BLOCK } from '../../data/test-block';
 
 describe('Block Model', function () {
 
   describe('addBlock', () => {
-    let addBlockParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
-      chain: 'BTC',
-      network: 'regtest',
-      block: TEST_BLOCK,
-      height: 1355
-    };
-    const internalBlock = AdapterProvider.convertBlock(addBlockParams);
     let sandbox;
     beforeEach(() => {
       sandbox = sinon.sandbox.create();
@@ -29,7 +19,7 @@ describe('Block Model', function () {
       let newBlock = Object.assign(
         { save: () => Promise.resolve() },
         BlockModel,
-        internalBlock
+        TEST_MONGO_BLOCK
       );
       sandbox.stub(BlockModel, 'handleReorg').resolves();
       sandbox.stub(BlockModel, 'findOne').resolves(newBlock);
@@ -37,10 +27,11 @@ describe('Block Model', function () {
       sandbox.stub(newBlock, 'save').resolves();
       sandbox.stub(TransactionModel, 'batchImport').resolves();
 
-      const result = await BlockModel.addBlock(addBlockParams);
-      expect(addBlockParams.block.hash).to.be.equal(result.hash);
-      expect(addBlockParams.height).to.be.equal(result.height);
-      expect(addBlockParams.chain).to.be.equal(result.chain);
+      const result = await BlockModel.addBlock(TEST_CORE_BLOCK);
+      // TODO: if `update` is stubbed out to return `newBlock`, then
+      // this test just tests if `addBlock` calls returns the result from update
+      expect(TEST_BLOCK.hash).to.be.equal(result.hash);
+      expect('BTC').to.be.equal(result.chain);
     });
   });
 
@@ -96,6 +87,11 @@ describe('Block Model', function () {
       sandbox.restore();
     });
 
+    const chainnet = {
+      chain: 'BTC',
+      network: 'regtest',
+    };
+
     it('should return if localTip hash equals the previous hash', async () => {
       let blockModelRemoveSpy = sandbox.stub(BlockModel, 'remove').resolves();
       let transactionModelRemoveSpy = sandbox.stub(TransactionModel, 'remove').resolves();
@@ -119,7 +115,7 @@ describe('Block Model', function () {
         network: 'regtest'
       };
 
-      await BlockModel.handleReorg(params);
+      await BlockModel.handleReorg(params.header.prevHash, params);
       expect(blockModelRemoveSpy.notCalled).to.be.true;
       expect(transactionModelRemoveSpy.notCalled).to.be.true;
       expect(coinModelRemoveSpy.notCalled).to.be.true;
@@ -137,25 +133,12 @@ describe('Block Model', function () {
         height: 0
       });
 
-      let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
-        chain: 'BTC',
-        network: 'regtest',
-        block: TEST_BLOCK,
-        height: 1355
-      };
-      const internalBlock = AdapterProvider.convertBlock(blockMethodParams);
-      let params = Object.assign(
-        BlockModel,
-        internalBlock
-      );
-
-      await BlockModel.handleReorg(params);
+      await BlockModel.handleReorg(TEST_CORE_BLOCK.header.prevHash, chainnet);
       expect(blockModelRemoveSpy.notCalled).to.be.true;
       expect(transactionModelRemoveSpy.notCalled).to.be.true;
       expect(coinModelRemoveSpy.notCalled).to.be.true;
       expect(coinModelUpdateSpy.notCalled).to.be.true;
       expect(blockModelGetLocalTipSpy.notCalled).to.be.false;
-
     });
 
     it('should call blockModel remove', async () => {
@@ -168,21 +151,8 @@ describe('Block Model', function () {
         previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
-      let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
-        chain: 'BTC',
-        network: 'regtest',
-        block: TEST_BLOCK,
-        height: 1355
-      };
-      const internalBlock = AdapterProvider.convertBlock(blockMethodParams);
-      let params = Object.assign(
-        BlockModel,
-        internalBlock
-      );
-
-      await BlockModel.handleReorg(params);
+      await BlockModel.handleReorg(TEST_CORE_BLOCK.header.prevHash, chainnet);
       expect(blockModelRemoveSpy.calledOnce).to.be.true;
-
     });
 
     it('should call transactionModel remove', async () => {
@@ -195,21 +165,8 @@ describe('Block Model', function () {
         previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
-      let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
-        chain: 'BTC',
-        network: 'regtest',
-        block: TEST_BLOCK,
-        height: 1355
-      };
-      const internalBlock = AdapterProvider.convertBlock(blockMethodParams);
-      let params = Object.assign(
-        BlockModel,
-        internalBlock
-      );
-
-      await BlockModel.handleReorg(params);
+      await BlockModel.handleReorg(TEST_CORE_BLOCK.header.prevHash, chainnet);
       expect(transactionModelRemoveSpy.calledOnce).to.be.true;
-
     });
 
     it('should call coinModel remove', async () => {
@@ -222,21 +179,8 @@ describe('Block Model', function () {
         previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
-      let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
-        chain: 'BTC',
-        network: 'regtest',
-        block: TEST_BLOCK,
-        height: 1355
-      };
-      const internalBlock = AdapterProvider.convertBlock(blockMethodParams);
-      let params = Object.assign(
-        BlockModel,
-        internalBlock
-      );
-
-      await BlockModel.handleReorg(params);
+      await BlockModel.handleReorg(TEST_CORE_BLOCK.header.prevHash, chainnet);
       expect(coinModelRemoveSpy.calledOnce).to.be.true;
-
     });
 
     it('should call coinModel update', async () => {
@@ -249,50 +193,25 @@ describe('Block Model', function () {
         previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
-      let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
-        chain: 'BTC',
-        network: 'regtest',
-        block: TEST_BLOCK,
-        height: 1355
-      };
-      const internalBlock = AdapterProvider.convertBlock(blockMethodParams);
-      let params = Object.assign(
-        BlockModel,
-        internalBlock
-      );
-
-      await BlockModel.handleReorg(params);
+      await BlockModel.handleReorg(TEST_CORE_BLOCK.header.prevHash, chainnet);
       expect(coinModelUpdateSpy.calledOnce).to.be.true;
-
     });
   });
 
   describe('_apiTransform', () => {
     it('should return the transform object with block values', () => {
-      let params: Adapter.ConvertBlockParams<Bitcoin.Block> = {
-        chain: 'BTC',
-        network: 'regtest',
-        block: TEST_BLOCK,
-        height: 1355
-      };
-      const block = AdapterProvider.convertBlock(params);
-
-      const result = BlockModel._apiTransform(new BlockModel(block), {
-        object: false
-      });
+      const block = new BlockModel(TEST_MONGO_BLOCK);
+      const result = BlockModel._apiTransform(block, { 'object': false });
       const parseResult = JSON.parse(result);
 
       expect(parseResult.hash).to.be.equal(block.hash);
-      expect(parseResult.height).to.be.equal(block.height);
       expect(parseResult.version).to.be.equal(block.version);
       expect(parseResult.size).to.be.equal(block.size);
       expect(parseResult.merkleRoot).to.be.equal(block.merkleRoot);
       expect(parseResult.time).to.not.equal(block.time);
-      expect(parseResult.timeNormalized).to.not.equal(block.timeNormalized);
       expect(parseResult.nonce).to.be.equal(block.nonce);
       expect(parseResult.bits).to.be.equal(block.bits);
       expect(parseResult.previousBlockHash).to.be.equal(block.previousBlockHash);
-      expect(parseResult.nextBlockHash).to.be.equal(block.nextBlockHash);
       expect(parseResult.transactionCount).to.be.equal(block.transactionCount);
     });
   });

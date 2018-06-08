@@ -28,7 +28,10 @@ describe('P2P Service', () => {
     // start and connect the service
     const runner = P2pProvider.build({
       chain,
-      network,
+      info: {
+        chain,
+        network,
+      },
       blocks: BlockModel,
       transactions: TransactionModel,
       config: Object.assign(config.chains.BTC.regtest, {
@@ -54,11 +57,11 @@ describe('P2P Service', () => {
 
     // wait for all the new blocks to hit the database
     let recent;
-    const stored = new Promise(r => stream.blocks.subscribe(pair => {
-      if (pair.block.hash === recent) {
+    const stored = new Promise(r => stream.blocks.subscribe(block => {
+      if (block.header.hash === recent) {
         r();
       }
-      recent = pair.block.hash;
+      recent = block.header.hash;
     }));
     const added = (await rpc.generate(1))[0];
     if (added !== recent) {
@@ -68,6 +71,8 @@ describe('P2P Service', () => {
 
     // check that blocks got updated when not explicitly syncing
     await verify(rpc, 16);
+
+    // TODO: Add tests for lone non-block transactions.
   });
 });
 

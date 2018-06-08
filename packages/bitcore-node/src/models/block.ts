@@ -1,12 +1,12 @@
+import logger from '../logger';
 import { Schema, Document, model, DocumentQuery } from 'mongoose';
 import { CoinModel } from './coin';
 import { TransactionModel } from './transaction';
 import { TransformOptions } from '../types/TransformOptions';
 import { ChainNetwork } from '../types/ChainNetwork';
 import { TransformableModel } from '../types/TransformableModel';
-import logger from '../logger';
 import { LoggifyObject } from '../decorators/Loggify';
-import { Bitcoin } from '../types/namespaces/Bitcoin';
+import { CoreBlock } from '../types/namespaces/ChainAdapter';
 
 export interface IBlock {
   chain: string;
@@ -31,19 +31,11 @@ export type BlockQuery = { [key in keyof IBlock]?: any } &
   Partial<DocumentQuery<IBlock, Document>>;
 type IBlockDoc = IBlock & Document;
 
-export type AddBlockParams = {
-  block: Bitcoin.Block;
-  parentChain?: string;
-  forkHeight?: number;
-} & ChainNetwork &
-  Partial<IBlock>;
-
 type IBlockModelDoc = IBlockDoc & TransformableModel<IBlockDoc>;
-export type BlockMethodParams = { header?: Bitcoin.Block.HeaderObj } & ChainNetwork;
 export interface IBlockModel extends IBlockModelDoc {
-  addBlock: (params: AddBlockParams) => Promise<IBlockModel>;
-  handleReorg: (params: BlockMethodParams) => Promise<void>;
-  getLocalTip: (params: BlockMethodParams) => Promise<IBlockModel>;
+  addBlock: (block: CoreBlock) => Promise<IBlockModel>;
+  handleReorg: (prevHash: string, chainnet: ChainNetwork) => Promise<void>;
+  getLocalTip: (chainnet: ChainNetwork) => Promise<IBlockModel>;
   getPoolInfo: (coinbase: string) => string;
   getLocatorHashes: (params: ChainNetwork) => Promise<string[]>;
 }
@@ -72,12 +64,11 @@ BlockSchema.index({ chain: 1, network: 1, processed: 1, height: -1 });
 BlockSchema.index({ chain: 1, network: 1, timeNormalized: 1 });
 BlockSchema.index({ previousBlockHash: 1 });
 
-BlockSchema.statics.addBlock = async (params: AddBlockParams) => {
-  const { block, chain, network, parentChain, forkHeight } = params;
-  const header = block.header.toObject();
-  const blockTime = header.time * 1000;
+BlockSchema.statics.addBlock = async (block: CoreBlock) => {
+  const { chain, network, header } = block;
+  const blockTime = block.header.time * 1000;
 
-  await BlockModel.handleReorg({ header, chain, network });
+  await BlockModel.handleReorg(header.prevHash, { chain, network });
 
   const previousBlock = await BlockModel.findOne({
     hash: header.prevHash,
@@ -114,8 +105,8 @@ BlockSchema.statics.addBlock = async (params: AddBlockParams) => {
       bits: header.bits,
       nonce: header.nonce,
       transactionCount: block.transactions.length,
-      size: block.toBuffer().length,
-      reward: block.transactions[0].outputAmount
+      size: block.size,
+      reward: block.reward,
     },
     {
       upsert: true
@@ -128,16 +119,11 @@ BlockSchema.statics.addBlock = async (params: AddBlockParams) => {
     await previousBlock.save();
   }
 
-  await TransactionModel.batchImport({
-    txs: block.transactions,
+  await TransactionModel.batchImport(block.transactions, {
     blockHash: header.hash,
-    blockTime: new Date(blockTime),
-    blockTimeNormalized: new Date(blockTimeNormalized),
-    height: height,
-    chain,
-    network,
-    parentChain,
-    forkHeight
+    blockTime: blockTime,
+    blockTimeNormalized: blockTimeNormalized,
+    height,
   });
 
   return BlockModel.update(
@@ -152,8 +138,7 @@ BlockSchema.statics.getPoolInfo = function(coinbase: string) {
   return coinbase;
 };
 
-BlockSchema.statics.getLocalTip = async (params: ChainNetwork) => {
-  const { chain, network } = params;
+BlockSchema.statics.getLocalTip = async ({ chain, network }: ChainNetwork) => {
   const bestBlock = await BlockModel.findOne({
     processed: true,
     chain,
@@ -179,10 +164,9 @@ BlockSchema.statics.getLocatorHashes = async (params: ChainNetwork) => {
   return locatorBlocks.map(block => block.hash);
 };
 
-BlockSchema.statics.handleReorg = async (params: BlockMethodParams) => {
-  const { header, chain, network } = params;
-  const localTip = await BlockModel.getLocalTip(params);
-  if (header && localTip.hash === header.prevHash) {
+BlockSchema.statics.handleReorg = async (prevHash: string, { chain, network }: ChainNetwork) => {
+  const localTip = await BlockModel.getLocalTip({ chain, network });
+  if (localTip.hash === prevHash) {
     return;
   }
   if (localTip.height === 0) {
