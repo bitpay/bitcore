@@ -8,12 +8,12 @@
           "trustedPeers": [
             {
               "host": "bitcoin",
-              "port": 20008
+              "port": 8332
             }
           ],
           "rpc": {
             "host": "bitcoin",
-            "port": 20009,
+            "port": 8333,
             "username": "bitcorenodetest",
             "password": "local321"
           }

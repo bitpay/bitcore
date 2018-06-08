@@ -2,8 +2,8 @@ import { Schema, Document, model, DocumentQuery } from "mongoose";
 import { CoinModel, ICoinModel } from "./coin";
 import { TransformOptions } from "../types/TransformOptions";
 import { partition } from "../utils/partition";
-import {IWalletModel} from "./wallet";
-import {TransactionModel} from "./transaction";
+import { IWalletModel } from "./wallet";
+import { TransactionModel } from "./transaction";
 import { TransformableModel } from "../types/TransformableModel";
 import { LoggifyObject } from "../decorators/Loggify";
 
@@ -26,8 +26,9 @@ export type UpdateCoinsParams = {
   addresses: string[];
 };
 
-interface IWalletAddressModel extends IWalletAddressDocModel{
+interface IWalletAddressModel extends IWalletAddressDocModel {
   updateCoins: (params: UpdateCoinsParams) => Promise<any>;
+  getUpdateCoinsObj: (params: UpdateCoinsParams) => any;
 }
 
 const WalletAddressSchema = new Schema({
@@ -39,8 +40,8 @@ const WalletAddressSchema = new Schema({
 
 WalletAddressSchema.index({ address: 1, wallet: 1 });
 
-WalletAddressSchema.statics._apiTransform = function(
-  walletAddress:{ address: string },
+WalletAddressSchema.statics._apiTransform = function (
+  walletAddress: { address: string },
   options: TransformOptions
 ) {
   let transform = {
@@ -52,11 +53,12 @@ WalletAddressSchema.statics._apiTransform = function(
   return JSON.stringify(transform);
 };
 
-WalletAddressSchema.statics.updateCoins = async function(
+WalletAddressSchema.statics.getUpdateCoinsObj = function (
   params: UpdateCoinsParams
 ) {
   const { wallet, addresses } = params;
   const { chain, network } = wallet;
+
   let walletUpdates = addresses.map((address: string) => {
     return {
       updateOne: {
@@ -67,7 +69,6 @@ WalletAddressSchema.statics.updateCoins = async function(
     };
   });
 
-  let walletUpdateBatches = partition(walletUpdates, 500);
   let coinUpdates = addresses.map((address: string) => {
     return {
       updateMany: {
@@ -78,6 +79,20 @@ WalletAddressSchema.statics.updateCoins = async function(
       }
     };
   });
+
+  return {
+    walletUpdates,
+    coinUpdates
+  };
+}
+
+WalletAddressSchema.statics.updateCoins = async function (
+  params: { walletUpdates: any, coinUpdates: any } & UpdateCoinsParams
+) {
+  const { walletUpdates, coinUpdates, wallet } = params;
+  const { chain, network } = wallet;
+
+  let walletUpdateBatches = partition(walletUpdates, 500);
   let coinUpdateBatches = partition(coinUpdates, 500);
 
   return new Promise(async resolve => {
@@ -99,8 +114,8 @@ WalletAddressSchema.statics.updateCoins = async function(
       { spentTxid: 1, mintTxid: 1 }
     ).cursor();
 
-    coinCursor.on("data", function(data: ICoinModel) {
-      
+    coinCursor.on("data", function (data: ICoinModel) {
+
       const Transaction = TransactionModel;
       coinCursor.pause();
       Transaction.update(
@@ -109,14 +124,14 @@ WalletAddressSchema.statics.updateCoins = async function(
           $addToSet: { wallets: wallet._id }
         },
         { multi: true },
-        function() {
+        function () {
           // TODO Error handling if update fails?
           coinCursor.resume();
         }
       );
     });
 
-    coinCursor.on("end", function() {
+    coinCursor.on("end", function () {
       resolve();
     });
   });
@@ -124,3 +139,4 @@ WalletAddressSchema.statics.updateCoins = async function(
 
 LoggifyObject(WalletAddressSchema.statics, 'WalletAddressSchema');
 export let WalletAddressModel: IWalletAddressModel = model<IWalletAddressDoc, IWalletAddressModel>("WalletAddress", WalletAddressSchema);
+

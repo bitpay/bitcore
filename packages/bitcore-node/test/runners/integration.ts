@@ -11,7 +11,7 @@ const TEST_DIR = path.join(__dirname, '../integration');
 
 const storageArgs = {
     dbHost: config.dbHost,
-    dbName: config.dbName
+    dbName: 'bitcore-integration'
 };
 
 function handleError(err) {

@@ -2,6 +2,9 @@ const {Transform} = require('stream');
 const util = require('util');
 const _ = require('underscore');
 const logger = require('../../../logger');
+const mongoose = require('mongoose');
+const Coin = mongoose.model('Coin');
+
 
 function ListTransactionsStream(wallet) {
   this.wallet = wallet;
@@ -10,8 +13,19 @@ function ListTransactionsStream(wallet) {
 
 util.inherits(ListTransactionsStream, Transform);
 
-ListTransactionsStream.prototype._transform = function(transaction, enc, done) {
+ListTransactionsStream.prototype._transform = async function(transaction, enc, done) {
   var self = this;
+  transaction.inputs = await Coin.collection.find({
+    chain: transaction.chain,
+    network: transaction.network,
+    spentTxid: transaction.txid
+  }, { batchSize: 100 }).toArray();
+  transaction.outputs = await Coin.collection.find({
+    chain: transaction.chain,
+    network: transaction.network,
+    mintTxid: transaction.txid
+  }, { batchSize: 100 }).toArray();
+
   var wallet = this.wallet._id.toString();
   var totalInputs = transaction.inputs.reduce((total, input) => { return total + input.value; }, 0);
   var totalOutputs = transaction.outputs.reduce((total, output) => { return total + output.value; }, 0);
@@ -27,7 +41,6 @@ ListTransactionsStream.prototype._transform = function(transaction, enc, done) {
   });
 
   if(sending) {
-    var recipients = 0;
     _.each(transaction.outputs, function(output) {
       var contains = false;
       _.each(output.wallets, function(outputWallet) {
@@ -36,7 +49,6 @@ ListTransactionsStream.prototype._transform = function(transaction, enc, done) {
         }
       });
       if(!contains) {
-        recipients++;
         self.push(JSON.stringify({
           txid: transaction.txid,
           category: 'send',
@@ -48,9 +60,6 @@ ListTransactionsStream.prototype._transform = function(transaction, enc, done) {
         }) + '\n');
       }
     });
-    if (recipients > 1){
-      logger.warn('probably missing a change address', {txid: transaction.txid});
-    }
     if(fee > 0) {
       self.push(JSON.stringify({
         txid: transaction.txid,

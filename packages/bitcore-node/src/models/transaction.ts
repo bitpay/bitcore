@@ -32,7 +32,7 @@ export type TransactionQuery = {[key in keyof ITransaction]?: any}&
 type ITransactionDoc = ITransaction & Document;
 type ITransactionModelDoc = ITransactionDoc & TransformableModel<ITransactionDoc>;
 
-type BatchImportMethodParams = {
+export type BatchImportMethodParams = {
   txs: Array<Bitcoin.Transaction>;
   height: number;
   blockTime?: Date;
@@ -342,25 +342,7 @@ TransactionSchema.statics.getTransactions = function(params: {
   query: TransactionQuery;
 }) {
   let query = params.query;
-  return TransactionModel.collection.aggregate([
-    { $match: query },
-    {
-      $lookup: {
-        from: "coins",
-        localField: "txid",
-        foreignField: "spentTxid",
-        as: "inputs"
-      }
-    },
-    {
-      $lookup: {
-        from: "coins",
-        localField: "txid",
-        foreignField: "mintTxid",
-        as: "outputs"
-      }
-    }
-  ]);
+  return this.find(query).cursor();
 };
 
 TransactionSchema.statics._apiTransform = function(
