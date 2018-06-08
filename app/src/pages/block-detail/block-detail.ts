@@ -12,7 +12,7 @@ import { CurrencyProvider } from '../../providers/currency/currency';
  */
 @IonicPage({
   name: 'block-detail',
-  segment: 'block/:blockHash'
+  segment: ':selectedCurrency/block/:blockHash'
 })
 @Component({
   selector: 'page-block-detail',
@@ -45,14 +45,15 @@ export class BlockDetailPage {
 
   public goToPreviousBlock(): void {
     this.navCtrl.push('block-detail', {
+      'selectedCurrency': this.currency.selectedCurrency,
       'blockHash': this.block.previousblockhash
     });
   }
 
   public goToNextBlock(): void {
     this.navCtrl.push('block-detail', {
+      'selectedCurrency': this.currency.selectedCurrency,
       'blockHash': this.block.nextblockhash
     });
   }
-
 }

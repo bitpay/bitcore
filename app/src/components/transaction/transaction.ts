@@ -33,12 +33,14 @@ export class TransactionComponent {
 
   public goToTx(txId: string): void {
     this.navCtrl.push('transaction', {
+      'selectedCurrency': this.currency.selectedCurrency,
       'txId': txId
     });
   }
 
   public goToAddress(addrStr: string): void {
     this.navCtrl.push('address', {
+      'selectedCurrency': this.currency.selectedCurrency,
       'addrStr': addrStr
     });
   }

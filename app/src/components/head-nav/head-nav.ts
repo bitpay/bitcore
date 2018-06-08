@@ -47,6 +47,7 @@ export class HeadNavComponent {
         console.log('block', data);
         let parsedData: any = JSON.parse(data._body);
         this.navCtrl.push('block-detail', {
+          'selectedCurrency': this.currency.selectedCurrency,
           'blockHash': parsedData.hash
         });
       }.bind(this),
@@ -57,6 +58,7 @@ export class HeadNavComponent {
             console.log('tx', data);
             let parsedData: any = JSON.parse(data._body);
             this.navCtrl.push('transaction', {
+              'selectedCurrency': this.currency.selectedCurrency,
               'txId': parsedData.txid
             });
           }.bind(this),
@@ -67,6 +69,7 @@ export class HeadNavComponent {
                 console.log('addr', data);
                 let parsedData: any = JSON.parse(data._body);
                 this.navCtrl.push('address', {
+                  'selectedCurrency': this.currency.selectedCurrency,
                   'addrStr': parsedData.addrStr
                 });
               }.bind(this),
@@ -77,6 +80,7 @@ export class HeadNavComponent {
                     console.log('height', data);
                     let parsedData: any = JSON.parse(data._body);
                     this.navCtrl.push('block-detail', {
+                      'selectedCurrency': this.currency.selectedCurrency,
                       'blockHash': parsedData.blockHash
                     });
                   }.bind(this),

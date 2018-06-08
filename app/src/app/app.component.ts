@@ -2,6 +2,7 @@ import { Component, ViewChild } from '@angular/core';
 import { Platform, MenuController, Nav } from 'ionic-angular';
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
+import { CurrencyProvider } from '../providers/currency/currency';
 import {
   HomePage
 } from '../pages';
@@ -24,6 +25,7 @@ export class InsightApp {
     platform: Platform,
     menu: MenuController,
     splash: SplashScreen,
+    public currency: CurrencyProvider,
     status: StatusBar
   ) {
     this.menu = menu;
@@ -39,8 +41,6 @@ export class InsightApp {
       { title: 'Home', component: HomePage },
       { title: 'Blocks', component: 'blocks' },
       { title: 'Broadcast Transaction', component: 'BroadcastTxPage' }
-      // { title: 'Verify Signed Message', component: VerifyMessagePage },
-      // { title: 'Node Status', component: NodeStatusPage }
     ];
   }
 
@@ -57,6 +57,8 @@ export class InsightApp {
     // close the menu when clicking a link from the menu
     this.menu.close();
     // navigate to the new page if it is not the current page
-    this.nav.setRoot(page.component);
+    this.nav.setRoot(page.component, {
+      'selectedCurrency': this.currency.selectedCurrency
+    });
   }
 }

@@ -7,16 +7,12 @@ import { HeadNavComponentModule } from '../components/head-nav/head-nav.module';
 import { LatestTransactionsComponentModule } from '../components/latest-transactions/latest-transactions.module';
 import { LatestBlocksComponentModule } from '../components/latest-blocks/latest-blocks.module';
 import {
-  HomePage,
-  NodeStatusPage,
-  VerifyMessagePage
+  HomePage
 } from './index';
 
 @NgModule({
   declarations: [
-    HomePage,
-    NodeStatusPage,
-    VerifyMessagePage
+    HomePage
   ],
   imports: [
     IonicModule,

@@ -13,6 +13,7 @@ import 'rxjs/add/operator/map';
 export class CurrencyProvider {
 
   public defaultCurrency: string;
+  public selectedCurrency: string;
   public currencySymbol: string;
   public factor: number = 1;
   private bitstamp: number;
@@ -22,6 +23,7 @@ export class CurrencyProvider {
 
   constructor(public http: Http, private api: ApiProvider) {
     this.defaultCurrency = '%DEFAULT_CURRENCY%';
+    this.selectedCurrency = this.defaultCurrency.toLowerCase();
     this.currencySymbol = this.defaultCurrency;
 
     let url: string = this.api.apiPrefix + 'explorers';
