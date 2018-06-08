@@ -2,7 +2,6 @@ import { P2pProvider } from './services/p2p';
 import { Storage } from './services/storage';
 import { Worker } from './services/worker';
 import { Api } from './services/api';
-import config from './config';
 import cluster = require('cluster');
 import parseArgv from './utils/parseArgv';
 let args = parseArgv([], ['DEBUG']);
