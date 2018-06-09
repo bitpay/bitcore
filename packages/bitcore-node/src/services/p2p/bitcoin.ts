@@ -174,8 +174,8 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       });
       const hash = message.block.hash;
 
+      this.emit(hash, message.block);
       if (!this.invCache[this.bitcoreP2p.Inventory.TYPE.BLOCK].use(hash)) {
-        this.emit(hash, message.block);
         if (!this.syncing) {
           this.stream.blocks.next({
             block: message.block,
@@ -263,7 +263,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
     return undefined;
   }
 
-  private async getHeaders(candidateHashes: string[]): Promise<Bitcoin.Block.HeaderObj[]> {
+  public async getHeaders(candidateHashes: string[]): Promise<Bitcoin.Block.HeaderObj[]> {
     return new Promise(resolve => {
       const getHeaders = () => {
         this.pool.sendMessage(this.messages.GetHeaders({
@@ -280,13 +280,13 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
     }) as Promise<Bitcoin.Block.HeaderObj[]>;
   }
 
-  private async getBlock(hash: string): Promise<Bitcoin.Block> {
+  public async getBlock(hash: string): Promise<Bitcoin.Block> {
     return new Promise(resolve => {
       logger.debug('Getting block, hash:', hash);
       const _getBlock = () => {
         this.pool.sendMessage(this.messages.GetData.forBlock(hash));
       };
-      const getBlockRetry = setInterval(_getBlock, 1000);
+      const getBlockRetry = setInterval(_getBlock, 5000);
 
       this.once(hash, block => {
         logger.debug('Received block, hash:', hash);

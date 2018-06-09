@@ -195,6 +195,8 @@ function mockP2p(extra?: Partial<StandardP2p>): StandardP2p {
     parent: () => undefined,
     stop: async () => {},
     syncing: false,
+    getHeaders: () => Promise.resolve([]),
+    getBlock: () => Promise.resolve()
   }, extra? extra : {});
 }
 
