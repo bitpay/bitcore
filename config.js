@@ -93,8 +93,8 @@ var config = {
   //      testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
   //    },
   //    bch: {
-  //      livenet: 'https://bch-insight.bitpay.com/tx/{{txid}}',
-  //      testnet: 'https://test-bch-insight.bitpay.com/tx/{{txid}}',
+  //      livenet: 'https://bch-insight.bitpay.com/#/tx/{{txid}}',
+  //      testnet: 'https://test-bch-insight.bitpay.com/#/tx/{{txid}}',
   //    }
   //  },
   // },
