@@ -270,7 +270,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
           starts: candidateHashes
         }));
       };
-      const headersRetry = setInterval(getHeaders, 5000);
+      const headersRetry = setInterval(getHeaders, 1000);
 
       this.once('headers', headers => {
         clearInterval(headersRetry);
