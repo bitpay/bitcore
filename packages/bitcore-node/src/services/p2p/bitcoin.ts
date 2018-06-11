@@ -174,8 +174,8 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       });
       const hash = message.block.hash;
 
-      this.emit(hash, message.block);
       if (!this.invCache[this.bitcoreP2p.Inventory.TYPE.BLOCK].use(hash)) {
+        this.emit(hash, message.block);
         if (!this.syncing) {
           this.stream.blocks.next({
             block: message.block,
