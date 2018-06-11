@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
 import { ApiProvider } from '../../providers/api/api';
+import { DefaultProvider } from '../../providers/default/default';
 import 'rxjs/add/operator/map';
 
 /*
@@ -21,8 +22,12 @@ export class CurrencyProvider {
   private loading: boolean;
   public explorers: any = [];
 
-  constructor(public http: Http, private api: ApiProvider) {
-    this.defaultCurrency = '%DEFAULT_CURRENCY%';
+  constructor(
+    public http: Http,
+    private api: ApiProvider,
+    private defaults: DefaultProvider
+  ) {
+    this.defaultCurrency = defaults.getDefault('%DEFAULT_CURRENCY%');
     this.selectedCurrency = this.defaultCurrency.toLowerCase();
     this.currencySymbol = this.defaultCurrency;
 

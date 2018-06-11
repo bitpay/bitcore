@@ -3,6 +3,7 @@ import { Http, HttpModule, BaseRequestOptions, Response, ResponseOptions } from 
 import { MockBackend } from '@angular/http/testing';
 import { BlocksProvider } from './blocks';
 import { ApiProvider } from '../api/api';
+import { DefaultProvider } from '../../providers/default/default';
 
 describe('Blocks Provider', () => {
   beforeEach(async(() => {
@@ -12,6 +13,7 @@ describe('Blocks Provider', () => {
       providers: [
         BlocksProvider,
         ApiProvider,
+        DefaultProvider,
         MockBackend,
         BaseRequestOptions,
         {
