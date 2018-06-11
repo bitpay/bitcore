@@ -10,7 +10,10 @@ import 'rxjs/add/operator/map';
 */
 @Injectable()
 export class DefaultProvider {
-  private defaults = {
+  private defaults: {
+    '%DEFAULT_CURRENCY%': string,
+    '%API_PREFIX%': string
+  }= {
     '%DEFAULT_CURRENCY%': 'BTC',
     '%API_PREFIX%': '/api'
   };
@@ -18,7 +21,7 @@ export class DefaultProvider {
   constructor(public http: Http) {
   }
 
-  getDefault(str: string) {
+  public getDefault(str: string): string {
     return (this.defaults[str] !== undefined) ? this.defaults[str] : str;
   }
 }
