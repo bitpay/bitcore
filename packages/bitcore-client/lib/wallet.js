@@ -21,29 +21,46 @@ class Wallet {
 
   static async create(params) {
     const { chain, network, name, phrase, password, path } = params;
+
     if (!chain || !network || !name || !path) {
       throw new Error('Missing required parameter');
     }
+
     const mnemonic = new Mnemonic(phrase);
     const privateKey = mnemonic.toHDPrivateKey(password);
-    const pubKey = privateKey.hdPublicKey.publicKey.toString();
     const walletEncryptionKey = Encrypter.generateEncryptionKey();
-    const keyObj = Object.assign(privateKey.toObject(), privateKey.hdPublicKey.toObject());
-    const encryptionKey = Encrypter.encryptEncryptionKey(walletEncryptionKey, password);
-    const encPrivateKey = Encrypter.encryptPrivateKey(JSON.stringify(keyObj), pubKey, walletEncryptionKey);
+
+    // TODO: can we remove the Object.assign part for simplification since we already
+    // store relevant pubKey information separately
+    const masterKey = Encrypter.encryptPrivateKey(
+      JSON.stringify(
+        Object.assign(
+          privateKey.toObject(),
+          privateKey.hdPublicKey.toObject()
+        )
+      ),
+      privateKey.hdPublicKey.publicKey.toString(),
+      walletEncryptionKey
+    );
+
+    const walletObj = {
+      name,
+      chain,
+      network,
+      password: await Bcrypt.hash(password, 10),
+      encryptionKey: Encrypter.encryptEncryptionKey(walletEncryptionKey, password),
+      masterKey,
+      xPubKey: privateKey.hdPublicKey.xPubKey,
+      pubKey: privateKey.hdPublicKey.publicKey.toString(),
+    };
+
     const storage = new Storage({
       path,
       errorIfExists: true,
       createIfMissing: true
     });
-    const wallet = Object.assign(params, {
-      encryptionKey,
-      masterKey: encPrivateKey,
-      password: await Bcrypt.hash(password, 10),
-      xPubKey: keyObj.xpubkey,
-      pubKey
-    });
-    await storage.saveWallet({ wallet });
+
+    await storage.saveWallet({ wallet: walletObj });
     const loadedWallet = await this.loadWallet({ path, storage });
     await loadedWallet.unlock(password);
     await loadedWallet.register();
