@@ -14,9 +14,7 @@ function findConfig() {
     if (!foundConfig) {
       try {
         const walletConfig = require(path);
-        console.log((walletConfig));
-        foundConfig = walletConfig.wallets;
-        console.log(foundConfig);
+        foundConfig = walletConfig;
       } catch (e) {
         foundConfig = undefined;
       }
