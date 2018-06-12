@@ -45,6 +45,9 @@ const authenticate: RequestHandler = async (
   const { chain, network, pubKey } = req.params as SignedApiRequest;
   logger.debug('Authenticating request with pubKey: ', pubKey);
   const wallet = await ChainStateProvider.getWallet({ chain, network, pubKey });
+  if(req.is('application/octet-stream')) {
+    req.body = JSON.parse(req.body.toString());
+  }
   if (!wallet) {
     return res.status(404).send(new Error('Wallet not found'));
   }
