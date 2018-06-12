@@ -1,0 +1,12 @@
+{
+  "wallets": [
+    {
+      "name": "test",
+      "path": "test"
+    },
+    {
+      "name": "test_1",
+      "path": "test"
+    }
+  ]
+}
