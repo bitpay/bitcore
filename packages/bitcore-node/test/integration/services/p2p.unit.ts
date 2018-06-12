@@ -22,8 +22,11 @@ describe('P2P Service', () => {
     const chain = 'BTC';
     const network = 'regtest';
 
+    const startingHeight = await localHeight();
     // add some blocks to sync on startup
     await rpc.generate(10);
+    const newHeight = await localHeight();
+    expect(startingHeight + 10 === newHeight);
 
     // start and connect the service
     const runner = P2pProvider.build({
@@ -38,7 +41,7 @@ describe('P2P Service', () => {
         forkHeight: 0,
       }),
     });
-    const stream = await runner.start();
+    await runner.start();
 
     // wait for it to stop syncing
     await new Promise(r => runner.events.once(P2pEvents.SYNC_COMPLETE, r));
@@ -52,24 +55,19 @@ describe('P2P Service', () => {
       await sleep(100);
     }
 
-    // wait for all the new blocks to hit the database
-    let recent;
-    const stored = new Promise(r => stream.blocks.subscribe(pair => {
-      if (pair.block.hash === recent) {
-        r();
-      }
-      recent = pair.block.hash;
-    }));
-    const added = (await rpc.generate(1))[0];
-    if (added !== recent) {
-      recent = added;
-      await stored;
-    }
-
     // check that blocks got updated when not explicitly syncing
     await verify(rpc, 16);
   });
 });
+
+async function localHeight() {
+  let tip = await BlockModel.getLocalTip({
+    chain: 'BTC',
+    network: 'regtest',
+  });
+
+  return tip.height;
+}
 
 async function verify(rpc: RPC, tail: number) {
   const myTip = await BlockModel.getLocalTip({

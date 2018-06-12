@@ -14,7 +14,7 @@ import { Bitcoin } from '../../types/namespaces/Bitcoin';
 import { CSP } from '../../types/namespaces/ChainStateProvider';
 import { setImmediate } from 'timers';
 import { EventEmitter } from 'events';
-import { LoggifyClass } from "../../decorators/Loggify";
+import { LoggifyClass } from '../../decorators/Loggify';
 
 const P2PClasses: {
   [key: string]: Class<StandardP2p>;
@@ -50,7 +50,7 @@ export interface P2pService<Block, Transaction> {
   // when `true` only emit blocks that result from the syncing process
   syncing: boolean;
 
-  getHeaders(hashes: string[]): Promise<any[]>;
+  getMissingBlockHashes(hashes: string[]): Promise<any[]>;
   getBlock(hash: string): Promise<any>;
 }
 
@@ -97,7 +97,7 @@ export class P2pRunner {
   private async wireupBlockStream(
     syncer: ChainSyncer,
     parent?: { height: number; chain: string }
-  ){
+  ) {
     return this.service
       .blocks()
       .pipe(
@@ -213,11 +213,8 @@ export class P2pRunner {
         });
         logger.debug(`Received ${locators.length} headers`);
 
-        /*
-         *finalHash = await this.service.sync(locators);
-         */
-
-        const headers = await this.service.getHeaders(locators);
+        const headers = await this.service.getMissingBlockHashes(locators);
+        finalHash = headers[headers.length -1].hash;
 
         for (const header of headers) {
           const block = await this.service.getBlock(header.hash);

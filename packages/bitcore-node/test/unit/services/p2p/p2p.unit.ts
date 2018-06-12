@@ -58,6 +58,8 @@ describe('P2P Service', () => {
 
     const blocks: Subject<BlockEvent> = new Subject();
     const TransactionModel = mockTransactionModel();
+    const blockHashes = Array(100).fill(0).map((_, i) => ({hash: i + 1}));
+    const lastIndex = blockHashes.length-1;
     const BlockModel = mockBlockModel({
       addBlock: async (params) => {
         const idx = parseInt(params.block.hash);
@@ -65,7 +67,7 @@ describe('P2P Service', () => {
         await sleep((100 - idx)/2);
         db.push(idx);
         if (idx === 100) {
-          expect(db).to.deep.equal(Array(100).fill(0).map((_, i) => i + 1));
+          expect(db[lastIndex]).to.deep.equal(blockHashes[lastIndex].hash);
           done();
         }
         return undefined as any;
@@ -74,36 +76,38 @@ describe('P2P Service', () => {
         return { height: db.length } as IBlockModel;
       },
     });
-    const Fakeblock = mockP2p({
+
+    const FakeP2p = mockP2p({
       blocks: () => blocks,
       height: () => 100,
+      getMissingBlockHashes: async() => blockHashes,
+      getBlock: async(i) => {
+        const block = JSON.parse(JSON.stringify(TEST_BLOCK));
+        block.hash = i.toString();
+        return block;
+      },
       sync: async () => {
-        for (let i = 1; i <= 100; i += 1) {
-          const block = JSON.parse(JSON.stringify(TEST_BLOCK));
-          block.hash = i.toString();
-          blocks.next({
-            block,
-            transactions: block.transactions,
-          });
-        }
         return "100";
       },
     });
 
-    new P2pRunner('GOB', 'p-hound', BlockModel, TransactionModel, Fakeblock).start();
+    new P2pRunner('GOB', 'p-hound', BlockModel, TransactionModel, FakeP2p).start();
   });
 
   it('should restart sync if new blocks have arrived', done => {
     let poolHeight = 50;
     const db: number[] = [];
 
+    const blockHashes = Array(100).fill(0).map((_, i) => ({hash: i + 1}));
+    const hashes = blockHashes.map(b => b.hash);
+    const first50 = blockHashes.slice(0, 50);
     const blocks: Subject<BlockEvent> = new Subject();
     const TransactionModel = mockTransactionModel();
     const BlockModel = mockBlockModel({
       addBlock: async (params) => {
         db.push(parseInt(params.block.hash));
         if (db.length === 100) {
-          expect(db).to.deep.equal(Array(100).fill(0).map((_, i) => i + 1));
+          expect(db).to.deep.equal(hashes);
           done();
         }
         return undefined as any;
@@ -117,16 +121,16 @@ describe('P2P Service', () => {
       height: () => {
         return poolHeight;
       },
+      getMissingBlockHashes: async() => poolHeight > 50 ? first50: blockHashes,
+      getBlock: async(i) => {
+        const block = JSON.parse(JSON.stringify(TEST_BLOCK));
+        block.hash = i.toString();
+        return block;
+      },
       sync: async () => {
         const start = poolHeight === 50 ? 1 : 51;
         const end = poolHeight;
         for (let i = start; i <= end; i += 1) {
-          const block = JSON.parse(JSON.stringify(TEST_BLOCK));
-          block.hash = i.toString();
-          blocks.next({
-            block,
-            transactions: block.transactions,
-          });
           await sleep(10);
           if (poolHeight === 50 && i === 25) {
             poolHeight = 100;
@@ -195,8 +199,8 @@ function mockP2p(extra?: Partial<StandardP2p>): StandardP2p {
     parent: () => undefined,
     stop: async () => {},
     syncing: false,
-    getHeaders: () => Promise.resolve([]),
-    getBlock: () => Promise.resolve()
+    getMissingBlockHashes: () => Promise.resolve([]),
+    getBlock: (i) => Promise.resolve(i)
   }, extra? extra : {});
 }
 

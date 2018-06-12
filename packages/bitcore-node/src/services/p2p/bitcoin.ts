@@ -226,7 +226,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
   }
 
   public async sync(locatorHashes: string[]): Promise<string | undefined> {
-    const headers = await this.getHeaders(locatorHashes);
+    const headers = await this.getMissingBlockHashes(locatorHashes);
     let lastHash: string | undefined = undefined;
 
     for (const header of headers) {
@@ -263,7 +263,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
     return undefined;
   }
 
-  public async getHeaders(candidateHashes: string[]): Promise<Bitcoin.Block.HeaderObj[]> {
+  public async getMissingBlockHashes(candidateHashes: string[]): Promise<Bitcoin.Block.HeaderObj[]> {
     return new Promise(resolve => {
       const getHeaders = () => {
         this.pool.sendMessage(this.messages.GetHeaders({
