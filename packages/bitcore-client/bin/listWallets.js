@@ -11,12 +11,13 @@ program
 
 const main = async () => {
   const path = program.path;
-  fs.readdir(path, function (err, folder) {
+  const walletsInPath = config.wallets.filter(wallet => wallet.path === path);
+  fs.readdir(path, (err, files) => {
     if (err) {
-      console.error(err);
-      return;
+      return console.error(err);
     }
-    console.log(folder);
+    const matchingWallets = walletsInPath.filter(wallet => files.includes(wallet));
+    console.log(matchingWallets);
   });
 }
 
