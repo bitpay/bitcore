@@ -7,8 +7,8 @@
   },
   "proxies": [
     {
-      "path": "/api",
-      "proxyUrl": "https://insight.bitpay.com/api"
+      "path": "%IONIC_PATH%",
+      "proxyUrl": "%IONIC_PROXY_URL%"
     }
   ]
 }
