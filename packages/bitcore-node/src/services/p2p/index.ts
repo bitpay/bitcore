@@ -14,6 +14,7 @@ import { Bitcoin } from '../../types/namespaces/Bitcoin';
 import { CSP } from '../../types/namespaces/ChainStateProvider';
 import { setImmediate } from 'timers';
 import { EventEmitter } from 'events';
+import { LoggifyClass } from '../../decorators/Loggify';
 
 const P2PClasses: {
   [key: string]: Class<StandardP2p>;
@@ -48,6 +49,9 @@ export interface P2pService<Block, Transaction> {
 
   // when `true` only emit blocks that result from the syncing process
   syncing: boolean;
+
+  getMissingBlockHashes(hashes: string[]): Promise<any[]>;
+  getBlock(hash: string): Promise<any>;
 }
 
 export type StandardP2p = P2pService<Bitcoin.Block, Bitcoin.Transaction>;
@@ -65,6 +69,7 @@ export enum P2pEvents {
   SYNC_COMPLETE = 'SYNC_COMPLETE'
 }
 
+@LoggifyClass
 export class P2pRunner {
   private service: StandardP2p;
   private chain: string;
@@ -92,7 +97,7 @@ export class P2pRunner {
   private async wireupBlockStream(
     syncer: ChainSyncer,
     parent?: { height: number; chain: string }
-  ){
+  ) {
     return this.service
       .blocks()
       .pipe(
@@ -208,7 +213,52 @@ export class P2pRunner {
         });
         logger.debug(`Received ${locators.length} headers`);
 
-        finalHash = await this.service.sync(locators);
+        const headers = await this.service.getMissingBlockHashes(locators);
+        finalHash = headers[headers.length -1].hash;
+
+        for (const header of headers) {
+          const block = await this.service.getBlock(header.hash);
+          logger.debug('Block received', block.hash);
+          await this.blocks.addBlock({
+            chain: this.chain,
+            network: this.network,
+            forkHeight: parent ? parent.height : 0,
+            parentChain: parent ? parent.chain : this.chain,
+            block: block
+          });
+          if (this.service.syncing) {
+            if (finished || !goalHeight) {
+              return;
+            }
+            logger.debug(`Syncing block ${block.hash}`, {
+              chain: this.chain,
+              network: this.network
+            });
+            counter += 1;
+            if (Date.now() - lastLog > 100) {
+              logger.info(
+                `Sync progress ${(counter * 100 / goalHeight).toFixed(3)}%`,
+                {
+                  chain: this.chain,
+                  network: this.network,
+                  height: counter
+                }
+              );
+              lastLog = Date.now();
+            }
+            if (block.hash === finalHash) {
+              start();
+            } else {
+              recentHash = block.hash;
+            }
+          } else {
+            logger.info(`Added block ${block.hash}`, {
+              chain: this.chain,
+              network: this.network
+            });
+          }
+        }
+
         if (finalHash && recentHash === finalHash) {
           setImmediate(() => start());
         }
