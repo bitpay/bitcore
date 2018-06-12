@@ -9,7 +9,7 @@ let args = parseArgv([], ['DEBUG']);
 const startServices = async () => {
   await Storage.start({});
   await Worker.start();
-  await P2pProvider.startConfiguredChains();
+  P2pProvider.startConfiguredChains();
 };
 
 const runMaster = async() => {
