@@ -87,6 +87,7 @@ export class P2pRunner {
     const syncer = await this.sync();
 
     const blocks = this.service.blocks().pipe(concatMap(async blocks => {
+      logger.info(`Adding ${blocks.length} blocks...`);
       const hashes = blocks.map(b => b.header.hash);
       await this.blocks.addBlocks(blocks);
       if (this.service.syncing && blocks.length > 0) {

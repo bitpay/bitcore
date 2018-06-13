@@ -68,6 +68,7 @@ BlockSchema.index({ previousBlockHash: 1 });
 const batch = (items, n, f) => Promise.all(partition(items, n).map(f));
 
 BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
+  const start = Date.now();
   const first = blocks[0];
   if (!first) {
     return;
@@ -178,6 +179,8 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
     }
   })));
 
+  const end = Date.now();
+  logger.info(`Avg. Time Per Block: ${(end - start) / blocks.length}`);
   return blocks.map(b => b.header.hash);
 };
 

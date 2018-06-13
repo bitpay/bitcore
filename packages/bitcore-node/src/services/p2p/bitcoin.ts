@@ -223,6 +223,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
 
   public async sync(locatorHashes: string[]): Promise<string | undefined> {
     // TODO: configurable limit?
+    logger.info(`Fetching blocks...`);
     const limit = 35000000;
     const headers = await this.getHeaders(locatorHashes);
     if (headers.length === 0) {
@@ -262,7 +263,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       done: false,
     })).then(d => d.accum);
 
-    logger.info(`Syncing ${blocks.length} blocks...`);
+    logger.info(`Parsing ${blocks.length} blocks...`);
     this.stream.blocks.next(blocks);
 
     return blocks.slice(-1)[0].hash;
