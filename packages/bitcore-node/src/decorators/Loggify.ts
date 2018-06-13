@@ -1,6 +1,8 @@
 import logger from '../logger';
 import util from 'util';
+import parseArgv from "../utils/parseArgv";
 export const PerformanceTracker = {};
+let args = parseArgv([], ['DEBUG']);
 
 let LoggifiedClasses: { [key: string]: boolean } = {};
 
@@ -15,7 +17,7 @@ export function SavePerformance(logPrefix, startTime, endTime) {
   } else {
     PerformanceTracker[logPrefix].time += totalTime;
     PerformanceTracker[logPrefix].count++;
-    PerformanceTracker[logPrefix].avg = PerformanceTracker[logPrefix].time / PerformanceTracker[logPrefix].count ;
+    PerformanceTracker[logPrefix].avg = PerformanceTracker[logPrefix].time / PerformanceTracker[logPrefix].count;
   }
 }
 
@@ -23,6 +25,9 @@ export function SavePerformance(logPrefix, startTime, endTime) {
 export function LoggifyClass<T extends { new (...args: any[]): {} }>(
   aClass: T
 ) {
+  if(!args.DEBUG) {
+    return aClass;
+  }
   return class extends aClass {
     constructor(...args: any[]) {
       super(...args);
@@ -32,7 +37,7 @@ export function LoggifyClass<T extends { new (...args: any[]): {} }>(
         logger.debug(
           `Loggifying ${aClass.name} with args:: ${util.inspect(args)}`
         );
-        LoggifyObject(aClass, aClass.name, self);
+        LoggifyObject(aClass.prototype, aClass.name, self);
       }
     }
   };
@@ -42,13 +47,16 @@ export function LoggifyMethod(className: string) {
   return function(
     descriptor: TypedPropertyDescriptor<Function>
   ) {
-    if (descriptor.value != undefined) {
+    if (descriptor.value != undefined && args.DEBUG) {
       descriptor.value = LoggifyFunction(descriptor.value, className);
     }
   };
 }
 
 export function LoggifyFunction(fn: Function, logPrefix: string = '', bind?: any) {
+  if(!args.DEBUG) {
+    return fn as (...methodargs: any[]) => any;
+  }
   let copy = fn;
   if (bind) {
     copy = copy.bind(bind);
@@ -77,6 +85,9 @@ export function LoggifyFunction(fn: Function, logPrefix: string = '', bind?: any
 }
 
 export function LoggifyObject(obj: any, logPrefix: string = '', bind?: any) {
+  if(!args.DEBUG) {
+    return obj;
+  }
   for (let prop of Object.getOwnPropertyNames(obj)) {
     if (typeof obj[prop] === 'function') {
       let copy = obj[prop];

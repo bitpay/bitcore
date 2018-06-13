@@ -7,7 +7,7 @@ import { TransformOptions } from "../types/TransformOptions";
 import { ChainNetwork } from "../types/ChainNetwork";
 import { TransformableModel } from "../types/TransformableModel";
 import logger from "../logger";
-import { LoggifyObject } from "../decorators/Loggify";
+import { LoggifyObject, LoggifyFunction } from "../decorators/Loggify";
 import { Bitcoin } from "../types/namespaces/Bitcoin";
 const config = require("../config");
 const Chain = require("../chain");
@@ -361,6 +361,7 @@ TransactionSchema.statics._apiTransform = function(
   return JSON.stringify(transform);
 };
 
+CoinModel.collection.bulkWrite = LoggifyFunction(CoinModel.collection.bulkWrite, 'CoinModel::collection.bulkWrite', CoinModel.collection);
 LoggifyObject(TransactionSchema.statics, 'TransactionSchema');
 export let TransactionModel: ITransactionModel = model<
   ITransactionDoc,
