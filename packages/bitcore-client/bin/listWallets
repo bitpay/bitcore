@@ -10,6 +10,10 @@ program
   .option('--path <path>', 'REQUIRED - Where wallets are stored')
   .parse(process.argv);
 
+if (!program.path) {
+  program.help();
+}
+
 const main = async () => {
   const path = program.path;
   const walletsInPath = config.wallets.filter(wallet => wallet.path === path);

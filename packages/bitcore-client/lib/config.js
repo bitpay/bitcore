@@ -9,7 +9,6 @@ function findConfig() {
     `../${configFileName}`,
     `../../${configFileName}`
   ];
-
   for (let path of walletConfigPaths) {
     if (!foundConfig) {
       try {
