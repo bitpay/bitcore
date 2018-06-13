@@ -4,11 +4,9 @@ import parseArgv from "../utils/parseArgv";
 export const PerformanceTracker = {};
 let args = parseArgv([], ['DEBUG']);
 
-let LoggifiedClasses: { [key: string]: boolean } = {};
-
 export function SavePerformance(logPrefix, startTime, endTime) {
   const totalTime = endTime.getTime() - startTime.getTime();
-  if(!PerformanceTracker[logPrefix]) {
+  if (!PerformanceTracker[logPrefix]) {
     PerformanceTracker[logPrefix] = {
       time: totalTime,
       count: 1,
@@ -22,46 +20,38 @@ export function SavePerformance(logPrefix, startTime, endTime) {
 }
 
 
-export function LoggifyClass<T extends { new (...args: any[]): {} }>(
+export function LoggifyClass<T extends { new(...args: any[]): {} }>(
   aClass: T
 ) {
-  if(!args.DEBUG) {
+  if (!args.DEBUG) {
     return aClass;
   }
   return class extends aClass {
     constructor(...args: any[]) {
       super(...args);
-      var self = this;
-      if (!LoggifiedClasses[aClass.name]) {
-        LoggifiedClasses[aClass.name] = true;
-        logger.debug(
-          `Loggifying ${aClass.name} with args:: ${util.inspect(args)}`
-        );
-        LoggifyObject(aClass.prototype, aClass.name, self);
+      logger.debug(
+        `Loggifying ${aClass.name} with args:: ${util.inspect(args)}`
+      );
+      for (let prop of Object.getOwnPropertyNames(aClass.prototype)) {
+        if (typeof this[prop] === 'function') {
+          logger.debug(`Loggifying  ${aClass.name}::${prop}`);
+          this[prop] = LoggifyFunction(this[prop], `${aClass.name}::${prop}`, this);
+        }
       }
     }
   };
 }
 
-export function LoggifyMethod(className: string) {
-  return function(
-    descriptor: TypedPropertyDescriptor<Function>
-  ) {
-    if (descriptor.value != undefined && args.DEBUG) {
-      descriptor.value = LoggifyFunction(descriptor.value, className);
-    }
-  };
-}
 
 export function LoggifyFunction(fn: Function, logPrefix: string = '', bind?: any) {
-  if(!args.DEBUG) {
+  if (!args.DEBUG) {
     return fn as (...methodargs: any[]) => any;
   }
   let copy = fn;
   if (bind) {
     copy = copy.bind(bind);
   }
-  return function(...methodargs: any[]) {
+  return function (...methodargs: any[]) {
     const startTime = new Date();
     logger.debug(`${logPrefix}::args::${util.inspect(methodargs)}`);
     let returnVal = copy(...methodargs);
@@ -85,7 +75,7 @@ export function LoggifyFunction(fn: Function, logPrefix: string = '', bind?: any
 }
 
 export function LoggifyObject(obj: any, logPrefix: string = '', bind?: any) {
-  if(!args.DEBUG) {
+  if (!args.DEBUG) {
     return obj;
   }
   for (let prop of Object.getOwnPropertyNames(obj)) {

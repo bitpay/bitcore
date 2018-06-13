@@ -65,7 +65,7 @@ function startTestDatabase() {
 async function benchmark() {
 
  await startTestDatabase();
- let blocks = generateBlocks(1000);
+ let blocks = generateBlocks(100);
   console.log(blocks.length);
 
 }
