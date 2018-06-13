@@ -1,7 +1,25 @@
 import logger from '../logger';
 import util from 'util';
+export const PerformanceTracker = {};
 
 let LoggifiedClasses: { [key: string]: boolean } = {};
+
+export function SavePerformance(logPrefix, startTime, endTime) {
+  const totalTime = endTime.getTime() - startTime.getTime();
+  if(!PerformanceTracker[logPrefix]) {
+    PerformanceTracker[logPrefix] = {
+      time: totalTime,
+      count: 1,
+      avg: totalTime
+    };
+  } else {
+    PerformanceTracker[logPrefix].time += totalTime;
+    PerformanceTracker[logPrefix].count++;
+    PerformanceTracker[logPrefix].avg = PerformanceTracker[logPrefix].time / PerformanceTracker[logPrefix].count ;
+  }
+}
+
+
 export function LoggifyClass<T extends { new (...args: any[]): {} }>(
   aClass: T
 ) {
@@ -30,12 +48,13 @@ export function LoggifyMethod(className: string) {
   };
 }
 
-export function LoggifyFunction(fn: Function, logPrefix?: string, bind?: any) {
+export function LoggifyFunction(fn: Function, logPrefix: string = '', bind?: any) {
   let copy = fn;
   if (bind) {
     copy = copy.bind(bind);
   }
   return function(...methodargs: any[]) {
+    const startTime = new Date();
     logger.debug(`${logPrefix}::args::${util.inspect(methodargs)}`);
     let returnVal = copy(...methodargs);
     if (returnVal && <Promise<any>>returnVal.then) {
@@ -46,9 +65,11 @@ export function LoggifyFunction(fn: Function, logPrefix?: string, bind?: any) {
         })
         .then((data: any) => {
           logger.debug(`${logPrefix}::resolved::${util.inspect(data)}`);
+          SavePerformance(logPrefix, startTime, new Date());
           return data;
         });
     } else {
+      SavePerformance(logPrefix, startTime, new Date());
       logger.debug(`${logPrefix}::returned::${util.inspect(returnVal)}`);
     }
     return returnVal;
