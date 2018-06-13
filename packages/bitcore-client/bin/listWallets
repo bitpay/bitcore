@@ -4,6 +4,8 @@
 const fs = require('fs');
 const config = require('../lib/config');
 const program = require('commander');
+const util = require('util');
+const readdirAsync = util.promisify(fs.readdir);
 
 program
   .version(require('../package.json').version)
@@ -18,7 +20,7 @@ const main = async () => {
   const path = program.path;
   const walletsInPath = config.wallets.filter(wallet => wallet.path === path);
 
-  fs.readdir(path, (err, files) => {
+  await readdirAsync(path, (err, files) => {
     if (err) {
       return console.error(err);
     }
