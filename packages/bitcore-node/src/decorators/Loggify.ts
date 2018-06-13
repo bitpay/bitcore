@@ -53,7 +53,7 @@ export function LoggifyFunction(fn: Function, logPrefix: string = '', bind?: any
   }
   return function (...methodargs: any[]) {
     const startTime = new Date();
-    logger.debug(`${logPrefix}::args::${util.inspect(methodargs)}`);
+    logger.debug(`${logPrefix}::called::`);
     let returnVal = copy(...methodargs);
     if (returnVal && <Promise<any>>returnVal.then) {
       returnVal
@@ -62,13 +62,13 @@ export function LoggifyFunction(fn: Function, logPrefix: string = '', bind?: any
           throw err;
         })
         .then((data: any) => {
-          logger.debug(`${logPrefix}::resolved::${util.inspect(data)}`);
+          logger.debug(`${logPrefix}::resolved::`);
           SavePerformance(logPrefix, startTime, new Date());
           return data;
         });
     } else {
       SavePerformance(logPrefix, startTime, new Date());
-      logger.debug(`${logPrefix}::returned::${util.inspect(returnVal)}`);
+      logger.debug(`${logPrefix}::returned::`);
     }
     return returnVal;
   };
