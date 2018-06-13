@@ -87,9 +87,11 @@ WalletAddressSchema.statics.getUpdateCoinsObj = function (
 }
 
 WalletAddressSchema.statics.updateCoins = async function (
-  params: { walletUpdates: any, coinUpdates: any } & UpdateCoinsParams
+  params: UpdateCoinsParams
 ) {
-  const { walletUpdates, coinUpdates, wallet } = params;
+  const { wallet } = params;
+  const updates = WalletAddressModel.getUpdateCoinsObj(params);
+  const { walletUpdates, coinUpdates } = updates;
   const { chain, network } = wallet;
 
   let walletUpdateBatches = partition(walletUpdates, 500);
