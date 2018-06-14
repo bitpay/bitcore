@@ -52,9 +52,8 @@ describe('P2P Service', () => {
     // slowly add some blocks
     for (let i = 0; i < 5; i += 1) {
       await rpc.generate(1);
-      await sleep(100);
+      await sleep(200);
     }
-
     // check that blocks got updated when not explicitly syncing
     await verify(rpc, 16);
   });
