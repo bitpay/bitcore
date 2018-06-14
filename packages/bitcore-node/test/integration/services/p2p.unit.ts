@@ -1,17 +1,21 @@
 import logger from '../../../src/logger';
 import config from '../../../src/config';
+import { resetDatabase } from '../../helpers';
 import { expect } from 'chai';
 import { P2pProvider, P2pEvents } from '../../../src/services/p2p';
 import { BlockModel } from '../../../src/models/block';
 import { TransactionModel } from '../../../src/models/transaction';
-import { Storage } from '../../../src/services/storage';
 import { sleep } from '../../../src/utils/async';
 import { RPC } from '../../../src/rpc';
 
 describe('P2P Service', () => {
+
+  beforeEach(async () => {
+    return resetDatabase();
+  });
+
   it('should sync to latest and listen for new blocks', async function() {
-    this.timeout(15000);
-    await Storage.start({});
+    this.timeout(1500);
 
     expect(config.chains.BTC).to.not.be.undefined;;
     expect(config.chains.BTC.regtest).to.not.be.undefined;;
@@ -52,10 +56,10 @@ describe('P2P Service', () => {
     // slowly add some blocks
     for (let i = 0; i < 5; i += 1) {
       await rpc.generate(1);
-      await sleep(200);
+      await sleep(500);
     }
     // check that blocks got updated when not explicitly syncing
-    await verify(rpc, 16);
+    await verify(rpc, 15);
   });
 });
 
@@ -83,7 +87,7 @@ async function verify(rpc: RPC, tail: number) {
   let hash = poolTip;
 
   // loop back `height` blocks and check that everything is OK
-  for (; tail > 0; tail -= 1) {
+  for (let blockHeight = tail; blockHeight > 0; blockHeight -= 1) {
     logger.info(`Checking block ${hash}`);
 
     // check block is correct
