@@ -26,7 +26,13 @@ export class BlockDetailPage {
     tx: []
   };
 
-  constructor(public navCtrl: NavController, private http: Http, public navParams: NavParams, private api: ApiProvider, public currency: CurrencyProvider) {
+  constructor(
+    public navCtrl: NavController,
+    private http: Http,
+    public navParams: NavParams,
+    private api: ApiProvider,
+    public currency: CurrencyProvider
+  ) {
     this.blockHash = navParams.get('blockHash');
   }
 

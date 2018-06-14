@@ -18,7 +18,7 @@ export class ApiProvider {
     public http: Http,
     private defaults: DefaultProvider
   ) {
-    this.apiPrefix = defaults.getDefault('%API_PREFIX%') + '/';
+    this.apiPrefix = defaults.getDefault('%API_PREFIX%');
   }
 
 }

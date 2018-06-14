@@ -21,9 +21,13 @@ describe('DefaultProvider', () => {
     defaults = provider;
   }));
 
-  it('has defaults', () => {
+  it('initializes', () => {
     expect(defaults).not.toBeNull();
+  });
+
+  it('has defaults', () => {
     expect(defaults.getDefault('%DEFAULT_CURRENCY%')).toBe('BTC');
     expect(defaults.getDefault('%API_PREFIX%')).toBe('/api');
+    expect(defaults.getDefault('%NETWORK%')).toBe('testnet');
   });
 });

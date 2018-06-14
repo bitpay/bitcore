@@ -12,10 +12,12 @@ import 'rxjs/add/operator/map';
 export class DefaultProvider {
   private defaults: {
     '%DEFAULT_CURRENCY%': string,
-    '%API_PREFIX%': string
+    '%API_PREFIX%': string,
+    '%NETWORK%': string
   }= {
     '%DEFAULT_CURRENCY%': 'BTC',
-    '%API_PREFIX%': '/api'
+    '%API_PREFIX%': '/api',
+    '%NETWORK%': 'testnet'
   };
 
   constructor(public http: Http) {
