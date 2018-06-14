@@ -7,7 +7,7 @@ import { TransformOptions } from "../types/TransformOptions";
 import { ChainNetwork } from "../types/ChainNetwork";
 import { TransformableModel } from "../types/TransformableModel";
 import logger from "../logger";
-import { LoggifyObject } from "../decorators/Loggify";
+import { LoggifyObject, LoggifyFunction } from "../decorators/Loggify";
 import { Bitcoin } from "../types/namespaces/Bitcoin";
 const config = require("../config");
 const Chain = require("../chain");
@@ -224,7 +224,7 @@ TransactionSchema.statics.getMintOps = async function(
         let address = "";
         let scriptBuffer = output.script && output.script.toBuffer();
         if (scriptBuffer) {
-          address = output.script.toAddress(network).toString();
+          address = output.script.toAddress(network).toString(true);
           if (
             address === "false" &&
             output.script.classify() === "Pay to public key"
@@ -232,7 +232,7 @@ TransactionSchema.statics.getMintOps = async function(
             let hash = Chain[chain].lib.crypto.Hash.sha256ripemd160(
               output.script.chunks[0].buf
             );
-            address = Chain[chain].lib.Address(hash, network).toString();
+            address = Chain[chain].lib.Address(hash, network).toString(true);
           }
         }
 
@@ -308,7 +308,7 @@ TransactionSchema.statics.getSpendOps = function(
     let txid = tx._hash;
     for (let input of tx.inputs) {
       let inputObj = input.toObject();
-      const updateQuery = {
+      const updateQuery: any = {
         updateOne: {
           filter: {
             mintTxid: inputObj.prevTxId,
@@ -326,7 +326,7 @@ TransactionSchema.statics.getSpendOps = function(
         }
       };
       if (config.pruneSpentScripts && height > 0) {
-        Object.assign(updateQuery.updateOne.update, {$unset: {script: null}});
+        updateQuery.updateOne.update.$unset= {script: null};
       }
       spendOps.push(updateQuery);
     }
@@ -361,6 +361,7 @@ TransactionSchema.statics._apiTransform = function(
   return JSON.stringify(transform);
 };
 
+CoinModel.collection.bulkWrite = LoggifyFunction(CoinModel.collection.bulkWrite, 'CoinModel::collection.bulkWrite', CoinModel.collection);
 LoggifyObject(TransactionSchema.statics, 'TransactionSchema');
 export let TransactionModel: ITransactionModel = model<
   ITransactionDoc,

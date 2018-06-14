@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { resetDatabase } from '../../helpers/index';
+import { resetDatabase } from '../../helpers';
 import { BlockModel } from '../../../src/models/block';
 import { TransactionModel } from '../../../src/models/transaction';
 import { CoinModel } from '../../../src/models/coin';

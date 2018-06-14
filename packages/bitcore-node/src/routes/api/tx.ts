@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { CSP } from '../types/namespaces/ChainStateProvider';
-import { ChainStateProvider } from '../providers/chain-state';
-import logger from '../logger';
+import { CSP } from '../../types/namespaces/ChainStateProvider';
+import { ChainStateProvider } from '../../providers/chain-state';
+import logger from '../../logger';
 const router = Router({ mergeParams: true });
 
 router.get('/', function(req, res) {
