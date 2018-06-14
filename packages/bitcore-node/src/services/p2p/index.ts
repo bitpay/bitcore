@@ -267,7 +267,7 @@ export class P2pRunner {
           setImmediate(() => start());
         }
       } else {
-        logger.info(`${this.chain} up to date.`);
+        logger.info(`${this.chain}:${this.network} up to date.`);
         this.service.syncing = false;
         finished = true;
         this.events.emit(P2pEvents.SYNC_COMPLETE, true);
