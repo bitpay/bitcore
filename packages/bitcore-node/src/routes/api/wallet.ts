@@ -1,9 +1,9 @@
 import { Request, Response, Router } from 'express';
-import { ChainNetwork } from '../types/ChainNetwork';
-import { IWalletModel } from '../models/wallet';
+import { ChainNetwork } from '../../types/ChainNetwork';
+import { IWalletModel } from '../../models/wallet';
 import { RequestHandler } from 'express-serve-static-core';
-import { ChainStateProvider } from "../providers/chain-state";
-import logger from '../logger';
+import { ChainStateProvider } from "../../providers/chain-state";
+import logger from '../../logger';
 const router = Router({ mergeParams: true });
 const secp256k1 = require('secp256k1');
 const bitcoreLib = require('bitcore-lib');
