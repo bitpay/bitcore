@@ -10,7 +10,7 @@ services:
       - 8100:8100
       - 3000:3000
     environment:
-      - DB_HOST=db:27017
+      - DB_HOST=db
       - DB_NAME=bitcore-test
       - BITCORE_CONFIG_PATH=/bitcore/bitcore-test.config.json
     depends_on:
@@ -19,13 +19,8 @@ services:
 
   db:
     image: mongo
-    ports:
-      - 27018:27017
 
   bitcoin:
-    ports:
-      - 8332:8332
-      - 8333:8333
     image: ruimarinho/bitcoin-core:0.16.0-alpine
     command:
       -printtoconsole

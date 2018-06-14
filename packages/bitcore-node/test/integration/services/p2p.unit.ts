@@ -69,9 +69,11 @@ async function localHeight() {
 }
 
 async function verify(rpc: RPC, tail: number) {
+  const chain = 'BTC';
+  const network = 'regtest';
   const myTip = await BlockModel.getLocalTip({
-    chain: 'BTC',
-    network: 'regtest',
+    chain,
+    network,
   });
   const poolTip = await rpc.bestBlockHashAsync();
 
@@ -86,7 +88,7 @@ async function verify(rpc: RPC, tail: number) {
 
     // check block is correct
     const truth = await rpc.blockAsync(hash);
-    const ours = await BlockModel.find({ hash });
+    const ours = await BlockModel.find({ hash, chain, network });
     expect(ours.length, 'number of blocks').to.equal(1);
     expect(ours[0].previousBlockHash, 'previous block hash').to.equal(truth.previousblockhash);
     expect(ours[0].nextBlockHash, 'next block hash').to.equal(truth.nextblockhash);
