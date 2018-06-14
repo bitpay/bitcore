@@ -186,6 +186,9 @@ export class P2pRunner {
 
     // sync the main chain
     const start = async () => {
+      // remove the previous block to ensure consistency through process termination
+      await this.blocks.handleReorg({chain: this.chain, network: this.network });
+
       // get best block we currently have to see if we're synced
       let bestBlock = await tip();
 
