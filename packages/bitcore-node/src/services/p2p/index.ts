@@ -169,6 +169,48 @@ export class P2pRunner {
     };
   }
 
+  prefetcher: Iterator<void> | null = null;
+  prefetched = {};
+  * prefetch(headers: Array<{hash: string}>, count: number) {
+    if(!headers.length) {
+      return;
+    }
+    let prefetchTilIndex = count;
+    let index = 0;
+    let lastBatchHeader = headers[prefetchTilIndex] || headers[headers.length -1];
+    this.lastPrefetch = lastBatchHeader.hash;
+    for(let {hash} of headers) {
+      this.prefetched[hash] = this.service.getBlock(hash);
+      this.lastPrefetch = hash;
+      if(index == prefetchTilIndex ) {
+        yield;
+        // pause until we use the hash we stopped at
+        if(Object.keys(this.prefetched).length >  1.5 * count) {
+          this.prefetched = {};
+        }
+        prefetchTilIndex += count;
+      } else {
+        index++;
+      }
+    }
+  }
+
+  lastPrefetch = '';
+  async getBlock(hash: string) {
+    if(this.prefetched[hash]) {
+      const block = this.prefetched[hash];
+      if(this.lastPrefetch == hash && this.prefetcher) {
+        this.prefetcher.next()
+      }
+      return block;
+    } else {
+      if(this.prefetcher) {
+        this.prefetcher.next()
+      }
+      return this.service.getBlock(hash);
+    }
+  }
+
   async sync(): Promise<ChainSyncer> {
     this.service.syncing = true;
     const parent = this.service.parent();
@@ -220,8 +262,9 @@ export class P2pRunner {
         const headers = await this.service.getMissingBlockHashes(locators);
         finalHash = headers[headers.length -1].hash;
 
+        this.prefetcher = this.prefetch(headers, 5);
         for (const header of headers) {
-          const block = await this.service.getBlock(header.hash);
+          const block = await this.getBlock(header.hash);
           logger.debug('Block received', block.hash);
           await this.blocks.addBlock({
             chain: this.chain,
