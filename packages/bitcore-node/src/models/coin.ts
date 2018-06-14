@@ -39,16 +39,16 @@ const CoinSchema = new Schema({
   spentHeight: Number
 });
 
-CoinSchema.index({ mintTxid: 1 });
-CoinSchema.index(
-  { mintTxid: 1, mintIndex: 1 },
-  { partialFilterExpression: { spentHeight: { $lt: 0 } } }
-);
-CoinSchema.index({ address: 1 });
-CoinSchema.index({ mintHeight: 1, chain: 1, network: 1 });
-CoinSchema.index({ spentTxid: 1 }, { sparse: true });
-CoinSchema.index({ spentHeight: 1, chain: 1, network: 1 });
-CoinSchema.index({ wallets: 1, spentHeight: 1 }, { sparse: true });
+CoinSchema.index({ mintTxid: "hashed" });
+// CoinSchema.index(
+//   { mintTxid: 1, mintIndex: 1 },
+//   { partialFilterExpression: { spentHeight: { $lt: 0 } } }
+// );
+CoinSchema.index({ address: "hashed" });
+// CoinSchema.index({ mintHeight: 1, chain: 1, network: 1 });
+CoinSchema.index({ spentTxid: "hashed" }, { sparse: true });
+// CoinSchema.index({ spentHeight: 1, chain: 1, network: 1 });
+// CoinSchema.index({ wallets: 1, spentHeight: 1 }, { sparse: true });
 
 CoinSchema.statics.getBalance = function(params: { query: CoinQuery }) {
   let { query } = params;

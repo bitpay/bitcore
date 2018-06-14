@@ -60,12 +60,13 @@ const BlockSchema = new Schema({
   processed: Boolean
 });
 
-BlockSchema.index({ hash: 1 });
-BlockSchema.index({ chain: 1, network: 1, processed: 1, height: -1 });
-BlockSchema.index({ chain: 1, network: 1, timeNormalized: 1 });
-BlockSchema.index({ previousBlockHash: 1 });
+BlockSchema.index({ hash: "hashed" });
+BlockSchema.index({ // chain: 1, network: 1,
+                    processed: 1, height: -1 });
+// BlockSchema.index({ chain: 1, network: 1, timeNormalized: 1 });
+// BlockSchema.index({ previousBlockHash: 1 });
 
-const batch = (items, n, f) => Promise.all(partition(items, n).map(f));
+const batch = (items, f, n = 10) => Promise.all(partition(items, n).map(f));
 
 BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
   const start = Date.now();
@@ -77,11 +78,7 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
 
   await BlockModel.handleReorg(first.header.prevHash, { chain, network });
 
-  const startBlock = await BlockModel.findOne({
-    hash: first.header.prevHash,
-    chain,
-    network
-  });
+  const startBlock = await BlockModel.findOne({ hash: first.header.prevHash });
   if (startBlock) {
     startBlock.nextBlockHash = first.header.hash;
     logger.debug('Updating previous block.nextBlockHash ', first.header.hash);
@@ -102,32 +99,24 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
   const mine = BlockModel.collection.bulkWrite(blocks.map((block, i) => {
     // Add the block
     return {
-      updateOne: {
-        filter: {
-          hash: block.header.hash,
+      insertOne: {
+        document: {
           chain,
-          network
+          network,
+          hash: block.header.hash,
+          height: height(i),
+          version: block.header.version,
+          previousBlockHash: block.header.prevHash,
+          merkleRoot: block.header.merkleRoot,
+          time: new Date(block.header.time),
+          timeNormalized: new Date(normalizedTimes[i]),
+          bits: block.header.bits,
+          nonce: block.header.nonce,
+          transactionCount: block.transactions.length,
+          size: block.size,
+          reward: block.reward,
+          nextBlockHash: blocks[i + 1] && blocks[i + 1].header.hash,
         },
-        update: {
-          $set: {
-            chain,
-            network,
-            height: height(i),
-            version: block.header.version,
-            previousBlockHash: block.header.prevHash,
-            merkleRoot: block.header.merkleRoot,
-            time: new Date(block.header.time),
-            timeNormalized: new Date(normalizedTimes[i]),
-            bits: block.header.bits,
-            nonce: block.header.nonce,
-            transactionCount: block.transactions.length,
-            size: block.size,
-            reward: block.reward,
-            nextBlockHash: blocks[i + 1] && blocks[i + 1].header.hash,
-          }
-        },
-        upsert: true,
-        forceServerObjectId: true
       },
     };
   }), {
@@ -137,7 +126,7 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
   const mint = blocks.map(async (block, i) => {
     const mintOps = await TransactionModel.getMintOps(block.transactions, height(i));
     logger.debug('Minting Coins', mintOps.length);
-    await batch(mintOps, 100, b => CoinModel.collection.bulkWrite(b, {
+    await batch(mintOps, b => CoinModel.collection.bulkWrite(b, {
       ordered: false,
     }));
   });
@@ -149,7 +138,7 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
   for (const [i, block] of blocks.entries()) {
     const spendOps = TransactionModel.getSpendOps(block.transactions, height(i));
     logger.debug('Spending Coins', spendOps.length);
-    await batch(spendOps, 100, b => CoinModel.collection.bulkWrite(b, {
+    await batch(spendOps, b => CoinModel.collection.bulkWrite(b, {
       ordered: false
     }));
   }
@@ -163,7 +152,7 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
       height: height(i),
     });
     logger.debug('Writing Transactions', txOps.length);
-    await batch(txOps, 100, b => TransactionModel.collection.bulkWrite(b, {
+    await batch(txOps, b => TransactionModel.collection.bulkWrite(b, {
       ordered: false
     }));
   }));
@@ -171,8 +160,6 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
   // Mark these blocks as 'processed'
   await Promise.all(blocks.map(block => BlockModel.update({
     hash: block.header.hash,
-    chain,
-    network
   }, {
     $set: {
       processed: true
@@ -180,7 +167,9 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
   })));
 
   const end = Date.now();
-  logger.info(`Avg. Time Per Block: ${(end - start) / blocks.length}`);
+  logger.info(`Avg. ms/Block: ${(end - start) / blocks.length}`);
+  const size = blocks.map(b => b.size).reduce((a, b) => a + b);
+  logger.info(`Avg. Bytes/ms: ${ size / (end - start) }`);
   return blocks.map(b => b.header.hash);
 };
 
@@ -190,21 +179,25 @@ BlockSchema.statics.getPoolInfo = function(coinbase: string) {
   return coinbase;
 };
 
-BlockSchema.statics.getLocalTip = async ({ chain, network }: ChainNetwork) => {
+// TODO: create a memo for local tip
+BlockSchema.statics.getLocalTip = async ({ // chain, network
+                                         }: ChainNetwork) => {
   const bestBlock = await BlockModel.findOne({
     processed: true,
-    chain,
-    network
+    // chain,
+    // network
   }).sort({ height: -1 });
   return bestBlock || { height: 0 };
 };
 
-BlockSchema.statics.getLocatorHashes = async (params: ChainNetwork) => {
-  const { chain, network } = params;
+// TODO: create a ring buffer for locator hashes
+BlockSchema.statics.getLocatorHashes = async (// params: ChainNetwork
+                                             ) => {
+  // const { chain, network } = params;
   const locatorBlocks = await BlockModel.find({
     processed: true,
-    chain,
-    network
+    // chain,
+    // network
   })
     .sort({ height: -1 })
     .limit(30)
@@ -230,30 +223,30 @@ BlockSchema.statics.handleReorg = async (prevHash: string, { chain, network }: C
   });
 
   await BlockModel.remove({
-    chain,
-    network,
+    // chain,
+    // network,
     height: {
       $gte: localTip.height
     }
   });
   await TransactionModel.remove({
-    chain,
-    network,
+    // chain,
+    // network,
     blockHeight: {
       $gte: localTip.height
     }
   });
   await CoinModel.remove({
-    chain,
-    network,
+    // chain,
+    // network,
     mintHeight: {
       $gte: localTip.height
     }
   });
   await CoinModel.update(
     {
-      chain,
-      network,
+      // chain,
+      // network,
       spentHeight: {
         $gte: localTip.height
       }

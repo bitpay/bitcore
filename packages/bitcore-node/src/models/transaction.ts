@@ -77,11 +77,11 @@ const TransactionSchema = new Schema({
   wallets: { type: [Schema.Types.ObjectId] }
 });
 
-TransactionSchema.index({ txid: 1 });
-TransactionSchema.index({ chain: 1, network: 1, blockHeight: 1 });
-TransactionSchema.index({ blockHash: 1 });
-TransactionSchema.index({ chain: 1, network: 1, blockTimeNormalized: 1 });
-TransactionSchema.index({ wallets: 1 }, { sparse: true });
+TransactionSchema.index({ txid: "hashed" });
+// TransactionSchema.index({ chain: 1, network: 1, blockHeight: 1 });
+// TransactionSchema.index({ blockHash: 1 });
+// TransactionSchema.index({ chain: 1, network: 1, blockTimeNormalized: 1 });
+// TransactionSchema.index({ wallets: 1 }, { sparse: true });
 
 TransactionSchema.statics.batchImport = async (txs: CoreTransaction[], blockInfo?: {
   blockHash: string;
@@ -126,7 +126,7 @@ TransactionSchema.statics.addTransactions = async (
   const mintWallets: CoinWalletAggregate[] = await CoinModel.collection
     .aggregate([
       {
-        $match: { mintTxid: { $in: txids }, chain, network }
+        $match: { mintTxid: { $in: txids } }
       },
       { $unwind: "$wallets" },
       { $group: { _id: "$mintTxid", wallets: { $addToSet: "$wallets" } } }
@@ -136,7 +136,7 @@ TransactionSchema.statics.addTransactions = async (
   const spentWallets: CoinWalletAggregate[] = await CoinModel.collection
     .aggregate([
       {
-        $match: { spentTxid: { $in: txids }, chain, network }
+        $match: { spentTxid: { $in: txids } }
       },
       { $unwind: "$wallets" },
       { $group: { _id: "$spentTxid", wallets: { $addToSet: "$wallets" } } }
@@ -159,29 +159,21 @@ TransactionSchema.statics.addTransactions = async (
     }
 
     return {
-      updateOne: {
-        filter: {
+      insertOne: {
+        document: {
           txid: tx.hash,
           chain,
-          network
+          network,
+          blockHeight: blockInfo? blockInfo.height : -1,
+          blockHash: blockInfo? blockInfo.blockHash : undefined,
+          blockTime: blockInfo? blockInfo.blockTime : new Date(),
+          blockTimeNormalized: blockInfo? blockInfo.blockTimeNormalized : new Date(),
+          coinbase: tx.coinbase,
+          size: tx.size,
+          locktime: tx.nLockTime,
+          wallets
         },
-        update: {
-          $set: {
-            chain,
-            network,
-            blockHeight: blockInfo? blockInfo.height : -1,
-            blockHash: blockInfo? blockInfo.blockHash : undefined,
-            blockTime: blockInfo? blockInfo.blockTime : new Date(),
-            blockTimeNormalized: blockInfo? blockInfo.blockTimeNormalized : new Date(),
-            coinbase: tx.coinbase,
-            size: tx.size,
-            locktime: tx.nLockTime,
-            wallets
-          }
-        },
-        upsert: true,
-        forceServerObjectId: true
-      }
+      },
     };
   });
 };
@@ -194,6 +186,7 @@ TransactionSchema.statics.getMintOps = async (
   const mintOps: any[] = [];
   let parentChainCoins = [];
 
+  // TODO: figure out parent chain cross-db
   if (info.parent && height < info.parent.height) {
     parentChainCoins = await CoinModel.find({
       chain: info.parent.chain,
@@ -212,42 +205,33 @@ TransactionSchema.statics.getMintOps = async (
       }
 
       mintOps.push({
-        updateOne: {
-          filter: {
+        insertOne: {
+          document: {
             mintTxid: tx.hash,
             mintIndex: index,
-            spentHeight: { $lt: 0 },
             chain: info.chain,
             network: info.network,
+            mintHeight: height,
+            coinbase: tx.coinbase,
+            value: output.value,
+            address: output.address,
+            script: output.script,
+            wallets: []
           },
-          update: {
-            $set: {
-              chain: info.chain,
-              network: info.network,
-              mintHeight: height,
-              coinbase: tx.coinbase,
-              value: output.value,
-              address: output.address,
-              script: output.script,
-              spentHeight: -2,
-              wallets: []
-            }
-          },
-          upsert: true,
-          forceServerObjectId: true
-        }
+        },
       });
     }
   }
 
   const mintOpsAddresses = mintOps.map(
-    mintOp => mintOp.updateOne.update.$set.address
+    mintOp => mintOp.insertOne.document.address
   );
 
   const wallets = await WalletAddressModel.collection.find({
     address: { $in: mintOpsAddresses },
-    chain: info.chain,
-    network: info.network
+    // TODO: update wallets db
+    // chain: info.chain,
+    // network: info.network
   }, {
     batchSize: 100
   }).toArray();
@@ -255,8 +239,8 @@ TransactionSchema.statics.getMintOps = async (
   if (wallets.length > 0) {
     return mintOps.map(mintOp => {
       const matchingAddrs= wallets
-        .filter(w => w.address === mintOp.updateOne.update.$set.address);
-      mintOp.updateOne.update.$set.wallets = matchingAddrs.map(w => w.wallet);
+        .filter(w => w.address === mintOp.insertOne.document.address);
+      mintOp.insertOne.document.wallets = matchingAddrs.map(w => w.wallet);
       return mintOp;
     });
   }
@@ -279,10 +263,6 @@ TransactionSchema.statics.getSpendOps = (
         updateOne: {
           filter: {
             mintTxid: input.prevTxId,
-            mintIndex: input.outputIndex,
-            spentHeight: { $lt: 0 },
-            chain: info.chain,
-            network: info.network,
           },
           update: {
             $set: {
