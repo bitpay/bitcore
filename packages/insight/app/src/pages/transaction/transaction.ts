@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { TxsProvider } from '../../providers/transactions/transactions';
+import { CurrencyProvider } from '../../providers/currency/currency';
 
 /**
  * Generated class for the TransactionPage page.
@@ -10,7 +11,7 @@ import { TxsProvider } from '../../providers/transactions/transactions';
  */
 @IonicPage({
   name: 'transaction',
-  segment: 'tx/:txId'
+  segment: ':selectedCurrency/tx/:txId'
 })
 @Component({
   selector: 'page-transaction',
@@ -22,7 +23,12 @@ export class TransactionPage {
   private txId: string;
   public tx: any = {};
 
-  constructor(public navCtrl: NavController, public navParams: NavParams, private txProvider: TxsProvider) {
+  constructor(
+    public navCtrl: NavController,
+    public navParams: NavParams,
+    private txProvider: TxsProvider,
+    public currency: CurrencyProvider
+  ) {
     this.txId = navParams.get('txId');
   }
 
@@ -41,6 +47,7 @@ export class TransactionPage {
 
   public goToBlock(blockHash: string): void {
     this.navCtrl.push('block-detail', {
+      'selectedCurrency': this.currency.selectedCurrency,
       'blockHash': blockHash
     });
   }

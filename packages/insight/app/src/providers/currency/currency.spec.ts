@@ -3,6 +3,7 @@ import { TestBed, ComponentFixture, inject } from '@angular/core/testing';
 import { HttpModule } from '@angular/http';
 import { CurrencyProvider } from './currency';
 import { ApiProvider } from '../api/api';
+import { DefaultProvider } from '../default/default';
 
 describe('CurrencyProvider', () => {
   let currency: CurrencyProvider;
@@ -14,13 +15,14 @@ describe('CurrencyProvider', () => {
       ],
       providers: [
         ApiProvider,
-        CurrencyProvider
+        CurrencyProvider,
+        DefaultProvider
       ]
     });
   });
 
-  beforeEach(inject([CurrencyProvider], _cp => {
-    currency = _cp;
+  beforeEach(inject([CurrencyProvider], provider => {
+    currency = provider;
   }));
 
   it('initialises', () => {

@@ -47,10 +47,8 @@
               </p>
               <div *ngFor="let item of vin.items">
                 <div *ngIf="item.scriptSig">
-                  <div *ngFor="let scriptSig of item.scriptSig.asm | split:' '">
-                    <div class="unlocking-script">
-                      <p>{{ scriptSig }}</p>
-                    </div>
+                  <div class="unlocking-script">
+                    <p>{{ item.scriptSig.asm }}
                   </div>
                 </div>
               </div>
@@ -87,7 +85,7 @@
                 <b>Locking Script</b>
               </p>
               <div class="locking-script">
-                <p>{{vout.scriptPubKey.asm}}</p>
+                <p>{{ vout.scriptPubKey.asm }}</p>
               </div>
             </div>
           </div>

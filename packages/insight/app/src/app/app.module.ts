@@ -5,12 +5,13 @@ import { IonicApp, IonicModule, IonicErrorHandler } from 'ionic-angular';
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
 import { InsightApp } from './app.component';
-import { PagesModule, HomePage, BlocksPage, NodeStatusPage, VerifyMessagePage } from '../pages';
+import { PagesModule, HomePage, BlocksPage } from '../pages';
 import { BlocksService, StorageService } from '../services';
 import { ApiProvider } from '../providers/api/api';
 import { CurrencyProvider } from '../providers/currency/currency';
 import { BlocksProvider } from '../providers/blocks/blocks';
 import { TxsProvider } from '../providers/transactions/transactions';
+import { DefaultProvider } from '../providers/default/default';
 
 @NgModule({
   declarations: [
@@ -26,9 +27,7 @@ import { TxsProvider } from '../providers/transactions/transactions';
   entryComponents: [
     InsightApp,
     HomePage,
-    BlocksPage,
-    NodeStatusPage,
-    VerifyMessagePage
+    BlocksPage
   ],
   providers: [
     StatusBar,
@@ -39,7 +38,8 @@ import { TxsProvider } from '../providers/transactions/transactions';
     ApiProvider,
     CurrencyProvider,
     BlocksProvider,
-    TxsProvider
+    TxsProvider,
+    DefaultProvider
   ]
 })
 

@@ -6,6 +6,7 @@ import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { ActionSheetController } from 'ionic-angular';
 import { PopoverController } from 'ionic-angular';
+import { ToastController } from 'ionic-angular';
 import { DenominationComponent } from '../denomination/denomination';
 
 /**
@@ -24,7 +25,6 @@ export class HeadNavComponent {
   public loading: boolean;
   @Input() public title: string;
   public q: string;
-  public badQuery: boolean = false;
 
   constructor(
     private navCtrl: NavController,
@@ -32,7 +32,8 @@ export class HeadNavComponent {
     private api: ApiProvider,
     public currency: CurrencyProvider,
     public actionSheetCtrl: ActionSheetController,
-    public popoverCtrl: PopoverController
+    public popoverCtrl: PopoverController,
+    public toastCtrl: ToastController
   ) {
   }
 
@@ -46,6 +47,7 @@ export class HeadNavComponent {
         console.log('block', data);
         let parsedData: any = JSON.parse(data._body);
         this.navCtrl.push('block-detail', {
+          'selectedCurrency': this.currency.selectedCurrency,
           'blockHash': parsedData.hash
         });
       }.bind(this),
@@ -56,6 +58,7 @@ export class HeadNavComponent {
             console.log('tx', data);
             let parsedData: any = JSON.parse(data._body);
             this.navCtrl.push('transaction', {
+              'selectedCurrency': this.currency.selectedCurrency,
               'txId': parsedData.txid
             });
           }.bind(this),
@@ -66,6 +69,7 @@ export class HeadNavComponent {
                 console.log('addr', data);
                 let parsedData: any = JSON.parse(data._body);
                 this.navCtrl.push('address', {
+                  'selectedCurrency': this.currency.selectedCurrency,
                   'addrStr': parsedData.addrStr
                 });
               }.bind(this),
@@ -73,8 +77,10 @@ export class HeadNavComponent {
                 this.http.get(apiPrefix + 'block-index/' + this.q).subscribe(
                   function (data: any): void {
                     this.resetSearch();
+                    console.log('height', data);
                     let parsedData: any = JSON.parse(data._body);
                     this.navCtrl.push('block-detail', {
+                      'selectedCurrency': this.currency.selectedCurrency,
                       'blockHash': parsedData.blockHash
                     });
                   }.bind(this),
@@ -93,17 +99,17 @@ export class HeadNavComponent {
 
   /* tslint:disable:no-unused-variable */
   private reportBadQuery(): void {
-    this.badQuery = true;
-    console.log('badQuery', this.badQuery);
+    this.presentToast();
+  }
 
-    setTimeout(
-      function (): void {
-        this.badQuery = false;
-        console.log('badQuery', this.badQuery);
-      }.bind(this),
-      2000
-    );
-  };
+  private presentToast(): void {
+    const toast: any = this.toastCtrl.create({
+      message: 'No matching records found!',
+      duration: 3000,
+      position: 'top'
+    });
+    toast.present();
+  }
 
   private resetSearch(): void {
     this.q = '';

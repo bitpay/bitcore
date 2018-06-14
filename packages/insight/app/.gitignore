@@ -38,3 +38,6 @@ $RECYCLE.BIN/
 .DS_Store
 Thumbs.db
 UserInterfaceState.xcuserstate
+
+# .docker env
+.docker/env/*.env
