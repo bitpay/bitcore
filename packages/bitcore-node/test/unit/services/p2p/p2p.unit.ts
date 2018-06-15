@@ -54,18 +54,18 @@ describe('P2P Service', () => {
   });
 
   it('should sync blocks in order', done => {
-    const db: number[] = [];
+    const db: string[] = [];
 
     const blocks: Subject<BlockEvent> = new Subject();
     const TransactionModel = mockTransactionModel();
-    const blockHashes = Array(100).fill(0).map((_, i) => ({hash: i + 1}));
+    const blockHashes = Array(100).fill(0).map((_, i) => ({hash: (i + 1).toString()}));
     const lastIndex = blockHashes.length-1;
     const BlockModel = mockBlockModel({
       addBlock: async (params) => {
         const idx = parseInt(params.block.hash);
         // simulate db taking a long time to write data
         await sleep((100 - idx)/2);
-        db.push(idx);
+        db.push(idx.toString());
         if (idx === 100) {
           expect(db[lastIndex]).to.deep.equal(blockHashes[lastIndex].hash);
           done();
@@ -96,16 +96,20 @@ describe('P2P Service', () => {
 
   it('should restart sync if new blocks have arrived', done => {
     let poolHeight = 50;
-    const db: number[] = [];
+    const db: string[] = [];
 
-    const blockHashes = Array(100).fill(0).map((_, i) => ({hash: i + 1}));
+    const blockHashes = Array(100).fill(0).map((_, i) => ({hash: (i + 1).toString()}));
     const hashes = blockHashes.map(b => b.hash);
     const first50 = blockHashes.slice(0, 50);
+    const last50 = blockHashes.slice(50, 100);
     const blocks: Subject<BlockEvent> = new Subject();
     const TransactionModel = mockTransactionModel();
     const BlockModel = mockBlockModel({
       addBlock: async (params) => {
-        db.push(parseInt(params.block.hash));
+        db.push(params.block.hash);
+        if(db.length === 50) {
+          poolHeight = 100
+        }
         if (db.length === 100) {
           expect(db).to.deep.equal(hashes);
           done();
@@ -121,22 +125,14 @@ describe('P2P Service', () => {
       height: () => {
         return poolHeight;
       },
-      getMissingBlockHashes: async() => poolHeight > 50 ? first50: blockHashes,
+      getMissingBlockHashes: async() => poolHeight > 50 ? last50: first50,
       getBlock: async(i) => {
         const block = JSON.parse(JSON.stringify(TEST_BLOCK));
         block.hash = i.toString();
         return block;
       },
       sync: async () => {
-        const start = poolHeight === 50 ? 1 : 51;
-        const end = poolHeight;
-        for (let i = start; i <= end; i += 1) {
-          await sleep(10);
-          if (poolHeight === 50 && i === 25) {
-            poolHeight = 100;
-          }
-        }
-        return end.toString();
+        return poolHeight.toString();
       },
     });
 
@@ -212,6 +208,7 @@ function mockTransactionModel(extra?: Partial<ITransactionModel>): ITransactionM
 
 function mockBlockModel(extra?: Partial<IBlockModel>): IBlockModel {
   return Object.assign({
+    handleReorg: () => {},
     addBlock: async () => {},
     getLocalTip: async () => {
       return {

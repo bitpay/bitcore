@@ -5,13 +5,14 @@ export class Prefetcher<I, O> {
 
   constructor(private args: Array<I>, private count: number, private applyFn: (arg: I) => O) {
     this.batchIterator = this.prefetch();
+    this.batchIterator.next();
   }
 
   private * prefetch() {
     if(!this.args.length) {
       return;
     }
-    let prefetchTilIndex = this.count;
+    let prefetchTilIndex = this.count - 1;
     let index = 0;
     let lastBatchHeader = this.args[prefetchTilIndex] || this.args[this.args.length -1];
     this.lastPrefetch = lastBatchHeader.toString();
