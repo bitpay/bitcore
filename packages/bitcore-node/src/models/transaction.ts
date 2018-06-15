@@ -94,19 +94,19 @@ TransactionSchema.statics.batchImport = async (txs: CoreTransaction[], blockInfo
 
   const mintOps = await TransactionModel.getMintOps(txs, height);
   logger.debug('Minting Coins', mintOps.length);
-  await batch(mintOps, 100, b => CoinModel.collection.bulkWrite(b, {
+  await batch(mintOps, 10, b => CoinModel.collection.bulkWrite(b, {
     ordered: false
   }));
 
   const spendOps = TransactionModel.getSpendOps(txs, height);
   logger.debug('Spending Coins', spendOps.length);
-  await batch(spendOps, 100, b => CoinModel.collection.bulkWrite(b, {
+  await batch(spendOps, 10, b => CoinModel.collection.bulkWrite(b, {
     ordered: false
   }));
 
   const txOps = await TransactionModel.addTransactions(txs, blockInfo);
   logger.debug('Writing Transactions', txOps.length);
-  await batch(txOps, 100, b => TransactionModel.collection.bulkWrite(b, {
+  await batch(txOps, 10, b => TransactionModel.collection.bulkWrite(b, {
     ordered: false
   }));
 };
@@ -233,7 +233,7 @@ TransactionSchema.statics.getMintOps = async (
     // chain: info.chain,
     // network: info.network
   }, {
-    batchSize: 100
+    batchSize: 10
   }).toArray();
 
   if (wallets.length > 0) {
