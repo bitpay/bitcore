@@ -7,7 +7,7 @@ import { ChainNetwork } from '../types/ChainNetwork';
 import { TransformableModel } from '../types/TransformableModel';
 import { LoggifyObject } from '../decorators/Loggify';
 import { CoreBlock } from '../types/namespaces/ChainAdapter';
-import { partition } from '../utils/partition';
+// import { partition } from '../utils/partition';
 
 export interface IBlock {
   chain: string;
@@ -23,7 +23,7 @@ export interface IBlock {
   nextBlockHash: string;
   transactionCount: number;
   size: number;
-  bits: number;
+  bits: string;
   reward: number;
   processed: boolean;
 }
@@ -55,7 +55,7 @@ const BlockSchema = new Schema({
   nextBlockHash: String,
   transactionCount: Number,
   size: Number,
-  bits: Number,
+  bits: String,
   reward: Number,
   processed: Boolean
 });
@@ -66,10 +66,25 @@ BlockSchema.index({ // chain: 1, network: 1,
 // BlockSchema.index({ chain: 1, network: 1, timeNormalized: 1 });
 // BlockSchema.index({ previousBlockHash: 1 });
 
-// const batch = (items, f, n = 10) => Promise.all(partition(items, n).map(f));
+export function batch<T, M>(items: T[], f: (items: T[]) => Promise<M>, n: number = 100): Promise<M[]> {
+  const partitioned: {
+    curr: T[];
+    accum: T[][];
+  } = {
+    curr: [],
+    accum: [],
+  };
 
-function batch<T, M>(items: T[], f: (items: T[]) => Promise<M>, n: number = 10): Promise<M[]> {
-  return Promise.all(partition(items, n).map(f));
+  for (const [i, item] of items.entries()) {
+    partitioned.curr.push(item);
+    if (i % n === 0) {
+      partitioned.accum.push(partitioned.curr);
+      partitioned.curr = [];
+    }
+  }
+  partitioned.accum.push(partitioned.curr);
+
+  return Promise.all(partitioned.accum.map(f));
 }
 
 BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
@@ -101,7 +116,7 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
   const height = i => ((startBlock && startBlock.height + 1) || 1) + i;
 
   // Mine all the blocks
-  const mine = batch(blocks.map((block, i) => {
+  const mine = BlockModel.collection.bulkWrite(blocks.map((block, i) => {
     return {
       insertOne: {
         document: {
@@ -123,45 +138,46 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
         },
       },
     };
-  }), batch => BlockModel.collection.bulkWrite(batch, {
+  }), {
     ordered: false,
-  }));
+  }).then(_ => {});
 
-  // Mint & Spend the coins
-  const coins = blocks
-    .map(async (block, i) => {
-      const mintOps = await TransactionModel.getMintOps(block.transactions, height(i));
-      const spendOps = TransactionModel.getSpendOps(block.transactions, height(i));
-      return mintOps.concat(spendOps);
-    })
-    .reduce(async (a, b) => {
-      return (await a).concat(await b);
-    })
-    .then(ops => batch(ops, batch => CoinModel.collection.bulkWrite(batch, {
-      ordered: false,
-    })));
+  // Mint the coins!
+  const mint = blocks.map(async (block, i) => {
+    const mintOps = await TransactionModel.getMintOps(block.transactions, height(i));
+    if (mintOps.length > 0) {
+      await CoinModel.collection.bulkWrite(mintOps, {
+        ordered: false,
+      });
+    }
+  });
+
+  // Spend the coins!
+  const spend = blocks.map(async (block, i) => {
+    const spendOps = TransactionModel.getSpendOps(block.transactions, height(i));
+    if (spendOps.length > 0) {
+      await CoinModel.collection.bulkWrite(spendOps, {
+        ordered: false,
+      });
+    }
+  });
 
   await Promise.all([
     mine,
-    coins,
-  ]);
+  ].concat(mint).concat(spend));
 
   // Add transactions
-  const transactions = blocks
-    .map((block, i) => TransactionModel.addTransactions(block.transactions, {
+  await Promise.all(blocks.map(async (block, i) => {
+    const ops = await TransactionModel.addTransactions(block.transactions, {
         blockHash: block.header.hash,
         blockTime: block.header.time,
         blockTimeNormalized: normalizedTimes[i],
         height: height(i),
-    }))
-    .reduce(async (a, b) => {
-      return (await a).concat(await b);
-    })
-    .then(ops => batch(ops, b => TransactionModel.collection.bulkWrite(b, {
+    });
+    return await TransactionModel.collection.bulkWrite(ops, {
       ordered: false
-    })));
-
-  await transactions;
+    });
+  }));
 
   // Mark these blocks as 'processed'
   await Promise.all(blocks.map(block => BlockModel.update({

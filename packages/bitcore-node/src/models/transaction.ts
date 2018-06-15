@@ -120,6 +120,9 @@ TransactionSchema.statics.addTransactions = async (
     height: number;
   }
 ): Promise<any[]> => {
+	if (txs.length === 0) {
+		return [];
+	}
   const { chain, network } = txs[0];
   const txids = txs.map(tx => tx.hash);
 
@@ -182,6 +185,9 @@ TransactionSchema.statics.getMintOps = async (
   txs: CoreTransaction[],
   height: number,
 ): Promise<any[]> => {
+	if (txs.length === 0) {
+		return [];
+	}
   const info: ChainInfo = txs[0];
   const mintOps: any[] = [];
   let parentChainCoins = [];
@@ -251,6 +257,9 @@ TransactionSchema.statics.getSpendOps = (
   txs: CoreTransaction[],
   height: number,
 ): any[] => {
+	if (txs.length === 0) {
+		return [];
+	}
   const info: ChainInfo = txs[0];
   if (info.parent && height < info.parent.height) {
     return [];

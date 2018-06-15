@@ -66,7 +66,7 @@ export const TEST_MONGO_BLOCK: IBlock = {
   size: 264,
   transactionCount: 1,
   nonce: 2,
-  bits: 545259519,
+  bits: '545259519',
   time: new Date(1526756523),
   timeNormalized: new Date(1526756523),
   merkleRoot: "08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08",
