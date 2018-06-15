@@ -15,6 +15,8 @@ export interface ICoin {
   wallets: Schema.Types.ObjectId;
   spentTxid: string;
   spentHeight: number;
+  spent?: boolean;
+  minted?: boolean;
 }
 export type CoinQuery = {[key in keyof ICoin]?: any}  &
   Partial<DocumentQuery<ICoin, Document>>;
@@ -36,7 +38,9 @@ const CoinSchema = new Schema({
   script: Buffer,
   wallets: { type: [Schema.Types.ObjectId] },
   spentTxid: String,
-  spentHeight: Number
+  spentHeight: Number,
+  spent: Boolean,
+  minted: Boolean,
 });
 
 CoinSchema.index({ mintTxid: "hashed" });
@@ -49,9 +53,13 @@ CoinSchema.index({ address: "hashed" });
 CoinSchema.index({ spentTxid: "hashed" }, { sparse: true });
 // CoinSchema.index({ spentHeight: 1, chain: 1, network: 1 });
 // CoinSchema.index({ wallets: 1, spentHeight: 1 }, { sparse: true });
+CoinSchema.index({ minted: 1, spent: 1 });
+
+// TODO: need to find unspent coins, and find all coins with certain wallets
 
 CoinSchema.statics.getBalance = function(params: { query: CoinQuery }) {
   let { query } = params;
+  // TODO: getBalance uses CoinModel.spentHeight index
   query = Object.assign(query, { spentHeight: { $lt: 0 } });
   return CoinModel.aggregate([
     { $match: query },

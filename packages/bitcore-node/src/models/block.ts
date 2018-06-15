@@ -205,6 +205,7 @@ BlockSchema.statics.getPoolInfo = function(coinbase: string) {
 BlockSchema.statics.getLocalTip = async ({ // chain, network
                                          }: ChainNetwork) => {
   const bestBlock = await BlockModel.findOne({
+    // TODO: BlockModel.getLocalTip uses BlockModel.processed key
     processed: true,
     // chain,
     // network
@@ -217,6 +218,7 @@ BlockSchema.statics.getLocatorHashes = async (// params: ChainNetwork
                                              ) => {
   // const { chain, network } = params;
   const locatorBlocks = await BlockModel.find({
+    // TODO: BlockModel.locatorBlocks uses BlockModel.processed key
     processed: true,
     // chain,
     // network
@@ -251,6 +253,7 @@ BlockSchema.statics.handleReorg = async (prevHash: string, { chain, network }: C
       $gte: localTip.height
     }
   });
+  // TODO: handleReorg uses TransactionModel.blockHeight index
   await TransactionModel.remove({
     // chain,
     // network,
@@ -261,6 +264,7 @@ BlockSchema.statics.handleReorg = async (prevHash: string, { chain, network }: C
   await CoinModel.remove({
     // chain,
     // network,
+    // TODO: Reorg uses CoinModel.mintHeight index
     mintHeight: {
       $gte: localTip.height
     }
@@ -269,6 +273,7 @@ BlockSchema.statics.handleReorg = async (prevHash: string, { chain, network }: C
     {
       // chain,
       // network,
+      // TODO: Reorg uses CoinModel.spentHeight index
       spentHeight: {
         $gte: localTip.height
       }

@@ -19,6 +19,7 @@ import { AdapterProvider } from '../../providers/adapter';
 
 
 export interface P2pService<Block, Transaction> {
+  // TODO: remove rxjs and use something else
   // a stream of incoming blocks
   blocks(): Observable<Block[]>;
 

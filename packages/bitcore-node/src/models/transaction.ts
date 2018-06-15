@@ -83,6 +83,9 @@ TransactionSchema.index({ txid: "hashed" });
 // TransactionSchema.index({ chain: 1, network: 1, blockTimeNormalized: 1 });
 // TransactionSchema.index({ wallets: 1 }, { sparse: true });
 
+// TODO: blockHash, blockHeight, blockTimeNormalized, wallets indices are all used
+// might be able to get away with just indexing wallets
+
 TransactionSchema.statics.batchImport = async (txs: CoreTransaction[], blockInfo?: {
   blockHash: string;
   blockTime: number;
@@ -198,6 +201,7 @@ TransactionSchema.statics.getMintOps = async (
       chain: info.parent.chain,
       network: info.network,
       mintHeight: height,
+      // TODO: getting parent unspent coins uses CoinModel.spentHeight index
       spentHeight: { $gt: -2, $lt: info.parent.height }
     }).lean();
   }
@@ -211,18 +215,24 @@ TransactionSchema.statics.getMintOps = async (
       }
 
       mintOps.push({
-        insertOne: {
-          document: {
+        updateOne: {
+          filter: {
             mintTxid: tx.hash,
-            mintIndex: index,
-            chain: info.chain,
-            network: info.network,
-            mintHeight: height,
-            coinbase: tx.coinbase,
-            value: output.value,
-            address: output.address,
-            script: output.script,
-            wallets: []
+          },
+          update: {
+            $set: {
+              mintTxid: tx.hash,
+              mintIndex: index,
+              chain: info.chain,
+              network: info.network,
+              mintHeight: height,
+              coinbase: tx.coinbase,
+              value: output.value,
+              address: output.address,
+              script: output.script,
+              wallets: [],
+              minted: true,
+            },
           },
         },
       });
@@ -276,7 +286,8 @@ TransactionSchema.statics.getSpendOps = (
           update: {
             $set: {
               spentTxid: tx.hash,
-              spentHeight: height
+              spentHeight: height,
+              spent: true,
             }
           }
         }

@@ -63,6 +63,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getBalanceForWallet(params: CSP.GetBalanceForWalletParams) {
+    // TODO: getBalanceForWallet uses CoinModel.wallets index
     const { walletId } = params;
     let query = { wallets: walletId };
     return CoinModel.getBalance({ query });
@@ -135,9 +136,11 @@ export class InternalStateProvider implements CSP.IChainStateService {
       network: network.toLowerCase()
     };
     if (args.blockHeight) {
+      // TODO: streamTransactions uses TransactionModel.blockHeight index
       query.blockHeight = Number(args.blockHeight);
     }
     if (args.blockHash) {
+      // TODO: streamTransactions uses TransactionModel.blockHash index
       query.blockHash = args.blockHash;
     }
     TransactionModel.getTransactions({ query })
@@ -187,6 +190,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return WalletAddressModel.updateCoins({ wallet, addresses });
   }
 
+  // TODO: streamWalletTransactions uses indices: blockHeight, wallets, blockTimeNormalized
   async streamWalletTransactions(params: CSP.StreamWalletTransactionsParams) {
     let { network, wallet, stream, args } = params;
     let query: TransactionQuery = {
