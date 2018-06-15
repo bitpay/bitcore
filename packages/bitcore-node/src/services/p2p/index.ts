@@ -52,7 +52,7 @@ export interface P2pService<Block, Transaction> {
   syncing: boolean;
 
   getMissingBlockHashes(hashes: string[]): Promise<{hash: string}[]>;
-  getBlock(hash: string): Promise<any>;
+  getBlock(hash: string): Promise<Block>;
 }
 
 export type StandardP2p = P2pService<Bitcoin.Block, Bitcoin.Transaction>;
@@ -78,7 +78,7 @@ export class P2pRunner {
   private blocks: IBlockModel;
   private transactions: ITransactionModel;
   public events: EventEmitter;
-  private blockPrefetcher: Prefetcher<string, Promise<any>> | null = null;
+  private blockPrefetcher: Prefetcher<string, Promise<Bitcoin.Block>> | null = null;
 
   constructor(
     chain: string,
@@ -171,7 +171,7 @@ export class P2pRunner {
   }
 
 
-  async getBlock(hash: string) {
+  async getBlock(hash: string): Promise<Bitcoin.Block> {
     if(this.blockPrefetcher) {
       return this.blockPrefetcher.get(hash)
     }
