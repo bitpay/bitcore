@@ -15,6 +15,7 @@ import { CSP } from '../../types/namespaces/ChainStateProvider';
 import { setImmediate } from 'timers';
 import { EventEmitter } from 'events';
 import { LoggifyClass } from '../../decorators/Loggify';
+import { Prefetcher } from "../../utils/prefetcher";
 
 const P2PClasses: {
   [key: string]: Class<StandardP2p>;
@@ -50,7 +51,7 @@ export interface P2pService<Block, Transaction> {
   // when `true` only emit blocks that result from the syncing process
   syncing: boolean;
 
-  getMissingBlockHashes(hashes: string[]): Promise<any[]>;
+  getMissingBlockHashes(hashes: string[]): Promise<{hash: string}[]>;
   getBlock(hash: string): Promise<any>;
 }
 
@@ -76,8 +77,8 @@ export class P2pRunner {
   private network: string;
   private blocks: IBlockModel;
   private transactions: ITransactionModel;
-
   public events: EventEmitter;
+  private blockPrefetcher: Prefetcher<string, Promise<any>> | null = null;
 
   constructor(
     chain: string,
@@ -169,46 +170,12 @@ export class P2pRunner {
     };
   }
 
-  prefetcher: Iterator<void> | null = null;
-  prefetched = {};
-  * prefetch(headers: Array<{hash: string}>, count: number) {
-    if(!headers.length) {
-      return;
-    }
-    let prefetchTilIndex = count;
-    let index = 0;
-    let lastBatchHeader = headers[prefetchTilIndex] || headers[headers.length -1];
-    this.lastPrefetch = lastBatchHeader.hash;
-    for(let {hash} of headers) {
-      this.prefetched[hash] = this.service.getBlock(hash);
-      this.lastPrefetch = hash;
-      if(index == prefetchTilIndex ) {
-        yield;
-        // pause until we use the hash we stopped at
-        if(Object.keys(this.prefetched).length >  1.5 * count) {
-          this.prefetched = {};
-        }
-        prefetchTilIndex += count;
-      } else {
-        index++;
-      }
-    }
-  }
 
-  lastPrefetch = '';
   async getBlock(hash: string) {
-    if(this.prefetched[hash]) {
-      const block = this.prefetched[hash];
-      if(this.lastPrefetch == hash && this.prefetcher) {
-        this.prefetcher.next()
-      }
-      return block;
-    } else {
-      if(this.prefetcher) {
-        this.prefetcher.next()
-      }
-      return this.service.getBlock(hash);
+    if(this.blockPrefetcher) {
+      return this.blockPrefetcher.get(hash)
     }
+    return this.service.getBlock(hash);
   }
 
   async sync(): Promise<ChainSyncer> {
@@ -261,10 +228,10 @@ export class P2pRunner {
 
         const headers = await this.service.getMissingBlockHashes(locators);
         finalHash = headers[headers.length -1].hash;
-
-        this.prefetcher = this.prefetch(headers, 10);
-        for (const header of headers) {
-          const block = await this.getBlock(header.hash);
+        let hashes = headers.map(h => h.hash);
+        this.blockPrefetcher = new Prefetcher(hashes, 10, this.service.getBlock);
+        for (const hash of hashes) {
+          const block = await this.getBlock(hash);
           logger.debug('Block received', block.hash);
           await this.blocks.addBlock({
             chain: this.chain,
