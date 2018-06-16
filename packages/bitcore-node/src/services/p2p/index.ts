@@ -12,7 +12,6 @@ import { ITransactionModel } from '../../models/transaction';
 import { SupportedChain, SupportedChainSet } from '../../types/SupportedChain';
 import { BtcP2pService } from './bitcoin';
 import { CSP } from '../../types/namespaces/ChainStateProvider';
-import { setImmediate } from 'timers';
 import { EventEmitter } from 'events';
 import { CoreBlock, CoreTransaction, IChainAdapter, ChainInfo } from '../../types/namespaces/ChainAdapter';
 import { AdapterProvider } from '../../providers/adapter';
@@ -31,7 +30,7 @@ export interface P2pService<Block, Transaction> {
 
   // sync data from previous history according to these hashes
   // returns the hash of the last block synced
-  sync(locatorHashes: string[]): Promise<string | undefined>;
+  sync(locatorHashes: string[]): Promise<Block[]>;
 
   // get the max height of every peer in the pool
   height(): number;
@@ -85,21 +84,17 @@ export class P2pRunner {
     transactions: Observable<CoreTransaction>,
   }> {
     logger.debug(`Started worker for chain ${this.chain}`);
-    const syncer = await this.sync();
+    // TODO: careful this does not hold up all the other services starting
+    this.service.syncing = true;
+    await this.service.start();
+    await this.sync();
 
     const blocks = this.service.blocks().pipe(concatMap(async blocks => {
-      logger.info(`Adding ${blocks.length} blocks...`);
-      const hashes = blocks.map(b => b.header.hash);
       await this.blocks.addBlocks(blocks);
-      if (this.service.syncing && blocks.length > 0) {
-        syncer.add(hashes);
-      }
-      else {
-        logger.info(`Added blocks ${blocks.map(b => b.header.hash)}`, {
-          chain: this.chain,
-          network: this.network,
-        });
-      }
+      logger.info(`Added blocks ${blocks.map(b => b.header.hash)}`, {
+        chain: this.chain,
+        network: this.network,
+      });
       return blocks;
     })).pipe(share());
     blocks.subscribe(() => {}, logger.error.bind(logger));
@@ -115,8 +110,6 @@ export class P2pRunner {
     txs.subscribe(() => {}, logger.error.bind(logger));
 
     // wait for it to get connected
-    await this.service.start();
-    syncer.start();
     return {
       blocks,
       transactions: txs,
@@ -130,83 +123,64 @@ export class P2pRunner {
       chain: this.chain,
       network: this.network
     });
-    let finished = false;
-    let finalHash;
-    let recentHash;
-    let goalHeight;
-    let counter = 0;
-    let lastLog = 0;
 
-    // sync the main chain
-    const start = async () => {
-      // get best block we currently have to see if we're synced
-      let bestBlock = await tip();
+    // get best block we currently have to see if we're synced
+    let bestBlock = await tip();
 
-      // wait for the parent fork to sync first
-      if (parent && parent.height && bestBlock.height < parent.height) {
-        logger.info(`Waiting until ${parent.chain} syncs before ${this.chain}`);
-        do {
-          await sleep(5000);
-          bestBlock = await tip();
-        }
-        while (bestBlock.height < parent.height);
+    // wait for the parent fork to sync first
+    if (parent && parent.height && bestBlock.height < parent.height) {
+      logger.info(`Waiting until ${parent.chain} syncs before ${this.chain}`);
+      do {
+        await sleep(5000);
+        bestBlock = await tip();
       }
+      while (bestBlock.height < parent.height);
+    }
 
-      counter = bestBlock.height;
+    const locators = await this.blocks.getLocatorHashes({
+      chain: this.chain,
+      network: this.network
+    });
+    logger.debug(`Received ${locators.length} headers`);
+
+    let blocks = await this.service.sync(locators);
+    let counter = bestBlock.height;
+    let goalHeight = this.service.height();
+    let stop = false;
+    process.on('SIGINT', () => {
+      logger.warn("Caught CTRL-C stopping gracefully...");
+      stop = true;
+    });
+
+    do {
+      logger.info(`Syncing from ${counter} to ${goalHeight} for chain ${this.chain}`);
+      logger.info(`Adding ${blocks.length} blocks...`);
+      counter += blocks.length;
+
+      await Promise.all([
+        this.blocks.addBlocks(blocks),
+        (async () => {
+          // TODO: what happens if < 30?
+          const locators = blocks.slice(-30).map(b => b.header.hash).reverse();
+          blocks = await this.service.sync(locators);
+          logger.info(`Done parsing.`);
+        })(),
+      ]);
+
       goalHeight = this.service.height();
-      if (bestBlock.height !== goalHeight) {
-        logger.info(
-          `Syncing from ${bestBlock.height} to ${this.service.height()} for chain ${
-          this.chain
-        }`);
+      logger.info(`Sync progress ${(counter * 100 / goalHeight).toFixed(3)}%`, {
+        chain: this.chain,
+        network: this.network,
+        height: counter
+      });
+    } while (counter !== goalHeight && !stop);
 
-        const locators = await this.blocks.getLocatorHashes({
-          chain: this.chain,
-          network: this.network
-        });
-        logger.debug(`Received ${locators.length} headers`);
-
-        finalHash = await this.service.sync(locators);
-        if (finalHash && recentHash === finalHash) {
-          setImmediate(() => start());
-        }
-      }
-      else {
-        logger.info(`${this.chain} up to date.`);
-        this.service.syncing = false;
-        finished = true;
-        this.events.emit(P2pEvents.SYNC_COMPLETE, true);
-      }
-    };
-
-    // notify syncing service that a hash has been added to the db
-    return {
-      add: (hashes: string[]) => {
-        if (finished || !goalHeight) {
-          return;
-        }
-        logger.debug(`Syncing blocks ${hashes}`, {
-          chain: this.chain,
-          network: this.network
-        });
-        counter += hashes.length;
-        if (Date.now() - lastLog > 100) {
-          logger.info(`Sync progress ${(counter * 100 / goalHeight).toFixed(3)}%`, {
-            chain: this.chain,
-            network: this.network,
-            height: counter
-          });
-          lastLog = Date.now();
-        }
-        if (hashes.slice(-1)[0] === finalHash) {
-          start();
-        }
-        else {
-          recentHash = hashes.slice(-1)[0];
-        }
-      },
-      start,
-    };
+    if (stop) {
+      process.exit(0);
+    }
+    logger.info(`${this.chain} up to date.`);
+    this.service.syncing = false;
+    this.events.emit(P2pEvents.SYNC_COMPLETE, true);
   }
 }
 
@@ -310,7 +284,10 @@ function standardize<B, T>(
       return adapter.convertTx(info, tx);
     })),
     start: () => service.start(),
-    sync: hashes => service.sync(hashes),
+    sync: hashes => service.sync(hashes).then(blocks => {
+      logger.info(`Parsing ${blocks.length} blocks...`);
+      return blocks.map(block => adapter.convertBlock(info, block));
+    }),
     height: () => service.height(),
     parent: () => service.parent(),
     stop: () => service.stop(),

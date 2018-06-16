@@ -211,7 +211,7 @@ TransactionSchema.statics.getMintOps = async (
       mintOps.push({
         updateOne: {
           filter: {
-			id: `${tx.hash}.${index}`,
+            id: `${tx.hash}.${index}`,
           },
           update: {
             $set: {
@@ -225,7 +225,6 @@ TransactionSchema.statics.getMintOps = async (
               address: output.address,
               script: output.script,
               wallets: [],
-              minted: true,
             },
           },
           upsert: true,

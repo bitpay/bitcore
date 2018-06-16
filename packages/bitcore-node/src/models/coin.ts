@@ -17,7 +17,6 @@ export interface ICoin {
   spentTxid: string;
   spentHeight: number;
   spent?: boolean;
-  minted?: boolean;
 }
 export type CoinQuery = {[key in keyof ICoin]?: any}  &
   Partial<DocumentQuery<ICoin, Document>>;
@@ -42,21 +41,20 @@ const CoinSchema = new Schema({
   spentTxid: String,
   spentHeight: Number,
   spent: Boolean,
-  minted: Boolean,
 });
 
 CoinSchema.index({ id: "hashed" });
 CoinSchema.index({ mintTxid: "hashed" });
+CoinSchema.index({ address: "hashed" });
+CoinSchema.index({ spentTxid: "hashed" }, { sparse: true });
+CoinSchema.index({ wallets: 1, spent: 1 });
+CoinSchema.index({ spent: 1 });
 // CoinSchema.index(
 //   { mintTxid: 1, mintIndex: 1 },
 //   { partialFilterExpression: { spentHeight: { $lt: 0 } } }
 // );
-CoinSchema.index({ address: "hashed" });
 // CoinSchema.index({ mintHeight: 1, chain: 1, network: 1 });
-CoinSchema.index({ spentTxid: "hashed" }, { sparse: true });
 // CoinSchema.index({ spentHeight: 1, chain: 1, network: 1 });
-CoinSchema.index({ wallets: 1, minted: 1, spent: 1 }, { sparse: true });
-CoinSchema.index({ minted: 1, spent: 1 }, { sparse: true });
 
 // TODO: need to find unspent coins, and find all coins with certain wallets
 
