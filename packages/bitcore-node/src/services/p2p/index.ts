@@ -143,7 +143,7 @@ export class P2pRunner {
       let bestBlock = await tip();
 
       // wait for the parent fork to sync first
-      if (parent && bestBlock.height < parent.height) {
+      if (parent && parent.height && bestBlock.height < parent.height) {
         logger.info(`Waiting until ${parent.chain} syncs before ${this.chain}`);
         do {
           await sleep(5000);

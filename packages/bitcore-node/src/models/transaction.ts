@@ -81,7 +81,7 @@ TransactionSchema.index({ txid: "hashed" });
 // TransactionSchema.index({ chain: 1, network: 1, blockHeight: 1 });
 // TransactionSchema.index({ blockHash: 1 });
 // TransactionSchema.index({ chain: 1, network: 1, blockTimeNormalized: 1 });
-// TransactionSchema.index({ wallets: 1 }, { sparse: true });
+TransactionSchema.index({ wallets: 1 }, { sparse: true });
 
 // TODO: blockHash, blockHeight, blockTimeNormalized, wallets indices are all used
 // might be able to get away with just indexing wallets
@@ -123,9 +123,6 @@ TransactionSchema.statics.addTransactions = async (
     height: number;
   }
 ): Promise<any[]> => {
-	if (txs.length === 0) {
-		return [];
-	}
   const { chain, network } = txs[0];
   const txids = txs.map(tx => tx.hash);
 
@@ -188,15 +185,12 @@ TransactionSchema.statics.getMintOps = async (
   txs: CoreTransaction[],
   height: number,
 ): Promise<any[]> => {
-	if (txs.length === 0) {
-		return [];
-	}
   const info: ChainInfo = txs[0];
   const mintOps: any[] = [];
   let parentChainCoins = [];
 
   // TODO: figure out parent chain cross-db
-  if (info.parent && height < info.parent.height) {
+  if (info.parent && info.parent.height && height < info.parent.height) {
     parentChainCoins = await CoinModel.find({
       chain: info.parent.chain,
       network: info.network,
@@ -217,7 +211,7 @@ TransactionSchema.statics.getMintOps = async (
       mintOps.push({
         updateOne: {
           filter: {
-            mintTxid: tx.hash,
+			id: `${tx.hash}.${index}`,
           },
           update: {
             $set: {
@@ -234,13 +228,15 @@ TransactionSchema.statics.getMintOps = async (
               minted: true,
             },
           },
+          upsert: true,
+          forceServerObjectId: true,
         },
       });
     }
   }
 
   const mintOpsAddresses = mintOps.map(
-    mintOp => mintOp.insertOne.document.address
+    mintOp => mintOp.updateOne.update.$set.address
   );
 
   const wallets = await WalletAddressModel.collection.find({
@@ -255,8 +251,8 @@ TransactionSchema.statics.getMintOps = async (
   if (wallets.length > 0) {
     return mintOps.map(mintOp => {
       const matchingAddrs= wallets
-        .filter(w => w.address === mintOp.insertOne.document.address);
-      mintOp.insertOne.document.wallets = matchingAddrs.map(w => w.wallet);
+        .filter(w => w.address === mintOp.updateOne.update.$set.address);
+      mintOp.updateOne.update.$set.wallets = matchingAddrs.map(w => w.wallet);
       return mintOp;
     });
   }
@@ -267,11 +263,8 @@ TransactionSchema.statics.getSpendOps = (
   txs: CoreTransaction[],
   height: number,
 ): any[] => {
-	if (txs.length === 0) {
-		return [];
-	}
   const info: ChainInfo = txs[0];
-  if (info.parent && height < info.parent.height) {
+  if (info.parent && info.parent.height && height < info.parent.height) {
     return [];
   }
 
@@ -281,16 +274,18 @@ TransactionSchema.statics.getSpendOps = (
       const updateQuery: any = {
         updateOne: {
           filter: {
-            mintTxid: input.prevTxId,
+			id: `${input.prevTxId}.${input.outputIndex}`,
           },
           update: {
             $set: {
               spentTxid: tx.hash,
               spentHeight: height,
               spent: true,
-            }
-          }
-        }
+            },
+          },
+          upsert: true,
+          forceServerObjectId: true,
+        },
       };
       if (config.pruneSpentScripts && height > 0) {
         updateQuery.updateOne.update.$unset = {

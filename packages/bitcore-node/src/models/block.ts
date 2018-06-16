@@ -145,11 +145,9 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
   // Mint the coins!
   const mint = blocks.map(async (block, i) => {
     const mintOps = await TransactionModel.getMintOps(block.transactions, height(i));
-    if (mintOps.length > 0) {
-      await CoinModel.collection.bulkWrite(mintOps, {
-        ordered: false,
-      });
-    }
+	await CoinModel.collection.bulkWrite(mintOps, {
+	  ordered: false,
+	});
   });
 
   // Spend the coins!

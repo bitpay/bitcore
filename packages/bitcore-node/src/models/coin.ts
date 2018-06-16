@@ -3,6 +3,7 @@ import { TransformableModel } from "../types/TransformableModel";
 import { LoggifyObject } from "../decorators/Loggify";
 
 export interface ICoin {
+  id: string;
   network: string;
   chain: string;
   mintTxid: string;
@@ -27,6 +28,7 @@ export interface ICoinModel extends ICoinModelDoc {
   getBalance: (params: { query: CoinQuery }) => Promise<{balance: number}[]>;
 }
 const CoinSchema = new Schema({
+  id: String,
   network: String,
   chain: String,
   mintTxid: String,
@@ -43,6 +45,7 @@ const CoinSchema = new Schema({
   minted: Boolean,
 });
 
+CoinSchema.index({ id: "hashed" });
 CoinSchema.index({ mintTxid: "hashed" });
 // CoinSchema.index(
 //   { mintTxid: 1, mintIndex: 1 },
@@ -52,8 +55,8 @@ CoinSchema.index({ address: "hashed" });
 // CoinSchema.index({ mintHeight: 1, chain: 1, network: 1 });
 CoinSchema.index({ spentTxid: "hashed" }, { sparse: true });
 // CoinSchema.index({ spentHeight: 1, chain: 1, network: 1 });
-// CoinSchema.index({ wallets: 1, spentHeight: 1 }, { sparse: true });
-CoinSchema.index({ minted: 1, spent: 1 });
+CoinSchema.index({ wallets: 1, minted: 1, spent: 1 }, { sparse: true });
+CoinSchema.index({ minted: 1, spent: 1 }, { sparse: true });
 
 // TODO: need to find unspent coins, and find all coins with certain wallets
 
