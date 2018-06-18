@@ -1,20 +1,24 @@
-import mongoose = require("mongoose");
 import { Response } from "express";
 import { TransformableModel } from "../types/TransformableModel";
 import logger from '../logger';
 import config from '../config';
 import { LoggifyClass } from "../decorators/Loggify";
+import { MongoClient, Db } from "mongodb";
 import "../models"
 
 @LoggifyClass
 export class StorageService {
-  start(args: any): Promise<any> {
+  client: MongoClient | undefined;
+  db: Db | undefined;
+  connected: boolean = false;
+
+  start(args: any): Promise<MongoClient> {
     return new Promise((resolve, reject) => {
       let options = Object.assign({}, config, args);
       let { dbName, dbHost } = options;
       const connectUrl = `mongodb://${dbHost}/${dbName}?socketTimeoutMS=3600000&noDelay=true`;
       let attemptConnect = async () => {
-        return mongoose.connect(connectUrl, {
+        return MongoClient.connect(connectUrl, {
           keepAlive: 1,
           poolSize: config.maxPoolSize,
           /*
@@ -25,15 +29,17 @@ export class StorageService {
       let attempted = 0;
       let attemptConnectId = setInterval(async () => {
         try {
-          let data = await attemptConnect();
+          this.client = await attemptConnect();
+          this.db = this.client.db(dbName);
+          this.connected = true;
           clearInterval(attemptConnectId);
-          resolve(data);
+          resolve(this.client);
         } catch (err) {
           logger.error(err);
           attempted++;
           if (attempted > 5) {
             clearInterval(attemptConnectId);
-            reject(err);
+            reject(new Error("Failed to connect to database"));
           }
         }
       }, 5000);
