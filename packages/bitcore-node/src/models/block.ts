@@ -156,28 +156,46 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
     }).then(_ => {});
   });
 
-  // Mint the coins!
-  const mint = blocks.map(async (block, i) => {
-    const mintOps = await time(timings, `mint_ops_${i}`, async () => {
-      return await TransactionModel.getMintOps(block.transactions, height(i))
-    });
-    await time(timings, `bulkwrite_mint_${i}`, async () => {
-      await CoinModel.collection.bulkWrite(mintOps, {
-        ordered: false,
-      });
+  // Mint & Spend: Merge Strategy
+  const txs = blocks.map((block, i) => {
+    return {
+      height: height(i),
+      txs: block.transactions,
+    };
+  });
+  const mint = await TransactionModel.getMintOps(txs);
+  const spend = TransactionModel.getSpendOps(txs);
+
+  const memo = mint.reduce((prev, curr) => {
+    const doc = curr.updateOne.update.$set;
+    if (!prev[doc.mintTxid]) {
+      prev[doc.mintTxid] = {};
+    }
+    prev[doc.mintTxid][doc.mintIndex] = curr;
+    return prev;
+  }, {});
+
+  const merged_spend = spend.filter(op => {
+    const filter = op.updateOne.filter;
+    const mintop = memo[filter.mintTxid][filter.mintIndex];
+    if (mintop) {
+      mintop.updateOne.update.$set.spentTxid = op.updateOne.update.$set.spentTxid;
+      mintop.updateOne.update.$set.spentHeight = op.updateOne.update.$set.spentHeight;
+      return false;
+    }
+    return true;
+  });
+
+  const bulk_mint = time(timings, `bulkwrite_mint`, async () => {
+    await CoinModel.collection.bulkWrite(mint, {
+      ordered: false,
     });
   });
 
-  // Spend the coins!
-  const spend = blocks.map(async (block, i) => {
-    const spendOps = await time(timings, `spend_ops_${i}`, async () => {
-      return TransactionModel.getSpendOps(block.transactions, height(i));
-    });
-    if (spendOps.length > 0) {
-      await time(timings, `bulkwrite_spend_${i}`, async () => {
-        await CoinModel.collection.bulkWrite(spendOps, {
-          ordered: false,
-        });
+  const bulk_spend = time(timings, `bulkwrite_spend`, async () => {
+    if (merged_spend.length > 0) {
+      await CoinModel.collection.bulkWrite(merged_spend, {
+        ordered: false,
       });
     }
   });
@@ -185,7 +203,7 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
   await time(timings, 'all_mine_mint_spend', async () => {
     return await Promise.all([
       mine,
-    ].concat(mint).concat(spend));
+    ].concat(bulk_mint).concat(bulk_spend));
   });
 
   // Add transactions

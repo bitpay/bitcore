@@ -52,8 +52,14 @@ export interface ITransactionModel extends ITransactionModelDoc {
     blockTimeNormalized: number;
     height: number;
   }) => Promise<void>;
-  getMintOps: (txs: CoreTransaction[], height: number) => Promise<any[]>;
-  getSpendOps: (txs: CoreTransaction[], height: number) => any[];
+  getMintOps: (transactions: {
+    txs: CoreTransaction[];
+    height: number;
+  }[]) => Promise<any[]>;
+  getSpendOps: (transactions: {
+    txs: CoreTransaction[];
+    height: number;
+  }[]) => any[];
   addTransactions: (txs: CoreTransaction[], blockInfo?: {
     blockHash: string;
     blockTime: number;
@@ -95,13 +101,19 @@ TransactionSchema.statics.batchImport = async (txs: CoreTransaction[], blockInfo
   const batch = (items, n, f) => Promise.all(partition(items, n).map(f));
   const height = (blockInfo && blockInfo.height) || -1;
 
-  const mintOps = await TransactionModel.getMintOps(txs, height);
+  const mintOps = await TransactionModel.getMintOps([{
+    txs,
+    height,
+  }]);
   logger.debug('Minting Coins', mintOps.length);
   await batch(mintOps, 10, b => CoinModel.collection.bulkWrite(b, {
     ordered: false
   }));
 
-  const spendOps = TransactionModel.getSpendOps(txs, height);
+  const spendOps = TransactionModel.getSpendOps([{
+    txs,
+    height,
+  }]);
   logger.debug('Spending Coins', spendOps.length);
   await batch(spendOps, 10, b => CoinModel.collection.bulkWrite(b, {
     ordered: false
@@ -182,128 +194,136 @@ TransactionSchema.statics.addTransactions = async (
 };
 
 TransactionSchema.statics.getMintOps = async (
-  txs: CoreTransaction[],
-  height: number,
+  transactions: {
+    txs: CoreTransaction[];
+    height: number;
+  }[]
 ): Promise<any[]> => {
-  const info: ChainInfo = txs[0];
-  const mintOps: any[] = [];
-  let parentChainCoins = [];
+  const info: ChainInfo = transactions[0].txs[0];
 
-  // TODO: figure out parent chain cross-db
-  if (info.parent && info.parent.height && height < info.parent.height) {
+  let parentChainCoins: {
+    mintTxid: string;
+    mintIndex: number;
+  }[] = [];
+  if (info.parent && info.parent.height && transactions[0].height < info.parent.height) {
     parentChainCoins = await CoinModel.find({
       chain: info.parent.chain,
       network: info.network,
-      mintHeight: height,
-      // TODO: getting parent unspent coins uses CoinModel.spentHeight index
-      spentHeight: { $gt: -2, $lt: info.parent.height }
-    }).lean();
+      mintHeight: {
+        $lte: transactions.slice(-1)[0].height,
+        $gte: transactions[0].height,
+      },
+      mintTxid: {
+        $in: [].concat.apply([], transactions.map(t => t.txs.map(tx => tx.hash)))
+      },
+    }, {
+      mintTxid: 1,
+      mintIndex: 1,
+    });
   }
-
-  for (const tx of txs) {
-    for (const [index, output] of tx.outputs.entries()) {
-      if (parentChainCoins.find((parentChainCoin: ICoinModel) =>
-                                parentChainCoin.mintTxid === tx.hash &&
-                                parentChainCoin.mintIndex === index)) {
-        continue;
-      }
-
-      mintOps.push({
-        updateOne: {
-          filter: {
-            mintTxid: tx.hash,
-            mintIndex: index,
-            chain: info.chain,
-            network: info.network,
-          },
-          update: {
-            $set: {
-              id: `${tx.hash}.${index}`,
-              mintTxid: tx.hash,
-              mintIndex: index,
-              chain: info.chain,
-              network: info.network,
-              mintHeight: height,
-              coinbase: tx.coinbase,
-              value: output.value,
-              address: output.address,
-              script: output.script,
-              wallets: [],
-            },
-          },
-          upsert: true,
-          forceServerObjectId: true,
-        },
-      });
-    }
-  }
-
-  const mintOpsAddresses = mintOps.map(
-    mintOp => mintOp.updateOne.update.$set.address
-  );
 
   const wallets = await WalletAddressModel.collection.find({
-    address: { $in: mintOpsAddresses },
-    // TODO: update wallets db
-    // chain: info.chain,
-    // network: info.network
+    address: {
+      $in: [].concat.apply([], transactions.map(t => {
+        return [].concat.apply([], t.txs.map(tx => {
+          return tx.outputs.map(out => out.address);
+        }))
+      })),
+    },
+    chain: info.chain,
+    network: info.network
   }, {
     batchSize: 10
   }).toArray();
 
-  if (wallets.length > 0) {
-    return mintOps.map(mintOp => {
-      const matchingAddrs= wallets
-        .filter(w => w.address === mintOp.updateOne.update.$set.address);
-      mintOp.updateOne.update.$set.wallets = matchingAddrs.map(w => w.wallet);
-      return mintOp;
-    });
-  }
-  return mintOps;
+  return [].concat.apply([], transactions.map(transaction => {
+    return [].concat.apply([], transaction.txs.map(tx => {
+      return tx.outputs
+        .filter((_, index) => parentChainCoins.find(coin => {
+          return coin.mintTxid == tx.hash && coin.mintIndex == index;
+        }))
+        .map((output, index) => {
+          return {
+            updateOne: {
+              filter: {
+                mintTxid: tx.hash,
+                mintIndex: index,
+                chain: info.chain,
+                network: info.network,
+              },
+              update: {
+                $set: {
+                  mintTxid: tx.hash,
+                  mintIndex: index,
+                  chain: info.chain,
+                  network: info.network,
+                  mintHeight: transaction.height,
+                  coinbase: tx.coinbase,
+                  value: output.value,
+                  address: output.address,
+                  script: output.script,
+                  wallets: wallets
+                    .filter(w => w.address === output.address)
+                    .map(w => w.wallet),
+                },
+              },
+              upsert: true,
+              forceServerObjectId: true,
+            },
+          };
+        });
+    }));
+  }));
 }
 
 TransactionSchema.statics.getSpendOps = (
-  txs: CoreTransaction[],
-  height: number,
+  transactions: {
+    txs: CoreTransaction[];
+    height: number;
+  }[]
 ): any[] => {
-  const info: ChainInfo = txs[0];
-  if (info.parent && info.parent.height && height < info.parent.height) {
+  const info: ChainInfo = transactions[0].txs[0];
+  if (!info) {
     return [];
   }
-
-  const spendOps: any[] = [];
-  for (const tx of txs.filter(tx => !tx.coinbase)) {
-    for (const input of tx.inputs) {
-      const updateQuery: any = {
-        updateOne: {
-          filter: {
-            mintTxid: input.prevTxId,
-            mintIndex: input.outputIndex,
-            chain: info.chain,
-            network: info.network,
-          },
-          update: {
-            $set: {
-              mintTxid: input.prevTxId,
-              mintIndex: input.outputIndex,
-              spentTxid: tx.hash,
-              spentHeight: height,
-              spent: true,
-            },
-          },
-          upsert: true,
-          forceServerObjectId: true,
-        },
-      };
-      if (config.pruneSpentScripts && height > 0) {
-        updateQuery.updateOne.update.$unset = {
-          script: null,
-        };
-      }
-      spendOps.push(updateQuery);
-    }
+  if (info.parent && info.parent.height) {
+    transactions = transactions.filter(t => info.parent && t.height >= info.parent.height);
   }
-  return spendOps;
+
+  return [].concat.apply([], transactions.map(txs => {
+    return [].concat.apply([], txs.txs
+      .filter(tx => !tx.coinbase)
+      .map(tx => {
+        return tx.inputs.map(input => {
+          const op: any = {
+            updateOne: {
+              filter: {
+                mintTxid: input.prevTxId,
+                mintIndex: input.outputIndex,
+                chain: info.chain,
+                network: info.network,
+              },
+              update: {
+                $set: {
+                  mintTxid: input.prevTxId,
+                  mintIndex: input.outputIndex,
+                  spentTxid: tx.hash,
+                  spentHeight: txs.height,
+                },
+              },
+              upsert: true,
+              forceServerObjectId: true,
+            },
+          };
+          if (config.pruneSpentScripts && txs.height > 0) {
+            op.updateOne.update.$unset = {
+              script: null,
+            };
+          }
+          return op;
+        });
+      }));
+  }));
 };
 
 TransactionSchema.statics.getTransactions = function(params: {
