@@ -177,8 +177,8 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
 
   const merged_spend = spend.filter(op => {
     const filter = op.updateOne.filter;
-    const mintop = memo[filter.mintTxid][filter.mintIndex];
-    if (mintop) {
+    if (memo[filter.mintTxid] && memo[filter.mintTxid][filter.mintIndex]) {
+      const mintop = memo[filter.mintTxid][filter.mintIndex];
       mintop.updateOne.update.$set.spentTxid = op.updateOne.update.$set.spentTxid;
       mintop.updateOne.update.$set.spentHeight = op.updateOne.update.$set.spentHeight;
       return false;

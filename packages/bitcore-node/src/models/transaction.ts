@@ -239,8 +239,8 @@ TransactionSchema.statics.getMintOps = async (
   return [].concat.apply([], transactions.map(transaction => {
     return [].concat.apply([], transaction.txs.map(tx => {
       return tx.outputs
-        .filter((_, index) => parentChainCoins.find(coin => {
-          return coin.mintTxid == tx.hash && coin.mintIndex == index;
+        .filter((_, index) => !parentChainCoins.find(coin => {
+          return coin.mintTxid === tx.hash && coin.mintIndex === index;
         }))
         .map((output, index) => {
           return {
