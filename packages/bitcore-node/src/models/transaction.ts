@@ -77,10 +77,10 @@ const TransactionSchema = new Schema({
   wallets: { type: [Schema.Types.ObjectId] }
 });
 
-TransactionSchema.index({ txid: "hashed" });
-// TransactionSchema.index({ chain: 1, network: 1, blockHeight: 1 });
-// TransactionSchema.index({ blockHash: 1 });
-// TransactionSchema.index({ chain: 1, network: 1, blockTimeNormalized: 1 });
+TransactionSchema.index({ txid: 1 });
+TransactionSchema.index({ chain: 1, network: 1, blockHeight: 1 });
+TransactionSchema.index({ blockHash: 1 });
+TransactionSchema.index({ chain: 1, network: 1, blockTimeNormalized: 1 });
 TransactionSchema.index({ wallets: 1 }, { sparse: true });
 
 // TODO: blockHash, blockHeight, blockTimeNormalized, wallets indices are all used
@@ -211,10 +211,14 @@ TransactionSchema.statics.getMintOps = async (
       mintOps.push({
         updateOne: {
           filter: {
-            id: `${tx.hash}.${index}`,
+            mintTxid: tx.hash,
+            mintIndex: index,
+            chain: info.chain,
+            network: info.network,
           },
           update: {
             $set: {
+              id: `${tx.hash}.${index}`,
               mintTxid: tx.hash,
               mintIndex: index,
               chain: info.chain,
@@ -273,10 +277,15 @@ TransactionSchema.statics.getSpendOps = (
       const updateQuery: any = {
         updateOne: {
           filter: {
-			id: `${input.prevTxId}.${input.outputIndex}`,
+            mintTxid: input.prevTxId,
+            mintIndex: input.outputIndex,
+            chain: info.chain,
+            network: info.network,
           },
           update: {
             $set: {
+              mintTxid: input.prevTxId,
+              mintIndex: input.outputIndex,
               spentTxid: tx.hash,
               spentHeight: height,
               spent: true,

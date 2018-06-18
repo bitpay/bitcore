@@ -43,18 +43,17 @@ const CoinSchema = new Schema({
   spent: Boolean,
 });
 
-CoinSchema.index({ id: "hashed" });
-CoinSchema.index({ mintTxid: "hashed" });
-CoinSchema.index({ address: "hashed" });
-CoinSchema.index({ spentTxid: "hashed" }, { sparse: true });
-CoinSchema.index({ wallets: 1, spent: 1 });
-CoinSchema.index({ spent: 1 });
-// CoinSchema.index(
-//   { mintTxid: 1, mintIndex: 1 },
-//   { partialFilterExpression: { spentHeight: { $lt: 0 } } }
-// );
-// CoinSchema.index({ mintHeight: 1, chain: 1, network: 1 });
-// CoinSchema.index({ spentHeight: 1, chain: 1, network: 1 });
+CoinSchema.index({ mintTxid: 1 });
+CoinSchema.index({ mintTxid: 1, mintIndex: 1 }, {
+  partialFilterExpression: {
+    spentHeight: { $lt: 0 },
+  }
+});
+CoinSchema.index({ address: 1 });
+CoinSchema.index({ mintHeight: 1, chain: 1, network: 1 });
+CoinSchema.index({ spentTxid: 1 }, { sparse: true });
+CoinSchema.index({ spentHeight: 1, chain: 1, network: 1 });
+CoinSchema.index({ wallets: 1, spentHeight: 1 });
 
 // TODO: need to find unspent coins, and find all coins with certain wallets
 

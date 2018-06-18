@@ -167,6 +167,11 @@ export class P2pRunner {
         })(),
       ]);
 
+      if (counter >= 200000) {
+        logger.warn(`Reached height 200000, exiting early.`);
+        process.exit(0);
+      }
+
       goalHeight = this.service.height();
       logger.info(`Sync progress ${(counter * 100 / goalHeight).toFixed(3)}%`, {
         chain: this.chain,

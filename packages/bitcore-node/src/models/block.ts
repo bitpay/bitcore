@@ -60,10 +60,9 @@ const BlockSchema = new Schema({
   processed: Boolean
 });
 
-BlockSchema.index({ hash: "hashed" });
-BlockSchema.index({ // chain: 1, network: 1,
-                    processed: 1, height: -1 });
-// BlockSchema.index({ chain: 1, network: 1, timeNormalized: 1 });
+BlockSchema.index({ hash: 1 }, { unique: true });
+BlockSchema.index({ chain: 1, network: 1, processed: 1, height: -1 });
+BlockSchema.index({ chain: 1, network: 1, timeNormalized: 1 });
 // BlockSchema.index({ previousBlockHash: 1 });
 
 export function batch<T, M>(items: T[], f: (items: T[]) => Promise<M>, n: number = 100): Promise<M[]> {
@@ -87,7 +86,18 @@ export function batch<T, M>(items: T[], f: (items: T[]) => Promise<M>, n: number
   return Promise.all(partitioned.accum.map(f));
 }
 
+async function time<T>(store: {
+  [key: string]: number;
+}, title: string, f: () => PromiseLike<T>): Promise<T> {
+  const start = Date.now();
+  const result = await f();
+  const end = Date.now();
+  store[title] = end - start;
+  return result;
+};
+
 BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
+  const timings = {};
   const start = Date.now();
   const first = blocks[0];
   if (!first) {
@@ -97,7 +107,9 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
 
   await BlockModel.handleReorg(first.header.prevHash, { chain, network });
 
-  const startBlock = await BlockModel.findOne({ hash: first.header.prevHash });
+  const startBlock = await time(timings, 'find_start_block', async () => {
+    return await BlockModel.findOne({ hash: first.header.prevHash })
+  });
   if (startBlock) {
     startBlock.nextBlockHash = first.header.hash;
     logger.debug('Updating previous block.nextBlockHash ', first.header.hash);
@@ -116,80 +128,110 @@ BlockSchema.statics.addBlocks = async (blocks: CoreBlock[]) => {
   const height = i => ((startBlock && startBlock.height + 1) || 1) + i;
 
   // Mine all the blocks
-  const mine = BlockModel.collection.bulkWrite(blocks.map((block, i) => {
-    return {
-      insertOne: {
-        document: {
-          chain,
-          network,
-          hash: block.header.hash,
-          height: height(i),
-          version: block.header.version,
-          previousBlockHash: block.header.prevHash,
-          merkleRoot: block.header.merkleRoot,
-          time: new Date(block.header.time),
-          timeNormalized: new Date(normalizedTimes[i]),
-          bits: block.header.bits,
-          nonce: block.header.nonce,
-          transactionCount: block.transactions.length,
-          size: block.size,
-          reward: block.reward,
-          nextBlockHash: blocks[i + 1] && blocks[i + 1].header.hash,
+  const mine = time(timings, `bulkwrite_blocks`, async () => {
+    return await BlockModel.collection.bulkWrite(blocks.map((block, i) => {
+      return {
+        insertOne: {
+          document: {
+            chain,
+            network,
+            hash: block.header.hash,
+            height: height(i),
+            version: block.header.version,
+            previousBlockHash: block.header.prevHash,
+            merkleRoot: block.header.merkleRoot,
+            time: new Date(block.header.time),
+            timeNormalized: new Date(normalizedTimes[i]),
+            bits: block.header.bits,
+            nonce: block.header.nonce,
+            transactionCount: block.transactions.length,
+            size: block.size,
+            reward: block.reward,
+            nextBlockHash: blocks[i + 1] && blocks[i + 1].header.hash,
+          },
         },
-      },
-    };
-  }), {
-    ordered: false,
-  }).then(_ => {});
+      };
+    }), {
+      ordered: false,
+    }).then(_ => {});
+  });
 
   // Mint the coins!
   const mint = blocks.map(async (block, i) => {
-    const mintOps = await TransactionModel.getMintOps(block.transactions, height(i));
-	await CoinModel.collection.bulkWrite(mintOps, {
-	  ordered: false,
-	});
+    const mintOps = await time(timings, `mint_ops_${i}`, async () => {
+      return await TransactionModel.getMintOps(block.transactions, height(i))
+    });
+    await time(timings, `bulkwrite_mint_${i}`, async () => {
+      await CoinModel.collection.bulkWrite(mintOps, {
+        ordered: false,
+      });
+    });
   });
 
   // Spend the coins!
   const spend = blocks.map(async (block, i) => {
-    const spendOps = TransactionModel.getSpendOps(block.transactions, height(i));
+    const spendOps = await time(timings, `spend_ops_${i}`, async () => {
+      return TransactionModel.getSpendOps(block.transactions, height(i));
+    });
     if (spendOps.length > 0) {
-      await CoinModel.collection.bulkWrite(spendOps, {
-        ordered: false,
+      await time(timings, `bulkwrite_spend_${i}`, async () => {
+        await CoinModel.collection.bulkWrite(spendOps, {
+          ordered: false,
+        });
       });
     }
   });
 
-  await Promise.all([
-    mine,
-  ].concat(mint).concat(spend));
+  await time(timings, 'all_mine_mint_spend', async () => {
+    return await Promise.all([
+      mine,
+    ].concat(mint).concat(spend));
+  });
 
   // Add transactions
   await Promise.all(blocks.map(async (block, i) => {
-    const ops = await TransactionModel.addTransactions(block.transactions, {
+    const ops = await time(timings, `add_transactions_${i}`, async () => {
+      return await TransactionModel.addTransactions(block.transactions, {
         blockHash: block.header.hash,
         blockTime: block.header.time,
         blockTimeNormalized: normalizedTimes[i],
         height: height(i),
+      });
     });
-    return await TransactionModel.collection.bulkWrite(ops, {
-      ordered: false
+    return await time(timings, `bulkwrite_transactions_${i}`, async () => {
+      return await TransactionModel.collection.bulkWrite(ops, {
+        ordered: false
+      });
     });
   }));
 
+  // Mark unspent coins with spent height -2
+  await time(timings, 'unspent_coins', async () => {
+    await CoinModel.update({
+      spentHeight: null,
+    }, {
+      $set: {
+        spentHeight: -2,
+      }
+    })
+  });
+
   // Mark these blocks as 'processed'
-  await Promise.all(blocks.map(block => BlockModel.update({
-    hash: block.header.hash,
-  }, {
-    $set: {
-      processed: true
-    }
-  })));
+  await time(timings, 'blocks_mark_processed', async () => {
+    await Promise.all(blocks.map(block => BlockModel.update({
+      hash: block.header.hash,
+    }, {
+      $set: {
+        processed: true
+      }
+    })));
+  });
 
   const end = Date.now();
   logger.info(`Avg. ms/Block: ${(end - start) / blocks.length}`);
   const size = blocks.map(b => b.size).reduce((a, b) => a + b);
   logger.info(`Avg. Bytes/ms: ${ size / (end - start) }`);
+  console.log(`Profiling: ${startBlock? startBlock.height : 0} ${JSON.stringify(timings)}`);
   return blocks.map(b => b.header.hash);
 };
 
@@ -201,7 +243,7 @@ BlockSchema.statics.getPoolInfo = function(coinbase: string) {
 
 // TODO: create a memo for local tip
 BlockSchema.statics.getLocalTip = async ({ // chain, network
-                                         }: ChainNetwork) => {
+}: ChainNetwork) => {
   const bestBlock = await BlockModel.findOne({
     // TODO: BlockModel.getLocalTip uses BlockModel.processed key
     processed: true,
@@ -213,7 +255,7 @@ BlockSchema.statics.getLocalTip = async ({ // chain, network
 
 // TODO: create a ring buffer for locator hashes
 BlockSchema.statics.getLocatorHashes = async (// params: ChainNetwork
-                                             ) => {
+) => {
   // const { chain, network } = params;
   const locatorBlocks = await BlockModel.find({
     // TODO: BlockModel.locatorBlocks uses BlockModel.processed key
