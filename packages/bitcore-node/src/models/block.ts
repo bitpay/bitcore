@@ -84,19 +84,22 @@ export class Block extends BaseModel<IBlock> {
         network
       },
       {
-        chain,
-        network,
-        height,
-        version: header.version,
-        previousBlockHash: header.prevHash,
-        merkleRoot: header.merkleRoot,
-        time: new Date(blockTime),
-        timeNormalized: new Date(blockTimeNormalized),
-        bits: header.bits,
-        nonce: header.nonce,
-        transactionCount: block.transactions.length,
-        size: block.toBuffer().length,
-        reward: block.transactions[0].outputAmount
+        $set: {
+          chain,
+          network,
+          hash: block.hash,
+          height,
+          version: header.version,
+          previousBlockHash: header.prevHash,
+          merkleRoot: header.merkleRoot,
+          time: new Date(blockTime),
+          timeNormalized: new Date(blockTimeNormalized),
+          bits: header.bits,
+          nonce: header.nonce,
+          transactionCount: block.transactions.length,
+          size: block.toBuffer().length,
+          reward: block.transactions[0].outputAmount
+        }
       },
       {
         upsert: true
@@ -110,7 +113,7 @@ export class Block extends BaseModel<IBlock> {
           network,
           hash: previousBlock.hash
         },
-        { nextBlockHash: header.hash }
+        { $set: { nextBlockHash: header.hash } }
       );
       logger.debug('Updating previous block.nextBlockHash ', header.hash);
     }
