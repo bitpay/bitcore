@@ -4,7 +4,7 @@ import { TransformOptions } from '../types/TransformOptions';
 import { ChainNetwork } from '../types/ChainNetwork';
 import { LoggifyClass } from '../decorators/Loggify';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
-import { BaseModel } from "./base";
+import { BaseModel } from './base';
 import logger from '../logger';
 
 export type IBlock = {
@@ -24,18 +24,22 @@ export type IBlock = {
   bits: number;
   reward: number;
   processed: boolean;
-}
+};
 
 @LoggifyClass
 export class Block extends BaseModel<IBlock> {
-
   constructor() {
     super('blocks');
   }
 
   async onConnect() {
     this.collection.createIndex({ hash: 1 });
-    this.collection.createIndex({ chain: 1, network: 1, processed: 1, height: -1 });
+    this.collection.createIndex({
+      chain: 1,
+      network: 1,
+      processed: 1,
+      height: -1
+    });
     this.collection.createIndex({ chain: 1, network: 1, timeNormalized: 1 });
     this.collection.createIndex({ previousBlockHash: 1 });
   }
@@ -53,14 +57,17 @@ export class Block extends BaseModel<IBlock> {
 
     await this.handleReorg({ header, chain, network });
 
-    const previousBlock = (await this.collection.findOneAndUpdate({
+    const previousBlock = await this.collection.findOne({
       hash: header.prevHash,
       chain,
       network
-    }, {nextBlockHash: header.hash})).value;
+    });
 
     const blockTimeNormalized = (() => {
-      if (previousBlock && blockTime <= previousBlock.timeNormalized.getTime()) {
+      if (
+        previousBlock &&
+        blockTime <= previousBlock.timeNormalized.getTime()
+      ) {
         return previousBlock.timeNormalized.getTime() + 1;
       } else {
         return blockTime;
@@ -96,6 +103,18 @@ export class Block extends BaseModel<IBlock> {
       }
     );
 
+    if (previousBlock) {
+      await this.collection.updateOne(
+        {
+          chain,
+          network,
+          hash: previousBlock.hash
+        },
+        { nextBlockHash: header.hash }
+      );
+      logger.debug('Updating previous block.nextBlockHash ', header.hash);
+    }
+
     await TransactionModel.batchImport({
       txs: block.transactions,
       blockHash: header.hash,
@@ -114,31 +133,34 @@ export class Block extends BaseModel<IBlock> {
     );
   }
 
-
   getPoolInfo(coinbase: string) {
     //TODO need to make this actually parse the coinbase input and map to miner strings
     // also should go somewhere else
     return coinbase;
-  };
+  }
 
-  async getLocalTip(params: ChainNetwork)  {
+  async getLocalTip(params: ChainNetwork) {
     const { chain, network } = params;
-    const [ bestBlock ] = await this.collection.find({
-      processed: true,
-      chain,
-      network
-    }).sort({ height: -1 }).limit(1).toArray();
+    const [bestBlock] = await this.collection
+      .find({
+        processed: true,
+        chain,
+        network
+      })
+      .sort({ height: -1 })
+      .limit(1)
+      .toArray();
     return bestBlock || { height: 0 };
-  };
-
+  }
 
   async getLocatorHashes(params: ChainNetwork) {
     const { chain, network } = params;
-    const locatorBlocks = await this.collection.find({
-      processed: true,
-      chain,
-      network
-    })
+    const locatorBlocks = await this.collection
+      .find({
+        processed: true,
+        chain,
+        network
+      })
       .sort({ height: -1 })
       .limit(30)
       .toArray();
@@ -147,8 +169,7 @@ export class Block extends BaseModel<IBlock> {
       return [Array(65).join('0')];
     }
     return locatorBlocks.map(block => block.hash);
-  };
-
+  }
 
   async handleReorg(params: {
     header?: Bitcoin.Block.HeaderObj;
@@ -206,11 +227,9 @@ export class Block extends BaseModel<IBlock> {
     );
 
     logger.debug('Removed data from above blockHeight: ', localTip.height);
-  };
+  }
 
-
-
-  _apiTransform( block: IBlock, options: TransformOptions): IBlock | string {
+  _apiTransform(block: IBlock, options: TransformOptions): IBlock | string {
     let transform: IBlock = {
       chain: block.chain,
       network: block.network,
@@ -245,7 +264,7 @@ export class Block extends BaseModel<IBlock> {
       return transform;
     }
     return JSON.stringify(transform);
-  };
+  }
 }
 
 export let BlockModel = new Block();
