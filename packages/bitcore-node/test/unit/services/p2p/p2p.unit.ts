@@ -212,6 +212,7 @@ function mockTransactionModel(extra?: Partial<ITransactionModel>): ITransactionM
 
 function mockBlockModel(extra?: Partial<IBlockModel>): IBlockModel {
   return Object.assign({
+    handleReorg: async () => {},
     addBlock: async () => {},
     getLocalTip: async () => {
       return {
