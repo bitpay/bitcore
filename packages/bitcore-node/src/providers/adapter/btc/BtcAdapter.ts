@@ -24,8 +24,8 @@ export class BTCAdapter
       version: Number(header.version),
       bits: Number(header.bits),
       nonce: Number(header.nonce),
-      time: new Date(header.time * 1000),
-      timeNormalized: new Date(header.time * 1000),
+      time: header.time * 1000,
+      timeNormalized: header.time * 1000,
       transactionCount: block.transactions.length,
       size: block.toBuffer().length,
       reward: block.transactions[0].outputAmount,
@@ -49,9 +49,9 @@ export class BTCAdapter
       locktime: tx.nLockTime,
       wallets: [],
       blockHash: hash,
-      blockTime: time,
+      blockTime: new Date(time),
       blockHeight: height,
-      blockTimeNormalized: timeNormalized
+      blockTimeNormalized: new Date(timeNormalized)
     };
     return converted;
   }

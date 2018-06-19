@@ -4,7 +4,7 @@ import glob from 'glob';
 import Mocha from 'mocha';
 
 import config from '../../src/config';
-import { StorageService } from '../../src/services/storage';
+import { Storage } from '../../src/services/storage';
 
 const TIMEOUT = 5000;
 const TEST_DIR = path.join(__dirname, '../integration');
@@ -21,8 +21,7 @@ function handleError(err) {
 }
 
 function startTestDatabase() {
-  let storage = new StorageService();
-  return storage.start(storageArgs);
+  return Storage.start(storageArgs);
 }
 
 function runTests() {
