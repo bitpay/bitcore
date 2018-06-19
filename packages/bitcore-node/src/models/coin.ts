@@ -22,6 +22,9 @@ class Coin extends BaseModel<ICoin> {
 
   constructor() {
     super('coins');
+  }
+
+  onConnect() {
     this.collection.createIndex({ mintTxid: 1 });
     this.collection.createIndex(
       { mintTxid: 1, mintIndex: 1 },
@@ -37,7 +40,7 @@ class Coin extends BaseModel<ICoin> {
   getBalance(params: { query: any }) {
     let { query } = params;
     query = Object.assign(query, { spentHeight: { $lt: 0 } });
-    return this.collection.aggregate([
+    return this.collection.aggregate<{balance: number}>([
       { $match: query },
       {
         $group: {
@@ -46,7 +49,7 @@ class Coin extends BaseModel<ICoin> {
         }
       },
       { $project: { _id: false } }
-    ]);
+    ]).toArray();
   };
 
   _apiTransform(

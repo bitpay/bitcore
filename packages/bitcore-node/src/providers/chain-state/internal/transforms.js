@@ -1,9 +1,10 @@
+const { CoinModel } = require('../../../models/coin');
 const {Transform} = require('stream');
 const util = require('util');
 const _ = require('underscore');
-const logger = require('../../../logger');
-const mongoose = require('mongoose');
-const Coin = mongoose.model('Coin');
+/*
+ *const logger = require('../../../logger');
+ */
 
 
 function ListTransactionsStream(wallet) {
@@ -15,12 +16,12 @@ util.inherits(ListTransactionsStream, Transform);
 
 ListTransactionsStream.prototype._transform = async function(transaction, enc, done) {
   var self = this;
-  transaction.inputs = await Coin.collection.find({
+  transaction.inputs = await CoinModel.collection.find({
     chain: transaction.chain,
     network: transaction.network,
     spentTxid: transaction.txid
   }, { batchSize: 100 }).toArray();
-  transaction.outputs = await Coin.collection.find({
+  transaction.outputs = await CoinModel.collection.find({
     chain: transaction.chain,
     network: transaction.network,
     mintTxid: transaction.txid

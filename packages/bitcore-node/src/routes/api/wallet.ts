@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
 import { ChainNetwork } from '../../types/ChainNetwork';
-import { IWalletModel } from '../../models/wallet';
+import { IWallet } from '../../models/wallet';
 import { RequestHandler } from 'express-serve-static-core';
 import { ChainStateProvider } from "../../providers/chain-state";
 import logger from '../../logger';
@@ -21,7 +21,7 @@ type PreAuthRequest = {
 } & Request;
 
 type AuthenticatedRequest = {
-  wallet?: IWalletModel;
+  wallet?: IWallet;
 } & PreAuthRequest;
 
 const verifyRequestSignature = (params: VerificationPayload): boolean => {

@@ -4,7 +4,7 @@ import { TransformOptions } from "../types/TransformOptions";
 import { ObjectID } from "mongodb";
 
 export type IWallet =  {
-  _id: ObjectID
+  _id?: ObjectID
   chain: string;
   network: string;
   name: string;
@@ -17,6 +17,9 @@ export class Wallet extends BaseModel<IWallet> {
 
   constructor() {
     super('wallets');
+  }
+
+  onConnect() {
     this.collection.createIndex({ pubKey: 1 });
   }
 

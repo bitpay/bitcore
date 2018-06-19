@@ -37,7 +37,7 @@ describe('Block Model', function () {
       sandbox.stub(newBlock, 'save').resolves();
       sandbox.stub(TransactionModel, 'batchImport').resolves();
 
-      const result = await BlockModel.addBlock(addBlockParams);
+      const result = (await BlockModel.addBlock(addBlockParams)).result;
       expect(addBlockParams.block.hash).to.be.equal(result.hash);
       expect(addBlockParams.height).to.be.equal(result.height);
       expect(addBlockParams.chain).to.be.equal(result.chain);
@@ -277,9 +277,9 @@ describe('Block Model', function () {
       };
       const block = AdapterProvider.convertBlock(params);
 
-      const result = BlockModel._apiTransform(new BlockModel(block), {
+      const result = BlockModel._apiTransform(block, {
         object: false
-      });
+      }).toString();
       const parseResult = JSON.parse(result);
 
       expect(parseResult.hash).to.be.equal(block.hash);

@@ -27,10 +27,13 @@ export type IBlock = {
 }
 
 @LoggifyClass
-class Block extends BaseModel<IBlock> {
+export class Block extends BaseModel<IBlock> {
 
   constructor() {
     super('blocks');
+  }
+
+  async onConnect() {
     this.collection.createIndex({ hash: 1 });
     this.collection.createIndex({ chain: 1, network: 1, processed: 1, height: -1 });
     this.collection.createIndex({ chain: 1, network: 1, timeNormalized: 1 });
@@ -207,8 +210,11 @@ class Block extends BaseModel<IBlock> {
 
 
 
-  _apiTransform( block: IBlock, options: TransformOptions) {
-    let transform = {
+  _apiTransform( block: IBlock, options: TransformOptions): IBlock | string {
+    let transform: IBlock = {
+      chain: block.chain,
+      network: block.network,
+      processed: block.processed,
       hash: block.hash,
       height: block.height,
       version: block.version,

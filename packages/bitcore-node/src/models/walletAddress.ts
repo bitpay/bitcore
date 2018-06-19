@@ -7,7 +7,7 @@ import { IWallet } from "./wallet";
 import { TransactionModel } from "./transaction";
 
 
-type IWalletAddress = {
+export type IWalletAddress = {
   wallet: ObjectID;
   address: string;
   chain: string;
@@ -19,6 +19,9 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
 
   constructor() {
     super('walletaddresses');
+  }
+
+  onConnect() {
     this.collection.createIndex({ address: 1, wallet: 1 });
   }
 

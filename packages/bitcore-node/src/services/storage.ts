@@ -1,3 +1,4 @@
+import { EventEmitter } from 'events';
 import { Response } from "express";
 import { TransformableModel } from "../types/TransformableModel";
 import logger from '../logger';
@@ -11,6 +12,7 @@ export class StorageService {
   client: MongoClient | undefined;
   db: Db | undefined;
   connected: boolean = false;
+  connection = new EventEmitter();
 
   start(args: any): Promise<MongoClient> {
     return new Promise((resolve, reject) => {
@@ -33,6 +35,7 @@ export class StorageService {
           this.db = this.client.db(dbName);
           this.connected = true;
           clearInterval(attemptConnectId);
+          this.connection.emit('CONNECTED');
           resolve(this.client);
         } catch (err) {
           logger.error(err);
@@ -54,7 +57,7 @@ export class StorageService {
     res: Response
   ) {
 
-    let cursor = model.find(query).cursor({
+    let cursor = model.find(query).stream({
       transform: model._apiTransform
     });
     cursor.on("error", function(err) {

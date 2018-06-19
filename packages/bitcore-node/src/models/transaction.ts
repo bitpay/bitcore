@@ -3,10 +3,10 @@ import { WalletAddressModel } from "./walletAddress";
 import { partition } from "../utils/partition";
 import { ObjectID } from "bson";
 import { TransformOptions } from "../types/TransformOptions";
-import logger from "../logger";
 import { LoggifyClass } from "../decorators/Loggify";
 import { Bitcoin } from "../types/namespaces/Bitcoin";
 import { BaseModel } from "./base";
+import logger from "../logger";
 const config = require("../config");
 const Chain = require("../chain");
 
@@ -29,6 +29,9 @@ export type ITransaction = {
 export class Transaction extends BaseModel<ITransaction> {
   constructor() {
     super('transactions');
+  }
+
+  onConnect() {
     this.collection.createIndex({ txid: 1 });
     this.collection.createIndex({ chain: 1, network: 1, blockHeight: 1 });
     this.collection.createIndex({ blockHash: 1 });
