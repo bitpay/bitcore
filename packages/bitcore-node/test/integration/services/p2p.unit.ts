@@ -15,7 +15,7 @@ describe('P2P Service', () => {
   });
 
   it('should sync to latest and listen for new blocks', async function() {
-    this.timeout(1500);
+    this.timeout(15000);
 
     expect(config.chains.BTC).to.not.be.undefined;;
     expect(config.chains.BTC.regtest).to.not.be.undefined;;
