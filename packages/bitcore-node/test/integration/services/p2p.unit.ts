@@ -92,7 +92,7 @@ async function verify(rpc: RPC, tail: number) {
 
     // check block is correct
     const truth = await rpc.blockAsync(hash);
-    const ours = await BlockModel.find({ hash, chain, network });
+    const ours = await BlockModel.find({ hash, chain, network }).toArray();
     expect(ours.length, 'number of blocks').to.equal(1);
     expect(ours[0].previousBlockHash, 'previous block hash').to.equal(truth.previousblockhash);
     expect(ours[0].nextBlockHash, 'next block hash').to.equal(truth.nextblockhash);
@@ -102,7 +102,7 @@ async function verify(rpc: RPC, tail: number) {
     // check that we got all transactions
     for (const txid of truth.tx) {
       logger.info(` - transaction ${txid}`);
-      const tx = await TransactionModel.find({ txid });
+      const tx = await TransactionModel.find({ txid }).toArray();
       expect(tx.length, 'number of transactions').to.equal(1);
       expect(tx[0].blockHash, 'block hash of transaction').to.equal(hash);
       expect(tx[0].blockHeight, 'block height of transaction').to.equal(truth.height);
@@ -114,7 +114,7 @@ async function verify(rpc: RPC, tail: number) {
       txid: {
         $nin: truth.tx
       },
-    });
+    }).toArray();
     expect(extra.length, 'number of extra transactions').to.equal(0);
 
     // move on to the next hash

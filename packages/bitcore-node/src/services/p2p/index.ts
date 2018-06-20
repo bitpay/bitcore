@@ -6,9 +6,9 @@ import { TransactionModel } from '../../models/transaction';
 import { Observable } from 'rxjs';
 import { concatMap, share } from 'rxjs/operators';
 import { ChainNetwork, Chain } from '../../types/ChainNetwork';
-import { IBlockModel } from '../../models/block';
+import { Block } from '../../models/block';
 import { sleep } from '../../utils/async';
-import { ITransactionModel } from '../../models/transaction';
+import { Transaction } from '../../models/transaction';
 import { BtcP2pService } from './bitcoin';
 import { Bitcoin } from '../../types/namespaces/Bitcoin';
 import { CSP } from '../../types/namespaces/ChainStateProvider';
@@ -75,16 +75,16 @@ export class P2pRunner {
   private service: StandardP2p;
   private chain: string;
   private network: string;
-  private blocks: IBlockModel;
-  private transactions: ITransactionModel;
+  private blocks: Block;
+  private transactions: Transaction;
   public events: EventEmitter;
   private blockPrefetcher: Prefetcher<string, Promise<Bitcoin.Block>> | null = null;
 
   constructor(
     chain: string,
     network: string,
-    blocks: IBlockModel,
-    transactions: ITransactionModel,
+    blocks: Block,
+    transactions: Transaction,
     service: StandardP2p
   ) {
     this.service = service;
@@ -332,8 +332,8 @@ export class P2pProxy implements CSP.Provider<Class<StandardP2p>> {
   build(params: {
     chain: string;
     network: string;
-    blocks: IBlockModel;
-    transactions: ITransactionModel;
+    blocks: Block;
+    transactions: Transaction;
     config: any;
   }): P2pRunner {
     logger.debug(`Building p2p service for ${params.chain}.`);
