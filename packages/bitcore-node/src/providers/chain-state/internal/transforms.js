@@ -2,10 +2,6 @@ const { CoinModel } = require('../../../models/coin');
 const {Transform} = require('stream');
 const util = require('util');
 const _ = require('underscore');
-/*
- *const logger = require('../../../logger');
- */
-
 
 function ListTransactionsStream(wallet) {
   this.wallet = wallet;
