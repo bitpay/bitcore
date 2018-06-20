@@ -9,8 +9,8 @@ import "../models"
 
 @LoggifyClass
 export class StorageService {
-  client: MongoClient | undefined;
-  db: Db | undefined;
+  client?: MongoClient;
+  db?: Db;
   connected: boolean = false;
   connection = new EventEmitter();
 
