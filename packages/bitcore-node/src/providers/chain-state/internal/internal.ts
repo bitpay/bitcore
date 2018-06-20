@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { CoinModel } from '../../../models/coin';
-import { BlockModel, IBlock } from '../../../models/block';
+import { BlockModel } from '../../../models/block';
 import { WalletModel, IWallet } from '../../../models/wallet';
 import { WalletAddressModel } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
@@ -15,15 +15,12 @@ const JSONStream = require('JSONStream');
 const ListTransactionsStream = require('./transforms');
 
 type StreamWalletUtxoArgs = { includeSpent: 'true' | undefined };
-type StreamWalletUtxoParams = {
-  wallet: IWallet;
-  args: Partial<StreamWalletUtxoArgs>;
-  stream: Response;
-};
+type StreamWalletUtxoParams = { wallet: IWallet; args: Partial<StreamWalletUtxoArgs>; stream: Response };
 
 @LoggifyClass
 export class InternalStateProvider implements CSP.IChainStateService {
   chain: string;
+
   constructor(chain: string) {
     this.chain = chain;
     this.chain = this.chain.toUpperCase();
@@ -40,11 +37,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     if (typeof address !== 'string' || !this.chain || !network) {
       throw 'Missing required param';
     }
-    let query = {
-      chain: this.chain,
-      network: network.toLowerCase(),
-      address
-    } as any;
+    let query = { chain: this.chain, network: network.toLowerCase(), address } as any;
     const unspent = args.unspent;
     if (unspent) {
       query.spentHeight = { $lt: 0 };
@@ -55,7 +48,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
     const { network, address } = params;
     let query = { chain: this.chain, network, address };
-    let balance = await CoinModel.getBalance({query});
+    let balance = await CoinModel.getBalance({ query });
     return balance;
   }
 
@@ -90,9 +83,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     if (!blocks) {
       throw 'blocks not found';
     }
-    let transformedBlocks = blocks.map(block =>
-      BlockModel._apiTransform(block, { object: true }) as IBlock
-    );
+    let transformedBlocks = blocks.map(block => BlockModel._apiTransform(block, { object: true }).valueOf());
     return transformedBlocks;
   }
 
@@ -155,7 +146,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async createWallet(params: CSP.CreateWalletParams) {
-    const { network, name, pubKey, path, singleAddress  } = params;
+    const { network, name, pubKey, path, singleAddress } = params;
     if (typeof name !== 'string' || !network) {
       throw 'Missing required param';
     }
@@ -215,7 +206,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     transactionStream.pipe(listTransactionsStream).pipe(stream);
   }
 
-  async getWalletBalance(params: { wallet: IWallet}) {
+  async getWalletBalance(params: { wallet: IWallet }) {
     let query = { wallets: params.wallet._id };
     return CoinModel.getBalance({ query });
   }
