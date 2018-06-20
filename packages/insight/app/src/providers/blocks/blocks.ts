@@ -104,8 +104,13 @@ export class BlocksProvider {
   }
 
   public getBlock(hash: string): Observable<{ block: AppBlock }> {
-    return this.http.get(this.api.apiPrefix + 'BTC/testnet/block/' + hash).
-    map((data) => {
+    let url: string = this.api.apiPrefix + '/' +
+      this.currency.selectedCurrency.toUpperCase() + '/' +
+      this.defaults.getDefault('%NETWORK%') + '/' +
+      '/block/' +
+      hash;
+    return this.http.get(url)
+    .map((data) => {
       let block: ApiBlock = data.json();
       let appBlock: AppBlock = this.toAppBlock(block);
       return { block: appBlock };

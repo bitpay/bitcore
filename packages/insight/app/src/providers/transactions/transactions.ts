@@ -3,6 +3,8 @@ import { Http } from '@angular/http';
 import 'rxjs/add/operator/map';
 import { ApiProvider } from '../../providers/api/api';
 import { Observable } from 'rxjs/Observable';
+import { CurrencyProvider } from '../../providers/currency/currency';
+import { DefaultProvider } from '../../providers/default/default';
 
 /*
   Generated class for the TxsProvider provider.
@@ -89,11 +91,16 @@ export type AppTx = {
 @Injectable()
 export class TxsProvider {
 
-    constructor(public http: Http, private api: ApiProvider) {
-    }
+  constructor(
+    public http: Http,
+    private api: ApiProvider,
+    public currency: CurrencyProvider,
+    private defaults: DefaultProvider
+  ) {
+  }
 
     private toAppTx(tx: ApiTx): AppTx {
-        let sumSatoshis: (arr: any) => number = (arr) => arr.reduce((prev, cur) => prev + cur.value, 0);
+        let sumSatoshis = (arr: any): number => arr.reduce((prev, cur) => prev + cur.value, 0);
         let inputs: number = sumSatoshis(tx.inputs);
         let outputs: number = sumSatoshis(tx.outputs);
         let fee: number = tx.coinbase ? 0 : (inputs - outputs);
@@ -118,24 +125,38 @@ export class TxsProvider {
     }
 
     public getTxs(args?: { blockHash?: string }): Observable<{ txs: Array<AppTx> }> {
-        let queryString: string = '';
-        if (args.blockHash) {
-            queryString += `?blockHash=${args.blockHash}`;
-        }
-        return this.http.get(this.api.apiPrefix + 'BTC/testnet/tx' + queryString)
-            .map((data) => {
-                let txs: Array<ApiTx> = data.json();
-                let appTxs: Array<AppTx> = txs.map(this.toAppTx);
-                return { txs: appTxs };
-            });
+      let queryString: string = '';
+      if (args.blockHash) {
+        queryString += `?blockHash=${args.blockHash}`;
+      }
+      let url: string = this.api.apiPrefix + '/' +
+        this.currency.selectedCurrency.toUpperCase() + '/' +
+        this.defaults.getDefault('%NETWORK%') + '/' +
+        'tx' +
+        queryString;
+      return this.http.get(url)
+      .map((data) => {
+        console.log('data is', data);
+        let txs: Array<ApiTx> = data.json();
+        console.log('txs is', txs);
+        let appTxs: Array<AppTx> = txs.map(this.toAppTx);
+        return { txs: appTxs };
+      });
     }
 
     public getTx(hash: string): Observable<{ tx: AppTx }> {
-        return this.http.get(this.api.apiPrefix + 'BTC/testnet/tx/' + hash)
-            .map((data) => {
-                let apiTx: ApiTx = data.json()[0];
-                let appTx: AppTx = this.toAppTx(apiTx);
-                return { tx: appTx };
-            });
+      let url: string = this.api.apiPrefix + '/' +
+        this.currency.selectedCurrency.toUpperCase() + '/' +
+        this.defaults.getDefault('%NETWORK%') + '/' +
+        'tx/' +
+        hash;
+      console.log('url is', url);
+      //return this.http.get(this.api.apiPrefix + 'BTC/testnet/tx/' + hash)
+      return this.http.get(url)
+      .map((data) => {
+        let apiTx: ApiTx = data.json()[0];
+        let appTx: AppTx = this.toAppTx(apiTx);
+        return { tx: appTx };
+      });
     }
 }
