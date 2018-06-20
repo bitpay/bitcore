@@ -1,6 +1,6 @@
-import { LoggifyClass } from "../decorators/Loggify";
-import { BaseModel } from "./base";
-import { ObjectID } from "mongodb";
+import { LoggifyClass } from '../decorators/Loggify';
+import { BaseModel } from './base';
+import { ObjectID } from 'mongodb';
 
 export type ICoin = {
   network: string;
@@ -15,11 +15,10 @@ export type ICoin = {
   wallets: Set<ObjectID>;
   spentTxid: string;
   spentHeight: number;
-}
+};
 
 @LoggifyClass
 class Coin extends BaseModel<ICoin> {
-
   constructor() {
     super('coins');
   }
@@ -40,29 +39,28 @@ class Coin extends BaseModel<ICoin> {
   getBalance(params: { query: any }) {
     let { query } = params;
     query = Object.assign(query, { spentHeight: { $lt: 0 } });
-    return this.collection.aggregate<{balance: number}>([
-      { $match: query },
-      {
-        $group: {
-          _id: null,
-          balance: { $sum: "$value" }
-        }
-      },
-      { $project: { _id: false } }
-    ]).toArray();
-  };
+    return this.collection
+      .aggregate<{ balance: number }>([
+        { $match: query },
+        {
+          $group: {
+            _id: null,
+            balance: { $sum: '$value' }
+          }
+        },
+        { $project: { _id: false } }
+      ])
+      .toArray();
+  }
 
-  _apiTransform(
-    coin: ICoin,
-    options: { object: boolean }
-  ) {
-    let script = coin.script || "";
+  _apiTransform(coin: ICoin, options: { object: boolean }) {
+    let script = coin.script || '';
     let transform = {
       txid: coin.mintTxid,
       vout: coin.mintIndex,
       spentTxid: coin.spentTxid,
       address: coin.address,
-      script: script.toString("hex"),
+      script: script.toString('hex'),
       value: coin.value
     };
     if (options && options.object) {

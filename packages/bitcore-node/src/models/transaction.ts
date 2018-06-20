@@ -1,14 +1,14 @@
-import { CoinModel, ICoin } from "./coin";
-import { WalletAddressModel } from "./walletAddress";
-import { partition } from "../utils/partition";
-import { ObjectID } from "bson";
-import { TransformOptions } from "../types/TransformOptions";
-import { LoggifyClass } from "../decorators/Loggify";
-import { Bitcoin } from "../types/namespaces/Bitcoin";
-import { BaseModel } from "./base";
-import logger from "../logger";
-const config = require("../config");
-const Chain = require("../chain");
+import { CoinModel, ICoin } from './coin';
+import { WalletAddressModel } from './walletAddress';
+import { partition } from '../utils/partition';
+import { ObjectID } from 'bson';
+import { TransformOptions } from '../types/TransformOptions';
+import { LoggifyClass } from '../decorators/Loggify';
+import { Bitcoin } from '../types/namespaces/Bitcoin';
+import { BaseModel } from './base';
+import logger from '../logger';
+const config = require('../config');
+const Chain = require('../chain');
 
 export type ITransaction = {
   txid: string;
@@ -23,7 +23,7 @@ export type ITransaction = {
   size: number;
   locktime: number;
   wallets: ObjectID[];
-}
+};
 
 @LoggifyClass
 export class Transaction extends BaseModel<ITransaction> {
@@ -39,7 +39,7 @@ export class Transaction extends BaseModel<ITransaction> {
     this.collection.createIndex({ wallets: 1 }, { sparse: true });
   }
 
-  async batchImport (params: {
+  async batchImport(params: {
     txs: Array<Bitcoin.Transaction>;
     height: number;
     blockTime?: Date;
@@ -54,9 +54,7 @@ export class Transaction extends BaseModel<ITransaction> {
     logger.debug('Minting Coins', mintOps.length);
     if (mintOps.length) {
       mintOps = partition(mintOps, 100);
-      mintOps = mintOps.map((mintBatch: Array<any>) =>
-        CoinModel.collection.bulkWrite(mintBatch, { ordered: false })
-      );
+      mintOps = mintOps.map((mintBatch: Array<any>) => CoinModel.collection.bulkWrite(mintBatch, { ordered: false }));
       await Promise.all(mintOps);
     }
 
@@ -73,13 +71,11 @@ export class Transaction extends BaseModel<ITransaction> {
     let txOps = await this.addTransactions(params);
     logger.debug('Writing Transactions', txOps.length);
     const txBatches = partition(txOps, 100);
-    const txs = txBatches.map((txBatch: Array<any>) =>
-      this.collection.bulkWrite(txBatch, { ordered: false })
-    );
+    const txs = txBatches.map((txBatch: Array<any>) => this.collection.bulkWrite(txBatch, { ordered: false }));
     await Promise.all(txs);
-  };
+  }
 
-  async addTransactions(params:{
+  async addTransactions(params: {
     txs: Array<Bitcoin.Transaction>;
     height: number;
     blockTime?: Date;
@@ -93,37 +89,28 @@ export class Transaction extends BaseModel<ITransaction> {
     let { blockHash, blockTime, blockTimeNormalized, chain, height, network, txs } = params;
     let txids = txs.map(tx => tx._hash);
 
+    type TaggedCoin = ICoin & { _id: string };
     let mintWallets = await CoinModel.collection
-      .aggregate([
-        {
-          $match: { mintTxid: { $in: txids }, chain, network }
-        },
-        { $unwind: "$wallets" },
-        { $group: { _id: "$mintTxid", wallets: { $addToSet: "$wallets" } } }
+      .aggregate<TaggedCoin>([
+        { $match: { mintTxid: { $in: txids }, chain, network } },
+        { $unwind: '$wallets' },
+        { $group: { _id: '$mintTxid', wallets: { $addToSet: '$wallets' } } }
       ])
-      .toArray() as Array<ICoin & {_id: string}>;
+      .toArray();
 
     let spentWallets = await CoinModel.collection
-      .aggregate([
-        {
-          $match: { spentTxid: { $in: txids }, chain, network }
-        },
-        { $unwind: "$wallets" },
-        { $group: { _id: "$spentTxid", wallets: { $addToSet: "$wallets" } } }
+      .aggregate<TaggedCoin>([
+        { $match: { spentTxid: { $in: txids }, chain, network } },
+        { $unwind: '$wallets' },
+        { $group: { _id: '$spentTxid', wallets: { $addToSet: '$wallets' } } }
       ])
-      .toArray() as Array<ICoin & {_id: string}>;
+      .toArray();
 
     let txOps = txs.map((tx, index) => {
       let wallets = new Array<ObjectID>();
-      for (let wallet of mintWallets
-        .concat(spentWallets)
-        .filter(wallet => wallet._id === txids[index])) {
+      for (let wallet of mintWallets.concat(spentWallets).filter(wallet => wallet._id === txids[index])) {
         for (let walletMatch of wallet.wallets) {
-          if (
-            !wallets.find(
-              wallet => wallet.toHexString() === walletMatch.toHexString()
-            )
-          ) {
+          if (!wallets.find(wallet => wallet.toHexString() === walletMatch.toHexString())) {
             wallets.push(walletMatch);
           }
         }
@@ -131,11 +118,7 @@ export class Transaction extends BaseModel<ITransaction> {
 
       return {
         updateOne: {
-          filter: {
-            txid: txids[index],
-            chain,
-            network
-          },
+          filter: { txid: txids[index], chain, network },
           update: {
             $set: {
               chain,
@@ -158,7 +141,7 @@ export class Transaction extends BaseModel<ITransaction> {
     return txOps;
   }
 
-  async getMintOps(params:{
+  async getMintOps(params: {
     txs: Array<Bitcoin.Transaction>;
     height: number;
     parentChain?: string;
@@ -183,37 +166,24 @@ export class Transaction extends BaseModel<ITransaction> {
       let isCoinbase = tx.isCoinbase();
       for (let [index, output] of tx.outputs.entries()) {
         let parentChainCoin = parentChainCoins.find(
-          (parentChainCoin: ICoin) =>
-          parentChainCoin.mintTxid === txid &&
-          parentChainCoin.mintIndex === index
+          (parentChainCoin: ICoin) => parentChainCoin.mintTxid === txid && parentChainCoin.mintIndex === index
         );
         if (parentChainCoin) {
           continue;
         }
-        let address = "";
+        let address = '';
         let scriptBuffer = output.script && output.script.toBuffer();
         if (scriptBuffer) {
           address = output.script.toAddress(network).toString(true);
-          if (
-            address === "false" &&
-            output.script.classify() === "Pay to public key"
-          ) {
-            let hash = Chain[chain].lib.crypto.Hash.sha256ripemd160(
-              output.script.chunks[0].buf
-            );
+          if (address === 'false' && output.script.classify() === 'Pay to public key') {
+            let hash = Chain[chain].lib.crypto.Hash.sha256ripemd160(output.script.chunks[0].buf);
             address = Chain[chain].lib.Address(hash, network).toString(true);
           }
         }
 
         mintOps.push({
           updateOne: {
-            filter: {
-              mintTxid: txid,
-              mintIndex: index,
-              spentHeight: { $lt: 0 },
-              chain,
-              network
-            },
+            filter: { mintTxid: txid, mintIndex: index, spentHeight: { $lt: 0 }, chain, network },
             update: {
               $set: {
                 chain,
@@ -233,23 +203,15 @@ export class Transaction extends BaseModel<ITransaction> {
         });
       }
     }
-    let mintOpsAddresses = mintOps.map(
-      mintOp => mintOp.updateOne.update.$set.address
-    );
+    let mintOpsAddresses = mintOps.map(mintOp => mintOp.updateOne.update.$set.address);
     let wallets = await WalletAddressModel.collection
-    .find(
-      { address: { $in: mintOpsAddresses }, chain, network },
-      { batchSize: 100 }
-    )
-    .toArray();
+      .find({ address: { $in: mintOpsAddresses }, chain, network }, { batchSize: 100 })
+      .toArray();
     if (wallets.length) {
       mintOps = mintOps.map(mintOp => {
         let transformedWallets = wallets
-          .filter(
-            wallet => wallet.address === mintOp.updateOne.update.$set.address
-          )
+          .filter(wallet => wallet.address === mintOp.updateOne.update.$set.address)
           .map(wallet => wallet.wallet);
-
         mintOp.updateOne.update.$set.wallets = transformedWallets;
         return mintOp;
       });
@@ -257,7 +219,7 @@ export class Transaction extends BaseModel<ITransaction> {
     return mintOps;
   }
 
-  getSpendOps(params:{
+  getSpendOps(params: {
     txs: Array<Bitcoin.Transaction>;
     height: number;
     parentChain?: string;
@@ -286,34 +248,24 @@ export class Transaction extends BaseModel<ITransaction> {
               chain,
               network
             },
-            update: {
-              $set: {
-                spentTxid: txid,
-                spentHeight: height
-              }
-            }
+            update: { $set: { spentTxid: txid, spentHeight: height } }
           }
         };
         if (config.pruneSpentScripts && height > 0) {
-          updateQuery.updateOne.update.$unset= {script: null};
+          updateQuery.updateOne.update.$unset = { script: null };
         }
         spendOps.push(updateQuery);
       }
     }
     return spendOps;
-  };
+  }
 
-  getTransactions(params: {
-    query: any;
-  }) {
+  getTransactions(params: { query: any }) {
     let query = params.query;
     return this.collection.find(query);
-  };
+  }
 
-  _apiTransform(
-    tx: ITransaction,
-    options: TransformOptions
-  ) {
+  _apiTransform(tx: ITransaction, options: TransformOptions) {
     let transform = {
       txid: tx.txid,
       network: tx.network,
@@ -328,6 +280,6 @@ export class Transaction extends BaseModel<ITransaction> {
       return transform;
     }
     return JSON.stringify(transform);
-  };
+  }
 }
 export let TransactionModel = new Transaction();

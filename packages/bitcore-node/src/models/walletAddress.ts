@@ -1,22 +1,19 @@
-import { CoinModel, ICoin } from "./coin";
-import { TransformOptions } from "../types/TransformOptions";
-import { partition } from "../utils/partition";
-import { ObjectID } from "mongodb";
-import { BaseModel } from "./base";
-import { IWallet } from "./wallet";
-import { TransactionModel } from "./transaction";
-
+import { CoinModel, ICoin } from './coin';
+import { TransformOptions } from '../types/TransformOptions';
+import { partition } from '../utils/partition';
+import { ObjectID } from 'mongodb';
+import { BaseModel } from './base';
+import { IWallet } from './wallet';
+import { TransactionModel } from './transaction';
 
 export type IWalletAddress = {
   wallet: ObjectID;
   address: string;
   chain: string;
   network: string;
-}
-
+};
 
 export class WalletAddress extends BaseModel<IWalletAddress> {
-
   constructor() {
     super('walletaddresses');
   }
@@ -25,20 +22,15 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
     this.collection.createIndex({ address: 1, wallet: 1 });
   }
 
-  _apiTransform( walletAddress: { address: string }, options: TransformOptions) {
-    let transform = {
-      address: walletAddress.address
-    };
+  _apiTransform(walletAddress: { address: string }, options: TransformOptions) {
+    let transform = { address: walletAddress.address };
     if (options && options.object) {
       return transform;
     }
     return JSON.stringify(transform);
-  };
+  }
 
-  getUpdateCoinsObj(params: {
-    wallet: IWallet;
-    addresses: string[];
-  }) {
+  getUpdateCoinsObj(params: { wallet: IWallet; addresses: string[] }) {
     const { wallet, addresses } = params;
     const { chain, network } = wallet;
 
@@ -69,10 +61,7 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
     };
   }
 
-  async updateCoins(params: {
-    wallet: IWallet;
-    addresses: string[];
-  }) {
+  async updateCoins(params: { wallet: IWallet; addresses: string[] }) {
     const { wallet } = params;
     const updates = WalletAddressModel.getUpdateCoinsObj(params);
     const { walletUpdates, coinUpdates } = updates;
@@ -90,34 +79,29 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
 
       await Promise.all(
         coinUpdateBatches.map(coinUpdateBatch => {
-          return CoinModel.collection.bulkWrite(coinUpdateBatch, {
-            ordered: false
-          });
+          return CoinModel.collection.bulkWrite(coinUpdateBatch, { ordered: false });
         })
       );
-      let coinCursor = CoinModel.find(
-        { wallets: wallet._id }).project( { spentTxid: 1, mintTxid: 1 });
+      let coinCursor = CoinModel.find({ wallets: wallet._id }).project({ spentTxid: 1, mintTxid: 1 });
 
-      coinCursor.on("data", function (data: ICoin) {
+      coinCursor.on('data', function(data: ICoin) {
         coinCursor.pause();
         TransactionModel.update(
           { chain, network, txid: { $in: [data.spentTxid, data.mintTxid] } },
-          {
-            $addToSet: { wallets: wallet._id }
-          },
+          { $addToSet: { wallets: wallet._id } },
           { multi: true },
-          function () {
+          function() {
             // TODO Error handling if update fails?
             coinCursor.resume();
           }
         );
       });
 
-      coinCursor.on("end", function () {
+      coinCursor.on('end', function() {
         resolve();
       });
     });
-  };
+  }
 }
 
 export let WalletAddressModel = new WalletAddress();
