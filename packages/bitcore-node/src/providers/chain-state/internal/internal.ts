@@ -242,4 +242,27 @@ export class InternalStateProvider implements CSP.IChainStateService {
     });
     return txPromise;
   }
+
+  async getCoinsForTx({
+    chain,
+    network,
+    txid,
+  }: {
+    chain: string;
+    network: string;
+    txid: string;
+  }) {
+    return {
+      outputs: await CoinModel.find({
+        chain,
+        network,
+        mintTxid: txid,
+      }),
+      inputs: await CoinModel.find({
+        chain,
+        network,
+        spentTxid: txid,
+      }),
+    };
+  }
 }
