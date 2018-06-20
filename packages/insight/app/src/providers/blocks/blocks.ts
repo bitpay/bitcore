@@ -94,7 +94,7 @@ export class BlocksProvider {
     let url: string = this.api.apiPrefix + '/' +
       this.currency.selectedCurrency.toUpperCase() + '/' +
       this.defaults.getDefault('%NETWORK%') + '/' +
-      '/block';
+      'block';
     return this.http.get(url)
     .map((data) => {
       let blocks: Array<ApiBlock> = data.json();

@@ -100,7 +100,7 @@ export class TxsProvider {
   }
 
     private toAppTx(tx: ApiTx): AppTx {
-        let sumSatoshis = (arr: any): number => arr.reduce((prev, cur) => prev + cur.value, 0);
+        let sumSatoshis: any = (arr: any): number => arr.reduce((prev, cur) => prev + cur.value, 0);
         let inputs: number = sumSatoshis(tx.inputs);
         let outputs: number = sumSatoshis(tx.outputs);
         let fee: number = tx.coinbase ? 0 : (inputs - outputs);
@@ -123,7 +123,7 @@ export class TxsProvider {
         };
     }
 
-    public getTxs(args?: { blockHash?: string }): Observable<{ txs: Array<AppTx> }> {
+    public getTxs(args?: { blockHash?: string }): Observable<{ txs: Array<ApiTx> }> {
       let queryString: string = '';
       if (args.blockHash) {
         queryString += `?blockHash=${args.blockHash}`;
@@ -136,8 +136,11 @@ export class TxsProvider {
       return this.http.get(url)
       .map((data) => {
         let txs: Array<ApiTx> = data.json();
+        /*
         let appTxs: Array<AppTx> = txs.map(this.toAppTx);
         return { txs: appTxs };
+         */
+        return { txs: txs };
       });
     }
 
@@ -154,4 +157,18 @@ export class TxsProvider {
         return { tx: appTx };
       });
     }
+
+  public getCoins(txId: string): any {
+    debugger;
+    let url: string = this.api.apiPrefix + '/' +
+      this.currency.selectedCurrency.toUpperCase() + '/' +
+      this.defaults.getDefault('%NETWORK%') + '/' +
+      'coins/' +
+      txId;
+    return this.http.get(url)
+      .map((data) => {
+        let coins: any = data.json()[0];
+        return { coins: coins };
+      });
+  }
 }

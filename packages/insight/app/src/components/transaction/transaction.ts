@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Input } from '@angular/core';
 import { NavController } from 'ionic-angular';
 import { CurrencyProvider } from '../../providers/currency/currency';
+import { TxsProvider } from '../../providers/transactions/transactions';
 
 /**
  * Generated class for the TransactionComponent component.
@@ -20,7 +21,18 @@ export class TransactionComponent {
   public expanded: boolean = false;
   @Input() public tx: any = {};
 
-  constructor(private navCtrl: NavController, public currency: CurrencyProvider) {
+  constructor(
+    private navCtrl: NavController,
+    public currency: CurrencyProvider,
+    public txProvider: TxsProvider
+  ) {
+  }
+
+  public ionVewDidLoad(): void {
+    this.txProvider.getCoins(this.tx.txid).subscribe((data) => {
+      this.tx.inputs = data.inputs;
+      this.tx.outputs = data.outputs;
+    });
   }
 
   public getAddress(vout: any): string {
