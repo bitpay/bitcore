@@ -104,7 +104,6 @@ export class TxsProvider {
         let inputs: number = sumSatoshis(tx.inputs);
         let outputs: number = sumSatoshis(tx.outputs);
         let fee: number = tx.coinbase ? 0 : (inputs - outputs);
-        console.log(inputs, outputs, tx.outputs);
 
         return {
             txid: tx.txid,
@@ -136,9 +135,7 @@ export class TxsProvider {
         queryString;
       return this.http.get(url)
       .map((data) => {
-        console.log('data is', data);
         let txs: Array<ApiTx> = data.json();
-        console.log('txs is', txs);
         let appTxs: Array<AppTx> = txs.map(this.toAppTx);
         return { txs: appTxs };
       });
@@ -150,8 +147,6 @@ export class TxsProvider {
         this.defaults.getDefault('%NETWORK%') + '/' +
         'tx/' +
         hash;
-      console.log('url is', url);
-      //return this.http.get(this.api.apiPrefix + 'BTC/testnet/tx/' + hash)
       return this.http.get(url)
       .map((data) => {
         let apiTx: ApiTx = data.json()[0];
