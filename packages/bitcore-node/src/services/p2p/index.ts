@@ -229,7 +229,7 @@ export class P2pRunner {
         const headers = await this.service.getMissingBlockHashes(locators);
         finalHash = headers[headers.length -1].hash;
         let hashes = headers.map(h => h.hash);
-        this.blockPrefetcher = new Prefetcher(hashes, 10, this.service.getBlock);
+        this.blockPrefetcher = new Prefetcher(hashes, 10, this.service.getBlock, this.service);
         for (const hash of hashes) {
           const block = await this.getBlock(hash);
           logger.debug('Block received', block.hash);

@@ -1,7 +1,7 @@
 import logger from '../../logger';
 import { HostPort } from '../../types/HostPort';
 import { Peer, BitcoreP2pPool } from '../../types/Bitcore-P2P-Pool';
-import { Bitcoin } from "../../types/namespaces/Bitcoin";
+import { Bitcoin } from '../../types/namespaces/Bitcoin';
 import { LoggifyClass } from '../../decorators/Loggify';
 import { P2pService } from '.';
 
@@ -30,12 +30,11 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
   private stayConnected?: NodeJS.Timer;
   private stream: {
     blocks: Subject<{
-      block: Bitcoin.Block,
-      transactions: Bitcoin.Transaction[]
+      block: Bitcoin.Block;
+      transactions: Bitcoin.Transaction[];
     }>;
     transactions: Subject<Bitcoin.Transaction>;
   };
-
 
   constructor(config: any) {
     super();
@@ -43,16 +42,14 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
     // Chain
     if (typeof config.chain === 'string') {
       this.chain = config.chain;
-    }
-    else {
+    } else {
       throw new Error(`BtcP2pService: chain must be a string, got ${config.chain}`);
     }
 
     // Network
     if (typeof config.network === 'string') {
       this.network = config.network;
-    }
-    else {
+    } else {
       throw new Error(`BtcP2pService: network must be a string, got ${config.network}`);
     }
 
@@ -61,8 +58,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       let chain;
       if (typeof config.parentChain === 'string') {
         chain = config.parentChain;
-      }
-      else {
+      } else {
         throw new Error(`BtcP2pService: parentChain must be a string, got ${config.parentChain}`);
       }
 
@@ -70,16 +66,14 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       let height;
       if (typeof config.forkHeight === 'number') {
         height = config.forkHeight;
-      }
-      else {
+      } else {
         throw new Error(`BtcP2pService: forkHeight must be a number, got ${config.forkHeight}`);
       }
       this.forked = {
         chain,
-        height,
+        height
       };
-    }
-    else if (config.forkHeight) {
+    } else if (config.forkHeight) {
       throw new Error(`BtcP2pService: must provide forkHeight if providing parentChain`);
     }
 
@@ -89,13 +83,11 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       for (const peer of config.trustedPeers) {
         if (typeof peer.host === 'string' && typeof peer.port === 'number') {
           this.trustedPeers.push(peer);
-        }
-        else {
+        } else {
           throw new Error(`BtcP2pService: peer must be { host: string, port: number }, got ${peer}`);
         }
       }
-    }
-    else {
+    } else {
       throw new Error(`BtcP2pService: trustedPeers must be a non-empty list, got ${config.trustedPeers}`);
     }
 
@@ -103,12 +95,12 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
     this.bitcoreP2p = Chain[this.chain].p2p;
     this.invCache = {
       [this.bitcoreP2p.Inventory.TYPE.BLOCK]: new Cache(1000),
-      [this.bitcoreP2p.Inventory.TYPE.TX]: new Cache(1000),
+      [this.bitcoreP2p.Inventory.TYPE.TX]: new Cache(1000)
     };
     this.syncing = false;
     this.stream = {
       blocks: new Subject(),
-      transactions: new Subject(),
+      transactions: new Subject()
     };
 
     if (!this.bitcoreLib.Networks.get(this.network)) {
@@ -157,7 +149,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
         peer: `${peer.host}:${peer.port}`,
         chain: this.chain,
         network: this.network,
-        transaction: message.transaction.hash,
+        transaction: message.transaction.hash
       });
       const hash = message.transaction.hash;
       if (!this.invCache[this.bitcoreP2p.Inventory.TYPE.TX].use(hash)) {
@@ -190,7 +182,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
         peer: `${peer.host}:${peer.port}`,
         chain: this.chain,
         network: this.network,
-        headers: message.headers.map(h => h.hash),
+        headers: message.headers.map(h => h.hash)
       });
       this.emit('headers', message.headers);
     });
@@ -215,7 +207,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
 
     // connect to peers before using this service
     return new Promise<void>(resolve => {
-      this.pool.once('peerready', () => resolve())
+      this.pool.once('peerready', () => resolve());
     });
   }
 
@@ -242,22 +234,15 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
   }
 
   public height(): number {
-    return Object.values(this.pool._connectedPeers).reduce(
-      (best, peer: Peer) => Math.max(best, peer.bestHeight),
-      0
-    );
+    return Object.values(this.pool._connectedPeers).reduce((best, peer: Peer) => Math.max(best, peer.bestHeight), 0);
   }
 
-  public parent(): {
-    chain: string,
-    network: string,
-    height: number,
-  } | undefined {
+  public parent(): { chain: string; network: string; height: number } | undefined {
     if (this.forked && this.forked.chain !== this.chain) {
       return {
         chain: this.forked.chain,
         network: this.network,
-        height: this.forked.height,
+        height: this.forked.height
       };
     }
     return undefined;
@@ -266,9 +251,11 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
   public async getMissingBlockHashes(candidateHashes: string[]): Promise<Bitcoin.Block.HeaderObj[]> {
     return new Promise(resolve => {
       const getHeaders = () => {
-        this.pool.sendMessage(this.messages.GetHeaders({
-          starts: candidateHashes
-        }));
+        this.pool.sendMessage(
+          this.messages.GetHeaders({
+            starts: candidateHashes
+          })
+        );
       };
       const headersRetry = setInterval(getHeaders, 1000);
 
