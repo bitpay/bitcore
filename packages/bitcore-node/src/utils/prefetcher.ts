@@ -19,9 +19,10 @@ export class Prefetcher<I, O> {
     }
     let prefetchTilIndex = this.count - 1;
     let index = 0;
-    let lastBatchHeader = this.args[prefetchTilIndex] || this.args[this.args.length - 1];
+    let lastIndex = prefetchTilIndex < this.args.length ? prefetchTilIndex : this.args.length - 1;
+    let lastBatchHeader = this.args[lastIndex];
     this.lastPrefetch = lastBatchHeader.toString();
-    for (let arg of this.args) {
+    for (const arg of this.args) {
       const cacheKey = arg.toString();
       this.prefetched[cacheKey] = this.applyFn(arg);
       this.lastPrefetch = cacheKey;

@@ -78,7 +78,7 @@ export class P2pRunner {
   private blocks: Block;
   private transactions: Transaction;
   public events: EventEmitter;
-  private blockPrefetcher: Prefetcher<string, Promise<Bitcoin.Block>> | null = null;
+  private blockPrefetcher?: Prefetcher<string, Promise<Bitcoin.Block>>;
 
   constructor(
     chain: string,
@@ -228,7 +228,7 @@ export class P2pRunner {
 
         const headers = await this.service.getMissingBlockHashes(locators);
         finalHash = headers[headers.length -1].hash;
-        let hashes = headers.map(h => h.hash);
+        const hashes = headers.map(h => h.hash);
         this.blockPrefetcher = new Prefetcher(hashes, 10, this.service.getBlock, this.service);
         for (const hash of hashes) {
           const block = await this.getBlock(hash);
