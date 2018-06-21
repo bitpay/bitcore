@@ -58,7 +58,7 @@ describe('P2P Service', () => {
 
     const blocks: Subject<BlockEvent> = new Subject();
     const TransactionModel = mockTransactionModel();
-    const blockHashes = Array(100).fill(0).map((_, i) => ({hash: (i + 1).toString()}));
+    const blockHashes = TEST_BLOCKS;
     const lastIndex = blockHashes.length-1;
     const FakeBlockModel = mockBlockModel({
       addBlock: async (params) => {
@@ -98,7 +98,7 @@ describe('P2P Service', () => {
     let poolHeight = 50;
     const db: string[] = [];
 
-    const blockHashes = Array(100).fill(0).map((_, i) => ({hash: (i + 1).toString()}));
+    const blockHashes = TEST_BLOCKS;
     const hashes = blockHashes.map(b => b.hash);
     const first50 = blockHashes.slice(0, 50);
     const last50 = blockHashes.slice(50, 100);
@@ -219,6 +219,7 @@ function mockBlockModel(extra?: Partial<Block>): Block{
   } as any as Block, extra? extra : {});
 }
 
+const TEST_BLOCKS = Array(100).fill(0).map((_, i) => ({hash: (i + 1).toString()}));
 type BlockEvent = {
   block: Bitcoin.Block,
   transactions: Bitcoin.Transaction[]
