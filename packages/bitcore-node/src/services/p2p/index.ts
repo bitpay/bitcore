@@ -184,8 +184,12 @@ export class P2pRunner {
     let counter = 0;
     let lastLog = 0;
 
+    // remove the previous block to ensure consistency through process termination
+    await this.blocks.handleReorg({chain: this.chain, network: this.network });
+
     // sync the main chain
     const start = async () => {
+
       // get best block we currently have to see if we're synced
       let bestBlock = await tip();
 
@@ -263,7 +267,7 @@ export class P2pRunner {
           setImmediate(() => start());
         }
       } else {
-        logger.info(`${this.chain} up to date.`);
+        logger.info(`${this.chain}:${this.network} up to date.`);
         this.service.syncing = false;
         finished = true;
         this.events.emit(P2pEvents.SYNC_COMPLETE, true);

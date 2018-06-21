@@ -1,6 +1,7 @@
 const request = require('request-promise-native');
 const bitcoreLib = require('bitcore-lib');
 const secp256k1 = require('secp256k1');
+const stream = require('stream');
 const { URL } = require('url');
 
 const Client = function (params) {
@@ -58,14 +59,24 @@ Client.prototype.getCoins = async function (params) {
   });
 };
 
+<<<<<<< HEAD
 Client.prototype.importAddresses = async function (params) {
   const { addresses, payload, pubKey } = params;
+=======
+Client.prototype.importAddresses = async function(params) {
+  const {  payload, pubKey } = params;
+>>>>>>> 657f9c1a6bdfcb4a26bfd11c7ca9cfde158f20a5
   const url = `${this.baseUrl}/wallet/${pubKey}`;
-  const signature = this.sign({ method: 'POST', url, payload });
-  return request.post(url, {
-    headers: { 'x-signature': signature },
-    body: payload,
-    json: true
+  const signature = this.sign({ method: 'POST', url, payload});
+
+  return new Promise((resolve) => {
+    let dataStream = new stream.Readable({objectMode: true});
+    dataStream.pipe(request.post(url, {
+      headers: { 'x-signature': signature, 'content-type': 'application/octet-stream' }
+    })).on('end', resolve);
+    let jsonData = JSON.stringify(payload);
+    dataStream.push(jsonData);
+    dataStream.push(null);
   });
 };
 

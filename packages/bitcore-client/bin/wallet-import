@@ -10,11 +10,11 @@ program
   .option('--path <path>', 'REQUIRED - Where wallet is stored')
   .option(
     '--parse [parse]',
-    'OPTIONAL - A json string to parse in the form {"address": "mXy1234", privKey: "xxxxxxx"}'
+    'OPTIONAL - A json string to parse in the form {"address": "mXy1234", privKey: "xxxxxxx", pubKey: "yyyyyyyy"}'
   )
   .option(
     '--file [file]',
-    'OPTIONAL - A jsonl file with {"address": "mXy1234", privKey: "xxxxxxx"} in it'
+    'OPTIONAL - A jsonl file with {"address": "mXy1234", privKey: "xxxxxxx", pubKey: "yyyyyyyy"} in it'
   )
   .parse(process.argv);
 
