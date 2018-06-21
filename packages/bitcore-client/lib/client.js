@@ -3,11 +3,11 @@ const bitcoreLib = require('bitcore-lib');
 const secp256k1 = require('secp256k1');
 const { URL } = require('url');
 
-const Client = function(params) {
+const Client = function (params) {
   Object.assign(this, params);
 };
 
-Client.prototype.sign = function(params) {
+Client.prototype.sign = function (params) {
   const { method, url, payload = {} } = params;
   const parsedUrl = new URL(url);
   const message = [method, parsedUrl.pathname + parsedUrl.search, JSON.stringify(payload)].join('|');
@@ -16,7 +16,7 @@ Client.prototype.sign = function(params) {
   return secp256k1.sign(messageHash, privateKey).signature.toString('hex');
 };
 
-Client.prototype.register = async function(params) {
+Client.prototype.register = async function (params) {
   const { payload } = params;
   const url = `${this.baseUrl}/wallet`;
   const signature = this.sign({ method: 'POST', url, payload });
@@ -27,7 +27,7 @@ Client.prototype.register = async function(params) {
   });
 };
 
-Client.prototype.getBalance = async function(params) {
+Client.prototype.getBalance = async function (params) {
   const { payload, pubKey } = params;
   const url = `${this.baseUrl}/wallet/${pubKey}/balance`;
   const signature = this.sign({ method: 'GET', url, payload });
@@ -38,7 +38,16 @@ Client.prototype.getBalance = async function(params) {
   });
 };
 
-Client.prototype.getCoins = async function(params) {
+Client.prototype.getAddressTxos = async function (params) {
+  const { unspent, address } = params;
+  const args = unspent ? `?unspent=${usnpent}` : ``;
+  const url = `${this.baseUrl}/address/${address}${args}`;
+  return request.get(url, {
+    json: true
+  });
+}
+
+Client.prototype.getCoins = async function (params) {
   const { payload, pubKey, includeSpent } = params;
   const url = `${this.baseUrl}/wallet/${pubKey}/utxos?includeSpent=${includeSpent}`;
   const signature = this.sign({ method: 'GET', url, payload });
@@ -49,7 +58,7 @@ Client.prototype.getCoins = async function(params) {
   });
 };
 
-Client.prototype.importAddresses = async function(params) {
+Client.prototype.importAddresses = async function (params) {
   const { addresses, payload, pubKey } = params;
   const url = `${this.baseUrl}/wallet/${pubKey}`;
   const signature = this.sign({ method: 'POST', url, payload });
@@ -60,7 +69,7 @@ Client.prototype.importAddresses = async function(params) {
   });
 };
 
-Client.prototype.broadcast = async function(params) {
+Client.prototype.broadcast = async function (params) {
   const { payload } = params;
   const url = `${this.baseUrl}/tx/send`;
   return request.post(url, { body: payload, json: true });
