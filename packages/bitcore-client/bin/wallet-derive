@@ -1,9 +1,6 @@
 #!/usr/bin/env node
 
-const request = require('request-promise-native');
 const bitcoreLib = require('bitcore-lib');
-const secp256k1 = require('secp256k1');
-const { URL } = require('url');
 const program = require('commander');
 const Wallet = require('../lib/wallet');
 const promptly = require('promptly');
