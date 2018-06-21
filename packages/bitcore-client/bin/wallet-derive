@@ -12,7 +12,7 @@ program
   .option('--change <change>', 'REQUIRED - should derive change addresses')
   .parse(process.argv);
 
-function derivePrivateKey(addressIndex, isChange, network, key) {
+function derivePrivateKey(addressIndex, isChange, key) {
   const changeNum = isChange ? 1 : 0;
   const path = `m/${changeNum}/${addressIndex}`;
   return key.derive(path);
@@ -39,7 +39,7 @@ const main = async () => {
     const HDPrivateKey = new bitcoreLib.HDPrivateKey(xprivkey);
 
     while (unusedAddressCounter < gap) {
-      const derived = derivePrivateKey(index, change, network, HDPrivateKey);
+      const derived = derivePrivateKey(index, change, HDPrivateKey);
       const privKey = derived.privateKey.toString();
       const address = derived.privateKey.toAddress(network).toString();
       await wallet.importKeys({ keys: [{ privKey, address }] });
