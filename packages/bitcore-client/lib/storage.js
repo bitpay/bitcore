@@ -1,6 +1,7 @@
 const levelup = require('levelup');
 const leveldown = require('leveldown');
 const Encrypter = require('./encryption');
+const bitcoreLib = require('bitcore-lib');
 
 class Storage {
   constructor(params) {
@@ -42,7 +43,8 @@ class Storage {
   }
   async addKey(params) {
     const { key, encryptionKey } = params;
-    const { pubKey } = key;
+    let { pubKey } = key;
+    pubKey = pubKey || new bitcoreLib.PrivateKey(key.privKey).publicKey.toString();
     let payload = {};
     if (pubKey && key.privKey && encryptionKey) {
       const encKey = Encrypter.encryptPrivateKey(

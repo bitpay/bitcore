@@ -2,6 +2,7 @@
 
 const program = require('commander');
 const Wallet = require('../lib/wallet');
+const promptly = require('promptly');
 
 program
   .version(require('../package.json').version)
@@ -12,7 +13,9 @@ const main = async () => {
   const {path} = program;
   let wallet;
   try {
+    const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.loadWallet({ path });
+    wallet = await wallet.unlock(password);
     utxos = await wallet.getUtxos();
     for (const utxo of utxos){
       console.log(`${JSON.stringify(utxo)}`);
