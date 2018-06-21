@@ -13,7 +13,8 @@
   "main": "build/src/server.js",
   "bin": "bin/start",
   "prettier": {
-    "singleQuote": true
+    "singleQuote": true,
+    "printWidth": 120
   },
   "scripts": {
     "start": "npm run tsc && node build/src/server.js",

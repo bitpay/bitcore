@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { WalletModel, IWalletModel } from '../../../src/models/wallet';
+import { WalletModel, IWallet } from '../../../src/models/wallet';
 import { WalletAddressModel } from '../../../src/models/walletAddress';
 
 describe('Wallet Model', function () {
@@ -12,9 +12,9 @@ describe('Wallet Model', function () {
         singleAddress: true,
         pubKey: 'xpub661MyMwAqRbcFa63vSTa3vmRiVWbpLWhgUsyvjfMFP7ePR5osC1rtPUkgJrB94V1YEQathfWLm9U5zaZttYPDPWhASwJGUvYvPGtofqnTGN',
         path: 'm/44\'/0\'/0\''
-      }
-      const result = WalletModel._apiTransform(new WalletModel(wallet), { object: false });
-      const parseResult = JSON.parse(result);
+      } as IWallet;
+      const result = WalletModel._apiTransform(wallet, { object: false });
+      const parseResult = JSON.parse(result.toString());
 
       expect(parseResult).to.deep.equal({
         name: 'Wallet1',
@@ -28,8 +28,8 @@ describe('Wallet Model', function () {
         singleAddress: true,
         pubKey: 'xpub661MyMwAqRbcFa63vSTa3vmRiVWbpLWhgUsyvjfMFP7ePR5osC1rtPUkgJrB94V1YEQathfWLm9U5zaZttYPDPWhASwJGUvYvPGtofqnTGN',
         path: 'm/44\'/0\'/0\''
-      }
-      const result = WalletModel._apiTransform(new WalletModel(wallet), { object: true });
+      } as IWallet;
+      const result = WalletModel._apiTransform(wallet, { object: true });
       expect(result).to.deep.equal({
         name: 'Wallet1',
         pubKey: 'xpub661MyMwAqRbcFa63vSTa3vmRiVWbpLWhgUsyvjfMFP7ePR5osC1rtPUkgJrB94V1YEQathfWLm9U5zaZttYPDPWhASwJGUvYvPGtofqnTGN'
@@ -60,7 +60,7 @@ describe('Wallet Model', function () {
         path: 'm/44\'/0\'/0\'',
         chain: 'BTC',
         network: 'regtest'
-      } as IWalletModel;
+      } as IWallet;
 
       await WalletModel.updateCoins(wallet);
       expect(walletAddressModelSpy.calledOnce).to.be.true;
