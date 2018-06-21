@@ -4,6 +4,7 @@ COPY package*.json ./
 RUN npm install
 COPY lerna.json ./
 
+COPY ./packages/bitcore-mnemonic/package.json ./packages/bitcore-mnemonic/package.json
 COPY ./packages/bitcore-lib/package.json ./packages/bitcore-lib/package.json
 COPY ./packages/bitcore-lib-cash/package.json ./packages/bitcore-lib-cash/package.json
 COPY ./packages/bitcore-p2p/package.json ./packages/bitcore-p2p/package.json
@@ -16,7 +17,7 @@ COPY ./packages/insight/app/package.json ./packages/insight/app/package.json
 
 RUN ./node_modules/.bin/lerna bootstrap
 
-COPY . . 
+COPY . .
 EXPOSE 3000
 EXPOSE 8100
 CMD ["./node_modules/.bin/lerna", "run", "start"]
