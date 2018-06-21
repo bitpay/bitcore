@@ -42,7 +42,6 @@ const main = async () => {
     const HDPrivateKey = new bitcoreLib.HDPrivateKey(xprivkey);
 
     while (unusedAddressCounter < gap) {
-      // TODO: logic for change addresses
       const derived = derivePrivateKey(index, change, network, HDPrivateKey);
       const privKey = derived.privateKey.toString();
       const address = derived.privateKey.toAddress(network).toString();
