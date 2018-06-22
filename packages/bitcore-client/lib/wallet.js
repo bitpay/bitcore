@@ -16,6 +16,7 @@ class Wallet {
   }
 
   saveWallet() {
+    this.lock();
     return this.storage.saveWallet({ wallet: this });
   }
 

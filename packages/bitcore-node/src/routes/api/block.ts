@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { ChainStateProvider } from "../providers/chain-state";
+import { ChainStateProvider } from "../../providers/chain-state";
 const router = require("express").Router({ mergeParams: true });
 
 router.get("/", async function(req: Request, res: Response) {

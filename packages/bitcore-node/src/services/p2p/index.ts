@@ -6,9 +6,9 @@ import { TransactionModel } from '../../models/transaction';
 import { Observable } from 'rxjs';
 import { concatMap, share } from 'rxjs/operators';
 import { ChainNetwork, Chain } from '../../types/ChainNetwork';
-import { IBlockModel } from '../../models/block';
+import { Block } from '../../models/block';
 import { sleep } from '../../utils/async';
-import { ITransactionModel } from '../../models/transaction';
+import { Transaction } from '../../models/transaction';
 import { BtcP2pService } from './bitcoin';
 import { Bitcoin } from '../../types/namespaces/Bitcoin';
 import { CSP } from '../../types/namespaces/ChainStateProvider';
@@ -74,16 +74,16 @@ export class P2pRunner {
   private service: StandardP2p;
   private chain: string;
   private network: string;
-  private blocks: IBlockModel;
-  private transactions: ITransactionModel;
+  private blocks: Block;
+  private transactions: Transaction;
 
   public events: EventEmitter;
 
   constructor(
     chain: string,
     network: string,
-    blocks: IBlockModel,
-    transactions: ITransactionModel,
+    blocks: Block,
+    transactions: Transaction,
     service: StandardP2p
   ) {
     this.service = service;
@@ -184,8 +184,12 @@ export class P2pRunner {
     let counter = 0;
     let lastLog = 0;
 
+    // remove the previous block to ensure consistency through process termination
+    await this.blocks.handleReorg({chain: this.chain, network: this.network });
+
     // sync the main chain
     const start = async () => {
+
       // get best block we currently have to see if we're synced
       let bestBlock = await tip();
 
@@ -263,7 +267,7 @@ export class P2pRunner {
           setImmediate(() => start());
         }
       } else {
-        logger.info(`${this.chain} up to date.`);
+        logger.info(`${this.chain}:${this.network} up to date.`);
         this.service.syncing = false;
         finished = true;
         this.events.emit(P2pEvents.SYNC_COMPLETE, true);
@@ -318,8 +322,8 @@ export class P2pProxy implements CSP.Provider<Class<StandardP2p>> {
   build(params: {
     chain: string;
     network: string;
-    blocks: IBlockModel;
-    transactions: ITransactionModel;
+    blocks: Block;
+    transactions: Transaction;
     config: any;
   }): P2pRunner {
     logger.debug(`Building p2p service for ${params.chain}.`);

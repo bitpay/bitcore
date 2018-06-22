@@ -13,7 +13,8 @@
   "main": "build/src/server.js",
   "bin": "bin/start",
   "prettier": {
-    "singleQuote": true
+    "singleQuote": true,
+    "printWidth": 120
   },
   "scripts": {
     "start": "npm run tsc && node build/src/server.js",
@@ -69,6 +70,7 @@
     "body-parser": "^1.18.3",
     "express": "^4.16.3",
     "mkdirp": "^0.5.1",
+    "mongodb": "^3.0.10",
     "mongoose": "^5.0.11",
     "progress": "^2.0.0",
     "request": "^2.86.0",

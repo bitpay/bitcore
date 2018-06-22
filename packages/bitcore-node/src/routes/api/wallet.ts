@@ -1,9 +1,9 @@
 import { Request, Response, Router } from 'express';
-import { ChainNetwork } from '../types/ChainNetwork';
-import { IWalletModel } from '../models/wallet';
+import { ChainNetwork } from '../../types/ChainNetwork';
+import { IWallet } from '../../models/wallet';
 import { RequestHandler } from 'express-serve-static-core';
-import { ChainStateProvider } from "../providers/chain-state";
-import logger from '../logger';
+import { ChainStateProvider } from "../../providers/chain-state";
+import logger from '../../logger';
 const router = Router({ mergeParams: true });
 const secp256k1 = require('secp256k1');
 const bitcoreLib = require('bitcore-lib');
@@ -21,7 +21,7 @@ type PreAuthRequest = {
 } & Request;
 
 type AuthenticatedRequest = {
-  wallet?: IWalletModel;
+  wallet?: IWallet;
 } & PreAuthRequest;
 
 const verifyRequestSignature = (params: VerificationPayload): boolean => {
@@ -45,6 +45,9 @@ const authenticate: RequestHandler = async (
   const { chain, network, pubKey } = req.params as SignedApiRequest;
   logger.debug('Authenticating request with pubKey: ', pubKey);
   const wallet = await ChainStateProvider.getWallet({ chain, network, pubKey });
+  if(req.is('application/octet-stream')) {
+    req.body = JSON.parse(req.body.toString());
+  }
   if (!wallet) {
     return res.status(404).send(new Error('Wallet not found'));
   }
