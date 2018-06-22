@@ -15,21 +15,16 @@ import { TxsProvider } from '../../providers/transactions/transactions';
   templateUrl: 'transaction.html'
 })
 export class TransactionComponent {
-
   private COIN: number = 100000000;
 
   public expanded: boolean = false;
   @Input() public tx: any = {};
 
-  constructor(
-    private navCtrl: NavController,
-    public currency: CurrencyProvider,
-    public txProvider: TxsProvider
-  ) {
-  }
+  constructor(private navCtrl: NavController, public currency: CurrencyProvider, public txProvider: TxsProvider) {}
 
   public ionVewDidLoad(): void {
-    this.txProvider.getCoins(this.tx.txid).subscribe((data) => {
+    this.txProvider.getCoins(this.tx.txid).subscribe(data => {
+      console.log(data);
       this.tx.inputs = data.inputs;
       this.tx.outputs = data.outputs;
     });
@@ -45,15 +40,15 @@ export class TransactionComponent {
 
   public goToTx(txId: string): void {
     this.navCtrl.push('transaction', {
-      'selectedCurrency': this.currency.selectedCurrency,
-      'txId': txId
+      selectedCurrency: this.currency.selectedCurrency,
+      txId: txId
     });
   }
 
   public goToAddress(addrStr: string): void {
     this.navCtrl.push('address', {
-      'selectedCurrency': this.currency.selectedCurrency,
-      'addrStr': addrStr
+      selectedCurrency: this.currency.selectedCurrency,
+      addrStr: addrStr
     });
   }
 
@@ -71,7 +66,6 @@ export class TransactionComponent {
     let u: number = 0;
 
     for (let i: number = 0; i < l; i++) {
-
       let notAddr: boolean = false;
       // non standard input
       if (items[i].scriptSig && !items[i].addr) {
@@ -105,15 +99,14 @@ export class TransactionComponent {
       }
       tmp[addr].isSpent = items[i].spentTxId;
 
-      tmp[addr].doubleSpentTxID = tmp[addr].doubleSpentTxID   || items[i].doubleSpentTxID;
+      tmp[addr].doubleSpentTxID = tmp[addr].doubleSpentTxID || items[i].doubleSpentTxID;
       tmp[addr].doubleSpentIndex = tmp[addr].doubleSpentIndex || items[i].doubleSpentIndex;
       tmp[addr].dbError = tmp[addr].dbError || items[i].dbError;
       tmp[addr].valueSat += Math.round(items[i].value * this.COIN);
       tmp[addr].items.push(items[i]);
       tmp[addr].notAddr = notAddr;
 
-      if (items[i].unconfirmedInput)
-        tmp[addr].unconfirmedInput = true;
+      if (items[i].unconfirmedInput) tmp[addr].unconfirmedInput = true;
 
       tmp[addr].count++;
     }
@@ -125,5 +118,5 @@ export class TransactionComponent {
     }
 
     return ret;
-  };
+  }
 }

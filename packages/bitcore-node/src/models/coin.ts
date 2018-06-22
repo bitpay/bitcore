@@ -57,6 +57,7 @@ class Coin extends BaseModel<ICoin> {
     let script = coin.script || '';
     let transform = {
       txid: coin.mintTxid,
+      coinbase: coin.coinbase,
       vout: coin.mintIndex,
       spentTxid: coin.spentTxid,
       address: coin.address,

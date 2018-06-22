@@ -17,7 +17,7 @@ export class DefaultProvider {
   }= {
     '%DEFAULT_CURRENCY%': 'BTC',
     '%API_PREFIX%': '/api',
-    '%NETWORK%': 'testnet'
+    '%NETWORK%': 'regtest'
   };
 
   constructor(public http: Http) {
