@@ -167,10 +167,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       if (!this.invCache[this.bitcoreP2p.Inventory.TYPE.BLOCK].use(hash)) {
         this.emit(hash, message.block);
         if (!this.syncing) {
-          this.streamer.emit('block', {
-            block: message.block,
-            transactions: message.block.transactions
-          });
+          this.streamer.emit('block', message.block);
         }
       }
     });
