@@ -49,11 +49,6 @@ export interface P2pService<Block, _Transaction> {
 
 export type StandardP2p = P2pService<Bitcoin.Block, Bitcoin.Transaction>;
 
-export type CompleteBlock<B, T> = {
-  block: B;
-  transactions: T[];
-};
-
 export enum P2pEvents {
   SYNC_COMPLETE = 'SYNC_COMPLETE'
 }
@@ -86,19 +81,16 @@ export class P2pRunner {
   private wireupBlockStream(
     parent?: { height: number; chain: string }
   ) {
-    this.service.stream().on('block', async (pair: {
-      block: Bitcoin.Block,
-      transactions: Bitcoin.Transaction[]
-    }) => {
+    this.service.stream().on('block', async (block: Bitcoin.Block) => {
       await this.blocks.addBlock({
         chain: this.chain,
         network: this.network,
         forkHeight: parent ? parent.height : 0,
         parentChain: parent ? parent.chain : this.chain,
-        block: pair.block,
+        block: block,
       });
       if (!this.service.syncing) {
-        logger.info(`Added block ${pair.block.hash}`, {
+        logger.info(`Added block ${block.hash}`, {
           chain: this.chain,
           network: this.network
         });
@@ -150,15 +142,13 @@ export class P2pRunner {
     let bestBlock = await tip();
 
     // wait for the parent fork to sync first
-    if (parent && bestBlock.height < parent.height) {
+    while (parent && bestBlock.height < parent.height) {
       logger.info(`Waiting until ${parent.chain} syncs before ${this.chain}`);
-      do {
-        await sleep(5000);
-        bestBlock = await tip();
-      } while (bestBlock.height < parent.height);
+      await sleep(5000);
+      bestBlock = await tip();
     }
 
-    const headers = async () => {
+    const getHeaders = async () => {
       const locators = await this.blocks.getLocatorHashes({
         chain: this.chain,
         network: this.network
@@ -170,16 +160,17 @@ export class P2pRunner {
 
     let lastLog = 0;
     let counter = bestBlock.height;
-    let goalHeight = this.service.height();
-    let hashes = await headers();
+    let poolHeight = this.service.height();
+    let hashes;
 
-    while (hashes.length > 0) {
+    while (!hashes || hashes.length > 0) {
       logger.info(
         `Syncing from ${
           bestBlock.height
         } to ${this.service.height()} for chain ${this.chain}`
       );
 
+      hashes = await getHeaders();
       for (const hash of hashes) {
         const block = await this.service.getBlock(hash);
         logger.debug('Block received', block.hash);
@@ -197,7 +188,7 @@ export class P2pRunner {
         counter += 1;
         if (Date.now() - lastLog > 100) {
           logger.info(
-            `Sync progress ${(counter * 100 / goalHeight).toFixed(3)}%`,
+            `Sync progress ${(counter * 100 / poolHeight).toFixed(3)}%`,
             {
               chain: this.chain,
               network: this.network,
@@ -207,8 +198,7 @@ export class P2pRunner {
           lastLog = Date.now();
         }
       }
-      hashes = await headers();
-      goalHeight = this.service.height();
+      poolHeight = this.service.height();
     }
     logger.info(`${this.chain}:${this.network} up to date.`);
     this.service.syncing = false;
