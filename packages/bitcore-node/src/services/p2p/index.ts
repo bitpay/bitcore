@@ -148,23 +148,19 @@ export class P2pRunner {
       });
       logger.debug(`Received ${locators.length} headers`);
 
-      return await this.service.getMissingBlockHashes(locators);
+      return this.service.getMissingBlockHashes(locators);
     };
 
-    let lastLog = 0;
-    let counter = bestBlock.height;
 
-    let poolHeight = this.service.height();
     let hashes;
-
     while (!hashes || hashes.length > 0) {
       hashes = await getHeaders();
-      poolHeight = this.service.height();
       bestBlock = await tip();
-
+      let lastLog = 0;
+      let counter = bestBlock.height;
       logger.info(
         `Syncing from ${
-          bestBlock.height
+        bestBlock.height
         } to ${this.service.height()} for chain ${this.chain}`
       );
 
@@ -185,7 +181,7 @@ export class P2pRunner {
         counter += 1;
         if (Date.now() - lastLog > 100) {
 
-          logger.info(`Sync progress ${((counter * 100) / poolHeight).toFixed(3)}%`, {
+          logger.info(`Sync progress ${((counter * 100) / this.service.height()).toFixed(3)}%`, {
             chain: this.chain,
             network: this.network,
             height: counter

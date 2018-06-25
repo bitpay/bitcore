@@ -74,10 +74,18 @@ describe('P2P Service', () => {
       }
     });
 
+    let counter = 1;
     const FakeP2p = mockP2p({
       stream: () => blocks,
       height: () => 100,
-      getMissingBlockHashes: async () => blockHashes,
+      getMissingBlockHashes: async () => {
+        if (counter === 1) {
+          counter++;
+          return blockHashes
+        } else {
+          return [];
+        }
+      },
       getBlock: async i => {
         const block = JSON.parse(JSON.stringify(TEST_BLOCK));
         block.hash = i.toString();
@@ -100,8 +108,9 @@ describe('P2P Service', () => {
       addBlock: async params => {
         await sleep(10);
         db.push(params.block.hash);
-        if(params.block.hash === '50') {
-          poolHeight = 100;
+        if (params.block.hash === '50') {
+          console.log('Setting poolHeight = 100')
+          //poolHeight = 100;
         }
         if (db.length === 100) {
           expect(db).to.deep.equal(hashes);
@@ -114,14 +123,20 @@ describe('P2P Service', () => {
       }
     });
 
+    let counter = 1;
     const FakeP2p = mockP2p({
       height: () => poolHeight,
       getMissingBlockHashes: async () => {
-        if(poolHeight === 50) {
+        if (counter == 1) {
+          counter++;
+          console.log('returning first 50')
           return hashes.slice(0, 50);
-        } else if (poolHeight > 50 && db.length < 100) {
+        } else if (counter == 2) {
+          counter++;
+          console.log('returning last 50')
+          poolHeight = 100;
           return hashes.slice(50, 100);
-        } else  {
+        } else {
           return [];
         }
       },
