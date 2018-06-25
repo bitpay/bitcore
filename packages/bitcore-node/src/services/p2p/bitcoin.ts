@@ -6,7 +6,6 @@ import { LoggifyClass } from '../../decorators/Loggify';
 import { P2pService } from '.';
 
 import { EventEmitter } from 'events';
-import { Subject } from 'rxjs';
 import { Cache } from '../../utils/cache';
 
 const Chain = require('../../chain');
@@ -28,17 +27,12 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
   private messages: any;
   private invCache: { [key: string]: Cache };
   private stayConnected?: NodeJS.Timer;
-  private stream: {
-    blocks: Subject<{
-      block: Bitcoin.Block,
-      transactions: Bitcoin.Transaction[]
-    }>;
-    transactions: Subject<Bitcoin.Transaction>;
-  };
+  private streamer: EventEmitter;
 
 
   constructor(config: any) {
     super();
+    this.streamer = new EventEmitter();
 
     // Chain
     if (typeof config.chain === 'string') {
@@ -106,10 +100,6 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       [this.bitcoreP2p.Inventory.TYPE.TX]: new Cache(1000),
     };
     this.syncing = false;
-    this.stream = {
-      blocks: new Subject(),
-      transactions: new Subject(),
-    };
 
     if (!this.bitcoreLib.Networks.get(this.network)) {
       throw new Error('Unknown network specified in config');
@@ -161,7 +151,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       });
       const hash = message.transaction.hash;
       if (!this.invCache[this.bitcoreP2p.Inventory.TYPE.TX].use(hash)) {
-        this.stream.transactions.next(message.transaction);
+        this.streamer.emit('tx', message.transaction);
       }
     });
 
@@ -177,10 +167,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       if (!this.invCache[this.bitcoreP2p.Inventory.TYPE.BLOCK].use(hash)) {
         this.emit(hash, message.block);
         if (!this.syncing) {
-          this.stream.blocks.next({
-            block: message.block,
-            transactions: message.block.transactions
-          });
+          this.streamer.emit('block', message.block);
         }
       }
     });
@@ -225,22 +212,6 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
     }
   }
 
-  public async sync(locatorHashes: string[]): Promise<string | undefined> {
-    const headers = await this.getMissingBlockHashes(locatorHashes);
-    let lastHash: string | undefined = undefined;
-
-    for (const header of headers) {
-      const block = await this.getBlock(header.hash);
-      logger.debug('Block received', block.hash);
-      this.stream.blocks.next({
-        block,
-        transactions: block.transactions
-      });
-      lastHash = block.hash;
-    }
-    return lastHash;
-  }
-
   public height(): number {
     return Object.values(this.pool._connectedPeers).reduce(
       (best, peer: Peer) => Math.max(best, peer.bestHeight),
@@ -263,7 +234,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
     return undefined;
   }
 
-  public async getMissingBlockHashes(candidateHashes: string[]): Promise<Bitcoin.Block.HeaderObj[]> {
+  public async getMissingBlockHashes(candidateHashes: string[]): Promise<string[]> {
     return new Promise(resolve => {
       const getHeaders = () => {
         this.pool.sendMessage(this.messages.GetHeaders({
@@ -272,12 +243,12 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       };
       const headersRetry = setInterval(getHeaders, 1000);
 
-      this.once('headers', headers => {
+      this.once('headers', (headers: Bitcoin.Block.HeaderObj[]) => {
         clearInterval(headersRetry);
-        resolve(headers);
+        resolve(headers.map(h => h.hash));
       });
       getHeaders();
-    }) as Promise<Bitcoin.Block.HeaderObj[]>;
+    }) as Promise<string[]>;
   }
 
   public async getBlock(hash: string): Promise<Bitcoin.Block> {
@@ -297,11 +268,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
     }) as Promise<Bitcoin.Block>;
   }
 
-  blocks() {
-    return this.stream.blocks;
-  }
-
-  transactions() {
-    return this.stream.transactions;
+  stream() {
+    return this.streamer;
   }
 }
