@@ -2,7 +2,7 @@ import logger from '../../../src/logger';
 import config from '../../../src/config';
 import { resetDatabase } from '../../helpers';
 import { expect } from 'chai';
-import { P2pProvider, P2pEvents } from '../../../src/services/p2p';
+import { P2pProvider } from '../../../src/services/p2p';
 import { BlockModel } from '../../../src/models/block';
 import { TransactionModel } from '../../../src/models/transaction';
 import { sleep } from '../../../src/utils/async';

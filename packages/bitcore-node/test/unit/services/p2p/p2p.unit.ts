@@ -22,10 +22,7 @@ describe('P2P Service', () => {
     const Fakeblock = mockP2p({
       stream: () => blocks,
       start: async () => {
-        blocks.emit('block', {
-          block: TEST_BLOCK,
-          transactions: TEST_BLOCK.transactions,
-        });
+        blocks.emit('block', TEST_BLOCK);
       }
     });
 
@@ -160,10 +157,7 @@ describe('P2P Service', () => {
     }, mockP2p({
       stream: () => blocks,
       start: async () => {
-        blocks.emit('block', {
-          block: TEST_BLOCK,
-          transactions: TEST_BLOCK.transactions,
-        });
+        blocks.emit('block', TEST_BLOCK);
         await sleep(100);
         events.emit('sent-block', {});
       },

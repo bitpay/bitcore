@@ -68,13 +68,7 @@ export class P2pRunner {
 
   public events: EventEmitter;
 
-  constructor(
-    chain: string,
-    network: string,
-    blocks: Block,
-    transactions: Transaction,
-    service: StandardP2p
-  ) {
+  constructor(chain: string, network: string, blocks: Block, transactions: Transaction, service: StandardP2p) {
     this.service = service;
     this.chain = chain;
     this.network = network;
@@ -83,22 +77,18 @@ export class P2pRunner {
     this.events = new EventEmitter();
   }
 
-  private wireupBlockStream(
-    parent?: { height: number; chain: string }
-  ) {
-    this.service.stream().on('block', async (pair: {
-      block: Bitcoin.Block,
-      transactions: Bitcoin.Transaction[]
-    }) => {
+  private wireupBlockStream(parent?: { height: number; chain: string }) {
+    this.service.stream().on('block', async (block: Bitcoin.Block) => {
       await this.blocks.addBlock({
         chain: this.chain,
         network: this.network,
         forkHeight: parent ? parent.height : 0,
         parentChain: parent ? parent.chain : this.chain,
-        block: pair.block,
+        block: block
       });
+
       if (!this.service.syncing) {
-        logger.info(`Added block ${pair.block.hash}`, {
+        logger.info(`Added block ${block.hash}`, {
           chain: this.chain,
           network: this.network
         });
@@ -138,27 +128,25 @@ export class P2pRunner {
     this.service.syncing = true;
     const parent = this.service.parent();
     const tip = () =>
-    this.blocks.getLocalTip({
-      chain: this.chain,
-      network: this.network
-    });
+      this.blocks.getLocalTip({
+        chain: this.chain,
+        network: this.network
+      });
 
     // remove the previous block to ensure consistency through process termination
-    await this.blocks.handleReorg({chain: this.chain, network: this.network });
+    await this.blocks.handleReorg({ chain: this.chain, network: this.network });
 
     // get best block we currently have to see if we're synced
     let bestBlock = await tip();
 
     // wait for the parent fork to sync first
-    if (parent && bestBlock.height < parent.height) {
+    while (parent && bestBlock.height < parent.height) {
       logger.info(`Waiting until ${parent.chain} syncs before ${this.chain}`);
-      do {
-        await sleep(5000);
-        bestBlock = await tip();
-      } while (bestBlock.height < parent.height);
+      await sleep(5000);
+      bestBlock = await tip();
     }
 
-    const headers = async () => {
+    const getHeaders = async () => {
       const locators = await this.blocks.getLocatorHashes({
         chain: this.chain,
         network: this.network
@@ -171,14 +159,10 @@ export class P2pRunner {
     let lastLog = 0;
     let counter = bestBlock.height;
     let goalHeight = this.service.height();
-    let hashes = await headers();
+    let hashes = await getHeaders();
 
     while (hashes.length > 0) {
-      logger.info(
-        `Syncing from ${
-          bestBlock.height
-        } to ${this.service.height()} for chain ${this.chain}`
-      );
+      logger.info(`Syncing from ${bestBlock.height} to ${this.service.height()} for chain ${this.chain}`);
 
       for (const hash of hashes) {
         const block = await this.service.getBlock(hash);
@@ -188,26 +172,23 @@ export class P2pRunner {
           network: this.network,
           forkHeight: parent ? parent.height : 0,
           parentChain: parent ? parent.chain : this.chain,
-          block,
+          block
         });
         logger.debug(`Syncing block ${block.hash}`, {
           chain: this.chain,
-          network: this.network,
+          network: this.network
         });
         counter += 1;
         if (Date.now() - lastLog > 100) {
-          logger.info(
-            `Sync progress ${(counter * 100 / goalHeight).toFixed(3)}%`,
-            {
-              chain: this.chain,
-              network: this.network,
-              height: counter
-            }
-          );
+          logger.info(`Sync progress ${((counter * 100) / goalHeight).toFixed(3)}%`, {
+            chain: this.chain,
+            network: this.network,
+            height: counter
+          });
           lastLog = Date.now();
         }
       }
-      hashes = await headers();
+      hashes = await getHeaders();
       goalHeight = this.service.height();
     }
     logger.info(`${this.chain}:${this.network} up to date.`);
@@ -228,23 +209,11 @@ export class P2pProxy implements CSP.Provider<Class<StandardP2p>> {
     P2PClasses[chain] = service;
   }
 
-  build(params: {
-    chain: string;
-    network: string;
-    blocks: Block;
-    transactions: Transaction;
-    config: any;
-  }): P2pRunner {
+  build(params: { chain: string; network: string; blocks: Block; transactions: Transaction; config: any }): P2pRunner {
     logger.debug(`Building p2p service for ${params.chain}.`);
     const P2PClass = this.get(params);
     const chainP2PConnection = new P2PClass(params.config);
-    const runner = new P2pRunner(
-      params.chain,
-      params.network,
-      params.blocks,
-      params.transactions,
-      chainP2PConnection
-    );
+    const runner = new P2pRunner(params.chain, params.network, params.blocks, params.transactions, chainP2PConnection);
     return runner;
   }
 
