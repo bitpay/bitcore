@@ -182,7 +182,7 @@ export class P2pRunner {
         counter += 1;
         if (Date.now() - lastLog > 100) {
 
-          logger.info(`Sync progress ${((counter * 100) / goalHeight).toFixed(3)}%`, {
+          logger.info(`Sync progress ${((counter * 100) / poolHeight).toFixed(3)}%`, {
             chain: this.chain,
             network: this.network,
             height: counter
@@ -191,7 +191,7 @@ export class P2pRunner {
         }
       }
       hashes = await getHeaders();
-      goalHeight = this.service.height();
+      poolHeight = this.service.height();
     }
     logger.info(`${this.chain}:${this.network} up to date.`);
     this.service.syncing = false;
