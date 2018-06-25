@@ -109,7 +109,6 @@ describe('P2P Service', () => {
         await sleep(10);
         db.push(params.block.hash);
         if (params.block.hash === '50') {
-          console.log('Setting poolHeight = 100')
           //poolHeight = 100;
         }
         if (db.length === 100) {
@@ -129,11 +128,9 @@ describe('P2P Service', () => {
       getMissingBlockHashes: async () => {
         if (counter == 1) {
           counter++;
-          console.log('returning first 50')
           return hashes.slice(0, 50);
         } else if (counter == 2) {
           counter++;
-          console.log('returning last 50')
           poolHeight = 100;
           return hashes.slice(50, 100);
         } else {
