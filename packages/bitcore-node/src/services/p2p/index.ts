@@ -158,13 +158,16 @@ export class P2pRunner {
     let hashes;
 
     while (!hashes || hashes.length > 0) {
+      hashes = await getHeaders();
+      poolHeight = this.service.height();
+      bestBlock = await tip();
+
       logger.info(
         `Syncing from ${
           bestBlock.height
         } to ${this.service.height()} for chain ${this.chain}`
       );
 
-      hashes = await getHeaders();
       for (const hash of hashes) {
         const block = await this.service.getBlock(hash);
         logger.debug('Block received', block.hash);
@@ -190,8 +193,6 @@ export class P2pRunner {
           lastLog = Date.now();
         }
       }
-      hashes = await getHeaders();
-      poolHeight = this.service.height();
     }
     logger.info(`${this.chain}:${this.network} up to date.`);
     this.service.syncing = false;
