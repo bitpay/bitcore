@@ -49,11 +49,6 @@ export interface P2pService<Block, _Transaction> {
 
 export type StandardP2p = P2pService<Bitcoin.Block, Bitcoin.Transaction>;
 
-export type CompleteBlock<B, T> = {
-  block: B;
-  transactions: T[];
-};
-
 export enum P2pEvents {
   SYNC_COMPLETE = 'SYNC_COMPLETE'
 }
@@ -158,12 +153,18 @@ export class P2pRunner {
 
     let lastLog = 0;
     let counter = bestBlock.height;
-    let goalHeight = this.service.height();
-    let hashes = await getHeaders();
 
-    while (hashes.length > 0) {
-      logger.info(`Syncing from ${bestBlock.height} to ${this.service.height()} for chain ${this.chain}`);
+    let poolHeight = this.service.height();
+    let hashes;
 
+    while (!hashes || hashes.length > 0) {
+      logger.info(
+        `Syncing from ${
+          bestBlock.height
+        } to ${this.service.height()} for chain ${this.chain}`
+      );
+
+      hashes = await getHeaders();
       for (const hash of hashes) {
         const block = await this.service.getBlock(hash);
         logger.debug('Block received', block.hash);
@@ -180,6 +181,7 @@ export class P2pRunner {
         });
         counter += 1;
         if (Date.now() - lastLog > 100) {
+
           logger.info(`Sync progress ${((counter * 100) / goalHeight).toFixed(3)}%`, {
             chain: this.chain,
             network: this.network,
