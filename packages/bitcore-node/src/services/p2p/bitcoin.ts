@@ -1,19 +1,19 @@
 import logger from '../../logger';
 import { HostPort } from '../../types/HostPort';
 import { Peer, BitcoreP2pPool } from '../../types/Bitcore-P2P-Pool';
-import { Bitcoin } from "../../types/namespaces/Bitcoin";
+import { Bitcoin } from '../../types/namespaces/Bitcoin';
 import { LoggifyClass } from '../../decorators/Loggify';
 import { P2pService } from '.';
 
 import { EventEmitter } from 'events';
-import { Subject } from 'rxjs';
 import { Cache } from '../../utils/cache';
 
 const Chain = require('../../chain');
 
 @LoggifyClass
-export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Block, Bitcoin.Transaction> {
+export class BtcP2pService implements P2pService<Bitcoin.Block, Bitcoin.Transaction> {
   public syncing: boolean;
+  public stream: EventEmitter;
 
   private chain: string;
   private network: string;
@@ -28,31 +28,21 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
   private messages: any;
   private invCache: { [key: string]: Cache };
   private stayConnected?: NodeJS.Timer;
-  private stream: {
-    blocks: Subject<{
-      block: Bitcoin.Block,
-      transactions: Bitcoin.Transaction[]
-    }>;
-    transactions: Subject<Bitcoin.Transaction>;
-  };
-
 
   constructor(config: any) {
-    super();
+    this.stream = new EventEmitter();
 
     // Chain
     if (typeof config.chain === 'string') {
       this.chain = config.chain;
-    }
-    else {
+    } else {
       throw new Error(`BtcP2pService: chain must be a string, got ${config.chain}`);
     }
 
     // Network
     if (typeof config.network === 'string') {
       this.network = config.network;
-    }
-    else {
+    } else {
       throw new Error(`BtcP2pService: network must be a string, got ${config.network}`);
     }
 
@@ -61,8 +51,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       let chain;
       if (typeof config.parentChain === 'string') {
         chain = config.parentChain;
-      }
-      else {
+      } else {
         throw new Error(`BtcP2pService: parentChain must be a string, got ${config.parentChain}`);
       }
 
@@ -70,16 +59,14 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       let height;
       if (typeof config.forkHeight === 'number') {
         height = config.forkHeight;
-      }
-      else {
+      } else {
         throw new Error(`BtcP2pService: forkHeight must be a number, got ${config.forkHeight}`);
       }
       this.forked = {
         chain,
-        height,
+        height
       };
-    }
-    else if (config.forkHeight) {
+    } else if (config.forkHeight) {
       throw new Error(`BtcP2pService: must provide forkHeight if providing parentChain`);
     }
 
@@ -89,13 +76,11 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       for (const peer of config.trustedPeers) {
         if (typeof peer.host === 'string' && typeof peer.port === 'number') {
           this.trustedPeers.push(peer);
-        }
-        else {
+        } else {
           throw new Error(`BtcP2pService: peer must be { host: string, port: number }, got ${peer}`);
         }
       }
-    }
-    else {
+    } else {
       throw new Error(`BtcP2pService: trustedPeers must be a non-empty list, got ${config.trustedPeers}`);
     }
 
@@ -103,13 +88,9 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
     this.bitcoreP2p = Chain[this.chain].p2p;
     this.invCache = {
       [this.bitcoreP2p.Inventory.TYPE.BLOCK]: new Cache(1000),
-      [this.bitcoreP2p.Inventory.TYPE.TX]: new Cache(1000),
+      [this.bitcoreP2p.Inventory.TYPE.TX]: new Cache(1000)
     };
     this.syncing = false;
-    this.stream = {
-      blocks: new Subject(),
-      transactions: new Subject(),
-    };
 
     if (!this.bitcoreLib.Networks.get(this.network)) {
       throw new Error('Unknown network specified in config');
@@ -157,11 +138,11 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
         peer: `${peer.host}:${peer.port}`,
         chain: this.chain,
         network: this.network,
-        transaction: message.transaction.hash,
+        transaction: message.transaction.hash
       });
       const hash = message.transaction.hash;
       if (!this.invCache[this.bitcoreP2p.Inventory.TYPE.TX].use(hash)) {
-        this.stream.transactions.next(message.transaction);
+        this.stream.emit('tx', message.transaction);
       }
     });
 
@@ -175,12 +156,9 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
       const hash = message.block.hash;
 
       if (!this.invCache[this.bitcoreP2p.Inventory.TYPE.BLOCK].use(hash)) {
-        this.emit(hash, message.block);
+        this.stream.emit(hash, message.block);
         if (!this.syncing) {
-          this.stream.blocks.next({
-            block: message.block,
-            transactions: message.block.transactions
-          });
+          this.stream.emit('block', message.block);
         }
       }
     });
@@ -190,9 +168,9 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
         peer: `${peer.host}:${peer.port}`,
         chain: this.chain,
         network: this.network,
-        headers: message.headers.map(h => h.hash),
+        headers: message.headers.map(h => h.hash)
       });
-      this.emit('headers', message.headers);
+      this.stream.emit('headers', message.headers);
     });
 
     this.pool.on('peerinv', (peer, message) => {
@@ -215,7 +193,7 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
 
     // connect to peers before using this service
     return new Promise<void>(resolve => {
-      this.pool.once('peerready', () => resolve())
+      this.pool.once('peerready', () => resolve());
     });
   }
 
@@ -225,83 +203,60 @@ export class BtcP2pService extends EventEmitter implements P2pService<Bitcoin.Bl
     }
   }
 
-  public async sync(locatorHashes: string[]): Promise<string | undefined> {
-    const headers = await this.getMissingBlockHashes(locatorHashes);
-    let lastHash: string | undefined = undefined;
-
-    for (const header of headers) {
-      const block = await this.getBlock(header.hash);
-      logger.debug('Block received', block.hash);
-      this.stream.blocks.next({
-        block,
-        transactions: block.transactions
-      });
-      lastHash = block.hash;
-    }
-    return lastHash;
-  }
-
   public height(): number {
-    return Object.values(this.pool._connectedPeers).reduce(
-      (best, peer: Peer) => Math.max(best, peer.bestHeight),
-      0
-    );
+    return Object.values(this.pool._connectedPeers).reduce((best, peer: Peer) => Math.max(best, peer.bestHeight), 0);
   }
 
-  public parent(): {
-    chain: string,
-    network: string,
-    height: number,
-  } | undefined {
+  public parent():
+    | {
+        chain: string;
+        network: string;
+        height: number;
+      }
+    | undefined {
     if (this.forked && this.forked.chain !== this.chain) {
       return {
         chain: this.forked.chain,
         network: this.network,
-        height: this.forked.height,
+        height: this.forked.height
       };
     }
     return undefined;
   }
 
-  public async getMissingBlockHashes(candidateHashes: string[]): Promise<Bitcoin.Block.HeaderObj[]> {
-    return new Promise(resolve => {
+  public async getMissingBlockHashes(candidateHashes: string[]): Promise<string[]> {
+    return new Promise<string[]>(resolve => {
       const getHeaders = () => {
-        this.pool.sendMessage(this.messages.GetHeaders({
-          starts: candidateHashes
-        }));
+        this.pool.sendMessage(
+          this.messages.GetHeaders({
+            starts: candidateHashes
+          })
+        );
       };
       const headersRetry = setInterval(getHeaders, 1000);
 
-      this.once('headers', headers => {
+      this.stream.once('headers', (headers: Bitcoin.Block.HeaderObj[]) => {
         clearInterval(headersRetry);
-        resolve(headers);
+        resolve(headers.map(h => h.hash));
       });
       getHeaders();
-    }) as Promise<Bitcoin.Block.HeaderObj[]>;
+    });
   }
 
   public async getBlock(hash: string): Promise<Bitcoin.Block> {
-    return new Promise(resolve => {
+    return new Promise<Bitcoin.Block>(resolve => {
       logger.debug('Getting block, hash:', hash);
       const _getBlock = () => {
         this.pool.sendMessage(this.messages.GetData.forBlock(hash));
       };
       const getBlockRetry = setInterval(_getBlock, 1000);
 
-      this.once(hash, block => {
+      this.stream.once(hash, block => {
         logger.debug('Received block, hash:', hash);
         clearInterval(getBlockRetry);
         resolve(block);
       });
       _getBlock();
-    }) as Promise<Bitcoin.Block>;
-  }
-
-  blocks() {
-    return this.stream.blocks;
-  }
-
-  transactions() {
-    return this.stream.transactions;
+    });
   }
 }
