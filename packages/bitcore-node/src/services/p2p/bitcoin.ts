@@ -13,6 +13,7 @@ const Chain = require('../../chain');
 @LoggifyClass
 export class BtcP2pService implements P2pService<Bitcoin.Block, Bitcoin.Transaction> {
   public syncing: boolean;
+  public stream: EventEmitter;
 
   private chain: string;
   private network: string;
@@ -27,10 +28,9 @@ export class BtcP2pService implements P2pService<Bitcoin.Block, Bitcoin.Transact
   private messages: any;
   private invCache: { [key: string]: Cache };
   private stayConnected?: NodeJS.Timer;
-  private _stream: EventEmitter;
 
   constructor(config: any) {
-    this._stream = new EventEmitter();
+    this.stream = new EventEmitter();
 
     // Chain
     if (typeof config.chain === 'string') {
@@ -142,7 +142,7 @@ export class BtcP2pService implements P2pService<Bitcoin.Block, Bitcoin.Transact
       });
       const hash = message.transaction.hash;
       if (!this.invCache[this.bitcoreP2p.Inventory.TYPE.TX].use(hash)) {
-        this._stream.emit('tx', message.transaction);
+        this.stream.emit('tx', message.transaction);
       }
     });
 
@@ -156,9 +156,9 @@ export class BtcP2pService implements P2pService<Bitcoin.Block, Bitcoin.Transact
       const hash = message.block.hash;
 
       if (!this.invCache[this.bitcoreP2p.Inventory.TYPE.BLOCK].use(hash)) {
-        this._stream.emit(hash, message.block);
+        this.stream.emit(hash, message.block);
         if (!this.syncing) {
-          this._stream.emit('block', message.block);
+          this.stream.emit('block', message.block);
         }
       }
     });
@@ -170,7 +170,7 @@ export class BtcP2pService implements P2pService<Bitcoin.Block, Bitcoin.Transact
         network: this.network,
         headers: message.headers.map(h => h.hash)
       });
-      this._stream.emit('headers', message.headers);
+      this.stream.emit('headers', message.headers);
     });
 
     this.pool.on('peerinv', (peer, message) => {
@@ -225,7 +225,7 @@ export class BtcP2pService implements P2pService<Bitcoin.Block, Bitcoin.Transact
   }
 
   public async getMissingBlockHashes(candidateHashes: string[]): Promise<string[]> {
-    return new Promise<string []>(resolve => {
+    return new Promise<string[]>(resolve => {
       const getHeaders = () => {
         this.pool.sendMessage(
           this.messages.GetHeaders({
@@ -235,7 +235,7 @@ export class BtcP2pService implements P2pService<Bitcoin.Block, Bitcoin.Transact
       };
       const headersRetry = setInterval(getHeaders, 1000);
 
-      this._stream.once('headers', (headers: Bitcoin.Block.HeaderObj[]) => {
+      this.stream.once('headers', (headers: Bitcoin.Block.HeaderObj[]) => {
         clearInterval(headersRetry);
         resolve(headers.map(h => h.hash));
       });
@@ -251,16 +251,12 @@ export class BtcP2pService implements P2pService<Bitcoin.Block, Bitcoin.Transact
       };
       const getBlockRetry = setInterval(_getBlock, 1000);
 
-      this._stream.once(hash, block => {
+      this.stream.once(hash, block => {
         logger.debug('Received block, hash:', hash);
         clearInterval(getBlockRetry);
         resolve(block);
       });
       _getBlock();
     });
-  }
-
-  stream() {
-    return this._stream;
   }
 }

@@ -20,7 +20,7 @@ describe('P2P Service', () => {
       }
     });
     const Fakeblock = mockP2p({
-      stream: () => blocks,
+      stream: blocks,
       start: async () => {
         blocks.emit('block', TEST_BLOCK);
       }
@@ -40,7 +40,7 @@ describe('P2P Service', () => {
       }
     });
     const Fakeblock = mockP2p({
-      stream: () => transactions,
+      stream: transactions,
       start: async () => {
         transactions.emit('tx', TEST_TX);
       }
@@ -76,7 +76,7 @@ describe('P2P Service', () => {
 
     let counter = 1;
     const FakeP2p = mockP2p({
-      stream: () => blocks,
+      stream: blocks,
       height: () => 100,
       getMissingBlockHashes: async () => {
         if (counter === 1) {
@@ -172,7 +172,7 @@ describe('P2P Service', () => {
         }
       },
       mockP2p({
-        stream: () => blocks,
+        stream: blocks,
         start: async () => {
           blocks.emit('block', TEST_BLOCK);
           await sleep(100);
@@ -189,7 +189,7 @@ describe('P2P Service', () => {
 function mockP2p(extra?: Partial<StandardP2p>): StandardP2p {
   return Object.assign(
     {
-      stream: () => new EventEmitter(),
+      stream: new EventEmitter(),
       start: async () => {},
       height: () => 0,
       parent: () => undefined,

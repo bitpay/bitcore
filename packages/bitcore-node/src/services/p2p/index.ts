@@ -22,7 +22,7 @@ const P2PClasses: {
 
 export interface P2pService<Block, _Transaction> {
   // a stream of blocks and transactions
-  stream(): EventEmitter;
+  stream: EventEmitter;
 
   // connect to the peers and begin emitting data
   start(): Promise<void>;
@@ -73,7 +73,7 @@ export class P2pRunner {
   }
 
   private wireupBlockStream(parent?: { height: number; chain: string }) {
-    this.service.stream().on('block', async (block: Bitcoin.Block) => {
+    this.service.stream.on('block', async (block: Bitcoin.Block) => {
       await this.blocks.addBlock({
         chain: this.chain,
         network: this.network,
@@ -92,7 +92,7 @@ export class P2pRunner {
   }
 
   private wireupTxStream() {
-    this.service.stream().on('tx', async (tx: Bitcoin.Transaction) => {
+    this.service.stream.on('tx', async (tx: Bitcoin.Transaction) => {
       await this.transactions.batchImport({
         txs: [tx],
         height: -1,
