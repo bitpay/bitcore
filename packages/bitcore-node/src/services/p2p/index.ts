@@ -81,13 +81,10 @@ export class P2pRunner {
         parentChain: parent ? parent.chain : this.chain,
         block: block
       });
-
-      if (!this.service.syncing) {
-        logger.info(`Added block ${block.hash}`, {
-          chain: this.chain,
-          network: this.network
-        });
-      }
+      logger.info(`Added block ${block.hash}`, {
+        chain: this.chain,
+        network: this.network
+      });
     });
   }
 
