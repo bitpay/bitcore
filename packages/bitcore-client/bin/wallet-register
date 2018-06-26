@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
+const fs = require('fs');
 const program = require('commander');
 const Wallet = require('../lib/wallet');
 const promptly = require('promptly');
+const util = require('util');
+const accessAsync = util.promisify(fs.access);
 
 program
   .version(require('../package.json').version)
@@ -10,9 +13,20 @@ program
   .option('--baseUrl <url>', 'optional - Change configured wallet baseUrl')
   .parse(process.argv);
 
+if (!program.path || !program.baseUrl) {
+  program.help();
+}
+
 const main = async () => {
   const { path, baseUrl } = program;
   let wallet;
+  try {
+    await accessAsync(path, fs.constants.F_OK | fs.constants.R_OK);
+    await accessAsync(path + 'LOCK', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
+    await accessAsync(path + 'LOG', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
+  } catch (err) {
+    return console.error('Invalid wallet path');
+  }
   try {
     const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.loadWallet({ path });

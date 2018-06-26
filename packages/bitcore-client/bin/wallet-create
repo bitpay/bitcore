@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
+const fs = require('fs');
 const program = require('commander');
 const Wallet = require('../lib/wallet');
 const promptly = require('promptly');
+const util = require('util');
+const accessAsync = util.promisify(fs.access);
 
 program
   .version(require('../package.json').version)
@@ -13,13 +16,24 @@ program
     'REQUIRED - Network (livenet/testnet/regtest, etc)'
   )
   .option('--path <path>', 'REQUIRED - Where wallet should be stored')
-  .option('--mnemonic <phrase>', 'optional - Seed using existing backup phrase')
+  .option('--mnemonic [phrase]', 'OPTIONAL - Seed using existing backup phrase')
   .parse(process.argv);
+
+if (!program.name || !program.chain || !program.network || !program.path) {
+  program.help();
+}
 
 const main = async () => {
   const { name, chain, network, path, phrase } = program;
   const password = await promptly.password('Wallet Password:');
   let wallet;
+  try {
+    await accessAsync(path, fs.constants.F_OK | fs.constants.R_OK);
+    await accessAsync(path + 'LOCK', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
+    await accessAsync(path + 'LOG', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
+  } catch (err) {
+    return console.error('Invalid wallet path');
+  }
   try {
     wallet = await Wallet.create({
       name,

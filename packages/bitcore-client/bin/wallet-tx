@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
+const fs = require('fs');
 const program = require('commander');
 const Wallet = require('../lib/wallet');
 const promptly = require('promptly');
+const util = require('util');
+const accessAsync = util.promisify(fs.access);
 
 program
   .version(require('../package.json').version)
@@ -17,9 +20,20 @@ program
   .option('--change <change>', 'REQUIRED - Change addresses')
   .parse(process.argv);
 
+if (!program.path || !program.amount || !program.addresses || !program.fee || !program.utxos || !program.change) {
+  program.help();
+}
+
 const main = async () => {
   const { path } = program;
   let wallet;
+  try {
+    await accessAsync(path, fs.constants.F_OK | fs.constants.R_OK);
+    await accessAsync(path + 'LOCK', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
+    await accessAsync(path + 'LOG', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
+  } catch (err) {
+    return console.error('Invalid wallet path');
+  }
   try {
     const { addresses, amount, utxos, change, fee } = program;
     wallet = await Wallet.loadWallet({ path });

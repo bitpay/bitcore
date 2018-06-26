@@ -1,16 +1,23 @@
 #!/usr/bin/env node
 
+const fs = require('fs');
 const bitcoreLib = require('bitcore-lib');
 const program = require('commander');
 const Wallet = require('../lib/wallet');
 const promptly = require('promptly');
+const util = require('util');
+const accessAsync = util.promisify(fs.access);
 
 program
   .version(require('../package.json').version)
   .option('--path <path>', 'REQUIRED - Filepath where wallet is stored')
   .option('--gap <gap>', 'REQUIRED - Number of addresses to derive (will derive that many change addresses too)')
-  .option('--change <change>', 'REQUIRED - should derive change addresses')
+  .option('--change <change>', 'REQUIRED - should derive change addresses(true/false)')
   .parse(process.argv);
+
+if (!program.path || !program.gap || !program.change) {
+  program.help();
+}
 
 function derivePrivateKey(addressIndex, isChange, key) {
   const changeNum = isChange ? 1 : 0;
@@ -21,6 +28,13 @@ function derivePrivateKey(addressIndex, isChange, key) {
 const main = async () => {
   const { path, gap, change } = program;
   let wallet;
+  try {
+    await accessAsync(path, fs.constants.F_OK | fs.constants.R_OK);
+    await accessAsync(path + 'LOCK', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
+    await accessAsync(path + 'LOG', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
+  } catch (err) {
+    return console.error('Invalid wallet path');
+  }
   try {
     const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.loadWallet({ path });
