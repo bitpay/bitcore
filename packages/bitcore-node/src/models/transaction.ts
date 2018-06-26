@@ -338,7 +338,8 @@ TransactionSchema.statics.getTransactions = function(params: {
   query: TransactionQuery;
 }) {
   let query = params.query;
-  return this.find(query).cursor();
+  let result = exports.TransactionModel.find(query).cursor();
+  return result;
 };
 
 TransactionSchema.statics._apiTransform = function(
