@@ -81,7 +81,7 @@ describe('P2P Service', () => {
       getMissingBlockHashes: async () => {
         if (counter === 1) {
           counter++;
-          return blockHashes
+          return blockHashes;
         } else {
           return [];
         }
@@ -108,9 +108,6 @@ describe('P2P Service', () => {
       addBlock: async params => {
         await sleep(10);
         db.push(params.block.hash);
-        if (params.block.hash === '50') {
-          //poolHeight = 100;
-        }
         if (db.length === 100) {
           expect(db).to.deep.equal(hashes);
           done();
@@ -142,7 +139,7 @@ describe('P2P Service', () => {
         block.hash = i.toString();
         return block;
       },
-      start: async () => { }
+      start: async () => {}
     });
 
     new P2pRunner('GOB', 'p-hound', FakeBlockModel, TransactionModel, FakeP2p).start();
@@ -193,10 +190,10 @@ function mockP2p(extra?: Partial<StandardP2p>): StandardP2p {
   return Object.assign(
     {
       stream: () => new EventEmitter(),
-      start: async () => { },
+      start: async () => {},
       height: () => 0,
       parent: () => undefined,
-      stop: async () => { },
+      stop: async () => {},
       syncing: false,
       getMissingBlockHashes: () => Promise.resolve([]),
       getBlock: i => Promise.resolve(i)
@@ -208,7 +205,7 @@ function mockP2p(extra?: Partial<StandardP2p>): StandardP2p {
 function mockTransactionModel(extra?: Partial<Transaction>): Transaction {
   return Object.assign(
     ({
-      batchImport: async () => { }
+      batchImport: async () => {}
     } as any) as Transaction,
     extra ? extra : {}
   );
@@ -217,8 +214,8 @@ function mockTransactionModel(extra?: Partial<Transaction>): Transaction {
 function mockBlockModel(extra?: Partial<Block>): Block {
   return Object.assign(
     ({
-      handleReorg: async () => { },
-      addBlock: async () => { },
+      handleReorg: async () => {},
+      addBlock: async () => {},
       getLocalTip: async () => {
         return {
           height: 0
