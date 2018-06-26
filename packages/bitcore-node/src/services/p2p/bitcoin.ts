@@ -225,7 +225,7 @@ export class BtcP2pService implements P2pService<Bitcoin.Block, Bitcoin.Transact
   }
 
   public async getMissingBlockHashes(candidateHashes: string[]): Promise<string[]> {
-    return new Promise(resolve => {
+    return new Promise<string []>(resolve => {
       const getHeaders = () => {
         this.pool.sendMessage(
           this.messages.GetHeaders({
@@ -240,11 +240,11 @@ export class BtcP2pService implements P2pService<Bitcoin.Block, Bitcoin.Transact
         resolve(headers.map(h => h.hash));
       });
       getHeaders();
-    }) as Promise<string[]>;
+    });
   }
 
   public async getBlock(hash: string): Promise<Bitcoin.Block> {
-    return new Promise(resolve => {
+    return new Promise<Bitcoin.Block>(resolve => {
       logger.debug('Getting block, hash:', hash);
       const _getBlock = () => {
         this.pool.sendMessage(this.messages.GetData.forBlock(hash));
@@ -257,7 +257,7 @@ export class BtcP2pService implements P2pService<Bitcoin.Block, Bitcoin.Transact
         resolve(block);
       });
       _getBlock();
-    }) as Promise<Bitcoin.Block>;
+    });
   }
 
   stream() {
