@@ -1,11 +1,8 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
 const program = require('commander');
 const Wallet = require('../lib/wallet');
 const promptly = require('promptly');
-const util = require('util');
-const accessAsync = util.promisify(fs.access);
 
 program
   .version(require('../package.json').version)
@@ -21,15 +18,18 @@ const main = async () => {
   const { path, tx } = program;
   let wallet;
   try {
-    await accessAsync(path, fs.constants.F_OK | fs.constants.R_OK);
-    await accessAsync(path + 'LOCK', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
-    await accessAsync(path + 'LOG', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
-  } catch (err) {
-    return console.error('Invalid wallet path');
-  }
-  try {
     const password = await promptly.password('Wallet Password:');
+    if (!password) {
+      throw new Error(
+        'No password provided. Keys can\'t be imported without unlocking the wallet'
+      );
+    }
     wallet = await Wallet.loadWallet({ path });
+    if (!wallet) {
+      throw new Error(
+        'No wallet found'
+      );
+    }
     wallet = await wallet.unlock(password);
     let signedTx = await wallet.signTx({ tx });
     console.log(signedTx.uncheckedSerialize());
