@@ -58,8 +58,8 @@ class Wallet {
     const { path } = params;
     try {
       await accessAsync(path, fs.constants.F_OK | fs.constants.R_OK);
-      await accessAsync(path + 'LOCK', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
-      await accessAsync(path + 'LOG', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
+      await accessAsync(path + '/LOCK' || path + 'LOCK', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
+      await accessAsync(path + '/LOG' || path + 'LOG', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
     } catch (err) {
       return console.error('Invalid wallet path');
     }

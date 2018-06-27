@@ -31,8 +31,8 @@ const main = async () => {
       );
     }
     wallet = await wallet.unlock(password);
-    await wallet.broadcast({ tx });
-    console.log(`Transaction broadcasted, txid: ${tx}`);
+    const transaction = await wallet.broadcast({ tx });
+    console.log(`Transaction broadcasted, txid: ${transaction.txid}`);
   } catch (e) {
     console.error(e);
   }
