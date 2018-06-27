@@ -105,7 +105,7 @@ function startBenchmarkDatabase() {
 async function benchmark(blockCount: number, blockSizeMb: number) {
   await resetDatabase();
   const startTime = new Date();
-  for (let block of generateBlocks(5, blockSizeMb)) {
+  for (let block of generateBlocks(blockCount, blockSizeMb)) {
     console.log('Adding block', block.hash);
     await BlockModel.addBlock({ block, chain: 'BENCH', network: 'MARK' });
   }
@@ -113,7 +113,7 @@ async function benchmark(blockCount: number, blockSizeMb: number) {
   const time = endTime.getTime() - startTime.getTime();
   const seconds = time/1000;
   console.log(`Benchmark for ${blockCount} (${blockSizeMb} MB) blocks completed after ${seconds} s`);
-  console.log(`${blockSizeMb / seconds} MB/s`);
+  console.log(`${blockSizeMb * blockCount / seconds} MB/s`);
   console.log(`${seconds / blockCount } Seconds/Block`);
 }
 
