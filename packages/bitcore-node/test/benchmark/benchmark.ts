@@ -102,9 +102,8 @@ function startBenchmarkDatabase() {
   return Storage.start(storageArgs);
 }
 
-async function benchmark(blockSizeMb: number) {
+async function benchmark(blockCount: number, blockSizeMb: number) {
   await resetDatabase();
-  const blockCount = 5;
   const startTime = new Date();
   for (let block of generateBlocks(5, blockSizeMb)) {
     console.log('Adding block', block.hash);
@@ -119,6 +118,6 @@ async function benchmark(blockSizeMb: number) {
 }
 
 startBenchmarkDatabase()
-.then(() => benchmark(1))
-.then(() => benchmark(32))
+.then(() => benchmark(160, 1))
+.then(() => benchmark(5, 32))
 .then(() => process.exit());
