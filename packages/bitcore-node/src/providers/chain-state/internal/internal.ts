@@ -235,6 +235,11 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getCoinsForTx({ chain, network, txid }: { chain: string; network: string; txid: string }) {
+    const tx = await TransactionModel.find({ txid }).count();
+    if (tx === 0) {
+      throw new Error(`No such transaction ${txid}`);
+    }
+
     let inputs = await CoinModel.collection
       .find({
         chain,
