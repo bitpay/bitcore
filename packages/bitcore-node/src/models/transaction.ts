@@ -7,7 +7,7 @@ import { LoggifyClass } from '../decorators/Loggify';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { BaseModel } from './base';
 import logger from '../logger';
-import config from '../Config';
+import config from '../config';
 
 const Chain = require('../chain');
 
