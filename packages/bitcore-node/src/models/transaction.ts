@@ -7,8 +7,8 @@ import { LoggifyClass } from '../decorators/Loggify';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { BaseModel } from './base';
 import logger from '../logger';
-import config from '../types/Config';
-const config = require('../config');
+import config from '../Config';
+
 const Chain = require('../chain');
 
 export type ITransaction = {
