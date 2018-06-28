@@ -2,6 +2,7 @@
 
 const program = require('commander');
 const Wallet = require('../lib/wallet');
+const promptly = require('promptly');
 
 program
   .version(require('../package.json').version)
@@ -13,7 +14,9 @@ const main = async () => {
   const {tx, path} = program;
   let wallet;
   try {
+    const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.loadWallet({ path });
+    wallet = await wallet.unlock(password);
     await wallet.broadcast({ tx });
     console.log('Transaction broadcasted');
   } catch (e) {

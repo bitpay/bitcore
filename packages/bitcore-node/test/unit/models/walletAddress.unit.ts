@@ -1,18 +1,18 @@
 import { expect } from 'chai';
-import { WalletAddressModel } from '../../../src/models/walletAddress';
-import { IWalletModel } from '../../../src/models/wallet';
+import { IWalletAddress, WalletAddressModel } from "../../../src/models/walletAddress";
+import { IWallet } from "../../../src/models/wallet";
 
 describe('WalletAddress Model', function () {
 
   describe('_apiTransform', () => {
     it('should return transform object with wallet addresses', () => {
-      let walletAddress = {
-        address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf'
-      };
+      let walletAddress: IWalletAddress = {
+        address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf',
+      } as IWalletAddress;
 
-      const result = WalletAddressModel._apiTransform(new WalletAddressModel(walletAddress), {
+      const result = WalletAddressModel._apiTransform(walletAddress, {
         object: false
-      });
+      }).toString();
 
       const parseResult = JSON.parse(result);
 
@@ -20,11 +20,12 @@ describe('WalletAddress Model', function () {
 
     });
     it('should return the raw transform object if options field exists and set to true', () => {
-      let walletAddress = {
-        address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf'
-      };
 
-      const result = WalletAddressModel._apiTransform(new WalletAddressModel(walletAddress), {
+      let walletAddress: IWalletAddress = {
+        address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf',
+      } as IWalletAddress;
+
+      const result = WalletAddressModel._apiTransform(walletAddress, {
         object: true
       });
       expect(result).to.deep.equal({ address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf' });
@@ -40,7 +41,7 @@ describe('WalletAddress Model', function () {
         path: 'm/44\'/0\'/0\'',
         chain: 'BTC',
         network: 'regtest'
-      } as IWalletModel;
+      } as IWallet;
 
       let params = {
         wallet: wallet,

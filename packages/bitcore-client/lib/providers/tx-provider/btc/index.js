@@ -20,7 +20,8 @@ class BTCTxProvder {
     let newTx = new bitcoreLib.Transaction()
       .from(applicableUtxos)
       .to(this.getOutputsFromTx({ tx: bitcoreTx }));
-    return newTx.sign(keys.toString('hex'));
+    const privKeys = keys.map(key => key.privKey.toString('hex'));
+    return newTx.sign(privKeys);
   }
 
   getRelatedUtxos({ outputs, utxos }) {
