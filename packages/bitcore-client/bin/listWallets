@@ -1,0 +1,34 @@
+#!/usr/bin/env node
+'use strict';
+
+const fs = require('fs');
+const config = require('../lib/config');
+const program = require('commander');
+const util = require('util');
+const readdirAsync = util.promisify(fs.readdir);
+
+program
+  .version(require('../package.json').version)
+  .option('--path <path>', 'REQUIRED - Where wallets are stored')
+  .parse(process.argv);
+
+if (!program.path) {
+  program.help();
+}
+
+const main = async () => {
+  const path = program.path;
+  const walletsInPath = config.wallets.filter(wallet => wallet.path === path);
+
+  await readdirAsync(path, (err, files) => {
+    if (err) {
+      return console.error(err);
+    }
+    const matchingWallets = files.filter(wallets =>
+      walletsInPath.map(wallet => wallet.name).includes(wallets)
+    );
+    console.log(matchingWallets);
+  });
+}
+
+main();
