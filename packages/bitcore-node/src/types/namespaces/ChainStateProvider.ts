@@ -29,7 +29,7 @@ export declare namespace CSP {
   };
   export type GetBlocksParams = ChainNetwork & {
     sinceBlock: number | string;
-    args: { limit: number };
+    args: Partial<{ limit: number, startDate: Date, endDate: Date }>;
   };
   export type BroadcastTransactionParams = ChainNetwork & {
     rawTx: string;
