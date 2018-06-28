@@ -5,6 +5,7 @@ const bitcoreLib = require('bitcore-lib');
 const Client = require('./client');
 const Storage = require('./storage');
 const txProvider = require('../lib/providers/tx-provider');
+const config = require('./config');
 
 class Wallet {
   constructor(params) {
@@ -44,9 +45,11 @@ class Wallet {
       pubKey
     });
     await storage.saveWallet({ wallet });
+    config.addWallet(path);
     const loadedWallet = await this.loadWallet({ path, storage });
     await loadedWallet.unlock(password);
     await loadedWallet.register();
+
     return loadedWallet;
   }
 

@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 'use strict';
 
+const Os = require('os');
+const Path = require('path');
 const fs = require('fs');
 const config = require('../lib/config');
 const program = require('commander');
@@ -17,16 +19,15 @@ if (!program.path) {
 }
 
 const main = async () => {
-  const path = program.path;
+  const path = Path.resolve(program.path);
   const walletsInPath = config.wallets.filter(wallet => wallet.path === path);
+  const walletNames = walletsInPath.map(wallet => wallet.name)
 
   await readdirAsync(path, (err, files) => {
     if (err) {
       return console.error(err);
     }
-    const matchingWallets = files.filter(wallets =>
-      walletsInPath.map(wallet => wallet.name).includes(wallets)
-    );
+    const matchingWallets = files.filter(wallets => walletNames.includes(wallets));
     console.log(matchingWallets);
   });
 }
