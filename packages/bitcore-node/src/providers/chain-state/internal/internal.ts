@@ -60,7 +60,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async getBlocks(params: CSP.GetBlocksParams) {
     const { network, sinceBlock, args } = params;
-    let { limit, startDate, endDate } = args;
+    let { limit, startDate, endDate, date } = args;
     if (!this.chain || !network) {
       throw 'Missing required param';
     }
@@ -82,9 +82,17 @@ export class InternalStateProvider implements CSP.IChainStateService {
     if (endDate) {
       Object.assign(query.time, { ...query.time, $lt: new Date(endDate) });
     }
+    if(date) {
+      let firstDate = new Date(date);
+      let nextDate = new Date(date);
+      nextDate.setDate(nextDate.getDate() + 1);
+      query.time = { $gt: firstDate, $lt: nextDate};
+    }
+    limit = limit || 200;
+    limit = limit > 1000 ? 1000 : limit;
     let blocks = await BlockModel.find(query)
       .sort({ height: -1 })
-      .limit(limit || 100)
+      .limit(limit)
       .toArray();
     if (!blocks) {
       throw 'blocks not found';
