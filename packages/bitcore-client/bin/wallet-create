@@ -16,10 +16,6 @@ program
   .option('--mnemonic [phrase]', 'OPTIONAL - Seed using existing backup phrase')
   .parse(process.argv);
 
-if (!program.name || !program.chain || !program.network || !program.path) {
-  program.help();
-}
-
 const main = async () => {
   const { name, chain, network, path, phrase } = program;
   let wallet;

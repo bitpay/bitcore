@@ -12,10 +12,6 @@ program
   .option('--change <change>', 'REQUIRED - should derive change addresses(true/false)')
   .parse(process.argv);
 
-if (!program.path || !program.gap || !program.change) {
-  program.help();
-}
-
 function derivePrivateKey(addressIndex, isChange, key) {
   const changeNum = isChange ? 1 : 0;
   const path = `m/${changeNum}/${addressIndex}`;

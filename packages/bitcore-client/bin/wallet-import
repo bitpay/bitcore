@@ -18,10 +18,6 @@ program
   )
   .parse(process.argv);
 
-if (!program.path || !process.argv[4]) {
-  program.help();
-}
-
 const getFileKeys = file => {
   let contents = fs.readFileSync(file).toString();
   let fileKeys = contents

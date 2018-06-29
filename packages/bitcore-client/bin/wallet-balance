@@ -9,10 +9,6 @@ program
   .option('--path <path>', 'REQUIRED - Where wallet is stored')
   .parse(process.argv);
 
-if (!program.path) {
-  program.help();
-}
-
 const main = async () => {
   const { path } = program;
   let wallet;

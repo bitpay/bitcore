@@ -10,10 +10,6 @@ program
   .option('--baseUrl <url>', 'optional - Change configured wallet baseUrl')
   .parse(process.argv);
 
-if (!program.path || !program.baseUrl) {
-  program.help();
-}
-
 const main = async () => {
   const { path, baseUrl } = program;
   let wallet;

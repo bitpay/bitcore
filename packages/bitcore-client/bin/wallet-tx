@@ -17,10 +17,6 @@ program
   .option('--change <change>', 'REQUIRED - Change addresses')
   .parse(process.argv);
 
-if (!program.path || !program.amount || !program.addresses || !program.fee || !program.utxos || !program.change) {
-  program.help();
-}
-
 const main = async () => {
   const { path } = program;
   let wallet;

@@ -10,10 +10,6 @@ program
   .option('--tx <tx>', 'REQUIRED - The transaction to sign')
   .parse(process.argv);
 
-if (!program.path || !program.tx) {
-  program.help();
-}
-
 const main = async () => {
   const { path, tx } = program;
   let wallet;
