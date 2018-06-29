@@ -25,11 +25,6 @@ const main = async () => {
   let wallet;
   try {
     const password = await promptly.password('Wallet Password:');
-    if (!password) {
-      throw new Error(
-        'supply a valid password'
-      );
-    }
     wallet = await Wallet.create({
       name,
       chain,

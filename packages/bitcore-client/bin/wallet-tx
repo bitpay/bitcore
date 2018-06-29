@@ -34,11 +34,6 @@ const main = async () => {
     }
     if (utxos) {
       const password = await promptly.password('Wallet Password:');
-      if (!password) {
-        throw new Error(
-          'No password provided. Keys can\'t be imported without unlocking the wallet'
-        );
-      }
       wallet = await wallet.unlock(password);
     }
     let params = { addresses, amount, utxos, change, fee };
