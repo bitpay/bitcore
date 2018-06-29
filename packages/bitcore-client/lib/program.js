@@ -11,10 +11,14 @@ program.parse = (args) => {
     return option.long.replace('--', '');
   });
 
-  if (!!options.some(element => !Object.getOwnPropertyNames(program).includes(element))) {
-    throw new Error(`Missing a required flag`);
-  }
+  const match = !options.some(element => !Object.getOwnPropertyNames(program).includes(element));
 
+  if (!match) {
+    const missing = options.filter(match => {
+      return !Object.getOwnPropertyNames(program).includes(match);
+    })
+    throw new Error(`Missing required flag: --${missing}`);
+  }
 }
 
 module.exports = program;
