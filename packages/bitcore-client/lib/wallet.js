@@ -8,6 +8,7 @@ const Storage = require('./storage');
 const txProvider = require('../lib/providers/tx-provider');
 const util = require('util');
 const accessAsync = util.promisify(fs.access);
+const config = ('../lib/config');
 
 class Wallet {
   constructor(params) {
@@ -48,6 +49,7 @@ class Wallet {
       pubKey
     });
     await storage.saveWallet({ wallet });
+    config.addWallet(path);
     const loadedWallet = await this.loadWallet({ path, storage });
     await loadedWallet.unlock(password);
     await loadedWallet.register();
@@ -61,7 +63,7 @@ class Wallet {
       await accessAsync(path + '/LOCK' || path + 'LOCK', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
       await accessAsync(path + '/LOG' || path + 'LOG', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
     } catch (err) {
-      return console.error('Invalid wallet path');
+      throw new Error('Invalid wallet path');
     }
     const storage = params.storage || new Storage({ path, errorIfExists: false, createIfMissing: false });
     const loadedWallet = await storage.loadWallet();
