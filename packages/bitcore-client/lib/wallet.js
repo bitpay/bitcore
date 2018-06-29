@@ -61,7 +61,7 @@ class Wallet {
       await accessAsync(path + '/LOCK' || path + 'LOCK', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
       await accessAsync(path + '/LOG' || path + 'LOG', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
     } catch (err) {
-      return new Error('Invalid wallet path');
+      return console.error('Invalid wallet path');
     }
     const storage = params.storage || new Storage({ path, errorIfExists: false, createIfMissing: false });
     const loadedWallet = await storage.loadWallet();
