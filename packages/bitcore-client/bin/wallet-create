@@ -13,14 +13,14 @@ program
     'REQUIRED - Network (livenet/testnet/regtest, etc)'
   )
   .option('--path <path>', 'REQUIRED - Where wallet should be stored')
-  .option('--mnemonic <phrase>', 'optional - Seed using existing backup phrase')
+  .option('--mnemonic [phrase]', 'OPTIONAL - Seed using existing backup phrase')
   .parse(process.argv);
 
 const main = async () => {
   const { name, chain, network, path, phrase } = program;
-  const password = await promptly.password('Wallet Password:');
   let wallet;
   try {
+    const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.create({
       name,
       chain,

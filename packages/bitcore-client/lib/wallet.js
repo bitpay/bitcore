@@ -1,3 +1,4 @@
+const fs = require('fs');
 const Bcrypt = require('bcrypt');
 const Encrypter = require('./encryption');
 const Mnemonic = require('bitcore-mnemonic');
@@ -5,7 +6,9 @@ const bitcoreLib = require('bitcore-lib');
 const Client = require('./client');
 const Storage = require('./storage');
 const txProvider = require('../lib/providers/tx-provider');
-const config = require('./config');
+const util = require('util');
+const accessAsync = util.promisify(fs.access);
+const config = ('../lib/config');
 
 class Wallet {
   constructor(params) {
@@ -55,6 +58,13 @@ class Wallet {
 
   static async loadWallet(params) {
     const { path } = params;
+    try {
+      await accessAsync(path, fs.constants.F_OK | fs.constants.R_OK);
+      await accessAsync(path + '/LOCK' || path + 'LOCK', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
+      await accessAsync(path + '/LOG' || path + 'LOG', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
+    } catch (err) {
+      throw new Error('Invalid wallet path');
+    }
     const storage = params.storage || new Storage({ path, errorIfExists: false, createIfMissing: false });
     const loadedWallet = await storage.loadWallet();
     return new Wallet(Object.assign(loadedWallet, { storage }));

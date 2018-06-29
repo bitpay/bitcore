@@ -9,7 +9,7 @@ program
   .option('--path <path>', 'REQUIRED - Where wallet is stored')
   .option(
     '--addresses <addresses>',
-    'REQUIRED - Address of receiver, or json array [{address: abc1234, satoshis: xxxxx}]'
+    'REQUIRED - Address of receiver, or json array \'[{"address": "abc1234", "satoshis": xxxxx}]\''
   )
   .option('--amount <amount>', 'REQUIRED - Value to transfer')
   .option('--fee <fee>', 'REQUIRED - The transaction fee to pay')
@@ -23,6 +23,11 @@ const main = async () => {
   try {
     const { addresses, amount, utxos, change, fee } = program;
     wallet = await Wallet.loadWallet({ path });
+    if (!wallet) {
+      throw new Error(
+        'No wallet found'
+      );
+    }
     if (utxos) {
       const password = await promptly.password('Wallet Password:');
       wallet = await wallet.unlock(password);

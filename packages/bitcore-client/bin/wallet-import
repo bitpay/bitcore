@@ -10,11 +10,11 @@ program
   .option('--path <path>', 'REQUIRED - Where wallet is stored')
   .option(
     '--parse [parse]',
-    'OPTIONAL - A json string to parse in the form {"address": "mXy1234", privKey: "xxxxxxx", pubKey: "yyyyyyyy"}'
+    'OPTIONAL - A json string to parse in the form {"address": "mXy1234", "privKey": "xxxxxxx", "pubKey": "yyyyyyyy"}'
   )
   .option(
     '--file [file]',
-    'OPTIONAL - A jsonl file with {"address": "mXy1234", privKey: "xxxxxxx", pubKey: "yyyyyyyy"} in it'
+    'OPTIONAL - A jsonl file with {"address": "mXy1234", "privKey": "xxxxxxx", "pubKey": "yyyyyyyy"} in it'
   )
   .parse(process.argv);
 
@@ -41,12 +41,12 @@ const main = async () => {
   let wallet;
   try {
     const password = await promptly.password('Wallet Password:');
-    if (!password) {
+    wallet = await Wallet.loadWallet({ path });
+    if (!wallet) {
       throw new Error(
-        'No password provided. Keys can\'t be imported without unlocking the wallet'
+        'No wallet found'
       );
     }
-    wallet = await Wallet.loadWallet({ path });
     wallet = await wallet.unlock(password);
     let keyInput = [];
     if (file) {

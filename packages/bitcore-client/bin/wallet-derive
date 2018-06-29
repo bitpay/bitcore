@@ -9,7 +9,7 @@ program
   .version(require('../package.json').version)
   .option('--path <path>', 'REQUIRED - Filepath where wallet is stored')
   .option('--gap <gap>', 'REQUIRED - Number of addresses to derive (will derive that many change addresses too)')
-  .option('--change <change>', 'REQUIRED - should derive change addresses')
+  .option('--change <change>', 'REQUIRED - should derive change addresses(true/false)')
   .parse(process.argv);
 
 function derivePrivateKey(addressIndex, isChange, key) {
@@ -24,6 +24,11 @@ const main = async () => {
   try {
     const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.loadWallet({ path });
+    if (!wallet) {
+      throw new Error(
+        'No wallet found'
+      );
+    }
     wallet = await wallet.unlock(password);
 
     const { chain, network } = wallet;
