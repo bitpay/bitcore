@@ -50,7 +50,6 @@ class Wallet {
     const loadedWallet = await this.loadWallet({ path, storage });
     await loadedWallet.unlock(password);
     await loadedWallet.register();
-
     return loadedWallet;
   }
 
