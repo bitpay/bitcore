@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
-const program = require('commander');
+const program = require('../lib/program');
 const Wallet = require('../lib/wallet');
 const promptly = require('promptly');
 
