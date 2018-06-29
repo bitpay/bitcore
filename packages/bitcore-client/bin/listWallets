@@ -13,10 +13,6 @@ program
   .option('--path <path>', 'REQUIRED - Where wallets are stored')
   .parse(process.argv);
 
-if (!program.path) {
-  program.help();
-}
-
 const main = async () => {
   const walletContainingFolder = Path.resolve(program.path);
   const walletsInPath = config.wallets.filter(wallet => wallet.path === walletContainingFolder);
