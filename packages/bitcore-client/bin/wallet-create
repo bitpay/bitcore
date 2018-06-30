@@ -13,7 +13,7 @@ program
     'REQUIRED - Network (livenet/testnet/regtest, etc)'
   )
   .option('--path <path>', 'REQUIRED - Where wallet should be stored')
-  .option('--mnemonic <phrase>', 'optional - Seed using existing backup phrase')
+  .option('--mnemonic [phrase]', 'optional - Seed using existing backup phrase')
   .parse(process.argv);
 
 const main = async () => {
