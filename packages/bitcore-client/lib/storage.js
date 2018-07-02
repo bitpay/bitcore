@@ -4,8 +4,6 @@ const levelup = require('levelup');
 const leveldown = require('leveldown');
 const Encrypter = require('./encryption');
 const bitcoreLib = require('bitcore-lib');
-const util = require('util');
-const accessAsync = util.promisify(fs.access);
 
 class Storage {
   constructor(params) {
@@ -23,12 +21,9 @@ class Storage {
     }
     this.path = path || `${basePath}/bitcoreWallet`;
     if(!createIfMissing) {
-      try {
-        await accessAsync(path, fs.constants.F_OK | fs.constants.R_OK);
-        await accessAsync(path + '/LOCK' || path + 'LOCK', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
-        await accessAsync(path + '/LOG' || path + 'LOG', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
-      } catch (err) {
-        throw new Error('Invalid wallet path');
+      const walletExists = fs.existsSync(this.path) && fs.existsSync(this.path + '/LOCK') && fs.existsSync(this.path + '/LOG');
+      if(!walletExists) {
+        throw new Error('Not a valid wallet path');
       }
     }
     this.db = levelup(leveldown(this.path), { createIfMissing, errorIfExists });
@@ -47,6 +42,11 @@ class Storage {
       }
     });
   }
+
+  listWallets(params) {
+    return this.db.db.iterator([{gte: 'wallet', lt: 'walleu'}]);
+  }
+
   async saveWallet(params) {
     const { wallet } = params;
     return this.db.put(`wallet|${wallet.name}`, JSON.stringify(wallet));
