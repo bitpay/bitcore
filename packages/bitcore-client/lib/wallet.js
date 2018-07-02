@@ -5,8 +5,6 @@ const Mnemonic = require('bitcore-mnemonic');
 const Client = require('./client');
 const Storage = require('./storage');
 const txProvider = require('../lib/providers/tx-provider');
-const util = require('util');
-const accessAsync = util.promisify(fs.access);
 const config = ('../lib/config');
 
 class Wallet {
@@ -29,6 +27,7 @@ class Wallet {
 
   static async create(params) {
     const { chain, network, name, phrase, password, path } = params;
+    let { storage } = params;
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
     }
@@ -47,7 +46,7 @@ class Wallet {
     const encryptionKey = Encrypter.encryptEncryptionKey(walletEncryptionKey, password);
     const encPrivateKey = Encrypter.encryptPrivateKey(JSON.stringify(privKeyObj), pubKey, walletEncryptionKey);
 
-    const storage = new Storage({
+    storage = storage || new Storage({
       path,
       errorIfExists: false,
       createIfMissing: true
@@ -69,7 +68,7 @@ class Wallet {
       xPubKey: hdPubKey.xpubkey,
       pubKey
     });
-    // save wallet to storage, config file, and then bitcore-node
+    // save wallet to storage and then bitcore-node
     await storage.saveWallet({ wallet });
     const loadedWallet = await this.loadWallet({ storage, name, chain, network });
     console.log(mnemonic.toString());
@@ -81,17 +80,9 @@ class Wallet {
   }
 
   static async loadWallet(params) {
-    const { chain, network, name } = params;
-    try {
-      await accessAsync(path, fs.constants.F_OK | fs.constants.R_OK);
-      await accessAsync(path + '/LOCK' || path + 'LOCK', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
-      await accessAsync(path + '/LOG' || path + 'LOG', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
-    } catch (err) {
-      throw new Error('Invalid wallet path');
-    }
-    
+    const { chain, network, name, path } = params;
     let { storage } = params;
-    storage = storage || new Storage({ errorIfExists: false, createIfMissing: false });
+    storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path });
     const loadedWallet = await storage.loadWallet({ chain, network, name });
     return new Wallet(Object.assign(loadedWallet, { storage }));
   }
