@@ -1,7 +1,7 @@
-import { IBlock } from "../../models/block";
-import { Response } from "express";
-import { IWallet } from "../../models/wallet";
-import { ChainNetwork } from "../../types/ChainNetwork";
+import { IBlock } from '../../models/block';
+import { Response } from 'express';
+import { IWallet } from '../../models/wallet';
+import { ChainNetwork } from '../../types/ChainNetwork';
 export declare namespace CSP {
   export type StreamWalletTransactionsArgs = {
     startBlock: number;
@@ -29,7 +29,7 @@ export declare namespace CSP {
   };
   export type GetBlocksParams = ChainNetwork & {
     sinceBlock: number | string;
-    args: Partial<{ limit: number, startDate: Date, endDate: Date }>;
+    args: Partial<{ limit: number; startDate: Date; endDate: Date; date: Date }>;
   };
   export type BroadcastTransactionParams = ChainNetwork & {
     rawTx: string;
@@ -43,8 +43,8 @@ export declare namespace CSP {
   };
 
   export type GetWalletBalanceParams = ChainNetwork & {
-    wallet: IWallet
-  }
+    wallet: IWallet;
+  };
 
   export type StreamAddressUtxosParams = ChainNetwork & {
     address: string;
@@ -68,7 +68,7 @@ export declare namespace CSP {
     stream: Response;
     args: StreamWalletTransactionsArgs;
   };
-  export type StreamWalletUtxosArgs = { includeSpent: "true" | undefined };
+  export type StreamWalletUtxosArgs = { includeSpent: 'true' | undefined };
   export type StreamWalletUtxosParams = ChainNetwork & {
     wallet: IWallet;
     args: Partial<StreamWalletUtxosArgs>;
@@ -76,18 +76,17 @@ export declare namespace CSP {
   };
 
   export type Provider<T> = { get(params: { chain: string }): T };
-  export type ChainStateProvider = Provider<IChainStateService> &
-    IChainStateService;
+  export type ChainStateProvider = Provider<IChainStateService> & IChainStateService;
   export interface IChainStateService {
-    getBalanceForAddress(params: GetBalanceForAddressParams): Promise<{balance: number}[]>;
-    getBalanceForWallet(params: GetBalanceForWalletParams): Promise<{balance: number}[]>;
+    getBalanceForAddress(params: GetBalanceForAddressParams): Promise<{ balance: number }[]>;
+    getBalanceForWallet(params: GetBalanceForWalletParams): Promise<{ balance: number }[]>;
     getBlock(params: GetBlockParams): Promise<IBlock | string>;
     getBlocks(params: GetBlocksParams): Promise<Array<IBlock>>;
     broadcastTransaction(params: BroadcastTransactionParams): Promise<any>;
     createWallet(params: CreateWalletParams): Promise<IWallet>;
-    getWallet(params: GetWalletParams): Promise<IWallet| null>;
+    getWallet(params: GetWalletParams): Promise<IWallet | null>;
     updateWallet(params: UpdateWalletParams): Promise<{}>;
-    getWalletBalance(params: GetWalletBalanceParams): Promise<{balance: number}[]>;
+    getWalletBalance(params: GetWalletBalanceParams): Promise<{ balance: number }[]>;
     streamAddressUtxos(params: StreamAddressUtxosParams): any;
     streamTransactions(params: StreamTransactionsParams): any;
     streamTransaction(params: StreamTransactionParams): any;
@@ -98,4 +97,3 @@ export declare namespace CSP {
 
   type ChainStateServices = { [key: string]: IChainStateService };
 }
-
