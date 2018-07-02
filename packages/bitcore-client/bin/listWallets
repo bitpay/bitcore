@@ -12,17 +12,11 @@ program
 const main = async () => {
   const { path } = program;
   let storage = new Storage({createIfMissing: false, errorIfExists: false, path});
-  let itr = storage.listWallets();
-  let value;
-  let getNext = (err, keyBuffer) => {
-    if(!err && keyBuffer) {
-      const key = keyBuffer.toString();
-      // key = 'wallet|walletName'
-      console.log(key.slice(7));
-      itr.next(getNext);
-    }
-  }
-  itr.next(getNext);
-}
+  let walletStream = storage.listWallets();
+  walletStream.on('data', (wallet) => {
+    const { name, chain, network } = JSON.parse(wallet.toString());
+    console.log({name, chain, network});
+  });
+};
 
 main();
