@@ -24,11 +24,6 @@ const main = async () => {
   try {
     const { addresses, amount, utxos, change, fee } = program;
     wallet = await Wallet.loadWallet({ name, path });
-    if (!wallet) {
-      throw new Error(
-        'No wallet found'
-      );
-    }
     if (utxos) {
       const password = await promptly.password('Wallet Password:');
       wallet = await wallet.unlock(password);

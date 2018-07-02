@@ -13,11 +13,6 @@ const main = async () => {
   const { name, path } = program;
   try {
     const wallet = await Wallet.loadWallet({ name, path });
-    if (!wallet) {
-      throw new Error(
-        'No wallet found'
-      );
-    }
     const balance = await wallet.getBalance();
     console.log(
       Object.assign(balance, {

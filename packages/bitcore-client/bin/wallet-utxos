@@ -14,11 +14,6 @@ const main = async () => {
   try {
     const wallet = await Wallet.loadWallet({ name, path });
     const utxos = await wallet.getUtxos();
-    if (!wallet) {
-      throw new Error(
-        'No wallet found'
-      );
-    }
     for (const utxo of utxos) {
       console.log(`${JSON.stringify(utxo)}`);
     }

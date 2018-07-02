@@ -25,11 +25,6 @@ const main = async () => {
   try {
     const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.loadWallet({ name, path });
-    if (!wallet) {
-      throw new Error(
-        'No wallet found'
-      );
-    }
     wallet = await wallet.unlock(password);
 
     const { chain, network } = wallet;

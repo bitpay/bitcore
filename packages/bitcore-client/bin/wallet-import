@@ -43,11 +43,6 @@ const main = async () => {
   try {
     const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.loadWallet({ path });
-    if (!wallet) {
-      throw new Error(
-        'No wallet found'
-      );
-    }
     wallet = await Wallet.loadWallet({ name, path });
     wallet = await wallet.unlock(password);
     let keyInput = [];
