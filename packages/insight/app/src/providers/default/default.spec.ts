@@ -28,6 +28,6 @@ describe('DefaultProvider', () => {
   it('has defaults', () => {
     expect(defaults.getDefault('%DEFAULT_CURRENCY%')).toBe('BTC');
     expect(defaults.getDefault('%API_PREFIX%')).toBe('/api');
-    expect(defaults.getDefault('%NETWORK%')).toBe('testnet');
+    expect(defaults.getDefault('%NETWORK%')).toBe('regtest');
   });
 });
