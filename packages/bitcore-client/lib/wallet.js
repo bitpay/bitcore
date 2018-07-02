@@ -2,7 +2,6 @@ const fs = require('fs');
 const Bcrypt = require('bcrypt');
 const Encrypter = require('./encryption');
 const Mnemonic = require('bitcore-mnemonic');
-const bitcoreLib = require('bitcore-lib');
 const Client = require('./client');
 const Storage = require('./storage');
 const txProvider = require('../lib/providers/tx-provider');
@@ -17,6 +16,10 @@ class Wallet {
       return new Wallet(this.create(params));
     }
     this.baseUrl = this.baseUrl || `http://127.0.0.1:3000/api/${this.chain}/${this.network}`;
+    this.client = new Client({
+      baseUrl: this.baseUrl,
+      authKey: this.getAuthSigningKey()
+    });
   }
 
   saveWallet() {
@@ -26,38 +29,59 @@ class Wallet {
 
   static async create(params) {
     const { chain, network, name, phrase, password, path } = params;
-    if (!chain || !network || !name || !path) {
+    if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
     }
+    // Generate private keys
     const mnemonic = new Mnemonic(phrase);
-    const privateKey = mnemonic.toHDPrivateKey(password);
-    const pubKey = privateKey.hdPublicKey.publicKey.toString();
+    const hdPrivKey = mnemonic.toHDPrivateKey(password);
+    const privKeyObj = hdPrivKey.toObject();
+    const authKey = hdPrivKey.deriveChild('m/2').privateKey.toString();
+
+    // Generate public keys
+    const hdPubKey = hdPrivKey.hdPublicKey;
+    const pubKey = hdPrivKey.hdPublicKey.publicKey.toString();
+
+    // Generate and encrypt the encryption key and private key
     const walletEncryptionKey = Encrypter.generateEncryptionKey();
-    const keyObj = Object.assign(privateKey.toObject(), privateKey.hdPublicKey.toObject());
     const encryptionKey = Encrypter.encryptEncryptionKey(walletEncryptionKey, password);
-    const encPrivateKey = Encrypter.encryptPrivateKey(JSON.stringify(keyObj), pubKey, walletEncryptionKey);
+    const encPrivateKey = Encrypter.encryptPrivateKey(JSON.stringify(privKeyObj), pubKey, walletEncryptionKey);
+
     const storage = new Storage({
       path,
-      errorIfExists: true,
+      errorIfExists: false,
       createIfMissing: true
     });
+
+    let alreadyExists;
+    try {
+      alreadyExists = await this.loadWallet({ storage, name, chain, network });
+    } catch (err) {}
+    if (alreadyExists) {
+      throw new Error('Wallet already exists');
+    }
+
     const wallet = Object.assign(params, {
       encryptionKey,
+      authKey,
       masterKey: encPrivateKey,
       password: await Bcrypt.hash(password, 10),
-      xPubKey: keyObj.xpubkey,
+      xPubKey: hdPubKey.xpubkey,
       pubKey
     });
+    // save wallet to storage, config file, and then bitcore-node
     await storage.saveWallet({ wallet });
-    config.addWallet(path);
-    const loadedWallet = await this.loadWallet({ path, storage });
-    await loadedWallet.unlock(password);
-    await loadedWallet.register();
+    const loadedWallet = await this.loadWallet({ storage, name, chain, network });
+    console.log(mnemonic.toString());
+    await loadedWallet.register().catch((e) => {
+      console.debug(e);
+      console.error('Failed to register wallet with bitcore-node.');
+    });
     return loadedWallet;
   }
 
   static async loadWallet(params) {
-    const { path } = params;
+    const { chain, network, name } = params;
     try {
       await accessAsync(path, fs.constants.F_OK | fs.constants.R_OK);
       await accessAsync(path + '/LOCK' || path + 'LOCK', fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK);
@@ -65,8 +89,10 @@ class Wallet {
     } catch (err) {
       throw new Error('Invalid wallet path');
     }
-    const storage = params.storage || new Storage({ path, errorIfExists: false, createIfMissing: false });
-    const loadedWallet = await storage.loadWallet();
+    
+    let { storage } = params;
+    storage = storage || new Storage({ errorIfExists: false, createIfMissing: false });
+    const loadedWallet = await storage.loadWallet({ chain, network, name });
     return new Wallet(Object.assign(loadedWallet, { storage }));
   }
 
@@ -87,11 +113,6 @@ class Wallet {
       encryptionKey,
       masterKey
     };
-    this.client = new Client({
-      baseUrl: this.baseUrl,
-      authKey: this.getAuthSigningKey()
-    });
-
     return this;
   }
 
@@ -103,7 +124,7 @@ class Wallet {
     }
     const payload = {
       name: this.name,
-      pubKey: this.unlocked.masterKey.xpubkey,
+      pubKey: this.xPubKey,
       path: this.derivationPath,
       network: this.network,
       chain: this.chain
@@ -112,18 +133,16 @@ class Wallet {
   }
 
   getAuthSigningKey() {
-    return new bitcoreLib.HDPrivateKey(this.unlocked.masterKey.xprivkey).deriveChild('m/2').privateKey;
+    return this.authKey;
   }
 
   getBalance() {
-    const { masterKey } = this.unlocked;
-    return this.client.getBalance({ pubKey: masterKey.xpubkey });
+    return this.client.getBalance({ pubKey: this.xPubKey});
   }
 
   getUtxos() {
-    const { masterKey } = this.unlocked;
     return this.client.getCoins({
-      pubKey: masterKey.xpubkey,
+      pubKey: this.xPubKey,
       includeSpent: false
     });
   }
@@ -155,7 +174,13 @@ class Wallet {
     const { keys } = params;
     const { encryptionKey } = this.unlocked;
     for (const key of keys) {
-      let keyToSave = { key, encryptionKey };
+      let keyToSave = {
+        key,
+        encryptionKey,
+        chain: this.chain,
+        network: this.network,
+        name: this.name
+      };
       await this.storage.addKey(keyToSave);
     }
     const addedAddresses = keys.map(key => {
@@ -183,7 +208,10 @@ class Wallet {
     let keyPromises = inputAddresses.map(address => {
       return this.storage.getKey({
         address,
-        encryptionKey
+        encryptionKey,
+        chain: this.chain,
+        network: this.network,
+        name: this.name
       });
     });
     let keys = await Promise.all(keyPromises);

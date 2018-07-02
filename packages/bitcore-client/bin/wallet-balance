@@ -2,25 +2,22 @@
 
 const program = require('../lib/program');
 const Wallet = require('../lib/wallet');
-const promptly = require('promptly');
 
 program
   .version(require('../package.json').version)
-  .option('--path <path>', 'REQUIRED - Where wallet is stored')
+  .option('--name <name>', 'REQUIRED - Wallet name')
+  .option('--path [path]', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
 const main = async () => {
-  const { path } = program;
-  let wallet;
+  const { name, path } = program;
   try {
-    const password = await promptly.password('Wallet Password:');
-    wallet = await Wallet.loadWallet({ path });
+    const wallet = await Wallet.loadWallet({ name, path });
     if (!wallet) {
       throw new Error(
         'No wallet found'
       );
     }
-    wallet = await wallet.unlock(password);
     const balance = await wallet.getBalance();
     console.log(
       Object.assign(balance, {

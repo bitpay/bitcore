@@ -7,7 +7,7 @@ const promptly = require('promptly');
 
 program
   .version(require('../package.json').version)
-  .option('--path <path>', 'REQUIRED - Where wallet is stored')
+  .option('--name <name>', 'REQUIRED - Wallet Name')
   .option(
     '--parse [parse]',
     'OPTIONAL - A json string to parse in the form {"address": "mXy1234", "privKey": "xxxxxxx", "pubKey": "yyyyyyyy"}'
@@ -16,6 +16,7 @@ program
     '--file [file]',
     'OPTIONAL - A jsonl file with {"address": "mXy1234", "privKey": "xxxxxxx", "pubKey": "yyyyyyyy"} in it'
   )
+  .option('--path [path]', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
 const getFileKeys = file => {
@@ -37,7 +38,7 @@ const parseKeys = keys => {
 };
 
 const main = async () => {
-  const { path, file, parse } = program;
+  const { name, path, file, parse } = program;
   let wallet;
   try {
     const password = await promptly.password('Wallet Password:');
@@ -47,6 +48,7 @@ const main = async () => {
         'No wallet found'
       );
     }
+    wallet = await Wallet.loadWallet({ name, path });
     wallet = await wallet.unlock(password);
     let keyInput = [];
     if (file) {
