@@ -43,7 +43,7 @@ class Storage {
     });
   }
 
-  listWallets(params) {
+  listWallets() {
     return this.db.createValueStream({ gt: Buffer.from('walle'), lt: Buffer.from('wallf') });
   }
 
