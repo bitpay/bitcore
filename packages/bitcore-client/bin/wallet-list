@@ -11,8 +11,8 @@ program
 
 const main = async () => {
   const { path } = program;
-  let storage = new Storage({createIfMissing: false, errorIfExists: false, path});
-  let walletStream = storage.listWallets();
+  const storage = new Storage({createIfMissing: false, errorIfExists: false, path});
+  const walletStream = storage.listWallets();
   walletStream.on('data', (wallet) => {
     const { name, chain, network } = JSON.parse(wallet.toString());
     console.log({name, chain, network});
