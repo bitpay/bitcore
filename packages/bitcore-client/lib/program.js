@@ -11,13 +11,14 @@ program.parse = (args) => {
     return option.long.replace('--', '');
   });
 
-  const match = !options.some(element => !Object.getOwnPropertyNames(program).includes(element));
-
-  if (!match) {
-    const missing = options.filter(match => {
-      return !Object.getOwnPropertyNames(program).includes(match);
-    })
-    throw new Error(`Missing required flag: --${missing}`);
+  const programProps = Object.getOwnPropertyNames(program);
+  for(let option of program.options) {
+    const optionName = option.long.replace('--', '');
+    const required = option.required && option.required !== 0;
+    const missing = !programProps.includes(optionName);
+    if(required && missing) {
+      throw new Error(`Missing required flag: --${optionName}`);
+    }
   }
 }
 
