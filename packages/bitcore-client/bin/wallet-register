@@ -2,21 +2,19 @@
 
 const program = require('commander');
 const Wallet = require('../lib/wallet');
-const promptly = require('promptly');
 
 program
   .version(require('../package.json').version)
-  .option('--path <path>', 'REQUIRED - Where wallet is stored')
+  .option('--name <name>', 'REQUIRED - Wallet Name')
+  .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--baseUrl <url>', 'optional - Change configured wallet baseUrl')
   .parse(process.argv);
 
 const main = async () => {
-  const { path, baseUrl } = program;
+  const { name, path, baseUrl } = program;
   let wallet;
   try {
-    const password = await promptly.password('Wallet Password:');
-    wallet = await Wallet.loadWallet({ path });
-    wallet = await wallet.unlock(password);
+    wallet = await Wallet.loadWallet({ name, path });
     await wallet.register({ baseUrl });
     console.log('Wallet registered!');
   } catch (e) {

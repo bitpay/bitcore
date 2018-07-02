@@ -1,12 +1,9 @@
 const Bcrypt = require('bcrypt');
 const Encrypter = require('./encryption');
 const Mnemonic = require('bitcore-mnemonic');
-const bitcoreLib = require('bitcore-lib');
-const { HDPrivateKey } = bitcoreLib;
 const Client = require('./client');
 const Storage = require('./storage');
 const txProvider = require('../lib/providers/tx-provider');
-const config = require('./config');
 
 class Wallet {
   constructor(params) {
@@ -28,7 +25,7 @@ class Wallet {
 
   static async create(params) {
     const { chain, network, name, phrase, password, path } = params;
-    if (!chain || !network || !name || !path) {
+    if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
     }
     // Generate private keys
@@ -48,9 +45,17 @@ class Wallet {
 
     const storage = new Storage({
       path,
-      errorIfExists: true,
+      errorIfExists: false,
       createIfMissing: true
     });
+
+    let alreadyExists;
+    try {
+      alreadyExists = await this.loadWallet({ storage, name, chain, network });
+    } catch (err) {}
+    if (alreadyExists) {
+      throw new Error('Wallet already exists');
+    }
 
     const wallet = Object.assign(params, {
       encryptionKey,
@@ -62,20 +67,20 @@ class Wallet {
     });
     // save wallet to storage, config file, and then bitcore-node
     await storage.saveWallet({ wallet });
-    config.addWallet(path);
-    const loadedWallet = await this.loadWallet({ path, storage });
+    const loadedWallet = await this.loadWallet({ storage, name, chain, network });
     console.log(mnemonic.toString());
     await loadedWallet.register().catch((e) => {
       console.debug(e);
-      console.error('Failed to register wallet with bitcore-node.') 
+      console.error('Failed to register wallet with bitcore-node.');
     });
     return loadedWallet;
   }
 
   static async loadWallet(params) {
-    const { path } = params;
-    const storage = params.storage || new Storage({ path, errorIfExists: false, createIfMissing: false });
-    const loadedWallet = await storage.loadWallet();
+    const { chain, network, name } = params;
+    let { storage } = params;
+    storage = storage || new Storage({ errorIfExists: false, createIfMissing: false });
+    const loadedWallet = await storage.loadWallet({ chain, network, name });
     return new Wallet(Object.assign(loadedWallet, { storage }));
   }
 
@@ -157,7 +162,13 @@ class Wallet {
     const { keys } = params;
     const { encryptionKey } = this.unlocked;
     for (const key of keys) {
-      let keyToSave = { key, encryptionKey };
+      let keyToSave = {
+        key,
+        encryptionKey,
+        chain: this.chain,
+        network: this.network,
+        name: this.name
+      };
       await this.storage.addKey(keyToSave);
     }
     const addedAddresses = keys.map(key => {
@@ -185,7 +196,10 @@ class Wallet {
     let keyPromises = inputAddresses.map(address => {
       return this.storage.getKey({
         address,
-        encryptionKey
+        encryptionKey,
+        chain: this.chain,
+        network: this.network,
+        name: this.name
       });
     });
     let keys = await Promise.all(keyPromises);

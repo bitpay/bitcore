@@ -6,14 +6,15 @@ const promptly = require('promptly');
 
 program
   .version(require('../package.json').version)
-  .option('--path <path>', 'REQUIRED - Wallet Path')
+  .option('--name <name>', 'REQUIRED - Wallet Name')
+  .option('--path [path]', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
 const main = async () => {
-  const { path } = program;
+  const { name, path } = program;
   try {
     const password = await promptly.password('Wallet Password:');
-    let wallet = await Wallet.loadWallet({ path });
+    let wallet = await Wallet.loadWallet({ name, path });
     await wallet.unlock(password);
     console.log(wallet);
   } catch (e) {

@@ -6,16 +6,17 @@ const promptly = require('promptly');
 
 program
   .version(require('../package.json').version)
-  .option('--path <path>', 'REQUIRED - Where wallet is stored')
+  .option('--name <name>', 'REQUIRED - Wallet Name')
+  .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--tx <tx>', 'REQUIRED - The transaction to sign')
   .parse(process.argv);
 
 const main = async () => {
-  const { path, tx } = program;
+  const { name, path, tx } = program;
   let wallet;
   try {
     const password = await promptly.password('Wallet Password:');
-    wallet = await Wallet.loadWallet({ path });
+    wallet = await Wallet.loadWallet({ name, path });
     wallet = await wallet.unlock(password);
     let signedTx = await wallet.signTx({ tx });
     console.log(signedTx.uncheckedSerialize());

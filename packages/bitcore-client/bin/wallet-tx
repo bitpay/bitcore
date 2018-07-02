@@ -6,7 +6,7 @@ const promptly = require('promptly');
 
 program
   .version(require('../package.json').version)
-  .option('--path <path>', 'REQUIRED - Where wallet is stored')
+  .option('--name <name>', 'REQUIRED - Wallet Name')
   .option(
     '--addresses <addresses>',
     'REQUIRED - Address of receiver, or json array [{address: abc1234, satoshis: xxxxx}]'
@@ -15,14 +15,15 @@ program
   .option('--fee <fee>', 'REQUIRED - The transaction fee to pay')
   .option('--utxos <utxos>', 'REQUIRED - Unspent transactions that can be spent')
   .option('--change <change>', 'REQUIRED - Change addresses')
+  .option('--path [path]', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
 const main = async () => {
-  const { path } = program;
+  const { name, path } = program;
   let wallet;
   try {
     const { addresses, amount, utxos, change, fee } = program;
-    wallet = await Wallet.loadWallet({ path });
+    wallet = await Wallet.loadWallet({ name, path });
     if (utxos) {
       const password = await promptly.password('Wallet Password:');
       wallet = await wallet.unlock(password);
