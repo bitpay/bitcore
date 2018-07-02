@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const program = require('commander');
+const program = require('../lib/program');
 const Wallet = require('../lib/wallet');
 
 program

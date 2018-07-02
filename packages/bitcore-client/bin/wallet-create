@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const program = require('commander');
+const program = require('../lib/program');
 const Wallet = require('../lib/wallet');
 const promptly = require('promptly');
 
@@ -19,9 +19,9 @@ program
 
 const main = async () => {
   const { name, baseUrl, chain, network, path, phrase } = program;
-  const password = await promptly.password('Wallet Password:');
   let wallet;
   try {
+    const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.create({
       name,
       baseUrl,

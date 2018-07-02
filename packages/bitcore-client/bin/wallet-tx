@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const program = require('commander');
+const program = require('../lib/program');
 const Wallet = require('../lib/wallet');
 const promptly = require('promptly');
 
@@ -9,7 +9,7 @@ program
   .option('--name <name>', 'REQUIRED - Wallet Name')
   .option(
     '--addresses <addresses>',
-    'REQUIRED - Address of receiver, or json array [{address: abc1234, satoshis: xxxxx}]'
+    'REQUIRED - Address of receiver, or json array \'[{"address": "abc1234", "satoshis": xxxxx}]\''
   )
   .option('--amount <amount>', 'REQUIRED - Value to transfer')
   .option('--fee <fee>', 'REQUIRED - The transaction fee to pay')

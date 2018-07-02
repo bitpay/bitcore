@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
-const program = require('commander');
+const program = require('../lib/program');
 const Wallet = require('../lib/wallet');
 const promptly = require('promptly');
 
@@ -10,11 +10,11 @@ program
   .option('--name <name>', 'REQUIRED - Wallet Name')
   .option(
     '--parse [parse]',
-    'OPTIONAL - A json string to parse in the form {"address": "mXy1234", privKey: "xxxxxxx", pubKey: "yyyyyyyy"}'
+    'OPTIONAL - A json string to parse in the form {"address": "mXy1234", "privKey": "xxxxxxx", "pubKey": "yyyyyyyy"}'
   )
   .option(
     '--file [file]',
-    'OPTIONAL - A jsonl file with {"address": "mXy1234", privKey: "xxxxxxx", pubKey: "yyyyyyyy"} in it'
+    'OPTIONAL - A jsonl file with {"address": "mXy1234", "privKey": "xxxxxxx", "pubKey": "yyyyyyyy"} in it'
   )
   .option('--path [path]', 'optional - Custom wallet storage path')
   .parse(process.argv);
@@ -42,11 +42,7 @@ const main = async () => {
   let wallet;
   try {
     const password = await promptly.password('Wallet Password:');
-    if (!password) {
-      throw new Error(
-        'No password provided. Keys can\'t be imported without unlocking the wallet'
-      );
-    }
+    wallet = await Wallet.loadWallet({ path });
     wallet = await Wallet.loadWallet({ name, path });
     wallet = await wallet.unlock(password);
     let keyInput = [];

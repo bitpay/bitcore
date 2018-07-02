@@ -20,6 +20,12 @@ class Storage {
       }
     }
     this.path = path || `${basePath}/bitcoreWallet`;
+    if(!createIfMissing) {
+      const walletExists = fs.existsSync(this.path) && fs.existsSync(this.path + '/LOCK') && fs.existsSync(this.path + '/LOG');
+      if(!walletExists) {
+        throw new Error('Not a valid wallet path');
+      }
+    }
     this.db = levelup(leveldown(this.path), { createIfMissing, errorIfExists });
   }
   async loadWallet(params) {
@@ -36,6 +42,11 @@ class Storage {
       }
     });
   }
+
+  listWallets(params) {
+    return this.db.db.iterator([{gte: 'wallet', lt: 'walleu'}]);
+  }
+
   async saveWallet(params) {
     const { wallet } = params;
     return this.db.put(`wallet|${wallet.name}`, JSON.stringify(wallet));
