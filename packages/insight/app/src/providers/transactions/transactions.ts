@@ -164,12 +164,8 @@ export class TxsProvider {
       '/' +
       'tx/' +
       hash;
-    const coinsReq: Promise<CoinsApiResponse> = this.getCoins(hash).toPromise();
     return this.http.get(url).flatMap(async data => {
       let apiTx: ApiTx = data.json()[0];
-      const coins: CoinsApiResponse = await coinsReq;
-      apiTx.inputs = coins.inputs;
-      apiTx.outputs = coins.outputs;
       let appTx: AppTx = this.toAppTx(apiTx);
       return { tx: appTx };
     });

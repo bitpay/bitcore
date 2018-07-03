@@ -15,13 +15,12 @@ export class DefaultProvider {
     '%API_PREFIX%': string,
     '%NETWORK%': string
   }= {
-    '%DEFAULT_CURRENCY%': 'BTC',
-    '%API_PREFIX%': '/api',
-    '%NETWORK%': 'regtest'
+    '%DEFAULT_CURRENCY%': process.env.DEFAULT_CURRENCY || 'BTC',
+    '%API_PREFIX%': process.env.API_PREFIX || '/api',
+    '%NETWORK%': process.env.NETWORK || 'regtest'
   };
 
-  constructor(public http: Http) {
-  }
+  constructor(public http: Http) { }
 
   public getDefault(str: string): string {
     return (this.defaults[str] !== undefined) ? this.defaults[str] : str;

@@ -1,6 +1,7 @@
 import config from '../config';
 import { Request, Response } from 'express';
 import express from 'express';
+import cors from 'cors';
 
 const app = express();
 const bodyParser = require('body-parser');
@@ -47,7 +48,7 @@ function getRouterFromFile(path) {
   return router;
 }
 
-app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
+app.use('/api/:chain/:network', cors(), (req: Request, resp: Response, next: any) => {
   let { chain, network } = req.params;
   const hasChain = chains.includes(chain);
   const chainNetworks = networks[chain] || null;
