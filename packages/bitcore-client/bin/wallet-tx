@@ -2,16 +2,14 @@
 
 const program = require('../lib/program');
 const Wallet = require('../lib/wallet');
-const promptly = require('promptly');
 
 program
   .version(require('../package.json').version)
   .option('--name <name>', 'REQUIRED - Wallet Name')
   .option(
-    '--addresses <addresses>',
-    'REQUIRED - Address of receiver, or json array \'[{"address": "abc1234", "satoshis": xxxxx}]\''
+    '--recipients <recipients>',
+    'REQUIRED - Address of receiver, or json array \'[{"address": "abc1234", "amount": x.xx}]\''
   )
-  .option('--amount <amount>', 'REQUIRED - Value to transfer')
   .option('--fee <fee>', 'REQUIRED - The transaction fee to pay')
   .option('--utxos <utxos>', 'REQUIRED - Unspent transactions that can be spent')
   .option('--change <change>', 'REQUIRED - Change addresses')
@@ -22,14 +20,10 @@ const main = async () => {
   const { name, path } = program;
   let wallet;
   try {
-    const { addresses, amount, utxos, change, fee } = program;
+    const { recipients, utxos, change, fee } = program;
     wallet = await Wallet.loadWallet({ name, path });
-    if (utxos) {
-      const password = await promptly.password('Wallet Password:');
-      wallet = await wallet.unlock(password);
-    }
-    let params = { addresses, amount, utxos, change, fee };
-    params.addresses = addresses.includes('[') ? JSON.parse(addresses) : addresses;
+    let params = { recipients, utxos, change, fee };
+    params.recipients = recipients.includes('[') ? JSON.parse(recipients) : recipients;
     params.utxos = params.utxos ? JSON.parse(params.utxos) : [];
     const tx = await wallet.newTx(params);
     console.log(tx.uncheckedSerialize());

@@ -141,8 +141,7 @@ class Wallet {
     const payload = {
       network: this.network,
       chain: this.chain,
-      addresses: params.addresses,
-      amount: params.amount,
+      recipients: params.recipients,
       change: params.change,
       fee: params.fee,
       utxos
