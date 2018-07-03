@@ -68,6 +68,7 @@
     "bitcore-p2p": "^8.0.0",
     "bitcore-p2p-cash": "^8.0.0",
     "body-parser": "^1.18.3",
+    "cors": "^2.8.4",
     "express": "^4.16.3",
     "mkdirp": "^0.5.1",
     "mongodb": "^3.0.10",
