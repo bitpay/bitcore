@@ -36,16 +36,21 @@ router.get('/:txId', function(req, res) {
   return ChainStateProvider.streamTransaction({ chain, network, txId, stream: res });
 });
 
-router.get('/:txid/coins', async (req, res) => {
+router.get('/:txid/coins', (req, res, next) => {
   let { chain, network, txid } = req.params;
   if (typeof txid !== 'string' || typeof chain !== 'string' || typeof network !== 'string') {
-    return res.status(400).send('Missing required param');
+    res.status(400).send('Missing required param');
   }
-  chain = chain.toUpperCase();
-  network = network.toLowerCase();
-  const coins = await ChainStateProvider.getCoinsForTx({ chain, network, txid });
-  res.setHeader('Content-Type', 'application/json');
-  return res.status(200).send(JSON.stringify(coins));
+  else {
+    chain = chain.toUpperCase();
+    network = network.toLowerCase();
+    ChainStateProvider.getCoinsForTx({ chain, network, txid })
+      .then(coins => {
+        res.setHeader('Content-Type', 'application/json');
+        return res.status(200).send(JSON.stringify(coins));
+      })
+      .catch(next);
+  }
 });
 
 router.post('/send', async function(req, res) {
