@@ -25,7 +25,6 @@ export class BlocksPage {
     this.blocksProvider.getBlocks().subscribe(
       ({blocks}) => {
         this.blocks = blocks;
-        console.log('this.blocks', this.blocks);
         this.loading = false;
       },
       (err) => {
