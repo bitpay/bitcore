@@ -28,6 +28,9 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   getRPC(network: string) {
     const RPC_PEER = config.chains[this.chain][network].rpc;
+    if (!RPC_PEER) {
+      throw new Error(`RPC not configured for ${this.chain} ${network}`);
+    }
     const { username, password, host, port } = RPC_PEER;
     return new RPC(username, password, host, port);
   }
@@ -236,7 +239,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
     let { network, rawTx } = params;
-    let txPromise = new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       this.getRPC(network).sendTransaction(rawTx, (err: any, result: any) => {
         if (err) {
           reject(err);
@@ -245,6 +248,5 @@ export class InternalStateProvider implements CSP.IChainStateService {
         }
       });
     });
-    return txPromise;
   }
 }
