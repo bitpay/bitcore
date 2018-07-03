@@ -25,7 +25,7 @@ describe('ApiProvider', () => {
 
   it('initialises', () => {
     expect(api).not.toBeNull();
-    expect(api.apiPrefix).toBe('/api/');
+    expect(api.apiPrefix).toBe('/api');
   });
 
 });

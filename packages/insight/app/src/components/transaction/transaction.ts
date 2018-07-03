@@ -20,13 +20,22 @@ export class TransactionComponent {
   public expanded: boolean = false;
   @Input() public tx: any = {};
 
-  constructor(private navCtrl: NavController, public currency: CurrencyProvider, public txProvider: TxsProvider) {}
+  constructor(
+    private navCtrl: NavController,
+    public currency: CurrencyProvider,
+    public txProvider: TxsProvider
+  ) {
+  }
 
-  public ionVewDidLoad(): void {
+  public ngOnInit(): void {
+    this.getCoins();
+  }
+
+  public getCoins(): void {
     this.txProvider.getCoins(this.tx.txid).subscribe(data => {
-      console.log(data);
-      this.tx.inputs = data.inputs;
-      this.tx.outputs = data.outputs;
+      this.tx.vin = data.inputs;
+      this.tx.vout = data.outputs;
+      this.tx.fee = this.txProvider.getFee(this.tx);
     });
   }
 

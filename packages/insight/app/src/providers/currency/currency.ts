@@ -47,6 +47,8 @@ export class CurrencyProvider {
   }
 
   public getConvertedNumber(value: number): number {
+    // TODO: Change this function to make use of satoshis so that we don't have to do all these roundabout conversions.
+    value = value * 1e-8;
     if (value === 0.00000000) return 0;
 
     let response: number;

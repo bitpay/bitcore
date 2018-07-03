@@ -92,7 +92,7 @@ export type AppTx = {
   time: number;
   valueOut: number;
   size: number;
-  fees: number;
+  fee: number;
   blockheight: number;
   blocktime: number;
 };
@@ -106,15 +106,18 @@ export class TxsProvider {
     private defaults: DefaultProvider
   ) {}
 
-  private toAppTx(tx: ApiTx): AppTx {
-    let sumSatoshis: any = (arr: any): number => arr.reduce((prev, cur) => prev + cur.value, 0);
-    let inputs: number = sumSatoshis(tx.inputs);
-    let outputs: number = sumSatoshis(tx.outputs);
-    let fee: number = tx.coinbase ? 0 : inputs - outputs;
+  public getFee(tx: AppTx): number {
+    const sumSatoshis: any = (arr: any): number => arr.reduce((prev, cur) => prev + cur.value, 0);
+    const inputs: number = sumSatoshis(tx.vin);
+    const outputs: number = sumSatoshis(tx.vout);
+    const fee: number = tx.isCoinBase ? 0 : inputs - outputs;
+    return fee;
+  }
 
+  private toAppTx(tx: ApiTx): AppTx {
     return {
       txid: tx.txid,
-      fees: fee / 10 ** 8,
+      fee: null, // calculated later, when coins are retrieved
       blockheight: tx.blockHeight,
       confirmations: 0,
       blockhash: tx.blockHash,
@@ -123,38 +126,11 @@ export class TxsProvider {
       isCoinBase: tx.coinbase,
       size: tx.size,
       locktime: tx.locktime,
-      vin: tx.inputs,
-      vout: tx.outputs,
+      vin: [], // populated when coins are retrieved
+      vout: [], // populated when coins are retrieved
       valueOut: tx.value,
       version: tx.version
     };
-  }
-
-  private toAppInput(input: ApiInput): AppInput {
-    return {
-      coinbase: input.coinbase.valueOf(),
-      sequence: -1,
-      n: -1,
-      txid: input.txid,
-      vout: input.vout,
-      scriptSig: {
-        hex: '',
-        asm: '',
-        addresses: [],
-        type: ''
-      },
-      addr: input.address,
-      valueSat: input.value,
-      value: input.value,
-      doubleSpentTxID: '',
-      isConfirmed: true,
-      confirmations: 1,
-      unconfirmedInput: ''
-    };
-  }
-
-  private toAppOutput(output: ApiInput): AppOutput {
-    return {};
   }
 
   public getTxs(args?: { blockHash?: string }): Observable<{ txs: Array<AppTx> }> {
