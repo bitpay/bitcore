@@ -128,7 +128,7 @@ export class TxsProvider {
       locktime: tx.locktime,
       vin: [], // populated when coins are retrieved
       vout: [], // populated when coins are retrieved
-      valueOut: tx.value,
+      valueOut: null,
       version: tx.version
     };
   }
