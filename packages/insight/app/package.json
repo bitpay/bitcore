@@ -30,6 +30,7 @@
     "@ionic/storage": "2.0.1",
     "angular2-moment": "^1.6.0",
     "angular2-qrcode": "^2.0.1",
+    "bitcore-lib": "^0.15.0",
     "ionic-angular": "3.4.2",
     "ionicons": "3.0.0",
     "rxjs": "5.4.0",
