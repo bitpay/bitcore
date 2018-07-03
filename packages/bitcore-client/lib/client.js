@@ -59,8 +59,16 @@ Client.prototype.getCoins = async function (params) {
   });
 };
 
+Client.prototype.getFee = async function (params) {
+  const { target } = params;
+  const url = `${this.baseUrl}/fee/${target}`;
+  return request.get(url, {
+    json: true
+  });
+}
+
 Client.prototype.importAddresses = async function(params) {
-  const {  payload, pubKey } = params;
+  const { payload, pubKey } = params;
   const url = `${this.baseUrl}/wallet/${pubKey}`;
   const signature = this.sign({ method: 'POST', url, payload});
 

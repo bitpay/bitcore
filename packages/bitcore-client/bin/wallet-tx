@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node --inspect-brk
 
 const program = require('../lib/program');
 const Wallet = require('../lib/wallet');
@@ -12,9 +12,10 @@ program
     'REQUIRED - Address of receiver, or json array \'[{"address": "abc1234", "satoshis": xxxxx}]\''
   )
   .option('--amount <amount>', 'REQUIRED - Value to transfer')
-  .option('--fee <fee>', 'REQUIRED - The transaction fee to pay')
   .option('--utxos <utxos>', 'REQUIRED - Unspent transactions that can be spent')
   .option('--change <change>', 'REQUIRED - Change addresses')
+  .option('--fee [fee]', 'optional - custom transaction fee to pay')
+  .option('--target [target]', 'optional - custom target block for confirmation')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
@@ -22,13 +23,21 @@ const main = async () => {
   const { name, path } = program;
   let wallet;
   try {
-    const { addresses, amount, utxos, change, fee } = program;
+    const { addresses, amount, utxos, change, fee, target=2 } = program;
     wallet = await Wallet.loadWallet({ name, path });
     if (utxos) {
       const password = await promptly.password('Wallet Password:');
       wallet = await wallet.unlock(password);
     }
+
+    const calculatedNetworkFee = await wallet.getNetworkFee({ target });
+
+    if (fee < calculatedNetworkFee.feerate) {
+      throw new Error(`fee lower than calculated network fee: ${calculatedNetworkFee.feerate}`)
+    }
+
     let params = { addresses, amount, utxos, change, fee };
+    params.fee = params.fee ? params.fee : calculatedNetworkFee.feerate;
     params.addresses = addresses.includes('[') ? JSON.parse(addresses) : addresses;
     params.utxos = params.utxos ? JSON.parse(params.utxos) : [];
     const tx = await wallet.newTx(params);

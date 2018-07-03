@@ -120,4 +120,9 @@ export class RPC {
   async blockAsync(hash: string): Promise<any> {
     return await this.asyncCall('getblock', [hash]);
   }
+
+  getEstimateSmartFee(target: number, callback: CallbackType) {
+    this.callMethod('estimatesmartfee', [target], callback);
+  }
+
 }
