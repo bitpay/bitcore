@@ -36,6 +36,7 @@ export class TransactionComponent {
       this.tx.vin = data.inputs;
       this.tx.vout = data.outputs;
       this.tx.fee = this.txProvider.getFee(this.tx);
+      this.tx.valueOut = this.tx.vout.reduce((prev, cur) => prev + cur.value, 0);
     });
   }
 

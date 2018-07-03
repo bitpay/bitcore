@@ -12,6 +12,7 @@ import { CurrencyProvider } from '../providers/currency/currency';
 import { BlocksProvider } from '../providers/blocks/blocks';
 import { TxsProvider } from '../providers/transactions/transactions';
 import { DefaultProvider } from '../providers/default/default';
+import { PriceProvider } from '../providers/price/price';
 
 @NgModule({
   declarations: [
@@ -39,7 +40,8 @@ import { DefaultProvider } from '../providers/default/default';
     CurrencyProvider,
     BlocksProvider,
     TxsProvider,
-    DefaultProvider
+    DefaultProvider,
+    PriceProvider
   ]
 })
 
