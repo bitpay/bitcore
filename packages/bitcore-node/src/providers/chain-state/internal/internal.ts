@@ -11,7 +11,6 @@ import config from '../../../config';
 
 import { TransactionModel } from '../../../models/transaction';
 
-const JSONStream = require('JSONStream');
 const ListTransactionsStream = require('./transforms');
 
 type StreamWalletUtxoArgs = { includeSpent: 'true' | undefined };
@@ -62,7 +61,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getBlocks(params: CSP.GetBlocksParams) {
-    const { network, sinceBlock, args } = params;
+    const { network, sinceBlock, stream, args } = params;
     let { limit, startDate, endDate, date } = args;
     if (!this.chain || !network) {
       throw 'Missing required param';
@@ -93,15 +92,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
     limit = limit || 200;
     limit = limit > 1000 ? 1000 : limit;
-    let blocks = await BlockModel.find(query)
-      .sort({ height: -1 })
-      .limit(limit)
-      .toArray();
-    if (!blocks) {
-      throw 'blocks not found';
-    }
-    let transformedBlocks = blocks.map(block => BlockModel._apiTransform(block, { object: true }).valueOf());
-    return transformedBlocks;
+    Storage.apiStreamingFind(BlockModel, query, stream);
   }
 
   async getBlock(params: CSP.GetBlockParams) {
@@ -145,9 +136,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     if (args.blockHash) {
       query.blockHash = args.blockHash;
     }
-    TransactionModel.getTransactions({ query })
-      .pipe(JSONStream.stringify())
-      .pipe(stream);
+    Storage.apiStreamingFind(TransactionModel, query, stream);
   }
 
   streamTransaction(params: CSP.StreamTransactionParams) {
@@ -157,9 +146,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
     network = network.toLowerCase();
     let query = { chain: this.chain, network, txid: txId };
-    TransactionModel.getTransactions({ query })
-      .pipe(JSONStream.stringify())
-      .pipe(stream);
+    Storage.apiStreamingFind(TransactionModel, query, stream);
   }
 
   async createWallet(params: CSP.CreateWalletParams) {

@@ -10,13 +10,10 @@ router.get('/', async function(req: Request, res: Response) {
       chain,
       network,
       sinceBlock,
-      args: { date }
+      args: { date },
+      stream: res
     };
-    let block = await ChainStateProvider.getBlocks(payload);
-    if (!block) {
-      return res.status(404).send('block not found');
-    }
-    return res.json(block);
+    return ChainStateProvider.getBlocks(payload);;
   } catch (err) {
     return res.status(500).send(err);
   }
