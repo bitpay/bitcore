@@ -43,8 +43,8 @@ class Storage {
     });
   }
 
-  listWallets(params) {
-    return this.db.db.iterator([{gte: 'wallet', lt: 'walleu'}]);
+  listWallets() {
+    return this.db.createValueStream({ gt: Buffer.from('walle'), lt: Buffer.from('wallf') });
   }
 
   async saveWallet(params) {

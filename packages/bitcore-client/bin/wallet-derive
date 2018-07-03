@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 
-const bitcoreLib = require('bitcore-lib');
+const bitcoreLibs = {
+  BTC: require('bitcore-lib'),
+  BCH: require('bitcore-lib-cash')
+};
 const program = require('../lib/program');
 const Wallet = require('../lib/wallet');
 const promptly = require('promptly');
@@ -37,7 +40,7 @@ const main = async () => {
     }
 
     const xprivkey = wallet.unlocked.masterKey.xprivkey;
-    const HDPrivateKey = new bitcoreLib.HDPrivateKey(xprivkey);
+    const HDPrivateKey = new bitcoreLibs[chain].HDPrivateKey(xprivkey);
 
     while (unusedAddressCounter < gap) {
       const derived = derivePrivateKey(index, change, HDPrivateKey);

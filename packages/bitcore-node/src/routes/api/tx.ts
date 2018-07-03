@@ -6,8 +6,12 @@ const router = Router({ mergeParams: true });
 
 router.get('/', function(req, res) {
   let { chain, network } = req.params;
+  let { blockHeight, blockHash } = req.query;
   if (!chain || !network) {
     return res.status(400).send('Missing required param');
+  }
+  if (!blockHash && !blockHeight) {
+    return res.status(400).send('Must provide blockHash or blockHeight');
   }
   chain = chain.toUpperCase();
   network = network.toLowerCase();
@@ -17,11 +21,12 @@ router.get('/', function(req, res) {
     stream: res,
     args: {}
   };
-  if (req.query.blockHeight) {
-    payload.args.blockHeight = parseInt(req.query.blockHeight);
+
+  if (blockHeight) {
+    payload.args.blockHeight = parseInt(blockHeight);
   }
-  if (req.query.blockHash) {
-    payload.args.blockHash = req.query.blockHash;
+  if (blockHash) {
+    payload.args.blockHash = blockHash;
   }
   return ChainStateProvider.streamTransactions(payload);
 });
@@ -50,7 +55,7 @@ router.post('/send', async function(req, res) {
     return res.send({ txid });
   } catch (err) {
     logger.error(err);
-    return res.status(500).send(err);
+    return res.status(500).send(err.message);
   }
 });
 module.exports = {

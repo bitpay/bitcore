@@ -1,11 +1,9 @@
-const fs = require('fs');
 const Bcrypt = require('bcrypt');
 const Encrypter = require('./encryption');
 const Mnemonic = require('bitcore-mnemonic');
 const Client = require('./client');
 const Storage = require('./storage');
 const txProvider = require('../lib/providers/tx-provider');
-const config = ('../lib/config');
 
 class Wallet {
   constructor(params) {
@@ -149,8 +147,7 @@ class Wallet {
     const payload = {
       network: this.network,
       chain: this.chain,
-      addresses: params.addresses,
-      amount: params.amount,
+      recipients: params.recipients,
       change: params.change,
       fee: params.fee,
       utxos

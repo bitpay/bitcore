@@ -158,11 +158,10 @@ export class Block extends BaseModel<IBlock> {
     logger.debug('Removed data from above blockHeight: ', localTip.height);
   }
 
-  _apiTransform(block: IBlock, options: TransformOptions): IBlock | string {
-    let transform: IBlock = {
+  _apiTransform(block: IBlock, options: TransformOptions): any {
+    const transform = {
       chain: block.chain,
       network: block.network,
-      processed: block.processed,
       hash: block.hash,
       height: block.height,
       version: block.version,

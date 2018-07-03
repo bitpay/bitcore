@@ -60,26 +60,26 @@ export class StorageService {
     let cursor = model.find(query).stream({
       transform: model._apiTransform
     });
-    cursor.on("error", function(err) {
+    cursor.on('error', function(err) {
       return res.status(500).end(err.message);
     });
     let isFirst = true;
-    res.type("json");
-    cursor.on("data", function(data) {
+    res.type('json');
+    cursor.on('data', function(data) {
       if (isFirst) {
-        res.write("[\n");
+        res.write('[\n');
         isFirst = false;
       } else {
-        res.write(",\n");
+        res.write(',\n');
       }
       res.write(data);
     });
-    cursor.on("end", function() {
+    cursor.on('end', function() {
       if (isFirst) {
         // there was no data
-        res.write("[]");
+        res.write('[]');
       } else {
-        res.write("]");
+        res.write(']');
       }
       res.end();
     });
