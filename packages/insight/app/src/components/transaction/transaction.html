@@ -2,8 +2,10 @@
   <ion-row>
     <ion-col col-7>
       <div class="ellipsis">
-        <ion-icon name="add-circle" [hidden]="expanded" (click)="toggleExpanded()"></ion-icon>
-        <ion-icon name="remove-circle" [hidden]="!expanded" (click)="toggleExpanded()"></ion-icon>
+        <span *ngIf="showCoins">
+          <ion-icon name="add-circle" [hidden]="expanded" (click)="toggleExpanded()"></ion-icon>
+          <ion-icon name="remove-circle" [hidden]="!expanded" (click)="toggleExpanded()"></ion-icon>
+        </span>
         <span>
           <a (click)="goToTx(tx.txid)">{{ tx.txid }}</a>
         </span>
@@ -22,7 +24,7 @@
     </ion-col>
   </ion-row>
 
-  <ion-row>
+  <ion-row *ngIf="showCoins">
     <ion-col col-12 col-md-5>
 
       <ion-list [hidden]="!tx.isCoinBase">
@@ -100,7 +102,7 @@
     </ion-col>
   </ion-row>
 
-  <ion-row align-items-center text-uppercase class="small">
+  <ion-row align-items-center text-uppercase class="small" *ngIf="showCoins">
     <ion-col col-6>
       <div [hidden]="tx.isCoinBase">
         <ion-chip>

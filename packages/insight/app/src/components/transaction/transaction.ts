@@ -19,6 +19,7 @@ export class TransactionComponent {
 
   public expanded: boolean = false;
   @Input() public tx: any = {};
+  @Input() public showCoins?: boolean = false;
 
   constructor(
     private navCtrl: NavController,
@@ -28,7 +29,9 @@ export class TransactionComponent {
   }
 
   public ngOnInit(): void {
-    this.getCoins();
+    if (this.showCoins) {
+      this.getCoins();
+    }
   }
 
   public getCoins(): void {
@@ -36,7 +39,7 @@ export class TransactionComponent {
       this.tx.vin = data.inputs;
       this.tx.vout = data.outputs;
       this.tx.fee = this.txProvider.getFee(this.tx);
-      this.tx.valueOut = data.outputs.reduce((a, b) => a + b.value, 0)
+      this.tx.valueOut = data.outputs.reduce((a, b) => a + b.value, 0);
     });
   }
 
