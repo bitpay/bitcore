@@ -131,7 +131,6 @@ class Wallet {
 
   getNetworkFee(params) {
     const target = params.target || 2;
-    console.log(target);
     return this.client.getFee({ target });
   }
 

@@ -21,16 +21,26 @@ const main = async () => {
   const { name, path } = program;
   let wallet;
   try {
-    const { recipients, utxos, change, fee } = program;
+    const { recipients, utxos, change, fee, target=2 } = program;
     wallet = await Wallet.loadWallet({ name, path });
 
-    const calculatedNetworkFee = await wallet.getNetworkFee({ target });
+    const parsedUtxos = utxos.includes('[') ? JSON.parse(utxos) : [];
+    const parsedRecipients = recipients.includes('[') ? JSON.parse(recipients) : [];
 
-    const transactionFee = (utxos.length * 148 + recipients.length * 34 + 10) * calculatedNetworkFee.feerate;
+    if (!parsedRecipients.length || !parsedUtxos.length) {
+      throw new Error('invalid arguments');
+    }
+
+    const calculatedNetworkFeeKb = await wallet.getNetworkFee({ target });
+    const netWorkFeeSat = calculatedNetworkFeeKb.feerate * 1E8/1000;
+
+    const transactionSize = (parsedUtxos.length * 148 + parsedRecipients.length * 34 + 10 + parsedUtxos.length);
+    const totalTransactionFee = transactionSize * netWorkFeeSat;
 
     let params = { recipients, utxos, change, fee };
-    params.recipients = recipients.includes('[') ? JSON.parse(recipients) : recipients;
-    params.utxos = params.utxos ? JSON.parse(params.utxos) : [];
+    params.fee = Number(fee) || totalTransactionFee;
+    params.recipients = parsedRecipients;
+    params.utxos = parsedUtxos;
     const tx = await wallet.newTx(params);
     console.log(tx.uncheckedSerialize());
   } catch (e) {
