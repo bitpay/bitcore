@@ -39,14 +39,8 @@ export class AddressPage {
   public ionViewDidLoad(): void {
     this.http.get(this.api.apiPrefix + '/address/' + this.addrStr).subscribe(
       data => {
-        console.log(data);
+        this.address = this.addrStr;
         this.transactions = data.json().map(this.transaction.toAppTx);
-        /*
-         *this.address = JSON.parse(data['_body']);
-         */
-        /*
-         *this.transactions = data;
-         */
         this.loading = false;
       },
       err => {
