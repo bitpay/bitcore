@@ -28,7 +28,8 @@
     "test:ci": "npm run test:ci:build && npm run test:ci:unit && npm run test:ci:integration",
     "test:ci:build": "cd ../.. && docker-compose -f docker-compose.test.yml build",
     "test:ci:unit": "cd ../.. && docker-compose -f docker-compose.test.yml run --entrypoint 'npm run test:unit' test_runner",
-    "test:ci:integration": "cd ../.. && docker-compose -f docker-compose.test.yml run --entrypoint 'npm run test:integration' test_runner"
+    "test:ci:integration": "cd ../.. && docker-compose -f docker-compose.test.yml run --entrypoint 'npm run test:integration' test_runner",
+    "benchmark": "npm run tsc && node build/test/benchmark/benchmark.js"
   },
   "keywords": [
     "bitcore-node",

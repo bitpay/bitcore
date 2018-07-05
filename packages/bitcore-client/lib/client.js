@@ -41,12 +41,12 @@ Client.prototype.getBalance = async function (params) {
 
 Client.prototype.getAddressTxos = async function (params) {
   const { unspent, address } = params;
-  const args = unspent ? `?unspent=${unspent}` : ``;
+  const args = unspent ? `?unspent=${unspent}` : '';
   const url = `${this.baseUrl}/address/${address}${args}`;
   return request.get(url, {
     json: true
   });
-}
+};
 
 Client.prototype.getCoins = async function (params) {
   const { payload, pubKey, includeSpent } = params;

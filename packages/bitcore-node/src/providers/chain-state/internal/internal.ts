@@ -11,7 +11,6 @@ import config from '../../../config';
 
 import { TransactionModel } from '../../../models/transaction';
 
-const JSONStream = require('JSONStream');
 const ListTransactionsStream = require('./transforms');
 
 type StreamWalletUtxoArgs = { includeSpent: 'true' | undefined };
@@ -28,6 +27,9 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   getRPC(network: string) {
     const RPC_PEER = config.chains[this.chain][network].rpc;
+    if (!RPC_PEER) {
+      throw new Error(`RPC not configured for ${this.chain} ${network}`);
+    }
     const { username, password, host, port } = RPC_PEER;
     return new RPC(username, password, host, port);
   }
@@ -59,8 +61,8 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getBlocks(params: CSP.GetBlocksParams) {
-    const { network, sinceBlock, args } = params;
-    let { limit = undefined } = args || {};
+    const { network, sinceBlock, stream, args } = params;
+    let { limit, startDate, endDate, date } = args;
     if (!this.chain || !network) {
       throw 'Missing required param';
     }
@@ -76,15 +78,21 @@ export class InternalStateProvider implements CSP.IChainStateService {
       }
       query.height = { $gt: height };
     }
-    let blocks = await BlockModel.find(query)
-      .sort({ height: -1 })
-      .limit(limit || 100)
-      .toArray();
-    if (!blocks) {
-      throw 'blocks not found';
+    if (startDate) {
+      query.time = { $gt: new Date(startDate) };
     }
-    let transformedBlocks = blocks.map(block => BlockModel._apiTransform(block, { object: true }).valueOf());
-    return transformedBlocks;
+    if (endDate) {
+      Object.assign(query.time, { ...query.time, $lt: new Date(endDate) });
+    }
+    if(date) {
+      let firstDate = new Date(date);
+      let nextDate = new Date(date);
+      nextDate.setDate(nextDate.getDate() + 1);
+      query.time = { $gt: firstDate, $lt: nextDate};
+    }
+    limit = limit || 200;
+    limit = limit > 1000 ? 1000 : limit;
+    Storage.apiStreamingFind(BlockModel, query, stream);
   }
 
   async getBlock(params: CSP.GetBlockParams) {
@@ -128,9 +136,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     if (args.blockHash) {
       query.blockHash = args.blockHash;
     }
-    TransactionModel.getTransactions({ query })
-      .pipe(JSONStream.stringify())
-      .pipe(stream);
+    Storage.apiStreamingFind(TransactionModel, query, stream);
   }
 
   streamTransaction(params: CSP.StreamTransactionParams) {
@@ -140,9 +146,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
     network = network.toLowerCase();
     let query = { chain: this.chain, network, txid: txId };
-    TransactionModel.getTransactions({ query })
-      .pipe(JSONStream.stringify())
-      .pipe(stream);
+    Storage.apiStreamingFind(TransactionModel, query, stream);
   }
 
   async createWallet(params: CSP.CreateWalletParams) {
@@ -222,7 +226,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
     let { network, rawTx } = params;
-    let txPromise = new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       this.getRPC(network).sendTransaction(rawTx, (err: any, result: any) => {
         if (err) {
           reject(err);
@@ -231,7 +235,6 @@ export class InternalStateProvider implements CSP.IChainStateService {
         }
       });
     });
-    return txPromise;
   }
 
   async getCoinsForTx({ chain, network, txid }: { chain: string; network: string; txid: string }) {

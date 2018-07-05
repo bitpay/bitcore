@@ -2,7 +2,7 @@ import logger from '../../../src/logger';
 import config from '../../../src/config';
 import { resetDatabase } from '../../helpers';
 import { expect } from 'chai';
-import { P2pProvider, P2pEvents } from '../../../src/services/p2p';
+import { P2pProvider } from '../../../src/services/p2p';
 import { BlockModel } from '../../../src/models/block';
 import { TransactionModel } from '../../../src/models/transaction';
 import { sleep } from '../../../src/utils/async';
@@ -45,10 +45,8 @@ describe('P2P Service', () => {
         forkHeight: 0,
       }),
     });
-    await runner.start();
-
     // wait for it to stop syncing
-    await new Promise(r => runner.events.once(P2pEvents.SYNC_COMPLETE, r));
+    await runner.start();
 
     // check DB that all the new blocks are synced correctly
     await verify(rpc, 10);
