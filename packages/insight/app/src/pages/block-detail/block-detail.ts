@@ -10,8 +10,8 @@ import { BlocksProvider } from '../../providers/blocks/blocks';
  * on Ionic pages and navigation.
  */
 @IonicPage({
-    name: 'block-detail',
-    segment: 'block/:blockHash'
+  name: 'block-detail',
+  segment: ':selectedCurrency/block/:blockHash'
 })
 @Component({
     selector: 'page-block-detail',
@@ -25,10 +25,14 @@ export class BlockDetailPage {
         tx: []
     };
 
-    constructor(public navCtrl: NavController, public navParams: NavParams,
-                private blockProvider: BlocksProvider, public currency: CurrencyProvider) {
-        this.blockHash = navParams.get('blockHash');
-    }
+  constructor(
+    public navCtrl: NavController,
+    public navParams: NavParams,
+    private blockProvider: BlocksProvider,
+    public currency: CurrencyProvider
+  ) {
+    this.blockHash = navParams.get('blockHash');
+  }
 
     public ionViewDidLoad(): void {
         this.blockProvider.getBlock(this.blockHash).subscribe(
@@ -43,16 +47,17 @@ export class BlockDetailPage {
         );
     }
 
-    public goToPreviousBlock(): void {
-        this.navCtrl.push('block-detail', {
-            'blockHash': this.block.previousblockhash
-        });
-    }
+  public goToPreviousBlock(): void {
+    this.navCtrl.push('block-detail', {
+      'selectedCurrency': this.currency.selectedCurrency,
+      'blockHash': this.block.previousblockhash
+    });
+  }
 
-    public goToNextBlock(): void {
-        this.navCtrl.push('block-detail', {
-            'blockHash': this.block.nextblockhash
-        });
-    }
-
+  public goToNextBlock(): void {
+    this.navCtrl.push('block-detail', {
+      'selectedCurrency': this.currency.selectedCurrency,
+      'blockHash': this.block.nextblockhash
+    });
+  }
 }

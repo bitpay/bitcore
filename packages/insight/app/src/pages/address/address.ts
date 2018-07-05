@@ -12,7 +12,7 @@ import { CurrencyProvider } from '../../providers/currency/currency';
  */
 @IonicPage({
   name: 'address',
-  segment: 'address/:addrStr'
+  segment: ':selectedCurrency/address/:addrStr'
 })
 @Component({
   selector: 'page-address',
