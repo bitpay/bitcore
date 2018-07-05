@@ -8,7 +8,7 @@ program
   .option('--name <name>', 'REQUIRED - Wallet Name')
   .option(
     '--recipients <recipients>',
-    'REQUIRED - Address of receiver, or json array \'[{"address": "abc1234", "amount": xxxxxx}]\''
+    'REQUIRED - JSON array \'[{"address": "abc1234", "amount": xxxxxx}]\''
   )
   .option('--utxos <utxos>', 'REQUIRED - Unspent transactions that can be spent')
   .option('--change <change>', 'REQUIRED - Change addresses')
