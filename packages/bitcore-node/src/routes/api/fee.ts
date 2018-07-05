@@ -5,7 +5,7 @@ const router = require('express').Router({ mergeParams: true });
 router.get('/:target', async (req: Request, res: Response) => {
   let { target, chain, network } = req.params;
   if (network === 'regtest') {
-    return res.json({ feerate: 0.0002 });
+    return res.json({ feerate: 0.0002 }); // default 20 sat/byte for regtest
   }
   try {
     let fee = await ChainStateProvider.getFee({ chain, network, target});
