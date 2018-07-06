@@ -47,10 +47,8 @@
               </p>
               <div *ngFor="let item of vin.items">
                 <div *ngIf="item.scriptSig">
-                  <div *ngFor="let scriptSig of item.scriptSig.asm | split:' '">
-                    <div class="unlocking-script">
-                      <p>{{ scriptSig }}</p>
-                    </div>
+                  <div class="unlocking-script">
+                    <p>{{ item.scriptSig.asm }}
                   </div>
                 </div>
               </div>
@@ -75,19 +73,19 @@
           <div>
             <div class="ellipsis">
               <p>
-                <a (click)="goToAddress(getAddress(vout))">{{ getAddress(vout) }}</a>
+                <a (click)="goToAddress(vout.address)">{{ vout.address }}</a>
               </p>
             </div>
-            <div [hidden]="!expanded">
+            <div *ngIf="expanded">
               <p>
                 <b>Script Template</b>
-                <i>{{vout.scriptPubKey.type}}</i>
+                <i>{{vout.script.type}}</i>
               </p>
               <p>
                 <b>Locking Script</b>
               </p>
               <div class="locking-script">
-                <p>{{vout.scriptPubKey.asm}}</p>
+                <p>{{ vout.script.asm }}</p>
               </div>
             </div>
           </div>
@@ -107,7 +105,7 @@
       <div [hidden]="tx.isCoinBase">
         <ion-chip>
           <ion-label>Fee
-            <span text-nowrap>{{ currency.getConvertedNumber(tx.fees) | number:'1.0-8' }} {{ currency.currencySymbol }}</span>
+            <span text-nowrap>{{ currency.getConvertedNumber(tx.fee) | number:'1.0-8' }} {{ currency.currencySymbol }}</span>
           </ion-label>
         </ion-chip>
       </div>

@@ -226,15 +226,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async getFee(params: CSP.GetEstimateSmartFeeParams) {
     const { network, target } = params;
-    return new Promise((resolve, reject) => {
-      this.getRPC(network).getEstimateSmartFee(Number(target), (err: any, result: any) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(result);
-        }
-      });
-    });
+    return this.getRPC(network).getEstimateSmartFee(Number(target))
   }
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
@@ -248,5 +240,33 @@ export class InternalStateProvider implements CSP.IChainStateService {
         }
       });
     });
+  }
+
+  async getCoinsForTx({ chain, network, txid }: { chain: string; network: string; txid: string }) {
+    const tx = await TransactionModel.find({ txid }).count();
+    if (tx === 0) {
+      throw new Error(`No such transaction ${txid}`);
+    }
+
+    let inputs = await CoinModel.collection
+      .find({
+        chain,
+        network,
+        spentTxid: txid
+      })
+      .toArray();
+
+    const outputs = await CoinModel.collection
+      .find({
+        chain,
+        network,
+        mintTxid: txid
+      })
+      .toArray();
+
+    return {
+      inputs: inputs.map(input => CoinModel._apiTransform(input, { object: true })),
+      outputs: outputs.map(output => CoinModel._apiTransform(output, { object: true }))
+    };
   }
 }

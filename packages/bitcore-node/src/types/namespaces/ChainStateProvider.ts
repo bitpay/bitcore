@@ -98,6 +98,7 @@ export declare namespace CSP {
     streamWalletAddresses(params: StreamWalletAddressesParams): any;
     streamWalletTransactions(params: StreamWalletTransactionsParams): any;
     streamWalletUtxos(params: StreamWalletUtxosParams): any;
+    getCoinsForTx(params: {chain: string, network: string, txid: string }): Promise<any>;
   }
 
   type ChainStateServices = { [key: string]: IChainStateService };

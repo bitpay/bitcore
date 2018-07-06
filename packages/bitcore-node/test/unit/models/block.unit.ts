@@ -1,23 +1,19 @@
 import { expect } from 'chai';
-import { BlockModel } from '../../../src/models/block';
+import { BlockModel, IBlock } from '../../../src/models/block';
 import { TransactionModel } from '../../../src/models/transaction';
 import { CoinModel } from '../../../src/models/coin';
 import * as sinon from 'sinon';
 import { TEST_BLOCK } from '../../data/test-block';
-import { AdapterProvider } from '../../../src/providers/adapter';
-import { Adapter } from '../../../src/types/namespaces/ChainAdapter';
-import { Bitcoin } from '../../../src/types/namespaces/Bitcoin';
 import { Storage } from '../../../src/services/storage';
 
 describe('Block Model', function() {
   describe('addBlock', () => {
-    let addBlockParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
+    let addBlockParams = {
       chain: 'BTC',
       network: 'regtest',
       block: TEST_BLOCK,
       height: 1355
     };
-    const internalBlock = AdapterProvider.convertBlock(addBlockParams);
     let sandbox;
     beforeEach(() => {
       sandbox = sinon.sandbox.create();
@@ -29,7 +25,7 @@ describe('Block Model', function() {
       let newBlock = Object.assign(
         { save: () => Promise.resolve() },
         BlockModel,
-        internalBlock
+        addBlockParams
       );
 
       mockStorage(newBlock);
@@ -37,7 +33,7 @@ describe('Block Model', function() {
       sandbox.stub(TransactionModel, 'batchImport').resolves();
 
       const result = (await BlockModel.addBlock(addBlockParams)).result;
-      expect(addBlockParams.block.hash).to.be.equal(result.hash);
+      expect(addBlockParams.block.hash).to.be.equal(result.block.hash);
       expect(addBlockParams.height).to.be.equal(result.height);
       expect(addBlockParams.chain).to.be.equal(result.chain);
     });
@@ -144,14 +140,13 @@ describe('Block Model', function() {
           height: 0
         });
 
-      let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
+      let blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      const internalBlock = AdapterProvider.convertBlock(blockMethodParams);
-      let params = Object.assign(BlockModel, internalBlock);
+      let params = Object.assign(BlockModel, blockMethodParams);
 
       await BlockModel.handleReorg(params);
       expect(blockModelRemoveSpy.notCalled).to.be.true;
@@ -167,14 +162,13 @@ describe('Block Model', function() {
         previousBlockHash:
         '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
-      let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
+      let blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      const internalBlock = AdapterProvider.convertBlock(blockMethodParams);
-      let params = Object.assign(BlockModel, internalBlock);
+      let params = Object.assign(BlockModel, blockMethodParams);
       const removeSpy = Storage.db!.collection('blocks')
         .remove as sinon.SinonSpy;
 
@@ -189,14 +183,13 @@ describe('Block Model', function() {
         '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
-      let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
+      let blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      const internalBlock = AdapterProvider.convertBlock(blockMethodParams);
-      let params = Object.assign(BlockModel, internalBlock);
+      let params = Object.assign(BlockModel, blockMethodParams);
       const removeSpy = Storage.db!.collection('transactions')
         .remove as sinon.SinonSpy;
 
@@ -211,14 +204,13 @@ describe('Block Model', function() {
         '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
-      let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
+      let blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      const internalBlock = AdapterProvider.convertBlock(blockMethodParams);
-      let params = Object.assign(BlockModel, internalBlock);
+      let params = Object.assign(BlockModel, blockMethodParams);
       const collectionSpy = Storage.db!.collection as sinon.SinonSpy;
       const removeSpy = Storage.db!.collection('coins')
         .remove as sinon.SinonSpy;
@@ -235,14 +227,13 @@ describe('Block Model', function() {
         '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
-      let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
+      let blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      const internalBlock = AdapterProvider.convertBlock(blockMethodParams);
-      let params = Object.assign(BlockModel, internalBlock);
+      let params = Object.assign(BlockModel, blockMethodParams);
       const collectionSpy = Storage.db!.collection as sinon.SinonSpy;
       const updateSpy = Storage.db!.collection('coins')
         .update as sinon.SinonSpy;
@@ -255,33 +246,40 @@ describe('Block Model', function() {
 
   describe('_apiTransform', () => {
     it('should return the transform object with block values', () => {
-      let params: Adapter.ConvertBlockParams<Bitcoin.Block> = {
+      const block: IBlock = {
         chain: 'BTC',
-        network: 'regtest',
-        block: TEST_BLOCK,
-        height: 1355
+        network: 'mainnet',
+        height: 1,
+        hash: 'abcd',
+        version: 1,
+        merkleRoot: 'deff',
+        time: Date.now(),
+        timeNormalized: Date.now(),
+        nonce: 1,
+        previousBlockHash: 'aabb',
+        nextBlockHash: 'bbcc',
+        transactionCount: 1,
+        size: 255,
+        bits: 256,
+        reward: 5000000000,
+        processed: true
       };
-      const block = AdapterProvider.convertBlock(params);
 
-      const result = BlockModel._apiTransform(block, {
-        object: false
-      }).toString();
-      const parseResult = JSON.parse(result);
+      const result = BlockModel._apiTransform(block, { object: true });
 
-      expect(parseResult.hash).to.be.equal(block.hash);
-      expect(parseResult.height).to.be.equal(block.height);
-      expect(parseResult.version).to.be.equal(block.version);
-      expect(parseResult.size).to.be.equal(block.size);
-      expect(parseResult.merkleRoot).to.be.equal(block.merkleRoot);
-      expect(parseResult.time).to.equal(block.time);
-      expect(parseResult.timeNormalized).to.equal(block.timeNormalized);
-      expect(parseResult.nonce).to.be.equal(block.nonce);
-      expect(parseResult.bits).to.be.equal(block.bits);
-      expect(parseResult.previousBlockHash).to.be.equal(
-        block.previousBlockHash
-      );
-      expect(parseResult.nextBlockHash).to.be.equal(block.nextBlockHash);
-      expect(parseResult.transactionCount).to.be.equal(block.transactionCount);
+      expect(result.hash).to.be.equal(block.hash);
+      expect(result.height).to.be.equal(block.height);
+      expect(result.version).to.be.equal(block.version);
+      expect(result.size).to.be.equal(block.size);
+      expect(result.merkleRoot).to.be.equal(block.merkleRoot);
+      expect(result.time).to.equal(block.time);
+      expect(result.timeNormalized).to.equal(block.timeNormalized);
+      expect(result.nonce).to.be.equal(block.nonce);
+      expect(result.bits).to.be.equal(block.bits);
+      expect(result.previousBlockHash).to.be.equal(block.previousBlockHash);
+      expect(result.nextBlockHash).to.be.equal(block.nextBlockHash);
+      expect(result.transactionCount).to.be.equal(block.transactionCount);
+      expect(result).to.not.have.property('processed');
     });
   });
 });

@@ -35,7 +35,11 @@ BufferReader.prototype.set = function(obj) {
 };
 
 BufferReader.prototype.eof = function() {
-  return this.pos >= this.buf.length;
+  if(this.buf) {
+    return this.pos >= this.buf.length;
+  } else {
+    return true;
+  }
 };
 
 BufferReader.prototype.finished = BufferReader.prototype.eof;

@@ -1,4 +1,4 @@
-<ion-list radio-group [(ngModel)]="currencyProvider.currencySymbol" (ionChange)="currencyProvider.setCurrency(currencyProvider.currencySymbol)">
+<ion-list radio-group [(ngModel)]="currencyProvider.currencySymbol" (ionChange)="priceProvider.setCurrency(currencyProvider.currencySymbol)">
   <ion-list-header *ngIf="switcherOn">
     Blockchain
   </ion-list-header>

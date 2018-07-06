@@ -5,7 +5,9 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Http } from '@angular/http';
 import { ApiProvider } from '../../providers/api/api';
 
-@IonicPage()
+@IonicPage({
+  segment: ':selectedCurrency/broadcast-tx'
+})
 @Component({
   selector: 'page-broadcast-tx',
   templateUrl: 'broadcast-tx.html'
