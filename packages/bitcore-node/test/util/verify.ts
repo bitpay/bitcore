@@ -4,6 +4,7 @@ import { expect } from 'chai';
 import { TransactionModel, ITransaction } from "../../src/models/transaction";
 import { CoinModel } from "../../src/models/coin";
 import { ChainNetwork } from "../../src/types/ChainNetwork";
+import { WalletAddressModel } from "../../src/models/walletAddress";
 
 
 export async function blocks(info: ChainNetwork, creds: {
@@ -125,8 +126,6 @@ export async function transactions(info: ChainNetwork, creds: {
   host: string;
   port: number;
 }) {
-  // TODO: TransactionModel: .wallets
-  // TODO: CoinModel: .wallets
   const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 
   // check each transaction
@@ -141,16 +140,52 @@ export async function transactions(info: ChainNetwork, creds: {
       expect(tx.size, 'tx size').to.equal(truth.size);
       expect(tx.locktime, 'tx locktime').to.equal(truth.locktime);
 
-      const ours = await CoinModel.find({
-        network: info.network,
-        chain: info.chain,
-        spentTxid: tx.txid,
-      });
+      { // Minted by this transaction
+        const ours = await CoinModel.find({
+          network: info.network,
+          chain: info.chain,
+          mintTxid: tx.txid,
+        });
+        expect(ours.length, 'number mint txids').to.equal(truth.vout.length);
+        for (const our of ours) {
+          // coins
+          expect(our.mintTxid, 'tx mint height').to.equal(tx.blockHeight);
+          expect(our.value, 'tx mint value').to.equal(
+            truth.vout[our.mintIndex].value
+          );
+          expect(truth.vout[our.mintIndex].scriptPubKey.addresses,
+                 'tx mint address').to.include(our.address);
+          expect(our.mintIndex === 0 && our.coinbase
+                 || our.mintIndex !== 0 && !our.coinbase).to.be.true;
 
-      expect(ours.length, 'number spent txids').to.equal(1);
-      expect(ours[0].spentHeight, 'tx spent height').to.equal(tx.blockHeight);
+          // wallets
+          expect(tx.wallets).to.include.members(our.wallets);
+          if (our.wallets.length > 0) {
+            const wallets = await WalletAddressModel.find({
+              wallet: {
+                $in: our.wallets,
+              },
+              address: our.address,
+              chain: info.chain,
+              network: info.network,
+            });
+            expect(wallets.length, 'wallet exists').to.be.greaterThan(0);
+          }
+        }
+      }
 
-      // TODO: the rest of CoinModel
+      { // Spent by this transaction
+        const ours = await CoinModel.find({
+          network: info.network,
+          chain: info.chain,
+          spentTxid: tx.txid,
+        });
+        expect(ours.length, 'number spent txids').to.equal(truth.vin.length);
+        for (const our of ours) {
+          expect(our.spentTxid, 'tx spent height').to.equal(tx.blockHeight);
+          expect(tx.wallets).to.include.members(our.wallets);
+        }
+      }
     });
     cursor.on('end', resolve);
   });
