@@ -16,7 +16,13 @@ const main = async () => {
   try {
     wallet = await Wallet.loadWallet({ name, path });
     const transaction = await wallet.broadcast({ tx });
-    console.log(`Transaction broadcasted, txid: ${transaction.txid}`);
+
+    console.log('Transaction broadcasted');
+    console.log(
+      JSON.stringify(Object.assign({}, {
+        txid: transaction.txid
+      }))
+    );
   } catch (e) {
     console.error(e);
   }
