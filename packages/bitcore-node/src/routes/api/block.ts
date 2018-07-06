@@ -4,13 +4,13 @@ const router = require('express').Router({ mergeParams: true });
 
 router.get('/', async function(req: Request, res: Response) {
   let { chain, network } = req.params;
-  const { sinceBlock, date } = req.query;
+  const { sinceBlock, date, limit } = req.query;
   try {
     let payload = {
       chain,
       network,
       sinceBlock,
-      args: { date },
+      args: { date, limit },
       stream: res
     };
     return ChainStateProvider.getBlocks(payload);;
