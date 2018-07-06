@@ -54,10 +54,11 @@ export class StorageService {
   apiStreamingFind(
     model: TransformableModel<any>,
     query: any,
+    options: any,
     res: Response
   ) {
-
-    let cursor = model.find(query).stream({
+    options.limit = Math.min(options.limit || 100, 1000);
+    let cursor = model.find(query, options).stream({
       transform: model._apiTransform
     });
     cursor.on('error', function(err) {
