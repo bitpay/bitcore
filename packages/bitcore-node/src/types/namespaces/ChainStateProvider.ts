@@ -27,14 +27,14 @@ export declare namespace CSP {
   export type GetBlockParams = ChainNetwork & {
     blockId: string;
   };
-  export type GetEstimateSmartFeeParams = ChainNetwork & {
-    target: number;
-  }
   export type GetBlocksParams = ChainNetwork & {
     sinceBlock: number | string;
     args: Partial<{ limit: number; startDate: Date; endDate: Date; date: Date }>;
     stream: Response;
   };
+  export type GetEstimateSmartFeeParams = ChainNetwork & {
+    target: number;
+  }
   export type BroadcastTransactionParams = ChainNetwork & {
     rawTx: string;
   };

@@ -21,7 +21,7 @@ const main = async () => {
   const { name, path } = program;
   let wallet;
   try {
-    const { recipients, utxos, change, fee, target=2 } = program;
+    const { recipients, utxos, change, fee, target } = program;
     wallet = await Wallet.loadWallet({ name, path });
 
     const parsedUtxos = utxos.includes('[') ? JSON.parse(utxos) : [];
@@ -31,10 +31,13 @@ const main = async () => {
       throw new Error('invalid arguments');
     }
 
+    const utxoBytes = 148;
+    const outputBytes = 34;
+    const transactionHeader = 10;
     const calculatedNetworkFeeKb = await wallet.getNetworkFee({ target });
     const netWorkFeeSat = calculatedNetworkFeeKb.feerate * 1E8/1000;
 
-    const transactionSize = (parsedUtxos.length * 148 + parsedRecipients.length * 34 + 10 + parsedUtxos.length);
+    const transactionSize = (parsedUtxos.length * utxoBytes + parsedRecipients.length * outputBytes + transactionHeader + parsedUtxos.length);
     const totalTransactionFee = transactionSize * netWorkFeeSat;
 
     let params = { recipients, utxos, change, fee };
