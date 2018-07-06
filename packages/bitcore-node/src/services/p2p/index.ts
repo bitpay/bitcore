@@ -95,8 +95,7 @@ export class P2pRunner {
         height: -1,
         network: this.network,
         chain: this.chain,
-        blockTime: new Date(),
-        blockTimeNormalized: new Date()
+        mempoolTime: new Date(),
       });
       logger.debug(`Added transaction ${tx.hash}`, {
         chain: this.chain,
