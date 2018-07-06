@@ -28,7 +28,11 @@ describe('Coin Model', function () {
         vout: 0,
         spentTxid: '',
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
-        script: '',
+        coinbase: true,
+        script: {
+          asm: "",
+          type: "Unknown"
+        },
         value: 5000000000.0
       });
     });
@@ -56,7 +60,11 @@ describe('Coin Model', function () {
         vout: 0,
         spentTxid: '',
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
-        script: '',
+        coinbase: true,
+        script: {
+          asm: "",
+          type: "Unknown"
+        },
         value: 5000000000.0
       });
     });
