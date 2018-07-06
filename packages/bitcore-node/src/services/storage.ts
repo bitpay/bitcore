@@ -51,13 +51,13 @@ export class StorageService {
 
   stop() {}
 
-  apiStreamingFind(
-    model: TransformableModel<any>,
+  apiStreamingFind<T>(
+    model: TransformableModel<T>,
     query: any,
     res: Response
   ) {
 
-    let cursor = model.find(query).stream({
+    let cursor = model.collection.find(query).stream({
       transform: model._apiTransform
     });
     cursor.on('error', function(err) {

@@ -114,7 +114,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
       }
       query.height = height;
     }
-    let block = await BlockModel.findOne(query);
+    let block = await BlockModel.collection.findOne(query);
     if (!block) {
       throw 'block not found';
     }
@@ -162,13 +162,13 @@ export class InternalStateProvider implements CSP.IChainStateService {
       path,
       singleAddress
     };
-    await WalletModel.insert(wallet);
+    await WalletModel.collection.insert(wallet);
     return wallet;
   }
 
   async getWallet(params: CSP.GetWalletParams) {
     const { pubKey } = params;
-    return WalletModel.findOne({ pubKey });
+    return WalletModel.collection.findOne({ pubKey });
   }
 
   streamWalletAddresses(params: CSP.StreamWalletAddressesParams) {
@@ -238,7 +238,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getCoinsForTx({ chain, network, txid }: { chain: string; network: string; txid: string }) {
-    const tx = await TransactionModel.find({ txid }).count();
+    const tx = await TransactionModel.collection.find({ txid }).count();
     if (tx === 0) {
       throw new Error(`No such transaction ${txid}`);
     }

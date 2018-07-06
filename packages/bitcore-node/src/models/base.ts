@@ -28,23 +28,4 @@ export abstract class BaseModel<T> {
       throw new Error('Not connected to the database yet');
     }
   }
-
-  get find() {
-    return this.collection.find.bind(this.collection);
-  }
-  get findOne() {
-    return this.collection.findOne.bind(this.collection);
-  }
-  get update() {
-    return this.collection.update.bind(this.collection);
-  }
-  get updateOne() {
-    return this.collection.updateOne.bind(this.collection);
-  }
-  get remove() {
-    return this.collection.remove.bind(this.collection);
-  }
-  get insert() {
-    return this.collection.insert.bind(this.collection);
-  }
 }
