@@ -4,7 +4,6 @@ import 'rxjs/add/operator/map';
 import { ApiProvider } from '../../providers/api/api';
 import { Observable } from 'rxjs/Observable';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { DefaultProvider } from '../../providers/default/default';
 
 /*
   Generated class for the BlocksProvider provider.
@@ -59,10 +58,7 @@ export class BlocksProvider {
   constructor(
     public http: Http,
     private api: ApiProvider,
-    public currency: CurrencyProvider,
-    private defaults: DefaultProvider
-  ) {
-  }
+    public currency: CurrencyProvider) { }
 
   private toAppBlock(block: ApiBlock): AppBlock {
     let difficulty: number = 0x1d00ffff /  block.bits;
@@ -91,10 +87,7 @@ export class BlocksProvider {
   }
 
   public getBlocks(): Observable<{ blocks: Array<AppBlock> }> {
-    let url: string = this.api.apiPrefix + '/' +
-      this.currency.selectedCurrency.toUpperCase() + '/' +
-      this.defaults.getDefault('%NETWORK%') + '/' +
-      'block';
+    let url: string = this.api.apiPrefix + '/block';
     return this.http.get(url)
     .map((data) => {
       let blocks: Array<ApiBlock> = data.json();
@@ -104,11 +97,7 @@ export class BlocksProvider {
   }
 
   public getBlock(hash: string): Observable<{ block: AppBlock }> {
-    let url: string = this.api.apiPrefix + '/' +
-      this.currency.selectedCurrency.toUpperCase() + '/' +
-      this.defaults.getDefault('%NETWORK%') + '/' +
-      '/block/' +
-      hash;
+    let url: string = this.api.apiPrefix + '/block/' + hash;
     return this.http.get(url)
     .map((data) => {
       let block: ApiBlock = data.json();

@@ -56,7 +56,7 @@ class Coin extends BaseModel<ICoin> {
   }
 
   _apiTransform(coin: ICoin, options: { object: boolean }) {
-    const sbuf = coin.script.buffer || new Buffer('');
+    const sbuf = coin.script.buffer || Buffer.from('');
     const script = Chain[coin.chain].lib.Script.fromBuffer(sbuf);
     let transform = {
       txid: coin.mintTxid,

@@ -4,7 +4,6 @@ import 'rxjs/add/operator/map';
 import { ApiProvider } from '../../providers/api/api';
 import { Observable } from 'rxjs/Observable';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { DefaultProvider } from '../../providers/default/default';
 
 /*
   Generated class for the TxsProvider provider.
@@ -99,12 +98,7 @@ export type AppTx = {
 
 @Injectable()
 export class TxsProvider {
-  constructor(
-    public http: Http,
-    private api: ApiProvider,
-    public currency: CurrencyProvider,
-    private defaults: DefaultProvider
-  ) {}
+  constructor(public http: Http, private api: ApiProvider, public currency: CurrencyProvider) {}
 
   public getFee(tx: AppTx): number {
     const sumSatoshis: any = (arr: any): number => arr.reduce((prev, cur) => prev + cur.value, 0);
@@ -114,7 +108,7 @@ export class TxsProvider {
     return fee;
   }
 
-  private toAppTx(tx: ApiTx): AppTx {
+  public toAppTx(tx: ApiTx): AppTx {
     return {
       txid: tx.txid,
       fee: null, // calculated later, when coins are retrieved
@@ -138,15 +132,7 @@ export class TxsProvider {
     if (args.blockHash) {
       queryString += `?blockHash=${args.blockHash}`;
     }
-    let url: string =
-      this.api.apiPrefix +
-      '/' +
-      this.currency.selectedCurrency.toUpperCase() +
-      '/' +
-      this.defaults.getDefault('%NETWORK%') +
-      '/' +
-      'tx' +
-      queryString;
+    let url: string = this.api.apiPrefix + '/tx' + queryString;
     return this.http.get(url).map(data => {
       let txs: Array<ApiTx> = data.json();
       let appTxs: Array<AppTx> = txs.map(this.toAppTx);
@@ -155,15 +141,7 @@ export class TxsProvider {
   }
 
   public getTx(hash: string): Observable<{ tx: AppTx }> {
-    let url: string =
-      this.api.apiPrefix +
-      '/' +
-      this.currency.selectedCurrency.toUpperCase() +
-      '/' +
-      this.defaults.getDefault('%NETWORK%') +
-      '/' +
-      'tx/' +
-      hash;
+    let url: string = this.api.apiPrefix + '/tx/' + hash;
     return this.http.get(url).flatMap(async data => {
       let apiTx: ApiTx = data.json()[0];
       let appTx: AppTx = this.toAppTx(apiTx);
@@ -172,16 +150,7 @@ export class TxsProvider {
   }
 
   public getCoins(txId: string): Observable<CoinsApiResponse> {
-    let url: string =
-      this.api.apiPrefix +
-      '/' +
-      this.currency.selectedCurrency.toUpperCase() +
-      '/' +
-      this.defaults.getDefault('%NETWORK%') +
-      '/' +
-      'tx/' +
-      txId +
-      '/coins';
+    let url: string = this.api.apiPrefix + '/tx/' + txId + '/coins';
     return this.http.get(url).map(data => {
       return data.json() as CoinsApiResponse;
     });
