@@ -24,7 +24,7 @@
       <ion-item>
         Fee Rate
         <ion-note item-end>
-          {{ (tx.fees / tx.size) * 1E8 | number:'1.0-8' }} sats/byte
+          {{ (tx.fee / tx.size) | number:'1.0-8' }} sats/byte
         </ion-note>
       </ion-item>
       <ion-item>
@@ -49,7 +49,7 @@
 
     <h2>Details</h2>
 
-    <transaction [tx]="tx"></transaction>
+    <transaction [tx]="tx" [showCoins]="true"></transaction>
   </div>
 
 </ion-content>
