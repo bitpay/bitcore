@@ -90,7 +90,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
       nextDate.setDate(nextDate.getDate() + 1);
       query.time = { $gt: firstDate, $lt: nextDate};
     }
-    Storage.apiStreamingFind(BlockModel, query, { limit }, stream);
+    Storage.apiStreamingFind(BlockModel, query, { limit, sort: {height: -1} }, stream);
   }
 
   async getBlock(params: CSP.GetBlockParams) {
