@@ -87,5 +87,9 @@ class ChainStateProxy implements CSP.ChainStateProvider {
   registerService(currency: string, service: CSP.IChainStateService){
     services[currency] = service;
   };
+
+  async getCoinsForTx(params: {chain: string; network: string, txid: string }) {
+    return this.get(params).getCoinsForTx(params);
+  }
 }
 export let ChainStateProvider = new ChainStateProxy();

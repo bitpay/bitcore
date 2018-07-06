@@ -5,6 +5,10 @@ import { NavMock } from '../mocks';
 import { PopoverController, MenuController } from 'ionic-angular';
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
+import { ApiProvider } from '../providers/api/api';
+import { CurrencyProvider } from '../providers/currency/currency';
+import { DefaultProvider } from '../providers/default/default';
+import { HttpModule } from '@angular/http';
 
 describe('InsightApp', () => {
   let injector: TestBed;
@@ -12,13 +16,19 @@ describe('InsightApp', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
+      imports: [
+        HttpModule
+      ],
       providers: [
         PopoverController,
         InsightApp,
         Platform,
         MenuController,
         SplashScreen,
-        StatusBar
+        StatusBar,
+        ApiProvider,
+        CurrencyProvider,
+        DefaultProvider
       ]
     });
     injector = getTestBed();

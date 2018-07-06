@@ -148,7 +148,6 @@ export class P2pRunner {
       return this.service.getMissingBlockHashes(locators);
     };
 
-
     let hashes;
     while (!hashes || hashes.length > 0) {
       hashes = await getHeaders();
@@ -177,7 +176,6 @@ export class P2pRunner {
         });
         counter += 1;
         if (Date.now() - lastLog > 100) {
-
           logger.info(`Sync progress ${((counter * 100) / this.service.height()).toFixed(3)}%`, {
             chain: this.chain,
             network: this.network,

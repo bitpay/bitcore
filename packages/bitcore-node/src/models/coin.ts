@@ -2,6 +2,8 @@ import { LoggifyClass } from '../decorators/Loggify';
 import { BaseModel } from './base';
 import { ObjectID } from 'mongodb';
 
+const Chain = require('../chain');
+
 export type ICoin = {
   network: string;
   chain: string;
@@ -54,13 +56,18 @@ class Coin extends BaseModel<ICoin> {
   }
 
   _apiTransform(coin: ICoin, options: { object: boolean }) {
-    let script = coin.script || '';
+    const sbuf = coin.script.buffer || Buffer.from('');
+    const script = Chain[coin.chain].lib.Script.fromBuffer(sbuf);
     let transform = {
       txid: coin.mintTxid,
+      coinbase: coin.coinbase,
       vout: coin.mintIndex,
       spentTxid: coin.spentTxid,
       address: coin.address,
-      script: script.toString('hex'),
+      script: {
+        type: script.classify(),
+        asm: script.toASM(),
+      },
       value: coin.value
     };
     if (options && options.object) {
