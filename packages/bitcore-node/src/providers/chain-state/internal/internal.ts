@@ -223,6 +223,11 @@ export class InternalStateProvider implements CSP.IChainStateService {
     Storage.apiStreamingFind(CoinModel, query, { limit }, stream);
   }
 
+  async getFee(params: CSP.GetEstimateSmartFeeParams) {
+    const { network, target } = params;
+    return this.getRPC(network).getEstimateSmartFee(Number(target))
+  }
+
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
     let { network, rawTx } = params;
     return new Promise((resolve, reject) => {

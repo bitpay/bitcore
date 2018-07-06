@@ -32,6 +32,9 @@ export declare namespace CSP {
     args: Partial<{ limit: number; startDate: Date; endDate: Date; date: Date }>;
     stream: Response;
   };
+  export type GetEstimateSmartFeeParams = ChainNetwork & {
+    target: number;
+  }
   export type BroadcastTransactionParams = ChainNetwork & {
     rawTx: string;
   };
@@ -86,6 +89,7 @@ export declare namespace CSP {
     getBalanceForWallet(params: GetBalanceForWalletParams): Promise<{ balance: number }[]>;
     getBlock(params: GetBlockParams): Promise<IBlock | string>;
     getBlocks(params: GetBlocksParams): any;
+    getFee(params: GetEstimateSmartFeeParams): any;
     broadcastTransaction(params: BroadcastTransactionParams): Promise<any>;
     createWallet(params: CreateWalletParams): Promise<IWallet>;
     getWallet(params: GetWalletParams): Promise<IWallet | null>;

@@ -129,6 +129,11 @@ class Wallet {
     return this.client.getBalance({ pubKey: this.xPubKey});
   }
 
+  getNetworkFee(params) {
+    const target = params.target || 2;
+    return this.client.getFee({ target });
+  }
+
   getUtxos() {
     return this.client.getCoins({
       pubKey: this.xPubKey,
