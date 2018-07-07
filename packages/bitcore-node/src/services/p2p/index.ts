@@ -155,7 +155,6 @@ export class P2pRunner {
 
       return this.service.getMissingBlockHashes(locators);
     };
-        const hashes = headers.map(h => h.hash);
     let hashes;
     while (!hashes || hashes.length > 0) {
       hashes = await getHeaders();
