@@ -43,6 +43,7 @@ export class Transaction extends BaseModel<ITransaction> {
   async batchImport(params: {
     txs: Array<Bitcoin.Transaction>;
     height: number;
+    mempoolTime?: Date;
     blockTime?: Date;
     blockHash?: string;
     blockTimeNormalized?: Date;

@@ -111,10 +111,12 @@ router.get('/:pubKey', authenticate, async function(
 router.get('/:pubKey/addresses', authenticate, async function(req, res) {
   try {
     let { chain, network, pubKey } = req.params;
+    let { limit } = req.query;
     let payload = {
       chain,
       network,
       walletId: pubKey,
+      limit,
       stream: res
     };
     return ChainStateProvider.streamWalletAddresses(payload);
@@ -187,11 +189,13 @@ router.get(
   authenticate,
   async (req: AuthenticatedRequest, res) => {
     let { chain, network } = req.params;
+    let { limit=1000 } = req.query;
     try {
       return ChainStateProvider.streamWalletUtxos({
         chain,
         network,
         wallet: req.wallet!,
+        limit,
         stream: res,
         args: req.query
       });
