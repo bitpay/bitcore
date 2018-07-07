@@ -10,7 +10,7 @@ import { BlocksProvider } from '../../providers/blocks/blocks';
  */
 @IonicPage({
   name: 'blocks',
-  segment: 'blocks'
+  segment: ':selectedCurrency/blocks'
 })
 @Component({
   selector: 'page-blocks',
@@ -25,7 +25,6 @@ export class BlocksPage {
     this.blocksProvider.getBlocks().subscribe(
       ({blocks}) => {
         this.blocks = blocks;
-        console.log('this.blocks', this.blocks);
         this.loading = false;
       },
       (err) => {

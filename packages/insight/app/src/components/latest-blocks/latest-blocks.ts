@@ -1,6 +1,7 @@
 import { Component, NgZone, Input } from '@angular/core';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { NavController } from 'ionic-angular';
+import { CurrencyProvider } from '../../providers/currency/currency';
 
 /**
  * Generated class for the LatestBlocksComponent component.
@@ -21,7 +22,7 @@ export class LatestBlocksComponent {
   @Input() public showTimeAs: string;
   private reloadInterval: any;
 
-  constructor(private blocksProvider: BlocksProvider, private navCtrl: NavController, ngZone: NgZone) {
+  constructor(private blocksProvider: BlocksProvider, private navCtrl: NavController, ngZone: NgZone, public currency: CurrencyProvider) {
     this.loadBlocks();
     const seconds: number = 15;
     ngZone.runOutsideAngular(() => {
@@ -51,6 +52,7 @@ export class LatestBlocksComponent {
 
   public goToBlock(blockHash: string): void {
     this.navCtrl.push('block-detail', {
+      'selectedCurrency': this.currency.selectedCurrency,
       'blockHash': blockHash
     });
   }
@@ -62,7 +64,9 @@ export class LatestBlocksComponent {
   }
 
   public goToBlocks(): void {
-    this.navCtrl.push('blocks');
+    this.navCtrl.push('blocks', {
+      'selectedCurrency': this.currency.selectedCurrency
+    });
   }
 
   private ngOnDestroy(): void {

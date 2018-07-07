@@ -2,7 +2,7 @@ import logger from '../../../src/logger';
 import config from '../../../src/config';
 import { resetDatabase } from '../../helpers';
 import { expect } from 'chai';
-import { P2pProvider, P2pEvents } from '../../../src/services/p2p';
+import { P2pProvider } from '../../../src/services/p2p';
 import { BlockModel } from '../../../src/models/block';
 import { TransactionModel } from '../../../src/models/transaction';
 import { sleep } from '../../../src/utils/async';
@@ -45,10 +45,8 @@ describe('P2P Service', () => {
         forkHeight: 0,
       }),
     });
-    await runner.start();
-
     // wait for it to stop syncing
-    await new Promise(r => runner.events.once(P2pEvents.SYNC_COMPLETE, r));
+    await runner.start();
 
     // check DB that all the new blocks are synced correctly
     await verify(rpc, 10);
@@ -92,7 +90,7 @@ async function verify(rpc: RPC, tail: number) {
 
     // check block is correct
     const truth = await rpc.blockAsync(hash);
-    const ours = await BlockModel.find({ hash, chain, network }).toArray();
+    const ours = await BlockModel.collection.find({ hash, chain, network }).toArray();
     expect(ours.length, 'number of blocks').to.equal(1);
     expect(ours[0].previousBlockHash, 'previous block hash').to.equal(truth.previousblockhash);
     expect(ours[0].nextBlockHash, 'next block hash').to.equal(truth.nextblockhash);
@@ -102,14 +100,14 @@ async function verify(rpc: RPC, tail: number) {
     // check that we got all transactions
     for (const txid of truth.tx) {
       logger.info(` - transaction ${txid}`);
-      const tx = await TransactionModel.find({ txid }).toArray();
+      const tx = await TransactionModel.collection.find({ txid }).toArray();
       expect(tx.length, 'number of transactions').to.equal(1);
       expect(tx[0].blockHash, 'block hash of transaction').to.equal(hash);
       expect(tx[0].blockHeight, 'block height of transaction').to.equal(truth.height);
     }
 
     // check we have no extra transactions
-    const extra = await TransactionModel.find({
+    const extra = await TransactionModel.collection.find({
       blockHash: hash,
       txid: {
         $nin: truth.tx

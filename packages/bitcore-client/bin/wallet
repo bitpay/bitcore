@@ -6,6 +6,7 @@ program
   .version(require('../package.json').version)
   .description('CLI wallet utility for Bitcore-node')
   .command('create', 'create a wallet').alias('c')
+  .command('list', 'list wallets').alias('l')
   .command('import', 'import addresses/keys').alias('i')
   .command('register', 'register a wallet with bitcore-node').alias('r')
   .command('balance', 'check wallet balance').alias('b')

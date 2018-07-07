@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const program = require('commander');
+const program = require('../lib/program');
 const Wallet = require('../lib/wallet');
 const promptly = require('promptly');
 
@@ -12,17 +12,18 @@ program
     '--network <network>',
     'REQUIRED - Network (livenet/testnet/regtest, etc)'
   )
-  .option('--path <path>', 'REQUIRED - Where wallet should be stored')
-  .option('--mnemonic <phrase>', 'optional - Seed using existing backup phrase')
+  .option('--baseUrl [host]', 'optional - Specify custom Bitcore API URL')
+  .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--mnemonic [phrase]', 'optional - Seed using existing backup phrase')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, chain, network, path, phrase } = program;
-  const password = await promptly.password('Wallet Password:');
-  let wallet;
+  const { name, baseUrl, chain, network, path, phrase } = program;
   try {
-    wallet = await Wallet.create({
+    const password = await promptly.password('Wallet Password:');
+    await Wallet.create({
       name,
+      baseUrl,
       chain,
       network,
       path,

@@ -41,12 +41,12 @@ Client.prototype.getBalance = async function (params) {
 
 Client.prototype.getAddressTxos = async function (params) {
   const { unspent, address } = params;
-  const args = unspent ? `?unspent=${unspent}` : ``;
+  const args = unspent ? `?unspent=${unspent}` : '';
   const url = `${this.baseUrl}/address/${address}${args}`;
   return request.get(url, {
     json: true
   });
-}
+};
 
 Client.prototype.getCoins = async function (params) {
   const { payload, pubKey, includeSpent } = params;
@@ -59,8 +59,16 @@ Client.prototype.getCoins = async function (params) {
   });
 };
 
+Client.prototype.getFee = async function (params) {
+  const { target } = params;
+  const url = `${this.baseUrl}/fee/${target}`;
+  return request.get(url, {
+    json: true
+  });
+}
+
 Client.prototype.importAddresses = async function(params) {
-  const {  payload, pubKey } = params;
+  const { payload, pubKey } = params;
   const url = `${this.baseUrl}/wallet/${pubKey}`;
   const signature = this.sign({ method: 'POST', url, payload});
 

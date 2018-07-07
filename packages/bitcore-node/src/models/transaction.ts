@@ -7,7 +7,8 @@ import { LoggifyClass } from '../decorators/Loggify';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { BaseModel } from './base';
 import logger from '../logger';
-const config = require('../config');
+import config from '../config';
+
 const Chain = require('../chain');
 
 export type ITransaction = {
@@ -42,6 +43,7 @@ export class Transaction extends BaseModel<ITransaction> {
   async batchImport(params: {
     txs: Array<Bitcoin.Transaction>;
     height: number;
+    mempoolTime?: Date;
     blockTime?: Date;
     blockHash?: string;
     blockTimeNormalized?: Date;
@@ -53,7 +55,7 @@ export class Transaction extends BaseModel<ITransaction> {
     let mintOps = await this.getMintOps(params);
     logger.debug('Minting Coins', mintOps.length);
     if (mintOps.length) {
-      mintOps = partition(mintOps, 100);
+      mintOps = partition(mintOps, mintOps.length / config.maxPoolSize);
       mintOps = mintOps.map((mintBatch: Array<any>) => CoinModel.collection.bulkWrite(mintBatch, { ordered: false }));
       await Promise.all(mintOps);
     }
@@ -61,7 +63,7 @@ export class Transaction extends BaseModel<ITransaction> {
     let spendOps = this.getSpendOps(params);
     logger.debug('Spending Coins', spendOps.length);
     if (spendOps.length) {
-      spendOps = partition(spendOps, 100);
+      spendOps = partition(spendOps, spendOps.length / config.maxPoolSize);
       spendOps = spendOps.map((spendBatch: Array<any>) =>
         CoinModel.collection.bulkWrite(spendBatch, { ordered: false })
       );
@@ -70,7 +72,7 @@ export class Transaction extends BaseModel<ITransaction> {
 
     let txOps = await this.addTransactions(params);
     logger.debug('Writing Transactions', txOps.length);
-    const txBatches = partition(txOps, 100);
+    const txBatches = partition(txOps, txOps.length / config.maxPoolSize);
     const txs = txBatches.map((txBatch: Array<any>) => this.collection.bulkWrite(txBatch, { ordered: false }));
     await Promise.all(txs);
   }
@@ -153,7 +155,7 @@ export class Transaction extends BaseModel<ITransaction> {
     let mintOps = new Array<any>();
     let parentChainCoins = new Array<ICoin>();
     if (parentChain && forkHeight && height < forkHeight) {
-      parentChainCoins = await CoinModel.find({
+      parentChainCoins = await CoinModel.collection.find({
         chain: parentChain,
         network,
         mintHeight: height,

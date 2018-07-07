@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { WalletModel, IWallet } from '../../../src/models/wallet';
 import { WalletAddressModel } from '../../../src/models/walletAddress';
+import { mockCollection } from "../../helpers/index.js";
 
 describe('Wallet Model', function () {
 
@@ -47,7 +48,7 @@ describe('Wallet Model', function () {
       sandbox.restore();
     });
     it('should call wallet address model update coins', async () => {
-      sandbox.stub(WalletAddressModel, 'find').returns([]);
+      Object.assign(WalletAddressModel.collection, mockCollection([]))
       let walletAddressModelSpy = sandbox.stub(WalletAddressModel, 'updateCoins').returns({
         wallet: sandbox.stub().returnsThis(),
         addresses: sandbox.stub().returnsThis()

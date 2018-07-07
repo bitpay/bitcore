@@ -1,32 +1,28 @@
 import { expect } from 'chai';
-import { Subject } from 'rxjs';
 import { Bitcoin } from '../../../../src/types/namespaces/Bitcoin';
 import { TEST_BLOCK } from '../../../data/test-block';
 import { TEST_TX } from '../../../data/test-tx';
 import { sleep } from '../../../../src/utils/async';
 import { EventEmitter } from 'events';
 import { P2pRunner, StandardP2p } from '../../../../src/services/p2p';
-import { IBlock, Block } from "../../../../src/models/block";
-import { Transaction } from "../../../../src/models/transaction";
+import { IBlock, Block } from '../../../../src/models/block';
+import { Transaction } from '../../../../src/models/transaction';
 
 describe('P2P Service', () => {
   it('should write blocks from p2p', done => {
-    const blocks: Subject<BlockEvent> = new Subject();
+    const blocks = new EventEmitter();
     const TransactionModel = mockTransactionModel();
     const FakeBlockModel = mockBlockModel({
-      addBlock: async (params) => {
+      addBlock: async params => {
         expect(params.block).to.deep.equal(TEST_BLOCK);
         done();
         return undefined as any;
       }
     });
     const Fakeblock = mockP2p({
-      blocks: () => blocks,
+      stream: blocks,
       start: async () => {
-        blocks.next({
-          block: TEST_BLOCK,
-          transactions: TEST_BLOCK.transactions,
-        });
+        blocks.emit('block', TEST_BLOCK);
       }
     });
 
@@ -34,20 +30,20 @@ describe('P2P Service', () => {
   });
 
   it('should write transactions from p2p', done => {
-    const transactions: Subject<Bitcoin.Transaction> = new Subject();
+    const transactions = new EventEmitter();
     const FakeBlockModel = mockBlockModel();
     const TransactionModel = mockTransactionModel({
-      batchImport: async (params) => {
+      batchImport: async params => {
         expect(params.txs[0]).to.deep.equal(TEST_TX);
         expect(params.txs.length).to.equal(1);
         done();
-      },
+      }
     });
     const Fakeblock = mockP2p({
-      transactions: () => transactions,
+      stream: transactions,
       start: async () => {
-        transactions.next(TEST_TX);
-      },
+        transactions.emit('tx', TEST_TX);
+      }
     });
 
     new P2pRunner('GOB', 'p-hound', FakeBlockModel, TransactionModel, Fakeblock).start();
@@ -56,39 +52,45 @@ describe('P2P Service', () => {
   it('should sync blocks in order', done => {
     const db: string[] = [];
 
-    const blocks: Subject<BlockEvent> = new Subject();
+    const blocks = new EventEmitter();
     const TransactionModel = mockTransactionModel();
-    const blockHashes = TEST_BLOCKS;
-    const lastIndex = blockHashes.length-1;
+    const blockHashes = Array(100)
+      .fill(0)
+      .map((_, i) => `${i + 1}`);
     const FakeBlockModel = mockBlockModel({
-      addBlock: async (params) => {
+      addBlock: async params => {
         const idx = parseInt(params.block.hash);
         // simulate db taking a long time to write data
-        await sleep((100 - idx)/2);
+        await sleep((100 - idx) / 2);
         db.push(idx.toString());
         if (idx === 100) {
-          expect(db[lastIndex]).to.deep.equal(blockHashes[lastIndex].hash);
+          expect(db).to.deep.equal(blockHashes);
           done();
         }
         return undefined as any;
       },
       getLocalTip: async () => {
         return { height: db.length } as IBlock;
-      },
+      }
     });
 
+    let counter = 1;
     const FakeP2p = mockP2p({
-      blocks: () => blocks,
+      stream: blocks,
       height: () => 100,
-      getMissingBlockHashes: async() => blockHashes,
-      getBlock: async(i) => {
+      getMissingBlockHashes: async () => {
+        if (counter === 1) {
+          counter++;
+          return blockHashes;
+        } else {
+          return [];
+        }
+      },
+      getBlock: async i => {
         const block = JSON.parse(JSON.stringify(TEST_BLOCK));
         block.hash = i.toString();
         return block;
-      },
-      sync: async () => {
-        return "100";
-      },
+      }
     });
 
     new P2pRunner('GOB', 'p-hound', FakeBlockModel, TransactionModel, FakeP2p).start();
@@ -98,18 +100,14 @@ describe('P2P Service', () => {
     let poolHeight = 50;
     const db: string[] = [];
 
-    const blockHashes = TEST_BLOCKS;
-    const hashes = blockHashes.map(b => b.hash);
-    const first50 = blockHashes.slice(0, 50);
-    const last50 = blockHashes.slice(50, 100);
-    const blocks: Subject<BlockEvent> = new Subject();
+    const hashes = Array(100)
+      .fill(0)
+      .map((_, i) => `${i + 1}`);
     const TransactionModel = mockTransactionModel();
     const FakeBlockModel = mockBlockModel({
-      addBlock: async (params) => {
+      addBlock: async params => {
+        await sleep(10);
         db.push(params.block.hash);
-        if(db.length === 50) {
-          poolHeight = 100
-        }
         if (db.length === 100) {
           expect(db).to.deep.equal(hashes);
           done();
@@ -118,109 +116,113 @@ describe('P2P Service', () => {
       },
       getLocalTip: async () => {
         return { height: db.length } as IBlock;
-      },
+      }
     });
-    const Fakeblock = mockP2p({
-      blocks: () => blocks,
-      height: () => {
-        return poolHeight;
+
+    let counter = 1;
+    const FakeP2p = mockP2p({
+      height: () => poolHeight,
+      getMissingBlockHashes: async () => {
+        if (counter == 1) {
+          counter++;
+          return hashes.slice(0, 50);
+        } else if (counter == 2) {
+          counter++;
+          poolHeight = 100;
+          return hashes.slice(50, 100);
+        } else {
+          return [];
+        }
       },
-      getMissingBlockHashes: async() => poolHeight > 50 ? last50: first50,
-      getBlock: async(i) => {
+      getBlock: async i => {
         const block = JSON.parse(JSON.stringify(TEST_BLOCK));
         block.hash = i.toString();
         return block;
       },
-      sync: async () => {
-        return poolHeight.toString();
-      },
+      start: async () => {}
     });
 
-    new P2pRunner('GOB', 'p-hound', FakeBlockModel, TransactionModel, Fakeblock).start();
+    new P2pRunner('GOB', 'p-hound', FakeBlockModel, TransactionModel, FakeP2p).start();
   });
 
   it('should recognize the end of a slow call to sync', done => {
     const events = new EventEmitter();
     const db: Bitcoin.Block[] = [];
-    const blocks: Subject<BlockEvent> = new Subject();
+    const blocks = new EventEmitter();
     const TransactionModel = mockTransactionModel();
     const FakeBlockModel = mockBlockModel({
-      addBlock: async (params) => {
+      addBlock: async params => {
         db.push(params.block);
         return undefined as any;
       },
       getLocalTip: async () => {
         return { height: db.length } as IBlock;
-      },
+      }
     });
-    const Fakeblock = Object.assign({
-      set syncing(dosync) {
-        if (dosync === false && db.length > 0) {
-          expect(db).to.deep.equal([TEST_BLOCK]);
-          done();
+    const Fakeblock = Object.assign(
+      {
+        set syncing(dosync) {
+          if (dosync === false && db.length > 0) {
+            expect(db).to.deep.equal([TEST_BLOCK]);
+            done();
+          }
+        },
+        get syncing() {
+          return true;
         }
       },
-      get syncing() {
-        return true;
-      }
-    }, mockP2p({
-      blocks: () => blocks,
-      start: async () => {
-        blocks.next({
-          block: TEST_BLOCK,
-          transactions: TEST_BLOCK.transactions,
-        });
-        await sleep(100);
-        events.emit('sent-block', {});
-      },
-      height: () => 1,
-      sync: () => new Promise(resolve => {
-        events.on('sent-block', () => {
-          resolve(TEST_BLOCK.hash);
-        });
-      }),
-    }));
+      mockP2p({
+        stream: blocks,
+        start: async () => {
+          blocks.emit('block', TEST_BLOCK);
+          await sleep(100);
+          events.emit('sent-block', {});
+        },
+        height: () => 1
+      })
+    );
 
     new P2pRunner('GOB', 'p-hound', FakeBlockModel, TransactionModel, Fakeblock).start();
   });
 });
 
 function mockP2p(extra?: Partial<StandardP2p>): StandardP2p {
-  return Object.assign({
-    blocks: () => new Subject(),
-    transactions: () => new Subject(),
-    start: async () => {},
-    sync: async () => undefined,
-    height: () => 0,
-    parent: () => undefined,
-    stop: async () => {},
-    syncing: false,
-    getMissingBlockHashes: () => Promise.resolve([]),
-    getBlock: (i) => Promise.resolve(i)
-  }, extra? extra : {});
+  return Object.assign(
+    {
+      stream: new EventEmitter(),
+      start: async () => {},
+      height: () => 0,
+      parent: () => undefined,
+      stop: async () => {},
+      syncing: false,
+      getMissingBlockHashes: () => Promise.resolve([]),
+      getBlock: i => Promise.resolve(i)
+    },
+    extra ? extra : {}
+  );
 }
 
 function mockTransactionModel(extra?: Partial<Transaction>): Transaction {
-  return Object.assign({
-    batchImport: async () => {},
-  } as any as Transaction, extra? extra : {});
+  return Object.assign(
+    ({
+      batchImport: async () => {}
+    } as any) as Transaction,
+    extra ? extra : {}
+  );
 }
 
-function mockBlockModel(extra?: Partial<Block>): Block{
-  return Object.assign({
-    handleReorg: async () => {},
-    addBlock: async () => {},
-    getLocalTip: async () => {
-      return {
-        height: 0,
-      } as IBlock;
-    },
-    getLocatorHashes: async () => [],
-  } as any as Block, extra? extra : {});
+function mockBlockModel(extra?: Partial<Block>): Block {
+  return Object.assign(
+    ({
+      handleReorg: async () => {},
+      addBlock: async () => {},
+      getLocalTip: async () => {
+        return {
+          height: 0
+        } as IBlock;
+      },
+      getLocatorHashes: async () => []
+    } as any) as Block,
+    extra ? extra : {}
+  );
 }
-
-const TEST_BLOCKS = Array(100).fill(0).map((_, i) => ({hash: (i + 1).toString()}));
-type BlockEvent = {
-  block: Bitcoin.Block,
-  transactions: Bitcoin.Transaction[]
-};

@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
 import 'rxjs/add/operator/map';
+import { DefaultProvider } from '../../providers/default/default';
+import { CurrencyProvider } from '../../providers/currency/currency';
 
 /*
   Generated class for the ApiProvider provider.
@@ -10,12 +12,12 @@ import 'rxjs/add/operator/map';
 */
 @Injectable()
 export class ApiProvider {
-
   public apiPrefix: string;
 
-  constructor(public http: Http) {
-    // TODO Make this an API call
-    this.apiPrefix = '/api/';
+  constructor(public http: Http, private defaults: DefaultProvider, public currency: CurrencyProvider) {
+    const prefix: string = defaults.getDefault('%API_PREFIX%');
+    const chain: string = this.currency.selectedCurrency.toUpperCase();
+    const network: string = this.defaults.getDefault('%NETWORK%');
+    this.apiPrefix = `${prefix}/${chain}/${network}`;
   }
-
 }

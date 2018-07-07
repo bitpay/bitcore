@@ -4,7 +4,7 @@ import { TransformableModel } from "../types/TransformableModel";
 import logger from '../logger';
 import config from '../config';
 import { LoggifyClass } from "../decorators/Loggify";
-import { MongoClient, Db } from "mongodb";
+import { MongoClient, Db, FindOneOptions } from "mongodb";
 import "../models"
 
 @LoggifyClass
@@ -51,35 +51,36 @@ export class StorageService {
 
   stop() {}
 
-  apiStreamingFind(
-    model: TransformableModel<any>,
+  apiStreamingFind<T>(
+    model: TransformableModel<T>,
     query: any,
+    options: FindOneOptions,
     res: Response
   ) {
-
-    let cursor = model.find(query).stream({
+    options.limit = Math.min(options.limit || 100, 1000);
+    let cursor = model.collection.find(query, options).stream({
       transform: model._apiTransform
     });
-    cursor.on("error", function(err) {
+    cursor.on('error', function(err) {
       return res.status(500).end(err.message);
     });
     let isFirst = true;
-    res.type("json");
-    cursor.on("data", function(data) {
+    res.type('json');
+    cursor.on('data', function(data) {
       if (isFirst) {
-        res.write("[\n");
+        res.write('[\n');
         isFirst = false;
       } else {
-        res.write(",\n");
+        res.write(',\n');
       }
       res.write(data);
     });
-    cursor.on("end", function() {
+    cursor.on('end', function() {
       if (isFirst) {
         // there was no data
-        res.write("[]");
+        res.write('[]');
       } else {
-        res.write("]");
+        res.write(']');
       }
       res.end();
     });

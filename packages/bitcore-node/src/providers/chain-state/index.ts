@@ -72,6 +72,10 @@ class ChainStateProxy implements CSP.ChainStateProvider {
     return this.get(params).getWalletBalance(params);
   }
 
+  async getFee(params: CSP.GetEstimateSmartFeeParams) {
+    return this.get(params).getFee(params);
+  }
+
   streamWalletUtxos(params: CSP.StreamWalletUtxosParams) {
     return this.get(params).streamWalletUtxos(params);
   }
@@ -83,5 +87,9 @@ class ChainStateProxy implements CSP.ChainStateProvider {
   registerService(currency: string, service: CSP.IChainStateService){
     services[currency] = service;
   };
+
+  async getCoinsForTx(params: {chain: string; network: string, txid: string }) {
+    return this.get(params).getCoinsForTx(params);
+  }
 }
 export let ChainStateProvider = new ChainStateProxy();

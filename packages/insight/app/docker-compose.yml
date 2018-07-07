@@ -1,0 +1,30 @@
+version: '2'
+
+services:
+  insight-ui-btc:
+    container_name: insight-ui-btc-${ENV}
+    build:
+      context: .
+      dockerfile: .docker/docker-insight.dockerfile
+    ports:
+      - "4447:8100"
+    env_file:
+      - ./.docker/env/btc.${ENV}.env
+    networks:
+      - insight-network
+
+  insight-ui-bch:
+    container_name: insight-ui-bch-${ENV}
+    build:
+      context: .
+      dockerfile: .docker/docker-insight.dockerfile
+    ports:
+      - "4448:8100"
+    env_file:
+      - ./.docker/env/bch.${ENV}.env
+    networks:
+      - insight-network
+
+networks:
+  insight-network:
+    driver: bridge
