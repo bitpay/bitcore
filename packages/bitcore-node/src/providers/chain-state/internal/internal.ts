@@ -1,4 +1,3 @@
-import { Response } from 'express';
 import { CoinModel } from '../../../models/coin';
 import { BlockModel } from '../../../models/block';
 import { WalletModel, IWallet } from '../../../models/wallet';
@@ -12,9 +11,6 @@ import config from '../../../config';
 import { TransactionModel } from '../../../models/transaction';
 
 const ListTransactionsStream = require('./transforms');
-
-type StreamWalletUtxoArgs = { includeSpent: 'true' | undefined };
-type StreamWalletUtxoParams = { wallet: IWallet; limit: Number, args: Partial<StreamWalletUtxoArgs>; stream: Response };
 
 @LoggifyClass
 export class InternalStateProvider implements CSP.IChainStateService {
@@ -214,7 +210,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return CoinModel.getBalance({ query });
   }
 
-  streamWalletUtxos(params: StreamWalletUtxoParams) {
+  streamWalletUtxos(params: CSP.StreamWalletUtxosParams) {
     const { wallet, limit, args = {}, stream } = params;
     let query: any = { wallets: wallet._id };
     if (args.includeSpent !== 'true') {
