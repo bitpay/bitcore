@@ -12,10 +12,17 @@ var transactionVector = require('../data/tx_creation');
 
 
 describe('MerkleBlock', function() {
-  var blockhex  = data.HEX[0];
-  var blockbuf  = new Buffer(blockhex,'hex');
-  var blockJSON = JSON.stringify(data.JSON[0]);
-  var blockObject = JSON.parse(JSON.stringify(data.JSON[0]));
+  var blockhex;
+  var blockbuf;
+  var blockJSON;
+  var blockObject;
+
+  before(function() {
+    blockhex  = data.HEX[0];
+    blockbuf  = new Buffer(blockhex,'hex');
+    blockJSON = JSON.stringify(data.JSON[0]);
+    blockObject = JSON.parse(JSON.stringify(data.JSON[0]));
+  });
 
   describe('#constructor', function() {
     it('should make a new merkleblock from buffer', function() {
@@ -155,7 +162,7 @@ describe('MerkleBlock', function() {
   describe('#filterdTxsHash', function() {
 
     it('should validate good merkleblocks', function() {
-      var hashOfFilteredTx = '6f64fd5aa9dd01f74c03656d376625cf80328d83d9afebe60cc68b8f0e245bd9' 
+      var hashOfFilteredTx = '6f64fd5aa9dd01f74c03656d376625cf80328d83d9afebe60cc68b8f0e245bd9'
       var b = MerkleBlock(data.JSON[3]);
       b.filterdTxsHash()[0].should.equal(hashOfFilteredTx);
     });
@@ -227,4 +234,3 @@ describe('MerkleBlock', function() {
   });
 
 });
-
