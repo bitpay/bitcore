@@ -4,7 +4,7 @@ import { TransformableModel } from "../types/TransformableModel";
 import logger from '../logger';
 import config from '../config';
 import { LoggifyClass } from "../decorators/Loggify";
-import { MongoClient, Db } from "mongodb";
+import { MongoClient, Db, FindOneOptions } from "mongodb";
 import "../models"
 
 @LoggifyClass
@@ -51,14 +51,14 @@ export class StorageService {
 
   stop() {}
 
-  apiStreamingFind(
-    model: TransformableModel<any>,
+  apiStreamingFind<T>(
+    model: TransformableModel<T>,
     query: any,
-    options: any,
+    options: FindOneOptions,
     res: Response
   ) {
     options.limit = Math.min(options.limit || 100, 1000);
-    let cursor = model.find(query, options).stream({
+    let cursor = model.collection.find(query, options).stream({
       transform: model._apiTransform
     });
     cursor.on('error', function(err) {

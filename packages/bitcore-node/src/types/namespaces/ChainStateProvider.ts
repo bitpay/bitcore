@@ -53,7 +53,7 @@ export declare namespace CSP {
   export type StreamAddressUtxosParams = ChainNetwork & {
     address: string;
     stream: Response;
-    limit: Number;
+    limit: number;
     args: StreamAddressUtxosArgs;
   };
   export type StreamTransactionsParams = ChainNetwork & {
@@ -67,7 +67,7 @@ export declare namespace CSP {
   export type StreamWalletAddressesParams = ChainNetwork & {
     walletId: IWallet;
     stream: Response;
-    limit: Number;
+    limit: number;
   };
   export type StreamWalletTransactionsParams = ChainNetwork & {
     wallet: IWallet;
@@ -77,7 +77,7 @@ export declare namespace CSP {
   export type StreamWalletUtxosArgs = { includeSpent: 'true' | undefined };
   export type StreamWalletUtxosParams = ChainNetwork & {
     wallet: IWallet;
-    limit: Number;
+    limit: number;
     args: Partial<StreamWalletUtxosArgs>;
     stream: Response;
   };

@@ -82,11 +82,11 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
           return CoinModel.collection.bulkWrite(coinUpdateBatch, { ordered: false });
         })
       );
-      let coinCursor = CoinModel.find({ wallets: wallet._id }).project({ spentTxid: 1, mintTxid: 1 });
+      let coinCursor = CoinModel.collection.find({ wallets: wallet._id }).project({ spentTxid: 1, mintTxid: 1 });
 
       coinCursor.on('data', function(data: ICoin) {
         coinCursor.pause();
-        TransactionModel.update(
+        TransactionModel.collection.update(
           { chain, network, txid: { $in: [data.spentTxid, data.mintTxid] } },
           { $addToSet: { wallets: wallet._id } },
           { multi: true },

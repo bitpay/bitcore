@@ -155,7 +155,7 @@ export class Transaction extends BaseModel<ITransaction> {
     let mintOps = new Array<any>();
     let parentChainCoins = new Array<ICoin>();
     if (parentChain && forkHeight && height < forkHeight) {
-      parentChainCoins = await CoinModel.find({
+      parentChainCoins = await CoinModel.collection.find({
         chain: parentChain,
         network,
         mintHeight: height,
