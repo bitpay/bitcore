@@ -58,7 +58,7 @@ export class StorageService {
     res: Response
   ) {
     options.limit = Math.min(options.limit || 100, 1000);
-    let cursor = model.find(query, options).stream({
+    let cursor = model.collection.find(query, options).stream({
       transform: model._apiTransform
     });
     cursor.on('error', function(err) {
