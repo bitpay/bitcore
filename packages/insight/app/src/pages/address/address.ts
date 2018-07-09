@@ -52,7 +52,7 @@ export class AddressPage {
           totalReceived,
           totalSent,
           balance,
-          txApperances: apiCoin.length
+          txAppearances: apiCoin.length
         };
         this.transactions = apiCoin;
         this.loading = false;
