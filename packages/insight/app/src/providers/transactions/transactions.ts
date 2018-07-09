@@ -41,6 +41,7 @@ export type ApiInput = {
   vout: number;
   address: string;
   script: string;
+  spentTxid: string;
   value: number;
 };
 
