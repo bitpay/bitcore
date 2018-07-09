@@ -14,8 +14,8 @@ export type IBlock = {
   hash: string;
   version: number;
   merkleRoot: string;
-  time: number;
-  timeNormalized: number;
+  time: Date;
+  timeNormalized: Date;
   nonce: number;
   previousBlockHash: string;
   nextBlockHash: string;
@@ -55,8 +55,8 @@ export class Block extends BaseModel<IBlock> {
     const previousBlock = await this.collection.findOne({ hash: header.prevHash, chain, network });
 
     const blockTimeNormalized = (() => {
-      if (previousBlock && blockTime <= previousBlock.timeNormalized) {
-        return previousBlock.timeNormalized + 1;
+      if (previousBlock && blockTime <= previousBlock.timeNormalized.getTime()) {
+        return previousBlock.timeNormalized.getTime() + 1;
       } else {
         return blockTime;
       }

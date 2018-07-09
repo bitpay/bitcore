@@ -31,7 +31,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   streamAddressUtxos(params: CSP.StreamAddressUtxosParams) {
-    const { network, address, limit=10, stream, args } = params;
+    const { network, address, limit = 10, stream, args } = params;
     if (typeof address !== 'string' || !this.chain || !network) {
       throw 'Missing required param';
     }
@@ -56,9 +56,24 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return CoinModel.getBalance({ query });
   }
 
-  async getBlocks(params: CSP.GetBlocksParams) {
-    const { network, sinceBlock, stream, args } = params;
-    let { limit=10, startDate, endDate, date } = args;
+  streamBlocks(params: CSP.StreamBlocksParams) {
+    const { stream, args } = params;
+    const { limit = 10 } = args;
+    const query = this.getBlocksQuery(params);
+    Storage.apiStreamingFind(BlockModel, query, { limit, sort: { height: -1 } }, stream);
+  }
+
+  async getBlocks(params: CSP.StreamBlocksParams) {
+    const { args = {} } = params;
+    const { limit = 10 } = args;
+    const query = this.getBlocksQuery(params);
+    let blocks = await BlockModel.collection.find(query, { limit, sort: { height: -1 } }).toArray();
+    return blocks.map(block => BlockModel._apiTransform(block, { object: true }));
+  }
+
+  private getBlocksQuery(params: CSP.StreamBlocksParams) {
+    const { network, sinceBlock, blockId, args = {}} = params;
+    let { startDate, endDate, date } = args;
     if (!this.chain || !network) {
       throw 'Missing required param';
     }
@@ -67,6 +82,17 @@ export class InternalStateProvider implements CSP.IChainStateService {
       network: network.toLowerCase(),
       processed: true
     };
+    if (blockId) {
+      if (blockId.length === 64) {
+        query.hash = blockId;
+      } else {
+        let height = parseInt(blockId, 10);
+        if (Number.isNaN(height) || height.toString(10) !== blockId) {
+          throw 'invalid block id provided';
+        }
+        query.height = height;
+      }
+    }
     if (sinceBlock) {
       let height = Number(sinceBlock);
       if (Number.isNaN(height) || height.toString(10) !== sinceBlock) {
@@ -80,44 +106,23 @@ export class InternalStateProvider implements CSP.IChainStateService {
     if (endDate) {
       Object.assign(query.time, { ...query.time, $lt: new Date(endDate) });
     }
-    if(date) {
+    if (date) {
       let firstDate = new Date(date);
       let nextDate = new Date(date);
       nextDate.setDate(nextDate.getDate() + 1);
-      query.time = { $gt: firstDate, $lt: nextDate};
+      query.time = { $gt: firstDate, $lt: nextDate };
     }
-    Storage.apiStreamingFind(BlockModel, query, { limit, sort: {height: -1} }, stream);
+    return query;
   }
 
-  async getBlock(params: CSP.GetBlockParams) {
-    const { network, blockId } = params;
-    if (typeof blockId !== 'string' || !this.chain || !network) {
-      throw 'Missing required param';
-    }
-    let query: any = {
-      chain: this.chain,
-      network: network.toLowerCase(),
-      processed: true
-    };
-    if (blockId.length === 64) {
-      query.hash = blockId;
-    } else {
-      let height = parseInt(blockId, 10);
-      if (Number.isNaN(height) || height.toString(10) !== blockId) {
-        throw 'invalid block id provided';
-      }
-      query.height = height;
-    }
-    let block = await BlockModel.collection.findOne(query);
-    if (!block) {
-      throw 'block not found';
-    }
-    return BlockModel._apiTransform(block, { object: true });
+  async getBlock(params: CSP.StreamBlocksParams) {
+    let blocks = await this.getBlocks(params);
+    return blocks[0];
   }
 
   streamTransactions(params: CSP.StreamTransactionsParams) {
     const { network, stream, args } = params;
-    let { limit=100, blockHash, blockHeight } = args;
+    let { limit = 100, blockHash, blockHeight } = args;
     if (!this.chain || !network) {
       throw 'Missing chain or network';
     }
@@ -167,7 +172,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   streamWalletAddresses(params: CSP.StreamWalletAddressesParams) {
-    let { walletId, limit=1000, stream } = params;
+    let { walletId, limit = 1000, stream } = params;
     let query = { wallet: walletId };
     Storage.apiStreamingFind(WalletAddressModel, query, { limit }, stream);
   }
@@ -221,7 +226,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async getFee(params: CSP.GetEstimateSmartFeeParams) {
     const { network, target } = params;
-    return this.getRPC(network).getEstimateSmartFee(Number(target))
+    return this.getRPC(network).getEstimateSmartFee(Number(target));
   }
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
