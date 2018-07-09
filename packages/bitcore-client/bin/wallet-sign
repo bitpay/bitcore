@@ -21,9 +21,9 @@ const main = async () => {
     let signedTx = await wallet.signTx({ tx });
 
     console.log(
-      JSON.stringify(Object.assign({}, {
+      JSON.stringify({
         signedTx: signedTx.uncheckedSerialize()
-      }))
+      })
     );
   } catch (e) {
     console.error(e);

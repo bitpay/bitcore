@@ -47,9 +47,9 @@ const main = async () => {
     const tx = await wallet.newTx(params);
 
     console.log(
-      JSON.stringify(Object.assign({}, {
+      JSON.stringify({
         rawTx: tx.uncheckedSerialize()
-      }))
+      })
     );
   } catch (e) {
     console.error(e);

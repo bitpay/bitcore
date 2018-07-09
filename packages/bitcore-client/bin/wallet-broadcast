@@ -19,9 +19,9 @@ const main = async () => {
 
     console.log('Transaction broadcasted');
     console.log(
-      JSON.stringify(Object.assign({}, {
+      JSON.stringify({
         txid: transaction.txid
-      }))
+      })
     );
   } catch (e) {
     console.error(e);
