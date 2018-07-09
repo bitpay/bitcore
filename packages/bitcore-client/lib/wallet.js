@@ -11,7 +11,7 @@ class Wallet {
     if (!this.masterKey) {
       return new Wallet(this.create(params));
     }
-    this.baseUrl = this.baseUrl || `http://127.0.0.1:3000/api/${this.chain}/${this.network}`;
+    this.baseUrl = this.baseUrl || `https://api.bitcore.io/api/${this.chain}/${this.network}`;
     this.client = new Client({
       baseUrl: this.baseUrl,
       authKey: this.getAuthSigningKey()
