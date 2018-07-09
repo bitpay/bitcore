@@ -4,13 +4,14 @@ import 'rxjs/add/operator/map';
 import { ApiProvider } from '../../providers/api/api';
 import { Observable } from 'rxjs/Observable';
 import { CurrencyProvider } from '../../providers/currency/currency';
+import { ApiBlock } from '../blocks/blocks';
 
 /*
   Generated class for the TxsProvider provider.
 
   See https://angular.io/docs/ts/latest/guide/dependency-injection.html
   for more info on providers and Angular DI.
-*/
+ */
 
 type CoinsApiResponse = { inputs: ApiInput[]; outputs: ApiInput[] };
 export type ApiTx = {
@@ -109,12 +110,12 @@ export class TxsProvider {
     return fee;
   }
 
-  public toAppTx(tx: ApiTx): AppTx {
+  public toAppTx(tx: ApiTx, bestHeight: number): AppTx {
     return {
       txid: tx.txid,
       fee: null, // calculated later, when coins are retrieved
       blockheight: tx.blockHeight,
-      confirmations: 0,
+      confirmations: bestHeight - tx.blockHeight,
       blockhash: tx.blockHash,
       blocktime: new Date(tx.blockTime).getTime() / 1000,
       time: new Date(tx.blockTime).getTime() / 1000,
@@ -128,25 +129,36 @@ export class TxsProvider {
     };
   }
 
+  public getCurrentHeight(): Observable<number> {
+    let heightUrl: string = this.api.apiPrefix + '/block/tip';
+    return this.http.get(heightUrl).map(blockResp => {
+      const block: ApiBlock = blockResp.json();
+      return block.height;
+    });
+  }
   public getTxs(args?: { blockHash?: string }): Observable<{ txs: Array<AppTx> }> {
     let queryString: string = '';
     if (args.blockHash) {
       queryString += `?blockHash=${args.blockHash}`;
     }
     let url: string = this.api.apiPrefix + '/tx' + queryString;
-    return this.http.get(url).map(data => {
-      let txs: Array<ApiTx> = data.json();
-      let appTxs: Array<AppTx> = txs.map(this.toAppTx);
-      return { txs: appTxs };
+    return this.getCurrentHeight().flatMap(height => {
+      return this.http.get(url).map(data => {
+        let txs: Array<ApiTx> = data.json();
+        let appTxs: Array<AppTx> = txs.map(tx => this.toAppTx(tx, height));
+        return { txs: appTxs };
+      });
     });
   }
 
   public getTx(hash: string): Observable<{ tx: AppTx }> {
     let url: string = this.api.apiPrefix + '/tx/' + hash;
-    return this.http.get(url).flatMap(async data => {
-      let apiTx: ApiTx = data.json()[0];
-      let appTx: AppTx = this.toAppTx(apiTx);
-      return { tx: appTx };
+    return this.getCurrentHeight().flatMap(height => {
+      return this.http.get(url).flatMap(async data => {
+        let apiTx: ApiTx = data.json()[0];
+        let appTx: AppTx = this.toAppTx(apiTx, height);
+        return { tx: appTx };
+      });
     });
   }
 

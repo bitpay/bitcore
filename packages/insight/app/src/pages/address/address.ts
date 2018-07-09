@@ -42,11 +42,9 @@ export class AddressPage {
         let apiCoin: ApiInput[] = data.json() as ApiInput[];
         let add: (prev: number, cur: number) => number = (prev, cur) => prev + cur;
         let sentCoin: ApiInput[] = apiCoin.filter(coin => coin.spentTxid);
-        let unspentCoin: ApiInput[] = apiCoin.filter(coin => !coin.spentTxid);
         let totalReceived: number = apiCoin.map(c => c.value).reduce(add, 0);
         let totalSent: number = sentCoin.map(c => c.value).reduce(add, 0);
         let balance: number = totalReceived - totalSent;
-        console.log(apiCoin);
         this.address = {
           addrStr: this.addrStr,
           totalReceived,
