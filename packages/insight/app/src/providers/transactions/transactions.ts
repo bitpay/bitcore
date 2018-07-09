@@ -4,7 +4,7 @@ import 'rxjs/add/operator/map';
 import { ApiProvider } from '../../providers/api/api';
 import { Observable } from 'rxjs/Observable';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { ApiBlock } from '../blocks/blocks';
+import { ApiBlock, BlocksProvider } from '../blocks/blocks';
 
 /*
   Generated class for the TxsProvider provider.
@@ -100,7 +100,7 @@ export type AppTx = {
 
 @Injectable()
 export class TxsProvider {
-  constructor(public http: Http, private api: ApiProvider, public currency: CurrencyProvider) {}
+  constructor(public http: Http, private api: ApiProvider, public currency: CurrencyProvider, public blocks: BlocksProvider) {}
 
   public getFee(tx: AppTx): number {
     const sumSatoshis: any = (arr: any): number => arr.reduce((prev, cur) => prev + cur.value, 0);
@@ -129,20 +129,13 @@ export class TxsProvider {
     };
   }
 
-  public getCurrentHeight(): Observable<number> {
-    let heightUrl: string = this.api.apiPrefix + '/block/tip';
-    return this.http.get(heightUrl).map(blockResp => {
-      const block: ApiBlock = blockResp.json();
-      return block.height;
-    });
-  }
   public getTxs(args?: { blockHash?: string }): Observable<{ txs: Array<AppTx> }> {
     let queryString: string = '';
     if (args.blockHash) {
       queryString += `?blockHash=${args.blockHash}`;
     }
     let url: string = this.api.apiPrefix + '/tx' + queryString;
-    return this.getCurrentHeight().flatMap(height => {
+    return this.blocks.getCurrentHeight().flatMap(height => {
       return this.http.get(url).map(data => {
         let txs: Array<ApiTx> = data.json();
         let appTxs: Array<AppTx> = txs.map(tx => this.toAppTx(tx, height));
@@ -153,7 +146,7 @@ export class TxsProvider {
 
   public getTx(hash: string): Observable<{ tx: AppTx }> {
     let url: string = this.api.apiPrefix + '/tx/' + hash;
-    return this.getCurrentHeight().flatMap(height => {
+    return this.blocks.getCurrentHeight().flatMap(height => {
       return this.http.get(url).flatMap(async data => {
         let apiTx: ApiTx = data.json()[0];
         let appTx: AppTx = this.toAppTx(apiTx, height);
