@@ -47,7 +47,13 @@ export class AddressPage {
         let totalSent: number = sentCoin.map(c => c.value).reduce(add, 0);
         let balance: number = totalReceived - totalSent;
         console.log(apiCoin);
-        this.address = { addrStr: this.addrStr, totalReceived, totalSent, balance };
+        this.address = {
+          addrStr: this.addrStr,
+          totalReceived,
+          totalSent,
+          balance,
+          txApperances: apiCoin.length
+        };
         this.transactions = apiCoin;
         this.loading = false;
       },

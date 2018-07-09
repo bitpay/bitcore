@@ -9,9 +9,7 @@
 
   <div *ngIf="!loading" class="page-content">
     <h1>Address</h1>
-    <p class="ellipsis"><b>Address</b> {{ address.addrStr }}</p>
-    <p>{{ currency.getConvertedNumber(address.balance) | number:'1.0-8' }} {{ currency.currencySymbol }}</p>
-
+    <p class="ellipsis">{{ address.addrStr }}</p>
     <h2>Summary</h2>
 
     <ion-list class="list--summary">
