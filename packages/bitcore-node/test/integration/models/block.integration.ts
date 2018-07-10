@@ -20,7 +20,7 @@ describe('Block Model', function () {
         hash: '528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7',
         version: '536870912',
         merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
-        time: 1526326784,
+        time: new Date(1526326784),
         nonce: '3',
         previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
         size: 264,
@@ -34,7 +34,7 @@ describe('Block Model', function () {
         hash: '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
         version: '536870912',
         merkleRoot: '8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826',
-        time: 1526326785,
+        time: new Date(1526326785),
         nonce: '0',
         previousBlockHash: '528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7',
         size: 264,
@@ -148,7 +148,7 @@ describe('Block Model', function () {
         hash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
         version: '536870912',
         merkleRoot: '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
-        time: 1526326785,
+        time: new Date(1526326785),
         nonce: '3',
         previousBlockHash: '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
         size: 264,
@@ -162,8 +162,8 @@ describe('Block Model', function () {
         hash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9',
         version: '536870912',
         merkleRoot: 'be9a7cc27cceef8dee3cfff0754df46590b6934987fdf24bd9528ce8718978f0',
-        time: 1526326786,
-        timeNormalized: 1526326786,
+        time: new Date(1526326786),
+        timeNormalized: new Date(1526326786),
         nonce: '2',
         previousBlockHash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
         size: 264,
@@ -284,7 +284,7 @@ describe('Block Model', function () {
         hash: '528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7',
         version: '536870912',
         merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
-        time: 1526326784,
+        time: new Date(1526326784),
         nonce: '3',
         previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
         size: 264,
@@ -298,7 +298,7 @@ describe('Block Model', function () {
         hash: '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
         version: '536870912',
         merkleRoot: '8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826',
-        time: 1526326785,
+        time: new Date(1526326785),
         nonce: '0',
         previousBlockHash: '528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7',
         size: 264,
@@ -312,7 +312,7 @@ describe('Block Model', function () {
         hash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
         version: '536870912',
         merkleRoot: '8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826',
-        time: 1526326785,
+        time: new Date(1526326785),
         nonce: '3',
         previousBlockHash: '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
         size: 264,
@@ -545,7 +545,7 @@ describe('Block Model', function () {
       expect(unspentCoins[0].chain).to.equal('BTC');
       expect(unspentCoins[0].network).to.equal('regtest');
       expect(unspentCoins[0].mintTxid).to.equal('8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f'),
-      expect(unspentCoins[0].mintIndex).to.equal(0);
+        expect(unspentCoins[0].mintIndex).to.equal(0);
       expect(unspentCoins[0].mintHeight).to.equal(5);
       expect(unspentCoins[0].coinbase).to.equal(true);
       expect(unspentCoins[0].value).to.equal(500.0);

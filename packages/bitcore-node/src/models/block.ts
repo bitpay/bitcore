@@ -14,8 +14,8 @@ export type IBlock = {
   hash: string;
   version: number;
   merkleRoot: string;
-  time: number;
-  timeNormalized: number;
+  time: Date;
+  timeNormalized: Date;
   nonce: number;
   previousBlockHash: string;
   nextBlockHash: string;
@@ -55,8 +55,9 @@ export class Block extends BaseModel<IBlock> {
     const previousBlock = await this.collection.findOne({ hash: header.prevHash, chain, network });
 
     const blockTimeNormalized = (() => {
-      if (previousBlock && blockTime <= previousBlock.timeNormalized) {
-        return previousBlock.timeNormalized + 1;
+      const prevTime = previousBlock ? previousBlock.timeNormalized : null;
+      if (prevTime && blockTime <= prevTime.getTime()) {
+        return prevTime.getTime() + 1;
       } else {
         return blockTime;
       }
@@ -89,7 +90,10 @@ export class Block extends BaseModel<IBlock> {
     );
 
     if (previousBlock) {
-      await this.collection.updateOne({ chain, network, hash: previousBlock.hash }, { $set: { nextBlockHash: header.hash } });
+      await this.collection.updateOne(
+        { chain, network, hash: previousBlock.hash },
+        { $set: { nextBlockHash: header.hash } }
+      );
       logger.debug('Updating previous block.nextBlockHash ', header.hash);
     }
 
@@ -116,7 +120,8 @@ export class Block extends BaseModel<IBlock> {
 
   async getLocalTip(params: ChainNetwork) {
     const { chain, network } = params;
-    const [bestBlock] = await this.collection.find({ processed: true, chain, network })
+    const [bestBlock] = await this.collection
+      .find({ processed: true, chain, network })
       .sort({ height: -1 })
       .limit(1)
       .toArray();
@@ -125,7 +130,8 @@ export class Block extends BaseModel<IBlock> {
 
   async getLocatorHashes(params: ChainNetwork) {
     const { chain, network } = params;
-    const locatorBlocks = await this.collection.find({ processed: true, chain, network })
+    const locatorBlocks = await this.collection
+      .find({ processed: true, chain, network })
       .sort({ height: -1 })
       .limit(30)
       .toArray();
