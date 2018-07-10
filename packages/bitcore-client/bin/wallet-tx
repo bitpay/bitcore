@@ -1,35 +1,49 @@
 #!/usr/bin/env node
 
-const program = require('commander');
+const program = require('../lib/program');
 const Wallet = require('../lib/wallet');
-const promptly = require('promptly');
 
 program
   .version(require('../package.json').version)
-  .option('--path <path>', 'REQUIRED - Where wallet is stored')
+  .option('--name <name>', 'REQUIRED - Wallet Name')
   .option(
-    '--addresses <addresses>',
-    'REQUIRED - Address of receiver, or json array [{address: abc1234, satoshis: xxxxx}]'
+    '--recipients <recipients>',
+    'REQUIRED - JSON array \'[{"address": "abc1234", "amount": xxxxxx}]\''
   )
-  .option('--amount <amount>', 'REQUIRED - Value to transfer')
-  .option('--fee <fee>', 'REQUIRED - The transaction fee to pay')
   .option('--utxos <utxos>', 'REQUIRED - Unspent transactions that can be spent')
   .option('--change <change>', 'REQUIRED - Change addresses')
+  .option('--fee [fee]', 'optional - custom transaction fee to pay')
+  .option('--target [target]', 'optional - custom target block for confirmation')
+  .option('--path [path]', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
 const main = async () => {
-  const { path } = program;
+  const { name, path } = program;
   let wallet;
   try {
-    const { addresses, amount, utxos, change, fee } = program;
-    wallet = await Wallet.loadWallet({ path });
-    if (utxos) {
-      const password = await promptly.password('Wallet Password:');
-      wallet = await wallet.unlock(password);
+    const { recipients, utxos, change, fee, target } = program;
+    wallet = await Wallet.loadWallet({ name, path });
+
+    const parsedUtxos = utxos.includes('[') ? JSON.parse(utxos) : [];
+    const parsedRecipients = recipients.includes('[') ? JSON.parse(recipients) : [];
+
+    if (!parsedRecipients.length || !parsedUtxos.length) {
+      throw new Error('invalid arguments');
     }
-    let params = { addresses, amount, utxos, change, fee };
-    params.addresses = addresses.includes('[') ? JSON.parse(addresses) : addresses;
-    params.utxos = params.utxos ? JSON.parse(params.utxos) : [];
+
+    const utxoBytes = 148;
+    const outputBytes = 34;
+    const transactionHeader = 10;
+    const calculatedNetworkFeeKb = await wallet.getNetworkFee({ target });
+    const netWorkFeeSat = calculatedNetworkFeeKb.feerate * 1E8/1000;
+
+    const transactionSize = (parsedUtxos.length * utxoBytes + parsedRecipients.length * outputBytes + transactionHeader + parsedUtxos.length);
+    const totalTransactionFee = transactionSize * netWorkFeeSat;
+
+    let params = { recipients, utxos, change, fee };
+    params.fee = Number(fee) || totalTransactionFee;
+    params.recipients = parsedRecipients;
+    params.utxos = parsedUtxos;
     const tx = await wallet.newTx(params);
     console.log(tx.uncheckedSerialize());
   } catch (e) {

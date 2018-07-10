@@ -24,7 +24,7 @@
       "type": "node",
       "request": "launch",
       "name": "UnitTests",
-      "program": "${workspaceRoot}/build-test/test/runners/unit.js",
+      "program": "${workspaceRoot}/build/test/runners/unit.js",
       "protocol": "auto",
       "preLaunchTask": "npm: tsc:test"
     },
@@ -32,7 +32,7 @@
       "type": "node",
       "request": "launch",
       "name": "IntegrationTests",
-      "program": "${workspaceRoot}/build-test/test/runners/integration.js",
+      "program": "${workspaceRoot}/build/test/runners/integration.js",
       "protocol": "auto",
       "preLaunchTask": "npm: tsc:test"
     }

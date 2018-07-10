@@ -1,5 +1,5 @@
 export type BitcoinAddress = {
-  toString: () => string;
+  toString: (stripCash: boolean) => string;
 };
 export type BitcoinScript = {
   toBuffer: () => Buffer;

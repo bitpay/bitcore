@@ -1,6 +1,7 @@
 import config from '../config';
 import { Request, Response } from 'express';
 import express from 'express';
+import cors from 'cors';
 
 const app = express();
 const bodyParser = require('body-parser');
@@ -21,21 +22,33 @@ for (let chain of chains) {
   }
 }
 
-function bootstrap() {
+function bootstrap(path?: string) {
   const fs = require('fs');
   const router = express.Router({
     mergeParams: true
   });
-  fs.readdirSync(__dirname + '/').forEach(function(file: string) {
+  const folder = path ? path + '/' : '';
+  fs.readdirSync(__dirname + '/' + path).forEach(function(file: string) {
     if (file.match(/\.js$/) !== null && file !== 'index.js') {
-      var route = require('./' + file);
+      var route = require('./' + folder + file);
       router.use(route.path, route.router);
     }
   });
 
   return router;
 }
-app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
+
+function getRouterFromFile(path) {
+  const router = express.Router({
+    mergeParams: true
+  });
+
+  var route = require('./' + path);
+  router.use(route.path, route.router);
+  return router;
+}
+
+app.use('/api/:chain/:network', cors(), (req: Request, resp: Response, next: any) => {
   let { chain, network } = req.params;
   const hasChain = chains.includes(chain);
   const chainNetworks = networks[chain] || null;
@@ -57,6 +70,7 @@ app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
   return next();
 });
 
-app.use('/api/:chain/:network', bootstrap());
+app.use('/api/:chain/:network', bootstrap('api'));
+app.use('/', getRouterFromFile('admin'));
 
 export default app;

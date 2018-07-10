@@ -1,7 +1,7 @@
-import { IBlock } from "../../models/block";
-import { Response } from "express";
-import { IWalletModel, IWallet, IWalletDoc } from "../../models/wallet";
-import { ChainNetwork } from "../../types/ChainNetwork";
+import { IBlock } from '../../models/block';
+import { Response } from 'express';
+import { IWallet } from '../../models/wallet';
+import { ChainNetwork } from '../../types/ChainNetwork';
 export declare namespace CSP {
   export type StreamWalletTransactionsArgs = {
     startBlock: number;
@@ -25,12 +25,17 @@ export declare namespace CSP {
     walletId: string;
   };
   export type GetBlockParams = ChainNetwork & {
-    blockId: string;
+    blockId?: string;
   };
-  export type GetBlocksParams = ChainNetwork & {
+  export type StreamBlocksParams = ChainNetwork & {
+    blockId?: string;
     sinceBlock: number | string;
-    args: { limit: number };
+    args: Partial<{ limit: number; startDate: Date; endDate: Date; date: Date }>;
+    stream: Response;
   };
+  export type GetEstimateSmartFeeParams = ChainNetwork & {
+    target: number;
+  }
   export type BroadcastTransactionParams = ChainNetwork & {
     rawTx: string;
   };
@@ -38,17 +43,18 @@ export declare namespace CSP {
   export type GetWalletParams = ChainNetwork & PubKey;
 
   export type UpdateWalletParams = ChainNetwork & {
-    wallet: IWalletModel;
+    wallet: IWallet;
     addresses: string[];
   };
 
   export type GetWalletBalanceParams = ChainNetwork & {
-    wallet: IWalletModel
-  }
+    wallet: IWallet;
+  };
 
   export type StreamAddressUtxosParams = ChainNetwork & {
     address: string;
     stream: Response;
+    limit: number;
     args: StreamAddressUtxosArgs;
   };
   export type StreamTransactionsParams = ChainNetwork & {
@@ -60,34 +66,36 @@ export declare namespace CSP {
     stream: Response;
   };
   export type StreamWalletAddressesParams = ChainNetwork & {
-    walletId: IWalletModel;
+    walletId: IWallet;
     stream: Response;
+    limit: number;
   };
   export type StreamWalletTransactionsParams = ChainNetwork & {
-    wallet: IWalletModel;
+    wallet: IWallet;
     stream: Response;
     args: StreamWalletTransactionsArgs;
   };
-  export type StreamWalletUtxosArgs = { includeSpent: "true" | undefined };
+  export type StreamWalletUtxosArgs = { includeSpent: 'true' | undefined };
   export type StreamWalletUtxosParams = ChainNetwork & {
-    wallet: IWalletModel;
+    wallet: IWallet;
+    limit: number;
     args: Partial<StreamWalletUtxosArgs>;
     stream: Response;
   };
 
   export type Provider<T> = { get(params: { chain: string }): T };
-  export type ChainStateProvider = Provider<IChainStateService> &
-    IChainStateService;
+  export type ChainStateProvider = Provider<IChainStateService> & IChainStateService;
   export interface IChainStateService {
-    getBalanceForAddress(params: GetBalanceForAddressParams): Promise<{balance: number}[]>;
-    getBalanceForWallet(params: GetBalanceForWalletParams): Promise<{balance: number}[]>;
-    getBlock(params: GetBlockParams): Promise<IBlock>;
-    getBlocks(params: GetBlocksParams): Promise<IBlock[]>;
+    getBalanceForAddress(params: GetBalanceForAddressParams): Promise<{ balance: number }[]>;
+    getBalanceForWallet(params: GetBalanceForWalletParams): Promise<{ balance: number }[]>;
+    getBlock(params: GetBlockParams): Promise<IBlock | string>;
+    streamBlocks(paramStreamBlocksParamsams): any;
+    getFee(params: GetEstimateSmartFeeParams): any;
     broadcastTransaction(params: BroadcastTransactionParams): Promise<any>;
-    createWallet(params: CreateWalletParams): Promise<IWalletDoc>;
-    getWallet(params: GetWalletParams): Promise<IWalletDoc | null>;
-    updateWallet(params: UpdateWalletParams): Promise<IWalletModel>;
-    getWalletBalance(params: GetWalletBalanceParams): Promise<{balance: number}[]>;
+    createWallet(params: CreateWalletParams): Promise<IWallet>;
+    getWallet(params: GetWalletParams): Promise<IWallet | null>;
+    updateWallet(params: UpdateWalletParams): Promise<{}>;
+    getWalletBalance(params: GetWalletBalanceParams): Promise<{ balance: number }[]>;
     streamAddressUtxos(params: StreamAddressUtxosParams): any;
     streamTransactions(params: StreamTransactionsParams): any;
     streamTransaction(params: StreamTransactionParams): any;

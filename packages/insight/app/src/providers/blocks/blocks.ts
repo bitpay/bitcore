@@ -4,7 +4,6 @@ import 'rxjs/add/operator/map';
 import { ApiProvider } from '../../providers/api/api';
 import { Observable } from 'rxjs/Observable';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { DefaultProvider } from '../../providers/default/default';
 
 /*
   Generated class for the BlocksProvider provider.
@@ -14,60 +13,57 @@ import { DefaultProvider } from '../../providers/default/default';
 */
 
 export type ApiBlock = {
-    height: number;
-    nonce: number;
-    bits: number;
-    size: number;
-    hash: string;
-    merkleRoot: string;
-    nextBlockHash: string;
-    previousBlockHash: string;
-    transactionCount: number;
-    reward: number;
-    minedBy: string;
-    version: number;
-    time: Date;
-    timeNormalized: Date;
+  height: number;
+  nonce: number;
+  bits: number;
+  size: number;
+  hash: string;
+  merkleRoot: string;
+  nextBlockHash: string;
+  previousBlockHash: string;
+  transactionCount: number;
+  reward: number;
+  minedBy: string;
+  version: number;
+  time: Date;
+  timeNormalized: Date;
 };
 
 export type AppBlock = {
-    height: number;
-    merkleroot: string;
-    size: number;
-    version: number;
-    difficulty: number;
-    bits: string;
-    virtualSize: number;
-    hash: string;
-    time: number;
-    tx: {
-        length: number
-    },
-    txlength: number;
-    previousblockhash: string,
-    nextblockhash: string,
-    poolInfo: {
-        poolName: string;
-        url: string;
-    },
-    reward: number;
+  height: number;
+  merkleroot: string;
+  nonce: number;
+  size: number;
+  confirmations: number;
+  version: number;
+  difficulty: number;
+  bits: string;
+  virtualSize: number;
+  hash: string;
+  time: number;
+  tx: {
+    length: number;
+  };
+  txlength: number;
+  previousblockhash: string;
+  nextblockhash: string;
+  poolInfo: {
+    poolName: string;
+    url: string;
+  };
+  reward: number;
 };
 
 @Injectable()
 export class BlocksProvider {
+  constructor(public http: Http, private api: ApiProvider, public currency: CurrencyProvider) {}
 
-  constructor(
-    public http: Http,
-    private api: ApiProvider,
-    public currency: CurrencyProvider,
-    private defaults: DefaultProvider
-  ) {
-  }
-
-  private toAppBlock(block: ApiBlock): AppBlock {
-    let difficulty: number = 0x1d00ffff /  block.bits;
+  private toAppBlock(block: ApiBlock, bestHeight: number): AppBlock {
+    let difficulty: number = 0x1d00ffff / block.bits;
     return {
       height: block.height,
+      confirmations: bestHeight - block.height,
+      nonce: block.nonce,
       size: block.size,
       virtualSize: block.size,
       merkleroot: block.merkleRoot,
@@ -86,34 +82,37 @@ export class BlocksProvider {
         poolName: block.minedBy,
         url: ''
       },
-      reward: block.reward / (10 ** 8)
+      reward: block.reward / 10 ** 8
     };
   }
 
+  public getCurrentHeight(): Observable<number> {
+    let heightUrl: string = this.api.apiPrefix + '/block/tip';
+    return this.http.get(heightUrl).map(blockResp => {
+      const block: ApiBlock = blockResp.json();
+      return block.height;
+    });
+  }
+
   public getBlocks(): Observable<{ blocks: Array<AppBlock> }> {
-    let url: string = this.api.apiPrefix + '/' +
-      this.currency.selectedCurrency.toUpperCase() + '/' +
-      this.defaults.getDefault('%NETWORK%') + '/' +
-      'block';
-    return this.http.get(url)
-    .map((data) => {
-      let blocks: Array<ApiBlock> = data.json();
-      let appBlocks: Array<AppBlock> = blocks.map(this.toAppBlock);
-      return { blocks: appBlocks };
+    let url: string = this.api.apiPrefix + '/block';
+    return this.getCurrentHeight().flatMap(height => {
+      return this.http.get(url).map(data => {
+        let blocks: Array<ApiBlock> = data.json();
+        let appBlocks: Array<AppBlock> = blocks.map(this.toAppBlock);
+        return { blocks: appBlocks };
+      });
     });
   }
 
   public getBlock(hash: string): Observable<{ block: AppBlock }> {
-    let url: string = this.api.apiPrefix + '/' +
-      this.currency.selectedCurrency.toUpperCase() + '/' +
-      this.defaults.getDefault('%NETWORK%') + '/' +
-      '/block/' +
-      hash;
-    return this.http.get(url)
-    .map((data) => {
-      let block: ApiBlock = data.json();
-      let appBlock: AppBlock = this.toAppBlock(block);
-      return { block: appBlock };
+    let url: string = this.api.apiPrefix + '/block/' + hash;
+    return this.getCurrentHeight().flatMap(height => {
+      return this.http.get(url).map(data => {
+        let block: ApiBlock = data.json();
+        let appBlock: AppBlock = this.toAppBlock(block, height);
+        return { block: appBlock };
+      });
     });
   }
 }

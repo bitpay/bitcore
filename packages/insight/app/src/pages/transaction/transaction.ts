@@ -18,7 +18,6 @@ import { CurrencyProvider } from '../../providers/currency/currency';
   templateUrl: 'transaction.html'
 })
 export class TransactionPage {
-
   public loading: boolean = true;
   private txId: string;
   public tx: any = {};
@@ -34,11 +33,15 @@ export class TransactionPage {
 
   public ionViewDidLoad(): void {
     this.txProvider.getTx(this.txId).subscribe(
-      (data) => {
+      data => {
         this.tx = data.tx;
         this.loading = false;
+        this.txProvider.getCoins(this.txId).subscribe(coinData => {
+          this.tx.inputs = coinData.inputs;
+          this.tx.outputs = coinData.outputs;
+        });
       },
-      (err) => {
+      err => {
         console.log('err is', err);
         this.loading = false;
       }
@@ -47,8 +50,8 @@ export class TransactionPage {
 
   public goToBlock(blockHash: string): void {
     this.navCtrl.push('block-detail', {
-      'selectedCurrency': this.currency.selectedCurrency,
-      'blockHash': blockHash
+      selectedCurrency: this.currency.selectedCurrency,
+      blockHash: blockHash
     });
   }
 }

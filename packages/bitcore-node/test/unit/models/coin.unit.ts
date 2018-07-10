@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { CoinModel } from '../../../src/models/coin';
+import { CoinModel, ICoin } from '../../../src/models/coin';
 
 describe('Coin Model', function () {
 
@@ -11,24 +11,28 @@ describe('Coin Model', function () {
         mintTxid: '81f24ac62a6ffb634b74e6278997f0788f3c64e844453f8831d2a526dc3ecb13',
         mintIndex: 0,
         mintHeight: 1,
-        coinBase: true,
+        coinbase: true,
         value: 5000000000.0,
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
-        script: '',
-        wallets: [],
+        script: Buffer.from(''),
+        wallets: new Set<any>(),
         spentTxid: '',
         spentHeight: -2
-      };
+      } as ICoin;
 
-      const result = CoinModel._apiTransform(new CoinModel(coin), { object: false });
+      const result = CoinModel._apiTransform(coin, { object: false });
 
-      const parseResult = JSON.parse(result);
+      const parseResult = JSON.parse(result.toString());
       expect(parseResult).to.deep.equal({
         txid: '81f24ac62a6ffb634b74e6278997f0788f3c64e844453f8831d2a526dc3ecb13',
         vout: 0,
         spentTxid: '',
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
-        script: '',
+        coinbase: true,
+        script: {
+          asm: "",
+          type: "Unknown"
+        },
         value: 5000000000.0
       });
     });
@@ -39,22 +43,28 @@ describe('Coin Model', function () {
         mintTxid: '81f24ac62a6ffb634b74e6278997f0788f3c64e844453f8831d2a526dc3ecb13',
         mintIndex: 0,
         mintHeight: 1,
-        coinBase: true,
+        coinbase: true,
         value: 5000000000.0,
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
-        script: '',
-        wallets: [],
+        script: Buffer.from(''),
+        wallets: new Set<any>(),
         spentTxid: '',
         spentHeight: -2
-      };
+      } as ICoin;
 
-      const result = CoinModel._apiTransform(new CoinModel(coin), { object: true });
+
+
+      const result = CoinModel._apiTransform(coin, { object: true });
       expect(result).to.deep.equal({
         txid: '81f24ac62a6ffb634b74e6278997f0788f3c64e844453f8831d2a526dc3ecb13',
         vout: 0,
         spentTxid: '',
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
-        script: '',
+        coinbase: true,
+        script: {
+          asm: "",
+          type: "Unknown"
+        },
         value: 5000000000.0
       });
     });

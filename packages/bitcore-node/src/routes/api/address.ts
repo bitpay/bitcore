@@ -1,14 +1,15 @@
 import express = require('express');
 const router = express.Router({ mergeParams: true });
-import { ChainStateProvider } from '../providers/chain-state';
+import { ChainStateProvider } from '../../providers/chain-state';
 
 router.get('/:address', function(req, res) {
   let { address, chain, network } = req.params;
-  let { unspent } = req.query;
+  let { unspent, limit=10 } = req.query;
   let payload = {
     chain,
     network,
     address,
+    limit,
     stream: res,
     args: { unspent }
   };

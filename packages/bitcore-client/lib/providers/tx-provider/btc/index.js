@@ -1,12 +1,16 @@
 const bitcoreLib = require('bitcore-lib');
 
 class BTCTxProvder {
-  create({ addresses, amount, utxos, change, fee }) {
+  create({ recipients, utxos, change, fee }) {
     let tx = new bitcoreLib.Transaction()
       .from(utxos)
-      .to(addresses, Number(amount))
-      .fee(Number(fee))
-      .change(change);
+      .fee(Number(fee));
+    for (const recipient of recipients) {
+      tx.to(recipient.address, recipient.amount);
+    }
+    if (change) {
+      tx.change(change);
+    }
     return tx;
   }
 
@@ -20,7 +24,8 @@ class BTCTxProvder {
     let newTx = new bitcoreLib.Transaction()
       .from(applicableUtxos)
       .to(this.getOutputsFromTx({ tx: bitcoreTx }));
-    return newTx.sign(keys.toString('hex'));
+    const privKeys = keys.map(key => key.privKey.toString('hex'));
+    return newTx.sign(privKeys);
   }
 
   getRelatedUtxos({ outputs, utxos }) {

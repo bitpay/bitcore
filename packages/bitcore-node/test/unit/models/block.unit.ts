@@ -1,23 +1,21 @@
 import { expect } from 'chai';
-import { BlockModel } from '../../../src/models/block';
+import { BlockModel, IBlock } from '../../../src/models/block';
 import { TransactionModel } from '../../../src/models/transaction';
 import { CoinModel } from '../../../src/models/coin';
 import * as sinon from 'sinon';
 import { TEST_BLOCK } from '../../data/test-block';
-import { AdapterProvider } from '../../../src/providers/adapter';
-import { Adapter } from '../../../src/types/namespaces/ChainAdapter';
-import { Bitcoin } from '../../../src/types/namespaces/Bitcoin';
+import { Storage } from '../../../src/services/storage';
+import { mockStorage } from '../../helpers';
+import { mockCollection } from "../../helpers/index.js";
 
-describe('Block Model', function () {
-
+describe('Block Model', function() {
   describe('addBlock', () => {
-    let addBlockParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
+    let addBlockParams = {
       chain: 'BTC',
       network: 'regtest',
       block: TEST_BLOCK,
       height: 1355
     };
-    const internalBlock = AdapterProvider.convertBlock(addBlockParams);
     let sandbox;
     beforeEach(() => {
       sandbox = sinon.sandbox.create();
@@ -26,19 +24,14 @@ describe('Block Model', function () {
       sandbox.restore();
     });
     it('should be able to add a block', async () => {
-      let newBlock = Object.assign(
-        { save: () => Promise.resolve() },
-        BlockModel,
-        internalBlock
-      );
+      let newBlock = Object.assign({ save: () => Promise.resolve() }, BlockModel, addBlockParams);
+
+      mockStorage(newBlock);
       sandbox.stub(BlockModel, 'handleReorg').resolves();
-      sandbox.stub(BlockModel, 'findOne').resolves(newBlock);
-      sandbox.stub(BlockModel, 'update').resolves(newBlock);
-      sandbox.stub(newBlock, 'save').resolves();
       sandbox.stub(TransactionModel, 'batchImport').resolves();
 
-      const result = await BlockModel.addBlock(addBlockParams);
-      expect(addBlockParams.block.hash).to.be.equal(result.hash);
+      const result = (await BlockModel.addBlock(addBlockParams)).result;
+      expect(addBlockParams.block.hash).to.be.equal(result.block.hash);
       expect(addBlockParams.height).to.be.equal(result.height);
       expect(addBlockParams.chain).to.be.equal(result.chain);
     });
@@ -53,10 +46,7 @@ describe('Block Model', function () {
       sandbox.restore();
     });
     it('should return with height zero if there are no blocks', async () => {
-      sandbox.stub(BlockModel, 'findOne').returns({
-        sort: sandbox.stub().resolves(null),
-        exec: sandbox.stub().resolves(null)
-      });
+      mockStorage(null);
       const params = { chain: 'BTC', network: 'regtest' };
       const result = await BlockModel.getLocalTip(params);
       expect(result).to.deep.equal({ height: 0 });
@@ -76,11 +66,6 @@ describe('Block Model', function () {
       sandbox.restore();
     });
     it('should return 65 zeros if there are no processed blocks for the chain and network', async () => {
-      sandbox.stub(BlockModel, 'find').returns({
-        sort: sandbox.stub().returnsThis(),
-        limit: sandbox.stub().returnsThis(),
-        exec: sandbox.stub().returns(Promise.resolve([]))
-      });
       const params = { chain: 'BTC', network: 'regtest' };
       const result = await BlockModel.getLocatorHashes(params);
       expect(result).to.deep.equal([Array(65).join('0')]);
@@ -97,10 +82,13 @@ describe('Block Model', function () {
     });
 
     it('should return if localTip hash equals the previous hash', async () => {
-      let blockModelRemoveSpy = sandbox.stub(BlockModel, 'remove').resolves();
-      let transactionModelRemoveSpy = sandbox.stub(TransactionModel, 'remove').resolves();
-      let coinModelRemoveSpy = sandbox.stub(CoinModel, 'remove').resolves();
-      let coinModelUpdateSpy = sandbox.stub(CoinModel, 'update').resolves();
+      Object.assign(BlockModel.collection, mockCollection(null));
+      Object.assign(TransactionModel.collection, mockCollection(null));
+      Object.assign(CoinModel.collection, mockCollection(null));
+      let blockModelRemoveSpy = BlockModel.collection.remove as sinon.SinonSpy;
+      let transactionModelRemoveSpy = TransactionModel.collection.remove as sinon.SinonSpy;
+      let coinModelRemoveSpy = CoinModel.collection.remove as sinon.SinonSpy;
+      let coinModelUpdateSpy = CoinModel.collection.update as sinon.SinonSpy;
       let blockModelGetLocalTipSpy = sandbox.stub(BlockModel, 'getLocalTip').returns({
         hash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
@@ -125,29 +113,24 @@ describe('Block Model', function () {
       expect(coinModelRemoveSpy.notCalled).to.be.true;
       expect(coinModelUpdateSpy.notCalled).to.be.true;
       expect(blockModelGetLocalTipSpy.notCalled).to.be.false;
-
     });
 
     it('should return if localTip height is zero', async () => {
-      let blockModelRemoveSpy = sandbox.stub(BlockModel, 'remove').resolves();
-      let transactionModelRemoveSpy = sandbox.stub(TransactionModel, 'remove').resolves();
-      let coinModelRemoveSpy = sandbox.stub(CoinModel, 'remove').resolves();
-      let coinModelUpdateSpy = sandbox.stub(CoinModel, 'update').resolves();
+      let blockModelRemoveSpy = BlockModel.collection.remove as sinon.SinonSpy;
+      let transactionModelRemoveSpy = TransactionModel.collection.remove as sinon.SinonSpy;
+      let coinModelRemoveSpy = CoinModel.collection.remove as sinon.SinonSpy;
+      let coinModelUpdateSpy = CoinModel.collection.update as sinon.SinonSpy;
       let blockModelGetLocalTipSpy = sandbox.stub(BlockModel, 'getLocalTip').returns({
         height: 0
       });
 
-      let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
+      let blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      const internalBlock = AdapterProvider.convertBlock(blockMethodParams);
-      let params = Object.assign(
-        BlockModel,
-        internalBlock
-      );
+      let params = Object.assign(BlockModel, blockMethodParams);
 
       await BlockModel.handleReorg(params);
       expect(blockModelRemoveSpy.notCalled).to.be.true;
@@ -155,145 +138,124 @@ describe('Block Model', function () {
       expect(coinModelRemoveSpy.notCalled).to.be.true;
       expect(coinModelUpdateSpy.notCalled).to.be.true;
       expect(blockModelGetLocalTipSpy.notCalled).to.be.false;
-
     });
 
     it('should call blockModel remove', async () => {
-      let blockModelRemoveSpy = sandbox.stub(BlockModel, 'remove').resolves();
-      sandbox.stub(TransactionModel, 'remove').resolves();
-      sandbox.stub(CoinModel, 'remove').resolves();
-      sandbox.stub(CoinModel, 'update').resolves();
-      sandbox.stub(BlockModel, 'getLocalTip').returns({
+      mockStorage({
         height: 1,
         previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
-
-      let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
+      let blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      const internalBlock = AdapterProvider.convertBlock(blockMethodParams);
-      let params = Object.assign(
-        BlockModel,
-        internalBlock
-      );
+      let params = Object.assign(BlockModel, blockMethodParams);
+      const removeSpy = BlockModel.collection.remove as sinon.SinonSpy;
 
       await BlockModel.handleReorg(params);
-      expect(blockModelRemoveSpy.calledOnce).to.be.true;
-
+      expect(removeSpy.called).to.be.true;
     });
 
     it('should call transactionModel remove', async () => {
-      sandbox.stub(BlockModel, 'remove').resolves();
-      let transactionModelRemoveSpy = sandbox.stub(TransactionModel, 'remove').resolves();
-      sandbox.stub(CoinModel, 'remove').resolves();
-      sandbox.stub(CoinModel, 'update').resolves();
-      sandbox.stub(BlockModel, 'getLocalTip').returns({
+      mockStorage({
         height: 1,
         previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
-      let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
+      let blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      const internalBlock = AdapterProvider.convertBlock(blockMethodParams);
-      let params = Object.assign(
-        BlockModel,
-        internalBlock
-      );
+      let params = Object.assign(BlockModel, blockMethodParams);
+      const removeSpy = TransactionModel.collection.remove as sinon.SinonSpy;
 
       await BlockModel.handleReorg(params);
-      expect(transactionModelRemoveSpy.calledOnce).to.be.true;
-
+      expect(removeSpy.called).to.be.true;
     });
 
     it('should call coinModel remove', async () => {
-      sandbox.stub(BlockModel, 'remove').resolves();
-      sandbox.stub(TransactionModel, 'remove').resolves();
-      let coinModelRemoveSpy = sandbox.stub(CoinModel, 'remove').resolves();
-      sandbox.stub(CoinModel, 'update').resolves();
-      sandbox.stub(BlockModel, 'getLocalTip').returns({
+      mockStorage({
         height: 1,
         previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
-      let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
+      let blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      const internalBlock = AdapterProvider.convertBlock(blockMethodParams);
-      let params = Object.assign(
-        BlockModel,
-        internalBlock
-      );
+      let params = Object.assign(BlockModel, blockMethodParams);
+      const collectionSpy = Storage.db!.collection as sinon.SinonSpy;
+      const removeSpy = CoinModel.collection.remove as sinon.SinonSpy;
 
       await BlockModel.handleReorg(params);
-      expect(coinModelRemoveSpy.calledOnce).to.be.true;
-
+      expect(collectionSpy.calledOnceWith('coins'));
+      expect(removeSpy.callCount).to.eq(3);
     });
 
     it('should call coinModel update', async () => {
-      sandbox.stub(BlockModel, 'remove').resolves();
-      sandbox.stub(TransactionModel, 'remove').resolves();
-      sandbox.stub(CoinModel, 'remove').resolves();
-      let coinModelUpdateSpy = sandbox.stub(CoinModel, 'update').resolves();
-      sandbox.stub(BlockModel, 'getLocalTip').returns({
+      mockStorage({
         height: 1,
         previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
-      let blockMethodParams: Adapter.ConvertBlockParams<Bitcoin.Block> = {
+      let blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      const internalBlock = AdapterProvider.convertBlock(blockMethodParams);
-      let params = Object.assign(
-        BlockModel,
-        internalBlock
-      );
+      let params = Object.assign(BlockModel, blockMethodParams);
+      const collectionSpy = Storage.db!.collection as sinon.SinonSpy;
+      const updateSpy = CoinModel.collection.update as sinon.SinonSpy;
 
       await BlockModel.handleReorg(params);
-      expect(coinModelUpdateSpy.calledOnce).to.be.true;
-
+      expect(collectionSpy.calledOnceWith('coins'));
+      expect(updateSpy.called).to.be.true;
     });
   });
 
   describe('_apiTransform', () => {
     it('should return the transform object with block values', () => {
-      let params: Adapter.ConvertBlockParams<Bitcoin.Block> = {
+      const block: IBlock = {
         chain: 'BTC',
-        network: 'regtest',
-        block: TEST_BLOCK,
-        height: 1355
+        network: 'mainnet',
+        height: 1,
+        hash: 'abcd',
+        version: 1,
+        merkleRoot: 'deff',
+        time: new Date,
+        timeNormalized: new Date(),
+        nonce: 1,
+        previousBlockHash: 'aabb',
+        nextBlockHash: 'bbcc',
+        transactionCount: 1,
+        size: 255,
+        bits: 256,
+        reward: 5000000000,
+        processed: true
       };
-      const block = AdapterProvider.convertBlock(params);
 
-      const result = BlockModel._apiTransform(new BlockModel(block), {
-        object: false
-      });
-      const parseResult = JSON.parse(result);
+      const result = BlockModel._apiTransform(block, { object: true });
 
-      expect(parseResult.hash).to.be.equal(block.hash);
-      expect(parseResult.height).to.be.equal(block.height);
-      expect(parseResult.version).to.be.equal(block.version);
-      expect(parseResult.size).to.be.equal(block.size);
-      expect(parseResult.merkleRoot).to.be.equal(block.merkleRoot);
-      expect(parseResult.time).to.not.equal(block.time);
-      expect(parseResult.timeNormalized).to.not.equal(block.timeNormalized);
-      expect(parseResult.nonce).to.be.equal(block.nonce);
-      expect(parseResult.bits).to.be.equal(block.bits);
-      expect(parseResult.previousBlockHash).to.be.equal(block.previousBlockHash);
-      expect(parseResult.nextBlockHash).to.be.equal(block.nextBlockHash);
-      expect(parseResult.transactionCount).to.be.equal(block.transactionCount);
+      expect(result.hash).to.be.equal(block.hash);
+      expect(result.height).to.be.equal(block.height);
+      expect(result.version).to.be.equal(block.version);
+      expect(result.size).to.be.equal(block.size);
+      expect(result.merkleRoot).to.be.equal(block.merkleRoot);
+      expect(result.time).to.equal(block.time);
+      expect(result.timeNormalized).to.equal(block.timeNormalized);
+      expect(result.nonce).to.be.equal(block.nonce);
+      expect(result.bits).to.be.equal(block.bits);
+      expect(result.previousBlockHash).to.be.equal(block.previousBlockHash);
+      expect(result.nextBlockHash).to.be.equal(block.nextBlockHash);
+      expect(result.transactionCount).to.be.equal(block.transactionCount);
+      expect(result).to.not.have.property('processed');
     });
   });
 });
