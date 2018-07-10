@@ -25,6 +25,11 @@ class Coin extends BaseModel<ICoin> {
     super('coins');
   }
 
+  allowedPaging = [
+    "mintHeight" as "mintHeight",
+    "spentHeight" as "spentHeight",
+  ];
+
   onConnect() {
     this.collection.createIndex({ mintTxid: 1 });
     this.collection.createIndex(

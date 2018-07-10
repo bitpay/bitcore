@@ -32,6 +32,10 @@ export class Transaction extends BaseModel<ITransaction> {
     super('transactions');
   }
 
+  allowedPaging = [
+    "blockHeight" as "blockHeight"
+  ];
+
   onConnect() {
     this.collection.createIndex({ txid: 1 });
     this.collection.createIndex({ chain: 1, network: 1, blockHeight: 1 });
