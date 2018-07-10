@@ -2,6 +2,7 @@ import { IBlock } from '../../models/block';
 import { Response } from 'express';
 import { IWallet } from '../../models/wallet';
 import { ChainNetwork } from '../../types/ChainNetwork';
+import { StreamingFindOptions } from "../../services/storage";
 export declare namespace CSP {
   export type StreamWalletTransactionsArgs = {
     startBlock: number;
@@ -30,7 +31,7 @@ export declare namespace CSP {
   export type StreamBlocksParams = ChainNetwork & {
     blockId?: string;
     sinceBlock: number | string;
-    args: Partial<{ startDate: Date; endDate: Date; date: Date;}>;
+    args: Partial<{ startDate: Date; endDate: Date; date: Date;} & StreamingFindOptions<IBlock>>;
     stream: Response;
   };
   export type GetEstimateSmartFeeParams = ChainNetwork & {

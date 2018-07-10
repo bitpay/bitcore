@@ -7,7 +7,10 @@ export abstract class BaseModel<T> {
   db?: Db;
 
   // each model must implement an array of keys that are indexed, for paging
-  abstract allowedPaging: Array<keyof T>;
+  abstract allowedPaging: Array<{
+    type: 'string' | 'number' | 'date';
+    key: keyof T;
+  }>;
 
   constructor(private collectionName: string) {
     this.handleConnection();

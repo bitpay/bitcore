@@ -7,12 +7,13 @@ import { LoggifyClass } from '../decorators/Loggify';
 import { MongoClient, Db, FindOneOptions } from 'mongodb';
 import '../models';
 
-export type StreamingFindOptions<T> = {
+export type StreamingFindOptions<T> = Partial<{
   paging: keyof T;
   since: T[keyof T];
   direction: 1 | -1;
   limit: number;
-} & FindOneOptions;
+}> &
+  FindOneOptions;
 
 @LoggifyClass
 export class StorageService {
@@ -33,8 +34,8 @@ export class StorageService {
             keepAlive: 1,
             poolSize: config.maxPoolSize
             /*
-           *nativeParser: true
-           */
+             *nativeParser: true
+             */
           }
         );
       };
@@ -61,14 +62,41 @@ export class StorageService {
 
   stop() {}
 
-  apiStreamingFind<T>(
-    model: TransformableModel<T>,
-    query: any,
-    options: StreamingFindOptions<T>,
-    res: Response
-  ) {
-    if (options.since !== undefined && model.allowedPaging.includes(options.paging)) {
-      if (options.direction === 1) {
+  validPagingProperty<T>(model: TransformableModel<T>, property: keyof T) {
+    return model.allowedPaging.some(allowed => allowed.key === property);
+  }
+
+  /**
+   * castForDb
+   *
+   * For a given model, return the typecasted value based on a key and the type associated with that key
+   */
+  typecastForDb<T>(model: TransformableModel<T>, modelKey: keyof T, modelValue: T[keyof T]) {
+    let typecastedValue = modelValue;
+    if (modelKey) {
+      let oldValue = modelValue as any;
+      let optionsType = model.allowedPaging.find(prop => prop.key === modelKey);
+      if (optionsType) {
+        switch (optionsType.type) {
+          case 'number':
+            typecastedValue = Number(oldValue) as any;
+            break;
+          case 'string':
+            typecastedValue = (oldValue || '').toString() as any;
+            break;
+          case 'date':
+            typecastedValue = new Date(oldValue) as any;
+            break;
+        }
+      }
+    }
+    return typecastedValue;
+  }
+
+  apiStreamingFind<T>(model: TransformableModel<T>, query: any, options: StreamingFindOptions<T>, res: Response) {
+    if (options.since !== undefined && options.paging && this.validPagingProperty(model, options.paging)) {
+      options.since = this.typecastForDb(model, options.paging, options.since);
+      if (options.direction && Number(options.direction) === 1) {
         query[options.paging] = { $gt: options.since };
         options.sort = { [options.paging]: 1 };
       } else {
