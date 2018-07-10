@@ -40,7 +40,10 @@ export type ApiInput = {
   coinbase: boolean;
   vout: number;
   address: string;
-  script: string;
+  script: {
+    asm: string;
+    type: string
+  };
   value: number;
 };
 
