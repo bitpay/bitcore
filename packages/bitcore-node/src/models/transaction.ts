@@ -276,6 +276,7 @@ export class Transaction extends BaseModel<ITransaction> {
       blockTime: tx.blockTime,
       blockTimeNormalized: tx.blockTimeNormalized,
       coinbase: tx.coinbase,
+      size: tx.size,
       fee: tx.fee
     };
     if (options && options.object) {
