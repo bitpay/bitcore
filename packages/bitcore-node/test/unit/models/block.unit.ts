@@ -5,6 +5,8 @@ import { CoinModel } from '../../../src/models/coin';
 import * as sinon from 'sinon';
 import { TEST_BLOCK } from '../../data/test-block';
 import { Storage } from '../../../src/services/storage';
+import { mockStorage } from '../../helpers';
+import { mockCollection } from "../../helpers/index.js";
 
 describe('Block Model', function() {
   describe('addBlock', () => {
@@ -22,11 +24,7 @@ describe('Block Model', function() {
       sandbox.restore();
     });
     it('should be able to add a block', async () => {
-      let newBlock = Object.assign(
-        { save: () => Promise.resolve() },
-        BlockModel,
-        addBlockParams
-      );
+      let newBlock = Object.assign({ save: () => Promise.resolve() }, BlockModel, addBlockParams);
 
       mockStorage(newBlock);
       sandbox.stub(BlockModel, 'handleReorg').resolves();
@@ -68,11 +66,6 @@ describe('Block Model', function() {
       sandbox.restore();
     });
     it('should return 65 zeros if there are no processed blocks for the chain and network', async () => {
-      sandbox.stub(BlockModel, 'find').returns({
-        sort: sandbox.stub().returnsThis(),
-        limit: sandbox.stub().returnsThis(),
-        exec: sandbox.stub().returns(Promise.resolve([]))
-      });
       const params = { chain: 'BTC', network: 'regtest' };
       const result = await BlockModel.getLocatorHashes(params);
       expect(result).to.deep.equal([Array(65).join('0')]);
@@ -89,29 +82,24 @@ describe('Block Model', function() {
     });
 
     it('should return if localTip hash equals the previous hash', async () => {
-      let blockModelRemoveSpy = sandbox.stub(BlockModel, 'remove').resolves();
-      let transactionModelRemoveSpy = sandbox
-        .stub(TransactionModel, 'remove')
-        .resolves();
-      let coinModelRemoveSpy = sandbox.stub(CoinModel, 'remove').resolves();
-      let coinModelUpdateSpy = sandbox.stub(CoinModel, 'update').resolves();
-      let blockModelGetLocalTipSpy = sandbox
-        .stub(BlockModel, 'getLocalTip')
-        .returns({
-          hash:
-          '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
-        });
+      Object.assign(BlockModel.collection, mockCollection(null));
+      Object.assign(TransactionModel.collection, mockCollection(null));
+      Object.assign(CoinModel.collection, mockCollection(null));
+      let blockModelRemoveSpy = BlockModel.collection.remove as sinon.SinonSpy;
+      let transactionModelRemoveSpy = TransactionModel.collection.remove as sinon.SinonSpy;
+      let coinModelRemoveSpy = CoinModel.collection.remove as sinon.SinonSpy;
+      let coinModelUpdateSpy = CoinModel.collection.update as sinon.SinonSpy;
+      let blockModelGetLocalTipSpy = sandbox.stub(BlockModel, 'getLocalTip').returns({
+        hash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
+      });
 
       const params = {
         header: {
-          prevHash:
-          '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9',
-          hash:
-          '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
+          prevHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9',
+          hash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
           time: 1526756523,
           version: '536870912',
-          merkleRoot:
-          '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08',
+          merkleRoot: '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08',
           bits: parseInt('207fffff', 16).toString(),
           nonce: '2'
         },
@@ -128,17 +116,13 @@ describe('Block Model', function() {
     });
 
     it('should return if localTip height is zero', async () => {
-      let blockModelRemoveSpy = sandbox.stub(BlockModel, 'remove').resolves();
-      let transactionModelRemoveSpy = sandbox
-        .stub(TransactionModel, 'remove')
-        .resolves();
-      let coinModelRemoveSpy = sandbox.stub(CoinModel, 'remove').resolves();
-      let coinModelUpdateSpy = sandbox.stub(CoinModel, 'update').resolves();
-      let blockModelGetLocalTipSpy = sandbox
-        .stub(BlockModel, 'getLocalTip')
-        .returns({
-          height: 0
-        });
+      let blockModelRemoveSpy = BlockModel.collection.remove as sinon.SinonSpy;
+      let transactionModelRemoveSpy = TransactionModel.collection.remove as sinon.SinonSpy;
+      let coinModelRemoveSpy = CoinModel.collection.remove as sinon.SinonSpy;
+      let coinModelUpdateSpy = CoinModel.collection.update as sinon.SinonSpy;
+      let blockModelGetLocalTipSpy = sandbox.stub(BlockModel, 'getLocalTip').returns({
+        height: 0
+      });
 
       let blockMethodParams = {
         chain: 'BTC',
@@ -159,8 +143,7 @@ describe('Block Model', function() {
     it('should call blockModel remove', async () => {
       mockStorage({
         height: 1,
-        previousBlockHash:
-        '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
+        previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
       let blockMethodParams = {
         chain: 'BTC',
@@ -169,8 +152,7 @@ describe('Block Model', function() {
         height: 1355
       };
       let params = Object.assign(BlockModel, blockMethodParams);
-      const removeSpy = Storage.db!.collection('blocks')
-        .remove as sinon.SinonSpy;
+      const removeSpy = BlockModel.collection.remove as sinon.SinonSpy;
 
       await BlockModel.handleReorg(params);
       expect(removeSpy.called).to.be.true;
@@ -179,8 +161,7 @@ describe('Block Model', function() {
     it('should call transactionModel remove', async () => {
       mockStorage({
         height: 1,
-        previousBlockHash:
-        '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
+        previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
       let blockMethodParams = {
@@ -190,8 +171,7 @@ describe('Block Model', function() {
         height: 1355
       };
       let params = Object.assign(BlockModel, blockMethodParams);
-      const removeSpy = Storage.db!.collection('transactions')
-        .remove as sinon.SinonSpy;
+      const removeSpy = TransactionModel.collection.remove as sinon.SinonSpy;
 
       await BlockModel.handleReorg(params);
       expect(removeSpy.called).to.be.true;
@@ -200,8 +180,7 @@ describe('Block Model', function() {
     it('should call coinModel remove', async () => {
       mockStorage({
         height: 1,
-        previousBlockHash:
-        '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
+        previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
       let blockMethodParams = {
@@ -212,8 +191,7 @@ describe('Block Model', function() {
       };
       let params = Object.assign(BlockModel, blockMethodParams);
       const collectionSpy = Storage.db!.collection as sinon.SinonSpy;
-      const removeSpy = Storage.db!.collection('coins')
-        .remove as sinon.SinonSpy;
+      const removeSpy = CoinModel.collection.remove as sinon.SinonSpy;
 
       await BlockModel.handleReorg(params);
       expect(collectionSpy.calledOnceWith('coins'));
@@ -223,8 +201,7 @@ describe('Block Model', function() {
     it('should call coinModel update', async () => {
       mockStorage({
         height: 1,
-        previousBlockHash:
-        '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
+        previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
       let blockMethodParams = {
@@ -235,8 +212,7 @@ describe('Block Model', function() {
       };
       let params = Object.assign(BlockModel, blockMethodParams);
       const collectionSpy = Storage.db!.collection as sinon.SinonSpy;
-      const updateSpy = Storage.db!.collection('coins')
-        .update as sinon.SinonSpy;
+      const updateSpy = CoinModel.collection.update as sinon.SinonSpy;
 
       await BlockModel.handleReorg(params);
       expect(collectionSpy.calledOnceWith('coins'));
@@ -253,8 +229,8 @@ describe('Block Model', function() {
         hash: 'abcd',
         version: 1,
         merkleRoot: 'deff',
-        time: Date.now(),
-        timeNormalized: Date.now(),
+        time: new Date,
+        timeNormalized: new Date(),
         nonce: 1,
         previousBlockHash: 'aabb',
         nextBlockHash: 'bbcc',
@@ -283,23 +259,3 @@ describe('Block Model', function() {
     });
   });
 });
-
-function mockStorage(toReturn, collectionMethods = {}) {
-  const mock = Object.assign(
-    {
-      find: sinon.stub().returnsThis(),
-      sort: sinon.stub().returnsThis(),
-      remove: sinon.stub().resolves(),
-      limit: sinon.stub().returnsThis(),
-      toArray: sinon.stub().resolves([toReturn]),
-      findOne: sinon.stub().resolves(toReturn),
-      update: sinon.stub().resolves({ result: toReturn }),
-      updateOne: sinon.stub().resolves(toReturn)
-    },
-    collectionMethods
-  );
-  Storage.db = {
-    collection: sinon.stub().returns(mock)
-  } as any;
-  return Storage;
-}

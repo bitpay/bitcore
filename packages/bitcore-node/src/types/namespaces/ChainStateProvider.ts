@@ -25,13 +25,17 @@ export declare namespace CSP {
     walletId: string;
   };
   export type GetBlockParams = ChainNetwork & {
-    blockId: string;
+    blockId?: string;
   };
-  export type GetBlocksParams = ChainNetwork & {
+  export type StreamBlocksParams = ChainNetwork & {
+    blockId?: string;
     sinceBlock: number | string;
     args: Partial<{ limit: number; startDate: Date; endDate: Date; date: Date }>;
     stream: Response;
   };
+  export type GetEstimateSmartFeeParams = ChainNetwork & {
+    target: number;
+  }
   export type BroadcastTransactionParams = ChainNetwork & {
     rawTx: string;
   };
@@ -50,6 +54,7 @@ export declare namespace CSP {
   export type StreamAddressUtxosParams = ChainNetwork & {
     address: string;
     stream: Response;
+    limit: number;
     args: StreamAddressUtxosArgs;
   };
   export type StreamTransactionsParams = ChainNetwork & {
@@ -63,6 +68,7 @@ export declare namespace CSP {
   export type StreamWalletAddressesParams = ChainNetwork & {
     walletId: IWallet;
     stream: Response;
+    limit: number;
   };
   export type StreamWalletTransactionsParams = ChainNetwork & {
     wallet: IWallet;
@@ -72,6 +78,7 @@ export declare namespace CSP {
   export type StreamWalletUtxosArgs = { includeSpent: 'true' | undefined };
   export type StreamWalletUtxosParams = ChainNetwork & {
     wallet: IWallet;
+    limit: number;
     args: Partial<StreamWalletUtxosArgs>;
     stream: Response;
   };
@@ -82,7 +89,8 @@ export declare namespace CSP {
     getBalanceForAddress(params: GetBalanceForAddressParams): Promise<{ balance: number }[]>;
     getBalanceForWallet(params: GetBalanceForWalletParams): Promise<{ balance: number }[]>;
     getBlock(params: GetBlockParams): Promise<IBlock | string>;
-    getBlocks(params: GetBlocksParams): any;
+    streamBlocks(paramStreamBlocksParamsams): any;
+    getFee(params: GetEstimateSmartFeeParams): any;
     broadcastTransaction(params: BroadcastTransactionParams): Promise<any>;
     createWallet(params: CreateWalletParams): Promise<IWallet>;
     getWallet(params: GetWalletParams): Promise<IWallet | null>;

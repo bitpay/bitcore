@@ -14,8 +14,8 @@ export type IBlock = {
   hash: string;
   version: number;
   merkleRoot: string;
-  time: number;
-  timeNormalized: number;
+  time: Date;
+  timeNormalized: Date;
   nonce: number;
   previousBlockHash: string;
   nextBlockHash: string;
@@ -52,11 +52,12 @@ export class Block extends BaseModel<IBlock> {
 
     await this.handleReorg({ header, chain, network });
 
-    const previousBlock = await this.findOne({ hash: header.prevHash, chain, network });
+    const previousBlock = await this.collection.findOne({ hash: header.prevHash, chain, network });
 
     const blockTimeNormalized = (() => {
-      if (previousBlock && blockTime <= previousBlock.timeNormalized) {
-        return previousBlock.timeNormalized + 1;
+      const prevTime = previousBlock ? previousBlock.timeNormalized : null;
+      if (prevTime && blockTime <= prevTime.getTime()) {
+        return prevTime.getTime() + 1;
       } else {
         return blockTime;
       }
@@ -65,7 +66,7 @@ export class Block extends BaseModel<IBlock> {
     const height = (previousBlock && previousBlock.height + 1) || 1;
     logger.debug('Setting blockheight', height);
 
-    await this.update(
+    await this.collection.update(
       { hash: header.hash, chain, network },
       {
         $set: {
@@ -89,7 +90,10 @@ export class Block extends BaseModel<IBlock> {
     );
 
     if (previousBlock) {
-      await this.updateOne({ chain, network, hash: previousBlock.hash }, { $set: { nextBlockHash: header.hash } });
+      await this.collection.updateOne(
+        { chain, network, hash: previousBlock.hash },
+        { $set: { nextBlockHash: header.hash } }
+      );
       logger.debug('Updating previous block.nextBlockHash ', header.hash);
     }
 
@@ -105,7 +109,7 @@ export class Block extends BaseModel<IBlock> {
       forkHeight
     });
 
-    return this.update({ hash: header.hash, chain, network }, { $set: { processed: true } });
+    return this.collection.update({ hash: header.hash, chain, network }, { $set: { processed: true } });
   }
 
   getPoolInfo(coinbase: string) {
@@ -116,7 +120,8 @@ export class Block extends BaseModel<IBlock> {
 
   async getLocalTip(params: ChainNetwork) {
     const { chain, network } = params;
-    const [bestBlock] = await this.find({ processed: true, chain, network })
+    const [bestBlock] = await this.collection
+      .find({ processed: true, chain, network })
       .sort({ height: -1 })
       .limit(1)
       .toArray();
@@ -125,7 +130,8 @@ export class Block extends BaseModel<IBlock> {
 
   async getLocatorHashes(params: ChainNetwork) {
     const { chain, network } = params;
-    const locatorBlocks = await this.find({ processed: true, chain, network })
+    const locatorBlocks = await this.collection
+      .find({ processed: true, chain, network })
       .sort({ height: -1 })
       .limit(30)
       .toArray();
@@ -146,10 +152,10 @@ export class Block extends BaseModel<IBlock> {
       return;
     }
     logger.info(`Resetting tip to ${localTip.previousBlockHash}`, { chain, network });
-    await this.remove({ chain, network, height: { $gte: localTip.height } });
-    await TransactionModel.remove({ chain, network, blockHeight: { $gte: localTip.height } });
-    await CoinModel.remove({ chain, network, mintHeight: { $gte: localTip.height } });
-    await CoinModel.update(
+    await this.collection.remove({ chain, network, height: { $gte: localTip.height } });
+    await TransactionModel.collection.remove({ chain, network, blockHeight: { $gte: localTip.height } });
+    await CoinModel.collection.remove({ chain, network, mintHeight: { $gte: localTip.height } });
+    await CoinModel.collection.update(
       { chain, network, spentHeight: { $gte: localTip.height } },
       { $set: { spentTxid: null, spentHeight: -1 } },
       { multi: true }

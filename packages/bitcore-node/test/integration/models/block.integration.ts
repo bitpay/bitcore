@@ -13,35 +13,35 @@ describe('Block Model', function () {
 
   describe('addBlock', () => {
     it('should add a block accordingly when a previousBlock does not reference incoming block', async () => {
-      await BlockModel.insert({
+      await BlockModel.collection.insert({
         chain: 'BTC',
         network: 'regtest',
         height: 5,
         hash: '528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7',
         version: '536870912',
         merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
-        time: 1526326784,
+        time: new Date(1526326784),
         nonce: '3',
         previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
         size: 264,
         bits: parseInt('207fffff', 16).toString(),
         processed: true
       });
-      await BlockModel.insert({
+      await BlockModel.collection.insert({
         chain: 'BTC',
         network: 'regtest',
         height: 6,
         hash: '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
         version: '536870912',
         merkleRoot: '8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826',
-        time: 1526326785,
+        time: new Date(1526326785),
         nonce: '0',
         previousBlockHash: '528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7',
         size: 264,
         bits: parseInt('207fffff', 16).toString(),
         processed: true
       });
-      await BlockModel.insert({
+      await BlockModel.collection.insert({
         chain: 'BTC',
         network: 'regtest',
         height: 7,
@@ -55,7 +55,7 @@ describe('Block Model', function () {
         bits: parseInt('207fffff', 16).toString(),
         processed: true,
       });
-      await BlockModel.insert({
+      await BlockModel.collection.insert({
         chain: 'BTC',
         network: 'regtest',
         height: 8,
@@ -72,7 +72,7 @@ describe('Block Model', function () {
 
       await BlockModel.addBlock({ block: TEST_BLOCK, chain: 'BTC', network: 'regtest' });
 
-      const blocks = await BlockModel.find({ chain: 'BTC', network: 'regtest' }).toArray();
+      const blocks = await BlockModel.collection.find({ chain: 'BTC', network: 'regtest' }).toArray();
       expect(blocks.length).to.equal(4);
       const ownBlock = blocks[3];
       expect(ownBlock.chain).to.equal('BTC');
@@ -92,7 +92,7 @@ describe('Block Model', function () {
 
       logger.info(`new block was successfully added with hash`, ownBlock.hash);
 
-      const transaction = await TransactionModel.find({
+      const transaction = await TransactionModel.collection.find({
         chain: 'BTC',
         network: 'regtest',
         blockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929'
@@ -113,7 +113,7 @@ describe('Block Model', function () {
 
     });
     it('should add a block when incoming block references previous block hash', async () => {
-      await BlockModel.insert({
+      await BlockModel.collection.insert({
         chain: 'BTC',
         network: 'regtest',
         height: 5,
@@ -127,7 +127,7 @@ describe('Block Model', function () {
         bits: parseInt('207fffff', 16).toString(),
         processed: true
       });
-      await BlockModel.insert({
+      await BlockModel.collection.insert({
         chain: 'BTC',
         network: 'regtest',
         height: 6,
@@ -141,29 +141,29 @@ describe('Block Model', function () {
         bits: parseInt('207fffff', 16).toString(),
         processed: true
       });
-      await BlockModel.insert({
+      await BlockModel.collection.insert({
         chain: 'BTC',
         network: 'regtest',
         height: 7,
         hash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
         version: '536870912',
         merkleRoot: '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
-        time: 1526326785,
+        time: new Date(1526326785),
         nonce: '3',
         previousBlockHash: '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
         size: 264,
         bits: parseInt('207fffff', 16).toString(),
         processed: true,
       });
-      await BlockModel.insert({
+      await BlockModel.collection.insert({
         chain: 'BTC',
         network: 'regtest',
         height: 8,
         hash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9',
         version: '536870912',
         merkleRoot: 'be9a7cc27cceef8dee3cfff0754df46590b6934987fdf24bd9528ce8718978f0',
-        time: 1526326786,
-        timeNormalized: 1526326786,
+        time: new Date(1526326786),
+        timeNormalized: new Date(1526326786),
         nonce: '2',
         previousBlockHash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
         size: 264,
@@ -173,7 +173,7 @@ describe('Block Model', function () {
 
       await BlockModel.addBlock({ block: TEST_BLOCK, chain: 'BTC', network: 'regtest' });
 
-      const blocks = await BlockModel.find({ chain: 'BTC', network: 'regtest' }).sort({ height: 1 }).toArray();
+      const blocks = await BlockModel.collection.find({ chain: 'BTC', network: 'regtest' }).sort({ height: 1 }).toArray();
       expect(blocks.length).to.equal(5);
       const ownBlock = blocks[4];
       expect(ownBlock.chain).to.equal('BTC');
@@ -193,7 +193,7 @@ describe('Block Model', function () {
 
       logger.info(`new block was successfully added with hash`, ownBlock.hash);
 
-      const transaction = await TransactionModel.find({
+      const transaction = await TransactionModel.collection.find({
         chain: 'BTC',
         network: 'regtest',
         blockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929'
@@ -218,9 +218,9 @@ describe('Block Model', function () {
   describe('getLocalTip', () => {
     it('should get the highest processed block for a particular chain and network', async () => {
 
-      await BlockModel.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 1 });
-      await BlockModel.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 2 });
-      await BlockModel.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 3 });
+      await BlockModel.collection.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 1 });
+      await BlockModel.collection.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 2 });
+      await BlockModel.collection.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 3 });
 
       const result = await BlockModel.getLocalTip({ chain: 'BTC', network: 'regtest' });
 
@@ -232,11 +232,11 @@ describe('Block Model', function () {
     });
     it('should return block with height zero if block is not found for a particular chain and network', async () => {
 
-      await BlockModel.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 1 });
-      await BlockModel.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 2 });
-      await BlockModel.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 3 });
-      await BlockModel.insert({ processed: true, chain: 'BCH', network: 'regtest', height: 10 });
-      await BlockModel.insert({ processed: true, chain: 'BTC', network: 'testnet', height: 10 });
+      await BlockModel.collection.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 1 });
+      await BlockModel.collection.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 2 });
+      await BlockModel.collection.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 3 });
+      await BlockModel.collection.insert({ processed: true, chain: 'BCH', network: 'regtest', height: 10 });
+      await BlockModel.collection.insert({ processed: true, chain: 'BTC', network: 'testnet', height: 10 });
 
       const result = await BlockModel.getLocalTip({ chain: 'ETH', network: 'regtest' });
 
@@ -249,7 +249,7 @@ describe('Block Model', function () {
     it('should return the highest processed block hash for the last thirty blocks for a particular chain and network', async () => {
 
       for (let i = 1; i < 31; i++) {
-        await BlockModel.insert({ processed: true, chain: 'BTC', network: 'regtest', height: i, hash: `hash${i}` });
+        await BlockModel.collection.insert({ processed: true, chain: 'BTC', network: 'regtest', height: i, hash: `hash${i}` });
       }
       const result = await BlockModel.getLocatorHashes({ chain: 'BTC', network: 'regtest' });
 
@@ -265,7 +265,7 @@ describe('Block Model', function () {
     });
     it('should return block hash with 64 zeros if processed block count less than two is found for a particular chain and network', async () => {
 
-      await BlockModel.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 1 });
+      await BlockModel.collection.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 1 });
 
       const result = await BlockModel.getLocatorHashes({ chain: 'BTC', network: 'regtest' });
 
@@ -277,42 +277,42 @@ describe('Block Model', function () {
   describe('handleReorg', () => {
     it('should not reorg if the incoming block\'s prevHash matches the block hash of the current highest block', async () => {
 
-      await BlockModel.insert({
+      await BlockModel.collection.insert({
         chain: 'BTC',
         network: 'regtest',
         height: 1335,
         hash: '528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7',
         version: '536870912',
         merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
-        time: 1526326784,
+        time: new Date(1526326784),
         nonce: '3',
         previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
         size: 264,
         bits: parseInt('207fffff', 16).toString(),
         processed: true
       });
-      await BlockModel.insert({
+      await BlockModel.collection.insert({
         chain: 'BTC',
         network: 'regtest',
         height: 1336,
         hash: '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
         version: '536870912',
         merkleRoot: '8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826',
-        time: 1526326785,
+        time: new Date(1526326785),
         nonce: '0',
         previousBlockHash: '528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7',
         size: 264,
         bits: parseInt('207fffff', 16).toString(),
         processed: true
       });
-      await BlockModel.insert({
+      await BlockModel.collection.insert({
         chain: 'BTC',
         network: 'regtest',
         height: 1337,
         hash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
         version: '536870912',
         merkleRoot: '8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826',
-        time: 1526326785,
+        time: new Date(1526326785),
         nonce: '3',
         previousBlockHash: '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
         size: 264,
@@ -334,7 +334,7 @@ describe('Block Model', function () {
         network: 'regtest'
       });
 
-      const result = await BlockModel.find({ chain: 'BTC', network: 'regtest' }).toArray();
+      const result = await BlockModel.collection.find({ chain: 'BTC', network: 'regtest' }).toArray();
       expect(result.length).to.equal(3);
 
     });
@@ -354,13 +354,13 @@ describe('Block Model', function () {
         network: 'regtest'
       });
 
-      const result = await BlockModel.find({ chain: 'BTC', network: 'regtest' }).toArray();
+      const result = await BlockModel.collection.find({ chain: 'BTC', network: 'regtest' }).toArray();
       expect(result.length).to.equal(0);
 
     });
     it('should successfully handle reorg', async () => {
       // setting the Block model
-      await BlockModel.insert({
+      await BlockModel.collection.insert({
         chain: 'BTC',
         network: 'regtest',
         height: 5,
@@ -374,7 +374,7 @@ describe('Block Model', function () {
         bits: parseInt('207fffff', 16).toString(),
         processed: true
       });
-      await BlockModel.insert({
+      await BlockModel.collection.insert({
         chain: 'BTC',
         network: 'regtest',
         height: 6,
@@ -388,7 +388,7 @@ describe('Block Model', function () {
         bits: parseInt('207fffff', 16).toString(),
         processed: true
       });
-      await BlockModel.insert({
+      await BlockModel.collection.insert({
         chain: 'BTC',
         network: 'regtest',
         height: 7,
@@ -404,7 +404,7 @@ describe('Block Model', function () {
       });
 
       // setting TX model
-      await TransactionModel.insert({
+      await TransactionModel.collection.insert({
         txid: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
         chain: 'BTC',
         network: 'regtest',
@@ -415,7 +415,7 @@ describe('Block Model', function () {
         size: 145,
         blockHeight: 8
       });
-      await TransactionModel.insert({
+      await TransactionModel.collection.insert({
         txid: '8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826',
         chain: 'BTC',
         network: 'regtest',
@@ -426,7 +426,7 @@ describe('Block Model', function () {
         size: 145,
         blockHeight: 8
       });
-      await TransactionModel.insert({
+      await TransactionModel.collection.insert({
         txid: '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
         chain: 'BTC',
         network: 'regtest',
@@ -439,7 +439,7 @@ describe('Block Model', function () {
       });
 
       // setting the Coin model
-      await CoinModel.insert({
+      await CoinModel.collection.insert({
         network: 'regtest',
         chain: 'BTC',
         mintTxid: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
@@ -449,7 +449,7 @@ describe('Block Model', function () {
         value: 500.0,
         address: 'mkjB6LmjiNfJWgH4aP4v1GkFjRcQTfDSfj'
       });
-      await CoinModel.insert({
+      await CoinModel.collection.insert({
         network: 'regtest',
         chain: 'BTC',
         mintTxid: '8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826',
@@ -459,7 +459,7 @@ describe('Block Model', function () {
         value: 500.0,
         address: 'mkjB6LmjiNfJWgH4aP4v1GkFjRcQTfDSfj'
       });
-      await CoinModel.insert({
+      await CoinModel.collection.insert({
         network: 'regtest',
         chain: 'BTC',
         mintTxid: '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
@@ -487,13 +487,13 @@ describe('Block Model', function () {
       });
 
       // check for removed block after Reorg in db
-      const blocks = await BlockModel.find({
+      const blocks = await BlockModel.collection.find({
         chain: 'BTC',
         network: 'regtest'
       }).toArray();
       expect(blocks.length).to.equal(2);
 
-      const removedBlock = await BlockModel.find({
+      const removedBlock = await BlockModel.collection.find({
         chain: 'BTC',
         network: 'regtest',
         height: {
@@ -503,13 +503,13 @@ describe('Block Model', function () {
       expect(removedBlock.length).to.equal(0);
 
       // check for removed tx after Reorg in db
-      const transaction = await TransactionModel.find({
+      const transaction = await TransactionModel.collection.find({
         chain: 'BTC',
         network: 'regtest'
       }).toArray();
       expect(transaction.length).to.equal(1);
 
-      const removedTransaction = await TransactionModel.find({
+      const removedTransaction = await TransactionModel.collection.find({
         chain: 'BTC',
         network: 'regtest',
         blockHeight: {
@@ -519,13 +519,13 @@ describe('Block Model', function () {
       expect(removedTransaction.length).to.equal(0);
 
       // check for removed coin after Reorg in db
-      const coinModel = await CoinModel.find({
+      const coinModel = await CoinModel.collection.find({
         chain: 'BTC',
         network: 'regtest',
       }).toArray();
       expect(coinModel.length).to.equal(1);
 
-      const removedCoin = await CoinModel.find({
+      const removedCoin = await CoinModel.collection.find({
         chain: 'BTC',
         network: 'regtest',
         mintHeight: {
@@ -535,7 +535,7 @@ describe('Block Model', function () {
       expect(removedCoin.length).to.equal(0);
 
       // check for unspent coins in the db
-      const unspentCoins = await CoinModel.find({
+      const unspentCoins = await CoinModel.collection.find({
         chain: 'BTC',
         network: 'regtest',
         spentTxid: null,
@@ -545,7 +545,7 @@ describe('Block Model', function () {
       expect(unspentCoins[0].chain).to.equal('BTC');
       expect(unspentCoins[0].network).to.equal('regtest');
       expect(unspentCoins[0].mintTxid).to.equal('8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f'),
-      expect(unspentCoins[0].mintIndex).to.equal(0);
+        expect(unspentCoins[0].mintIndex).to.equal(0);
       expect(unspentCoins[0].mintHeight).to.equal(5);
       expect(unspentCoins[0].coinbase).to.equal(true);
       expect(unspentCoins[0].value).to.equal(500.0);

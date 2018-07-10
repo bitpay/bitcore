@@ -43,6 +43,7 @@ export class Transaction extends BaseModel<ITransaction> {
   async batchImport(params: {
     txs: Array<Bitcoin.Transaction>;
     height: number;
+    mempoolTime?: Date;
     blockTime?: Date;
     blockHash?: string;
     blockTimeNormalized?: Date;
@@ -154,7 +155,7 @@ export class Transaction extends BaseModel<ITransaction> {
     let mintOps = new Array<any>();
     let parentChainCoins = new Array<ICoin>();
     if (parentChain && forkHeight && height < forkHeight) {
-      parentChainCoins = await CoinModel.find({
+      parentChainCoins = await CoinModel.collection.find({
         chain: parentChain,
         network,
         mintHeight: height,

@@ -1,4 +1,3 @@
-import { Response } from 'express';
 import { CoinModel } from '../../../models/coin';
 import { BlockModel } from '../../../models/block';
 import { WalletModel, IWallet } from '../../../models/wallet';
@@ -12,9 +11,6 @@ import config from '../../../config';
 import { TransactionModel } from '../../../models/transaction';
 
 const ListTransactionsStream = require('./transforms');
-
-type StreamWalletUtxoArgs = { includeSpent: 'true' | undefined };
-type StreamWalletUtxoParams = { wallet: IWallet; args: Partial<StreamWalletUtxoArgs>; stream: Response };
 
 @LoggifyClass
 export class InternalStateProvider implements CSP.IChainStateService {
@@ -35,7 +31,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   streamAddressUtxos(params: CSP.StreamAddressUtxosParams) {
-    const { network, address, stream, args } = params;
+    const { network, address, limit = 10, stream, args } = params;
     if (typeof address !== 'string' || !this.chain || !network) {
       throw 'Missing required param';
     }
@@ -44,7 +40,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     if (unspent) {
       query.spentHeight = { $lt: 0 };
     }
-    Storage.apiStreamingFind(CoinModel, query, stream);
+    Storage.apiStreamingFind(CoinModel, query, { limit }, stream);
   }
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
@@ -60,9 +56,24 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return CoinModel.getBalance({ query });
   }
 
-  async getBlocks(params: CSP.GetBlocksParams) {
-    const { network, sinceBlock, stream, args } = params;
-    let { limit, startDate, endDate, date } = args;
+  streamBlocks(params: CSP.StreamBlocksParams) {
+    const { stream, args } = params;
+    const { limit = 10 } = args;
+    const query = this.getBlocksQuery(params);
+    Storage.apiStreamingFind(BlockModel, query, { limit, sort: { height: -1 } }, stream);
+  }
+
+  async getBlocks(params: CSP.StreamBlocksParams) {
+    const { args = {} } = params;
+    const { limit = 10 } = args;
+    const query = this.getBlocksQuery(params);
+    let blocks = await BlockModel.collection.find(query, { limit, sort: { height: -1 } }).toArray();
+    return blocks.map(block => BlockModel._apiTransform(block, { object: true }));
+  }
+
+  private getBlocksQuery(params: CSP.StreamBlocksParams) {
+    const { network, sinceBlock, blockId, args = {}} = params;
+    let { startDate, endDate, date } = args;
     if (!this.chain || !network) {
       throw 'Missing required param';
     }
@@ -71,6 +82,17 @@ export class InternalStateProvider implements CSP.IChainStateService {
       network: network.toLowerCase(),
       processed: true
     };
+    if (blockId) {
+      if (blockId.length === 64) {
+        query.hash = blockId;
+      } else {
+        let height = parseInt(blockId, 10);
+        if (Number.isNaN(height) || height.toString(10) !== blockId) {
+          throw 'invalid block id provided';
+        }
+        query.height = height;
+      }
+    }
     if (sinceBlock) {
       let height = Number(sinceBlock);
       if (Number.isNaN(height) || height.toString(10) !== sinceBlock) {
@@ -84,45 +106,23 @@ export class InternalStateProvider implements CSP.IChainStateService {
     if (endDate) {
       Object.assign(query.time, { ...query.time, $lt: new Date(endDate) });
     }
-    if(date) {
+    if (date) {
       let firstDate = new Date(date);
       let nextDate = new Date(date);
       nextDate.setDate(nextDate.getDate() + 1);
-      query.time = { $gt: firstDate, $lt: nextDate};
+      query.time = { $gt: firstDate, $lt: nextDate };
     }
-    limit = limit || 200;
-    limit = limit > 1000 ? 1000 : limit;
-    Storage.apiStreamingFind(BlockModel, query, stream);
+    return query;
   }
 
-  async getBlock(params: CSP.GetBlockParams) {
-    const { network, blockId } = params;
-    if (typeof blockId !== 'string' || !this.chain || !network) {
-      throw 'Missing required param';
-    }
-    let query: any = {
-      chain: this.chain,
-      network: network.toLowerCase(),
-      processed: true
-    };
-    if (blockId.length === 64) {
-      query.hash = blockId;
-    } else {
-      let height = parseInt(blockId, 10);
-      if (Number.isNaN(height) || height.toString(10) !== blockId) {
-        throw 'invalid block id provided';
-      }
-      query.height = height;
-    }
-    let block = await BlockModel.findOne(query);
-    if (!block) {
-      throw 'block not found';
-    }
-    return BlockModel._apiTransform(block, { object: true });
+  async getBlock(params: CSP.StreamBlocksParams) {
+    let blocks = await this.getBlocks(params);
+    return blocks[0];
   }
 
   streamTransactions(params: CSP.StreamTransactionsParams) {
     const { network, stream, args } = params;
+    let { limit = 100, blockHash, blockHeight } = args;
     if (!this.chain || !network) {
       throw 'Missing chain or network';
     }
@@ -130,13 +130,13 @@ export class InternalStateProvider implements CSP.IChainStateService {
       chain: this.chain,
       network: network.toLowerCase()
     };
-    if (args.blockHeight) {
-      query.blockHeight = Number(args.blockHeight);
+    if (blockHeight) {
+      query.blockHeight = Number(blockHeight);
     }
-    if (args.blockHash) {
-      query.blockHash = args.blockHash;
+    if (blockHash) {
+      query.blockHash = blockHash;
     }
-    Storage.apiStreamingFind(TransactionModel, query, stream);
+    Storage.apiStreamingFind(TransactionModel, query, { limit }, stream);
   }
 
   streamTransaction(params: CSP.StreamTransactionParams) {
@@ -146,7 +146,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
     network = network.toLowerCase();
     let query = { chain: this.chain, network, txid: txId };
-    Storage.apiStreamingFind(TransactionModel, query, stream);
+    Storage.apiStreamingFind(TransactionModel, query, { limit: 100 }, stream);
   }
 
   async createWallet(params: CSP.CreateWalletParams) {
@@ -162,19 +162,19 @@ export class InternalStateProvider implements CSP.IChainStateService {
       path,
       singleAddress
     };
-    await WalletModel.insert(wallet);
+    await WalletModel.collection.insert(wallet);
     return wallet;
   }
 
   async getWallet(params: CSP.GetWalletParams) {
     const { pubKey } = params;
-    return WalletModel.findOne({ pubKey });
+    return WalletModel.collection.findOne({ pubKey });
   }
 
   streamWalletAddresses(params: CSP.StreamWalletAddressesParams) {
-    let { walletId, stream } = params;
+    let { walletId, limit = 1000, stream } = params;
     let query = { wallet: walletId };
-    Storage.apiStreamingFind(WalletAddressModel, query, stream);
+    Storage.apiStreamingFind(WalletAddressModel, query, { limit }, stream);
   }
 
   async updateWallet(params: CSP.UpdateWalletParams) {
@@ -215,13 +215,18 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return CoinModel.getBalance({ query });
   }
 
-  streamWalletUtxos(params: StreamWalletUtxoParams) {
-    const { wallet, args = {}, stream } = params;
+  streamWalletUtxos(params: CSP.StreamWalletUtxosParams) {
+    const { wallet, limit, args = {}, stream } = params;
     let query: any = { wallets: wallet._id };
     if (args.includeSpent !== 'true') {
       query.spentHeight = { $lt: 0 };
     }
-    Storage.apiStreamingFind(CoinModel, query, stream);
+    Storage.apiStreamingFind(CoinModel, query, { limit }, stream);
+  }
+
+  async getFee(params: CSP.GetEstimateSmartFeeParams) {
+    const { network, target } = params;
+    return this.getRPC(network).getEstimateSmartFee(Number(target));
   }
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
@@ -238,7 +243,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getCoinsForTx({ chain, network, txid }: { chain: string; network: string; txid: string }) {
-    const tx = await TransactionModel.find({ txid }).count();
+    const tx = await TransactionModel.collection.find({ txid }).count();
     if (tx === 0) {
       throw new Error(`No such transaction ${txid}`);
     }
