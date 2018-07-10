@@ -99,7 +99,7 @@ export class BlocksProvider {
     return this.getCurrentHeight().flatMap(height => {
       return this.http.get(url).map(data => {
         let blocks: Array<ApiBlock> = data.json();
-        let appBlocks: Array<AppBlock> = blocks.map(this.toAppBlock);
+        let appBlocks: Array<AppBlock> = blocks.map(block => this.toAppBlock(block, height));
         return { blocks: appBlocks };
       });
     });
