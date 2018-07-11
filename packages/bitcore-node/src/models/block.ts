@@ -32,6 +32,13 @@ export class Block extends BaseModel<IBlock> {
     super('blocks');
   }
 
+  allowedPaging = [
+    {
+      key: 'height' as 'height',
+      type: 'number' as 'number'
+    }
+  ];
+
   async onConnect() {
     this.collection.createIndex({ hash: 1 });
     this.collection.createIndex({ chain: 1, network: 1, processed: 1, height: -1 });

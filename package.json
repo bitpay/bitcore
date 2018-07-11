@@ -6,7 +6,9 @@
   },
   "scripts": {
     "build": "docker build -t bitcore-node .",
-    "postinstall": "./node_modules/.bin/lerna bootstrap"
+    "postinstall": "./node_modules/.bin/lerna bootstrap",
+    "insight": "cd packages/insight && npm start",
+    "node": "cd packages/bitcore-node && npm start"
   },
   "devDependencies": {
     "eslint": "^4.19.1",

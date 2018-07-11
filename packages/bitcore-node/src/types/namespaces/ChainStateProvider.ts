@@ -2,6 +2,7 @@ import { IBlock } from '../../models/block';
 import { Response } from 'express';
 import { IWallet } from '../../models/wallet';
 import { ChainNetwork } from '../../types/ChainNetwork';
+import { StreamingFindOptions } from "../../services/storage";
 export declare namespace CSP {
   export type StreamWalletTransactionsArgs = {
     startBlock: number;
@@ -30,12 +31,12 @@ export declare namespace CSP {
   export type StreamBlocksParams = ChainNetwork & {
     blockId?: string;
     sinceBlock: number | string;
-    args: Partial<{ limit: number; startDate: Date; endDate: Date; date: Date }>;
+    args: Partial<{ startDate: Date; endDate: Date; date: Date;} & StreamingFindOptions<IBlock>>;
     stream: Response;
   };
   export type GetEstimateSmartFeeParams = ChainNetwork & {
     target: number;
-  }
+  };
   export type BroadcastTransactionParams = ChainNetwork & {
     rawTx: string;
   };
@@ -102,7 +103,7 @@ export declare namespace CSP {
     streamWalletAddresses(params: StreamWalletAddressesParams): any;
     streamWalletTransactions(params: StreamWalletTransactionsParams): any;
     streamWalletUtxos(params: StreamWalletUtxosParams): any;
-    getCoinsForTx(params: {chain: string, network: string, txid: string }): Promise<any>;
+    getCoinsForTx(params: { chain: string; network: string; txid: string }): Promise<any>;
   }
 
   type ChainStateServices = { [key: string]: IChainStateService };

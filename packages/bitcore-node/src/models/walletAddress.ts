@@ -18,6 +18,8 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
     super('walletaddresses');
   }
 
+  allowedPaging = [];
+
   onConnect() {
     this.collection.createIndex({ address: 1, wallet: 1 });
   }

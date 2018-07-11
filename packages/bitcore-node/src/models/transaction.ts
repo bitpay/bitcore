@@ -32,6 +32,8 @@ export class Transaction extends BaseModel<ITransaction> {
     super('transactions');
   }
 
+  allowedPaging = [{ key: 'blockHeight' as 'blockHeight', type: 'number' as 'number' }];
+
   onConnect() {
     this.collection.createIndex({ txid: 1 });
     this.collection.createIndex({ chain: 1, network: 1, blockHeight: 1 });
@@ -155,12 +157,14 @@ export class Transaction extends BaseModel<ITransaction> {
     let mintOps = new Array<any>();
     let parentChainCoins = new Array<ICoin>();
     if (parentChain && forkHeight && height < forkHeight) {
-      parentChainCoins = await CoinModel.collection.find({
-        chain: parentChain,
-        network,
-        mintHeight: height,
-        spentHeight: { $gt: -2, $lt: forkHeight }
-      }).toArray();
+      parentChainCoins = await CoinModel.collection
+        .find({
+          chain: parentChain,
+          network,
+          mintHeight: height,
+          spentHeight: { $gt: -2, $lt: forkHeight }
+        })
+        .toArray();
     }
     for (let tx of txs) {
       tx._hash = tx.hash;

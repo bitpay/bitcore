@@ -17,6 +17,7 @@ export class Wallet extends BaseModel<IWallet> {
   constructor() {
     super('wallets');
   }
+  allowedPaging = [];
 
   onConnect() {
     this.collection.createIndex({ pubKey: 1 });

@@ -57,23 +57,22 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   streamBlocks(params: CSP.StreamBlocksParams) {
-    const { stream, args } = params;
-    const { limit = 10 } = args;
-    const query = this.getBlocksQuery(params);
-    Storage.apiStreamingFind(BlockModel, query, { limit, sort: { height: -1 } }, stream);
+    const { stream } = params;
+    const { query, options } = this.getBlocksQuery(params);
+    Storage.apiStreamingFind(BlockModel, query, options, stream);
   }
 
   async getBlocks(params: CSP.StreamBlocksParams) {
-    const { args = {} } = params;
-    const { limit = 10 } = args;
-    const query = this.getBlocksQuery(params);
-    let blocks = await BlockModel.collection.find(query, { limit, sort: { height: -1 } }).toArray();
+    const { query, options } = this.getBlocksQuery(params);
+    let blocks = await BlockModel.collection.find(query, options).toArray();
     return blocks.map(block => BlockModel._apiTransform(block, { object: true }));
   }
 
   private getBlocksQuery(params: CSP.StreamBlocksParams) {
-    const { network, sinceBlock, blockId, args = {}} = params;
-    let { startDate, endDate, date } = args;
+    const { network, sinceBlock, blockId, args = {} } = params;
+    let { startDate, endDate, date, since, direction, paging } = args;
+    let { limit = 10, sort = { height: -1 } } = args;
+    let options = { limit, sort, since, direction, paging };
     if (!this.chain || !network) {
       throw 'Missing required param';
     }
@@ -112,7 +111,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
       nextDate.setDate(nextDate.getDate() + 1);
       query.time = { $gt: firstDate, $lt: nextDate };
     }
-    return query;
+    return { query, options };
   }
 
   async getBlock(params: CSP.StreamBlocksParams) {

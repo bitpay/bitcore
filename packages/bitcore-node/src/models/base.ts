@@ -6,6 +6,12 @@ export abstract class BaseModel<T> {
   client?: MongoClient;
   db?: Db;
 
+  // each model must implement an array of keys that are indexed, for paging
+  abstract allowedPaging: Array<{
+    type: 'string' | 'number' | 'date';
+    key: keyof T;
+  }>;
+
   constructor(private collectionName: string) {
     this.handleConnection();
   }
