@@ -63,7 +63,7 @@ export class StorageService {
   stop() {}
 
   validPagingProperty<T>(model: TransformableModel<T>, property: keyof T) {
-    return model.allowedPaging.some(allowed => allowed.key === property);
+    return model.allowedPaging.some((prop) => prop.key === property);
   }
 
   /**
