@@ -57,7 +57,7 @@ export async function blocks(info: ChainNetwork, creds: {
     expect(block.size, 'block size').to.equal(truth.size);
     expect(block.bits.toString(16), 'block bits').to.equal(truth.bits);
     expect(block.processed, 'block processed').to.equal(true);
-    expect(block.time.getTime(), 'block time').to.equal(truth.time);
+    expect(block.time.getTime(), 'block time').to.equal(truth.time * 1000);
 
     if (block.height < tip.height) {
       expect(block.nextBlockHash, 'block next hash').to.equal(truth.nextblockhash);
