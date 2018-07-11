@@ -212,8 +212,8 @@ export async function transactions(info: ChainNetwork, creds: {
 
 if (require.main === module) (async () => {
   const info = {
-    chain: 'BTC',
-    network: 'testnet',
+    chain: process.env.CHAIN || 'BTC',
+    network: process.env.NETWORK || 'testnet',
   };
   const creds = config.chains[info.chain][info.network].rpc;
 
