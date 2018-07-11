@@ -75,7 +75,7 @@
           <div>
             <div class="ellipsis">
               <p>
-                <a (click)="goToAddress(vout.address)">{{ vout.address }}</a>
+                <a (click)="goToAddress(vout.address)">{{ getAddress(vout) }}</a>
               </p>
             </div>
             <div *ngIf="expanded">

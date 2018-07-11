@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { Input } from '@angular/core';
 import { NavController } from 'ionic-angular';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { TxsProvider } from '../../providers/transactions/transactions';
+import { TxsProvider, ApiInput } from '../../providers/transactions/transactions';
 
 /**
  * Generated class for the TransactionComponent component.
@@ -43,12 +43,12 @@ export class TransactionComponent {
     });
   }
 
-  public getAddress(vout: any): string {
-    if (vout.scriptPubKey && vout.scriptPubKey.addresses) {
-      return vout.scriptPubKey.addresses[0];
-    } else {
+  public getAddress(vout: ApiInput): string {
+    if (vout.address === 'false') {
       return 'Unparsed address';
     }
+
+    return vout.address;
   }
 
   public goToTx(txId: string): void {

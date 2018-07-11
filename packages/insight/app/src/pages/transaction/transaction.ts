@@ -36,10 +36,7 @@ export class TransactionPage {
       data => {
         this.tx = data.tx;
         this.loading = false;
-        this.txProvider.getCoins(this.txId).subscribe(coinData => {
-          this.tx.inputs = coinData.inputs;
-          this.tx.outputs = coinData.outputs;
-        });
+        // Be aware that the tx component is loading data into the tx object
       },
       err => {
         console.log('err is', err);
