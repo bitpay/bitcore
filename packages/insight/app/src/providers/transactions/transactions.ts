@@ -4,7 +4,7 @@ import 'rxjs/add/operator/map';
 import { ApiProvider } from '../../providers/api/api';
 import { Observable } from 'rxjs/Observable';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { ApiBlock, BlocksProvider } from '../blocks/blocks';
+import { BlocksProvider } from '../blocks/blocks';
 
 /*
   Generated class for the TxsProvider provider.
@@ -41,7 +41,10 @@ export type ApiInput = {
   coinbase: boolean;
   vout: number;
   address: string;
-  script: string;
+  script: {
+    asm: string;
+    type: string
+  };
   spentTxid: string;
   value: number;
 };

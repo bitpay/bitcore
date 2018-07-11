@@ -29,15 +29,16 @@ export class AddressPage {
     public navCtrl: NavController,
     public navParams: NavParams,
     private http: Http,
-    private api: ApiProvider,
-    public currency: CurrencyProvider,
-    public transaction: TxsProvider
+    private apiProvider: ApiProvider,
+    public currencyProvider: CurrencyProvider,
+    public txProvider: TxsProvider
   ) {
     this.addrStr = navParams.get('addrStr');
   }
 
   public ionViewDidLoad(): void {
-    this.http.get(this.api.apiPrefix + '/address/' + this.addrStr).subscribe(
+    let url: string = this.apiProvider.apiPrefix + '/address/' + this.addrStr;
+    this.http.get(url).subscribe(
       data => {
         let apiCoin: ApiInput[] = data.json() as ApiInput[];
         let add: (prev: number, cur: number) => number = (prev, cur) => prev + cur;
