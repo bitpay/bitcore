@@ -45,6 +45,7 @@ export async function blocks(info: ChainNetwork, creds: {
     // Check times are increasing
     times[block.height - 1] = block.time.getTime();
     normalizedTimes[block.height - 1] = block.timeNormalized.getTime();
+
     const truth = await rpc.verbose_block(block.hash);
     expect(block.height, 'block height').to.equal(truth.height);
     expect(block.hash, 'block hash').to.equal(truth.hash);
@@ -150,6 +151,7 @@ export async function transactions(info: ChainNetwork, creds: {
     if (!tx) {
       break;
     }
+    logger.info(`verifying tx ${tx.txid}: ${tx.blockHeight}`);
     const truth = await rpc.transaction(tx.txid, tx.blockHash);
 
     expect(tx.size, 'tx size').to.equal(truth.size);
@@ -164,14 +166,16 @@ export async function transactions(info: ChainNetwork, creds: {
       expect(ours.length, 'number mint txids').to.equal(truth.vout.length);
       for (const our of ours) {
         // coins
-        expect(our.mintTxid, 'tx mint height').to.equal(tx.blockHeight);
+        expect(our.mintHeight, 'tx mint height').to.equal(tx.blockHeight);
         expect(our.value, 'tx mint value').to.equal(
-          truth.vout[our.mintIndex].value
+          Math.round(truth.vout[our.mintIndex].value * SATOSHI)
         );
-        expect(truth.vout[our.mintIndex].scriptPubKey.addresses,
-               'tx mint address').to.include(our.address);
-        expect(our.mintIndex === 0 && our.coinbase
-               || our.mintIndex !== 0 && !our.coinbase).to.be.true;
+        // TODO: why?
+        if (our.address && our.address !== 'false') {
+          expect(truth.vout[our.mintIndex].scriptPubKey.addresses,
+                 'tx mint address').to.include(our.address);
+        }
+        expect(our.coinbase).to.equal(tx.coinbase);
 
         // wallets
         expect(tx.wallets).to.include.members(our.wallets);
@@ -195,9 +199,10 @@ export async function transactions(info: ChainNetwork, creds: {
         chain: info.chain,
         spentTxid: tx.txid,
       });
-      expect(ours.length, 'number spent txids').to.equal(truth.vin.length);
+      const nspent = truth.vin.length + (tx.coinbase ? -1 : 0);
+      expect(ours.length, 'number spent txids').to.equal(nspent);
       for (const our of ours) {
-        expect(our.spentTxid, 'tx spent height').to.equal(tx.blockHeight);
+        expect(our.spentHeight, 'tx spent height').to.equal(tx.blockHeight);
         expect(tx.wallets).to.include.members(our.wallets);
       }
     }
