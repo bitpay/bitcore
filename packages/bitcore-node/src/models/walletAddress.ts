@@ -86,20 +86,25 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
       );
       let coinCursor = CoinModel.collection.find({ wallets: wallet._id }).project({ spentTxid: 1, mintTxid: 1 });
 
+      let txUpdates = [] as Array<any>;
       coinCursor.on('data', function(data: ICoin) {
         coinCursor.pause();
-        TransactionModel.collection.update(
-          { chain, network, txid: { $in: [data.spentTxid, data.mintTxid] } },
-          { $addToSet: { wallets: wallet._id } },
-          { multi: true },
-          function() {
-            // TODO Error handling if update fails?
-            coinCursor.resume();
+        txUpdates.push({
+          updateMany: {
+            filter: { chain, network, txid: { $in: [data.spentTxid, data.mintTxid] } },
+            update: { $addToSet: { wallets: wallet._id } }
           }
-        );
+        });
+        coinCursor.resume();
       });
 
-      coinCursor.on('end', function() {
+      coinCursor.on('end', async() => {
+        txUpdates = partition(txUpdates, 500);
+        await Promise.all(
+          txUpdates.map(txUpdate => {
+            return TransactionModel.collection.bulkWrite(txUpdate, { ordered: false });
+          })
+        )
         resolve();
       });
     });
