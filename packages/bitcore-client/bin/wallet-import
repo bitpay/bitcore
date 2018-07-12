@@ -42,7 +42,6 @@ const main = async () => {
   let wallet;
   try {
     const password = await promptly.password('Wallet Password:');
-    wallet = await Wallet.loadWallet({ path });
     wallet = await Wallet.loadWallet({ name, path });
     wallet = await wallet.unlock(password);
     let keyInput = [];
