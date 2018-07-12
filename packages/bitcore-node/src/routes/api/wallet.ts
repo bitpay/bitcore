@@ -96,18 +96,6 @@ router.post('/', async function(req, res) {
   }
 });
 
-router.get('/:pubKey', authenticate, async function(
-  req: AuthenticatedRequest,
-  res: Response
-) {
-  try {
-    let wallet = req.wallet;
-    return res.send(wallet);
-  } catch (err) {
-    return res.status(500).send(err);
-  }
-});
-
 router.get('/:pubKey/addresses', authenticate, async function(req, res) {
   try {
     let { chain, network, pubKey } = req.params;
@@ -153,7 +141,7 @@ router.get(
   async (req: AuthenticatedRequest, res) => {
     let { chain, network } = req.params;
     try {
-      return await ChainStateProvider.streamWalletTransactions({
+      return ChainStateProvider.streamWalletTransactions({
         chain,
         network,
         wallet: req.wallet!,
@@ -204,6 +192,18 @@ router.get(
     }
   }
 );
+
+router.get('/:pubKey', authenticate, async function (
+  req: AuthenticatedRequest,
+  res: Response
+) {
+  try {
+    let wallet = req.wallet;
+    return res.send(wallet);
+  } catch (err) {
+    return res.status(500).send(err);
+  }
+});
 
 module.exports = {
   router: router,

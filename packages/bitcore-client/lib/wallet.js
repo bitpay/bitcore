@@ -145,6 +145,13 @@ class Wallet {
     });
   }
 
+  listTransactions(params) {
+    return this.client.listTransactions({
+      ...params,
+      pubKey: this.xPubKey
+    });
+  }
+
   async newTx(params) {
     const utxos = params.utxos || (await this.getUtxos(params));
     const payload = {

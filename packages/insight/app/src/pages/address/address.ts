@@ -3,7 +3,7 @@ import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { Http } from '@angular/http';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { TxsProvider, ApiInput } from '../../providers/transactions/transactions';
+import { TxsProvider, ApiInput, ApiTx } from '../../providers/transactions/transactions';
 
 /**
  * Generated class for the AddressPage page.
@@ -53,11 +53,21 @@ export class AddressPage {
           balance,
           txAppearances: apiCoin.length
         };
-        this.transactions = apiCoin;
         this.loading = false;
       },
       err => {
-        console.log('err is', err);
+        console.error('err is', err);
+      }
+    );
+
+    let txurl: string = this.apiProvider.apiPrefix + '/address/' + this.addrStr + '/txs';
+    this.http.get(txurl).subscribe(
+      data => {
+        let apiTx: ApiTx[] = data.json() as ApiTx[];
+        this.transactions = apiTx.map(this.txProvider.toAppTx);
+      },
+      err => {
+        console.error('err is', err);
         this.loading = false;
       }
     );

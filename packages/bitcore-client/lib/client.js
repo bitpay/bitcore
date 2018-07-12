@@ -1,3 +1,5 @@
+
+const requestStream = require('request');
 const request = require('request-promise-native');
 const bitcoreLib = require('bitcore-lib');
 const secp256k1 = require('secp256k1');
@@ -59,13 +61,23 @@ Client.prototype.getCoins = async function (params) {
   });
 };
 
+Client.prototype.listTransactions = function (params) {
+  const { payload, pubKey, startDate, endDate } = params;
+  const url = `${this.baseUrl}/wallet/${pubKey}/transactions?startDate=${startDate}&endDate=${endDate}`;
+  const signature = this.sign({ method: 'GET', url, payload });
+  return requestStream.get(url, {
+    headers: { 'x-signature': signature },
+    json: true
+  });
+};
+
 Client.prototype.getFee = async function (params) {
   const { target } = params;
   const url = `${this.baseUrl}/fee/${target}`;
   return request.get(url, {
     json: true
   });
-}
+};
 
 Client.prototype.importAddresses = async function(params) {
   const { payload, pubKey } = params;
