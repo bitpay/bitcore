@@ -96,18 +96,6 @@ router.post('/', async function(req, res) {
   }
 });
 
-router.get('/:pubKey', authenticate, async function(
-  req: AuthenticatedRequest,
-  res: Response
-) {
-  try {
-    let wallet = req.wallet;
-    return res.send(wallet);
-  } catch (err) {
-    return res.status(500).send(err);
-  }
-});
-
 router.get('/:pubKey/addresses', authenticate, async function(req, res) {
   try {
     let { chain, network, pubKey } = req.params;
@@ -204,6 +192,18 @@ router.get(
     }
   }
 );
+
+router.get('/:pubKey', authenticate, async function (
+  req: AuthenticatedRequest,
+  res: Response
+) {
+  try {
+    let wallet = req.wallet;
+    return res.send(wallet);
+  } catch (err) {
+    return res.status(500).send(err);
+  }
+});
 
 module.exports = {
   router: router,
