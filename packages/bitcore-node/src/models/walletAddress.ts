@@ -1,4 +1,4 @@
-import { CoinModel, ICoin } from './coin';
+import { CoinModel } from './coin';
 import { TransformOptions } from '../types/TransformOptions';
 import { partition } from '../utils/partition';
 import { ObjectID } from 'mongodb';
