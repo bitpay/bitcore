@@ -4,7 +4,7 @@ import { TransformableModel } from '../types/TransformableModel';
 import logger from '../logger';
 import config from '../config';
 import { LoggifyClass } from '../decorators/Loggify';
-import { MongoClient, Db, FindOneOptions } from 'mongodb';
+import { MongoClient, Db, FindOneOptions, Cursor } from 'mongodb';
 import '../models';
 
 export type StreamingFindOptions<T> = Partial<{
@@ -63,7 +63,7 @@ export class StorageService {
   stop() {}
 
   validPagingProperty<T>(model: TransformableModel<T>, property: keyof T) {
-    return model.allowedPaging.some((prop) => prop.key === property);
+    return model.allowedPaging.some(prop => prop.key === property);
   }
 
   /**
@@ -93,21 +93,7 @@ export class StorageService {
     return typecastedValue;
   }
 
-  apiStreamingFind<T>(model: TransformableModel<T>, query: any, options: StreamingFindOptions<T>, res: Response) {
-    if (options.since !== undefined && options.paging && this.validPagingProperty(model, options.paging)) {
-      options.since = this.typecastForDb(model, options.paging, options.since);
-      if (options.direction && Number(options.direction) === 1) {
-        query[options.paging] = { $gt: options.since };
-        options.sort = { [options.paging]: 1 };
-      } else {
-        query[options.paging] = { $lt: options.since };
-        options.sort = { [options.paging]: -1 };
-      }
-    }
-    options.limit = Math.min(options.limit || 100, 1000);
-    let cursor = model.collection.find(query, options).stream({
-      transform: model._apiTransform
-    });
+  apiStream<T>(cursor: Cursor<T>, res: Response) {
     cursor.on('error', function(err) {
       return res.status(500).end(err.message);
     });
@@ -131,6 +117,24 @@ export class StorageService {
       }
       res.end();
     });
+  }
+
+  apiStreamingFind<T>(model: TransformableModel<T>, query: any, options: StreamingFindOptions<T>, res: Response) {
+    if (options.since !== undefined && options.paging && this.validPagingProperty(model, options.paging)) {
+      options.since = this.typecastForDb(model, options.paging, options.since);
+      if (options.direction && Number(options.direction) === 1) {
+        query[options.paging] = { $gt: options.since };
+        options.sort = { [options.paging]: 1 };
+      } else {
+        query[options.paging] = { $lt: options.since };
+        options.sort = { [options.paging]: -1 };
+      }
+    }
+    options.limit = Math.min(options.limit || 100, 1000);
+    let cursor = model.collection.find(query, options).stream({
+      transform: model._apiTransform
+    });
+    this.apiStream(cursor, res);
   }
 }
 

@@ -30,17 +30,31 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return new RPC(username, password, host, port);
   }
 
-  streamAddressUtxos(params: CSP.StreamAddressUtxosParams) {
-    const { network, address, limit = 10, stream, args } = params;
+  private getAddressQuery(params: CSP.StreamAddressUtxosParams) {
+    const {network, address, args} = params;
     if (typeof address !== 'string' || !this.chain || !network) {
       throw 'Missing required param';
     }
-    let query = { chain: this.chain, network: network.toLowerCase(), address } as any;
-    const unspent = args.unspent;
-    if (unspent) {
-      query.spentHeight = { $lt: 0 };
+    const query = { chain: this.chain, network: network.toLowerCase(), address } as any;
+    if(args.unspent) {
+      query.spentHeight = {$lt: 0};
     }
+    return query;
+  }
+
+  streamAddressUtxos(params: CSP.StreamAddressUtxosParams) {
+    const { limit = 10, stream } = params;
+    const query = this.getAddressQuery(params);
     Storage.apiStreamingFind(CoinModel, query, { limit }, stream);
+  }
+
+  async streamAddressTransactions(params: CSP.StreamAddressUtxosParams) {
+    const { limit = 10, stream } = params;
+    const query = this.getAddressQuery(params);
+    const coins = await CoinModel.collection.find(query, {limit}).toArray();
+    const txids = coins.map((coin) => coin.mintTxid);
+    const txQuery = {txid: {$in: txids}};
+    Storage.apiStreamingFind(TransactionModel, txQuery, {}, stream);
   }
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
