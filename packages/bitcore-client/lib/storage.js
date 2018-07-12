@@ -67,20 +67,24 @@ class Storage {
       json;
     }
   }
-  async addKey(params) {
-    const { name, key, encryptionKey } = params;
-    let { pubKey } = key;
-    pubKey = pubKey || new bitcoreLib.PrivateKey(key.privKey).publicKey.toString();
-    let payload = {};
-    if (pubKey && key.privKey && encryptionKey) {
-      const encKey = Encrypter.encryptPrivateKey(
-        JSON.stringify(key),
-        Buffer.from(pubKey, 'hex'),
-        Buffer.from(encryptionKey, 'hex')
-      );
-      payload = { encKey, pubKey };
-    }
-    return this.db.put(`key|${name}|${key.address}`, JSON.stringify(payload));
+  async addKeys(params) {
+    const { name, keys, encryptionKey } = params;
+    const ops = keys.map(key => {
+      let { pubKey } = key;
+      pubKey = pubKey || new bitcoreLib.PrivateKey(key.privKey).publicKey.toString();
+      let payload = {};
+      if (pubKey && key.privKey && encryptionKey) {
+        const encKey = Encrypter.encryptPrivateKey(
+          JSON.stringify(key),
+          Buffer.from(pubKey, 'hex'),
+          Buffer.from(encryptionKey, 'hex')
+        );
+        payload = { encKey, pubKey };
+      }
+      return { type: 'put', key: `key|${name}|${key.address}`, value: JSON.stringify(payload)};
+    });
+
+    return this.db.batch(ops);
   }
 }
 

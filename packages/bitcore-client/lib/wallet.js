@@ -166,25 +166,17 @@ class Wallet {
   async importKeys(params) {
     const { keys } = params;
     const { encryptionKey } = this.unlocked;
-    for (const key of keys) {
-      let keyToSave = {
-        key,
-        encryptionKey,
-        chain: this.chain,
-        network: this.network,
-        name: this.name
-      };
-      await this.storage.addKey(keyToSave);
+    const keysToSave = keys.filter(key => typeof key.privKey === 'string');
+    if (keysToSave.length) {
+      await this.storage.addKeys({ keys: keysToSave, encryptionKey, name: this.name });
     }
     const addedAddresses = keys.map(key => {
       return { address: key.address };
     });
-    if (this.unlocked) {
-      return this.client.importAddresses({
-        pubKey: this.xPubKey,
-        payload: addedAddresses
-      });
-    }
+    return this.client.importAddresses({
+      pubKey: this.xPubKey,
+      payload: addedAddresses
+    });
   }
 
   async signTx(params) {
