@@ -11,7 +11,7 @@ import { Cache } from '../../utils/cache';
 const Chain = require('../../chain');
 
 @LoggifyClass
-export class BtcP2pService implements P2pService<Bitcoin.Block, Bitcoin.Transaction> {
+export class BtcP2pService implements P2pService<Bitcoin.Block> {
   public syncing: boolean;
   public stream: EventEmitter;
 

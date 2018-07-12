@@ -20,7 +20,7 @@ const P2PClasses: {
   BTC: BtcP2pService
 };
 
-export interface P2pService<Block, _Transaction> {
+export interface P2pService<Block> {
   // a stream of blocks and transactions
   stream: EventEmitter;
 
@@ -47,7 +47,7 @@ export interface P2pService<Block, _Transaction> {
   getBlock(hash: string): Promise<Block>;
 }
 
-export type StandardP2p = P2pService<Bitcoin.Block, Bitcoin.Transaction>;
+export type StandardP2p = P2pService<Bitcoin.Block>;
 
 export enum P2pEvents {
   SYNC_COMPLETE = 'SYNC_COMPLETE'
