@@ -1,7 +1,7 @@
 import { BTCStateProvider } from './btc/btc';
 import { BCHStateProvider } from './bch/bch';
 import { ETHStateProvider } from './eth/eth';
-import { BATStateProvider } from "./erc20/tokens/bat";
+import { BATStateProvider } from './erc20/tokens/bat';
 import { CSP } from '../../types/namespaces/ChainStateProvider';
 import { Chain } from '../../types/ChainNetwork';
 
@@ -14,7 +14,7 @@ const services: CSP.ChainStateServices = {
 
 class ChainStateProxy implements CSP.ChainStateProvider {
   get({ chain }: Chain) {
-    if(services[chain] == undefined) {
+    if (services[chain] == undefined) {
       throw new Error(`Chain ${chain} doesn't have a ChainStateProvider registered`);
     }
     return services[chain];
@@ -22,6 +22,10 @@ class ChainStateProxy implements CSP.ChainStateProvider {
 
   streamAddressUtxos(params: CSP.StreamAddressUtxosParams) {
     return this.get(params).streamAddressUtxos(params);
+  }
+
+  streamAddressTransactions(params: CSP.StreamAddressUtxosParams) {
+    return this.get(params).streamAddressTransactions(params);
   }
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
@@ -84,11 +88,11 @@ class ChainStateProxy implements CSP.ChainStateProvider {
     return this.get(params).broadcastTransaction(params);
   }
 
-  registerService(currency: string, service: CSP.IChainStateService){
+  registerService(currency: string, service: CSP.IChainStateService) {
     services[currency] = service;
-  };
+  }
 
-  async getCoinsForTx(params: {chain: string; network: string, txid: string }) {
+  async getCoinsForTx(params: { chain: string; network: string; txid: string }) {
     return this.get(params).getCoinsForTx(params);
   }
 }
