@@ -1,0 +1,25 @@
+#!/usr/bin/env node
+
+const program = require('../lib/program');
+const Wallet = require('../lib/wallet');
+
+program
+  .version(require('../package.json').version)
+  .option('--name <name>', 'REQUIRED - Wallet name')
+  .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--startDate [startDate]')
+  .option('--endDate [endDate]')
+  .parse(process.argv);
+
+const main = async () => {
+  const { name, path, startDate, endDate } = program;
+  try {
+    const wallet = await Wallet.loadWallet({ name, path });
+    const txStream = wallet.listTransactions({ startDate, endDate });
+    txStream.pipe(process.stdout);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+main();

@@ -26,7 +26,7 @@
         "mkdirp": "^0.5.1",
         "progress": "^2.0.0",
         "promptly": "^3.0.3",
-        "request": "^2.85.0",
+        "request": "^2.87.0",
         "request-promise-native": "^1.0.5",
         "secp256k1": "^3.5.0"
     },

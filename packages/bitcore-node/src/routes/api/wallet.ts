@@ -141,7 +141,7 @@ router.get(
   async (req: AuthenticatedRequest, res) => {
     let { chain, network } = req.params;
     try {
-      return await ChainStateProvider.streamWalletTransactions({
+      return ChainStateProvider.streamWalletTransactions({
         chain,
         network,
         wallet: req.wallet!,
