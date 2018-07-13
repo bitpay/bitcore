@@ -53,7 +53,7 @@ ListTransactionsStream.prototype._transform = function (transaction, enc, done) 
         }
       }
       for(let output of transaction.outputs) {
-        if (output.wallets.includes(output)) {
+        if (output.wallets.includes(wallet)) {
           self.push(JSON.stringify({
             txid: transaction.txid,
             category: 'receive',
@@ -65,6 +65,7 @@ ListTransactionsStream.prototype._transform = function (transaction, enc, done) 
           }) + '\n');
         }
       }
+      return Promise.resolve();
     })
     .then(() => done())
     .catch((err) => done(err));
