@@ -1,4 +1,4 @@
-import { CoinModel, ICoin } from './coin';
+import { CoinModel } from './coin';
 import { TransformOptions } from '../types/TransformOptions';
 import { partition } from '../utils/partition';
 import { ObjectID } from 'mongodb';
@@ -84,24 +84,26 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
           return CoinModel.collection.bulkWrite(coinUpdateBatch, { ordered: false });
         })
       );
-      let coinCursor = CoinModel.collection.find({ wallets: wallet._id }).project({ spentTxid: 1, mintTxid: 1 });
-
-      coinCursor.on('data', function(data: ICoin) {
-        coinCursor.pause();
-        TransactionModel.collection.update(
-          { chain, network, txid: { $in: [data.spentTxid, data.mintTxid] } },
-          { $addToSet: { wallets: wallet._id } },
-          { multi: true },
-          function() {
-            // TODO Error handling if update fails?
-            coinCursor.resume();
+      let coins = await CoinModel.collection.find({ wallets: wallet._id }, { batchSize: 100 }).project({ spentTxid: 1, mintTxid: 1 }).toArray();
+      let txids = {};
+      for (let coin of coins) {
+        txids[coin.mintTxid] = true;
+        txids[coin.spentTxid] = true;
+      }
+      let txUpdates = Object.keys(txids).map(txid => {
+        return {
+          updateOne: {
+            filter: { chain, network, txid },
+            update: { $addToSet: { wallets: wallet._id } }
           }
-        );
+        }
       });
-
-      coinCursor.on('end', function() {
-        resolve();
-      });
+      await Promise.all(
+        partition(txUpdates, 500).map(txUpdate => {
+          return TransactionModel.collection.bulkWrite(txUpdate, { ordered: false });
+        })
+      )
+      resolve();
     });
   }
 }
