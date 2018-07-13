@@ -24,13 +24,14 @@ ListTransactionsStream.prototype._transform = function (transaction, enc, done) 
 
       transaction.inputs = inputs;
       transaction.outputs = outputs;
-      var wallet = this.wallet._id;
+      var wallet = this.wallet._id.toString();
       var totalInputs = transaction.inputs.reduce((total, input) => { return total + input.value; }, 0);
       var totalOutputs = transaction.outputs.reduce((total, output) => { return total + output.value; }, 0);
       var fee = totalInputs - totalOutputs;
+      const stringifyWallets = (coin) => coin.wallets.map(w => w.toString());
 
       for(let input of transaction.inputs) {
-        if (input.wallets.includes(wallet)) {
+        if (stringifyWallets(input).includes(wallet)) {
           self.push(JSON.stringify({
             txid: transaction.txid,
             category: 'send',
@@ -53,7 +54,7 @@ ListTransactionsStream.prototype._transform = function (transaction, enc, done) 
         }
       }
       for(let output of transaction.outputs) {
-        if (output.wallets.includes(wallet)) {
+        if (stringifyWallets(output).includes(wallet)) {
           self.push(JSON.stringify({
             txid: transaction.txid,
             category: 'receive',
