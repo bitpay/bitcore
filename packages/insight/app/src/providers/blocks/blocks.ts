@@ -94,8 +94,8 @@ export class BlocksProvider {
     });
   }
 
-  public getBlocks(): Observable<{ blocks: Array<AppBlock> }> {
-    let url: string = this.api.apiPrefix + '/block';
+  public getBlocks(numBlocks: number = 10): Observable<{ blocks: Array<AppBlock> }> {
+    let url: string = this.api.apiPrefix + '/block?limit=' + numBlocks;
     return this.getCurrentHeight().flatMap(height => {
       return this.http.get(url).map(data => {
         let blocks: Array<ApiBlock> = data.json();

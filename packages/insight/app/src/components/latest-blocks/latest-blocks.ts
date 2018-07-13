@@ -17,18 +17,21 @@ export class LatestBlocksComponent {
 
   public loading: boolean = true;
   public blocks: Array<any> = [];
-  @Input() public numBlocks: number;
+  @Input() public numBlocks: number = 10;
   @Input() public showAllBlocksButton: boolean;
   @Input() public showTimeAs: string;
   private reloadInterval: any;
 
-  constructor(private blocksProvider: BlocksProvider, private navCtrl: NavController, ngZone: NgZone, public currency: CurrencyProvider) {
+  constructor(private blocksProvider: BlocksProvider, private navCtrl: NavController, private ngZone: NgZone, public currency: CurrencyProvider) {
+  }
+
+  public ngOnInit() {
     this.loadBlocks();
     const seconds: number = 15;
-    ngZone.runOutsideAngular(() => {
+    this.ngZone.runOutsideAngular(() => {
       this.reloadInterval = setInterval(
         function (): void {
-          ngZone.run(function (): void {
+          this.ngZone.run(function (): void {
             this.loadBlocks.call(this);
           }.bind(this));
         }.bind(this),
@@ -38,7 +41,7 @@ export class LatestBlocksComponent {
   }
 
   private loadBlocks(): void {
-    this.blocksProvider.getBlocks().subscribe(
+    this.blocksProvider.getBlocks(this.numBlocks).subscribe(
       ({blocks}) => {
         this.blocks = blocks;
         this.loading = false;
