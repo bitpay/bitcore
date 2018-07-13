@@ -27,14 +27,16 @@ export async function blocks(info: ChainNetwork, creds: {
   const normalizedTimes = new Array(tip.height).fill(0);
 
   // check each block
-  const cursor = BlockModel.find({}).cursor();
+  const cursor = BlockModel.collection.find({
+    chain: info.chain,
+    network: info.network,
+  });
 
   while (true) {
     const block: IBlock = await cursor.next();
-    if (!block || !block.processed) {
-      break;
-    }
-    logger.info(`verifying block ${block.height}: ${block.hash}`);
+    if (!block) break;
+    if (!block.processed) continue;
+    logger.info(`verifying block ${block.hash}: ${block.height}`);
 
     // Check there's all unique heights
     expect(block.height, 'block height').to.be.gte(1);
@@ -72,20 +74,20 @@ export async function blocks(info: ChainNetwork, creds: {
       expect(block.reward, 'block reward').to.equal(Math.round(reward * SATOSHI));
 
       // Check block only has all `truth`'s transactions
-      const ours = await TransactionModel.find({
+      const ours = await TransactionModel.collection.find({
         chain: info.chain,
         network: info.network,
         txid: {
           $in: truth.tx.map(tx => tx.txid),
         },
-      }, {
+      }).project({
         txid: true,
         coinbase: true,
         blockHash: true,
         blockHeight: true,
         blockTime: true,
         blockTimeNormalized: true,
-      });
+      }).toArray();
 
       // Check coinbase flag
       const ourCoinbase = ours.filter(tx => tx.coinbase);
@@ -113,21 +115,20 @@ export async function blocks(info: ChainNetwork, creds: {
       }
 
       // Check no other tx points to our block hash
-      const extra = await TransactionModel.find({
+      const extra = await TransactionModel.collection.find({
         chain: info.chain,
         network: info.network,
         blockHash: block.hash,
         txid: {
           $nin: truth.tx.map(tx => tx.txid),
         },
-      });
-      expect(extra.length, 'number of extra transactions').to.equal(0);
+      }).count();
+      expect(extra, 'number of extra transactions').to.equal(0);
     }
   }
 
   // Check the heights are all unique
-  expect(heights.filter(h => !h).length).to.equal(0);
-  expect(heights.length).to.equal(tip.height);
+  expect(heights.filter(h => !h).length, 'no duplicate heights').to.equal(0);
 
   // Check increasing times
   const increases = l => !!l.reduce((prev, curr) => prev < curr? curr : undefined);
@@ -144,7 +145,10 @@ export async function transactions(info: ChainNetwork, creds: {
 }) {
   const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 
-  const txcursor = TransactionModel.find({}).cursor();
+  const txcursor = TransactionModel.collection.find({
+    chain: info.chain,
+    network: info.network,
+  });
 
   while (true) {
     const tx: ITransaction = await txcursor.next();
@@ -158,11 +162,11 @@ export async function transactions(info: ChainNetwork, creds: {
     expect(tx.locktime, 'tx locktime').to.equal(truth.locktime);
 
     { // Minted by this transaction
-      const ours = await CoinModel.find({
+      const ours = await CoinModel.collection.find({
         network: info.network,
         chain: info.chain,
         mintTxid: tx.txid,
-      });
+      }).toArray();
       expect(ours.length, 'number mint txids').to.equal(truth.vout.length);
       for (const our of ours) {
         // coins
@@ -178,32 +182,32 @@ export async function transactions(info: ChainNetwork, creds: {
         expect(our.coinbase).to.equal(tx.coinbase);
 
         // wallets
-        expect(tx.wallets).to.include.members(our.wallets);
-        if (our.wallets.length > 0) {
-          const wallets = await WalletAddressModel.find({
+        expect(tx.wallets).to.include.members(Array.from(our.wallets));
+        if (our.wallets.size > 0) {
+          const wallets = await WalletAddressModel.collection.find({
             wallet: {
               $in: our.wallets,
             },
             address: our.address,
             chain: info.chain,
             network: info.network,
-          });
+          }).toArray();
           expect(wallets.length, 'wallet exists').to.be.greaterThan(0);
         }
       }
     }
 
     { // Spent by this transaction
-      const ours = await CoinModel.find({
+      const ours = await CoinModel.collection.find({
         network: info.network,
         chain: info.chain,
         spentTxid: tx.txid,
-      });
+      }).toArray();
       const nspent = truth.vin.length + (tx.coinbase ? -1 : 0);
       expect(ours.length, 'number spent txids').to.equal(nspent);
       for (const our of ours) {
         expect(our.spentHeight, 'tx spent height').to.equal(tx.blockHeight);
-        expect(tx.wallets).to.include.members(our.wallets);
+        expect(tx.wallets).to.include.members(Array.from(our.wallets));
       }
     }
   }
