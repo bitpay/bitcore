@@ -13,6 +13,7 @@ class Wallet {
     }
     if(this.baseUrl) {
       this.baseUrl = `${this.baseUrl}/${this.chain}/${this.network}`;
+      console.log(this.baseUrl);
     } else {
       this.baseUrl = `https://api.bitcore.io/api/${this.chain}/${this.network}`;
     }
