@@ -11,7 +11,12 @@ class Wallet {
     if (!this.masterKey) {
       return new Wallet(this.create(params));
     }
-    this.baseUrl = this.baseUrl || `https://api.bitcore.io/api/${this.chain}/${this.network}`;
+    if(this.baseUrl) {
+      this.baseUrl = `${this.baseUrl}/${this.chain}/${this.network}`;
+      console.log(this.baseUrl);
+    } else {
+      this.baseUrl = `https://api.bitcore.io/api/${this.chain}/${this.network}`;
+    }
     this.client = new Client({
       baseUrl: this.baseUrl,
       authKey: this.getAuthSigningKey()

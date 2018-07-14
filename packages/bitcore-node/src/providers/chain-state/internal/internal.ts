@@ -220,7 +220,9 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
     let transactionStream = TransactionModel.getTransactions({ query });
     let listTransactionsStream = new ListTransactionsStream(wallet);
-    transactionStream.pipe(listTransactionsStream).pipe(stream);
+    transactionStream
+      .pipe(listTransactionsStream)
+      .pipe(stream);
   }
 
   async getWalletBalance(params: { wallet: IWallet }) {
