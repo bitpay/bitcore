@@ -220,13 +220,8 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
     let transactionStream = TransactionModel.getTransactions({ query });
     let listTransactionsStream = new ListTransactionsStream(wallet);
-    let count = 0;
-    let txcount = 0;
     transactionStream
-      .on('data', () => txcount++)
       .pipe(listTransactionsStream)
-      .on('data', () => count++)
-      .on('finish', () => console.log(`txcount: ${txcount} count: ${count}`))
       .pipe(stream);
   }
 
