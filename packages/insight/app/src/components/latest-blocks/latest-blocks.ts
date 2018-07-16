@@ -19,13 +19,19 @@ export class LatestBlocksComponent {
   public blocks: Array<any> = [];
   @Input() public numBlocks: number = 10;
   @Input() public showAllBlocksButton: boolean;
+  @Input() public showLoadMoreButton: boolean = false;
   @Input() public showTimeAs: string;
   private reloadInterval: any;
 
-  constructor(private blocksProvider: BlocksProvider, private navCtrl: NavController, private ngZone: NgZone, public currency: CurrencyProvider) {
+  constructor(
+    private blocksProvider: BlocksProvider,
+    private navCtrl: NavController,
+    private ngZone: NgZone,
+    public currency: CurrencyProvider
+  ) {
   }
 
-  public ngOnInit() {
+  public ngOnInit(): void {
     this.loadBlocks();
     const seconds: number = 15;
     this.ngZone.runOutsideAngular(() => {
@@ -53,6 +59,21 @@ export class LatestBlocksComponent {
     );
   }
 
+  public loadMoreBlocks(): void {
+    clearInterval(this.reloadInterval);
+    let since: number = this.blocks[this.blocks.length - 1].height;
+    this.blocksProvider.pageBlocks(since, this.numBlocks).subscribe(
+      ({blocks}) => {
+        this.blocks = this.blocks.concat(blocks);
+        this.loading = false;
+      },
+      (err) => {
+        console.log('err', err);
+        this.loading = false;
+      }
+    );
+  }
+
   public goToBlock(blockHash: string): void {
     this.navCtrl.push('block-detail', {
       'selectedCurrency': this.currency.selectedCurrency,
@@ -61,8 +82,9 @@ export class LatestBlocksComponent {
   }
 
   public getBlocks(): Array<any> {
+    return this.blocks;
     /* tslint:disable:no-unused-variable */
-    return this.blocks.filter((block, index) => index < this.numBlocks);
+    // return this.blocks.filter((block, index) => index < this.numBlocks);
     /* tslint:enable:no-unused-variable */
   }
 

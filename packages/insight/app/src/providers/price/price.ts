@@ -12,7 +12,6 @@ import 'rxjs/add/operator/map';
 @Injectable()
 export class PriceProvider {
   constructor(public currency: CurrencyProvider, public api: ApiProvider) {
-    console.log('Hello PriceProvider Provider');
   }
 
   public setCurrency(currency: string): void {
