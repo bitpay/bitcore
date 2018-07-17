@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
-import { DefaultProvider } from '../../providers/default/default';
 
 /**
  * Generated class for the HomePage page.
@@ -20,8 +19,7 @@ export class HomePage {
 
   constructor(
     public navCtrl: NavController,
-    public navParams: NavParams,
-    public defaults: DefaultProvider
+    public navParams: NavParams
   ) {
   }
 

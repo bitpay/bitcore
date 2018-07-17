@@ -2,6 +2,7 @@ import { Component, NgZone, Input } from '@angular/core';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { NavController } from 'ionic-angular';
 import { CurrencyProvider } from '../../providers/currency/currency';
+import { DefaultProvider } from '../../providers/default/default';
 
 /**
  * Generated class for the LatestBlocksComponent component.
@@ -17,8 +18,8 @@ export class LatestBlocksComponent {
 
   public loading: boolean = true;
   public blocks: Array<any> = [];
-  @Input() public numBlocks: number = 10;
-  @Input() public showAllBlocksButton: boolean;
+  @Input() public numBlocks: number;
+  @Input() public showAllBlocksButton: boolean = false;
   @Input() public showLoadMoreButton: boolean = false;
   @Input() public showTimeAs: string;
   private reloadInterval: any;
@@ -27,8 +28,10 @@ export class LatestBlocksComponent {
     private blocksProvider: BlocksProvider,
     private navCtrl: NavController,
     private ngZone: NgZone,
-    public currency: CurrencyProvider
+    public currency: CurrencyProvider,
+    public defaults: DefaultProvider
   ) {
+    this.numBlocks = parseInt(defaults.getDefault('%NUM_BLOCKS%'));
   }
 
   public ngOnInit(): void {
@@ -83,9 +86,6 @@ export class LatestBlocksComponent {
 
   public getBlocks(): Array<any> {
     return this.blocks;
-    /* tslint:disable:no-unused-variable */
-    // return this.blocks.filter((block, index) => index < this.numBlocks);
-    /* tslint:enable:no-unused-variable */
   }
 
   public goToBlocks(): void {

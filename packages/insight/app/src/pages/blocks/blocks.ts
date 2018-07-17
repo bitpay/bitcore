@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { BlocksProvider } from '../../providers/blocks/blocks';
-import { DefaultProvider } from '../../providers/default/default';
 
 /**
  * Generated class for the BlocksPage page.
@@ -25,8 +24,7 @@ export class BlocksPage {
   constructor(
     public navCtrl: NavController,
     public navParams: NavParams,
-    private blocksProvider: BlocksProvider,
-    public defaults: DefaultProvider
+    private blocksProvider: BlocksProvider
   ) {
     this.blocksProvider.getBlocks().subscribe(
       ({blocks}) => {
