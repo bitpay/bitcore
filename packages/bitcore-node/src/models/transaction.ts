@@ -268,7 +268,7 @@ export class Transaction extends BaseModel<ITransaction> {
 
   getTransactions(params: { query: any }) {
     let query = params.query;
-    return this.collection.find(query);
+    return this.collection.find(query).addCursorFlag('noCursorTimeout', true);
   }
 
   _apiTransform(tx: ITransaction, options: TransformOptions) {

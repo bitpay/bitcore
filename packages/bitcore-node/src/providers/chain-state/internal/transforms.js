@@ -16,12 +16,12 @@ ListTransactionsStream.prototype._transform = async function(transaction, enc, d
     chain: transaction.chain,
     network: transaction.network,
     spentTxid: transaction.txid
-  }, { batchSize: 100 }).toArray();
+  }, { batchSize: 100 }).addCursorFlag('noCursorTimeout', true).toArray();
   transaction.outputs = await CoinModel.collection.find({
     chain: transaction.chain,
     network: transaction.network,
     mintTxid: transaction.txid
-  }, { batchSize: 100 }).toArray();
+  }, { batchSize: 100 }).addCursorFlag('noCursorTimeout', true).toArray();
 
   var wallet = this.wallet._id.toString();
   var totalInputs = transaction.inputs.reduce((total, input) => { return total + input.value; }, 0);
