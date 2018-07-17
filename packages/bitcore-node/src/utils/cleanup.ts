@@ -28,9 +28,9 @@ Storage.start({})
   .then(() => {
     let cursor = BlockModel.collection.find({});
     cursor.addCursorFlag('noCursorTimeout', true);
-    cursor.pipe(new CleanupTransform());
-    cursor.on('data', console.log);
-    cursor.on('end', () => console.log('done'));
+    cursor.pipe(new CleanupTransform())
+      .on('data', console.log)
+      .on('end', () => console.log('done'));
   })
   .catch(e => {
     console.error('fatal', e);
