@@ -19,7 +19,12 @@ const main = async () => {
     wallet = await Wallet.loadWallet({ name, path });
     wallet = await wallet.unlock(password);
     let signedTx = await wallet.signTx({ tx });
-    console.log(signedTx.uncheckedSerialize());
+
+    console.log(
+      JSON.stringify({
+        signedTx: signedTx.uncheckedSerialize()
+      })
+    );
   } catch (e) {
     console.error(e);
   }
