@@ -26,7 +26,7 @@ class CleanupTransform extends Transform {
 
 Storage.start({})
   .then(() => {
-    let cursor = BlockModel.collection.find({});
+    let cursor = BlockModel.collection.find({}).sort({height: -1});
     cursor.addCursorFlag('noCursorTimeout', true);
     cursor.pipe(new CleanupTransform())
       .on('data', console.log)
