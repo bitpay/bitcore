@@ -232,7 +232,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     const { wallet, limit, args = {}, stream } = params;
     let query: any = { wallets: wallet._id };
     if (args.includeSpent !== 'true') {
-      query.spentHeight = { $lt: 0 };
+      query.spentHeight = { $lt: -1 };
     }
     Storage.apiStreamingFind(CoinModel, query, { limit }, stream);
   }
