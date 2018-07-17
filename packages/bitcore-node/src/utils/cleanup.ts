@@ -10,12 +10,13 @@ class CleanupTransform extends Transform {
   }
 
   async _transform(block, _, done) {
+    const self = this;
     const txs = await TransactionModel.collection.find({ blockHash: block.hash }).toArray();
     for (let tx of txs) {
       let mints = await CoinModel.collection.find({ mintTxid: tx.txid }).toArray();
       for (let mint of mints) {
         if (mint.mintHeight != block.height && block.height > mint.mintHeight) {
-          this.push(mint);
+          self.push(mint);
         }
       }
     }
