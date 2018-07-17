@@ -28,7 +28,6 @@ export class BtcP2pService implements P2pService<Bitcoin.Block, Bitcoin.Transact
   private messages: any;
   private invCache: { [key: string]: Cache };
   private stayConnected?: NodeJS.Timer;
-
   constructor(config: any) {
     this.stream = new EventEmitter();
 

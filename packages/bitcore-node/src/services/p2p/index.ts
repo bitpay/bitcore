@@ -12,6 +12,7 @@ import { Bitcoin } from '../../types/namespaces/Bitcoin';
 import { CSP } from '../../types/namespaces/ChainStateProvider';
 import { EventEmitter } from 'events';
 import { LoggifyClass } from '../../decorators/Loggify';
+import { Prefetcher } from "../../utils/prefetcher";
 
 const P2PClasses: {
   [key: string]: Class<StandardP2p>;
@@ -60,8 +61,8 @@ export class P2pRunner {
   private network: string;
   private blocks: Block;
   private transactions: Transaction;
-
   public events: EventEmitter;
+  private blockPrefetcher?: Prefetcher<string, Promise<Bitcoin.Block>>;
 
   constructor(chain: string, network: string, blocks: Block, transactions: Transaction, service: StandardP2p) {
     this.service = service;
@@ -115,6 +116,14 @@ export class P2pRunner {
     await this.sync();
   }
 
+
+  async getBlock(hash: string): Promise<Bitcoin.Block> {
+    if(this.blockPrefetcher) {
+      return this.blockPrefetcher.get(hash)
+    }
+    return this.service.getBlock(hash);
+  }
+
   async sync() {
     this.service.syncing = true;
     const parent = this.service.parent();
@@ -146,7 +155,6 @@ export class P2pRunner {
 
       return this.service.getMissingBlockHashes(locators);
     };
-
     let hashes;
     while (!hashes || hashes.length > 0) {
       hashes = await getHeaders();
@@ -159,8 +167,9 @@ export class P2pRunner {
         } to ${this.service.height()} for chain ${this.chain}`
       );
 
+      this.blockPrefetcher = new Prefetcher(hashes, 10, this.service.getBlock, this.service);
       for (const hash of hashes) {
-        const block = await this.service.getBlock(hash);
+        const block = await this.getBlock(hash);
         logger.debug('Block received', block.hash);
         await this.blocks.addBlock({
           chain: this.chain,
