@@ -42,6 +42,12 @@
           <button ion-button (click)="goToBlocks()">See all blocks</button>
         </ion-col>
       </ion-row>
+
+      <ion-row *ngIf="showLoadMoreButton">
+        <ion-col text-center>
+          <button ion-button (click)="loadMoreBlocks()">Load more blocks</button>
+        </ion-col>
+      </ion-row>
     </ion-grid>
   </div>
 </div>

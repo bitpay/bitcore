@@ -21,7 +21,11 @@ export class BlocksPage {
   public loading: boolean = true;
   public blocks: Array<any> = [];
 
-  constructor(public navCtrl: NavController, public navParams: NavParams, private blocksProvider: BlocksProvider) {
+  constructor(
+    public navCtrl: NavController,
+    public navParams: NavParams,
+    private blocksProvider: BlocksProvider
+  ) {
     this.blocksProvider.getBlocks().subscribe(
       ({blocks}) => {
         this.blocks = blocks;

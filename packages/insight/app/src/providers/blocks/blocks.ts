@@ -94,8 +94,22 @@ export class BlocksProvider {
     });
   }
 
-  public getBlocks(): Observable<{ blocks: Array<AppBlock> }> {
-    let url: string = this.api.apiPrefix + '/block';
+  public getBlocks(numBlocks: number = 10): Observable<{ blocks: Array<AppBlock> }> {
+    let url: string = this.api.apiPrefix + '/block?limit=' + numBlocks;
+    return this.getCurrentHeight().flatMap(height => {
+      return this.http.get(url).map(data => {
+        let blocks: Array<ApiBlock> = data.json();
+        let appBlocks: Array<AppBlock> = blocks.map(block => this.toAppBlock(block, height));
+        return { blocks: appBlocks };
+      });
+    });
+  }
+
+  /**
+   * example: http://localhost:8100/api/BTC/regtest/block?since=582&limit=100&paging=height&direction=1
+   */
+  public pageBlocks(since: number, numBlocks: number = 10): Observable<{ blocks: Array<AppBlock> }> {
+    let url: string = `${this.api.apiPrefix}/block?since=${since}&limit=${numBlocks}&paging=height&direction=-1`;
     return this.getCurrentHeight().flatMap(height => {
       return this.http.get(url).map(data => {
         let blocks: Array<ApiBlock> = data.json();
