@@ -45,7 +45,12 @@ const main = async () => {
     params.recipients = parsedRecipients;
     params.utxos = parsedUtxos;
     const tx = await wallet.newTx(params);
-    console.log(tx.uncheckedSerialize());
+
+    console.log(
+      JSON.stringify({
+        rawTx: tx.uncheckedSerialize()
+      })
+    );
   } catch (e) {
     console.error(e);
   }
