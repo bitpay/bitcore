@@ -157,8 +157,6 @@ function removeNetwork(network) {
   unindexNetworkBy(network, Object.keys(networkMaps));
 }
 
-
-
 var networkMagic = {
   livenet: 0xe3e1f3e8,
   testnet: 0xf4e5f3f4,
@@ -173,7 +171,6 @@ var dnsSeeds = [
   'seed.deadalnix.me'
 ];
 
-
 var TESTNET = {
   PORT: 18333,
   NETWORK_MAGIC: networkMagic.testnet,
@@ -181,14 +178,12 @@ var TESTNET = {
   PREFIX: 'bchtest'
 };
 
-
 var REGTEST = {
   PORT: 18444,
   NETWORK_MAGIC: networkMagic.regtest,
   DNS_SEEDS: [],
   PREFIX: 'bchreg'
 };
-
 
 var liveNetwork = {
   name: 'livenet',
@@ -246,71 +241,9 @@ var livenet = get('livenet');
 var regtest = get('regtest');
 var testnet = get('testnet');
 
-
-
-Object.defineProperty(testnet, 'port', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.PORT;
-    } else {
-      return TESTNET.PORT;
-    }
-  }
-});
-
-Object.defineProperty(testnet, 'networkMagic', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return BufferUtil.integerAsBuffer(REGTEST.NETWORK_MAGIC);
-    } else {
-      return BufferUtil.integerAsBuffer(TESTNET.NETWORK_MAGIC);
-    }
-  }
-});
-
-Object.defineProperty(testnet, 'dnsSeeds', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.DNS_SEEDS;
-    } else {
-      return TESTNET.DNS_SEEDS;
-    }
-  }
-});
-
-
-Object.defineProperty(testnet, 'prefix', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.PREFIX;
-    } else {
-      return TESTNET.PREFIX;
-    }
-  }
-});
-
-Object.defineProperty(testnet, 'prefixArray', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return prefixToArray(REGTEST.PREFIX);
-    } else {
-      return prefixToArray(TESTNET.PREFIX);
-    }
-  }
-});
-
 /**
  * @function
+ * @deprecated
  * @member Networks#enableRegtest
  * Will enable regtest features for testnet
  */
@@ -320,6 +253,7 @@ function enableRegtest() {
 
 /**
  * @function
+ * @deprecated
  * @member Networks#disableRegtest
  * Will disable regtest features for testnet
  */
