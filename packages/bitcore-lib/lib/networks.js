@@ -154,12 +154,20 @@ var livenet = get('livenet');
 
 addNetwork({
   name: 'testnet',
-  alias: 'regtest',
+  alias: 'test',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
   scripthash: 0xc4,
   xpubkey: 0x043587cf,
-  xprivkey: 0x04358394
+  xprivkey: 0x04358394,
+  networkMagic: 0x0b110907,
+  port: 18333,
+  dnsSeeds: [
+    'testnet-seed.bitcoin.petertodd.org',
+    'testnet-seed.bluematt.me',
+    'testnet-seed.alexykot.me',
+    'testnet-seed.bitcoin.schildbach.de'
+  ]
 });
 
 /**
@@ -168,75 +176,28 @@ addNetwork({
  */
 var testnet = get('testnet');
 
-// Add configurable values for testnet/regtest
-
-var TESTNET = {
-  PORT: 18333,
-  NETWORK_MAGIC: BufferUtil.integerAsBuffer(0x0b110907),
-  DNS_SEEDS: [
-    'testnet-seed.bitcoin.petertodd.org',
-    'testnet-seed.bluematt.me',
-    'testnet-seed.alexykot.me',
-    'testnet-seed.bitcoin.schildbach.de'
-  ]
-};
-
-for (var key in TESTNET) {
-  if (!_.isObject(TESTNET[key])) {
-    networkMaps[TESTNET[key]] = testnet;
-  }
-}
-
-var REGTEST = {
-  PORT: 18444,
-  NETWORK_MAGIC: BufferUtil.integerAsBuffer(0xfabfb5da),
-  DNS_SEEDS: []
-};
-
-for (var key in REGTEST) {
-  if (!_.isObject(REGTEST[key])) {
-    networkMaps[REGTEST[key]] = testnet;
-  }
-}
-
-Object.defineProperty(testnet, 'port', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.PORT;
-    } else {
-      return TESTNET.PORT;
-    }
-  }
-});
-
-Object.defineProperty(testnet, 'networkMagic', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.NETWORK_MAGIC;
-    } else {
-      return TESTNET.NETWORK_MAGIC;
-    }
-  }
-});
-
-Object.defineProperty(testnet, 'dnsSeeds', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.DNS_SEEDS;
-    } else {
-      return TESTNET.DNS_SEEDS;
-    }
-  }
+addNetwork({
+  name: 'regtest',
+  alias: 'dev',
+  pubkeyhash: 0x6f,
+  privatekey: 0xef,
+  scripthash: 0xc4,
+  xpubkey: 0x043587cf,
+  xprivkey: 0x04358394,
+  networkMagic: 0xfabfb5da,
+  port: 18444,
+  dnsSeeds: []
 });
 
 /**
+ * @instance
+ * @member Networks#testnet
+ */
+var regtest = get('regtest');
+
+/**
  * @function
+ * @deprecated
  * @member Networks#enableRegtest
  * Will enable regtest features for testnet
  */
@@ -246,6 +207,7 @@ function enableRegtest() {
 
 /**
  * @function
+ * @deprecated
  * @member Networks#disableRegtest
  * Will disable regtest features for testnet
  */
@@ -263,6 +225,7 @@ module.exports = {
   livenet: livenet,
   mainnet: livenet,
   testnet: testnet,
+  regtest: regtest,
   get: get,
   enableRegtest: enableRegtest,
   disableRegtest: disableRegtest
