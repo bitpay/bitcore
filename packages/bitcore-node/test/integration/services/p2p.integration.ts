@@ -2,7 +2,8 @@ import logger from '../../../src/logger';
 import config from '../../../src/config';
 import { resetDatabase } from '../../helpers';
 import { expect } from 'chai';
-import { P2pProvider } from '../../../src/services/p2p';
+import { P2pService } from '../../../src/services/p2p';
+import { ChainStateProvider } from '../../../src/providers/chain-state';
 import { BlockModel } from '../../../src/models/block';
 import { TransactionModel } from '../../../src/models/transaction';
 import { sleep } from '../../../src/utils/async';
@@ -26,27 +27,23 @@ describe('P2P Service', () => {
     const chain = 'BTC';
     const network = 'regtest';
 
-    const startingHeight = await localHeight();
+    const startingHeight = await ChainStateProvider.getLocalTip({chain, network});
     // add some blocks to sync on startup
     await rpc.generate(10);
-    const newHeight = await localHeight();
+    const newHeight = await ChainStateProvider.getLocalTip({ chain, network });
     expect(startingHeight + 10 === newHeight);
 
     // start and connect the service
-    const runner = P2pProvider.build({
+    const p2pService = new P2pService({
       chain,
       network,
-      blocks: BlockModel,
-      transactions: TransactionModel,
       config: Object.assign(config.chains.BTC.regtest, {
         chain,
-        network,
-        parentChain: chain,
-        forkHeight: 0,
-      }),
+        network
+      })
     });
     // wait for it to stop syncing
-    await runner.start();
+    await p2pService.start();
 
     // check DB that all the new blocks are synced correctly
     await verify(rpc, 10);
@@ -61,19 +58,10 @@ describe('P2P Service', () => {
   });
 });
 
-async function localHeight() {
-  let tip = await BlockModel.getLocalTip({
-    chain: 'BTC',
-    network: 'regtest',
-  });
-
-  return tip.height;
-}
-
 async function verify(rpc: RPC, tail: number) {
   const chain = 'BTC';
   const network = 'regtest';
-  const myTip = await BlockModel.getLocalTip({
+  const myTip = await ChainStateProvider.getLocalTip({
     chain,
     network,
   });

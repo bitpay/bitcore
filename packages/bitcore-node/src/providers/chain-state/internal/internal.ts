@@ -282,4 +282,21 @@ export class InternalStateProvider implements CSP.IChainStateService {
       outputs: outputs.map(output => CoinModel._apiTransform(output, { object: true }))
     };
   }
+
+  async getLocalTip({ chain, network }) {
+    return BlockModel.collection.findOne({ chain, network, processed: true}, { sort: { height: -1 }});
+  }
+
+  async getLocatorHashes(params) {
+    const { chain, network } = params;
+    const locatorBlocks = await BlockModel.collection.find({
+      processed: true,
+      chain,
+      network
+    }, { sort: { height: -1 }, limit: 30}).toArray();
+    if (locatorBlocks.length < 2) {
+      return [Array(65).join('0')];
+    }
+    return locatorBlocks.map(block => block.hash);
+  }
 }

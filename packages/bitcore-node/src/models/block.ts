@@ -1,11 +1,11 @@
 import { CoinModel } from './coin';
 import { TransactionModel } from './transaction';
 import { TransformOptions } from '../types/TransformOptions';
-import { ChainNetwork } from '../types/ChainNetwork';
 import { LoggifyClass } from '../decorators/Loggify';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { BaseModel } from './base';
 import logger from '../logger';
+import { ChainStateProvider } from '../providers/chain-state';
 
 export type IBlock = {
   chain: string;
@@ -47,7 +47,7 @@ export class Block extends BaseModel<IBlock> {
   }
 
   async addBlock(params: {
-    block: Bitcoin.Block;
+    block: any;
     parentChain?: string;
     forkHeight?: number;
     chain: string;
@@ -57,7 +57,11 @@ export class Block extends BaseModel<IBlock> {
     const header = block.header.toObject();
     const blockTime = header.time * 1000;
 
-    await this.handleReorg({ header, chain, network });
+    const reorg = await this.handleReorg({ header, chain, network });
+
+    if (reorg) {
+      return Promise.reject('reorg');
+    }
 
     const previousBlock = await this.collection.findOne({ hash: header.prevHash, chain, network });
 
@@ -125,38 +129,14 @@ export class Block extends BaseModel<IBlock> {
     return coinbase;
   }
 
-  async getLocalTip(params: ChainNetwork) {
-    const { chain, network } = params;
-    const [bestBlock] = await this.collection
-      .find({ processed: true, chain, network })
-      .sort({ height: -1 })
-      .limit(1)
-      .toArray();
-    return bestBlock || { height: 0 };
-  }
-
-  async getLocatorHashes(params: ChainNetwork) {
-    const { chain, network } = params;
-    const locatorBlocks = await this.collection
-      .find({ processed: true, chain, network })
-      .sort({ height: -1 })
-      .limit(30)
-      .toArray();
-
-    if (locatorBlocks.length < 2) {
-      return [Array(65).join('0')];
-    }
-    return locatorBlocks.map(block => block.hash);
-  }
-
-  async handleReorg(params: { header?: Bitcoin.Block.HeaderObj; chain: string; network: string }) {
+  async handleReorg(params: { header?: Bitcoin.Block.HeaderObj; chain: string; network: string }): Promise<boolean> {
     const { header, chain, network } = params;
-    const localTip = await BlockModel.getLocalTip(params);
-    if (header && localTip.hash === header.prevHash) {
-      return;
+    const localTip = await ChainStateProvider.getLocalTip(params);
+    if (header && localTip && localTip.hash === header.prevHash) {
+      return false;
     }
-    if (localTip.height === 0) {
-      return;
+    if (!localTip || localTip.height === 0) {
+      return false;
     }
     logger.info(`Resetting tip to ${localTip.previousBlockHash}`, { chain, network });
     await this.collection.remove({ chain, network, height: { $gte: localTip.height } });
@@ -169,6 +149,7 @@ export class Block extends BaseModel<IBlock> {
     );
 
     logger.debug('Removed data from above blockHeight: ', localTip.height);
+    return true;
   }
 
   _apiTransform(block: IBlock, options: TransformOptions): any {

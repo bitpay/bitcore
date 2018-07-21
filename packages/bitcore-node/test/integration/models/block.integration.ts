@@ -215,65 +215,6 @@ describe('Block Model', function () {
     });
   });
 
-  describe('getLocalTip', () => {
-    it('should get the highest processed block for a particular chain and network', async () => {
-
-      await BlockModel.collection.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 1 });
-      await BlockModel.collection.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 2 });
-      await BlockModel.collection.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 3 });
-
-      const result = await BlockModel.getLocalTip({ chain: 'BTC', network: 'regtest' });
-
-      expect(result.height).to.equal(3);
-      expect(result.processed).to.equal(true);
-      expect(result.chain).to.equal('BTC');
-      expect(result.network).to.equal('regtest');
-
-    });
-    it('should return block with height zero if block is not found for a particular chain and network', async () => {
-
-      await BlockModel.collection.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 1 });
-      await BlockModel.collection.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 2 });
-      await BlockModel.collection.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 3 });
-      await BlockModel.collection.insert({ processed: true, chain: 'BCH', network: 'regtest', height: 10 });
-      await BlockModel.collection.insert({ processed: true, chain: 'BTC', network: 'testnet', height: 10 });
-
-      const result = await BlockModel.getLocalTip({ chain: 'ETH', network: 'regtest' });
-
-      expect(result.height).to.equal(0);
-
-    });
-  });
-
-  describe('getLocatorHashes', () => {
-    it('should return the highest processed block hash for the last thirty blocks for a particular chain and network', async () => {
-
-      for (let i = 1; i < 31; i++) {
-        await BlockModel.collection.insert({ processed: true, chain: 'BTC', network: 'regtest', height: i, hash: `hash${i}` });
-      }
-      const result = await BlockModel.getLocatorHashes({ chain: 'BTC', network: 'regtest' });
-
-      expect(result).to.deep.equal([
-        'hash30', 'hash29', 'hash28', 'hash27', 'hash26',
-        'hash25', 'hash24', 'hash23', 'hash22', 'hash21',
-        'hash20', 'hash19', 'hash18', 'hash17', 'hash16',
-        'hash15', 'hash14', 'hash13', 'hash12', 'hash11',
-        'hash10', 'hash9', 'hash8', 'hash7', 'hash6',
-        'hash5', 'hash4', 'hash3', 'hash2', 'hash1'
-      ]);
-
-    });
-    it('should return block hash with 64 zeros if processed block count less than two is found for a particular chain and network', async () => {
-
-      await BlockModel.collection.insert({ processed: true, chain: 'BTC', network: 'regtest', height: 1 });
-
-      const result = await BlockModel.getLocatorHashes({ chain: 'BTC', network: 'regtest' });
-
-      expect(result).to.deep.equal([Array(65).join('0')]);
-
-    });
-  });
-
   describe('handleReorg', () => {
     it('should not reorg if the incoming block\'s prevHash matches the block hash of the current highest block', async () => {
 

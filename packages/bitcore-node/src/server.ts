@@ -1,4 +1,4 @@
-import { P2pProvider } from './services/p2p';
+import { P2pService } from './services/p2p';
 import { Storage } from './services/storage';
 import { Worker } from './services/worker';
 import { Api } from './services/api';
@@ -9,7 +9,7 @@ let args = parseArgv([], ['DEBUG']);
 const startServices = async () => {
   await Storage.start({});
   await Worker.start();
-  P2pProvider.startConfiguredChains();
+  P2pService.startConfiguredChains();
 };
 
 const runMaster = async() => {
