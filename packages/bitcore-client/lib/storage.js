@@ -28,19 +28,14 @@ class Storage {
     }
     this.db = levelup(leveldown(this.path), { createIfMissing, errorIfExists });
   }
+
   async loadWallet(params) {
     const { name } = params;
-    return new Promise(async (resolve, reject) => {
-      try {
-        const wallet = await this.db.get(`wallet|${name}`);
-        if (wallet) {
-          resolve(JSON.parse(wallet));
-        }
-        resolve(null);
-      } catch (err) {
-        reject(err);
-      }
-    });
+    const wallet = await this.db.get(`wallet|${name}`);
+    if (!wallet) {
+      return;
+    }
+    return JSON.parse(wallet);
   }
 
   listWallets() {
