@@ -59,7 +59,7 @@ class Storage {
       );
       return JSON.parse(decrypted);
     } else {
-      json;
+      return json;
     }
   }
   async addKeys(params) {
