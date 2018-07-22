@@ -14,20 +14,16 @@ try {
   return program.help()
 }
 
-const main = async () => {
+async function main() {
   const { name, path } = program;
-  try {
-    const wallet = await Wallet.loadWallet({ name, path });
-    const balance = await wallet.getBalance();
-    console.log(
-      Object.assign(balance, {
-        currency: wallet.chain,
-        network: wallet.network
-      })
-    );
-  } catch (e) {
-    console.error(e);
-  }
-};
+  const wallet = await Wallet.loadWallet({ name, path });
+  const balance = await wallet.getBalance();
+  return Object.assign(balance, {
+    currency: wallet.chain,
+    network: wallet.network
+  });
+}
 
-main();
+main()
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
