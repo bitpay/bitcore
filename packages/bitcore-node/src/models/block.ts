@@ -50,10 +50,11 @@ export class Block extends BaseModel<IBlock> {
     block: any;
     parentChain?: string;
     forkHeight?: number;
+    initialSyncComplete: boolean;
     chain: string;
     network: string;
   }) {
-    const { block, chain, network, parentChain, forkHeight } = params;
+    const { block, chain, network, parentChain, forkHeight, initialSyncComplete } = params;
     const header = block.header.toObject();
     const blockTime = header.time * 1000;
 
@@ -117,7 +118,8 @@ export class Block extends BaseModel<IBlock> {
       chain,
       network,
       parentChain,
-      forkHeight
+      forkHeight,
+      initialSyncComplete
     });
 
     return this.collection.update({ hash: header.hash, chain, network }, { $set: { processed: true } });

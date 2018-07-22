@@ -9,6 +9,7 @@ import { LoggifyClass } from '../../../decorators/Loggify';
 import config from '../../../config';
 
 import { TransactionModel } from '../../../models/transaction';
+import { StateModel } from '../../../models/state';
 
 const ListTransactionsStream = require('./transforms');
 
@@ -166,6 +167,11 @@ export class InternalStateProvider implements CSP.IChainStateService {
     const { network, name, pubKey, path, singleAddress } = params;
     if (typeof name !== 'string' || !network) {
       throw 'Missing required param';
+    }
+    const state = await StateModel.collection.findOne({});
+    const initialSyncComplete = state && state.initialSyncComplete && state.initialSyncComplete.includes(`${this.chain}:${network}`);
+    if (!initialSyncComplete) {
+      throw 'Wallet creation not permitted before intitial sync is complete';
     }
     const wallet: IWallet = {
       chain: this.chain,

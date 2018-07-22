@@ -70,7 +70,7 @@ describe('Block Model', function () {
         processed: true,
       });
 
-      await BlockModel.addBlock({ block: TEST_BLOCK, chain: 'BTC', network: 'regtest' });
+      await BlockModel.addBlock({ block: TEST_BLOCK, chain: 'BTC', network: 'regtest', initialSyncComplete: false });
 
       const blocks = await BlockModel.collection.find({ chain: 'BTC', network: 'regtest' }).toArray();
       expect(blocks.length).to.equal(4);
@@ -171,7 +171,7 @@ describe('Block Model', function () {
         processed: true,
       });
 
-      await BlockModel.addBlock({ block: TEST_BLOCK, chain: 'BTC', network: 'regtest' });
+      await BlockModel.addBlock({ block: TEST_BLOCK, chain: 'BTC', network: 'regtest', initialSyncComplete: false });
 
       const blocks = await BlockModel.collection.find({ chain: 'BTC', network: 'regtest' }).sort({ height: 1 }).toArray();
       expect(blocks.length).to.equal(5);

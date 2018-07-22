@@ -53,6 +53,7 @@ export class Transaction extends BaseModel<ITransaction> {
     forkHeight?: number;
     chain: string;
     network: string;
+    initialSyncComplete: boolean;
   }) {
     let mintOps = await this.getMintOps(params);
     logger.debug('Minting Coins', mintOps.length);
@@ -87,35 +88,44 @@ export class Transaction extends BaseModel<ITransaction> {
     blockTimeNormalized?: Date;
     parentChain?: string;
     forkHeight?: number;
+    initialSyncComplete: boolean;
     chain: string;
     network: string;
   }) {
-    let { blockHash, blockTime, blockTimeNormalized, chain, height, network, txs } = params;
+    let { blockHash, blockTime, blockTimeNormalized, chain, height, network, txs, initialSyncComplete } = params;
     let txids = txs.map(tx => tx._hash);
 
     type TaggedCoin = ICoin & { _id: string };
-    let mintWallets = await CoinModel.collection
-      .aggregate<TaggedCoin>([
-        { $match: { mintTxid: { $in: txids }, chain, network } },
-        { $unwind: '$wallets' },
-        { $group: { _id: '$mintTxid', wallets: { $addToSet: '$wallets' } } }
-      ])
-      .toArray();
+    let mintWallets;
+    let spentWallets;
 
-    let spentWallets = await CoinModel.collection
-      .aggregate<TaggedCoin>([
-        { $match: { spentTxid: { $in: txids }, chain, network } },
-        { $unwind: '$wallets' },
-        { $group: { _id: '$spentTxid', wallets: { $addToSet: '$wallets' } } }
-      ])
-      .toArray();
+    if (initialSyncComplete){
+      mintWallets = await CoinModel.collection
+        .aggregate<TaggedCoin>([
+          { $match: { mintTxid: { $in: txids }, chain, network } },
+          { $unwind: '$wallets' },
+          { $group: { _id: '$mintTxid', wallets: { $addToSet: '$wallets' } } }
+        ])
+        .toArray();
+
+      spentWallets = await CoinModel.collection
+        .aggregate<TaggedCoin>([
+          { $match: { spentTxid: { $in: txids }, chain, network } },
+          { $unwind: '$wallets' },
+          { $group: { _id: '$spentTxid', wallets: { $addToSet: '$wallets' } } }
+        ])
+        .toArray();
+    }
+
 
     let txOps = txs.map((tx, index) => {
       let wallets = new Array<ObjectID>();
-      for (let wallet of mintWallets.concat(spentWallets).filter(wallet => wallet._id === txids[index])) {
-        for (let walletMatch of wallet.wallets) {
-          if (!wallets.find(wallet => wallet.toHexString() === walletMatch.toHexString())) {
-            wallets.push(walletMatch);
+      if (initialSyncComplete){
+        for (let wallet of mintWallets.concat(spentWallets).filter(wallet => wallet._id === txids[index])) {
+          for (let walletMatch of wallet.wallets) {
+            if (!wallets.find(wallet => wallet.toHexString() === walletMatch.toHexString())) {
+              wallets.push(walletMatch);
+            }
           }
         }
       }
@@ -150,10 +160,11 @@ export class Transaction extends BaseModel<ITransaction> {
     height: number;
     parentChain?: string;
     forkHeight?: number;
+    initialSyncComplete: boolean;
     chain: string;
     network: string;
   }): Promise<any> {
-    let { chain, height, network, txs, parentChain, forkHeight } = params;
+    let { chain, height, network, txs, parentChain, forkHeight, initialSyncComplete } = params;
     let mintOps = new Array<any>();
     let parentChainCoins = new Array<ICoin>();
     if (parentChain && forkHeight && height < forkHeight) {
@@ -209,19 +220,23 @@ export class Transaction extends BaseModel<ITransaction> {
         });
       }
     }
-    let mintOpsAddresses = mintOps.map(mintOp => mintOp.updateOne.update.$set.address);
-    let wallets = await WalletAddressModel.collection
-      .find({ address: { $in: mintOpsAddresses }, chain, network }, { batchSize: 100 })
-      .toArray();
-    if (wallets.length) {
-      mintOps = mintOps.map(mintOp => {
-        let transformedWallets = wallets
-          .filter(wallet => wallet.address === mintOp.updateOne.update.$set.address)
-          .map(wallet => wallet.wallet);
-        mintOp.updateOne.update.$set.wallets = transformedWallets;
-        return mintOp;
-      });
+
+    if (initialSyncComplete) {
+      let mintOpsAddresses = mintOps.map(mintOp => mintOp.updateOne.update.$set.address);
+      let wallets = await WalletAddressModel.collection
+        .find({ address: { $in: mintOpsAddresses }, chain, network }, { batchSize: 100 })
+        .toArray();
+      if (wallets.length) {
+        mintOps = mintOps.map(mintOp => {
+          let transformedWallets = wallets
+            .filter(wallet => wallet.address === mintOp.updateOne.update.$set.address)
+            .map(wallet => wallet.wallet);
+          mintOp.updateOne.update.$set.wallets = transformedWallets;
+          return mintOp;
+        });
+      }
     }
+
     return mintOps;
   }
 

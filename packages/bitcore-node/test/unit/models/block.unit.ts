@@ -15,7 +15,8 @@ describe('Block Model', function() {
       chain: 'BTC',
       network: 'regtest',
       block: TEST_BLOCK,
-      height: 1355
+      height: 1355,
+      initialSyncComplete: false
     };
     let sandbox;
     beforeEach(() => {

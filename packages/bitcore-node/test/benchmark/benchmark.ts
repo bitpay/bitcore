@@ -107,7 +107,7 @@ async function benchmark(blockCount: number, blockSizeMb: number) {
   const startTime = new Date();
   for (let block of generateBlocks(blockCount, blockSizeMb)) {
     console.log('Adding block', block.hash);
-    await BlockModel.addBlock({ block, chain: 'BENCH', network: 'MARK' });
+    await BlockModel.addBlock({ block, chain: 'BENCH', network: 'MARK', initialSyncComplete: false });
   }
   const endTime = new Date();
   const time = endTime.getTime() - startTime.getTime();

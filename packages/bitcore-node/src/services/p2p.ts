@@ -5,6 +5,7 @@ import { BlockModel } from '../models/block';
 import { ChainStateProvider } from '../providers/chain-state';
 import { TransactionModel } from '../models/transaction';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
+import { StateModel } from '../models/state';
 const Chain = require('../chain');
 const LRU = require('lru-cache');
 
@@ -19,6 +20,7 @@ export class P2pService {
   private messages: any;
   private pool: any;
   private invCache: any;
+  private initialSyncComplete: boolean;
   constructor(params) {
     const { chain, network, chainConfig } = params;
     this.chain = chain;
@@ -28,6 +30,7 @@ export class P2pService {
     this.chainConfig = chainConfig;
     this.events = new EventEmitter();
     this.syncing = true;
+    this.initialSyncComplete = false;
     this.invCache = new LRU({max: 10000});
     this.messages = new this.bitcoreP2p.Messages({
       network: this.bitcoreLib.Networks.get(this.network)
@@ -201,6 +204,7 @@ export class P2pService {
         network: this.network,
         forkHeight: this.chainConfig.forkHeight,
         parentChain: this.chainConfig.parentChain,
+        initialSyncComplete: this.initialSyncComplete,
         block
       });
       if (!this.syncing) {
@@ -223,7 +227,8 @@ export class P2pService {
       height: -1,
       mempoolTime: now,
       blockTime: now,
-      blockTimeNormalized: now
+      blockTimeNormalized: now,
+      initialSyncComplete: true
     });
   };
 
@@ -231,6 +236,8 @@ export class P2pService {
     const { chain, chainConfig, network } = this;
     const { parentChain, forkHeight } = chainConfig;
     this.syncing = true;
+    const state = await StateModel.collection.findOne({});
+    this.initialSyncComplete = state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
     let tip = await ChainStateProvider.getLocalTip({chain, network});
     if (parentChain && (!tip || tip.height < forkHeight)){
       let parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
@@ -273,6 +280,7 @@ export class P2pService {
     }
     logger.info(`${chain}:${network} up to date.`);
     this.syncing = false;
+    StateModel.collection.findOneAndUpdate({}, {$addToSet: { initialSyncComplete: `${chain}:${network}`}}, { upsert: true});
     return true;
   }
 
