@@ -243,7 +243,6 @@ export class P2pService {
       let parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
       while (!parentTip || parentTip.height < forkHeight) {
         logger.info(`Waiting until ${parentChain} syncs before ${chain} ${network}`);
-        parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
         await new Promise(resolve => {
           setTimeout(resolve, 5000);
         })
