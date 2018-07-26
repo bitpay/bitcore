@@ -1,4 +1,4 @@
-import config from '../config'
+import config from '../config';
 import logger from '../logger';
 import { EventEmitter } from 'events';
 import { BlockModel } from '../models/block';
@@ -6,6 +6,7 @@ import { ChainStateProvider } from '../providers/chain-state';
 import { TransactionModel } from '../models/transaction';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { StateModel } from '../models/state';
+import { CoinModel } from '../models/coin';
 const Chain = require('../chain');
 const LRU = require('lru-cache');
 
@@ -31,7 +32,7 @@ export class P2pService {
     this.events = new EventEmitter();
     this.syncing = true;
     this.initialSyncComplete = false;
-    this.invCache = new LRU({max: 10000});
+    this.invCache = new LRU({ max: 10000 });
     this.messages = new this.bitcoreP2p.Messages({
       network: this.bitcoreLib.Networks.get(this.network)
     });
@@ -112,7 +113,7 @@ export class P2pService {
 
     this.pool.on('peerinv', (peer, message) => {
       if (!this.syncing) {
-        const filtered = message.inventory.filter((inv) => {
+        const filtered = message.inventory.filter(inv => {
           const hash = this.bitcoreLib.encoding
             .BufferReader(inv.hash)
             .readReverse()
@@ -189,7 +190,7 @@ export class P2pService {
 
   getBestPoolHeight(): number {
     let best = 0;
-    for (const peer of Object.values(this.pool._connectedPeers) as {bestHeight: number}[]) {
+    for (const peer of Object.values(this.pool._connectedPeers) as { bestHeight: number }[]) {
       if (peer.bestHeight > best) {
         best = peer.bestHeight;
       }
@@ -230,23 +231,28 @@ export class P2pService {
       blockTimeNormalized: now,
       initialSyncComplete: true
     });
-  };
+  }
 
   async sync() {
     const { chain, chainConfig, network } = this;
     const { parentChain, forkHeight } = chainConfig;
     this.syncing = true;
     const state = await StateModel.collection.findOne({});
-    this.initialSyncComplete = state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
-    let tip = await ChainStateProvider.getLocalTip({chain, network});
-    if (parentChain && (!tip || tip.height < forkHeight)){
+    this.initialSyncComplete =
+      state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
+    let tip = await ChainStateProvider.getLocalTip({ chain, network });
+    if (parentChain && (!tip || tip.height < forkHeight)) {
       let parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
       while (!parentTip || parentTip.height < forkHeight) {
         logger.info(`Waiting until ${parentChain} syncs before ${chain} ${network}`);
         await new Promise(resolve => {
           setTimeout(resolve, 5000);
-        })
+        });
         parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
+      }
+      if (parentTip.height > forkHeight && tip.height === 0) {
+        // fork copy logic
+        await this.createFork(chain, parentChain, forkHeight);
       }
     }
 
@@ -259,7 +265,7 @@ export class P2pService {
     while (!headers || headers.length > 0) {
       headers = await getHeaders();
       tip = await ChainStateProvider.getLocalTip({ chain, network });
-      let currentHeight = tip? tip.height: 0;
+      let currentHeight = tip ? tip.height : 0;
       let lastLog = 0;
       logger.info(`Syncing ${headers.length} blocks for ${chain} ${network}`);
 
@@ -268,7 +274,7 @@ export class P2pService {
         await this.processBlock(block);
         currentHeight++;
         if (Date.now() - lastLog > 100) {
-          logger.info(`Sync progress ${(100 * (currentHeight) / this.getBestPoolHeight()).toFixed(3)}%`, {
+          logger.info(`Sync progress ${((100 * currentHeight) / this.getBestPoolHeight()).toFixed(3)}%`, {
             chain,
             network,
             height: currentHeight
@@ -279,8 +285,62 @@ export class P2pService {
     }
     logger.info(`${chain}:${network} up to date.`);
     this.syncing = false;
-    StateModel.collection.findOneAndUpdate({}, {$addToSet: { initialSyncComplete: `${chain}:${network}`}}, { upsert: true});
+    StateModel.collection.findOneAndUpdate(
+      {},
+      { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
+      { upsert: true }
+    );
     return true;
+  }
+
+  async createFork(newChain: string, parentChain: string, forkHeight: number) {
+    const blockCursor = BlockModel.collection.find({ parentChain, height: { $lt: forkHeight } }, { batchSize: 100 });
+    while (blockCursor.hasNext()) {
+      const block = await blockCursor.next();
+      const newBlock = Object.assign({}, block, { chain: newChain });
+      const mongoOperations = new Array();
+      mongoOperations.push(BlockModel.collection.insert(newBlock));
+
+      const blockTransactions = await TransactionModel.collection
+        .find({
+          chain: parentChain,
+          blockHeight: { $lt: forkHeight }
+        })
+        .toArray();
+
+      const newTransactions = blockTransactions.map(tx => {
+        return Object.assign({}, tx, {
+          _id: null,
+          chain: newChain
+        });
+      });
+      mongoOperations.push(TransactionModel.collection.insertMany(newTransactions));
+
+      // find coins that were spent past the fork, or not spent at the time of fork
+      const blockCoins = await CoinModel.collection
+        .find({
+          chain: parentChain,
+          mintHeight: block.height,
+          spentHeight: { $or: [{ $gt: forkHeight }, { $eq: -2 }] }
+        })
+        .toArray();
+
+      const newCoins = blockCoins.map(coin => {
+        const legacyAddress = new Chain[parentChain].lib.Address(coin.address);
+        const newAddress = this.bitcoreLib.Address(legacyAddress);
+        return Object.assign({}, coin, {
+          _id: null,
+          chain: newChain,
+          spentHeight: -2,
+          spentTxid: null,
+          address: newAddress
+        });
+      });
+
+      mongoOperations.push(CoinModel.collection.insertMany(newCoins));
+
+      await Promise.all(mongoOperations);
+    }
   }
 
   async start() {
