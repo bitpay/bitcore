@@ -294,17 +294,25 @@ export class P2pService {
   }
 
   async createFork(newChain: string, parentChain: string, forkHeight: number) {
-    const blockCursor = BlockModel.collection.find({ parentChain, height: { $lt: forkHeight } }, { batchSize: 100 });
+    const currentHeight = ChainStateProvider.getLocalTip({ chain: newChain, network: this.network });
+    const blockCursor = BlockModel.collection
+      .find(
+        { chain: parentChain, network: this.network, height: { $lt: forkHeight, $gte: currentHeight } },
+        { batchSize: 100 }
+      )
+      .sort({ height: 1 });
+
     while (blockCursor.hasNext()) {
       const block = await blockCursor.next();
-      const newBlock = Object.assign({}, block, { chain: newChain });
+      const newBlock = Object.assign({}, block, { chain: newChain, processed: false });
       const mongoOperations = new Array();
       mongoOperations.push(BlockModel.collection.insert(newBlock));
 
       const blockTransactions = await TransactionModel.collection
         .find({
           chain: parentChain,
-          blockHeight: { $lt: forkHeight }
+          network: this.network,
+          blockHash: block.hash
         })
         .toArray();
 
@@ -340,6 +348,11 @@ export class P2pService {
       mongoOperations.push(CoinModel.collection.insertMany(newCoins));
 
       await Promise.all(mongoOperations);
+
+      BlockModel.collection.updateOne(
+        { chain: newChain, network: this.network, hash: block.hash },
+        { processed: true }
+      );
     }
   }
 
