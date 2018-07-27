@@ -278,7 +278,7 @@ export class P2pService {
           await this.processBlock(block);
           currentHeight++;
           if (Date.now() - lastLog > 100) {
-            logger.info(`Sync progress ${(100 * (currentHeight) / this.getBestPoolHeight()).toFixed(3)}%`, {
+            logger.info(`Sync progress ${((100 * currentHeight) / this.getBestPoolHeight()).toFixed(3)}%`, {
               chain,
               network,
               height: currentHeight
@@ -289,7 +289,6 @@ export class P2pService {
           logger.error(`Error syncing ${chain} ${network}`, err);
           return this.sync();
         }
-        
       }
     }
     logger.info(`${chain}:${network} up to date.`);
@@ -303,7 +302,7 @@ export class P2pService {
   }
 
   async createFork(newChain: string, parentChain: string, forkHeight: number) {
-    const currentHeight = ChainStateProvider.getLocalTip({ chain: newChain, network: this.network });
+    const currentHeight = await ChainStateProvider.getLocalTip({ chain: newChain, network: this.network });
     const blockCursor = BlockModel.collection
       .find(
         { chain: parentChain, network: this.network, height: { $lt: forkHeight, $gte: currentHeight } },
@@ -357,7 +356,7 @@ export class P2pService {
       mongoOperations.push(CoinModel.collection.insertMany(newCoins));
 
       await Promise.all(mongoOperations);
-
+      logger.info(`Forking block ${block.height}`);
       BlockModel.collection.updateOne(
         { chain: newChain, network: this.network, hash: block.hash },
         { processed: true }
