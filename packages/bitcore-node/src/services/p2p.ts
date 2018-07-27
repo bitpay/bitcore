@@ -75,7 +75,8 @@ export class P2pService {
         hash
       });
       if (!this.invCache.get(hash)) {
-        this.events.emit('tx', message.transaction);
+        this.processTransaction(message.transaction);
+        this.events.emit('transaction', message.transaction);
       }
       this.invCache.set(hash);
     });
@@ -198,29 +199,32 @@ export class P2pService {
   }
 
   async processBlock(block): Promise<any> {
-    try {
-      await BlockModel.addBlock({
-        chain: this.chain,
-        network: this.network,
-        forkHeight: this.chainConfig.forkHeight,
-        parentChain: this.chainConfig.parentChain,
-        initialSyncComplete: this.initialSyncComplete,
-        block
-      });
-      if (!this.syncing) {
-        logger.info(`Added block ${block.hash}`, {
+    return new Promise(async (resolve, reject) => {
+      try {
+        await BlockModel.addBlock({
           chain: this.chain,
-          network: this.network
+          network: this.network,
+          forkHeight: this.chainConfig.forkHeight,
+          parentChain: this.chainConfig.parentChain,
+          initialSyncComplete: this.initialSyncComplete,
+          block
         });
+        if (!this.syncing) {
+          logger.info(`Added block ${block.hash}`, {
+            chain: this.chain,
+            network: this.network
+          });
+        }
+        resolve();
+      } catch (err) {
+        reject(err);
       }
-    } catch (err) {
-      this.sync();
-    }
+    });
   }
 
   async processTransaction(tx: Bitcoin.Transaction): Promise<any> {
     const now = new Date();
-    await TransactionModel.batchImport({
+    TransactionModel.batchImport({
       chain: this.chain,
       network: this.network,
       txs: [tx],
@@ -262,19 +266,24 @@ export class P2pService {
       let currentHeight = tip? tip.height: 0;
       let lastLog = 0;
       logger.info(`Syncing ${headers.length} blocks for ${chain} ${network}`);
-
       for (const header of headers) {
-        const block = await this.getBlock(header.hash);
-        await this.processBlock(block);
-        currentHeight++;
-        if (Date.now() - lastLog > 100) {
-          logger.info(`Sync progress ${(100 * (currentHeight) / this.getBestPoolHeight()).toFixed(3)}%`, {
-            chain,
-            network,
-            height: currentHeight
-          });
-          lastLog = Date.now();
+        try {
+          const block = await this.getBlock(header.hash);
+          await this.processBlock(block);
+          currentHeight++;
+          if (Date.now() - lastLog > 100) {
+            logger.info(`Sync progress ${(100 * (currentHeight) / this.getBestPoolHeight()).toFixed(3)}%`, {
+              chain,
+              network,
+              height: currentHeight
+            });
+            lastLog = Date.now();
+          }
+        } catch (err) {
+          logger.error(`Error syncing ${chain} ${network}`, err);
+          return this.sync();
         }
+        
       }
     }
     logger.info(`${chain}:${network} up to date.`);
