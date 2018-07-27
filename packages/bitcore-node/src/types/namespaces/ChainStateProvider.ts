@@ -106,7 +106,7 @@ export declare namespace CSP {
     streamWalletTransactions(params: StreamWalletTransactionsParams): any;
     streamWalletUtxos(params: StreamWalletUtxosParams): any;
     getCoinsForTx(params: { chain: string; network: string; txid: string }): Promise<any>;
-    getLocalTip(params): Promise<any>;
+    getLocalTip(params): Promise<IBlock| null>;
     getLocatorHashes(params): Promise<any>
   }
 

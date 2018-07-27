@@ -254,7 +254,7 @@ export class P2pService {
         });
         parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
       }
-      if (parentTip.height > forkHeight && tip.height === 0) {
+      if (parentTip.height > forkHeight && (!tip || tip.height < forkHeight)) {
         // fork copy logic
         await this.createFork(chain, parentChain, forkHeight);
       }
@@ -302,7 +302,8 @@ export class P2pService {
   }
 
   async createFork(newChain: string, parentChain: string, forkHeight: number) {
-    const currentHeight = await ChainStateProvider.getLocalTip({ chain: newChain, network: this.network });
+    const tip = await ChainStateProvider.getLocalTip({ chain: newChain, network: this.network });
+    const currentHeight = tip ? tip.height : 0;
     const blockCursor = BlockModel.collection
       .find(
         { chain: parentChain, network: this.network, height: { $lt: forkHeight, $gte: currentHeight } },
