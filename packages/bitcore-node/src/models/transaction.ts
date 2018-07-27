@@ -70,14 +70,14 @@ export class Transaction extends BaseModel<ITransaction> {
       spendOps = spendOps.map((spendBatch: Array<any>) =>
         CoinModel.collection.bulkWrite(spendBatch, { ordered: false })
       );
-      await Promise.all(spendOps);
     }
 
     let txOps = await this.addTransactions(params);
     logger.debug('Writing Transactions', txOps.length);
     const txBatches = partition(txOps, txOps.length / config.maxPoolSize);
     const txs = txBatches.map((txBatch: Array<any>) => this.collection.bulkWrite(txBatch, { ordered: false }));
-    await Promise.all(txs);
+
+    await Promise.all(spendOps.concat(txs));
   }
 
   async addTransactions(params: {
