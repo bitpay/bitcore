@@ -306,4 +306,4 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 }
 
-export let InternalState = new InternalStateProvider();
+export const InternalState = new InternalStateProvider();
