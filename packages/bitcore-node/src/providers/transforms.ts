@@ -1,4 +1,4 @@
-const { CoinModel } = require('../../../models/coin');
+import { CoinModel } from '../models/coin';
 import { Transform } from 'stream';
 import { IWallet } from '../models/wallet';
 
