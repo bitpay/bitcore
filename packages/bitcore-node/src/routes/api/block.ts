@@ -22,7 +22,7 @@ router.get('/', async function(req: Request, res: Response) {
 router.get('/tip', async function(req: Request, res: Response) {
   let { chain, network } = req.params;
   try {
-    let tip = await InternalState.getBlock({ chain, network });
+    let tip = await InternalState.getLocalTip({ chain, network });
     return res.json(tip);
   } catch (err) {
     return res.status(500).send(err);

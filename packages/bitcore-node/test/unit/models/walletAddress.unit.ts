@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import { IWalletAddress, WalletAddressModel } from "../../../src/models/walletAddress";
 import { IWallet } from "../../../src/models/wallet";
+import { ObjectID } from "bson";
+import { MongoBound } from "../../../src/models/base";
 
 describe('WalletAddress Model', function () {
 
@@ -35,13 +37,14 @@ describe('WalletAddress Model', function () {
   describe('getUpdateCoinsObj', () => {
     it('should return the update coin object', async () => {
       let wallet = {
+        _id: new ObjectID(),
         name: 'Wallet1',
         singleAddress: true,
         pubKey: 'xpub661MyMwAqRbcFa63vSTa3vmRiVWbpLWhgUsyvjfMFP7ePR5osC1rtPUkgJrB94V1YEQathfWLm9U5zaZttYPDPWhASwJGUvYvPGtofqnTGN',
         path: 'm/44\'/0\'/0\'',
         chain: 'BTC',
         network: 'regtest'
-      } as IWallet;
+      } as MongoBound<IWallet>;
 
       let params = {
         wallet: wallet,

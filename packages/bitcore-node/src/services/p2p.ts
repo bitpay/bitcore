@@ -1,8 +1,8 @@
-import config from '../config'
+import config from '../config';
 import logger from '../logger';
 import { EventEmitter } from 'events';
 import { BlockModel } from '../models/block';
-import { ChainStateProvider } from '../providers/chain-state';
+import { InternalState } from '../providers/chain-state';
 import { TransactionModel } from '../models/transaction';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { StateModel } from '../models/state';
@@ -31,7 +31,7 @@ export class P2pService {
     this.events = new EventEmitter();
     this.syncing = true;
     this.initialSyncComplete = false;
-    this.invCache = new LRU({max: 10000});
+    this.invCache = new LRU({ max: 10000 });
     this.messages = new this.bitcoreP2p.Messages({
       network: this.bitcoreLib.Networks.get(this.network)
     });
@@ -52,17 +52,18 @@ export class P2pService {
   }
 
   setupListeners() {
+    const { chain, network } = this;
     this.pool.on('peerready', peer => {
       logger.info(`Connected to peer ${peer.host}`, {
-        chain: this.chain,
-        network: this.network
+        chain: chain,
+        network: network
       });
     });
 
     this.pool.on('peerdisconnect', peer => {
       logger.warn(`Not connected to peer ${peer.host}`, {
-        chain: this.chain,
-        network: this.network
+        chain: chain,
+        network: network
       });
     });
 
@@ -70,8 +71,8 @@ export class P2pService {
       const hash = message.transaction.hash;
       logger.debug('peer tx received', {
         peer: `${peer.host}:${peer.port}`,
-        chain: this.chain,
-        network: this.network,
+        chain: chain,
+        network: network,
         hash
       });
       if (!this.invCache.get(hash)) {
@@ -86,8 +87,8 @@ export class P2pService {
       const { hash } = block;
       logger.debug('peer block received', {
         peer: `${peer.host}:${peer.port}`,
-        chain: this.chain,
-        network: this.network,
+        chain: chain,
+        network: network,
         hash
       });
 
@@ -95,8 +96,13 @@ export class P2pService {
         this.invCache.set(hash);
         this.events.emit(hash, message.block);
         if (!this.syncing) {
-          this.processBlock(block);
-          this.events.emit('block', message.block);
+          try {
+            this.processBlock(block);
+            this.events.emit('block', message.block);
+          } catch (err) {
+            logger.error(`Error syncing ${chain} ${network}`, err);
+            return this.sync();
+          }
         }
       }
     });
@@ -104,7 +110,7 @@ export class P2pService {
     this.pool.on('peerheaders', (peer, message) => {
       logger.debug('peerheaders message received', {
         peer: `${peer.host}:${peer.port}`,
-        chain: this.chain,
+        chain: chain,
         network: this.network,
         count: message.headers.length
       });
@@ -113,7 +119,7 @@ export class P2pService {
 
     this.pool.on('peerinv', (peer, message) => {
       if (!this.syncing) {
-        const filtered = message.inventory.filter((inv) => {
+        const filtered = message.inventory.filter(inv => {
           const hash = this.bitcoreLib.encoding
             .BufferReader(inv.hash)
             .readReverse()
@@ -190,7 +196,7 @@ export class P2pService {
 
   getBestPoolHeight(): number {
     let best = 0;
-    for (const peer of Object.values(this.pool._connectedPeers) as {bestHeight: number}[]) {
+    for (const peer of Object.values(this.pool._connectedPeers) as { bestHeight: number }[]) {
       if (peer.bestHeight > best) {
         best = peer.bestHeight;
       }
@@ -234,36 +240,37 @@ export class P2pService {
       blockTimeNormalized: now,
       initialSyncComplete: true
     });
-  };
+  }
 
   async sync() {
     const { chain, chainConfig, network } = this;
     const { parentChain, forkHeight } = chainConfig;
     this.syncing = true;
     const state = await StateModel.collection.findOne({});
-    this.initialSyncComplete = state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
-    let tip = await ChainStateProvider.getLocalTip({chain, network});
-    if (parentChain && (!tip || tip.height < forkHeight)){
-      let parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
+    this.initialSyncComplete =
+      state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
+    let tip = await InternalState.getLocalTip({ chain, network });
+    if (parentChain && (!tip || tip.height < forkHeight)) {
+      let parentTip = await InternalState.getLocalTip({ chain: parentChain, network });
       while (!parentTip || parentTip.height < forkHeight) {
         logger.info(`Waiting until ${parentChain} syncs before ${chain} ${network}`);
         await new Promise(resolve => {
           setTimeout(resolve, 5000);
-        })
-        parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
+        });
+        parentTip = await InternalState.getLocalTip({ chain: parentChain, network });
       }
     }
 
     const getHeaders = async () => {
-      const locators = await ChainStateProvider.getLocatorHashes({ chain, network });
+      const locators = await InternalState.getLocatorHashes({ chain, network });
       return this.getHeaders(locators);
     };
 
     let headers;
     while (!headers || headers.length > 0) {
       headers = await getHeaders();
-      tip = await ChainStateProvider.getLocalTip({ chain, network });
-      let currentHeight = tip? tip.height: 0;
+      tip = await InternalState.getLocalTip({ chain, network });
+      let currentHeight = tip ? tip.height : 0;
       let lastLog = 0;
       logger.info(`Syncing ${headers.length} blocks for ${chain} ${network}`);
       for (const header of headers) {
@@ -272,7 +279,7 @@ export class P2pService {
           await this.processBlock(block);
           currentHeight++;
           if (Date.now() - lastLog > 100) {
-            logger.info(`Sync progress ${(100 * (currentHeight) / this.getBestPoolHeight()).toFixed(3)}%`, {
+            logger.info(`Sync progress ${((100 * currentHeight) / this.getBestPoolHeight()).toFixed(3)}%`, {
               chain,
               network,
               height: currentHeight
@@ -283,12 +290,15 @@ export class P2pService {
           logger.error(`Error syncing ${chain} ${network}`, err);
           return this.sync();
         }
-        
       }
     }
     logger.info(`${chain}:${network} up to date.`);
     this.syncing = false;
-    StateModel.collection.findOneAndUpdate({}, {$addToSet: { initialSyncComplete: `${chain}:${network}`}}, { upsert: true});
+    StateModel.collection.findOneAndUpdate(
+      {},
+      { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
+      { upsert: true }
+    );
     return true;
   }
 

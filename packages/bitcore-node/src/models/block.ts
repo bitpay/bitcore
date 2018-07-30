@@ -5,7 +5,7 @@ import { LoggifyClass } from '../decorators/Loggify';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { BaseModel } from './base';
 import logger from '../logger';
-import { ChainStateProvider } from '../providers/chain-state';
+import { InternalState } from '../providers/chain-state';
 
 export type IBlock = {
   chain: string;
@@ -133,7 +133,7 @@ export class Block extends BaseModel<IBlock> {
 
   async handleReorg(params: { header?: Bitcoin.Block.HeaderObj; chain: string; network: string }): Promise<boolean> {
     const { header, chain, network } = params;
-    const localTip = await ChainStateProvider.getLocalTip(params);
+    const localTip = await InternalState.getLocalTip(params);
     if (header && localTip && localTip.hash === header.prevHash) {
       return false;
     }
