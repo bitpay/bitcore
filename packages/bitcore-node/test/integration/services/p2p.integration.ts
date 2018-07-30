@@ -3,7 +3,7 @@ import config from '../../../src/config';
 import { resetDatabase } from '../../helpers';
 import { expect } from 'chai';
 import { P2pService } from '../../../src/services/p2p';
-import { ChainStateProvider } from '../../../src/providers/chain-state';
+import { InternalState } from '../../../src/providers/chain-state';
 import { BlockModel } from '../../../src/models/block';
 import { TransactionModel } from '../../../src/models/transaction';
 import { sleep } from '../../../src/utils/async';
@@ -27,11 +27,12 @@ describe('P2P Service', () => {
     const chain = 'BTC';
     const network = 'regtest';
 
-    const startingHeight = await ChainStateProvider.getLocalTip({chain, network});
+    const startTip = await InternalState.getLocalTip({chain, network});
     // add some blocks to sync on startup
     await rpc.generate(10);
-    const newHeight = await ChainStateProvider.getLocalTip({ chain, network });
-    expect(startingHeight + 10 === newHeight);
+    const tip = await InternalState.getLocalTip({ chain, network });
+    const newHeight = tip!.height;
+    expect(startTip!.height + 10 === newHeight);
 
     // start and connect the service
     const p2pService = new P2pService({
@@ -61,14 +62,14 @@ describe('P2P Service', () => {
 async function verify(rpc: RPC, tail: number) {
   const chain = 'BTC';
   const network = 'regtest';
-  const myTip = await ChainStateProvider.getLocalTip({
+  const myTip = await InternalState.getLocalTip({
     chain,
     network,
   });
   const poolTip = await rpc.bestBlockHashAsync();
 
   // check that we're at the right tip
-  expect(myTip.hash, 'local tip').to.equal(poolTip);
+  expect(myTip!.hash, 'local tip').to.equal(poolTip);
 
   let hash = poolTip;
 

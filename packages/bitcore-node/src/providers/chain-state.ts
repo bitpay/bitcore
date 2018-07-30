@@ -1,15 +1,15 @@
-import { CoinModel } from '../../models/coin';
-import { BlockModel } from '../../models/block';
-import { WalletModel, IWallet } from '../../models/wallet';
-import { WalletAddressModel } from '../../models/walletAddress';
-import { CSP } from '../../types/namespaces/ChainStateProvider';
-import { Storage } from '../../services/storage';
-import { RPC } from '../../rpc';
-import { LoggifyClass } from '../../decorators/Loggify';
-import config from '../../config';
+import { CoinModel } from '../models/coin';
+import { BlockModel } from '../models/block';
+import { WalletModel, IWallet } from '../models/wallet';
+import { WalletAddressModel } from '../models/walletAddress';
+import { CSP } from '../types/namespaces/ChainStateProvider';
+import { Storage } from '../services/storage';
+import { RPC } from '../rpc';
+import { LoggifyClass } from '../decorators/Loggify';
+import config from '../config';
 
-import { TransactionModel } from '../../models/transaction';
-import { StateModel } from '../../models/state';
+import { TransactionModel } from '../models/transaction';
+import { StateModel } from '../models/state';
 
 const ListTransactionsStream = require('./transforms');
 
