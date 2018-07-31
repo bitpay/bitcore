@@ -1,0 +1,59 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const read = require("read");
+const readline = require('readline');
+const inner = require(process.argv[0]);
+
+
+const password = async () => {
+  const ttyin = fs.openSync('/dev/tty', 'r');
+  if !(tty.isatty(ttyin)) {
+    throw new Error(`Could not get access to ${ttyin}`);
+  }
+  const ttyout = fs.openSync('/dev/tty', 'w');
+  if !(tty.isatty(ttyout)) {
+    throw new Error(`Could not get access to ${ttyout}`);
+  }
+
+  return new Promise((resolve, reject) => {
+    read({
+      silent: true,
+      prompt: 'Password: ',
+      input: new tty.ReadStream(ttyin),
+      output: new tty.ReadStream(ttyout),
+    }, (error, result) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(result);
+      }
+    });
+  });
+};
+
+
+const main = async () => {
+  // Get the password, even when piping things
+  const pass = inner.password? await password() : false;
+  const args = process.argv.slice(1);
+
+  // Normal operation, no piping
+  if (process.stdin.isTTY) {
+    inner.program.parse(args);
+    inner.hook(inner.program, pass);
+  }
+
+  // Read line by line and run
+  const pipe = readline.createInterface({
+    input: process.stdin,
+  });
+  pipe.on('line', line => {
+    const data = JSON.parse(line);
+    // TODO: clear earlier arguments from inner.program?
+    inner.program.parse(Object.assign({}, args, data));
+    inner.hook(inner.program, pass);
+  });
+};
+
+main();

@@ -14,10 +14,9 @@ program
   .option('--change <change>', 'REQUIRED - Change addresses')
   .option('--fee [fee]', 'optional - custom transaction fee to pay')
   .option('--target [target]', 'optional - custom target block for confirmation')
-  .option('--path [path]', 'optional - Custom wallet storage path')
-  .parse(process.argv);
+  .option('--path [path]', 'optional - Custom wallet storage path');
 
-const main = async () => {
+const main = async (program) => {
   const { name, path } = program;
   let wallet;
   try {
@@ -56,4 +55,13 @@ const main = async () => {
   }
 };
 
-main();
+module.exports = {
+  password: true,
+  hook: main,
+  params: program,
+};
+
+if (require.main === module) {
+  program.parse(process.argv);
+  main(program);
+}
