@@ -19,12 +19,6 @@
           {{ currencyProvider.getConvertedNumber(address.balance) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
         </ion-note>
       </ion-item>
-      <ion-item>
-        No. Transactions
-        <ion-note item-end>
-          {{ address.txAppearances }}
-        </ion-note>
-      </ion-item>
     </ion-list>
 
     <p text-center>

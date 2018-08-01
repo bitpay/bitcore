@@ -46,7 +46,6 @@ export class AddressPage {
       this.address = {
         balance: json.balance,
         addrStr: this.addrStr,
-        txAppearances: 0, /* TODO: what's up with this? */
       };
       this.loading = false;
     }, err => {
