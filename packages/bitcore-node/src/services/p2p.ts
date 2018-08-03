@@ -280,7 +280,7 @@ export class P2pService {
           await this.processBlock(block);
           currentHeight++;
           if (Date.now() - lastLog > 100) {
-            logger.info(`Sync progress ${((100 * currentHeight) / this.getBestPoolHeight()).toFixed(3)}%`, {
+            logger.info(`Sync `, {
               chain,
               network,
               height: currentHeight
