@@ -32,10 +32,8 @@ export class StorageService {
           connectUrl,
           {
             keepAlive: 1,
-            poolSize: config.maxPoolSize
-            /*
-             *nativeParser: true
-             */
+            poolSize: config.maxPoolSize,
+            useNewUrlParser: true
           }
         );
       };
