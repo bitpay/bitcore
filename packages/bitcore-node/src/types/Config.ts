@@ -4,6 +4,7 @@ export default interface Config {
   port: number;
   dbHost: string;
   dbName: string;
+  dbPort: string;
   numWorkers: number;
 
   chains: {
