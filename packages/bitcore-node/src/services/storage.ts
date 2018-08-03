@@ -31,7 +31,7 @@ export class StorageService {
         return MongoClient.connect(
           connectUrl,
           {
-            keepAlive: 1,
+            keepAlive: true,
             poolSize: config.maxPoolSize,
             useNewUrlParser: true
           }
