@@ -55,6 +55,7 @@ const Config = function(): ConfigType {
     port: 3000,
     dbHost: process.env.DB_HOST || "127.0.0.1",
     dbName: process.env.DB_NAME || "bitcore",
+    dbPort: process.env.DB_NAME || "27017",
     numWorkers: os.cpus().length,
     chains: {}
   };
