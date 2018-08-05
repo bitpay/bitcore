@@ -66,7 +66,6 @@ export class Transaction extends BaseModel<ITransaction> {
     if (mintOps.length) {
       mintOps = partition(mintOps, mintOps.length / config.maxPoolSize);
       mintOps = mintOps.map((mintBatch: Array<any>) => CoinModel.collection.bulkWrite(mintBatch, { ordered: false }));
-      await Promise.all(mintOps);
     }
     if (spendOps.length) {
       spendOps = partition(spendOps, spendOps.length / config.maxPoolSize);
@@ -74,16 +73,18 @@ export class Transaction extends BaseModel<ITransaction> {
         CoinModel.collection.bulkWrite(spendBatch, { ordered: false })
       );
     }
+    const coinOps = mintOps.concat(spendOps);
+    await Promise.all(coinOps);
 
     let txs: Promise<BulkWriteOpResultObject>[] = [];
     if (mintOps) {
       let txOps = await this.addTransactions(params);
       logger.debug('Writing Transactions', txOps.length);
       const txBatches = partition(txOps, txOps.length / config.maxPoolSize);
-      txs = txBatches.map((txBatch: Array<any>) => this.collection.bulkWrite(txBatch, { ordered: false }));
+      txs = txBatches.map((txBatch: Array<any>) => this.collection.bulkWrite(txBatch, { ordered: false, j: false, w: 0 }));
     }
 
-    await Promise.all(spendOps.concat(txs));
+    await Promise.all(txs);
   }
 
   async addTransactions(params: {
