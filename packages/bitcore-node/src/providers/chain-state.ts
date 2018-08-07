@@ -1,4 +1,9 @@
-import { CoinModel } from '../models/coin';
+import config from '../config';
+import through2 from 'through2';
+
+import { MongoBound } from '../models/base';
+import { ObjectId } from 'mongodb';
+import { CoinModel, ICoin } from '../models/coin';
 import { BlockModel } from '../models/block';
 import { WalletModel, IWallet } from '../models/wallet';
 import { WalletAddressModel } from '../models/walletAddress';
@@ -6,12 +11,10 @@ import { CSP } from '../types/namespaces/ChainStateProvider';
 import { Storage } from '../services/storage';
 import { RPC } from '../rpc';
 import { LoggifyClass } from '../decorators/Loggify';
-import config from '../config';
-
 import { TransactionModel } from '../models/transaction';
 import { StateModel } from '../models/state';
-
-const ListTransactionsStream = require('./transforms');
+import { ListTransactionsStream } from './transforms';
+import { StringifyJsonStream } from '../utils/stringifyJsonStream';
 
 @LoggifyClass
 export class InternalStateProvider implements CSP.IChainStateService {
@@ -190,6 +193,49 @@ export class InternalStateProvider implements CSP.IChainStateService {
     Storage.apiStreamingFind(WalletAddressModel, query, { limit }, stream);
   }
 
+  async streamMissingWalletAddresses(params: CSP.StreamWalletMissingAddressesParams) {
+    const { chain, network, pubKey, stream } = params;
+    const wallet = await WalletModel.collection.findOne({ pubKey });
+    const walletId = wallet!._id;
+    const query = { chain, network, wallets: walletId, spentHeight: { $gte: 0 } };
+    const cursor = CoinModel.collection.find(query);
+    const seen = {};
+    const stringifyWallets = (wallets: Array<ObjectId>) => wallets.map(w => w.toHexString());
+    const allMissingAddresses = new Array<string>();
+    let totalMissingValue = 0;
+    const missingStream = cursor.pipe(
+      through2(
+        { objectMode: true },
+        async (spentCoin: MongoBound<ICoin>, _, done) => {
+          if (!seen[spentCoin.spentTxid]) {
+            seen[spentCoin.spentTxid] = true;
+            // find coins that were spent with my coins
+            const spends = await CoinModel.collection
+              .find({ chain, network, spentTxid: spentCoin.spentTxid })
+              .toArray();
+            const missing = spends
+              .filter(coin => !stringifyWallets(coin.wallets).includes(walletId.toHexString()))
+              .map(coin => {
+                const { _id, wallets, address, value } = coin;
+                totalMissingValue += value;
+                allMissingAddresses.push(address);
+                return { _id, wallets, address, value, expected: walletId.toHexString() };
+              });
+            if (missing.length > 0) {
+              return done(null, { txid: spentCoin.spentTxid, missing });
+            }
+          }
+          return done();
+        },
+        function(done) {
+          this.push({ allMissingAddresses, totalMissingValue });
+          done();
+        }
+      )
+    );
+    missingStream.pipe(new StringifyJsonStream()).pipe(stream);
+  }
+
   async updateWallet(params: CSP.UpdateWalletParams) {
     const { wallet, addresses } = params;
     return WalletAddressModel.updateCoins({ wallet, addresses });
@@ -204,23 +250,36 @@ export class InternalStateProvider implements CSP.IChainStateService {
     };
     if (args) {
       if (args.startBlock) {
-        query.blockHeight = { $gte: Number(args.startBlock) };
+        query.mintHeight = { $gte: Number(args.startBlock) };
       }
       if (args.endBlock) {
-        query.blockHeight = query.blockHeight || {};
-        query.blockHeight.$lte = Number(args.endBlock);
+        query.mintHeight = query.blockHeight || {};
+        query.mintHeight.$lte = Number(args.endBlock);
       }
       if (args.startDate) {
-        query.blockTimeNormalized = { $gte: new Date(args.startDate) };
+        // find a height near this date
+        const [block] = await BlockModel.collection
+          .find({ chain, network, timeNormalized: { $gte: new Date(args.startDate) } })
+          .sort({ height: 1 })
+          .limit(1)
+          .toArray();
+        query.mintHeight = { $gte: block.height };
       }
       if (args.endDate) {
-        query.blockTimeNormalized = query.blockTimeNormalized || {};
-        query.blockTimeNormalized.$lt = new Date(args.endDate);
+        // find a height near this date
+        const [block] = await BlockModel.collection
+          .find({ chain, network, timeNormalized: { $gte: new Date(args.endDate) } })
+          .sort({ height: 1 })
+          .limit(1)
+          .toArray();
+        query.mintHeight = query.mintHeight || {};
+        query.mintHeight.$lte = block.height;
       }
     }
-    let transactionStream = TransactionModel.getTransactions({ query });
-    let listTransactionsStream = new ListTransactionsStream(wallet);
-    transactionStream.pipe(listTransactionsStream).pipe(stream);
+    console.log(query);
+    const walletCoins = CoinModel.collection.find(query);
+    const listTransactionsStream = new ListTransactionsStream(wallet);
+    walletCoins.pipe(listTransactionsStream).pipe(stream);
   }
 
   async getWalletBalance(params: CSP.GetWalletBalanceParams) {

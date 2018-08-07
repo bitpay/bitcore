@@ -2,7 +2,7 @@ import { CoinModel } from '../models/coin';
 import { Transform } from 'stream';
 import { IWallet } from '../models/wallet';
 
-class ListTransactionsStream extends Transform {
+export class ListTransactionsStream extends Transform {
   constructor(private wallet: IWallet) {
     super({ objectMode: true });
   }

@@ -4,6 +4,7 @@ import { IWallet } from '../../models/wallet';
 import { RequestHandler } from 'express-serve-static-core';
 import { InternalState } from '../../providers/chain-state';
 import logger from '../../logger';
+import { MongoBound } from "../../models/base";
 const router = Router({ mergeParams: true });
 const secp256k1 = require('secp256k1');
 const bitcoreLib = require('bitcore-lib');
@@ -20,7 +21,7 @@ type PreAuthRequest = {
 } & Request;
 
 type AuthenticatedRequest = {
-  wallet?: IWallet;
+  wallet?: MongoBound<IWallet>;
 } & PreAuthRequest;
 
 const verifyRequestSignature = (params: VerificationPayload): boolean => {
@@ -87,14 +88,30 @@ router.post('/', async function(req, res) {
   }
 });
 
-router.get('/:pubKey/addresses', authenticate, async function(req, res) {
+router.get('/:pubKey/addresses/missing', async (req: AuthenticatedRequest, res) => {
   try {
     let { chain, network, pubKey } = req.params;
+    let payload = {
+      chain,
+      network,
+      pubKey,
+      stream: res
+    };
+    return InternalState.streamMissingWalletAddresses(payload);
+  } catch (err) {
+    return res.status(500).send(err);
+  }
+});
+
+router.get('/:pubKey/addresses', authenticate, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { wallet } = req;
+    let { chain, network } = req.params;
     let { limit } = req.query;
     let payload = {
       chain,
       network,
-      walletId: pubKey,
+      walletId: wallet!._id,
       limit,
       stream: res
     };
@@ -106,6 +123,7 @@ router.get('/:pubKey/addresses', authenticate, async function(req, res) {
 
 // update wallet
 router.post('/:pubKey', authenticate, async (req: AuthenticatedRequest, res) => {
+  const { wallet } = req;
   let { chain, network } = req.params;
   let addressLines: { address: string }[] = req.body;
   try {
@@ -113,7 +131,7 @@ router.post('/:pubKey', authenticate, async (req: AuthenticatedRequest, res) => 
     await InternalState.updateWallet({
       chain,
       network,
-      wallet: req.wallet!,
+      wallet: wallet!,
       addresses
     });
     return res.send({ success: true });
