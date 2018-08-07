@@ -63,7 +63,7 @@ export class P2pService {
     this.pool.on('peerdisconnect', peer => {
       logger.warn(`Not connected to peer ${peer.host}`, {
         chain: chain,
-        network: network
+        network: network,
         port: peer.port
       });
     });
