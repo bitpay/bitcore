@@ -250,36 +250,23 @@ export class InternalStateProvider implements CSP.IChainStateService {
     };
     if (args) {
       if (args.startBlock) {
-        query.mintHeight = { $gte: Number(args.startBlock) };
+        query.blockHeight = { $gte: Number(args.startBlock) };
       }
       if (args.endBlock) {
-        query.mintHeight = query.blockHeight || {};
-        query.mintHeight.$lte = Number(args.endBlock);
+        query.blockHeight = query.blockHeight || {};
+        query.blockHeight.$lte = Number(args.endBlock);
       }
       if (args.startDate) {
-        // find a height near this date
-        const [block] = await BlockModel.collection
-          .find({ chain, network, timeNormalized: { $gte: new Date(args.startDate) } })
-          .sort({ height: 1 })
-          .limit(1)
-          .toArray();
-        query.mintHeight = { $gte: block.height };
+        query.blockTimeNormalized = { $gte: new Date(args.startDate) };
       }
       if (args.endDate) {
-        // find a height near this date
-        const [block] = await BlockModel.collection
-          .find({ chain, network, timeNormalized: { $gte: new Date(args.endDate) } })
-          .sort({ height: 1 })
-          .limit(1)
-          .toArray();
-        query.mintHeight = query.mintHeight || {};
-        query.mintHeight.$lte = block.height;
+        query.blockTimeNormalized = query.blockTimeNormalized || {};
+        query.blockTimeNormalized.$lt = new Date(args.endDate);
       }
     }
-    console.log(query);
-    const walletCoins = CoinModel.collection.find(query);
-    const listTransactionsStream = new ListTransactionsStream(wallet);
-    walletCoins.pipe(listTransactionsStream).pipe(stream);
+    let transactionStream = TransactionModel.getTransactions({ query });
+    let listTransactionsStream = new ListTransactionsStream(wallet);
+    transactionStream.pipe(listTransactionsStream).pipe(stream);
   }
 
   async getWalletBalance(params: CSP.GetWalletBalanceParams) {
