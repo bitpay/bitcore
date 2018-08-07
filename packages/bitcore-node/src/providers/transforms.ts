@@ -1,114 +1,73 @@
-import { CoinModel } from '../models/coin';
+import { ICoin } from '../models/coin';
 import { Transform } from 'stream';
+import { TransactionModel, ITransaction } from '../models/transaction';
+import { MongoBound } from '../models/base';
 import { IWallet } from '../models/wallet';
+import through2 from 'through2';
 
-class ListTransactionsStream extends Transform {
-  constructor(private wallet: IWallet) {
-    super({ objectMode: true });
+export class ListTransactionsStream extends Transform {
+  constructor(private wallet: MongoBound<IWallet>) {
+    super({
+      objectMode: true
+    });
   }
 
-  async _transform(transaction, _, done) {
-    var self = this;
-    transaction.inputs = await CoinModel.collection
-      .find(
-        {
-          chain: transaction.chain,
-          network: transaction.network,
-          spentTxid: transaction.txid
-        },
-        { batchSize: 100 }
-      )
-      .addCursorFlag('noCursorTimeout', true)
-      .toArray();
-    transaction.outputs = await CoinModel.collection
-      .find(
-        {
-          chain: transaction.chain,
-          network: transaction.network,
-          mintTxid: transaction.txid
-        },
-        { batchSize: 100 }
-      )
-      .addCursorFlag('noCursorTimeout', true)
-      .toArray();
-
-    var wallet = this.wallet._id!.toString();
-    var totalInputs = transaction.inputs.reduce((total, input) => {
-      return total + input.value;
-    }, 0);
-    var totalOutputs = transaction.outputs.reduce((total, output) => {
-      return total + output.value;
-    }, 0);
-    var fee = totalInputs - totalOutputs;
-    var sending = _.some(transaction.inputs, function(input) {
-      var contains = false;
-      _.each(input.wallets, function(inputWallet) {
-        if (inputWallet.equals(wallet)) {
-          contains = true;
-        }
-      });
-      return contains;
-    });
-
-    if (sending) {
-      _.each(transaction.outputs, function(output) {
-        var contains = false;
-        _.each(output.wallets, function(outputWallet) {
-          if (outputWallet.equals(wallet)) {
-            contains = true;
-          }
-        });
-        if (!contains) {
-          self.push(
-            JSON.stringify({
-              txid: transaction.txid,
-              category: 'send',
-              satoshis: -output.value,
-              height: transaction.blockHeight,
-              address: output.address,
-              outputIndex: output.vout,
-              blockTime: transaction.blockTimeNormalized
-            }) + '\n'
-          );
-        }
-      });
-      if (fee > 0) {
-        self.push(
-          JSON.stringify({
-            txid: transaction.txid,
-            category: 'fee',
-            satoshis: -fee,
-            height: transaction.blockHeight,
-            blockTime: transaction.blockTimeNormalized
-          }) + '\n'
-        );
-      }
-      return done();
+  writeTxToStream(coin: ICoin) {
+    if (coin.spentTxid) {
+      console.log('Spending', coin.value);
+      this.push(
+        JSON.stringify({
+          txid: coin.spentTxid,
+          category: 'send',
+          satoshis: -coin.value,
+          height: coin.spentHeight,
+          address: coin.address,
+          outputIndex: coin.mintIndex
+        }) + '\n'
+      );
     }
 
-    _.each(transaction.outputs, function(output) {
-      var contains = false;
-      _.each(output.wallets, function(outputWallet) {
-        if (outputWallet.equals(wallet)) {
-          contains = true;
-        }
-      });
-      if (contains) {
-        self.push(
-          JSON.stringify({
-            txid: transaction.txid,
-            category: 'receive',
-            satoshis: output.value,
-            height: transaction.blockHeight,
-            address: output.address,
-            outputIndex: output.vout,
-            blockTime: transaction.blockTimeNormalized
-          }) + '\n'
-        );
-      }
-    });
+    if (coin.mintTxid) {
+      console.log('Minting', coin.value);
+      this.push(
+        JSON.stringify({
+          txid: coin.mintTxid,
+          category: 'receive',
+          satoshis: coin.value,
+          height: coin.mintHeight,
+          address: coin.address,
+          outputIndex: coin.mintIndex
+        }) + '\n'
+      );
+    }
+  }
+
+  async _flush(done) {
+    // write all the wallet fees at the end
+    console.log('Flushing');
+    TransactionModel.collection.find({ wallets: this.wallet._id }).pipe(
+      through2(
+        { objectMode: true },
+        (tx: ITransaction, _, inner) => {
+          console.log('Fee', tx.fee);
+          inner(
+            null,
+            JSON.stringify({
+              txid: tx.txid,
+              category: 'fee',
+              satoshis: -tx.fee,
+              height: tx.blockHeight
+            }) + '\n'
+          );
+        },
+        () => done()
+      )
+    );
+  }
+
+  _transform(coin: ICoin, _, done) {
+    console.log('writing coin', coin.mintTxid);
+    this.writeTxToStream(coin);
     done();
   }
 }
-
-module.exports = ListTransactionsStream;

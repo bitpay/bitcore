@@ -52,17 +52,18 @@ export class P2pService {
   }
 
   setupListeners() {
+    const { chain, network } = this;
     this.pool.on('peerready', peer => {
       logger.info(`Connected to peer ${peer.host}`, {
-        chain: this.chain,
-        network: this.network
+        chain: chain,
+        network: network
       });
     });
 
     this.pool.on('peerdisconnect', peer => {
       logger.warn(`Not connected to peer ${peer.host}`, {
-        chain: this.chain,
-        network: this.network,
+        chain: chain,
+        network: network,
         port: peer.port
       });
     });
@@ -71,8 +72,8 @@ export class P2pService {
       const hash = message.transaction.hash;
       logger.debug('peer tx received', {
         peer: `${peer.host}:${peer.port}`,
-        chain: this.chain,
-        network: this.network,
+        chain: chain,
+        network: network,
         hash
       });
       if (!this.invCache.get(hash)) {
@@ -88,8 +89,8 @@ export class P2pService {
       const { chain, network } = this;
       logger.debug('peer block received', {
         peer: `${peer.host}:${peer.port}`,
-        chain: this.chain,
-        network: this.network,
+        chain: chain,
+        network: network,
         hash
       });
 
@@ -111,7 +112,7 @@ export class P2pService {
     this.pool.on('peerheaders', (peer, message) => {
       logger.debug('peerheaders message received', {
         peer: `${peer.host}:${peer.port}`,
-        chain: this.chain,
+        chain: chain,
         network: this.network,
         count: message.headers.length
       });
@@ -250,7 +251,7 @@ export class P2pService {
     const state = await StateModel.collection.findOne({});
     this.initialSyncComplete =
       state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
-    let tip = await InternalState.getLocalTip({chain, network});
+    let tip = await InternalState.getLocalTip({ chain, network });
     if (parentChain && (!tip || tip.height < forkHeight)) {
       let parentTip = await InternalState.getLocalTip({ chain: parentChain, network });
       while (!parentTip || parentTip.height < forkHeight) {

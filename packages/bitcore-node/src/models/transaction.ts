@@ -1,7 +1,7 @@
 import { CoinModel, ICoin } from './coin';
 import { WalletAddressModel } from './walletAddress';
 import { partition } from '../utils/partition';
-import { ObjectID } from 'bson';
+import { ObjectId } from 'mongodb';
 import { TransformOptions } from '../types/TransformOptions';
 import { LoggifyClass } from '../decorators/Loggify';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
@@ -24,7 +24,7 @@ export type ITransaction = {
   fee: number;
   size: number;
   locktime: number;
-  wallets: ObjectID[];
+  wallets: ObjectId[];
 };
 
 @LoggifyClass
@@ -101,14 +101,14 @@ export class Transaction extends BaseModel<ITransaction> {
     mintOps?: Array<any>;
   }) {
     let { blockHash, blockTime, blockTimeNormalized, chain, height, network, txs, initialSyncComplete } = params;
-    let txids = txs.map(tx => tx._hash);
+    let txids = txs.map(tx => tx._hash) as Array<string>;
 
     type TaggedCoin = ICoin & { _id: string };
-    let mintWallets;
-    let spentWallets;
+    let mintedTxWallets;
+    let spentTxWallets;
 
-    if (initialSyncComplete){
-      mintWallets = await CoinModel.collection
+    if (initialSyncComplete) {
+      mintedTxWallets = await CoinModel.collection
         .aggregate<TaggedCoin>([
           { $match: { mintTxid: { $in: txids }, chain, network } },
           { $unwind: '$wallets' },
@@ -116,7 +116,7 @@ export class Transaction extends BaseModel<ITransaction> {
         ])
         .toArray();
 
-      spentWallets = await CoinModel.collection
+      spentTxWallets = await CoinModel.collection
         .aggregate<TaggedCoin>([
        { $match: { spentTxid: { $in: txids }, chain, network } },
           { $unwind: '$wallets' },
@@ -125,11 +125,43 @@ export class Transaction extends BaseModel<ITransaction> {
         .toArray();
     }
 
+    let txInputs: { [txid: string]: number } = {};
+    let megaOr = new Array<any>();
+    for (let tx of txs) {
+      //console.log('Finding inputs for ', tx._hash);
+      const spentInputQueries = tx.inputs.map(input => {
+        const txInput = input.toObject();
+        if (txInput) {
+          return {
+            mintTxid: txInput.prevTxId,
+            mintIndex: txInput.outputIndex
+          };
+        }
+        return;
+      });
+      megaOr = megaOr.concat(spentInputQueries);
+    }
+    //console.log('Mega OR Len', megaOr.length);
+    const coinInputs = await CoinModel.collection
+      .aggregate<{ _id: string; total: number }>([
+        { $match: { $or: megaOr } },
+        { $group: { _id: '$spentTxid', total: { $sum: '$value' } } }
+      ])
+      .toArray();
+    //console.log('Aggregate finished');
 
-    let txOps = txs.map((tx, index) => {
-      let wallets = new Array<ObjectID>();
-      if (initialSyncComplete){
-        for (let wallet of mintWallets.concat(spentWallets).filter(wallet => wallet._id === txids[index])) {
+    for (let input of coinInputs) {
+      //console.log(input._id, input.total);
+      txInputs[input._id] = input.total;
+    }
+
+    let txOps = new Array<any>();
+    for (let i = 0; i < txs.length; i++) {
+      const tx = txs[i];
+      let wallets = new Array<ObjectId>();
+      if (initialSyncComplete) {
+        const walletTxGroups = mintedTxWallets.concat(spentTxWallets);
+        for (let wallet of walletTxGroups.filter(walletTxGroup => walletTxGroup._id === txids[i])) {
           for (let walletMatch of wallet.wallets) {
             if (!wallets.find(wallet => wallet.toHexString() === walletMatch.toHexString())) {
               wallets.push(walletMatch);
@@ -138,9 +170,12 @@ export class Transaction extends BaseModel<ITransaction> {
         }
       }
 
-      return {
+      const totalOut = tx.outputAmount;
+      const sumInput = txInputs[txids[i]] || 0;
+      const fee = sumInput - totalOut;
+      txOps.push({
         updateOne: {
-          filter: { txid: txids[index], chain, network },
+          filter: { txid: txids[i], chain, network },
           update: {
             $set: {
               chain,
@@ -152,14 +187,16 @@ export class Transaction extends BaseModel<ITransaction> {
               coinbase: tx.isCoinbase(),
               size: tx.toBuffer().length,
               locktime: tx.nLockTime,
+              fee,
               wallets
             }
           },
           upsert: true,
           forceServerObjectId: true
         }
-      };
-    });
+      });
+    }
+    //console.log('Returning txops', txOps.length);
     return txOps;
   }
 
@@ -190,6 +227,7 @@ export class Transaction extends BaseModel<ITransaction> {
       tx._hash = tx.hash;
       let txid = tx._hash;
       let isCoinbase = tx.isCoinbase();
+
       for (let [index, output] of tx.outputs.entries()) {
         let parentChainCoin = parentChainCoins.find(
           (parentChainCoin: ICoin) => parentChainCoin.mintTxid === txid && parentChainCoin.mintIndex === index
@@ -232,14 +270,14 @@ export class Transaction extends BaseModel<ITransaction> {
 
     if (initialSyncComplete) {
       let mintOpsAddresses = mintOps.map(mintOp => mintOp.updateOne.update.$set.address);
-      let wallets = await WalletAddressModel.collection
+      let walletAddresses = await WalletAddressModel.collection
         .find({ address: { $in: mintOpsAddresses }, chain, network }, { batchSize: 100 })
         .toArray();
-      if (wallets.length) {
+      if (walletAddresses.length) {
         mintOps = mintOps.map(mintOp => {
-          let transformedWallets = wallets
-            .filter(wallet => wallet.address === mintOp.updateOne.update.$set.address)
-            .map(wallet => wallet.wallet);
+          let transformedWallets = walletAddresses
+            .filter(walletAddress => walletAddress.address === mintOp.updateOne.update.$set.address)
+            .map(walletAddress => walletAddress.wallet);
           mintOp.updateOne.update.$set.wallets = transformedWallets;
           return mintOp;
         });

@@ -1,8 +1,6 @@
 import { BaseModel } from './base';
-import { ObjectID } from 'mongodb';
 
 export type IState = {
-  _id?: ObjectID;
   initialSyncComplete: any;
 };
 

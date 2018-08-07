@@ -2,7 +2,7 @@ import { CoinModel } from './coin';
 import { TransformOptions } from '../types/TransformOptions';
 import { partition } from '../utils/partition';
 import { ObjectID } from 'mongodb';
-import { BaseModel } from './base';
+import { BaseModel, MongoBound } from './base';
 import { IWallet } from './wallet';
 import { TransactionModel } from './transaction';
 
@@ -32,7 +32,7 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
     return JSON.stringify(transform);
   }
 
-  getUpdateCoinsObj(params: { wallet: IWallet; addresses: string[] }) {
+  getUpdateCoinsObj(params: { wallet: MongoBound<IWallet>; addresses: string[] }) {
     const { wallet, addresses } = params;
     const { chain, network } = wallet;
 
@@ -63,7 +63,7 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
     };
   }
 
-  async updateCoins(params: { wallet: IWallet; addresses: string[] }) {
+  async updateCoins(params: { wallet: MongoBound<IWallet>; addresses: string[] }) {
     const { wallet } = params;
     const updates = WalletAddressModel.getUpdateCoinsObj(params);
     const { walletUpdates, coinUpdates } = updates;
