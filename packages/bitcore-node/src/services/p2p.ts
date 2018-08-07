@@ -310,7 +310,7 @@ export class P2pService {
   }
 
   async createFork(newChain: string, parentChain: string, forkHeight: number) {
-    const tip = await ChainStateProvider.getLocalTip({ chain: newChain, network: this.network });
+    const tip = await InternalState.getLocalTip({ chain: newChain, network: this.network });
     const currentHeight = tip ? tip.height : 0;
     const blockCursor = BlockModel.collection
       .find(
@@ -321,55 +321,57 @@ export class P2pService {
 
     while (blockCursor.hasNext()) {
       const block = await blockCursor.next();
-      const newBlock = Object.assign({}, block, { chain: newChain, processed: false });
-      const mongoOperations = new Array();
-      mongoOperations.push(BlockModel.collection.insert(newBlock));
+      if (block) {
+        const newBlock = Object.assign({}, block, { chain: newChain, processed: false });
+        const mongoOperations = new Array();
+        mongoOperations.push(BlockModel.collection.insert(newBlock));
 
-      const blockTransactions = await TransactionModel.collection
-        .find({
-          chain: parentChain,
-          network: this.network,
-          blockHash: block.hash
-        })
-        .toArray();
+        const blockTransactions = await TransactionModel.collection
+          .find({
+            chain: parentChain,
+            network: this.network,
+            blockHash: block.hash
+          })
+          .toArray();
 
-      const newTransactions = blockTransactions.map(tx => {
-        return Object.assign({}, tx, {
-          _id: null,
-          chain: newChain
+        const newTransactions = blockTransactions.map(tx => {
+          return Object.assign({}, tx, {
+            _id: null,
+            chain: newChain
+          });
         });
-      });
-      mongoOperations.push(TransactionModel.collection.insertMany(newTransactions));
+        mongoOperations.push(TransactionModel.collection.insertMany(newTransactions));
 
-      // find coins that were spent past the fork, or not spent at the time of fork
-      const blockCoins = await CoinModel.collection
-        .find({
-          chain: parentChain,
-          mintHeight: block.height,
-          spentHeight: { $or: [{ $gt: forkHeight }, { $eq: -2 }] }
-        })
-        .toArray();
+        // find coins that were spent past the fork, or not spent at the time of fork
+        const blockCoins = await CoinModel.collection
+          .find({
+            chain: parentChain,
+            mintHeight: block.height,
+            spentHeight: { $or: [{ $gt: forkHeight }, { $eq: -2 }] }
+          })
+          .toArray();
 
-      const newCoins = blockCoins.map(coin => {
-        const legacyAddress = new Chain[parentChain].lib.Address(coin.address);
-        const newAddress = this.bitcoreLib.Address(legacyAddress);
-        return Object.assign({}, coin, {
-          _id: null,
-          chain: newChain,
-          spentHeight: -2,
-          spentTxid: null,
-          address: newAddress
+        const newCoins = blockCoins.map(coin => {
+          const legacyAddress = new Chain[parentChain].lib.Address(coin.address);
+          const newAddress = this.bitcoreLib.Address(legacyAddress);
+          return Object.assign({}, coin, {
+            _id: null,
+            chain: newChain,
+            spentHeight: -2,
+            spentTxid: null,
+            address: newAddress
+          });
         });
-      });
 
-      mongoOperations.push(CoinModel.collection.insertMany(newCoins));
+        mongoOperations.push(CoinModel.collection.insertMany(newCoins));
 
-      await Promise.all(mongoOperations);
-      logger.info(`Forking block ${block.height}`);
-      BlockModel.collection.updateOne(
-        { chain: newChain, network: this.network, hash: block.hash },
-        { processed: true }
-      );
+        await Promise.all(mongoOperations);
+        logger.info(`Forking block ${block.height}`);
+        BlockModel.collection.updateOne(
+          { chain: newChain, network: this.network, hash: block.hash },
+          { processed: true }
+        );
+      }
     }
   }
 
