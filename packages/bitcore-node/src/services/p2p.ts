@@ -64,6 +64,7 @@ export class P2pService {
       logger.warn(`Not connected to peer ${peer.host}`, {
         chain: chain,
         network: network
+        port: peer.port
       });
     });
 
@@ -82,9 +83,10 @@ export class P2pService {
       this.invCache.set(hash);
     });
 
-    this.pool.on('peerblock', (peer, message) => {
+    this.pool.on('peerblock', async (peer, message) => {
       const { block } = message;
       const { hash } = block;
+      const { chain, network } = this;
       logger.debug('peer block received', {
         peer: `${peer.host}:${peer.port}`,
         chain: chain,
@@ -97,7 +99,7 @@ export class P2pService {
         this.events.emit(hash, message.block);
         if (!this.syncing) {
           try {
-            this.processBlock(block);
+            await this.processBlock(block);
             this.events.emit('block', message.block);
           } catch (err) {
             logger.error(`Error syncing ${chain} ${network}`, err);
@@ -279,7 +281,7 @@ export class P2pService {
           await this.processBlock(block);
           currentHeight++;
           if (Date.now() - lastLog > 100) {
-            logger.info(`Sync progress ${((100 * currentHeight) / this.getBestPoolHeight()).toFixed(3)}%`, {
+            logger.info(`Sync `, {
               chain,
               network,
               height: currentHeight

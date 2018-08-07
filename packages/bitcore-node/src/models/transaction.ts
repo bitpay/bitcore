@@ -59,14 +59,13 @@ export class Transaction extends BaseModel<ITransaction> {
   }) {
     let mintOps = await this.getMintOps(params);
     logger.debug('Minting Coins', mintOps.length);
-
+   
     params.mintOps = mintOps || [];
     let spendOps = this.getSpendOps(params);
     logger.debug('Spending Coins', spendOps.length);
     if (mintOps.length) {
       mintOps = partition(mintOps, mintOps.length / config.maxPoolSize);
       mintOps = mintOps.map((mintBatch: Array<any>) => CoinModel.collection.bulkWrite(mintBatch, { ordered: false }));
-      await Promise.all(mintOps);
     }
     if (spendOps.length) {
       spendOps = partition(spendOps, spendOps.length / config.maxPoolSize);
@@ -74,16 +73,18 @@ export class Transaction extends BaseModel<ITransaction> {
         CoinModel.collection.bulkWrite(spendBatch, { ordered: false })
       );
     }
+    const coinOps = mintOps.concat(spendOps);
+    await Promise.all(coinOps);
 
     let txs: Promise<BulkWriteOpResultObject>[] = [];
     if (mintOps) {
       let txOps = await this.addTransactions(params);
       logger.debug('Writing Transactions', txOps.length);
       const txBatches = partition(txOps, txOps.length / config.maxPoolSize);
-      txs = txBatches.map((txBatch: Array<any>) => this.collection.bulkWrite(txBatch, { ordered: false }));
+      txs = txBatches.map((txBatch: Array<any>) => this.collection.bulkWrite(txBatch, { ordered: false, j: false, w: 0 }));
     }
 
-    await Promise.all(spendOps.concat(txs));
+    await Promise.all(txs);
   }
 
   async addTransactions(params: {
@@ -117,7 +118,7 @@ export class Transaction extends BaseModel<ITransaction> {
 
       spentTxWallets = await CoinModel.collection
         .aggregate<TaggedCoin>([
-          { $match: { spentTxid: { $in: txids }, chain, network } },
+       { $match: { spentTxid: { $in: txids }, chain, network } },
           { $unwind: '$wallets' },
           { $group: { _id: '$spentTxid', wallets: { $addToSet: '$wallets' } } }
         ])
@@ -295,7 +296,7 @@ export class Transaction extends BaseModel<ITransaction> {
     network: string;
     mintOps?: Array<any>;
   }): Array<any> {
-    let { chain, network, height, txs, parentChain, forkHeight, mintOps = [] } = params;
+    let { chain, network, height, txs, parentChain, forkHeight, mintOps=[] } = params;
     let spendOps: any[] = [];
     if (parentChain && forkHeight && height < forkHeight) {
       return spendOps;
@@ -313,7 +314,7 @@ export class Transaction extends BaseModel<ITransaction> {
       for (let input of tx.inputs) {
         let inputObj = input.toObject();
         let sameBlockSpend = mintMap[inputObj.prevTxId] && mintMap[inputObj.prevTxId][inputObj.outputIndex];
-        if (sameBlockSpend) {
+        if (sameBlockSpend){
           sameBlockSpend.updateOne.update.$set.spentHeight = height;
           sameBlockSpend.updateOne.update.$set.spentTxid = txid;
           if (config.pruneSpentScripts && height > 0) {
