@@ -109,18 +109,6 @@ export class RPC {
     this.callMethod('getaddressesbyaccount', [account], callback);
   }
 
-  async generate(n: number): Promise<string[]> {
-    return await this.asyncCall('generate', [n]) as string[];
-  }
-
-  async bestBlockHashAsync(): Promise<string> {
-    return await this.asyncCall('getbestblockhash', []) as string;
-  }
-
-  async blockAsync(hash: string): Promise<any> {
-    return await this.asyncCall('getblock', [hash]);
-  }
-
   async getEstimateSmartFee(target: number) {
     return this.asyncCall('estimatesmartfee', [target]);
   }

@@ -12,7 +12,7 @@ export type ICoin = {
   mintHeight: number;
   coinbase: boolean;
   value: number;
-  address: string;
+  address?: string;
   script: Buffer;
   wallets: Set<ObjectID>;
   spentTxid: string;
@@ -31,11 +31,7 @@ class Coin extends BaseModel<ICoin> {
   ];
 
   onConnect() {
-    this.collection.createIndex({ mintTxid: 1 });
-    this.collection.createIndex(
-      { mintTxid: 1, mintIndex: 1 },
-      { partialFilterExpression: { spentHeight: { $lt: 0 } } }
-    );
+    this.collection.createIndex({ mintTxid: 1, mintIndex: 1 });
     this.collection.createIndex({ address: 1 });
     this.collection.createIndex({ mintHeight: 1, chain: 1, network: 1 });
     this.collection.createIndex({ spentTxid: 1 }, { sparse: true });

@@ -47,11 +47,11 @@ describe('Block Model', function() {
     afterEach(() => {
       sandbox.restore();
     });
-    it('should return with height zero if there are no blocks', async () => {
+    it('should return null if there are no blocks', async () => {
       mockStorage(null);
       const params = { chain: 'BTC', network: 'regtest' };
       const result = await InternalState.getLocalTip(params);
-      expect(result).to.deep.equal({ height: 0 });
+      expect(result).to.deep.equal(null);
     });
   });
 
@@ -91,9 +91,6 @@ describe('Block Model', function() {
       let transactionModelRemoveSpy = TransactionModel.collection.remove as sinon.SinonSpy;
       let coinModelRemoveSpy = CoinModel.collection.remove as sinon.SinonSpy;
       let coinModelUpdateSpy = CoinModel.collection.update as sinon.SinonSpy;
-      let blockModelGetLocalTipSpy = sandbox.stub(BlockModel, 'getLocalTip').returns({
-        hash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
-      });
 
       const params = {
         header: {
@@ -114,7 +111,6 @@ describe('Block Model', function() {
       expect(transactionModelRemoveSpy.notCalled).to.be.true;
       expect(coinModelRemoveSpy.notCalled).to.be.true;
       expect(coinModelUpdateSpy.notCalled).to.be.true;
-      expect(blockModelGetLocalTipSpy.notCalled).to.be.false;
     });
 
     it('should return if localTip height is zero', async () => {
@@ -122,9 +118,6 @@ describe('Block Model', function() {
       let transactionModelRemoveSpy = TransactionModel.collection.remove as sinon.SinonSpy;
       let coinModelRemoveSpy = CoinModel.collection.remove as sinon.SinonSpy;
       let coinModelUpdateSpy = CoinModel.collection.update as sinon.SinonSpy;
-      let blockModelGetLocalTipSpy = sandbox.stub(BlockModel, 'getLocalTip').returns({
-        height: 0
-      });
 
       let blockMethodParams = {
         chain: 'BTC',
@@ -139,7 +132,6 @@ describe('Block Model', function() {
       expect(transactionModelRemoveSpy.notCalled).to.be.true;
       expect(coinModelRemoveSpy.notCalled).to.be.true;
       expect(coinModelUpdateSpy.notCalled).to.be.true;
-      expect(blockModelGetLocalTipSpy.notCalled).to.be.false;
     });
 
     it('should call blockModel remove', async () => {
