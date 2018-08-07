@@ -2,7 +2,7 @@ import config from '../config';
 import logger from '../logger';
 import { EventEmitter } from 'events';
 import { BlockModel } from '../models/block';
-import { ChainStateProvider } from '../providers/chain-state';
+import { InternalState } from '../providers/chain-state';
 import { TransactionModel } from '../models/transaction';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { StateModel } from '../models/state';
@@ -53,17 +53,19 @@ export class P2pService {
   }
 
   setupListeners() {
+    const { chain, network } = this;
     this.pool.on('peerready', peer => {
       logger.info(`Connected to peer ${peer.host}`, {
-        chain: this.chain,
-        network: this.network
+        chain: chain,
+        network: network
       });
     });
 
     this.pool.on('peerdisconnect', peer => {
       logger.warn(`Not connected to peer ${peer.host}`, {
-        chain: this.chain,
-        network: this.network
+        chain: chain,
+        network: network,
+        port: peer.port
       });
     });
 
@@ -71,8 +73,8 @@ export class P2pService {
       const hash = message.transaction.hash;
       logger.debug('peer tx received', {
         peer: `${peer.host}:${peer.port}`,
-        chain: this.chain,
-        network: this.network,
+        chain: chain,
+        network: network,
         hash
       });
       if (!this.invCache.get(hash)) {
@@ -82,13 +84,14 @@ export class P2pService {
       this.invCache.set(hash);
     });
 
-    this.pool.on('peerblock', (peer, message) => {
+    this.pool.on('peerblock', async (peer, message) => {
       const { block } = message;
       const { hash } = block;
+      const { chain, network } = this;
       logger.debug('peer block received', {
         peer: `${peer.host}:${peer.port}`,
-        chain: this.chain,
-        network: this.network,
+        chain: chain,
+        network: network,
         hash
       });
 
@@ -96,8 +99,13 @@ export class P2pService {
         this.invCache.set(hash);
         this.events.emit(hash, message.block);
         if (!this.syncing) {
-          this.processBlock(block);
-          this.events.emit('block', message.block);
+          try {
+            await this.processBlock(block);
+            this.events.emit('block', message.block);
+          } catch (err) {
+            logger.error(`Error syncing ${chain} ${network}`, err);
+            return this.sync();
+          }
         }
       }
     });
@@ -105,7 +113,7 @@ export class P2pService {
     this.pool.on('peerheaders', (peer, message) => {
       logger.debug('peerheaders message received', {
         peer: `${peer.host}:${peer.port}`,
-        chain: this.chain,
+        chain: chain,
         network: this.network,
         count: message.headers.length
       });
@@ -244,15 +252,15 @@ export class P2pService {
     const state = await StateModel.collection.findOne({});
     this.initialSyncComplete =
       state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
-    let tip = await ChainStateProvider.getLocalTip({ chain, network });
+    let tip = await InternalState.getLocalTip({ chain, network });
     if (parentChain && (!tip || tip.height < forkHeight)) {
-      let parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
+      let parentTip = await InternalState.getLocalTip({ chain: parentChain, network });
       while (!parentTip || parentTip.height < forkHeight) {
         logger.info(`Waiting until ${parentChain} syncs before ${chain} ${network}`);
         await new Promise(resolve => {
           setTimeout(resolve, 5000);
         });
-        parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
+        parentTip = await InternalState.getLocalTip({ chain: parentChain, network });
       }
       if (parentTip.height > forkHeight && (!tip || tip.height < forkHeight)) {
         // fork copy logic
@@ -261,14 +269,14 @@ export class P2pService {
     }
 
     const getHeaders = async () => {
-      const locators = await ChainStateProvider.getLocatorHashes({ chain, network });
+      const locators = await InternalState.getLocatorHashes({ chain, network });
       return this.getHeaders(locators);
     };
 
     let headers;
     while (!headers || headers.length > 0) {
       headers = await getHeaders();
-      tip = await ChainStateProvider.getLocalTip({ chain, network });
+      tip = await InternalState.getLocalTip({ chain, network });
       let currentHeight = tip ? tip.height : 0;
       let lastLog = 0;
       logger.info(`Syncing ${headers.length} blocks for ${chain} ${network}`);
@@ -278,7 +286,7 @@ export class P2pService {
           await this.processBlock(block);
           currentHeight++;
           if (Date.now() - lastLog > 100) {
-            logger.info(`Sync progress ${((100 * currentHeight) / this.getBestPoolHeight()).toFixed(3)}%`, {
+            logger.info(`Sync `, {
               chain,
               network,
               height: currentHeight

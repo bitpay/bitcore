@@ -1,10 +1,8 @@
 import { WalletAddressModel } from '../models/walletAddress';
-import { BaseModel } from './base';
+import { BaseModel, MongoBound } from './base';
 import { TransformOptions } from '../types/TransformOptions';
-import { ObjectID } from 'mongodb';
 
 export type IWallet = {
-  _id?: ObjectID;
   chain: string;
   network: string;
   name: string;
@@ -31,7 +29,7 @@ export class Wallet extends BaseModel<IWallet> {
     return JSON.stringify(transform);
   }
 
-  async updateCoins(wallet: IWallet) {
+  async updateCoins(wallet: MongoBound<IWallet>) {
     let addressModels = await WalletAddressModel.collection.find({ wallet: wallet._id }).toArray();
     let addresses = addressModels.map(model => model.address);
     return WalletAddressModel.updateCoins({ wallet, addresses });
