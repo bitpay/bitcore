@@ -303,18 +303,23 @@ export class P2pService {
           spendBatch = spendBatch.concat(blockUpdates.spendOps);
           txBatch = txBatch.concat(blockUpdates.txOps);
           prevBlock = blockUpdates.blockOp.$set;
+          if (Date.now() - lastLog > 100) {
+            logger.info(`Sync `, {
+              chain,
+              network,
+              height: currentHeight,
+              mintQueue: mintBatch.length
+            });
+            lastLog = Date.now();
+          }
 
           if (mintBatch.length > 100000) {
-            if (Date.now() - lastLog > 100) {
-              logger.info(`Writing ${blockBatch.length} blocks `, {
-                chain,
-                network,
-                height: currentHeight
-              });
-              lastLog = Date.now();
-            }
+            logger.info(`Writing ${blockBatch.length} blocks `, {
+              chain,
+              network,
+              height: currentHeight
+            });
             await BlockModel.processBlockOps(blockBatch);
-
 
             blockBatch = new Array<any>();
             mintBatch = new Array<any>();
@@ -328,16 +333,13 @@ export class P2pService {
           return this.sync();
         }
       }
-      if(mintBatch.length > 0) {
+      if (mintBatch.length > 0) {
         // clear out the remaining at the end of sync
-        if (Date.now() - lastLog > 100) {
-          logger.info(`Writing ${blockBatch.length} blocks `, {
-            chain,
-            network,
-            height: currentHeight
-          });
-          lastLog = Date.now();
-        }
+        logger.info(`Writing ${blockBatch.length} blocks `, {
+          chain,
+          network,
+          height: currentHeight
+        });
         await BlockModel.processBlockOps(blockBatch);
         blockBatch = new Array<any>();
         mintBatch = new Array<any>();
