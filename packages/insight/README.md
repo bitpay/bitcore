@@ -15,3 +15,11 @@ git clone -b next https://github.com/bitpay/insight.git && cd insight/server
 npm install
 npm start
 ```
+
+## Network / Chain setting
+
+To use a specific network / chain set the `NETWORK` and  `CHAIN` environment variable, e.g.:
+
+```bash
+NETWORK=testnet CHAIN=BCH npm start
+```
